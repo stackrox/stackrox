@@ -32,6 +32,8 @@ import:
   subpackages:
   - proto
   - protoc-gen-gogo/descriptor
+- package: github.com/docker/distribution
+  version: v2.6.2
 testImport:
 - package: github.com/stretchr/testify
   version: ^1.1.4

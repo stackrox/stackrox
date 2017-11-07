@@ -1,6 +1,8 @@
 package db
 
 import (
+	registryTypes "bitbucket.org/stack-rox/apollo/apollo/registries/types"
+	scannerTypes "bitbucket.org/stack-rox/apollo/apollo/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
@@ -20,4 +22,12 @@ type Storage interface {
 	RemoveAlert(id string)
 	GetAlert(id string) *v1.Alert
 	GetAlerts() []*v1.Alert
+
+	AddRegistry(name string, registry registryTypes.ImageRegistry)
+	RemoveRegistry(name string)
+	GetRegistries() map[string]registryTypes.ImageRegistry
+
+	AddScanner(name string, scanner scannerTypes.ImageScanner)
+	RemoveScanner(name string)
+	GetScanners() map[string]scannerTypes.ImageScanner
 }

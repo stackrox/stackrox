@@ -6,6 +6,11 @@ import (
 
 // ImageScanner is the interface that all scanners must implement
 type ImageScanner interface {
-	GetScan(id string) (*v1.ImageScan, error)
-	Scan(id string) error // Potentially initiate scan
+	Config() map[string]string
+	Endpoint() string
+
+	GetLastScan(image *v1.Image) (*v1.ImageScan, error)
+	GetScans(image *v1.Image) ([]*v1.ImageScan, error)
+	Scan(image *v1.Image) error // Potentially initiate scan
+	Test() error
 }

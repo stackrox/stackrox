@@ -7,27 +7,70 @@ import "google/api/annotations.proto";
 package v1;
 
 enum ImageScanState {
-    UNSCANNED = 0;
-    SCANNING =  1;
-    SCANNED =   2;
+    FAILED    = 0;
+    UNSCANNED = 1;
+    SCANNING  = 2;
+    PENDING   = 3;
+    SCANNED   = 4;
+    CHECKING  = 5;
+    COMPLETED = 6;
+}
+
+message ImageLayer {
+    string instruction = 1;
+    string value       = 2;
+    int64 created      = 3;
+    string author      = 4;
 }
 
 message ImageMetadata {
-    int64 created = 1;
-    string author = 2;
+    int64  created             = 1;
+    string author              = 2;
+    repeated ImageLayer layers = 3;
+}
+
+message License {
+    string name = 1;
+    string type = 2;
+    string url  = 3;
+}
+
+message Vulnerability {
+    string cve     = 1;
+    float cvss     = 2;
+    string summary = 3;
+}
+
+message ScanLayer {
+    string sha                              = 1;
+    repeated ImageScanComponents components = 2;
+}
+
+message ImageScanComponents {
+    string name                  = 1;
+    string version               = 2;
+    License license              = 3;
+    repeated string full_path    = 4; // Unsure if needed
+    repeated Vulnerability vulns = 5;
 }
 
 message ImageScan {
-    ImageScanState state = 1;
-    int64 last_scanned   = 2;
-    float cve_score      = 3;
+    string sha                              = 1;
+    string registry                         = 2;
+    string remote                           = 3;
+    string tag                              = 4;
+    // This indicates which version of the CVE DB this was scanned against. Used to determine if rescan needed
+    string cve_db_identifier                = 5;
+    ImageScanState state                    = 6;
+    repeated ScanLayer layers               = 7;
+    int64 scan_time                         = 8;
 }
 
 message Image {
-    string sha      = 1;
-    string registry = 2;
-    string repo     = 3;
-    string tag      = 4;
+    string sha             = 1;
+    string registry        = 2;
+    string remote          = 3;
+    string tag             = 4;
 
     ImageMetadata metadata = 5;
     ImageScan scan         = 6;

@@ -83,7 +83,7 @@ func (i *ImageProcessor) RemoveRule(name string) {
 func matchRuleToImage(rule *regexImageRule, image *v1.Image) ([]*v1.Violation, bool) {
 	var violations []*v1.Violation
 
-	if rule.Image.MatchString(image.Repo) {
+	if rule.Image.MatchString(image.Remote) {
 		violations = append(violations, &v1.Violation{
 			Severity: rule.Severity,
 			Message:  fmt.Sprintf("Rule %v matched image %v via image", rule.Image.String(), image.String()),
@@ -118,7 +118,7 @@ func (i *ImageProcessor) checkImage(image *v1.Image) (*v1.Alert, error) {
 	defer i.ruleMutex.Unlock()
 
 	var violations []*v1.Violation
-	// TODO(cgorman) implement this violation logic coherently
+	// TODO(cgorman) implement violation calculation logic
 	if len(violations) != 0 {
 		alert := &v1.Alert{
 			Id:         "ID", // UUID
@@ -130,7 +130,6 @@ func (i *ImageProcessor) checkImage(image *v1.Image) (*v1.Alert, error) {
 }
 
 func (i *ImageProcessor) enrichImage(image *v1.Image) error {
-
 	for _, registry := range i.registries {
 		metadata, err := registry.Metadata(image)
 		if err != nil {
@@ -142,7 +141,7 @@ func (i *ImageProcessor) enrichImage(image *v1.Image) error {
 	}
 
 	for _, scanner := range i.scanners {
-		scan, err := scanner.GetScan(image.Sha)
+		scan, err := scanner.GetLastScan(image)
 		if err != nil {
 			log.Error(err)
 			continue

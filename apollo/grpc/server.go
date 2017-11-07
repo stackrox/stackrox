@@ -40,7 +40,6 @@ func Register(service APIService) {
 }
 
 // API listens for new connections on APIPort 8080, and redirects them to the gRPC-Gateway
-// API at /v1, or the gRPC API.
 type API interface {
 	Start()
 }

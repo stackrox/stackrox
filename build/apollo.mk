@@ -192,6 +192,14 @@ test-common:
 	@echo "+ $@"
 	@go test -cover $(TESTFLAGS) -v $(shell go list -e ./... | grep -v generated | grep -v integration-tests | grep -v vendor) 2>&1 | tee test.log
 
+.PHONY: test-integration
+test-integration:
+	@echo "+ $@"
+	@go test -cover -tags integration -v $(shell go list -e ./... | grep -v generated | grep -v integration-tests | grep -v vendor) 2>&1 | tee test.log
+
+.PHONY: test-all
+test-all: test-integration
+
 .PHONY: report
 report:
 	@echo "+ $@"

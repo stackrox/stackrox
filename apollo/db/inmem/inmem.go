@@ -4,6 +4,8 @@ import (
 	"sort"
 	"sync"
 
+	registryTypes "bitbucket.org/stack-rox/apollo/apollo/registries/types"
+	scannerTypes "bitbucket.org/stack-rox/apollo/apollo/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
@@ -17,6 +19,12 @@ type InMemoryStore struct {
 
 	alerts     map[string]*v1.Alert
 	alertMutex sync.Mutex
+
+	registries    map[string]registryTypes.ImageRegistry
+	registryMutex sync.Mutex
+
+	scanners  map[string]scannerTypes.ImageScanner
+	scanMutex sync.Mutex
 }
 
 // New creates a new InMemoryStore
@@ -25,6 +33,8 @@ func New() *InMemoryStore {
 		images:     make(map[string]*v1.Image),
 		imageRules: make(map[string]*v1.ImageRule),
 		alerts:     make(map[string]*v1.Alert),
+		registries: make(map[string]registryTypes.ImageRegistry),
+		scanners:   make(map[string]scannerTypes.ImageScanner),
 	}
 }
 
@@ -50,7 +60,7 @@ func (i *InMemoryStore) GetImages() []*v1.Image {
 	for _, image := range i.images {
 		images = append(images, image)
 	}
-	sort.SliceStable(images, func(i, j int) bool { return images[i].Repo < images[j].Repo })
+	sort.SliceStable(images, func(i, j int) bool { return images[i].Remote < images[j].Remote })
 	return images
 }
 
@@ -125,4 +135,46 @@ func (i *InMemoryStore) RemoveAlert(id string) {
 	i.alertMutex.Lock()
 	defer i.alertMutex.Unlock()
 	delete(i.alerts, id)
+}
+
+// AddRegistry adds a registry
+func (i *InMemoryStore) AddRegistry(name string, registry registryTypes.ImageRegistry) {
+	i.registryMutex.Lock()
+	defer i.registryMutex.Unlock()
+	i.registries[name] = registry
+}
+
+// RemoveRegistry removes a registry
+func (i *InMemoryStore) RemoveRegistry(name string) {
+	i.registryMutex.Lock()
+	defer i.registryMutex.Unlock()
+	delete(i.registries, name)
+}
+
+// GetRegistries retrieves all registries from the DB
+func (i *InMemoryStore) GetRegistries() map[string]registryTypes.ImageRegistry {
+	i.registryMutex.Lock()
+	defer i.registryMutex.Unlock()
+	return i.registries
+}
+
+// AddScanner adds a scanner
+func (i *InMemoryStore) AddScanner(name string, scanner scannerTypes.ImageScanner) {
+	i.scanMutex.Lock()
+	defer i.scanMutex.Unlock()
+	i.scanners[name] = scanner
+}
+
+// RemoveScanner removes a scanner
+func (i *InMemoryStore) RemoveScanner(name string) {
+	i.scanMutex.Lock()
+	defer i.scanMutex.Unlock()
+	delete(i.scanners, name)
+}
+
+// GetScanners retrieves all scanners from the db
+func (i *InMemoryStore) GetScanners() map[string]scannerTypes.ImageScanner {
+	i.scanMutex.Lock()
+	defer i.scanMutex.Unlock()
+	return i.scanners
 }

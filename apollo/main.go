@@ -11,6 +11,8 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
 	"bitbucket.org/stack-rox/apollo/apollo/listeners"
 	_ "bitbucket.org/stack-rox/apollo/apollo/listeners/all"
+	_ "bitbucket.org/stack-rox/apollo/apollo/registries/all"
+	_ "bitbucket.org/stack-rox/apollo/apollo/scanners/all"
 	"bitbucket.org/stack-rox/apollo/apollo/service"
 	"bitbucket.org/stack-rox/apollo/apollo/types"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -50,10 +52,10 @@ func main() {
 	benchmarkService := service.NewBenchmarkService(database)
 	grpc.Register(benchmarkService)
 
-	registryService := service.NewRegistryService(database, imageProcessor)
+	registryService := service.NewRegistryService(database)
 	grpc.Register(registryService)
 
-	scannerService := service.NewScannerService(database, imageProcessor)
+	scannerService := service.NewScannerService(database)
 	grpc.Register(scannerService)
 
 	// Initialize by getting resources initially

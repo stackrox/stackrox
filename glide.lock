@@ -1,14 +1,28 @@
-hash: 4ef3cb052b348685a1df2e1a829bd5ec83610a3212b79e06020ea88b733b4930
-updated: 2017-11-22T17:51:56.165166769Z
+hash: c881740a9a2df29bba8d62522063f36b1790bff33bce0b084e817cab8b61997a
+updated: 2017-11-27T22:09:38.215284564Z
 imports:
-- name: github.com/docker/distribution
-  version: 7484e51bf6af0d3b1a849644cdaced3cfcf13617
+- name: github.com/Azure/go-ansiterm
+  version: d6e3b3328b783f23731bc4d058875b0371ff8109
   subpackages:
-  - digestset
+  - winterm
+- name: github.com/docker/distribution
+  version: 48294d928ced5dd9b378f7fd7c6f5da3ff3f2c89
+  subpackages:
+  - context
+  - digest
   - manifest
   - manifest/schema1
   - manifest/schema2
   - reference
+  - registry/api/errcode
+  - registry/api/v2
+  - registry/client
+  - registry/client/auth
+  - registry/client/auth/challenge
+  - registry/client/transport
+  - registry/storage/cache
+  - registry/storage/cache/memory
+  - uuid
 - name: github.com/docker/docker
   version: f5ec1e2936dcbe7b5001c2b817188b095c700c27
   subpackages:
@@ -27,7 +41,32 @@ imports:
   - api/types/versions
   - api/types/volume
   - client
+  - image
+  - image/v1
+  - layer
+  - opts
+  - pkg/archive
+  - pkg/fileutils
+  - pkg/httputils
+  - pkg/idtools
+  - pkg/ioutils
+  - pkg/jsonlog
+  - pkg/jsonmessage
+  - pkg/longpath
+  - pkg/plugingetter
+  - pkg/plugins
+  - pkg/plugins/transport
+  - pkg/pools
+  - pkg/promise
+  - pkg/random
+  - pkg/stringid
+  - pkg/system
+  - pkg/tarsum
+  - pkg/term
+  - pkg/term/windows
   - pkg/tlsconfig
+  - reference
+  - registry
 - name: github.com/docker/go-connections
   version: 4ccf312bf1d35e5dbda654e57a9be4c3f3cd0366
   subpackages:
@@ -55,6 +94,10 @@ imports:
   - ptypes/empty
   - ptypes/struct
   - ptypes/timestamp
+- name: github.com/gorilla/context
+  version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
+- name: github.com/gorilla/mux
+  version: 0a192a193177452756c362c20087ddafcf6829c4
 - name: github.com/grpc-ecosystem/go-grpc-middleware
   version: 6d3547c644afb325c16df96e3c7177ea6e2fdebd
   subpackages:
@@ -79,6 +122,7 @@ imports:
 - name: github.com/opencontainers/runc
   version: b2567b37d7b75eb4cf325b77297b140ea686ce8f
   subpackages:
+  - libcontainer/system
   - libcontainer/user
 - name: github.com/pkg/errors
   version: f15c970de5b76fac0b59abb32d62c17cc7bed265
@@ -88,11 +132,20 @@ imports:
   version: f006c2ac4710855cf0f916dd6b77acf6b048dc6e
   repo: https://github.com/sirupsen/logrus.git
   vcs: git
-- name: github.com/sirupsen/logrus
-  version: 3ec0642a7fb6488f65b06f9040adc67e3990296a
+- name: github.com/spf13/pflag
+  version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
+- name: github.com/vbatts/tar-split
+  version: 38ec4ddb06dedbea0a895c4848b248eb38af221b
+  subpackages:
+  - archive/tar
+  - tar/asm
+  - tar/storage
 - name: golang.org/x/crypto
   version: c10c31b5e94b6f7a0283272dc2bb27163dcea24b
   subpackages:
+  - bcrypt
+  - blowfish
+  - ocsp
   - ssh/terminal
 - name: golang.org/x/net
   version: a337091b0525af65de94df2eb7e98bd9962dcbe2
@@ -158,3 +211,4 @@ testImports:
   subpackages:
   - assert
   - require
+  - suite

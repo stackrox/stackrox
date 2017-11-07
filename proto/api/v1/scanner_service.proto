@@ -9,8 +9,7 @@ package v1;
 message Scanner {
     string name     = 1;
     string endpoint = 2;
-    string username = 3;
-    string password = 4;
+    map<string, string> config = 3;
 }
 
 message GetScannersRequest {
