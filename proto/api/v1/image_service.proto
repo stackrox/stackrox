@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "v1";
 
 import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 
 package v1;
 
@@ -17,16 +18,16 @@ enum ImageScanState {
 }
 
 message ImageLayer {
-    string instruction = 1;
-    string value       = 2;
-    int64 created      = 3;
-    string author      = 4;
+    string instruction                 = 1;
+    string value                       = 2;
+    google.protobuf.Timestamp created  = 3;
+    string author                      = 4;
 }
 
 message ImageMetadata {
-    int64  created             = 1;
-    string author              = 2;
-    repeated ImageLayer layers = 3;
+    google.protobuf.Timestamp  created = 1;
+    string author                      = 2;
+    repeated ImageLayer layers         = 3;
 }
 
 message License {
@@ -63,7 +64,7 @@ message ImageScan {
     string cve_db_identifier                = 5;
     ImageScanState state                    = 6;
     repeated ScanLayer layers               = 7;
-    int64 scan_time                         = 8;
+    google.protobuf.Timestamp scan_time     = 8;
 }
 
 message Image {

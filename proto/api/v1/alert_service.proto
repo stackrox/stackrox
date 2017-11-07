@@ -8,9 +8,8 @@ import "v1/common.proto";
 package v1;
 
 message Violation {
-    string rule       = 1;
-    string message    = 2;
-    Severity severity = 3;
+    string message    = 1;
+    Severity severity = 2;
 }
 
 message Resource {
@@ -21,9 +20,10 @@ message Resource {
 
 message Alert {
     string id                     = 1;
-    Resource resource             = 2;
-    Severity severity             = 3;
-    repeated Violation violations = 4;
+    string rule_name              = 2;
+    Resource resource             = 3;
+    Severity severity             = 4;
+    repeated Violation violations = 5;
 }
 
 service AlertService {

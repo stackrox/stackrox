@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -150,6 +151,7 @@ func TestConvertTagScanSummariesToImageScans(t *testing.T) {
 			CheckCompletedAt: time.Unix(0, 1000),
 		},
 	}
+	protoTime, _ := ptypes.TimestampProto(time.Unix(0, 1000))
 	expectedScans := []*v1.ImageScan{
 		{
 			Registry: "registry",
@@ -157,7 +159,7 @@ func TestConvertTagScanSummariesToImageScans(t *testing.T) {
 			Tag:      "latest",
 			State:    v1.ImageScanState_CHECKING,
 			Layers:   expectedLayers,
-			ScanTime: 1000,
+			ScanTime: protoTime,
 		},
 	}
 

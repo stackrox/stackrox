@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "v1/common.proto";
+
+package v1;
+
+message DockerfileLineRuleField {
+    string instruction  = 1;
+    string value        = 2;
+}
+
+enum Comparator {
+    LESS_THAN              = 0;
+    LESS_THAN_OR_EQUALS    = 1;
+    EQUALS                 = 2;
+    GREATER_THAN_OR_EQUALS = 3;
+    GREATER_THAN           = 4;
+}
+
+enum MathOP {
+    MIN = 0;
+    MAX = 1;
+    AVG = 2;
+}
+
+message NumericalRule {
+    Comparator op  = 1;
+    MathOP math_op = 2;
+    float value    = 3;
+}
+
+// Image Name
+message ImageNameRule {
+    string registry        = 1; // e.g. docker.io
+    string namespace       = 2; // e.g. stackrox
+    string repo            = 3; // e.g. container-summarizer
+    string tag             = 4; // e.g. latest
+}
+
+message ImageRule {
+    // Rule Metadata
+    string name                        = 1;
+    Severity severity                  = 2;
+
+    ImageNameRule image_name           = 3;
+
+    // Registry metadata
+    int64 image_age_days               = 4;
+    DockerfileLineRuleField line_rule  = 5;
+
+    // Scan Metadata
+    NumericalRule cvss                 = 6;
+    string cve                         = 7;
+    string component                   = 8;
+    int64 scan_age_days                = 9;
+}
+
+message ImageRules {
+    repeated ImageRule rules = 1;
+}
+
+service ImageRuleService {
+
+    rpc GetImageRules(google.protobuf.Empty) returns (ImageRules) {
+        option (google.api.http) = {
+            get: "/v1/images/rules"
+        };
+    }
+
+    rpc PostImageRule(ImageRule) returns (ImageRule) {
+        option (google.api.http) = {
+            post: "/v1/images/rules"
+            body: "*"
+        };
+    }
+
+    rpc PutImageRule(ImageRule) returns (ImageRule) {
+        option (google.api.http) = {
+            put: "/v1/images/rules/{name}"
+            body: "*"
+        };
+    }
+
+}

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"github.com/golang/protobuf/ptypes"
 )
 
 func convertVulns(dockerVulnDetails []*vulnerabilityDetails) []*v1.Vulnerability {
@@ -62,13 +63,19 @@ func convertTagScanSummariesToImageScans(server string, tagScanSummaries []*tagS
 	imageScans := make([]*v1.ImageScan, 0, len(tagScanSummaries))
 	for _, tagScan := range tagScanSummaries {
 		convertedLayers := convertLayers(tagScan.LayerDetails)
+
+		completedAt, err := ptypes.TimestampProto(tagScan.CheckCompletedAt)
+		if err != nil {
+			log.Error(err)
+		}
+
 		imageScans = append(imageScans, &v1.ImageScan{
 			Registry: server,
 			Remote:   fmt.Sprintf("%v/%v", tagScan.Namespace, tagScan.RepoName),
 			Tag:      tagScan.Tag,
 			State:    convertScanState(tagScan.LastScanStatus),
 			Layers:   convertedLayers,
-			ScanTime: tagScan.CheckCompletedAt.UnixNano(),
+			ScanTime: completedAt,
 		})
 	}
 	return imageScans

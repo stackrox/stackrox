@@ -7,6 +7,11 @@ import (
 	registryTypes "bitbucket.org/stack-rox/apollo/apollo/registries/types"
 	scannerTypes "bitbucket.org/stack-rox/apollo/apollo/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/logging"
+)
+
+var (
+	log = logging.New("inmem")
 )
 
 // InMemoryStore is an in memory representation of the database

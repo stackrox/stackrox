@@ -65,12 +65,18 @@ func main() {
 	}
 
 	for _, container := range runningContainers {
-		alert, err := imageProcessor.Process(container.Image)
+		log.Infof("Image found: %+v", container.Image)
+		alerts, err := imageProcessor.Process(container.Image)
 		if err != nil {
 			log.Error(err)
 			continue
 		}
-		log.Infof("Alert %+v generated for %v", alert, container.ID)
+		for _, alert := range alerts {
+			log.Warnf("Alert Generated: %v with Severity %v due to rule %v", alert.Id, alert.Severity.String(), alert.RuleName)
+			for _, violation := range alert.Violations {
+				log.Warnf("\t %v - %v", violation.Severity.String(), violation.Message)
+			}
+		}
 	}
 
 	go listener.Start()
@@ -84,12 +90,17 @@ func main() {
 			switch event.Action {
 			case types.Create, types.Update:
 				for _, container := range event.Containers {
-					alert, err := imageProcessor.Process(container.Image)
+					alerts, err := imageProcessor.Process(container.Image)
 					if err != nil {
 						log.Error(err)
 						continue
 					}
-					log.Infof("Alert %+v generated for %v", alert, container.ID)
+					for _, alert := range alerts {
+						log.Warnf("Alert Generated: %v with Severity %v due to rule %v", alert.Id, alert.Severity.String(), alert.RuleName)
+						for _, violation := range alert.Violations {
+							log.Warnf("\t %v - %v", violation.Severity.String(), violation.Message)
+						}
+					}
 				}
 			default:
 				log.Infof("Event Action %v is currently not implemented", event.Action.String())
@@ -100,7 +111,5 @@ func main() {
 			return
 		}
 	}
-
 	// docker service create --restart-policy=none --name crawler1 -e url=http://blog.alexellis.io -d crawl_site alexellis2/href-counter
-
 }

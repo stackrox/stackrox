@@ -9,10 +9,17 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/registries"
 	registryTypes "bitbucket.org/stack-rox/apollo/apollo/registries/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/heroku/docker-registry-client/registry"
 )
 
 const pluginName = "docker"
+
+var (
+	log = logging.New("registry/docker")
+)
 
 type dockerRegistry struct {
 	config   map[string]string
@@ -101,12 +108,31 @@ func scrubDockerfileLines(compat v1Compatibility) *v1.ImageLayer {
 	if lineInstruction == "" {
 		lineInstruction = "RUN"
 	}
+	protoTS, err := ptypes.TimestampProto(compat.Created)
+	if err != nil {
+		log.Error(err)
+	}
 	return &v1.ImageLayer{
 		Instruction: lineInstruction,
 		Value:       line,
-		Created:     compat.Created.UnixNano(),
+		Created:     protoTS,
 		Author:      compat.Author,
 	}
+}
+
+func compareProtoTimestamps(t1, t2 *timestamp.Timestamp) bool {
+	if t1 == nil {
+		return true
+	}
+	if t2 == nil {
+		return false
+	}
+	if t1.Seconds < t2.Seconds {
+		return true
+	} else if t2.Seconds > t1.Seconds {
+		return false
+	}
+	return t1.Nanos < t2.Nanos
 }
 
 // Metadata returns the metadata via this registries implementation
@@ -125,7 +151,7 @@ func (d *dockerRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 			return nil, err
 		}
 		layer := scrubDockerfileLines(compat)
-		if layer.Created > latest.Created {
+		if compareProtoTimestamps(latest.Created, layer.Created) {
 			latest = *layer
 		}
 		layers = append(layers, layer)

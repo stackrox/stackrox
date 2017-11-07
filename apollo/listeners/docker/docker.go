@@ -141,7 +141,6 @@ func (dl *Listener) processEvent(msg events.Message) {
 	actor := msg.Type
 	id := msg.Actor.ID
 
-	log.Infof("Docker Msg: %+v", msg)
 	var resourceAction apolloTypes.ResourceAction
 	switch msg.Action {
 	case "create":
@@ -164,7 +163,6 @@ func (dl *Listener) processEvent(msg events.Message) {
 		Containers: []*apolloTypes.Container{container},
 		Action:     resourceAction,
 	}
-	log.Infof("%+v", event)
 	dl.eventsChan <- event
 }
 

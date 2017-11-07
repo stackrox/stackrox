@@ -1,13 +1,10 @@
 package imageprocessor
 
 import (
-	"fmt"
 	"regexp"
 	"sync"
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
-	registryTypes "bitbucket.org/stack-rox/apollo/apollo/registries/types"
-	scannerTypes "bitbucket.org/stack-rox/apollo/apollo/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 )
@@ -18,41 +15,118 @@ var (
 
 // ImageProcessor enriches and processes images to determine rule violations
 type ImageProcessor struct {
-	registries []registryTypes.ImageRegistry
-	scanners   []scannerTypes.ImageScanner
-
 	database db.Storage
 
 	ruleMutex  sync.Mutex
 	regexRules map[string]*regexImageRule
 }
 
+type lineRuleFieldRegex struct {
+	Instruction string
+	Value       *regexp.Regexp
+}
+
+type imageNameRuleRegex struct {
+	Registry  *regexp.Regexp
+	Namespace *regexp.Regexp
+	Repo      *regexp.Regexp
+	Tag       *regexp.Regexp
+}
+
 type regexImageRule struct {
-	Registry *regexp.Regexp
-	Tag      *regexp.Regexp
-	Image    *regexp.Regexp
-	Severity v1.Severity
 	Name     string
+	Severity v1.Severity
+
+	ImageNameRule *imageNameRuleRegex
+
+	ImageAgeDays int64
+	LineRule     *lineRuleFieldRegex
+
+	CVSS        *v1.NumericalRule
+	CVE         *regexp.Regexp
+	Component   *regexp.Regexp
+	ScanAgeDays int64
+}
+
+func compileImageNameRuleRegex(rule *v1.ImageNameRule) (*imageNameRuleRegex, error) {
+	if rule == nil {
+		return nil, nil
+	}
+	registry, err := compileStringRegex(rule.Registry)
+	if err != nil {
+		return nil, err
+	}
+	namespace, err := compileStringRegex(rule.Namespace)
+	if err != nil {
+		return nil, err
+	}
+	repo, err := compileStringRegex(rule.Repo)
+	if err != nil {
+		return nil, err
+	}
+	tag, err := compileStringRegex(rule.Tag)
+	if err != nil {
+		return nil, err
+	}
+	return &imageNameRuleRegex{
+		Registry:  registry,
+		Namespace: namespace,
+		Repo:      repo,
+		Tag:       tag,
+	}, nil
+}
+
+func compileStringRegex(rule string) (*regexp.Regexp, error) {
+	if rule == "" {
+		return nil, nil
+	}
+	return regexp.Compile(rule)
+}
+
+func compileLineRuleFieldRegex(line *v1.DockerfileLineRuleField) (*lineRuleFieldRegex, error) {
+	if line == nil {
+		return nil, nil
+	}
+	value, err := regexp.Compile(line.Value)
+	if err != nil {
+		return nil, err
+	}
+	return &lineRuleFieldRegex{
+		Instruction: line.Instruction,
+		Value:       value,
+	}, nil
 }
 
 func (i *ImageProcessor) addRegexImageRule(rule *v1.ImageRule) error {
-	registry, err := regexp.Compile(rule.Registry)
+	imageNameRegex, err := compileImageNameRuleRegex(rule.ImageName)
 	if err != nil {
-		return fmt.Errorf("registry regex: %+v", err)
+		return err
 	}
-	tag, err := regexp.Compile(rule.Tag)
+	lineRule, err := compileLineRuleFieldRegex(rule.LineRule)
 	if err != nil {
-		return fmt.Errorf("tag regex: %+v", err)
+		return err
 	}
-	image, err := regexp.Compile(rule.Image)
+	component, err := compileStringRegex(rule.Component)
 	if err != nil {
-		return fmt.Errorf("image regex: %+v", err)
+		return err
+	}
+	cve, err := compileStringRegex(rule.Cve)
+	if err != nil {
+		return err
 	}
 	i.regexRules[rule.Name] = &regexImageRule{
-		Registry: registry,
-		Tag:      tag,
-		Image:    image,
 		Name:     rule.Name,
+		Severity: rule.Severity,
+
+		ImageNameRule: imageNameRegex,
+
+		ImageAgeDays: rule.ImageAgeDays,
+		LineRule:     lineRule,
+
+		CVSS:        rule.Cvss,
+		CVE:         cve,
+		Component:   component,
+		ScanAgeDays: rule.ScanAgeDays,
 	}
 	return nil
 }
@@ -80,67 +154,42 @@ func (i *ImageProcessor) RemoveRule(name string) {
 	delete(i.regexRules, name)
 }
 
-func matchRuleToImage(rule *regexImageRule, image *v1.Image) ([]*v1.Violation, bool) {
-	var violations []*v1.Violation
-
-	if rule.Image.MatchString(image.Remote) {
-		violations = append(violations, &v1.Violation{
-			Severity: rule.Severity,
-			Message:  fmt.Sprintf("Rule %v matched image %v via image", rule.Image.String(), image.String()),
-		})
-	}
-	if rule.Registry.MatchString(image.Registry) {
-		violations = append(violations, &v1.Violation{
-			Severity: rule.Severity,
-			Message:  fmt.Sprintf("Rule %v matched image %v via registry", rule.Registry.String(), image.String()),
-		})
-	}
-	if rule.Tag.MatchString(image.Tag) {
-		violations = append(violations, &v1.Violation{
-			Severity: rule.Severity,
-			Message:  fmt.Sprintf("Rule %v matched image %v via tag", rule.Tag.String(), image.String()),
-		})
-	}
-	return violations, len(violations) == 0
-}
-
 // Process takes in a new image and determines if an alert should be fired
-func (i *ImageProcessor) Process(image *v1.Image) (*v1.Alert, error) {
+func (i *ImageProcessor) Process(image *v1.Image) ([]*v1.Alert, error) {
+	// TODO(cgorman) Better notification system or scheme around notifying if there is an error
 	if err := i.enrichImage(image); err != nil {
 		return nil, err
 	}
-
 	return i.checkImage(image)
 }
 
-func (i *ImageProcessor) checkImage(image *v1.Image) (*v1.Alert, error) {
+func (i *ImageProcessor) checkImage(image *v1.Image) ([]*v1.Alert, error) {
 	i.ruleMutex.Lock()
 	defer i.ruleMutex.Unlock()
 
-	var violations []*v1.Violation
-	// TODO(cgorman) implement violation calculation logic
-	if len(violations) != 0 {
-		alert := &v1.Alert{
-			Id:         "ID", // UUID
-			Violations: violations,
+	var alerts []*v1.Alert
+	for _, rule := range i.regexRules {
+		if alert := rule.matchRuleToImage(image); alert != nil {
+			alerts = append(alerts, alert)
 		}
-		return alert, nil
 	}
-	return nil, nil
+	return alerts, nil
 }
 
 func (i *ImageProcessor) enrichImage(image *v1.Image) error {
-	for _, registry := range i.registries {
+	i.ruleMutex.Lock()
+	defer i.ruleMutex.Unlock()
+	for _, registry := range i.database.GetRegistries() {
 		metadata, err := registry.Metadata(image)
 		if err != nil {
-			log.Error(err)
+			log.Error(err) // This will be removed, but useful for debugging at this point
 			continue
 		}
 		image.Metadata = metadata
 		break
 	}
 
-	for _, scanner := range i.scanners {
+	for _, scanner := range i.database.GetScanners() {
 		scan, err := scanner.GetLastScan(image)
 		if err != nil {
 			log.Error(err)

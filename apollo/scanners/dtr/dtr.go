@@ -71,7 +71,6 @@ func newScanner(endpoint string, config map[string]string) (scannerTypes.ImageSc
 	}
 
 	go scanner.refreshMetadata()
-
 	return scanner, nil
 }
 

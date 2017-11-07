@@ -31,12 +31,12 @@ type RuleService struct {
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *RuleService) RegisterServiceServer(grpcServer *grpc.Server) {
-	v1.RegisterRuleServiceServer(grpcServer, s)
+	v1.RegisterImageRuleServiceServer(grpcServer, s)
 }
 
 // RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
 func (s *RuleService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-	return v1.RegisterRuleServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	return v1.RegisterImageRuleServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 }
 
 // GetImageRules retrieves all image rules
@@ -47,15 +47,15 @@ func (s *RuleService) GetImageRules(ctx context.Context, _ *empty.Empty) (*v1.Im
 // PostImageRule inserts a new image rule into the system
 func (s *RuleService) PostImageRule(ctx context.Context, request *v1.ImageRule) (*v1.ImageRule, error) {
 	s.storage.AddImageRule(request)
-	s.imageProcessor.UpdateRule(request)
-	return request, nil
+	err := s.imageProcessor.UpdateRule(request)
+	return request, err
 }
 
 // PutImageRule updates a current image rule into the system
 func (s *RuleService) PutImageRule(ctx context.Context, request *v1.ImageRule) (*v1.ImageRule, error) {
 	s.storage.UpdateImageRule(request)
-	s.imageProcessor.UpdateRule(request)
-	return request, nil
+	err := s.imageProcessor.UpdateRule(request)
+	return request, err
 }
 
 // DeleteImageRule deletes an image rule from the system

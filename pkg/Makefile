@@ -1,7 +1,7 @@
 ROX_PROJECT=pkg
 TESTFLAGS=-race -p 4
 
-API_SERVICES = v1/rule_service
+API_SERVICES = v1/image_rule_service
 API_SERVICES += v1/benchmark_service
 API_SERVICES += v1/scanner_service
 API_SERVICES += v1/registry_service

@@ -9,6 +9,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/docker-bench/cis"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -39,12 +40,19 @@ func main() {
 		log.Fatalf("%v must be specified", apolloEndpointEnv)
 	}
 
-	startTime := time.Now().UnixNano()
+	protoStartTime, err := ptypes.TimestampProto(time.Now())
+	if err != nil {
+		log.Fatalf("Could not compute starting time: %+v", err)
+	}
 	results := cis.RunCISBenchmark()
+	protoEndTime, err := ptypes.TimestampProto(time.Now())
+	if err != nil {
+		log.Fatalf("Could not conver to proto ending time: %+v", err)
+	}
 	payload := &v1.BenchmarkPayload{
 		Results:   results,
-		StartTime: startTime,
-		EndTime:   time.Now().UnixNano(),
+		StartTime: protoStartTime,
+		EndTime:   protoEndTime,
 		Host:      os.Getenv("HOSTNAME"),
 	}
 
