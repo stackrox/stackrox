@@ -1,0 +1,15 @@
+*/container/bin/*
+*/container/conf/*
+*/container/data/*
+deps
+report.xml
+test.log
+vendor/
+api/generated
+*.g4
+*.tokens
+BUILD.bazel
+.idea/
+protoc-*
+pkg/api/generated
+glide.out

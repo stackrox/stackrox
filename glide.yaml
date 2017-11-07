@@ -1,0 +1,37 @@
+package: bitbucket.org/stack-rox/apollo
+ignore:
+- bitbucket.org/stack-rox/apollo
+- github.com/docker/docker/daemon
+import:
+- package: github.com/docker/docker
+  version: v1.13.0
+- package: github.com/Sirupsen/logrus
+  repo: https://github.com/sirupsen/logrus.git
+  vcs: git
+  version: v1.0.3
+- package: github.com/golang/protobuf
+  version: 130e6b02ab059e7b717a096f397c5b60111cae74
+- package: github.com/grpc-ecosystem/grpc-gateway
+  version: c323909dd41de182a54b4d1610f26034da5e097e
+- package: google.golang.org/genproto
+  version: f676e0f3ac6395ff1a529ae59a6670878a8371a6
+- package: github.com/grpc-ecosystem/go-grpc-middleware
+  version: 6d3547c644afb325c16df96e3c7177ea6e2fdebd
+- package: github.com/mwitkow/go-proto-validators
+  version: a55ca57f374a8846924b030f534d8b8211508cf0
+- package: github.com/heroku/docker-registry-client
+  version: fd2fe803496897db70c236ee244f41487ea92ec2
+- package: github.com/satori/go.uuid
+  version: 5bf94b69c6b68ee1b541973bb8e1144db23a194b
+- package: github.com/gogo/protobuf
+  version: b79ae77db468f92c7ef48e12c9c5d70e6a20c3b8
+- package: google.golang.org/grpc
+  version: v1.7.2
+- package: golang.org/x/net
+  version: a337091b0525af65de94df2eb7e98bd9962dcbe2
+  subpackages:
+  - proto
+  - protoc-gen-gogo/descriptor
+testImport:
+- package: github.com/stretchr/testify
+  version: ^1.1.4

@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+
+package v1;
+
+message Registry {
+    string name     = 1;
+    string endpoint = 2;
+    string username = 3;
+    string password = 4;
+}
+
+message GetRegistriesRequest {
+    string name = 1;
+}
+
+message GetRegistriesResponse {
+    repeated Registry registries = 1;
+}
+
+service RegistryService {
+
+    rpc GetRegistries(GetRegistriesRequest) returns (GetRegistriesResponse) {
+        option (google.api.http) = {
+            get: "/v1/registries"
+        };
+    }
+
+    rpc PostRegistry(Registry) returns (Registry) {
+        option (google.api.http) = {
+            post: "/v1/registries"
+            body: "*"
+        };
+    }
+
+}

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+package v1;
+
+enum Severity {
+    LOW      = 0;
+    MEDIUM   = 1;
+    HIGH     = 2;
+    CRITICAL = 3;
+}
+

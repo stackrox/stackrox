@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+
+package v1;
+
+enum ImageScanState {
+    UNSCANNED = 0;
+    SCANNING =  1;
+    SCANNED =   2;
+}
+
+message ImageMetadata {
+    int64 created = 1;
+    string author = 2;
+}
+
+message ImageScan {
+    ImageScanState state = 1;
+    int64 last_scanned   = 2;
+    float cve_score      = 3;
+}
+
+message Image {
+    string sha      = 1;
+    string registry = 2;
+    string repo     = 3;
+    string tag      = 4;
+
+    ImageMetadata metadata = 5;
+    ImageScan scan         = 6;
+}
+
+service ImageService {
+
+//    rpc GetImageRules(google.protobuf.Empty) returns (ImageRules) {
+//        option (google.api.http) = {
+//            get: "/v1/imageses"
+//        };
+//    }
+//
+//    rpc PostImageRule(ImageRule) returns (ImageRule) {
+//        option (google.api.http) = {
+//            post: "/v1/images/rules"
+//            body: "*"
+//        };
+//    }
+//
+//    rpc PutImageRule(ImageRule) returns (ImageRule) {
+//        option (google.api.http) = {
+//            put: "/v1/images/rules/{name}"
+//            body: "*"
+//        };
+//    }
+
+}

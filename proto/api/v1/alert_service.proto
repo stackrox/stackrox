@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "v1/common.proto";
+
+package v1;
+
+message Violation {
+    string rule       = 1;
+    string message    = 2;
+    Severity severity = 3;
+}
+
+message Resource {
+    string id   = 1;
+    string name = 2;
+    string type = 3;
+}
+
+message Alert {
+    string id                     = 1;
+    Resource resource             = 2;
+    Severity severity             = 3;
+    repeated Violation violations = 4;
+}
+
+service AlertService {
+
+//    rpc GetImageRules(google.protobuf.Empty) returns (ImageRules) {
+//        option (google.api.http) = {
+//            get: "/v1/images/rules"
+//        };
+//    }
+//
+//    rpc PostImageRule(ImageRule) returns (ImageRule) {
+//        option (google.api.http) = {
+//            post: "/v1/images/rules"
+//            body: "*"
+//        };
+//    }
+//
+//    rpc PutImageRule(ImageRule) returns (ImageRule) {
+//        option (google.api.http) = {
+//            put: "/v1/images/rules/{name}"
+//            body: "*"
+//        };
+//    }
+
+}
