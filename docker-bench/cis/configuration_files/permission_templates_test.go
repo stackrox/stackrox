@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,7 +22,7 @@ func createTestFile() (string, error) {
 func TestCompareFilePermissions(t *testing.T) {
 	// Test file not existing
 	file := "/tmp/idontexist"
-	expectedResult := common.TestResult{Result: common.Note}
+	expectedResult := v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_NOTE}
 	result := compareFilePermissions(file, 0777, true)
 	assert.Equal(t, expectedResult.Result, result.Result)
 	assert.Equal(t, 1, len(result.Notes))
@@ -33,21 +33,21 @@ func TestCompareFilePermissions(t *testing.T) {
 	// Check equality
 	err = os.Chmod(file, 0777)
 	require.Nil(t, err)
-	expectedResult = common.TestResult{Result: common.Pass}
+	expectedResult = v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_PASS}
 	result = compareFilePermissions(file, 0777, true)
 	assert.Equal(t, expectedResult, result)
 
 	// Check less than with includesLower: true
 	err = os.Chmod(file, 0666)
 	require.Nil(t, err)
-	expectedResult = common.TestResult{Result: common.Pass}
+	expectedResult = v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_PASS}
 	result = compareFilePermissions(file, 0777, true)
 	assert.Equal(t, expectedResult, result)
 
 	// Check less than with includesLower: false
 	err = os.Chmod(file, 0666)
 	require.Nil(t, err)
-	expectedResult = common.TestResult{Result: common.Warn}
+	expectedResult = v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_WARN}
 	result = compareFilePermissions(file, 0777, false)
 	assert.Equal(t, expectedResult.Result, result.Result)
 	assert.Equal(t, 1, len(result.Notes))
@@ -56,7 +56,7 @@ func TestCompareFilePermissions(t *testing.T) {
 	// Check less than with includesLower: false
 	err = os.Chmod(file, 0777)
 	require.Nil(t, err)
-	expectedResult = common.TestResult{Result: common.Warn}
+	expectedResult = v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_WARN}
 	result = compareFilePermissions(file, 0666, false)
 	assert.Equal(t, expectedResult.Result, result.Result)
 	assert.Equal(t, 1, len(result.Notes))
@@ -64,7 +64,7 @@ func TestCompareFilePermissions(t *testing.T) {
 
 func TestPermissionsCheck(t *testing.T) {
 	// Test empty file
-	expectedResult := common.TestResult{Result: common.Note}
+	expectedResult := v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_NOTE}
 	benchmark := newPermissionsCheck("bench", "desc", "", 0777, true)
 	result := benchmark.Run()
 	assert.Equal(t, expectedResult.Result, result.Result)
@@ -75,7 +75,7 @@ func TestPermissionsCheck(t *testing.T) {
 	require.Nil(t, err)
 	err = os.Chmod(file, 0777)
 	require.Nil(t, err)
-	expectedResult = common.TestResult{Result: common.Pass}
+	expectedResult = v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_PASS}
 	benchmark = newPermissionsCheck("bench", "desc", file, 0777, true)
 	result = benchmark.Run()
 	assert.Equal(t, expectedResult, result)
@@ -83,7 +83,7 @@ func TestPermissionsCheck(t *testing.T) {
 
 func TestRecursivePermissionsCheck(t *testing.T) {
 	// Test empty file
-	expectedResult := common.TestResult{Result: common.Note}
+	expectedResult := v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_NOTE}
 	benchmark := newRecursivePermissionsCheck("bench", "desc", "", 0777, true)
 	result := benchmark.Run()
 	assert.Equal(t, expectedResult.Result, result.Result)
@@ -98,14 +98,14 @@ func TestRecursivePermissionsCheck(t *testing.T) {
 	require.Nil(t, err)
 
 	// Happy path
-	expectedResult = common.TestResult{Result: common.Pass}
+	expectedResult = v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_PASS}
 	benchmark = newRecursivePermissionsCheck("bench", "desc", dir, 0666, true)
 	result = benchmark.Run()
 	assert.Equal(t, expectedResult, result)
 
 	// One file has the wrong permissions
 	err = os.Chmod(fileB, 0777)
-	expectedResult = common.TestResult{Result: common.Warn}
+	expectedResult = v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_WARN}
 	benchmark = newRecursivePermissionsCheck("bench", "desc", dir, 0666, true)
 	result = benchmark.Run()
 	assert.Equal(t, expectedResult.Result, result.Result)

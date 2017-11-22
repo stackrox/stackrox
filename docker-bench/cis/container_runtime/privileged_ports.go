@@ -3,33 +3,35 @@ package containerruntime
 import (
 	"strconv"
 
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type privilegedPortsBenchmark struct{}
 
-func (c *privilegedPortsBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 5.7",
-		Description:  "Ensure privileged ports are not mapped within containers",
-		Dependencies: []common.Dependency{common.InitContainers},
+func (c *privilegedPortsBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 5.7",
+			Description: "Ensure privileged ports are not mapped within containers",
+		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *privilegedPortsBenchmark) Run() (result common.TestResult) {
-	result.Pass()
-	for _, container := range common.ContainersRunning {
+func (c *privilegedPortsBenchmark) Run() (result v1.BenchmarkTestResult) {
+	utils.Pass(&result)
+	for _, container := range utils.ContainersRunning {
 		for containerPort, hostBinding := range container.NetworkSettings.Ports {
 			for _, binding := range hostBinding {
 				portNum, err := strconv.Atoi(binding.HostPort)
 				if err != nil {
-					result.Warn()
-					result.AddNotef("Could not parse host port for container %v: %+v", container.ID, binding.HostPort)
+					utils.Warn(&result)
+					utils.AddNotef(&result, "Could not parse host port for container %v: %+v", container.ID, binding.HostPort)
 					continue
 				}
 				if portNum < 1024 {
-					result.Warn()
-					result.AddNotef("Container %v binds %v to privileged host port %v", containerPort, container.ID, portNum)
+					utils.Warn(&result)
+					utils.AddNotef(&result, "Container %v binds %v to privileged host port %v", containerPort, container.ID, portNum)
 				}
 			}
 		}
@@ -38,6 +40,6 @@ func (c *privilegedPortsBenchmark) Run() (result common.TestResult) {
 }
 
 // NewPrivilegedPortsBenchmark implements CIS-5.7
-func NewPrivilegedPortsBenchmark() common.Benchmark {
+func NewPrivilegedPortsBenchmark() utils.Benchmark {
 	return &privilegedPortsBenchmark{}
 }

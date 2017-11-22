@@ -4,7 +4,7 @@ ignore:
 - github.com/docker/docker/daemon
 import:
 - package: github.com/docker/docker
-  version: v1.13.0
+  version: v17.03.2-ce
 - package: github.com/Sirupsen/logrus
   repo: https://github.com/sirupsen/logrus.git
   vcs: git

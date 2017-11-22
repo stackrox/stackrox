@@ -4,38 +4,40 @@ import (
 	"context"
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type insecureRegistriesBenchmark struct{}
 
-func (c *insecureRegistriesBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 2.4",
-		Description:  "Ensure insecure registries are not used",
-		Dependencies: []common.Dependency{common.InitDockerClient},
+func (c *insecureRegistriesBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 2.4",
+			Description: "Ensure insecure registries are not used",
+		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
 	}
 }
 
-func (c *insecureRegistriesBenchmark) Run() (result common.TestResult) {
-	result.Pass()
-	info, err := common.DockerClient.Info(context.Background())
+func (c *insecureRegistriesBenchmark) Run() (result v1.BenchmarkTestResult) {
+	utils.Pass(&result)
+	info, err := utils.DockerClient.Info(context.Background())
 	if err != nil {
-		result.Warn()
-		result.AddNotes(err.Error())
+		utils.Warn(&result)
+		utils.AddNotes(&result, err.Error())
 		return
 	}
 	for _, registry := range info.RegistryConfig.InsecureRegistryCIDRs {
 		if strings.HasPrefix(registry.String(), "127.") { // Localhost prefix can be ignored
 			continue
 		}
-		result.Warn()
-		result.AddNotef("Insecure registry with CIDR %v is configured", registry)
+		utils.Warn(&result)
+		utils.AddNotef(&result, "Insecure registry with CIDR %v is configured", registry)
 	}
 	return
 }
 
 // NewInsecureRegistriesBenchmark implements CIS-2.4
-func NewInsecureRegistriesBenchmark() common.Benchmark {
+func NewInsecureRegistriesBenchmark() utils.Benchmark {
 	return &insecureRegistriesBenchmark{}
 }

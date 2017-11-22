@@ -3,27 +3,28 @@ package containerruntime
 import (
 	//"context"
 
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
-	//"github.com/docker/docker/api/types"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type latestImageBenchmark struct{}
 
-func (c *latestImageBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 5.27",
-		Description:  "Ensure docker commands always get the latest version of the image",
-		Dependencies: []common.Dependency{common.InitImages},
+func (c *latestImageBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 5.27",
+			Description: "Ensure docker commands always get the latest version of the image",
+		}, Dependencies: []utils.Dependency{utils.InitImages},
 	}
 }
 
-func (c *latestImageBenchmark) Run() (result common.TestResult) {
-	result.Note()
-	result.AddNotes("Pulling images is invasive and not always possible depending on credential management")
+func (c *latestImageBenchmark) Run() (result v1.BenchmarkTestResult) {
+	utils.Note(&result)
+	utils.AddNotes(&result, "Pulling images is invasive and not always possible depending on credential management")
 	return
 }
 
 // NewLatestImageBenchmark implements CIS-5.27
-func NewLatestImageBenchmark() common.Benchmark {
+func NewLatestImageBenchmark() utils.Benchmark {
 	return &latestImageBenchmark{}
 }

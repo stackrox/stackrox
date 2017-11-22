@@ -3,38 +3,40 @@ package containerruntime
 import (
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type userDockerExecBenchmark struct{}
 
-func (c *userDockerExecBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 5.23",
-		Description:  "Ensure docker exec commands are not used with user option",
-		Dependencies: []common.Dependency{common.InitContainers},
+func (c *userDockerExecBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 5.23",
+			Description: "Ensure docker exec commands are not used with user option",
+		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *userDockerExecBenchmark) Run() (result common.TestResult) {
-	result.Pass()
-	auditLog, err := common.ReadFile("/var/log/audit/audit.log")
+func (c *userDockerExecBenchmark) Run() (result v1.BenchmarkTestResult) {
+	utils.Pass(&result)
+	auditLog, err := utils.ReadFile("/var/log/audit/audit.log")
 	if err != nil {
-		result.Warn()
-		result.AddNotef("Error reading /var/log/audit/audit.log: %+v", err)
+		utils.Warn(&result)
+		utils.AddNotef(&result, "Error reading /var/log/audit/audit.log: %+v", err)
 		return
 	}
 	lines := strings.Split(auditLog, "\n")
 	for _, line := range lines {
 		if strings.Contains(line, "exec") && strings.Contains(line, "user") {
-			result.Warn()
-			result.AddNotef("docker exec was used with the --user option: %v", line)
+			utils.Warn(&result)
+			utils.AddNotef(&result, "docker exec was used with the --user option: %v", line)
 		}
 	}
 	return
 }
 
 // NewUserDockerExecBenchmark implements CIS-5.23
-func NewUserDockerExecBenchmark() common.Benchmark {
+func NewUserDockerExecBenchmark() utils.Benchmark {
 	return &userDockerExecBenchmark{}
 }

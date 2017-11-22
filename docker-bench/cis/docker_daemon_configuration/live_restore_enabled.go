@@ -3,36 +3,38 @@ package dockerdaemonconfiguration
 import (
 	"context"
 
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type liveRestoreEnabledBenchmark struct{}
 
-func (c *liveRestoreEnabledBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 2.14",
-		Description:  "Ensure live restore is Enabled",
-		Dependencies: []common.Dependency{common.InitDockerClient},
+func (c *liveRestoreEnabledBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 2.14",
+			Description: "Ensure live restore is Enabled",
+		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
 	}
 }
 
-func (c *liveRestoreEnabledBenchmark) Run() (result common.TestResult) {
-	info, err := common.DockerClient.Info(context.Background())
+func (c *liveRestoreEnabledBenchmark) Run() (result v1.BenchmarkTestResult) {
+	info, err := utils.DockerClient.Info(context.Background())
 	if err != nil {
-		result.Result = common.Warn
-		result.AddNotes(err.Error())
+		utils.Warn(&result)
+		utils.AddNotes(&result, err.Error())
 		return
 	}
 	if !info.LiveRestoreEnabled {
-		result.Result = common.Warn
-		result.AddNotes("Live restore is not enabled")
+		utils.Warn(&result)
+		utils.AddNotes(&result, "Live restore is not enabled")
 		return
 	}
-	result.Result = common.Pass
+	utils.Pass(&result)
 	return
 }
 
 // NewLiveRestoreEnabledBenchmark implements CIS-2.14
-func NewLiveRestoreEnabledBenchmark() common.Benchmark {
+func NewLiveRestoreEnabledBenchmark() utils.Benchmark {
 	return &liveRestoreEnabledBenchmark{}
 }

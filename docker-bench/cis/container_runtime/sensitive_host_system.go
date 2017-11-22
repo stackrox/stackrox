@@ -1,16 +1,18 @@
 package containerruntime
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type sensitiveHostMountsBenchmark struct{}
 
-func (c *sensitiveHostMountsBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 5.5",
-		Description:  "Ensure sensitive host system directories are not mounted on containers",
-		Dependencies: []common.Dependency{common.InitContainers},
+func (c *sensitiveHostMountsBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 5.5",
+			Description: "Ensure sensitive host system directories are not mounted on containers",
+		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
@@ -25,13 +27,13 @@ var sensitiveMountMap = map[string]struct{}{
 	"/usr":  {},
 }
 
-func (c *sensitiveHostMountsBenchmark) Run() (result common.TestResult) {
-	result.Pass()
-	for _, container := range common.ContainersRunning {
+func (c *sensitiveHostMountsBenchmark) Run() (result v1.BenchmarkTestResult) {
+	utils.Pass(&result)
+	for _, container := range utils.ContainersRunning {
 		for _, mount := range container.Mounts {
 			if _, ok := sensitiveMountMap[mount.Source]; ok {
-				result.Warn()
-				result.AddNotef("Container %v mounts in sensitive mount source %v", container.ID, mount.Source)
+				utils.Warn(&result)
+				utils.AddNotef(&result, "Container %v mounts in sensitive mount source %v", container.ID, mount.Source)
 			}
 		}
 	}
@@ -39,6 +41,6 @@ func (c *sensitiveHostMountsBenchmark) Run() (result common.TestResult) {
 }
 
 // NewSensitiveHostMountsBenchmark implements CIS-5.5
-func NewSensitiveHostMountsBenchmark() common.Benchmark {
+func NewSensitiveHostMountsBenchmark() utils.Benchmark {
 	return &sensitiveHostMountsBenchmark{}
 }

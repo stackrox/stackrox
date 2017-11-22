@@ -3,27 +3,29 @@ package containerruntime
 import (
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type specificHostInterfaceBenchmark struct{}
 
-func (c *specificHostInterfaceBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 5.13",
-		Description:  "Ensure incoming container traffic is binded to a specific host interface",
-		Dependencies: []common.Dependency{common.InitContainers},
+func (c *specificHostInterfaceBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 5.13",
+			Description: "Ensure incoming container traffic is binded to a specific host interface",
+		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *specificHostInterfaceBenchmark) Run() (result common.TestResult) {
-	result.Pass()
-	for _, container := range common.ContainersRunning {
+func (c *specificHostInterfaceBenchmark) Run() (result v1.BenchmarkTestResult) {
+	utils.Pass(&result)
+	for _, container := range utils.ContainersRunning {
 		for containerPort, hostBinding := range container.NetworkSettings.Ports {
 			for _, binding := range hostBinding {
 				if strings.Contains(binding.HostIP, "0.0.0.0") {
-					result.Warn()
-					result.AddNotef("Container %v binds %v -> 0.0.0.0 %v", container.ID, containerPort, binding.HostPort)
+					utils.Warn(&result)
+					utils.AddNotef(&result, "Container %v binds %v -> 0.0.0.0 %v", container.ID, containerPort, binding.HostPort)
 				}
 			}
 		}
@@ -32,6 +34,6 @@ func (c *specificHostInterfaceBenchmark) Run() (result common.TestResult) {
 }
 
 // NewSpecificHostInterfaceBenchmark implements CIS-5.13
-func NewSpecificHostInterfaceBenchmark() common.Benchmark {
+func NewSpecificHostInterfaceBenchmark() utils.Benchmark {
 	return &specificHostInterfaceBenchmark{}
 }

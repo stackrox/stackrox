@@ -1,31 +1,33 @@
 package containerruntime
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type usernsBenchmark struct{}
 
-func (c *usernsBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 5.30",
-		Description:  "Ensure the host's user namespaces is not shared",
-		Dependencies: []common.Dependency{common.InitContainers},
+func (c *usernsBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 5.30",
+			Description: "Ensure the host's user namespaces is not shared",
+		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *usernsBenchmark) Run() (result common.TestResult) {
-	result.Pass()
-	for _, container := range common.ContainersRunning {
+func (c *usernsBenchmark) Run() (result v1.BenchmarkTestResult) {
+	utils.Pass(&result)
+	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.UsernsMode.IsHost() {
-			result.Warn()
-			result.AddNotef("Container %v has user namespace set to host", container.ID)
+			utils.Warn(&result)
+			utils.AddNotef(&result, "Container %v has user namespace set to host", container.ID)
 		}
 	}
 	return
 }
 
 // NewUsernsBenchmark implements CIS-5.30
-func NewUsernsBenchmark() common.Benchmark {
+func NewUsernsBenchmark() utils.Benchmark {
 	return &usernsBenchmark{}
 }

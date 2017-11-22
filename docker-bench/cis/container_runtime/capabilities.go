@@ -1,16 +1,18 @@
 package containerruntime
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type capabilitiesBenchmark struct{}
 
-func (c *capabilitiesBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 5.3",
-		Description:  "Ensure Linux Kernel Capabilities are restricted within containers",
-		Dependencies: []common.Dependency{common.InitContainers},
+func (c *capabilitiesBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 5.3",
+			Description: "Ensure Linux Kernel Capabilities are restricted within containers",
+		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
@@ -22,12 +24,12 @@ func newExpectedCapDrop() map[string]bool {
 	}
 }
 
-func (c *capabilitiesBenchmark) Run() (result common.TestResult) {
-	result.Pass()
-	for _, container := range common.ContainersRunning {
+func (c *capabilitiesBenchmark) Run() (result v1.BenchmarkTestResult) {
+	utils.Pass(&result)
+	for _, container := range utils.ContainersRunning {
 		if len(container.HostConfig.CapAdd) > 0 {
-			result.Warn()
-			result.AddNotef("Container %v adds capabilities: %+v", container.ID, container.HostConfig.CapAdd)
+			utils.Warn(&result)
+			utils.AddNotef(&result, "Container %v adds capabilities: %+v", container.ID, container.HostConfig.CapAdd)
 			continue
 		}
 		capDropMap := newExpectedCapDrop()
@@ -36,8 +38,8 @@ func (c *capabilitiesBenchmark) Run() (result common.TestResult) {
 		}
 		for k, v := range capDropMap {
 			if !v {
-				result.Warn()
-				result.AddNotef("Expected container %v to drop capability %v", container.ID, k)
+				utils.Warn(&result)
+				utils.AddNotef(&result, "Expected container %v to drop capability %v", container.ID, k)
 			}
 		}
 	}
@@ -45,6 +47,6 @@ func (c *capabilitiesBenchmark) Run() (result common.TestResult) {
 }
 
 // NewCapabilitiesBenchmark implements CIS-5.3
-func NewCapabilitiesBenchmark() common.Benchmark {
+func NewCapabilitiesBenchmark() utils.Benchmark {
 	return &capabilitiesBenchmark{}
 }

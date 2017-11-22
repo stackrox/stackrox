@@ -1,31 +1,33 @@
 package containerruntime
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type memoryBenchmark struct{}
 
-func (c *memoryBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 5.10",
-		Description:  "Ensure memory usage for container is limited",
-		Dependencies: []common.Dependency{common.InitContainers},
+func (c *memoryBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 5.10",
+			Description: "Ensure memory usage for container is limited",
+		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *memoryBenchmark) Run() (result common.TestResult) {
-	result.Pass()
-	for _, container := range common.ContainersRunning {
+func (c *memoryBenchmark) Run() (result v1.BenchmarkTestResult) {
+	utils.Pass(&result)
+	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.Memory == 0 {
-			result.Warn()
-			result.AddNotef("Container %v does not have a memory limit", container.ID)
+			utils.Warn(&result)
+			utils.AddNotef(&result, "Container %v does not have a memory limit", container.ID)
 		}
 	}
 	return
 }
 
 // NewMemoryBenchmark implements CIS-5.10
-func NewMemoryBenchmark() common.Benchmark {
+func NewMemoryBenchmark() utils.Benchmark {
 	return &memoryBenchmark{}
 }

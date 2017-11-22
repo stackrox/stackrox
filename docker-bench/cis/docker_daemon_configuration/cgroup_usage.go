@@ -1,30 +1,32 @@
 package dockerdaemonconfiguration
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type cgroupUsageBenchmark struct{}
 
-func (c *cgroupUsageBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 2.9",
-		Description:  "Ensure the default cgroup usage has been confirmed",
-		Dependencies: []common.Dependency{common.InitDockerConfig},
+func (c *cgroupUsageBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 2.9",
+			Description: "Ensure the default cgroup usage has been confirmed",
+		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *cgroupUsageBenchmark) Run() (result common.TestResult) {
-	if parent, ok := common.DockerConfig["cgroup-parent"]; ok {
-		result.Warn()
-		result.AddNotef("Cgroup path is set as %v", parent)
+func (c *cgroupUsageBenchmark) Run() (result v1.BenchmarkTestResult) {
+	if parent, ok := utils.DockerConfig["cgroup-parent"]; ok {
+		utils.Warn(&result)
+		utils.AddNotef(&result, "Cgroup path is set as %v", parent)
 		return
 	}
-	result.Pass()
+	utils.Pass(&result)
 	return
 }
 
 // NewCgroupUsageBenchmark implements CIS-2.9
-func NewCgroupUsageBenchmark() common.Benchmark {
+func NewCgroupUsageBenchmark() utils.Benchmark {
 	return &cgroupUsageBenchmark{}
 }

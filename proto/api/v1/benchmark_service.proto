@@ -7,21 +7,21 @@ import "google/protobuf/empty.proto";
 
 package v1;
 
-enum Status {
+enum BenchmarkStatus {
     INFO = 0;
     WARN = 1;
     NOTE = 2;
     PASS = 3;
 }
 
-message TestResult {
-    Status result         = 1;
-    repeated string notes = 2;
+message BenchmarkTestResult {
+    BenchmarkStatus result         = 1;
+    repeated string notes          = 2;
 }
 
-message Result {
-    TestResult test_result                    = 1;
-    BenchmarkDefinition benchmark_definitions = 2;
+message BenchmarkResult {
+    BenchmarkTestResult test_result          = 1;
+    BenchmarkDefinition benchmark_definition = 2;
 }
 
 message BenchmarkDefinition {
@@ -30,10 +30,10 @@ message BenchmarkDefinition {
 }
 
 message BenchmarkPayload {
-    repeated Result results = 1;
-    int64 start_time        = 2;
-    int64 end_time          = 3;
-    string host             = 4;
+    repeated BenchmarkResult results = 1;
+    int64 start_time                 = 2;
+    int64 end_time                   = 3;
+    string host                      = 4;
 }
 
 message GetBenchmarkRequest {

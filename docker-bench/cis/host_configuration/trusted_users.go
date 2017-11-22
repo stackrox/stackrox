@@ -1,32 +1,35 @@
 package hostconfiguration
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"github.com/opencontainers/runc/libcontainer/user"
 )
 
 type trustedUsers struct{}
 
-func (c *trustedUsers) Definition() common.Definition {
-	return common.Definition{
-		Name:        "CIS 1.4",
-		Description: "Ensure the container host has been Hardened",
+func (c *trustedUsers) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 1.4",
+			Description: "Ensure the container host has been Hardened",
+		},
 	}
 }
 
-func (c *trustedUsers) Run() (result common.TestResult) {
+func (c *trustedUsers) Run() (result v1.BenchmarkTestResult) {
 	group, err := user.LookupGroup("docker")
 	if err != nil {
-		result.Result = common.Warn
-		result.AddNotef("Docker group does not exist: %v", err.Error())
+		utils.Warn(&result)
+		utils.AddNotef(&result, "Docker group does not exist: %v", err.Error())
 		return
 	}
-	result.Result = common.Note
-	result.AddNotes(group.List...)
+	utils.Note(&result)
+	utils.AddNotes(&result, group.List...)
 	return
 }
 
 // NewTrustedUsers implements CIS-1.4
-func NewTrustedUsers() common.Benchmark {
+func NewTrustedUsers() utils.Benchmark {
 	return &trustedUsers{}
 }

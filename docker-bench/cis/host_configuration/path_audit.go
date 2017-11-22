@@ -1,7 +1,8 @@
 package hostconfiguration
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type pathAudit struct {
@@ -10,19 +11,21 @@ type pathAudit struct {
 	Path        string
 }
 
-func (s *pathAudit) Definition() common.Definition {
-	return common.Definition{
-		Name:        s.Name,
-		Description: s.Description,
+func (s *pathAudit) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        s.Name,
+			Description: s.Description,
+		},
 	}
 }
 
-func (s *pathAudit) Run() (result common.TestResult) {
-	result = common.CheckAudit(s.Path)
+func (s *pathAudit) Run() (result v1.BenchmarkTestResult) {
+	result = utils.CheckAudit(s.Path)
 	return
 }
 
-func newPathAudit(name, description, path string) common.Benchmark {
+func newPathAudit(name, description, path string) utils.Benchmark {
 	return &pathAudit{
 		Name:        name,
 		Description: description,

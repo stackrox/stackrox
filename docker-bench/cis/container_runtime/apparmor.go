@@ -1,31 +1,33 @@
 package containerruntime
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type appArmorBenchmark struct{}
 
-func (c *appArmorBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 5.1",
-		Description:  "Ensure AppArmor Profile is Enabled",
-		Dependencies: []common.Dependency{common.InitContainers},
+func (c *appArmorBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 5.1",
+			Description: "Ensure AppArmor Profile is Enabled",
+		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *appArmorBenchmark) Run() (result common.TestResult) {
-	result.Pass()
-	for _, container := range common.ContainersRunning {
+func (c *appArmorBenchmark) Run() (result v1.BenchmarkTestResult) {
+	utils.Pass(&result)
+	for _, container := range utils.ContainersRunning {
 		if container.AppArmorProfile == "" || container.AppArmorProfile == "unconfined" {
-			result.Warn()
-			result.AddNotef("Container %v does not have app armor configured", container.ID)
+			utils.Warn(&result)
+			utils.AddNotef(&result, "Container %v does not have app armor configured", container.ID)
 		}
 	}
 	return
 }
 
 // NewAppArmorBenchmark implements CIS-5.1
-func NewAppArmorBenchmark() common.Benchmark {
+func NewAppArmorBenchmark() utils.Benchmark {
 	return &appArmorBenchmark{}
 }

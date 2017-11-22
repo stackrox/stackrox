@@ -6,7 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,7 +25,7 @@ func runContainer(params ...string) error {
 	runCommands = append(runCommands, params...)
 	runCommands = append(runCommands, "python:2.7", "python", "-m", "SimpleHTTPServer")
 	log.Printf("docker %+v", runCommands)
-	output, err := common.CombinedOutput("docker", runCommands...)
+	output, err := utils.CombinedOutput("docker", runCommands...)
 	if err != nil {
 		return fmt.Errorf("failed to run test container. Err: %+v. Output: %v", err, output)
 	}
@@ -33,7 +34,7 @@ func runContainer(params ...string) error {
 }
 
 func createNetwork() {
-	output, err := common.CombinedOutput("docker", "network", "create", networkName)
+	output, err := utils.CombinedOutput("docker", "network", "create", networkName)
 	if err != nil {
 		log.Print(output)
 	} else {
@@ -42,14 +43,14 @@ func createNetwork() {
 }
 
 func cleanupContainer() {
-	output, err := common.CombinedOutput("docker", "kill", containerName)
+	output, err := utils.CombinedOutput("docker", "kill", containerName)
 	if err != nil {
 		log.Printf("Error killing %v: %+v: %v", containerName, err.Error(), output)
 	} else {
 		log.Printf("Successfully killed %v", containerName)
 	}
 
-	output, err = common.CombinedOutput("docker", "rm", containerName)
+	output, err = utils.CombinedOutput("docker", "rm", containerName)
 	if err != nil {
 		log.Printf("Error removing %v: %+v: %v", containerName, err.Error(), output)
 	} else {
@@ -74,7 +75,7 @@ func TestRuntimeBenchmarksWarn(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	benchmarks := []common.Benchmark{
+	benchmarks := []utils.Benchmark{
 		NewAppArmorBenchmark(), // 5.1
 		NewSELinuxBenchmark(),
 		NewCapabilitiesBenchmark(),
@@ -108,59 +109,59 @@ func TestRuntimeBenchmarksWarn(t *testing.T) {
 		NewDockerSocketMountBenchmark(),
 	}
 
-	expectedResults := []string{
-		common.Warn, // 1
-		common.Warn,
-		common.Warn,
-		common.Warn,
-		common.Warn, // 5
-		common.Note,
-		common.Warn,
-		common.Note,
-		common.Pass, // Cannot use both bridge and host network at the same time. Bridge removes port binding so allow host network test to pass
-		common.Warn, // 10
-		common.Warn,
-		common.Warn,
-		common.Warn,
-		common.Warn,
-		common.Warn, // 15
-		common.Warn,
-		common.Warn,
-		common.Note,
-		common.Warn,
-		common.Warn, // 20
-		common.Warn,
-		//common.Warn, // Docker exec audits are commented out
-		//common.Warn, // Docker exec audits are commented out
-		common.Warn,
-		common.Warn, // 25
-		common.Warn,
-		common.Note,
-		common.Warn,
-		common.Warn,
-		common.Warn, // 30
-		common.Warn,
+	expectedResults := []v1.BenchmarkStatus{
+		v1.BenchmarkStatus_WARN, // 1
+		v1.BenchmarkStatus_WARN,
+		v1.BenchmarkStatus_WARN,
+		v1.BenchmarkStatus_WARN,
+		v1.BenchmarkStatus_WARN, // 5
+		v1.BenchmarkStatus_NOTE,
+		v1.BenchmarkStatus_WARN,
+		v1.BenchmarkStatus_NOTE,
+		v1.BenchmarkStatus_PASS, // Cannot use both bridge and host network at the same time. Bridge removes port binding so allow host network test to pass
+		v1.BenchmarkStatus_WARN, // 10
+		v1.BenchmarkStatus_WARN,
+		v1.BenchmarkStatus_WARN,
+		v1.BenchmarkStatus_WARN,
+		v1.BenchmarkStatus_WARN,
+		v1.BenchmarkStatus_WARN, // 15
+		v1.BenchmarkStatus_WARN,
+		v1.BenchmarkStatus_WARN,
+		v1.BenchmarkStatus_NOTE,
+		v1.BenchmarkStatus_WARN,
+		v1.BenchmarkStatus_WARN, // 20
+		v1.BenchmarkStatus_WARN,
+		//v1.BenchmarkStatus_WARN, // Docker exec audits are commented out
+		//v1.BenchmarkStatus_WARN, // Docker exec audits are commented out
+		v1.BenchmarkStatus_WARN,
+		v1.BenchmarkStatus_WARN, // 25
+		v1.BenchmarkStatus_WARN,
+		v1.BenchmarkStatus_NOTE,
+		v1.BenchmarkStatus_WARN,
+		v1.BenchmarkStatus_WARN,
+		v1.BenchmarkStatus_WARN, // 30
+		v1.BenchmarkStatus_WARN,
 	}
 	require.Equal(t, len(benchmarks), len(expectedResults))
 
 	// Set the containers manually to work around sync.Once
-	containersRunning, containersAll, err := common.GetContainers()
+	containersRunning, containersAll, err := utils.GetContainers()
 	require.Nil(t, err)
-	common.ContainersRunning = containersRunning
-	common.ContainersAll = containersAll
+	utils.ContainersRunning = containersRunning
+	utils.ContainersAll = containersAll
 
 	// In order for the SELinux benchmark to see that SELinux has been enabled on dockerd
 	// We set the configuration field explicitly
-	err = common.InitDockerConfig()
+	err = utils.InitDockerConfig()
 	require.Nil(t, err)
-	common.DockerConfig["selinux-enabled"] = []string{""}
+	utils.DockerConfig["selinux-enabled"] = []string{""}
 	defer func() {
-		common.DockerConfig = make(map[string]common.DockerConfigParams)
+		utils.DockerConfig = make(map[string]utils.DockerConfigParams)
 	}()
 
-	for i, container := range common.ContainersRunning {
+	for i, container := range utils.ContainersRunning {
 		if container.Name == containerName {
-			common.ContainersRunning = common.ContainersRunning[i : i+1]
+			utils.ContainersRunning = utils.ContainersRunning[i : i+1]
 		}
 	}
 	for i, benchmark := range benchmarks {
@@ -188,7 +189,7 @@ func TestRuntimeBenchmarksPass(t *testing.T) {
 		"--net="+networkName)
 	require.Nil(t, err)
 
-	benchmarks := []common.Benchmark{
+	benchmarks := []utils.Benchmark{
 		NewAppArmorBenchmark(), // 5.1
 		NewSELinuxBenchmark(),
 		NewCapabilitiesBenchmark(),
@@ -222,49 +223,49 @@ func TestRuntimeBenchmarksPass(t *testing.T) {
 		NewDockerSocketMountBenchmark(),
 	}
 
-	expectedResults := []string{
-		common.Pass, // 1
-		common.Pass,
-		common.Pass,
-		common.Pass,
-		common.Pass, // 5
-		common.Note,
-		common.Pass,
-		common.Note,
-		common.Pass,
-		common.Pass, // 10
-		common.Pass,
-		common.Pass,
-		common.Pass,
-		common.Pass,
-		common.Pass, // 15
-		common.Pass,
-		common.Pass,
-		common.Note,
-		common.Pass,
-		common.Pass, // 20
-		common.Pass,
-		// common.Pass, // Docker exec audits are commented out
-		// common.Pass, // Docker exec audits are commented out
-		common.Pass,
-		common.Pass, // 25
-		common.Pass,
-		common.Note,
-		common.Pass,
-		common.Pass,
-		common.Pass, // 30
-		common.Pass,
+	expectedResults := []v1.BenchmarkStatus{
+		v1.BenchmarkStatus_PASS, // 1
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_PASS, // 5
+		v1.BenchmarkStatus_NOTE,
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_NOTE,
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_PASS, // 10
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_PASS, // 15
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_NOTE,
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_PASS, // 20
+		v1.BenchmarkStatus_PASS,
+		// v1.BenchmarkStatus_PASS, // Docker exec audits are commented out
+		// v1.BenchmarkStatus_PASS, // Docker exec audits are commented out
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_PASS, // 25
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_NOTE,
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_PASS,
+		v1.BenchmarkStatus_PASS, // 30
+		v1.BenchmarkStatus_PASS,
 	}
 	require.Equal(t, len(benchmarks), len(expectedResults))
 	// Set the containers manually to work around sync.Once
-	containersRunning, containersAll, err := common.GetContainers()
+	containersRunning, containersAll, err := utils.GetContainers()
 	require.Nil(t, err)
-	common.ContainersRunning = containersRunning
-	common.ContainersAll = containersAll
+	utils.ContainersRunning = containersRunning
+	utils.ContainersAll = containersAll
 
-	for i, container := range common.ContainersRunning {
+	for i, container := range utils.ContainersRunning {
 		if container.Name == containerName {
-			common.ContainersRunning = common.ContainersRunning[i : i+1]
+			utils.ContainersRunning = utils.ContainersRunning[i : i+1]
 		}
 	}
 	for i, benchmark := range benchmarks {
@@ -273,7 +274,7 @@ func TestRuntimeBenchmarksPass(t *testing.T) {
 			benchmark.Definition().Name,
 			benchmark.Definition().Description,
 		)
-		if result.Result == common.Warn {
+		if result.Result == v1.BenchmarkStatus_WARN {
 			log.Printf("%+v", result.Notes)
 		}
 	}

@@ -1,30 +1,32 @@
 package dockerdaemonconfiguration
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type disableLegacyRegistryBenchmark struct{}
 
-func (c *disableLegacyRegistryBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 2.13",
-		Description:  "Ensure operations on legacy registry (v1) are Disabled",
-		Dependencies: []common.Dependency{common.InitDockerConfig},
+func (c *disableLegacyRegistryBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 2.13",
+			Description: "Ensure operations on legacy registry (v1) are Disabled",
+		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *disableLegacyRegistryBenchmark) Run() (result common.TestResult) {
-	if _, ok := common.DockerConfig["disable-legacy-registry"]; !ok {
-		result.Warn()
-		result.AddNotes("Legacy registry is not disabled")
+func (c *disableLegacyRegistryBenchmark) Run() (result v1.BenchmarkTestResult) {
+	if _, ok := utils.DockerConfig["disable-legacy-registry"]; !ok {
+		utils.Warn(&result)
+		utils.AddNotes(&result, "Legacy registry is not disabled")
 		return
 	}
-	result.Pass()
+	utils.Pass(&result)
 	return
 }
 
 // NewDisableLegacyRegistryBenchmark implements CIS-2.13
-func NewDisableLegacyRegistryBenchmark() common.Benchmark {
+func NewDisableLegacyRegistryBenchmark() utils.Benchmark {
 	return &disableLegacyRegistryBenchmark{}
 }

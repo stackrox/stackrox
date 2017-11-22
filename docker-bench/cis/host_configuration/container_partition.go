@@ -3,40 +3,42 @@ package hostconfiguration
 import (
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type containerPartitionBenchmark struct{}
 
-func (c *containerPartitionBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 1.1",
-		Description:  "Ensure a separate partition for containers has been created",
-		Dependencies: []common.Dependency{common.InitDockerConfig},
+func (c *containerPartitionBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 1.1",
+			Description: "Ensure a separate partition for containers has been created",
+		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *containerPartitionBenchmark) Run() (result common.TestResult) {
-	fstab, err := common.ReadFile("/etc/fstab")
+func (c *containerPartitionBenchmark) Run() (result v1.BenchmarkTestResult) {
+	fstab, err := utils.ReadFile("/etc/fstab")
 	if err != nil {
-		result.Warn()
+		utils.Warn(&result)
 		return
 	}
 	if strings.Contains(fstab, "/var/lib/docker") {
-		result.Pass()
+		utils.Pass(&result)
 		return
 	}
-	_, err = common.CombinedOutput("mountpoint", "-q", "--", "/var/lib/docker")
+	_, err = utils.CombinedOutput("mountpoint", "-q", "--", "/var/lib/docker")
 	if err == nil {
-		result.Pass()
+		utils.Pass(&result)
 		return
 	}
-	result.Warn()
-	result.AddNotes("/var/lib/docker does not have its own partition")
+	utils.Warn(&result)
+	utils.AddNotes(&result, "/var/lib/docker does not have its own partition")
 	return
 }
 
 // NewContainerPartitionBenchmark implements CIS-1.1
-func NewContainerPartitionBenchmark() common.Benchmark {
+func NewContainerPartitionBenchmark() utils.Benchmark {
 	return &containerPartitionBenchmark{}
 }

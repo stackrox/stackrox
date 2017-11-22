@@ -1,26 +1,28 @@
 package containerimagesandbuild
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type imageSecretsBenchmark struct{}
 
-func (c *imageSecretsBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 4.10",
-		Description:  "Ensure secrets are not stored in Dockerfiles",
-		Dependencies: []common.Dependency{common.InitImages},
+func (c *imageSecretsBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 4.10",
+			Description: "Ensure secrets are not stored in Dockerfiles",
+		}, Dependencies: []utils.Dependency{utils.InitImages},
 	}
 }
 
-func (c *imageSecretsBenchmark) Run() (result common.TestResult) {
-	result.Note()
-	result.AddNotes("Ensuring secrets are not stored in Dockerfiles requires manual introspection")
+func (c *imageSecretsBenchmark) Run() (result v1.BenchmarkTestResult) {
+	utils.Note(&result)
+	utils.AddNotes(&result, "Ensuring secrets are not stored in Dockerfiles requires manual introspection")
 	return
 }
 
 // NewImageSecretsBenchmark implements CIS-4.10
-func NewImageSecretsBenchmark() common.Benchmark {
+func NewImageSecretsBenchmark() utils.Benchmark {
 	return &imageSecretsBenchmark{}
 }

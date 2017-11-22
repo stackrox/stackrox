@@ -1,31 +1,33 @@
 package containerruntime
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type cpuPriorityBenchmark struct{}
 
-func (c *cpuPriorityBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 5.11",
-		Description:  "Ensure CPU priority is set appropriately on the container",
-		Dependencies: []common.Dependency{common.InitContainers},
+func (c *cpuPriorityBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 5.11",
+			Description: "Ensure CPU priority is set appropriately on the container",
+		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *cpuPriorityBenchmark) Run() (result common.TestResult) {
-	result.Pass()
-	for _, container := range common.ContainersRunning {
+func (c *cpuPriorityBenchmark) Run() (result v1.BenchmarkTestResult) {
+	utils.Pass(&result)
+	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.CPUShares == 0 {
-			result.Warn()
-			result.AddNotef("Container %v does not have cpu shares set", container.ID)
+			utils.Warn(&result)
+			utils.AddNotef(&result, "Container %v does not have cpu shares set", container.ID)
 		}
 	}
 	return
 }
 
 // NewCPUPriorityBenchmark implements CIS-5.11
-func NewCPUPriorityBenchmark() common.Benchmark {
+func NewCPUPriorityBenchmark() utils.Benchmark {
 	return &cpuPriorityBenchmark{}
 }

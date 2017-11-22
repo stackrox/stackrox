@@ -1,31 +1,33 @@
 package containerruntime
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type pidCgroupBenchmark struct{}
 
-func (c *pidCgroupBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 5.28",
-		Description:  "Ensure PIDs cgroup limit is used",
-		Dependencies: []common.Dependency{common.InitContainers},
+func (c *pidCgroupBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 5.28",
+			Description: "Ensure PIDs cgroup limit is used",
+		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *pidCgroupBenchmark) Run() (result common.TestResult) {
-	result.Pass()
-	for _, container := range common.ContainersRunning {
+func (c *pidCgroupBenchmark) Run() (result v1.BenchmarkTestResult) {
+	utils.Pass(&result)
+	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.PidsLimit <= 0 {
-			result.Warn()
-			result.AddNotef("Container %v does not have pids limit set", container.ID)
+			utils.Warn(&result)
+			utils.AddNotef(&result, "Container %v does not have pids limit set", container.ID)
 		}
 	}
 	return
 }
 
 // NewPidCgroupBenchmark implements CIS-5.28
-func NewPidCgroupBenchmark() common.Benchmark {
+func NewPidCgroupBenchmark() utils.Benchmark {
 	return &pidCgroupBenchmark{}
 }

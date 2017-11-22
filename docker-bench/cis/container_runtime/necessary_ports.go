@@ -1,25 +1,27 @@
 package containerruntime
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type necessaryPortsBenchmark struct{}
 
-func (c *necessaryPortsBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 5.8",
-		Description:  "Ensure only needed ports are open on the container",
-		Dependencies: []common.Dependency{common.InitContainers},
+func (c *necessaryPortsBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 5.8",
+			Description: "Ensure only needed ports are open on the container",
+		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *necessaryPortsBenchmark) Run() (result common.TestResult) {
-	result.Note()
-	for _, container := range common.ContainersRunning {
+func (c *necessaryPortsBenchmark) Run() (result v1.BenchmarkTestResult) {
+	utils.Note(&result)
+	for _, container := range utils.ContainersRunning {
 		for containerPort, hostBinding := range container.NetworkSettings.Ports {
 			for _, binding := range hostBinding {
-				result.AddNotef("Container %v binds container %v -> host %v", container.ID, containerPort, binding.HostPort)
+				utils.AddNotef(&result, "Container %v binds container %v -> host %v", container.ID, containerPort, binding.HostPort)
 			}
 		}
 	}
@@ -27,6 +29,6 @@ func (c *necessaryPortsBenchmark) Run() (result common.TestResult) {
 }
 
 // NewNecessaryPortsBenchmark implements CIS-5.8
-func NewNecessaryPortsBenchmark() common.Benchmark {
+func NewNecessaryPortsBenchmark() utils.Benchmark {
 	return &necessaryPortsBenchmark{}
 }

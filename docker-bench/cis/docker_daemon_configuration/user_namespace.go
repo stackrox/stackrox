@@ -3,38 +3,40 @@ package dockerdaemonconfiguration
 import (
 	"context"
 
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type userNamespaceBenchmark struct{}
 
-func (c *userNamespaceBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 2.8",
-		Description:  "Enable user namespace support",
-		Dependencies: []common.Dependency{common.InitDockerClient},
+func (c *userNamespaceBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 2.8",
+			Description: "Enable user namespace support",
+		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
 	}
 }
 
-func (c *userNamespaceBenchmark) Run() (result common.TestResult) {
-	info, err := common.DockerClient.Info(context.Background())
+func (c *userNamespaceBenchmark) Run() (result v1.BenchmarkTestResult) {
+	info, err := utils.DockerClient.Info(context.Background())
 	if err != nil {
-		result.Result = common.Warn
-		result.AddNotes(err.Error())
+		utils.Warn(&result)
+		utils.AddNotes(&result, err.Error())
 		return
 	}
 	for _, opt := range info.SecurityOptions {
 		if opt == "userns" {
-			result.Result = common.Pass
+			utils.Pass(&result)
 			return
 		}
 	}
-	result.Result = common.Warn
-	result.AddNotes("userns is not present in security options")
+	utils.Warn(&result)
+	utils.AddNotes(&result, "userns is not present in security options")
 	return
 }
 
 // NewUserNamespaceBenchmark implements CIS-2.8
-func NewUserNamespaceBenchmark() common.Benchmark {
+func NewUserNamespaceBenchmark() utils.Benchmark {
 	return &userNamespaceBenchmark{}
 }

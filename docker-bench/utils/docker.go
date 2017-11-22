@@ -1,7 +1,8 @@
-package common
+package utils
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -10,14 +11,13 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-	//"github.com/docker/docker/daemon"
 )
 
-// Config is the docker bench representations of the docker config
-type Config map[string]DockerConfigParams
+// FlattenedDockerConfig is the docker bench representations of the docker config
+type FlattenedDockerConfig map[string]DockerConfigParams
 
 // Get combines the plural and non plural fields
-func (c Config) Get(key string) (DockerConfigParams, bool) {
+func (c FlattenedDockerConfig) Get(key string) (DockerConfigParams, bool) {
 	var params DockerConfigParams
 	var found bool
 	if foundParams, ok := c[key]; ok {
@@ -32,7 +32,7 @@ func (c Config) Get(key string) (DockerConfigParams, bool) {
 }
 
 // DockerConfig is the exported type for benchmarks to reference
-var DockerConfig Config
+var DockerConfig FlattenedDockerConfig
 var dockerConfigOnce sync.Once
 
 // DockerClient is the exported docker client for benchmarks to use
@@ -150,19 +150,27 @@ func walkStruct(m map[string]DockerConfigParams, i interface{}) {
 	}
 }
 
+func appendToConfig(m map[string]DockerConfigParams, key, value string) {
+	m[key] = append(m[key], value)
+}
+
+func boolToString(b bool) string {
+	return fmt.Sprintf("%v", b)
+}
+
 // Docker's config format is incredibly infuriating as the command line options are different from the config file
 func getDockerConfigFromFile(path string, m map[string]DockerConfigParams) error {
-	return fmt.Errorf("Docker config file is currently not supported")
-	//fileData, err := ReadFile(path)
-	//if err != nil {
-	//	return err
-	//}
-	//var config daemon.Config
-	//if err := json.Unmarshal([]byte(fileData), &config); err != nil {
-	//	return err
-	//}
-	//walkStruct(m, &config)
-	//return nil
+	fileData, err := ReadFile(path)
+	if err != nil {
+		return err
+	}
+	var config Config
+	if err := json.Unmarshal([]byte(fileData), &config); err != nil {
+		return err
+	}
+	// Populate most fields automatically
+	walkStruct(m, &config)
+	return nil
 }
 
 // DockerConfigParams is a wrapper around the list of values that the docker commandline can have
@@ -220,7 +228,7 @@ func getExpandedKey(key string) string {
 	return strings.TrimLeft(key, "--")
 }
 
-func parseArg(m Config, arg, nextArg string) bool {
+func parseArg(m FlattenedDockerConfig, arg, nextArg string) bool {
 	// If arg containers = then it must be an individual argument and not require the next argument
 	// e.g. --security-opt=seccomp as a opposed to --security-opt seccomp
 	if strings.Contains(arg, "=") {
@@ -243,7 +251,7 @@ func parseArg(m Config, arg, nextArg string) bool {
 	return false
 }
 
-func parseArgs(m Config, args []string) {
+func parseArgs(m FlattenedDockerConfig, args []string) {
 	if len(args) == 0 {
 		return
 	}
@@ -277,7 +285,7 @@ func InitDockerConfig() error {
 			return
 		}
 		args := getCommandLineArgs(cmdLine, processName)
-		config := make(Config)
+		config := make(FlattenedDockerConfig)
 		// Populate the configuration with the arguments
 		parseArgs(config, args)
 

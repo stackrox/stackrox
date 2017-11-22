@@ -1,5 +1,5 @@
-hash: 18b08940ba32a553b1495fe4026f3a789635162acc46be24302adebebe1b264c
-updated: 2017-11-18T21:19:11.147761903Z
+hash: 4ef3cb052b348685a1df2e1a829bd5ec83610a3212b79e06020ea88b733b4930
+updated: 2017-11-22T17:51:56.165166769Z
 imports:
 - name: github.com/docker/distribution
   version: 7484e51bf6af0d3b1a849644cdaced3cfcf13617
@@ -10,7 +10,7 @@ imports:
   - manifest/schema2
   - reference
 - name: github.com/docker/docker
-  version: 49bf474f9ed7ce7143a59d1964ff7b7fd9b52178
+  version: f5ec1e2936dcbe7b5001c2b817188b095c700c27
   subpackages:
   - api/types
   - api/types/blkiodev

@@ -9,10 +9,11 @@ import (
 	"bitbucket.org/stack-rox/apollo/docker-bench/cis/docker_daemon_configuration"
 	"bitbucket.org/stack-rox/apollo/docker-bench/cis/docker_security_operations"
 	"bitbucket.org/stack-rox/apollo/docker-bench/cis/host_configuration"
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
-var cisBenchmarks = []common.Benchmark{
+var cisBenchmarks = []utils.Benchmark{
 	// Part 1
 	hostconfiguration.NewContainerPartitionBenchmark(), // 1.1
 	hostconfiguration.NewHostHardened(),
@@ -122,9 +123,9 @@ var cisBenchmarks = []common.Benchmark{
 }
 
 // RunCISBenchmark runs the CIS benchmark
-func RunCISBenchmark() []common.Result {
-	results := make([]common.Result, len(cisBenchmarks))
-	for i, benchmark := range cisBenchmarks {
+func RunCISBenchmark() []*v1.BenchmarkResult {
+	results := make([]*v1.BenchmarkResult, 0, len(cisBenchmarks))
+	for _, benchmark := range cisBenchmarks {
 		for _, dep := range benchmark.Definition().Dependencies {
 			if err := dep(); err != nil {
 				fmt.Printf("Skipping Test %v due to err in dependency: %+v\n", benchmark.Definition().Name, err)
@@ -132,10 +133,12 @@ func RunCISBenchmark() []common.Result {
 			}
 		}
 		result := benchmark.Run()
-		results[i] = common.Result{
-			TestResult:          result,
-			BenchmarkDefinition: benchmark.Definition(),
-		}
+
+		definition := benchmark.Definition().BenchmarkDefinition
+		results = append(results, &v1.BenchmarkResult{
+			TestResult:          &result,
+			BenchmarkDefinition: &definition,
+		})
 	}
 	return results
 }

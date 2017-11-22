@@ -1,25 +1,28 @@
 package hostconfiguration
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type hostHardened struct{}
 
-func (c *hostHardened) Definition() common.Definition {
-	return common.Definition{
-		Name:        "CIS 1.2",
-		Description: "Ensure the container host has been Hardened",
+func (c *hostHardened) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 1.2",
+			Description: "Ensure the container host has been Hardened",
+		},
 	}
 }
 
-func (c *hostHardened) Run() (result common.TestResult) {
-	result.Result = common.Note
-	result.AddNotes("Ensuring the host is hardened with the lastest kernel requires manual introspection")
+func (c *hostHardened) Run() (result v1.BenchmarkTestResult) {
+	utils.Note(&result)
+	utils.AddNotes(&result, "Ensuring the host is hardened with the lastest kernel requires manual introspection")
 	return
 }
 
 // NewHostHardened implements CIS-1.2
-func NewHostHardened() common.Benchmark {
+func NewHostHardened() utils.Benchmark {
 	return &hostHardened{}
 }

@@ -1,37 +1,39 @@
 package dockerdaemonconfiguration
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type disableUserlandProxyBenchmark struct{}
 
-func (c *disableUserlandProxyBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 2.15",
-		Description:  "Ensure Userland Proxy is Disabled",
-		Dependencies: []common.Dependency{common.InitDockerConfig},
+func (c *disableUserlandProxyBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 2.15",
+			Description: "Ensure Userland Proxy is Disabled",
+		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *disableUserlandProxyBenchmark) Run() (result common.TestResult) {
-	opts, ok := common.DockerConfig["userland-proxy"]
+func (c *disableUserlandProxyBenchmark) Run() (result v1.BenchmarkTestResult) {
+	opts, ok := utils.DockerConfig["userland-proxy"]
 	if !ok {
-		result.Warn()
-		result.AddNotes("userland proxy is enabled by default")
+		utils.Warn(&result)
+		utils.AddNotes(&result, "userland proxy is enabled by default")
 		return
 	}
 	if opts.Matches("false") {
-		result.Warn()
-		result.AddNotes("userland proxy is enabled")
+		utils.Warn(&result)
+		utils.AddNotes(&result, "userland proxy is enabled")
 		return
 	}
-	result.Pass()
+	utils.Pass(&result)
 	return
 
 }
 
 // NewDisableUserlandProxyBenchmark implements CIS-2.15
-func NewDisableUserlandProxyBenchmark() common.Benchmark {
+func NewDisableUserlandProxyBenchmark() utils.Benchmark {
 	return &disableUserlandProxyBenchmark{}
 }

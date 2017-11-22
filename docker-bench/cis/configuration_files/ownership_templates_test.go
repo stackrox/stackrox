@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -76,7 +76,7 @@ func TestCompareFileOwnership(t *testing.T) {
 	require.Nil(t, err)
 
 	// Match the ownership
-	expectedResult := common.TestResult{Result: common.Pass}
+	expectedResult := v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_PASS}
 	f, err := createTestFileOwnership(currentUser.Username, currentUser.Username)
 	require.Nil(t, err)
 	result := compareFileOwnership(f, currentUser.Username, currentUser.Username)
@@ -86,7 +86,7 @@ func TestCompareFileOwnership(t *testing.T) {
 	// Testing for this is hard because of the rules of user:group. The base user requires sudo to chown
 	// Compare to a file that doesn't have the right ownership
 	// Match the user but not the group
-	expectedResult = common.TestResult{Result: common.Warn}
+	expectedResult = v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_WARN}
 	result = compareFileOwnership("/etc/passwd", currentUser.Username, currentUser.Username)
 	result = compareFileOwnership(f, currentUser.Username, "docker")
 	assert.Equal(t, expectedResult.Result, result.Result)
@@ -97,7 +97,7 @@ func TestFileOwnershipCheck(t *testing.T) {
 	// Set up file to check against
 	currentUser, err := user.Current()
 	require.Nil(t, err)
-	expectedResult := common.TestResult{Result: common.Pass}
+	expectedResult := v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_PASS}
 	f, err := createTestFileOwnership(currentUser.Username, currentUser.Username)
 	require.Nil(t, err)
 
@@ -107,7 +107,7 @@ func TestFileOwnershipCheck(t *testing.T) {
 	assert.Equal(t, 0, len(result.Notes))
 
 	// Check empty file
-	expectedResult = common.TestResult{Result: common.Note}
+	expectedResult = v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_NOTE}
 	benchmark = newOwnershipCheck("Test bench", "desc", "", currentUser.Username, currentUser.Username)
 	result = benchmark.Run()
 	assert.Equal(t, expectedResult.Result, result.Result)
@@ -120,14 +120,15 @@ func TestRecursiveOwnershipCheck(t *testing.T) {
 	dir, _, _, err := createTestDirOwnership(currentUser.Username, currentUser.Username)
 	require.Nil(t, err)
 
-	expectedResult := common.TestResult{Result: common.Pass}
+	//expectedResult := v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_PASS}
+	expectedResult := v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_PASS}
 	benchmark := newRecursiveOwnershipCheck("test bench", "desc", dir, currentUser.Username, currentUser.Username)
 	result := benchmark.Run()
 	assert.Equal(t, expectedResult.Result, result.Result)
 	assert.Equal(t, 0, len(result.Notes))
 
 	// Check empty file
-	expectedResult = common.TestResult{Result: common.Note}
+	expectedResult = v1.BenchmarkTestResult{Result: v1.BenchmarkStatus_NOTE}
 	benchmark = newRecursiveOwnershipCheck("Test bench", "desc", "", currentUser.Username, currentUser.Username)
 	result = benchmark.Run()
 	assert.Equal(t, expectedResult.Result, result.Result)

@@ -1,32 +1,34 @@
 package dockerdaemonconfiguration
 
 import (
-	"bitbucket.org/stack-rox/apollo/docker-bench/common"
+	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
 type authorizationPluginBenchmark struct{}
 
-func (c *authorizationPluginBenchmark) Definition() common.Definition {
-	return common.Definition{
-		Name:         "CIS 2.11",
-		Description:  "Ensure that authorization for Docker client commands is enabled",
-		Dependencies: []common.Dependency{common.InitDockerConfig},
+func (c *authorizationPluginBenchmark) Definition() utils.Definition {
+	return utils.Definition{
+		BenchmarkDefinition: v1.BenchmarkDefinition{
+			Name:        "CIS 2.11",
+			Description: "Ensure that authorization for Docker client commands is enabled",
+		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *authorizationPluginBenchmark) Run() (result common.TestResult) {
-	_, ok := common.DockerConfig["authorization-plugin"]
+func (c *authorizationPluginBenchmark) Run() (result v1.BenchmarkTestResult) {
+	_, ok := utils.DockerConfig["authorization-plugin"]
 	if !ok {
-		result.Result = common.Warn
-		result.AddNotes("No authorization plugin is enabled for the docker client")
+		utils.Warn(&result)
+		utils.AddNotes(&result, "No authorization plugin is enabled for the docker client")
 		return
 	}
 	// TODO(cgorman) search for image?
-	result.Result = common.Pass
+	utils.Pass(&result)
 	return
 }
 
 // NewAuthorizationPluginBenchmark implements CIS-2.11
-func NewAuthorizationPluginBenchmark() common.Benchmark {
+func NewAuthorizationPluginBenchmark() utils.Benchmark {
 	return &authorizationPluginBenchmark{}
 }

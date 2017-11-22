@@ -1,15 +1,16 @@
-package common
+package utils
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
 
-	"github.com/docker/docker/daemon"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDockerConfigGet(t *testing.T) {
-	config := make(Config)
+	config := make(FlattenedDockerConfig)
 
 	// Look for something in empty map
 	var expectedParams DockerConfigParams
@@ -17,14 +18,14 @@ func TestDockerConfigGet(t *testing.T) {
 	assert.False(t, found)
 	assert.Equal(t, expectedParams, actualParams)
 
-	config = make(Config)
+	config = make(FlattenedDockerConfig)
 	expectedParams = DockerConfigParams{"hi"}
 	config["hello"] = expectedParams
 	actualParams, found = config.Get("hello")
 	assert.True(t, found)
 	assert.Equal(t, expectedParams, actualParams)
 
-	config = make(Config)
+	config = make(FlattenedDockerConfig)
 	expectedParams = DockerConfigParams{"hi"}
 	config["hellos"] = expectedParams
 	actualParams, found = config.Get("hello")
@@ -76,13 +77,13 @@ func TestGetTagValue(t *testing.T) {
 }
 
 func TestWalkStruct(t *testing.T) {
-	d := &daemon.Config{
+	d := &Config{
 		CgroupParent:         "cgroup",
 		EnableSelinuxSupport: true,
 		OOMScoreAdjust:       55,
-		CommonConfig: daemon.CommonConfig{
+		CommonConfig: CommonConfig{
 			ClusterOpts: map[string]string{
-				"opt1-key": "opt1-value",
+				"opt1key": "opt1value",
 			},
 		},
 	}
@@ -92,7 +93,7 @@ func TestWalkStruct(t *testing.T) {
 		"cgroup-parent":      {"cgroup"},
 		"selinux-enabled":    {"true"},
 		"oom-score-adjust":   {"55"},
-		"cluster-store-opts": {"opt1-key=opt1-value"},
+		"cluster-store-opts": {"opt1key=opt1value"},
 	}
 	for k, v := range expectedMap {
 		assert.Equal(t, v, configMap[k])
@@ -164,35 +165,35 @@ func TestGetExpandedKey(t *testing.T) {
 }
 
 func TestParseArg(t *testing.T) {
-	config := make(Config)
+	config := make(FlattenedDockerConfig)
 	skip := parseArg(config, "--security-opt", "seccomp") // Use the next element due to space in commandline
-	assert.Equal(t, Config{"security-opt": []string{"seccomp"}}, config)
+	assert.Equal(t, FlattenedDockerConfig{"security-opt": []string{"seccomp"}}, config)
 	assert.True(t, skip)
 
-	config = make(Config)
+	config = make(FlattenedDockerConfig)
 	skip = parseArg(config, "--security-opt=seccomp", "") // Use the next element due to space in commandline
-	assert.Equal(t, Config{"security-opt": []string{"seccomp"}}, config)
+	assert.Equal(t, FlattenedDockerConfig{"security-opt": []string{"seccomp"}}, config)
 	assert.False(t, skip)
 
-	config = make(Config)
+	config = make(FlattenedDockerConfig)
 	skip = parseArg(config, "--no-new-privileges", "--selinux-enabled") // Use the next element due to space in commandline
-	assert.Equal(t, Config{"no-new-privileges": []string{""}}, config)
+	assert.Equal(t, FlattenedDockerConfig{"no-new-privileges": []string{""}}, config)
 	assert.False(t, skip)
 
-	config = make(Config)
+	config = make(FlattenedDockerConfig)
 	skip = parseArg(config, "--no-new-privileges", "") // Use the next element due to space in commandline
-	assert.Equal(t, Config{"no-new-privileges": []string{""}}, config)
+	assert.Equal(t, FlattenedDockerConfig{"no-new-privileges": []string{""}}, config)
 }
 
 func TestParseArgs(t *testing.T) {
 	args := []string{}
-	config := make(Config)
+	config := make(FlattenedDockerConfig)
 	parseArgs(config, args)
-	assert.Equal(t, Config{}, config)
+	assert.Equal(t, FlattenedDockerConfig{}, config)
 
-	config = make(Config)
+	config = make(FlattenedDockerConfig)
 	args = []string{"--security-opt", "seccomp", "--security-opt=apparmor", "--no-new-privileges", "--selinux-enabled"}
-	expectedConfig := Config{
+	expectedConfig := FlattenedDockerConfig{
 		"security-opt":      []string{"seccomp", "apparmor"},
 		"no-new-privileges": []string{""},
 		"selinux-enabled":   []string{""},
@@ -200,12 +201,108 @@ func TestParseArgs(t *testing.T) {
 	parseArgs(config, args)
 	assert.Equal(t, expectedConfig, config)
 
-	config = make(Config)
+	config = make(FlattenedDockerConfig)
 	args = []string{"--security-opt", "seccomp", "--security-opt=apparmor", "--no-new-privileges", "true"}
-	expectedConfig = Config{
+	expectedConfig = FlattenedDockerConfig{
 		"security-opt":      []string{"seccomp", "apparmor"},
 		"no-new-privileges": []string{"true"},
 	}
 	parseArgs(config, args)
 	assert.Equal(t, expectedConfig, config)
+}
+
+const dockerConfigFile = `
+{
+	"authorization-plugins": [],
+	"data-root": "",
+	"dns": [],
+	"dns-opts": [],
+	"dns-search": [],
+	"exec-opts": [],
+	"exec-root": "",
+	"experimental": false,
+	"storage-driver": "",
+	"storage-opts": [],
+	"labels": [],
+	"live-restore": true,
+	"log-driver": "",
+	"log-opts": {},
+	"mtu": 0,
+	"pidfile": "",
+	"cluster-store": "",
+	"cluster-store-opts": {},
+	"cluster-advertise": "",
+	"max-concurrent-downloads": 3,
+	"max-concurrent-uploads": 5,
+	"default-shm-size": "64M",
+	"shutdown-timeout": 15,
+	"debug": true,
+	"hosts": [],
+	"log-level": "",
+	"tls": true,
+	"tlsverify": true,
+	"tlscacert": "",
+	"tlscert": "",
+	"tlskey": "",
+	"swarm-default-advertise-addr": "",
+	"api-cors-header": "",
+	"selinux-enabled": false,
+	"userns-remap": "",
+	"group": "",
+	"cgroup-parent": "",
+	"default-ulimits": {},
+	"init": false,
+	"init-path": "/usr/libexec/docker-init",
+	"ipv6": false,
+	"iptables": false,
+	"ip-forward": false,
+	"ip-masq": false,
+	"userland-proxy": false,
+	"userland-proxy-path": "/usr/libexec/docker-proxy",
+	"ip": "0.0.0.0",
+	"bridge": "",
+	"bip": "",
+	"fixed-cidr": "",
+	"fixed-cidr-v6": "",
+	"default-gateway": "",
+	"default-gateway-v6": "",
+	"icc": false,
+	"raw-logs": false,
+	"allow-nondistributable-artifacts": [],
+	"registry-mirrors": [],
+	"seccomp-profile": "",
+	"insecure-registries": [],
+	"disable-legacy-registry": false,
+	"no-new-privileges": false,
+	"default-runtime": "runc",
+	"oom-score-adjust": -500,
+	"runtimes": {
+		"runc": {
+			"path": "runc"
+		},
+		"custom": {
+			"path": "/usr/local/bin/my-runc-replacement",
+			"runtimeArgs": [
+				"--debug"
+			]
+		}
+	}
+}
+`
+
+func TestDockerConfigFile(t *testing.T) {
+	f, err := ioutil.TempFile("", "")
+	require.Nil(t, err)
+	defer os.Remove(f.Name())
+	defer f.Close()
+
+	_, err = f.Write([]byte(dockerConfigFile))
+	require.Nil(t, err)
+
+	m := make(map[string]DockerConfigParams)
+	err = getDockerConfigFromFile(f.Name(), m)
+	require.Nil(t, err)
+
+	assert.Contains(t, m["oom-score-adjust"], "-500")
+	assert.Contains(t, m["userland-proxy-path"], "/usr/libexec/docker-proxy")
 }
