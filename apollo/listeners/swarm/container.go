@@ -1,11 +1,11 @@
-package docker
+package swarm
 
 import (
 	"bitbucket.org/stack-rox/apollo/apollo/types"
 	"github.com/docker/docker/api/types/swarm"
 )
 
-// Container is the Docker specific implementation of the Container Interface
+// Container is the Swarm specific implementation of the Container Interface
 type swarmToContainer struct {
 	service swarm.Service
 }

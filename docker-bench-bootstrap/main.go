@@ -60,4 +60,8 @@ func main() {
 	if err := client.ContainerStart(context.Background(), body.ID, types.ContainerStartOptions{}); err != nil {
 		log.Fatalf("Error starting docker-bench container: %+v", err)
 	}
+
+	if _, err := client.ContainerWait(context.Background(), body.ID); err != nil {
+		log.Fatalf("error waiting for container %v to finish", body.ID)
+	}
 }

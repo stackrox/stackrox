@@ -11,8 +11,11 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
 	"bitbucket.org/stack-rox/apollo/apollo/listeners"
 	_ "bitbucket.org/stack-rox/apollo/apollo/listeners/all"
+	"bitbucket.org/stack-rox/apollo/apollo/orchestrators"
+	_ "bitbucket.org/stack-rox/apollo/apollo/orchestrators/all"
 	_ "bitbucket.org/stack-rox/apollo/apollo/registries/all"
 	_ "bitbucket.org/stack-rox/apollo/apollo/scanners/all"
+	"bitbucket.org/stack-rox/apollo/apollo/scheduler"
 	"bitbucket.org/stack-rox/apollo/apollo/service"
 	"bitbucket.org/stack-rox/apollo/apollo/types"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -30,7 +33,7 @@ func main() {
 	signal.Notify(sigs, os.Interrupt)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	lis := "docker"
+	lis := "swarm"
 	listenerCreator, exists := listeners.Registry[lis]
 	if !exists {
 		log.Fatalf("Listener %v does not exist", lis)
@@ -49,7 +52,12 @@ func main() {
 	ruleService := service.NewRuleService(database, imageProcessor)
 	grpc.Register(ruleService)
 
-	benchmarkService := service.NewBenchmarkService(database)
+	orchestrator, err := orchestrators.Registry["swarm"]()
+	if err != nil {
+		log.Fatal(err)
+	}
+	sched := scheduler.NewDockerBenchScheduler(orchestrator)
+	benchmarkService := service.NewBenchmarkService(database, sched)
 	grpc.Register(benchmarkService)
 
 	registryService := service.NewRegistryService(database)

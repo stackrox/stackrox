@@ -29,6 +29,8 @@ import:
   version: v1.7.2
 - package: golang.org/x/net
   version: a337091b0525af65de94df2eb7e98bd9962dcbe2
+- package: github.com/docker/distribution
+  version: v2.6.2
   subpackages:
   - proto
   - protoc-gen-gogo/descriptor

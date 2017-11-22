@@ -1,5 +1,5 @@
-hash: c881740a9a2df29bba8d62522063f36b1790bff33bce0b084e817cab8b61997a
-updated: 2017-11-28T05:57:54.084812508Z
+hash: 5880f5db9bd525bd7896cd0742f7ec8e98b5f365ac14ee7a1f7a9ba373f12714
+updated: 2017-11-28T17:35:53.841214631Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: d6e3b3328b783f23731bc4d058875b0371ff8109
@@ -13,6 +13,8 @@ imports:
   - manifest
   - manifest/schema1
   - manifest/schema2
+  - proto
+  - protoc-gen-gogo/descriptor
   - reference
   - registry/api/errcode
   - registry/api/v2
@@ -157,8 +159,6 @@ imports:
   - idna
   - internal/timeseries
   - lex/httplex
-  - proto
-  - protoc-gen-gogo/descriptor
   - proxy
   - trace
 - name: golang.org/x/sys

@@ -3,6 +3,10 @@ package grpc
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
+	"fmt"
 	golog "log"
 	"net"
 	"net/http"
@@ -10,17 +14,17 @@ import (
 	"strings"
 
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/pkg/tls/keys"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/credentials"
 )
 
-const grpcEndpoint = "127.0.0.1:8081"
-const gateway = "0.0.0.0:8080"
+const grpcPort = ":8080"
+const endpoint = "localhost" + grpcPort
 
 var (
 	log = logging.New("api")
@@ -56,13 +60,27 @@ func (a *apiImpl) Start() {
 	go a.run()
 }
 
-// authFunc implements grpc_auth.AuthFunc. Our services handle their own authentication, so deny by default otherwise.
-func (a *apiImpl) authFunc(ctx context.Context, method string) (context.Context, error) {
-	return nil, status.Errorf(codes.Unimplemented, "The URL %v you tried to reach isn't implemented.", method)
+// httpErrorLogger implements io.Writer interface. It is used to control
+// error messages coming from http server which can be logged.
+type httpErrorLogger struct {
+}
+
+// Write suppresses EOF error messages
+func (l httpErrorLogger) Write(p []byte) (n int, err error) {
+	if !bytes.Contains(p, []byte("EOF")) {
+		return os.Stderr.Write(p)
+	}
+	return len(p), nil
 }
 
 func (a *apiImpl) run() {
-	server := grpc.NewServer(
+	pool, pair, err := getPair()
+	if err != nil {
+		panic(err)
+	}
+
+	grpcServer := grpc.NewServer(
+		grpc.Creds(credentials.NewClientTLSFromCert(pool, endpoint)),
 		grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(
 				grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
@@ -77,43 +95,65 @@ func (a *apiImpl) run() {
 		),
 	)
 
-	// EmitDefaults allows marshalled structs with the omitempty: false setting to return 0-valued defaults.
-	gwMux := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{EmitDefaults: true}))
 	for _, service := range apiServices {
-		service.RegisterServiceServer(server)
-		if err := service.RegisterServiceHandlerFromEndpoint(context.Background(), gwMux, grpcEndpoint, []grpc.DialOption{grpc.WithInsecure()}); err != nil {
+		service.RegisterServiceServer(grpcServer)
+	}
+
+	ctx := context.Background()
+	dcreds := credentials.NewTLS(&tls.Config{
+		ServerName:         endpoint,
+		RootCAs:            pool,
+		InsecureSkipVerify: true,
+	})
+	dopts := []grpc.DialOption{grpc.WithTransportCredentials(dcreds)}
+
+	mux := http.NewServeMux()
+	gwmux := runtime.NewServeMux()
+	for _, service := range apiServices {
+		if err := service.RegisterServiceHandlerFromEndpoint(ctx, gwmux, endpoint, dopts); err != nil {
 			panic(err)
 		}
 	}
-
-	// Start GRPC listener
-	grpcListener, err := net.Listen("tcp", grpcEndpoint)
+	mux.Handle("/", gwmux)
+	conn, err := net.Listen("tcp", grpcPort)
 	if err != nil {
 		panic(err)
 	}
-	go func() {
-		err := server.Serve(grpcListener)
-		panic(err)
-	}()
-
-	// Start HTTP Server
-	httpServer := &http.Server{
-		Addr:     grpcEndpoint,
-		Handler:  a.defaultHandlerFunc(server, gwMux),
+	srv := &http.Server{
+		Addr:     endpoint,
+		Handler:  grpcHandlerFunc(grpcServer, mux),
 		ErrorLog: golog.New(httpErrorLogger{}, "", golog.LstdFlags),
+		TLSConfig: &tls.Config{
+			Certificates: []tls.Certificate{*pair},
+			NextProtos:   []string{"h2"},
+		},
 	}
-	listener, err := net.Listen("tcp", gateway)
+	fmt.Printf("grpc on port: %v\n", grpcPort)
+	err = srv.Serve(tls.NewListener(conn, srv.TLSConfig))
 	if err != nil {
-		panic(err)
+		log.Fatal("ListenAndServe: ", err)
 	}
-	log.Infof("API server started on %s", gateway)
-	if err := httpServer.Serve(listener); err != nil {
-		log.Fatal(err)
-		return
-	}
+	return
 }
 
-func (a *apiImpl) defaultHandlerFunc(grpcServer *grpc.Server, httpHandler http.Handler) http.Handler {
+func getPair() (*x509.CertPool, *tls.Certificate, error) {
+	cert, key, err := keys.GenerateStackRoxKeyPair()
+	if err != nil {
+		return nil, nil, err
+	}
+	pair, err := tls.X509KeyPair(cert.Key().PEM(), key.Key().PEM())
+	if err != nil {
+		return nil, nil, err
+	}
+	pool := x509.NewCertPool()
+	ok := pool.AppendCertsFromPEM(cert.Key().PEM())
+	if !ok {
+		return nil, nil, errors.New("Cert is invalid")
+	}
+	return pool, &pair, nil
+}
+
+func grpcHandlerFunc(grpcServer *grpc.Server, httpHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
 			grpcServer.ServeHTTP(w, r)
@@ -121,17 +161,4 @@ func (a *apiImpl) defaultHandlerFunc(grpcServer *grpc.Server, httpHandler http.H
 			httpHandler.ServeHTTP(w, r)
 		}
 	})
-}
-
-// httpErrorLogger implements io.Writer interface. It is used to control
-// error messages coming from http server which can be logged.
-type httpErrorLogger struct {
-}
-
-// Write suppresses EOF error messages
-func (l httpErrorLogger) Write(p []byte) (n int, err error) {
-	if !bytes.Contains(p, []byte("EOF")) {
-		return os.Stderr.Write(p)
-	}
-	return len(p), nil
 }

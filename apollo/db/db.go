@@ -30,4 +30,7 @@ type Storage interface {
 	AddScanner(name string, scanner scannerTypes.ImageScanner)
 	RemoveScanner(name string)
 	GetScanners() map[string]scannerTypes.ImageScanner
+
+	AddBenchmark(benchmark *v1.BenchmarkPayload)
+	GetBenchmarks(request *v1.GetBenchmarksRequest) []*v1.BenchmarkPayload
 }

@@ -31,33 +31,68 @@ message BenchmarkDefinition {
 }
 
 message BenchmarkPayload {
-    repeated BenchmarkResult results     = 1;
-    google.protobuf.Timestamp start_time = 2;
-    google.protobuf.Timestamp end_time   = 3;
-    string host                          = 4;
+    string id                            = 1;
+    repeated BenchmarkResult results     = 2;
+    google.protobuf.Timestamp start_time = 3;
+    google.protobuf.Timestamp end_time   = 4;
+    string host                          = 5;
 }
 
-message GetBenchmarkRequest {
-    google.protobuf.Timestamp start_time = 1;
-    google.protobuf.Timestamp end_time   = 2;
-    string host                          = 3;
+message GetBenchmarksRequest {
+    google.protobuf.Timestamp from_end_time = 1;
+    google.protobuf.Timestamp to_end_time   = 2;
+    string host                             = 3;
 }
 
-message GetBenchmarkResponse {
+message GetBenchmarksResponse {
     repeated BenchmarkPayload benchmarks = 1;
+}
+
+message BenchmarkSchedule {
+    bool enable          = 1;
+    int64 interval_days  = 2;
+}
+
+message TriggerBenchmarkRequest {}
+
+message GetBenchmarkScheduleResponse {
+    bool enabled                             = 1;
+    int64 interval_days                      = 2;
+    google.protobuf.Timestamp next_scheduled = 3;
 }
 
 service BenchmarkService {
 
-    rpc GetBenchmark(GetBenchmarkRequest) returns (GetBenchmarkResponse) {
+    // For now, we will support only 1 schedule, but as our benchmarks are expanded we could potentially target specific benchmarks
+    rpc PostBenchmarkSchedule(BenchmarkSchedule) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            get: "/v1/benchmarks"
+            post: "/v1/benchmarks/schedule"
+            body: "*"
         };
     }
 
-    rpc PostBenchmark(BenchmarkPayload) returns (google.protobuf.Empty) {
+    rpc GetBenchmarkSchedule(google.protobuf.Empty) returns (GetBenchmarkScheduleResponse) {
         option (google.api.http) = {
-            post: "/v1/benchmarks"
+            get: "/v1/benchmarks/schedule"
+        };
+    }
+
+    rpc TriggerBenchmark(TriggerBenchmarkRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/benchmarks/trigger"
+            body: "*"
+        };
+    }
+
+    rpc GetBenchmarkResults(GetBenchmarksRequest) returns (GetBenchmarksResponse) {
+        option (google.api.http) = {
+            get: "/v1/benchmarks/results"
+        };
+    }
+
+    rpc PostBenchmarkResult(BenchmarkPayload) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/benchmarks/results"
             body: "*"
         };
     }
