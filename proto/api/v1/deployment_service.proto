@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "v1/image_service.proto";
+
+package v1;
+
+message Deployment {
+    string id = 1;
+    string name = 2;
+    string version = 3;
+    string type = 4;
+    google.protobuf.Timestamp   updated_at  = 5;
+
+    Image image = 6;
+}

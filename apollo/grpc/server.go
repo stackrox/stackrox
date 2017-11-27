@@ -36,26 +36,23 @@ type APIService interface {
 	RegisterServiceHandlerFromEndpoint(context.Context, *runtime.ServeMux, string, []grpc.DialOption) error
 }
 
-var apiServices []APIService
-
-// Register adds a new APIService to the list of API services
-func Register(service APIService) {
-	apiServices = append(apiServices, service)
-}
-
 // API listens for new connections on APIPort 8080, and redirects them to the gRPC-Gateway
 type API interface {
+	// Start runs the API in a goroutine.
 	Start()
+	// Register adds a new APIService to the list of API services
+	Register(service APIService)
 }
 
-type apiImpl struct{}
+type apiImpl struct {
+	apiServices []APIService
+}
 
 // NewAPI returns an API object.
 func NewAPI() API {
 	return &apiImpl{}
 }
 
-// Start runs the API in a goroutine.
 func (a *apiImpl) Start() {
 	go a.run()
 }
@@ -71,6 +68,10 @@ func (l httpErrorLogger) Write(p []byte) (n int, err error) {
 		return os.Stderr.Write(p)
 	}
 	return len(p), nil
+}
+
+func (a *apiImpl) Register(service APIService) {
+	a.apiServices = append(a.apiServices, service)
 }
 
 func (a *apiImpl) run() {
@@ -95,7 +96,7 @@ func (a *apiImpl) run() {
 		),
 	)
 
-	for _, service := range apiServices {
+	for _, service := range a.apiServices {
 		service.RegisterServiceServer(grpcServer)
 	}
 
@@ -109,7 +110,7 @@ func (a *apiImpl) run() {
 
 	mux := http.NewServeMux()
 	gwmux := runtime.NewServeMux()
-	for _, service := range apiServices {
+	for _, service := range a.apiServices {
 		if err := service.RegisterServiceHandlerFromEndpoint(ctx, gwmux, endpoint, dopts); err != nil {
 			panic(err)
 		}

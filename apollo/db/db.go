@@ -36,4 +36,15 @@ type Storage interface {
 
 	AddBenchmark(benchmark *v1.BenchmarkPayload)
 	GetBenchmarks(request *v1.GetBenchmarksRequest) []*v1.BenchmarkPayload
+
+	DeploymentStorage
+}
+
+// DeploymentStorage provides storage functionality for deployments.
+type DeploymentStorage interface {
+	GetDeployment(id string) (*v1.Deployment, bool, error)
+	GetDeployments() ([]*v1.Deployment, error)
+	AddDeployment(deployment *v1.Deployment) error
+	UpdateDeployment(deployment *v1.Deployment) error
+	RemoveDeployment(id string) error
 }

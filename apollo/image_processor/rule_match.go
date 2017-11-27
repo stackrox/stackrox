@@ -3,9 +3,8 @@ package imageprocessor
 import (
 	"fmt"
 	"math"
-	"time"
-
 	"strings"
+	"time"
 
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"

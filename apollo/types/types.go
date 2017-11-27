@@ -40,17 +40,9 @@ func (r ResourceAction) String() string {
 	}
 }
 
-// Container is a general abstraction of a docker container
-type Container struct {
-	ID         string
-	Name       string
-	Privileged bool
-	Image      *v1.Image
-}
-
-// Event is the generic form of orchestrator events
-type Event struct {
-	Containers []*Container
+// DeploymentEvent is the act of creating, updating or removing a deployment.
+type DeploymentEvent struct {
+	Deployment *v1.Deployment
 	Action     ResourceAction
 }
 

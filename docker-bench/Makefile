@@ -7,7 +7,7 @@ GENERATED_SRCS = $(GENERATED_API_SRCS)
 all: style build test report image
 
 .PHONY: noimage
-noimage: deps style build test report
+noimage: style build test report
 
 .PHONY: preclean
 preclean:

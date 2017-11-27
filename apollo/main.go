@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"syscall"
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
@@ -12,6 +13,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
 	"bitbucket.org/stack-rox/apollo/apollo/listeners"
 	_ "bitbucket.org/stack-rox/apollo/apollo/listeners/all"
+	listenerTypes "bitbucket.org/stack-rox/apollo/apollo/listeners/types"
 	"bitbucket.org/stack-rox/apollo/apollo/orchestrators"
 	_ "bitbucket.org/stack-rox/apollo/apollo/orchestrators/all"
 	_ "bitbucket.org/stack-rox/apollo/apollo/registries/all"
@@ -26,104 +28,113 @@ var (
 	log = logging.New("apollo/main")
 )
 
-var imageProcessor *imageprocessor.ImageProcessor
-var database db.Storage
-
 func main() {
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, os.Interrupt)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	apollo := newApollo()
 
-	lis := "swarm"
-	listenerCreator, exists := listeners.Registry[lis]
-	if !exists {
-		log.Fatalf("Listener %v does not exist", lis)
-	}
-	listener, err := listenerCreator()
-	if err != nil {
-		panic(err)
-	}
-
+	var err error
 	persistence, err := boltdb.MakeBoltDB("/var/lib/")
 	if err != nil {
 		panic(err)
 	}
+	apollo.database = inmem.New(persistence)
 
-	database = inmem.New(persistence)
-	imageProcessor, err = imageprocessor.New(database)
+	const platform = "swarm"
+	listenerCreator, exists := listeners.Registry[platform]
+	if !exists {
+		log.Fatalf("Listener %v does not exist", platform)
+	}
+
+	apollo.listener, err = listenerCreator(apollo.database)
 	if err != nil {
 		panic(err)
 	}
 
-	ruleService := service.NewRuleService(database, imageProcessor)
-	grpc.Register(ruleService)
+	apollo.imageProcessor, err = imageprocessor.New(apollo.database)
+	if err != nil {
+		panic(err)
+	}
 
-	orchestrator, err := orchestrators.Registry["swarm"]()
+	go apollo.startGRPCServer()
+	go apollo.listener.Start()
+
+	orchestrator, err := orchestrators.Registry[platform]()
 	if err != nil {
 		log.Fatal(err)
 	}
-	sched := scheduler.NewDockerBenchScheduler(orchestrator)
-	benchmarkService := service.NewBenchmarkService(database, sched)
-	grpc.Register(benchmarkService)
+	apollo.benchScheduler = scheduler.NewDockerBenchScheduler(orchestrator)
 
-	registryService := service.NewRegistryService(database)
-	grpc.Register(registryService)
+	apollo.processForever()
+}
 
-	scannerService := service.NewScannerService(database)
-	grpc.Register(scannerService)
+type apollo struct {
+	signalsC       chan (os.Signal)
+	benchScheduler *scheduler.DockerBenchScheduler
+	listener       listenerTypes.Listener
+	imageProcessor *imageprocessor.ImageProcessor
+	database       db.Storage
+	server         grpc.API
+}
 
-	// Initialize by getting resources initially
-	runningContainers, err := listener.GetContainers()
-	if err != nil {
-		panic(err)
-	}
+func newApollo() *apollo {
+	apollo := &apollo{}
 
-	for _, container := range runningContainers {
-		log.Infof("Image found: %+v", container.Image)
-		alerts, err := imageProcessor.Process(container.Image)
-		if err != nil {
-			log.Error(err)
-			continue
+	apollo.signalsC = make(chan os.Signal, 1)
+	signal.Notify(apollo.signalsC, os.Interrupt)
+	signal.Notify(apollo.signalsC, syscall.SIGINT, syscall.SIGTERM)
+
+	return apollo
+}
+
+func (a *apollo) startGRPCServer() {
+	a.server = grpc.NewAPI()
+	ruleService := service.NewRuleService(a.database, a.imageProcessor)
+	a.server.Register(ruleService)
+
+	benchmarkService := service.NewBenchmarkService(a.database, a.benchScheduler)
+	a.server.Register(benchmarkService)
+
+	registryService := service.NewRegistryService(a.database)
+	a.server.Register(registryService)
+
+	scannerService := service.NewScannerService(a.database)
+	a.server.Register(scannerService)
+
+	a.server.Start()
+}
+
+func (a *apollo) processForever() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Errorf("Caught panic in process loop; restarting. Stack: %s", string(debug.Stack()))
+			a.processForever()
 		}
-		for _, alert := range alerts {
-			log.Warnf("Alert Generated: %v with Severity %v due to rule %v", alert.Id, alert.Severity.String(), alert.RuleName)
-			for _, violation := range alert.Violations {
-				log.Warnf("\t %v - %v", violation.Severity.String(), violation.Message)
-			}
-		}
-	}
-
-	go listener.Start()
-
-	apiImp := grpc.NewAPI()
-	apiImp.Start()
+	}()
 
 	for {
 		select {
-		case event := <-listener.Events():
+		case event := <-a.listener.Events():
+			log.Infof("Received new Deployment Event: %#v", event)
 			switch event.Action {
 			case types.Create, types.Update:
-				for _, container := range event.Containers {
-					alerts, err := imageProcessor.Process(container.Image)
-					if err != nil {
-						log.Error(err)
-						continue
-					}
-					for _, alert := range alerts {
-						log.Warnf("Alert Generated: %v with Severity %v due to rule %v", alert.Id, alert.Severity.String(), alert.RuleName)
-						for _, violation := range alert.Violations {
-							log.Warnf("\t %v - %v", violation.Severity.String(), violation.Message)
-						}
+				alerts, err := a.imageProcessor.Process(event.Deployment.GetImage())
+				if err != nil {
+					log.Error(err)
+					continue
+				}
+				for _, alert := range alerts {
+					log.Warnf("Alert Generated: %v with Severity %v due to rule %v", alert.Id, alert.Severity.String(), alert.RuleName)
+					for _, violation := range alert.Violations {
+						log.Warnf("\t %v - %v", violation.Severity.String(), violation.Message)
 					}
 				}
 			default:
-				log.Infof("Event Action %v is currently not implemented", event.Action.String())
+				log.Infof("DeploymentEvent Action %v is currently not implemented", event.Action.String())
 			}
-		case sig := <-sigs:
+		case sig := <-a.signalsC:
 			log.Infof("Caught %s signal", sig)
-			listener.Done()
+			a.listener.Stop()
+			log.Infof("Apollo terminated")
 			return
 		}
 	}
-	// docker service create --restart-policy=none --name crawler1 -e url=http://blog.alexellis.io -d crawl_site alexellis2/href-counter
 }
