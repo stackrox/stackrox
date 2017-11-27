@@ -96,5 +96,5 @@ service BenchmarkService {
             body: "*"
         };
     }
-
+    // No put or delete for benchmarks
 }

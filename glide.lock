@@ -1,10 +1,12 @@
-hash: 5880f5db9bd525bd7896cd0742f7ec8e98b5f365ac14ee7a1f7a9ba373f12714
-updated: 2017-11-28T17:35:53.841214631Z
+hash: 15516a0ade308760afe0901801e5ed69618ce54b8e35f0baa3bab8007b5c8624
+updated: 2017-11-28T22:30:22.710373176Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: d6e3b3328b783f23731bc4d058875b0371ff8109
   subpackages:
   - winterm
+- name: github.com/boltdb/bolt
+  version: 2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8
 - name: github.com/docker/distribution
   version: 48294d928ced5dd9b378f7fd7c6f5da3ff3f2c89
   subpackages:
@@ -13,8 +15,6 @@ imports:
   - manifest
   - manifest/schema1
   - manifest/schema2
-  - proto
-  - protoc-gen-gogo/descriptor
   - reference
   - registry/api/errcode
   - registry/api/v2

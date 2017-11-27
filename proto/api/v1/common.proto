@@ -7,9 +7,10 @@ import "google/api/annotations.proto";
 package v1;
 
 enum Severity {
-    LOW      = 0;
-    MEDIUM   = 1;
-    HIGH     = 2;
-    CRITICAL = 3;
+    UNSET_SEVERITY    = 0;
+    LOW_SEVERITY      = 1;
+    MEDIUM_SEVERITY   = 2;
+    HIGH_SEVERITY     = 3;
+    CRITICAL_SEVERITY = 4;
 }
 

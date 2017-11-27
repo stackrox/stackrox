@@ -26,26 +26,25 @@ message Alert {
     repeated Violation violations = 5;
 }
 
+message GetAlertsRequest {
+    string id          = 1;
+    Severity severity  = 2;
+}
+
+message GetAlertsResponse {
+    repeated Alert alerts = 1;
+}
+
 service AlertService {
 
-//    rpc GetImageRules(google.protobuf.Empty) returns (ImageRules) {
-//        option (google.api.http) = {
-//            get: "/v1/images/rules"
-//        };
-//    }
-//
-//    rpc PostImageRule(ImageRule) returns (ImageRule) {
-//        option (google.api.http) = {
-//            post: "/v1/images/rules"
-//            body: "*"
-//        };
-//    }
-//
-//    rpc PutImageRule(ImageRule) returns (ImageRule) {
-//        option (google.api.http) = {
-//            put: "/v1/images/rules/{name}"
-//            body: "*"
-//        };
-//    }
+    rpc GetAlerts (GetAlertsRequest) returns (GetAlertsResponse) {
+        option (google.api.http) = {
+            get: "/v1/alerts"
+        };
+    }
+
+    // No post/put API for alerts
+
+    // No deletion of alerts
 
 }

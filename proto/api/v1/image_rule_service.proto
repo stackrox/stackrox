@@ -63,25 +63,39 @@ message ImageRules {
     repeated ImageRule rules = 1;
 }
 
+message GetImageRulesRequest {
+    string name = 1;
+}
+
+message DeleteImageRuleRequest {
+    string name = 1;
+}
+
 service ImageRuleService {
 
-    rpc GetImageRules(google.protobuf.Empty) returns (ImageRules) {
+    rpc GetImageRules(GetImageRulesRequest) returns (ImageRules) {
         option (google.api.http) = {
             get: "/v1/images/rules"
         };
     }
 
-    rpc PostImageRule(ImageRule) returns (ImageRule) {
+    rpc PostImageRule(ImageRule) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             post: "/v1/images/rules"
             body: "*"
         };
     }
 
-    rpc PutImageRule(ImageRule) returns (ImageRule) {
+    rpc PutImageRule(ImageRule) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             put: "/v1/images/rules/{name}"
             body: "*"
+        };
+    }
+
+    rpc DeleteImageRule(DeleteImageRuleRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/images/rules/{name}"
         };
     }
 

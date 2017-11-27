@@ -77,26 +77,19 @@ message Image {
     ImageScan scan         = 6;
 }
 
+message GetImagesRequest {
+}
+
+message GetImagesResponse {
+    repeated Image images = 1;
+}
+
 service ImageService {
 
-//    rpc GetImageRules(google.protobuf.Empty) returns (ImageRules) {
-//        option (google.api.http) = {
-//            get: "/v1/imageses"
-//        };
-//    }
-//
-//    rpc PostImageRule(ImageRule) returns (ImageRule) {
-//        option (google.api.http) = {
-//            post: "/v1/images/rules"
-//            body: "*"
-//        };
-//    }
-//
-//    rpc PutImageRule(ImageRule) returns (ImageRule) {
-//        option (google.api.http) = {
-//            put: "/v1/images/rules/{name}"
-//            body: "*"
-//        };
-//    }
+    rpc GetImages(GetImagesRequest) returns (GetImagesResponse) {
+        option (google.api.http) = {
+            get: "/v1/images"
+        };
+    }
 
 }

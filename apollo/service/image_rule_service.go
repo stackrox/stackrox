@@ -40,26 +40,27 @@ func (s *RuleService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 }
 
 // GetImageRules retrieves all image rules
-func (s *RuleService) GetImageRules(ctx context.Context, _ *empty.Empty) (*v1.ImageRules, error) {
-	return &v1.ImageRules{Rules: s.storage.GetImageRules()}, nil
+func (s *RuleService) GetImageRules(ctx context.Context, request *v1.GetImageRulesRequest) (*v1.ImageRules, error) {
+	rules, err := s.storage.GetImageRules(request)
+	return &v1.ImageRules{Rules: rules}, err
 }
 
 // PostImageRule inserts a new image rule into the system
-func (s *RuleService) PostImageRule(ctx context.Context, request *v1.ImageRule) (*v1.ImageRule, error) {
+func (s *RuleService) PostImageRule(ctx context.Context, request *v1.ImageRule) (*empty.Empty, error) {
 	s.storage.AddImageRule(request)
 	err := s.imageProcessor.UpdateRule(request)
-	return request, err
+	return &empty.Empty{}, err
 }
 
 // PutImageRule updates a current image rule into the system
-func (s *RuleService) PutImageRule(ctx context.Context, request *v1.ImageRule) (*v1.ImageRule, error) {
+func (s *RuleService) PutImageRule(ctx context.Context, request *v1.ImageRule) (*empty.Empty, error) {
 	s.storage.UpdateImageRule(request)
 	err := s.imageProcessor.UpdateRule(request)
-	return request, err
+	return &empty.Empty{}, err
 }
 
 // DeleteImageRule deletes an image rule from the system
-func (s *RuleService) DeleteImageRule(ctx context.Context, request *v1.ImageRule) (*empty.Empty, error) {
+func (s *RuleService) DeleteImageRule(ctx context.Context, request *v1.DeleteImageRuleRequest) (*empty.Empty, error) {
 	s.storage.RemoveImageRule(request.Name)
 	s.imageProcessor.RemoveRule(request.Name)
 	return &empty.Empty{}, nil

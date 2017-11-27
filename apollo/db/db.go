@@ -8,20 +8,23 @@ import (
 
 // Storage is the interface for the persistent storage
 type Storage interface {
-	AddImage(image *v1.Image)
-	RemoveImage(string)
-	GetImages() []*v1.Image
+	Load() error
+	Close()
 
-	AddImageRule(*v1.ImageRule)
-	RemoveImageRule(string)
-	UpdateImageRule(*v1.ImageRule)
-	GetImageRules() []*v1.ImageRule
-	GetImageRule(string) *v1.ImageRule
+	GetImages(request *v1.GetImagesRequest) ([]*v1.Image, error)
+	AddImage(image *v1.Image) error
+	UpdateImage(image *v1.Image) error
+	RemoveImage(id string) error
 
-	AddAlert(alert *v1.Alert)
-	RemoveAlert(id string)
-	GetAlert(id string) *v1.Alert
-	GetAlerts() []*v1.Alert
+	GetImageRules(request *v1.GetImageRulesRequest) ([]*v1.ImageRule, error)
+	AddImageRule(*v1.ImageRule) error
+	UpdateImageRule(*v1.ImageRule) error
+	RemoveImageRule(string) error
+
+	GetAlerts(request *v1.GetAlertsRequest) ([]*v1.Alert, error)
+	AddAlert(alert *v1.Alert) error
+	UpdateAlert(alert *v1.Alert) error
+	RemoveAlert(id string) error
 
 	AddRegistry(name string, registry registryTypes.ImageRegistry)
 	RemoveRegistry(name string)

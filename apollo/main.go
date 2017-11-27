@@ -6,6 +6,7 @@ import (
 	"syscall"
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
+	"bitbucket.org/stack-rox/apollo/apollo/db/boltdb"
 	"bitbucket.org/stack-rox/apollo/apollo/db/inmem"
 	"bitbucket.org/stack-rox/apollo/apollo/grpc"
 	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
@@ -43,7 +44,12 @@ func main() {
 		panic(err)
 	}
 
-	database = inmem.New()
+	persistence, err := boltdb.MakeBoltDB("/var/lib/")
+	if err != nil {
+		panic(err)
+	}
+
+	database = inmem.New(persistence)
 	imageProcessor, err = imageprocessor.New(database)
 	if err != nil {
 		panic(err)

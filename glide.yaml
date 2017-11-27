@@ -25,17 +25,17 @@ import:
   version: 5bf94b69c6b68ee1b541973bb8e1144db23a194b
 - package: github.com/gogo/protobuf
   version: b79ae77db468f92c7ef48e12c9c5d70e6a20c3b8
+  subpackages:
+    - proto
+    - protoc-gen-gogo/descriptor
 - package: google.golang.org/grpc
   version: v1.7.2
 - package: golang.org/x/net
   version: a337091b0525af65de94df2eb7e98bd9962dcbe2
 - package: github.com/docker/distribution
   version: v2.6.2
-  subpackages:
-  - proto
-  - protoc-gen-gogo/descriptor
-- package: github.com/docker/distribution
-  version: v2.6.2
+- package: github.com/boltdb/bolt
+  version: v1.3.1
 testImport:
 - package: github.com/stretchr/testify
   version: ^1.1.4
