@@ -28,7 +28,7 @@ func main() {
 	apollo := newApollo()
 
 	var err error
-	persistence, err := boltdb.MakeBoltDB("/var/lib/")
+	persistence, err := boltdb.New("/var/lib/")
 	if err != nil {
 		panic(err)
 	}
@@ -42,14 +42,14 @@ func main() {
 		panic(err)
 	}
 
-	go apollo.startGRPCServer()
-
 	const platform = "swarm"
 	orchestrator, err := orchestrators.Registry[platform]()
 	if err != nil {
 		log.Fatal(err)
 	}
 	apollo.benchScheduler = scheduler.NewDockerBenchScheduler(orchestrator)
+
+	go apollo.startGRPCServer()
 
 	apollo.processForever()
 }
@@ -78,8 +78,8 @@ func (a *apollo) startGRPCServer() {
 	a.server.Register(service.NewAlertService(a.database))
 	a.server.Register(service.NewBenchmarkService(a.database, a.benchScheduler))
 	a.server.Register(service.NewImagePolicyService(a.database, a.imageProcessor))
-	a.server.Register(service.NewRegistryService(a.database))
-	a.server.Register(service.NewScannerService(a.database))
+	a.server.Register(service.NewRegistryService(a.database, a.imageProcessor))
+	a.server.Register(service.NewScannerService(a.database, a.imageProcessor))
 	a.server.Start()
 }
 

@@ -31,16 +31,18 @@ type dtr struct {
 	username string
 	password string
 
+	protoScanner *v1.Scanner
+
 	metadata *scannerMetadata
 	features *metadataFeatures
 }
 
-func newScanner(endpoint string, config map[string]string) (scannerTypes.ImageScanner, error) {
-	username, ok := config["username"]
+func newScanner(protoScanner *v1.Scanner) (*dtr, error) {
+	username, ok := protoScanner.Config["username"]
 	if !ok {
 		return nil, errors.New("username parameter must be defined for DTR")
 	}
-	password, ok := config["password"]
+	password, ok := protoScanner.Config["password"]
 	if !ok {
 		return nil, errors.New("password parameter must be defined for DTR")
 	}
@@ -49,7 +51,7 @@ func newScanner(endpoint string, config map[string]string) (scannerTypes.ImageSc
 	}
 	// Trim any trailing slashes as the expectation will be that the input is in the form
 	// https://12.12.12.12:8080 or https://dtr.com
-	endpoint = strings.TrimSuffix(endpoint, "/")
+	endpoint := strings.TrimSuffix(protoScanner.Endpoint, "/")
 	if !strings.HasPrefix(endpoint, "http") {
 		endpoint = "https://" + endpoint
 	}
@@ -131,9 +133,6 @@ func (d *dtr) getStatus() (*scannerMetadata, *metadataFeatures, error) {
 		return nil, nil, err
 	}
 	body, err = d.sendRequest("GET", "/api/v0/meta/features")
-	if err != nil {
-		return nil, nil, err
-	}
 	features, err := parseFeatures(body)
 	if err != nil {
 		return nil, nil, err
@@ -187,12 +186,8 @@ func (d *dtr) Test() error {
 	return nil
 }
 
-func (d *dtr) Config() map[string]string {
-	return d.config
-}
-
-func (d *dtr) Endpoint() string {
-	return d.server
+func (d *dtr) ProtoScanner() *v1.Scanner {
+	return d.protoScanner
 }
 
 // GetLastScan retrieves the most recent scan
@@ -208,5 +203,8 @@ func (d *dtr) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 }
 
 func init() {
-	scanners.Registry["dtr"] = newScanner
+	scanners.Registry["dtr"] = func(scanner *v1.Scanner) (scannerTypes.ImageScanner, error) {
+		scan, err := newScanner(scanner)
+		return scan, err
+	}
 }

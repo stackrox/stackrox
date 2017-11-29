@@ -12,10 +12,10 @@ type imageStore struct {
 	images     map[string]*v1.Image
 	imageMutex sync.Mutex
 
-	persistent db.Storage
+	persistent db.ImageStorage
 }
 
-func newImageStore(persistent db.Storage) *imageStore {
+func newImageStore(persistent db.ImageStorage) *imageStore {
 	return &imageStore{
 		images:     make(map[string]*v1.Image),
 		persistent: persistent,

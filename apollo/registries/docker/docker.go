@@ -15,15 +15,13 @@ import (
 	"github.com/heroku/docker-registry-client/registry"
 )
 
-const pluginName = "docker"
-
 var (
 	log = logging.New("registry/docker")
 )
 
 type dockerRegistry struct {
-	config   map[string]string
-	endpoint string
+	protoRegistry *v1.Registry
+
 	hub      *registry.Registry
 	registry string
 }
@@ -39,29 +37,28 @@ type v1Compatibility struct {
 	Config  v1Config  `json:"container_config"`
 }
 
-func newRegistry(endpoint string, config map[string]string) (registryTypes.ImageRegistry, error) {
-	username, ok := config["username"]
+func newRegistry(protoRegistry *v1.Registry) (*dockerRegistry, error) {
+	username, ok := protoRegistry.Config["username"]
 	if !ok {
 		return nil, errors.New("Config parameter 'username' must be defined for docker registry plugin")
 	}
-	password, ok := config["password"]
+	password, ok := protoRegistry.Config["password"]
 	if !ok {
 		return nil, errors.New("Config parameter 'password' must be defined for docker registry plugin")
 	}
 
-	url := endpoint
-	if !strings.HasPrefix(endpoint, "http") {
-		url = "https://" + endpoint
+	url := protoRegistry.Endpoint
+	if !strings.HasPrefix(protoRegistry.Endpoint, "http") {
+		url = "https://" + protoRegistry.Endpoint
 	}
 	hub, err := registry.New(url, username, password)
 	if err != nil {
 		return nil, err
 	}
 	return &dockerRegistry{
-		config:   config,
-		endpoint: endpoint,
-		hub:      hub,
-		registry: endpoint,
+		protoRegistry: protoRegistry,
+		hub:           hub,
+		registry:      protoRegistry.Endpoint,
 	}, nil
 }
 
@@ -164,16 +161,8 @@ func (d *dockerRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 	return imageMetadata, nil
 }
 
-func (d *dockerRegistry) Config() map[string]string {
-	return d.config
-}
-
-func (d *dockerRegistry) Endpoint() string {
-	return d.endpoint
-}
-
-func (d *dockerRegistry) Type() string {
-	return pluginName
+func (d *dockerRegistry) ProtoRegistry() *v1.Registry {
+	return d.protoRegistry
 }
 
 // Test tests the current registry and makes sure that it is working properly
@@ -183,5 +172,8 @@ func (d *dockerRegistry) Test() error {
 }
 
 func init() {
-	registries.Registry["docker"] = newRegistry
+	registries.Registry["docker"] = func(registry *v1.Registry) (registryTypes.ImageRegistry, error) {
+		reg, err := newRegistry(registry)
+		return reg, err
+	}
 }

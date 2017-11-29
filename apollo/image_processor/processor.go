@@ -1,10 +1,15 @@
 package imageprocessor
 
 import (
+	"fmt"
 	"regexp"
 	"sync"
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
+	"bitbucket.org/stack-rox/apollo/apollo/registries"
+	registryTypes "bitbucket.org/stack-rox/apollo/apollo/registries/types"
+	"bitbucket.org/stack-rox/apollo/apollo/scanners"
+	scannerTypes "bitbucket.org/stack-rox/apollo/apollo/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 )
@@ -24,6 +29,12 @@ type ImageProcessor struct {
 
 	policyMutex   sync.Mutex
 	regexPolicies map[string]*regexImagePolicy
+
+	registryMutex sync.Mutex
+	registries    map[string]registryTypes.ImageRegistry
+
+	scannerMutex sync.Mutex
+	scanners     map[string]scannerTypes.ImageScanner
 }
 
 type lineRuleFieldRegex struct {
@@ -101,6 +112,20 @@ func compileLineRuleFieldRegex(line *v1.DockerfileLineRuleField) (*lineRuleField
 	}, nil
 }
 
+// UpdateRegistry updates image processors map of active registries
+func (i *ImageProcessor) UpdateRegistry(registry registryTypes.ImageRegistry) {
+	i.registryMutex.Lock()
+	defer i.registryMutex.Unlock()
+	i.registries[registry.ProtoRegistry().Name] = registry
+}
+
+// UpdateScanner updates image processors map of active scanners
+func (i *ImageProcessor) UpdateScanner(scanner scannerTypes.ImageScanner) {
+	i.scannerMutex.Lock()
+	defer i.scannerMutex.Unlock()
+	i.scanners[scanner.ProtoScanner().Name] = scanner
+}
+
 func (i *ImageProcessor) addRegexImagePolicy(policy *v1.ImagePolicy) error {
 	imageNameRegex, err := compileImageNamePolicyRegex(policy.GetImageName())
 	if err != nil {
@@ -134,13 +159,69 @@ func (i *ImageProcessor) addRegexImagePolicy(policy *v1.ImagePolicy) error {
 	return nil
 }
 
-// New creates a new image processor
-func New(database db.Storage) (*ImageProcessor, error) {
-	return &ImageProcessor{
-		database: database,
+func (i *ImageProcessor) initializeRegistries() error {
+	registryMap := make(map[string]registryTypes.ImageRegistry)
+	protoRegistries, err := i.database.GetRegistries(&v1.GetRegistriesRequest{})
+	if err != nil {
+		return err
+	}
+	for _, protoRegistry := range protoRegistries {
+		registry, err := registries.CreateRegistry(protoRegistry)
+		if err != nil {
+			return fmt.Errorf("error generating a registry from persisted registry data: %+v", err)
+		}
+		registryMap[protoRegistry.Name] = registry
+	}
+	i.registries = registryMap
+	return nil
+}
 
+func (i *ImageProcessor) initializeScanners() error {
+	scannerMap := make(map[string]scannerTypes.ImageScanner)
+	protoScanners, err := i.database.GetScanners(&v1.GetScannersRequest{})
+	if err != nil {
+		return err
+	}
+	for _, protoScanner := range protoScanners {
+		scanner, err := scanners.CreateScanner(protoScanner)
+		if err != nil {
+			return fmt.Errorf("error generating a registry from persisted registry data: %+v", err)
+		}
+		scannerMap[protoScanner.Name] = scanner
+	}
+	i.scanners = scannerMap
+	return nil
+}
+
+func (i *ImageProcessor) initializeImagePolicies() error {
+	imagePolicies, err := i.database.GetImagePolicies(&v1.GetImagePoliciesRequest{})
+	if err != nil {
+		return err
+	}
+	for _, imagePolicy := range imagePolicies {
+		if err := i.addRegexImagePolicy(imagePolicy); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// New creates a new image processor and initializes the registries and scanners from the DB if they exist
+func New(database db.Storage) (*ImageProcessor, error) {
+	processor := &ImageProcessor{
+		database:      database,
 		regexPolicies: make(map[string]*regexImagePolicy),
-	}, nil
+	}
+	if err := processor.initializeImagePolicies(); err != nil {
+		return nil, err
+	}
+	if err := processor.initializeRegistries(); err != nil {
+		return nil, err
+	}
+	if err := processor.initializeScanners(); err != nil {
+		return nil, err
+	}
+	return processor, nil
 }
 
 // UpdatePolicy updates the current policy in a threadsafe manner.
@@ -181,9 +262,8 @@ func (i *ImageProcessor) checkImage(deployment *v1.Deployment) ([]*v1.Alert, err
 }
 
 func (i *ImageProcessor) enrichImage(image *v1.Image) error {
-	i.policyMutex.Lock()
-	defer i.policyMutex.Unlock()
-	for _, registry := range i.database.GetRegistries() {
+	i.registryMutex.Lock()
+	for _, registry := range i.registries {
 		metadata, err := registry.Metadata(image)
 		if err != nil {
 			log.Error(err) // This will be removed, but useful for debugging at this point
@@ -192,8 +272,10 @@ func (i *ImageProcessor) enrichImage(image *v1.Image) error {
 		image.Metadata = metadata
 		break
 	}
+	i.registryMutex.Unlock()
 
-	for _, scanner := range i.database.GetScanners() {
+	i.scannerMutex.Lock()
+	for _, scanner := range i.scanners {
 		scan, err := scanner.GetLastScan(image)
 		if err != nil {
 			log.Error(err)
@@ -202,8 +284,8 @@ func (i *ImageProcessor) enrichImage(image *v1.Image) error {
 		image.Scan = scan
 		break
 	}
+	i.scannerMutex.Unlock()
 
 	// Store image in the database
-	i.database.AddImage(image)
-	return nil
+	return i.database.AddImage(image)
 }

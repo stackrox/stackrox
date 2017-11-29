@@ -24,11 +24,11 @@ func (suite *BoltDeploymentTestSuite) SetupSuite() {
 	if err != nil {
 		suite.FailNow("Failed to get temporary directory", err.Error())
 	}
-	db, err := MakeBoltDB(tmpDir)
+	db, err := New(tmpDir)
 	if err != nil {
 		suite.FailNow("Failed to make BoltDB", err.Error())
 	}
-	suite.BoltDB = db.(*BoltDB)
+	suite.BoltDB = db
 }
 
 func (suite *BoltDeploymentTestSuite) TeardownSuite() {

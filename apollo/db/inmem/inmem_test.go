@@ -18,7 +18,7 @@ func createBoltDB() (db.Storage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get temporary directory: %v", err.Error())
 	}
-	db, err := boltdb.MakeBoltDB(tmpDir)
+	db, err := boltdb.New(tmpDir)
 	if err != nil {
 		return nil, err
 	}

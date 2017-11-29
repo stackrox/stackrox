@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
@@ -12,6 +11,8 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // NewBenchmarkService returns the BenchmarkService API.
@@ -40,13 +41,18 @@ func (s *BenchmarkService) RegisterServiceHandlerFromEndpoint(ctx context.Contex
 
 // GetBenchmarkResults retrieves benchmark results based on the request filters
 func (s *BenchmarkService) GetBenchmarkResults(ctx context.Context, request *v1.GetBenchmarksRequest) (*v1.GetBenchmarksResponse, error) {
-	benchmarks := s.storage.GetBenchmarks(request)
+	benchmarks, err := s.storage.GetBenchmarks(request)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 	return &v1.GetBenchmarksResponse{Benchmarks: benchmarks}, nil
 }
 
 // PostBenchmarkResult inserts a new benchmark result into the system
 func (s *BenchmarkService) PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkPayload) (*empty.Empty, error) {
-	s.storage.AddBenchmark(request)
+	if err := s.storage.AddBenchmark(request); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 	return &empty.Empty{}, nil
 }
 
@@ -56,7 +62,7 @@ func (s *BenchmarkService) PostBenchmarkSchedule(ctx context.Context, request *v
 		s.schedule.Disable()
 		return &empty.Empty{}, nil
 	} else if request.IntervalDays == 0 {
-		return nil, errors.New("enabling benchmark schedule requires a nonzero interval")
+		return nil, status.Error(codes.Internal, "enabling benchmark schedule requires a nonzero interval")
 	}
 
 	log.Infof("Enabling benchmark schedule with interval %v days", request.IntervalDays)
@@ -68,7 +74,7 @@ func (s *BenchmarkService) PostBenchmarkSchedule(ctx context.Context, request *v
 func (s *BenchmarkService) GetBenchmarkSchedule(ctx context.Context, _ *empty.Empty) (*v1.GetBenchmarkScheduleResponse, error) {
 	protoNextScheduled, err := ptypes.TimestampProto(s.schedule.NextScheduled)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &v1.GetBenchmarkScheduleResponse{
@@ -80,6 +86,8 @@ func (s *BenchmarkService) GetBenchmarkSchedule(ctx context.Context, _ *empty.Em
 
 // TriggerBenchmark triggers a benchmark launch asynchronously
 func (s *BenchmarkService) TriggerBenchmark(ctx context.Context, request *v1.TriggerBenchmarkRequest) (*empty.Empty, error) {
-	err := s.schedule.Launch()
-	return &empty.Empty{}, err
+	if err := s.schedule.Launch(); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &empty.Empty{}, nil
 }

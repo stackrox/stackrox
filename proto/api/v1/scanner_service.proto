@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "v1";
 
 import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
 
 package v1;
 
@@ -28,9 +29,16 @@ service ScannerService {
         };
     }
 
-    rpc PostScanner(Scanner) returns (Scanner) {
+    rpc PostScanner(Scanner) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             post: "/v1/scanners"
+            body: "*"
+        };
+    }
+
+    rpc PutScanner(Scanner) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/v1/scanners/{name}"
             body: "*"
         };
     }

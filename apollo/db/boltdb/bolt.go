@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/boltdb/bolt"
 )
@@ -18,8 +17,8 @@ type BoltDB struct {
 	*bolt.DB
 }
 
-// MakeBoltDB returns an instance of the persistent BoltDB store
-func MakeBoltDB(dbPath string) (db.Storage, error) {
+// New returns an instance of the persistent BoltDB store
+func New(dbPath string) (*BoltDB, error) {
 	db, err := bolt.Open(filepath.Join(dbPath, "apollo.db"), 0600, nil)
 	if err != nil {
 		return nil, err
@@ -37,6 +36,9 @@ func initializeTables(db *bolt.DB) error {
 		if _, err := tx.CreateBucketIfNotExists([]byte(alertBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
+		if _, err := tx.CreateBucketIfNotExists([]byte(benchmarkBucket)); err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
 		if _, err := tx.CreateBucketIfNotExists([]byte(deploymentBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
@@ -44,6 +46,12 @@ func initializeTables(db *bolt.DB) error {
 			return fmt.Errorf("create bucket: %s", err)
 		}
 		if _, err := tx.CreateBucketIfNotExists([]byte(imagePolicyBucket)); err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		if _, err := tx.CreateBucketIfNotExists([]byte(registryBucket)); err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		if _, err := tx.CreateBucketIfNotExists([]byte(scannerBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
 		return nil

@@ -1,11 +1,12 @@
 package service
 
 import (
-	"fmt"
-
 	"bitbucket.org/stack-rox/apollo/apollo/db"
+	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
 	"bitbucket.org/stack-rox/apollo/apollo/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/secrets"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -14,15 +15,17 @@ import (
 )
 
 // NewRegistryService returns the RegistryService API.
-func NewRegistryService(storage db.Storage) *RegistryService {
+func NewRegistryService(storage db.RegistryStorage, processor *imageprocessor.ImageProcessor) *RegistryService {
 	return &RegistryService{
-		storage: storage,
+		storage:   storage,
+		processor: processor,
 	}
 }
 
 // RegistryService is the struct that manages the Registry API
 type RegistryService struct {
-	storage db.RegistryStorage
+	storage   db.RegistryStorage
+	processor *imageprocessor.ImageProcessor
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -35,41 +38,49 @@ func (s *RegistryService) RegisterServiceHandlerFromEndpoint(ctx context.Context
 	return v1.RegisterRegistryServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 }
 
-// secretKeys lists the keys that have secret values so we should scrub the keys out of the map before returning from the api
-var secretKeys = []string{
-	"password",
-	"token",
-}
-
 // GetRegistries retrieves all registries that matches the request filters
 func (s *RegistryService) GetRegistries(ctx context.Context, request *v1.GetRegistriesRequest) (*v1.GetRegistriesResponse, error) {
-	registriesWithSecrets := s.storage.GetRegistries()
+	registriesWithSecrets, err := s.storage.GetRegistries(request)
+	if err != nil {
+		return nil, err
+	}
 	registriesWithoutSecrets := make([]*v1.Registry, 0, len(registriesWithSecrets))
-	for name, registryWithSecret := range registriesWithSecrets {
-		config := registryWithSecret.Config()
-		for _, secretKey := range secretKeys {
-			delete(config, secretKey)
-		}
+	for _, registryWithSecret := range registriesWithSecrets {
+		scrubbedConfig := secrets.ScrubSecrets(registryWithSecret.Config)
 		registriesWithoutSecrets = append(registriesWithoutSecrets, &v1.Registry{
-			Name:     name,
-			Endpoint: registryWithSecret.Endpoint(),
-			Type:     registryWithSecret.Type(),
-			Config:   config,
+			Name:     registryWithSecret.Name,
+			Endpoint: registryWithSecret.Endpoint,
+			Type:     registryWithSecret.Type,
+			Config:   scrubbedConfig,
 		})
 	}
 	return &v1.GetRegistriesResponse{Registries: registriesWithoutSecrets}, nil
 }
 
-// PostRegistry inserts a new registry into the system
-func (s *RegistryService) PostRegistry(ctx context.Context, request *v1.Registry) (*v1.Registry, error) {
-	creator, exists := registries.Registry[request.Type]
-	if !exists {
-		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("Registry with type %v does not exist", request.Type))
-	}
-	registry, err := creator(request.Endpoint, request.Config)
+// PutRegistry updates a registry in the system
+func (s *RegistryService) PutRegistry(ctx context.Context, request *v1.Registry) (*empty.Empty, error) {
+	// creates and validates the configuration
+	registry, err := registries.CreateRegistry(request)
 	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := s.storage.UpdateRegistry(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	s.storage.AddRegistry(request.Name, registry)
-	return request, nil
+	s.processor.UpdateRegistry(registry)
+	return &empty.Empty{}, nil
+}
+
+// PostRegistry inserts a new registry into the system if it doesn't already exist
+func (s *RegistryService) PostRegistry(ctx context.Context, request *v1.Registry) (*empty.Empty, error) {
+	// creates and validates the configuration
+	registry, err := registries.CreateRegistry(request)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := s.storage.AddRegistry(request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	s.processor.UpdateRegistry(registry)
+	return &empty.Empty{}, nil
 }

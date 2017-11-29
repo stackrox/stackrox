@@ -41,8 +41,8 @@ func New(persistentStorage db.Storage) *InMemoryStore {
 }
 
 // Load initializes the in-memory database from the persistent database
-func (i *InMemoryStore) Load() error {
-	v := reflect.ValueOf(i).Elem()
+func (s *InMemoryStore) Load() error {
+	v := reflect.ValueOf(s).Elem()
 	t := v.Type()
 
 	for i := 0; i < t.NumField(); i++ {
@@ -53,14 +53,16 @@ func (i *InMemoryStore) Load() error {
 			if err := vField.Interface().(loader).loadFromPersistent(); err != nil {
 				return fmt.Errorf("unable to load data from persistent storage for %s", tField.Name)
 			}
+		} else {
+			log.Infof("Field %v does not support loading from persistence", tField.Name)
 		}
 	}
 	return nil
 }
 
 // Close closes the persistent database
-func (i *InMemoryStore) Close() {
-	i.persistent.Close()
+func (s *InMemoryStore) Close() {
+	s.persistent.Close()
 }
 
 type loader interface {

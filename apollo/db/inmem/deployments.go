@@ -12,10 +12,10 @@ type deploymentStore struct {
 	deployments      map[string]*v1.Deployment
 	deploymentsMutex sync.Mutex
 
-	persistent db.Storage
+	persistent db.DeploymentStorage
 }
 
-func newDeploymentStore(persistent db.Storage) *deploymentStore {
+func newDeploymentStore(persistent db.DeploymentStorage) *deploymentStore {
 	return &deploymentStore{
 		deployments: make(map[string]*v1.Deployment),
 		persistent:  persistent,

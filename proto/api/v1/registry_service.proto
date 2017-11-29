@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "v1";
 
 import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
 
 package v1;
 
@@ -29,9 +30,16 @@ service RegistryService {
         };
     }
 
-    rpc PostRegistry(Registry) returns (Registry) {
+    rpc PostRegistry(Registry) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             post: "/v1/registries"
+            body: "*"
+        };
+    }
+
+    rpc PutRegistry(Registry) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/v1/registries/{name}"
             body: "*"
         };
     }

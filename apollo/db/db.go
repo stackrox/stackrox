@@ -1,8 +1,6 @@
 package db
 
 import (
-	registryTypes "bitbucket.org/stack-rox/apollo/apollo/registries/types"
-	scannerTypes "bitbucket.org/stack-rox/apollo/apollo/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
@@ -31,8 +29,9 @@ type AlertStorage interface {
 
 // BenchmarkStorage provides storage functionality for benchmarks.
 type BenchmarkStorage interface {
-	AddBenchmark(benchmark *v1.BenchmarkPayload)
-	GetBenchmarks(request *v1.GetBenchmarksRequest) []*v1.BenchmarkPayload
+	GetBenchmark(id string) (*v1.BenchmarkPayload, bool, error)
+	GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*v1.BenchmarkPayload, error)
+	AddBenchmark(benchmark *v1.BenchmarkPayload) error
 }
 
 // DeploymentStorage provides storage functionality for deployments.
@@ -62,14 +61,18 @@ type ImageStorage interface {
 
 // RegistryStorage provide storage functionality for registries.
 type RegistryStorage interface {
-	AddRegistry(name string, registry registryTypes.ImageRegistry)
-	RemoveRegistry(name string)
-	GetRegistries() map[string]registryTypes.ImageRegistry
+	GetRegistry(name string) (*v1.Registry, bool, error)
+	GetRegistries(request *v1.GetRegistriesRequest) ([]*v1.Registry, error)
+	AddRegistry(registry *v1.Registry) error
+	UpdateRegistry(registry *v1.Registry) error
+	RemoveRegistry(name string) error
 }
 
 // ScannerStorage provide storage functionality for scanner.
 type ScannerStorage interface {
-	AddScanner(name string, scanner scannerTypes.ImageScanner)
-	RemoveScanner(name string)
-	GetScanners() map[string]scannerTypes.ImageScanner
+	GetScanner(name string) (*v1.Scanner, bool, error)
+	GetScanners(request *v1.GetScannersRequest) ([]*v1.Scanner, error)
+	AddScanner(scanner *v1.Scanner) error
+	UpdateScanner(scanner *v1.Scanner) error
+	RemoveScanner(name string) error
 }
