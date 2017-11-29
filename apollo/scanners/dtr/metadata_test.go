@@ -24,7 +24,15 @@ var metadataPayload = `{
   }
  }`
 
-func getExpectedMetadata() (*ScannerMetadata, error) {
+var featurePayload = `{
+  "scanningEnabled": true,
+  "scanningLicensed": true,
+  "promotionLicensed": true,
+  "db_version": 290,
+  "ucpHost": "10.138.0.2:7443"
+ }`
+
+func getExpectedMetadata() (*scannerMetadata, error) {
 	scannerUpdate, err := time.Parse(time.RFC3339Nano, "2017-11-16T21:07:18.934766247Z")
 	if err != nil {
 		return nil, err
@@ -38,7 +46,7 @@ func getExpectedMetadata() (*ScannerMetadata, error) {
 		return nil, err
 	}
 
-	return &ScannerMetadata{
+	return &scannerMetadata{
 		State:              0,
 		ScannerVersion:     3,
 		ScannerUpdatedAt:   scannerUpdate,
@@ -55,6 +63,16 @@ func getExpectedMetadata() (*ScannerMetadata, error) {
 	}, nil
 }
 
+func getExpectedFeatures() *metadataFeatures {
+	return &metadataFeatures{
+		ScanningEnabled:   true,
+		ScanningLicensed:  true,
+		PromotionLicensed: true,
+		DBVersion:         290,
+		UCPHost:           "10.138.0.2:7443",
+	}
+}
+
 func TestParseMetadata(t *testing.T) {
 	meta, err := parseMetadata([]byte(metadataPayload))
 	require.Nil(t, err)
@@ -62,4 +80,10 @@ func TestParseMetadata(t *testing.T) {
 	expectedMeta, err := getExpectedMetadata()
 	require.Nil(t, err)
 	assert.Equal(t, expectedMeta, meta)
+}
+
+func TestParseFeatures(t *testing.T) {
+	features, err := parseFeatures([]byte(featurePayload))
+	require.Nil(t, err)
+	assert.Equal(t, getExpectedFeatures(), features)
 }

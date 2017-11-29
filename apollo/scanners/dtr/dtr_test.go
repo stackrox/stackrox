@@ -8,8 +8,6 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/apollo/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,7 +32,7 @@ func handleAuth(r *http.Request) error {
 func (suite *DTRSuite) SetupSuite() {
 	masterRouter := http.NewServeMux()
 	// Handle
-	masterRouter.HandleFunc("/api/v0/imagescan/repositories/docker/nginx/1.10/linux/amd64", func(w http.ResponseWriter, r *http.Request) {
+	masterRouter.HandleFunc("/api/v0/imagescan/repositories/docker/nginx/1.10", func(w http.ResponseWriter, r *http.Request) {
 		if err := handleAuth(r); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -59,6 +57,15 @@ func (suite *DTRSuite) SetupSuite() {
 		fmt.Fprintf(w, metadataPayload)
 	})
 
+	masterRouter.HandleFunc("/api/v0/meta/features", func(w http.ResponseWriter, r *http.Request) {
+		if err := handleAuth(r); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, featurePayload)
+	})
+
 	masterServer := httptest.NewServer(masterRouter)
 	suite.server = masterServer
 
@@ -79,11 +86,12 @@ func (suite *DTRSuite) TearDownSuite() {
 
 func (suite *DTRSuite) TestGetStatus() {
 	d := suite.dtr.(*dtr)
-	meta, err := d.getStatus()
-	require.Nil(suite.T(), err)
+	meta, features, err := d.getStatus()
+	suite.NoError(err)
 
 	expectedMeta, err := getExpectedMetadata()
-	assert.Equal(suite.T(), expectedMeta, meta)
+	suite.Equal(expectedMeta, meta)
+	suite.Equal(getExpectedFeatures(), features)
 }
 
 func (suite *DTRSuite) TestGetScans() {
@@ -95,14 +103,14 @@ func (suite *DTRSuite) TestGetScans() {
 		Tag:      "1.10",
 	}
 	scans, err := d.GetScans(image)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	expectedScanSummaries, err := getExpectedImageScans()
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// convert scans here. It relies on converting the scan but is not the conversion test
 	expectedScans := convertTagScanSummariesToImageScans(d.server, expectedScanSummaries)
-	assert.Equal(suite.T(), expectedScans, scans)
+	suite.Equal(expectedScans, scans)
 }
 
 func (suite *DTRSuite) TestGetLastScan() {
@@ -114,14 +122,14 @@ func (suite *DTRSuite) TestGetLastScan() {
 		Tag:      "1.10",
 	}
 	scan, err := d.GetLastScan(image)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	expectedScanSummaries, err := getExpectedImageScans()
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// convert scans here. It relies on converting the scan but is not the conversion test
 	expectedScans := convertTagScanSummariesToImageScans(d.server, expectedScanSummaries)
-	assert.Equal(suite.T(), expectedScans[0], scan)
+	suite.Equal(expectedScans[0], scan)
 }
 
 func (suite *DTRSuite) TestScan() {
@@ -132,5 +140,5 @@ func (suite *DTRSuite) TestScan() {
 		Tag:      "1.10",
 	}
 	err := d.Scan(image)
-	require.Nil(suite.T(), err)
+	suite.NoError(err)
 }

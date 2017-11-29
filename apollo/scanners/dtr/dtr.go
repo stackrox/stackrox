@@ -31,13 +31,8 @@ type dtr struct {
 	username string
 	password string
 
-	Metadata *ScannerMetadata
-}
-
-func parseDTRImageScans(data []byte) ([]*tagScanSummary, error) {
-	var scans []*tagScanSummary
-	err := json.Unmarshal(data, &scans)
-	return scans, err
+	metadata *scannerMetadata
+	features *metadataFeatures
 }
 
 func newScanner(endpoint string, config map[string]string) (scannerTypes.ImageScanner, error) {
@@ -74,8 +69,16 @@ func newScanner(endpoint string, config map[string]string) (scannerTypes.ImageSc
 	return scanner, nil
 }
 
-func parseMetadata(body []byte) (*ScannerMetadata, error) {
-	var meta ScannerMetadata
+func parseMetadata(body []byte) (*scannerMetadata, error) {
+	var meta scannerMetadata
+	if err := json.Unmarshal(body, &meta); err != nil {
+		return nil, err
+	}
+	return &meta, nil
+}
+
+func parseFeatures(body []byte) (*metadataFeatures, error) {
+	var meta metadataFeatures
 	if err := json.Unmarshal(body, &meta); err != nil {
 		return nil, err
 	}
@@ -91,17 +94,17 @@ func (d *dtr) refreshMetadata() {
 }
 
 func (d *dtr) fetchMetadata() error {
-	meta, err := d.getStatus()
+	meta, features, err := d.getStatus()
 	if err != nil {
 		return err
 	}
-	d.Metadata = meta
+	d.metadata = meta
+	d.features = features
 	return nil
 }
 
-func (d *dtr) getStatus() (*ScannerMetadata, error) {
-	metadataURL := fmt.Sprintf("%v/api/v0/imagescan/status", d.server)
-	req, err := http.NewRequest("GET", metadataURL, nil)
+func (d *dtr) sendRequest(method, urlPrefix string) ([]byte, error) {
+	req, err := http.NewRequest(method, d.server+urlPrefix, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -115,41 +118,44 @@ func (d *dtr) getStatus() (*ScannerMetadata, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-
-	meta, err := parseMetadata(body)
-	if err != nil {
-		return nil, err
-	}
-	return meta, nil
+	return body, nil
 }
 
-func (d *dtr) initialize() error {
-	meta, err := d.getStatus()
+func (d *dtr) getStatus() (*scannerMetadata, *metadataFeatures, error) {
+	body, err := d.sendRequest("GET", "/api/v0/imagescan/status")
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-	d.Metadata = meta
-	return nil
+	meta, err := parseMetadata(body)
+	if err != nil {
+		return nil, nil, err
+	}
+	body, err = d.sendRequest("GET", "/api/v0/meta/features")
+	if err != nil {
+		return nil, nil, err
+	}
+	features, err := parseFeatures(body)
+	if err != nil {
+		return nil, nil, err
+	}
+	return meta, features, nil
 }
 
 // GetScan takes in an id and returns the image scan for that id if applicable
 func (d *dtr) GetScans(image *v1.Image) ([]*v1.ImageScan, error) {
-	getScanURL := fmt.Sprintf("%v/api/v0/imagescan/repositories/%v/%v/linux/amd64?detailed=true", d.server, image.Remote, image.Tag)
-	req, err := http.NewRequest("GET", getScanURL, nil)
-	req.SetBasicAuth(d.username, d.password)
-	resp, err := d.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
+	getScanURL := fmt.Sprintf("/api/v0/imagescan/repositories/%v/%v?detailed=true", image.Remote, image.Tag)
+	body, err := d.sendRequest("GET", getScanURL)
 	scans, err := parseDTRImageScans(body)
 	if err != nil {
-		return nil, err
+		scanErrors, err := parseDTRImageScanErrors(body)
+		if err != nil {
+			return nil, err
+		}
+		var errMsg string
+		for _, scanErr := range scanErrors.Errors {
+			errMsg += scanErr.Message + "\n"
+		}
+		return nil, errors.New(errMsg)
 	}
 	if len(scans) == 0 {
 		return nil, fmt.Errorf("expected to receive at least one scan for %v", image.String())
@@ -162,10 +168,7 @@ func (d *dtr) GetScans(image *v1.Image) ([]*v1.ImageScan, error) {
 //GET /api/v0/imagescan/repositories/{namespace}/{reponame}/{tag}?detailed=true
 // Scan initiates a scan of the passed id
 func (d *dtr) Scan(image *v1.Image) error {
-	scanURL := fmt.Sprintf("%v/api/v0/imagescan/scan/%v/%v/linux/amd64", d.server, image.Remote, image.Tag)
-	req, err := http.NewRequest("POST", scanURL, nil)
-	req.SetBasicAuth(d.username, d.password)
-	_, err = d.client.Do(req)
+	_, err := d.sendRequest("POST", fmt.Sprintf("/api/v0/imagescan/scan/%v/%v/linux/amd64", image.Remote, image.Tag))
 	if err != nil {
 		return err
 	}
@@ -174,8 +177,14 @@ func (d *dtr) Scan(image *v1.Image) error {
 
 // Test initiates a test of the DTR which verifies that we have the proper scan permissions
 func (d *dtr) Test() error {
-	_, err := d.getStatus()
-	return err
+	_, features, err := d.getStatus()
+	if err != nil {
+		return err
+	}
+	if !features.ScanningEnabled {
+		return errors.New("Scanning is not currently enabled on your Docker Trusted Registry")
+	}
+	return nil
 }
 
 func (d *dtr) Config() map[string]string {

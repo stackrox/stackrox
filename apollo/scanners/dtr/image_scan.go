@@ -1,6 +1,9 @@
 package dtr
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type scanStatus int
 
@@ -34,6 +37,18 @@ func (s scanStatus) String() string {
 	default:
 		return "unknown"
 	}
+}
+
+func parseDTRImageScans(data []byte) ([]*tagScanSummary, error) {
+	var scans []*tagScanSummary
+	err := json.Unmarshal(data, &scans)
+	return scans, err
+}
+
+func parseDTRImageScanErrors(data []byte) (scanErrors, error) {
+	var errors scanErrors
+	err := json.Unmarshal(data, &errors)
+	return errors, err
 }
 
 // tagScanSummary implements the results of scan from DTR
@@ -80,4 +95,14 @@ type vulnerability struct {
 	CVE     string  `json:"cve"`
 	CVSS    float32 `json:"cvss"`
 	Summary string  `json:"summary"`
+}
+
+type scanError struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+	Detail  string `json:"detail"`
+}
+
+type scanErrors struct {
+	Errors []scanError `json:"errors"`
 }
