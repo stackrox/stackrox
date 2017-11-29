@@ -33,22 +33,17 @@ func MakeBoltDB(dbPath string) (db.Storage, error) {
 }
 
 func initializeTables(db *bolt.DB) error {
-	var err error
 	return db.Update(func(tx *bolt.Tx) error {
-		_, err = tx.CreateBucketIfNotExists([]byte(alertBucket))
-		if err != nil {
+		if _, err := tx.CreateBucketIfNotExists([]byte(alertBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
-		_, err = tx.CreateBucketIfNotExists([]byte(deploymentBucket))
-		if err != nil {
+		if _, err := tx.CreateBucketIfNotExists([]byte(deploymentBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
-		_, err = tx.CreateBucketIfNotExists([]byte(imageBucket))
-		if err != nil {
+		if _, err := tx.CreateBucketIfNotExists([]byte(imageBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
-		_, err = tx.CreateBucketIfNotExists([]byte(imageRuleBucket))
-		if err != nil {
+		if _, err := tx.CreateBucketIfNotExists([]byte(imageRuleBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
 		return nil

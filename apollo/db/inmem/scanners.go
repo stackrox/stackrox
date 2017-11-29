@@ -1,24 +1,43 @@
 package inmem
 
-import "bitbucket.org/stack-rox/apollo/apollo/scanners/types"
+import (
+	"sync"
+
+	"bitbucket.org/stack-rox/apollo/apollo/db"
+	scannerTypes "bitbucket.org/stack-rox/apollo/apollo/scanners/types"
+)
+
+type scannerStore struct {
+	scanners  map[string]scannerTypes.ImageScanner
+	scanMutex sync.Mutex
+
+	persistent db.Storage
+}
+
+func newScannerStore(persistent db.Storage) *scannerStore {
+	return &scannerStore{
+		scanners:   make(map[string]scannerTypes.ImageScanner),
+		persistent: persistent,
+	}
+}
 
 // AddScanner adds a scanner
-func (i *InMemoryStore) AddScanner(name string, scanner types.ImageScanner) {
-	i.scanMutex.Lock()
-	defer i.scanMutex.Unlock()
-	i.scanners[name] = scanner
+func (s *scannerStore) AddScanner(name string, scanner scannerTypes.ImageScanner) {
+	s.scanMutex.Lock()
+	defer s.scanMutex.Unlock()
+	s.scanners[name] = scanner
 }
 
 // RemoveScanner removes a scanner
-func (i *InMemoryStore) RemoveScanner(name string) {
-	i.scanMutex.Lock()
-	defer i.scanMutex.Unlock()
-	delete(i.scanners, name)
+func (s *scannerStore) RemoveScanner(name string) {
+	s.scanMutex.Lock()
+	defer s.scanMutex.Unlock()
+	delete(s.scanners, name)
 }
 
 // GetScanners retrieves all scanners from the db
-func (i *InMemoryStore) GetScanners() map[string]types.ImageScanner {
-	i.scanMutex.Lock()
-	defer i.scanMutex.Unlock()
-	return i.scanners
+func (s *scannerStore) GetScanners() map[string]scannerTypes.ImageScanner {
+	s.scanMutex.Lock()
+	defer s.scanMutex.Unlock()
+	return s.scanners
 }

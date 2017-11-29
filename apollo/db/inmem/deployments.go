@@ -2,75 +2,86 @@ package inmem
 
 import (
 	"sort"
+	"sync"
 
+	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
-func (i *InMemoryStore) loadDeployments() error {
-	i.deploymentsMutex.Lock()
-	defer i.deploymentsMutex.Unlock()
-	deployments, err := i.persistent.GetDeployments()
+type deploymentStore struct {
+	deployments      map[string]*v1.Deployment
+	deploymentsMutex sync.Mutex
+
+	persistent db.Storage
+}
+
+func newDeploymentStore(persistent db.Storage) *deploymentStore {
+	return &deploymentStore{
+		deployments: make(map[string]*v1.Deployment),
+		persistent:  persistent,
+	}
+}
+
+func (s *deploymentStore) loadFromPersistent() error {
+	s.deploymentsMutex.Lock()
+	defer s.deploymentsMutex.Unlock()
+	deployments, err := s.persistent.GetDeployments()
 	if err != nil {
 		return err
 	}
 	for _, d := range deployments {
-		i.deployments[d.Id] = d
+		s.deployments[d.Id] = d
 	}
 	return nil
 }
 
-// GetDeployment retrieves a deployment by id.
-func (i *InMemoryStore) GetDeployment(id string) (d *v1.Deployment, exist bool, err error) {
-	i.deploymentsMutex.Lock()
-	defer i.deploymentsMutex.Unlock()
-	d, exist = i.deployments[id]
+func (s *deploymentStore) GetDeployment(id string) (d *v1.Deployment, exist bool, err error) {
+	s.deploymentsMutex.Lock()
+	defer s.deploymentsMutex.Unlock()
+	d, exist = s.deployments[id]
 	return
 }
 
-// GetDeployments retrieves all deployments.
-func (i *InMemoryStore) GetDeployments() (deployments []*v1.Deployment, err error) {
-	i.deploymentsMutex.Lock()
-	defer i.deploymentsMutex.Unlock()
-	deployments = make([]*v1.Deployment, 0, len(i.deployments))
-	for _, d := range i.deployments {
+func (s *deploymentStore) GetDeployments() (deployments []*v1.Deployment, err error) {
+	s.deploymentsMutex.Lock()
+	defer s.deploymentsMutex.Unlock()
+	deployments = make([]*v1.Deployment, 0, len(s.deployments))
+	for _, d := range s.deployments {
 		deployments = append(deployments, d)
 	}
 	sort.SliceStable(deployments, func(i, j int) bool { return deployments[i].Id < deployments[j].Id })
 	return
 }
 
-// AddDeployment adds a new deployment.
-func (i *InMemoryStore) AddDeployment(deployment *v1.Deployment) (err error) {
-	if err = i.persistent.AddDeployment(deployment); err != nil {
+func (s *deploymentStore) AddDeployment(deployment *v1.Deployment) (err error) {
+	if err = s.persistent.AddDeployment(deployment); err != nil {
 		return
 	}
-	i.upsertDeployment(deployment)
+	s.upsertDeployment(deployment)
 	return
 }
 
-// UpdateDeployment updates a deployment.
-func (i *InMemoryStore) UpdateDeployment(deployment *v1.Deployment) (err error) {
-	if err = i.persistent.UpdateDeployment(deployment); err != nil {
+func (s *deploymentStore) UpdateDeployment(deployment *v1.Deployment) (err error) {
+	if err = s.persistent.UpdateDeployment(deployment); err != nil {
 		return
 	}
-	i.upsertDeployment(deployment)
+	s.upsertDeployment(deployment)
 	return
 }
 
-func (i *InMemoryStore) upsertDeployment(deployment *v1.Deployment) {
-	i.alertMutex.Lock()
-	defer i.alertMutex.Unlock()
-	i.deployments[deployment.Id] = deployment
+func (s *deploymentStore) upsertDeployment(deployment *v1.Deployment) {
+	s.deploymentsMutex.Lock()
+	defer s.deploymentsMutex.Unlock()
+	s.deployments[deployment.Id] = deployment
 }
 
-// RemoveDeployment removes a deployment.
-func (i *InMemoryStore) RemoveDeployment(id string) (err error) {
-	if err = i.persistent.RemoveDeployment(id); err != nil {
+func (s *deploymentStore) RemoveDeployment(id string) (err error) {
+	if err = s.persistent.RemoveDeployment(id); err != nil {
 		return
 	}
 
-	i.deploymentsMutex.Lock()
-	defer i.deploymentsMutex.Unlock()
-	delete(i.deployments, id)
+	s.deploymentsMutex.Lock()
+	defer s.deploymentsMutex.Unlock()
+	delete(s.deployments, id)
 	return
 }

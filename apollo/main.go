@@ -37,6 +37,9 @@ func main() {
 		panic(err)
 	}
 	apollo.database = inmem.New(persistence)
+	if err = apollo.database.Load(); err != nil {
+		log.Fatal(err)
+	}
 
 	const platform = "swarm"
 	listenerCreator, exists := listeners.Registry[platform]
