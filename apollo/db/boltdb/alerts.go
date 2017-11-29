@@ -8,6 +8,24 @@ import (
 
 const alertBucket = "alerts"
 
+// GetAlert returns an alert with given id.
+func (b *BoltDB) GetAlert(id string) (alert *v1.Alert, exists bool, err error) {
+	alert = new(v1.Alert)
+	err = b.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(alertBucket))
+		val := b.Get([]byte(id))
+		if val == nil {
+			exists = false
+			return nil
+		}
+
+		exists = true
+		return proto.Unmarshal(val, alert)
+	})
+
+	return
+}
+
 // GetAlerts ignores the request and gives all values
 func (b *BoltDB) GetAlerts(*v1.GetAlertsRequest) ([]*v1.Alert, error) {
 	var alerts []*v1.Alert

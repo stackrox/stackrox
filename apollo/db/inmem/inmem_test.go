@@ -41,13 +41,13 @@ func TestLoad(t *testing.T) {
 		Id: "id1",
 	}
 	persistent.AddAlert(alert)
-	imageRule := &v1.ImageRule{
-		Name: "rule1",
+	imagePolicy := &v1.ImagePolicy{
+		Name: "policy1",
 	}
-	persistent.AddImageRule(imageRule)
+	persistent.AddImagePolicy(imagePolicy)
 	inmem.Load()
 
 	assert.Equal(t, map[string]*v1.Image{image.Sha: image}, inmem.images)
 	assert.Equal(t, map[string]*v1.Alert{alert.Id: alert}, inmem.alerts)
-	assert.Equal(t, map[string]*v1.ImageRule{imageRule.Name: imageRule}, inmem.imageRules)
+	assert.Equal(t, map[string]*v1.ImagePolicy{imagePolicy.Name: imagePolicy}, inmem.imagePolicies)
 }

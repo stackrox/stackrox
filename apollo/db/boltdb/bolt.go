@@ -43,7 +43,7 @@ func initializeTables(db *bolt.DB) error {
 		if _, err := tx.CreateBucketIfNotExists([]byte(imageBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(imageRuleBucket)); err != nil {
+		if _, err := tx.CreateBucketIfNotExists([]byte(imagePolicyBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
 		return nil

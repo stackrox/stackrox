@@ -14,7 +14,7 @@ type Storage interface {
 	AlertStorage
 	BenchmarkStorage
 	DeploymentStorage
-	ImageRuleStorage
+	ImagePolicyStorage
 	ImageStorage
 	RegistryStorage
 	ScannerStorage
@@ -22,6 +22,7 @@ type Storage interface {
 
 // AlertStorage provides storage functionality for alerts.
 type AlertStorage interface {
+	GetAlert(id string) (*v1.Alert, bool, error)
 	GetAlerts(request *v1.GetAlertsRequest) ([]*v1.Alert, error)
 	AddAlert(alert *v1.Alert) error
 	UpdateAlert(alert *v1.Alert) error
@@ -43,12 +44,12 @@ type DeploymentStorage interface {
 	RemoveDeployment(id string) error
 }
 
-// ImageRuleStorage provides storage functionality for image rules.
-type ImageRuleStorage interface {
-	GetImageRules(request *v1.GetImageRulesRequest) ([]*v1.ImageRule, error)
-	AddImageRule(*v1.ImageRule) error
-	UpdateImageRule(*v1.ImageRule) error
-	RemoveImageRule(string) error
+// ImagePolicyStorage provides storage functionality for image policies.
+type ImagePolicyStorage interface {
+	GetImagePolicies(request *v1.GetImagePoliciesRequest) ([]*v1.ImagePolicy, error)
+	AddImagePolicy(*v1.ImagePolicy) error
+	UpdateImagePolicy(*v1.ImagePolicy) error
+	RemoveImagePolicy(string) error
 }
 
 // ImageStorage provide storage functionality for images.

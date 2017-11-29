@@ -22,7 +22,7 @@ func NewRegistryService(storage db.Storage) *RegistryService {
 
 // RegistryService is the struct that manages the Registry API
 type RegistryService struct {
-	storage db.Storage
+	storage db.RegistryStorage
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

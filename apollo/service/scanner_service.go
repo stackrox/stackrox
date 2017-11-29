@@ -22,7 +22,7 @@ func NewScannerService(storage db.Storage) *ScannerService {
 
 // ScannerService is the struct that manages the Scanner API
 type ScannerService struct {
-	storage db.Storage
+	storage db.ScannerStorage
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

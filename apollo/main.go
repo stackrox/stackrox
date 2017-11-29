@@ -90,11 +90,15 @@ func newApollo() *apollo {
 
 func (a *apollo) startGRPCServer() {
 	a.server = grpc.NewAPI()
-	ruleService := service.NewRuleService(a.database, a.imageProcessor)
-	a.server.Register(ruleService)
+
+	alertService := service.NewAlertService(a.database)
+	a.server.Register(alertService)
 
 	benchmarkService := service.NewBenchmarkService(a.database, a.benchScheduler)
 	a.server.Register(benchmarkService)
+
+	imagePolicyService := service.NewImagePolicyService(a.database, a.imageProcessor)
+	a.server.Register(imagePolicyService)
 
 	registryService := service.NewRegistryService(a.database)
 	a.server.Register(registryService)
@@ -119,15 +123,18 @@ func (a *apollo) processForever() {
 			log.Infof("Received new Deployment Event: %#v", event)
 			switch event.Action {
 			case types.Create, types.Update:
-				alerts, err := a.imageProcessor.Process(event.Deployment.GetImage())
+				alerts, err := a.imageProcessor.Process(event.Deployment)
 				if err != nil {
 					log.Error(err)
 					continue
 				}
 				for _, alert := range alerts {
-					log.Warnf("Alert Generated: %v with Severity %v due to rule %v", alert.Id, alert.Severity.String(), alert.RuleName)
-					for _, violation := range alert.Violations {
-						log.Warnf("\t %v - %v", violation.Severity.String(), violation.Message)
+					log.Warnf("Alert Generated: %v with Severity %v due to image policy %v", alert.Id, alert.Severity.String(), alert.GetPolicy().GetName())
+					for _, violation := range alert.GetPolicy().GetViolations() {
+						log.Warnf("\t %v", violation.Message)
+					}
+					if err := a.database.AddAlert(alert); err != nil {
+						log.Error(err)
 					}
 				}
 			default:

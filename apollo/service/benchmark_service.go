@@ -24,7 +24,7 @@ func NewBenchmarkService(storage db.Storage, schedule *scheduler.DockerBenchSche
 
 // BenchmarkService is the struct that manages the benchmark API
 type BenchmarkService struct {
-	storage  db.Storage
+	storage  db.BenchmarkStorage
 	schedule *scheduler.DockerBenchScheduler
 }
 

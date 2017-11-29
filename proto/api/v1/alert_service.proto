@@ -3,43 +3,84 @@ syntax = "proto3";
 option go_package = "v1";
 
 import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 import "v1/common.proto";
+import "v1/image_policy_service.proto";
+import "v1/deployment_service.proto";
 
 package v1;
 
-message Violation {
-    string message    = 1;
-    Severity severity = 2;
-}
-
-message Resource {
-    string id   = 1;
-    string name = 2;
-    string type = 3;
-}
-
 message Alert {
-    string id                     = 1;
-    string rule_name              = 2;
-    Resource resource             = 3;
-    Severity severity             = 4;
-    repeated Violation violations = 5;
+    string id                       = 1;
+    Policy policy                   = 2;
+    Deployment deployment           = 3;
+    Severity severity               = 4;
+    google.protobuf.Timestamp time  = 5;
+}
+
+enum Policy_Category {
+    UNSET_CATEGORY          = 0;
+    IMAGE_ASSURANCE         = 1;
+    CONTAINER_CAPABILITIES  = 2;
+}
+
+message Policy {
+    Policy_Category category        = 1;
+    string name                     = 2;
+    message Violation {
+        string message    = 1;
+    }
+    repeated Violation violations   = 3;
+
+    oneof policy_oneof {
+        ImagePolicy image_policy    = 4;
+    }
+}
+
+message GetAlertRequest {
+    string id          = 1;
 }
 
 message GetAlertsRequest {
-    string id          = 1;
-    Severity severity  = 2;
+    Policy_Category category        = 1;
+    string policy_name              = 2;
+    Severity severity               = 3;
+    google.protobuf.Timestamp since = 4;
 }
 
 message GetAlertsResponse {
     repeated Alert alerts = 1;
 }
 
+message GetAlertsGroupResponse {
+    message PolicyGroup {
+        string policy = 1;
+        repeated Alert alerts = 2;
+    }
+    message CategoryGroup {
+        Policy_Category category = 1;
+        repeated PolicyGroup by_policy = 2;
+    }
+    repeated CategoryGroup by_category = 1;
+}
+
 service AlertService {
+
+    rpc GetAlert (GetAlertRequest) returns (Alert) {
+        option (google.api.http) = {
+            get: "/v1/alert/{id}"
+        };
+    }
 
     rpc GetAlerts (GetAlertsRequest) returns (GetAlertsResponse) {
         option (google.api.http) = {
             get: "/v1/alerts"
+        };
+    }
+
+    rpc GetAlertsGroup (GetAlertsRequest) returns (GetAlertsGroupResponse) {
+        option (google.api.http) = {
+            get: "/v1/alerts/groups"
         };
     }
 

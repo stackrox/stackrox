@@ -27,75 +27,75 @@ enum MathOP {
     AVG = 2;
 }
 
-message NumericalRule {
+message NumericalPolicy {
     Comparator op  = 1;
     MathOP math_op = 2;
     float value    = 3;
 }
 
 // Image Name
-message ImageNameRule {
+message ImageNamePolicy {
     string registry        = 1; // e.g. docker.io
     string namespace       = 2; // e.g. stackrox
     string repo            = 3; // e.g. container-summarizer
     string tag             = 4; // e.g. latest
 }
 
-message ImageRule {
-    // Rule Metadata
+message ImagePolicy {
+    // Policy Metadata
     string name                        = 1;
     Severity severity                  = 2;
 
-    ImageNameRule image_name           = 3;
+    ImageNamePolicy image_name = 3;
 
     // Registry metadata
     int64 image_age_days               = 4;
     DockerfileLineRuleField line_rule  = 5;
 
     // Scan Metadata
-    NumericalRule cvss                 = 6;
+    NumericalPolicy cvss = 6;
     string cve                         = 7;
     string component                   = 8;
     int64 scan_age_days                = 9;
 }
 
-message ImageRules {
-    repeated ImageRule rules = 1;
-}
-
-message GetImageRulesRequest {
+message GetImagePoliciesRequest {
     string name = 1;
 }
 
-message DeleteImageRuleRequest {
+message DeleteImagePolicyRequest {
     string name = 1;
 }
 
-service ImageRuleService {
+message ImagePoliciesResponse {
+    repeated ImagePolicy policies = 1;
+}
 
-    rpc GetImageRules(GetImageRulesRequest) returns (ImageRules) {
+service ImagePolicyService {
+
+    rpc GetImagePolicies (GetImagePoliciesRequest) returns (ImagePoliciesResponse) {
         option (google.api.http) = {
-            get: "/v1/images/rules"
+            get: "/v1/images/policies"
         };
     }
 
-    rpc PostImageRule(ImageRule) returns (google.protobuf.Empty) {
+    rpc PostImagePolicy (ImagePolicy) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            post: "/v1/images/rules"
+            post: "/v1/images/policies"
             body: "*"
         };
     }
 
-    rpc PutImageRule(ImageRule) returns (google.protobuf.Empty) {
+    rpc PutImagePolicy (ImagePolicy) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            put: "/v1/images/rules/{name}"
+            put: "/v1/images/policies/{name}"
             body: "*"
         };
     }
 
-    rpc DeleteImageRule(DeleteImageRuleRequest) returns (google.protobuf.Empty) {
+    rpc DeleteImagePolicy (DeleteImagePolicyRequest) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            delete: "/v1/images/rules/{name}"
+            delete: "/v1/images/policies/{name}"
         };
     }
 

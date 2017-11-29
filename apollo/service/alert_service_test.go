@@ -1,0 +1,214 @@
+package service
+
+import (
+	"testing"
+
+	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"github.com/docker/docker/pkg/testutil/assert"
+	"github.com/golang/protobuf/ptypes/timestamp"
+)
+
+func TestGroupAlerts(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name     string
+		input    []*v1.Alert
+		expected *v1.GetAlertsGroupResponse
+	}{
+		{
+			name: "one category",
+			input: []*v1.Alert{
+				{
+					Id: "id1",
+					Policy: &v1.Policy{
+						Category: v1.Policy_Category_IMAGE_ASSURANCE,
+						Name:     "policy1",
+					},
+					Severity: v1.Severity_LOW_SEVERITY,
+					Time:     &timestamp.Timestamp{Seconds: 300},
+				},
+				{
+					Id: "id2",
+					Policy: &v1.Policy{
+						Category: v1.Policy_Category_IMAGE_ASSURANCE,
+						Name:     "policy2",
+					},
+					Severity: v1.Severity_HIGH_SEVERITY,
+					Time:     &timestamp.Timestamp{Seconds: 200},
+				},
+				{
+					Id: "id3",
+					Policy: &v1.Policy{
+						Category: v1.Policy_Category_IMAGE_ASSURANCE,
+						Name:     "policy1",
+					},
+					Severity: v1.Severity_LOW_SEVERITY,
+					Time:     &timestamp.Timestamp{Seconds: 100},
+				},
+			},
+			expected: &v1.GetAlertsGroupResponse{
+				ByCategory: []*v1.GetAlertsGroupResponse_CategoryGroup{
+					{
+						Category: v1.Policy_Category_IMAGE_ASSURANCE,
+						ByPolicy: []*v1.GetAlertsGroupResponse_PolicyGroup{
+							{
+								Policy: "policy1",
+								Alerts: []*v1.Alert{
+									{
+										Id: "id1",
+										Policy: &v1.Policy{
+											Category: v1.Policy_Category_IMAGE_ASSURANCE,
+											Name:     "policy1",
+										},
+										Severity: v1.Severity_LOW_SEVERITY,
+										Time:     &timestamp.Timestamp{Seconds: 300},
+									},
+									{
+										Id: "id3",
+										Policy: &v1.Policy{
+											Category: v1.Policy_Category_IMAGE_ASSURANCE,
+											Name:     "policy1",
+										},
+										Severity: v1.Severity_LOW_SEVERITY,
+										Time:     &timestamp.Timestamp{Seconds: 100},
+									},
+								},
+							},
+							{
+								Policy: "policy2",
+								Alerts: []*v1.Alert{
+									{
+										Id: "id2",
+										Policy: &v1.Policy{
+											Category: v1.Policy_Category_IMAGE_ASSURANCE,
+											Name:     "policy2",
+										},
+										Severity: v1.Severity_HIGH_SEVERITY,
+										Time:     &timestamp.Timestamp{Seconds: 200},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "multiple categories",
+			input: []*v1.Alert{
+				{
+					Id: "id1",
+					Policy: &v1.Policy{
+						Category: v1.Policy_Category_IMAGE_ASSURANCE,
+						Name:     "policy1",
+					},
+					Severity: v1.Severity_LOW_SEVERITY,
+					Time:     &timestamp.Timestamp{Seconds: 300},
+				},
+				{
+					Id: "id2",
+					Policy: &v1.Policy{
+						Category: v1.Policy_Category_IMAGE_ASSURANCE,
+						Name:     "policy2",
+					},
+					Severity: v1.Severity_HIGH_SEVERITY,
+					Time:     &timestamp.Timestamp{Seconds: 200},
+				},
+				{
+					Id: "id3",
+					Policy: &v1.Policy{
+						Category: v1.Policy_Category_CONTAINER_CAPABILITIES,
+						Name:     "policy10",
+					},
+					Severity: v1.Severity_CRITICAL_SEVERITY,
+					Time:     &timestamp.Timestamp{Seconds: 150},
+				},
+				{
+					Id: "id4",
+					Policy: &v1.Policy{
+						Category: v1.Policy_Category_IMAGE_ASSURANCE,
+						Name:     "policy1",
+					},
+					Severity: v1.Severity_LOW_SEVERITY,
+					Time:     &timestamp.Timestamp{Seconds: 100},
+				},
+			},
+			expected: &v1.GetAlertsGroupResponse{
+				ByCategory: []*v1.GetAlertsGroupResponse_CategoryGroup{
+					{
+						Category: v1.Policy_Category_IMAGE_ASSURANCE,
+						ByPolicy: []*v1.GetAlertsGroupResponse_PolicyGroup{
+							{
+								Policy: "policy1",
+								Alerts: []*v1.Alert{
+									{
+										Id: "id1",
+										Policy: &v1.Policy{
+											Category: v1.Policy_Category_IMAGE_ASSURANCE,
+											Name:     "policy1",
+										},
+										Severity: v1.Severity_LOW_SEVERITY,
+										Time:     &timestamp.Timestamp{Seconds: 300},
+									},
+									{
+										Id: "id4",
+										Policy: &v1.Policy{
+											Category: v1.Policy_Category_IMAGE_ASSURANCE,
+											Name:     "policy1",
+										},
+										Severity: v1.Severity_LOW_SEVERITY,
+										Time:     &timestamp.Timestamp{Seconds: 100},
+									},
+								},
+							},
+							{
+								Policy: "policy2",
+								Alerts: []*v1.Alert{
+									{
+										Id: "id2",
+										Policy: &v1.Policy{
+											Category: v1.Policy_Category_IMAGE_ASSURANCE,
+											Name:     "policy2",
+										},
+										Severity: v1.Severity_HIGH_SEVERITY,
+										Time:     &timestamp.Timestamp{Seconds: 200},
+									},
+								},
+							},
+						},
+					},
+					{
+						Category: v1.Policy_Category_CONTAINER_CAPABILITIES,
+						ByPolicy: []*v1.GetAlertsGroupResponse_PolicyGroup{
+							{
+								Policy: "policy10",
+								Alerts: []*v1.Alert{
+									{
+										Id: "id3",
+										Policy: &v1.Policy{
+											Category: v1.Policy_Category_CONTAINER_CAPABILITIES,
+											Name:     "policy10",
+										},
+										Severity: v1.Severity_CRITICAL_SEVERITY,
+										Time:     &timestamp.Timestamp{Seconds: 150},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	alertService := &AlertService{}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := alertService.groupAlerts(c.input)
+
+			assert.DeepEqual(t, actual, c.expected)
+		})
+	}
+}

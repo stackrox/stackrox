@@ -13,12 +13,17 @@ var (
 	log = logging.New("imageprocessor/processor")
 )
 
-// ImageProcessor enriches and processes images to determine rule violations
+// ImageProcessor enriches and processes images to determine image policy violations.
 type ImageProcessor struct {
-	database db.Storage
+	database interface {
+		db.ImagePolicyStorage
+		db.ImageStorage
+		db.RegistryStorage
+		db.ScannerStorage
+	}
 
-	ruleMutex  sync.Mutex
-	regexRules map[string]*regexImageRule
+	policyMutex   sync.Mutex
+	regexPolicies map[string]*regexImagePolicy
 }
 
 type lineRuleFieldRegex struct {
@@ -26,49 +31,48 @@ type lineRuleFieldRegex struct {
 	Value       *regexp.Regexp
 }
 
-type imageNameRuleRegex struct {
+type imageNamePolicyRegex struct {
 	Registry  *regexp.Regexp
 	Namespace *regexp.Regexp
 	Repo      *regexp.Regexp
 	Tag       *regexp.Regexp
 }
 
-type regexImageRule struct {
-	Name     string
-	Severity v1.Severity
+type regexImagePolicy struct {
+	Original *v1.ImagePolicy
 
-	ImageNameRule *imageNameRuleRegex
+	ImageNamePolicy *imageNamePolicyRegex
 
 	ImageAgeDays int64
 	LineRule     *lineRuleFieldRegex
 
-	CVSS        *v1.NumericalRule
+	CVSS        *v1.NumericalPolicy
 	CVE         *regexp.Regexp
 	Component   *regexp.Regexp
 	ScanAgeDays int64
 }
 
-func compileImageNameRuleRegex(rule *v1.ImageNameRule) (*imageNameRuleRegex, error) {
-	if rule == nil {
+func compileImageNamePolicyRegex(policy *v1.ImageNamePolicy) (*imageNamePolicyRegex, error) {
+	if policy == nil {
 		return nil, nil
 	}
-	registry, err := compileStringRegex(rule.Registry)
+	registry, err := compileStringRegex(policy.GetRegistry())
 	if err != nil {
 		return nil, err
 	}
-	namespace, err := compileStringRegex(rule.Namespace)
+	namespace, err := compileStringRegex(policy.GetNamespace())
 	if err != nil {
 		return nil, err
 	}
-	repo, err := compileStringRegex(rule.Repo)
+	repo, err := compileStringRegex(policy.GetRepo())
 	if err != nil {
 		return nil, err
 	}
-	tag, err := compileStringRegex(rule.Tag)
+	tag, err := compileStringRegex(policy.GetTag())
 	if err != nil {
 		return nil, err
 	}
-	return &imageNameRuleRegex{
+	return &imageNamePolicyRegex{
 		Registry:  registry,
 		Namespace: namespace,
 		Repo:      repo,
@@ -76,11 +80,11 @@ func compileImageNameRuleRegex(rule *v1.ImageNameRule) (*imageNameRuleRegex, err
 	}, nil
 }
 
-func compileStringRegex(rule string) (*regexp.Regexp, error) {
-	if rule == "" {
+func compileStringRegex(policy string) (*regexp.Regexp, error) {
+	if policy == "" {
 		return nil, nil
 	}
-	return regexp.Compile(rule)
+	return regexp.Compile(policy)
 }
 
 func compileLineRuleFieldRegex(line *v1.DockerfileLineRuleField) (*lineRuleFieldRegex, error) {
@@ -97,36 +101,35 @@ func compileLineRuleFieldRegex(line *v1.DockerfileLineRuleField) (*lineRuleField
 	}, nil
 }
 
-func (i *ImageProcessor) addRegexImageRule(rule *v1.ImageRule) error {
-	imageNameRegex, err := compileImageNameRuleRegex(rule.ImageName)
+func (i *ImageProcessor) addRegexImagePolicy(policy *v1.ImagePolicy) error {
+	imageNameRegex, err := compileImageNamePolicyRegex(policy.GetImageName())
 	if err != nil {
 		return err
 	}
-	lineRule, err := compileLineRuleFieldRegex(rule.LineRule)
+	lineRule, err := compileLineRuleFieldRegex(policy.GetLineRule())
 	if err != nil {
 		return err
 	}
-	component, err := compileStringRegex(rule.Component)
+	component, err := compileStringRegex(policy.GetComponent())
 	if err != nil {
 		return err
 	}
-	cve, err := compileStringRegex(rule.Cve)
+	cve, err := compileStringRegex(policy.GetCve())
 	if err != nil {
 		return err
 	}
-	i.regexRules[rule.Name] = &regexImageRule{
-		Name:     rule.Name,
-		Severity: rule.Severity,
+	i.regexPolicies[policy.GetName()] = &regexImagePolicy{
+		Original: policy,
 
-		ImageNameRule: imageNameRegex,
+		ImageNamePolicy: imageNameRegex,
 
-		ImageAgeDays: rule.ImageAgeDays,
+		ImageAgeDays: policy.GetImageAgeDays(),
 		LineRule:     lineRule,
 
-		CVSS:        rule.Cvss,
+		CVSS:        policy.GetCvss(),
 		CVE:         cve,
 		Component:   component,
-		ScanAgeDays: rule.ScanAgeDays,
+		ScanAgeDays: policy.GetScanAgeDays(),
 	}
 	return nil
 }
@@ -136,40 +139,41 @@ func New(database db.Storage) (*ImageProcessor, error) {
 	return &ImageProcessor{
 		database: database,
 
-		regexRules: make(map[string]*regexImageRule),
+		regexPolicies: make(map[string]*regexImagePolicy),
 	}, nil
 }
 
-// UpdateRule updates the current rule in a threadsafe manner
-func (i *ImageProcessor) UpdateRule(rule *v1.ImageRule) error {
-	i.ruleMutex.Lock()
-	defer i.ruleMutex.Unlock()
-	return i.addRegexImageRule(rule)
+// UpdatePolicy updates the current policy in a threadsafe manner.
+func (i *ImageProcessor) UpdatePolicy(policy *v1.ImagePolicy) error {
+	i.policyMutex.Lock()
+	defer i.policyMutex.Unlock()
+	return i.addRegexImagePolicy(policy)
 }
 
-// RemoveRule removes the rule specified by name in a threadsafe manner
-func (i *ImageProcessor) RemoveRule(name string) {
-	i.ruleMutex.Lock()
-	defer i.ruleMutex.Unlock()
-	delete(i.regexRules, name)
+// RemovePolicy removes the policy specified by name in a threadsafe manner.
+func (i *ImageProcessor) RemovePolicy(name string) {
+	i.policyMutex.Lock()
+	defer i.policyMutex.Unlock()
+	delete(i.regexPolicies, name)
 }
 
 // Process takes in a new image and determines if an alert should be fired
-func (i *ImageProcessor) Process(image *v1.Image) ([]*v1.Alert, error) {
+func (i *ImageProcessor) Process(deployment *v1.Deployment) ([]*v1.Alert, error) {
 	// TODO(cgorman) Better notification system or scheme around notifying if there is an error
-	if err := i.enrichImage(image); err != nil {
+	if err := i.enrichImage(deployment.Image); err != nil {
 		return nil, err
 	}
-	return i.checkImage(image)
+	return i.checkImage(deployment)
 }
 
-func (i *ImageProcessor) checkImage(image *v1.Image) ([]*v1.Alert, error) {
-	i.ruleMutex.Lock()
-	defer i.ruleMutex.Unlock()
+func (i *ImageProcessor) checkImage(deployment *v1.Deployment) ([]*v1.Alert, error) {
+	i.policyMutex.Lock()
+	defer i.policyMutex.Unlock()
 
 	var alerts []*v1.Alert
-	for _, rule := range i.regexRules {
-		if alert := rule.matchRuleToImage(image); alert != nil {
+	for _, policy := range i.regexPolicies {
+		if alert := policy.matchPolicyToImage(deployment.GetImage()); alert != nil {
+			alert.Deployment = deployment
 			alerts = append(alerts, alert)
 		}
 	}
@@ -177,8 +181,8 @@ func (i *ImageProcessor) checkImage(image *v1.Image) ([]*v1.Alert, error) {
 }
 
 func (i *ImageProcessor) enrichImage(image *v1.Image) error {
-	i.ruleMutex.Lock()
-	defer i.ruleMutex.Unlock()
+	i.policyMutex.Lock()
+	defer i.policyMutex.Unlock()
 	for _, registry := range i.database.GetRegistries() {
 		metadata, err := registry.Metadata(image)
 		if err != nil {
