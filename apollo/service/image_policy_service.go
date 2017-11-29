@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
@@ -9,6 +11,8 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -47,21 +51,50 @@ func (s *ImagePolicyService) GetImagePolicies(ctx context.Context, request *v1.G
 
 // PostImagePolicy inserts a new image policy into the system.
 func (s *ImagePolicyService) PostImagePolicy(ctx context.Context, request *v1.ImagePolicy) (*empty.Empty, error) {
-	s.storage.AddImagePolicy(request)
-	err := s.imageProcessor.UpdatePolicy(request)
-	return &empty.Empty{}, err
+	if err := validateImagePolicy(request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := s.storage.AddImagePolicy(request); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if err := s.imageProcessor.UpdatePolicy(request); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &empty.Empty{}, nil
+}
+
+func validateImagePolicy(policy *v1.ImagePolicy) error {
+	if policy.GetName() == "" {
+		return errors.New("Image policy must have a set name")
+	}
+	if policy.GetSeverity() == v1.Severity_UNSET_SEVERITY {
+		return errors.New("Image policy must have a set severity")
+	}
+	return nil
 }
 
 // PutImagePolicy updates a current image policy in the system.
 func (s *ImagePolicyService) PutImagePolicy(ctx context.Context, request *v1.ImagePolicy) (*empty.Empty, error) {
-	s.storage.UpdateImagePolicy(request)
-	err := s.imageProcessor.UpdatePolicy(request)
-	return &empty.Empty{}, err
+	if err := validateImagePolicy(request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := s.storage.UpdateImagePolicy(request); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if err := s.imageProcessor.UpdatePolicy(request); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &empty.Empty{}, nil
 }
 
 // DeleteImagePolicy deletes an image policy from the system.
 func (s *ImagePolicyService) DeleteImagePolicy(ctx context.Context, request *v1.DeleteImagePolicyRequest) (*empty.Empty, error) {
-	s.storage.RemoveImagePolicy(request.Name)
-	s.imageProcessor.RemovePolicy(request.Name)
+	if request.Name == "" {
+		return nil, status.Error(codes.InvalidArgument, "A policy name must be specified to delete an Image Policy")
+	}
+	if err := s.storage.RemoveImagePolicy(request.GetName()); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	s.imageProcessor.RemovePolicy(request.GetName())
 	return &empty.Empty{}, nil
 }

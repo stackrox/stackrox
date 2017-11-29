@@ -102,9 +102,15 @@ func compileLineRuleFieldRegex(line *v1.DockerfileLineRuleField) (*lineRuleField
 	if line == nil {
 		return nil, nil
 	}
-	value, err := regexp.Compile(line.Value)
+	if _, ok := registryTypes.DockerfileInstructionSet[line.Instruction]; !ok {
+		return nil, fmt.Errorf("%v is not a valid dockerfile instruction", line.Instruction)
+	}
+	value, err := compileStringRegex(line.Value)
 	if err != nil {
 		return nil, err
+	}
+	if value == nil {
+		return nil, fmt.Errorf("value must be defined for a dockerfile instruction")
 	}
 	return &lineRuleFieldRegex{
 		Instruction: line.Instruction,

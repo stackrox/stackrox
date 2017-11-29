@@ -62,27 +62,6 @@ func newRegistry(protoRegistry *v1.Registry) (*dockerRegistry, error) {
 	}, nil
 }
 
-var instructions = []string{
-	"ADD",
-	"ARG",
-	"CMD",
-	"COPY",
-	"ENTRYPOINT",
-	"ENV",
-	"EXPOSE",
-	"FROM",
-	"HEALTHCHECK",
-	"LABEL",
-	"MAINTAINER",
-	"ONBUILD",
-	"RUN",
-	"SHELL",
-	"STOPSIGNAL",
-	"USER",
-	"VOLUME",
-	"WORKDIR",
-}
-
 var scrubPrefixes = []string{
 	"/bin/sh -c #(nop)",
 	"/bin/sh -c ",
@@ -95,7 +74,7 @@ func scrubDockerfileLines(compat v1Compatibility) *v1.ImageLayer {
 	}
 	line = strings.Join(strings.Fields(line), " ")
 	var lineInstruction string
-	for _, instruction := range instructions {
+	for instruction := range registryTypes.DockerfileInstructionSet {
 		if strings.HasPrefix(line, instruction) {
 			lineInstruction = instruction
 			line = strings.TrimPrefix(line, instruction+" ")
