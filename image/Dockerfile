@@ -7,6 +7,7 @@ RUN apk update && apk add ca-certificates procps && apk --purge del apk-tools
 
 ENV PATH=/apollo
 
+ADD ./policies /data/policies
 ADD ./bin/ /apollo/
 
 EXPOSE 8080

@@ -12,6 +12,8 @@ var (
 	log = logging.New("db/bolt")
 )
 
+const defaultPoliciesPath = `/data/policies`
+
 // BoltDB returns an instantiation of the storage interface. Exported for test purposes
 type BoltDB struct {
 	*bolt.DB
@@ -23,16 +25,38 @@ func New(dbPath string) (*BoltDB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := initializeTables(db); err != nil {
+
+	b := &BoltDB{
+		DB: db,
+	}
+
+	if err := b.initializeTables(); err != nil {
+		log.Errorf("unable to initialize buckets: %s", err)
+		b.Close()
 		return nil, err
 	}
-	return &BoltDB{
-		db,
-	}, nil
+
+	return b, nil
 }
 
-func initializeTables(db *bolt.DB) error {
-	return db.Update(func(tx *bolt.Tx) error {
+// NewWithDefaults returns an instance of the persistent BoltDB store with default values loaded.
+func NewWithDefaults(dbPath string) (*BoltDB, error) {
+	db, err := New(dbPath)
+	if err != nil {
+		return db, err
+	}
+
+	if err := db.loadDefaults(); err != nil {
+		log.Errorf("unable to load defaults: %s", err)
+		db.Close()
+		return nil, err
+	}
+
+	return db, nil
+}
+
+func (b *BoltDB) initializeTables() error {
+	return b.Update(func(tx *bolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists([]byte(alertBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}

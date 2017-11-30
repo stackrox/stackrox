@@ -26,7 +26,7 @@ func main() {
 	apollo := newApollo()
 
 	var err error
-	persistence, err := boltdb.New("/var/lib/")
+	persistence, err := boltdb.NewWithDefaults("/var/lib/")
 	if err != nil {
 		panic(err)
 	}

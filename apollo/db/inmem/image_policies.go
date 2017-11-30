@@ -13,10 +13,10 @@ type imagePolicyStore struct {
 	imagePolicies      map[string]*v1.ImagePolicy
 	imagePoliciesMutex sync.Mutex
 
-	persistent db.Storage
+	persistent db.ImagePolicyStorage
 }
 
-func newImagePolicyStore(persistent db.Storage) *imagePolicyStore {
+func newImagePolicyStore(persistent db.ImagePolicyStorage) *imagePolicyStore {
 	return &imagePolicyStore{
 		imagePolicies: make(map[string]*v1.ImagePolicy),
 		persistent:    persistent,

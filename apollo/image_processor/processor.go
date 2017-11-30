@@ -253,6 +253,10 @@ func (i *ImageProcessor) checkImage(deployment *v1.Deployment) ([]*v1.Alert, err
 
 	var alerts []*v1.Alert
 	for _, policy := range i.regexPolicies {
+		if policy.Original.GetDisabled() {
+			continue
+		}
+
 		if alert := policy.matchPolicyToImage(deployment.GetImage()); alert != nil {
 			alert.Deployment = deployment
 			alerts = append(alerts, alert)

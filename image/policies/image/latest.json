@@ -1,0 +1,8 @@
+{
+  "name": "latest tag",
+  "description": "Alert on deployments with images using tag 'latest'",
+  "severity": 1,
+  "image_name": {
+    "tag": "latest"
+  }
+}

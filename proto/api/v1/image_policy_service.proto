@@ -43,20 +43,22 @@ message ImageNamePolicy {
 
 message ImagePolicy {
     // Policy Metadata
-    string name                        = 1;
-    Severity severity                  = 2;
+    string name                         = 1;
+    Severity severity                   = 2;
+    string description                  = 3;
+    bool disabled                       = 4;
 
-    ImageNamePolicy image_name = 3;
+    ImageNamePolicy image_name          = 5;
 
     // Registry metadata
-    int64 image_age_days               = 4;
-    DockerfileLineRuleField line_rule  = 5;
+    int64 image_age_days                = 6;
+    DockerfileLineRuleField line_rule   = 7;
 
     // Scan Metadata
-    NumericalPolicy cvss = 6;
-    string cve                         = 7;
-    string component                   = 8;
-    int64 scan_age_days                = 9;
+    NumericalPolicy cvss                = 8;
+    string cve                          = 9;
+    string component                    = 10;
+    int64 scan_age_days                 = 11;
 }
 
 message GetImagePoliciesRequest {
