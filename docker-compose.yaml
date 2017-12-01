@@ -1,0 +1,37 @@
+version: "3.2"
+services:
+  apollo:
+    image: stackrox/apollo:latest
+    networks:
+      stackrox:
+        aliases:
+          - apollo
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+    ports:
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: ingress
+  agent:
+    image: stackrox/apollo:latest
+    entrypoint:
+      - swarm-agent
+    networks:
+      stackrox:
+        aliases:
+          - agent
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+    deploy:
+      placement:
+        constraints:
+          - node.role==manager
+    environment:
+      - "APOLLO_ENDPOINT=apollo:8080"
+networks:
+  stackrox:

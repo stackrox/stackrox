@@ -174,6 +174,13 @@ image-common:
 	    $(LABELS) \
 	    container
 
+static-binary:
+	@docker run --rm \
+	    -v "$(BASE_PATH)/:$(GO_BASE_PATH)/" \
+	    -w "$(GO_BASE_PATH)/$(PROJECT_SUBDIR)" \
+	    -e CGO_ENABLED=0 -e GOOS=linux -e GOARCH=amd64 \
+	    golang:$(GO_VERSION) \
+	    go build -o $(GO_BASE_PATH)/$(PROJECT_SUBDIR)/container/bin/$(BINARY) -ldflags "-s" -ldflags "-s -X bitbucket.org/stack-rox/apollo/version.version=$(VERSION)" -installsuffix cgo
 
 #############
 ## Testing ##

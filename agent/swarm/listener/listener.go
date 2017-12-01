@@ -1,15 +1,12 @@
-package swarm
+package listener
 
 import (
 	"context"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/apollo/db"
-	"bitbucket.org/stack-rox/apollo/apollo/listeners"
-	listenerTypes "bitbucket.org/stack-rox/apollo/apollo/listeners/types"
-	apolloTypes "bitbucket.org/stack-rox/apollo/apollo/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/docker"
+	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
@@ -21,24 +18,16 @@ var (
 	log = logging.New("listener/swarm")
 )
 
-func init() {
-	listeners.Registry["swarm"] = func(storage db.DeploymentStorage) (listenerTypes.Listener, error) {
-		d, err := New(storage)
-		return d, err
-	}
-}
-
 // listener provides functionality for listening to deployment events.
 type listener struct {
 	*dockerClient.Client
-	eventsC  chan apolloTypes.DeploymentEvent
+	eventsC  chan *v1.DeploymentEvent
 	stopC    chan struct{}
 	stoppedC chan struct{}
-	storage  db.DeploymentStorage
 }
 
 // New returns a docker listener
-func New(storage db.DeploymentStorage) (listenerTypes.Listener, error) {
+func New() (listeners.Listener, error) {
 	dockerClient, err := docker.NewClient()
 	if err != nil {
 		return nil, err
@@ -48,10 +37,9 @@ func New(storage db.DeploymentStorage) (listenerTypes.Listener, error) {
 	}
 	return &listener{
 		Client:   dockerClient,
-		eventsC:  make(chan apolloTypes.DeploymentEvent, 10),
+		eventsC:  make(chan *v1.DeploymentEvent, 10),
 		stopC:    make(chan struct{}),
 		stoppedC: make(chan struct{}),
-		storage:  storage,
 	}, nil
 }
 
@@ -100,14 +88,11 @@ func (dl *listener) sendExistingDeployments() {
 	}
 
 	for _, d := range existingDeployments {
-		dl.eventsC <- apolloTypes.DeploymentEvent{
+		dl.eventsC <- &v1.DeploymentEvent{
 			Deployment: d,
-			Action:     apolloTypes.Create,
+			Action:     v1.ResourceAction_CREATE_RESOURCE,
 		}
 
-		if err = dl.storage.AddDeployment(d); err != nil {
-			log.Errorf("unable to add deployment %s: %s", d.GetId(), err)
-		}
 	}
 }
 
@@ -125,18 +110,7 @@ func (dl *listener) getNewExistingDeployments() ([]*v1.Deployment, error) {
 		d := serviceWrap(service).asDeployment()
 		deployments[i] = d
 	}
-	newDeployments := dl.filterKnownDeployments(deployments)
-	return newDeployments, nil
-}
-
-func (dl *listener) filterKnownDeployments(deployments []*v1.Deployment) (output []*v1.Deployment) {
-	for _, d := range deployments {
-		if saved, exists, err := dl.storage.GetDeployment(d.GetId()); err != nil || !exists || saved.GetVersion() != d.GetVersion() {
-			output = append(output, d)
-		}
-	}
-
-	return
+	return deployments, nil
 }
 
 func (dl *listener) getDeploymentFromServiceID(id string) (*v1.Deployment, error) {
@@ -154,50 +128,38 @@ func (dl *listener) pipeDeploymentEvent(msg events.Message) {
 	actor := msg.Type
 	id := msg.Actor.ID
 
-	var resourceAction apolloTypes.ResourceAction
+	var resourceAction v1.ResourceAction
 	var deployment *v1.Deployment
 	var err error
 
 	switch msg.Action {
 	case "create":
-		resourceAction = apolloTypes.Create
+		resourceAction = v1.ResourceAction_CREATE_RESOURCE
 
 		if deployment, err = dl.getDeploymentFromServiceID(id); err != nil {
 			log.Errorf("unable to get deployment (actor=%v,id=%v): %s", actor, id, err)
 			return
-		}
-
-		if err = dl.storage.AddDeployment(deployment); err != nil {
-			log.Errorf("unable to add deployment %s: %s", deployment.GetId(), err)
 		}
 	case "update":
-		resourceAction = apolloTypes.Update
+		resourceAction = v1.ResourceAction_UPDATE_RESOURCE
 
 		if deployment, err = dl.getDeploymentFromServiceID(id); err != nil {
 			log.Errorf("unable to get deployment (actor=%v,id=%v): %s", actor, id, err)
 			return
 		}
-
-		if err = dl.storage.UpdateDeployment(deployment); err != nil {
-			log.Errorf("unable to update deployment %s: %s", deployment.GetId(), err)
-		}
 	case "remove":
-		resourceAction = apolloTypes.Remove
-
-		if err = dl.storage.RemoveDeployment(deployment.GetId()); err != nil {
-			log.Errorf("unable to remove deployment %s: %s", deployment.GetId(), err)
-		}
+		resourceAction = v1.ResourceAction_REMOVE_RESOURCE
 
 		deployment = &v1.Deployment{
 			Id: id,
 		}
 	default:
-		resourceAction = apolloTypes.Unknown
+		resourceAction = v1.ResourceAction_UNSET_ACTION_RESOURCE
 		log.Warnf("unknown action: %s", msg.Action)
 		return
 	}
 
-	event := apolloTypes.DeploymentEvent{
+	event := &v1.DeploymentEvent{
 		Deployment: deployment,
 		Action:     resourceAction,
 	}
@@ -206,7 +168,7 @@ func (dl *listener) pipeDeploymentEvent(msg events.Message) {
 }
 
 // Events is the mechanism through which the events are propagated back to the event loop
-func (dl *listener) Events() <-chan apolloTypes.DeploymentEvent {
+func (dl *listener) Events() <-chan *v1.DeploymentEvent {
 	return dl.eventsC
 }
 

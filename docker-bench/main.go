@@ -1,19 +1,17 @@
 package main
 
 import (
-	"crypto/tls"
 	"fmt"
 	"os"
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/docker-bench/cis"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 var (
@@ -24,16 +22,6 @@ const (
 	apolloEndpointEnv = "ROX_APOLLO_ENDPOINT"
 	retries           = 5
 )
-
-// GRPCConnection returns a grpc.ClientConn object.
-func GRPCConnection(endpoint string) (conn *grpc.ClientConn, err error) {
-	tlsConfig := &tls.Config{
-		// TODO(cgorman) Proper cert management and TLS
-		InsecureSkipVerify: true,
-	}
-	creds := credentials.NewTLS(tlsConfig)
-	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds))
-}
 
 func main() {
 	ip := os.Getenv(apolloEndpointEnv)
@@ -57,7 +45,7 @@ func main() {
 		EndTime:   protoEndTime,
 		Host:      os.Getenv("HOSTNAME"),
 	}
-	conn, err := GRPCConnection(ip)
+	conn, err := clientconn.GRPCConnection(ip)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -13,4 +13,3 @@ enum Severity {
     HIGH_SEVERITY     = 3;
     CRITICAL_SEVERITY = 4;
 }
-

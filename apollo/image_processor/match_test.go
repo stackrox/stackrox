@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/apollo/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -115,20 +115,20 @@ func TestMatchImageName(t *testing.T) {
 			Tag:       regexp.MustCompile("^latest$"),
 		},
 	}
-	image := types.GenerateImageFromString("nginx")
+	image := images.GenerateImageFromString("nginx")
 	violations, exists = policy.matchImageName(image)
 	assert.True(t, exists)
 	assert.Equal(t, 1, len(violations))
 
 	// If the image is totally different don't match
-	image = types.GenerateImageFromString("summarizer")
+	image = images.GenerateImageFromString("summarizer")
 	violations, exists = policy.matchImageName(image)
 	assert.True(t, exists)
 	assert.Equal(t, 0, len(violations))
 
 	// If one of the values doesn't match then don't return a violation. Image parameters are AND'd together
 	policy.ImageNamePolicy.Registry = regexp.MustCompile("^docker-registry$")
-	image = types.GenerateImageFromString("nginx")
+	image = images.GenerateImageFromString("nginx")
 	violations, exists = policy.matchImageName(image)
 	assert.True(t, exists)
 	assert.Equal(t, 0, len(violations))

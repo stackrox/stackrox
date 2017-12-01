@@ -1,7 +1,8 @@
 ROX_PROJECT=pkg
 TESTFLAGS=-race -p 4
 
-API_SERVICES = v1/alert_service
+API_SERVICES  = v1/agent_event_service
+API_SERVICES += v1/alert_service
 API_SERVICES += v1/benchmark_service
 API_SERVICES += v1/common
 API_SERVICES += v1/deployment_service
@@ -24,7 +25,7 @@ preclean:
 	@rm -rf serialization/generated
 	@rm -rf api/generated
 
-SUBDIRS := $(foreach dir, $(wildcard */.), $(if $(shell find $(dir) -name "*.go"),$(dir),))
+SUBDIRS := $(foreach dir, $(wildcard */.), $(if $(shell find $(dir) -name "*.go" -not -path "api/*"),$(dir),))
 
 .PHONY: build-pkg
 build-pkg: preclean $(GENERATED_SRCS) $(SUBDIRS)

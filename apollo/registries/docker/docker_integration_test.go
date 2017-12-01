@@ -5,15 +5,19 @@ package docker
 import (
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/apollo/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	// DefaultRegistry defaults to dockerhub
+	defaultRegistry = "https://registry-1.docker.io" // variable so that it could be potentially changed
+)
+
 func TestGetMetadataIntegration(t *testing.T) {
-	url := types.DefaultRegistry
+	url := defaultRegistry
 	username := ""
 	password := ""
 

@@ -4,7 +4,7 @@ TESTFLAGS=-race -p 4
 GENERATED_SRCS = $(GENERATED_API_SRCS)
 
 .PHONY: all
-all: style build test report image
+all: style build test report
 
 .PHONY: noimage
 noimage: style build test report

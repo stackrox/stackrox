@@ -1,10 +1,10 @@
-package swarm
+package listener
 
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/apollo/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/golang/protobuf/ptypes"
 )
@@ -23,7 +23,7 @@ func (s serviceWrap) asDeployment() *v1.Deployment {
 		Version:   fmt.Sprintf("%d", s.Version.Index),
 		Type:      modeWrap(s.Spec.Mode).asType(),
 		UpdatedAt: updatedTime,
-		Image:     types.GenerateImageFromString(s.Spec.TaskTemplate.ContainerSpec.Image),
+		Image:     images.GenerateImageFromString(s.Spec.TaskTemplate.ContainerSpec.Image),
 	}
 }
 

@@ -5,9 +5,9 @@ RUN printf "http://apk.rox.systems/v3.6/main\nhttp://apk.rox.systems/v3.6/commun
 
 RUN apk update && apk add ca-certificates procps && apk --purge del apk-tools
 
-ENV PATH=/
+ENV PATH=/apollo
 
-ADD ./bin/apollo /apollo
+ADD ./bin/ /apollo/
 
 EXPOSE 8080
 
