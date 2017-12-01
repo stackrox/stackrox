@@ -1,0 +1,28 @@
+@tailwind preflight;
+
+.tab {
+    @apply .p-2 .cursor-pointer .border-b .border-grey-light;
+}
+
+.tab:hover {
+    @apply .bg-grey-lighter;
+}
+
+.tab-active {
+    @apply .p-2 .cursor-pointer .border-l .border-r .border-t .border-b-0;
+}
+
+.pill {
+    @apply .text-black;
+}
+
+.pill:hover {
+    @apply .text-blue;
+}
+
+.pill-active {
+    @apply .text-blue;
+}
+
+
+@tailwind utilities;
