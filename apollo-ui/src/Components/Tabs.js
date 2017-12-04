@@ -4,11 +4,9 @@ class Tabs extends Component {
     constructor(props) {
         super(props);
 
-        var headers = props.header.split(',');
-
         this.state = {
-            headers: headers,
-            active: headers[0],
+            headers: props.headers,
+            active: props.headers[0],
             children: props.children
         }
 
@@ -41,7 +39,7 @@ class Tabs extends Component {
                     {this.getHeaders()}
                     <div className="flex flex-1 border-b border-gray-light"></div>
                 </div>
-                {this.renderChildren()}
+                <div className="border-b border-r border-l border-gray-light">{this.renderChildren()}</div>
             </div>
         );
     }

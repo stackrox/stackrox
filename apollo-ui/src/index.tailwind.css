@@ -12,17 +12,8 @@
     @apply .p-2 .cursor-pointer .border-l .border-r .border-t .border-b-0;
 }
 
-.pill {
-    @apply .text-black;
+.border-collapse {
+    border-collapse: collapse;
 }
-
-.pill:hover {
-    @apply .text-blue;
-}
-
-.pill-active {
-    @apply .text-blue;
-}
-
 
 @tailwind utilities;

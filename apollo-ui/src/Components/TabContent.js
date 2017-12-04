@@ -17,7 +17,7 @@ class TabContent extends Component {
 
     render() {
         return (
-            <div className={(this.state.active === this.state.name) ? 'flex p-2' : 'hidden p-2'}>
+            <div className={(this.state.active === this.state.name) ? 'flex flex-col p-2' : 'hidden p-2'}>
                 {this.state.children}
             </div>
         );

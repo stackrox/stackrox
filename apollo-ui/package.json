@@ -1,16 +1,19 @@
 {
   "name": "apollo-ui",
+  "mantra": "Praise the Light",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "fbemitter": "^2.1.1",
     "react": "^16.1.1",
     "react-dom": "^16.1.1",
+    "react-router-dom": "^4.2.2",
     "react-scripts": "1.0.17",
     "tailwindcss": "^0.2.2"
   },
   "scripts": {
-    "start": "tailwind build ./src/index.tailwind.css -c ./tailwind.js -o ./src/index.css && react-scripts start",
-    "build": "tailwind build ./src/index.tailwind.css -c ./tailwind.js -o ./src/index.css && react-scripts build",
+    "start": "tailwind build ./src/index.tailwind.css -c ./tailwind.js -o ./src/index.css && NODE_PATH=src react-scripts start",
+    "build": "tailwind build ./src/index.tailwind.css -c ./tailwind.js -o ./src/index.css && NODE_PATH=src react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   }
