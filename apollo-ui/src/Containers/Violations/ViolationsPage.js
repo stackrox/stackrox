@@ -3,7 +3,7 @@ import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import Table from 'Components/Table';
 import Select from 'Components/Select';
-import Pills from 'Components/Pills';
+// import Pills from 'Components/Pills';
 
 import CompliancePage from 'Containers/Violations/Compliance/CompliancePage';
 
@@ -21,7 +21,10 @@ class ViolationsContainer extends Component {
             tab: {
                 headers: ['Policies', 'Compliance']
             },
-            select: {
+            category: {
+                options: ['All categories', 'Image Assurance', 'Configurations', 'Orchestrator Target', 'Denial of Policy', 'Privileges & Capabilities', 'Account Authorization']
+            },
+            time: {
                 options: ['Last 24 Hours', 'Last Week', 'Last Month', 'Last Year']
             },
             pills: [{ text: 'Image Assurance', value: 'IMAGE_ASSURANCE' }, { text: 'Configurations', value: 'CONFIGURATIONS' }, { text: 'Orchestrator Target', value: 'ORCHESTRATOR_TARGET' }, { text: 'Denial of Policy', value: 'DENIAL_OF_POLICY' }, { text: 'Privileges & Capabilities', value: 'PRIVILEGES_AND_CAPABILITIES' }, { text: 'Account Authorization', value: 'ACCOUNT_AUTHORIZATION' }],
@@ -78,22 +81,22 @@ class ViolationsContainer extends Component {
 
     render() {
         return (
-            <section className="flex flex-1 p-4">
+            <section className="flex flex-1 p-3 h-full">
                 <Tabs headers={this.state.tab.headers}>
                     <TabContent name={this.state.tab.headers[0]}>
-                        <div className="flex flex-1 flex-row p-4">
+                        <div className="flex flex-1 flex-row mb-3">
                             <div className="flex flex-1 self-center justify-start">
-                                <input className="appearance-none border rounded w-full py-2 px-3 border-gray-light"
-                                    placeholder="Scope by resource type:Registry" />
+                                <input className="border rounded w-full p-3  border-base-300"
+                                    placeholder="Filter by registry, severity, deployment, or tag" />
                             </div>
                             <div className="flex flex-row self-center justify-end">
-                                <Select options={this.state.select.options}></Select>
+                                <Select options={this.state.category.options}></Select>
+                            </div>
+                            <div className="flex flex-row self-center justify-end">
+                                <Select options={this.state.time.options}></Select>
                             </div>
                         </div>
-                        <div className="flex flex-1 flex-col p-4">
-                            <Pills data={this.state.pills} onActivePillsChange={this.onActivePillsChange.bind(this)}></Pills>
-                        </div>
-                        <div className="flex flex-1 flex-col p-4">
+                        <div className="flex flex-1 flex-col pb-4">
                             <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={this.onRowClick.bind(this)}></Table>
                         </div>
                     </TabContent>

@@ -61,7 +61,7 @@ class MainSidePanel extends Component {
                 {/*<span className="font-semibold">Policy: </span> 
                 <span>{this.state.data.name}</span>*/}
                 <span className="flex flex-1">Alerts for "{this.state.data.name}"</span>
-                <Icon.X className="cursor-pointer" color="white" size={20} onClick={() => { this.hidePanel() }} />
+                <Icon.X className="cursor-pointer h-6 w-6 text-white" onClick={() => { this.hidePanel() }} />
             </div>
         );
     }
@@ -71,7 +71,7 @@ class MainSidePanel extends Component {
         return (
             <header className="flex flex-row w-full p-4 border-b border-grey-light font-bold">
                 <span className="flex flex-1">{this.state.modal.data.deployment.name} ({this.state.modal.data.deployment.id})</span>
-                <Icon.X className="cursor-pointer" color="black" size={20} onClick={() => { this.handleCloseModal() }} />
+                <Icon.X className="cursor-pointer h-6 w-6" onClick={() => { this.handleCloseModal() }} />
             </header>
         );
     }
@@ -79,48 +79,48 @@ class MainSidePanel extends Component {
     displayModalBody() {
         if (this.state.modal.data === {} || !this.state.modal.data || !this.state.modal.data.deployment) return "";
         return (
-            <div className="flex flex-row bg-grey-lighter overflow-auto">
-                <div className="flex flex-col w-1/2 border-r border-grey-light">
+            <div className="flex">
+                <div className="w-1/2 border-r border-base-300">
                     <div className="bg-white m-4">
-                        <header className="w-full p-4 border-b border-grey-light font-bold">Alert Summary</header>
+                        <header className="w-full p-4 border-b border-base-300 font-bold">Alert Summary</header>
                         <div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Description:</span> {this.state.modal.data.policy.imagePolicy.description}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Deployment ID:</span> {this.state.modal.data.deployment.id}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Severity:</span> {this.state.modal.data.severity}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Time:</span> {this.state.modal.data.time}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Type:</span> {this.state.modal.data.deployment.type}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Last Updated:</span> {this.state.modal.data.deployment.updatedAt}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Version:</span> {this.state.modal.data.deployment.version}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Description:</span> {this.state.modal.data.policy.imagePolicy.description}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Deployment ID:</span> {this.state.modal.data.deployment.id}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Severity:</span> {this.state.modal.data.severity}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Time:</span> {this.state.modal.data.time}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Type:</span> {this.state.modal.data.deployment.type}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Last Updated:</span> {this.state.modal.data.deployment.updatedAt}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Version:</span> {this.state.modal.data.deployment.version}</div>
                         </div>
                     </div>
                     <div className="bg-white m-4">
                         <header className="w-full p-4 border-b border-grey-light font-bold">Image Summary</header>
                         <div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Registry:</span> {this.state.modal.data.deployment.image.registry}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Remote:</span> {this.state.modal.data.deployment.image.remote}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">SHA:</span> {this.state.modal.data.deployment.image.sha}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Metadata:</span> {this.state.modal.data.deployment.image.metadata}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Scan:</span> {this.state.modal.data.deployment.image.scan}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Tag:</span> {this.state.modal.data.deployment.image.tag}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Registry:</span> {this.state.modal.data.deployment.image.registry}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Remote:</span> {this.state.modal.data.deployment.image.remote}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">SHA:</span> {this.state.modal.data.deployment.image.sha}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Metadata:</span> {this.state.modal.data.deployment.image.metadata}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Scan:</span> {this.state.modal.data.deployment.image.scan}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Tag:</span> {this.state.modal.data.deployment.image.tag}</div>
                         </div>
                     </div>
                 </div>
-                <div className="flex flex-col w-1/2">
+                <div className="w-1/2">
                     <div className="bg-white m-4">
                         <header className="w-full p-4 border-b border-grey-light font-bold">Policy Details</header>
                         <div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Name:</span> {this.state.modal.data.policy.name}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Description:</span> {this.state.modal.data.policy.imagePolicy.description}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Category:</span> {this.state.modal.data.policy.category}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Severity:</span> {this.state.modal.data.policy.imagePolicy.severity}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Disabled:</span> {String(this.state.modal.data.policy.imagePolicy.disabled)}</div>
-                            <div className="py-2 px-4 text-xs truncate"><span className="font-bold">Scan Age Day:</span> {this.state.modal.data.policy.imagePolicy.scanAgeDays}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Category:</span> {this.state.modal.data.policy.category}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Name:</span> {this.state.modal.data.policy.name}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Description:</span> {this.state.modal.data.policy.imagePolicy.description}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Severity:</span> {this.state.modal.data.policy.imagePolicy.severity}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Disabled:</span> {String(this.state.modal.data.policy.imagePolicy.disabled)}</div>
+                            <div className="py-2 px-4 truncate"><span className="font-bold">Scan Age Day:</span> {this.state.modal.data.policy.imagePolicy.scanAgeDays}</div>
                         </div>
                     </div>
                     <div className="bg-white m-4">
                         <header className="w-full p-4 border-b border-grey-light font-bold">Violations</header>
                         <div>
-                            {this.state.modal.data.policy.violations.map((violation, i) => { return <div key={'policy-alerts-violation-' + i} className="py-2 px-4 text-xs break-words">{violation.message}</div>; }) }
+                            {this.state.modal.data.policy.violations.map((violation, i) => { return <div key={'policy-alerts-violation-' + i} className="py-2 px-4 break-words">{violation.message}</div>; }) }
                         </div>
                     </div>
                 </div>
@@ -152,7 +152,7 @@ class MainSidePanel extends Component {
 
     render() {
         return (
-            <aside className={"pin-r h-full bg-white border-l border-grey-light " + ((this.state.showPanel) ? 'flex flex-col' : 'hidden')}>
+            <aside className={"h-full bg-primary-200 md:w-2/3 overflow-y-scroll h-full" + ((this.state.showPanel) ? '' : ' hidden')}>
                 <div className="p-4 bg-black text-white border-b border-grey-light w-full">{this.displayHeader()}</div>
                 <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={this.handleOpenModal.bind(this)}></Table>
                 <ReactModal
@@ -160,8 +160,8 @@ class MainSidePanel extends Component {
                     onRequestClose={this.handleCloseModal}
                     contentLabel="Modal"
                     ariaHideApp={false}
-                    overlayClassName="ReactModal__Overlay react-modal-overlay"
-                    className="ReactModal__Content h-95 w-2/3 m-0-auto p0 bg-white border border-grey-light mt-4 mb-4 overflow-auto">
+                    overlayClassName="ReactModal__Overlay react-modal-overlay p-4"
+                    className="ReactModal__Content w-2/3 mx-auto my-0 bg-base-100 overflow-scroll h-full">
                     {this.displayModalHeader()}
                     {this.displayModalBody()}
                 </ReactModal>

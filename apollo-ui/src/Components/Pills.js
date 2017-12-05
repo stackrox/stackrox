@@ -29,11 +29,9 @@ class Pills extends Component {
     }
 
     render() {
-        return (
-            <div className="flex flex-row flex-wrap rounded-sm border-grey-light border">
-                {this.displayData()}
-            </div>
-        );
+        return <div className={`pills`}>
+            {this.displayData()}
+          </div>;
     }
 
 }

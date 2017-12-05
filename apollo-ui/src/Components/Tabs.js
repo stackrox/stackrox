@@ -15,8 +15,8 @@ class Tabs extends Component {
         var active = this.state.active;
         var tabClick = this.tabClick;
         return this.props.headers.map(function (header, i) {
-            var tabClass = (active === header) ? 'tab-active' : 'tab';
-            return <div className={tabClass} key={header + '-' + i} onClick={() => tabClick(header)}>{header}</div>;
+            var tabClass = active === header ? "tab tab-active" : "tab";
+            return <button className={tabClass} key={header + '-' + i} onClick={() => tabClick(header)}>{header}</button>;
         });
     }
 
@@ -32,12 +32,11 @@ class Tabs extends Component {
 
     render() {
         return (
-            <div className="overflow-auto w-full">
-                <div className="flex flex-row font-mono font-bold">
+            <div className="overflow-auto w-full bg-white shadow">
+                <div className="tab-group flex flex-row font-bold mb-3 bg-base-200">
                     {this.getHeaders()}
-                    <div className="flex flex-1 border-b border-gray-light"></div>
                 </div>
-                <div className="border-b border-r border-l border-gray-light overflow-auto">{this.renderChildren()}</div>
+                <div className="bg-white overflow-auto px-3">{this.renderChildren()}</div>
             </div>
         );
     }

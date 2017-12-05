@@ -42,9 +42,7 @@ class CompliancePage extends Component {
 
     render() {
         return (
-            <div className="flex flex-1 flex-row p-4">
                 <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={(row) => {}}></Table>
-            </div>
         );
     }
 

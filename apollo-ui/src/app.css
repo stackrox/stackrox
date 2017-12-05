@@ -1,0 +1,180 @@
+:root {
+    /* Theme-light */
+    --theme-light-base: 225;
+    --theme-light-primary: var(--theme-light-base);
+    /* indigo */
+    --theme-light-secondary: 250;
+    --theme-light-accent: 308;
+    --theme-light-highlight: 193;
+    --theme-light-success: 165;
+    --theme-light-low: 42;
+    --theme-light-medium: 20;
+    --theme-light-high: 358;
+    --theme-light-s-0: 0%;
+    --theme-light-s-10: 10%;
+    --theme-light-s-20: 20%;
+    --theme-light-s-30: 30%;
+    --theme-light-s-40: 40%;
+    --theme-light-s-50: 50%;
+    --theme-light-s-60: 60%;
+    --theme-light-s-70: 70%;
+    --theme-light-s-80: 80%;
+    --theme-light-s-90: 90%;
+    --theme-light-s-100: 100%;
+    --theme-light-l-0: 0%;
+    --theme-light-l-10: 10%;
+    --theme-light-l-20: 20%;
+    --theme-light-l-30: 30%;
+    --theme-light-l-40: 45%;
+    --theme-light-l-50: 55%;
+    --theme-light-l-60: 70%;
+    --theme-light-l-70: 80%;
+    --theme-light-l-80: 90%;
+    --theme-light-l-90: 97%;
+    --theme-light-l-100: 100%;
+    /*---------------------------------------------------------------*/
+    /* Theme-dark */
+    --theme-dark-base: 230;
+    --theme-dark-primary: 230;
+    --theme-dark-secondary: 250;
+    --theme-dark-accent: 308;
+    --theme-dark-highlight: 193;
+    --theme-dark-success: 165;
+    --theme-dark-low: 42;
+    --theme-dark-medium: 20;
+    --theme-dark-high: 358;
+    --theme-dark-s-0: 0%;
+    --theme-dark-s-10: 10%;
+    --theme-dark-s-20: 20%;
+    --theme-dark-s-30: 30%;
+    --theme-dark-s-40: 40%;
+    --theme-dark-s-50: 50%;
+    --theme-dark-s-60: 60%;
+    --theme-dark-s-70: 70%;
+    --theme-dark-s-80: 80%;
+    --theme-dark-s-90: 90%;
+    --theme-dark-s-100: 97%;
+    --theme-dark-l-0: 100%;
+    --theme-dark-l-10: 90%;
+    --theme-dark-l-20: 80%;
+    --theme-dark-l-30: 70%;
+    --theme-dark-l-40: 60%;
+    --theme-dark-l-50: 50%;
+    --theme-dark-l-60: 40%;
+    --theme-dark-l-70: 30%;
+    --theme-dark-l-80: 20%;
+    --theme-dark-l-90: 10%;
+    --theme-dark-l-100: 0%;
+    /*---------------------------------------------------------------*/
+    /* Active Theme */
+    /* swatches */
+    --base: var(--theme-light-base);
+    --primary: var(--theme-light-primary);
+    --secondary: var(--theme-light-secondary);
+    --accent: var(--theme-light-accent);
+    --highlight: var(--theme-light-highlight);
+    --success: var(--theme-light-success);
+    --low: var(--theme-light-low);
+    --medium: var(--theme-light-medium);
+    --high: var(--theme-light-high);
+    --white: var(--theme-light-white);
+    --black: var(--theme-light-black);
+    /* Saturation scale */
+    --s-0: var(--theme-light-s-0);
+    --s-10: var(--theme-light-s-10);
+    --s-20: var(--theme-light-s-20);
+    --s-30: var(--theme-light-s-30);
+    --s-40: var(--theme-light-s-40);
+    --s-50: var(--theme-light-s-50);
+    --s-60: var(--theme-light-s-60);
+    --s-70: var(--theme-light-s-70);
+    --s-80: var(--theme-light-s-80);
+    --s-90: var(--theme-light-s-90);
+    --s-100: var(--theme-light-s-100);
+    /* lightness scale */
+    --l-0: var(--theme-light-l-0);
+    --l-10: var(--theme-light-l-10);
+    --l-20: var(--theme-light-l-20);
+    --l-30: var(--theme-light-l-30);
+    --l-40: var(--theme-light-l-40);
+    --l-50: var(--theme-light-l-50);
+    --l-60: var(--theme-light-l-60);
+    --l-70: var(--theme-light-l-70);
+    --l-80: var(--theme-light-l-80);
+    --l-90: var(--theme-light-l-90);
+    --l-100: var(--theme-light-l-100);
+}
+
+@tailwind preflight;
+
+button:focus {
+    outline: none;
+}
+
+button, select, input {
+    @apply text-base-600 text-base font-600 appearance-none;
+    line-height: 14px; /*weird render bug fix where select text gets clipped at bottom */
+}
+
+.content-box {
+    background-clip: content-box;
+}
+
+.pills {
+    @apply flex flex-col flex-auto rounded-sm border border-base-300 .overflow-hidden;
+}
+
+@screen md {
+    .pills {
+        @apply flex-row;
+    }
+}
+
+.disabled {
+@apply opacity-50 cursor-not-allowed .pointer-events-none;
+}
+
+.border-collapse {
+    border-collapse: collapse;
+}
+
+
+.react-modal-overlay {
+    @apply .fixed .pin-t .pin-l .w-full .h-full;
+    background-color: hsla(0, 0%, 21%, 0.85);
+}
+
+.pill {
+    @apply select-none bg-base-200 cursor-pointer p-2 m-2 rounded-sm .whitespace-no-wrap .flex-1 .text-center .text-xs .text-base-500 .font-600;
+}
+
+.pill-active {
+    @apply .select-none .cursor-pointer .p-2 .m-2 .bg-base-300 .rounded-sm .whitespace-no-wrap .flex-1 .text-center .text-xs .text-base-700 .font-600;
+}
+
+.tab {
+     @apply text-base-500 uppercase p-3 text-sm tracking-wide;
+}
+
+.tab-active {
+    @apply text-primary-600 bg-white;
+}
+
+.tab:hover, .tab:focus {
+    @apply text-base-700;
+}
+
+.tab-active:hover, .tab-active:focus {
+    @apply text-primary-600;
+}
+
+.pill:hover {
+    @apply .text-primary-500;
+}
+
+.pill-active {
+    @apply .text-primary-500;
+}
+
+
+@tailwind utilities;

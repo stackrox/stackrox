@@ -14,7 +14,9 @@ class Table extends Component {
 
     displayHeaders() {
        return <tr>{this.props.columns.map(function(column, i) {
-           return <th className='p-2 text-left border border-grey-light' key={column.label + i}>{column.label}</th>;
+           return <th className="p-3 text-left border-b border-t border-base-300 text-primary-500" key={column.label + i}>
+               {column.label}
+             </th>;
        })}</tr>
     }
 
@@ -25,11 +27,13 @@ class Table extends Component {
         var rowClick = this.rowClick;
         return rows.map(function (row, i) {
             var cols = columns.map(function (column, i) {
-                var className = `p-2 text-left border border-grey-light ${active === row ? 'bg-blue-lightest' : ''}`;
+                var className = `p-3 ${active === row ? 'bg-primary-300' : ''}`;
                 var value = resolvePath(row, column.key);
                 return <td className={className} key={column.key + '-' + i}>{value}</td>;
             });
-            return <tr className='cursor-pointer' key={i} onClick={() => rowClick(row)}>{cols}</tr>
+            return <tr className="cursor-pointer border-b border-base-300" key={i} onClick={() => rowClick(row)}>
+                {cols}
+              </tr>;
         });
     }
 
@@ -39,7 +43,7 @@ class Table extends Component {
 
     render() {
         return (
-            <table className='w-full border-collapse'>
+            <table className='w-full border-collapse text-sm'>
                 <thead>{this.displayHeaders()}</thead>
                 <tbody>{this.displayBody()}</tbody>
             </table>
