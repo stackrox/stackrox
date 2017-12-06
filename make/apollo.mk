@@ -13,9 +13,6 @@ GO_BASE_PATH ?= /go/src/bitbucket.org/stack-rox/apollo
 VERSION_FILE ?= $(BASE_PATH)"/ROX_VERSION"
 VERSION ?= `cat $(VERSION_FILE) | xargs echo -n`
 
-# CURRENT GO VERSION
-GO_VERSION ?= 1.9.1
-
 .PHONY: version
 version:
 	echo "$(VERSION)"
@@ -33,10 +30,9 @@ preclean:
 postclean:
 
 .PHONY: clean-common
-clean-common: clean-deps
+clean-common:
 	@echo "+ $@"
 	@go clean -i
-	#@rm -f container/NOTICE.txt
 	@rm -rf $(GOPATH)/src/github.com/grpc-ecosystem
 	@rm -rf $(GOPATH)/src/github.com/golang/protobuf
 	@rm -f $(GOPATH)/bin/protoc-gen-grpc-gateway
@@ -64,20 +60,6 @@ docs: generated-srcs
 	@echo 'Access your docs at http://localhost:6061/pkg/bitbucket.org/stack-rox/apollo/$(ROX_PROJECT)/'
 	@echo 'Hit CTRL-C to quit.'
 	@godoc -http=:6061
-
-###########
-## Glide ##
-###########
-deps: glide.yaml glide.lock
-	@echo "+ $@"
-	@glide --quiet install 2>&1 | tee glide.out
-	@testerror="$$(grep 'Lock file may be out of date' glide.out | wc -l)" && test $$testerror -eq 0
-	@touch deps
-
-.PHONY: clean-deps
-clean-deps:
-	@echo "+ $@"
-	@rm -f deps
 
 
 ###########
@@ -125,62 +107,14 @@ vet:
 ## Local Compilation ##
 #######################
 
-
 generated-srcs: $(GENERATED_SRCS)
 
 .PHONY: build
 build: generated-srcs
-	@echo "+ $@"
-	@GOARCH=amd64 go build -i -o container/bin/$(BINARY) -ldflags "-X bitbucket.org/stack-rox/apollo/version.version=$(VERSION)" .
+	bazel run //:gazelle
+	bazel build --cpu=k8 \
+		//$(PROJECT_SUBDIR)
 
-.PHONY: install
-install: generated-srcs
-	@echo "+ $@"
-	@GOARCH=amd64 go install -ldflags "-X bitbucket.org/stack-rox/apollo/version.version=$(VERSION)" .
-
-####################
-## Image building ##
-####################
-.PHONY: image
-image: preimage image-common postimage
-
-.PHONY: preimage
-preimage:
-
-.PHONY: postimage
-postimage:
-
-ifdef ROXCI_BUILD_NUMBER
-LABELS += --label com.stackrox.build.number=$(ROXCI_BUILD_NUMBER)
-endif
-ifdef ROXCI_COMMIT
-LABELS += --label com.stackrox.build.sha=$(ROXCI_COMMIT)
-endif
-
-.PHONY: image-common
-image-common:
-	@echo "+ $@"
-	@mkdir -p container/bin
-	#@cp $(BASE_PATH)/open-source/NOTICE.txt container/
-	@docker run --rm \
-	    -v "$(BASE_PATH)/:$(GO_BASE_PATH)/" \
-	    -w "$(GO_BASE_PATH)/$(PROJECT_SUBDIR)" \
-	    -e CGO_ENABLED=0 -e GOOS=linux -e GOARCH=amd64 \
-	    golang:$(GO_VERSION) \
-	    go build -o $(GO_BASE_PATH)/$(PROJECT_SUBDIR)/container/bin/$(BINARY) -ldflags "-s" -ldflags "-s -X bitbucket.org/stack-rox/apollo/version.version=$(VERSION)" -installsuffix cgo
-	docker build \
-	    -f container/Dockerfile \
-	    -t stackrox/$(IMAGE):$(IMAGE_TAG) \
-	    $(LABELS) \
-	    container
-
-static-binary:
-	@docker run --rm \
-	    -v "$(BASE_PATH)/:$(GO_BASE_PATH)/" \
-	    -w "$(GO_BASE_PATH)/$(PROJECT_SUBDIR)" \
-	    -e CGO_ENABLED=0 -e GOOS=linux -e GOARCH=amd64 \
-	    golang:$(GO_VERSION) \
-	    go build -o $(GO_BASE_PATH)/$(PROJECT_SUBDIR)/container/bin/$(BINARY) -ldflags "-s" -ldflags "-s -X bitbucket.org/stack-rox/apollo/version.version=$(VERSION)" -installsuffix cgo
 
 #############
 ## Testing ##

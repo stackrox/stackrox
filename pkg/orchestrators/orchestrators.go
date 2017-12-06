@@ -5,10 +5,12 @@ type Creator func() (Orchestrator, error)
 
 // SystemService is an abstraction for a container
 type SystemService struct {
-	Envs   []string
-	Image  string
-	Mounts []string
-	Global bool
+	Name    string
+	Envs    []string
+	Image   string
+	Mounts  []string
+	Global  bool
+	Command []string
 }
 
 // Orchestrator is the interface that allows for actions against an orchestrator

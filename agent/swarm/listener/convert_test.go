@@ -14,6 +14,8 @@ import (
 func TestAsDeployment(t *testing.T) {
 	t.Parallel()
 
+	time100 := time.Unix(100, 0)
+
 	cases := []struct {
 		service  swarm.Service
 		expected *v1.Deployment
@@ -36,13 +38,13 @@ func TestAsDeployment(t *testing.T) {
 						},
 					},
 					TaskTemplate: swarm.TaskSpec{
-						ContainerSpec: swarm.ContainerSpec{
+						ContainerSpec: &swarm.ContainerSpec{
 							Image: "nginx:latest",
 						},
 					},
 				},
-				UpdateStatus: swarm.UpdateStatus{
-					CompletedAt: time.Unix(100, 0),
+				UpdateStatus: &swarm.UpdateStatus{
+					CompletedAt: &time100,
 				},
 			},
 			expected: &v1.Deployment{

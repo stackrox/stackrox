@@ -5,10 +5,10 @@ import (
 	"log"
 	"os"
 
+	"bitbucket.org/stack-rox/apollo/pkg/docker"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/client"
 )
 
 const (
@@ -16,12 +16,12 @@ const (
 )
 
 func main() {
-	image := "stackrox/docker-bench:latest"
+	image := "stackrox/apollo:latest"
 	if imageEnv := os.Getenv(dockerBenchImageEnv); imageEnv != "" {
 		image = imageEnv
 	}
 
-	client, err := client.NewEnvClient()
+	client, err := docker.NewClient()
 	if err != nil {
 		log.Fatalf("Unable to connect to docker client: %+v", err)
 	}
@@ -41,9 +41,10 @@ func main() {
 	}
 
 	containerConfig := &container.Config{
-		Env:     os.Environ(),
-		Image:   image,
-		Volumes: volumeMap,
+		Env:        os.Environ(),
+		Image:      image,
+		Volumes:    volumeMap,
+		Entrypoint: []string{"docker-bench"},
 	}
 	hostConfig := &container.HostConfig{
 		Binds:   strVolumes,
@@ -64,7 +65,11 @@ func main() {
 		log.Fatalf("Error starting docker-bench container: %+v", err)
 	}
 
-	if _, err := client.ContainerWait(context.Background(), body.ID); err != nil {
-		log.Fatalf("error waiting for container %v to finish", body.ID)
+	okC, errC := client.ContainerWait(context.Background(), body.ID, container.WaitConditionNotRunning)
+	select {
+	case <-okC:
+		return
+	case err := <-errC:
+		log.Fatalf("error waiting for container %v to finish: %s", body.ID, err)
 	}
 }

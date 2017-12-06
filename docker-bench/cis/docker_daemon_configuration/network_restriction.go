@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types"
 )
 
 type networkRestrictionBenchmark struct{}
@@ -22,7 +23,7 @@ func (c *networkRestrictionBenchmark) Definition() utils.Definition {
 func (c *networkRestrictionBenchmark) Run() (result v1.BenchmarkTestResult) {
 	listFilters := filters.NewArgs()
 	listFilters.Add("Name", "bridge")
-	inspect, err := utils.DockerClient.NetworkInspect(context.Background(), "bridge")
+	inspect, err := utils.DockerClient.NetworkInspect(context.Background(), "bridge", types.NetworkInspectOptions{})
 	if err != nil {
 		utils.Warn(&result)
 		utils.AddNotes(&result, err.Error())

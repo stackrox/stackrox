@@ -69,7 +69,6 @@ func (d *BenchmarkSchedulerClient) removeService(delay time.Duration, id string)
 		time.Sleep(time.Duration(i) * 2 * time.Second)
 	}
 	log.Error("Timed out trying to remove benchmark service")
-
 }
 
 // Launch triggers a run of the benchmark immediately.
@@ -78,13 +77,15 @@ func (d *BenchmarkSchedulerClient) Launch() error {
 	d.scanActive = true
 	// TODO(cgorman) parametrize the tag for docker-bench-bootstrap
 	service := orchestrators.SystemService{
+		Name: fmt.Sprintf("docker-bench-%s", d.lastScanID),
 		Envs: []string{
 			fmt.Sprintf("ROX_APOLLO_POST_ENDPOINT=%s", d.advertisedEndpoint),
 			fmt.Sprintf("ROX_APOLLO_SCAN_ID=%s", d.lastScanID),
 		},
-		Image:  "stackrox/docker-bench-bootstrap:latest",
+		Image:  "stackrox/apollo:latest",
 		Mounts: []string{"/var/run/docker.sock:/var/run/docker.sock"},
 		Global: true,
+		Command: []string{"docker-bench-bootstrap"},
 	}
 	id, err := d.orchestrator.Launch(service)
 	if err != nil {

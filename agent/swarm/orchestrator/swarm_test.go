@@ -21,10 +21,11 @@ func TestLaunch(t *testing.T) {
 	require.Nil(t, err)
 
 	service := types.SystemService{
-		Envs:   []string{"ROX_APOLLO_ENDPOINT=localhost:8080"},
-		Image:  "stackrox/docker-bench-bootstrap:latest",
-		Mounts: []string{"/var/run/docker.sock:/var/run/docker.sock"},
-		Global: true,
+		Envs:    []string{"ROX_APOLLO_ENDPOINT=localhost:8080"},
+		Image:   "stackrox/apollo:latest",
+		Mounts:  []string{"/var/run/docker.sock:/var/run/docker.sock"},
+		Global:  true,
+		Command: []string{"docker-bench-bootstrap"},
 	}
 
 	_, err = orchestrator.Launch(service)

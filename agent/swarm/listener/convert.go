@@ -11,14 +11,20 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
 type serviceWrap swarm.Service
 
 func (s serviceWrap) asDeployment(client *client.Client) *v1.Deployment {
-	updatedTime, err := ptypes.TimestampProto(s.UpdateStatus.CompletedAt)
-	if err != nil {
-		log.Error(err)
+	var updatedTime *timestamp.Timestamp
+	up := s.UpdateStatus
+	if up != nil && up.CompletedAt != nil {
+		var err error
+		updatedTime, err = ptypes.TimestampProto(*up.CompletedAt)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 
 	image := images.GenerateImageFromString(s.Spec.TaskTemplate.ContainerSpec.Image)

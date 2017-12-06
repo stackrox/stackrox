@@ -1,5 +1,5 @@
-hash: 4ac75a76de0fa7e6d514736a77921ba379310df896201c8e956a395a5a8bf0e6
-updated: 2017-12-07T01:53:42.054404-08:00
+hash: 315288caeb4c841e2883f7b019291068fbec6f8f52a320dd73b071377a2ce121
+updated: 2017-12-07T10:39:09.312988-08:00
 imports:
 - name: github.com/Azure/go-ansiterm
   version: d6e3b3328b783f23731bc4d058875b0371ff8109
@@ -7,15 +7,11 @@ imports:
   - winterm
 - name: github.com/boltdb/bolt
   version: 2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8
-- name: github.com/davecgh/go-spew
-  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
-  subpackages:
-  - spew
 - name: github.com/docker/distribution
-  version: 48294d928ced5dd9b378f7fd7c6f5da3ff3f2c89
+  version: edc3ab29cdff8694dd6feb85cfeb4b5f1b38ed9c
   subpackages:
   - context
-  - digest
+  - digestset
   - manifest
   - manifest/schema1
   - manifest/schema2
@@ -30,50 +26,38 @@ imports:
   - registry/storage/cache/memory
   - uuid
 - name: github.com/docker/docker
-  version: f5ec1e2936dcbe7b5001c2b817188b095c700c27
+  version: 9b4a616e4b3819ef062780b5fd854616be2c22bb
   subpackages:
+  - api
   - api/types
   - api/types/blkiodev
   - api/types/container
   - api/types/events
   - api/types/filters
+  - api/types/image
   - api/types/mount
   - api/types/network
-  - api/types/reference
   - api/types/registry
   - api/types/strslice
   - api/types/swarm
+  - api/types/swarm/runtime
   - api/types/time
   - api/types/versions
   - api/types/volume
   - client
-  - image
-  - image/v1
-  - layer
-  - opts
-  - pkg/archive
-  - pkg/fileutils
-  - pkg/httputils
-  - pkg/idtools
   - pkg/ioutils
   - pkg/jsonlog
   - pkg/jsonmessage
   - pkg/longpath
-  - pkg/plugingetter
-  - pkg/plugins
-  - pkg/plugins/transport
-  - pkg/pools
-  - pkg/promise
-  - pkg/random
+  - pkg/mount
   - pkg/stringid
   - pkg/system
   - pkg/tarsum
   - pkg/term
   - pkg/term/windows
-  - pkg/testutil/assert
   - pkg/tlsconfig
-  - reference
   - registry
+  - registry/resumable
 - name: github.com/docker/go-connections
   version: 3ede32e2033de7505e6500d6c868c2b9ed9f169d
   subpackages:
@@ -128,35 +112,28 @@ imports:
   version: 78439966b38d69bf38227fbf57ac8a6fee70f69a
 - name: github.com/mwitkow/go-proto-validators
   version: a55ca57f374a8846924b030f534d8b8211508cf0
+- name: github.com/Nvveen/Gotty
+  version: cd527374f1e5bff4938207604a14f2e38a9cf512
 - name: github.com/opencontainers/go-digest
   version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
+- name: github.com/opencontainers/image-spec
+  version: 89b51c794e9113108a2914e38e66c826a649f2b5
+  subpackages:
+  - specs-go
+  - specs-go/v1
 - name: github.com/opencontainers/runc
   version: b2567b37d7b75eb4cf325b77297b140ea686ce8f
   subpackages:
-  - libcontainer/system
   - libcontainer/user
 - name: github.com/pkg/errors
   version: f15c970de5b76fac0b59abb32d62c17cc7bed265
 - name: github.com/satori/go.uuid
   version: 5bf94b69c6b68ee1b541973bb8e1144db23a194b
-- name: github.com/Sirupsen/logrus
+- name: github.com/sirupsen/logrus
   version: f006c2ac4710855cf0f916dd6b77acf6b048dc6e
-  repo: https://github.com/sirupsen/logrus.git
-  vcs: git
-- name: github.com/spf13/pflag
-  version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
-- name: github.com/vbatts/tar-split
-  version: 38ec4ddb06dedbea0a895c4848b248eb38af221b
-  subpackages:
-  - archive/tar
-  - tar/asm
-  - tar/storage
 - name: golang.org/x/crypto
   version: c10c31b5e94b6f7a0283272dc2bb27163dcea24b
   subpackages:
-  - bcrypt
-  - blowfish
-  - ocsp
   - ssh/terminal
 - name: golang.org/x/net
   version: a337091b0525af65de94df2eb7e98bd9962dcbe2
@@ -207,6 +184,10 @@ imports:
   - tap
   - transport
 testImports:
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
 - name: github.com/pmezard/go-difflib
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
   subpackages:

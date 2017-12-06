@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
-	"github.com/docker/docker/pkg/testutil/assert"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGroupAlerts(t *testing.T) {
@@ -155,7 +155,7 @@ func TestGroupAlerts(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			actual := alertService.groupAlerts(c.input)
 
-			assert.DeepEqual(t, actual, c.expected)
+			assert.Equal(t, actual, c.expected)
 		})
 	}
 }

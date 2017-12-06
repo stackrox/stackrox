@@ -28,10 +28,8 @@ func New() (orchestrators.Orchestrator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to create docker client: %+v", err)
 	}
+	client.NegotiateAPIVersion(context.Background())
 
-	if err := docker.NegotiateClientVersionToLatest(client, docker.DefaultAPIVersion); err != nil {
-		return nil, err
-	}
 	return &swarmOrchestrator{
 		dockerClient: client,
 	}, nil
@@ -54,11 +52,18 @@ func (s *swarmOrchestrator) Launch(service orchestrators.SystemService) (string,
 	}
 
 	spec := swarm.ServiceSpec{
+		Annotations: swarm.Annotations{
+			Labels: map[string]string{
+				"com.docker.stack.namespace": "apollo",
+			},
+			Name: service.Name,
+		},
 		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: swarm.ContainerSpec{
-				Image:  service.Image,
-				Env:    service.Envs,
-				Mounts: mounts,
+			ContainerSpec: &swarm.ContainerSpec{
+				Image:   service.Image,
+				Env:     service.Envs,
+				Mounts:  mounts,
+				Command: service.Command,
 			},
 			RestartPolicy: &swarm.RestartPolicy{
 				Condition: swarm.RestartPolicyConditionNone,

@@ -6,9 +6,4 @@ TESTFLAGS=-race -p 4
 .PHONY: all
 all: style build test report
 
-.PHONY: preclean
-preclean:
-	@echo "+ $@"
-	@rm -rf container/bin
-
-include ../../build/apollo.mk
+include ../../make/apollo.mk

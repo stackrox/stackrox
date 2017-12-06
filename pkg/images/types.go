@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
-	"github.com/docker/docker/reference"
+	"github.com/docker/distribution/reference"
 )
 
 // GenerateImageFromString generates an image type from a common string format
@@ -23,14 +23,14 @@ func GenerateImageFromString(imageStr string) *v1.Image {
 		imageStr = imageStr[:idx]
 	}
 
-	named, _ := reference.ParseNamed(imageStr)
-	tag := reference.DefaultTag
+	named, _ := reference.ParseNormalizedNamed(imageStr)
+	tag := "latest"
 	namedTagged, ok := named.(reference.NamedTagged)
 	if ok {
 		tag = namedTagged.Tag()
 	}
-	image.Remote = named.RemoteName()
+	image.Remote = reference.Path(named)
 	image.Tag = tag
-	image.Registry = named.Hostname()
+	image.Registry = reference.Domain(named)
 	return &image
 }

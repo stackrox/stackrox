@@ -34,9 +34,7 @@ func New() (listeners.Listener, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := docker.NegotiateClientVersionToLatest(dockerClient, docker.DefaultAPIVersion); err != nil {
-		return nil, err
-	}
+	dockerClient.NegotiateAPIVersion(context.Background())
 	return &listener{
 		Client:    dockerClient,
 		eventsC:   make(chan *v1.DeploymentEvent, 10),
@@ -121,7 +119,7 @@ func (dl *listener) getDeploymentFromServiceID(id string) (*v1.Deployment, error
 	ctx, cancel := context.WithTimeout(context.Background(), docker.HangTimeout)
 	defer cancel()
 
-	serviceInfo, _, err := dl.Client.ServiceInspectWithRaw(ctx, id)
+	serviceInfo, _, err := dl.Client.ServiceInspectWithRaw(ctx, id, types.ServiceInspectOptions{})
 	if err != nil {
 		return nil, err
 	}

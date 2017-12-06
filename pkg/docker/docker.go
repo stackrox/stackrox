@@ -3,7 +3,6 @@ package docker
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -27,52 +26,17 @@ const (
 
 // NewClient returns a new docker client or an error if there was issues generating it
 func NewClient() (*client.Client, error) {
-	client, err := client.NewEnvClient()
+	cli, err := client.NewEnvClient()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to create docker client: %+v", err)
 	}
-	return client, nil
-}
-
-func getDockerVersion(v string) (float64, error) {
-	version, err := strconv.ParseFloat(v, 64)
-	return version, err
-}
-
-func dockerVersionString(v float64) string {
-	return fmt.Sprintf("%0.2f", v)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	cli.NegotiateAPIVersion(ctx)
+	return cli, nil
 }
 
 // TimeoutContext returns a context with a timeout with the duration of the hang timeout
 func TimeoutContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), HangTimeout)
-}
-
-// NegotiateClientVersionToLatest negotiates the golang API version with the Docker server
-func NegotiateClientVersionToLatest(client client.APIClient, dockerAPIVersion float64) error {
-	// update client version to lowest supported version
-	client.UpdateClientVersion(dockerVersionString(DefaultAPIVersion))
-	versionStruct, err := client.ServerVersion(context.Background())
-	if err != nil {
-		return fmt.Errorf("unable to get docker server version: %+v", err)
-	}
-	var minClientVersion float64
-	if versionStruct.MinAPIVersion == "" { // Backwards compatibility
-		minClientVersion, err = getDockerVersion(versionStruct.APIVersion)
-		if err != nil {
-			return fmt.Errorf("unable to parse docker server api version: %+v", err)
-		}
-	} else {
-		minClientVersion, err = getDockerVersion(versionStruct.MinAPIVersion)
-		if err != nil {
-			return fmt.Errorf("unable to parse docker server min api version: %+v", err)
-		}
-	}
-	versionToNegotiate := dockerAPIVersion
-	if dockerAPIVersion < minClientVersion {
-		versionToNegotiate = minClientVersion
-	}
-	log.Infof("Negotiating Docker API version to %v", versionToNegotiate)
-	client.UpdateClientVersion(dockerVersionString(versionToNegotiate))
-	return nil
 }
