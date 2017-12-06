@@ -86,8 +86,6 @@ func (s *BenchmarkService) GetBenchmarkSchedule(ctx context.Context, _ *empty.Em
 
 // TriggerBenchmark triggers a benchmark launch asynchronously
 func (s *BenchmarkService) TriggerBenchmark(ctx context.Context, request *v1.TriggerBenchmarkRequest) (*empty.Empty, error) {
-	if err := s.schedule.Launch(); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
+	s.schedule.Trigger()
 	return &empty.Empty{}, nil
 }

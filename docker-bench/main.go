@@ -31,12 +31,12 @@ func main() {
 
 	protoStartTime, err := ptypes.TimestampProto(time.Now())
 	if err != nil {
-		log.Fatalf("Could not compute starting time: %+v", err)
+		log.Fatalf("Could not convert starting time to proto: %+v", err)
 	}
 	results := cis.RunCISBenchmark()
 	protoEndTime, err := ptypes.TimestampProto(time.Now())
 	if err != nil {
-		log.Fatalf("Could not conver to proto ending time: %+v", err)
+		log.Fatalf("Could not convert ending time to proto: %+v", err)
 	}
 	payload := &v1.BenchmarkPayload{
 		Id:        uuid.NewV4().String(),

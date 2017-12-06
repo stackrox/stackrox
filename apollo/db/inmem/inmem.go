@@ -49,11 +49,13 @@ func (s *InMemoryStore) Load() error {
 		vField := v.Field(i)
 		tField := t.Field(i)
 
-		if tField.Type.Implements(loaderType) {
+		switch {
+		case tField.Type.Implements(loaderType):
 			if err := vField.Interface().(loader).loadFromPersistent(); err != nil {
 				return fmt.Errorf("unable to load data from persistent storage for %s", tField.Name)
 			}
-		} else {
+		case tField.Name == "persistent": // This field is the DB itself, so can't be loaded.
+		default:
 			log.Infof("Field %v does not support loading from persistence", tField.Name)
 		}
 	}

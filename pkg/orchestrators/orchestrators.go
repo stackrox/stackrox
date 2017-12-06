@@ -1,4 +1,7 @@
-package types
+package orchestrators
+
+// Creator is a function stub that defined how to create a Orchestrator
+type Creator func() (Orchestrator, error)
 
 // SystemService is an abstraction for a container
 type SystemService struct {

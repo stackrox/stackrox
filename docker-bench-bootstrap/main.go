@@ -46,11 +46,15 @@ func main() {
 		Volumes: volumeMap,
 	}
 	hostConfig := &container.HostConfig{
-		Binds:       strVolumes,
-		NetworkMode: container.NetworkMode("host"),
-		PidMode:     container.PidMode("host"),
+		Binds: strVolumes,
+		//NetworkMode: container.NetworkMode("host"),
+		PidMode: container.PidMode("host"),
 	}
-	networkingConfig := &network.NetworkingConfig{}
+	networkingConfig := &network.NetworkingConfig{
+		EndpointsConfig: map[string]*network.EndpointSettings{
+			"apollo_net": {},
+		},
+	}
 
 	body, err := client.ContainerCreate(context.Background(), containerConfig, hostConfig, networkingConfig, "")
 	if err != nil {

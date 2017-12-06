@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	log = logging.New("listener/swarm")
+	log = logging.New("listener")
 )
 
 // listener provides functionality for listening to deployment events.
@@ -107,7 +107,7 @@ func (dl *listener) getNewExistingDeployments() ([]*v1.Deployment, error) {
 
 	deployments := make([]*v1.Deployment, len(swarmServices))
 	for i, service := range swarmServices {
-		d := serviceWrap(service).asDeployment()
+		d := serviceWrap(service).asDeployment(dl.Client)
 		deployments[i] = d
 	}
 	return deployments, nil
@@ -121,7 +121,7 @@ func (dl *listener) getDeploymentFromServiceID(id string) (*v1.Deployment, error
 	if err != nil {
 		return nil, err
 	}
-	return serviceWrap(serviceInfo).asDeployment(), nil
+	return serviceWrap(serviceInfo).asDeployment(dl.Client), nil
 }
 
 func (dl *listener) pipeDeploymentEvent(msg events.Message) {

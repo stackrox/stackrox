@@ -1,14 +1,13 @@
-package swarm
+package orchestrator
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/apollo/orchestrators"
-	"bitbucket.org/stack-rox/apollo/apollo/orchestrators/types"
 	"bitbucket.org/stack-rox/apollo/pkg/docker"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
 	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
@@ -16,14 +15,15 @@ import (
 )
 
 var (
-	log = logging.New("orchestrators/swarm")
+	log = logging.New("orchestrator")
 )
 
 type swarmOrchestrator struct {
 	dockerClient *client.Client
 }
 
-func newSwarm() (types.Orchestrator, error) {
+// New creates a new Swarm orchestrator client.
+func New() (orchestrators.Orchestrator, error) {
 	client, err := docker.NewClient()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create docker client: %+v", err)
@@ -37,7 +37,7 @@ func newSwarm() (types.Orchestrator, error) {
 	}, nil
 }
 
-func (s *swarmOrchestrator) Launch(service types.SystemService) (string, error) {
+func (s *swarmOrchestrator) Launch(service orchestrators.SystemService) (string, error) {
 	var mounts []mount.Mount
 	for _, m := range service.Mounts {
 		spl := strings.Split(m, ":")
@@ -80,8 +80,4 @@ func (s *swarmOrchestrator) Launch(service types.SystemService) (string, error) 
 
 func (s *swarmOrchestrator) Kill(id string) error {
 	return s.dockerClient.ServiceRemove(context.Background(), id)
-}
-
-func init() {
-	orchestrators.Registry["swarm"] = newSwarm
 }

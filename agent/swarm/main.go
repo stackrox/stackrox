@@ -7,9 +7,11 @@ import (
 	"syscall"
 
 	"bitbucket.org/stack-rox/apollo/agent/swarm/listener"
+	"bitbucket.org/stack-rox/apollo/agent/swarm/orchestrator"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/pkg/scheduler"
 )
 
 var (
@@ -53,6 +55,13 @@ func main() {
 
 	go listener.Start()
 
+	orch, err := orchestrator.New()
+	if err != nil {
+		panic(err)
+	}
+	bench := scheduler.NewBenchmarkSchedulerClient(orch, apolloEndpoint())
+	go bench.Start()
+
 	for {
 		select {
 		case ev := <-listener.Events():
@@ -65,6 +74,7 @@ func main() {
 		case sig := <-sigs:
 			logger.Infof("Caught %s signal", sig)
 			listener.Stop()
+			bench.Stop()
 			logger.Infof("Agent terminated")
 			return
 		}

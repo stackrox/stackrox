@@ -109,13 +109,14 @@ func (a *apiImpl) run() {
 	dopts := []grpc.DialOption{grpc.WithTransportCredentials(dcreds)}
 
 	mux := http.NewServeMux()
-	gwmux := runtime.NewServeMux()
+	// EmitDefaults allows marshalled structs with the omitempty: false setting to return 0-valued defaults.
+	gwMux := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{EmitDefaults: true}))
 	for _, service := range a.apiServices {
-		if err := service.RegisterServiceHandlerFromEndpoint(ctx, gwmux, endpoint, dopts); err != nil {
+		if err := service.RegisterServiceHandlerFromEndpoint(ctx, gwMux, endpoint, dopts); err != nil {
 			panic(err)
 		}
 	}
-	mux.Handle("/", gwmux)
+	mux.Handle("/", gwMux)
 	conn, err := net.Listen("tcp", grpcPort)
 	if err != nil {
 		panic(err)

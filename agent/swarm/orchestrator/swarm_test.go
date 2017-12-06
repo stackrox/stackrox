@@ -11,13 +11,13 @@ import (
 )
 
 func TestNewSwarm(t *testing.T) {
-	orchestrator, err := newSwarm()
+	orchestrator, err := New()
 	require.Nil(t, err)
 	require.NotNil(t, orchestrator)
 }
 
 func TestLaunch(t *testing.T) {
-	orchestrator, err := newSwarm()
+	orchestrator, err := New()
 	require.Nil(t, err)
 
 	service := types.SystemService{

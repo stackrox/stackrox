@@ -11,8 +11,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/db/inmem"
 	"bitbucket.org/stack-rox/apollo/apollo/grpc"
 	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
-	"bitbucket.org/stack-rox/apollo/apollo/orchestrators"
-	_ "bitbucket.org/stack-rox/apollo/apollo/orchestrators/all"
 	_ "bitbucket.org/stack-rox/apollo/apollo/registries/all"
 	_ "bitbucket.org/stack-rox/apollo/apollo/scanners/all"
 	"bitbucket.org/stack-rox/apollo/apollo/scheduler"
@@ -42,12 +40,7 @@ func main() {
 		panic(err)
 	}
 
-	const platform = "swarm"
-	orchestrator, err := orchestrators.Registry[platform]()
-	if err != nil {
-		log.Fatal(err)
-	}
-	apollo.benchScheduler = scheduler.NewDockerBenchScheduler(orchestrator)
+	apollo.benchScheduler = scheduler.NewDockerBenchScheduler()
 
 	go apollo.startGRPCServer()
 

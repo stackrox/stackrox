@@ -6,6 +6,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/client"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stretchr/testify/assert"
 )
@@ -59,8 +60,13 @@ func TestAsDeployment(t *testing.T) {
 		},
 	}
 
+	cli, err := client.NewEnvClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	for _, c := range cases {
-		got := serviceWrap(c.service).asDeployment()
+		got := serviceWrap(c.service).asDeployment(cli)
 
 		assert.Equal(t, c.expected, got)
 	}

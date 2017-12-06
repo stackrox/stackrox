@@ -3,13 +3,7 @@ services:
   apollo:
     image: stackrox/apollo:latest
     networks:
-      stackrox:
-        aliases:
-          - apollo
-    volumes:
-      - type: bind
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
+      net:
     ports:
       - target: 8080
         published: 8080
@@ -19,10 +13,10 @@ services:
     image: stackrox/apollo:latest
     entrypoint:
       - swarm-agent
+    depends_on:
+      - apollo
     networks:
-      stackrox:
-        aliases:
-          - agent
+      net:
     volumes:
       - type: bind
         source: /var/run/docker.sock
@@ -32,6 +26,8 @@ services:
         constraints:
           - node.role==manager
     environment:
-      - "APOLLO_ENDPOINT=apollo:8080"
+      - "APOLLO_ENDPOINT=apollo.apollo_net:8080"
 networks:
-  stackrox:
+  net:
+    driver: overlay
+    attachable: true
