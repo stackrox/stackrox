@@ -69,17 +69,30 @@ func (s *AlertService) GetAlertsGroup(ctx context.Context, request *v1.GetAlerts
 }
 
 func (s *AlertService) groupAlerts(alerts []*v1.Alert) (output *v1.GetAlertsGroupResponse) {
-	group := make(map[v1.Policy_Category]map[string][]*v1.Alert)
+	group := make(map[v1.Policy_Category]map[string]*v1.GetAlertsGroupResponse_PolicyGroup)
 
 	for _, a := range alerts {
 		cat := a.GetPolicy().GetCategory()
-		pol := a.GetPolicy().GetName()
+		pol := a.GetPolicy()
 
 		if group[cat] == nil {
-			group[cat] = make(map[string][]*v1.Alert)
+			group[cat] = make(map[string]*v1.GetAlertsGroupResponse_PolicyGroup)
 		}
 
-		group[cat][pol] = append(group[cat][pol], a)
+		if existing := group[cat][pol.GetName()]; existing == nil {
+			group[cat][pol.GetName()] = &v1.GetAlertsGroupResponse_PolicyGroup{
+				Policy: &v1.GetAlertsGroupResponse_PolicyDetails{
+					Name:     pol.GetName(),
+					Severity: pol.GetImagePolicy().GetSeverity(),
+					PolicyOneof: &v1.GetAlertsGroupResponse_PolicyDetails_ImagePolicy{
+						ImagePolicy: pol.GetImagePolicy(),
+					},
+				},
+				NumAlerts: 1,
+			}
+		} else {
+			existing.NumAlerts++
+		}
 	}
 
 	output = new(v1.GetAlertsGroupResponse)
@@ -87,14 +100,12 @@ func (s *AlertService) groupAlerts(alerts []*v1.Alert) (output *v1.GetAlertsGrou
 
 	for cat, byPolicy := range group {
 		policyGroups := make([]*v1.GetAlertsGroupResponse_PolicyGroup, 0, len(byPolicy))
-		for policy, alerts := range byPolicy {
-			policyGroups = append(policyGroups, &v1.GetAlertsGroupResponse_PolicyGroup{
-				Policy: policy,
-				Alerts: alerts,
-			})
+
+		for _, policyGroup := range byPolicy {
+			policyGroups = append(policyGroups, policyGroup)
 		}
 
-		sort.Slice(policyGroups, func(i, j int) bool { return policyGroups[i].Policy < policyGroups[j].Policy })
+		sort.Slice(policyGroups, func(i, j int) bool { return policyGroups[i].Policy.GetName() < policyGroups[j].Policy.GetName() })
 
 		output.ByCategory = append(output.ByCategory, &v1.GetAlertsGroupResponse_CategoryGroup{
 			Category: cat,

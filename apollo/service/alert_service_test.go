@@ -53,41 +53,18 @@ func TestGroupAlerts(t *testing.T) {
 						Category: v1.Policy_Category_IMAGE_ASSURANCE,
 						ByPolicy: []*v1.GetAlertsGroupResponse_PolicyGroup{
 							{
-								Policy: "policy1",
-								Alerts: []*v1.Alert{
-									{
-										Id: "id1",
-										Policy: &v1.Policy{
-											Category: v1.Policy_Category_IMAGE_ASSURANCE,
-											Name:     "policy1",
-										},
-										Severity: v1.Severity_LOW_SEVERITY,
-										Time:     &timestamp.Timestamp{Seconds: 300},
-									},
-									{
-										Id: "id3",
-										Policy: &v1.Policy{
-											Category: v1.Policy_Category_IMAGE_ASSURANCE,
-											Name:     "policy1",
-										},
-										Severity: v1.Severity_LOW_SEVERITY,
-										Time:     &timestamp.Timestamp{Seconds: 100},
-									},
+								Policy: &v1.GetAlertsGroupResponse_PolicyDetails{
+									Name:        "policy1",
+									PolicyOneof: &v1.GetAlertsGroupResponse_PolicyDetails_ImagePolicy{},
 								},
+								NumAlerts: 2,
 							},
 							{
-								Policy: "policy2",
-								Alerts: []*v1.Alert{
-									{
-										Id: "id2",
-										Policy: &v1.Policy{
-											Category: v1.Policy_Category_IMAGE_ASSURANCE,
-											Name:     "policy2",
-										},
-										Severity: v1.Severity_HIGH_SEVERITY,
-										Time:     &timestamp.Timestamp{Seconds: 200},
-									},
+								Policy: &v1.GetAlertsGroupResponse_PolicyDetails{
+									Name:        "policy2",
+									PolicyOneof: &v1.GetAlertsGroupResponse_PolicyDetails_ImagePolicy{},
 								},
+								NumAlerts: 1,
 							},
 						},
 					},
@@ -140,41 +117,18 @@ func TestGroupAlerts(t *testing.T) {
 						Category: v1.Policy_Category_IMAGE_ASSURANCE,
 						ByPolicy: []*v1.GetAlertsGroupResponse_PolicyGroup{
 							{
-								Policy: "policy1",
-								Alerts: []*v1.Alert{
-									{
-										Id: "id1",
-										Policy: &v1.Policy{
-											Category: v1.Policy_Category_IMAGE_ASSURANCE,
-											Name:     "policy1",
-										},
-										Severity: v1.Severity_LOW_SEVERITY,
-										Time:     &timestamp.Timestamp{Seconds: 300},
-									},
-									{
-										Id: "id4",
-										Policy: &v1.Policy{
-											Category: v1.Policy_Category_IMAGE_ASSURANCE,
-											Name:     "policy1",
-										},
-										Severity: v1.Severity_LOW_SEVERITY,
-										Time:     &timestamp.Timestamp{Seconds: 100},
-									},
+								Policy: &v1.GetAlertsGroupResponse_PolicyDetails{
+									Name:        "policy1",
+									PolicyOneof: &v1.GetAlertsGroupResponse_PolicyDetails_ImagePolicy{},
 								},
+								NumAlerts: 2,
 							},
 							{
-								Policy: "policy2",
-								Alerts: []*v1.Alert{
-									{
-										Id: "id2",
-										Policy: &v1.Policy{
-											Category: v1.Policy_Category_IMAGE_ASSURANCE,
-											Name:     "policy2",
-										},
-										Severity: v1.Severity_HIGH_SEVERITY,
-										Time:     &timestamp.Timestamp{Seconds: 200},
-									},
+								Policy: &v1.GetAlertsGroupResponse_PolicyDetails{
+									Name:        "policy2",
+									PolicyOneof: &v1.GetAlertsGroupResponse_PolicyDetails_ImagePolicy{},
 								},
+								NumAlerts: 1,
 							},
 						},
 					},
@@ -182,18 +136,11 @@ func TestGroupAlerts(t *testing.T) {
 						Category: v1.Policy_Category_CONTAINER_CAPABILITIES,
 						ByPolicy: []*v1.GetAlertsGroupResponse_PolicyGroup{
 							{
-								Policy: "policy10",
-								Alerts: []*v1.Alert{
-									{
-										Id: "id3",
-										Policy: &v1.Policy{
-											Category: v1.Policy_Category_CONTAINER_CAPABILITIES,
-											Name:     "policy10",
-										},
-										Severity: v1.Severity_CRITICAL_SEVERITY,
-										Time:     &timestamp.Timestamp{Seconds: 150},
-									},
+								Policy: &v1.GetAlertsGroupResponse_PolicyDetails{
+									Name:        "policy10",
+									PolicyOneof: &v1.GetAlertsGroupResponse_PolicyDetails_ImagePolicy{},
 								},
+								NumAlerts: 1,
 							},
 						},
 					},

@@ -113,17 +113,28 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 	assert.Equal(suite.T(), alert1, alert)
 
 	// Filter by severity
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{Severity: v1.Severity_HIGH_SEVERITY})
+	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{
+		Severity: []v1.Severity{
+			v1.Severity_HIGH_SEVERITY,
+			v1.Severity_LOW_SEVERITY,
+		},
+	})
 	suite.Nil(err)
-	assert.Equal(suite.T(), []*v1.Alert{alert2}, alerts)
+	assert.Equal(suite.T(), []*v1.Alert{alert2, alert1}, alerts)
 
 	// Filter by category.
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{Category: v1.Policy_Category_IMAGE_ASSURANCE})
+	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{
+		Category: []v1.Policy_Category{
+			v1.Policy_Category_IMAGE_ASSURANCE,
+		},
+	})
 	suite.Nil(err)
 	assert.Equal(suite.T(), []*v1.Alert{alert2, alert1}, alerts)
 
 	// Filter by Policy.
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{PolicyName: "policy2"})
+	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{
+		PolicyName: []string{"policy2", "policy23"},
+	})
 	suite.Nil(err)
 	assert.Equal(suite.T(), []*v1.Alert{alert2}, alerts)
 

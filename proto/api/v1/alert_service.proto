@@ -42,9 +42,9 @@ message GetAlertRequest {
 }
 
 message GetAlertsRequest {
-    Policy_Category category        = 1;
-    string policy_name              = 2;
-    Severity severity               = 3;
+    repeated Policy_Category category      = 1;
+    repeated string policy_name            = 2;
+    repeated Severity severity             = 3;
     google.protobuf.Timestamp since = 4;
 }
 
@@ -52,10 +52,18 @@ message GetAlertsResponse {
     repeated Alert alerts = 1;
 }
 
+
 message GetAlertsGroupResponse {
+    message PolicyDetails {
+        string name = 1;
+        Severity severity = 2;
+        oneof policy_oneof {
+            ImagePolicy image_policy    = 4;
+        }
+    }
     message PolicyGroup {
-        string policy = 1;
-        repeated Alert alerts = 2;
+        PolicyDetails policy = 1;
+        int64 num_alerts = 2;
     }
     message CategoryGroup {
         Policy_Category category = 1;

@@ -233,6 +233,7 @@ func (policy *regexImagePolicy) matchPolicyToImage(image *v1.Image) *v1.Alert {
 			},
 		},
 		Severity: policy.Original.Severity,
+		Time:     ptypes.TimestampNow(),
 	}
 	return alert
 }

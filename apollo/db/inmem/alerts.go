@@ -53,17 +53,20 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 	}
 
 	requestTime, requestTimeErr := ptypes.Timestamp(request.GetSince())
+	severitySet := severitiesWrap(request.GetSeverity()).asSet()
+	categoriesSet := categoriesWrap(request.GetCategory()).asSet()
+	policiesSet := policiesWrap(request.GetPolicyName()).asSet()
 
 	for _, alert := range alerts {
-		if request.GetSeverity() != v1.Severity_UNSET_SEVERITY && alert.GetSeverity() != request.GetSeverity() {
+		if _, ok := severitySet[alert.GetSeverity()]; len(severitySet) > 0 && !ok {
 			continue
 		}
 
-		if request.GetCategory() != v1.Policy_Category_UNSET_CATEGORY && alert.GetPolicy().GetCategory() != request.GetCategory() {
+		if _, ok := categoriesSet[alert.GetPolicy().GetCategory()]; len(categoriesSet) > 0 && !ok {
 			continue
 		}
 
-		if request.GetPolicyName() != "" && alert.GetPolicy().GetName() != request.GetPolicyName() {
+		if _, ok := policiesSet[alert.GetPolicy().GetName()]; len(policiesSet) > 0 && !ok {
 			continue
 		}
 
@@ -121,4 +124,40 @@ func (s *alertStore) RemoveAlert(id string) error {
 	}
 	delete(s.alerts, id)
 	return nil
+}
+
+type severitiesWrap []v1.Severity
+
+func (wrap severitiesWrap) asSet() map[v1.Severity]struct{} {
+	output := make(map[v1.Severity]struct{})
+
+	for _, s := range wrap {
+		output[s] = struct{}{}
+	}
+
+	return output
+}
+
+type categoriesWrap []v1.Policy_Category
+
+func (wrap categoriesWrap) asSet() map[v1.Policy_Category]struct{} {
+	output := make(map[v1.Policy_Category]struct{})
+
+	for _, c := range wrap {
+		output[c] = struct{}{}
+	}
+
+	return output
+}
+
+type policiesWrap []string
+
+func (wrap policiesWrap) asSet() map[string]struct{} {
+	output := make(map[string]struct{})
+
+	for _, p := range wrap {
+		output[p] = struct{}{}
+	}
+
+	return output
 }
