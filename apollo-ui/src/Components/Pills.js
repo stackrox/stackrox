@@ -25,6 +25,7 @@ class Pills extends Component {
         var active = this.state.active;
         active[item] = !active[item];
         this.setState({ active: active });
+        this.props.onActivePillsChange(this.state.active);
     }
 
     render() {

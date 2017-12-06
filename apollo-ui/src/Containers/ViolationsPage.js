@@ -5,6 +5,8 @@ import Table from 'Components/Table';
 import Select from 'Components/Select';
 import Pills from 'Components/Pills';
 
+import axios from 'axios';
+
 class ViolationsContainer extends Component {
     constructor(props) {
         super(props);
@@ -19,17 +21,30 @@ class ViolationsContainer extends Component {
             pills: ['All', 'Image Assurance', 'Configurations', 'Orchestrator Target', 'Denial of Policy', 'Privileges & Capabilities', 'Account Authorization'],
             table: {
                 columns: [
-                    { key: 'benchmark', label: 'Benchmark' },
-                    { key: 'status', label: 'Status' }
+                    { key: 'name', label: 'Name' },
+                    { key: 'description', label: 'Description' },
+                    { key: 'severity', label: 'Severity' }
                 ],
-                rows: [
-                    { id: 1, benchmark: 'Ensure a separate partition for containers has been created', status: 'Pass' },
-                    { id: 2, benchmark: 'Ensure the container host has been Hardened', status: 'Pass' },
-                    { id: 3, benchmark: 'Ensure Docker is up to Date. Using 17.06.0 which is current', status: 'Pass' },
-                    { id: 4, benchmark: 'Ensure only trusted users are allowed to control Docker daemon', status: 'Fail' }
-                ]
+                rows: []
             }
         }
+    }
+
+    componentDidMount() {
+        axios.get('/v1/images/policies', {
+            params: {}
+        }).then((response) => {
+            if(!response.data.policies) return;
+            const table = this.state.table;
+            table.rows = response.data.policies;
+            this.setState({ table: table });
+        }).catch((error) => {
+            console.log(error);
+        });
+    }
+
+    onActivePillsChange(active) {
+        console.log(active);
     }
 
     render() {
@@ -47,13 +62,13 @@ class ViolationsContainer extends Component {
                             </div>
                         </div>
                         <div className="flex flex-1 flex-col p-4">
-                            <Pills data={this.state.pills}></Pills>
+                            <Pills data={this.state.pills} onActivePillsChange={this.onActivePillsChange.bind(this)}></Pills>
+                        </div>
+                        <div className="flex flex-1 flex-col p-4">
+                            <Table columns={this.state.table.columns} rows={this.state.table.rows}></Table>
                         </div>
                     </TabContent>
                     <TabContent name={this.state.tab.headers[1]}>
-                        <div className="flex flex-1 flex-row p-4">
-                            <Table columns={this.state.table.columns} rows={this.state.table.rows}></Table>
-                        </div>
                     </TabContent>
                 </Tabs>
             </section>

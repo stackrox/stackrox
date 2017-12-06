@@ -82,7 +82,7 @@ build: deps
 .PHONY: start
 start: deps
 	@echo "+ $@"
-	yarn start
+	HTTPS=true yarn start
 
 .PHONY: test
 test: deps

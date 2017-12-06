@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "axios": "^0.17.1",
     "fbemitter": "^2.1.1",
+    "flat": "^4.0.0",
     "react": "^16.1.1",
     "react-dom": "^16.1.1",
     "react-router-dom": "^4.2.2",
@@ -16,5 +18,12 @@
     "build": "tailwind build ./src/index.tailwind.css -c ./tailwind.js -o ./src/index.css && NODE_PATH=src react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
+  },
+  "proxy": {
+    "/v1": {
+      "target": "https://localhost:8080",
+      "changeOrigin": true,
+      "secure": false
+    }
   }
 }

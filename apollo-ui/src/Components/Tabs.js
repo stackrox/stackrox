@@ -5,9 +5,7 @@ class Tabs extends Component {
         super(props);
 
         this.state = {
-            headers: props.headers,
-            active: props.headers[0],
-            children: props.children
+            active: props.headers[0]
         }
 
         this.tabClick = this.tabClick.bind(this);
@@ -16,7 +14,7 @@ class Tabs extends Component {
     getHeaders() {
         var active = this.state.active;
         var tabClick = this.tabClick;
-        return this.state.headers.map(function (header, i) {
+        return this.props.headers.map(function (header, i) {
             var tabClass = (active === header) ? 'tab-active' : 'tab';
             return <div className={tabClass} key={header + '-' + i} onClick={() => tabClick(header)}>{header}</div>;
         });
@@ -27,7 +25,7 @@ class Tabs extends Component {
     }
 
     renderChildren() {
-        return React.Children.map(this.state.children, child => {
+        return React.Children.map(this.props.children, child => {
             return React.cloneElement(child, { active: this.state.active});
         });
     }

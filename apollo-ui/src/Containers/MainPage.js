@@ -3,12 +3,14 @@ import {
     BrowserRouter as Router,
     Route,
     Redirect,
+    Switch,
     Link
 } from 'react-router-dom';
 
 import logo from 'images/logo.svg';
 
 import ViolationsPage from 'Containers/ViolationsPage';
+import MainSidePanel from 'Containers/MainSidePanel';
 
 class Main extends Component {
     render() {
@@ -24,41 +26,28 @@ class Main extends Component {
                     </div>
                 </header>
                 <Router>
-                    <section className="flex flex-1 text-grey-dark">
+                    <section className="flex flex-1 text-grey-dark relative">
                         <nav className="flex w-1 bg-blue-lightest md:w-1/6 border-r border-gray-light">
                             <ul className="flex flex-col list-reset p-0 w-full font-mono font-bold">
                                 <li className="flex">
-                                    <a className="flex p-6 w-full">
-                                        <Link to="/dashboard" className="no-underline hover:underline text-grey">Dashboard</Link> 
-                                    </a>
+                                    <Link to="/dashboard" className="flex p-6 w-full no-underline hover:underline text-grey">Dashboard</Link>
                                 </li>
                                 <li className="flex">
-                                    <a className="flex p-6 w-full">
-                                        <Link to="/violations" className="no-underline hover:underline text-grey">Violations</Link>
-                                    </a>
+                                    <Link to="/violations" className="flex p-6 w-full no-underline hover:underline text-grey">Violations</Link>
                                 </li>
                                 <li className="flex">
-                                    <a className="flex p-6 w-full">
-                                        <Link to="/compliance" className="no-underline hover:underline text-grey">Compliance</Link>
-                                    </a>
-                                </li>
-                                <li className="flex">
-                                    <a className="flex p-6 w-full">
-                                        <Link to="/policies" className="no-underline hover:underline text-grey">Policies</Link>
-                                    </a>
-                                </li>
-                                <li className="flex">
-                                    <a className="flex p-6 w-full">
-                                        <Link to="/integrations" className="no-underline hover:underline text-grey">Integrations</Link>
-                                    </a>
+                                    <Link to="/integrations" className="flex p-6 w-full no-underline hover:underline text-grey">Integrations</Link>
                                 </li>
                             </ul>
                         </nav>
                         <main className="flex flex-1 flex-col bg-white md:w-5/6">
                             {/* Redirects to a default path */}
-                            <Redirect from="/" to="/violations" />
-                            <Route exact path="/violations" component={ViolationsPage} />
+                            <Switch>
+                                <Route exact path="/violations" component={ViolationsPage} />
+                                <Redirect from="/" to="/violations" />
+                            </Switch>
                         </main>
+                        <MainSidePanel></MainSidePanel>
                     </section>
                 </Router>
             </section>
