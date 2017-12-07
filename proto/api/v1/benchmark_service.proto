@@ -4,55 +4,13 @@ option go_package = "v1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
-import "google/protobuf/timestamp.proto";
 
 package v1;
 
-enum BenchmarkStatus {
-    INFO = 0;
-    WARN = 1;
-    NOTE = 2;
-    PASS = 3;
-}
-
-message BenchmarkTestResult {
-    BenchmarkStatus result = 1;
-    repeated string notes  = 2;
-}
-
-message BenchmarkResult {
-    BenchmarkTestResult test_result          = 1;
-    BenchmarkDefinition benchmark_definition = 2;
-}
-
-message BenchmarkDefinition {
-    string name        = 1;
-    string description = 2;
-}
-
-message BenchmarkPayload {
-    string id                            = 1;
-    repeated BenchmarkResult results     = 2;
-    google.protobuf.Timestamp start_time = 3;
-    google.protobuf.Timestamp end_time   = 4;
-    string host                          = 5;
-    string scan_id                       = 6;
-    string cluster_id                    = 7;
-}
-
-message GetBenchmarksRequest {
-    google.protobuf.Timestamp from_end_time = 1;
-    google.protobuf.Timestamp to_end_time   = 2;
-    string host                             = 3;
-}
-
-message GetBenchmarksResponse {
-    repeated BenchmarkPayload benchmarks = 1;
-}
-
 message BenchmarkSchedule {
     bool enable          = 1;
-    int64 interval_days  = 2;
+    int64 time_of_day    = 2;
+    int64 interval_days  = 3;
 }
 
 message TriggerBenchmarkRequest {}
@@ -61,6 +19,32 @@ message GetBenchmarkScheduleResponse {
     bool enabled           = 1;
     int64 interval_days    = 2;
     string current_scan_id = 3;
+}
+
+message Benchmark {
+    string name            = 1;
+    bool editable          = 2;
+    repeated string checks = 3;
+}
+
+message GetBenchmarksRequest {
+    string name = 1;
+}
+
+message GetBenchmarksResponse {
+    repeated Benchmark benchmarks = 1;
+}
+
+message DeleteBenchmarkRequest {
+    string name = 1;
+}
+
+message Check {
+    string name = 1;
+}
+
+message GetChecksResponse {
+    repeated Check checks = 1;
 }
 
 service BenchmarkService {
@@ -86,28 +70,36 @@ service BenchmarkService {
         };
     }
 
-    rpc GetBenchmarkResults(GetBenchmarksRequest) returns (GetBenchmarksResponse) {
+    rpc GetChecks(google.protobuf.Empty) returns (GetChecksResponse) {
         option (google.api.http) = {
-            get: "/v1/benchmarks/results"
+            get: "/v1/benchmarks/checks"
         };
     }
 
-    rpc PostBenchmarkResult(BenchmarkPayload) returns (google.protobuf.Empty) {
+    rpc GetBenchmarks(GetBenchmarksRequest) returns (GetBenchmarksResponse) {
         option (google.api.http) = {
-            post: "/v1/benchmarks/results"
-            body: "*"
+            get: "/v1/benchmarks/configs"
         };
     }
-    // No put or delete for benchmarks
-}
 
-// The BenchmarkRelayService is used by the agent to receive benchmark results,
-// which are then forwarded to the central server.
-service BenchmarkRelayService {
-    rpc PostBenchmarkResult(BenchmarkPayload) returns (google.protobuf.Empty) {
+    rpc PostBenchmark(Benchmark) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            post: "/v1/benchmarks/results"
+            post: "/v1/benchmarks/configs"
             body: "*"
         };
     }
+
+    rpc PutBenchmark(Benchmark) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/v1/benchmarks/configs/{name}"
+            body: "*"
+        };
+    }
+
+    rpc DeleteBenchmark(DeleteBenchmarkRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/benchmarks/configs/{name}"
+        };
+    }
+
 }

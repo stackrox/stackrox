@@ -38,7 +38,7 @@ type agent struct {
 
 func (a *agent) startGRPCServer() {
 	a.server = grpc.NewAPI()
-	a.server.Register(service.NewBenchmarkRelayService(benchmarks.NewLRURelayer(v1.NewBenchmarkServiceClient(a.conn))))
+	a.server.Register(service.NewBenchmarkRelayService(benchmarks.NewLRURelayer(v1.NewBenchmarkResultsServiceClient(a.conn))))
 	a.server.Start()
 }
 

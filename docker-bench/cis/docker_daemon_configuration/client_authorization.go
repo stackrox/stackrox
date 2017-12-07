@@ -9,14 +9,14 @@ type authorizationPluginBenchmark struct{}
 
 func (c *authorizationPluginBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.11",
 			Description: "Ensure that authorization for Docker client commands is enabled",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *authorizationPluginBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *authorizationPluginBenchmark) Run() (result v1.CheckResult) {
 	_, ok := utils.DockerConfig["authorization-plugin"]
 	if !ok {
 		utils.Warn(&result)
@@ -29,6 +29,6 @@ func (c *authorizationPluginBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewAuthorizationPluginBenchmark implements CIS-2.11
-func NewAuthorizationPluginBenchmark() utils.Benchmark {
+func NewAuthorizationPluginBenchmark() utils.Check {
 	return &authorizationPluginBenchmark{}
 }

@@ -9,14 +9,14 @@ type tlsVerifyBenchmark struct{}
 
 func (c *tlsVerifyBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.6",
 			Description: "Ensure TLS authentication for Docker daemon is configured",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *tlsVerifyBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *tlsVerifyBenchmark) Run() (result v1.CheckResult) {
 	hosts, ok := utils.DockerConfig["host"]
 	if !ok {
 		utils.Pass(&result)
@@ -55,6 +55,6 @@ func (c *tlsVerifyBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewTLSVerifyBenchmark implements CIS-2.6
-func NewTLSVerifyBenchmark() utils.Benchmark {
+func NewTLSVerifyBenchmark() utils.Check {
 	return &tlsVerifyBenchmark{}
 }

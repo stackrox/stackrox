@@ -9,14 +9,14 @@ type necessaryPortsBenchmark struct{}
 
 func (c *necessaryPortsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.8",
 			Description: "Ensure only needed ports are open on the container",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *necessaryPortsBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *necessaryPortsBenchmark) Run() (result v1.CheckResult) {
 	utils.Note(&result)
 	for _, container := range utils.ContainersRunning {
 		for containerPort, hostBinding := range container.NetworkSettings.Ports {
@@ -29,6 +29,6 @@ func (c *necessaryPortsBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewNecessaryPortsBenchmark implements CIS-5.8
-func NewNecessaryPortsBenchmark() utils.Benchmark {
+func NewNecessaryPortsBenchmark() utils.Check {
 	return &necessaryPortsBenchmark{}
 }

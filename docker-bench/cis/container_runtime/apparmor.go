@@ -9,14 +9,14 @@ type appArmorBenchmark struct{}
 
 func (c *appArmorBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.1",
 			Description: "Ensure AppArmor Profile is Enabled",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *appArmorBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *appArmorBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.AppArmorProfile == "" || container.AppArmorProfile == "unconfined" {
@@ -28,6 +28,6 @@ func (c *appArmorBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewAppArmorBenchmark implements CIS-5.1
-func NewAppArmorBenchmark() utils.Benchmark {
+func NewAppArmorBenchmark() utils.Check {
 	return &appArmorBenchmark{}
 }

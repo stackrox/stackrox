@@ -9,14 +9,14 @@ type imageHealthcheckBenchmark struct{}
 
 func (c *imageHealthcheckBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 4.6",
 			Description: "Ensure HEALTHCHECK instructions have been added to the container image",
 		}, Dependencies: []utils.Dependency{utils.InitImages},
 	}
 }
 
-func (c *imageHealthcheckBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *imageHealthcheckBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, image := range utils.Images {
 		if image.Config.Healthcheck == nil {
@@ -28,6 +28,6 @@ func (c *imageHealthcheckBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewImageHealthcheckBenchmark implements CIS-4.6
-func NewImageHealthcheckBenchmark() utils.Benchmark {
+func NewImageHealthcheckBenchmark() utils.Check {
 	return &imageHealthcheckBenchmark{}
 }

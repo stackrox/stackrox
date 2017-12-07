@@ -11,14 +11,14 @@ type seccompBenchmark struct{}
 
 func (c *seccompBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.21",
 			Description: "Ensure the default seccomp profile is not Disabled",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *seccompBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *seccompBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		for _, opt := range container.HostConfig.SecurityOpt {
@@ -33,6 +33,6 @@ func (c *seccompBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewSeccompBenchmark implements CIS-5.21
-func NewSeccompBenchmark() utils.Benchmark {
+func NewSeccompBenchmark() utils.Check {
 	return &seccompBenchmark{}
 }

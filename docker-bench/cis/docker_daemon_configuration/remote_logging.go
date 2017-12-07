@@ -12,14 +12,14 @@ type remoteLoggingBenchmark struct{}
 
 func (c *remoteLoggingBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.12",
 			Description: "Ensure centralized and remote logging is configured",
 		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
 	}
 }
 
-func (c *remoteLoggingBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *remoteLoggingBenchmark) Run() (result v1.CheckResult) {
 	info, err := utils.DockerClient.Info(context.Background())
 	if err != nil {
 		utils.Warn(&result)
@@ -36,6 +36,6 @@ func (c *remoteLoggingBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewRemoteLoggingBenchmark implements CIS-2.12
-func NewRemoteLoggingBenchmark() utils.Benchmark {
+func NewRemoteLoggingBenchmark() utils.Check {
 	return &remoteLoggingBenchmark{}
 }

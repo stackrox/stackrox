@@ -11,14 +11,14 @@ type userDockerExecBenchmark struct{}
 
 func (c *userDockerExecBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.23",
 			Description: "Ensure docker exec commands are not used with user option",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *userDockerExecBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *userDockerExecBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	auditLog, err := utils.ReadFile("/var/log/audit/audit.log")
 	if err != nil {
@@ -37,6 +37,6 @@ func (c *userDockerExecBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewUserDockerExecBenchmark implements CIS-5.23
-func NewUserDockerExecBenchmark() utils.Benchmark {
+func NewUserDockerExecBenchmark() utils.Check {
 	return &userDockerExecBenchmark{}
 }

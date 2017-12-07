@@ -12,14 +12,14 @@ type aufsBenchmark struct{}
 
 func (c *aufsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.5",
 			Description: "Ensure aufs storage driver is not used",
 		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
 	}
 }
 
-func (c *aufsBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *aufsBenchmark) Run() (result v1.CheckResult) {
 	info, err := utils.DockerClient.Info(context.Background())
 	if err != nil {
 		utils.Warn(&result)
@@ -36,6 +36,6 @@ func (c *aufsBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewAUFSBenchmark implements CIS-2.5
-func NewAUFSBenchmark() utils.Benchmark {
+func NewAUFSBenchmark() utils.Check {
 	return &aufsBenchmark{}
 }

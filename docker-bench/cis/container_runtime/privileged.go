@@ -9,14 +9,14 @@ type privilegedBenchmark struct{}
 
 func (c *privilegedBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.4",
 			Description: "Ensure privileged containers are not used",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *privilegedBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *privilegedBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.Privileged {
@@ -28,6 +28,6 @@ func (c *privilegedBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewPrivilegedBenchmark implements CIS-5.4
-func NewPrivilegedBenchmark() utils.Benchmark {
+func NewPrivilegedBenchmark() utils.Check {
 	return &privilegedBenchmark{}
 }

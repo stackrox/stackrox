@@ -34,7 +34,7 @@ func (s *BenchmarkRelayService) RegisterServiceHandlerFromEndpoint(ctx context.C
 }
 
 // PostBenchmarkResult inserts a new benchmark result into the system
-func (s *BenchmarkRelayService) PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkPayload) (*empty.Empty, error) {
+func (s *BenchmarkRelayService) PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkResult) (*empty.Empty, error) {
 	if request == nil {
 		return &empty.Empty{}, status.Errorf(codes.InvalidArgument, "Request object must be non-nil")
 	}

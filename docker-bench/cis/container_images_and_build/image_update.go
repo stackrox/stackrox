@@ -12,14 +12,14 @@ type imageUpdateInstructionsBenchmark struct{}
 
 func (c *imageUpdateInstructionsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 4.7",
 			Description: "Ensure update instructions are not use alone in the Dockerfile",
 		}, Dependencies: []utils.Dependency{utils.InitImages},
 	}
 }
 
-func (c *imageUpdateInstructionsBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *imageUpdateInstructionsBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, image := range utils.Images {
 		historySlice, err := utils.DockerClient.ImageHistory(context.Background(), image.ID)
@@ -40,6 +40,6 @@ func (c *imageUpdateInstructionsBenchmark) Run() (result v1.BenchmarkTestResult)
 }
 
 // NewImageUpdateInstructionsBenchmark implements CIS-4.7
-func NewImageUpdateInstructionsBenchmark() utils.Benchmark {
+func NewImageUpdateInstructionsBenchmark() utils.Check {
 	return &imageUpdateInstructionsBenchmark{}
 }

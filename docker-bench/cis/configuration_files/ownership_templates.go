@@ -23,14 +23,14 @@ type fileOwnershipCheck struct {
 
 func (f *fileOwnershipCheck) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        f.Name,
 			Description: f.Description,
 		},
 	}
 }
 
-func compareFileOwnership(file string, expectedUser string, expectedGroup string) (result v1.BenchmarkTestResult) {
+func compareFileOwnership(file string, expectedUser string, expectedGroup string) (result v1.CheckResult) {
 	info, err := os.Stat(file)
 	if os.IsNotExist(err) {
 		utils.Note(&result)
@@ -75,7 +75,7 @@ func compareFileOwnership(file string, expectedUser string, expectedGroup string
 	return
 }
 
-func (f *fileOwnershipCheck) Run() (result v1.BenchmarkTestResult) {
+func (f *fileOwnershipCheck) Run() (result v1.CheckResult) {
 	if f.File == "" {
 		utils.Note(&result)
 		utils.AddNotes(&result, "Test is not applicable. File is not defined")
@@ -85,7 +85,7 @@ func (f *fileOwnershipCheck) Run() (result v1.BenchmarkTestResult) {
 	return
 }
 
-func newOwnershipCheck(name, description, file, user, group string) utils.Benchmark {
+func newOwnershipCheck(name, description, file, user, group string) utils.Check {
 	return &fileOwnershipCheck{
 		Name:        name,
 		Description: description,
@@ -103,7 +103,7 @@ type systemdOwnershipCheck struct {
 	Group       string
 }
 
-func newSystemdOwnershipCheck(name, description, service, user, group string) utils.Benchmark {
+func newSystemdOwnershipCheck(name, description, service, user, group string) utils.Check {
 	return &systemdOwnershipCheck{
 		Name:        name,
 		Description: description,
@@ -115,13 +115,13 @@ func newSystemdOwnershipCheck(name, description, service, user, group string) ut
 
 func (s *systemdOwnershipCheck) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{Name: s.Name,
+		CheckDefinition: v1.CheckDefinition{Name: s.Name,
 			Description: s.Description,
 		},
 	}
 }
 
-func (s *systemdOwnershipCheck) Run() (result v1.BenchmarkTestResult) {
+func (s *systemdOwnershipCheck) Run() (result v1.CheckResult) {
 	if s.Service == "" {
 		utils.Note(&result)
 		utils.AddNotes(&result, "Test is not applicable. Service is not defined")
@@ -142,13 +142,13 @@ type recursiveOwnershipCheck struct {
 
 func (r *recursiveOwnershipCheck) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{Name: r.Name,
+		CheckDefinition: v1.CheckDefinition{Name: r.Name,
 			Description: r.Description,
 		},
 	}
 }
 
-func (r *recursiveOwnershipCheck) Run() (result v1.BenchmarkTestResult) {
+func (r *recursiveOwnershipCheck) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	if r.Directory == "" {
 		utils.Note(&result)
@@ -168,7 +168,7 @@ func (r *recursiveOwnershipCheck) Run() (result v1.BenchmarkTestResult) {
 	}
 	for _, file := range files {
 		tempResult := compareFileOwnership(filepath.Join(r.Directory, file.Name()), r.User, r.Group)
-		if tempResult.Result != v1.BenchmarkStatus_PASS {
+		if tempResult.Result != v1.CheckStatus_PASS {
 			utils.AddNotes(&result, tempResult.Notes...)
 			result.Result = tempResult.Result
 		}
@@ -176,7 +176,7 @@ func (r *recursiveOwnershipCheck) Run() (result v1.BenchmarkTestResult) {
 	return
 }
 
-func newRecursiveOwnershipCheck(name, description, directory, user, group string) utils.Benchmark {
+func newRecursiveOwnershipCheck(name, description, directory, user, group string) utils.Check {
 	return &recursiveOwnershipCheck{
 		Name:        name,
 		Description: description,

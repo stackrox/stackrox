@@ -11,14 +11,14 @@ type userNamespaceBenchmark struct{}
 
 func (c *userNamespaceBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.8",
 			Description: "Enable user namespace support",
 		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
 	}
 }
 
-func (c *userNamespaceBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *userNamespaceBenchmark) Run() (result v1.CheckResult) {
 	info, err := utils.DockerClient.Info(context.Background())
 	if err != nil {
 		utils.Warn(&result)
@@ -37,6 +37,6 @@ func (c *userNamespaceBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewUserNamespaceBenchmark implements CIS-2.8
-func NewUserNamespaceBenchmark() utils.Benchmark {
+func NewUserNamespaceBenchmark() utils.Check {
 	return &userNamespaceBenchmark{}
 }

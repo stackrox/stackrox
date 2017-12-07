@@ -9,14 +9,14 @@ type pidNamespaceBenchmark struct{}
 
 func (c *pidNamespaceBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.15",
 			Description: "Ensure the host's process namespace is not shared",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *pidNamespaceBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *pidNamespaceBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.PidMode.IsHost() {
@@ -28,6 +28,6 @@ func (c *pidNamespaceBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewPidNamespaceBenchmark implements CIS-5.15
-func NewPidNamespaceBenchmark() utils.Benchmark {
+func NewPidNamespaceBenchmark() utils.Check {
 	return &pidNamespaceBenchmark{}
 }

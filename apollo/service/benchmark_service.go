@@ -38,23 +38,6 @@ func (s *BenchmarkService) RegisterServiceHandlerFromEndpoint(ctx context.Contex
 	return v1.RegisterBenchmarkServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 }
 
-// GetBenchmarkResults retrieves benchmark results based on the request filters
-func (s *BenchmarkService) GetBenchmarkResults(ctx context.Context, request *v1.GetBenchmarksRequest) (*v1.GetBenchmarksResponse, error) {
-	benchmarks, err := s.storage.GetBenchmarks(request)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	return &v1.GetBenchmarksResponse{Benchmarks: benchmarks}, nil
-}
-
-// PostBenchmarkResult inserts a new benchmark result into the system
-func (s *BenchmarkService) PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkPayload) (*empty.Empty, error) {
-	if err := s.storage.AddBenchmark(request); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	return &empty.Empty{}, nil
-}
-
 // PostBenchmarkSchedule can trigger a new run, set a schedule, or disable a schedule
 func (s *BenchmarkService) PostBenchmarkSchedule(ctx context.Context, request *v1.BenchmarkSchedule) (*empty.Empty, error) {
 	if !request.Enable {
@@ -82,4 +65,39 @@ func (s *BenchmarkService) GetBenchmarkSchedule(ctx context.Context, _ *empty.Em
 func (s *BenchmarkService) TriggerBenchmark(ctx context.Context, request *v1.TriggerBenchmarkRequest) (*empty.Empty, error) {
 	s.schedule.Trigger()
 	return &empty.Empty{}, nil
+}
+
+// GetChecks returns all the available checks that can be included in a benchmark
+func (s *BenchmarkService) GetChecks(ctx context.Context, _ *empty.Empty) (*v1.GetChecksResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+// GetBenchmarks returns all the benchmarks as specified by the requests parameters
+func (s *BenchmarkService) GetBenchmarks(ctx context.Context, request *v1.GetBenchmarksRequest) (*v1.GetBenchmarksResponse, error) {
+	benchmarks, err := s.storage.GetBenchmarks(request)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &v1.GetBenchmarksResponse{Benchmarks: benchmarks}, nil
+}
+
+// PostBenchmark creates a new benchmark
+func (s *BenchmarkService) PostBenchmark(ctx context.Context, request *v1.Benchmark) (*empty.Empty, error) {
+	if err := s.storage.AddBenchmark(request); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &empty.Empty{}, nil
+}
+
+// PutBenchmark updates a benchmark
+func (s *BenchmarkService) PutBenchmark(ctx context.Context, request *v1.Benchmark) (*empty.Empty, error) {
+	if err := s.storage.UpdateBenchmark(request); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &empty.Empty{}, nil
+}
+
+// DeleteBenchmark removes a benchmark
+func (s *BenchmarkService) DeleteBenchmark(ctx context.Context, request *v1.DeleteBenchmarkRequest) (*empty.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
 }

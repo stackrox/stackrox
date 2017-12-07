@@ -11,14 +11,14 @@ type privilegedPortsBenchmark struct{}
 
 func (c *privilegedPortsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.7",
 			Description: "Ensure privileged ports are not mapped within containers",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *privilegedPortsBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *privilegedPortsBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		for containerPort, hostBinding := range container.NetworkSettings.Ports {
@@ -40,6 +40,6 @@ func (c *privilegedPortsBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewPrivilegedPortsBenchmark implements CIS-5.7
-func NewPrivilegedPortsBenchmark() utils.Benchmark {
+func NewPrivilegedPortsBenchmark() utils.Check {
 	return &privilegedPortsBenchmark{}
 }

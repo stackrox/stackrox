@@ -9,14 +9,14 @@ type imageSprawlBenchmark struct{}
 
 func (c *imageSprawlBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 6.1",
 			Description: "Ensure image sprawl is avoided",
 		}, Dependencies: []utils.Dependency{utils.InitImages, utils.InitContainers},
 	}
 }
 
-func (c *imageSprawlBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *imageSprawlBenchmark) Run() (result v1.CheckResult) {
 	utils.Info(&result)
 	m := make(map[string]struct{})
 	for _, container := range utils.ContainersRunning {
@@ -27,6 +27,6 @@ func (c *imageSprawlBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewImageSprawlBenchmark implements CIS-6.1
-func NewImageSprawlBenchmark() utils.Benchmark {
+func NewImageSprawlBenchmark() utils.Check {
 	return &imageSprawlBenchmark{}
 }

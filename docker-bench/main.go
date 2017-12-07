@@ -43,7 +43,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not convert ending time to proto: %+v", err)
 	}
-	payload := &v1.BenchmarkPayload{
+	payload := &v1.BenchmarkResult{
 		Id:        uuid.NewV4().String(),
 		Results:   results,
 		StartTime: protoStartTime,

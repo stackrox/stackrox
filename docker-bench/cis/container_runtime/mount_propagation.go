@@ -10,14 +10,14 @@ type mountPropagationBenchmark struct{}
 
 func (c *mountPropagationBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.19",
 			Description: "Ensure mount propagation mode is not set to shared",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *mountPropagationBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *mountPropagationBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		for _, containerMount := range container.Mounts {
@@ -31,6 +31,6 @@ func (c *mountPropagationBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewMountPropagationBenchmark implements CIS-5.19
-func NewMountPropagationBenchmark() utils.Benchmark {
+func NewMountPropagationBenchmark() utils.Check {
 	return &mountPropagationBenchmark{}
 }

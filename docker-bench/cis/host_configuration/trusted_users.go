@@ -10,14 +10,14 @@ type trustedUsers struct{}
 
 func (c *trustedUsers) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 1.4",
 			Description: "Ensure the container host has been Hardened",
 		},
 	}
 }
 
-func (c *trustedUsers) Run() (result v1.BenchmarkTestResult) {
+func (c *trustedUsers) Run() (result v1.CheckResult) {
 	group, err := user.LookupGroup("docker")
 	if err != nil {
 		utils.Warn(&result)
@@ -30,6 +30,6 @@ func (c *trustedUsers) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewTrustedUsers implements CIS-1.4
-func NewTrustedUsers() utils.Benchmark {
+func NewTrustedUsers() utils.Check {
 	return &trustedUsers{}
 }

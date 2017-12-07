@@ -9,14 +9,14 @@ type runtimeHealthcheckBenchmark struct{}
 
 func (c *runtimeHealthcheckBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.26",
 			Description: "Ensure container health is checked at runtime",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *runtimeHealthcheckBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *runtimeHealthcheckBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.State.Status != "running" {
@@ -36,6 +36,6 @@ func (c *runtimeHealthcheckBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewRuntimeHealthcheckBenchmark implements CIS-5.26
-func NewRuntimeHealthcheckBenchmark() utils.Benchmark {
+func NewRuntimeHealthcheckBenchmark() utils.Check {
 	return &runtimeHealthcheckBenchmark{}
 }

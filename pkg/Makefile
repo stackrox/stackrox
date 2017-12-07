@@ -4,6 +4,7 @@ TESTFLAGS=-race -p 4
 API_SERVICES  = v1/agent_event_service
 API_SERVICES += v1/alert_service
 API_SERVICES += v1/benchmark_service
+API_SERVICES += v1/benchmark_results_service
 API_SERVICES += v1/common
 API_SERVICES += v1/deployment_service
 API_SERVICES += v1/image_policy_service

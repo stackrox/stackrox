@@ -11,14 +11,14 @@ type acquiringPrivilegesBenchmark struct{}
 
 func (c *acquiringPrivilegesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.25",
 			Description: "Ensure the container is restricted from acquiring additional privileges",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *acquiringPrivilegesBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *acquiringPrivilegesBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 LOOP:
 	for _, container := range utils.ContainersRunning {
@@ -34,6 +34,6 @@ LOOP:
 }
 
 // NewAcquiringPrivilegesBenchmark implements CIS-5.25
-func NewAcquiringPrivilegesBenchmark() utils.Benchmark {
+func NewAcquiringPrivilegesBenchmark() utils.Check {
 	return &acquiringPrivilegesBenchmark{}
 }

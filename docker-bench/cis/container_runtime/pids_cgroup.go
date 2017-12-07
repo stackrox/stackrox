@@ -9,14 +9,14 @@ type pidCgroupBenchmark struct{}
 
 func (c *pidCgroupBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.28",
 			Description: "Ensure PIDs cgroup limit is used",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *pidCgroupBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *pidCgroupBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.PidsLimit <= 0 {
@@ -28,6 +28,6 @@ func (c *pidCgroupBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewPidCgroupBenchmark implements CIS-5.28
-func NewPidCgroupBenchmark() utils.Benchmark {
+func NewPidCgroupBenchmark() utils.Check {
 	return &pidCgroupBenchmark{}
 }

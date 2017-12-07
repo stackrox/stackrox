@@ -9,14 +9,14 @@ type cpuPriorityBenchmark struct{}
 
 func (c *cpuPriorityBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.11",
 			Description: "Ensure CPU priority is set appropriately on the container",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *cpuPriorityBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *cpuPriorityBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.CPUShares == 0 {
@@ -28,6 +28,6 @@ func (c *cpuPriorityBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewCPUPriorityBenchmark implements CIS-5.11
-func NewCPUPriorityBenchmark() utils.Benchmark {
+func NewCPUPriorityBenchmark() utils.Check {
 	return &cpuPriorityBenchmark{}
 }

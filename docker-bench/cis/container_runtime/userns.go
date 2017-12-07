@@ -9,14 +9,14 @@ type usernsBenchmark struct{}
 
 func (c *usernsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.30",
 			Description: "Ensure the host's user namespaces is not shared",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *usernsBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *usernsBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.UsernsMode.IsHost() {
@@ -28,6 +28,6 @@ func (c *usernsBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewUsernsBenchmark implements CIS-5.30
-func NewUsernsBenchmark() utils.Benchmark {
+func NewUsernsBenchmark() utils.Check {
 	return &usernsBenchmark{}
 }

@@ -21,7 +21,7 @@ const (
 type Relayer interface {
 	Start()
 	Stop()
-	Accept(payload *v1.BenchmarkPayload)
+	Accept(payload *v1.BenchmarkResult)
 }
 
 // An LRURelayer sends received benchmark payloads onto central Apollo.
@@ -30,7 +30,7 @@ type Relayer interface {
 type LRURelayer struct {
 	cache *lru.Cache
 
-	client v1.BenchmarkServiceClient
+	client v1.BenchmarkResultsServiceClient
 
 	tick  *time.Ticker
 	stopC chan struct{}
@@ -39,7 +39,7 @@ type LRURelayer struct {
 }
 
 // NewLRURelayer creates a new LRURelayer, which must then be started.
-func NewLRURelayer(client v1.BenchmarkServiceClient) *LRURelayer {
+func NewLRURelayer(client v1.BenchmarkResultsServiceClient) *LRURelayer {
 	cache, err := lru.New(cacheSize)
 	if err != nil {
 		// This only happens in extreme cases (at this time, for invalid size only).
@@ -72,12 +72,12 @@ func (r *LRURelayer) Stop() {
 	r.stopC <- struct{}{}
 }
 
-func payloadKey(payload *v1.BenchmarkPayload) string {
+func payloadKey(payload *v1.BenchmarkResult) string {
 	return strings.Join([]string{payload.GetScanId(), payload.GetHost(), payload.GetStartTime().String()}, "-")
 }
 
 // Accept accepts a new payload, tries to relay it, and caches if unsuccessful.
-func (r *LRURelayer) Accept(payload *v1.BenchmarkPayload) {
+func (r *LRURelayer) Accept(payload *v1.BenchmarkResult) {
 	payload.ClusterId = agent.ClusterID.Setting()
 	err := r.relay(payload)
 	if err != nil {
@@ -93,7 +93,7 @@ func (r *LRURelayer) run() {
 			// Must have been evicted. Nothing more we can do about that.
 			continue
 		}
-		err := r.relay(obj.(*v1.BenchmarkPayload))
+		err := r.relay(obj.(*v1.BenchmarkResult))
 		if err != nil {
 			r.logger.Warnf("Couldn't retry %s: %s", k, err)
 		} else {
@@ -102,7 +102,7 @@ func (r *LRURelayer) run() {
 	}
 }
 
-func (r *LRURelayer) relay(payload *v1.BenchmarkPayload) error {
+func (r *LRURelayer) relay(payload *v1.BenchmarkResult) error {
 	r.logger.Infof("Relaying payload %s", payloadKey(payload))
 	_, err := r.client.PostBenchmarkResult(context.Background(), payload)
 	return err

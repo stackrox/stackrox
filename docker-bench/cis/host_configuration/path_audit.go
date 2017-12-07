@@ -13,19 +13,19 @@ type pathAudit struct {
 
 func (s *pathAudit) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        s.Name,
 			Description: s.Description,
 		},
 	}
 }
 
-func (s *pathAudit) Run() (result v1.BenchmarkTestResult) {
+func (s *pathAudit) Run() (result v1.CheckResult) {
 	result = utils.CheckAudit(s.Path)
 	return
 }
 
-func newPathAudit(name, description, path string) utils.Benchmark {
+func newPathAudit(name, description, path string) utils.Check {
 	return &pathAudit{
 		Name:        name,
 		Description: description,

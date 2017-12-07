@@ -9,14 +9,14 @@ type defaultUlimitBenchmark struct{}
 
 func (c *defaultUlimitBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.7",
 			Description: "Ensure the default ulimit is configured appropriately",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *defaultUlimitBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *defaultUlimitBenchmark) Run() (result v1.CheckResult) {
 	if _, ok := utils.DockerConfig["default-ulimit"]; !ok {
 		utils.Warn(&result)
 		utils.AddNotes(&result, "No default-ulimit values are set")
@@ -27,6 +27,6 @@ func (c *defaultUlimitBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewDefaultUlimitBenchmark implements CIS-2.7
-func NewDefaultUlimitBenchmark() utils.Benchmark {
+func NewDefaultUlimitBenchmark() utils.Check {
 	return &defaultUlimitBenchmark{}
 }

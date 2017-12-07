@@ -19,14 +19,14 @@ type filePermissionsCheck struct {
 
 func (f *filePermissionsCheck) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        f.Name,
 			Description: f.Description,
 		},
 	}
 }
 
-func compareFilePermissions(file string, permissionLevel uint32, includesLower bool) (result v1.BenchmarkTestResult) {
+func compareFilePermissions(file string, permissionLevel uint32, includesLower bool) (result v1.CheckResult) {
 	info, err := os.Stat(file)
 	if os.IsNotExist(err) {
 		utils.Note(&result)
@@ -47,7 +47,7 @@ func compareFilePermissions(file string, permissionLevel uint32, includesLower b
 	return
 }
 
-func (f *filePermissionsCheck) Run() (result v1.BenchmarkTestResult) {
+func (f *filePermissionsCheck) Run() (result v1.CheckResult) {
 	if f.File == "" {
 		utils.Note(&result)
 		utils.AddNotes(&result, "Test is not applicable. File is not defined")
@@ -57,7 +57,7 @@ func (f *filePermissionsCheck) Run() (result v1.BenchmarkTestResult) {
 	return
 }
 
-func newPermissionsCheck(name, description, file string, permissionLevel uint32, includesLower bool) utils.Benchmark {
+func newPermissionsCheck(name, description, file string, permissionLevel uint32, includesLower bool) utils.Check {
 	return &filePermissionsCheck{
 		Name:            name,
 		Description:     description,
@@ -75,7 +75,7 @@ type systemdPermissionsCheck struct {
 	Service         string
 }
 
-func newSystemdPermissionsCheck(name, description, service string, permissionLevel uint32, includesLower bool) utils.Benchmark {
+func newSystemdPermissionsCheck(name, description, service string, permissionLevel uint32, includesLower bool) utils.Check {
 	return &systemdPermissionsCheck{
 		Name:            name,
 		Description:     description,
@@ -87,13 +87,13 @@ func newSystemdPermissionsCheck(name, description, service string, permissionLev
 
 func (s *systemdPermissionsCheck) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{Name: s.Name,
+		CheckDefinition: v1.CheckDefinition{Name: s.Name,
 			Description: s.Description,
 		},
 	}
 }
 
-func (s *systemdPermissionsCheck) Run() (result v1.BenchmarkTestResult) {
+func (s *systemdPermissionsCheck) Run() (result v1.CheckResult) {
 	if s.Service == "" {
 		utils.Note(&result)
 		utils.AddNotes(&result, "Test is not applicable. Service is not defined")
@@ -114,14 +114,14 @@ type recursivePermissionsCheck struct {
 
 func (r *recursivePermissionsCheck) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        r.Name,
 			Description: r.Description,
 		},
 	}
 }
 
-func (r *recursivePermissionsCheck) Run() (result v1.BenchmarkTestResult) {
+func (r *recursivePermissionsCheck) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	if r.Directory == "" {
 		utils.Note(&result)
@@ -141,7 +141,7 @@ func (r *recursivePermissionsCheck) Run() (result v1.BenchmarkTestResult) {
 	}
 	for _, file := range files {
 		tempResult := compareFilePermissions(filepath.Join(r.Directory, file.Name()), r.PermissionLevel, r.IncludesLower)
-		if tempResult.Result != v1.BenchmarkStatus_PASS {
+		if tempResult.Result != v1.CheckStatus_PASS {
 			utils.AddNotes(&result, tempResult.Notes...)
 			result.Result = tempResult.Result
 		}
@@ -149,7 +149,7 @@ func (r *recursivePermissionsCheck) Run() (result v1.BenchmarkTestResult) {
 	return
 }
 
-func newRecursivePermissionsCheck(name, description, filepath string, permissionLevel uint32, includesLower bool) utils.Benchmark {
+func newRecursivePermissionsCheck(name, description, filepath string, permissionLevel uint32, includesLower bool) utils.Check {
 	return &recursivePermissionsCheck{
 		Name:            name,
 		Description:     description,

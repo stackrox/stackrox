@@ -9,14 +9,14 @@ type disableLegacyRegistryBenchmark struct{}
 
 func (c *disableLegacyRegistryBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.13",
 			Description: "Ensure operations on legacy registry (v1) are Disabled",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *disableLegacyRegistryBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *disableLegacyRegistryBenchmark) Run() (result v1.CheckResult) {
 	if _, ok := utils.DockerConfig["disable-legacy-registry"]; !ok {
 		utils.Warn(&result)
 		utils.AddNotes(&result, "Legacy registry is not disabled")
@@ -27,6 +27,6 @@ func (c *disableLegacyRegistryBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewDisableLegacyRegistryBenchmark implements CIS-2.13
-func NewDisableLegacyRegistryBenchmark() utils.Benchmark {
+func NewDisableLegacyRegistryBenchmark() utils.Check {
 	return &disableLegacyRegistryBenchmark{}
 }

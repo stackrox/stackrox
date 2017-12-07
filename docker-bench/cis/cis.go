@@ -13,7 +13,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
 
-var cisBenchmarks = []utils.Benchmark{
+var cisBenchmarks = []utils.Check{
 	// Part 1
 	hostconfiguration.NewContainerPartitionBenchmark(), // 1.1
 	hostconfiguration.NewHostHardened(),
@@ -123,8 +123,8 @@ var cisBenchmarks = []utils.Benchmark{
 }
 
 // RunCISBenchmark runs the CIS benchmark
-func RunCISBenchmark() []*v1.BenchmarkResult {
-	results := make([]*v1.BenchmarkResult, 0, len(cisBenchmarks))
+func RunCISBenchmark() []*v1.CheckResult {
+	results := make([]*v1.CheckResult, 0, len(cisBenchmarks))
 	for _, benchmark := range cisBenchmarks {
 		for _, dep := range benchmark.Definition().Dependencies {
 			if err := dep(); err != nil {
@@ -134,11 +134,9 @@ func RunCISBenchmark() []*v1.BenchmarkResult {
 		}
 		result := benchmark.Run()
 
-		definition := benchmark.Definition().BenchmarkDefinition
-		results = append(results, &v1.BenchmarkResult{
-			TestResult:          &result,
-			BenchmarkDefinition: &definition,
-		})
+		definition := benchmark.Definition().CheckDefinition
+		result.Definition = &definition
+		results = append(results, &result)
 	}
 	return results
 }

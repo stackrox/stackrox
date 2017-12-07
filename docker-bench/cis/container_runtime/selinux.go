@@ -11,14 +11,14 @@ type seLinuxBenchmark struct{}
 
 func (c *seLinuxBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.2",
 			Description: "Ensure SELinux security options are set, if applicable",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig, utils.InitContainers},
 	}
 }
 
-func checkContainersForSELinux() (result v1.BenchmarkTestResult) {
+func checkContainersForSELinux() (result v1.CheckResult) {
 	utils.Pass(&result)
 LOOP:
 	for _, container := range utils.ContainersRunning {
@@ -33,7 +33,7 @@ LOOP:
 	return
 }
 
-func (c *seLinuxBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *seLinuxBenchmark) Run() (result v1.CheckResult) {
 	if values, ok := utils.DockerConfig["selinux-enabled"]; ok && (values.Matches("") || values.Matches("true")) {
 		result = checkContainersForSELinux()
 		return
@@ -43,6 +43,6 @@ func (c *seLinuxBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewSELinuxBenchmark implements CIS-5.2
-func NewSELinuxBenchmark() utils.Benchmark {
+func NewSELinuxBenchmark() utils.Check {
 	return &seLinuxBenchmark{}
 }

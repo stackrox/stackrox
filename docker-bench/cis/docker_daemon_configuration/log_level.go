@@ -9,14 +9,14 @@ type logLevelBenchmark struct{}
 
 func (c *logLevelBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.2",
 			Description: "Ensure the logging level is set to 'info'",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *logLevelBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *logLevelBenchmark) Run() (result v1.CheckResult) {
 	if vals, ok := utils.DockerConfig["log-level"]; ok {
 		if _, exists := vals.Contains("info"); !exists {
 			utils.Warn(&result)
@@ -29,6 +29,6 @@ func (c *logLevelBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewLogLevelBenchmark implements CIS-2.2
-func NewLogLevelBenchmark() utils.Benchmark {
+func NewLogLevelBenchmark() utils.Check {
 	return &logLevelBenchmark{}
 }

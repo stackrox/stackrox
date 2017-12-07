@@ -11,14 +11,14 @@ type dockerSocketMountBenchmark struct{}
 
 func (c *dockerSocketMountBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.31",
 			Description: "Ensure the Docker socket is not mounted inside any containers",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *dockerSocketMountBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *dockerSocketMountBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		for _, containerMount := range container.Mounts {
@@ -32,6 +32,6 @@ func (c *dockerSocketMountBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewDockerSocketMountBenchmark implements CIS-5.31
-func NewDockerSocketMountBenchmark() utils.Benchmark {
+func NewDockerSocketMountBenchmark() utils.Check {
 	return &dockerSocketMountBenchmark{}
 }

@@ -13,14 +13,14 @@ type networkRestrictionBenchmark struct{}
 
 func (c *networkRestrictionBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.1",
 			Description: "Ensure network traffic is restricted between containers on the default bridge",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig, utils.InitDockerClient},
 	}
 }
 
-func (c *networkRestrictionBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *networkRestrictionBenchmark) Run() (result v1.CheckResult) {
 	listFilters := filters.NewArgs()
 	listFilters.Add("Name", "bridge")
 	inspect, err := utils.DockerClient.NetworkInspect(context.Background(), "bridge", types.NetworkInspectOptions{})
@@ -39,6 +39,6 @@ func (c *networkRestrictionBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewNetworkRestrictionBenchmark implements CIS-2.1
-func NewNetworkRestrictionBenchmark() utils.Benchmark {
+func NewNetworkRestrictionBenchmark() utils.Check {
 	return &networkRestrictionBenchmark{}
 }

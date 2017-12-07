@@ -9,14 +9,14 @@ type restrictContainerPrivilegesBenchmark struct{}
 
 func (c *restrictContainerPrivilegesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.18",
 			Description: "Ensure containers are restricted from acquiring new privileges",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *restrictContainerPrivilegesBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *restrictContainerPrivilegesBenchmark) Run() (result v1.CheckResult) {
 	if opts, ok := utils.DockerConfig["no-new-privileges"]; !ok {
 		utils.Warn(&result)
 		utils.AddNotes(&result, "ContainersRunning are not prevented from acquiring new privileges by default")
@@ -31,6 +31,6 @@ func (c *restrictContainerPrivilegesBenchmark) Run() (result v1.BenchmarkTestRes
 }
 
 // NewRestrictContainerPrivilegesBenchmark implements CIS-2.18
-func NewRestrictContainerPrivilegesBenchmark() utils.Benchmark {
+func NewRestrictContainerPrivilegesBenchmark() utils.Check {
 	return &restrictContainerPrivilegesBenchmark{}
 }

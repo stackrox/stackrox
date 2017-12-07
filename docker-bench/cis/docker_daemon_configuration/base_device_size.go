@@ -9,14 +9,14 @@ type baseDeviceSizeBenchmark struct{}
 
 func (c *baseDeviceSizeBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.10",
 			Description: "Ensure base device size is not changed until needed",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *baseDeviceSizeBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *baseDeviceSizeBenchmark) Run() (result v1.CheckResult) {
 	opts, ok := utils.DockerConfig["storage-opt"]
 	if ok {
 		if val, found := opts.Contains("dm.basesize"); found {
@@ -30,6 +30,6 @@ func (c *baseDeviceSizeBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewBaseDeviceSizeBenchmark implements CIS-2.10
-func NewBaseDeviceSizeBenchmark() utils.Benchmark {
+func NewBaseDeviceSizeBenchmark() utils.Check {
 	return &baseDeviceSizeBenchmark{}
 }

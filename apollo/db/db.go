@@ -10,6 +10,7 @@ type Storage interface {
 	Close()
 
 	AlertStorage
+	BenchmarkResultsStorage
 	BenchmarkStorage
 	DeploymentStorage
 	ImagePolicyStorage
@@ -27,11 +28,20 @@ type AlertStorage interface {
 	RemoveAlert(id string) error
 }
 
-// BenchmarkStorage provides storage functionality for benchmarks.
+// BenchmarkStorage provides storage functionality for benchmarks results.
 type BenchmarkStorage interface {
-	GetBenchmark(id string) (*v1.BenchmarkPayload, bool, error)
-	GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*v1.BenchmarkPayload, error)
-	AddBenchmark(benchmark *v1.BenchmarkPayload) error
+	GetBenchmark(name string) (*v1.Benchmark, bool, error)
+	GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*v1.Benchmark, error)
+	AddBenchmark(benchmark *v1.Benchmark) error
+	UpdateBenchmark(benchmark *v1.Benchmark) error
+	RemoveBenchmark(name string) error
+}
+
+// BenchmarkResultsStorage provides storage functionality for benchmarks results.
+type BenchmarkResultsStorage interface {
+	GetBenchmarkResult(id string) (*v1.BenchmarkResult, bool, error)
+	GetBenchmarkResults(request *v1.GetBenchmarkResultsRequest) ([]*v1.BenchmarkResult, error)
+	AddBenchmarkResult(benchmark *v1.BenchmarkResult) error
 }
 
 // DeploymentStorage provides storage functionality for deployments.

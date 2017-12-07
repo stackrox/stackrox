@@ -9,14 +9,14 @@ type readonlyRootfsBenchmark struct{}
 
 func (c *readonlyRootfsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.12",
 			Description: "Ensure the container's root filesystem is mounted as read only",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *readonlyRootfsBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *readonlyRootfsBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if !container.HostConfig.ReadonlyRootfs {
@@ -28,6 +28,6 @@ func (c *readonlyRootfsBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewReadonlyRootfsBenchmark implements CIS-5.12
-func NewReadonlyRootfsBenchmark() utils.Benchmark {
+func NewReadonlyRootfsBenchmark() utils.Check {
 	return &readonlyRootfsBenchmark{}
 }

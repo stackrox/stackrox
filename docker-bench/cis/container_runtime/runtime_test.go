@@ -76,7 +76,7 @@ func TestRuntimeBenchmarksWarn(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	benchmarks := []utils.Benchmark{
+	benchmarks := []utils.Check{
 		NewAppArmorBenchmark(), // 5.1
 		NewSELinuxBenchmark(),
 		NewCapabilitiesBenchmark(),
@@ -110,38 +110,38 @@ func TestRuntimeBenchmarksWarn(t *testing.T) {
 		NewDockerSocketMountBenchmark(),
 	}
 
-	expectedResults := []v1.BenchmarkStatus{
-		v1.BenchmarkStatus_WARN, // 1
-		v1.BenchmarkStatus_WARN,
-		v1.BenchmarkStatus_WARN,
-		v1.BenchmarkStatus_WARN,
-		v1.BenchmarkStatus_WARN, // 5
-		v1.BenchmarkStatus_NOTE,
-		v1.BenchmarkStatus_WARN,
-		v1.BenchmarkStatus_NOTE,
-		v1.BenchmarkStatus_PASS, // Cannot use both bridge and host network at the same time. Bridge removes port binding so allow host network test to pass
-		v1.BenchmarkStatus_WARN, // 10
-		v1.BenchmarkStatus_WARN,
-		v1.BenchmarkStatus_WARN,
-		v1.BenchmarkStatus_WARN,
-		v1.BenchmarkStatus_WARN,
-		v1.BenchmarkStatus_WARN, // 15
-		v1.BenchmarkStatus_WARN,
-		v1.BenchmarkStatus_WARN,
-		v1.BenchmarkStatus_NOTE,
-		v1.BenchmarkStatus_WARN,
-		v1.BenchmarkStatus_WARN, // 20
-		v1.BenchmarkStatus_WARN,
-		//v1.BenchmarkStatus_WARN, // Docker exec audits are commented out
-		//v1.BenchmarkStatus_WARN, // Docker exec audits are commented out
-		v1.BenchmarkStatus_WARN,
-		v1.BenchmarkStatus_WARN, // 25
-		v1.BenchmarkStatus_WARN,
-		v1.BenchmarkStatus_NOTE,
-		v1.BenchmarkStatus_WARN,
-		v1.BenchmarkStatus_WARN,
-		v1.BenchmarkStatus_WARN, // 30
-		v1.BenchmarkStatus_WARN,
+	expectedResults := []v1.CheckStatus{
+		v1.CheckStatus_WARN, // 1
+		v1.CheckStatus_WARN,
+		v1.CheckStatus_WARN,
+		v1.CheckStatus_WARN,
+		v1.CheckStatus_WARN, // 5
+		v1.CheckStatus_NOTE,
+		v1.CheckStatus_WARN,
+		v1.CheckStatus_NOTE,
+		v1.CheckStatus_PASS, // Cannot use both bridge and host network at the same time. Bridge removes port binding so allow host network test to pass
+		v1.CheckStatus_WARN, // 10
+		v1.CheckStatus_WARN,
+		v1.CheckStatus_WARN,
+		v1.CheckStatus_WARN,
+		v1.CheckStatus_WARN,
+		v1.CheckStatus_WARN, // 15
+		v1.CheckStatus_WARN,
+		v1.CheckStatus_WARN,
+		v1.CheckStatus_NOTE,
+		v1.CheckStatus_WARN,
+		v1.CheckStatus_WARN, // 20
+		v1.CheckStatus_WARN,
+		//v1.CheckStatus_WARN, // Docker exec audits are commented out
+		//v1.CheckStatus_WARN, // Docker exec audits are commented out
+		v1.CheckStatus_WARN,
+		v1.CheckStatus_WARN, // 25
+		v1.CheckStatus_WARN,
+		v1.CheckStatus_NOTE,
+		v1.CheckStatus_WARN,
+		v1.CheckStatus_WARN,
+		v1.CheckStatus_WARN, // 30
+		v1.CheckStatus_WARN,
 	}
 	require.Equal(t, len(benchmarks), len(expectedResults))
 
@@ -195,7 +195,7 @@ func TestRuntimeBenchmarksPass(t *testing.T) {
 		"--net="+networkName)
 	require.Nil(t, err)
 
-	benchmarks := []utils.Benchmark{
+	benchmarks := []utils.Check{
 		NewAppArmorBenchmark(), // 5.1
 		NewSELinuxBenchmark(),
 		NewCapabilitiesBenchmark(),
@@ -229,38 +229,38 @@ func TestRuntimeBenchmarksPass(t *testing.T) {
 		NewDockerSocketMountBenchmark(),
 	}
 
-	expectedResults := []v1.BenchmarkStatus{
-		v1.BenchmarkStatus_PASS, // 1
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_PASS, // 5
-		v1.BenchmarkStatus_NOTE,
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_NOTE,
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_PASS, // 10
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_PASS, // 15
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_NOTE,
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_PASS, // 20
-		v1.BenchmarkStatus_PASS,
-		// v1.BenchmarkStatus_PASS, // Docker exec audits are commented out
-		// v1.BenchmarkStatus_PASS, // Docker exec audits are commented out
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_PASS, // 25
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_NOTE,
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_PASS,
-		v1.BenchmarkStatus_PASS, // 30
-		v1.BenchmarkStatus_PASS,
+	expectedResults := []v1.CheckStatus{
+		v1.CheckStatus_PASS, // 1
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_PASS, // 5
+		v1.CheckStatus_NOTE,
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_NOTE,
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_PASS, // 10
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_PASS, // 15
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_NOTE,
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_PASS, // 20
+		v1.CheckStatus_PASS,
+		// v1.CheckStatus_PASS, // Docker exec audits are commented out
+		// v1.CheckStatus_PASS, // Docker exec audits are commented out
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_PASS, // 25
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_NOTE,
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_PASS,
+		v1.CheckStatus_PASS, // 30
+		v1.CheckStatus_PASS,
 	}
 	require.Equal(t, len(benchmarks), len(expectedResults))
 	// Set the containers manually to work around sync.Once
@@ -280,7 +280,7 @@ func TestRuntimeBenchmarksPass(t *testing.T) {
 			benchmark.Definition().Name,
 			benchmark.Definition().Description,
 		)
-		if result.Result == v1.BenchmarkStatus_WARN {
+		if result.Result == v1.CheckStatus_WARN {
 			log.Printf("%+v", result.Notes)
 		}
 	}

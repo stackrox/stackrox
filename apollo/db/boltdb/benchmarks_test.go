@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -37,18 +36,16 @@ func (suite *BoltBenchmarkTestSuite) TeardownSuite() {
 }
 
 func (suite *BoltBenchmarkTestSuite) TestBenchmarks() {
-	benchmarks := []*v1.BenchmarkPayload{
+	benchmarks := []*v1.Benchmark{
 		{
-			Id:        "bench1",
-			StartTime: ptypes.TimestampNow(),
-			EndTime:   ptypes.TimestampNow(),
-			Host:      "host1",
+			Name:     "bench1",
+			Editable: true,
+			Checks:   []string{"CIS 1", "CIS 2"},
 		},
 		{
-			Id:        "bench2",
-			StartTime: ptypes.TimestampNow(),
-			EndTime:   ptypes.TimestampNow(),
-			Host:      "host2",
+			Name:     "bench2",
+			Editable: true,
+			Checks:   []string{"CIS 3", "CIS 4"},
 		},
 	}
 
@@ -58,9 +55,36 @@ func (suite *BoltBenchmarkTestSuite) TestBenchmarks() {
 	}
 
 	for _, b := range benchmarks {
-		got, exists, err := suite.GetBenchmark(b.Id)
+		got, exists, err := suite.GetBenchmark(b.Name)
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, b)
+	}
+
+	// Test Update
+	for _, b := range benchmarks {
+		b.Editable = false
+	}
+
+	for _, b := range benchmarks {
+		suite.NoError(suite.UpdateBenchmark(b))
+	}
+
+	for _, b := range benchmarks {
+		got, exists, err := suite.GetBenchmark(b.GetName())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.Equal(got, b)
+	}
+
+	// Test Remove
+	for _, b := range benchmarks {
+		suite.NoError(suite.RemoveBenchmark(b.GetName()))
+	}
+
+	for _, b := range benchmarks {
+		_, exists, err := suite.GetBenchmark(b.GetName())
+		suite.NoError(err)
+		suite.False(exists)
 	}
 }

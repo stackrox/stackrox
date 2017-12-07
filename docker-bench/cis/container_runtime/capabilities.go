@@ -9,7 +9,7 @@ type capabilitiesBenchmark struct{}
 
 func (c *capabilitiesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.3",
 			Description: "Ensure Linux Kernel Capabilities are restricted within containers",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
@@ -24,7 +24,7 @@ func newExpectedCapDrop() map[string]bool {
 	}
 }
 
-func (c *capabilitiesBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *capabilitiesBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if len(container.HostConfig.CapAdd) > 0 {
@@ -47,6 +47,6 @@ func (c *capabilitiesBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewCapabilitiesBenchmark implements CIS-5.3
-func NewCapabilitiesBenchmark() utils.Benchmark {
+func NewCapabilitiesBenchmark() utils.Check {
 	return &capabilitiesBenchmark{}
 }

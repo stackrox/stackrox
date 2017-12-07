@@ -9,14 +9,14 @@ type ipTablesEnabledBenchmark struct{}
 
 func (c *ipTablesEnabledBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.3",
 			Description: "Ensure Docker is allowed to make changes to iptables",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *ipTablesEnabledBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *ipTablesEnabledBenchmark) Run() (result v1.CheckResult) {
 	values, ok := utils.DockerConfig["iptables"]
 	if !ok {
 		utils.Pass(&result)
@@ -32,6 +32,6 @@ func (c *ipTablesEnabledBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewIPTablesEnabledBenchmark implements CIS-2.3
-func NewIPTablesEnabledBenchmark() utils.Benchmark {
+func NewIPTablesEnabledBenchmark() utils.Check {
 	return &ipTablesEnabledBenchmark{}
 }

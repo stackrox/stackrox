@@ -9,14 +9,14 @@ type ipcNamespaceBenchmark struct{}
 
 func (c *ipcNamespaceBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 5.16",
 			Description: "Ensure the host's IPC namespace is not shared",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *ipcNamespaceBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *ipcNamespaceBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.IpcMode.IsHost() {
@@ -28,6 +28,6 @@ func (c *ipcNamespaceBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewIpcNamespaceBenchmark implements CIS-5.16
-func NewIpcNamespaceBenchmark() utils.Benchmark {
+func NewIpcNamespaceBenchmark() utils.Check {
 	return &ipcNamespaceBenchmark{}
 }

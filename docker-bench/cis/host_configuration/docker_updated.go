@@ -11,14 +11,14 @@ type dockerUpdated struct{}
 
 func (c *dockerUpdated) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 1.3",
 			Description: "Ensure Docker is up to date",
 		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
 	}
 }
 
-func (c *dockerUpdated) Run() (result v1.BenchmarkTestResult) {
+func (c *dockerUpdated) Run() (result v1.CheckResult) {
 	version, err := utils.DockerClient.ServerVersion(context.Background())
 	if err != nil {
 		utils.Note(&result)
@@ -31,6 +31,6 @@ func (c *dockerUpdated) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewDockerUpdated implements CIS-1.3
-func NewDockerUpdated() utils.Benchmark {
+func NewDockerUpdated() utils.Check {
 	return &dockerUpdated{}
 }

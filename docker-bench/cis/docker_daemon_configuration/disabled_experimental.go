@@ -11,14 +11,14 @@ type disableExperimentalBenchmark struct{}
 
 func (c *disableExperimentalBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.17",
 			Description: "Ensure experimental features are avoided in production",
 		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
 	}
 }
 
-func (c *disableExperimentalBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *disableExperimentalBenchmark) Run() (result v1.CheckResult) {
 	info, err := utils.DockerClient.Info(context.Background())
 	if err != nil {
 		utils.Warn(&result)
@@ -35,6 +35,6 @@ func (c *disableExperimentalBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewDisableExperimentalBenchmark implements CIS-2.17
-func NewDisableExperimentalBenchmark() utils.Benchmark {
+func NewDisableExperimentalBenchmark() utils.Check {
 	return &disableExperimentalBenchmark{}
 }

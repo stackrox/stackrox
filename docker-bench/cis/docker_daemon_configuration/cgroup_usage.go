@@ -9,14 +9,14 @@ type cgroupUsageBenchmark struct{}
 
 func (c *cgroupUsageBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.9",
 			Description: "Ensure the default cgroup usage has been confirmed",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *cgroupUsageBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *cgroupUsageBenchmark) Run() (result v1.CheckResult) {
 	if parent, ok := utils.DockerConfig["cgroup-parent"]; ok {
 		utils.Warn(&result)
 		utils.AddNotef(&result, "Cgroup path is set as %v", parent)
@@ -27,6 +27,6 @@ func (c *cgroupUsageBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewCgroupUsageBenchmark implements CIS-2.9
-func NewCgroupUsageBenchmark() utils.Benchmark {
+func NewCgroupUsageBenchmark() utils.Check {
 	return &cgroupUsageBenchmark{}
 }

@@ -12,14 +12,14 @@ type insecureRegistriesBenchmark struct{}
 
 func (c *insecureRegistriesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkDefinition: v1.BenchmarkDefinition{
+		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.4",
 			Description: "Ensure insecure registries are not used",
 		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
 	}
 }
 
-func (c *insecureRegistriesBenchmark) Run() (result v1.BenchmarkTestResult) {
+func (c *insecureRegistriesBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	info, err := utils.DockerClient.Info(context.Background())
 	if err != nil {
@@ -38,6 +38,6 @@ func (c *insecureRegistriesBenchmark) Run() (result v1.BenchmarkTestResult) {
 }
 
 // NewInsecureRegistriesBenchmark implements CIS-2.4
-func NewInsecureRegistriesBenchmark() utils.Benchmark {
+func NewInsecureRegistriesBenchmark() utils.Check {
 	return &insecureRegistriesBenchmark{}
 }
