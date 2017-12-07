@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+package v1;
+
+message BenchmarkTrigger {
+    string name                    = 1;
+    google.protobuf.Timestamp time = 2;
+    repeated string clusters       = 3;
+}
+
+message GetBenchmarkTriggersRequest {
+    repeated string names               = 1;
+    repeated string clusters            = 2;
+    google.protobuf.Timestamp from_time = 3;
+    google.protobuf.Timestamp to_time   = 4;
+
+}
+
+message GetBenchmarkTriggersResponse {
+    repeated BenchmarkTrigger triggers = 1;
+}
+
+service BenchmarkTriggerService {
+
+    rpc GetTriggers (GetBenchmarkTriggersRequest) returns (GetBenchmarkTriggersResponse) {
+        option (google.api.http) = {
+            get: "/v1/benchmarks/triggers"
+        };
+    }
+
+    rpc Trigger (BenchmarkTrigger) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/benchmarks/triggers/{name}"
+            body: "*"
+        };
+    }
+
+}

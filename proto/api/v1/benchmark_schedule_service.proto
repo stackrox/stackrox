@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+package v1;
+
+message BenchmarkSchedule {
+    string name                            = 1;
+    google.protobuf.Timestamp start_time   = 2;
+    int64 interval_days                    = 3;
+    google.protobuf.Timestamp last_updated = 4;
+    repeated string clusters               = 5;
+}
+
+message GetBenchmarkSchedulesRequest {
+    string cluster = 1;
+}
+
+message GetBenchmarkSchedulesResponse {
+    repeated BenchmarkSchedule schedules = 1;
+}
+
+message DeleteBenchmarkScheduleRequest {
+    string name = 1;
+}
+
+service BenchmarkScheduleService {
+
+    rpc GetBenchmarkSchedules (GetBenchmarkSchedulesRequest) returns (GetBenchmarkSchedulesResponse) {
+        option (google.api.http) = {
+            get: "/v1/benchmarks/schedules"
+        };
+    }
+
+    rpc PostBenchmarkSchedule (BenchmarkSchedule) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/benchmarks/schedules"
+            body: "*"
+        };
+    }
+
+    rpc PutBenchmarkSchedule (BenchmarkSchedule) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/v1/benchmarks/schedules/{name}"
+            body: "*"
+        };
+    }
+
+    rpc DeleteBenchmarkSchedule (DeleteBenchmarkScheduleRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/benchmarks/schedules/{name}"
+        };
+    }
+
+}

@@ -88,12 +88,16 @@ func TestBenchmarkResultsFiltering(t *testing.T) {
 			StartTime: start1,
 			EndTime:   end1,
 			Host:      "host1",
+			ScanId:    "scan1",
+			ClusterId: "cluster1",
 		},
 		{
 			Id:        "bench2",
 			StartTime: start2,
 			EndTime:   end2,
 			Host:      "host2",
+			ScanId:    "scan2",
+			ClusterId: "cluster2",
 		},
 	}
 
@@ -106,7 +110,7 @@ func TestBenchmarkResultsFiltering(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, benchmarks, actualBenchmarks)
 
-	actualBenchmarks, err = storage.GetBenchmarkResults(&v1.GetBenchmarkResultsRequest{Host: "host1"})
+	actualBenchmarks, err = storage.GetBenchmarkResults(&v1.GetBenchmarkResultsRequest{Host: "host1", ScanId: "scan1", Clusters: []string{"cluster1"}})
 	assert.NoError(t, err)
 	assert.Equal(t, benchmarks[:1], actualBenchmarks)
 

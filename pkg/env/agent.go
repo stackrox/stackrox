@@ -1,16 +1,8 @@
-// Package agent facilitates interactions with deployed cluster agents.
-// Agents are the "beachhead" in the cluster, and report back to central Apollo.
-package agent
+package env
 
 import (
 	"os"
 )
-
-// A Setting is a runtime configuration set using an environment variable.
-type Setting interface {
-	EnvVar() string
-	Setting() string
-}
 
 var (
 	// ClusterID is used to provide a cluster ID to an agent.

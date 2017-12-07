@@ -51,7 +51,10 @@ func initializeAgent() *agent.Agent {
 		panic(err)
 	}
 
-	a.BenchScheduler = benchmarks.NewSchedulerClient(a.Orchestrator, a.ApolloEndpoint, a.AdvertisedEndpoint, a.Image)
+	a.BenchScheduler, err = benchmarks.NewSchedulerClient(a.Orchestrator, a.ApolloEndpoint, a.AdvertisedEndpoint, a.Image, a.ClusterID)
+	if err != nil {
+		panic(err)
+	}
 	a.ScannerPoller = scanners.NewScannersClient(a.ApolloEndpoint, a.ClusterID)
 	a.RegistryPoller = registries.NewRegistriesClient(a.ApolloEndpoint, a.ClusterID)
 

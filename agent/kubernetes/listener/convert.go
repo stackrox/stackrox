@@ -3,15 +3,15 @@ package listener
 import (
 	"reflect"
 
-	"bitbucket.org/stack-rox/apollo/pkg/agent"
 	pkgV1 "bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"github.com/golang/protobuf/ptypes"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var clusterID = agent.ClusterID.Setting()
+var clusterID = env.ClusterID.Setting()
 
 type wrap struct {
 	*pkgV1.DeploymentEvent

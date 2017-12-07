@@ -97,7 +97,7 @@ func (s *benchmarkStore) RemoveBenchmark(name string) error {
 	defer s.benchmarkMutex.Unlock()
 	if benchmark, ok := s.benchmarks[name]; ok {
 		if !benchmark.Editable {
-			return fmt.Errorf("Cannot remove benchmark %v because it cannot be editted", name)
+			return fmt.Errorf("Cannot remove benchmark %v because it cannot be edited", name)
 		}
 	}
 	if err := s.persistent.RemoveBenchmark(name); err != nil {

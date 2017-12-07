@@ -5,8 +5,8 @@ import (
 	"text/template"
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
-	"bitbucket.org/stack-rox/apollo/pkg/agent"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
@@ -134,14 +134,14 @@ func (c clusterWrap) asDeployment() (string, error) {
 		var b []byte
 		buf := bytes.NewBuffer(b)
 		err := swarmTemplate.Execute(buf, map[string]string{
-			"ImageEnv":              agent.Image.EnvVar(),
+			"ImageEnv":              env.Image.EnvVar(),
 			"Image":                 c.ApolloImage,
-			"PublicEndpointEnv":     agent.ApolloEndpoint.EnvVar(),
+			"PublicEndpointEnv":     env.ApolloEndpoint.EnvVar(),
 			"PublicEndpoint":        c.CentralApiEndpoint,
-			"ClusterNameEnv":        agent.ClusterID.EnvVar(),
+			"ClusterNameEnv":        env.ClusterID.EnvVar(),
 			"ClusterName":           c.Name,
-			"AdvertisedEndpointEnv": agent.AdvertisedEndpoint.EnvVar(),
-			"AdvertisedEndpoint":    agent.AdvertisedEndpoint.Setting(),
+			"AdvertisedEndpointEnv": env.AdvertisedEndpoint.EnvVar(),
+			"AdvertisedEndpoint":    env.AdvertisedEndpoint.Setting(),
 		})
 		if err != nil {
 			return "", err
