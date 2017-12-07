@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/pkg/agent"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/docker"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
@@ -21,9 +22,10 @@ var (
 // listener provides functionality for listening to deployment events.
 type listener struct {
 	*dockerClient.Client
-	eventsC  chan *v1.DeploymentEvent
-	stopC    chan struct{}
-	stoppedC chan struct{}
+	eventsC   chan *v1.DeploymentEvent
+	stopC     chan struct{}
+	stoppedC  chan struct{}
+	clusterID string
 }
 
 // New returns a docker listener
@@ -36,10 +38,11 @@ func New() (listeners.Listener, error) {
 		return nil, err
 	}
 	return &listener{
-		Client:   dockerClient,
-		eventsC:  make(chan *v1.DeploymentEvent, 10),
-		stopC:    make(chan struct{}),
-		stoppedC: make(chan struct{}),
+		Client:    dockerClient,
+		eventsC:   make(chan *v1.DeploymentEvent, 10),
+		stopC:     make(chan struct{}),
+		stoppedC:  make(chan struct{}),
+		clusterID: agent.ClusterID.Setting(),
 	}, nil
 }
 
@@ -91,6 +94,7 @@ func (dl *listener) sendExistingDeployments() {
 		dl.eventsC <- &v1.DeploymentEvent{
 			Deployment: d,
 			Action:     v1.ResourceAction_CREATE_RESOURCE,
+			ClusterId:  dl.clusterID,
 		}
 
 	}
@@ -162,6 +166,7 @@ func (dl *listener) pipeDeploymentEvent(msg events.Message) {
 	event := &v1.DeploymentEvent{
 		Deployment: deployment,
 		Action:     resourceAction,
+		ClusterId:  dl.clusterID,
 	}
 
 	dl.eventsC <- event

@@ -29,7 +29,8 @@ type BenchmarkSchedulerClient struct {
 	updateTicker *time.Ticker
 	orchestrator orchestrators.Orchestrator
 
-	endpoint string
+	advertisedEndpoint string
+	apolloEndpoint     string
 
 	started bool
 	done    chan struct{}
@@ -41,12 +42,13 @@ type BenchmarkSchedulerClient struct {
 }
 
 // NewBenchmarkSchedulerClient returns a new scheduler
-func NewBenchmarkSchedulerClient(orchestrator orchestrators.Orchestrator, apolloEndpoint string) *BenchmarkSchedulerClient {
+func NewBenchmarkSchedulerClient(orchestrator orchestrators.Orchestrator, apolloEndpoint string, advertisedEndpoint string) *BenchmarkSchedulerClient {
 	return &BenchmarkSchedulerClient{
-		updateTicker: time.NewTicker(updateInterval),
-		orchestrator: orchestrator,
-		done:         make(chan struct{}),
-		endpoint:     apolloEndpoint,
+		updateTicker:       time.NewTicker(updateInterval),
+		orchestrator:       orchestrator,
+		done:               make(chan struct{}),
+		apolloEndpoint:     apolloEndpoint,
+		advertisedEndpoint: advertisedEndpoint,
 	}
 }
 
@@ -77,7 +79,7 @@ func (d *BenchmarkSchedulerClient) Launch() error {
 	// TODO(cgorman) parametrize the tag for docker-bench-bootstrap
 	service := orchestrators.SystemService{
 		Envs: []string{
-			fmt.Sprintf("ROX_APOLLO_ENDPOINT=%s", d.endpoint),
+			fmt.Sprintf("ROX_APOLLO_POST_ENDPOINT=%s", d.advertisedEndpoint),
 			fmt.Sprintf("ROX_APOLLO_SCAN_ID=%s", d.lastScanID),
 		},
 		Image:  "stackrox/docker-bench-bootstrap:latest",
@@ -96,7 +98,7 @@ func (d *BenchmarkSchedulerClient) Launch() error {
 
 // Start runs the scheduler
 func (d *BenchmarkSchedulerClient) Start() {
-	conn, err := clientconn.GRPCConnection(d.endpoint)
+	conn, err := clientconn.GRPCConnection(d.apolloEndpoint)
 	if err != nil {
 		panic(err)
 	}

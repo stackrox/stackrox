@@ -37,6 +37,7 @@ message BenchmarkPayload {
     google.protobuf.Timestamp end_time   = 4;
     string host                          = 5;
     string scan_id                       = 6;
+    string cluster_id                    = 7;
 }
 
 message GetBenchmarksRequest {
@@ -98,4 +99,15 @@ service BenchmarkService {
         };
     }
     // No put or delete for benchmarks
+}
+
+// The BenchmarkRelayService is used by the agent to receive benchmark results,
+// which are then forwarded to the central server.
+service BenchmarkRelayService {
+    rpc PostBenchmarkResult(BenchmarkPayload) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/benchmarks/results"
+            body: "*"
+        };
+    }
 }

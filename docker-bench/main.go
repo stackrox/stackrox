@@ -20,7 +20,7 @@ var (
 )
 
 const (
-	apolloEndpointEnv = "ROX_APOLLO_ENDPOINT"
+	apolloEndpointEnv = "ROX_APOLLO_POST_ENDPOINT"
 	retries           = 5
 )
 
@@ -56,7 +56,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer conn.Close()
-	client := v1.NewBenchmarkServiceClient(conn)
+	client := v1.NewBenchmarkRelayServiceClient(conn)
 
 	fmt.Printf("%+v\n", payload)
 	for i := 1; i < retries+1; i++ {

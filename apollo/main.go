@@ -9,12 +9,12 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/apollo/db/boltdb"
 	"bitbucket.org/stack-rox/apollo/apollo/db/inmem"
-	"bitbucket.org/stack-rox/apollo/apollo/grpc"
 	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
 	_ "bitbucket.org/stack-rox/apollo/apollo/registries/all"
 	_ "bitbucket.org/stack-rox/apollo/apollo/scanners/all"
 	"bitbucket.org/stack-rox/apollo/apollo/scheduler"
 	"bitbucket.org/stack-rox/apollo/apollo/service"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 )
 

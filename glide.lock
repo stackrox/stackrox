@@ -1,5 +1,5 @@
-hash: 15516a0ade308760afe0901801e5ed69618ce54b8e35f0baa3bab8007b5c8624
-updated: 2017-11-28T22:30:22.710373176Z
+hash: 4ac75a76de0fa7e6d514736a77921ba379310df896201c8e956a395a5a8bf0e6
+updated: 2017-12-07T01:53:42.054404-08:00
 imports:
 - name: github.com/Azure/go-ansiterm
   version: d6e3b3328b783f23731bc4d058875b0371ff8109
@@ -7,6 +7,10 @@ imports:
   - winterm
 - name: github.com/boltdb/bolt
   version: 2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
 - name: github.com/docker/distribution
   version: 48294d928ced5dd9b378f7fd7c6f5da3ff3f2c89
   subpackages:
@@ -66,11 +70,12 @@ imports:
   - pkg/tarsum
   - pkg/term
   - pkg/term/windows
+  - pkg/testutil/assert
   - pkg/tlsconfig
   - reference
   - registry
 - name: github.com/docker/go-connections
-  version: 4ccf312bf1d35e5dbda654e57a9be4c3f3cd0366
+  version: 3ede32e2033de7505e6500d6c868c2b9ed9f169d
   subpackages:
   - nat
   - sockets
@@ -111,6 +116,10 @@ imports:
   - runtime
   - runtime/internal
   - utilities
+- name: github.com/hashicorp/golang-lru
+  version: 0a025b7e63adc15a622f29b0b2c4c3848243bbf6
+  subpackages:
+  - simplelru
 - name: github.com/heroku/docker-registry-client
   version: fd2fe803496897db70c236ee244f41487ea92ec2
   subpackages:
@@ -198,10 +207,6 @@ imports:
   - tap
   - transport
 testImports:
-- name: github.com/davecgh/go-spew
-  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
-  subpackages:
-  - spew
 - name: github.com/pmezard/go-difflib
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
   subpackages:
