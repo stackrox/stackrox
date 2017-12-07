@@ -46,8 +46,7 @@ func main() {
 		Volumes: volumeMap,
 	}
 	hostConfig := &container.HostConfig{
-		Binds: strVolumes,
-		//NetworkMode: container.NetworkMode("host"),
+		Binds:   strVolumes,
 		PidMode: container.PidMode("host"),
 	}
 	networkingConfig := &network.NetworkingConfig{

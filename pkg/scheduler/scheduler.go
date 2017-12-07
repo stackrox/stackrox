@@ -34,11 +34,8 @@ type BenchmarkSchedulerClient struct {
 	started bool
 	done    chan struct{}
 
-	NextScheduled time.Time
-	Interval      time.Duration
-	Enabled       bool
-
 	scanActive bool
+	lastScanID string
 
 	stateLock sync.Mutex
 }
@@ -77,9 +74,12 @@ func (d *BenchmarkSchedulerClient) removeService(delay time.Duration, id string)
 // The stateLock must be held by the caller until this function returns.
 func (d *BenchmarkSchedulerClient) Launch() error {
 	d.scanActive = true
-	// TODO(cgorman) parameterize the tag for docker-bench-bootstrap
+	// TODO(cgorman) parametrize the tag for docker-bench-bootstrap
 	service := orchestrators.SystemService{
-		Envs:   []string{fmt.Sprintf("ROX_APOLLO_ENDPOINT=%s", d.endpoint)},
+		Envs: []string{
+			fmt.Sprintf("ROX_APOLLO_ENDPOINT=%s", d.endpoint),
+			fmt.Sprintf("ROX_APOLLO_SCAN_ID=%s", d.lastScanID),
+		},
 		Image:  "stackrox/docker-bench-bootstrap:latest",
 		Mounts: []string{"/var/run/docker.sock:/var/run/docker.sock"},
 		Global: true,
@@ -116,22 +116,15 @@ func (d *BenchmarkSchedulerClient) Start() {
 				log.Errorf("Schedule was nil")
 				continue
 			}
-			scheduleTime := time.Unix(schedule.GetNextScheduled().Seconds, int64(schedule.GetNextScheduled().Nanos))
-			if schedule.GetNextScheduled().GetSeconds() == 0 && schedule.GetNextScheduled().GetNanos() == 0 {
-				// Don't scan if the scheduled time is the zero value as expressed in proto.
-				continue
-			}
-			if scheduleTime.IsZero() {
-				// Don't scan if the scheduled time is the zero value as expressed in Go.
-				continue
-			}
 			d.stateLock.Lock()
 			if d.scanActive {
 				d.stateLock.Unlock()
 				continue
 			}
-			if time.Now().After(scheduleTime) {
-				log.Infof("Launching Docker bench")
+			id := schedule.GetCurrentScanId()
+			if d.lastScanID != id && len(id) > 0 {
+				log.Infof("Launching Docker bench for scan %s", id)
+				d.lastScanID = id
 				if err := d.Launch(); err != nil {
 					log.Errorf("Error launching benchmark: %s", err)
 				}

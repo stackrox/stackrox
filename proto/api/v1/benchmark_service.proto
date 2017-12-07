@@ -36,6 +36,7 @@ message BenchmarkPayload {
     google.protobuf.Timestamp start_time = 3;
     google.protobuf.Timestamp end_time   = 4;
     string host                          = 5;
+    string scan_id                       = 6;
 }
 
 message GetBenchmarksRequest {
@@ -56,9 +57,9 @@ message BenchmarkSchedule {
 message TriggerBenchmarkRequest {}
 
 message GetBenchmarkScheduleResponse {
-    bool enabled                             = 1;
-    int64 interval_days                      = 2;
-    google.protobuf.Timestamp next_scheduled = 3;
+    bool enabled           = 1;
+    int64 interval_days    = 2;
+    string current_scan_id = 3;
 }
 
 service BenchmarkService {

@@ -6,7 +6,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/apollo/scheduler"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
@@ -72,15 +71,10 @@ func (s *BenchmarkService) PostBenchmarkSchedule(ctx context.Context, request *v
 
 // GetBenchmarkSchedule returns the current benchmark schedule
 func (s *BenchmarkService) GetBenchmarkSchedule(ctx context.Context, _ *empty.Empty) (*v1.GetBenchmarkScheduleResponse, error) {
-	protoNextScheduled, err := ptypes.TimestampProto(s.schedule.NextScheduled)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
 	return &v1.GetBenchmarkScheduleResponse{
 		Enabled:       s.schedule.Enabled,
 		IntervalDays:  int64(s.schedule.Interval.Hours() / 24),
-		NextScheduled: protoNextScheduled,
+		CurrentScanId: s.schedule.CurrentScanID,
 	}, nil
 }
 

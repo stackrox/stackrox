@@ -8,6 +8,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/docker-bench/cis"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
+	"bitbucket.org/stack-rox/apollo/pkg/docker"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/golang/protobuf/ptypes"
@@ -29,6 +30,10 @@ func main() {
 		log.Fatalf("%v must be specified", apolloEndpointEnv)
 	}
 
+	hostname, err := getHostname()
+	if err != nil {
+		log.Fatalf("Could not find this node's hostname: %+v", err)
+	}
 	protoStartTime, err := ptypes.TimestampProto(time.Now())
 	if err != nil {
 		log.Fatalf("Could not convert starting time to proto: %+v", err)
@@ -43,7 +48,8 @@ func main() {
 		Results:   results,
 		StartTime: protoStartTime,
 		EndTime:   protoEndTime,
-		Host:      os.Getenv("HOSTNAME"),
+		Host:      hostname,
+		ScanId:    os.Getenv("ROX_APOLLO_SCAN_ID"),
 	}
 	conn, err := clientconn.GRPCConnection(ip)
 	if err != nil {
@@ -62,4 +68,18 @@ func main() {
 		time.Sleep(time.Duration(i*2) * time.Second)
 	}
 	log.Error("Timed out posting benchmark back to Apollo")
+}
+
+func getHostname() (string, error) {
+	cli, err := docker.NewClient()
+	if err != nil {
+		return "", fmt.Errorf("docker client setup: %s", err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	info, err := cli.Info(ctx)
+	if err != nil {
+		return "", fmt.Errorf("docker info: %s", err)
+	}
+	return info.Name, nil
 }

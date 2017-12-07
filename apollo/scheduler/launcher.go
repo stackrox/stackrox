@@ -1,11 +1,11 @@
 package scheduler
 
 import (
+	"sync"
 	"time"
 
-	"sync"
-
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 )
 
 var (
@@ -14,9 +14,9 @@ var (
 
 // DockerBenchScheduler schedules the docker benchmark.
 type DockerBenchScheduler struct {
-	NextScheduled time.Time
 	Interval      time.Duration
 	Enabled       bool
+	CurrentScanID string
 
 	ticker    *time.Ticker
 	done      chan struct{}
@@ -33,7 +33,7 @@ func NewDockerBenchScheduler() *DockerBenchScheduler {
 func (d *DockerBenchScheduler) Disable() {
 	d.stateLock.Lock()
 
-	d.NextScheduled = time.Unix(0, 0)
+	d.CurrentScanID = ""
 	d.Interval = 0
 	d.Enabled = false
 
@@ -43,6 +43,7 @@ func (d *DockerBenchScheduler) Disable() {
 // Enable starts the scheduler and takes in a duration at which to run the interval.
 func (d *DockerBenchScheduler) Enable(duration time.Duration) {
 	d.stateLock.Lock()
+	defer d.stateLock.Unlock()
 
 	if d.started {
 		d.ticker.Stop()
@@ -52,20 +53,17 @@ func (d *DockerBenchScheduler) Enable(duration time.Duration) {
 		go d.Start()
 	}
 
-	d.NextScheduled = time.Now().Add(duration)
+	d.CurrentScanID = uuid.NewV4().String()
 	d.Interval = duration
 	d.Enabled = true
-
-	d.stateLock.Unlock()
 }
 
 // Trigger causes a scan to be scheduled immediately.
 func (d *DockerBenchScheduler) Trigger() {
 	d.stateLock.Lock()
+	defer d.stateLock.Unlock()
 
-	d.NextScheduled = time.Now()
-
-	d.stateLock.Unlock()
+	d.CurrentScanID = uuid.NewV4().String()
 }
 
 // Start runs the scheduler
@@ -74,7 +72,7 @@ func (d *DockerBenchScheduler) Start() {
 		select {
 		case <-d.ticker.C:
 			d.stateLock.Lock()
-			d.NextScheduled = time.Now()
+			d.CurrentScanID = uuid.NewV4().String()
 			d.stateLock.Unlock()
 		case <-d.done:
 			d.stateLock.Lock()
