@@ -8,7 +8,7 @@ services:
       - target: 8080
         published: 8080
         protocol: tcp
-        mode: ingress
+        mode: host
   agent:
     image: stackrox/apollo:latest
     entrypoint:

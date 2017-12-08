@@ -16,4 +16,17 @@
     border-collapse: collapse;
 }
 
+.m-0-auto {
+    margin: 0 auto;
+}
+
+.h-95 {
+    height: 95%;
+}
+
+.react-modal-overlay {
+    @apply .fixed .pin-t .pin-l .w-full .h-full;
+    background-color: hsla(0, 0%, 21%, 0.85);
+}
+
 @tailwind utilities;

@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import emitter from 'emitter';
+import resolvePath from 'object-resolve-path';
 
 class Table extends Component {
     constructor(props) {
@@ -25,22 +25,16 @@ class Table extends Component {
         var rowClick = this.rowClick;
         return rows.map(function (row, i) {
             var cols = columns.map(function (column, i) {
-                var className = `p-2 text-left border border-grey-light ${active === row.id ? 'bg-blue-lightest' : ''}`
-                return <td className={className} key={row[column.key]}>{row[column.key]}</td>;
+                var className = `p-2 text-left border border-grey-light ${active === row ? 'bg-blue-lightest' : ''}`;
+                var value = resolvePath(row, column.key);
+                return <td className={className} key={column.key + '-' + i}>{value}</td>;
             });
             return <tr className='cursor-pointer' key={i} onClick={() => rowClick(row)}>{cols}</tr>
         });
     }
 
     rowClick(row) {
-        if (this.state.active === row.id) {
-            this.setState({ active: null });
-            emitter.emit('Table:row-selected', null);
-        }
-        else {
-            this.setState({ active: row.id });
-            emitter.emit('Table:row-selected', row);
-        }
+        this.props.onRowClick(row);
     }
 
     render() {

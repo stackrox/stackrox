@@ -9,14 +9,14 @@ import {
 
 import logo from 'images/logo.svg';
 
-import ViolationsPage from 'Containers/ViolationsPage';
-import MainSidePanel from 'Containers/MainSidePanel';
+import ViolationsPage from 'Containers/Violations/ViolationsPage';
+import PolicyAlertsSidePanel from 'Containers/Violations/Policies/PolicyAlertsSidePanel';
 
 class Main extends Component {
     render() {
         return (
             <section className="flex flex-1 flex-col">
-                <header className="flex h-16 bg-blue-lightest border-b border-gray-light">
+                <header className="flex h-16 bg-black border-b border-gray-light">
                     <div className="flex p-6 self-center">
                         <img src={logo} className="h-8" alt="logo" />
                     </div>
@@ -27,16 +27,16 @@ class Main extends Component {
                 </header>
                 <Router>
                     <section className="flex flex-1 text-grey-dark relative">
-                        <nav className="flex w-1 bg-blue-lightest md:w-1/6 border-r border-gray-light">
+                        <nav className="flex w-1 bg-black md:w-1/6 border-r border-gray-light">
                             <ul className="flex flex-col list-reset p-0 w-full font-mono font-bold">
                                 <li className="flex">
-                                    <Link to="/dashboard" className="flex p-6 w-full no-underline hover:underline text-grey">Dashboard</Link>
+                                    <Link to="/dashboard" className="flex p-6 w-full no-underline hover:underline text-white">Dashboard</Link>
                                 </li>
                                 <li className="flex">
-                                    <Link to="/violations" className="flex p-6 w-full no-underline hover:underline text-grey">Violations</Link>
+                                    <Link to="/violations" className="flex p-6 w-full no-underline hover:underline text-white">Violations</Link>
                                 </li>
                                 <li className="flex">
-                                    <Link to="/integrations" className="flex p-6 w-full no-underline hover:underline text-grey">Integrations</Link>
+                                    <Link to="/integrations" className="flex p-6 w-full no-underline hover:underline text-white">Integrations</Link>
                                 </li>
                             </ul>
                         </nav>
@@ -47,7 +47,7 @@ class Main extends Component {
                                 <Redirect from="/" to="/violations" />
                             </Switch>
                         </main>
-                        <MainSidePanel></MainSidePanel>
+                        <PolicyAlertsSidePanel></PolicyAlertsSidePanel>
                     </section>
                 </Router>
             </section>

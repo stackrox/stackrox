@@ -32,12 +32,12 @@ class Tabs extends Component {
 
     render() {
         return (
-            <div className="flex flex-col flex-1">
+            <div className="overflow-auto w-full">
                 <div className="flex flex-row font-mono font-bold">
                     {this.getHeaders()}
                     <div className="flex flex-1 border-b border-gray-light"></div>
                 </div>
-                <div className="border-b border-r border-l border-gray-light">{this.renderChildren()}</div>
+                <div className="border-b border-r border-l border-gray-light overflow-auto">{this.renderChildren()}</div>
             </div>
         );
     }
