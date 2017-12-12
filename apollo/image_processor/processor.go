@@ -3,6 +3,7 @@ package imageprocessor
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"sync"
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
@@ -47,6 +48,23 @@ type imageNamePolicyRegex struct {
 	Namespace *regexp.Regexp
 	Repo      *regexp.Regexp
 	Tag       *regexp.Regexp
+}
+
+func (i imageNamePolicyRegex) String() string {
+	var fields []string
+	if i.Registry != nil {
+		fields = append(fields, fmt.Sprintf("registry=%v", i.Registry))
+	}
+	if i.Namespace != nil {
+		fields = append(fields, fmt.Sprintf("namespace=%v", i.Namespace))
+	}
+	if i.Repo != nil {
+		fields = append(fields, fmt.Sprintf("repo=%v", i.Repo))
+	}
+	if i.Tag != nil {
+		fields = append(fields, fmt.Sprintf("tag=%v", i.Tag))
+	}
+	return strings.Join(fields, ", ")
 }
 
 type regexImagePolicy struct {

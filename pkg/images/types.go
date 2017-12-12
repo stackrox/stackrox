@@ -1,6 +1,7 @@
 package images
 
 import (
+	"fmt"
 	"strings"
 
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
@@ -33,4 +34,13 @@ func GenerateImageFromString(imageStr string) *v1.Image {
 	image.Tag = tag
 	image.Registry = reference.Domain(named)
 	return &image
+}
+
+// ImageWrapper provides helper functions around the proto image type
+type ImageWrapper struct {
+	*v1.Image
+}
+
+func (i ImageWrapper) String() string {
+	return fmt.Sprintf("%v/%v:%v", i.Registry, i.Remote, i.Tag)
 }

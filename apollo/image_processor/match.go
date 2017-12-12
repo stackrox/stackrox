@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/golang/protobuf/ptypes"
 )
@@ -156,7 +157,7 @@ func (policy *regexImagePolicy) matchImageName(image *v1.Image) (violations []*v
 		return
 	}
 	violations = append(violations, &v1.Policy_Violation{
-		Message: fmt.Sprintf("Image name '%v' matches the name policy '%+v'", image.String(), *policy.ImageNamePolicy),
+		Message: fmt.Sprintf("Image name '%v' matches the name policy '%v'", images.ImageWrapper{image}.String(), policy.ImageNamePolicy.String()),
 	})
 	return
 }
