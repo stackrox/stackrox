@@ -83,6 +83,7 @@ func (s *BenchmarkService) GetBenchmarks(ctx context.Context, request *v1.GetBen
 
 // PostBenchmark creates a new benchmark
 func (s *BenchmarkService) PostBenchmark(ctx context.Context, request *v1.Benchmark) (*empty.Empty, error) {
+	request.Editable = true // all user generated benchmarks are editable
 	if err := s.storage.AddBenchmark(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -99,5 +100,8 @@ func (s *BenchmarkService) PutBenchmark(ctx context.Context, request *v1.Benchma
 
 // DeleteBenchmark removes a benchmark
 func (s *BenchmarkService) DeleteBenchmark(ctx context.Context, request *v1.DeleteBenchmarkRequest) (*empty.Empty, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
+	if err := s.storage.RemoveBenchmark(request.Name); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &empty.Empty{}, nil
 }

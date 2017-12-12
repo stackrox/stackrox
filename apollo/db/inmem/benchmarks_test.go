@@ -36,7 +36,7 @@ func testBenchmarks(t *testing.T, insertStorage, retrievalStorage db.BenchmarkSt
 
 	// Test Update
 	for _, b := range benchmarks {
-		b.Editable = false
+		b.Checks = []string{"CIS 10"}
 	}
 
 	for _, b := range benchmarks {

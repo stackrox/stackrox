@@ -6,7 +6,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 )
 
 type benchmarkResultStore struct {
@@ -60,15 +60,15 @@ func (s *benchmarkResultStore) GetBenchmarkResults(request *v1.GetBenchmarkResul
 	if request.ToEndTime != nil || request.FromEndTime != nil {
 		filteredBenchmarks := benchmarks[:0]
 		for _, benchmark := range benchmarks {
-			if (request.FromEndTime == nil || compareProtoTimestamps(request.FromEndTime, benchmark.EndTime) != 1) &&
-				(request.ToEndTime == nil || compareProtoTimestamps(benchmark.EndTime, request.ToEndTime) != 1) {
+			if (request.FromEndTime == nil || protoconv.CompareProtoTimestamps(request.FromEndTime, benchmark.EndTime) != 1) &&
+				(request.ToEndTime == nil || protoconv.CompareProtoTimestamps(benchmark.EndTime, request.ToEndTime) != 1) {
 				filteredBenchmarks = append(filteredBenchmarks, benchmark)
 			}
 		}
 		benchmarks = filteredBenchmarks
 	}
 	sort.SliceStable(benchmarks, func(i, j int) bool {
-		return compareProtoTimestamps(benchmarks[i].EndTime, benchmarks[j].EndTime) == -1
+		return protoconv.CompareProtoTimestamps(benchmarks[i].EndTime, benchmarks[j].EndTime) == -1
 	})
 	return benchmarks, nil
 }
@@ -82,24 +82,4 @@ func (s *benchmarkResultStore) AddBenchmarkResult(benchmark *v1.BenchmarkResult)
 	defer s.benchmarkMutex.Unlock()
 	s.benchmarkResults[benchmark.Id] = benchmark
 	return nil
-}
-
-func compareProtoTimestamps(t1, t2 *timestamp.Timestamp) int {
-	if t1 == nil {
-		return -1
-	}
-	if t2 == nil {
-		return 1
-	}
-	if t1.Seconds < t2.Seconds {
-		return -1
-	} else if t1.Seconds > t2.Seconds {
-		return 1
-	}
-	if t1.Nanos < t2.Nanos {
-		return -1
-	} else if t1.Nanos > t2.Nanos {
-		return 1
-	}
-	return 0
 }

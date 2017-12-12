@@ -26,7 +26,7 @@ func (c *dockerUpdated) Run() (result v1.CheckResult) {
 		return
 	}
 	utils.Note(&result)
-	utils.AddNotes(&result, "Docker server is currently running %v", version.Version)
+	utils.AddNotef(&result, "Docker server is currently running %v", version.Version)
 	return
 }
 

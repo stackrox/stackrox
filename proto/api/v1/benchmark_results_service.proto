@@ -41,10 +41,35 @@ message GetBenchmarkResultsRequest {
     google.protobuf.Timestamp from_end_time = 1;
     google.protobuf.Timestamp to_end_time   = 2;
     string host                             = 3;
+    string benchmark                        = 4;
 }
 
 message GetBenchmarkResultsResponse {
     repeated BenchmarkResult benchmarks = 1;
+}
+
+message GetBenchmarkResultsGroupedResponse {
+    repeated BenchmarkResultsGrouped benchmarks = 1;
+}
+
+message BenchmarkResultsGrouped {
+    string scan_id                 = 1;
+    google.protobuf.Timestamp time = 2;
+    message ScopedCheckResult {
+        CheckDefinition definition = 1;
+        message HostResult {
+            string host            = 1;
+            CheckStatus result     = 2;
+            repeated string notes  = 3;
+        }
+        repeated HostResult host_results     = 2;
+        map<string,int32> aggregated_results = 3;
+    }
+    repeated ScopedCheckResult check_results = 3;
+}
+
+message GetBenchmarkResultsGroupedRequest {
+    string benchmark = 1;
 }
 
 service BenchmarkResultsService {
@@ -52,6 +77,12 @@ service BenchmarkResultsService {
     rpc GetBenchmarkResults(GetBenchmarkResultsRequest) returns (GetBenchmarkResultsResponse) {
         option (google.api.http) = {
             get: "/v1/benchmarks/results"
+        };
+    }
+
+    rpc GetBenchmarkResultsGrouped(GetBenchmarkResultsGroupedRequest) returns (GetBenchmarkResultsGroupedResponse) {
+        option (google.api.http) = {
+            get: "/v1/benchmarks/results/grouped/{benchmark}"
         };
     }
 

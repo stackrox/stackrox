@@ -1,10 +1,9 @@
 package inmem
 
 import (
+	"fmt"
 	"sort"
 	"sync"
-
-	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
@@ -76,6 +75,14 @@ func (s *benchmarkStore) AddBenchmark(benchmark *v1.Benchmark) error {
 }
 
 func (s *benchmarkStore) UpdateBenchmark(benchmark *v1.Benchmark) error {
+	s.benchmarkMutex.Lock()
+	if benchmark, ok := s.benchmarks[benchmark.Name]; ok {
+		if !benchmark.Editable {
+			s.benchmarkMutex.Unlock()
+			return fmt.Errorf("Cannot update benchmark %v because it cannot be edited", benchmark.Name)
+		}
+	}
+	s.benchmarkMutex.Unlock()
 	if err := s.persistent.UpdateBenchmark(benchmark); err != nil {
 		return err
 	}
@@ -86,6 +93,14 @@ func (s *benchmarkStore) UpdateBenchmark(benchmark *v1.Benchmark) error {
 }
 
 func (s *benchmarkStore) RemoveBenchmark(name string) error {
+	s.benchmarkMutex.Lock()
+	if benchmark, ok := s.benchmarks[name]; ok {
+		if !benchmark.Editable {
+			s.benchmarkMutex.Unlock()
+			return fmt.Errorf("Cannot remove benchmark %v because it cannot be editted", name)
+		}
+	}
+	s.benchmarkMutex.Unlock()
 	if err := s.persistent.RemoveBenchmark(name); err != nil {
 		return err
 	}

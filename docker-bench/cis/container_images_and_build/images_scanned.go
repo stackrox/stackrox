@@ -10,6 +10,7 @@ type scannedImagesBenchmark struct{}
 func (c *scannedImagesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
+			Name:        "CIS 4.4",
 			Description: "Ensure images are scanned and rebuilt to include security patches",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
