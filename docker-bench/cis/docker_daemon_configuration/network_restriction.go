@@ -5,8 +5,8 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
-	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 )
 
 type networkRestrictionBenchmark struct{}

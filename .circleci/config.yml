@@ -1,0 +1,78 @@
+version: 2
+jobs:
+  build:
+    docker:
+      # This image is the standard circleci/golang:1.9.2 image, plus bazel
+      # and other necessary build tools like goimports and glide.
+      - image: stackrox/apollo:circleci@sha256:83411a04f5de99b35b34582d9afdf371fda3f31e1ed6bd4eabf01119e3c381da
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+
+    working_directory: /go/src/bitbucket.org/stack-rox/apollo
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - run: make deps
+
+      - run: make -C pkg clean all
+      - run: make -C agent/swarm clean all
+      - run: make -C apollo clean all
+      - run: make -C docker-bench clean all
+      - run: make -C docker-bench-bootstrap clean all
+
+      - run: make image
+
+      - run: docker tag stackrox/apollo:latest stackrox/apollo:$CIRCLE_SHA1
+      - run: docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+      - run: docker push stackrox/apollo:$CIRCLE_SHA1
+
+  build-ui:
+    docker:
+      - image: circleci/node:8.9.3-browsers
+
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - run: curl -o- -L https://yarnpkg.com/install.sh | bash
+
+      - run: make -C apollo-ui
+
+      - run: docker tag stackrox/apollo-ui:latest stackrox/apollo:ui-$CIRCLE_SHA1
+      - run: docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+      - run: docker push stackrox/apollo:ui-$CIRCLE_SHA1
+
+  retag:
+    docker:
+      - image: circleci/golang:1.9.2
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+    steps:
+      - setup_remote_docker
+
+      - run: |
+          docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+          docker pull stackrox/apollo:$CIRCLE_SHA1
+          docker tag stackrox/apollo:$CIRCLE_SHA1 stackrox/apollo:latest
+          docker push stackrox/apollo:latest
+          docker pull stackrox/apollo:ui-$CIRCLE_SHA1
+          docker tag stackrox/apollo:ui-$CIRCLE_SHA1 stackrox/apollo:ui-latest
+          docker push stackrox/apollo:ui-latest
+
+workflows:
+  version: 2
+  build_all:
+    jobs:
+      - build
+      - build-ui
+      - retag:
+          requires:
+            - build
+            - build-ui
+          filters:
+            branches:
+              only:
+                - master

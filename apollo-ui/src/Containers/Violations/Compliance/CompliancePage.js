@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import Table from 'Components/Table';
 
 import axios from 'axios';
-import emitter from 'emitter';
 import queryString from 'query-string';
 
 class CompliancePage extends Component {

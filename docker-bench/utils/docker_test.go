@@ -34,6 +34,10 @@ func TestDockerConfigGet(t *testing.T) {
 }
 
 func TestGetPID(t *testing.T) {
+	if val := os.Getenv("CIRCLECI"); len(val) != 0 {
+		t.Skip("This test cannot run in CircleCI Docker-in-Docker")
+	}
+
 	pid, err := getPID("init")
 	assert.Nil(t, err)
 	assert.Equal(t, 1, pid)
@@ -43,6 +47,10 @@ func TestGetPID(t *testing.T) {
 }
 
 func TestGetProcessPID(t *testing.T) {
+	if val := os.Getenv("CIRCLECI"); len(val) != 0 {
+		t.Skip("This test cannot run in CircleCI Docker-in-Docker")
+	}
+
 	processes := []string{"howdy", "init", "blah"}
 	pid, name, err := getProcessPID(processes)
 	assert.Nil(t, err)
@@ -55,6 +63,10 @@ func TestGetProcessPID(t *testing.T) {
 }
 
 func TestGetCommandLine(t *testing.T) {
+	if val := os.Getenv("CIRCLECI"); len(val) != 0 {
+		t.Skip("This test cannot run in CircleCI Docker-in-Docker")
+	}
+
 	cmdline, err := getCommandLine(1)
 	require.Nil(t, err)
 	assert.Contains(t, cmdline, "init")

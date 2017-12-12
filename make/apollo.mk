@@ -71,7 +71,7 @@ style: fmt imports lint vet
 .PHONY: fmt
 fmt:
 	@echo "+ $@"
-ifdef ROXCI_LOGGING_LEVEL
+ifdef CIRCLECI
 		@echo "The environment indicates we are in CI; checking gofmt."
 		@$(eval FMT=`find . -name vendor -prune -name generated -prune -o -name '*.go' -print | xargs gofmt -l`)
 		@echo "gofmt problems in the following files, if any:"
@@ -83,7 +83,7 @@ endif
 .PHONY: imports
 imports:
 	@echo "+ $@"
-ifdef ROXCI_LOGGING_LEVEL
+ifdef CIRCLECI
 		@echo "The environment indicates we are in CI; checking goimports."
 		@$(eval IMPORTS=`find . -name vendor -prune -name generated -prune -o -name '*.go' -print | xargs goimports -l`)
 		@echo "goimports problems in the following files, if any:"
@@ -150,7 +150,7 @@ report:
 	@grep "^coverage: " -A1 test.log | grep -v -e '--' | paste -d " "  - -
 	@echo
 	@echo "Test pass/fail summary:"
-	@grep failures report.xml | column -t
+	@grep failures report.xml
 	@echo
 	@echo "`grep 'FAIL	bitbucket.org/stack-rox/apollo' test.log | wc -l` package(s) detected with compilation or test failures."
 	@-grep 'FAIL	bitbucket.org/stack-rox/apollo' test.log || true

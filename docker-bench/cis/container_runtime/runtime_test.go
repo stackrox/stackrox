@@ -3,6 +3,7 @@ package containerruntime
 import (
 	"fmt"
 	"log"
+	"os"
 	"testing"
 	"time"
 
@@ -152,8 +153,13 @@ func TestRuntimeBenchmarksWarn(t *testing.T) {
 
 	// In order for the SELinux benchmark to see that SELinux has been enabled on dockerd
 	// We set the configuration field explicitly
-	err = utils.InitDockerConfig()
-	require.Nil(t, err)
+	utils.DockerConfig = make(map[string]utils.DockerConfigParams)
+	if val := os.Getenv("CIRCLECI"); len(val) != 0 {
+		t.Log("Daemon configuration cannot be accessed in CircleCI Docker-in-Docker")
+	} else {
+		err = utils.InitDockerConfig()
+		require.Nil(t, err)
+	}
 	utils.DockerConfig["selinux-enabled"] = []string{""}
 	defer func() {
 		utils.DockerConfig = make(map[string]utils.DockerConfigParams)

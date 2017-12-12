@@ -82,9 +82,9 @@ func (d *BenchmarkSchedulerClient) Launch() error {
 			fmt.Sprintf("ROX_APOLLO_POST_ENDPOINT=%s", d.advertisedEndpoint),
 			fmt.Sprintf("ROX_APOLLO_SCAN_ID=%s", d.lastScanID),
 		},
-		Image:  "stackrox/apollo:latest",
-		Mounts: []string{"/var/run/docker.sock:/var/run/docker.sock"},
-		Global: true,
+		Image:   "stackrox/apollo:latest",
+		Mounts:  []string{"/var/run/docker.sock:/var/run/docker.sock"},
+		Global:  true,
 		Command: []string{"docker-bench-bootstrap"},
 	}
 	id, err := d.orchestrator.Launch(service)
