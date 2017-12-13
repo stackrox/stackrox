@@ -9,6 +9,15 @@ services:
         published: 8080
         protocol: tcp
         mode: host
+  apollo-ui:
+    image: stackrox/apollo:ui-latest
+    networks:
+      net:
+    ports:
+      - target: 3000
+        published: 3000
+        protocol: tcp
+        mode: host
   agent:
     image: stackrox/apollo:latest
     entrypoint:

@@ -4,12 +4,12 @@ all: deps test image
 .PHONY: image
 image: build
 	@echo "+ $@"
-	docker build -t stackrox/apollo-ui:latest .
+	docker build -t stackrox/apollo:ui-latest .
 
 .PHONY: container
 container:
 	@echo "+ $@"
-	docker run -p 3000:3000 --name apollo-ui -d stackrox/apollo-ui 
+	docker run -p 3000:3000 --name apollo-ui -d stackrox/apollo:ui-latest
 
 .PHONY: clean
 clean:
@@ -76,7 +76,7 @@ deps: package.json
 .PHONY: build
 build: deps
 	@echo "+ $@"
-	HTTPS=true yarn build
+	yarn build
 
 .PHONY: start
 start: deps

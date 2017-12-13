@@ -18,6 +18,15 @@ services:
         published: 8080
         protocol: tcp
         mode: ingress
+  apollo-ui:
+    image: stackrox/apollo:ui-${APOLLO_IMAGE_TAG:-latest}
+    networks:
+      net:
+    ports:
+      - target: 3000
+        published: 3000
+        protocol: tcp
+        mode: ingress
   agent:
     image: stackrox/apollo:${APOLLO_IMAGE_TAG:-latest}
     entrypoint:

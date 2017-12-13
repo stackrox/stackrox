@@ -40,7 +40,7 @@ jobs:
 
       - run: make -C apollo-ui
 
-      - run: docker tag stackrox/apollo-ui:latest stackrox/apollo:ui-$CIRCLE_SHA1
+      - run: docker tag stackrox/apollo:ui-latest stackrox/apollo:ui-$CIRCLE_SHA1
       - run: docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
       - run: docker push stackrox/apollo:ui-$CIRCLE_SHA1
 

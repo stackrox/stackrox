@@ -6,12 +6,12 @@ WORKDIR /usr/src/app
 # Install app dependencies
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
 # where available (npm@5+)
-COPY build ./
+COPY build ./build
+COPY prod/package.json ./
+COPY prod/server.js ./
+COPY prod/yarn.lock ./
 
-# If you are building your code for production
-# RUN npm install --only=production
-RUN npm install -g serve
 RUN yarn install
 
 EXPOSE 3000
-CMD [ "serve", "-p 3000 -s build" ]
+CMD [ "npm", "run", "serve" ]
