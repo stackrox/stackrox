@@ -1,0 +1,64 @@
+# This file is meant to be used in a real Swarm cluster (not a local VM).
+# Adjust the DOCKER_HOST to match your cluster. You can override this by
+# setting the value in your local environment.
+# Similarly, the "latest" tag will be used unless APOLLO_IMAGE_TAG is
+# set in your environment.
+# You need to create secrets. You can do so using roxc, like this:
+#   roxc system setup --platform=swarm --registry-username $(cat .buildUsername) --registry-password $(cat .buildPassword) --swarm-client-cert-path /tmp/certs
+# Then, deploy:
+#   docker stack deploy -c docker-compose-cluster.yaml apollo --with-registry-auth
+version: "3.2"
+services:
+  apollo:
+    image: stackrox/apollo:${APOLLO_IMAGE_TAG:-latest}
+    networks:
+      net:
+    ports:
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: ingress
+  agent:
+    image: stackrox/apollo:${APOLLO_IMAGE_TAG:-latest}
+    entrypoint:
+      - swarm-agent
+    depends_on:
+      - apollo
+    networks:
+      net:
+    deploy:
+      placement:
+        constraints:
+          - node.role==manager
+    environment:
+      APOLLO_ENDPOINT: apollo.apollo_net:8080
+      ROX_APOLLO_CLUSTER_ID: test
+      ROX_APOLLO_ADVERTISED_ENDPOINT: agent.apollo_net:8080
+      DOCKER_CERT_PATH: /run/secrets/
+      DOCKER_HOST: ${DOCKER_HOST}
+    secrets:
+    - source: rox_docker_client_ca_pem
+      target: ca.pem
+      mode: 400
+    - source: rox_docker_client_cert_pem
+      target: cert.pem
+      mode: 400
+    - source: rox_docker_client_key_pem
+      target: key.pem
+      mode: 400
+    - source: rox_registry_auth
+      target: rox_registry_auth
+      mode: 400
+networks:
+  net:
+    driver: overlay
+    attachable: true
+secrets:
+  rox_docker_client_ca_pem:
+    external: true
+  rox_docker_client_cert_pem:
+    external: true
+  rox_docker_client_key_pem:
+    external: true
+  rox_registry_auth:
+    external: true

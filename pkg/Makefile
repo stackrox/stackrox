@@ -9,6 +9,7 @@ API_SERVICES += v1/common
 API_SERVICES += v1/deployment_service
 API_SERVICES += v1/image_policy_service
 API_SERVICES += v1/image_service
+API_SERVICES += v1/ping_service
 API_SERVICES += v1/registry_service
 API_SERVICES += v1/scanner_service
 

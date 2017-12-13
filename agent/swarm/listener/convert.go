@@ -3,6 +3,7 @@ package listener
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
@@ -28,8 +29,15 @@ func (s serviceWrap) asDeployment(client *client.Client) *v1.Deployment {
 	}
 
 	image := images.GenerateImageFromString(s.Spec.TaskTemplate.ContainerSpec.Image)
-	if image.Sha == "" {
+
+	retries := 0
+	for image.Sha == "" && retries <= 5 {
+		time.Sleep(time.Second)
 		image.Sha = s.getSHAFromTask(client)
+		retries++
+	}
+	if image.Sha == "" {
+		log.Warnf("Couldn't find an image SHA for service %s", s.ID)
 	}
 
 	return &v1.Deployment{
@@ -66,7 +74,6 @@ func (s serviceWrap) getSHAFromTask(client *client.Client) string {
 		// differ between tasks on different nodes.
 		return container.Image
 	}
-	log.Warnf("Couldn't find an image SHA for service %s", s.ID)
 	return ""
 }
 

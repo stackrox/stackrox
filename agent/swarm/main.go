@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"bitbucket.org/stack-rox/apollo/agent/swarm/benchmarks"
 	"bitbucket.org/stack-rox/apollo/agent/swarm/listener"
@@ -18,7 +19,10 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
 	"bitbucket.org/stack-rox/apollo/pkg/scheduler"
+	"github.com/golang/protobuf/ptypes/empty"
 	googleGRPC "google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type agent struct {
@@ -79,6 +83,8 @@ func (a *agent) start() {
 	a.startGRPCServer()
 	go a.listener.Start()
 	go a.benchScheduler.Start()
+
+	a.waitUntilApolloIsReady()
 	go a.relayEvents()
 }
 
@@ -87,7 +93,6 @@ func (a *agent) stop() {
 	a.benchScheduler.Stop()
 
 	a.conn.Close()
-
 }
 
 func (a *agent) relayEvents() {
@@ -96,8 +101,7 @@ func (a *agent) relayEvents() {
 	for {
 		select {
 		case ev := <-a.listener.Events():
-			_, err := cli.ReportDeploymentEvent(context.Background(), ev)
-			if err != nil {
+			if err := a.reportDeploymentEvent(cli, ev); err != nil {
 				a.logger.Errorf("Couldn't report event %+v: %+v", ev, err)
 			} else {
 				a.logger.Infof("Successfully reported event %+v", ev)
@@ -124,4 +128,30 @@ func main() {
 			return
 		}
 	}
+}
+
+func (a *agent) waitUntilApolloIsReady() {
+	pingService := v1.NewPingServiceClient(a.conn)
+
+	_, err := pingService.Ping(context.Background(), &empty.Empty{})
+	for err != nil {
+		a.logger.Infof("Ping to Apollo failed: %s. Retrying...", err)
+		time.Sleep(2 * time.Second)
+		_, err = pingService.Ping(context.Background(), &empty.Empty{})
+	}
+}
+
+func (a *agent) reportDeploymentEvent(cli v1.AgentEventServiceClient, ev *v1.DeploymentEvent) (err error) {
+	retries := 0
+	_, err = cli.ReportDeploymentEvent(context.Background(), ev)
+	errStatus, ok := status.FromError(err)
+
+	for retries <= 5 && err != nil && ok && errStatus.Code() == codes.Unavailable {
+		retries++
+		time.Sleep(time.Duration(retries) * time.Second)
+		_, err = cli.ReportDeploymentEvent(context.Background(), ev)
+		errStatus, ok = status.FromError(err)
+	}
+
+	return
 }
