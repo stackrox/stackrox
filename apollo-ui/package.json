@@ -5,8 +5,11 @@
   "private": true,
   "dependencies": {
     "axios": "^0.17.1",
+    "date-fns": "^1.29.0",
+    "express": "^4.16.2",
     "fbemitter": "^2.1.1",
     "flat": "^4.0.0",
+    "http-proxy-middleware": "^0.17.4",
     "object-resolve-path": "^1.1.1",
     "query-string": "^5.0.1",
     "react": "^16.1.1",
@@ -14,7 +17,6 @@
     "react-feather": "^1.0.7",
     "react-modal": "^3.1.7",
     "react-router-dom": "^4.2.2",
-    "react-feather": "^1.0.7",
     "react-scripts": "1.0.17",
     "tailwindcss": "^0.3.0"
   },

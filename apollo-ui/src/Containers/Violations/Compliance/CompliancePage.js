@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import Table from 'Components/Table';
+import Tabs from 'Components/Tabs';
+import TabContent from 'Components/TabContent';
 
 import axios from 'axios';
 import queryString from 'query-string';
@@ -11,7 +13,10 @@ class CompliancePage extends Component {
         this.params = {};
 
         this.state = {
-           table: {
+            tab: {
+                headers: [{ text: 'CIS Docker Benchmark', disabled: false }, { text: 'Swarm Benchmark', disabled: true }, { text: 'Kubernetes Benchmark', disabled: true }]
+            },
+            table: {
                 columns: [
                     { key: 'benchmarkDefinition.name', label: 'Name' },
                     { key: 'benchmarkDefinition.description', label: 'Description' },
@@ -42,7 +47,15 @@ class CompliancePage extends Component {
 
     render() {
         return (
-                <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={(row) => {}}></Table>
+            <div className="flex flex-1 flex-row p-4">
+                <Tabs headers={this.state.tab.headers}>
+                    <TabContent name={this.state.tab.headers[0]}>
+                        <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={(row) => { }}></Table>
+                    </TabContent>
+                    <TabContent name={this.state.tab.headers[1]}></TabContent>
+                    <TabContent name={this.state.tab.headers[2]}></TabContent>
+                </Tabs>
+            </div>
         );
     }
 

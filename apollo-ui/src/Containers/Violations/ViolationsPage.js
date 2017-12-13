@@ -3,7 +3,6 @@ import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import Table from 'Components/Table';
 import Select from 'Components/Select';
-// import Pills from 'Components/Pills';
 
 import CompliancePage from 'Containers/Violations/Compliance/CompliancePage';
 
@@ -19,7 +18,7 @@ class ViolationsContainer extends Component {
 
         this.state = {
             tab: {
-                headers: ['Policies', 'Compliance']
+                headers: [{ text: 'Policies', disabled: false }, { text: 'Compliance', disabled: false }]
             },
             category: {
                 options: ['All categories', 'Image Assurance', 'Configurations', 'Orchestrator Target', 'Denial of Policy', 'Privileges & Capabilities', 'Account Authorization']
@@ -27,7 +26,7 @@ class ViolationsContainer extends Component {
             time: {
                 options: ['Last 24 Hours', 'Last Week', 'Last Month', 'Last Year']
             },
-            pills: [{ text: 'Image Assurance', value: 'IMAGE_ASSURANCE' }, { text: 'Configurations', value: 'CONFIGURATIONS' }, { text: 'Orchestrator Target', value: 'ORCHESTRATOR_TARGET' }, { text: 'Denial of Policy', value: 'DENIAL_OF_POLICY' }, { text: 'Privileges & Capabilities', value: 'PRIVILEGES_AND_CAPABILITIES' }, { text: 'Account Authorization', value: 'ACCOUNT_AUTHORIZATION' }],
+            pills: [{ text: 'Image Assurance', value: 'IMAGE_ASSURANCE', disabled: false }, { text: 'Configurations', value: 'CONFIGURATIONS', disabled: true }, { text: 'Orchestrator Target', value: 'ORCHESTRATOR_TARGET', disabled: true }, { text: 'Denial of Policy', value: 'DENIAL_OF_POLICY', disabled: true }, { text: 'Privileges & Capabilities', value: 'PRIVILEGES_AND_CAPABILITIES', disabled: true }, { text: 'Account Authorization', value: 'ACCOUNT_AUTHORIZATION', disabled: true }],
             table: {
                 columns: [
                     { key: 'name', label: 'Name' },
@@ -65,8 +64,8 @@ class ViolationsContainer extends Component {
                     var result = {
                         name: policy.policy.name,
                         description: policy.policy.imagePolicy.description,
-                        category: category.category,
-                        severity: policy.policy.severity,
+                        category: category.category.replace('_', ' ').capitalizeFirstLetterOfWord(),
+                        severity: policy.policy.severity.split('_')[0].capitalizeFirstLetterOfWord(),
                         numAlerts: policy.numAlerts
                     }
                     return result;

@@ -6,11 +6,12 @@ import {
     Switch,
     Link
 } from 'react-router-dom';
-import Logo from "Components/icons/logo";
-import * as Icon from "react-feather";
-import IntegrationsPage from "Containers/Violations/ViolationsPage";
-import ViolationsPage from 'Containers/Violations/ViolationsPage';
+import Logo from 'Components/icons/logo';
+import * as Icon from 'react-feather';
+
 import PolicyAlertsSidePanel from 'Containers/Violations/Policies/PolicyAlertsSidePanel';
+import IntegrationsPage from 'Containers/Integrations/IntegrationsPage';
+import ViolationsPage from 'Containers/Violations/ViolationsPage';
 
 class Main extends Component {
     render() {
@@ -57,7 +58,7 @@ class Main extends Component {
                     <Redirect from="/" to="/violations" />
                   </Switch>
                 </main>
-                <PolicyAlertsSidePanel />
+                <PolicyAlertsSidePanel></PolicyAlertsSidePanel>
               </section>
                 </Router>
             </section>

@@ -31,9 +31,7 @@ class Table extends Component {
                 var value = resolvePath(row, column.key);
                 return <td className={className} key={column.key + '-' + i}>{value}</td>;
             });
-            return <tr className="cursor-pointer border-b border-base-300" key={i} onClick={() => rowClick(row)}>
-                {cols}
-              </tr>;
+            return <tr className='cursor-pointer border-b border-base-300' key={i} onClick={() => rowClick(row)}>{cols}</tr>
         });
     }
 

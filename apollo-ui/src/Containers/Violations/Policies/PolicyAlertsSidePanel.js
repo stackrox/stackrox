@@ -4,6 +4,7 @@ import ReactModal from 'react-modal';
 import * as Icon from 'react-feather';
 import emitter from 'emitter';
 import axios from 'axios';
+import dateFns from 'date-fns';
 
 class MainSidePanel extends Component {
     constructor(props) {
@@ -45,7 +46,11 @@ class MainSidePanel extends Component {
             if(!response.data || !response.data.alerts.length) return;
             var table = this.state.table;
             table.rows = response.data.alerts.map((alert) => {
-                alert.severity = alert.severity.replace('_', ' ');
+                console.log(alert);
+                alert.policy.category = alert.policy.category.replace('_', ' ').capitalizeFirstLetterOfWord();
+                alert.policy.imagePolicy.severity = alert.severity.split('_')[0].capitalizeFirstLetterOfWord();
+                alert.severity = alert.severity.split('_')[0].capitalizeFirstLetterOfWord();
+                alert.time = dateFns.format(alert.time, 'MM/DD/YYYY HH:MM:ss A')
                 return alert;
             });
             this.setState({ data: data, table: table });
@@ -90,7 +95,6 @@ class MainSidePanel extends Component {
                             <div className="py-2 px-4 truncate"><span className="font-bold">Time:</span> {this.state.modal.data.time}</div>
                             <div className="py-2 px-4 truncate"><span className="font-bold">Type:</span> {this.state.modal.data.deployment.type}</div>
                             <div className="py-2 px-4 truncate"><span className="font-bold">Last Updated:</span> {this.state.modal.data.deployment.updatedAt}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Version:</span> {this.state.modal.data.deployment.version}</div>
                         </div>
                     </div>
                     <div className="bg-white m-4">

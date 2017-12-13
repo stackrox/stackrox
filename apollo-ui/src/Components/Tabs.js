@@ -15,12 +15,14 @@ class Tabs extends Component {
         var active = this.state.active;
         var tabClick = this.tabClick;
         return this.props.headers.map(function (header, i) {
-            var tabClass = active === header ? "tab tab-active" : "tab";
-            return <button className={tabClass} key={header + '-' + i} onClick={() => tabClick(header)}>{header}</button>;
+            var tabClass = (active === header) ? 'tab tab-active' : 'tab';
+            if (header.disabled) tabClass = "p-2 cursor-default border-b border-grey-light text-grey";
+            return <div className={tabClass} key={header + '-' + i} onClick={() => tabClick(header)}>{header.text}</div>;
         });
     }
 
     tabClick(header) {
+        if(header.disabled) return;
         this.setState({ active: header });
     }
 
