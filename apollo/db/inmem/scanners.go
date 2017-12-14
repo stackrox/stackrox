@@ -57,19 +57,16 @@ func (s *scannerStore) GetScanners(request *v1.GetScannersRequest) ([]*v1.Scanne
 }
 
 func (s *scannerStore) upsertScanner(scanner *v1.Scanner) {
-	s.scannerMutex.Lock()
-	defer s.scannerMutex.Unlock()
 	s.scanners[scanner.Name] = scanner
 }
 
 // AddScanner upserts a scanner
 func (s *scannerStore) AddScanner(scanner *v1.Scanner) error {
 	s.scannerMutex.Lock()
+	defer s.scannerMutex.Unlock()
 	if _, exists := s.scanners[scanner.Name]; exists {
-		s.scannerMutex.Unlock()
 		return fmt.Errorf("Scanner with name %v already exists", scanner.Name)
 	}
-	s.scannerMutex.Unlock()
 	if err := s.persistent.AddScanner(scanner); err != nil {
 		return err
 	}
@@ -79,6 +76,8 @@ func (s *scannerStore) AddScanner(scanner *v1.Scanner) error {
 
 // UpdateScanner upserts a scanner
 func (s *scannerStore) UpdateScanner(scanner *v1.Scanner) error {
+	s.scannerMutex.Lock()
+	defer s.scannerMutex.Unlock()
 	if err := s.persistent.UpdateScanner(scanner); err != nil {
 		return err
 	}
@@ -88,11 +87,11 @@ func (s *scannerStore) UpdateScanner(scanner *v1.Scanner) error {
 
 // RemoveScanner removes a scanner
 func (s *scannerStore) RemoveScanner(name string) error {
+	s.scannerMutex.Lock()
+	defer s.scannerMutex.Unlock()
 	if err := s.persistent.RemoveScanner(name); err != nil {
 		return err
 	}
-	s.scannerMutex.Lock()
-	defer s.scannerMutex.Unlock()
 	delete(s.scanners, name)
 	return nil
 }

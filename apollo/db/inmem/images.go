@@ -1,6 +1,7 @@
 package inmem
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 
@@ -48,13 +49,16 @@ func (s *imageStore) GetImages(request *v1.GetImagesRequest) ([]*v1.Image, error
 }
 
 func (s *imageStore) insertImage(image *v1.Image) {
-	s.imageMutex.Lock()
-	defer s.imageMutex.Unlock()
 	s.images[image.Sha] = image
 }
 
 // AddImage adds an image to the database
 func (s *imageStore) AddImage(image *v1.Image) error {
+	s.imageMutex.Lock()
+	defer s.imageMutex.Unlock()
+	if _, ok := s.images[image.Sha]; ok {
+		return fmt.Errorf("Cannot add image %v because it already exists", image.Sha)
+	}
 	if err := s.persistent.AddImage(image); err != nil {
 		return err
 	}
@@ -64,6 +68,8 @@ func (s *imageStore) AddImage(image *v1.Image) error {
 
 // UpdateImage updates an image
 func (s *imageStore) UpdateImage(image *v1.Image) error {
+	s.imageMutex.Lock()
+	defer s.imageMutex.Unlock()
 	if err := s.persistent.UpdateImage(image); err != nil {
 		return err
 	}

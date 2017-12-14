@@ -56,19 +56,16 @@ func (s *registryStore) GetRegistries(request *v1.GetRegistriesRequest) ([]*v1.R
 }
 
 func (s *registryStore) upsertRegistry(registry *v1.Registry) {
-	s.registryMutex.Lock()
-	defer s.registryMutex.Unlock()
 	s.registries[registry.Name] = registry
 }
 
 // AddRegistry upserts a registry
 func (s *registryStore) AddRegistry(registry *v1.Registry) error {
 	s.registryMutex.Lock()
+	defer s.registryMutex.Unlock()
 	if _, exists := s.registries[registry.Name]; exists {
-		s.registryMutex.Unlock()
 		return fmt.Errorf("Registry with name %v already exists", registry.Name)
 	}
-	s.registryMutex.Unlock()
 	if err := s.persistent.AddRegistry(registry); err != nil {
 		return err
 	}
@@ -78,6 +75,8 @@ func (s *registryStore) AddRegistry(registry *v1.Registry) error {
 
 // UpdateRegistry upserts a registry
 func (s *registryStore) UpdateRegistry(registry *v1.Registry) error {
+	s.registryMutex.Lock()
+	defer s.registryMutex.Unlock()
 	if err := s.persistent.UpdateRegistry(registry); err != nil {
 		return err
 	}
@@ -87,11 +86,11 @@ func (s *registryStore) UpdateRegistry(registry *v1.Registry) error {
 
 // RemoveRegistry removes a registry
 func (s *registryStore) RemoveRegistry(name string) error {
+	s.registryMutex.Lock()
+	defer s.registryMutex.Unlock()
 	if err := s.persistent.RemoveRegistry(name); err != nil {
 		return err
 	}
-	s.registryMutex.Lock()
-	defer s.registryMutex.Unlock()
 	delete(s.registries, name)
 	return nil
 }

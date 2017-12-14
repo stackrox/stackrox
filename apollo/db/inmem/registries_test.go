@@ -24,7 +24,10 @@ func testRegistries(t *testing.T, insertStorage, retrievalStorage db.RegistrySto
 	for _, r := range registries {
 		assert.NoError(t, insertStorage.AddRegistry(r))
 	}
-
+	// Verify insertion multiple times does not deadlock and causes an error
+	for _, r := range registries {
+		assert.Error(t, insertStorage.AddRegistry(r))
+	}
 	for _, r := range registries {
 		got, exists, err := retrievalStorage.GetRegistry(r.Name)
 		assert.NoError(t, err)

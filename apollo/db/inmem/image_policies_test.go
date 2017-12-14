@@ -28,39 +28,48 @@ func (suite *ImagePoliciesTestSuite) TeardownSuite() {
 	suite.Close()
 }
 
-func (suite *ImagePoliciesTestSuite) basicImagePoliciesTest(updateStore, retrievalStore db.Storage) {
-	policy1 := &v1.ImagePolicy{
-		Name:     "policy1",
-		Severity: v1.Severity_LOW_SEVERITY,
+func (suite *ImagePoliciesTestSuite) basicImagePoliciesTest(updateStore, retrievalStore db.ImagePolicyStorage) {
+	expectedPolicies := []*v1.ImagePolicy{
+		{
+			Name:     "policy1",
+			Severity: v1.Severity_LOW_SEVERITY,
+		},
+		{
+			Name:     "policy2",
+			Severity: v1.Severity_HIGH_SEVERITY,
+		},
 	}
-	err := updateStore.AddImagePolicy(policy1)
-	suite.Nil(err)
-	policy2 := &v1.ImagePolicy{
-		Name:     "policy2",
-		Severity: v1.Severity_HIGH_SEVERITY,
+
+	// Test Add
+	for _, p := range expectedPolicies {
+		suite.NoError(updateStore.AddImagePolicy(p))
 	}
-	err = updateStore.AddImagePolicy(policy2)
-	suite.Nil(err)
+
+	// Verify insertion multiple times does not deadlock and causes an error
+	for _, p := range expectedPolicies {
+		suite.Error(updateStore.AddImagePolicy(p))
+	}
 
 	// Verify add is persisted
 	imagePolicies, err := retrievalStore.GetImagePolicies(&v1.GetImagePoliciesRequest{})
 	suite.Nil(err)
-	suite.Equal([]*v1.ImagePolicy{policy1, policy2}, imagePolicies)
+	suite.Equal(expectedPolicies, imagePolicies)
 
 	// Verify update works
-	policy1.Severity = v1.Severity_HIGH_SEVERITY
-	err = suite.UpdateImagePolicy(policy1)
+	for _, p := range expectedPolicies {
+		p.Severity = v1.Severity_MEDIUM_SEVERITY
+		suite.NoError(updateStore.UpdateImagePolicy(p))
+	}
 	imagePolicies, err = retrievalStore.GetImagePolicies(&v1.GetImagePoliciesRequest{})
-	suite.Nil(err)
-	suite.Equal([]*v1.ImagePolicy{policy1, policy2}, imagePolicies)
+	suite.NoError(err)
+	suite.Equal(expectedPolicies, imagePolicies)
 
 	// Verify deletion is persisted
-	err = suite.RemoveImagePolicy(policy1.Name)
-	suite.Nil(err)
-	err = suite.RemoveImagePolicy(policy2.Name)
-	suite.Nil(err)
+	for _, p := range expectedPolicies {
+		suite.NoError(updateStore.RemoveImagePolicy(p.Name))
+	}
 	imagePolicies, err = retrievalStore.GetImagePolicies(&v1.GetImagePoliciesRequest{})
-	suite.Nil(err)
+	suite.NoError(err)
 	suite.Len(imagePolicies, 0)
 }
 

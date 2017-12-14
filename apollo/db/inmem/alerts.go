@@ -1,6 +1,7 @@
 package inmem
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 
@@ -101,13 +102,16 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 }
 
 func (s *alertStore) upsertAlert(alert *v1.Alert) {
-	s.alertMutex.Lock()
-	defer s.alertMutex.Unlock()
 	s.alerts[alert.Id] = alert
 }
 
 // AddAlert adds a new alert
 func (s *alertStore) AddAlert(alert *v1.Alert) error {
+	s.alertMutex.Lock()
+	defer s.alertMutex.Unlock()
+	if _, ok := s.alerts[alert.Id]; ok {
+		return fmt.Errorf("Alert %v cannot be added because it already exists", alert.Id)
+	}
 	if err := s.persistent.AddAlert(alert); err != nil {
 		return err
 	}
@@ -117,6 +121,8 @@ func (s *alertStore) AddAlert(alert *v1.Alert) error {
 
 // UpdateAlert updates an alert
 func (s *alertStore) UpdateAlert(alert *v1.Alert) error {
+	s.alertMutex.Lock()
+	defer s.alertMutex.Unlock()
 	if err := s.persistent.UpdateAlert(alert); err != nil {
 		return err
 	}

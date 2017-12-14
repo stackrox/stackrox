@@ -29,40 +29,46 @@ func (suite *ImagesTestSuite) TeardownSuite() {
 }
 
 func (suite *ImagesTestSuite) basicStorageTest(updateStore, retrievalStore db.Storage) {
-	image1 := &v1.Image{
-		Sha:      "sha1",
-		Registry: "docker.io",
+	expectedImages := []*v1.Image{
+		{
+			Sha:      "sha1",
+			Registry: "docker.io",
+		},
+		{
+			Sha:      "sha2",
+			Registry: "stackrox.io",
+		},
 	}
-	err := updateStore.AddImage(image1)
-	suite.Nil(err)
 
-	image2 := &v1.Image{
-		Sha:      "sha2",
-		Registry: "stackrox.io",
+	// Test add
+	for _, i := range expectedImages {
+		suite.NoError(updateStore.AddImage(i))
 	}
-	err = updateStore.AddImage(image2)
-	suite.Nil(err)
+	// Verify insertion multiple times does not deadlock and causes an error
+	for _, i := range expectedImages {
+		suite.Error(updateStore.AddImage(i))
+	}
 
 	// Verify add is persisted
 	images, err := retrievalStore.GetImages(&v1.GetImagesRequest{})
-	suite.Nil(err)
-	suite.Equal([]*v1.Image{image1, image2}, images)
+	suite.NoError(err)
+	suite.Equal(expectedImages, images)
 
 	// Verify update works
-	image1.Registry = "stackrox.io"
-	err = updateStore.UpdateImage(image1)
-	suite.Nil(err)
+	for _, image := range expectedImages {
+		image.Registry = "dtr.io"
+		suite.NoError(updateStore.UpdateImage(image))
+	}
 	images, err = retrievalStore.GetImages(&v1.GetImagesRequest{})
-	suite.Nil(err)
-	suite.Equal([]*v1.Image{image1, image2}, images)
+	suite.NoError(err)
+	suite.Equal(expectedImages, images)
 
 	// Verify deletion is persisted
-	err = updateStore.RemoveImage(image1.Sha)
-	suite.Nil(err)
-	err = updateStore.RemoveImage(image2.Sha)
-	suite.Nil(err)
+	for _, image := range images {
+		suite.NoError(updateStore.RemoveImage(image.Sha))
+	}
 	images, err = retrievalStore.GetImages(&v1.GetImagesRequest{})
-	suite.Nil(err)
+	suite.NoError(err)
 	suite.Len(images, 0)
 }
 
@@ -75,22 +81,24 @@ func (suite *ImagesTestSuite) TestImages() {
 }
 
 func (suite *ImagesTestSuite) TestGetImagesFilters() {
-	image1 := &v1.Image{
-		Sha:      "sha1",
-		Registry: "docker.io",
+	expectedImages := []*v1.Image{
+		{Sha: "sha1",
+			Registry: "docker.io",
+		},
+		{
+			Sha:      "sha2",
+			Registry: "stackrox.io",
+		},
 	}
-	err := suite.AddImage(image1)
-	suite.Nil(err)
-
-	image2 := &v1.Image{
-		Sha:      "sha2",
-		Registry: "stackrox.io",
+	for _, image := range expectedImages {
+		suite.NoError(suite.AddImage(image))
 	}
-	err = suite.AddImage(image2)
-	suite.Nil(err)
-
 	// Get all images
 	images, err := suite.GetImages(&v1.GetImagesRequest{})
 	suite.Nil(err)
-	suite.Equal([]*v1.Image{image1, image2}, images)
+	suite.Equal(expectedImages, images)
+
+	for _, image := range expectedImages {
+		suite.NoError(suite.RemoveImage(image.Sha))
+	}
 }

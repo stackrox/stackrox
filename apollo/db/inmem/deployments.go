@@ -1,6 +1,7 @@
 package inmem
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 
@@ -54,6 +55,11 @@ func (s *deploymentStore) GetDeployments() (deployments []*v1.Deployment, err er
 }
 
 func (s *deploymentStore) AddDeployment(deployment *v1.Deployment) (err error) {
+	s.deploymentsMutex.Lock()
+	defer s.deploymentsMutex.Unlock()
+	if _, ok := s.deployments[deployment.Id]; ok {
+		return fmt.Errorf("Cannot add deployment %v because it already exists", deployment.Id)
+	}
 	if err = s.persistent.AddDeployment(deployment); err != nil {
 		return
 	}
@@ -62,6 +68,8 @@ func (s *deploymentStore) AddDeployment(deployment *v1.Deployment) (err error) {
 }
 
 func (s *deploymentStore) UpdateDeployment(deployment *v1.Deployment) (err error) {
+	s.deploymentsMutex.Lock()
+	defer s.deploymentsMutex.Unlock()
 	if err = s.persistent.UpdateDeployment(deployment); err != nil {
 		return
 	}
@@ -70,18 +78,15 @@ func (s *deploymentStore) UpdateDeployment(deployment *v1.Deployment) (err error
 }
 
 func (s *deploymentStore) upsertDeployment(deployment *v1.Deployment) {
-	s.deploymentsMutex.Lock()
-	defer s.deploymentsMutex.Unlock()
 	s.deployments[deployment.Id] = deployment
 }
 
 func (s *deploymentStore) RemoveDeployment(id string) (err error) {
+	s.deploymentsMutex.Lock()
+	defer s.deploymentsMutex.Unlock()
 	if err = s.persistent.RemoveDeployment(id); err != nil {
 		return
 	}
-
-	s.deploymentsMutex.Lock()
-	defer s.deploymentsMutex.Unlock()
 	delete(s.deployments, id)
 	return
 }

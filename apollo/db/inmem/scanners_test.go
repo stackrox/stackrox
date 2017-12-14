@@ -24,6 +24,10 @@ func testScanners(t *testing.T, insertStorage, retrievalStorage db.ScannerStorag
 	for _, r := range scanners {
 		assert.NoError(t, insertStorage.AddScanner(r))
 	}
+	// Verify insertion multiple times does not deadlock and causes an error
+	for _, r := range scanners {
+		assert.Error(t, insertStorage.AddScanner(r))
+	}
 
 	for _, r := range scanners {
 		got, exists, err := retrievalStorage.GetScanner(r.Name)

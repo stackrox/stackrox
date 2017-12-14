@@ -39,6 +39,11 @@ func TestDeployments(t *testing.T) {
 		assert.NoError(t, storage.AddDeployment(d))
 	}
 
+	// Verify insertion multiple times does not deadlock and causes an error
+	for _, d := range deployments {
+		assert.Error(t, storage.AddDeployment(d))
+	}
+
 	for _, d := range deployments {
 		got, exists, err := storage.GetDeployment(d.GetId())
 		assert.NoError(t, err)

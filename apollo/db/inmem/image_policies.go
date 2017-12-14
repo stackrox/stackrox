@@ -58,11 +58,10 @@ func (s *imagePolicyStore) GetImagePolicies(request *v1.GetImagePoliciesRequest)
 // AddImagePolicy adds the image policy to the database.
 func (s *imagePolicyStore) AddImagePolicy(policy *v1.ImagePolicy) error {
 	s.imagePoliciesMutex.Lock()
+	defer s.imagePoliciesMutex.Unlock()
 	if _, ok := s.imagePolicies[policy.Name]; ok {
-		s.imagePoliciesMutex.Unlock()
 		return fmt.Errorf("policy with name %v already exists and cannot be added again", policy.Name)
 	}
-	s.imagePoliciesMutex.Unlock()
 	if err := s.persistent.AddImagePolicy(policy); err != nil {
 		return err
 	}
@@ -72,6 +71,8 @@ func (s *imagePolicyStore) AddImagePolicy(policy *v1.ImagePolicy) error {
 
 // UpdateImagePolicy updates the image policy.
 func (s *imagePolicyStore) UpdateImagePolicy(policy *v1.ImagePolicy) error {
+	s.imagePoliciesMutex.Lock()
+	defer s.imagePoliciesMutex.Unlock()
 	if err := s.persistent.UpdateImagePolicy(policy); err != nil {
 		return err
 	}
@@ -80,8 +81,6 @@ func (s *imagePolicyStore) UpdateImagePolicy(policy *v1.ImagePolicy) error {
 }
 
 func (s *imagePolicyStore) upsertImagePolicy(policy *v1.ImagePolicy) {
-	s.imagePoliciesMutex.Lock()
-	defer s.imagePoliciesMutex.Unlock()
 	s.imagePolicies[policy.Name] = policy
 }
 

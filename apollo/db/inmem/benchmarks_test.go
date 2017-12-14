@@ -26,6 +26,10 @@ func testBenchmarks(t *testing.T, insertStorage, retrievalStorage db.BenchmarkSt
 	for _, b := range benchmarks {
 		assert.NoError(t, insertStorage.AddBenchmark(b))
 	}
+	// Verify insertion multiple times does not deadlock and causes an error
+	for _, b := range benchmarks {
+		assert.Error(t, insertStorage.AddBenchmark(b))
+	}
 
 	for _, b := range benchmarks {
 		got, exists, err := retrievalStorage.GetBenchmark(b.Name)

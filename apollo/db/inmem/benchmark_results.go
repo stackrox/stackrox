@@ -1,6 +1,7 @@
 package inmem
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 
@@ -75,11 +76,14 @@ func (s *benchmarkResultStore) GetBenchmarkResults(request *v1.GetBenchmarkResul
 
 // AddBenchmarkResult inserts a benchmark into memory
 func (s *benchmarkResultStore) AddBenchmarkResult(benchmark *v1.BenchmarkResult) error {
+	s.benchmarkMutex.Lock()
+	defer s.benchmarkMutex.Unlock()
+	if _, ok := s.benchmarkResults[benchmark.Id]; ok {
+		return fmt.Errorf("Benchmark result %v cannot be added because it already exists", benchmark.Id)
+	}
 	if err := s.persistent.AddBenchmarkResult(benchmark); err != nil {
 		return err
 	}
-	s.benchmarkMutex.Lock()
-	defer s.benchmarkMutex.Unlock()
 	s.benchmarkResults[benchmark.Id] = benchmark
 	return nil
 }

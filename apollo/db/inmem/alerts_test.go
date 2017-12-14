@@ -6,7 +6,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -31,42 +30,50 @@ func (suite *AlertsTestSuite) TeardownSuite() {
 }
 
 func (suite *AlertsTestSuite) basicAlertTest(updateStore, retrievalStore db.Storage) {
-	alert1 := &v1.Alert{
-		Id:       "id1",
-		Severity: v1.Severity_LOW_SEVERITY,
-		Time:     &timestamp.Timestamp{Seconds: 200},
+
+	alerts := []*v1.Alert{
+		{
+			Id:       "id1",
+			Severity: v1.Severity_LOW_SEVERITY,
+			Time:     &timestamp.Timestamp{Seconds: 200},
+		},
+		{
+			Id:       "id2",
+			Severity: v1.Severity_HIGH_SEVERITY,
+			Time:     &timestamp.Timestamp{Seconds: 100},
+		},
 	}
-	err := updateStore.AddAlert(alert1)
-	suite.Nil(err)
-	alert2 := &v1.Alert{
-		Id:       "id2",
-		Severity: v1.Severity_HIGH_SEVERITY,
-		Time:     &timestamp.Timestamp{Seconds: 100},
+
+	for _, alert := range alerts {
+		suite.NoError(updateStore.AddAlert(alert))
 	}
-	err = updateStore.AddAlert(alert2)
-	suite.Nil(err)
+	// Verify insertion multiple times does not deadlock and causes an error
+	for _, alert := range alerts {
+		suite.Error(updateStore.AddAlert(alert))
+	}
 
 	// Verify add is persisted
-	alerts, err := retrievalStore.GetAlerts(&v1.GetAlertsRequest{})
+	retrievedAlerts, err := retrievalStore.GetAlerts(&v1.GetAlertsRequest{})
 	suite.Nil(err)
-	suite.Equal([]*v1.Alert{alert1, alert2}, alerts)
+	suite.Equal(alerts, retrievedAlerts)
 
 	// Verify update works
-	alert1.Severity = v1.Severity_HIGH_SEVERITY
-	err = updateStore.UpdateAlert(alert1)
+	for _, alert := range alerts {
+		alert.Severity = v1.Severity_MEDIUM_SEVERITY
+		suite.NoError(updateStore.UpdateAlert(alert))
+	}
+
+	retrievedAlerts, err = retrievalStore.GetAlerts(&v1.GetAlertsRequest{})
 	suite.Nil(err)
-	alerts, err = retrievalStore.GetAlerts(&v1.GetAlertsRequest{})
-	suite.Nil(err)
-	suite.Equal([]*v1.Alert{alert1, alert2}, alerts)
+	suite.Equal(alerts, retrievedAlerts)
 
 	// Verify deletion is persisted
-	err = updateStore.RemoveAlert(alert1.Id)
+	for _, alert := range alerts {
+		suite.NoError(updateStore.RemoveAlert(alert.Id))
+	}
+	retrievedAlerts, err = retrievalStore.GetAlerts(&v1.GetAlertsRequest{})
 	suite.Nil(err)
-	err = updateStore.RemoveAlert(alert2.Id)
-	suite.Nil(err)
-	alerts, err = retrievalStore.GetAlerts(&v1.GetAlertsRequest{})
-	suite.Nil(err)
-	suite.Len(alerts, 0)
+	suite.Len(retrievedAlerts, 0)
 }
 
 func (suite *AlertsTestSuite) TestPersistence() {
@@ -88,7 +95,7 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 		Time:     &timestamp.Timestamp{Seconds: 100},
 	}
 	err := suite.AddAlert(alert1)
-	suite.Nil(err)
+	suite.NoError(err)
 	alert2 := &v1.Alert{
 		Id: "id2",
 		Policy: &v1.Policy{
@@ -99,18 +106,18 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 		Time:     &timestamp.Timestamp{Seconds: 200},
 	}
 	err = suite.AddAlert(alert2)
-	suite.Nil(err)
+	suite.NoError(err)
 
 	// Get all alerts
 	alerts, err := suite.GetAlerts(&v1.GetAlertsRequest{})
-	suite.Nil(err)
-	assert.Equal(suite.T(), []*v1.Alert{alert2, alert1}, alerts)
+	suite.NoError(err)
+	suite.Equal([]*v1.Alert{alert2, alert1}, alerts)
 
 	// Get by ID
 	alert, exists, err := suite.GetAlert("id1")
-	suite.Nil(err)
+	suite.NoError(err)
 	suite.True(exists)
-	assert.Equal(suite.T(), alert1, alert)
+	suite.Equal(alert1, alert)
 
 	// Filter by severity
 	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{
@@ -119,8 +126,8 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 			v1.Severity_LOW_SEVERITY,
 		},
 	})
-	suite.Nil(err)
-	assert.Equal(suite.T(), []*v1.Alert{alert2, alert1}, alerts)
+	suite.NoError(err)
+	suite.Equal([]*v1.Alert{alert2, alert1}, alerts)
 
 	// Filter by category.
 	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{
@@ -128,18 +135,22 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 			v1.Policy_Category_IMAGE_ASSURANCE,
 		},
 	})
-	suite.Nil(err)
-	assert.Equal(suite.T(), []*v1.Alert{alert2, alert1}, alerts)
+	suite.NoError(err)
+	suite.Equal([]*v1.Alert{alert2, alert1}, alerts)
 
 	// Filter by Policy.
 	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{
 		PolicyName: []string{"policy2", "policy23"},
 	})
-	suite.Nil(err)
-	assert.Equal(suite.T(), []*v1.Alert{alert2}, alerts)
+	suite.NoError(err)
+	suite.Equal([]*v1.Alert{alert2}, alerts)
 
 	// Filter by time.
 	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{Since: &timestamp.Timestamp{Seconds: 150}})
 	suite.Nil(err)
-	assert.Equal(suite.T(), []*v1.Alert{alert2}, alerts)
+	suite.Equal([]*v1.Alert{alert2}, alerts)
+
+	suite.NoError(suite.RemoveAlert(alert1.Id))
+	suite.NoError(suite.RemoveAlert(alert2.Id))
+
 }
