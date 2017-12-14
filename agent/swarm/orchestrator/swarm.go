@@ -3,6 +3,7 @@ package orchestrator
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"strings"
 
 	"bitbucket.org/stack-rox/apollo/pkg/docker"
@@ -75,12 +76,23 @@ func (s *swarmOrchestrator) Launch(service orchestrators.SystemService) (string,
 	}
 	ctx, cancelFunc := docker.TimeoutContext()
 	defer cancelFunc()
-	createResp, err := s.dockerClient.ServiceCreate(ctx, spec, dockerTypes.ServiceCreateOptions{})
+
+	createResp, err := s.dockerClient.ServiceCreate(ctx, spec, serviceCreateOptions())
 	if err != nil {
 		return "", err
 	}
 	log.Infof("Swarm Create Resp: %+v", createResp)
 	return createResp.ID, nil
+}
+
+func serviceCreateOptions() (opts dockerTypes.ServiceCreateOptions) {
+	contents, err := ioutil.ReadFile("/run/secrets/rox_registry_auth")
+	if err != nil {
+		log.Warnf("Couldn't open registry auth secret: %s", err)
+		return
+	}
+	opts.EncodedRegistryAuth = string(contents)
+	return
 }
 
 func (s *swarmOrchestrator) Kill(id string) error {
