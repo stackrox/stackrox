@@ -47,10 +47,14 @@ class CompliancePage extends Component {
 
     render() {
         return (
-            <div className="flex flex-1 flex-row p-4">
-                <Tabs headers={this.state.tab.headers}>
+            <div className="flex">
+                <Tabs className="bg-white" headers={this.state.tab.headers}>
                     <TabContent name={this.state.tab.headers[0]}>
-                        <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={(row) => { }}></Table>
+                    <div className="flex flex-1 bg-base-100">
+                        <div className="flex-1 w-full p-3 overflow-y-scroll bg-white rounded-sm shadow">
+                            <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={(row) => { }}></Table>
+                        </div>
+                    </div>
                     </TabContent>
                     <TabContent name={this.state.tab.headers[1]}></TabContent>
                     <TabContent name={this.state.tab.headers[2]}></TabContent>

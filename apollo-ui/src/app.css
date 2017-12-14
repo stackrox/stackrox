@@ -1,6 +1,6 @@
 :root {
     /* Theme-light */
-    --theme-light-base: 225;
+    --theme-light-base: 220;
     --theme-light-primary: var(--theme-light-base);
     /* indigo */
     --theme-light-secondary: 250;
@@ -13,7 +13,7 @@
     --theme-light-s-0: 0%;
     --theme-light-s-10: 10%;
     --theme-light-s-20: 20%;
-    --theme-light-s-30: 30%;
+    --theme-light-s-30: 27%;
     --theme-light-s-40: 40%;
     --theme-light-s-50: 50%;
     --theme-light-s-60: 60%;
@@ -25,11 +25,11 @@
     --theme-light-l-10: 10%;
     --theme-light-l-20: 20%;
     --theme-light-l-30: 30%;
-    --theme-light-l-40: 45%;
+    --theme-light-l-40: 36%;
     --theme-light-l-50: 55%;
     --theme-light-l-60: 70%;
     --theme-light-l-70: 80%;
-    --theme-light-l-80: 90%;
+    --theme-light-l-80: 93%;
     --theme-light-l-90: 97%;
     --theme-light-l-100: 100%;
     /*---------------------------------------------------------------*/
@@ -130,6 +130,10 @@ button, select, input {
     }
 }
 
+.shadow-underline {
+    box-shadow: inset 0 -1px 0px 0 hsla(0, 0%, 0%, 0.10);
+}
+
 .disabled {
 @apply opacity-50 cursor-not-allowed .pointer-events-none;
 }
@@ -137,7 +141,6 @@ button, select, input {
 .border-collapse {
     border-collapse: collapse;
 }
-
 
 .react-modal-overlay {
     @apply .fixed .pin-t .pin-l .w-full .h-full;
@@ -152,16 +155,31 @@ button, select, input {
     @apply .select-none .cursor-pointer .p-2 .m-2 .bg-base-300 .rounded-sm .whitespace-no-wrap .flex-1 .text-center .text-xs .text-base-700 .font-600;
 }
 
+.transition {
+ animation: fadein .25s ease-in;
+}
+
+@keyframes fadein {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
 .tab {
-     @apply text-base-500 uppercase p-3 text-sm tracking-wide;
+     @apply text-base-600 uppercase p-3 text-sm tracking-wide;
 }
 
 .tab-active {
-    @apply text-primary-600 bg-white;
+    @apply text-primary-600 bg-white rounded-t-sm;
+    box-shadow: 0px -1px 0px 0px hsla(0, 0%, 0%, 0.10), 1px 0px 0px 0px hsla(0, 0%, 0%, 0.10), -1px 0px 0px 0px hsla(0, 0%, 0%, 0.10);
 }
 
 .tab:hover, .tab:focus {
-    @apply text-base-700;
+    @apply text-primary-700;
 }
 
 .tab-active:hover, .tab-active:focus {

@@ -4,6 +4,7 @@ import TabContent from 'Components/TabContent';
 import Table from 'Components/Table';
 import Select from 'Components/Select';
 
+import PolicyAlertsSidePanel from "Containers/Violations/Policies/PolicyAlertsSidePanel";
 import CompliancePage from 'Containers/Violations/Compliance/CompliancePage';
 
 import axios from 'axios';
@@ -80,23 +81,26 @@ class ViolationsContainer extends Component {
 
     render() {
         return (
-            <section className="flex flex-1 p-3 h-full">
+            <section className="flex flex-1 h-full">
                 <Tabs headers={this.state.tab.headers}>
                     <TabContent name={this.state.tab.headers[0]}>
-                        <div className="flex flex-1 flex-row mb-3">
-                            <div className="flex flex-1 self-center justify-start">
+                        <div className="flex mb-3 mx-3 flex-none">
+                             <div className="flex flex-1 self-center justify-start">
                                 <input className="border rounded w-full p-3  border-base-300"
                                     placeholder="Filter by registry, severity, deployment, or tag" />
                             </div>
-                            <div className="flex flex-row self-center justify-end">
+                            <div className="flex self-center justify-end">
                                 <Select options={this.state.category.options}></Select>
                             </div>
-                            <div className="flex flex-row self-center justify-end">
+                            <div className="flex self-center justify-end">
                                 <Select options={this.state.time.options}></Select>
                             </div>
                         </div>
-                        <div className="flex flex-1 flex-col pb-4">
-                            <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={this.onRowClick.bind(this)}></Table>
+                        <div className="flex flex-1 border-t border-primary-300 bg-base-100">
+                            <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow">
+                                <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={this.onRowClick.bind(this)}></Table>
+                            </div>
+                            <PolicyAlertsSidePanel></PolicyAlertsSidePanel>
                         </div>
                     </TabContent>
                     <TabContent name={this.state.tab.headers[1]}>

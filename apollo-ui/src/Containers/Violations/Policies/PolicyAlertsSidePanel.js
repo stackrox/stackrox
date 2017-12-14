@@ -62,11 +62,11 @@ class MainSidePanel extends Component {
     displayHeader() {
         if(!this.state.data) return "";
         return (
-            <div className="flex flex-row">
+            <div className="flex">
                 {/*<span className="font-semibold">Policy: </span> 
                 <span>{this.state.data.name}</span>*/}
-                <span className="flex flex-1">Alerts for "{this.state.data.name}"</span>
-                <Icon.X className="cursor-pointer h-6 w-6 text-white" onClick={() => { this.hidePanel() }} />
+                <span className="flex flex-1 self-center text-primary-600 uppercase tracking-wide">Alerts for "{this.state.data.name}"</span>
+                <Icon.X className="cursor-pointer h-6 w-6 text-primary-600 hover:text-primary-500" onClick={() => { this.hidePanel() }} />
             </div>
         );
     }
@@ -74,7 +74,7 @@ class MainSidePanel extends Component {
     displayModalHeader() {
         if (this.state.modal.data === {} || !this.state.modal.data || !this.state.modal.data.deployment) return "";
         return (
-            <header className="flex flex-row w-full p-4 border-b border-grey-light font-bold">
+            <header className="flex w-full p-4 font-bold flex-none">
                 <span className="flex flex-1">{this.state.modal.data.deployment.name} ({this.state.modal.data.deployment.id})</span>
                 <Icon.X className="cursor-pointer h-6 w-6" onClick={() => { this.handleCloseModal() }} />
             </header>
@@ -84,9 +84,9 @@ class MainSidePanel extends Component {
     displayModalBody() {
         if (this.state.modal.data === {} || !this.state.modal.data || !this.state.modal.data.deployment) return "";
         return (
-            <div className="flex">
-                <div className="w-1/2 border-r border-base-300">
-                    <div className="bg-white m-4">
+            <div className="flex flex-1 overflow-y-scroll">
+                <div className="flex flex-col w-1/2 border-r border-base-300">
+                    <div className="bg-white m-4 flex-1">
                         <header className="w-full p-4 border-b border-base-300 font-bold">Alert Summary</header>
                         <div>
                             <div className="py-2 px-4 truncate"><span className="font-bold">Description:</span> {this.state.modal.data.policy.imagePolicy.description}</div>
@@ -97,8 +97,8 @@ class MainSidePanel extends Component {
                             <div className="py-2 px-4 truncate"><span className="font-bold">Last Updated:</span> {this.state.modal.data.deployment.updatedAt}</div>
                         </div>
                     </div>
-                    <div className="bg-white m-4">
-                        <header className="w-full p-4 border-b border-grey-light font-bold">Image Summary</header>
+                    <div className="bg-white m-4 flex-1">
+                        <header className="w-full p-4 border-b border-base-300 font-bold">Image Summary</header>
                         <div>
                             <div className="py-2 px-4 truncate"><span className="font-bold">Registry:</span> {this.state.modal.data.deployment.image.registry}</div>
                             <div className="py-2 px-4 truncate"><span className="font-bold">Remote:</span> {this.state.modal.data.deployment.image.remote}</div>
@@ -109,9 +109,9 @@ class MainSidePanel extends Component {
                         </div>
                     </div>
                 </div>
-                <div className="w-1/2">
-                    <div className="bg-white m-4">
-                        <header className="w-full p-4 border-b border-grey-light font-bold">Policy Details</header>
+                <div className="flex flex-col w-1/2">
+                    <div className="bg-white m-4 flex-1">
+                        <header className="w-full p-4 font-bold">Policy Details</header>
                         <div>
                             <div className="py-2 px-4 truncate"><span className="font-bold">Category:</span> {this.state.modal.data.policy.category}</div>
                             <div className="py-2 px-4 truncate"><span className="font-bold">Name:</span> {this.state.modal.data.policy.name}</div>
@@ -121,8 +121,8 @@ class MainSidePanel extends Component {
                             <div className="py-2 px-4 truncate"><span className="font-bold">Scan Age Day:</span> {this.state.modal.data.policy.imagePolicy.scanAgeDays}</div>
                         </div>
                     </div>
-                    <div className="bg-white m-4">
-                        <header className="w-full p-4 border-b border-grey-light font-bold">Violations</header>
+                    <div className="bg-white m-4 flex-1">
+                        <header className="w-full p-4 font-bold">Violations</header>
                         <div>
                             {this.state.modal.data.policy.violations.map((violation, i) => { return <div key={'policy-alerts-violation-' + i} className="py-2 px-4 break-words">{violation.message}</div>; }) }
                         </div>
@@ -156,16 +156,18 @@ class MainSidePanel extends Component {
 
     render() {
         return (
-            <aside className={"h-full bg-primary-200 md:w-2/3 overflow-y-scroll h-full" + ((this.state.showPanel) ? '' : ' hidden')}>
-                <div className="p-4 bg-black text-white border-b border-grey-light w-full">{this.displayHeader()}</div>
-                <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={this.handleOpenModal.bind(this)}></Table>
+            <aside className={"flex-col h-full bg-primary-100 md:w-2/3 border-l border-primary-300 " + ((this.state.showPanel) ? 'flex' : ' hidden')}>
+                <div className="p-3 border-b border-primary-300 w-full">{this.displayHeader()}</div>
+                <div className="flex-1 p-3 overflow-y-scroll bg-white rounded-sm shadow">
+                    <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={this.handleOpenModal.bind(this)}></Table>
+                </div>
                 <ReactModal
                     isOpen={this.state.modal.showModal}
                     onRequestClose={this.handleCloseModal}
                     contentLabel="Modal"
                     ariaHideApp={false}
-                    overlayClassName="ReactModal__Overlay react-modal-overlay p-4"
-                    className="ReactModal__Content w-2/3 mx-auto my-0 bg-base-100 overflow-scroll h-full">
+                    overlayClassName="ReactModal__Overlay react-modal-overlay p-4 flex"
+                    className="ReactModal__Content w-2/3 mx-auto my-0 flex flex-col self-center bg-primary-100 overflow-hidden max-h-full">
                     {this.displayModalHeader()}
                     {this.displayModalBody()}
                 </ReactModal>

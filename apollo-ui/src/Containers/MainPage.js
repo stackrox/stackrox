@@ -4,18 +4,18 @@ import {
     Route,
     Redirect,
     Switch,
-    Link
+    NavLink
 } from 'react-router-dom';
 import Logo from 'Components/icons/logo';
 import * as Icon from 'react-feather';
 
-import PolicyAlertsSidePanel from 'Containers/Violations/Policies/PolicyAlertsSidePanel';
 import IntegrationsPage from 'Containers/Integrations/IntegrationsPage';
 import ViolationsPage from 'Containers/Violations/ViolationsPage';
 
 class Main extends Component {
     render() {
-        return <section className="flex flex-1 flex-col h-full">
+        return <Router>
+            <section className="flex flex-1 flex-col h-full">
               <header className="flex bg-primary-600 justify-between px-3">
                 <div className="flex">
                   <div className="flex self-center">
@@ -24,22 +24,28 @@ class Main extends Component {
                   <nav>
                     <ul className="flex list-reset flex-1 uppercase text-sm tracking-wide">
                       <li>
-                        <Link to="/dashboard" className="flex border-l px-4 no-underline py-5 pb-4 text-base-600 text-white hover:bg-primary-700 disabled items-center">
-                          <span><Icon.BarChart className="h-4 w-4 mr-3" /></span>
+                        <NavLink to="/dashboard" className="flex border-l border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 text-white hover:text-primary-200 disabled items-center" activeClassName="bg-base-800">
+                          <span>
+                            <Icon.BarChart className="h-4 w-4 mr-3" />
+                          </span>
                           <span>Dashboard</span>
-                        </Link>
+                        </NavLink>
                       </li>
                       <li>
-                        <Link to="/violations" className="flex border-l border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:bg-primary-700 text-white items-center">
-                          <span><Icon.AlertTriangle className="h-4 w-4 mr-3" /></span>
+                        <NavLink to="/violations" className="flex border-l border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:text-primary-200 text-white items-center" activeClassName="bg-primary-800">
+                          <span>
+                            <Icon.AlertTriangle className="h-4 w-4 mr-3" />
+                          </span>
                           <span>Violations</span>
-                        </Link>
+                        </NavLink>
                       </li>
                       <li>
-                        <Link to="/integrations" className="flex border-l border-r border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:bg-primary-700 text-white items-center">
-                          <span><Icon.PlusCircle className="h-4 w-4 mr-3" /></span>
+                        <NavLink to="/integrations" className="flex border-l border-r border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:text-primary-200 text-white items-center" activeClassName="bg-primary-800">
+                          <span>
+                            <Icon.PlusCircle className="h-4 w-4 mr-3" />
+                          </span>
                           <span>Integrations</span>
-                        </Link>
+                        </NavLink>
                       </li>
                     </ul>
                   </nav>
@@ -48,7 +54,6 @@ class Main extends Component {
                   <img className="block h-8 rounded-full" src="https://loremflickr.com/320/320?lock=4" alt="User profile" />
                 </div>
               </header>
-              <Router>
               <section className="flex flex-1 bg-base-100">
                 <main className="overflow-y-scroll w-full">
                   {/* Redirects to a default path */}
@@ -58,11 +63,9 @@ class Main extends Component {
                     <Redirect from="/" to="/violations" />
                   </Switch>
                 </main>
-                <PolicyAlertsSidePanel></PolicyAlertsSidePanel>
               </section>
-                </Router>
             </section>
-        
+          </Router>;
     }
 }
 

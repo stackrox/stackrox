@@ -53,17 +53,17 @@ function remCalc(pixel) {
 
 let colors = {
   "base-100": "hsl(var(--base),var(--s-50),var(--l-90))",
-  "base-200": "hsl(var(--base),var(--s-40),var(--l-80))",
+  "base-200": "hsl(var(--base),var(--s-50),var(--l-80))",
   "base-300": "hsl(var(--base),var(--s-10),var(--l-70))",
   "base-400": "hsl(var(--base),var(--s-10),var(--l-60))",
   "base-500": "hsl(var(--base),var(--s-10),var(--l-50))",
   "base-600": "hsl(var(--base),var(--s-10),var(--l-40))",
-  "base-700": "hsl(var(--base),var(--s-10),var(--l-30))",
+  "base-700": "hsl(var(--base),var(--s-30),var(--l-30))",
   "base-800": "hsl(var(--base),var(--s-10),var(--l-20))",
   "base-900": "hsl(var(--base),var(--s-10),var(--l-10))",
 
   "primary-100": "hsl(var(--primary),var(--s-50),var(--l-90))",
-  "primary-200": "hsl(var(--primary),var(--s-40),var(--l-80))",
+  "primary-200": "hsl(var(--primary),var(--s-50),var(--l-80))",
   "primary-300": "hsl(var(--primary),var(--s-30),var(--l-70))",
   "primary-400": "hsl(var(--primary),var(--s-40),var(--l-60))",
   "primary-500": "hsl(var(--primary),var(--s-50),var(--l-50))",
