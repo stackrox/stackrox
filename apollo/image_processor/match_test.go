@@ -64,6 +64,11 @@ func getTestImage() *v1.Image {
 	}
 }
 
+func clearImagePluginData(i *v1.Image) {
+	i.Metadata = nil
+	i.Scan = nil
+}
+
 func TestMatchComponent(t *testing.T) {
 	violations, exists := emptyRegexImagePolicy().matchComponent(nil)
 	assert.False(t, exists)
@@ -83,6 +88,12 @@ func TestMatchComponent(t *testing.T) {
 	violations, exists = berkeleyDBPolicy.matchComponent(image)
 	assert.True(t, exists)
 	assert.Equal(t, 1, len(violations))
+
+	// Check if there is no metadata
+	clearImagePluginData(image)
+	violations, exists = berkeleyDBPolicy.matchComponent(image)
+	assert.Nil(t, violations)
+	assert.True(t, exists)
 }
 
 func TestMatchLineRule(t *testing.T) {
@@ -101,6 +112,12 @@ func TestMatchLineRule(t *testing.T) {
 	violations, exists = policy.matchLineRule(image)
 	assert.True(t, exists)
 	assert.Equal(t, 1, len(violations))
+
+	// Check if there is no scan
+	clearImagePluginData(image)
+	violations, exists = policy.matchLineRule(image)
+	assert.Nil(t, violations)
+	assert.True(t, exists)
 }
 
 func TestMatchImageName(t *testing.T) {
@@ -184,6 +201,12 @@ func TestMatchCVSS(t *testing.T) {
 	violations, exists = testPolicy.matchCVSS(image)
 	assert.True(t, exists)
 	assert.Equal(t, 1, len(violations))
+
+	// Check if there is no scan
+	clearImagePluginData(image)
+	violations, exists = testPolicy.matchCVSS(image)
+	assert.Nil(t, violations)
+	assert.True(t, exists)
 }
 
 func TestMatchCVE(t *testing.T) {
@@ -207,6 +230,12 @@ func TestMatchCVE(t *testing.T) {
 	violations, exists = policy.matchCVE(image)
 	assert.True(t, exists)
 	assert.Equal(t, 0, len(violations))
+
+	// Check if there is no scan
+	clearImagePluginData(image)
+	violations, exists = policy.matchCVE(image)
+	assert.Nil(t, violations)
+	assert.True(t, exists)
 }
 
 func TestMatchImageAge(t *testing.T) {
@@ -234,6 +263,12 @@ func TestMatchImageAge(t *testing.T) {
 	violations, exists = policy.matchImageAge(image)
 	assert.True(t, exists)
 	assert.Equal(t, 1, len(violations))
+
+	// Check if there is no metadata
+	clearImagePluginData(image)
+	violations, exists = policy.matchImageAge(image)
+	assert.Nil(t, violations)
+	assert.True(t, exists)
 }
 
 func TestMatchScanAge(t *testing.T) {
@@ -261,6 +296,12 @@ func TestMatchScanAge(t *testing.T) {
 	violations, exists = policy.matchScanAge(image)
 	assert.True(t, exists)
 	assert.Equal(t, 1, len(violations))
+
+	// Check if there is no scan
+	clearImagePluginData(image)
+	violations, exists = policy.matchScanAge(image)
+	assert.Nil(t, violations)
+	assert.True(t, exists)
 }
 
 func TestMatchPolicyToImage(t *testing.T) {
