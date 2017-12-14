@@ -1,0 +1,10 @@
+{
+  "name": "Any Vulnerabilities",
+  "description": "Disallow images with any vulnerabilities",
+  "severity": 1,
+  "cvss": {
+    "op": 3,
+    "math_op": 1,
+    "value": 0
+  }
+}

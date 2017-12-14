@@ -1,5 +1,5 @@
 {
-  "name": "latest tag",
+  "name": "Latest tag",
   "description": "Alert on deployments with images using tag 'latest'",
   "severity": 1,
   "image_name": {

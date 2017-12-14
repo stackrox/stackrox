@@ -65,6 +65,7 @@ func (s *registryStore) upsertRegistry(registry *v1.Registry) {
 func (s *registryStore) AddRegistry(registry *v1.Registry) error {
 	s.registryMutex.Lock()
 	if _, exists := s.registries[registry.Name]; exists {
+		s.registryMutex.Unlock()
 		return fmt.Errorf("Registry with name %v already exists", registry.Name)
 	}
 	s.registryMutex.Unlock()

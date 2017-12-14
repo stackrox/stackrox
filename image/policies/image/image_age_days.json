@@ -1,0 +1,6 @@
+{
+  "name": "90-Day Image Age",
+  "description": "Alert on deployments with images that haven't been updated in 90 days",
+  "severity": 1,
+  "image_age_days": 90
+}

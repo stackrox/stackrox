@@ -1,0 +1,9 @@
+{
+  "name": "/etc Volume",
+  "description": "Alert on deployments that use '/etc' volume",
+  "severity": 1,
+  "line_rule": {
+		"instruction": "VOLUME",
+		"value": "/etc"
+	}
+}

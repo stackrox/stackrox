@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const dtrServer = "https://35.197.78.114"
+const dtrServer = "https://apollo-dtr.rox.systems"
 const user = "srox"
 const password = "f6Ptzm3fUc0cy5HhZ2Rihqpvb5A0Atdv"
 
@@ -58,7 +58,7 @@ func (suite *DTRIntegrationSuite) TestGetStatus() {
 func (suite *DTRIntegrationSuite) TestGetScans() {
 	image := &v1.Image{
 		Registry: dtrServer,
-		Remote:   "docker/nginx",
+		Remote:   "srox/nginx",
 		Tag:      "1.10",
 	}
 	scans, err := suite.GetScans(image)
@@ -70,7 +70,7 @@ func (suite *DTRIntegrationSuite) TestGetScans() {
 func (suite *DTRIntegrationSuite) TestGetLastScan() {
 	image := &v1.Image{
 		Registry: dtrServer,
-		Remote:   "docker/nginx",
+		Remote:   "srox/nginx",
 		Tag:      "1.10",
 	}
 	scan, err := suite.GetLastScan(image)
@@ -82,7 +82,7 @@ func (suite *DTRIntegrationSuite) TestGetLastScan() {
 func (suite *DTRIntegrationSuite) TestScan() {
 	image := &v1.Image{
 		Registry: "",
-		Remote:   "docker/nginx",
+		Remote:   "srox/nginx",
 		Tag:      "1.10",
 	}
 	err := suite.Scan(image)

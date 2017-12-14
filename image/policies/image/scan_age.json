@@ -1,0 +1,6 @@
+{
+  "name": "30-Day Scan Age",
+  "description": "Alert on deployments with images that haven't been scanned in 30 days",
+  "severity": 2,
+  "scan_age_days": 30
+}

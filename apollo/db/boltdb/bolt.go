@@ -12,7 +12,8 @@ var (
 	log = logging.New("db/bolt")
 )
 
-const defaultPoliciesPath = `/data/policies`
+// var so this can be modified in tests
+var defaultPoliciesPath = `/data/policies`
 
 // BoltDB returns an instantiation of the storage interface. Exported for test purposes
 type BoltDB struct {

@@ -59,6 +59,7 @@ func (s *imagePolicyStore) GetImagePolicies(request *v1.GetImagePoliciesRequest)
 func (s *imagePolicyStore) AddImagePolicy(policy *v1.ImagePolicy) error {
 	s.imagePoliciesMutex.Lock()
 	if _, ok := s.imagePolicies[policy.Name]; ok {
+		s.imagePoliciesMutex.Unlock()
 		return fmt.Errorf("policy with name %v already exists and cannot be added again", policy.Name)
 	}
 	s.imagePoliciesMutex.Unlock()

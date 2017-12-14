@@ -61,6 +61,7 @@ func newScanner(protoScanner *v1.Scanner) (*dtr, error) {
 		username:       username,
 		password:       password,
 		metadataTicker: time.NewTicker(metadataRefreshInterval),
+		protoScanner:   protoScanner,
 	}
 
 	if err := scanner.fetchMetadata(); err != nil {

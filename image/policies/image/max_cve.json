@@ -1,0 +1,10 @@
+{
+  "name": "max(CVE) >= 3",
+  "description": "Alert on deployments with a max CVE >= 3",
+  "severity": 3,
+  "cvss": {
+  	"op": 3,
+  	"math_op": 1,
+  	"value": 3
+  }
+}

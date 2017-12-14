@@ -62,6 +62,7 @@ func (s *benchmarkStore) GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*v1.
 func (s *benchmarkStore) AddBenchmark(benchmark *v1.Benchmark) error {
 	s.benchmarkMutex.Lock()
 	if _, ok := s.benchmarks[benchmark.Name]; ok {
+		s.benchmarkMutex.Unlock()
 		return fmt.Errorf("benchmark %v already exists", benchmark.Name)
 	}
 	s.benchmarkMutex.Unlock()

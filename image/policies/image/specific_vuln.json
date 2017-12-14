@@ -1,0 +1,6 @@
+{
+  "name": "CVE-2017-15804",
+  "description": "Alert on deployments with images containing 'CVE-2017-15804'",
+  "severity": 1,
+  "cve": "CVE-2017-15804"
+}

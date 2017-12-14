@@ -1,5 +1,5 @@
 {
-  "name": "no nginx",
+  "name": "DockerHub Nginx",
   "description": "Alert on deployments with nginx image from docker.io'",
   "severity": 2,
   "image_name": {

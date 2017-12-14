@@ -1,0 +1,9 @@
+{
+  "name": "NGINX CMD",
+  "description": "Alert on deployments using 'nginx' as the command",
+  "severity": 1,
+  "line_rule": {
+		"instruction": "CMD",
+		"value": ".*nginx.*"
+	}
+}

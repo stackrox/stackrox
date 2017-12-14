@@ -48,7 +48,7 @@ func (policy *regexImagePolicy) matchLineRule(image *v1.Image) (violations []*v1
 		if lineRegex.Instruction == layer.Instruction && lineRegex.Value.MatchString(layer.Value) {
 			dockerFileLine := fmt.Sprintf("%v %v", layer.Instruction, layer.Value)
 			violation := &v1.Policy_Violation{
-				Message: fmt.Sprintf("Dockerfile Line '%v' matches the instruction '%v' and regex '%+v'", dockerFileLine, layer.Instruction, lineRegex),
+				Message: fmt.Sprintf("Dockerfile Line '%v' matches the instruction '%v' and regex '%v'", dockerFileLine, layer.Instruction, lineRegex.Value),
 			}
 			violations = append(violations, violation)
 		}
@@ -111,21 +111,27 @@ func (policy *regexImagePolicy) matchCVSS(image *v1.Image) (violations []*v1.Pol
 	}
 
 	var comparatorFunc func(x, y float32) bool
+	var comparatorChar string
 	switch policy.CVSS.Op {
 	case v1.Comparator_LESS_THAN:
 		comparatorFunc = func(x, y float32) bool { return x < y }
+		comparatorChar = "<"
 	case v1.Comparator_LESS_THAN_OR_EQUALS:
 		comparatorFunc = func(x, y float32) bool { return x <= y }
+		comparatorChar = "<="
 	case v1.Comparator_EQUALS:
 		comparatorFunc = func(x, y float32) bool { return x == y }
+		comparatorChar = "="
 	case v1.Comparator_GREATER_THAN_OR_EQUALS:
 		comparatorFunc = func(x, y float32) bool { return x >= y }
+		comparatorChar = ">="
 	case v1.Comparator_GREATER_THAN:
 		comparatorFunc = func(x, y float32) bool { return x > y }
+		comparatorChar = ">"
 	}
 	if comparatorFunc(value, policy.CVSS.Value) {
 		violations = append(violations, &v1.Policy_Violation{
-			Message: fmt.Sprintf("CVSS component was violated"),
+			Message: fmt.Sprintf("The %v(cvss) = %v. %v is %v threshold of %v", policy.CVSS.MathOp.String(), value, value, comparatorChar, policy.CVSS.Value),
 		})
 	}
 	return

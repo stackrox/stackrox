@@ -66,6 +66,7 @@ func (s *scannerStore) upsertScanner(scanner *v1.Scanner) {
 func (s *scannerStore) AddScanner(scanner *v1.Scanner) error {
 	s.scannerMutex.Lock()
 	if _, exists := s.scanners[scanner.Name]; exists {
+		s.scannerMutex.Unlock()
 		return fmt.Errorf("Scanner with name %v already exists", scanner.Name)
 	}
 	s.scannerMutex.Unlock()
