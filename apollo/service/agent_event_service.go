@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bitbucket.org/stack-rox/apollo/apollo/alerts"
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
@@ -15,15 +16,17 @@ import (
 // NewAgentEventService returns the AgentEventService API.
 func NewAgentEventService(processor *imageprocessor.ImageProcessor, database db.Storage) *AgentEventService {
 	return &AgentEventService{
-		processor: processor,
-		storage:   database,
+		processor:        processor,
+		stalenessHandler: alerts.NewStalenessHandler(database),
+		storage:          database,
 	}
 }
 
 // AgentEventService is the struct that manages the AgentEvent API
 type AgentEventService struct {
-	processor *imageprocessor.ImageProcessor
-	storage   db.Storage
+	processor        *imageprocessor.ImageProcessor
+	stalenessHandler alerts.StalenessHandler
+	storage          db.Storage
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -59,6 +62,8 @@ func (s *AgentEventService) ReportDeploymentEvent(ctx context.Context, request *
 	if err := s.handlePersistence(request); err != nil {
 		return &empty.Empty{}, status.Error(codes.Internal, err.Error())
 	}
+
+	s.stalenessHandler.UpdateStaleness(request)
 
 	alerts, err := s.processor.Process(d)
 	if err != nil {

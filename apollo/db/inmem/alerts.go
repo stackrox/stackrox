@@ -55,9 +55,14 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 	requestTime, requestTimeErr := ptypes.Timestamp(request.GetSince())
 	severitySet := severitiesWrap(request.GetSeverity()).asSet()
 	categoriesSet := categoriesWrap(request.GetCategory()).asSet()
-	policiesSet := policiesWrap(request.GetPolicyName()).asSet()
+	policiesSet := stringWrap(request.GetPolicyName()).asSet()
+	deploymentIDSet := stringWrap(request.GetDeploymentId()).asSet()
 
 	for _, alert := range alerts {
+		if alert.GetStale() != request.GetStale() {
+			continue
+		}
+
 		if _, ok := severitySet[alert.GetSeverity()]; len(severitySet) > 0 && !ok {
 			continue
 		}
@@ -67,6 +72,10 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 		}
 
 		if _, ok := policiesSet[alert.GetPolicy().GetName()]; len(policiesSet) > 0 && !ok {
+			continue
+		}
+
+		if _, ok := deploymentIDSet[alert.GetDeployment().GetId()]; len(deploymentIDSet) > 0 && !ok {
 			continue
 		}
 
@@ -150,9 +159,9 @@ func (wrap categoriesWrap) asSet() map[v1.Policy_Category]struct{} {
 	return output
 }
 
-type policiesWrap []string
+type stringWrap []string
 
-func (wrap policiesWrap) asSet() map[string]struct{} {
+func (wrap stringWrap) asSet() map[string]struct{} {
 	output := make(map[string]struct{})
 
 	for _, p := range wrap {

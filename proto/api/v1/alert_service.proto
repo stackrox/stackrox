@@ -16,6 +16,7 @@ message Alert {
     Deployment deployment           = 3;
     Severity severity               = 4;
     google.protobuf.Timestamp time  = 5;
+    bool stale                      = 6;
 }
 
 enum Policy_Category {
@@ -45,13 +46,14 @@ message GetAlertsRequest {
     repeated Policy_Category category      = 1;
     repeated string policy_name            = 2;
     repeated Severity severity             = 3;
-    google.protobuf.Timestamp since = 4;
+    google.protobuf.Timestamp since        = 4;
+    bool stale                             = 5;
+    repeated string deployment_id          = 6;
 }
 
 message GetAlertsResponse {
     repeated Alert alerts = 1;
 }
-
 
 message GetAlertsGroupResponse {
     message PolicyDetails {
