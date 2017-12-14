@@ -6,7 +6,7 @@ import emitter from 'emitter';
 import axios from 'axios';
 import dateFns from 'date-fns';
 
-class MainSidePanel extends Component {
+class PolicyAlertsSidePanel extends Component {
     constructor(props) {
         super(props);
 
@@ -46,7 +46,6 @@ class MainSidePanel extends Component {
             if(!response.data || !response.data.alerts.length) return;
             var table = this.state.table;
             table.rows = response.data.alerts.map((alert) => {
-                console.log(alert);
                 alert.policy.category = alert.policy.category.replace('_', ' ').capitalizeFirstLetterOfWord();
                 alert.policy.imagePolicy.severity = alert.severity.split('_')[0].capitalizeFirstLetterOfWord();
                 alert.severity = alert.severity.split('_')[0].capitalizeFirstLetterOfWord();
@@ -63,8 +62,6 @@ class MainSidePanel extends Component {
         if(!this.state.data) return "";
         return (
             <div className="flex">
-                {/*<span className="font-semibold">Policy: </span> 
-                <span>{this.state.data.name}</span>*/}
                 <span className="flex flex-1 self-center text-primary-600 uppercase tracking-wide">Alerts for "{this.state.data.name}"</span>
                 <Icon.X className="cursor-pointer h-6 w-6 text-primary-600 hover:text-primary-500" onClick={() => { this.hidePanel() }} />
             </div>
@@ -144,7 +141,6 @@ class MainSidePanel extends Component {
         var modal = this.state.modal;
         modal.showModal = true;
         modal.data = row;
-        console.log(modal.data);
         this.setState({ modal: modal });
     }
 
@@ -177,7 +173,7 @@ class MainSidePanel extends Component {
 
     componentDidMount() {
         // set up event listeners for this componenet
-        this.tableRowSelectedListener = emitter.addListener('Table:row-selected', (data) => {
+        this.tableRowSelectedListener = emitter.addListener('PolicyAlertsTable:row-selected', (data) => {
             this.getAlerts(data);
         });
     }
@@ -189,4 +185,4 @@ class MainSidePanel extends Component {
 
 }
 
-export default MainSidePanel;
+export default PolicyAlertsSidePanel;

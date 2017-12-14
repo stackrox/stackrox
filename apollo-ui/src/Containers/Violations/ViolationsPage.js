@@ -17,6 +17,8 @@ class ViolationsContainer extends Component {
 
         this.params = {};
 
+        this.timeout = null;
+
         this.state = {
             tab: {
                 headers: [{ text: 'Policies', disabled: false }, { text: 'Compliance', disabled: false }]
@@ -34,49 +36,66 @@ class ViolationsContainer extends Component {
                     { key: 'description', label: 'Description' },
                     { key: 'category', label: 'Category' },
                     { key: 'severity', label: 'Severity' },
-                    { key: 'numAlerts', label: 'Alerts' }
+                    { key: 'numAlerts', label: 'Alerts', align: 'right' }
                 ],
                 rows: []
             }
         }
+
+        this.pollAlertGroups = this.pollAlertGroups.bind(this);
     }
 
     componentDidMount() {
-        this.getAlertsGroups();
+        this.pollAlertGroups();
+    }
+
+    pollAlertGroups() {
+        var promise = this.getAlertsGroups();
+        var func = this.pollAlertGroups;
+        // eslint-disable-next-line
+        var timeout = this.timeout;
+        promise.then(function (result) {
+            timeout = setTimeout(func, 5000);
+        });
+    }
+
+    getAlertsGroups() {
+        var promise = new Promise((resolve, reject) => {
+            var params = "?" + queryString.stringify(this.params);
+            const table = this.state.table;
+            axios.get(`/v1/alerts/groups${params}`).then((response) => {
+                if (!response.data.byCategory) return;
+                response.data.byCategory.map((category) => {
+                    return table.rows = category.byPolicy.map((policy) => {
+                        var result = {
+                            name: policy.policy.name,
+                            description: policy.policy.imagePolicy.description,
+                            category: category.category.replace('_', ' ').capitalizeFirstLetterOfWord(),
+                            severity: policy.policy.severity.split('_')[0].capitalizeFirstLetterOfWord(),
+                            numAlerts: policy.numAlerts
+                        }
+                        return result;
+                    });
+                });
+                this.setState({ table: table });
+                resolve({});
+            }).catch((error) => {
+                table.rows = [];
+                this.setState({ table: table });
+                resolve({});
+            });
+        });
+        return promise;
     }
 
     onRowClick(row) {
-        emitter.emit('Table:row-selected', row);
+        emitter.emit('PolicyAlertsTable:row-selected', row);
     }
 
     onActivePillsChange(active) {
         const params = this.params;
         params.category = Object.keys(active);
         this.getAlertsGroups();
-    }
-
-    getAlertsGroups() {
-        var params = "?" + queryString.stringify(this.params);
-        const table = this.state.table;
-        axios.get(`/v1/alerts/groups${params}`).then((response) => {
-            if (!response.data.byCategory) return;
-            response.data.byCategory.map((category) => {
-                return table.rows = category.byPolicy.map((policy) => {
-                    var result = {
-                        name: policy.policy.name,
-                        description: policy.policy.imagePolicy.description,
-                        category: category.category.replace('_', ' ').capitalizeFirstLetterOfWord(),
-                        severity: policy.policy.severity.split('_')[0].capitalizeFirstLetterOfWord(),
-                        numAlerts: policy.numAlerts
-                    }
-                    return result;
-                });
-            });
-            this.setState({ table: table });
-        }).catch((error) => {
-            table.rows = [];
-            this.setState({ table: table });
-        });
     }
 
     render() {
@@ -109,6 +128,10 @@ class ViolationsContainer extends Component {
                 </Tabs>
             </section>
         );
+    }
+
+    componentWillUnmount() {
+        if (this.timeout) this.timeout.cancel();
     }
 
 }

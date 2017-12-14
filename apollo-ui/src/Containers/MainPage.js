@@ -50,9 +50,6 @@ class Main extends Component {
                     </ul>
                   </nav>
                 </div>
-                <div className="flex self-center">
-                  <img className="block h-8 rounded-full" src="https://loremflickr.com/320/320?lock=4" alt="User profile" />
-                </div>
               </header>
               <section className="flex flex-1 bg-base-100">
                 <main className="overflow-y-scroll w-full">
