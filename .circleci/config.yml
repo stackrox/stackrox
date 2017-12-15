@@ -3,8 +3,8 @@ jobs:
   build:
     docker:
       # This image is the standard circleci/golang:1.9.2 image, plus bazel
-      # and other necessary build tools like goimports and glide.
-      - image: stackrox/apollo:circleci@sha256:83411a04f5de99b35b34582d9afdf371fda3f31e1ed6bd4eabf01119e3c381da
+      # and other necessary build tools like goimports and dep.
+      - image: stackrox/apollo:circleci@sha256:1f2b166d9039849e207dea5169257f758a933ef4c8e863600f1d931be46d6de6
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD

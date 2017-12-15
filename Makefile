@@ -49,11 +49,11 @@ vet:
 ##################
 ## Dependencies ##
 ##################
-deps: glide.yaml glide.lock
+deps: proto-generated Gopkg.toml Gopkg.lock
 	@echo "+ $@"
-	@glide --quiet install 2>&1 | tee glide.out
-	@testerror="$$(grep 'Lock file may be out of date' glide.out | wc -l)" && test $$testerror -eq 0
-	@testerror="$$(grep '[ERROR]' glide.out | wc -l)" && test $$testerror -eq 0
+# `dep status` exits with a nonzero code if there is a toml->lock mismatch.
+	dep status
+	dep ensure
 	@touch deps
 
 .PHONY: clean-deps

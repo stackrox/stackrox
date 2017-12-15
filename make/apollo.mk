@@ -18,7 +18,7 @@ dev:
 	@go get -u github.com/golang/lint/golint
 	@go get -u golang.org/x/tools/cmd/goimports
 	@go get -u github.com/jstemmer/go-junit-report
-	@curl https://glide.sh/get | sh
+	@go get -u github.com/golang/dep/cmd/dep
 
 .PHONY: docs
 docs: generated-srcs
