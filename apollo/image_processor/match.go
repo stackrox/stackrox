@@ -25,14 +25,11 @@ func (policy *regexImagePolicy) matchComponent(image *v1.Image) (violations []*v
 		return
 	}
 	policyExists = true
-	if image.Scan == nil {
-		return
-	}
-	for _, layer := range image.GetScan().Layers {
-		for _, component := range layer.Components {
-			if policy.Component.MatchString(component.Name) {
+	for _, layer := range image.GetScan().GetLayers() {
+		for _, component := range layer.GetComponents() {
+			if policy.Component.MatchString(component.GetName()) {
 				violation := &v1.Policy_Violation{
-					Message: fmt.Sprintf("Component '%v' matches the regex %+v", component.Name, policy.Component),
+					Message: fmt.Sprintf("Component '%v' matches the regex %+v", component.GetName(), policy.Component),
 				}
 				violations = append(violations, violation)
 			}
@@ -46,15 +43,12 @@ func (policy *regexImagePolicy) matchLineRule(image *v1.Image) (violations []*v1
 		return
 	}
 	policyExists = true
-	if image.Metadata == nil {
-		return
-	}
 	lineRegex := policy.LineRule
-	for _, layer := range image.Metadata.Layers {
-		if lineRegex.Instruction == layer.Instruction && lineRegex.Value.MatchString(layer.Value) {
-			dockerFileLine := fmt.Sprintf("%v %v", layer.Instruction, layer.Value)
+	for _, layer := range image.GetMetadata().GetLayers() {
+		if lineRegex.Instruction == layer.Instruction && lineRegex.Value.MatchString(layer.GetValue()) {
+			dockerFileLine := fmt.Sprintf("%v %v", layer.GetInstruction(), layer.GetValue())
 			violation := &v1.Policy_Violation{
-				Message: fmt.Sprintf("Dockerfile Line '%v' matches the instruction '%v' and regex '%v'", dockerFileLine, layer.Instruction, lineRegex.Value),
+				Message: fmt.Sprintf("Dockerfile Line '%v' matches the instruction '%v' and regex '%v'", dockerFileLine, layer.GetInstruction(), lineRegex.Value),
 			}
 			violations = append(violations, violation)
 		}
@@ -67,15 +61,12 @@ func (policy *regexImagePolicy) matchCVE(image *v1.Image) (violations []*v1.Poli
 		return
 	}
 	policyExists = true
-	if image.Scan == nil {
-		return
-	}
-	for _, layer := range image.Scan.Layers {
-		for _, component := range layer.Components {
-			for _, vuln := range component.Vulns {
-				if policy.CVE.MatchString(vuln.Cve) {
+	for _, layer := range image.GetScan().GetLayers() {
+		for _, component := range layer.GetComponents() {
+			for _, vuln := range component.GetVulns() {
+				if policy.CVE.MatchString(vuln.GetCve()) {
 					violations = append(violations, &v1.Policy_Violation{
-						Message: fmt.Sprintf("CVE '%v' matches the regex '%+v'", vuln.Cve, policy.CVE),
+						Message: fmt.Sprintf("CVE '%v' matches the regex '%+v'", vuln.GetCve(), policy.CVE),
 					})
 				}
 			}
@@ -89,27 +80,24 @@ func (policy *regexImagePolicy) matchCVSS(image *v1.Image) (violations []*v1.Pol
 		return
 	}
 	policyExists = true
-	if image.Scan == nil {
-		return
-	}
 	minimum := float32(math.MaxFloat32)
 	var maximum float32
 	var average float32
 
 	var numVulns float32
-	for _, layer := range image.Scan.Layers {
-		for _, component := range layer.Components {
-			for _, vuln := range component.Vulns {
-				minimum = min(minimum, vuln.Cvss)
-				maximum = max(maximum, vuln.Cvss)
-				average += vuln.Cvss
+	for _, layer := range image.GetScan().GetLayers() {
+		for _, component := range layer.GetComponents() {
+			for _, vuln := range component.GetVulns() {
+				minimum = min(minimum, vuln.GetCvss())
+				maximum = max(maximum, vuln.GetCvss())
+				average += vuln.GetCvss()
 				numVulns++
 			}
 		}
 	}
 
 	var value float32
-	switch policy.CVSS.MathOp {
+	switch policy.CVSS.GetMathOp() {
 	case v1.MathOP_MIN:
 		value = minimum
 	case v1.MathOP_MAX:
@@ -124,7 +112,7 @@ func (policy *regexImagePolicy) matchCVSS(image *v1.Image) (violations []*v1.Pol
 
 	var comparatorFunc func(x, y float32) bool
 	var comparatorChar string
-	switch policy.CVSS.Op {
+	switch policy.CVSS.GetOp() {
 	case v1.Comparator_LESS_THAN:
 		comparatorFunc = func(x, y float32) bool { return x < y }
 		comparatorChar = "<"
@@ -141,9 +129,9 @@ func (policy *regexImagePolicy) matchCVSS(image *v1.Image) (violations []*v1.Pol
 		comparatorFunc = func(x, y float32) bool { return x > y }
 		comparatorChar = ">"
 	}
-	if comparatorFunc(value, policy.CVSS.Value) {
+	if comparatorFunc(value, policy.CVSS.GetValue()) {
 		violations = append(violations, &v1.Policy_Violation{
-			Message: fmt.Sprintf("The %v(cvss) = %v. %v is %v threshold of %v", policy.CVSS.MathOp.String(), value, value, comparatorChar, policy.CVSS.Value),
+			Message: fmt.Sprintf("The %s(cvss) = %v. %v is %v threshold of %v", policy.CVSS.GetMathOp(), value, value, comparatorChar, policy.CVSS.GetValue()),
 		})
 	}
 	return
@@ -175,7 +163,7 @@ func (policy *regexImagePolicy) matchImageName(image *v1.Image) (violations []*v
 		return
 	}
 	violations = append(violations, &v1.Policy_Violation{
-		Message: fmt.Sprintf("Image name '%v' matches the name policy '%v'", images.ImageWrapper{image}.String(), policy.ImageNamePolicy.String()),
+		Message: fmt.Sprintf("Image name '%s' matches the name policy '%s'", images.ImageWrapper{Image: image}, policy.ImageNamePolicy),
 	})
 	return
 }
@@ -185,11 +173,12 @@ func (policy *regexImagePolicy) matchImageAge(image *v1.Image) (violations []*v1
 		return
 	}
 	policyExists = true
-	if image.Metadata == nil {
+	deadline := time.Now().AddDate(0, 0, -int(policy.ImageAgeDays))
+	created := image.GetMetadata().GetCreated()
+	if created == nil {
 		return
 	}
-	deadline := time.Now().AddDate(0, 0, -int(policy.ImageAgeDays))
-	createdTime, err := ptypes.Timestamp(image.Metadata.Created)
+	createdTime, err := ptypes.Timestamp(created)
 	if err != nil {
 		log.Error(err) // Log just in case, though in reality this should not occur
 	}
@@ -206,11 +195,12 @@ func (policy *regexImagePolicy) matchScanAge(image *v1.Image) (violations []*v1.
 		return
 	}
 	policyExists = true
-	if image.Scan == nil {
+	deadline := time.Now().AddDate(0, 0, -int(policy.ScanAgeDays))
+	scanned := image.GetScan().GetScanTime()
+	if scanned == nil {
 		return
 	}
-	deadline := time.Now().AddDate(0, 0, -int(policy.ScanAgeDays))
-	scannedTime, err := ptypes.Timestamp(image.Scan.ScanTime)
+	scannedTime, err := ptypes.Timestamp(scanned)
 	if err != nil {
 		log.Error(err) // Log just in case, though in reality this should not occur
 	}
