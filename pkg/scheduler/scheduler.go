@@ -18,7 +18,7 @@ var (
 )
 
 const (
-	cleanupDuration = 10 * time.Minute
+	cleanupDuration = 1 * time.Minute
 	retries         = 5
 
 	updateInterval = 15 * time.Second
