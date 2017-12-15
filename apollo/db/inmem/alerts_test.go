@@ -93,6 +93,7 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 		},
 		Severity: v1.Severity_LOW_SEVERITY,
 		Time:     &timestamp.Timestamp{Seconds: 100},
+		Stale:    true,
 	}
 	err := suite.AddAlert(alert1)
 	suite.NoError(err)
@@ -104,6 +105,7 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 		},
 		Severity: v1.Severity_HIGH_SEVERITY,
 		Time:     &timestamp.Timestamp{Seconds: 200},
+		Stale:    false,
 	}
 	err = suite.AddAlert(alert2)
 	suite.NoError(err)
@@ -150,7 +152,13 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 	suite.Nil(err)
 	suite.Equal([]*v1.Alert{alert2}, alerts)
 
+	// Filter by staleness
+	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{
+		Stale: []bool{false},
+	})
+	suite.Nil(err)
+	suite.Equal([]*v1.Alert{alert2}, alerts)
+
 	suite.NoError(suite.RemoveAlert(alert1.Id))
 	suite.NoError(suite.RemoveAlert(alert2.Id))
-
 }

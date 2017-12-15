@@ -15,7 +15,9 @@ class ViolationsContainer extends Component {
     constructor(props) {
         super(props);
 
-        this.params = {};
+        this.params = {
+            stale: false
+        };
 
         this.timeout = null;
 

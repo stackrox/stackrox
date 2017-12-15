@@ -58,7 +58,7 @@ type ClusterStorage interface {
 // DeploymentStorage provides storage functionality for deployments.
 type DeploymentStorage interface {
 	GetDeployment(id string) (*v1.Deployment, bool, error)
-	GetDeployments() ([]*v1.Deployment, error)
+	GetDeployments(request *v1.GetDeploymentsRequest) ([]*v1.Deployment, error)
 	AddDeployment(deployment *v1.Deployment) error
 	UpdateDeployment(deployment *v1.Deployment) error
 	RemoveDeployment(id string) error

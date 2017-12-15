@@ -9,11 +9,41 @@ import "v1/image_service.proto";
 package v1;
 
 message Deployment {
-    string id = 1;
-    string name = 2;
-    string version = 3;
-    string type = 4;
-    google.protobuf.Timestamp   updated_at  = 5;
+    string id =                                 1;
+    string name =                               2;
+    string version =                            3;
+    string type =                               4;
+    int64 replicas =                            5;
+    google.protobuf.Timestamp updated_at =      6;
 
-    Image image = 6;
+    Image image =                               7;
+}
+
+message GetDeploymentRequest {
+    string id               = 1;
+}
+
+message GetDeploymentsRequest {
+    repeated string name                = 1;
+    repeated string type                = 2;
+    repeated string image_sha           = 3;
+}
+
+message GetDeploymentsResponse {
+    repeated Deployment deployments = 1;
+}
+
+service DeploymentService {
+
+    rpc GetDeployment(GetDeploymentRequest) returns (Deployment) {
+        option (google.api.http) = {
+            get: "/v1/deployment/{id}"
+        };
+    }
+
+    rpc GetDeployments(GetDeploymentsRequest) returns (GetDeploymentsResponse) {
+        option (google.api.http) = {
+            get: "/v1/deployments"
+        };
+    }
 }

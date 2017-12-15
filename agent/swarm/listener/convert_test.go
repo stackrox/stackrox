@@ -34,7 +34,7 @@ func TestAsDeployment(t *testing.T) {
 					},
 					Mode: swarm.ServiceMode{
 						Replicated: &swarm.ReplicatedService{
-							Replicas: &[]uint64{1}[0],
+							Replicas: &[]uint64{10}[0],
 						},
 					},
 					TaskTemplate: swarm.TaskSpec{
@@ -52,6 +52,7 @@ func TestAsDeployment(t *testing.T) {
 				Name:      "foo",
 				Version:   "100",
 				Type:      "Replicated",
+				Replicas:  10,
 				UpdatedAt: &timestamp.Timestamp{Seconds: 100},
 				Image: &v1.Image{
 					Registry: "docker.io",

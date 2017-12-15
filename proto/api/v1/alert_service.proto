@@ -49,7 +49,7 @@ message GetAlertsRequest {
     repeated string policy_name            = 2;
     repeated Severity severity             = 3;
     google.protobuf.Timestamp since        = 4;
-    bool stale                             = 5;
+    repeated bool stale                    = 5;
     repeated string deployment_id          = 6;
 }
 

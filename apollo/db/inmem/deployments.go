@@ -26,7 +26,7 @@ func newDeploymentStore(persistent db.DeploymentStorage) *deploymentStore {
 func (s *deploymentStore) loadFromPersistent() error {
 	s.deploymentsMutex.Lock()
 	defer s.deploymentsMutex.Unlock()
-	deployments, err := s.persistent.GetDeployments()
+	deployments, err := s.persistent.GetDeployments(&v1.GetDeploymentsRequest{})
 	if err != nil {
 		return err
 	}
@@ -43,13 +43,30 @@ func (s *deploymentStore) GetDeployment(id string) (d *v1.Deployment, exist bool
 	return
 }
 
-func (s *deploymentStore) GetDeployments() (deployments []*v1.Deployment, err error) {
+func (s *deploymentStore) GetDeployments(request *v1.GetDeploymentsRequest) (deployments []*v1.Deployment, err error) {
 	s.deploymentsMutex.Lock()
 	defer s.deploymentsMutex.Unlock()
-	deployments = make([]*v1.Deployment, 0, len(s.deployments))
+
+	nameSet := stringWrap(request.GetName()).asSet()
+	typeSet := stringWrap(request.GetType()).asSet()
+	imageShaSet := stringWrap(request.GetImageSha()).asSet()
+
 	for _, d := range s.deployments {
+		if _, ok := nameSet[d.GetName()]; len(nameSet) > 0 && !ok {
+			continue
+		}
+
+		if _, ok := typeSet[d.GetType()]; len(typeSet) > 0 && !ok {
+			continue
+		}
+
+		if _, ok := imageShaSet[d.GetImage().GetSha()]; len(imageShaSet) > 0 && !ok {
+			continue
+		}
+
 		deployments = append(deployments, d)
 	}
+
 	sort.SliceStable(deployments, func(i, j int) bool { return deployments[i].Id < deployments[j].Id })
 	return
 }

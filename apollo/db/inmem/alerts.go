@@ -60,7 +60,7 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 	deploymentIDSet := stringWrap(request.GetDeploymentId()).asSet()
 
 	for _, alert := range alerts {
-		if alert.GetStale() != request.GetStale() {
+		if len(request.GetStale()) == 1 && alert.GetStale() != request.GetStale()[0] {
 			continue
 		}
 

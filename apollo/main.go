@@ -81,6 +81,7 @@ func (a *apollo) startGRPCServer() {
 	a.server.Register(service.NewBenchmarkService(a.database, a.benchScheduler))
 	a.server.Register(service.NewBenchmarkResultsService(a.database))
 	a.server.Register(service.NewClusterService(a.database))
+	a.server.Register(service.NewDeploymentService(a.database))
 	a.server.Register(service.NewImagePolicyService(a.database, a.imageProcessor))
 	a.server.Register(service.NewNotifierService(a.database, a.notificationProcessor))
 	a.server.Register(service.NewPingService())

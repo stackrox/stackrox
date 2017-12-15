@@ -40,11 +40,14 @@ func (s serviceWrap) asDeployment(client *client.Client) *v1.Deployment {
 		log.Warnf("Couldn't find an image SHA for service %s", s.ID)
 	}
 
+	m := modeWrap(s.Spec.Mode)
+
 	return &v1.Deployment{
 		Id:        s.ID,
 		Name:      s.Spec.Name,
 		Version:   fmt.Sprintf("%d", s.Version.Index),
-		Type:      modeWrap(s.Spec.Mode).asType(),
+		Type:      m.asType(),
+		Replicas:  m.asReplica(),
 		UpdatedAt: updatedTime,
 		Image:     image,
 	}
@@ -85,4 +88,12 @@ func (m modeWrap) asType() string {
 	}
 
 	return `Global`
+}
+
+func (m modeWrap) asReplica() int64 {
+	if m.Replicated != nil {
+		return int64(*m.Replicated.Replicas)
+	}
+
+	return 0
 }

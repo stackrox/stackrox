@@ -27,7 +27,7 @@ func (b *BoltDB) GetDeployment(id string) (deployment *v1.Deployment, exists boo
 }
 
 // GetDeployments returns all deployments.
-func (b *BoltDB) GetDeployments() (deployments []*v1.Deployment, err error) {
+func (b *BoltDB) GetDeployments(*v1.GetDeploymentsRequest) (deployments []*v1.Deployment, err error) {
 	err = b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(deploymentBucket))
 		b.ForEach(func(k, v []byte) error {

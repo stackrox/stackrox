@@ -40,7 +40,8 @@ class PolicyAlertsSidePanel extends Component {
         this.clearData();
         axios.get('/v1/alerts', {
             params: {
-                policy_name: data.name
+                policy_name: data.name,
+                stale: false
             }
         }).then((response) => {
             if (!response.data || !response.data.alerts.length) return;
