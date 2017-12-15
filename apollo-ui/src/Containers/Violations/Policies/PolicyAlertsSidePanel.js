@@ -71,9 +71,9 @@ class PolicyAlertsSidePanel extends Component {
     displayModalHeader() {
         if (this.state.modal.data === {} || !this.state.modal.data || !this.state.modal.data.deployment) return "";
         return (
-            <header className="flex w-full p-4 font-bold flex-none">
-                <span className="flex flex-1">{this.state.modal.data.deployment.name} ({this.state.modal.data.deployment.id})</span>
-                <Icon.X className="cursor-pointer h-6 w-6" onClick={() => { this.handleCloseModal() }} />
+            <header className="flex w-full p-3 font-bold border-b border-primary-200 flex-none bg-primary-500">
+                <span className="flex flex-1 uppercase self-center text-white">{this.state.modal.data.deployment.name} ({this.state.modal.data.deployment.id})</span>
+                <Icon.X className="cursor-pointer h-6 w-6 text-white" onClick={() => { this.handleCloseModal() }} />
             </header>
         );
     }
@@ -82,48 +82,51 @@ class PolicyAlertsSidePanel extends Component {
         if (this.state.modal.data === {} || !this.state.modal.data || !this.state.modal.data.deployment) return "";
         return (
             <div className="flex flex-1 overflow-y-scroll">
-                <div className="flex flex-col w-1/2 border-r border-base-300">
-                    <div className="bg-white m-4 flex-1">
-                        <header className="w-full p-4 border-b border-base-300 font-bold">Alert Summary</header>
+                <div className="flex flex-col w-1/2 border-r border-primary-200">
+                    <div className="bg-white m-3 flex-grow pb-2">
+                        <header className="w-full p-3 font-bold border-b border-primary-200 mb-2">Violations</header>
                         <div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Description:</span> {this.state.modal.data.policy.imagePolicy.description}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Deployment ID:</span> {this.state.modal.data.deployment.id}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Severity:</span> {this.state.modal.data.severity}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Time:</span> {this.state.modal.data.time}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Type:</span> {this.state.modal.data.deployment.type}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Last Updated:</span> {this.state.modal.data.deployment.updatedAt}</div>
+                            {this.state.modal.data.policy.violations.map((violation, i) => { return <div key={'policy-alerts-violation-' + i} className="py-2 px-3 break-words">{violation.message}</div>; }) }
                         </div>
                     </div>
-                    <div className="bg-white m-4 flex-1">
-                        <header className="w-full p-4 border-b border-base-300 font-bold">Image Summary</header>
+                    <div className="bg-white m-3 pb-2">
+                        <header className="w-full p-3 border-b border-base-300 font-bold mb-2">Alert Summary</header>
                         <div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Registry:</span> {this.state.modal.data.deployment.image.registry}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Remote:</span> {this.state.modal.data.deployment.image.remote}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">SHA:</span> {this.state.modal.data.deployment.image.sha}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Metadata:</span> {this.state.modal.data.deployment.image.metadata}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Scan:</span> {this.state.modal.data.deployment.image.scan}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Tag:</span> {this.state.modal.data.deployment.image.tag}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Description:</span> {this.state.modal.data.policy.imagePolicy.description}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Deployment ID:</span> {this.state.modal.data.deployment.id}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Severity:</span> {this.state.modal.data.severity}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Time:</span> {this.state.modal.data.time}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Type:</span> {this.state.modal.data.deployment.type}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Last Updated:</span> {this.state.modal.data.deployment.updatedAt}</div>
                         </div>
                     </div>
+
                 </div>
                 <div className="flex flex-col w-1/2">
-                    <div className="bg-white m-4 flex-1">
-                        <header className="w-full p-4 font-bold">Policy Details</header>
+                    <div className="bg-white m-3 pb-2">
+                        <header className="w-full p-3 border-b border-primary-200 font-bold mb-2">Image Summary</header>
                         <div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Category:</span> {this.state.modal.data.policy.category}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Name:</span> {this.state.modal.data.policy.name}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Description:</span> {this.state.modal.data.policy.imagePolicy.description}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Severity:</span> {this.state.modal.data.policy.imagePolicy.severity}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Disabled:</span> {String(this.state.modal.data.policy.imagePolicy.disabled)}</div>
-                            <div className="py-2 px-4 truncate"><span className="font-bold">Scan Age Day:</span> {this.state.modal.data.policy.imagePolicy.scanAgeDays}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Registry:</span> {this.state.modal.data.deployment.image.registry}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Remote:</span> {this.state.modal.data.deployment.image.remote}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">SHA:</span> {this.state.modal.data.deployment.image.sha}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Metadata:</span> {this.state.modal.data.deployment.image.metadata}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Scan:</span> {this.state.modal.data.deployment.image.scan}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Tag:</span> {this.state.modal.data.deployment.image.tag}</div>
                         </div>
                     </div>
-                    <div className="bg-white m-4 flex-1">
-                        <header className="w-full p-4 font-bold">Violations</header>
+                    <div className="bg-white m-3 pb-2">
+                        <header className="w-full p-3 font-bold border-b border-primary-200 mb-2">Policy Details</header>
                         <div>
-                            {this.state.modal.data.policy.violations.map((violation, i) => { return <div key={'policy-alerts-violation-' + i} className="py-2 px-4 break-words">{violation.message}</div>; }) }
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Name:</span> {this.state.modal.data.policy.name}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Description:</span> {this.state.modal.data.policy.imagePolicy.description}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Severity:</span> {this.state.modal.data.policy.imagePolicy.severity}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Category:</span> {this.state.modal.data.policy.category}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Disabled:</span> {String(this.state.modal.data.policy.imagePolicy.disabled)}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Scan Age Day:</span> {this.state.modal.data.policy.imagePolicy.scanAgeDays}</div>
                         </div>
                     </div>
+                    
+                    
                 </div>
             </div>
         );

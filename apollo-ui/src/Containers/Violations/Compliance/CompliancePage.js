@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import Table from 'Components/Table';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
+import Select from "Components/Select";
 
 import ComplianceBenchmarksSidePanel from 'Containers/Violations/Compliance/ComplianceBenchmarksSidePanel';
 
@@ -23,6 +24,9 @@ class CompliancePage extends Component {
         this.state = {
             tab: {
                 headers: [{ text: 'CIS Docker Benchmark', disabled: false }, { text: 'Swarm Benchmark', disabled: true }, { text: 'Kubernetes Benchmark', disabled: true }]
+            },
+            category: {
+                options: ['No scheduled scanning', 'Scan every 24 hours', 'Scan every 2 days', 'Scan every week']
             },
             table: {
                 columns: [
@@ -94,17 +98,21 @@ class CompliancePage extends Component {
 
     render() {
         return (
-            <div className="flex">
+            <div className="flex flex-1">
                 <Tabs className="bg-white" headers={this.state.tab.headers}>
                     <TabContent name={this.state.tab.headers[0]}>
+                         <div className="flex w-full mb-3 px-3 items-center">
+                                    <span className="flex flex-1 text-xl font-500 text-primary-500 self-end">Last Scanned: {this.state.lastScanned || 'Never'}</span>
+                                     <div className="flex self-center justify-end pr-5 border-r border-primary-200">
+                                <Select options={this.state.category.options}></Select>
+                            </div>
+                                    {
+                                        (this.state.scanning) ? (<button className="p-3 ml-5 h-10 w-24 rounded-sm bg-success-500 text-white hover:bg-success-600 uppercase text-center"><ClipLoader color={'white'} loading={this.state.scanning} size={20}></ClipLoader></button>) : (<button className="p-3 ml-5 h-10 w-24 rounded-sm bg-success-500 text-white hover:bg-success-600 uppercase" onClick={this.onTriggerScan.bind(this)}>Scan now</button>)
+                                    }
+                            </div>
                         <div className="flex flex-1 border-t border-primary-300 bg-base-100">
                             <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow">
-                                <div className="flex w-full py-2 pl-2 items-center">
-                                    <h1 className="flex flex-1 text-lg text-primary-500 justify-end">Last Scanned: {this.state.lastScanned || 'Never'}</h1>
-                                    {
-                                        (this.state.scanning) ? (<div className="px-4"><ClipLoader color={'#123abc'} loading={this.state.scanning} size={20}></ClipLoader></div>) : (<button className="border border-base-300 border-primary-500 px-2 py-1 ml-2 font-semibold text-primary-500 hover:text-white hover:bg-primary-500" onClick={this.onTriggerScan.bind(this)}>Trigger Scan</button>)
-                                    }
-                                </div>
+                           
                                 <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={this.onRowClick.bind(this)}></Table>
                             </div>
                             <ComplianceBenchmarksSidePanel></ComplianceBenchmarksSidePanel>

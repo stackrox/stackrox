@@ -142,6 +142,12 @@ button, select, input {
     border-collapse: collapse;
 }
 
+[class~=flex-1] {
+@apply min-h-0;
+/* Firefox needs this property to properly scroll panels with flex/overflow. Tailwind throws an exception error when using
+their built-in classes, so this is a workaround to `bundle` the Firefox fix with every `flex-1` class by default*/
+}
+
 .react-modal-overlay {
     @apply .fixed .pin-t .pin-l .w-full .h-full;
     background-color: hsla(0, 0%, 21%, 0.85);
