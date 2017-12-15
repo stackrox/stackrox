@@ -1,6 +1,6 @@
 {
   "name": "/etc Volume",
-  "description": "Alert on deployments that use '/etc' volume",
+  "description": "Alert on deployments that use a Dockerfile with 'VOLUME /etc'",
   "severity": 1,
   "line_rule": {
 		"instruction": "VOLUME",

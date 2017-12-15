@@ -1,6 +1,6 @@
 {
-  "name": "DockerHub Nginx",
-  "description": "Alert on deployments with nginx image from docker.io'",
+  "name": "DockerHub NGINX",
+  "description": "Alert on deployments with nginx image from 'docker.io'",
   "severity": 2,
   "image_name": {
     "registry": "docker.io",

@@ -1,6 +1,6 @@
 {
   "name": "Any Vulnerabilities",
-  "description": "Disallow images with any vulnerabilities",
+  "description": "Alert on deployments with any vulnerabilities",
   "severity": 1,
   "cvss": {
     "op": 3,

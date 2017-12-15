@@ -1,9 +1,9 @@
 {
   "name": "Nginx Entrypoint",
-  "description": "Alert on deployments with any CVE >= 3",
+  "description": "Alert on deployments with an entrypoint that contains nginx",
   "severity": 3,
   "line_rule": {
 		"instruction": "ENTRYPOINT",
-		"value": "nginx"
+		"value": ".*nginx.*"
 	}
 }
