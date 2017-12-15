@@ -20,7 +20,7 @@ class CompliancePage extends Component {
         this.params = {};
 
         this.timeout = null;
-
+        
         this.state = {
             tab: {
                 headers: [{ text: 'CIS Docker Benchmark', disabled: false }, { text: 'Swarm Benchmark', disabled: true }, { text: 'Kubernetes Benchmark', disabled: true }]

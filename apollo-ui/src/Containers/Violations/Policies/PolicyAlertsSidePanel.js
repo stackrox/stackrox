@@ -34,7 +34,7 @@ class PolicyAlertsSidePanel extends Component {
 
     getAlerts(data) {
         if (!data) {
-            this.setState({ showPanel: false, data: {}, alerts:[] }); 
+            this.setState({ showPanel: false, data: {}, alerts: [] });
             return;
         }
         this.clearData();
@@ -43,7 +43,7 @@ class PolicyAlertsSidePanel extends Component {
                 policy_name: data.name
             }
         }).then((response) => {
-            if(!response.data || !response.data.alerts.length) return;
+            if (!response.data || !response.data.alerts.length) return;
             var table = this.state.table;
             table.rows = response.data.alerts.map((alert) => {
                 alert.policy.category = alert.policy.category.replace('_', ' ').capitalizeFirstLetterOfWord();
@@ -59,7 +59,7 @@ class PolicyAlertsSidePanel extends Component {
     }
 
     displayHeader() {
-        if(!this.state.data) return "";
+        if (!this.state.data) return "";
         return (
             <div className="flex">
                 <span className="flex flex-1 self-center text-primary-600 uppercase tracking-wide">Alerts for "{this.state.data.name}"</span>
@@ -86,7 +86,7 @@ class PolicyAlertsSidePanel extends Component {
                     <div className="bg-white m-3 flex-grow pb-2">
                         <header className="w-full p-3 font-bold border-b border-primary-200 mb-2">Violations</header>
                         <div>
-                            {this.state.modal.data.policy.violations.map((violation, i) => { return <div key={'policy-alerts-violation-' + i} className="py-2 px-3 break-words">{violation.message}</div>; }) }
+                            {this.state.modal.data.policy.violations.map((violation, i) => { return <div key={'policy-alerts-violation-' + i} className="py-2 px-3 break-words">{violation.message}</div>; })}
                         </div>
                     </div>
                     <div className="bg-white m-3 pb-2">
@@ -109,8 +109,6 @@ class PolicyAlertsSidePanel extends Component {
                             <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Registry:</span> {this.state.modal.data.deployment.image.registry}</div>
                             <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Remote:</span> {this.state.modal.data.deployment.image.remote}</div>
                             <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">SHA:</span> {this.state.modal.data.deployment.image.sha}</div>
-                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Metadata:</span> {this.state.modal.data.deployment.image.metadata}</div>
-                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Scan:</span> {this.state.modal.data.deployment.image.scan}</div>
                             <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Tag:</span> {this.state.modal.data.deployment.image.tag}</div>
                         </div>
                     </div>
@@ -125,8 +123,8 @@ class PolicyAlertsSidePanel extends Component {
                             <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Scan Age Day:</span> {this.state.modal.data.policy.imagePolicy.scanAgeDays}</div>
                         </div>
                     </div>
-                    
-                    
+
+
                 </div>
             </div>
         );

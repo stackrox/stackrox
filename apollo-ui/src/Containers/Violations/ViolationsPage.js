@@ -19,6 +19,21 @@ class ViolationsContainer extends Component {
 
         this.timeout = null;
 
+        var setSeverityClass = (item) => { 
+            switch(item) {
+                case 'Low': 
+                    return 'text-low-500';
+                case 'Medium':
+                    return 'text-medium-500';
+                case 'High':
+                    return 'text-high-500';
+                case 'Critical':
+                    return 'text-critical-500';
+                default:
+                    return '';
+            }
+        };
+
         this.state = {
             tab: {
                 headers: [{ text: 'Policies', disabled: false }, { text: 'Compliance', disabled: false }]
@@ -35,7 +50,7 @@ class ViolationsContainer extends Component {
                     { key: 'name', label: 'Name' },
                     { key: 'description', label: 'Description' },
                     { key: 'category', label: 'Category' },
-                    { key: 'severity', label: 'Severity' },
+                    { key: 'severity', label: 'Severity', classFunc: setSeverityClass},
                     { key: 'numAlerts', label: 'Alerts', align: 'right' }
                 ],
                 rows: []

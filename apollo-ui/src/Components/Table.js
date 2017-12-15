@@ -28,11 +28,12 @@ class Table extends Component {
         var rowClick = this.rowClick;
         return rows.map(function (row, i) {
             var cols = columns.map(function (column, i) {
-                var className = `p-3 ${active === row ? 'bg-primary-300' : ''} ${column.align === 'right' ? 'text-right' : 'text-left'}`;
                 var value = resolvePath(row, column.key);
+                var classFunc = column.classFunc || (() => {return ''});
+                var className = `p-3 ${active === row ? 'bg-primary-300' : ''} ${column.align === 'right' ? 'text-right' : 'text-left'} ${classFunc(value)}`;
                 return <td className={className} key={column.key + '-' + i}>{value || column.default}</td>;
             });
-            return <tr className='cursor-pointer border-b border-base-300 hover:bg-base-100' key={i} onClick={() => rowClick(row)}>{cols}</tr>
+            return <tr className='cursor-pointer border-b border-base-300 hover:bg-base-100' key={'row-' +  i} onClick={() => rowClick(row)}>{cols}</tr>
         });
     }
 
