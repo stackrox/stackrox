@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/alerts"
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
+	"bitbucket.org/stack-rox/apollo/apollo/notifications"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -14,19 +15,21 @@ import (
 )
 
 // NewAgentEventService returns the AgentEventService API.
-func NewAgentEventService(processor *imageprocessor.ImageProcessor, database db.Storage) *AgentEventService {
+func NewAgentEventService(imageProcessor *imageprocessor.ImageProcessor, notificationsProcessor *notifications.Processor, database db.Storage) *AgentEventService {
 	return &AgentEventService{
-		processor:        processor,
-		stalenessHandler: alerts.NewStalenessHandler(database),
-		storage:          database,
+		imageProcessor:        imageProcessor,
+		notificationProcessor: notificationsProcessor,
+		stalenessHandler:      alerts.NewStalenessHandler(database),
+		storage:               database,
 	}
 }
 
 // AgentEventService is the struct that manages the AgentEvent API
 type AgentEventService struct {
-	processor        *imageprocessor.ImageProcessor
-	stalenessHandler alerts.StalenessHandler
-	storage          db.Storage
+	imageProcessor        *imageprocessor.ImageProcessor
+	notificationProcessor *notifications.Processor
+	stalenessHandler      alerts.StalenessHandler
+	storage               db.Storage
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -65,7 +68,7 @@ func (s *AgentEventService) ReportDeploymentEvent(ctx context.Context, request *
 
 	s.stalenessHandler.UpdateStaleness(request)
 
-	alerts, err := s.processor.Process(d)
+	alerts, err := s.imageProcessor.Process(d)
 	if err != nil {
 		log.Error(err)
 		return &empty.Empty{}, status.Error(codes.Internal, err.Error())
@@ -78,6 +81,7 @@ func (s *AgentEventService) ReportDeploymentEvent(ctx context.Context, request *
 		if err := s.storage.AddAlert(alert); err != nil {
 			log.Error(err)
 		}
+		s.notificationProcessor.Process(alert)
 	}
 	return &empty.Empty{}, nil
 }

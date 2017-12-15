@@ -59,6 +59,8 @@ message ImagePolicy {
     string cve                          = 9;
     string component                    = 10;
     int64 scan_age_days                 = 11;
+
+    repeated string notifiers           = 12;
 }
 
 message GetImagePoliciesRequest {

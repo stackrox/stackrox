@@ -36,6 +36,8 @@ message Policy {
     oneof policy_oneof {
         ImagePolicy image_policy    = 4;
     }
+
+    repeated string notifiers       = 5;
 }
 
 message GetAlertRequest {

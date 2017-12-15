@@ -16,6 +16,7 @@ type Storage interface {
 	DeploymentStorage
 	ImagePolicyStorage
 	ImageStorage
+	NotifierStorage
 	RegistryStorage
 	ScannerStorage
 }
@@ -77,6 +78,15 @@ type ImageStorage interface {
 	AddImage(image *v1.Image) error
 	UpdateImage(image *v1.Image) error
 	RemoveImage(id string) error
+}
+
+// NotifierStorage provide storage functionality for notifiers
+type NotifierStorage interface {
+	GetNotifier(name string) (*v1.Notifier, bool, error)
+	GetNotifiers(request *v1.GetNotifiersRequest) ([]*v1.Notifier, error)
+	AddNotifier(notifier *v1.Notifier) error
+	UpdateNotifier(notifier *v1.Notifier) error
+	RemoveNotifier(name string) error
 }
 
 // RegistryStorage provide storage functionality for registries.

@@ -243,6 +243,7 @@ func (policy *regexImagePolicy) matchPolicyToImage(image *v1.Image) *v1.Alert {
 			Category:   v1.Policy_Category_IMAGE_ASSURANCE,
 			Name:       policy.Original.GetName(),
 			Violations: violations,
+			Notifiers:  policy.Original.Notifiers,
 			PolicyOneof: &v1.Policy_ImagePolicy{
 				ImagePolicy: policy.Original,
 			},
