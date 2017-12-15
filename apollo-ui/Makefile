@@ -18,7 +18,7 @@ clean:
 	rm -rf node_modules
 	docker kill apollo-ui || true
 	docker rm apollo-ui || true
-	docker rmi stackrox/apollo-ui:latest || true
+	docker rmi stackrox/apollo:ui-latest || true
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)

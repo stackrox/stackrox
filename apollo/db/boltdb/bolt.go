@@ -67,6 +67,9 @@ func (b *BoltDB) initializeTables() error {
 		if _, err := tx.CreateBucketIfNotExists([]byte(benchmarkResultBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
+		if _, err := tx.CreateBucketIfNotExists([]byte(clusterBucket)); err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
 		if _, err := tx.CreateBucketIfNotExists([]byte(deploymentBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}

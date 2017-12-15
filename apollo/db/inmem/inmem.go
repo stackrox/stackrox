@@ -18,6 +18,7 @@ type InMemoryStore struct {
 	*alertStore
 	*benchmarkStore
 	*benchmarkResultStore
+	*clusterStore
 	*deploymentStore
 	*imagePolicyStore
 	*imageStore
@@ -34,6 +35,7 @@ func New(persistentStorage db.Storage) *InMemoryStore {
 		alertStore:           newAlertStore(persistentStorage),
 		benchmarkStore:       newBenchmarkStore(persistentStorage),
 		benchmarkResultStore: newBenchmarkResultsStore(persistentStorage),
+		clusterStore:         newClusterStore(persistentStorage),
 		deploymentStore:      newDeploymentStore(persistentStorage),
 		imagePolicyStore:     newImagePolicyStore(persistentStorage),
 		imageStore:           newImageStore(persistentStorage),

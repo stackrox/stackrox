@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+package v1;
+
+enum ClusterType {
+    GENERIC_CLUSTER = 0;
+    KUBERNETES_CLUSTER = 1;
+    OPENSHIFT_CLUSTER = 2;
+    SWARM_CLUSTER = 3;
+    DOCKER_EE_CLUSTER = 4;
+}
+
+message Cluster {
+    string      name                 = 1;
+    ClusterType type                 = 2;
+    string      apollo_image         = 3;
+    string      central_api_endpoint = 4;
+}
+
+message ClusterResponse {
+    Cluster cluster         = 1;
+    string  deployment_yaml = 2;
+}
+
+message ClustersList {
+    repeated Cluster clusters = 1;
+}
+
+message ClusterByName {
+    string name = 1;
+}
+
+service ClustersService {
+
+    rpc GetClusters (google.protobuf.Empty) returns (ClustersList) {
+        option (google.api.http) = {
+            get: "/v1/clusters"
+        };
+    }
+
+    rpc GetCluster (ClusterByName) returns (ClusterResponse) {
+        option (google.api.http) = {
+            get: "/v1/clusters/{name}"
+        };
+    }
+
+    rpc PostCluster (Cluster) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/clusters"
+            body: "*"
+        };
+    }
+
+    rpc PutCluster (Cluster) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/v1/clusters/{name}"
+            body: "*"
+        };
+    }
+
+    rpc DeleteCluster (ClusterByName) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/clusters/{name}"
+        };
+    }
+}
+

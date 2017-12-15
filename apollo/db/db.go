@@ -12,6 +12,7 @@ type Storage interface {
 	AlertStorage
 	BenchmarkResultsStorage
 	BenchmarkStorage
+	ClusterStorage
 	DeploymentStorage
 	ImagePolicyStorage
 	ImageStorage
@@ -42,6 +43,15 @@ type BenchmarkResultsStorage interface {
 	GetBenchmarkResult(id string) (*v1.BenchmarkResult, bool, error)
 	GetBenchmarkResults(request *v1.GetBenchmarkResultsRequest) ([]*v1.BenchmarkResult, error)
 	AddBenchmarkResult(benchmark *v1.BenchmarkResult) error
+}
+
+// ClusterStorage provides storage functionality for clusters.
+type ClusterStorage interface {
+	GetCluster(name string) (*v1.Cluster, bool, error)
+	GetClusters() ([]*v1.Cluster, error)
+	AddCluster(cluster *v1.Cluster) error
+	UpdateCluster(cluster *v1.Cluster) error
+	RemoveCluster(name string) error
 }
 
 // DeploymentStorage provides storage functionality for deployments.

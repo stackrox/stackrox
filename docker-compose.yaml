@@ -1,25 +1,25 @@
 version: "3.2"
 services:
   apollo:
-    image: stackrox/apollo:latest
+    image: stackrox/apollo:${APOLLO_IMAGE_TAG:-latest}
     networks:
       net:
     ports:
       - target: 8080
         published: 8080
         protocol: tcp
-        mode: host
+        mode: ingress
   apollo-ui:
-    image: stackrox/apollo:ui-latest
+    image: stackrox/apollo:ui-${APOLLO_IMAGE_TAG:-latest}
     networks:
       net:
     ports:
       - target: 3000
         published: 3000
         protocol: tcp
-        mode: host
+        mode: ingress
   agent:
-    image: stackrox/apollo:latest
+    image: stackrox/apollo:${APOLLO_IMAGE_TAG:-latest}
     entrypoint:
       - swarm-agent
     depends_on:
