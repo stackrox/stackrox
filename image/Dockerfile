@@ -13,7 +13,7 @@ RUN apk update && \
 
 ENV PATH=/apollo
 
-ADD ./policies /data/policies
+ADD ./policies/ /data/policies
 ADD ./bin/ /apollo/
 
 EXPOSE 8080

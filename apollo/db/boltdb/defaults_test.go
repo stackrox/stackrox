@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"bitbucket.org/stack-rox/apollo/image/policies"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,7 +24,7 @@ func TestGetDefaultImagePolicies(t *testing.T) {
 	defer db.Close()
 	defer os.Remove(db.Path())
 
-	defaultPoliciesPath = os.Getenv("GOPATH") + "/src/bitbucket.org/stack-rox/apollo/image/policies"
+	defaultPoliciesPath = policies.Directory()
 
 	imagePolicies, err := db.getDefaultImagePolicies()
 	require.NoError(t, err)

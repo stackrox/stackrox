@@ -1,10 +1,12 @@
+// +build linux
+// +build cgo
+
 package configurationfiles
 
 import (
 	"io/ioutil"
 	"os"
 	"os/user"
-	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -41,22 +43,6 @@ func createTestFileOwnership(u, g string) (string, error) {
 		return "", err
 	}
 	return file.Name(), nil
-}
-
-func createTestDir() (dir string, fileA string, fileB string, err error) {
-	dir, err = ioutil.TempDir("", "")
-	if err != nil {
-		return
-	}
-	fileA = filepath.Join(dir, "a.txt")
-	if err = ioutil.WriteFile(fileA, []byte("hello world"), 0777); err != nil {
-		return
-	}
-	fileB = filepath.Join(dir, "b.txt")
-	if err = ioutil.WriteFile(fileB, []byte("hello world"), 0777); err != nil {
-		return
-	}
-	return
 }
 
 // Returns file name with these ownership settings

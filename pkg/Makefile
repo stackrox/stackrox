@@ -27,6 +27,8 @@ preclean:
 	@echo "+ $@"
 	@rm -rf api/generated
 
+clean: clean-protos
+
 SUBDIRS := $(foreach dir, $(wildcard */.), $(if $(shell find $(dir) -name "*.go" -not -path "api/*"),$(dir),))
 
 .PHONY: build-pkg

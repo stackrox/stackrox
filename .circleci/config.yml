@@ -14,15 +14,7 @@ jobs:
       - checkout
       - setup_remote_docker
 
-      - run: make deps
-
-      - run: make -C pkg clean all
-      - run: make -C agent/swarm clean all
-      - run: make -C apollo clean all
-      - run: make -C docker-bench clean all
-      - run: make -C docker-bench-bootstrap clean all
-
-      - run: make image
+      - run: make all
 
       - run: docker tag stackrox/apollo:latest stackrox/apollo:$CIRCLE_SHA1
       - run: docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD

@@ -199,3 +199,13 @@ $(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SW
 $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(PROTOC_GEN_GRPC_GATEWAY)
 	@echo "+ $@"
 	docker run --user $(shell id -u) --rm -v $(CURDIR)/docs:/tmp/docs swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
+
+.PHONY: clean-protos
+clean-protos:
+	@rm -rf $(GOPATH)/src/github.com/grpc-ecosystem
+	@rm -rf $(GOPATH)/src/github.com/golang/protobuf
+	@rm -f $(GOPATH)/bin/protoc-gen-grpc-gateway
+	@rm -f $(GOPATH)/bin/protoc-gen-go
+	@rm -rf $(PROTOC_TMP)
+	@rm -f $(PROTOC_FILE)
+	@test -n "$(GENERATED_API_PATH)" && rm -rf "$(GENERATED_API_PATH)" || true
