@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"strings"
 
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -74,24 +75,35 @@ func (a *apiImpl) Register(service APIService) {
 	a.apiServices = append(a.apiServices, service)
 }
 
+func panicHandler(p interface{}) (err error) {
+	if r := recover(); r == nil {
+		err = fmt.Errorf("%v", p)
+		log.Errorf("Caught panic in gRPC call. Stack: %s", string(debug.Stack()))
+	}
+	return
+}
+
 func (a *apiImpl) run() {
 	pool, pair, err := getPair()
 	if err != nil {
 		panic(err)
 	}
 
+	opts := []grpc_recovery.Option{
+		grpc_recovery.WithRecoveryHandler(panicHandler),
+	}
 	grpcServer := grpc.NewServer(
 		grpc.Creds(credentials.NewClientTLSFromCert(pool, endpoint)),
 		grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(
 				grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-				grpc_recovery.StreamServerInterceptor(),
+				grpc_recovery.StreamServerInterceptor(opts...),
 			),
 		),
 		grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(
 				grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-				grpc_recovery.UnaryServerInterceptor(),
+				grpc_recovery.UnaryServerInterceptor(opts...),
 			),
 		),
 	)
