@@ -3,7 +3,7 @@
   "description": "Alert on deployments with any vulnerabilities",
   "severity": 1,
   "cvss": {
-    "op": 3,
+    "op": 4,
     "math_op": 1,
     "value": 0
   }

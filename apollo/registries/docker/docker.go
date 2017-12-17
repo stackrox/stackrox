@@ -38,13 +38,18 @@ type v1Compatibility struct {
 }
 
 func newRegistry(protoRegistry *v1.Registry) (*dockerRegistry, error) {
-	username, ok := protoRegistry.Config["username"]
-	if !ok {
-		return nil, errors.New("Config parameter 'username' must be defined for docker registry plugin")
+	username, hasUsername := protoRegistry.Config["username"]
+	password, hasPassword := protoRegistry.Config["password"]
+
+	if hasUsername != hasPassword {
+		if !hasUsername {
+			return nil, errors.New("Config parameter 'username' must be defined for all non Docker Hub registries")
+		}
+		return nil, errors.New("Config parameter 'password' must be defined for all non Docker Hub registries")
 	}
-	password, ok := protoRegistry.Config["password"]
-	if !ok {
-		return nil, errors.New("Config parameter 'password' must be defined for docker registry plugin")
+
+	if (!hasUsername && !hasPassword) && !strings.Contains(protoRegistry.Endpoint, "docker.io") {
+		return nil, errors.New("Config parameters 'username' and 'password' must be defined for all non Docker Hub registries")
 	}
 
 	url := protoRegistry.Endpoint
