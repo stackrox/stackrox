@@ -25,6 +25,7 @@
     "start": "tailwind build ./src/app.css -c ./tailwind.js -o ./src/index.css && NODE_PATH=src react-scripts start",
     "build": "tailwind build ./src/app.css -c ./tailwind.js -o ./src/index.css && NODE_PATH=src react-scripts build",
     "test": "react-scripts test --env=jsdom",
+    "lint": "eslint src prod",
     "eject": "react-scripts eject"
   },
   "proxy": {
@@ -33,5 +34,13 @@
       "changeOrigin": true,
       "secure": false
     }
+  },
+  "devDependencies": {
+    "babel-eslint": "^8.0.3",
+    "eslint": "^4.13.1",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-jsx-a11y": "^6.0.3",
+    "eslint-plugin-react": "^7.5.1"
   }
 }

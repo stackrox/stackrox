@@ -10,6 +10,6 @@ const AppPage = () => (
     <Router>
         <Route path="/" component={MainPage} />
     </Router>
-)
+);
 
 export default AppPage;

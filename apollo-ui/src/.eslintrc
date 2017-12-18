@@ -1,0 +1,42 @@
+{
+    "env" : {
+        "browser": true
+    },
+    "settings": {
+        // in build scripts we use NODE_PATH, so need to configure eslint-plugin-import
+        "import/resolver": {
+            "node": {
+                "moduleDirectory": ["../node_modules", "./"]
+            }
+        }
+    },
+    "rules": {        
+        // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-filename-extension.md
+        // allow JSX in .js files
+        "react/jsx-filename-extension": ["warn", { "extensions": [".js", ".jsx"] }],
+
+        // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-indent.md
+        // changing indent from 2 to 4
+        "react/jsx-indent": ["error", 4],
+
+        // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-indent-props.md
+        // changing indent from 2 to 4
+        "react/jsx-indent-props": ["error", 4],
+
+        // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-no-bind.md
+        // forbid arrow functions as well
+        "react/jsx-no-bind": ["error", {
+            "ignoreRefs": true,
+            "allowArrowFunctions": false,  // Airbnb code style doesn't support ES7 property initializers
+            "allowBind": false
+        }],
+  
+        // TODO-ivan: rules below are to be removed after fixing all violations in the code
+        "react/prop-types": "warn",
+        "react/no-array-index-key": "warn",
+        "react/no-unused-state": "warn",
+    
+        "jsx-a11y/no-static-element-interactions": "warn",
+        "jsx-a11y/click-events-have-key-events": "warn"
+    }
+}

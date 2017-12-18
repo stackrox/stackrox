@@ -25,11 +25,19 @@ class PolicyAlertsSidePanel extends Component {
                 showModal: false,
                 data: {}
             }
-        }
+        };
+    }
 
-        this.hidePanel = this.hidePanel.bind(this);
-        this.handleOpenModal = this.handleOpenModal.bind(this);
-        this.handleCloseModal = this.handleCloseModal.bind(this);
+    componentDidMount() {
+        // set up event listeners for this componenet
+        this.tableRowSelectedListener = emitter.addListener('PolicyAlertsTable:row-selected', (data) => {
+            this.getAlerts(data);
+        });
+    }
+
+    componentWillUnmount() {
+        // remove event listeners
+        this.tableRowSelectedListener.remove();
     }
 
     getAlerts(data) {
@@ -45,49 +53,50 @@ class PolicyAlertsSidePanel extends Component {
             }
         }).then((response) => {
             if (!response.data || !response.data.alerts.length) return;
-            var table = this.state.table;
+            const { table } = this.state;
             table.rows = response.data.alerts.map((alert) => {
-                alert.policy.category = alert.policy.category.replace('_', ' ').capitalizeFirstLetterOfWord();
-                alert.policy.imagePolicy.severity = alert.severity.split('_')[0].capitalizeFirstLetterOfWord();
-                alert.severity = alert.severity.split('_')[0].capitalizeFirstLetterOfWord();
-                alert.time = dateFns.format(alert.time, 'MM/DD/YYYY HH:MM:ss A')
-                return alert;
+                const result = Object.assign({}, alert);
+                result.policy.category = alert.policy.category.replace('_', ' ').capitalizeFirstLetterOfWord();
+                result.policy.imagePolicy.severity = alert.severity.split('_')[0].capitalizeFirstLetterOfWord();
+                result.severity = alert.severity.split('_')[0].capitalizeFirstLetterOfWord();
+                result.time = dateFns.format(alert.time, 'MM/DD/YYYY HH:MM:ss A');
+                return result;
             });
-            this.setState({ data: data, table: table });
-        }).catch((error) => {
+            this.setState({ data, table });
+        }).catch(() => {
             this.setState({ data: {}, alerts: [] });
         });
     }
 
     displayHeader() {
-        if (!this.state.data) return "";
+        if (!this.state.data) return '';
         return (
             <div className="flex">
-                <span className="flex flex-1 self-center text-primary-600 uppercase tracking-wide">Alerts for "{this.state.data.name}"</span>
-                <Icon.X className="cursor-pointer h-6 w-6 text-primary-600 hover:text-primary-500" onClick={() => { this.hidePanel() }} />
+                <span className="flex flex-1 self-center text-primary-600 uppercase tracking-wide">Alerts for &quot;{this.state.data.name}&quot;</span>
+                <Icon.X className="cursor-pointer h-6 w-6 text-primary-600 hover:text-primary-500" onClick={this.hidePanel} />
             </div>
         );
     }
 
     displayModalHeader() {
-        if (this.state.modal.data === {} || !this.state.modal.data || !this.state.modal.data.deployment) return "";
+        if (this.state.modal.data === {} || !this.state.modal.data || !this.state.modal.data.deployment) return '';
         return (
             <header className="flex w-full p-3 font-bold border-b border-primary-200 flex-none bg-primary-500">
                 <span className="flex flex-1 uppercase self-center text-white">{this.state.modal.data.deployment.name} ({this.state.modal.data.deployment.id})</span>
-                <Icon.X className="cursor-pointer h-6 w-6 text-white" onClick={() => { this.handleCloseModal() }} />
+                <Icon.X className="cursor-pointer h-6 w-6 text-white" onClick={this.handleCloseModal} />
             </header>
         );
     }
 
     displayModalBody() {
-        if (this.state.modal.data === {} || !this.state.modal.data || !this.state.modal.data.deployment) return "";
+        if (this.state.modal.data === {} || !this.state.modal.data || !this.state.modal.data.deployment) return '';
         return (
             <div className="flex flex-1 overflow-y-scroll">
                 <div className="flex flex-col w-1/2 border-r border-primary-200">
                     <div className="bg-white m-3 flex-grow pb-2">
                         <header className="w-full p-3 font-bold border-b border-primary-200 mb-2">Violations</header>
                         <div>
-                            {this.state.modal.data.policy.violations.map((violation, i) => { return <div key={'policy-alerts-violation-' + i} className="py-2 px-3 break-words">{violation.message}</div>; })}
+                            {this.state.modal.data.policy.violations.map((violation, i) => <div key={`policy-alerts-violation-${i}`} className="py-2 px-3 break-words">{violation.message}</div>)}
                         </div>
                     </div>
                     <div className="bg-white m-3 pb-2">
@@ -135,29 +144,29 @@ class PolicyAlertsSidePanel extends Component {
         this.setState({ showPanel: true, alerts: [] });
     }
 
-    hidePanel() {
+    hidePanel = () => {
         this.setState({ showPanel: false });
     }
 
-    handleOpenModal(row) {
-        var modal = this.state.modal;
+    handleOpenModal = (row) => {
+        const { modal } = this.state;
         modal.showModal = true;
         modal.data = row;
-        this.setState({ modal: modal });
+        this.setState({ modal });
     }
 
-    handleCloseModal() {
-        var modal = this.state.modal;
+    handleCloseModal = () => {
+        const { modal } = this.state;
         modal.showModal = false;
-        this.setState({ modal: modal });
+        this.setState({ modal });
     }
 
     render() {
         return (
-            <aside className={"flex-col h-full bg-primary-100 md:w-2/3 border-l border-primary-300 " + ((this.state.showPanel) ? 'flex' : ' hidden')}>
+            <aside className={`flex-col h-full bg-primary-100 md:w-2/3 border-l border-primary-300 ${(this.state.showPanel) ? 'flex' : ' hidden'}`}>
                 <div className="p-3 border-b border-primary-300 w-full">{this.displayHeader()}</div>
                 <div className="flex-1 p-3 overflow-y-scroll bg-white rounded-sm shadow">
-                    <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={this.handleOpenModal.bind(this)}></Table>
+                    <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={this.handleOpenModal} />
                 </div>
                 <ReactModal
                     isOpen={this.state.modal.showModal}
@@ -165,26 +174,15 @@ class PolicyAlertsSidePanel extends Component {
                     contentLabel="Modal"
                     ariaHideApp={false}
                     overlayClassName="ReactModal__Overlay react-modal-overlay p-4 flex"
-                    className="ReactModal__Content w-2/3 mx-auto my-0 flex flex-col self-center bg-primary-100 overflow-hidden max-h-full">
+                    // eslint-disable-next-line max-len
+                    className="ReactModal__Content w-2/3 mx-auto my-0 flex flex-col self-center bg-primary-100 overflow-hidden max-h-full"
+                >
                     {this.displayModalHeader()}
                     {this.displayModalBody()}
                 </ReactModal>
             </aside>
         );
     }
-
-    componentDidMount() {
-        // set up event listeners for this componenet
-        this.tableRowSelectedListener = emitter.addListener('PolicyAlertsTable:row-selected', (data) => {
-            this.getAlerts(data);
-        });
-    }
-
-    componentWillUnmount() {
-        // remove event listeners
-        this.tableRowSelectedListener.remove();
-    }
-
 }
 
 export default PolicyAlertsSidePanel;

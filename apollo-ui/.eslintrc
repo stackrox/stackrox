@@ -1,0 +1,48 @@
+{
+  "parser": "babel-eslint",
+  "extends": "airbnb",
+  "rules": {
+      // https://eslint.org/docs/rules/max-len
+      // copied from Airbnb config except for ignoring JSX and trailing comments
+      "max-len": ["error", 100, 4, {
+        "ignoreUrls": true,
+        "ignoreComments": false,
+        "ignoreRegExpLiterals": true,
+        "ignoreStrings": true,
+        "ignoreTemplateLiterals": true,
+  
+        // StackRox specifics
+        "ignoreTrailingComments": true,
+        "ignorePattern": "\\s*<"  // ingore JSX (TODO-ivan: for readability better to reconsider)
+    }],
+
+    // https://eslint.org/docs/rules/indent
+    // copied from Airbnb config and changed indent from 2 to 4
+    "indent": ["error", 4, {
+      "SwitchCase": 1,
+      "VariableDeclarator": 1,
+      "outerIIFEBody": 1,
+      // MemberExpression: null,
+      "FunctionDeclaration": {
+        "parameters": 1,
+        "body": 1
+      },
+      "FunctionExpression": {
+        "parameters": 1,
+        "body": 1
+      },
+      "CallExpression": {
+        "arguments": 1
+      },
+      "ArrayExpression": 1,
+      "ObjectExpression": 1,
+      "ImportDeclaration": 1,
+      "flatTernaryExpressions": false,
+      "ignoredNodes": ["JSXElement", "JSXElement *"]
+    }],
+
+    // https://eslint.org/docs/rules/comma-dangle
+    // really annoying, even Airbnb guys override it
+    "comma-dangle": "off"
+  }
+}

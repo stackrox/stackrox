@@ -73,8 +73,13 @@ nodejs-ubuntu:
 deps: package.json
 	yarn install
 
+.PHONY: lint
+lint: deps
+	@echo "+ $@"
+	yarn lint
+
 .PHONY: build
-build: deps
+build: deps lint
 	@echo "+ $@"
 	yarn build
 

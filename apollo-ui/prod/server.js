@@ -1,20 +1,21 @@
-var express = require('express');
-var proxy = require('http-proxy-middleware');
-var app = express();
+const express = require('express');
+const proxy = require('http-proxy-middleware');
 
-var endpoint = process.env.ROX_APOLLO_ENDPOINT || "apollo.apollo_net:8080";
+const app = express();
 
-app.use(express.static(__dirname + '/build'));
+const endpoint = process.env.ROX_APOLLO_ENDPOINT || 'apollo.apollo_net:8080';
+
+app.use(express.static(`${__dirname}/build`));
 
 app.use('/v1', proxy({
-    target: "https://" + endpoint,
+    target: `https://${endpoint}`,
     changeOrigin: true,
     secure: false
 }));
 
 // redirect all dynamically added URLs to index.html (let react app to handle 404.)
 app.get('/*', (req, res) => {
-    res.sendFile(__dirname + '/build/index.html');
+    res.sendFile(`${__dirname}/build/index.html`);
 });
 
 app.listen(3000);

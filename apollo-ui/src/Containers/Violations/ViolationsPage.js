@@ -4,7 +4,7 @@ import TabContent from 'Components/TabContent';
 import Table from 'Components/Table';
 import Select from 'Components/Select';
 
-import PolicyAlertsSidePanel from "Containers/Violations/Policies/PolicyAlertsSidePanel";
+import PolicyAlertsSidePanel from 'Containers/Violations/Policies/PolicyAlertsSidePanel';
 import CompliancePage from 'Containers/Violations/Compliance/CompliancePage';
 
 import axios from 'axios';
@@ -21,9 +21,9 @@ class ViolationsContainer extends Component {
 
         this.timeout = null;
 
-        var setSeverityClass = (item) => { 
-            switch(item) {
-                case 'Low': 
+        const setSeverityClass = (item) => {
+            switch (item) {
+                case 'Low':
                     return 'text-low-500';
                 case 'Medium':
                     return 'text-medium-500';
@@ -52,67 +52,67 @@ class ViolationsContainer extends Component {
                     { key: 'name', label: 'Name' },
                     { key: 'description', label: 'Description' },
                     { key: 'category', label: 'Category' },
-                    { key: 'severity', label: 'Severity', classFunc: setSeverityClass},
+                    { key: 'severity', label: 'Severity', classFunc: setSeverityClass },
                     { key: 'numAlerts', label: 'Alerts', align: 'right' }
                 ],
                 rows: []
             }
-        }
-
-        this.pollAlertGroups = this.pollAlertGroups.bind(this);
+        };
     }
 
     componentDidMount() {
         this.pollAlertGroups();
     }
 
-    pollAlertGroups() {
-        var promise = this.getAlertsGroups();
-        var func = this.pollAlertGroups;
-        // eslint-disable-next-line
-        var timeout = this.timeout;
-        promise.then(function (result) {
-            timeout = setTimeout(func, 5000);
-        });
+    componentWillUnmount() {
+        if (this.timeout) this.timeout.cancel();
     }
 
+    onRowClick = (row) => {
+        emitter.emit('PolicyAlertsTable:row-selected', row);
+    }
+
+    onActivePillsChange(active) {
+        const { params } = this;
+        params.category = Object.keys(active);
+        this.getAlertsGroups();
+    }
+
+
     getAlertsGroups() {
-        var promise = new Promise((resolve, reject) => {
-            var params = "?" + queryString.stringify(this.params);
-            const table = this.state.table;
+        const promise = new Promise((resolve) => {
+            const params = `?${queryString.stringify(this.params)}`;
+            const { table } = this.state;
             axios.get(`/v1/alerts/groups${params}`).then((response) => {
                 if (!response.data.byCategory) return;
-                response.data.byCategory.map((category) => {
-                    return table.rows = category.byPolicy.map((policy) => {
-                        var result = {
+                response.data.byCategory.forEach((category) => {
+                    table.rows = category.byPolicy.map((policy) => {
+                        const result = {
                             name: policy.policy.name,
                             description: policy.policy.imagePolicy.description,
                             category: category.category.replace('_', ' ').capitalizeFirstLetterOfWord(),
                             severity: policy.policy.severity.split('_')[0].capitalizeFirstLetterOfWord(),
                             numAlerts: policy.numAlerts
-                        }
+                        };
                         return result;
                     });
                 });
-                this.setState({ table: table });
+                this.setState({ table });
                 resolve({});
-            }).catch((error) => {
+            }).catch(() => {
                 table.rows = [];
-                this.setState({ table: table });
+                this.setState({ table });
                 resolve({});
             });
         });
         return promise;
     }
 
-    onRowClick(row) {
-        emitter.emit('PolicyAlertsTable:row-selected', row);
-    }
-
-    onActivePillsChange(active) {
-        const params = this.params;
-        params.category = Object.keys(active);
-        this.getAlertsGroups();
+    pollAlertGroups = () => {
+        const promise = this.getAlertsGroups();
+        promise.then(() => {
+            this.timeout = setTimeout(this.pollAlertGroups, 5000);
+        });
     }
 
     render() {
@@ -121,36 +121,33 @@ class ViolationsContainer extends Component {
                 <Tabs headers={this.state.tab.headers}>
                     <TabContent name={this.state.tab.headers[0]}>
                         <div className="flex mb-3 mx-3 flex-none">
-                             <div className="flex flex-1 self-center justify-start">
-                                <input className="border rounded w-full p-3  border-base-300"
-                                    placeholder="Filter by registry, severity, deployment, or tag" />
+                            <div className="flex flex-1 self-center justify-start">
+                                <input
+                                    className="border rounded w-full p-3  border-base-300"
+                                    placeholder="Filter by registry, severity, deployment, or tag"
+                                />
                             </div>
                             <div className="flex self-center justify-end">
-                                <Select options={this.state.category.options}></Select>
+                                <Select options={this.state.category.options} />
                             </div>
                             <div className="flex self-center justify-end">
-                                <Select options={this.state.time.options}></Select>
+                                <Select options={this.state.time.options} />
                             </div>
                         </div>
                         <div className="flex flex-1 border-t border-primary-300 bg-base-100">
                             <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow">
-                                <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={this.onRowClick.bind(this)}></Table>
+                                <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={this.onRowClick} />
                             </div>
-                            <PolicyAlertsSidePanel></PolicyAlertsSidePanel>
+                            <PolicyAlertsSidePanel />
                         </div>
                     </TabContent>
                     <TabContent name={this.state.tab.headers[1]}>
-                        <CompliancePage></CompliancePage>
+                        <CompliancePage />
                     </TabContent>
                 </Tabs>
             </section>
         );
     }
-
-    componentWillUnmount() {
-        if (this.timeout) this.timeout.cancel();
-    }
-
 }
 
 export default ViolationsContainer;
