@@ -34,7 +34,9 @@ func New() (listeners.Listener, error) {
 	if err != nil {
 		return nil, err
 	}
-	dockerClient.NegotiateAPIVersion(context.Background())
+	ctx, cancel := docker.TimeoutContext()
+	defer cancel()
+	dockerClient.NegotiateAPIVersion(ctx)
 	return &listener{
 		Client:    dockerClient,
 		eventsC:   make(chan *v1.DeploymentEvent, 10),
@@ -99,9 +101,8 @@ func (dl *listener) sendExistingDeployments() {
 }
 
 func (dl *listener) getNewExistingDeployments() ([]*v1.Deployment, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), docker.HangTimeout)
+	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
-
 	swarmServices, err := dl.Client.ServiceList(ctx, types.ServiceListOptions{})
 	if err != nil {
 		return nil, err
@@ -116,7 +117,7 @@ func (dl *listener) getNewExistingDeployments() ([]*v1.Deployment, error) {
 }
 
 func (dl *listener) getDeploymentFromServiceID(id string) (*v1.Deployment, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), docker.HangTimeout)
+	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 
 	serviceInfo, _, err := dl.Client.ServiceInspectWithRaw(ctx, id, types.ServiceInspectOptions{})

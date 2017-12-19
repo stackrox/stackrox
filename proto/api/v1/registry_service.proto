@@ -11,7 +11,8 @@ message Registry {
     string name                 = 1;
     string type                 = 2;
     string endpoint             = 3;
-    map<string, string> config  = 4;
+    string remote               = 4;
+    map<string, string> config  = 5;
 }
 
 message GetRegistriesRequest {

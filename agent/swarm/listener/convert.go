@@ -1,11 +1,11 @@
 package listener
 
 import (
-	"context"
 	"fmt"
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/docker"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
@@ -57,7 +57,9 @@ func (s serviceWrap) getSHAFromTask(client *client.Client) string {
 	opts := filters.NewArgs()
 	opts.Add("service", s.ID)
 	opts.Add("desired-state", "running")
-	tasks, err := client.TaskList(context.Background(), types.TaskListOptions{Filters: opts})
+	ctx, cancel := docker.TimeoutContext()
+	defer cancel()
+	tasks, err := client.TaskList(ctx, types.TaskListOptions{Filters: opts})
 	if err != nil {
 		log.Errorf("Couldn't enumerate service %s tasks to get image SHA: %s", s.ID, err)
 		return ""
@@ -67,7 +69,9 @@ func (s serviceWrap) getSHAFromTask(client *client.Client) string {
 		if id == "" {
 			continue
 		}
-		container, err := client.ContainerInspect(context.Background(), id)
+		ctx, cancel := docker.TimeoutContext()
+		defer cancel()
+		container, err := client.ContainerInspect(ctx, id)
 		if err != nil {
 			log.Warnf("Couldn't inspect %s to get image SHA for service %s: %s", id, s.ID, err)
 			continue

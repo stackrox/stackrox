@@ -298,6 +298,9 @@ func (i *ImageProcessor) enrichWithMetadata(image *v1.Image) (bool, error) {
 	i.registryMutex.Lock()
 	defer i.registryMutex.Unlock()
 	for _, registry := range i.registries {
+		if !registry.Match(image) {
+			continue
+		}
 		metadata, err := registry.Metadata(image)
 		if err != nil {
 			log.Error(err) // This will be removed, but useful for debugging at this point
@@ -313,6 +316,9 @@ func (i *ImageProcessor) enrichWithScan(image *v1.Image) (bool, error) {
 	i.scannerMutex.Lock()
 	defer i.scannerMutex.Unlock()
 	for _, scanner := range i.scanners {
+		if !scanner.Match(image) {
+			continue
+		}
 		scan, err := scanner.GetLastScan(image)
 		if err != nil {
 			log.Error(err)

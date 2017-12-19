@@ -9,8 +9,10 @@ package v1;
 
 message Scanner {
     string name                 = 1;
-    string endpoint             = 2;
-    map<string, string> config  = 3;
+    string type                 = 2;
+    string endpoint             = 3;
+    string remote               = 4;
+    map<string, string> config  = 5;
 }
 
 message GetScannersRequest {

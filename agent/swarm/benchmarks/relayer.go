@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	cacheSize = 1000
-	interval  = 2 * time.Second
+	cacheSize      = 1000
+	interval       = 2 * time.Second
+	requestTimeout = 3 * time.Second
 )
 
 // A Relayer sends received benchmark payloads onto central Apollo.
@@ -104,6 +105,8 @@ func (r *LRURelayer) run() {
 
 func (r *LRURelayer) relay(payload *v1.BenchmarkResult) error {
 	r.logger.Infof("Relaying payload %s", payloadKey(payload))
-	_, err := r.client.PostBenchmarkResult(context.Background(), payload)
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	defer cancel()
+	_, err := r.client.PostBenchmarkResult(ctx, payload)
 	return err
 }

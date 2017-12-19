@@ -56,12 +56,15 @@ func main() {
 		},
 	}
 
-	body, err := client.ContainerCreate(context.Background(), containerConfig, hostConfig, networkingConfig, "")
+	ctx, cancel := docker.TimeoutContext()
+	defer cancel()
+	body, err := client.ContainerCreate(ctx, containerConfig, hostConfig, networkingConfig, "")
 	if err != nil {
 		log.Fatalf("Error creating docker-bench container: %+v", err)
 	}
-
-	if err := client.ContainerStart(context.Background(), body.ID, types.ContainerStartOptions{}); err != nil {
+	ctx, cancel = docker.TimeoutContext()
+	defer cancel()
+	if err := client.ContainerStart(ctx, body.ID, types.ContainerStartOptions{}); err != nil {
 		log.Fatalf("Error starting docker-bench container: %+v", err)
 	}
 

@@ -16,9 +16,9 @@ var Registry = map[string]Creator{}
 // CreateScanner checks to make sure the integration exists and then tries to generate a new Scanner
 // returns an error if the creation was unsuccessful
 func CreateScanner(scanner *v1.Scanner) (types.ImageScanner, error) {
-	creator, exists := Registry[scanner.Name]
+	creator, exists := Registry[scanner.Type]
 	if !exists {
-		return nil, fmt.Errorf("Scanner with name %v does not exist", scanner.Name)
+		return nil, fmt.Errorf("Scanner with type '%v' does not exist", scanner.Type)
 	}
 	return creator(scanner)
 }

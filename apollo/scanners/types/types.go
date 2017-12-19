@@ -10,6 +10,7 @@ type ImageScanner interface {
 
 	GetLastScan(image *v1.Image) (*v1.ImageScan, error)
 	GetScans(image *v1.Image) ([]*v1.ImageScan, error)
+	Match(image *v1.Image) bool
 	Scan(image *v1.Image) error // Potentially initiate scan
 	Test() error
 }

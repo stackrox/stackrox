@@ -16,7 +16,10 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 )
 
-const metadataRefreshInterval = 5 * time.Minute
+const (
+	metadataRefreshInterval = 5 * time.Minute
+	requestTimeout          = 5 * time.Second
+)
 
 var (
 	log = logging.New("dtr")
@@ -47,7 +50,7 @@ func newScanner(protoScanner *v1.Scanner) (*dtr, error) {
 		return nil, errors.New("password parameter must be defined for DTR")
 	}
 	client := &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: requestTimeout,
 	}
 	// Trim any trailing slashes as the expectation will be that the input is in the form
 	// https://12.12.12.12:8080 or https://dtr.com
@@ -204,6 +207,11 @@ func (d *dtr) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 		return nil, fmt.Errorf("no scans were found for image %v", image.String())
 	}
 	return imageScans[0], nil
+}
+
+// Match decides if the image is contained within this registry
+func (d *dtr) Match(image *v1.Image) bool {
+	return d.protoScanner.Remote == image.Registry
 }
 
 func init() {

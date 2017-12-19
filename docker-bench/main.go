@@ -22,6 +22,7 @@ var (
 const (
 	apolloEndpointEnv = "ROX_APOLLO_POST_ENDPOINT"
 	retries           = 5
+	requestTimeout    = 5 * time.Second
 )
 
 func main() {
@@ -60,11 +61,14 @@ func main() {
 
 	fmt.Printf("%+v\n", payload)
 	for i := 1; i < retries+1; i++ {
-		_, err := client.PostBenchmarkResult(context.Background(), payload)
+		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+		defer cancel()
+		_, err := client.PostBenchmarkResult(ctx, payload)
 		if err == nil {
 			return
 		}
 		log.Warnf("Error posting benchmark to %v: %+v", ip, err)
+		log.Infof("Sleeping for %v before retrying", (time.Duration(i*2) * time.Second).Seconds())
 		time.Sleep(time.Duration(i*2) * time.Second)
 	}
 	log.Error("Timed out posting benchmark back to Apollo")
@@ -75,7 +79,7 @@ func getHostname() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("docker client setup: %s", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 	info, err := cli.Info(ctx)
 	if err != nil {

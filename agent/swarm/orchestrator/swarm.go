@@ -29,7 +29,9 @@ func New() (orchestrators.Orchestrator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to create docker client: %+v", err)
 	}
-	client.NegotiateAPIVersion(context.Background())
+	ctx, cancel := docker.TimeoutContext()
+	defer cancel()
+	client.NegotiateAPIVersion(ctx)
 
 	return &swarmOrchestrator{
 		dockerClient: client,

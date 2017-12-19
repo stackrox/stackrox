@@ -56,6 +56,7 @@ func newRegistry(protoRegistry *v1.Registry) (*dockerRegistry, error) {
 	if !strings.HasPrefix(protoRegistry.Endpoint, "http") {
 		url = "https://" + protoRegistry.Endpoint
 	}
+
 	hub, err := registry.New(url, username, password)
 	if err != nil {
 		return nil, err
@@ -156,6 +157,11 @@ func (d *dockerRegistry) ProtoRegistry() *v1.Registry {
 func (d *dockerRegistry) Test() error {
 	_, err := d.hub.Repositories()
 	return err
+}
+
+// Match decides if the image is contained within this registry
+func (d *dockerRegistry) Match(image *v1.Image) bool {
+	return d.protoRegistry.Remote == image.Registry
 }
 
 func init() {
