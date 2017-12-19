@@ -118,7 +118,10 @@ func compareProtoTimestamps(t1, t2 *timestamp.Timestamp) bool {
 
 // Metadata returns the metadata via this registries implementation
 func (d *dockerRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
-	manifest, err := d.hub.Manifest(image.Remote, image.Tag)
+	if image == nil {
+		return nil, nil
+	}
+	manifest, err := d.hub.Manifest(image.GetRemote(), image.GetTag())
 	if err != nil {
 		return nil, err
 	}

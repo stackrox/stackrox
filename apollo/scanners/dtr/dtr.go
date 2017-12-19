@@ -143,7 +143,10 @@ func (d *dtr) getStatus() (*scannerMetadata, *metadataFeatures, error) {
 
 // GetScan takes in an id and returns the image scan for that id if applicable
 func (d *dtr) GetScans(image *v1.Image) ([]*v1.ImageScan, error) {
-	getScanURL := fmt.Sprintf("/api/v0/imagescan/repositories/%v/%v?detailed=true", image.Remote, image.Tag)
+	if image == nil || image.GetRemote() == "" || image.GetTag() == "" {
+		return nil, nil
+	}
+	getScanURL := fmt.Sprintf("/api/v0/imagescan/repositories/%v/%v?detailed=true", image.GetRemote(), image.GetTag())
 	body, err := d.sendRequest("GET", getScanURL)
 	scans, err := parseDTRImageScans(body)
 	if err != nil {

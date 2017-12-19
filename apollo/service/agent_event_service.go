@@ -91,7 +91,7 @@ func (s *AgentEventService) handlePersistence(event *v1.DeploymentEvent) error {
 	deployment := event.GetDeployment()
 	switch action {
 	case v1.ResourceAction_CREATE_RESOURCE:
-		if err := s.storage.AddDeployment(deployment); err != nil {
+		if err := s.storage.UpdateDeployment(deployment); err != nil {
 			log.Errorf("unable to add deployment %s: %s", deployment.GetId(), err)
 			return err
 		}

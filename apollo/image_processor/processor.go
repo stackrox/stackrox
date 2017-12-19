@@ -265,7 +265,12 @@ func (i *ImageProcessor) RemovePolicy(name string) {
 // Process takes in a new image and determines if an alert should be fired
 func (i *ImageProcessor) Process(deployment *v1.Deployment) ([]*v1.Alert, error) {
 	// TODO(cgorman) Better notification system or scheme around notifying if there is an error
-	if err := i.enrichImage(deployment.Image); err != nil {
+	img := deployment.GetImage()
+	if img == nil {
+		log.Warnf("Received a nil image for deployment %s", deployment.GetId())
+		return nil, nil
+	}
+	if err := i.enrichImage(deployment.GetImage()); err != nil {
 		return nil, err
 	}
 	return i.checkImage(deployment)
@@ -289,8 +294,9 @@ func (i *ImageProcessor) checkImage(deployment *v1.Deployment) ([]*v1.Alert, err
 	return alerts, nil
 }
 
-func (i *ImageProcessor) enrichImage(image *v1.Image) error {
+func (i *ImageProcessor) enrichWithMetadata(image *v1.Image) (bool, error) {
 	i.registryMutex.Lock()
+	defer i.registryMutex.Unlock()
 	for _, registry := range i.registries {
 		metadata, err := registry.Metadata(image)
 		if err != nil {
@@ -298,11 +304,14 @@ func (i *ImageProcessor) enrichImage(image *v1.Image) error {
 			continue
 		}
 		image.Metadata = metadata
-		break
+		return true, nil
 	}
-	i.registryMutex.Unlock()
+	return false, nil
+}
 
+func (i *ImageProcessor) enrichWithScan(image *v1.Image) (bool, error) {
 	i.scannerMutex.Lock()
+	defer i.scannerMutex.Unlock()
 	for _, scanner := range i.scanners {
 		scan, err := scanner.GetLastScan(image)
 		if err != nil {
@@ -310,10 +319,23 @@ func (i *ImageProcessor) enrichImage(image *v1.Image) error {
 			continue
 		}
 		image.Scan = scan
-		break
+		return true, nil
 	}
-	i.scannerMutex.Unlock()
+	return false, nil
+}
 
-	// Store image in the database
-	return i.database.AddImage(image)
+func (i *ImageProcessor) enrichImage(image *v1.Image) error {
+	updatedMetadata, err := i.enrichWithMetadata(image)
+	if err != nil {
+		return err
+	}
+	updatedScan, err := i.enrichWithScan(image)
+	if err != nil {
+		return err
+	}
+	if updatedMetadata || updatedScan {
+		// Store image in the database
+		return i.database.UpdateImage(image)
+	}
+	return nil
 }

@@ -133,25 +133,39 @@ func main() {
 func (a *agent) waitUntilApolloIsReady() {
 	pingService := v1.NewPingServiceClient(a.conn)
 
-	_, err := pingService.Ping(context.Background(), &empty.Empty{})
+	err := pingWithTimeout(pingService)
 	for err != nil {
 		a.logger.Infof("Ping to Apollo failed: %s. Retrying...", err)
 		time.Sleep(2 * time.Second)
-		_, err = pingService.Ping(context.Background(), &empty.Empty{})
+		err = pingWithTimeout(pingService)
 	}
+}
+
+func pingWithTimeout(svc v1.PingServiceClient) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_, err = svc.Ping(ctx, &empty.Empty{})
+	return
 }
 
 func (a *agent) reportDeploymentEvent(cli v1.AgentEventServiceClient, ev *v1.DeploymentEvent) (err error) {
 	retries := 0
-	_, err = cli.ReportDeploymentEvent(context.Background(), ev)
+	err = reportWithTimeout(cli, ev)
 	errStatus, ok := status.FromError(err)
 
 	for retries <= 5 && err != nil && ok && errStatus.Code() == codes.Unavailable {
 		retries++
 		time.Sleep(time.Duration(retries) * time.Second)
-		_, err = cli.ReportDeploymentEvent(context.Background(), ev)
+		err = reportWithTimeout(cli, ev)
 		errStatus, ok = status.FromError(err)
 	}
 
+	return
+}
+
+func reportWithTimeout(cli v1.AgentEventServiceClient, ev *v1.DeploymentEvent) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_, err = cli.ReportDeploymentEvent(ctx, ev)
 	return
 }
