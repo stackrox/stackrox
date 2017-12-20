@@ -60,7 +60,7 @@ func (s *deploymentStore) GetDeployments(request *v1.GetDeploymentsRequest) (dep
 			continue
 		}
 
-		if _, ok := imageShaSet[d.GetImage().GetSha()]; len(imageShaSet) > 0 && !ok {
+		if len(imageShaSet) > 0 && !s.matchImageSha(imageShaSet, d.GetImages()) {
 			continue
 		}
 
@@ -69,6 +69,16 @@ func (s *deploymentStore) GetDeployments(request *v1.GetDeploymentsRequest) (dep
 
 	sort.SliceStable(deployments, func(i, j int) bool { return deployments[i].Id < deployments[j].Id })
 	return
+}
+
+func (s *deploymentStore) matchImageSha(imageShaSet map[string]struct{}, images []*v1.Image) bool {
+	for _, image := range images {
+		if _, ok := imageShaSet[image.GetSha()]; !ok {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (s *deploymentStore) AddDeployment(deployment *v1.Deployment) (err error) {

@@ -99,7 +99,7 @@ func (s *slack) Notify(alert *v1.Alert) error {
 		{
 			Title: "Deployment",
 			Value: fmt.Sprintf("```Name : %v\nImage: %v```",
-				alert.Deployment.Name, images.ImageWrapper{Image: alert.Deployment.Image}.String()),
+				alert.Deployment.Name, images.SliceWrapper(alert.GetDeployment().GetImages()).String()),
 		},
 	}
 	attachments := []attachment{

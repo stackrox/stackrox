@@ -1,0 +1,116 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: apollo
+  namespace: stackrox
+spec:
+  ports:
+  - name: api
+    port: 8080
+  selector:
+    app: apollo
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: apollo
+  namespace: stackrox
+  labels:
+    app: apollo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apollo
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: apollo
+    spec:
+      containers:
+      - image: stackrox/apollo:latest
+        imagePullPolicy: Always
+        name: apollo
+        ports:
+        - name: api
+          containerPort: 8080
+      imagePullSecrets:
+      - name: stackrox
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: agent
+  namespace: stackrox
+  labels:
+    app: agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agent
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: agent
+    spec:
+      containers:
+      - image: stackrox/apollo:latest
+        env:
+        - name: ROX_APOLLO_ENDPOINT
+          value: apollo.stackrox:8080
+        - name: ROX_APOLLO_CLUSTER_ID
+          value: test
+        imagePullPolicy: Always
+        name: agent
+        command:
+          - kubernetes-agent
+      imagePullSecrets:
+      - name: stackrox
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui
+  namespace: stackrox
+spec:
+  ports:
+  - name: ui
+    port: 3000
+  selector:
+    app: ui
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ui
+  namespace: stackrox
+  labels:
+    app: ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ui
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: ui
+    spec:
+      containers:
+      - image: stackrox/apollo:ui-latest
+        imagePullPolicy: Always
+        name: ui
+        ports:
+        - name: ui
+          containerPort: 3000
+        env:
+        - name: ROX_APOLLO_ENDPOINT
+          value: apollo.stackrox:8080
+      imagePullSecrets:
+      - name: stackrox

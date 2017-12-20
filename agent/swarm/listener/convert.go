@@ -49,7 +49,7 @@ func (s serviceWrap) asDeployment(client *client.Client) *v1.Deployment {
 		Type:      m.asType(),
 		Replicas:  m.asReplica(),
 		UpdatedAt: updatedTime,
-		Image:     image,
+		Images:    []*v1.Image{image},
 	}
 }
 

@@ -54,10 +54,12 @@ func TestAsDeployment(t *testing.T) {
 				Type:      "Replicated",
 				Replicas:  10,
 				UpdatedAt: &timestamp.Timestamp{Seconds: 100},
-				Image: &v1.Image{
-					Registry: "docker.io",
-					Remote:   "library/nginx",
-					Tag:      "latest",
+				Images: []*v1.Image{
+					{
+						Registry: "docker.io",
+						Remote:   "library/nginx",
+						Tag:      "latest",
+					},
 				},
 			},
 		},

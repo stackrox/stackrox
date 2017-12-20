@@ -40,7 +40,7 @@ services:
         constraints:
           - node.role==manager
     environment:
-      APOLLO_ENDPOINT: apollo.apollo_net:8080
+      ROX_APOLLO_ENDPOINT: apollo.apollo_net:8080
       ROX_APOLLO_CLUSTER_ID: test
       ROX_APOLLO_ADVERTISED_ENDPOINT: agent.apollo_net:8080
       DOCKER_CERT_PATH: /run/secrets/

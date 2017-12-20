@@ -265,14 +265,17 @@ func (i *ImageProcessor) RemovePolicy(name string) {
 // Process takes in a new image and determines if an alert should be fired
 func (i *ImageProcessor) Process(deployment *v1.Deployment) ([]*v1.Alert, error) {
 	// TODO(cgorman) Better notification system or scheme around notifying if there is an error
-	img := deployment.GetImage()
-	if img == nil {
+	if len(deployment.GetImages()) == 0 {
 		log.Warnf("Received a nil image for deployment %s", deployment.GetId())
 		return nil, nil
 	}
-	if err := i.enrichImage(deployment.GetImage()); err != nil {
-		return nil, err
+
+	for _, img := range deployment.GetImages() {
+		if err := i.enrichImage(img); err != nil {
+			return nil, err
+		}
 	}
+
 	return i.checkImage(deployment)
 }
 
@@ -281,16 +284,19 @@ func (i *ImageProcessor) checkImage(deployment *v1.Deployment) ([]*v1.Alert, err
 	defer i.policyMutex.Unlock()
 
 	var alerts []*v1.Alert
-	for _, policy := range i.regexPolicies {
-		if policy.Original.GetDisabled() {
-			continue
-		}
+	for _, img := range deployment.GetImages() {
+		for _, policy := range i.regexPolicies {
+			if policy.Original.GetDisabled() {
+				continue
+			}
 
-		if alert := policy.matchPolicyToImage(deployment.GetImage()); alert != nil {
-			alert.Deployment = deployment
-			alerts = append(alerts, alert)
+			if alert := policy.matchPolicyToImage(img); alert != nil {
+				alert.Deployment = deployment
+				alerts = append(alerts, alert)
+			}
 		}
 	}
+
 	return alerts, nil
 }
 

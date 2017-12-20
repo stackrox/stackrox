@@ -16,7 +16,7 @@ message Deployment {
     int64 replicas =                            5;
     google.protobuf.Timestamp updated_at =      6;
 
-    Image image =                               7;
+    repeated Image images =                     7;
 }
 
 message GetDeploymentRequest {

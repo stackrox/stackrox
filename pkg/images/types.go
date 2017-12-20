@@ -36,11 +36,23 @@ func GenerateImageFromString(imageStr string) *v1.Image {
 	return &image
 }
 
-// ImageWrapper provides helper functions around the proto image type
-type ImageWrapper struct {
+// SliceWrapper provides helper functions for a slice of images.
+type SliceWrapper []*v1.Image
+
+func (s SliceWrapper) String() string {
+	var output []string
+	for _, img := range s {
+		output = append(output, Wrapper{img}.String())
+	}
+
+	return strings.Join(output, ", ")
+}
+
+// Wrapper provides helper functions for an image.
+type Wrapper struct {
 	*v1.Image
 }
 
-func (i ImageWrapper) String() string {
+func (i Wrapper) String() string {
 	return fmt.Sprintf("%v/%v:%v", i.Registry, i.Remote, i.Tag)
 }

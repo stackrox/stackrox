@@ -163,7 +163,7 @@ func (policy *regexImagePolicy) matchImageName(image *v1.Image) (violations []*v
 		return
 	}
 	violations = append(violations, &v1.Policy_Violation{
-		Message: fmt.Sprintf("Image name '%s' matches the name policy '%s'", images.ImageWrapper{Image: image}, policy.ImageNamePolicy),
+		Message: fmt.Sprintf("Image name '%s' matches the name policy '%s'", images.Wrapper{Image: image}, policy.ImageNamePolicy),
 	})
 	return
 }

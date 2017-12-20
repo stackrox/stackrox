@@ -106,6 +106,7 @@ test: gazelle
 image: gazelle
 	@echo "+ $@"
 	bazel build $(BAZEL_FLAGS) \
+		//agent/kubernetes \
 		//agent/swarm \
 		//apollo \
 		//docker-bench \
@@ -113,6 +114,7 @@ image: gazelle
 
 # TODO(cg): Replace with native bazel Docker build.
 	cp bazel-bin/agent/swarm/linux_amd64_pure_stripped/swarm image/bin/swarm-agent
+	cp bazel-bin/agent/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-agent
 	cp bazel-bin/apollo/linux_amd64_pure_stripped/apollo image/bin/apollo
 	cp bazel-bin/docker-bench/linux_amd64_pure_stripped/docker-bench image/bin/docker-bench
 	cp bazel-bin/docker-bench-bootstrap/linux_amd64_pure_stripped/docker-bench-bootstrap image/bin/docker-bench-bootstrap
