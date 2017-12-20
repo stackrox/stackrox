@@ -1,7 +1,6 @@
 package dockerdaemonconfiguration
 
 import (
-	"context"
 	"strings"
 
 	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
@@ -15,18 +14,12 @@ func (c *aufsBenchmark) Definition() utils.Definition {
 		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.5",
 			Description: "Ensure aufs storage driver is not used",
-		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
+		}, Dependencies: []utils.Dependency{utils.InitInfo},
 	}
 }
 
 func (c *aufsBenchmark) Run() (result v1.CheckResult) {
-	info, err := utils.DockerClient.Info(context.Background())
-	if err != nil {
-		utils.Warn(&result)
-		utils.AddNotes(&result, err.Error())
-		return
-	}
-	if strings.Contains(info.Driver, "aufs") {
+	if strings.Contains(utils.DockerInfo.Driver, "aufs") {
 		utils.Warn(&result)
 		utils.AddNotes(&result, "aufs is currently configured as the storage driver")
 		return

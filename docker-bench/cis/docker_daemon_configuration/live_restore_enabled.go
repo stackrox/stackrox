@@ -1,8 +1,6 @@
 package dockerdaemonconfiguration
 
 import (
-	"context"
-
 	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 )
@@ -19,13 +17,7 @@ func (c *liveRestoreEnabledBenchmark) Definition() utils.Definition {
 }
 
 func (c *liveRestoreEnabledBenchmark) Run() (result v1.CheckResult) {
-	info, err := utils.DockerClient.Info(context.Background())
-	if err != nil {
-		utils.Warn(&result)
-		utils.AddNotes(&result, err.Error())
-		return
-	}
-	if !info.LiveRestoreEnabled {
+	if !utils.DockerInfo.LiveRestoreEnabled {
 		utils.Warn(&result)
 		utils.AddNotes(&result, "Live restore is not enabled")
 		return

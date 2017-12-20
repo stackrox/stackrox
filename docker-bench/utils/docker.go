@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -9,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"bitbucket.org/stack-rox/apollo/pkg/docker"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 )
@@ -49,6 +49,10 @@ var containersOnce sync.Once
 // Images is the list of images in the system. It does not include all the layers
 var Images []types.ImageInspect
 var imagesOnce sync.Once
+
+// DockerInfo contains the info of the docker daemon
+var DockerInfo types.Info
+var infoOnce sync.Once
 
 // GetReadableImageName takes in a docker image and returns the human readable repo:tag combination or the ID if
 // the tag doesn't exist
@@ -306,7 +310,7 @@ func InitDockerConfig() error {
 func InitDockerClient() error {
 	var funcErr error
 	dockerClientOnce.Do(func() {
-		DockerClient, funcErr = client.NewEnvClient()
+		DockerClient, funcErr = docker.NewClient()
 	})
 	return funcErr
 }
@@ -316,7 +320,9 @@ func GetContainers() ([]types.ContainerJSON, []types.ContainerJSON, error) {
 	if err := InitDockerClient(); err != nil {
 		return nil, nil, err
 	}
-	containersList, err := DockerClient.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+	ctx, cancel := docker.TimeoutContext()
+	defer cancel()
+	containersList, err := DockerClient.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
 		return nil, nil, err
 
@@ -325,7 +331,9 @@ func GetContainers() ([]types.ContainerJSON, []types.ContainerJSON, error) {
 	var containers []types.ContainerJSON
 
 	for _, container := range containersList {
-		containerInspect, err := DockerClient.ContainerInspect(context.Background(), container.ID)
+		ctx, cancel := docker.TimeoutContext()
+		defer cancel()
+		containerInspect, err := DockerClient.ContainerInspect(ctx, container.ID)
 		if err != nil {
 			return nil, nil, err
 
@@ -361,14 +369,18 @@ func GetImages() ([]types.ImageInspect, error) {
 	if err := InitDockerClient(); err != nil {
 		return nil, err
 	}
-	imageList, err := DockerClient.ImageList(context.Background(), types.ImageListOptions{All: false})
+	ctx, cancel := docker.TimeoutContext()
+	defer cancel()
+	imageList, err := DockerClient.ImageList(ctx, types.ImageListOptions{All: false})
 	if err != nil {
 		return nil, err
 
 	}
 	var images []types.ImageInspect
 	for _, image := range imageList {
-		imageInspect, _, err := DockerClient.ImageInspectWithRaw(context.Background(), image.ID)
+		ctx, cancel := docker.TimeoutContext()
+		defer cancel()
+		imageInspect, _, err := DockerClient.ImageInspectWithRaw(ctx, image.ID)
 		if err != nil {
 			return nil, err
 
@@ -388,6 +400,25 @@ func InitImages() error {
 			return
 		}
 		Images = images
+	})
+	return funcErr
+}
+
+// InitInfo initializes the docker info
+func InitInfo() error {
+	var funcErr error
+	infoOnce.Do(func() {
+		if err := InitDockerClient(); err != nil {
+			funcErr = err
+		}
+		ctx, cancel := docker.TimeoutContext()
+		defer cancel()
+		info, err := DockerClient.Info(ctx)
+		if err != nil {
+			funcErr = err
+			return
+		}
+		DockerInfo = info
 	})
 	return funcErr
 }

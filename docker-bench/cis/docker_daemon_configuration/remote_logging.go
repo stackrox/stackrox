@@ -1,7 +1,6 @@
 package dockerdaemonconfiguration
 
 import (
-	"context"
 	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
@@ -15,20 +14,15 @@ func (c *remoteLoggingBenchmark) Definition() utils.Definition {
 		CheckDefinition: v1.CheckDefinition{
 			Name:        "CIS 2.12",
 			Description: "Ensure centralized and remote logging is configured",
-		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
+		}, Dependencies: []utils.Dependency{utils.InitInfo},
 	}
 }
 
 func (c *remoteLoggingBenchmark) Run() (result v1.CheckResult) {
-	info, err := utils.DockerClient.Info(context.Background())
-	if err != nil {
+	if utils.DockerInfo.LoggingDriver == "json-file" {
 		utils.Warn(&result)
-		utils.AddNotes(&result, err.Error())
-		return
-	}
-	if info.LoggingDriver == "json-file" {
-		utils.Warn(&result)
-		utils.AddNotes(&result, fmt.Sprintf("Logging driver %v is currently not configured for remote logging", info.LoggingDriver))
+		utils.AddNotes(&result,
+			fmt.Sprintf("Logging driver '%v' is currently not configured for remote logging", utils.DockerInfo.LoggingDriver))
 		return
 	}
 	utils.Pass(&result)
