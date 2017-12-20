@@ -38,7 +38,7 @@ func compareFileOwnership(file string, expectedUser string, expectedGroup string
 		return
 	} else if err != nil {
 		utils.Warn(&result)
-		utils.AddNotef(&result, "Error getting file info for %v: %+v", file, err.Error())
+		utils.AddNotef(&result, "Error getting file info for '%v': %+v", file, err.Error())
 		return
 	}
 
@@ -47,13 +47,13 @@ func compareFileOwnership(file string, expectedUser string, expectedGroup string
 		fileGroup, err := user.LookupGroup(expectedGroup)
 		if err != nil {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Failed to lookup fileGroup %v", expectedGroup)
+			utils.AddNotef(&result, "Failed to lookup fileGroup '%v'", expectedGroup)
 			return
 		}
 
 		if fileGroup.Gid != strconv.Itoa(int(gid)) {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Group did not match expected. expected: %v. actual: %v", fileGroup.Gid, strconv.Itoa(int(gid)))
+			utils.AddNotef(&result, "Group did not match expected. expected: '%v'. actual: '%v'", fileGroup.Gid, strconv.Itoa(int(gid)))
 			return
 		}
 	}
@@ -62,12 +62,12 @@ func compareFileOwnership(file string, expectedUser string, expectedGroup string
 		fileUser, err := user.Lookup(expectedUser)
 		if err != nil {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Failed to lookup user %v", expectedUser)
+			utils.AddNotef(&result, "Failed to lookup user '%v'", expectedUser)
 			return
 		}
 		if fileUser.Uid != strconv.Itoa(int(uid)) {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "User did not match expected. expected: %v. actual: %v", fileUser.Uid, strconv.Itoa(int(gid)))
+			utils.AddNotef(&result, "User did not match expected. expected: '%v'. actual: '%v'", fileUser.Uid, strconv.Itoa(int(gid)))
 			return
 		}
 	}
@@ -158,7 +158,7 @@ func (r *recursiveOwnershipCheck) Run() (result v1.CheckResult) {
 	files, err := ioutil.ReadDir(r.Directory)
 	if os.IsNotExist(err) {
 		utils.Note(&result)
-		utils.AddNotef(&result, "Directory %v does not exist. Test may not be applicable", files)
+		utils.AddNotef(&result, "Directory '%v' does not exist. Test may not be applicable", r.Directory)
 		return
 	}
 	if err != nil {

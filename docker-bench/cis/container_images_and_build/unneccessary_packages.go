@@ -18,7 +18,7 @@ func (c *unnecessaryPackagesBenchmark) Definition() utils.Definition {
 
 func (c *unnecessaryPackagesBenchmark) Run() (result v1.CheckResult) {
 	utils.Note(&result)
-	utils.AddNotef(&result, "Checking if packages inside the image are necessary container ar and make sure they are necessary")
+	utils.AddNotef(&result, "Check if the packages inside the image are necessary")
 	return
 }
 

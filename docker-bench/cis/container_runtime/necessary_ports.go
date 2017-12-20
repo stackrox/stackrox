@@ -21,7 +21,7 @@ func (c *necessaryPortsBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		for containerPort, hostBinding := range container.NetworkSettings.Ports {
 			for _, binding := range hostBinding {
-				utils.AddNotef(&result, "Container %v binds container %v -> host %v", container.ID, containerPort, binding.HostPort)
+				utils.AddNotef(&result, "Container '%v' binds container '%v' -> host '%v'", container.ID, containerPort, binding.HostPort)
 			}
 		}
 	}

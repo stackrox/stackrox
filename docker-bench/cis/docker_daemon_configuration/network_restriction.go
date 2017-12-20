@@ -1,10 +1,9 @@
 package dockerdaemonconfiguration
 
 import (
-	"context"
-
 	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/docker"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 )
@@ -23,7 +22,9 @@ func (c *networkRestrictionBenchmark) Definition() utils.Definition {
 func (c *networkRestrictionBenchmark) Run() (result v1.CheckResult) {
 	listFilters := filters.NewArgs()
 	listFilters.Add("Name", "bridge")
-	inspect, err := utils.DockerClient.NetworkInspect(context.Background(), "bridge", types.NetworkInspectOptions{})
+	ctx, cancel := docker.TimeoutContext()
+	defer cancel()
+	inspect, err := utils.DockerClient.NetworkInspect(ctx, "bridge", types.NetworkInspectOptions{})
 	if err != nil {
 		utils.Warn(&result)
 		utils.AddNotes(&result, err.Error())

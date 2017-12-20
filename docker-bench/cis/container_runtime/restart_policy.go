@@ -21,7 +21,7 @@ func (c *restartPolicyBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.RestartPolicy.Name != "on-failure" || container.HostConfig.RestartPolicy.MaximumRetryCount != 5 {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container %v has restart policy %v with max retires %v", container.ID,
+			utils.AddNotef(&result, "Container '%v' has restart policy '%v' with max retries '%v'", container.ID,
 				container.HostConfig.RestartPolicy.Name,
 				container.HostConfig.RestartPolicy.MaximumRetryCount,
 			)

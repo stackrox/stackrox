@@ -24,7 +24,7 @@ func (c *dockerSocketMountBenchmark) Run() (result v1.CheckResult) {
 		for _, containerMount := range container.Mounts {
 			if strings.Contains(containerMount.Source, "docker.sock") {
 				utils.Warn(&result)
-				utils.AddNotef(&result, "Container %v has mounted docker.sock", container.ID)
+				utils.AddNotef(&result, "Container '%v' has mounted docker.sock", container.ID)
 			}
 		}
 	}

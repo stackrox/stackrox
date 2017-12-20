@@ -21,7 +21,7 @@ func (c *utsNamespaceBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.UTSMode.IsHost() {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container %v has UTS mode set to host", container.ID)
+			utils.AddNotef(&result, "Container '%v' has UTS mode set to host", container.ID)
 		}
 	}
 	return

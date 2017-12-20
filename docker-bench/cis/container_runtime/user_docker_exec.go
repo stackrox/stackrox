@@ -30,7 +30,7 @@ func (c *userDockerExecBenchmark) Run() (result v1.CheckResult) {
 	for _, line := range lines {
 		if strings.Contains(line, "exec") && strings.Contains(line, "user") {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "docker exec was used with the --user option: %v", line)
+			utils.AddNotef(&result, "docker exec was used with the --user option: '%v'", line)
 		}
 	}
 	return

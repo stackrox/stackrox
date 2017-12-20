@@ -20,7 +20,7 @@ func (c *logLevelBenchmark) Run() (result v1.CheckResult) {
 	if vals, ok := utils.DockerConfig["log-level"]; ok {
 		if _, exists := vals.Contains("info"); !exists {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "log-level is set to %v", vals[0])
+			utils.AddNotef(&result, "log-level is set to '%v'", vals[0])
 			return
 		}
 	}

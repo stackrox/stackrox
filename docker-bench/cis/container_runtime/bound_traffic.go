@@ -25,7 +25,7 @@ func (c *specificHostInterfaceBenchmark) Run() (result v1.CheckResult) {
 			for _, binding := range hostBinding {
 				if strings.Contains(binding.HostIP, "0.0.0.0") {
 					utils.Warn(&result)
-					utils.AddNotef(&result, "Container %v binds %v -> 0.0.0.0 %v", container.ID, containerPort, binding.HostPort)
+					utils.AddNotef(&result, "Container '%v' binds '%v' -> '0.0.0.0 %v'", container.ID, containerPort, binding.HostPort)
 				}
 			}
 		}

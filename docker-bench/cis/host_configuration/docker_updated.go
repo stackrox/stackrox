@@ -1,10 +1,9 @@
 package hostconfiguration
 
 import (
-	"context"
-
 	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/docker"
 )
 
 type dockerUpdated struct{}
@@ -19,14 +18,16 @@ func (c *dockerUpdated) Definition() utils.Definition {
 }
 
 func (c *dockerUpdated) Run() (result v1.CheckResult) {
-	version, err := utils.DockerClient.ServerVersion(context.Background())
+	ctx, cancel := docker.TimeoutContext()
+	defer cancel()
+	version, err := utils.DockerClient.ServerVersion(ctx)
 	if err != nil {
 		utils.Note(&result)
 		utils.AddNotef(&result, "Manual introspection will be req'd for docker version. Could not retrieve due to %+v", err)
 		return
 	}
 	utils.Note(&result)
-	utils.AddNotef(&result, "Docker server is currently running %v", version.Version)
+	utils.AddNotef(&result, "Docker server is currently running '%v'", version.Version)
 	return
 }
 

@@ -21,7 +21,7 @@ func (c *appArmorBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if container.AppArmorProfile == "" || container.AppArmorProfile == "unconfined" {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container %v does not have app armor configured", container.ID)
+			utils.AddNotef(&result, "Container '%v' does not have app armor configured", container.ID)
 		}
 	}
 	return

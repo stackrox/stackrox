@@ -21,7 +21,7 @@ func (c *containerUserBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if container.Config.User == "" || container.Config.User == "root" {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container %v with image %v is running as root user", container.ID, container.Config.Image)
+			utils.AddNotef(&result, "Container '%v' with image '%v' is running as root user", container.ID, container.Config.Image)
 		}
 	}
 	return

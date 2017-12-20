@@ -28,7 +28,7 @@ LOOP:
 			}
 		}
 		utils.Warn(&result)
-		utils.AddNotef(&result, "Container %v does not set no-new-privileges in security opts", container.ID)
+		utils.AddNotef(&result, "Container '%v' does not set no-new-privileges in security opts", container.ID)
 	}
 	return
 }

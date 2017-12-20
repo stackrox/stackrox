@@ -1,11 +1,11 @@
 package containerimagesandbuild
 
 import (
-	"context"
 	"strings"
 
 	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/docker"
 )
 
 type imageCopyBenchmark struct{}
@@ -22,7 +22,9 @@ func (c *imageCopyBenchmark) Definition() utils.Definition {
 func (c *imageCopyBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
 	for _, image := range utils.Images {
-		historySlice, err := utils.DockerClient.ImageHistory(context.Background(), image.ID)
+		ctx, cancel := docker.TimeoutContext()
+		defer cancel()
+		historySlice, err := utils.DockerClient.ImageHistory(ctx, image.ID)
 		if err != nil {
 			utils.Warn(&result)
 			utils.AddNotef(&result, "Could not get image history for image %v: %+v", err)

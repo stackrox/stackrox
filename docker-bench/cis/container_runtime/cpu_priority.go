@@ -21,7 +21,7 @@ func (c *cpuPriorityBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.CPUShares == 0 {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container %v does not have cpu shares set", container.ID)
+			utils.AddNotef(&result, "Container '%v' does not have cpu shares set", container.ID)
 		}
 	}
 	return

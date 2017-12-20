@@ -18,7 +18,7 @@ func (c *containerSprawlBenchmark) Definition() utils.Definition {
 
 func (c *containerSprawlBenchmark) Run() (result v1.CheckResult) {
 	utils.Info(&result)
-	utils.AddNotef(&result, "There are %v containers in use out of %v", len(utils.ContainersRunning), len(utils.ContainersAll))
+	utils.AddNotef(&result, "There are '%v' containers in use out of '%v'", len(utils.ContainersRunning), len(utils.ContainersAll))
 	return
 }
 

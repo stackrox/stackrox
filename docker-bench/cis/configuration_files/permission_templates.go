@@ -30,11 +30,11 @@ func compareFilePermissions(file string, permissionLevel uint32, includesLower b
 	info, err := os.Stat(file)
 	if os.IsNotExist(err) {
 		utils.Note(&result)
-		utils.AddNotef(&result, "Test may not be applicable because %v does not exist", file)
+		utils.AddNotef(&result, "Test may not be applicable because '%v' does not exist", file)
 		return
 	} else if err != nil {
 		utils.Warn(&result)
-		utils.AddNotef(&result, "Error getting file info for %v: %+v", file, err.Error())
+		utils.AddNotef(&result, "Error getting file info for '%v': %+v", file, err)
 		return
 	}
 
@@ -43,7 +43,7 @@ func compareFilePermissions(file string, permissionLevel uint32, includesLower b
 		return
 	}
 	utils.Warn(&result)
-	utils.AddNotef(&result, "Permission level %d is higher than %v on file %v", uint32(info.Mode().Perm()), permissionLevel, file)
+	utils.AddNotef(&result, "Permission level '%d' is higher than '%v' on file '%v'", uint32(info.Mode().Perm()), permissionLevel, file)
 	return
 }
 
@@ -131,7 +131,7 @@ func (r *recursivePermissionsCheck) Run() (result v1.CheckResult) {
 	files, err := ioutil.ReadDir(r.Directory)
 	if os.IsNotExist(err) {
 		utils.Note(&result)
-		utils.AddNotef(&result, "Directory %v does not exist. Test may not be applicable", r.Directory)
+		utils.AddNotef(&result, "Directory '%v' does not exist. Test may not be applicable", r.Directory)
 		return
 	}
 	if err != nil {

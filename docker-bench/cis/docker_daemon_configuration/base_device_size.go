@@ -21,7 +21,7 @@ func (c *baseDeviceSizeBenchmark) Run() (result v1.CheckResult) {
 	if ok {
 		if val, found := opts.Contains("dm.basesize"); found {
 			utils.Warn(&result)
-			utils.AddNotes(&result, "Storage opt for basesize is %v", val)
+			utils.AddNotes(&result, "Storage opt for basesize is '%v'", val)
 			return
 		}
 	}

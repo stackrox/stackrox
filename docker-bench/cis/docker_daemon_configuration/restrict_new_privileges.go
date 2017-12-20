@@ -19,7 +19,7 @@ func (c *restrictContainerPrivilegesBenchmark) Definition() utils.Definition {
 func (c *restrictContainerPrivilegesBenchmark) Run() (result v1.CheckResult) {
 	if opts, ok := utils.DockerConfig["no-new-privileges"]; !ok {
 		utils.Warn(&result)
-		utils.AddNotes(&result, "ContainersRunning are not prevented from acquiring new privileges by default")
+		utils.AddNotes(&result, "Running containers are not prevented from acquiring new privileges by default")
 		return
 	} else if opts.Matches("false") {
 		utils.Warn(&result)

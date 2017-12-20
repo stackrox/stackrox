@@ -19,7 +19,7 @@ func (c *cgroupUsageBenchmark) Definition() utils.Definition {
 func (c *cgroupUsageBenchmark) Run() (result v1.CheckResult) {
 	if parent, ok := utils.DockerConfig["cgroup-parent"]; ok {
 		utils.Warn(&result)
-		utils.AddNotef(&result, "Cgroup path is set as %v", parent)
+		utils.AddNotef(&result, "Cgroup path is set as '%v'", parent)
 		return
 	}
 	utils.Pass(&result)

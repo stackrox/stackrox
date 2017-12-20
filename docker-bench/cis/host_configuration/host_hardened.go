@@ -18,7 +18,7 @@ func (c *hostHardened) Definition() utils.Definition {
 
 func (c *hostHardened) Run() (result v1.CheckResult) {
 	utils.Note(&result)
-	utils.AddNotes(&result, "Ensuring the host is hardened with the lastest kernel requires manual introspection")
+	utils.AddNotes(&result, "Ensuring the host is hardened with the latest kernel requires manual introspection")
 	return
 }
 

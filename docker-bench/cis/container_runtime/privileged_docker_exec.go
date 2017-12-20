@@ -30,7 +30,7 @@ func (c *privilegedDockerExecBenchmark) Run() (result v1.CheckResult) {
 	for _, line := range lines {
 		if strings.Contains(line, "exec") && strings.Contains(line, "privileged") {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "docker exec was used with the --privileged option: %v", line)
+			utils.AddNotef(&result, "docker exec was used with the --privileged option: '%v'", line)
 		}
 	}
 	return

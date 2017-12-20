@@ -21,7 +21,7 @@ func (c *pidCgroupBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.PidsLimit <= 0 {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container %v does not have pids limit set", container.ID)
+			utils.AddNotef(&result, "Container '%v' does not have pids limit set", container.ID)
 		}
 	}
 	return

@@ -24,7 +24,7 @@ func (c *seccompBenchmark) Run() (result v1.CheckResult) {
 		for _, opt := range container.HostConfig.SecurityOpt {
 			if strings.Contains(opt, "seccomp:unconfined") {
 				utils.Warn(&result)
-				utils.AddNotef(&result, "Container %v has seccomp set to unconfined", container.ID)
+				utils.AddNotef(&result, "Container '%v' has seccomp set to unconfined", container.ID)
 				break
 			}
 		}

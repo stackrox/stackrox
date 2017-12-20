@@ -24,12 +24,12 @@ func (c *runtimeHealthcheckBenchmark) Run() (result v1.CheckResult) {
 		}
 		if container.State.Health == nil {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container %v does not have health configured", container.ID)
+			utils.AddNotef(&result, "Container '%v' does not have health configured", container.ID)
 			continue
 		}
 		if container.State.Health.Status == "" {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container %v is currently reporting empty health", container.ID)
+			utils.AddNotef(&result, "Container '%v' is currently reporting empty health", container.ID)
 		}
 	}
 	return

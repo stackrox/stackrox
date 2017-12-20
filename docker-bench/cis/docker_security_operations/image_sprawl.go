@@ -22,7 +22,7 @@ func (c *imageSprawlBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		m[container.Image] = struct{}{}
 	}
-	utils.AddNotef(&result, "There are %v images in use out of %v", len(m), len(utils.Images))
+	utils.AddNotef(&result, "There are '%v' images in use out of '%v'", len(m), len(utils.Images))
 	return
 }
 
