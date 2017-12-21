@@ -19,7 +19,7 @@ class ViolationsContainer extends Component {
             stale: false
         };
 
-        this.timeout = null;
+        this.pollTimeoutId = null;
 
         const setSeverityClass = (item) => {
             switch (item) {
@@ -65,7 +65,10 @@ class ViolationsContainer extends Component {
     }
 
     componentWillUnmount() {
-        if (this.timeout) this.timeout.cancel();
+        if (this.pollTimeoutId) {
+            clearTimeout(this.pollTimeoutId);
+            this.pollTimeoutId = null;
+        }
     }
 
     onRowClick = (row) => {
@@ -78,40 +81,35 @@ class ViolationsContainer extends Component {
         this.getAlertsGroups();
     }
 
-
-    getAlertsGroups() {
-        const promise = new Promise((resolve) => {
-            const params = `?${queryString.stringify(this.params)}`;
-            const { table } = this.state;
-            axios.get(`/v1/alerts/groups${params}`).then((response) => {
-                if (!response.data.byCategory) return;
-                response.data.byCategory.forEach((category) => {
-                    table.rows = category.byPolicy.map((policy) => {
-                        const result = {
-                            name: policy.policy.name,
-                            description: policy.policy.imagePolicy.description,
-                            category: category.category.replace('_', ' ').capitalizeFirstLetterOfWord(),
-                            severity: policy.policy.severity.split('_')[0].capitalizeFirstLetterOfWord(),
-                            numAlerts: policy.numAlerts
-                        };
-                        return result;
-                    });
+    getAlertsGroups = () => {
+        const params = `?${queryString.stringify(this.params)}`;
+        const { table } = this.state;
+        return axios.get(`/v1/alerts/groups${params}`).then((response) => {
+            if (!this.pollTimeoutId) return;
+            if (!response.data.byCategory) return;
+            response.data.byCategory.forEach((category) => {
+                table.rows = category.byPolicy.map((policy) => {
+                    const result = {
+                        name: policy.policy.name,
+                        description: policy.policy.imagePolicy.description,
+                        category: category.category.replace('_', ' ').capitalizeFirstLetterOfWord(),
+                        severity: policy.policy.severity.split('_')[0].capitalizeFirstLetterOfWord(),
+                        numAlerts: policy.numAlerts
+                    };
+                    return result;
                 });
-                this.setState({ table });
-                resolve({});
-            }).catch(() => {
-                table.rows = [];
-                this.setState({ table });
-                resolve({});
             });
+            this.setState({ table });
+        }).catch(() => {
+            if (!this.pollTimeoutId) return;
+            table.rows = [];
+            this.setState({ table });
         });
-        return promise;
     }
 
     pollAlertGroups = () => {
-        const promise = this.getAlertsGroups();
-        promise.then(() => {
-            this.timeout = setTimeout(this.pollAlertGroups, 5000);
+        this.getAlertsGroups().then(() => {
+            this.pollTimeoutId = setTimeout(this.pollAlertGroups, 5000);
         });
     }
 

@@ -10,7 +10,6 @@ import axios from 'axios';
 import emitter from 'emitter';
 import queryString from 'query-string';
 import dateFns from 'date-fns';
-import { setTimeout } from 'timers';
 import { ClipLoader } from 'react-spinners';
 
 class CompliancePage extends Component {
@@ -19,7 +18,7 @@ class CompliancePage extends Component {
 
         this.params = {};
 
-        this.timeout = null;
+        this.pollTimeoutId = null;
 
         this.state = {
             tab: {
@@ -54,11 +53,14 @@ class CompliancePage extends Component {
     }
 
     componentDidMount() {
-        this.pollBenchMarks();
+        this.pollBenchmarks();
     }
 
     componentWillUnmount() {
-        if (this.timeout) this.timeout.cancel();
+        if (this.pollTimeoutId) {
+            clearTimeout(this.pollTimeoutId);
+            this.pollTimeoutId = null;
+        }
     }
 
     onTriggerScan = () => {
@@ -73,33 +75,30 @@ class CompliancePage extends Component {
         emitter.emit('ComplianceTable:row-selected', row);
     }
 
-    getBenchMarks() {
-        const promise = new Promise((resolve) => {
-            const params = `?${queryString.stringify(this.params)}`;
-            const { table } = this.state;
-            axios.get(`/v1/benchmarks/results/grouped/cis${params}`).then((response) => {
-                if (!response.data || !response.data.benchmarks) return;
-                const lastScanned = dateFns.format(response.data.benchmarks[0].time, 'MM/DD/YYYY h:MM:ss A');
-                const { scanId } = response.data.benchmarks[0];
-                table.rows = response.data.benchmarks[0].checkResults;
-                if (lastScanned !== this.state.lastScanned) {
-                    this.setState({
-                        table, lastScanned, scanId, scanning: false
-                    });
-                }
-                resolve({});
-            }).catch(() => {
-                table.rows = [];
-                this.setState({ table, lastScanned: '', scanId: '' });
-                resolve({});
-            });
+    getBenchmarks = () => {
+        const params = `?${queryString.stringify(this.params)}`;
+        const { table } = this.state;
+        return axios.get(`/v1/benchmarks/results/grouped/cis${params}`).then((response) => {
+            if (!this.pollTimeoutId) return;
+            if (!response.data || !response.data.benchmarks) return;
+            const lastScanned = dateFns.format(response.data.benchmarks[0].time, 'MM/DD/YYYY h:MM:ss A');
+            const { scanId } = response.data.benchmarks[0];
+            table.rows = response.data.benchmarks[0].checkResults;
+            if (lastScanned !== this.state.lastScanned) {
+                this.setState({
+                    table, lastScanned, scanId, scanning: false
+                });
+            }
+        }).catch(() => {
+            if (!this.pollTimeoutId) return;
+            table.rows = [];
+            this.setState({ table, lastScanned: '', scanId: '' });
         });
-        return promise;
     }
 
-    pollBenchMarks = () => {
-        this.getBenchMarks().then(() => {
-            this.timeout = setTimeout(this.pollBenchMarks, 5000);
+    pollBenchmarks = () => {
+        this.getBenchmarks().then(() => {
+            this.pollTimeoutId = setTimeout(this.pollBenchmarks, 5000);
         });
     }
 
