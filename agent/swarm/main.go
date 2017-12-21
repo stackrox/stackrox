@@ -23,6 +23,8 @@ func main() {
 
 	a.Start()
 
+	registerAPIServices(a)
+
 	for {
 		select {
 		case sig := <-sigs:
@@ -50,12 +52,12 @@ func initializeAgent() *agent.Agent {
 
 	a.BenchScheduler = scheduler.NewBenchmarkSchedulerClient(a.Orchestrator, a.ApolloEndpoint, a.AdvertisedEndpoint)
 
-	registerAPIServices(a)
-
 	a.Logger.Info("Swarm Agent Initialized")
 	return a
 }
 
 func registerAPIServices(a *agent.Agent) {
 	a.Server.Register(service.NewBenchmarkRelayService(benchmarks.NewLRURelayer(v1.NewBenchmarkResultsServiceClient(a.Conn))))
+
+	a.Logger.Info("API services registered")
 }
