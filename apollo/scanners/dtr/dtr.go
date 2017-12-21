@@ -27,7 +27,6 @@ var (
 
 type dtr struct {
 	client         *http.Client
-	config         map[string]string
 	metadataTicker *time.Ticker
 
 	server   string
@@ -151,6 +150,9 @@ func (d *dtr) GetScans(image *v1.Image) ([]*v1.ImageScan, error) {
 	}
 	getScanURL := fmt.Sprintf("/api/v0/imagescan/repositories/%v/%v?detailed=true", image.GetRemote(), image.GetTag())
 	body, err := d.sendRequest("GET", getScanURL)
+	if err != nil {
+		return nil, err
+	}
 	scans, err := parseDTRImageScans(body)
 	if err != nil {
 		scanErrors, err := parseDTRImageScanErrors(body)

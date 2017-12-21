@@ -39,7 +39,8 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
 
 [[constraint]]
   name = "github.com/heroku/docker-registry-client"
-  revision = "fd2fe803496897db70c236ee244f41487ea92ec2"
+  revision = "e8b6d64c1b4456f7bf0758ac628a70348a2441cb"
+  source = "git@bitbucket.org:stack-rox/docker-registry-client.git"
 
 [[constraint]]
   name = "github.com/opencontainers/runc"

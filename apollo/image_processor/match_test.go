@@ -20,29 +20,25 @@ func getTestImage() *v1.Image {
 	return &v1.Image{
 		Scan: &v1.ImageScan{
 			ScanTime: ptypes.TimestampNow(),
-			Layers: []*v1.ScanLayer{
+			Components: []*v1.ImageScanComponents{
 				{
-					Components: []*v1.ImageScanComponents{
+					Name: "berkeleyDB",
+					Vulns: []*v1.Vulnerability{
 						{
-							Name: "berkeleyDB",
-							Vulns: []*v1.Vulnerability{
-								{
-									Cvss: 2,
-									Cve:  "CVE-2016-1",
-								},
-								{
-									Cvss: 4,
-									Cve:  "CVE-2017-1",
-								},
-							},
+							Cvss: 2,
+							Cve:  "CVE-2016-1",
 						},
 						{
-							Name: "berkeleyCE",
-							Vulns: []*v1.Vulnerability{
-								{
-									Cvss: 6,
-								},
-							},
+							Cvss: 4,
+							Cve:  "CVE-2017-1",
+						},
+					},
+				},
+				{
+					Name: "berkeleyCE",
+					Vulns: []*v1.Vulnerability{
+						{
+							Cvss: 6,
 						},
 					},
 				},

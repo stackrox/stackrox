@@ -85,7 +85,7 @@ func getTestComponents() ([]*component, []*v1.ImageScanComponents) {
 	return dockerComponents, v1Components
 }
 
-func getTestLayers() ([]*detailedSummary, []*v1.ScanLayer) {
+func getTestLayers() ([]*detailedSummary, []*v1.ImageScanComponents) {
 	dockerComponents, v1Components := getTestComponents()
 
 	dockerLayers := []*detailedSummary{
@@ -94,14 +94,7 @@ func getTestLayers() ([]*detailedSummary, []*v1.ScanLayer) {
 			Components: dockerComponents,
 		},
 	}
-
-	v1Layers := []*v1.ScanLayer{
-		{
-			Sha:        "sha",
-			Components: v1Components,
-		},
-	}
-	return dockerLayers, v1Layers
+	return dockerLayers, v1Components
 }
 
 func TestConvertVulns(t *testing.T) {
@@ -140,7 +133,7 @@ func TestConvertScanState(t *testing.T) {
 }
 
 func TestConvertTagScanSummariesToImageScans(t *testing.T) {
-	dockerLayers, expectedLayers := getTestLayers()
+	dockerLayers, expectedComponents := getTestLayers()
 	tagScanSummaries := []*tagScanSummary{
 		{
 			Namespace:        "docker",
@@ -154,12 +147,12 @@ func TestConvertTagScanSummariesToImageScans(t *testing.T) {
 	protoTime, _ := ptypes.TimestampProto(time.Unix(0, 1000))
 	expectedScans := []*v1.ImageScan{
 		{
-			Registry: "registry",
-			Remote:   "docker/nginx",
-			Tag:      "latest",
-			State:    v1.ImageScanState_CHECKING,
-			Layers:   expectedLayers,
-			ScanTime: protoTime,
+			Registry:   "registry",
+			Remote:     "docker/nginx",
+			Tag:        "latest",
+			State:      v1.ImageScanState_CHECKING,
+			Components: expectedComponents,
+			ScanTime:   protoTime,
 		},
 	}
 

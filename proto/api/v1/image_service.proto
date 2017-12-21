@@ -42,11 +42,6 @@ message Vulnerability {
     string summary = 3;
 }
 
-message ScanLayer {
-    string sha                              = 1;
-    repeated ImageScanComponents components = 2;
-}
-
 message ImageScanComponents {
     string name                  = 1;
     string version               = 2;
@@ -63,7 +58,7 @@ message ImageScan {
     // This indicates which version of the CVE DB this was scanned against. Used to determine if rescan needed
     string cve_db_identifier                = 5;
     ImageScanState state                    = 6;
-    repeated ScanLayer layers               = 7;
+    repeated ImageScanComponents components = 7;
     google.protobuf.Timestamp scan_time     = 8;
 }
 

@@ -47,16 +47,13 @@ func convertComponents(dockerComponents []*component) []*v1.ImageScanComponents 
 	return components
 }
 
-func convertLayers(layerDetails []*detailedSummary) []*v1.ScanLayer {
-	layers := make([]*v1.ScanLayer, len(layerDetails))
-	for i, layerDetail := range layerDetails {
+func convertLayers(layerDetails []*detailedSummary) []*v1.ImageScanComponents {
+	components := make([]*v1.ImageScanComponents, 0, len(layerDetails))
+	for _, layerDetail := range layerDetails {
 		convertedComponents := convertComponents(layerDetail.Components)
-		layers[i] = &v1.ScanLayer{
-			Sha:        layerDetail.SHA256Sum,
-			Components: convertedComponents,
-		}
+		components = append(components, convertedComponents...)
 	}
-	return layers
+	return components
 }
 
 func convertTagScanSummariesToImageScans(server string, tagScanSummaries []*tagScanSummary) []*v1.ImageScan {
@@ -70,12 +67,12 @@ func convertTagScanSummariesToImageScans(server string, tagScanSummaries []*tagS
 		}
 
 		imageScans = append(imageScans, &v1.ImageScan{
-			Registry: server,
-			Remote:   fmt.Sprintf("%v/%v", tagScan.Namespace, tagScan.RepoName),
-			Tag:      tagScan.Tag,
-			State:    convertScanState(tagScan.LastScanStatus),
-			Layers:   convertedLayers,
-			ScanTime: completedAt,
+			Registry:   server,
+			Remote:     fmt.Sprintf("%v/%v", tagScan.Namespace, tagScan.RepoName),
+			Tag:        tagScan.Tag,
+			State:      convertScanState(tagScan.LastScanStatus),
+			Components: convertedLayers,
+			ScanTime:   completedAt,
 		})
 	}
 	return imageScans

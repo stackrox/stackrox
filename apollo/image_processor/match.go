@@ -25,14 +25,12 @@ func (policy *regexImagePolicy) matchComponent(image *v1.Image) (violations []*v
 		return
 	}
 	policyExists = true
-	for _, layer := range image.GetScan().GetLayers() {
-		for _, component := range layer.GetComponents() {
-			if policy.Component.MatchString(component.GetName()) {
-				violation := &v1.Policy_Violation{
-					Message: fmt.Sprintf("Component '%v' matches the regex %+v", component.GetName(), policy.Component),
-				}
-				violations = append(violations, violation)
+	for _, component := range image.GetScan().GetComponents() {
+		if policy.Component.MatchString(component.GetName()) {
+			violation := &v1.Policy_Violation{
+				Message: fmt.Sprintf("Component '%v' matches the regex %+v", component.GetName(), policy.Component),
 			}
+			violations = append(violations, violation)
 		}
 	}
 	return
@@ -61,14 +59,12 @@ func (policy *regexImagePolicy) matchCVE(image *v1.Image) (violations []*v1.Poli
 		return
 	}
 	policyExists = true
-	for _, layer := range image.GetScan().GetLayers() {
-		for _, component := range layer.GetComponents() {
-			for _, vuln := range component.GetVulns() {
-				if policy.CVE.MatchString(vuln.GetCve()) {
-					violations = append(violations, &v1.Policy_Violation{
-						Message: fmt.Sprintf("CVE '%v' matches the regex '%+v'", vuln.GetCve(), policy.CVE),
-					})
-				}
+	for _, component := range image.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			if policy.CVE.MatchString(vuln.GetCve()) {
+				violations = append(violations, &v1.Policy_Violation{
+					Message: fmt.Sprintf("CVE '%v' matches the regex '%+v'", vuln.GetCve(), policy.CVE),
+				})
 			}
 		}
 	}
@@ -85,14 +81,12 @@ func (policy *regexImagePolicy) matchCVSS(image *v1.Image) (violations []*v1.Pol
 	var average float32
 
 	var numVulns float32
-	for _, layer := range image.GetScan().GetLayers() {
-		for _, component := range layer.GetComponents() {
-			for _, vuln := range component.GetVulns() {
-				minimum = min(minimum, vuln.GetCvss())
-				maximum = max(maximum, vuln.GetCvss())
-				average += vuln.GetCvss()
-				numVulns++
-			}
+	for _, component := range image.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			minimum = min(minimum, vuln.GetCvss())
+			maximum = max(maximum, vuln.GetCvss())
+			average += vuln.GetCvss()
+			numVulns++
 		}
 	}
 

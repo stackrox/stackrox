@@ -147,7 +147,8 @@
 [[projects]]
   name = "github.com/heroku/docker-registry-client"
   packages = ["registry"]
-  revision = "fd2fe803496897db70c236ee244f41487ea92ec2"
+  revision = "e8b6d64c1b4456f7bf0758ac628a70348a2441cb"
+  source = "git@bitbucket.org:stack-rox/docker-registry-client.git"
 
 [[projects]]
   name = "github.com/juju/ratelimit"
@@ -270,6 +271,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9b5257ba57aa4b615a7ca0fe81a8bb2e1bf134b60442971701685c536e21f5d7"
+  inputs-digest = "905cb0f116121f97685cfe1cbe8a616a780601db90902c7dee8eec6ef449a244"
   solver-name = "gps-cdcl"
   solver-version = 1
