@@ -31,6 +31,7 @@ type SchedulerClient struct {
 
 	advertisedEndpoint string
 	apolloEndpoint     string
+	image              string
 
 	started bool
 	done    chan struct{}
@@ -42,13 +43,14 @@ type SchedulerClient struct {
 }
 
 // NewSchedulerClient returns a new scheduler
-func NewSchedulerClient(orchestrator orchestrators.Orchestrator, apolloEndpoint string, advertisedEndpoint string) *SchedulerClient {
+func NewSchedulerClient(orchestrator orchestrators.Orchestrator, apolloEndpoint string, advertisedEndpoint string, image string) *SchedulerClient {
 	return &SchedulerClient{
 		updateTicker:       time.NewTicker(updateInterval),
 		orchestrator:       orchestrator,
 		done:               make(chan struct{}),
 		apolloEndpoint:     apolloEndpoint,
 		advertisedEndpoint: advertisedEndpoint,
+		image:              image,
 	}
 }
 
@@ -75,14 +77,14 @@ func (d *SchedulerClient) removeService(delay time.Duration, id string) {
 // The stateLock must be held by the caller until this function returns.
 func (d *SchedulerClient) Launch() error {
 	d.scanActive = true
-	// TODO(cgorman) parametrize the tag for docker-bench-bootstrap
 	service := orchestrators.SystemService{
 		Name: fmt.Sprintf("docker-bench-%s", d.lastScanID),
 		Envs: []string{
 			fmt.Sprintf("ROX_APOLLO_POST_ENDPOINT=%s", d.advertisedEndpoint),
 			fmt.Sprintf("ROX_APOLLO_SCAN_ID=%s", d.lastScanID),
+			fmt.Sprintf("ROX_DOCKER_BENCH_IMAGE=%s", d.image),
 		},
-		Image:   "stackrox/apollo:latest",
+		Image:   d.image,
 		Mounts:  []string{"/var/run/docker.sock:/var/run/docker.sock"},
 		Global:  true,
 		Command: []string{"docker-bench-bootstrap"},

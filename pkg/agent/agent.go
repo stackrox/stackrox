@@ -28,6 +28,7 @@ type Agent struct {
 	ClusterID          string
 	ApolloEndpoint     string
 	AdvertisedEndpoint string
+	Image              string
 
 	Conn *googleGRPC.ClientConn
 
@@ -42,6 +43,7 @@ func New() *Agent {
 		ClusterID:          ClusterID.Setting(),
 		ApolloEndpoint:     ApolloEndpoint.Setting(),
 		AdvertisedEndpoint: AdvertisedEndpoint.Setting(),
+		Image:              Image.Setting(),
 
 		Logger: logging.New("main"),
 	}

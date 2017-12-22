@@ -2,7 +2,9 @@
 // Agents are the "beachhead" in the cluster, and report back to central Apollo.
 package agent
 
-import "os"
+import (
+	"os"
+)
 
 // A Setting is a runtime configuration set using an environment variable.
 type Setting interface {
@@ -18,6 +20,8 @@ var (
 	// AdvertisedEndpoint is used to provide the Agent with the endpoint it
 	// should advertise to services that need to contact it, within its own cluster.
 	AdvertisedEndpoint = Setting(advertisedEndpoint{})
+	// Image is the image that should be launched for new benchmarks.
+	Image = Setting(image{})
 )
 
 type clusterID struct{}
@@ -32,12 +36,12 @@ func (c clusterID) Setting() string {
 
 type apolloEndpoint struct{}
 
-func (c apolloEndpoint) EnvVar() string {
+func (a apolloEndpoint) EnvVar() string {
 	return "ROX_APOLLO_ENDPOINT"
 }
 
-func (c apolloEndpoint) Setting() string {
-	ep := os.Getenv(c.EnvVar())
+func (a apolloEndpoint) Setting() string {
+	ep := os.Getenv(a.EnvVar())
 	if len(ep) == 0 {
 		return "apollo.apollo_net:8080"
 	}
@@ -46,14 +50,28 @@ func (c apolloEndpoint) Setting() string {
 
 type advertisedEndpoint struct{}
 
-func (c advertisedEndpoint) EnvVar() string {
+func (a advertisedEndpoint) EnvVar() string {
 	return "ROX_APOLLO_ADVERTISED_ENDPOINT"
 }
 
-func (c advertisedEndpoint) Setting() string {
-	ep := os.Getenv(c.EnvVar())
+func (a advertisedEndpoint) Setting() string {
+	ep := os.Getenv(a.EnvVar())
 	if len(ep) == 0 {
 		return "agent.apollo_net:8080"
 	}
 	return ep
+}
+
+type image struct{}
+
+func (img image) EnvVar() string {
+	return "ROX_APOLLO_IMAGE"
+}
+
+func (img image) Setting() string {
+	name := os.Getenv(img.EnvVar())
+	if len(name) == 0 {
+		return "stackrox/apollo:latest"
+	}
+	return name
 }

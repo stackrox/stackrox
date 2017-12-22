@@ -117,6 +117,7 @@ services:
       - "{{.PublicEndpointEnv}}={{.PublicEndpoint}}"
       - "{{.ClusterNameEnv}}={{.ClusterName}}"
       - "{{.AdvertisedEndpointEnv}}={{.AdvertisedEndpoint}}"
+      - "{{.ImageEnv}}={{.Image}}"
 networks:
   net:
     driver: overlay
@@ -133,6 +134,7 @@ func (c clusterWrap) asDeployment() (string, error) {
 		var b []byte
 		buf := bytes.NewBuffer(b)
 		err := swarmTemplate.Execute(buf, map[string]string{
+			"ImageEnv":              agent.Image.EnvVar(),
 			"Image":                 c.ApolloImage,
 			"PublicEndpointEnv":     agent.ApolloEndpoint.EnvVar(),
 			"PublicEndpoint":        c.CentralApiEndpoint,

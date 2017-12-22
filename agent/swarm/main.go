@@ -48,7 +48,7 @@ func initializeAgent() *agent.Agent {
 		panic(err)
 	}
 
-	a.BenchScheduler = benchmarks.NewSchedulerClient(a.Orchestrator, a.ApolloEndpoint, a.AdvertisedEndpoint)
+	a.BenchScheduler = benchmarks.NewSchedulerClient(a.Orchestrator, a.ApolloEndpoint, a.AdvertisedEndpoint, a.Image)
 
 	a.Logger.Info("Swarm Agent Initialized")
 	return a
