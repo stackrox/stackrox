@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
-	"bitbucket.org/stack-rox/apollo/pkg/scheduler"
 	"github.com/golang/protobuf/ptypes/empty"
 	googleGRPC "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -21,7 +21,7 @@ import (
 type Agent struct {
 	Server                  grpc.API
 	Listener                listeners.Listener
-	BenchScheduler          *scheduler.BenchmarkSchedulerClient
+	BenchScheduler          *benchmarks.SchedulerClient
 	Orchestrator            orchestrators.Orchestrator
 	ServiceRegistrationFunc func(api grpc.API)
 

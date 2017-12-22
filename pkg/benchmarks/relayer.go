@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/pkg/agent"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/hashicorp/golang-lru"
@@ -33,6 +32,8 @@ type LRURelayer struct {
 
 	client v1.BenchmarkResultsServiceClient
 
+	clusterID string
+
 	tick  *time.Ticker
 	stopC chan struct{}
 
@@ -40,18 +41,19 @@ type LRURelayer struct {
 }
 
 // NewLRURelayer creates a new LRURelayer, which must then be started.
-func NewLRURelayer(client v1.BenchmarkResultsServiceClient) *LRURelayer {
+func NewLRURelayer(client v1.BenchmarkResultsServiceClient, clusterID string) *LRURelayer {
 	cache, err := lru.New(cacheSize)
 	if err != nil {
 		// This only happens in extreme cases (at this time, for invalid size only).
 		panic(err)
 	}
 	return &LRURelayer{
-		cache:  cache,
-		client: client,
-		tick:   time.NewTicker(interval),
-		stopC:  make(chan struct{}),
-		logger: logging.New("relayer"),
+		cache:     cache,
+		client:    client,
+		clusterID: clusterID,
+		tick:      time.NewTicker(interval),
+		stopC:     make(chan struct{}),
+		logger:    logging.New("relayer"),
 	}
 }
 
@@ -79,7 +81,7 @@ func payloadKey(payload *v1.BenchmarkResult) string {
 
 // Accept accepts a new payload, tries to relay it, and caches if unsuccessful.
 func (r *LRURelayer) Accept(payload *v1.BenchmarkResult) {
-	payload.ClusterId = agent.ClusterID.Setting()
+	payload.ClusterId = r.clusterID
 	err := r.relay(payload)
 	if err != nil {
 		r.logger.Warnf("Couldn't send %s: %s", payloadKey(payload), err)

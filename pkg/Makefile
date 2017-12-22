@@ -41,6 +41,9 @@ build-pkg: preclean generated-srcs
 .PHONY: generated-srcs
 generated-srcs: $(GENERATED_SRCS)
 
+.PHONY: clean-generated-srcs
+clean-generated-srcs: clean-generated
+
 .PHONY: $(SUBDIRS)
 $(SUBDIRS):
 	@echo "+ build $@"

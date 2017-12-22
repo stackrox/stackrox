@@ -63,7 +63,7 @@ clean-deps:
 
 .PHONY: proto-generated
 proto-generated:
-	make -C pkg clean generated-srcs
+	make -C pkg clean-generated-srcs generated-srcs
 
 
 ###########

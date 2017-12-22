@@ -1,7 +1,6 @@
-package service
+package benchmarks
 
 import (
-	"bitbucket.org/stack-rox/apollo/agent/swarm/benchmarks"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -12,7 +11,7 @@ import (
 )
 
 // NewBenchmarkRelayService returns the BenchmarkRelayService API.
-func NewBenchmarkRelayService(relayer benchmarks.Relayer) *BenchmarkRelayService {
+func NewBenchmarkRelayService(relayer Relayer) *BenchmarkRelayService {
 	return &BenchmarkRelayService{
 		relayer: relayer,
 	}
@@ -20,7 +19,7 @@ func NewBenchmarkRelayService(relayer benchmarks.Relayer) *BenchmarkRelayService
 
 // BenchmarkRelayService is the struct that manages the benchmark API
 type BenchmarkRelayService struct {
-	relayer benchmarks.Relayer
+	relayer Relayer
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

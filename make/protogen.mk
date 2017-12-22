@@ -17,7 +17,7 @@ PROTO_API_PROTOS = $(API_SERVICES:%=$(PROTO_API_PATH)/%.proto)
 ## Protobuf ##
 ##############
 # Set some platform variables for protoc.
-PROTOC_VERSION := 3.4.0
+PROTOC_VERSION := 3.5.0
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 PROTOC_ARCH = linux
@@ -209,3 +209,7 @@ clean-protos:
 	@rm -rf $(PROTOC_TMP)
 	@rm -f $(PROTOC_FILE)
 	@test -n "$(GENERATED_API_PATH)" && rm -rf "$(GENERATED_API_PATH)" || true
+
+.PHONY: clean-generated
+clean-generated:
+	@rm -rf "$(GENERATED_API_PATH)"

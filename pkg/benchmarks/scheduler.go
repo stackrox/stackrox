@@ -1,4 +1,4 @@
-package scheduler
+package benchmarks
 
 import (
 	"context"
@@ -24,8 +24,8 @@ const (
 	updateInterval = 15 * time.Second
 )
 
-// BenchmarkSchedulerClient schedules the docker benchmark
-type BenchmarkSchedulerClient struct {
+// SchedulerClient schedules the docker benchmark
+type SchedulerClient struct {
 	updateTicker *time.Ticker
 	orchestrator orchestrators.Orchestrator
 
@@ -41,9 +41,9 @@ type BenchmarkSchedulerClient struct {
 	stateLock sync.Mutex
 }
 
-// NewBenchmarkSchedulerClient returns a new scheduler
-func NewBenchmarkSchedulerClient(orchestrator orchestrators.Orchestrator, apolloEndpoint string, advertisedEndpoint string) *BenchmarkSchedulerClient {
-	return &BenchmarkSchedulerClient{
+// NewSchedulerClient returns a new scheduler
+func NewSchedulerClient(orchestrator orchestrators.Orchestrator, apolloEndpoint string, advertisedEndpoint string) *SchedulerClient {
+	return &SchedulerClient{
 		updateTicker:       time.NewTicker(updateInterval),
 		orchestrator:       orchestrator,
 		done:               make(chan struct{}),
@@ -52,7 +52,7 @@ func NewBenchmarkSchedulerClient(orchestrator orchestrators.Orchestrator, apollo
 	}
 }
 
-func (d *BenchmarkSchedulerClient) removeService(delay time.Duration, id string) {
+func (d *SchedulerClient) removeService(delay time.Duration, id string) {
 	defer func() {
 		d.stateLock.Lock()
 		d.scanActive = false
@@ -73,7 +73,7 @@ func (d *BenchmarkSchedulerClient) removeService(delay time.Duration, id string)
 
 // Launch triggers a run of the benchmark immediately.
 // The stateLock must be held by the caller until this function returns.
-func (d *BenchmarkSchedulerClient) Launch() error {
+func (d *SchedulerClient) Launch() error {
 	d.scanActive = true
 	// TODO(cgorman) parametrize the tag for docker-bench-bootstrap
 	service := orchestrators.SystemService{
@@ -98,7 +98,7 @@ func (d *BenchmarkSchedulerClient) Launch() error {
 }
 
 // Start runs the scheduler
-func (d *BenchmarkSchedulerClient) Start() {
+func (d *SchedulerClient) Start() {
 	conn, err := clientconn.GRPCConnection(d.apolloEndpoint)
 	if err != nil {
 		panic(err)
@@ -141,7 +141,7 @@ func (d *BenchmarkSchedulerClient) Start() {
 }
 
 // Stop stops the scheduler client from triggering any more jobs.
-func (d *BenchmarkSchedulerClient) Stop() {
+func (d *SchedulerClient) Stop() {
 	d.done <- struct{}{}
 
 	// TODO(cg): Also stop any launched benchmark.

@@ -5,13 +5,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"bitbucket.org/stack-rox/apollo/agent/swarm/benchmarks"
 	"bitbucket.org/stack-rox/apollo/agent/swarm/listener"
 	"bitbucket.org/stack-rox/apollo/agent/swarm/orchestrator"
-	"bitbucket.org/stack-rox/apollo/agent/swarm/service"
 	"bitbucket.org/stack-rox/apollo/pkg/agent"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/scheduler"
+	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
 )
 
 func main() {
@@ -50,14 +48,14 @@ func initializeAgent() *agent.Agent {
 		panic(err)
 	}
 
-	a.BenchScheduler = scheduler.NewBenchmarkSchedulerClient(a.Orchestrator, a.ApolloEndpoint, a.AdvertisedEndpoint)
+	a.BenchScheduler = benchmarks.NewSchedulerClient(a.Orchestrator, a.ApolloEndpoint, a.AdvertisedEndpoint)
 
 	a.Logger.Info("Swarm Agent Initialized")
 	return a
 }
 
 func registerAPIServices(a *agent.Agent) {
-	a.Server.Register(service.NewBenchmarkRelayService(benchmarks.NewLRURelayer(v1.NewBenchmarkResultsServiceClient(a.Conn))))
+	a.Server.Register(benchmarks.NewBenchmarkRelayService(benchmarks.NewLRURelayer(v1.NewBenchmarkResultsServiceClient(a.Conn), a.ClusterID)))
 
 	a.Logger.Info("API services registered")
 }
