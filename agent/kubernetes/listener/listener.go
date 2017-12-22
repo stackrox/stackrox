@@ -6,10 +6,10 @@ import (
 	pkgV1 "bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 )
@@ -25,16 +25,13 @@ var (
 type kubernetesListener struct {
 	client *kubernetes.Clientset
 
-	metaC   chan resourceWrap
-	eventsC chan *pkgV1.DeploymentEvent
-
+	eventsC     chan *pkgV1.DeploymentEvent
 	resourcesWL []resourceWatchLister
 }
 
 // New returns a new kubernetes listener.
 func New() listeners.Listener {
 	k := &kubernetesListener{
-		metaC:   make(chan resourceWrap, 10),
 		eventsC: make(chan *pkgV1.DeploymentEvent, 10),
 	}
 	k.initialize()
@@ -50,17 +47,15 @@ func (k *kubernetesListener) Start() {
 	for _, wl := range k.resourcesWL {
 		go wl.watch()
 	}
-
-	go k.listenForDeployments()
 }
 
 func (k *kubernetesListener) createResourceWatchers() {
 	k.resourcesWL = []resourceWatchLister{
-		newReplicaSetWatchLister(k.client.ExtensionsV1beta1().RESTClient(), k.metaC),
-		newDaemonSetWatchLister(k.client.ExtensionsV1beta1().RESTClient(), k.metaC),
-		newReplicationControllerWatchLister(k.client.CoreV1().RESTClient(), k.metaC),
-		newDeploymentWatcher(k.client.ExtensionsV1beta1().RESTClient(), k.metaC),
-		newStatefulSetWatchLister(k.client.AppsV1beta1().RESTClient(), k.metaC),
+		newReplicaSetWatchLister(k.client.ExtensionsV1beta1().RESTClient(), k.eventsC),
+		newDaemonSetWatchLister(k.client.ExtensionsV1beta1().RESTClient(), k.eventsC),
+		newReplicationControllerWatchLister(k.client.CoreV1().RESTClient(), k.eventsC),
+		newDeploymentWatcher(k.client.ExtensionsV1beta1().RESTClient(), k.eventsC),
+		newStatefulSetWatchLister(k.client.AppsV1beta1().RESTClient(), k.eventsC),
 	}
 }
 
@@ -88,14 +83,6 @@ func (k *kubernetesListener) Stop() {
 	}
 }
 
-func (k *kubernetesListener) listenForDeployments() {
-	for metaObj := range k.metaC {
-		deployment := metaObj.asDeploymentEvent()
-
-		k.eventsC <- deployment
-	}
-}
-
 func (k *kubernetesListener) Events() <-chan *pkgV1.DeploymentEvent {
 	return k.eventsC
 }
@@ -115,7 +102,7 @@ func newWatchLister(client rest.Interface) watchLister {
 }
 
 func (wl *watchLister) watch(object string, objectType runtime.Object, changedFunc func(interface{}, pkgV1.ResourceAction)) {
-	watchlist := cache.NewListWatchFromClient(wl.client, object, api.NamespaceAll, fields.Everything())
+	watchlist := cache.NewListWatchFromClient(wl.client, object, v1.NamespaceAll, fields.Everything())
 
 	wl.store, wl.controller = cache.NewInformer(
 		watchlist,

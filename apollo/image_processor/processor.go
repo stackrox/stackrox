@@ -12,6 +12,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/scanners"
 	scannerTypes "bitbucket.org/stack-rox/apollo/apollo/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 )
 
@@ -264,27 +265,29 @@ func (i *ImageProcessor) RemovePolicy(name string) {
 
 // Process takes in a new image and determines if an alert should be fired
 func (i *ImageProcessor) Process(deployment *v1.Deployment) ([]*v1.Alert, error) {
+	imgs := images.FromContainers(deployment.GetContainers()).Images()
+
 	// TODO(cgorman) Better notification system or scheme around notifying if there is an error
-	if len(deployment.GetImages()) == 0 {
+	if len(imgs) == 0 {
 		log.Warnf("Received a nil image for deployment %s", deployment.GetId())
 		return nil, nil
 	}
 
-	for _, img := range deployment.GetImages() {
+	for _, img := range imgs {
 		if err := i.enrichImage(img); err != nil {
 			return nil, err
 		}
 	}
 
-	return i.checkImage(deployment)
+	return i.checkImage(deployment, imgs)
 }
 
-func (i *ImageProcessor) checkImage(deployment *v1.Deployment) ([]*v1.Alert, error) {
+func (i *ImageProcessor) checkImage(deployment *v1.Deployment, imgs []*v1.Image) ([]*v1.Alert, error) {
 	i.policyMutex.Lock()
 	defer i.policyMutex.Unlock()
 
 	var alerts []*v1.Alert
-	for _, img := range deployment.GetImages() {
+	for _, img := range imgs {
 		for _, policy := range i.regexPolicies {
 			if policy.Original.GetDisabled() {
 				continue

@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
 	"bitbucket.org/stack-rox/apollo/apollo/notifications"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
@@ -47,7 +48,7 @@ func (s *AgentEventService) ReportDeploymentEvent(ctx context.Context, request *
 	if request == nil {
 		return nil, status.Error(codes.InvalidArgument, "Request must include an event")
 	}
-	log.Infof("Processing container event %+v", request)
+	log.Infof("Processing deployment event %+v", request)
 
 	d := request.GetDeployment()
 	if d == nil {
@@ -73,7 +74,7 @@ func (s *AgentEventService) ReportDeploymentEvent(ctx context.Context, request *
 		log.Error(err)
 		return &empty.Empty{}, status.Error(codes.Internal, err.Error())
 	}
-	for _, i := range d.GetImages() {
+	for _, i := range images.FromContainers(d.GetContainers()).Images() {
 		if err := s.storage.AddImage(i); err != nil {
 			log.Error(err)
 		}

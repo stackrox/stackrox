@@ -15,3 +15,5 @@ protoc-*
 pkg/api/generated
 glide.out
 
+!/BUILD.bazel
+!/image/policies/BUILD.bazel

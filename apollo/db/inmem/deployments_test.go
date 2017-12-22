@@ -86,9 +86,11 @@ func TestGetDeployments(t *testing.T) {
 		Type:      "Replicated",
 		Replicas:  10,
 		UpdatedAt: ptypes.TimestampNow(),
-		Images: []*v1.Image{
+		Containers: []*v1.Container{
 			{
-				Sha: "04a094fe844e055828cb2d64ead6bd3eb4257e7c7b5d1e2af0da89fa20472cf4",
+				Image: &v1.Image{
+					Sha: "04a094fe844e055828cb2d64ead6bd3eb4257e7c7b5d1e2af0da89fa20472cf4",
+				},
 			},
 		},
 	}
@@ -98,9 +100,11 @@ func TestGetDeployments(t *testing.T) {
 		Version:   "400",
 		Type:      "Global",
 		UpdatedAt: ptypes.TimestampNow(),
-		Images: []*v1.Image{
+		Containers: []*v1.Container{
 			{
-				Sha: "5b1e27e74327764cee6db966f5b624fbfbb6ce280754b575ff78cd940a43196f",
+				Image: &v1.Image{
+					Sha: "5b1e27e74327764cee6db966f5b624fbfbb6ce280754b575ff78cd940a43196f",
+				},
 			},
 		},
 	}
@@ -111,9 +115,11 @@ func TestGetDeployments(t *testing.T) {
 		Type:      "Replicated",
 		Replicas:  1,
 		UpdatedAt: ptypes.TimestampNow(),
-		Images: []*v1.Image{
+		Containers: []*v1.Container{
 			{
-				Sha: "25baa3ba19031d81309549af43f75c45aaaab318f34f5e4d5380a9fea304dddb",
+				Image: &v1.Image{
+					Sha: "25baa3ba19031d81309549af43f75c45aaaab318f34f5e4d5380a9fea304dddb",
+				},
 			},
 		},
 	}

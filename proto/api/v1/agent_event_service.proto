@@ -5,15 +5,8 @@ option go_package = "v1";
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "v1/deployment_service.proto";
-import "v1/image_service.proto";
 
 package v1;
-
-message Container {
-    string id    = 1;
-    string name  = 2;
-    Image  image = 3;
-}
 
 enum ResourceAction {
     UNSET_ACTION_RESOURCE = 0;

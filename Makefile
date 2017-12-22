@@ -79,7 +79,7 @@ LINUX_AMD64 := --cpu=k8
 BAZEL_FLAGS := $(PURE) $(LINUX_AMD64)
 cleanup:
 	@echo "Total BUILD.bazel files deleted: "
-	@find . -name BUILD.bazel -print | xargs rm | wc -l | xargs echo
+	@find . -mindepth 2 -name BUILD.bazel -print | grep -v "^./image" | xargs rm | wc -l | xargs echo
 
 .PHONY: gazelle
 gazelle: deps proto-generated cleanup

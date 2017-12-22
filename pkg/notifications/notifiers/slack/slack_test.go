@@ -59,12 +59,14 @@ func TestSlackNotify(t *testing.T) {
 		Deployment: &v1.Deployment{
 			Name: "nginx_server",
 			Id:   "s79mdvmb6dsl",
-			Images: []*v1.Image{
+			Containers: []*v1.Container{
 				{
-					Sha:      "SHA",
-					Registry: "docker.io",
-					Remote:   "library/nginx",
-					Tag:      "latest",
+					Image: &v1.Image{
+						Sha:      "SHA",
+						Registry: "docker.io",
+						Remote:   "library/nginx",
+						Tag:      "latest",
+					},
 				},
 			},
 		},

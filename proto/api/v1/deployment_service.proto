@@ -9,14 +9,63 @@ import "v1/image_service.proto";
 package v1;
 
 message Deployment {
-    string id =                                 1;
-    string name =                               2;
-    string version =                            3;
-    string type =                               4;
-    int64 replicas =                            5;
-    google.protobuf.Timestamp updated_at =      6;
+    string id                                  = 1;
+    string name                                = 2;
+    string version                             = 3;
+    string type                                = 4;
+    string namespace                           = 5;
+    int64 replicas                             = 6;
+    google.protobuf.Timestamp updated_at       = 7;
 
-    repeated Image images =                     7;
+    repeated Container containers              = 8;
+}
+
+message Container {
+    ContainerConfig config              = 1;
+    Image image                         = 2;
+    SecurityContext security_context    = 3;
+    repeated Volume volumes             = 4;
+    repeated PortConfig ports           = 5;
+}
+
+
+message ContainerConfig {
+    message EnvironmentConfig {
+        string key      = 1;
+        string value    = 2;
+    }
+    repeated EnvironmentConfig env  = 1;
+    repeated string command         = 2;
+    repeated string args            = 3;
+    string directory                = 4;
+    string user                     = 5;
+    int64 uid                       = 6;
+}
+
+message Volume {
+    string name         = 1;
+    string path         = 2;
+    bool read_only      = 3;
+    string type         = 4;
+}
+
+message PortConfig {
+    string name             = 1;
+    int32 container_port    = 2;
+    string protocol         = 3;
+}
+
+message SecurityContext {
+    bool privileged                     = 1;
+    message SELinux {
+        string user     = 1;
+        string role     = 2;
+        string type     = 3;
+        string level    = 4;
+    }
+    SELinux selinux                     = 2;
+    repeated string drop_capabilities   = 3;
+    repeated string add_capabilities    = 4;
 }
 
 message GetDeploymentRequest {

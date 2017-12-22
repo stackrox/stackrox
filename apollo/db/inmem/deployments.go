@@ -60,7 +60,8 @@ func (s *deploymentStore) GetDeployments(request *v1.GetDeploymentsRequest) (dep
 			continue
 		}
 
-		if len(imageShaSet) > 0 && !s.matchImageSha(imageShaSet, d.GetImages()) {
+		if len(imageShaSet) > 0 && !s.matchImageSha(imageShaSet, d.GetContainers()) {
+
 			continue
 		}
 
@@ -71,9 +72,9 @@ func (s *deploymentStore) GetDeployments(request *v1.GetDeploymentsRequest) (dep
 	return
 }
 
-func (s *deploymentStore) matchImageSha(imageShaSet map[string]struct{}, images []*v1.Image) bool {
-	for _, image := range images {
-		if _, ok := imageShaSet[image.GetSha()]; !ok {
+func (s *deploymentStore) matchImageSha(imageShaSet map[string]struct{}, containers []*v1.Container) bool {
+	for _, c := range containers {
+		if _, ok := imageShaSet[c.GetImage().GetSha()]; !ok {
 			return false
 		}
 	}

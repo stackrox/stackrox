@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	pkgV1 "bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	"k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/pkg/api/v1"
-	appsV1Beta1 "k8s.io/client-go/pkg/apis/apps/v1beta1"
-	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/rest"
 )
 
@@ -35,14 +35,14 @@ type reflectionWatchLister struct {
 	objectType     runtime.Object
 	metaFieldIndex []int
 
-	metaC chan resourceWrap
+	eventC chan<- *pkgV1.DeploymentEvent
 }
 
-func newReflectionWatcherFromClient(client rest.Interface, resourceType string, objectType runtime.Object, metaC chan resourceWrap) *reflectionWatchLister {
-	return newReflectionWatcher(newWatchLister(client), resourceType, objectType, metaC)
+func newReflectionWatcherFromClient(client rest.Interface, resourceType string, objectType runtime.Object, eventC chan<- *pkgV1.DeploymentEvent) *reflectionWatchLister {
+	return newReflectionWatcher(newWatchLister(client), resourceType, objectType, eventC)
 }
 
-func newReflectionWatcher(watchLister watchLister, resourceType string, objectType runtime.Object, metaC chan resourceWrap) *reflectionWatchLister {
+func newReflectionWatcher(watchLister watchLister, resourceType string, objectType runtime.Object, eventC chan<- *pkgV1.DeploymentEvent) *reflectionWatchLister {
 	ty := reflect.Indirect(reflect.ValueOf(objectType)).Type()
 	metaField, ok := ty.FieldByName("ObjectMeta")
 	if !ok || metaField.Type != reflect.TypeOf(metav1.ObjectMeta{}) {
@@ -54,7 +54,7 @@ func newReflectionWatcher(watchLister watchLister, resourceType string, objectTy
 		rt:             resourceType,
 		objectType:     objectType,
 		metaFieldIndex: metaField.Index,
-		metaC:          metaC,
+		eventC:         eventC,
 	}
 }
 
@@ -72,73 +72,9 @@ func (wl *reflectionWatchLister) stop() {
 }
 
 func (wl *reflectionWatchLister) resourceChanged(obj interface{}, action pkgV1.ResourceAction) {
-	objValue := reflect.Indirect(reflect.ValueOf(obj))
-	meta, ok := objValue.FieldByIndex(wl.metaFieldIndex).Interface().(metav1.ObjectMeta)
-	if !ok {
-		logger.Errorf("obj %+v does not have an ObjectMeta field of the correct type", obj)
-		return
+	if d := newDeploymentEventFromResource(obj, action, wl.metaFieldIndex, wl.resourceType()); d != nil {
+		wl.eventC <- d
 	}
-
-	// Ignore resources that are owned by another resource.
-	if len(meta.OwnerReferences) > 0 {
-		return
-	}
-
-	images := wl.getImages(objValue)
-	replicas := wl.getReplicas(objValue)
-
-	wl.metaC <- resourceWrap{
-		ObjectMeta:   meta,
-		resourceType: wl.resourceType(),
-		replicas:     replicas,
-		images:       images,
-		action:       action,
-	}
-}
-
-func (wl *reflectionWatchLister) getImages(objValue reflect.Value) (images []string) {
-	spec := objValue.FieldByName("Spec")
-	if reflect.DeepEqual(spec, reflect.Value{}) {
-		logger.Errorf("Obj %+v does not have a Spec field", objValue)
-		return
-	}
-
-	template, ok := spec.FieldByName("Template").Interface().(v1.PodTemplateSpec)
-	if !ok {
-		logger.Errorf("Spec obj %+v does not have a Template field", spec)
-		return
-	}
-
-	for _, c := range template.Spec.Containers {
-		images = append(images, c.Image)
-	}
-
-	return
-}
-
-func (wl *reflectionWatchLister) getReplicas(objValue reflect.Value) int {
-	spec := objValue.FieldByName("Spec")
-	if reflect.DeepEqual(spec, reflect.Value{}) {
-		logger.Errorf("Obj %+v does not have a Spec field", objValue)
-		return 0
-	}
-
-	replicaField := spec.FieldByName("Replicas")
-	if reflect.DeepEqual(replicaField, reflect.Value{}) {
-		return 0
-	}
-
-	replicasPointer, ok := replicaField.Interface().(*int32)
-	if ok && replicasPointer != nil {
-		return int(*replicasPointer)
-	}
-
-	replicas, ok := replicaField.Interface().(int32)
-	if ok {
-		return int(replicas)
-	}
-
-	return 0
 }
 
 func (wl *reflectionWatchLister) listObjects() (objects []metav1.ObjectMeta) {
@@ -156,22 +92,22 @@ func (wl *reflectionWatchLister) listObjects() (objects []metav1.ObjectMeta) {
 
 // Factory methods for the types of resources we support.
 
-func newReplicaSetWatchLister(client rest.Interface, metaC chan resourceWrap) resourceWatchLister {
-	return newReflectionWatcherFromClient(client, replicaSet, &v1beta1.ReplicaSet{}, metaC)
+func newReplicaSetWatchLister(client rest.Interface, eventsC chan<- *pkgV1.DeploymentEvent) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, replicaSet, &v1beta1.ReplicaSet{}, eventsC)
 }
 
-func newDaemonSetWatchLister(client rest.Interface, metaC chan resourceWrap) resourceWatchLister {
-	return newReflectionWatcherFromClient(client, daemonSet, &v1beta1.DaemonSet{}, metaC)
+func newDaemonSetWatchLister(client rest.Interface, eventsC chan<- *pkgV1.DeploymentEvent) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, daemonSet, &v1beta1.DaemonSet{}, eventsC)
 }
 
-func newReplicationControllerWatchLister(client rest.Interface, metaC chan resourceWrap) resourceWatchLister {
-	return newReflectionWatcherFromClient(client, replicationController, &v1.ReplicationController{}, metaC)
+func newReplicationControllerWatchLister(client rest.Interface, eventsC chan<- *pkgV1.DeploymentEvent) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, replicationController, &v1.ReplicationController{}, eventsC)
 }
 
-func newDeploymentWatcher(client rest.Interface, metaC chan resourceWrap) resourceWatchLister {
-	return newReflectionWatcherFromClient(client, deployment, &v1beta1.Deployment{}, metaC)
+func newDeploymentWatcher(client rest.Interface, eventsC chan<- *pkgV1.DeploymentEvent) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, deployment, &v1beta1.Deployment{}, eventsC)
 }
 
-func newStatefulSetWatchLister(client rest.Interface, metaC chan resourceWrap) resourceWatchLister {
-	return newReflectionWatcherFromClient(client, statefulSet, &appsV1Beta1.StatefulSet{}, metaC)
+func newStatefulSetWatchLister(client rest.Interface, eventsC chan<- *pkgV1.DeploymentEvent) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, statefulSet, &appsv1beta1.StatefulSet{}, eventsC)
 }
