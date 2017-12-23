@@ -111,7 +111,6 @@ func (d *SchedulerClient) Start() {
 	for {
 		select {
 		case <-d.updateTicker.C:
-			log.Infof("Checking Docker bench schedule")
 			schedule, err := cli.GetBenchmarkSchedule(context.Background(), &empty.Empty{})
 			if err != nil {
 				log.Errorf("Error checking schedule: %s", err)

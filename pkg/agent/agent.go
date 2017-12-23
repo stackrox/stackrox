@@ -23,7 +23,7 @@ type Agent struct {
 	Listener                listeners.Listener
 	BenchScheduler          *benchmarks.SchedulerClient
 	Orchestrator            orchestrators.Orchestrator
-	ServiceRegistrationFunc func(api grpc.API)
+	ServiceRegistrationFunc func(a *Agent)
 
 	ClusterID          string
 	ApolloEndpoint     string
@@ -56,6 +56,10 @@ func (a *Agent) Start() {
 	a.Conn, err = clientconn.GRPCConnection(a.ApolloEndpoint)
 	if err != nil {
 		panic(err)
+	}
+
+	if a.ServiceRegistrationFunc != nil {
+		a.ServiceRegistrationFunc(a)
 	}
 
 	a.Server.Start()
