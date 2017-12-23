@@ -3,8 +3,8 @@ jobs:
   build:
     docker:
       # This image is the standard circleci/golang:1.9.2 image, plus bazel
-      # and other necessary build tools like goimports and dep.
-      - image: stackrox/apollo:circleci@sha256:1f2b166d9039849e207dea5169257f758a933ef4c8e863600f1d931be46d6de6
+      # and other necessary build tools like goimports, dep, and yarn.
+      - image: stackrox/apollo:circleci@sha256:d10504619e1b9ea218c5a8f02968f38d0ee7d04d0764fcf35e4d75729eafaad9
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
@@ -14,27 +14,17 @@ jobs:
       - checkout
       - setup_remote_docker
 
-      - run: make all
-
-      - run: docker tag stackrox/apollo:latest stackrox/apollo:$CIRCLE_SHA1
-      - run: docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-      - run: docker push stackrox/apollo:$CIRCLE_SHA1
-
-  build-ui:
-    docker:
-      - image: circleci/node:8.9.3-browsers
-
-    steps:
-      - checkout
-      - setup_remote_docker
-
-      - run: curl -o- -L https://yarnpkg.com/install.sh | bash
-
       - run: make -C apollo-ui
 
       - run: docker tag stackrox/apollo:ui-latest stackrox/apollo:ui-$CIRCLE_SHA1
       - run: docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
       - run: docker push stackrox/apollo:ui-$CIRCLE_SHA1
+
+      - run: make all
+
+      - run: docker tag stackrox/apollo:latest stackrox/apollo:$CIRCLE_SHA1
+      - run: docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+      - run: docker push stackrox/apollo:$CIRCLE_SHA1
 
   retag:
     docker:
@@ -59,11 +49,9 @@ workflows:
   build_all:
     jobs:
       - build
-      - build-ui
       - retag:
           requires:
             - build
-            - build-ui
           filters:
             branches:
               only:
