@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-const grpcPort = ":8080"
+const grpcPort = ":443"
 const endpoint = "localhost" + grpcPort
 
 var (
@@ -37,7 +37,7 @@ type APIService interface {
 	RegisterServiceHandlerFromEndpoint(context.Context, *runtime.ServeMux, string, []grpc.DialOption) error
 }
 
-// API listens for new connections on APIPort 8080, and redirects them to the gRPC-Gateway
+// API listens for new connections on port 443, and redirects them to the gRPC-Gateway
 type API interface {
 	// Start runs the API in a goroutine.
 	Start()
@@ -47,11 +47,19 @@ type API interface {
 
 type apiImpl struct {
 	apiServices []APIService
+	serveUI     bool
 }
 
 // NewAPI returns an API object.
 func NewAPI() API {
 	return &apiImpl{}
+}
+
+// NewAPIWithUI returns an API server that also serves the UI.
+func NewAPIWithUI() API {
+	return &apiImpl{
+		serveUI: true,
+	}
 }
 
 func (a *apiImpl) Start() {
@@ -128,7 +136,12 @@ func (a *apiImpl) run() {
 			panic(err)
 		}
 	}
-	mux.Handle("/", gwMux)
+	if a.serveUI {
+		mux.Handle("/", uiMux())
+		mux.Handle("/v1/", gwMux)
+	} else {
+		mux.Handle("/", gwMux)
+	}
 	conn, err := net.Listen("tcp", grpcPort)
 	if err != nil {
 		panic(err)
@@ -148,6 +161,21 @@ func (a *apiImpl) run() {
 		log.Fatal("ListenAndServe: ", err)
 	}
 	return
+}
+
+func uiMux() http.Handler {
+	mux := http.NewServeMux()
+	mux.Handle("/static/", http.FileServer(http.FileSystem(http.Dir("/ui"))))
+	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "/ui/favicon.ico")
+	})
+	mux.HandleFunc("/service-worker.js", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "/ui/service-worker.js")
+	})
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "/ui/index.html")
+	})
+	return mux
 }
 
 func getPair() (*x509.CertPool, *tls.Certificate, error) {

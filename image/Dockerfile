@@ -15,7 +15,8 @@ ENV PATH=/apollo
 
 ADD ./policies/ /data/policies
 ADD ./bin/ /apollo/
+ADD ./ui/build  /ui/
 
-EXPOSE 8080
+EXPOSE 443
 
 ENTRYPOINT ["apollo"]

@@ -21,7 +21,7 @@ func TestLaunch(t *testing.T) {
 	require.Nil(t, err)
 
 	service := types.SystemService{
-		Envs:    []string{"ROX_APOLLO_ENDPOINT=localhost:8080"},
+		Envs:    []string{"ROX_APOLLO_ENDPOINT=localhost:443"},
 		Image:   "stackrox/apollo:latest",
 		Mounts:  []string{"/var/run/docker.sock:/var/run/docker.sock"},
 		Global:  true,

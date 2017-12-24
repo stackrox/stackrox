@@ -9,7 +9,12 @@ all: deps style test image
 ## Style ##
 ###########
 .PHONY: style
-style: fmt imports lint vet
+style: fmt imports lint vet ui-lint
+
+.PHONY: ui-lint
+ui-lint:
+	@echo "+ $@"
+	make -C apollo-ui lint
 
 .PHONY: fmt
 fmt:
@@ -98,12 +103,14 @@ test: gazelle
 	    //... -vendor/... -docker-bench/...
 # docker-bench tests don't work in Bazel yet.
 	make -C docker-bench test report
+# neither do UI tests
+	make -C apollo-ui test
 
 
 ###########
 ## Image ##
 ###########
-image: gazelle
+image: gazelle clean-image
 	@echo "+ $@"
 	bazel build $(BAZEL_FLAGS) \
 		//agent/kubernetes \
@@ -112,7 +119,10 @@ image: gazelle
 		//docker-bench \
 		//docker-bench-bootstrap \
 
+	make -C apollo-ui build
+
 # TODO(cg): Replace with native bazel Docker build.
+	cp -r apollo-ui/build image/ui/
 	cp bazel-bin/agent/swarm/linux_amd64_pure_stripped/swarm image/bin/swarm-agent
 	cp bazel-bin/agent/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-agent
 	cp bazel-bin/apollo/linux_amd64_pure_stripped/apollo image/bin/apollo
@@ -124,10 +134,15 @@ image: gazelle
 ###########
 ## Clean ##
 ###########
-clean:
-	git clean -xf image/bin
+.PHONY: clean
+clean: clean-image
+	@echo "+ $@"
 	make -C pkg clean
-	make -C apollo clean
-	make -C agent/swarm clean
+
+.PHONY: clean-image
+clean-image:
+	@echo "+ $@"
+	git clean -xf image/bin
+	git clean -xf image/ui
 
 include make/protogen.mk

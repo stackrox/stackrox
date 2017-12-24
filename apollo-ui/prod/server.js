@@ -3,7 +3,7 @@ const proxy = require('http-proxy-middleware');
 
 const app = express();
 
-const endpoint = process.env.ROX_APOLLO_ENDPOINT || 'apollo.apollo_net:8080';
+const endpoint = process.env.ROX_APOLLO_ENDPOINT || 'apollo.apollo_net:443';
 
 app.use(express.static(`${__dirname}/build`));
 

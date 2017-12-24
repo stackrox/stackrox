@@ -1,5 +1,5 @@
 .PHONY: all
-all: deps test image
+all: deps lint test image
 
 .PHONY: image
 image: build
@@ -79,7 +79,7 @@ lint: deps
 	yarn lint
 
 .PHONY: build
-build: deps lint
+build: deps
 	@echo "+ $@"
 	yarn build
 

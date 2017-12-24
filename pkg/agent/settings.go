@@ -43,7 +43,7 @@ func (a apolloEndpoint) EnvVar() string {
 func (a apolloEndpoint) Setting() string {
 	ep := os.Getenv(a.EnvVar())
 	if len(ep) == 0 {
-		return "apollo.apollo_net:8080"
+		return "apollo.apollo_net:443"
 	}
 	return ep
 }
@@ -57,7 +57,7 @@ func (a advertisedEndpoint) EnvVar() string {
 func (a advertisedEndpoint) Setting() string {
 	ep := os.Getenv(a.EnvVar())
 	if len(ep) == 0 {
-		return "agent.apollo_net:8080"
+		return "agent.apollo_net:443"
 	}
 	return ep
 }

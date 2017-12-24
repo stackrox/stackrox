@@ -75,7 +75,7 @@ func newApollo() *apollo {
 }
 
 func (a *apollo) startGRPCServer() {
-	a.server = grpc.NewAPI()
+	a.server = grpc.NewAPIWithUI()
 	a.server.Register(service.NewAgentEventService(a.imageProcessor, a.notificationProcessor, a.database))
 	a.server.Register(service.NewAlertService(a.database))
 	a.server.Register(service.NewBenchmarkService(a.database, a.benchScheduler))
