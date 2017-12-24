@@ -73,6 +73,11 @@ func (s *AgentEventService) ReportDeploymentEvent(ctx context.Context, request *
 		log.Error(err)
 		return &empty.Empty{}, status.Error(codes.Internal, err.Error())
 	}
+	for _, i := range d.GetImages() {
+		if err := s.storage.AddImage(i); err != nil {
+			log.Error(err)
+		}
+	}
 	for _, alert := range alerts {
 		log.Warnf("Alert Generated: %v with Severity %v due to image policy %v", alert.Id, alert.Severity.String(), alert.GetPolicy().GetName())
 		for _, violation := range alert.GetPolicy().GetViolations() {
