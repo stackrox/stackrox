@@ -1,6 +1,6 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-
 
 const Select = ({ options }) => (
     <div className="relative ml-3">
@@ -12,5 +12,9 @@ const Select = ({ options }) => (
         </div>
     </div>
 );
+
+Select.propTypes = {
+    options: PropTypes.arrayOf(PropTypes.string).isRequired,
+};
 
 export default Select;

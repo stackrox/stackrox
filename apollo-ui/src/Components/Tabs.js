@@ -1,33 +1,34 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import TabContent from 'Components/TabContent';
 
 class Tabs extends Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            active: props.headers[0]
+            activeIndex: 0
         };
     }
 
     getHeaders() {
-        const { active } = this.state;
+        const { activeIndex } = this.state;
         return this.props.headers.map((header, i) => {
-            let tabClass = (active === header) ? 'tab tab-active mt-2' : 'tab mt-2';
+            let tabClass = (activeIndex === i) ? 'tab tab-active mt-2' : 'tab mt-2';
             if (header.disabled) tabClass = 'tab disabled mt-2';
-            return <button className={tabClass} key={`${header}-${i}`} onClick={this.tabClickHandler(header)}>{header.text}</button>;
+            return <button className={tabClass} key={`${header.text}`} onClick={this.tabClickHandler(header, i)}>{header.text}</button>;
         });
     }
 
-    tabClickHandler = header => () => {
+    tabClickHandler = (header, i) => () => {
         if (header.disabled) return;
-        this.setState({ active: header });
+        this.setState({ activeIndex: i });
     }
 
     renderChildren() {
-        return React.Children.map(
-            this.props.children,
-            child => React.cloneElement(child, { active: this.state.active })
-        );
+        const children = React.Children.toArray(this.props.children);
+        return children.map((tabContentChild, i) =>
+            React.cloneElement(tabContentChild, { active: this.state.activeIndex === i }));
     }
 
     render() {
@@ -41,5 +42,29 @@ class Tabs extends Component {
         );
     }
 }
+
+Tabs.defaultProps = {
+    headers: [],
+    children: [],
+    className: ''
+};
+
+Tabs.propTypes = {
+    headers: PropTypes.arrayOf(PropTypes.shape({
+        text: PropTypes.string,
+        disabled: PropTypes.bool
+    })),
+    children: (props, propName, componentName) => {
+        const prop = props[propName];
+        let error = null;
+        React.Children.forEach(prop, (child) => {
+            if (child.type !== TabContent) {
+                error = new Error(`'${componentName}' children should be of type 'TabContent', but got '${child.type}'.`);
+            }
+        });
+        return error;
+    },
+    className: PropTypes.string
+};
 
 export default Tabs;

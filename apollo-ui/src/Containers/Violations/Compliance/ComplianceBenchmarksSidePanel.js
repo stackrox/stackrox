@@ -49,8 +49,6 @@ class ComplianceBenchmarksSidePanel extends Component {
         if (!this.state.data) return '';
         return (
             <div className="flex flex-row">
-                {/* <span className="font-semibold">Policy: </span>
-                <span>{this.state.data.name}</span> */}
                 <span className="flex flex-1 self-center text-primary-600 uppercase tracking-wide">Host Results for &quot;{this.state.data.name}&quot;</span>
                 <Icon.X className="cursor-pointer h-6 w-6 text-primary-600 hover:text-primary-500" onClick={this.hidePanel} />
             </div>
@@ -82,7 +80,7 @@ class ComplianceBenchmarksSidePanel extends Component {
     }
 
     clearData() {
-        this.setState({ showPanel: true, hosts: [] });
+        this.setState({ showPanel: true });
     }
 
     hidePanel = () => {

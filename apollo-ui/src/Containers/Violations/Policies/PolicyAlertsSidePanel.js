@@ -12,7 +12,6 @@ class PolicyAlertsSidePanel extends Component {
 
         this.state = {
             showPanel: false,
-            policy: {},
             table: {
                 columns: [
                     { key: 'deployment.name', label: 'Deployment' },
@@ -42,7 +41,7 @@ class PolicyAlertsSidePanel extends Component {
 
     getAlerts(data) {
         if (!data) {
-            this.setState({ showPanel: false, data: {}, alerts: [] });
+            this.setState({ showPanel: false, data: {} });
             return;
         }
         this.clearData();
@@ -64,7 +63,7 @@ class PolicyAlertsSidePanel extends Component {
             });
             this.setState({ data, table });
         }).catch(() => {
-            this.setState({ data: {}, alerts: [] });
+            this.setState({ data: {} });
         });
     }
 
@@ -96,7 +95,7 @@ class PolicyAlertsSidePanel extends Component {
                     <div className="bg-white m-3 flex-grow pb-2">
                         <header className="w-full p-3 font-bold border-b border-primary-200 mb-2">Violations</header>
                         <div>
-                            {this.state.modal.data.policy.violations.map((violation, i) => <div key={`policy-alerts-violation-${i}`} className="py-2 px-3 break-words">{violation.message}</div>)}
+                            {this.state.modal.data.policy.violations.map(violation => <div key={`${violation.message}`} className="py-2 px-3 break-words">{violation.message}</div>)}
                         </div>
                     </div>
                     <div className="bg-white m-3 pb-2">
@@ -141,7 +140,7 @@ class PolicyAlertsSidePanel extends Component {
     }
 
     clearData() {
-        this.setState({ showPanel: true, alerts: [] });
+        this.setState({ showPanel: true });
     }
 
     hidePanel = () => {

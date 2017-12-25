@@ -117,7 +117,7 @@ class ViolationsContainer extends Component {
         return (
             <section className="flex flex-1 h-full">
                 <Tabs headers={this.state.tab.headers}>
-                    <TabContent name={this.state.tab.headers[0]}>
+                    <TabContent>
                         <div className="flex mb-3 mx-3 flex-none">
                             <div className="flex flex-1 self-center justify-start">
                                 <input
@@ -139,7 +139,7 @@ class ViolationsContainer extends Component {
                             <PolicyAlertsSidePanel />
                         </div>
                     </TabContent>
-                    <TabContent name={this.state.tab.headers[1]}>
+                    <TabContent>
                         <CompliancePage />
                     </TabContent>
                 </Tabs>

@@ -47,7 +47,6 @@ class CompliancePage extends Component {
                 rows: []
             },
             lastScanned: '',
-            scanId: '',
             scanning: false
         };
     }
@@ -66,8 +65,7 @@ class CompliancePage extends Component {
     onTriggerScan = () => {
         this.setState({ scanning: true });
         axios.post('/v1/benchmarks/trigger', {}).then(() => {
-        }).catch((error) => {
-            console.log(error);
+        }).catch(() => {
         });
     }
 
@@ -82,17 +80,16 @@ class CompliancePage extends Component {
             if (!this.pollTimeoutId) return;
             if (!response.data || !response.data.benchmarks) return;
             const lastScanned = dateFns.format(response.data.benchmarks[0].time, 'MM/DD/YYYY h:MM:ss A');
-            const { scanId } = response.data.benchmarks[0];
             table.rows = response.data.benchmarks[0].checkResults;
             if (lastScanned !== this.state.lastScanned) {
                 this.setState({
-                    table, lastScanned, scanId, scanning: false
+                    table, lastScanned, scanning: false
                 });
             }
         }).catch(() => {
             if (!this.pollTimeoutId) return;
             table.rows = [];
-            this.setState({ table, lastScanned: '', scanId: '' });
+            this.setState({ table, lastScanned: '' });
         });
     }
 
