@@ -3,6 +3,29 @@ import PropTypes from 'prop-types';
 import TabContent from 'Components/TabContent';
 
 class Tabs extends Component {
+    static defaultProps = {
+        children: [],
+        className: ''
+    };
+
+    static propTypes = {
+        headers: PropTypes.arrayOf(PropTypes.shape({
+            text: PropTypes.string,
+            disabled: PropTypes.bool
+        })).isRequired,
+        children: (props, propName, componentName) => {
+            const prop = props[propName];
+            let error = null;
+            React.Children.forEach(prop, (child) => {
+                if (child.type !== TabContent) {
+                    error = new Error(`'${componentName}' children should be of type 'TabContent', but got '${child.type}'.`);
+                }
+            });
+            return error;
+        },
+        className: PropTypes.string
+    };
+
     constructor(props) {
         super(props);
 
@@ -42,29 +65,5 @@ class Tabs extends Component {
         );
     }
 }
-
-Tabs.defaultProps = {
-    headers: [],
-    children: [],
-    className: ''
-};
-
-Tabs.propTypes = {
-    headers: PropTypes.arrayOf(PropTypes.shape({
-        text: PropTypes.string,
-        disabled: PropTypes.bool
-    })),
-    children: (props, propName, componentName) => {
-        const prop = props[propName];
-        let error = null;
-        React.Children.forEach(prop, (child) => {
-            if (child.type !== TabContent) {
-                error = new Error(`'${componentName}' children should be of type 'TabContent', but got '${child.type}'.`);
-            }
-        });
-        return error;
-    },
-    className: PropTypes.string
-};
 
 export default Tabs;

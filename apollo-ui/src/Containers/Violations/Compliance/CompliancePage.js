@@ -103,7 +103,7 @@ class CompliancePage extends Component {
         return (
             <div className="flex flex-1">
                 <Tabs className="bg-white" headers={this.state.tab.headers}>
-                    <TabContent name={this.state.tab.headers[0]}>
+                    <TabContent>
                         <div className="flex w-full mb-3 px-3 items-center">
                             <span className="flex flex-1 text-xl font-500 text-primary-500 self-end">Last Scanned: {this.state.lastScanned || 'Never'}</span>
                             <div className="flex self-center justify-end pr-5 border-r border-primary-200">
@@ -121,8 +121,8 @@ class CompliancePage extends Component {
                             <ComplianceBenchmarksSidePanel />
                         </div>
                     </TabContent>
-                    <TabContent name={this.state.tab.headers[1]} />
-                    <TabContent name={this.state.tab.headers[2]} />
+                    <TabContent />
+                    <TabContent />
                 </Tabs>
             </div>
         );

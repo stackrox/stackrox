@@ -38,5 +38,16 @@
     
         "jsx-a11y/no-static-element-interactions": "warn",
         "jsx-a11y/click-events-have-key-events": "warn"
-    }
+    },
+    "overrides": [
+        {
+            "files": [
+                "*.test.js"
+            ],
+            "env": {
+                "browser": true,
+                "jest": true
+            }
+        }
+    ]
 }

@@ -6,6 +6,8 @@
   "dependencies": {
     "axios": "^0.17.1",
     "date-fns": "^1.29.0",
+    "enzyme": "^3.2.0",
+    "enzyme-adapter-react-16": "^1.1.1",
     "express": "^4.16.2",
     "fbemitter": "^2.1.1",
     "flat": "^4.0.0",
@@ -25,7 +27,8 @@
   "scripts": {
     "start": "tailwind build ./src/app.css -c ./tailwind.js -o ./src/index.css && NODE_PATH=src react-scripts start",
     "build": "tailwind build ./src/app.css -c ./tailwind.js -o ./src/index.css && NODE_PATH=src react-scripts build",
-    "test": "react-scripts test --env=jsdom",
+    "test": "NODE_PATH=src react-scripts test --env=jsdom --coverage",
+    "test-watch": "NODE_PATH=src react-scripts test --env=jsdom",
     "lint": "eslint src prod",
     "eject": "react-scripts eject"
   },
@@ -38,7 +41,7 @@
   },
   "devDependencies": {
     "babel-eslint": "^8.0.3",
-    "eslint": "^4.13.1",
+    "eslint": "^4.14.0",
     "eslint-config-airbnb": "^16.1.0",
     "eslint-plugin-import": "^2.8.0",
     "eslint-plugin-jsx-a11y": "^6.0.3",

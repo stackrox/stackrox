@@ -91,4 +91,9 @@ start: deps
 .PHONY: test
 test: deps
 	@echo "+ $@"
-	yarn test -- --coverage
+	yarn test
+
+.PHONY: test-watch
+test-watch: deps
+	@echo "+ $@"
+	yarn test-watch

@@ -4,8 +4,8 @@ import PropTypes from 'prop-types';
 
 class Table extends Component {
     static propTypes = {
-        columns: PropTypes.arrayOf(PropTypes.node).isRequired,
-        rows: PropTypes.arrayOf(PropTypes.node).isRequired,
+        columns: PropTypes.arrayOf(PropTypes.object).isRequired,
+        rows: PropTypes.arrayOf(PropTypes.object).isRequired,
         onRowClick: PropTypes.func
     };
 

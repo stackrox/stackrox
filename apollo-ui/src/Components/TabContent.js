@@ -8,12 +8,13 @@ const TabContent = ({ children, active }) => (
 );
 
 TabContent.defaultProps = {
-    children: []
+    children: [],
+    active: false
 };
 
 TabContent.propTypes = {
-    children: PropTypes.arrayOf(PropTypes.element),
-    active: PropTypes.bool.isRequired
+    children: PropTypes.node,
+    active: PropTypes.bool
 };
 
 export default TabContent;
