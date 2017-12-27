@@ -42,19 +42,6 @@ message ContainerConfig {
     int64 uid                       = 6;
 }
 
-message Volume {
-    string name         = 1;
-    string path         = 2;
-    bool read_only      = 3;
-    string type         = 4;
-}
-
-message PortConfig {
-    string name             = 1;
-    int32 container_port    = 2;
-    string protocol         = 3;
-}
-
 message SecurityContext {
     bool privileged                     = 1;
     message SELinux {
@@ -66,6 +53,19 @@ message SecurityContext {
     SELinux selinux                     = 2;
     repeated string drop_capabilities   = 3;
     repeated string add_capabilities    = 4;
+}
+
+message Volume {
+    string name         = 1;
+    string path         = 2;
+    bool read_only      = 3;
+    string type         = 4;
+}
+
+message PortConfig {
+    string name             = 1;
+    int32 container_port    = 2;
+    string protocol         = 3;
 }
 
 message GetDeploymentRequest {

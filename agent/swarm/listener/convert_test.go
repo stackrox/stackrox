@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -28,6 +29,15 @@ func TestAsDeployment(t *testing.T) {
 						Index: 100,
 					},
 				},
+				Endpoint: swarm.Endpoint{
+					Ports: []swarm.PortConfig{
+						{
+							Name:       "api",
+							TargetPort: 80,
+							Protocol:   swarm.PortConfigProtocolTCP,
+						},
+					},
+				},
 				Spec: swarm.ServiceSpec{
 					Annotations: swarm.Annotations{
 						Name: "foo",
@@ -39,7 +49,28 @@ func TestAsDeployment(t *testing.T) {
 					},
 					TaskTemplate: swarm.TaskSpec{
 						ContainerSpec: &swarm.ContainerSpec{
-							Image: "nginx:latest",
+							Args:    []string{"--flags", "--args"},
+							Command: []string{"init"},
+							Dir:     "/bin",
+							Env:     []string{"LOGLEVEL=Warn", "JVMFLAGS=-Xms256m", "invalidENV"},
+							Image:   "nginx:latest",
+							User:    "root",
+							Privileges: &swarm.Privileges{
+								SELinuxContext: &swarm.SELinuxContext{
+									User:  "user",
+									Role:  "role",
+									Type:  "type",
+									Level: "level",
+								},
+							},
+							Mounts: []mount.Mount{
+								{
+									Source:   "volumeSource",
+									Type:     mount.TypeVolume,
+									ReadOnly: true,
+									Target:   "/var/data",
+								},
+							},
 						},
 					},
 				},
@@ -56,10 +87,49 @@ func TestAsDeployment(t *testing.T) {
 				UpdatedAt: &timestamp.Timestamp{Seconds: 100},
 				Containers: []*v1.Container{
 					{
+						Config: &v1.ContainerConfig{
+							Args: []string{"--flags", "--args"},
+							Env: []*v1.ContainerConfig_EnvironmentConfig{
+								{
+									Key:   "LOGLEVEL",
+									Value: "Warn",
+								},
+								{
+									Key:   "JVMFLAGS",
+									Value: "-Xms256m",
+								},
+							},
+							Command:   []string{"init"},
+							Directory: "/bin",
+							User:      "root",
+						},
 						Image: &v1.Image{
 							Registry: "docker.io",
 							Remote:   "library/nginx",
 							Tag:      "latest",
+						},
+						SecurityContext: &v1.SecurityContext{
+							Selinux: &v1.SecurityContext_SELinux{
+								User:  "user",
+								Role:  "role",
+								Type:  "type",
+								Level: "level",
+							},
+						},
+						Ports: []*v1.PortConfig{
+							{
+								Name:          "api",
+								ContainerPort: 80,
+								Protocol:      "tcp",
+							},
+						},
+						Volumes: []*v1.Volume{
+							{
+								Name:     "volumeSource",
+								Type:     "volume",
+								ReadOnly: true,
+								Path:     "/var/data",
+							},
 						},
 					},
 				},
