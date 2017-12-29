@@ -7,6 +7,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"github.com/golang/protobuf/proto"
 )
 
 type registryStore struct {
@@ -21,6 +22,10 @@ func newRegistryStore(persistent db.RegistryStorage) *registryStore {
 		registries: make(map[string]*v1.Registry),
 		persistent: persistent,
 	}
+}
+
+func (s *registryStore) clone(registry *v1.Registry) *v1.Registry {
+	return proto.Clone(registry).(*v1.Registry)
 }
 
 func (s *registryStore) loadFromPersistent() error {
@@ -41,7 +46,7 @@ func (s *registryStore) GetRegistry(name string) (registry *v1.Registry, exists 
 	s.registryMutex.Lock()
 	defer s.registryMutex.Unlock()
 	registry, exists = s.registries[name]
-	return
+	return s.clone(registry), exists, nil
 }
 
 func (s *registryStore) GetRegistries(request *v1.GetRegistriesRequest) ([]*v1.Registry, error) {
@@ -49,14 +54,17 @@ func (s *registryStore) GetRegistries(request *v1.GetRegistriesRequest) ([]*v1.R
 	defer s.registryMutex.Unlock()
 	registrySlice := make([]*v1.Registry, 0, len(s.registries))
 	for _, registry := range s.registries {
-		registrySlice = append(registrySlice, registry)
+		if len(request.GetCluster()) != 0 && !sliceContains(registry.GetClusters(), request.GetCluster()) {
+			continue
+		}
+		registrySlice = append(registrySlice, s.clone(registry))
 	}
 	sort.SliceStable(registrySlice, func(i, j int) bool { return registrySlice[i].Name < registrySlice[j].Name })
 	return registrySlice, nil
 }
 
 func (s *registryStore) upsertRegistry(registry *v1.Registry) {
-	s.registries[registry.Name] = registry
+	s.registries[registry.Name] = s.clone(registry)
 }
 
 // AddRegistry upserts a registry

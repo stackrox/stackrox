@@ -7,6 +7,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"github.com/golang/protobuf/proto"
 )
 
 type benchmarkStore struct {
@@ -21,6 +22,10 @@ func newBenchmarkStore(persistent db.BenchmarkStorage) *benchmarkStore {
 		benchmarks: make(map[string]*v1.Benchmark),
 		persistent: persistent,
 	}
+}
+
+func (s *benchmarkStore) clone(benchmark *v1.Benchmark) *v1.Benchmark {
+	return proto.Clone(benchmark).(*v1.Benchmark)
 }
 
 func (s *benchmarkStore) loadFromPersistent() error {
@@ -41,7 +46,7 @@ func (s *benchmarkStore) GetBenchmark(name string) (benchmark *v1.Benchmark, exi
 	s.benchmarkMutex.Lock()
 	defer s.benchmarkMutex.Unlock()
 	benchmark, exists = s.benchmarks[name]
-	return
+	return s.clone(benchmark), exists, nil
 }
 
 // GetBenchmarkResults applies the filters from GetBenchmarkResultsRequest and returns the Benchmarks
@@ -50,7 +55,7 @@ func (s *benchmarkStore) GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*v1.
 	defer s.benchmarkMutex.Unlock()
 	var benchmarks []*v1.Benchmark
 	for _, benchmark := range s.benchmarks {
-		benchmarks = append(benchmarks, benchmark)
+		benchmarks = append(benchmarks, s.clone(benchmark))
 	}
 	sort.SliceStable(benchmarks, func(i, j int) bool {
 		return benchmarks[i].Name < benchmarks[j].Name
@@ -68,7 +73,7 @@ func (s *benchmarkStore) AddBenchmark(benchmark *v1.Benchmark) error {
 	if err := s.persistent.AddBenchmark(benchmark); err != nil {
 		return err
 	}
-	s.benchmarks[benchmark.Name] = benchmark
+	s.benchmarks[benchmark.Name] = s.clone(benchmark)
 	return nil
 }
 
@@ -83,7 +88,7 @@ func (s *benchmarkStore) UpdateBenchmark(benchmark *v1.Benchmark) error {
 	if err := s.persistent.UpdateBenchmark(benchmark); err != nil {
 		return err
 	}
-	s.benchmarks[benchmark.Name] = benchmark
+	s.benchmarks[benchmark.Name] = s.clone(benchmark)
 	return nil
 }
 

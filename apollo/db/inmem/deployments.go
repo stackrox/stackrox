@@ -7,6 +7,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"github.com/golang/protobuf/proto"
 )
 
 type deploymentStore struct {
@@ -21,6 +22,10 @@ func newDeploymentStore(persistent db.DeploymentStorage) *deploymentStore {
 		deployments: make(map[string]*v1.Deployment),
 		persistent:  persistent,
 	}
+}
+
+func (s *deploymentStore) clone(deploy *v1.Deployment) *v1.Deployment {
+	return proto.Clone(deploy).(*v1.Deployment)
 }
 
 func (s *deploymentStore) loadFromPersistent() error {
@@ -40,7 +45,7 @@ func (s *deploymentStore) GetDeployment(id string) (d *v1.Deployment, exist bool
 	s.deploymentsMutex.Lock()
 	defer s.deploymentsMutex.Unlock()
 	d, exist = s.deployments[id]
-	return
+	return s.clone(d), exist, nil
 }
 
 func (s *deploymentStore) GetDeployments(request *v1.GetDeploymentsRequest) (deployments []*v1.Deployment, err error) {
@@ -65,7 +70,7 @@ func (s *deploymentStore) GetDeployments(request *v1.GetDeploymentsRequest) (dep
 			continue
 		}
 
-		deployments = append(deployments, d)
+		deployments = append(deployments, s.clone(d))
 	}
 
 	sort.SliceStable(deployments, func(i, j int) bool { return deployments[i].Id < deployments[j].Id })
@@ -106,7 +111,7 @@ func (s *deploymentStore) UpdateDeployment(deployment *v1.Deployment) (err error
 }
 
 func (s *deploymentStore) upsertDeployment(deployment *v1.Deployment) {
-	s.deployments[deployment.Id] = deployment
+	s.deployments[deployment.Id] = s.clone(deployment)
 }
 
 func (s *deploymentStore) RemoveDeployment(id string) (err error) {

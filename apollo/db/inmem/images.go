@@ -7,6 +7,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"github.com/golang/protobuf/proto"
 )
 
 type imageStore struct {
@@ -21,6 +22,10 @@ func newImageStore(persistent db.ImageStorage) *imageStore {
 		images:     make(map[string]*v1.Image),
 		persistent: persistent,
 	}
+}
+
+func (s *imageStore) clone(image *v1.Image) *v1.Image {
+	return proto.Clone(image).(*v1.Image)
 }
 
 func (s *imageStore) loadFromPersistent() error {
@@ -42,14 +47,14 @@ func (s *imageStore) GetImages(request *v1.GetImagesRequest) ([]*v1.Image, error
 	defer s.imageMutex.Unlock()
 	images := make([]*v1.Image, 0, len(s.images))
 	for _, image := range s.images {
-		images = append(images, image)
+		images = append(images, s.clone(image))
 	}
 	sort.SliceStable(images, func(i, j int) bool { return images[i].Sha < images[j].Sha })
 	return images, nil
 }
 
 func (s *imageStore) insertImage(image *v1.Image) {
-	s.images[image.Sha] = image
+	s.images[image.Sha] = s.clone(image)
 }
 
 // AddImage adds an image to the database

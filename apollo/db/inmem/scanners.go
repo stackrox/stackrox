@@ -7,6 +7,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"github.com/golang/protobuf/proto"
 )
 
 type scannerStore struct {
@@ -21,6 +22,10 @@ func newScannerStore(persistent db.ScannerStorage) *scannerStore {
 		scanners:   make(map[string]*v1.Scanner),
 		persistent: persistent,
 	}
+}
+
+func (s *scannerStore) clone(scanner *v1.Scanner) *v1.Scanner {
+	return proto.Clone(scanner).(*v1.Scanner)
 }
 
 func (s *scannerStore) loadFromPersistent() error {
@@ -41,7 +46,7 @@ func (s *scannerStore) GetScanner(name string) (scanner *v1.Scanner, exists bool
 	s.scannerMutex.Lock()
 	defer s.scannerMutex.Unlock()
 	scanner, exists = s.scanners[name]
-	return
+	return s.clone(scanner), exists, nil
 }
 
 // GetScanners returns a slice of scanners based on the request
@@ -50,14 +55,26 @@ func (s *scannerStore) GetScanners(request *v1.GetScannersRequest) ([]*v1.Scanne
 	defer s.scannerMutex.Unlock()
 	scannerSlice := make([]*v1.Scanner, 0, len(s.scanners))
 	for _, scanner := range s.scanners {
-		scannerSlice = append(scannerSlice, scanner)
+		if len(request.GetCluster()) != 0 && !sliceContains(scanner.GetClusters(), request.GetCluster()) {
+			continue
+		}
+		scannerSlice = append(scannerSlice, s.clone(scanner))
 	}
 	sort.SliceStable(scannerSlice, func(i, j int) bool { return scannerSlice[i].Name < scannerSlice[j].Name })
 	return scannerSlice, nil
 }
 
+func sliceContains(slice []string, wanted string) bool {
+	for _, val := range slice {
+		if val == wanted {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *scannerStore) upsertScanner(scanner *v1.Scanner) {
-	s.scanners[scanner.Name] = scanner
+	s.scanners[scanner.Name] = s.clone(scanner)
 }
 
 // AddScanner upserts a scanner

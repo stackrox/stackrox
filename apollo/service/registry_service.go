@@ -3,8 +3,8 @@ package service
 import (
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
-	"bitbucket.org/stack-rox/apollo/apollo/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/secrets"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -40,21 +40,20 @@ func (s *RegistryService) RegisterServiceHandlerFromEndpoint(ctx context.Context
 
 // GetRegistries retrieves all registries that matches the request filters
 func (s *RegistryService) GetRegistries(ctx context.Context, request *v1.GetRegistriesRequest) (*v1.GetRegistriesResponse, error) {
-	registriesWithSecrets, err := s.storage.GetRegistries(request)
+	registries, err := s.storage.GetRegistries(request)
 	if err != nil {
 		return nil, err
 	}
-	registriesWithoutSecrets := make([]*v1.Registry, 0, len(registriesWithSecrets))
-	for _, registryWithSecret := range registriesWithSecrets {
-		scrubbedConfig := secrets.ScrubSecrets(registryWithSecret.Config)
-		registriesWithoutSecrets = append(registriesWithoutSecrets, &v1.Registry{
-			Name:     registryWithSecret.Name,
-			Endpoint: registryWithSecret.Endpoint,
-			Type:     registryWithSecret.Type,
-			Config:   scrubbedConfig,
-		})
+
+	if request.RequestorIsAgent {
+		return &v1.GetRegistriesResponse{Registries: registries}, nil
 	}
-	return &v1.GetRegistriesResponse{Registries: registriesWithoutSecrets}, nil
+
+	// Remove secrets for other API accessors.
+	for _, r := range registries {
+		r.Config = secrets.ScrubSecrets(r.Config)
+	}
+	return &v1.GetRegistriesResponse{Registries: registries}, nil
 }
 
 // PutRegistry updates a registry in the system

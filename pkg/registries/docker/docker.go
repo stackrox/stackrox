@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"sync"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/apollo/registries"
-	registryTypes "bitbucket.org/stack-rox/apollo/apollo/registries/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/heroku/docker-registry-client/registry"
@@ -22,8 +23,14 @@ var (
 type dockerRegistry struct {
 	protoRegistry *v1.Registry
 
-	hub      *registry.Registry
 	registry string
+
+	getClientOnce sync.Once
+	clientObj     client
+
+	url      string
+	username string
+	password string
 }
 
 type v1Config struct {
@@ -35,6 +42,23 @@ type v1Compatibility struct {
 	Created time.Time `json:"created"`
 	Author  string    `json:"author"`
 	Config  v1Config  `json:"container_config"`
+}
+
+type client interface {
+	Manifest(repository, reference string) (*manifestV1.SignedManifest, error)
+	Repositories() ([]string, error)
+}
+
+type nilClient struct {
+	error error
+}
+
+func (n nilClient) Manifest(repository, reference string) (*manifestV1.SignedManifest, error) {
+	return nil, n.error
+}
+
+func (n nilClient) Repositories() ([]string, error) {
+	return nil, n.error
 }
 
 func newRegistry(protoRegistry *v1.Registry) (*dockerRegistry, error) {
@@ -57,15 +81,25 @@ func newRegistry(protoRegistry *v1.Registry) (*dockerRegistry, error) {
 		url = "https://" + protoRegistry.Endpoint
 	}
 
-	hub, err := registry.New(url, username, password)
-	if err != nil {
-		return nil, err
-	}
 	return &dockerRegistry{
 		protoRegistry: protoRegistry,
-		hub:           hub,
 		registry:      protoRegistry.Endpoint,
+		url:           url,
+		username:      username,
+		password:      password,
 	}, nil
+}
+
+func (d *dockerRegistry) client() (c client) {
+	d.getClientOnce.Do(func() {
+		reg, err := registry.New(d.url, d.username, d.password)
+		if err != nil {
+			d.clientObj = nilClient{err}
+			return
+		}
+		d.clientObj = reg
+	})
+	return d.clientObj
 }
 
 var scrubPrefixes = []string{
@@ -80,7 +114,7 @@ func scrubDockerfileLines(compat v1Compatibility) *v1.ImageLayer {
 	}
 	line = strings.Join(strings.Fields(line), " ")
 	var lineInstruction string
-	for instruction := range registryTypes.DockerfileInstructionSet {
+	for instruction := range registries.DockerfileInstructionSet {
 		if strings.HasPrefix(line, instruction) {
 			lineInstruction = instruction
 			line = strings.TrimPrefix(line, instruction+" ")
@@ -119,10 +153,11 @@ func compareProtoTimestamps(t1, t2 *timestamp.Timestamp) bool {
 
 // Metadata returns the metadata via this registries implementation
 func (d *dockerRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
+	log.Infof("Getting metadata for image %v", image)
 	if image == nil {
 		return nil, nil
 	}
-	manifest, err := d.hub.Manifest(image.GetRemote(), image.GetTag())
+	manifest, err := d.client().Manifest(image.GetRemote(), image.GetTag())
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +190,7 @@ func (d *dockerRegistry) ProtoRegistry() *v1.Registry {
 
 // Test tests the current registry and makes sure that it is working properly
 func (d *dockerRegistry) Test() error {
-	_, err := d.hub.Repositories()
+	_, err := d.client().Repositories()
 	return err
 }
 
@@ -164,8 +199,12 @@ func (d *dockerRegistry) Match(image *v1.Image) bool {
 	return d.protoRegistry.Remote == image.Registry
 }
 
+func (d *dockerRegistry) Global() bool {
+	return len(d.protoRegistry.GetClusters()) == 0
+}
+
 func init() {
-	registries.Registry["docker"] = func(registry *v1.Registry) (registryTypes.ImageRegistry, error) {
+	registries.Registry["docker"] = func(registry *v1.Registry) (registries.ImageRegistry, error) {
 		reg, err := newRegistry(registry)
 		return reg, err
 	}

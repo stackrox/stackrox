@@ -7,11 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/apollo/scanners"
-	scannerTypes "bitbucket.org/stack-rox/apollo/apollo/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 )
 
 const (
@@ -119,8 +118,12 @@ func (d *tenable) Match(image *v1.Image) bool {
 	return registry == image.Registry
 }
 
+func (d *tenable) Global() bool {
+	return len(d.protoScanner.GetClusters()) == 0
+}
+
 func init() {
-	scanners.Registry["tenable"] = func(scanner *v1.Scanner) (scannerTypes.ImageScanner, error) {
+	scanners.Registry["tenable"] = func(scanner *v1.Scanner) (scanners.ImageScanner, error) {
 		scan, err := newScanner(scanner)
 		return scan, err
 	}

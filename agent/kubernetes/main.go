@@ -5,8 +5,13 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
+	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
+
 	"bitbucket.org/stack-rox/apollo/agent/kubernetes/listener"
 	"bitbucket.org/stack-rox/apollo/pkg/agent"
+	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 )
 
 func main() {
@@ -33,6 +38,9 @@ func initializeAgent() *agent.Agent {
 	a := agent.New()
 
 	a.Listener = listener.New()
+
+	a.ScannerPoller = scanners.NewScannersClient(a.ApolloEndpoint, a.ClusterID)
+	a.RegistryPoller = registries.NewRegistriesClient(a.ApolloEndpoint, a.ClusterID)
 
 	a.Logger.Info("Kubernetes Agent Initialized")
 	return a

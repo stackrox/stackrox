@@ -2,18 +2,34 @@ package secrets
 
 import "strings"
 
-// secretKeys lists the keys that have secret values so we should scrub the keys out of the map before returning from the api
-var secretKeys = map[string]struct{}{
-	"password":  {},
-	"token":     {},
-	"secretKey": {},
+// secretKeys lists keys that have secret values that should be scrubbed
+// out of a config before returning it in the API.
+type secretKeys map[string]struct{}
+
+func newSecretKeys(keys []string) secretKeys {
+	sk := make(secretKeys)
+	for _, k := range keys {
+		sk[strings.ToLower(k)] = struct{}{}
+	}
+	return sk
 }
 
-// ScrubSecrets removes secret keys from a map[string]string and returns a new copy without secrets
+func (sk secretKeys) shouldScrub(key string) bool {
+	_, present := sk[strings.ToLower(key)]
+	return present
+}
+
+var scrubber = newSecretKeys([]string{
+	"password",
+	"token",
+	"secretKey",
+})
+
+// ScrubSecrets removes secret keys from a map[string]string and returns a new copy without secrets.
 func ScrubSecrets(m map[string]string) map[string]string {
 	newMap := make(map[string]string)
 	for k, v := range m {
-		if _, isSecret := secretKeys[strings.ToLower(k)]; !isSecret {
+		if !scrubber.shouldScrub(k) {
 			newMap[k] = v
 		}
 	}

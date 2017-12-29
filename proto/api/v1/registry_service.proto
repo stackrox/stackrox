@@ -13,10 +13,15 @@ message Registry {
     string endpoint             = 3;
     string remote               = 4;
     map<string, string> config  = 5;
+    // If a list of clusters is provided, the integration will only be accessed from the specified clusters' agents.
+    repeated string clusters    = 6;
 }
 
 message GetRegistriesRequest {
-    string name = 1;
+    string name    = 1;
+    string cluster = 2;
+
+    bool requestor_is_agent = 16; // TODO(cg): This is only to be used until service-to-service auth is implemented.
 }
 
 message GetRegistriesResponse {

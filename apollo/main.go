@@ -11,13 +11,13 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/db/inmem"
 	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
 	"bitbucket.org/stack-rox/apollo/apollo/notifications"
-	_ "bitbucket.org/stack-rox/apollo/apollo/registries/all"
-	_ "bitbucket.org/stack-rox/apollo/apollo/scanners/all"
 	"bitbucket.org/stack-rox/apollo/apollo/scheduler"
 	"bitbucket.org/stack-rox/apollo/apollo/service"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	_ "bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers/all"
+	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
+	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
 )
 
 var (

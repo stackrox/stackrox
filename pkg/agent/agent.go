@@ -11,6 +11,8 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
+	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	"github.com/golang/protobuf/ptypes/empty"
 	googleGRPC "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -24,6 +26,8 @@ type Agent struct {
 	BenchScheduler          *benchmarks.SchedulerClient
 	Orchestrator            orchestrators.Orchestrator
 	ServiceRegistrationFunc func(a *Agent)
+	ScannerPoller           *scanners.Client
+	RegistryPoller          *registries.Client
 
 	ClusterID          string
 	ApolloEndpoint     string
@@ -69,6 +73,12 @@ func (a *Agent) Start() {
 	if a.BenchScheduler != nil {
 		go a.BenchScheduler.Start()
 	}
+	if a.ScannerPoller != nil {
+		go a.ScannerPoller.Start()
+	}
+	if a.RegistryPoller != nil {
+		go a.RegistryPoller.Start()
+	}
 
 	a.waitUntilApolloIsReady()
 	go a.relayEvents()
@@ -81,6 +91,12 @@ func (a *Agent) Stop() {
 	}
 	if a.BenchScheduler != nil {
 		a.BenchScheduler.Stop()
+	}
+	if a.ScannerPoller != nil {
+		a.ScannerPoller.Stop()
+	}
+	if a.RegistryPoller != nil {
+		a.RegistryPoller.Stop()
 	}
 
 	a.Conn.Close()
@@ -120,6 +136,8 @@ func pingWithTimeout(svc v1.PingServiceClient) (err error) {
 }
 
 func (a *Agent) reportDeploymentEvent(cli v1.AgentEventServiceClient, ev *v1.DeploymentEvent) (err error) {
+	a.enrichImages(ev)
+
 	retries := 0
 	err = reportWithTimeout(cli, ev)
 	errStatus, ok := status.FromError(err)
@@ -132,6 +150,30 @@ func (a *Agent) reportDeploymentEvent(cli v1.AgentEventServiceClient, ev *v1.Dep
 	}
 
 	return
+}
+
+func (a *Agent) enrichImages(ev *v1.DeploymentEvent) {
+	for _, c := range ev.GetDeployment().GetContainers() {
+		img := c.GetImage()
+		for _, r := range a.RegistryPoller.Registries() {
+			if r.Match(img) {
+				meta, err := r.Metadata(img)
+				if err != nil {
+					a.Logger.Warnf("Couldn't get metadata for %v: %s", img, err)
+				}
+				img.Metadata = meta
+			}
+		}
+		for _, s := range a.ScannerPoller.Scanners() {
+			if s.Match(img) {
+				scan, err := s.GetLastScan(img)
+				if err != nil {
+					a.Logger.Warnf("Couldn't get last scan for %v: %s", img, err)
+				}
+				img.Scan = scan
+			}
+		}
+	}
 }
 
 func reportWithTimeout(cli v1.AgentEventServiceClient, ev *v1.DeploymentEvent) (err error) {

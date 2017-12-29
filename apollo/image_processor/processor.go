@@ -7,17 +7,16 @@ import (
 	"sync"
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
-	"bitbucket.org/stack-rox/apollo/apollo/registries"
-	registryTypes "bitbucket.org/stack-rox/apollo/apollo/registries/types"
-	"bitbucket.org/stack-rox/apollo/apollo/scanners"
-	scannerTypes "bitbucket.org/stack-rox/apollo/apollo/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	scannerTypes "bitbucket.org/stack-rox/apollo/pkg/scanners"
 )
 
 var (
-	log = logging.New("imageprocessor/processor")
+	log = logging.New("image_processor")
 )
 
 // ImageProcessor enriches and processes images to determine image policy violations.
@@ -33,7 +32,7 @@ type ImageProcessor struct {
 	regexPolicies map[string]*regexImagePolicy
 
 	registryMutex sync.Mutex
-	registries    map[string]registryTypes.ImageRegistry
+	registries    map[string]registries.ImageRegistry
 
 	scannerMutex sync.Mutex
 	scanners     map[string]scannerTypes.ImageScanner
@@ -121,7 +120,7 @@ func compileLineRuleFieldRegex(line *v1.DockerfileLineRuleField) (*lineRuleField
 	if line == nil {
 		return nil, nil
 	}
-	if _, ok := registryTypes.DockerfileInstructionSet[line.Instruction]; !ok {
+	if _, ok := registries.DockerfileInstructionSet[line.Instruction]; !ok {
 		return nil, fmt.Errorf("%v is not a valid dockerfile instruction", line.Instruction)
 	}
 	value, err := compileStringRegex(line.Value)
@@ -138,7 +137,7 @@ func compileLineRuleFieldRegex(line *v1.DockerfileLineRuleField) (*lineRuleField
 }
 
 // UpdateRegistry updates image processors map of active registries
-func (i *ImageProcessor) UpdateRegistry(registry registryTypes.ImageRegistry) {
+func (i *ImageProcessor) UpdateRegistry(registry registries.ImageRegistry) {
 	i.registryMutex.Lock()
 	defer i.registryMutex.Unlock()
 	i.registries[registry.ProtoRegistry().Name] = registry
@@ -185,7 +184,7 @@ func (i *ImageProcessor) addRegexImagePolicy(policy *v1.ImagePolicy) error {
 }
 
 func (i *ImageProcessor) initializeRegistries() error {
-	registryMap := make(map[string]registryTypes.ImageRegistry)
+	registryMap := make(map[string]registries.ImageRegistry)
 	protoRegistries, err := i.database.GetRegistries(&v1.GetRegistriesRequest{})
 	if err != nil {
 		return err
@@ -307,6 +306,9 @@ func (i *ImageProcessor) enrichWithMetadata(image *v1.Image) (bool, error) {
 	i.registryMutex.Lock()
 	defer i.registryMutex.Unlock()
 	for _, registry := range i.registries {
+		if !registry.Global() {
+			continue
+		}
 		if !registry.Match(image) {
 			continue
 		}
@@ -325,6 +327,9 @@ func (i *ImageProcessor) enrichWithScan(image *v1.Image) (bool, error) {
 	i.scannerMutex.Lock()
 	defer i.scannerMutex.Unlock()
 	for _, scanner := range i.scanners {
+		if !scanner.Global() {
+			continue
+		}
 		if !scanner.Match(image) {
 			continue
 		}

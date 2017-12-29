@@ -65,6 +65,8 @@ spec:
           value: apollo.stackrox:443
         - name: ROX_APOLLO_CLUSTER_ID
           value: test
+        - name: ROX_APOLLO_IMAGE
+          value: stackrox/apollo:latest
         imagePullPolicy: Always
         name: agent
         command:

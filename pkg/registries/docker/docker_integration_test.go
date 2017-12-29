@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
-	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,10 +20,11 @@ func TestGetMetadataIntegration(t *testing.T) {
 	username := ""
 	password := ""
 
-	hub, err := registry.New(url, username, password)
-	require.Nil(t, err)
-
-	dockerHubClient := &dockerRegistry{hub: hub}
+	dockerHubClient := &dockerRegistry{
+		url:      url,
+		username: username,
+		password: password,
+	}
 
 	image := v1.Image{
 		Remote: "library/nginx",

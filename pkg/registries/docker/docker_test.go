@@ -10,7 +10,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -114,10 +113,9 @@ func getProtoTimestamp(nanos int64) *timestamp.Timestamp {
 func TestGetMetadata(t *testing.T) {
 	newMockRegistry()
 
-	hub, err := registry.New("http://"+server.Listener.Addr().String(), "", "")
-	require.Nil(t, err)
-
-	dockerHubClient := &dockerRegistry{hub: hub}
+	dockerHubClient := &dockerRegistry{
+		url: "http://" + server.Listener.Addr().String(),
+	}
 
 	image := v1.Image{
 		Remote: "library/nginx",

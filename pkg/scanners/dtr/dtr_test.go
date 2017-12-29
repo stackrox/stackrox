@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/apollo/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -19,7 +19,7 @@ type DTRSuite struct {
 	suite.Suite
 
 	server *httptest.Server
-	dtr    types.ImageScanner
+	dtr    scanners.ImageScanner
 }
 
 func handleAuth(r *http.Request) error {

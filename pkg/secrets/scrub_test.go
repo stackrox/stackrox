@@ -8,10 +8,12 @@ import (
 
 func TestScrubSecrets(t *testing.T) {
 	m := map[string]string{
-		"password": "password",
-		"token":    "token",
-		"Token":    "token",
-		"endpoint": "endpoint",
+		"password":  "password",
+		"token":     "token",
+		"Token":     "token",
+		"endpoint":  "endpoint",
+		"secretKey": "secret!",
+		"secretkey": "secret",
 	}
 	assert.Equal(t, map[string]string{"endpoint": "endpoint"}, ScrubSecrets(m))
 }

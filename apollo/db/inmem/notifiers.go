@@ -7,6 +7,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"github.com/golang/protobuf/proto"
 )
 
 type notifierStore struct {
@@ -21,6 +22,10 @@ func newNotifierStore(persistent db.NotifierStorage) *notifierStore {
 		notifiers:  make(map[string]*v1.Notifier),
 		persistent: persistent,
 	}
+}
+
+func (s *notifierStore) clone(notifier *v1.Notifier) *v1.Notifier {
+	return proto.Clone(notifier).(*v1.Notifier)
 }
 
 func (s *notifierStore) loadFromPersistent() error {
@@ -41,7 +46,7 @@ func (s *notifierStore) GetNotifier(name string) (notifier *v1.Notifier, exists 
 	s.notifierMutex.Lock()
 	defer s.notifierMutex.Unlock()
 	notifier, exists = s.notifiers[name]
-	return
+	return s.clone(notifier), exists, nil
 }
 
 // GetNotifierResults applies the filters from GetNotifierResultsRequest and returns the Notifiers
@@ -50,7 +55,7 @@ func (s *notifierStore) GetNotifiers(request *v1.GetNotifiersRequest) ([]*v1.Not
 	defer s.notifierMutex.Unlock()
 	var notifiers []*v1.Notifier
 	for _, notifier := range s.notifiers {
-		notifiers = append(notifiers, notifier)
+		notifiers = append(notifiers, s.clone(notifier))
 	}
 	sort.SliceStable(notifiers, func(i, j int) bool {
 		return notifiers[i].Name < notifiers[j].Name
@@ -68,7 +73,7 @@ func (s *notifierStore) AddNotifier(notifier *v1.Notifier) error {
 	if err := s.persistent.AddNotifier(notifier); err != nil {
 		return err
 	}
-	s.notifiers[notifier.Name] = notifier
+	s.notifiers[notifier.Name] = s.clone(notifier)
 	return nil
 }
 
@@ -79,7 +84,7 @@ func (s *notifierStore) UpdateNotifier(notifier *v1.Notifier) error {
 	if err := s.persistent.UpdateNotifier(notifier); err != nil {
 		return err
 	}
-	s.notifiers[notifier.Name] = notifier
+	s.notifiers[notifier.Name] = s.clone(notifier)
 	return nil
 }
 

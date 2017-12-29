@@ -1,4 +1,4 @@
-package types
+package registries
 
 import (
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
@@ -10,6 +10,7 @@ type ImageRegistry interface {
 	Match(image *v1.Image) bool
 	Metadata(image *v1.Image) (*v1.ImageMetadata, error)
 	Test() error
+	Global() bool
 }
 
 // DockerfileInstructionSet are the set of acceptable keywords in a Dockerfile

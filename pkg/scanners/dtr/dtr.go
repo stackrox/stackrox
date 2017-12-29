@@ -10,10 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/apollo/scanners"
-	scannerTypes "bitbucket.org/stack-rox/apollo/apollo/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 )
 
 const (
@@ -201,6 +200,7 @@ func (d *dtr) ProtoScanner() *v1.Scanner {
 
 // GetLastScan retrieves the most recent scan
 func (d *dtr) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
+	log.Infof("Getting latest scan for image %v", image)
 	imageScans, err := d.GetScans(image)
 	if err != nil {
 		return nil, err
@@ -216,8 +216,12 @@ func (d *dtr) Match(image *v1.Image) bool {
 	return d.protoScanner.Remote == image.Registry
 }
 
+func (d *dtr) Global() bool {
+	return len(d.protoScanner.GetClusters()) == 0
+}
+
 func init() {
-	scanners.Registry["dtr"] = func(scanner *v1.Scanner) (scannerTypes.ImageScanner, error) {
+	scanners.Registry["dtr"] = func(scanner *v1.Scanner) (scanners.ImageScanner, error) {
 		scan, err := newScanner(scanner)
 		return scan, err
 	}

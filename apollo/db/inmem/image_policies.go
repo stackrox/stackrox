@@ -7,6 +7,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"github.com/golang/protobuf/proto"
 )
 
 type imagePolicyStore struct {
@@ -21,6 +22,10 @@ func newImagePolicyStore(persistent db.ImagePolicyStorage) *imagePolicyStore {
 		imagePolicies: make(map[string]*v1.ImagePolicy),
 		persistent:    persistent,
 	}
+}
+
+func (s *imagePolicyStore) clone(policy *v1.ImagePolicy) *v1.ImagePolicy {
+	return proto.Clone(policy).(*v1.ImagePolicy)
 }
 
 func (s *imagePolicyStore) loadFromPersistent() error {
@@ -42,12 +47,12 @@ func (s *imagePolicyStore) GetImagePolicies(request *v1.GetImagePoliciesRequest)
 	defer s.imagePoliciesMutex.Unlock()
 	policies := make([]*v1.ImagePolicy, 0, len(s.imagePolicies))
 	for _, v := range s.imagePolicies {
-		policies = append(policies, v)
+		policies = append(policies, s.clone(v))
 	}
 	if request.Name != "" {
 		val, ok := s.imagePolicies[request.Name]
 		if ok {
-			return []*v1.ImagePolicy{val}, nil
+			return []*v1.ImagePolicy{s.clone(val)}, nil
 		}
 		return policies, nil
 	}
@@ -81,7 +86,7 @@ func (s *imagePolicyStore) UpdateImagePolicy(policy *v1.ImagePolicy) error {
 }
 
 func (s *imagePolicyStore) upsertImagePolicy(policy *v1.ImagePolicy) {
-	s.imagePolicies[policy.Name] = policy
+	s.imagePolicies[policy.Name] = s.clone(policy)
 }
 
 // RemoveImagePolicy removes the image policy.

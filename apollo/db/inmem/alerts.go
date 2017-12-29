@@ -7,6 +7,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 )
 
@@ -22,6 +23,10 @@ func newAlertStore(persistent db.AlertStorage) *alertStore {
 		alerts:     make(map[string]*v1.Alert),
 		persistent: persistent,
 	}
+}
+
+func (s *alertStore) clone(alert *v1.Alert) *v1.Alert {
+	return proto.Clone(alert).(*v1.Alert)
 }
 
 func (s *alertStore) loadFromPersistent() error {

@@ -3,8 +3,8 @@ package service
 import (
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
-	"bitbucket.org/stack-rox/apollo/apollo/scanners"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	"bitbucket.org/stack-rox/apollo/pkg/secrets"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -40,20 +40,20 @@ func (s *ScannerService) RegisterServiceHandlerFromEndpoint(ctx context.Context,
 
 // GetScanners retrieves all registries that matches the request filters
 func (s *ScannerService) GetScanners(ctx context.Context, request *v1.GetScannersRequest) (*v1.GetScannersResponse, error) {
-	scannersWithSecrets, err := s.storage.GetScanners(request)
+	scanners, err := s.storage.GetScanners(request)
 	if err != nil {
 		return nil, err
 	}
-	scannersWithoutSecrets := make([]*v1.Scanner, 0, len(scannersWithSecrets))
-	for _, scannerWithSecret := range scannersWithSecrets {
-		scrubbedConfig := secrets.ScrubSecrets(scannerWithSecret.Config)
-		scannersWithoutSecrets = append(scannersWithoutSecrets, &v1.Scanner{
-			Name:     scannerWithSecret.Name,
-			Endpoint: scannerWithSecret.Endpoint,
-			Config:   scrubbedConfig,
-		})
+
+	if request.RequestorIsAgent {
+		return &v1.GetScannersResponse{Scanners: scanners}, nil
 	}
-	return &v1.GetScannersResponse{Scanners: scannersWithoutSecrets}, nil
+
+	// Remove secrets for other API accessors.
+	for _, s := range scanners {
+		s.Config = secrets.ScrubSecrets(s.Config)
+	}
+	return &v1.GetScannersResponse{Scanners: scanners}, nil
 }
 
 // PostScanner inserts a new Scanner into the system
