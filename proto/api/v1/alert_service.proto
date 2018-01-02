@@ -5,7 +5,7 @@ option go_package = "v1";
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "v1/common.proto";
-import "v1/image_policy_service.proto";
+import "v1/policy_service.proto";
 import "v1/deployment_service.proto";
 
 package v1;
@@ -14,30 +14,12 @@ message Alert {
     string id                       = 1;
     Policy policy                   = 2;
     Deployment deployment           = 3;
-    Severity severity               = 4;
-    google.protobuf.Timestamp time  = 5;
-    bool stale                      = 6;
-}
-
-enum Policy_Category {
-    UNSET_CATEGORY          = 0;
-    IMAGE_ASSURANCE         = 1;
-    CONTAINER_CAPABILITIES  = 2;
-}
-
-message Policy {
-    Policy_Category category        = 1;
-    string name                     = 2;
     message Violation {
         string message    = 1;
     }
-    repeated Violation violations   = 3;
-
-    oneof policy_oneof {
-        ImagePolicy image_policy    = 4;
-    }
-
-    repeated string notifiers       = 5;
+    repeated Violation violations   = 4;
+    google.protobuf.Timestamp time  = 5;
+    bool stale                      = 6;
 }
 
 message GetAlertRequest {
@@ -58,15 +40,8 @@ message GetAlertsResponse {
 }
 
 message GetAlertsGroupResponse {
-    message PolicyDetails {
-        string name = 1;
-        Severity severity = 2;
-        oneof policy_oneof {
-            ImagePolicy image_policy    = 4;
-        }
-    }
     message PolicyGroup {
-        PolicyDetails policy = 1;
+        Policy policy = 1;
         int64 num_alerts = 2;
     }
     message CategoryGroup {

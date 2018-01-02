@@ -18,7 +18,7 @@ func createBolt() (*BoltDB, error) {
 	return db, err
 }
 
-func TestGetDefaultImagePolicies(t *testing.T) {
+func TestGetDefaultPolicies(t *testing.T) {
 	db, err := createBolt()
 	require.NoError(t, err)
 	defer db.Close()
@@ -26,7 +26,7 @@ func TestGetDefaultImagePolicies(t *testing.T) {
 
 	defaultPoliciesPath = policies.Directory()
 
-	imagePolicies, err := db.getDefaultImagePolicies()
+	policies, err := db.getDefaultPolicies()
 	require.NoError(t, err)
-	require.NotNil(t, imagePolicies)
+	require.NotNil(t, policies)
 }

@@ -91,7 +91,7 @@ class ViolationsContainer extends Component {
                 table.rows = category.byPolicy.map((policy) => {
                     const result = {
                         name: policy.policy.name,
-                        description: policy.policy.imagePolicy.description,
+                        description: policy.policy.description,
                         category: category.category.replace('_', ' ').capitalizeFirstLetterOfWord(),
                         severity: policy.policy.severity.split('_')[0].capitalizeFirstLetterOfWord(),
                         numAlerts: policy.numAlerts

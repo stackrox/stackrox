@@ -33,14 +33,18 @@ func (suite *AlertsTestSuite) basicAlertTest(updateStore, retrievalStore db.Stor
 
 	alerts := []*v1.Alert{
 		{
-			Id:       "id1",
-			Severity: v1.Severity_LOW_SEVERITY,
-			Time:     &timestamp.Timestamp{Seconds: 200},
+			Id: "id1",
+			Policy: &v1.Policy{
+				Severity: v1.Severity_LOW_SEVERITY,
+			},
+			Time: &timestamp.Timestamp{Seconds: 200},
 		},
 		{
-			Id:       "id2",
-			Severity: v1.Severity_HIGH_SEVERITY,
-			Time:     &timestamp.Timestamp{Seconds: 100},
+			Id: "id2",
+			Policy: &v1.Policy{
+				Severity: v1.Severity_HIGH_SEVERITY,
+			},
+			Time: &timestamp.Timestamp{Seconds: 100},
 		},
 	}
 
@@ -59,7 +63,7 @@ func (suite *AlertsTestSuite) basicAlertTest(updateStore, retrievalStore db.Stor
 
 	// Verify update works
 	for _, alert := range alerts {
-		alert.Severity = v1.Severity_MEDIUM_SEVERITY
+		alert.Policy.Severity = v1.Severity_MEDIUM_SEVERITY
 		suite.NoError(updateStore.UpdateAlert(alert))
 	}
 
@@ -88,24 +92,24 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 	alert1 := &v1.Alert{
 		Id: "id1",
 		Policy: &v1.Policy{
-			Category: v1.Policy_Category_IMAGE_ASSURANCE,
-			Name:     "policy1",
+			Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+			Name:       "policy1",
+			Severity:   v1.Severity_LOW_SEVERITY,
 		},
-		Severity: v1.Severity_LOW_SEVERITY,
-		Time:     &timestamp.Timestamp{Seconds: 100},
-		Stale:    true,
+		Time:  &timestamp.Timestamp{Seconds: 100},
+		Stale: true,
 	}
 	err := suite.AddAlert(alert1)
 	suite.NoError(err)
 	alert2 := &v1.Alert{
 		Id: "id2",
 		Policy: &v1.Policy{
-			Category: v1.Policy_Category_IMAGE_ASSURANCE,
-			Name:     "policy2",
+			Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+			Name:       "policy2",
+			Severity:   v1.Severity_HIGH_SEVERITY,
 		},
-		Severity: v1.Severity_HIGH_SEVERITY,
-		Time:     &timestamp.Timestamp{Seconds: 200},
-		Stale:    false,
+		Time:  &timestamp.Timestamp{Seconds: 200},
+		Stale: false,
 	}
 	err = suite.AddAlert(alert2)
 	suite.NoError(err)

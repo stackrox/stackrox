@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "v1/common.proto";
+import "v1/configuration_policy.proto";
+import "v1/image_policy.proto";
+import "v1/privilege_policy.proto";
+
+package v1;
+
+message Policy {
+    string name                                 = 1;
+    Severity severity                           = 2;
+    string description                          = 3;
+    bool disabled                               = 4;
+    repeated Policy_Category categories         = 5;
+
+    message Scope {
+        string cluster      = 1;
+        string namespace    = 2;
+        message Label {
+            string key   = 1;
+            string value = 2;
+        }
+        Label label         = 3;
+    }
+    repeated Scope scope                        = 6;
+
+    repeated string notifiers                   = 7;
+
+    ImagePolicy image_policy                    = 8;
+    PrivilegePolicy privilege_policy            = 9;
+    ConfigurationPolicy configuration_policy    = 10;
+}
+
+enum Policy_Category {
+    UNSET_CATEGORY              = 0;
+    IMAGE_ASSURANCE             = 1;
+    PRIVILEGES_CAPABILITIES     = 2;
+    CONTAINER_CONFIGURATION     = 3;
+}
+
+message GetPolicyRequest {
+    string name = 1;
+}
+
+message GetPoliciesRequest {
+    repeated string name                = 1;
+    repeated Policy_Category category   = 2;
+    repeated Severity severity          = 3;
+    repeated bool disabled              = 4;
+}
+
+message DeletePolicyRequest {
+    string name = 1;
+}
+
+message PoliciesResponse {
+    repeated Policy policies = 1;
+}
+
+
+service PolicyService {
+
+    rpc GetPolicy (GetPolicyRequest) returns (Policy) {
+        option (google.api.http) = {
+            get: "/v1/policies/{name}"
+        };
+    }
+
+    rpc GetPolicies (GetPoliciesRequest) returns (PoliciesResponse) {
+        option (google.api.http) = {
+            get: "/v1/policies"
+        };
+    }
+
+    rpc PostPolicy (Policy) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/policies"
+            body: "*"
+        };
+    }
+
+    rpc PutPolicy (Policy) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/v1/policies/{name}"
+            body: "*"
+        };
+    }
+
+    rpc DeletePolicy (DeletePolicyRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/policies/{name}"
+        };
+    }
+
+}

@@ -11,31 +11,31 @@ import (
 )
 
 func (b *BoltDB) loadDefaults() error {
-	return b.loadDefaultImagePolicies()
+	return b.loadDefaultPolicies()
 }
 
-func (b *BoltDB) loadDefaultImagePolicies() error {
-	if policies, err := b.GetImagePolicies(&v1.GetImagePoliciesRequest{}); err == nil && len(policies) > 0 {
+func (b *BoltDB) loadDefaultPolicies() error {
+	if policies, err := b.GetPolicies(&v1.GetPoliciesRequest{}); err == nil && len(policies) > 0 {
 		return nil
 	}
 
-	policies, err := b.getDefaultImagePolicies()
+	policies, err := b.getDefaultPolicies()
 	if err != nil {
 		return err
 	}
 
 	for _, p := range policies {
-		if err := b.AddImagePolicy(p); err != nil {
+		if err := b.AddPolicy(p); err != nil {
 			return err
 		}
 	}
 
-	log.Infof("Loaded %d default Image Policies", len(policies))
+	log.Infof("Loaded %d default Policies", len(policies))
 	return nil
 }
 
-func (b *BoltDB) getDefaultImagePolicies() (policies []*v1.ImagePolicy, err error) {
-	dir := path.Join(defaultPoliciesPath, "image")
+func (b *BoltDB) getDefaultPolicies() (policies []*v1.Policy, err error) {
+	dir := path.Join(defaultPoliciesPath, "files")
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		log.Errorf("Unable to list files in directory: %s", err)
@@ -48,8 +48,8 @@ func (b *BoltDB) getDefaultImagePolicies() (policies []*v1.ImagePolicy, err erro
 			continue
 		}
 
-		var p *v1.ImagePolicy
-		p, err = b.readImagePolicyFile(path.Join(dir, f.Name()))
+		var p *v1.Policy
+		p, err = b.readPolicyFile(path.Join(dir, f.Name()))
 		if err == nil {
 			policies = append(policies, p)
 		} else {
@@ -60,14 +60,14 @@ func (b *BoltDB) getDefaultImagePolicies() (policies []*v1.ImagePolicy, err erro
 	return
 }
 
-func (b *BoltDB) readImagePolicyFile(path string) (*v1.ImagePolicy, error) {
+func (b *BoltDB) readPolicyFile(path string) (*v1.Policy, error) {
 	contents, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Errorf("Unable to read file %s: %s", path, err)
 		return nil, err
 	}
 
-	r := new(v1.ImagePolicy)
+	r := new(v1.Policy)
 	err = json.NewDecoder(bytes.NewReader(contents)).Decode(r)
 	if err != nil {
 		log.Errorf("Unable to unmarshal policy json: %s", err)

@@ -20,14 +20,14 @@ func max(x, y float32) float32 {
 	return float32(math.Max(float64(x), float64(y)))
 }
 
-func (policy *regexImagePolicy) matchComponent(image *v1.Image) (violations []*v1.Policy_Violation, policyExists bool) {
+func (policy *regexImagePolicy) matchComponent(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
 	if policy.Component == nil {
 		return
 	}
 	policyExists = true
 	for _, component := range image.GetScan().GetComponents() {
 		if policy.Component.MatchString(component.GetName()) {
-			violation := &v1.Policy_Violation{
+			violation := &v1.Alert_Violation{
 				Message: fmt.Sprintf("Component '%v' matches the regex %+v", component.GetName(), policy.Component),
 			}
 			violations = append(violations, violation)
@@ -36,7 +36,7 @@ func (policy *regexImagePolicy) matchComponent(image *v1.Image) (violations []*v
 	return
 }
 
-func (policy *regexImagePolicy) matchLineRule(image *v1.Image) (violations []*v1.Policy_Violation, policyExists bool) {
+func (policy *regexImagePolicy) matchLineRule(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
 	if policy.LineRule == nil {
 		return
 	}
@@ -45,7 +45,7 @@ func (policy *regexImagePolicy) matchLineRule(image *v1.Image) (violations []*v1
 	for _, layer := range image.GetMetadata().GetLayers() {
 		if lineRegex.Instruction == layer.Instruction && lineRegex.Value.MatchString(layer.GetValue()) {
 			dockerFileLine := fmt.Sprintf("%v %v", layer.GetInstruction(), layer.GetValue())
-			violation := &v1.Policy_Violation{
+			violation := &v1.Alert_Violation{
 				Message: fmt.Sprintf("Dockerfile Line '%v' matches the instruction '%v' and regex '%v'", dockerFileLine, layer.GetInstruction(), lineRegex.Value),
 			}
 			violations = append(violations, violation)
@@ -54,7 +54,7 @@ func (policy *regexImagePolicy) matchLineRule(image *v1.Image) (violations []*v1
 	return
 }
 
-func (policy *regexImagePolicy) matchCVE(image *v1.Image) (violations []*v1.Policy_Violation, policyExists bool) {
+func (policy *regexImagePolicy) matchCVE(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
 	if policy.CVE == nil {
 		return
 	}
@@ -62,7 +62,7 @@ func (policy *regexImagePolicy) matchCVE(image *v1.Image) (violations []*v1.Poli
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			if policy.CVE.MatchString(vuln.GetCve()) {
-				violations = append(violations, &v1.Policy_Violation{
+				violations = append(violations, &v1.Alert_Violation{
 					Message: fmt.Sprintf("CVE '%v' matches the regex '%+v'", vuln.GetCve(), policy.CVE),
 				})
 			}
@@ -71,7 +71,7 @@ func (policy *regexImagePolicy) matchCVE(image *v1.Image) (violations []*v1.Poli
 	return
 }
 
-func (policy *regexImagePolicy) matchCVSS(image *v1.Image) (violations []*v1.Policy_Violation, policyExists bool) {
+func (policy *regexImagePolicy) matchCVSS(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
 	if policy.CVSS == nil {
 		return
 	}
@@ -124,14 +124,14 @@ func (policy *regexImagePolicy) matchCVSS(image *v1.Image) (violations []*v1.Pol
 		comparatorChar = ">"
 	}
 	if comparatorFunc(value, policy.CVSS.GetValue()) {
-		violations = append(violations, &v1.Policy_Violation{
+		violations = append(violations, &v1.Alert_Violation{
 			Message: fmt.Sprintf("The %s(cvss) = %v. %v is %v threshold of %v", policy.CVSS.GetMathOp(), value, value, comparatorChar, policy.CVSS.GetValue()),
 		})
 	}
 	return
 }
 
-func (policy *regexImagePolicy) matchImageName(image *v1.Image) (violations []*v1.Policy_Violation, policyExists bool) {
+func (policy *regexImagePolicy) matchImageName(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
 	if policy.ImageNamePolicy == nil {
 		return
 	}
@@ -156,13 +156,13 @@ func (policy *regexImagePolicy) matchImageName(image *v1.Image) (violations []*v
 	if policy.ImageNamePolicy.Tag != nil && !policy.ImageNamePolicy.Tag.MatchString(image.Tag) {
 		return
 	}
-	violations = append(violations, &v1.Policy_Violation{
+	violations = append(violations, &v1.Alert_Violation{
 		Message: fmt.Sprintf("Image name '%s' matches the name policy '%s'", images.Wrapper{Image: image}, policy.ImageNamePolicy),
 	})
 	return
 }
 
-func (policy *regexImagePolicy) matchImageAge(image *v1.Image) (violations []*v1.Policy_Violation, policyExists bool) {
+func (policy *regexImagePolicy) matchImageAge(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
 	if policy.ImageAgeDays == 0 {
 		return
 	}
@@ -177,14 +177,14 @@ func (policy *regexImagePolicy) matchImageAge(image *v1.Image) (violations []*v1
 		log.Error(err) // Log just in case, though in reality this should not occur
 	}
 	if createdTime.Before(deadline) {
-		violations = append(violations, &v1.Policy_Violation{
+		violations = append(violations, &v1.Alert_Violation{
 			Message: fmt.Sprintf("Image Age '%v' is %0.2f days past the deadline", createdTime, deadline.Sub(createdTime).Hours()/24),
 		})
 	}
 	return
 }
 
-func (policy *regexImagePolicy) matchScanAge(image *v1.Image) (violations []*v1.Policy_Violation, policyExists bool) {
+func (policy *regexImagePolicy) matchScanAge(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
 	if policy.ScanAgeDays == 0 {
 		return
 	}
@@ -199,14 +199,14 @@ func (policy *regexImagePolicy) matchScanAge(image *v1.Image) (violations []*v1.
 		log.Error(err) // Log just in case, though in reality this should not occur
 	}
 	if scannedTime.Before(deadline) {
-		violations = append(violations, &v1.Policy_Violation{
+		violations = append(violations, &v1.Alert_Violation{
 			Message: fmt.Sprintf("Scan Age '%v' is %0.2f days past the deadline", scannedTime, deadline.Sub(scannedTime).Hours()/24),
 		})
 	}
 	return
 }
 
-type matchFunc func(image *v1.Image) ([]*v1.Policy_Violation, bool)
+type matchFunc func(image *v1.Image) ([]*v1.Alert_Violation, bool)
 
 // matchPolicyToImage matches the policy if *ALL* conditions of the policy are satisfied.
 func (policy *regexImagePolicy) matchPolicyToImage(image *v1.Image) *v1.Alert {
@@ -219,7 +219,7 @@ func (policy *regexImagePolicy) matchPolicyToImage(image *v1.Image) *v1.Alert {
 		policy.matchImageAge,
 		policy.matchScanAge,
 	}
-	var violations []*v1.Policy_Violation
+	var violations []*v1.Alert_Violation
 	// This ensures that the policy exists and if there isn't a violation of the field then it should not return any violations
 	for _, f := range matchFunctions {
 		calculatedViolations, exists := f(image)
@@ -232,18 +232,10 @@ func (policy *regexImagePolicy) matchPolicyToImage(image *v1.Image) *v1.Alert {
 		return nil
 	}
 	alert := &v1.Alert{
-		Id: uuid.NewV4().String(),
-		Policy: &v1.Policy{
-			Category:   v1.Policy_Category_IMAGE_ASSURANCE,
-			Name:       policy.Original.GetName(),
-			Violations: violations,
-			Notifiers:  policy.Original.Notifiers,
-			PolicyOneof: &v1.Policy_ImagePolicy{
-				ImagePolicy: policy.Original,
-			},
-		},
-		Severity: policy.Original.Severity,
-		Time:     ptypes.TimestampNow(),
+		Id:         uuid.NewV4().String(),
+		Policy:     policy.Original,
+		Violations: violations,
+		Time:       ptypes.TimestampNow(),
 	}
 	return alert
 }

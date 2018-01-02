@@ -16,13 +16,13 @@ import (
 )
 
 var (
-	log = logging.New("image_processor")
+	log = logging.New("detection/image_processor")
 )
 
 // ImageProcessor enriches and processes images to determine image policy violations.
 type ImageProcessor struct {
 	database interface {
-		db.ImagePolicyStorage
+		db.PolicyStorage
 		db.ImageStorage
 		db.RegistryStorage
 		db.ScannerStorage
@@ -68,7 +68,7 @@ func (i imageNamePolicyRegex) String() string {
 }
 
 type regexImagePolicy struct {
-	Original *v1.ImagePolicy
+	Original *v1.Policy
 
 	ImageNamePolicy *imageNamePolicyRegex
 
@@ -150,20 +150,22 @@ func (i *ImageProcessor) UpdateScanner(scanner scannerTypes.ImageScanner) {
 	i.scanners[scanner.ProtoScanner().Name] = scanner
 }
 
-func (i *ImageProcessor) addRegexImagePolicy(policy *v1.ImagePolicy) error {
-	imageNameRegex, err := compileImageNamePolicyRegex(policy.GetImageName())
+func (i *ImageProcessor) addRegexImagePolicy(policy *v1.Policy) error {
+	imagePolicy := policy.GetImagePolicy()
+
+	imageNameRegex, err := compileImageNamePolicyRegex(imagePolicy.GetImageName())
 	if err != nil {
 		return err
 	}
-	lineRule, err := compileLineRuleFieldRegex(policy.GetLineRule())
+	lineRule, err := compileLineRuleFieldRegex(imagePolicy.GetLineRule())
 	if err != nil {
 		return err
 	}
-	component, err := compileStringRegex(policy.GetComponent())
+	component, err := compileStringRegex(imagePolicy.GetComponent())
 	if err != nil {
 		return err
 	}
-	cve, err := compileStringRegex(policy.GetCve())
+	cve, err := compileStringRegex(imagePolicy.GetCve())
 	if err != nil {
 		return err
 	}
@@ -172,13 +174,13 @@ func (i *ImageProcessor) addRegexImagePolicy(policy *v1.ImagePolicy) error {
 
 		ImageNamePolicy: imageNameRegex,
 
-		ImageAgeDays: policy.GetImageAgeDays(),
+		ImageAgeDays: imagePolicy.GetImageAgeDays(),
 		LineRule:     lineRule,
 
-		CVSS:        policy.GetCvss(),
+		CVSS:        imagePolicy.GetCvss(),
 		CVE:         cve,
 		Component:   component,
-		ScanAgeDays: policy.GetScanAgeDays(),
+		ScanAgeDays: imagePolicy.GetScanAgeDays(),
 	}
 	return nil
 }
@@ -218,7 +220,9 @@ func (i *ImageProcessor) initializeScanners() error {
 }
 
 func (i *ImageProcessor) initializeImagePolicies() error {
-	imagePolicies, err := i.database.GetImagePolicies(&v1.GetImagePoliciesRequest{})
+	imagePolicies, err := i.database.GetPolicies(&v1.GetPoliciesRequest{
+		Category: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+	})
 	if err != nil {
 		return err
 	}
@@ -249,7 +253,10 @@ func New(database db.Storage) (*ImageProcessor, error) {
 }
 
 // UpdatePolicy updates the current policy in a threadsafe manner.
-func (i *ImageProcessor) UpdatePolicy(policy *v1.ImagePolicy) error {
+func (i *ImageProcessor) UpdatePolicy(policy *v1.Policy) error {
+	if policy.GetImagePolicy() == nil {
+		return fmt.Errorf("policy %s must contain image policy", policy.GetName())
+	}
 	i.policyMutex.Lock()
 	defer i.policyMutex.Unlock()
 	return i.addRegexImagePolicy(policy)

@@ -2,8 +2,11 @@
   "name": "/etc Volume",
   "description": "Alert on deployments that use a Dockerfile with 'VOLUME /etc'",
   "severity": 1,
-  "line_rule": {
-		"instruction": "VOLUME",
-		"value": "/etc"
-	}
+  "categories": [1],
+  "image_policy": {
+    "line_rule": {
+      "instruction": "VOLUME",
+      "value": "/etc"
+    }
+  }
 }

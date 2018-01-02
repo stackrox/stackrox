@@ -16,7 +16,7 @@ class PolicyAlertsSidePanel extends Component {
                 columns: [
                     { key: 'deployment.name', label: 'Deployment' },
                     { key: 'time', label: 'Time' },
-                    { key: 'deployment.image.registry', label: 'Registry' }
+                    { key: 'deployment.replicas', label: 'Replicas' }
                 ],
                 rows: []
             },
@@ -28,7 +28,7 @@ class PolicyAlertsSidePanel extends Component {
     }
 
     componentDidMount() {
-        // set up event listeners for this componenet
+        // set up event listeners for this component
         this.tableRowSelectedListener = emitter.addListener('PolicyAlertsTable:row-selected', (data) => {
             this.getAlerts(data);
         });
@@ -55,9 +55,8 @@ class PolicyAlertsSidePanel extends Component {
             const { table } = this.state;
             table.rows = response.data.alerts.map((alert) => {
                 const result = Object.assign({}, alert);
-                result.policy.category = alert.policy.category.replace('_', ' ').capitalizeFirstLetterOfWord();
-                result.policy.imagePolicy.severity = alert.severity.split('_')[0].capitalizeFirstLetterOfWord();
-                result.severity = alert.severity.split('_')[0].capitalizeFirstLetterOfWord();
+                result.policy.categories = alert.policy.categories.map(cat => cat.replace('_', ' ').capitalizeFirstLetterOfWord());
+                result.policy.severity = alert.policy.severity.split('_')[0].capitalizeFirstLetterOfWord();
                 result.time = dateFns.format(alert.time, 'MM/DD/YYYY HH:MM:ss A');
                 return result;
             });
@@ -95,15 +94,15 @@ class PolicyAlertsSidePanel extends Component {
                     <div className="bg-white m-3 flex-grow pb-2">
                         <header className="w-full p-3 font-bold border-b border-primary-200 mb-2">Violations</header>
                         <div>
-                            {this.state.modal.data.policy.violations.map(violation => <div key={`${violation.message}`} className="py-2 px-3 break-words">{violation.message}</div>)}
+                            {this.state.modal.data.violations.map(violation => <div key={`${violation.message}`} className="py-2 px-3 break-words">{violation.message}</div>)}
                         </div>
                     </div>
                     <div className="bg-white m-3 pb-2">
                         <header className="w-full p-3 border-b border-base-300 font-bold mb-2">Alert Summary</header>
                         <div>
-                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Description:</span> {this.state.modal.data.policy.imagePolicy.description}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Description:</span> {this.state.modal.data.policy.description}</div>
                             <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Deployment ID:</span> {this.state.modal.data.deployment.id}</div>
-                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Severity:</span> {this.state.modal.data.severity}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Severity:</span> {this.state.modal.data.policy.severity}</div>
                             <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Time:</span> {this.state.modal.data.time}</div>
                             <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Type:</span> {this.state.modal.data.deployment.type}</div>
                             <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Last Updated:</span> {this.state.modal.data.deployment.updatedAt}</div>
@@ -113,22 +112,24 @@ class PolicyAlertsSidePanel extends Component {
                 </div>
                 <div className="flex flex-col w-1/2">
                     <div className="bg-white m-3 pb-2">
-                        <header className="w-full p-3 border-b border-primary-200 font-bold mb-2">Image Summary</header>
-                        <div>
-                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Registry:</span> {this.state.modal.data.deployment.image.registry}</div>
-                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Remote:</span> {this.state.modal.data.deployment.image.remote}</div>
-                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">SHA:</span> {this.state.modal.data.deployment.image.sha}</div>
-                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Tag:</span> {this.state.modal.data.deployment.image.tag}</div>
-                        </div>
+                        <header className="w-full p-3 border-b border-primary-200 font-bold mb-2">Deployment Summary</header>
+                        {this.state.modal.data.deployment.containers.map(container => (
+                            <div>
+                                <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Registry:</span> {container.image.registry}</div>
+                                <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Remote:</span> {container.image.remote}</div>
+                                <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">SHA:</span> {container.image.sha}</div>
+                                <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Tag:</span> {container.image.tag}</div>
+                            </div>
+                        ))}
                     </div>
                     <div className="bg-white m-3 pb-2">
                         <header className="w-full p-3 font-bold border-b border-primary-200 mb-2">Policy Details</header>
                         <div>
                             <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Name:</span> {this.state.modal.data.policy.name}</div>
-                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Description:</span> {this.state.modal.data.policy.imagePolicy.description}</div>
-                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Severity:</span> {this.state.modal.data.policy.imagePolicy.severity}</div>
-                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Category:</span> {this.state.modal.data.policy.category}</div>
-                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Disabled:</span> {String(this.state.modal.data.policy.imagePolicy.disabled)}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Description:</span> {this.state.modal.data.policy.description}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Severity:</span> {this.state.modal.data.policy.severity}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Categories:</span> {this.state.modal.data.policy.categories.join(', ')}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Disabled:</span> {String(this.state.modal.data.policy.disabled)}</div>
                             <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Scan Age Day:</span> {this.state.modal.data.policy.imagePolicy.scanAgeDays}</div>
                         </div>
                     </div>

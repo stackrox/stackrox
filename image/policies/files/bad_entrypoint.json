@@ -1,0 +1,12 @@
+{
+  "name": "Nginx Entrypoint",
+  "description": "Alert on deployments with an entrypoint that contains nginx",
+  "severity": 3,
+  "categories": [1],
+  "image_policy": {
+    "line_rule": {
+      "instruction": "ENTRYPOINT",
+      "value": ".*nginx.*"
+    }
+  }
+}

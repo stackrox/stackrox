@@ -1,9 +1,0 @@
-{
-  "name": "Ubuntu Base",
-  "description": "Alert on images from Ubuntu base images",
-  "severity": 1,
-  "line_rule": {
-		"instruction": "FROM",
-		"value": ".*ubuntu.*"
-	}
-}

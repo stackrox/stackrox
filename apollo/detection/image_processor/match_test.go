@@ -308,7 +308,7 @@ func TestMatchPolicyToImage(t *testing.T) {
 	image := getTestImage()
 
 	policy := &regexImagePolicy{
-		Original: &v1.ImagePolicy{
+		Original: &v1.Policy{
 			Name:     "policy1",
 			Severity: v1.Severity_CRITICAL_SEVERITY,
 		},
@@ -322,7 +322,7 @@ func TestMatchPolicyToImage(t *testing.T) {
 	// Make sure if two are specified and both have violations that we receive the violations
 	alert = policy.matchPolicyToImage(image)
 	assert.NotNil(t, alert)
-	assert.Equal(t, 3, len(alert.GetPolicy().GetViolations()))
+	assert.Equal(t, 3, len(alert.GetViolations()))
 
 	// Make sure if two are specified, but one does not have a violation that we receive no violations
 	policy.Component = regexp.MustCompile("^blah*") // should make ComponentMatch generate no violations so overall alert fails

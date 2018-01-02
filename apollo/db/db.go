@@ -14,7 +14,7 @@ type Storage interface {
 	BenchmarkStorage
 	ClusterStorage
 	DeploymentStorage
-	ImagePolicyStorage
+	PolicyStorage
 	ImageStorage
 	NotifierStorage
 	RegistryStorage
@@ -64,14 +64,6 @@ type DeploymentStorage interface {
 	RemoveDeployment(id string) error
 }
 
-// ImagePolicyStorage provides storage functionality for image policies.
-type ImagePolicyStorage interface {
-	GetImagePolicies(request *v1.GetImagePoliciesRequest) ([]*v1.ImagePolicy, error)
-	AddImagePolicy(*v1.ImagePolicy) error
-	UpdateImagePolicy(*v1.ImagePolicy) error
-	RemoveImagePolicy(string) error
-}
-
 // ImageStorage provide storage functionality for images.
 type ImageStorage interface {
 	GetImages(request *v1.GetImagesRequest) ([]*v1.Image, error)
@@ -87,6 +79,15 @@ type NotifierStorage interface {
 	AddNotifier(notifier *v1.Notifier) error
 	UpdateNotifier(notifier *v1.Notifier) error
 	RemoveNotifier(name string) error
+}
+
+// PolicyStorage provides storage functionality for policies.
+type PolicyStorage interface {
+	GetPolicy(name string) (*v1.Policy, bool, error)
+	GetPolicies(request *v1.GetPoliciesRequest) ([]*v1.Policy, error)
+	AddPolicy(*v1.Policy) error
+	UpdatePolicy(*v1.Policy) error
+	RemovePolicy(string) error
 }
 
 // RegistryStorage provide storage functionality for registries.

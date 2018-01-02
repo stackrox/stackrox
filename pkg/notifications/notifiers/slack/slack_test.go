@@ -41,20 +41,9 @@ func TestSlackNotify(t *testing.T) {
 	alert := &v1.Alert{
 		Id: "Alert1",
 		Policy: &v1.Policy{
-			Name: "Vulnerable Container",
-			Violations: []*v1.Policy_Violation{
-				{
-					Message: "Deployment is affected by 'CVE-2017-15804'",
-				},
-				{
-					"Deployment is affected by 'CVE-2017-15670'",
-				},
-			},
-			PolicyOneof: &v1.Policy_ImagePolicy{
-				ImagePolicy: &v1.ImagePolicy{
-					Description: "Alert if the container contains vulnerabilities",
-				},
-			},
+			Name:        "Vulnerable Container",
+			Description: "Alert if the container contains vulnerabilities",
+			Severity:    v1.Severity_LOW_SEVERITY,
 		},
 		Deployment: &v1.Deployment{
 			Name: "nginx_server",
@@ -70,7 +59,14 @@ func TestSlackNotify(t *testing.T) {
 				},
 			},
 		},
-		Severity: v1.Severity_LOW_SEVERITY,
+		Violations: []*v1.Alert_Violation{
+			{
+				Message: "Deployment is affected by 'CVE-2017-15804'",
+			},
+			{
+				"Deployment is affected by 'CVE-2017-15670'",
+			},
+		},
 	}
 	assert.NoError(t, s.Notify(alert))
 }

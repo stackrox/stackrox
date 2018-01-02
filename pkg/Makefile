@@ -7,11 +7,14 @@ API_SERVICES += v1/benchmark_service
 API_SERVICES += v1/benchmark_results_service
 API_SERVICES += v1/cluster_service
 API_SERVICES += v1/common
+API_SERVICES += v1/configuration_policy
 API_SERVICES += v1/deployment_service
-API_SERVICES += v1/image_policy_service
+API_SERVICES += v1/image_policy
 API_SERVICES += v1/image_service
 API_SERVICES += v1/notifier_service
 API_SERVICES += v1/ping_service
+API_SERVICES += v1/policy_service
+API_SERVICES += v1/privilege_policy
 API_SERVICES += v1/registry_service
 API_SERVICES += v1/scanner_service
 

@@ -40,8 +40,8 @@ func SeverityString(s v1.Severity) string {
 	}
 }
 
-// StringViolations converts []*v1.Policy_Violation to []string
-func StringViolations(policyViolations []*v1.Policy_Violation) []string {
+// StringViolations converts []*v1.Alert_Violation to []string
+func StringViolations(policyViolations []*v1.Alert_Violation) []string {
 	violations := make([]string, 0, len(policyViolations))
 	for _, p := range policyViolations {
 		violations = append(violations, p.Message)

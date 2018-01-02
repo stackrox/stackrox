@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "v1/common.proto";
+
+package v1;
+
+message PrivilegePolicy {
+    oneof set_privileged {
+        bool privileged                 = 1;
+    }
+    message SELinuxPolicy {
+        string user     = 1;
+        string role     = 2;
+        string type     = 3;
+        string level    = 4;
+    }
+    SELinuxPolicy selinux               = 2;
+    repeated string drop_capabilities   = 3;
+    repeated string add_capabilities    = 4;
+}
+

@@ -1,0 +1,12 @@
+{
+  "name": "Ubuntu Base",
+  "description": "Alert on images from Ubuntu base images",
+  "severity": 1,
+  "categories": [1],
+  "image_policy": {
+    "line_rule": {
+      "instruction": "FROM",
+      "value": ".*ubuntu.*"
+    }
+  }
+}

@@ -3,7 +3,7 @@ package service
 import (
 	"bitbucket.org/stack-rox/apollo/apollo/alerts"
 	"bitbucket.org/stack-rox/apollo/apollo/db"
-	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
+	"bitbucket.org/stack-rox/apollo/apollo/detection/image_processor"
 	"bitbucket.org/stack-rox/apollo/apollo/notifications"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
@@ -80,8 +80,8 @@ func (s *AgentEventService) ReportDeploymentEvent(ctx context.Context, request *
 		}
 	}
 	for _, alert := range alerts {
-		log.Warnf("Alert Generated: %v with Severity %v due to image policy %v", alert.Id, alert.Severity.String(), alert.GetPolicy().GetName())
-		for _, violation := range alert.GetPolicy().GetViolations() {
+		log.Warnf("Alert Generated: %v with Severity %v due to image policy %v", alert.Id, alert.GetPolicy().GetSeverity().String(), alert.GetPolicy().GetName())
+		for _, violation := range alert.GetViolations() {
 			log.Warnf("\t %v", violation.Message)
 		}
 		if err := s.storage.AddAlert(alert); err != nil {

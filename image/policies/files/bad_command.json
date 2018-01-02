@@ -1,0 +1,12 @@
+{
+  "name": "NGINX CMD",
+  "description": "Alert on deployments using 'nginx' as the command",
+  "severity": 1,
+  "categories": [1],
+  "image_policy": {
+    "line_rule": {
+      "instruction": "CMD",
+      "value": ".*nginx.*"
+    }
+  }
+}

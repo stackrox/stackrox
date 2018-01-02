@@ -9,7 +9,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/apollo/db/boltdb"
 	"bitbucket.org/stack-rox/apollo/apollo/db/inmem"
-	"bitbucket.org/stack-rox/apollo/apollo/image_processor"
+	"bitbucket.org/stack-rox/apollo/apollo/detection/image_processor"
 	"bitbucket.org/stack-rox/apollo/apollo/notifications"
 	"bitbucket.org/stack-rox/apollo/apollo/scheduler"
 	"bitbucket.org/stack-rox/apollo/apollo/service"
@@ -83,9 +83,9 @@ func (a *apollo) startGRPCServer() {
 	a.server.Register(service.NewClusterService(a.database))
 	a.server.Register(service.NewDeploymentService(a.database))
 	a.server.Register(service.NewImageService(a.database))
-	a.server.Register(service.NewImagePolicyService(a.database, a.imageProcessor))
 	a.server.Register(service.NewNotifierService(a.database, a.notificationProcessor))
 	a.server.Register(service.NewPingService())
+	a.server.Register(service.NewPolicyService(a.database, a.imageProcessor))
 	a.server.Register(service.NewRegistryService(a.database, a.imageProcessor))
 	a.server.Register(service.NewScannerService(a.database, a.imageProcessor))
 	a.server.Start()

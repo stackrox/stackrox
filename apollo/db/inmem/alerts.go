@@ -69,11 +69,11 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 			continue
 		}
 
-		if _, ok := severitySet[alert.GetSeverity()]; len(severitySet) > 0 && !ok {
+		if _, ok := severitySet[alert.GetPolicy().GetSeverity()]; len(severitySet) > 0 && !ok {
 			continue
 		}
 
-		if _, ok := categoriesSet[alert.GetPolicy().GetCategory()]; len(categoriesSet) > 0 && !ok {
+		if len(categoriesSet) > 0 && !s.matchCategories(alert.GetPolicy().GetCategories(), categoriesSet) {
 			continue
 		}
 
@@ -104,6 +104,16 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 	})
 
 	return
+}
+
+func (s *alertStore) matchCategories(alertCategories []v1.Policy_Category, categorySet map[v1.Policy_Category]struct{}) bool {
+	for _, c := range alertCategories {
+		if _, ok := categorySet[c]; ok {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (s *alertStore) upsertAlert(alert *v1.Alert) {

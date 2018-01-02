@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "v1/common.proto";
+
+package v1;
+
+message DockerfileLineRuleField {
+    string instruction  = 1;
+    string value        = 2;
+}
+
+enum Comparator {
+    LESS_THAN              = 0;
+    LESS_THAN_OR_EQUALS    = 1;
+    EQUALS                 = 2;
+    GREATER_THAN_OR_EQUALS = 3;
+    GREATER_THAN           = 4;
+}
+
+enum MathOP {
+    MIN = 0;
+    MAX = 1;
+    AVG = 2;
+}
+
+message NumericalPolicy {
+    Comparator op  = 1;
+    MathOP math_op = 2;
+    float value    = 3;
+}
+
+// Image Name
+message ImageNamePolicy {
+    string registry        = 1; // e.g. docker.io
+    string namespace       = 2; // e.g. stackrox
+    string repo            = 3; // e.g. container-summarizer
+    string tag             = 4; // e.g. latest
+}
+
+message ImagePolicy {
+    ImageNamePolicy image_name          = 1;
+
+    // Registry metadata
+    int64 image_age_days                = 2;
+    DockerfileLineRuleField line_rule   = 3;
+
+    // Scan Metadata
+    NumericalPolicy cvss                = 4;
+    string cve                          = 5;
+    string component                    = 6;
+    int64 scan_age_days                 = 7;
+}

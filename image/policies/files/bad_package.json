@@ -2,5 +2,8 @@
   "name": "BerkeleyDB",
   "description": "Alert on deployments with BerkleyDB",
   "severity": 3,
-  "component": "^berkeley*"
+  "categories": [1],
+  "image_policy": {
+    "component": "^berkeley*"
+  }
 }

@@ -2,9 +2,12 @@
   "name": "avg(CVSS) >= 3",
   "description": "Alert on deployments with an average CVSS score >= 3",
   "severity": 3,
-  "cvss": {
-  	"op": 3,
-  	"math_op": 2,
-  	"value": 3
+  "categories": [1],
+  "image_policy": {
+    "cvss": {
+      "op": 3,
+      "math_op": 2,
+      "value": 3
+    }
   }
 }

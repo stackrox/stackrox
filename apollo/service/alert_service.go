@@ -72,27 +72,24 @@ func (s *AlertService) groupAlerts(alerts []*v1.Alert) (output *v1.GetAlertsGrou
 	group := make(map[v1.Policy_Category]map[string]*v1.GetAlertsGroupResponse_PolicyGroup)
 
 	for _, a := range alerts {
-		cat := a.GetPolicy().GetCategory()
 		pol := a.GetPolicy()
+		cats := a.GetPolicy().GetCategories()
 
-		if group[cat] == nil {
-			group[cat] = make(map[string]*v1.GetAlertsGroupResponse_PolicyGroup)
-		}
-
-		if existing := group[cat][pol.GetName()]; existing == nil {
-			group[cat][pol.GetName()] = &v1.GetAlertsGroupResponse_PolicyGroup{
-				Policy: &v1.GetAlertsGroupResponse_PolicyDetails{
-					Name:     pol.GetName(),
-					Severity: pol.GetImagePolicy().GetSeverity(),
-					PolicyOneof: &v1.GetAlertsGroupResponse_PolicyDetails_ImagePolicy{
-						ImagePolicy: pol.GetImagePolicy(),
-					},
-				},
-				NumAlerts: 1,
+		for _, cat := range cats {
+			if group[cat] == nil {
+				group[cat] = make(map[string]*v1.GetAlertsGroupResponse_PolicyGroup)
 			}
-		} else {
-			existing.NumAlerts++
+
+			if existing := group[cat][pol.GetName()]; existing == nil {
+				group[cat][pol.GetName()] = &v1.GetAlertsGroupResponse_PolicyGroup{
+					Policy:    pol,
+					NumAlerts: 1,
+				}
+			} else {
+				existing.NumAlerts++
+			}
 		}
+
 	}
 
 	output = new(v1.GetAlertsGroupResponse)

@@ -78,23 +78,20 @@ func (s *slack) Notify(alert *v1.Alert) error {
 	endpoint := notifiers.AlertLink(alert, s.UiEndpoint)
 	pretext := fmt.Sprintf("<%v|%v>", endpoint, tagLine)
 
-	imagePolicy, ok := alert.GetPolicy().PolicyOneof.(*v1.Policy_ImagePolicy)
-	if !ok {
-		panic("Other cases need to be implemented")
-	}
+	policy := alert.GetPolicy()
 
 	attachmentFields := []attachmentField{
 		{
 			Title: "",
-			Value: "*Severity*: " + inline(notifiers.SeverityString(alert.Severity)),
+			Value: "*Severity*: " + inline(notifiers.SeverityString(policy.GetSeverity())),
 		},
 		{
 			Title: "Policy Description",
-			Value: codeBlock(imagePolicy.ImagePolicy.Description),
+			Value: codeBlock(policy.GetDescription()),
 		},
 		{
 			Title: "Violations",
-			Value: fmt.Sprintf("```%s```", strings.Join(notifiers.StringViolations(alert.Policy.Violations), "\n")),
+			Value: fmt.Sprintf("```%s```", strings.Join(notifiers.StringViolations(alert.GetViolations()), "\n")),
 		},
 		{
 			Title: "Deployment",
@@ -105,7 +102,7 @@ func (s *slack) Notify(alert *v1.Alert) error {
 	attachments := []attachment{
 		{
 			FallBack:       "Rox Alert",
-			Color:          getAttachmentColor(alert.Severity),
+			Color:          getAttachmentColor(policy.GetSeverity()),
 			Pretext:        pretext,
 			Text:           "",
 			MarkDownFields: []string{"text", "fields"},

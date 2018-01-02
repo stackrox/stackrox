@@ -39,14 +39,18 @@ func (suite *BoltAlertsTestSuite) TeardownSuite() {
 
 func (suite *BoltAlertsTestSuite) TestAlerts() {
 	alert1 := &v1.Alert{
-		Id:       "id1",
-		Severity: v1.Severity_LOW_SEVERITY,
+		Id: "id1",
+		Policy: &v1.Policy{
+			Severity: v1.Severity_LOW_SEVERITY,
+		},
 	}
 	err := suite.AddAlert(alert1)
 	suite.Nil(err)
 	alert2 := &v1.Alert{
-		Id:       "id2",
-		Severity: v1.Severity_HIGH_SEVERITY,
+		Id: "id2",
+		Policy: &v1.Policy{
+			Severity: v1.Severity_HIGH_SEVERITY,
+		},
 	}
 	err = suite.AddAlert(alert2)
 	suite.Nil(err)
@@ -56,7 +60,7 @@ func (suite *BoltAlertsTestSuite) TestAlerts() {
 	suite.Nil(err)
 	suite.Equal([]*v1.Alert{alert1, alert2}, alerts)
 
-	alert1.Severity = v1.Severity_HIGH_SEVERITY
+	alert1.Policy.Severity = v1.Severity_HIGH_SEVERITY
 	suite.UpdateAlert(alert1)
 	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{})
 	suite.Nil(err)

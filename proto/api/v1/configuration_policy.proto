@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "v1/common.proto";
+
+package v1;
+
+message ConfigurationPolicy {
+    message EnvironmentPolicy {
+        string key      = 1;
+        string value    = 2;
+    }
+    EnvironmentPolicy env           = 1;
+    string command                  = 2;
+    string args                     = 3;
+    string directory                = 4;
+    string user                     = 5;
+
+    message VolumePolicy {
+        string name         = 1;
+        string path         = 2;
+        oneof set_read_only {
+            bool read_only  = 3;
+        }
+        string type         = 4;
+    }
+    VolumePolicy volume_policy      = 6;
+
+    message PortPolicy {
+        int32 port          = 1;
+        string protocol     = 2;
+    }
+    PortPolicy port_policy          = 7;
+}

@@ -1,9 +1,0 @@
-{
-  "name": "Port 80",
-  "description": "Alert on deployments exposing port 80",
-  "severity": 3,
-  "line_rule": {
-		"instruction": "EXPOSE",
-		"value": "\\s+80/tcp"
-	}
-}

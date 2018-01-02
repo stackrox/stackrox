@@ -11,6 +11,6 @@ go_library(
 
 filegroup(
     name = "fixtures",
-    srcs = glob(["image/*.json"]),
+    srcs = glob(["files/*.json"]),
     visibility = ["//visibility:public"],
 )
