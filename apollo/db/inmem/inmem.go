@@ -1,16 +1,12 @@
 package inmem
 
 import (
-	"fmt"
-	"reflect"
-
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 )
 
 var (
-	log        = logging.New("inmem")
-	loaderType = reflect.TypeOf((*loader)(nil)).Elem()
+	log = logging.New("inmem")
 )
 
 // InMemoryStore is an in memory representation of the database
@@ -50,33 +46,7 @@ func New(persistentStorage db.Storage) *InMemoryStore {
 	}
 }
 
-// Load initializes the in-memory database from the persistent database
-func (s *InMemoryStore) Load() error {
-	v := reflect.ValueOf(s).Elem()
-	t := v.Type()
-
-	for i := 0; i < t.NumField(); i++ {
-		vField := v.Field(i)
-		tField := t.Field(i)
-
-		switch {
-		case tField.Type.Implements(loaderType):
-			if err := vField.Interface().(loader).loadFromPersistent(); err != nil {
-				return fmt.Errorf("unable to load data from persistent storage for %s", tField.Name)
-			}
-		case tField.Name == "persistent": // This field is the DB itself, so can't be loaded.
-		default:
-			log.Infof("Field %v does not support loading from persistence", tField.Name)
-		}
-	}
-	return nil
-}
-
 // Close closes the persistent database
 func (s *InMemoryStore) Close() {
 	s.persistent.Close()
-}
-
-type loader interface {
-	loadFromPersistent() error
 }

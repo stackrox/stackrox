@@ -105,8 +105,3 @@ func (b *BoltDB) initializeTables() error {
 func (b *BoltDB) Close() {
 	b.DB.Close()
 }
-
-// Load is empty because Load is only used by non persistent DBs
-func (b *BoltDB) Load() error {
-	return nil
-}
