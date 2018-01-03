@@ -2,53 +2,32 @@ package inmem
 
 import (
 	"sort"
-	"sync"
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
-	"github.com/golang/protobuf/proto"
 )
 
 type benchmarkTriggerStore struct {
-	triggers     map[string]*v1.BenchmarkTrigger
-	triggerMutex sync.Mutex
-
-	persistent db.BenchmarkTriggerStorage
+	db.BenchmarkTriggerStorage
 }
 
 func newBenchmarkTriggerStore(persistent db.BenchmarkTriggerStorage) *benchmarkTriggerStore {
 	return &benchmarkTriggerStore{
-		triggers:   make(map[string]*v1.BenchmarkTrigger),
-		persistent: persistent,
+		BenchmarkTriggerStorage: persistent,
 	}
-}
-
-func (s *benchmarkTriggerStore) loadFromPersistent() error {
-	s.triggerMutex.Lock()
-	defer s.triggerMutex.Unlock()
-	triggers, err := s.persistent.GetBenchmarkTriggers(&v1.GetBenchmarkTriggersRequest{})
-	if err != nil {
-		return err
-	}
-	for _, trigger := range triggers {
-		s.triggers[trigger.Time.String()] = trigger
-	}
-	return nil
-}
-
-func (s *benchmarkTriggerStore) clone(trigger *v1.BenchmarkTrigger) *v1.BenchmarkTrigger {
-	return proto.Clone(trigger).(*v1.BenchmarkTrigger)
 }
 
 // GetBenchmarkTriggers returns a slice of triggers based on the request
 func (s *benchmarkTriggerStore) GetBenchmarkTriggers(request *v1.GetBenchmarkTriggersRequest) ([]*v1.BenchmarkTrigger, error) {
-	s.triggerMutex.Lock()
-	defer s.triggerMutex.Unlock()
+	triggers, err := s.BenchmarkTriggerStorage.GetBenchmarkTriggers(request)
+	if err != nil {
+		return nil, err
+	}
 	nameSet := stringWrap(request.GetNames()).asSet()
 	clusterSet := stringWrap(request.GetClusters()).asSet()
-	var triggerSlice []*v1.BenchmarkTrigger
-	for _, trigger := range s.triggers {
+	filteredTriggers := triggers[:0]
+	for _, trigger := range triggers {
 		if _, ok := nameSet[trigger.GetName()]; len(nameSet) > 0 && !ok {
 			continue
 		}
@@ -76,21 +55,10 @@ func (s *benchmarkTriggerStore) GetBenchmarkTriggers(request *v1.GetBenchmarkTri
 		if request.ToTime != nil && protoconv.CompareProtoTimestamps(request.ToTime, trigger.Time) == -1 {
 			continue
 		}
-		triggerSlice = append(triggerSlice, s.clone(trigger))
+		filteredTriggers = append(filteredTriggers, trigger)
 	}
-	sort.SliceStable(triggerSlice, func(i, j int) bool {
-		return protoconv.CompareProtoTimestamps(triggerSlice[i].Time, triggerSlice[j].Time) == 1
+	sort.SliceStable(filteredTriggers, func(i, j int) bool {
+		return protoconv.CompareProtoTimestamps(filteredTriggers[i].Time, filteredTriggers[j].Time) == 1
 	})
-	return triggerSlice, nil
-}
-
-// AddBenchmarkTrigger upserts a trigger
-func (s *benchmarkTriggerStore) AddBenchmarkTrigger(trigger *v1.BenchmarkTrigger) error {
-	s.triggerMutex.Lock()
-	defer s.triggerMutex.Unlock()
-	if err := s.persistent.AddBenchmarkTrigger(trigger); err != nil {
-		return err
-	}
-	s.triggers[trigger.Time.String()] = trigger
-	return nil
+	return filteredTriggers, nil
 }

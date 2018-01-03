@@ -1,63 +1,29 @@
 package inmem
 
 import (
-	"fmt"
 	"sort"
-	"sync"
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 )
 
 type alertStore struct {
-	alerts     map[string]*v1.Alert
-	alertMutex sync.Mutex
-
-	persistent db.AlertStorage
+	db.AlertStorage
 }
 
 func newAlertStore(persistent db.AlertStorage) *alertStore {
 	return &alertStore{
-		alerts:     make(map[string]*v1.Alert),
-		persistent: persistent,
+		AlertStorage: persistent,
 	}
-}
-
-func (s *alertStore) clone(alert *v1.Alert) *v1.Alert {
-	return proto.Clone(alert).(*v1.Alert)
-}
-
-func (s *alertStore) loadFromPersistent() error {
-	s.alertMutex.Lock()
-	defer s.alertMutex.Unlock()
-	alerts, err := s.persistent.GetAlerts(&v1.GetAlertsRequest{})
-	if err != nil {
-		return err
-	}
-	for _, alert := range alerts {
-		s.alerts[alert.Id] = alert
-	}
-	return nil
-}
-
-func (s *alertStore) GetAlert(id string) (d *v1.Alert, exist bool, err error) {
-	s.alertMutex.Lock()
-	defer s.alertMutex.Unlock()
-	d, exist = s.alerts[id]
-	return
 }
 
 // GetAlerts retrieves all alerts
 func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Alert, err error) {
-	s.alertMutex.Lock()
-	defer s.alertMutex.Unlock()
-	alerts := make([]*v1.Alert, 0, len(s.alerts))
-	for _, alert := range s.alerts {
-		alerts = append(alerts, alert)
+	alerts, err := s.AlertStorage.GetAlerts(request)
+	if err != nil {
+		return nil, err
 	}
-
 	requestTime, requestTimeErr := ptypes.Timestamp(request.GetSince())
 	severitySet := severitiesWrap(request.GetSeverity()).asSet()
 	categoriesSet := categoriesWrap(request.GetCategory()).asSet()
@@ -114,46 +80,6 @@ func (s *alertStore) matchCategories(alertCategories []v1.Policy_Category, categ
 	}
 
 	return false
-}
-
-func (s *alertStore) upsertAlert(alert *v1.Alert) {
-	s.alerts[alert.Id] = alert
-}
-
-// AddAlert adds a new alert
-func (s *alertStore) AddAlert(alert *v1.Alert) error {
-	s.alertMutex.Lock()
-	defer s.alertMutex.Unlock()
-	if _, ok := s.alerts[alert.Id]; ok {
-		return fmt.Errorf("Alert %v cannot be added because it already exists", alert.Id)
-	}
-	if err := s.persistent.AddAlert(alert); err != nil {
-		return err
-	}
-	s.upsertAlert(alert)
-	return nil
-}
-
-// UpdateAlert updates an alert
-func (s *alertStore) UpdateAlert(alert *v1.Alert) error {
-	s.alertMutex.Lock()
-	defer s.alertMutex.Unlock()
-	if err := s.persistent.UpdateAlert(alert); err != nil {
-		return err
-	}
-	s.upsertAlert(alert)
-	return nil
-}
-
-// RemoveAlert removes an alert
-func (s *alertStore) RemoveAlert(id string) error {
-	s.alertMutex.Lock()
-	defer s.alertMutex.Unlock()
-	if err := s.persistent.RemoveAlert(id); err != nil {
-		return err
-	}
-	delete(s.alerts, id)
-	return nil
 }
 
 type severitiesWrap []v1.Severity

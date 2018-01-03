@@ -6,7 +6,6 @@ import (
 
 // Storage is the interface for the persistent storage
 type Storage interface {
-	Load() error
 	Close()
 
 	AlertStorage

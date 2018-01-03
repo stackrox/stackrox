@@ -32,10 +32,6 @@ func main() {
 		panic(err)
 	}
 	apollo.database = inmem.New(persistence)
-	if err = apollo.database.Load(); err != nil {
-		log.Fatal(err)
-	}
-
 	apollo.imageProcessor, err = imageprocessor.New(apollo.database)
 	if err != nil {
 		panic(err)

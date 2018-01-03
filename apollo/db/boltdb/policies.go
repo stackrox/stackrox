@@ -1,6 +1,8 @@
 package boltdb
 
 import (
+	"fmt"
+
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
@@ -8,17 +10,26 @@ import (
 
 const policyBucket = "policies"
 
-// GetPolicy returns a policy with given name.
+func (b *BoltDB) getPolicy(name string, bucket *bolt.Bucket) (policy *v1.Policy, exists bool, err error) {
+	policy = new(v1.Policy)
+	val := bucket.Get([]byte(name))
+	if val == nil {
+		return
+	}
+	exists = true
+	err = proto.Unmarshal(val, policy)
+	return
+}
+
+// GetPolicy returns policy with given id.
 func (b *BoltDB) GetPolicy(name string) (policy *v1.Policy, exists bool, err error) {
 	policy = new(v1.Policy)
 	err = b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))
 		val := b.Get([]byte(name))
 		if val == nil {
-			exists = false
 			return nil
 		}
-
 		exists = true
 		return proto.Unmarshal(val, policy)
 	})
@@ -26,8 +37,8 @@ func (b *BoltDB) GetPolicy(name string) (policy *v1.Policy, exists bool, err err
 	return
 }
 
-// GetPolicies returns all policies regardless of request.
-func (b *BoltDB) GetPolicies(*v1.GetPoliciesRequest) ([]*v1.Policy, error) {
+// GetPolicies retrieves policies matching the request from bolt
+func (b *BoltDB) GetPolicies(request *v1.GetPoliciesRequest) ([]*v1.Policy, error) {
 	var policies []*v1.Policy
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))
@@ -44,33 +55,41 @@ func (b *BoltDB) GetPolicies(*v1.GetPoliciesRequest) ([]*v1.Policy, error) {
 	return policies, err
 }
 
-func (b *BoltDB) upsertPolicy(policy *v1.Policy) error {
+// AddPolicy adds a policy to bolt
+func (b *BoltDB) AddPolicy(policy *v1.Policy) error {
+	return b.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(policyBucket))
+		_, exists, err := b.getPolicy(policy.Name, bucket)
+		if err != nil {
+			return err
+		}
+		if exists {
+			return fmt.Errorf("Policy %v cannot be added because it already exists", policy.GetName())
+		}
+		bytes, err := proto.Marshal(policy)
+		if err != nil {
+			return err
+		}
+		return bucket.Put([]byte(policy.Name), bytes)
+	})
+}
+
+// UpdatePolicy updates a policy to bolt
+func (b *BoltDB) UpdatePolicy(policy *v1.Policy) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))
 		bytes, err := proto.Marshal(policy)
 		if err != nil {
-			log.Error(err)
 			return err
 		}
 		return b.Put([]byte(policy.Name), bytes)
 	})
 }
 
-// AddPolicy inserts the policy.
-func (b *BoltDB) AddPolicy(policy *v1.Policy) error {
-	return b.upsertPolicy(policy)
-}
-
-// UpdatePolicy updates the policy.
-func (b *BoltDB) UpdatePolicy(policy *v1.Policy) error {
-	return b.upsertPolicy(policy)
-}
-
-// RemovePolicy removes the policy from the database.
+// RemovePolicy removes a policy.
 func (b *BoltDB) RemovePolicy(name string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))
-		err := b.Delete([]byte(name))
-		return err
+		return b.Delete([]byte(name))
 	})
 }

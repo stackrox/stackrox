@@ -3,6 +3,7 @@ package service
 import (
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
@@ -36,6 +37,7 @@ func (s *BenchmarkScheduleService) RegisterServiceHandlerFromEndpoint(ctx contex
 // PostBenchmarkSchedule adds a new schedule
 func (s *BenchmarkScheduleService) PostBenchmarkSchedule(ctx context.Context, request *v1.BenchmarkSchedule) (*empty.Empty, error) {
 	// TODO(cg) Validate benchmark schedule
+	request.LastUpdated = ptypes.TimestampNow()
 	if err := s.storage.AddBenchmarkSchedule(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -45,6 +47,7 @@ func (s *BenchmarkScheduleService) PostBenchmarkSchedule(ctx context.Context, re
 // PutBenchmarkSchedule updates a current schedule
 func (s *BenchmarkScheduleService) PutBenchmarkSchedule(ctx context.Context, request *v1.BenchmarkSchedule) (*empty.Empty, error) {
 	// TODO(cg) Validate benchmark schedule
+	request.LastUpdated = ptypes.TimestampNow()
 	if err := s.storage.UpdateBenchmarkSchedule(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
