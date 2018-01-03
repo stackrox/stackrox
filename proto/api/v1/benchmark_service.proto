@@ -7,24 +7,23 @@ import "google/protobuf/empty.proto";
 
 package v1;
 
-message BenchmarkSchedule {
-    bool enable          = 1;
-    int64 time_of_day    = 2;
-    int64 interval_days  = 3;
+message CheckDefinition {
+    string name        = 1;
+    string description = 2;
 }
 
-message TriggerBenchmarkRequest {}
-
-message GetBenchmarkScheduleResponse {
-    bool enabled           = 1;
-    int64 interval_days    = 2;
-    string current_scan_id = 3;
+message GetChecksResponse {
+    repeated CheckDefinition checks = 1;
 }
 
 message Benchmark {
     string name            = 1;
     bool editable          = 2;
     repeated string checks = 3;
+}
+
+message GetBenchmarkRequest {
+    string name = 1;
 }
 
 message GetBenchmarksRequest {
@@ -39,40 +38,17 @@ message DeleteBenchmarkRequest {
     string name = 1;
 }
 
-message Check {
-    string name = 1;
-}
-
-message GetChecksResponse {
-    repeated Check checks = 1;
-}
-
 service BenchmarkService {
-
-    // For now, we will support only 1 schedule, but as our benchmarks are expanded we could potentially target specific benchmarks
-    rpc PostBenchmarkSchedule(BenchmarkSchedule) returns (google.protobuf.Empty) {
-        option (google.api.http) = {
-            post: "/v1/benchmarks/schedule"
-            body: "*"
-        };
-    }
-
-    rpc GetBenchmarkSchedule(google.protobuf.Empty) returns (GetBenchmarkScheduleResponse) {
-        option (google.api.http) = {
-            get: "/v1/benchmarks/schedule"
-        };
-    }
-
-    rpc TriggerBenchmark(TriggerBenchmarkRequest) returns (google.protobuf.Empty) {
-        option (google.api.http) = {
-            post: "/v1/benchmarks/trigger"
-            body: "*"
-        };
-    }
 
     rpc GetChecks(google.protobuf.Empty) returns (GetChecksResponse) {
         option (google.api.http) = {
             get: "/v1/benchmarks/checks"
+        };
+    }
+
+    rpc GetBenchmark(GetBenchmarkRequest) returns (Benchmark) {
+        option (google.api.http) = {
+            get: "/v1/benchmarks/configs/{name}"
         };
     }
 

@@ -55,12 +55,19 @@ func (s *benchmarkResultStore) GetBenchmarkResults(request *v1.GetBenchmarkResul
 	s.benchmarkMutex.Lock()
 	defer s.benchmarkMutex.Unlock()
 	var benchmarks []*v1.BenchmarkResult
+
+	clusterSet := stringWrap(request.GetClusters()).asSet()
 	for _, benchmark := range s.benchmarkResults {
-		if request.Host == "" {
-			benchmarks = append(benchmarks, s.clone(benchmark))
-		} else if benchmark.Host == request.Host {
-			benchmarks = append(benchmarks, s.clone(benchmark))
+		if request.Host != "" && benchmark.Host != request.Host {
+			continue
 		}
+		if request.ScanId != "" && benchmark.ScanId != request.ScanId {
+			continue
+		}
+		if _, ok := clusterSet[benchmark.GetClusterId()]; len(clusterSet) > 0 && !ok {
+			continue
+		}
+		benchmarks = append(benchmarks, benchmark)
 	}
 	// Filter by start and end time if defined
 	if request.ToEndTime != nil || request.FromEndTime != nil {

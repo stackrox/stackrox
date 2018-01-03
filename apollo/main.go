@@ -11,7 +11,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/db/inmem"
 	"bitbucket.org/stack-rox/apollo/apollo/detection/image_processor"
 	"bitbucket.org/stack-rox/apollo/apollo/notifications"
-	"bitbucket.org/stack-rox/apollo/apollo/scheduler"
 	"bitbucket.org/stack-rox/apollo/apollo/service"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -48,8 +47,6 @@ func main() {
 	}
 	go apollo.notificationProcessor.Start()
 
-	apollo.benchScheduler = scheduler.NewDockerBenchScheduler()
-
 	go apollo.startGRPCServer()
 
 	apollo.processForever()
@@ -57,7 +54,6 @@ func main() {
 
 type apollo struct {
 	signalsC              chan (os.Signal)
-	benchScheduler        *scheduler.DockerBenchScheduler
 	imageProcessor        *imageprocessor.ImageProcessor
 	notificationProcessor *notifications.Processor
 	database              db.Storage
@@ -78,8 +74,10 @@ func (a *apollo) startGRPCServer() {
 	a.server = grpc.NewAPIWithUI()
 	a.server.Register(service.NewAgentEventService(a.imageProcessor, a.notificationProcessor, a.database))
 	a.server.Register(service.NewAlertService(a.database))
-	a.server.Register(service.NewBenchmarkService(a.database, a.benchScheduler))
+	a.server.Register(service.NewBenchmarkService(a.database))
+	a.server.Register(service.NewBenchmarkScheduleService(a.database))
 	a.server.Register(service.NewBenchmarkResultsService(a.database))
+	a.server.Register(service.NewBenchmarkTriggerService(a.database))
 	a.server.Register(service.NewClusterService(a.database))
 	a.server.Register(service.NewDeploymentService(a.database))
 	a.server.Register(service.NewImageService(a.database))

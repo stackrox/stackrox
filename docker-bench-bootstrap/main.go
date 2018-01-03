@@ -6,20 +6,14 @@ import (
 	"os"
 
 	"bitbucket.org/stack-rox/apollo/pkg/docker"
+	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 )
 
-const (
-	dockerBenchImageEnv = "ROX_DOCKER_BENCH_IMAGE"
-)
-
 func main() {
-	image := "stackrox/apollo:latest"
-	if imageEnv := os.Getenv(dockerBenchImageEnv); imageEnv != "" {
-		image = imageEnv
-	}
+	image := env.Image.Setting()
 
 	client, err := docker.NewClient()
 	if err != nil {
@@ -28,11 +22,11 @@ func main() {
 
 	strVolumes := []string{
 		"/var/run/docker.sock:/var/run/docker.sock",
-		"/var/lib:/var/lib",
-		"/etc:/etc",
-		"/var/log/audit:/var/log/audit",
-		"/lib/systemd:/lib/systemd",
-		"/usr/lib/systemd:/usr/lib/systemd",
+		"/var/lib:/var/lib:ro",
+		"/etc:/etc:ro",
+		"/var/log/audit:/var/log/audit:ro",
+		"/lib/systemd:/lib/systemd:ro",
+		"/usr/lib/systemd:/usr/lib/systemd:ro",
 	}
 
 	volumeMap := make(map[string]struct{})
@@ -47,8 +41,9 @@ func main() {
 		Entrypoint: []string{"docker-bench"},
 	}
 	hostConfig := &container.HostConfig{
-		Binds:   strVolumes,
-		PidMode: container.PidMode("host"),
+		Binds:      strVolumes,
+		PidMode:    container.PidMode("host"),
+		AutoRemove: true,
 	}
 	networkingConfig := &network.NetworkingConfig{
 		EndpointsConfig: map[string]*network.EndpointSettings{
@@ -62,6 +57,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error creating docker-bench container: %+v", err)
 	}
+
 	ctx, cancel = docker.TimeoutContext()
 	defer cancel()
 	if err := client.ContainerStart(ctx, body.ID, types.ContainerStartOptions{}); err != nil {

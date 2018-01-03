@@ -13,7 +13,10 @@ var (
 )
 
 // var so this can be modified in tests
-var defaultPoliciesPath = `/data/policies`
+var (
+	defaultPoliciesPath   = `/data/policies`
+	defaultBenchmarksPath = `/data/benchmarks`
+)
 
 // BoltDB returns an instantiation of the storage interface. Exported for test purposes
 type BoltDB struct {
@@ -65,6 +68,12 @@ func (b *BoltDB) initializeTables() error {
 			return fmt.Errorf("create bucket: %s", err)
 		}
 		if _, err := tx.CreateBucketIfNotExists([]byte(benchmarkResultBucket)); err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		if _, err := tx.CreateBucketIfNotExists([]byte(benchmarkScheduleBucket)); err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		if _, err := tx.CreateBucketIfNotExists([]byte(benchmarkTriggerBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
 		if _, err := tx.CreateBucketIfNotExists([]byte(clusterBucket)); err != nil {

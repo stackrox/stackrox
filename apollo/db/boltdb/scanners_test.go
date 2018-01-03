@@ -35,7 +35,7 @@ func (suite *BoltScannerTestSuite) TeardownSuite() {
 	os.Remove(suite.Path())
 }
 
-func (suite *BoltScannerTestSuite) TestDeployments() {
+func (suite *BoltScannerTestSuite) TestScanners() {
 	scanners := []*v1.Scanner{
 		{
 			Name:     "scanner1",

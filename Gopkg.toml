@@ -77,3 +77,7 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
 [[constraint]]
   name = "k8s.io/client-go"
   version = "kubernetes-1.9.0"
+
+[[constraint]]
+  name = "github.com/deckarep/golang-set"
+  version = "v1.7"

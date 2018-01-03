@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
+	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -44,10 +45,10 @@ func New() *Agent {
 	return &Agent{
 		Server: grpc.NewAPI(),
 
-		ClusterID:          ClusterID.Setting(),
-		ApolloEndpoint:     ApolloEndpoint.Setting(),
-		AdvertisedEndpoint: AdvertisedEndpoint.Setting(),
-		Image:              Image.Setting(),
+		ClusterID:          env.ClusterID.Setting(),
+		ApolloEndpoint:     env.ApolloEndpoint.Setting(),
+		AdvertisedEndpoint: env.AdvertisedEndpoint.Setting(),
+		Image:              env.Image.Setting(),
 
 		Logger: logging.New("main"),
 	}

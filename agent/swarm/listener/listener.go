@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/pkg/agent"
 	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/docker"
+	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/docker/docker/api/types"
@@ -42,7 +42,7 @@ func New() (listeners.Listener, error) {
 		eventsC:   make(chan *v1.DeploymentEvent, 10),
 		stopC:     make(chan struct{}),
 		stoppedC:  make(chan struct{}),
-		clusterID: agent.ClusterID.Setting(),
+		clusterID: env.ClusterID.Setting(),
 	}, nil
 }
 

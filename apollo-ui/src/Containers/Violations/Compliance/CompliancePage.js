@@ -64,7 +64,7 @@ class CompliancePage extends Component {
 
     onTriggerScan = () => {
         this.setState({ scanning: true });
-        axios.post('/v1/benchmarks/trigger', {}).then(() => {
+        axios.post('/v1/benchmarks/triggers/CIS%20Benchmark', {}).then(() => {
         }).catch(() => {
         });
     }
@@ -79,7 +79,7 @@ class CompliancePage extends Component {
         return axios.get(`/v1/benchmarks/results/grouped/cis${params}`).then((response) => {
             if (!this.pollTimeoutId) return;
             if (!response.data || !response.data.benchmarks) return;
-            const lastScanned = dateFns.format(response.data.benchmarks[0].time, 'MM/DD/YYYY h:MM:ss A');
+            const lastScanned = dateFns.format(response.data.benchmarks[0].time, 'MM/DD/YYYY h:mm:ss A');
             table.rows = response.data.benchmarks[0].checkResults;
             if (lastScanned !== this.state.lastScanned) {
                 this.setState({

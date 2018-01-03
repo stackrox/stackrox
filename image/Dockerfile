@@ -13,6 +13,7 @@ RUN apk update && \
 
 ENV PATH=/apollo
 
+ADD ./benchmarks/ /data/benchmarks
 ADD ./policies/ /data/policies
 ADD ./bin/ /apollo/
 ADD ./ui/build  /ui/

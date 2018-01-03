@@ -5,6 +5,7 @@ option go_package = "v1";
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
+import "v1/benchmark_service.proto";
 
 package v1;
 
@@ -19,11 +20,6 @@ message CheckResult {
     CheckDefinition definition = 1;
     CheckStatus result         = 2;
     repeated string notes      = 3;
-}
-
-message CheckDefinition {
-    string name        = 1;
-    string description = 2;
 }
 
 message BenchmarkResult {
@@ -42,6 +38,8 @@ message GetBenchmarkResultsRequest {
     google.protobuf.Timestamp to_end_time   = 2;
     string host                             = 3;
     string benchmark                        = 4;
+    string scan_id                          = 5;
+    repeated string clusters                = 6;
 }
 
 message GetBenchmarkResultsResponse {
