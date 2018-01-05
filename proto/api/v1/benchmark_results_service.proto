@@ -10,10 +10,11 @@ import "v1/benchmark_service.proto";
 package v1;
 
 enum CheckStatus {
-    INFO = 0;
-    WARN = 1;
-    NOTE = 2;
-    PASS = 3;
+    INFO           = 0;
+    WARN           = 1;
+    NOTE           = 2;
+    PASS           = 3;
+    NOT_APPLICABLE = 4;
 }
 
 message CheckResult {

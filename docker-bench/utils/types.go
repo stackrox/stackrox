@@ -50,3 +50,8 @@ func Warn(result *v1.CheckResult) {
 func Note(result *v1.CheckResult) {
 	result.Result = v1.CheckStatus_NOTE
 }
+
+// NotApplicable sets the test result to NotApplicable and should be used when the check applies to a specific type of node
+func NotApplicable(result *v1.CheckResult) {
+	result.Result = v1.CheckStatus_NOT_APPLICABLE
+}

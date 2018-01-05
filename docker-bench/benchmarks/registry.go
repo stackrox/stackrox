@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/docker-bench/cis/docker_daemon_configuration"
 	"bitbucket.org/stack-rox/apollo/docker-bench/cis/docker_security_operations"
 	"bitbucket.org/stack-rox/apollo/docker-bench/cis/host_configuration"
+	"bitbucket.org/stack-rox/apollo/docker-bench/cis/swarm"
 	"bitbucket.org/stack-rox/apollo/docker-bench/utils"
 )
 
@@ -122,6 +123,18 @@ var checkCreators = []checkCreator{
 	// Part 6
 	dockersecurityoperations.NewImageSprawlBenchmark,
 	dockersecurityoperations.NewContainerSprawlBenchmark,
+
+	// Part 7
+	swarm.NewSwarmEnabledCheck, // 7.1
+	swarm.NewMinimumManagersCheck,
+	swarm.NewHostInterfaceBind,
+	swarm.NewEncryptedNetworks,
+	swarm.NewSecretManagement, // 7.5
+	swarm.NewAutoLockCheck,
+	swarm.NewAutoLockRotationCheck,
+	swarm.NewNodeCertificates,
+	swarm.NewCACertificates,
+	swarm.NewManagementPlaneCheck, // 7.10
 }
 
 func init() {
