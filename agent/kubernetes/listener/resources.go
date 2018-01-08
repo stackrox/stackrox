@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"strings"
 
-	pkgV1 "bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"

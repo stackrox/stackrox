@@ -3,7 +3,7 @@ package registries
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 )
 
 // Creator is a func stub that defines how to create an image registry

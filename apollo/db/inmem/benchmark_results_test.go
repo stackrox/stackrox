@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
-	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/assert"
 )

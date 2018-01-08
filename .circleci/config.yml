@@ -3,8 +3,8 @@ jobs:
   build:
     docker:
       # This image is the standard circleci/golang:1.9.2 image, plus bazel
-      # and other necessary build tools like goimports, dep, and yarn.
-      - image: stackrox/apollo:circleci@sha256:d10504619e1b9ea218c5a8f02968f38d0ee7d04d0764fcf35e4d75729eafaad9
+      # and other necessary build tools like goimports, dep, yarn, and envsubst.
+      - image: stackrox/apollo:circleci@sha256:0c34ed2da594f58d50159ddd3f5453f0d5768c428d658af37ce901fabf5c1b08
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
@@ -14,6 +14,7 @@ jobs:
       - checkout
       - setup_remote_docker
 
+      - run: cat tools/ci-bazel.rc | envsubst > tools/bazel.rc
       - run: make all
 
       - run: docker tag stackrox/apollo:latest stackrox/apollo:$CIRCLE_SHA1

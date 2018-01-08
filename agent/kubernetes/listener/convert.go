@@ -3,7 +3,7 @@ package listener
 import (
 	"reflect"
 
-	pkgV1 "bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"github.com/golang/protobuf/ptypes"

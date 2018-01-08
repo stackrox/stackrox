@@ -1,0 +1,8 @@
+startup --batch --host_jvm_args=-Dbazel.DigestFunction=sha256
+build --spawn_strategy=remote
+build --strategy=Javac=remote
+build --genrule_strategy=remote
+build --strategy=Closure=remote
+build --remote_rest_cache=https://bc-ext.rox.systems/$BAZEL_CACHE_SECRET_URL/
+build --remote_local_fallback
+build --remote_upload_local_results

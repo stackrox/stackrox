@@ -8,7 +8,8 @@ RUN echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8
         bazel \
         openjdk-8-jdk \
         && \
-    sudo apt-get autoremove -y
+    sudo apt-get autoremove -y && \
+    echo "Cache Busted: 2018-01-05"
 
 # Add necessary Go build tools
 RUN go get -u github.com/golang/lint/golint && \
@@ -28,3 +29,7 @@ RUN sudo apt-get update && \
     echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list && \
     sudo apt-get update && \
     sudo apt-get install yarn
+
+# Install envsubst
+RUN sudo apt-get update && \
+    sudo apt-get install -y gettext

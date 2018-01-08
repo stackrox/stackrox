@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	manifestV2 "github.com/docker/distribution/manifest/schema2"

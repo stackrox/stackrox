@@ -4,10 +4,10 @@ option go_package = "v1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
-import "v1/common.proto";
-import "v1/configuration_policy.proto";
-import "v1/image_policy.proto";
-import "v1/privilege_policy.proto";
+import "api/v1/common.proto";
+import "api/v1/configuration_policy.proto";
+import "api/v1/image_policy.proto";
+import "api/v1/privilege_policy.proto";
 
 package v1;
 

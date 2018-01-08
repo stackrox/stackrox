@@ -3,7 +3,7 @@ package listener
 import (
 	"time"
 
-	pkgV1 "bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"k8s.io/api/core/v1"

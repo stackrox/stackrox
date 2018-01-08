@@ -53,10 +53,41 @@ vet:
 	@go vet $(shell go list -e ./... | grep -v generated | grep -v vendor)
 
 
-##################
-## Dependencies ##
-##################
-deps: proto-generated Gopkg.toml Gopkg.lock
+#####################################
+## Generated Code and Dependencies ##
+#####################################
+API_SERVICES  = agent_event_service
+API_SERVICES += alert_service
+API_SERVICES += benchmark_results_service
+API_SERVICES += benchmark_schedule_service
+API_SERVICES += benchmark_service
+API_SERVICES += benchmark_trigger_service
+API_SERVICES += cluster_service
+API_SERVICES += common
+API_SERVICES += configuration_policy
+API_SERVICES += deployment_service
+API_SERVICES += image_policy
+API_SERVICES += image_service
+API_SERVICES += notifier_service
+API_SERVICES += ping_service
+API_SERVICES += policy_service
+API_SERVICES += privilege_policy
+API_SERVICES += registry_service
+API_SERVICES += scanner_service
+
+GENERATED_SRCS = $(GENERATED_API_SRCS) $(GENERATED_API_GW_SRCS)
+
+include make/protogen.mk
+
+.PHONY: generated-srcs
+generated-srcs: $(GENERATED_SRCS)
+
+.PHONY: clean-generated-srcs
+clean-generated-srcs:
+	@echo "+ $@"
+	git clean -xf generated
+
+deps: $(GENERATED_SRCS) Gopkg.toml Gopkg.lock
 	@echo "+ $@"
 # `dep status` exits with a nonzero code if there is a toml->lock mismatch.
 	dep status
@@ -67,11 +98,6 @@ deps: proto-generated Gopkg.toml Gopkg.lock
 clean-deps:
 	@echo "+ $@"
 	@rm -f deps
-
-.PHONY: proto-generated
-proto-generated:
-	make -C pkg clean-generated-srcs generated-srcs
-
 
 ###########
 ## Build ##
@@ -84,12 +110,12 @@ cleanup:
 	@find . -mindepth 2 -name BUILD.bazel -print | grep -v "^./image" | xargs rm | wc -l | xargs echo
 
 .PHONY: gazelle
-gazelle: deps proto-generated cleanup
+gazelle: deps $(GENERATED_SRCS) cleanup
 	bazel run //:gazelle
 
 .PHONY: build
 build: gazelle
-	bazel build $(BAZEL_FLAGS) //...
+	bazel build $(BAZEL_FLAGS) -- //... -vendor/...
 
 .PHONY: test
 test: gazelle
@@ -146,4 +172,3 @@ clean-image:
 	git clean -xf image/bin
 	git clean -xf image/ui
 
-include make/protogen.mk

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	pkgV1 "bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"

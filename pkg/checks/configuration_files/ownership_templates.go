@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"syscall"
 
-	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
 )
 

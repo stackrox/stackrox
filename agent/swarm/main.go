@@ -10,8 +10,8 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/agent/swarm/listener"
 	"bitbucket.org/stack-rox/apollo/agent/swarm/orchestrator"
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/agent"
-	"bitbucket.org/stack-rox/apollo/pkg/api/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"

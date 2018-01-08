@@ -1,16 +1,17 @@
-BASE_PATH ?= $(CURDIR)/..
+BASE_PATH ?= $(CURDIR)
 
 # GENERATED_API_XXX and PROTO_API_XXX variables contain standard paths used to
 # generate gRPC proto messages, services, and gateways for the API.
-GENERATED_API_PATH = api/generated/api
-GENERATED_DOC_PATH = docs/generated/api
+GENERATED_BASE_PATH = $(BASE_PATH)/generated
+GENERATED_API_PATH = $(GENERATED_BASE_PATH)/api/v1
+GENERATED_DOC_PATH = docs
 MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/v1/swagger.json
 GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/v1/reference
 GENERATED_API_SRCS = $(API_SERVICES:%=$(GENERATED_API_PATH)/%.pb.go)
 GENERATED_API_GW_SRCS = $(API_SERVICES:%=$(GENERATED_API_PATH)/%.pb.gw.go)
 GENERATED_API_VALIDATOR_SRCS = $(API_SERVICES:%=$(GENERATED_API_PATH)/%.validator.pb.go)
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICES:%=$(GENERATED_DOC_PATH)/%.swagger.json)
-PROTO_API_PATH = $(BASE_PATH)/proto/api
+PROTO_API_PATH = $(BASE_PATH)/api/v1
 PROTO_API_PROTOS = $(API_SERVICES:%=$(PROTO_API_PATH)/%.proto)
 
 ##############
@@ -61,25 +62,14 @@ proto-fmt:
 	@go get github.com/ckaznocha/protoc-gen-lint
 	@echo "Checking for proto style errors"
 	@$(PROTOC) \
-		--proto_path=../proto/data/ \
-		--lint_out=. \
-		../proto/data/*.proto
-	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
 		--lint_out=. \
-		--proto_path=$(PROTO_API_PATH) \
+		--proto_path=$(BASE_PATH) \
 		$(PROTO_API_PROTOS)
 
 PROTO_DEPS=$(PROTOC_GEN_GO) $(PROTOC) $(PROTOC_INCLUDES)
-
-.PHONY: proto-generated-files
-proto-generated-files: $(PROTO_DEPS) $(BASE_PATH)/proto/data
-	@echo "+ $@"
-	@echo '++ Seeing errors in this step? Make sure you have run `make dev`.'
-	@mkdir -p $(BASE_PATH)/pkg/serialization/generated/data/
-	@$(PROTOC) --proto_path=$(BASE_PATH)/proto/data/ --go_out=$(BASE_PATH)/pkg/serialization/generated/data/ $(BASE_PATH)/proto/data/*.proto
 
 ###############
 ## Utilities ##
@@ -145,10 +135,9 @@ $(GENERATED_API_PATH)/%.pb.go: $(PROTO_DEPS) $(PROTOC_GEN_GO) $(PROTOC_GEN_GRPC_
 	@echo "+ $@"
 	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
-		-I$(GOPATH)/src \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--proto_path=$(PROTO_API_PATH) \
-		--go_out=plugins=grpc:$(GENERATED_API_PATH) \
+		--proto_path=$(BASE_PATH) \
+		--go_out=plugins=grpc:$(GENERATED_BASE_PATH) \
 		$(PROTO_API_PROTOS)
 
 # Generate all of the reverse-proxies (gRPC-Gateways) with one invocation of
@@ -158,10 +147,9 @@ $(GENERATED_API_PATH)/%.pb.gw.go: $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PRO
 	@echo "+ $@"
 	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
-		-I$(GOPATH)/src \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--proto_path=$(PROTO_API_PATH) \
-		--grpc-gateway_out=logtostderr=true:$(GENERATED_API_PATH) \
+		--proto_path=$(BASE_PATH) \
+		--grpc-gateway_out=logtostderr=true:$(GENERATED_BASE_PATH) \
 		$(PROTO_API_PROTOS)
 
 # Generate all of the validator sources with one invocation of protoc
@@ -171,10 +159,9 @@ $(GENERATED_API_VALIDATOR_SRCS) : $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PRO
 	@echo "+ $@"
 	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
-		-I$(GOPATH)/src \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--proto_path=$(PROTO_API_PATH) \
-		--govalidators_out=$(GENERATED_API_PATH) \
+		--proto_path=$(BASE_PATH) \
+		--govalidators_out=$(GENERATED_BASE_PATH) \
 		$(PROTO_API_PROTOS)
 
 # Generate all of the swagger specifications with one invocation of protoc
@@ -184,9 +171,8 @@ $(GENERATED_DOC_PATH)/%.swagger.json: $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $
 	@echo "+ $@"
 	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
-		-I$(GOPATH)/src \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--proto_path=$(PROTO_API_PATH) \
+		--proto_path=$(BASE_PATH) \
 		--swagger_out=logtostderr=true:$(GENERATED_DOC_PATH) \
 		$(PROTO_API_PROTOS)
 
