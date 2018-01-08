@@ -2,7 +2,7 @@ package service
 
 import (
 	"bitbucket.org/stack-rox/apollo/apollo/db"
-	"bitbucket.org/stack-rox/apollo/apollo/detection/image_processor"
+	"bitbucket.org/stack-rox/apollo/apollo/detection"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	"bitbucket.org/stack-rox/apollo/pkg/secrets"
@@ -15,17 +15,17 @@ import (
 )
 
 // NewScannerService returns the ScannerService API.
-func NewScannerService(storage db.ScannerStorage, processor *imageprocessor.ImageProcessor) *ScannerService {
+func NewScannerService(storage db.ScannerStorage, detector *detection.Detector) *ScannerService {
 	return &ScannerService{
-		storage:   storage,
-		processor: processor,
+		storage:  storage,
+		detector: detector,
 	}
 }
 
 // ScannerService is the struct that manages the Scanner API
 type ScannerService struct {
-	storage   db.ScannerStorage
-	processor *imageprocessor.ImageProcessor
+	storage  db.ScannerStorage
+	detector *detection.Detector
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -65,7 +65,7 @@ func (s *ScannerService) PostScanner(ctx context.Context, request *v1.Scanner) (
 	if err := s.storage.AddScanner(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	s.processor.UpdateScanner(scanner)
+	s.detector.UpdateScanner(scanner)
 	return &empty.Empty{}, nil
 }
 
@@ -78,6 +78,6 @@ func (s *ScannerService) PutScanner(ctx context.Context, request *v1.Scanner) (*
 	if err := s.storage.UpdateScanner(request); err != nil {
 		return nil, err
 	}
-	s.processor.UpdateScanner(scanner)
+	s.detector.UpdateScanner(scanner)
 	return &empty.Empty{}, nil
 }

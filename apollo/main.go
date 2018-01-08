@@ -9,7 +9,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/apollo/db/boltdb"
 	"bitbucket.org/stack-rox/apollo/apollo/db/inmem"
-	"bitbucket.org/stack-rox/apollo/apollo/detection/image_processor"
+	"bitbucket.org/stack-rox/apollo/apollo/detection"
 	"bitbucket.org/stack-rox/apollo/apollo/notifications"
 	"bitbucket.org/stack-rox/apollo/apollo/service"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc"
@@ -32,7 +32,8 @@ func main() {
 		panic(err)
 	}
 	apollo.database = inmem.New(persistence)
-	apollo.imageProcessor, err = imageprocessor.New(apollo.database)
+
+	apollo.detector, err = detection.New(apollo.database)
 	if err != nil {
 		panic(err)
 	}
@@ -50,7 +51,7 @@ func main() {
 
 type apollo struct {
 	signalsC              chan (os.Signal)
-	imageProcessor        *imageprocessor.ImageProcessor
+	detector              *detection.Detector
 	notificationProcessor *notifications.Processor
 	database              db.Storage
 	server                grpc.API
@@ -68,7 +69,7 @@ func newApollo() *apollo {
 
 func (a *apollo) startGRPCServer() {
 	a.server = grpc.NewAPIWithUI()
-	a.server.Register(service.NewAgentEventService(a.imageProcessor, a.notificationProcessor, a.database))
+	a.server.Register(service.NewAgentEventService(a.detector, a.notificationProcessor, a.database))
 	a.server.Register(service.NewAlertService(a.database))
 	a.server.Register(service.NewBenchmarkService(a.database))
 	a.server.Register(service.NewBenchmarkScheduleService(a.database))
@@ -79,9 +80,9 @@ func (a *apollo) startGRPCServer() {
 	a.server.Register(service.NewImageService(a.database))
 	a.server.Register(service.NewNotifierService(a.database, a.notificationProcessor))
 	a.server.Register(service.NewPingService())
-	a.server.Register(service.NewPolicyService(a.database, a.imageProcessor))
-	a.server.Register(service.NewRegistryService(a.database, a.imageProcessor))
-	a.server.Register(service.NewScannerService(a.database, a.imageProcessor))
+	a.server.Register(service.NewPolicyService(a.database, a.detector))
+	a.server.Register(service.NewRegistryService(a.database, a.detector))
+	a.server.Register(service.NewScannerService(a.database, a.detector))
 	a.server.Start()
 }
 

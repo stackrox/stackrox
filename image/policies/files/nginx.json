@@ -1,8 +1,8 @@
 {
   "name": "DockerHub NGINX",
   "description": "Alert on deployments with nginx image from 'docker.io'",
-  "severity": 2,
-  "categories": [1],
+  "severity": "MEDIUM_SEVERITY",
+  "categories": ["IMAGE_ASSURANCE"],
   "image_policy": {
     "image_name": {
       "registry": "docker.io",

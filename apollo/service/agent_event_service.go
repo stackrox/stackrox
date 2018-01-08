@@ -3,7 +3,7 @@ package service
 import (
 	"bitbucket.org/stack-rox/apollo/apollo/alerts"
 	"bitbucket.org/stack-rox/apollo/apollo/db"
-	"bitbucket.org/stack-rox/apollo/apollo/detection/image_processor"
+	"bitbucket.org/stack-rox/apollo/apollo/detection"
 	"bitbucket.org/stack-rox/apollo/apollo/notifications"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
@@ -16,9 +16,9 @@ import (
 )
 
 // NewAgentEventService returns the AgentEventService API.
-func NewAgentEventService(imageProcessor *imageprocessor.ImageProcessor, notificationsProcessor *notifications.Processor, database db.Storage) *AgentEventService {
+func NewAgentEventService(detector *detection.Detector, notificationsProcessor *notifications.Processor, database db.Storage) *AgentEventService {
 	return &AgentEventService{
-		imageProcessor:        imageProcessor,
+		detector:              detector,
 		notificationProcessor: notificationsProcessor,
 		stalenessHandler:      alerts.NewStalenessHandler(database),
 		storage:               database,
@@ -27,7 +27,7 @@ func NewAgentEventService(imageProcessor *imageprocessor.ImageProcessor, notific
 
 // AgentEventService is the struct that manages the AgentEvent API
 type AgentEventService struct {
-	imageProcessor        *imageprocessor.ImageProcessor
+	detector              *detection.Detector
 	notificationProcessor *notifications.Processor
 	stalenessHandler      alerts.StalenessHandler
 	storage               db.Storage
@@ -69,7 +69,7 @@ func (s *AgentEventService) ReportDeploymentEvent(ctx context.Context, request *
 
 	s.stalenessHandler.UpdateStaleness(request)
 
-	alerts, err := s.imageProcessor.Process(d)
+	alerts, err := s.detector.Process(d)
 	if err != nil {
 		log.Error(err)
 		return &empty.Empty{}, status.Error(codes.Internal, err.Error())

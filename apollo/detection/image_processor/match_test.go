@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func emptyRegexImagePolicy() *regexImagePolicy {
-	return &regexImagePolicy{}
+func emptyRegexImagePolicy() *compiledImagePolicy {
+	return &compiledImagePolicy{}
 }
 
 func getTestImage() *v1.Image {
@@ -72,13 +72,13 @@ func TestMatchComponent(t *testing.T) {
 
 	image := getTestImage()
 
-	berkeleyPolicy := &regexImagePolicy{
+	berkeleyPolicy := &compiledImagePolicy{
 		Component: regexp.MustCompile("^berkeley*"),
 	}
 	violations, exists = berkeleyPolicy.matchComponent(image)
 	assert.True(t, exists)
 	assert.Equal(t, 2, len(violations))
-	berkeleyDBPolicy := &regexImagePolicy{
+	berkeleyDBPolicy := &compiledImagePolicy{
 		Component: regexp.MustCompile("^berkeleyD.*"),
 	}
 	violations, exists = berkeleyDBPolicy.matchComponent(image)
@@ -99,7 +99,7 @@ func TestMatchLineRule(t *testing.T) {
 
 	image := getTestImage()
 
-	policy := &regexImagePolicy{
+	policy := &compiledImagePolicy{
 		LineRule: &lineRuleFieldRegex{
 			Instruction: "CMD",
 			Value:       regexp.MustCompile("^sudo.*"),
@@ -120,7 +120,7 @@ func TestMatchImageName(t *testing.T) {
 	violations, exists := emptyRegexImagePolicy().matchImageName(nil)
 	assert.False(t, exists)
 	assert.Equal(t, 0, len(violations))
-	policy := &regexImagePolicy{
+	policy := &compiledImagePolicy{
 		ImageNamePolicy: &imageNamePolicyRegex{
 			Registry:  regexp.MustCompile("^docker.io$"),
 			Namespace: regexp.MustCompile("^library$"),
@@ -147,8 +147,8 @@ func TestMatchImageName(t *testing.T) {
 	assert.Equal(t, 0, len(violations))
 }
 
-func createTestPolicy(comparator v1.Comparator, op v1.MathOP, value float32) *regexImagePolicy {
-	return &regexImagePolicy{
+func createTestPolicy(comparator v1.Comparator, op v1.MathOP, value float32) *compiledImagePolicy {
+	return &compiledImagePolicy{
 		CVSS: &v1.NumericalPolicy{
 			Op:     comparator,
 			MathOp: op,
@@ -213,14 +213,14 @@ func TestMatchCVE(t *testing.T) {
 
 	image := getTestImage()
 
-	policy := &regexImagePolicy{
+	policy := &compiledImagePolicy{
 		CVE: regexp.MustCompile("^CVE-2016.*"),
 	}
 	violations, exists = policy.matchCVE(image)
 	assert.True(t, exists)
 	assert.Equal(t, 1, len(violations))
 
-	policy = &regexImagePolicy{
+	policy = &compiledImagePolicy{
 		CVE: regexp.MustCompile("^CVE-2018.*"),
 	}
 	violations, exists = policy.matchCVE(image)
@@ -245,7 +245,7 @@ func TestMatchImageAge(t *testing.T) {
 	now := ptypes.TimestampNow()
 
 	// Does not violate
-	policy := &regexImagePolicy{
+	policy := &compiledImagePolicy{
 		ImageAgeDays: 1,
 	}
 	image.Metadata.Created = now
@@ -277,7 +277,7 @@ func TestMatchScanAge(t *testing.T) {
 	now := ptypes.TimestampNow()
 
 	// Does not violate
-	policy := &regexImagePolicy{
+	policy := &compiledImagePolicy{
 		ScanAgeDays: 1,
 	}
 	image.Scan.ScanTime = now
@@ -302,12 +302,12 @@ func TestMatchScanAge(t *testing.T) {
 
 func TestMatchPolicyToImage(t *testing.T) {
 	// If empty then no violations
-	alert := emptyRegexImagePolicy().matchPolicyToImage(nil)
-	assert.Nil(t, alert)
+	violations := emptyRegexImagePolicy().Match(nil, &v1.Container{})
+	assert.Nil(t, violations)
 
 	image := getTestImage()
 
-	policy := &regexImagePolicy{
+	policy := &compiledImagePolicy{
 		Original: &v1.Policy{
 			Name:     "policy1",
 			Severity: v1.Severity_CRITICAL_SEVERITY,
@@ -320,12 +320,12 @@ func TestMatchPolicyToImage(t *testing.T) {
 	}
 
 	// Make sure if two are specified and both have violations that we receive the violations
-	alert = policy.matchPolicyToImage(image)
-	assert.NotNil(t, alert)
-	assert.Equal(t, 3, len(alert.GetViolations()))
+	violations = policy.Match(nil, &v1.Container{Image: image})
+	assert.NotNil(t, violations)
+	assert.Equal(t, 3, len(violations))
 
 	// Make sure if two are specified, but one does not have a violation that we receive no violations
 	policy.Component = regexp.MustCompile("^blah*") // should make ComponentMatch generate no violations so overall alert fails
-	alert = policy.matchPolicyToImage(image)
-	assert.Nil(t, alert)
+	violations = policy.Match(nil, &v1.Container{Image: image})
+	assert.Nil(t, violations)
 }

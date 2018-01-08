@@ -1,0 +1,11 @@
+{
+  "name": "Mount Docker Socket",
+  "description": "Alert on deployments with volume mount on docker socket",
+  "severity": "MEDIUM_SEVERITY",
+  "categories": ["CONTAINER_CONFIGURATION"],
+  "configuration_policy": {
+    "volume_policy": {
+      "path": "^/var/run/docker.sock$"
+    }
+  }
+}

@@ -35,8 +35,6 @@ var (
 	tenYears     = time.Now().Add(10 * 365 * 24 * time.Hour)
 	certTemplate = x509.Certificate{
 		BasicConstraintsValid:       true,
-		DNSNames:                    []string{"*.stackrox"},
-		IsCA:                        true,
 		KeyUsage:                    x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:                 []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 		MaxPathLen:                  0,

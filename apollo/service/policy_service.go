@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
-	"bitbucket.org/stack-rox/apollo/apollo/detection/image_processor"
+	"bitbucket.org/stack-rox/apollo/apollo/detection"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -20,17 +20,17 @@ var (
 )
 
 // NewPolicyService returns the PolicyService API.
-func NewPolicyService(storage db.PolicyStorage, processor *imageprocessor.ImageProcessor) *PolicyService {
+func NewPolicyService(storage db.PolicyStorage, detector *detection.Detector) *PolicyService {
 	return &PolicyService{
-		storage:        storage,
-		imageProcessor: processor,
+		storage:  storage,
+		detector: detector,
 	}
 }
 
 // PolicyService is the struct that manages Policies API
 type PolicyService struct {
-	storage        db.PolicyStorage
-	imageProcessor *imageprocessor.ImageProcessor
+	storage  db.PolicyStorage
+	detector *detection.Detector
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -70,7 +70,7 @@ func (s *PolicyService) PostPolicy(ctx context.Context, request *v1.Policy) (*em
 	if err := s.storage.AddPolicy(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if err := s.imageProcessor.UpdatePolicy(request); err != nil {
+	if err := s.detector.UpdatePolicy(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &empty.Empty{}, nil
@@ -94,10 +94,10 @@ func (s *PolicyService) PutPolicy(ctx context.Context, request *v1.Policy) (*emp
 	if err := validatePolicy(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if err := s.storage.UpdatePolicy(request); err != nil {
+	if err := s.detector.UpdatePolicy(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if err := s.imageProcessor.UpdatePolicy(request); err != nil {
+	if err := s.storage.UpdatePolicy(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &empty.Empty{}, nil
@@ -111,6 +111,6 @@ func (s *PolicyService) DeletePolicy(ctx context.Context, request *v1.DeletePoli
 	if err := s.storage.RemovePolicy(request.GetName()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	s.imageProcessor.RemovePolicy(request.GetName())
+	s.detector.RemovePolicy(request.GetName())
 	return &empty.Empty{}, nil
 }

@@ -1,12 +1,12 @@
 {
   "name": "Any Vulnerabilities",
   "description": "Alert on deployments with any vulnerabilities",
-  "severity": 1,
-  "categories": [1],
+  "severity": "LOW_SEVERITY",
+  "categories": ["IMAGE_ASSURANCE"],
   "image_policy": {
     "cvss": {
-      "op": 4,
-      "math_op": 1,
+      "op": "GREATER_THAN",
+      "math_op": "MAX",
       "value": 0
     }
   }

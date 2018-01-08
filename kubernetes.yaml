@@ -6,8 +6,8 @@ metadata:
 spec:
   ports:
   - name: api
-    port: 8080
-    containerPort: 443
+    port: 443
+    targetPort: 443
   selector:
     app: apollo
   type: ClusterIP

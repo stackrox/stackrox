@@ -3,6 +3,7 @@ package imageprocessor
 import (
 	"testing"
 
+	"bitbucket.org/stack-rox/apollo/apollo/detection/processors"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 )
@@ -31,16 +32,16 @@ func TestCompileImageNameRuleRegex(t *testing.T) {
 }
 
 func TestCompileStringRegex(t *testing.T) {
-	regex, err := compileStringRegex("")
+	regex, err := processors.CompileStringRegex("")
 	assert.NoError(t, err)
 	assert.Nil(t, regex)
 
-	regex, err = compileStringRegex(".*")
+	regex, err = processors.CompileStringRegex(".*")
 	assert.NoError(t, err)
 	assert.NotNil(t, regex)
 
 	// Not a regex
-	regex, err = compileStringRegex("*")
+	regex, err = processors.CompileStringRegex("*")
 	assert.Error(t, err)
 	assert.Nil(t, regex)
 }

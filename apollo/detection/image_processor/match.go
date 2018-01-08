@@ -8,9 +8,38 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
-	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/golang/protobuf/ptypes"
 )
+
+type matchFunc func(image *v1.Image) ([]*v1.Alert_Violation, bool)
+
+// Match matches the policy if *ALL* conditions of the policy are satisfied.
+func (policy *compiledImagePolicy) Match(deployment *v1.Deployment, container *v1.Container) (violations []*v1.Alert_Violation) {
+	image := container.GetImage()
+	if image == nil {
+		return
+	}
+
+	matchFunctions := []matchFunc{
+		policy.matchComponent,
+		policy.matchLineRule,
+		policy.matchCVSS,
+		policy.matchImageName,
+		policy.matchCVE,
+		policy.matchImageAge,
+		policy.matchScanAge,
+	}
+	// This ensures that the policy exists and if there isn't a violation of the field then it should not return any violations
+	for _, f := range matchFunctions {
+		calculatedViolations, exists := f(image)
+		if exists && len(calculatedViolations) == 0 {
+			return nil
+		}
+		violations = append(violations, calculatedViolations...)
+	}
+
+	return
+}
 
 func min(x, y float32) float32 {
 	return float32(math.Min(float64(x), float64(y)))
@@ -20,7 +49,7 @@ func max(x, y float32) float32 {
 	return float32(math.Max(float64(x), float64(y)))
 }
 
-func (policy *regexImagePolicy) matchComponent(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
+func (policy *compiledImagePolicy) matchComponent(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
 	if policy.Component == nil {
 		return
 	}
@@ -36,7 +65,7 @@ func (policy *regexImagePolicy) matchComponent(image *v1.Image) (violations []*v
 	return
 }
 
-func (policy *regexImagePolicy) matchLineRule(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
+func (policy *compiledImagePolicy) matchLineRule(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
 	if policy.LineRule == nil {
 		return
 	}
@@ -54,7 +83,7 @@ func (policy *regexImagePolicy) matchLineRule(image *v1.Image) (violations []*v1
 	return
 }
 
-func (policy *regexImagePolicy) matchCVE(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
+func (policy *compiledImagePolicy) matchCVE(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
 	if policy.CVE == nil {
 		return
 	}
@@ -71,7 +100,7 @@ func (policy *regexImagePolicy) matchCVE(image *v1.Image) (violations []*v1.Aler
 	return
 }
 
-func (policy *regexImagePolicy) matchCVSS(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
+func (policy *compiledImagePolicy) matchCVSS(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
 	if policy.CVSS == nil {
 		return
 	}
@@ -131,7 +160,7 @@ func (policy *regexImagePolicy) matchCVSS(image *v1.Image) (violations []*v1.Ale
 	return
 }
 
-func (policy *regexImagePolicy) matchImageName(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
+func (policy *compiledImagePolicy) matchImageName(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
 	if policy.ImageNamePolicy == nil {
 		return
 	}
@@ -162,7 +191,7 @@ func (policy *regexImagePolicy) matchImageName(image *v1.Image) (violations []*v
 	return
 }
 
-func (policy *regexImagePolicy) matchImageAge(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
+func (policy *compiledImagePolicy) matchImageAge(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
 	if policy.ImageAgeDays == 0 {
 		return
 	}
@@ -184,7 +213,7 @@ func (policy *regexImagePolicy) matchImageAge(image *v1.Image) (violations []*v1
 	return
 }
 
-func (policy *regexImagePolicy) matchScanAge(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
+func (policy *compiledImagePolicy) matchScanAge(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
 	if policy.ScanAgeDays == 0 {
 		return
 	}
@@ -204,38 +233,4 @@ func (policy *regexImagePolicy) matchScanAge(image *v1.Image) (violations []*v1.
 		})
 	}
 	return
-}
-
-type matchFunc func(image *v1.Image) ([]*v1.Alert_Violation, bool)
-
-// matchPolicyToImage matches the policy if *ALL* conditions of the policy are satisfied.
-func (policy *regexImagePolicy) matchPolicyToImage(image *v1.Image) *v1.Alert {
-	matchFunctions := []matchFunc{
-		policy.matchComponent,
-		policy.matchLineRule,
-		policy.matchCVSS,
-		policy.matchImageName,
-		policy.matchCVE,
-		policy.matchImageAge,
-		policy.matchScanAge,
-	}
-	var violations []*v1.Alert_Violation
-	// This ensures that the policy exists and if there isn't a violation of the field then it should not return any violations
-	for _, f := range matchFunctions {
-		calculatedViolations, exists := f(image)
-		if exists && len(calculatedViolations) == 0 {
-			return nil
-		}
-		violations = append(violations, calculatedViolations...)
-	}
-	if len(violations) == 0 {
-		return nil
-	}
-	alert := &v1.Alert{
-		Id:         uuid.NewV4().String(),
-		Policy:     policy.Original,
-		Violations: violations,
-		Time:       ptypes.TimestampNow(),
-	}
-	return alert
 }

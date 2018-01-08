@@ -2,7 +2,7 @@ package service
 
 import (
 	"bitbucket.org/stack-rox/apollo/apollo/db"
-	"bitbucket.org/stack-rox/apollo/apollo/detection/image_processor"
+	"bitbucket.org/stack-rox/apollo/apollo/detection"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/secrets"
@@ -15,17 +15,17 @@ import (
 )
 
 // NewRegistryService returns the RegistryService API.
-func NewRegistryService(storage db.RegistryStorage, processor *imageprocessor.ImageProcessor) *RegistryService {
+func NewRegistryService(storage db.RegistryStorage, detection *detection.Detector) *RegistryService {
 	return &RegistryService{
-		storage:   storage,
-		processor: processor,
+		storage:  storage,
+		detector: detection,
 	}
 }
 
 // RegistryService is the struct that manages the Registry API
 type RegistryService struct {
-	storage   db.RegistryStorage
-	processor *imageprocessor.ImageProcessor
+	storage  db.RegistryStorage
+	detector *detection.Detector
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -66,7 +66,7 @@ func (s *RegistryService) PutRegistry(ctx context.Context, request *v1.Registry)
 	if err := s.storage.UpdateRegistry(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	s.processor.UpdateRegistry(registry)
+	s.detector.UpdateRegistry(registry)
 	return &empty.Empty{}, nil
 }
 
@@ -80,6 +80,6 @@ func (s *RegistryService) PostRegistry(ctx context.Context, request *v1.Registry
 	if err := s.storage.AddRegistry(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	s.processor.UpdateRegistry(registry)
+	s.detector.UpdateRegistry(registry)
 	return &empty.Empty{}, nil
 }

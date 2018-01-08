@@ -1,8 +1,8 @@
 {
   "name": "Nginx Entrypoint",
   "description": "Alert on deployments with an entrypoint that contains nginx",
-  "severity": 3,
-  "categories": [1],
+  "severity": "HIGH_SEVERITY",
+  "categories": ["IMAGE_ASSURANCE"],
   "image_policy": {
     "line_rule": {
       "instruction": "ENTRYPOINT",

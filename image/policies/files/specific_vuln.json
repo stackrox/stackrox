@@ -1,8 +1,8 @@
 {
   "name": "CVE-2017-15804",
   "description": "Alert on deployments with images containing 'CVE-2017-15804'",
-  "severity": 1,
-  "categories": [1],
+  "severity": "LOW_SEVERITY",
+  "categories": ["IMAGE_ASSURANCE"],
   "image_policy": {
     "cve": "CVE-2017-15804"
   }

@@ -1,8 +1,8 @@
 {
   "name": "Port 80",
   "description": "Alert on deployments exposing port 80",
-  "severity": 3,
-  "categories": [1],
+  "severity": "HIGH_SEVERITY",
+  "categories": ["IMAGE_ASSURANCE"],
   "image_policy": {
     "line_rule": {
       "instruction": "EXPOSE",

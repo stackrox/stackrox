@@ -35,9 +35,6 @@ func TestGeneratedCertificateAttributes(t *testing.T) {
 	if cert.NotAfter.Before(time.Now().Add(time.Hour * 24 * 365 * 9)) {
 		t.Errorf("Invalid NotAfter time: %v", cert.NotAfter)
 	}
-	if !cert.IsCA {
-		t.Error("Cert should be a CA")
-	}
 	if cert.MaxPathLen > 0 {
 		t.Error("Cert should not be used to authenticate paths")
 	}
@@ -46,12 +43,5 @@ func TestGeneratedCertificateAttributes(t *testing.T) {
 	}
 	if cert.SignatureAlgorithm != x509.SHA256WithRSA {
 		t.Errorf("Unexpected signature algorith: %T", cert.SignatureAlgorithm)
-	}
-
-	possibleFQDNs := []string{"launcher.stackrox", "director.stackrox"}
-	for _, n := range possibleFQDNs {
-		if err = cert.VerifyHostname(n); err != nil {
-			t.Errorf("Hostname failed verification: %s", err)
-		}
 	}
 }

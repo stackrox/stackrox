@@ -338,10 +338,14 @@ func TestMatch(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		compiled, err := newCompiledConfigurationPolicy(c.policy)
+		compiled, err := NewCompiledConfigurationPolicy(c.policy)
 		assert.NoError(t, err)
 
-		violations := compiled.match(c.deployment)
+		var violations []*v1.Alert_Violation
+		for _, container := range c.deployment.GetContainers() {
+			vs := compiled.Match(c.deployment, container)
+			violations = append(violations, vs...)
+		}
 
 		assert.Equal(t, c.expectedViolations, violations)
 	}

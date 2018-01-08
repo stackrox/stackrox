@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/golang/protobuf/jsonpb"
 )
 
 func (b *BoltDB) loadDefaults() error {
@@ -71,7 +72,7 @@ func (b *BoltDB) readPolicyFile(path string) (*v1.Policy, error) {
 	}
 
 	r := new(v1.Policy)
-	err = json.NewDecoder(bytes.NewReader(contents)).Decode(r)
+	err = jsonpb.Unmarshal(bytes.NewReader(contents), r)
 	if err != nil {
 		log.Errorf("Unable to unmarshal policy json: %s", err)
 		return nil, err
