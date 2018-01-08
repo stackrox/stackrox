@@ -243,7 +243,7 @@ func (s *SchedulerClient) Launch(scanID string, benchmark *v1.Benchmark) error {
 		Image:   s.image,
 		Mounts:  []string{"/var/run/docker.sock:/var/run/docker.sock"},
 		Global:  true,
-		Command: []string{"docker-bench-bootstrap"},
+		Command: []string{"benchmark-bootstrap"},
 	}
 	_, err := s.orchestrator.Launch(service)
 	if err != nil {

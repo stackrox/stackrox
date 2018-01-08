@@ -102,12 +102,11 @@ test: gazelle
 	    --action_env=DOCKER_CERT_PATH=$(DOCKER_CERT_PATH) \
 	    --action_env=DOCKER_TLS_VERIFY=$(DOCKER_TLS_VERIFY) \
 	    -- \
-	    //... -vendor/... -docker-bench/...
-# docker-bench tests don't work in Bazel yet.
-	make -C docker-bench test report
+	    //... -vendor/... -benchmarks/...
+# benchmark tests don't work in Bazel yet.
+	make -C benchmarks test report
 # neither do UI tests
 	make -C apollo-ui test
-
 
 ###########
 ## Image ##
@@ -118,8 +117,8 @@ image: gazelle clean-image
 		//agent/kubernetes \
 		//agent/swarm \
 		//apollo \
-		//docker-bench \
-		//docker-bench-bootstrap \
+		//benchmarks \
+		//benchmark-bootstrap \
 
 	make -C apollo-ui build
 
@@ -128,8 +127,8 @@ image: gazelle clean-image
 	cp bazel-bin/agent/swarm/linux_amd64_pure_stripped/swarm image/bin/swarm-agent
 	cp bazel-bin/agent/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-agent
 	cp bazel-bin/apollo/linux_amd64_pure_stripped/apollo image/bin/apollo
-	cp bazel-bin/docker-bench/linux_amd64_pure_stripped/docker-bench image/bin/docker-bench
-	cp bazel-bin/docker-bench-bootstrap/linux_amd64_pure_stripped/docker-bench-bootstrap image/bin/docker-bench-bootstrap
+	cp bazel-bin/benchmarks/linux_amd64_pure_stripped/benchmarks image/bin/benchmarks
+	cp bazel-bin/benchmark-bootstrap/linux_amd64_pure_stripped/benchmark-bootstrap image/bin/benchmark-bootstrap
 	chmod +w image/bin/*
 	docker build -t stackrox/apollo:latest image/
 

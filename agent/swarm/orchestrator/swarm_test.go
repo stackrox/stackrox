@@ -25,7 +25,7 @@ func TestLaunch(t *testing.T) {
 		Image:   "stackrox/apollo:latest",
 		Mounts:  []string{"/var/run/docker.sock:/var/run/docker.sock"},
 		Global:  true,
-		Command: []string{"docker-bench-bootstrap"},
+		Command: []string{"benchmark-bootstrap"},
 	}
 
 	_, err = orchestrator.Launch(service)
