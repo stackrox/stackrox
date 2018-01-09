@@ -74,9 +74,10 @@ class BenchmarksPage extends Component {
     getBenchmarks = () => {
         const params = `?${queryString.stringify(this.params)}`;
         return axios.get(`/v1/benchmarks/results/grouped/${this.props.benchmarksResults}${params}`).then((response) => {
-            if (!response.data || !response.data.benchmarks || response.data.benchmarks.length === 0) return;
-            const lastScanned = dateFns.format(response.data.benchmarks[0].time, 'MM/DD/YYYY h:mm:ss A');
-            const benchmarks = response.data.benchmarks[0].checkResults;
+            const { data } = response;
+            if (!data || !data.benchmarks || data.benchmarks.length === 0) return;
+            const lastScanned = dateFns.format(data.benchmarks[0].time, 'MM/DD/YYYY h:mm:ss A');
+            const benchmarks = data.benchmarks[0].checkResults;
             if (lastScanned !== this.state.lastScanned) {
                 this.update('UPDATE_BENCHMARKS', {
                     benchmarks,
