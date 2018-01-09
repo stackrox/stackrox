@@ -91,10 +91,10 @@ func (dl *listener) sendExistingDeployments() {
 	}
 
 	for _, d := range existingDeployments {
+		d.ClusterId = dl.clusterID
 		dl.eventsC <- &v1.DeploymentEvent{
 			Deployment: d,
 			Action:     v1.ResourceAction_CREATE_RESOURCE,
-			ClusterId:  dl.clusterID,
 		}
 
 	}
@@ -162,10 +162,10 @@ func (dl *listener) pipeDeploymentEvent(msg events.Message) {
 		return
 	}
 
+	deployment.ClusterId = dl.clusterID
 	event := &v1.DeploymentEvent{
 		Deployment: deployment,
 		Action:     resourceAction,
-		ClusterId:  dl.clusterID,
 	}
 
 	dl.eventsC <- event

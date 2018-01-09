@@ -30,7 +30,6 @@ func (suite *AlertsTestSuite) TeardownSuite() {
 }
 
 func (suite *AlertsTestSuite) basicAlertTest(updateStore, retrievalStore db.Storage) {
-
 	alerts := []*v1.Alert{
 		{
 			Id: "id1",
@@ -96,6 +95,10 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 			Name:       "policy1",
 			Severity:   v1.Severity_LOW_SEVERITY,
 		},
+		Deployment: &v1.Deployment{
+			ClusterId: "test",
+			Id:        "deployment1",
+		},
 		Time:  &timestamp.Timestamp{Seconds: 100},
 		Stale: true,
 	}
@@ -107,6 +110,10 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 			Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
 			Name:       "policy2",
 			Severity:   v1.Severity_HIGH_SEVERITY,
+		},
+		Deployment: &v1.Deployment{
+			ClusterId: "prod",
+			Id:        "deployment1",
 		},
 		Time:  &timestamp.Timestamp{Seconds: 200},
 		Stale: false,
@@ -155,6 +162,20 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{Since: &timestamp.Timestamp{Seconds: 150}})
 	suite.Nil(err)
 	suite.Equal([]*v1.Alert{alert2}, alerts)
+
+	// Filter by deployment.
+	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{DeploymentId: []string{"deployment1", "someService"}})
+	suite.Nil(err)
+	suite.Equal([]*v1.Alert{alert2, alert1}, alerts)
+
+	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{DeploymentId: []string{"somethingelse"}})
+	suite.Nil(err)
+	suite.Empty(alerts)
+
+	// Filter by cluster.
+	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{Cluster: []string{"test", "someCluster"}})
+	suite.Nil(err)
+	suite.Equal([]*v1.Alert{alert1}, alerts)
 
 	// Filter by staleness
 	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{

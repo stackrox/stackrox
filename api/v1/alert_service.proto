@@ -32,7 +32,8 @@ message GetAlertsRequest {
     repeated Severity severity             = 3;
     google.protobuf.Timestamp since        = 4;
     repeated bool stale                    = 5;
-    repeated string deployment_id          = 6;
+    repeated string cluster                = 6;
+    repeated string deployment_id          = 7;
 }
 
 message GetAlertsResponse {
@@ -49,6 +50,28 @@ message GetAlertsGroupResponse {
         repeated PolicyGroup by_policy = 2;
     }
     repeated CategoryGroup by_category = 1;
+}
+
+message GetAlertsCountsRequest {
+    GetAlertsRequest request    = 1;
+    enum RequestGroup {
+        UNSET       = 0;
+        CATEGORY    = 1;
+        CLUSTER     = 2;
+    }
+    RequestGroup group_by       = 2;
+}
+
+message GetAlertsCountsResponse {
+    message AlertGroup {
+        string group                    = 1;
+        message AlertCounts {
+            Severity severity   = 1;
+            int64 count         = 2;
+        }
+        repeated AlertCounts counts     = 2;
+    }
+    repeated AlertGroup groups = 1;
 }
 
 service AlertService {
@@ -71,6 +94,11 @@ service AlertService {
         };
     }
 
+    rpc GetAlertsCounts (GetAlertsCountsRequest) returns (GetAlertsCountsResponse) {
+        option (google.api.http) = {
+            get: "/v1/alerts/counts"
+        };
+    }
     // No post/put API for alerts
 
     // No deletion of alerts

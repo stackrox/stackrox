@@ -18,7 +18,6 @@ enum ResourceAction {
 message DeploymentEvent {
     Deployment     deployment = 1;
     ResourceAction action     = 2;
-    string         cluster_id = 3;
 }
 
 service AgentEventService {

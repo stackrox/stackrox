@@ -16,8 +16,9 @@ message Deployment {
     string namespace                           = 5;
     int64 replicas                             = 6;
     google.protobuf.Timestamp updated_at       = 7;
+    string cluster_id                          = 8;
 
-    repeated Container containers              = 8;
+    repeated Container containers              = 9;
 }
 
 message Container {

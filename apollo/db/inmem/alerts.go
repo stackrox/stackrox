@@ -28,6 +28,7 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 	severitySet := severitiesWrap(request.GetSeverity()).asSet()
 	categoriesSet := categoriesWrap(request.GetCategory()).asSet()
 	policiesSet := stringWrap(request.GetPolicyName()).asSet()
+	clusterSet := stringWrap(request.GetCluster()).asSet()
 	deploymentIDSet := stringWrap(request.GetDeploymentId()).asSet()
 
 	for _, alert := range alerts {
@@ -44,6 +45,10 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 		}
 
 		if _, ok := policiesSet[alert.GetPolicy().GetName()]; len(policiesSet) > 0 && !ok {
+			continue
+		}
+
+		if _, ok := clusterSet[alert.GetDeployment().GetClusterId()]; len(clusterSet) > 0 && !ok {
 			continue
 		}
 
