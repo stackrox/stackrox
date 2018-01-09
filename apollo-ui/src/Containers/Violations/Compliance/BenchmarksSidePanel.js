@@ -4,7 +4,7 @@ import ReactModal from 'react-modal';
 import * as Icon from 'react-feather';
 import emitter from 'emitter';
 
-class ComplianceBenchmarksSidePanel extends Component {
+class BenchmarksSidePanel extends Component {
     constructor(props) {
         super(props);
 
@@ -102,7 +102,7 @@ class ComplianceBenchmarksSidePanel extends Component {
 
     render() {
         return (
-            <aside className={`flex-col h-full bg-primary-100 md:w-2/3 border-l border-primary-300 ${(this.state.showPanel) ? 'flex' : 'hidden'}`}>
+            <aside className={`flex-col bg-primary-100 md:w-2/3 border-l border-primary-300 ${(this.state.showPanel) ? 'flex' : 'hidden'}`}>
                 <div className="p-3 border-b border-primary-300 w-full">{this.displayHeader()}</div>
                 <div className="flex-1 p-3 overflow-y-scroll bg-white rounded-sm shadow">
                     <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={this.handleOpenModal} />
@@ -124,4 +124,4 @@ class ComplianceBenchmarksSidePanel extends Component {
     }
 }
 
-export default ComplianceBenchmarksSidePanel;
+export default BenchmarksSidePanel;
