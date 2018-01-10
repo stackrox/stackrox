@@ -10,7 +10,7 @@ const CompliancePage = () => {
         <div className="flex flex-1">
             <Tabs className="bg-white" headers={headers}>
                 <TabContent>
-                    <BenchmarksPage benchmarksResults="cis" benchmarksTrigger="CIS Benchmark" />
+                    <BenchmarksPage benchmarksResults="CIS Benchmark" benchmarksTrigger="CIS Benchmark" />
                 </TabContent>
                 <TabContent>
                     <BenchmarksPage benchmarksResults="Swarm Benchmark" benchmarksTrigger="Swarm Benchmark" />

@@ -20,13 +20,16 @@ func newBenchmarkResultsStore(persistent db.BenchmarkResultsStorage) *benchmarkR
 
 // GetBenchmarkResults applies the filters from GetBenchmarkResultsRequest and returns the Benchmarks
 func (s *benchmarkResultStore) GetBenchmarkResults(request *v1.GetBenchmarkResultsRequest) ([]*v1.BenchmarkResult, error) {
-	benchmarks, err := s.BenchmarkResultsStorage.GetBenchmarkResults(request)
+	benchmarksResults, err := s.BenchmarkResultsStorage.GetBenchmarkResults(request)
 	if err != nil {
 		return nil, err
 	}
 	var filtered []*v1.BenchmarkResult
 	clusterSet := stringWrap(request.GetClusters()).asSet()
-	for _, benchmark := range benchmarks {
+	for _, benchmark := range benchmarksResults {
+		if request.Benchmark != "" && benchmark.Name != request.Benchmark {
+			continue
+		}
 		if request.Host != "" && benchmark.Host != request.Host {
 			continue
 		}

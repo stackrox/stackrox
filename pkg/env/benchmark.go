@@ -8,6 +8,9 @@ var (
 
 	// Checks is used to provide the benchmark services with the checks that need to be run as part of the benchmark
 	Checks = Setting(checks{})
+
+	// BenchmarkName is used to provide the benchmark service with the benchmark name
+	BenchmarkName = Setting(benchmarkName{})
 )
 
 type scanID struct{}
@@ -27,5 +30,15 @@ func (c checks) EnvVar() string {
 }
 
 func (c checks) Setting() string {
+	return os.Getenv(c.EnvVar())
+}
+
+type benchmarkName struct{}
+
+func (c benchmarkName) EnvVar() string {
+	return "ROX_APOLLO_BENCHMARK_NAME"
+}
+
+func (c benchmarkName) Setting() string {
 	return os.Getenv(c.EnvVar())
 }

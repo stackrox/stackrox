@@ -31,7 +31,7 @@ func (f *fileOwnershipCheck) Definition() utils.Definition {
 }
 
 func compareFileOwnership(file string, expectedUser string, expectedGroup string) (result v1.CheckResult) {
-	info, err := os.Stat(file)
+	info, err := os.Stat(utils.ContainerPath(file))
 	if os.IsNotExist(err) {
 		utils.Note(&result)
 		utils.AddNotef(&result, "Test may not be applicable because %v does not exist", file)
@@ -156,7 +156,7 @@ func (r *recursiveOwnershipCheck) Run() (result v1.CheckResult) {
 		utils.AddNotes(&result, "Test is not applicable. Directory is not defined")
 		return
 	}
-	files, err := ioutil.ReadDir(r.Directory)
+	files, err := ioutil.ReadDir(utils.ContainerPath(r.Directory))
 	if os.IsNotExist(err) {
 		utils.Note(&result)
 		utils.AddNotef(&result, "Directory '%v' does not exist. Test may not be applicable", r.Directory)

@@ -20,7 +20,7 @@ func (c *privilegedDockerExecBenchmark) Definition() utils.Definition {
 
 func (c *privilegedDockerExecBenchmark) Run() (result v1.CheckResult) {
 	utils.Pass(&result)
-	auditLog, err := utils.ReadFile("/var/log/audit/audit.log")
+	auditLog, err := utils.ReadFile(utils.ContainerPath("/var/log/audit/audit.log"))
 	if err != nil {
 		utils.Warn(&result)
 		utils.AddNotef(&result, "Error reading /var/log/audit/audit.log: %+v", err)

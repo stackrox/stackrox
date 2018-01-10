@@ -22,11 +22,13 @@ func main() {
 
 	strVolumes := []string{
 		"/var/run/docker.sock:/var/run/docker.sock",
-		"/var/lib:/var/lib:ro",
-		"/etc:/etc:ro",
-		"/var/log/audit:/var/log/audit:ro",
-		"/lib/systemd:/lib/systemd:ro",
-		"/usr/lib/systemd:/usr/lib/systemd:ro",
+		"/var/run/docker.sock:/host/var/run/docker.sock", // Mount this twice because it makes it so any checks on /var/run/docker.sock do not need to be unique
+		"/var/lib:/host/var/lib:ro",
+		"/etc:/host/etc:ro",
+		"/var/log/audit:/host/var/log/audit:ro",
+		"/lib/systemd:/host/lib/systemd:ro",
+		"/usr/lib/systemd:/host/usr/lib/systemd:ro",
+		"/usr/bin:/host/usr/bin:ro",
 	}
 
 	volumeMap := make(map[string]struct{})

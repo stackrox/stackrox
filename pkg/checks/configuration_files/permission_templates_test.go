@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,6 +38,8 @@ func createTestDir() (dir string, fileA string, fileB string, err error) {
 }
 
 func TestCompareFilePermissions(t *testing.T) {
+	utils.ContainerPathPrefix = ""
+
 	// Test file not existing
 	file := "/tmp/idontexist"
 	expectedResult := v1.CheckResult{Result: v1.CheckStatus_NOTE}
@@ -80,6 +83,8 @@ func TestCompareFilePermissions(t *testing.T) {
 }
 
 func TestPermissionsCheck(t *testing.T) {
+	utils.ContainerPathPrefix = ""
+
 	// Test empty file
 	expectedResult := v1.CheckResult{Result: v1.CheckStatus_NOTE}
 	benchmark := newPermissionsCheck("bench", "desc", "", 0777, true)
@@ -99,6 +104,7 @@ func TestPermissionsCheck(t *testing.T) {
 }
 
 func TestRecursivePermissionsCheck(t *testing.T) {
+	utils.ContainerPathPrefix = ""
 	// Test empty file
 	expectedResult := v1.CheckResult{Result: v1.CheckStatus_NOTE}
 	benchmark := newRecursivePermissionsCheck("bench", "desc", "", 0777, true)

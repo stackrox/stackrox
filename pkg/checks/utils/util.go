@@ -5,8 +5,13 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
+
+// ContainerPathPrefix is the prefix for directories and file when they are within a container
+// It is a variable so tests can change its value dynamically
+var ContainerPathPrefix = "/host"
 
 // ReadFile takes in a filename and returns the body in string form or an error
 func ReadFile(filename string) (string, error) {
@@ -33,9 +38,14 @@ var possibleSystemdPaths = []string{
 func GetSystemdFile(service string) string {
 	for _, template := range possibleSystemdPaths {
 		path := fmt.Sprintf(template, service)
-		if _, err := os.Stat(path); err == nil {
+		if _, err := os.Stat(ContainerPath(path)); err == nil {
 			return path
 		}
 	}
 	return "systemd path not found"
+}
+
+// ContainerPath prepends /host onto a file path
+func ContainerPath(f string) string {
+	return filepath.Join(ContainerPathPrefix, f)
 }

@@ -19,16 +19,17 @@ func (c *containerPartitionBenchmark) Definition() utils.Definition {
 }
 
 func (c *containerPartitionBenchmark) Run() (result v1.CheckResult) {
-	fstab, err := utils.ReadFile("/etc/fstab")
+	fstab, err := utils.ReadFile(utils.ContainerPath("/etc/fstab"))
 	if err != nil {
 		utils.Warn(&result)
+		utils.AddNotef(&result, "Could not read /etc/fstab: %+v", err)
 		return
 	}
 	if strings.Contains(fstab, "/var/lib/docker") {
 		utils.Pass(&result)
 		return
 	}
-	_, err = utils.CombinedOutput("mountpoint", "-q", "--", "/var/lib/docker")
+	_, err = utils.CombinedOutput("mountpoint", "-q", "--", utils.ContainerPath("/var/lib/docker"))
 	if err == nil {
 		utils.Pass(&result)
 		return

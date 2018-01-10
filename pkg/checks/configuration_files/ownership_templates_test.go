@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -58,6 +59,7 @@ func createTestDirOwnership(u, g string) (dir string, fileA string, fileB string
 }
 
 func TestCompareFileOwnership(t *testing.T) {
+	utils.ContainerPathPrefix = ""
 	currentUser, err := user.Current()
 	require.Nil(t, err)
 
@@ -80,6 +82,7 @@ func TestCompareFileOwnership(t *testing.T) {
 }
 
 func TestFileOwnershipCheck(t *testing.T) {
+	utils.ContainerPathPrefix = ""
 	// Set up file to check against
 	currentUser, err := user.Current()
 	require.Nil(t, err)
@@ -101,12 +104,12 @@ func TestFileOwnershipCheck(t *testing.T) {
 }
 
 func TestRecursiveOwnershipCheck(t *testing.T) {
+	utils.ContainerPathPrefix = ""
 	currentUser, err := user.Current()
 	require.Nil(t, err)
 	dir, _, _, err := createTestDirOwnership(currentUser.Username, currentUser.Username)
 	require.Nil(t, err)
 
-	//expectedResult := v1.CheckResult{Result: v1.CheckStatus_PASS}
 	expectedResult := v1.CheckResult{Result: v1.CheckStatus_PASS}
 	benchmark := newRecursiveOwnershipCheck("test bench", "desc", dir, currentUser.Username, currentUser.Username)
 	result := benchmark.Run()

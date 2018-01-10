@@ -31,6 +31,7 @@ func RunBenchmark() *v1.BenchmarkResult {
 		EndTime:   protoEndTime,
 		Host:      hostname,
 		ScanId:    env.ScanID.Setting(),
+		Name:      env.BenchmarkName.Setting(),
 	}
 	return result
 }
