@@ -235,11 +235,11 @@ func (s *SchedulerClient) Launch(scanID string, benchmark *v1.Benchmark) error {
 	service := orchestrators.SystemService{
 		Name: name,
 		Envs: []string{
-			fmt.Sprintf("%s=%s", env.Image.EnvVar(), s.image),
-			fmt.Sprintf("%s=%s", env.AdvertisedEndpoint.EnvVar(), env.AdvertisedEndpoint.Setting()),
-			fmt.Sprintf("%s=%s", env.ScanID.EnvVar(), scanID),
-			fmt.Sprintf("%s=%s", env.Checks.EnvVar(), strings.Join(benchmark.Checks, ",")),
-			fmt.Sprintf("%s=%s", env.BenchmarkName.EnvVar(), benchmark.Name),
+			env.Combine(env.Image.EnvVar(), s.image),
+			env.CombineSetting(env.AdvertisedEndpoint),
+			env.Combine(env.ScanID.EnvVar(), scanID),
+			env.Combine(env.Checks.EnvVar(), strings.Join(benchmark.Checks, ",")),
+			env.Combine(env.BenchmarkName.EnvVar(), benchmark.Name),
 		},
 		Image:   s.image,
 		Mounts:  []string{"/var/run/docker.sock:/var/run/docker.sock"},

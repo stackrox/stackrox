@@ -2,6 +2,7 @@ package boltdb
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -24,8 +25,16 @@ type BoltDB struct {
 }
 
 // New returns an instance of the persistent BoltDB store
-func New(dbPath string) (*BoltDB, error) {
-	db, err := bolt.Open(filepath.Join(dbPath, "apollo.db"), 0600, nil)
+func New(dirPath string) (*BoltDB, error) {
+	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		err = os.MkdirAll(dirPath, 0600)
+		if err != nil {
+			return nil, fmt.Errorf("Error creating db path %v: %+v", dirPath, err)
+		}
+	} else if err != nil {
+		return nil, err
+	}
+	db, err := bolt.Open(filepath.Join(dirPath, "apollo.db"), 0600, nil)
 	if err != nil {
 		return nil, err
 	}

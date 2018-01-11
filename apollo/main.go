@@ -12,6 +12,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/detection"
 	"bitbucket.org/stack-rox/apollo/apollo/notifications"
 	"bitbucket.org/stack-rox/apollo/apollo/service"
+	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	_ "bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers/all"
@@ -27,7 +28,7 @@ func main() {
 	apollo := newApollo()
 
 	var err error
-	persistence, err := boltdb.NewWithDefaults("/var/lib/")
+	persistence, err := boltdb.NewWithDefaults(env.DBPath.Setting())
 	if err != nil {
 		panic(err)
 	}
