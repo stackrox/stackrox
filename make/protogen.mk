@@ -7,12 +7,12 @@ GENERATED_API_PATH = $(GENERATED_BASE_PATH)/api/v1
 GENERATED_DOC_PATH = docs
 MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/v1/swagger.json
 GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/v1/reference
-GENERATED_API_SRCS = $(API_SERVICES:%=$(GENERATED_API_PATH)/%.pb.go)
+GENERATED_PB_SRCS = $(API_SERVICES:%=$(GENERATED_API_PATH)/%.pb.go) $(PB_COMMON_FILES:%=$(GENERATED_API_PATH)/%.pb.go)
 GENERATED_API_GW_SRCS = $(API_SERVICES:%=$(GENERATED_API_PATH)/%.pb.gw.go)
 GENERATED_API_VALIDATOR_SRCS = $(API_SERVICES:%=$(GENERATED_API_PATH)/%.validator.pb.go)
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICES:%=$(GENERATED_DOC_PATH)/%.swagger.json)
 PROTO_API_PATH = $(BASE_PATH)/api/v1
-PROTO_API_PROTOS = $(API_SERVICES:%=$(PROTO_API_PATH)/%.proto)
+PROTO_API_PROTOS = $(API_SERVICES:%=$(PROTO_API_PATH)/%.proto) $(PB_COMMON_FILES:%=$(PROTO_API_PATH)/%.proto)
 
 ##############
 ## Protobuf ##
@@ -89,7 +89,7 @@ printsrcs:
 
 .PHONY: printapisrcs
 printapisrcs:
-	@echo $(GENERATED_API_SRCS)
+	@echo $(GENERATED_PB_SRCS)
 
 .PHONY: printgwsrcs
 printgwsrcs:
@@ -124,15 +124,12 @@ $(GENERATED_API_PATH):
 	@echo "+ $@"
 	@mkdir -p $(GENERATED_API_PATH)
 
-$(GENERATED_DOC_PATH):
-	@echo "+ $@"
-	@mkdir -p $(GENERATED_DOC_PATH)
-
 # Generate all of the proto messages and gRPC services with one invocation of
 # protoc when any of the .pb.go sources don't exist or when any of the .proto
 # files change.
-$(GENERATED_API_PATH)/%.pb.go: $(PROTO_DEPS) $(PROTOC_GEN_GO) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GOVALIDATORS) $(GENERATED_API_PATH) $(PROTO_API_PROTOS)
+$(GENERATED_API_PATH)/%.pb.go: $(PROTO_DEPS) $(PROTOC_GEN_GO) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GOVALIDATORS) $(PROTO_API_PROTOS)
 	@echo "+ $@"
+	@mkdir -p $(GENERATED_API_PATH)
 	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
@@ -143,8 +140,9 @@ $(GENERATED_API_PATH)/%.pb.go: $(PROTO_DEPS) $(PROTOC_GEN_GO) $(PROTOC_GEN_GRPC_
 # Generate all of the reverse-proxies (gRPC-Gateways) with one invocation of
 # protoc when any of the .pb.gw.go sources don't exist or when any of the
 # .proto files change.
-$(GENERATED_API_PATH)/%.pb.gw.go: $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GOVALIDATORS) $(GENERATED_API_PATH) $(PROTO_API_PROTOS)
+$(GENERATED_API_PATH)/%.pb.gw.go: $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GOVALIDATORS) $(PROTO_API_PROTOS)
 	@echo "+ $@"
+	@mkdir -p $(GENERATED_API_PATH)
 	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \

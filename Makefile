@@ -52,7 +52,6 @@ vet:
 	@echo "+ $@"
 	@go vet $(shell go list -e ./... | grep -v generated | grep -v vendor)
 
-
 #####################################
 ## Generated Code and Dependencies ##
 #####################################
@@ -63,19 +62,21 @@ API_SERVICES += benchmark_schedule_service
 API_SERVICES += benchmark_service
 API_SERVICES += benchmark_trigger_service
 API_SERVICES += cluster_service
-API_SERVICES += common
-API_SERVICES += configuration_policy
 API_SERVICES += deployment_service
-API_SERVICES += image_policy
 API_SERVICES += image_service
 API_SERVICES += notifier_service
 API_SERVICES += ping_service
 API_SERVICES += policy_service
-API_SERVICES += privilege_policy
 API_SERVICES += registry_service
 API_SERVICES += scanner_service
 
-GENERATED_SRCS = $(GENERATED_API_SRCS) $(GENERATED_API_GW_SRCS)
+# These .proto files do not contain gRPC methods and thus don't need gateway files.
+PB_COMMON_FILES  = common
+PB_COMMON_FILES += configuration_policy
+PB_COMMON_FILES += image_policy
+PB_COMMON_FILES += privilege_policy
+
+GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_GW_SRCS)
 
 include make/protogen.mk
 
@@ -164,11 +165,9 @@ image: gazelle clean-image
 .PHONY: clean
 clean: clean-image
 	@echo "+ $@"
-	make -C pkg clean
 
 .PHONY: clean-image
 clean-image:
 	@echo "+ $@"
 	git clean -xf image/bin
 	git clean -xf image/ui
-
