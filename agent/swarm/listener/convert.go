@@ -49,6 +49,7 @@ func (s serviceWrap) asDeployment(client *client.Client) *v1.Deployment {
 		Version:   fmt.Sprintf("%d", s.Version.Index),
 		Type:      m.asType(),
 		Replicas:  m.asReplica(),
+		Labels:    s.Spec.Labels,
 		UpdatedAt: updatedTime,
 		Containers: []*v1.Container{
 			{

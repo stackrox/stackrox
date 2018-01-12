@@ -41,6 +41,10 @@ func TestAsDeployment(t *testing.T) {
 				Spec: swarm.ServiceSpec{
 					Annotations: swarm.Annotations{
 						Name: "foo",
+						Labels: map[string]string{
+							"key":      "value",
+							"question": "answer",
+						},
 					},
 					Mode: swarm.ServiceMode{
 						Replicated: &swarm.ReplicatedService{
@@ -79,11 +83,15 @@ func TestAsDeployment(t *testing.T) {
 				},
 			},
 			expected: &v1.Deployment{
-				Id:        "fooID",
-				Name:      "foo",
-				Version:   "100",
-				Type:      "Replicated",
-				Replicas:  10,
+				Id:       "fooID",
+				Name:     "foo",
+				Version:  "100",
+				Type:     "Replicated",
+				Replicas: 10,
+				Labels: map[string]string{
+					"key":      "value",
+					"question": "answer",
+				},
 				UpdatedAt: &timestamp.Timestamp{Seconds: 100},
 				Containers: []*v1.Container{
 					{

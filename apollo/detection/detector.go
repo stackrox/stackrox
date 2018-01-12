@@ -61,7 +61,7 @@ func (d *Detector) Process(deployment *v1.Deployment) (alerts []*v1.Alert, err e
 	defer d.policyMutex.Unlock()
 
 	for _, policy := range d.policies {
-		if policy.GetDisabled() {
+		if !policy.shouldProcess(deployment) {
 			continue
 		}
 

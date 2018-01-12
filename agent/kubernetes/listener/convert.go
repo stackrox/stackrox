@@ -51,6 +51,7 @@ func newWrap(meta metav1.ObjectMeta, action pkgV1.ResourceAction, resourceType s
 				Type:      resourceType,
 				Version:   meta.ResourceVersion,
 				Namespace: meta.Namespace,
+				Labels:    meta.Labels,
 				UpdatedAt: updatedTime,
 				ClusterId: clusterID,
 			},

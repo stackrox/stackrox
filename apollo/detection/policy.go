@@ -115,3 +115,38 @@ func (p *policyWrapper) Match(deployment *v1.Deployment, container *v1.Container
 
 	return
 }
+
+// shouldProcess returns true if the policy is enabled and either the policy does not have scope constraints, or the deployment matches the scope.
+func (p *policyWrapper) shouldProcess(deployment *v1.Deployment) bool {
+	if p.Disabled {
+		return false
+	}
+
+	if len(p.GetScope()) == 0 {
+		return true
+	}
+
+	for _, s := range p.GetScope() {
+		if p.withinScope(s, deployment) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (p *policyWrapper) withinScope(scope *v1.Policy_Scope, deployment *v1.Deployment) bool {
+	if cluster := scope.GetCluster(); cluster != "" && deployment.GetClusterId() != cluster {
+		return false
+	}
+
+	if namespace := scope.GetNamespace(); namespace != "" && deployment.GetNamespace() != namespace {
+		return false
+	}
+
+	if label := scope.GetLabel(); label != nil && deployment.GetLabels()[label.GetKey()] != label.GetValue() {
+		return false
+	}
+
+	return true
+}

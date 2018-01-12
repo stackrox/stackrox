@@ -239,3 +239,237 @@ func TestMatch(t *testing.T) {
 		})
 	}
 }
+
+func TestScope(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name       string
+		policy     *policyWrapper
+		deployment *v1.Deployment
+		expected   bool
+	}{
+		{
+			name: "disabled",
+			policy: &policyWrapper{
+				Policy: &v1.Policy{
+					Disabled: true,
+				},
+			},
+			deployment: &v1.Deployment{
+				ClusterId: "clusterA",
+				Namespace: "namespace",
+				Labels: map[string]string{
+					"key": "value",
+					"foo": "bar",
+				},
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Tag:    "latest",
+							Remote: "stackrox/health",
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "wrong cluster",
+			policy: &policyWrapper{
+				Policy: &v1.Policy{
+					Scope: []*v1.Policy_Scope{
+						{
+							Cluster: "clusterB",
+						},
+					},
+				},
+			},
+			deployment: &v1.Deployment{
+				ClusterId: "clusterA",
+				Namespace: "namespace",
+				Labels: map[string]string{
+					"key": "value",
+					"foo": "bar",
+				},
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Tag:    "latest",
+							Remote: "stackrox/health",
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "wrong namespace",
+			policy: &policyWrapper{
+				Policy: &v1.Policy{
+					Scope: []*v1.Policy_Scope{
+						{
+							Cluster:   "clusterA",
+							Namespace: "notanamespace",
+						},
+					},
+				},
+			},
+			deployment: &v1.Deployment{
+				ClusterId: "clusterA",
+				Namespace: "namespace",
+				Labels: map[string]string{
+					"key": "value",
+					"foo": "bar",
+				},
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Tag:    "latest",
+							Remote: "stackrox/health",
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "wrong label",
+			policy: &policyWrapper{
+				Policy: &v1.Policy{
+					Scope: []*v1.Policy_Scope{
+						{
+							Cluster:   "clusterA",
+							Namespace: "namespace",
+							Label: &v1.Policy_Scope_Label{
+								Key:   "foo",
+								Value: "car",
+							},
+						},
+					},
+				},
+			},
+			deployment: &v1.Deployment{
+				ClusterId: "clusterA",
+				Namespace: "namespace",
+				Labels: map[string]string{
+					"key": "value",
+					"foo": "bar",
+				},
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Tag:    "latest",
+							Remote: "stackrox/health",
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "match just namespace",
+			policy: &policyWrapper{
+				Policy: &v1.Policy{
+					Scope: []*v1.Policy_Scope{
+						{
+							Namespace: "namespace",
+						},
+					},
+				},
+			},
+			deployment: &v1.Deployment{
+				ClusterId: "clusterA",
+				Namespace: "namespace",
+				Labels: map[string]string{
+					"key": "value",
+					"foo": "bar",
+				},
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Tag:    "latest",
+							Remote: "stackrox/health",
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "match all",
+			policy: &policyWrapper{
+				Policy: &v1.Policy{
+					Scope: []*v1.Policy_Scope{
+						{
+							Cluster:   "clusterA",
+							Namespace: "namespace",
+							Label: &v1.Policy_Scope_Label{
+								Key:   "foo",
+								Value: "bar",
+							},
+						},
+					},
+				},
+			},
+			deployment: &v1.Deployment{
+				ClusterId: "clusterA",
+				Namespace: "namespace",
+				Labels: map[string]string{
+					"key": "value",
+					"foo": "bar",
+				},
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Tag:    "latest",
+							Remote: "stackrox/health",
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "match one scope",
+			policy: &policyWrapper{
+				Policy: &v1.Policy{
+					Scope: []*v1.Policy_Scope{
+						{
+							Cluster: "clusterA",
+						},
+						{
+							Cluster:   "clusterB",
+							Namespace: "namespace",
+						},
+					},
+				},
+			},
+			deployment: &v1.Deployment{
+				ClusterId: "clusterA",
+				Namespace: "namespace",
+				Labels: map[string]string{
+					"key": "value",
+					"foo": "bar",
+				},
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Tag:    "latest",
+							Remote: "stackrox/health",
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := c.policy.shouldProcess(c.deployment)
+
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}

@@ -45,9 +45,13 @@ func TestConvert(t *testing.T) {
 			name: "Deployment",
 			inputObj: &v1beta1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
-					UID:               types.UID("FooID"),
-					Name:              "Foo",
-					Namespace:         "World",
+					UID:       types.UID("FooID"),
+					Name:      "Foo",
+					Namespace: "World",
+					Labels: map[string]string{
+						"key":      "value",
+						"question": "answer",
+					},
 					ResourceVersion:   "100",
 					CreationTimestamp: metav1.NewTime(time.Unix(1000, 0)),
 				},
@@ -159,6 +163,10 @@ func TestConvert(t *testing.T) {
 					Type:      deployment,
 					Version:   "100",
 					Replicas:  15,
+					Labels: map[string]string{
+						"key":      "value",
+						"question": "answer",
+					},
 					UpdatedAt: &timestamp.Timestamp{Seconds: 1000},
 					Containers: []*pkgV1.Container{
 						{
