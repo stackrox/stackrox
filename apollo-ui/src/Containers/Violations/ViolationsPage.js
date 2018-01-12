@@ -85,10 +85,10 @@ class ViolationsContainer extends Component {
         const params = `?${queryString.stringify(this.params)}`;
         const { table } = this.state;
         return axios.get(`/v1/alerts/groups${params}`).then((response) => {
-            if (!this.pollTimeoutId) return;
             if (!response.data.byCategory) return;
+            let tableRows = [];
             response.data.byCategory.forEach((category) => {
-                table.rows = category.byPolicy.map((policy) => {
+                const rows = category.byPolicy.map((policy) => {
                     const result = {
                         name: policy.policy.name,
                         description: policy.policy.description,
@@ -98,10 +98,11 @@ class ViolationsContainer extends Component {
                     };
                     return result;
                 });
+                tableRows = tableRows.concat(rows);
             });
+            table.rows = tableRows;
             this.setState({ table });
         }).catch(() => {
-            if (!this.pollTimeoutId) return;
             table.rows = [];
             this.setState({ table });
         });
