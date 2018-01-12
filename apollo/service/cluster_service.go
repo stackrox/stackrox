@@ -93,11 +93,57 @@ func (s *ClusterService) DeleteCluster(ctx context.Context, request *v1.ClusterB
 
 type clusterWrap v1.Cluster
 
-var swarmTemplate *template.Template
+func (c clusterWrap) asDeployment() (string, error) {
+	var b []byte
+	buf := bytes.NewBuffer(b)
+
+	if _, ok := clusterTypeTemplates[c.Type]; !ok {
+		return "", status.Errorf(codes.Unimplemented, "Cluster type %s is not currently implemented", c.Type.String())
+	}
+
+	t := clusterTypeTemplates[c.Type]
+	fields := c.commonFields()
+
+	switch c.Type {
+	case v1.ClusterType_KUBERNETES_CLUSTER:
+		namespace := "default"
+		if len(c.Namespace) != 0 {
+			namespace = c.Namespace
+		}
+		fields["Namespace"] = namespace
+		fields["ImagePullSecretEnv"] = env.ImagePullSecrets.EnvVar()
+		fields["ImagePullSecret"] = c.ImagePullSecret
+	}
+
+	err := t.Execute(buf, fields)
+	if err != nil {
+		log.Errorf("%s deployment template execution: %s", c.Type.String(), err)
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+func (c clusterWrap) commonFields() map[string]string {
+	return map[string]string{
+		"ImageEnv":              env.Image.EnvVar(),
+		"Image":                 c.ApolloImage,
+		"PublicEndpointEnv":     env.ApolloEndpoint.EnvVar(),
+		"PublicEndpoint":        c.CentralApiEndpoint,
+		"ClusterNameEnv":        env.ClusterID.EnvVar(),
+		"ClusterName":           c.Name,
+		"AdvertisedEndpointEnv": env.AdvertisedEndpoint.EnvVar(),
+		"AdvertisedEndpoint":    env.AdvertisedEndpoint.Setting(),
+	}
+}
+
+var (
+	clusterTypeTemplates = map[v1.ClusterType]*template.Template{}
+)
 
 func init() {
 	var err error
-	swarmTemplate, err = template.New("base").Parse(`version: "3.2"
+	clusterTypeTemplates[v1.ClusterType_DOCKER_EE_CLUSTER], err = template.New("base").Parse(`version: "3.2"
 services:
   agent:
     image: {{.Image}}
@@ -126,28 +172,54 @@ networks:
 	if err != nil {
 		panic(err)
 	}
-}
 
-func (c clusterWrap) asDeployment() (string, error) {
-	switch c.Type {
-	case v1.ClusterType_DOCKER_EE_CLUSTER:
-		var b []byte
-		buf := bytes.NewBuffer(b)
-		err := swarmTemplate.Execute(buf, map[string]string{
-			"ImageEnv":              env.Image.EnvVar(),
-			"Image":                 c.ApolloImage,
-			"PublicEndpointEnv":     env.ApolloEndpoint.EnvVar(),
-			"PublicEndpoint":        c.CentralApiEndpoint,
-			"ClusterNameEnv":        env.ClusterID.EnvVar(),
-			"ClusterName":           c.Name,
-			"AdvertisedEndpointEnv": env.AdvertisedEndpoint.EnvVar(),
-			"AdvertisedEndpoint":    env.AdvertisedEndpoint.Setting(),
-		})
-		if err != nil {
-			return "", err
-		}
-		return buf.String(), nil
-	default:
-		return "", status.Error(codes.Unimplemented, "Only Swarm deployments can be described currently")
+	clusterTypeTemplates[v1.ClusterType_KUBERNETES_CLUSTER], err = template.New("base").Parse(`apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: agent
+  namespace: {{.Namespace}}
+  labels:
+    app: agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agent
+  template:
+    metadata:
+      namespace: {{.Namespace}}
+      labels:
+        app: agent
+    spec:
+      containers:
+      - image: {{.Image}}
+        env:
+        - name: {{.PublicEndpointEnv}}
+          value: {{.PublicEndpoint}}
+        - name: {{.ClusterNameEnv}}
+          value: {{.ClusterName}}
+        - name: {{.ImageEnv}}
+          value: {{.Image}}
+        - name: {{.AdvertisedEndpointEnv}}
+          value: {{.AdvertisedEndpoint}}
+        - name: {{.ImagePullSecretEnv}}
+          value: {{.ImagePullSecret}}
+        - name: ROX_APOLLO_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: ROX_APOLLO_SERVICE_ACCOUNT
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.serviceAccountName
+        imagePullPolicy: Always
+        name: agent
+        command:
+          - kubernetes-agent
+      imagePullSecrets:
+      - name: {{.ImagePullSecret}}`)
+
+	if err != nil {
+		panic(err)
 	}
 }
