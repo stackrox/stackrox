@@ -21,7 +21,12 @@ func (s *systemdAudit) Definition() utils.Definition {
 }
 
 func (s *systemdAudit) Run() (result v1.CheckResult) {
-	path := utils.GetSystemdFile(s.Service)
+	path, err := utils.GetSystemdFile(s.Service)
+	if err != nil {
+		utils.Note(&result)
+		utils.AddNotef(&result, "Test may not be applicable. Systemd file could not be found for service %v", s.Service)
+		return
+	}
 	result = utils.CheckAudit(path)
 	return
 }

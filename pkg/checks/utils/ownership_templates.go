@@ -1,4 +1,4 @@
-package configurationfiles
+package utils
 
 import (
 	"fmt"
@@ -10,7 +10,6 @@ import (
 	"syscall"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
 )
 
 type fileOwnershipCheck struct {
@@ -21,8 +20,8 @@ type fileOwnershipCheck struct {
 	File        string
 }
 
-func (f *fileOwnershipCheck) Definition() utils.Definition {
-	return utils.Definition{
+func (f *fileOwnershipCheck) Definition() Definition {
+	return Definition{
 		CheckDefinition: v1.CheckDefinition{
 			Name:        f.Name,
 			Description: f.Description,
@@ -31,14 +30,14 @@ func (f *fileOwnershipCheck) Definition() utils.Definition {
 }
 
 func compareFileOwnership(file string, expectedUser string, expectedGroup string) (result v1.CheckResult) {
-	info, err := os.Stat(utils.ContainerPath(file))
+	info, err := os.Stat(ContainerPath(file))
 	if os.IsNotExist(err) {
-		utils.Note(&result)
-		utils.AddNotef(&result, "Test may not be applicable because %v does not exist", file)
+		Note(&result)
+		AddNotef(&result, "Test may not be applicable because %v does not exist", file)
 		return
 	} else if err != nil {
-		utils.Warn(&result)
-		utils.AddNotef(&result, "Error getting file info for '%v': %+v", file, err.Error())
+		Warn(&result)
+		AddNotef(&result, "Error getting file info for '%v': %+v", file, err.Error())
 		return
 	}
 
@@ -46,14 +45,14 @@ func compareFileOwnership(file string, expectedUser string, expectedGroup string
 	if expectedGroup != "" {
 		fileGroup, err := user.LookupGroup(expectedGroup)
 		if err != nil {
-			utils.Warn(&result)
-			utils.AddNotef(&result, "Failed to lookup fileGroup '%v'", expectedGroup)
+			Warn(&result)
+			AddNotef(&result, "Failed to lookup file Group '%v'", expectedGroup)
 			return
 		}
 
 		if fileGroup.Gid != strconv.Itoa(int(gid)) {
-			utils.Warn(&result)
-			utils.AddNotef(&result, "Group did not match expected. expected: '%v'. actual: '%v'", fileGroup.Gid, strconv.Itoa(int(gid)))
+			Warn(&result)
+			AddNotef(&result, "Group did not match expected. expected: '%v'. actual: '%v'", fileGroup.Gid, strconv.Itoa(int(gid)))
 			return
 		}
 	}
@@ -61,31 +60,32 @@ func compareFileOwnership(file string, expectedUser string, expectedGroup string
 	if expectedUser != "" {
 		fileUser, err := user.Lookup(expectedUser)
 		if err != nil {
-			utils.Warn(&result)
-			utils.AddNotef(&result, "Failed to lookup user '%v'", expectedUser)
+			Warn(&result)
+			AddNotef(&result, "Failed to lookup user '%v'", expectedUser)
 			return
 		}
 		if fileUser.Uid != strconv.Itoa(int(uid)) {
-			utils.Warn(&result)
-			utils.AddNotef(&result, "User did not match expected. expected: '%v'. actual: '%v'", fileUser.Uid, strconv.Itoa(int(gid)))
+			Warn(&result)
+			AddNotef(&result, "User did not match expected. expected: '%v'. actual: '%v'", fileUser.Uid, strconv.Itoa(int(gid)))
 			return
 		}
 	}
-	utils.Pass(&result)
+	Pass(&result)
 	return
 }
 
 func (f *fileOwnershipCheck) Run() (result v1.CheckResult) {
 	if f.File == "" {
-		utils.Note(&result)
-		utils.AddNotes(&result, "Test is not applicable. File is not defined")
+		Note(&result)
+		AddNotes(&result, "Test is not applicable. File is not defined")
 		return
 	}
 	result = compareFileOwnership(f.File, f.User, f.Group)
 	return
 }
 
-func newOwnershipCheck(name, description, file, user, group string) utils.Check {
+// NewOwnershipCheck takes a file and verifies the user and group are as expected
+func NewOwnershipCheck(name, description, file, user, group string) Check {
 	return &fileOwnershipCheck{
 		Name:        name,
 		Description: description,
@@ -103,7 +103,8 @@ type systemdOwnershipCheck struct {
 	Group       string
 }
 
-func newSystemdOwnershipCheck(name, description, service, user, group string) utils.Check {
+// NewSystemdOwnershipCheck takes the systemd service and tries to find the service file to check its ownership
+func NewSystemdOwnershipCheck(name, description, service, user, group string) Check {
 	return &systemdOwnershipCheck{
 		Name:        name,
 		Description: description,
@@ -113,8 +114,8 @@ func newSystemdOwnershipCheck(name, description, service, user, group string) ut
 	}
 }
 
-func (s *systemdOwnershipCheck) Definition() utils.Definition {
-	return utils.Definition{
+func (s *systemdOwnershipCheck) Definition() Definition {
+	return Definition{
 		CheckDefinition: v1.CheckDefinition{
 			Name:        s.Name,
 			Description: s.Description,
@@ -124,11 +125,16 @@ func (s *systemdOwnershipCheck) Definition() utils.Definition {
 
 func (s *systemdOwnershipCheck) Run() (result v1.CheckResult) {
 	if s.Service == "" {
-		utils.Note(&result)
-		utils.AddNotes(&result, "Test is not applicable. Service is not defined")
+		Note(&result)
+		AddNotes(&result, "Test is not applicable. Service is not defined")
 		return
 	}
-	systemdFile := utils.GetSystemdFile(s.Service)
+	systemdFile, err := GetSystemdFile(s.Service)
+	if err != nil {
+		Note(&result)
+		AddNotef(&result, "Test may not be applicable. Systemd file could not be found for service %v", s.Service)
+		return
+	}
 	result = compareFileOwnership(systemdFile, s.User, s.Group)
 	return
 }
@@ -141,8 +147,8 @@ type recursiveOwnershipCheck struct {
 	Group       string
 }
 
-func (r *recursiveOwnershipCheck) Definition() utils.Definition {
-	return utils.Definition{
+func (r *recursiveOwnershipCheck) Definition() Definition {
+	return Definition{
 		CheckDefinition: v1.CheckDefinition{Name: r.Name,
 			Description: r.Description,
 		},
@@ -150,34 +156,35 @@ func (r *recursiveOwnershipCheck) Definition() utils.Definition {
 }
 
 func (r *recursiveOwnershipCheck) Run() (result v1.CheckResult) {
-	utils.Pass(&result)
+	Pass(&result)
 	if r.Directory == "" {
-		utils.Note(&result)
-		utils.AddNotes(&result, "Test is not applicable. Directory is not defined")
+		Note(&result)
+		AddNotes(&result, "Test is not applicable. Directory is not defined")
 		return
 	}
-	files, err := ioutil.ReadDir(utils.ContainerPath(r.Directory))
+	files, err := ioutil.ReadDir(ContainerPath(r.Directory))
 	if os.IsNotExist(err) {
-		utils.Note(&result)
-		utils.AddNotef(&result, "Directory '%v' does not exist. Test may not be applicable", r.Directory)
+		Note(&result)
+		AddNotef(&result, "Directory '%v' does not exist. Test may not be applicable", r.Directory)
 		return
 	}
 	if err != nil {
-		utils.Warn(&result)
-		utils.AddNotes(&result, fmt.Sprintf("Could not check permissions due to %+v", err))
+		Warn(&result)
+		AddNotes(&result, fmt.Sprintf("Could not check permissions due to %+v", err))
 		return
 	}
 	for _, file := range files {
 		tempResult := compareFileOwnership(filepath.Join(r.Directory, file.Name()), r.User, r.Group)
 		if tempResult.Result != v1.CheckStatus_PASS {
-			utils.AddNotes(&result, tempResult.Notes...)
+			AddNotes(&result, tempResult.Notes...)
 			result.Result = tempResult.Result
 		}
 	}
 	return
 }
 
-func newRecursiveOwnershipCheck(name, description, directory, user, group string) utils.Check {
+// NewRecursiveOwnershipCheck takes a directory and checks the ownership of the stored files within it
+func NewRecursiveOwnershipCheck(name, description, directory, user, group string) Check {
 	return &recursiveOwnershipCheck{
 		Name:        name,
 		Description: description,

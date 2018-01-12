@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"bitbucket.org/stack-rox/apollo/pkg/checks"
 	"bitbucket.org/stack-rox/apollo/pkg/checks/host_configuration"
 	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
@@ -18,4 +19,9 @@ func TestRenderChecks(t *testing.T) {
 	assert.NoError(t, os.Setenv(env.Checks.EnvVar(), "CIS 1.1,CIS 1.2"))
 	checks := renderChecks()
 	assert.Equal(t, expectedChecks, checks)
+}
+
+func TestRegistry(t *testing.T) {
+	reg := checks.Registry
+	assert.NotEmpty(t, reg)
 }

@@ -1,4 +1,4 @@
-package configurationfiles
+package utils
 
 import (
 	"io/ioutil"
@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
 )
 
 type filePermissionsCheck struct {
@@ -17,8 +16,8 @@ type filePermissionsCheck struct {
 	File            string
 }
 
-func (f *filePermissionsCheck) Definition() utils.Definition {
-	return utils.Definition{
+func (f *filePermissionsCheck) Definition() Definition {
+	return Definition{
 		CheckDefinition: v1.CheckDefinition{
 			Name:        f.Name,
 			Description: f.Description,
@@ -27,37 +26,38 @@ func (f *filePermissionsCheck) Definition() utils.Definition {
 }
 
 func compareFilePermissions(file string, permissionLevel uint32, includesLower bool) (result v1.CheckResult) {
-	info, err := os.Stat(utils.ContainerPath(file))
+	info, err := os.Stat(ContainerPath(file))
 	if os.IsNotExist(err) {
-		utils.Note(&result)
-		utils.AddNotef(&result, "Test may not be applicable because '%v' does not exist", file)
+		Note(&result)
+		AddNotef(&result, "Test may not be applicable because '%v' does not exist", file)
 		return
 	} else if err != nil {
-		utils.Warn(&result)
-		utils.AddNotef(&result, "Error getting file info for '%v': %+v", file, err)
+		Warn(&result)
+		AddNotef(&result, "Error getting file info for '%v': %+v", file, err)
 		return
 	}
 
 	if uint32(info.Mode().Perm()) == permissionLevel || (uint32(info.Mode().Perm()) < permissionLevel && includesLower) {
-		utils.Pass(&result)
+		Pass(&result)
 		return
 	}
-	utils.Warn(&result)
-	utils.AddNotef(&result, "Permission level '%d' is higher than '%v' on file '%v'", uint32(info.Mode().Perm()), permissionLevel, file)
+	Warn(&result)
+	AddNotef(&result, "Permission level '%#o' is higher than '%#o' on file '%v'", uint32(info.Mode().Perm()), permissionLevel, file)
 	return
 }
 
 func (f *filePermissionsCheck) Run() (result v1.CheckResult) {
 	if f.File == "" {
-		utils.Note(&result)
-		utils.AddNotes(&result, "Test is not applicable. File is not defined")
+		Note(&result)
+		AddNotes(&result, "Test is not applicable. File is not defined")
 		return
 	}
 	result = compareFilePermissions(f.File, f.PermissionLevel, f.IncludesLower)
 	return
 }
 
-func newPermissionsCheck(name, description, file string, permissionLevel uint32, includesLower bool) utils.Check {
+// NewPermissionsCheck takes a file and verifies the permissions are as expected
+func NewPermissionsCheck(name, description, file string, permissionLevel uint32, includesLower bool) Check {
 	return &filePermissionsCheck{
 		Name:            name,
 		Description:     description,
@@ -75,7 +75,8 @@ type systemdPermissionsCheck struct {
 	Service         string
 }
 
-func newSystemdPermissionsCheck(name, description, service string, permissionLevel uint32, includesLower bool) utils.Check {
+// NewSystemdPermissionsCheck takes the systemd service and tries to find the service file to check permissions
+func NewSystemdPermissionsCheck(name, description, service string, permissionLevel uint32, includesLower bool) Check {
 	return &systemdPermissionsCheck{
 		Name:            name,
 		Description:     description,
@@ -85,8 +86,8 @@ func newSystemdPermissionsCheck(name, description, service string, permissionLev
 	}
 }
 
-func (s *systemdPermissionsCheck) Definition() utils.Definition {
-	return utils.Definition{
+func (s *systemdPermissionsCheck) Definition() Definition {
+	return Definition{
 		CheckDefinition: v1.CheckDefinition{Name: s.Name,
 			Description: s.Description,
 		},
@@ -95,11 +96,16 @@ func (s *systemdPermissionsCheck) Definition() utils.Definition {
 
 func (s *systemdPermissionsCheck) Run() (result v1.CheckResult) {
 	if s.Service == "" {
-		utils.Note(&result)
-		utils.AddNotes(&result, "Test is not applicable. Service is not defined")
+		Note(&result)
+		AddNotes(&result, "Test is not applicable. Service is not defined")
 		return
 	}
-	systemdFile := utils.GetSystemdFile(s.Service)
+	systemdFile, err := GetSystemdFile(s.Service)
+	if err != nil {
+		Note(&result)
+		AddNotef(&result, "Test may not be applicable. Systemd file could not be found for service %v", s.Service)
+		return
+	}
 	result = compareFilePermissions(systemdFile, s.PermissionLevel, s.IncludesLower)
 	return
 }
@@ -112,8 +118,8 @@ type recursivePermissionsCheck struct {
 	Directory       string
 }
 
-func (r *recursivePermissionsCheck) Definition() utils.Definition {
-	return utils.Definition{
+func (r *recursivePermissionsCheck) Definition() Definition {
+	return Definition{
 		CheckDefinition: v1.CheckDefinition{
 			Name:        r.Name,
 			Description: r.Description,
@@ -122,34 +128,35 @@ func (r *recursivePermissionsCheck) Definition() utils.Definition {
 }
 
 func (r *recursivePermissionsCheck) Run() (result v1.CheckResult) {
-	utils.Pass(&result)
+	Pass(&result)
 	if r.Directory == "" {
-		utils.Note(&result)
-		utils.AddNotes(&result, "Test is not applicable. Directory is not defined")
+		Note(&result)
+		AddNotes(&result, "Test is not applicable. Directory is not defined")
 		return
 	}
-	files, err := ioutil.ReadDir(utils.ContainerPath(r.Directory))
+	files, err := ioutil.ReadDir(ContainerPath(r.Directory))
 	if os.IsNotExist(err) {
-		utils.Note(&result)
-		utils.AddNotef(&result, "Directory '%v' does not exist. Test may not be applicable", r.Directory)
+		Note(&result)
+		AddNotef(&result, "Directory '%v' does not exist. Test may not be applicable", r.Directory)
 		return
 	}
 	if err != nil {
-		utils.Warn(&result)
-		utils.AddNotef(&result, "Could not check permissions due to %+v", err)
+		Warn(&result)
+		AddNotef(&result, "Could not check permissions due to %+v", err)
 		return
 	}
 	for _, file := range files {
 		tempResult := compareFilePermissions(filepath.Join(r.Directory, file.Name()), r.PermissionLevel, r.IncludesLower)
 		if tempResult.Result != v1.CheckStatus_PASS {
-			utils.AddNotes(&result, tempResult.Notes...)
+			AddNotes(&result, tempResult.Notes...)
 			result.Result = tempResult.Result
 		}
 	}
 	return
 }
 
-func newRecursivePermissionsCheck(name, description, filepath string, permissionLevel uint32, includesLower bool) utils.Check {
+// NewRecursivePermissionsCheck takes a directory and checks the permissions of the stored files within it
+func NewRecursivePermissionsCheck(name, description, filepath string, permissionLevel uint32, includesLower bool) Check {
 	return &recursivePermissionsCheck{
 		Name:            name,
 		Description:     description,

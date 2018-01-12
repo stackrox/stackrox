@@ -7,6 +7,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/checks"
+	_ "bitbucket.org/stack-rox/apollo/pkg/checks/all"
 	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
 	"bitbucket.org/stack-rox/apollo/pkg/docker"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
@@ -40,19 +41,19 @@ func runBenchmark() []*v1.CheckResult {
 	checks := renderChecks()
 
 	results := make([]*v1.CheckResult, 0, len(checks))
+Loop:
 	for _, check := range checks {
 		definition := check.Definition().CheckDefinition
 		for _, dep := range check.Definition().Dependencies {
 			if err := dep(); err != nil {
-				msg := fmt.Sprintf("Skipping Test %v due to err in dependency: %+v\n", check.Definition().Name, err)
-				log.Error(msg)
+				msg := fmt.Sprintf("Skipping Test %v due to err in dependency: %+v", check.Definition().Name, err)
 				result := &v1.CheckResult{
 					Definition: &definition,
 					Result:     v1.CheckStatus_NOTE,
 					Notes:      []string{msg},
 				}
 				results = append(results, result)
-				continue
+				continue Loop
 			}
 		}
 		result := check.Run()
@@ -82,7 +83,7 @@ func renderChecks() []utils.Check {
 	for _, checkStr := range checkStrs {
 		check, ok := checks.Registry[checkStr]
 		if !ok {
-			log.Errorf("Check %v is not currently supported", checkStr)
+			log.Errorf("Check %v is not currently supported. Supported checks are %+v", checkStr, checks.Registry)
 			continue
 		}
 		benchmarkChecks = append(benchmarkChecks, check)

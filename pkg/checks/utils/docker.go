@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -13,26 +12,8 @@ import (
 	"github.com/docker/docker/client"
 )
 
-// FlattenedDockerConfig is the benchmark's representation of the docker config
-type FlattenedDockerConfig map[string]DockerConfigParams
-
-// Get combines the plural and non plural fields
-func (c FlattenedDockerConfig) Get(key string) (DockerConfigParams, bool) {
-	var params DockerConfigParams
-	var found bool
-	if foundParams, ok := c[key]; ok {
-		params = append(params, foundParams...)
-		found = true
-	}
-	if foundParams, ok := c[key+"s"]; ok {
-		params = append(params, foundParams...)
-		found = true
-	}
-	return params, found
-}
-
 // DockerConfig is the exported type for benchmarks to reference
-var DockerConfig FlattenedDockerConfig
+var DockerConfig FlattenedConfig
 var dockerConfigOnce sync.Once
 
 // DockerClient is the exported docker client for benchmarks to use
@@ -66,32 +47,7 @@ func GetReadableImageName(image types.ImageInspect) string {
 	return image.ID
 }
 
-func getPID(process string) (int, error) {
-	output, err := CombinedOutput("/usr/bin/pgrep", "-f", "-n", process)
-	if err != nil {
-		return -1, err
-	}
-	pid, err := strconv.Atoi(output)
-	return pid, err
-}
-
-func getProcessPID(processNames []string) (pid int, processName string, err error) {
-	for _, processName = range processNames {
-		pid, err = getPID(processName)
-		if err == nil {
-			return
-		}
-	}
-	err = fmt.Errorf("Could not find any pids for processes: %+v", processNames)
-	return
-}
-
-func getCommandLine(pid int) (string, error) {
-	cmdline, err := ReadFile(fmt.Sprintf("/proc/%v/cmdline", pid))
-	return cmdline, err
-}
-
-var commandExpansion = map[string]string{
+var dockerCommandExpansion = map[string]string{
 	"-b": "--bridge",
 	"-D": "--debug",
 	"-G": "--group",
@@ -106,7 +62,7 @@ func getTagValue(tag string) (string, bool) {
 	return tag, tag != "-" && tag != ""
 }
 
-func walkStruct(m map[string]DockerConfigParams, i interface{}) {
+func walkStruct(m map[string]ConfigParams, i interface{}) {
 	val := reflect.ValueOf(i)
 	if reflect.TypeOf(i).Kind() == reflect.Ptr && !val.IsNil() {
 		val = val.Elem()
@@ -154,7 +110,7 @@ func walkStruct(m map[string]DockerConfigParams, i interface{}) {
 	}
 }
 
-func appendToConfig(m map[string]DockerConfigParams, key, value string) {
+func appendToConfig(m map[string]ConfigParams, key, value string) {
 	m[key] = append(m[key], value)
 }
 
@@ -163,7 +119,7 @@ func boolToString(b bool) string {
 }
 
 // Docker's config format is incredibly infuriating as the command line options are different from the config file
-func getDockerConfigFromFile(path string, m map[string]DockerConfigParams) error {
+func getDockerConfigFromFile(path string, m map[string]ConfigParams) error {
 	fileData, err := ReadFile(path)
 	if err != nil {
 		return err
@@ -177,101 +133,7 @@ func getDockerConfigFromFile(path string, m map[string]DockerConfigParams) error
 	return nil
 }
 
-// DockerConfigParams is a wrapper around the list of values that the docker commandline can have
-type DockerConfigParams []string
-
-// Matches takes a value and checks the parameter list to see if it contains an exact match
-func (d DockerConfigParams) Matches(value string) bool {
-	for _, val := range d {
-		if val == value {
-			return true
-		}
-	}
-	return false
-}
-
-// Contains checks to see if the parameter list contains the string in one of its elemenets
-func (d DockerConfigParams) Contains(value string) (string, bool) {
-	for _, val := range d {
-		if strings.Contains(val, value) {
-			return val, true
-		}
-	}
-	return "", false
-}
-
 var dockerProcessNames = []string{"docker daemon", "dockerd"}
-
-func nullRune(r rune) bool {
-	return r == 0x00
-}
-
-func getCommandLineArgs(commandLine string, processName string) []string {
-	// Remove the process name from the command line
-	// Can't use TrimLeft because /proc/<pid>/cmdline uses NUL char separators
-	commandLine = commandLine[len(processName)+1:]
-	commandLine = strings.TrimFunc(commandLine, nullRune)
-
-	// Split on the NUL
-	args := strings.FieldsFunc(commandLine, nullRune)
-	return args
-}
-
-func getKeyValueFromArg(arg string) (string, string) {
-	argSplit := strings.Split(arg, "=")
-	if len(argSplit) == 1 {
-		return arg, ""
-	}
-	return argSplit[0], argSplit[1]
-}
-
-func getExpandedKey(key string) string {
-	if expansion, ok := commandExpansion[key]; ok {
-		key = expansion
-	}
-	return strings.TrimLeft(key, "--")
-}
-
-func parseArg(m FlattenedDockerConfig, arg, nextArg string) bool {
-	// If arg containers = then it must be an individual argument and not require the next argument
-	// e.g. --security-opt=seccomp as a opposed to --security-opt seccomp
-	if strings.Contains(arg, "=") {
-		key, value := getKeyValueFromArg(arg)
-		expandedKey := getExpandedKey(key)
-		m[expandedKey] = append(m[expandedKey], value)
-		return false // Doesn't rely on next argument
-	}
-	// If the string is a flag and relies on the next value then consolidate
-	// e.g. --no-new-privileges true as opposed to --no-new-privileges --selinux-enabled
-	if strings.HasPrefix(arg, "-") && !strings.HasPrefix(nextArg, "-") {
-		expandedKey := getExpandedKey(arg)
-		m[expandedKey] = append(m[expandedKey], nextArg)
-		return true
-	}
-
-	// This is the case where the string is standalone like --no-new-privileges
-	expandedKey := getExpandedKey(arg)
-	m[expandedKey] = append(m[expandedKey], "")
-	return false
-}
-
-func parseArgs(m FlattenedDockerConfig, args []string) {
-	if len(args) == 0 {
-		return
-	}
-	var skip bool
-	for i := 0; i < len(args)-1; i++ {
-		if skip {
-			skip = !skip
-			continue
-		}
-		skip = parseArg(m, args[i], args[i+1])
-	}
-	// Parse last element with empty next arg if skip is not true
-	if !skip {
-		parseArg(m, args[len(args)-1], "")
-	}
-}
 
 // InitDockerConfig is the Dependency that initializes the docker config
 func InitDockerConfig() error {
@@ -289,9 +151,9 @@ func InitDockerConfig() error {
 			return
 		}
 		args := getCommandLineArgs(cmdLine, processName)
-		config := make(FlattenedDockerConfig)
+		config := make(FlattenedConfig)
 		// Populate the configuration with the arguments
-		parseArgs(config, args)
+		parseArgs(config, args, dockerCommandExpansion)
 
 		// Add arguments from the config file if it has been passed
 		if path, ok := config["config"]; ok {

@@ -21,7 +21,7 @@ func (c *caCertificates) Definition() utils.Definition {
 
 func (c *caCertificates) Run() (result v1.CheckResult) {
 	utils.Note(&result)
-	info, err := os.Stat("/var/lib/docker/swarm/certificates/swarm-root-ca.crt")
+	info, err := os.Stat(utils.ContainerPath("/var/lib/docker/swarm/certificates/swarm-root-ca.crt"))
 	if err != nil {
 		utils.Warn(&result)
 		utils.AddNotef(&result, "Could not check age of Swarm Root CA: %+v", err)

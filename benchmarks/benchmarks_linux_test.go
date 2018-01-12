@@ -156,7 +156,7 @@ func TestRuntimeBenchmarksWarn(t *testing.T) {
 
 	// In order for the SELinux benchmark to see that SELinux has been enabled on dockerd
 	// We set the configuration field explicitly
-	utils.DockerConfig = make(map[string]utils.DockerConfigParams)
+	utils.DockerConfig = make(map[string]utils.ConfigParams)
 	if val := os.Getenv("CIRCLECI"); len(val) != 0 {
 		t.Log("Daemon configuration cannot be accessed in CircleCI Docker-in-Docker")
 	} else {
@@ -165,7 +165,7 @@ func TestRuntimeBenchmarksWarn(t *testing.T) {
 	}
 	utils.DockerConfig["selinux-enabled"] = []string{""}
 	defer func() {
-		utils.DockerConfig = make(map[string]utils.DockerConfigParams)
+		utils.DockerConfig = make(map[string]utils.ConfigParams)
 	}()
 
 	for i, container := range utils.ContainersRunning {

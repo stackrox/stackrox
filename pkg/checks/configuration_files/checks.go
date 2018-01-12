@@ -8,7 +8,7 @@ import (
 
 // NewDockerServiceOwnershipCheck implements CIS-3.1
 func NewDockerServiceOwnershipCheck() utils.Check {
-	return newSystemdOwnershipCheck(
+	return utils.NewSystemdOwnershipCheck(
 		"CIS 3.1",
 		"Ensure that docker.service file ownership is set to root:root",
 		"docker.service",
@@ -19,7 +19,7 @@ func NewDockerServiceOwnershipCheck() utils.Check {
 
 // NewDockerServicePermissionsCheck implements CIS-3.2
 func NewDockerServicePermissionsCheck() utils.Check {
-	return newSystemdPermissionsCheck(
+	return utils.NewSystemdPermissionsCheck(
 		"CIS 3.2",
 		"Ensure that docker.service file permissions are set to 644 or more restrictive",
 		"docker.service",
@@ -30,7 +30,7 @@ func NewDockerServicePermissionsCheck() utils.Check {
 
 // NewDockerSocketOwnershipCheck implements CIS-3.3
 func NewDockerSocketOwnershipCheck() utils.Check {
-	return newSystemdOwnershipCheck(
+	return utils.NewSystemdOwnershipCheck(
 		"CIS 3.3",
 		"Ensure that docker.socket file ownership is set to root:root",
 		"docker.socket",
@@ -41,7 +41,7 @@ func NewDockerSocketOwnershipCheck() utils.Check {
 
 // NewDockerSocketPermissionsCheck implements CIS-3.4
 func NewDockerSocketPermissionsCheck() utils.Check {
-	return newSystemdPermissionsCheck(
+	return utils.NewSystemdPermissionsCheck(
 		"CIS 3.4",
 		"Ensure that docker.socket file permissions are set to 644 or more restrictive",
 		"docker.socket",
@@ -52,7 +52,7 @@ func NewDockerSocketPermissionsCheck() utils.Check {
 
 // NewEtcDockerOwnershipCheck implements CIS-3.5
 func NewEtcDockerOwnershipCheck() utils.Check {
-	return newOwnershipCheck(
+	return utils.NewOwnershipCheck(
 		"CIS 3.5",
 		"Ensure that /etc/docker file ownership is set to root:root",
 		"/etc/docker",
@@ -63,7 +63,7 @@ func NewEtcDockerOwnershipCheck() utils.Check {
 
 // NewEtcDockerPermissionsCheck implements CIS-3.6
 func NewEtcDockerPermissionsCheck() utils.Check {
-	return newPermissionsCheck(
+	return utils.NewPermissionsCheck(
 		"CIS 3.6",
 		"Ensure that /etc/docker directory permissions are set to 755 or more restrictive",
 		"/etc/docker",
@@ -74,7 +74,7 @@ func NewEtcDockerPermissionsCheck() utils.Check {
 
 // NewRegistryCertificateOwnershipCheck implements CIS-3.7
 func NewRegistryCertificateOwnershipCheck() utils.Check {
-	return newRecursiveOwnershipCheck(
+	return utils.NewRecursiveOwnershipCheck(
 		"CIS 3.7",
 		"Ensure that registry certificate file ownership is set to root:root",
 		"/etc/docker/certs.d",
@@ -85,7 +85,7 @@ func NewRegistryCertificateOwnershipCheck() utils.Check {
 
 // NewRegistryCertificatePermissionsCheck implements CIS-3.8
 func NewRegistryCertificatePermissionsCheck() utils.Check {
-	return newRecursivePermissionsCheck(
+	return utils.NewRecursivePermissionsCheck(
 		"CIS 3.8",
 		"Ensure that registry certificate file permissions are set to 444 or more restrictive",
 		"/etc/docker/certs.d",
@@ -96,7 +96,7 @@ func NewRegistryCertificatePermissionsCheck() utils.Check {
 
 // NewTLSCACertificateOwnershipCheck implements CIS-3.9
 func NewTLSCACertificateOwnershipCheck() utils.Check {
-	return newOwnershipCheck(
+	return utils.NewOwnershipCheck(
 		"CIS 3.9",
 		"Ensure that TLS CA certificate file ownership is set to root:root",
 		os.Getenv("TLS_CA_CERTIFICATE_FILE"),
@@ -107,7 +107,7 @@ func NewTLSCACertificateOwnershipCheck() utils.Check {
 
 // NewTLSCACertificatePermissionsCheck implements CIS-3.10
 func NewTLSCACertificatePermissionsCheck() utils.Check {
-	return newPermissionsCheck(
+	return utils.NewPermissionsCheck(
 		"CIS 3.10",
 		"Ensure that TLS CA certificate file permissions are set to 444 or more restrictive",
 		os.Getenv("TLS_CA_CERTIFICATE_FILE"),
@@ -118,7 +118,7 @@ func NewTLSCACertificatePermissionsCheck() utils.Check {
 
 // NewDockerServerCertificateOwnershipCheck implements CIS-3.11
 func NewDockerServerCertificateOwnershipCheck() utils.Check {
-	return newOwnershipCheck(
+	return utils.NewOwnershipCheck(
 		"CIS 3.11",
 		"Ensure that Docker server certificate file ownership is set to root:root",
 		os.Getenv("DOCKER_SERVER_CERTIFICATE_FILE"),
@@ -129,7 +129,7 @@ func NewDockerServerCertificateOwnershipCheck() utils.Check {
 
 // NewDockerServerCertificatePermissionsCheck implements CIS-3.12
 func NewDockerServerCertificatePermissionsCheck() utils.Check {
-	return newPermissionsCheck(
+	return utils.NewPermissionsCheck(
 		"CIS 3.12",
 		"Ensure that Docker server certificate file permissions are set to 444 or more restrictive",
 		os.Getenv("DOCKER_SERVER_CERTIFICATE_FILE"),
@@ -140,7 +140,7 @@ func NewDockerServerCertificatePermissionsCheck() utils.Check {
 
 // NewDockerServerCertificateKeyFileOwnershipCheck implements CIS-3.13
 func NewDockerServerCertificateKeyFileOwnershipCheck() utils.Check {
-	return newOwnershipCheck(
+	return utils.NewOwnershipCheck(
 		"CIS 3.13",
 		"Ensure that Docker server certificate key file ownership is set to root:root",
 		os.Getenv("DOCKER_SERVER_CERTIFICATE_KEY_FILE"),
@@ -151,7 +151,7 @@ func NewDockerServerCertificateKeyFileOwnershipCheck() utils.Check {
 
 // NewDockerServerCertificateKeyFilePermissionsCheck implements CIS-3.14
 func NewDockerServerCertificateKeyFilePermissionsCheck() utils.Check {
-	return newPermissionsCheck(
+	return utils.NewPermissionsCheck(
 		"CIS 3.14",
 		"Ensure that Docker server certificate key file permissions are set to 400",
 		os.Getenv("DOCKER_SERVER_CERTIFICATE_KEY_FILE"),
@@ -162,7 +162,7 @@ func NewDockerServerCertificateKeyFilePermissionsCheck() utils.Check {
 
 // NewDockerSocketFileOwnershipCheck implements CIS-3.15
 func NewDockerSocketFileOwnershipCheck() utils.Check {
-	return newOwnershipCheck(
+	return utils.NewOwnershipCheck(
 		"CIS 3.15",
 		"Ensure that Docker socket file ownership is set to root:docker",
 		"/var/run/docker.sock",
@@ -173,7 +173,7 @@ func NewDockerSocketFileOwnershipCheck() utils.Check {
 
 // NewDockerSocketFilePermissionsCheck implements CIS-3.16
 func NewDockerSocketFilePermissionsCheck() utils.Check {
-	return newPermissionsCheck(
+	return utils.NewPermissionsCheck(
 		"CIS 3.16",
 		"Ensure that Docker socket file permissions are set to 660 or more restrictive",
 		"/var/run/docker.sock",
@@ -184,7 +184,7 @@ func NewDockerSocketFilePermissionsCheck() utils.Check {
 
 // NewEtcDaemonJSONFileOwnershipCheck implements CIS-3.17
 func NewEtcDaemonJSONFileOwnershipCheck() utils.Check {
-	return newOwnershipCheck(
+	return utils.NewOwnershipCheck(
 		"CIS 3.17",
 		"Ensure that daemon.json file ownership is set to root:root",
 		"/etc/docker/daemon.json",
@@ -195,7 +195,7 @@ func NewEtcDaemonJSONFileOwnershipCheck() utils.Check {
 
 // NewEtcDaemonJSONPermissionsCheck implements CIS-3.18
 func NewEtcDaemonJSONPermissionsCheck() utils.Check {
-	return newPermissionsCheck(
+	return utils.NewPermissionsCheck(
 		"CIS 3.18",
 		"Ensure that daemon.json file permissions are set to 644 or more restrictive",
 		"/etc/docker/daemon.json",
@@ -206,7 +206,7 @@ func NewEtcDaemonJSONPermissionsCheck() utils.Check {
 
 // NewEtcDefaultDockerFileOwnershipCheck implements CIS-3.19
 func NewEtcDefaultDockerFileOwnershipCheck() utils.Check {
-	return newOwnershipCheck(
+	return utils.NewOwnershipCheck(
 		"CIS 3.19",
 		"Ensure that /etc/default/docker file ownership is set to root:root",
 		"/etc/default/docker",
@@ -217,7 +217,7 @@ func NewEtcDefaultDockerFileOwnershipCheck() utils.Check {
 
 // NewEtcDefaultDockerPermissionsCheck implements CIS-3.20
 func NewEtcDefaultDockerPermissionsCheck() utils.Check {
-	return newPermissionsCheck(
+	return utils.NewPermissionsCheck(
 		"CIS 3.20",
 		"Ensure that /etc/default/docker file permissions are set to 644 or more restrictive",
 		"/etc/default/docker",

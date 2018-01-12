@@ -35,14 +35,14 @@ var possibleSystemdPaths = []string{
 }
 
 // GetSystemdFile finds the systemd file for a particular service
-func GetSystemdFile(service string) string {
+func GetSystemdFile(service string) (string, error) {
 	for _, template := range possibleSystemdPaths {
 		path := fmt.Sprintf(template, service)
 		if _, err := os.Stat(ContainerPath(path)); err == nil {
-			return path
+			return path, nil
 		}
 	}
-	return "systemd path not found"
+	return "", fmt.Errorf("Systemd path for service %v not found", service)
 }
 
 // ContainerPath prepends /host onto a file path

@@ -10,23 +10,23 @@ import (
 )
 
 func TestDockerConfigGet(t *testing.T) {
-	config := make(FlattenedDockerConfig)
+	config := make(FlattenedConfig)
 
 	// Look for something in empty map
-	var expectedParams DockerConfigParams
+	var expectedParams ConfigParams
 	actualParams, found := config.Get("hello")
 	assert.False(t, found)
 	assert.Equal(t, expectedParams, actualParams)
 
-	config = make(FlattenedDockerConfig)
-	expectedParams = DockerConfigParams{"hi"}
+	config = make(FlattenedConfig)
+	expectedParams = ConfigParams{"hi"}
 	config["hello"] = expectedParams
 	actualParams, found = config.Get("hello")
 	assert.True(t, found)
 	assert.Equal(t, expectedParams, actualParams)
 
-	config = make(FlattenedDockerConfig)
-	expectedParams = DockerConfigParams{"hi"}
+	config = make(FlattenedConfig)
+	expectedParams = ConfigParams{"hi"}
 	config["hellos"] = expectedParams
 	actualParams, found = config.Get("hello")
 	assert.True(t, found)
@@ -60,9 +60,9 @@ func TestWalkStruct(t *testing.T) {
 			},
 		},
 	}
-	configMap := make(map[string]DockerConfigParams)
+	configMap := make(map[string]ConfigParams)
 	walkStruct(configMap, d)
-	var expectedMap = map[string]DockerConfigParams{
+	var expectedMap = map[string]ConfigParams{
 		"cgroup-parent":      {"cgroup"},
 		"selinux-enabled":    {"true"},
 		"oom-score-adjust":   {"55"},
@@ -74,7 +74,7 @@ func TestWalkStruct(t *testing.T) {
 }
 
 func TestDockerConfigParamsMatches(t *testing.T) {
-	params := DockerConfigParams{"howdy", "hello"}
+	params := ConfigParams{"howdy", "hello"}
 	assert.True(t, params.Matches("hello"))
 
 	assert.False(t, params.Matches("hey"))
@@ -82,7 +82,7 @@ func TestDockerConfigParamsMatches(t *testing.T) {
 }
 
 func TestDockerConfigParamsContains(t *testing.T) {
-	params := DockerConfigParams{"howdy", "hello"}
+	params := ConfigParams{"howdy", "hello"}
 
 	fullValue, exists := params.Contains("hello")
 	assert.True(t, exists)
@@ -124,63 +124,71 @@ func TestGetKeyValueFromArg(t *testing.T) {
 }
 
 func TestGetExpandedKey(t *testing.T) {
-	key := getExpandedKey("hello")
+	expandedKeyMap := map[string]string{
+		"-D": "--debug",
+	}
+
+	key := getExpandedKey("hello", expandedKeyMap)
 	assert.Equal(t, "hello", key)
 
-	key = getExpandedKey("-D")
+	key = getExpandedKey("-D", expandedKeyMap)
 	assert.Equal(t, "debug", key)
 
-	key = getExpandedKey("--hello")
+	key = getExpandedKey("--hello", expandedKeyMap)
 	assert.Equal(t, "hello", key)
 
-	key = getExpandedKey("--hello--hey")
+	key = getExpandedKey("--hello--hey", expandedKeyMap)
 	assert.Equal(t, "hello--hey", key)
 }
 
 func TestParseArg(t *testing.T) {
-	config := make(FlattenedDockerConfig)
-	skip := parseArg(config, "--security-opt", "seccomp") // Use the next element due to space in commandline
-	assert.Equal(t, FlattenedDockerConfig{"security-opt": []string{"seccomp"}}, config)
+	expandedKeyMap := make(map[string]string)
+
+	config := make(FlattenedConfig)
+	skip := parseArg(config, "--security-opt", "seccomp", expandedKeyMap) // Use the next element due to space in commandline
+	assert.Equal(t, FlattenedConfig{"security-opt": []string{"seccomp"}}, config)
 	assert.True(t, skip)
 
-	config = make(FlattenedDockerConfig)
-	skip = parseArg(config, "--security-opt=seccomp", "") // Use the next element due to space in commandline
-	assert.Equal(t, FlattenedDockerConfig{"security-opt": []string{"seccomp"}}, config)
+	config = make(FlattenedConfig)
+	skip = parseArg(config, "--security-opt=seccomp", "", expandedKeyMap) // Use the next element due to space in commandline
+	assert.Equal(t, FlattenedConfig{"security-opt": []string{"seccomp"}}, config)
 	assert.False(t, skip)
 
-	config = make(FlattenedDockerConfig)
-	skip = parseArg(config, "--no-new-privileges", "--selinux-enabled") // Use the next element due to space in commandline
-	assert.Equal(t, FlattenedDockerConfig{"no-new-privileges": []string{""}}, config)
+	config = make(FlattenedConfig)
+	skip = parseArg(config, "--no-new-privileges", "--selinux-enabled", expandedKeyMap) // Use the next element due to space in commandline
+	assert.Equal(t, FlattenedConfig{"no-new-privileges": []string{""}}, config)
 	assert.False(t, skip)
 
-	config = make(FlattenedDockerConfig)
-	skip = parseArg(config, "--no-new-privileges", "") // Use the next element due to space in commandline
-	assert.Equal(t, FlattenedDockerConfig{"no-new-privileges": []string{""}}, config)
+	config = make(FlattenedConfig)
+	skip = parseArg(config, "--no-new-privileges", "", expandedKeyMap) // Use the next element due to space in commandline
+	assert.Equal(t, FlattenedConfig{"no-new-privileges": []string{""}}, config)
 }
 
 func TestParseArgs(t *testing.T) {
-	args := []string{}
-	config := make(FlattenedDockerConfig)
-	parseArgs(config, args)
-	assert.Equal(t, FlattenedDockerConfig{}, config)
+	expandedKeyMap := make(map[string]string)
 
-	config = make(FlattenedDockerConfig)
+	args := []string{}
+	config := make(FlattenedConfig)
+	parseArgs(config, args, expandedKeyMap)
+	assert.Equal(t, FlattenedConfig{}, config)
+
+	config = make(FlattenedConfig)
 	args = []string{"--security-opt", "seccomp", "--security-opt=apparmor", "--no-new-privileges", "--selinux-enabled"}
-	expectedConfig := FlattenedDockerConfig{
+	expectedConfig := FlattenedConfig{
 		"security-opt":      []string{"seccomp", "apparmor"},
 		"no-new-privileges": []string{""},
 		"selinux-enabled":   []string{""},
 	}
-	parseArgs(config, args)
+	parseArgs(config, args, expandedKeyMap)
 	assert.Equal(t, expectedConfig, config)
 
-	config = make(FlattenedDockerConfig)
+	config = make(FlattenedConfig)
 	args = []string{"--security-opt", "seccomp", "--security-opt=apparmor", "--no-new-privileges", "true"}
-	expectedConfig = FlattenedDockerConfig{
+	expectedConfig = FlattenedConfig{
 		"security-opt":      []string{"seccomp", "apparmor"},
 		"no-new-privileges": []string{"true"},
 	}
-	parseArgs(config, args)
+	parseArgs(config, args, expandedKeyMap)
 	assert.Equal(t, expectedConfig, config)
 }
 
@@ -272,7 +280,7 @@ func TestDockerConfigFile(t *testing.T) {
 	_, err = f.Write([]byte(dockerConfigFile))
 	require.Nil(t, err)
 
-	m := make(map[string]DockerConfigParams)
+	m := make(map[string]ConfigParams)
 	err = getDockerConfigFromFile(f.Name(), m)
 	require.Nil(t, err)
 

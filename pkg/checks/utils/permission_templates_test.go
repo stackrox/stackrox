@@ -1,4 +1,4 @@
-package configurationfiles
+package utils
 
 import (
 	"io/ioutil"
@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -38,7 +37,7 @@ func createTestDir() (dir string, fileA string, fileB string, err error) {
 }
 
 func TestCompareFilePermissions(t *testing.T) {
-	utils.ContainerPathPrefix = ""
+	ContainerPathPrefix = ""
 
 	// Test file not existing
 	file := "/tmp/idontexist"
@@ -83,11 +82,11 @@ func TestCompareFilePermissions(t *testing.T) {
 }
 
 func TestPermissionsCheck(t *testing.T) {
-	utils.ContainerPathPrefix = ""
+	ContainerPathPrefix = ""
 
 	// Test empty file
 	expectedResult := v1.CheckResult{Result: v1.CheckStatus_NOTE}
-	benchmark := newPermissionsCheck("bench", "desc", "", 0777, true)
+	benchmark := NewPermissionsCheck("bench", "desc", "", 0777, true)
 	result := benchmark.Run()
 	assert.Equal(t, expectedResult.Result, result.Result)
 	assert.Equal(t, 1, len(result.Notes))
@@ -98,16 +97,16 @@ func TestPermissionsCheck(t *testing.T) {
 	err = os.Chmod(file, 0777)
 	require.Nil(t, err)
 	expectedResult = v1.CheckResult{Result: v1.CheckStatus_PASS}
-	benchmark = newPermissionsCheck("bench", "desc", file, 0777, true)
+	benchmark = NewPermissionsCheck("bench", "desc", file, 0777, true)
 	result = benchmark.Run()
 	assert.Equal(t, expectedResult, result)
 }
 
 func TestRecursivePermissionsCheck(t *testing.T) {
-	utils.ContainerPathPrefix = ""
+	ContainerPathPrefix = ""
 	// Test empty file
 	expectedResult := v1.CheckResult{Result: v1.CheckStatus_NOTE}
-	benchmark := newRecursivePermissionsCheck("bench", "desc", "", 0777, true)
+	benchmark := NewRecursivePermissionsCheck("bench", "desc", "", 0777, true)
 	result := benchmark.Run()
 	assert.Equal(t, expectedResult.Result, result.Result)
 	assert.Equal(t, 1, len(result.Notes))
@@ -122,14 +121,14 @@ func TestRecursivePermissionsCheck(t *testing.T) {
 
 	// Happy path
 	expectedResult = v1.CheckResult{Result: v1.CheckStatus_PASS}
-	benchmark = newRecursivePermissionsCheck("bench", "desc", dir, 0666, true)
+	benchmark = NewRecursivePermissionsCheck("bench", "desc", dir, 0666, true)
 	result = benchmark.Run()
 	assert.Equal(t, expectedResult, result)
 
 	// One file has the wrong permissions
 	err = os.Chmod(fileB, 0777)
 	expectedResult = v1.CheckResult{Result: v1.CheckStatus_WARN}
-	benchmark = newRecursivePermissionsCheck("bench", "desc", dir, 0666, true)
+	benchmark = NewRecursivePermissionsCheck("bench", "desc", dir, 0666, true)
 	result = benchmark.Run()
 	assert.Equal(t, expectedResult.Result, result.Result)
 	assert.Equal(t, 1, len(result.Notes))
