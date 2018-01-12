@@ -35,6 +35,12 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
+  name = "github.com/andygrunwald/go-jira"
+  packages = ["."]
+  revision = "acbc88d59582a4885dbd82fd775caa7c15245171"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/boltdb/bolt"
   packages = ["."]
   revision = "2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8"
@@ -141,6 +147,12 @@
   version = "v2.4.0"
 
 [[projects]]
+  name = "github.com/fatih/structs"
+  packages = ["."]
+  revision = "a720dfa8df582c51dee1b36feabb906bde1588bd"
+  version = "v1.0"
+
+[[projects]]
   name = "github.com/ghodss/yaml"
   packages = ["."]
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
@@ -205,6 +217,12 @@
   name = "github.com/google/btree"
   packages = ["."]
   revision = "316fb6d3f031ae8f4d457c6c5186b9e3ded70435"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/google/go-querystring"
+  packages = ["query"]
+  revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 
 [[projects]]
   branch = "master"
@@ -367,6 +385,15 @@
   ]
   revision = "b91bfb9ebec76498946beb6af7c0230c7cc7ba6c"
   version = "v1.2.0"
+
+[[projects]]
+  name = "github.com/trivago/tgo"
+  packages = [
+    "tcontainer",
+    "treflect"
+  ]
+  revision = "e4d1ddd28c17dd89ed26327cf69fded22060671b"
+  version = "v1.0.1"
 
 [[projects]]
   branch = "master"
@@ -609,6 +636,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f565292bea44f1ab49d7a84c9c3504648e3a306e3e75901375f7d28e0a44155e"
+  inputs-digest = "c346130e665a8d43f4e993371be8ff775edb86c2711bc69bf8efbdb23b65b529"
   solver-name = "gps-cdcl"
   solver-version = 1

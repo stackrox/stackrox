@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
+	"text/template"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/types"
+	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 )
 
 var (
@@ -44,6 +44,7 @@ type config struct {
 type notification struct {
 	Channel     string       `json:"channel" validate:"printascii"`
 	Attachments []attachment `json:"attachments"`
+	Text        string       `json:"text"`
 }
 
 // Attachment json struct for attachments
@@ -64,49 +65,44 @@ type attachmentField struct {
 	Short bool   `json:"short"`
 }
 
-func codeBlock(str string) string {
-	return "```" + str + "```"
-}
-
-func inline(str string) string {
-	return "`" + str + "`"
+func (s *slack) getDescription(alert *v1.Alert) (string, error) {
+	tabSpace := "        "
+	dblTabSpace := tabSpace + tabSpace
+	funcMap := template.FuncMap{
+		"header": func(s string) string {
+			return fmt.Sprintf("\r\n*%v*\r\n", s)
+		},
+		"subheader": func(s string) string {
+			return fmt.Sprintf("\r\n%v*%v*\r\n", tabSpace, s)
+		},
+		"line": func(s string) string {
+			return fmt.Sprintf("%v\r\n", s)
+		},
+		"list": func(s string) string {
+			return fmt.Sprintf("%v    - %v\r\n", tabSpace, s)
+		},
+		"nestedList": func(s string) string {
+			return fmt.Sprintf("%v- %v\r\n", dblTabSpace, s)
+		},
+	}
+	alertLink := notifiers.AlertLink(s.Notifier.UiEndpoint)
+	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
 // Notify takes in an alert and the portal endpoint and generates the Slack message
 func (s *slack) Notify(alert *v1.Alert) error {
-	tagLine := fmt.Sprintf("Deployment %v (%v) violates '%v' Policy", alert.Deployment.Name, alert.Deployment.Id, alert.Policy.Name)
-	endpoint := notifiers.AlertLink(alert, s.UiEndpoint)
-	pretext := fmt.Sprintf("<%v|%v>", endpoint, tagLine)
-
-	policy := alert.GetPolicy()
-
-	attachmentFields := []attachmentField{
-		{
-			Title: "",
-			Value: "*Severity*: " + inline(notifiers.SeverityString(policy.GetSeverity())),
-		},
-		{
-			Title: "Policy Description",
-			Value: codeBlock(policy.GetDescription()),
-		},
-		{
-			Title: "Violations",
-			Value: fmt.Sprintf("```%s```", strings.Join(notifiers.StringViolations(alert.GetViolations()), "\n")),
-		},
-		{
-			Title: "Deployment",
-			Value: fmt.Sprintf("```Name : %v\nImage: %v```",
-				alert.Deployment.Name, images.FromContainers(alert.GetDeployment().GetContainers()).String()),
-		},
+	tagLine := fmt.Sprintf("*Deployment %v (%v) violates '%v' Policy*", alert.Deployment.Name, alert.Deployment.Id, alert.Policy.Name)
+	body, err := s.getDescription(alert)
+	if err != nil {
+		return err
 	}
 	attachments := []attachment{
 		{
-			FallBack:       "Rox Alert",
-			Color:          getAttachmentColor(policy.GetSeverity()),
-			Pretext:        pretext,
-			Text:           "",
-			MarkDownFields: []string{"text", "fields"},
-			Fields:         attachmentFields,
+			FallBack:       body,
+			Color:          getAttachmentColor(alert.GetPolicy().GetSeverity()),
+			Pretext:        tagLine,
+			Text:           body,
+			MarkDownFields: []string{"pretext", "text", "fields"},
 		},
 	}
 	notification := notification{
@@ -114,7 +110,6 @@ func (s *slack) Notify(alert *v1.Alert) error {
 		Channel:     s.Channel,
 	}
 	jsonPayload, err := json.Marshal(&notification)
-	log.Debugf("JSON Payload: % #+v", string(jsonPayload))
 	if err != nil {
 		return fmt.Errorf("Could not marshal notification for alert %v", alert.Id)
 	}
@@ -129,6 +124,11 @@ func newSlack(protoNotifier *v1.Notifier) (*slack, error) {
 	channel, ok := protoNotifier.Config["channel"]
 	if !ok {
 		return nil, fmt.Errorf("Channel must be defined in the Slack Configuration")
+	}
+
+	webhook, err := urlfmt.FormatURL(webhook, true, false)
+	if err != nil {
+		return nil, err
 	}
 
 	return &slack{
@@ -147,17 +147,9 @@ func (s *slack) ProtoNotifier() *v1.Notifier {
 func (s *slack) Test() error {
 	n := notification{
 		Channel: s.Channel,
-		Attachments: []attachment{
-			{
-				FallBack:       "Rox Alert",
-				Pretext:        "This is a test alert from StackRox",
-				Text:           "",
-				MarkDownFields: []string{"text", "fields"},
-			},
-		},
+		Text:    "This is a test message created to test integration with StackRox.",
 	}
 	jsonPayload, err := json.Marshal(&n)
-	log.Debugf("JSON Payload: % #+v", string(jsonPayload))
 	if err != nil {
 		return errors.New("Could not marshal test notification")
 	}

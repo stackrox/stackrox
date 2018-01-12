@@ -1,0 +1,31 @@
+package readable
+
+import (
+	"fmt"
+	"time"
+
+	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
+)
+
+var (
+	log = logging.New("readable/time")
+)
+
+// ProtoTime takes a proto time type and converts it to a human readable string down to seconds
+func ProtoTime(ts *timestamp.Timestamp) string {
+	t, err := ptypes.Timestamp(ts)
+	if err != nil {
+		log.Error(err)
+		return "<malformed time>"
+	}
+	return Time(t)
+}
+
+// Time takes a golang time type and converts it to a human readable string down to seconds
+func Time(t time.Time) string {
+	return fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d",
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second())
+}

@@ -7,12 +7,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sort"
-	"strings"
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 )
 
 const (
@@ -52,9 +52,9 @@ func newScanner(protoScanner *v1.Scanner) (*dtr, error) {
 	}
 	// Trim any trailing slashes as the expectation will be that the input is in the form
 	// https://12.12.12.12:8080 or https://dtr.com
-	endpoint := strings.TrimSuffix(protoScanner.Endpoint, "/")
-	if !strings.HasPrefix(endpoint, "http") {
-		endpoint = "https://" + endpoint
+	endpoint, err := urlfmt.FormatURL(protoScanner.Endpoint, true, false)
+	if err != nil {
+		return nil, err
 	}
 	scanner := &dtr{
 		client:         client,

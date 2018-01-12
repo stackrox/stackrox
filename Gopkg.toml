@@ -81,3 +81,7 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
 [[constraint]]
   name = "github.com/deckarep/golang-set"
   version = "v1.7"
+
+[[constraint]]
+  name = "github.com/andygrunwald/go-jira"
+  version = "v1.0.0"

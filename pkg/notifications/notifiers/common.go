@@ -10,7 +10,7 @@ import (
 const alertLinkPath = "/violations"
 
 // AlertLink is the link URL for this alert
-func AlertLink(alert *v1.Alert, endpoint string) string {
+func AlertLink(endpoint string) string {
 	base, err := url.Parse(endpoint)
 	if err != nil {
 		log.Print(err)

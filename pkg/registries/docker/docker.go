@@ -10,6 +10,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -76,11 +77,10 @@ func newRegistry(protoRegistry *v1.Registry) (*dockerRegistry, error) {
 		return nil, errors.New("Config parameters 'username' and 'password' must be defined for all non Docker Hub registries")
 	}
 
-	url := protoRegistry.Endpoint
-	if !strings.HasPrefix(protoRegistry.Endpoint, "http") {
-		url = "https://" + protoRegistry.Endpoint
+	url, err := urlfmt.FormatURL(protoRegistry.Endpoint, true, false)
+	if err != nil {
+		return nil, err
 	}
-
 	return &dockerRegistry{
 		protoRegistry: protoRegistry,
 		registry:      protoRegistry.Endpoint,

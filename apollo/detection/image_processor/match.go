@@ -11,6 +11,8 @@ import (
 	"github.com/golang/protobuf/ptypes"
 )
 
+const cveLinkPrefix = "https://nvd.nist.gov/vuln/detail/"
+
 type matchFunc func(image *v1.Image) ([]*v1.Alert_Violation, bool)
 
 // Match matches the policy if *ALL* conditions of the policy are satisfied.
@@ -92,7 +94,7 @@ func (policy *compiledImagePolicy) matchCVE(image *v1.Image) (violations []*v1.A
 		for _, vuln := range component.GetVulns() {
 			if policy.CVE.MatchString(vuln.GetCve()) {
 				violations = append(violations, &v1.Alert_Violation{
-					Message: fmt.Sprintf("CVE '%v' matches the regex '%+v'", vuln.GetCve(), policy.CVE),
+					Message: fmt.Sprintf("CVE '%v' matches the regex '%+v'. Link: %v", vuln.GetCve(), policy.CVE, cveLinkPrefix+vuln.GetCve()),
 				})
 			}
 		}
