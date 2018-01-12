@@ -5,13 +5,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
-	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
-
 	"bitbucket.org/stack-rox/apollo/agent/kubernetes/listener"
 	"bitbucket.org/stack-rox/apollo/pkg/agent"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
 )
 
 func main() {
