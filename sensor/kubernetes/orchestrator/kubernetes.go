@@ -2,7 +2,9 @@ package orchestrator
 
 import (
 	"fmt"
+	"time"
 
+	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
 	pkgKubernetes "bitbucket.org/stack-rox/apollo/pkg/kubernetes"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -65,6 +67,14 @@ func (k *kubernetesOrchestrator) Launch(service orchestrators.SystemService) (st
 	return service.Name, nil
 }
 
+func (k *kubernetesOrchestrator) LaunchBenchmark(service orchestrators.SystemService) (string, error) {
+	service.Command = []string{benchmarks.BenchmarkCommand}
+	service.Envs = append(service.Envs, env.Combine(env.BenchmarkCompletion.EnvVar(), "true"))
+	service.Mounts = benchmarks.BenchmarkMounts
+	service.HostPID = true
+	return k.Launch(service)
+}
+
 func (k *kubernetesOrchestrator) newServiceWrap(service orchestrators.SystemService) *serviceWrap {
 	return &serviceWrap{
 		SystemService: service,
@@ -92,4 +102,10 @@ func (k *kubernetesOrchestrator) Kill(name string) error {
 	err := fmt.Errorf("unable to delete service %s; service not found", name)
 	logger.Error(err)
 	return err
+}
+
+// WaitForCompletion currently cannot be implemented in Kubernetes because DaemonSet Restart Policy must be always
+func (k *kubernetesOrchestrator) WaitForCompletion(_ string, timeout time.Duration) error {
+	time.Sleep(timeout)
+	return nil
 }

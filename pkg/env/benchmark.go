@@ -11,6 +11,9 @@ var (
 
 	// BenchmarkName is used to provide the benchmark service with the benchmark name
 	BenchmarkName = Setting(benchmarkName{})
+
+	// BenchmarkCompletion is used to provide the benchmark service with whether or not the benchmark container should exit
+	BenchmarkCompletion = Setting(benchmarkCompletion{})
 )
 
 type scanID struct{}
@@ -40,5 +43,15 @@ func (c benchmarkName) EnvVar() string {
 }
 
 func (c benchmarkName) Setting() string {
+	return os.Getenv(c.EnvVar())
+}
+
+type benchmarkCompletion struct{}
+
+func (c benchmarkCompletion) EnvVar() string {
+	return "ROX_APOLLO_BENCHMARK_COMPLETION"
+}
+
+func (c benchmarkCompletion) Setting() string {
 	return os.Getenv(c.EnvVar())
 }

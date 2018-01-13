@@ -5,6 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
@@ -37,20 +38,37 @@ func main() {
 
 func initializeSensor() *sensor.Sensor {
 	var err error
-	a := sensor.New()
+	s := sensor.New()
 
-	a.Listener = listener.New()
-	a.Enforcer, err = enforcer.New()
+	s.Listener = listener.New()
+	s.Enforcer, err = enforcer.New()
 	if err != nil {
-		a.Logger.Fatal(err)
+		s.Logger.Fatal(err)
 	}
-	a.Orchestrator, err = orchestrator.New()
+	s.Orchestrator, err = orchestrator.New()
 	if err != nil {
-		a.Logger.Fatal(err)
+		s.Logger.Fatal(err)
 	}
-	a.ScannerPoller = scanners.NewScannersClient(a.ApolloEndpoint, a.ClusterID)
-	a.RegistryPoller = registries.NewRegistriesClient(a.ApolloEndpoint, a.ClusterID)
+	s.ScannerPoller = scanners.NewScannersClient(s.ApolloEndpoint, s.ClusterID)
+	s.RegistryPoller = registries.NewRegistriesClient(s.ApolloEndpoint, s.ClusterID)
 
-	a.Logger.Info("Kubernetes Sensor Initialized")
-	return a
+	s.Orchestrator, err = orchestrator.New()
+	if err != nil {
+		panic(err)
+	}
+
+	s.BenchScheduler, err = benchmarks.NewSchedulerClient(s.Orchestrator, s.ApolloEndpoint, s.AdvertisedEndpoint, s.Image, s.ClusterID)
+	if err != nil {
+		panic(err)
+	}
+
+	s.ServiceRegistrationFunc = registerAPIServices
+
+	s.Logger.Info("Kubernetes Sensor Initialized")
+	return s
+}
+
+func registerAPIServices(a *sensor.Sensor) {
+	a.Server.Register(benchmarks.NewBenchmarkRelayService(benchmarks.NewLRURelayer(a.ApolloEndpoint, a.ClusterID)))
+	a.Logger.Info("API services registered")
 }

@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -61,4 +64,10 @@ func main() {
 		time.Sleep(time.Duration(i*2) * time.Second)
 	}
 	log.Error("Timed out posting benchmark back to Apollo")
+
+	signalsC := make(chan os.Signal, 1)
+	signal.Notify(signalsC, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	if env.BenchmarkCompletion.Setting() == "true" {
+		<-signalsC
+	}
 }

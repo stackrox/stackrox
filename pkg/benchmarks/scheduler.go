@@ -3,20 +3,17 @@ package benchmarks
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
-	"bitbucket.org/stack-rox/apollo/pkg/docker"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"github.com/deckarep/golang-set"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/swarm"
 	"github.com/golang/protobuf/ptypes"
 )
 
@@ -31,6 +28,8 @@ const (
 	// triggerTimespan is how long we should check for unfired triggers
 	triggerTimespan = 5 * time.Minute
 )
+
+var replaceRegex = regexp.MustCompile(`(\.|\s)`)
 
 type benchmarkRun struct {
 	benchmarkName string
@@ -182,49 +181,8 @@ func (s *SchedulerClient) removeService(id string) {
 }
 
 func (s *SchedulerClient) waitForBenchmarkToFinish(serviceName string) {
-	timeout := time.NewTimer(cleanupTimeout)
-	ticker := time.NewTicker(15 * time.Second)
-
-	client, err := docker.NewClient()
-	if err != nil {
-		log.Error(err)
-		// default to timeout
-		ticker.Stop()
-	}
-
-LOOP:
-	for {
-		select {
-		case <-ticker.C:
-			ctx, cancel := docker.TimeoutContext()
-			defer cancel()
-			f := filters.NewArgs()
-			f.Add("name", serviceName)
-
-			tasks, err := client.TaskList(ctx, types.TaskListOptions{Filters: f})
-			if err != nil {
-				log.Error(err)
-				continue
-			}
-			if len(tasks) == 0 {
-				continue
-			}
-			numNotFinished := len(tasks)
-			for _, task := range tasks {
-				switch task.Status.State {
-				case swarm.TaskStateComplete, swarm.TaskStateShutdown, swarm.TaskStateFailed, swarm.TaskStateRejected:
-					numNotFinished--
-				}
-			}
-			if numNotFinished == 0 {
-				log.Infof("All tasks are complete")
-				break LOOP
-			}
-		case <-timeout.C:
-			break LOOP
-
-		}
-
+	if err := s.orchestrator.WaitForCompletion(serviceName, cleanupTimeout); err != nil {
+		log.Errorf("Error waiting for completion of %v: %+v", serviceName, err)
 	}
 	s.removeService(serviceName)
 }
@@ -232,7 +190,7 @@ LOOP:
 // Launch triggers a run of the benchmark immediately.
 // The stateLock must be held by the caller until this function returns.
 func (s *SchedulerClient) Launch(scanID string, benchmark *v1.Benchmark) error {
-	name := "benchmark_bootstrap_" + strings.Replace(benchmark.Name, " ", "_", -1)
+	name := "benchmark-bootstrap-" + replaceRegex.ReplaceAllString(strings.ToLower(benchmark.Name), "-")
 	service := orchestrators.SystemService{
 		Name: name,
 		Envs: []string{
@@ -242,12 +200,10 @@ func (s *SchedulerClient) Launch(scanID string, benchmark *v1.Benchmark) error {
 			env.Combine(env.Checks.EnvVar(), strings.Join(benchmark.Checks, ",")),
 			env.Combine(env.BenchmarkName.EnvVar(), benchmark.Name),
 		},
-		Image:   s.image,
-		Mounts:  []string{"/var/run/docker.sock:/var/run/docker.sock"},
-		Global:  true,
-		Command: []string{"benchmark-bootstrap"},
+		Image:  s.image,
+		Global: true,
 	}
-	_, err := s.orchestrator.Launch(service)
+	_, err := s.orchestrator.LaunchBenchmark(service)
 	if err != nil {
 		return err
 	}
