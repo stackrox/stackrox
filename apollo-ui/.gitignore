@@ -2,6 +2,9 @@
 /node_modules
 /prod/node_modules
 
+# build
+lint
+
 # testing
 /coverage
 /**/__snapshots__

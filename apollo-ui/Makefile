@@ -1,24 +1,57 @@
 .PHONY: all
-all: deps lint test image
+all: deps lint test build
 
-.PHONY: image
-image: build
-	@echo "+ $@"
-	docker build -t stackrox/apollo:ui-latest .
+deps: package.json
+	yarn install
+	@touch deps
 
-.PHONY: container
-container:
+SOURCES := $(shell ls *.json) tailwind.js yarn.lock
+SOURCES += $(shell find prod)
+SOURCES += $(shell find public)
+SOURCES += $(shell find src -name '*.js' -print)
+SOURCES += $(shell find src -name '*.css' -print)
+SOURCES += $(shell find src -name '*.html' -print)
+
+.PHONY: printsrcs
+printsrcs:
 	@echo "+ $@"
-	docker run -p 3000:3000 --name apollo-ui -d stackrox/apollo:ui-latest
+	@echo "$(SOURCES)"
+
+lint: deps $(SOURCES)
+	@echo "+ $@"
+	yarn lint
+	@touch lint
+
+build: deps $(SOURCES)
+	@echo "+ $@"
+	yarn build
+
+.PHONY: start
+start: deps
+	@echo "+ $@"
+	yarn start
+
+.PHONY: test
+test: deps $(SOURCES)
+	@echo "+ $@"
+	yarn test
+
+.PHONY: test-watch
+test-watch: deps
+	@echo "+ $@"
+	yarn test-watch
 
 .PHONY: clean
 clean:
 	@echo "+ $@"
+	rm -f deps
+	rm -f lint
 	rm -rf build
 	rm -rf node_modules
-	docker kill apollo-ui || true
-	docker rm apollo-ui || true
-	docker rmi stackrox/apollo:ui-latest || true
+
+######################
+## Dev Dependencies ##
+######################
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
@@ -60,7 +93,6 @@ dev-osx:
 	@echo '++ Installing yarn using `brew`'
 	@brew install yarn
 	@brew link --overwrite yarn
-	
 
 .PHONY: nodejs-ubuntu
 nodejs-ubuntu:
@@ -68,32 +100,3 @@ nodejs-ubuntu:
 	@curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
 	@sudo apt-get install -y nodejs
 	@sudo apt-get install -y build-essential
-	
-
-deps: package.json
-	yarn install
-
-.PHONY: lint
-lint: deps
-	@echo "+ $@"
-	yarn lint
-
-.PHONY: build
-build: deps
-	@echo "+ $@"
-	yarn build
-
-.PHONY: start
-start: deps
-	@echo "+ $@"
-	yarn start
-
-.PHONY: test
-test: deps
-	@echo "+ $@"
-	yarn test
-
-.PHONY: test-watch
-test-watch: deps
-	@echo "+ $@"
-	yarn test-watch
