@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/apollo/detection"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/secrets"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -45,7 +46,11 @@ func (s *RegistryService) GetRegistries(ctx context.Context, request *v1.GetRegi
 		return nil, err
 	}
 
-	if request.RequestorIsAgent {
+	identity, err := auth.FromContext(ctx)
+	switch {
+	case err != nil:
+		log.Warnf("Could not ascertain client identity: %s", err)
+	case err == nil && identity.IdentityType.ServiceType == v1.ServiceType_SENSOR_SERVICE:
 		return &v1.GetRegistriesResponse{Registries: registries}, nil
 	}
 

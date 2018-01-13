@@ -63,7 +63,7 @@ func (c *Client) Start() {
 func (c *Client) doUpdate(cli v1.RegistryServiceClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	resp, err := cli.GetRegistries(ctx, &v1.GetRegistriesRequest{RequestorIsAgent: true, Cluster: c.clusterID})
+	resp, err := cli.GetRegistries(ctx, &v1.GetRegistriesRequest{Cluster: c.clusterID})
 	if err != nil {
 		log.Errorf("Error checking registries: %s", err)
 		return

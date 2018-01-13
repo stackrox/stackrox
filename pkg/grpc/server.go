@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"crypto/x509"
-	"errors"
 	"fmt"
 	golog "log"
 	"net"
@@ -14,8 +12,9 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/tls/keys"
+	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
@@ -46,20 +45,23 @@ type API interface {
 }
 
 type apiImpl struct {
-	apiServices []APIService
-	serveUI     bool
+	apiServices   []APIService
+	serveUI       bool
+	tlsConfigurer verifier.TLSConfigurer
 }
 
 // NewAPI returns an API object.
-func NewAPI() API {
-	return &apiImpl{}
+func NewAPI(tlsConfigurer verifier.TLSConfigurer) API {
+	return &apiImpl{
+		tlsConfigurer: tlsConfigurer,
+	}
 }
 
 // NewAPIWithUI returns an API server that also serves the UI.
-func NewAPIWithUI() API {
-	return &apiImpl{
-		serveUI: true,
-	}
+func NewAPIWithUI(tlsConfigurer verifier.TLSConfigurer) API {
+	a := NewAPI(tlsConfigurer).(*apiImpl)
+	a.serveUI = true
+	return a
 }
 
 func (a *apiImpl) Start() {
@@ -92,7 +94,7 @@ func panicHandler(p interface{}) (err error) {
 }
 
 func (a *apiImpl) run() {
-	pool, pair, err := getPair()
+	tlsConf, err := a.tlsConfigurer.TLSConfig()
 	if err != nil {
 		panic(err)
 	}
@@ -101,16 +103,18 @@ func (a *apiImpl) run() {
 		grpc_recovery.WithRecoveryHandler(panicHandler),
 	}
 	grpcServer := grpc.NewServer(
-		grpc.Creds(credentials.NewClientTLSFromCert(pool, endpoint)),
+		grpc.Creds(credentials.NewTLS(tlsConf)),
 		grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(
 				grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+				auth.StreamInterceptor(),
 				grpc_recovery.StreamServerInterceptor(opts...),
 			),
 		),
 		grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(
 				grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+				auth.UnaryInterceptor(),
 				grpc_recovery.UnaryServerInterceptor(opts...),
 			),
 		),
@@ -123,7 +127,7 @@ func (a *apiImpl) run() {
 	ctx := context.Background()
 	dcreds := credentials.NewTLS(&tls.Config{
 		ServerName:         endpoint,
-		RootCAs:            pool,
+		RootCAs:            tlsConf.RootCAs,
 		InsecureSkipVerify: true,
 	})
 	dopts := []grpc.DialOption{grpc.WithTransportCredentials(dcreds)}
@@ -146,14 +150,12 @@ func (a *apiImpl) run() {
 	if err != nil {
 		panic(err)
 	}
+	tlsConf.NextProtos = []string{"h2"}
 	srv := &http.Server{
-		Addr:     endpoint,
-		Handler:  grpcHandlerFunc(grpcServer, mux),
-		ErrorLog: golog.New(httpErrorLogger{}, "", golog.LstdFlags),
-		TLSConfig: &tls.Config{
-			Certificates: []tls.Certificate{*pair},
-			NextProtos:   []string{"h2"},
-		},
+		Addr:      endpoint,
+		Handler:   grpcHandlerFunc(grpcServer, mux),
+		ErrorLog:  golog.New(httpErrorLogger{}, "", golog.LstdFlags),
+		TLSConfig: tlsConf,
 	}
 	fmt.Printf("grpc on port: %v\n", grpcPort)
 	err = srv.Serve(tls.NewListener(conn, srv.TLSConfig))
@@ -176,23 +178,6 @@ func uiMux() http.Handler {
 		http.ServeFile(w, r, "/ui/index.html")
 	})
 	return mux
-}
-
-func getPair() (*x509.CertPool, *tls.Certificate, error) {
-	cert, key, err := keys.GenerateStackRoxKeyPair()
-	if err != nil {
-		return nil, nil, err
-	}
-	pair, err := tls.X509KeyPair(cert.Key().PEM(), key.Key().PEM())
-	if err != nil {
-		return nil, nil, err
-	}
-	pool := x509.NewCertPool()
-	ok := pool.AppendCertsFromPEM(cert.Key().PEM())
-	if !ok {
-		return nil, nil, errors.New("Cert is invalid")
-	}
-	return pool, &pair, nil
 }
 
 func grpcHandlerFunc(grpcServer *grpc.Server, httpHandler http.Handler) http.Handler {

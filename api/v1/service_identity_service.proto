@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+package v1;
+
+enum ServiceType {
+    UNKNOWN_SERVICE = 0;
+    SENSOR_SERVICE  = 1;
+    CENTRAL_SERVICE = 2;
+    REMOTE_SERVICE  = 3;
+}
+
+message ServiceIdentity {
+    int64       serial   = 1;
+    string      name     = 2;
+    ServiceType type     = 3;
+}
+
+message ServiceIdentityResponse {
+    repeated ServiceIdentity identities = 1;
+}
+
+message CreateServiceIdentityRequest {
+    string      name = 1;
+    ServiceType type = 2;
+}
+
+message CreateServiceIdentityResponse {
+    ServiceIdentity identity    = 1;
+    string          certificate = 2;
+    string          private_key = 3;
+}
+
+message Authority {
+    string certificate = 1;
+}
+
+message Authorities {
+    repeated Authority authorities = 1;
+}
+
+service ServiceIdentityService {
+
+    rpc GetServiceIdentities (google.protobuf.Empty) returns (ServiceIdentityResponse) {
+        option (google.api.http) = {
+            get: "/v1/serviceIdentities"
+        };
+    }
+
+    // CreateServiceIdentity creates a new key pair and certificate.
+    // The key and certificate are not retained and can never be retrieved again.
+    rpc CreateServiceIdentity (CreateServiceIdentityRequest) returns (CreateServiceIdentityResponse) {
+        option (google.api.http) = {
+            post: "/v1/serviceIdentities"
+            body: "*"
+        };
+    }
+
+    // GetAuthorities returns the authorities currently in use.
+    rpc GetAuthorities (google.protobuf.Empty) returns (Authorities) {
+        option (google.api.http) = {
+            get: "/v1/authorities"
+        };
+    }
+}
+

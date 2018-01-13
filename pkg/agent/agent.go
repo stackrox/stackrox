@@ -8,9 +8,11 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
+	"bitbucket.org/stack-rox/apollo/pkg/features"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
@@ -42,8 +44,14 @@ type Agent struct {
 
 // New returns a new Agent.
 func New() *Agent {
+	var server grpc.API
+	if features.MTLS.Enabled() {
+		server = grpc.NewAPI(verifier.NonCA{})
+	} else {
+		server = grpc.NewAPI(verifier.NoMTLS{})
+	}
 	return &Agent{
-		Server: grpc.NewAPI(),
+		Server: server,
 
 		ClusterID:          env.ClusterID.Setting(),
 		ApolloEndpoint:     env.ApolloEndpoint.Setting(),

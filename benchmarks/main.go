@@ -31,7 +31,7 @@ func main() {
 	flag.BoolVar(&jsonOnly, "json", false, "specify --json will print the payload out in json format and not try to post it")
 	flag.Parse()
 
-	conn, err := clientconn.GRPCConnection(env.AdvertisedEndpoint.Setting())
+	conn, err := clientconn.UnauthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting())
 	if err != nil {
 		log.Fatal(err)
 	}

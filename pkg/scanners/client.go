@@ -63,7 +63,7 @@ func (c *Client) Start() {
 func (c *Client) doUpdate(cli v1.ScannerServiceClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	resp, err := cli.GetScanners(ctx, &v1.GetScannersRequest{RequestorIsAgent: true, Cluster: c.clusterID})
+	resp, err := cli.GetScanners(ctx, &v1.GetScannersRequest{Cluster: c.clusterID})
 	if err != nil {
 		log.Errorf("Error checking scanners: %s", err)
 		return

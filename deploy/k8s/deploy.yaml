@@ -37,6 +37,9 @@ spec:
         ports:
         - name: api
           containerPort: 443
+        env:
+        - name: ROX_FEATURE_MTLS
+          value: "false"
       imagePullSecrets:
       - name: stackrox
 ---
@@ -61,6 +64,8 @@ spec:
       containers:
       - image: stackrox/apollo:latest
         env:
+        - name: ROX_FEATURE_MTLS
+          value: "false"
         - name: ROX_APOLLO_ENDPOINT
           value: apollo.stackrox:443
         - name: ROX_APOLLO_CLUSTER_ID

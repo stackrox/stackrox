@@ -13,8 +13,10 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/notifications"
 	"bitbucket.org/stack-rox/apollo/apollo/service"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
+	"bitbucket.org/stack-rox/apollo/pkg/features"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	_ "bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
@@ -69,7 +71,11 @@ func newApollo() *apollo {
 }
 
 func (a *apollo) startGRPCServer() {
-	a.server = grpc.NewAPIWithUI()
+	if features.MTLS.Enabled() {
+		a.server = grpc.NewAPIWithUI(verifier.CA{})
+	} else {
+		a.server = grpc.NewAPIWithUI(verifier.NoMTLS{})
+	}
 	a.server.Register(service.NewAgentEventService(a.detector, a.notificationProcessor, a.database))
 	a.server.Register(service.NewAlertService(a.database))
 	a.server.Register(service.NewBenchmarkService(a.database))
@@ -84,6 +90,7 @@ func (a *apollo) startGRPCServer() {
 	a.server.Register(service.NewPolicyService(a.database, a.detector))
 	a.server.Register(service.NewRegistryService(a.database, a.detector))
 	a.server.Register(service.NewScannerService(a.database, a.detector))
+	a.server.Register(service.NewServiceIdentityService(a.database))
 	a.server.Start()
 }
 

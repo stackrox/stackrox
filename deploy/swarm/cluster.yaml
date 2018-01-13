@@ -18,6 +18,8 @@ services:
         published: 8080
         protocol: tcp
         mode: ingress
+    environment:
+      ROX_FEATURE_MTLS: "false"
   agent:
     image: stackrox/apollo:${APOLLO_IMAGE_TAG:-latest}
     entrypoint:
@@ -35,8 +37,10 @@ services:
       ROX_APOLLO_CLUSTER_ID: test
       ROX_APOLLO_ADVERTISED_ENDPOINT: agent.apollo_net:443
       ROX_APOLLO_IMAGE: stackrox/apollo:${APOLLO_IMAGE_TAG:-latest}
-      DOCKER_CERT_PATH: /run/secrets/
-      DOCKER_HOST: ${DOCKER_HOST}
+      ROX_FEATURE_MTLS: "false"
+      DOCKER_HOST: $DOCKER_HOST
+      DOCKER_TLS_VERIFY: $DOCKER_TLS_VERIFY
+      DOCKER_CERT_PATH: /run/secrets
     secrets:
     - source: rox_docker_client_ca_pem
       target: ca.pem

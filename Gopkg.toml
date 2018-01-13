@@ -93,3 +93,7 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
 [[constraint]]
   name = "gopkg.in/yaml.v2"
   revision = "a3f3340b5840cee44f372bddb5880fcbc419b46a"
+
+[[constraint]]
+  name = "github.com/cloudflare/cfssl"
+  branch = "master"

@@ -20,6 +20,7 @@ type Storage interface {
 	NotifierStorage
 	RegistryStorage
 	ScannerStorage
+	ServiceIdentityStorage
 }
 
 // AlertStorage provides storage functionality for alerts.
@@ -122,4 +123,10 @@ type ScannerStorage interface {
 	AddScanner(scanner *v1.Scanner) error
 	UpdateScanner(scanner *v1.Scanner) error
 	RemoveScanner(name string) error
+}
+
+// ServiceIdentityStorage provides storage functionality for service identities.
+type ServiceIdentityStorage interface {
+	GetServiceIdentities() ([]*v1.ServiceIdentity, error)
+	AddServiceIdentity(identity *v1.ServiceIdentity) error
 }

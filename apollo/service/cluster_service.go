@@ -38,23 +38,39 @@ func (s *ClusterService) RegisterServiceHandlerFromEndpoint(ctx context.Context,
 }
 
 // PostCluster creates a new cluster.
-func (s *ClusterService) PostCluster(ctx context.Context, request *v1.Cluster) (*empty.Empty, error) {
+func (s *ClusterService) PostCluster(ctx context.Context, request *v1.Cluster) (*v1.ClusterResponse, error) {
+	if request.GetName() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Name must be provided")
+	}
 	err := s.storage.AddCluster(request)
-	return &empty.Empty{}, err
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return s.getCluster(request.GetName())
 }
 
 // PutCluster creates a new cluster.
-func (s *ClusterService) PutCluster(ctx context.Context, request *v1.Cluster) (*empty.Empty, error) {
+func (s *ClusterService) PutCluster(ctx context.Context, request *v1.Cluster) (*v1.ClusterResponse, error) {
+	if request.GetName() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Name must be provided")
+	}
 	err := s.storage.UpdateCluster(request)
-	return &empty.Empty{}, err
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return s.getCluster(request.GetName())
 }
 
 // GetCluster returns the specified cluster.
 func (s *ClusterService) GetCluster(ctx context.Context, request *v1.ClusterByName) (*v1.ClusterResponse, error) {
-	if request == nil {
+	if request.GetName() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Name must be provided")
 	}
-	cluster, ok, err := s.storage.GetCluster(request.Name)
+	return s.getCluster(request.GetName())
+}
+
+func (s *ClusterService) getCluster(name string) (*v1.ClusterResponse, error) {
+	cluster, ok, err := s.storage.GetCluster(name)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not get cluster: %s", err)
 	}
@@ -84,11 +100,14 @@ func (s *ClusterService) GetClusters(ctx context.Context, _ *empty.Empty) (*v1.C
 
 // DeleteCluster removes a cluster
 func (s *ClusterService) DeleteCluster(ctx context.Context, request *v1.ClusterByName) (*empty.Empty, error) {
-	if request == nil {
+	if request.GetName() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Request must have a name")
 	}
-	err := s.storage.RemoveCluster(request.Name)
-	return &empty.Empty{}, status.Error(codes.Internal, err.Error())
+	err := s.storage.RemoveCluster(request.GetName())
+	if err != nil {
+		return &empty.Empty{}, status.Error(codes.Internal, err.Error())
+	}
+	return &empty.Empty{}, nil
 }
 
 type clusterWrap v1.Cluster
@@ -151,27 +170,48 @@ services:
       - swarm-agent
     networks:
       net:
-    volumes:
-      - type: bind
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
     deploy:
       placement:
         constraints:
           - node.role==manager
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
     environment:
       - "{{.PublicEndpointEnv}}={{.PublicEndpoint}}"
       - "{{.ClusterNameEnv}}={{.ClusterName}}"
       - "{{.AdvertisedEndpointEnv}}={{.AdvertisedEndpoint}}"
       - "{{.ImageEnv}}={{.Image}}"
+    secrets:
+      - source: agent_certificate
+        target: cert.pem
+        mode: 400
+      - source: agent_private_key
+        target: key.pem
+        mode: 400
+      - source: central_certificate
+        target: ca-cert.pem
+        mode: 400
 networks:
   net:
     driver: overlay
     attachable: true
+secrets:
+  agent_private_key:
+    file: agent-{{.ClusterName}}-key.pem
+  agent_certificate:
+    file: agent-{{.ClusterName}}-cert.pem
+  central_certificate:
+    file: central-ca.pem
 `)
+	// TODO(cg): Do we need to include DOCKER_HOST, DOCKER_CERT_PATH, DOCKER_TLS_VERIFY?
 	if err != nil {
 		panic(err)
 	}
+
+	// Swarm is an alias of Docker EE for the purposes of cluster configuration.
+	clusterTypeTemplates[v1.ClusterType_SWARM_CLUSTER] = clusterTypeTemplates[v1.ClusterType_DOCKER_EE_CLUSTER]
 
 	clusterTypeTemplates[v1.ClusterType_KUBERNETES_CLUSTER], err = template.New("base").Parse(`apiVersion: extensions/v1beta1
 kind: Deployment

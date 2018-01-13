@@ -20,8 +20,6 @@ message Registry {
 message GetRegistriesRequest {
     string name    = 1;
     string cluster = 2;
-
-    bool requestor_is_agent = 16; // TODO(cg): This is only to be used until service-to-service auth is implemented.
 }
 
 message GetRegistriesResponse {

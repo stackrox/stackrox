@@ -69,6 +69,7 @@ API_SERVICES += ping_service
 API_SERVICES += policy_service
 API_SERVICES += registry_service
 API_SERVICES += scanner_service
+API_SERVICES += service_identity_service
 
 # These .proto files do not contain gRPC methods and thus don't need gateway files.
 PB_COMMON_FILES  = common
@@ -122,7 +123,7 @@ build: gazelle
 test: gazelle
 # PURE is so that the test and image stages can share artifacts on Linux.
 # action_env args are for running with remote Docker in CircleCI.
-	bazel test $(PURE) \
+	bazel test \
 	    --test_output=errors \
 	    --action_env=CIRCLECI=$(CIRCLECI) \
 	    --action_env=DOCKER_HOST=$(DOCKER_HOST) \

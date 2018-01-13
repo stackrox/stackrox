@@ -1,0 +1,27 @@
+version: "3.2"
+services:
+  apollo:
+    image: stackrox/apollo:${APOLLO_IMAGE_TAG:-latest}
+    networks:
+      net:
+    ports:
+      - target: 443
+        published: 8080
+        protocol: tcp
+        mode: ingress
+    secrets:
+      - source: apollo_private_key
+        target: ca-key.pem
+        mode: 400
+      - source: apollo_certificate
+        target: ca-cert.pem
+        mode: 400
+networks:
+  net:
+    driver: overlay
+    attachable: true
+secrets:
+  apollo_private_key:
+    file: ./ca-key.pem
+  apollo_certificate:
+    file: ./ca.pem

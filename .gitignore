@@ -1,19 +1,28 @@
 **/container/bin/*
 **/container/conf/*
 **/container/data/*
-bazel-*
+
+# Crypto
+*.csr
+*.pem
+
+# Uncommitted code
+vendor/
+api/generated
+
+# Makefile cruft
 deps
 report.xml
 test.log
-vendor/
-api/generated
+protoc-*
+
+# Bazel
+bazel-*
+BUILD.bazel
+!/BUILD.bazel
+!/image/policies/BUILD.bazel-*
+
+# Miscellaneous
 *.g4
 *.tokens
-BUILD.bazel
 .idea/
-protoc-*
-pkg/api/generated
-glide.out
-
-!/BUILD.bazel
-!/image/policies/BUILD.bazel

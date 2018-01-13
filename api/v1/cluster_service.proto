@@ -51,14 +51,14 @@ service ClustersService {
         };
     }
 
-    rpc PostCluster (Cluster) returns (google.protobuf.Empty) {
+    rpc PostCluster (Cluster) returns (ClusterResponse) {
         option (google.api.http) = {
             post: "/v1/clusters"
             body: "*"
         };
     }
 
-    rpc PutCluster (Cluster) returns (google.protobuf.Empty) {
+    rpc PutCluster (Cluster) returns (ClusterResponse) {
         option (google.api.http) = {
             put: "/v1/clusters/{name}"
             body: "*"

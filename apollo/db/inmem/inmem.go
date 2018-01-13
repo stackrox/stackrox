@@ -23,6 +23,7 @@ type InMemoryStore struct {
 	*notifierStore
 	*registryStore
 	*scannerStore
+	*serviceIdentityStore
 
 	persistent db.Storage
 }
@@ -43,6 +44,7 @@ func New(persistentStorage db.Storage) *InMemoryStore {
 		notifierStore:          newNotifierStore(persistentStorage),
 		registryStore:          newRegistryStore(persistentStorage),
 		scannerStore:           newScannerStore(persistentStorage),
+		serviceIdentityStore:   newServiceIdentityStore(persistentStorage),
 	}
 }
 
