@@ -20,10 +20,10 @@ message DeploymentEvent {
     ResourceAction action     = 2;
 }
 
-service AgentEventService {
+service SensorEventService {
     rpc ReportDeploymentEvent(DeploymentEvent) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            post: "/v1/agent/events/deployment"
+            post: "/v1/sensor/events/deployment"
             body: "*"
         };
     }

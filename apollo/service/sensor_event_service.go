@@ -15,9 +15,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// NewAgentEventService returns the AgentEventService API.
-func NewAgentEventService(detector *detection.Detector, notificationsProcessor *notifications.Processor, database db.Storage) *AgentEventService {
-	return &AgentEventService{
+// NewSensorEventService returns the SensorEventService API.
+func NewSensorEventService(detector *detection.Detector, notificationsProcessor *notifications.Processor, database db.Storage) *SensorEventService {
+	return &SensorEventService{
 		detector:              detector,
 		notificationProcessor: notificationsProcessor,
 		stalenessHandler:      alerts.NewStalenessHandler(database),
@@ -25,8 +25,8 @@ func NewAgentEventService(detector *detection.Detector, notificationsProcessor *
 	}
 }
 
-// AgentEventService is the struct that manages the AgentEvent API
-type AgentEventService struct {
+// SensorEventService is the struct that manages the SensorEvent API
+type SensorEventService struct {
 	detector              *detection.Detector
 	notificationProcessor *notifications.Processor
 	stalenessHandler      alerts.StalenessHandler
@@ -34,17 +34,17 @@ type AgentEventService struct {
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
-func (s *AgentEventService) RegisterServiceServer(grpcServer *grpc.Server) {
-	v1.RegisterAgentEventServiceServer(grpcServer, s)
+func (s *SensorEventService) RegisterServiceServer(grpcServer *grpc.Server) {
+	v1.RegisterSensorEventServiceServer(grpcServer, s)
 }
 
 // RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
-func (s *AgentEventService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-	return v1.RegisterAgentEventServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+func (s *SensorEventService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
+	return v1.RegisterSensorEventServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 }
 
-// ReportDeploymentEvent receives a new deployment event from an agent.
-func (s *AgentEventService) ReportDeploymentEvent(ctx context.Context, request *v1.DeploymentEvent) (*empty.Empty, error) {
+// ReportDeploymentEvent receives a new deployment event from a sensor.
+func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request *v1.DeploymentEvent) (*empty.Empty, error) {
 	if request == nil {
 		return nil, status.Error(codes.InvalidArgument, "Request must include an event")
 	}
@@ -92,7 +92,7 @@ func (s *AgentEventService) ReportDeploymentEvent(ctx context.Context, request *
 	return &empty.Empty{}, nil
 }
 
-func (s *AgentEventService) handlePersistence(event *v1.DeploymentEvent) error {
+func (s *SensorEventService) handlePersistence(event *v1.DeploymentEvent) error {
 	action := event.GetAction()
 	deployment := event.GetDeployment()
 	switch action {

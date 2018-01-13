@@ -1,5 +1,5 @@
-ROX_PROJECT=agent
-PROJECT_SUBDIR=agent/swarm
+ROX_PROJECT=sensor
+PROJECT_SUBDIR=sensor/swarm
 BASE_PATH=$(CURDIR)/../..
 TESTFLAGS=-race -p 4
 

@@ -95,7 +95,7 @@ service BenchmarkResultsService {
 
 }
 
-// The BenchmarkRelayService is used by the agent to receive benchmark results,
+// The BenchmarkRelayService is used by the sensor to receive benchmark results,
 // which are then forwarded to the central server.
 service BenchmarkRelayService {
     rpc PostBenchmarkResult(BenchmarkResult) returns (google.protobuf.Empty) {

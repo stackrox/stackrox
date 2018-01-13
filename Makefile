@@ -55,8 +55,7 @@ vet:
 #####################################
 ## Generated Code and Dependencies ##
 #####################################
-API_SERVICES  = agent_event_service
-API_SERVICES += alert_service
+API_SERVICES  = alert_service
 API_SERVICES += benchmark_results_service
 API_SERVICES += benchmark_schedule_service
 API_SERVICES += benchmark_service
@@ -69,6 +68,7 @@ API_SERVICES += ping_service
 API_SERVICES += policy_service
 API_SERVICES += registry_service
 API_SERVICES += scanner_service
+API_SERVICES += sensor_event_service
 API_SERVICES += service_identity_service
 
 # These .proto files do not contain gRPC methods and thus don't need gateway files.
@@ -142,21 +142,21 @@ test: gazelle
 image: gazelle clean-image
 	@echo "+ $@"
 	bazel build $(BAZEL_FLAGS) \
-		//agent/kubernetes \
-		//agent/swarm \
 		//apollo \
 		//benchmarks \
 		//benchmark-bootstrap \
+		//sensor/kubernetes \
+		//sensor/swarm \
 
 	make -C apollo-ui build
 
 # TODO(cg): Replace with native bazel Docker build.
 	cp -r apollo-ui/build image/ui/
-	cp bazel-bin/agent/swarm/linux_amd64_pure_stripped/swarm image/bin/swarm-agent
-	cp bazel-bin/agent/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-agent
 	cp bazel-bin/apollo/linux_amd64_pure_stripped/apollo image/bin/apollo
 	cp bazel-bin/benchmarks/linux_amd64_pure_stripped/benchmarks image/bin/benchmarks
 	cp bazel-bin/benchmark-bootstrap/linux_amd64_pure_stripped/benchmark-bootstrap image/bin/benchmark-bootstrap
+	cp bazel-bin/sensor/swarm/linux_amd64_pure_stripped/swarm image/bin/swarm-sensor
+	cp bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-sensor
 	chmod +w image/bin/*
 	docker build -t stackrox/apollo:latest image/
 

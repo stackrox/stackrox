@@ -46,20 +46,20 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: agent
+  name: sensor
   namespace: stackrox
   labels:
-    app: agent
+    app: sensor
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: agent
+      app: sensor
   template:
     metadata:
       namespace: stackrox
       labels:
-        app: agent
+        app: sensor
     spec:
       containers:
       - image: stackrox/apollo:latest
@@ -81,8 +81,8 @@ spec:
             fieldRef:
               fieldPath: spec.serviceAccountName
         imagePullPolicy: Always
-        name: agent
+        name: sensor
         command:
-          - kubernetes-agent
+          - kubernetes-sensor
       imagePullSecrets:
       - name: stackrox

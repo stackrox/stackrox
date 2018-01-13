@@ -13,7 +13,7 @@ message Registry {
     string endpoint             = 3;
     string remote               = 4;
     map<string, string> config  = 5;
-    // If a list of clusters is provided, the integration will only be accessed from the specified clusters' agents.
+    // If a list of clusters is provided, the integration will only be accessed from the specified clusters' sensors.
     repeated string clusters    = 6;
 }
 

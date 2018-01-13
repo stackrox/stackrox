@@ -8,9 +8,9 @@ const (
 )
 
 var (
-	// Namespace is the namespace in which agents and benchmark services are deployed (k8s).
+	// Namespace is the namespace in which sensors and benchmark services are deployed (k8s).
 	Namespace = Setting(namespace{})
-	// ServiceAccount designates the account under which agents and benchmarks operate (k8s).
+	// ServiceAccount designates the account under which sensors and benchmarks operate (k8s).
 	ServiceAccount = Setting(serviceAccount{})
 	// ImagePullSecrets are secrets used for pulling images (k8s).
 	ImagePullSecrets = Setting(imagePullSecrets{})

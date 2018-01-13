@@ -76,7 +76,6 @@ func (a *apollo) startGRPCServer() {
 	} else {
 		a.server = grpc.NewAPIWithUI(verifier.NoMTLS{})
 	}
-	a.server.Register(service.NewAgentEventService(a.detector, a.notificationProcessor, a.database))
 	a.server.Register(service.NewAlertService(a.database))
 	a.server.Register(service.NewBenchmarkService(a.database))
 	a.server.Register(service.NewBenchmarkScheduleService(a.database))
@@ -90,6 +89,7 @@ func (a *apollo) startGRPCServer() {
 	a.server.Register(service.NewPolicyService(a.database, a.detector))
 	a.server.Register(service.NewRegistryService(a.database, a.detector))
 	a.server.Register(service.NewScannerService(a.database, a.detector))
+	a.server.Register(service.NewSensorEventService(a.detector, a.notificationProcessor, a.database))
 	a.server.Register(service.NewServiceIdentityService(a.database))
 	a.server.Start()
 }

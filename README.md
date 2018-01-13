@@ -49,7 +49,7 @@ The deploy script will:
 
 Currently, this script works on a Swarm worker that does not have TLS enabled.
 Future changes will automate setup for clusters with such configurations, but
-in the meantime you can manually edit agent-remote-deploy.yaml to add the
+in the meantime you can manually edit sensor-remote-deploy.yaml to add the
 following secrets:
 
 ```

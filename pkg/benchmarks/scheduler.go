@@ -357,7 +357,7 @@ func uniqueScanID(t time.Time, benchmarkName, triggerType string) string {
 
 // Start runs the scheduler
 func (s *SchedulerClient) Start() {
-	// Initialize triggers that have results from this agent
+	// Initialize triggers that have results from this sensor
 	s.initializeTriggers()
 	for {
 		select {

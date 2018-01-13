@@ -8,13 +8,13 @@ import (
 	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
 
-	"bitbucket.org/stack-rox/apollo/agent/swarm/listener"
-	"bitbucket.org/stack-rox/apollo/agent/swarm/orchestrator"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/agent"
 	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"bitbucket.org/stack-rox/apollo/pkg/sensor"
+	"bitbucket.org/stack-rox/apollo/sensor/swarm/listener"
+	"bitbucket.org/stack-rox/apollo/sensor/swarm/orchestrator"
 )
 
 func main() {
@@ -22,7 +22,7 @@ func main() {
 	signal.Notify(sigs, os.Interrupt)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	a := initializeAgent()
+	a := initializeSensor()
 
 	a.Start()
 
@@ -31,14 +31,14 @@ func main() {
 		case sig := <-sigs:
 			a.Logger.Infof("Caught %s signal", sig)
 			a.Stop()
-			a.Logger.Info("Swarm Agent terminated")
+			a.Logger.Info("Swarm Sensor terminated")
 			return
 		}
 	}
 }
 
-func initializeAgent() *agent.Agent {
-	a := agent.New()
+func initializeSensor() *sensor.Sensor {
+	a := sensor.New()
 	var err error
 
 	a.Listener, err = listener.New()
@@ -60,11 +60,11 @@ func initializeAgent() *agent.Agent {
 
 	a.ServiceRegistrationFunc = registerAPIServices
 
-	a.Logger.Info("Swarm Agent Initialized")
+	a.Logger.Info("Swarm Sensor Initialized")
 	return a
 }
 
-func registerAPIServices(a *agent.Agent) {
+func registerAPIServices(a *sensor.Sensor) {
 	a.Server.Register(benchmarks.NewBenchmarkRelayService(benchmarks.NewLRURelayer(v1.NewBenchmarkResultsServiceClient(a.Conn), a.ClusterID)))
 	a.Logger.Info("API services registered")
 }

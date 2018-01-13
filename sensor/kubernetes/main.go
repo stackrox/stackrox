@@ -5,12 +5,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"bitbucket.org/stack-rox/apollo/agent/kubernetes/listener"
-	"bitbucket.org/stack-rox/apollo/pkg/agent"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
+	"bitbucket.org/stack-rox/apollo/pkg/sensor"
+	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/listener"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 	signal.Notify(sigs, os.Interrupt)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	a := initializeAgent()
+	a := initializeSensor()
 
 	a.Start()
 
@@ -27,20 +27,20 @@ func main() {
 		case sig := <-sigs:
 			a.Logger.Infof("Caught %s signal", sig)
 			a.Stop()
-			a.Logger.Info("Kubernetes Agent terminated")
+			a.Logger.Info("Kubernetes Sensor terminated")
 			return
 		}
 	}
 }
 
-func initializeAgent() *agent.Agent {
-	a := agent.New()
+func initializeSensor() *sensor.Sensor {
+	a := sensor.New()
 
 	a.Listener = listener.New()
 
 	a.ScannerPoller = scanners.NewScannersClient(a.ApolloEndpoint, a.ClusterID)
 	a.RegistryPoller = registries.NewRegistriesClient(a.ApolloEndpoint, a.ClusterID)
 
-	a.Logger.Info("Kubernetes Agent Initialized")
+	a.Logger.Info("Kubernetes Sensor Initialized")
 	return a
 }

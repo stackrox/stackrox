@@ -164,10 +164,10 @@ func init() {
 	var err error
 	clusterTypeTemplates[v1.ClusterType_DOCKER_EE_CLUSTER], err = template.New("base").Parse(`version: "3.2"
 services:
-  agent:
+  sensor:
     image: {{.Image}}
     entrypoint:
-      - swarm-agent
+      - swarm-sensor
     networks:
       net:
     deploy:
@@ -184,10 +184,10 @@ services:
       - "{{.AdvertisedEndpointEnv}}={{.AdvertisedEndpoint}}"
       - "{{.ImageEnv}}={{.Image}}"
     secrets:
-      - source: agent_certificate
+      - source: sensor_certificate
         target: cert.pem
         mode: 400
-      - source: agent_private_key
+      - source: sensor_private_key
         target: key.pem
         mode: 400
       - source: central_certificate
@@ -198,10 +198,10 @@ networks:
     driver: overlay
     attachable: true
 secrets:
-  agent_private_key:
-    file: agent-{{.ClusterName}}-key.pem
-  agent_certificate:
-    file: agent-{{.ClusterName}}-cert.pem
+  sensor_private_key:
+    file: sensor-{{.ClusterName}}-key.pem
+  sensor_certificate:
+    file: sensor-{{.ClusterName}}-cert.pem
   central_certificate:
     file: central-ca.pem
 `)
@@ -216,20 +216,20 @@ secrets:
 	clusterTypeTemplates[v1.ClusterType_KUBERNETES_CLUSTER], err = template.New("base").Parse(`apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: agent
+  name: sensor
   namespace: {{.Namespace}}
   labels:
-    app: agent
+    app: sensor
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: agent
+      app: sensor
   template:
     metadata:
       namespace: {{.Namespace}}
       labels:
-        app: agent
+        app: sensor
     spec:
       containers:
       - image: {{.Image}}
@@ -253,9 +253,9 @@ spec:
             fieldRef:
               fieldPath: spec.serviceAccountName
         imagePullPolicy: Always
-        name: agent
+        name: sensor
         command:
-          - kubernetes-agent
+          - kubernetes-sensor
       imagePullSecrets:
       - name: {{.ImagePullSecret}}`)
 

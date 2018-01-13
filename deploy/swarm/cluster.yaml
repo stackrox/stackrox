@@ -20,10 +20,10 @@ services:
         mode: ingress
     environment:
       ROX_FEATURE_MTLS: "false"
-  agent:
+  sensor:
     image: stackrox/apollo:${APOLLO_IMAGE_TAG:-latest}
     entrypoint:
-      - swarm-agent
+      - swarm-sensor
     depends_on:
       - apollo
     networks:
@@ -35,7 +35,7 @@ services:
     environment:
       ROX_APOLLO_ENDPOINT: apollo.apollo_net:443
       ROX_APOLLO_CLUSTER_ID: test
-      ROX_APOLLO_ADVERTISED_ENDPOINT: agent.apollo_net:443
+      ROX_APOLLO_ADVERTISED_ENDPOINT: sensor.apollo_net:443
       ROX_APOLLO_IMAGE: stackrox/apollo:${APOLLO_IMAGE_TAG:-latest}
       ROX_FEATURE_MTLS: "false"
       DOCKER_HOST: $DOCKER_HOST

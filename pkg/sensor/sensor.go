@@ -1,4 +1,4 @@
-package agent
+package sensor
 
 import (
 	"context"
@@ -22,13 +22,13 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Agent provides common structure and functionality for agents across various platforms.
-type Agent struct {
+// Sensor provides common structure and functionality for sensors across various platforms.
+type Sensor struct {
 	Server                  grpc.API
 	Listener                listeners.Listener
 	BenchScheduler          *benchmarks.SchedulerClient
 	Orchestrator            orchestrators.Orchestrator
-	ServiceRegistrationFunc func(a *Agent)
+	ServiceRegistrationFunc func(a *Sensor)
 	ScannerPoller           *scanners.Client
 	RegistryPoller          *registries.Client
 
@@ -42,15 +42,15 @@ type Agent struct {
 	Logger *logging.Logger
 }
 
-// New returns a new Agent.
-func New() *Agent {
+// New returns a new Sensor.
+func New() *Sensor {
 	var server grpc.API
 	if features.MTLS.Enabled() {
 		server = grpc.NewAPI(verifier.NonCA{})
 	} else {
 		server = grpc.NewAPI(verifier.NoMTLS{})
 	}
-	return &Agent{
+	return &Sensor{
 		Server: server,
 
 		ClusterID:          env.ClusterID.Setting(),
@@ -63,7 +63,7 @@ func New() *Agent {
 }
 
 // Start starts all subroutines and the API server.
-func (a *Agent) Start() {
+func (a *Sensor) Start() {
 	var err error
 	a.Logger.Infof("Connecting to Apollo server %s", a.ApolloEndpoint)
 	a.Conn, err = clientconn.GRPCConnection(a.ApolloEndpoint)
@@ -93,8 +93,8 @@ func (a *Agent) Start() {
 	go a.relayEvents()
 }
 
-// Stop stops the agent.
-func (a *Agent) Stop() {
+// Stop stops the sensor.
+func (a *Sensor) Stop() {
 	if a.Listener != nil {
 		a.Listener.Stop()
 	}
@@ -111,8 +111,8 @@ func (a *Agent) Stop() {
 	a.Conn.Close()
 }
 
-func (a *Agent) relayEvents() {
-	cli := v1.NewAgentEventServiceClient(a.Conn)
+func (a *Sensor) relayEvents() {
+	cli := v1.NewSensorEventServiceClient(a.Conn)
 
 	for {
 		select {
@@ -126,7 +126,7 @@ func (a *Agent) relayEvents() {
 	}
 }
 
-func (a *Agent) waitUntilApolloIsReady() {
+func (a *Sensor) waitUntilApolloIsReady() {
 	pingService := v1.NewPingServiceClient(a.Conn)
 
 	err := pingWithTimeout(pingService)
@@ -144,7 +144,7 @@ func pingWithTimeout(svc v1.PingServiceClient) (err error) {
 	return
 }
 
-func (a *Agent) reportDeploymentEvent(cli v1.AgentEventServiceClient, ev *v1.DeploymentEvent) (err error) {
+func (a *Sensor) reportDeploymentEvent(cli v1.SensorEventServiceClient, ev *v1.DeploymentEvent) (err error) {
 	a.enrichImages(ev)
 
 	retries := 0
@@ -161,7 +161,7 @@ func (a *Agent) reportDeploymentEvent(cli v1.AgentEventServiceClient, ev *v1.Dep
 	return
 }
 
-func (a *Agent) enrichImages(ev *v1.DeploymentEvent) {
+func (a *Sensor) enrichImages(ev *v1.DeploymentEvent) {
 	for _, c := range ev.GetDeployment().GetContainers() {
 		img := c.GetImage()
 		for _, r := range a.RegistryPoller.Registries() {
@@ -185,7 +185,7 @@ func (a *Agent) enrichImages(ev *v1.DeploymentEvent) {
 	}
 }
 
-func reportWithTimeout(cli v1.AgentEventServiceClient, ev *v1.DeploymentEvent) (err error) {
+func reportWithTimeout(cli v1.SensorEventServiceClient, ev *v1.DeploymentEvent) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	_, err = cli.ReportDeploymentEvent(ctx, ev)

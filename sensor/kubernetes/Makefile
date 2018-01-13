@@ -1,5 +1,5 @@
-ROX_PROJECT=agent
-PROJECT_SUBDIR=agent/kubernetes
+ROX_PROJECT=sensor
+PROJECT_SUBDIR=sensor/kubernetes
 BASE_PATH=$(CURDIR)/../..
 TESTFLAGS=-race -p 4
 

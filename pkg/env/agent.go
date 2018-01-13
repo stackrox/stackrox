@@ -5,11 +5,11 @@ import (
 )
 
 var (
-	// ClusterID is used to provide a cluster ID to an agent.
+	// ClusterID is used to provide a cluster ID to a sensor.
 	ClusterID = Setting(clusterID{})
-	// ApolloEndpoint is used to provide Apollo's reachable endpoint to an agent.
+	// ApolloEndpoint is used to provide Apollo's reachable endpoint to a sensor.
 	ApolloEndpoint = Setting(apolloEndpoint{})
-	// AdvertisedEndpoint is used to provide the Agent with the endpoint it
+	// AdvertisedEndpoint is used to provide the Sensor with the endpoint it
 	// should advertise to services that need to contact it, within its own cluster.
 	AdvertisedEndpoint = Setting(advertisedEndpoint{})
 	// Image is the image that should be launched for new benchmarks.
@@ -49,7 +49,7 @@ func (a advertisedEndpoint) EnvVar() string {
 func (a advertisedEndpoint) Setting() string {
 	ep := os.Getenv(a.EnvVar())
 	if len(ep) == 0 {
-		return "agent.apollo_net:443"
+		return "sensor.apollo_net:443"
 	}
 	return ep
 }

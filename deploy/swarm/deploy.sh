@@ -44,7 +44,7 @@ RESP=$(curl -X POST \
     -s \
     https://$APOLLO_ENDPOINT/v1/clusters)
 echo "Response: $RESP"
-echo "$RESP" | jq -r .deploymentYaml > agent-$CLUSTER_NAME-deploy.yaml
+echo "$RESP" | jq -r .deploymentYaml > sensor-$CLUSTER_NAME-deploy.yaml
 
 echo "Getting identity for new cluster"
 RESP=$(curl -X POST \
@@ -53,8 +53,8 @@ RESP=$(curl -X POST \
     -s \
     https://$APOLLO_ENDPOINT/v1/serviceIdentities)
 echo "Response: $RESP"
-echo "$RESP" | jq -r .certificate > agent-$CLUSTER_NAME-cert.pem
-echo "$RESP" | jq -r .privateKey > agent-$CLUSTER_NAME-key.pem
+echo "$RESP" | jq -r .certificate > sensor-$CLUSTER_NAME-cert.pem
+echo "$RESP" | jq -r .privateKey > sensor-$CLUSTER_NAME-key.pem
 
 echo "Getting CA certificate"
 RESP=$(curl \
@@ -64,4 +64,4 @@ RESP=$(curl \
 echo "Response: $RESP"
 echo "$RESP" | jq -r .authorities[0].certificate > central-ca.pem
 
-docker stack deploy -c agent-$CLUSTER_NAME-deploy.yaml apollo $FLAGS
+docker stack deploy -c sensor-$CLUSTER_NAME-deploy.yaml apollo $FLAGS
