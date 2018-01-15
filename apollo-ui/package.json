@@ -22,6 +22,7 @@
     "react-router-dom": "^4.2.2",
     "react-scripts": "1.0.17",
     "react-spinners": "^0.2.5",
+    "recharts": "^1.0.0-beta.9",
     "tailwindcss": "^0.3.0"
   },
   "scripts": {

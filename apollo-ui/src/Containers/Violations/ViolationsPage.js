@@ -15,10 +15,6 @@ class ViolationsContainer extends Component {
     constructor(props) {
         super(props);
 
-        this.params = {
-            stale: false
-        };
-
         this.pollTimeoutId = null;
 
         const setSeverityClass = (item) => {
@@ -81,10 +77,18 @@ class ViolationsContainer extends Component {
         this.getAlertsGroups();
     }
 
+    getQueryParams() {
+        // grab search string from location, and modify string for params
+        const { search } = this.props.location;
+        const params = queryString.parse(search);
+        return params;
+    }
+
     getAlertsGroups = () => {
-        const params = `?${queryString.stringify(this.params)}`;
         const { table } = this.state;
-        return axios.get(`/v1/alerts/groups${params}`).then((response) => {
+        return axios.get('/v1/alerts/groups', {
+            params: { stale: 'false', ...this.getQueryParams() }
+        }).then((response) => {
             if (!response.data.byCategory) return;
             let tableRows = [];
             response.data.byCategory.forEach((category) => {

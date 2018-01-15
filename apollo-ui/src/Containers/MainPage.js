@@ -9,6 +9,7 @@ import {
 import * as Icon from 'react-feather';
 
 import Logo from 'Components/icons/logo';
+import DashboardPage from 'Containers/Dashboard/DashboardPage';
 import IntegrationsPage from 'Containers/Integrations/IntegrationsPage';
 import ViolationsPage from 'Containers/Violations/ViolationsPage';
 
@@ -23,7 +24,7 @@ const Main = () => (
                     <nav>
                         <ul className="flex list-reset flex-1 uppercase text-sm tracking-wide">
                             <li>
-                                <NavLink to="/dashboard" className="flex border-l border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 text-white hover:text-primary-200 disabled items-center" activeClassName="bg-base-800">
+                                <NavLink to="/dashboard" className="flex border-l border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:text-primary-200 text-white items-center" activeClassName="bg-primary-800">
                                     <span>
                                         <Icon.BarChart className="h-4 w-4 mr-3" />
                                     </span>
@@ -54,9 +55,10 @@ const Main = () => (
                 <main className="overflow-y-scroll w-full">
                     {/* Redirects to a default path */}
                     <Switch>
+                        <Route exact path="/dashboard" component={DashboardPage} />
                         <Route exact path="/violations" component={ViolationsPage} />
                         <Route exact path="/integrations" component={IntegrationsPage} />
-                        <Redirect from="/" to="/violations" />
+                        <Redirect from="/" to="/dashboard" />
                     </Switch>
                 </main>
             </section>
