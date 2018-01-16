@@ -49,11 +49,13 @@ func (suite *BoltScannerTestSuite) TestScanners() {
 
 	// Test Add
 	for _, r := range scanners {
-		suite.NoError(suite.AddScanner(r))
+		id, err := suite.AddScanner(r)
+		suite.NoError(err)
+		suite.NotEmpty(id)
 	}
 
 	for _, r := range scanners {
-		got, exists, err := suite.GetScanner(r.Name)
+		got, exists, err := suite.GetScanner(r.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, r)
@@ -69,7 +71,7 @@ func (suite *BoltScannerTestSuite) TestScanners() {
 	}
 
 	for _, r := range scanners {
-		got, exists, err := suite.GetScanner(r.Name)
+		got, exists, err := suite.GetScanner(r.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, r)
@@ -77,11 +79,11 @@ func (suite *BoltScannerTestSuite) TestScanners() {
 
 	// Test Remove
 	for _, r := range scanners {
-		suite.NoError(suite.RemoveScanner(r.Name))
+		suite.NoError(suite.RemoveScanner(r.GetId()))
 	}
 
 	for _, r := range scanners {
-		_, exists, err := suite.GetScanner(r.Name)
+		_, exists, err := suite.GetScanner(r.GetId())
 		suite.NoError(err)
 		suite.False(exists)
 	}

@@ -13,14 +13,28 @@ import (
 func (d *Detector) UpdateRegistry(registry registries.ImageRegistry) {
 	d.registryMutex.Lock()
 	defer d.registryMutex.Unlock()
-	d.registries[registry.ProtoRegistry().Name] = registry
+	d.registries[registry.ProtoRegistry().GetId()] = registry
+}
+
+// RemoveRegistry removes a registry from image processors map of active registries
+func (d *Detector) RemoveRegistry(id string) {
+	d.registryMutex.Lock()
+	defer d.registryMutex.Unlock()
+	delete(d.registries, id)
 }
 
 // UpdateScanner updates image processors map of active scanners
 func (d *Detector) UpdateScanner(scanner scannerTypes.ImageScanner) {
 	d.scannerMutex.Lock()
 	defer d.scannerMutex.Unlock()
-	d.scanners[scanner.ProtoScanner().Name] = scanner
+	d.scanners[scanner.ProtoScanner().GetId()] = scanner
+}
+
+// RemoveScanner removes a scanner from image processors map of active scanners
+func (d *Detector) RemoveScanner(id string) {
+	d.scannerMutex.Lock()
+	defer d.scannerMutex.Unlock()
+	delete(d.scanners, id)
 }
 
 func (d *Detector) initializeRegistries() error {
@@ -34,7 +48,7 @@ func (d *Detector) initializeRegistries() error {
 		if err != nil {
 			return fmt.Errorf("error generating a registry from persisted registry data: %+v", err)
 		}
-		registryMap[protoRegistry.Name] = registry
+		registryMap[protoRegistry.GetId()] = registry
 	}
 	d.registries = registryMap
 	return nil
@@ -51,7 +65,7 @@ func (d *Detector) initializeScanners() error {
 		if err != nil {
 			return fmt.Errorf("error generating a registry from persisted registry data: %+v", err)
 		}
-		scannerMap[protoScanner.Name] = scanner
+		scannerMap[protoScanner.GetId()] = scanner
 	}
 	d.scanners = scannerMap
 	return nil

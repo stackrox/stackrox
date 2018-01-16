@@ -4,15 +4,16 @@ import (
 	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
 )
 
 const scannerBucket = "scanners"
 
-func (b *BoltDB) getScanner(name string, bucket *bolt.Bucket) (scanner *v1.Scanner, exists bool, err error) {
+func (b *BoltDB) getScanner(id string, bucket *bolt.Bucket) (scanner *v1.Scanner, exists bool, err error) {
 	scanner = new(v1.Scanner)
-	val := bucket.Get([]byte(name))
+	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
 	}
@@ -21,12 +22,12 @@ func (b *BoltDB) getScanner(name string, bucket *bolt.Bucket) (scanner *v1.Scann
 	return
 }
 
-// GetScanner returns scanner with given name.
-func (b *BoltDB) GetScanner(name string) (scanner *v1.Scanner, exists bool, err error) {
+// GetScanner returns scanner with given id.
+func (b *BoltDB) GetScanner(id string) (scanner *v1.Scanner, exists bool, err error) {
 	scanner = new(v1.Scanner)
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(scannerBucket))
-		scanner, exists, err = b.getScanner(name, bucket)
+		scanner, exists, err = b.getScanner(id, bucket)
 		return err
 	})
 	return
@@ -50,23 +51,25 @@ func (b *BoltDB) GetScanners(request *v1.GetScannersRequest) ([]*v1.Scanner, err
 	return scanners, err
 }
 
-// AddScanner upserts a scanner into bolt
-func (b *BoltDB) AddScanner(scanner *v1.Scanner) error {
-	return b.Update(func(tx *bolt.Tx) error {
+// AddScanner adds a scanner into bolt
+func (b *BoltDB) AddScanner(scanner *v1.Scanner) (string, error) {
+	scanner.Id = uuid.NewV4().String()
+	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(scannerBucket))
-		_, exists, err := b.getScanner(scanner.Name, bucket)
+		_, exists, err := b.getScanner(scanner.GetId(), bucket)
 		if err != nil {
 			return err
 		}
 		if exists {
-			return fmt.Errorf("Scanner %v cannot be added because it already exists", scanner.GetName())
+			return fmt.Errorf("Scanner %v (%v) cannot be added because it already exists", scanner.GetId(), scanner.GetName())
 		}
 		bytes, err := proto.Marshal(scanner)
 		if err != nil {
 			return err
 		}
-		return bucket.Put([]byte(scanner.Name), bytes)
+		return bucket.Put([]byte(scanner.GetId()), bytes)
 	})
+	return scanner.Id, err
 }
 
 // UpdateScanner upserts a scanner into bolt
@@ -77,14 +80,14 @@ func (b *BoltDB) UpdateScanner(scanner *v1.Scanner) error {
 		if err != nil {
 			return err
 		}
-		return b.Put([]byte(scanner.Name), bytes)
+		return b.Put([]byte(scanner.GetId()), bytes)
 	})
 }
 
 // RemoveScanner removes a scanner from bolt
-func (b *BoltDB) RemoveScanner(name string) error {
+func (b *BoltDB) RemoveScanner(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(scannerBucket))
-		return b.Delete([]byte(name))
+		return b.Delete([]byte(id))
 	})
 }

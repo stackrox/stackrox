@@ -24,15 +24,12 @@ func testNotifiers(t *testing.T, insertStorage, retrievalStorage db.NotifierStor
 
 	// Test Add
 	for _, b := range notifiers {
-		assert.NoError(t, insertStorage.AddNotifier(b))
+		id, err := insertStorage.AddNotifier(b)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, id)
 	}
-	// Verify that adding a notifier that exists does not deadlock and fails
 	for _, b := range notifiers {
-		assert.Error(t, insertStorage.AddNotifier(b))
-	}
-
-	for _, b := range notifiers {
-		got, exists, err := retrievalStorage.GetNotifier(b.Name)
+		got, exists, err := retrievalStorage.GetNotifier(b.GetId())
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, got, b)
@@ -48,7 +45,7 @@ func testNotifiers(t *testing.T, insertStorage, retrievalStorage db.NotifierStor
 	}
 
 	for _, b := range notifiers {
-		got, exists, err := retrievalStorage.GetNotifier(b.GetName())
+		got, exists, err := retrievalStorage.GetNotifier(b.GetId())
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, got, b)
@@ -56,11 +53,11 @@ func testNotifiers(t *testing.T, insertStorage, retrievalStorage db.NotifierStor
 
 	// Test Remove
 	for _, b := range notifiers {
-		assert.NoError(t, insertStorage.RemoveNotifier(b.GetName()))
+		assert.NoError(t, insertStorage.RemoveNotifier(b.GetId()))
 	}
 
 	for _, b := range notifiers {
-		_, exists, err := retrievalStorage.GetNotifier(b.GetName())
+		_, exists, err := retrievalStorage.GetNotifier(b.GetId())
 		assert.NoError(t, err)
 		assert.False(t, exists)
 	}
@@ -110,10 +107,12 @@ func TestNotifiersFiltering(t *testing.T) {
 
 	// Test Add
 	for _, r := range notifiers {
-		assert.NoError(t, storage.AddNotifier(r))
+		id, err := storage.AddNotifier(r)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, id)
 	}
 
 	actualNotifiers, err := storage.GetNotifiers(&v1.GetNotifiersRequest{})
 	assert.NoError(t, err)
-	assert.Equal(t, notifiers, actualNotifiers)
+	assert.ElementsMatch(t, notifiers, actualNotifiers)
 }

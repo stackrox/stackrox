@@ -4,15 +4,16 @@ import (
 	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
 )
 
 const clusterBucket = "clusters"
 
-func (b *BoltDB) getCluster(name string, bucket *bolt.Bucket) (cluster *v1.Cluster, exists bool, err error) {
+func (b *BoltDB) getCluster(id string, bucket *bolt.Bucket) (cluster *v1.Cluster, exists bool, err error) {
 	cluster = new(v1.Cluster)
-	val := bucket.Get([]byte(name))
+	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
 	}
@@ -21,11 +22,11 @@ func (b *BoltDB) getCluster(name string, bucket *bolt.Bucket) (cluster *v1.Clust
 	return
 }
 
-// GetCluster returns cluster with given name.
-func (b *BoltDB) GetCluster(name string) (cluster *v1.Cluster, exists bool, err error) {
+// GetCluster returns cluster with given id.
+func (b *BoltDB) GetCluster(id string) (cluster *v1.Cluster, exists bool, err error) {
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(clusterBucket))
-		cluster, exists, err = b.getCluster(name, bucket)
+		cluster, exists, err = b.getCluster(id, bucket)
 		return err
 	})
 	return
@@ -50,22 +51,24 @@ func (b *BoltDB) GetClusters() ([]*v1.Cluster, error) {
 }
 
 // AddCluster adds a cluster to bolt
-func (b *BoltDB) AddCluster(cluster *v1.Cluster) error {
-	return b.Update(func(tx *bolt.Tx) error {
+func (b *BoltDB) AddCluster(cluster *v1.Cluster) (string, error) {
+	cluster.Id = uuid.NewV4().String()
+	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(clusterBucket))
-		currCluster, exists, err := b.getCluster(cluster.Name, bucket)
+		currCluster, exists, err := b.getCluster(cluster.GetId(), bucket)
 		if err != nil {
 			return err
 		}
 		if exists {
-			return fmt.Errorf("Cluster %v cannot be added because it already exists", currCluster.GetName())
+			return fmt.Errorf("Cluster %v (%v) cannot be added because it already exists", currCluster.GetId(), currCluster.GetName())
 		}
 		bytes, err := proto.Marshal(cluster)
 		if err != nil {
 			return err
 		}
-		return bucket.Put([]byte(cluster.Name), bytes)
+		return bucket.Put([]byte(cluster.GetId()), bytes)
 	})
+	return cluster.Id, err
 }
 
 // UpdateCluster updates a cluster to bolt
@@ -76,14 +79,14 @@ func (b *BoltDB) UpdateCluster(cluster *v1.Cluster) error {
 		if err != nil {
 			return err
 		}
-		return b.Put([]byte(cluster.Name), bytes)
+		return b.Put([]byte(cluster.GetId()), bytes)
 	})
 }
 
 // RemoveCluster removes a cluster.
-func (b *BoltDB) RemoveCluster(name string) error {
+func (b *BoltDB) RemoveCluster(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(clusterBucket))
-		return b.Delete([]byte(name))
+		return b.Delete([]byte(id))
 	})
 }

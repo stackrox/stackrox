@@ -4,15 +4,16 @@ import (
 	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
 )
 
 const registryBucket = "registries"
 
-func (b *BoltDB) getRegistry(name string, bucket *bolt.Bucket) (registry *v1.Registry, exists bool, err error) {
+func (b *BoltDB) getRegistry(id string, bucket *bolt.Bucket) (registry *v1.Registry, exists bool, err error) {
 	registry = new(v1.Registry)
-	val := bucket.Get([]byte(name))
+	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
 	}
@@ -21,11 +22,11 @@ func (b *BoltDB) getRegistry(name string, bucket *bolt.Bucket) (registry *v1.Reg
 	return
 }
 
-// GetRegistry returns registry with given name.
-func (b *BoltDB) GetRegistry(name string) (registry *v1.Registry, exists bool, err error) {
+// GetRegistry returns registry with given id.
+func (b *BoltDB) GetRegistry(id string) (registry *v1.Registry, exists bool, err error) {
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(registryBucket))
-		registry, exists, err = b.getRegistry(name, bucket)
+		registry, exists, err = b.getRegistry(id, bucket)
 		return err
 	})
 	return
@@ -49,23 +50,25 @@ func (b *BoltDB) GetRegistries(request *v1.GetRegistriesRequest) ([]*v1.Registry
 	return registries, err
 }
 
-// AddRegistry upserts a registry into bolt
-func (b *BoltDB) AddRegistry(registry *v1.Registry) error {
-	return b.Update(func(tx *bolt.Tx) error {
+// AddRegistry adds a registry into bolt
+func (b *BoltDB) AddRegistry(registry *v1.Registry) (string, error) {
+	registry.Id = uuid.NewV4().String()
+	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(registryBucket))
-		_, exists, err := b.getRegistry(registry.Name, bucket)
+		_, exists, err := b.getRegistry(registry.GetId(), bucket)
 		if err != nil {
 			return err
 		}
 		if exists {
-			return fmt.Errorf("Registry %v cannot be added because it already exists", registry.GetName())
+			return fmt.Errorf("Registry %v (%v) cannot be added because it already exists", registry.GetId(), registry.GetName())
 		}
 		bytes, err := proto.Marshal(registry)
 		if err != nil {
 			return err
 		}
-		return bucket.Put([]byte(registry.Name), bytes)
+		return bucket.Put([]byte(registry.GetId()), bytes)
 	})
+	return registry.Id, err
 }
 
 // UpdateRegistry upserts a registry into bolt
@@ -76,14 +79,14 @@ func (b *BoltDB) UpdateRegistry(registry *v1.Registry) error {
 		if err != nil {
 			return err
 		}
-		return b.Put([]byte(registry.Name), bytes)
+		return b.Put([]byte(registry.GetId()), bytes)
 	})
 }
 
 // RemoveRegistry removes a registry from bolt
-func (b *BoltDB) RemoveRegistry(name string) error {
+func (b *BoltDB) RemoveRegistry(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(registryBucket))
-		return b.Delete([]byte(name))
+		return b.Delete([]byte(id))
 	})
 }

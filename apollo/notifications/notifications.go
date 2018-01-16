@@ -48,30 +48,33 @@ func (p *Processor) initializeNotifiers() error {
 		}
 		notifier, err := notifierCreator(protoNotifier)
 		if err != nil {
-			return fmt.Errorf("Error creating notifier with name %v and type %v: %v", protoNotifier.Name, protoNotifier.Type, err)
+			return fmt.Errorf("Error creating notifier with %v (%v) and type %v: %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.Type, err)
 		}
 		p.UpdateNotifier(notifier)
 	}
 	return nil
 }
 
+func (p *Processor) notify(alert *v1.Alert) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	for _, id := range alert.Policy.Notifiers {
+		notifier, exists := p.notifiers[id]
+		if !exists {
+			log.Errorf("Could not send notification to notifier %v (%v) for alert %v because it does not exist", id, notifier.ProtoNotifier().GetName(), alert.GetId())
+			continue
+		}
+		if err := notifier.Notify(alert); err != nil {
+			log.Errorf("Unable to send notification to %v (%v) for alert %v: %v", id, notifier.ProtoNotifier().GetName(), alert.GetId(), err)
+		}
+	}
+}
+
 // Start begins the notification processor and is blocking
 func (p *Processor) Start() {
 	for {
 		alert := <-p.alertChan
-
-		p.lock.Lock()
-		for _, name := range alert.Policy.Notifiers {
-			notifier, exists := p.notifiers[name]
-			if !exists {
-				log.Errorf("Could not send notification to notifier %v for alert %v because it does not exist", name, alert.GetId())
-				continue
-			}
-			if err := notifier.Notify(alert); err != nil {
-				log.Errorf("Unable to send notification to %v for alert %v: %v", name, alert.GetId(), err)
-			}
-		}
-		p.lock.Unlock()
+		p.notify(alert)
 	}
 }
 
@@ -81,15 +84,15 @@ func (p *Processor) Process(alert *v1.Alert) {
 }
 
 // RemoveNotifier removes the in memory copy of the specified notifier
-func (p *Processor) RemoveNotifier(name string) {
+func (p *Processor) RemoveNotifier(id string) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	delete(p.notifiers, name)
+	delete(p.notifiers, id)
 }
 
 // UpdateNotifier updates or adds the passed notifier into memory
 func (p *Processor) UpdateNotifier(notifier types.Notifier) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	p.notifiers[notifier.ProtoNotifier().GetName()] = notifier
+	p.notifiers[notifier.ProtoNotifier().GetId()] = notifier
 }

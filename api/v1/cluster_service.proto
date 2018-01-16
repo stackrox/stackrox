@@ -4,6 +4,7 @@ option go_package = "v1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "api/v1/common.proto";
 
 package v1;
 
@@ -16,12 +17,13 @@ enum ClusterType {
 }
 
 message Cluster {
-    string      name                 = 1;
-    ClusterType type                 = 2;
-    string      apollo_image         = 3;
-    string      central_api_endpoint = 4;
-    string      namespace            = 5;
-    string      image_pull_secret    = 6;
+    string      id                   = 1;
+    string      name                 = 2;
+    ClusterType type                 = 3;
+    string      apollo_image         = 4;
+    string      central_api_endpoint = 5;
+    string      namespace            = 6;
+    string      image_pull_secret    = 7;
 }
 
 message ClusterResponse {
@@ -33,10 +35,6 @@ message ClustersList {
     repeated Cluster clusters = 1;
 }
 
-message ClusterByName {
-    string name = 1;
-}
-
 service ClustersService {
 
     rpc GetClusters (google.protobuf.Empty) returns (ClustersList) {
@@ -45,9 +43,9 @@ service ClustersService {
         };
     }
 
-    rpc GetCluster (ClusterByName) returns (ClusterResponse) {
+    rpc GetCluster (ResourceByID) returns (ClusterResponse) {
         option (google.api.http) = {
-            get: "/v1/clusters/{name}"
+            get: "/v1/clusters/{id}"
         };
     }
 
@@ -60,14 +58,14 @@ service ClustersService {
 
     rpc PutCluster (Cluster) returns (ClusterResponse) {
         option (google.api.http) = {
-            put: "/v1/clusters/{name}"
+            put: "/v1/clusters/{id}"
             body: "*"
         };
     }
 
-    rpc DeleteCluster (ClusterByName) returns (google.protobuf.Empty) {
+    rpc DeleteCluster (ResourceByID) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            delete: "/v1/clusters/{name}"
+            delete: "/v1/clusters/{id}"
         };
     }
 }

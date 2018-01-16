@@ -22,14 +22,12 @@ func testRegistries(t *testing.T, insertStorage, retrievalStorage db.RegistrySto
 
 	// Test Add
 	for _, r := range registries {
-		assert.NoError(t, insertStorage.AddRegistry(r))
-	}
-	// Verify insertion multiple times does not deadlock and causes an error
-	for _, r := range registries {
-		assert.Error(t, insertStorage.AddRegistry(r))
+		id, err := insertStorage.AddRegistry(r)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, id)
 	}
 	for _, r := range registries {
-		got, exists, err := retrievalStorage.GetRegistry(r.Name)
+		got, exists, err := retrievalStorage.GetRegistry(r.GetId())
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, got, r)
@@ -45,7 +43,7 @@ func testRegistries(t *testing.T, insertStorage, retrievalStorage db.RegistrySto
 	}
 
 	for _, r := range registries {
-		got, exists, err := retrievalStorage.GetRegistry(r.Name)
+		got, exists, err := retrievalStorage.GetRegistry(r.GetId())
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, got, r)
@@ -53,11 +51,11 @@ func testRegistries(t *testing.T, insertStorage, retrievalStorage db.RegistrySto
 
 	// Test Remove
 	for _, r := range registries {
-		assert.NoError(t, insertStorage.RemoveRegistry(r.Name))
+		assert.NoError(t, insertStorage.RemoveRegistry(r.GetId()))
 	}
 
 	for _, r := range registries {
-		_, exists, err := retrievalStorage.GetRegistry(r.Name)
+		_, exists, err := retrievalStorage.GetRegistry(r.GetId())
 		assert.NoError(t, err)
 		assert.False(t, exists)
 	}
@@ -103,11 +101,13 @@ func TestRegistriesFiltering(t *testing.T) {
 
 	// Test Add
 	for _, r := range registries {
-		assert.NoError(t, storage.AddRegistry(r))
+		id, err := storage.AddRegistry(r)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, id)
 	}
 
 	actualRegistries, err := storage.GetRegistries(&v1.GetRegistriesRequest{})
 	assert.NoError(t, err)
-	assert.Equal(t, registries, actualRegistries)
+	assert.ElementsMatch(t, registries, actualRegistries)
 
 }

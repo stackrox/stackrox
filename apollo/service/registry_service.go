@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/apollo/detection"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -37,6 +39,21 @@ func (s *RegistryService) RegisterServiceServer(grpcServer *grpc.Server) {
 // RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
 func (s *RegistryService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
 	return v1.RegisterRegistryServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+}
+
+// GetRegistry retrieves the registry based on the id passed
+func (s *RegistryService) GetRegistry(ctx context.Context, request *v1.ResourceByID) (*v1.Registry, error) {
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Registry id must be provided")
+	}
+	registry, exists, err := s.storage.GetRegistry(request.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("Scanner %v not found", request.GetId()))
+	}
+	return registry, nil
 }
 
 // GetRegistries retrieves all registries that matches the request filters
@@ -76,15 +93,32 @@ func (s *RegistryService) PutRegistry(ctx context.Context, request *v1.Registry)
 }
 
 // PostRegistry inserts a new registry into the system if it doesn't already exist
-func (s *RegistryService) PostRegistry(ctx context.Context, request *v1.Registry) (*empty.Empty, error) {
+func (s *RegistryService) PostRegistry(ctx context.Context, request *v1.Registry) (*v1.Registry, error) {
+	if request.GetId() != "" {
+		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new registry")
+	}
 	// creates and validates the configuration
 	registry, err := registries.CreateRegistry(request)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if err := s.storage.AddRegistry(request); err != nil {
+	id, err := s.storage.AddRegistry(request)
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+	request.Id = id
 	s.detector.UpdateRegistry(registry)
+	return request, nil
+}
+
+// DeleteRegistry deletes a registry from the system
+func (s *RegistryService) DeleteRegistry(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Registry id must be provided")
+	}
+	if err := s.storage.RemoveRegistry(request.GetId()); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	s.detector.RemoveRegistry(request.GetId())
 	return &empty.Empty{}, nil
 }

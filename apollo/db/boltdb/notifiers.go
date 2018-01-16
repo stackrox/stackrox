@@ -4,15 +4,16 @@ import (
 	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
 )
 
 const notifierBucket = "notifiers"
 
-func (b *BoltDB) getNotifier(name string, bucket *bolt.Bucket) (notifier *v1.Notifier, exists bool, err error) {
+func (b *BoltDB) getNotifier(id string, bucket *bolt.Bucket) (notifier *v1.Notifier, exists bool, err error) {
 	notifier = new(v1.Notifier)
-	val := bucket.Get([]byte(name))
+	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
 	}
@@ -22,10 +23,10 @@ func (b *BoltDB) getNotifier(name string, bucket *bolt.Bucket) (notifier *v1.Not
 }
 
 // GetNotifier returns notifier with given id.
-func (b *BoltDB) GetNotifier(name string) (notifier *v1.Notifier, exists bool, err error) {
+func (b *BoltDB) GetNotifier(id string) (notifier *v1.Notifier, exists bool, err error) {
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(notifierBucket))
-		notifier, exists, err = b.getNotifier(name, bucket)
+		notifier, exists, err = b.getNotifier(id, bucket)
 		return err
 	})
 	return
@@ -50,22 +51,24 @@ func (b *BoltDB) GetNotifiers(request *v1.GetNotifiersRequest) ([]*v1.Notifier, 
 }
 
 // AddNotifier adds a notifier to bolt
-func (b *BoltDB) AddNotifier(notifier *v1.Notifier) error {
-	return b.Update(func(tx *bolt.Tx) error {
+func (b *BoltDB) AddNotifier(notifier *v1.Notifier) (string, error) {
+	notifier.Id = uuid.NewV4().String()
+	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(notifierBucket))
-		_, exists, err := b.getNotifier(notifier.Name, bucket)
+		_, exists, err := b.getNotifier(notifier.GetId(), bucket)
 		if err != nil {
 			return err
 		}
 		if exists {
-			return fmt.Errorf("Notifier %v cannot be added because it already exists", notifier.GetName())
+			return fmt.Errorf("Notifier %v (%v) cannot be added because it already exists", notifier.GetName(), notifier.GetId())
 		}
 		bytes, err := proto.Marshal(notifier)
 		if err != nil {
 			return err
 		}
-		return bucket.Put([]byte(notifier.Name), bytes)
+		return bucket.Put([]byte(notifier.GetId()), bytes)
 	})
+	return notifier.Id, err
 }
 
 // UpdateNotifier updates a notifier to bolt
@@ -76,14 +79,14 @@ func (b *BoltDB) UpdateNotifier(notifier *v1.Notifier) error {
 		if err != nil {
 			return err
 		}
-		return b.Put([]byte(notifier.Name), bytes)
+		return b.Put([]byte(notifier.GetId()), bytes)
 	})
 }
 
 // RemoveNotifier removes a notifier.
-func (b *BoltDB) RemoveNotifier(name string) error {
+func (b *BoltDB) RemoveNotifier(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(notifierBucket))
-		return b.Delete([]byte(name))
+		return b.Delete([]byte(id))
 	})
 }

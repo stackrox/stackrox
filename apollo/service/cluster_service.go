@@ -39,18 +39,22 @@ func (s *ClusterService) RegisterServiceHandlerFromEndpoint(ctx context.Context,
 
 // PostCluster creates a new cluster.
 func (s *ClusterService) PostCluster(ctx context.Context, request *v1.Cluster) (*v1.ClusterResponse, error) {
-	if request.GetName() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Name must be provided")
+	if request.GetId() != "" {
+		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new cluster")
 	}
-	err := s.storage.AddCluster(request)
+	id, err := s.storage.AddCluster(request)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
-	return s.getCluster(request.GetName())
+	request.Id = id
+	return s.getCluster(request.GetId())
 }
 
 // PutCluster creates a new cluster.
 func (s *ClusterService) PutCluster(ctx context.Context, request *v1.Cluster) (*v1.ClusterResponse, error) {
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Id must be provided")
+	}
 	if request.GetName() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Name must be provided")
 	}
@@ -58,19 +62,19 @@ func (s *ClusterService) PutCluster(ctx context.Context, request *v1.Cluster) (*
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return s.getCluster(request.GetName())
+	return s.getCluster(request.GetId())
 }
 
 // GetCluster returns the specified cluster.
-func (s *ClusterService) GetCluster(ctx context.Context, request *v1.ClusterByName) (*v1.ClusterResponse, error) {
-	if request.GetName() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Name must be provided")
+func (s *ClusterService) GetCluster(ctx context.Context, request *v1.ResourceByID) (*v1.ClusterResponse, error) {
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Id must be provided")
 	}
-	return s.getCluster(request.GetName())
+	return s.getCluster(request.GetId())
 }
 
-func (s *ClusterService) getCluster(name string) (*v1.ClusterResponse, error) {
-	cluster, ok, err := s.storage.GetCluster(name)
+func (s *ClusterService) getCluster(id string) (*v1.ClusterResponse, error) {
+	cluster, ok, err := s.storage.GetCluster(id)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not get cluster: %s", err)
 	}
@@ -99,11 +103,11 @@ func (s *ClusterService) GetClusters(ctx context.Context, _ *empty.Empty) (*v1.C
 }
 
 // DeleteCluster removes a cluster
-func (s *ClusterService) DeleteCluster(ctx context.Context, request *v1.ClusterByName) (*empty.Empty, error) {
-	if request.GetName() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Request must have a name")
+func (s *ClusterService) DeleteCluster(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Request must have a id")
 	}
-	err := s.storage.RemoveCluster(request.GetName())
+	err := s.storage.RemoveCluster(request.GetId())
 	if err != nil {
 		return &empty.Empty{}, status.Error(codes.Internal, err.Error())
 	}

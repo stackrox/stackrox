@@ -4,17 +4,19 @@ option go_package = "v1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "api/v1/common.proto";
 
 package v1;
 
 message Registry {
-    string name                 = 1;
-    string type                 = 2;
-    string endpoint             = 3;
-    string remote               = 4;
-    map<string, string> config  = 5;
+    string id                   = 1;
+    string name                 = 2;
+    string type                 = 3;
+    string endpoint             = 5;
+    string remote               = 6;
+    map<string, string> config  = 7;
     // If a list of clusters is provided, the integration will only be accessed from the specified clusters' sensors.
-    repeated string clusters    = 6;
+    repeated string clusters    = 8;
 }
 
 message GetRegistriesRequest {
@@ -28,13 +30,19 @@ message GetRegistriesResponse {
 
 service RegistryService {
 
+    rpc GetRegistry(ResourceByID) returns (Registry) {
+        option (google.api.http) = {
+            get: "/v1/registries/{id}"
+        };
+    }
+
     rpc GetRegistries(GetRegistriesRequest) returns (GetRegistriesResponse) {
         option (google.api.http) = {
             get: "/v1/registries"
         };
     }
 
-    rpc PostRegistry(Registry) returns (google.protobuf.Empty) {
+    rpc PostRegistry(Registry) returns (Registry) {
         option (google.api.http) = {
             post: "/v1/registries"
             body: "*"
@@ -43,8 +51,14 @@ service RegistryService {
 
     rpc PutRegistry(Registry) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            put: "/v1/registries/{name}"
+            put: "/v1/registries/{id}"
             body: "*"
+        };
+    }
+
+    rpc DeleteRegistry(ResourceByID) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/registries/{id}"
         };
     }
 

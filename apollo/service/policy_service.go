@@ -44,15 +44,17 @@ func (s *PolicyService) RegisterServiceHandlerFromEndpoint(ctx context.Context, 
 }
 
 // GetPolicy returns a policy by name.
-func (s *PolicyService) GetPolicy(ctx context.Context, request *v1.GetPolicyRequest) (*v1.Policy, error) {
-	policy, exists, err := s.storage.GetPolicy(request.GetName())
+func (s *PolicyService) GetPolicy(ctx context.Context, request *v1.ResourceByID) (*v1.Policy, error) {
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Policy id must be provided")
+	}
+	policy, exists, err := s.storage.GetPolicy(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "policy with name '%s' does not exist", request.GetName())
+		return nil, status.Errorf(codes.NotFound, "policy with id '%s' does not exist", request.GetId())
 	}
-
 	return policy, nil
 }
 
@@ -63,17 +65,22 @@ func (s *PolicyService) GetPolicies(ctx context.Context, request *v1.GetPolicies
 }
 
 // PostPolicy inserts a new policy into the system.
-func (s *PolicyService) PostPolicy(ctx context.Context, request *v1.Policy) (*empty.Empty, error) {
+func (s *PolicyService) PostPolicy(ctx context.Context, request *v1.Policy) (*v1.Policy, error) {
+	if request.GetId() != "" {
+		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new policy")
+	}
 	if err := validatePolicy(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if err := s.storage.AddPolicy(request); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+	id, err := s.storage.AddPolicy(request)
+	if err != nil {
+		return nil, err
 	}
+	request.Id = id
 	if err := s.detector.UpdatePolicy(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return &empty.Empty{}, nil
+	return request, nil
 }
 
 func validatePolicy(policy *v1.Policy) error {
@@ -104,13 +111,13 @@ func (s *PolicyService) PutPolicy(ctx context.Context, request *v1.Policy) (*emp
 }
 
 // DeletePolicy deletes an policy from the system.
-func (s *PolicyService) DeletePolicy(ctx context.Context, request *v1.DeletePolicyRequest) (*empty.Empty, error) {
-	if request.Name == "" {
-		return nil, status.Error(codes.InvalidArgument, "A policy name must be specified to delete a Policy")
+func (s *PolicyService) DeletePolicy(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "A policy id must be specified to delete a Policy")
 	}
-	if err := s.storage.RemovePolicy(request.GetName()); err != nil {
+	if err := s.storage.RemovePolicy(request.GetId()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	s.detector.RemovePolicy(request.GetName())
+	s.detector.RemovePolicy(request.GetId())
 	return &empty.Empty{}, nil
 }

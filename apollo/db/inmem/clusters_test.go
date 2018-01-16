@@ -23,16 +23,13 @@ func testClusters(t *testing.T, insertStorage, retrievalStorage db.ClusterStorag
 
 	// Test Add
 	for _, b := range clusters {
-		assert.NoError(t, insertStorage.AddCluster(b))
-	}
-
-	// Test that adding again fails
-	for _, b := range clusters {
-		assert.Error(t, insertStorage.AddCluster(b))
+		id, err := insertStorage.AddCluster(b)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, id)
 	}
 
 	for _, b := range clusters {
-		got, exists, err := retrievalStorage.GetCluster(b.Name)
+		got, exists, err := retrievalStorage.GetCluster(b.GetId())
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, got, b)
@@ -48,7 +45,7 @@ func testClusters(t *testing.T, insertStorage, retrievalStorage db.ClusterStorag
 	}
 
 	for _, b := range clusters {
-		got, exists, err := retrievalStorage.GetCluster(b.GetName())
+		got, exists, err := retrievalStorage.GetCluster(b.GetId())
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, got, b)
@@ -56,11 +53,11 @@ func testClusters(t *testing.T, insertStorage, retrievalStorage db.ClusterStorag
 
 	// Test Remove
 	for _, b := range clusters {
-		assert.NoError(t, insertStorage.RemoveCluster(b.GetName()))
+		assert.NoError(t, insertStorage.RemoveCluster(b.GetId()))
 	}
 
 	for _, b := range clusters {
-		_, exists, err := retrievalStorage.GetCluster(b.GetName())
+		_, exists, err := retrievalStorage.GetCluster(b.GetId())
 		assert.NoError(t, err)
 		assert.False(t, exists)
 	}
@@ -102,10 +99,12 @@ func TestClustersFiltering(t *testing.T) {
 
 	// Test Add
 	for _, r := range clusters {
-		assert.NoError(t, storage.AddCluster(r))
+		id, err := storage.AddCluster(r)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, id)
 	}
 
 	actualClusters, err := storage.GetClusters()
 	assert.NoError(t, err)
-	assert.Equal(t, clusters, actualClusters)
+	assert.ElementsMatch(t, clusters, actualClusters)
 }

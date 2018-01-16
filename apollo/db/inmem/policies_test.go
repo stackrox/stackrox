@@ -42,18 +42,15 @@ func (suite *PoliciesTestSuite) basicPoliciesTest(updateStore, retrievalStore db
 
 	// Test Add
 	for _, p := range expectedPolicies {
-		suite.NoError(updateStore.AddPolicy(p))
-	}
-
-	// Verify insertion multiple times does not deadlock and causes an error
-	for _, p := range expectedPolicies {
-		suite.Error(updateStore.AddPolicy(p))
+		id, err := updateStore.AddPolicy(p)
+		suite.NoError(err)
+		suite.NotEmpty(id)
 	}
 
 	// Verify add is persisted
 	policies, err := retrievalStore.GetPolicies(&v1.GetPoliciesRequest{})
 	suite.Nil(err)
-	suite.Equal(expectedPolicies, policies)
+	suite.ElementsMatch(expectedPolicies, policies)
 
 	// Verify update works
 	for _, p := range expectedPolicies {
@@ -62,11 +59,11 @@ func (suite *PoliciesTestSuite) basicPoliciesTest(updateStore, retrievalStore db
 	}
 	policies, err = retrievalStore.GetPolicies(&v1.GetPoliciesRequest{})
 	suite.NoError(err)
-	suite.Equal(expectedPolicies, policies)
+	suite.ElementsMatch(expectedPolicies, policies)
 
 	// Verify deletion is persisted
 	for _, p := range expectedPolicies {
-		suite.NoError(updateStore.RemovePolicy(p.Name))
+		suite.NoError(updateStore.RemovePolicy(p.GetId()))
 	}
 	policies, err = retrievalStore.GetPolicies(&v1.GetPoliciesRequest{})
 	suite.NoError(err)
@@ -85,27 +82,29 @@ func (suite *PoliciesTestSuite) TestGetPoliciesFilters() {
 	policy1 := &v1.Policy{
 		Name: "policy1",
 	}
-	err := suite.AddPolicy(policy1)
-	suite.Nil(err)
 	policy2 := &v1.Policy{
 		Name: "policy2",
 	}
-	err = suite.AddPolicy(policy2)
-	suite.Nil(err)
+	policies := []*v1.Policy{policy1, policy2}
+	for _, p := range policies {
+		id, err := suite.AddPolicy(p)
+		suite.NoError(err)
+		suite.NotEmpty(id)
+	}
 	// Get all policies
 	policies, err := suite.GetPolicies(&v1.GetPoliciesRequest{})
 	suite.Nil(err)
-	suite.Equal([]*v1.Policy{policy1, policy2}, policies)
+	suite.ElementsMatch([]*v1.Policy{policy1, policy2}, policies)
 
 	// Get by Name
 	policies, err = suite.GetPolicies(&v1.GetPoliciesRequest{Name: []string{policy1.Name}})
 	suite.Nil(err)
-	suite.Equal([]*v1.Policy{policy1}, policies)
+	suite.ElementsMatch([]*v1.Policy{policy1}, policies)
 
 	// Cleanup
-	err = suite.RemovePolicy(policy1.Name)
+	err = suite.RemovePolicy(policy1.GetId())
 	suite.Nil(err)
 
-	err = suite.RemovePolicy(policy2.Name)
+	err = suite.RemovePolicy(policy2.GetId())
 	suite.Nil(err)
 }

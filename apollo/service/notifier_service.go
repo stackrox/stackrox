@@ -41,44 +41,31 @@ func (s *NotifierService) RegisterServiceHandlerFromEndpoint(ctx context.Context
 }
 
 // GetNotifier retrieves all registries that matches the request filters
-func (s *NotifierService) GetNotifier(ctx context.Context, request *v1.GetNotifierRequest) (*v1.Notifier, error) {
-	if request == nil || request.Name == "" {
-		return nil, status.Error(codes.InvalidArgument, "Notifier name must be provided")
+func (s *NotifierService) GetNotifier(ctx context.Context, request *v1.ResourceByID) (*v1.Notifier, error) {
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Notifier id must be provided")
 	}
-	notifierWithSecret, exists, err := s.storage.GetNotifier(request.Name)
+	notifier, exists, err := s.storage.GetNotifier(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if !exists {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("Notifier %v not found", request.Name))
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("Notifier %v not found", request.GetId()))
 	}
-	notifierWithoutSecret := &v1.Notifier{
-		Name:       notifierWithSecret.Name,
-		Type:       notifierWithSecret.Type,
-		UiEndpoint: notifierWithSecret.UiEndpoint,
-		Enabled:    notifierWithSecret.Enabled,
-		Config:     secrets.ScrubSecrets(notifierWithSecret.Config),
-	}
-	return notifierWithoutSecret, nil
+	notifier.Config = secrets.ScrubSecrets(notifier.Config)
+	return notifier, nil
 }
 
 // GetNotifiers retrieves all notifiers that match the request filters
 func (s *NotifierService) GetNotifiers(ctx context.Context, request *v1.GetNotifiersRequest) (*v1.GetNotifiersResponse, error) {
-	notifiersWithSecrets, err := s.storage.GetNotifiers(request)
+	notifiers, err := s.storage.GetNotifiers(request)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	notifiersWithoutSecrets := make([]*v1.Notifier, 0, len(notifiersWithSecrets))
-	for _, notifierWithSecret := range notifiersWithSecrets {
-		notifiersWithoutSecrets = append(notifiersWithoutSecrets, &v1.Notifier{
-			Name:       notifierWithSecret.Name,
-			Type:       notifierWithSecret.Type,
-			UiEndpoint: notifierWithSecret.UiEndpoint,
-			Enabled:    notifierWithSecret.Enabled,
-			Config:     secrets.ScrubSecrets(notifierWithSecret.Config),
-		})
+	for _, n := range notifiers {
+		n.Config = secrets.ScrubSecrets(n.Config)
 	}
-	return &v1.GetNotifiersResponse{Notifiers: notifiersWithoutSecrets}, nil
+	return &v1.GetNotifiersResponse{Notifiers: notifiers}, nil
 }
 
 // PutNotifier updates a notifier in the system
@@ -99,7 +86,10 @@ func (s *NotifierService) PutNotifier(ctx context.Context, request *v1.Notifier)
 }
 
 // PostNotifier inserts a new registry into the system if it doesn't already exist
-func (s *NotifierService) PostNotifier(ctx context.Context, request *v1.Notifier) (*empty.Empty, error) {
+func (s *NotifierService) PostNotifier(ctx context.Context, request *v1.Notifier) (*v1.Notifier, error) {
+	if request.GetId() != "" {
+		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new notifier")
+	}
 	notifierCreator, ok := notifiers.Registry[request.Type]
 	if !ok {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("Notifier type %v is not a valid notifier type", request.Type))
@@ -108,21 +98,23 @@ func (s *NotifierService) PostNotifier(ctx context.Context, request *v1.Notifier
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if err := s.storage.AddNotifier(request); err != nil {
+	id, err := s.storage.AddNotifier(request)
+	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	request.Id = id
 	s.processor.UpdateNotifier(notifier)
-	return &empty.Empty{}, nil
+	return request, nil
 }
 
 // DeleteNotifier deletes a notifier from the system
-func (s *NotifierService) DeleteNotifier(ctx context.Context, request *v1.DeleteNotifierRequest) (*empty.Empty, error) {
-	if request == nil || request.Name == "" {
-		return nil, status.Error(codes.InvalidArgument, "Notifier name must be provided")
+func (s *NotifierService) DeleteNotifier(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Notifier id must be provided")
 	}
-	if err := s.storage.RemoveNotifier(request.Name); err != nil {
+	if err := s.storage.RemoveNotifier(request.GetId()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	s.processor.RemoveNotifier(request.Name)
+	s.processor.RemoveNotifier(request.GetId())
 	return &empty.Empty{}, nil
 }

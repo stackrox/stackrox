@@ -4,15 +4,17 @@ option go_package = "v1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "api/v1/common.proto";
 
 package v1;
 
 message Notifier {
-    string name                = 1;
-    string type                = 2;
-    string ui_endpoint         = 3;
-    bool enabled               = 4;
-    map<string, string> config = 5;
+    string id                  = 1;
+    string name                = 2;
+    string type                = 3;
+    string ui_endpoint         = 4;
+    bool enabled               = 5;
+    map<string, string> config = 6;
 }
 
 message GetNotifiersRequest {
@@ -24,19 +26,11 @@ message GetNotifiersResponse {
     repeated Notifier notifiers = 1;
 }
 
-message GetNotifierRequest {
-    string name = 1;
-}
-
-message DeleteNotifierRequest {
-    string name = 1;
-}
-
 service NotifierService {
 
-    rpc GetNotifier(GetNotifierRequest) returns (Notifier) {
+    rpc GetNotifier(ResourceByID) returns (Notifier) {
         option (google.api.http) = {
-            get: "/v1/notifiers/{name}"
+            get: "/v1/notifiers/{id}"
         };
     }
 
@@ -48,21 +42,21 @@ service NotifierService {
 
     rpc PutNotifier(Notifier) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            put: "/v1/notifiers/{name}"
+            put: "/v1/notifiers/{id}"
             body: "*"
         };
     }
 
-    rpc PostNotifier(Notifier) returns (google.protobuf.Empty) {
+    rpc PostNotifier(Notifier) returns (Notifier) {
         option (google.api.http) = {
             post: "/v1/notifiers"
             body: "*"
         };
     }
 
-    rpc DeleteNotifier(DeleteNotifierRequest) returns (google.protobuf.Empty) {
+    rpc DeleteNotifier(ResourceByID) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            delete: "/v1/notifiers/{name}"
+            delete: "/v1/notifiers/{id}"
         };
     }
 

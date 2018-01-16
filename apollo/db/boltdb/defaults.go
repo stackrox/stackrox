@@ -29,7 +29,7 @@ func (b *BoltDB) loadDefaultPolicies() error {
 	}
 
 	for _, p := range policies {
-		if err := b.AddPolicy(p); err != nil {
+		if _, err := b.AddPolicy(p); err != nil {
 			return err
 		}
 	}

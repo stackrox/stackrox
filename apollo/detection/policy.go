@@ -29,7 +29,7 @@ func (d *Detector) initializePolicies() error {
 
 	for _, policy := range policies {
 		if err := d.addPolicy(policy); err != nil {
-			return fmt.Errorf("policy %s: %s", policy.GetName(), err)
+			return fmt.Errorf("policy %s: %s", policy.GetId(), err)
 		}
 	}
 	return nil
@@ -41,7 +41,7 @@ func (d *Detector) addPolicy(policy *v1.Policy) (err error) {
 		return err
 	}
 
-	d.policies[policy.GetName()] = p
+	d.policies[policy.GetId()] = p
 	return
 }
 
@@ -73,11 +73,11 @@ func (d *Detector) UpdatePolicy(policy *v1.Policy) error {
 	return d.addPolicy(policy)
 }
 
-// RemovePolicy removes the policy specified by name in a threadsafe manner.
-func (d *Detector) RemovePolicy(name string) {
+// RemovePolicy removes the policy specified by id in a threadsafe manner.
+func (d *Detector) RemovePolicy(id string) {
 	d.policyMutex.Lock()
 	defer d.policyMutex.Unlock()
-	delete(d.policies, name)
+	delete(d.policies, id)
 }
 
 func (d *Detector) matchPolicy(deployment *v1.Deployment, p *policyWrapper) *v1.Alert {

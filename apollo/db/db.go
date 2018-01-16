@@ -65,11 +65,11 @@ type BenchmarkTriggerStorage interface {
 
 // ClusterStorage provides storage functionality for clusters.
 type ClusterStorage interface {
-	GetCluster(name string) (*v1.Cluster, bool, error)
+	GetCluster(id string) (*v1.Cluster, bool, error)
 	GetClusters() ([]*v1.Cluster, error)
-	AddCluster(cluster *v1.Cluster) error
+	AddCluster(cluster *v1.Cluster) (string, error)
 	UpdateCluster(cluster *v1.Cluster) error
-	RemoveCluster(name string) error
+	RemoveCluster(id string) error
 }
 
 // DeploymentStorage provides storage functionality for deployments.
@@ -91,38 +91,38 @@ type ImageStorage interface {
 
 // NotifierStorage provide storage functionality for notifiers
 type NotifierStorage interface {
-	GetNotifier(name string) (*v1.Notifier, bool, error)
+	GetNotifier(id string) (*v1.Notifier, bool, error)
 	GetNotifiers(request *v1.GetNotifiersRequest) ([]*v1.Notifier, error)
-	AddNotifier(notifier *v1.Notifier) error
+	AddNotifier(notifier *v1.Notifier) (string, error)
 	UpdateNotifier(notifier *v1.Notifier) error
-	RemoveNotifier(name string) error
+	RemoveNotifier(id string) error
 }
 
 // PolicyStorage provides storage functionality for policies.
 type PolicyStorage interface {
-	GetPolicy(name string) (*v1.Policy, bool, error)
+	GetPolicy(id string) (*v1.Policy, bool, error)
 	GetPolicies(request *v1.GetPoliciesRequest) ([]*v1.Policy, error)
-	AddPolicy(*v1.Policy) error
+	AddPolicy(*v1.Policy) (string, error)
 	UpdatePolicy(*v1.Policy) error
-	RemovePolicy(string) error
+	RemovePolicy(id string) error
 }
 
 // RegistryStorage provide storage functionality for registries.
 type RegistryStorage interface {
-	GetRegistry(name string) (*v1.Registry, bool, error)
+	GetRegistry(id string) (*v1.Registry, bool, error)
 	GetRegistries(request *v1.GetRegistriesRequest) ([]*v1.Registry, error)
-	AddRegistry(registry *v1.Registry) error
+	AddRegistry(registry *v1.Registry) (string, error)
 	UpdateRegistry(registry *v1.Registry) error
-	RemoveRegistry(name string) error
+	RemoveRegistry(id string) error
 }
 
 // ScannerStorage provide storage functionality for scanner.
 type ScannerStorage interface {
-	GetScanner(name string) (*v1.Scanner, bool, error)
+	GetScanner(id string) (*v1.Scanner, bool, error)
 	GetScanners(request *v1.GetScannersRequest) ([]*v1.Scanner, error)
-	AddScanner(scanner *v1.Scanner) error
+	AddScanner(scanner *v1.Scanner) (string, error)
 	UpdateScanner(scanner *v1.Scanner) error
-	RemoveScanner(name string) error
+	RemoveScanner(id string) error
 }
 
 // ServiceIdentityStorage provides storage functionality for service identities.

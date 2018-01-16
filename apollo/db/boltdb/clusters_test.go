@@ -49,11 +49,13 @@ func (suite *BoltClusterTestSuite) TestClusters() {
 
 	// Test Add
 	for _, b := range clusters {
-		suite.NoError(suite.AddCluster(b))
+		id, err := suite.AddCluster(b)
+		suite.NoError(err)
+		suite.NotEmpty(id)
 	}
 
 	for _, b := range clusters {
-		got, exists, err := suite.GetCluster(b.Name)
+		got, exists, err := suite.GetCluster(b.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, b)
@@ -69,7 +71,7 @@ func (suite *BoltClusterTestSuite) TestClusters() {
 	}
 
 	for _, b := range clusters {
-		got, exists, err := suite.GetCluster(b.GetName())
+		got, exists, err := suite.GetCluster(b.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, b)
@@ -77,11 +79,11 @@ func (suite *BoltClusterTestSuite) TestClusters() {
 
 	// Test Remove
 	for _, b := range clusters {
-		suite.NoError(suite.RemoveCluster(b.GetName()))
+		suite.NoError(suite.RemoveCluster(b.GetId()))
 	}
 
 	for _, b := range clusters {
-		_, exists, err := suite.GetCluster(b.GetName())
+		_, exists, err := suite.GetCluster(b.GetId())
 		suite.NoError(err)
 		suite.False(exists)
 	}

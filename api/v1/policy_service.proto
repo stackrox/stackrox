@@ -12,11 +12,12 @@ import "api/v1/privilege_policy.proto";
 package v1;
 
 message Policy {
-    string name                                 = 1;
-    Severity severity                           = 2;
-    string description                          = 3;
-    bool disabled                               = 4;
-    repeated Policy_Category categories         = 5;
+    string id                                   = 1;
+    string name                                 = 2;
+    Severity severity                           = 3;
+    string description                          = 4;
+    bool disabled                               = 5;
+    repeated Policy_Category categories         = 6;
 
     message Scope {
         string cluster      = 1;
@@ -27,13 +28,13 @@ message Policy {
         }
         Label label         = 3;
     }
-    repeated Scope scope                        = 6;
+    repeated Scope scope                        = 7;
 
-    repeated string notifiers                   = 7;
+    repeated string notifiers                   = 8;
 
-    ImagePolicy image_policy                    = 8;
-    PrivilegePolicy privilege_policy            = 9;
-    ConfigurationPolicy configuration_policy    = 10;
+    ImagePolicy image_policy                    = 9;
+    PrivilegePolicy privilege_policy            = 10;
+    ConfigurationPolicy configuration_policy    = 11;
 }
 
 enum Policy_Category {
@@ -43,19 +44,11 @@ enum Policy_Category {
     CONTAINER_CONFIGURATION     = 3;
 }
 
-message GetPolicyRequest {
-    string name = 1;
-}
-
 message GetPoliciesRequest {
     repeated string name                = 1;
     repeated Policy_Category category   = 2;
     repeated Severity severity          = 3;
     repeated bool disabled              = 4;
-}
-
-message DeletePolicyRequest {
-    string name = 1;
 }
 
 message PoliciesResponse {
@@ -65,9 +58,9 @@ message PoliciesResponse {
 
 service PolicyService {
 
-    rpc GetPolicy (GetPolicyRequest) returns (Policy) {
+    rpc GetPolicy (ResourceByID) returns (Policy) {
         option (google.api.http) = {
-            get: "/v1/policies/{name}"
+            get: "/v1/policies/{id}"
         };
     }
 
@@ -77,7 +70,7 @@ service PolicyService {
         };
     }
 
-    rpc PostPolicy (Policy) returns (google.protobuf.Empty) {
+    rpc PostPolicy (Policy) returns (Policy) {
         option (google.api.http) = {
             post: "/v1/policies"
             body: "*"
@@ -86,14 +79,14 @@ service PolicyService {
 
     rpc PutPolicy (Policy) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            put: "/v1/policies/{name}"
+            put: "/v1/policies/{id}"
             body: "*"
         };
     }
 
-    rpc DeletePolicy (DeletePolicyRequest) returns (google.protobuf.Empty) {
+    rpc DeletePolicy (ResourceByID) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            delete: "/v1/policies/{name}"
+            delete: "/v1/policies/{id}"
         };
     }
 

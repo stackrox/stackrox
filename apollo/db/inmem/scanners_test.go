@@ -22,15 +22,13 @@ func testScanners(t *testing.T, insertStorage, retrievalStorage db.ScannerStorag
 
 	// Test Add
 	for _, r := range scanners {
-		assert.NoError(t, insertStorage.AddScanner(r))
-	}
-	// Verify insertion multiple times does not deadlock and causes an error
-	for _, r := range scanners {
-		assert.Error(t, insertStorage.AddScanner(r))
+		id, err := insertStorage.AddScanner(r)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, id)
 	}
 
 	for _, r := range scanners {
-		got, exists, err := retrievalStorage.GetScanner(r.Name)
+		got, exists, err := retrievalStorage.GetScanner(r.GetId())
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, got, r)
@@ -46,7 +44,7 @@ func testScanners(t *testing.T, insertStorage, retrievalStorage db.ScannerStorag
 	}
 
 	for _, r := range scanners {
-		got, exists, err := retrievalStorage.GetScanner(r.Name)
+		got, exists, err := retrievalStorage.GetScanner(r.GetId())
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, got, r)
@@ -54,11 +52,11 @@ func testScanners(t *testing.T, insertStorage, retrievalStorage db.ScannerStorag
 
 	// Test Remove
 	for _, r := range scanners {
-		assert.NoError(t, insertStorage.RemoveScanner(r.Name))
+		assert.NoError(t, insertStorage.RemoveScanner(r.GetId()))
 	}
 
 	for _, r := range scanners {
-		_, exists, err := retrievalStorage.GetScanner(r.Name)
+		_, exists, err := retrievalStorage.GetScanner(r.GetId())
 		assert.NoError(t, err)
 		assert.False(t, exists)
 	}
@@ -104,10 +102,12 @@ func TestScannersFiltering(t *testing.T) {
 
 	// Test Add
 	for _, r := range scanners {
-		assert.NoError(t, storage.AddScanner(r))
+		id, err := storage.AddScanner(r)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, id)
 	}
 
 	actualScanners, err := storage.GetScanners(&v1.GetScannersRequest{})
 	assert.NoError(t, err)
-	assert.Equal(t, scanners, actualScanners)
+	assert.ElementsMatch(t, scanners, actualScanners)
 }

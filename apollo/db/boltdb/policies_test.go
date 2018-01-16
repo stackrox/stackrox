@@ -40,30 +40,35 @@ func (suite *BoltPoliciesTestSuite) TestPolicies() {
 		Name:     "policy1",
 		Severity: v1.Severity_LOW_SEVERITY,
 	}
-	err := suite.AddPolicy(policy1)
-	suite.Nil(err)
-
 	policy2 := &v1.Policy{
 		Name:     "policy2",
 		Severity: v1.Severity_HIGH_SEVERITY,
 	}
-	err = suite.AddPolicy(policy2)
-	suite.Nil(err)
+	policies := []*v1.Policy{policy1, policy2}
+	for _, p := range policies {
+		id, err := suite.AddPolicy(p)
+		suite.NoError(err)
+		suite.NotEmpty(id)
+	}
+
 	// Get all alerts
-	policies, err := suite.GetPolicies(&v1.GetPoliciesRequest{})
+	retrievedPolicies, err := suite.GetPolicies(&v1.GetPoliciesRequest{})
 	suite.Nil(err)
-	suite.Equal([]*v1.Policy{policy1, policy2}, policies)
+	suite.ElementsMatch(policies, retrievedPolicies)
 
-	policy1.Severity = v1.Severity_HIGH_SEVERITY
-	err = suite.UpdatePolicy(policy1)
+	for _, p := range policies {
+		p.Severity = v1.Severity_MEDIUM_SEVERITY
+		suite.NoError(suite.UpdatePolicy(p))
+	}
+	retrievedPolicies, err = suite.GetPolicies(&v1.GetPoliciesRequest{})
 	suite.Nil(err)
-	policies, err = suite.GetPolicies(&v1.GetPoliciesRequest{})
-	suite.Nil(err)
-	suite.Equal([]*v1.Policy{policy1, policy2}, policies)
+	suite.ElementsMatch(policies, retrievedPolicies)
 
-	err = suite.RemovePolicy(policy1.Name)
-	suite.Nil(err)
-	policies, err = suite.GetPolicies(&v1.GetPoliciesRequest{})
-	suite.Nil(err)
-	suite.Equal([]*v1.Policy{policy2}, policies)
+	for _, p := range policies {
+		suite.NoError(suite.RemovePolicy(p.GetId()))
+	}
+
+	retrievedPolicies, err = suite.GetPolicies(&v1.GetPoliciesRequest{})
+	suite.NoError(err)
+	suite.Empty(retrievedPolicies)
 }

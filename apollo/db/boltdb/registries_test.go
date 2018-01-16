@@ -49,11 +49,13 @@ func (suite *BoltRegistryTestSuite) TestDeployments() {
 
 	// Test Add
 	for _, r := range registries {
-		suite.NoError(suite.AddRegistry(r))
+		id, err := suite.AddRegistry(r)
+		suite.NoError(err)
+		suite.NotEmpty(id)
 	}
 
 	for _, r := range registries {
-		got, exists, err := suite.GetRegistry(r.Name)
+		got, exists, err := suite.GetRegistry(r.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, r)
@@ -69,7 +71,7 @@ func (suite *BoltRegistryTestSuite) TestDeployments() {
 	}
 
 	for _, r := range registries {
-		got, exists, err := suite.GetRegistry(r.Name)
+		got, exists, err := suite.GetRegistry(r.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, r)
@@ -77,11 +79,11 @@ func (suite *BoltRegistryTestSuite) TestDeployments() {
 
 	// Test Remove
 	for _, r := range registries {
-		suite.NoError(suite.RemoveRegistry(r.Name))
+		suite.NoError(suite.RemoveRegistry(r.GetId()))
 	}
 
 	for _, r := range registries {
-		_, exists, err := suite.GetRegistry(r.Name)
+		_, exists, err := suite.GetRegistry(r.GetId())
 		suite.NoError(err)
 		suite.False(exists)
 	}

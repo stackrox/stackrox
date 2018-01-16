@@ -51,11 +51,13 @@ func (suite *BoltNotifierTestSuite) TestNotifiers() {
 
 	// Test Add
 	for _, b := range notifiers {
-		suite.NoError(suite.AddNotifier(b))
+		id, err := suite.AddNotifier(b)
+		suite.NoError(err)
+		suite.NotEmpty(id)
 	}
 
 	for _, b := range notifiers {
-		got, exists, err := suite.GetNotifier(b.Name)
+		got, exists, err := suite.GetNotifier(b.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, b)
@@ -68,7 +70,7 @@ func (suite *BoltNotifierTestSuite) TestNotifiers() {
 	}
 
 	for _, b := range notifiers {
-		got, exists, err := suite.GetNotifier(b.GetName())
+		got, exists, err := suite.GetNotifier(b.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, b)
@@ -76,11 +78,11 @@ func (suite *BoltNotifierTestSuite) TestNotifiers() {
 
 	// Test Remove
 	for _, b := range notifiers {
-		suite.NoError(suite.RemoveNotifier(b.GetName()))
+		suite.NoError(suite.RemoveNotifier(b.GetId()))
 	}
 
 	for _, b := range notifiers {
-		_, exists, err := suite.GetNotifier(b.GetName())
+		_, exists, err := suite.GetNotifier(b.GetId())
 		suite.NoError(err)
 		suite.False(exists)
 	}
