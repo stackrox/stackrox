@@ -36,12 +36,13 @@ per orchestrator.
 **WARNING:** You are looking at the tip of the development tree.
 If you need to create a customer demo, use the latest release version.
 
-### Docker Swarm
 The deploy script will:
 
  1. Launch Central.
  1. Create a cluster configuration and a service identity, then
  deploy the cluster sensor using that configuration and those credentials.
+
+### Docker Swarm
 
 ```
 ./deploy/swarm/deploy.sh
@@ -92,11 +93,15 @@ roxc system setup --platform=swarm \
 ```
 
 ### Kubernetes
-The Kubernetes deployment does not yet support mutual TLS, so the deployment is
-a little easier:
+Set your Docker image-pull credentials as `DOCKER_USER` and `DOCKER_PASS`, then run:
 
 ```
-kubectl create -f deploy/k8s/deploy.yaml
+./deploy/k8s/deploy.sh
 ```
 
-Note that you likely need to configure image-pull secrets first.
+The script will access the UI using a local port-forward, but you can
+optionally create a LoadBalancer service to access Central instead.
+
+```
+kubectl create -f deploy/k8s/lb.yaml
+```

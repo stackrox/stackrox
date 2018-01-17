@@ -11,10 +11,10 @@ services:
         mode: ingress
     secrets:
       - source: apollo_private_key
-        target: ca-key.pem
+        target: stackrox.io/ca-key.pem
         mode: 400
       - source: apollo_certificate
-        target: ca-cert.pem
+        target: stackrox.io/ca.pem
         mode: 400
 networks:
   net:

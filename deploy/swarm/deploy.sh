@@ -1,67 +1,34 @@
 #!/usr/bin/env bash
-
 set -e
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+SWARM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+COMMON_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/../common && pwd)"
 
-if [ ! -f "./ca-key.pem" ]; then
-    echo "Generating CA key..."
-    echo " + Getting cfssl..."
-    go get -u github.com/cloudflare/cfssl/cmd/...
-    echo " + Generating keypair..."
-    echo '{"CN":"CA","key":{"algo":"ecdsa"}}' | cfssl gencert -initca - | cfssljson -bare ca -
-fi
+source $COMMON_DIR/deploy.sh
+
+export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-apollo.apollo_net:443}"
+echo "In-cluster Apollo endpoint set to $CLUSTER_API_ENDPOINT"
 
 FLAGS=""
 if [ "$REGISTRY_AUTH" = "true" ]; then
-    FLAGS += "--with-registry-auth "
+    FLAGS="--with-registry-auth"
 fi
 
-APOLLO_ENDPOINT="${APOLLO_ENDPOINT:-localhost:8080}"
-echo "Apollo endpoint set to $APOLLO_ENDPOINT"
-
-APOLLO_IMAGE_TAG="${APOLLO_IMAGE_TAG:-latest}"
-echo "Apollo image tag set to $APOLLO_IMAGE_TAG"
+generate_ca "$SWARM_DIR"
 
 echo "Deploying Central..."
-docker stack deploy -c $DIR/central.yaml apollo $FLAGS
+docker stack deploy -c "$SWARM_DIR/central.yaml" apollo $FLAGS
+echo
 
-echo -n "Waiting for Central to respond."
-set +e
-until $(curl --output /dev/null --silent --fail -k https://$APOLLO_ENDPOINT/v1/ping); do
-    echo -n '.'
-    sleep 1
-done
-set -e
-echo ""
+wait_for_central "$LOCAL_API_ENDPOINT"
+CLUSTER="remote"
+create_cluster "$LOCAL_API_ENDPOINT" "$CLUSTER" SWARM_CLUSTER "$APOLLO_IMAGE" "$CLUSTER_API_ENDPOINT" "$SWARM_DIR"
+get_identity "$LOCAL_API_ENDPOINT" "$CLUSTER" "$SWARM_DIR"
+get_authority "$LOCAL_API_ENDPOINT" "$SWARM_DIR"
 
-echo "Creating a new cluster"
-CLUSTER_NAME=remote
-export CLUSTER="{\"name\": \"$CLUSTER_NAME\", \"type\": \"SWARM_CLUSTER\", \"apollo_image\": \"stackrox/apollo:$APOLLO_IMAGE_TAG\", \"central_api_endpoint\": \"$APOLLO_ENDPOINT\"}"
-RESP=$(curl -X POST \
-    -d "$CLUSTER" \
-    -k \
-    -s \
-    https://$APOLLO_ENDPOINT/v1/clusters)
-echo "Response: $RESP"
-echo "$RESP" | jq -r .deploymentYaml > sensor-$CLUSTER_NAME-deploy.yaml
+echo "Deploying Sensor..."
+docker stack deploy -c "$SWARM_DIR/sensor-$CLUSTER_NAME-deploy.yaml" apollo $FLAGS
+echo
 
-echo "Getting identity for new cluster"
-RESP=$(curl -X POST \
-    -d '{"name": "remote", "type": "SENSOR_SERVICE"}' \
-    -k \
-    -s \
-    https://$APOLLO_ENDPOINT/v1/serviceIdentities)
-echo "Response: $RESP"
-echo "$RESP" | jq -r .certificate > sensor-$CLUSTER_NAME-cert.pem
-echo "$RESP" | jq -r .privateKey > sensor-$CLUSTER_NAME-key.pem
-
-echo "Getting CA certificate"
-RESP=$(curl \
-    -k \
-    -s \
-    https://$APOLLO_ENDPOINT/v1/authorities)
-echo "Response: $RESP"
-echo "$RESP" | jq -r .authorities[0].certificate > central-ca.pem
-
-docker stack deploy -c sensor-$CLUSTER_NAME-deploy.yaml apollo $FLAGS
+echo "Successfully deployed!"
+echo "Access the UI at: https://$LOCAL_API_ENDPOINT"

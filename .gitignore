@@ -6,6 +6,9 @@
 *.csr
 *.pem
 
+# Deployment
+sensor-*.yaml
+
 # Uncommitted code
 vendor/
 api/generated

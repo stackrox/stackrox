@@ -189,13 +189,13 @@ services:
       - "{{.ImageEnv}}={{.Image}}"
     secrets:
       - source: sensor_certificate
-        target: cert.pem
+        target: stackrox.io/cert.pem
         mode: 400
       - source: sensor_private_key
-        target: key.pem
+        target: stackrox.io/key.pem
         mode: 400
       - source: central_certificate
-        target: ca-cert.pem
+        target: stackrox.io/ca.pem
         mode: 400
 networks:
   net:
@@ -259,9 +259,38 @@ spec:
         imagePullPolicy: Always
         name: sensor
         command:
-          - kubernetes-sensor
+        - kubernetes-sensor
+        volumeMounts:
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/
+          readOnly: true
       imagePullSecrets:
-      - name: {{.ImagePullSecret}}`)
+      - name: {{.ImagePullSecret}}
+      volumes:
+      - name: certs
+        secret:
+          secretName: sensor-tls
+          items:
+          - key: sensor-{{.ClusterName}}-cert.pem
+            path: cert.pem
+          - key: sensor-{{.ClusterName}}-key.pem
+            path: key.pem
+          - key: central-ca.pem
+            path: ca.pem
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sensor
+  namespace: {{.Namespace}}
+spec:
+  ports:
+  - name: https
+    port: 443
+    targetPort: 443
+  selector:
+    app: sensor
+  type: ClusterIP`)
 
 	if err != nil {
 		panic(err)

@@ -23,14 +23,14 @@ import (
 
 const (
 	// caCertFilePath is where the certificate is stored.
-	caCertFilePath = "/run/secrets/ca-cert.pem"
+	caCertFilePath = "/run/secrets/stackrox.io/ca.pem"
 	// caKeyFilePath is where the key is stored.
-	caKeyFilePath = "/run/secrets/ca-key.pem"
+	caKeyFilePath = "/run/secrets/stackrox.io/ca-key.pem"
 
 	// certFilePath is where the certificate is stored.
-	certFilePath = "/run/secrets/cert.pem"
+	certFilePath = "/run/secrets/stackrox.io/cert.pem"
 	// keyFilePath is where the key is stored.
-	keyFilePath = "/run/secrets/key.pem"
+	keyFilePath = "/run/secrets/stackrox.io/key.pem"
 
 	// To account for clock skew, set certificates to be valid some time in the past.
 	beforeGracePeriod = 1 * time.Hour
