@@ -8,7 +8,6 @@ import (
 	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
@@ -65,6 +64,6 @@ func initializeSensor() *sensor.Sensor {
 }
 
 func registerAPIServices(a *sensor.Sensor) {
-	a.Server.Register(benchmarks.NewBenchmarkRelayService(benchmarks.NewLRURelayer(v1.NewBenchmarkResultsServiceClient(a.Conn), a.ClusterID)))
+	a.Server.Register(benchmarks.NewBenchmarkRelayService(benchmarks.NewLRURelayer(a.ApolloEndpoint, a.ClusterID)))
 	a.Logger.Info("API services registered")
 }

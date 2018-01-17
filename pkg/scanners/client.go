@@ -43,6 +43,17 @@ func NewScannersClient(apolloEndpoint string, clusterID string) *Client {
 
 // Start runs the client
 func (c *Client) Start() {
+	for {
+		select {
+		case <-c.updateTicker.C:
+			c.doUpdate()
+		case <-c.done:
+			return
+		}
+	}
+}
+
+func (c *Client) doUpdate() {
 	conn, err := clientconn.GRPCConnection(c.apolloEndpoint)
 	if err != nil {
 		panic(err)
@@ -50,17 +61,6 @@ func (c *Client) Start() {
 	defer conn.Close()
 
 	cli := v1.NewScannerServiceClient(conn)
-	for {
-		select {
-		case <-c.updateTicker.C:
-			c.doUpdate(cli)
-		case <-c.done:
-			return
-		}
-	}
-}
-
-func (c *Client) doUpdate(cli v1.ScannerServiceClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	resp, err := cli.GetScanners(ctx, &v1.GetScannersRequest{Cluster: c.clusterID})

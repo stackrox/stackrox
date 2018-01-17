@@ -17,7 +17,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	"github.com/golang/protobuf/ptypes/empty"
-	googleGRPC "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -36,8 +35,6 @@ type Sensor struct {
 	ApolloEndpoint     string
 	AdvertisedEndpoint string
 	Image              string
-
-	Conn *googleGRPC.ClientConn
 
 	Logger *logging.Logger
 }
@@ -64,13 +61,7 @@ func New() *Sensor {
 
 // Start starts all subroutines and the API server.
 func (a *Sensor) Start() {
-	var err error
 	a.Logger.Infof("Connecting to Apollo server %s", a.ApolloEndpoint)
-	a.Conn, err = clientconn.GRPCConnection(a.ApolloEndpoint)
-	if err != nil {
-		panic(err)
-	}
-
 	if a.ServiceRegistrationFunc != nil {
 		a.ServiceRegistrationFunc(a)
 	}
@@ -107,17 +98,13 @@ func (a *Sensor) Stop() {
 	if a.RegistryPoller != nil {
 		a.RegistryPoller.Stop()
 	}
-
-	a.Conn.Close()
 }
 
 func (a *Sensor) relayEvents() {
-	cli := v1.NewSensorEventServiceClient(a.Conn)
-
 	for {
 		select {
 		case ev := <-a.Listener.Events():
-			if err := a.reportDeploymentEvent(cli, ev); err != nil {
+			if err := a.reportDeploymentEvent(ev); err != nil {
 				a.Logger.Errorf("Couldn't report event %+v: %+v", ev, err)
 			} else {
 				a.Logger.Infof("Successfully reported event %+v", ev)
@@ -127,9 +114,12 @@ func (a *Sensor) relayEvents() {
 }
 
 func (a *Sensor) waitUntilApolloIsReady() {
-	pingService := v1.NewPingServiceClient(a.Conn)
-
-	err := pingWithTimeout(pingService)
+	conn, err := clientconn.GRPCConnection(a.ApolloEndpoint)
+	if err != nil {
+		a.Logger.Fatal(err)
+	}
+	pingService := v1.NewPingServiceClient(conn)
+	err = pingWithTimeout(pingService)
 	for err != nil {
 		a.Logger.Infof("Ping to Apollo failed: %s. Retrying...", err)
 		time.Sleep(2 * time.Second)
@@ -144,7 +134,13 @@ func pingWithTimeout(svc v1.PingServiceClient) (err error) {
 	return
 }
 
-func (a *Sensor) reportDeploymentEvent(cli v1.SensorEventServiceClient, ev *v1.DeploymentEvent) (err error) {
+func (a *Sensor) reportDeploymentEvent(ev *v1.DeploymentEvent) (err error) {
+	conn, err := clientconn.GRPCConnection(a.ApolloEndpoint)
+	if err != nil {
+		return err
+	}
+	cli := v1.NewSensorEventServiceClient(conn)
+
 	a.enrichImages(ev)
 
 	retries := 0
