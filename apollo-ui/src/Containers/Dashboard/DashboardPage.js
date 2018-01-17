@@ -31,7 +31,7 @@ const reducer = (action, prevState, nextState) => {
         case 'UPDATE_VIOLATIONS_BY_POLICY_CATEGORY':
             return { violatonsByPolicyCategory: nextState.violatonsByPolicyCategory };
         case 'UPDATE_VIOLATIONS_BY_CLUSTERS':
-            return { violationsByClusters: nextState.violationsByClusters };
+            return { violationsByCluster: nextState.violationsByCluster };
         default:
             return prevState;
     }
@@ -51,16 +51,18 @@ class DashboardPage extends Component {
 
         this.state = {
             violatonsByPolicyCategory: [],
-            violationsByClusters: []
+            violationsByCluster: []
         };
     }
 
     componentDidMount() {
         this.getViolationsByPolicyCategory();
-        this.getViolationsByClusters();
+        this.getViolationsByCluster();
     }
 
-    getViolationsByPolicyCategory = () => axios.get('/v1/alerts/counts?group_by=CATEGORY').then((response) => {
+    getViolationsByPolicyCategory = () => axios.get('/v1/alerts/counts', {
+        params: { group_by: 'CATEGORY', 'request.stale': false }
+    }).then((response) => {
         const violatonsByPolicyCategory = response.data.groups;
         if (!violatonsByPolicyCategory) return;
         this.update('UPDATE_VIOLATIONS_BY_POLICY_CATEGORY', { violatonsByPolicyCategory });
@@ -68,10 +70,12 @@ class DashboardPage extends Component {
         console.error(error);
     });
 
-    getViolationsByClusters = () => axios.get('/v1/alerts/counts?group_by=CLUSTER').then((response) => {
-        const violationsByClusters = response.data.groups;
-        if (!violationsByClusters) return;
-        this.update('UPDATE_VIOLATIONS_BY_CLUSTERS', { violationsByClusters });
+    getViolationsByCluster = () => axios.get('/v1/alerts/counts', {
+        params: { group_by: 'CLUSTER', 'request.stale': false }
+    }).then((response) => {
+        const violationsByCluster = response.data.groups;
+        if (!violationsByCluster) return;
+        this.update('UPDATE_VIOLATIONS_BY_CLUSTERS', { violationsByCluster });
     }).catch((error) => {
         console.error(error);
     });
@@ -84,9 +88,9 @@ class DashboardPage extends Component {
         this.setState(prevState => reducer(action, prevState, nextState));
     }
 
-    renderViolationsByClusters = () => {
-        if (!this.state.violationsByClusters) return '';
-        const data = this.state.violationsByClusters.map((cluster) => {
+    renderViolationsByCluster = () => {
+        if (!this.state.violationsByCluster) return '';
+        const data = this.state.violationsByCluster.map((cluster) => {
             const dataPoint = {
                 name: cluster.group,
                 Critical: 0,
@@ -166,10 +170,10 @@ class DashboardPage extends Component {
                 <h1 className="font-500 mx-3 border-b border-primary-300 py-4 uppercase text-xl font-800 text-primary-600 tracking-wide">Environment Risk</h1>
                 <div className="overflow-auto">
                     <div className="flex flex-col w-full">
-                        <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 pb-3">Violations by Clusters</h2>
+                        <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 pb-3">Violations by Cluster</h2>
                         <div className="flex flex-1 w-full flex-wrap">
                             <div className="m-4 p-4 bg-white rounded-sm shadow">
-                                {this.renderViolationsByClusters()}
+                                {this.renderViolationsByCluster()}
                             </div>
                         </div>
                     </div>
