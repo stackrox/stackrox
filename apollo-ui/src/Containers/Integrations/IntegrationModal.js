@@ -19,7 +19,7 @@ const sourceMap = {
                 label: 'Username',
                 key: 'config.username',
                 type: 'text',
-                placeholder: 'user@company.org'
+                placeholder: 'user@example.com'
             },
             {
                 label: 'Password',
@@ -57,13 +57,13 @@ const sourceMap = {
                 label: 'Email Server',
                 key: 'config.server',
                 type: 'text',
-                placeholder: 'smtp.company.org:465'
+                placeholder: 'smtp.example.com:465'
             },
             {
                 label: 'Username',
                 key: 'config.username',
                 type: 'text',
-                placeholder: 'postmaster@company.org'
+                placeholder: 'postmaster@example.com'
             },
             {
                 label: 'Password',
@@ -74,13 +74,13 @@ const sourceMap = {
                 label: 'Sender',
                 key: 'config.sender',
                 type: 'text',
-                placeholder: 'apollo-notifier@company.org'
+                placeholder: 'harden-notifier@example.com'
             },
             {
                 label: 'Recipient',
                 key: 'config.recipient',
                 type: 'text',
-                placeholder: 'apollo-alerts@company.org'
+                placeholder: 'harden-alerts@example.com'
             },
             {
                 label: 'TLS',
