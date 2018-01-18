@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Table from 'Components/Table';
-import Select from 'Components/Select';
 
 import BenchmarksSidePanel from 'Containers/Violations/Compliance/BenchmarksSidePanel';
 
@@ -97,15 +96,6 @@ class BenchmarksPage extends Component {
         this.setState(prevState => reducer(action, prevState, nextState));
     }
 
-    renderScanOptions = () => {
-        const category = {
-            options: ['No scheduled scanning', 'Scan every 24 hours', 'Scan every 2 days', 'Scan every week']
-        };
-        return (
-            <Select options={category.options} />
-        );
-    }
-
     renderScanButton = () => {
         const buttonScanning = <button className="p-3 ml-5 h-10 w-24 rounded-sm bg-success-500 text-white hover:bg-success-600 uppercase text-center"><ClipLoader color="white" loading={this.state.scanning} size={20} /></button>;
         const scanButton = <button className="p-3 ml-5 h-10 w-24 rounded-sm bg-success-500 text-white hover:bg-success-600 uppercase" onClick={this.onTriggerScan}>Scan now</button>;
@@ -144,9 +134,6 @@ class BenchmarksPage extends Component {
             <div className="flex flex-col h-full">
                 <div className="flex w-full mb-3 px-3 items-center">
                     <span className="flex flex-1 text-xl font-500 text-primary-500 self-end">Last Scanned: {this.state.lastScanned || 'Never'}</span>
-                    <div className="flex self-center justify-end pr-5 border-r border-primary-200">
-                        {this.renderScanOptions()}
-                    </div>
                     {this.renderScanButton()}
                 </div>
                 <div className="flex flex-1 border-t border-primary-300 bg-base-100">

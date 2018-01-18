@@ -15,8 +15,7 @@ class PolicyAlertsSidePanel extends Component {
             table: {
                 columns: [
                     { key: 'deployment.name', label: 'Deployment' },
-                    { key: 'time', label: 'Time' },
-                    { key: 'deployment.replicas', label: 'Replicas' }
+                    { key: 'time', label: 'Time' }
                 ],
                 rows: []
             },

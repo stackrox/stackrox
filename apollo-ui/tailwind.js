@@ -112,6 +112,16 @@ let colors = {
   "success-800": "hsl(var(--success),var(--s-80),var(--l-20))",
   "success-900": "hsl(var(--success),var(--s-90),var(--l-10))",
 
+  "danger-100": "hsl(var(--danger),var(--s-50),var(--l-90))",
+  "danger-200": "hsl(var(--danger),var(--s-40),var(--l-80))",
+  "danger-300": "hsl(var(--danger),var(--s-30),var(--l-70))",
+  "danger-400": "hsl(var(--danger),var(--s-40),var(--l-60))",
+  "danger-500": "hsl(var(--danger),var(--s-50),var(--l-50))",
+  "danger-600": "hsl(var(--danger),var(--s-60),var(--l-40))",
+  "danger-700": "hsl(var(--danger),var(--s-70),var(--l-30))",
+  "danger-800": "hsl(var(--danger),var(--s-80),var(--l-20))",
+  "danger-900": "hsl(var(--danger),var(--s-90),var(--l-10))",
+
   "low-100": "hsl(var(--low),var(--s-50),var(--l-90))",
   "low-200": "hsl(var(--low),var(--s-40),var(--l-80))",
   "low-300": "hsl(var(--low),var(--s-30),var(--l-70))",

@@ -7,6 +7,7 @@
     --theme-light-accent: 308;
     --theme-light-highlight: 193;
     --theme-light-success: 165;
+    --theme-light-danger: 350;
     --theme-light-low: 42;
     --theme-light-medium: 20;
     --theme-light-high: 358;
@@ -40,6 +41,7 @@
     --theme-dark-accent: 308;
     --theme-dark-highlight: 193;
     --theme-dark-success: 165;
+    --theme-dark-danger: 350;
     --theme-dark-low: 42;
     --theme-dark-medium: 20;
     --theme-dark-high: 358;
@@ -74,6 +76,7 @@
     --accent: var(--theme-light-accent);
     --highlight: var(--theme-light-highlight);
     --success: var(--theme-light-success);
+    --danger: var(--theme-light-danger);
     --low: var(--theme-light-low);
     --medium: var(--theme-light-medium);
     --high: var(--theme-light-high);
@@ -114,6 +117,10 @@ button:focus {
 button, select, input {
     @apply text-base-600 text-base font-600 appearance-none;
     line-height: 14px; /*weird render bug fix where select text gets clipped at bottom */
+}
+
+button[disabled] {
+    @apply .opacity-50 .pointer-events-none;
 }
 
 .content-box {
@@ -165,6 +172,10 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
  animation: fadein .25s ease-in;
 }
 
+.transition-out {
+ animation: fadeout .25s ease-out;
+}
+
 @keyframes fadein {
     from {
         opacity: 0;
@@ -172,6 +183,16 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
 
     to {
         opacity: 1;
+    }
+}
+
+@keyframes fadeout {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
     }
 }
 
@@ -198,6 +219,10 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
 
 .pill-active {
     @apply .text-primary-500;
+}
+
+.min-w-64 {
+    min-width: 16rem !important;
 }
 
 

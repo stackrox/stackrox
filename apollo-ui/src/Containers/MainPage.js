@@ -12,6 +12,7 @@ import Logo from 'Components/icons/logo';
 import DashboardPage from 'Containers/Dashboard/DashboardPage';
 import IntegrationsPage from 'Containers/Integrations/IntegrationsPage';
 import ViolationsPage from 'Containers/Violations/ViolationsPage';
+import PoliciesPage from 'Containers/Policies/PoliciesPage';
 
 const Main = () => (
     <Router>
@@ -40,6 +41,14 @@ const Main = () => (
                                 </NavLink>
                             </li>
                             <li>
+                                <NavLink to="/policies" className="flex border-l border-r border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:text-primary-200 text-white items-center" activeClassName="bg-primary-800">
+                                    <span>
+                                        <Icon.FileText className="h-4 w-4 mr-3" />
+                                    </span>
+                                    <span>Policies</span>
+                                </NavLink>
+                            </li>
+                            <li>
                                 <NavLink to="/integrations" className="flex border-l border-r border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:text-primary-200 text-white items-center" activeClassName="bg-primary-800">
                                     <span>
                                         <Icon.PlusCircle className="h-4 w-4 mr-3" />
@@ -58,6 +67,7 @@ const Main = () => (
                         <Route exact path="/dashboard" component={DashboardPage} />
                         <Route exact path="/violations" component={ViolationsPage} />
                         <Route exact path="/integrations" component={IntegrationsPage} />
+                        <Route exact path="/policies" component={PoliciesPage} />
                         <Redirect from="/" to="/dashboard" />
                     </Switch>
                 </main>

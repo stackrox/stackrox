@@ -46,9 +46,10 @@ class Table extends Component {
         const rowClickable = !!this.props.onRowClick;
         return rows.map((row, i) => {
             const cols = columns.map((column) => {
-                const value = resolvePath(row, column.key);
-                const classFunc = column.classFunc || (() => '');
-                const className = `p-3 ${active === row ? 'bg-primary-300' : ''} ${column.align === 'right' ? 'text-right' : 'text-left'} ${classFunc(value)}`;
+                let value = resolvePath(row, column.key);
+                if (column.keyValueFunc) value = column.keyValueFunc(value);
+                const customClassName = (column.classFunc && column.classFunc(value)) || '';
+                const className = `p-3 ${active === row ? 'bg-primary-300' : ''} ${column.align === 'right' ? 'text-right' : 'text-left'} ${customClassName}`;
                 return <td className={className} key={`${column.key}`}>{value || column.default}</td>;
             });
             return (
@@ -65,7 +66,7 @@ class Table extends Component {
 
     render() {
         return (
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse transition">
                 <thead>{this.displayHeaders()}</thead>
                 <tbody>{this.displayBody()}</tbody>
             </table>
