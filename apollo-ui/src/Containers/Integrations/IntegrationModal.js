@@ -7,7 +7,7 @@ import axios from 'axios';
 import * as Icon from 'react-feather';
 
 const sourceMap = {
-    plugin: {
+    notifiers: {
         jira: [
             {
                 label: 'Integration Name',
@@ -114,7 +114,7 @@ const sourceMap = {
             }
         ]
     },
-    scanner: {
+    scanners: {
         tenable: [
             {
                 label: 'Integration Name',
@@ -180,7 +180,7 @@ const sourceMap = {
             }
         ],
     },
-    registry: {
+    registries: {
         docker: [
             {
                 label: 'Integration Name',
@@ -280,10 +280,16 @@ const sourceMap = {
     }
 };
 
+const SOURCE_LABELS = Object.freeze({
+    registries: 'registry',
+    scanners: 'scanner',
+    notifiers: 'plugin'
+});
+
 const api = {
-    registry: data => axios.post('/v1/registries', data),
-    scanner: data => axios.post('/v1/scanners', data),
-    plugin: data => axios.post('/v1/notifiers', data)
+    registries: data => axios.post('/v1/registries', data),
+    scanners: data => axios.post('/v1/scanners', data),
+    notifiers: data => axios.post('/v1/notifiers', data)
 };
 
 const reducer = (action, prevState, nextState) => {
@@ -302,8 +308,7 @@ class IntegrationModal extends Component {
         integration: PropTypes.shape({
             type: PropTypes.string.isRequired
         }).isRequired,
-        source: PropTypes.oneOf(['registry', 'scanner', 'plugin']).isRequired,
-        isOpen: PropTypes.bool.isRequired,
+        source: PropTypes.oneOf(['registries', 'scanners', 'notifiers']).isRequired,
         onRequestClose: PropTypes.func.isRequired
     }
 
@@ -391,9 +396,9 @@ class IntegrationModal extends Component {
         const type = (this.props.integration) ? this.props.integration.type : '';
         const { source } = this.props;
         return (
-            <Modal isOpen={this.props.isOpen} onRequestClose={this.onRequestClose}>
+            <Modal isOpen onRequestClose={this.onRequestClose}>
                 <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
-                    <span className="flex flex-1">Configure {type} {source}</span>
+                    <span className="flex flex-1">Configure {type} {SOURCE_LABELS[source]}</span>
                     <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.onRequestClose} />
                 </header>
                 {(this.state.message !== '') ? <div className="px-4 py-2 bg-high-500 text-white">{this.state.message}</div> : ''}

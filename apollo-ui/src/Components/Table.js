@@ -10,7 +10,7 @@ class Table extends Component {
     };
 
     static defaultProps = {
-        onRowClick: () => {}
+        onRowClick: null
     };
 
     constructor(props) {
@@ -35,12 +35,15 @@ class Table extends Component {
     }
 
     rowClickHandler = row => () => {
-        this.props.onRowClick(row);
+        if (this.props.onRowClick) {
+            this.props.onRowClick(row);
+        }
     }
 
     displayBody() {
         const { rows, columns } = this.props;
         const { active } = this.state;
+        const rowClickable = !!this.props.onRowClick;
         return rows.map((row, i) => {
             const cols = columns.map((column) => {
                 const value = resolvePath(row, column.key);
@@ -48,7 +51,15 @@ class Table extends Component {
                 const className = `p-3 ${active === row ? 'bg-primary-300' : ''} ${column.align === 'right' ? 'text-right' : 'text-left'} ${classFunc(value)}`;
                 return <td className={className} key={`${column.key}`}>{value || column.default}</td>;
             });
-            return <tr className="cursor-pointer border-b border-base-300 hover:bg-base-100" key={`row-${i}`} onClick={this.rowClickHandler(row)}>{cols}</tr>;
+            return (
+                <tr
+                    className={`${rowClickable ? 'cursor-pointer' : ''} border-b border-base-300 hover:bg-base-100`}
+                    key={`row-${i}`}
+                    onClick={rowClickable ? this.rowClickHandler(row) : null}
+                >
+                    {cols}
+                </tr>
+            );
         });
     }
 
