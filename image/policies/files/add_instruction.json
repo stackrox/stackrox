@@ -1,0 +1,12 @@
+{
+  "name": "ADD Command used instead of COPY",
+  "description": "Alert on deployments using a ADD command",
+  "severity": "LOW_SEVERITY",
+  "categories": ["IMAGE_ASSURANCE"],
+  "image_policy": {
+    "line_rule": {
+      "instruction": "ADD",
+      "value": ".*"
+    }
+  }
+}

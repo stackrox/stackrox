@@ -1,13 +1,13 @@
 {
-  "name": "max(CVSS) >= 3",
-  "description": "Alert on deployments with a max CVSS >= 3",
+  "name": "Maximum CVSS >= 7",
+  "description": "Alert on deployments with a max CVSS >= 7",
   "severity": "HIGH_SEVERITY",
   "categories": ["IMAGE_ASSURANCE"],
   "image_policy": {
     "cvss": {
       "op": "GREATER_THAN_OR_EQUALS",
       "math_op": "MAX",
-      "value": 3
+      "value": 7
     }
   }
 }

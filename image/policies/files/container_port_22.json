@@ -1,0 +1,12 @@
+{
+  "name": "Container Port 22",
+  "description": "Alert on deployments exposing port 22",
+  "severity": "HIGH_SEVERITY",
+  "categories": ["CONTAINER_CONFIGURATION"],
+  "configuration_policy": {
+    "port_policy": {
+      "port": 22,
+      "protocol": "tcp"
+    }
+  }
+}

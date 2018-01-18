@@ -1,9 +1,0 @@
-{
-  "name": "BerkeleyDB",
-  "description": "Alert on deployments with BerkleyDB",
-  "severity": "HIGH_SEVERITY",
-  "categories": ["IMAGE_ASSURANCE"],
-  "image_policy": {
-    "component": "^berkeley*"
-  }
-}

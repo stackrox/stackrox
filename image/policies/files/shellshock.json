@@ -1,0 +1,9 @@
+{
+  "name": "Shellshock: CVE-2014-6271",
+  "description": "Alert on deployments with images containing Shellshock vuln 'CVE-2014-6271'",
+  "severity": "CRITICAL_SEVERITY",
+  "categories": ["IMAGE_ASSURANCE"],
+  "image_policy": {
+    "cve": "CVE-2014-6271"
+  }
+}

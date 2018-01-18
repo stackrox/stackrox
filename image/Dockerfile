@@ -13,10 +13,10 @@ RUN apk update && \
 
 ENV PATH=/mitigate
 
-ADD ./benchmarks/ /data/benchmarks
-ADD ./policies/ /data/policies
-ADD ./bin/ /mitigate/
-ADD ./ui/build  /ui/
+COPY ./benchmarks/ /data/benchmarks
+COPY ./policies/ /data/policies
+COPY ./bin/ /mitigate/
+COPY ./ui/build  /ui/
 
 EXPOSE 443
 
