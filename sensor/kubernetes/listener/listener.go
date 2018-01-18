@@ -25,14 +25,14 @@ var (
 type kubernetesListener struct {
 	client *kubernetes.Clientset
 
-	eventsC     chan *pkgV1.DeploymentEvent
+	eventsC     chan *listeners.DeploymentEventWrap
 	resourcesWL []resourceWatchLister
 }
 
 // New returns a new kubernetes listener.
 func New() listeners.Listener {
 	k := &kubernetesListener{
-		eventsC: make(chan *pkgV1.DeploymentEvent, 10),
+		eventsC: make(chan *listeners.DeploymentEventWrap, 10),
 	}
 	k.initialize()
 	return k
@@ -83,7 +83,7 @@ func (k *kubernetesListener) Stop() {
 	}
 }
 
-func (k *kubernetesListener) Events() <-chan *pkgV1.DeploymentEvent {
+func (k *kubernetesListener) Events() <-chan *listeners.DeploymentEventWrap {
 	return k.eventsC
 }
 
@@ -110,7 +110,8 @@ func (wl *watchLister) watch(object string, objectType runtime.Object, changedFu
 		resyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				changedFunc(obj, pkgV1.ResourceAction_CREATE_RESOURCE)
+				// Once the initial objects are listed, the resource action changes to CREATE.
+				changedFunc(obj, pkgV1.ResourceAction_PREEXISTING_RESOURCE)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				changedFunc(newObj, pkgV1.ResourceAction_UPDATE_RESOURCE)

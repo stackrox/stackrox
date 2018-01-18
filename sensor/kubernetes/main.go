@@ -10,7 +10,9 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
 	"bitbucket.org/stack-rox/apollo/pkg/sensor"
+	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/enforcer"
 	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/listener"
+	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/orchestrator"
 )
 
 func main() {
@@ -34,10 +36,18 @@ func main() {
 }
 
 func initializeSensor() *sensor.Sensor {
+	var err error
 	a := sensor.New()
 
 	a.Listener = listener.New()
-
+	a.Enforcer, err = enforcer.New()
+	if err != nil {
+		a.Logger.Fatal(err)
+	}
+	a.Orchestrator, err = orchestrator.New()
+	if err != nil {
+		a.Logger.Fatal(err)
+	}
 	a.ScannerPoller = scanners.NewScannersClient(a.ApolloEndpoint, a.ClusterID)
 	a.RegistryPoller = registries.NewRegistriesClient(a.ApolloEndpoint, a.ClusterID)
 

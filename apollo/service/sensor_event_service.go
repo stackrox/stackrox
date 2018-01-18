@@ -7,7 +7,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/apollo/notifications"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -44,7 +43,7 @@ func (s *SensorEventService) RegisterServiceHandlerFromEndpoint(ctx context.Cont
 }
 
 // ReportDeploymentEvent receives a new deployment event from a sensor.
-func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request *v1.DeploymentEvent) (*empty.Empty, error) {
+func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request *v1.DeploymentEvent) (*v1.DeploymentEventResponse, error) {
 	if request == nil {
 		return nil, status.Error(codes.InvalidArgument, "Request must include an event")
 	}
@@ -55,25 +54,27 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 		return nil, status.Error(codes.InvalidArgument, "Event must include a deployment")
 	}
 
+	response := new(v1.DeploymentEventResponse)
 	// If it's a create and we already have the deployment, ignore it.
 	// We don't want new alerts, and don't need to bother the database again.
 	if request.GetAction() == v1.ResourceAction_CREATE_RESOURCE {
 		if _, ok, err := s.storage.GetDeployment(d.GetId()); err != nil && ok {
-			return &empty.Empty{}, nil
+			return response, nil
 		}
 	}
 
 	if err := s.handlePersistence(request); err != nil {
-		return &empty.Empty{}, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	s.stalenessHandler.UpdateStaleness(request)
 
-	alerts, err := s.detector.Process(d)
+	alerts, enforcement, err := s.detector.Process(d, request.GetAction())
 	if err != nil {
 		log.Error(err)
-		return &empty.Empty{}, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
+
 	for _, i := range images.FromContainers(d.GetContainers()).Images() {
 		if err := s.storage.AddImage(i); err != nil {
 			log.Error(err)
@@ -89,7 +90,13 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 		}
 		s.notificationProcessor.Process(alert)
 	}
-	return &empty.Empty{}, nil
+
+	response.Enforcement = enforcement
+	if enforcement != v1.EnforcementAction_UNSET_ENFORCEMENT {
+		log.Warnf("Taking enforcement action %s against deployment %s", enforcement, request.GetDeployment().GetName())
+	}
+
+	return response, nil
 }
 
 func (s *SensorEventService) handlePersistence(event *v1.DeploymentEvent) error {

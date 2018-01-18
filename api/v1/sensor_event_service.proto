@@ -3,16 +3,16 @@ syntax = "proto3";
 option go_package = "v1";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
 import "api/v1/deployment_service.proto";
 
 package v1;
 
 enum ResourceAction {
-    UNSET_ACTION_RESOURCE = 0;
-    CREATE_RESOURCE       = 1;
-    REMOVE_RESOURCE       = 2;
-    UPDATE_RESOURCE       = 3;
+    UNSET_ACTION_RESOURCE   = 0;
+    PREEXISTING_RESOURCE     = 1;
+    CREATE_RESOURCE         = 2;
+    REMOVE_RESOURCE         = 3;
+    UPDATE_RESOURCE         = 4;
 }
 
 message DeploymentEvent {
@@ -20,8 +20,12 @@ message DeploymentEvent {
     ResourceAction action     = 2;
 }
 
+message DeploymentEventResponse {
+    EnforcementAction enforcement = 1;
+}
+
 service SensorEventService {
-    rpc ReportDeploymentEvent(DeploymentEvent) returns (google.protobuf.Empty) {
+    rpc ReportDeploymentEvent(DeploymentEvent) returns (DeploymentEventResponse) {
         option (google.api.http) = {
             post: "/v1/sensor/events/deployment"
             body: "*"

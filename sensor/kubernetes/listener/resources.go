@@ -3,8 +3,11 @@ package listener
 import (
 	"reflect"
 	"strings"
+	"time"
 
 	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/kubernetes"
+	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -13,17 +16,10 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-const (
-	deployment            = `Deployment`
-	daemonSet             = `DaemonSet`
-	replicationController = `ReplicationController`
-	replicaSet            = `ReplicaSet`
-	statefulSet           = `StatefulSet`
-)
-
 type resourceWatchLister interface {
 	watch()
 	stop()
+	initialize()
 	listObjects() []metav1.ObjectMeta
 	resourceType() string
 }
@@ -31,18 +27,19 @@ type resourceWatchLister interface {
 // A reflectionWatchLister extracts the ObjectMetadata using reflection.
 type reflectionWatchLister struct {
 	watchLister
-	rt             string
-	objectType     runtime.Object
-	metaFieldIndex []int
+	rt                     string
+	objectType             runtime.Object
+	metaFieldIndex         []int
+	initialObjectsConsumed bool
 
-	eventC chan<- *pkgV1.DeploymentEvent
+	eventC chan<- *listeners.DeploymentEventWrap
 }
 
-func newReflectionWatcherFromClient(client rest.Interface, resourceType string, objectType runtime.Object, eventC chan<- *pkgV1.DeploymentEvent) *reflectionWatchLister {
+func newReflectionWatcherFromClient(client rest.Interface, resourceType string, objectType runtime.Object, eventC chan<- *listeners.DeploymentEventWrap) *reflectionWatchLister {
 	return newReflectionWatcher(newWatchLister(client), resourceType, objectType, eventC)
 }
 
-func newReflectionWatcher(watchLister watchLister, resourceType string, objectType runtime.Object, eventC chan<- *pkgV1.DeploymentEvent) *reflectionWatchLister {
+func newReflectionWatcher(watchLister watchLister, resourceType string, objectType runtime.Object, eventC chan<- *listeners.DeploymentEventWrap) *reflectionWatchLister {
 	ty := reflect.Indirect(reflect.ValueOf(objectType)).Type()
 	metaField, ok := ty.FieldByName("ObjectMeta")
 	if !ok || metaField.Type != reflect.TypeOf(metav1.ObjectMeta{}) {
@@ -60,7 +57,8 @@ func newReflectionWatcher(watchLister watchLister, resourceType string, objectTy
 
 func (wl *reflectionWatchLister) watch() {
 	// We use the lowercase'd version of the resource type plus a plural "s" as the type of objects to watch.
-	wl.watchLister.watch(strings.ToLower(wl.rt)+"s", wl.objectType, wl.resourceChanged)
+	go wl.watchLister.watch(strings.ToLower(wl.rt)+"s", wl.objectType, wl.resourceChanged)
+	go wl.initialize()
 }
 
 func (wl *reflectionWatchLister) resourceType() string {
@@ -72,8 +70,29 @@ func (wl *reflectionWatchLister) stop() {
 }
 
 func (wl *reflectionWatchLister) resourceChanged(obj interface{}, action pkgV1.ResourceAction) {
+	if wl.initialObjectsConsumed && action == pkgV1.ResourceAction_PREEXISTING_RESOURCE {
+		action = pkgV1.ResourceAction_CREATE_RESOURCE
+	}
+
 	if d := newDeploymentEventFromResource(obj, action, wl.metaFieldIndex, wl.resourceType()); d != nil {
-		wl.eventC <- d
+		wl.eventC <- &listeners.DeploymentEventWrap{
+			DeploymentEvent: d,
+			OriginalSpec:    obj,
+		}
+	}
+}
+
+// initialize periodically checks whether the watchLister has made an initial sync to retrieve preexisting objects.
+// Subsequent objects processed are assumed to be new, i.e. a CREATE_RESOURCE action.
+func (wl *reflectionWatchLister) initialize() {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		if wl.watchLister.controller != nil && wl.watchLister.controller.HasSynced() {
+			wl.initialObjectsConsumed = true
+			return
+		}
 	}
 }
 
@@ -92,22 +111,22 @@ func (wl *reflectionWatchLister) listObjects() (objects []metav1.ObjectMeta) {
 
 // Factory methods for the types of resources we support.
 
-func newReplicaSetWatchLister(client rest.Interface, eventsC chan<- *pkgV1.DeploymentEvent) resourceWatchLister {
-	return newReflectionWatcherFromClient(client, replicaSet, &v1beta1.ReplicaSet{}, eventsC)
+func newReplicaSetWatchLister(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, kubernetes.ReplicaSet, &v1beta1.ReplicaSet{}, eventsC)
 }
 
-func newDaemonSetWatchLister(client rest.Interface, eventsC chan<- *pkgV1.DeploymentEvent) resourceWatchLister {
-	return newReflectionWatcherFromClient(client, daemonSet, &v1beta1.DaemonSet{}, eventsC)
+func newDaemonSetWatchLister(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, kubernetes.DaemonSet, &v1beta1.DaemonSet{}, eventsC)
 }
 
-func newReplicationControllerWatchLister(client rest.Interface, eventsC chan<- *pkgV1.DeploymentEvent) resourceWatchLister {
-	return newReflectionWatcherFromClient(client, replicationController, &v1.ReplicationController{}, eventsC)
+func newReplicationControllerWatchLister(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, kubernetes.ReplicationController, &v1.ReplicationController{}, eventsC)
 }
 
-func newDeploymentWatcher(client rest.Interface, eventsC chan<- *pkgV1.DeploymentEvent) resourceWatchLister {
-	return newReflectionWatcherFromClient(client, deployment, &v1beta1.Deployment{}, eventsC)
+func newDeploymentWatcher(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, kubernetes.Deployment, &v1beta1.Deployment{}, eventsC)
 }
 
-func newStatefulSetWatchLister(client rest.Interface, eventsC chan<- *pkgV1.DeploymentEvent) resourceWatchLister {
-	return newReflectionWatcherFromClient(client, statefulSet, &appsv1beta1.StatefulSet{}, eventsC)
+func newStatefulSetWatchLister(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, kubernetes.StatefulSet, &appsv1beta1.StatefulSet{}, eventsC)
 }

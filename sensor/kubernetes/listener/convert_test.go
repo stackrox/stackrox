@@ -5,6 +5,7 @@ import (
 	"time"
 
 	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/kubernetes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
@@ -38,7 +39,7 @@ func TestConvert(t *testing.T) {
 			},
 			action:                  pkgV1.ResourceAction_CREATE_RESOURCE,
 			metaFieldIndex:          []int{1},
-			resourceType:            replicaSet,
+			resourceType:            kubernetes.ReplicaSet,
 			expectedDeploymentEvent: nil,
 		},
 		{
@@ -153,14 +154,14 @@ func TestConvert(t *testing.T) {
 			},
 			action:         pkgV1.ResourceAction_CREATE_RESOURCE,
 			metaFieldIndex: []int{1},
-			resourceType:   deployment,
+			resourceType:   kubernetes.Deployment,
 			expectedDeploymentEvent: &pkgV1.DeploymentEvent{
 				Action: pkgV1.ResourceAction_CREATE_RESOURCE,
 				Deployment: &pkgV1.Deployment{
 					Id:        "FooID",
 					Name:      "Foo",
 					Namespace: "World",
-					Type:      deployment,
+					Type:      kubernetes.Deployment,
 					Version:   "100",
 					Replicas:  15,
 					Labels: map[string]string{

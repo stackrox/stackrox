@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
+	"bitbucket.org/stack-rox/apollo/pkg/enforcers"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/features"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc"
@@ -25,6 +26,7 @@ import (
 type Sensor struct {
 	Server                  grpc.API
 	Listener                listeners.Listener
+	Enforcer                enforcers.Enforcer
 	BenchScheduler          *benchmarks.SchedulerClient
 	Orchestrator            orchestrators.Orchestrator
 	ServiceRegistrationFunc func(a *Sensor)
@@ -70,6 +72,9 @@ func (a *Sensor) Start() {
 	if a.Listener != nil {
 		go a.Listener.Start()
 	}
+	if a.Enforcer != nil {
+		go a.Enforcer.Start()
+	}
 	if a.BenchScheduler != nil {
 		go a.BenchScheduler.Start()
 	}
@@ -89,6 +94,9 @@ func (a *Sensor) Stop() {
 	if a.Listener != nil {
 		a.Listener.Stop()
 	}
+	if a.Enforcer != nil {
+		a.Enforcer.Stop()
+	}
 	if a.BenchScheduler != nil {
 		a.BenchScheduler.Stop()
 	}
@@ -104,10 +112,18 @@ func (a *Sensor) relayEvents() {
 	for {
 		select {
 		case ev := <-a.Listener.Events():
-			if err := a.reportDeploymentEvent(ev); err != nil {
+			if resp, err := a.reportDeploymentEvent(ev.DeploymentEvent); err != nil {
 				a.Logger.Errorf("Couldn't report event %+v: %+v", ev, err)
 			} else {
 				a.Logger.Infof("Successfully reported event %+v", ev)
+				if resp.GetEnforcement() != v1.EnforcementAction_UNSET_ENFORCEMENT {
+					a.Logger.Infof("Event requested enforcement %s for deployment %s", resp.GetEnforcement(), ev.GetDeployment().GetName())
+					a.Enforcer.Actions() <- &enforcers.DeploymentEnforcement{
+						Deployment:   ev.GetDeployment(),
+						OriginalSpec: ev.OriginalSpec,
+						Enforcement:  resp.GetEnforcement(),
+					}
+				}
 			}
 		}
 	}
@@ -134,23 +150,23 @@ func pingWithTimeout(svc v1.PingServiceClient) (err error) {
 	return
 }
 
-func (a *Sensor) reportDeploymentEvent(ev *v1.DeploymentEvent) (err error) {
+func (a *Sensor) reportDeploymentEvent(ev *v1.DeploymentEvent) (resp *v1.DeploymentEventResponse, err error) {
 	conn, err := clientconn.GRPCConnection(a.ApolloEndpoint)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	cli := v1.NewSensorEventServiceClient(conn)
 
 	a.enrichImages(ev)
 
 	retries := 0
-	err = reportWithTimeout(cli, ev)
+	resp, err = a.reportWithTimeout(cli, ev)
 	errStatus, ok := status.FromError(err)
 
 	for retries <= 5 && err != nil && ok && errStatus.Code() == codes.Unavailable {
 		retries++
 		time.Sleep(time.Duration(retries) * time.Second)
-		err = reportWithTimeout(cli, ev)
+		resp, err = a.reportWithTimeout(cli, ev)
 		errStatus, ok = status.FromError(err)
 	}
 
@@ -181,9 +197,9 @@ func (a *Sensor) enrichImages(ev *v1.DeploymentEvent) {
 	}
 }
 
-func reportWithTimeout(cli v1.SensorEventServiceClient, ev *v1.DeploymentEvent) (err error) {
+func (a *Sensor) reportWithTimeout(cli v1.SensorEventServiceClient, ev *v1.DeploymentEvent) (resp *v1.DeploymentEventResponse, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	_, err = cli.ReportDeploymentEvent(ctx, ev)
+	resp, err = cli.ReportDeploymentEvent(ctx, ev)
 	return
 }

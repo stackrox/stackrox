@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/pkg/env"
+	pkgKubernetes "bitbucket.org/stack-rox/apollo/pkg/kubernetes"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,8 +13,7 @@ import (
 )
 
 var (
-	logger       = logging.New("orchestrator")
-	deleteOption = &[]metav1.DeletionPropagation{metav1.DeletePropagationForeground}[0]
+	logger = logging.New("orchestrator")
 )
 
 type kubernetesOrchestrator struct {
@@ -74,7 +74,7 @@ func (k *kubernetesOrchestrator) newServiceWrap(service orchestrators.SystemServ
 
 func (k *kubernetesOrchestrator) Kill(name string) error {
 	if ds, err := k.client.ExtensionsV1beta1().DaemonSets(k.namespace).Get(name, metav1.GetOptions{}); err == nil && ds != nil {
-		if err := k.client.ExtensionsV1beta1().DaemonSets(k.namespace).Delete(name, &metav1.DeleteOptions{PropagationPolicy: deleteOption}); err != nil {
+		if err := k.client.ExtensionsV1beta1().DaemonSets(k.namespace).Delete(name, pkgKubernetes.DeleteOption); err != nil {
 			logger.Errorf("unable to delete daemonset %s: %s", name, err)
 			return err
 		}
@@ -82,7 +82,7 @@ func (k *kubernetesOrchestrator) Kill(name string) error {
 	}
 
 	if deploy, err := k.client.ExtensionsV1beta1().Deployments(k.namespace).Get(name, metav1.GetOptions{}); err == nil && deploy != nil {
-		if err := k.client.ExtensionsV1beta1().Deployments(k.namespace).Delete(name, &metav1.DeleteOptions{PropagationPolicy: deleteOption}); err != nil {
+		if err := k.client.ExtensionsV1beta1().Deployments(k.namespace).Delete(name, pkgKubernetes.DeleteOption); err != nil {
 			logger.Errorf("unable to delete deployment %s: %s", name, err)
 			return err
 		}

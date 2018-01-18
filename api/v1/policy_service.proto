@@ -18,7 +18,6 @@ message Policy {
     string description                          = 4;
     bool disabled                               = 5;
     repeated Policy_Category categories         = 6;
-
     message Scope {
         string cluster      = 1;
         string namespace    = 2;
@@ -29,12 +28,13 @@ message Policy {
         Label label         = 3;
     }
     repeated Scope scope                        = 7;
+    bool enforce                                = 8;
 
-    repeated string notifiers                   = 8;
+    repeated string notifiers                   = 9;
 
-    ImagePolicy image_policy                    = 9;
-    PrivilegePolicy privilege_policy            = 10;
-    ConfigurationPolicy configuration_policy    = 11;
+    ImagePolicy image_policy                    = 10;
+    PrivilegePolicy privilege_policy            = 11;
+    ConfigurationPolicy configuration_policy    = 12;
 }
 
 enum Policy_Category {

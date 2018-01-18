@@ -63,13 +63,13 @@ message ImageScan {
 }
 
 message Image {
-    string sha             = 1;
-    string registry        = 2;
-    string remote          = 3;
-    string tag             = 4;
+    string sha              = 1;
+    string registry         = 2;
+    string remote           = 3;
+    string tag              = 4;
 
-    ImageMetadata metadata = 5;
-    ImageScan scan         = 6;
+    ImageMetadata metadata  = 5;
+    ImageScan scan          = 6;
 }
 
 message GetImagesRequest {

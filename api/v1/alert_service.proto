@@ -18,8 +18,13 @@ message Alert {
         string message    = 1;
     }
     repeated Violation violations   = 4;
-    google.protobuf.Timestamp time  = 5;
-    bool stale                      = 6;
+    message Enforcement {
+        EnforcementAction action = 1;
+        string message           = 2;
+    }
+    Enforcement enforcement         = 5;
+    google.protobuf.Timestamp time  = 6;
+    bool stale                      = 7;
 }
 
 message GetAlertRequest {

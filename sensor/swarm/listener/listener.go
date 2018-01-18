@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/swarm"
 	dockerClient "github.com/docker/docker/client"
 )
 
@@ -22,7 +23,7 @@ var (
 // listener provides functionality for listening to deployment events.
 type listener struct {
 	*dockerClient.Client
-	eventsC   chan *v1.DeploymentEvent
+	eventsC   chan *listeners.DeploymentEventWrap
 	stopC     chan struct{}
 	stoppedC  chan struct{}
 	clusterID string
@@ -39,7 +40,7 @@ func New() (listeners.Listener, error) {
 	dockerClient.NegotiateAPIVersion(ctx)
 	return &listener{
 		Client:    dockerClient,
-		eventsC:   make(chan *v1.DeploymentEvent, 10),
+		eventsC:   make(chan *listeners.DeploymentEventWrap, 10),
 		stopC:     make(chan struct{}),
 		stoppedC:  make(chan struct{}),
 		clusterID: env.ClusterID.Setting(),
@@ -91,16 +92,13 @@ func (dl *listener) sendExistingDeployments() {
 	}
 
 	for _, d := range existingDeployments {
-		d.ClusterId = dl.clusterID
-		dl.eventsC <- &v1.DeploymentEvent{
-			Deployment: d,
-			Action:     v1.ResourceAction_CREATE_RESOURCE,
-		}
-
+		d.Deployment.ClusterId = dl.clusterID
+		d.Action = v1.ResourceAction_PREEXISTING_RESOURCE
+		dl.eventsC <- d
 	}
 }
 
-func (dl *listener) getNewExistingDeployments() ([]*v1.Deployment, error) {
+func (dl *listener) getNewExistingDeployments() ([]*listeners.DeploymentEventWrap, error) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 	swarmServices, err := dl.Client.ServiceList(ctx, types.ServiceListOptions{})
@@ -108,23 +106,28 @@ func (dl *listener) getNewExistingDeployments() ([]*v1.Deployment, error) {
 		return nil, err
 	}
 
-	deployments := make([]*v1.Deployment, len(swarmServices))
+	deployments := make([]*listeners.DeploymentEventWrap, len(swarmServices))
 	for i, service := range swarmServices {
 		d := serviceWrap(service).asDeployment(dl.Client)
-		deployments[i] = d
+		deployments[i] = &listeners.DeploymentEventWrap{
+			OriginalSpec: service,
+			DeploymentEvent: &v1.DeploymentEvent{
+				Deployment: d,
+			},
+		}
 	}
 	return deployments, nil
 }
 
-func (dl *listener) getDeploymentFromServiceID(id string) (*v1.Deployment, error) {
+func (dl *listener) getDeploymentFromServiceID(id string) (*v1.Deployment, swarm.Service, error) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 
 	serviceInfo, _, err := dl.Client.ServiceInspectWithRaw(ctx, id, types.ServiceInspectOptions{})
 	if err != nil {
-		return nil, err
+		return nil, swarm.Service{}, err
 	}
-	return serviceWrap(serviceInfo).asDeployment(dl.Client), nil
+	return serviceWrap(serviceInfo).asDeployment(dl.Client), serviceInfo, nil
 }
 
 func (dl *listener) pipeDeploymentEvent(msg events.Message) {
@@ -133,20 +136,21 @@ func (dl *listener) pipeDeploymentEvent(msg events.Message) {
 
 	var resourceAction v1.ResourceAction
 	var deployment *v1.Deployment
+	var originalSpec swarm.Service
 	var err error
 
 	switch msg.Action {
 	case "create":
 		resourceAction = v1.ResourceAction_CREATE_RESOURCE
 
-		if deployment, err = dl.getDeploymentFromServiceID(id); err != nil {
+		if deployment, originalSpec, err = dl.getDeploymentFromServiceID(id); err != nil {
 			log.Errorf("unable to get deployment (actor=%v,id=%v): %s", actor, id, err)
 			return
 		}
 	case "update":
 		resourceAction = v1.ResourceAction_UPDATE_RESOURCE
 
-		if deployment, err = dl.getDeploymentFromServiceID(id); err != nil {
+		if deployment, originalSpec, err = dl.getDeploymentFromServiceID(id); err != nil {
 			log.Errorf("unable to get deployment (actor=%v,id=%v): %s", actor, id, err)
 			return
 		}
@@ -163,16 +167,19 @@ func (dl *listener) pipeDeploymentEvent(msg events.Message) {
 	}
 
 	deployment.ClusterId = dl.clusterID
-	event := &v1.DeploymentEvent{
-		Deployment: deployment,
-		Action:     resourceAction,
+	event := &listeners.DeploymentEventWrap{
+		DeploymentEvent: &v1.DeploymentEvent{
+			Deployment: deployment,
+			Action:     resourceAction,
+		},
+		OriginalSpec: originalSpec,
 	}
 
 	dl.eventsC <- event
 }
 
 // Events is the mechanism through which the events are propagated back to the event loop
-func (dl *listener) Events() <-chan *v1.DeploymentEvent {
+func (dl *listener) Events() <-chan *listeners.DeploymentEventWrap {
 	return dl.eventsC
 }
 
