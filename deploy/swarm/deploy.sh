@@ -27,7 +27,16 @@ get_identity "$LOCAL_API_ENDPOINT" "$CLUSTER" "$SWARM_DIR"
 get_authority "$LOCAL_API_ENDPOINT" "$SWARM_DIR"
 
 echo "Deploying Sensor..."
-docker stack deploy -c "$SWARM_DIR/sensor-$CLUSTER_NAME-deploy.yaml" apollo $FLAGS
+FLAGS=""
+if [ "$REGISTRY_AUTH" = "true" ]; then
+    FLAGS="--with-registry-auth"
+    SCRIPT_TMP=$(mktemp)
+    chmod +x $SCRIPT_TMP
+    cat "$SWARM_DIR/sensor-deploy.sh" | sed "s/stack deploy -c/stack deploy $FLAGS -c/" > $SCRIPT_TMP
+    $SCRIPT_TMP
+else
+    $SWARM_DIR/sensor-deploy.sh
+fi
 echo
 
 echo "Successfully deployed!"

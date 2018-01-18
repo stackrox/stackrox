@@ -80,7 +80,9 @@ function create_cluster {
         https://$LOCAL_API_ENDPOINT/v1/clusters)
     echo "Status: $STATUS"
     echo "Response: $(cat ${TMP})"
-    cat "$TMP" | jq -r .deploymentYaml > "$OUTPUT_DIR/sensor-$CLUSTER_NAME-deploy.yaml"
+    cat "$TMP" | jq -r .deploymentYaml > "$OUTPUT_DIR/sensor-deploy.yaml"
+    cat "$TMP" | jq -r .deploymentCommand > "$OUTPUT_DIR/sensor-deploy.sh"
+    chmod +x "$OUTPUT_DIR/sensor-deploy.sh"
     rm "$TMP"
     echo
 }
@@ -107,8 +109,8 @@ function get_identity {
         https://$LOCAL_API_ENDPOINT/v1/serviceIdentities)
     echo "Status: $STATUS"
     echo "Response: $(cat ${TMP})"
-    cat "$TMP" | jq -r .certificate > "$OUTPUT_DIR/sensor-$CLUSTER_NAME-cert.pem"
-    cat "$TMP" | jq -r .privateKey > "$OUTPUT_DIR/sensor-$CLUSTER_NAME-key.pem"
+    cat "$TMP" | jq -r .certificate > "$OUTPUT_DIR/sensor-cert.pem"
+    cat "$TMP" | jq -r .privateKey > "$OUTPUT_DIR/sensor-key.pem"
     rm "$TMP"
     echo
 }

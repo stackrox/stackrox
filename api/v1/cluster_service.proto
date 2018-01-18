@@ -27,8 +27,9 @@ message Cluster {
 }
 
 message ClusterResponse {
-    Cluster cluster         = 1;
-    string  deployment_yaml = 2;
+    Cluster cluster            = 1;
+    string  deployment_yaml    = 2;
+    string  deployment_command = 3;
 }
 
 message ClustersList {

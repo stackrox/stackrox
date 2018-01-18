@@ -60,8 +60,7 @@ get_authority "$LOCAL_API_ENDPOINT" "$K8S_DIR"
 
 echo "Deploying Sensor..."
 kubectl delete secret -n "$NAMESPACE" sensor-tls || true
-kubectl create secret -n "$NAMESPACE" generic sensor-tls --from-file="$K8S_DIR/sensor-$CLUSTER-cert.pem" --from-file="$K8S_DIR/sensor-$CLUSTER-key.pem" --from-file="$K8S_DIR/central-ca.pem"
-kubectl create -f "$K8S_DIR/sensor-$CLUSTER_NAME-deploy.yaml"
+$K8S_DIR/sensor-deploy.sh
 echo
 
 echo "Successfully deployed!"
