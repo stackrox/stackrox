@@ -1,4 +1,4 @@
-package detection
+package matcher
 
 import (
 	"testing"
@@ -217,25 +217,16 @@ func TestMatch(t *testing.T) {
 		},
 	}
 
-	d := &Detector{}
-
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			p, err := newPolicyWrapper(c.policy)
+			p, err := New(c.policy)
 
 			assert.NoError(t, err)
 			assert.NotNil(t, p)
 
-			alert := d.matchPolicy(c.deployment, p)
+			violations := p.Match(c.deployment)
 
-			if c.numViolations > 0 {
-				assert.NotNil(t, alert)
-				assert.Equal(t, c.deployment, alert.Deployment)
-				assert.Equal(t, c.policy, alert.Policy)
-				assert.Equal(t, c.numViolations, len(alert.GetViolations()))
-			} else {
-				assert.Nil(t, alert)
-			}
+			assert.Equal(t, c.numViolations, len(violations))
 		})
 	}
 }
@@ -245,13 +236,13 @@ func TestScope(t *testing.T) {
 
 	cases := []struct {
 		name       string
-		policy     *policyWrapper
+		policy     *Policy
 		deployment *v1.Deployment
 		expected   bool
 	}{
 		{
 			name: "disabled",
-			policy: &policyWrapper{
+			policy: &Policy{
 				Policy: &v1.Policy{
 					Disabled: true,
 				},
@@ -276,7 +267,7 @@ func TestScope(t *testing.T) {
 		},
 		{
 			name: "wrong cluster",
-			policy: &policyWrapper{
+			policy: &Policy{
 				Policy: &v1.Policy{
 					Scope: []*v1.Policy_Scope{
 						{
@@ -305,7 +296,7 @@ func TestScope(t *testing.T) {
 		},
 		{
 			name: "wrong namespace",
-			policy: &policyWrapper{
+			policy: &Policy{
 				Policy: &v1.Policy{
 					Scope: []*v1.Policy_Scope{
 						{
@@ -335,7 +326,7 @@ func TestScope(t *testing.T) {
 		},
 		{
 			name: "wrong label",
-			policy: &policyWrapper{
+			policy: &Policy{
 				Policy: &v1.Policy{
 					Scope: []*v1.Policy_Scope{
 						{
@@ -369,7 +360,7 @@ func TestScope(t *testing.T) {
 		},
 		{
 			name: "match just namespace",
-			policy: &policyWrapper{
+			policy: &Policy{
 				Policy: &v1.Policy{
 					Scope: []*v1.Policy_Scope{
 						{
@@ -398,7 +389,7 @@ func TestScope(t *testing.T) {
 		},
 		{
 			name: "match all",
-			policy: &policyWrapper{
+			policy: &Policy{
 				Policy: &v1.Policy{
 					Scope: []*v1.Policy_Scope{
 						{
@@ -432,7 +423,7 @@ func TestScope(t *testing.T) {
 		},
 		{
 			name: "match one scope",
-			policy: &policyWrapper{
+			policy: &Policy{
 				Policy: &v1.Policy{
 					Scope: []*v1.Policy_Scope{
 						{
@@ -467,9 +458,143 @@ func TestScope(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual := c.policy.shouldProcess(c.deployment)
+			actual := c.policy.ShouldProcess(c.deployment)
 
 			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
+
+func TestGetEnforcementAction(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name                string
+		policy              *Policy
+		deployment          *v1.Deployment
+		action              v1.ResourceAction
+		expectedEnforcement v1.EnforcementAction
+		expectedMessage     string
+	}{
+		{
+			name: "not an enforcement policy",
+			policy: &Policy{
+				Policy: &v1.Policy{
+					Enforce: false,
+				},
+			},
+			deployment: &v1.Deployment{
+				Type: "Replicated",
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Tag:    "latest",
+							Remote: "stackrox/director",
+						},
+					},
+				},
+			},
+			action:              v1.ResourceAction_CREATE_RESOURCE,
+			expectedEnforcement: v1.EnforcementAction_UNSET_ENFORCEMENT,
+			expectedMessage:     "",
+		},
+		{
+			name: "global service",
+			policy: &Policy{
+				Policy: &v1.Policy{
+					Enforce: true,
+				},
+			},
+			deployment: &v1.Deployment{
+				Type: "Global",
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Tag:    "latest",
+							Remote: "stackrox/director",
+						},
+					},
+				},
+			},
+			action:              v1.ResourceAction_CREATE_RESOURCE,
+			expectedEnforcement: v1.EnforcementAction_UNSET_ENFORCEMENT,
+			expectedMessage:     "",
+		},
+		{
+			name: "daemonset",
+			policy: &Policy{
+				Policy: &v1.Policy{
+					Enforce: true,
+				},
+			},
+			deployment: &v1.Deployment{
+				Type: "DaemonSet",
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Tag:    "latest",
+							Remote: "stackrox/director",
+						},
+					},
+				},
+			},
+			action:              v1.ResourceAction_CREATE_RESOURCE,
+			expectedEnforcement: v1.EnforcementAction_UNSET_ENFORCEMENT,
+			expectedMessage:     "",
+		},
+		{
+			name: "update",
+			policy: &Policy{
+				Policy: &v1.Policy{
+					Enforce: true,
+				},
+			},
+			deployment: &v1.Deployment{
+				Type: "Replicated",
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Tag:    "latest",
+							Remote: "stackrox/director",
+						},
+					},
+				},
+			},
+			action:              v1.ResourceAction_UPDATE_RESOURCE,
+			expectedEnforcement: v1.EnforcementAction_UNSET_ENFORCEMENT,
+			expectedMessage:     "",
+		},
+		{
+			name: "scale to 0 enforcement",
+			policy: &Policy{
+				Policy: &v1.Policy{
+					Enforce: true,
+				},
+			},
+			deployment: &v1.Deployment{
+				Name: "foobar",
+				Type: "Replicated",
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Tag:    "latest",
+							Remote: "stackrox/director",
+						},
+					},
+				},
+			},
+			action:              v1.ResourceAction_CREATE_RESOURCE,
+			expectedEnforcement: v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+			expectedMessage:     "Deployment foobar scaled to 0 replicas in response to policy violation",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actualEnforcement, actualMsg := c.policy.GetEnforcementAction(c.deployment, c.action)
+
+			assert.Equal(t, c.expectedEnforcement, actualEnforcement)
+			assert.Equal(t, c.expectedMessage, actualMsg)
 		})
 	}
 }

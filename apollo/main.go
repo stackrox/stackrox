@@ -39,16 +39,15 @@ func main() {
 	}
 	apollo.database = inmem.New(persistence)
 
-	apollo.detector, err = detection.New(apollo.database)
-	if err != nil {
-		panic(err)
-	}
-
 	apollo.notificationProcessor, err = notifications.NewNotificationProcessor(apollo.database)
 	if err != nil {
 		panic(err)
 	}
 	go apollo.notificationProcessor.Start()
+	apollo.detector, err = detection.New(apollo.database, apollo.notificationProcessor)
+	if err != nil {
+		panic(err)
+	}
 
 	go apollo.startGRPCServer()
 
@@ -103,8 +102,8 @@ func (a *apollo) startGRPCServer() {
 	a.server.Register(service.NewPolicyService(a.database, a.detector))
 	a.server.Register(service.NewRegistryService(a.database, a.detector))
 	a.server.Register(service.NewScannerService(a.database, a.detector))
-	a.server.Register(service.NewSensorEventService(a.detector, a.notificationProcessor, a.database))
 	a.server.Register(idService)
+	a.server.Register(service.NewSensorEventService(a.detector, a.database))
 	a.server.Start()
 }
 
@@ -120,6 +119,7 @@ func (a *apollo) processForever() {
 		select {
 		case sig := <-a.signalsC:
 			log.Infof("Caught %s signal", sig)
+			a.detector.Stop()
 			log.Infof("Apollo terminated")
 			return
 		}

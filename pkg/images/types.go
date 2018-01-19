@@ -73,10 +73,12 @@ func (i Wrapper) String() string {
 	return fmt.Sprintf("%v/%v:%v", i.Registry, i.Remote, i.Tag)
 }
 
-// ShortID returns the SHA truncated to 12 characters
+// ShortID returns the SHA truncated to 12 characters.
 func (i Wrapper) ShortID() string {
-	if len(i.Sha) <= 12 {
-		return i.Sha
+	sha := strings.TrimPrefix(i.Sha, "sha256:")
+
+	if len(sha) <= 12 {
+		return sha
 	}
-	return i.Sha[:12]
+	return sha[:12]
 }

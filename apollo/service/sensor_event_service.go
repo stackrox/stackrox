@@ -1,10 +1,8 @@
 package service
 
 import (
-	"bitbucket.org/stack-rox/apollo/apollo/alerts"
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/apollo/detection"
-	"bitbucket.org/stack-rox/apollo/apollo/notifications"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -15,21 +13,17 @@ import (
 )
 
 // NewSensorEventService returns the SensorEventService API.
-func NewSensorEventService(detector *detection.Detector, notificationsProcessor *notifications.Processor, database db.Storage) *SensorEventService {
+func NewSensorEventService(detector *detection.Detector, database db.Storage) *SensorEventService {
 	return &SensorEventService{
-		detector:              detector,
-		notificationProcessor: notificationsProcessor,
-		stalenessHandler:      alerts.NewStalenessHandler(database),
-		storage:               database,
+		detector: detector,
+		storage:  database,
 	}
 }
 
 // SensorEventService is the struct that manages the SensorEvent API
 type SensorEventService struct {
-	detector              *detection.Detector
-	notificationProcessor *notifications.Processor
-	stalenessHandler      alerts.StalenessHandler
-	storage               db.Storage
+	detector *detection.Detector
+	storage  db.Storage
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -67,9 +61,7 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	s.stalenessHandler.UpdateStaleness(request)
-
-	alerts, enforcement, err := s.detector.Process(d, request.GetAction())
+	enforcement, err := s.detector.ProcessDeploymentEvent(d, request.GetAction())
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -79,16 +71,6 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 		if err := s.storage.AddImage(i); err != nil {
 			log.Error(err)
 		}
-	}
-	for _, alert := range alerts {
-		log.Warnf("Alert Generated: %v with Severity %v due to image policy %v", alert.Id, alert.GetPolicy().GetSeverity().String(), alert.GetPolicy().GetName())
-		for _, violation := range alert.GetViolations() {
-			log.Warnf("\t %v", violation.Message)
-		}
-		if err := s.storage.AddAlert(alert); err != nil {
-			log.Error(err)
-		}
-		s.notificationProcessor.ProcessAlert(alert)
 	}
 
 	response.Enforcement = enforcement

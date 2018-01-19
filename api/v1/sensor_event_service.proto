@@ -9,10 +9,11 @@ package v1;
 
 enum ResourceAction {
     UNSET_ACTION_RESOURCE   = 0;
-    PREEXISTING_RESOURCE     = 1;
+    PREEXISTING_RESOURCE    = 1;
     CREATE_RESOURCE         = 2;
     REMOVE_RESOURCE         = 3;
     UPDATE_RESOURCE         = 4;
+    REFRESH_RESOURCE        = 5;
 }
 
 message DeploymentEvent {
