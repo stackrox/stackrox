@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Table from 'Components/Table';
+import Select from 'Components/Select';
 
 import BenchmarksSidePanel from 'Containers/Compliance/BenchmarksSidePanel';
 
@@ -22,6 +23,8 @@ const reducer = (action, prevState, nextState) => {
             return { scanning: true };
         case 'STOP_SCANNING':
             return { scanning: false };
+        case 'UPDATE_SCHEDULE':
+            return { schedule: nextState.schedule };
         default:
             return prevState;
     }
@@ -30,7 +33,8 @@ const reducer = (action, prevState, nextState) => {
 class BenchmarksPage extends Component {
     static propTypes = {
         benchmarksResults: PropTypes.string.isRequired,
-        benchmarksTrigger: PropTypes.string.isRequired
+        benchmarksTrigger: PropTypes.string.isRequired,
+        benchmarksSchedule: PropTypes.string.isRequired
     }
 
     constructor(props) {
@@ -43,12 +47,20 @@ class BenchmarksPage extends Component {
         this.state = {
             benchmarks: [],
             lastScanned: '',
-            scanning: false
+            scanning: false,
+            schedule: {
+                name: this.props.benchmarksSchedule,
+                day: '',
+                hour: '',
+                active: false,
+                timezone_offset: new Date().getTimezoneOffset() / 60,
+            }
         };
     }
 
     componentDidMount() {
         this.pollBenchmarks();
+        this.retrieveSchedule();
     }
 
     componentWillUnmount() {
@@ -70,6 +82,27 @@ class BenchmarksPage extends Component {
         emitter.emit('ComplianceTable:row-selected', row);
     }
 
+    onScheduleDayChange = (value) => {
+        const { schedule } = this.state;
+        if (value === 'None') {
+            schedule.day = '';
+            schedule.hour = '';
+            this.update('UPDATE_SCHEDULE', { schedule });
+            this.removeSchedule();
+        } else {
+            schedule.day = value;
+            this.update('UPDATE_SCHEDULE', { schedule });
+            this.updateSchedule();
+        }
+    }
+
+    onScheduleHourChange = (value) => {
+        const { schedule } = this.state;
+        schedule.hour = value;
+        this.update('UPDATE_SCHEDULE', { schedule });
+        this.updateSchedule();
+    }
+
     getBenchmarks = () => {
         const params = `?${queryString.stringify(this.params)}`;
         return axios.get(`/v1/benchmarks/results/grouped/${this.props.benchmarksResults}${params}`).then((response) => {
@@ -86,14 +119,94 @@ class BenchmarksPage extends Component {
         });
     }
 
+    retrieveSchedule() {
+        return axios.get(`/v1/benchmarks/schedules/${this.props.benchmarksSchedule}`).then((response) => {
+            const schedule = response.data;
+            schedule.active = true;
+            this.update('UPDATE_SCHEDULE', { schedule });
+        }).catch((error) => {
+            console.error(error);
+        });
+    }
+
     pollBenchmarks = () => {
         this.getBenchmarks().then(() => {
             this.pollTimeoutId = setTimeout(this.pollBenchmarks, 5000);
         });
     }
 
+    removeSchedule() {
+        const { schedule } = this.state;
+        schedule.active = false;
+        this.update('UPDATE_SCHEDULE', { schedule });
+        return axios.delete(`/v1/benchmarks/schedules/${this.props.benchmarksSchedule}`);
+    }
+
+    updateSchedule() {
+        if (this.state.schedule.hour === '' || this.state.schedule.day === '') return;
+
+        if (this.state.schedule.active) {
+            axios.put(`/v1/benchmarks/schedules/${this.props.benchmarksSchedule}`, this.state.schedule);
+        } else {
+            const { schedule } = this.state;
+            schedule.active = true;
+            this.update('UPDATE_SCHEDULE', { schedule });
+            axios.post('/v1/benchmarks/schedules', this.state.schedule);
+        }
+    }
+
     update = (action, nextState) => {
         this.setState(prevState => reducer(action, prevState, nextState));
+    }
+
+    renderScanOptions = () => {
+        const category = {
+            options: [
+                { label: 'None', value: null },
+                { label: 'Monday', value: 'Monday' },
+                { label: 'Tuesday', value: 'Tuesday' },
+                { label: 'Wednesday', value: 'Wednesday' },
+                { label: 'Thursday', value: 'Thursday' },
+                { label: 'Friday', value: 'Friday' },
+                { label: 'Saturday', value: 'Saturday' },
+                { label: 'Sunday', value: 'Sunday' }]
+        };
+        return (
+            <Select className="block w-full border bg-base-100 border-base-200 text-base-500 p-3 pr-8 rounded" value={this.state.schedule.day} placeholder="No scheduled scanning" options={category.options} onChange={this.onScheduleDayChange} />
+        );
+    }
+
+    renderScanTimes = () => {
+        const category = {
+            options: [
+                { label: '00:00 AM', value: '00:00 AM' },
+                { label: '01:00 AM', value: '01:00 AM' },
+                { label: '02:00 AM', value: '02:00 AM' },
+                { label: '03:00 AM', value: '03:00 AM' },
+                { label: '04:00 AM', value: '04:00 AM' },
+                { label: '05:00 AM', value: '05:00 AM' },
+                { label: '06:00 AM', value: '06:00 AM' },
+                { label: '07:00 AM', value: '07:00 AM' },
+                { label: '08:00 AM', value: '08:00 AM' },
+                { label: '09:00 AM', value: '09:00 AM' },
+                { label: '10:00 AM', value: '10:00 AM' },
+                { label: '11:00 AM', value: '11:00 AM' },
+                { label: '12:00 PM', value: '12:00 PM' },
+                { label: '01:00 PM', value: '01:00 PM' },
+                { label: '02:00 PM', value: '02:00 PM' },
+                { label: '03:00 PM', value: '03:00 PM' },
+                { label: '04:00 PM', value: '04:00 PM' },
+                { label: '05:00 PM', value: '05:00 PM' },
+                { label: '06:00 PM', value: '06:00 PM' },
+                { label: '07:00 PM', value: '07:00 PM' },
+                { label: '08:00 PM', value: '08:00 PM' },
+                { label: '09:00 PM', value: '09:00 PM' },
+                { label: '10:00 PM', value: '10:00 PM' },
+                { label: '11:00 PM', value: '11:00 PM' }]
+        };
+        return (
+            <Select className="block w-full border bg-base-100 border-base-200 text-base-500 p-3 pr-8 rounded" value={this.state.schedule.hour} placeholder="None" options={category.options} onChange={this.onScheduleHourChange} />
+        );
     }
 
     renderScanButton = () => {
@@ -134,6 +247,9 @@ class BenchmarksPage extends Component {
             <div className="flex flex-col h-full">
                 <div className="flex w-full mb-3 px-3 items-center">
                     <span className="flex flex-1 text-xl font-500 text-primary-500 self-end">Last Scanned: {this.state.lastScanned || 'Never'}</span>
+                    <div className="flex self-center justify-end pr-5 border-r border-primary-200">
+                        <span className="mr-4">{this.renderScanOptions()}</span><span>{this.renderScanTimes()}</span>
+                    </div>
                     {this.renderScanButton()}
                 </div>
                 <div className="flex flex-1 border-t border-primary-300 bg-base-100">

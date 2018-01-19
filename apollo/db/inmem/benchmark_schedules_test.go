@@ -5,23 +5,18 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/assert"
 )
 
 func testBenchmarkSchedules(t *testing.T, insertStorage, retrievalStorage db.BenchmarkScheduleStorage) {
 	benchmarkSchedules := []*v1.BenchmarkSchedule{
 		{
-			Name:         "bench1",
-			StartTime:    ptypes.TimestampNow(),
-			IntervalDays: 1,
-			Clusters:     []string{"dev"},
+			Name:     "bench1",
+			Clusters: []string{"dev"},
 		},
 		{
-			Name:         "bench2",
-			StartTime:    ptypes.TimestampNow(),
-			IntervalDays: 2,
-			Clusters:     []string{"prod"},
+			Name:     "bench2",
+			Clusters: []string{"prod"},
 		},
 	}
 

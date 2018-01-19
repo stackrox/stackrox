@@ -6,18 +6,18 @@ const Select = ({
     className,
     options,
     placeholder,
-    onChange
+    onChange,
+    value
 }) => {
     this.handleClick = (event) => {
         onChange(event.target.value);
-        event.target.value = ''; // eslint-disable-line no-param-reassign
     };
     return (
         <div className="relative">
             <select
                 className={className}
                 onChange={this.handleClick}
-                value=""
+                value={value}
             >
                 <option value="" disabled>{placeholder}</option>
                 {options.map(option => <option key={option.label} value={option.value}>{option.label}</option>)}

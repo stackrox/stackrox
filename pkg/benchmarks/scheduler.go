@@ -213,22 +213,49 @@ func (s *SchedulerClient) Launch(scanID string, benchmark *v1.Benchmark, reason 
 	return nil
 }
 
-func nextScheduledTime(schedule *v1.BenchmarkSchedule) (time.Time, error) {
-	startTime, err := ptypes.Timestamp(schedule.GetStartTime())
+// ParseHour parses out a time in the form 03:04 PM
+func ParseHour(h string) (time.Time, error) {
+	hourTime, err := time.Parse("03:04 PM", h)
 	if err != nil {
-		return startTime, err
+		return hourTime, fmt.Errorf("could not parse hour '%v'", h)
 	}
-	nextDate := startTime
-	for nextDate.Before(time.Now()) {
-		nextDate = nextDate.AddDate(0, 0, int(schedule.IntervalDays))
+	return hourTime, nil
+}
+
+var dayMap = map[string]struct{}{
+	"Sunday":    {},
+	"Monday":    {},
+	"Tuesday":   {},
+	"Wednesday": {},
+	"Thursday":  {},
+	"Friday":    {},
+	"Saturday":  {},
+}
+
+// ValidDay makes sure that the string is a valid day of the week
+func ValidDay(d string) bool {
+	_, ok := dayMap[d]
+	return ok
+}
+
+func nextScheduledTime(schedule *v1.BenchmarkSchedule) (time.Time, error) {
+	now := time.Now().Add(-time.Duration(schedule.TimezoneOffset) * time.Hour)
+	hourTime, err := ParseHour(schedule.GetHour())
+	if err != nil {
+		return hourTime, err
 	}
-	return nextDate, nil
+	nextTime := time.Date(now.Year(), now.Month(), now.Day(), int(hourTime.Hour()), hourTime.Minute(), 0, 0, now.Location())
+	for nextTime.Before(now) || nextTime.Weekday().String() != schedule.GetDay() {
+		nextTime = nextTime.AddDate(0, 0, 1)
+	}
+	log.Infof("Next time: %v", nextTime)
+	return nextTime, nil
 }
 
 func (s *SchedulerClient) updateTriggers() {
 	triggers, err := s.getTriggers()
 	if err != nil {
-		log.Error()
+		log.Error(err)
 		return
 	}
 	for _, trigger := range triggers {

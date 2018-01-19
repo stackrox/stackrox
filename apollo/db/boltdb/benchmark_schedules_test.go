@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -39,16 +38,12 @@ func (suite *BoltBenchmarkSchedulesTestSuite) TeardownSuite() {
 func (suite *BoltBenchmarkSchedulesTestSuite) TestSchedules() {
 	schedules := []*v1.BenchmarkSchedule{
 		{
-			Name:         "bench1",
-			StartTime:    ptypes.TimestampNow(),
-			IntervalDays: 1,
-			Clusters:     []string{"dev"},
+			Name:     "bench1",
+			Clusters: []string{"dev"},
 		},
 		{
-			Name:         "bench2",
-			StartTime:    ptypes.TimestampNow(),
-			IntervalDays: 2,
-			Clusters:     []string{"prod"},
+			Name:     "bench2",
+			Clusters: []string{"prod"},
 		},
 	}
 
@@ -91,23 +86,3 @@ func (suite *BoltBenchmarkSchedulesTestSuite) TestSchedules() {
 		suite.False(exists)
 	}
 }
-
-/*
-	benchmarkS
-
-	// Test Add
-	for _, b := range benchmarkSchedules {
-		assert.NoError(t, insertStorage.AddBenchmarkSchedule(b))
-	}
-	// Verify insertion multiple times does not deadlock and causes an error
-	for _, b := range benchmarkSchedules {
-		assert.Error(t, insertStorage.AddBenchmarkSchedule(b))
-	}
-
-	for _, b := range benchmarkSchedules {
-		got, exists, err := retrievalStorage.GetBenchmarkSchedule(b.Name)
-		assert.NoError(t, err)
-		assert.True(t, exists)
-		assert.Equal(t, got, b)
-	}
-*/

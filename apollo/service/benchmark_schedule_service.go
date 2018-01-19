@@ -1,8 +1,11 @@
 package service
 
 import (
+	"fmt"
+
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -34,8 +37,29 @@ func (s *BenchmarkScheduleService) RegisterServiceHandlerFromEndpoint(ctx contex
 	return v1.RegisterBenchmarkScheduleServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 }
 
+// GetBenchmarkSchedule returns the current benchmark schedules
+func (s *BenchmarkScheduleService) GetBenchmarkSchedule(ctx context.Context, request *v1.GetBenchmarkScheduleRequest) (*v1.BenchmarkSchedule, error) {
+	if request.GetName() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Name field must be specified when retrieving a benchmark schedule")
+	}
+	schedule, exists, err := s.storage.GetBenchmarkSchedule(request.GetName())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if !exists {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("Schedule with name %v was not found", request.GetName()))
+	}
+	return schedule, nil
+}
+
 // PostBenchmarkSchedule adds a new schedule
 func (s *BenchmarkScheduleService) PostBenchmarkSchedule(ctx context.Context, request *v1.BenchmarkSchedule) (*empty.Empty, error) {
+	if _, err := benchmarks.ParseHour(request.GetHour()); err != nil {
+		return nil, fmt.Errorf("Could not parse hour '%v'", request.GetHour())
+	}
+	if !benchmarks.ValidDay(request.GetDay()) {
+		return nil, fmt.Errorf("'%v' is not a valid day of the week", request.GetDay())
+	}
 	// TODO(cg) Validate benchmark schedule
 	request.LastUpdated = ptypes.TimestampNow()
 	if err := s.storage.AddBenchmarkSchedule(request); err != nil {
@@ -46,6 +70,12 @@ func (s *BenchmarkScheduleService) PostBenchmarkSchedule(ctx context.Context, re
 
 // PutBenchmarkSchedule updates a current schedule
 func (s *BenchmarkScheduleService) PutBenchmarkSchedule(ctx context.Context, request *v1.BenchmarkSchedule) (*empty.Empty, error) {
+	if _, err := benchmarks.ParseHour(request.GetHour()); err != nil {
+		return nil, fmt.Errorf("Could not parse hour '%v'", request.GetHour())
+	}
+	if !benchmarks.ValidDay(request.GetDay()) {
+		return nil, fmt.Errorf("'%v' is not a valid day of the week", request.GetDay())
+	}
 	// TODO(cg) Validate benchmark schedule
 	request.LastUpdated = ptypes.TimestampNow()
 	if err := s.storage.UpdateBenchmarkSchedule(request); err != nil {

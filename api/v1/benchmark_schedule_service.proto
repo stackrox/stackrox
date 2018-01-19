@@ -10,11 +10,16 @@ package v1;
 
 message BenchmarkSchedule {
     string name                            = 1;
-    google.protobuf.Timestamp start_time   = 2;
-    int64 interval_days                    = 3;
-    google.protobuf.Timestamp last_updated = 4;
-    repeated string clusters               = 5;
-    repeated string notifiers              = 6;
+    string day                             = 2;
+    string hour                            = 3;
+    int64 timezone_offset                  = 4;
+    google.protobuf.Timestamp last_updated = 5;
+    repeated string clusters               = 6;
+    repeated string notifiers              = 7;
+}
+
+message GetBenchmarkScheduleRequest {
+    string name = 1;
 }
 
 message GetBenchmarkSchedulesRequest {
@@ -30,6 +35,12 @@ message DeleteBenchmarkScheduleRequest {
 }
 
 service BenchmarkScheduleService {
+
+    rpc GetBenchmarkSchedule (GetBenchmarkScheduleRequest) returns (BenchmarkSchedule) {
+        option (google.api.http) = {
+            get: "/v1/benchmarks/schedules/{name}"
+        };
+    }
 
     rpc GetBenchmarkSchedules (GetBenchmarkSchedulesRequest) returns (GetBenchmarkSchedulesResponse) {
         option (google.api.http) = {
