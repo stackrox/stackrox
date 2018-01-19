@@ -35,7 +35,8 @@ class PolicyCreationForm extends Component {
             submitForm: PropTypes.func,
             setValue: PropTypes.func,
             setAllValues: PropTypes.func,
-            clearAll: PropTypes.func
+            clearAll: PropTypes.func,
+            values: PropTypes.shape({})
         }).isRequired
     }
 
@@ -415,7 +416,6 @@ class PolicyCreationForm extends Component {
                 this.props.formApi.setValue(field.value, '');
             });
         } else this.props.formApi.setValue(fieldToAdd.value, '');
-        console.log(fieldToAdd.value, this.props.formApi.values);
     }
 
     removeField = (fieldValue) => {

@@ -55,7 +55,6 @@ class PoliciesPage extends Component {
     }
 
     onSubmit = (policy) => {
-        console.log('onSubmit', policy);
         if (this.state.addingPolicy) this.createPolicy(policy);
         else this.savePolicy(policy);
     }
@@ -74,6 +73,22 @@ class PoliciesPage extends Component {
     }
 
     preSubmit = policy => this.policyCreationForm.preSubmit(policy);
+
+    deletePolicies = () => {
+        const promises = [];
+        this.policyTable.getSelectedRows().forEach((obj) => {
+            // close the view panel if that policy is being deleted
+            if (this.state.selectedPolicy && obj.id === this.state.selectedPolicy.id) {
+                this.unselectPolicy();
+            }
+            const promise = axios.delete(`/v1/policies/${obj.id}`);
+            promises.push(promise);
+        });
+        Promise.all(promises).then(() => {
+            this.policyTable.clearSelectedRows();
+            this.getImagesPolicies();
+        });
+    }
 
     addPolicy = () => {
         this.update('ADD_POLICY', { policy: {} });
@@ -111,7 +126,6 @@ class PoliciesPage extends Component {
     }
 
     savePolicy = (policy) => {
-        console.log(policy);
         axios.put(`/v1/policies/${policy.id}`, policy).then(() => {
             this.cancelEditingPolicy();
             this.getImagesPolicies();
@@ -130,10 +144,17 @@ class PoliciesPage extends Component {
         const header = `${this.state.policies.length} Policies`;
         const buttons = [
             {
+                renderIcon: () => <Icon.Trash2 className="h-4 w-4" />,
+                text: 'Delete Policies',
+                className: 'flex py-2 px-2 rounded-sm text-danger-600 hover:text-white hover:bg-danger-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-danger-400',
+                onClick: this.deletePolicies,
+                disabled: this.state.editingPolicy !== null
+            },
+            {
                 renderIcon: () => <Icon.Plus className="h-4 w-4" />,
                 text: 'Add Policy',
                 className: 'flex py-2 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
-                onClick: () => this.addPolicy(),
+                onClick: this.addPolicy,
                 disabled: this.state.editingPolicy !== null
             }
         ];
@@ -163,7 +184,7 @@ class PoliciesPage extends Component {
         const rows = this.state.policies;
         return (
             <Panel header={header} buttons={buttons}>
-                <Table columns={columns} rows={rows} onRowClick={this.selectPolicy} />
+                <Table columns={columns} rows={rows} onRowClick={this.selectPolicy} checkboxes ref={(table) => { this.policyTable = table; }} />
             </Panel>
         );
     }
@@ -175,11 +196,6 @@ class PoliciesPage extends Component {
         const header = this.state.selectedPolicy.name;
         const buttons = [
             {
-                renderIcon: () => <Icon.X className="h-4 w-4" />,
-                className: 'flex py-2 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
-                onClick: this.unselectPolicy
-            },
-            {
                 renderIcon: () => <Icon.Edit className="h-4 w-4" />,
                 text: 'Edit Policy',
                 className: 'flex py-2 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
@@ -187,6 +203,11 @@ class PoliciesPage extends Component {
                     const { selectedPolicy } = this.state;
                     this.editPolicy(selectedPolicy);
                 }
+            },
+            {
+                renderIcon: () => <Icon.X className="h-4 w-4" />,
+                className: 'flex py-2 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
+                onClick: this.unselectPolicy
             }
         ];
         return (
@@ -216,7 +237,7 @@ class PoliciesPage extends Component {
                 renderIcon: () => <Icon.Save className="h-4 w-4" />,
                 text: 'Save Policy',
                 className: 'flex py-2 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
-                onClick: () => this.policyCreationForm.submitForm()
+                onClick: this.policyCreationForm.submitForm
             }
         ];
         return (

@@ -114,7 +114,7 @@ button:focus {
     outline: none;
 }
 
-button, select, input {
+button, select {
     @apply text-base-600 text-base font-600 appearance-none;
     line-height: 14px; /*weird render bug fix where select text gets clipped at bottom */
 }

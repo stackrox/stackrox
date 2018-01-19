@@ -35,7 +35,7 @@ class PoliciesPage extends Component {
                 category: []
             },
             category: {
-                options: [{ label: 'Image Assurance', value: 'IMAGE_ASURANCE' }, { label: 'Container Configuration', value: 'CONTAINER_CONFIGURATION' }, { label: 'Privileges & Capabilities', value: 'PRIVILEGES_AND_CAPABILITIES' }]
+                options: [{ label: 'Image Assurance', value: 'IMAGE_ASSURANCE' }, { label: 'Container Configuration', value: 'CONTAINER_CONFIGURATION' }, { label: 'Privileges & Capabilities', value: 'PRIVILEGES_CAPABILITIES' }]
             },
             table: {
                 columns: [
@@ -76,9 +76,11 @@ class PoliciesPage extends Component {
         const { table } = this.state;
         return axios.get(`/v1/alerts/groups${params}`).then((response) => {
             if (!response.data.byCategory) return;
+            let tableRows = [];
             response.data.byCategory.forEach((category) => {
-                table.rows = category.byPolicy.map((policy) => {
+                const rows = category.byPolicy.map((policy) => {
                     const result = {
+                        id: policy.policy.id,
                         name: policy.policy.name,
                         description: policy.policy.description,
                         category: category.category.replace('_', ' ').capitalizeFirstLetterOfWord(),
@@ -87,7 +89,9 @@ class PoliciesPage extends Component {
                     };
                     return result;
                 });
+                tableRows = tableRows.concat(rows);
             });
+            table.rows = tableRows;
             this.setState({ table });
         }).catch(() => {
             table.rows = [];

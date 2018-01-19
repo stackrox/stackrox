@@ -129,7 +129,9 @@ class PolicyAlertsSidePanel extends Component {
                             <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Severity:</span> {this.state.modal.data.policy.severity}</div>
                             <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Categories:</span> {this.state.modal.data.policy.categories.join(', ')}</div>
                             <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Disabled:</span> {String(this.state.modal.data.policy.disabled)}</div>
-                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Scan Age Day:</span> {this.state.modal.data.policy.imagePolicy.scanAgeDays}</div>
+                            {
+                                (this.state.modal.data.policy.imagePolicy) ? <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Scan Age Day:</span> {this.state.modal.data.policy.imagePolicy.scanAgeDays}</div> : ''
+                            }
                         </div>
                     </div>
 
