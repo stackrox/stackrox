@@ -1,20 +1,19 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const TabContent = ({ children, active }) => (
-    <div className={active ? 'flex flex-col h-full transition' : 'hidden'}>
+
+const TabContent = ({ children }) => (
+    <div className="flex flex-col h-full transition">
         {children}
     </div>
 );
 
 TabContent.defaultProps = {
-    children: [],
-    active: false
+    children: []
 };
 
 TabContent.propTypes = {
-    children: PropTypes.node,
-    active: PropTypes.bool
+    children: PropTypes.node
 };
 
 export default TabContent;

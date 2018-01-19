@@ -50,8 +50,7 @@ class Tabs extends Component {
 
     renderChildren() {
         const children = React.Children.toArray(this.props.children);
-        return children.map((tabContentChild, i) =>
-            React.cloneElement(tabContentChild, { active: this.state.activeIndex === i }));
+        return children[this.state.activeIndex];
     }
 
     render() {
