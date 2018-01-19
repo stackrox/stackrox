@@ -9,6 +9,7 @@
 # Deployment
 sensor-*.yaml
 sensor-deploy.sh
+sensor-deploy.zip
 
 # Uncommitted code
 vendor/

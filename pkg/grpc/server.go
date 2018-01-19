@@ -45,23 +45,21 @@ type API interface {
 }
 
 type apiImpl struct {
-	apiServices   []APIService
-	serveUI       bool
-	tlsConfigurer verifier.TLSConfigurer
+	apiServices []APIService
+	config      Config
+}
+
+// A Config configures the server.
+type Config struct {
+	TLS          verifier.TLSConfigurer
+	CustomRoutes map[string]http.Handler
 }
 
 // NewAPI returns an API object.
-func NewAPI(tlsConfigurer verifier.TLSConfigurer) API {
+func NewAPI(config Config) API {
 	return &apiImpl{
-		tlsConfigurer: tlsConfigurer,
+		config: config,
 	}
-}
-
-// NewAPIWithUI returns an API server that also serves the UI.
-func NewAPIWithUI(tlsConfigurer verifier.TLSConfigurer) API {
-	a := NewAPI(tlsConfigurer).(*apiImpl)
-	a.serveUI = true
-	return a
 }
 
 func (a *apiImpl) Start() {
@@ -94,7 +92,7 @@ func panicHandler(p interface{}) (err error) {
 }
 
 func (a *apiImpl) run() {
-	tlsConf, err := a.tlsConfigurer.TLSConfig()
+	tlsConf, err := a.config.TLS.TLSConfig()
 	if err != nil {
 		panic(err)
 	}
@@ -133,6 +131,9 @@ func (a *apiImpl) run() {
 	dopts := []grpc.DialOption{grpc.WithTransportCredentials(dcreds)}
 
 	mux := http.NewServeMux()
+	for prefix, handler := range a.config.CustomRoutes {
+		mux.Handle(prefix, handler)
+	}
 	// EmitDefaults allows marshalled structs with the omitempty: false setting to return 0-valued defaults.
 	gwMux := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{EmitDefaults: true}))
 	for _, service := range a.apiServices {
@@ -140,12 +141,7 @@ func (a *apiImpl) run() {
 			panic(err)
 		}
 	}
-	if a.serveUI {
-		mux.Handle("/", uiMux())
-		mux.Handle("/v1/", gwMux)
-	} else {
-		mux.Handle("/", gwMux)
-	}
+	mux.Handle("/v1/", gwMux)
 	conn, err := net.Listen("tcp", grpcPort)
 	if err != nil {
 		panic(err)
@@ -163,21 +159,6 @@ func (a *apiImpl) run() {
 		log.Fatal("ListenAndServe: ", err)
 	}
 	return
-}
-
-func uiMux() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/static/", http.FileServer(http.FileSystem(http.Dir("/ui"))))
-	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "/ui/favicon.ico")
-	})
-	mux.HandleFunc("/service-worker.js", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "/ui/service-worker.js")
-	})
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "/ui/index.html")
-	})
-	return mux
 }
 
 func grpcHandlerFunc(grpcServer *grpc.Server, httpHandler http.Handler) http.Handler {

@@ -1,11 +1,13 @@
 package main
 
 import (
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime/debug"
 	"syscall"
 
+	clustersZip "bitbucket.org/stack-rox/apollo/apollo/clusters/zip"
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/apollo/db/boltdb"
 	"bitbucket.org/stack-rox/apollo/apollo/db/inmem"
@@ -20,6 +22,7 @@ import (
 	_ "bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
+	"bitbucket.org/stack-rox/apollo/pkg/ui"
 )
 
 var (
@@ -71,17 +74,28 @@ func newApollo() *apollo {
 }
 
 func (a *apollo) startGRPCServer() {
-	if features.MTLS.Enabled() {
-		a.server = grpc.NewAPIWithUI(verifier.CA{})
-	} else {
-		a.server = grpc.NewAPIWithUI(verifier.NoMTLS{})
+	idService := service.NewServiceIdentityService(a.database)
+	clusterService := service.NewClusterService(a.database)
+
+	config := grpc.Config{
+		CustomRoutes: map[string]http.Handler{
+			"/": ui.Mux(),
+			"/api/extensions/clusters/zip": clustersZip.Handler(clusterService, idService),
+		},
 	}
+	if features.MTLS.Enabled() {
+		config.TLS = verifier.CA{}
+	} else {
+		config.TLS = verifier.NoMTLS{}
+	}
+
+	a.server = grpc.NewAPI(config)
 	a.server.Register(service.NewAlertService(a.database))
 	a.server.Register(service.NewBenchmarkService(a.database))
 	a.server.Register(service.NewBenchmarkScheduleService(a.database))
 	a.server.Register(service.NewBenchmarkResultsService(a.database))
 	a.server.Register(service.NewBenchmarkTriggerService(a.database))
-	a.server.Register(service.NewClusterService(a.database))
+	a.server.Register(clusterService)
 	a.server.Register(service.NewDeploymentService(a.database))
 	a.server.Register(service.NewImageService(a.database))
 	a.server.Register(service.NewNotifierService(a.database, a.notificationProcessor))
@@ -90,7 +104,7 @@ func (a *apollo) startGRPCServer() {
 	a.server.Register(service.NewRegistryService(a.database, a.detector))
 	a.server.Register(service.NewScannerService(a.database, a.detector))
 	a.server.Register(service.NewSensorEventService(a.detector, a.notificationProcessor, a.database))
-	a.server.Register(service.NewServiceIdentityService(a.database))
+	a.server.Register(idService)
 	a.server.Start()
 }
 

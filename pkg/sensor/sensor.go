@@ -45,9 +45,9 @@ type Sensor struct {
 func New() *Sensor {
 	var server grpc.API
 	if features.MTLS.Enabled() {
-		server = grpc.NewAPI(verifier.NonCA{})
+		server = grpc.NewAPI(grpc.Config{TLS: verifier.NonCA{}})
 	} else {
-		server = grpc.NewAPI(verifier.NoMTLS{})
+		server = grpc.NewAPI(grpc.Config{TLS: verifier.NoMTLS{}})
 	}
 	return &Sensor{
 		Server: server,

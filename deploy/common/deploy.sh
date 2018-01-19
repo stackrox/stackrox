@@ -46,6 +46,42 @@ function wait_for_central {
     echo
 }
 
+# get_cluster_zip
+# arguments:
+#   - central API server endpoint reachable from this host
+#   - name of cluster
+#   - type of cluster (e.g., SWARM_CLUSTER)
+#   - image reference (e.g., stackrox/apollo:latest)
+#   - central API endpoint reachable from the container (e.g., my-host:8080)
+#   - directory to drop files in
+#   - extra fields in JSON format
+function get_cluster_zip {
+    LOCAL_API_ENDPOINT="$1"
+    CLUSTER_NAME="$2"
+    CLUSTER_TYPE="$3"
+    CLUSTER_IMAGE="$4"
+    CLUSTER_API_ENDPOINT="$5"
+    OUTPUT_DIR="$6"
+    EXTRA_JSON="$7"
+
+    echo "Creating a new cluster"
+    if [ "$EXTRA_JSON" != "" ]; then
+        EXTRA_JSON=", $EXTRA_JSON"
+    fi
+    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"apollo_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\" $EXTRA_JSON}"
+
+    STATUS=$(curl -X POST \
+        -d "$CLUSTER_JSON" \
+        -k \
+        -s \
+        -o $OUTPUT_DIR/sensor-deploy.zip \
+        -w "%{http_code}\n" \
+        https://$LOCAL_API_ENDPOINT/api/extensions/clusters/zip)
+    echo "Status: $STATUS"
+    echo "Saved zip file to $OUTPUT_DIR"
+    echo
+}
+
 # create_cluster
 # arguments:
 #   - central API server endpoint reachable from this host

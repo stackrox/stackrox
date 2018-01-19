@@ -54,14 +54,13 @@ echo "Set local API endpoint to: $LOCAL_API_ENDPOINT"
 
 wait_for_central "$LOCAL_API_ENDPOINT"
 CLUSTER="remote"
-get_cluster_zip "$LOCAL_API_ENDPOINT" "$CLUSTER" KUBERNETES_CLUSTER "$APOLLO_IMAGE" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "\"namespace\": \"$NAMESPACE\", \"imagePullSecret\": \"stackrox\""
+create_cluster "$LOCAL_API_ENDPOINT" "$CLUSTER" KUBERNETES_CLUSTER "$APOLLO_IMAGE" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "\"namespace\": \"$NAMESPACE\", \"imagePullSecret\": \"stackrox\""
+get_identity "$LOCAL_API_ENDPOINT" "$CLUSTER" "$K8S_DIR"
+get_authority "$LOCAL_API_ENDPOINT" "$K8S_DIR"
 
 echo "Deploying Sensor..."
 kubectl delete secret -n "$NAMESPACE" sensor-tls || true
-UNZIP_DIR="$K8S_DIR/sensor-deploy/"
-rm -rf "$UNZIP_DIR"
-unzip "$K8S_DIR/sensor-deploy.zip" -d "$UNZIP_DIR"
-$UNZIP_DIR/sensor-deploy.sh
+$K8S_DIR/sensor-deploy.sh
 echo
 
 echo "Successfully deployed!"
