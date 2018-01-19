@@ -113,9 +113,9 @@ func (a *Sensor) relayEvents() {
 		select {
 		case ev := <-a.Listener.Events():
 			if resp, err := a.reportDeploymentEvent(ev.DeploymentEvent); err != nil {
-				a.Logger.Errorf("Couldn't report event %+v: %+v", ev, err)
+				a.Logger.Errorf("Couldn't report event %s for deployment %s: %+v", ev.GetAction(), ev.GetDeployment().GetName(), err)
 			} else {
-				a.Logger.Infof("Successfully reported event %+v", ev)
+				a.Logger.Infof("Successfully reported event %s for deployment %s", ev.GetAction(), ev.GetDeployment().GetName())
 				if resp.GetEnforcement() != v1.EnforcementAction_UNSET_ENFORCEMENT {
 					a.Logger.Infof("Event requested enforcement %s for deployment %s", resp.GetEnforcement(), ev.GetDeployment().GetName())
 					a.Enforcer.Actions() <- &enforcers.DeploymentEnforcement{

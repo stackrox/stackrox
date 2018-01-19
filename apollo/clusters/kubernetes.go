@@ -58,7 +58,7 @@ spec:
         - name: {{.ImageEnv}}
           value: {{.Image}}
         - name: {{.AdvertisedEndpointEnv}}
-          value: {{.AdvertisedEndpoint}}
+          value: sensor.{{.Namespace}}:443
         - name: {{.ImagePullSecretEnv}}
           value: {{.ImagePullSecret}}
         - name: ROX_APOLLO_NAMESPACE

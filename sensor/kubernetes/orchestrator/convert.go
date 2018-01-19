@@ -85,6 +85,7 @@ func (c converter) asKubernetesPod(service *serviceWrap) v1.PodTemplateSpec {
 			ImagePullSecrets:   c.asImagePullSecrets(),
 			RestartPolicy:      v1.RestartPolicyAlways,
 			Volumes:            c.asVolumes(service),
+			HostPID:            service.HostPID,
 		},
 	}
 }

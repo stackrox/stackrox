@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
 	"bitbucket.org/stack-rox/apollo/pkg/docker"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"github.com/docker/docker/api/types"
@@ -19,31 +20,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to connect to docker client: %+v", err)
 	}
-
-	strVolumes := []string{
-		"/var/run/docker.sock:/var/run/docker.sock",
-		"/var/run/docker.sock:/host/var/run/docker.sock", // Mount this twice because it makes it so any checks on /var/run/docker.sock do not need to be unique
-		"/var/lib:/host/var/lib:ro",
-		"/etc:/host/etc:ro",
-		"/var/log/audit:/host/var/log/audit:ro",
-		"/lib/systemd:/host/lib/systemd:ro",
-		"/usr/lib/systemd:/host/usr/lib/systemd:ro",
-		"/usr/bin:/host/usr/bin:ro",
-	}
-
 	volumeMap := make(map[string]struct{})
-	for _, vol := range strVolumes {
+	for _, vol := range benchmarks.BenchmarkMounts {
 		volumeMap[vol] = struct{}{}
 	}
-
 	containerConfig := &container.Config{
 		Env:        os.Environ(),
 		Image:      image,
 		Volumes:    volumeMap,
-		Entrypoint: []string{"benchmarks"},
+		Entrypoint: []string{benchmarks.BenchmarkCommand},
 	}
 	hostConfig := &container.HostConfig{
-		Binds:      strVolumes,
+		Binds:      benchmarks.BenchmarkMounts,
 		PidMode:    container.PidMode("host"),
 		AutoRemove: true,
 	}

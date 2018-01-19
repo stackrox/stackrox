@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -64,6 +65,9 @@ Loop:
 }
 
 func getHostname() (string, error) {
+	if err := os.Setenv("DOCKER_HOST", "unix://"+utils.ContainerPathPrefix+"/var/run/docker.sock"); err != nil {
+		log.Fatalf("Unable to set DOCKER_HOST: %+v", err)
+	}
 	cli, err := docker.NewClient()
 	if err != nil {
 		return "", fmt.Errorf("docker client setup: %s", err)

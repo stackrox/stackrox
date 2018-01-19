@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"regexp"
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -12,6 +13,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+const benchmarkNameRegex = `^[a-zA-Z0-9]([-a-zA-Z0-9.\s]*[a-zA-Z0-9])?$`
+
+var benchmarkNameRegexp = regexp.MustCompile(benchmarkNameRegex)
 
 // NewBenchmarkService returns the BenchmarkService API.
 func NewBenchmarkService(storage db.BenchmarkStorage) *BenchmarkService {
@@ -63,6 +68,9 @@ func (s *BenchmarkService) GetBenchmarks(ctx context.Context, request *v1.GetBen
 
 // PostBenchmark creates a new benchmark
 func (s *BenchmarkService) PostBenchmark(ctx context.Context, request *v1.Benchmark) (*empty.Empty, error) {
+	if !benchmarkNameRegexp.MatchString(request.GetName()) {
+		return nil, fmt.Errorf("benchmark name must start and end with an alphanumeric character and otherwise contain . - or whitespace")
+	}
 	request.Editable = true // all user generated benchmarks are editable
 	if err := s.storage.AddBenchmark(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -72,6 +80,9 @@ func (s *BenchmarkService) PostBenchmark(ctx context.Context, request *v1.Benchm
 
 // PutBenchmark updates a benchmark
 func (s *BenchmarkService) PutBenchmark(ctx context.Context, request *v1.Benchmark) (*empty.Empty, error) {
+	if !benchmarkNameRegexp.MatchString(request.GetName()) {
+		return nil, fmt.Errorf("benchmark name must start and end with an alphanumeric character and otherwise contain . - or whitespace")
+	}
 	if err := s.storage.UpdateBenchmark(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
