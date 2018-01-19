@@ -1,6 +1,6 @@
 {
-  "short_name": "StackRox Harden",
-  "name": "StackRox Harden",
+  "short_name": "StackRox Mitigate",
+  "name": "StackRox Mitigate",
   "icons": [
     {
       "src": "favicon.ico",

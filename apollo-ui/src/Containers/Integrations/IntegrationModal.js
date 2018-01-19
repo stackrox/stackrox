@@ -74,13 +74,13 @@ const sourceMap = {
                 label: 'Sender',
                 key: 'config.sender',
                 type: 'text',
-                placeholder: 'harden-notifier@example.com'
+                placeholder: 'mitigate-notifier@example.com'
             },
             {
                 label: 'Recipient',
                 key: 'config.recipient',
                 type: 'text',
-                placeholder: 'harden-alerts@example.com'
+                placeholder: 'mitigate-alerts@example.com'
             },
             {
                 label: 'TLS',
