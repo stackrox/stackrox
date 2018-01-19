@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Table from 'Components/Table';
 
-import BenchmarksSidePanel from 'Containers/Violations/Compliance/BenchmarksSidePanel';
+import BenchmarksSidePanel from 'Containers/Compliance/BenchmarksSidePanel';
 
 import axios from 'axios';
 import emitter from 'emitter';

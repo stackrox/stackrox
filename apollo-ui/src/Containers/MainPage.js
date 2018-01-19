@@ -11,18 +11,19 @@ import * as Icon from 'react-feather';
 import Logo from 'Components/icons/logo';
 import DashboardPage from 'Containers/Dashboard/DashboardPage';
 import IntegrationsPage from 'Containers/Integrations/IntegrationsPage';
-import ViolationsPage from 'Containers/Violations/ViolationsPage';
+import PolicyViolationsPage from 'Containers/Violations/PolicyViolationsPage';
 import PoliciesPage from 'Containers/Policies/PoliciesPage';
+import CompliancePage from 'Containers/Compliance/CompliancePage';
 
 const Main = () => (
     <Router>
         <section className="flex flex-1 flex-col h-full">
-            <header className="flex bg-primary-600 justify-between px-3">
-                <div className="flex">
+            <header className="flex bg-primary-600 justify-between">
+                <div className="flex flex-1">
                     <div className="flex self-center">
-                        <Logo className="fill-current text-white h-10 w-10 mr-3" />
+                        <Logo className="fill-current text-white h-10 w-10 mx-3" />
                     </div>
-                    <nav>
+                    <nav className="flex flex-row flex-1">
                         <ul className="flex list-reset flex-1 uppercase text-sm tracking-wide">
                             <li>
                                 <NavLink to="/dashboard" className="flex border-l border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:text-primary-200 text-white items-center" activeClassName="bg-primary-800">
@@ -41,6 +42,14 @@ const Main = () => (
                                 </NavLink>
                             </li>
                             <li>
+                                <NavLink to="/compliance" className="flex border-l border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:text-primary-200 text-white items-center" activeClassName="bg-primary-800">
+                                    <span>
+                                        <Icon.CheckSquare className="h-4 w-4 mr-3" />
+                                    </span>
+                                    <span>Compliance</span>
+                                </NavLink>
+                            </li>
+                            <li>
                                 <NavLink to="/policies" className="flex border-l border-r border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:text-primary-200 text-white items-center" activeClassName="bg-primary-800">
                                     <span>
                                         <Icon.FileText className="h-4 w-4 mr-3" />
@@ -48,6 +57,8 @@ const Main = () => (
                                     <span>Policies</span>
                                 </NavLink>
                             </li>
+                        </ul>
+                        <ul className="flex list-reset flex-1 uppercase text-sm tracking-wide justify-end">
                             <li>
                                 <NavLink to="/integrations" className="flex border-l border-r border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:text-primary-200 text-white items-center" activeClassName="bg-primary-800">
                                     <span>
@@ -65,7 +76,8 @@ const Main = () => (
                     {/* Redirects to a default path */}
                     <Switch>
                         <Route exact path="/dashboard" component={DashboardPage} />
-                        <Route exact path="/violations" component={ViolationsPage} />
+                        <Route exact path="/violations" component={PolicyViolationsPage} />
+                        <Route exact path="/compliance" component={CompliancePage} />
                         <Route exact path="/integrations" component={IntegrationsPage} />
                         <Route exact path="/policies" component={PoliciesPage} />
                         <Redirect from="/" to="/dashboard" />

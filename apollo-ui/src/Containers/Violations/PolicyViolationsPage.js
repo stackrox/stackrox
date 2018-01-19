@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import Table from 'Components/Table';
 import MultiSelect from 'react-select';
 
-import PolicyAlertsSidePanel from 'Containers/Violations/Policies/PolicyAlertsSidePanel';
+import PolicyAlertsSidePanel from 'Containers/Violations/PolicyAlertsSidePanel';
 
 import axios from 'axios';
 import emitter from 'emitter';
@@ -117,34 +117,36 @@ class PoliciesPage extends Component {
 
     render() {
         return (
-            <div className="flex flex-1 flex-col">
-                <div className="flex mb-3 mx-3 flex-none">
-                    <div className="flex flex-1 self-center justify-start">
-                        <input
-                            className="border rounded w-full p-3  border-base-300"
-                            placeholder="Filter by registry, severity, deployment, or tag"
-                        />
+            <section className="flex flex-1 h-full">
+                <div className="flex flex-1 mt-3 flex-col">
+                    <div className="flex mb-3 mx-3 flex-none">
+                        <div className="flex flex-1 self-center justify-start">
+                            <input
+                                className="border rounded w-full p-3  border-base-300"
+                                placeholder="Filter by registry, severity, deployment, or tag"
+                            />
+                        </div>
+                        <div className="flex self-center justify-end ml-3">
+                            <MultiSelect
+                                multi
+                                onChange={this.changeCategoriesParam}
+                                options={this.state.category.options}
+                                placeholder="Select categories"
+                                removeSelected
+                                simpleValue
+                                value={this.state.params.category}
+                                className="text-base-600 font-400 min-w-64"
+                            />
+                        </div>
                     </div>
-                    <div className="flex self-center justify-end ml-3">
-                        <MultiSelect
-                            multi
-                            onChange={this.changeCategoriesParam}
-                            options={this.state.category.options}
-                            placeholder="Select categories"
-                            removeSelected
-                            simpleValue
-                            value={this.state.params.category}
-                            className="text-base-600 font-400 min-w-64"
-                        />
+                    <div className="flex flex-1 border-t border-primary-300 bg-base-100">
+                        <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow">
+                            <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={this.onRowClick} />
+                        </div>
+                        <PolicyAlertsSidePanel />
                     </div>
                 </div>
-                <div className="flex flex-1 border-t border-primary-300 bg-base-100">
-                    <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow">
-                        <Table columns={this.state.table.columns} rows={this.state.table.rows} onRowClick={this.onRowClick} />
-                    </div>
-                    <PolicyAlertsSidePanel />
-                </div>
-            </div>
+            </section>
         );
     }
 }

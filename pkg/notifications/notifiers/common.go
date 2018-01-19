@@ -9,7 +9,7 @@ import (
 
 const (
 	alertLinkPath     = "/violations"
-	benchmarkLinkPath = "/violations"
+	benchmarkLinkPath = "/compliance"
 )
 
 // AlertLink is the link URL for this alert
