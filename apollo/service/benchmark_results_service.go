@@ -4,27 +4,43 @@ import (
 	"sort"
 
 	"bitbucket.org/stack-rox/apollo/apollo/db"
+	"bitbucket.org/stack-rox/apollo/apollo/notifications"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/hashicorp/golang-lru"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+const cacheSize = 100
+
 // NewBenchmarkResultsService returns the BenchmarkResultsService API.
-func NewBenchmarkResultsService(storage db.Storage) *BenchmarkResultsService {
+func NewBenchmarkResultsService(storage db.Storage, notificationsProcessor *notifications.Processor) *BenchmarkResultsService {
+	cache, err := lru.New(cacheSize)
+	if err != nil {
+		// This only happens in extreme cases (at this time, for invalid size only).
+		panic(err)
+	}
 	return &BenchmarkResultsService{
-		storage: storage,
+		resultStore:   storage,
+		scheduleStore: storage,
+		cache:         cache,
+		notificationsProcessor: notificationsProcessor,
 	}
 }
 
 // BenchmarkResultsService is the struct that manages the benchmark API
 type BenchmarkResultsService struct {
-	storage db.BenchmarkResultsStorage
+	resultStore            db.BenchmarkResultsStorage
+	scheduleStore          db.BenchmarkScheduleStorage
+	notificationsProcessor *notifications.Processor
+
+	cache *lru.Cache
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -39,7 +55,7 @@ func (s *BenchmarkResultsService) RegisterServiceHandlerFromEndpoint(ctx context
 
 // GetBenchmarkResults retrieves benchmark results based on the request filters
 func (s *BenchmarkResultsService) GetBenchmarkResults(ctx context.Context, request *v1.GetBenchmarkResultsRequest) (*v1.GetBenchmarkResultsResponse, error) {
-	benchmarks, err := s.storage.GetBenchmarkResults(request)
+	benchmarks, err := s.resultStore.GetBenchmarkResults(request)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -48,8 +64,24 @@ func (s *BenchmarkResultsService) GetBenchmarkResults(ctx context.Context, reque
 
 // PostBenchmarkResult inserts a new benchmark result into the system
 func (s *BenchmarkResultsService) PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkResult) (*empty.Empty, error) {
-	if err := s.storage.AddBenchmarkResult(request); err != nil {
+	if err := s.resultStore.AddBenchmarkResult(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if request.GetReason() == v1.BenchmarkReason_SCHEDULED {
+		if _, ok := s.cache.Get(request.GetScanId()); ok {
+			// This means that the scan id has already been processed and an alert about benchmarks coming in was already sent
+			return &empty.Empty{}, nil
+		}
+		s.cache.Add(request.GetScanId(), struct{}{})
+		schedule, exists, err := s.scheduleStore.GetBenchmarkSchedule(request.GetName())
+		if err != nil {
+			log.Errorf("Error retrieving benchmark schedule %v: %+v", request.GetName(), err)
+			return &empty.Empty{}, nil
+		} else if !exists {
+			log.Errorf("Benchmark schedule %v does not exist", request.GetName())
+			return &empty.Empty{}, nil
+		}
+		s.notificationsProcessor.ProcessBenchmark(schedule)
 	}
 	return &empty.Empty{}, nil
 }
@@ -104,7 +136,7 @@ func groupPayloadsByScanID(benchmarkResults []*v1.BenchmarkResult) *v1.GetBenchm
 
 // GetBenchmarkResultsGrouped retrieves benchmark results and groups them for the UI
 func (s *BenchmarkResultsService) GetBenchmarkResultsGrouped(ctx context.Context, request *v1.GetBenchmarkResultsGroupedRequest) (*v1.GetBenchmarkResultsGroupedResponse, error) {
-	benchmarkResults, err := s.storage.GetBenchmarkResults(&v1.GetBenchmarkResultsRequest{Benchmark: request.Benchmark})
+	benchmarkResults, err := s.resultStore.GetBenchmarkResults(&v1.GetBenchmarkResultsRequest{Benchmark: request.Benchmark})
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

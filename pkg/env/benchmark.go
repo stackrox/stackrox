@@ -1,6 +1,10 @@
 package env
 
-import "os"
+import (
+	"os"
+
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+)
 
 var (
 	// ScanID is used to provide the benchmark services with the current scan
@@ -14,6 +18,9 @@ var (
 
 	// BenchmarkCompletion is used to provide the benchmark service with whether or not the benchmark container should exit
 	BenchmarkCompletion = Setting(benchmarkCompletion{})
+
+	// BenchmarkReason is used to provide the benchmark service with why the benchmark was run (e.g. SCHEDULED or TRIGGERED)
+	BenchmarkReason = Setting(benchmarkReason{})
 )
 
 type scanID struct{}
@@ -54,4 +61,17 @@ func (c benchmarkCompletion) EnvVar() string {
 
 func (c benchmarkCompletion) Setting() string {
 	return os.Getenv(c.EnvVar())
+}
+
+type benchmarkReason struct{}
+
+func (c benchmarkReason) EnvVar() string {
+	return "ROX_APOLLO_BENCHMARK_REASON"
+}
+
+func (c benchmarkReason) Setting() string {
+	if val, ok := os.LookupEnv(c.EnvVar()); ok {
+		return val
+	}
+	return v1.BenchmarkReason_SCHEDULED.String()
 }

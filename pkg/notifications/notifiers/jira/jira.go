@@ -35,7 +35,7 @@ type jira struct {
 	*v1.Notifier
 }
 
-func (j *jira) getDescription(alert *v1.Alert) (string, error) {
+func (j *jira) getAlertDescription(alert *v1.Alert) (string, error) {
 	funcMap := template.FuncMap{
 		"header": func(s string) string {
 			return fmt.Sprintf("\r\n h4. %v\r\n", s)
@@ -57,9 +57,14 @@ func (j *jira) getDescription(alert *v1.Alert) (string, error) {
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
-// Notify takes in an alert and the portal endpoint and generates the Slack message
-func (j *jira) Notify(alert *v1.Alert) error {
-	description, err := j.getDescription(alert)
+func (j *jira) getBenchmarkDescription(schedule *v1.BenchmarkSchedule) (string, error) {
+	benchmarkLink := notifiers.BenchmarkLink(j.Notifier.UiEndpoint)
+	return notifiers.FormatBenchmark(schedule, benchmarkLink)
+}
+
+// AlertNotify takes in an alert and generates the notification
+func (j *jira) AlertNotify(alert *v1.Alert) error {
+	description, err := j.getAlertDescription(alert)
 	if err != nil {
 		return err
 	}
@@ -76,6 +81,31 @@ func (j *jira) Notify(alert *v1.Alert) error {
 			Description: description,
 			Priority: &jiraLib.Priority{
 				Name: severityToPriority(alert.GetPolicy().GetSeverity()),
+			},
+		},
+	}
+	return j.createIssue(i)
+}
+
+// BenchmarkNotify takes in a benchmark and generates the notification
+func (j *jira) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
+	description, err := j.getBenchmarkDescription(schedule)
+	if err != nil {
+		return err
+	}
+
+	i := &jiraLib.Issue{
+		Fields: &jiraLib.IssueFields{
+			Summary: fmt.Sprintf("New Benchmark Results for %v", schedule.GetName()),
+			Type: jiraLib.IssueType{
+				Name: j.issueType,
+			},
+			Project: jiraLib.Project{
+				Key: j.project,
+			},
+			Description: description,
+			Priority: &jiraLib.Priority{
+				Name: "P3-Low",
 			},
 		},
 	}

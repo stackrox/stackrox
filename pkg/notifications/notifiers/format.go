@@ -11,7 +11,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/readable"
 )
 
-type formatStruct struct {
+type policyFormatStruct struct {
 	*v1.Alert
 
 	AlertLink string
@@ -22,7 +22,7 @@ type formatStruct struct {
 	Time      string
 }
 
-const format = `
+const policyFormat = `
 {{stringify "Alert ID:" .Id | line}}
 {{stringify "Alert URL:" .AlertLink | line}}
 {{stringify "Time (UTC):" .Time | line}}
@@ -113,7 +113,7 @@ func FormatPolicy(alert *v1.Alert, alertLink string, funcMap template.FuncMap) (
 	funcMap["stringify"] = stringify
 	portPolicy := alert.GetPolicy().GetConfigurationPolicy().GetPortPolicy()
 	portStr := fmt.Sprintf("%v/%v", portPolicy.GetPort(), portPolicy.GetProtocol())
-	data := formatStruct{
+	data := policyFormatStruct{
 		Alert:     alert,
 		AlertLink: alertLink,
 		CVSS:      readable.NumericalPolicy(alert.GetPolicy().GetImagePolicy().GetCvss(), "cvss"),
@@ -123,9 +123,42 @@ func FormatPolicy(alert *v1.Alert, alertLink string, funcMap template.FuncMap) (
 		Time:      readable.ProtoTime(alert.Time),
 	}
 	// Remove all the formatting
-	f := strings.Replace(format, "\t", "", -1)
+	f := strings.Replace(policyFormat, "\t", "", -1)
 	f = strings.Replace(f, "\n", "", -1)
 
+	tmpl, err := template.New("").Funcs(funcMap).Parse(f)
+	if err != nil {
+		return "", err
+	}
+	var tpl bytes.Buffer
+	err = tmpl.Execute(&tpl, data)
+	if err != nil {
+		return "", err
+	}
+	return tpl.String(), nil
+}
+
+type benchmarkFormatStruct struct {
+	*v1.BenchmarkSchedule
+
+	Link string
+}
+
+const benchmarkFormat = `
+New benchmark results for benchmark '{{.BenchmarkSchedule.Name }}' have been posted. Go to {{ .Link }} to view the results.
+`
+
+// FormatBenchmark takes in a benchmark, and a link and generates the notification
+func FormatBenchmark(schedule *v1.BenchmarkSchedule, scheduleLink string) (string, error) {
+	funcMap := make(template.FuncMap)
+	funcMap["stringify"] = stringify
+	data := benchmarkFormatStruct{
+		BenchmarkSchedule: schedule,
+		Link:              scheduleLink,
+	}
+	// Remove all the formatting
+	f := strings.Replace(benchmarkFormat, "\t", "", -1)
+	f = strings.Replace(f, "\n", "", -1)
 	tmpl, err := template.New("").Funcs(funcMap).Parse(f)
 	if err != nil {
 		return "", err

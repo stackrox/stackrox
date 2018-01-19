@@ -123,7 +123,7 @@ func (m message) Bytes() []byte {
 	return []byte(fmt.Sprintf("To: %v\r\nSubject: %v\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n%v\r\n", m.To, m.Subject, m.Body))
 }
 
-func (e *email) plainText(alert *v1.Alert) (string, error) {
+func (e *email) plainTextAlert(alert *v1.Alert) (string, error) {
 	funcMap := template.FuncMap{
 		"header": func(s string) string {
 			return fmt.Sprintf("\r\n%v\r\n", s)
@@ -145,11 +145,26 @@ func (e *email) plainText(alert *v1.Alert) (string, error) {
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
-// Notify takes in an alert and the portal endpoint and generates the email
-func (e *email) Notify(alert *v1.Alert) error {
+func (e *email) plainTextBenchmark(schedule *v1.BenchmarkSchedule) (string, error) {
+	benchmarkLink := notifiers.BenchmarkLink(e.notifier.UiEndpoint)
+	return notifiers.FormatBenchmark(schedule, benchmarkLink)
+}
+
+// AlertNotify takes in an alert and generates the email
+func (e *email) AlertNotify(alert *v1.Alert) error {
 	subject := fmt.Sprintf("Deployment %v (%v) violates '%v' Policy", alert.GetDeployment().GetName(),
 		alert.GetDeployment().GetId(), alert.GetPolicy().GetName())
-	body, err := e.plainText(alert)
+	body, err := e.plainTextAlert(alert)
+	if err != nil {
+		return err
+	}
+	return e.sendEmail(subject, body)
+}
+
+// BenchmarkNotify takes in an benchmark and generates the email
+func (e *email) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
+	subject := fmt.Sprintf("New Benchmark Results for %v", schedule.GetName())
+	body, err := e.plainTextBenchmark(schedule)
 	if err != nil {
 		return err
 	}

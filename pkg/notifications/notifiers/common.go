@@ -7,7 +7,10 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 )
 
-const alertLinkPath = "/violations"
+const (
+	alertLinkPath     = "/violations"
+	benchmarkLinkPath = "/violations"
+)
 
 // AlertLink is the link URL for this alert
 func AlertLink(endpoint string) string {
@@ -18,6 +21,21 @@ func AlertLink(endpoint string) string {
 	u, err := url.Parse(alertLinkPath)
 	if err != nil {
 		log.Print(err)
+		return ""
+	}
+	return base.ResolveReference(u).String()
+}
+
+// BenchmarkLink is the link URL for this alert
+func BenchmarkLink(endpoint string) string {
+	base, err := url.Parse(endpoint)
+	if err != nil {
+		log.Print(err)
+	}
+	u, err := url.Parse(benchmarkLinkPath)
+	if err != nil {
+		log.Print(err)
+		return ""
 	}
 	return base.ResolveReference(u).String()
 }
@@ -38,13 +56,4 @@ func SeverityString(s v1.Severity) string {
 	default:
 		panic("The severity enum has been updated, but this switch statement hasn't")
 	}
-}
-
-// StringViolations converts []*v1.Alert_Violation to []string
-func StringViolations(policyViolations []*v1.Alert_Violation) []string {
-	violations := make([]string, 0, len(policyViolations))
-	for _, p := range policyViolations {
-		violations = append(violations, p.Message)
-	}
-	return violations
 }

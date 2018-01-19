@@ -34,6 +34,7 @@ func RunBenchmark() *v1.BenchmarkResult {
 		Host:      hostname,
 		ScanId:    env.ScanID.Setting(),
 		Name:      env.BenchmarkName.Setting(),
+		Reason:    v1.BenchmarkReason(v1.BenchmarkReason_value[env.BenchmarkReason.Setting()]),
 	}
 	return result
 }

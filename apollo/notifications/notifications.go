@@ -11,7 +11,10 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/types"
 )
 
-const alertChanSize = 100
+const (
+	alertChanSize     = 100
+	benchmarkChanSize = 100
+)
 
 var (
 	log = logging.New("notifications")
@@ -19,18 +22,20 @@ var (
 
 // Processor takes in alerts and sends the notifications tied to that alert
 type Processor struct {
-	alertChan chan *v1.Alert
-	notifiers map[string]types.Notifier
-	database  db.NotifierStorage
-	lock      sync.Mutex
+	alertChan     chan *v1.Alert
+	benchmarkChan chan *v1.BenchmarkSchedule
+	notifiers     map[string]types.Notifier
+	database      db.NotifierStorage
+	lock          sync.Mutex
 }
 
 // NewNotificationProcessor returns a new Processor
 func NewNotificationProcessor(database db.NotifierStorage) (*Processor, error) {
 	processor := &Processor{
-		alertChan: make(chan *v1.Alert, alertChanSize),
-		notifiers: make(map[string]types.Notifier),
-		database:  database,
+		alertChan:     make(chan *v1.Alert, alertChanSize),
+		benchmarkChan: make(chan *v1.BenchmarkSchedule, benchmarkChanSize),
+		notifiers:     make(map[string]types.Notifier),
+		database:      database,
 	}
 	err := processor.initializeNotifiers()
 	return processor, err
@@ -55,7 +60,7 @@ func (p *Processor) initializeNotifiers() error {
 	return nil
 }
 
-func (p *Processor) notify(alert *v1.Alert) {
+func (p *Processor) notifyAlert(alert *v1.Alert) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	for _, id := range alert.Policy.Notifiers {
@@ -64,23 +69,53 @@ func (p *Processor) notify(alert *v1.Alert) {
 			log.Errorf("Could not send notification to notifier %v (%v) for alert %v because it does not exist", id, notifier.ProtoNotifier().GetName(), alert.GetId())
 			continue
 		}
-		if err := notifier.Notify(alert); err != nil {
+		if err := notifier.AlertNotify(alert); err != nil {
 			log.Errorf("Unable to send notification to %v (%v) for alert %v: %v", id, notifier.ProtoNotifier().GetName(), alert.GetId(), err)
 		}
 	}
 }
 
-// Start begins the notification processor and is blocking
-func (p *Processor) Start() {
-	for {
-		alert := <-p.alertChan
-		p.notify(alert)
+func (p *Processor) notifyBenchmark(schedule *v1.BenchmarkSchedule) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	for _, id := range schedule.Notifiers {
+		notifier, exists := p.notifiers[id]
+		if !exists {
+			log.Errorf("Could not send notification to notifier %v (%v) for benchmark %v because it does not exist", id, notifier.ProtoNotifier().GetName(), schedule.GetName())
+			continue
+		}
+		if err := notifier.BenchmarkNotify(schedule); err != nil {
+			log.Errorf("Unable to send notification to %v (%v) for benchmark %v: %v", id, notifier.ProtoNotifier().GetName(), schedule.GetName(), err)
+		}
 	}
 }
 
-// Process pushs the alert into a channel to be processed
-func (p *Processor) Process(alert *v1.Alert) {
+func (p *Processor) processAlerts() {
+	for alert := range p.alertChan {
+		p.notifyAlert(alert)
+	}
+}
+
+func (p *Processor) processBenchmark() {
+	for schedule := range p.benchmarkChan {
+		p.notifyBenchmark(schedule)
+	}
+}
+
+// Start begins the notification processor and is blocking
+func (p *Processor) Start() {
+	go p.processAlerts()
+	go p.processBenchmark()
+}
+
+// ProcessAlert pushes the alert into a channel to be processed
+func (p *Processor) ProcessAlert(alert *v1.Alert) {
 	p.alertChan <- alert
+}
+
+// ProcessBenchmark pushes the alert into a channel to be processed
+func (p *Processor) ProcessBenchmark(schedule *v1.BenchmarkSchedule) {
+	p.benchmarkChan <- schedule
 }
 
 // RemoveNotifier removes the in memory copy of the specified notifier

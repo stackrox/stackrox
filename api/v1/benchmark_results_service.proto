@@ -17,6 +17,11 @@ enum CheckStatus {
     NOT_APPLICABLE = 4;
 }
 
+enum BenchmarkReason {
+    SCHEDULED = 0;
+    TRIGGERED = 1;
+}
+
 message CheckResult {
     CheckDefinition definition = 1;
     CheckStatus result         = 2;
@@ -32,6 +37,7 @@ message BenchmarkResult {
     string host                          = 6;
     string scan_id                       = 7;
     string cluster_id                    = 8;
+    BenchmarkReason reason               = 9;
 }
 
 message GetBenchmarkResultsRequest {

@@ -48,12 +48,20 @@ func getEmail(t *testing.T) *email {
 	return e
 }
 
-func TestEmailNotify(t *testing.T) {
+func TestEmailAlertNotify(t *testing.T) {
 	e := getEmail(t)
-	assert.NoError(t, e.Notify(mock.GetAlert()))
+	assert.NoError(t, e.AlertNotify(mock.GetAlert()))
 }
 
 func TestEmailTest(t *testing.T) {
 	e := getEmail(t)
 	assert.NoError(t, e.Test())
+}
+
+func TestEmailBenchmarkNotify(t *testing.T) {
+	e := getEmail(t)
+	schedule := &v1.BenchmarkSchedule{
+		Name: "CIS Docker Benchmark",
+	}
+	assert.NoError(t, e.BenchmarkNotify(schedule))
 }

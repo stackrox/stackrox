@@ -89,8 +89,8 @@ func (s *slack) getDescription(alert *v1.Alert) (string, error) {
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
-// Notify takes in an alert and the portal endpoint and generates the Slack message
-func (s *slack) Notify(alert *v1.Alert) error {
+// AlertNotify takes in an alert and generates the Slack message
+func (s *slack) AlertNotify(alert *v1.Alert) error {
 	tagLine := fmt.Sprintf("*Deployment %v (%v) violates '%v' Policy*", alert.Deployment.Name, alert.Deployment.Id, alert.Policy.Name)
 	body, err := s.getDescription(alert)
 	if err != nil {
@@ -112,6 +112,26 @@ func (s *slack) Notify(alert *v1.Alert) error {
 	jsonPayload, err := json.Marshal(&notification)
 	if err != nil {
 		return fmt.Errorf("Could not marshal notification for alert %v", alert.Id)
+	}
+	return postMessage(s.Webhook, jsonPayload)
+}
+
+// BenchmarkNotify takes in an benchmark schedule and generates the Slack message
+func (s *slack) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
+	body, err := notifiers.FormatBenchmark(schedule, notifiers.BenchmarkLink(s.UiEndpoint))
+	attachments := []attachment{
+		{
+			MarkDownFields: []string{"pretext", "text", "fields"},
+			Text:           body,
+		},
+	}
+	notification := notification{
+		Attachments: attachments,
+		Channel:     s.Channel,
+	}
+	jsonPayload, err := json.Marshal(&notification)
+	if err != nil {
+		return fmt.Errorf("Could not marshal notification for benchmark %v", schedule.GetName())
 	}
 	return postMessage(s.Webhook, jsonPayload)
 }

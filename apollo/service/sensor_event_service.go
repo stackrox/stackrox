@@ -88,7 +88,7 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 		if err := s.storage.AddAlert(alert); err != nil {
 			log.Error(err)
 		}
-		s.notificationProcessor.Process(alert)
+		s.notificationProcessor.ProcessAlert(alert)
 	}
 
 	response.Enforcement = enforcement

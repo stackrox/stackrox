@@ -26,7 +26,7 @@ func skip(t *testing.T) (string, string) {
 	return webhook, channel
 }
 
-func TestSlackNotify(t *testing.T) {
+func TestSlackAlertNotify(t *testing.T) {
 	webhook, channel := skip(t)
 	s := slack{
 		config: config{
@@ -37,7 +37,7 @@ func TestSlackNotify(t *testing.T) {
 			UiEndpoint: "http://google.com",
 		},
 	}
-	assert.NoError(t, s.Notify(mock.GetAlert()))
+	assert.NoError(t, s.AlertNotify(mock.GetAlert()))
 }
 
 func TestSlackTest(t *testing.T) {
@@ -52,4 +52,21 @@ func TestSlackTest(t *testing.T) {
 		},
 	}
 	assert.NoError(t, s.Test())
+}
+
+func TestSlackBenchmarkNotify(t *testing.T) {
+	webhook, channel := skip(t)
+	s := slack{
+		config: config{
+			Webhook: webhook,
+			Channel: channel,
+		},
+		Notifier: &v1.Notifier{
+			UiEndpoint: "http://google.com",
+		},
+	}
+	schedule := &v1.BenchmarkSchedule{
+		Name: "CIS Docker Benchmark",
+	}
+	assert.NoError(t, s.BenchmarkNotify(schedule))
 }
