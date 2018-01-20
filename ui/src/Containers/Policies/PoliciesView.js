@@ -199,20 +199,16 @@ class PolicyView extends Component {
                     <div className="h-full p-3">
                         {
                             policyDetails.map((field) => {
-                                try {
-                                    const { label } = fieldsMap[field];
-                                    const value = fieldsMap[field].formatValue([policy[field]]);
-                                    if (!value || (Array.isArray(value) && !value.length)) return '';
-                                    return (
-                                        <div className="mb-4" key={field}>
-                                            <div className="py-2 text-primary-500">{label}</div>
-                                            <div className="flex">{value}</div>
-                                        </div>
-                                    );
-                                } catch (error) {
-                                    console.error(error);
-                                    return '';
-                                }
+                                if (!fieldsMap[field]) return '';
+                                const { label } = fieldsMap[field];
+                                const value = fieldsMap[field].formatValue([policy[field]]);
+                                if (!value || (Array.isArray(value) && !value.length)) return '';
+                                return (
+                                    <div className="mb-4" key={field}>
+                                        <div className="py-2 text-primary-500">{label}</div>
+                                        <div className="flex">{value}</div>
+                                    </div>
+                                );
                             })
                         }
                     </div>
@@ -235,21 +231,17 @@ class PolicyView extends Component {
                         <div className="h-full p-3">
                             {
                                 fields.map((field) => {
-                                    try {
-                                        const { label } = fieldsMap[field];
-                                        const value =
-                                            fieldsMap[field].formatValue(policy[category][field]);
-                                        if (!value || (Array.isArray(value) && !value.length)) return '';
-                                        return (
-                                            <div className="mb-4" key={field}>
-                                                <div className="py-2 text-primary-500">{label}</div>
-                                                <div className="flex">{value}</div>
-                                            </div>
-                                        );
-                                    } catch (error) {
-                                        console.error(error);
-                                        return '';
-                                    }
+                                    if (!fieldsMap[field]) return '';
+                                    const { label } = fieldsMap[field];
+                                    const value =
+                                        fieldsMap[field].formatValue(policy[category][field]);
+                                    if (!value || (Array.isArray(value) && !value.length)) return '';
+                                    return (
+                                        <div className="mb-4" key={field}>
+                                            <div className="py-2 text-primary-500">{label}</div>
+                                            <div className="flex">{value}</div>
+                                        </div>
+                                    );
                                 })
                             }
                         </div>

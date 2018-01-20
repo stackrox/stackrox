@@ -237,7 +237,9 @@ class PoliciesPage extends Component {
                 renderIcon: () => <Icon.Save className="h-4 w-4" />,
                 text: 'Save Policy',
                 className: 'flex py-2 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
-                onClick: this.policyCreationForm.submitForm
+                onClick: () => {
+                    this.policyCreationForm.submitForm();
+                }
             }
         ];
         return (

@@ -6,7 +6,7 @@ class Table extends Component {
     static propTypes = {
         columns: PropTypes.arrayOf(PropTypes.object).isRequired,
         rows: PropTypes.arrayOf(PropTypes.shape({
-            id: PropTypes.string.isRequired
+            id: PropTypes.string
         })).isRequired,
         onRowClick: PropTypes.func,
         checkboxes: PropTypes.bool
@@ -68,7 +68,7 @@ class Table extends Component {
         const { rows, columns } = this.props;
         const { active } = this.state;
         const rowClickable = !!this.props.onRowClick;
-        return rows.map((row) => {
+        return rows.map((row, i) => {
             const tableCells = columns.map((column) => {
                 let value = resolvePath(row, column.key);
                 if (column.keyValueFunc) value = column.keyValueFunc(value);
@@ -86,7 +86,7 @@ class Table extends Component {
             return (
                 <tr
                     className={`${rowClickable ? 'cursor-pointer' : ''} border-b border-base-300 hover:bg-base-100`}
-                    key={row.id}
+                    key={i}
                     onClick={rowClickable ? this.rowClickHandler(row) : null}
                 >
                     {tableCells}

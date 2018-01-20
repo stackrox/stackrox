@@ -32,9 +32,7 @@ const reducer = (action, prevState, nextState) => {
 
 class BenchmarksPage extends Component {
     static propTypes = {
-        benchmarksResults: PropTypes.string.isRequired,
-        benchmarksTrigger: PropTypes.string.isRequired,
-        benchmarksSchedule: PropTypes.string.isRequired
+        benchmarkName: PropTypes.string.isRequired,
     }
 
     constructor(props) {
@@ -49,7 +47,7 @@ class BenchmarksPage extends Component {
             lastScanned: '',
             scanning: false,
             schedule: {
-                name: this.props.benchmarksSchedule,
+                name: this.props.benchmarkName,
                 day: '',
                 hour: '',
                 active: false,
@@ -72,7 +70,7 @@ class BenchmarksPage extends Component {
 
     onTriggerScan = () => {
         this.update('START_SCANNING');
-        const url = `/v1/benchmarks/triggers/${this.props.benchmarksTrigger}`;
+        const url = `/v1/benchmarks/triggers/${this.props.benchmarkName}`;
         axios.post(url, {}).then(() => {}).catch(() => {
             this.update('STOP_SCANNING');
         });
@@ -105,7 +103,7 @@ class BenchmarksPage extends Component {
 
     getBenchmarks = () => {
         const params = `?${queryString.stringify(this.params)}`;
-        return axios.get(`/v1/benchmarks/results/grouped/${this.props.benchmarksResults}${params}`).then((response) => {
+        return axios.get(`/v1/benchmarks/results/grouped/${this.props.benchmarkName}${params}`).then((response) => {
             const { data } = response;
             if (!data || !data.benchmarks || data.benchmarks.length === 0) return;
             const lastScanned = dateFns.format(data.benchmarks[0].time, 'MM/DD/YYYY h:mm:ss A');
@@ -120,7 +118,7 @@ class BenchmarksPage extends Component {
     }
 
     retrieveSchedule() {
-        return axios.get(`/v1/benchmarks/schedules/${this.props.benchmarksSchedule}`).then((response) => {
+        return axios.get(`/v1/benchmarks/schedules/${this.props.benchmarkName}`).then((response) => {
             const schedule = response.data;
             schedule.active = true;
             this.update('UPDATE_SCHEDULE', { schedule });
@@ -139,14 +137,14 @@ class BenchmarksPage extends Component {
         const { schedule } = this.state;
         schedule.active = false;
         this.update('UPDATE_SCHEDULE', { schedule });
-        return axios.delete(`/v1/benchmarks/schedules/${this.props.benchmarksSchedule}`);
+        return axios.delete(`/v1/benchmarks/schedules/${this.props.benchmarkName}`);
     }
 
     updateSchedule() {
         if (this.state.schedule.hour === '' || this.state.schedule.day === '') return;
 
         if (this.state.schedule.active) {
-            axios.put(`/v1/benchmarks/schedules/${this.props.benchmarksSchedule}`, this.state.schedule);
+            axios.put(`/v1/benchmarks/schedules/${this.props.benchmarkName}`, this.state.schedule);
         } else {
             const { schedule } = this.state;
             schedule.active = true;
