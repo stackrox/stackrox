@@ -1,0 +1,11 @@
+{
+  "name": "SELinux root",
+  "description": "Alert on deployments with containers running SELinux with root user",
+  "severity": "MEDIUM_SEVERITY",
+  "categories": ["PRIVILEGES_CAPABILITIES"],
+  "privilege_policy": {
+    "selinux": {
+      "user": "root"
+    }
+  }
+}

@@ -1,12 +1,12 @@
 {
-  "name": "Port 80",
-  "description": "Alert on deployments exposing port 80",
+  "name": "Image Port 22",
+  "description": "Alert on deployments exposing port 22",
   "severity": "HIGH_SEVERITY",
   "categories": ["IMAGE_ASSURANCE"],
   "image_policy": {
     "line_rule": {
       "instruction": "EXPOSE",
-      "value": "\\s+80/tcp"
+      "value": "(^22\/tcp|\\s+22\/tcp)"
     }
   }
 }

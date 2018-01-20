@@ -1,12 +1,12 @@
 {
-  "name": "NGINX CMD",
-  "description": "Alert on deployments using 'nginx' as the command",
+  "name": "Insecure specified in CMD",
+  "description": "Alert on deployments using 'insecure' in the command",
   "severity": "LOW_SEVERITY",
   "categories": ["IMAGE_ASSURANCE"],
   "image_policy": {
     "line_rule": {
       "instruction": "CMD",
-      "value": ".*nginx.*"
+      "value": ".*insecure.*"
     }
   }
 }
