@@ -15,10 +15,12 @@ import (
 // DockerConfig is the exported type for benchmarks to reference
 var DockerConfig FlattenedConfig
 var dockerConfigOnce sync.Once
+var dockerConfigErr error
 
 // DockerClient is the exported docker client for benchmarks to use
 var DockerClient *client.Client
 var dockerClientOnce sync.Once
+var dockerClientErr error
 
 // ContainersAll is a slice of all containers in the system
 var ContainersAll []types.ContainerJSON
@@ -26,14 +28,17 @@ var ContainersAll []types.ContainerJSON
 // ContainersRunning is the filtered set of containers that are running
 var ContainersRunning []types.ContainerJSON
 var containersOnce sync.Once
+var containerErr error
 
 // Images is the list of images in the system. It does not include all the layers
 var Images []types.ImageInspect
 var imagesOnce sync.Once
+var imageErr error
 
 // DockerInfo contains the info of the docker daemon
 var DockerInfo types.Info
 var infoOnce sync.Once
+var infoErr error
 
 // GetReadableImageName takes in a docker image and returns the human readable repo:tag combination or the ID if
 // the tag doesn't exist
@@ -137,17 +142,16 @@ var dockerProcessNames = []string{"docker daemon", "dockerd"}
 
 // InitDockerConfig is the Dependency that initializes the docker config
 func InitDockerConfig() error {
-	var funcErr error
 	dockerConfigOnce.Do(func() {
 		pid, processName, err := getProcessPID(dockerProcessNames)
 		if err != nil {
-			funcErr = err
+			dockerConfigErr = err
 			return
 		}
 
 		cmdLine, err := getCommandLine(pid)
 		if err != nil {
-			funcErr = err
+			dockerConfigErr = err
 			return
 		}
 		args := getCommandLineArgs(cmdLine, processName)
@@ -158,23 +162,22 @@ func InitDockerConfig() error {
 		// Add arguments from the config file if it has been passed
 		if path, ok := config["config"]; ok {
 			if err := getDockerConfigFromFile(path[0], config); err != nil {
-				funcErr = err
+				dockerConfigErr = err
 				return
 			}
 		}
 		DockerConfig = config
 		return
 	})
-	return funcErr
+	return dockerConfigErr
 }
 
 // InitDockerClient is the Dependency that initializes the docker client
 func InitDockerClient() error {
-	var funcErr error
 	dockerClientOnce.Do(func() {
-		DockerClient, funcErr = docker.NewClient()
+		DockerClient, dockerClientErr = docker.NewClient()
 	})
-	return funcErr
+	return dockerClientErr
 }
 
 // GetContainers retrieves the containers and returns running containers, all containers and an error respectively
@@ -213,17 +216,16 @@ func GetContainers() ([]types.ContainerJSON, []types.ContainerJSON, error) {
 
 // InitContainers initializes ContainersRunning and ContainersAll
 func InitContainers() error {
-	var funcErr error
 	containersOnce.Do(func() {
 		runningContainers, allContainers, err := GetContainers()
 		if err != nil {
-			funcErr = err
+			containerErr = err
 			return
 		}
 		ContainersRunning = runningContainers
 		ContainersAll = allContainers
 	})
-	return funcErr
+	return containerErr
 }
 
 // GetImages returns images and is exported for testing purposes
@@ -254,33 +256,31 @@ func GetImages() ([]types.ImageInspect, error) {
 
 // InitImages initializes the exported Images slice
 func InitImages() error {
-	var funcErr error
 	imagesOnce.Do(func() {
 		images, err := GetImages()
 		if err != nil {
-			funcErr = err
+			imageErr = err
 			return
 		}
 		Images = images
 	})
-	return funcErr
+	return imageErr
 }
 
 // InitInfo initializes the docker info
 func InitInfo() error {
-	var funcErr error
 	infoOnce.Do(func() {
 		if err := InitDockerClient(); err != nil {
-			funcErr = err
+			infoErr = err
 		}
 		ctx, cancel := docker.TimeoutContext()
 		defer cancel()
 		info, err := DockerClient.Info(ctx)
 		if err != nil {
-			funcErr = err
+			infoErr = err
 			return
 		}
 		DockerInfo = info
 	})
-	return funcErr
+	return infoErr
 }
