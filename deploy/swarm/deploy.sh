@@ -9,17 +9,16 @@ source $COMMON_DIR/deploy.sh
 export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.mitigate_net:443}"
 echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 
-FLAGS=""
-if [ "$REGISTRY_AUTH" = "true" ]; then
-    FLAGS="--with-registry-auth"
-fi
-
 generate_ca "$SWARM_DIR"
 
 echo "Deploying Central..."
 WD="$(pwd)"
 cd "$SWARM_DIR"
-docker stack deploy -c "$SWARM_DIR/central.yaml" mitigate $FLAGS
+if [ "$APOLLO_NO_REGISTRY_AUTH" = "true" ]; then
+    docker stack deploy -c "$SWARM_DIR/central.yaml" mitigate
+else
+    docker stack deploy -c "$SWARM_DIR/central.yaml" mitigate --with-registry-auth
+fi
 cd "$WD"
 echo
 
@@ -31,12 +30,14 @@ echo "Deploying Sensor..."
 UNZIP_DIR="$SWARM_DIR/sensor-deploy/"
 rm -rf "$UNZIP_DIR"
 unzip "$SWARM_DIR/sensor-deploy.zip" -d "$UNZIP_DIR"
-if [ "$FLAGS" != "" ]; then
+
+if [ "$APOLLO_NO_REGISTRY_AUTH" = "true" ]; then
     cp "$UNZIP_DIR/sensor-deploy.sh" "$UNZIP_DIR/tmp"
-    cat "$UNZIP_DIR/tmp" | sed "s/stack deploy -c/stack deploy $FLAGS -c/" > "$UNZIP_DIR/sensor-deploy.sh"
+    cat "$UNZIP_DIR/tmp" | sed "s/--with-registry-auth//" > "$UNZIP_DIR/sensor-deploy.sh"
 fi
 
 $UNZIP_DIR/sensor-deploy.sh
+echo
 
 echo "Successfully deployed!"
 echo "Access the UI at: https://$LOCAL_API_ENDPOINT"

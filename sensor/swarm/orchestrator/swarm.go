@@ -98,12 +98,12 @@ func (s *swarmOrchestrator) Launch(service orchestrators.SystemService) (string,
 }
 
 func serviceCreateOptions() (opts dockerTypes.ServiceCreateOptions) {
-	contents, err := ioutil.ReadFile("/run/secrets/rox_registry_auth")
+	contents, err := ioutil.ReadFile("/run/secrets/stackrox.io/registry_auth")
 	if err != nil {
 		log.Warnf("Couldn't open registry auth secret: %s", err)
 		return
 	}
-	opts.EncodedRegistryAuth = string(contents)
+	opts.EncodedRegistryAuth = strings.TrimSpace(string(contents))
 	return
 }
 

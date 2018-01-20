@@ -9,11 +9,6 @@ source $COMMON_DIR/deploy.sh
 export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.mitigate_net:443}"
 echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 
-FLAGS=""
-if [ "$REGISTRY_AUTH" = "true" ]; then
-    FLAGS="--with-registry-auth"
-fi
-
 generate_ca "$SWARM_DIR"
 
 echo "Deploying Central..."
@@ -30,14 +25,12 @@ get_identity "$LOCAL_API_ENDPOINT" "$CLUSTER" "$SWARM_DIR"
 get_authority "$LOCAL_API_ENDPOINT" "$SWARM_DIR"
 
 echo "Deploying Sensor..."
-if [ "$FLAGS" != "" ]; then
-    SCRIPT_TMP=$(mktemp)
-    chmod +x $SCRIPT_TMP
-    cat "$SWARM_DIR/sensor-deploy.sh" | sed "s/stack deploy -c/stack deploy $FLAGS -c/" > $SCRIPT_TMP
-    $SCRIPT_TMP
-else
-    $SWARM_DIR/sensor-deploy.sh
+if [ "$APOLLO_NO_REGISTRY_AUTH" = "true" ]; then
+    cp "$SWARM_DIR/sensor-deploy.sh" "$SWARM_DIR/tmp"
+    cat "$SWARM_DIR/tmp" | sed "s/--with-registry-auth//" > "$SWARM_DIR/sensor-deploy.sh"
 fi
+
+$SWARM_DIR/sensor-deploy.sh
 echo
 
 echo "Successfully deployed!"

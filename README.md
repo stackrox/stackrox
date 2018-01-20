@@ -44,53 +44,31 @@ The deploy script will:
 
 ### Docker Swarm
 
+Set `LOCAL_API_ENDPOINT` to a `hostname:port` string appropriate for your
+local host, VM, or cluster, then:
+
 ```
 ./deploy/swarm/deploy.sh
 ```
 
-Currently, this script works on a Swarm worker that does not have TLS enabled.
-Future changes will automate setup for clusters with such configurations, but
-in the meantime you can manually edit sensor-remote-deploy.yaml to add the
-following secrets:
+Currently, this script works on a Swarm worker that uses TLS certificate
+bundles and TCP connections.
 
-```
-secrets:
-  rox_docker_client_ca_pem:
-    external: true
-  rox_docker_client_cert_pem:
-    external: true
-  rox_docker_client_key_pem:
-    external: true
-  rox_registry_auth:
-    external: true
-```
+If you need to run in an environment without this configuration, you can remove
+references to the following secrets from both the `secrets` and `volumes`
+portions of the sensor-deploy YAML:
 
-and mounts:
+ * `docker_client_ca_pem`
+ * `docker_client_cert_pem`
+ * `docker_client_key_pem`
+ * `registry_auth`
 
-```
-    secrets:
-    - source: rox_docker_client_ca_pem
-      target: ca.pem
-      mode: 400
-    - source: rox_docker_client_cert_pem
-      target: cert.pem
-      mode: 400
-    - source: rox_docker_client_key_pem
-      target: key.pem
-      mode: 400
-    - source: rox_registry_auth
-      target: rox_registry_auth
-      mode: 400
-```
+ Additionally, remove these environment variables from the sensor-deploy YAML:
 
-To create those secrets, use `roxc`. A typical invocation might look like:
+ * `DOCKER_HOST`
+ * `DOCKER_TLS_VERIFY`
+ * `DOCKER_CERT_PATH`
 
-```
-roxc system setup --platform=swarm \
-    --registry-username $(cat .buildUsername) \
-    --registry-password $(cat .buildPassword) \
-    --swarm-client-cert-path /tmp/certs
-```
 
 ### Kubernetes
 Set your Docker image-pull credentials as `DOCKER_USER` and `DOCKER_PASS`, then run:

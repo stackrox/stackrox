@@ -2,9 +2,10 @@
 **/container/conf/*
 **/container/data/*
 
-# Crypto
+# Crypto/Secrets
 *.csr
 *.pem
+registry-auth
 
 # Deployment
 sensor-*.yaml

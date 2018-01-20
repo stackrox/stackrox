@@ -9,6 +9,11 @@ services:
         published: 8080
         protocol: tcp
         mode: ingress
+    ports:
+      - target: 443
+        published: 8080
+        protocol: tcp
+        mode: ingress
     secrets:
       - source: mitigate_private_key
         target: stackrox.io/ca-key.pem

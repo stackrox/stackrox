@@ -40,6 +40,9 @@ services:
       - "{{.ClusterNameEnv}}={{.ClusterName}}"
       - "{{.AdvertisedEndpointEnv}}={{.AdvertisedEndpoint}}"
       - "{{.ImageEnv}}={{.Image}}"
+      - "DOCKER_CERT_PATH=/run/secrets/stackrox.io/docker/"
+      - "DOCKER_HOST=$DOCKER_HOST"
+      - "DOCKER_TLS_VERIFY=$DOCKER_TLS_VERIFY"
     secrets:
       - source: sensor_certificate
         target: stackrox.io/cert.pem
@@ -49,6 +52,18 @@ services:
         mode: 400
       - source: central_certificate
         target: stackrox.io/ca.pem
+        mode: 400
+      - source: docker_client_ca_pem
+        target: stackrox.io/docker/ca.pem
+        mode: 400
+      - source: docker_client_cert_pem
+        target: stackrox.io/docker/cert.pem
+        mode: 400
+      - source: docker_client_key_pem
+        target: stackrox.io/docker/key.pem
+        mode: 400
+      - source: registry_auth
+        target: stackrox.io/registry_auth
         mode: 400
 networks:
   net:
@@ -60,12 +75,40 @@ secrets:
   sensor_certificate:
     file: sensor-cert.pem
   central_certificate:
-    file: central-ca.pem`
-	// TODO(cg): Do we need to include DOCKER_HOST, DOCKER_CERT_PATH, DOCKER_TLS_VERIFY?
+    file: central-ca.pem
+  docker_client_ca_pem:
+    file: docker-ca.pem
+  docker_client_cert_pem:
+    file: docker-cert.pem
+  docker_client_key_pem:
+    file: docker-key.pem
+  registry_auth:
+    file: registry-auth
+`
 
-	swarmCmd = commandPrefix + `WD=$(pwd)
+	swarmCmd = commandPrefix + `set -u
+WD=$(pwd)
 cd $DIR
-docker stack deploy -c ./sensor-deploy.yaml mitigate
+
+echo -n "Registry username for StackRox Mitigate image: "
+read -s REGISTRY_USERNAME
+echo
+echo -n "Registry password for StackRox Mitigate image: "
+read -s REGISTRY_PASSWORD
+echo
+
+REGISTRY_AUTH="{\"username\": \"$REGISTRY_USERNAME\", \"password\": \"$REGISTRY_PASSWORD\"}"
+echo -n "$REGISTRY_AUTH" | base64 | tr -- '+=/' '-_~' > registry-auth
+
+cp $DOCKER_CERT_PATH/ca.pem ./docker-ca.pem
+cp $DOCKER_CERT_PATH/key.pem ./docker-key.pem
+cp $DOCKER_CERT_PATH/cert.pem ./docker-cert.pem
+
+docker stack deploy -c ./sensor-deploy.yaml mitigate --with-registry-auth
+
+rm ./docker-*
+rm registry-auth
+
 cd $WD
 `
 )
