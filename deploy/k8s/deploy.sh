@@ -10,8 +10,8 @@ export NAMESPACE="${NAMESPACE:-stackrox}"
 echo "Kubernetes namespace set to $NAMESPACE"
 kubectl create ns "$NAMESPACE" || true
 
-export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-apollo.stackrox:443}"
-echo "In-cluster Apollo endpoint set to $CLUSTER_API_ENDPOINT"
+export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.stackrox:443}"
+echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 echo
 
 set -u
@@ -34,18 +34,18 @@ echo "Deploying Central..."
 kubectl delete secret -n "$NAMESPACE" central-tls || true
 kubectl create secret -n "$NAMESPACE" generic central-tls --from-file="$K8S_DIR/ca.pem" --from-file="$K8S_DIR/ca-key.pem"
 kubectl delete -f "$K8S_DIR/central.yaml" || true
-cat "$K8S_DIR/central.yaml" | sed "s|stackrox/apollo:latest|$APOLLO_IMAGE|" | kubectl create -f -
+cat "$K8S_DIR/central.yaml" | sed "s|stackrox/mitigate:latest|$MITIGATE_IMAGE|" | kubectl create -f -
 echo
 
-echo -n "Waiting for Apollo pod to be ready."
-until [ "$(kubectl get pod -n $NAMESPACE --selector 'app=apollo' | grep Running | wc -l)" -eq 1 ]; do
+echo -n "Waiting for Central pod to be ready."
+until [ "$(kubectl get pod -n $NAMESPACE --selector 'app=central' | grep Running | wc -l)" -eq 1 ]; do
     echo -n .
     sleep 1
 done
 echo
 
 pkill -f "kubectl port-forward -n ${NAMESPACE}" || true
-export CENTRAL_POD="$(kubectl get pod -n $NAMESPACE --selector 'app=apollo' --output=jsonpath='{.items..metadata.name} {.items..status.phase}' | grep Running | cut -f 1 -d ' ')"
+export CENTRAL_POD="$(kubectl get pod -n $NAMESPACE --selector 'app=central' --output=jsonpath='{.items..metadata.name} {.items..status.phase}' | grep Running | cut -f 1 -d ' ')"
 kubectl port-forward -n "$NAMESPACE" "$CENTRAL_POD" 8000:443 &
 PID="$!"
 echo "Port-forward launched with PID: $PID"
@@ -54,7 +54,7 @@ echo "Set local API endpoint to: $LOCAL_API_ENDPOINT"
 
 wait_for_central "$LOCAL_API_ENDPOINT"
 CLUSTER="remote"
-get_cluster_zip "$LOCAL_API_ENDPOINT" "$CLUSTER" KUBERNETES_CLUSTER "$APOLLO_IMAGE" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "\"namespace\": \"$NAMESPACE\", \"imagePullSecret\": \"stackrox\""
+get_cluster_zip "$LOCAL_API_ENDPOINT" "$CLUSTER" KUBERNETES_CLUSTER "$MITIGATE_IMAGE" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "\"namespace\": \"$NAMESPACE\", \"imagePullSecret\": \"stackrox\""
 
 echo "Deploying Sensor..."
 kubectl delete secret -n "$NAMESPACE" sensor-tls || true

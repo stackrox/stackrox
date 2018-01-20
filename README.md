@@ -1,6 +1,6 @@
-# Apollo
+# StackRox Mitigate
 
-Apollo is a new StackRox initiative to provide security in the
+Mitigate is a new StackRox initiative to provide security in the
 deployment phase of the container lifecycle.
 
 ## Build Tooling
@@ -11,15 +11,15 @@ The following build tools are required:
  Install XCode before Bazel if you are building on a Mac.
  * [Yarn](https://yarnpkg.com/en/)
  * [Go](https://golang.org/dl/)
- * Various Go linters that can be installed using `make -C apollo dev`
+ * Various Go linters that can be installed using `make -C central dev`
 
 ## How to Build
 ```
 make image
 ```
 
-This will create `stackrox/apollo:latest`. This is the only image required
-to run Apollo.
+This will create `stackrox/mitigate:latest`. This is the only image required
+to run Mitigate.
 
 ## How to Test
 ```

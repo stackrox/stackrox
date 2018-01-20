@@ -1,16 +1,16 @@
 # This file is meant to be used in a real Swarm cluster (not a local VM).
 # Adjust the DOCKER_HOST to match your cluster. You can override this by
 # setting the value in your local environment.
-# Similarly, the "latest" tag will be used unless APOLLO_IMAGE_TAG is
+# Similarly, the "latest" tag will be used unless MITIGATE_IMAGE_TAG is
 # set in your environment.
 # You need to create secrets. You can do so using roxc, like this:
 #   roxc system setup --platform=swarm --registry-username $(cat .buildUsername) --registry-password $(cat .buildPassword) --swarm-client-cert-path /tmp/certs
 # Then, deploy:
-#   docker stack deploy -c docker-compose-cluster.yaml apollo --with-registry-auth
+#   docker stack deploy -c docker-compose-cluster.yaml mitigate --with-registry-auth
 version: "3.2"
 services:
-  apollo:
-    image: stackrox/apollo:${APOLLO_IMAGE_TAG:-latest}
+  central:
+    image: stackrox/mitigate:${MITIGATE_IMAGE_TAG:-latest}
     networks:
       net:
     ports:
@@ -21,11 +21,11 @@ services:
     environment:
       ROX_FEATURE_MTLS: "false"
   sensor:
-    image: stackrox/apollo:${APOLLO_IMAGE_TAG:-latest}
+    image: stackrox/mitigate:${MITIGATE_IMAGE_TAG:-latest}
     entrypoint:
       - swarm-sensor
     depends_on:
-      - apollo
+      - central
     networks:
       net:
     deploy:
@@ -33,10 +33,10 @@ services:
         constraints:
           - node.role==manager
     environment:
-      ROX_APOLLO_ENDPOINT: apollo.apollo_net:443
-      ROX_APOLLO_CLUSTER_ID: test
-      ROX_APOLLO_ADVERTISED_ENDPOINT: sensor.apollo_net:443
-      ROX_APOLLO_IMAGE: stackrox/apollo:${APOLLO_IMAGE_TAG:-latest}
+      ROX_CENTRAL_ENDPOINT: central.mitigate_net:443
+      ROX_MITIGATE_CLUSTER_ID: test
+      ROX_MITIGATE_ADVERTISED_ENDPOINT: sensor.mitigate_net:443
+      ROX_MITIGATE_IMAGE: stackrox/mitigate:${MITIGATE_IMAGE_TAG:-latest}
       ROX_FEATURE_MTLS: "false"
       DOCKER_HOST: $DOCKER_HOST
       DOCKER_TLS_VERIFY: $DOCKER_TLS_VERIFY

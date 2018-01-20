@@ -54,12 +54,12 @@ func initializeSensor() *sensor.Sensor {
 		panic(err)
 	}
 
-	a.BenchScheduler, err = benchmarks.NewSchedulerClient(a.Orchestrator, a.ApolloEndpoint, a.AdvertisedEndpoint, a.Image, a.ClusterID)
+	a.BenchScheduler, err = benchmarks.NewSchedulerClient(a.Orchestrator, a.CentralEndpoint, a.AdvertisedEndpoint, a.Image, a.ClusterID)
 	if err != nil {
 		panic(err)
 	}
-	a.ScannerPoller = scanners.NewScannersClient(a.ApolloEndpoint, a.ClusterID)
-	a.RegistryPoller = registries.NewRegistriesClient(a.ApolloEndpoint, a.ClusterID)
+	a.ScannerPoller = scanners.NewScannersClient(a.CentralEndpoint, a.ClusterID)
+	a.RegistryPoller = registries.NewRegistriesClient(a.CentralEndpoint, a.ClusterID)
 
 	a.ServiceRegistrationFunc = registerAPIServices
 
@@ -68,6 +68,6 @@ func initializeSensor() *sensor.Sensor {
 }
 
 func registerAPIServices(a *sensor.Sensor) {
-	a.Server.Register(benchmarks.NewBenchmarkRelayService(benchmarks.NewLRURelayer(a.ApolloEndpoint, a.ClusterID)))
+	a.Server.Register(benchmarks.NewBenchmarkRelayService(benchmarks.NewLRURelayer(a.CentralEndpoint, a.ClusterID)))
 	a.Logger.Info("API services registered")
 }

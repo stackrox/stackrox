@@ -25,19 +25,19 @@ type Client struct {
 	scanners []ImageScanner
 	lock     sync.RWMutex
 
-	clusterID      string
-	apolloEndpoint string
+	clusterID       string
+	centralEndpoint string
 
 	done chan struct{}
 }
 
 // NewScannersClient returns a new client of the scanners API
-func NewScannersClient(apolloEndpoint string, clusterID string) *Client {
+func NewScannersClient(centralEndpoint string, clusterID string) *Client {
 	return &Client{
-		updateTicker:   time.NewTicker(updateInterval),
-		clusterID:      clusterID,
-		apolloEndpoint: apolloEndpoint,
-		done:           make(chan struct{}),
+		updateTicker:    time.NewTicker(updateInterval),
+		clusterID:       clusterID,
+		centralEndpoint: centralEndpoint,
+		done:            make(chan struct{}),
 	}
 }
 
@@ -54,7 +54,7 @@ func (c *Client) Start() {
 }
 
 func (c *Client) doUpdate() {
-	conn, err := clientconn.GRPCConnection(c.apolloEndpoint)
+	conn, err := clientconn.GRPCConnection(c.centralEndpoint)
 	if err != nil {
 		panic(err)
 	}

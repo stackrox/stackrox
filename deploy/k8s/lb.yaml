@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: apollo-lb
+  name: central-lb
 spec:
   ports:
   - port: 443
     targetPort: 443
   selector:
-    app: apollo
+    app: central
   type: LoadBalancer
   loadBalancerSourceRanges:
   # This is the office IP.

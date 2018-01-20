@@ -1,4 +1,4 @@
-// Package benchmarks handles receiving and relaying benchmarks to Apollo.
+// Package benchmarks handles receiving and relaying benchmarks to Mitigate Central.
 package benchmarks
 
 import (
@@ -18,21 +18,21 @@ const (
 	requestTimeout = 3 * time.Second
 )
 
-// A Relayer sends received benchmark payloads onto central Apollo.
+// A Relayer sends received benchmark payloads onto Mitigate Central.
 type Relayer interface {
 	Start()
 	Stop()
 	Accept(payload *v1.BenchmarkResult)
 }
 
-// An LRURelayer sends received benchmark payloads onto central Apollo.
+// An LRURelayer sends received benchmark payloads onto Mitigate Central.
 // If the relay is not successful at first, payloads are cached and will
 // be retried until new ones exceed the cache size.
 type LRURelayer struct {
 	cache *lru.Cache
 
-	apolloEndpoint string
-	clusterID      string
+	centralEndpoint string
+	clusterID       string
 
 	tick  *time.Ticker
 	stopC chan struct{}
@@ -41,19 +41,19 @@ type LRURelayer struct {
 }
 
 // NewLRURelayer creates a new LRURelayer, which must then be started.
-func NewLRURelayer(apolloEndpoint, clusterID string) *LRURelayer {
+func NewLRURelayer(centralEndpoint, clusterID string) *LRURelayer {
 	cache, err := lru.New(cacheSize)
 	if err != nil {
 		// This only happens in extreme cases (at this time, for invalid size only).
 		panic(err)
 	}
 	return &LRURelayer{
-		apolloEndpoint: apolloEndpoint,
-		cache:          cache,
-		clusterID:      clusterID,
-		tick:           time.NewTicker(interval),
-		stopC:          make(chan struct{}),
-		logger:         logging.New("relayer"),
+		centralEndpoint: centralEndpoint,
+		cache:           cache,
+		clusterID:       clusterID,
+		tick:            time.NewTicker(interval),
+		stopC:           make(chan struct{}),
+		logger:          logging.New("relayer"),
 	}
 }
 
@@ -106,7 +106,7 @@ func (r *LRURelayer) run() {
 }
 
 func (r *LRURelayer) relay(payload *v1.BenchmarkResult) error {
-	conn, err := clientconn.GRPCConnection(r.apolloEndpoint)
+	conn, err := clientconn.GRPCConnection(r.centralEndpoint)
 	if err != nil {
 		return err
 	}

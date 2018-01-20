@@ -20,7 +20,7 @@ message Cluster {
     string      id                   = 1;
     string      name                 = 2;
     ClusterType type                 = 3;
-    string      apollo_image         = 4;
+    string      mitigate_image       = 4;
     string      central_api_endpoint = 5;
     string      namespace            = 6;
     string      image_pull_secret    = 7;

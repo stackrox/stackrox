@@ -63,7 +63,7 @@ func main() {
 		log.Infof("Sleeping for %v before retrying", (time.Duration(i*2) * time.Second).Seconds())
 		time.Sleep(time.Duration(i*2) * time.Second)
 	}
-	log.Error("Timed out posting benchmark back to Apollo")
+	log.Error("Timed out posting benchmark back to Sensor")
 
 	signalsC := make(chan os.Signal, 1)
 	signal.Notify(signalsC, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)

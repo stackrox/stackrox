@@ -200,7 +200,7 @@ func GetContainers() ([]types.ContainerJSON, []types.ContainerJSON, error) {
 			return nil, nil, err
 
 		}
-		if strings.Contains(containerInspect.Config.Image, "stackrox/apollo") {
+		if strings.Contains(containerInspect.Config.Image, "stackrox/mitigate") {
 			continue
 		}
 		if containerInspect.State.Status == "running" {

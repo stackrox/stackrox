@@ -5,7 +5,7 @@ package swarm
 import (
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/apollo/orchestrators/types"
+	"bitbucket.org/stack-rox/apollo/central/orchestrators/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,8 +21,8 @@ func TestLaunch(t *testing.T) {
 	require.Nil(t, err)
 
 	service := types.SystemService{
-		Envs:    []string{"ROX_APOLLO_ENDPOINT=localhost:443"},
-		Image:   "stackrox/apollo:latest",
+		Envs:    []string{"ROX_CENTRAL_ENDPOINT=localhost:443"},
+		Image:   "stackrox/mitigate:latest",
 		Mounts:  []string{"/var/run/docker.sock:/var/run/docker.sock"},
 		Global:  true,
 		Command: []string{"benchmark-bootstrap"},

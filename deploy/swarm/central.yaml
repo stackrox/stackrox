@@ -1,7 +1,7 @@
 version: "3.2"
 services:
-  apollo:
-    image: stackrox/apollo:${APOLLO_IMAGE_TAG:-latest}
+  central:
+    image: stackrox/mitigate:${MITIGATE_IMAGE_TAG:-latest}
     networks:
       net:
     ports:
@@ -10,10 +10,10 @@ services:
         protocol: tcp
         mode: ingress
     secrets:
-      - source: apollo_private_key
+      - source: mitigate_private_key
         target: stackrox.io/ca-key.pem
         mode: 400
-      - source: apollo_certificate
+      - source: mitigate_certificate
         target: stackrox.io/ca.pem
         mode: 400
 networks:
@@ -21,7 +21,7 @@ networks:
     driver: overlay
     attachable: true
 secrets:
-  apollo_private_key:
+  mitigate_private_key:
     file: ./ca-key.pem
-  apollo_certificate:
+  mitigate_certificate:
     file: ./ca.pem

@@ -17,9 +17,9 @@ jobs:
       - run: cat tools/ci-bazel.rc | envsubst > tools/bazel.rc
       - run: make all
 
-      - run: docker tag stackrox/apollo:latest stackrox/apollo:$CIRCLE_SHA1
+      - run: docker tag stackrox/mitigate:latest stackrox/mitigate:$CIRCLE_SHA1
       - run: docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-      - run: docker push stackrox/apollo:$CIRCLE_SHA1
+      - run: docker push stackrox/mitigate:$CIRCLE_SHA1
 
   retag:
     docker:
@@ -32,9 +32,9 @@ jobs:
 
       - run: |
           docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-          docker pull stackrox/apollo:$CIRCLE_SHA1
-          docker tag stackrox/apollo:$CIRCLE_SHA1 stackrox/apollo:latest
-          docker push stackrox/apollo:latest
+          docker pull stackrox/mitigate:$CIRCLE_SHA1
+          docker tag stackrox/mitigate:$CIRCLE_SHA1 stackrox/mitigate:latest
+          docker push stackrox/mitigate:latest
 
 workflows:
   version: 2

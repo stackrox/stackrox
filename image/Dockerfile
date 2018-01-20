@@ -11,13 +11,13 @@ RUN apk update && \
     apk --purge del apk-tools \
     ;
 
-ENV PATH=/apollo
+ENV PATH=/mitigate
 
 ADD ./benchmarks/ /data/benchmarks
 ADD ./policies/ /data/policies
-ADD ./bin/ /apollo/
+ADD ./bin/ /mitigate/
 ADD ./ui/build  /ui/
 
 EXPOSE 443
 
-ENTRYPOINT ["apollo"]
+ENTRYPOINT ["central"]

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const dtrServer = "https://apollo-dtr.rox.systems"
+const dtrServer = "https://mitigate-dtr.rox.systems"
 const user = "srox"
 const password = "f6Ptzm3fUc0cy5HhZ2Rihqpvb5A0Atdv"
 

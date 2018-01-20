@@ -49,7 +49,7 @@ type SchedulerClient struct {
 	orchestrator   orchestrators.Orchestrator
 
 	advertisedEndpoint string
-	apolloEndpoint     string
+	centralEndpoint    string
 	cluster            string
 	image              string
 
@@ -63,13 +63,13 @@ type SchedulerClient struct {
 }
 
 // NewSchedulerClient returns a new scheduler
-func NewSchedulerClient(orchestrator orchestrators.Orchestrator, apolloEndpoint, advertisedEndpoint, image string, cluster string) (*SchedulerClient, error) {
+func NewSchedulerClient(orchestrator orchestrators.Orchestrator, centralEndpoint, advertisedEndpoint, image string, cluster string) (*SchedulerClient, error) {
 	return &SchedulerClient{
 		updateTicker:       time.NewTicker(updateInterval),
 		orchestrator:       orchestrator,
 		done:               make(chan struct{}),
 		cluster:            cluster,
-		apolloEndpoint:     apolloEndpoint,
+		centralEndpoint:    centralEndpoint,
 		advertisedEndpoint: advertisedEndpoint,
 		image:              image,
 
@@ -85,7 +85,7 @@ func grpcContext() (context.Context, context.CancelFunc) {
 }
 
 func (s *SchedulerClient) getSchedules() ([]*v1.BenchmarkSchedule, error) {
-	conn, err := clientconn.GRPCConnection(s.apolloEndpoint)
+	conn, err := clientconn.GRPCConnection(s.centralEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (s *SchedulerClient) getSchedules() ([]*v1.BenchmarkSchedule, error) {
 }
 
 func (s *SchedulerClient) getBenchmarkResults(scanID string) ([]*v1.BenchmarkResult, error) {
-	conn, err := clientconn.GRPCConnection(s.apolloEndpoint)
+	conn, err := clientconn.GRPCConnection(s.centralEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (s *SchedulerClient) getBenchmarkResults(scanID string) ([]*v1.BenchmarkRes
 }
 
 func (s *SchedulerClient) getTriggers() ([]*v1.BenchmarkTrigger, error) {
-	conn, err := clientconn.GRPCConnection(s.apolloEndpoint)
+	conn, err := clientconn.GRPCConnection(s.centralEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +323,7 @@ func (s *SchedulerClient) updateSchedules() {
 }
 
 func (s *SchedulerClient) launchBenchmark(run benchmarkRun) error {
-	conn, err := clientconn.GRPCConnection(s.apolloEndpoint)
+	conn, err := clientconn.GRPCConnection(s.centralEndpoint)
 	if err != nil {
 		return err
 	}

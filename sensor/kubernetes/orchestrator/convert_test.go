@@ -46,8 +46,8 @@ func TestConvertDeployment(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace: `stackrox`,
 							Labels: map[string]string{
-								`com.docker.stack.namespace`: `apollo`,
-								`com.apollo.service-name`:    `test`,
+								`com.docker.stack.namespace`: `mitigate`,
+								`com.mitigate.service-name`:  `test`,
 							},
 						},
 						Spec: v1.PodSpec{
@@ -129,7 +129,7 @@ func TestCovertDaemonSet(t *testing.T) {
 					Name:   `daemon`,
 					Image:  `stackrox/daemon:1.0`,
 				},
-				namespace: "apollo",
+				namespace: "mitigate",
 			},
 			expected: &v1beta1.DaemonSet{
 				TypeMeta: metav1.TypeMeta{
@@ -138,15 +138,15 @@ func TestCovertDaemonSet(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      `daemon`,
-					Namespace: `apollo`,
+					Namespace: `mitigate`,
 				},
 				Spec: v1beta1.DaemonSetSpec{
 					Template: v1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
-							Namespace: `apollo`,
+							Namespace: `mitigate`,
 							Labels: map[string]string{
-								`com.docker.stack.namespace`: `apollo`,
-								`com.apollo.service-name`:    `daemon`,
+								`com.docker.stack.namespace`: `mitigate`,
+								`com.mitigate.service-name`:  `daemon`,
 							},
 						},
 						Spec: v1.PodSpec{

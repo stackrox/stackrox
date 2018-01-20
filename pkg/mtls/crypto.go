@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/apollo/db"
+	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/cloudflare/cfssl/config"
 	cfcsr "github.com/cloudflare/cfssl/csr"

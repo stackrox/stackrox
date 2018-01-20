@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: apollo
+  name: central
   namespace: stackrox
 spec:
   ports:
@@ -9,31 +9,31 @@ spec:
     port: 443
     targetPort: 443
   selector:
-    app: apollo
+    app: central
   type: ClusterIP
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: apollo
+  name: central
   namespace: stackrox
   labels:
-    app: apollo
+    app: central
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: apollo
+      app: central
   template:
     metadata:
       namespace: stackrox
       labels:
-        app: apollo
+        app: central
     spec:
       containers:
-      - image: stackrox/apollo:latest
+      - image: stackrox/mitigate:latest
         imagePullPolicy: Always
-        name: apollo
+        name: central
         ports:
         - name: api
           containerPort: 443

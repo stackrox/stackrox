@@ -34,7 +34,7 @@ type Sensor struct {
 	RegistryPoller          *registries.Client
 
 	ClusterID          string
-	ApolloEndpoint     string
+	CentralEndpoint    string
 	AdvertisedEndpoint string
 	Image              string
 
@@ -53,7 +53,7 @@ func New() *Sensor {
 		Server: server,
 
 		ClusterID:          env.ClusterID.Setting(),
-		ApolloEndpoint:     env.ApolloEndpoint.Setting(),
+		CentralEndpoint:    env.CenralEndpoint.Setting(),
 		AdvertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 		Image:              env.Image.Setting(),
 
@@ -63,7 +63,7 @@ func New() *Sensor {
 
 // Start starts all subroutines and the API server.
 func (a *Sensor) Start() {
-	a.Logger.Infof("Connecting to Apollo server %s", a.ApolloEndpoint)
+	a.Logger.Infof("Connecting to Central server %s", a.CentralEndpoint)
 	if a.ServiceRegistrationFunc != nil {
 		a.ServiceRegistrationFunc(a)
 	}
@@ -85,7 +85,7 @@ func (a *Sensor) Start() {
 		go a.RegistryPoller.Start()
 	}
 
-	a.waitUntilApolloIsReady()
+	a.waitUntilCentralIsReady()
 	go a.relayEvents()
 }
 
@@ -129,15 +129,15 @@ func (a *Sensor) relayEvents() {
 	}
 }
 
-func (a *Sensor) waitUntilApolloIsReady() {
-	conn, err := clientconn.GRPCConnection(a.ApolloEndpoint)
+func (a *Sensor) waitUntilCentralIsReady() {
+	conn, err := clientconn.GRPCConnection(a.CentralEndpoint)
 	if err != nil {
 		a.Logger.Fatal(err)
 	}
 	pingService := v1.NewPingServiceClient(conn)
 	err = pingWithTimeout(pingService)
 	for err != nil {
-		a.Logger.Infof("Ping to Apollo failed: %s. Retrying...", err)
+		a.Logger.Infof("Ping to Central failed: %s. Retrying...", err)
 		time.Sleep(2 * time.Second)
 		err = pingWithTimeout(pingService)
 	}
@@ -151,7 +151,7 @@ func pingWithTimeout(svc v1.PingServiceClient) (err error) {
 }
 
 func (a *Sensor) reportDeploymentEvent(ev *v1.DeploymentEvent) (resp *v1.DeploymentEventResponse, err error) {
-	conn, err := clientconn.GRPCConnection(a.ApolloEndpoint)
+	conn, err := clientconn.GRPCConnection(a.CentralEndpoint)
 	if err != nil {
 		return nil, err
 	}
