@@ -73,6 +73,10 @@ const fieldsMap = {
         label: 'Scope',
         formatValue: d => d.join(', ')
     },
+    enforce: {
+        label: 'Enforce',
+        formatValue: d => ((d === true) ? 'Yes' : 'No')
+    },
     disabled: {
         label: 'Disabled',
         formatValue: d => ((d === true) ? 'Yes' : 'No')
@@ -201,7 +205,7 @@ class PolicyView extends Component {
                             policyDetails.map((field) => {
                                 if (!fieldsMap[field]) return '';
                                 const { label } = fieldsMap[field];
-                                const value = fieldsMap[field].formatValue([policy[field]]);
+                                const value = fieldsMap[field].formatValue(policy[field]);
                                 if (!value || (Array.isArray(value) && !value.length)) return '';
                                 return (
                                     <div className="mb-4" key={field}>

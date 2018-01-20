@@ -79,6 +79,17 @@ class PolicyCreationForm extends Component {
                         options: [],
                         required: true
 
+                    },
+                    {
+                        label: 'Enforce',
+                        value: 'enforce',
+                        exclude: false,
+                        type: 'select',
+                        options: [
+                            { label: 'Yes', value: true },
+                            { label: 'No', value: false }
+                        ],
+                        required: true
                     }
                 ],
                 imagePolicy: [
