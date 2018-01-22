@@ -208,7 +208,7 @@ const sourceMap = {
             },
             {
                 label: 'Docker Password',
-                key: 'remote',
+                key: 'password',
                 type: 'password',
                 placeholder: ''
             }
