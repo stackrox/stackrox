@@ -11,20 +11,21 @@ import "api/v1/deployment_service.proto";
 package v1;
 
 message Alert {
-    string id                       = 1;
-    Policy policy                   = 2;
-    Deployment deployment           = 3;
+    string id                               = 1;
+    Policy policy                           = 2;
+    Deployment deployment                   = 3;
     message Violation {
         string message    = 1;
     }
-    repeated Violation violations   = 4;
+    repeated Violation violations           = 4;
     message Enforcement {
         EnforcementAction action = 1;
         string message           = 2;
     }
-    Enforcement enforcement         = 5;
-    google.protobuf.Timestamp time  = 6;
-    bool stale                      = 7;
+    Enforcement enforcement                 = 5;
+    google.protobuf.Timestamp time          = 6;
+    bool stale                              = 7;
+    google.protobuf.Timestamp marked_stale  = 8;
 }
 
 message GetAlertRequest {
@@ -36,9 +37,12 @@ message GetAlertsRequest {
     repeated string policy_name            = 2;
     repeated Severity severity             = 3;
     google.protobuf.Timestamp since        = 4;
-    repeated bool stale                    = 5;
-    repeated string cluster                = 6;
-    repeated string deployment_id          = 7;
+    google.protobuf.Timestamp until        = 5;
+    repeated bool stale                    = 6;
+    repeated string cluster                = 7;
+    repeated string deployment_id          = 8;
+    google.protobuf.Timestamp sinceStale   = 9;
+    google.protobuf.Timestamp untilStale   = 10;
 }
 
 message GetAlertsResponse {

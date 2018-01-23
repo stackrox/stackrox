@@ -24,7 +24,10 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 	if err != nil {
 		return nil, err
 	}
-	requestTime, requestTimeErr := ptypes.Timestamp(request.GetSince())
+	sinceTime, sinceTimeErr := ptypes.Timestamp(request.GetSince())
+	untilTime, untilTimeErr := ptypes.Timestamp(request.GetUntil())
+	sinceStaleTime, sinceStaleTimeErr := ptypes.Timestamp(request.GetSinceStale())
+	untilStaleTime, untilStaleTimeErr := ptypes.Timestamp(request.GetUntilStale())
 	severitySet := severitiesWrap(request.GetSeverity()).asSet()
 	categoriesSet := categoriesWrap(request.GetCategory()).asSet()
 	policiesSet := stringWrap(request.GetPolicyName()).asSet()
@@ -56,8 +59,26 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 			continue
 		}
 
-		if requestTimeErr == nil && !requestTime.IsZero() {
-			if alertTime, alertTimeErr := ptypes.Timestamp(alert.GetTime()); alertTimeErr == nil && !requestTime.Before(alertTime) {
+		if sinceTimeErr == nil && !sinceTime.IsZero() {
+			if alertTime, alertTimeErr := ptypes.Timestamp(alert.GetTime()); alertTimeErr == nil && !sinceTime.Before(alertTime) {
+				continue
+			}
+		}
+
+		if untilTimeErr == nil && !untilTime.IsZero() {
+			if alertTime, alertTimeErr := ptypes.Timestamp(alert.GetTime()); alertTimeErr == nil && !untilTime.After(alertTime) {
+				continue
+			}
+		}
+
+		if sinceStaleTimeErr == nil && !sinceStaleTime.IsZero() {
+			if alertTime, alertTimeErr := ptypes.Timestamp(alert.GetTime()); alertTimeErr == nil && !sinceStaleTime.Before(alertTime) {
+				continue
+			}
+		}
+
+		if untilStaleTimeErr == nil && !untilStaleTime.IsZero() {
+			if alertTime, alertTimeErr := ptypes.Timestamp(alert.GetTime()); alertTimeErr == nil && !untilStaleTime.After(alertTime) {
 				continue
 			}
 		}
