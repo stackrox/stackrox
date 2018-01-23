@@ -97,3 +97,6 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
 [[constraint]]
   name = "github.com/cloudflare/cfssl"
   branch = "master"
+[[constraint]]
+  name = "github.com/NYTimes/gziphandler"
+  version = "1.0.0"

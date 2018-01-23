@@ -15,6 +15,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
+	"github.com/NYTimes/gziphandler"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
@@ -141,7 +142,7 @@ func (a *apiImpl) run() {
 			panic(err)
 		}
 	}
-	mux.Handle("/v1/", gwMux)
+	mux.Handle("/v1/", gziphandler.GzipHandler(gwMux))
 	conn, err := net.Listen("tcp", grpcPort)
 	if err != nil {
 		panic(err)

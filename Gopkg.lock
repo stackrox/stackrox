@@ -14,6 +14,12 @@
   version = "v0.4.6"
 
 [[projects]]
+  name = "github.com/NYTimes/gziphandler"
+  packages = ["."]
+  revision = "d6f46609c7629af3a02d791a4666866eed3cbd3e"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/Nvveen/Gotty"
   packages = ["."]
@@ -382,6 +388,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5c8944c50b7c52ba4f77c1f5aa579128a84aafa29d09ae923147319897c6e7d7"
+  inputs-digest = "1c0509d4b05bd4fd251eee0de6cdb1e43bb50f432de5f8f5d1b69194be2add5b"
   solver-name = "gps-cdcl"
   solver-version = 1

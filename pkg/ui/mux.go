@@ -2,6 +2,8 @@ package ui
 
 import (
 	"net/http"
+
+	"github.com/NYTimes/gziphandler"
 )
 
 // Mux returns a HTTP Handler that knows how to serve the UI assets,
@@ -18,5 +20,5 @@ func Mux() http.Handler {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "/ui/index.html")
 	})
-	return mux
+	return gziphandler.GzipHandler(mux)
 }
