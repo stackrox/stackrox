@@ -87,7 +87,7 @@ generated-srcs: $(GENERATED_SRCS)
 .PHONY: clean-generated-srcs
 clean-generated-srcs:
 	@echo "+ $@"
-	git clean -xf generated
+	git clean -xdf generated
 
 deps: $(GENERATED_SRCS) Gopkg.toml Gopkg.lock
 	@echo "+ $@"
@@ -164,11 +164,11 @@ image: gazelle clean-image
 ## Clean ##
 ###########
 .PHONY: clean
-clean: clean-image
+clean: clean-image clean-generated-srcs
 	@echo "+ $@"
 
 .PHONY: clean-image
 clean-image:
 	@echo "+ $@"
 	git clean -xf image/bin
-	git clean -xf image/ui
+	git clean -xdf image/ui
