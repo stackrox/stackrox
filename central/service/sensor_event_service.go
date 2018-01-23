@@ -85,6 +85,8 @@ func (s *SensorEventService) handlePersistence(event *v1.DeploymentEvent) error 
 	action := event.GetAction()
 	deployment := event.GetDeployment()
 	switch action {
+	case v1.ResourceAction_PREEXISTING_RESOURCE:
+		fallthrough
 	case v1.ResourceAction_CREATE_RESOURCE:
 		if err := s.storage.UpdateDeployment(deployment); err != nil {
 			log.Errorf("unable to add deployment %s: %s", deployment.GetId(), err)
