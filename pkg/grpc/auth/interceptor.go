@@ -55,7 +55,7 @@ func auth(ctx context.Context) (newCtx context.Context, err error) {
 	if ok {
 		return newCtx, nil
 	}
-	logger.Infof("Request failed TLS validation: %v", err)
+	logger.Debugf("Request failed TLS validation: %v", err)
 
 	newCtx, ok = authToken(ctx)
 	if !ok {
@@ -73,8 +73,12 @@ func authTLS(ctx context.Context) (newCtx context.Context, ok bool, err error) {
 	if !ok {
 		return ctx, false, status.Error(codes.Unauthenticated, "Could not get TLS information from peer")
 	}
-	if len(tls.State.VerifiedChains) != 1 {
-		return ctx, false, status.Error(codes.Unauthenticated, "We cowardly refuse to check anything other than one cert chain")
+	l := len(tls.State.VerifiedChains)
+	switch {
+	case l == 0:
+		return ctx, false, status.Error(codes.Unauthenticated, "No verified certificate chains were presented")
+	case l > 1:
+		return ctx, false, status.Error(codes.Unauthenticated, "Providing multiple verified chains is not supported")
 	}
 	chain := tls.State.VerifiedChains[0]
 	leaf := chain[0]
