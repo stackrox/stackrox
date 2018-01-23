@@ -24,6 +24,7 @@ message Cluster {
     string      central_api_endpoint = 5;
     string      namespace            = 6;
     string      image_pull_secret    = 7;
+    bool        disable_swarm_tls    = 16;
 }
 
 message ClusterResponse {

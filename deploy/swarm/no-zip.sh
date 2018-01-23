@@ -25,7 +25,7 @@ get_identity "$LOCAL_API_ENDPOINT" "$CLUSTER" "$SWARM_DIR"
 get_authority "$LOCAL_API_ENDPOINT" "$SWARM_DIR"
 
 echo "Deploying Sensor..."
-if [ "$APOLLO_NO_REGISTRY_AUTH" = "true" ]; then
+if [ "$MITIGATE_DISABLE_REGISTRY_AUTH" = "true" ]; then
     cp "$SWARM_DIR/sensor-deploy.sh" "$SWARM_DIR/tmp"
     cat "$SWARM_DIR/tmp" | sed "s/--with-registry-auth//" > "$SWARM_DIR/sensor-deploy.sh"
 fi
