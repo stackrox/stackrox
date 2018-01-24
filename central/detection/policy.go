@@ -1,8 +1,6 @@
 package detection
 
 import (
-	"fmt"
-
 	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 )
@@ -16,30 +14,27 @@ func (d *Detector) initializePolicies() error {
 	}
 
 	for _, policy := range policies {
-		if err := d.addPolicy(policy); err != nil {
-			return fmt.Errorf("policy %s: %s", policy.GetId(), err)
+		matcherPolicy, err := matcher.New(policy)
+		if err != nil {
+			logger.Errorf("policy %s: %s", policy.GetId(), err)
+			continue
 		}
+		d.addPolicy(matcherPolicy)
 	}
 	return nil
 }
 
-func (d *Detector) addPolicy(policy *v1.Policy) (err error) {
-	var p *matcher.Policy
-	if p, err = matcher.New(policy); err != nil {
-		return err
-	}
-
-	d.policies[policy.GetId()] = p
-	go d.reprocessPolicy(p)
+func (d *Detector) addPolicy(policy *matcher.Policy) {
+	d.policies[policy.GetId()] = policy
+	go d.reprocessPolicy(policy)
 	return
 }
 
 // UpdatePolicy updates the current policy in a threadsafe manner.
-func (d *Detector) UpdatePolicy(policy *v1.Policy) error {
+func (d *Detector) UpdatePolicy(policy *matcher.Policy) {
 	d.policyMutex.Lock()
 	defer d.policyMutex.Unlock()
-
-	return d.addPolicy(policy)
+	d.addPolicy(policy)
 }
 
 // RemovePolicy removes the policy specified by id in a threadsafe manner.

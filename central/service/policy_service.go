@@ -2,9 +2,11 @@ package service
 
 import (
 	"errors"
+	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/detection"
+	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -69,7 +71,8 @@ func (s *PolicyService) PostPolicy(ctx context.Context, request *v1.Policy) (*v1
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new policy")
 	}
-	if err := validatePolicy(request); err != nil {
+	policy, err := validatePolicy(request)
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	id, err := s.storage.AddPolicy(request)
@@ -77,33 +80,35 @@ func (s *PolicyService) PostPolicy(ctx context.Context, request *v1.Policy) (*v1
 		return nil, err
 	}
 	request.Id = id
-	if err := s.detector.UpdatePolicy(request); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
+	policy.Id = id
+	s.detector.UpdatePolicy(policy)
 	return request, nil
 }
 
-func validatePolicy(policy *v1.Policy) error {
+func validatePolicy(policy *v1.Policy) (*matcher.Policy, error) {
 	if policy.GetName() == "" {
-		return errors.New("policy must have a set name")
+		return nil, errors.New("policy must have a set name")
 	}
 	if policy.GetSeverity() == v1.Severity_UNSET_SEVERITY {
-		return errors.New("policy must have a set severity")
+		return nil, errors.New("policy must have a set severity")
 	}
 	if len(policy.GetCategories()) == 0 {
-		return errors.New("policy must have at least one category")
+		return nil, errors.New("policy must have at least one category")
 	}
-	return nil
+	matcherPolicy, err := matcher.New(policy)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("Policy could not be edited due to: %+v", err))
+	}
+	return matcherPolicy, nil
 }
 
 // PutPolicy updates a current policy in the system.
 func (s *PolicyService) PutPolicy(ctx context.Context, request *v1.Policy) (*empty.Empty, error) {
-	if err := validatePolicy(request); err != nil {
+	policy, err := validatePolicy(request)
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if err := s.detector.UpdatePolicy(request); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
+	s.detector.UpdatePolicy(policy)
 	if err := s.storage.UpdatePolicy(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
