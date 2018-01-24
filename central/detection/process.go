@@ -7,7 +7,7 @@ import (
 
 // ProcessDeploymentEvent takes in a deployment event and return alerts.
 func (d *Detector) ProcessDeploymentEvent(deployment *v1.Deployment, action v1.ResourceAction) (enforcement v1.EnforcementAction, err error) {
-	if _, err = d.enrich(deployment); err != nil {
+	if _, err = d.enricher.Enrich(deployment); err != nil {
 		return
 	}
 

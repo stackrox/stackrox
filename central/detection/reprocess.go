@@ -36,7 +36,7 @@ func (d *Detector) enrichAndReprocess() {
 	polices := d.getCurrentPolicies()
 
 	for _, deploy := range deployments {
-		if enriched, err := d.enrich(deploy); err != nil {
+		if enriched, err := d.enricher.Enrich(deploy); err != nil {
 			logger.Error(err)
 		} else if enriched {
 			d.queueTasks(deploy, polices)
@@ -70,7 +70,7 @@ func (d *Detector) reprocessRegistry(registry registries.ImageRegistry) {
 	policies := d.getCurrentPolicies()
 
 	for _, deploy := range deployments {
-		if d.enrichWithRegistry(deploy, registry) {
+		if d.enricher.EnrichWithRegistry(deploy, registry) {
 			d.queueTasks(deploy, policies)
 		}
 	}
@@ -86,7 +86,7 @@ func (d *Detector) reprocessScanner(scanner scannerTypes.ImageScanner) {
 	policies := d.getCurrentPolicies()
 
 	for _, deploy := range deployments {
-		if d.enrichWithScanner(deploy, scanner) {
+		if d.enricher.EnrichWithScanner(deploy, scanner) {
 			d.queueTasks(deploy, policies)
 		}
 	}

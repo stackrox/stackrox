@@ -61,6 +61,11 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	// No further processing is needed when a deployment is removed.
+	if request.GetAction() == v1.ResourceAction_REMOVE_RESOURCE {
+		return response, nil
+	}
+
 	enforcement, err := s.detector.ProcessDeploymentEvent(d, request.GetAction())
 	if err != nil {
 		log.Error(err)

@@ -5,6 +5,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
+	"bitbucket.org/stack-rox/apollo/central/enrichment"
 	"bitbucket.org/stack-rox/apollo/central/notifications"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -21,12 +22,10 @@ type Detector struct {
 	database interface {
 		db.AlertStorage
 		db.DeploymentStorage
-		db.ImageStorage
 		db.PolicyStorage
-		db.RegistryStorage
-		db.ScannerStorage
 	}
 
+	enricher              *enrichment.Enricher
 	notificationProcessor *notifications.Processor
 	taskC                 chan task
 	stopping              bool
@@ -34,30 +33,22 @@ type Detector struct {
 
 	policyMutex sync.Mutex
 	policies    map[string]*matcher.Policy
-
-	registryMutex sync.Mutex
-	registries    map[string]registries.ImageRegistry
-
-	scannerMutex sync.Mutex
-	scanners     map[string]scannerTypes.ImageScanner
 }
 
 // New creates a new detector and initializes the registries and scanners from the DB if they exist.
-func New(database db.Storage, notificationsProcessor *notifications.Processor) (*Detector, error) {
-	d := &Detector{
+func New(database db.Storage, notificationsProcessor *notifications.Processor) (d *Detector, err error) {
+	d = &Detector{
 		database:              database,
 		notificationProcessor: notificationsProcessor,
 		taskC:    make(chan task, 40),
 		stoppedC: make(chan struct{}),
 	}
 
-	if err := d.initializePolicies(); err != nil {
+	if d.enricher, err = enrichment.New(database); err != nil {
 		return nil, err
 	}
-	if err := d.initializeRegistries(); err != nil {
-		return nil, err
-	}
-	if err := d.initializeScanners(); err != nil {
+
+	if err = d.initializePolicies(); err != nil {
 		return nil, err
 	}
 
@@ -78,4 +69,26 @@ type task struct {
 	deployment *v1.Deployment
 	action     v1.ResourceAction
 	policy     *matcher.Policy
+}
+
+// UpdateRegistry updates image processors map of active registries
+func (d *Detector) UpdateRegistry(registry registries.ImageRegistry) {
+	d.enricher.UpdateRegistry(registry)
+	go d.reprocessRegistry(registry)
+}
+
+// RemoveRegistry removes a registry from image processors map of active registries
+func (d *Detector) RemoveRegistry(id string) {
+	d.enricher.RemoveRegistry(id)
+}
+
+// UpdateScanner updates image processors map of active scanners
+func (d *Detector) UpdateScanner(scanner scannerTypes.ImageScanner) {
+	d.enricher.UpdateScanner(scanner)
+	go d.reprocessScanner(scanner)
+}
+
+// RemoveScanner removes a scanner from image processors map of active scanners
+func (d *Detector) RemoveScanner(id string) {
+	d.enricher.RemoveScanner(id)
 }
