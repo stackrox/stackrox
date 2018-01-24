@@ -7,7 +7,6 @@ import BenchmarksSidePanel from 'Containers/Compliance/BenchmarksSidePanel';
 
 import axios from 'axios';
 import emitter from 'emitter';
-import queryString from 'query-string';
 import dateFns from 'date-fns';
 import { ClipLoader } from 'react-spinners';
 
@@ -101,17 +100,17 @@ class BenchmarksPage extends Component {
         this.updateSchedule();
     }
 
-    getBenchmarks = () => {
-        const params = `?${queryString.stringify(this.params)}`;
-        return axios.get(`/v1/benchmarks/results/grouped/${this.props.benchmarkName}${params}`).then((response) => {
-            const { data } = response;
-            if (!data || !data.benchmarks || data.benchmarks.length === 0) return;
-            const lastScanned = dateFns.format(data.benchmarks[0].time, 'MM/DD/YYYY h:mm:ss A');
-            const benchmarks = data.benchmarks[0].checkResults;
-            if (lastScanned !== this.state.lastScanned) {
+    getBenchmarks = () => axios.get(`/v1/benchmarks/scans?benchmark=${this.props.benchmarkName}`).then((response) => {
+        const { data } = response;
+        if (data.scanMetadata.length === 0) return;
+        const lastScan = data.scanMetadata[0];
+        const scanTime = dateFns.format(lastScan.time, 'MM/DD/YYYY h:mm:ss A');
+        axios.get(`/v1/benchmarks/scans/${lastScan.scanId}`).then((resp) => {
+            const { checks } = resp.data;
+            if (scanTime !== this.state.lastScanned) {
                 this.update('UPDATE_BENCHMARKS', {
-                    benchmarks,
-                    lastScanned
+                    benchmarks: checks,
+                    lastScanned: scanTime,
                 });
             }
         }).catch((error) => {
@@ -123,7 +122,7 @@ class BenchmarksPage extends Component {
         }).catch((error) => {
             console.error(error);
         });
-    }
+    });
 
     retrieveSchedule() {
         return axios.get(`/v1/benchmarks/schedules/${this.props.benchmarkName}`).then((response) => {

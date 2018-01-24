@@ -38,7 +38,7 @@ func (s *BenchmarkTriggerService) RegisterServiceHandlerFromEndpoint(ctx context
 
 // Trigger triggers a benchmark launch asynchronously
 func (s *BenchmarkTriggerService) Trigger(ctx context.Context, request *v1.BenchmarkTrigger) (*empty.Empty, error) {
-	_, exists, err := s.storage.GetBenchmark(request.Name)
+	_, exists, err := s.storage.GetBenchmark(request.GetName())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

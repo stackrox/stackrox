@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "api/v1/benchmark_service.proto";
+import "api/v1/benchmark_results_service.proto";
+
+package v1;
+
+message BenchmarkScanMetadata {
+    string scan_id                 = 1;
+    string benchmark               = 2;
+    repeated string clusters       = 3;
+    repeated string checks         = 4;
+    google.protobuf.Timestamp time = 5;
+    BenchmarkReason reason         = 6;
+}
+
+message BenchmarkScan {
+    message Check {
+        CheckDefinition definition = 1;
+        message HostResult {
+            string host            = 1;
+            CheckStatus result     = 2;
+            repeated string notes  = 3;
+        }
+        repeated HostResult host_results     = 2;
+        map<string,int32> aggregated_results = 3;
+    }
+    repeated Check checks = 1;
+}
+
+message ListBenchmarkScansRequest {
+    string benchmark         = 1;
+    repeated string clusters = 2;
+}
+
+message ListBenchmarkScansResponse {
+    repeated BenchmarkScanMetadata scan_metadata = 1;
+}
+
+message GetBenchmarkScanRequest {
+    string scan_id           = 1;
+    repeated string clusters = 2;
+    repeated string hosts    = 3;
+}
+
+service BenchmarkScanService {
+
+    rpc PostBenchmarkScan(BenchmarkScanMetadata) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/benchmarks/scans"
+            body: "*"
+        };
+    }
+
+    rpc ListBenchmarkScans(ListBenchmarkScansRequest) returns (ListBenchmarkScansResponse) {
+        option (google.api.http) = {
+            get: "/v1/benchmarks/scans"
+        };
+    }
+
+    rpc GetBenchmarkScan(GetBenchmarkScanRequest) returns (BenchmarkScan) {
+        option (google.api.http) = {
+            get: "/v1/benchmarks/scans/{scan_id}"
+        };
+    }
+
+}
