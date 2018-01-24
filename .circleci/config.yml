@@ -14,9 +14,14 @@ jobs:
       - checkout
       - setup_remote_docker
 
+      # Refresh the base image.
+      - run: docker pull alpine:3.7
+
+      # Build.
       - run: cat tools/ci-bazel.rc | envsubst > tools/bazel.rc
       - run: make all
 
+      # Push.
       - run: docker tag stackrox/mitigate:latest stackrox/mitigate:$CIRCLE_SHA1
       - run: docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
       - run: docker push stackrox/mitigate:$CIRCLE_SHA1
