@@ -117,7 +117,11 @@ const fieldsMap = {
     },
     component: {
         label: 'Component',
-        formatValue: d => d
+        formatValue: (d) => {
+            const name = (d.name) ? `${d.name}` : '';
+            const version = (d.version) ? d.version : '';
+            return `'${name}' with version '${version}'`;
+        }
     },
     env: {
         label: 'Environment',

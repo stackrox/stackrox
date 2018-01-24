@@ -21,13 +21,18 @@ type compiledImagePolicy struct {
 
 	ImageNamePolicy *imageNamePolicyRegex
 
-	ImageAgeDays int64
+	ImageAgeDays *int64
 	LineRule     *lineRuleFieldRegex
 
 	CVSS        *v1.NumericalPolicy
 	CVE         *regexp.Regexp
-	Component   *regexp.Regexp
-	ScanAgeDays int64
+	Component   *componentRegex
+	ScanAgeDays *int64
+}
+
+type componentRegex struct {
+	Name    *regexp.Regexp
+	Version *regexp.Regexp
 }
 
 type lineRuleFieldRegex struct {
@@ -53,11 +58,21 @@ func NewCompiledImagePolicy(policy *v1.Policy) (compiledP processors.CompiledPol
 		return nil, fmt.Errorf("policy %s must contain image policy", policy.GetName())
 	}
 
+	var imageAge, scanAge *int64
+	if imagePolicy.GetSetImageAgeDays() != nil {
+		tmp := imagePolicy.GetImageAgeDays()
+		imageAge = &tmp
+	}
+	if imagePolicy.GetSetScanAgeDays() != nil {
+		tmp := imagePolicy.GetScanAgeDays()
+		scanAge = &tmp
+	}
+
 	compiled := &compiledImagePolicy{
 		Original:     policy,
-		ImageAgeDays: imagePolicy.GetImageAgeDays(),
+		ImageAgeDays: imageAge,
 		CVSS:         imagePolicy.GetCvss(),
-		ScanAgeDays:  imagePolicy.GetScanAgeDays(),
+		ScanAgeDays:  scanAge,
 	}
 
 	compiled.ImageNamePolicy, err = compileImageNamePolicyRegex(imagePolicy.GetImageName())
@@ -68,7 +83,7 @@ func NewCompiledImagePolicy(policy *v1.Policy) (compiledP processors.CompiledPol
 	if err != nil {
 		return nil, fmt.Errorf("image line: %s", err)
 	}
-	compiled.Component, err = processors.CompileStringRegex(imagePolicy.GetComponent())
+	compiled.Component, err = compileComponent(imagePolicy.GetComponent())
 	if err != nil {
 		return nil, fmt.Errorf("image component: %s", err)
 	}
@@ -105,6 +120,24 @@ func compileImageNamePolicyRegex(policy *v1.ImageNamePolicy) (*imageNamePolicyRe
 		Namespace: namespace,
 		Repo:      repo,
 		Tag:       tag,
+	}, nil
+}
+
+func compileComponent(comp *v1.ImagePolicy_Component) (*componentRegex, error) {
+	if comp == nil {
+		return nil, nil
+	}
+	name, err := processors.CompileStringRegex(comp.GetName())
+	if err != nil {
+		return nil, fmt.Errorf("component name '%v' is not a valid regex", comp.GetName())
+	}
+	version, err := processors.CompileStringRegex(comp.GetVersion())
+	if err != nil {
+		return nil, fmt.Errorf("component version '%v' is not a valid regex", comp.GetVersion())
+	}
+	return &componentRegex{
+		Name:    name,
+		Version: version,
 	}, nil
 }
 

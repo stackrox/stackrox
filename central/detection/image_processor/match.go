@@ -57,9 +57,9 @@ func (policy *compiledImagePolicy) matchComponent(image *v1.Image) (violations [
 	}
 	policyExists = true
 	for _, component := range image.GetScan().GetComponents() {
-		if policy.Component.MatchString(component.GetName()) {
+		if policy.Component.Name.MatchString(component.GetName()) && policy.Component.Version.MatchString(component.GetVersion()) {
 			violation := &v1.Alert_Violation{
-				Message: fmt.Sprintf("Component '%v' matches the regex %+v", component.GetName(), policy.Component),
+				Message: fmt.Sprintf("Component '%v:%v' matches name regex %+v and value regex %+v", component.GetName(), component.GetVersion(), policy.Component.Name, policy.Component.Version),
 			}
 			violations = append(violations, violation)
 		}
@@ -194,11 +194,11 @@ func (policy *compiledImagePolicy) matchImageName(image *v1.Image) (violations [
 }
 
 func (policy *compiledImagePolicy) matchImageAge(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
-	if policy.ImageAgeDays == 0 {
+	if policy.ImageAgeDays == nil {
 		return
 	}
 	policyExists = true
-	deadline := time.Now().AddDate(0, 0, -int(policy.ImageAgeDays))
+	deadline := time.Now().AddDate(0, 0, -int(*policy.ImageAgeDays))
 	created := image.GetMetadata().GetCreated()
 	if created == nil {
 		return
@@ -216,11 +216,11 @@ func (policy *compiledImagePolicy) matchImageAge(image *v1.Image) (violations []
 }
 
 func (policy *compiledImagePolicy) matchScanAge(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
-	if policy.ScanAgeDays == 0 {
+	if policy.ScanAgeDays == nil {
 		return
 	}
 	policyExists = true
-	deadline := time.Now().AddDate(0, 0, -int(policy.ScanAgeDays))
+	deadline := time.Now().AddDate(0, 0, -int(*policy.ScanAgeDays))
 	scanned := image.GetScan().GetScanTime()
 	if scanned == nil {
 		return

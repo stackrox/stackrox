@@ -30,7 +30,9 @@ func GetAlert() *v1.Alert {
 					Repo:      "nginx",
 					Tag:       "1.10",
 				},
-				ImageAgeDays: 30,
+				SetImageAgeDays: &v1.ImagePolicy_ImageAgeDays{
+					ImageAgeDays: 30,
+				},
 				LineRule: &v1.DockerfileLineRuleField{
 					Instruction: "VOLUME",
 					Value:       "/etc/*",
@@ -40,9 +42,14 @@ func GetAlert() *v1.Alert {
 					MathOp: v1.MathOP_MAX,
 					Value:  5,
 				},
-				Cve:         "CVE-1234",
-				Component:   "berkeley*",
-				ScanAgeDays: 10,
+				Cve: "CVE-1234",
+				Component: &v1.ImagePolicy_Component{
+					Name:    "berkeley*",
+					Version: ".*",
+				},
+				SetScanAgeDays: &v1.ImagePolicy_ScanAgeDays{
+					ScanAgeDays: 10,
+				},
 			},
 			ConfigurationPolicy: &v1.ConfigurationPolicy{
 				Env: &v1.ConfigurationPolicy_EnvironmentPolicy{

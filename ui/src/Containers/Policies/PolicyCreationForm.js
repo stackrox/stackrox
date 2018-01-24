@@ -129,7 +129,7 @@ class PolicyCreationForm extends Component {
                     },
                     {
                         label: 'Days since Image scanned',
-                        value: 'imagePolicy.imageScanDays',
+                        value: 'imagePolicy.scanAgeDays',
                         type: 'number',
                         placeholder: '1 Day Ago',
                         required: false
@@ -211,8 +211,19 @@ class PolicyCreationForm extends Component {
                     {
                         label: 'Component',
                         value: 'imagePolicy.component',
-                        type: 'text',
-                        placeholder: '^example*',
+                        type: 'group',
+                        values: [
+                            {
+                                value: 'imagePolicy.component.name',
+                                type: 'text',
+                                placeholder: '^example*'
+                            },
+                            {
+                                value: 'imagePolicy.component.version',
+                                type: 'text',
+                                placeholder: '^v1.2.0$'
+                            }
+                        ],
                         required: false
                     }
                 ],

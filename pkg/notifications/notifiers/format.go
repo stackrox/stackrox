@@ -43,11 +43,14 @@ const policyFormat = `
 			{{if .Policy.ImagePolicy.LineRule.Instruction}}{{stringify "Instruction:" .Policy.ImagePolicy.LineRule.Instruction | nestedList}}{{end}}
 			{{if .Policy.ImagePolicy.LineRule.Value}}{{stringify "Value:" .Policy.ImagePolicy.LineRule.Value | nestedList}}{{end}}
 		{{end}}
-		{{if ne .Policy.ImagePolicy.ImageAgeDays 0}}{{stringify "Image Age >" .Policy.ImagePolicy.ImageAgeDays "days" | list}}{{end}}
+		{{if .Policy.ImagePolicy.SetImageAgeDays}}{{stringify "Image Age >" .Policy.ImagePolicy.GetImageAgeDays "days" | list}}{{end}}
 		{{if .Policy.ImagePolicy.Cvss}}{{stringify .CVSS | list}}{{end}}
 		{{if .Policy.ImagePolicy.Cve}}{{stringify "CVE:" .Policy.ImagePolicy.Cve | list}}{{end}}
-		{{if .Policy.ImagePolicy.Component}}{{stringify "Component:" .Policy.ImagePolicy.Component | list}}{{end}}
-		{{if ne .Policy.ImagePolicy.ScanAgeDays 0}}{{stringify "Scan Age >" .Policy.ImagePolicy.ScanAgeDays "days" | list}}{{end}}
+		{{if .Policy.ImagePolicy.Component}}{{list "Component"}}
+			{{if .Policy.ImagePolicy.Component.Name}}{{stringify "Name:" .Policy.ImagePolicy.Component.Name | nestedList}}{{end}}
+			{{if .Policy.ImagePolicy.Component.Version}}{{stringify "Version:" .Policy.ImagePolicy.Component.Version | nestedList}}{{end}}
+		{{end}}
+		{{if .Policy.ImagePolicy.SetScanAgeDays}}{{stringify "Scan Age >" .Policy.ImagePolicy.GetScanAgeDays "days" | list}}{{end}}
 	{{end}}
 	{{if .Policy.PrivilegePolicy }}{{subheader "Privilege Assurance:"}}
 		{{if .Policy.PrivilegePolicy.AddCapabilities}}{{list "Disallowed Add-Capabilities"}}

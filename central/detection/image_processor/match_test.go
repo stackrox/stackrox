@@ -33,6 +33,7 @@ func getTestImage() *v1.Image {
 							Cve:  "CVE-2017-1",
 						},
 					},
+					Version: "v1.5.0",
 				},
 				{
 					Name: "berkeleyCE",
@@ -41,6 +42,7 @@ func getTestImage() *v1.Image {
 							Cvss: 6,
 						},
 					},
+					Version: "v1.2.0",
 				},
 			},
 		},
@@ -72,14 +74,27 @@ func TestMatchComponent(t *testing.T) {
 
 	image := getTestImage()
 
+	componentRegex, err := compileComponent(&v1.ImagePolicy_Component{
+		Name:    "^berkeley*",
+		Version: ".*",
+	})
+	assert.NoError(t, err)
+
 	berkeleyPolicy := &compiledImagePolicy{
-		Component: regexp.MustCompile("^berkeley*"),
+		Component: componentRegex,
 	}
 	violations, exists = berkeleyPolicy.matchComponent(image)
 	assert.True(t, exists)
 	assert.Equal(t, 2, len(violations))
+
+	componentRegex, err = compileComponent(&v1.ImagePolicy_Component{
+		Name:    "^berkeleyD.*",
+		Version: "^v1.5.0$",
+	})
+	assert.NoError(t, err)
+
 	berkeleyDBPolicy := &compiledImagePolicy{
-		Component: regexp.MustCompile("^berkeleyD.*"),
+		Component: componentRegex,
 	}
 	violations, exists = berkeleyDBPolicy.matchComponent(image)
 	assert.True(t, exists)
@@ -241,12 +256,20 @@ func TestMatchImageAge(t *testing.T) {
 	assert.Equal(t, 0, len(violations))
 
 	image := getTestImage()
-
 	now := ptypes.TimestampNow()
 
-	// Does not violate
+	// Does not violate and does not exist
 	policy := &compiledImagePolicy{
-		ImageAgeDays: 1,
+		ImageAgeDays: nil,
+	}
+	violations, exists = policy.matchImageAge(image)
+	assert.False(t, exists)
+	assert.Equal(t, 0, len(violations))
+
+	// Does not violate and exists
+	var days int64 = 1
+	policy = &compiledImagePolicy{
+		ImageAgeDays: &days,
 	}
 	image.Metadata.Created = now
 	violations, exists = policy.matchImageAge(image)
@@ -276,9 +299,18 @@ func TestMatchScanAge(t *testing.T) {
 	image := getTestImage()
 	now := ptypes.TimestampNow()
 
-	// Does not violate
+	// Does not violate and does not exist
 	policy := &compiledImagePolicy{
-		ScanAgeDays: 1,
+		ScanAgeDays: nil,
+	}
+	violations, exists = policy.matchScanAge(image)
+	assert.False(t, exists)
+	assert.Equal(t, 0, len(violations))
+
+	// Does not violate and exists
+	var days int64 = 1
+	policy = &compiledImagePolicy{
+		ScanAgeDays: &days,
 	}
 	image.Scan.ScanTime = now
 	violations, exists = policy.matchScanAge(image)
@@ -307,6 +339,12 @@ func TestMatchPolicyToImage(t *testing.T) {
 
 	image := getTestImage()
 
+	componentRegex, err := compileComponent(&v1.ImagePolicy_Component{
+		Name:    "^berkeley*",
+		Version: ".*",
+	})
+	assert.NoError(t, err)
+
 	policy := &compiledImagePolicy{
 		Original: &v1.Policy{
 			Name:     "policy1",
@@ -316,7 +354,7 @@ func TestMatchPolicyToImage(t *testing.T) {
 			Instruction: "CMD",
 			Value:       regexp.MustCompile("^sudo.*"), // generates 1 violation
 		},
-		Component: regexp.MustCompile("^berkeley*"), // generates 2 violations
+		Component: componentRegex, // generates 2 violations
 	}
 
 	// Make sure if two are specified and both have violations that we receive the violations
@@ -324,8 +362,14 @@ func TestMatchPolicyToImage(t *testing.T) {
 	assert.NotNil(t, violations)
 	assert.Equal(t, 3, len(violations))
 
+	componentRegex, err = compileComponent(&v1.ImagePolicy_Component{
+		Name:    "^blah*",
+		Version: ".*",
+	})
+	assert.NoError(t, err)
+
 	// Make sure if two are specified, but one does not have a violation that we receive no violations
-	policy.Component = regexp.MustCompile("^blah*") // should make ComponentMatch generate no violations so overall alert fails
+	policy.Component = componentRegex // should make ComponentMatch generate no violations so overall alert fails
 	violations = policy.Match(nil, &v1.Container{Image: image})
 	assert.Nil(t, violations)
 }

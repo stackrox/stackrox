@@ -45,12 +45,20 @@ message ImagePolicy {
     ImageNamePolicy image_name          = 1;
 
     // Registry metadata
-    int64 image_age_days                = 2;
+    oneof set_image_age_days {
+        int64 image_age_days            = 2;
+    }
     DockerfileLineRuleField line_rule   = 3;
 
     // Scan Metadata
     NumericalPolicy cvss                = 4;
     string cve                          = 5;
-    string component                    = 6;
-    int64 scan_age_days                 = 7;
+    message Component {
+        string name    = 1;
+        string version = 2;
+    }
+    Component component                 = 6;
+    oneof set_scan_age_days {
+        int64 scan_age_days             = 7;
+    }
 }
