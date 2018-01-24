@@ -8,6 +8,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	"bitbucket.org/stack-rox/apollo/pkg/transports"
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	"github.com/heroku/docker-registry-client/registry"
 )
@@ -31,7 +32,7 @@ type tenableRegistry struct {
 
 	accessKey string
 	secretKey string
-	transport *persistentTokenTransport
+	transport *transports.PersistentTokenTransport
 }
 
 type client interface {
@@ -60,7 +61,7 @@ func newRegistry(protoRegistry *v1.Registry) (*tenableRegistry, error) {
 	if !ok {
 		return nil, errors.New("Config parameter 'secretKey' must be defined for Tenable registries")
 	}
-	tran, err := newPersistentTokenTransport(remoteEndpoint, accessKey, secretKey)
+	tran, err := transports.NewPersistentTokenTransport(remoteEndpoint, accessKey, secretKey)
 	if err != nil {
 		return nil, err
 	}

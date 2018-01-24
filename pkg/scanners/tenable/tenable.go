@@ -11,6 +11,8 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"bitbucket.org/stack-rox/apollo/pkg/transports"
+	dockerRegistry "github.com/heroku/docker-registry-client/registry"
 )
 
 const (
@@ -19,8 +21,9 @@ const (
 
 // Variables so we can modify during unit tests
 var (
-	registry    = "registry.cloud.tenable.com"
-	apiEndpoint = "https://cloud.tenable.com"
+	registry         = "registry.cloud.tenable.com"
+	registryEndpoint = "https://" + registry
+	apiEndpoint      = "https://cloud.tenable.com"
 )
 
 var (
@@ -32,6 +35,8 @@ type tenable struct {
 
 	accessKey string
 	secretKey string
+
+	reg *dockerRegistry.Registry
 
 	protoScanner *v1.Scanner
 }
@@ -45,6 +50,14 @@ func newScanner(protoScanner *v1.Scanner) (*tenable, error) {
 	if !ok {
 		return nil, errors.New("'secretKey' parameter must be defined for Tenable.io")
 	}
+	tran, err := transports.NewPersistentTokenTransport(registryEndpoint, accessKey, secretKey)
+	if err != nil {
+		return nil, err
+	}
+	reg, err := dockerRegistry.NewFromTransport(registryEndpoint, accessKey, secretKey, tran, dockerRegistry.Log)
+	if err != nil {
+		return nil, err
+	}
 	client := &http.Client{
 		Timeout: requestTimeout,
 	}
@@ -52,6 +65,7 @@ func newScanner(protoScanner *v1.Scanner) (*tenable, error) {
 		client:    client,
 		accessKey: accessKey,
 		secretKey: secretKey,
+		reg:       reg,
 
 		protoScanner: protoScanner,
 	}
@@ -92,11 +106,27 @@ func (d *tenable) ProtoScanner() *v1.Scanner {
 	return d.protoScanner
 }
 
+func (d *tenable) populateSHA(image *v1.Image) error {
+	manifest, err := d.reg.ManifestV2(image.GetRemote(), image.GetTag())
+	if err != nil {
+		return err
+	}
+	image.Sha = manifest.Config.Digest.String()
+	return nil
+}
+
 // GetLastScan retrieves the most recent scan
 func (d *tenable) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	if image == nil || image.GetRemote() == "" || image.GetTag() == "" {
 		return nil, nil
 	}
+	// If SHA is empty, then retrieve it from the Tenable registry
+	if image.GetSha() == "" {
+		if err := d.populateSHA(image); err != nil {
+			return nil, fmt.Errorf("unable to retrieve SHA for image %v due to: %+v", images.Wrapper{Image: image}.String(), err)
+		}
+	}
+
 	getScanURL := fmt.Sprintf("/container-security/api/v1/reports/by_image?image_id=%v",
 		images.Wrapper{Image: image}.ShortID())
 

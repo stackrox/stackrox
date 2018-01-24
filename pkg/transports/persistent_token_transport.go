@@ -1,4 +1,4 @@
-package tenable
+package transports
 
 import (
 	"encoding/json"
@@ -6,7 +6,8 @@ import (
 	"net/http"
 )
 
-type persistentTokenTransport struct {
+// PersistentTokenTransport is a transport that can be used to retrieve a token once from a registry and then be reused
+type PersistentTokenTransport struct {
 	Transport http.RoundTripper
 	Username  string
 	Password  string
@@ -14,8 +15,9 @@ type persistentTokenTransport struct {
 	Token     string
 }
 
-func newPersistentTokenTransport(registry, username, password string) (*persistentTokenTransport, error) {
-	tran := &persistentTokenTransport{
+// NewPersistentTokenTransport returns a new transport or an error if the token could not be generated
+func NewPersistentTokenTransport(registry, username, password string) (*PersistentTokenTransport, error) {
+	tran := &PersistentTokenTransport{
 		Transport: http.DefaultTransport,
 		Username:  username,
 		Password:  password,
@@ -31,7 +33,7 @@ type tokenResp struct {
 	Token string `json:"token"`
 }
 
-func (t *persistentTokenTransport) refreshToken() error {
+func (t *PersistentTokenTransport) refreshToken() error {
 	req, err := http.NewRequest("GET", t.Registry+"/v2/token", nil)
 	if err != nil {
 		return err
@@ -55,11 +57,12 @@ func (t *persistentTokenTransport) refreshToken() error {
 	return nil
 }
 
-func (t *persistentTokenTransport) setToken(req *http.Request) {
+func (t *PersistentTokenTransport) setToken(req *http.Request) {
 	req.Header.Add("Authorization", "Bearer "+t.Token)
 }
 
-func (t *persistentTokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+// RoundTrip implements the roundtripper interface and will try to refresh the token if it has expired
+func (t *PersistentTokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	t.setToken(req)
 	resp, err := t.Transport.RoundTrip(req)
 	if err != nil {

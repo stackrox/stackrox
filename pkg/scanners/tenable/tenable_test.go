@@ -11,6 +11,32 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const manifestPayload = `{
+   "schemaVersion": 2,
+   "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+   "config": {
+      "mediaType": "application/vnd.docker.container.image.v1+json",
+      "digest": "sha256:0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455"
+   },
+   "layers": [
+      {
+         "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+         "digest": "sha256:ef24d3d19d383c557b3bb92c21cc1b3e0c4ca6735160b6d3c684fb92ba0b3569"
+      },
+      {
+         "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+         "size": 20197968,
+         "digest": "sha256:96ebebd48bf5b659f6a6289aa67f5f6195f2aab6091df06beae8da160948e860"
+      },
+      {
+         "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+         "size": 195,
+         "digest": "sha256:783c67390305eb6df2f20ae03941343664fa3ca94b700eea449a46b1f6f686fe"
+      }
+   ]
+}
+`
+
 func TestTenableSuite(t *testing.T) {
 	suite.Run(t, new(TenableSuite))
 }
@@ -48,11 +74,22 @@ func (suite *TenableSuite) SetupSuite() {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "{}")
 	})
+	// Handle Registry ping
+	masterRouter.HandleFunc("/v2/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "{}")
+	})
+	// Handle
+	masterRouter.HandleFunc("/v2/library/nginx/manifests/1.10", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, manifestPayload)
+	})
 
 	masterServer := httptest.NewServer(masterRouter)
 
 	// Set the global variable of the Tenable endpoint
 	apiEndpoint = "http://" + masterServer.Listener.Addr().String()
+	registryEndpoint = apiEndpoint
 
 	suite.server = masterServer
 
