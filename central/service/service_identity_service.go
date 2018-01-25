@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -54,13 +53,13 @@ func (s *IdentityService) CreateServiceIdentity(ctx context.Context, request *v1
 	if request == nil {
 		return nil, status.Error(codes.InvalidArgument, "Request must be nonempty")
 	}
-	if request.GetName() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Name must be nonempty")
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "ID must be nonempty")
 	}
 	if request.GetType() == v1.ServiceType_UNKNOWN_SERVICE {
 		return nil, status.Error(codes.InvalidArgument, "Service type must be nonempty")
 	}
-	cert, key, id, err := mtls.IssueNewCert(fmt.Sprintf("%s: %s", request.GetType(), request.GetName()), request.GetType(), s.storage)
+	cert, key, id, err := mtls.IssueNewCert(mtls.CommonName{ServiceType: request.GetType(), Identifier: request.GetId()}, s.storage)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

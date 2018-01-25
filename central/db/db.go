@@ -1,6 +1,8 @@
 package db
 
 import (
+	"time"
+
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 )
 
@@ -70,6 +72,7 @@ type ClusterStorage interface {
 	AddCluster(cluster *v1.Cluster) (string, error)
 	UpdateCluster(cluster *v1.Cluster) error
 	RemoveCluster(id string) error
+	UpdateClusterContactTime(id string, t time.Time) error
 }
 
 // DeploymentStorage provides storage functionality for deployments.

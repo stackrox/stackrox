@@ -33,7 +33,7 @@ func AuthenticatedGRPCConnection(endpoint string) (conn *grpc.ClientConn, err er
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      pool,
-		ServerName:   mtls.CentralName, // This is required!
+		ServerName:   mtls.CentralCN.String(), // This is required!
 	}
 	creds := credentials.NewTLS(tlsConfig)
 	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds))

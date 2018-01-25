@@ -36,12 +36,12 @@ const (
 	beforeGracePeriod = 1 * time.Hour
 
 	certLifetime = 365 * 24 * time.Hour
-
-	// CentralName is a string used to identify Central in certificates.
-	CentralName = "Central"
 )
 
 var (
+	// CentralCN is the Common Name used in certificates for Central.
+	CentralCN = CommonName{ServiceType: v1.ServiceType_CENTRAL_SERVICE, Identifier: "Central"}
+
 	readCAOnce sync.Once
 	caCert     *x509.Certificate
 	caCertDER  []byte
@@ -118,7 +118,7 @@ func signingPolicy() *config.Signing {
 }
 
 // IssueNewCert generates a new key and certificate chain for a sensor.
-func IssueNewCert(name string, t v1.ServiceType, storage db.ServiceIdentityStorage) (certPEM, keyPEM []byte, identity *v1.ServiceIdentity, err error) {
+func IssueNewCert(cn CommonName, storage db.ServiceIdentityStorage) (certPEM, keyPEM []byte, identity *v1.ServiceIdentity, err error) {
 	returnErr := func(err error, prefix string) ([]byte, []byte, *v1.ServiceIdentity, error) {
 		return nil, nil, nil, fmt.Errorf("%s: %s", prefix, err)
 	}
@@ -142,8 +142,8 @@ func IssueNewCert(name string, t v1.ServiceType, storage db.ServiceIdentityStora
 	req := cfsigner.SignRequest{
 		Request: string(csrBytes),
 		Subject: &cfsigner.Subject{
-			CN:           name,
-			Names:        []cfcsr.Name{{OU: ou(t)}},
+			CN:           cn.String(),
+			Names:        []cfcsr.Name{{OU: ou(cn.ServiceType)}},
 			SerialNumber: strconv.FormatInt(serial, 10),
 		},
 	}
@@ -155,7 +155,7 @@ func IssueNewCert(name string, t v1.ServiceType, storage db.ServiceIdentityStora
 	certPEM = certBytes
 	keyPEM = keyBytes
 
-	id := generateIdentity(name, t, serial)
+	id := generateIdentity(cn, serial)
 	if storage != nil {
 		err = storage.AddServiceIdentity(id)
 		if err != nil {
@@ -178,10 +178,10 @@ func ou(t v1.ServiceType) string {
 	return t.String()
 }
 
-func generateIdentity(identity string, t v1.ServiceType, serial int64) *v1.ServiceIdentity {
+func generateIdentity(cn CommonName, serial int64) *v1.ServiceIdentity {
 	return &v1.ServiceIdentity{
-		Name:   identity,
-		Type:   t,
+		Id:     cn.Identifier,
+		Type:   cn.ServiceType,
 		Serial: serial,
 	}
 }

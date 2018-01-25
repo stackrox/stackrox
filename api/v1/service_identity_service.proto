@@ -16,7 +16,7 @@ enum ServiceType {
 
 message ServiceIdentity {
     int64       serial   = 1;
-    string      name     = 2;
+    string      id       = 2;
     ServiceType type     = 3;
 }
 
@@ -25,7 +25,7 @@ message ServiceIdentityResponse {
 }
 
 message CreateServiceIdentityRequest {
-    string      name = 1;
+    string      id = 1;
     ServiceType type = 2;
 }
 

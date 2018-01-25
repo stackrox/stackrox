@@ -2,10 +2,9 @@ package auth
 
 import (
 	"context"
-	"crypto/x509/pkix"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/pkg/mtls"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -82,18 +81,12 @@ func authTLS(ctx context.Context) (newCtx context.Context, ok bool, err error) {
 	}
 	chain := tls.State.VerifiedChains[0]
 	leaf := chain[0]
+	cn := mtls.CommonNameFromString(leaf.Subject.CommonName)
 	return newContext(ctx, Identity{
-		User:         leaf.Subject.CommonName,
-		IdentityType: IdentityType{ServiceType: ouType(leaf.Subject)},
+		Identifier:   cn.Identifier,
+		IdentityType: IdentityType{ServiceType: cn.ServiceType},
 		Serial:       leaf.SerialNumber,
 	}), true, nil
-}
-
-func ouType(subject pkix.Name) v1.ServiceType {
-	if len(subject.OrganizationalUnit) > 0 {
-		return v1.ServiceType(v1.ServiceType_value[subject.OrganizationalUnit[0]])
-	}
-	return v1.ServiceType_UNKNOWN_SERVICE
 }
 
 func authToken(ctx context.Context) (newCtx context.Context, ok bool) {

@@ -32,3 +32,6 @@ BUILD.bazel
 *.g4
 *.tokens
 .idea/
+
+# Integration configs used in development
+/*.json

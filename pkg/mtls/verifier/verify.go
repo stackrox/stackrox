@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls"
 	"bitbucket.org/stack-rox/apollo/pkg/tls/keys"
 )
@@ -41,7 +40,7 @@ func TrustedCertPool() (*x509.CertPool, error) {
 // TLSConfig initializes a server configuration that requires client TLS
 // authentication based on the Certificate Authority we are using.
 func (CA) TLSConfig() (*tls.Config, error) {
-	serverCert, serverKey, _, err := mtls.IssueNewCert(mtls.CentralName, v1.ServiceType_CENTRAL_SERVICE, nil)
+	serverCert, serverKey, _, err := mtls.IssueNewCert(mtls.CentralCN, nil)
 	if err != nil {
 		return nil, fmt.Errorf("server keypair: %s", err)
 	}

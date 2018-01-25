@@ -73,7 +73,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	idReq := &v1.CreateServiceIdentityRequest{
-		Name: resp.GetCluster().GetId(),
+		Id:   resp.GetCluster().GetId(),
 		Type: v1.ServiceType_SENSOR_SERVICE,
 	}
 	id, err := z.identityService.CreateServiceIdentity(ctx, idReq)

@@ -16,13 +16,15 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/features"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc"
+	pkgGRPC "bitbucket.org/stack-rox/apollo/pkg/grpc"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/clusters"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	_ "bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
 	"bitbucket.org/stack-rox/apollo/pkg/ui"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -59,7 +61,7 @@ type central struct {
 	detector              *detection.Detector
 	notificationProcessor *notifications.Processor
 	database              db.Storage
-	server                grpc.API
+	server                pkgGRPC.API
 }
 
 func newCentral() *central {
@@ -75,12 +77,15 @@ func newCentral() *central {
 func (c *central) startGRPCServer() {
 	idService := service.NewServiceIdentityService(c.database)
 	clusterService := service.NewClusterService(c.database)
+	clusterWatcher := clusters.NewClusterWatcher(c.database)
 
-	config := grpc.Config{
+	config := pkgGRPC.Config{
 		CustomRoutes: map[string]http.Handler{
 			"/": ui.Mux(),
 			"/api/extensions/clusters/zip": clustersZip.Handler(clusterService, idService),
 		},
+		UnaryInterceptors:  []grpc.UnaryServerInterceptor{clusterWatcher.UnaryInterceptor()},
+		StreamInterceptors: []grpc.StreamServerInterceptor{clusterWatcher.StreamInterceptor()},
 	}
 	if features.MTLS.Enabled() {
 		config.TLS = verifier.CA{}
@@ -88,7 +93,7 @@ func (c *central) startGRPCServer() {
 		config.TLS = verifier.NoMTLS{}
 	}
 
-	c.server = grpc.NewAPI(config)
+	c.server = pkgGRPC.NewAPI(config)
 	c.server.Register(service.NewAlertService(c.database))
 	c.server.Register(service.NewBenchmarkService(c.database))
 	c.server.Register(service.NewBenchmarkScheduleService(c.database))

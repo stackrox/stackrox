@@ -4,6 +4,7 @@ option go_package = "v1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
 
 package v1;
@@ -17,14 +18,15 @@ enum ClusterType {
 }
 
 message Cluster {
-    string      id                   = 1;
-    string      name                 = 2;
-    ClusterType type                 = 3;
-    string      mitigate_image       = 4;
-    string      central_api_endpoint = 5;
-    string      namespace            = 6;
-    string      image_pull_secret    = 7;
-    bool        disable_swarm_tls    = 16;
+    string                    id                   = 1;
+    string                    name                 = 2;
+    ClusterType               type                 = 3;
+    string                    mitigate_image       = 4;
+    string                    central_api_endpoint = 5;
+    string                    namespace            = 6;
+    string                    image_pull_secret    = 7;
+    google.protobuf.Timestamp last_contact         = 8;
+    bool                      disable_swarm_tls    = 16;
 }
 
 message ClusterResponse {
@@ -35,6 +37,10 @@ message ClusterResponse {
 
 message ClustersList {
     repeated Cluster clusters = 1;
+}
+
+message ClusterStatus {
+    google.protobuf.Timestamp last_contact = 1;
 }
 
 service ClustersService {

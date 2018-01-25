@@ -19,6 +19,7 @@ type contextKey struct{}
 // the credentials provided by the client.
 type Identity struct {
 	User         string
+	Identifier   string
 	IdentityType IdentityType
 	Serial       *big.Int
 }
@@ -42,6 +43,5 @@ func FromContext(ctx context.Context) (Identity, error) {
 	if !ok {
 		return Identity{}, ErrNoContext
 	}
-	logger.Debugf("Unpacked context: %#v", val)
 	return val, nil
 }

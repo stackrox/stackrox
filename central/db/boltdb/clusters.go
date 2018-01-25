@@ -2,14 +2,20 @@ package boltdb
 
 import (
 	"fmt"
+	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
-const clusterBucket = "clusters"
+const (
+	clusterBucket       = "clusters"
+	clusterStatusBucket = "clusters_status"
+)
 
 func (b *BoltDB) getCluster(id string, bucket *bolt.Bucket) (cluster *v1.Cluster, exists bool, err error) {
 	cluster = new(v1.Cluster)
@@ -19,7 +25,20 @@ func (b *BoltDB) getCluster(id string, bucket *bolt.Bucket) (cluster *v1.Cluster
 	}
 	exists = true
 	err = proto.Unmarshal(val, cluster)
+	if err != nil {
+		return
+	}
+	b.addContactTime(cluster)
 	return
+}
+
+func (b *BoltDB) addContactTime(cluster *v1.Cluster) {
+	t, err := b.getClusterContactTime(cluster.GetId())
+	if err != nil {
+		log.Warnf("Could not get cluster last-contact time for '%s': %s", cluster.GetId(), err)
+		return
+	}
+	cluster.LastContact = t
 }
 
 // GetCluster returns cluster with given id.
@@ -36,12 +55,13 @@ func (b *BoltDB) GetCluster(id string) (cluster *v1.Cluster, exists bool, err er
 func (b *BoltDB) GetClusters() ([]*v1.Cluster, error) {
 	var clusters []*v1.Cluster
 	err := b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(clusterBucket))
-		b.ForEach(func(k, v []byte) error {
+		bucket := tx.Bucket([]byte(clusterBucket))
+		bucket.ForEach(func(k, v []byte) error {
 			var cluster v1.Cluster
 			if err := proto.Unmarshal(v, &cluster); err != nil {
 				return err
 			}
+			b.addContactTime(&cluster)
 			clusters = append(clusters, &cluster)
 			return nil
 		})
@@ -89,4 +109,43 @@ func (b *BoltDB) RemoveCluster(id string) error {
 		b := tx.Bucket([]byte(clusterBucket))
 		return b.Delete([]byte(id))
 	})
+}
+
+// UpdateClusterContactTime stores the time at which the cluster has last
+// talked with Central. This is maintained separately to avoid being clobbered
+// by updates to the main Cluster config object.
+func (b *BoltDB) UpdateClusterContactTime(id string, t time.Time) error {
+	return b.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(clusterStatusBucket))
+		tsProto, err := ptypes.TimestampProto(t)
+		if err != nil {
+			return err
+		}
+		status := &v1.ClusterStatus{
+			LastContact: tsProto,
+		}
+		bytes, err := proto.Marshal(status)
+		if err != nil {
+			return err
+		}
+		return bucket.Put([]byte(id), bytes)
+	})
+}
+
+func (b *BoltDB) getClusterContactTime(id string) (t *timestamp.Timestamp, err error) {
+	err = b.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(clusterStatusBucket))
+		val := bucket.Get([]byte(id))
+		if val == nil {
+			return nil
+		}
+		status := new(v1.ClusterStatus)
+		err = proto.Unmarshal(val, status)
+		if err != nil {
+			return err
+		}
+		t = status.GetLastContact()
+		return nil
+	})
+	return
 }

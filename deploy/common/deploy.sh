@@ -100,7 +100,7 @@ function create_cluster {
     OUTPUT_DIR="$6"
     EXTRA_JSON="$7"
 
-    echo "Creating a new cluster"
+    >&2 echo "Creating a new cluster"
     if [ "$EXTRA_JSON" != "" ]; then
         EXTRA_JSON=", $EXTRA_JSON"
     fi
@@ -114,27 +114,28 @@ function create_cluster {
         -o $TMP \
         -w "%{http_code}\n" \
         https://$LOCAL_API_ENDPOINT/v1/clusters)
-    echo "Status: $STATUS"
-    echo "Response: $(cat ${TMP})"
+    >&2 echo "Status: $STATUS"
+    >&2 echo "Response: $(cat ${TMP})"
     cat "$TMP" | jq -r .deploymentYaml > "$OUTPUT_DIR/sensor-deploy.yaml"
     cat "$TMP" | jq -r .deploymentCommand > "$OUTPUT_DIR/sensor-deploy.sh"
     chmod +x "$OUTPUT_DIR/sensor-deploy.sh"
+    cat "$TMP" | jq -r .cluster.id
     rm "$TMP"
-    echo
+    >&2 echo
 }
 
 # get_identity
 # arguments:
 #   - central API server endpoint reachable from this host
-#   - name of cluster
+#   - ID of a cluster that has already been created
 #   - directory to drop files in
 function get_identity {
     LOCAL_API_ENDPOINT="$1"
-    CLUSTER_NAME="$2"
+    CLUSTER_ID="$2"
     OUTPUT_DIR="$3"
 
     echo "Getting identity for new cluster"
-    export ID_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"SENSOR_SERVICE\"}"
+    export ID_JSON="{\"id\": \"$CLUSTER_ID\", \"type\": \"SENSOR_SERVICE\"}"
     TMP=$(mktemp)
     STATUS=$(curl -X POST \
         -d "$ID_JSON" \

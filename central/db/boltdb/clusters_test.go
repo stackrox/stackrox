@@ -4,8 +4,10 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -36,14 +38,23 @@ func (suite *BoltClusterTestSuite) TeardownSuite() {
 }
 
 func (suite *BoltClusterTestSuite) TestClusters() {
+	checkin1 := time.Now()
+	checkin2 := time.Now().Add(-1 * time.Hour)
+	ts1, err := ptypes.TimestampProto(checkin1)
+	suite.NoError(err)
+	ts2, err := ptypes.TimestampProto(checkin2)
+	suite.NoError(err)
+
 	clusters := []*v1.Cluster{
 		{
 			Name:          "cluster1",
 			MitigateImage: "test-dtr.example.com/mitigate",
+			LastContact:   ts1,
 		},
 		{
 			Name:          "cluster2",
 			MitigateImage: "docker.io/stackrox/mitigate",
+			LastContact:   ts2,
 		},
 	}
 
@@ -52,6 +63,12 @@ func (suite *BoltClusterTestSuite) TestClusters() {
 		id, err := suite.AddCluster(b)
 		suite.NoError(err)
 		suite.NotEmpty(id)
+
+		// Add the timestamp in the second list.
+		t, err := ptypes.Timestamp(b.GetLastContact())
+		suite.NoError(err)
+		err = suite.UpdateClusterContactTime(b.GetId(), t)
+		suite.NoError(err)
 	}
 
 	for _, b := range clusters {
