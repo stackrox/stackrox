@@ -100,7 +100,6 @@ func (c *central) startGRPCServer() {
 	c.server.Register(service.NewBenchmarkResultsService(c.database, c.notificationProcessor))
 	c.server.Register(service.NewBenchmarkTriggerService(c.database))
 	c.server.Register(clusterService)
-	c.server.Register(service.NewDashboardService(c.database))
 	c.server.Register(service.NewDeploymentService(c.database))
 	c.server.Register(service.NewImageService(c.database))
 	c.server.Register(service.NewNotifierService(c.database, c.notificationProcessor))
