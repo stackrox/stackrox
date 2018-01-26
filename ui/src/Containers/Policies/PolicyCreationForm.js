@@ -4,6 +4,7 @@ import { Text, TextArea, Select } from 'react-form';
 import MultiSelect from 'react-select';
 import 'react-select/dist/react-select.css';
 import FormField from 'Components/FormField';
+import NumericInput from 'Components/NumericInput';
 import CustomSelect from 'Components/Select';
 
 import flatten from 'flat';
@@ -396,20 +397,8 @@ class PolicyCreationForm extends Component {
 
     preSubmit = (policy) => {
         let newPolicy = this.removeEmptyFields(policy);
-        newPolicy = this.convertNumberValues(newPolicy);
         newPolicy = this.setCategories(newPolicy);
         return newPolicy;
-    }
-
-    convertNumberValues = (obj) => {
-        const flattenedObj = flatten(obj);
-        Object.keys(flattenedObj).filter(o => o !== 'id').forEach((key) => {
-            if (typeof flattenedObj[key] === 'string' && !Number.isNaN(parseInt(flattenedObj[key], 10))) {
-                flattenedObj[key] = parseInt(flattenedObj[key], 10);
-            }
-        });
-        const newObj = flatten.unflatten(flattenedObj);
-        return newObj;
     }
 
     removeEmptyFields = (obj) => {
@@ -462,9 +451,28 @@ class PolicyCreationForm extends Component {
         let handleMultiSelectChange = () => { };
         switch (field.type) {
             case 'text':
-                return (<Text type="text" key={field.value} field={field.value} id={field.value} placeholder={field.placeholder} className="border rounded-l p-3 border-base-300 w-full font-400" />);
+                return (
+                    <Text
+                        type="text"
+                        key={field.value}
+                        field={field.value}
+                        id={field.value}
+                        placeholder={field.placeholder}
+                        className="border rounded-l p-3 border-base-300 w-full font-400"
+                    />
+                );
             case 'number':
-                return (<Text type="number" max={field.max} min={field.min} key={field.value} field={field.value} id={field.value} placeholder={field.placeholder} className="border rounded-l p-3 border-base-300 w-full font-400" />);
+                return (
+                    <NumericInput
+                        max={field.max}
+                        min={field.min}
+                        key={field.value}
+                        field={field.value}
+                        id={field.value}
+                        placeholder={field.placeholder}
+                        className="border rounded-l p-3 border-base-300 w-full font-400"
+                    />
+                );
             case 'textarea':
                 return (
                     <TextArea
@@ -508,6 +516,9 @@ class PolicyCreationForm extends Component {
             case 'group':
                 return field.values.map(input => this.renderFieldInput(input, input.value));
             default:
+                // error actually should be thrown, and then caught with React Error Boundaries
+                // TODO-ivan: throw error once we have nice Error Boundary designed and logging
+                console.error(new Error(`Unknown field type: ${field.type}`));
                 return '';
         }
     }
