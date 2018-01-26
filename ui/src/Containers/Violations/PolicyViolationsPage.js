@@ -1,4 +1,6 @@
 import React, { Component } from 'react';
+import ReactRouterPropTypes from 'react-router-prop-types';
+
 import Table from 'Components/Table';
 import MultiSelect from 'react-select';
 
@@ -9,6 +11,11 @@ import emitter from 'emitter';
 import queryString from 'query-string';
 
 class PoliciesPage extends Component {
+    static propTypes = {
+        history: ReactRouterPropTypes.history.isRequired,
+        location: ReactRouterPropTypes.location.isRequired
+    }
+
     constructor(props) {
         super(props);
 
@@ -30,10 +37,6 @@ class PoliciesPage extends Component {
         };
 
         this.state = {
-            params: {
-                stale: false,
-                category: []
-            },
             category: {
                 options: [{ label: 'Image Assurance', value: 'IMAGE_ASSURANCE' }, { label: 'Container Configuration', value: 'CONTAINER_CONFIGURATION' }, { label: 'Privileges & Capabilities', value: 'PRIVILEGES_CAPABILITIES' }]
             },
@@ -65,16 +68,33 @@ class PoliciesPage extends Component {
         emitter.emit('PolicyAlertsTable:row-selected', row);
     }
 
-    onActivePillsChange(active) {
-        const { params } = this;
-        params.category = Object.keys(active);
-        this.getAlertsGroups();
+    onCategoryFilterChange = (categories) => {
+        this.props.history.push({
+            pathname: this.props.location.pathname,
+            search: queryString.stringify({
+                ...this.getFilterParams(),
+                category: categories.map(c => c.value)
+            })
+        });
+
+        // history will be updated asynchronously and it should happen before alerts fetching
+        // TODO-ivan: to be removed with switching to react-router-redux
+        setTimeout(this.getAlertsGroups, 0);
+    }
+
+    getFilterParams() {
+        const { search } = this.props.location;
+        const params = queryString.parse(search);
+        return params;
     }
 
     getAlertsGroups = () => {
-        const params = this.getParams();
         const { table } = this.state;
-        return axios.get(`/v1/alerts/groups${params}`).then((response) => {
+        const params = queryString.stringify({
+            ...this.getFilterParams(),
+            stale: false
+        });
+        return axios.get(`/v1/alerts/groups?${params}`).then((response) => {
             if (!response.data.byCategory) return;
             let tableRows = [];
             response.data.byCategory.forEach((category) => {
@@ -99,20 +119,6 @@ class PoliciesPage extends Component {
         });
     }
 
-    getParams = () => {
-        let { params } = this.state;
-        params = `?${queryString.stringify(params)}`;
-        return params;
-    };
-
-    changeCategoriesParam = (categories) => {
-        const { params } = this.state;
-        const selectedCategories = (categories !== '') ? categories.split(',') : [];
-        params.category = selectedCategories;
-        this.setState({ params });
-        this.getAlertsGroups();
-    }
-
     pollAlertGroups = () => {
         this.getAlertsGroups().then(() => {
             this.pollTimeoutId = setTimeout(this.pollAlertGroups, 5000);
@@ -133,12 +139,11 @@ class PoliciesPage extends Component {
                         <div className="flex self-center justify-end ml-3">
                             <MultiSelect
                                 multi
-                                onChange={this.changeCategoriesParam}
+                                onChange={this.onCategoryFilterChange}
                                 options={this.state.category.options}
                                 placeholder="Select categories"
                                 removeSelected
-                                simpleValue
-                                value={this.state.params.category}
+                                value={this.getFilterParams().category}
                                 className="text-base-600 font-400 min-w-64"
                             />
                         </div>
