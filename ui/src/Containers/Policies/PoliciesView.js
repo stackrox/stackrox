@@ -67,7 +67,7 @@ const fieldsMap = {
     },
     notifiers: {
         label: 'Notifications',
-        formatValue: d => d.join(', ')
+        formatValue: (d, props) => props.notifiers.filter(n => d.includes(n.id)).map(n => n.name).join(', ')
     },
     scope: {
         label: 'Scope',
@@ -183,7 +183,10 @@ const fieldsMap = {
 
 class PolicyView extends Component {
     static propTypes = {
-        policy: PropTypes.shape({}).isRequired
+        policy: PropTypes.shape({}).isRequired,
+        notifiers: PropTypes.arrayOf(PropTypes.shape({ // eslint-disable-line  react/no-unused-prop-types
+            name: PropTypes.string.isRequired
+        })).isRequired
     }
 
     constructor(props) {
@@ -213,7 +216,8 @@ class PolicyView extends Component {
                             policyDetails.map((field) => {
                                 if (!fieldsMap[field]) return '';
                                 const { label } = fieldsMap[field];
-                                const value = fieldsMap[field].formatValue(policy[field]);
+                                const value = fieldsMap[field]
+                                    .formatValue(policy[field], this.props);
                                 if (!value || (Array.isArray(value) && !value.length)) return '';
                                 return (
                                     <div className="mb-4" key={field}>
@@ -246,7 +250,7 @@ class PolicyView extends Component {
                                     if (!fieldsMap[field]) return '';
                                     const { label } = fieldsMap[field];
                                     const value =
-                                        fieldsMap[field].formatValue(policy[category][field]);
+                                            fieldsMap[field].formatValue(policy[category][field]);
                                     if (!value || (Array.isArray(value) && !value.length)) return '';
                                     return (
                                         <div className="mb-4" key={field}>

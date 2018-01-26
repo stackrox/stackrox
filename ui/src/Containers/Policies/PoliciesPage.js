@@ -37,6 +37,7 @@ class PoliciesPage extends Component {
 
         this.state = {
             policies: [],
+            notifiers: [],
             selectedPolicy: null,
             editingPolicy: null,
             addingPolicy: false
@@ -45,6 +46,7 @@ class PoliciesPage extends Component {
 
     componentDidMount() {
         this.pollImagesPolicies();
+        this.retrieveNotifiers();
     }
 
     componentWillUnmount() {
@@ -65,6 +67,16 @@ class PoliciesPage extends Component {
         const { policies } = response.data;
         this.update('UPDATE_POLICIES', { policies });
     });
+
+    getNotifiers = () => axios.get('/v1/notifiers');
+
+    retrieveNotifiers =() => {
+        this.getNotifiers().then((response) => {
+            if (!response.data.notifiers) return;
+            const { notifiers } = response.data;
+            this.setState({ notifiers });
+        });
+    }
 
     pollImagesPolicies = () => {
         this.getImagesPolicies().then(() => {
@@ -190,6 +202,7 @@ class PoliciesPage extends Component {
     }
 
     renderViewPanel = () => {
+        const { notifiers } = this.state;
         const policy = this.state.selectedPolicy;
         const hide = this.state.selectedPolicy === null || this.state.editingPolicy !== null;
         if (hide) return '';
@@ -212,12 +225,13 @@ class PoliciesPage extends Component {
         ];
         return (
             <Panel header={header} buttons={buttons} width="w-2/3">
-                <PolicyView policy={policy} />
+                <PolicyView notifiers={notifiers} policy={policy} />
             </Panel>
         );
     }
 
     renderEditPanel = () => {
+        const { notifiers } = this.state;
         const policy = this.state.editingPolicy;
         const hide = policy === null;
         if (hide) return '';
@@ -246,7 +260,7 @@ class PoliciesPage extends Component {
             <Panel header={header} buttons={buttons} width="w-2/3">
                 <Form onSubmit={this.onSubmit} preSubmit={this.preSubmit}>
                     {formApi => (
-                        <PolicyCreationForm policy={policy} formApi={formApi} ref={(policyCreationForm) => { this.policyCreationForm = policyCreationForm; }} />
+                        <PolicyCreationForm notifiers={notifiers} policy={policy} formApi={formApi} ref={(policyCreationForm) => { this.policyCreationForm = policyCreationForm; }} />
                     )}
                 </Form>
             </Panel>

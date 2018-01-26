@@ -53,7 +53,7 @@ func (p *Processor) initializeNotifiers() error {
 		}
 		notifier, err := notifierCreator(protoNotifier)
 		if err != nil {
-			return fmt.Errorf("Error creating notifier with %v (%v) and type %v: %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.Type, err)
+			return fmt.Errorf("Error creating notifier with %v (%v) and type %v: %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType(), err)
 		}
 		p.UpdateNotifier(notifier)
 	}
@@ -66,7 +66,7 @@ func (p *Processor) notifyAlert(alert *v1.Alert) {
 	for _, id := range alert.Policy.Notifiers {
 		notifier, exists := p.notifiers[id]
 		if !exists {
-			log.Errorf("Could not send notification to notifier %v (%v) for alert %v because it does not exist", id, notifier.ProtoNotifier().GetName(), alert.GetId())
+			log.Errorf("Could not send notification to notifier id %v for alert %v because it does not exist", id, alert.GetId())
 			continue
 		}
 		if err := notifier.AlertNotify(alert); err != nil {
@@ -81,7 +81,7 @@ func (p *Processor) notifyBenchmark(schedule *v1.BenchmarkSchedule) {
 	for _, id := range schedule.Notifiers {
 		notifier, exists := p.notifiers[id]
 		if !exists {
-			log.Errorf("Could not send notification to notifier %v (%v) for benchmark %v because it does not exist", id, notifier.ProtoNotifier().GetName(), schedule.GetName())
+			log.Errorf("Could not send notification to notifier id %v for benchmark %v because it does not exist", id, schedule.GetName())
 			continue
 		}
 		if err := notifier.BenchmarkNotify(schedule); err != nil {
