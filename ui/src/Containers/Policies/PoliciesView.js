@@ -99,6 +99,10 @@ const fieldsMap = {
         label: 'Image Created',
         formatValue: d => ((d !== '0') ? `${Number(d)} Days ago` : '')
     },
+    scanExists: {
+        label: 'Scan Does Not Exist',
+        formatValue: () => 'Verify that the image is scanned'
+    },
     scanAgeDays: {
         label: 'Image Last Scanned',
         formatValue: d => ((d !== '0') ? `${Number(d)} Days ago` : '')

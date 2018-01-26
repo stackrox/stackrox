@@ -30,6 +30,7 @@ func (policy *compiledImagePolicy) Match(deployment *v1.Deployment, container *v
 		policy.matchCVE,
 		policy.matchImageAge,
 		policy.matchScanAge,
+		policy.matchScanExists,
 	}
 	// This ensures that the policy exists and if there isn't a violation of the field then it should not return any violations
 	for _, f := range matchFunctions {
@@ -232,6 +233,19 @@ func (policy *compiledImagePolicy) matchScanAge(image *v1.Image) (violations []*
 	if scannedTime.Before(deadline) {
 		violations = append(violations, &v1.Alert_Violation{
 			Message: fmt.Sprintf("Scan Age '%v' is %0.2f days past the deadline", scannedTime, deadline.Sub(scannedTime).Hours()/24),
+		})
+	}
+	return
+}
+
+func (policy *compiledImagePolicy) matchScanExists(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
+	if policy.ScanExists == nil {
+		return
+	}
+	policyExists = true
+	if *policy.ScanExists && image.GetScan() == nil {
+		violations = append(violations, &v1.Alert_Violation{
+			Message: fmt.Sprintf("Image '%v' has not been scanned", images.Wrapper{Image: image}),
 		})
 	}
 	return

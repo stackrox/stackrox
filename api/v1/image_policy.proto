@@ -61,4 +61,7 @@ message ImagePolicy {
     oneof set_scan_age_days {
         int64 scan_age_days             = 7;
     }
+    oneof set_scan_exists {
+        bool scan_exists                = 8;
+    }
 }

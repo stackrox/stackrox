@@ -28,6 +28,7 @@ type compiledImagePolicy struct {
 	CVE         *regexp.Regexp
 	Component   *componentRegex
 	ScanAgeDays *int64
+	ScanExists  *bool
 }
 
 type componentRegex struct {
@@ -67,12 +68,18 @@ func NewCompiledImagePolicy(policy *v1.Policy) (compiledP processors.CompiledPol
 		tmp := imagePolicy.GetScanAgeDays()
 		scanAge = &tmp
 	}
+	var scanExists *bool
+	if imagePolicy.GetSetScanExists() != nil {
+		tmp := imagePolicy.GetScanExists()
+		scanExists = &tmp
+	}
 
 	compiled := &compiledImagePolicy{
 		Original:     policy,
 		ImageAgeDays: imageAge,
 		CVSS:         imagePolicy.GetCvss(),
 		ScanAgeDays:  scanAge,
+		ScanExists:   scanExists,
 	}
 
 	compiled.ImageNamePolicy, err = compileImageNamePolicyRegex(imagePolicy.GetImageName())

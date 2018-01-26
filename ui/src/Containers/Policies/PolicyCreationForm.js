@@ -168,6 +168,14 @@ class PolicyCreationForm extends Component {
                         required: false
                     },
                     {
+                        label: 'Image is NOT Scanned',
+                        value: 'imagePolicy.scanExists',
+                        type: 'select',
+                        options: [
+                            { label: 'True', value: true },
+                        ],
+                    },
+                    {
                         label: 'CVSS',
                         value: 'imagePolicy.cvss',
                         type: 'group',
