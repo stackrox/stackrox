@@ -29,17 +29,17 @@ func TestGenerateTimeseries(t *testing.T) {
 	}
 	expectedEvents := []*v1.Event{
 		{
-			Time:   1,
+			Time:   1000,
 			Id:     "id1",
 			Action: v1.Action_CREATED,
 		},
 		{
-			Time:   6,
+			Time:   6000,
 			Id:     "id2",
 			Action: v1.Action_CREATED,
 		},
 		{
-			Time:   8,
+			Time:   8000,
 			Id:     "id1",
 			Action: v1.Action_REMOVED,
 		},
