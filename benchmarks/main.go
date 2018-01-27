@@ -9,8 +9,10 @@ import (
 	"syscall"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/benchmarks/runner"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	_ "bitbucket.org/stack-rox/apollo/pkg/checks"
+	_ "bitbucket.org/stack-rox/apollo/pkg/checks/all"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -27,21 +29,15 @@ const (
 	requestTimeout = 5 * time.Second
 )
 
-func main() {
-	var (
-		jsonOnly bool
-	)
-	flag.BoolVar(&jsonOnly, "json", false, "specify --json will print the payload out in json format and not try to post it")
-	flag.Parse()
-
+func runBenchmark(jsonOnly bool) {
 	conn, err := clientconn.UnauthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting())
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer conn.Close()
-	client := v1.NewBenchmarkRelayServiceClient(conn)
+	cli := v1.NewBenchmarkRelayServiceClient(conn)
 
-	benchmarkResult := RunBenchmark()
+	benchmarkResult := runner.RunBenchmark()
 	if jsonOnly {
 		marshaler := jsonpb.Marshaler{}
 		buf := new(bytes.Buffer)
@@ -55,7 +51,7 @@ func main() {
 	for i := 1; i < retries+1; i++ {
 		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 		defer cancel()
-		_, err := client.PostBenchmarkResult(ctx, benchmarkResult)
+		_, err := cli.PostBenchmarkResult(ctx, benchmarkResult)
 		if err == nil {
 			return
 		}
@@ -64,6 +60,16 @@ func main() {
 		time.Sleep(time.Duration(i*2) * time.Second)
 	}
 	log.Error("Timed out posting benchmark back to Sensor")
+}
+
+func main() {
+	var (
+		jsonOnly bool
+	)
+	flag.BoolVar(&jsonOnly, "json", false, "specify --json will print the payload out in json format and not try to post it")
+	flag.Parse()
+
+	runBenchmark(jsonOnly)
 
 	signalsC := make(chan os.Signal, 1)
 	signal.Notify(signalsC, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)

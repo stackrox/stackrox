@@ -1,4 +1,4 @@
-package main
+package runner
 
 import (
 	"fmt"
@@ -8,13 +8,17 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/checks"
-	_ "bitbucket.org/stack-rox/apollo/pkg/checks/all"
 	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
 	"bitbucket.org/stack-rox/apollo/pkg/docker"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
+	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
+)
+
+var (
+	log = logging.New("runner")
 )
 
 // RunBenchmark runs a benchmark based on environment variables
