@@ -130,7 +130,7 @@ test: gazelle
 	    --action_env=DOCKER_CERT_PATH=$(DOCKER_CERT_PATH) \
 	    --action_env=DOCKER_TLS_VERIFY=$(DOCKER_TLS_VERIFY) \
 	    -- \
-	    //... -vendor/... -benchmarks/...
+	    //... -vendor/... -benchmarks/... -tests/...
 # benchmark tests don't work in Bazel yet.
 	make -C benchmarks test report
 # neither do UI tests

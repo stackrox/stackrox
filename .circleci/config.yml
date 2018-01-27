@@ -3,8 +3,8 @@ jobs:
   build:
     docker:
       # This image is the standard circleci/golang:1.9.2 image, plus bazel
-      # and other necessary build tools like goimports, dep, yarn, and envsubst.
-      - image: stackrox/apollo:circleci@sha256:0c34ed2da594f58d50159ddd3f5453f0d5768c428d658af37ce901fabf5c1b08
+      # and other necessary build tools like goimports, dep, yarn, gcloud, kubectl, and envsubst.
+      - image: stackrox/apollo:circleci@sha256:a8a81cf007494e1f65316db798b4cafc2df7d666a1f21fbaeadf684529df0b47
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
@@ -26,6 +26,35 @@ jobs:
       - run: docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
       - run: docker push stackrox/mitigate:$CIRCLE_SHA1
 
+  deploy:
+    docker:
+      # This image is the standard circleci/golang:1.9.2 image, plus bazel
+      # and other necessary build tools like goimports, dep, yarn, gcloud, kubectl, and envsubst.
+      - image: stackrox/apollo:circleci@sha256:a8a81cf007494e1f65316db798b4cafc2df7d666a1f21fbaeadf684529df0b47
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+    working_directory: /go/src/bitbucket.org/stack-rox/apollo
+    steps:
+      - checkout
+      - run: make deps generated-srcs
+
+      # Set Env
+      - run: echo 'export DOCKER_USER="$DOCKERHUB_USERNAME"' >> $BASH_ENV
+      - run: echo 'export DOCKER_PASS="$DOCKERHUB_PASSWORD"' >> $BASH_ENV
+      - run: echo 'export MITIGATE_IMAGE_TAG="$CIRCLE_SHA1"' >> $BASH_ENV
+      - run: echo $GKE_SERVICE_ACCOUNT > /tmp/gke.json
+      - run: echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gke.json' >> $BASH_ENV
+      - run: gcloud auth activate-service-account --key-file /tmp/gke.json
+      
+      # Deploy
+      - run: source /dev/stdin <<< "$(curl -sL $CI_SETUP_URL_K8S)"
+      - run: ./scripts/k8s/cleanup.sh
+      - run: ./deploy/k8s/deploy.sh
+
+      # Test
+      - run: make -C tests
+
   retag:
     docker:
       - image: circleci/golang:1.9.2
@@ -46,6 +75,9 @@ workflows:
   build_all:
     jobs:
       - build
+      - deploy:
+          requires:
+            - build
       - retag:
           requires:
             - build

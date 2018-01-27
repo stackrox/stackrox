@@ -12,11 +12,12 @@ RUN echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8
     echo "Cache Busted: 2018-01-05"
 
 # Add necessary Go build tools
-RUN go get -u github.com/golang/lint/golint && \
+RUN sudo chown $(whoami) $GOPATH -R && \
+    go get -u github.com/golang/lint/golint && \
     go get -u golang.org/x/tools/cmd/goimports && \
     go get -u github.com/jstemmer/go-junit-report && \
-    curl -L -o $GOPATH/bin/dep https://github.com/golang/dep/releases/download/v0.3.2/dep-linux-amd64 && \
-    chmod +x $GOPATH/bin/dep
+    sudo curl -L -o $GOPATH/bin/dep https://github.com/golang/dep/releases/download/v0.3.2/dep-linux-amd64 && \
+    sudo chmod +x $GOPATH/bin/dep
 
 # Add Node
 RUN curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash - && \
@@ -33,3 +34,16 @@ RUN sudo apt-get update && \
 # Install envsubst
 RUN sudo apt-get update && \
     sudo apt-get install -y gettext
+
+# Install gcloud
+RUN export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)" && \
+    echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add - && \
+    sudo apt-get update && sudo apt-get install google-cloud-sdk
+
+# Install kubectl
+RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && \
+    chmod +x ./kubectl && \
+    sudo mv ./kubectl /usr/local/bin/kubectl && \
+    mkdir -p ~/.kube && \
+    touch ~/.kube/config
