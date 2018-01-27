@@ -9,23 +9,38 @@ source $COMMON_DIR/deploy.sh
 export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.mitigate_net:443}"
 echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 
-generate_ca "$SWARM_DIR"
+export MITIGATE_IMAGE="stackrox/mitigate:${MITIGATE_IMAGE_TAG:-latest}"
+
+echo "Generating central config..."
+OLD_DOCKER_HOST="$DOCKER_HOST"
+OLD_DOCKER_CERT_PATH="$DOCKER_CERT_PATH"
+OLD_DOCKER_TLS_VERIFY="$DOCKER_TLS_VERIFY"
+unset DOCKER_HOST DOCKER_CERT_PATH DOCKER_TLS_VERIFY
+
+docker run "$MITIGATE_IMAGE" -t swarm -i "$MITIGATE_IMAGE" -p 8080 > "$SWARM_DIR/central.zip"
+
+export DOCKER_HOST="$OLD_DOCKER_HOST"
+export DOCKER_CERT_PATH="$OLD_DOCKER_CERT_PATH"
+export DOCKER_TLS_VERIFY="$OLD_DOCKER_TLS_VERIFY"
+
+UNZIP_DIR="$SWARM_DIR/central-deploy/"
+rm -rf "$UNZIP_DIR"
+unzip "$SWARM_DIR/central.zip" -d "$UNZIP_DIR"
+echo
 
 echo "Deploying Central..."
-WD="$(pwd)"
-cd "$SWARM_DIR"
 if [ "$MITIGATE_DISABLE_REGISTRY_AUTH" = "true" ]; then
-    docker stack deploy -c "$SWARM_DIR/central.yaml" mitigate
-else
-    docker stack deploy -c "$SWARM_DIR/central.yaml" mitigate --with-registry-auth
+    cp "$UNZIP_DIR/deploy.sh" "$UNZIP_DIR/tmp"
+    cat "$UNZIP_DIR/tmp" | sed "s/--with-registry-auth//" > "$UNZIP_DIR/deploy.sh"
+    rm "$UNZIP_DIR/tmp"
 fi
-cd "$WD"
+$UNZIP_DIR/deploy.sh
 echo
 
 wait_for_central "$LOCAL_API_ENDPOINT"
 CLUSTER="remote"
 EXTRA_CONFIG=""
-if [ "$MITIGATE_DISABLE_DOCKER_TLS" = "true" ]; then
+if [ "$DOCKER_CERT_PATH" = "" ]; then
     EXTRA_CONFIG="\"disableSwarmTls\":true"
 fi
 get_cluster_zip "$LOCAL_API_ENDPOINT" "$CLUSTER" SWARM_CLUSTER "$MITIGATE_IMAGE" "$CLUSTER_API_ENDPOINT" "$SWARM_DIR" "$EXTRA_CONFIG"
@@ -38,6 +53,7 @@ unzip "$SWARM_DIR/sensor-deploy.zip" -d "$UNZIP_DIR"
 if [ "$MITIGATE_DISABLE_REGISTRY_AUTH" = "true" ]; then
     cp "$UNZIP_DIR/sensor-deploy.sh" "$UNZIP_DIR/tmp"
     cat "$UNZIP_DIR/tmp" | sed "s/--with-registry-auth//" > "$UNZIP_DIR/sensor-deploy.sh"
+    rm "$UNZIP_DIR/tmp"
 fi
 
 $UNZIP_DIR/sensor-deploy.sh

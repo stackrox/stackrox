@@ -11,6 +11,8 @@ registry-auth
 sensor-*.yaml
 sensor-deploy.sh
 sensor-deploy.zip
+central.zip
+tmp
 
 # Uncommitted code
 vendor/

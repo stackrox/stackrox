@@ -14,9 +14,9 @@ export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.stackrox:443}"
 echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 echo
 
-set -u
+export MITIGATE_IMAGE="stackrox/mitigate:${MITIGATE_IMAGE_TAG:-latest}"
 
-generate_ca "$K8S_DIR"
+set -u
 
 echo "Creating image pull secrets..."
 PULL_SECRET_NAME="stackrox"
@@ -30,11 +30,17 @@ kubectl create secret docker-registry \
     --docker-email="does-not-matter@stackrox.io"
 echo
 
+echo "Generating central config..."
+docker run "$MITIGATE_IMAGE" -t k8s -n "$NAMESPACE" -i "$MITIGATE_IMAGE" > $K8S_DIR/central.zip
+UNZIP_DIR="$K8S_DIR/central-deploy/"
+rm -rf "$UNZIP_DIR"
+unzip "$K8S_DIR/central.zip" -d "$UNZIP_DIR"
+echo
+
 echo "Deploying Central..."
 kubectl delete secret -n "$NAMESPACE" central-tls || true
-kubectl create secret -n "$NAMESPACE" generic central-tls --from-file="$K8S_DIR/ca.pem" --from-file="$K8S_DIR/ca-key.pem"
-kubectl delete -f "$K8S_DIR/central.yaml" || true
-cat "$K8S_DIR/central.yaml" | sed "s|stackrox/mitigate:latest|$MITIGATE_IMAGE|" | kubectl create -f -
+kubectl delete -f "$UNZIP_DIR/deploy.yaml" || true
+$UNZIP_DIR/deploy.sh
 echo
 
 echo -n "Waiting for Central pod to be ready."

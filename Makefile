@@ -143,6 +143,7 @@ image: gazelle clean-image
 	@echo "+ $@"
 	bazel build $(BAZEL_FLAGS) \
 		//central \
+		//cmd/deploy \
 		//benchmarks \
 		//benchmark-bootstrap \
 		//sensor/kubernetes \
@@ -153,6 +154,7 @@ image: gazelle clean-image
 # TODO(cg): Replace with native bazel Docker build.
 	cp -r ui/build image/ui/
 	cp bazel-bin/central/linux_amd64_pure_stripped/central image/bin/central
+	cp bazel-bin/cmd/deploy/linux_amd64_pure_stripped/deploy image/bin/deploy
 	cp bazel-bin/benchmarks/linux_amd64_pure_stripped/benchmarks image/bin/benchmarks
 	cp bazel-bin/benchmark-bootstrap/linux_amd64_pure_stripped/benchmark-bootstrap image/bin/benchmark-bootstrap
 	cp bazel-bin/sensor/swarm/linux_amd64_pure_stripped/swarm image/bin/swarm-sensor

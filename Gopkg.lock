@@ -52,7 +52,7 @@
 [[projects]]
   branch = "master"
   name = "github.com/cloudflare/cfssl"
-  packages = ["auth","certdb","config","crypto/pkcs7","csr","errors","helpers","helpers/derhelpers","info","log","ocsp/config","signer","signer/local"]
+  packages = ["auth","certdb","config","crypto/pkcs7","csr","errors","helpers","helpers/derhelpers","info","initca","log","ocsp/config","signer","signer/local"]
   revision = "d2393674072314fda47d2c7c16cb7fd4cdc16821"
 
 [[projects]]
@@ -223,6 +223,12 @@
   source = "git@bitbucket.org:stack-rox/docker-registry-client.git"
 
 [[projects]]
+  name = "github.com/inconshreveable/mousetrap"
+  packages = ["."]
+  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+  version = "v1.0"
+
+[[projects]]
   name = "github.com/json-iterator/go"
   packages = ["."]
   revision = "f7279a603edee96fe7764d3de9c6ff8cf9970994"
@@ -291,6 +297,12 @@
   packages = ["."]
   revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
   version = "v1.0.4"
+
+[[projects]]
+  name = "github.com/spf13/cobra"
+  packages = ["."]
+  revision = "7b2c5ac9fc04fc5efafb60700713d4fa609b777b"
+  version = "v0.0.1"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -388,6 +400,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1c0509d4b05bd4fd251eee0de6cdb1e43bb50f432de5f8f5d1b69194be2add5b"
+  inputs-digest = "53ed068d4100fa940e010686bd0987dbee2b7a15ac70578c9c756e4780d42df9"
   solver-name = "gps-cdcl"
   solver-version = 1

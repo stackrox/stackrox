@@ -37,6 +37,8 @@ jobs:
     working_directory: /go/src/bitbucket.org/stack-rox/apollo
     steps:
       - checkout
+      - setup_remote_docker
+      - run: docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
       - run: make deps generated-srcs
 
       # Set Env

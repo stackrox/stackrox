@@ -20,4 +20,4 @@ COPY ./ui/build  /ui/
 
 EXPOSE 443
 
-ENTRYPOINT ["central"]
+ENTRYPOINT ["deploy"]
