@@ -3,11 +3,9 @@ package verifier
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/pkg/mtls"
-	"bitbucket.org/stack-rox/apollo/pkg/tls/keys"
 )
 
 // A TLSConfigurer instantiates the appropriate TLS config for your environment.
@@ -21,10 +19,6 @@ type CA struct{}
 // A NonCA verifier picks up a certificate from the file system, rather than
 // issuing one to itself, and serves it.
 type NonCA struct{}
-
-// A NoMTLS verifier generates a random certificate without using a trusted CA at all.
-// Deprecated: This should only be used until MTLS is supported on all platforms.
-type NoMTLS struct{}
 
 // TrustedCertPool creates a CertPool that contains the CA certificate.
 func TrustedCertPool() (*x509.CertPool, error) {
@@ -74,37 +68,6 @@ func (NonCA) TLSConfig() (*tls.Config, error) {
 	// TODO(cg): Sensors should also issue creds to, and verify, their clients.
 	conf.ClientAuth = tls.NoClientCert
 	return conf, nil
-}
-
-// TLSConfig initializes a server configuration that uses a randomly generated
-// key and does not verify client certs.
-func (NoMTLS) TLSConfig() (*tls.Config, error) {
-	pool, cert, err := getPair()
-	if err != nil {
-		return nil, fmt.Errorf("tls conversion: %s", err)
-	}
-
-	return &tls.Config{
-		RootCAs:      pool,
-		Certificates: []tls.Certificate{*cert},
-	}, nil
-}
-
-func getPair() (*x509.CertPool, *tls.Certificate, error) {
-	cert, key, err := keys.GenerateStackRoxKeyPair()
-	if err != nil {
-		return nil, nil, err
-	}
-	pair, err := tls.X509KeyPair(cert.Key().PEM(), key.Key().PEM())
-	if err != nil {
-		return nil, nil, err
-	}
-	pool := x509.NewCertPool()
-	ok := pool.AppendCertsFromPEM(cert.Key().PEM())
-	if !ok {
-		return nil, nil, errors.New("Cert is invalid")
-	}
-	return pool, &pair, nil
 }
 
 func config(serverBundle tls.Certificate) (*tls.Config, error) {

@@ -20,21 +20,15 @@ type FeatureFlag interface {
 
 var (
 	// Features contains all defined Features by name.
-	Features = map[string]Feature{
-		MTLS.Name(): MTLS,
-	}
+	Features = map[string]Feature{}
 
 	// Flags contains all defined FeatureFlags by name.
-	Flags = map[string]FeatureFlag{
-		MTLS.EnvVar(): MTLS,
-	}
+	Flags = map[string]FeatureFlag{}
 )
 
 // These are the defined features and feature flags.
 // Example usage: features.MTLS.Enabled().
-var (
-	MTLS = mtls{}
-)
+var ()
 
 func isEnabled(val string, defaultValue bool) bool {
 	switch strings.ToLower(val) {

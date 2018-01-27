@@ -9,7 +9,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"bitbucket.org/stack-rox/apollo/pkg/enforcers"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
-	"bitbucket.org/stack-rox/apollo/pkg/features"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -43,14 +42,8 @@ type Sensor struct {
 
 // New returns a new Sensor.
 func New() *Sensor {
-	var server grpc.API
-	if features.MTLS.Enabled() {
-		server = grpc.NewAPI(grpc.Config{TLS: verifier.NonCA{}})
-	} else {
-		server = grpc.NewAPI(grpc.Config{TLS: verifier.NoMTLS{}})
-	}
 	return &Sensor{
-		Server: server,
+		Server: grpc.NewAPI(grpc.Config{TLS: verifier.NonCA{}}),
 
 		ClusterID:          env.ClusterID.Setting(),
 		CentralEndpoint:    env.CenralEndpoint.Setting(),

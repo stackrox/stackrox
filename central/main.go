@@ -15,7 +15,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/notifications"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
-	"bitbucket.org/stack-rox/apollo/pkg/features"
 	pkgGRPC "bitbucket.org/stack-rox/apollo/pkg/grpc"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/clusters"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -57,7 +56,7 @@ func main() {
 }
 
 type central struct {
-	signalsC              chan (os.Signal)
+	signalsC              chan os.Signal
 	detector              *detection.Detector
 	notificationProcessor *notifications.Processor
 	database              db.Storage
@@ -84,13 +83,9 @@ func (c *central) startGRPCServer() {
 			"/": ui.Mux(),
 			"/api/extensions/clusters/zip": clustersZip.Handler(clusterService, idService),
 		},
+		TLS:                verifier.CA{},
 		UnaryInterceptors:  []grpc.UnaryServerInterceptor{clusterWatcher.UnaryInterceptor()},
 		StreamInterceptors: []grpc.StreamServerInterceptor{clusterWatcher.StreamInterceptor()},
-	}
-	if features.MTLS.Enabled() {
-		config.TLS = verifier.CA{}
-	} else {
-		config.TLS = verifier.NoMTLS{}
 	}
 
 	c.server = pkgGRPC.NewAPI(config)

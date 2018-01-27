@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/pkg/features"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	"google.golang.org/grpc"
@@ -13,10 +12,7 @@ import (
 
 // GRPCConnection returns a grpc.ClientConn object.
 func GRPCConnection(endpoint string) (conn *grpc.ClientConn, err error) {
-	if features.MTLS.Enabled() {
-		return AuthenticatedGRPCConnection(endpoint)
-	}
-	return UnauthenticatedGRPCConnection(endpoint)
+	return AuthenticatedGRPCConnection(endpoint)
 }
 
 // AuthenticatedGRPCConnection returns a grpc.ClientConn object that uses
