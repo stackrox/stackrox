@@ -3,6 +3,7 @@ package detection
 import (
 	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/golang/protobuf/ptypes"
 )
 
 // ProcessDeploymentEvent takes in a deployment event and return alerts.
@@ -52,6 +53,7 @@ func (d *Detector) markExistingAlertsAsStale(deployment *v1.Deployment, policy *
 
 	for _, a := range existingAlerts {
 		a.Stale = true
+		a.MarkedStale = ptypes.TimestampNow()
 		if err := d.database.UpdateAlert(a); err != nil {
 			logger.Errorf("unable to update alert staleness: %s", err)
 		}

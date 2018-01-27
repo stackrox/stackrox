@@ -11,20 +11,21 @@ import "api/v1/deployment_service.proto";
 package v1;
 
 message Alert {
-    string id                       = 1;
-    Policy policy                   = 2;
-    Deployment deployment           = 3;
+    string id                               = 1;
+    Policy policy                           = 2;
+    Deployment deployment                   = 3;
     message Violation {
         string message    = 1;
     }
-    repeated Violation violations   = 4;
+    repeated Violation violations           = 4;
     message Enforcement {
         EnforcementAction action = 1;
         string message           = 2;
     }
-    Enforcement enforcement         = 5;
-    google.protobuf.Timestamp time  = 6;
-    bool stale                      = 7;
+    Enforcement enforcement                 = 5;
+    google.protobuf.Timestamp time          = 6;
+    bool stale                              = 7;
+    google.protobuf.Timestamp marked_stale  = 8;
 }
 
 message GetAlertRequest {
@@ -36,9 +37,12 @@ message GetAlertsRequest {
     repeated string policy_name            = 2;
     repeated Severity severity             = 3;
     google.protobuf.Timestamp since        = 4;
-    repeated bool stale                    = 5;
-    repeated string cluster                = 6;
-    repeated string deployment_id          = 7;
+    google.protobuf.Timestamp until        = 5;
+    google.protobuf.Timestamp sinceStale   = 6;
+    google.protobuf.Timestamp untilStale   = 7;
+    repeated bool stale                    = 8;
+    repeated string cluster                = 9;
+    repeated string deployment_id          = 10;
 }
 
 message GetAlertsResponse {
@@ -79,6 +83,22 @@ message GetAlertsCountsResponse {
     repeated AlertGroup groups = 1;
 }
 
+enum Type {
+    CREATED = 0;
+    REMOVED = 1;
+}
+
+message Event {
+    int64 time        = 1;
+    Type type         = 2;
+    string id         = 3;
+    Severity severity = 4;
+}
+
+message GetAlertTimeseriesResponse {
+    repeated Event events = 1;
+}
+
 service AlertService {
 
     rpc GetAlert (GetAlertRequest) returns (Alert) {
@@ -102,6 +122,12 @@ service AlertService {
     rpc GetAlertsCounts (GetAlertsCountsRequest) returns (GetAlertsCountsResponse) {
         option (google.api.http) = {
             get: "/v1/alerts/counts"
+        };
+    }
+
+    rpc GetAlertTimeseries(GetAlertsRequest) returns (GetAlertTimeseriesResponse) {
+        option (google.api.http) = {
+            get: "/v1/alerts/timeseries"
         };
     }
     // No post/put API for alerts

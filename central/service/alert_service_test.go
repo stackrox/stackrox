@@ -536,3 +536,43 @@ func TestCountAlerts(t *testing.T) {
 		})
 	}
 }
+
+func TestGenerateTimeseries(t *testing.T) {
+	alerts := []*v1.Alert{
+		{
+			Id: "id1",
+			Time: &timestamp.Timestamp{
+				Seconds: 1,
+			},
+			Stale: true,
+			MarkedStale: &timestamp.Timestamp{
+				Seconds: 8,
+			},
+		},
+		{
+			Id: "id2",
+			Time: &timestamp.Timestamp{
+				Seconds: 6,
+			},
+		},
+	}
+	expectedEvents := []*v1.Event{
+		{
+			Time: 1000,
+			Id:   "id1",
+			Type: v1.Type_CREATED,
+		},
+		{
+			Time: 6000,
+			Id:   "id2",
+			Type: v1.Type_CREATED,
+		},
+		{
+			Time: 8000,
+			Id:   "id1",
+			Type: v1.Type_REMOVED,
+		},
+	}
+	assert.Empty(t, getEventsFromAlerts(nil))
+	assert.Equal(t, expectedEvents, getEventsFromAlerts(alerts))
+}
