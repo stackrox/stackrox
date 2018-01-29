@@ -37,7 +37,27 @@
         "react/no-unused-state": "warn",
     
         "jsx-a11y/no-static-element-interactions": "warn",
-        "jsx-a11y/click-events-have-key-events": "warn"
+        "jsx-a11y/click-events-have-key-events": "warn",
+
+        // When using the react-router-dom Link component, we can exclude the href
+        "jsx-a11y/anchor-is-valid": [
+            "error",
+            {
+                "components": [
+                    "Link"
+                ],
+                "specialLink": [
+                    "to",
+                    "hrefLeft",
+                    "hrefRight"
+                ],
+                "aspects": [
+                    "noHref",
+                    "invalidHref",
+                    "preferButton"
+                ]
+            }
+        ]
     },
     "overrides": [
         {
