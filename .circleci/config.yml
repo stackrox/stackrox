@@ -8,6 +8,16 @@ defaults: &defaults
         password: $DOCKERHUB_PASSWORD
   working_directory: /go/src/bitbucket.org/stack-rox/apollo
 
+restoreNPM: &restoreNPM
+  restore_cache:
+    keys:
+      - v1-mitigate-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
+
+restoreVendor: &restoreVendor
+  restore_cache:
+    keys:
+      - v1-mitigate-go-vendor-{{ checksum "Gopkg.lock" }}
+
 version: 2
 jobs:
   build:
@@ -16,12 +26,12 @@ jobs:
       - checkout
       - setup_remote_docker
 
-      # Refresh the base image.
-      - run: docker pull alpine:3.7
+      - run:
+          name: Refresh base image
+          command: docker pull alpine:3.7
 
-      - restore_cache:
-          keys:
-            - v1-mitigate-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
+      - *restoreNPM
+      - *restoreVendor
 
       - run:
           name: Build all
@@ -33,6 +43,11 @@ jobs:
           key: v1-mitigate-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
           paths:
             - ui/node_modules
+
+      - save-cache:
+          key: v1-mitigate-go-vendor-{{ checksum "Gopkg.lock" }}
+          paths:
+            - vendor
 
       - run:
           name: Push new Docker image
@@ -49,9 +64,8 @@ jobs:
       - checkout
       - setup_remote_docker
 
-      - restore_cache:
-          keys:
-            - v1-mitigate-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
+      - *restoreNPM
+      - *restoreVendor
 
       - run: make deps generated-srcs
 
