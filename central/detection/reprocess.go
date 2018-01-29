@@ -23,11 +23,12 @@ func (d *Detector) periodicallyEnrich() {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		d.enrichAndReprocess()
+		d.EnrichAndReprocess()
 	}
 }
 
-func (d *Detector) enrichAndReprocess() {
+// EnrichAndReprocess enriches all deployments. If new data is available, it re-assesses all policies for that deployment.
+func (d *Detector) EnrichAndReprocess() {
 	deployments, err := d.database.GetDeployments(&v1.GetDeploymentsRequest{})
 	if err != nil {
 		logger.Error(err)

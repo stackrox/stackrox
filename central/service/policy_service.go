@@ -137,3 +137,10 @@ func (s *PolicyService) DeletePolicy(ctx context.Context, request *v1.ResourceBy
 	s.detector.RemovePolicy(request.GetId())
 	return &empty.Empty{}, nil
 }
+
+// ReassessPolicies manually triggers enrichment of all deployments, and re-assesses policies if there's updated data.
+func (s *PolicyService) ReassessPolicies(context.Context, *empty.Empty) (*empty.Empty, error) {
+	go s.detector.EnrichAndReprocess()
+
+	return &empty.Empty{}, nil
+}

@@ -90,4 +90,10 @@ service PolicyService {
         };
     }
 
+    rpc ReassessPolicies (google.protobuf.Empty) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/policies/reassess"
+        };
+    }
+
 }
