@@ -174,7 +174,7 @@ const sourceMap = {
             },
             {
                 label: 'Docker Password',
-                key: 'remote',
+                key: 'config.password',
                 type: 'password',
                 placeholder: ''
             }
@@ -208,7 +208,7 @@ const sourceMap = {
             },
             {
                 label: 'Docker Password',
-                key: 'password',
+                key: 'config.password',
                 type: 'password',
                 placeholder: ''
             }
@@ -272,7 +272,7 @@ const sourceMap = {
             },
             {
                 label: 'Docker Password',
-                key: 'remote',
+                key: 'config.password',
                 type: 'password',
                 placeholder: ''
             }
@@ -287,9 +287,9 @@ const SOURCE_LABELS = Object.freeze({
 });
 
 const api = {
-    registries: data => axios.post('/v1/registries', data),
-    scanners: data => axios.post('/v1/scanners', data),
-    notifiers: data => axios.post('/v1/notifiers', data)
+    registries: data => (data.id !== '' ? axios.put(`/v1/registries/${data.id}`, data) : axios.post('/v1/registries', data)),
+    scanners: data => (data.id !== '' ? axios.put(`/v1/scanners/${data.id}`, data) : axios.post('/v1/scanners', data)),
+    notifiers: data => (data.id !== '' ? axios.put(`/v1/notifiers/${data.id}`, data) : axios.post('/v1/notifiers', data))
 };
 
 const reducer = (action, prevState, nextState) => {
