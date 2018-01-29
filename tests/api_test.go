@@ -10,7 +10,7 @@ import (
 )
 
 func TestPing(t *testing.T) {
-	conn, err := clientconn.UnauthenticatedGRPCConnection(localEndpoint)
+	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
 	if err != nil {
 		t.Fatal(err)
 	}

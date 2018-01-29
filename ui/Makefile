@@ -1,3 +1,5 @@
+UI_BASE_URL ?= https://localhost:8000
+
 .PHONY: all
 all: deps lint test build
 
@@ -40,6 +42,16 @@ test: deps $(SOURCES)
 test-watch: deps
 	@echo "+ $@"
 	yarn test-watch
+
+.PHONY: test-e2e-local
+test-e2e-local: deps $(SOURCES)
+	@echo "+ $@"
+	yarn test-e2e-local
+
+.PHONY: test-e2e-ci
+test-e2e-ci: deps $(SOURCES)
+	@echo "+ $@"
+	yarn test-e2e-ci --config baseUrl=$(UI_BASE_URL)
 
 .PHONY: clean
 clean:

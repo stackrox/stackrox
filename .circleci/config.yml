@@ -1,15 +1,17 @@
+defaults: &defaults
+  docker:
+    # This image is the standard circleci/golang:1.9.2 image, plus bazel
+    # and other necessary build tools like goimports, dep, yarn, gcloud, kubectl, and envsubst.
+    - image: stackrox/apollo:circleci@sha256:249cb1b6da79bf0acf2f8e25a1f8dffd55929d0b86569258cc97394d2209ed7b
+      auth:
+        username: $DOCKERHUB_USERNAME
+        password: $DOCKERHUB_PASSWORD
+  working_directory: /go/src/bitbucket.org/stack-rox/apollo
+
 version: 2
 jobs:
   build:
-    docker:
-      # This image is the standard circleci/golang:1.9.2 image, plus bazel
-      # and other necessary build tools like goimports, dep, yarn, gcloud, kubectl, and envsubst.
-      - image: stackrox/apollo:circleci@sha256:a8a81cf007494e1f65316db798b4cafc2df7d666a1f21fbaeadf684529df0b47
-        auth:
-          username: $DOCKERHUB_USERNAME
-          password: $DOCKERHUB_PASSWORD
-
-    working_directory: /go/src/bitbucket.org/stack-rox/apollo
+    <<: *defaults
     steps:
       - checkout
       - setup_remote_docker
@@ -17,45 +19,93 @@ jobs:
       # Refresh the base image.
       - run: docker pull alpine:3.7
 
-      # Build.
-      - run: cat tools/ci-bazel.rc | envsubst > tools/bazel.rc
-      - run: make all
+      - restore_cache:
+          keys:
+            - v1-mitigate-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
 
-      # Push.
-      - run: docker tag stackrox/mitigate:latest stackrox/mitigate:$CIRCLE_SHA1
-      - run: docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-      - run: docker push stackrox/mitigate:$CIRCLE_SHA1
+      - run:
+          name: Build all
+          command: |
+            cat tools/ci-bazel.rc | envsubst > tools/bazel.rc
+            make all
 
-  deploy:
-    docker:
-      # This image is the standard circleci/golang:1.9.2 image, plus bazel
-      # and other necessary build tools like goimports, dep, yarn, gcloud, kubectl, and envsubst.
-      - image: stackrox/apollo:circleci@sha256:a8a81cf007494e1f65316db798b4cafc2df7d666a1f21fbaeadf684529df0b47
-        auth:
-          username: $DOCKERHUB_USERNAME
-          password: $DOCKERHUB_PASSWORD
-    working_directory: /go/src/bitbucket.org/stack-rox/apollo
+      - save-cache:
+          key: v1-mitigate-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
+          paths:
+            - ui/node_modules
+
+      - run:
+          name: Push new Docker image
+          command: |
+            docker tag stackrox/mitigate:latest stackrox/mitigate:$CIRCLE_SHA1
+            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+            docker push stackrox/mitigate:$CIRCLE_SHA1
+
+  deploy-k8s:
+    <<: *defaults
+    environment:
+      - LOCAL_PORT: 8000
     steps:
       - checkout
       - setup_remote_docker
-      - run: docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+
+      - restore_cache:
+          keys:
+            - v1-mitigate-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
+
       - run: make deps generated-srcs
 
-      # Set Env
-      - run: echo 'export DOCKER_USER="$DOCKERHUB_USERNAME"' >> $BASH_ENV
-      - run: echo 'export DOCKER_PASS="$DOCKERHUB_PASSWORD"' >> $BASH_ENV
-      - run: echo 'export MITIGATE_IMAGE_TAG="$CIRCLE_SHA1"' >> $BASH_ENV
-      - run: echo $GKE_SERVICE_ACCOUNT > /tmp/gke.json
-      - run: echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gke.json' >> $BASH_ENV
-      - run: gcloud auth activate-service-account --key-file /tmp/gke.json
+      - run:
+          name: Setup deployment env
+          command: |
+            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+            echo 'export DOCKER_USER="$DOCKERHUB_USERNAME"' >> $BASH_ENV
+            echo 'export DOCKER_PASS="$DOCKERHUB_PASSWORD"' >> $BASH_ENV
+            echo 'export MITIGATE_IMAGE_TAG="$CIRCLE_SHA1"' >> $BASH_ENV
+            echo $GKE_SERVICE_ACCOUNT > /tmp/gke.json
+            echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gke.json' >> $BASH_ENV
+            gcloud auth activate-service-account --key-file /tmp/gke.json
       
-      # Deploy
-      - run: source /dev/stdin <<< "$(curl -sL $CI_SETUP_URL_K8S)"
-      - run: ./scripts/k8s/cleanup.sh
-      - run: ./deploy/k8s/deploy.sh
+      - run:
+          name: Deploy to a remote cluster
+          command: |
+            source /dev/stdin <<< "$(curl -sL $CI_SETUP_URL_K8S)"
+            ./scripts/k8s/cleanup.sh
+            ./deploy/k8s/deploy.sh
 
-      # Test
-      - run: make -C tests
+      - run:
+          name: Setup port-forwarding for tests
+          command: ./scripts/k8s/local-port-forward.sh
+          background: true
+
+      - run:
+          name: Wait for the server being up
+          command: |
+            export PING_URL=https://127.0.0.1:${LOCAL_PORT}/v1/ping
+            curl -k --connect-timeout 5 --max-time 10 --retry 10 --retry-connrefused --retry-delay 1 --retry-max-time 30 ${PING_URL}
+
+      - run:
+          name: API tests
+          command: |
+            export API_ENDPOINT=localhost:${LOCAL_PORT}
+            make -C tests
+
+      - run:
+          name: UI e2e tests
+          command: |
+            export UI_BASE_URL=https://localhost:${LOCAL_PORT}
+            make -C ui test-e2e-ci
+
+      - store_test_results:
+          path: ui/cypress/reports
+
+      - store_artifacts:
+          path: ui/cypress/videos
+          destination: ui-e2e-videos
+
+      - store_artifacts:
+          path: ui/cypress/screenshots
+          destination: ui-e2e-screenshots
 
   retag:
     docker:
@@ -66,18 +116,20 @@ jobs:
     steps:
       - setup_remote_docker
 
-      - run: |
-          docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-          docker pull stackrox/mitigate:$CIRCLE_SHA1
-          docker tag stackrox/mitigate:$CIRCLE_SHA1 stackrox/mitigate:latest
-          docker push stackrox/mitigate:latest
+      - run:
+          name: Retag
+          command: |
+            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+            docker pull stackrox/mitigate:$CIRCLE_SHA1
+            docker tag stackrox/mitigate:$CIRCLE_SHA1 stackrox/mitigate:latest
+            docker push stackrox/mitigate:latest
 
 workflows:
   version: 2
   build_all:
     jobs:
       - build
-      - deploy:
+      - deploy-k8s:
           requires:
             - build
       - retag:

@@ -1,16 +1,12 @@
 package tests
 
 import (
-	"log"
 	"os"
-	"os/exec"
 	"testing"
-
-	"bitbucket.org/stack-rox/apollo/tests/platform"
 )
 
 var (
-	localEndpoint = `localhost:8000`
+	apiEndpoint = `localhost:8000`
 )
 
 func TestMain(m *testing.M) {
@@ -19,23 +15,12 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// only kubernetes is currently supported.
 func setup() {
-	p := platform.NewFromEnv()
-
-	cmd := exec.Command(`bash`, `-c`, p.SetupScript())
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
-	}
-	if err := cmd.Wait(); err != nil {
-		log.Fatal(err)
-	}
+	// TODO: good practice would be to wait for the server to be responsive / warmed up (e.g. with timeout 10 sec)
 }
 
 func init() {
-	if le, ok := os.LookupEnv(`LOCAL_API_ENDPOINT`); ok {
-		localEndpoint = le
+	if le, ok := os.LookupEnv(`API_ENDPOINT`); ok {
+		apiEndpoint = le
 	}
 }

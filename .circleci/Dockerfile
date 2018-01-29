@@ -31,6 +31,10 @@ RUN sudo apt-get update && \
     sudo apt-get update && \
     sudo apt-get install yarn
 
+# Add cypress.io dependencies
+RUN sudo apt-get update && \
+    sudo apt-get install xvfb libgtk2.0-0 libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2
+
 # Install envsubst
 RUN sudo apt-get update && \
     sudo apt-get install -y gettext
