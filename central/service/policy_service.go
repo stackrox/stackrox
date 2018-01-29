@@ -22,17 +22,19 @@ var (
 )
 
 // NewPolicyService returns the PolicyService API.
-func NewPolicyService(storage db.PolicyStorage, detector *detection.Detector) *PolicyService {
+func NewPolicyService(storage db.Storage, detector *detection.Detector) *PolicyService {
 	return &PolicyService{
-		storage:  storage,
-		detector: detector,
+		policyStorage:   storage,
+		notifierStorage: storage,
+		detector:        detector,
 	}
 }
 
 // PolicyService is the struct that manages Policies API
 type PolicyService struct {
-	storage  db.PolicyStorage
-	detector *detection.Detector
+	policyStorage   db.PolicyStorage
+	notifierStorage db.NotifierStorage
+	detector        *detection.Detector
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -50,7 +52,7 @@ func (s *PolicyService) GetPolicy(ctx context.Context, request *v1.ResourceByID)
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Policy id must be provided")
 	}
-	policy, exists, err := s.storage.GetPolicy(request.GetId())
+	policy, exists, err := s.policyStorage.GetPolicy(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -62,7 +64,7 @@ func (s *PolicyService) GetPolicy(ctx context.Context, request *v1.ResourceByID)
 
 // GetPolicies retrieves all policies according to the request.
 func (s *PolicyService) GetPolicies(ctx context.Context, request *v1.GetPoliciesRequest) (*v1.PoliciesResponse, error) {
-	policies, err := s.storage.GetPolicies(request)
+	policies, err := s.policyStorage.GetPolicies(request)
 	return &v1.PoliciesResponse{Policies: policies}, err
 }
 
@@ -71,11 +73,11 @@ func (s *PolicyService) PostPolicy(ctx context.Context, request *v1.Policy) (*v1
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new policy")
 	}
-	policy, err := validatePolicy(request)
+	policy, err := s.validatePolicy(request)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	id, err := s.storage.AddPolicy(request)
+	id, err := s.policyStorage.AddPolicy(request)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +87,7 @@ func (s *PolicyService) PostPolicy(ctx context.Context, request *v1.Policy) (*v1
 	return request, nil
 }
 
-func validatePolicy(policy *v1.Policy) (*matcher.Policy, error) {
+func (s *PolicyService) validatePolicy(policy *v1.Policy) (*matcher.Policy, error) {
 	if policy.GetName() == "" {
 		return nil, errors.New("policy must have a set name")
 	}
@@ -94,6 +96,15 @@ func validatePolicy(policy *v1.Policy) (*matcher.Policy, error) {
 	}
 	if len(policy.GetCategories()) == 0 {
 		return nil, errors.New("policy must have at least one category")
+	}
+	for _, n := range policy.GetNotifiers() {
+		_, exists, err := s.notifierStorage.GetNotifier(n)
+		if err != nil {
+			return nil, fmt.Errorf("Error checking if notifier %v is valid", n)
+		}
+		if !exists {
+			return nil, fmt.Errorf("Notifier %v does not exist", n)
+		}
 	}
 	matcherPolicy, err := matcher.New(policy)
 	if err != nil {
@@ -104,12 +115,12 @@ func validatePolicy(policy *v1.Policy) (*matcher.Policy, error) {
 
 // PutPolicy updates a current policy in the system.
 func (s *PolicyService) PutPolicy(ctx context.Context, request *v1.Policy) (*empty.Empty, error) {
-	policy, err := validatePolicy(request)
+	policy, err := s.validatePolicy(request)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	s.detector.UpdatePolicy(policy)
-	if err := s.storage.UpdatePolicy(request); err != nil {
+	if err := s.policyStorage.UpdatePolicy(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &empty.Empty{}, nil
@@ -120,7 +131,7 @@ func (s *PolicyService) DeletePolicy(ctx context.Context, request *v1.ResourceBy
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "A policy id must be specified to delete a Policy")
 	}
-	if err := s.storage.RemovePolicy(request.GetId()); err != nil {
+	if err := s.policyStorage.RemovePolicy(request.GetId()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	s.detector.RemovePolicy(request.GetId())

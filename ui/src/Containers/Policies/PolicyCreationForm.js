@@ -12,7 +12,6 @@ import flattenObject from 'utils/flattenObject';
 import differenceBy from 'lodash/differenceBy';
 import intersection from 'lodash/intersection';
 import omitBy from 'lodash/omitBy';
-import axios from 'axios';
 
 const categoriesMap = {
     imagePolicy: 'IMAGE_ASSURANCE',
@@ -32,6 +31,9 @@ const reducer = (action, prevState, nextState) => {
 class PolicyCreationForm extends Component {
     static propTypes = {
         policy: PropTypes.shape({}).isRequired,
+        notifiers: PropTypes.arrayOf(PropTypes.shape({
+            name: PropTypes.string.isRequired
+        })).isRequired,
         formApi: PropTypes.shape({
             submitForm: PropTypes.func,
             setValue: PropTypes.func,
@@ -79,7 +81,6 @@ class PolicyCreationForm extends Component {
                         type: 'multiselect',
                         options: [],
                         required: true
-
                     },
                     {
                         label: 'Enforce',
@@ -376,20 +377,15 @@ class PolicyCreationForm extends Component {
         this.forceUpdate();
     }
 
-    getNotifiers = () => axios.get('/v1/notifiers');
-
     setNotifierFieldOptions = () => {
-        this.getNotifiers().then((response) => {
-            if (!response.data.notifiers) return;
-            const { notifiers } = response.data;
-            const { policyFields } = this.state;
-            policyFields.policyDetails = policyFields.policyDetails.map((field) => {
-                const newField = field;
-                if (field.value === 'notifiers') newField.options = notifiers.map(notifier => ({ label: notifier.name, value: notifier.name }));
-                return newField;
-            });
-            this.update('UPDATE_POLICY_FIELDS', { policyFields });
+        const { policyFields } = this.state;
+        const { notifiers } = this.props;
+        policyFields.policyDetails = policyFields.policyDetails.map((field) => {
+            const newField = field;
+            if (field.value === 'notifiers') newField.options = notifiers.map(notifier => ({ label: notifier.name, value: notifier.id }));
+            return newField;
         });
+        this.update('UPDATE_POLICY_FIELDS', { policyFields });
     }
 
     setFormFields = () => {
