@@ -7,21 +7,11 @@ import ClustersModal from 'Containers/Integrations/ClustersModal';
 
 import axios from 'axios';
 
-import qualys from 'images/qualys.svg';
-import artifactory from 'images/artifactory.svg';
-import azure from 'images/azure.svg';
-import dockerEnt from 'images/docker-ent.svg';
 import docker from 'images/docker.svg';
-import google from 'images/google.svg';
-import grafeas from 'images/grafeas.svg';
 import jira from 'images/jira.svg';
 import kubernetes from 'images/kubernetes.svg';
-import openshift from 'images/openshift.svg';
-import pagerduty from 'images/pagerduty.svg';
 import slack from 'images/slack.svg';
 import tenable from 'images/tenable.svg';
-import servicenow from 'images/servicenow.svg';
-import splunk from 'images/splunk.svg';
 import email from 'images/email.svg';
 
 const dataSources = {
@@ -39,40 +29,12 @@ const dataSources = {
             source: 'registries',
             image: tenable,
             disabled: false
-        },
-        {
-            label: 'Openshift Container Registry',
-            type: 'openshift',
-            source: 'registries',
-            image: openshift,
-            disabled: true
-        },
-        {
-            label: 'Google Container Registry',
-            type: 'google',
-            source: 'registries',
-            image: google,
-            disabled: true
-        },
-        {
-            label: 'Azure Container Registry',
-            type: 'azure',
-            source: 'registries',
-            image: azure,
-            disabled: true
-        },
-        {
-            label: 'Artifactory',
-            type: 'artifactory',
-            source: 'registries',
-            image: artifactory,
-            disabled: true
         }
     ],
     orchestratorsAndContainerPlatforms: [
         {
             label: 'Docker Enterprise Edition',
-            image: dockerEnt,
+            image: docker,
             disabled: false,
             clusterType: 'DOCKER_EE_CLUSTER'
         },
@@ -87,12 +49,6 @@ const dataSources = {
             image: docker,
             disabled: false,
             clusterType: 'SWARM_CLUSTER'
-        },
-        {
-            label: 'Red Hat OpenShift',
-            image: openshift,
-            disabled: false,
-            clusterType: 'OPENSHIFT_CLUSTER'
         }
     ],
     scanningAndGovernanceTools: [
@@ -109,20 +65,6 @@ const dataSources = {
             source: 'scanners',
             image: tenable,
             disabled: false
-        },
-        {
-            label: 'Qualys',
-            type: 'qualys',
-            source: 'scanners',
-            image: qualys,
-            disabled: true
-        },
-        {
-            label: 'Grafeas',
-            type: 'grafeas',
-            source: 'scanners',
-            image: grafeas,
-            disabled: true
         }
     ],
     plugins: [
@@ -146,27 +88,6 @@ const dataSources = {
             source: 'notifiers',
             image: email,
             disabled: false
-        },
-        {
-            label: 'Pagerduty',
-            type: 'pagerduty',
-            source: 'notifiers',
-            image: pagerduty,
-            disabled: true
-        },
-        {
-            label: 'Splunk',
-            type: 'splunk',
-            source: 'notifiers',
-            image: splunk,
-            disabled: true
-        },
-        {
-            label: 'ServiceNow',
-            type: 'servicenow',
-            source: 'notifiers',
-            image: servicenow,
-            disabled: true
         }
     ]
 };
@@ -283,6 +204,17 @@ class IntegrationsPage extends Component {
         this.update('CLOSE_CLUSTERS_MODAL');
     }
 
+    isOrchestratorDisabled = (orchestrator) => {
+        const { clusterType } = orchestrator;
+        const clusters = this.state.clusters.filter(cluster => cluster.type === clusterType);
+        return clusters.length === 0;
+    }
+
+    isIntegrated = (integration) => {
+        const { source, type } = integration;
+        return this.state[source].find(obj => obj.type === type) !== undefined;
+    }
+
     update = (action, nextState) => {
         this.setState(prevState => reducer(action, prevState, nextState));
     }
@@ -340,6 +272,8 @@ class IntegrationsPage extends Component {
                                         key={registry.label}
                                         integration={registry}
                                         onClick={this.openIntegrationModal}
+                                        disabled={registry.disabled}
+                                        isIntegrated={this.isIntegrated(registry)}
                                     />))
                             }
                         </div>
@@ -355,6 +289,7 @@ class IntegrationsPage extends Component {
                                         key={orchestrator.label}
                                         integration={orchestrator}
                                         onClick={this.openClustersModal}
+                                        disabled={this.isOrchestratorDisabled(orchestrator)}
                                     />))
                             }
                         </div>
@@ -371,6 +306,8 @@ class IntegrationsPage extends Component {
                                         key={tool.label}
                                         integration={tool}
                                         onClick={this.openIntegrationModal}
+                                        disabled={tool.disabled}
+                                        isIntegrated={this.isIntegrated(tool)}
                                     />))
                             }
                         </div>
@@ -387,6 +324,8 @@ class IntegrationsPage extends Component {
                                         key={plugin.label}
                                         integration={plugin}
                                         onClick={this.openIntegrationModal}
+                                        disabled={plugin.disabled}
+                                        isIntegrated={this.isIntegrated(plugin)}
                                     />))
                             }
                         </div>
