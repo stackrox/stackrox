@@ -91,53 +91,28 @@ func (s *AlertService) GetAlertsCounts(ctx context.Context, request *v1.GetAlert
 }
 
 func (s *AlertService) groupAlerts(alerts []*v1.Alert) (output *v1.GetAlertsGroupResponse) {
-	groups := s.getMapOfAlertGroups(alerts)
+	policiesMap := make(map[string]*v1.Policy)
+	alertCountsByPolicy := make(map[string]int)
+
+	for _, a := range alerts {
+		policiesMap[a.GetPolicy().GetId()] = a.GetPolicy()
+		alertCountsByPolicy[a.GetPolicy().GetId()]++
+	}
 
 	output = new(v1.GetAlertsGroupResponse)
-	output.ByCategory = make([]*v1.GetAlertsGroupResponse_CategoryGroup, 0, len(groups))
+	output.AlertsByPolicies = make([]*v1.GetAlertsGroupResponse_PolicyGroup, 0, len(policiesMap))
 
-	for cat, byPolicy := range groups {
-		policyGroups := make([]*v1.GetAlertsGroupResponse_PolicyGroup, 0, len(byPolicy))
-
-		for _, policyGroup := range byPolicy {
-			policyGroups = append(policyGroups, policyGroup)
-		}
-
-		sort.Slice(policyGroups, func(i, j int) bool { return policyGroups[i].Policy.GetName() < policyGroups[j].Policy.GetName() })
-
-		output.ByCategory = append(output.ByCategory, &v1.GetAlertsGroupResponse_CategoryGroup{
-			Category: cat,
-			ByPolicy: policyGroups,
+	for id, p := range policiesMap {
+		output.AlertsByPolicies = append(output.AlertsByPolicies, &v1.GetAlertsGroupResponse_PolicyGroup{
+			Policy:    p,
+			NumAlerts: int64(alertCountsByPolicy[id]),
 		})
 	}
 
-	sort.Slice(output.ByCategory, func(i, j int) bool { return output.ByCategory[i].Category < output.ByCategory[j].Category })
+	sort.Slice(output.AlertsByPolicies, func(i, j int) bool {
+		return output.AlertsByPolicies[i].GetPolicy().GetName() < output.AlertsByPolicies[j].GetPolicy().GetName()
+	})
 
-	return
-}
-
-func (s *AlertService) getMapOfAlertGroups(alerts []*v1.Alert) (group map[v1.Policy_Category]map[string]*v1.GetAlertsGroupResponse_PolicyGroup) {
-	group = make(map[v1.Policy_Category]map[string]*v1.GetAlertsGroupResponse_PolicyGroup)
-
-	for _, a := range alerts {
-		pol := a.GetPolicy()
-		cats := a.GetPolicy().GetCategories()
-
-		for _, cat := range cats {
-			if group[cat] == nil {
-				group[cat] = make(map[string]*v1.GetAlertsGroupResponse_PolicyGroup)
-			}
-
-			if existing := group[cat][pol.GetName()]; existing == nil {
-				group[cat][pol.GetName()] = &v1.GetAlertsGroupResponse_PolicyGroup{
-					Policy:    pol,
-					NumAlerts: 1,
-				}
-			} else {
-				existing.NumAlerts++
-			}
-		}
-	}
 	return
 }
 

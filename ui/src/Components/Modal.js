@@ -11,7 +11,7 @@ const Modal = props => (
         ariaHideApp={false}
         overlayClassName="ReactModal__Overlay react-modal-overlay p-4 flex"
         // eslint-disable-next-line max-len
-        className="ReactModal__Content w-1/3 mx-auto my-0 flex flex-col self-center bg-primary-100 overflow-hidden max-h-full transition"
+        className={`ReactModal__Content mx-auto my-0 flex flex-col self-center bg-primary-100 overflow-hidden max-h-full transition ${props.className}`}
     >
         {props.children}
     </ReactModal>
@@ -20,7 +20,12 @@ const Modal = props => (
 Modal.propTypes = {
     isOpen: PropTypes.bool.isRequired,
     onRequestClose: PropTypes.func.isRequired,
-    children: PropTypes.node.isRequired
+    children: PropTypes.node.isRequired,
+    className: PropTypes.string
+};
+
+Modal.defaultProps = {
+    className: 'w-1/3'
 };
 
 export default Modal;

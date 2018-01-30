@@ -23,6 +23,7 @@ func TestGroupAlerts(t *testing.T) {
 					Id: "id1",
 					Policy: &v1.Policy{
 						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Id:         "id1",
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
 					},
@@ -32,6 +33,7 @@ func TestGroupAlerts(t *testing.T) {
 					Id: "id2",
 					Policy: &v1.Policy{
 						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Id:         "id2",
 						Name:       "policy2",
 						Severity:   v1.Severity_HIGH_SEVERITY,
 					},
@@ -41,6 +43,7 @@ func TestGroupAlerts(t *testing.T) {
 					Id: "id3",
 					Policy: &v1.Policy{
 						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Id:         "id1",
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
 					},
@@ -48,27 +51,24 @@ func TestGroupAlerts(t *testing.T) {
 				},
 			},
 			expected: &v1.GetAlertsGroupResponse{
-				ByCategory: []*v1.GetAlertsGroupResponse_CategoryGroup{
+				AlertsByPolicies: []*v1.GetAlertsGroupResponse_PolicyGroup{
 					{
-						Category: v1.Policy_Category_IMAGE_ASSURANCE,
-						ByPolicy: []*v1.GetAlertsGroupResponse_PolicyGroup{
-							{
-								Policy: &v1.Policy{
-									Name:       "policy1",
-									Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
-									Severity:   v1.Severity_LOW_SEVERITY,
-								},
-								NumAlerts: 2,
-							},
-							{
-								Policy: &v1.Policy{
-									Name:       "policy2",
-									Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
-									Severity:   v1.Severity_HIGH_SEVERITY,
-								},
-								NumAlerts: 1,
-							},
+						Policy: &v1.Policy{
+							Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+							Id:         "id1",
+							Name:       "policy1",
+							Severity:   v1.Severity_LOW_SEVERITY,
 						},
+						NumAlerts: 2,
+					},
+					{
+						Policy: &v1.Policy{
+							Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+							Id:         "id2",
+							Name:       "policy2",
+							Severity:   v1.Severity_HIGH_SEVERITY,
+						},
+						NumAlerts: 1,
 					},
 				},
 			},
@@ -80,6 +80,7 @@ func TestGroupAlerts(t *testing.T) {
 					Id: "id1",
 					Policy: &v1.Policy{
 						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Id:         "id1",
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
 					},
@@ -89,6 +90,7 @@ func TestGroupAlerts(t *testing.T) {
 					Id: "id2",
 					Policy: &v1.Policy{
 						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_PRIVILEGES_CAPABILITIES},
+						Id:         "id2",
 						Name:       "policy2",
 						Severity:   v1.Severity_HIGH_SEVERITY,
 					},
@@ -98,7 +100,8 @@ func TestGroupAlerts(t *testing.T) {
 					Id: "id3",
 					Policy: &v1.Policy{
 						Categories: []v1.Policy_Category{v1.Policy_Category_CONTAINER_CONFIGURATION},
-						Name:       "policy10",
+						Id:         "id30",
+						Name:       "policy30",
 						Severity:   v1.Severity_CRITICAL_SEVERITY,
 					},
 					Time: &timestamp.Timestamp{Seconds: 150},
@@ -107,6 +110,7 @@ func TestGroupAlerts(t *testing.T) {
 					Id: "id4",
 					Policy: &v1.Policy{
 						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Id:         "id1",
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
 					},
@@ -114,53 +118,33 @@ func TestGroupAlerts(t *testing.T) {
 				},
 			},
 			expected: &v1.GetAlertsGroupResponse{
-				ByCategory: []*v1.GetAlertsGroupResponse_CategoryGroup{
+				AlertsByPolicies: []*v1.GetAlertsGroupResponse_PolicyGroup{
 					{
-						Category: v1.Policy_Category_IMAGE_ASSURANCE,
-						ByPolicy: []*v1.GetAlertsGroupResponse_PolicyGroup{
-							{
-								Policy: &v1.Policy{
-									Name:       "policy1",
-									Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
-									Severity:   v1.Severity_LOW_SEVERITY,
-								},
-								NumAlerts: 2,
-							},
-							{
-								Policy: &v1.Policy{
-									Name:       "policy2",
-									Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_PRIVILEGES_CAPABILITIES},
-									Severity:   v1.Severity_HIGH_SEVERITY,
-								},
-								NumAlerts: 1,
-							},
+						Policy: &v1.Policy{
+							Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+							Id:         "id1",
+							Name:       "policy1",
+							Severity:   v1.Severity_LOW_SEVERITY,
 						},
+						NumAlerts: 2,
 					},
 					{
-						Category: v1.Policy_Category_PRIVILEGES_CAPABILITIES,
-						ByPolicy: []*v1.GetAlertsGroupResponse_PolicyGroup{
-							{
-								Policy: &v1.Policy{
-									Name:       "policy2",
-									Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_PRIVILEGES_CAPABILITIES},
-									Severity:   v1.Severity_HIGH_SEVERITY,
-								},
-								NumAlerts: 1,
-							},
+						Policy: &v1.Policy{
+							Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_PRIVILEGES_CAPABILITIES},
+							Id:         "id2",
+							Name:       "policy2",
+							Severity:   v1.Severity_HIGH_SEVERITY,
 						},
+						NumAlerts: 1,
 					},
 					{
-						Category: v1.Policy_Category_CONTAINER_CONFIGURATION,
-						ByPolicy: []*v1.GetAlertsGroupResponse_PolicyGroup{
-							{
-								Policy: &v1.Policy{
-									Name:       "policy10",
-									Categories: []v1.Policy_Category{v1.Policy_Category_CONTAINER_CONFIGURATION},
-									Severity:   v1.Severity_CRITICAL_SEVERITY,
-								},
-								NumAlerts: 1,
-							},
+						Policy: &v1.Policy{
+							Categories: []v1.Policy_Category{v1.Policy_Category_CONTAINER_CONFIGURATION},
+							Id:         "id30",
+							Name:       "policy30",
+							Severity:   v1.Severity_CRITICAL_SEVERITY,
 						},
+						NumAlerts: 1,
 					},
 				},
 			},

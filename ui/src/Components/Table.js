@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
-import resolvePath from 'object-resolve-path';
 import PropTypes from 'prop-types';
+import TableCell from 'Components/TableCell';
 
 class Table extends Component {
     static propTypes = {
@@ -48,7 +48,7 @@ class Table extends Component {
         }
     }
 
-    displayHeaders() {
+    renderHeaders() {
         const tableHeaders = this.props.columns.map((column) => {
             const className = `p-3 text-primary-500 border-b border-base-300 hover:text-primary-600 ${column.align === 'right' ? 'text-right' : 'text-left'}`;
             return (
@@ -64,18 +64,11 @@ class Table extends Component {
         );
     }
 
-    displayBody() {
+    renderBody() {
         const { rows, columns } = this.props;
-        const { active } = this.state;
         const rowClickable = !!this.props.onRowClick;
         return rows.map((row, i) => {
-            const tableCells = columns.map((column) => {
-                let value = resolvePath(row, column.key);
-                if (column.keyValueFunc) value = column.keyValueFunc(value);
-                const customClassName = (column.classFunc && column.classFunc(value)) || '';
-                const className = `p-3 ${active === row ? 'bg-primary-300' : ''} ${column.align === 'right' ? 'text-right' : 'text-left'} ${customClassName}`;
-                return <td className={className} key={`${column.key}`}>{value || column.default}</td>;
-            });
+            const tableCells = columns.map(column => <TableCell column={column} row={row} key={`${column.key}`} />);
             if (this.props.checkboxes) {
                 tableCells.unshift((
                     <td className="text-center" key="checkboxTableCell" >
@@ -98,8 +91,8 @@ class Table extends Component {
     render() {
         return (
             <table className="w-full border-collapse transition">
-                <thead>{this.displayHeaders()}</thead>
-                <tbody>{this.displayBody()}</tbody>
+                <thead>{this.renderHeaders()}</thead>
+                <tbody>{this.renderBody()}</tbody>
             </table>
         );
     }

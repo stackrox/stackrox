@@ -104,7 +104,7 @@ class DashboardPage extends Component {
         console.error(error);
     });
 
-    getEventsByTime = () => axios.get('/v1/dashboard/alerts/timeseries').then((response) => {
+    getEventsByTime = () => axios.get('/v1/alerts/timeseries').then((response) => {
         const eventsByTime = response.data.events;
         if (!eventsByTime) return;
         this.update('UPDATE_EVENTS_BY_TIME', { eventsByTime });
@@ -148,7 +148,7 @@ class DashboardPage extends Component {
             const time = format(parseInt(event.time, 10), 'MMM DD');
             const events = timeEventMap[time];
             if (events !== undefined) {
-                switch (event.action) {
+                switch (event.type) {
                     case 'CREATED':
                         timeEventMap[time] += 1;
                         break;

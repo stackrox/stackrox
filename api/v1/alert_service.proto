@@ -54,11 +54,8 @@ message GetAlertsGroupResponse {
         Policy policy = 1;
         int64 num_alerts = 2;
     }
-    message CategoryGroup {
-        Policy_Category category = 1;
-        repeated PolicyGroup by_policy = 2;
-    }
-    repeated CategoryGroup by_category = 1;
+
+    repeated PolicyGroup alerts_by_policies = 1;
 }
 
 message GetAlertsCountsRequest {

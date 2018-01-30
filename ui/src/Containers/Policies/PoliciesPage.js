@@ -158,14 +158,14 @@ class PoliciesPage extends Component {
             {
                 renderIcon: () => <Icon.Trash2 className="h-4 w-4" />,
                 text: 'Delete Policies',
-                className: 'flex py-2 px-2 rounded-sm text-danger-600 hover:text-white hover:bg-danger-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-danger-400',
+                className: 'flex py-1 px-2 rounded-sm text-danger-600 hover:text-white hover:bg-danger-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-danger-400',
                 onClick: this.deletePolicies,
                 disabled: this.state.editingPolicy !== null
             },
             {
                 renderIcon: () => <Icon.Plus className="h-4 w-4" />,
                 text: 'Add Policy',
-                className: 'flex py-2 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                className: 'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
                 onClick: this.addPolicy,
                 disabled: this.state.editingPolicy !== null
             }
@@ -211,7 +211,7 @@ class PoliciesPage extends Component {
             {
                 renderIcon: () => <Icon.Edit className="h-4 w-4" />,
                 text: 'Edit Policy',
-                className: 'flex py-2 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                className: 'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
                 onClick: () => {
                     const { selectedPolicy } = this.state;
                     this.editPolicy(selectedPolicy);
@@ -219,7 +219,7 @@ class PoliciesPage extends Component {
             },
             {
                 renderIcon: () => <Icon.X className="h-4 w-4" />,
-                className: 'flex py-2 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
+                className: 'flex py-1 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
                 onClick: this.unselectPolicy
             }
         ];
@@ -240,7 +240,7 @@ class PoliciesPage extends Component {
             {
                 renderIcon: () => <Icon.X className="h-4 w-4" />,
                 text: 'Cancel',
-                className: 'flex py-2 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
+                className: 'flex py-1 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
                 onClick: () => {
                     const newPolicy = this.state.addingPolicy;
                     if (newPolicy) return this.cancelAddingPolicy();
@@ -250,7 +250,7 @@ class PoliciesPage extends Component {
             {
                 renderIcon: () => <Icon.Save className="h-4 w-4" />,
                 text: 'Save Policy',
-                className: 'flex py-2 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                className: 'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
                 onClick: () => {
                     this.policyCreationForm.submitForm();
                 }

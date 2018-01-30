@@ -114,6 +114,14 @@ class BenchmarksPage extends Component {
                     lastScanned
                 });
             }
+        }).catch((error) => {
+            if (error.response && error.response.status === 404) {
+                // ignore 404 since it's ok for benchmark schedule to not exist
+                return null;
+            }
+            return Promise.reject(error);
+        }).catch((error) => {
+            console.error(error);
         });
     }
 
@@ -122,6 +130,12 @@ class BenchmarksPage extends Component {
             const schedule = response.data;
             schedule.active = true;
             this.update('UPDATE_SCHEDULE', { schedule });
+        }).catch((error) => {
+            if (error.response && error.response.status === 404) {
+                // ignore 404 since it's ok for benchmark schedule to not exist
+                return null;
+            }
+            return Promise.reject(error);
         }).catch((error) => {
             console.error(error);
         });

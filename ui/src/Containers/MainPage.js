@@ -11,7 +11,7 @@ import * as Icon from 'react-feather';
 import Logo from 'Components/icons/logo';
 import DashboardPage from 'Containers/Dashboard/DashboardPage';
 import IntegrationsPage from 'Containers/Integrations/IntegrationsPage';
-import PolicyViolationsPage from 'Containers/Violations/PolicyViolationsPage';
+import ViolationsPage from 'Containers/Violations/ViolationsPage';
 import PoliciesPage from 'Containers/Policies/PoliciesPage';
 import CompliancePage from 'Containers/Compliance/CompliancePage';
 
@@ -76,7 +76,7 @@ const Main = () => (
                     {/* Redirects to a default path */}
                     <Switch>
                         <Route exact path="/dashboard" component={DashboardPage} />
-                        <Route exact path="/violations" component={PolicyViolationsPage} />
+                        <Route exact path="/violations" component={ViolationsPage} />
                         <Route exact path="/compliance" component={CompliancePage} />
                         <Route exact path="/integrations" component={IntegrationsPage} />
                         <Route exact path="/policies" component={PoliciesPage} />
