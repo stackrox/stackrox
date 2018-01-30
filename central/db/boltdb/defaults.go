@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"github.com/golang/protobuf/jsonpb"
+	"bitbucket.org/stack-rox/apollo/pkg/defaults"
 )
 
 func (b *BoltDB) loadDefaults() error {
@@ -23,7 +23,7 @@ func (b *BoltDB) loadDefaultPolicies() error {
 		return nil
 	}
 
-	policies, err := b.getDefaultPolicies()
+	policies, err := defaults.Policies()
 	if err != nil {
 		return err
 	}
@@ -36,49 +36,6 @@ func (b *BoltDB) loadDefaultPolicies() error {
 
 	log.Infof("Loaded %d default Policies", len(policies))
 	return nil
-}
-
-func (b *BoltDB) getDefaultPolicies() (policies []*v1.Policy, err error) {
-	dir := path.Join(defaultPoliciesPath, "files")
-	files, err := ioutil.ReadDir(dir)
-	if err != nil {
-		log.Errorf("Unable to list files in directory: %s", err)
-		return
-	}
-
-	for _, f := range files {
-		if filepath.Ext(f.Name()) != `.json` {
-			log.Debugf("Ignoring non-json file: %s", f.Name())
-			continue
-		}
-
-		var p *v1.Policy
-		p, err = b.readPolicyFile(path.Join(dir, f.Name()))
-		if err == nil {
-			policies = append(policies, p)
-		} else {
-			return
-		}
-	}
-
-	return
-}
-
-func (b *BoltDB) readPolicyFile(path string) (*v1.Policy, error) {
-	contents, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Errorf("Unable to read file %s: %s", path, err)
-		return nil, err
-	}
-
-	r := new(v1.Policy)
-	err = jsonpb.Unmarshal(bytes.NewReader(contents), r)
-	if err != nil {
-		log.Errorf("Unable to unmarshal policy json: %s", err)
-		return nil, err
-	}
-
-	return r, nil
 }
 
 func (b *BoltDB) loadDefaultBenchmarks() error {

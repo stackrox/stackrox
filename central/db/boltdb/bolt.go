@@ -15,7 +15,6 @@ var (
 
 // var so this can be modified in tests
 var (
-	defaultPoliciesPath   = `/data/policies`
 	defaultBenchmarksPath = `/data/benchmarks`
 )
 

@@ -3,7 +3,6 @@ package policies
 import (
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"bitbucket.org/stack-rox/apollo/pkg/testutils"
 )
@@ -13,10 +12,12 @@ func Directory() string {
 	_, file, _, _ := runtime.Caller(0)
 	dir := filepath.Dir(file)
 	ws := testutils.GetTestWorkspaceDir()
-	// in bazel this path string is already qualified to the workspace, so we don't need to trim the prefix
-	if dir[0] == '/' && strings.HasPrefix(dir, ws) {
-		dir = dir[len(ws)+1:]
+
+	// without bazel, we can use the absolute path directly.
+	if dir[0] == '/' {
+		return dir
 	}
 
+	// in bazel this path string is already qualified to the workspace, so we don't need to trim the prefix
 	return filepath.Join(ws, dir)
 }

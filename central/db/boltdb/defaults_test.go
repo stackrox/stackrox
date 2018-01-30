@@ -7,6 +7,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
 	"bitbucket.org/stack-rox/apollo/image/policies"
+	"bitbucket.org/stack-rox/apollo/pkg/defaults"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,8 +27,8 @@ func TestGetDefaultPolicies(t *testing.T) {
 	defer db.Close()
 	defer os.Remove(db.Path())
 
-	defaultPoliciesPath = policies.Directory()
-	policies, err := db.getDefaultPolicies()
+	defaults.PoliciesPath = policies.Directory()
+	policies, err := defaults.Policies()
 	require.NoError(t, err)
 	require.NotNil(t, policies)
 
