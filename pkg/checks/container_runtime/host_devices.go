@@ -13,7 +13,7 @@ type hostDevicesBenchmark struct{}
 func (c *hostDevicesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.17",
+			Name:        "CIS Docker v1.1.0 - 5.17",
 			Description: "Ensure host devices are not directly exposed to containers",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

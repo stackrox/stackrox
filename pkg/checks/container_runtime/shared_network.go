@@ -10,7 +10,7 @@ type sharedNetworkBenchmark struct{}
 func (c *sharedNetworkBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.9",
+			Name:        "CIS Docker v1.1.0 - 5.9",
 			Description: "Ensure the host's network namespace is not shared",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

@@ -10,7 +10,7 @@ type userNamespaceBenchmark struct{}
 func (c *userNamespaceBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 2.8",
+			Name:        "CIS Docker v1.1.0 - 2.8",
 			Description: "Enable user namespace support",
 		}, Dependencies: []utils.Dependency{utils.InitInfo},
 	}

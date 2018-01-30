@@ -10,7 +10,7 @@ type bridgeNetworkBenchmark struct{}
 func (c *bridgeNetworkBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.29",
+			Name:        "CIS Docker v1.1.0 - 5.29",
 			Description: "Ensure Docker's default bridge docker0 is not used",
 		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
 	}

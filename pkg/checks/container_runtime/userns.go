@@ -10,7 +10,7 @@ type usernsBenchmark struct{}
 func (c *usernsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.30",
+			Name:        "CIS Docker v1.1.0 - 5.30",
 			Description: "Ensure the host's user namespaces is not shared",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

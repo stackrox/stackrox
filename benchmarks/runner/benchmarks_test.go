@@ -16,7 +16,7 @@ func TestRenderChecks(t *testing.T) {
 		hostconfiguration.NewContainerPartitionBenchmark(),
 		hostconfiguration.NewHostHardened(),
 	}
-	assert.NoError(t, os.Setenv(env.Checks.EnvVar(), "CIS 1.1,CIS 1.2"))
+	assert.NoError(t, os.Setenv(env.Checks.EnvVar(), "CIS Docker v1.1.0 - 1.1,CIS Docker v1.1.0 - 1.2"))
 	checks := renderChecks()
 	assert.Equal(t, expectedChecks, checks)
 }

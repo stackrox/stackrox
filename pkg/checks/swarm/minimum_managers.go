@@ -14,7 +14,7 @@ type minimumManagers struct{}
 func (c *minimumManagers) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 7.2",
+			Name:        "CIS Docker v1.1.0 - 7.2",
 			Description: "Ensure the minimum number of manager nodes have been created in a swarm",
 		},
 		Dependencies: []utils.Dependency{utils.InitDockerClient},

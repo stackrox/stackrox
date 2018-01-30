@@ -12,7 +12,7 @@ type privilegedDockerExecBenchmark struct{}
 func (c *privilegedDockerExecBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.22",
+			Name:        "CIS Docker v1.1.0 - 5.22",
 			Description: "Ensure docker exec commands are not used with privileged option",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

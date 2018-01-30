@@ -10,7 +10,7 @@ type appArmorBenchmark struct{}
 func (c *appArmorBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.1",
+			Name:        "CIS Docker v1.1.0 - 5.1",
 			Description: "Ensure AppArmor Profile is Enabled",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

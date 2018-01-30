@@ -10,7 +10,7 @@ type pidCgroupBenchmark struct{}
 func (c *pidCgroupBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.28",
+			Name:        "CIS Docker v1.1.0 - 5.28",
 			Description: "Ensure PIDs cgroup limit is used",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

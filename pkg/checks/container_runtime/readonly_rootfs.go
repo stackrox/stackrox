@@ -10,7 +10,7 @@ type readonlyRootfsBenchmark struct{}
 func (c *readonlyRootfsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.12",
+			Name:        "CIS Docker v1.1.0 - 5.12",
 			Description: "Ensure the container's root filesystem is mounted as read only",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

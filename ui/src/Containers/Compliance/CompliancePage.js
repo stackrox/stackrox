@@ -6,9 +6,9 @@ import BenchmarksPage from 'Containers/Compliance/BenchmarksPage';
 
 const CompliancePage = () => {
     const benchmarks = [
-        { text: 'CIS Benchmark', disabled: false },
-        { text: 'Swarm Benchmark', disabled: false },
-        { text: 'Kubernetes v1.2.0 Benchmark', disabled: false }
+        { text: 'CIS Docker v1.1.0 Benchmark', disabled: false },
+        { text: 'CIS Swarm v1.1.0 Benchmark', disabled: false },
+        { text: 'CIS Kubernetes v1.2.0 Benchmark', disabled: false }
     ];
     return (
         <section className="flex flex-1 h-full">

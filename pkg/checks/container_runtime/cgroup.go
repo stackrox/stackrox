@@ -10,7 +10,7 @@ type cgroupBenchmark struct{}
 func (c *cgroupBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.24",
+			Name:        "CIS Docker v1.1.0 - 5.24",
 			Description: "Ensure cgroup usage is confirmed",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

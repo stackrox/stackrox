@@ -12,7 +12,7 @@ type seccompBenchmark struct{}
 func (c *seccompBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.21",
+			Name:        "CIS Docker v1.1.0 - 5.21",
 			Description: "Ensure the default seccomp profile is not Disabled",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

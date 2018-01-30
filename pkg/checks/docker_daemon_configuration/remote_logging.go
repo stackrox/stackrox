@@ -12,7 +12,7 @@ type remoteLoggingBenchmark struct{}
 func (c *remoteLoggingBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 2.12",
+			Name:        "CIS Docker v1.1.0 - 2.12",
 			Description: "Ensure centralized and remote logging is configured",
 		}, Dependencies: []utils.Dependency{utils.InitInfo},
 	}

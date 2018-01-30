@@ -12,7 +12,7 @@ type dockerSocketMountBenchmark struct{}
 func (c *dockerSocketMountBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.31",
+			Name:        "CIS Docker v1.1.0 - 5.31",
 			Description: "Ensure the Docker socket is not mounted inside any containers",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

@@ -10,7 +10,7 @@ type autoLockRotation struct{}
 func (c *autoLockRotation) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 7.7",
+			Name:        "CIS Docker v1.1.0 - 7.7",
 			Description: "Ensure swarm manager auto-lock key is rotated periodically",
 		},
 		Dependencies: []utils.Dependency{utils.InitInfo},

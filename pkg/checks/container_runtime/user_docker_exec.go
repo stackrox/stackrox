@@ -12,7 +12,7 @@ type userDockerExecBenchmark struct{}
 func (c *userDockerExecBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.23",
+			Name:        "CIS Docker v1.1.0 - 5.23",
 			Description: "Ensure docker exec commands are not used with user option",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

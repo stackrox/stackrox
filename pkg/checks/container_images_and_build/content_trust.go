@@ -14,7 +14,7 @@ type contentTrustBenchmark struct{}
 func (c *contentTrustBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 4.5",
+			Name:        "CIS Docker v1.1.0 - 4.5",
 			Description: "Ensure Content trust for Docker is Enabled",
 		},
 	}

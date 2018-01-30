@@ -1,16 +1,16 @@
 {
-  "name": "Swarm Benchmark",
+  "name": "CIS Swarm v1.1.0 Benchmark",
   "editable": false,
   "checks": [
-    "CIS 7.1",
-    "CIS 7.2",
-    "CIS 7.3",
-    "CIS 7.4",
-    "CIS 7.5",
-    "CIS 7.6",
-    "CIS 7.7",
-    "CIS 7.8",
-    "CIS 7.9",
-    "CIS 7.10"
+    "CIS Docker v1.1.0 - 7.1",
+    "CIS Docker v1.1.0 - 7.2",
+    "CIS Docker v1.1.0 - 7.3",
+    "CIS Docker v1.1.0 - 7.4",
+    "CIS Docker v1.1.0 - 7.5",
+    "CIS Docker v1.1.0 - 7.6",
+    "CIS Docker v1.1.0 - 7.7",
+    "CIS Docker v1.1.0 - 7.8",
+    "CIS Docker v1.1.0 - 7.9",
+    "CIS Docker v1.1.0 - 7.10"
   ]
 }

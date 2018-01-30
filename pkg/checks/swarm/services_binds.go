@@ -10,7 +10,7 @@ type hostInterfaceBind struct{}
 func (c *hostInterfaceBind) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 7.3",
+			Name:        "CIS Docker v1.1.0 - 7.3",
 			Description: "Ensure swarm services are binded to a specific host interface",
 		},
 		Dependencies: []utils.Dependency{utils.InitDockerConfig},

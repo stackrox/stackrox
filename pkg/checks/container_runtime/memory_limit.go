@@ -10,7 +10,7 @@ type memoryBenchmark struct{}
 func (c *memoryBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.10",
+			Name:        "CIS Docker v1.1.0 - 5.10",
 			Description: "Ensure memory usage for container is limited",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

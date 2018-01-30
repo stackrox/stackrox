@@ -10,7 +10,7 @@ type cpuPriorityBenchmark struct{}
 func (c *cpuPriorityBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.11",
+			Name:        "CIS Docker v1.1.0 - 5.11",
 			Description: "Ensure CPU priority is set appropriately on the container",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

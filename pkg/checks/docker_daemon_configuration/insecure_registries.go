@@ -12,7 +12,7 @@ type insecureRegistriesBenchmark struct{}
 func (c *insecureRegistriesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 2.4",
+			Name:        "CIS Docker v1.1.0 - 2.4",
 			Description: "Ensure insecure registries are not used",
 		}, Dependencies: []utils.Dependency{utils.InitInfo},
 	}

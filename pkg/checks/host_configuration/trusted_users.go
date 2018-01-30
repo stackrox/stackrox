@@ -11,7 +11,7 @@ type trustedUsers struct{}
 func (c *trustedUsers) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 1.4",
+			Name:        "CIS Docker v1.1.0 - 1.4",
 			Description: "Ensure the container host has been Hardened",
 		},
 	}

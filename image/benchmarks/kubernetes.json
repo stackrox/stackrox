@@ -1,5 +1,5 @@
 {
-   "name":"Kubernetes v1.2.0 Benchmark",
+   "name":"CIS Kubernetes v1.2.0 Benchmark",
    "editable":false,
    "checks":[
       "CIS Kubernetes v1.2.0 - 1.1.1",

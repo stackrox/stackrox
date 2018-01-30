@@ -12,7 +12,7 @@ type seLinuxBenchmark struct{}
 func (c *seLinuxBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.2",
+			Name:        "CIS Docker v1.1.0 - 5.2",
 			Description: "Ensure SELinux security options are set, if applicable",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig, utils.InitContainers},
 	}

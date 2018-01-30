@@ -10,7 +10,7 @@ type logLevelBenchmark struct{}
 func (c *logLevelBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 2.2",
+			Name:        "CIS Docker v1.1.0 - 2.2",
 			Description: "Ensure the logging level is set to 'info'",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}

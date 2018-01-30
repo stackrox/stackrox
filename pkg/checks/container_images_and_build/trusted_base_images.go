@@ -10,7 +10,7 @@ type trustedBaseImagesBenchmark struct{}
 func (c *trustedBaseImagesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 4.2",
+			Name:        "CIS Docker v1.1.0 - 4.2",
 			Description: "Ensure that containers use trusted base images",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

@@ -10,7 +10,7 @@ type ipcNamespaceBenchmark struct{}
 func (c *ipcNamespaceBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.16",
+			Name:        "CIS Docker v1.1.0 - 5.16",
 			Description: "Ensure the host's IPC namespace is not shared",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

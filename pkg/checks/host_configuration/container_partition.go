@@ -12,7 +12,7 @@ type containerPartitionBenchmark struct{}
 func (c *containerPartitionBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 1.1",
+			Name:        "CIS Docker v1.1.0 - 1.1",
 			Description: "Ensure a separate partition for containers has been created",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}

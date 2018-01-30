@@ -10,7 +10,7 @@ type authorizationPluginBenchmark struct{}
 func (c *authorizationPluginBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 2.11",
+			Name:        "CIS Docker v1.1.0 - 2.11",
 			Description: "Ensure that authorization for Docker client commands is enabled",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}

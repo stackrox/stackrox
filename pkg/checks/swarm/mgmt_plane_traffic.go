@@ -10,7 +10,7 @@ type mgmtPlaneData struct{}
 func (c *mgmtPlaneData) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 7.10",
+			Name:        "CIS Docker v1.1.0 - 7.10",
 			Description: "Ensure management plane traffic has been separated from data plane traffic",
 		},
 	}

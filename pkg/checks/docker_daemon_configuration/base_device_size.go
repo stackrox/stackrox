@@ -10,7 +10,7 @@ type baseDeviceSizeBenchmark struct{}
 func (c *baseDeviceSizeBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 2.10",
+			Name:        "CIS Docker v1.1.0 - 2.10",
 			Description: "Ensure base device size is not changed until needed",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}

@@ -10,7 +10,7 @@ type utsNamespaceBenchmark struct{}
 func (c *utsNamespaceBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.20",
+			Name:        "CIS Docker v1.1.0 - 5.20",
 			Description: "Ensure the host's UTS namespace is not shared",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

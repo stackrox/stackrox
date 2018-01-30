@@ -10,7 +10,7 @@ type imageHealthcheckBenchmark struct{}
 func (c *imageHealthcheckBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 4.6",
+			Name:        "CIS Docker v1.1.0 - 4.6",
 			Description: "Ensure HEALTHCHECK instructions have been added to the container image",
 		}, Dependencies: []utils.Dependency{utils.InitImages},
 	}

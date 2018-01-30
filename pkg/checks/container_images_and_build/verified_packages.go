@@ -10,7 +10,7 @@ type verifiedPackagesBenchmark struct{}
 func (c *verifiedPackagesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 4.11",
+			Name:        "CIS Docker v1.1.0 - 4.11",
 			Description: "Ensure verified packages are only Installed",
 		}, Dependencies: []utils.Dependency{utils.InitImages},
 	}

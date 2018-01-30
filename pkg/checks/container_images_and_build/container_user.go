@@ -10,7 +10,7 @@ type containerUserBenchmark struct{}
 func (c *containerUserBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 4.1",
+			Name:        "CIS Docker v1.1.0 - 4.1",
 			Description: "Ensure a user for the container has been created",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

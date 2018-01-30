@@ -12,7 +12,7 @@ type capabilitiesBenchmark struct{}
 func (c *capabilitiesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.3",
+			Name:        "CIS Docker v1.1.0 - 5.3",
 			Description: "Ensure Linux Kernel Capabilities are restricted within containers",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

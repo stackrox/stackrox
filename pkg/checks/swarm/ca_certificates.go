@@ -13,7 +13,7 @@ type caCertificates struct{}
 func (c *caCertificates) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 7.9",
+			Name:        "CIS Docker v1.1.0 - 7.9",
 			Description: "Ensure CA certificates are rotated as appropriate",
 		},
 	}

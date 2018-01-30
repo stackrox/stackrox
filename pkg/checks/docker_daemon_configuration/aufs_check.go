@@ -12,7 +12,7 @@ type aufsBenchmark struct{}
 func (c *aufsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 2.5",
+			Name:        "CIS Docker v1.1.0 - 2.5",
 			Description: "Ensure aufs storage driver is not used",
 		}, Dependencies: []utils.Dependency{utils.InitInfo},
 	}

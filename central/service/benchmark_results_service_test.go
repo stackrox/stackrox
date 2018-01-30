@@ -26,7 +26,7 @@ func TestGroupPayloadsByScanID(t *testing.T) {
 						"/var/lib/docker does not have its own partition",
 					},
 					Definition: &v1.CheckDefinition{
-						Name:        "CIS 1.1",
+						Name:        "CIS Docker v1.1.0 - 1.1",
 						Description: "Ensure a separate partition for containers has been created",
 					},
 				},
@@ -42,7 +42,7 @@ func TestGroupPayloadsByScanID(t *testing.T) {
 				{
 					Result: v1.CheckStatus_PASS,
 					Definition: &v1.CheckDefinition{
-						Name:        "CIS 1.1",
+						Name:        "CIS Docker v1.1.0 - 1.1",
 						Description: "Ensure a separate partition for containers has been created",
 					},
 				},
@@ -61,7 +61,7 @@ func TestGroupPayloadsByScanID(t *testing.T) {
 					},
 					Result: v1.CheckStatus_INFO,
 					Definition: &v1.CheckDefinition{
-						Name:        "CIS 1.1",
+						Name:        "CIS Docker v1.1.0 - 1.1",
 						Description: "Ensure a separate partition for containers has been created",
 					},
 				},
@@ -79,7 +79,7 @@ func TestGroupPayloadsByScanID(t *testing.T) {
 				CheckResults: []*v1.BenchmarkResultsGrouped_ScopedCheckResult{
 					{
 						Definition: &v1.CheckDefinition{
-							Name:        "CIS 1.1",
+							Name:        "CIS Docker v1.1.0 - 1.1",
 							Description: "Ensure a separate partition for containers has been created",
 						},
 						AggregatedResults: map[string]int32{
@@ -103,7 +103,7 @@ func TestGroupPayloadsByScanID(t *testing.T) {
 				CheckResults: []*v1.BenchmarkResultsGrouped_ScopedCheckResult{
 					{
 						Definition: &v1.CheckDefinition{
-							Name:        "CIS 1.1",
+							Name:        "CIS Docker v1.1.0 - 1.1",
 							Description: "Ensure a separate partition for containers has been created",
 						},
 						AggregatedResults: map[string]int32{

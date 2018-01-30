@@ -13,7 +13,7 @@ type networkRestrictionBenchmark struct{}
 func (c *networkRestrictionBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 2.1",
+			Name:        "CIS Docker v1.1.0 - 2.1",
 			Description: "Ensure network traffic is restricted between containers on the default bridge",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig, utils.InitDockerClient},
 	}

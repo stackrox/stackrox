@@ -10,7 +10,7 @@ type restartPolicyBenchmark struct{}
 func (c *restartPolicyBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.14",
+			Name:        "CIS Docker v1.1.0 - 5.14",
 			Description: "Ensure 'on-failure' container restart policy is set to '5'",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

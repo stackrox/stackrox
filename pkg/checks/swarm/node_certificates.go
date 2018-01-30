@@ -10,7 +10,7 @@ type nodeCertificates struct{}
 func (c *nodeCertificates) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 7.8",
+			Name:        "CIS Docker v1.1.0 - 7.8",
 			Description: "Ensure node certificates are rotated as appropriate",
 		},
 		Dependencies: []utils.Dependency{utils.InitInfo},

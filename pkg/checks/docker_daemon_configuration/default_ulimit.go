@@ -10,7 +10,7 @@ type defaultUlimitBenchmark struct{}
 func (c *defaultUlimitBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 2.7",
+			Name:        "CIS Docker v1.1.0 - 2.7",
 			Description: "Ensure the default ulimit is configured appropriately",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}

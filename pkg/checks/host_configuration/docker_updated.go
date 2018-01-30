@@ -11,7 +11,7 @@ type dockerUpdated struct{}
 func (c *dockerUpdated) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 1.3",
+			Name:        "CIS Docker v1.1.0 - 1.3",
 			Description: "Ensure Docker is up to date",
 		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
 	}

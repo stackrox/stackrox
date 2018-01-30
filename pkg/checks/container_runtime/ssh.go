@@ -10,7 +10,7 @@ type sshBenchmark struct{}
 func (c *sshBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.6",
+			Name:        "CIS Docker v1.1.0 - 5.6",
 			Description: "Ensure ssh is not run within containers",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

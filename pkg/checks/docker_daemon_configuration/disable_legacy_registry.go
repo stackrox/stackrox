@@ -10,7 +10,7 @@ type disableLegacyRegistryBenchmark struct{}
 func (c *disableLegacyRegistryBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 2.13",
+			Name:        "CIS Docker v1.1.0 - 2.13",
 			Description: "Ensure operations on legacy registry (v1) are Disabled",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}

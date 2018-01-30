@@ -12,7 +12,7 @@ type secretManagement struct{}
 func (c *secretManagement) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 7.5",
+			Name:        "CIS Docker v1.1.0 - 7.5",
 			Description: "Ensure Docker's secret management commands are used for managing secrets in a Swarm cluster",
 		},
 		Dependencies: []utils.Dependency{utils.InitInfo},

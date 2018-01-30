@@ -10,7 +10,7 @@ type tlsVerifyBenchmark struct{}
 func (c *tlsVerifyBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 2.6",
+			Name:        "CIS Docker v1.1.0 - 2.6",
 			Description: "Ensure TLS authentication for Docker daemon is configured",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}

@@ -10,7 +10,7 @@ type containerSprawlBenchmark struct{}
 func (c *containerSprawlBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 6.2",
+			Name:        "CIS Docker v1.1.0 - 6.2",
 			Description: "Ensure container sprawl is avoided",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

@@ -10,7 +10,7 @@ type restrictContainerPrivilegesBenchmark struct{}
 func (c *restrictContainerPrivilegesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 2.18",
+			Name:        "CIS Docker v1.1.0 - 2.18",
 			Description: "Ensure containers are restricted from acquiring new privileges",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}

@@ -40,12 +40,12 @@ func (suite *BoltBenchmarkTestSuite) TestBenchmarks() {
 		{
 			Name:     "bench1",
 			Editable: true,
-			Checks:   []string{"CIS 1", "CIS 2"},
+			Checks:   []string{"CIS Docker v1.1.0 - 1", "CIS Docker v1.1.0 - 2"},
 		},
 		{
 			Name:     "bench2",
 			Editable: true,
-			Checks:   []string{"CIS 3", "CIS 4"},
+			Checks:   []string{"CIS Docker v1.1.0 - 3", "CIS Docker v1.1.0 - 4"},
 		},
 	}
 

@@ -12,7 +12,7 @@ type latestImageBenchmark struct{}
 func (c *latestImageBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.27",
+			Name:        "CIS Docker v1.1.0 - 5.27",
 			Description: "Ensure docker commands always get the latest version of the image",
 		}, Dependencies: []utils.Dependency{utils.InitImages},
 	}

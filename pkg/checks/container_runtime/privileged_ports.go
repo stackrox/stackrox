@@ -12,7 +12,7 @@ type privilegedPortsBenchmark struct{}
 func (c *privilegedPortsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.7",
+			Name:        "CIS Docker v1.1.0 - 5.7",
 			Description: "Ensure privileged ports are not mapped within containers",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

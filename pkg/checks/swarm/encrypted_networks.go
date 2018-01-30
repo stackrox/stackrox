@@ -13,7 +13,7 @@ type encryptedNetworks struct{}
 func (c *encryptedNetworks) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 7.4",
+			Name:        "CIS Docker v1.1.0 - 7.4",
 			Description: "Ensure data exchanged between containers are encrypted on different nodes on the overlay network",
 		},
 		Dependencies: []utils.Dependency{utils.InitInfo},

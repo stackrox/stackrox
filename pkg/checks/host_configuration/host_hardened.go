@@ -10,7 +10,7 @@ type hostHardened struct{}
 func (c *hostHardened) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 1.2",
+			Name:        "CIS Docker v1.1.0 - 1.2",
 			Description: "Ensure the container host has been Hardened",
 		},
 	}

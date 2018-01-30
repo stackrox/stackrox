@@ -10,7 +10,7 @@ type necessaryPortsBenchmark struct{}
 func (c *necessaryPortsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.8",
+			Name:        "CIS Docker v1.1.0 - 5.8",
 			Description: "Ensure only needed ports are open on the container",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

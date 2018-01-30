@@ -10,7 +10,7 @@ type runtimeHealthcheckBenchmark struct{}
 func (c *runtimeHealthcheckBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.26",
+			Name:        "CIS Docker v1.1.0 - 5.26",
 			Description: "Ensure container health is checked at runtime",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

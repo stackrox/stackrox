@@ -10,7 +10,7 @@ type autoLock struct{}
 func (c *autoLock) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 7.6",
+			Name:        "CIS Docker v1.1.0 - 7.6",
 			Description: "Ensure swarm manager is run in auto-lock mode",
 		},
 		Dependencies: []utils.Dependency{utils.InitInfo},

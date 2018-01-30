@@ -10,7 +10,7 @@ type ipTablesEnabledBenchmark struct{}
 func (c *ipTablesEnabledBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 2.3",
+			Name:        "CIS Docker v1.1.0 - 2.3",
 			Description: "Ensure Docker is allowed to make changes to iptables",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}

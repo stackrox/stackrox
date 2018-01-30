@@ -10,7 +10,7 @@ type disableExperimentalBenchmark struct{}
 func (c *disableExperimentalBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 2.17",
+			Name:        "CIS Docker v1.1.0 - 2.17",
 			Description: "Ensure experimental features are avoided in production",
 		}, Dependencies: []utils.Dependency{utils.InitInfo},
 	}

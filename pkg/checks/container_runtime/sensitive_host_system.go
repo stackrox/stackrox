@@ -10,7 +10,7 @@ type sensitiveHostMountsBenchmark struct{}
 func (c *sensitiveHostMountsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 5.5",
+			Name:        "CIS Docker v1.1.0 - 5.5",
 			Description: "Ensure sensitive host system directories are not mounted on containers",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}

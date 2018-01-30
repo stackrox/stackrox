@@ -11,7 +11,7 @@ type swarmEnabled struct{}
 func (c *swarmEnabled) Definition() utils.Definition {
 	return utils.Definition{
 		CheckDefinition: v1.CheckDefinition{
-			Name:        "CIS 7.1",
+			Name:        "CIS Docker v1.1.0 - 7.1",
 			Description: "Do not enable swarm mode on a docker engine instance unless needed",
 		},
 		Dependencies: []utils.Dependency{utils.InitInfo},
