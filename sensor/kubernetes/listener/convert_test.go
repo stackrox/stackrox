@@ -23,6 +23,7 @@ func TestConvert(t *testing.T) {
 		action                  pkgV1.ResourceAction
 		metaFieldIndex          []int
 		resourceType            string
+		podLister               *mockPodLister
 		expectedDeploymentEvent *pkgV1.DeploymentEvent
 	}{
 		{
@@ -57,6 +58,9 @@ func TestConvert(t *testing.T) {
 					CreationTimestamp: metav1.NewTime(time.Unix(1000, 0)),
 				},
 				Spec: v1beta1.DeploymentSpec{
+					Selector: &metav1.LabelSelector{
+						MatchLabels: make(map[string]string),
+					},
 					Replicas: &[]int32{15}[0],
 					Template: v1.PodTemplateSpec{
 						Spec: v1.PodSpec{
@@ -152,11 +156,25 @@ func TestConvert(t *testing.T) {
 					},
 				},
 			},
-			action:         pkgV1.ResourceAction_CREATE_RESOURCE,
+			action:         pkgV1.ResourceAction_PREEXISTING_RESOURCE,
 			metaFieldIndex: []int{1},
 			resourceType:   kubernetes.Deployment,
+			podLister: &mockPodLister{
+				pods: []v1.Pod{
+					{
+						Status: v1.PodStatus{
+							ContainerStatuses: []v1.ContainerStatus{
+								{
+									Image:   "docker.io/stackrox/policy-engine:1.3",
+									ImageID: "docker-pullable://docker.io/stackrox/policy-engine@sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
+								},
+							},
+						},
+					},
+				},
+			},
 			expectedDeploymentEvent: &pkgV1.DeploymentEvent{
-				Action: pkgV1.ResourceAction_CREATE_RESOURCE,
+				Action: pkgV1.ResourceAction_PREEXISTING_RESOURCE,
 				Deployment: &pkgV1.Deployment{
 					Id:        "FooID",
 					Name:      "Foo",
@@ -234,6 +252,7 @@ func TestConvert(t *testing.T) {
 								Registry: "docker.io",
 								Remote:   "stackrox/policy-engine",
 								Tag:      "1.3",
+								Sha:      "6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 							},
 							SecurityContext: &pkgV1.SecurityContext{
 								Privileged:      true,
@@ -256,9 +275,17 @@ func TestConvert(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual := newDeploymentEventFromResource(c.inputObj, c.action, c.metaFieldIndex, c.resourceType)
+			actual := newDeploymentEventFromResource(c.inputObj, c.action, c.metaFieldIndex, c.resourceType, c.podLister)
 
 			assert.Equal(t, c.expectedDeploymentEvent, actual)
 		})
 	}
+}
+
+type mockPodLister struct {
+	pods []v1.Pod
+}
+
+func (l *mockPodLister) list(map[string]string) []v1.Pod {
+	return l.pods
 }

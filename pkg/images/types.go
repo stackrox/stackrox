@@ -36,6 +36,15 @@ func GenerateImageFromString(imageStr string) *v1.Image {
 	return &image
 }
 
+// ExtractImageSha returns the image sha if it exists within the string.
+func ExtractImageSha(imageStr string) string {
+	if idx := strings.Index(imageStr, "@sha256:"); idx != -1 {
+		return imageStr[idx+len("@sha256:"):]
+	}
+
+	return ""
+}
+
 // FromContainers provides helper functions for getting a slice of images from containers.
 type FromContainers []*v1.Container
 

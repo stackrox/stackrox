@@ -25,7 +25,9 @@ var (
 type kubernetesListener struct {
 	client *kubernetes.Clientset
 
-	eventsC     chan *listeners.DeploymentEventWrap
+	eventsC chan *listeners.DeploymentEventWrap
+
+	podWL       *podWatchLister
 	resourcesWL []resourceWatchLister
 }
 
@@ -44,18 +46,23 @@ func (k *kubernetesListener) initialize() {
 }
 
 func (k *kubernetesListener) Start() {
+	go k.podWL.watch()
+	k.podWL.blockUntilSynced()
+
 	for _, wl := range k.resourcesWL {
 		go wl.watch()
 	}
 }
 
 func (k *kubernetesListener) createResourceWatchers() {
+	k.podWL = newPodWatchLister(k.client.CoreV1().RESTClient())
+
 	k.resourcesWL = []resourceWatchLister{
-		newReplicaSetWatchLister(k.client.ExtensionsV1beta1().RESTClient(), k.eventsC),
-		newDaemonSetWatchLister(k.client.ExtensionsV1beta1().RESTClient(), k.eventsC),
-		newReplicationControllerWatchLister(k.client.CoreV1().RESTClient(), k.eventsC),
-		newDeploymentWatcher(k.client.ExtensionsV1beta1().RESTClient(), k.eventsC),
-		newStatefulSetWatchLister(k.client.AppsV1beta1().RESTClient(), k.eventsC),
+		newReplicaSetWatchLister(k.client.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL),
+		newDaemonSetWatchLister(k.client.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL),
+		newReplicationControllerWatchLister(k.client.CoreV1().RESTClient(), k.eventsC, k.podWL),
+		newDeploymentWatcher(k.client.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL),
+		newStatefulSetWatchLister(k.client.AppsV1beta1().RESTClient(), k.eventsC, k.podWL),
 	}
 }
 
@@ -78,6 +85,8 @@ func getClient() (client *kubernetes.Clientset, err error) {
 }
 
 func (k *kubernetesListener) Stop() {
+	k.podWL.stop()
+
 	for _, wl := range k.resourcesWL {
 		wl.stop()
 	}
@@ -91,7 +100,7 @@ type watchLister struct {
 	client     rest.Interface
 	store      cache.Store
 	controller cache.Controller
-	stopC      chan (struct{})
+	stopC      chan struct{}
 }
 
 func newWatchLister(client rest.Interface) watchLister {

@@ -31,15 +31,16 @@ type reflectionWatchLister struct {
 	objectType             runtime.Object
 	metaFieldIndex         []int
 	initialObjectsConsumed bool
+	podLister              podLister
 
 	eventC chan<- *listeners.DeploymentEventWrap
 }
 
-func newReflectionWatcherFromClient(client rest.Interface, resourceType string, objectType runtime.Object, eventC chan<- *listeners.DeploymentEventWrap) *reflectionWatchLister {
-	return newReflectionWatcher(newWatchLister(client), resourceType, objectType, eventC)
+func newReflectionWatcherFromClient(client rest.Interface, resourceType string, objectType runtime.Object, eventC chan<- *listeners.DeploymentEventWrap, lister podLister) *reflectionWatchLister {
+	return newReflectionWatcher(newWatchLister(client), resourceType, objectType, eventC, lister)
 }
 
-func newReflectionWatcher(watchLister watchLister, resourceType string, objectType runtime.Object, eventC chan<- *listeners.DeploymentEventWrap) *reflectionWatchLister {
+func newReflectionWatcher(watchLister watchLister, resourceType string, objectType runtime.Object, eventC chan<- *listeners.DeploymentEventWrap, lister podLister) *reflectionWatchLister {
 	ty := reflect.Indirect(reflect.ValueOf(objectType)).Type()
 	metaField, ok := ty.FieldByName("ObjectMeta")
 	if !ok || metaField.Type != reflect.TypeOf(metav1.ObjectMeta{}) {
@@ -51,6 +52,7 @@ func newReflectionWatcher(watchLister watchLister, resourceType string, objectTy
 		rt:             resourceType,
 		objectType:     objectType,
 		metaFieldIndex: metaField.Index,
+		podLister:      lister,
 		eventC:         eventC,
 	}
 }
@@ -74,7 +76,7 @@ func (wl *reflectionWatchLister) resourceChanged(obj interface{}, action pkgV1.R
 		action = pkgV1.ResourceAction_CREATE_RESOURCE
 	}
 
-	if d := newDeploymentEventFromResource(obj, action, wl.metaFieldIndex, wl.resourceType()); d != nil {
+	if d := newDeploymentEventFromResource(obj, action, wl.metaFieldIndex, wl.resourceType(), wl.podLister); d != nil {
 		wl.eventC <- &listeners.DeploymentEventWrap{
 			DeploymentEvent: d,
 			OriginalSpec:    obj,
@@ -111,22 +113,22 @@ func (wl *reflectionWatchLister) listObjects() (objects []metav1.ObjectMeta) {
 
 // Factory methods for the types of resources we support.
 
-func newReplicaSetWatchLister(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap) resourceWatchLister {
-	return newReflectionWatcherFromClient(client, kubernetes.ReplicaSet, &v1beta1.ReplicaSet{}, eventsC)
+func newReplicaSetWatchLister(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap, lister podLister) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, kubernetes.ReplicaSet, &v1beta1.ReplicaSet{}, eventsC, lister)
 }
 
-func newDaemonSetWatchLister(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap) resourceWatchLister {
-	return newReflectionWatcherFromClient(client, kubernetes.DaemonSet, &v1beta1.DaemonSet{}, eventsC)
+func newDaemonSetWatchLister(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap, lister podLister) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, kubernetes.DaemonSet, &v1beta1.DaemonSet{}, eventsC, lister)
 }
 
-func newReplicationControllerWatchLister(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap) resourceWatchLister {
-	return newReflectionWatcherFromClient(client, kubernetes.ReplicationController, &v1.ReplicationController{}, eventsC)
+func newReplicationControllerWatchLister(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap, lister podLister) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, kubernetes.ReplicationController, &v1.ReplicationController{}, eventsC, lister)
 }
 
-func newDeploymentWatcher(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap) resourceWatchLister {
-	return newReflectionWatcherFromClient(client, kubernetes.Deployment, &v1beta1.Deployment{}, eventsC)
+func newDeploymentWatcher(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap, lister podLister) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, kubernetes.Deployment, &v1beta1.Deployment{}, eventsC, lister)
 }
 
-func newStatefulSetWatchLister(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap) resourceWatchLister {
-	return newReflectionWatcherFromClient(client, kubernetes.StatefulSet, &appsv1beta1.StatefulSet{}, eventsC)
+func newStatefulSetWatchLister(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap, lister podLister) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, kubernetes.StatefulSet, &appsv1beta1.StatefulSet{}, eventsC, lister)
 }

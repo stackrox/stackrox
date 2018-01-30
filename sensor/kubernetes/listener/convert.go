@@ -17,7 +17,7 @@ type wrap struct {
 	*pkgV1.DeploymentEvent
 }
 
-func newDeploymentEventFromResource(obj interface{}, action pkgV1.ResourceAction, metaFieldIndex []int, resourceType string) (event *pkgV1.DeploymentEvent) {
+func newDeploymentEventFromResource(obj interface{}, action pkgV1.ResourceAction, metaFieldIndex []int, resourceType string, lister podLister) (event *pkgV1.DeploymentEvent) {
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	meta, ok := objValue.FieldByIndex(metaFieldIndex).Interface().(metav1.ObjectMeta)
 	if !ok {
@@ -30,11 +30,11 @@ func newDeploymentEventFromResource(obj interface{}, action pkgV1.ResourceAction
 		return
 	}
 
-	r := newWrap(meta, action, resourceType)
+	wrap := newWrap(meta, action, resourceType)
 
-	r.populateFields(objValue)
+	wrap.populateFields(objValue, action, lister)
 
-	return r.DeploymentEvent
+	return wrap.DeploymentEvent
 }
 
 func newWrap(meta metav1.ObjectMeta, action pkgV1.ResourceAction, resourceType string) wrap {
@@ -60,7 +60,7 @@ func newWrap(meta metav1.ObjectMeta, action pkgV1.ResourceAction, resourceType s
 	}
 }
 
-func (w *wrap) populateFields(objValue reflect.Value) {
+func (w *wrap) populateFields(objValue reflect.Value, action pkgV1.ResourceAction, lister podLister) {
 	spec := objValue.FieldByName("Spec")
 	if reflect.DeepEqual(spec, reflect.Value{}) {
 		logger.Errorf("Obj %+v does not have a Spec field", objValue)
@@ -76,6 +76,10 @@ func (w *wrap) populateFields(objValue reflect.Value) {
 	}
 
 	w.populateContainers(podTemplate.Spec)
+
+	if action == pkgV1.ResourceAction_PREEXISTING_RESOURCE || action == pkgV1.ResourceAction_UPDATE_RESOURCE {
+		w.populateImageShas(spec, lister)
+	}
 }
 
 func (w *wrap) populateContainers(podSpec v1.PodSpec) {
@@ -106,6 +110,44 @@ func (w *wrap) populateReplicas(spec reflect.Value) {
 	if ok {
 		w.Deployment.Replicas = int64(replicas)
 	}
+}
+
+func (w *wrap) populateImageShas(spec reflect.Value, lister podLister) {
+	labelSelector := w.getLabelSelector(spec)
+	pods := lister.list(labelSelector)
+	imageMap := make(map[pkgV1.Image]string)
+
+	for _, p := range pods {
+		for _, c := range p.Status.ContainerStatuses {
+			img := images.GenerateImageFromString(c.Image)
+			if sha := images.ExtractImageSha(c.ImageID); sha != "" {
+				imageMap[*img] = sha
+			}
+		}
+	}
+
+	for _, c := range w.Deployment.Containers {
+		if sha, ok := imageMap[*c.Image]; ok {
+			c.Image.Sha = sha
+		}
+	}
+}
+
+func (w *wrap) getLabelSelector(spec reflect.Value) map[string]string {
+	s := spec.FieldByName("Selector")
+
+	// Selector is of map type for replication controller
+	if labels, ok := s.Interface().(map[string]string); ok {
+		return labels
+	}
+
+	// All other resources uses labelSelector.
+	if ls, ok := s.Interface().(*metav1.LabelSelector); ok {
+		return ls.MatchLabels
+	}
+
+	logger.Warn("unable to get label selector for %+v", spec.Type())
+	return make(map[string]string)
 }
 
 func (w *wrap) populateContainerConfigs(podSpec v1.PodSpec) {
