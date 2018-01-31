@@ -1,6 +1,7 @@
 {
   "name": "CIS Swarm v1.1.0 Benchmark",
   "editable": false,
+  "clusterTypes": ["SWARM_CLUSTER", "DOCKER_EE_CLUSTER"],
   "checks": [
     "CIS Docker v1.1.0 - 7.1",
     "CIS Docker v1.1.0 - 7.2",

@@ -10,11 +10,11 @@ import "api/v1/common.proto";
 package v1;
 
 enum ClusterType {
-    GENERIC_CLUSTER = 0;
+    GENERIC_CLUSTER    = 0;
     KUBERNETES_CLUSTER = 1;
-    OPENSHIFT_CLUSTER = 2;
-    SWARM_CLUSTER = 3;
-    DOCKER_EE_CLUSTER = 4;
+    OPENSHIFT_CLUSTER  = 2;
+    SWARM_CLUSTER      = 3;
+    DOCKER_EE_CLUSTER  = 4;
 }
 
 message Cluster {

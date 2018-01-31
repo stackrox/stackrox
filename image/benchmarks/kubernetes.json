@@ -1,6 +1,7 @@
 {
    "name":"CIS Kubernetes v1.2.0 Benchmark",
    "editable":false,
+   "clusterTypes": ["KUBERNETES_CLUSTER"],
    "checks":[
       "CIS Kubernetes v1.2.0 - 1.1.1",
       "CIS Kubernetes v1.2.0 - 1.1.2",

@@ -4,6 +4,7 @@ option go_package = "v1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "api/v1/cluster_service.proto";
 
 package v1;
 
@@ -17,9 +18,10 @@ message GetChecksResponse {
 }
 
 message Benchmark {
-    string name            = 1;
-    bool editable          = 2;
-    repeated string checks = 3;
+    string name                             = 1;
+    bool editable                           = 2;
+    repeated string checks                  = 3;
+    repeated ClusterType cluster_types      = 4;
 }
 
 message GetBenchmarkRequest {

@@ -2,13 +2,13 @@ package boltdb
 
 import (
 	"bytes"
-	"encoding/json"
 	"io/ioutil"
 	"path"
 	"path/filepath"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/defaults"
+	"github.com/golang/protobuf/jsonpb"
 )
 
 func (b *BoltDB) loadDefaults() error {
@@ -91,7 +91,7 @@ func (b *BoltDB) readBenchmarkFile(path string) (*v1.Benchmark, error) {
 	}
 
 	r := new(v1.Benchmark)
-	err = json.NewDecoder(bytes.NewReader(contents)).Decode(r)
+	err = jsonpb.Unmarshal(bytes.NewReader(contents), r)
 	if err != nil {
 		log.Errorf("Unable to unmarshal benchmark json: %s", err)
 		return nil, err
