@@ -23,7 +23,7 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
 
 [[constraint]]
   name = "github.com/golang/protobuf"
-  revision = "130e6b02ab059e7b717a096f397c5b60111cae74"
+  version = "1.0.0"
 
 [[constraint]]
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
