@@ -43,7 +43,7 @@ func (sa serviceAccount) Setting() string {
 type imagePullSecrets struct{}
 
 func (imagePullSecrets) EnvVar() string {
-	return `ROX_MITIGATE_IMAGEPULL_SECRETS`
+	return `ROX_MITIGATE_IMAGE_PULL_CONFIG`
 }
 
 // Values interpreted as comma separated list of secret names.
