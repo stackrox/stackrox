@@ -91,6 +91,7 @@ func (c *central) startGRPCServer() {
 	c.server = pkgGRPC.NewAPI(config)
 	c.server.Register(service.NewAlertService(c.database))
 	c.server.Register(service.NewBenchmarkService(c.database))
+	c.server.Register(service.NewBenchmarkScansService(c.database))
 	c.server.Register(service.NewBenchmarkScheduleService(c.database))
 	c.server.Register(service.NewBenchmarkResultsService(c.database, c.notificationProcessor))
 	c.server.Register(service.NewBenchmarkTriggerService(c.database))

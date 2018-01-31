@@ -11,7 +11,7 @@ type Storage interface {
 	Close()
 
 	AlertStorage
-	BenchmarkResultsStorage
+	BenchmarkScansStorage
 	BenchmarkScheduleStorage
 	BenchmarkStorage
 	BenchmarkTriggerStorage
@@ -52,10 +52,11 @@ type BenchmarkScheduleStorage interface {
 	RemoveBenchmarkSchedule(name string) error
 }
 
-// BenchmarkResultsStorage provides storage functionality for benchmarks results.
-type BenchmarkResultsStorage interface {
-	GetBenchmarkResult(id string) (*v1.BenchmarkResult, bool, error)
-	GetBenchmarkResults(request *v1.GetBenchmarkResultsRequest) ([]*v1.BenchmarkResult, error)
+// BenchmarkScansStorage provides storage functionality for benchmarks scans.
+type BenchmarkScansStorage interface {
+	AddScan(request *v1.BenchmarkScanMetadata) error
+	ListBenchmarkScans(*v1.ListBenchmarkScansRequest) ([]*v1.BenchmarkScanMetadata, error)
+	GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (*v1.BenchmarkScan, bool, error)
 	AddBenchmarkResult(benchmark *v1.BenchmarkResult) error
 }
 

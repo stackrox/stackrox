@@ -10,30 +10,30 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// NewBenchmarkRelayService returns the BenchmarkRelayService API.
-func NewBenchmarkRelayService(relayer Relayer) *BenchmarkRelayService {
-	return &BenchmarkRelayService{
+// NewBenchmarkResultsService returns the BenchmarkResultsService API.
+func NewBenchmarkResultsService(relayer Relayer) *BenchmarkResultsService {
+	return &BenchmarkResultsService{
 		relayer: relayer,
 	}
 }
 
-// BenchmarkRelayService is the struct that manages the benchmark API
-type BenchmarkRelayService struct {
+// BenchmarkResultsService is the struct that manages the benchmark results API
+type BenchmarkResultsService struct {
 	relayer Relayer
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
-func (s *BenchmarkRelayService) RegisterServiceServer(grpcServer *grpc.Server) {
-	v1.RegisterBenchmarkRelayServiceServer(grpcServer, s)
+func (s *BenchmarkResultsService) RegisterServiceServer(grpcServer *grpc.Server) {
+	v1.RegisterBenchmarkResultsServiceServer(grpcServer, s)
 }
 
-// RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
-func (s *BenchmarkRelayService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-	return v1.RegisterBenchmarkRelayServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+// RegisterServiceHandlerFromEndpoint implements the APIService interface, but the agent does not accept calls over the gRPC gateway
+func (s *BenchmarkResultsService) RegisterServiceHandlerFromEndpoint(context.Context, *runtime.ServeMux, string, []grpc.DialOption) error {
+	return nil
 }
 
 // PostBenchmarkResult inserts a new benchmark result into the system
-func (s *BenchmarkRelayService) PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkResult) (*empty.Empty, error) {
+func (s *BenchmarkResultsService) PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkResult) (*empty.Empty, error) {
 	if request == nil {
 		return &empty.Empty{}, status.Errorf(codes.InvalidArgument, "Request object must be non-nil")
 	}

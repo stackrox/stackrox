@@ -57,6 +57,7 @@ vet:
 #####################################
 API_SERVICES  = alert_service
 API_SERVICES += benchmark_results_service
+API_SERVICES += benchmark_scan_service
 API_SERVICES += benchmark_schedule_service
 API_SERVICES += benchmark_service
 API_SERVICES += benchmark_trigger_service

@@ -13,6 +13,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
+	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/deckarep/golang-set"
 	"github.com/golang/protobuf/ptypes"
 )
@@ -29,13 +30,11 @@ const (
 	triggerTimespan = 5 * time.Minute
 )
 
-var replaceRegex = regexp.MustCompile(`(\.|\s)`)
+var (
+	replaceRegex = regexp.MustCompile(`(\.|\s)`)
 
-type benchmarkRun struct {
-	reason        v1.BenchmarkReason
-	benchmarkName string
-	scanID        string
-}
+	staticIDNamespace = uuid.FromStringOrPanic("0a41c738-16d8-4e82-8e1b-921e5bb3d1c5")
+)
 
 type scheduleMetadata struct {
 	*v1.BenchmarkSchedule
@@ -59,7 +58,8 @@ type SchedulerClient struct {
 	schedules map[string]*scheduleMetadata
 	triggers  map[string]*v1.BenchmarkTrigger
 
-	benchmarkChan chan benchmarkRun
+	// Channel for enqueuing Scans (note: checks will be populated by the consumer)
+	benchmarkChan chan *v1.BenchmarkScanMetadata
 }
 
 // NewSchedulerClient returns a new scheduler
@@ -76,7 +76,7 @@ func NewSchedulerClient(orchestrator orchestrators.Orchestrator, centralEndpoint
 		schedules: make(map[string]*scheduleMetadata),
 		triggers:  make(map[string]*v1.BenchmarkTrigger),
 
-		benchmarkChan: make(chan benchmarkRun, 512),
+		benchmarkChan: make(chan *v1.BenchmarkScanMetadata, 512),
 	}, nil
 }
 
@@ -102,24 +102,24 @@ func (s *SchedulerClient) getSchedules() ([]*v1.BenchmarkSchedule, error) {
 	return scheduleResp.Schedules, nil
 }
 
-func (s *SchedulerClient) getBenchmarkResults(scanID string) ([]*v1.BenchmarkResult, error) {
+func (s *SchedulerClient) benchmarkScanExists(scanID, benchmarkName string) (bool, error) {
 	conn, err := clientconn.GRPCConnection(s.centralEndpoint)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 	defer conn.Close()
 
 	ctx, cancel := grpcContext()
 	defer cancel()
-	log.Infof("Fetching benchmark results for scan: %v", scanID)
-	benchmarkResults, err := v1.NewBenchmarkResultsServiceClient(conn).GetBenchmarkResults(ctx, &v1.GetBenchmarkResultsRequest{
+	log.Infof("Fetching benchmark scan: %v", scanID)
+	scan, err := v1.NewBenchmarkScanServiceClient(conn).GetBenchmarkScan(ctx, &v1.GetBenchmarkScanRequest{
 		ScanId:   scanID,
 		Clusters: []string{s.cluster},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error checking results: %s", err)
+		return false, fmt.Errorf("error checking results: %s", err)
 	}
-	return benchmarkResults.Benchmarks, nil
+	return len(scan.GetChecks()) > 0, nil
 }
 
 func (s *SchedulerClient) getTriggers() ([]*v1.BenchmarkTrigger, error) {
@@ -158,12 +158,12 @@ func (s *SchedulerClient) initializeTriggers() {
 			continue
 		}
 		scanID := uniqueScanID(triggered, trigger.GetName(), "triggered")
-		results, err := s.getBenchmarkResults(scanID)
+		exists, err := s.benchmarkScanExists(scanID, trigger.GetName())
 		if err != nil {
 			log.Errorf("Error getting benchmark results for scan %v", scanID)
 			continue
 		}
-		if len(results) != 0 {
+		if exists {
 			s.triggers[trigger.Name] = trigger
 		}
 	}
@@ -190,17 +190,17 @@ func (s *SchedulerClient) waitForBenchmarkToFinish(serviceName string) {
 
 // Launch triggers a run of the benchmark immediately.
 // The stateLock must be held by the caller until this function returns.
-func (s *SchedulerClient) Launch(scanID string, benchmark *v1.Benchmark, reason v1.BenchmarkReason) error {
-	name := "benchmark-bootstrap-" + replaceRegex.ReplaceAllString(strings.ToLower(benchmark.Name), "-")
+func (s *SchedulerClient) Launch(scan *v1.BenchmarkScanMetadata) error {
+	name := "benchmark-bootstrap-" + replaceRegex.ReplaceAllString(strings.ToLower(scan.GetBenchmark()), "-")
 	service := orchestrators.SystemService{
 		Name: name,
 		Envs: []string{
 			env.Combine(env.Image.EnvVar(), s.image),
 			env.CombineSetting(env.AdvertisedEndpoint),
-			env.Combine(env.ScanID.EnvVar(), scanID),
-			env.Combine(env.Checks.EnvVar(), strings.Join(benchmark.Checks, ",")),
-			env.Combine(env.BenchmarkName.EnvVar(), benchmark.Name),
-			env.Combine(env.BenchmarkReason.EnvVar(), reason.String()),
+			env.Combine(env.ScanID.EnvVar(), scan.GetScanId()),
+			env.Combine(env.Checks.EnvVar(), strings.Join(scan.GetChecks(), ",")),
+			env.Combine(env.BenchmarkName.EnvVar(), scan.GetBenchmark()),
+			env.Combine(env.BenchmarkReason.EnvVar(), scan.GetReason().String()),
 		},
 		Image:  s.image,
 		Global: true,
@@ -268,7 +268,14 @@ func (s *SchedulerClient) updateTriggers() {
 			}
 			scanID := uniqueScanID(t, trigger.GetName(), "triggered")
 			log.Infof("Adding %v to the benchmark queue", scanID)
-			s.benchmarkChan <- benchmarkRun{reason: v1.BenchmarkReason_TRIGGERED, scanID: scanID, benchmarkName: trigger.GetName()}
+
+			s.benchmarkChan <- &v1.BenchmarkScanMetadata{
+				ScanId:    scanID,
+				Benchmark: trigger.GetName(),
+				Clusters:  trigger.GetClusters(),
+				Time:      trigger.GetTime(),
+				Reason:    v1.BenchmarkReason_TRIGGERED,
+			}
 			s.triggers[key] = trigger
 		}
 	}
@@ -307,11 +314,21 @@ func (s *SchedulerClient) updateSchedules() {
 	now := time.Now()
 	for benchmarkName, scheduleMetadata := range s.schedules {
 		nextScanTime := scheduleMetadata.NextScanTime
+		protoTime, err := ptypes.TimestampProto(nextScanTime)
+		if err != nil {
+			log.Errorf("Could not convert golang time %v to proto time", nextScanTime)
+		}
 		if nextScanTime.Before(now) {
 			scanID := uniqueScanID(nextScanTime, benchmarkName, "scheduled")
 			// Add benchmark to the queue to be scheduled
 			log.Infof("Adding %v to the benchmark queue", scanID)
-			s.benchmarkChan <- benchmarkRun{reason: v1.BenchmarkReason_SCHEDULED, scanID: scanID, benchmarkName: benchmarkName}
+			s.benchmarkChan <- &v1.BenchmarkScanMetadata{
+				ScanId:    scanID,
+				Benchmark: benchmarkName,
+				Clusters:  scheduleMetadata.GetClusters(),
+				Time:      protoTime,
+				Reason:    v1.BenchmarkReason_SCHEDULED,
+			}
 
 			// Update the benchmark time to be triggered on the next scan time
 			scheduleMetadata.NextScanTime, err = nextScheduledTime(scheduleMetadata.BenchmarkSchedule)
@@ -322,7 +339,7 @@ func (s *SchedulerClient) updateSchedules() {
 	}
 }
 
-func (s *SchedulerClient) launchBenchmark(run benchmarkRun) error {
+func (s *SchedulerClient) launchBenchmark(scan *v1.BenchmarkScanMetadata) error {
 	conn, err := clientconn.GRPCConnection(s.centralEndpoint)
 	if err != nil {
 		return err
@@ -331,20 +348,26 @@ func (s *SchedulerClient) launchBenchmark(run benchmarkRun) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
-	benchmark, err := v1.NewBenchmarkServiceClient(conn).GetBenchmark(ctx, &v1.GetBenchmarkRequest{Name: run.benchmarkName})
+	benchmark, err := v1.NewBenchmarkServiceClient(conn).GetBenchmark(ctx, &v1.GetBenchmarkRequest{Name: scan.GetBenchmark()})
 	if err != nil {
 		return err
 	}
-	if err := s.Launch(run.scanID, benchmark, run.reason); err != nil {
+	scan.Checks = benchmark.GetChecks()
+	// Send report back to master (may need retries, saying that we are trying to launch)
+	ctx, cancel = context.WithTimeout(context.Background(), requestTimeout)
+	defer cancel()
+	_, err = v1.NewBenchmarkScanServiceClient(conn).PostBenchmarkScan(ctx, scan)
+	if err != nil {
+		return err
+	}
+	if err := s.Launch(scan); err != nil {
 		return fmt.Errorf("Error launching benchmark: %s", err)
 	}
 	return nil
 }
 
 func uniqueScanID(t time.Time, benchmarkName, triggerType string) string {
-	return fmt.Sprintf("%v %d-%02d-%02d %02d:%02d:00 %v", benchmarkName,
-		t.Year(), t.Month(), t.Day(),
-		t.Hour(), t.Minute(), triggerType)
+	return uuid.NewV5(staticIDNamespace, t.Format(time.RFC3339)+benchmarkName+triggerType).String()
 }
 
 // Start runs the scheduler
@@ -358,10 +381,10 @@ func (s *SchedulerClient) Start() {
 			s.updateSchedules()
 			// Update the triggers and schedule any ones that need to be run
 			s.updateTriggers()
-		case run := <-s.benchmarkChan:
-			log.Infof("Launching benchmark %v for scan id '%s'", run.benchmarkName, run.scanID)
-			if err := s.launchBenchmark(run); err != nil {
-				log.Errorf("Error launching benchmark %v with scan id '%v': %+v", run.benchmarkName, run.scanID, err)
+		case scan := <-s.benchmarkChan:
+			log.Infof("Launching benchmark %v for scan id '%s'", scan.GetBenchmark(), scan.GetScanId())
+			if err := s.launchBenchmark(scan); err != nil {
+				log.Errorf("Error launching benchmark %v with scan id '%v': %+v", scan.GetBenchmark(), scan.GetScanId(), err)
 			}
 		case <-s.done:
 			s.started = false

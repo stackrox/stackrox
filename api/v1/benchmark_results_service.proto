@@ -23,9 +23,12 @@ enum BenchmarkReason {
 }
 
 message CheckResult {
-    CheckDefinition definition = 1;
-    CheckStatus result         = 2;
-    repeated string notes      = 3;
+    string id                  = 1;
+    string host                = 2;
+    string cluster             = 3;
+    CheckDefinition definition = 4;
+    CheckStatus result         = 5;
+    repeated string notes      = 6;
 }
 
 message BenchmarkResult {
@@ -40,74 +43,15 @@ message BenchmarkResult {
     BenchmarkReason reason               = 9;
 }
 
-message GetBenchmarkResultsRequest {
-    google.protobuf.Timestamp from_end_time = 1;
-    google.protobuf.Timestamp to_end_time   = 2;
-    string host                             = 3;
-    string benchmark                        = 4;
-    string scan_id                          = 5;
-    repeated string clusters                = 6;
-}
-
-message GetBenchmarkResultsResponse {
-    repeated BenchmarkResult benchmarks = 1;
-}
-
-message GetBenchmarkResultsGroupedResponse {
-    repeated BenchmarkResultsGrouped benchmarks = 1;
-}
-
-message BenchmarkResultsGrouped {
-    string scan_id                 = 1;
-    google.protobuf.Timestamp time = 2;
-    message ScopedCheckResult {
-        CheckDefinition definition = 1;
-        message HostResult {
-            string host            = 1;
-            CheckStatus result     = 2;
-            repeated string notes  = 3;
-        }
-        repeated HostResult host_results     = 2;
-        map<string,int32> aggregated_results = 3;
-    }
-    repeated ScopedCheckResult check_results = 3;
-}
-
-message GetBenchmarkResultsGroupedRequest {
-    string benchmark = 1;
-}
-
 service BenchmarkResultsService {
 
-    rpc GetBenchmarkResults(GetBenchmarkResultsRequest) returns (GetBenchmarkResultsResponse) {
-        option (google.api.http) = {
-            get: "/v1/benchmarks/results"
-        };
-    }
-
-    rpc GetBenchmarkResultsGrouped(GetBenchmarkResultsGroupedRequest) returns (GetBenchmarkResultsGroupedResponse) {
-        option (google.api.http) = {
-            get: "/v1/benchmarks/results/grouped/{benchmark}"
-        };
-    }
-
     rpc PostBenchmarkResult(BenchmarkResult) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             post: "/v1/benchmarks/results"
             body: "*"
         };
     }
+
     // No put or delete for benchmark results
 
-}
-
-// The BenchmarkRelayService is used by the sensor to receive benchmark results,
-// which are then forwarded to the central server.
-service BenchmarkRelayService {
-    rpc PostBenchmarkResult(BenchmarkResult) returns (google.protobuf.Empty) {
-        option (google.api.http) = {
-            post: "/v1/benchmarks/results"
-            body: "*"
-        };
-    }
 }

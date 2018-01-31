@@ -75,7 +75,10 @@ func (b *BoltDB) initializeTables() error {
 		if _, err := tx.CreateBucketIfNotExists([]byte(benchmarkBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(benchmarkResultBucket)); err != nil {
+		if _, err := tx.CreateBucketIfNotExists([]byte(benchmarksToScansBucket)); err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		if _, err := tx.CreateBucketIfNotExists([]byte(checkResultsBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
 		if _, err := tx.CreateBucketIfNotExists([]byte(benchmarkScheduleBucket)); err != nil {
@@ -106,6 +109,12 @@ func (b *BoltDB) initializeTables() error {
 			return fmt.Errorf("create bucket: %s", err)
 		}
 		if _, err := tx.CreateBucketIfNotExists([]byte(scannerBucket)); err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		if _, err := tx.CreateBucketIfNotExists([]byte(scanMetadataBucket)); err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		if _, err := tx.CreateBucketIfNotExists([]byte(scansToCheckBucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
 		if _, err := tx.CreateBucketIfNotExists([]byte(serviceIdentityBucket)); err != nil {

@@ -35,7 +35,7 @@ func runBenchmark(jsonOnly bool) {
 		log.Fatal(err)
 	}
 	defer conn.Close()
-	cli := v1.NewBenchmarkRelayServiceClient(conn)
+	cli := v1.NewBenchmarkResultsServiceClient(conn)
 
 	benchmarkResult := runner.RunBenchmark()
 	if jsonOnly {
