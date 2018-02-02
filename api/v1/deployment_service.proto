@@ -4,6 +4,7 @@ option go_package = "v1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
+import "api/v1/common.proto";
 import "api/v1/image_service.proto";
 
 package v1;
@@ -75,10 +76,6 @@ message PortConfig {
     string protocol         = 3;
 }
 
-message GetDeploymentRequest {
-    string id               = 1;
-}
-
 message GetDeploymentsRequest {
     repeated string name                = 1;
     repeated string type                = 2;
@@ -91,7 +88,7 @@ message GetDeploymentsResponse {
 
 service DeploymentService {
 
-    rpc GetDeployment(GetDeploymentRequest) returns (Deployment) {
+    rpc GetDeployment(ResourceByID) returns (Deployment) {
         option (google.api.http) = {
             get: "/v1/deployment/{id}"
         };

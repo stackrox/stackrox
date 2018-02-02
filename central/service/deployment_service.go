@@ -34,7 +34,7 @@ func (s *DeploymentService) RegisterServiceHandlerFromEndpoint(ctx context.Conte
 }
 
 // GetDeployment returns the deployment with given id.
-func (s *DeploymentService) GetDeployment(ctx context.Context, request *v1.GetDeploymentRequest) (*v1.Deployment, error) {
+func (s *DeploymentService) GetDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.Deployment, error) {
 	deployment, exists, err := s.storage.GetDeployment(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
