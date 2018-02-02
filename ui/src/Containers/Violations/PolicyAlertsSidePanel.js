@@ -142,7 +142,7 @@ class PolicyAlertsSidePanel extends Component {
         ];
         const rows = this.state.alerts.map((alert) => {
             const result = alert;
-            result.time = dateFns.format(alert.time, 'MM/DD/YYYY hh:MM:ss A');
+            result.time = dateFns.format(alert.time, 'MM/DD/YYYY h:mm:ss A');
             return result;
         });
         return <Table columns={columns} rows={rows} onRowClick={this.handleOpenModal} />;
