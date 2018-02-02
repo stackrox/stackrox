@@ -36,7 +36,7 @@ func (s *AlertService) RegisterServiceHandlerFromEndpoint(ctx context.Context, m
 }
 
 // GetAlert returns the alert with given id.
-func (s *AlertService) GetAlert(ctx context.Context, request *v1.GetAlertRequest) (*v1.Alert, error) {
+func (s *AlertService) GetAlert(ctx context.Context, request *v1.ResourceByID) (*v1.Alert, error) {
 	alert, exists, err := s.storage.GetAlert(request.GetId())
 	if err != nil {
 		log.Error(err)

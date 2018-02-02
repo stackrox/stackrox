@@ -93,11 +93,13 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 		Policy: &v1.Policy{
 			Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
 			Name:       "policy1",
+			Id:         "policyID1",
 			Severity:   v1.Severity_LOW_SEVERITY,
 		},
 		Deployment: &v1.Deployment{
 			ClusterId: "test",
-			Id:        "deployment1",
+			Id:        "deploymentID1",
+			Name:      "deployment1",
 		},
 		Time:  &timestamp.Timestamp{Seconds: 100},
 		Stale: true,
@@ -109,11 +111,13 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 		Policy: &v1.Policy{
 			Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
 			Name:       "policy2",
+			Id:         "policyID2",
 			Severity:   v1.Severity_HIGH_SEVERITY,
 		},
 		Deployment: &v1.Deployment{
 			ClusterId: "prod",
-			Id:        "deployment1",
+			Id:        "deploymentID1",
+			Name:      "deployment1",
 		},
 		Time:  &timestamp.Timestamp{Seconds: 200},
 		Stale: false,
@@ -151,26 +155,38 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 	suite.NoError(err)
 	suite.Equal([]*v1.Alert{alert2, alert1}, alerts)
 
-	// Filter by Policy.
+	// Filter by Policy Name.
 	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{
 		PolicyName: []string{"policy2", "policy23"},
 	})
 	suite.NoError(err)
 	suite.Equal([]*v1.Alert{alert2}, alerts)
 
+	// Filter by Policy IDs.
+	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{
+		PolicyId: []string{"policyID1", "randomID"},
+	})
+	suite.NoError(err)
+	suite.Equal([]*v1.Alert{alert1}, alerts)
+
 	// Filter by time.
 	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{Since: &timestamp.Timestamp{Seconds: 150}})
 	suite.Nil(err)
 	suite.Equal([]*v1.Alert{alert2}, alerts)
 
-	// Filter by deployment.
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{DeploymentId: []string{"deployment1", "someService"}})
+	// Filter by deployment IDs.
+	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{DeploymentId: []string{"deploymentID1", "someService"}})
 	suite.Nil(err)
 	suite.Equal([]*v1.Alert{alert2, alert1}, alerts)
 
 	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{DeploymentId: []string{"somethingelse"}})
 	suite.Nil(err)
 	suite.Empty(alerts)
+
+	// Filter by deployment name.
+	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{DeploymentName: []string{"deployment1"}})
+	suite.Nil(err)
+	suite.Equal([]*v1.Alert{alert2, alert1}, alerts)
 
 	// Filter by cluster.
 	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{Cluster: []string{"test", "someCluster"}})

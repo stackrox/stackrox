@@ -41,7 +41,7 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 	if request == nil {
 		return nil, status.Error(codes.InvalidArgument, "Request must include an event")
 	}
-	log.Infof("Processing deployment event %+v", request)
+	log.Infof("Processing deployment event: deployment: %s (%s), action: %s", request.GetDeployment().Id, request.GetDeployment().GetName(), request.GetAction().String())
 
 	d := request.GetDeployment()
 	if d == nil {
@@ -61,11 +61,6 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	// No further processing is needed when a deployment is removed.
-	if request.GetAction() == v1.ResourceAction_REMOVE_RESOURCE {
-		return response, nil
-	}
-
 	enforcement, err := s.detector.ProcessDeploymentEvent(d, request.GetAction())
 	if err != nil {
 		log.Error(err)
@@ -73,7 +68,7 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 	}
 
 	for _, i := range images.FromContainers(d.GetContainers()).Images() {
-		if err := s.storage.AddImage(i); err != nil {
+		if err := s.storage.UpdateImage(i); err != nil {
 			log.Error(err)
 		}
 	}

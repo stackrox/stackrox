@@ -52,7 +52,7 @@ echo
 
 pkill -f "kubectl port-forward -n ${NAMESPACE}" || true
 export CENTRAL_POD="$(kubectl get pod -n $NAMESPACE --selector 'app=central' --output=jsonpath='{.items..metadata.name} {.items..status.phase}' | grep Running | cut -f 1 -d ' ')"
-kubectl port-forward -n "$NAMESPACE" "$CENTRAL_POD" 8000:443 &
+kubectl port-forward -n "$NAMESPACE" "$CENTRAL_POD" 8000:443 &> /dev/null &
 PID="$!"
 echo "Port-forward launched with PID: $PID"
 LOCAL_API_ENDPOINT=localhost:8000

@@ -28,11 +28,14 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 	untilTime, untilTimeErr := ptypes.Timestamp(request.GetUntil())
 	sinceStaleTime, sinceStaleTimeErr := ptypes.Timestamp(request.GetSinceStale())
 	untilStaleTime, untilStaleTimeErr := ptypes.Timestamp(request.GetUntilStale())
+
 	severitySet := severitiesWrap(request.GetSeverity()).asSet()
 	categoriesSet := categoriesWrap(request.GetCategory()).asSet()
-	policiesSet := stringWrap(request.GetPolicyName()).asSet()
+	policyIDsSet := stringWrap(request.GetPolicyId()).asSet()
+	policyNamesSet := stringWrap(request.GetPolicyName()).asSet()
 	clusterSet := stringWrap(request.GetCluster()).asSet()
-	deploymentIDSet := stringWrap(request.GetDeploymentId()).asSet()
+	deploymentIDsSet := stringWrap(request.GetDeploymentId()).asSet()
+	deploymentNamesSet := stringWrap(request.GetDeploymentName()).asSet()
 
 	for _, alert := range alerts {
 		if len(request.GetStale()) == 1 && alert.GetStale() != request.GetStale()[0] {
@@ -47,7 +50,11 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 			continue
 		}
 
-		if _, ok := policiesSet[alert.GetPolicy().GetName()]; len(policiesSet) > 0 && !ok {
+		if _, ok := policyNamesSet[alert.GetPolicy().GetName()]; len(policyNamesSet) > 0 && !ok {
+			continue
+		}
+
+		if _, ok := policyIDsSet[alert.GetPolicy().GetId()]; len(policyIDsSet) > 0 && !ok {
 			continue
 		}
 
@@ -55,7 +62,11 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 			continue
 		}
 
-		if _, ok := deploymentIDSet[alert.GetDeployment().GetId()]; len(deploymentIDSet) > 0 && !ok {
+		if _, ok := deploymentIDsSet[alert.GetDeployment().GetId()]; len(deploymentIDsSet) > 0 && !ok {
+			continue
+		}
+
+		if _, ok := deploymentNamesSet[alert.GetDeployment().GetName()]; len(deploymentNamesSet) > 0 && !ok {
 			continue
 		}
 

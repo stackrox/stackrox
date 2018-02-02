@@ -1,7 +1,6 @@
 package detection
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/golang/protobuf/ptypes"
 )
@@ -30,7 +29,12 @@ func (d *Detector) ProcessDeploymentEvent(deployment *v1.Deployment, action v1.R
 }
 
 func (d *Detector) processTask(task task) (alert *v1.Alert, enforcement v1.EnforcementAction) {
-	d.markExistingAlertsAsStale(task.deployment, task.policy)
+	d.markExistingAlertsAsStale(task.deployment.GetId(), task.policy.GetId())
+
+	// No further processing is needed when a deployment is removed.
+	if task.action == v1.ResourceAction_REMOVE_RESOURCE {
+		return
+	}
 
 	alert, enforcement = d.detect(task)
 
@@ -48,8 +52,8 @@ func (d *Detector) processTask(task task) (alert *v1.Alert, enforcement v1.Enfor
 	return
 }
 
-func (d *Detector) markExistingAlertsAsStale(deployment *v1.Deployment, policy *matcher.Policy) {
-	existingAlerts := d.getExistingAlert(deployment, policy)
+func (d *Detector) markExistingAlertsAsStale(deploymentID string, policyID string) {
+	existingAlerts := d.getExistingAlert(deploymentID, policyID)
 
 	for _, a := range existingAlerts {
 		a.Stale = true
@@ -60,11 +64,11 @@ func (d *Detector) markExistingAlertsAsStale(deployment *v1.Deployment, policy *
 	}
 }
 
-func (d *Detector) getExistingAlert(deployment *v1.Deployment, policy *matcher.Policy) (existingAlerts []*v1.Alert) {
+func (d *Detector) getExistingAlert(deploymentID string, policyID string) (existingAlerts []*v1.Alert) {
 	var err error
 	existingAlerts, err = d.database.GetAlerts(&v1.GetAlertsRequest{
-		DeploymentId: []string{deployment.GetId()},
-		PolicyName:   []string{policy.GetName()},
+		DeploymentId: []string{deploymentID},
+		PolicyId:     []string{policyID},
 		Stale:        []bool{false},
 	})
 	if err != nil {
