@@ -5,12 +5,7 @@ import * as Icon from 'react-feather';
 import Modal from 'Components/Modal';
 import Table from 'Components/Table';
 
-const TITLES = Object.freeze({
-    KUBERNETES_CLUSTER: 'Kubernetes Clusters',
-    DOCKER_EE_CLUSTER: 'Docker EE Clusters',
-    SWARM_CLUSTER: 'Swarm Clusters',
-    OPENSHIFT_CLUSTER: 'OpenShift Clusters'
-});
+import { clusterTypeLabels } from 'messages/common';
 
 class ClustersModal extends Component {
     static propTypes = {
@@ -37,7 +32,7 @@ class ClustersModal extends Component {
         return (
             <Modal isOpen onRequestClose={onRequestClose}>
                 <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
-                    <span className="flex flex-1">{TITLES[clusterType]}</span>
+                    <span className="flex flex-1">{clusterTypeLabels[clusterType]}</span>
                     <Icon.X className="h-4 w-4 cursor-pointer" onClick={onRequestClose} />
                 </header>
                 <div className="p-4">

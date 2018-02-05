@@ -5,12 +5,7 @@ import flatten from 'flat';
 import omitBy from 'lodash/omitBy';
 import difference from 'lodash/difference';
 import pick from 'lodash/pick';
-
-const categoriesMap = {
-    IMAGE_ASSURANCE: 'Image Assurance',
-    CONTAINER_CONFIGURATION: 'Container Configuration',
-    PRIVILEGES_CAPABILITIES: 'Privileges and Capabilities'
-};
+import { categoriesLabels } from 'messages/common';
 
 const categoryGroupsMap = {
     imagePolicy: 'Image Assurance',
@@ -78,12 +73,12 @@ const fieldsMap = {
         formatValue: d => ((d === true) ? 'Yes' : 'No')
     },
     disabled: {
-        label: 'Disabled',
-        formatValue: d => ((d === true) ? 'Yes' : 'No')
+        label: 'Enabled',
+        formatValue: d => ((d !== true) ? 'Yes' : 'No')
     },
     categories: {
         label: 'Categories',
-        formatValue: d => d.map(obj => categoriesMap[obj]).join(', ')
+        formatValue: d => d.map(obj => categoriesLabels[obj]).join(', ')
     },
     imageName: {
         label: 'Image',

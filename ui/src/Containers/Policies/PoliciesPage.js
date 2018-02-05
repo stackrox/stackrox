@@ -9,6 +9,7 @@ import PolicyView from 'Containers/Policies/PoliciesView';
 import axios from 'axios';
 import * as Icon from 'react-feather';
 import isEqual from 'lodash/isEqual';
+import { severityLabels } from 'messages/common';
 
 const reducer = (action, prevState, nextState) => {
     switch (action) {
@@ -137,15 +138,26 @@ class PoliciesPage extends Component {
         });
     }
 
+    updatePolicy = policy => axios.put(`/v1/policies/${policy.id}`, policy).then(() => {
+        this.getImagesPolicies();
+    }).catch((error) => {
+        console.error(error);
+        if (error.response) toast(error.response.data.error);
+        return error;
+    });
+
     savePolicy = (policy) => {
-        axios.put(`/v1/policies/${policy.id}`, policy).then(() => {
+        this.updatePolicy(policy).then((error) => {
+            if (error !== undefined) return;
             this.cancelEditingPolicy();
-            this.getImagesPolicies();
             this.selectPolicy(policy);
-        }).catch((error) => {
-            console.error(error);
-            if (error.response) toast(error.response.data.error);
         });
+    }
+
+    toggleEnabledDisabledPolicy = (policy) => {
+        const newPolicy = Object.assign({}, policy);
+        newPolicy.disabled = !policy.disabled;
+        this.updatePolicy(newPolicy);
     }
 
     update = (action, nextState) => {
@@ -171,14 +183,14 @@ class PoliciesPage extends Component {
             }
         ];
         const columns = [
-            { key: 'name', label: 'Name' },
+            { keys: ['name', 'disabled'], keyValueFunc: (name, disabled) => <div className="flex items-center relative"><div className={`h-2 w-2 rounded-lg absolute -ml-4 ${(!disabled) ? 'bg-success-500' : 'bg-base-300'}`} /><div>{name}</div></div>, label: 'Name' },
             { key: 'description', label: 'Description' },
             {
                 key: 'severity',
-                keyValueFunc: item => item.split('_')[0].capitalizeFirstLetterOfWord(),
                 label: 'Severity',
-                classFunc: (item) => {
-                    switch (item) {
+                keyValueFunc: severity => severityLabels[severity],
+                classFunc: (severity) => {
+                    switch (severity) {
                         case 'Low':
                             return 'text-low-500';
                         case 'Medium':
@@ -193,10 +205,17 @@ class PoliciesPage extends Component {
                 }
             },
         ];
+        const actions = [
+            {
+                renderIcon: row => ((row.disabled) ? <Icon.Power className="h-4 w-4 text-success-500" /> : <Icon.Power className="h-4 w-4 text-base-600" />),
+                className: 'flex rounded-sm uppercase text-center text-sm items-center',
+                onClick: this.toggleEnabledDisabledPolicy
+            }
+        ];
         const rows = this.state.policies;
         return (
             <Panel header={header} buttons={buttons}>
-                <Table columns={columns} rows={rows} onRowClick={this.selectPolicy} checkboxes ref={(table) => { this.policyTable = table; }} />
+                <Table columns={columns} rows={rows} onRowClick={this.selectPolicy} actions={actions} checkboxes ref={(table) => { this.policyTable = table; }} />
             </Panel>
         );
     }
@@ -272,7 +291,7 @@ class PoliciesPage extends Component {
             <section className="flex flex-1 h-full">
                 <ToastContainer toastClassName="font-sans text-base-600 text-white font-600 bg-black" hideProgressBar autoClose={3000} />
                 <div className="flex flex-1 border-t border-primary-300 bg-base-100">
-                    <div className="flex flex-row w-full p-3 overflow-y-scroll bg-white rounded-sm shadow">
+                    <div className="flex flex-row w-full overflow-y-scroll bg-white rounded-sm shadow">
                         {this.renderTablePanel()}
                         {this.renderViewPanel()}
                         {this.renderEditPanel()}

@@ -83,6 +83,17 @@ class PolicyCreationForm extends Component {
                         required: true
                     },
                     {
+                        label: 'Enable',
+                        value: 'disabled',
+                        exclude: false,
+                        type: 'select',
+                        options: [
+                            { label: 'Yes', value: false },
+                            { label: 'No', value: true }
+                        ],
+                        required: true
+                    },
+                    {
                         label: 'Enforce',
                         value: 'enforce',
                         exclude: false,
@@ -373,10 +384,6 @@ class PolicyCreationForm extends Component {
         this.setNotifierFieldOptions();
     }
 
-    componentWillReceiveProps() {
-        this.forceUpdate();
-    }
-
     setNotifierFieldOptions = () => {
         const { policyFields } = this.state;
         const { notifiers } = this.props;
@@ -431,6 +438,7 @@ class PolicyCreationForm extends Component {
                 this.props.formApi.setValue(field.value, '');
             });
         } else this.props.formApi.setValue(fieldToAdd.value, '');
+        this.update();
     }
 
     removeField = (fieldValue) => {

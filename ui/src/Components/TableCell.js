@@ -17,23 +17,32 @@ class TableCell extends Component {
     );
 
     renderTableCell = (column, row) => {
-        let value = resolvePath(row, column.key);
-        if (column.keyValueFunc) value = column.keyValueFunc(value);
-        const customClassName = (column.classFunc && column.classFunc(value)) || '';
+        let result = '';
+        let value;
+        let customClassName;
+        if (column.keys) {
+            if (column.keyValueFunc) {
+                value = column.keyValueFunc(...column.keys.map(key =>
+                    resolvePath(row, key)));
+            } else value = column.keys.map(key => resolvePath(row, key));
+            customClassName = (column.classFunc && column.classFunc(...column.keys.map(key => resolvePath(row, key)))) || '';
+        } else {
+            if (column.keyValueFunc) {
+                value = column.keyValueFunc(resolvePath(row, column.key));
+            } else value = resolvePath(row, column.key);
+            customClassName = (column.classFunc && column.classFunc(value)) || '';
+        }
         const className = `p-3 ${column.align === 'right' ? 'text-right' : 'text-left'} ${customClassName}`;
+        result = <td className={className} key={`${column.key}`}>{value || column.default}</td>;
         if (column.tooltip) {
-            return (
+            result = (
                 <td className={className} key={`${column.key}`}>
                     <div className="inline-block" data-tip data-for={`tooltip-${row.id}`}>{value || column.default}</div>
                     {this.renderToolTip(column, row)}
                 </td>
             );
-        }
-        return (
-            <td className={className} key={`${column.key}`}>
-                {value || column.default}
-            </td>
-        );
+        } else result = <td className={className} key={`${column.key}`}>{value || column.default}</td>;
+        return result;
     }
 
     render() {

@@ -2,12 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
-const severityLabels = {
-    CRITICAL_SEVERITY: 'Critical',
-    HIGH_SEVERITY: 'High',
-    MEDIUM_SEVERITY: 'Medium',
-    LOW_SEVERITY: 'Low'
-};
+import { severityLabels } from 'messages/common';
 
 const SeverityTile = (props) => {
     const backgroundStyle = {

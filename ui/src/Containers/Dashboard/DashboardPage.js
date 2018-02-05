@@ -9,6 +9,7 @@ import SeverityTile from 'Containers/Dashboard/SeverityTile';
 import axios from 'axios';
 import { format, subDays } from 'date-fns';
 import * as Icon from 'react-feather';
+import { severityLabels } from 'messages/common';
 
 //  @TODO: Have one source of truth for severity colors
 const severityColorMap = {
@@ -16,13 +17,6 @@ const severityColorMap = {
     HIGH_SEVERITY: 'hsl(349, 100%, 78%)',
     MEDIUM_SEVERITY: 'hsl(20, 100%, 78%)',
     LOW_SEVERITY: 'hsl(42, 100%, 84%)'
-};
-
-const severityLabels = {
-    CRITICAL_SEVERITY: 'Critical',
-    HIGH_SEVERITY: 'High',
-    MEDIUM_SEVERITY: 'Medium',
-    LOW_SEVERITY: 'Low'
 };
 
 const policyCategoriesMap = {
