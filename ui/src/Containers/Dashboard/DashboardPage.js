@@ -9,7 +9,9 @@ import SeverityTile from 'Containers/Dashboard/SeverityTile';
 import axios from 'axios';
 import { format, subDays } from 'date-fns';
 import * as Icon from 'react-feather';
+
 import { severityLabels } from 'messages/common';
+import retrieveBenchmarks from 'Providers/BenchmarksService';
 
 //  @TODO: Have one source of truth for severity colors
 const severityColorMap = {
@@ -33,8 +35,6 @@ const policyCategoriesMap = {
         icon: <Icon.Lock className="h-4 w-4 mr-3" />
     }
 };
-
-const benchmarkNames = ['CIS Benchmark', 'Swarm Benchmark', 'Kubernetes v1.2.0 Benchmark'];
 
 const reducer = (action, prevState, nextState) => {
     switch (action) {
@@ -107,18 +107,36 @@ class DashboardPage extends Component {
     });
 
     getBenchmarks = () => {
-        const promise = new Promise((resolve) => {
-            const promises = [];
-            benchmarkNames.forEach((benchmarkName) => {
-                promises.push(axios.get(`/v1/benchmarks/results/grouped/${benchmarkName}`));
-            });
-            Promise.all(promises).then((values) => {
-                const { benchmarks } = this.state;
-                values.forEach((value, i) => {
-                    benchmarks[benchmarkNames[i]] = value.data.benchmarks;
+        const baseUrl = '/v1/benchmarks/scans';
+        const promise = new Promise((resolve, reject) => {
+            const benchmarkPromises = [];
+            const benchmarkNames = [];
+            retrieveBenchmarks().then((vals) => {
+                vals.forEach((benchmark) => {
+                    benchmarkNames.push(benchmark.name);
+                    benchmarkPromises.push(axios.get(`${baseUrl}?benchmark=${benchmark.name}`));
                 });
-                this.update('UPDATE_BENCHMARKS', { benchmarks });
-                resolve(values);
+
+                Promise.all(benchmarkPromises).then((benchmarkValues) => {
+                    const promises = [];
+                    benchmarkValues.forEach((benchmarkValue) => {
+                        if (benchmarkValue.data.scanMetadata &&
+                            benchmarkValue.data.scanMetadata.length) {
+                            promises.push(axios.get(`${baseUrl}/${benchmarkValue.data.scanMetadata[0].scanId}`));
+                        }
+                    });
+
+                    Promise.all(promises).then((values) => {
+                        const { benchmarks } = this.state;
+                        values.forEach((value, i) => {
+                            benchmarks[benchmarkNames[i]] = [value.data];
+                        });
+                        this.update('UPDATE_BENCHMARKS', { benchmarks });
+                        resolve(values);
+                    });
+                });
+            }).catch((error) => {
+                reject(error);
             });
         });
         return promise;

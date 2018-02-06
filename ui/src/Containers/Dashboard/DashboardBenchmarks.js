@@ -34,7 +34,7 @@ class DashboardBenchmarks extends Component {
             NOTE: 0
         };
         let total = 0;
-        benchmarks[0].checkResults.forEach((result) => {
+        benchmarks[0].checks.forEach((result) => {
             Object.keys(result.aggregatedResults)
                 .forEach((aggregatedResult) => {
                     if (results[aggregatedResult] !== undefined) {

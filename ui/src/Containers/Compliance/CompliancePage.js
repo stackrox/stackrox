@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
-
 import BenchmarksPage from 'Containers/Compliance/BenchmarksPage';
-import axios from 'axios';
+import retrieveBenchmarks from 'Providers/BenchmarksService';
 
 class CompliancePage extends Component {
     constructor(props) {
@@ -19,23 +18,13 @@ class CompliancePage extends Component {
     }
 
     getBenchmarks() {
-        axios.get('/v1/clusters').then((clusterResponse) => {
-            const { clusters } = clusterResponse.data;
-            const clusterTypes = new Set(clusters.map(c => c.type));
-
-            return axios.get('/v1/benchmarks/configs').then((configResponse) => {
-                const { benchmarks } = configResponse.data;
-                const benchmarkTabs = benchmarks.map((benchmark) => {
-                    const enabled = benchmark.clusterTypes.reduce((val, type) =>
-                        val || clusterTypes.has(type), false);
-                    return {
-                        benchmarkName: benchmark.name,
-                        text: benchmark.name,
-                        disabled: !enabled
-                    };
-                }).sort((a, b) => (a.disabled < b.disabled ? -1 : a.disabled > b.disabled));
-                this.setState({ benchmarkTabs });
-            });
+        retrieveBenchmarks().then((benchmarks) => {
+            const benchmarkTabs = benchmarks.map(benchmark => ({
+                benchmarkName: benchmark.name,
+                text: benchmark.name,
+                disabled: !benchmark.available
+            })).sort((a, b) => (a.disabled < b.disabled ? -1 : a.disabled > b.disabled));
+            this.setState({ benchmarkTabs });
         }).catch((error) => {
             console.error(error);
         });
