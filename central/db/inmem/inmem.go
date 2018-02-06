@@ -1,6 +1,8 @@
 package inmem
 
 import (
+	"net/http"
+
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 )
@@ -55,4 +57,9 @@ func New(persistentStorage db.Storage) *InMemoryStore {
 // Close closes the persistent database
 func (s *InMemoryStore) Close() {
 	s.persistent.Close()
+}
+
+// BackupHandler returns the persistent database's BackupHandler
+func (s *InMemoryStore) BackupHandler() http.Handler {
+	return s.persistent.BackupHandler()
 }

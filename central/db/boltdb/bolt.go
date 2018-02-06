@@ -2,8 +2,11 @@ package boltdb
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"time"
 
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/boltdb/bolt"
@@ -130,4 +133,22 @@ func (b *BoltDB) initializeTables() error {
 // Close closes the database
 func (b *BoltDB) Close() {
 	b.DB.Close()
+}
+
+// BackupHandler writes a consistent view of the database to the HTTP response
+func (b *BoltDB) BackupHandler() http.Handler {
+	filename := time.Now().Format("mitigate_2006_01_02.db")
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		// This will block all other transactions until this has completed. We could use View for a hot backup
+		err := b.Update(func(tx *bolt.Tx) error {
+			w.Header().Set("Content-Type", "application/octet-stream")
+			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%v\"", filename))
+			w.Header().Set("Content-Length", strconv.Itoa(int(tx.Size())))
+			_, err := tx.WriteTo(w)
+			return err
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
 }

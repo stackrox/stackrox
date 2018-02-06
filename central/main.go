@@ -26,6 +26,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	"bitbucket.org/stack-rox/apollo/pkg/ui"
+	"github.com/NYTimes/gziphandler"
 	"google.golang.org/grpc"
 )
 
@@ -86,6 +87,7 @@ func (c *central) startGRPCServer() {
 		CustomRoutes: map[string]http.Handler{
 			"/": ui.Mux(),
 			"/api/extensions/clusters/zip": clustersZip.Handler(clusterService, idService),
+			"/db/backup":                   gziphandler.GzipHandler(c.database.BackupHandler()),
 		},
 		TLS: verifier.CA{},
 		UnaryInterceptors: []grpc.UnaryServerInterceptor{

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"net/http"
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -8,6 +9,7 @@ import (
 
 // Storage is the interface for the persistent storage
 type Storage interface {
+	BackupHandler() http.Handler
 	Close()
 
 	AlertStorage
