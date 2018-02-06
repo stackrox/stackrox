@@ -11,6 +11,7 @@ var (
 
 // InMemoryStore is an in memory representation of the database
 type InMemoryStore struct {
+	db.AuthProviderStorage
 	db.BenchmarkScansStorage
 	db.BenchmarkScheduleStorage
 	db.BenchmarkStorage
@@ -32,6 +33,7 @@ type InMemoryStore struct {
 // New creates a new InMemoryStore
 func New(persistentStorage db.Storage) *InMemoryStore {
 	return &InMemoryStore{
+		AuthProviderStorage:      persistentStorage,
 		BenchmarkScansStorage:    persistentStorage,
 		BenchmarkScheduleStorage: persistentStorage,
 		BenchmarkStorage:         persistentStorage,

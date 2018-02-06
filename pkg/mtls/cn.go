@@ -2,10 +2,26 @@ package mtls
 
 import (
 	"fmt"
+	"math/big"
 	"strings"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 )
+
+// Identity identifies a particular certificate.
+type Identity struct {
+	Name   CommonName
+	Serial *big.Int
+}
+
+// V1 returns the identity represented as a v1 API ServiceIdentity.
+func (id Identity) V1() *v1.ServiceIdentity {
+	return &v1.ServiceIdentity{
+		Serial: id.Serial.Int64(),
+		Type:   id.Name.ServiceType,
+		Id:     id.Name.Identifier,
+	}
+}
 
 // CommonName encodes the parts of a certificate common name (CN).
 type CommonName struct {

@@ -7,6 +7,11 @@ import (
 	"runtime/debug"
 	"syscall"
 
+	_ "bitbucket.org/stack-rox/apollo/pkg/authproviders/all"
+	_ "bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers/all"
+	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
+	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
+
 	clustersZip "bitbucket.org/stack-rox/apollo/central/clusters/zip"
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/db/boltdb"
@@ -16,12 +21,10 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
 	pkgGRPC "bitbucket.org/stack-rox/apollo/pkg/grpc"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth/user"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/clusters"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
-	_ "bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers/all"
-	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
-	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
 	"bitbucket.org/stack-rox/apollo/pkg/ui"
 	"google.golang.org/grpc"
 )
@@ -77,19 +80,28 @@ func (c *central) startGRPCServer() {
 	idService := service.NewServiceIdentityService(c.database)
 	clusterService := service.NewClusterService(c.database)
 	clusterWatcher := clusters.NewClusterWatcher(c.database)
+	userAuth := user.NewAuthInterceptor(c.database)
 
 	config := pkgGRPC.Config{
 		CustomRoutes: map[string]http.Handler{
 			"/": ui.Mux(),
 			"/api/extensions/clusters/zip": clustersZip.Handler(clusterService, idService),
 		},
-		TLS:                verifier.CA{},
-		UnaryInterceptors:  []grpc.UnaryServerInterceptor{clusterWatcher.UnaryInterceptor()},
-		StreamInterceptors: []grpc.StreamServerInterceptor{clusterWatcher.StreamInterceptor()},
+		TLS: verifier.CA{},
+		UnaryInterceptors: []grpc.UnaryServerInterceptor{
+			userAuth.UnaryInterceptor(),
+			clusterWatcher.UnaryInterceptor(),
+		},
+		StreamInterceptors: []grpc.StreamServerInterceptor{
+			userAuth.StreamInterceptor(),
+			clusterWatcher.StreamInterceptor(),
+		},
 	}
 
 	c.server = pkgGRPC.NewAPI(config)
 	c.server.Register(service.NewAlertService(c.database))
+	c.server.Register(service.NewAuthService())
+	c.server.Register(service.NewAuthProviderService(c.database, userAuth))
 	c.server.Register(service.NewBenchmarkService(c.database))
 	c.server.Register(service.NewBenchmarkScansService(c.database))
 	c.server.Register(service.NewBenchmarkScheduleService(c.database))

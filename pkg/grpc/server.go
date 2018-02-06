@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth/mtls"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	"github.com/NYTimes/gziphandler"
@@ -71,7 +71,7 @@ func (a *apiImpl) Register(service APIService) {
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	u := []grpc.UnaryServerInterceptor{
 		grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-		auth.UnaryInterceptor(),
+		mtls.UnaryInterceptor(),
 	}
 	u = append(u, a.config.UnaryInterceptors...)
 	u = append(u, a.unaryRecovery())
@@ -81,7 +81,7 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	s := []grpc.StreamServerInterceptor{
 		grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-		auth.StreamInterceptor(),
+		mtls.StreamInterceptor(),
 	}
 	s = append(s, a.config.StreamInterceptors...)
 	s = append(s, a.streamRecovery())

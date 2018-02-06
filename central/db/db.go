@@ -11,6 +11,7 @@ type Storage interface {
 	Close()
 
 	AlertStorage
+	AuthProviderStorage
 	BenchmarkScansStorage
 	BenchmarkScheduleStorage
 	BenchmarkStorage
@@ -32,6 +33,15 @@ type AlertStorage interface {
 	AddAlert(alert *v1.Alert) error
 	UpdateAlert(alert *v1.Alert) error
 	RemoveAlert(id string) error
+}
+
+// AuthProviderStorage provide storage functionality for authProvider.
+type AuthProviderStorage interface {
+	GetAuthProvider(id string) (*v1.AuthProvider, bool, error)
+	GetAuthProviders(request *v1.GetAuthProvidersRequest) ([]*v1.AuthProvider, error)
+	AddAuthProvider(authProvider *v1.AuthProvider) (string, error)
+	UpdateAuthProvider(authProvider *v1.AuthProvider) error
+	RemoveAuthProvider(id string) error
 }
 
 // BenchmarkStorage provides storage functionality for benchmarks results.

@@ -65,9 +65,11 @@ func (s *RegistryService) GetRegistries(ctx context.Context, request *v1.GetRegi
 
 	identity, err := auth.FromContext(ctx)
 	switch {
+	case err == auth.ErrNoContext:
+		log.Debugf("No authentication context provided")
 	case err != nil:
 		log.Warnf("Could not ascertain client identity: %s", err)
-	case err == nil && identity.IdentityType.ServiceType == v1.ServiceType_SENSOR_SERVICE:
+	case err == nil && identity.TLS.Name.ServiceType == v1.ServiceType_SENSOR_SERVICE:
 		return &v1.GetRegistriesResponse{Registries: registries}, nil
 	}
 

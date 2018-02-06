@@ -1,20 +1,20 @@
-package auth
+package mtls
 
 import (
 	"context"
 
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
 
 var (
-	logger = logging.New("grpc/auth")
+	logger = logging.New("pkg/grpc/auth/mtls")
 )
 
 // UnaryInterceptor applies authentication to unary gRPC server calls.
@@ -30,7 +30,7 @@ func StreamInterceptor() grpc.StreamServerInterceptor {
 }
 
 func authUnary(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	newCtx, err := auth(ctx)
+	newCtx, err := doAuth(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -38,29 +38,24 @@ func authUnary(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo,
 }
 
 func authStream(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	newCtx, err := auth(stream.Context())
+	newCtx, err := doAuth(stream.Context())
 	if err != nil {
 		return err
 	}
-	newStream := &streamWithContext{
+	newStream := &auth.StreamWithContext{
 		ServerStream:    stream,
 		ContextOverride: newCtx,
 	}
 	return handler(srv, newStream)
 }
 
-func auth(ctx context.Context) (newCtx context.Context, err error) {
+func doAuth(ctx context.Context) (newCtx context.Context, err error) {
 	newCtx, ok, err := authTLS(ctx)
-	if ok {
+	if err != nil && ok {
 		return newCtx, nil
 	}
 	logger.Debugf("Request failed TLS validation: %v", err)
-
-	newCtx, ok = authToken(ctx)
-	if !ok {
-		return nil, status.Error(codes.Unauthenticated, "No client certificate or authentication provided")
-	}
-	return newCtx, nil
+	return ctx, nil
 }
 
 func authTLS(ctx context.Context) (newCtx context.Context, ok bool, err error) {
@@ -82,27 +77,11 @@ func authTLS(ctx context.Context) (newCtx context.Context, ok bool, err error) {
 	chain := tls.State.VerifiedChains[0]
 	leaf := chain[0]
 	cn := mtls.CommonNameFromString(leaf.Subject.CommonName)
-	return newContext(ctx, Identity{
-		Identifier:   cn.Identifier,
-		IdentityType: IdentityType{ServiceType: cn.ServiceType},
-		Serial:       leaf.SerialNumber,
+	return auth.NewContext(ctx, auth.Identity{
+		TLS: mtls.Identity{
+			Name:   cn,
+			Serial: leaf.SerialNumber,
+		},
+		Expiration: leaf.NotAfter,
 	}), true, nil
-}
-
-func authToken(ctx context.Context) (newCtx context.Context, ok bool) {
-	// TODO(cg): This handler obviously isn't secure. Replace it when user auth is implemented.
-
-	meta, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		// TODO(cg): When auth is mandatory, return Unauthenticated status.
-		return ctx, true
-	}
-	var username string
-	if len(meta["username"]) > 0 {
-		username = meta["username"][0]
-	}
-	return newContext(ctx, Identity{
-		User:         username,
-		IdentityType: IdentityType{EndUser: true},
-	}), true
 }

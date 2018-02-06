@@ -67,11 +67,15 @@ func (cw ClusterWatcher) watchStream(srv interface{}, stream grpc.ServerStream, 
 
 func (cw ClusterWatcher) recordCheckin(ctx context.Context) error {
 	id, err := auth.FromContext(ctx)
-	if err != nil {
+	switch {
+	case err == auth.ErrNoContext:
+		return nil
+	case err != nil:
 		return err
 	}
-	if id.IdentityType.ServiceType == v1.ServiceType_SENSOR_SERVICE && id.Identifier != "" {
-		return cw.db.UpdateClusterContactTime(id.Identifier, time.Now())
+
+	if id.TLS.Name.ServiceType == v1.ServiceType_SENSOR_SERVICE && id.TLS.Name.Identifier != "" {
+		return cw.db.UpdateClusterContactTime(id.TLS.Name.Identifier, time.Now())
 	}
 	return nil
 }

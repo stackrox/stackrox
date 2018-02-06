@@ -14,6 +14,7 @@ import IntegrationsPage from 'Containers/Integrations/IntegrationsPage';
 import ViolationsPage from 'Containers/Violations/ViolationsPage';
 import PoliciesPage from 'Containers/Policies/PoliciesPage';
 import CompliancePage from 'Containers/Compliance/CompliancePage';
+import OpenIDConnectReceiver from 'Containers/OpenIDConnectReceiver';
 
 const Main = () => (
     <Router>
@@ -80,6 +81,7 @@ const Main = () => (
                         <Route exact path="/compliance" component={CompliancePage} />
                         <Route exact path="/integrations" component={IntegrationsPage} />
                         <Route exact path="/policies" component={PoliciesPage} />
+                        <Route exact path="/auth/response/oidc" component={OpenIDConnectReceiver} />
                         <Redirect from="/" to="/dashboard" />
                     </Switch>
                 </main>
