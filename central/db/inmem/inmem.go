@@ -11,19 +11,20 @@ var (
 
 // InMemoryStore is an in memory representation of the database
 type InMemoryStore struct {
+	db.BenchmarkScansStorage
+	db.BenchmarkScheduleStorage
+	db.BenchmarkStorage
+	db.ClusterStorage
+	db.ImageStorage
+	db.NotifierStorage
+	db.ServiceIdentityStorage
+
 	*alertStore
-	*benchmarkScheduleStore
-	*benchmarkResultStore
-	*benchmarkStore
 	*benchmarkTriggerStore
-	*clusterStore
 	*deploymentStore
 	*policyStore
-	*imageStore
-	*notifierStore
 	*registryStore
 	*scannerStore
-	*serviceIdentityStore
 
 	persistent db.Storage
 }
@@ -31,20 +32,21 @@ type InMemoryStore struct {
 // New creates a new InMemoryStore
 func New(persistentStorage db.Storage) *InMemoryStore {
 	return &InMemoryStore{
-		persistent:             persistentStorage,
-		alertStore:             newAlertStore(persistentStorage),
-		benchmarkScheduleStore: newBenchmarkScheduleStore(persistentStorage),
-		benchmarkStore:         newBenchmarkStore(persistentStorage),
-		benchmarkResultStore:   newBenchmarkResultsStore(persistentStorage),
-		benchmarkTriggerStore:  newBenchmarkTriggerStore(persistentStorage),
-		clusterStore:           newClusterStore(persistentStorage),
-		deploymentStore:        newDeploymentStore(persistentStorage),
-		policyStore:            newPolicyStore(persistentStorage),
-		imageStore:             newImageStore(persistentStorage),
-		notifierStore:          newNotifierStore(persistentStorage),
-		registryStore:          newRegistryStore(persistentStorage),
-		scannerStore:           newScannerStore(persistentStorage),
-		serviceIdentityStore:   newServiceIdentityStore(persistentStorage),
+		BenchmarkScansStorage:    persistentStorage,
+		BenchmarkScheduleStorage: persistentStorage,
+		BenchmarkStorage:         persistentStorage,
+		ClusterStorage:           persistentStorage,
+		ImageStorage:             persistentStorage,
+		NotifierStorage:          persistentStorage,
+		ServiceIdentityStorage:   persistentStorage,
+
+		persistent:            persistentStorage,
+		alertStore:            newAlertStore(persistentStorage),
+		benchmarkTriggerStore: newBenchmarkTriggerStore(persistentStorage),
+		deploymentStore:       newDeploymentStore(persistentStorage),
+		policyStore:           newPolicyStore(persistentStorage),
+		registryStore:         newRegistryStore(persistentStorage),
+		scannerStore:          newScannerStore(persistentStorage),
 	}
 }
 
