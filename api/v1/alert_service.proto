@@ -41,6 +41,9 @@ message GetAlertsRequest {
     repeated string cluster                = 10;
     repeated string deployment_id          = 11;
     repeated string deployment_name        = 12;
+
+    string label_key                       = 13;
+    string label_value                     = 14;
 }
 
 message GetAlertsResponse {

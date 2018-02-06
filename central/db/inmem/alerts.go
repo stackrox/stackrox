@@ -70,6 +70,10 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 			continue
 		}
 
+		if v, ok := alert.GetDeployment().GetLabels()[request.GetLabelKey()]; len(request.GetLabelKey()) > 0 && (!ok || v != request.GetLabelValue()) {
+			continue
+		}
+
 		if sinceTimeErr == nil && !sinceTime.IsZero() {
 			if alertTime, alertTimeErr := ptypes.Timestamp(alert.GetTime()); alertTimeErr == nil && !sinceTime.Before(alertTime) {
 				continue

@@ -100,6 +100,9 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 			ClusterId: "test",
 			Id:        "deploymentID1",
 			Name:      "deployment1",
+			Labels: map[string]string{
+				"foo": "bar",
+			},
 		},
 		Time:  &timestamp.Timestamp{Seconds: 100},
 		Stale: true,
@@ -118,6 +121,10 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 			ClusterId: "prod",
 			Id:        "deploymentID1",
 			Name:      "deployment1",
+			Labels: map[string]string{
+				"hello": "world",
+				"key":   "value",
+			},
 		},
 		Time:  &timestamp.Timestamp{Seconds: 200},
 		Stale: false,
@@ -125,80 +132,104 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 	err = suite.AddAlert(alert2)
 	suite.NoError(err)
 
-	// Get all alerts
-	alerts, err := suite.GetAlerts(&v1.GetAlertsRequest{})
-	suite.NoError(err)
-	suite.Equal([]*v1.Alert{alert2, alert1}, alerts)
-
 	// Get by ID
 	alert, exists, err := suite.GetAlert("id1")
 	suite.NoError(err)
 	suite.True(exists)
 	suite.Equal(alert1, alert)
 
-	// Filter by severity
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{
-		Severity: []v1.Severity{
-			v1.Severity_HIGH_SEVERITY,
-			v1.Severity_LOW_SEVERITY,
+	cases := []struct {
+		name     string
+		request  *v1.GetAlertsRequest
+		expected []*v1.Alert
+	}{
+		{
+			name:     "all",
+			request:  &v1.GetAlertsRequest{},
+			expected: []*v1.Alert{alert2, alert1},
 		},
-	})
-	suite.NoError(err)
-	suite.Equal([]*v1.Alert{alert2, alert1}, alerts)
-
-	// Filter by category.
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{
-		Category: []v1.Policy_Category{
-			v1.Policy_Category_IMAGE_ASSURANCE,
+		{
+			name: "severity",
+			request: &v1.GetAlertsRequest{
+				Severity: []v1.Severity{
+					v1.Severity_HIGH_SEVERITY,
+					v1.Severity_LOW_SEVERITY,
+				},
+			},
+			expected: []*v1.Alert{alert2, alert1},
 		},
-	})
-	suite.NoError(err)
-	suite.Equal([]*v1.Alert{alert2, alert1}, alerts)
+		{
+			name: "category",
+			request: &v1.GetAlertsRequest{
+				Category: []v1.Policy_Category{
+					v1.Policy_Category_IMAGE_ASSURANCE,
+				},
+			},
+			expected: []*v1.Alert{alert2, alert1},
+		},
+		{
+			name: "policy name",
+			request: &v1.GetAlertsRequest{
+				PolicyName: []string{"policy2", "policy23"},
+			},
+			expected: []*v1.Alert{alert2},
+		},
+		{
+			name: "policy id",
+			request: &v1.GetAlertsRequest{
+				PolicyId: []string{"policyID1", "randomID"},
+			},
+			expected: []*v1.Alert{alert1},
+		},
+		{
+			name:     "time since",
+			request:  &v1.GetAlertsRequest{Since: &timestamp.Timestamp{Seconds: 150}},
+			expected: []*v1.Alert{alert2},
+		},
+		{
+			name:     "deployment id",
+			request:  &v1.GetAlertsRequest{DeploymentId: []string{"deploymentID1", "someService"}},
+			expected: []*v1.Alert{alert2, alert1},
+		},
+		{
+			name:    "deployment id 2",
+			request: &v1.GetAlertsRequest{DeploymentId: []string{"somethingelse"}},
+		},
+		{
+			name:     "deployment name",
+			request:  &v1.GetAlertsRequest{DeploymentName: []string{"deployment1"}},
+			expected: []*v1.Alert{alert2, alert1},
+		},
+		{
+			name:     "cluster",
+			request:  &v1.GetAlertsRequest{Cluster: []string{"test", "someCluster"}},
+			expected: []*v1.Alert{alert1},
+		},
+		{
+			name:     "labels",
+			request:  &v1.GetAlertsRequest{LabelKey: "key", LabelValue: "value"},
+			expected: []*v1.Alert{alert2},
+		},
+		{
+			name:    "labels 2",
+			request: &v1.GetAlertsRequest{LabelKey: "key"},
+		},
+		{
+			name: "stale",
+			request: &v1.GetAlertsRequest{
+				Stale: []bool{false},
+			},
+			expected: []*v1.Alert{alert2},
+		},
+	}
 
-	// Filter by Policy Name.
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{
-		PolicyName: []string{"policy2", "policy23"},
-	})
-	suite.NoError(err)
-	suite.Equal([]*v1.Alert{alert2}, alerts)
-
-	// Filter by Policy IDs.
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{
-		PolicyId: []string{"policyID1", "randomID"},
-	})
-	suite.NoError(err)
-	suite.Equal([]*v1.Alert{alert1}, alerts)
-
-	// Filter by time.
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{Since: &timestamp.Timestamp{Seconds: 150}})
-	suite.Nil(err)
-	suite.Equal([]*v1.Alert{alert2}, alerts)
-
-	// Filter by deployment IDs.
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{DeploymentId: []string{"deploymentID1", "someService"}})
-	suite.Nil(err)
-	suite.Equal([]*v1.Alert{alert2, alert1}, alerts)
-
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{DeploymentId: []string{"somethingelse"}})
-	suite.Nil(err)
-	suite.Empty(alerts)
-
-	// Filter by deployment name.
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{DeploymentName: []string{"deployment1"}})
-	suite.Nil(err)
-	suite.Equal([]*v1.Alert{alert2, alert1}, alerts)
-
-	// Filter by cluster.
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{Cluster: []string{"test", "someCluster"}})
-	suite.Nil(err)
-	suite.Equal([]*v1.Alert{alert1}, alerts)
-
-	// Filter by staleness
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{
-		Stale: []bool{false},
-	})
-	suite.Nil(err)
-	suite.Equal([]*v1.Alert{alert2}, alerts)
+	for _, c := range cases {
+		suite.T().Run(c.name, func(t *testing.T) {
+			alerts, err := suite.GetAlerts(c.request)
+			suite.NoError(err)
+			suite.Equal(c.expected, alerts)
+		})
+	}
 
 	suite.NoError(suite.RemoveAlert(alert1.Id))
 	suite.NoError(suite.RemoveAlert(alert2.Id))

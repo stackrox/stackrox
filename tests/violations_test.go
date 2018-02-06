@@ -20,7 +20,12 @@ const (
 )
 
 var (
-	alertRequestOptions = v1.GetAlertsRequest{DeploymentName: []string{nginxDeploymentName}, Stale: []bool{false}}
+	alertRequestOptions = v1.GetAlertsRequest{
+		DeploymentName: []string{nginxDeploymentName},
+		LabelKey:       "hello",
+		LabelValue:     "world",
+		Stale:          []bool{false},
+	}
 )
 
 func TestAlerts(t *testing.T) {
@@ -62,7 +67,7 @@ func TestAlerts(t *testing.T) {
 }
 
 func setupNginxDeployment(t *testing.T) {
-	cmd := exec.Command(`kubectl`, `run`, nginxDeploymentName, `--image=nginx`, `--port=22`, `--env=SECRET=true`)
+	cmd := exec.Command(`kubectl`, `run`, nginxDeploymentName, `--image=nginx`, `--port=22`, `--env=SECRET=true`, `--labels=hello=world`)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
 
