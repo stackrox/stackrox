@@ -34,6 +34,9 @@ class PolicyCreationForm extends Component {
         notifiers: PropTypes.arrayOf(PropTypes.shape({
             name: PropTypes.string.isRequired
         })).isRequired,
+        clusters: PropTypes.arrayOf(PropTypes.shape({
+            name: PropTypes.string.isRequired
+        })).isRequired,
         formApi: PropTypes.shape({
             submitForm: PropTypes.func,
             setValue: PropTypes.func,
@@ -75,14 +78,6 @@ class PolicyCreationForm extends Component {
                         required: true
                     },
                     {
-                        label: 'Notifications',
-                        value: 'notifiers',
-                        exclude: false,
-                        type: 'multiselect',
-                        options: [],
-                        required: true
-                    },
-                    {
                         label: 'Enable',
                         value: 'disabled',
                         exclude: false,
@@ -96,13 +91,26 @@ class PolicyCreationForm extends Component {
                     {
                         label: 'Enforce',
                         value: 'enforce',
-                        exclude: false,
                         type: 'select',
                         options: [
                             { label: 'Yes', value: true },
                             { label: 'No', value: false }
                         ],
                         required: true
+                    },
+                    {
+                        label: 'Notifications',
+                        value: 'notifiers',
+                        type: 'multiselect',
+                        options: [],
+                        required: true
+                    },
+                    {
+                        label: 'Restrict to Clusters',
+                        value: 'scope',
+                        type: 'multiselect',
+                        options: [],
+                        required: false
                     }
                 ],
                 imagePolicy: [
@@ -382,6 +390,7 @@ class PolicyCreationForm extends Component {
     componentDidMount() {
         this.setFormFields();
         this.setNotifierFieldOptions();
+        this.setClusterFieldOptions();
     }
 
     setNotifierFieldOptions = () => {
@@ -395,19 +404,44 @@ class PolicyCreationForm extends Component {
         this.update('UPDATE_POLICY_FIELDS', { policyFields });
     }
 
+    setClusterFieldOptions = () => {
+        const { policyFields } = this.state;
+        const { clusters } = this.props;
+        policyFields.policyDetails = policyFields.policyDetails.map((field) => {
+            const newField = field;
+            if (field.value === 'scope') newField.options = clusters.map(cluster => ({ label: cluster.name, value: cluster.id }));
+            return newField;
+        });
+        this.update('UPDATE_POLICY_FIELDS', { policyFields });
+    }
+
     setFormFields = () => {
-        const filteredPolicy = this.removeEmptyFields(this.props.policy);
+        let filteredPolicy = this.removeEmptyFields(this.props.policy);
+        filteredPolicy = this.preFormatScopeField(filteredPolicy);
         this.props.formApi.setAllValues(filteredPolicy);
     }
 
     setCategories = (obj) => {
-        const newObj = obj;
+        const newObj = Object.assign({}, obj);
         newObj.categories = intersection(Object.keys(this.state.policyFields).filter(o => o !== 'policyDetails'), Object.keys(obj)).map(o => categoriesMap[o]);
-        return obj;
+        return newObj;
     };
+
+    preFormatScopeField = (obj) => {
+        const newObj = Object.assign({}, obj);
+        if (obj.scope) newObj.scope = obj.scope.map(o => o.cluster);
+        return newObj;
+    }
+
+    postFormatScopeField = (obj) => {
+        const newObj = Object.assign({}, obj);
+        newObj.scope = obj.scope.map(o => ({ cluster: o }));
+        return newObj;
+    }
 
     preSubmit = (policy) => {
         let newPolicy = this.removeEmptyFields(policy);
+        newPolicy = this.postFormatScopeField(newPolicy);
         newPolicy = this.setCategories(newPolicy);
         return newPolicy;
     }

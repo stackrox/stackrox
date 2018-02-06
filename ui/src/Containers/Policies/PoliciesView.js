@@ -65,8 +65,8 @@ const fieldsMap = {
         formatValue: (d, props) => props.notifiers.filter(n => d.includes(n.id)).map(n => n.name).join(', ')
     },
     scope: {
-        label: 'Scope',
-        formatValue: d => d.join(', ')
+        label: 'Restricted to Clusters',
+        formatValue: d => d.map(o => o.cluster).join(', ')
     },
     enforce: {
         label: 'Enforce',

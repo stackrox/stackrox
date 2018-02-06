@@ -39,6 +39,7 @@ class PoliciesPage extends Component {
         this.state = {
             policies: [],
             notifiers: [],
+            clusters: [],
             selectedPolicy: null,
             editingPolicy: null,
             addingPolicy: false
@@ -48,6 +49,7 @@ class PoliciesPage extends Component {
     componentDidMount() {
         this.pollImagesPolicies();
         this.retrieveNotifiers();
+        this.retrieveClusters();
     }
 
     componentWillUnmount() {
@@ -71,11 +73,21 @@ class PoliciesPage extends Component {
 
     getNotifiers = () => axios.get('/v1/notifiers');
 
+    getClusters = () => axios.get('/v1/clusters');
+
     retrieveNotifiers =() => {
         this.getNotifiers().then((response) => {
             if (!response.data.notifiers) return;
             const { notifiers } = response.data;
             this.setState({ notifiers });
+        });
+    }
+
+    retrieveClusters = () => {
+        this.getClusters().then((response) => {
+            if (!response.data.clusters) return;
+            const { clusters } = response.data;
+            this.setState({ clusters });
         });
     }
 
@@ -251,6 +263,7 @@ class PoliciesPage extends Component {
 
     renderEditPanel = () => {
         const { notifiers } = this.state;
+        const { clusters } = this.state;
         const policy = this.state.editingPolicy;
         const hide = policy === null;
         if (hide) return '';
@@ -279,7 +292,7 @@ class PoliciesPage extends Component {
             <Panel header={header} buttons={buttons} width="w-2/3">
                 <Form onSubmit={this.onSubmit} preSubmit={this.preSubmit}>
                     {formApi => (
-                        <PolicyCreationForm notifiers={notifiers} policy={policy} formApi={formApi} ref={(policyCreationForm) => { this.policyCreationForm = policyCreationForm; }} />
+                        <PolicyCreationForm clusters={clusters} notifiers={notifiers} policy={policy} formApi={formApi} ref={(policyCreationForm) => { this.policyCreationForm = policyCreationForm; }} />
                     )}
                 </Form>
             </Panel>
