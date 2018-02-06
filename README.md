@@ -71,7 +71,7 @@ portions of the sensor-deploy YAML:
 
 
 ### Kubernetes
-Set your Docker image-pull credentials as `DOCKER_USER` and `DOCKER_PASS`, then run:
+Set your Docker image-pull credentials as `REGISTRY_USERNAME` and `REGISTRY_PASSWORD`, then run:
 
 ```
 ./deploy/k8s/deploy.sh

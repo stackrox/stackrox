@@ -25,8 +25,8 @@ set +x
 kubectl create secret docker-registry \
     "$PULL_SECRET_NAME" --namespace "$NAMESPACE" \
     --docker-server=https://index.docker.io/v1/ \
-    --docker-username="$DOCKER_USER" \
-    --docker-password="$DOCKER_PASS" \
+    --docker-username="$REGISTRY_USERNAME" \
+    --docker-password="$REGISTRY_PASSWORD" \
     --docker-email="does-not-matter@stackrox.io"
 echo
 

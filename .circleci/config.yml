@@ -73,8 +73,8 @@ jobs:
           name: Setup deployment env
           command: |
             docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
-            echo 'export DOCKER_USER="$DOCKERHUB_USERNAME"' >> $BASH_ENV
-            echo 'export DOCKER_PASS="$DOCKERHUB_PASSWORD"' >> $BASH_ENV
+            echo 'export REGISTRY_USERNAME="$DOCKERHUB_USERNAME"' >> $BASH_ENV
+            echo 'export REGISTRY_PASSWORD="$DOCKERHUB_PASSWORD"' >> $BASH_ENV
             echo 'export MITIGATE_IMAGE_TAG="$CIRCLE_SHA1"' >> $BASH_ENV
             echo $GKE_SERVICE_ACCOUNT > /tmp/gke.json
             echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gke.json' >> $BASH_ENV
