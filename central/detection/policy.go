@@ -35,6 +35,7 @@ func (d *Detector) UpdatePolicy(policy *matcher.Policy) {
 	d.policyMutex.Lock()
 	defer d.policyMutex.Unlock()
 	d.addPolicy(policy)
+	d.notificationProcessor.UpdatePolicy(policy.Policy)
 }
 
 // RemovePolicy removes the policy specified by id in a threadsafe manner.
@@ -46,7 +47,32 @@ func (d *Detector) RemovePolicy(id string) {
 		p.Disabled = true
 		go d.reprocessPolicy(p)
 		delete(d.policies, id)
+		d.notificationProcessor.RemovePolicy(p.Policy)
 	}
+}
+
+// RemoveNotifier updates all policies that use provided notifier.
+func (d *Detector) RemoveNotifier(id string) {
+	d.policyMutex.Lock()
+	defer d.policyMutex.Unlock()
+
+	for _, p := range d.policies {
+		filtered := p.GetNotifiers()[:0]
+
+		for _, n := range p.GetNotifiers() {
+			if n != id {
+				filtered = append(filtered, n)
+			}
+		}
+
+		if len(p.GetNotifiers()) != len(filtered) {
+			p.Notifiers = filtered
+			if err := d.database.UpdatePolicy(p.Policy); err != nil {
+				logger.Errorf("unable to update policy: %s", err)
+			}
+		}
+	}
+
 }
 
 func (d *Detector) getCurrentPolicies() (policies []*matcher.Policy) {

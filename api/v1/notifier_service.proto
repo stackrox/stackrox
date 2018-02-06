@@ -15,6 +15,11 @@ message Notifier {
     string ui_endpoint         = 4;
     bool enabled               = 5;
     map<string, string> config = 6;
+    message Policy {
+        string id = 1;
+        string name = 2;
+    }
+    repeated Policy policies   = 7;
 }
 
 message GetNotifiersRequest {
@@ -24,6 +29,11 @@ message GetNotifiersRequest {
 
 message GetNotifiersResponse {
     repeated Notifier notifiers = 1;
+}
+
+message DeleteNotifierRequest {
+    string id  = 1;
+    bool force = 2;
 }
 
 service NotifierService {
@@ -54,7 +64,7 @@ service NotifierService {
         };
     }
 
-    rpc DeleteNotifier(ResourceByID) returns (google.protobuf.Empty) {
+    rpc DeleteNotifier(DeleteNotifierRequest) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             delete: "/v1/notifiers/{id}"
         };

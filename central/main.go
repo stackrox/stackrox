@@ -98,7 +98,7 @@ func (c *central) startGRPCServer() {
 	c.server.Register(clusterService)
 	c.server.Register(service.NewDeploymentService(c.database))
 	c.server.Register(service.NewImageService(c.database))
-	c.server.Register(service.NewNotifierService(c.database, c.notificationProcessor))
+	c.server.Register(service.NewNotifierService(c.database, c.notificationProcessor, c.detector))
 	c.server.Register(service.NewPingService())
 	c.server.Register(service.NewPolicyService(c.database, c.detector))
 	c.server.Register(service.NewRegistryService(c.database, c.detector))

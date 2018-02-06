@@ -2,12 +2,14 @@ package service
 
 import (
 	"fmt"
+	"sort"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/notifications"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
 	"bitbucket.org/stack-rox/apollo/pkg/secrets"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
@@ -17,10 +19,11 @@ import (
 )
 
 // NewNotifierService returns the NotifierService API.
-func NewNotifierService(storage db.NotifierStorage, processor *notifications.Processor) *NotifierService {
+func NewNotifierService(storage db.NotifierStorage, processor *notifications.Processor, detector policyDetector) *NotifierService {
 	return &NotifierService{
 		storage:   storage,
 		processor: processor,
+		detector:  detector,
 	}
 }
 
@@ -28,6 +31,11 @@ func NewNotifierService(storage db.NotifierStorage, processor *notifications.Pro
 type NotifierService struct {
 	storage   db.NotifierStorage
 	processor *notifications.Processor
+	detector  policyDetector
+}
+
+type policyDetector interface {
+	RemoveNotifier(id string)
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -53,6 +61,7 @@ func (s *NotifierService) GetNotifier(ctx context.Context, request *v1.ResourceB
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("Notifier %v not found", request.GetId()))
 	}
 	notifier.Config = secrets.ScrubSecrets(notifier.Config)
+	s.populatePolicies(notifier)
 	return notifier, nil
 }
 
@@ -64,6 +73,7 @@ func (s *NotifierService) GetNotifiers(ctx context.Context, request *v1.GetNotif
 	}
 	for _, n := range notifiers {
 		n.Config = secrets.ScrubSecrets(n.Config)
+		s.populatePolicies(n)
 	}
 	return &v1.GetNotifiersResponse{Notifiers: notifiers}, nil
 }
@@ -108,13 +118,46 @@ func (s *NotifierService) PostNotifier(ctx context.Context, request *v1.Notifier
 }
 
 // DeleteNotifier deletes a notifier from the system
-func (s *NotifierService) DeleteNotifier(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
+func (s *NotifierService) DeleteNotifier(ctx context.Context, request *v1.DeleteNotifierRequest) (*empty.Empty, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Notifier id must be provided")
 	}
+	n, err := s.GetNotifier(ctx, &v1.ResourceByID{Id: request.GetId()})
+	if err != nil {
+		return nil, err
+	}
+
+	if !request.GetForce() && len(n.Policies) != 0 {
+		m := jsonpb.Marshaler{}
+		policiesOnly := &v1.Notifier{
+			Policies: n.GetPolicies(),
+		}
+		jsonString, err := m.MarshalToString(policiesOnly)
+
+		if err != nil {
+			log.Error(err)
+			return nil, status.Error(codes.FailedPrecondition, "Notifier is in use by policies")
+		}
+
+		return nil, status.Errorf(codes.FailedPrecondition, "Notifier is in use by policies: %s", jsonString)
+	}
+
 	if err := s.storage.RemoveNotifier(request.GetId()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	s.processor.RemoveNotifier(request.GetId())
+	s.detector.RemoveNotifier(request.GetId())
 	return &empty.Empty{}, nil
+}
+
+func (s *NotifierService) populatePolicies(notifier *v1.Notifier) {
+	policies := s.processor.GetIntegratedPolicies(notifier.GetId())
+
+	for _, p := range policies {
+		notifier.Policies = append(notifier.Policies, &v1.Notifier_Policy{Id: p.GetId(), Name: p.GetName()})
+	}
+
+	sort.Slice(notifier.Policies, func(i, j int) bool {
+		return notifier.Policies[i].Name < notifier.Policies[j].Name
+	})
 }
