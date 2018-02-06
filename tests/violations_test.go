@@ -66,7 +66,7 @@ func setupNginxDeployment(t *testing.T) {
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
 
-	waitForNginxDeployment(t)
+	waitForDeployment(t, nginxDeploymentName)
 }
 
 func teardownNginxDeployment(t *testing.T) {
@@ -75,12 +75,12 @@ func teardownNginxDeployment(t *testing.T) {
 	require.NoError(t, err, string(output))
 
 	if !t.Failed() {
-		waitForNginxTermination(t)
+		waitForTermination(t, nginxDeploymentName)
 		t.Run("staleAlerts", verifyStaleAlerts)
 	}
 }
 
-func waitForNginxDeployment(t *testing.T) {
+func waitForDeployment(t *testing.T, deploymentName string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
@@ -93,7 +93,7 @@ func waitForNginxDeployment(t *testing.T) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		deployments, err := service.GetDeployments(ctx, &v1.GetDeploymentsRequest{Name: []string{nginxDeploymentName}})
+		deployments, err := service.GetDeployments(ctx, &v1.GetDeploymentsRequest{Name: []string{deploymentName}})
 		if err != nil && ctx.Err() == context.DeadlineExceeded {
 			t.Fatal(err)
 		}
@@ -108,7 +108,7 @@ func waitForNginxDeployment(t *testing.T) {
 	}
 }
 
-func waitForNginxTermination(t *testing.T) {
+func waitForTermination(t *testing.T, deploymentName string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
@@ -121,7 +121,7 @@ func waitForNginxTermination(t *testing.T) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		deployments, err := service.GetDeployments(ctx, &v1.GetDeploymentsRequest{Name: []string{nginxDeploymentName}})
+		deployments, err := service.GetDeployments(ctx, &v1.GetDeploymentsRequest{Name: []string{deploymentName}})
 		if err != nil && ctx.Err() == context.DeadlineExceeded {
 			t.Fatal(err)
 		}

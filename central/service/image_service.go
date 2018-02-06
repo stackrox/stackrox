@@ -32,6 +32,21 @@ func (s *ImageService) RegisterServiceHandlerFromEndpoint(ctx context.Context, m
 	return v1.RegisterImageServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 }
 
+// GetImage returns an image with given sha if it exists.
+func (s *ImageService) GetImage(ctx context.Context, request *v1.ResourceByID) (*v1.Image, error) {
+	image, exists, err := s.storage.GetImage(request.GetId())
+	if err != nil {
+		log.Error(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if !exists {
+		log.Error(err)
+		return nil, status.Errorf(codes.NotFound, "image with sha '%s' does not exist", request.GetId())
+	}
+
+	return image, nil
+}
+
 // GetImages retrieves all images.
 func (s *ImageService) GetImages(ctx context.Context, request *v1.GetImagesRequest) (*v1.GetImagesResponse, error) {
 	images, err := s.storage.GetImages(request)

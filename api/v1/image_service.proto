@@ -4,6 +4,7 @@ option go_package = "v1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
+import "api/v1/common.proto";
 
 package v1;
 
@@ -80,6 +81,12 @@ message GetImagesResponse {
 }
 
 service ImageService {
+
+    rpc GetImage(ResourceByID) returns (Image) {
+        option (google.api.http) = {
+            get: "/v1/images/{id}"
+        };
+    }
 
     rpc GetImages(GetImagesRequest) returns (GetImagesResponse) {
         option (google.api.http) = {

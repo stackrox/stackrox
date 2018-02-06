@@ -53,6 +53,8 @@ spec:
         env:
         - name: {{.PublicEndpointEnv}}
           value: {{.PublicEndpoint}}
+        - name: {{.ClusterIDEnv}}
+          value: {{.ClusterID}}
         - name: {{.ClusterNameEnv}}
           value: {{.ClusterName}}
         - name: {{.ImageEnv}}

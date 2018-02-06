@@ -87,6 +87,7 @@ type DeploymentStorage interface {
 
 // ImageStorage provide storage functionality for images.
 type ImageStorage interface {
+	GetImage(sha string) (*v1.Image, bool, error)
 	GetImages(request *v1.GetImagesRequest) ([]*v1.Image, error)
 	AddImage(image *v1.Image) error
 	UpdateImage(image *v1.Image) error

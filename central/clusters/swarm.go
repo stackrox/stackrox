@@ -44,6 +44,7 @@ services:
     environment:
       - "{{.PublicEndpointEnv}}={{.PublicEndpoint}}"
       - "{{.ClusterNameEnv}}={{.ClusterName}}"
+      - "{{.ClusterIDEnv}}={{.ClusterID}}"
       - "{{.AdvertisedEndpointEnv}}={{.AdvertisedEndpoint}}"
       - "{{.ImageEnv}}={{.Image}}"
 {{ if ne .DisableSwarmTLS "true" }}

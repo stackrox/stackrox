@@ -23,10 +23,11 @@ var (
 // listener provides functionality for listening to deployment events.
 type listener struct {
 	*dockerClient.Client
-	eventsC   chan *listeners.DeploymentEventWrap
-	stopC     chan struct{}
-	stoppedC  chan struct{}
-	clusterID string
+	eventsC     chan *listeners.DeploymentEventWrap
+	stopC       chan struct{}
+	stoppedC    chan struct{}
+	clusterID   string
+	clusterName string
 }
 
 // New returns a docker listener
@@ -39,11 +40,12 @@ func New() (listeners.Listener, error) {
 	defer cancel()
 	dockerClient.NegotiateAPIVersion(ctx)
 	return &listener{
-		Client:    dockerClient,
-		eventsC:   make(chan *listeners.DeploymentEventWrap, 10),
-		stopC:     make(chan struct{}),
-		stoppedC:  make(chan struct{}),
-		clusterID: env.ClusterID.Setting(),
+		Client:      dockerClient,
+		eventsC:     make(chan *listeners.DeploymentEventWrap, 10),
+		stopC:       make(chan struct{}),
+		stoppedC:    make(chan struct{}),
+		clusterID:   env.ClusterID.Setting(),
+		clusterName: env.ClusterName.Setting(),
 	}, nil
 }
 
@@ -93,6 +95,7 @@ func (dl *listener) sendExistingDeployments() {
 
 	for _, d := range existingDeployments {
 		d.Deployment.ClusterId = dl.clusterID
+		d.Deployment.ClusterName = dl.clusterName
 		d.Action = v1.ResourceAction_PREEXISTING_RESOURCE
 		dl.eventsC <- d
 	}
@@ -167,6 +170,7 @@ func (dl *listener) pipeDeploymentEvent(msg events.Message) {
 	}
 
 	deployment.ClusterId = dl.clusterID
+	deployment.ClusterName = dl.clusterName
 	event := &listeners.DeploymentEventWrap{
 		DeploymentEvent: &v1.DeploymentEvent{
 			Deployment: deployment,

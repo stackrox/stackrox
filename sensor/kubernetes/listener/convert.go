@@ -11,7 +11,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var clusterID = env.ClusterID.Setting()
+var (
+	clusterID   = env.ClusterID.Setting()
+	clusterName = env.ClusterName.Setting()
+)
 
 type wrap struct {
 	*pkgV1.DeploymentEvent
@@ -46,14 +49,15 @@ func newWrap(meta metav1.ObjectMeta, action pkgV1.ResourceAction, resourceType s
 	return wrap{
 		&pkgV1.DeploymentEvent{
 			Deployment: &pkgV1.Deployment{
-				Id:        string(meta.UID),
-				Name:      meta.Name,
-				Type:      resourceType,
-				Version:   meta.ResourceVersion,
-				Namespace: meta.Namespace,
-				Labels:    meta.Labels,
-				UpdatedAt: updatedTime,
-				ClusterId: clusterID,
+				Id:          string(meta.UID),
+				Name:        meta.Name,
+				Type:        resourceType,
+				Version:     meta.ResourceVersion,
+				Namespace:   meta.Namespace,
+				Labels:      meta.Labels,
+				UpdatedAt:   updatedTime,
+				ClusterId:   clusterID,
+				ClusterName: clusterName,
 			},
 			Action: action,
 		},

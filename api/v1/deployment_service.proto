@@ -24,8 +24,9 @@ message Deployment {
     map<string, string> labels                 = 7;
     google.protobuf.Timestamp updated_at       = 8;
     string cluster_id                          = 9;
+    string cluster_name                        = 10;
 
-    repeated Container containers              = 10;
+    repeated Container containers              = 11;
 }
 
 message Container {

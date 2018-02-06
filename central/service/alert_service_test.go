@@ -403,7 +403,7 @@ func TestCountAlerts(t *testing.T) {
 						Severity:   v1.Severity_LOW_SEVERITY,
 					},
 					Deployment: &v1.Deployment{
-						ClusterId: "test",
+						ClusterName: "test",
 					},
 					Time: &timestamp.Timestamp{Seconds: 300},
 				},
@@ -415,7 +415,7 @@ func TestCountAlerts(t *testing.T) {
 						Severity:   v1.Severity_CRITICAL_SEVERITY,
 					},
 					Deployment: &v1.Deployment{
-						ClusterId: "test",
+						ClusterName: "test",
 					},
 					Time: &timestamp.Timestamp{Seconds: 200},
 				},
@@ -427,7 +427,7 @@ func TestCountAlerts(t *testing.T) {
 						Severity:   v1.Severity_LOW_SEVERITY,
 					},
 					Deployment: &v1.Deployment{
-						ClusterId: "prod",
+						ClusterName: "prod",
 					},
 					Time: &timestamp.Timestamp{Seconds: 130},
 				},
@@ -439,7 +439,7 @@ func TestCountAlerts(t *testing.T) {
 						Severity:   v1.Severity_MEDIUM_SEVERITY,
 					},
 					Deployment: &v1.Deployment{
-						ClusterId: "prod",
+						ClusterName: "prod",
 					},
 					Time: &timestamp.Timestamp{Seconds: 120},
 				},
@@ -451,7 +451,7 @@ func TestCountAlerts(t *testing.T) {
 						Severity:   v1.Severity_HIGH_SEVERITY,
 					},
 					Deployment: &v1.Deployment{
-						ClusterId: "prod",
+						ClusterName: "prod",
 					},
 					Time: &timestamp.Timestamp{Seconds: 120},
 				},
@@ -463,7 +463,7 @@ func TestCountAlerts(t *testing.T) {
 						Severity:   v1.Severity_HIGH_SEVERITY,
 					},
 					Deployment: &v1.Deployment{
-						ClusterId: "test",
+						ClusterName: "test",
 					},
 					Time: &timestamp.Timestamp{Seconds: 110},
 				},

@@ -198,6 +198,6 @@ var (
 			}
 			return
 		},
-		v1.GetAlertsCountsRequest_CLUSTER: func(a *v1.Alert) []string { return []string{a.GetDeployment().GetClusterId()} },
+		v1.GetAlertsCountsRequest_CLUSTER: func(a *v1.Alert) []string { return []string{a.GetDeployment().GetClusterName()} },
 	}
 )
