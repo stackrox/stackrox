@@ -31,7 +31,7 @@ func (c *capabilitiesBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if len(container.HostConfig.CapAdd) > 0 {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container '%v' adds capabilities: %v", container.ID, strings.Join(container.HostConfig.CapAdd, ","))
+			utils.AddNotef(&result, "Container '%v' (%v) adds capabilities: %v", container.ID, container.Name, strings.Join(container.HostConfig.CapAdd, ","))
 			continue
 		}
 		capDropMap := newExpectedCapDrop()
@@ -41,7 +41,7 @@ func (c *capabilitiesBenchmark) Run() (result v1.CheckResult) {
 		for k, v := range capDropMap {
 			if !v {
 				utils.Warn(&result)
-				utils.AddNotef(&result, "Expected container '%v' to drop capability '%v'", container.ID, k)
+				utils.AddNotef(&result, "Expected container '%v' (%v) to drop capability '%v'", container.ID, container.Name, k)
 			}
 		}
 	}

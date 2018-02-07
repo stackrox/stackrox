@@ -23,7 +23,7 @@ func (c *mountPropagationBenchmark) Run() (result v1.CheckResult) {
 		for _, containerMount := range container.Mounts {
 			if containerMount.Propagation == mount.PropagationShared {
 				utils.Warn(&result)
-				utils.AddNotef(&result, "Container '%v' and mount '%v' uses shared propagation", container.ID, containerMount.Name)
+				utils.AddNotef(&result, "Container '%v' (%v) and mount '%v' uses shared propagation", container.ID, container.Name, containerMount.Name)
 			}
 		}
 	}

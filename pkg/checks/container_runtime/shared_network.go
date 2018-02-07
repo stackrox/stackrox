@@ -21,7 +21,7 @@ func (c *sharedNetworkBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.NetworkMode.IsHost() {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container '%v' has network set to --net=host", container.ID)
+			utils.AddNotef(&result, "Container '%v' (%v) has network set to --net=host", container.ID, container.Name)
 		}
 	}
 	return

@@ -21,7 +21,7 @@ func (c *readonlyRootfsBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if !container.HostConfig.ReadonlyRootfs {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container '%v' does not have a readonly rootfs", container.ID)
+			utils.AddNotef(&result, "Container '%v' (%v) does not have a readonly rootfs", container.ID, container.Name)
 		}
 	}
 	return

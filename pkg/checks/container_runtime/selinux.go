@@ -28,7 +28,7 @@ LOOP:
 			}
 		}
 		utils.Warn(&result)
-		utils.AddNotef(&result, "Container '%v' does not have selinux configured", container.ID)
+		utils.AddNotef(&result, "Container '%v' (%v) does not have selinux configured", container.ID, container.Name)
 	}
 	return
 }

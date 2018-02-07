@@ -21,7 +21,7 @@ func (c *memoryBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.Memory == 0 {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container '%v' does not have a memory limit", container.ID)
+			utils.AddNotef(&result, "Container '%v' (%v) does not have a memory limit", container.ID, container.Name)
 		}
 	}
 	return

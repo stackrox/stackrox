@@ -20,7 +20,7 @@ func (c *ulimitBenchmark) Run() (result v1.CheckResult) {
 	utils.Note(&result)
 	for _, container := range utils.ContainersRunning {
 		if len(container.HostConfig.Ulimits) > 0 {
-			utils.AddNotef(&result, "Container '%v' overrides ulimits", container.ID)
+			utils.AddNotef(&result, "Container '%v' (%v) overrides ulimits", container.ID, container.Name)
 		}
 	}
 	return

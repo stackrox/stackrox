@@ -28,7 +28,7 @@ func (c *hostDevicesBenchmark) Run() (result v1.CheckResult) {
 			for _, device := range container.HostConfig.Devices {
 				devices = append(devices, fmt.Sprintf("%v:%v", device.PathOnHost, device.PathInContainer))
 			}
-			utils.AddNotef(&result, "Container '%v' has host devices %+v exposed to it", container.ID, strings.Join(devices, ","))
+			utils.AddNotef(&result, "Container '%v' (%v) has host devices %+v exposed to it", container.ID, container.Name, strings.Join(devices, ","))
 		}
 	}
 	return

@@ -26,12 +26,12 @@ func (c *privilegedPortsBenchmark) Run() (result v1.CheckResult) {
 				portNum, err := strconv.Atoi(binding.HostPort)
 				if err != nil {
 					utils.Warn(&result)
-					utils.AddNotef(&result, "Could not parse host port for container '%v': '%v'", container.ID, binding.HostPort)
+					utils.AddNotef(&result, "Could not parse host port for container '%v' (%v): '%v'", container.ID, container.Name, binding.HostPort)
 					continue
 				}
 				if portNum < 1024 {
 					utils.Warn(&result)
-					utils.AddNotef(&result, "Container '%v' binds '%v' to privileged host port '%v'", container.ID, containerPort, portNum)
+					utils.AddNotef(&result, "Container '%v' (%v) binds '%v' to privileged host port '%v'", container.ID, container.Name, containerPort, portNum)
 				}
 			}
 		}

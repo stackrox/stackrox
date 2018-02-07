@@ -21,7 +21,7 @@ func (c *usernsBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.UsernsMode.IsHost() {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container '%v' has user namespace set to host", container.ID)
+			utils.AddNotef(&result, "Container '%v' (%v) has user namespace set to host", container.ID, container.Name)
 		}
 	}
 	return

@@ -21,7 +21,7 @@ func (c *cgroupBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.CgroupParent != "docker" && container.HostConfig.CgroupParent != "" {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container '%v' has the cgroup parent set to '%v'", container.ID, container.HostConfig.CgroupParent)
+			utils.AddNotef(&result, "Container '%v' (%v) has the cgroup parent set to '%v'", container.ID, container.Name, container.HostConfig.CgroupParent)
 		}
 	}
 	return

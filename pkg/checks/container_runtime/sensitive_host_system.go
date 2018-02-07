@@ -33,7 +33,7 @@ func (c *sensitiveHostMountsBenchmark) Run() (result v1.CheckResult) {
 		for _, mount := range container.Mounts {
 			if _, ok := sensitiveMountMap[mount.Source]; ok {
 				utils.Warn(&result)
-				utils.AddNotef(&result, "Container '%v' mounts in sensitive mount source '%v'", container.ID, mount.Source)
+				utils.AddNotef(&result, "Container '%v' (%v) mounts in sensitive mount source '%v'", container.ID, container.Name, mount.Source)
 			}
 		}
 	}

@@ -21,7 +21,7 @@ func (c *bridgeNetworkBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if _, ok := container.NetworkSettings.Networks["bridge"]; ok {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container '%v' is running on the bridge network", container.ID)
+			utils.AddNotef(&result, "Container '%v' (%v) is running on the bridge network", container.ID, container.Name)
 		}
 	}
 	return

@@ -21,7 +21,7 @@ func (c *ipcNamespaceBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.IpcMode.IsHost() {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container %v has ipc mode set to host", container.ID)
+			utils.AddNotef(&result, "Container '%v' (%v) has ipc mode set to host", container.ID, container.Name)
 		}
 	}
 	return

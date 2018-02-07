@@ -21,7 +21,7 @@ func (c *privilegedBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.Privileged {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container '%v' is running as privileged", container.ID)
+			utils.AddNotef(&result, "Container '%v' (%v) is running as privileged", container.ID, container.Name)
 		}
 	}
 	return

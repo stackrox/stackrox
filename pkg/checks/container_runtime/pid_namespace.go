@@ -21,7 +21,7 @@ func (c *pidNamespaceBenchmark) Run() (result v1.CheckResult) {
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.PidMode.IsHost() {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Container '%v' has pid mode set to host", container.ID)
+			utils.AddNotef(&result, "Container '%v' (%v) has pid mode set to host", container.ID, container.Name)
 		}
 	}
 	return
