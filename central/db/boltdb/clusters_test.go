@@ -1,7 +1,6 @@
 package boltdb
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -21,11 +20,7 @@ type BoltClusterTestSuite struct {
 }
 
 func (suite *BoltClusterTestSuite) SetupSuite() {
-	tmpDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		suite.FailNow("Failed to get temporary directory", err.Error())
-	}
-	db, err := New(tmpDir)
+	db, err := boltFromTmpDir()
 	if err != nil {
 		suite.FailNow("Failed to make BoltDB", err.Error())
 	}

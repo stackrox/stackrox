@@ -1,9 +1,9 @@
 package boltdb
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -19,14 +19,17 @@ type BoltAlertsTestSuite struct {
 	*BoltDB
 }
 
-func (suite *BoltAlertsTestSuite) SetupSuite() {
+func boltFromTmpDir() (*BoltDB, error) {
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
-		suite.FailNow("Failed to get temporary directory", err.Error())
+		return nil, err
 	}
-	db, err := New(tmpDir)
+	return New(filepath.Join(tmpDir, "mitigate.db"))
+}
+
+func (suite *BoltAlertsTestSuite) SetupSuite() {
+	db, err := boltFromTmpDir()
 	if err != nil {
-		fmt.Printf("Error making BoltDB: %+v", err)
 		suite.FailNow("Failed to make BoltDB", err.Error())
 	}
 	suite.BoltDB = db

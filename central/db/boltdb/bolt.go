@@ -27,7 +27,8 @@ type BoltDB struct {
 }
 
 // New returns an instance of the persistent BoltDB store
-func New(dirPath string) (*BoltDB, error) {
+func New(path string) (*BoltDB, error) {
+	dirPath := filepath.Dir(path)
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 		err = os.MkdirAll(dirPath, 0600)
 		if err != nil {
@@ -36,7 +37,7 @@ func New(dirPath string) (*BoltDB, error) {
 	} else if err != nil {
 		return nil, err
 	}
-	db, err := bolt.Open(filepath.Join(dirPath, "mitigate.db"), 0600, nil)
+	db, err := bolt.Open(path, 0600, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -56,6 +57,10 @@ func New(dirPath string) (*BoltDB, error) {
 
 // NewWithDefaults returns an instance of the persistent BoltDB store with default values loaded.
 func NewWithDefaults(dbPath string) (*BoltDB, error) {
+	if filepath.Ext(dbPath) != ".db" {
+		dbPath = filepath.Join(dbPath, "mitigate.db")
+	}
+
 	db, err := New(dbPath)
 	if err != nil {
 		return db, err
@@ -71,60 +76,31 @@ func NewWithDefaults(dbPath string) (*BoltDB, error) {
 }
 
 func (b *BoltDB) initializeTables() error {
+	var buckets = []string{
+		alertBucket,
+		authProviderBucket,
+		benchmarksToScansBucket,
+		benchmarkBucket,
+		benchmarkScheduleBucket,
+		benchmarkTriggerBucket,
+		checkResultsBucket,
+		clusterBucket,
+		clusterStatusBucket,
+		deploymentBucket,
+		imageBucket,
+		policyBucket,
+		notifierBucket,
+		registryBucket,
+		scannerBucket,
+		scanMetadataBucket,
+		scansToCheckBucket,
+		serviceIdentityBucket,
+	}
 	return b.Update(func(tx *bolt.Tx) error {
-		if _, err := tx.CreateBucketIfNotExists([]byte(alertBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(authProviderBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(benchmarkBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(benchmarksToScansBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(checkResultsBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(benchmarkScheduleBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(benchmarkTriggerBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(clusterBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(clusterStatusBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(deploymentBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(imageBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(policyBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(notifierBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(registryBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(scannerBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(scanMetadataBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(scansToCheckBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(serviceIdentityBucket)); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
+		for _, b := range buckets {
+			if _, err := tx.CreateBucketIfNotExists([]byte(b)); err != nil {
+				return fmt.Errorf("create bucket: %s", err)
+			}
 		}
 		return nil
 	})

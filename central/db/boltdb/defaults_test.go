@@ -1,7 +1,6 @@
 package boltdb
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -12,17 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func createBolt() (*BoltDB, error) {
-	tmpDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return nil, err
-	}
-	db, err := New(tmpDir)
-	return db, err
-}
-
 func TestGetDefaultPolicies(t *testing.T) {
-	db, err := createBolt()
+	db, err := boltFromTmpDir()
 	require.NoError(t, err)
 	defer db.Close()
 	defer os.Remove(db.Path())
