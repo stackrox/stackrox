@@ -24,17 +24,19 @@ var (
 // NewPolicyService returns the PolicyService API.
 func NewPolicyService(storage db.Storage, detector *detection.Detector) *PolicyService {
 	return &PolicyService{
-		policyStorage:   storage,
-		notifierStorage: storage,
-		detector:        detector,
+		deploymentStorage: storage,
+		policyStorage:     storage,
+		notifierStorage:   storage,
+		detector:          detector,
 	}
 }
 
 // PolicyService is the struct that manages Policies API
 type PolicyService struct {
-	policyStorage   db.PolicyStorage
-	notifierStorage db.NotifierStorage
-	detector        *detection.Detector
+	deploymentStorage db.DeploymentStorage
+	policyStorage     db.PolicyStorage
+	notifierStorage   db.NotifierStorage
+	detector          *detection.Detector
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -143,4 +145,28 @@ func (s *PolicyService) ReassessPolicies(context.Context, *empty.Empty) (*empty.
 	go s.detector.EnrichAndReprocess()
 
 	return &empty.Empty{}, nil
+}
+
+// DryRunPolicy runs a dry run of the policy and determines what deployments would
+func (s *PolicyService) DryRunPolicy(ctx context.Context, request *v1.Policy) (*v1.DryRunResponse, error) {
+	policy, err := s.validatePolicy(request)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	var resp v1.DryRunResponse
+	deployments, err := s.deploymentStorage.GetDeployments(&v1.GetDeploymentsRequest{})
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	for _, deployment := range deployments {
+		alert, _ := s.detector.Detect(detection.NewTask(deployment, v1.ResourceAction_DRYRUN_RESOURCE, policy))
+		if alert != nil {
+			violations := make([]string, 0, len(alert.GetViolations()))
+			for _, v := range alert.GetViolations() {
+				violations = append(violations, v.GetMessage())
+			}
+			resp.Alerts = append(resp.GetAlerts(), &v1.DryRunResponse_Alert{Deployment: deployment.GetName(), Violations: violations})
+		}
+	}
+	return &resp, nil
 }

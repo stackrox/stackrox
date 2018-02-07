@@ -27,7 +27,7 @@ type Detector struct {
 
 	enricher              *enrichment.Enricher
 	notificationProcessor *notifications.Processor
-	taskC                 chan task
+	taskC                 chan Task
 	stopping              bool
 	stoppedC              chan struct{}
 
@@ -40,7 +40,7 @@ func New(database db.Storage, notificationsProcessor *notifications.Processor) (
 	d = &Detector{
 		database:              database,
 		notificationProcessor: notificationsProcessor,
-		taskC:    make(chan task, 40),
+		taskC:    make(chan Task, 40),
 		stoppedC: make(chan struct{}),
 	}
 
@@ -58,14 +58,24 @@ func New(database db.Storage, notificationsProcessor *notifications.Processor) (
 	return d, nil
 }
 
-// Stop closes the task reprocessing channel, and waits for remaining tasks to finish before returning.
+// Stop closes the Task reprocessing channel, and waits for remaining tasks to finish before returning.
 func (d *Detector) Stop() {
 	d.stopping = true
 	close(d.taskC)
 	<-d.stoppedC
 }
 
-type task struct {
+// NewTask creates a new task object
+func NewTask(deployment *v1.Deployment, action v1.ResourceAction, policy *matcher.Policy) Task {
+	return Task{
+		deployment: deployment,
+		action:     action,
+		policy:     policy,
+	}
+}
+
+// Task describes a unit to be processed
+type Task struct {
 	deployment *v1.Deployment
 	action     v1.ResourceAction
 	policy     *matcher.Policy

@@ -6,7 +6,8 @@ import (
 	"github.com/golang/protobuf/ptypes"
 )
 
-func (d *Detector) detect(task task) (alert *v1.Alert, enforcement v1.EnforcementAction) {
+// Detect takes a Task and returns whether an alert and an enforcement action would be taken
+func (d *Detector) Detect(task Task) (alert *v1.Alert, enforcement v1.EnforcementAction) {
 	if !task.policy.ShouldProcess(task.deployment) {
 		return
 	}
@@ -18,7 +19,7 @@ func (d *Detector) detect(task task) (alert *v1.Alert, enforcement v1.Enforcemen
 	return
 }
 
-func (d *Detector) generateAlert(task task) (alert *v1.Alert) {
+func (d *Detector) generateAlert(task Task) (alert *v1.Alert) {
 	violations := task.policy.Match(task.deployment)
 	if len(violations) == 0 {
 		return

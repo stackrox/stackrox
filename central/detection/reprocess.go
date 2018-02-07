@@ -53,7 +53,7 @@ func (d *Detector) reprocessPolicy(policy *matcher.Policy) {
 	}
 
 	for _, deploy := range deployments {
-		d.taskC <- task{
+		d.taskC <- Task{
 			deployment: deploy,
 			policy:     policy,
 			action:     v1.ResourceAction_REFRESH_RESOURCE,
@@ -95,7 +95,7 @@ func (d *Detector) reprocessScanner(scanner scannerTypes.ImageScanner) {
 
 func (d *Detector) queueTasks(deployment *v1.Deployment, policies []*matcher.Policy) {
 	for _, p := range policies {
-		d.taskC <- task{
+		d.taskC <- Task{
 			deployment: deployment,
 			policy:     p,
 			action:     v1.ResourceAction_REFRESH_RESOURCE,

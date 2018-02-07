@@ -14,6 +14,7 @@ enum ResourceAction {
     REMOVE_RESOURCE         = 3;
     UPDATE_RESOURCE         = 4;
     REFRESH_RESOURCE        = 5;
+    DRYRUN_RESOURCE         = 6;
 }
 
 message DeploymentEvent {

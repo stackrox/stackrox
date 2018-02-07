@@ -55,6 +55,13 @@ message PoliciesResponse {
     repeated Policy policies = 1;
 }
 
+message DryRunResponse {
+    message Alert {
+        string deployment          = 1;
+        repeated string violations = 2;
+    }
+    repeated Alert alerts = 1;
+}
 
 service PolicyService {
 
@@ -93,6 +100,13 @@ service PolicyService {
     rpc ReassessPolicies (google.protobuf.Empty) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             post: "/v1/policies/reassess"
+        };
+    }
+
+    rpc DryRunPolicy (Policy) returns (DryRunResponse) {
+        option (google.api.http) = {
+            post: "/v1/policies/dryrun"
+            body: "*"
         };
     }
 

@@ -17,7 +17,7 @@ func (d *Detector) ProcessDeploymentEvent(deployment *v1.Deployment, action v1.R
 	defer d.policyMutex.Unlock()
 
 	for _, policy := range d.policies {
-		_, enforceAction := d.processTask(task{deployment, action, policy})
+		_, enforceAction := d.processTask(Task{deployment, action, policy})
 
 		if enforceAction != v1.EnforcementAction_UNSET_ENFORCEMENT {
 			enforcementActions = append(enforcementActions, enforceAction)
@@ -28,7 +28,7 @@ func (d *Detector) ProcessDeploymentEvent(deployment *v1.Deployment, action v1.R
 	return
 }
 
-func (d *Detector) processTask(task task) (alert *v1.Alert, enforcement v1.EnforcementAction) {
+func (d *Detector) processTask(task Task) (alert *v1.Alert, enforcement v1.EnforcementAction) {
 	d.markExistingAlertsAsStale(task.deployment.GetId(), task.policy.GetId())
 
 	// No further processing is needed when a deployment is removed.
@@ -36,7 +36,7 @@ func (d *Detector) processTask(task task) (alert *v1.Alert, enforcement v1.Enfor
 		return
 	}
 
-	alert, enforcement = d.detect(task)
+	alert, enforcement = d.Detect(task)
 
 	if alert != nil {
 		logger.Warnf("Alert Generated: %v with Severity %v due to policy %v", alert.Id, alert.GetPolicy().GetSeverity().String(), alert.GetPolicy().GetName())
