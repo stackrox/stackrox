@@ -153,10 +153,8 @@ func TestImages(t *testing.T) {
 	}
 
 	const dockerRegistry = `docker.io`
-	const googleRegistry = `gcr.io`
 
 	require.NotEmpty(t, imageMap[dockerRegistry])
-	assert.NotEmpty(t, imageMap[googleRegistry])
 
 	foundMitigateImage := false
 

@@ -99,7 +99,7 @@ func (s *slack) AlertNotify(alert *v1.Alert) error {
 	attachments := []attachment{
 		{
 			FallBack:       body,
-			Color:          getAttachmentColor(alert.GetPolicy().GetSeverity()),
+			Color:          GetAttachmentColor(alert.GetPolicy().GetSeverity()),
 			Pretext:        tagLine,
 			Text:           body,
 			MarkDownFields: []string{"pretext", "text", "fields"},
@@ -199,7 +199,8 @@ func postMessage(url string, jsonPayload []byte) (err error) {
 	return
 }
 
-func getAttachmentColor(s v1.Severity) string {
+// GetAttachmentColor returns the corresponding color for each severity.
+func GetAttachmentColor(s v1.Severity) string {
 	switch s {
 	case v1.Severity_LOW_SEVERITY:
 		return colorLowAlert
