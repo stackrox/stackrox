@@ -8,6 +8,7 @@ import * as Icon from 'react-feather';
 
 import axios from 'axios';
 import dateFns from 'date-fns';
+import { severityLabels, categoriesLabels } from 'messages/common';
 
 const reducer = (action, prevState, nextState) => {
     switch (action) {
@@ -84,29 +85,20 @@ class PolicyAlertsSidePanel extends Component {
                     <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.handleCloseModal} />
                 </header>
                 <div className="flex flex-1 overflow-y-scroll">
-                    <div className="flex flex-col w-1/2 border-r border-primary-200">
-                        <div className="bg-white m-3 flex-grow pb-2">
-                            <header className="w-full p-3 font-bold border-b border-primary-200 mb-2">Violations</header>
-                            <div>
-                                {this.state.alert.violations.map(violation => <div key={`${violation.message}`} className="py-2 px-3 break-words">{violation.message}</div>)}
+                    <div className="flex flex-col w-full">
+                        <div className="bg-white m-3 flex-grow">
+                            <div className="flex py-2 px-3 truncate">
+                                <div className="flex-row font-bold text-primary-500">Violation:</div>
+                                <div className="flex-row px-1">
+                                    {this.state.alert.violations.map(violation => <div key={`${violation.message}`} className="flex-col break-words">{violation.message}</div>)}
+                                </div>
                             </div>
-                        </div>
-                        <div className="bg-white m-3 pb-2">
-                            <header className="w-full p-3 border-b border-base-300 font-bold mb-2">Alert Summary</header>
-                            <div>
-                                <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Description:</span> {this.state.alert.policy.description}</div>
-                                <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Deployment ID:</span> {this.state.alert.deployment.id}</div>
-                                <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Severity:</span> {this.state.alert.policy.severity}</div>
-                                <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Time:</span> {this.state.alert.time}</div>
-                                <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Type:</span> {this.state.alert.deployment.type}</div>
-                                <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Last Updated:</span> {this.state.alert.deployment.updatedAt || 'Never'}</div>
-                            </div>
-                        </div>
-
-                    </div>
-                    <div className="flex flex-col w-1/2">
-                        <div className="bg-white m-3 pb-2">
-                            <header className="w-full p-3 border-b border-primary-200 font-bold mb-2">Deployment Summary</header>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Description:</span> {this.state.alert.policy.description}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Severity:</span> {severityLabels[this.state.alert.policy.severity]}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Date:</span> {this.state.alert.date}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Time:</span> {this.state.alert.time}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Type:</span> {this.state.alert.deployment.type}</div>
+                            <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Deployment ID:</span> {this.state.alert.deployment.id}</div>
                             {this.state.alert.deployment.containers.map(container => (
                                 <div key={container.image.sha}>
                                     <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Registry:</span> {container.image.registry}</div>
@@ -115,18 +107,11 @@ class PolicyAlertsSidePanel extends Component {
                                     <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Tag:</span> {container.image.tag}</div>
                                 </div>
                             ))}
-                        </div>
-                        <div className="bg-white m-3 pb-2">
-                            <header className="w-full p-3 font-bold border-b border-primary-200 mb-2">Policy Details</header>
-                            <div>
-                                <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Name:</span> {this.state.alert.policy.name}</div>
-                                <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Description:</span> {this.state.alert.policy.description}</div>
-                                <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Severity:</span> {this.state.alert.policy.severity}</div>
-                                <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Categories:</span> {this.state.alert.policy.categories.join(', ')}</div>
-                                <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Disabled:</span> {String(this.state.alert.policy.disabled)}</div>
-                                {
-                                    (this.state.alert.policy.imagePolicy) ? <div className="py-2 px-3 truncate"><span className="font-bold text-primary-500">Scan Age Day:</span> {this.state.alert.policy.imagePolicy.scanAgeDays || 0}</div> : ''
-                                }
+                            <div className="py-2 px-3 truncate">
+                                <span className="font-bold text-primary-500">Categories: </span>
+                                {this.state.alert.policy.categories
+                                    .map(category => categoriesLabels[category])
+                                    .join(', ')}
                             </div>
                         </div>
                     </div>
@@ -141,8 +126,9 @@ class PolicyAlertsSidePanel extends Component {
             { key: 'time', label: 'Time' }
         ];
         const rows = this.state.alerts.map((alert) => {
-            const result = alert;
-            result.time = dateFns.format(alert.time, 'MM/DD/YYYY h:mm:ss A');
+            const result = Object.assign({}, alert);
+            result.date = dateFns.format(alert.time, 'MM/DD/YYYY');
+            result.time = dateFns.format(alert.time, 'h:mm:ss A');
             return result;
         });
         return <Table columns={columns} rows={rows} onRowClick={this.handleOpenModal} />;
