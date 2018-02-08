@@ -8,6 +8,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,6 +32,9 @@ var (
 func TestAlerts(t *testing.T) {
 	defer teardownNginxDeployment(t)
 	setupNginxDeployment(t)
+
+	defer revertPolicyScopeChange(t, expectedPort22Policy)
+	addPolicyClusterScope(t, expectedPort22Policy)
 
 	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
 	require.NoError(t, err)
@@ -135,6 +139,57 @@ func waitForTermination(t *testing.T, deploymentName string) {
 			return
 		}
 	}
+}
+
+func addPolicyClusterScope(t *testing.T, policyName string) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
+	require.NoError(t, err)
+
+	clusterService := v1.NewClustersServiceClient(conn)
+
+	clusters, err := clusterService.GetClusters(ctx, &empty.Empty{})
+	require.NoError(t, err)
+	require.Len(t, clusters.GetClusters(), 1)
+
+	c := clusters.GetClusters()[0]
+	clusterID := c.GetId()
+
+	policyService := v1.NewPolicyServiceClient(conn)
+
+	policyResp, err := policyService.GetPolicies(ctx, &v1.GetPoliciesRequest{Name: []string{policyName}})
+	require.NoError(t, err)
+	require.Len(t, policyResp.GetPolicies(), 1)
+
+	policy := policyResp.GetPolicies()[0]
+	policy.Scope = append(policy.Scope, &v1.Policy_Scope{
+		Cluster: clusterID,
+	})
+
+	_, err = policyService.PutPolicy(ctx, policy)
+	require.NoError(t, err)
+}
+
+func revertPolicyScopeChange(t *testing.T, policyName string) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
+	require.NoError(t, err)
+
+	policyService := v1.NewPolicyServiceClient(conn)
+
+	policyResp, err := policyService.GetPolicies(ctx, &v1.GetPoliciesRequest{Name: []string{policyName}})
+	require.NoError(t, err)
+	require.Len(t, policyResp.GetPolicies(), 1)
+
+	policy := policyResp.GetPolicies()[0]
+	policy.Scope = policy.Scope[:len(policy.GetScope())-1]
+
+	_, err = policyService.PutPolicy(ctx, policy)
+	require.NoError(t, err)
 }
 
 func verifyStaleAlerts(t *testing.T) {

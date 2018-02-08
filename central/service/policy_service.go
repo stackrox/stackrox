@@ -27,6 +27,7 @@ func NewPolicyService(storage db.Storage, detector *detection.Detector) *PolicyS
 		deploymentStorage: storage,
 		policyStorage:     storage,
 		notifierStorage:   storage,
+		clusterStorage:    storage,
 		detector:          detector,
 	}
 }
@@ -36,6 +37,7 @@ type PolicyService struct {
 	deploymentStorage db.DeploymentStorage
 	policyStorage     db.PolicyStorage
 	notifierStorage   db.NotifierStorage
+	clusterStorage    db.ClusterStorage
 	detector          *detection.Detector
 }
 
@@ -87,32 +89,6 @@ func (s *PolicyService) PostPolicy(ctx context.Context, request *v1.Policy) (*v1
 	policy.Id = id
 	s.detector.UpdatePolicy(policy)
 	return request, nil
-}
-
-func (s *PolicyService) validatePolicy(policy *v1.Policy) (*matcher.Policy, error) {
-	if policy.GetName() == "" {
-		return nil, errors.New("policy must have a set name")
-	}
-	if policy.GetSeverity() == v1.Severity_UNSET_SEVERITY {
-		return nil, errors.New("policy must have a set severity")
-	}
-	if len(policy.GetCategories()) == 0 {
-		return nil, errors.New("policy must have at least one category")
-	}
-	for _, n := range policy.GetNotifiers() {
-		_, exists, err := s.notifierStorage.GetNotifier(n)
-		if err != nil {
-			return nil, fmt.Errorf("Error checking if notifier %v is valid", n)
-		}
-		if !exists {
-			return nil, fmt.Errorf("Notifier %v does not exist", n)
-		}
-	}
-	matcherPolicy, err := matcher.New(policy)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("Policy could not be edited due to: %+v", err))
-	}
-	return matcherPolicy, nil
 }
 
 // PutPolicy updates a current policy in the system.
@@ -169,4 +145,44 @@ func (s *PolicyService) DryRunPolicy(ctx context.Context, request *v1.Policy) (*
 		}
 	}
 	return &resp, nil
+}
+
+func (s *PolicyService) validatePolicy(policy *v1.Policy) (*matcher.Policy, error) {
+	if policy.GetName() == "" {
+		return nil, errors.New("policy must have a set name")
+	}
+	if policy.GetSeverity() == v1.Severity_UNSET_SEVERITY {
+		return nil, errors.New("policy must have a set severity")
+	}
+	if len(policy.GetCategories()) == 0 {
+		return nil, errors.New("policy must have at least one category")
+	}
+	for _, n := range policy.GetNotifiers() {
+		_, exists, err := s.notifierStorage.GetNotifier(n)
+		if err != nil {
+			return nil, fmt.Errorf("Error checking if notifier %v is valid", n)
+		}
+		if !exists {
+			return nil, fmt.Errorf("Notifier %v does not exist", n)
+		}
+	}
+	for _, scope := range policy.GetScope() {
+		if scope.GetCluster() == "" {
+			continue
+		}
+
+		_, exists, err := s.clusterStorage.GetCluster(scope.GetCluster())
+		if err != nil {
+			return nil, fmt.Errorf("unable to get cluster id %s: %s", scope.GetCluster(), err)
+		}
+		if !exists {
+			return nil, fmt.Errorf("Cluster %s does not exist", scope.GetCluster())
+		}
+	}
+
+	matcherPolicy, err := matcher.New(policy)
+	if err != nil {
+		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
+	}
+	return matcherPolicy, nil
 }
