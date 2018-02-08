@@ -6,11 +6,10 @@ import (
 
 var (
 	// ClusterID is used to provide a cluster ID to a sensor.
+	// This cluster ID is not relied upon for authentication or authorization.
 	ClusterID = Setting(clusterID{})
-	// ClusterName is used to provide a cluster name to a sensor.
-	ClusterName = Setting(clusterName{})
-	// CenralEndpoint is used to provide Central's reachable endpoint to a sensor.
-	CenralEndpoint = Setting(centralEndpoint{})
+	// CentralEndpoint is used to provide Central's reachable endpoint to a sensor.
+	CentralEndpoint = Setting(centralEndpoint{})
 	// AdvertisedEndpoint is used to provide the Sensor with the endpoint it
 	// should advertise to services that need to contact it, within its own cluster.
 	AdvertisedEndpoint = Setting(advertisedEndpoint{})
@@ -25,16 +24,6 @@ func (c clusterID) EnvVar() string {
 }
 
 func (c clusterID) Setting() string {
-	return os.Getenv(c.EnvVar())
-}
-
-type clusterName struct{}
-
-func (c clusterName) EnvVar() string {
-	return "ROX_MITIGATE_CLUSTER_NAME"
-}
-
-func (c clusterName) Setting() string {
 	return os.Getenv(c.EnvVar())
 }
 

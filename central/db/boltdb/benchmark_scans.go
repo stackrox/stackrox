@@ -63,7 +63,7 @@ func (b *BoltDB) AddBenchmarkResult(result *v1.BenchmarkResult) error {
 		checksBucket := tx.Bucket([]byte(checkResultsBucket))
 		for _, check := range result.Results {
 			check.Id = uuid.NewV4().String()
-			check.Cluster = result.GetClusterId()
+			check.ClusterId = result.GetClusterId()
 			check.Host = result.GetHost()
 
 			bytes, err := proto.Marshal(check)
@@ -127,7 +127,7 @@ func (b *BoltDB) GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (scan *v1
 		err = fmt.Errorf("Scan id must be defined when retrieving results")
 		return
 	}
-	clusterSet := newStringSet(request.GetClusters())
+	clusterSet := newStringSet(request.GetClusterIds())
 	hostSet := newStringSet(request.GetHosts())
 	scan = new(v1.BenchmarkScan)
 	err = b.View(func(tx *bolt.Tx) error {
@@ -161,7 +161,7 @@ func (b *BoltDB) GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (scan *v1
 				if err != nil {
 					return err
 				}
-				if clusterSet.Cardinality() != 0 && !clusterSet.Contains(result.GetCluster()) {
+				if clusterSet.Cardinality() != 0 && !clusterSet.Contains(result.GetClusterId()) {
 					return nil
 				}
 				if hostSet.Cardinality() != 0 && !hostSet.Contains(result.GetHost()) {
@@ -201,13 +201,13 @@ func (b *BoltDB) ListBenchmarkScans(request *v1.ListBenchmarkScansRequest) ([]*v
 	}
 
 	// Filter the schedule metadata
-	clusterSet := newStringSet(request.GetClusters())
+	clusterSet := newStringSet(request.GetClusterIds())
 	filtered := scansMetadata[:0]
 	for _, scan := range scansMetadata {
 		if request.GetBenchmark() != "" && request.GetBenchmark() != scan.GetBenchmark() {
 			continue
 		}
-		scanClusterSet := newStringSet(request.GetClusters())
+		scanClusterSet := newStringSet(request.GetClusterIds())
 		// This means none of the items intersect in the two clusters so we should skip this scan
 		if clusterSet.Cardinality() != 0 && clusterSet.Intersect(scanClusterSet).Cardinality() == 0 {
 			continue

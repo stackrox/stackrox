@@ -6,7 +6,6 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/docker"
-	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/docker/docker/api/types"
@@ -23,11 +22,9 @@ var (
 // listener provides functionality for listening to deployment events.
 type listener struct {
 	*dockerClient.Client
-	eventsC     chan *listeners.DeploymentEventWrap
-	stopC       chan struct{}
-	stoppedC    chan struct{}
-	clusterID   string
-	clusterName string
+	eventsC  chan *listeners.DeploymentEventWrap
+	stopC    chan struct{}
+	stoppedC chan struct{}
 }
 
 // New returns a docker listener
@@ -40,12 +37,10 @@ func New() (listeners.Listener, error) {
 	defer cancel()
 	dockerClient.NegotiateAPIVersion(ctx)
 	return &listener{
-		Client:      dockerClient,
-		eventsC:     make(chan *listeners.DeploymentEventWrap, 10),
-		stopC:       make(chan struct{}),
-		stoppedC:    make(chan struct{}),
-		clusterID:   env.ClusterID.Setting(),
-		clusterName: env.ClusterName.Setting(),
+		Client:   dockerClient,
+		eventsC:  make(chan *listeners.DeploymentEventWrap, 10),
+		stopC:    make(chan struct{}),
+		stoppedC: make(chan struct{}),
 	}, nil
 }
 
@@ -94,8 +89,6 @@ func (dl *listener) sendExistingDeployments() {
 	}
 
 	for _, d := range existingDeployments {
-		d.Deployment.ClusterId = dl.clusterID
-		d.Deployment.ClusterName = dl.clusterName
 		d.Action = v1.ResourceAction_PREEXISTING_RESOURCE
 		dl.eventsC <- d
 	}
@@ -169,8 +162,6 @@ func (dl *listener) pipeDeploymentEvent(msg events.Message) {
 		return
 	}
 
-	deployment.ClusterId = dl.clusterID
-	deployment.ClusterName = dl.clusterName
 	event := &listeners.DeploymentEventWrap{
 		DeploymentEvent: &v1.DeploymentEvent{
 			Deployment: deployment,

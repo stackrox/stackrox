@@ -25,7 +25,7 @@ func (s *benchmarkTriggerStore) GetBenchmarkTriggers(request *v1.GetBenchmarkTri
 		return nil, err
 	}
 	nameSet := stringWrap(request.GetNames()).asSet()
-	clusterSet := stringWrap(request.GetClusters()).asSet()
+	clusterSet := stringWrap(request.GetClusterIds()).asSet()
 	filteredTriggers := triggers[:0]
 	for _, trigger := range triggers {
 		if _, ok := nameSet[trigger.GetName()]; len(nameSet) > 0 && !ok {
@@ -33,9 +33,9 @@ func (s *benchmarkTriggerStore) GetBenchmarkTriggers(request *v1.GetBenchmarkTri
 		}
 		// If request clusters is empty then return all
 		// If the trigger has no cluster set, then it applies to all clusters
-		if len(clusterSet) != 0 && len(trigger.Clusters) != 0 {
+		if len(clusterSet) != 0 && len(trigger.ClusterIds) != 0 {
 			var clusterMatch bool
-			for _, cluster := range trigger.Clusters {
+			for _, cluster := range trigger.ClusterIds {
 				if _, ok := clusterSet[cluster]; ok {
 					clusterMatch = true
 					break

@@ -5,6 +5,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/assert"
 )
@@ -64,16 +65,20 @@ func TestBenchmarkTriggersFiltering(t *testing.T) {
 	triggerTime2.Seconds -= 1000
 	triggerTime3.Seconds -= 2000
 
+	cluster1 := uuid.NewV4().String()
+	cluster2a := uuid.NewV4().String()
+	cluster2b := uuid.NewV4().String()
+
 	storage := newBenchmarkTriggerStore(persistent)
 	trigger1 := &v1.BenchmarkTrigger{
-		Name:     "trigger1",
-		Time:     triggerTime1,
-		Clusters: []string{"development"},
+		Name:       "trigger1",
+		Time:       triggerTime1,
+		ClusterIds: []string{cluster1},
 	}
 	trigger2 := &v1.BenchmarkTrigger{
-		Name:     "trigger2",
-		Time:     triggerTime2,
-		Clusters: []string{"integration", "production"},
+		Name:       "trigger2",
+		Time:       triggerTime2,
+		ClusterIds: []string{cluster2a, cluster2b},
 	}
 	// trigger with no cluster
 	trigger3 := &v1.BenchmarkTrigger{
@@ -102,7 +107,7 @@ func TestBenchmarkTriggersFiltering(t *testing.T) {
 	assert.Equal(t, []*v1.BenchmarkTrigger{trigger1}, actualTriggers)
 
 	actualTriggers, err = storage.GetBenchmarkTriggers(&v1.GetBenchmarkTriggersRequest{
-		Clusters: []string{"development"},
+		ClusterIds: []string{cluster1},
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, []*v1.BenchmarkTrigger{trigger1, trigger3}, actualTriggers)

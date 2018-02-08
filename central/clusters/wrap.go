@@ -86,12 +86,10 @@ func (d basicDeployer) fields(c Wrap) map[string]string {
 	fields := map[string]string{
 		"ImageEnv":              env.Image.EnvVar(),
 		"Image":                 c.MitigateImage,
-		"PublicEndpointEnv":     env.CenralEndpoint.EnvVar(),
+		"PublicEndpointEnv":     env.CentralEndpoint.EnvVar(),
 		"PublicEndpoint":        c.CentralApiEndpoint,
 		"ClusterIDEnv":          env.ClusterID.EnvVar(),
 		"ClusterID":             c.Id,
-		"ClusterNameEnv":        env.ClusterName.EnvVar(),
-		"ClusterName":           c.Name,
 		"AdvertisedEndpointEnv": env.AdvertisedEndpoint.EnvVar(),
 		"AdvertisedEndpoint":    env.AdvertisedEndpoint.Setting(),
 		"DisableSwarmTLS":       strconv.FormatBool(c.DisableSwarmTls),

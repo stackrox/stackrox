@@ -46,7 +46,7 @@ func New() *Sensor {
 		Server: grpc.NewAPI(grpc.Config{TLS: verifier.NonCA{}}),
 
 		ClusterID:          env.ClusterID.Setting(),
-		CentralEndpoint:    env.CenralEndpoint.Setting(),
+		CentralEndpoint:    env.CentralEndpoint.Setting(),
 		AdvertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 		Image:              env.Image.Setting(),
 

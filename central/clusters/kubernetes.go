@@ -55,8 +55,6 @@ spec:
           value: {{.PublicEndpoint}}
         - name: {{.ClusterIDEnv}}
           value: {{.ClusterID}}
-        - name: {{.ClusterNameEnv}}
-          value: {{.ClusterName}}
         - name: {{.ImageEnv}}
           value: {{.Image}}
         - name: {{.AdvertisedEndpointEnv}}

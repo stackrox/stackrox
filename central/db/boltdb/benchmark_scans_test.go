@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/suite"
 )
@@ -32,20 +33,22 @@ func (suite *BoltBenchmarkScansTestSuite) TeardownSuite() {
 }
 
 func (suite *BoltBenchmarkScansTestSuite) TestResults() {
+	cluster1 := uuid.NewV4().String()
+	cluster2 := uuid.NewV4().String()
 	scanMetadata := []*v1.BenchmarkScanMetadata{
 		{
-			ScanId:    "scan1",
-			Benchmark: "benchmark1",
-			Clusters:  []string{"cluster1", "cluster2"},
-			Checks:    []string{"check1", "check2"},
-			Reason:    v1.BenchmarkReason_SCHEDULED,
+			ScanId:     "scan1",
+			Benchmark:  "benchmark1",
+			ClusterIds: []string{cluster1, cluster2},
+			Checks:     []string{"check1", "check2"},
+			Reason:     v1.BenchmarkReason_SCHEDULED,
 		},
 		{
-			ScanId:    "scan2",
-			Benchmark: "benchmark2",
-			Clusters:  []string{"cluster1", "cluster2"},
-			Checks:    []string{"check1", "check2"},
-			Reason:    v1.BenchmarkReason_SCHEDULED,
+			ScanId:     "scan2",
+			Benchmark:  "benchmark2",
+			ClusterIds: []string{cluster1, cluster2},
+			Checks:     []string{"check1", "check2"},
+			Reason:     v1.BenchmarkReason_SCHEDULED,
 		},
 	}
 	for _, m := range scanMetadata {
@@ -59,7 +62,7 @@ func (suite *BoltBenchmarkScansTestSuite) TestResults() {
 			StartTime: ptypes.TimestampNow(),
 			EndTime:   ptypes.TimestampNow(),
 			Host:      "host1",
-			ClusterId: "cluster1",
+			ClusterId: cluster1,
 			Results: []*v1.CheckResult{
 				{
 					Definition: &v1.CheckDefinition{
@@ -83,7 +86,7 @@ func (suite *BoltBenchmarkScansTestSuite) TestResults() {
 			StartTime: ptypes.TimestampNow(),
 			EndTime:   ptypes.TimestampNow(),
 			Host:      "host2",
-			ClusterId: "cluster2",
+			ClusterId: cluster2,
 			Results: []*v1.CheckResult{
 				{
 					Definition: &v1.CheckDefinition{

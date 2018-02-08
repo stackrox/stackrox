@@ -13,7 +13,7 @@ package v1;
 message BenchmarkScanMetadata {
     string scan_id                 = 1;
     string benchmark               = 2;
-    repeated string clusters       = 3;
+    repeated string cluster_ids    = 3;
     repeated string checks         = 4;
     google.protobuf.Timestamp time = 5;
     BenchmarkReason reason         = 6;
@@ -34,8 +34,8 @@ message BenchmarkScan {
 }
 
 message ListBenchmarkScansRequest {
-    string benchmark         = 1;
-    repeated string clusters = 2;
+    string benchmark            = 1;
+    repeated string cluster_ids = 2;
 }
 
 message ListBenchmarkScansResponse {
@@ -43,9 +43,9 @@ message ListBenchmarkScansResponse {
 }
 
 message GetBenchmarkScanRequest {
-    string scan_id           = 1;
-    repeated string clusters = 2;
-    repeated string hosts    = 3;
+    string scan_id              = 1;
+    repeated string cluster_ids = 2;
+    repeated string hosts       = 3;
 }
 
 service BenchmarkScanService {

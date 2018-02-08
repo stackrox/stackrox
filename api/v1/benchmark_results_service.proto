@@ -25,7 +25,7 @@ enum BenchmarkReason {
 message CheckResult {
     string id                  = 1;
     string host                = 2;
-    string cluster             = 3;
+    string cluster_id          = 3;
     CheckDefinition definition = 4;
     CheckStatus result         = 5;
     repeated string notes      = 6;

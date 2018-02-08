@@ -194,7 +194,8 @@ func verifyAlertCounts(t *testing.T, service v1.AlertServiceClient) {
 	require.Len(t, alertCounts.GetGroups(), 1)
 	group := alertCounts.GetGroups()[0]
 
-	assert.Equal(t, "remote", group.GetGroup())
+	// TODO(cg): Consider verifying the cluster ID that is returned.
+	// Doing so would require either putting with a specific ID during setup, or getting it here.
 	assert.NotEmpty(t, group.GetCounts())
 
 	// Group by category.

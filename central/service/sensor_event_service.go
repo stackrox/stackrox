@@ -53,6 +53,18 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 	if d == nil {
 		return nil, status.Error(codes.InvalidArgument, "Event must include a deployment")
 	}
+	// We do not want to trust what clients tell us their cluster ID is;
+	// let their certificates do the talking.
+	d.ClusterId = identity.Name.Identifier
+	cluster, clusterExists, err := s.storage.GetCluster(d.ClusterId)
+	switch {
+	case err != nil:
+		log.Warnf("Couldn't get name of cluster: %s", err)
+	case !clusterExists:
+		log.Warnf("Couldn't find cluster '%s'", d.ClusterId)
+	default:
+		d.ClusterName = cluster.GetName()
+	}
 
 	response := new(v1.DeploymentEventResponse)
 	// If it's a create and we already have the deployment, ignore it.

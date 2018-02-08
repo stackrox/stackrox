@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -31,14 +32,16 @@ func (suite *BoltBenchmarkSchedulesTestSuite) TeardownSuite() {
 }
 
 func (suite *BoltBenchmarkSchedulesTestSuite) TestSchedules() {
+	cluster1 := uuid.NewV4().String()
+	cluster2 := uuid.NewV4().String()
 	schedules := []*v1.BenchmarkSchedule{
 		{
-			Name:     "bench1",
-			Clusters: []string{"dev"},
+			Name:       "bench1",
+			ClusterIds: []string{cluster1},
 		},
 		{
-			Name:     "bench2",
-			Clusters: []string{"prod"},
+			Name:       "bench2",
+			ClusterIds: []string{cluster2},
 		},
 	}
 
@@ -55,8 +58,9 @@ func (suite *BoltBenchmarkSchedulesTestSuite) TestSchedules() {
 	}
 
 	// Test Update
+	changedCluster := uuid.NewV4().String()
 	for _, b := range schedules {
-		b.Clusters = []string{"integration"}
+		b.ClusterIds = []string{changedCluster}
 	}
 
 	for _, b := range schedules {

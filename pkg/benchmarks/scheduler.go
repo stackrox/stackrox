@@ -49,7 +49,7 @@ type SchedulerClient struct {
 
 	advertisedEndpoint string
 	centralEndpoint    string
-	cluster            string
+	clusterID          string
 	image              string
 
 	started bool
@@ -63,12 +63,12 @@ type SchedulerClient struct {
 }
 
 // NewSchedulerClient returns a new scheduler
-func NewSchedulerClient(orchestrator orchestrators.Orchestrator, centralEndpoint, advertisedEndpoint, image string, cluster string) (*SchedulerClient, error) {
+func NewSchedulerClient(orchestrator orchestrators.Orchestrator, centralEndpoint, advertisedEndpoint, image string, clusterID string) (*SchedulerClient, error) {
 	return &SchedulerClient{
 		updateTicker:       time.NewTicker(updateInterval),
 		orchestrator:       orchestrator,
 		done:               make(chan struct{}),
-		cluster:            cluster,
+		clusterID:          clusterID,
 		centralEndpoint:    centralEndpoint,
 		advertisedEndpoint: advertisedEndpoint,
 		image:              image,
@@ -94,7 +94,7 @@ func (s *SchedulerClient) getSchedules() ([]*v1.BenchmarkSchedule, error) {
 	ctx, cancel := grpcContext()
 	defer cancel()
 	scheduleResp, err := v1.NewBenchmarkScheduleServiceClient(conn).GetBenchmarkSchedules(ctx, &v1.GetBenchmarkSchedulesRequest{
-		Cluster: s.cluster,
+		Cluster: s.clusterID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("Error checking schedule: %s", err)
@@ -113,8 +113,8 @@ func (s *SchedulerClient) benchmarkScanExists(scanID, benchmarkName string) (boo
 	defer cancel()
 	log.Infof("Fetching benchmark scan: %v", scanID)
 	scan, err := v1.NewBenchmarkScanServiceClient(conn).GetBenchmarkScan(ctx, &v1.GetBenchmarkScanRequest{
-		ScanId:   scanID,
-		Clusters: []string{s.cluster},
+		ScanId:     scanID,
+		ClusterIds: []string{s.clusterID},
 	})
 	if err != nil {
 		return false, fmt.Errorf("error checking results: %s", err)
@@ -135,8 +135,8 @@ func (s *SchedulerClient) getTriggers() ([]*v1.BenchmarkTrigger, error) {
 	ts := ptypes.TimestampNow()
 	ts.Seconds -= int64(triggerTimespan.Seconds())
 	triggerResp, err := v1.NewBenchmarkTriggerServiceClient(conn).GetTriggers(ctx, &v1.GetBenchmarkTriggersRequest{
-		Clusters: []string{s.cluster},
-		FromTime: ts,
+		ClusterIds: []string{s.clusterID},
+		FromTime:   ts,
 	})
 	if err != nil {
 		return nil, err
@@ -270,11 +270,11 @@ func (s *SchedulerClient) updateTriggers() {
 			log.Infof("Adding %v to the benchmark queue", scanID)
 
 			s.benchmarkChan <- &v1.BenchmarkScanMetadata{
-				ScanId:    scanID,
-				Benchmark: trigger.GetName(),
-				Clusters:  trigger.GetClusters(),
-				Time:      trigger.GetTime(),
-				Reason:    v1.BenchmarkReason_TRIGGERED,
+				ScanId:     scanID,
+				Benchmark:  trigger.GetName(),
+				ClusterIds: trigger.GetClusterIds(),
+				Time:       trigger.GetTime(),
+				Reason:     v1.BenchmarkReason_TRIGGERED,
 			}
 			s.triggers[key] = trigger
 		}
@@ -323,11 +323,11 @@ func (s *SchedulerClient) updateSchedules() {
 			// Add benchmark to the queue to be scheduled
 			log.Infof("Adding %v to the benchmark queue", scanID)
 			s.benchmarkChan <- &v1.BenchmarkScanMetadata{
-				ScanId:    scanID,
-				Benchmark: benchmarkName,
-				Clusters:  scheduleMetadata.GetClusters(),
-				Time:      protoTime,
-				Reason:    v1.BenchmarkReason_SCHEDULED,
+				ScanId:     scanID,
+				Benchmark:  benchmarkName,
+				ClusterIds: scheduleMetadata.GetClusterIds(),
+				Time:       protoTime,
+				Reason:     v1.BenchmarkReason_SCHEDULED,
 			}
 
 			// Update the benchmark time to be triggered on the next scan time

@@ -68,6 +68,6 @@ func initializeSensor() *sensor.Sensor {
 }
 
 func registerAPIServices(a *sensor.Sensor) {
-	a.Server.Register(benchmarks.NewBenchmarkResultsService(benchmarks.NewLRURelayer(a.CentralEndpoint, a.ClusterID)))
+	a.Server.Register(benchmarks.NewBenchmarkResultsService(benchmarks.NewLRURelayer(a.CentralEndpoint)))
 	a.Logger.Info("API services registered")
 }

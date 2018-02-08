@@ -32,7 +32,6 @@ type LRURelayer struct {
 	cache *lru.Cache
 
 	centralEndpoint string
-	clusterID       string
 
 	tick  *time.Ticker
 	stopC chan struct{}
@@ -41,7 +40,7 @@ type LRURelayer struct {
 }
 
 // NewLRURelayer creates a new LRURelayer, which must then be started.
-func NewLRURelayer(centralEndpoint, clusterID string) *LRURelayer {
+func NewLRURelayer(centralEndpoint string) *LRURelayer {
 	cache, err := lru.New(cacheSize)
 	if err != nil {
 		// This only happens in extreme cases (at this time, for invalid size only).
@@ -50,7 +49,6 @@ func NewLRURelayer(centralEndpoint, clusterID string) *LRURelayer {
 	return &LRURelayer{
 		centralEndpoint: centralEndpoint,
 		cache:           cache,
-		clusterID:       clusterID,
 		tick:            time.NewTicker(interval),
 		stopC:           make(chan struct{}),
 		logger:          logging.New("relayer"),
@@ -81,7 +79,6 @@ func payloadKey(payload *v1.BenchmarkResult) string {
 
 // Accept accepts a new payload, tries to relay it, and caches if unsuccessful.
 func (r *LRURelayer) Accept(payload *v1.BenchmarkResult) {
-	payload.ClusterId = r.clusterID
 	err := r.relay(payload)
 	if err != nil {
 		r.logger.Warnf("Couldn't send %s: %s", payloadKey(payload), err)

@@ -43,7 +43,6 @@ services:
         target: /var/run/docker.sock
     environment:
       - "{{.PublicEndpointEnv}}={{.PublicEndpoint}}"
-      - "{{.ClusterNameEnv}}={{.ClusterName}}"
       - "{{.ClusterIDEnv}}={{.ClusterID}}"
       - "{{.AdvertisedEndpointEnv}}={{.AdvertisedEndpoint}}"
       - "{{.ImageEnv}}={{.Image}}"

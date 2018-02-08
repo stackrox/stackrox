@@ -14,7 +14,7 @@ message BenchmarkSchedule {
     string hour                            = 3;
     int64 timezone_offset                  = 4;
     google.protobuf.Timestamp last_updated = 5;
-    repeated string clusters               = 6;
+    repeated string cluster_ids            = 6;
     repeated string notifiers              = 7;
 }
 
