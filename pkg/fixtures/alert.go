@@ -14,7 +14,7 @@ func GetAlert() *v1.Alert {
 				Message: "Deployment is affected by 'CVE-2017-15804'",
 			},
 			{
-				"Deployment is affected by 'CVE-2017-15670'",
+				Message: "Deployment is affected by 'CVE-2017-15670'",
 			},
 		},
 		Time: ptypes.TimestampNow(),

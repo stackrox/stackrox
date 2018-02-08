@@ -74,6 +74,10 @@ func NewCompiledImagePolicy(policy *v1.Policy) (compiledP processors.CompiledPol
 		scanExists = &tmp
 	}
 
+	if imagePolicy.GetCvss().GetValue() < 0 || imagePolicy.GetCvss().GetValue() > 10 {
+		return nil, fmt.Errorf("policy %s must have CVSS score between 0-10 (actual: %v)", policy.GetName(), imagePolicy.GetCvss().GetValue())
+	}
+
 	compiled := &compiledImagePolicy{
 		Original:     policy,
 		ImageAgeDays: imageAge,
