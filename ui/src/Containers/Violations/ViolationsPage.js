@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import ReactRouterPropTypes from 'react-router-prop-types';
 import Table from 'Components/Table';
 import MultiSelect from 'react-select';
 
@@ -50,6 +51,11 @@ const reducer = (action, prevState, nextState) => {
 };
 
 class ViolationsPage extends Component {
+    static propTypes = {
+        history: ReactRouterPropTypes.history.isRequired,
+        location: ReactRouterPropTypes.location.isRequired
+    }
+
     constructor(props) {
         super(props);
 

@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-import * as Icon from 'react-feather';
-
 class IntegrationTile extends Component {
     static propTypes = {
         integration: PropTypes.shape({
@@ -11,19 +9,19 @@ class IntegrationTile extends Component {
         }).isRequired,
         onClick: PropTypes.func.isRequired,
         disabled: PropTypes.bool,
-        isIntegrated: PropTypes.bool
+        numIntegrations: PropTypes.number
     }
 
     static defaultProps = {
         disabled: false,
-        isIntegrated: false
+        numIntegrations: 0
     }
 
     onClick = () => this.props.onClick(this.props.integration)
 
     renderIndicator = () => {
-        if (!this.props.isIntegrated) return '';
-        return <Icon.CheckSquare className="h-6 w-6 absolute pin-r pin-t m-4 text-success-500" />;
+        if (this.props.numIntegrations === 0) return null;
+        return <span className="flex h-6 absolute pin-r pin-t m-2 p-2 items-center justify-center text-success-500 font-bold text-xl border-2 border-success-300">{this.props.numIntegrations}</span>;
     }
 
     render() {
@@ -31,7 +29,7 @@ class IntegrationTile extends Component {
         return (
             <div className="p-3 w-1/4">
                 <button
-                    className={`w-full p-4 bg-white rounded-sm shadow text-center relative ${(disabled) ? 'disabled' : ''}`}
+                    className={`w-full p-4 bg-white rounded-sm shadow text-center relative ${(disabled) ? 'disabled' : ''} ${this.props.numIntegrations !== 0 && 'border-2 border-success-400'}`}
                     onClick={this.onClick}
                 >
                     {this.renderIndicator()}

@@ -25,7 +25,7 @@ Modal.propTypes = {
 };
 
 Modal.defaultProps = {
-    className: 'w-1/3'
+    className: ''
 };
 
 export default Modal;

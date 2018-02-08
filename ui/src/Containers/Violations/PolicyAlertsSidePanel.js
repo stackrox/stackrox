@@ -57,7 +57,6 @@ class PolicyAlertsSidePanel extends Component {
             }
         }).then((response) => {
             if (!response.data.alerts.length) return;
-            console.log(response.data);
             this.update('UPDATE_ALERTS', { alerts: response.data.alerts });
         }).catch((error) => {
             console.error(error);

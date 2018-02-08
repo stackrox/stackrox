@@ -2,9 +2,12 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Modal from 'Components/Modal';
 import { Form, Text, Select } from 'react-form';
+import Table from 'Components/Table';
+import Panel from 'Components/Panel';
 
 import axios from 'axios';
 import * as Icon from 'react-feather';
+import tableColumnDescriptor from 'Containers/Integrations/tableColumnDescriptor';
 
 const sourceMap = {
     notifiers: {
@@ -287,13 +290,24 @@ const SOURCE_LABELS = Object.freeze({
 });
 
 const api = {
-    registries: data => (data.id !== '' ? axios.put(`/v1/registries/${data.id}`, data) : axios.post('/v1/registries', data)),
-    scanners: data => (data.id !== '' ? axios.put(`/v1/scanners/${data.id}`, data) : axios.post('/v1/scanners', data)),
-    notifiers: data => (data.id !== '' ? axios.put(`/v1/notifiers/${data.id}`, data) : axios.post('/v1/notifiers', data))
+    registries: {
+        save: data => ((data.id !== undefined && data.id !== '') ? axios.put(`/v1/registries/${data.id}`, data) : axios.post('/v1/registries', data)),
+        delete: data => axios.delete(`/v1/registries/${data.id}`)
+    },
+    scanners: {
+        save: data => ((data.id !== undefined && data.id !== '') ? axios.put(`/v1/scanners/${data.id}`, data) : axios.post('/v1/scanners', data)),
+        delete: data => axios.delete(`/v1/scanners/${data.id}`)
+    },
+    notifiers: {
+        save: data => ((data.id !== undefined && data.id !== '') ? axios.put(`/v1/notifiers/${data.id}`, data) : axios.post('/v1/notifiers', data)),
+        delete: data => axios.delete(`/v1/notifiers/${data.id}`)
+    }
 };
 
 const reducer = (action, prevState, nextState) => {
     switch (action) {
+        case 'EDIT_INTEGRATION':
+            return { editIntegration: nextState.editIntegration };
         case 'ERROR_MESSAGE':
             return { message: nextState.message };
         case 'CLEAR_ERROR_MESSAGE':
@@ -305,17 +319,20 @@ const reducer = (action, prevState, nextState) => {
 
 class IntegrationModal extends Component {
     static propTypes = {
-        integration: PropTypes.shape({
+        integrations: PropTypes.arrayOf(PropTypes.shape({
             type: PropTypes.string.isRequired
-        }).isRequired,
+        })).isRequired,
         source: PropTypes.oneOf(['registries', 'scanners', 'notifiers']).isRequired,
-        onRequestClose: PropTypes.func.isRequired
+        type: PropTypes.string.isRequired,
+        onRequestClose: PropTypes.func.isRequired,
+        onIntegrationsUpdate: PropTypes.func.isRequired
     }
 
     constructor(props) {
         super(props);
 
         this.state = {
+            editIntegration: null,
             message: ''
         };
     }
@@ -326,10 +343,11 @@ class IntegrationModal extends Component {
     }
 
     onSubmit = (formData) => {
+        this.update('CLEAR_ERROR_MESSAGE');
         const data = this.addDefaultFormValues(formData);
-        api[this.props.source](data).then(() => {
-            const isSuccessful = true;
-            this.onRequestClose(isSuccessful);
+        api[this.props.source].save(data).then(() => {
+            this.props.onIntegrationsUpdate(this.props.source);
+            this.update('EDIT_INTEGRATION', { editIntegration: null });
         }).catch((error) => {
             this.update('ERROR_MESSAGE', { message: error.response.data.error });
         });
@@ -338,13 +356,61 @@ class IntegrationModal extends Component {
     addDefaultFormValues = (formData) => {
         const data = formData;
         data.uiEndpoint = window.location.origin;
-        data.type = this.props.integration.type;
+        data.type = this.props.type;
         data.enabled = true;
         return data;
     }
 
+    addIntegration = () => {
+        this.update('EDIT_INTEGRATION', { editIntegration: {} });
+    }
+
+    deleteIntegration = () => {
+        const promises = [];
+        this.policyTable.getSelectedRows().forEach((data) => {
+            const promise = api[this.props.source].delete(data);
+            promises.push(promise);
+        });
+        Promise.all(promises).then(() => {
+            this.policyTable.clearSelectedRows();
+            this.props.onIntegrationsUpdate(this.props.source);
+        });
+    }
+
     update = (action, nextState) => {
         this.setState(prevState => reducer(action, prevState, nextState));
+    }
+
+    renderTable = () => {
+        const header = `${this.props.type.toUpperCase()} Integrations`;
+        const buttons = [
+            {
+                renderIcon: () => <Icon.Trash2 className="h-4 w-4" />,
+                text: 'Delete',
+                className: 'flex py-1 px-2 rounded-sm text-danger-600 hover:text-white hover:bg-danger-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-danger-400',
+                onClick: this.deleteIntegration,
+                disabled: this.state.editIntegration !== null
+            },
+            {
+                renderIcon: () => <Icon.Plus className="h-4 w-4" />,
+                text: 'Add Integration',
+                className: 'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                onClick: this.addIntegration,
+                disabled: this.state.editIntegration !== null
+            }
+        ];
+        const columns = tableColumnDescriptor[this.props.source][this.props.type];
+        const rows = this.props.integrations;
+        const onRowClickHandler = () => (integration) => {
+            this.update('EDIT_INTEGRATION', { editIntegration: integration });
+        };
+        return (
+            <div className="flex flex-1">
+                <Panel header={header} buttons={buttons}>
+                    <Table columns={columns} rows={rows} checkboxes onRowClick={onRowClickHandler()} ref={(table) => { this.policyTable = table; }} />
+                </Panel>
+            </div>
+        );
     }
 
     renderField = (field) => {
@@ -367,8 +433,7 @@ class IntegrationModal extends Component {
     }
 
     renderFields = () => {
-        if (!this.props.integration) return '';
-        const fields = sourceMap[this.props.source][this.props.integration.type];
+        const fields = sourceMap[this.props.source][this.props.type];
         return fields.map(field => (
             <label className="flex mt-4" htmlFor={field.key} key={field.label}>
                 <div className="mr-4 flex items-center w-2/3 capitalize">{field.label}</div>
@@ -377,35 +442,61 @@ class IntegrationModal extends Component {
         ));
     };
 
-    render() {
-        const FormContent = props => (
-            <form onSubmit={props.formApi.submitForm}>
-                <div>
-                    {this.renderFields()}
-                </div>
-                <div className="flex items-center justify-end mt-4">
-                    <button
-                        className="p-3 rounded-sm bg-success-500 text-white hover:bg-success-600 uppercase"
-                        type="submit"
-                    >
-                        Integrate
-                    </button>
-                </div>
-            </form>
-        );
-        const type = (this.props.integration) ? this.props.integration.type : '';
-        const { source } = this.props;
+    renderForm = () => {
+        if (!this.state.editIntegration) return '';
+        const header = this.state.editIntegration.name || 'New Integration';
+        const buttons = [
+            {
+                renderIcon: () => <Icon.X className="h-4 w-4" />,
+                text: 'Cancel',
+                className: 'flex py-1 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
+                onClick: () => {
+                    this.update('EDIT_INTEGRATION', { editIntegration: null });
+                }
+            },
+            {
+                renderIcon: () => <Icon.Save className="h-4 w-4" />,
+                text: `${(this.state.editIntegration.name) ? 'Save' : 'Create'} Integration`,
+                className: 'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                onClick: () => {
+                    this.formApi.submitForm();
+                }
+            }
+        ];
+        const key = (this.state.editIntegration) ? this.state.editIntegration.name : 'new-integration';
+        const FormContent = (props) => {
+            this.formApi = props.formApi;
+            return (
+                <form onSubmit={props.formApi.submitForm} className="w-full p-4" >
+                    <div>
+                        {this.renderFields()}
+                    </div>
+                </form>
+            );
+        };
         return (
-            <Modal isOpen onRequestClose={this.onRequestClose}>
+            <div className="flex flex-1">
+                <Panel header={header} buttons={buttons}>
+                    <Form onSubmit={this.onSubmit} validateSuccess={this.validateSuccess} defaultValues={this.state.editIntegration} key={key}>
+                        <FormContent />
+                    </Form>
+                </Panel>
+            </div>
+        );
+    }
+
+    render() {
+        const { source, type } = this.props;
+        return (
+            <Modal isOpen onRequestClose={this.onRequestClose} className="w-5/6 h-full">
                 <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
                     <span className="flex flex-1">Configure {type} {SOURCE_LABELS[source]}</span>
                     <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.onRequestClose} />
                 </header>
                 {(this.state.message !== '') ? <div className="px-4 py-2 bg-high-500 text-white">{this.state.message}</div> : ''}
-                <div className="p-4">
-                    <Form onSubmit={this.onSubmit} validateSuccess={this.validateSuccess} defaultValues={this.props.integration}>
-                        <FormContent />
-                    </Form>
+                <div className="flex flex-1 w-full bg-white">
+                    {this.renderTable()}
+                    {this.renderForm()}
                 </div>
             </Modal>
         );

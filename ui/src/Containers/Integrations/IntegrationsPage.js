@@ -99,16 +99,18 @@ const reducer = (action, prevState, nextState) => {
             return {
                 integrationModal: {
                     open: true,
-                    integration: nextState.integration,
-                    source: nextState.source
+                    integrations: nextState.integrations,
+                    source: nextState.source,
+                    type: nextState.type
                 }
             };
         case 'CLOSE_INTEGRATION_MODAL':
             return {
                 integrationModal: {
                     open: false,
-                    integration: {},
-                    source: {}
+                    integrations: [],
+                    source: '',
+                    type: ''
                 }
             };
         case 'OPEN_CLUSTERS_MODAL':
@@ -143,8 +145,9 @@ class IntegrationsPage extends Component {
         this.state = {
             integrationModal: {
                 open: false,
-                integration: {},
-                source: {}
+                integrations: [],
+                source: '',
+                type: ''
             },
             clustersModal: {
                 open: false,
@@ -164,7 +167,7 @@ class IntegrationsPage extends Component {
         this.getEntities('clusters');
     }
 
-    getEntities(source) {
+    getEntities = (source) => {
         axios.get(`/v1/${source}`).then((response) => {
             const { [source]: entities } = response.data;
             this.update('UPDATE_ENTITIES', { entities, source });
@@ -173,30 +176,35 @@ class IntegrationsPage extends Component {
         });
     }
 
+    getClustersForOrchestrator = (orchestrator) => {
+        const { clusterType } = orchestrator;
+        const clusters = this.state.clusters.filter(cluster => cluster.type === clusterType);
+        return clusters;
+    }
+
     openIntegrationModal = (integrationCategory) => {
         const { source, type } = integrationCategory;
-        let integration = this.state[source].find(i => i.type === type.toLowerCase());
-        if (!integration) integration = { type: type.toLowerCase(), source };
-        this.update('OPEN_INTEGRATION_MODAL', { integration, source });
+        const integrations = this.state[source].filter(i => i.type === type.toLowerCase());
+        this.update('OPEN_INTEGRATION_MODAL', { integrations, source, type });
     }
 
     closeIntegrationModal = (isSuccessful) => {
         if (isSuccessful === true) {
             const {
                 integrationModal: {
-                    integration,
-                    source
+                    source,
+                    type
                 }
             } = this.state;
-            toast(`Successfully integrated ${integration.type}`);
+            toast(`Successfully integrated ${type}`);
             this.getEntities(source);
         }
         this.update('CLOSE_INTEGRATION_MODAL');
     }
 
     openClustersModal = (orchestrator) => {
+        const clusters = this.getClustersForOrchestrator(orchestrator);
         const { clusterType } = orchestrator;
-        const clusters = this.state.clusters.filter(cluster => cluster.type === clusterType);
         this.update('OPEN_CLUSTERS_MODAL', { clusters, clusterType });
     }
 
@@ -204,16 +212,10 @@ class IntegrationsPage extends Component {
         this.update('CLOSE_CLUSTERS_MODAL');
     }
 
-    isOrchestratorDisabled = (orchestrator) => {
-        const { clusterType } = orchestrator;
-        const clusters = this.state.clusters.filter(cluster => cluster.type === clusterType);
-        return clusters.length === 0;
-    }
-
-    isIntegrated = (integration) => {
-        const { source, type } = integration;
-        return this.state[source].find(obj => obj.type === type) !== undefined;
-    }
+    findIntegrations = (source, type) => {
+        const integrations = this.state[source];
+        return integrations.filter(obj => obj.type === type);
+    };
 
     update = (action, nextState) => {
         this.setState(prevState => reducer(action, prevState, nextState));
@@ -222,17 +224,20 @@ class IntegrationsPage extends Component {
     renderIntegrationModal() {
         const {
             integrationModal: {
-                integration,
                 source,
+                type,
                 open
             }
         } = this.state;
         if (!open) return null;
+        const integrations = this.state[source].filter(i => i.type === type.toLowerCase());
         return (
             <IntegrationModal
-                integration={integration}
+                integrations={integrations}
                 source={source}
+                type={type}
                 onRequestClose={this.closeIntegrationModal}
+                onIntegrationsUpdate={this.getEntities}
             />
         );
     }
@@ -256,6 +261,49 @@ class IntegrationsPage extends Component {
     }
 
     render() {
+        const registries = dataSources.registries.map(registry => (
+            <IntegrationTile
+                key={registry.label}
+                integration={registry}
+                onClick={this.openIntegrationModal}
+                disabled={registry.disabled}
+                numIntegrations={this.findIntegrations(registry.source, registry.type).length}
+            />
+        ));
+
+        const orchestrators = dataSources.orchestratorsAndContainerPlatforms.map((orchestrator) => {
+            const clustersCount = this.getClustersForOrchestrator(orchestrator).length;
+            return (
+                <IntegrationTile
+                    key={orchestrator.label}
+                    integration={orchestrator}
+                    onClick={this.openClustersModal}
+                    disabled={clustersCount === 0}
+                    numIntegrations={clustersCount}
+                />
+            );
+        });
+
+        const scanners = dataSources.scanningAndGovernanceTools.map(tool => (
+            <IntegrationTile
+                key={tool.label}
+                integration={tool}
+                onClick={this.openIntegrationModal}
+                disabled={tool.disabled}
+                numIntegrations={this.findIntegrations(tool.source, tool.type).length}
+            />
+        ));
+
+        const plugins = dataSources.plugins.map(plugin => (
+            <IntegrationTile
+                key={plugin.label}
+                integration={plugin}
+                onClick={this.openIntegrationModal}
+                disabled={plugin.disabled}
+                numIntegrations={this.findIntegrations(plugin.source, plugin.type).length}
+            />
+        ));
+
         return (
             <section className="flex">
                 <ToastContainer toastClassName="font-sans text-base-600 text-white font-600 bg-black" hideProgressBar autoClose={3000} />
@@ -266,16 +314,7 @@ class IntegrationsPage extends Component {
                             Registries
                         </h2>
                         <div className="flex flex-wrap">
-                            {
-                                dataSources.registries.map(registry => (
-                                    <IntegrationTile
-                                        key={registry.label}
-                                        integration={registry}
-                                        onClick={this.openIntegrationModal}
-                                        disabled={registry.disabled}
-                                        isIntegrated={this.isIntegrated(registry)}
-                                    />))
-                            }
+                            {registries}
                         </div>
                     </div>
                     <div>
@@ -283,15 +322,7 @@ class IntegrationsPage extends Component {
                             Orchestrators &amp; Container Platforms
                         </h2>
                         <div className="flex">
-                            {
-                                dataSources.orchestratorsAndContainerPlatforms.map(orchestrator => (
-                                    <IntegrationTile
-                                        key={orchestrator.label}
-                                        integration={orchestrator}
-                                        onClick={this.openClustersModal}
-                                        disabled={this.isOrchestratorDisabled(orchestrator)}
-                                    />))
-                            }
+                            {orchestrators}
                         </div>
                     </div>
 
@@ -300,16 +331,7 @@ class IntegrationsPage extends Component {
                             Scanning &amp; Governance Tools
                         </h2>
                         <div className="flex flex-wrap">
-                            {
-                                dataSources.scanningAndGovernanceTools.map(tool => (
-                                    <IntegrationTile
-                                        key={tool.label}
-                                        integration={tool}
-                                        onClick={this.openIntegrationModal}
-                                        disabled={tool.disabled}
-                                        isIntegrated={this.isIntegrated(tool)}
-                                    />))
-                            }
+                            {scanners}
                         </div>
                     </div>
 
@@ -318,16 +340,7 @@ class IntegrationsPage extends Component {
                             Plugins
                         </h2>
                         <div className="flex flex-wrap">
-                            {
-                                dataSources.plugins.map(plugin => (
-                                    <IntegrationTile
-                                        key={plugin.label}
-                                        integration={plugin}
-                                        onClick={this.openIntegrationModal}
-                                        disabled={plugin.disabled}
-                                        isIntegrated={this.isIntegrated(plugin)}
-                                    />))
-                            }
+                            {plugins}
                         </div>
                     </div>
                 </div>
