@@ -4,7 +4,8 @@ Mitigate is a new StackRox initiative to provide security in the
 deployment phase of the container lifecycle.
 
 ## Build Tooling
-The following build tools are required:
+Mitigate is distributed as a single image. The following build tools are
+required to completely build that image and run tests:
 
  * Make
  * [Bazel](https://docs.bazel.build/versions/master/install.html) 0.9 or higher.
@@ -14,7 +15,7 @@ The following build tools are required:
  * Various Go linters that can be installed using `make -C central dev`
 
 ## How to Build
-```
+```bash
 make image
 ```
 
@@ -22,19 +23,28 @@ This will create `stackrox/mitigate:latest`. This is the only image required
 to run Mitigate.
 
 ## How to Test
-```
+```bash
 make test
 ```
 
 Note: there are integration tests in some components, and we currently
 run those manually. They will be re-enabled at some point.
 
+## How to Apply or Check Style Standards
+```bash
+make style
+```
+
+This will rewrite Go code to conform to standard style guidelines.
+JavaScript code is only checked, not rewritten.
+
 ## How to Deploy
 Deployment configurations are under the `deploy/` directory, organized
 per orchestrator.
 
-**WARNING:** You are looking at the tip of the development tree.
-If you need to create a customer demo, use the latest release version.
+_**WARNING:** You are looking at the tip of the development tree.
+If you need to create a customer demo, use the instructions for the
+[latest stable version](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/233242976/StackRox+Mitigate)._
 
 The deploy script will:
 
@@ -42,44 +52,117 @@ The deploy script will:
  1. Create a cluster configuration and a service identity, then
  deploy the cluster sensor using that configuration and those credentials.
 
+You can (and likely should) set the environment variable `MITIGATE_IMAGE_TAG`
+in your shell to ensure that you get the version you want.
+
 ### Docker Swarm
 
 Set `LOCAL_API_ENDPOINT` to a `hostname:port` string appropriate for your
 local host, VM, or cluster, then:
 
-```
+```bash
 ./deploy/swarm/deploy.sh
 ```
 
-Currently, this script works on a Swarm worker that uses TLS certificate
-bundles and TCP connections.
+When prompted, enter the credentials for whatever image registry you are
+downloading Mitigate from. Usually, this is [Docker Hub](https://hub.docker.com).
+They are necessary so that Sensor can properly deploy the Benchmark Bootstrap
+service on all cluster nodes when requested.
+You may set these as `REGISTRY_USERNAME` and `REGISTRY_PASSWORD` in your
+environment to avoid typing them repeatedly.
 
-If you need to run in an environment without this configuration, you can remove
-references to the following secrets from both the `secrets` and `volumes`
-portions of the sensor-deploy YAML:
+If `DOCKER_CERT_PATH` is empty in the script's environment, the script will
+request that Central generate a Sensor config that excludes Docker TLS
+credentials. Otherwise, the credentials currently in use in your shell
+will be sent to the cluster and created as secrets for the Sensor to use.
 
- * `docker_client_ca_pem`
- * `docker_client_cert_pem`
- * `docker_client_key_pem`
- * `registry_auth`
+If you are running on a local VM and do not want Swarm to pull a new image when
+you submit the Mitigate stack (e.g., to use a locally built `:latest` tag),
+use this variant instead:
 
- Additionally, remove these environment variables from the sensor-deploy YAML:
-
- * `DOCKER_HOST`
- * `DOCKER_TLS_VERIFY`
- * `DOCKER_CERT_PATH`
-
+```bash
+./deploy/swarm/deploy-local.sh
+```
 
 ### Kubernetes
-Set your Docker image-pull credentials as `REGISTRY_USERNAME` and `REGISTRY_PASSWORD`, then run:
+Set your Docker image-pull credentials as `REGISTRY_USERNAME` and
+`REGISTRY_PASSWORD`, then run:
 
-```
+```bash
 ./deploy/k8s/deploy.sh
 ```
 
-The script will access the UI using a local port-forward, but you can
+The script will provide access the UI using a local port-forward, but you can
 optionally create a LoadBalancer service to access Central instead.
 
-```
+```bash
 kubectl create -f deploy/k8s/lb.yaml
 ```
+
+## How to Release a New Version
+Releasing a new version of Mitigate requires only a few steps.
+
+These steps assume that the tip of `origin/master` is what you plan to release,
+and that the build for that commit has completed.
+
+### Get Ready
+```bash
+git checkout master
+git pull
+export RELEASE_COMMIT="$(git log | head -n 1 | cut -f 2 -d ' ')"
+echo "Preparing to release ${RELEASE_COMMIT}"
+```
+
+Decide the release version and export it into your shell for convenience,
+for example:
+
+```bash
+export RELEASE_VERSION=0.999
+```
+
+By convention, we do not currently use a `v` prefix for release branches and
+tags (that is, we push branches like `release/0.5` and tags like `0.5`,
+not `release/v0.5` and `v0.5`).
+
+### Create a Release Branch
+```bash
+git checkout -b release/${RELEASE_VERSION}
+git push -u origin release/${RELEASE_VERSION}
+```
+
+### Create a Tag
+```bash
+git tag -a -m "v${RELEASE_VERSION}" "${RELEASE_VERSION}"
+git tag -ln "${RELEASE_VERSION}"
+```
+
+### Push to Docker Hub
+```bash
+export FROM="stackrox/mitigate:${RELEASE_COMMIT}"
+export TO="stackrox/mitigate:${RELEASE_VERSION}"
+docker pull "${FROM}"
+docker tag "${FROM}" "${TO}"
+docker push "${TO}"
+```
+
+### Push to stackrox.io
+```bash
+export FROM="stackrox/mitigate:${RELEASE_VERSION}"
+export TO="stackrox.io/mitigate:${RELEASE_VERSION}"
+docker tag "${FROM}" "${TO}"
+docker push "${TO}"
+```
+
+### Modify Demo Instructions
+The Mitigate demo instructions live in a [Google Drive folder](https://drive.google.com/drive/folders/1gem9vG0Z0hzokF7S_r4WGwXDCCXi6fbT).
+
+1. Copy the current latest version of the instructions to a new Google Doc.
+1. Update the instructions at the top of the document to reference the new
+release version git and Docker image tags.
+1. Run through the entire document and make sure that everything works.
+1. If there are new features to showcase, consider modifying the demo
+instructions to demonstrate them.
+
+### Publish a Confluence Page for the Version
+Copy the "Latest Stable Version" page, update it, and replace the link on
+[Mitigate wiki homepage](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/233242976/StackRox+Mitigate).
