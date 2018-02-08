@@ -10,6 +10,34 @@ import * as Icon from 'react-feather';
 import tableColumnDescriptor from 'Containers/Integrations/tableColumnDescriptor';
 
 const sourceMap = {
+    authProviders: {
+        auth0: [
+            {
+                label: 'Integration Name',
+                key: 'name',
+                type: 'text',
+                placeholder: 'Auth0'
+            },
+            {
+                label: 'Domain',
+                key: 'config.domain',
+                type: 'text',
+                placeholder: 'your-tenant.auth0.com'
+            },
+            {
+                label: 'Client ID',
+                key: 'config.client_id',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                label: 'Audience',
+                key: 'config.audience',
+                type: 'text',
+                placeholder: 'mitigate.stackrox.io'
+            }
+        ]
+    },
     notifiers: {
         jira: [
             {
@@ -280,16 +308,21 @@ const sourceMap = {
                 placeholder: ''
             }
         ],
-    }
+    },
 };
 
 const SOURCE_LABELS = Object.freeze({
+    authProviders: 'authentication provider',
     registries: 'registry',
     scanners: 'scanner',
     notifiers: 'plugin'
 });
 
 const api = {
+    authProviders: {
+        save: data => ((data.id !== undefined && data.id !== '') ? axios.put(`/v1/authProviders/${data.id}`, data) : axios.post('/v1/authProviders', data)),
+        delete: data => axios.delete(`/v1/authProviders/${data.id}`)
+    },
     registries: {
         save: data => ((data.id !== undefined && data.id !== '') ? axios.put(`/v1/registries/${data.id}`, data) : axios.post('/v1/registries', data)),
         delete: data => axios.delete(`/v1/registries/${data.id}`)
@@ -322,7 +355,7 @@ class IntegrationModal extends Component {
         integrations: PropTypes.arrayOf(PropTypes.shape({
             type: PropTypes.string.isRequired
         })).isRequired,
-        source: PropTypes.oneOf(['registries', 'scanners', 'notifiers']).isRequired,
+        source: PropTypes.oneOf(['registries', 'scanners', 'notifiers', 'authProviders']).isRequired,
         type: PropTypes.string.isRequired,
         onRequestClose: PropTypes.func.isRequired,
         onIntegrationsUpdate: PropTypes.func.isRequired

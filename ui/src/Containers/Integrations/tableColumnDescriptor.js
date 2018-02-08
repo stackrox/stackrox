@@ -1,6 +1,12 @@
 import React from 'react';
 
 const tableColumnDescriptor = Object.freeze({
+    authProviders: {
+        auth0: [
+            { key: 'name', label: 'Name' },
+            { key: 'config.domain', label: 'Auth0 Domain' },
+        ]
+    },
     notifiers: {
         slack: [
             { key: 'name', label: 'Name' },

@@ -65,7 +65,7 @@ func (s *AuthProviderService) GetAuthProviders(ctx context.Context, request *v1.
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetAuthProvidersResponse{Providers: authProviders}, nil
+	return &v1.GetAuthProvidersResponse{AuthProviders: authProviders}, nil
 }
 
 // PostAuthProvider inserts a new auth provider into the system

@@ -25,7 +25,7 @@ message GetAuthProvidersRequest {
 }
 
 message GetAuthProvidersResponse {
-    repeated AuthProvider providers = 1;
+    repeated AuthProvider auth_providers = 1;
 }
 
 service AuthProviderService {

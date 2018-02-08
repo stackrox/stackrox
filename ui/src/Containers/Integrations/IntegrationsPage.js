@@ -7,6 +7,7 @@ import ClustersModal from 'Containers/Integrations/ClustersModal';
 
 import axios from 'axios';
 
+import auth0 from 'images/auth0.svg';
 import docker from 'images/docker.svg';
 import jira from 'images/jira.svg';
 import kubernetes from 'images/kubernetes.svg';
@@ -15,6 +16,15 @@ import tenable from 'images/tenable.svg';
 import email from 'images/email.svg';
 
 const dataSources = {
+    authProviders: [
+        {
+            label: 'Auth0',
+            type: 'auth0',
+            source: 'authProviders',
+            image: auth0,
+            disabled: false
+        }
+    ],
     registries: [
         {
             label: 'Docker Registry',
@@ -153,18 +163,20 @@ class IntegrationsPage extends Component {
                 open: false,
                 clusters: []
             },
-            notifiers: [],
+            authProviders: [],
             clusters: [],
-            scanners: [],
-            registries: []
+            notifiers: [],
+            registries: [],
+            scanners: []
         };
     }
 
     componentDidMount() {
-        this.getEntities('notifiers');
-        this.getEntities('scanners');
-        this.getEntities('registries');
+        this.getEntities('authProviders');
         this.getEntities('clusters');
+        this.getEntities('notifiers');
+        this.getEntities('registries');
+        this.getEntities('scanners');
     }
 
     getEntities = (source) => {
@@ -304,6 +316,16 @@ class IntegrationsPage extends Component {
             />
         ));
 
+        const authProviders = dataSources.authProviders.map(plugin => (
+            <IntegrationTile
+                key={plugin.label}
+                integration={plugin}
+                onClick={this.openIntegrationModal}
+                disabled={plugin.disabled}
+                numIntegrations={this.findIntegrations(plugin.source, plugin.type).length}
+            />
+        ));
+
         return (
             <section className="flex">
                 <ToastContainer toastClassName="font-sans text-base-600 text-white font-600 bg-black" hideProgressBar autoClose={3000} />
@@ -341,6 +363,15 @@ class IntegrationsPage extends Component {
                         </h2>
                         <div className="flex flex-wrap">
                             {plugins}
+                        </div>
+                    </div>
+
+                    <div className="mb-6">
+                        <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
+                            Authentication Providers
+                        </h2>
+                        <div className="flex flex-wrap">
+                            {authProviders}
                         </div>
                     </div>
                 </div>
