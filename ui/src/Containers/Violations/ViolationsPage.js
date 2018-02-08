@@ -65,6 +65,9 @@ class ViolationsPage extends Component {
             category: {
                 options: [{ label: 'Image Assurance', value: 'IMAGE_ASSURANCE' }, { label: 'Container Configuration', value: 'CONTAINER_CONFIGURATION' }, { label: 'Privileges & Capabilities', value: 'PRIVILEGES_CAPABILITIES' }]
             },
+            severity: {
+                options: [{ label: 'Critical Severity', value: 'CRITICAL_SEVERITY' }, { label: 'High Severity', value: 'HIGH_SEVERITY' }, { label: 'Medium Severity', value: 'MEDIUM_SEVERITY' }, { label: 'Low Severity', value: 'LOW_SEVERITY' }]
+            },
             alertsByPolicies: [],
             policy: {}
         };
@@ -87,12 +90,12 @@ class ViolationsPage extends Component {
         this.getAlertsGroups();
     }
 
-    onCategoryFilterChange = (categories) => {
+    onFilterChange = type => (options) => {
         this.props.history.push({
             pathname: this.props.location.pathname,
             search: queryString.stringify({
                 ...this.getFilterParams(),
-                category: categories.map(c => c.value)
+                [type]: options.map(c => c.value)
             })
         });
 
@@ -175,21 +178,26 @@ class ViolationsPage extends Component {
         return (
             <section className="flex flex-1 h-full">
                 <div className="flex flex-1 mt-3 flex-col">
-                    <div className="flex mb-3 mx-3 flex-none">
-                        <div className="flex flex-1 self-center justify-start">
-                            <input
-                                className="border rounded w-full p-3  border-base-300"
-                                placeholder="Filter by registry, severity, deployment, or tag"
-                            />
-                        </div>
-                        <div className="flex self-center justify-end ml-3">
+                    <div className="flex mb-3 mx-3 self-end justify-end">
+                        <div className="flex ml-3">
                             <MultiSelect
                                 multi
-                                onChange={this.onCategoryFilterChange}
+                                onChange={this.onFilterChange('category')}
                                 options={this.state.category.options}
                                 placeholder="Select categories"
                                 removeSelected
                                 value={this.getFilterParams().category}
+                                className="text-base-600 font-400 min-w-64"
+                            />
+                        </div>
+                        <div className="flex ml-3">
+                            <MultiSelect
+                                multi
+                                onChange={this.onFilterChange('severity')}
+                                options={this.state.severity.options}
+                                placeholder="Select severities"
+                                removeSelected
+                                value={this.getFilterParams().severity}
                                 className="text-base-600 font-400 min-w-64"
                             />
                         </div>
