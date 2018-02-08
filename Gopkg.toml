@@ -39,8 +39,8 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
 
 [[constraint]]
   name = "github.com/heroku/docker-registry-client"
-  revision = "e8b6d64c1b4456f7bf0758ac628a70348a2441cb"
   source = "git@bitbucket.org:stack-rox/docker-registry-client.git"
+  revision = "c0382be6e46b7f52b8c6dd0a91c1253e891645f8"
 
 [[constraint]]
   name = "github.com/opencontainers/runc"
@@ -109,3 +109,7 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
 [[constraint]]
   version = "2.1.3"
   name = "gopkg.in/square/go-jose.v2"
+
+[[constraint]]
+  name = "github.com/coreos/clair"
+  version = "v2.0.1"

@@ -54,7 +54,7 @@ func newScanner(protoScanner *v1.Scanner) (*tenable, error) {
 	if err != nil {
 		return nil, err
 	}
-	reg, err := dockerRegistry.NewFromTransport(registryEndpoint, accessKey, secretKey, tran, dockerRegistry.Log)
+	reg, err := dockerRegistry.NewFromTransport(registryEndpoint, tran, dockerRegistry.Log)
 	if err != nil {
 		return nil, err
 	}

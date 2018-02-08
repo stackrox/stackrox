@@ -1,0 +1,88 @@
+package clair
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/clair/mock"
+	clairV1 "github.com/coreos/clair/api/v1"
+	"github.com/stretchr/testify/suite"
+)
+
+func TestClairSuite(t *testing.T) {
+	suite.Run(t, new(ClairSuite))
+}
+
+type ClairSuite struct {
+	suite.Suite
+
+	server  *httptest.Server
+	scanner *clair
+}
+
+func (suite *ClairSuite) SetupSuite() {
+	masterRouter := http.NewServeMux()
+	// Handle getting layer endpoint
+	masterRouter.HandleFunc("/v1/layers/sha256:0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455", func(w http.ResponseWriter, r *http.Request) {
+		features, _ := mock.GetTestFeatures()
+		bytes, _ := json.Marshal(&clairV1.LayerEnvelope{Layer: &clairV1.Layer{Features: features}})
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, string(bytes))
+	})
+	// Handle namespace endpoint
+	masterRouter.HandleFunc("/v1/namespaces", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	masterServer := httptest.NewServer(masterRouter)
+
+	// Set the global variable of the Clair endpoint
+	suite.server = masterServer
+
+	protoScanner := &v1.Scanner{
+		Endpoint: "http://" + masterServer.Listener.Addr().String(),
+	}
+
+	var err error
+	// newScanner is tested within setup
+	suite.scanner, err = newScanner(protoScanner)
+	if err != nil {
+		suite.FailNow("Could not setup Clair scanner: " + err.Error())
+	}
+}
+
+func (suite *ClairSuite) TearDownSuite() {
+	suite.server.Close()
+}
+
+func (suite *ClairSuite) TestScanTest() {
+	err := suite.scanner.Test()
+	suite.NoError(err)
+}
+
+func (suite *ClairSuite) TestGetLastScan() {
+	image := &v1.Image{
+		Registry: "quay.io",
+		Remote:   "integration/nginx",
+		Tag:      "1.10",
+		Metadata: &v1.ImageMetadata{
+			FsLayers: []string{
+				"sha256:0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455",
+				"sha256:randomhashthatshouldnotbeused",
+			},
+		},
+	}
+	scan, err := suite.scanner.GetLastScan(image)
+	suite.NoError(err)
+
+	features, _ := mock.GetTestFeatures()
+	layerEnvelope := &clairV1.LayerEnvelope{Layer: &clairV1.Layer{Features: features}}
+
+	// convert scans here. It relies on converting the scan but is not the conversion test
+	expectedImageScan := convertLayerToImageScan(image, layerEnvelope)
+	suite.Equal(expectedImageScan, scan)
+}

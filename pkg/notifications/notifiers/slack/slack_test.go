@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/mock"
+	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,7 +37,7 @@ func TestSlackAlertNotify(t *testing.T) {
 			UiEndpoint: "http://google.com",
 		},
 	}
-	assert.NoError(t, s.AlertNotify(mock.GetAlert()))
+	assert.NoError(t, s.AlertNotify(fixtures.GetAlert()))
 }
 
 func TestSlackTest(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/mock"
+	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,7 +47,7 @@ func getJira(t *testing.T) *jira {
 
 func TestJiraNotify(t *testing.T) {
 	j := getJira(t)
-	assert.NoError(t, j.AlertNotify(mock.GetAlert()))
+	assert.NoError(t, j.AlertNotify(fixtures.GetAlert()))
 }
 
 func TestJiraTest(t *testing.T) {

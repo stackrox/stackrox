@@ -50,6 +50,27 @@ func (e *Enricher) EnrichWithScanner(deployment *v1.Deployment, scanner scannerT
 	return
 }
 
+func (e *Enricher) equalComponents(components1, components2 []*v1.ImageScanComponents) bool {
+	if len(components1) != len(components2) {
+		return false
+	}
+	for i := 0; i < len(components1); i++ {
+		c1 := components1[i]
+		c2 := components2[i]
+		if len(c1.GetVulns()) != len(c2.GetVulns()) {
+			return false
+		}
+		for j := 0; j < len(c1.GetVulns()); j++ {
+			v1 := c1.GetVulns()[j]
+			v2 := c2.GetVulns()[j]
+			if v1.GetCve() != v2.GetCve() || v1.GetCvss() != v2.GetCvss() || v1.GetLink() != v2.GetLink() || v1.GetSummary() != v2.GetSummary() {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func (e *Enricher) enrichImageWithScanner(image *v1.Image, scanner scannerTypes.ImageScanner) (bool, error) {
 	if !scanner.Global() {
 		return false, nil
@@ -69,7 +90,7 @@ func (e *Enricher) enrichImageWithScanner(image *v1.Image, scanner scannerTypes.
 		logger.Error(err)
 		return false, err
 	}
-	if protoconv.CompareProtoTimestamps(image.GetScan().GetScanTime(), scan.GetScanTime()) != 0 {
+	if protoconv.CompareProtoTimestamps(image.GetScan().GetScanTime(), scan.GetScanTime()) != 0 || !e.equalComponents(image.GetScan().GetComponents(), scan.GetComponents()) {
 		image.Scan = scan
 		e.storage.UpdateImage(image)
 		return true, nil

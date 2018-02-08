@@ -1,4 +1,4 @@
-package mock
+package fixtures
 
 import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"

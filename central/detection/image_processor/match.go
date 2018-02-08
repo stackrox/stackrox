@@ -86,6 +86,13 @@ func (policy *compiledImagePolicy) matchLineRule(image *v1.Image) (violations []
 	return
 }
 
+func getVulnLink(v *v1.Vulnerability) string {
+	if v.GetLink() != "" {
+		return v.GetLink()
+	}
+	return cveLinkPrefix + v.GetCve()
+}
+
 func (policy *compiledImagePolicy) matchCVE(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {
 	if policy.CVE == nil {
 		return
@@ -95,7 +102,7 @@ func (policy *compiledImagePolicy) matchCVE(image *v1.Image) (violations []*v1.A
 		for _, vuln := range component.GetVulns() {
 			if policy.CVE.MatchString(vuln.GetCve()) {
 				violations = append(violations, &v1.Alert_Violation{
-					Message: fmt.Sprintf("CVE '%v' matches the regex '%+v'. Link: %v", vuln.GetCve(), policy.CVE, cveLinkPrefix+vuln.GetCve()),
+					Message: fmt.Sprintf("CVE '%v' matches the regex '%+v'. Link: %v", vuln.GetCve(), policy.CVE, getVulnLink(vuln)),
 				})
 			}
 		}

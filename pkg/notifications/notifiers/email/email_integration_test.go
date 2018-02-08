@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/mock"
+	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -50,7 +50,7 @@ func getEmail(t *testing.T) *email {
 
 func TestEmailAlertNotify(t *testing.T) {
 	e := getEmail(t)
-	assert.NoError(t, e.AlertNotify(mock.GetAlert()))
+	assert.NoError(t, e.AlertNotify(fixtures.GetAlert()))
 }
 
 func TestEmailTest(t *testing.T) {

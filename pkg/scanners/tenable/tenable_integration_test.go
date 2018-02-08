@@ -24,7 +24,7 @@ func TestTenableIntegrationSuite(t *testing.T) {
 type TenableIntegrationSuite struct {
 	suite.Suite
 
-	*tenable
+	tenable *tenable
 }
 
 func (suite *TenableIntegrationSuite) SetupSuite() {
@@ -44,7 +44,7 @@ func (suite *TenableIntegrationSuite) SetupSuite() {
 func (suite *TenableIntegrationSuite) TearDownSuite() {}
 
 func (suite *TenableIntegrationSuite) TestTestFunction() {
-	err := suite.Test()
+	err := suite.tenable.Test()
 	suite.NoError(err)
 }
 
@@ -55,7 +55,7 @@ func (suite *TenableIntegrationSuite) TestGetLastScan() {
 		Remote:   "srox/nginx",
 		Tag:      "1.10",
 	}
-	scan, err := suite.GetLastScan(image)
+	scan, err := suite.tenable.GetLastScan(image)
 	suite.Nil(err)
 	suite.NotNil(scan)
 	if scan != nil {

@@ -82,6 +82,19 @@ func (i Wrapper) String() string {
 	return fmt.Sprintf("%v/%v:%v", i.Registry, i.Remote, i.Tag)
 }
 
+// GetSHA returns the trimmed sha of the image
+func (i Wrapper) GetSHA() string {
+	return strings.TrimPrefix(i.Sha, "sha256:")
+}
+
+// GetPrefixedSHA returns the SHA prefixed with sha256:
+func (i Wrapper) GetPrefixedSHA() string {
+	if strings.HasPrefix(i.Sha, "sha256:") {
+		return i.Sha
+	}
+	return "sha256:" + i.Sha
+}
+
 // ShortID returns the SHA truncated to 12 characters.
 func (i Wrapper) ShortID() string {
 	sha := strings.TrimPrefix(i.Sha, "sha256:")

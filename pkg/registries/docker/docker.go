@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
@@ -40,6 +41,7 @@ type v1Config struct {
 
 // Parse out the layer JSON
 type v1Compatibility struct {
+	ID      string    `json:"id"`
 	Created time.Time `json:"created"`
 	Author  string    `json:"author"`
 	Config  v1Config  `json:"container_config"`
@@ -151,12 +153,28 @@ func compareProtoTimestamps(t1, t2 *timestamp.Timestamp) bool {
 	return t1.Nanos < t2.Nanos
 }
 
+func (d *dockerRegistry) getV2Metadata(image *v1.Image) *v1.V2Metadata {
+	metadata, err := d.client().(*registry.Registry).ManifestV2(image.GetRemote(), image.GetTag())
+	if err != nil {
+		return nil
+	}
+	layers := make([]string, 0, len(metadata.Layers))
+	for _, layer := range metadata.Layers {
+		layers = append(layers, layer.Digest.String())
+	}
+	return &v1.V2Metadata{
+		Digest: metadata.Config.Digest.String(),
+		Layers: layers,
+	}
+}
+
 // Metadata returns the metadata via this registries implementation
 func (d *dockerRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
-	log.Infof("Getting metadata for image %v", image)
+	log.Infof("Getting metadata for image %s", images.Wrapper{Image: image})
 	if image == nil {
 		return nil, nil
 	}
+
 	manifest, err := d.client().Manifest(image.GetRemote(), image.GetTag())
 	if err != nil {
 		return nil, err
@@ -176,10 +194,16 @@ func (d *dockerRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 		}
 		layers = append(layers, layer)
 	}
+	fsLayers := make([]string, 0, len(manifest.FSLayers))
+	for _, fsLayer := range manifest.FSLayers {
+		fsLayers = append(fsLayers, fsLayer.BlobSum.String())
+	}
 	imageMetadata := &v1.ImageMetadata{
-		Created: latest.Created,
-		Author:  latest.Author,
-		Layers:  layers,
+		Created:  latest.Created,
+		Author:   latest.Author,
+		Layers:   layers,
+		FsLayers: fsLayers,
+		V2:       d.getV2Metadata(image),
 	}
 	return imageMetadata, nil
 }

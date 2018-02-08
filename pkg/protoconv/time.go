@@ -5,6 +5,9 @@ import "github.com/golang/protobuf/ptypes/timestamp"
 // CompareProtoTimestamps compares two of the proto timestamps
 // This is necessary because the library has few equality checks
 func CompareProtoTimestamps(t1, t2 *timestamp.Timestamp) int {
+	if t1 == nil && t2 == nil {
+		return 0
+	}
 	if t1 == nil {
 		return -1
 	}

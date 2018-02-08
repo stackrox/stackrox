@@ -25,10 +25,17 @@ message ImageLayer {
     string author                      = 4;
 }
 
+message V2Metadata {
+    string digest          = 1;
+    repeated string layers = 2;
+}
+
 message ImageMetadata {
-    google.protobuf.Timestamp  created = 1;
+    google.protobuf.Timestamp created  = 1;
     string author                      = 2;
     repeated ImageLayer layers         = 3;
+    repeated string fs_layers          = 4;
+    V2Metadata v2                      = 5;
 }
 
 message License {
@@ -41,6 +48,7 @@ message Vulnerability {
     string cve     = 1;
     float cvss     = 2;
     string summary = 3;
+    string link    = 4;
 }
 
 message ImageScanComponents {

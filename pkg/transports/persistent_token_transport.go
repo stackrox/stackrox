@@ -76,3 +76,8 @@ func (t *PersistentTokenTransport) RoundTrip(req *http.Request) (*http.Response,
 	t.setToken(req)
 	return t.Transport.RoundTrip(req)
 }
+
+// GetToken returns the auth token
+func (t *PersistentTokenTransport) GetToken() string {
+	return t.Token
+}

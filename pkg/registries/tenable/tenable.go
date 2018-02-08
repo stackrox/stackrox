@@ -77,7 +77,7 @@ func newRegistry(protoRegistry *v1.Registry) (*tenableRegistry, error) {
 
 func (d *tenableRegistry) client() client {
 	d.getClientOnce.Do(func() {
-		reg, err := registry.NewFromTransport(remoteEndpoint, d.accessKey, d.secretKey, d.transport, registry.Log)
+		reg, err := registry.NewFromTransport(remoteEndpoint, d.transport, registry.Log)
 		if err != nil {
 			d.clientObj = nilClient{err}
 			return

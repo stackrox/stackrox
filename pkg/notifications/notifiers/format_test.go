@@ -5,7 +5,7 @@ import (
 	"testing"
 	"text/template"
 
-	"bitbucket.org/stack-rox/apollo/pkg/mock"
+	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,7 +28,7 @@ func TestFormatPolicy(t *testing.T) {
 		},
 	}
 	alertLink := AlertLink("https://localhost:8080")
-	body, err := FormatPolicy(mock.GetAlert(), alertLink, funcMap)
+	body, err := FormatPolicy(fixtures.GetAlert(), alertLink, funcMap)
 	assert.NoError(t, err)
 	fmt.Println(body)
 }
