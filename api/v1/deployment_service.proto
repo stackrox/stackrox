@@ -4,6 +4,7 @@ option go_package = "v1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 import "api/v1/common.proto";
 import "api/v1/image_service.proto";
 
@@ -87,6 +88,14 @@ message GetDeploymentsResponse {
     repeated Deployment deployments = 1;
 }
 
+message DeploymentLabelsResponse {
+    message LabelValues {
+        repeated string values = 1;
+    }
+    map<string, LabelValues> labels     = 1;
+    repeated string values              = 2;
+}
+
 service DeploymentService {
 
     rpc GetDeployment(ResourceByID) returns (Deployment) {
@@ -98,6 +107,12 @@ service DeploymentService {
     rpc GetDeployments(GetDeploymentsRequest) returns (GetDeploymentsResponse) {
         option (google.api.http) = {
             get: "/v1/deployments"
+        };
+    }
+
+    rpc GetLabels(google.protobuf.Empty) returns (DeploymentLabelsResponse) {
+        option (google.api.http) = {
+            get: "/v1/deployments/labels"
         };
     }
 }

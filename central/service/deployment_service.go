@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"sort"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -54,4 +56,56 @@ func (s *DeploymentService) GetDeployments(ctx context.Context, request *v1.GetD
 	}
 
 	return &v1.GetDeploymentsResponse{Deployments: deployments}, nil
+}
+
+// GetLabels returns label keys and values for current deployments.
+func (s *DeploymentService) GetLabels(context.Context, *empty.Empty) (*v1.DeploymentLabelsResponse, error) {
+	deployments, err := s.storage.GetDeployments(&v1.GetDeploymentsRequest{})
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	labelsMap, values := labelsMapFromDeployments(deployments)
+
+	return &v1.DeploymentLabelsResponse{
+		Labels: labelsMap,
+		Values: values,
+	}, nil
+}
+
+func labelsMapFromDeployments(deployments []*v1.Deployment) (keyValuesMap map[string]*v1.DeploymentLabelsResponse_LabelValues, values []string) {
+	tempSet := make(map[string]map[string]struct{})
+	valSet := make(map[string]struct{})
+
+	for _, d := range deployments {
+		for k, v := range d.GetLabels() {
+			if valSet := tempSet[k]; valSet == nil {
+				tempSet[k] = map[string]struct{}{v: {}}
+			} else {
+				valSet[v] = struct{}{}
+			}
+
+			valSet[v] = struct{}{}
+		}
+	}
+
+	keyValuesMap = make(map[string]*v1.DeploymentLabelsResponse_LabelValues)
+	for k, valSet := range tempSet {
+		keyValuesMap[k] = &v1.DeploymentLabelsResponse_LabelValues{
+			Values: make([]string, 0, len(valSet)),
+		}
+
+		for v := range valSet {
+			keyValuesMap[k].Values = append(keyValuesMap[k].Values, v)
+		}
+		sort.Strings(keyValuesMap[k].Values)
+	}
+
+	values = make([]string, 0, len(valSet))
+	for v := range valSet {
+		values = append(values, v)
+	}
+	sort.Strings(values)
+
+	return
 }
