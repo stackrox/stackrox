@@ -99,6 +99,16 @@ class PoliciesPage extends Component {
 
     preSubmit = policy => this.policyCreationForm.preSubmit(policy);
 
+    reassessPolicies = () => {
+        axios.post('/v1/policies/reassess').then(() => {
+            toast('Policies were reassessed');
+            this.policyTable.clearSelectedRows();
+        }).catch((error) => {
+            console.error(error);
+            if (error.response) toast(error.response.data.error);
+        });
+    }
+
     deletePolicies = () => {
         const promises = [];
         this.policyTable.getSelectedRows().forEach((obj) => {
@@ -185,6 +195,14 @@ class PoliciesPage extends Component {
                 className: 'flex py-1 px-2 rounded-sm text-danger-600 hover:text-white hover:bg-danger-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-danger-400',
                 onClick: this.deletePolicies,
                 disabled: this.state.editingPolicy !== null
+            },
+            {
+                renderIcon: () => <Icon.FileText className="h-4 w-4" />,
+                text: 'Reassess Policies',
+                className: 'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                onClick: this.reassessPolicies,
+                disabled: this.state.editingPolicy !== null,
+                tooltip: 'Manually enrich external data'
             },
             {
                 renderIcon: () => <Icon.Plus className="h-4 w-4" />,

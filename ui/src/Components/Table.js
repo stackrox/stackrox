@@ -106,7 +106,7 @@ class Table extends Component {
             if (this.props.checkboxes) {
                 tableCells.unshift((
                     <td className="p-3 text-center" key="checkboxTableCell">
-                        <input type="checkbox" className="h-4 w-4 cursor-pointer" onClick={this.rowCheckedHandler(row)} />
+                        <input type="checkbox" className="h-4 w-4 cursor-pointer" onClick={this.rowCheckedHandler(row)} checked={this.state.selected.has(row)} />
                     </td>
                 ));
             }
