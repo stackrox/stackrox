@@ -239,15 +239,18 @@ func ValidDay(d string) bool {
 }
 
 func nextScheduledTime(schedule *v1.BenchmarkSchedule) (time.Time, error) {
-	now := time.Now().Add(-time.Duration(schedule.TimezoneOffset) * time.Hour)
 	hourTime, err := ParseHour(schedule.GetHour())
 	if err != nil {
 		return hourTime, err
 	}
-	nextTime := time.Date(now.Year(), now.Month(), now.Day(), int(hourTime.Hour()), hourTime.Minute(), 0, 0, now.Location())
-	for nextTime.Before(now) || nextTime.Weekday().String() != schedule.GetDay() {
+
+	nowTimezone := time.Now().Add(-time.Duration(schedule.TimezoneOffset) * time.Hour)
+	nextTime := time.Date(nowTimezone.Year(), nowTimezone.Month(), nowTimezone.Day(), int(hourTime.Hour()), hourTime.Minute(), 0, 0, nowTimezone.Location())
+	for nextTime.Before(nowTimezone) || nextTime.Weekday().String() != schedule.GetDay() {
 		nextTime = nextTime.AddDate(0, 0, 1)
 	}
+	// Move nextTime back into UTC
+	nextTime = nextTime.Add(time.Duration(schedule.TimezoneOffset) * time.Hour)
 	log.Infof("Next time: %v", nextTime)
 	return nextTime, nil
 }
@@ -330,11 +333,9 @@ func (s *SchedulerClient) updateSchedules() {
 				Reason:     v1.BenchmarkReason_SCHEDULED,
 			}
 
-			// Update the benchmark time to be triggered on the next scan time
-			scheduleMetadata.NextScanTime, err = nextScheduledTime(scheduleMetadata.BenchmarkSchedule)
-			if err != nil {
-				log.Error(err)
-			}
+			// Schedule the scan next week
+			scheduleMetadata.NextScanTime = nextScanTime.Add(7 * 24 * time.Hour)
+			log.Infof("Benchmark %v is scheduled to run next week at %v", scheduleMetadata.GetName(), scheduleMetadata.NextScanTime.Format(time.RFC3339))
 		}
 	}
 }
