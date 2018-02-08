@@ -3,6 +3,7 @@ package boltdb
 import (
 	"fmt"
 
+	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
@@ -93,6 +94,10 @@ func (b *BoltDB) UpdatePolicy(policy *v1.Policy) error {
 func (b *BoltDB) RemovePolicy(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))
-		return b.Delete([]byte(id))
+		key := []byte(id)
+		if exists := b.Get(key) != nil; !exists {
+			return db.ErrNotFound{Type: "Policy", ID: string(key)}
+		}
+		return b.Delete(key)
 	})
 }

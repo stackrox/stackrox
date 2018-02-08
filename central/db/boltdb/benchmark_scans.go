@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 
+	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
@@ -92,7 +93,7 @@ func (b *BoltDB) getScanMetadata(tx *bolt.Tx, scanID string) (*v1.BenchmarkScanM
 	metadataBucket := tx.Bucket([]byte(scanMetadataBucket))
 	bytes := metadataBucket.Get([]byte(scanID))
 	if bytes == nil {
-		return nil, fmt.Errorf("Could not find any metadata for scan id '%v'", scanID)
+		return nil, db.ErrNotFound{Type: "Scan", ID: scanID}
 	}
 	var result v1.BenchmarkScanMetadata
 	if err := proto.Unmarshal(bytes, &result); err != nil {
@@ -140,7 +141,7 @@ func (b *BoltDB) GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (scan *v1
 		// grab from scan ids -> checks -> check ids
 		scanToChecks := tx.Bucket([]byte(scansToCheckBucket)).Bucket([]byte(request.GetScanId()))
 		if scanToChecks == nil {
-			return fmt.Errorf("Could not find any data for scan id '%v'", request.GetScanId())
+			return db.ErrNotFound{Type: "Results for scan", ID: request.GetScanId()}
 		}
 
 		scan.Checks = make([]*v1.BenchmarkScan_Check, 0, len(metadata.GetChecks()))
@@ -152,7 +153,7 @@ func (b *BoltDB) GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (scan *v1
 
 			resultBucket := scanToChecks.Bucket([]byte(check))
 			if resultBucket == nil {
-				return fmt.Errorf("Could not find any data for check '%v'", check)
+				return db.ErrNotFound{Type: "Results for check", ID: check}
 			}
 
 			// Iterate over the checks that are included in the desired scan and fetch them

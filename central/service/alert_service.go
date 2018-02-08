@@ -43,7 +43,6 @@ func (s *AlertService) GetAlert(ctx context.Context, request *v1.ResourceByID) (
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if !exists {
-		log.Error(err)
 		return nil, status.Errorf(codes.NotFound, "alert with id '%s' does not exist", request.GetId())
 	}
 

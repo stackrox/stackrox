@@ -109,9 +109,8 @@ func (s *ClusterService) DeleteCluster(ctx context.Context, request *v1.Resource
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Request must have a id")
 	}
-	err := s.storage.RemoveCluster(request.GetId())
-	if err != nil {
-		return &empty.Empty{}, status.Error(codes.Internal, err.Error())
+	if err := s.storage.RemoveCluster(request.GetId()); err != nil {
+		return nil, returnErrorCode(err)
 	}
 	return &empty.Empty{}, nil
 }

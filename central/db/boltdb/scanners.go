@@ -3,6 +3,7 @@ package boltdb
 import (
 	"fmt"
 
+	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
@@ -88,6 +89,10 @@ func (b *BoltDB) UpdateScanner(scanner *v1.Scanner) error {
 func (b *BoltDB) RemoveScanner(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(scannerBucket))
-		return b.Delete([]byte(id))
+		key := []byte(id)
+		if exists := b.Get(key) != nil; !exists {
+			return db.ErrNotFound{Type: "Scanner", ID: string(key)}
+		}
+		return b.Delete(key)
 	})
 }

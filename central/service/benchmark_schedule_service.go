@@ -98,7 +98,7 @@ func (s *BenchmarkScheduleService) GetBenchmarkSchedules(ctx context.Context, re
 // DeleteBenchmarkSchedule removes a benchmark schedule
 func (s *BenchmarkScheduleService) DeleteBenchmarkSchedule(ctx context.Context, request *v1.DeleteBenchmarkScheduleRequest) (*empty.Empty, error) {
 	if err := s.storage.RemoveBenchmarkSchedule(request.Name); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, returnErrorCode(err)
 	}
 	return &empty.Empty{}, nil
 }

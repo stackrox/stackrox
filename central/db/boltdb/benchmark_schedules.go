@@ -3,6 +3,7 @@ package boltdb
 import (
 	"fmt"
 
+	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
@@ -86,6 +87,10 @@ func (b *BoltDB) UpdateBenchmarkSchedule(schedule *v1.BenchmarkSchedule) error {
 func (b *BoltDB) RemoveBenchmarkSchedule(name string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(benchmarkScheduleBucket))
-		return b.Delete([]byte(name))
+		key := []byte(name)
+		if exists := b.Get(key) != nil; !exists {
+			return db.ErrNotFound{Type: "Benchmark Schedule", ID: name}
+		}
+		return b.Delete(key)
 	})
 }

@@ -3,6 +3,7 @@ package boltdb
 import (
 	"fmt"
 
+	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
@@ -84,6 +85,10 @@ func (b *BoltDB) UpdateImage(image *v1.Image) error {
 func (b *BoltDB) RemoveImage(sha string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(imageBucket))
-		return b.Delete([]byte(sha))
+		key := []byte(sha)
+		if exists := b.Get(key) != nil; !exists {
+			return db.ErrNotFound{Type: "Image", ID: string(key)}
+		}
+		return b.Delete(key)
 	})
 }

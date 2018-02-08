@@ -119,7 +119,7 @@ func (s *RegistryService) DeleteRegistry(ctx context.Context, request *v1.Resour
 		return nil, status.Error(codes.InvalidArgument, "Registry id must be provided")
 	}
 	if err := s.storage.RemoveRegistry(request.GetId()); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, returnErrorCode(err)
 	}
 	s.detector.RemoveRegistry(request.GetId())
 	return &empty.Empty{}, nil

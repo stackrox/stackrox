@@ -3,6 +3,7 @@ package boltdb
 import (
 	"fmt"
 
+	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
@@ -84,6 +85,10 @@ func (b *BoltDB) UpdateDeployment(deployment *v1.Deployment) error {
 func (b *BoltDB) RemoveDeployment(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(deploymentBucket))
-		return b.Delete([]byte(id))
+		key := []byte(id)
+		if exists := b.Get(key) != nil; !exists {
+			return db.ErrNotFound{Type: "Deployment", ID: string(key)}
+		}
+		return b.Delete(key)
 	})
 }

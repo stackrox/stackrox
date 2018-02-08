@@ -3,6 +3,7 @@ package boltdb
 import (
 	"fmt"
 
+	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
@@ -94,6 +95,9 @@ func (b *BoltDB) RemoveBenchmark(name string) error {
 		benchmark, exists, err := b.getBenchmark(name, bucket)
 		if err != nil {
 			return err
+		}
+		if !exists {
+			return db.ErrNotFound{Type: "Benchmark", ID: name}
 		}
 		if exists && !benchmark.Editable {
 			return fmt.Errorf("Cannot remove benchmark %v because it cannot be edited", benchmark.Name)

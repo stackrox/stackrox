@@ -116,7 +116,7 @@ func (s *ScannerService) DeleteScanner(ctx context.Context, request *v1.Resource
 		return nil, status.Error(codes.InvalidArgument, "Scanner id must be provided")
 	}
 	if err := s.storage.RemoveScanner(request.GetId()); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, returnErrorCode(err)
 	}
 	s.detector.RemoveScanner(request.GetId())
 	return &empty.Empty{}, nil

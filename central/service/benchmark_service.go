@@ -92,7 +92,7 @@ func (s *BenchmarkService) PutBenchmark(ctx context.Context, request *v1.Benchma
 // DeleteBenchmark removes a benchmark
 func (s *BenchmarkService) DeleteBenchmark(ctx context.Context, request *v1.DeleteBenchmarkRequest) (*empty.Empty, error) {
 	if err := s.storage.RemoveBenchmark(request.Name); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, returnErrorCode(err)
 	}
 	return &empty.Empty{}, nil
 }

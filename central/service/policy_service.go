@@ -134,7 +134,7 @@ func (s *PolicyService) DeletePolicy(ctx context.Context, request *v1.ResourceBy
 		return nil, status.Error(codes.InvalidArgument, "A policy id must be specified to delete a Policy")
 	}
 	if err := s.policyStorage.RemovePolicy(request.GetId()); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, returnErrorCode(err)
 	}
 	s.detector.RemovePolicy(request.GetId())
 	return &empty.Empty{}, nil

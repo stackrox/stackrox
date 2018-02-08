@@ -143,7 +143,7 @@ func (s *NotifierService) DeleteNotifier(ctx context.Context, request *v1.Delete
 	}
 
 	if err := s.storage.RemoveNotifier(request.GetId()); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, returnErrorCode(err)
 	}
 	s.processor.RemoveNotifier(request.GetId())
 	s.detector.RemoveNotifier(request.GetId())

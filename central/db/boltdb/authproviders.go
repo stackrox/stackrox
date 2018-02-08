@@ -91,7 +91,7 @@ func (b *BoltDB) RemoveAuthProvider(id string) error {
 		b := tx.Bucket([]byte(authProviderBucket))
 		key := []byte(id)
 		if exists := b.Get(key) != nil; !exists {
-			return db.ErrNotFound{ID: id}
+			return db.ErrNotFound{Type: "Auth Provider", ID: id}
 		}
 		return b.Delete(key)
 	})

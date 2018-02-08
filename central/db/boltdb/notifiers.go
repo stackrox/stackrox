@@ -3,6 +3,7 @@ package boltdb
 import (
 	"fmt"
 
+	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
@@ -87,6 +88,10 @@ func (b *BoltDB) UpdateNotifier(notifier *v1.Notifier) error {
 func (b *BoltDB) RemoveNotifier(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(notifierBucket))
-		return b.Delete([]byte(id))
+		key := []byte(id)
+		if exists := b.Get(key) != nil; !exists {
+			return db.ErrNotFound{Type: "Notifier", ID: string(key)}
+		}
+		return b.Delete(key)
 	})
 }

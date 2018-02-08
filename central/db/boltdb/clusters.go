@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
@@ -107,7 +108,11 @@ func (b *BoltDB) UpdateCluster(cluster *v1.Cluster) error {
 func (b *BoltDB) RemoveCluster(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(clusterBucket))
-		return b.Delete([]byte(id))
+		key := []byte(id)
+		if exists := b.Get(key) != nil; !exists {
+			return db.ErrNotFound{Type: "Cluster", ID: string(key)}
+		}
+		return b.Delete(key)
 	})
 }
 
