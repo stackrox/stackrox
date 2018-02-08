@@ -52,8 +52,8 @@ func (s *BenchmarkResultsService) RegisterServiceHandlerFromEndpoint(ctx context
 
 // PostBenchmarkResult inserts a new benchmark result into the system
 func (s *BenchmarkResultsService) PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkResult) (*empty.Empty, error) {
-	identity, err := auth.FromContext(ctx)
-	if err != nil || identity.TLS.Name.ServiceType != v1.ServiceType_SENSOR_SERVICE {
+	identity, err := auth.FromTLSContext(ctx)
+	if err != nil || identity.Name.ServiceType != v1.ServiceType_SENSOR_SERVICE {
 		return nil, status.Error(codes.Unauthenticated, "only sensors are allowed")
 	}
 	if err := s.resultStore.AddBenchmarkResult(request); err != nil {

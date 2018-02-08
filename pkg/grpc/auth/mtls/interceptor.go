@@ -30,18 +30,12 @@ func StreamInterceptor() grpc.StreamServerInterceptor {
 }
 
 func authUnary(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	newCtx, err := doAuth(ctx)
-	if err != nil {
-		return nil, err
-	}
+	newCtx := doAuth(ctx)
 	return handler(newCtx, req)
 }
 
 func authStream(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	newCtx, err := doAuth(stream.Context())
-	if err != nil {
-		return err
-	}
+	newCtx := doAuth(stream.Context())
 	newStream := &auth.StreamWithContext{
 		ServerStream:    stream,
 		ContextOverride: newCtx,
@@ -49,39 +43,39 @@ func authStream(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServ
 	return handler(srv, newStream)
 }
 
-func doAuth(ctx context.Context) (newCtx context.Context, err error) {
-	newCtx, ok, err := authTLS(ctx)
-	if err != nil && ok {
-		return newCtx, nil
+func doAuth(ctx context.Context) (newCtx context.Context) {
+	newCtx, err := authTLS(ctx)
+	if err != nil {
+		logger.Debugf("Request failed TLS validation: %v", err)
+		return ctx
 	}
-	logger.Debugf("Request failed TLS validation: %v", err)
-	return ctx, nil
+	return newCtx
 }
 
-func authTLS(ctx context.Context) (newCtx context.Context, ok bool, err error) {
+func authTLS(ctx context.Context) (newCtx context.Context, err error) {
 	client, ok := peer.FromContext(ctx)
 	if !ok {
-		return ctx, false, status.Error(codes.Unauthenticated, "Could not access authentication information")
+		return ctx, status.Error(codes.Unauthenticated, "Could not access authentication information")
 	}
 	tls, ok := client.AuthInfo.(credentials.TLSInfo)
 	if !ok {
-		return ctx, false, status.Error(codes.Unauthenticated, "Could not get TLS information from peer")
+		return ctx, status.Error(codes.Unauthenticated, "Could not get TLS information from peer")
 	}
 	l := len(tls.State.VerifiedChains)
 	switch {
 	case l == 0:
-		return ctx, false, status.Error(codes.Unauthenticated, "No verified certificate chains were presented")
+		return ctx, status.Error(codes.Unauthenticated, "No verified certificate chains were presented")
 	case l > 1:
-		return ctx, false, status.Error(codes.Unauthenticated, "Providing multiple verified chains is not supported")
+		return ctx, status.Error(codes.Unauthenticated, "Providing multiple verified chains is not supported")
 	}
 	chain := tls.State.VerifiedChains[0]
 	leaf := chain[0]
 	cn := mtls.CommonNameFromString(leaf.Subject.CommonName)
-	return auth.NewContext(ctx, auth.Identity{
-		TLS: mtls.Identity{
+	return auth.NewTLSContext(ctx, auth.TLSIdentity{
+		Identity: mtls.Identity{
 			Name:   cn,
 			Serial: leaf.SerialNumber,
 		},
 		Expiration: leaf.NotAfter,
-	}), true, nil
+	}), nil
 }

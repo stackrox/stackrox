@@ -62,13 +62,13 @@ func (s *ScannerService) GetScanners(ctx context.Context, request *v1.GetScanner
 	if err != nil {
 		return nil, err
 	}
-	identity, err := auth.FromContext(ctx)
+	identity, err := auth.FromTLSContext(ctx)
 	switch {
 	case err == auth.ErrNoContext:
 		log.Debugf("No authentication context provided")
 	case err != nil:
 		log.Warnf("Error getting client identity: %s", err)
-	case err == nil && identity.TLS.Name.ServiceType == v1.ServiceType_SENSOR_SERVICE:
+	case err == nil && identity.Name.ServiceType == v1.ServiceType_SENSOR_SERVICE:
 		return &v1.GetScannersResponse{Scanners: scanners}, nil
 	}
 

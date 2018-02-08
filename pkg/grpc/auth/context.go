@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/pkg/authproviders"
@@ -15,40 +14,48 @@ var (
 	ErrNoContext = errors.New("no identity context found")
 )
 
-type contextKey struct{}
+type tlsContextKey struct{}
+type userContextKey struct{}
 
-// An Identity holds the information this package is able to ascertain from
-// the credentials provided by the client.
-type Identity struct {
-	User       User
-	TLS        mtls.Identity
+// A TLSIdentity holds an identity extracted from service-to-service TLS credentials.
+type TLSIdentity struct {
+	mtls.Identity
 	Expiration time.Time
 }
 
-// User has user data and which provider gave it to us.
-type User struct {
+// NewTLSContext adds the given Identity to the Context.
+func NewTLSContext(ctx context.Context, id TLSIdentity) context.Context {
+	return context.WithValue(ctx, tlsContextKey{}, id)
+}
+
+// FromTLSContext retrieves identity information from the given context.
+// The context must have been passed through the interceptors provided by this package.
+func FromTLSContext(ctx context.Context) (TLSIdentity, error) {
+	val, ok := ctx.Value(tlsContextKey{}).(TLSIdentity)
+	if !ok {
+		return TLSIdentity{}, ErrNoContext
+	}
+	return val, nil
+}
+
+// A UserIdentity holds an identity extracted from a user authentication token.
+type UserIdentity struct {
 	authproviders.User
 	AuthProvider authproviders.Authenticator
+	Expiration   time.Time
 }
 
-func (id Identity) String() string {
-	if id.User.ID != "" {
-		return fmt.Sprintf("User: %s", id.User.ID)
-	}
-	return id.TLS.Name.String()
+// NewUserContext adds the given Identity to the Context.
+func NewUserContext(ctx context.Context, id UserIdentity) context.Context {
+	return context.WithValue(ctx, userContextKey{}, id)
 }
 
-// NewContext adds the given Identity to the Context.
-func NewContext(ctx context.Context, id Identity) context.Context {
-	return context.WithValue(ctx, contextKey{}, id)
-}
-
-// FromContext retrieves identity information from the given context.
+// FromUserContext retrieves identity information from the given context.
 // The context must have been passed through the interceptors provided by this package.
-func FromContext(ctx context.Context) (Identity, error) {
-	val, ok := ctx.Value(contextKey{}).(Identity)
+func FromUserContext(ctx context.Context) (UserIdentity, error) {
+	val, ok := ctx.Value(userContextKey{}).(UserIdentity)
 	if !ok {
-		return Identity{}, ErrNoContext
+		return UserIdentity{}, ErrNoContext
 	}
 	return val, nil
 }

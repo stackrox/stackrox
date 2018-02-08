@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
@@ -38,6 +39,11 @@ func (s *SensorEventService) RegisterServiceHandlerFromEndpoint(ctx context.Cont
 
 // ReportDeploymentEvent receives a new deployment event from a sensor.
 func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request *v1.DeploymentEvent) (*v1.DeploymentEventResponse, error) {
+	identity, err := auth.FromTLSContext(ctx)
+	if err != nil || identity.Name.ServiceType != v1.ServiceType_SENSOR_SERVICE {
+		return nil, status.Error(codes.Unauthenticated, "only sensors are allowed")
+	}
+
 	if request == nil {
 		return nil, status.Error(codes.InvalidArgument, "Request must include an event")
 	}

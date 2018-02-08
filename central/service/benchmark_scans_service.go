@@ -38,8 +38,8 @@ func (s *BenchmarkScansService) RegisterServiceHandlerFromEndpoint(ctx context.C
 
 // PostBenchmarkScan inserts a scan into the database
 func (s *BenchmarkScansService) PostBenchmarkScan(ctx context.Context, scan *v1.BenchmarkScanMetadata) (*empty.Empty, error) {
-	identity, err := auth.FromContext(ctx)
-	if err != nil || identity.TLS.Name.ServiceType != v1.ServiceType_SENSOR_SERVICE {
+	identity, err := auth.FromTLSContext(ctx)
+	if err != nil || identity.Name.ServiceType != v1.ServiceType_SENSOR_SERVICE {
 		return nil, status.Error(codes.Unauthenticated, "only sensors are allowed")
 	}
 	return &empty.Empty{}, s.scanStore.AddScan(scan)

@@ -32,37 +32,53 @@ func (s *AuthService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // GetAuthStatus retrieves the auth status based on the credentials given to the server.
 func (s *AuthService) GetAuthStatus(ctx context.Context, request *empty.Empty) (*v1.AuthStatus, error) {
-	id, err := auth.FromContext(ctx)
+	authStatus, err := userAuth(ctx)
+	if err == nil {
+		return authStatus, nil
+	}
+
+	authStatus, err = tlsAuth(ctx)
+	if err == nil {
+		return authStatus, nil
+	}
+
+	return nil, status.Error(codes.Unauthenticated, "not authenticated")
+}
+
+func userAuth(ctx context.Context) (*v1.AuthStatus, error) {
+	id, err := auth.FromUserContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	exp, err := ptypes.TimestampProto(id.Expiration)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "expiration time: %s", err)
+	}
+	var url string
+	if id.User.AuthProvider != nil {
+		url = id.User.AuthProvider.RefreshURL()
+	}
+	return &v1.AuthStatus{
+		Id:         &v1.AuthStatus_UserId{UserId: id.User.ID},
+		Expires:    exp,
+		RefreshUrl: url,
+	}, nil
+}
+
+func tlsAuth(ctx context.Context) (*v1.AuthStatus, error) {
+	id, err := auth.FromTLSContext(ctx)
 	switch {
 	case err == auth.ErrNoContext:
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	case err != nil:
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-
 	exp, err := ptypes.TimestampProto(id.Expiration)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "expiration time: %s", err)
 	}
-
-	if id.User.ID != "" {
-		var url string
-		if id.User.AuthProvider != nil {
-			url = id.User.AuthProvider.RefreshURL()
-		}
-		return &v1.AuthStatus{
-			Id:         &v1.AuthStatus_UserId{UserId: id.User.ID},
-			Expires:    exp,
-			RefreshUrl: url,
-		}, nil
-	}
-
-	if id.TLS.Name.Identifier != "" {
-		return &v1.AuthStatus{
-			Id:      &v1.AuthStatus_ServiceId{ServiceId: id.TLS.V1()},
-			Expires: exp,
-		}, nil
-	}
-
-	return nil, status.Error(codes.Unauthenticated, "not authenticated")
+	return &v1.AuthStatus{
+		Id:      &v1.AuthStatus_ServiceId{ServiceId: id.Identity.V1()},
+		Expires: exp,
+	}, nil
 }

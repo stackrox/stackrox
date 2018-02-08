@@ -102,12 +102,10 @@ func (a *AuthInterceptor) authToken(ctx context.Context) (newCtx context.Context
 			logger.Debugf("User auth error: %s", err)
 			continue
 		}
-		return auth.NewContext(ctx, auth.Identity{
-			User: auth.User{
-				User:         user,
-				AuthProvider: p,
-			},
-			Expiration: expiration,
+		return auth.NewUserContext(ctx, auth.UserIdentity{
+			User:         user,
+			AuthProvider: p,
+			Expiration:   expiration,
 		}), true
 	}
 	return ctx, false
