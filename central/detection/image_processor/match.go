@@ -102,7 +102,8 @@ func (policy *compiledImagePolicy) matchCVE(image *v1.Image) (violations []*v1.A
 		for _, vuln := range component.GetVulns() {
 			if policy.CVE.MatchString(vuln.GetCve()) {
 				violations = append(violations, &v1.Alert_Violation{
-					Message: fmt.Sprintf("CVE '%v' matches the regex '%+v'. Link: %v", vuln.GetCve(), policy.CVE, getVulnLink(vuln)),
+					Message: fmt.Sprintf("'%v' in Component '%v' matches the regex '%+v'", vuln.GetCve(), component.GetName(), policy.CVE),
+					Link:    getVulnLink(vuln),
 				})
 			}
 		}
@@ -132,7 +133,11 @@ func (policy *compiledImagePolicy) matchCVSS(image *v1.Image) (violations []*v1.
 	var value float32
 	switch policy.CVSS.GetMathOp() {
 	case v1.MathOP_MIN:
-		value = minimum
+		// This case is necessary due to setting the minimum value as the largest float
+		// If there are no vulns then the minimum value would be max float
+		if numVulns > 0 {
+			value = minimum
+		}
 	case v1.MathOP_MAX:
 		value = maximum
 	case v1.MathOP_AVG:

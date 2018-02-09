@@ -16,6 +16,7 @@ message Alert {
     Deployment deployment                   = 3;
     message Violation {
         string message    = 1;
+        string link       = 2;
     }
     repeated Violation violations           = 4;
     message Enforcement {
