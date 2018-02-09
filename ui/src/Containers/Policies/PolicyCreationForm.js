@@ -4,7 +4,7 @@ import { Text, TextArea, Select } from 'react-form';
 import MultiSelect from 'react-select';
 import 'react-select/dist/react-select.css';
 import FormField from 'Components/FormField';
-import NumericInput from 'Components/NumericInput';
+import NumericInput from 'react-numeric-input';
 import CustomSelect from 'Components/Select';
 
 import flatten from 'flat';
@@ -435,7 +435,7 @@ class PolicyCreationForm extends Component {
 
     postFormatScopeField = (obj) => {
         const newObj = Object.assign({}, obj);
-        newObj.scope = obj.scope.map(o => ({ cluster: o }));
+        if (newObj.scope) newObj.scope = obj.scope.map(o => ({ cluster: o }));
         return newObj;
     }
 
@@ -516,6 +516,7 @@ class PolicyCreationForm extends Component {
                         field={field.value}
                         id={field.value}
                         placeholder={field.placeholder}
+                        style={{ style: false }}
                         className="border rounded-l p-3 border-base-300 w-full font-400"
                     />
                 );

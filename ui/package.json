@@ -21,6 +21,7 @@
     "react-feather": "^1.0.7",
     "react-form": "^2.15.2",
     "react-modal": "^3.1.7",
+    "react-numeric-input": "^2.2.3",
     "react-router-dom": "^4.2.2",
     "react-router-prop-types": "^0.0.3",
     "react-scripts": "1.0.17",
