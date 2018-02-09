@@ -86,7 +86,7 @@ class PolicyAlertsSidePanel extends Component {
                 <div className="flex flex-1 overflow-y-scroll">
                     <div className="flex flex-col w-full">
                         <div className="bg-white m-3 flex-grow">
-                            <div className="flex py-2 px-3 truncate">
+                            <div className="flex py-2 px-3">
                                 <div className="flex-row font-bold text-primary-500">Violation:</div>
                                 <div className="flex-row px-1">
                                     {this.state.alert.violations.map(violation => <div key={`${violation.message}`} className="flex-col break-words">{violation.message}</div>)}
