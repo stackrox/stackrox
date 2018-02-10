@@ -1,10 +1,10 @@
 describe('Dashboard page', () => {
     beforeEach(() => {
-        cy.visit('/dashboard');
+        cy.visit('/main/dashboard');
     });
 
     it('should select item in nav bar', () => {
-        cy.get('nav li:contains("Dashboard") a').should('have.class', 'bg-primary-800');
+        cy.get('nav li:contains("Dashboard") a').should('have.class', 'bg-primary-600');
     });
 
     it('should have violations by cluster chart', () => {

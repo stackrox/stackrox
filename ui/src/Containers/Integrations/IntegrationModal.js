@@ -1,13 +1,16 @@
 import React, { Component } from 'react';
+import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
 import Modal from 'Components/Modal';
 import { Form, Text, Select } from 'react-form';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
+import { withRouter } from 'react-router-dom';
 
 import axios from 'axios';
 import * as Icon from 'react-feather';
 import tableColumnDescriptor from 'Containers/Integrations/tableColumnDescriptor';
+import AuthService from 'Providers/AuthService';
 
 const sourceMap = {
     authProviders: {
@@ -358,7 +361,8 @@ class IntegrationModal extends Component {
         source: PropTypes.oneOf(['registries', 'scanners', 'notifiers', 'authProviders']).isRequired,
         type: PropTypes.string.isRequired,
         onRequestClose: PropTypes.func.isRequired,
-        onIntegrationsUpdate: PropTypes.func.isRequired
+        onIntegrationsUpdate: PropTypes.func.isRequired,
+        history: ReactRouterPropTypes.history.isRequired,
     }
 
     constructor(props) {
@@ -379,6 +383,11 @@ class IntegrationModal extends Component {
         this.update('CLEAR_ERROR_MESSAGE');
         const data = this.addDefaultFormValues(formData);
         api[this.props.source].save(data).then(() => {
+            if (!this.props.integrations.length && this.props.source === 'authProviders') {
+                AuthService.logout();
+                this.props.history.go('/login');
+                return;
+            }
             this.props.onIntegrationsUpdate(this.props.source);
             this.update('EDIT_INTEGRATION', { editIntegration: null });
         }).catch((error) => {
@@ -388,7 +397,8 @@ class IntegrationModal extends Component {
 
     addDefaultFormValues = (formData) => {
         const data = formData;
-        data.uiEndpoint = window.location.origin;
+        const { location } = window;
+        data.uiEndpoint = (this.props.source === 'authProviders') ? location.host : location.origin;
         data.type = this.props.type;
         data.enabled = true;
         return data;
@@ -536,4 +546,4 @@ class IntegrationModal extends Component {
     }
 }
 
-export default IntegrationModal;
+export default withRouter(IntegrationModal);

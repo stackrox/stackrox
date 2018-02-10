@@ -1,10 +1,10 @@
 describe('Integrations page', () => {
     beforeEach(() => {
-        cy.visit('/integrations');
+        cy.visit('/main/integrations');
     });
 
     it('should have selected item in nav bar', () => {
-        cy.get('nav li:contains("Integrations") a').should('have.class', 'bg-primary-800');
+        cy.get('nav li:contains("Integrations") a').should('have.class', 'bg-primary-600');
     });
 
     it('should allow integration with Slack', () => {

@@ -14,13 +14,13 @@ describe('General sanity checks', () => {
         cy.get('nav li:not(:first) a').as('otherNavItems');
 
         // redirect should happen
-        cy.url().should('contain', '/dashboard');
+        cy.url().should('contain', '/main/dashboard');
 
         // Dashboard is selected
-        cy.get('@firstNavItem').should('have.class', 'bg-primary-800');
+        cy.get('@firstNavItem').should('have.class', 'bg-primary-600');
         cy.get('@firstNavItem').contains('Dashboard');
 
         // nothing else is selected
-        cy.get('@otherNavItems').should('not.have.class', 'bg-primary-800');
+        cy.get('@otherNavItems').should('not.have.class', 'bg-primary-600');
     });
 });

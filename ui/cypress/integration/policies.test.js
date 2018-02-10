@@ -1,10 +1,10 @@
 describe('Policies page', () => {
     beforeEach(() => {
-        cy.visit('/policies');
+        cy.visit('/main/policies');
     });
 
     it('should have selected item in nav bar', () => {
-        cy.get('nav li:contains("Policies") a').should('have.class', 'bg-primary-800');
+        cy.get('nav li:contains("Policies") a').should('have.class', 'bg-primary-600');
     });
 
     it('should allow updating policy name', () => {

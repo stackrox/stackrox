@@ -143,7 +143,7 @@ class DashboardPage extends Component {
     };
 
     makeBarClickHandler = (cluster, severity) => () => {
-        this.props.history.push(`/violations?severity=${severity}&cluster=${cluster}`);
+        this.props.history.push(`/main/violations?severity=${severity}&cluster=${cluster}`);
     }
 
     update = (action, nextState) => {
@@ -259,7 +259,7 @@ class DashboardPage extends Component {
                 value: parseInt(d.count, 10),
                 color: severityColorMap[d.severity],
                 onClick: () => {
-                    this.props.history.push(`/violations?category=${policyType.group}&severity=${d.severity}`);
+                    this.props.history.push(`/main/violations?category=${policyType.group}&severity=${d.severity}`);
                 }
             }));
             return (

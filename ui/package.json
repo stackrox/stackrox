@@ -31,10 +31,11 @@
     "react-tooltip": "^3.4.0",
     "react-transition-group": "^2.2.1",
     "recharts": "^1.0.0-beta.9",
+    "store": "^2.0.12",
     "tailwindcss": "^0.3.0"
   },
   "scripts": {
-    "start": "tailwind build ./src/app.css -c ./tailwind.js -o ./src/index.css && NODE_PATH=src react-scripts start",
+    "start": "tailwind build ./src/app.css -c ./tailwind.js -o ./src/index.css && HTTPS=true NODE_PATH=src react-scripts start",
     "build": "tailwind build ./src/app.css -c ./tailwind.js -o ./src/index.css && NODE_PATH=src react-scripts build",
     "test": "NODE_PATH=src react-scripts test --env=jsdom --coverage",
     "test-watch": "NODE_PATH=src react-scripts test --env=jsdom",

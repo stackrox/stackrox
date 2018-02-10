@@ -182,6 +182,7 @@ class IntegrationsPage extends Component {
     getEntities = (source) => {
         axios.get(`/v1/${source}`).then((response) => {
             const { [source]: entities } = response.data;
+            console.log(source, entities, response.data);
             this.update('UPDATE_ENTITIES', { entities, source });
         }).catch((error) => {
             console.error(error.response);

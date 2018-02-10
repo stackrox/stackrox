@@ -1,10 +1,10 @@
 describe('Compliance page', () => {
     beforeEach(() => {
-        cy.visit('/compliance');
+        cy.visit('/main/compliance');
     });
 
     it('should have selected item in nav bar', () => {
-        cy.get('nav li:contains("Compliance") a').should('have.class', 'bg-primary-800');
+        cy.get('nav li:contains("Compliance") a').should('have.class', 'bg-primary-600');
     });
 
     it('should start scanning', () => {
