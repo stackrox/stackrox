@@ -2,7 +2,8 @@ package service
 
 import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/allow"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -30,6 +31,11 @@ func (s *AuthService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 	return v1.RegisterAuthServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 }
 
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *AuthService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, returnErrorCode(allow.Anonymous().Authorized(ctx))
+}
+
 // GetAuthStatus retrieves the auth status based on the credentials given to the server.
 func (s *AuthService) GetAuthStatus(ctx context.Context, request *empty.Empty) (*v1.AuthStatus, error) {
 	authStatus, err := userAuth(ctx)
@@ -46,7 +52,7 @@ func (s *AuthService) GetAuthStatus(ctx context.Context, request *empty.Empty) (
 }
 
 func userAuth(ctx context.Context) (*v1.AuthStatus, error) {
-	id, err := auth.FromUserContext(ctx)
+	id, err := authn.FromUserContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -66,9 +72,9 @@ func userAuth(ctx context.Context) (*v1.AuthStatus, error) {
 }
 
 func tlsAuth(ctx context.Context) (*v1.AuthStatus, error) {
-	id, err := auth.FromTLSContext(ctx)
+	id, err := authn.FromTLSContext(ctx)
 	switch {
-	case err == auth.ErrNoContext:
+	case err == authn.ErrNoContext:
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	case err != nil:
 		return nil, status.Error(codes.Internal, err.Error())

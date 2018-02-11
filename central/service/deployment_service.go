@@ -6,6 +6,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
@@ -33,6 +34,11 @@ func (s *DeploymentService) RegisterServiceServer(grpcServer *grpc.Server) {
 // RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
 func (s *DeploymentService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
 	return v1.RegisterDeploymentServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+}
+
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *DeploymentService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, returnErrorCode(user.Any().Authorized(ctx))
 }
 
 // GetDeployment returns the deployment with given id.

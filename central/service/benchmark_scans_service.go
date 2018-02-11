@@ -5,7 +5,10 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/idcheck"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/service"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
@@ -36,12 +39,19 @@ func (s *BenchmarkScansService) RegisterServiceHandlerFromEndpoint(ctx context.C
 	return v1.RegisterBenchmarkScanServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 }
 
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *BenchmarkScansService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	pr := service.PerRPC{
+		Default: or.SensorOrUser(),
+		Authorizers: map[string]authz.Authorizer{
+			"/v1.BenchmarkScansService/PostBenchmarkScan": idcheck.SensorsOnly(),
+		},
+	}
+	return ctx, returnErrorCode(pr.Authorized(ctx, fullMethodName))
+}
+
 // PostBenchmarkScan inserts a scan into the database
 func (s *BenchmarkScansService) PostBenchmarkScan(ctx context.Context, scan *v1.BenchmarkScanMetadata) (*empty.Empty, error) {
-	identity, err := auth.FromTLSContext(ctx)
-	if err != nil || identity.Name.ServiceType != v1.ServiceType_SENSOR_SERVICE {
-		return nil, status.Error(codes.Unauthenticated, "only sensors are allowed")
-	}
 	return &empty.Empty{}, s.scanStore.AddScan(scan)
 }
 

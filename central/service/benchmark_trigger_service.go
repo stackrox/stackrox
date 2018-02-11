@@ -5,6 +5,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -36,7 +37,12 @@ func (s *BenchmarkTriggerService) RegisterServiceHandlerFromEndpoint(ctx context
 	return v1.RegisterBenchmarkTriggerServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 }
 
-// Trigger triggers a benchmark launch asynchronously
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *BenchmarkTriggerService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, returnErrorCode(or.SensorOrUser().Authorized(ctx))
+}
+
+// Trigger triggers a benchmark launch asynchronously.
 func (s *BenchmarkTriggerService) Trigger(ctx context.Context, request *v1.BenchmarkTrigger) (*empty.Empty, error) {
 	_, exists, err := s.storage.GetBenchmark(request.GetName())
 	if err != nil {
@@ -52,7 +58,7 @@ func (s *BenchmarkTriggerService) Trigger(ctx context.Context, request *v1.Bench
 	return &empty.Empty{}, nil
 }
 
-// GetTriggers triggers returns all  a benchmark launch asynchronously
+// GetTriggers triggers returns all of the manual benchmark triggers.
 func (s *BenchmarkTriggerService) GetTriggers(ctx context.Context, request *v1.GetBenchmarkTriggersRequest) (*v1.GetBenchmarkTriggersResponse, error) {
 	triggers, err := s.storage.GetBenchmarkTriggers(request)
 	if err != nil {

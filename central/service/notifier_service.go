@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/notifications"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
 	"bitbucket.org/stack-rox/apollo/pkg/secrets"
 	"github.com/golang/protobuf/jsonpb"
@@ -46,6 +47,11 @@ func (s *NotifierService) RegisterServiceServer(grpcServer *grpc.Server) {
 // RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
 func (s *NotifierService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
 	return v1.RegisterNotifierServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+}
+
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *NotifierService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, returnErrorCode(user.Any().Authorized(ctx))
 }
 
 // GetNotifier retrieves all registries that matches the request filters

@@ -4,7 +4,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/notifications"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/idcheck"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/hashicorp/golang-lru"
@@ -16,7 +16,7 @@ import (
 
 const cacheSize = 100
 
-// NewBenchmarkResultsService returns the BenchmarkResultsService API.
+// NewBenchmarkResultsService returns the BenchmarkResultsService API for Central.
 func NewBenchmarkResultsService(storage db.Storage, notificationsProcessor *notifications.Processor) *BenchmarkResultsService {
 	cache, err := lru.New(cacheSize)
 	if err != nil {
@@ -50,12 +50,13 @@ func (s *BenchmarkResultsService) RegisterServiceHandlerFromEndpoint(ctx context
 	return v1.RegisterBenchmarkResultsServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 }
 
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *BenchmarkResultsService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, returnErrorCode(idcheck.SensorsOnly().Authorized(ctx))
+}
+
 // PostBenchmarkResult inserts a new benchmark result into the system
 func (s *BenchmarkResultsService) PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkResult) (*empty.Empty, error) {
-	identity, err := auth.FromTLSContext(ctx)
-	if err != nil || identity.Name.ServiceType != v1.ServiceType_SENSOR_SERVICE {
-		return nil, status.Error(codes.Unauthenticated, "only sensors are allowed")
-	}
 	if err := s.resultStore.AddBenchmarkResult(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

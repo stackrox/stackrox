@@ -21,7 +21,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
 	pkgGRPC "bitbucket.org/stack-rox/apollo/pkg/grpc"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth/user"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn/user"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/clusters"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"

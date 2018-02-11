@@ -1,4 +1,4 @@
-package auth
+package authn
 
 import (
 	"context"
@@ -16,6 +16,7 @@ var (
 
 type tlsContextKey struct{}
 type userContextKey struct{}
+type authConfigurationContextKey struct{}
 
 // A TLSIdentity holds an identity extracted from service-to-service TLS credentials.
 type TLSIdentity struct {
@@ -56,6 +57,28 @@ func FromUserContext(ctx context.Context) (UserIdentity, error) {
 	val, ok := ctx.Value(userContextKey{}).(UserIdentity)
 	if !ok {
 		return UserIdentity{}, ErrNoContext
+	}
+	return val, nil
+}
+
+// AuthConfiguration provides information about how auth is configured (or not).
+type AuthConfiguration struct {
+	// ProviderConfigured indicates at least one provider is configured.
+	ProviderConfigured bool
+}
+
+// NewAuthConfigurationContext adds the given AuthConfiguration to the Context.
+func NewAuthConfigurationContext(ctx context.Context, conf AuthConfiguration) context.Context {
+	return context.WithValue(ctx, authConfigurationContextKey{}, conf)
+}
+
+// FromAuthConfigurationContext retrieves information about authentication
+// configuration from the given context. The context must have been passed
+// through the interceptors provided by this package.
+func FromAuthConfigurationContext(ctx context.Context) (AuthConfiguration, error) {
+	val, ok := ctx.Value(authConfigurationContextKey{}).(AuthConfiguration)
+	if !ok {
+		return AuthConfiguration{}, ErrNoContext
 	}
 	return val, nil
 }

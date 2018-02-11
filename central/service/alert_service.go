@@ -7,6 +7,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -33,6 +34,11 @@ func (s *AlertService) RegisterServiceServer(grpcServer *grpc.Server) {
 // RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
 func (s *AlertService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
 	return v1.RegisterAlertServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+}
+
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *AlertService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, returnErrorCode(user.Any().Authorized(ctx))
 }
 
 // GetAlert returns the alert with given id.

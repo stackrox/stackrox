@@ -6,11 +6,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/authproviders"
 	"bitbucket.org/stack-rox/apollo/pkg/jwt"
+)
+
+const (
+	cacheExpiry = 5 * time.Minute
 )
 
 func init() {
@@ -32,9 +37,17 @@ type config struct {
 	Enabled bool
 }
 
+type cacheElem struct {
+	profile    *auth0Profile
+	expiration time.Time
+}
+
 // Auth0 integrates with the Auth0 /authorize API to get access tokens.
 type auth0 struct {
 	config config
+
+	cacheLock    *sync.Mutex
+	profileCache map[string]cacheElem
 }
 
 // Validate checks the provided Config for errors.
@@ -51,7 +64,9 @@ func (c config) Validate() error {
 // NewAuth0 creates a new Auth0 integration from an API object.
 func newAuth0(cfg config) *auth0 {
 	return &auth0{
-		config: cfg,
+		config:       cfg,
+		cacheLock:    new(sync.Mutex),
+		profileCache: make(map[string]cacheElem),
 	}
 }
 
@@ -164,7 +179,33 @@ func (a auth0) User(headers map[string][]string) (u authproviders.User, exp time
 	}, claims.Expiry.Time(), nil
 }
 
+func (a auth0) getCachedProfile(token string) (*auth0Profile, bool) {
+	a.cacheLock.Lock()
+	defer a.cacheLock.Unlock()
+	cache, ok := a.profileCache[token]
+	if !ok {
+		return nil, false
+	}
+	if cache.expiration.Before(time.Now()) {
+		delete(a.profileCache, token)
+		return nil, false
+	}
+	return cache.profile, true
+}
+
+func (a auth0) addCachedProfile(t string, p *auth0Profile) {
+	a.cacheLock.Lock()
+	defer a.cacheLock.Unlock()
+	a.profileCache[t] = cacheElem{
+		profile:    p,
+		expiration: time.Now().Add(cacheExpiry),
+	}
+}
+
 func (a auth0) getProfile(token string) (email string, err error) {
+	if profile, ok := a.getCachedProfile(token); ok {
+		return profile.Name, nil
+	}
 	c := http.Client{
 		Timeout: 5 * time.Second,
 	}
@@ -184,11 +225,15 @@ func (a auth0) getProfile(token string) (email string, err error) {
 		return "", err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return "", fmt.Errorf("Failed to retrieve profile due to exceeding API limits")
+	}
 	var prof auth0Profile
 	dec := json.NewDecoder(resp.Body)
 	if err := dec.Decode(&prof); err != nil {
 		return "", fmt.Errorf("profile decoding: %s", err)
 	}
+	a.addCachedProfile(token, &prof)
 	return prof.Name, nil
 }
 

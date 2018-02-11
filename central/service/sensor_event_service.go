@@ -4,7 +4,8 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/idcheck"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
@@ -37,13 +38,13 @@ func (s *SensorEventService) RegisterServiceHandlerFromEndpoint(ctx context.Cont
 	return v1.RegisterSensorEventServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 }
 
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *SensorEventService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, returnErrorCode(idcheck.SensorsOnly().Authorized(ctx))
+}
+
 // ReportDeploymentEvent receives a new deployment event from a sensor.
 func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request *v1.DeploymentEvent) (*v1.DeploymentEventResponse, error) {
-	identity, err := auth.FromTLSContext(ctx)
-	if err != nil || identity.Name.ServiceType != v1.ServiceType_SENSOR_SERVICE {
-		return nil, status.Error(codes.Unauthenticated, "only sensors are allowed")
-	}
-
 	if request == nil {
 		return nil, status.Error(codes.InvalidArgument, "Request must include an event")
 	}
@@ -55,16 +56,7 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 	}
 	// We do not want to trust what clients tell us their cluster ID is;
 	// let their certificates do the talking.
-	d.ClusterId = identity.Name.Identifier
-	cluster, clusterExists, err := s.storage.GetCluster(d.ClusterId)
-	switch {
-	case err != nil:
-		log.Warnf("Couldn't get name of cluster: %s", err)
-	case !clusterExists:
-		log.Warnf("Couldn't find cluster '%s'", d.ClusterId)
-	default:
-		d.ClusterName = cluster.GetName()
-	}
+	s.resetClusterData(ctx, d)
 
 	response := new(v1.DeploymentEventResponse)
 	// If it's a create and we already have the deployment, ignore it.
@@ -97,6 +89,29 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 	}
 
 	return response, nil
+}
+
+func (s *SensorEventService) resetClusterData(ctx context.Context, d *v1.Deployment) {
+	d.ClusterId = ""
+	d.ClusterName = ""
+
+	identity, err := authn.FromTLSContext(ctx)
+	if err != nil {
+		// This should be impossible, because we have already passed through MTLS auth.
+		log.Errorf("Couldn't get cluster identity: %s", err)
+		return
+	}
+
+	d.ClusterId = identity.Name.Identifier
+	cluster, clusterExists, err := s.storage.GetCluster(d.ClusterId)
+	switch {
+	case err != nil:
+		log.Warnf("Couldn't get name of cluster: %s", err)
+	case !clusterExists:
+		log.Warnf("Couldn't find cluster '%s'", d.ClusterId)
+	default:
+		d.ClusterName = cluster.GetName()
+	}
 }
 
 func (s *SensorEventService) handlePersistence(event *v1.DeploymentEvent) error {

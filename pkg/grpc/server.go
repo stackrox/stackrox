@@ -8,11 +8,13 @@ import (
 	"net/http"
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth/mtls"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn/mtls"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/deny"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	"github.com/NYTimes/gziphandler"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
@@ -74,6 +76,10 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 		mtls.UnaryInterceptor(),
 	}
 	u = append(u, a.config.UnaryInterceptors...)
+
+	// Default to deny all access. This forces services to properly override the AuthFunc.
+	u = append(u, grpc_auth.UnaryServerInterceptor(deny.AuthFunc))
+
 	u = append(u, a.unaryRecovery())
 	return u
 }
@@ -84,6 +90,10 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 		mtls.StreamInterceptor(),
 	}
 	s = append(s, a.config.StreamInterceptors...)
+
+	// Default to deny all access. This forces services to properly override the AuthFunc.
+	s = append(s, grpc_auth.StreamServerInterceptor(deny.AuthFunc))
+
 	s = append(s, a.streamRecovery())
 	return s
 }
@@ -101,7 +111,7 @@ func (a *apiImpl) muxer(tlsConf *tls.Config) http.Handler {
 	for prefix, handler := range a.config.CustomRoutes {
 		mux.Handle(prefix, handler)
 	}
-	// EmitDefaults allows marshalled structs with the omitempty: false setting to return 0-valued defaults.
+	// EmitDefaults marshals zero values into the output, instead of omitting them.
 	gwMux := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{EmitDefaults: true}))
 	for _, service := range a.apiServices {
 		if err := service.RegisterServiceHandlerFromEndpoint(ctx, gwMux, endpoint, dialOpts); err != nil {

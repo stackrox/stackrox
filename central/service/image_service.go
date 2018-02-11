@@ -3,6 +3,7 @@ package service
 import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -30,6 +31,11 @@ func (s *ImageService) RegisterServiceServer(grpcServer *grpc.Server) {
 // RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
 func (s *ImageService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
 	return v1.RegisterImageServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+}
+
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *ImageService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, returnErrorCode(user.Any().Authorized(ctx))
 }
 
 // GetImage returns an image with given sha if it exists.

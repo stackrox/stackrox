@@ -2,6 +2,7 @@ package benchmarks
 
 import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/allow"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
@@ -10,7 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// NewBenchmarkResultsService returns the BenchmarkResultsService API.
+// NewBenchmarkResultsService returns the BenchmarkResultsService API for Sensors.
 func NewBenchmarkResultsService(relayer Relayer) *BenchmarkResultsService {
 	return &BenchmarkResultsService{
 		relayer: relayer,
@@ -30,6 +31,12 @@ func (s *BenchmarkResultsService) RegisterServiceServer(grpcServer *grpc.Server)
 // RegisterServiceHandlerFromEndpoint implements the APIService interface, but the agent does not accept calls over the gRPC gateway
 func (s *BenchmarkResultsService) RegisterServiceHandlerFromEndpoint(context.Context, *runtime.ServeMux, string, []grpc.DialOption) error {
 	return nil
+}
+
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *BenchmarkResultsService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	// TODO(cg): AP-157: Provide credentials to the benchmark service and verify them here.
+	return ctx, allow.Anonymous().Authorized(ctx)
 }
 
 // PostBenchmarkResult inserts a new benchmark result into the system

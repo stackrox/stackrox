@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/allow"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
@@ -26,6 +27,11 @@ func (s *PingService) RegisterServiceServer(grpcServer *grpc.Server) {
 // RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
 func (s *PingService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
 	return v1.RegisterPingServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+}
+
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *PingService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, returnErrorCode(allow.Anonymous().Authorized(ctx))
 }
 
 // Ping implements v1.PingServiceServer, and it always returns a v1.PongMessage object.

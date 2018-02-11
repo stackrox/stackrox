@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"google.golang.org/grpc"
 )
@@ -66,9 +66,9 @@ func (cw ClusterWatcher) watchStream(srv interface{}, stream grpc.ServerStream, 
 }
 
 func (cw ClusterWatcher) recordCheckin(ctx context.Context) error {
-	id, err := auth.FromTLSContext(ctx)
+	id, err := authn.FromTLSContext(ctx)
 	switch {
-	case err == auth.ErrNoContext:
+	case err == authn.ErrNoContext:
 		return nil
 	case err != nil:
 		return err

@@ -6,7 +6,8 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/secrets"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -41,6 +42,11 @@ func (s *RegistryService) RegisterServiceHandlerFromEndpoint(ctx context.Context
 	return v1.RegisterRegistryServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 }
 
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *RegistryService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, returnErrorCode(or.SensorOrUser().Authorized(ctx))
+}
+
 // GetRegistry retrieves the registry based on the id passed
 func (s *RegistryService) GetRegistry(ctx context.Context, request *v1.ResourceByID) (*v1.Registry, error) {
 	if request.GetId() == "" {
@@ -63,9 +69,9 @@ func (s *RegistryService) GetRegistries(ctx context.Context, request *v1.GetRegi
 		return nil, err
 	}
 
-	identity, err := auth.FromTLSContext(ctx)
+	identity, err := authn.FromTLSContext(ctx)
 	switch {
-	case err == auth.ErrNoContext:
+	case err == authn.ErrNoContext:
 		log.Debugf("No authentication context provided")
 	case err != nil:
 		log.Warnf("Could not ascertain client identity: %s", err)

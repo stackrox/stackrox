@@ -6,7 +6,8 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	"bitbucket.org/stack-rox/apollo/pkg/secrets"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -41,6 +42,11 @@ func (s *ScannerService) RegisterServiceHandlerFromEndpoint(ctx context.Context,
 	return v1.RegisterScannerServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 }
 
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *ScannerService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, returnErrorCode(or.SensorOrUser().Authorized(ctx))
+}
+
 // GetScanner retrieves the scanner based on the id passed
 func (s *ScannerService) GetScanner(ctx context.Context, request *v1.ResourceByID) (*v1.Scanner, error) {
 	if request.GetId() == "" {
@@ -62,9 +68,9 @@ func (s *ScannerService) GetScanners(ctx context.Context, request *v1.GetScanner
 	if err != nil {
 		return nil, err
 	}
-	identity, err := auth.FromTLSContext(ctx)
+	identity, err := authn.FromTLSContext(ctx)
 	switch {
-	case err == auth.ErrNoContext:
+	case err == authn.ErrNoContext:
 		log.Debugf("No authentication context provided")
 	case err != nil:
 		log.Warnf("Error getting client identity: %s", err)

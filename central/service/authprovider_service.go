@@ -6,6 +6,10 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/authproviders"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/allow"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/service"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
@@ -42,6 +46,18 @@ func (s *AuthProviderService) RegisterServiceServer(grpcServer *grpc.Server) {
 // RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
 func (s *AuthProviderService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
 	return v1.RegisterAuthProviderServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+}
+
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *AuthProviderService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	pr := service.PerRPC{
+		Default: user.Any(),
+		Authorizers: map[string]authz.Authorizer{
+			"/v1.AuthProviderService/GetAuthProvider":  allow.Anonymous(),
+			"/v1.AuthProviderService/GetAuthProviders": allow.Anonymous(),
+		},
+	}
+	return ctx, returnErrorCode(pr.Authorized(ctx, fullMethodName))
 }
 
 // GetAuthProvider retrieves the authProvider based on the id passed

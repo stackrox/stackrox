@@ -6,7 +6,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/authproviders"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -66,33 +66,28 @@ func (a *AuthInterceptor) StreamInterceptor() grpc.StreamServerInterceptor {
 }
 
 func (a *AuthInterceptor) authUnary(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	newCtx, ok := a.authToken(ctx)
-	if !ok {
-		return handler(ctx, req)
-	}
-	return handler(newCtx, req)
+	return handler(a.authToken(ctx), req)
 }
 
 func (a *AuthInterceptor) authStream(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	newCtx, ok := a.authToken(stream.Context())
-	if !ok {
-		return handler(srv, stream)
-	}
-	newStream := &auth.StreamWithContext{
+	newStream := &authn.StreamWithContext{
 		ServerStream:    stream,
-		ContextOverride: newCtx,
+		ContextOverride: a.authToken(stream.Context()),
 	}
 	return handler(srv, newStream)
 }
 
-func (a *AuthInterceptor) authToken(ctx context.Context) (newCtx context.Context, ok bool) {
+func (a *AuthInterceptor) authToken(ctx context.Context) (newCtx context.Context) {
 	meta, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return ctx, false
+		return ctx
 	}
 
 	a.lock.RLock()
 	defer a.lock.RUnlock()
+	newCtx = authn.NewAuthConfigurationContext(ctx, authn.AuthConfiguration{
+		ProviderConfigured: a.countEnabled() > 0,
+	})
 	for _, p := range a.providers {
 		if !p.Enabled() {
 			continue
@@ -102,11 +97,20 @@ func (a *AuthInterceptor) authToken(ctx context.Context) (newCtx context.Context
 			logger.Debugf("User auth error: %s", err)
 			continue
 		}
-		return auth.NewUserContext(ctx, auth.UserIdentity{
+		return authn.NewUserContext(newCtx, authn.UserIdentity{
 			User:         user,
 			AuthProvider: p,
 			Expiration:   expiration,
-		}), true
+		})
 	}
-	return ctx, false
+	return newCtx
+}
+
+func (a *AuthInterceptor) countEnabled() (enabled int) {
+	for _, p := range a.providers {
+		if p.Enabled() {
+			enabled++
+		}
+	}
+	return enabled
 }

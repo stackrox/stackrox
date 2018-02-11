@@ -3,7 +3,7 @@ package mtls
 import (
 	"context"
 
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/auth"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls"
 	"google.golang.org/grpc"
@@ -36,7 +36,7 @@ func authUnary(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo,
 
 func authStream(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	newCtx := doAuth(stream.Context())
-	newStream := &auth.StreamWithContext{
+	newStream := &authn.StreamWithContext{
 		ServerStream:    stream,
 		ContextOverride: newCtx,
 	}
@@ -71,7 +71,7 @@ func authTLS(ctx context.Context) (newCtx context.Context, err error) {
 	chain := tls.State.VerifiedChains[0]
 	leaf := chain[0]
 	cn := mtls.CommonNameFromString(leaf.Subject.CommonName)
-	return auth.NewTLSContext(ctx, auth.TLSIdentity{
+	return authn.NewTLSContext(ctx, authn.TLSIdentity{
 		Identity: mtls.Identity{
 			Name:   cn,
 			Serial: leaf.SerialNumber,
