@@ -8,6 +8,7 @@
     "date-fns": "^1.29.0",
     "enzyme": "^3.2.0",
     "enzyme-adapter-react-16": "^1.1.1",
+    "eslint-plugin-prettier": "^2.6.0",
     "express": "^4.16.2",
     "fbemitter": "^2.1.1",
     "flat": "^4.0.0",
@@ -57,12 +58,14 @@
     "cypress": "^1.4.1",
     "eslint": "^4.14.0",
     "eslint-config-airbnb": "^16.1.0",
+    "eslint-config-prettier": "^2.9.0",
     "eslint-plugin-cypress": "^2.0.1",
     "eslint-plugin-import": "^2.8.0",
     "eslint-plugin-jsx-a11y": "^6.0.3",
     "eslint-plugin-react": "^7.5.1",
     "mocha": "^5.0.0",
     "mocha-junit-reporter": "^1.17.0",
-    "mocha-multi-reporters": "^1.1.7"
+    "mocha-multi-reporters": "^1.1.7",
+    "prettier": "^1.10.2"
   }
 }

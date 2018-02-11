@@ -1,16 +1,17 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-
 import { ResponsiveContainer, PieChart, Pie, Sector, Legend, Cell } from 'recharts';
 
 class TwoLevelPieChart extends Component {
     static propTypes = {
-        data: PropTypes.arrayOf(PropTypes.shape({
-            name: PropTypes.string.isRequired,
-            value: PropTypes.number.isRequired,
-            color: PropTypes.string.isRequired,
-            onClick: PropTypes.func.isRequired
-        })).isRequired
+        data: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string.isRequired,
+                value: PropTypes.number.isRequired,
+                color: PropTypes.string.isRequired,
+                onClick: PropTypes.func.isRequired
+            })
+        ).isRequired
     };
 
     constructor(props) {
@@ -23,11 +24,11 @@ class TwoLevelPieChart extends Component {
 
     onPieEnter = (data, index) => {
         this.setState({
-            activeIndex: index,
+            activeIndex: index
         });
-    }
+    };
 
-    renderActiveShape = (properties) => {
+    renderActiveShape = properties => {
         const RADIAN = Math.PI / 180;
         const {
             cx,
@@ -44,16 +45,18 @@ class TwoLevelPieChart extends Component {
         } = properties;
         const sin = Math.sin(-RADIAN * midAngle);
         const cos = Math.cos(-RADIAN * midAngle);
-        const sx = cx + ((outerRadius + 10) * cos);
-        const sy = cy + ((outerRadius + 10) * sin);
-        const mx = cx + ((outerRadius + 30) * cos);
-        const my = cy + ((outerRadius + 30) * sin);
-        const ex = mx + ((cos >= 0 ? 1 : -1) * 22);
+        const sx = cx + (outerRadius + 10) * cos;
+        const sy = cy + (outerRadius + 10) * sin;
+        const mx = cx + (outerRadius + 30) * cos;
+        const my = cy + (outerRadius + 30) * sin;
+        const ex = mx + (cos >= 0 ? 1 : -1) * 22;
         const ey = my;
         const textAnchor = cos >= 0 ? 'start' : 'end';
         return (
             <g className="cursor-pointer" onClick={onClick}>
-                <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill}>{payload.name}</text>
+                <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill}>
+                    {payload.name}
+                </text>
                 <Sector
                     cx={cx}
                     cy={cy}
@@ -74,10 +77,15 @@ class TwoLevelPieChart extends Component {
                 />
                 <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
                 <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-                <text x={ex + ((cos >= 0 ? 1 : -1) * 12)} y={ey} textAnchor={textAnchor} fill="#333">{`${payload.name} (${value})`}</text>
+                <text
+                    x={ex + (cos >= 0 ? 1 : -1) * 12}
+                    y={ey}
+                    textAnchor={textAnchor}
+                    fill="#333"
+                >{`${payload.name} (${value})`}</text>
             </g>
         );
-    }
+    };
 
     render() {
         return (
@@ -92,9 +100,7 @@ class TwoLevelPieChart extends Component {
                         outerRadius={80}
                         onMouseEnter={this.onPieEnter}
                     >
-                        {
-                            this.props.data.map(entry => <Cell key={entry.name} fill={entry.color} />)
-                        }
+                        {this.props.data.map(entry => <Cell key={entry.name} fill={entry.color} />)}
                     </Pie>
                     <Legend />
                 </PieChart>

@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
 import ReactModal from 'react-modal';
 
 const Modal = props => (
@@ -10,8 +9,9 @@ const Modal = props => (
         contentLabel="Modal"
         ariaHideApp={false}
         overlayClassName="ReactModal__Overlay react-modal-overlay p-4 flex"
-        // eslint-disable-next-line max-len
-        className={`ReactModal__Content mx-auto my-0 flex flex-col self-center bg-primary-100 overflow-hidden max-h-full transition ${props.className}`}
+        className={`ReactModal__Content mx-auto my-0 flex flex-col self-center bg-primary-100 overflow-hidden max-h-full transition ${
+            props.className
+        }`}
     >
         {props.children}
     </ReactModal>

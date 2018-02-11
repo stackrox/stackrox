@@ -1,29 +1,36 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+
 import TableCell from 'Components/TableCell';
 
 class Table extends Component {
     static propTypes = {
-        columns: PropTypes.arrayOf(PropTypes.shape({
-            key: PropTypes.string,
-            label: PropTypes.string,
-            keyValueFunc: PropTypes.func,
-            align: PropTypes.string,
-            classFunc: PropTypes.func,
-            default: PropTypes.any
-        })).isRequired,
-        rows: PropTypes.arrayOf(PropTypes.shape({
-            id: PropTypes.string
-        })).isRequired,
+        columns: PropTypes.arrayOf(
+            PropTypes.shape({
+                key: PropTypes.string,
+                label: PropTypes.string,
+                keyValueFunc: PropTypes.func,
+                align: PropTypes.string,
+                classFunc: PropTypes.func,
+                default: PropTypes.any
+            })
+        ).isRequired,
+        rows: PropTypes.arrayOf(
+            PropTypes.shape({
+                id: PropTypes.string
+            })
+        ).isRequired,
         onRowClick: PropTypes.func,
         checkboxes: PropTypes.bool,
-        actions: PropTypes.arrayOf(PropTypes.shape({
-            text: PropTypes.string,
-            renderIcon: PropTypes.func,
-            className: PropTypes.string,
-            onClick: PropTypes.func,
-            disabled: PropTypes.bool,
-        }))
+        actions: PropTypes.arrayOf(
+            PropTypes.shape({
+                text: PropTypes.string,
+                renderIcon: PropTypes.func,
+                className: PropTypes.string,
+                onClick: PropTypes.func,
+                disabled: PropTypes.bool
+            })
+        )
     };
 
     static defaultProps = {
@@ -46,9 +53,9 @@ class Table extends Component {
         const { selected } = this.state;
         selected.clear();
         this.setState({ selected });
-    }
+    };
 
-    rowCheckedHandler = row => (event) => {
+    rowCheckedHandler = row => event => {
         event.stopPropagation();
         const { selected } = this.state;
         if (!selected.has(row)) selected.add(row);
@@ -60,66 +67,93 @@ class Table extends Component {
         if (this.props.onRowClick) {
             this.props.onRowClick(row);
         }
-    }
+    };
 
-    actionClickHandler = (action, row) => (event) => {
+    actionClickHandler = (action, row) => event => {
         event.stopPropagation();
         action.onClick(row);
-    }
+    };
 
-    renderActionButtons = row => this.props.actions.map((button, i) => (
-        <button
-            key={i}
-            className={button.className}
-            onClick={this.actionClickHandler(button, row)}
-            disabled={button.disabled}
-        >
-            {(button.renderIcon) ? <span className="flex items-center">{button.renderIcon(row)}</span> : ''}
-            {(button.text) ? <span className={`${(button.renderIcon) ? 'ml-3' : ''}`}>{button.text}</span> : ''}
-        </button>
-    ));
+    renderActionButtons = row =>
+        this.props.actions.map((button, i) => (
+            <button
+                key={i}
+                className={button.className}
+                onClick={this.actionClickHandler(button, row)}
+                disabled={button.disabled}
+            >
+                {button.renderIcon && (
+                    <span className="flex items-center">{button.renderIcon(row)}</span>
+                )}
+                {button.text && (
+                    <span className={`${button.renderIcon && 'ml-3'}`}>{button.text}</span>
+                )}
+            </button>
+        ));
 
     renderHeaders() {
-        const tableHeaders = this.props.columns.map((column) => {
-            const className = `p-3 text-primary-500 border-b border-base-300 hover:text-primary-600 ${column.align === 'right' ? 'text-right' : 'text-left'}`;
+        const tableHeaders = this.props.columns.map(column => {
+            const className = `p-3 text-primary-500 border-b border-base-300 hover:text-primary-600 ${
+                column.align === 'right' ? 'text-right' : 'text-left'
+            }`;
             return (
                 <th className={className} key={column.label}>
                     {column.label}
-                </th>);
+                </th>
+            );
         });
         if (this.props.checkboxes) {
-            tableHeaders.unshift(<th className="p-3 text-primary-500 border-b border-base-300 hover:text-primary-600" key="checkboxTableHeader" />);
+            tableHeaders.unshift(
+                <th
+                    className="p-3 text-primary-500 border-b border-base-300 hover:text-primary-600"
+                    key="checkboxTableHeader"
+                />
+            );
         }
         if (this.props.actions && this.props.actions.length) {
-            tableHeaders.push(<th className="p-3 text-primary-500 border-b border-base-300 hover:text-primary-600" key="actionsTableHeader">Actions</th>);
+            tableHeaders.push(
+                <th
+                    className="p-3 text-primary-500 border-b border-base-300 hover:text-primary-600"
+                    key="actionsTableHeader"
+                >
+                    Actions
+                </th>
+            );
         }
-        return (
-            <tr>{tableHeaders}</tr>
-        );
+        return <tr>{tableHeaders}</tr>;
     }
 
     renderBody() {
         const { rows, columns } = this.props;
         const rowClickable = !!this.props.onRowClick;
         return rows.map((row, i) => {
-            const tableCells = columns.map(column => <TableCell column={column} row={row} key={`${column.key}`} />);
+            const tableCells = columns.map(column => (
+                <TableCell column={column} row={row} key={`${column.key}`} />
+            ));
             if (this.props.checkboxes) {
-                tableCells.unshift((
+                tableCells.unshift(
                     <td className="p-3 text-center" key="checkboxTableCell">
-                        <input type="checkbox" className="h-4 w-4 cursor-pointer" onClick={this.rowCheckedHandler(row)} checked={this.state.selected.has(row)} />
+                        <input
+                            type="checkbox"
+                            className="h-4 w-4 cursor-pointer"
+                            onClick={this.rowCheckedHandler(row)}
+                            checked={this.state.selected.has(row)}
+                        />
                     </td>
-                ));
+                );
             }
             if (this.props.actions && this.props.actions.length) {
-                tableCells.push((
+                tableCells.push(
                     <td className="flex justify-center p-3 text-center" key="actionsTableCell">
                         {this.renderActionButtons(row)}
                     </td>
-                ));
+                );
             }
             return (
                 <tr
-                    className={`${rowClickable ? 'cursor-pointer' : ''} border-b border-base-300 hover:bg-base-100`}
+                    className={`${
+                        rowClickable ? 'cursor-pointer' : ''
+                    } border-b border-base-300 hover:bg-base-100`}
                     key={i}
                     onClick={rowClickable ? this.rowClickHandler(row) : null}
                 >

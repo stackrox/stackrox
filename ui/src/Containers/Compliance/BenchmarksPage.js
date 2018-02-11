@@ -1,14 +1,13 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import Table from 'Components/Table';
-import Select from 'Components/Select';
-
-import BenchmarksSidePanel from 'Containers/Compliance/BenchmarksSidePanel';
-
 import axios from 'axios';
 import emitter from 'emitter';
 import dateFns from 'date-fns';
 import { ClipLoader } from 'react-spinners';
+
+import Table from 'Components/Table';
+import Select from 'Components/Select';
+import BenchmarksSidePanel from 'Containers/Compliance/BenchmarksSidePanel';
 
 const reducer = (action, prevState, nextState) => {
     switch (action) {
@@ -31,8 +30,8 @@ const reducer = (action, prevState, nextState) => {
 
 class BenchmarksPage extends Component {
     static propTypes = {
-        benchmarkName: PropTypes.string.isRequired,
-    }
+        benchmarkName: PropTypes.string.isRequired
+    };
 
     constructor(props) {
         super(props);
@@ -50,7 +49,7 @@ class BenchmarksPage extends Component {
                 day: '',
                 hour: '',
                 active: false,
-                timezone_offset: new Date().getTimezoneOffset() / 60,
+                timezone_offset: new Date().getTimezoneOffset() / 60
             }
         };
     }
@@ -70,16 +69,19 @@ class BenchmarksPage extends Component {
     onTriggerScan = () => {
         this.update('START_SCANNING');
         const url = `/v1/benchmarks/triggers/${this.props.benchmarkName}`;
-        axios.post(url, {}).then(() => {}).catch(() => {
-            this.update('STOP_SCANNING');
-        });
-    }
+        axios
+            .post(url, {})
+            .then(() => {})
+            .catch(() => {
+                this.update('STOP_SCANNING');
+            });
+    };
 
-    onRowClick = (row) => {
+    onRowClick = row => {
         emitter.emit('ComplianceTable:row-selected', row);
-    }
+    };
 
-    onScheduleDayChange = (value) => {
+    onScheduleDayChange = value => {
         const { schedule } = this.state;
         if (value === 'None') {
             schedule.day = '';
@@ -91,60 +93,69 @@ class BenchmarksPage extends Component {
             this.update('UPDATE_SCHEDULE', { schedule });
             this.updateSchedule();
         }
-    }
+    };
 
-    onScheduleHourChange = (value) => {
+    onScheduleHourChange = value => {
         const { schedule } = this.state;
         schedule.hour = value;
         this.update('UPDATE_SCHEDULE', { schedule });
         this.updateSchedule();
-    }
+    };
 
-    getBenchmarks = () => axios.get(`/v1/benchmarks/scans?benchmark=${this.props.benchmarkName}`).then((response) => {
-        const { data } = response;
-        if (data.scanMetadata.length === 0) return;
-        const lastScan = data.scanMetadata[0];
-        const scanTime = dateFns.format(lastScan.time, 'MM/DD/YYYY h:mm:ss A');
-        axios.get(`/v1/benchmarks/scans/${lastScan.scanId}`).then((resp) => {
-            const { checks } = resp.data;
-            if (scanTime !== this.state.lastScanned) {
-                this.update('UPDATE_BENCHMARKS', {
-                    benchmarks: checks,
-                    lastScanned: scanTime,
+    getBenchmarks = () =>
+        axios.get(`/v1/benchmarks/scans?benchmark=${this.props.benchmarkName}`).then(response => {
+            const { data } = response;
+            if (data.scanMetadata.length === 0) return;
+            const lastScan = data.scanMetadata[0];
+            const scanTime = dateFns.format(lastScan.time, 'MM/DD/YYYY h:mm:ss A');
+            axios
+                .get(`/v1/benchmarks/scans/${lastScan.scanId}`)
+                .then(resp => {
+                    const { checks } = resp.data;
+                    if (scanTime !== this.state.lastScanned) {
+                        this.update('UPDATE_BENCHMARKS', {
+                            benchmarks: checks,
+                            lastScanned: scanTime
+                        });
+                    }
+                })
+                .catch(error => {
+                    if (error.response && error.response.status === 404) {
+                        // ignore 404 since it's ok for benchmark schedule to not exist
+                        return null;
+                    }
+                    return Promise.reject(error);
+                })
+                .catch(error => {
+                    console.error(error);
                 });
-            }
-        }).catch((error) => {
-            if (error.response && error.response.status === 404) {
-                // ignore 404 since it's ok for benchmark schedule to not exist
-                return null;
-            }
-            return Promise.reject(error);
-        }).catch((error) => {
-            console.error(error);
         });
-    });
 
     retrieveSchedule() {
-        return axios.get(`/v1/benchmarks/schedules/${this.props.benchmarkName}`).then((response) => {
-            const schedule = response.data;
-            schedule.active = true;
-            this.update('UPDATE_SCHEDULE', { schedule });
-        }).catch((error) => {
-            if (error.response && error.response.status === 404) {
-                // ignore 404 since it's ok for benchmark schedule to not exist
-                return null;
-            }
-            return Promise.reject(error);
-        }).catch((error) => {
-            console.error(error);
-        });
+        return axios
+            .get(`/v1/benchmarks/schedules/${this.props.benchmarkName}`)
+            .then(response => {
+                const schedule = response.data;
+                schedule.active = true;
+                this.update('UPDATE_SCHEDULE', { schedule });
+            })
+            .catch(error => {
+                if (error.response && error.response.status === 404) {
+                    // ignore 404 since it's ok for benchmark schedule to not exist
+                    return null;
+                }
+                return Promise.reject(error);
+            })
+            .catch(error => {
+                console.error(error);
+            });
     }
 
     pollBenchmarks = () => {
         this.getBenchmarks().then(() => {
             this.pollTimeoutId = setTimeout(this.pollBenchmarks, 5000);
         });
-    }
+    };
 
     removeSchedule() {
         const { schedule } = this.state;
@@ -168,7 +179,7 @@ class BenchmarksPage extends Component {
 
     update = (action, nextState) => {
         this.setState(prevState => reducer(action, prevState, nextState));
-    }
+    };
 
     renderScanOptions = () => {
         const category = {
@@ -180,12 +191,19 @@ class BenchmarksPage extends Component {
                 { label: 'Thursday', value: 'Thursday' },
                 { label: 'Friday', value: 'Friday' },
                 { label: 'Saturday', value: 'Saturday' },
-                { label: 'Sunday', value: 'Sunday' }]
+                { label: 'Sunday', value: 'Sunday' }
+            ]
         };
         return (
-            <Select className="block w-full border bg-base-100 border-base-200 text-base-500 p-3 pr-8 rounded" value={this.state.schedule.day} placeholder="No scheduled scanning" options={category.options} onChange={this.onScheduleDayChange} />
+            <Select
+                className="block w-full border bg-base-100 border-base-200 text-base-500 p-3 pr-8 rounded"
+                value={this.state.schedule.day}
+                placeholder="No scheduled scanning"
+                options={category.options}
+                onChange={this.onScheduleDayChange}
+            />
         );
-    }
+    };
 
     renderScanTimes = () => {
         const category = {
@@ -213,20 +231,36 @@ class BenchmarksPage extends Component {
                 { label: '08:00 PM', value: '08:00 PM' },
                 { label: '09:00 PM', value: '09:00 PM' },
                 { label: '10:00 PM', value: '10:00 PM' },
-                { label: '11:00 PM', value: '11:00 PM' }]
+                { label: '11:00 PM', value: '11:00 PM' }
+            ]
         };
         return (
-            <Select className="block w-full border bg-base-100 border-base-200 text-base-500 p-3 pr-8 rounded" value={this.state.schedule.hour} placeholder="None" options={category.options} onChange={this.onScheduleHourChange} />
+            <Select
+                className="block w-full border bg-base-100 border-base-200 text-base-500 p-3 pr-8 rounded"
+                value={this.state.schedule.hour}
+                placeholder="None"
+                options={category.options}
+                onChange={this.onScheduleHourChange}
+            />
         );
-    }
+    };
 
     renderScanButton = () => {
-        const buttonScanning = <button className="p-3 ml-5 h-10 w-24 rounded-sm bg-success-500 text-white hover:bg-success-600 uppercase text-center"><ClipLoader color="white" loading={this.state.scanning} size={20} /></button>;
-        const scanButton = <button className="p-3 ml-5 h-10 w-24 rounded-sm bg-success-500 text-white hover:bg-success-600 uppercase" onClick={this.onTriggerScan}>Scan now</button>;
-        return (
-            (this.state.scanning) ? (buttonScanning) : (scanButton)
+        const buttonScanning = (
+            <button className="p-3 ml-5 h-10 w-24 rounded-sm bg-success-500 text-white hover:bg-success-600 uppercase text-center">
+                <ClipLoader color="white" loading={this.state.scanning} size={20} />
+            </button>
         );
-    }
+        const scanButton = (
+            <button
+                className="p-3 ml-5 h-10 w-24 rounded-sm bg-success-500 text-white hover:bg-success-600 uppercase"
+                onClick={this.onTriggerScan}
+            >
+                Scan now
+            </button>
+        );
+        return this.state.scanning ? buttonScanning : scanButton;
+    };
 
     renderTable = () => {
         const table = {
@@ -234,32 +268,45 @@ class BenchmarksPage extends Component {
                 { key: 'definition.name', label: 'Name' },
                 { key: 'definition.description', label: 'Description' },
                 {
-                    key: 'aggregatedResults.PASS', label: 'Pass', default: 0, align: 'right'
+                    key: 'aggregatedResults.PASS',
+                    label: 'Pass',
+                    default: 0,
+                    align: 'right'
                 },
                 {
-                    key: 'aggregatedResults.INFO', label: 'Info', default: 0, align: 'right'
+                    key: 'aggregatedResults.INFO',
+                    label: 'Info',
+                    default: 0,
+                    align: 'right'
                 },
                 {
-                    key: 'aggregatedResults.WARN', label: 'Warn', default: 0, align: 'right'
+                    key: 'aggregatedResults.WARN',
+                    label: 'Warn',
+                    default: 0,
+                    align: 'right'
                 },
                 {
-                    key: 'aggregatedResults.NOTE', label: 'Note', default: 0, align: 'right'
+                    key: 'aggregatedResults.NOTE',
+                    label: 'Note',
+                    default: 0,
+                    align: 'right'
                 }
             ],
             rows: this.state.benchmarks
         };
-        return (
-            <Table columns={table.columns} rows={table.rows} onRowClick={this.onRowClick} />
-        );
-    }
+        return <Table columns={table.columns} rows={table.rows} onRowClick={this.onRowClick} />;
+    };
 
     render() {
         return (
             <div className="flex flex-col h-full">
                 <div className="flex w-full mb-3 px-3 items-center">
-                    <span className="flex flex-1 text-xl font-500 text-primary-500 self-end">Last Scanned: {this.state.lastScanned || 'Never'}</span>
+                    <span className="flex flex-1 text-xl font-500 text-primary-500 self-end">
+                        Last Scanned: {this.state.lastScanned || 'Never'}
+                    </span>
                     <div className="flex self-center justify-end pr-5 border-r border-primary-200">
-                        <span className="mr-4">{this.renderScanOptions()}</span><span>{this.renderScanTimes()}</span>
+                        <span className="mr-4">{this.renderScanOptions()}</span>
+                        <span>{this.renderScanTimes()}</span>
                     </div>
                     {this.renderScanButton()}
                 </div>

@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-
 import * as Icon from 'react-feather';
 
 class FormFieldRemoveButton extends Component {
@@ -9,7 +8,7 @@ class FormFieldRemoveButton extends Component {
         onClick: PropTypes.func.isRequired
     };
 
-    handleClick = () => this.props.onClick(this.props.field)
+    handleClick = () => this.props.onClick(this.props.field);
 
     render() {
         return (

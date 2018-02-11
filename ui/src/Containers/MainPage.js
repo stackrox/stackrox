@@ -1,15 +1,9 @@
 import React, { Component } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import {
-    BrowserRouter as Router,
-    Redirect,
-    Switch,
-    NavLink,
-    withRouter
-} from 'react-router-dom';
-import ProtectedRoute from 'Components/ProtectedRoute';
+import { BrowserRouter as Router, Redirect, Switch, NavLink, withRouter } from 'react-router-dom';
 import * as Icon from 'react-feather';
 
+import ProtectedRoute from 'Components/ProtectedRoute';
 import Logo from 'Components/icons/logo';
 import DashboardPage from 'Containers/Dashboard/DashboardPage';
 import IntegrationsPage from 'Containers/Integrations/IntegrationsPage';
@@ -54,39 +48,41 @@ const navLinks = [
 class MainPage extends Component {
     static propTypes = {
         history: ReactRouterPropTypes.history.isRequired
-    }
+    };
 
     renderLeftSideNavLinks = () => (
         <ul className="flex list-reset flex-1 uppercase text-sm tracking-wide">
-            {
-                navLinks.filter(obj => obj.align === 'left').map((navLink, i, arr) => (
-                    <li key={navLink.text}>
-                        <NavLink to={navLink.to} className={`flex border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:text-primary-200 text-white items-center ${(i === arr.length - 1) ? 'border-l border-r' : 'border-l'}`} activeClassName="bg-primary-600">
-                            <span>
-                                {navLink.renderIcon()}
-                            </span>
-                            <span>{navLink.text}</span>
-                        </NavLink>
-                    </li>
-                ))
-            }
+            {navLinks.filter(obj => obj.align === 'left').map((navLink, i, arr) => (
+                <li key={navLink.text}>
+                    <NavLink
+                        to={navLink.to}
+                        className={`flex border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:text-primary-200 text-white items-center ${
+                            i === arr.length - 1 ? 'border-l border-r' : 'border-l'
+                        }`}
+                        activeClassName="bg-primary-600"
+                    >
+                        <span>{navLink.renderIcon()}</span>
+                        <span>{navLink.text}</span>
+                    </NavLink>
+                </li>
+            ))}
         </ul>
     );
 
     renderRightSideNavLinks = () => (
         <ul className="flex list-reset flex-1 uppercase text-sm tracking-wide justify-end">
-            {
-                navLinks.filter(obj => obj.align === 'right').map(navLink => (
-                    <li key={navLink.text}>
-                        <NavLink to={navLink.to} className="flex border-l border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:text-primary-200 text-white items-center" activeClassName="bg-primary-600">
-                            <span>
-                                {navLink.renderIcon()}
-                            </span>
-                            <span>{navLink.text}</span>
-                        </NavLink>
-                    </li>
-                ))
-            }
+            {navLinks.filter(obj => obj.align === 'right').map(navLink => (
+                <li key={navLink.text}>
+                    <NavLink
+                        to={navLink.to}
+                        className="flex border-l border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:text-primary-200 text-white items-center"
+                        activeClassName="bg-primary-600"
+                    >
+                        <span>{navLink.renderIcon()}</span>
+                        <span>{navLink.text}</span>
+                    </NavLink>
+                </li>
+            ))}
         </ul>
     );
 
@@ -97,14 +93,17 @@ class MainPage extends Component {
             this.props.history.push('/login');
         };
         return (
-            <button onClick={logout()} className="flex border-l border-r border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:text-primary-200 text-white items-center">
+            <button
+                onClick={logout()}
+                className="flex border-l border-r border-primary-400 px-4 no-underline py-5 pb-4 text-base-600 hover:text-primary-200 text-white items-center"
+            >
                 <span>
                     <Icon.LogOut className="h-4 w-4 mr-3" />
                 </span>
                 <span>Logout</span>
             </button>
         );
-    }
+    };
 
     render() {
         return (
@@ -120,7 +119,6 @@ class MainPage extends Component {
                                 {this.renderRightSideNavLinks()}
                                 {this.renderLogoutButton()}
                             </nav>
-
                         </div>
                     </header>
                     <section className="flex flex-1 bg-base-100">
@@ -128,9 +126,18 @@ class MainPage extends Component {
                             {/* Redirects to a default path */}
                             <Switch>
                                 <ProtectedRoute path="/main/dashboard" component={DashboardPage} />
-                                <ProtectedRoute path="/main/violations" component={ViolationsPage} />
-                                <ProtectedRoute path="/main/compliance" component={CompliancePage} />
-                                <ProtectedRoute path="/main/integrations" component={IntegrationsPage} />
+                                <ProtectedRoute
+                                    path="/main/violations"
+                                    component={ViolationsPage}
+                                />
+                                <ProtectedRoute
+                                    path="/main/compliance"
+                                    component={CompliancePage}
+                                />
+                                <ProtectedRoute
+                                    path="/main/integrations"
+                                    component={IntegrationsPage}
+                                />
                                 <ProtectedRoute path="/main/policies" component={PoliciesPage} />
                                 <Redirect from="/main" to="/main/dashboard" />
                             </Switch>

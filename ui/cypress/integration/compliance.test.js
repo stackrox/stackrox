@@ -14,8 +14,14 @@ describe('Compliance page', () => {
         cy.get('button:contains("Scan now")').as('scanNow');
 
         // start scanning
-        cy.get('@scanNow').children().should('have.length', 0);
+        cy
+            .get('@scanNow')
+            .children()
+            .should('have.length', 0);
         cy.get('@scanNow').click();
-        cy.get('@scanNow').children().should('have.length', 1); // spinner should appear
+        cy
+            .get('@scanNow')
+            .children()
+            .should('have.length', 1); // spinner should appear
     });
 });

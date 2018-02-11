@@ -1,11 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-
 const TabContent = ({ children }) => (
-    <div className="flex flex-col h-full transition">
-        {children}
-    </div>
+    <div className="flex flex-col h-full transition">{children}</div>
 );
 
 TabContent.defaultProps = {

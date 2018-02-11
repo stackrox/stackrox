@@ -1,13 +1,8 @@
 import React from 'react';
-import {
-    BrowserRouter as Router,
-    Route,
-    Switch,
-    Redirect
-} from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
+
 import ProtectedRoute from 'Components/ProtectedRoute';
 import AuthRedirectRoute from 'Components/AuthRedirectRoute';
-
 import Auth from 'Containers/Auth';
 import MainPage from 'Containers/MainPage';
 import LoginPage from 'Containers/Login/LoginPage';

@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+
 import FormFieldRemoveButton from 'Components/FormFieldRemoveButton';
 
 const FormField = props => (
@@ -7,7 +8,9 @@ const FormField = props => (
         <div className="py-2 text-primary-500">{props.label}</div>
         <div className="flex">
             {props.children}
-            {props.onRemove ? <FormFieldRemoveButton field={props.value} onClick={props.onRemove} /> : ''}
+            {props.onRemove && (
+                <FormFieldRemoveButton field={props.value} onClick={props.onRemove} />
+            )}
         </div>
     </div>
 );

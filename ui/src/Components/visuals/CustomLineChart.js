@@ -1,7 +1,15 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-import { ResponsiveContainer, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import {
+    ResponsiveContainer,
+    LineChart,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend
+} from 'recharts';
 
 class CustomLineChart extends Component {
     static propTypes = {
@@ -34,7 +42,10 @@ class CustomLineChart extends Component {
                         domain={[0, 'dataMax']}
                         allowDecimals={false}
                         label={{
-                            value: this.props.yAxisDataKey, angle: -90, position: 'insideLeft', textAnchor: 'middle'
+                            value: this.props.yAxisDataKey,
+                            angle: -90,
+                            position: 'insideLeft',
+                            textAnchor: 'middle'
                         }}
                     />
                     <CartesianGrid strokeDasharray="3 3" />

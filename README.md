@@ -4,6 +4,8 @@ Mitigate is a new StackRox initiative to provide security in the
 deployment phase of the container lifecycle.
 
 ## Build Tooling
+**Note**: if you want to develop only Mitigate UI, please refer to [ui/README.md](./ui/README.md) for dev env setup instructions.
+
 Mitigate is distributed as a single image. The following build tools are
 required to completely build that image and run tests:
 

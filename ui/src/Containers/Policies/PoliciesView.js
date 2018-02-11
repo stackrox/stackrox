@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-
 import flatten from 'flat';
 import omitBy from 'lodash/omitBy';
 import difference from 'lodash/difference';
 import pick from 'lodash/pick';
+
 import { categoriesLabels } from 'messages/common';
 
 const categoryGroupsMap = {
@@ -17,14 +17,14 @@ const cvssMap = {
     mathOp: {
         MAX: 'Max score',
         AVG: 'AVG score',
-        MIN: 'Min score',
+        MIN: 'Min score'
     },
     op: {
         GREATER_THAN: 'Is greater than',
         GREATER_THAN_OR_EQUALS: 'Is greater than or equal to',
         EQUALS: 'Is equal to',
         LESS_THAN_OR_EQUALS: 'Is less than or equal to',
-        LESS_THAN: 'Is less than',
+        LESS_THAN: 'Is less than'
     }
 };
 
@@ -41,7 +41,7 @@ const fieldsMap = {
     },
     severity: {
         label: 'Severity',
-        formatValue: (d) => {
+        formatValue: d => {
             switch (d) {
                 case 'CRITICAL_SEVERITY':
                     return 'Critical';
@@ -62,7 +62,11 @@ const fieldsMap = {
     },
     notifiers: {
         label: 'Notifications',
-        formatValue: (d, props) => props.notifiers.filter(n => d.includes(n.id)).map(n => n.name).join(', ')
+        formatValue: (d, props) =>
+            props.notifiers
+                .filter(n => d.includes(n.id))
+                .map(n => n.name)
+                .join(', ')
     },
     scope: {
         label: 'Restricted to Clusters',
@@ -70,11 +74,11 @@ const fieldsMap = {
     },
     enforce: {
         label: 'Enforce',
-        formatValue: d => ((d === true) ? 'Yes' : 'No')
+        formatValue: d => (d === true ? 'Yes' : 'No')
     },
     disabled: {
         label: 'Enabled',
-        formatValue: d => ((d !== true) ? 'Yes' : 'No')
+        formatValue: d => (d !== true ? 'Yes' : 'No')
     },
     categories: {
         label: 'Categories',
@@ -82,17 +86,19 @@ const fieldsMap = {
     },
     imageName: {
         label: 'Image',
-        formatValue: (d) => {
-            const namespace = (d.namespace) ? d.namespace : 'any';
-            const repo = (d.repo) ? d.repo : 'any';
-            const tag = (d.tag) ? d.tag : 'any';
-            const registry = (d.registry) ? d.registry : 'any';
-            return `Alert on ${namespace} namespace${(d.namespace) ? '' : 's'} using ${repo} repo${(d.repo) ? '' : 's'} using ${tag} tag from ${registry} registry`;
+        formatValue: d => {
+            const namespace = d.namespace ? d.namespace : 'any';
+            const repo = d.repo ? d.repo : 'any';
+            const tag = d.tag ? d.tag : 'any';
+            const registry = d.registry ? d.registry : 'any';
+            return `Alert on ${namespace} namespace${d.namespace ? '' : 's'} using ${repo} repo${
+                d.repo ? '' : 's'
+            } using ${tag} tag from ${registry} registry`;
         }
     },
     imageAgeDays: {
         label: 'Image Created',
-        formatValue: d => ((d !== '0') ? `${Number(d)} Days ago` : '')
+        formatValue: d => (d !== '0' ? `${Number(d)} Days ago` : '')
     },
     scanExists: {
         label: 'Scan Does Not Exist',
@@ -100,7 +106,7 @@ const fieldsMap = {
     },
     scanAgeDays: {
         label: 'Image Last Scanned',
-        formatValue: d => ((d !== '0') ? `${Number(d)} Days ago` : '')
+        formatValue: d => (d !== '0' ? `${Number(d)} Days ago` : '')
     },
     lineRule: {
         label: 'Line Rule',
@@ -116,17 +122,17 @@ const fieldsMap = {
     },
     component: {
         label: 'Component',
-        formatValue: (d) => {
-            const name = (d.name) ? `${d.name}` : '';
-            const version = (d.version) ? d.version : '';
+        formatValue: d => {
+            const name = d.name ? `${d.name}` : '';
+            const version = d.version ? d.version : '';
             return `'${name}' with version '${version}'`;
         }
     },
     env: {
         label: 'Environment',
-        formatValue: (d) => {
-            const key = (d.key) ? `${d.key}` : '';
-            const value = (d.value) ? d.value : '';
+        formatValue: d => {
+            const key = d.key ? `${d.key}` : '';
+            const value = d.value ? d.value : '';
             return `${key}=${value}`;
         }
     },
@@ -148,17 +154,17 @@ const fieldsMap = {
     },
     volumePolicy: {
         label: 'Volume Policy',
-        formatValue: (d) => {
-            const type = (d.type) ? `${d.type} ` : '';
-            const path = (d.path) ? d.path : '';
+        formatValue: d => {
+            const type = d.type ? `${d.type} ` : '';
+            const path = d.path ? d.path : '';
             return `${type}${path}`;
         }
     },
     portPolicy: {
         label: 'Port',
-        formatValue: (d) => {
-            const protocol = (d.protocol) ? `${d.protocol} ` : '';
-            const port = (d.port) ? d.port : '';
+        formatValue: d => {
+            const protocol = d.protocol ? `${d.protocol} ` : '';
+            const port = d.port ? d.port : '';
             return `${protocol}${port}`;
         }
     },
@@ -172,17 +178,21 @@ const fieldsMap = {
     },
     privileged: {
         label: 'Privileged',
-        formatValue: d => ((d === true) ? 'Yes' : 'No')
-    },
+        formatValue: d => (d === true ? 'Yes' : 'No')
+    }
 };
 
 class PolicyView extends Component {
     static propTypes = {
         policy: PropTypes.shape({}).isRequired,
-        notifiers: PropTypes.arrayOf(PropTypes.shape({ // eslint-disable-line  react/no-unused-prop-types
-            name: PropTypes.string.isRequired
-        })).isRequired
-    }
+        // 'notifiers' prop is being used indirectly
+        // eslint-disable-next-line  react/no-unused-prop-types
+        notifiers: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string.isRequired
+            })
+        ).isRequired
+    };
 
     constructor(props) {
         super(props);
@@ -190,12 +200,15 @@ class PolicyView extends Component {
         this.state = {};
     }
 
-    removeEmptyFields = (obj) => {
+    removeEmptyFields = obj => {
         const flattenedObj = flatten(obj);
-        const omittedObj = omitBy(flattenedObj, value => value === null || value === undefined || value === '' || value === []);
+        const omittedObj = omitBy(
+            flattenedObj,
+            value => value === null || value === undefined || value === '' || value === []
+        );
         const newObj = flatten.unflatten(omittedObj);
         return newObj;
-    }
+    };
 
     renderFields = () => {
         const policy = this.removeEmptyFields(this.props.policy);
@@ -205,14 +218,46 @@ class PolicyView extends Component {
         return (
             <div className="px-3 py-4 border-b border-base-300">
                 <div className="bg-white border border-base-200 shadow">
-                    <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">Policy Details</div>
+                    <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">
+                        Policy Details
+                    </div>
                     <div className="h-full p-3">
-                        {
-                            policyDetails.map((field) => {
+                        {policyDetails.map(field => {
+                            if (!fieldsMap[field]) return '';
+                            const { label } = fieldsMap[field];
+                            const value = fieldsMap[field].formatValue(policy[field], this.props);
+                            if (!value || (Array.isArray(value) && !value.length)) return '';
+                            return (
+                                <div className="mb-4" key={field}>
+                                    <div className="py-2 text-primary-500">{label}</div>
+                                    <div className="flex">{value}</div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    renderFieldsByPolicyCategories = () => {
+        const policy = this.removeEmptyFields(this.props.policy);
+        const policyCategoryFields = Object.keys(pick(policy, categories));
+        return policyCategoryFields.map(category => {
+            const policyCategoryLabel = categoryGroupsMap[category];
+            const fields = Object.keys(policy[category]);
+            if (!fields.length) return '';
+            return (
+                <div className="px-3 py-4 border-b border-base-300" key={category}>
+                    <div className="bg-white border border-base-200 shadow">
+                        <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">
+                            {policyCategoryLabel}
+                        </div>
+                        <div className="h-full p-3">
+                            {fields.map(field => {
                                 if (!fieldsMap[field]) return '';
                                 const { label } = fieldsMap[field];
-                                const value = fieldsMap[field]
-                                    .formatValue(policy[field], this.props);
+                                const value = fieldsMap[field].formatValue(policy[category][field]);
                                 if (!value || (Array.isArray(value) && !value.length)) return '';
                                 return (
                                     <div className="mb-4" key={field}>
@@ -220,47 +265,13 @@ class PolicyView extends Component {
                                         <div className="flex">{value}</div>
                                     </div>
                                 );
-                            })
-                        }
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    renderFieldsByPolicyCategories = () => {
-        const policy = this.removeEmptyFields(this.props.policy);
-        const policyCategoryFields = Object.keys(pick(policy, categories));
-        return policyCategoryFields.map((category) => {
-            const policyCategoryLabel = categoryGroupsMap[category];
-            const fields = Object.keys(policy[category]);
-            if (!fields.length) return '';
-            return (
-                <div className="px-3 py-4 border-b border-base-300" key={category}>
-                    <div className="bg-white border border-base-200 shadow">
-                        <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">{policyCategoryLabel}</div>
-                        <div className="h-full p-3">
-                            {
-                                fields.map((field) => {
-                                    if (!fieldsMap[field]) return '';
-                                    const { label } = fieldsMap[field];
-                                    const value =
-                                            fieldsMap[field].formatValue(policy[category][field]);
-                                    if (!value || (Array.isArray(value) && !value.length)) return '';
-                                    return (
-                                        <div className="mb-4" key={field}>
-                                            <div className="py-2 text-primary-500">{label}</div>
-                                            <div className="flex">{value}</div>
-                                        </div>
-                                    );
-                                })
-                            }
+                            })}
                         </div>
                     </div>
                 </div>
             );
         });
-    }
+    };
 
     render() {
         return (

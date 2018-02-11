@@ -1,11 +1,10 @@
 import React, { Component } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
+import axios from 'axios';
 
 import IntegrationModal from 'Containers/Integrations/IntegrationModal';
 import IntegrationTile from 'Containers/Integrations/IntegrationTile';
 import ClustersModal from 'Containers/Integrations/ClustersModal';
-
-import axios from 'axios';
 
 import auth0 from 'images/auth0.svg';
 import docker from 'images/docker.svg';
@@ -102,7 +101,6 @@ const dataSources = {
     ]
 };
 
-
 const reducer = (action, prevState, nextState) => {
     switch (action) {
         case 'OPEN_INTEGRATION_MODAL':
@@ -179,51 +177,49 @@ class IntegrationsPage extends Component {
         this.getEntities('scanners');
     }
 
-    getEntities = (source) => {
-        axios.get(`/v1/${source}`).then((response) => {
-            const { [source]: entities } = response.data;
-            console.log(source, entities, response.data);
-            this.update('UPDATE_ENTITIES', { entities, source });
-        }).catch((error) => {
-            console.error(error.response);
-        });
-    }
+    getEntities = source => {
+        axios
+            .get(`/v1/${source}`)
+            .then(response => {
+                const { [source]: entities } = response.data;
+                console.log(source, entities, response.data);
+                this.update('UPDATE_ENTITIES', { entities, source });
+            })
+            .catch(error => {
+                console.error(error.response);
+            });
+    };
 
-    getClustersForOrchestrator = (orchestrator) => {
+    getClustersForOrchestrator = orchestrator => {
         const { clusterType } = orchestrator;
         const clusters = this.state.clusters.filter(cluster => cluster.type === clusterType);
         return clusters;
-    }
+    };
 
-    openIntegrationModal = (integrationCategory) => {
+    openIntegrationModal = integrationCategory => {
         const { source, type } = integrationCategory;
         const integrations = this.state[source].filter(i => i.type === type.toLowerCase());
         this.update('OPEN_INTEGRATION_MODAL', { integrations, source, type });
-    }
+    };
 
-    closeIntegrationModal = (isSuccessful) => {
+    closeIntegrationModal = isSuccessful => {
         if (isSuccessful === true) {
-            const {
-                integrationModal: {
-                    source,
-                    type
-                }
-            } = this.state;
+            const { integrationModal: { source, type } } = this.state;
             toast(`Successfully integrated ${type}`);
             this.getEntities(source);
         }
         this.update('CLOSE_INTEGRATION_MODAL');
-    }
+    };
 
-    openClustersModal = (orchestrator) => {
+    openClustersModal = orchestrator => {
         const clusters = this.getClustersForOrchestrator(orchestrator);
         const { clusterType } = orchestrator;
         this.update('OPEN_CLUSTERS_MODAL', { clusters, clusterType });
-    }
+    };
 
     closeClustersModal = () => {
         this.update('CLOSE_CLUSTERS_MODAL');
-    }
+    };
 
     findIntegrations = (source, type) => {
         const integrations = this.state[source];
@@ -232,16 +228,10 @@ class IntegrationsPage extends Component {
 
     update = (action, nextState) => {
         this.setState(prevState => reducer(action, prevState, nextState));
-    }
+    };
 
     renderIntegrationModal() {
-        const {
-            integrationModal: {
-                source,
-                type,
-                open
-            }
-        } = this.state;
+        const { integrationModal: { source, type, open } } = this.state;
         if (!open) return null;
         const integrations = this.state[source].filter(i => i.type === type.toLowerCase());
         return (
@@ -256,13 +246,7 @@ class IntegrationsPage extends Component {
     }
 
     renderClustersModal() {
-        const {
-            clustersModal: {
-                open,
-                clusters,
-                clusterType
-            }
-        } = this.state;
+        const { clustersModal: { open, clusters, clusterType } } = this.state;
         if (!open) return null;
         return (
             <ClustersModal
@@ -284,7 +268,7 @@ class IntegrationsPage extends Component {
             />
         ));
 
-        const orchestrators = dataSources.orchestratorsAndContainerPlatforms.map((orchestrator) => {
+        const orchestrators = dataSources.orchestratorsAndContainerPlatforms.map(orchestrator => {
             const clustersCount = this.getClustersForOrchestrator(orchestrator).length;
             return (
                 <IntegrationTile
@@ -329,51 +313,47 @@ class IntegrationsPage extends Component {
 
         return (
             <section className="flex">
-                <ToastContainer toastClassName="font-sans text-base-600 text-white font-600 bg-black" hideProgressBar autoClose={3000} />
+                <ToastContainer
+                    toastClassName="font-sans text-base-600 text-white font-600 bg-black"
+                    hideProgressBar
+                    autoClose={3000}
+                />
                 <div className="md:w-full border-r border-primary-300 pt-4">
-                    <h1 className="font-500 mx-3 border-b border-primary-300 pb-4 uppercase text-xl font-800 text-primary-600 tracking-wide">Data sources</h1>
+                    <h1 className="font-500 mx-3 border-b border-primary-300 pb-4 uppercase text-xl font-800 text-primary-600 tracking-wide">
+                        Data sources
+                    </h1>
                     <div>
                         <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 pb-3">
                             Registries
                         </h2>
-                        <div className="flex flex-wrap">
-                            {registries}
-                        </div>
+                        <div className="flex flex-wrap">{registries}</div>
                     </div>
                     <div>
                         <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
                             Orchestrators &amp; Container Platforms
                         </h2>
-                        <div className="flex">
-                            {orchestrators}
-                        </div>
+                        <div className="flex">{orchestrators}</div>
                     </div>
 
                     <div className="mb-6">
                         <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
                             Scanning &amp; Governance Tools
                         </h2>
-                        <div className="flex flex-wrap">
-                            {scanners}
-                        </div>
+                        <div className="flex flex-wrap">{scanners}</div>
                     </div>
 
                     <div className="mb-6">
                         <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
                             Plugins
                         </h2>
-                        <div className="flex flex-wrap">
-                            {plugins}
-                        </div>
+                        <div className="flex flex-wrap">{plugins}</div>
                     </div>
 
                     <div className="mb-6">
                         <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
                             Authentication Providers
                         </h2>
-                        <div className="flex flex-wrap">
-                            {authProviders}
-                        </div>
+                        <div className="flex flex-wrap">{authProviders}</div>
                     </div>
                 </div>
                 {this.renderIntegrationModal()}

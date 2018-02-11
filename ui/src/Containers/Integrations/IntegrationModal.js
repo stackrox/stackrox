@@ -1,14 +1,14 @@
 import React, { Component } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
-import Modal from 'Components/Modal';
 import { Form, Text, Select } from 'react-form';
-import Table from 'Components/Table';
-import Panel from 'Components/Panel';
 import { withRouter } from 'react-router-dom';
-
 import axios from 'axios';
 import * as Icon from 'react-feather';
+
+import Modal from 'Components/Modal';
+import Table from 'Components/Table';
+import Panel from 'Components/Panel';
 import tableColumnDescriptor from 'Containers/Integrations/tableColumnDescriptor';
 import AuthService from 'Providers/AuthService';
 
@@ -120,10 +120,7 @@ const sourceMap = {
                 label: 'TLS',
                 key: 'config.tls',
                 type: 'select',
-                options: [
-                    { label: 'On', value: 'true' },
-                    { label: 'Off', value: 'false' }
-                ],
+                options: [{ label: 'On', value: 'true' }, { label: 'Off', value: 'false' }],
                 placeholder: 'Enable TLS?'
             }
         ],
@@ -212,7 +209,7 @@ const sourceMap = {
                 type: 'password',
                 placeholder: ''
             }
-        ],
+        ]
     },
     registries: {
         docker: [
@@ -310,8 +307,8 @@ const sourceMap = {
                 type: 'password',
                 placeholder: ''
             }
-        ],
-    },
+        ]
+    }
 };
 
 const SOURCE_LABELS = Object.freeze({
@@ -323,19 +320,31 @@ const SOURCE_LABELS = Object.freeze({
 
 const api = {
     authProviders: {
-        save: data => ((data.id !== undefined && data.id !== '') ? axios.put(`/v1/authProviders/${data.id}`, data) : axios.post('/v1/authProviders', data)),
+        save: data =>
+            data.id !== undefined && data.id !== ''
+                ? axios.put(`/v1/authProviders/${data.id}`, data)
+                : axios.post('/v1/authProviders', data),
         delete: data => axios.delete(`/v1/authProviders/${data.id}`)
     },
     registries: {
-        save: data => ((data.id !== undefined && data.id !== '') ? axios.put(`/v1/registries/${data.id}`, data) : axios.post('/v1/registries', data)),
+        save: data =>
+            data.id !== undefined && data.id !== ''
+                ? axios.put(`/v1/registries/${data.id}`, data)
+                : axios.post('/v1/registries', data),
         delete: data => axios.delete(`/v1/registries/${data.id}`)
     },
     scanners: {
-        save: data => ((data.id !== undefined && data.id !== '') ? axios.put(`/v1/scanners/${data.id}`, data) : axios.post('/v1/scanners', data)),
+        save: data =>
+            data.id !== undefined && data.id !== ''
+                ? axios.put(`/v1/scanners/${data.id}`, data)
+                : axios.post('/v1/scanners', data),
         delete: data => axios.delete(`/v1/scanners/${data.id}`)
     },
     notifiers: {
-        save: data => ((data.id !== undefined && data.id !== '') ? axios.put(`/v1/notifiers/${data.id}`, data) : axios.post('/v1/notifiers', data)),
+        save: data =>
+            data.id !== undefined && data.id !== ''
+                ? axios.put(`/v1/notifiers/${data.id}`, data)
+                : axios.post('/v1/notifiers', data),
         delete: data => axios.delete(`/v1/notifiers/${data.id}`)
     }
 };
@@ -355,15 +364,18 @@ const reducer = (action, prevState, nextState) => {
 
 class IntegrationModal extends Component {
     static propTypes = {
-        integrations: PropTypes.arrayOf(PropTypes.shape({
-            type: PropTypes.string.isRequired
-        })).isRequired,
-        source: PropTypes.oneOf(['registries', 'scanners', 'notifiers', 'authProviders']).isRequired,
+        integrations: PropTypes.arrayOf(
+            PropTypes.shape({
+                type: PropTypes.string.isRequired
+            })
+        ).isRequired,
+        source: PropTypes.oneOf(['registries', 'scanners', 'notifiers', 'authProviders'])
+            .isRequired,
         type: PropTypes.string.isRequired,
         onRequestClose: PropTypes.func.isRequired,
         onIntegrationsUpdate: PropTypes.func.isRequired,
-        history: ReactRouterPropTypes.history.isRequired,
-    }
+        history: ReactRouterPropTypes.history.isRequired
+    };
 
     constructor(props) {
         super(props);
@@ -374,43 +386,46 @@ class IntegrationModal extends Component {
         };
     }
 
-    onRequestClose = (isSuccessful) => {
+    onRequestClose = isSuccessful => {
         this.update('CLEAR_ERROR_MESSAGE');
         this.props.onRequestClose(isSuccessful);
-    }
+    };
 
-    onSubmit = (formData) => {
+    onSubmit = formData => {
         this.update('CLEAR_ERROR_MESSAGE');
         const data = this.addDefaultFormValues(formData);
-        api[this.props.source].save(data).then(() => {
-            if (!this.props.integrations.length && this.props.source === 'authProviders') {
-                AuthService.logout();
-                this.props.history.go('/login');
-                return;
-            }
-            this.props.onIntegrationsUpdate(this.props.source);
-            this.update('EDIT_INTEGRATION', { editIntegration: null });
-        }).catch((error) => {
-            this.update('ERROR_MESSAGE', { message: error.response.data.error });
-        });
-    }
+        api[this.props.source]
+            .save(data)
+            .then(() => {
+                if (!this.props.integrations.length && this.props.source === 'authProviders') {
+                    AuthService.logout();
+                    this.props.history.go('/login');
+                    return;
+                }
+                this.props.onIntegrationsUpdate(this.props.source);
+                this.update('EDIT_INTEGRATION', { editIntegration: null });
+            })
+            .catch(error => {
+                this.update('ERROR_MESSAGE', { message: error.response.data.error });
+            });
+    };
 
-    addDefaultFormValues = (formData) => {
+    addDefaultFormValues = formData => {
         const data = formData;
         const { location } = window;
-        data.uiEndpoint = (this.props.source === 'authProviders') ? location.host : location.origin;
+        data.uiEndpoint = this.props.source === 'authProviders' ? location.host : location.origin;
         data.type = this.props.type;
         data.enabled = true;
         return data;
-    }
+    };
 
     addIntegration = () => {
         this.update('EDIT_INTEGRATION', { editIntegration: {} });
-    }
+    };
 
     deleteIntegration = () => {
         const promises = [];
-        this.policyTable.getSelectedRows().forEach((data) => {
+        this.policyTable.getSelectedRows().forEach(data => {
             const promise = api[this.props.source].delete(data);
             promises.push(promise);
         });
@@ -418,11 +433,11 @@ class IntegrationModal extends Component {
             this.policyTable.clearSelectedRows();
             this.props.onIntegrationsUpdate(this.props.source);
         });
-    }
+    };
 
     update = (action, nextState) => {
         this.setState(prevState => reducer(action, prevState, nextState));
-    }
+    };
 
     renderTable = () => {
         const header = `${this.props.type.toUpperCase()} Integrations`;
@@ -430,50 +445,78 @@ class IntegrationModal extends Component {
             {
                 renderIcon: () => <Icon.Trash2 className="h-4 w-4" />,
                 text: 'Delete',
-                className: 'flex py-1 px-2 rounded-sm text-danger-600 hover:text-white hover:bg-danger-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-danger-400',
+                className:
+                    'flex py-1 px-2 rounded-sm text-danger-600 hover:text-white hover:bg-danger-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-danger-400',
                 onClick: this.deleteIntegration,
                 disabled: this.state.editIntegration !== null
             },
             {
                 renderIcon: () => <Icon.Plus className="h-4 w-4" />,
                 text: 'Add Integration',
-                className: 'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                className:
+                    'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
                 onClick: this.addIntegration,
                 disabled: this.state.editIntegration !== null
             }
         ];
         const columns = tableColumnDescriptor[this.props.source][this.props.type];
         const rows = this.props.integrations;
-        const onRowClickHandler = () => (integration) => {
+        const onRowClickHandler = () => integration => {
             this.update('EDIT_INTEGRATION', { editIntegration: integration });
         };
         return (
             <div className="flex flex-1">
                 <Panel header={header} buttons={buttons}>
-                    <Table columns={columns} rows={rows} checkboxes onRowClick={onRowClickHandler()} ref={(table) => { this.policyTable = table; }} />
+                    <Table
+                        columns={columns}
+                        rows={rows}
+                        checkboxes
+                        onRowClick={onRowClickHandler()}
+                        ref={table => {
+                            this.policyTable = table;
+                        }}
+                    />
                 </Panel>
             </div>
         );
-    }
+    };
 
-    renderField = (field) => {
+    renderField = field => {
         switch (field.type) {
             case 'text':
                 return (
-                    <Text type="text" className="border rounded w-full p-3 border-base-300" field={field.key} id={field.key} placeholder={field.placeholder} />
+                    <Text
+                        type="text"
+                        className="border rounded w-full p-3 border-base-300"
+                        field={field.key}
+                        id={field.key}
+                        placeholder={field.placeholder}
+                    />
                 );
             case 'password':
                 return (
-                    <Text type="password" className="border rounded w-full p-3 border-base-300" field={field.key} id={field.key} placeholder={field.placeholder} />
+                    <Text
+                        type="password"
+                        className="border rounded w-full p-3 border-base-300"
+                        field={field.key}
+                        id={field.key}
+                        placeholder={field.placeholder}
+                    />
                 );
             case 'select':
                 return (
-                    <Select field={field.key} id={field.key} options={field.options} placeholder={field.placeholder} className="border rounded w-full p-3 border-base-300" />
+                    <Select
+                        field={field.key}
+                        id={field.key}
+                        options={field.options}
+                        placeholder={field.placeholder}
+                        className="border rounded w-full p-3 border-base-300"
+                    />
                 );
             default:
                 return '';
         }
-    }
+    };
 
     renderFields = () => {
         const fields = sourceMap[this.props.source][this.props.type];
@@ -492,51 +535,62 @@ class IntegrationModal extends Component {
             {
                 renderIcon: () => <Icon.X className="h-4 w-4" />,
                 text: 'Cancel',
-                className: 'flex py-1 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
+                className:
+                    'flex py-1 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
                 onClick: () => {
                     this.update('EDIT_INTEGRATION', { editIntegration: null });
                 }
             },
             {
                 renderIcon: () => <Icon.Save className="h-4 w-4" />,
-                text: `${(this.state.editIntegration.name) ? 'Save' : 'Create'} Integration`,
-                className: 'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                text: `${this.state.editIntegration.name ? 'Save' : 'Create'} Integration`,
+                className:
+                    'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
                 onClick: () => {
                     this.formApi.submitForm();
                 }
             }
         ];
-        const key = (this.state.editIntegration) ? this.state.editIntegration.name : 'new-integration';
-        const FormContent = (props) => {
+        const key = this.state.editIntegration
+            ? this.state.editIntegration.name
+            : 'new-integration';
+        const FormContent = props => {
             this.formApi = props.formApi;
             return (
-                <form onSubmit={props.formApi.submitForm} className="w-full p-4" >
-                    <div>
-                        {this.renderFields()}
-                    </div>
+                <form onSubmit={props.formApi.submitForm} className="w-full p-4">
+                    <div>{this.renderFields()}</div>
                 </form>
             );
         };
         return (
             <div className="flex flex-1">
                 <Panel header={header} buttons={buttons}>
-                    <Form onSubmit={this.onSubmit} validateSuccess={this.validateSuccess} defaultValues={this.state.editIntegration} key={key}>
+                    <Form
+                        onSubmit={this.onSubmit}
+                        validateSuccess={this.validateSuccess}
+                        defaultValues={this.state.editIntegration}
+                        key={key}
+                    >
                         <FormContent />
                     </Form>
                 </Panel>
             </div>
         );
-    }
+    };
 
     render() {
         const { source, type } = this.props;
         return (
             <Modal isOpen onRequestClose={this.onRequestClose} className="w-5/6 h-full">
                 <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
-                    <span className="flex flex-1">Configure {type} {SOURCE_LABELS[source]}</span>
+                    <span className="flex flex-1">
+                        Configure {type} {SOURCE_LABELS[source]}
+                    </span>
                     <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.onRequestClose} />
                 </header>
-                {(this.state.message !== '') ? <div className="px-4 py-2 bg-high-500 text-white">{this.state.message}</div> : ''}
+                {this.state.message !== '' && (
+                    <div className="px-4 py-2 bg-high-500 text-white">{this.state.message}</div>
+                )}
                 <div className="flex flex-1 w-full bg-white">
                     {this.renderTable()}
                     {this.renderForm()}

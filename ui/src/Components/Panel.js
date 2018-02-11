@@ -12,19 +12,21 @@ class Panel extends Component {
 
     static propTypes = {
         header: PropTypes.string,
-        buttons: PropTypes.arrayOf(PropTypes.shape({
-            className: PropTypes.string,
-            onClick: PropTypes.func,
-            disabled: PropTypes.bool,
-            text: PropTypes.string,
-            renderIcon: PropTypes.func,
-            tooltip: PropTypes.string
-        })),
+        buttons: PropTypes.arrayOf(
+            PropTypes.shape({
+                className: PropTypes.string,
+                onClick: PropTypes.func,
+                disabled: PropTypes.bool,
+                text: PropTypes.string,
+                renderIcon: PropTypes.func,
+                tooltip: PropTypes.string
+            })
+        ),
         width: PropTypes.string,
         children: PropTypes.node
     };
 
-    renderToolTip = (button) => {
+    renderToolTip = button => {
         if (!button.tooltip) return '';
         return (
             <ReactTooltip id={`button-${button.text}`} type="dark" effect="solid">
@@ -44,8 +46,10 @@ class Panel extends Component {
                     data-tip
                     data-for={`button-${button.text}`}
                 >
-                    { (button.renderIcon) ? <span className="flex items-center">{button.renderIcon()}</span> : '' }
-                    { (button.text) ? <span className="ml-3">{button.text}</span> : '' }
+                    {button.renderIcon && (
+                        <span className="flex items-center">{button.renderIcon()}</span>
+                    )}
+                    {button.text && <span className="ml-3">{button.text}</span>}
                 </button>
                 {this.renderToolTip(button)}
             </span>
@@ -56,7 +60,9 @@ class Panel extends Component {
         return (
             <div className={`flex flex-col bg-white border border-base-300 ${this.props.width}`}>
                 <div className="flex shadow-underline font-bold bg-primary-100 p-3">
-                    <div className="flex flex-1 text-base-600 uppercase items-center tracking-wide">{this.props.header}</div>
+                    <div className="flex flex-1 text-base-600 uppercase items-center tracking-wide">
+                        {this.props.header}
+                    </div>
                     <div className="flex items-center">{this.renderButtons()}</div>
                 </div>
                 <div className="flex flex-1 overflow-auto transition">{this.props.children}</div>

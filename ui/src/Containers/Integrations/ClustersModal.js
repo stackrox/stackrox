@@ -12,7 +12,7 @@ class ClustersModal extends Component {
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
         clusterType: PropTypes.string.isRequired,
         onRequestClose: PropTypes.func.isRequired
-    }
+    };
 
     renderClusters() {
         const { clusters } = this.props;
@@ -35,9 +35,7 @@ class ClustersModal extends Component {
                     <span className="flex flex-1">{clusterTypeLabels[clusterType]}</span>
                     <Icon.X className="h-4 w-4 cursor-pointer" onClick={onRequestClose} />
                 </header>
-                <div className="p-4">
-                    {this.renderClusters()}
-                </div>
+                <div className="p-4">{this.renderClusters()}</div>
             </Modal>
         );
     }

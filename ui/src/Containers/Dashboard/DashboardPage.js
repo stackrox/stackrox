@@ -1,17 +1,28 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import TwoLevelPieChart from 'Components/visuals/TwoLevelPieChart';
-import CustomLineChart from 'Components/visuals/CustomLineChart';
-import DashboardBenchmarks from 'Containers/Dashboard/DashboardBenchmarks';
-import SeverityTile from 'Containers/Dashboard/SeverityTile';
-
+import {
+    Line,
+    BarChart,
+    Bar,
+    Cell,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer
+} from 'recharts';
 import axios from 'axios';
 import { format, subDays } from 'date-fns';
 import * as Icon from 'react-feather';
 
-import { severityLabels } from 'messages/common';
+import TwoLevelPieChart from 'Components/visuals/TwoLevelPieChart';
+import CustomLineChart from 'Components/visuals/CustomLineChart';
+import DashboardBenchmarks from 'Containers/Dashboard/DashboardBenchmarks';
+import SeverityTile from 'Containers/Dashboard/SeverityTile';
 import retrieveBenchmarks from 'Providers/BenchmarksService';
+
+import { severityLabels } from 'messages/common';
 
 //  @TODO: Have one source of truth for severity colors
 const severityColorMap = {
@@ -56,7 +67,7 @@ class DashboardPage extends Component {
         history: PropTypes.shape({
             push: PropTypes.func.isRequired
         }).isRequired
-    }
+    };
 
     constructor(props) {
         super(props);
@@ -78,77 +89,97 @@ class DashboardPage extends Component {
         this.getBenchmarks();
     }
 
-    getViolationsByPolicyCategory = () => axios.get('/v1/alerts/counts', {
-        params: { group_by: 'CATEGORY', 'request.stale': false }
-    }).then((response) => {
-        const violatonsByPolicyCategory = response.data.groups;
-        if (!violatonsByPolicyCategory) return;
-        this.update('UPDATE_VIOLATIONS_BY_POLICY_CATEGORY', { violatonsByPolicyCategory });
-    }).catch((error) => {
-        console.error(error);
-    });
+    getViolationsByPolicyCategory = () =>
+        axios
+            .get('/v1/alerts/counts', {
+                params: { group_by: 'CATEGORY', 'request.stale': false }
+            })
+            .then(response => {
+                const violatonsByPolicyCategory = response.data.groups;
+                if (!violatonsByPolicyCategory) return;
+                this.update('UPDATE_VIOLATIONS_BY_POLICY_CATEGORY', { violatonsByPolicyCategory });
+            })
+            .catch(error => {
+                console.error(error);
+            });
 
-    getViolationsByCluster = () => axios.get('/v1/alerts/counts', {
-        params: { group_by: 'CLUSTER', 'request.stale': false }
-    }).then((response) => {
-        const violationsByCluster = response.data.groups;
-        if (!violationsByCluster) return;
-        this.update('UPDATE_VIOLATIONS_BY_CLUSTERS', { violationsByCluster });
-    }).catch((error) => {
-        console.error(error);
-    });
+    getViolationsByCluster = () =>
+        axios
+            .get('/v1/alerts/counts', {
+                params: { group_by: 'CLUSTER', 'request.stale': false }
+            })
+            .then(response => {
+                const violationsByCluster = response.data.groups;
+                if (!violationsByCluster) return;
+                this.update('UPDATE_VIOLATIONS_BY_CLUSTERS', { violationsByCluster });
+            })
+            .catch(error => {
+                console.error(error);
+            });
 
-    getEventsByTime = () => axios.get('/v1/alerts/timeseries').then((response) => {
-        const eventsByTime = response.data.events;
-        if (!eventsByTime) return;
-        this.update('UPDATE_EVENTS_BY_TIME', { eventsByTime });
-    }).catch((error) => {
-        console.error(error);
-    });
+    getEventsByTime = () =>
+        axios
+            .get('/v1/alerts/timeseries')
+            .then(response => {
+                const eventsByTime = response.data.events;
+                if (!eventsByTime) return;
+                this.update('UPDATE_EVENTS_BY_TIME', { eventsByTime });
+            })
+            .catch(error => {
+                console.error(error);
+            });
 
     getBenchmarks = () => {
         const baseUrl = '/v1/benchmarks/scans';
         const promise = new Promise((resolve, reject) => {
             const benchmarkPromises = [];
             const benchmarkNames = [];
-            retrieveBenchmarks().then((vals) => {
-                vals.forEach((benchmark) => {
-                    benchmarkNames.push(benchmark.name);
-                    benchmarkPromises.push(axios.get(`${baseUrl}?benchmark=${benchmark.name}`));
-                });
-
-                Promise.all(benchmarkPromises).then((benchmarkValues) => {
-                    const promises = [];
-                    benchmarkValues.forEach((benchmarkValue) => {
-                        if (benchmarkValue.data.scanMetadata &&
-                            benchmarkValue.data.scanMetadata.length) {
-                            promises.push(axios.get(`${baseUrl}/${benchmarkValue.data.scanMetadata[0].scanId}`));
-                        }
+            retrieveBenchmarks()
+                .then(vals => {
+                    vals.forEach(benchmark => {
+                        benchmarkNames.push(benchmark.name);
+                        benchmarkPromises.push(axios.get(`${baseUrl}?benchmark=${benchmark.name}`));
                     });
 
-                    Promise.all(promises).then((values) => {
-                        const { benchmarks } = this.state;
-                        values.forEach((value, i) => {
-                            benchmarks[benchmarkNames[i]] = [value.data];
+                    Promise.all(benchmarkPromises).then(benchmarkValues => {
+                        const promises = [];
+                        benchmarkValues.forEach(benchmarkValue => {
+                            if (
+                                benchmarkValue.data.scanMetadata &&
+                                benchmarkValue.data.scanMetadata.length
+                            ) {
+                                promises.push(
+                                    axios.get(
+                                        `${baseUrl}/${benchmarkValue.data.scanMetadata[0].scanId}`
+                                    )
+                                );
+                            }
                         });
-                        this.update('UPDATE_BENCHMARKS', { benchmarks });
-                        resolve(values);
+
+                        Promise.all(promises).then(values => {
+                            const { benchmarks } = this.state;
+                            values.forEach((value, i) => {
+                                benchmarks[benchmarkNames[i]] = [value.data];
+                            });
+                            this.update('UPDATE_BENCHMARKS', { benchmarks });
+                            resolve(values);
+                        });
                     });
+                })
+                .catch(error => {
+                    reject(error);
                 });
-            }).catch((error) => {
-                reject(error);
-            });
         });
         return promise;
     };
 
     makeBarClickHandler = (cluster, severity) => () => {
         this.props.history.push(`/main/violations?severity=${severity}&cluster=${cluster}`);
-    }
+    };
 
     update = (action, nextState) => {
         this.setState(prevState => reducer(action, prevState, nextState));
-    }
+    };
 
     renderEventsByTime = () => {
         if (!this.state.eventsByTime) return '';
@@ -156,7 +187,7 @@ class DashboardPage extends Component {
         for (let i = 6; i >= 0; i -= 1) {
             timeEventMap[format(subDays(new Date(), i), 'MMM DD')] = 0;
         }
-        this.state.eventsByTime.forEach((event) => {
+        this.state.eventsByTime.forEach(event => {
             const time = format(parseInt(event.time, 10), 'MMM DD');
             const events = timeEventMap[time];
             if (events !== undefined) {
@@ -178,11 +209,11 @@ class DashboardPage extends Component {
                 <Line type="monotone" dataKey="events" stroke="#82ca9d" />
             </CustomLineChart>
         );
-    }
+    };
 
     renderViolationsByCluster = () => {
         if (!this.state.violationsByCluster) return '';
-        const data = this.state.violationsByCluster.map((cluster) => {
+        const data = this.state.violationsByCluster.map(cluster => {
             const dataPoint = {
                 name: cluster.group,
                 Critical: 0,
@@ -190,7 +221,7 @@ class DashboardPage extends Component {
                 Medium: 0,
                 Low: 0
             };
-            cluster.counts.forEach((d) => {
+            cluster.counts.forEach(d => {
                 dataPoint[severityLabels[d.severity]] = parseInt(d.count, 10);
             });
             return dataPoint;
@@ -199,67 +230,64 @@ class DashboardPage extends Component {
             <ResponsiveContainer>
                 <BarChart
                     data={data}
-                    margin={
-                        {
-                            top: 5,
-                            right: 30,
-                            left: 20,
-                            bottom: 5
-                        }
-                    }
+                    margin={{
+                        top: 5,
+                        right: 30,
+                        left: 20,
+                        bottom: 5
+                    }}
                 >
                     <XAxis dataKey="name" />
                     <YAxis
                         domain={[0, 'dataMax']}
                         allowDecimals={false}
                         label={{
-                            value: 'Count', angle: -90, position: 'insideLeft', textAnchor: 'middle'
+                            value: 'Count',
+                            angle: -90,
+                            position: 'insideLeft',
+                            textAnchor: 'middle'
                         }}
                     />
                     <CartesianGrid strokeDasharray="3 3" />
                     <Tooltip />
                     <Legend horizontalAlign="right" wrapperStyle={{ lineHeight: '40px' }} />
-                    {
-                        Object.keys(severityLabels).map((severity) => {
-                            const arr = [];
-                            const bar = (
-                                <Bar
-                                    name={severityLabels[severity]}
-                                    key={severityLabels[severity]}
-                                    dataKey={severityLabels[severity]}
-                                    fill={severityColorMap[severity]}
-                                >
-                                    {
-                                        data.map(entry => (
-                                            <Cell
-                                                key={entry.name}
-                                                className="cursor-pointer"
-                                                onClick={
-                                                    this.makeBarClickHandler(entry.name, severity)
-                                                }
-                                            />
-                                        ))
-                                    }
-                                </Bar>
-                            );
-                            arr.push(bar);
-                            return arr;
-                        })
-                    }
+                    {Object.keys(severityLabels).map(severity => {
+                        const arr = [];
+                        const bar = (
+                            <Bar
+                                name={severityLabels[severity]}
+                                key={severityLabels[severity]}
+                                dataKey={severityLabels[severity]}
+                                fill={severityColorMap[severity]}
+                            >
+                                {data.map(entry => (
+                                    <Cell
+                                        key={entry.name}
+                                        className="cursor-pointer"
+                                        onClick={this.makeBarClickHandler(entry.name, severity)}
+                                    />
+                                ))}
+                            </Bar>
+                        );
+                        arr.push(bar);
+                        return arr;
+                    })}
                 </BarChart>
             </ResponsiveContainer>
         );
-    }
+    };
 
     renderViolationsByPolicyCategory = () => {
         if (!this.state.violatonsByPolicyCategory) return '';
-        return this.state.violatonsByPolicyCategory.map((policyType) => {
+        return this.state.violatonsByPolicyCategory.map(policyType => {
             const data = policyType.counts.map(d => ({
                 name: severityLabels[d.severity],
                 value: parseInt(d.count, 10),
                 color: severityColorMap[d.severity],
                 onClick: () => {
-                    this.props.history.push(`/main/violations?category=${policyType.group}&severity=${d.severity}`);
+                    this.props.history.push(
+                        `/main/violations?category=${policyType.group}&severity=${d.severity}`
+                    );
                 }
             }));
             return (
@@ -285,8 +313,8 @@ class DashboardPage extends Component {
             MEDIUM_SEVERITY: 0,
             LOW_SEVERITY: 0
         };
-        this.state.violationsByCluster.forEach((cluster) => {
-            cluster.counts.forEach((d) => {
+        this.state.violationsByCluster.forEach(cluster => {
+            cluster.counts.forEach(d => {
                 const count = parseInt(d.count, 10);
                 counts[d.severity] += count;
             });
@@ -294,19 +322,19 @@ class DashboardPage extends Component {
         const severities = Object.keys(counts);
         return (
             <div className="flex flex-1 flex-col w-full">
-                <h2 className="flex items-center text-xl text-base font-sans text-base-600 pb-8 tracking-wide font-500">Environment Risk</h2>
+                <h2 className="flex items-center text-xl text-base font-sans text-base-600 pb-8 tracking-wide font-500">
+                    Environment Risk
+                </h2>
                 <div className="flex">
-                    {
-                        severities.map((severity, i) => (
-                            <SeverityTile
-                                severity={severity}
-                                count={counts[severity]}
-                                color={severityColorMap[severity]}
-                                index={i}
-                                key={severity}
-                            />
-                        ))
-                    }
+                    {severities.map((severity, i) => (
+                        <SeverityTile
+                            severity={severity}
+                            count={counts[severity]}
+                            color={severityColorMap[severity]}
+                            index={i}
+                            key={severity}
+                        />
+                    ))}
                 </div>
             </div>
         );
@@ -314,7 +342,9 @@ class DashboardPage extends Component {
 
     renderBenchmarks = () => (
         <div className="flex flex-1 flex-col w-full">
-            <h2 className="flex items-center text-xl text-base font-sans text-base-600 pb-8 tracking-wide font-500">Benchmarks</h2>
+            <h2 className="flex items-center text-xl text-base font-sans text-base-600 pb-8 tracking-wide font-500">
+                Benchmarks
+            </h2>
             <DashboardBenchmarks benchmarks={this.state.benchmarks} />
         </div>
     );
@@ -339,7 +369,9 @@ class DashboardPage extends Component {
                                         <Icon.Layers className="h-4 w-4 mr-3" />
                                         Violations by Cluster
                                     </h2>
-                                    <div className="flex flex-1 m-4 h-64">{this.renderViolationsByCluster()}</div>
+                                    <div className="flex flex-1 m-4 h-64">
+                                        {this.renderViolationsByCluster()}
+                                    </div>
                                 </div>
                             </div>
                             <div className="p-8 md:w-full lg:w-1/2">
@@ -348,7 +380,9 @@ class DashboardPage extends Component {
                                         <Icon.AlertTriangle className="h-4 w-4 mr-3" />
                                         Events by Time
                                     </h2>
-                                    <div className="flex flex-1 m-4 h-64">{this.renderEventsByTime()}</div>
+                                    <div className="flex flex-1 m-4 h-64">
+                                        {this.renderEventsByTime()}
+                                    </div>
                                 </div>
                             </div>
                         </div>

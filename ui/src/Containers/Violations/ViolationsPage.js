@@ -1,13 +1,12 @@
 import React, { Component } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import Table from 'Components/Table';
 import MultiSelect from 'react-select';
-
-import PolicyAlertsSidePanel from 'Containers/Violations/PolicyAlertsSidePanel';
-
 import axios from 'axios';
 import queryString from 'query-string';
 import isEqual from 'lodash/isEqual';
+
+import Table from 'Components/Table';
+import PolicyAlertsSidePanel from 'Containers/Violations/PolicyAlertsSidePanel';
 
 const policyCategoriesLabels = {
     CONTAINER_CONFIGURATION: 'Container Configuration',
@@ -22,7 +21,7 @@ const severityLabels = {
     LOW_SEVERITY: 'Low'
 };
 
-const setSeverityClass = (item) => {
+const setSeverityClass = item => {
     switch (item) {
         case 'Low':
             return 'text-low-500';
@@ -54,7 +53,7 @@ class ViolationsPage extends Component {
     static propTypes = {
         history: ReactRouterPropTypes.history.isRequired,
         location: ReactRouterPropTypes.location.isRequired
-    }
+    };
 
     constructor(props) {
         super(props);
@@ -63,10 +62,19 @@ class ViolationsPage extends Component {
 
         this.state = {
             category: {
-                options: [{ label: 'Image Assurance', value: 'IMAGE_ASSURANCE' }, { label: 'Container Configuration', value: 'CONTAINER_CONFIGURATION' }, { label: 'Privileges & Capabilities', value: 'PRIVILEGES_CAPABILITIES' }]
+                options: [
+                    { label: 'Image Assurance', value: 'IMAGE_ASSURANCE' },
+                    { label: 'Container Configuration', value: 'CONTAINER_CONFIGURATION' },
+                    { label: 'Privileges & Capabilities', value: 'PRIVILEGES_CAPABILITIES' }
+                ]
             },
             severity: {
-                options: [{ label: 'Critical Severity', value: 'CRITICAL_SEVERITY' }, { label: 'High Severity', value: 'HIGH_SEVERITY' }, { label: 'Medium Severity', value: 'MEDIUM_SEVERITY' }, { label: 'Low Severity', value: 'LOW_SEVERITY' }]
+                options: [
+                    { label: 'Critical Severity', value: 'CRITICAL_SEVERITY' },
+                    { label: 'High Severity', value: 'HIGH_SEVERITY' },
+                    { label: 'Medium Severity', value: 'MEDIUM_SEVERITY' },
+                    { label: 'Low Severity', value: 'LOW_SEVERITY' }
+                ]
             },
             alertsByPolicies: [],
             policy: {}
@@ -90,7 +98,7 @@ class ViolationsPage extends Component {
         this.getAlertsGroups();
     }
 
-    onFilterChange = type => (options) => {
+    onFilterChange = type => options => {
         this.props.history.push({
             pathname: this.props.location.pathname,
             search: queryString.stringify({
@@ -102,21 +110,27 @@ class ViolationsPage extends Component {
         // history will be updated asynchronously and it should happen before alerts fetching
         // TODO-ivan: to be removed with switching to react-router-redux
         setTimeout(this.getAlertsGroups, 0);
-    }
+    };
 
     getAlertsGroups = () => {
         const params = queryString.stringify({
             ...this.getFilterParams(),
             stale: false
         });
-        return axios.get(`/v1/alerts/groups?${params}`).then((response) => {
-            if (!response.data.alertsByPolicies ||
-                isEqual(response.data.alertsByPolicies, this.state.alertsByPolicies)) return;
-            this.setState({ alertsByPolicies: response.data.alertsByPolicies });
-        }).catch((error) => {
-            console.error(error);
-        });
-    }
+        return axios
+            .get(`/v1/alerts/groups?${params}`)
+            .then(response => {
+                if (
+                    !response.data.alertsByPolicies ||
+                    isEqual(response.data.alertsByPolicies, this.state.alertsByPolicies)
+                )
+                    return;
+                this.setState({ alertsByPolicies: response.data.alertsByPolicies });
+            })
+            .catch(error => {
+                console.error(error);
+            });
+    };
 
     getFilterParams() {
         const { search } = this.props.location;
@@ -128,11 +142,11 @@ class ViolationsPage extends Component {
         this.getAlertsGroups().then(() => {
             this.pollTimeoutId = setTimeout(this.pollAlertGroups, 5000);
         });
-    }
+    };
 
-    openPanel = (policy) => {
+    openPanel = policy => {
         this.update('OPEN_POLICY_ALERTS_PANEL', { policy });
-    }
+    };
 
     closePanel = () => {
         this.update('CLOSE_POLICY_ALERTS_PANEL');
@@ -140,7 +154,7 @@ class ViolationsPage extends Component {
 
     update = (action, nextState) => {
         this.setState(prevState => reducer(action, prevState, nextState));
-    }
+    };
 
     renderTable = () => {
         const columns = [
@@ -149,13 +163,14 @@ class ViolationsPage extends Component {
             {
                 key: 'categories',
                 label: 'Categories',
-                keyValueFunc: obj => ((obj.length > 1) ? 'Multiple' : policyCategoriesLabels[obj[0]]),
-                tooltip: categories => categories.map(category => policyCategoriesLabels[category]).join(' | ')
+                keyValueFunc: obj => (obj.length > 1 ? 'Multiple' : policyCategoriesLabels[obj[0]]),
+                tooltip: categories =>
+                    categories.map(category => policyCategoriesLabels[category]).join(' | ')
             },
             { key: 'severity', label: 'Severity', classFunc: setSeverityClass },
             { key: 'numAlerts', label: 'Alerts', align: 'right' }
         ];
-        const rows = this.state.alertsByPolicies.map((obj) => {
+        const rows = this.state.alertsByPolicies.map(obj => {
             const row = {
                 id: obj.policy.id,
                 name: obj.policy.name,
@@ -167,12 +182,12 @@ class ViolationsPage extends Component {
             return row;
         });
         return <Table columns={columns} rows={rows} onRowClick={this.openPanel} />;
-    }
+    };
 
     renderPolicyAlertsPanel = () => {
         if (!this.state.isPanelOpen) return '';
         return <PolicyAlertsSidePanel policy={this.state.policy} onClose={this.closePanel} />;
-    }
+    };
 
     render() {
         return (

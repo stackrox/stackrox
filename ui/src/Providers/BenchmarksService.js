@@ -8,18 +8,21 @@ export default function retrieveBenchmarks() {
     const clustersUrl = `${baseUrl}/clusters`;
     const configsUrl = `${baseUrl}/benchmarks/configs`;
 
-    return Promise.all([axios.get(clustersUrl), axios.get(configsUrl)])
-        .then(([clusterResponse, configResponse]) => {
+    return Promise.all([axios.get(clustersUrl), axios.get(configsUrl)]).then(
+        ([clusterResponse, configResponse]) => {
             const { clusters } = clusterResponse.data;
             const clusterTypes = new Set(clusters.map(c => c.type));
             const { benchmarks } = configResponse.data;
-            return benchmarks.map((benchmark) => {
-                const available = benchmark.clusterTypes.reduce((val, type) =>
-                    val || clusterTypes.has(type), false);
+            return benchmarks.map(benchmark => {
+                const available = benchmark.clusterTypes.reduce(
+                    (val, type) => val || clusterTypes.has(type),
+                    false
+                );
                 return {
                     name: benchmark.name,
                     available
                 };
             });
-        });
+        }
+    );
 }

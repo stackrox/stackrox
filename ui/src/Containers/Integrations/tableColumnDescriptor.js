@@ -2,10 +2,7 @@ import React from 'react';
 
 const tableColumnDescriptor = Object.freeze({
     authProviders: {
-        auth0: [
-            { key: 'name', label: 'Name' },
-            { key: 'config.domain', label: 'Auth0 Domain' },
-        ]
+        auth0: [{ key: 'name', label: 'Name' }, { key: 'config.domain', label: 'Auth0 Domain' }]
     },
     notifiers: {
         slack: [
@@ -19,7 +16,11 @@ const tableColumnDescriptor = Object.freeze({
             { key: 'config.issue_type', label: 'Issue Type' },
             {
                 key: 'config.url',
-                keyValueFunc: url => <a href={url} target="_blank">{url}</a>,
+                keyValueFunc: url => (
+                    <a href={url} target="_blank">
+                        {url}
+                    </a>
+                ),
                 label: 'URL'
             }
         ],

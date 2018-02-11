@@ -2,16 +2,16 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Text, TextArea, Select } from 'react-form';
 import MultiSelect from 'react-select';
-import 'react-select/dist/react-select.css';
-import FormField from 'Components/FormField';
-import NumericInput from 'react-numeric-input';
-import CustomSelect from 'Components/Select';
-
 import flatten from 'flat';
 import flattenObject from 'utils/flattenObject';
 import differenceBy from 'lodash/differenceBy';
 import intersection from 'lodash/intersection';
 import omitBy from 'lodash/omitBy';
+
+import 'react-select/dist/react-select.css';
+import FormField from 'Components/FormField';
+import NumericInput from 'react-numeric-input';
+import CustomSelect from 'Components/Select';
 
 const categoriesMap = {
     imagePolicy: 'IMAGE_ASSURANCE',
@@ -31,12 +31,16 @@ const reducer = (action, prevState, nextState) => {
 class PolicyCreationForm extends Component {
     static propTypes = {
         policy: PropTypes.shape({}).isRequired,
-        notifiers: PropTypes.arrayOf(PropTypes.shape({
-            name: PropTypes.string.isRequired
-        })).isRequired,
-        clusters: PropTypes.arrayOf(PropTypes.shape({
-            name: PropTypes.string.isRequired
-        })).isRequired,
+        notifiers: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string.isRequired
+            })
+        ).isRequired,
+        clusters: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string.isRequired
+            })
+        ).isRequired,
         formApi: PropTypes.shape({
             submitForm: PropTypes.func,
             setValue: PropTypes.func,
@@ -44,7 +48,7 @@ class PolicyCreationForm extends Component {
             clearAll: PropTypes.func,
             values: PropTypes.shape({})
         }).isRequired
-    }
+    };
 
     constructor(props) {
         super(props);
@@ -66,7 +70,7 @@ class PolicyCreationForm extends Component {
                             { label: 'Critical', value: 'CRITICAL_SEVERITY' },
                             { label: 'High', value: 'HIGH_SEVERITY' },
                             { label: 'Medium', value: 'MEDIUM_SEVERITY' },
-                            { label: 'Low', value: 'LOW_SEVERITY' },
+                            { label: 'Low', value: 'LOW_SEVERITY' }
                         ],
                         placeholder: 'Select a severity level',
                         required: true
@@ -82,20 +86,14 @@ class PolicyCreationForm extends Component {
                         value: 'disabled',
                         exclude: false,
                         type: 'select',
-                        options: [
-                            { label: 'Yes', value: false },
-                            { label: 'No', value: true }
-                        ],
+                        options: [{ label: 'Yes', value: false }, { label: 'No', value: true }],
                         required: true
                     },
                     {
                         label: 'Enforce',
                         value: 'enforce',
                         type: 'select',
-                        options: [
-                            { label: 'Yes', value: true },
-                            { label: 'No', value: false }
-                        ],
+                        options: [{ label: 'Yes', value: true }, { label: 'No', value: false }],
                         required: true
                     },
                     {
@@ -191,9 +189,7 @@ class PolicyCreationForm extends Component {
                         label: 'Image is NOT Scanned',
                         value: 'imagePolicy.scanExists',
                         type: 'select',
-                        options: [
-                            { label: 'True', value: true },
-                        ],
+                        options: [{ label: 'True', value: true }]
                     },
                     {
                         label: 'CVSS',
@@ -214,9 +210,15 @@ class PolicyCreationForm extends Component {
                                 type: 'select',
                                 options: [
                                     { label: 'Is greater than', value: 'GREATER_THAN' },
-                                    { label: 'Is greater than or equal to', value: 'GREATER_THAN_OR_EQUALS' },
+                                    {
+                                        label: 'Is greater than or equal to',
+                                        value: 'GREATER_THAN_OR_EQUALS'
+                                    },
                                     { label: 'Is equal to', value: 'EQUALS' },
-                                    { label: 'Is less than or equal to', value: 'LESS_THAN_OR_EQUALS' },
+                                    {
+                                        label: 'Is less than or equal to',
+                                        value: 'LESS_THAN_OR_EQUALS'
+                                    },
                                     { label: 'Is less than', value: 'LESS_THAN' }
                                 ]
                             },
@@ -226,7 +228,7 @@ class PolicyCreationForm extends Component {
                                 placeholder: '0-10',
                                 max: 10,
                                 min: 0
-                            },
+                            }
                         ],
                         required: false
                     },
@@ -338,10 +340,7 @@ class PolicyCreationForm extends Component {
                         label: 'Privileged',
                         value: 'privilegePolicy.privileged',
                         type: 'select',
-                        options: [
-                            { label: 'Yes', value: true },
-                            { label: 'No', value: false }
-                        ],
+                        options: [{ label: 'Yes', value: true }, { label: 'No', value: false }],
                         required: false
                     },
                     {
@@ -396,105 +395,119 @@ class PolicyCreationForm extends Component {
     setNotifierFieldOptions = () => {
         const { policyFields } = this.state;
         const { notifiers } = this.props;
-        policyFields.policyDetails = policyFields.policyDetails.map((field) => {
+        policyFields.policyDetails = policyFields.policyDetails.map(field => {
             const newField = field;
-            if (field.value === 'notifiers') newField.options = notifiers.map(notifier => ({ label: notifier.name, value: notifier.id }));
+            if (field.value === 'notifiers')
+                newField.options = notifiers.map(notifier => ({
+                    label: notifier.name,
+                    value: notifier.id
+                }));
             return newField;
         });
         this.update('UPDATE_POLICY_FIELDS', { policyFields });
-    }
+    };
 
     setClusterFieldOptions = () => {
         const { policyFields } = this.state;
         const { clusters } = this.props;
-        policyFields.policyDetails = policyFields.policyDetails.map((field) => {
+        policyFields.policyDetails = policyFields.policyDetails.map(field => {
             const newField = field;
-            if (field.value === 'scope') newField.options = clusters.map(cluster => ({ label: cluster.name, value: cluster.id }));
+            if (field.value === 'scope')
+                newField.options = clusters.map(cluster => ({
+                    label: cluster.name,
+                    value: cluster.id
+                }));
             return newField;
         });
         this.update('UPDATE_POLICY_FIELDS', { policyFields });
-    }
+    };
 
     setFormFields = () => {
         let filteredPolicy = this.removeEmptyFields(this.props.policy);
         filteredPolicy = this.preFormatScopeField(filteredPolicy);
         this.props.formApi.setAllValues(filteredPolicy);
-    }
+    };
 
-    setCategories = (obj) => {
+    setCategories = obj => {
         const newObj = Object.assign({}, obj);
-        newObj.categories = intersection(Object.keys(this.state.policyFields).filter(o => o !== 'policyDetails'), Object.keys(obj)).map(o => categoriesMap[o]);
+        newObj.categories = intersection(
+            Object.keys(this.state.policyFields).filter(o => o !== 'policyDetails'),
+            Object.keys(obj)
+        ).map(o => categoriesMap[o]);
         return newObj;
     };
 
-    preFormatScopeField = (obj) => {
+    preFormatScopeField = obj => {
         const newObj = Object.assign({}, obj);
         if (obj.scope) newObj.scope = obj.scope.map(o => o.cluster);
         return newObj;
-    }
+    };
 
-    postFormatScopeField = (obj) => {
+    postFormatScopeField = obj => {
         const newObj = Object.assign({}, obj);
         if (newObj.scope) newObj.scope = obj.scope.map(o => ({ cluster: o }));
         return newObj;
-    }
+    };
 
-    preSubmit = (policy) => {
+    preSubmit = policy => {
         let newPolicy = this.removeEmptyFields(policy);
         newPolicy = this.postFormatScopeField(newPolicy);
         newPolicy = this.setCategories(newPolicy);
         return newPolicy;
-    }
+    };
 
-    removeEmptyFields = (obj) => {
+    removeEmptyFields = obj => {
         const flattenedObj = flatten(obj);
-        const omittedObj = omitBy(flattenedObj, value => value === null || value === undefined || value === '' || value === []);
+        const omittedObj = omitBy(
+            flattenedObj,
+            value => value === null || value === undefined || value === '' || value === []
+        );
         const newObj = flatten.unflatten(omittedObj);
         return newObj;
-    }
+    };
 
     clearAll = () => {
         this.props.formApi.clearAll();
-    }
+    };
 
     submitForm = () => {
         this.props.formApi.submitForm();
-    }
+    };
 
-    addFormField = (fieldValue) => {
+    addFormField = fieldValue => {
         let fieldToAdd = {};
-        Object.keys(this.state.policyFields).forEach((fieldGroup) => {
+        Object.keys(this.state.policyFields).forEach(fieldGroup => {
             const field = this.state.policyFields[fieldGroup].find(obj => obj.value === fieldValue);
             if (field) fieldToAdd = field;
         });
         if (fieldToAdd.type === 'group') {
-            fieldToAdd.values.forEach((field) => {
+            fieldToAdd.values.forEach(field => {
                 this.props.formApi.setValue(field.value, '');
             });
         } else this.props.formApi.setValue(fieldToAdd.value, '');
         this.update();
-    }
+    };
 
-    removeField = (fieldValue) => {
+    removeField = fieldValue => {
         let fieldToRemove = {};
-        Object.keys(this.state.policyFields).forEach((fieldGroup) => {
+        Object.keys(this.state.policyFields).forEach(fieldGroup => {
             const field = this.state.policyFields[fieldGroup].find(obj => obj.value === fieldValue);
 
             if (field) fieldToRemove = field;
         });
         if (fieldToRemove.type === 'group') {
-            fieldToRemove.values.forEach((field) => {
+            fieldToRemove.values.forEach(field => {
                 this.props.formApi.setValue(field.value, null);
             });
         } else this.props.formApi.setValue(fieldToRemove.value, null);
-    }
+    };
 
     update = (action, nextState) => {
         this.setState(PrevState => reducer(action, PrevState, nextState));
-    }
+    };
 
     renderFieldInput = (field, value) => {
-        let handleMultiSelectChange = () => { };
+        let handleMultiSelectChange = () => {};
         switch (field.type) {
             case 'text':
                 return (
@@ -542,8 +555,8 @@ class PolicyCreationForm extends Component {
                     />
                 );
             case 'multiselect':
-                handleMultiSelectChange = (newValue) => {
-                    const values = (newValue !== '') ? newValue.split(',') : [];
+                handleMultiSelectChange = newValue => {
+                    const values = newValue !== '' ? newValue.split(',') : [];
                     this.props.formApi.setValue(field.value, values);
                 };
 
@@ -568,42 +581,42 @@ class PolicyCreationForm extends Component {
                 console.error(new Error(`Unknown field type: ${field.type}`));
                 return '';
         }
-    }
+    };
 
-    renderFields = (possibleFields) => {
+    renderFields = possibleFields => {
         const formFields = Object.keys(flattenObject(this.props.formApi.values));
-        const filteredFields = possibleFields.filter((obj) => {
+        const filteredFields = possibleFields.filter(obj => {
             if (obj.type === 'group') return formFields.find(o => o.includes(obj.value));
             return formFields.indexOf(obj.value) !== -1 || obj.required === true;
         });
         if (!filteredFields.length) {
-            return (
-                <div className="p-3 text-base-500 font-500">
-                    No Fields Added
-                </div>
-            );
+            return <div className="p-3 text-base-500 font-500">No Fields Added</div>;
         }
         return (
             <div className="h-full p-3">
-                {
-                    filteredFields.map((field) => {
-                        const value = this.props.formApi.values[field.value];
-                        const removeField = (!field.required) ? this.removeField : null;
-                        return (
-                            <FormField key={field.value} label={field.label} value={field.value} onRemove={removeField}>
-                                {this.renderFieldInput(field, value)}
-                            </FormField>
-                        );
-                    })
-                }
+                {filteredFields.map(field => {
+                    const value = this.props.formApi.values[field.value];
+                    const removeField = !field.required ? this.removeField : null;
+                    return (
+                        <FormField
+                            key={field.value}
+                            label={field.label}
+                            value={field.value}
+                            onRemove={removeField}
+                        >
+                            {this.renderFieldInput(field, value)}
+                        </FormField>
+                    );
+                })}
             </div>
         );
-    }
+    };
 
-    renderFormFieldsBuilder = (possibleFields) => {
-        const formFields = Object.keys(flattenObject(this.props.formApi.values))
-            .map(d => ({ value: d }));
-        const availableFields = differenceBy(possibleFields, formFields, 'value').filter((obj) => {
+    renderFormFieldsBuilder = possibleFields => {
+        const formFields = Object.keys(flattenObject(this.props.formApi.values)).map(d => ({
+            value: d
+        }));
+        const availableFields = differenceBy(possibleFields, formFields, 'value').filter(obj => {
             if (obj.type === 'group') return !formFields.find(o => o.value.includes(obj.value));
             return !obj.required;
         });
@@ -622,24 +635,28 @@ class PolicyCreationForm extends Component {
                 </span>
             </div>
         );
-    }
+    };
 
     renderGroupedFields = () => {
         const fieldGroups = Object.keys(this.state.policyFields);
-        return fieldGroups.map((fieldGroup) => {
-            const fieldGroupName = fieldGroup.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        return fieldGroups.map(fieldGroup => {
+            const fieldGroupName = fieldGroup
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/^./, str => str.toUpperCase());
             const possibleFields = this.state.policyFields[fieldGroup];
             return (
                 <div className="px-3 py-4 bg-base-100 border-b border-base-300" key={fieldGroup}>
                     <div className="bg-white border border-base-200 shadow">
-                        <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">{fieldGroupName}</div>
+                        <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">
+                            {fieldGroupName}
+                        </div>
                         {this.renderFields(possibleFields)}
                         {this.renderFormFieldsBuilder(possibleFields)}
                     </div>
                 </div>
             );
         });
-    }
+    };
 
     render() {
         return (

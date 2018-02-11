@@ -7,11 +7,14 @@ const endpoint = process.env.ROX_APOLLO_ENDPOINT || 'apollo.apollo_net:443';
 
 app.use(express.static(`${__dirname}/build`));
 
-app.use('/v1', proxy({
-    target: `https://${endpoint}`,
-    changeOrigin: true,
-    secure: false
-}));
+app.use(
+    '/v1',
+    proxy({
+        target: `https://${endpoint}`,
+        changeOrigin: true,
+        secure: false
+    })
+);
 
 // redirect all dynamically added URLs to index.html (let react app to handle 404.)
 app.get('/*', (req, res) => {
