@@ -18,7 +18,7 @@ describe('Dashboard page', () => {
 
     it('should have events by time charts', () => {
         cy
-            .get('h2:contains("Events by Time")')
+            .get('h2:contains("Active Violations by Time")')
             .next()
             .within(() => {
                 cy.get('svg.recharts-surface');

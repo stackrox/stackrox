@@ -87,7 +87,7 @@ enum Type {
     REMOVED = 1;
 }
 
-message Event {
+message AlertEvent {
     int64 time        = 1;
     Type type         = 2;
     string id         = 3;
@@ -95,7 +95,7 @@ message Event {
 }
 
 message GetAlertTimeseriesResponse {
-    repeated Event events = 1;
+    repeated AlertEvent alert_events = 1;
 }
 
 service AlertService {

@@ -170,13 +170,13 @@ func (s *AlertService) getMapOfAlertCounts(alerts []*v1.Alert, groupByFunc func(
 	return
 }
 
-func getEventsFromAlerts(alerts []*v1.Alert) (events []*v1.Event) {
+func getEventsFromAlerts(alerts []*v1.Alert) (events []*v1.AlertEvent) {
 	// Optimization: The final size is guaranteed to be at least len(alerts)
-	events = make([]*v1.Event, 0, len(alerts))
+	events = make([]*v1.AlertEvent, 0, len(alerts))
 	for _, a := range alerts {
-		events = append(events, &v1.Event{Time: a.GetTime().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_CREATED, Severity: a.GetPolicy().GetSeverity()})
+		events = append(events, &v1.AlertEvent{Time: a.GetTime().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_CREATED, Severity: a.GetPolicy().GetSeverity()})
 		if a.GetStale() {
-			events = append(events, &v1.Event{Time: a.GetMarkedStale().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_REMOVED, Severity: a.GetPolicy().GetSeverity()})
+			events = append(events, &v1.AlertEvent{Time: a.GetMarkedStale().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_REMOVED, Severity: a.GetPolicy().GetSeverity()})
 		}
 	}
 	sort.SliceStable(events, func(i, j int) bool { return events[i].GetTime() < events[j].GetTime() })
@@ -190,7 +190,7 @@ func (s *AlertService) GetAlertTimeseries(ctx context.Context, req *v1.GetAlerts
 		return nil, err
 	}
 	response := new(v1.GetAlertTimeseriesResponse)
-	response.Events = getEventsFromAlerts(alerts)
+	response.AlertEvents = getEventsFromAlerts(alerts)
 	return response, nil
 }
 

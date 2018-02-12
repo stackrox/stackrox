@@ -321,11 +321,11 @@ func verifyAlertTimeseries(t *testing.T, service v1.AlertServiceClient) {
 	timeseries, err := service.GetAlertTimeseries(ctx, &alertRequestOptions)
 	require.NoError(t, err)
 
-	assert.True(t, len(timeseries.GetEvents()) >= 3)
+	assert.True(t, len(timeseries.GetAlertEvents()) >= 3)
 
 	numCreatedEvents := 0
 
-	for _, e := range timeseries.GetEvents() {
+	for _, e := range timeseries.GetAlertEvents() {
 		if e.Type == v1.Type_CREATED {
 			numCreatedEvents++
 		}

@@ -540,7 +540,7 @@ func TestGenerateTimeseries(t *testing.T) {
 			},
 		},
 	}
-	expectedEvents := []*v1.Event{
+	expectedEvents := []*v1.AlertEvent{
 		{
 			Time: 1000,
 			Id:   "id1",

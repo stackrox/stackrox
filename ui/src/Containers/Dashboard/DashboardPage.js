@@ -53,8 +53,8 @@ const reducer = (action, prevState, nextState) => {
             return { violatonsByPolicyCategory: nextState.violatonsByPolicyCategory };
         case 'UPDATE_VIOLATIONS_BY_CLUSTERS':
             return { violationsByCluster: nextState.violationsByCluster };
-        case 'UPDATE_EVENTS_BY_TIME':
-            return { eventsByTime: nextState.eventsByTime };
+        case 'UPDATE_ALERTS_BY_TIME':
+            return { alertsByTime: nextState.alertsByTime };
         case 'UPDATE_BENCHMARKS':
             return { benchmarks: nextState.benchmarks };
         default:
@@ -78,14 +78,14 @@ class DashboardPage extends Component {
             violatonsByPolicyCategory: [],
             violationsByCluster: [],
             benchmarks: {},
-            eventsByTime: []
+            alertsByTime: []
         };
     }
 
     componentDidMount() {
         this.getViolationsByPolicyCategory();
         this.getViolationsByCluster();
-        this.getEventsByTime();
+        this.getAlertsByTime();
         this.getBenchmarks();
     }
 
@@ -117,13 +117,13 @@ class DashboardPage extends Component {
                 console.error(error);
             });
 
-    getEventsByTime = () =>
+    getAlertsByTime = () =>
         axios
             .get('/v1/alerts/timeseries')
             .then(response => {
-                const eventsByTime = response.data.events;
-                if (!eventsByTime) return;
-                this.update('UPDATE_EVENTS_BY_TIME', { eventsByTime });
+                const alertsByTime = response.data.alertEvents;
+                if (!alertsByTime) return;
+                this.update('UPDATE_ALERTS_BY_TIME', { alertsByTime });
             })
             .catch(error => {
                 console.error(error);
@@ -181,32 +181,56 @@ class DashboardPage extends Component {
         this.setState(prevState => reducer(action, prevState, nextState));
     };
 
-    renderEventsByTime = () => {
-        if (!this.state.eventsByTime) return '';
-        const timeEventMap = {};
+    renderAlertsByTime = () => {
+        if (!this.state.alertsByTime) return '';
+        const timeAlertMap = {};
+        const xAxisBuckets = [];
         for (let i = 6; i >= 0; i -= 1) {
-            timeEventMap[format(subDays(new Date(), i), 'MMM DD')] = 0;
+            const key = format(subDays(new Date(), i), 'MMM DD');
+            timeAlertMap[key] = 0;
+            xAxisBuckets.push(key);
         }
-        this.state.eventsByTime.forEach(event => {
-            const time = format(parseInt(event.time, 10), 'MMM DD');
-            const events = timeEventMap[time];
-            if (events !== undefined) {
-                switch (event.type) {
+        let startCount = 0;
+        this.state.alertsByTime.forEach(alert => {
+            const time = format(parseInt(alert.time, 10), 'MMM DD');
+            const alerts = timeAlertMap[time];
+            if (alerts !== undefined) {
+                switch (alert.type) {
                     case 'CREATED':
-                        timeEventMap[time] += 1;
+                        timeAlertMap[time] += 1;
                         break;
                     case 'REMOVED':
-                        timeEventMap[time] -= 1;
+                        timeAlertMap[time] -= 1;
+                        break;
+                    default:
+                        break;
+                }
+            } else {
+                switch (alert.type) {
+                    case 'CREATED':
+                        startCount += 1;
+                        break;
+                    case 'REMOVED':
+                        startCount -= 1;
                         break;
                     default:
                         break;
                 }
             }
         });
-        const data = Object.keys(timeEventMap).map(time => ({ time, events: timeEventMap[time] }));
+        let runningSum = startCount;
+        xAxisBuckets.forEach(key => {
+            const prevVal = timeAlertMap[key];
+            timeAlertMap[key] += runningSum;
+            runningSum += prevVal;
+        });
+        const data = Object.keys(timeAlertMap).map(time => ({
+            time,
+            violations: timeAlertMap[time]
+        }));
         return (
-            <CustomLineChart data={data} xAxisDataKey="time" yAxisDataKey="Events">
-                <Line type="monotone" dataKey="events" stroke="#82ca9d" />
+            <CustomLineChart data={data} xAxisDataKey="time" yAxisDataKey="">
+                <Line type="monotone" dataKey="violations" stroke="#82ca9d" />
             </CustomLineChart>
         );
     };
@@ -378,10 +402,10 @@ class DashboardPage extends Component {
                                 <div className="flex flex-col p-4 bg-white rounded-sm shadow">
                                     <h2 className="flex items-center text-lg text-base font-sans text-base-600 py-4 tracking-wide">
                                         <Icon.AlertTriangle className="h-4 w-4 mr-3" />
-                                        Events by Time
+                                        Active Violations by Time
                                     </h2>
                                     <div className="flex flex-1 m-4 h-64">
-                                        {this.renderEventsByTime()}
+                                        {this.renderAlertsByTime()}
                                     </div>
                                 </div>
                             </div>
