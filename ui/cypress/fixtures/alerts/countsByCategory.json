@@ -1,0 +1,12 @@
+{
+    "groups": [
+        {
+            "group": "CONTAINER_CONFIGURATION",
+            "counts": [{ "severity": "MEDIUM_SEVERITY", "count": "2" }]
+        },
+        { 
+            "group": "IMAGE_ASSURANCE",
+            "counts": [{ "severity": "LOW_SEVERITY", "count": "3" }]
+        }
+    ]
+}

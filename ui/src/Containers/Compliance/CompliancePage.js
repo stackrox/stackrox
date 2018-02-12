@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import BenchmarksPage from 'Containers/Compliance/BenchmarksPage';
-import retrieveBenchmarks from 'Providers/BenchmarksService';
+import { fetchBenchmarks } from 'Providers/BenchmarksService';
 
 class CompliancePage extends Component {
     constructor(props) {
@@ -18,21 +18,20 @@ class CompliancePage extends Component {
         this.getBenchmarks();
     }
 
-    getBenchmarks() {
-        retrieveBenchmarks()
-            .then(benchmarks => {
-                const benchmarkTabs = benchmarks
-                    .map(benchmark => ({
-                        benchmarkName: benchmark.name,
-                        text: benchmark.name,
-                        disabled: !benchmark.available
-                    }))
-                    .sort((a, b) => (a.disabled < b.disabled ? -1 : a.disabled > b.disabled));
-                this.setState({ benchmarkTabs });
-            })
-            .catch(error => {
-                console.error(error);
-            });
+    async getBenchmarks() {
+        try {
+            const benchmarks = await fetchBenchmarks();
+            const benchmarkTabs = benchmarks
+                .map(benchmark => ({
+                    benchmarkName: benchmark.name,
+                    text: benchmark.name,
+                    disabled: !benchmark.available
+                }))
+                .sort((a, b) => (a.disabled < b.disabled ? -1 : a.disabled > b.disabled));
+            this.setState({ benchmarkTabs });
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     render() {

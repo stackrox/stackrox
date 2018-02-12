@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import axios from 'axios';
 import emitter from 'emitter';
 import dateFns from 'date-fns';
 import { ClipLoader } from 'react-spinners';
@@ -8,6 +7,7 @@ import { ClipLoader } from 'react-spinners';
 import Table from 'Components/Table';
 import Select from 'Components/Select';
 import BenchmarksSidePanel from 'Containers/Compliance/BenchmarksSidePanel';
+import * as service from 'Providers/BenchmarksService';
 
 const reducer = (action, prevState, nextState) => {
     switch (action) {
@@ -68,13 +68,9 @@ class BenchmarksPage extends Component {
 
     onTriggerScan = () => {
         this.update('START_SCANNING');
-        const url = `/v1/benchmarks/triggers/${this.props.benchmarkName}`;
-        axios
-            .post(url, {})
-            .then(() => {})
-            .catch(() => {
-                this.update('STOP_SCANNING');
-            });
+        service.triggerScan(this.props.benchmarkName).catch(() => {
+            this.update('STOP_SCANNING');
+        });
     };
 
     onRowClick = row => {
@@ -102,53 +98,33 @@ class BenchmarksPage extends Component {
         this.updateSchedule();
     };
 
-    getBenchmarks = () =>
-        axios.get(`/v1/benchmarks/scans?benchmark=${this.props.benchmarkName}`).then(response => {
-            const { data } = response;
-            if (data.scanMetadata.length === 0) return;
-            const lastScan = data.scanMetadata[0];
-            const scanTime = dateFns.format(lastScan.time, 'MM/DD/YYYY h:mm:ss A');
-            axios
-                .get(`/v1/benchmarks/scans/${lastScan.scanId}`)
-                .then(resp => {
-                    const { checks } = resp.data;
-                    if (scanTime !== this.state.lastScanned) {
-                        this.update('UPDATE_BENCHMARKS', {
-                            benchmarks: checks,
-                            lastScanned: scanTime
-                        });
-                    }
-                })
-                .catch(error => {
-                    if (error.response && error.response.status === 404) {
-                        // ignore 404 since it's ok for benchmark schedule to not exist
-                        return null;
-                    }
-                    return Promise.reject(error);
-                })
-                .catch(error => {
-                    console.error(error);
-                });
-        });
+    async getBenchmarks() {
+        try {
+            const lastScan = await service.fetchLastScan(this.props.benchmarkName);
+            if (!lastScan) return;
 
-    retrieveSchedule() {
-        return axios
-            .get(`/v1/benchmarks/schedules/${this.props.benchmarkName}`)
-            .then(response => {
-                const schedule = response.data;
-                schedule.active = true;
-                this.update('UPDATE_SCHEDULE', { schedule });
-            })
-            .catch(error => {
-                if (error.response && error.response.status === 404) {
-                    // ignore 404 since it's ok for benchmark schedule to not exist
-                    return null;
-                }
-                return Promise.reject(error);
-            })
-            .catch(error => {
-                console.error(error);
-            });
+            const scanTime = dateFns.format(lastScan.metadata.time, 'MM/DD/YYYY h:mm:ss A');
+            const { checks } = lastScan.data;
+            if (scanTime !== this.state.lastScanned) {
+                this.update('UPDATE_BENCHMARKS', {
+                    benchmarks: checks,
+                    lastScanned: scanTime
+                });
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async retrieveSchedule() {
+        try {
+            const schedule = await service.fetchSchedule(this.props.benchmarkName);
+            if (!schedule) return;
+            schedule.active = true;
+            this.update('UPDATE_SCHEDULE', { schedule });
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     pollBenchmarks = () => {
@@ -157,23 +133,28 @@ class BenchmarksPage extends Component {
         });
     };
 
-    removeSchedule() {
-        const { schedule } = this.state;
-        schedule.active = false;
-        this.update('UPDATE_SCHEDULE', { schedule });
-        return axios.delete(`/v1/benchmarks/schedules/${this.props.benchmarkName}`);
+    async removeSchedule() {
+        try {
+            const schedule = { ...this.state.schedule, active: false };
+            this.update('UPDATE_SCHEDULE', { schedule });
+            await service.deleteSchedule(this.props.benchmarkName);
+        } catch (error) {
+            console.error(error);
+        }
     }
 
-    updateSchedule() {
+    async updateSchedule() {
         if (this.state.schedule.hour === '' || this.state.schedule.day === '') return;
-
-        if (this.state.schedule.active) {
-            axios.put(`/v1/benchmarks/schedules/${this.props.benchmarkName}`, this.state.schedule);
-        } else {
-            const { schedule } = this.state;
-            schedule.active = true;
-            this.update('UPDATE_SCHEDULE', { schedule });
-            axios.post('/v1/benchmarks/schedules', this.state.schedule);
+        try {
+            if (this.state.schedule.active) {
+                await service.updateSchedule(this.props.benchmarkName, this.state.schedule);
+            } else {
+                const schedule = { ...this.state.schedule, active: true };
+                this.update('UPDATE_SCHEDULE', { schedule });
+                await service.createSchedule(schedule);
+            }
+        } catch (error) {
+            console.error(error);
         }
     }
 

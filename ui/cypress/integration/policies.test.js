@@ -1,6 +1,8 @@
+import { url as policiesUrl, selectors } from './pages/PoliciesPage';
+
 describe('Policies page', () => {
     beforeEach(() => {
-        cy.visit('/main/policies');
+        cy.visit(policiesUrl);
     });
 
     it('should have selected item in nav bar', () => {
@@ -9,9 +11,9 @@ describe('Policies page', () => {
 
     it('should allow updating policy name', () => {
         const updatePolicyName = typeStr => {
-            cy.get('button:contains("Edit Policy")').click();
+            cy.get(selectors.editPolicyButton).click();
             cy.get('form input:first').type(typeStr);
-            cy.get('button:contains("Save Policy")').click();
+            cy.get(selectors.savePolicyButton).click();
         };
         const secretSuffix = ':secretSuffix:';
         const deleteSuffix = '{backspace}'.repeat(secretSuffix.length);

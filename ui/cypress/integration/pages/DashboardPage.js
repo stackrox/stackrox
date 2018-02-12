@@ -1,0 +1,27 @@
+export const url = '/main/dashboard';
+
+const severityColors = {
+    CRITICAL_SEVERITY: 'hsl(7, 100%, 55%)',
+    HIGH_SEVERITY: 'hsl(349, 100%, 78%)',
+    MEDIUM_SEVERITY: 'hsl(20, 100%, 78%)',
+    LOW_SEVERITY: 'hsl(42, 100%, 84%)'
+};
+
+export const selectors = {
+    navLink: 'nav li:contains("Dashboard") a',
+    sectionHeaders: {
+        environmentRisk: 'h2:contains("Environment Risk")',
+        benchmarks: 'h2:contains("Benchmarks")',
+        violationsByClusters: 'h2:contains("Violations by Cluster")',
+        eventsByTime: 'h2:contains("Active Violations by Time")',
+        containerConfiguration: 'h2:contains("Container Configuration")'
+    },
+    chart: {
+        xAxis: 'g.xAxis',
+        grid: 'g.recharts-cartesian-grid',
+        medSeverityBar: `g.recharts-bar-rectangle path[fill="${severityColors.MEDIUM_SEVERITY}"]`,
+        lowSeverityBar: `g.recharts-bar-rectangle path[fill="${severityColors.LOW_SEVERITY}"]`,
+        medSeveritySector: `g.recharts-pie-sector path[fill="${severityColors.MEDIUM_SEVERITY}"]`,
+        legendItem: `span.recharts-legend-item-text`
+    }
+};

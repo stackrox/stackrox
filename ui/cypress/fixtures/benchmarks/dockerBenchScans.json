@@ -1,0 +1,12 @@
+{
+    "scanMetadata": [
+        {
+            "scanId": "dockerBenchScan1",
+            "benchmark": "CIS Docker v1.1.0 Benchmark",
+            "clusterIds": [],
+            "checks": [],
+            "time": "2018-02-11T06:53:44.400097886Z",
+            "reason": "TRIGGERED"
+        }
+    ]
+}

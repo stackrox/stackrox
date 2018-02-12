@@ -20,7 +20,8 @@ import TwoLevelPieChart from 'Components/visuals/TwoLevelPieChart';
 import CustomLineChart from 'Components/visuals/CustomLineChart';
 import DashboardBenchmarks from 'Containers/Dashboard/DashboardBenchmarks';
 import SeverityTile from 'Containers/Dashboard/SeverityTile';
-import retrieveBenchmarks from 'Providers/BenchmarksService';
+import { fetchBenchmarks, fetchLastScan } from 'Providers/BenchmarksService';
+import fetchClusters from 'Providers/ClustersService';
 
 import { severityLabels } from 'messages/common';
 
@@ -57,6 +58,8 @@ const reducer = (action, prevState, nextState) => {
             return { alertsByTime: nextState.alertsByTime };
         case 'UPDATE_BENCHMARKS':
             return { benchmarks: nextState.benchmarks };
+        case 'UPDATE_CLUSTERS':
+            return { clustersByName: nextState.clustersByName };
         default:
             return prevState;
     }
@@ -78,7 +81,8 @@ class DashboardPage extends Component {
             violatonsByPolicyCategory: [],
             violationsByCluster: [],
             benchmarks: {},
-            alertsByTime: []
+            alertsByTime: [],
+            clustersByName: {}
         };
     }
 
@@ -87,6 +91,7 @@ class DashboardPage extends Component {
         this.getViolationsByCluster();
         this.getAlertsByTime();
         this.getBenchmarks();
+        this.getClusters();
     }
 
     getViolationsByPolicyCategory = () =>
@@ -129,52 +134,44 @@ class DashboardPage extends Component {
                 console.error(error);
             });
 
-    getBenchmarks = () => {
-        const baseUrl = '/v1/benchmarks/scans';
-        const promise = new Promise((resolve, reject) => {
-            const benchmarkPromises = [];
-            const benchmarkNames = [];
-            retrieveBenchmarks()
-                .then(vals => {
-                    vals.forEach(benchmark => {
-                        benchmarkNames.push(benchmark.name);
-                        benchmarkPromises.push(axios.get(`${baseUrl}?benchmark=${benchmark.name}`));
-                    });
+    async getBenchmarks() {
+        try {
+            const allBenchmarks = await fetchBenchmarks();
+            const lastScans = await Promise.all(
+                allBenchmarks.filter(b => b.available).map(b => fetchLastScan(b.name))
+            );
+            const benchmarks = lastScans.reduce(
+                (result, scan) =>
+                    scan ? { ...result, [scan.metadata.benchmark]: [scan.data] } : result,
+                {}
+            );
+            this.update('UPDATE_BENCHMARKS', { benchmarks });
+        } catch (error) {
+            console.error(error);
+        }
+    }
 
-                    Promise.all(benchmarkPromises).then(benchmarkValues => {
-                        const promises = [];
-                        benchmarkValues.forEach(benchmarkValue => {
-                            if (
-                                benchmarkValue.data.scanMetadata &&
-                                benchmarkValue.data.scanMetadata.length
-                            ) {
-                                promises.push(
-                                    axios.get(
-                                        `${baseUrl}/${benchmarkValue.data.scanMetadata[0].scanId}`
-                                    )
-                                );
-                            }
-                        });
+    async getClusters() {
+        try {
+            const clusters = await fetchClusters();
+            const clustersByName = clusters.reduce(
+                (result, cluster) => ({
+                    ...result,
+                    [cluster.name]: cluster
+                }),
+                {}
+            );
+            this.update('UPDATE_CLUSTERS', { clustersByName });
+        } catch (error) {
+            console.error(error);
+        }
+    }
 
-                        Promise.all(promises).then(values => {
-                            const { benchmarks } = this.state;
-                            values.forEach((value, i) => {
-                                benchmarks[benchmarkNames[i]] = [value.data];
-                            });
-                            this.update('UPDATE_BENCHMARKS', { benchmarks });
-                            resolve(values);
-                        });
-                    });
-                })
-                .catch(error => {
-                    reject(error);
-                });
-        });
-        return promise;
-    };
-
-    makeBarClickHandler = (cluster, severity) => () => {
-        this.props.history.push(`/main/violations?severity=${severity}&cluster=${cluster}`);
+    makeBarClickHandler = (clusterName, severity) => () => {
+        const cluster = this.state.clustersByName[clusterName];
+        // if clusters are not loaded yet, at least we can redirect to unfiltered violations
+        const clusterQuery = cluster ? `cluster=${cluster.id}` : '';
+        this.props.history.push(`/main/violations?severity=${severity}&${clusterQuery}`);
     };
 
     update = (action, nextState) => {

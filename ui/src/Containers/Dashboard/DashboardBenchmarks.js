@@ -48,7 +48,7 @@ class DashboardBenchmarks extends Component {
                 <div className="pb-3 flex w-full" key={benchmarkName}>
                     <Link
                         className="text-sm text-primary-500 tracking-wide underline w-1/3 text-left"
-                        to="/compliance"
+                        to="/main/compliance"
                     >
                         {benchmarkName}
                     </Link>
