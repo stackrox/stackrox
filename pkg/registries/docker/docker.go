@@ -65,6 +65,10 @@ func (n nilClient) Repositories() ([]string, error) {
 }
 
 func newRegistry(protoRegistry *v1.Registry) (*dockerRegistry, error) {
+	if protoRegistry.GetImageRegistry() == "" {
+		return nil, errors.New("Image registry must be specified")
+	}
+
 	username, hasUsername := protoRegistry.Config["username"]
 	password, hasPassword := protoRegistry.Config["password"]
 
@@ -220,7 +224,7 @@ func (d *dockerRegistry) Test() error {
 
 // Match decides if the image is contained within this registry
 func (d *dockerRegistry) Match(image *v1.Image) bool {
-	return d.protoRegistry.Remote == image.Registry
+	return d.protoRegistry.GetImageRegistry() == image.GetRegistry()
 }
 
 func (d *dockerRegistry) Global() bool {
@@ -228,8 +232,10 @@ func (d *dockerRegistry) Global() bool {
 }
 
 func init() {
-	registries.Registry["docker"] = func(registry *v1.Registry) (registries.ImageRegistry, error) {
+	f := func(registry *v1.Registry) (registries.ImageRegistry, error) {
 		reg, err := newRegistry(registry)
 		return reg, err
 	}
+	registries.Registry["docker"] = f
+	registries.Registry["quay"] = f
 }

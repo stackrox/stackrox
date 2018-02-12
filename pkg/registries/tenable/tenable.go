@@ -113,7 +113,7 @@ func (d *tenableRegistry) Test() error {
 
 // Match decides if the image is contained within this registry
 func (d *tenableRegistry) Match(image *v1.Image) bool {
-	return remote == image.Registry
+	return remote == image.GetRegistry()
 }
 
 func (d *tenableRegistry) Global() bool {

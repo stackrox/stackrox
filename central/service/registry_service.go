@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/errorHelpers"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
@@ -86,8 +87,31 @@ func (s *RegistryService) GetRegistries(ctx context.Context, request *v1.GetRegi
 	return &v1.GetRegistriesResponse{Registries: registries}, nil
 }
 
+func validateRegistry(reg *v1.Registry) error {
+	var errs []string
+	if reg.GetName() == "" {
+		errs = append(errs, "Registry name must be defined")
+	}
+	if reg.GetType() == "" {
+		errs = append(errs, "Registry type must be defined")
+	}
+	if reg.GetEndpoint() == "" {
+		errs = append(errs, "Registry endpoint must be defined")
+	}
+	if reg.GetImageRegistry() == "" {
+		errs = append(errs, "Registry image registry must be defined")
+	}
+	if len(errs) > 0 {
+		return errorHelpers.FormatErrorStrings("Validation", errs)
+	}
+	return nil
+}
+
 // PutRegistry updates a registry in the system
 func (s *RegistryService) PutRegistry(ctx context.Context, request *v1.Registry) (*empty.Empty, error) {
+	if err := validateRegistry(request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 	// creates and validates the configuration
 	registry, err := registries.CreateRegistry(request)
 	if err != nil {
@@ -102,6 +126,9 @@ func (s *RegistryService) PutRegistry(ctx context.Context, request *v1.Registry)
 
 // PostRegistry inserts a new registry into the system if it doesn't already exist
 func (s *RegistryService) PostRegistry(ctx context.Context, request *v1.Registry) (*v1.Registry, error) {
+	if err := validateRegistry(request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new registry")
 	}

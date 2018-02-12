@@ -12,7 +12,9 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"bitbucket.org/stack-rox/apollo/pkg/set"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
+	"github.com/deckarep/golang-set"
 	dockerRegistry "github.com/heroku/docker-registry-client/registry"
 )
 
@@ -34,6 +36,7 @@ type quay struct {
 	reg *dockerRegistry.Registry
 
 	protoScanner *v1.Scanner
+	registrySet  mapset.Set
 }
 
 func newScanner(protoScanner *v1.Scanner) (*quay, error) {
@@ -59,6 +62,7 @@ func newScanner(protoScanner *v1.Scanner) (*quay, error) {
 		oauthToken: oauthToken,
 
 		protoScanner: protoScanner,
+		registrySet:  set.NewSetFromStringSlice(protoScanner.GetRegistries()),
 	}
 	return scanner, nil
 }
@@ -137,7 +141,7 @@ func (q *quay) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 
 // Match decides if the image is contained within this scanner
 func (q *quay) Match(image *v1.Image) bool {
-	return q.protoScanner.GetRemote() == image.GetRegistry()
+	return q.registrySet.Cardinality() == 0 || q.registrySet.Contains(image.GetRegistry())
 }
 
 func (q *quay) Global() bool {

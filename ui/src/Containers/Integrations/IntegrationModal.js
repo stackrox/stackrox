@@ -3,6 +3,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
 import { Form, Text, Select } from 'react-form';
 import { withRouter } from 'react-router-dom';
+import MultiSelect from 'react-select';
 import axios from 'axios';
 import * as Icon from 'react-feather';
 
@@ -160,10 +161,11 @@ const sourceMap = {
                 placeholder: 'https://cloud.tenable.com'
             },
             {
-                label: 'Remote Endpoint',
-                key: 'remote',
-                type: 'text',
-                placeholder: 'registry.cloud.tenable.com'
+                label: 'Image Registries',
+                key: 'registries',
+                type: 'multiselect',
+                options: [],
+                placeholder: 'registry.cloud.tenable.com (default: all)'
             },
             {
                 label: 'Access Key',
@@ -192,22 +194,71 @@ const sourceMap = {
                 placeholder: 'example-dtr.rox.systems'
             },
             {
-                label: 'Remote Endpoint',
-                key: 'remote',
-                type: 'text',
-                placeholder: 'example-dtr.rox.systems'
+                label: 'Image Registries',
+                key: 'registries',
+                type: 'multiselect',
+                options: [],
+                placeholder: 'example-dtr.rox.systems (default: all)'
             },
             {
-                label: 'Docker Username',
+                label: 'Username',
                 key: 'config.username',
                 type: 'text',
                 placeholder: ''
             },
             {
-                label: 'Docker Password',
+                label: 'Password',
                 key: 'config.password',
                 type: 'password',
                 placeholder: ''
+            }
+        ],
+        quay: [
+            {
+                label: 'Integration Name',
+                key: 'name',
+                type: 'text',
+                placeholder: 'Quay Scanner'
+            },
+            {
+                label: 'Scanner Endpoint',
+                key: 'endpoint',
+                type: 'text',
+                placeholder: 'quay.io'
+            },
+            {
+                label: 'Image Registries',
+                key: 'registries',
+                type: 'multiselect',
+                options: [],
+                placeholder: 'quay.io (default: all)'
+            },
+            {
+                label: 'OAuth Token',
+                key: 'config.oauthToken',
+                type: 'text',
+                placeholder: ''
+            }
+        ],
+        clair: [
+            {
+                label: 'Integration Name',
+                key: 'name',
+                type: 'text',
+                placeholder: 'Clair Scanner'
+            },
+            {
+                label: 'Scanner Endpoint',
+                key: 'endpoint',
+                type: 'text',
+                placeholder: 'https://clair.example.com'
+            },
+            {
+                label: 'Image Registries',
+                key: 'registries',
+                type: 'multiselect',
+                options: [],
+                placeholder: '(default: all)'
             }
         ]
     },
@@ -220,14 +271,14 @@ const sourceMap = {
                 placeholder: 'Docker Registry'
             },
             {
-                label: 'Scanner Endpoint',
+                label: 'Registry Endpoint',
                 key: 'endpoint',
                 type: 'text',
                 placeholder: 'registry-1.docker.io'
             },
             {
-                label: 'Remote Endpoint',
-                key: 'remote',
+                label: 'Image Registry',
+                key: 'imageRegistry',
                 type: 'text',
                 placeholder: 'docker.io'
             },
@@ -252,14 +303,14 @@ const sourceMap = {
                 placeholder: 'Tenable Registry'
             },
             {
-                label: 'Scanner Endpoint',
+                label: 'Registry Endpoint',
                 key: 'endpoint',
                 type: 'text',
                 placeholder: 'registry.cloud.tenable.com'
             },
             {
-                label: 'Remote Endpoint',
-                key: 'remote',
+                label: 'Image Registry',
+                key: 'imageRegistry',
                 type: 'text',
                 placeholder: 'registry.cloud.tenable.com'
             },
@@ -284,14 +335,14 @@ const sourceMap = {
                 placeholder: 'DTR Registry'
             },
             {
-                label: 'Scanner Endpoint',
+                label: 'Registry Endpoint',
                 key: 'endpoint',
                 type: 'text',
                 placeholder: 'example-dtr.rox.systems'
             },
             {
-                label: 'Remote Endpoint',
-                key: 'remote',
+                label: 'Image Registry',
+                key: 'imageRegistry',
                 type: 'text',
                 placeholder: 'example-dtr.rox.systems'
             },
@@ -303,6 +354,38 @@ const sourceMap = {
             },
             {
                 label: 'Docker Password',
+                key: 'config.password',
+                type: 'password',
+                placeholder: ''
+            }
+        ],
+        quay: [
+            {
+                label: 'Integration Name',
+                key: 'name',
+                type: 'text',
+                placeholder: 'Quay Registry'
+            },
+            {
+                label: 'Registry Endpoint',
+                key: 'endpoint',
+                type: 'text',
+                placeholder: 'quay.io'
+            },
+            {
+                label: 'Image Registry',
+                key: 'imageRegistry',
+                type: 'text',
+                placeholder: 'quay.io'
+            },
+            {
+                label: 'Username',
+                key: 'config.username',
+                type: 'text',
+                placeholder: '$oauthtoken'
+            },
+            {
+                label: 'Password',
                 key: 'config.password',
                 type: 'password',
                 placeholder: ''
@@ -482,6 +565,10 @@ class IntegrationModal extends Component {
     };
 
     renderField = field => {
+        const handleMultiSelectChange = () => newValue => {
+            const values = newValue !== '' ? newValue.split(',') : [];
+            this.formApi.setValue(field.key, values);
+        };
         switch (field.type) {
             case 'text':
                 return (
@@ -511,6 +598,20 @@ class IntegrationModal extends Component {
                         options={field.options}
                         placeholder={field.placeholder}
                         className="border rounded w-full p-3 border-base-300"
+                    />
+                );
+            case 'multiselect':
+                return (
+                    <MultiSelect.Creatable
+                        key={field.key}
+                        multi
+                        onChange={handleMultiSelectChange()}
+                        options={field.options}
+                        placeholder={field.placeholder}
+                        removeSelected
+                        simpleValue
+                        value={this.formApi.values[field.key]}
+                        className="text-base-600 font-400 w-full"
                     />
                 );
             default:

@@ -47,8 +47,8 @@ func (suite *ClairIntegrationSuite) TestGetLastScan() {
 
 	creator := registries.Registry["docker"]
 	s, err := creator(&v1.Registry{
-		Endpoint: "registry-1.docker.io",
-		Remote:   "docker.io",
+		Endpoint:      "registry-1.docker.io",
+		ImageRegistry: "docker.io",
 		Config: map[string]string{
 			"username": "",
 			"password": "",

@@ -13,6 +13,8 @@ import kubernetes from 'images/kubernetes.svg';
 import slack from 'images/slack.svg';
 import tenable from 'images/tenable.svg';
 import email from 'images/email.svg';
+import quay from 'images/quay.svg';
+import clair from 'images/clair.svg';
 
 const dataSources = {
     authProviders: [
@@ -37,6 +39,13 @@ const dataSources = {
             type: 'tenable',
             source: 'registries',
             image: tenable,
+            disabled: false
+        },
+        {
+            label: 'Quay Registry',
+            type: 'quay',
+            source: 'registries',
+            image: quay,
             disabled: false
         }
     ],
@@ -73,6 +82,20 @@ const dataSources = {
             type: 'tenable',
             source: 'scanners',
             image: tenable,
+            disabled: false
+        },
+        {
+            label: 'Quay',
+            type: 'quay',
+            source: 'scanners',
+            image: quay,
+            disabled: false
+        },
+        {
+            label: 'Clair',
+            type: 'clair',
+            source: 'scanners',
+            image: clair,
             disabled: false
         }
     ],

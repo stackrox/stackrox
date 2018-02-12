@@ -13,8 +13,10 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"bitbucket.org/stack-rox/apollo/pkg/set"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 	clairV1 "github.com/coreos/clair/api/v1"
+	"github.com/deckarep/golang-set"
 )
 
 const (
@@ -30,6 +32,7 @@ type clair struct {
 	client       *http.Client
 	endpoint     string
 	protoScanner *v1.Scanner
+	registrySet  mapset.Set
 }
 
 func newScanner(protoScanner *v1.Scanner) (*clair, error) {
@@ -44,6 +47,7 @@ func newScanner(protoScanner *v1.Scanner) (*clair, error) {
 		client:       client,
 		endpoint:     endpoint,
 		protoScanner: protoScanner,
+		registrySet:  set.NewSetFromStringSlice(protoScanner.GetRegistries()),
 	}
 	return scanner, nil
 }
@@ -165,7 +169,7 @@ func (c *clair) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 
 // Match decides if the image is contained within this scanner
 func (c *clair) Match(image *v1.Image) bool {
-	return true
+	return c.registrySet.Cardinality() == 0 || c.registrySet.Contains(image.GetRegistry())
 }
 
 func (c *clair) Global() bool {

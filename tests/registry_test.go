@@ -22,10 +22,10 @@ const (
 
 var (
 	dockerRegistry = &v1.Registry{
-		Name:     "public dockerhub",
-		Type:     "docker",
-		Endpoint: "registry-1.docker.io",
-		Remote:   "docker.io",
+		Name:          "public dockerhub",
+		Type:          "docker",
+		Endpoint:      "registry-1.docker.io",
+		ImageRegistry: "docker.io",
 	}
 )
 

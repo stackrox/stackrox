@@ -25,8 +25,8 @@ type QuayIntegrationSuite struct {
 
 func (suite *QuayIntegrationSuite) SetupSuite() {
 	protoScanner := &v1.Scanner{
-		Endpoint: "quay.io",
-		Remote:   "quay.io",
+		Endpoint:   "quay.io",
+		Registries: []string{"quay.io"},
 		Config: map[string]string{
 			"oauthToken": testOauthToken,
 		},

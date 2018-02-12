@@ -34,29 +34,44 @@ const tableColumnDescriptor = Object.freeze({
         tenable: [
             { key: 'name', label: 'Name' },
             { key: 'endpoint', label: 'Scanner Endpoint' },
-            { key: 'remote', label: 'Remote Endpoint' }
+            { key: 'registries', label: 'Registries', keyValueFunc: obj => obj.join(', ') }
         ],
         dtr: [
             { key: 'name', label: 'Name' },
             { key: 'endpoint', label: 'Scanner Endpoint' },
-            { key: 'remote', label: 'Remote Endpoint' }
+            { key: 'registries', label: 'Registries', keyValueFunc: obj => obj.join(', ') }
+        ],
+        quay: [
+            { key: 'name', label: 'Name' },
+            { key: 'endpoint', label: 'Scanner Endpoint' },
+            { key: 'registries', label: 'Registries', keyValueFunc: obj => obj.join(', ') }
+        ],
+        clair: [
+            { key: 'name', label: 'Name' },
+            { key: 'endpoint', label: 'Scanner Endpoint' },
+            { key: 'registries', label: 'Registries', keyValueFunc: obj => obj.join(', ') }
         ]
     },
     registries: {
         docker: [
             { key: 'name', label: 'Name' },
-            { key: 'endpoint', label: 'Scanner Endpoint' },
-            { key: 'remote', label: 'Remote Endpoint' }
+            { key: 'endpoint', label: 'Registry Endpoint' },
+            { key: 'imageRegistry', label: 'Image Registry' }
         ],
         tenable: [
             { key: 'name', label: 'Name' },
-            { key: 'endpoint', label: 'Scanner Endpoint' },
-            { key: 'remote', label: 'Remote Endpoint' }
+            { key: 'endpoint', label: 'Registry Endpoint' },
+            { key: 'imageRegistry', label: 'Image Registry' }
         ],
         dtr: [
             { key: 'name', label: 'Name' },
-            { key: 'endpoint', label: 'Scanner Endpoint' },
-            { key: 'remote', label: 'Remote Endpoint' }
+            { key: 'endpoint', label: 'Registry Endpoint' },
+            { key: 'imageRegistries', label: 'Image Registry' }
+        ],
+        quay: [
+            { key: 'name', label: 'Name' },
+            { key: 'endpoint', label: 'Registry Endpoint' },
+            { key: 'imageRegistry', label: 'Image Registry' }
         ]
     }
 });

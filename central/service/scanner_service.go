@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/errorHelpers"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
@@ -85,8 +86,28 @@ func (s *ScannerService) GetScanners(ctx context.Context, request *v1.GetScanner
 	return &v1.GetScannersResponse{Scanners: scanners}, nil
 }
 
+func validateScanner(scanner *v1.Scanner) error {
+	var errs []string
+	if scanner.GetName() == "" {
+		errs = append(errs, "Scanner name must be defined")
+	}
+	if scanner.GetType() == "" {
+		errs = append(errs, "Scanner type must be defined")
+	}
+	if scanner.GetEndpoint() == "" {
+		errs = append(errs, "Scanner endpoint must be defined")
+	}
+	if len(errs) > 0 {
+		return errorHelpers.FormatErrorStrings("Validation", errs)
+	}
+	return nil
+}
+
 // PostScanner inserts a new Scanner into the system
 func (s *ScannerService) PostScanner(ctx context.Context, request *v1.Scanner) (*v1.Scanner, error) {
+	if err := validateScanner(request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new scanner")
 	}
@@ -105,6 +126,9 @@ func (s *ScannerService) PostScanner(ctx context.Context, request *v1.Scanner) (
 
 // PutScanner updates a scanner in the system
 func (s *ScannerService) PutScanner(ctx context.Context, request *v1.Scanner) (*empty.Empty, error) {
+	if err := validateScanner(request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 	scanner, err := scanners.CreateScanner(request)
 	if err != nil {
 		return nil, err

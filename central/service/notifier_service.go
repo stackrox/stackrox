@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/notifications"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/errorHelpers"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
 	"bitbucket.org/stack-rox/apollo/pkg/secrets"
@@ -84,8 +85,28 @@ func (s *NotifierService) GetNotifiers(ctx context.Context, request *v1.GetNotif
 	return &v1.GetNotifiersResponse{Notifiers: notifiers}, nil
 }
 
+func validateNotifier(notifier *v1.Notifier) error {
+	var errs []string
+	if notifier.GetName() == "" {
+		errs = append(errs, "Notifier name must be defined")
+	}
+	if notifier.GetType() == "" {
+		errs = append(errs, "Notifier type must be defined")
+	}
+	if notifier.GetUiEndpoint() == "" {
+		errs = append(errs, "Notifier UI endpoint must be defined")
+	}
+	if len(errs) > 0 {
+		return errorHelpers.FormatErrorStrings("Validation", errs)
+	}
+	return nil
+}
+
 // PutNotifier updates a notifier in the system
 func (s *NotifierService) PutNotifier(ctx context.Context, request *v1.Notifier) (*empty.Empty, error) {
+	if err := validateNotifier(request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 	notifierCreator, ok := notifiers.Registry[request.Type]
 	if !ok {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("Notifier type %v is not a valid notifier type", request.Type))
@@ -103,6 +124,9 @@ func (s *NotifierService) PutNotifier(ctx context.Context, request *v1.Notifier)
 
 // PostNotifier inserts a new registry into the system if it doesn't already exist
 func (s *NotifierService) PostNotifier(ctx context.Context, request *v1.Notifier) (*v1.Notifier, error) {
+	if err := validateNotifier(request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new notifier")
 	}

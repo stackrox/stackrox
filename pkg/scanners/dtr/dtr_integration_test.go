@@ -64,7 +64,7 @@ func (suite *DTRIntegrationSuite) TestGetScans() {
 	scans, err := suite.GetScans(image)
 	suite.Nil(err)
 	suite.NotEmpty(scans)
-	suite.NotEmpty(scans[0].Layers)
+	suite.NotEmpty(scans[0].Components)
 }
 
 func (suite *DTRIntegrationSuite) TestGetLastScan() {
@@ -76,7 +76,7 @@ func (suite *DTRIntegrationSuite) TestGetLastScan() {
 	scan, err := suite.GetLastScan(image)
 	suite.Nil(err)
 	suite.NotNil(scan)
-	suite.NotEmpty(scan.Layers)
+	suite.NotEmpty(scan.Components)
 }
 
 func (suite *DTRIntegrationSuite) TestScan() {

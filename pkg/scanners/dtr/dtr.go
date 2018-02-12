@@ -12,7 +12,9 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"bitbucket.org/stack-rox/apollo/pkg/set"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
+	"github.com/deckarep/golang-set"
 )
 
 const (
@@ -33,6 +35,7 @@ type dtr struct {
 	password string
 
 	protoScanner *v1.Scanner
+	registrySet  mapset.Set
 
 	metadata *scannerMetadata
 	features *metadataFeatures
@@ -52,7 +55,7 @@ func newScanner(protoScanner *v1.Scanner) (*dtr, error) {
 	}
 	// Trim any trailing slashes as the expectation will be that the input is in the form
 	// https://12.12.12.12:8080 or https://dtr.com
-	endpoint, err := urlfmt.FormatURL(protoScanner.Endpoint, true, false)
+	endpoint, err := urlfmt.FormatURL(protoScanner.GetEndpoint(), true, false)
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +66,7 @@ func newScanner(protoScanner *v1.Scanner) (*dtr, error) {
 		password:       password,
 		metadataTicker: time.NewTicker(metadataRefreshInterval),
 		protoScanner:   protoScanner,
+		registrySet:    set.NewSetFromStringSlice(protoScanner.GetRegistries()),
 	}
 
 	if err := scanner.fetchMetadata(); err != nil {
@@ -213,7 +217,7 @@ func (d *dtr) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 
 // Match decides if the image is contained within this registry
 func (d *dtr) Match(image *v1.Image) bool {
-	return d.protoScanner.Remote == image.Registry
+	return d.registrySet.Cardinality() == 0 || d.registrySet.Contains(image.GetRegistry())
 }
 
 func (d *dtr) Global() bool {

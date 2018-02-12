@@ -145,7 +145,7 @@ func (d *tenable) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 
 // Match decides if the image is contained within this registry
 func (d *tenable) Match(image *v1.Image) bool {
-	return registry == image.Registry
+	return registry == image.GetRegistry()
 }
 
 func (d *tenable) Global() bool {

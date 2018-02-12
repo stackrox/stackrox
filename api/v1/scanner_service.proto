@@ -13,7 +13,7 @@ message Scanner {
     string name                 = 2;
     string type                 = 3;
     string endpoint             = 4;
-    string remote               = 5;
+    repeated string registries  = 5;
     map<string, string> config  = 6;
     // If a list of clusters is provided, the integration will only be accessed from the specified clusters' sensors.
     repeated string clusters    = 7;
