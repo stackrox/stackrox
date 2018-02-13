@@ -90,15 +90,34 @@ func teardownAlpineDeployment(t *testing.T) {
 }
 
 func verifyNoMetadata(t *testing.T, conn *grpc.ClientConn) {
-	verifyMetadata(t, conn, false)
+	if assertion := verifyMetadata(t, conn, func(metadata *v1.ImageMetadata) bool { return metadata == nil }); !assertion {
+		t.Error("image metadata is not nil")
+	}
 }
 
 func verifyMetadataPopulated(t *testing.T, conn *grpc.ClientConn) {
-	verifyMetadata(t, conn, true)
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	timer := time.NewTimer(time.Minute)
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if verifyMetadata(t, conn, func(metadata *v1.ImageMetadata) bool { return metadata != nil }) {
+				return
+			}
+		case <-timer.C:
+			t.Error("image metadata not populated after 1 minute")
+		}
+	}
 }
 
-func verifyMetadata(t *testing.T, conn *grpc.ClientConn, metadata bool) {
-	verifyImageMetadata(t, conn, metadata)
+func verifyMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.ImageMetadata) bool) bool {
+	if assertion := verifyImageMetadata(t, conn, assertFunc); !assertion {
+		return false
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
@@ -112,10 +131,8 @@ func verifyMetadata(t *testing.T, conn *grpc.ClientConn, metadata bool) {
 		require.NotEmpty(t, d.GetContainers())
 		c := d.GetContainers()[0]
 
-		if metadata {
-			assert.NotNil(t, c.GetImage().GetMetadata())
-		} else {
-			assert.Nil(t, c.GetImage().GetMetadata())
+		if assertion := assertFunc(c.GetImage().GetMetadata()); !assertion {
+			return false
 		}
 	}
 
@@ -130,15 +147,15 @@ func verifyMetadata(t *testing.T, conn *grpc.ClientConn, metadata bool) {
 		require.NotEmpty(t, a.GetDeployment().GetContainers())
 		c := a.GetDeployment().GetContainers()[0]
 
-		if metadata {
-			assert.NotNil(t, c.GetImage().GetMetadata())
-		} else {
-			assert.Nil(t, c.GetImage().GetMetadata())
+		if assertion := assertFunc(c.GetImage().GetMetadata()); !assertion {
+			return false
 		}
 	}
+
+	return true
 }
 
-func verifyImageMetadata(t *testing.T, conn *grpc.ClientConn, metadata bool) {
+func verifyImageMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.ImageMetadata) bool) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
@@ -151,17 +168,15 @@ func verifyImageMetadata(t *testing.T, conn *grpc.ClientConn, metadata bool) {
 		image, err := imageService.GetImage(ctx, &v1.ResourceByID{Id: alpineImageSha})
 		if err != nil && ctx.Err() == context.DeadlineExceeded {
 			t.Error(err)
-			return
+			return false
 		}
 
 		if err == nil && image != nil {
-			if metadata && image.GetMetadata() != nil {
-				return
-			} else if !metadata && image.GetMetadata() == nil {
-				return
-			}
+			return assertFunc(image.GetMetadata())
 		}
 	}
+
+	return false
 }
 
 func verifyCreateRegistry(t *testing.T, conn *grpc.ClientConn) {

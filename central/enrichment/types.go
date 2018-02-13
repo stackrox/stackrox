@@ -104,7 +104,7 @@ func (e *Enricher) enrichImage(image *v1.Image) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if updatedMetadata || updatedScan {
+	if image.GetSha() != "" && (updatedMetadata || updatedScan) {
 		// Store image in the database
 		return true, e.storage.UpdateImage(image)
 	}
