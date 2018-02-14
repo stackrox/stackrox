@@ -123,8 +123,10 @@ func TestGetMetadata(t *testing.T) {
 	}
 
 	image := v1.Image{
-		Remote: "library/nginx",
-		Tag:    "1.10",
+		Name: &v1.ImageName{
+			Remote: "library/nginx",
+			Tag:    "1.10",
+		},
 	}
 	metadata, err := dockerHubClient.Metadata(&image)
 	require.Nil(t, err)

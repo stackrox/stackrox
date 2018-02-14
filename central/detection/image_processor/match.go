@@ -180,13 +180,13 @@ func (policy *compiledImagePolicy) matchImageName(image *v1.Image) (violations [
 		return
 	}
 	policyExists = true
-	if policy.ImageNamePolicy.Registry != nil && !policy.ImageNamePolicy.Registry.MatchString(image.Registry) {
+	if policy.ImageNamePolicy.Registry != nil && !policy.ImageNamePolicy.Registry.MatchString(image.GetName().GetRegistry()) {
 		return
 	}
-	remoteSplit := strings.Split(image.Remote, "/")
+	remoteSplit := strings.Split(image.GetName().GetRemote(), "/")
 	if len(remoteSplit) < 2 {
 		// This really should never happen because image populates with defaults in the form of namespace/repo
-		log.Errorf("'%v' must be of the format namespace/repo", image.Remote)
+		log.Errorf("'%v' must be of the format namespace/repo", image.GetName().GetRemote())
 		return
 	}
 	namespace := remoteSplit[0]
@@ -197,7 +197,7 @@ func (policy *compiledImagePolicy) matchImageName(image *v1.Image) (violations [
 	if policy.ImageNamePolicy.Repo != nil && !policy.ImageNamePolicy.Repo.MatchString(repo) {
 		return // return nothing if one of the regexes doesn't match. It must match all things in the image policy
 	}
-	if policy.ImageNamePolicy.Tag != nil && !policy.ImageNamePolicy.Tag.MatchString(image.Tag) {
+	if policy.ImageNamePolicy.Tag != nil && !policy.ImageNamePolicy.Tag.MatchString(image.GetName().GetTag()) {
 		return
 	}
 	violations = append(violations, &v1.Alert_Violation{

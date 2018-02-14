@@ -15,9 +15,9 @@ import (
 func hasNecessaryAuth(images []*v1.Image) (authenticated bool) {
 	registrySet := mapset.NewSet()
 	for _, image := range images {
-		if image.GetRegistry() != registry.IndexName {
-			registrySet.Add(image.GetRegistry())
-		} else if !strings.HasPrefix(image.GetRemote(), "library") {
+		if image.GetName().GetRegistry() != registry.IndexName {
+			registrySet.Add(image.GetName().GetRegistry())
+		} else if !strings.HasPrefix(image.GetName().GetRemote(), "library") {
 			registrySet.Add(registry.DefaultV2Registry.Host)
 		}
 	}

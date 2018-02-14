@@ -41,8 +41,10 @@ func (suite *ClairIntegrationSuite) TestScanTest() {
 
 func (suite *ClairIntegrationSuite) TestGetLastScan() {
 	image := &v1.Image{
-		Remote: "library/nginx",
-		Tag:    "1.13",
+		Name: &v1.ImageName{
+			Remote: "library/nginx",
+			Tag:    "1.13",
+		},
 	}
 
 	creator := registries.Registry["docker"]

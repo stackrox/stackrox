@@ -81,7 +81,7 @@ func (e *Enricher) enrichImageWithScanner(image *v1.Image, scanner scannerTypes.
 		return false, nil
 	}
 
-	if image.GetSha() == "" {
+	if image.GetName().GetSha() == "" {
 		if _, err := e.enrichWithMetadata(image); err != nil {
 			return false, err
 		}

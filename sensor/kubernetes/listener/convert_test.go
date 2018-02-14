@@ -200,9 +200,11 @@ func TestConvert(t *testing.T) {
 								},
 							},
 							Image: &pkgV1.Image{
-								Registry: "docker.io",
-								Remote:   "stackrox/kafka",
-								Tag:      "latest",
+								Name: &pkgV1.ImageName{
+									Registry: "docker.io",
+									Remote:   "stackrox/kafka",
+									Tag:      "latest",
+								},
 							},
 							Ports: []*pkgV1.PortConfig{
 								{
@@ -249,10 +251,12 @@ func TestConvert(t *testing.T) {
 								Uid: 0,
 							},
 							Image: &pkgV1.Image{
-								Registry: "docker.io",
-								Remote:   "stackrox/policy-engine",
-								Tag:      "1.3",
-								Sha:      "6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
+								Name: &pkgV1.ImageName{
+									Registry: "docker.io",
+									Remote:   "stackrox/policy-engine",
+									Tag:      "1.3",
+									Sha:      "6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
+								},
 							},
 							SecurityContext: &pkgV1.SecurityContext{
 								Privileged:      true,

@@ -94,10 +94,12 @@ func GetAlert() *v1.Alert {
 			Containers: []*v1.Container{
 				{
 					Image: &v1.Image{
-						Sha:      "SHA",
-						Registry: "docker.io",
-						Remote:   "library/nginx",
-						Tag:      "latest",
+						Name: &v1.ImageName{
+							Sha:      "SHA",
+							Registry: "docker.io",
+							Remote:   "library/nginx",
+							Tag:      "latest",
+						},
 					},
 				},
 			},

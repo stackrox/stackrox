@@ -119,9 +119,11 @@ func (suite *TenableSuite) TestTestFunction() {
 
 func (suite *TenableSuite) TestGetLastScan() {
 	image := &v1.Image{
-		Registry: "",
-		Remote:   "docker/nginx",
-		Tag:      "1.10",
+		Name: &v1.ImageName{
+			Registry: "",
+			Remote:   "docker/nginx",
+			Tag:      "1.10",
+		},
 	}
 	scan, err := suite.scanner.GetLastScan(image)
 	suite.NoError(err)

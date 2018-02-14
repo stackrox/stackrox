@@ -108,9 +108,11 @@ func (suite *QuaySuite) TestScanTest() {
 
 func (suite *QuaySuite) TestGetLastScan() {
 	image := &v1.Image{
-		Registry: "quay.io",
-		Remote:   "integration/nginx",
-		Tag:      "1.10",
+		Name: &v1.ImageName{
+			Registry: "quay.io",
+			Remote:   "integration/nginx",
+			Tag:      "1.10",
+		},
 	}
 	scan, err := suite.scanner.GetLastScan(image)
 	suite.NoError(err)

@@ -148,10 +148,10 @@ func (d *dtr) getStatus() (*scannerMetadata, *metadataFeatures, error) {
 
 // GetScan takes in an id and returns the image scan for that id if applicable
 func (d *dtr) GetScans(image *v1.Image) ([]*v1.ImageScan, error) {
-	if image == nil || image.GetRemote() == "" || image.GetTag() == "" {
+	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}
-	getScanURL := fmt.Sprintf("/api/v0/imagescan/repositories/%v/%v?detailed=true", image.GetRemote(), image.GetTag())
+	getScanURL := fmt.Sprintf("/api/v0/imagescan/repositories/%v/%v?detailed=true", image.GetName().GetRemote(), image.GetName().GetTag())
 	body, err := d.sendRequest("GET", getScanURL)
 	if err != nil {
 		return nil, err
@@ -179,7 +179,7 @@ func (d *dtr) GetScans(image *v1.Image) ([]*v1.ImageScan, error) {
 //GET /api/v0/imagescan/repositories/{namespace}/{reponame}/{tag}?detailed=true
 // Scan initiates a scan of the passed id
 func (d *dtr) Scan(image *v1.Image) error {
-	_, err := d.sendRequest("POST", fmt.Sprintf("/api/v0/imagescan/scan/%v/%v/linux/amd64", image.Remote, image.Tag))
+	_, err := d.sendRequest("POST", fmt.Sprintf("/api/v0/imagescan/scan/%v/%v/linux/amd64", image.GetName().GetRemote(), image.GetName().GetTag()))
 	if err != nil {
 		return err
 	}
@@ -217,7 +217,7 @@ func (d *dtr) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 
 // Match decides if the image is contained within this registry
 func (d *dtr) Match(image *v1.Image) bool {
-	return d.registrySet.Cardinality() == 0 || d.registrySet.Contains(image.GetRegistry())
+	return d.registrySet.Cardinality() == 0 || d.registrySet.Contains(image.GetName().GetRegistry())
 }
 
 func (d *dtr) Global() bool {

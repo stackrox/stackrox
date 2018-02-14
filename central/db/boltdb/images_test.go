@@ -32,15 +32,19 @@ func (suite *BoltImagesTestSuite) TeardownSuite() {
 
 func (suite *BoltImagesTestSuite) TestImages() {
 	image1 := &v1.Image{
-		Sha:      "sha1",
-		Registry: "docker.io",
+		Name: &v1.ImageName{
+			Sha:      "sha1",
+			Registry: "docker.io",
+		},
 	}
 	err := suite.AddImage(image1)
 	suite.Nil(err)
 
 	image2 := &v1.Image{
-		Sha:      "sha2",
-		Registry: "stackrox.io",
+		Name: &v1.ImageName{
+			Sha:      "sha2",
+			Registry: "stackrox.io",
+		},
 	}
 	err = suite.AddImage(image2)
 	suite.Nil(err)
@@ -49,14 +53,14 @@ func (suite *BoltImagesTestSuite) TestImages() {
 	suite.Nil(err)
 	suite.Equal([]*v1.Image{image1, image2}, images)
 
-	image1.Registry = "stackrox.io"
+	image1.Name.Registry = "stackrox.io"
 	err = suite.UpdateImage(image1)
 	suite.Nil(err)
 	images, err = suite.GetImages(&v1.GetImagesRequest{})
 	suite.Nil(err)
 	suite.Equal([]*v1.Image{image1, image2}, images)
 
-	err = suite.RemoveImage(image1.Sha)
+	err = suite.RemoveImage(image1.GetName().GetSha())
 	suite.Nil(err)
 	images, err = suite.GetImages(&v1.GetImagesRequest{})
 	suite.Nil(err)

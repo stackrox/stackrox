@@ -107,21 +107,21 @@ func (d *tenable) ProtoScanner() *v1.Scanner {
 }
 
 func (d *tenable) populateSHA(image *v1.Image) error {
-	manifest, err := d.reg.ManifestV2(image.GetRemote(), image.GetTag())
+	manifest, err := d.reg.ManifestV2(image.GetName().GetRemote(), image.GetName().GetTag())
 	if err != nil {
 		return err
 	}
-	image.Sha = manifest.Config.Digest.String()
+	image.Name.Sha = manifest.Config.Digest.String()
 	return nil
 }
 
 // GetLastScan retrieves the most recent scan
 func (d *tenable) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
-	if image == nil || image.GetRemote() == "" || image.GetTag() == "" {
+	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}
 	// If SHA is empty, then retrieve it from the Tenable registry
-	if image.GetSha() == "" {
+	if image.GetName().GetSha() == "" {
 		if err := d.populateSHA(image); err != nil {
 			return nil, fmt.Errorf("unable to retrieve SHA for image %v due to: %+v", images.Wrapper{Image: image}.String(), err)
 		}
@@ -145,7 +145,7 @@ func (d *tenable) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 
 // Match decides if the image is contained within this registry
 func (d *tenable) Match(image *v1.Image) bool {
-	return registry == image.GetRegistry()
+	return registry == image.GetName().GetRegistry()
 }
 
 func (d *tenable) Global() bool {

@@ -10,17 +10,19 @@ import (
 
 // GenerateImageFromString generates an image type from a common string format
 func GenerateImageFromString(imageStr string) *v1.Image {
-	var image v1.Image
+	image := v1.Image{
+		Name: &v1.ImageName{},
+	}
 
 	// Check if its a sha and return if it is
 	if strings.HasPrefix(imageStr, "sha256:") {
-		image.Sha = strings.TrimPrefix(imageStr, "sha256:")
+		image.Name.Sha = strings.TrimPrefix(imageStr, "sha256:")
 		return &image
 	}
 
 	// Cut off @sha256:
 	if idx := strings.Index(imageStr, "@sha256:"); idx != -1 {
-		image.Sha = imageStr[idx+len("@sha256:"):]
+		image.Name.Sha = imageStr[idx+len("@sha256:"):]
 		imageStr = imageStr[:idx]
 	}
 
@@ -33,9 +35,9 @@ func GenerateImageFromString(imageStr string) *v1.Image {
 	if ok {
 		tag = namedTagged.Tag()
 	}
-	image.Remote = reference.Path(named)
-	image.Tag = tag
-	image.Registry = reference.Domain(named)
+	image.Name.Remote = reference.Path(named)
+	image.Name.Tag = tag
+	image.Name.Registry = reference.Domain(named)
 	return &image
 }
 
@@ -82,25 +84,25 @@ type Wrapper struct {
 }
 
 func (i Wrapper) String() string {
-	return fmt.Sprintf("%v/%v:%v", i.Registry, i.Remote, i.Tag)
+	return fmt.Sprintf("%v/%v:%v", i.GetName().GetRegistry(), i.GetName().GetRemote(), i.GetName().GetTag())
 }
 
 // GetSHA returns the trimmed sha of the image
 func (i Wrapper) GetSHA() string {
-	return strings.TrimPrefix(i.Sha, "sha256:")
+	return strings.TrimPrefix(i.GetName().GetSha(), "sha256:")
 }
 
 // GetPrefixedSHA returns the SHA prefixed with sha256:
 func (i Wrapper) GetPrefixedSHA() string {
-	if strings.HasPrefix(i.Sha, "sha256:") {
-		return i.Sha
+	if strings.HasPrefix(i.GetName().GetSha(), "sha256:") {
+		return i.GetName().GetSha()
 	}
-	return "sha256:" + i.Sha
+	return "sha256:" + i.GetName().GetSha()
 }
 
 // ShortID returns the SHA truncated to 12 characters.
 func (i Wrapper) ShortID() string {
-	sha := strings.TrimPrefix(i.Sha, "sha256:")
+	sha := strings.TrimPrefix(i.GetName().GetSha(), "sha256:")
 
 	if len(sha) <= 12 {
 		return sha

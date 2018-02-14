@@ -78,7 +78,7 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 	}
 
 	for _, i := range images.FromContainers(d.GetContainers()).Images() {
-		if i.GetSha() == "" {
+		if i.GetName().GetSha() == "" {
 			log.Debugf("Skipping persistence of image without sha: %+v", i)
 			continue
 		}

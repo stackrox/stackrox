@@ -100,21 +100,21 @@ func (q *quay) ProtoScanner() *v1.Scanner {
 }
 
 func (q *quay) populateSHA(image *v1.Image) error {
-	manifest, err := q.reg.ManifestV2(image.GetRemote(), image.GetTag())
+	manifest, err := q.reg.ManifestV2(image.GetName().GetRemote(), image.GetName().GetTag())
 	if err != nil {
 		return err
 	}
-	image.Sha = manifest.Config.Digest.String()
+	image.Name.Sha = manifest.Config.Digest.String()
 	return nil
 }
 
 // GetLastScan retrieves the most recent scan
 func (q *quay) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
-	if image == nil || image.GetRemote() == "" || image.GetTag() == "" {
+	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}
 	// If SHA is empty, then retrieve it from the Quay registry
-	if image.GetSha() == "" {
+	if image.GetName().GetSha() == "" {
 		if err := q.populateSHA(image); err != nil {
 			return nil, fmt.Errorf("unable to retrieve SHA for image %v due to: %+v", images.Wrapper{Image: image}.String(), err)
 		}
@@ -123,7 +123,7 @@ func (q *quay) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	values := url.Values{}
 	values.Add("features", "true")
 	values.Add("vulnerabilities", "true")
-	body, status, err := q.sendRequest("GET", values, "api", "v1", "repository", image.GetRemote(), "manifest", images.Wrapper{Image: image}.GetPrefixedSHA(), "security")
+	body, status, err := q.sendRequest("GET", values, "api", "v1", "repository", image.GetName().GetRemote(), "manifest", images.Wrapper{Image: image}.GetPrefixedSHA(), "security")
 	if err != nil {
 		return nil, err
 	} else if status != http.StatusOK {
@@ -141,7 +141,7 @@ func (q *quay) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 
 // Match decides if the image is contained within this scanner
 func (q *quay) Match(image *v1.Image) bool {
-	return q.registrySet.Cardinality() == 0 || q.registrySet.Contains(image.GetRegistry())
+	return q.registrySet.Cardinality() == 0 || q.registrySet.Contains(image.GetName().GetRegistry())
 }
 
 func (q *quay) Global() bool {

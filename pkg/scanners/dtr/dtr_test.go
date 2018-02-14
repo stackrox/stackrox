@@ -103,9 +103,11 @@ func (suite *DTRSuite) TestGetScans() {
 	d := suite.dtr.(*dtr)
 
 	image := &v1.Image{
-		Registry: "",
-		Remote:   "docker/nginx",
-		Tag:      "1.10",
+		Name: &v1.ImageName{
+			Registry: "",
+			Remote:   "docker/nginx",
+			Tag:      "1.10",
+		},
 	}
 	scans, err := d.GetScans(image)
 	suite.NoError(err)
@@ -122,9 +124,11 @@ func (suite *DTRSuite) TestGetLastScan() {
 	d := suite.dtr.(*dtr)
 
 	image := &v1.Image{
-		Registry: "",
-		Remote:   "docker/nginx",
-		Tag:      "1.10",
+		Name: &v1.ImageName{
+			Registry: "",
+			Remote:   "docker/nginx",
+			Tag:      "1.10",
+		},
 	}
 	scan, err := d.GetLastScan(image)
 	suite.NoError(err)
@@ -140,9 +144,11 @@ func (suite *DTRSuite) TestGetLastScan() {
 func (suite *DTRSuite) TestScan() {
 	d := suite.dtr.(*dtr)
 	image := &v1.Image{
-		Registry: "",
-		Remote:   "docker/nginx",
-		Tag:      "1.10",
+		Name: &v1.ImageName{
+			Registry: "",
+			Remote:   "docker/nginx",
+			Tag:      "1.10",
+		},
 	}
 	err := d.Scan(image)
 	suite.NoError(err)

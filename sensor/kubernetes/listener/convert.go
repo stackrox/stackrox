@@ -111,20 +111,20 @@ func (w *wrap) populateReplicas(spec reflect.Value) {
 func (w *wrap) populateImageShas(spec reflect.Value, lister podLister) {
 	labelSelector := w.getLabelSelector(spec)
 	pods := lister.list(labelSelector)
-	imageMap := make(map[pkgV1.Image]string)
+	imageMap := make(map[pkgV1.ImageName]string)
 
 	for _, p := range pods {
 		for _, c := range p.Status.ContainerStatuses {
 			img := images.GenerateImageFromString(c.Image)
 			if sha := images.ExtractImageSha(c.ImageID); sha != "" {
-				imageMap[*img] = sha
+				imageMap[*img.GetName()] = sha
 			}
 		}
 	}
 
 	for _, c := range w.Deployment.Containers {
-		if sha, ok := imageMap[*c.Image]; ok {
-			c.Image.Sha = sha
+		if sha, ok := imageMap[*c.Image.GetName()]; ok {
+			c.Image.Name.Sha = sha
 		}
 	}
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const dtrServer = "https://mitigate-dtr.rox.systems"
+const dtrServer = "https://apollo-dtr.rox.systems"
 const user = "srox"
 const password = "f6Ptzm3fUc0cy5HhZ2Rihqpvb5A0Atdv"
 
@@ -57,33 +57,39 @@ func (suite *DTRIntegrationSuite) TestGetStatus() {
 
 func (suite *DTRIntegrationSuite) TestGetScans() {
 	image := &v1.Image{
-		Registry: dtrServer,
-		Remote:   "srox/nginx",
-		Tag:      "1.10",
+		Name: &v1.ImageName{
+			Registry: dtrServer,
+			Remote:   "srox/nginx",
+			Tag:      "1.12",
+		},
 	}
 	scans, err := suite.GetScans(image)
 	suite.Nil(err)
 	suite.NotEmpty(scans)
-	suite.NotEmpty(scans[0].Components)
+	suite.NotEmpty(scans[0].GetComponents())
 }
 
 func (suite *DTRIntegrationSuite) TestGetLastScan() {
 	image := &v1.Image{
-		Registry: dtrServer,
-		Remote:   "srox/nginx",
-		Tag:      "1.10",
+		Name: &v1.ImageName{
+			Registry: dtrServer,
+			Remote:   "srox/nginx",
+			Tag:      "1.12",
+		},
 	}
 	scan, err := suite.GetLastScan(image)
 	suite.Nil(err)
 	suite.NotNil(scan)
-	suite.NotEmpty(scan.Components)
+	suite.NotEmpty(scan.GetComponents())
 }
 
 func (suite *DTRIntegrationSuite) TestScan() {
 	image := &v1.Image{
-		Registry: "",
-		Remote:   "srox/nginx",
-		Tag:      "1.10",
+		Name: &v1.ImageName{
+			Registry: dtrServer,
+			Remote:   "srox/nginx",
+			Tag:      "1.12",
+		},
 	}
 	err := suite.Scan(image)
 	suite.Nil(err)

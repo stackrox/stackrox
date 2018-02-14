@@ -136,19 +136,19 @@ func run(cfg config) error {
 }
 
 func runImage(image *v1.Image) error {
-	registryEndpoint := image.GetRegistry()
-	if endpoint, ok := fullyQualifiedRegistryOverride[image.GetRegistry()]; ok {
+	registryEndpoint := image.GetName().GetRegistry()
+	if endpoint, ok := fullyQualifiedRegistryOverride[image.GetName().GetRegistry()]; ok {
 		registryEndpoint = endpoint
 	}
-	registryID := image.GetRegistry()
-	if id, ok := registryOverride[image.GetRegistry()]; ok {
+	registryID := image.GetName().GetRegistry()
+	if id, ok := registryOverride[image.GetName().GetRegistry()]; ok {
 		registryID = id
 	}
 
 	auth, ok := registryAuth[registryID]
 	if !ok {
-		if image.GetRegistry() != "docker.io" {
-			return fmt.Errorf("No registry auth for '%v' found. Please docker login to %v", image.GetRegistry(), image.GetRegistry())
+		if image.GetName().GetRegistry() != "docker.io" {
+			return fmt.Errorf("No registry auth for '%v' found. Please docker login to %v", image.GetName().GetRegistry(), image.GetName().GetRegistry())
 		}
 		auth = &basicAuth{}
 	}

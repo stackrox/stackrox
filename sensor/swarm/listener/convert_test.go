@@ -112,9 +112,11 @@ func TestAsDeployment(t *testing.T) {
 							User:      "root",
 						},
 						Image: &v1.Image{
-							Registry: "docker.io",
-							Remote:   "library/nginx",
-							Tag:      "latest",
+							Name: &v1.ImageName{
+								Registry: "docker.io",
+								Remote:   "library/nginx",
+								Tag:      "latest",
+							},
 						},
 						SecurityContext: &v1.SecurityContext{
 							Selinux: &v1.SecurityContext_SELinux{

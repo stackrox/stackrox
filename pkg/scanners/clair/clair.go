@@ -135,7 +135,7 @@ func (c *clair) getLastScanFromV2Metadata(image *v1.Image) (*clairV1.LayerEnvelo
 }
 
 func (c *clair) getLastScanFromV1Metadata(image *v1.Image) (*clairV1.LayerEnvelope, bool) {
-	layerEnvelope, err := c.retrieveLayerData(image.GetSha())
+	layerEnvelope, err := c.retrieveLayerData(image.GetName().GetSha())
 	if err == nil {
 		return layerEnvelope, true
 	} else if err != errNotExists {
@@ -154,7 +154,7 @@ func (c *clair) getLastScanFromV1Metadata(image *v1.Image) (*clairV1.LayerEnvelo
 
 // GetLastScan retrieves the most recent scan
 func (c *clair) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
-	if image == nil || image.GetRemote() == "" || image.GetTag() == "" {
+	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}
 	le, found := c.getLastScanFromV2Metadata(image)
@@ -169,7 +169,7 @@ func (c *clair) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 
 // Match decides if the image is contained within this scanner
 func (c *clair) Match(image *v1.Image) bool {
-	return c.registrySet.Cardinality() == 0 || c.registrySet.Contains(image.GetRegistry())
+	return c.registrySet.Cardinality() == 0 || c.registrySet.Contains(image.GetName().GetRegistry())
 }
 
 func (c *clair) Global() bool {

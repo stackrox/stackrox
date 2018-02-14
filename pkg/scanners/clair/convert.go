@@ -8,10 +8,12 @@ import (
 
 func convertLayerToImageScan(image *v1.Image, layerEnvelope *clairV1.LayerEnvelope) *v1.ImageScan {
 	return &v1.ImageScan{
-		Sha:        image.GetSha(),
-		Registry:   image.GetRegistry(),
-		Remote:     image.GetRemote(),
-		Tag:        image.GetTag(),
+		Name: &v1.ImageName{
+			Sha:      image.GetName().GetSha(),
+			Registry: image.GetName().GetRegistry(),
+			Remote:   image.GetName().GetRemote(),
+			Tag:      image.GetName().GetTag(),
+		},
 		State:      v1.ImageScanState_COMPLETED,
 		Components: clairConv.ConvertFeatures(layerEnvelope.Layer.Features),
 	}

@@ -92,11 +92,11 @@ func (d *tenableRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 	if image == nil {
 		return nil, nil
 	}
-	manifest, err := d.client().ManifestV2(image.GetRemote(), image.GetTag())
+	manifest, err := d.client().ManifestV2(image.GetName().GetRemote(), image.GetName().GetTag())
 	if err != nil {
 		return nil, err
 	}
-	image.Sha = strings.TrimPrefix(manifest.Config.Digest.String(), "sha256:")
+	image.Name.Sha = strings.TrimPrefix(manifest.Config.Digest.String(), "sha256:")
 	return nil, nil
 }
 
@@ -113,7 +113,7 @@ func (d *tenableRegistry) Test() error {
 
 // Match decides if the image is contained within this registry
 func (d *tenableRegistry) Match(image *v1.Image) bool {
-	return remote == image.GetRegistry()
+	return remote == image.GetName().GetRegistry()
 }
 
 func (d *tenableRegistry) Global() bool {

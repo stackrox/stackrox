@@ -26,7 +26,7 @@ type clairClient struct {
 func (cc *clairClient) analyzeRemoteImage(registryURL string, image *v1.Image, layers []string, headers map[string]string) error {
 	var prevLayer string
 	for _, layer := range layers {
-		fullURL, err := urlfmt.FullyQualifiedURL(registryURL, url.Values{}, "v2", image.GetRemote(), "blobs", layer)
+		fullURL, err := urlfmt.FullyQualifiedURL(registryURL, url.Values{}, "v2", image.GetName().GetRemote(), "blobs", layer)
 		if err != nil {
 			return err
 		}

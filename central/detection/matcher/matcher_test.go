@@ -31,6 +31,7 @@ func TestMatch(t *testing.T) {
 		name          string
 		policy        *v1.Policy
 		deployment    *v1.Deployment
+		excluded      *v1.DryRunResponse_Excluded
 		numViolations int
 	}{
 		{
@@ -49,8 +50,10 @@ func TestMatch(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/health",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
 						},
 						SecurityContext: &v1.SecurityContext{
 							Privileged: false,
@@ -81,8 +84,10 @@ func TestMatch(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/health",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
 						},
 						SecurityContext: &v1.SecurityContext{
 							Privileged: false,
@@ -113,8 +118,10 @@ func TestMatch(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/health",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
 						},
 						SecurityContext: &v1.SecurityContext{
 							Privileged: false,
@@ -122,8 +129,10 @@ func TestMatch(t *testing.T) {
 					},
 					{
 						Image: &v1.Image{
-							Tag:    "1.4",
-							Remote: "stackrox/health",
+							Name: &v1.ImageName{
+								Tag:    "1.4",
+								Remote: "stackrox/health",
+							},
 						},
 						SecurityContext: &v1.SecurityContext{
 							Privileged: true,
@@ -154,8 +163,10 @@ func TestMatch(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/health",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
 						},
 						SecurityContext: &v1.SecurityContext{
 							Privileged: true,
@@ -163,8 +174,10 @@ func TestMatch(t *testing.T) {
 					},
 					{
 						Image: &v1.Image{
-							Tag:    "1.5",
-							Remote: "stackrox/zookeeper",
+							Name: &v1.ImageName{
+								Tag:    "1.5",
+								Remote: "stackrox/zookeeper",
+							},
 						},
 						SecurityContext: &v1.SecurityContext{
 							Privileged: true,
@@ -195,8 +208,10 @@ func TestMatch(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/health",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
 						},
 						SecurityContext: &v1.SecurityContext{
 							Privileged: true,
@@ -204,8 +219,10 @@ func TestMatch(t *testing.T) {
 					},
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/zookeeper",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/zookeeper",
+							},
 						},
 						SecurityContext: &v1.SecurityContext{
 							Privileged: true,
@@ -214,6 +231,144 @@ func TestMatch(t *testing.T) {
 				},
 			},
 			numViolations: 4,
+		},
+		{
+			name: "latest image tag policy with two whitelists that do not match",
+			policy: &v1.Policy{
+				Name:       "latest",
+				Severity:   v1.Severity_LOW_SEVERITY,
+				Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+				ImagePolicy: &v1.ImagePolicy{
+					ImageName: &v1.ImageNamePolicy{
+						Tag: "latest",
+					},
+				},
+				Whitelists: []*v1.Whitelist{
+					{
+						Container: &v1.Whitelist_Container{
+							ImageName: &v1.ImageName{
+								Remote: "stackrox/kafka",
+							},
+						},
+					},
+					{
+						Deployment: &v1.Whitelist_Deployment{
+							Scope: &v1.Scope{
+								Namespace: "blah",
+							},
+						},
+					},
+				},
+			},
+			deployment: &v1.Deployment{
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
+						},
+						SecurityContext: &v1.SecurityContext{
+							Privileged: false,
+						},
+					},
+				},
+			},
+			numViolations: 1,
+		},
+		{
+			name: "latest image tag policy with two whitelists (2nd matches deployment)",
+			policy: &v1.Policy{
+				Name:       "latest",
+				Severity:   v1.Severity_LOW_SEVERITY,
+				Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+				ImagePolicy: &v1.ImagePolicy{
+					ImageName: &v1.ImageNamePolicy{
+						Tag: "latest",
+					},
+				},
+				Whitelists: []*v1.Whitelist{
+					{
+						Container: &v1.Whitelist_Container{
+							ImageName: &v1.ImageName{
+								Remote: "stackrox/kafka",
+							},
+						},
+					},
+					{
+						Deployment: &v1.Whitelist_Deployment{
+							Name: "deployment1",
+						},
+					},
+				},
+			},
+			deployment: &v1.Deployment{
+				Name: "deployment1",
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
+						},
+					},
+				},
+			},
+			excluded: &v1.DryRunResponse_Excluded{
+				Deployment: "deployment1",
+				Whitelist: &v1.Whitelist{
+					Deployment: &v1.Whitelist_Deployment{
+						Name: "deployment1",
+					},
+				},
+			},
+			numViolations: 0,
+		},
+		{
+			name: "latest image tag policy with two whitelists (2nd matches container)",
+			policy: &v1.Policy{
+				Name:       "latest",
+				Severity:   v1.Severity_LOW_SEVERITY,
+				Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+				ImagePolicy: &v1.ImagePolicy{
+					ImageName: &v1.ImageNamePolicy{
+						Tag: "latest",
+					},
+				},
+				Whitelists: []*v1.Whitelist{
+					{
+						Container: &v1.Whitelist_Container{
+							ImageName: &v1.ImageName{
+								Remote: "stackrox/kafka",
+							},
+						},
+					},
+					{
+						Container: &v1.Whitelist_Container{
+							ImageName: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
+						},
+					},
+				},
+			},
+			deployment: &v1.Deployment{
+				Name: "deployment1",
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
+						},
+					},
+				},
+			},
+			numViolations: 0,
 		},
 	}
 
@@ -224,9 +379,10 @@ func TestMatch(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, p)
 
-			violations := p.Match(c.deployment)
+			violations, excluded := p.Match(c.deployment)
 
 			assert.Equal(t, c.numViolations, len(violations))
+			assert.Equal(t, c.excluded, excluded)
 		})
 	}
 }
@@ -257,8 +413,10 @@ func TestScope(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/health",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
 						},
 					},
 				},
@@ -269,7 +427,7 @@ func TestScope(t *testing.T) {
 			name: "wrong cluster",
 			policy: &Policy{
 				Policy: &v1.Policy{
-					Scope: []*v1.Policy_Scope{
+					Scope: []*v1.Scope{
 						{
 							Cluster: "clusterB",
 						},
@@ -286,8 +444,10 @@ func TestScope(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/health",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
 						},
 					},
 				},
@@ -298,7 +458,7 @@ func TestScope(t *testing.T) {
 			name: "wrong namespace",
 			policy: &Policy{
 				Policy: &v1.Policy{
-					Scope: []*v1.Policy_Scope{
+					Scope: []*v1.Scope{
 						{
 							Cluster:   "clusterA",
 							Namespace: "notanamespace",
@@ -316,8 +476,10 @@ func TestScope(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/health",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
 						},
 					},
 				},
@@ -328,11 +490,11 @@ func TestScope(t *testing.T) {
 			name: "wrong label",
 			policy: &Policy{
 				Policy: &v1.Policy{
-					Scope: []*v1.Policy_Scope{
+					Scope: []*v1.Scope{
 						{
 							Cluster:   "clusterA",
 							Namespace: "namespace",
-							Label: &v1.Policy_Scope_Label{
+							Label: &v1.Scope_Label{
 								Key:   "foo",
 								Value: "car",
 							},
@@ -350,8 +512,10 @@ func TestScope(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/health",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
 						},
 					},
 				},
@@ -362,7 +526,7 @@ func TestScope(t *testing.T) {
 			name: "match just namespace",
 			policy: &Policy{
 				Policy: &v1.Policy{
-					Scope: []*v1.Policy_Scope{
+					Scope: []*v1.Scope{
 						{
 							Namespace: "namespace",
 						},
@@ -379,8 +543,10 @@ func TestScope(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/health",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
 						},
 					},
 				},
@@ -391,11 +557,11 @@ func TestScope(t *testing.T) {
 			name: "match all",
 			policy: &Policy{
 				Policy: &v1.Policy{
-					Scope: []*v1.Policy_Scope{
+					Scope: []*v1.Scope{
 						{
 							Cluster:   "clusterA",
 							Namespace: "namespace",
-							Label: &v1.Policy_Scope_Label{
+							Label: &v1.Scope_Label{
 								Key:   "foo",
 								Value: "bar",
 							},
@@ -413,8 +579,10 @@ func TestScope(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/health",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
 						},
 					},
 				},
@@ -425,7 +593,7 @@ func TestScope(t *testing.T) {
 			name: "match one scope",
 			policy: &Policy{
 				Policy: &v1.Policy{
-					Scope: []*v1.Policy_Scope{
+					Scope: []*v1.Scope{
 						{
 							Cluster: "clusterA",
 						},
@@ -446,8 +614,10 @@ func TestScope(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/health",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
 						},
 					},
 				},
@@ -488,8 +658,10 @@ func TestGetEnforcementAction(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/director",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/director",
+							},
 						},
 					},
 				},
@@ -510,8 +682,10 @@ func TestGetEnforcementAction(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/director",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/director",
+							},
 						},
 					},
 				},
@@ -532,8 +706,10 @@ func TestGetEnforcementAction(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/director",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/director",
+							},
 						},
 					},
 				},
@@ -554,8 +730,10 @@ func TestGetEnforcementAction(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/director",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/director",
+							},
 						},
 					},
 				},
@@ -577,8 +755,10 @@ func TestGetEnforcementAction(t *testing.T) {
 				Containers: []*v1.Container{
 					{
 						Image: &v1.Image{
-							Tag:    "latest",
-							Remote: "stackrox/director",
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/director",
+							},
 						},
 					},
 				},
@@ -595,6 +775,162 @@ func TestGetEnforcementAction(t *testing.T) {
 
 			assert.Equal(t, c.expectedEnforcement, actualEnforcement)
 			assert.Equal(t, c.expectedMessage, actualMsg)
+		})
+	}
+}
+
+func TestDeploymentWhitelist(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name            string
+		expectWhitelist bool
+		deployment      *v1.Deployment
+		whitelist       *v1.Whitelist
+	}{
+		{
+			name:            "nil whitelist",
+			whitelist:       nil,
+			deployment:      nil,
+			expectWhitelist: false,
+		},
+		{
+			name: "match scope",
+			whitelist: &v1.Whitelist{
+				Deployment: &v1.Whitelist_Deployment{
+					Scope: &v1.Scope{
+						Cluster:   "clusterA",
+						Namespace: "namespace",
+						Label: &v1.Scope_Label{
+							Key:   "foo",
+							Value: "bar",
+						},
+					},
+				},
+			},
+			deployment: &v1.Deployment{
+				ClusterId: "clusterA",
+				Namespace: "namespace",
+				Labels: map[string]string{
+					"key": "value",
+					"foo": "bar",
+				},
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Name: &v1.ImageName{
+								Tag:    "latest",
+								Remote: "stackrox/health",
+							},
+						},
+					},
+				},
+			},
+			expectWhitelist: true,
+		},
+		{
+			name: "match service name",
+			whitelist: &v1.Whitelist{
+				Deployment: &v1.Whitelist_Deployment{
+					Name: "deployment1",
+				},
+			},
+			deployment: &v1.Deployment{
+				Name: "deployment1",
+			},
+			expectWhitelist: true,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			p := &Policy{}
+			assert.Equal(t, c.expectWhitelist, p.matchesDeploymentWhitelist(c.whitelist.GetDeployment(), c.deployment))
+		})
+	}
+}
+
+func TestContainerWhitelist(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name            string
+		expectWhitelist bool
+		container       *v1.Container
+		whitelist       *v1.Whitelist
+	}{
+		{
+			name:            "nil whitelist",
+			whitelist:       nil,
+			container:       nil,
+			expectWhitelist: false,
+		},
+		{
+			name: "match registry only",
+			whitelist: &v1.Whitelist{
+				Container: &v1.Whitelist_Container{
+					ImageName: &v1.ImageName{
+						Registry: "registry",
+					},
+				},
+			},
+			container: &v1.Container{
+				Image: &v1.Image{
+					Name: &v1.ImageName{
+						Registry: "registry",
+					},
+				},
+			},
+			expectWhitelist: true,
+		},
+		{
+			name: "match one, but not others",
+			whitelist: &v1.Whitelist{
+				Container: &v1.Whitelist_Container{
+					ImageName: &v1.ImageName{
+						Registry: "registry",
+						Remote:   "remote",
+					},
+				},
+			},
+			container: &v1.Container{
+				Image: &v1.Image{
+					Name: &v1.ImageName{
+						Registry: "registry1",
+						Remote:   "remote",
+					},
+				},
+			},
+			expectWhitelist: false,
+		},
+		{
+			name: "match all",
+			whitelist: &v1.Whitelist{
+				Container: &v1.Whitelist_Container{
+					ImageName: &v1.ImageName{
+						Sha:      "sha",
+						Registry: "registry",
+						Remote:   "remote",
+						Tag:      "tag",
+					},
+				},
+			},
+			container: &v1.Container{
+				Image: &v1.Image{
+					Name: &v1.ImageName{
+						Sha:      "sha",
+						Registry: "registry",
+						Remote:   "remote",
+						Tag:      "tag",
+					},
+				},
+			},
+			expectWhitelist: true,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			p := &Policy{}
+			assert.Equal(t, c.expectWhitelist, p.matchesContainerWhitelist(c.whitelist.GetContainer(), c.container))
 		})
 	}
 }

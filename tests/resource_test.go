@@ -32,9 +32,9 @@ func TestClusters(t *testing.T) {
 	assert.Equal(t, `remote`, c.GetName())
 
 	img := images.GenerateImageFromString(c.GetMitigateImage())
-	assert.Equal(t, `stackrox/mitigate`, img.GetRemote())
+	assert.Equal(t, `stackrox/mitigate`, img.GetName().GetRemote())
 	if sha, ok := os.LookupEnv(`CIRCLE_SHA1`); ok {
-		assert.Equal(t, sha, img.GetTag())
+		assert.Equal(t, sha, img.GetName().GetTag())
 	}
 
 	cByID, err := service.GetCluster(ctx, &v1.ResourceByID{Id: c.GetId()})
@@ -91,9 +91,9 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
 	require.Len(t, centralDeployment.GetContainers(), 1)
 	c := centralDeployment.GetContainers()[0]
 
-	assert.Equal(t, `stackrox/mitigate`, c.GetImage().GetRemote())
+	assert.Equal(t, `stackrox/mitigate`, c.GetImage().GetName().GetRemote())
 	if sha, ok := os.LookupEnv(`CIRCLE_SHA1`); ok {
-		assert.Equal(t, sha, c.GetImage().GetTag())
+		assert.Equal(t, sha, c.GetImage().GetName().GetTag())
 	}
 
 	require.Len(t, c.GetVolumes(), 1)
@@ -114,9 +114,9 @@ func verifySensorDeployment(t *testing.T, sensorDeployment *v1.Deployment) {
 	require.Len(t, sensorDeployment.GetContainers(), 1)
 	c := sensorDeployment.GetContainers()[0]
 
-	assert.Equal(t, `stackrox/mitigate`, c.GetImage().GetRemote())
+	assert.Equal(t, `stackrox/mitigate`, c.GetImage().GetName().GetRemote())
 	if sha, ok := os.LookupEnv(`CIRCLE_SHA1`); ok {
-		assert.Equal(t, sha, c.GetImage().GetTag())
+		assert.Equal(t, sha, c.GetImage().GetName().GetTag())
 	}
 
 	require.Len(t, c.GetVolumes(), 1)
@@ -149,7 +149,7 @@ func TestImages(t *testing.T) {
 
 	imageMap := make(map[string][]*v1.Image)
 	for _, img := range images.GetImages() {
-		imageMap[img.GetRegistry()] = append(imageMap[img.GetRegistry()], img)
+		imageMap[img.GetName().GetRegistry()] = append(imageMap[img.GetName().GetRegistry()], img)
 	}
 
 	const dockerRegistry = `docker.io`
@@ -159,11 +159,11 @@ func TestImages(t *testing.T) {
 	foundMitigateImage := false
 
 	for _, img := range imageMap[dockerRegistry] {
-		if img.GetRemote() == `stackrox/mitigate` {
+		if img.GetName().GetRemote() == `stackrox/mitigate` {
 			foundMitigateImage = true
 
 			if sha, ok := os.LookupEnv(`CIRCLE_SHA1`); ok {
-				assert.Equal(t, sha, img.GetTag())
+				assert.Equal(t, sha, img.GetName().GetTag())
 			}
 		}
 	}

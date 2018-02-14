@@ -158,7 +158,7 @@ func compareProtoTimestamps(t1, t2 *timestamp.Timestamp) bool {
 }
 
 func (d *dockerRegistry) getV2Metadata(image *v1.Image) *v1.V2Metadata {
-	metadata, err := d.client().(*registry.Registry).ManifestV2(image.GetRemote(), image.GetTag())
+	metadata, err := d.client().(*registry.Registry).ManifestV2(image.GetName().GetRemote(), image.GetName().GetTag())
 	if err != nil {
 		return nil
 	}
@@ -179,7 +179,7 @@ func (d *dockerRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 		return nil, nil
 	}
 
-	manifest, err := d.client().Manifest(image.GetRemote(), image.GetTag())
+	manifest, err := d.client().Manifest(image.GetName().GetRemote(), image.GetName().GetTag())
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (d *dockerRegistry) Test() error {
 
 // Match decides if the image is contained within this registry
 func (d *dockerRegistry) Match(image *v1.Image) bool {
-	return d.protoRegistry.GetImageRegistry() == image.GetRegistry()
+	return d.protoRegistry.GetImageRegistry() == image.GetName().GetRegistry()
 }
 
 func (d *dockerRegistry) Global() bool {

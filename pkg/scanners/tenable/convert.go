@@ -46,11 +46,12 @@ func convertScanToImageScan(image *v1.Image, s *scanResult) *v1.ImageScan {
 	}
 	components := convertNVDFindingsAndPackagesToComponents(s.Findings, s.InstalledPackages)
 	return &v1.ImageScan{
-		Sha:      s.Digest,
-		Registry: registry,
-		Remote:   image.Remote,
-
-		Tag:        s.Tag,
+		Name: &v1.ImageName{
+			Sha:      s.Digest,
+			Registry: registry,
+			Remote:   image.GetName().GetRemote(),
+			Tag:      s.Tag,
+		},
 		ScanTime:   completedAt,
 		State:      v1.ImageScanState_COMPLETED,
 		Components: components,

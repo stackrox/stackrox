@@ -51,7 +51,7 @@ func (s *deploymentStore) GetDeployments(request *v1.GetDeploymentsRequest) ([]*
 
 func (s *deploymentStore) matchImageSha(imageShaSet map[string]struct{}, containers []*v1.Container) bool {
 	for _, c := range containers {
-		if _, ok := imageShaSet[c.GetImage().GetSha()]; !ok {
+		if _, ok := imageShaSet[c.GetImage().GetName().GetSha()]; !ok {
 			return false
 		}
 	}

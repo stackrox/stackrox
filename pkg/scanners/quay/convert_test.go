@@ -11,9 +11,11 @@ import (
 
 func getTestScan() (*scanResult, *v1.ImageScan, *v1.Image) {
 	image := &v1.Image{
-		Registry: "quay.io",
-		Remote:   "integration/nginx",
-		Tag:      "1.10",
+		Name: &v1.ImageName{
+			Registry: "quay.io",
+			Remote:   "integration/nginx",
+			Tag:      "1.10",
+		},
 	}
 	quayFeatures, protoComponents := mock.GetTestFeatures()
 
@@ -28,9 +30,11 @@ func getTestScan() (*scanResult, *v1.ImageScan, *v1.Image) {
 	protoScan := &v1.ImageScan{
 		State:      v1.ImageScanState_COMPLETED,
 		Components: protoComponents,
-		Registry:   image.GetRegistry(),
-		Remote:     image.GetRemote(),
-		Tag:        image.GetTag(),
+		Name: &v1.ImageName{
+			Registry: image.GetName().GetRegistry(),
+			Remote:   image.GetName().GetRemote(),
+			Tag:      image.GetName().GetTag(),
+		},
 	}
 	return quayScan, protoScan, image
 }

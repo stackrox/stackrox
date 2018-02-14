@@ -110,7 +110,7 @@ func waitForDeployment(t *testing.T, deploymentName string) {
 		if err == nil && len(deployments.GetDeployments()) > 0 {
 			d := deployments.GetDeployments()[0]
 
-			if len(d.GetContainers()) > 0 && d.GetContainers()[0].GetImage().GetSha() != "" {
+			if len(d.GetContainers()) > 0 && d.GetContainers()[0].GetImage().GetName().GetSha() != "" {
 				return
 			}
 		}
@@ -164,7 +164,7 @@ func addPolicyClusterScope(t *testing.T, policyName string) {
 	require.Len(t, policyResp.GetPolicies(), 1)
 
 	policy := policyResp.GetPolicies()[0]
-	policy.Scope = append(policy.Scope, &v1.Policy_Scope{
+	policy.Scope = append(policy.Scope, &v1.Scope{
 		Cluster: clusterID,
 	})
 

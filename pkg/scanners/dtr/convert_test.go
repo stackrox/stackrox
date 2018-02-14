@@ -147,9 +147,11 @@ func TestConvertTagScanSummariesToImageScans(t *testing.T) {
 	protoTime, _ := ptypes.TimestampProto(time.Unix(0, 1000))
 	expectedScans := []*v1.ImageScan{
 		{
-			Registry:   "registry",
-			Remote:     "docker/nginx",
-			Tag:        "latest",
+			Name: &v1.ImageName{
+				Registry: "registry",
+				Remote:   "docker/nginx",
+				Tag:      "latest",
+			},
 			State:      v1.ImageScanState_CHECKING,
 			Components: expectedComponents,
 			ScanTime:   protoTime,

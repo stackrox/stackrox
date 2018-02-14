@@ -141,16 +141,60 @@ func (s *PolicyService) DryRunPolicy(ctx context.Context, request *v1.Policy) (*
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	for _, deployment := range deployments {
-		alert, _ := s.detector.Detect(detection.NewTask(deployment, v1.ResourceAction_DRYRUN_RESOURCE, policy))
+		alert, _, excluded := s.detector.Detect(detection.NewTask(deployment, v1.ResourceAction_DRYRUN_RESOURCE, policy))
 		if alert != nil {
 			violations := make([]string, 0, len(alert.GetViolations()))
 			for _, v := range alert.GetViolations() {
 				violations = append(violations, v.GetMessage())
 			}
 			resp.Alerts = append(resp.GetAlerts(), &v1.DryRunResponse_Alert{Deployment: deployment.GetName(), Violations: violations})
+		} else if excluded != nil {
+			resp.Excluded = append(resp.GetExcluded(), excluded)
 		}
 	}
 	return &resp, nil
+}
+
+func (s *PolicyService) validateScope(scope *v1.Scope) error {
+	if scope.GetCluster() == "" {
+		return nil
+	}
+	_, exists, err := s.clusterStorage.GetCluster(scope.GetCluster())
+	if err != nil {
+		return fmt.Errorf("unable to get cluster id %s: %s", scope.GetCluster(), err)
+	}
+	if !exists {
+		return fmt.Errorf("Cluster %s does not exist", scope.GetCluster())
+	}
+	return nil
+}
+
+func (s *PolicyService) validateWhitelist(whitelist *v1.Whitelist) error {
+	// TODO(cgorman) once we have real whitelist support in UI, add validation for whitelist name
+	if whitelist.GetContainer() == nil && whitelist.GetDeployment() == nil {
+		return errors.New("All whitelists must have some criteria to match on")
+	}
+	if whitelist.GetContainer() != nil {
+		imageName := whitelist.GetContainer().GetImageName()
+		if imageName == nil {
+			return errors.New("If container whitelist is defined, then image name must also be defined")
+		}
+		if imageName.GetSha() == "" && imageName.GetRegistry() == "" && imageName.GetRemote() == "" && imageName.GetTag() == "" {
+			return errors.New("At least one field of image name must be populated (sha, registry, remote, tag)")
+		}
+	}
+	if whitelist.GetDeployment() != nil {
+		deployment := whitelist.GetDeployment()
+		if deployment.GetScope() == nil && deployment.GetName() == "" {
+			return errors.New("At least one field of deployment whitelist must be defined")
+		}
+		if deployment.GetScope() != nil {
+			if err := s.validateScope(deployment.GetScope()); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (s *PolicyService) validatePolicy(policy *v1.Policy) (*matcher.Policy, error) {
@@ -173,16 +217,14 @@ func (s *PolicyService) validatePolicy(policy *v1.Policy) (*matcher.Policy, erro
 		}
 	}
 	for _, scope := range policy.GetScope() {
-		if scope.GetCluster() == "" {
-			continue
+		if err := s.validateScope(scope); err != nil {
+			return nil, err
 		}
+	}
 
-		_, exists, err := s.clusterStorage.GetCluster(scope.GetCluster())
-		if err != nil {
-			return nil, fmt.Errorf("unable to get cluster id %s: %s", scope.GetCluster(), err)
-		}
-		if !exists {
-			return nil, fmt.Errorf("Cluster %s does not exist", scope.GetCluster())
+	for _, whitelist := range policy.GetWhitelists() {
+		if err := s.validateWhitelist(whitelist); err != nil {
+			return nil, err
 		}
 	}
 

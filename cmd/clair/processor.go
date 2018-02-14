@@ -55,10 +55,10 @@ func (p *scanProcessor) processImage(image *v1.Image) error {
 
 func (p *scanProcessor) fetchLayers(image *v1.Image) ([]string, error) {
 	var layers []string
-	m2, err := p.dockerRegistry.ManifestV2(image.GetRemote(), image.GetTag())
+	m2, err := p.dockerRegistry.ManifestV2(image.GetName().GetRemote(), image.GetName().GetTag())
 	if err != nil || len(m2.Layers) == 0 {
 		// fall back to v1 if no v2
-		m1, err := p.dockerRegistry.Manifest(image.GetRemote(), image.GetTag())
+		m1, err := p.dockerRegistry.Manifest(image.GetName().GetRemote(), image.GetName().GetTag())
 		if err != nil {
 			return nil, err
 		}

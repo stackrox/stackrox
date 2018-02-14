@@ -36,7 +36,9 @@ func (d *Detector) processTask(task Task) (alert *v1.Alert, enforcement v1.Enfor
 		return
 	}
 
-	alert, enforcement = d.Detect(task)
+	// The third argument is if the task matched a whitelist
+	var excluded *v1.DryRunResponse_Excluded
+	alert, enforcement, excluded = d.Detect(task)
 
 	if alert != nil {
 		logger.Warnf("Alert Generated: %v with Severity %v due to policy %v", alert.Id, alert.GetPolicy().GetSeverity().String(), alert.GetPolicy().GetName())
@@ -47,6 +49,8 @@ func (d *Detector) processTask(task Task) (alert *v1.Alert, enforcement v1.Enfor
 			logger.Error(err)
 		}
 		d.notificationProcessor.ProcessAlert(alert)
+	} else if excluded != nil {
+		logger.Infof("Alert for policy '%v' on deployment '%v' was NOT generated due to whitelist '%v'", task.policy.GetName(), task.deployment.GetName(), excluded.GetWhitelist().GetName())
 	}
 
 	return

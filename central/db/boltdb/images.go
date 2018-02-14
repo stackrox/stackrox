@@ -53,18 +53,18 @@ func (b *BoltDB) GetImages(*v1.GetImagesRequest) ([]*v1.Image, error) {
 func (b *BoltDB) AddImage(image *v1.Image) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(imageBucket))
-		_, exists, err := b.getImage(image.Sha, bucket)
+		_, exists, err := b.getImage(image.GetName().GetSha(), bucket)
 		if err != nil {
 			return err
 		}
 		if exists {
-			return fmt.Errorf("Image %v cannot be added because it already exists", image.GetSha())
+			return fmt.Errorf("Image %v cannot be added because it already exists", image.GetName().GetSha())
 		}
 		bytes, err := proto.Marshal(image)
 		if err != nil {
 			return err
 		}
-		return bucket.Put([]byte(image.Sha), bytes)
+		return bucket.Put([]byte(image.GetName().GetSha()), bytes)
 	})
 }
 
@@ -76,7 +76,7 @@ func (b *BoltDB) UpdateImage(image *v1.Image) error {
 		if err != nil {
 			return err
 		}
-		return b.Put([]byte(image.Sha), bytes)
+		return b.Put([]byte(image.GetName().GetSha()), bytes)
 	})
 }
 

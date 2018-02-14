@@ -32,12 +32,12 @@ func (s serviceWrap) asDeployment(client *client.Client) *v1.Deployment {
 	image := images.GenerateImageFromString(s.Spec.TaskTemplate.ContainerSpec.Image)
 
 	retries := 0
-	for image.Sha == "" && retries <= 15 {
+	for image.GetName().GetSha() == "" && retries <= 15 {
 		time.Sleep(time.Second)
-		image.Sha = s.getSHAFromTask(client)
+		image.Name.Sha = s.getSHAFromTask(client)
 		retries++
 	}
-	if image.Sha == "" {
+	if image.GetName().GetSha() == "" {
 		log.Warnf("Couldn't find an image SHA for service %s", s.ID)
 	}
 

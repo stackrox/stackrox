@@ -40,10 +40,30 @@ func New(policy *v1.Policy) (*Policy, error) {
 	return p, nil
 }
 
+func (p *Policy) matchesContainerWhitelists(whitelists []*v1.Whitelist, container *v1.Container) bool {
+	for _, whitelist := range p.GetWhitelists() {
+		if p.matchesContainerWhitelist(whitelist.GetContainer(), container) {
+			return true
+		}
+	}
+	return false
+}
+
 // Match returns violations if deployment violates the policy.
-func (p *Policy) Match(deployment *v1.Deployment) (violations []*v1.Alert_Violation) {
+func (p *Policy) Match(deployment *v1.Deployment) (violations []*v1.Alert_Violation, excluded *v1.DryRunResponse_Excluded) {
+	for _, whitelist := range p.GetWhitelists() {
+		if p.matchesDeploymentWhitelist(whitelist.GetDeployment(), deployment) {
+			return nil, &v1.DryRunResponse_Excluded{
+				Deployment: deployment.GetName(),
+				Whitelist:  whitelist,
+			}
+		}
+	}
 	// each container is considered independently.
 	for _, c := range deployment.GetContainers() {
+		if p.matchesContainerWhitelists(p.GetWhitelists(), c) {
+			break
+		}
 		violations = append(violations, p.matchContainer(deployment, c)...)
 	}
 
@@ -84,7 +104,7 @@ func (p *Policy) ShouldProcess(deployment *v1.Deployment) bool {
 	return false
 }
 
-func (p *Policy) withinScope(scope *v1.Policy_Scope, deployment *v1.Deployment) bool {
+func (p *Policy) withinScope(scope *v1.Scope, deployment *v1.Deployment) bool {
 	if cluster := scope.GetCluster(); cluster != "" && deployment.GetClusterId() != cluster {
 		return false
 	}
@@ -115,4 +135,38 @@ func (p *Policy) GetEnforcementAction(deployment *v1.Deployment, action v1.Resou
 	}
 
 	return v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, fmt.Sprintf("Deployment %s scaled to 0 replicas in response to policy violation", deployment.GetName())
+}
+
+func (p *Policy) matchesDeploymentWhitelist(whitelist *v1.Whitelist_Deployment, deployment *v1.Deployment) bool {
+	if whitelist == nil {
+		return false
+	}
+	if whitelist.GetScope() != nil && !p.withinScope(whitelist.GetScope(), deployment) {
+		return false
+	}
+	if whitelist.GetName() != "" && whitelist.GetName() != deployment.GetName() {
+		return false
+	}
+	return true
+}
+
+func (p *Policy) matchesContainerWhitelist(whitelist *v1.Whitelist_Container, container *v1.Container) bool {
+	if whitelist == nil {
+		return false
+	}
+	whitelistName := whitelist.GetImageName()
+	containerName := container.GetImage().GetName()
+	if whitelistName.GetSha() != "" && whitelistName.GetSha() != containerName.GetSha() {
+		return false
+	}
+	if whitelistName.GetRegistry() != "" && whitelistName.GetRegistry() != containerName.GetRegistry() {
+		return false
+	}
+	if whitelistName.GetRemote() != "" && whitelistName.GetRemote() != containerName.GetRemote() {
+		return false
+	}
+	if whitelistName.GetTag() != "" && whitelistName.GetTag() != containerName.GetTag() {
+		return false
+	}
+	return true
 }
