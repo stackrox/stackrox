@@ -186,7 +186,13 @@ class ViolationsPage extends Component {
 
     renderPolicyAlertsPanel = () => {
         if (!this.state.isPanelOpen) return '';
-        return <PolicyAlertsSidePanel policy={this.state.policy} onClose={this.closePanel} />;
+        return (
+            <PolicyAlertsSidePanel
+                policy={this.state.policy}
+                onClose={this.closePanel}
+                updatePolicy={this.updatePolicy}
+            />
+        );
     };
 
     render() {

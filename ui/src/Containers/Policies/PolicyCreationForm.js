@@ -41,6 +41,11 @@ class PolicyCreationForm extends Component {
                 name: PropTypes.string.isRequired
             })
         ).isRequired,
+        deployments: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string.isRequired
+            })
+        ).isRequired,
         formApi: PropTypes.shape({
             submitForm: PropTypes.func,
             setValue: PropTypes.func,
@@ -123,7 +128,14 @@ class PolicyCreationForm extends Component {
                         value: 'scope',
                         type: 'multiselect',
                         options: [],
-                        required: false
+                        required: true
+                    },
+                    {
+                        label: 'Deployments Whitelist',
+                        value: 'deployments',
+                        type: 'multiselect',
+                        options: [],
+                        required: true
                     }
                 ],
                 imagePolicy: [
@@ -169,7 +181,7 @@ class PolicyCreationForm extends Component {
                         required: false
                     },
                     {
-                        label: 'Line Rule',
+                        label: 'Dockerfile Line',
                         value: 'imagePolicy.lineRule',
                         type: 'group',
                         values: [
@@ -405,6 +417,7 @@ class PolicyCreationForm extends Component {
         this.setFormFields();
         this.setNotifierFieldOptions();
         this.setClusterFieldOptions();
+        this.setDeploymentWhitelistOptions();
     }
 
     setNotifierFieldOptions = () => {
@@ -425,13 +438,30 @@ class PolicyCreationForm extends Component {
     setClusterFieldOptions = () => {
         const { policyFields } = this.state;
         const { clusters } = this.props;
+        const clusterOptions = clusters.map(cluster => ({
+            label: cluster.name,
+            value: cluster.id
+        }));
+
         policyFields.policyDetails = policyFields.policyDetails.map(field => {
             const newField = field;
-            if (field.value === 'scope')
-                newField.options = clusters.map(cluster => ({
-                    label: cluster.name,
-                    value: cluster.id
-                }));
+            if (field.value === 'scope') newField.options = clusterOptions;
+            return newField;
+        });
+        this.update('UPDATE_POLICY_FIELDS', { policyFields });
+    };
+
+    setDeploymentWhitelistOptions = () => {
+        const { policyFields } = this.state;
+        const { deployments } = this.props;
+        const deploymentOptions = deployments.map(deployment => ({
+            label: deployment.name,
+            value: deployment.name
+        }));
+
+        policyFields.policyDetails = policyFields.policyDetails.map(field => {
+            const newField = field;
+            if (field.value === 'deployments') newField.options = deploymentOptions;
             return newField;
         });
         this.update('UPDATE_POLICY_FIELDS', { policyFields });
@@ -439,6 +469,7 @@ class PolicyCreationForm extends Component {
 
     setFormFields = () => {
         let filteredPolicy = this.removeEmptyFields(this.props.policy);
+        filteredPolicy = this.preFormatWhitelistField(filteredPolicy);
         filteredPolicy = this.preFormatScopeField(filteredPolicy);
         this.props.formApi.setAllValues(filteredPolicy);
     };
@@ -464,10 +495,28 @@ class PolicyCreationForm extends Component {
         return newObj;
     };
 
+    preFormatWhitelistField = policy => {
+        const { whitelists } = policy;
+        if (!whitelists.length) {
+            return policy;
+        }
+        const clientPolicy = Object.assign({}, policy);
+        clientPolicy.deployments = whitelists.map(o => o.deployment.name);
+        return clientPolicy;
+    };
+
+    postFormatWhitelistField = policy => {
+        const serverPolicy = Object.assign({}, policy);
+        if (policy.deployments)
+            serverPolicy.whitelists = policy.deployments.map(o => ({ deployment: { name: o } }));
+        return serverPolicy;
+    };
+
     preSubmit = policy => {
         let newPolicy = this.removeEmptyFields(policy);
-        newPolicy = this.postFormatScopeField(newPolicy);
         newPolicy = this.setCategories(newPolicy);
+        newPolicy = this.postFormatScopeField(newPolicy);
+        newPolicy = this.postFormatWhitelistField(newPolicy);
         return newPolicy;
     };
 

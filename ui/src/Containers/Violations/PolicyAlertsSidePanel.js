@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import Modal from 'Components/Modal';
+import ReactTooltip from 'react-tooltip';
 
 import * as Icon from 'react-feather';
 
@@ -26,7 +27,8 @@ const reducer = (action, prevState, nextState) => {
 class PolicyAlertsSidePanel extends Component {
     static propTypes = {
         policy: PropTypes.shape({
-            name: PropTypes.string
+            name: PropTypes.string,
+            id: PropTypes.string
         }).isRequired,
         onClose: PropTypes.func.isRequired
     };
@@ -37,7 +39,16 @@ class PolicyAlertsSidePanel extends Component {
         this.state = {
             isModalOpen: false,
             alerts: [],
-            alert: {}
+            alert: {},
+            whiteListButton: {
+                onClick: this.whitelistDeployment,
+                text: 'Whitelist Deployment',
+                key: 'whitelist-button',
+                className:
+                    'flex py-1 px-2 rounded-sm text-danger-600 hover:text-white hover:bg-danger-400 uppercase text-center text-sm items-center ml-2 mb-2 bg-white border-2 border-danger-400',
+                tooltip:
+                    'Whitelist deployment for this policy. View whitelists in the policy editing page'
+            }
         };
     }
 
@@ -76,6 +87,31 @@ class PolicyAlertsSidePanel extends Component {
 
     update = (action, nextState) => {
         this.setState(prevState => reducer(action, prevState, nextState));
+    };
+
+    whitelistDeployment = () => {
+        const { id } = this.props.policy;
+        axios
+            .get(`/v1/policies/${id}`)
+            .then(resp => {
+                const newPolicy = resp.data;
+                newPolicy.whitelists.push({
+                    deployment: { name: this.state.alert.deployment.name }
+                });
+                axios
+                    .put(`/v1/policies/${newPolicy.id}`, newPolicy)
+                    .then(() => {
+                        this.update('CLOSE_MODAL');
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        return error;
+                    });
+            })
+            .catch(error => {
+                console.error(error);
+                return error;
+            });
     };
 
     renderModal = () => {
@@ -156,19 +192,19 @@ class PolicyAlertsSidePanel extends Component {
                                         <span className="font-bold text-primary-500">
                                             Registry:
                                         </span>{' '}
-                                        {container.image.registry}
+                                        {container.image.name.registry}
                                     </div>
                                     <div className="py-2 px-3 truncate">
                                         <span className="font-bold text-primary-500">Remote:</span>{' '}
-                                        {container.image.remote}
+                                        {container.image.name.remote}
                                     </div>
                                     <div className="py-2 px-3 truncate">
                                         <span className="font-bold text-primary-500">SHA:</span>{' '}
-                                        {container.image.sha}
+                                        {container.image.name.sha}
                                     </div>
                                     <div className="py-2 px-3 truncate">
                                         <span className="font-bold text-primary-500">Tag:</span>{' '}
-                                        {container.image.tag}
+                                        {container.image.name.tag}
                                     </div>
                                 </div>
                             ))}
@@ -178,10 +214,44 @@ class PolicyAlertsSidePanel extends Component {
                                     .map(category => categoriesLabels[category])
                                     .join(', ')}
                             </div>
+                            <div>
+                                {' '}
+                                <hr className="h-px bg-black" />
+                            </div>
+                            <div className="flex justify-center">
+                                {this.renderButton(this.state.whiteListButton)}
+                            </div>
                         </div>
                     </div>
                 </div>
             </Modal>
+        );
+    };
+
+    renderButton = button => (
+        <span key={button.text}>
+            <button
+                className={button.className}
+                onClick={button.onClick}
+                disabled={button.disabled}
+                data-tip
+                data-for={`button-${button.text}`}
+            >
+                {button.renderIcon && (
+                    <span className="flex items-center">{button.renderIcon()}</span>
+                )}
+                {button.text && <span>{button.text}</span>}
+            </button>
+            {this.renderToolTip(button)}
+        </span>
+    );
+
+    renderToolTip = button => {
+        if (!button.tooltip) return '';
+        return (
+            <ReactTooltip id={`button-${button.text}`} type="dark" effect="solid">
+                {button.tooltip}
+            </ReactTooltip>
         );
     };
 

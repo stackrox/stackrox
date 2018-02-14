@@ -16,7 +16,7 @@ const categoryGroupsMap = {
 const cvssMap = {
     mathOp: {
         MAX: 'Max score',
-        AVG: 'AVG score',
+        AVG: 'Avg score',
         MIN: 'Min score'
     },
     op: {
@@ -91,6 +91,10 @@ const fieldsMap = {
     categories: {
         label: 'Categories',
         formatValue: d => d.map(obj => categoriesLabels[obj]).join(', ')
+    },
+    whitelists: {
+        label: 'Whitelisted Deployments',
+        formatValue: d => d.map(obj => obj.deployment.name).join(', ')
     },
     imageName: {
         label: 'Image',

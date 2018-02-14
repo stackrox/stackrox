@@ -41,6 +41,7 @@ class PoliciesPage extends Component {
             policies: [],
             notifiers: [],
             clusters: [],
+            deployments: [],
             selectedPolicy: null,
             editingPolicy: null,
             addingPolicy: false
@@ -51,6 +52,7 @@ class PoliciesPage extends Component {
         this.pollImagesPolicies();
         this.retrieveNotifiers();
         this.retrieveClusters();
+        this.retrieveDeployments();
     }
 
     componentWillUnmount() {
@@ -90,6 +92,14 @@ class PoliciesPage extends Component {
             if (!response.data.clusters) return;
             const { clusters } = response.data;
             this.setState({ clusters });
+        });
+    };
+
+    retrieveDeployments = () => {
+        axios.get('/v1/deployments').then(response => {
+            if (!response.data.deployments) return;
+            const { deployments } = response.data;
+            this.setState({ deployments });
         });
     };
 
@@ -326,6 +336,7 @@ class PoliciesPage extends Component {
     renderEditPanel = () => {
         const { notifiers } = this.state;
         const { clusters } = this.state;
+        const { deployments } = this.state;
         const policy = this.state.editingPolicy;
         const hide = policy === null;
         if (hide) return '';
@@ -358,6 +369,7 @@ class PoliciesPage extends Component {
                     {formApi => (
                         <PolicyCreationForm
                             clusters={clusters}
+                            deployments={deployments}
                             notifiers={notifiers}
                             policy={policy}
                             formApi={formApi}
