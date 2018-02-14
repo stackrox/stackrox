@@ -44,7 +44,7 @@ func (b *BoltDB) GetPolicies(request *v1.GetPoliciesRequest) ([]*v1.Policy, erro
 	var policies []*v1.Policy
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))
-		b.ForEach(func(k, v []byte) error {
+		return b.ForEach(func(k, v []byte) error {
 			var policy v1.Policy
 			if err := proto.Unmarshal(v, &policy); err != nil {
 				return err
@@ -52,7 +52,6 @@ func (b *BoltDB) GetPolicies(request *v1.GetPoliciesRequest) ([]*v1.Policy, erro
 			policies = append(policies, &policy)
 			return nil
 		})
-		return nil
 	})
 	return policies, err
 }

@@ -38,7 +38,7 @@ func (b *BoltDB) GetRegistries(request *v1.GetRegistriesRequest) ([]*v1.Registry
 	var registries []*v1.Registry
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(registryBucket))
-		b.ForEach(func(k, v []byte) error {
+		return b.ForEach(func(k, v []byte) error {
 			var registry v1.Registry
 			if err := proto.Unmarshal(v, &registry); err != nil {
 				return err
@@ -46,7 +46,6 @@ func (b *BoltDB) GetRegistries(request *v1.GetRegistriesRequest) ([]*v1.Registry
 			registries = append(registries, &registry)
 			return nil
 		})
-		return nil
 	})
 	return registries, err
 }

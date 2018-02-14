@@ -38,7 +38,7 @@ func (b *BoltDB) GetNotifiers(request *v1.GetNotifiersRequest) ([]*v1.Notifier, 
 	var notifiers []*v1.Notifier
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(notifierBucket))
-		b.ForEach(func(k, v []byte) error {
+		return b.ForEach(func(k, v []byte) error {
 			var notifier v1.Notifier
 			if err := proto.Unmarshal(v, &notifier); err != nil {
 				return err
@@ -46,7 +46,6 @@ func (b *BoltDB) GetNotifiers(request *v1.GetNotifiersRequest) ([]*v1.Notifier, 
 			notifiers = append(notifiers, &notifier)
 			return nil
 		})
-		return nil
 	})
 	return notifiers, err
 }

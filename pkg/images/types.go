@@ -24,7 +24,10 @@ func GenerateImageFromString(imageStr string) *v1.Image {
 		imageStr = imageStr[:idx]
 	}
 
-	named, _ := reference.ParseNormalizedNamed(imageStr)
+	named, err := reference.ParseNormalizedNamed(imageStr)
+	if err != nil {
+		return &image
+	}
 	tag := "latest"
 	namedTagged, ok := named.(reference.NamedTagged)
 	if ok {
@@ -65,9 +68,9 @@ func (cs FromContainers) String() string {
 type SliceWrapper []*v1.Image
 
 func (s SliceWrapper) String() string {
-	var output []string
-	for _, img := range s {
-		output = append(output, Wrapper{img}.String())
+	output := make([]string, len(s))
+	for i, img := range s {
+		output[i] = Wrapper{img}.String()
 	}
 
 	return strings.Join(output, ", ")

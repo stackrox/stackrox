@@ -89,7 +89,7 @@ func (e *Enricher) Enrich(deployment *v1.Deployment) (enriched bool, err error) 
 	}
 
 	if enriched {
-		e.storage.UpdateDeployment(deployment)
+		err = e.storage.UpdateDeployment(deployment)
 	}
 
 	return

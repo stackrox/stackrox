@@ -108,7 +108,9 @@ func (b *BoltDB) initializeTables() error {
 
 // Close closes the database
 func (b *BoltDB) Close() {
-	b.DB.Close()
+	if err := b.DB.Close(); err != nil {
+		log.Errorf("unable to close bolt db: %s", err)
+	}
 }
 
 // BackupHandler writes a consistent view of the database to the HTTP response

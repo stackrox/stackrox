@@ -37,7 +37,7 @@ func (b *BoltDB) GetImages(*v1.GetImagesRequest) ([]*v1.Image, error) {
 	var images []*v1.Image
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(imageBucket))
-		b.ForEach(func(k, v []byte) error {
+		return b.ForEach(func(k, v []byte) error {
 			var image v1.Image
 			if err := proto.Unmarshal(v, &image); err != nil {
 				return err
@@ -45,7 +45,6 @@ func (b *BoltDB) GetImages(*v1.GetImagesRequest) ([]*v1.Image, error) {
 			images = append(images, &image)
 			return nil
 		})
-		return nil
 	})
 	return images, err
 }

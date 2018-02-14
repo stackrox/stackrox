@@ -91,7 +91,9 @@ func populateRegistryAuth(file string) {
 }
 
 func main() {
-	cmd().Execute()
+	if err := cmd().Execute(); err != nil {
+		log.Errorf("unable to execute: %s", err)
+	}
 }
 
 func run(cfg config) error {

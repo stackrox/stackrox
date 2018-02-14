@@ -74,7 +74,11 @@ func (cc *clairClient) analyzeLayer(path, layerName, parentLayerName string, h m
 	defer response.Body.Close()
 
 	if response.StatusCode != 201 {
-		body, _ := ioutil.ReadAll(response.Body)
+		body, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			log.Errorf("unable to read message: %s", err)
+			return fmt.Errorf("Got response %d", response.StatusCode)
+		}
 		return fmt.Errorf("Got response %d with message %s", response.StatusCode, string(body))
 	}
 	return nil

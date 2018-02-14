@@ -137,5 +137,7 @@ Output is a zip file printed to stdout.`,
 }
 
 func main() {
-	cmd().Execute()
+	if err := cmd().Execute(); err != nil {
+		logger.Errorf("unable to execute: %s", err)
+	}
 }

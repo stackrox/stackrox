@@ -39,7 +39,7 @@ func (b *BoltDB) GetAuthProviders(request *v1.GetAuthProvidersRequest) ([]*v1.Au
 	var authProviders []*v1.AuthProvider
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(authProviderBucket))
-		b.ForEach(func(k, v []byte) error {
+		return b.ForEach(func(k, v []byte) error {
 			var authProvider v1.AuthProvider
 			if err := proto.Unmarshal(v, &authProvider); err != nil {
 				return err
@@ -47,7 +47,6 @@ func (b *BoltDB) GetAuthProviders(request *v1.GetAuthProvidersRequest) ([]*v1.Au
 			authProviders = append(authProviders, &authProvider)
 			return nil
 		})
-		return nil
 	})
 	return authProviders, err
 }

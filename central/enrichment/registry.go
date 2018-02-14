@@ -44,7 +44,9 @@ func (e *Enricher) EnrichWithRegistry(deployment *v1.Deployment, registry regist
 	}
 
 	if updated {
-		e.storage.UpdateDeployment(deployment)
+		if err := e.storage.UpdateDeployment(deployment); err != nil {
+			logger.Errorf("unable to update deployment: %s", err)
+		}
 	}
 
 	return
@@ -65,7 +67,10 @@ func (e *Enricher) enrichImageWithRegistry(image *v1.Image, registry registries.
 
 	if protoconv.CompareProtoTimestamps(image.GetMetadata().GetCreated(), metadata.GetCreated()) != 0 {
 		image.Metadata = metadata
-		e.storage.UpdateImage(image)
+		if err := e.storage.UpdateImage(image); err != nil {
+			logger.Errorf("unable to update image: %s", err)
+			return false, nil
+		}
 		return true, nil
 	}
 

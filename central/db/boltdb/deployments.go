@@ -37,7 +37,7 @@ func (b *BoltDB) GetDeployments(request *v1.GetDeploymentsRequest) ([]*v1.Deploy
 	var deployments []*v1.Deployment
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(deploymentBucket))
-		b.ForEach(func(k, v []byte) error {
+		return b.ForEach(func(k, v []byte) error {
 			var deployment v1.Deployment
 			if err := proto.Unmarshal(v, &deployment); err != nil {
 				return err
@@ -45,7 +45,6 @@ func (b *BoltDB) GetDeployments(request *v1.GetDeploymentsRequest) ([]*v1.Deploy
 			deployments = append(deployments, &deployment)
 			return nil
 		})
-		return nil
 	})
 	return deployments, err
 }

@@ -57,7 +57,7 @@ func (b *BoltDB) GetClusters() ([]*v1.Cluster, error) {
 	var clusters []*v1.Cluster
 	err := b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(clusterBucket))
-		bucket.ForEach(func(k, v []byte) error {
+		return bucket.ForEach(func(k, v []byte) error {
 			var cluster v1.Cluster
 			if err := proto.Unmarshal(v, &cluster); err != nil {
 				return err
@@ -66,7 +66,6 @@ func (b *BoltDB) GetClusters() ([]*v1.Cluster, error) {
 			clusters = append(clusters, &cluster)
 			return nil
 		})
-		return nil
 	})
 	return clusters, err
 }

@@ -44,7 +44,9 @@ func (e *Enricher) EnrichWithScanner(deployment *v1.Deployment, scanner scannerT
 	}
 
 	if updated {
-		e.storage.UpdateDeployment(deployment)
+		if err := e.storage.UpdateDeployment(deployment); err != nil {
+			logger.Errorf("unable to updated deployment: %s", err)
+		}
 	}
 
 	return
@@ -92,7 +94,10 @@ func (e *Enricher) enrichImageWithScanner(image *v1.Image, scanner scannerTypes.
 	}
 	if protoconv.CompareProtoTimestamps(image.GetScan().GetScanTime(), scan.GetScanTime()) != 0 || !e.equalComponents(image.GetScan().GetComponents(), scan.GetComponents()) {
 		image.Scan = scan
-		e.storage.UpdateImage(image)
+		if err := e.storage.UpdateImage(image); err != nil {
+			logger.Errorf("unable to update image: %s", err)
+			return false, err
+		}
 		return true, nil
 	}
 

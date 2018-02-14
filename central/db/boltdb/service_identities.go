@@ -15,7 +15,7 @@ func (b *BoltDB) GetServiceIdentities() ([]*v1.ServiceIdentity, error) {
 	var serviceIdentities []*v1.ServiceIdentity
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(serviceIdentityBucket))
-		b.ForEach(func(k, v []byte) error {
+		return b.ForEach(func(k, v []byte) error {
 			var serviceIdentity v1.ServiceIdentity
 			if err := proto.Unmarshal(v, &serviceIdentity); err != nil {
 				return err
@@ -23,7 +23,6 @@ func (b *BoltDB) GetServiceIdentities() ([]*v1.ServiceIdentity, error) {
 			serviceIdentities = append(serviceIdentities, &serviceIdentity)
 			return nil
 		})
-		return nil
 	})
 	return serviceIdentities, err
 }

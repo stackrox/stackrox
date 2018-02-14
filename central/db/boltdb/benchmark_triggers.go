@@ -13,7 +13,7 @@ func (b *BoltDB) GetBenchmarkTriggers(request *v1.GetBenchmarkTriggersRequest) (
 	var triggers []*v1.BenchmarkTrigger
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(benchmarkTriggerBucket))
-		b.ForEach(func(k, v []byte) error {
+		return b.ForEach(func(k, v []byte) error {
 			var trigger v1.BenchmarkTrigger
 			if err := proto.Unmarshal(v, &trigger); err != nil {
 				return err
@@ -21,7 +21,6 @@ func (b *BoltDB) GetBenchmarkTriggers(request *v1.GetBenchmarkTriggersRequest) (
 			triggers = append(triggers, &trigger)
 			return nil
 		})
-		return nil
 	})
 	return triggers, err
 }

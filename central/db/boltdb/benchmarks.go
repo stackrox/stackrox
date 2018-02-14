@@ -37,7 +37,7 @@ func (b *BoltDB) GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*v1.Benchmar
 	var benchmarks []*v1.Benchmark
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(benchmarkBucket))
-		b.ForEach(func(k, v []byte) error {
+		return b.ForEach(func(k, v []byte) error {
 			var benchmark v1.Benchmark
 			if err := proto.Unmarshal(v, &benchmark); err != nil {
 				return err
@@ -45,7 +45,6 @@ func (b *BoltDB) GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*v1.Benchmar
 			benchmarks = append(benchmarks, &benchmark)
 			return nil
 		})
-		return nil
 	})
 	return benchmarks, err
 }

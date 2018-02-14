@@ -39,7 +39,7 @@ func (b *BoltDB) GetScanners(request *v1.GetScannersRequest) ([]*v1.Scanner, err
 	var scanners []*v1.Scanner
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(scannerBucket))
-		b.ForEach(func(k, v []byte) error {
+		return b.ForEach(func(k, v []byte) error {
 			var scanner v1.Scanner
 			if err := proto.Unmarshal(v, &scanner); err != nil {
 				return err
@@ -47,7 +47,6 @@ func (b *BoltDB) GetScanners(request *v1.GetScannersRequest) ([]*v1.Scanner, err
 			scanners = append(scanners, &scanner)
 			return nil
 		})
-		return nil
 	})
 	return scanners, err
 }

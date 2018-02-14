@@ -37,7 +37,7 @@ func (b *BoltDB) GetAlerts(*v1.GetAlertsRequest) ([]*v1.Alert, error) {
 	var alerts []*v1.Alert
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(alertBucket))
-		b.ForEach(func(k, v []byte) error {
+		return b.ForEach(func(k, v []byte) error {
 			var alert v1.Alert
 			if err := proto.Unmarshal(v, &alert); err != nil {
 				return err
@@ -45,7 +45,6 @@ func (b *BoltDB) GetAlerts(*v1.GetAlertsRequest) ([]*v1.Alert, error) {
 			alerts = append(alerts, &alert)
 			return nil
 		})
-		return nil
 	})
 	return alerts, err
 }

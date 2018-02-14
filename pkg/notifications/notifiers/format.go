@@ -175,10 +175,10 @@ func FormatBenchmark(schedule *v1.BenchmarkSchedule, scheduleLink string) (strin
 }
 
 // stringify converts a list of interfaces into a space separated string of their string representations
-func stringify(i ...interface{}) string {
-	var result []string
-	for _, in := range i {
-		result = append(result, fmt.Sprintf("%v", in))
+func stringify(inter ...interface{}) string {
+	result := make([]string, len(inter))
+	for i, in := range inter {
+		result[i] = fmt.Sprintf("%v", in)
 	}
 	return strings.Join(result, " ")
 }
