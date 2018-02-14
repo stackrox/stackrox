@@ -9,5 +9,7 @@
       "repo": "nginx",
       "tag": "1.10"
     }
-  }
+  },
+  "rationale": "This is an example of policy that you could create. nginx:1.10 has many vulnerabilities",
+  "remediation": "Migrate to the latest stable release of NGINX"
 }

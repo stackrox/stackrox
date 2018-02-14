@@ -5,5 +5,7 @@
   "categories": ["PRIVILEGES_CAPABILITIES"],
   "privilege_policy": {
     "privileged": true
-  }
+  },
+  "rationale": "Containers running as privileged represent greater post-exploitation risk by allowing an attacker to access all host devices, run a daemon in the container, etc.",
+  "remediation": "Verify that privileged capabilities are required and cannot be provided with a subset of other controls"
 }

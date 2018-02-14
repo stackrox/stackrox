@@ -79,6 +79,21 @@ class PolicyCreationForm extends Component {
                         label: 'Description',
                         value: 'description',
                         type: 'textarea',
+                        placeholder: 'What does this policy do?',
+                        required: true
+                    },
+                    {
+                        label: 'Rationale',
+                        value: 'rationale',
+                        type: 'textarea',
+                        placeholder: 'Why does this policy exist?',
+                        required: true
+                    },
+                    {
+                        label: 'Remediation',
+                        value: 'remediation',
+                        type: 'textarea',
+                        placeholder: 'What can an operator do to resolve any violations?',
                         required: true
                     },
                     {
@@ -541,6 +556,7 @@ class PolicyCreationForm extends Component {
                         field={field.value}
                         id={field.value}
                         rows="4"
+                        placeholder={field.placeholder}
                     />
                 );
             case 'select':

@@ -267,9 +267,9 @@ class PoliciesPage extends Component {
             {
                 renderIcon: row =>
                     row.disabled ? (
-                        <Icon.Power className="h-4 w-4 text-success-500" />
+                        <Icon.Power className="h-5 w-4 text-base-600" />
                     ) : (
-                        <Icon.Power className="h-4 w-4 text-base-600" />
+                        <Icon.Power className="h-5 w-4 text-success-500" />
                     ),
                 className: 'flex rounded-sm uppercase text-center text-sm items-center',
                 onClick: this.toggleEnabledDisabledPolicy

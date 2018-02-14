@@ -9,5 +9,7 @@
       "math_op": "MAX",
       "value": 7
     }
-  }
+  },
+  "rationale": "If an image has a vulnerability with a CVSS score greater than 7, the container may pose an unnecessarily high risk of exploitation.",
+  "remediation": "Speak with your security team to identify and mitigate the vulnerabilities"
 }

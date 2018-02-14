@@ -8,5 +8,7 @@
       "port": 22,
       "protocol": "tcp"
     }
-  }
+  },
+  "rationale": "Port 22 is reserved for SSH access. SSH should not typically be used within containers",
+  "remediation": "Ensure that non-ssh services are not using Port 22 and if they are running SSH ensure that they have been vetted"
 }

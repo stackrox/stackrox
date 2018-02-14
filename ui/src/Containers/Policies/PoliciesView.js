@@ -60,6 +60,14 @@ const fieldsMap = {
         label: 'Description',
         formatValue: d => d
     },
+    rationale: {
+        label: 'Rationale',
+        formatValue: r => r
+    },
+    remediation: {
+        label: 'Remediation',
+        formatValue: r => r
+    },
     notifiers: {
         label: 'Notifications',
         formatValue: (d, props) =>

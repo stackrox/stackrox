@@ -5,5 +5,7 @@
   "categories": ["IMAGE_ASSURANCE"],
   "image_policy": {
     "cve": "CVE-2014-6271"
-  }
+  },
+  "rationale": "Shellshock is a serious and easily-exploitable vulnerability in the Unix Bash shell",
+  "remediation": "Rebuild your container with an updated Unix Bash shell. Usually this can be accomplished by simply rebuilding your Dockerfile"
 }

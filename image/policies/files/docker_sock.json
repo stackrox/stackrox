@@ -7,5 +7,7 @@
     "volume_policy": {
       "path": "^/var/run/docker.sock$"
     }
-  }
+  },
+  "rationale": "Mounting /var/run/docker.sock implies container access to the docker daemon. This expands the attack surface of the container and gives an intruder an opportunity to break containment if the daemon is not properly secured",
+  "remediation": "Access Orchestrator API's to launch new services or access node data"
 }

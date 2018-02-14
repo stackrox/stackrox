@@ -5,5 +5,7 @@
   "categories": ["IMAGE_ASSURANCE"],
   "image_policy": {
     "cve": "CVE-2017-5638"
-  }
+  },
+  "rationale": "CVE-2017-5638 is a serious and easily-exploitable vulnerability in Apache Struts",
+  "remediation": "Rebuild your container with an updated version of Apache Struts"
 }

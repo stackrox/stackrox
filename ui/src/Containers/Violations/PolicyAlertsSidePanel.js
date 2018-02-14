@@ -1,13 +1,13 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import axios from 'axios';
-import dateFns from 'date-fns';
-import * as Icon from 'react-feather';
-
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import Modal from 'Components/Modal';
 
+import * as Icon from 'react-feather';
+
+import axios from 'axios';
+import dateFns from 'date-fns';
 import { severityLabels, categoriesLabels } from 'messages/common';
 
 const reducer = (action, prevState, nextState) => {
@@ -106,9 +106,29 @@ class PolicyAlertsSidePanel extends Component {
                                     ))}
                                 </div>
                             </div>
-                            <div className="py-2 px-3 truncate">
-                                <span className="font-bold text-primary-500">Description:</span>{' '}
-                                {this.state.alert.policy.description}
+                            <div className="flex py-2 px-3">
+                                <div className="flex-row font-bold text-primary-500">
+                                    Description:
+                                </div>
+                                <div className="flex-row px-1">
+                                    {this.state.alert.policy.description}
+                                </div>
+                            </div>
+                            <div className="flex py-2 px-3">
+                                <div className="flex-row font-bold text-primary-500">
+                                    Rationale:
+                                </div>
+                                <div className="flex-row px-1">
+                                    {this.state.alert.policy.rationale}
+                                </div>
+                            </div>
+                            <div className="flex py-2 px-3">
+                                <div className="flex-row font-bold text-primary-500">
+                                    Remediation:
+                                </div>
+                                <div className="flex-row px-1">
+                                    {this.state.alert.policy.remediation}
+                                </div>
                             </div>
                             <div className="py-2 px-3 truncate">
                                 <span className="font-bold text-primary-500">Severity:</span>{' '}

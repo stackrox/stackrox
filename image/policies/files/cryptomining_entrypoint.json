@@ -8,5 +8,7 @@
       "instruction": "ENTRYPOINT",
       "value": ".*minerd.*"
     }
-  }
+  },
+  "rationale": "minerd is a cryptomining binary that has been recently used to mine cryptocurrency in hijacked clusters",
+  "remediation": "Remove the services that are cryptomining"
 }
