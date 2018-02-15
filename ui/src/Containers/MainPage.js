@@ -127,7 +127,7 @@ class MainPage extends Component {
                             <Switch>
                                 <ProtectedRoute path="/main/dashboard" component={DashboardPage} />
                                 <ProtectedRoute
-                                    path="/main/violations"
+                                    path="/main/violations/:alertId?"
                                     component={ViolationsPage}
                                 />
                                 <ProtectedRoute

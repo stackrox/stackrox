@@ -6,7 +6,8 @@ import queryString from 'query-string';
 import isEqual from 'lodash/isEqual';
 
 import Table from 'Components/Table';
-import PolicyAlertsSidePanel from 'Containers/Violations/PolicyAlertsSidePanel';
+import PolicyAlertsSidePanel from './PolicyAlertsSidePanel';
+import ViolationsModal from './ViolationsModal';
 
 const policyCategoriesLabels = {
     CONTAINER_CONFIGURATION: 'Container Configuration',
@@ -44,6 +45,8 @@ const reducer = (action, prevState, nextState) => {
             return { isPanelOpen: true, policy: nextState.policy };
         case 'CLOSE_POLICY_ALERTS_PANEL':
             return { isPanelOpen: false, policy: null };
+        case 'UPDATE_ALERT':
+            return { alertId: nextState.alertId };
         default:
             return prevState;
     }
@@ -52,7 +55,8 @@ const reducer = (action, prevState, nextState) => {
 class ViolationsPage extends Component {
     static propTypes = {
         history: ReactRouterPropTypes.history.isRequired,
-        location: ReactRouterPropTypes.location.isRequired
+        location: ReactRouterPropTypes.location.isRequired,
+        match: ReactRouterPropTypes.match.isRequired
     };
 
     constructor(props) {
@@ -77,12 +81,14 @@ class ViolationsPage extends Component {
                 ]
             },
             alertsByPolicies: [],
-            policy: {}
+            policy: {},
+            alertId: null
         };
     }
 
     componentDidMount() {
         this.pollAlertGroups();
+        this.getAlertId();
     }
 
     componentWillUnmount() {
@@ -112,6 +118,11 @@ class ViolationsPage extends Component {
         setTimeout(this.getAlertsGroups, 0);
     };
 
+    onModalClose = () => {
+        this.changeUrl(alert.id);
+        this.update('UPDATE_ALERT', { alertId: null });
+    };
+
     getAlertsGroups = () => {
         const params = queryString.stringify({
             ...this.getFilterParams(),
@@ -138,6 +149,11 @@ class ViolationsPage extends Component {
         return params;
     }
 
+    getAlertId() {
+        const { alertId } = this.props.match.params;
+        this.update('UPDATE_ALERT', { alertId });
+    }
+
     pollAlertGroups = () => {
         this.getAlertsGroups().then(() => {
             this.pollTimeoutId = setTimeout(this.pollAlertGroups, 5000);
@@ -151,6 +167,18 @@ class ViolationsPage extends Component {
     closePanel = () => {
         this.update('CLOSE_POLICY_ALERTS_PANEL');
     };
+
+    launchModal = alert => {
+        this.changeUrl(alert.id);
+        this.update('UPDATE_ALERT', { alertId: alert.id });
+    };
+
+    changeUrl(id) {
+        const urlValue = id ? `/${id}` : '';
+        this.props.history.push({
+            pathname: `/main/violations${urlValue}`
+        });
+    }
 
     update = (action, nextState) => {
         this.setState(prevState => reducer(action, prevState, nextState));
@@ -184,12 +212,18 @@ class ViolationsPage extends Component {
         return <Table columns={columns} rows={rows} onRowClick={this.openPanel} />;
     };
 
+    renderModal() {
+        if (!this.state.alertId) return '';
+        return <ViolationsModal alertId={this.state.alertId} onClose={this.onModalClose} />;
+    }
+
     renderPolicyAlertsPanel = () => {
         if (!this.state.isPanelOpen) return '';
         return (
             <PolicyAlertsSidePanel
                 policy={this.state.policy}
                 onClose={this.closePanel}
+                onRowClick={this.launchModal}
                 updatePolicy={this.updatePolicy}
             />
         );
@@ -228,6 +262,7 @@ class ViolationsPage extends Component {
                             {this.renderTable()}
                         </div>
                         {this.renderPolicyAlertsPanel()}
+                        {this.renderModal()}
                     </div>
                 </div>
             </section>
