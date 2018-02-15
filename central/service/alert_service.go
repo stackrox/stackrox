@@ -100,7 +100,9 @@ func (s *AlertService) groupAlerts(alerts []*v1.Alert) (output *v1.GetAlertsGrou
 	alertCountsByPolicy := make(map[string]int)
 
 	for _, a := range alerts {
-		policiesMap[a.GetPolicy().GetId()] = a.GetPolicy()
+		if _, ok := policiesMap[a.GetPolicy().GetId()]; !ok {
+			policiesMap[a.GetPolicy().GetId()] = a.GetPolicy()
+		}
 		alertCountsByPolicy[a.GetPolicy().GetId()]++
 	}
 

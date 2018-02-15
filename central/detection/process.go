@@ -36,6 +36,13 @@ func (d *Detector) processTask(task Task) (alert *v1.Alert, enforcement v1.Enfor
 		return
 	}
 
+	deploy, exists, err := d.database.GetDeployment(task.deployment.GetId())
+	if err != nil {
+		logger.Error(err)
+	} else if !exists || deploy.Version != task.deployment.Version {
+		return
+	}
+
 	// The third argument is if the task matched a whitelist
 	var excluded *v1.DryRunResponse_Excluded
 	alert, enforcement, excluded = d.Detect(task)

@@ -52,11 +52,34 @@ func (d *Detector) reprocessPolicy(policy *matcher.Policy) {
 		return
 	}
 
+	deploymentMap := make(map[string]struct{})
+
 	for _, deploy := range deployments {
 		d.taskC <- Task{
 			deployment: deploy,
 			policy:     policy,
 			action:     v1.ResourceAction_REFRESH_RESOURCE,
+		}
+
+		deploymentMap[deploy.GetId()] = struct{}{}
+	}
+
+	alerts, err := d.database.GetAlerts(&v1.GetAlertsRequest{
+		Stale:    []bool{false},
+		PolicyId: []string{policy.GetId()},
+	})
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	for _, alert := range alerts {
+		if _, ok := deploymentMap[alert.GetDeployment().GetId()]; !ok {
+			d.taskC <- Task{
+				deployment: alert.GetDeployment(),
+				policy:     policy,
+				action:     v1.ResourceAction_REMOVE_RESOURCE,
+			}
 		}
 	}
 }
