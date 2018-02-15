@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc/codes"
 )
 
@@ -26,6 +27,11 @@ func (e ErrNoCredentials) Status() codes.Code {
 	return codes.Unauthenticated
 }
 
+// HTTPStatus implements the HTTPStatus interface
+func (e ErrNoCredentials) HTTPStatus() int {
+	return runtime.HTTPStatusFromCode(e.Status())
+}
+
 // ErrNotAuthorized occurs if credentials are found, but they are
 // insufficiently authorized.
 type ErrNotAuthorized struct {
@@ -41,6 +47,11 @@ func (e ErrNotAuthorized) Status() codes.Code {
 	return codes.PermissionDenied
 }
 
+// HTTPStatus implements the HTTPStatus interface
+func (e ErrNotAuthorized) HTTPStatus() int {
+	return runtime.HTTPStatusFromCode(e.Status())
+}
+
 // ErrNoAuthzConfigured occurs if authorization is not implemented for a
 // service. This is a programming error.
 type ErrNoAuthzConfigured struct{}
@@ -52,6 +63,11 @@ func (e ErrNoAuthzConfigured) Error() string {
 // Status implements the StatusError interface.
 func (e ErrNoAuthzConfigured) Status() codes.Code {
 	return codes.Unimplemented
+}
+
+// HTTPStatus implements the HTTPStatus interface
+func (e ErrNoAuthzConfigured) HTTPStatus() int {
+	return runtime.HTTPStatusFromCode(e.Status())
 }
 
 // ErrAuthnConfigMissing occurs if user authentication configuration is
@@ -67,4 +83,9 @@ func (e ErrAuthnConfigMissing) Error() string {
 // Status implements the StatusError interface.
 func (e ErrAuthnConfigMissing) Status() codes.Code {
 	return codes.Unimplemented
+}
+
+// HTTPStatus implements the HTTPStatus interface
+func (e ErrAuthnConfigMissing) HTTPStatus() int {
+	return runtime.HTTPStatusFromCode(e.Status())
 }

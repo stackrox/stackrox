@@ -10,6 +10,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn/mtls"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/deny"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/routes"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	"github.com/NYTimes/gziphandler"
@@ -50,7 +51,7 @@ type apiImpl struct {
 // A Config configures the server.
 type Config struct {
 	TLS                verifier.TLSConfigurer
-	CustomRoutes       map[string]http.Handler
+	CustomRoutes       map[string]routes.CustomRoute
 	UnaryInterceptors  []grpc.UnaryServerInterceptor
 	StreamInterceptors []grpc.StreamServerInterceptor
 }
@@ -108,8 +109,8 @@ func (a *apiImpl) muxer(tlsConf *tls.Config) http.Handler {
 	dialOpts := []grpc.DialOption{grpc.WithTransportCredentials(dialCreds)}
 
 	mux := http.NewServeMux()
-	for prefix, handler := range a.config.CustomRoutes {
-		mux.Handle(prefix, handler)
+	for prefix, route := range a.config.CustomRoutes {
+		mux.Handle(prefix, route.Handler())
 	}
 	// EmitDefaults marshals zero values into the output, instead of omitting them.
 	gwMux := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{EmitDefaults: true}))

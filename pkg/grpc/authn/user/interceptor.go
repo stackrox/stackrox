@@ -2,6 +2,8 @@ package user
 
 import (
 	"context"
+	"net/http"
+	"strings"
 	"sync"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -65,6 +67,19 @@ func (a *AuthInterceptor) StreamInterceptor() grpc.StreamServerInterceptor {
 	return a.authStream
 }
 
+// HTTPInterceptor is an interceptor for http handlers
+func (a *AuthInterceptor) HTTPInterceptor(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		// Lowercase all of the header keys due to grpc metadata keys being lowercased
+		newHeaders := make(map[string][]string)
+		for k, v := range req.Header {
+			newHeaders[strings.ToLower(k)] = v
+		}
+		ctx := a.retrieveToken(req.Context(), newHeaders)
+		h.ServeHTTP(w, req.WithContext(ctx))
+	})
+}
+
 func (a *AuthInterceptor) authUnary(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	return handler(a.authToken(ctx), req)
 }
@@ -77,12 +92,7 @@ func (a *AuthInterceptor) authStream(srv interface{}, stream grpc.ServerStream, 
 	return handler(srv, newStream)
 }
 
-func (a *AuthInterceptor) authToken(ctx context.Context) (newCtx context.Context) {
-	meta, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return ctx
-	}
-
+func (a *AuthInterceptor) retrieveToken(ctx context.Context, headers map[string][]string) (newCtx context.Context) {
 	a.lock.RLock()
 	defer a.lock.RUnlock()
 	newCtx = authn.NewAuthConfigurationContext(ctx, authn.AuthConfiguration{
@@ -92,11 +102,12 @@ func (a *AuthInterceptor) authToken(ctx context.Context) (newCtx context.Context
 		if !p.Enabled() {
 			continue
 		}
-		user, expiration, err := p.User(meta)
+		user, expiration, err := p.User(headers)
 		if err != nil {
 			logger.Debugf("User auth error: %s", err)
 			continue
 		}
+
 		return authn.NewUserContext(newCtx, authn.UserIdentity{
 			User:         user,
 			AuthProvider: p,
@@ -104,6 +115,14 @@ func (a *AuthInterceptor) authToken(ctx context.Context) (newCtx context.Context
 		})
 	}
 	return newCtx
+}
+
+func (a *AuthInterceptor) authToken(ctx context.Context) context.Context {
+	meta, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return ctx
+	}
+	return a.retrieveToken(ctx, meta)
 }
 
 func (a *AuthInterceptor) countEnabled() (enabled int) {

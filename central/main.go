@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"os"
 	"os/signal"
 	"runtime/debug"
@@ -21,12 +20,14 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
 	pkgGRPC "bitbucket.org/stack-rox/apollo/pkg/grpc"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn/user"
+	authnUser "bitbucket.org/stack-rox/apollo/pkg/grpc/authn/user"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/allow"
+	authzUser "bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/clusters"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/routes"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	"bitbucket.org/stack-rox/apollo/pkg/ui"
-	"github.com/NYTimes/gziphandler"
 	"google.golang.org/grpc"
 )
 
@@ -81,13 +82,28 @@ func (c *central) startGRPCServer() {
 	idService := service.NewServiceIdentityService(c.database)
 	clusterService := service.NewClusterService(c.database)
 	clusterWatcher := clusters.NewClusterWatcher(c.database)
-	userAuth := user.NewAuthInterceptor(c.database)
+	userAuth := authnUser.NewAuthInterceptor(c.database)
 
 	config := pkgGRPC.Config{
-		CustomRoutes: map[string]http.Handler{
-			"/": ui.Mux(),
-			"/api/extensions/clusters/zip": clustersZip.Handler(clusterService, idService),
-			"/db/backup":                   gziphandler.GzipHandler(c.database.BackupHandler()),
+		CustomRoutes: map[string]routes.CustomRoute{
+			"/": {
+				AuthInterceptor: userAuth.HTTPInterceptor,
+				Authorizer:      allow.Anonymous(),
+				ServerHandler:   ui.Mux(),
+				Compression:     true,
+			},
+			"/api/extensions/clusters/zip": {
+				AuthInterceptor: userAuth.HTTPInterceptor,
+				Authorizer:      authzUser.Any(),
+				ServerHandler:   clustersZip.Handler(clusterService, idService),
+				Compression:     false,
+			},
+			"/db/backup": {
+				AuthInterceptor: userAuth.HTTPInterceptor,
+				Authorizer:      authzUser.Any(),
+				ServerHandler:   c.database.BackupHandler(),
+				Compression:     true,
+			},
 		},
 		TLS: verifier.CA{},
 		UnaryInterceptors: []grpc.UnaryServerInterceptor{
