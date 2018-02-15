@@ -104,6 +104,12 @@ func (c *central) startGRPCServer() {
 				ServerHandler:   c.database.BackupHandler(),
 				Compression:     true,
 			},
+			"/db/export": {
+				AuthInterceptor: userAuth.HTTPInterceptor,
+				Authorizer:      authzUser.Any(),
+				ServerHandler:   c.database.ExportHandler(),
+				Compression:     true,
+			},
 		},
 		TLS: verifier.CA{},
 		UnaryInterceptors: []grpc.UnaryServerInterceptor{

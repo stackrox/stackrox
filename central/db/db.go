@@ -10,6 +10,7 @@ import (
 // Storage is the interface for the persistent storage
 type Storage interface {
 	BackupHandler() http.Handler
+	ExportHandler() http.Handler
 	Close()
 
 	AlertStorage

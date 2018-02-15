@@ -63,3 +63,8 @@ func (s *InMemoryStore) Close() {
 func (s *InMemoryStore) BackupHandler() http.Handler {
 	return s.persistent.BackupHandler()
 }
+
+// ExportHandler returns the persistent database's ExportHandler
+func (s *InMemoryStore) ExportHandler() http.Handler {
+	return s.persistent.ExportHandler()
+}

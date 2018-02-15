@@ -8,16 +8,16 @@ import (
 	"strconv"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/boltHelper"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/boltdb/bolt"
 )
 
 var (
 	log = logging.New("db/bolt")
-)
 
-// var so this can be modified in tests
-var (
+	// var so this can be modified in tests
 	defaultBenchmarksPath = `/data/benchmarks`
 )
 
@@ -113,14 +113,12 @@ func (b *BoltDB) Close() {
 	}
 }
 
-// BackupHandler writes a consistent view of the database to the HTTP response
-func (b *BoltDB) BackupHandler() http.Handler {
-	filename := time.Now().Format("mitigate_2006_01_02.db")
+func serializeDB(db *bolt.DB, file, removalPath string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// This will block all other transactions until this has completed. We could use View for a hot backup
-		err := b.Update(func(tx *bolt.Tx) error {
+		err := db.Update(func(tx *bolt.Tx) error {
 			w.Header().Set("Content-Type", "application/octet-stream")
-			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%v\"", filename))
+			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%v\"", file))
 			w.Header().Set("Content-Length", strconv.Itoa(int(tx.Size())))
 			_, err := tx.WriteTo(w)
 			return err
@@ -128,5 +126,103 @@ func (b *BoltDB) BackupHandler() http.Handler {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+		if removalPath != "" {
+			db.Close()
+			if err := os.Remove(removalPath); err != nil {
+				log.Error(err)
+			}
+		}
+	})
+}
+
+// BackupHandler writes a consistent view of the database to the HTTP response
+func (b *BoltDB) BackupHandler() http.Handler {
+	filename := time.Now().Format("mitigate_2006_01_02.db")
+	return serializeDB(b.DB, filename, "")
+}
+
+func handleError(w http.ResponseWriter, err error) {
+	log.Error(err)
+	http.Error(w, err.Error(), http.StatusInternalServerError)
+}
+
+// ExportHandler writes a consistent view of the database without secrets to the HTTP response
+func (b *BoltDB) ExportHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		exportedFilepath := filepath.Join(os.TempDir(), "exported.db")
+		defer os.Remove(exportedFilepath)
+
+		// This will block all other transactions until this has completed. We could use View for a hot backup
+		err := b.Update(func(tx *bolt.Tx) error {
+			return tx.CopyFile(exportedFilepath, 0600)
+		})
+		if err != nil {
+			handleError(w, err)
+			return
+		}
+		exportDB, err := New(exportedFilepath)
+		if err != nil {
+			handleError(w, err)
+			return
+		}
+		defer exportDB.Close()
+
+		notifiers, err := exportDB.GetNotifiers(&v1.GetNotifiersRequest{})
+		if err != nil {
+			handleError(w, err)
+			return
+		}
+		for _, n := range notifiers {
+			n.Config = nil
+			if err := exportDB.UpdateNotifier(n); err != nil {
+				handleError(w, err)
+				return
+			}
+		}
+		registries, err := exportDB.GetRegistries(&v1.GetRegistriesRequest{})
+		if err != nil {
+			handleError(w, err)
+			return
+		}
+		for _, r := range registries {
+			r.Config = nil
+			if err := exportDB.UpdateRegistry(r); err != nil {
+				handleError(w, err)
+				return
+			}
+		}
+		scanners, err := exportDB.GetScanners(&v1.GetScannersRequest{})
+		if err != nil {
+			handleError(w, err)
+			return
+		}
+		for _, s := range scanners {
+			s.Config = nil
+			if err := exportDB.UpdateScanner(s); err != nil {
+				handleError(w, err)
+				return
+			}
+		}
+		if err := exportDB.Sync(); err != nil {
+			handleError(w, err)
+			return
+		}
+
+		filename := time.Now().Format("mitigate_2006_01_02.db")
+		compactedFilepath := filepath.Join(os.TempDir(), filename)
+
+		// Create completely clean DB and compact to it, wiping the secrets from cached memory
+		newDB, err := bolt.Open(compactedFilepath, 0600, nil)
+		if err != nil {
+			handleError(w, err)
+			return
+		}
+		if err := boltHelper.Compact(newDB, exportDB.DB); err != nil {
+			handleError(w, err)
+			return
+		}
+		// Close the databases
+		exportDB.Close()
+		serializeDB(newDB, filename, compactedFilepath).ServeHTTP(w, req)
 	})
 }
