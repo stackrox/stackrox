@@ -28,6 +28,8 @@ const (
 	updateInterval = 30 * time.Second
 	// triggerTimespan is how long we should check for unfired triggers
 	triggerTimespan = 5 * time.Minute
+
+	benchmarkServiceName = "benchmark"
 )
 
 var (
@@ -191,9 +193,8 @@ func (s *SchedulerClient) waitForBenchmarkToFinish(serviceName string) {
 // Launch triggers a run of the benchmark immediately.
 // The stateLock must be held by the caller until this function returns.
 func (s *SchedulerClient) Launch(scan *v1.BenchmarkScanMetadata) error {
-	name := "benchmark-bootstrap-" + replaceRegex.ReplaceAllString(strings.ToLower(scan.GetBenchmark()), "-")
 	service := orchestrators.SystemService{
-		Name: name,
+		Name: benchmarkServiceName,
 		Envs: []string{
 			env.Combine(env.Image.EnvVar(), s.image),
 			env.CombineSetting(env.AdvertisedEndpoint),
@@ -209,7 +210,7 @@ func (s *SchedulerClient) Launch(scan *v1.BenchmarkScanMetadata) error {
 	if err != nil {
 		return err
 	}
-	s.waitForBenchmarkToFinish(name)
+	s.waitForBenchmarkToFinish(benchmarkServiceName)
 	return nil
 }
 

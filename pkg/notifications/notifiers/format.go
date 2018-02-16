@@ -30,9 +30,12 @@ const policyFormat = `
 {{header "Violations:"}}
 	{{range .Violations}}{{list .Message}}{{end}}
 {{header "Policy Definition:"}}
-	{{stringify "Description:" .Policy.Description | subheader}}
-	{{stringify "Rationale:" .Policy.Rationale | subheader}}
-	{{stringify "Remediation:" .Policy.Remediation | subheader}}
+	{{"Description:" | subheader}}
+	{{.Policy.Description | list}}
+	{{"Rationale:" | subheader}}
+	{{.Policy.Rationale | list}}
+	{{"Remediation:" | subheader}}
+	{{.Policy.Remediation | list}}
 
 	{{if .Policy.ImagePolicy }}{{ subheader "Image Assurance:"}}
 		{{if .Policy.ImagePolicy.ImageName}}{{list "Image Name"}}

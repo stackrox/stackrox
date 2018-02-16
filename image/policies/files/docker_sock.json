@@ -16,6 +16,12 @@
       "deployment": {
         "name": "mitigate_sensor"
       }
+    },
+    {
+      "name": "Don't alert on stackrox benchmarks",
+      "deployment": {
+        "name": "benchmark"
+      }
     }
   ]
 }
