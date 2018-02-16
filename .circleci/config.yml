@@ -13,10 +13,10 @@ restoreNPM: &restoreNPM
     keys:
       - v1-mitigate-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
 
-restoreVendor: &restoreVendor
+restoreDep: &restoreDep
   restore_cache:
     keys:
-      - v1-mitigate-go-vendor-{{ checksum "Gopkg.lock" }}
+      - v1-mitigate-go-pkg-dep-{{ checksum "Gopkg.lock" }}
 
 version: 2
 jobs:
@@ -31,7 +31,7 @@ jobs:
           command: docker pull alpine:3.7
 
       - *restoreNPM
-      - *restoreVendor
+      - *restoreDep
 
       - run:
           name: Build all
@@ -45,9 +45,9 @@ jobs:
             - ui/node_modules
 
       - save-cache:
-          key: v1-mitigate-go-vendor-{{ checksum "Gopkg.lock" }}
+          key: v1-mitigate-go-pkg-dep-{{ checksum "Gopkg.lock" }}
           paths:
-            - vendor
+            - /go/pkg/dep
 
       - run:
           name: Push new Docker image
@@ -65,7 +65,7 @@ jobs:
       - setup_remote_docker
 
       - *restoreNPM
-      - *restoreVendor
+      - *restoreDep
 
       - run: make deps generated-srcs
 
@@ -79,7 +79,7 @@ jobs:
             echo $GKE_SERVICE_ACCOUNT > /tmp/gke.json
             echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gke.json' >> $BASH_ENV
             gcloud auth activate-service-account --key-file /tmp/gke.json
-      
+
       - run:
           name: Deploy to a remote cluster
           command: |
