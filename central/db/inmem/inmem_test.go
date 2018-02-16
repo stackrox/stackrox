@@ -14,7 +14,7 @@ func createBoltDB() (db.Storage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get temporary directory: %v", err.Error())
 	}
-	db, err := boltdb.New(filepath.Join(tmpDir, "mitigate.db"))
+	db, err := boltdb.New(filepath.Join(tmpDir, "prevent.db"))
 	if err != nil {
 		return nil, err
 	}

@@ -85,7 +85,7 @@ func (d basicDeployer) Command(c Wrap) (string, error) {
 func (d basicDeployer) fields(c Wrap) map[string]string {
 	fields := map[string]string{
 		"ImageEnv":              env.Image.EnvVar(),
-		"Image":                 c.MitigateImage,
+		"Image":                 c.PreventImage,
 		"PublicEndpointEnv":     env.CentralEndpoint.EnvVar(),
 		"PublicEndpoint":        c.CentralApiEndpoint,
 		"ClusterIDEnv":          env.ClusterID.EnvVar(),

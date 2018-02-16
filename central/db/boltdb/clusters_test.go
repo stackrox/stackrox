@@ -42,14 +42,14 @@ func (suite *BoltClusterTestSuite) TestClusters() {
 
 	clusters := []*v1.Cluster{
 		{
-			Name:          "cluster1",
-			MitigateImage: "test-dtr.example.com/mitigate",
-			LastContact:   ts1,
+			Name:         "cluster1",
+			PreventImage: "test-dtr.example.com/prevent",
+			LastContact:  ts1,
 		},
 		{
-			Name:          "cluster2",
-			MitigateImage: "docker.io/stackrox/mitigate",
-			LastContact:   ts2,
+			Name:         "cluster2",
+			PreventImage: "docker.io/stackrox/prevent",
+			LastContact:  ts2,
 		},
 	}
 
@@ -75,7 +75,7 @@ func (suite *BoltClusterTestSuite) TestClusters() {
 
 	// Test Update
 	for _, b := range clusters {
-		b.MitigateImage = b.MitigateImage + "/mitigate"
+		b.PreventImage = b.PreventImage + "/prevent"
 	}
 
 	for _, b := range clusters {

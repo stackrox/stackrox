@@ -1,6 +1,6 @@
 {
-  "short_name": "StackRox Mitigate",
-  "name": "StackRox Mitigate",
+  "short_name": "StackRox Prevent",
+  "name": "StackRox Prevent",
   "icons": [
     {
       "src": "favicon.ico",

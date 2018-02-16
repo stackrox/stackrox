@@ -29,7 +29,7 @@ type config struct {
 	// ClientID is the identifier of the API client.
 	ClientID string
 	// Audience is the identifier of this service that will be embedded in the token.
-	// Audience is recommended but will default to a Mitigate-specific value if unset.
+	// Audience is recommended but will default to a Prevent-specific value if unset.
 	Audience string
 	// Endpoint is the server on which the redirect URL is to be found.
 	Endpoint string
@@ -89,7 +89,7 @@ func (c config) audience() string {
 	if c.Audience != "" {
 		return c.Audience
 	}
-	return "https://mitigate.stackrox.io"
+	return "https://prevent.stackrox.io"
 }
 
 // Enabled says if the integration is enabled.

@@ -19,7 +19,7 @@ var (
 type namespace struct{}
 
 func (namespace) EnvVar() string {
-	return `ROX_MITIGATE_NAMESPACE`
+	return `ROX_PREVENT_NAMESPACE`
 }
 
 func (ns namespace) Setting() string {
@@ -33,7 +33,7 @@ func (ns namespace) Setting() string {
 type serviceAccount struct{}
 
 func (serviceAccount) EnvVar() string {
-	return `ROX_MITIGATE_SERVICE_ACCOUNT`
+	return `ROX_PREVENT_SERVICE_ACCOUNT`
 }
 
 func (sa serviceAccount) Setting() string {
@@ -43,7 +43,7 @@ func (sa serviceAccount) Setting() string {
 type imagePullSecrets struct{}
 
 func (imagePullSecrets) EnvVar() string {
-	return `ROX_MITIGATE_IMAGE_PULL_CONFIG`
+	return `ROX_PREVENT_IMAGE_PULL_CONFIG`
 }
 
 // Values interpreted as comma separated list of secret names.

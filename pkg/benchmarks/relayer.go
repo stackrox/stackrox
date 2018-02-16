@@ -1,4 +1,4 @@
-// Package benchmarks handles receiving and relaying benchmarks to Mitigate Central.
+// Package benchmarks handles receiving and relaying benchmarks to Prevent Central.
 package benchmarks
 
 import (
@@ -18,14 +18,14 @@ const (
 	requestTimeout = 3 * time.Second
 )
 
-// A Relayer sends received benchmark payloads onto Mitigate Central.
+// A Relayer sends received benchmark payloads onto Prevent Central.
 type Relayer interface {
 	Start()
 	Stop()
 	Accept(payload *v1.BenchmarkResult)
 }
 
-// An LRURelayer sends received benchmark payloads onto Mitigate Central.
+// An LRURelayer sends received benchmark payloads onto Prevent Central.
 // If the relay is not successful at first, payloads are cached and will
 // be retried until new ones exceed the cache size.
 type LRURelayer struct {

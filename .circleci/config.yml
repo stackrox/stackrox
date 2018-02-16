@@ -11,12 +11,12 @@ defaults: &defaults
 restoreNPM: &restoreNPM
   restore_cache:
     keys:
-      - v1-mitigate-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
+      - v1-prevent-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
 
 restoreDep: &restoreDep
   restore_cache:
     keys:
-      - v1-mitigate-go-pkg-dep-{{ checksum "Gopkg.lock" }}
+      - v1-prevent-go-pkg-dep-{{ checksum "Gopkg.lock" }}
 
 version: 2
 jobs:
@@ -40,21 +40,21 @@ jobs:
             make all
 
       - save-cache:
-          key: v1-mitigate-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
+          key: v1-prevent-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
           paths:
             - ui/node_modules
 
       - save-cache:
-          key: v1-mitigate-go-pkg-dep-{{ checksum "Gopkg.lock" }}
+          key: v1-prevent-go-pkg-dep-{{ checksum "Gopkg.lock" }}
           paths:
             - /go/pkg/dep
 
       - run:
           name: Push new Docker image
           command: |
-            docker tag stackrox/mitigate:latest stackrox/mitigate:$CIRCLE_SHA1
+            docker tag stackrox/prevent:latest stackrox/prevent:$CIRCLE_SHA1
             docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-            docker push stackrox/mitigate:$CIRCLE_SHA1
+            docker push stackrox/prevent:$CIRCLE_SHA1
 
   deploy-k8s:
     <<: *defaults
@@ -75,7 +75,7 @@ jobs:
             docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
             echo 'export REGISTRY_USERNAME="$DOCKERHUB_USERNAME"' >> $BASH_ENV
             echo 'export REGISTRY_PASSWORD="$DOCKERHUB_PASSWORD"' >> $BASH_ENV
-            echo 'export MITIGATE_IMAGE_TAG="$CIRCLE_SHA1"' >> $BASH_ENV
+            echo 'export PREVENT_IMAGE_TAG="$CIRCLE_SHA1"' >> $BASH_ENV
             echo $GKE_SERVICE_ACCOUNT > /tmp/gke.json
             echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gke.json' >> $BASH_ENV
             gcloud auth activate-service-account --key-file /tmp/gke.json
@@ -134,9 +134,9 @@ jobs:
           name: Retag
           command: |
             docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-            docker pull stackrox/mitigate:$CIRCLE_SHA1
-            docker tag stackrox/mitigate:$CIRCLE_SHA1 stackrox/mitigate:latest
-            docker push stackrox/mitigate:latest
+            docker pull stackrox/prevent:$CIRCLE_SHA1
+            docker tag stackrox/prevent:$CIRCLE_SHA1 stackrox/prevent:latest
+            docker push stackrox/prevent:latest
 
 workflows:
   version: 2

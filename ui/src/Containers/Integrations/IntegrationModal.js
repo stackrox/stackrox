@@ -38,7 +38,7 @@ const sourceMap = {
                 label: 'Audience',
                 key: 'config.audience',
                 type: 'text',
-                placeholder: 'mitigate.stackrox.io'
+                placeholder: 'prevent.stackrox.io'
             }
         ]
     },
@@ -109,13 +109,13 @@ const sourceMap = {
                 label: 'Sender',
                 key: 'config.sender',
                 type: 'text',
-                placeholder: 'mitigate-notifier@example.com'
+                placeholder: 'prevent-notifier@example.com'
             },
             {
                 label: 'Recipient',
                 key: 'config.recipient',
                 type: 'text',
-                placeholder: 'mitigate-alerts@example.com'
+                placeholder: 'prevent-alerts@example.com'
             },
             {
                 label: 'TLS',

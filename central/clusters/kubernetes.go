@@ -61,11 +61,11 @@ spec:
           value: sensor.{{.Namespace}}:443
         - name: {{.ImagePullSecretEnv}}
           value: {{.ImagePullSecret}}
-        - name: ROX_MITIGATE_NAMESPACE
+        - name: ROX_PREVENT_NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        - name: ROX_MITIGATE_SERVICE_ACCOUNT
+        - name: ROX_PREVENT_SERVICE_ACCOUNT
           valueFrom:
             fieldRef:
               fieldPath: spec.serviceAccountName

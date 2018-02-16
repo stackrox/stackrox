@@ -62,7 +62,7 @@ func GetAlert() *v1.Alert {
 				User:      "root",
 				VolumePolicy: &v1.ConfigurationPolicy_VolumePolicy{
 					Name: "name",
-					Path: "/etc/mitigate",
+					Path: "/etc/network",
 					SetReadOnly: &v1.ConfigurationPolicy_VolumePolicy_ReadOnly{
 						ReadOnly: true,
 					},

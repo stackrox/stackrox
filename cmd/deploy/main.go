@@ -59,7 +59,7 @@ func outputZip(config central.Config, clusterType v1.ClusterType) error {
 
 	// Add MTLS files
 	req := csr.CertificateRequest{
-		CN:         "StackRox Mitigate Certificate Authority",
+		CN:         "StackRox Prevent Certificate Authority",
 		KeyRequest: csr.NewBasicKeyRequest(),
 	}
 	cert, _, key, err := initca.New(&req)
@@ -118,8 +118,8 @@ func cmd() *cobra.Command {
 	var clusterTypeInput string
 	c := &cobra.Command{
 		Use:   "deploy",
-		Short: "Deploy generates deployment files for StackRox Mitigate Central",
-		Long: `Deploy generates deployment files for StackRox Mitigate Central.
+		Short: "Deploy generates deployment files for StackRox Prevent Central",
+		Long: `Deploy generates deployment files for StackRox Prevent Central.
 Output is a zip file printed to stdout.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cluster := clusterType(clusterTypeInput)
@@ -130,7 +130,7 @@ Output is a zip file printed to stdout.`,
 		},
 	}
 	c.Flags().StringVarP(&clusterTypeInput, "type", "t", "", "cluster type (kubernetes, k8s, openshift, swarm, ee, dockeree)")
-	c.Flags().StringVarP(&cfg.Image, "image", "i", "stackrox.io/mitigate", "image to use") // TODO(cg): -X flag should provide version tag
+	c.Flags().StringVarP(&cfg.Image, "image", "i", "stackrox.io/prevent", "image to use") // TODO(cg): -X flag should provide version tag
 	c.Flags().StringVarP(&cfg.Namespace, "namespace", "n", "stackrox", "namespace [Kubernetes/OpenShift]")
 	c.Flags().IntVarP(&cfg.PublicPort, "port", "p", 443, "public port to expose [Docker Swarm/Docker EE]")
 	return c

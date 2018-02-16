@@ -14,7 +14,7 @@ export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.stackrox:443}"
 echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 echo
 
-export MITIGATE_IMAGE="stackrox/mitigate:${MITIGATE_IMAGE_TAG:-latest}"
+export PREVENT_IMAGE="stackrox/prevent:${PREVENT_IMAGE_TAG:-latest}"
 
 set -u
 
@@ -31,7 +31,7 @@ kubectl create secret docker-registry \
 echo
 
 echo "Generating central config..."
-docker run "$MITIGATE_IMAGE" -t k8s -n "$NAMESPACE" -i "$MITIGATE_IMAGE" > $K8S_DIR/central.zip
+docker run "$PREVENT_IMAGE" -t k8s -n "$NAMESPACE" -i "$PREVENT_IMAGE" > $K8S_DIR/central.zip
 UNZIP_DIR="$K8S_DIR/central-deploy/"
 rm -rf "$UNZIP_DIR"
 unzip "$K8S_DIR/central.zip" -d "$UNZIP_DIR"
@@ -60,7 +60,7 @@ echo "Set local API endpoint to: $LOCAL_API_ENDPOINT"
 
 wait_for_central "$LOCAL_API_ENDPOINT"
 CLUSTER="remote"
-get_cluster_zip "$LOCAL_API_ENDPOINT" "$CLUSTER" KUBERNETES_CLUSTER "$MITIGATE_IMAGE" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "\"namespace\": \"$NAMESPACE\", \"imagePullSecret\": \"stackrox\""
+get_cluster_zip "$LOCAL_API_ENDPOINT" "$CLUSTER" KUBERNETES_CLUSTER "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "\"namespace\": \"$NAMESPACE\", \"imagePullSecret\": \"stackrox\""
 
 echo "Deploying Sensor..."
 kubectl delete secret -n "$NAMESPACE" sensor-tls || true

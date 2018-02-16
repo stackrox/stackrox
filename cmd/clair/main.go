@@ -41,7 +41,7 @@ type config struct {
 	clairEndpoint    string
 	dockerConfigPath string
 	image            string
-	mitigateEndpoint string
+	preventEndpoint  string
 }
 
 func cmd() *cobra.Command {
@@ -57,7 +57,7 @@ func cmd() *cobra.Command {
 	c.Flags().StringVarP(&cfg.clairEndpoint, "clair", "e", "127.0.0.1:6060", "clair endpoint")
 	c.Flags().StringVarP(&cfg.dockerConfigPath, "config", "c", dockerConfigPath, "docker config path")
 	c.Flags().StringVarP(&cfg.image, "image", "i", "", "image name to run")
-	c.Flags().StringVarP(&cfg.mitigateEndpoint, "mitigate", "m", os.Getenv("LOCAL_API_ENDPOINT"), "Mitigate endpoint for automatic parsing")
+	c.Flags().StringVarP(&cfg.preventEndpoint, "prevent", "m", os.Getenv("LOCAL_API_ENDPOINT"), "Prevent endpoint for automatic parsing")
 	return c
 }
 
@@ -67,7 +67,7 @@ func stripHTTPPrefix(s string) string {
 }
 
 func evaluateRegistryOverride() {
-	overrides, ok := os.LookupEnv("MITIGATE_REGISTRY_OVERRIDE")
+	overrides, ok := os.LookupEnv("PREVENT_REGISTRY_OVERRIDE")
 	if !ok {
 		return
 	}
@@ -75,7 +75,7 @@ func evaluateRegistryOverride() {
 	for _, c := range csv {
 		spl := strings.Split(c, "=")
 		if len(spl) != 2 {
-			log.Fatalf("Environment variable section MITIGATE_REGISTRY_OVERRIDE '%v' must be separated with an = sign", c)
+			log.Fatalf("Environment variable section PREVENT_REGISTRY_OVERRIDE '%v' must be separated with an = sign", c)
 		}
 		fullyQualifiedRegistryOverride[spl[0]] = spl[1]
 		registryOverride[stripHTTPPrefix(spl[0])] = stripHTTPPrefix(spl[1])
@@ -100,8 +100,8 @@ func run(cfg config) error {
 	if cfg.clairEndpoint == "" {
 		return errors.New("Endpoint for Clair must be defined")
 	}
-	if cfg.image == "" && cfg.mitigateEndpoint == "" {
-		return errors.New("Either image or mitigate must be defined")
+	if cfg.image == "" && cfg.preventEndpoint == "" {
+		return errors.New("Either image or prevent must be defined")
 	}
 	endpoint, err := urlfmt.FormatURL(cfg.clairEndpoint, false, false)
 	if err != nil {
@@ -119,7 +119,7 @@ func run(cfg config) error {
 	}
 
 	// Go get images, check that they are authenticated, then add them to clair
-	images, err := getImages(cfg.mitigateEndpoint)
+	images, err := getImages(cfg.preventEndpoint)
 	if err != nil {
 		log.Fatal(err)
 	}

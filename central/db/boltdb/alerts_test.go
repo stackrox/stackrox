@@ -24,7 +24,7 @@ func boltFromTmpDir() (*BoltDB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return New(filepath.Join(tmpDir, "mitigate.db"))
+	return New(filepath.Join(tmpDir, "prevent.db"))
 }
 
 func (suite *BoltAlertsTestSuite) SetupSuite() {

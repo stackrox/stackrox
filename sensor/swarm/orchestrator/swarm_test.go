@@ -22,7 +22,7 @@ func TestLaunch(t *testing.T) {
 
 	service := types.SystemService{
 		Envs:    []string{"ROX_CENTRAL_ENDPOINT=localhost:443"},
-		Image:   "stackrox/mitigate:latest",
+		Image:   "stackrox/prevent:latest",
 		Mounts:  []string{"/var/run/docker.sock:/var/run/docker.sock"},
 		Global:  true,
 		Command: []string{"benchmark-bootstrap"},

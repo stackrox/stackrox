@@ -26,7 +26,7 @@ var (
 type scanID struct{}
 
 func (s scanID) EnvVar() string {
-	return "ROX_MITIGATE_SCAN_ID"
+	return "ROX_PREVENT_SCAN_ID"
 }
 
 func (s scanID) Setting() string {
@@ -36,7 +36,7 @@ func (s scanID) Setting() string {
 type checks struct{}
 
 func (c checks) EnvVar() string {
-	return "ROX_MITIGATE_CHECKS"
+	return "ROX_PREVENT_CHECKS"
 }
 
 func (c checks) Setting() string {
@@ -46,7 +46,7 @@ func (c checks) Setting() string {
 type benchmarkName struct{}
 
 func (c benchmarkName) EnvVar() string {
-	return "ROX_MITIGATE_BENCHMARK_NAME"
+	return "ROX_PREVENT_BENCHMARK_NAME"
 }
 
 func (c benchmarkName) Setting() string {
@@ -56,7 +56,7 @@ func (c benchmarkName) Setting() string {
 type benchmarkCompletion struct{}
 
 func (c benchmarkCompletion) EnvVar() string {
-	return "ROX_MITIGATE_BENCHMARK_COMPLETION"
+	return "ROX_PREVENT_BENCHMARK_COMPLETION"
 }
 
 func (c benchmarkCompletion) Setting() string {
@@ -66,7 +66,7 @@ func (c benchmarkCompletion) Setting() string {
 type benchmarkReason struct{}
 
 func (c benchmarkReason) EnvVar() string {
-	return "ROX_MITIGATE_BENCHMARK_REASON"
+	return "ROX_PREVENT_BENCHMARK_REASON"
 }
 
 func (c benchmarkReason) Setting() string {

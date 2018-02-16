@@ -118,7 +118,7 @@ class LoginPage extends Component {
                 <div className="flex flex-col items-center justify-center mb-8">
                     <Logo className="fill-current text-white h-24 w-24" />
                     <h1 className="text-2xl font-sans text-white tracking-wide mb-4">
-                        Welcome to StackRox Mitigate
+                        Welcome to StackRox Prevent
                     </h1>
                     <h2 className="text-xl font-sans text-white tracking-wide text-center">
                         Addressing pre-runtime security use cases for your container deployments

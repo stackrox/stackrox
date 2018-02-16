@@ -3,13 +3,13 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 export LOCAL_API_ENDPOINT="${LOCAL_API_ENDPOINT:-localhost:8080}"
-echo "Local Mitigate endpoint set to $LOCAL_API_ENDPOINT"
+echo "Local StackRox Prevent endpoint set to $LOCAL_API_ENDPOINT"
 
-export MITIGATE_IMAGE_TAG="${MITIGATE_IMAGE_TAG:-latest}"
-echo "Mitigate image tag set to $MITIGATE_IMAGE_TAG"
+export PREVENT_IMAGE_TAG="${PREVENT_IMAGE_TAG:-latest}"
+echo "StackRox Prevent image tag set to $PREVENT_IMAGE_TAG"
 
-export MITIGATE_IMAGE="${MITIGATE_IMAGE:-stackrox/mitigate:$MITIGATE_IMAGE_TAG}"
-echo "Mitigate image set to $MITIGATE_IMAGE"
+export PREVENT_IMAGE="${PREVENT_IMAGE:-stackrox/prevent:$PREVENT_IMAGE_TAG}"
+echo "StackRox Prevent image set to $PREVENT_IMAGE"
 
 # generate_ca
 # arguments:
@@ -51,7 +51,7 @@ function wait_for_central {
 #   - central API server endpoint reachable from this host
 #   - name of cluster
 #   - type of cluster (e.g., SWARM_CLUSTER)
-#   - image reference (e.g., stackrox/mitigate:latest)
+#   - image reference (e.g., stackrox/prevent:latest)
 #   - central API endpoint reachable from the container (e.g., my-host:8080)
 #   - directory to drop files in
 #   - extra fields in JSON format
@@ -68,7 +68,7 @@ function get_cluster_zip {
     if [ "$EXTRA_JSON" != "" ]; then
         EXTRA_JSON=", $EXTRA_JSON"
     fi
-    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"mitigate_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\" $EXTRA_JSON}"
+    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"prevent_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\" $EXTRA_JSON}"
 
     STATUS=$(curl -X POST \
         -d "$CLUSTER_JSON" \
@@ -87,7 +87,7 @@ function get_cluster_zip {
 #   - central API server endpoint reachable from this host
 #   - name of cluster
 #   - type of cluster (e.g., SWARM_CLUSTER)
-#   - image reference (e.g., stackrox/mitigate:latest)
+#   - image reference (e.g., stackrox/prevent:latest)
 #   - central API endpoint reachable from the container (e.g., my-host:8080)
 #   - directory to drop files in
 #   - extra fields in JSON format
@@ -104,7 +104,7 @@ function create_cluster {
     if [ "$EXTRA_JSON" != "" ]; then
         EXTRA_JSON=", $EXTRA_JSON"
     fi
-    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"mitigate_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\" $EXTRA_JSON}"
+    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"prevent_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\" $EXTRA_JSON}"
 
     TMP=$(mktemp)
     STATUS=$(curl -X POST \

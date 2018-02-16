@@ -103,12 +103,12 @@ cd $DIR
 
 # Create registry-auth secret, used to pull the benchmark image.
 if [ -z "$REGISTRY_USERNAME" ]; then
-  echo -n "Registry username for StackRox Mitigate image: "
+  echo -n "Registry username for StackRox Prevent image: "
   read -s REGISTRY_USERNAME
   echo
 fi
 if [ -z "$REGISTRY_PASSWORD" ]; then
-  echo -n "Registry password for StackRox Mitigate image: "
+  echo -n "Registry password for StackRox Prevent image: "
   read -s REGISTRY_PASSWORD
   echo
 fi
@@ -123,7 +123,7 @@ if [ -n "$DOCKER_CERT_PATH" ]; then
 fi
 
 # Deploy.
-docker stack deploy -c ./sensor-deploy.yaml mitigate --with-registry-auth
+docker stack deploy -c ./sensor-deploy.yaml prevent --with-registry-auth
 
 # Clean up temporary files.
 rm registry-auth

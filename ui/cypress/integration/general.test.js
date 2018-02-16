@@ -7,7 +7,7 @@ import { url as dashboardUrl } from './pages/DashboardPage';
 describe('General sanity checks', () => {
     it('should have correct <title>', () => {
         cy.visit('/');
-        cy.title().should('eq', 'Mitigate');
+        cy.title().should('eq', 'Prevent');
     });
 
     it('should render navbar with Dashboard selected', () => {

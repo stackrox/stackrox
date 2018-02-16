@@ -37,7 +37,7 @@ func main() {
 	}
 	networkingConfig := &network.NetworkingConfig{
 		EndpointsConfig: map[string]*network.EndpointSettings{
-			"mitigate_net": {},
+			"prevent_net": {},
 		},
 	}
 

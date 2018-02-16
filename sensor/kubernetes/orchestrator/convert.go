@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	namespaceLabel     = `com.docker.stack.namespace`
-	mitigateLabelValue = `mitigate`
-	serviceLabel       = `com.mitigate.service-name`
+	namespaceLabel    = `com.docker.stack.namespace`
+	preventLabelValue = `prevent`
+	serviceLabel      = `com.prevent.service-name`
 )
 
 var (
@@ -93,7 +93,7 @@ func (c converter) asKubernetesPod(service *serviceWrap) v1.PodTemplateSpec {
 func (converter) asKubernetesLabels(name string) (labels map[string]string) {
 	labels = make(map[string]string)
 
-	labels[namespaceLabel] = mitigateLabelValue
+	labels[namespaceLabel] = preventLabelValue
 	labels[serviceLabel] = name
 	return
 }

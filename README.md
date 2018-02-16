@@ -1,12 +1,12 @@
-# StackRox Mitigate
+# StackRox Prevent
 
-Mitigate is a new StackRox initiative to provide security in the
+Prevent is a new StackRox initiative to provide security in the
 deployment phase of the container lifecycle.
 
 ## Build Tooling
-**Note**: if you want to develop only Mitigate UI, please refer to [ui/README.md](./ui/README.md) for dev env setup instructions.
+**Note**: if you want to develop only Prevent UI, please refer to [ui/README.md](./ui/README.md) for dev env setup instructions.
 
-Mitigate is distributed as a single image. The following build tools are
+Prevent is distributed as a single image. The following build tools are
 required to completely build that image and run tests:
 
  * Make
@@ -21,8 +21,8 @@ required to completely build that image and run tests:
 make image
 ```
 
-This will create `stackrox/mitigate:latest`. This is the only image required
-to run Mitigate.
+This will create `stackrox/prevent:latest`. This is the only image required
+to run StackRox Prevent.
 
 ## How to Test
 ```bash
@@ -46,7 +46,7 @@ per orchestrator.
 
 _**WARNING:** You are looking at the tip of the development tree.
 If you need to create a customer demo, use the instructions for the
-[latest stable version](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/233242976/StackRox+Mitigate)._
+[latest stable version](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/233242976/StackRox+Prevent)._
 
 The deploy script will:
 
@@ -54,7 +54,7 @@ The deploy script will:
  1. Create a cluster configuration and a service identity, then
  deploy the cluster sensor using that configuration and those credentials.
 
-You can (and likely should) set the environment variable `MITIGATE_IMAGE_TAG`
+You can (and likely should) set the environment variable `PREVENT_IMAGE_TAG`
 in your shell to ensure that you get the version you want.
 
 ### Docker Swarm
@@ -67,7 +67,7 @@ local host, VM, or cluster, then:
 ```
 
 When prompted, enter the credentials for whatever image registry you are
-downloading Mitigate from. Usually, this is [Docker Hub](https://hub.docker.com).
+downloading StackRox Prevent from. Usually, this is [Docker Hub](https://hub.docker.com).
 They are necessary so that Sensor can properly deploy the Benchmark Bootstrap
 service on all cluster nodes when requested.
 You may set these as `REGISTRY_USERNAME` and `REGISTRY_PASSWORD` in your
@@ -79,7 +79,7 @@ credentials. Otherwise, the credentials currently in use in your shell
 will be sent to the cluster and created as secrets for the Sensor to use.
 
 If you are running on a local VM and do not want Swarm to pull a new image when
-you submit the Mitigate stack (e.g., to use a locally built `:latest` tag),
+you submit the StackRox Prevent stack (e.g., to use a locally built `:latest` tag),
 use this variant instead:
 
 ```bash
@@ -102,7 +102,7 @@ kubectl create -f deploy/k8s/lb.yaml
 ```
 
 ## How to Release a New Version
-Releasing a new version of Mitigate requires only a few steps.
+Releasing a new version of StackRox Prevent requires only a few steps.
 
 These steps assume that the tip of `origin/master` is what you plan to release,
 and that the build for that commit has completed.
@@ -140,8 +140,8 @@ git tag -ln "${RELEASE_VERSION}"
 
 ### Push to Docker Hub
 ```bash
-export FROM="stackrox/mitigate:${RELEASE_COMMIT}"
-export TO="stackrox/mitigate:${RELEASE_VERSION}"
+export FROM="stackrox/prevent:${RELEASE_COMMIT}"
+export TO="stackrox/prevent:${RELEASE_VERSION}"
 docker pull "${FROM}"
 docker tag "${FROM}" "${TO}"
 docker push "${TO}"
@@ -149,14 +149,14 @@ docker push "${TO}"
 
 ### Push to stackrox.io
 ```bash
-export FROM="stackrox/mitigate:${RELEASE_VERSION}"
-export TO="stackrox.io/mitigate:${RELEASE_VERSION}"
+export FROM="stackrox/prevent:${RELEASE_VERSION}"
+export TO="stackrox.io/prevent:${RELEASE_VERSION}"
 docker tag "${FROM}" "${TO}"
 docker push "${TO}"
 ```
 
 ### Modify Demo Instructions
-The Mitigate demo instructions live in a [Google Drive folder](https://drive.google.com/drive/folders/1gem9vG0Z0hzokF7S_r4WGwXDCCXi6fbT).
+The StackRox Prevent demo instructions live in a [Google Drive folder](https://drive.google.com/drive/folders/1gem9vG0Z0hzokF7S_r4WGwXDCCXi6fbT).
 
 1. Copy the current latest version of the instructions to a new Google Doc.
 1. Update the instructions at the top of the document to reference the new
@@ -167,4 +167,4 @@ instructions to demonstrate them.
 
 ### Publish a Confluence Page for the Version
 Copy the "Latest Stable Version" page, update it, and replace the link on
-[Mitigate wiki homepage](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/233242976/StackRox+Mitigate).
+[Prevent wiki homepage](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/233242976/StackRox+Prevent).

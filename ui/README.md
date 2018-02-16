@@ -1,11 +1,11 @@
-# StackRox Mitigate UI
+# StackRox Prevent UI
 
-This sub-project contains Web UI (SPA) for Mitigate product.  
+This sub-project contains Web UI (SPA) for Prevent product.
 This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
 
 ## Development
 
-If you are developing only Mitigate UI, then you don't have to install build tooling described in the parent [README.md](../README.md).
+If you are developing only Prevent UI, then you don't have to install build tooling described in the parent [README.md](../README.md).
 Instead follow the instructions below.
 
 ### Build Tooling
@@ -19,9 +19,9 @@ Instead follow the instructions below.
 The following steps assume that your working directory is the root `apollo` directory (not `apollo/ui` where this `README.md` is placed).
 
 1. `docker login` - login to Docker Hub with your Docker ID
-2. `docker pull stackrox/mitigate:latest` - pull the latest Mitigate image
+2. `docker pull stackrox/prevent:latest` - pull the latest Prevent image
 3. `docker swarm init` - initialize local Swarm cluster
-4. `./deploy/swarm/deploy-local.sh` - deploy Mitigate to a local Swarm cluster
+4. `./deploy/swarm/deploy-local.sh` - deploy Prevent to a local Swarm cluster
 5. `make -C ui start` - start a dev server to serve UI
 
 ### IDEs

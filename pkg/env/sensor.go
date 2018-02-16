@@ -20,7 +20,7 @@ var (
 type clusterID struct{}
 
 func (c clusterID) EnvVar() string {
-	return "ROX_MITIGATE_CLUSTER_ID"
+	return "ROX_PREVENT_CLUSTER_ID"
 }
 
 func (c clusterID) Setting() string {
@@ -36,7 +36,7 @@ func (a centralEndpoint) EnvVar() string {
 func (a centralEndpoint) Setting() string {
 	ep := os.Getenv(a.EnvVar())
 	if len(ep) == 0 {
-		return "central.mitigate_net:443"
+		return "central.prevent_net:443"
 	}
 	return ep
 }
@@ -44,13 +44,13 @@ func (a centralEndpoint) Setting() string {
 type advertisedEndpoint struct{}
 
 func (a advertisedEndpoint) EnvVar() string {
-	return "ROX_MITIGATE_ADVERTISED_ENDPOINT"
+	return "ROX_PREVENT_ADVERTISED_ENDPOINT"
 }
 
 func (a advertisedEndpoint) Setting() string {
 	ep := os.Getenv(a.EnvVar())
 	if len(ep) == 0 {
-		return "sensor.mitigate_net:443"
+		return "sensor.prevent_net:443"
 	}
 	return ep
 }
@@ -58,13 +58,13 @@ func (a advertisedEndpoint) Setting() string {
 type image struct{}
 
 func (img image) EnvVar() string {
-	return "ROX_MITIGATE_IMAGE"
+	return "ROX_PREVENT_IMAGE"
 }
 
 func (img image) Setting() string {
 	name := os.Getenv(img.EnvVar())
 	if len(name) == 0 {
-		return "stackrox/mitigate:latest"
+		return "stackrox/prevent:latest"
 	}
 	return name
 }

@@ -165,7 +165,7 @@ image: gazelle clean-image
 	cp bazel-bin/sensor/swarm/linux_amd64_pure_stripped/swarm image/bin/swarm-sensor
 	cp bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-sensor
 	chmod +w image/bin/*
-	docker build -t stackrox/mitigate:latest image/
+	docker build -t stackrox/prevent:latest image/
 
 ###########
 ## Clean ##

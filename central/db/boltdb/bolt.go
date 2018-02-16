@@ -58,7 +58,7 @@ func New(path string) (*BoltDB, error) {
 // NewWithDefaults returns an instance of the persistent BoltDB store with default values loaded.
 func NewWithDefaults(dbPath string) (*BoltDB, error) {
 	if filepath.Ext(dbPath) != ".db" {
-		dbPath = filepath.Join(dbPath, "mitigate.db")
+		dbPath = filepath.Join(dbPath, "prevent.db")
 	}
 
 	db, err := New(dbPath)
@@ -137,7 +137,7 @@ func serializeDB(db *bolt.DB, file, removalPath string) http.Handler {
 
 // BackupHandler writes a consistent view of the database to the HTTP response
 func (b *BoltDB) BackupHandler() http.Handler {
-	filename := time.Now().Format("mitigate_2006_01_02.db")
+	filename := time.Now().Format("prevent_2006_01_02.db")
 	return serializeDB(b.DB, filename, "")
 }
 
@@ -208,7 +208,7 @@ func (b *BoltDB) ExportHandler() http.Handler {
 			return
 		}
 
-		filename := time.Now().Format("mitigate_2006_01_02.db")
+		filename := time.Now().Format("prevent_2006_01_02.db")
 		compactedFilepath := filepath.Join(os.TempDir(), filename)
 
 		// Create completely clean DB and compact to it, wiping the secrets from cached memory

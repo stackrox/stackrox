@@ -31,8 +31,8 @@ func TestClusters(t *testing.T) {
 	assert.Equal(t, v1.ClusterType_KUBERNETES_CLUSTER, c.GetType())
 	assert.Equal(t, `remote`, c.GetName())
 
-	img := images.GenerateImageFromString(c.GetMitigateImage())
-	assert.Equal(t, `stackrox/mitigate`, img.GetName().GetRemote())
+	img := images.GenerateImageFromString(c.GetPreventImage())
+	assert.Equal(t, `stackrox/prevent`, img.GetName().GetRemote())
 	if sha, ok := os.LookupEnv(`CIRCLE_SHA1`); ok {
 		assert.Equal(t, sha, img.GetName().GetTag())
 	}
@@ -91,7 +91,7 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
 	require.Len(t, centralDeployment.GetContainers(), 1)
 	c := centralDeployment.GetContainers()[0]
 
-	assert.Equal(t, `stackrox/mitigate`, c.GetImage().GetName().GetRemote())
+	assert.Equal(t, `stackrox/prevent`, c.GetImage().GetName().GetRemote())
 	if sha, ok := os.LookupEnv(`CIRCLE_SHA1`); ok {
 		assert.Equal(t, sha, c.GetImage().GetName().GetTag())
 	}
@@ -114,7 +114,7 @@ func verifySensorDeployment(t *testing.T, sensorDeployment *v1.Deployment) {
 	require.Len(t, sensorDeployment.GetContainers(), 1)
 	c := sensorDeployment.GetContainers()[0]
 
-	assert.Equal(t, `stackrox/mitigate`, c.GetImage().GetName().GetRemote())
+	assert.Equal(t, `stackrox/prevent`, c.GetImage().GetName().GetRemote())
 	if sha, ok := os.LookupEnv(`CIRCLE_SHA1`); ok {
 		assert.Equal(t, sha, c.GetImage().GetName().GetTag())
 	}
@@ -156,11 +156,11 @@ func TestImages(t *testing.T) {
 
 	require.NotEmpty(t, imageMap[dockerRegistry])
 
-	foundMitigateImage := false
+	foundPreventImage := false
 
 	for _, img := range imageMap[dockerRegistry] {
-		if img.GetName().GetRemote() == `stackrox/mitigate` {
-			foundMitigateImage = true
+		if img.GetName().GetRemote() == `stackrox/prevent` {
+			foundPreventImage = true
 
 			if sha, ok := os.LookupEnv(`CIRCLE_SHA1`); ok {
 				assert.Equal(t, sha, img.GetName().GetTag())
@@ -168,5 +168,5 @@ func TestImages(t *testing.T) {
 		}
 	}
 
-	assert.True(t, foundMitigateImage)
+	assert.True(t, foundPreventImage)
 }

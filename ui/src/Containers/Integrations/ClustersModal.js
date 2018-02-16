@@ -22,7 +22,7 @@ class ClustersModal extends Component {
 
         const columns = [
             { key: 'name', label: 'Name' },
-            { key: 'mitigateImage', label: 'StackRox Image' }
+            { key: 'preventImage', label: 'StackRox Image' }
         ];
         return <Table columns={columns} rows={clusters} />;
     }

@@ -12,9 +12,9 @@
   "remediation": "Access Orchestrator API's to launch new services or access node data",
   "whitelists": [
     {
-      "name": "Don't alert on stackrox mitigate",
+      "name": "Don't alert on stackrox prevent",
       "deployment": {
-        "name": "mitigate_sensor"
+        "name": "prevent_sensor"
       }
     },
     {

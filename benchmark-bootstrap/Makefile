@@ -4,4 +4,4 @@ TESTFLAGS=-race -p 1
 .PHONY: all
 all: style build
 
-include ../make/mitigate.mk
+include ../make/prevent.mk

@@ -11,11 +11,11 @@ RUN apk update && \
     apk --purge del apk-tools \
     ;
 
-ENV PATH=/mitigate
+ENV PATH=/prevent
 
 COPY ./benchmarks/ /data/benchmarks
 COPY ./policies/ /data/policies
-COPY ./bin/ /mitigate/
+COPY ./bin/ /prevent/
 COPY ./ui/build  /ui/
 
 EXPOSE 443

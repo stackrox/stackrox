@@ -32,10 +32,10 @@ services:
         protocol: tcp
         mode: ingress
     secrets:
-      - source: mitigate_private_key
+      - source: prevent_private_key
         target: stackrox.io/ca-key.pem
         mode: 400
-      - source: mitigate_certificate
+      - source: prevent_certificate
         target: stackrox.io/ca.pem
         mode: 400
 networks:
@@ -43,16 +43,16 @@ networks:
     driver: overlay
     attachable: true
 secrets:
-  mitigate_private_key:
+  prevent_private_key:
     file: ./ca-key.pem
-  mitigate_certificate:
+  prevent_certificate:
     file: ./ca.pem
 `
 
 	swarmCmd = commandPrefix + `WD=$(pwd)
 cd $DIR
 
-docker stack deploy -c ./deploy.yaml mitigate --with-registry-auth
+docker stack deploy -c ./deploy.yaml prevent --with-registry-auth
 
 cd $WD
 `
