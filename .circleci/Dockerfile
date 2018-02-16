@@ -1,15 +1,14 @@
 FROM circleci/golang:1.9.2
 
 # Install Bazel
-RUN echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list && \
-    curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add - && \
-    sudo apt-get update && \
-    sudo apt-get install -y \
-        bazel \
-        openjdk-8-jdk \
-        && \
-    sudo apt-get autoremove -y && \
-    echo "Cache Busted: 2018-01-05"
+ARG BAZEL_VERSION=0.9.0
+RUN sudo apt-get update && \
+    sudo apt-get install pkg-config zip g++ zlib1g-dev unzip python && \
+    wget -q https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh && \
+    chmod +x bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh && \
+    sudo ./bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh --prefix=/usr/local && \
+    rm ./bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh && \
+    sudo apt-get autoremove -y
 
 # Add necessary Go build tools
 RUN sudo chown $(whoami) $GOPATH -R && \
