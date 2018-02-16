@@ -38,7 +38,7 @@ class Panel extends Component {
     renderButtons() {
         if (!this.props.buttons) return '';
         return this.props.buttons.map(button => (
-            <span key={button.text}>
+            <span key={`button_${button.text}`}>
                 <button
                     className={button.className}
                     onClick={button.onClick}

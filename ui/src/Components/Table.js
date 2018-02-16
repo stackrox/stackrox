@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import isEqual from 'lodash/isEqual';
 
 import TableCell from 'Components/TableCell';
 
@@ -43,29 +44,33 @@ class Table extends Component {
         super(props);
 
         this.state = {
-            selected: new Set()
+            checked: new Set(),
+            selected: null
         };
     }
 
-    getSelectedRows = () => Array.from(this.state.selected);
+    getSelectedRows = () => Array.from(this.state.checked);
 
     clearSelectedRows = () => {
-        const { selected } = this.state;
-        selected.clear();
-        this.setState({ selected });
+        const { checked } = this.state;
+        checked.clear();
+        this.setState({ checked });
     };
 
     rowCheckedHandler = row => event => {
         event.stopPropagation();
-        const { selected } = this.state;
-        if (!selected.has(row)) selected.add(row);
-        else selected.delete(row);
-        this.setState({ selected });
+        const { checked } = this.state;
+        if (!checked.has(row)) checked.add(row);
+        else checked.delete(row);
+        this.setState({ checked });
     };
 
     rowClickHandler = row => () => {
         if (this.props.onRowClick) {
             this.props.onRowClick(row);
+            this.setState({
+                selected: row
+            });
         }
     };
 
@@ -137,7 +142,7 @@ class Table extends Component {
                             type="checkbox"
                             className="h-4 w-4 cursor-pointer"
                             onClick={this.rowCheckedHandler(row)}
-                            checked={this.state.selected.has(row)}
+                            checked={this.state.checked.has(row)}
                         />
                     </td>
                 );
@@ -151,8 +156,8 @@ class Table extends Component {
             }
             return (
                 <tr
-                    className={`${
-                        rowClickable ? 'cursor-pointer' : ''
+                    className={`${rowClickable ? 'cursor-pointer' : ''} ${
+                        isEqual(this.state.selected, row) ? 'bg-base-200' : ''
                     } border-b border-base-300 hover:bg-base-100`}
                     key={i}
                     onClick={rowClickable ? this.rowClickHandler(row) : null}
