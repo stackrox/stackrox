@@ -1,6 +1,7 @@
 package notifiers
 
 import (
+	"fmt"
 	"log"
 	"net/url"
 
@@ -8,17 +9,18 @@ import (
 )
 
 const (
-	alertLinkPath     = "/violations"
-	benchmarkLinkPath = "/compliance"
+	alertLinkPath     = "/main/violations/%s"
+	benchmarkLinkPath = "/main/compliance"
 )
 
 // AlertLink is the link URL for this alert
-func AlertLink(endpoint string) string {
+func AlertLink(endpoint string, alertID string) string {
 	base, err := url.Parse(endpoint)
 	if err != nil {
 		log.Print(err)
 	}
-	u, err := url.Parse(alertLinkPath)
+	alertPath := fmt.Sprintf(alertLinkPath, alertID)
+	u, err := url.Parse(alertPath)
 	if err != nil {
 		log.Print(err)
 		return ""

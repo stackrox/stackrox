@@ -85,7 +85,7 @@ func (s *slack) getDescription(alert *v1.Alert) (string, error) {
 			return fmt.Sprintf("%v- %v\r\n", dblTabSpace, s)
 		},
 	}
-	alertLink := notifiers.AlertLink(s.Notifier.UiEndpoint)
+	alertLink := notifiers.AlertLink(s.Notifier.UiEndpoint, alert.GetId())
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 

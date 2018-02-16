@@ -71,26 +71,26 @@ class ViolationsModal extends Component {
     );
 
     renderContainer = container => (
-        <div key={container.image.sha}>
+        <div key={container.image.name.sha}>
             <div className="py-2 px-3 truncate">
                 <span className="font-bold text-primary-500">Registry:</span>
                 {` `}
-                {container.image.registry}
+                {container.image.name.registry}
             </div>
             <div className="py-2 px-3 truncate">
                 <span className="font-bold text-primary-500">Remote:</span>
                 {` `}
-                {container.image.remote}
+                {container.image.name.remote}
             </div>
             <div className="py-2 px-3 truncate">
                 <span className="font-bold text-primary-500">SHA:</span>
                 {` `}
-                {container.image.sha}
+                {container.image.name.sha}
             </div>
             <div className="py-2 px-3 truncate">
                 <span className="font-bold text-primary-500">Tag:</span>
                 {` `}
-                {container.image.tag}
+                {container.image.name.tag}
             </div>
         </div>
     );

@@ -53,7 +53,7 @@ func (j *jira) getAlertDescription(alert *v1.Alert) (string, error) {
 			return fmt.Sprintf("** %v\r\n", s)
 		},
 	}
-	alertLink := notifiers.AlertLink(j.Notifier.UiEndpoint)
+	alertLink := notifiers.AlertLink(j.Notifier.UiEndpoint, alert.GetId())
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 

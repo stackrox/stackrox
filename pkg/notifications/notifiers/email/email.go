@@ -141,7 +141,7 @@ func (e *email) plainTextAlert(alert *v1.Alert) (string, error) {
 			return fmt.Sprintf("\t\t - %v\r\n", s)
 		},
 	}
-	alertLink := notifiers.AlertLink(e.notifier.UiEndpoint)
+	alertLink := notifiers.AlertLink(e.notifier.UiEndpoint, alert.GetId())
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
