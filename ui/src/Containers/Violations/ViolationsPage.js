@@ -47,8 +47,6 @@ const reducer = (action, prevState, nextState) => {
             return { isPanelOpen: true, policy: nextState.policy };
         case 'CLOSE_POLICY_ALERTS_PANEL':
             return { isPanelOpen: false, policy: null };
-        case 'UPDATE_ALERT':
-            return { alertId: nextState.alertId };
         default:
             return prevState;
     }
@@ -83,14 +81,12 @@ class ViolationsPage extends Component {
                 ]
             },
             alertsByPolicies: [],
-            policy: {},
-            alertId: null
+            policy: {}
         };
     }
 
     componentDidMount() {
         this.pollAlertGroups();
-        this.getAlertId();
     }
 
     componentWillUnmount() {
@@ -121,8 +117,7 @@ class ViolationsPage extends Component {
     };
 
     onModalClose = () => {
-        this.changeUrl(alert.id);
-        this.update('UPDATE_ALERT', { alertId: null });
+        this.changeUrl();
     };
 
     getAlertsGroups = () => {
@@ -149,11 +144,6 @@ class ViolationsPage extends Component {
         const { search } = this.props.location;
         const params = queryString.parse(search);
         return params;
-    }
-
-    getAlertId() {
-        const { alertId } = this.props.match.params;
-        this.update('UPDATE_ALERT', { alertId });
     }
 
     pollAlertGroups = () => {
@@ -225,8 +215,13 @@ class ViolationsPage extends Component {
     };
 
     renderModal() {
-        if (!this.state.alertId) return '';
-        return <ViolationsModal alertId={this.state.alertId} onClose={this.onModalClose} />;
+        if (!this.props.match.params.alertId) return '';
+        return (
+            <ViolationsModal
+                alertId={this.props.match.params.alertId}
+                onClose={this.onModalClose}
+            />
+        );
     }
 
     renderPolicyAlertsPanel = () => {
