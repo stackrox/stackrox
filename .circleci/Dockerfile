@@ -1,4 +1,4 @@
-FROM circleci/golang:1.9.2
+FROM circleci/golang:1.9.4
 
 # Install Bazel
 ARG BAZEL_VERSION=0.9.0
@@ -15,7 +15,7 @@ RUN sudo chown $(whoami) $GOPATH -R && \
     go get -u github.com/golang/lint/golint && \
     go get -u golang.org/x/tools/cmd/goimports && \
     go get -u github.com/jstemmer/go-junit-report && \
-    sudo curl -L -o $GOPATH/bin/dep https://github.com/golang/dep/releases/download/v0.3.2/dep-linux-amd64 && \
+    sudo curl -L -o $GOPATH/bin/dep https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64 && \
     sudo chmod +x $GOPATH/bin/dep
 
 # Add Node

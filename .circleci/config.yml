@@ -2,7 +2,7 @@ defaults: &defaults
   docker:
     # This image is the standard circleci/golang:1.9.2 image, plus bazel
     # and other necessary build tools like goimports, dep, yarn, gcloud, kubectl, and envsubst.
-    - image: stackrox/apollo:circleci@sha256:e28d1c942cd7181ea30aa2c6eaad8c5ad8ae67dd60a4d6f7e00000731fa18372
+    - image: stackrox/apollo:circleci@sha256:5da8afba8de2bcb986ce3eadf93b6f566cdc888c181ccd2e99e5e96bae283be2
       auth:
         username: $DOCKERHUB_USERNAME
         password: $DOCKERHUB_PASSWORD
