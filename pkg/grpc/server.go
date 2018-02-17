@@ -22,8 +22,8 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-const grpcPort = ":443"
-const endpoint = "localhost" + grpcPort
+const grpcAddr = ":443"
+const endpoint = "localhost" + grpcAddr
 
 var (
 	log = logging.New("api")
@@ -150,15 +150,15 @@ func (a *apiImpl) run() {
 		ErrorLog:  golog.New(httpErrorLogger{}, "", golog.LstdFlags),
 		TLSConfig: tlsConf,
 	}
-	conn, err := net.Listen("tcp", grpcPort)
+	conn, err := net.Listen("tcp", grpcAddr)
 	if err != nil {
 		panic(err)
 	}
+	log.Infof("gRPC server started on %s", grpcAddr)
 	err = srv.Serve(tls.NewListener(conn, srv.TLSConfig))
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
-	log.Infof("gRPC server started on port %d", grpcPort)
 	return
 }
 
