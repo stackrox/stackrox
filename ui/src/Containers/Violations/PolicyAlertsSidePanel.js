@@ -7,6 +7,7 @@ import * as Icon from 'react-feather';
 
 import axios from 'axios';
 import dateFns from 'date-fns';
+import { sortTime } from 'sorters/sorters';
 
 const reducer = (action, prevState, nextState) => {
     switch (action) {
@@ -96,7 +97,7 @@ class PolicyAlertsSidePanel extends Component {
     renderTable = () => {
         const columns = [
             { key: 'deployment.name', label: 'Deployment' },
-            { key: 'time', label: 'Time' }
+            { key: 'time', label: 'Time', sortMethod: sortTime }
         ];
         const rows = this.state.alerts.map(alert => {
             const result = Object.assign({}, alert);

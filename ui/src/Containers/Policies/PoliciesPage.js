@@ -11,6 +11,7 @@ import PolicyCreationForm from 'Containers/Policies/PolicyCreationForm';
 import PolicyView from 'Containers/Policies/PoliciesView';
 
 import { severityLabels } from 'messages/common';
+import { sortSeverity } from 'sorters/sorters';
 
 const reducer = (action, prevState, nextState) => {
     switch (action) {
@@ -239,6 +240,7 @@ class PoliciesPage extends Component {
         ];
         const columns = [
             {
+                key: 'name',
                 keys: ['name', 'disabled'],
                 keyValueFunc: (name, disabled) => (
                     <div className="flex items-center relative">
@@ -270,7 +272,8 @@ class PoliciesPage extends Component {
                         default:
                             return '';
                     }
-                }
+                },
+                sortMethod: sortSeverity
             }
         ];
         const actions = [

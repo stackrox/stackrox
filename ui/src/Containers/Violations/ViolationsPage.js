@@ -5,6 +5,8 @@ import axios from 'axios';
 import queryString from 'query-string';
 import isEqual from 'lodash/isEqual';
 
+import { sortNumber, sortSeverity } from 'sorters/sorters';
+
 import Table from 'Components/Table';
 import PolicyAlertsSidePanel from './PolicyAlertsSidePanel';
 import ViolationsModal from './ViolationsModal';
@@ -195,8 +197,18 @@ class ViolationsPage extends Component {
                 tooltip: categories =>
                     categories.map(category => policyCategoriesLabels[category]).join(' | ')
             },
-            { key: 'severity', label: 'Severity', classFunc: setSeverityClass },
-            { key: 'numAlerts', label: 'Alerts', align: 'right' }
+            {
+                key: 'severity',
+                label: 'Severity',
+                classFunc: setSeverityClass,
+                sortMethod: sortSeverity
+            },
+            {
+                key: 'numAlerts',
+                label: 'Alerts',
+                align: 'right',
+                sortMethod: sortNumber('numAlerts')
+            }
         ];
         const rows = this.state.alertsByPolicies.map(obj => {
             const row = {

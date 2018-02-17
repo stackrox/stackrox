@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import emitter from 'emitter';
 import dateFns from 'date-fns';
 import { ClipLoader } from 'react-spinners';
+import { sortNumber } from 'sorters/sorters';
 
 import Table from 'Components/Table';
 import Select from 'Components/Select';
@@ -252,25 +253,29 @@ class BenchmarksPage extends Component {
                     key: 'aggregatedResults.PASS',
                     label: 'Pass',
                     default: 0,
-                    align: 'right'
+                    align: 'right',
+                    sortMethod: sortNumber('aggregatedResults.PASS')
                 },
                 {
                     key: 'aggregatedResults.INFO',
                     label: 'Info',
                     default: 0,
-                    align: 'right'
+                    align: 'right',
+                    sortMethod: sortNumber('aggregatedResults.INFO')
                 },
                 {
                     key: 'aggregatedResults.WARN',
                     label: 'Warn',
                     default: 0,
-                    align: 'right'
+                    align: 'right',
+                    sortMethod: sortNumber('aggregatedResults.WARN')
                 },
                 {
                     key: 'aggregatedResults.NOTE',
                     label: 'Note',
                     default: 0,
-                    align: 'right'
+                    align: 'right',
+                    sortMethod: sortNumber('aggregatedResults.NOTE')
                 }
             ],
             rows: this.state.benchmarks

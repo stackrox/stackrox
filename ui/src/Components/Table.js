@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import isEqual from 'lodash/isEqual';
 
 import TableCell from 'Components/TableCell';
+import find from 'lodash/find';
+import flattenObject from 'utils/flattenObject';
 
 class Table extends Component {
     static propTypes = {
@@ -13,7 +15,8 @@ class Table extends Component {
                 keyValueFunc: PropTypes.func,
                 align: PropTypes.string,
                 classFunc: PropTypes.func,
-                default: PropTypes.any
+                default: PropTypes.any,
+                sortMethod: PropTypes.func
             })
         ).isRequired,
         rows: PropTypes.arrayOf(
@@ -44,12 +47,32 @@ class Table extends Component {
         super(props);
 
         this.state = {
+            data: [],
+            sortBy: null,
+            sortDir: {},
             checked: new Set(),
             selected: null
         };
     }
 
+    componentWillReceiveProps(nextProps) {
+        if (nextProps !== this.props) {
+            this.setState({ data: nextProps.rows.slice() });
+        }
+    }
+
     getSelectedRows = () => Array.from(this.state.checked);
+
+    getDirection = direction => {
+        if (!direction) return '';
+        return direction === 'DESC' ? ' ↓' : ' ↑';
+    };
+
+    getValue = (obj, key) => {
+        let val = Object.assign({}, flattenObject(obj))[key];
+        val = typeof val === 'string' ? val : val[0];
+        return val;
+    };
 
     clearSelectedRows = () => {
         const { checked } = this.state;
@@ -79,6 +102,36 @@ class Table extends Component {
         action.onClick(row);
     };
 
+    sortRows = key => () => {
+        const sortBy = key;
+        let sortDir = this.state.sortDir[sortBy];
+
+        if (sortBy === this.state.sortBy) {
+            sortDir = this.state.sortDir[sortBy] === 'ASC' ? 'DESC' : 'ASC';
+        } else {
+            sortDir = 'DESC';
+        }
+
+        const rows = this.state.data.slice();
+        const column = find(this.props.columns, o => o.key === sortBy);
+        const sortFn = (a, b) => {
+            let sortVal = 0;
+            if (column && column.sortMethod) {
+                sortVal = column.sortMethod(a, b);
+            } else {
+                const aValue = this.getValue(a, sortBy);
+                const bValue = this.getValue(b, sortBy);
+                sortVal = aValue.localeCompare(bValue);
+            }
+            if (sortDir === 'DESC') {
+                sortVal *= -1;
+            }
+            return sortVal;
+        };
+        rows.sort(sortFn);
+        this.setState({ sortBy, sortDir: { [key]: sortDir }, data: rows.slice() });
+    };
+
     renderActionButtons = row =>
         this.props.actions.map((button, i) => (
             <button
@@ -98,12 +151,12 @@ class Table extends Component {
 
     renderHeaders() {
         const tableHeaders = this.props.columns.map(column => {
-            const className = `p-3 text-primary-500 border-b border-base-300 hover:text-primary-600 ${
+            const className = `p-3 text-primary-500 border-b border-base-300 hover:text-primary-600 cursor-pointer truncate ${
                 column.align === 'right' ? 'text-right' : 'text-left'
             }`;
             return (
-                <th className={className} key={column.label}>
-                    {column.label}
+                <th className={className} key={column.key} onClick={this.sortRows(column.key)}>
+                    {column.label + this.getDirection(this.state.sortDir[column.key])}
                 </th>
             );
         });
@@ -129,9 +182,9 @@ class Table extends Component {
     }
 
     renderBody() {
-        const { rows, columns } = this.props;
+        const { columns } = this.props;
         const rowClickable = !!this.props.onRowClick;
-        return rows.map((row, i) => {
+        return this.state.data.map((row, i) => {
             const tableCells = columns.map(column => (
                 <TableCell column={column} row={row} key={`${column.key}`} />
             ));
