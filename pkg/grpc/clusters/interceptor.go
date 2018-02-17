@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	logger = logging.New("grpc/clusters")
+	logger = logging.LoggerForModule()
 )
 
 // ContactTimeUpdater contains the storage-access functions that this

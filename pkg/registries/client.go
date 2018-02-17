@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	log = logging.New("registries")
+	log = logging.LoggerForModule()
 )
 
 const (

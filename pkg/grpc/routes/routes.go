@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	logger = logging.New("grpc/routes")
+	logger = logging.LoggerForModule()
 )
 
 func defaultInterceptor(h http.Handler) http.Handler {

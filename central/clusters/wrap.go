@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	log = logging.New("clusters")
+	log = logging.LoggerForModule()
 )
 
 const (

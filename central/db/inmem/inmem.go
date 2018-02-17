@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	log = logging.New("inmem")
+	log = logging.LoggerForModule()
 )
 
 // InMemoryStore is an in memory representation of the database

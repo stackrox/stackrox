@@ -45,7 +45,7 @@ var (
 	// ErrUnverifiableToken means that, despite all efforts, the token could not be validated.
 	ErrUnverifiableToken = errors.New("token could not be validated")
 
-	logger = logging.New("pkg/jwt")
+	logger = logging.LoggerForModule()
 )
 
 // tokenFromHeader looks for the token in the Authorization header.

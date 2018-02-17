@@ -51,7 +51,7 @@ func NewLRURelayer(centralEndpoint string) *LRURelayer {
 		cache:           cache,
 		tick:            time.NewTicker(interval),
 		stopC:           make(chan struct{}),
-		logger:          logging.New("relayer"),
+		logger:          logging.NewOrGet("relayer"),
 	}
 }
 

@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	log          = logging.New("clair")
+	log          = logging.LoggerForModule()
 	errNotExists = errors.New("Layer does not exist")
 )
 

@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	log = logging.New("notifiers/jira")
+	log = logging.LoggerForModule()
 )
 
 // Jira notifier plugin

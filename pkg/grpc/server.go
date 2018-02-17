@@ -26,7 +26,7 @@ const grpcAddr = ":443"
 const endpoint = "localhost" + grpcAddr
 
 var (
-	log = logging.New("api")
+	log = logging.LoggerForModule()
 )
 
 // APIService is the service interface

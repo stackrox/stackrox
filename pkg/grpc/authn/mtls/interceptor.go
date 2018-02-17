@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	logger = logging.New("pkg/grpc/auth/mtls")
+	logger = logging.LoggerForModule()
 )
 
 // UnaryInterceptor applies authentication to unary gRPC server calls.

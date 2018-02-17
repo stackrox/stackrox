@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	logger = logging.New("listener")
+	logger = logging.LoggerForModule()
 )
 
 type kubernetesListener struct {

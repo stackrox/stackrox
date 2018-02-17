@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	logger = logging.New("detection/privilege_processor")
+	logger = logging.LoggerForModule()
 )
 
 type matchFunc func(*v1.SecurityContext) ([]*v1.Alert_Violation, bool)

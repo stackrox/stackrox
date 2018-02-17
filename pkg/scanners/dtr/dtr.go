@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	log = logging.New("dtr")
+	log = logging.LoggerForModule()
 )
 
 type dtr struct {

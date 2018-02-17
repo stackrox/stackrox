@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	logger = logging.New("detection")
+	logger = logging.LoggerForModule()
 )
 
 // Detector processes deployments and reports alerts if policies are violated.

@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	log = logging.New("service")
+	log = logging.LoggerForModule()
 )
 
 // NewPolicyService returns the PolicyService API.

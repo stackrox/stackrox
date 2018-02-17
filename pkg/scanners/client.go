@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	log = logging.New("scanners")
+	log = logging.LoggerForModule()
 )
 
 const (

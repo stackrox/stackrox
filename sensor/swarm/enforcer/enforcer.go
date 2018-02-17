@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	logger = logging.New("swarm/enforcer")
+	logger = logging.LoggerForModule()
 )
 
 type enforcer struct {

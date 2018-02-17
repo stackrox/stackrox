@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	logger = logging.New("main")
+	logger = logging.LoggerForModule()
 )
 
 func clusterType(ct string) v1.ClusterType {

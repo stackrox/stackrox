@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	log = logging.New("benchmarks/utils")
+	log = logging.LoggerForModule()
 )
 
 type configStatus struct {

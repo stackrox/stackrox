@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	logger = logging.New("pkg/grpc/auth/user")
+	logger = logging.LoggerForModule()
 )
 
 // AuthLister contains the storage-access functions that this

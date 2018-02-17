@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	log = logging.New("scheduler")
+	log = logging.LoggerForModule()
 )
 
 const (

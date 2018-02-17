@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	log = logging.New("notifiers/email")
+	log = logging.LoggerForModule()
 )
 
 // email notifier plugin

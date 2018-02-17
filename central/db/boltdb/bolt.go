@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	log = logging.New("db/bolt")
+	log = logging.LoggerForModule()
 
 	// var so this can be modified in tests
 	defaultBenchmarksPath = `/data/benchmarks`

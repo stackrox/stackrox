@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	logger = logging.New("clusters/zip")
+	logger = logging.LoggerForModule()
 )
 
 // Handler returns a handler for the cluster zip method.

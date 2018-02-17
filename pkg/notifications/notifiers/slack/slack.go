@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	log = logging.New("notifiers/slack")
+	log = logging.LoggerForModule()
 )
 
 const (
