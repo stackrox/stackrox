@@ -47,18 +47,11 @@ class Table extends Component {
         super(props);
 
         this.state = {
-            data: [],
             sortBy: null,
             sortDir: {},
             checked: new Set(),
             selected: null
         };
-    }
-
-    componentWillReceiveProps(nextProps) {
-        if (nextProps !== this.props) {
-            this.setState({ data: nextProps.rows.slice() });
-        }
     }
 
     getSelectedRows = () => Array.from(this.state.checked);
@@ -112,7 +105,7 @@ class Table extends Component {
             sortDir = 'DESC';
         }
 
-        const rows = this.state.data.slice();
+        const { rows } = this.props;
         const column = find(this.props.columns, o => o.key === sortBy);
         const sortFn = (a, b) => {
             let sortVal = 0;
@@ -129,7 +122,7 @@ class Table extends Component {
             return sortVal;
         };
         rows.sort(sortFn);
-        this.setState({ sortBy, sortDir: { [key]: sortDir }, data: rows.slice() });
+        this.setState({ sortBy, sortDir: { [key]: sortDir } });
     };
 
     renderActionButtons = row =>
@@ -182,9 +175,9 @@ class Table extends Component {
     }
 
     renderBody() {
-        const { columns } = this.props;
+        const { columns, rows } = this.props;
         const rowClickable = !!this.props.onRowClick;
-        return this.state.data.map((row, i) => {
+        return rows.map((row, i) => {
             const tableCells = columns.map(column => (
                 <TableCell column={column} row={row} key={`${column.key}`} />
             ));
