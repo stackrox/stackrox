@@ -135,10 +135,11 @@ func TestAsDeployment(t *testing.T) {
 						},
 						Volumes: []*v1.Volume{
 							{
-								Name:     "volumeSource",
-								Type:     "volume",
-								ReadOnly: true,
-								Path:     "/var/data",
+								Name:        "volumeSource",
+								Type:        "volume",
+								ReadOnly:    true,
+								Source:      "volumeSource",
+								Destination: "/var/data",
 							},
 						},
 					},

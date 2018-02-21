@@ -87,7 +87,8 @@ const policyFormat = `
 		{{if .Policy.ConfigurationPolicy.VolumePolicy}}{{list "Volume"}}
 			{{if .Policy.ConfigurationPolicy.VolumePolicy.Name}}{{stringify "Name:" .Policy.ConfigurationPolicy.VolumePolicy.Name | nestedList}}{{end}}
 			{{if .Policy.ConfigurationPolicy.VolumePolicy.Type}}{{stringify "Type:" .Policy.ConfigurationPolicy.VolumePolicy.Type | nestedList}}{{end}}
-			{{if .Policy.ConfigurationPolicy.VolumePolicy.Path}}{{stringify "Path:" .Policy.ConfigurationPolicy.VolumePolicy.Path | nestedList}}{{end}}
+			{{if .Policy.ConfigurationPolicy.VolumePolicy.Source}}{{stringify "Source:" .Policy.ConfigurationPolicy.VolumePolicy.Source | nestedList}}{{end}}
+			{{if .Policy.ConfigurationPolicy.VolumePolicy.Destination}}{{stringify "Destination:" .Policy.ConfigurationPolicy.VolumePolicy.Destination | nestedList}}{{end}}
 			{{if .Policy.ConfigurationPolicy.VolumePolicy.SetReadOnly}}{{stringify "ReadOnly:" .Policy.ConfigurationPolicy.VolumePolicy.GetReadOnly | nestedList}}{{end}}
 		{{end}}
 	{{end}}

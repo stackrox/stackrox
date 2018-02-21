@@ -21,11 +21,12 @@ message ConfigurationPolicy {
 
     message VolumePolicy {
         string name         = 1;
-        string path         = 2;
+        string source       = 2;
+        string destination  = 3;
         oneof set_read_only {
-            bool read_only  = 3;
+            bool read_only  = 4;
         }
-        string type         = 4;
+        string type         = 5;
     }
     VolumePolicy volume_policy      = 6;
 

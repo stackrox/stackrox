@@ -123,10 +123,11 @@ func (s serviceWrap) getVolumes() []*v1.Volume {
 
 	for i, m := range spec.Mounts {
 		output[i] = &v1.Volume{
-			Name:     m.Source,
-			Path:     m.Target,
-			Type:     string(m.Type),
-			ReadOnly: m.ReadOnly,
+			Name:        m.Source,
+			Source:      m.Source,
+			Destination: m.Target,
+			Type:        string(m.Type),
+			ReadOnly:    m.ReadOnly,
 		}
 	}
 
@@ -136,9 +137,9 @@ func (s serviceWrap) getVolumes() []*v1.Volume {
 			path = `/run/secrets/` + secret.File.Name
 		}
 		output = append(output, &v1.Volume{
-			Name: secret.SecretName,
-			Path: path,
-			Type: `secret`,
+			Name:        secret.SecretName,
+			Destination: path,
+			Type:        `secret`,
 		})
 	}
 	return output

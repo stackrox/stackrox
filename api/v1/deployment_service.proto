@@ -38,7 +38,6 @@ message Container {
     repeated PortConfig ports           = 5;
 }
 
-
 message ContainerConfig {
     message EnvironmentConfig {
         string key      = 1;
@@ -67,9 +66,10 @@ message SecurityContext {
 
 message Volume {
     string name         = 1;
-    string path         = 2;
-    bool read_only      = 3;
-    string type         = 4;
+    string source       = 2;
+    string destination  = 3;
+    bool read_only      = 4;
+    string type         = 5;
 }
 
 message PortConfig {

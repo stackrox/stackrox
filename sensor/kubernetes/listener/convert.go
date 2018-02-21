@@ -5,6 +5,7 @@ import (
 
 	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
+	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/volumes"
 	"github.com/golang/protobuf/ptypes"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -218,26 +219,39 @@ func (w *wrap) populateSecurityContext(podSpec v1.PodSpec) {
 	}
 }
 
-func (w *wrap) populateVolumes(podSpec v1.PodSpec) {
-	volumeTypeMap := make(map[string]string)
+func (w *wrap) getVolumeSourceMap(podSpec v1.PodSpec) map[string]volumes.VolumeSource {
+	volumeSourceMap := make(map[string]volumes.VolumeSource)
 	for _, v := range podSpec.Volumes {
 		val := reflect.ValueOf(v.VolumeSource)
-
 		for i := 0; i < val.NumField(); i++ {
 			f := val.Field(i)
 			if !f.IsNil() {
-				volumeTypeMap[v.Name] = val.Type().Field(i).Name
+				sourceCreator, ok := volumes.VolumeRegistry[val.Type().Field(i).Name]
+				if !ok {
+					volumeSourceMap[v.Name] = &volumes.Unimplemented{}
+				} else {
+					volumeSourceMap[v.Name] = sourceCreator(f.Interface())
+				}
 			}
 		}
 	}
+	return volumeSourceMap
+}
 
+func (w *wrap) populateVolumes(podSpec v1.PodSpec) {
+	volumeSourceMap := w.getVolumeSourceMap(podSpec)
 	for i, c := range podSpec.Containers {
 		for _, v := range c.VolumeMounts {
+			sourceVolume, ok := volumeSourceMap[v.Name]
+			if !ok {
+				sourceVolume = &volumes.Unimplemented{}
+			}
 			w.Deployment.Containers[i].Volumes = append(w.Deployment.Containers[i].Volumes, &pkgV1.Volume{
-				Name:     v.Name,
-				Path:     v.MountPath,
-				ReadOnly: v.ReadOnly,
-				Type:     volumeTypeMap[v.Name],
+				Name:        v.Name,
+				Source:      sourceVolume.Source(),
+				Destination: v.MountPath,
+				ReadOnly:    v.ReadOnly,
+				Type:        sourceVolume.Type(),
 			})
 		}
 	}

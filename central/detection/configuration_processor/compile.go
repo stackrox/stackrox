@@ -31,10 +31,11 @@ type compiledEnvironmentPolicy struct {
 }
 
 type compiledVolumePolicy struct {
-	Name     *regexp.Regexp
-	Path     *regexp.Regexp
-	ReadOnly *bool
-	Type     *regexp.Regexp
+	Name        *regexp.Regexp
+	Source      *regexp.Regexp
+	Destination *regexp.Regexp
+	ReadOnly    *bool
+	Type        *regexp.Regexp
 }
 
 type compiledPortPolicy struct {
@@ -109,7 +110,7 @@ func newCompiledEnvironmentPolicy(envPolicy *v1.ConfigurationPolicy_EnvironmentP
 }
 
 func newCompiledVolumePolicy(volumePolicy *v1.ConfigurationPolicy_VolumePolicy) (compiled *compiledVolumePolicy, err error) {
-	if volumePolicy == nil || (!volumePolicy.GetReadOnly() && volumePolicy.GetName() == "" && volumePolicy.GetPath() == "" && volumePolicy.GetType() == "") {
+	if volumePolicy == nil || (!volumePolicy.GetReadOnly() && volumePolicy.GetName() == "" && volumePolicy.GetSource() == "" && volumePolicy.GetDestination() == "" && volumePolicy.GetType() == "") {
 		return
 	}
 
@@ -124,9 +125,14 @@ func newCompiledVolumePolicy(volumePolicy *v1.ConfigurationPolicy_VolumePolicy) 
 		return nil, fmt.Errorf("name: %s", err)
 	}
 
-	compiled.Path, err = processors.CompileStringRegex(volumePolicy.GetPath())
+	compiled.Source, err = processors.CompileStringRegex(volumePolicy.GetSource())
 	if err != nil {
-		return nil, fmt.Errorf("path: %s", err)
+		return nil, fmt.Errorf("source: %s", err)
+	}
+
+	compiled.Destination, err = processors.CompileStringRegex(volumePolicy.GetDestination())
+	if err != nil {
+		return nil, fmt.Errorf("destination: %s", err)
 	}
 
 	compiled.Type, err = processors.CompileStringRegex(volumePolicy.GetType())
@@ -173,8 +179,11 @@ func (p *compiledVolumePolicy) String() string {
 	if p.Name != nil {
 		fields = append(fields, fmt.Sprintf("name=%v", p.Name))
 	}
-	if p.Path != nil {
-		fields = append(fields, fmt.Sprintf("path=%v", p.Path))
+	if p.Source != nil {
+		fields = append(fields, fmt.Sprintf("source=%v", p.Source))
+	}
+	if p.Destination != nil {
+		fields = append(fields, fmt.Sprintf("destination=%v", p.Destination))
 	}
 	if p.Type != nil {
 		fields = append(fields, fmt.Sprintf("type=%v", p.Type))

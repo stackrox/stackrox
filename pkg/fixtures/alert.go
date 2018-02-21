@@ -61,8 +61,9 @@ func GetAlert() *v1.Alert {
 				Directory: "/directory",
 				User:      "root",
 				VolumePolicy: &v1.ConfigurationPolicy_VolumePolicy{
-					Name: "name",
-					Path: "/etc/network",
+					Name:        "name",
+					Source:      "10.0.0.1/export",
+					Destination: "/etc/network",
 					SetReadOnly: &v1.ConfigurationPolicy_VolumePolicy_ReadOnly{
 						ReadOnly: true,
 					},

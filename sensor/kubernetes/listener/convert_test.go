@@ -6,6 +6,7 @@ import (
 
 	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/kubernetes"
+	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/volumes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
@@ -228,10 +229,11 @@ func TestConvert(t *testing.T) {
 							},
 							Volumes: []*pkgV1.Volume{
 								{
-									Name:     "secretVol1",
-									Path:     "/var/secrets",
-									ReadOnly: true,
-									Type:     "Secret",
+									Name:        "secretVol1",
+									Source:      "private_key",
+									Destination: "/var/secrets",
+									ReadOnly:    true,
+									Type:        "Secret",
 								},
 							},
 						},
@@ -265,9 +267,10 @@ func TestConvert(t *testing.T) {
 							Volumes: []*pkgV1.Volume{
 
 								{
-									Name: "hostMountVol1",
-									Path: "/var/run/docker.sock",
-									Type: "HostPath",
+									Name:        "hostMountVol1",
+									Source:      "/var/run/docker.sock",
+									Destination: "/var/run/docker.sock",
+									Type:        "HostPath",
 								},
 							},
 						},
@@ -284,6 +287,54 @@ func TestConvert(t *testing.T) {
 			assert.Equal(t, c.expectedDeploymentEvent, actual)
 		})
 	}
+}
+
+func TestGetVolumeSourceMap(t *testing.T) {
+	t.Parallel()
+
+	secretVol := v1.Volume{
+		Name: "secret",
+		VolumeSource: v1.VolumeSource{
+			Secret: &v1.SecretVolumeSource{
+				SecretName: "private_key",
+			},
+		},
+	}
+	hostPathVol := v1.Volume{
+		Name: "host",
+		VolumeSource: v1.VolumeSource{
+			HostPath: &v1.HostPathVolumeSource{
+				Path: "/var/run/docker.sock",
+			},
+		},
+	}
+	ebsVol := v1.Volume{
+		Name: "ebs",
+		VolumeSource: v1.VolumeSource{
+			AWSElasticBlockStore: &v1.AWSElasticBlockStoreVolumeSource{
+				VolumeID: "ebsVolumeID",
+			},
+		},
+	}
+	unimplementedVol := v1.Volume{
+		Name: "unimplemented",
+		VolumeSource: v1.VolumeSource{
+			Flocker: &v1.FlockerVolumeSource{},
+		},
+	}
+
+	spec := v1.PodSpec{
+		Volumes: []v1.Volume{secretVol, hostPathVol, ebsVol, unimplementedVol},
+	}
+
+	expectedMap := map[string]volumes.VolumeSource{
+		"secret":        volumes.VolumeRegistry["Secret"](secretVol.Secret),
+		"host":          volumes.VolumeRegistry["HostPath"](hostPathVol.HostPath),
+		"ebs":           volumes.VolumeRegistry["AWSElasticBlockStore"](ebsVol.AWSElasticBlockStore),
+		"unimplemented": &volumes.Unimplemented{},
+	}
+	w := &wrap{}
+	assert.Equal(t, expectedMap, w.getVolumeSourceMap(spec))
 }
 
 type mockPodLister struct {

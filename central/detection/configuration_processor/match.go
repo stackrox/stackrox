@@ -135,7 +135,10 @@ func (p *compiledVolumePolicy) matchVolume(vol *v1.Volume) (violations []*v1.Ale
 	if p.Name != nil && !p.Name.MatchString(vol.GetName()) {
 		return
 	}
-	if p.Path != nil && !p.Path.MatchString(vol.GetPath()) {
+	if p.Source != nil && !p.Source.MatchString(vol.GetSource()) {
+		return
+	}
+	if p.Destination != nil && !p.Destination.MatchString(vol.GetDestination()) {
 		return
 	}
 	if p.Type != nil && !p.Type.MatchString(vol.GetType()) {

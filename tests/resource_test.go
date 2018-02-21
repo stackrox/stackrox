@@ -98,7 +98,7 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
 
 	require.Len(t, c.GetVolumes(), 1)
 	v := c.GetVolumes()[0]
-	assert.Equal(t, "/run/secrets/stackrox.io/", v.GetPath())
+	assert.Equal(t, "/run/secrets/stackrox.io/", v.GetDestination())
 	assert.True(t, v.GetReadOnly())
 
 	require.Len(t, c.GetPorts(), 1)
@@ -121,7 +121,7 @@ func verifySensorDeployment(t *testing.T, sensorDeployment *v1.Deployment) {
 
 	require.Len(t, c.GetVolumes(), 1)
 	v := c.GetVolumes()[0]
-	assert.Equal(t, "/run/secrets/stackrox.io/", v.GetPath())
+	assert.Equal(t, "/run/secrets/stackrox.io/", v.GetDestination())
 	assert.True(t, v.GetReadOnly())
 }
 
