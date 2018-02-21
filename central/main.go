@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime/debug"
@@ -85,33 +87,8 @@ func (c *central) startGRPCServer() {
 	userAuth := authnUser.NewAuthInterceptor(c.database)
 
 	config := pkgGRPC.Config{
-		CustomRoutes: map[string]routes.CustomRoute{
-			"/": {
-				AuthInterceptor: userAuth.HTTPInterceptor,
-				Authorizer:      allow.Anonymous(),
-				ServerHandler:   ui.Mux(),
-				Compression:     true,
-			},
-			"/api/extensions/clusters/zip": {
-				AuthInterceptor: userAuth.HTTPInterceptor,
-				Authorizer:      authzUser.Any(),
-				ServerHandler:   clustersZip.Handler(clusterService, idService),
-				Compression:     false,
-			},
-			"/db/backup": {
-				AuthInterceptor: userAuth.HTTPInterceptor,
-				Authorizer:      authzUser.Any(),
-				ServerHandler:   c.database.BackupHandler(),
-				Compression:     true,
-			},
-			"/db/export": {
-				AuthInterceptor: userAuth.HTTPInterceptor,
-				Authorizer:      authzUser.Any(),
-				ServerHandler:   c.database.ExportHandler(),
-				Compression:     true,
-			},
-		},
-		TLS: verifier.CA{},
+		CustomRoutes: c.customRoutes(userAuth, clusterService, idService),
+		TLS:          verifier.CA{},
 		UnaryInterceptors: []grpc.UnaryServerInterceptor{
 			userAuth.UnaryInterceptor(),
 			clusterWatcher.UnaryInterceptor(),
@@ -142,6 +119,63 @@ func (c *central) startGRPCServer() {
 	c.server.Register(idService)
 	c.server.Register(service.NewSensorEventService(c.detector, c.database))
 	c.server.Start()
+}
+
+func (c *central) customRoutes(userAuth *authnUser.AuthInterceptor, clusterService *service.ClusterService, idService *service.IdentityService) (routeMap map[string]routes.CustomRoute) {
+	routeMap = map[string]routes.CustomRoute{
+		"/": {
+			AuthInterceptor: userAuth.HTTPInterceptor,
+			Authorizer:      allow.Anonymous(),
+			ServerHandler:   ui.Mux(),
+			Compression:     true,
+		},
+		"/api/extensions/clusters/zip": {
+			AuthInterceptor: userAuth.HTTPInterceptor,
+			Authorizer:      authzUser.Any(),
+			ServerHandler:   clustersZip.Handler(clusterService, idService),
+			Compression:     false,
+		},
+		"/db/backup": {
+			AuthInterceptor: userAuth.HTTPInterceptor,
+			Authorizer:      authzUser.Any(),
+			ServerHandler:   c.database.BackupHandler(),
+			Compression:     true,
+		},
+		"/db/export": {
+			AuthInterceptor: userAuth.HTTPInterceptor,
+			Authorizer:      authzUser.Any(),
+			ServerHandler:   c.database.ExportHandler(),
+			Compression:     true,
+		},
+	}
+
+	c.addDebugRoutes(routeMap, userAuth)
+
+	return
+}
+
+func (c *central) addDebugRoutes(routeMap map[string]routes.CustomRoute, userAuth *authnUser.AuthInterceptor) {
+	rs := map[string]http.Handler{
+		"/debug/pprof":         http.HandlerFunc(pprof.Index),
+		"/debug/pprof/cmdline": http.HandlerFunc(pprof.Cmdline),
+		"/debug/pprof/profile": http.HandlerFunc(pprof.Profile),
+		"/debug/pprof/symbol":  http.HandlerFunc(pprof.Symbol),
+		"/debug/pprof/trace":   http.HandlerFunc(pprof.Trace),
+		"/debug/block":         pprof.Handler(`block`),
+		"/debug/goroutine":     pprof.Handler(`goroutine`),
+		"/debug/heap":          pprof.Handler(`heap`),
+		"/debug/mutex":         pprof.Handler(`mutex`),
+		"/debug/threadcreate":  pprof.Handler(`threadcreate`),
+	}
+
+	for r, h := range rs {
+		routeMap[r] = routes.CustomRoute{
+			AuthInterceptor: userAuth.HTTPInterceptor,
+			Authorizer:      authzUser.Any(),
+			ServerHandler:   h,
+			Compression:     true,
+		}
+	}
 }
 
 func (c *central) processForever() {
