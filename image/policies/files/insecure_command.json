@@ -9,6 +9,6 @@
       "value": ".*insecure.*"
     }
   },
-  "rationale": "Using insecure in a command implies accessing or providing data from a server on an unencrypted connection",
-  "remediation": "Use a certificate manager and certificate rotation routinely to ensure secure service-to-service communication"
+  "rationale": "Using insecure in a command implies accessing or providing data from a server on an unencrypted connection.",
+  "remediation": "Use a certificate manager and certificate rotation routinely to ensure secure service-to-service communication."
 }

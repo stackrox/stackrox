@@ -1,11 +1,11 @@
 {
   "name": "Heartbleed: CVE-2014-0160",
-  "description": "Alert on deployments with images containing Heartbleed vuln 'CVE-2014-0160'",
+  "description": "Alert on deployments with images containing Heartbleed vulnerability (CVE-2014-0160)",
   "severity": "CRITICAL_SEVERITY",
   "categories": ["IMAGE_ASSURANCE"],
   "image_policy": {
     "cve": "CVE-2014-0160"
   },
-  "rationale": "Heartbleed is a serious and easily-exploitable vulnerability in OpenSSL",
-  "remediation": "Rebuild your container with an updated OpenSSL library. Usually this can be accomplished by simply rebuilding your Dockerfile"
+  "rationale": "Heartbleed is a serious and easily-exploitable vulnerability in OpenSSL.",
+  "remediation": "Rebuild your container with an updated OpenSSL library. Usually this can be accomplished by simply rebuilding your Dockerfile."
 }

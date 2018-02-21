@@ -6,6 +6,6 @@
   "image_policy": {
     "scan_age_days": 30
   },
-  "rationale": "Out of date scans may not be identifying the most recent CVEs",
-  "remediation": "Trigger a scan on your images, configure a schedule within the scanner, or automate periodic updates to your scans"
+  "rationale": "Out-of-date scans may not identify the most recent CVEs.",
+  "remediation": "Trigger a scan on your images, configure a schedule within the scanner, or automate periodic updates to your scans."
 }
