@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	log = logging.New("notifications")
+	log = logging.LoggerForModule()
 )
 
 // Processor takes in alerts and sends the notifications tied to that alert

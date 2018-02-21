@@ -50,7 +50,7 @@ lint:
 .PHONY: vet
 vet:
 	@echo "+ $@"
-	@go vet $(shell go list -e ./... | grep -v generated | grep -v vendor)
+	@$(BASE_DIR)/tools/go-vet.sh $(shell go list -e ./... | grep -v generated | grep -v vendor)
 
 #####################################
 ## Generated Code and Dependencies ##

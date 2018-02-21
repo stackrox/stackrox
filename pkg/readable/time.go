@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	log = logging.New("readable/time")
+	log = logging.LoggerForModule()
 )
 
 // ProtoTime takes a proto time type and converts it to a human readable string down to seconds

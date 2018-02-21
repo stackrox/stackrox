@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	log = logging.New("orchestrator")
+	log = logging.LoggerForModule()
 )
 
 type swarmOrchestrator struct {

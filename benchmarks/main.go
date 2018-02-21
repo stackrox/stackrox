@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	log = logging.New("benchmarks")
+	log = logging.LoggerForModule()
 )
 
 const (

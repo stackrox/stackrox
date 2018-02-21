@@ -32,7 +32,7 @@ import (
 )
 
 var (
-	log = logging.New("main")
+	log = logging.LoggerForModule()
 )
 
 func main() {

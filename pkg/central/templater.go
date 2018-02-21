@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	log = logging.New("pkg/central")
+	log = logging.LoggerForModule()
 )
 
 const (

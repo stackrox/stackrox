@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	log = logging.New("runner")
+	log = logging.LoggerForModule()
 )
 
 // RunBenchmark runs a benchmark based on environment variables

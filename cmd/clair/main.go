@@ -30,7 +30,7 @@ var (
 		"docker.io": "https://registry-1.docker.io",
 	}
 
-	log = logging.New("cmd/clair")
+	log = logging.LoggerForModule()
 )
 
 func init() {

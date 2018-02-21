@@ -50,7 +50,7 @@ func New() *Sensor {
 		AdvertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 		Image:              env.Image.Setting(),
 
-		Logger: logging.New("main"),
+		Logger: logging.NewOrGet("main"),
 	}
 }
 

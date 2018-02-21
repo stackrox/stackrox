@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	logger = logging.New("kubernetes/enforcer")
+	logger = logging.LoggerForModule()
 )
 
 type enforcer struct {

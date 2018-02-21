@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	logger = logging.New("orchestrator")
+	logger = logging.LoggerForModule()
 )
 
 type kubernetesOrchestrator struct {

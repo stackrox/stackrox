@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	log = logging.New("pkg/docker")
+	log = logging.LoggerForModule()
 )
 
 const (

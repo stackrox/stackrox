@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	log = logging.New("registry/docker")
+	log = logging.LoggerForModule()
 )
 
 type dockerRegistry struct {

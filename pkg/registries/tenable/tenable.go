@@ -19,7 +19,7 @@ var (
 )
 
 var (
-	log = logging.New("registry/docker")
+	log = logging.LoggerForModule()
 )
 
 type tenableRegistry struct {

@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	log = logging.New("quay")
+	log = logging.LoggerForModule()
 )
 
 type quay struct {

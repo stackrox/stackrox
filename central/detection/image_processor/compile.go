@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	log = logging.New("detection/image_processor")
+	log = logging.LoggerForModule()
 )
 
 // compiledImagePolicy is an Image Policy that has been precompiled for matching deployments.

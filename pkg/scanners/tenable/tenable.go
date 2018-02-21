@@ -27,7 +27,7 @@ var (
 )
 
 var (
-	log = logging.New("tenable")
+	log = logging.LoggerForModule()
 )
 
 type tenable struct {

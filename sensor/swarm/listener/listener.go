@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	log = logging.New("listener")
+	log = logging.LoggerForModule()
 )
 
 // listener provides functionality for listening to deployment events.
