@@ -98,6 +98,10 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
   name = "github.com/cloudflare/cfssl"
   branch = "master"
 
+[[override]]
+  name = "github.com/google/certificate-transparency-go"
+  branch = "master"
+
 [[constraint]]
   name = "github.com/NYTimes/gziphandler"
   version = "1.0.0"
