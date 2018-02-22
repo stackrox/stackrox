@@ -63,6 +63,9 @@ func (b *BoltDB) AddAuthProvider(authProvider *v1.AuthProvider) (string, error) 
 		if exists {
 			return fmt.Errorf("AuthProvider %v (%v) cannot be added because it already exists", authProvider.GetId(), authProvider.GetName())
 		}
+		if err := checkUniqueKeyExistsAndInsert(tx, authProviderBucket, authProvider.GetId(), authProvider.GetName()); err != nil {
+			return fmt.Errorf("Could not add AuthProvider due to name validation: %s", err)
+		}
 		bytes, err := proto.Marshal(authProvider)
 		if err != nil {
 			return err
@@ -76,6 +79,12 @@ func (b *BoltDB) AddAuthProvider(authProvider *v1.AuthProvider) (string, error) 
 func (b *BoltDB) UpdateAuthProvider(authProvider *v1.AuthProvider) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(authProviderBucket))
+		// If the update is changing the name, check if the name has already been taken
+		if getCurrentUniqueKey(tx, authProviderBucket, authProvider.GetId()) != authProvider.GetName() {
+			if err := checkUniqueKeyExistsAndInsert(tx, authProviderBucket, authProvider.GetId(), authProvider.GetName()); err != nil {
+				return fmt.Errorf("Could not update auth provider due to name validation: %s", err)
+			}
+		}
 		bytes, err := proto.Marshal(authProvider)
 		if err != nil {
 			return err
@@ -91,6 +100,9 @@ func (b *BoltDB) RemoveAuthProvider(id string) error {
 		key := []byte(id)
 		if exists := b.Get(key) != nil; !exists {
 			return db.ErrNotFound{Type: "Auth Provider", ID: id}
+		}
+		if err := removeUniqueKey(tx, authProviderBucket, id); err != nil {
+			return err
 		}
 		return b.Delete(key)
 	})

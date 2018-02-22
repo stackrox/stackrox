@@ -63,6 +63,9 @@ func (b *BoltDB) AddScanner(scanner *v1.Scanner) (string, error) {
 		if exists {
 			return fmt.Errorf("Scanner %v (%v) cannot be added because it already exists", scanner.GetId(), scanner.GetName())
 		}
+		if err := checkUniqueKeyExistsAndInsert(tx, scannerBucket, scanner.GetId(), scanner.GetName()); err != nil {
+			return fmt.Errorf("Could not add scanner due to name validation: %s", err)
+		}
 		bytes, err := proto.Marshal(scanner)
 		if err != nil {
 			return err
@@ -76,6 +79,12 @@ func (b *BoltDB) AddScanner(scanner *v1.Scanner) (string, error) {
 func (b *BoltDB) UpdateScanner(scanner *v1.Scanner) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(scannerBucket))
+		// If the update is changing the name, check if the name has already been taken
+		if getCurrentUniqueKey(tx, scannerBucket, scanner.GetId()) != scanner.GetName() {
+			if err := checkUniqueKeyExistsAndInsert(tx, scannerBucket, scanner.GetId(), scanner.GetName()); err != nil {
+				return fmt.Errorf("Could not update scanner due to name validation: %s", err)
+			}
+		}
 		bytes, err := proto.Marshal(scanner)
 		if err != nil {
 			return err
@@ -91,6 +100,9 @@ func (b *BoltDB) RemoveScanner(id string) error {
 		key := []byte(id)
 		if exists := b.Get(key) != nil; !exists {
 			return db.ErrNotFound{Type: "Scanner", ID: string(key)}
+		}
+		if err := removeUniqueKey(tx, scannerBucket, id); err != nil {
+			return err
 		}
 		return b.Delete(key)
 	})

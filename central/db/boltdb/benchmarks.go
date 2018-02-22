@@ -79,6 +79,7 @@ func (b *BoltDB) UpdateBenchmark(benchmark *v1.Benchmark) error {
 		if exists && !currBenchmark.Editable {
 			return fmt.Errorf("Cannot update benchmark %v because it cannot be edited", benchmark.Name)
 		}
+		// TODO(cgorman) None of these are editable and we'll need to move this to id (AP-328). At that point check naming uniqueness
 		bytes, err := proto.Marshal(benchmark)
 		if err != nil {
 			return err

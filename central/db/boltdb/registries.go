@@ -62,6 +62,9 @@ func (b *BoltDB) AddRegistry(registry *v1.Registry) (string, error) {
 		if exists {
 			return fmt.Errorf("Registry %v (%v) cannot be added because it already exists", registry.GetId(), registry.GetName())
 		}
+		if err := checkUniqueKeyExistsAndInsert(tx, registryBucket, registry.GetId(), registry.GetName()); err != nil {
+			return fmt.Errorf("Could not add registry due to name validation: %s", err)
+		}
 		bytes, err := proto.Marshal(registry)
 		if err != nil {
 			return err
@@ -75,6 +78,12 @@ func (b *BoltDB) AddRegistry(registry *v1.Registry) (string, error) {
 func (b *BoltDB) UpdateRegistry(registry *v1.Registry) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(registryBucket))
+		// If the update is changing the name, check if the name has already been taken
+		if getCurrentUniqueKey(tx, registryBucket, registry.GetId()) != registry.GetName() {
+			if err := checkUniqueKeyExistsAndInsert(tx, registryBucket, registry.GetId(), registry.GetName()); err != nil {
+				return fmt.Errorf("Could not update registry due to name validation: %s", err)
+			}
+		}
 		bytes, err := proto.Marshal(registry)
 		if err != nil {
 			return err
@@ -90,6 +99,9 @@ func (b *BoltDB) RemoveRegistry(id string) error {
 		key := []byte(id)
 		if exists := b.Get(key) != nil; !exists {
 			return db.ErrNotFound{Type: "Registry", ID: string(key)}
+		}
+		if err := removeUniqueKey(tx, registryBucket, id); err != nil {
+			return err
 		}
 		return b.Delete(key)
 	})

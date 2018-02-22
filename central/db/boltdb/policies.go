@@ -68,6 +68,9 @@ func (b *BoltDB) AddPolicy(policy *v1.Policy) (string, error) {
 		if exists {
 			return fmt.Errorf("Policy %v (%v) cannot be added because it already exists", policy.GetName(), policy.GetId())
 		}
+		if err := checkUniqueKeyExistsAndInsert(tx, policyBucket, policy.GetId(), policy.GetName()); err != nil {
+			return fmt.Errorf("Could not add policy due to name validation: %s", err)
+		}
 		bytes, err := proto.Marshal(policy)
 		if err != nil {
 			return err
@@ -81,6 +84,12 @@ func (b *BoltDB) AddPolicy(policy *v1.Policy) (string, error) {
 func (b *BoltDB) UpdatePolicy(policy *v1.Policy) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))
+		// If the update is changing the name, check if the name has already been taken
+		if getCurrentUniqueKey(tx, policyBucket, policy.GetId()) != policy.GetName() {
+			if err := checkUniqueKeyExistsAndInsert(tx, policyBucket, policy.GetId(), policy.GetName()); err != nil {
+				return fmt.Errorf("Could not update policy due to name validation: %s", err)
+			}
+		}
 		bytes, err := proto.Marshal(policy)
 		if err != nil {
 			return err
@@ -96,6 +105,9 @@ func (b *BoltDB) RemovePolicy(id string) error {
 		key := []byte(id)
 		if exists := b.Get(key) != nil; !exists {
 			return db.ErrNotFound{Type: "Policy", ID: string(key)}
+		}
+		if err := removeUniqueKey(tx, policyBucket, id); err != nil {
+			return err
 		}
 		return b.Delete(key)
 	})

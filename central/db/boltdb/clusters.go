@@ -82,6 +82,9 @@ func (b *BoltDB) AddCluster(cluster *v1.Cluster) (string, error) {
 		if exists {
 			return fmt.Errorf("Cluster %v (%v) cannot be added because it already exists", currCluster.GetId(), currCluster.GetName())
 		}
+		if err := checkUniqueKeyExistsAndInsert(tx, clusterBucket, cluster.GetId(), cluster.GetName()); err != nil {
+			return fmt.Errorf("Could not add cluster due to name validation: %s", err)
+		}
 		bytes, err := proto.Marshal(cluster)
 		if err != nil {
 			return err
@@ -95,6 +98,12 @@ func (b *BoltDB) AddCluster(cluster *v1.Cluster) (string, error) {
 func (b *BoltDB) UpdateCluster(cluster *v1.Cluster) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(clusterBucket))
+		// If the update is changing the name, check if the name has already been taken
+		if getCurrentUniqueKey(tx, clusterBucket, cluster.GetId()) != cluster.GetName() {
+			if err := checkUniqueKeyExistsAndInsert(tx, clusterBucket, cluster.GetId(), cluster.GetName()); err != nil {
+				return fmt.Errorf("Could not update cluster due to name validation: %s", err)
+			}
+		}
 		bytes, err := proto.Marshal(cluster)
 		if err != nil {
 			return err
@@ -108,6 +117,9 @@ func (b *BoltDB) RemoveCluster(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(clusterBucket))
 		key := []byte(id)
+		if err := removeUniqueKey(tx, clusterBucket, id); err != nil {
+			return err
+		}
 		if exists := b.Get(key) != nil; !exists {
 			return db.ErrNotFound{Type: "Cluster", ID: string(key)}
 		}

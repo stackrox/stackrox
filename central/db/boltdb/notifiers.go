@@ -62,6 +62,9 @@ func (b *BoltDB) AddNotifier(notifier *v1.Notifier) (string, error) {
 		if exists {
 			return fmt.Errorf("Notifier %v (%v) cannot be added because it already exists", notifier.GetName(), notifier.GetId())
 		}
+		if err := checkUniqueKeyExistsAndInsert(tx, notifierBucket, notifier.GetId(), notifier.GetName()); err != nil {
+			return fmt.Errorf("Could not add notifier due to name validation: %s", err)
+		}
 		bytes, err := proto.Marshal(notifier)
 		if err != nil {
 			return err
@@ -75,6 +78,12 @@ func (b *BoltDB) AddNotifier(notifier *v1.Notifier) (string, error) {
 func (b *BoltDB) UpdateNotifier(notifier *v1.Notifier) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(notifierBucket))
+		// If the update is changing the name, check if the name has already been taken
+		if getCurrentUniqueKey(tx, notifierBucket, notifier.GetId()) != notifier.GetName() {
+			if err := checkUniqueKeyExistsAndInsert(tx, notifierBucket, notifier.GetId(), notifier.GetName()); err != nil {
+				return fmt.Errorf("Could not update notifier due to name validation: %s", err)
+			}
+		}
 		bytes, err := proto.Marshal(notifier)
 		if err != nil {
 			return err
@@ -90,6 +99,9 @@ func (b *BoltDB) RemoveNotifier(id string) error {
 		key := []byte(id)
 		if exists := b.Get(key) != nil; !exists {
 			return db.ErrNotFound{Type: "Notifier", ID: string(key)}
+		}
+		if err := removeUniqueKey(tx, notifierBucket, id); err != nil {
+			return err
 		}
 		return b.Delete(key)
 	})
