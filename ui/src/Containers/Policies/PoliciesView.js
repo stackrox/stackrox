@@ -80,9 +80,20 @@ const fieldsMap = {
         label: 'Restricted to Clusters',
         formatValue: d => d.map(o => o.cluster).join(', ')
     },
-    enforce: {
-        label: 'Enforce',
-        formatValue: d => (d === true ? 'Yes' : 'No')
+    enforcement: {
+        label: 'Enforcement Action',
+        formatValue: d => {
+            switch (d) {
+                case 'UNSET_ENFORCEMENT':
+                    return 'None';
+                case 'SCALE_TO_ZERO_ENFORCEMENT':
+                    return 'Scale to Zero Replicas';
+                case 'UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT':
+                    return 'Add an Unsatisfiable Node Constraint';
+                default:
+                    return d;
+            }
+        }
     },
     disabled: {
         label: 'Enabled',

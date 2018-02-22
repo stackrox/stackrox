@@ -23,4 +23,8 @@ describe('Policies page', () => {
         cy.get(`table tr td:contains("${secretSuffix}")`);
         updatePolicyName(deleteSuffix); // revert back
     });
+
+    it('should open the panel to create a new policy', () => {
+        cy.get(selectors.addPolicyButton).click();
+    });
 });

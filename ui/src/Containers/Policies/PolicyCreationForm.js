@@ -110,10 +110,17 @@ class PolicyCreationForm extends Component {
                         required: true
                     },
                     {
-                        label: 'Enforce',
-                        value: 'enforce',
+                        label: 'Enforcement Action',
+                        value: 'enforcement',
                         type: 'select',
-                        options: [{ label: 'Yes', value: true }, { label: 'No', value: false }],
+                        options: [
+                            { label: 'None', value: 'UNSET_ENFORCEMENT' },
+                            { label: 'Scale to Zero Replicas', value: 'SCALE_TO_ZERO_ENFORCEMENT' },
+                            {
+                                label: 'Add an Unsatisfiable Node Constraint',
+                                value: 'UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT'
+                            }
+                        ],
                         required: true
                     },
                     {
@@ -497,7 +504,7 @@ class PolicyCreationForm extends Component {
 
     preFormatWhitelistField = policy => {
         const { whitelists } = policy;
-        if (!whitelists.length) {
+        if (!whitelists || !whitelists.length) {
             return policy;
         }
         const clientPolicy = Object.assign({}, policy);

@@ -50,7 +50,7 @@ class PoliciesPage extends Component {
     }
 
     componentDidMount() {
-        this.pollImagesPolicies();
+        this.pollPolicies();
         this.retrieveNotifiers();
         this.retrieveClusters();
         this.retrieveDeployments();
@@ -68,7 +68,7 @@ class PoliciesPage extends Component {
         else this.savePolicy(policy);
     };
 
-    getImagesPolicies = () =>
+    getPolicies = () =>
         axios.get('/v1/policies', { params: this.params }).then(response => {
             if (!response.data.policies || isEqual(this.state.policies, response.data.policies))
                 return;
@@ -104,9 +104,9 @@ class PoliciesPage extends Component {
         });
     };
 
-    pollImagesPolicies = () => {
-        this.getImagesPolicies().then(() => {
-            this.pollTimeoutId = setTimeout(this.pollImagesPolicies, 5000);
+    pollPolicies = () => {
+        this.getPolicies().then(() => {
+            this.pollTimeoutId = setTimeout(this.pollPolicies, 5000);
         });
     };
 
@@ -137,7 +137,7 @@ class PoliciesPage extends Component {
         });
         Promise.all(promises).then(() => {
             this.policyTable.clearSelectedRows();
-            this.getImagesPolicies();
+            this.getPolicies();
         });
     };
 
@@ -170,7 +170,7 @@ class PoliciesPage extends Component {
             .post('/v1/policies', policy)
             .then(() => {
                 this.cancelAddingPolicy();
-                this.getImagesPolicies();
+                this.getPolicies();
                 this.selectPolicy(policy);
             })
             .catch(error => {
@@ -183,7 +183,7 @@ class PoliciesPage extends Component {
         axios
             .put(`/v1/policies/${policy.id}`, policy)
             .then(() => {
-                this.getImagesPolicies();
+                this.getPolicies();
             })
             .catch(error => {
                 console.error(error);
