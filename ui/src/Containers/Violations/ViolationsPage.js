@@ -1,11 +1,14 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import MultiSelect from 'react-select';
-import axios from 'axios';
 import queryString from 'query-string';
-import isEqual from 'lodash/isEqual';
+import { connect } from 'react-redux';
+import { createSelector, createStructuredSelector } from 'reselect';
 
 import { sortNumber, sortSeverity } from 'sorters/sorters';
+import { actions as alertActions } from 'reducers/alerts';
+import { selectors } from 'reducers';
 
 import Table from 'Components/Table';
 import PolicyAlertsSidePanel from './PolicyAlertsSidePanel';
@@ -24,83 +27,57 @@ const severityLabels = {
     LOW_SEVERITY: 'Low'
 };
 
-const setSeverityClass = item => {
-    switch (item) {
-        case 'Low':
-            return 'text-low-500';
-        case 'Medium':
-            return 'text-medium-500';
-        case 'High':
-            return 'text-high-500';
-        case 'Critical':
-            return 'text-critical-500';
-        default:
-            return '';
-    }
+const getSeverityClassName = severityValue => {
+    const severityClassMapping = {
+        Low: 'text-low-500',
+        Medium: 'text-medium-500',
+        High: 'text-high-500',
+        Critical: 'text-critical-500'
+    };
+    const res = severityClassMapping[severityValue];
+    if (res) return res;
+    throw new Error(`Unknown severity: ${severityValue}`);
 };
 
-const reducer = (action, prevState, nextState) => {
-    switch (action) {
-        case 'UPDATE_ALERTS_BY_POLICIES':
-            return { alertsByPolicies: nextState.alertsByPolicies };
-        case 'OPEN_POLICY_ALERTS_PANEL':
-            return { isPanelOpen: true, policy: nextState.policy };
-        case 'CLOSE_POLICY_ALERTS_PANEL':
-            return { isPanelOpen: false, policy: null };
-        default:
-            return prevState;
-    }
-};
+const categoryOptions = [
+    { label: 'Image Assurance', value: 'IMAGE_ASSURANCE' },
+    { label: 'Container Configuration', value: 'CONTAINER_CONFIGURATION' },
+    { label: 'Privileges & Capabilities', value: 'PRIVILEGES_CAPABILITIES' }
+];
+
+const severityOptions = [
+    { label: 'Critical Severity', value: 'CRITICAL_SEVERITY' },
+    { label: 'High Severity', value: 'HIGH_SEVERITY' },
+    { label: 'Medium Severity', value: 'MEDIUM_SEVERITY' },
+    { label: 'Low Severity', value: 'LOW_SEVERITY' }
+];
 
 class ViolationsPage extends Component {
     static propTypes = {
+        violatedPolicies: PropTypes.arrayOf(
+            PropTypes.shape({
+                id: PropTypes.string.isRequired,
+                numAlerts: PropTypes.string.isRequired
+            })
+        ).isRequired,
+        alertsForSelectedPolicy: PropTypes.arrayOf(
+            PropTypes.shape({
+                id: PropTypes.string.isRequired
+            })
+        ).isRequired,
+        selectedPolicy: PropTypes.shape({
+            id: PropTypes.string.isRequired,
+            name: PropTypes.string.isRequired
+        }),
+        selectViolatedPolicy: PropTypes.func.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
         location: ReactRouterPropTypes.location.isRequired,
         match: ReactRouterPropTypes.match.isRequired
     };
 
-    constructor(props) {
-        super(props);
-
-        this.pollTimeoutId = null;
-
-        this.state = {
-            category: {
-                options: [
-                    { label: 'Image Assurance', value: 'IMAGE_ASSURANCE' },
-                    { label: 'Container Configuration', value: 'CONTAINER_CONFIGURATION' },
-                    { label: 'Privileges & Capabilities', value: 'PRIVILEGES_CAPABILITIES' }
-                ]
-            },
-            severity: {
-                options: [
-                    { label: 'Critical Severity', value: 'CRITICAL_SEVERITY' },
-                    { label: 'High Severity', value: 'HIGH_SEVERITY' },
-                    { label: 'Medium Severity', value: 'MEDIUM_SEVERITY' },
-                    { label: 'Low Severity', value: 'LOW_SEVERITY' }
-                ]
-            },
-            alertsByPolicies: [],
-            policy: {}
-        };
-    }
-
-    componentDidMount() {
-        this.pollAlertGroups();
-    }
-
-    componentWillUnmount() {
-        if (this.pollTimeoutId) {
-            clearTimeout(this.pollTimeoutId);
-            this.pollTimeoutId = null;
-        }
-    }
-
-    onActivePillsChange(active) {
-        const { params } = this;
-        params.category = Object.keys(active);
-        this.getAlertsGroups();
-    }
+    static defaultProps = {
+        selectedPolicy: null
+    };
 
     onFilterChange = type => options => {
         this.props.history.push({
@@ -110,34 +87,22 @@ class ViolationsPage extends Component {
                 [type]: options.map(c => c.value)
             })
         });
-
-        // history will be updated asynchronously and it should happen before alerts fetching
-        // TODO-ivan: to be removed with switching to react-router-redux
-        setTimeout(this.getAlertsGroups, 0);
     };
 
-    onModalClose = () => {
-        this.changeUrl();
+    onViolatedPolicyClick = policy => {
+        this.props.selectViolatedPolicy(policy.id);
     };
 
-    getAlertsGroups = () => {
-        const params = queryString.stringify({
-            ...this.getFilterParams(),
-            stale: false
-        });
-        return axios
-            .get(`/v1/alerts/groups?${params}`)
-            .then(response => {
-                if (
-                    !response.data.alertsByPolicies ||
-                    isEqual(response.data.alertsByPolicies, this.state.alertsByPolicies)
-                )
-                    return;
-                this.setState({ alertsByPolicies: response.data.alertsByPolicies });
-            })
-            .catch(error => {
-                console.error(error);
-            });
+    onCloseSidePanel = () => {
+        this.props.selectViolatedPolicy(null);
+    };
+
+    onAlertClick = alert => {
+        this.updateAlertUrl(alert.id);
+    };
+
+    onAlertModalClose = () => {
+        this.updateAlertUrl();
     };
 
     getFilterParams() {
@@ -146,37 +111,15 @@ class ViolationsPage extends Component {
         return params;
     }
 
-    pollAlertGroups = () => {
-        this.getAlertsGroups().then(() => {
-            this.pollTimeoutId = setTimeout(this.pollAlertGroups, 5000);
-        });
-    };
-
-    openPanel = policy => {
-        this.update('OPEN_POLICY_ALERTS_PANEL', { policy });
-    };
-
-    closePanel = () => {
-        this.update('CLOSE_POLICY_ALERTS_PANEL');
-    };
-
-    launchModal = alert => {
-        this.changeUrl(alert.id);
-        this.update('UPDATE_ALERT', { alertId: alert.id });
-    };
-
-    changeUrl(id) {
-        const urlValue = id ? `/${id}` : '';
+    updateAlertUrl(alertId) {
+        const urlSuffix = alertId ? `/${alertId}` : '';
         this.props.history.push({
-            pathname: `/main/violations${urlValue}`
+            pathname: `/main/violations${urlSuffix}`,
+            search: this.props.location.search
         });
     }
 
-    update = (action, nextState) => {
-        this.setState(prevState => reducer(action, prevState, nextState));
-    };
-
-    renderTable = () => {
+    renderTable() {
         const columns = [
             { key: 'name', label: 'Name' },
             { key: 'description', label: 'Description' },
@@ -190,7 +133,7 @@ class ViolationsPage extends Component {
             {
                 key: 'severity',
                 label: 'Severity',
-                classFunc: setSeverityClass,
+                classFunc: getSeverityClassName,
                 sortMethod: sortSeverity
             },
             {
@@ -200,41 +143,34 @@ class ViolationsPage extends Component {
                 sortMethod: sortNumber('numAlerts')
             }
         ];
-        const rows = this.state.alertsByPolicies.map(obj => {
-            const row = {
-                id: obj.policy.id,
-                name: obj.policy.name,
-                description: obj.policy.description,
-                categories: obj.policy.categories,
-                severity: severityLabels[obj.policy.severity],
-                numAlerts: obj.numAlerts
-            };
-            return row;
-        });
-        return <Table columns={columns} rows={rows} onRowClick={this.openPanel} />;
-    };
+        const rows = this.props.violatedPolicies.map(policy => ({
+            ...policy,
+            severity: severityLabels[policy.severity]
+        }));
+        return <Table columns={columns} rows={rows} onRowClick={this.onViolatedPolicyClick} />;
+    }
 
     renderModal() {
-        if (!this.props.match.params.alertId) return '';
+        if (!this.props.match.params.alertId) return null;
         return (
             <ViolationsModal
                 alertId={this.props.match.params.alertId}
-                onClose={this.onModalClose}
+                onClose={this.onAlertModalClose}
             />
         );
     }
 
-    renderPolicyAlertsPanel = () => {
-        if (!this.state.isPanelOpen) return '';
+    renderPolicyAlertsPanel() {
+        if (!this.props.selectedPolicy) return null;
         return (
             <PolicyAlertsSidePanel
-                policy={this.state.policy}
-                onClose={this.closePanel}
-                onRowClick={this.launchModal}
-                updatePolicy={this.updatePolicy}
+                header={this.props.selectedPolicy.name}
+                alerts={this.props.alertsForSelectedPolicy}
+                onClose={this.onCloseSidePanel}
+                onRowClick={this.onAlertClick}
             />
         );
-    };
+    }
 
     render() {
         return (
@@ -245,7 +181,7 @@ class ViolationsPage extends Component {
                             <MultiSelect
                                 multi
                                 onChange={this.onFilterChange('category')}
-                                options={this.state.category.options}
+                                options={categoryOptions}
                                 placeholder="Select categories"
                                 removeSelected
                                 value={this.getFilterParams().category}
@@ -256,7 +192,7 @@ class ViolationsPage extends Component {
                             <MultiSelect
                                 multi
                                 onChange={this.onFilterChange('severity')}
-                                options={this.state.severity.options}
+                                options={severityOptions}
                                 placeholder="Select severities"
                                 removeSelected
                                 value={this.getFilterParams().severity}
@@ -277,4 +213,36 @@ class ViolationsPage extends Component {
     }
 }
 
-export default ViolationsPage;
+const getViolatedPolicies = createSelector(
+    [selectors.getPoliciesById, selectors.getAlertNumsByPolicy],
+    (policiesById, alertNumsByPolicy) =>
+        alertNumsByPolicy.map(alertNum => ({
+            ...policiesById[alertNum.policy],
+            numAlerts: alertNum.numAlerts
+        }))
+);
+
+const getAlertsForSelectedPolicy = createSelector(
+    [selectors.getAlertsById, selectors.getSelectedViolatedPolicyId, selectors.getAlertsByPolicy],
+    (alerts, policyId, alertsByPolicy) => {
+        if (!policyId || !alertsByPolicy[policyId]) return [];
+        return alertsByPolicy[policyId].map(alertId => alerts[alertId]);
+    }
+);
+
+const getSelectedPolicy = createSelector(
+    [selectors.getPoliciesById, selectors.getSelectedViolatedPolicyId],
+    (policiesById, policyId) => policiesById[policyId]
+);
+
+const mapStateToProps = createStructuredSelector({
+    violatedPolicies: getViolatedPolicies,
+    alertsForSelectedPolicy: getAlertsForSelectedPolicy,
+    selectedPolicy: getSelectedPolicy
+});
+
+const mapDispatchToProps = dispatch => ({
+    selectViolatedPolicy: policyId => dispatch(alertActions.selectViolatedPolicy(policyId))
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(ViolationsPage);

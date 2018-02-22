@@ -5,7 +5,7 @@ import Select from 'react-select';
 import { ClipLoader } from 'react-spinners';
 
 import Logo from 'Components/icons/logo';
-import AuthService from 'Providers/AuthService';
+import AuthService from 'services/AuthService';
 
 const reducer = (action, prevState, nextState) => {
     switch (action) {

@@ -8,7 +8,7 @@ import { sortNumber } from 'sorters/sorters';
 import Table from 'Components/Table';
 import Select from 'Components/Select';
 import BenchmarksSidePanel from 'Containers/Compliance/BenchmarksSidePanel';
-import * as service from 'Providers/BenchmarksService';
+import * as service from 'services/BenchmarksService';
 
 const reducer = (action, prevState, nextState) => {
     switch (action) {

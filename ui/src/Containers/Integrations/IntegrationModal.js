@@ -11,7 +11,7 @@ import Modal from 'Components/Modal';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import tableColumnDescriptor from 'Containers/Integrations/tableColumnDescriptor';
-import AuthService from 'Providers/AuthService';
+import AuthService from 'services/AuthService';
 
 const sourceMap = {
     authProviders: {
@@ -405,9 +405,9 @@ const api = {
     authProviders: {
         save: data =>
             data.id !== undefined && data.id !== ''
-                ? axios.put(`/v1/authProviders/${data.id}`, data)
+                ? axios.put(`/v1/authservices/${data.id}`, data)
                 : axios.post('/v1/authProviders', data),
-        delete: data => axios.delete(`/v1/authProviders/${data.id}`)
+        delete: data => axios.delete(`/v1/authservices/${data.id}`)
     },
     registries: {
         save: data =>

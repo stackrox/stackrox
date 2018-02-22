@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import { BrowserRouter as Router, Redirect, Switch, NavLink, withRouter } from 'react-router-dom';
+import { Redirect, Switch, NavLink, withRouter } from 'react-router-dom';
 import * as Icon from 'react-feather';
 
 import ProtectedRoute from 'Components/ProtectedRoute';
@@ -10,7 +10,7 @@ import IntegrationsPage from 'Containers/Integrations/IntegrationsPage';
 import ViolationsPage from 'Containers/Violations/ViolationsPage';
 import PoliciesPage from 'Containers/Policies/PoliciesPage';
 import CompliancePage from 'Containers/Compliance/CompliancePage';
-import AuthService from 'Providers/AuthService';
+import AuthService from 'services/AuthService';
 
 const navLinks = [
     {
@@ -107,44 +107,39 @@ class MainPage extends Component {
 
     render() {
         return (
-            <Router>
-                <section className="flex flex-1 flex-col h-full">
-                    <header className="flex bg-primary-500 justify-between">
-                        <div className="flex flex-1">
-                            <nav className="flex flex-row flex-1">
-                                <div className="flex self-center">
-                                    <Logo className="fill-current text-white h-10 w-10 mx-3" />
-                                </div>
-                                {this.renderLeftSideNavLinks()}
-                                {this.renderRightSideNavLinks()}
-                                {this.renderLogoutButton()}
-                            </nav>
-                        </div>
-                    </header>
-                    <section className="flex flex-1 bg-base-100">
-                        <main className="overflow-y-scroll w-full">
-                            {/* Redirects to a default path */}
-                            <Switch>
-                                <ProtectedRoute path="/main/dashboard" component={DashboardPage} />
-                                <ProtectedRoute
-                                    path="/main/violations/:alertId?"
-                                    component={ViolationsPage}
-                                />
-                                <ProtectedRoute
-                                    path="/main/compliance"
-                                    component={CompliancePage}
-                                />
-                                <ProtectedRoute
-                                    path="/main/integrations"
-                                    component={IntegrationsPage}
-                                />
-                                <ProtectedRoute path="/main/policies" component={PoliciesPage} />
-                                <Redirect from="/main" to="/main/dashboard" />
-                            </Switch>
-                        </main>
-                    </section>
+            <section className="flex flex-1 flex-col h-full">
+                <header className="flex bg-primary-500 justify-between">
+                    <div className="flex flex-1">
+                        <nav className="flex flex-row flex-1">
+                            <div className="flex self-center">
+                                <Logo className="fill-current text-white h-10 w-10 mx-3" />
+                            </div>
+                            {this.renderLeftSideNavLinks()}
+                            {this.renderRightSideNavLinks()}
+                            {this.renderLogoutButton()}
+                        </nav>
+                    </div>
+                </header>
+                <section className="flex flex-1 bg-base-100">
+                    <main className="overflow-y-scroll w-full">
+                        {/* Redirects to a default path */}
+                        <Switch>
+                            <ProtectedRoute path="/main/dashboard" component={DashboardPage} />
+                            <ProtectedRoute
+                                path="/main/violations/:alertId?"
+                                component={ViolationsPage}
+                            />
+                            <ProtectedRoute path="/main/compliance" component={CompliancePage} />
+                            <ProtectedRoute
+                                path="/main/integrations"
+                                component={IntegrationsPage}
+                            />
+                            <ProtectedRoute path="/main/policies" component={PoliciesPage} />
+                            <Redirect from="/main" to="/main/dashboard" />
+                        </Switch>
+                    </main>
                 </section>
-            </Router>
+            </section>
         );
     }
 }

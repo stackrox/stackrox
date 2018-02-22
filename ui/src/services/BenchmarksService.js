@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import fetchClusters from 'Providers/ClustersService';
+import fetchClusters from 'services/ClustersService';
 
 const baseUrl = '/v1/benchmarks';
 

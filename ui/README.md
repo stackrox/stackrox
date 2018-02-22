@@ -40,3 +40,10 @@ Examples of configuration for some IDEs:
 ```
 
 * [IntelliJ IDEA](https://www.jetbrains.com/idea/) / [WebStorm](https://www.jetbrains.com/webstorm/) / [GoLand](https://www.jetbrains.com/go/): Install and configure [ESLint plugin](https://plugins.jetbrains.com/plugin/7494-eslint). To apply autofixes on file save add [File Watcher](https://www.jetbrains.com/help/idea/using-file-watchers.html) to watch JavaScript files and to run ESLint program `apollo/ui/node_modules/.bin/eslint` with arguments `--fix $FilePath$`.
+
+### Browsers
+
+For better development experience it's recommended to use [Google Chrome Browser](https://www.google.com/chrome/) with the following extensions installed:
+
+* [React Developer Tools](https://chrome.google.com/webstore/detail/react-developer-tools/fmkadmapgofadopljbjfkapdkoienihi?hl=en)
+* [Redux DevTools](https://chrome.google.com/webstore/detail/redux-devtools/lmhkpmbekcpmknklioeibfkpmmfibljd?hl=en)

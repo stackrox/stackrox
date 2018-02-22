@@ -20,8 +20,8 @@ import TwoLevelPieChart from 'Components/visuals/TwoLevelPieChart';
 import CustomLineChart from 'Components/visuals/CustomLineChart';
 import DashboardBenchmarks from 'Containers/Dashboard/DashboardBenchmarks';
 import SeverityTile from 'Containers/Dashboard/SeverityTile';
-import { fetchBenchmarks, fetchLastScan } from 'Providers/BenchmarksService';
-import fetchClusters from 'Providers/ClustersService';
+import { fetchBenchmarks, fetchLastScan } from 'services/BenchmarksService';
+import fetchClusters from 'services/ClustersService';
 
 import { severityLabels } from 'messages/common';
 

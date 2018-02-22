@@ -4,7 +4,7 @@ import { withRouter } from 'react-router-dom';
 import queryString from 'query-string';
 import { ClipLoader } from 'react-spinners';
 
-import AuthService from 'Providers/AuthService';
+import AuthService from 'services/AuthService';
 
 class AuthRedirectRoute extends Component {
     static propTypes = {

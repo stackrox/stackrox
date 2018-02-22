@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import BenchmarksPage from 'Containers/Compliance/BenchmarksPage';
-import { fetchBenchmarks } from 'Providers/BenchmarksService';
+import { fetchBenchmarks } from 'services/BenchmarksService';
 
 class CompliancePage extends Component {
     constructor(props) {

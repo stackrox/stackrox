@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import AuthService from 'Providers/AuthService';
+import AuthService from 'services/AuthService';
 
 let requestTokenInterceptor = null;
 let responseInterceptor = null;

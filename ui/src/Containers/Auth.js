@@ -5,7 +5,7 @@ import { withRouter } from 'react-router-dom';
 import { ClipLoader } from 'react-spinners';
 import axios from 'axios';
 
-import AuthService from 'Providers/AuthService';
+import AuthService from 'services/AuthService';
 
 const excludedUrls = ['/login', '/auth/response/oidc'];
 

@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Route, Redirect } from 'react-router-dom';
 
-import AuthService from 'Providers/AuthService';
+import AuthService from 'services/AuthService';
 
 const ProtectedRoute = ({ ...rest }) => {
     const to = {
