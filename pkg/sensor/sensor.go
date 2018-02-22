@@ -115,6 +115,7 @@ func (a *Sensor) relayEvents() {
 						Deployment:   ev.GetDeployment(),
 						OriginalSpec: ev.OriginalSpec,
 						Enforcement:  resp.GetEnforcement(),
+						AlertID:      resp.GetAlertId(),
 					}
 				}
 			}

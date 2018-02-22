@@ -12,6 +12,8 @@ const (
 	ReplicationController = `ReplicationController`
 	ReplicaSet            = `ReplicaSet`
 	StatefulSet           = `StatefulSet`
+
+	UnsatisfiableNodeConstraintKey = `BlockedByStackRoxPrevent`
 )
 
 // Kubernetes delete options that ensure that dependent objects (e.g. pods) are deleted when

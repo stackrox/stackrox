@@ -7,6 +7,7 @@ type DeploymentEnforcement struct {
 	Deployment   *v1.Deployment
 	OriginalSpec interface{}
 	Enforcement  v1.EnforcementAction
+	AlertID      string
 }
 
 // EnforceFunc represents an enforcement function.

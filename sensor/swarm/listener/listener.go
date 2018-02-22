@@ -104,7 +104,7 @@ func (dl *listener) getNewExistingDeployments() ([]*listeners.DeploymentEventWra
 
 	deployments := make([]*listeners.DeploymentEventWrap, len(swarmServices))
 	for i, service := range swarmServices {
-		d := serviceWrap(service).asDeployment(dl.Client)
+		d := serviceWrap(service).asDeployment(dl.Client, true)
 		deployments[i] = &listeners.DeploymentEventWrap{
 			OriginalSpec: service,
 			DeploymentEvent: &v1.DeploymentEvent{
@@ -123,7 +123,7 @@ func (dl *listener) getDeploymentFromServiceID(id string) (*v1.Deployment, swarm
 	if err != nil {
 		return nil, swarm.Service{}, err
 	}
-	return serviceWrap(serviceInfo).asDeployment(dl.Client), serviceInfo, nil
+	return serviceWrap(serviceInfo).asDeployment(dl.Client, true), serviceInfo, nil
 }
 
 func (dl *listener) pipeDeploymentEvent(msg events.Message) {

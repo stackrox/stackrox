@@ -10,6 +10,7 @@ import "api/v1/configuration_policy.proto";
 import "api/v1/image_policy.proto";
 import "api/v1/privilege_policy.proto";
 import "api/v1/image_service.proto";
+import "api/v1/deployment_service.proto";
 
 package v1;
 
@@ -47,7 +48,7 @@ message Policy {
     bool disabled                               = 7;
     repeated Policy_Category categories         = 8;
     repeated Scope scope                        = 9;
-    bool enforce                                = 10;
+    EnforcementAction enforcement               = 10;
 
     repeated string notifiers                   = 11;
 

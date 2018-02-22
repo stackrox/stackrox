@@ -154,7 +154,7 @@ func TestAsDeployment(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		got := serviceWrap(c.service).asDeployment(cli)
+		got := serviceWrap(c.service).asDeployment(cli, false)
 
 		assert.Equal(t, c.expected, got)
 	}

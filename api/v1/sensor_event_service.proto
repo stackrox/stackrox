@@ -23,7 +23,8 @@ message DeploymentEvent {
 }
 
 message DeploymentEventResponse {
-    EnforcementAction enforcement = 1;
+    string alert_id               = 1;
+    EnforcementAction enforcement = 2;
 }
 
 service SensorEventService {

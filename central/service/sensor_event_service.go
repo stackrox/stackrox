@@ -71,7 +71,7 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	enforcement, err := s.detector.ProcessDeploymentEvent(d, request.GetAction())
+	alertID, enforcement, err := s.detector.ProcessDeploymentEvent(d, request.GetAction())
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -88,6 +88,7 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 		}
 	}
 
+	response.AlertId = alertID
 	response.Enforcement = enforcement
 	if enforcement != v1.EnforcementAction_UNSET_ENFORCEMENT {
 		log.Warnf("Taking enforcement action %s against deployment %s", enforcement, request.GetDeployment().GetName())

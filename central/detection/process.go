@@ -6,25 +6,28 @@ import (
 )
 
 // ProcessDeploymentEvent takes in a deployment event and return alerts.
-func (d *Detector) ProcessDeploymentEvent(deployment *v1.Deployment, action v1.ResourceAction) (enforcement v1.EnforcementAction, err error) {
+func (d *Detector) ProcessDeploymentEvent(deployment *v1.Deployment, action v1.ResourceAction) (alertID string, enforcement v1.EnforcementAction, err error) {
 	if _, err = d.enricher.Enrich(deployment); err != nil {
 		return
 	}
 
-	var enforcementActions []v1.EnforcementAction
+	var enforcementActions []alertWithEnforcement
 
 	d.policyMutex.Lock()
 	defer d.policyMutex.Unlock()
 
 	for _, policy := range d.policies {
-		_, enforceAction := d.processTask(Task{deployment, action, policy})
+		alert, enforceAction := d.processTask(Task{deployment, action, policy})
 
 		if enforceAction != v1.EnforcementAction_UNSET_ENFORCEMENT {
-			enforcementActions = append(enforcementActions, enforceAction)
+			enforcementActions = append(enforcementActions, alertWithEnforcement{
+				alert:       alert,
+				enforcement: enforceAction,
+			})
 		}
 	}
 
-	enforcement = d.determineEnforcementResponse(enforcementActions)
+	alertID, enforcement = d.determineEnforcementResponse(enforcementActions)
 	return
 }
 
@@ -92,13 +95,23 @@ func (d *Detector) getExistingAlert(deploymentID string, policyID string) (exist
 
 // Each alert can have an enforcement response, but (assuming that enforcement is mutually exclusive) only one can be
 // taken per deployment.
-// Currently a Scale to 0 enforcement response is issued if any alert raises this action.
-func (d *Detector) determineEnforcementResponse(enforcementActions []v1.EnforcementAction) v1.EnforcementAction {
-	for _, a := range enforcementActions {
-		if a == v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT {
-			return v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT
+// Scale to Zero Replicas takes precedence over unsatisfiable node constraints.
+func (d *Detector) determineEnforcementResponse(enforcementActions []alertWithEnforcement) (alertID string, action v1.EnforcementAction) {
+	for _, enfAction := range enforcementActions {
+		if enfAction.enforcement == v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT {
+			return enfAction.alert.GetId(), v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT
+		}
+
+		if enfAction.enforcement != v1.EnforcementAction_UNSET_ENFORCEMENT {
+			alertID = enfAction.alert.GetId()
+			action = enfAction.enforcement
 		}
 	}
 
-	return v1.EnforcementAction_UNSET_ENFORCEMENT
+	return
+}
+
+type alertWithEnforcement struct {
+	alert       *v1.Alert
+	enforcement v1.EnforcementAction
 }
