@@ -53,7 +53,7 @@ func applyNodeConstraintToObj(obj interface{}, alertID string) (err error) {
 	if nodeSelector.IsNil() {
 		nodeSelector.Set(reflect.MakeMap(nodeSelector.Type()))
 	}
-	nodeSelector.SetMapIndex(reflect.ValueOf(pkgKubernetes.UnsatisfiableNodeConstraintKey), reflect.ValueOf(alertID))
+	nodeSelector.SetMapIndex(reflect.ValueOf(enforcers.UnsatisfiableNodeConstraintKey), reflect.ValueOf(alertID))
 
 	return
 }

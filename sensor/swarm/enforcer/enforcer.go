@@ -45,6 +45,7 @@ func New() (enforcers.Enforcer, error) {
 		stoppedC:       make(chan struct{}),
 	}
 	e.enforcementMap[v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT] = e.scaleToZero
+	e.enforcementMap[v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT] = e.unsatisfiableNodeConstraint
 
 	return e, nil
 }
@@ -92,6 +93,26 @@ func (e *enforcer) scaleToZero(enforcement *enforcers.DeploymentEnforcement) (er
 	}
 
 	service.Spec.Mode.Replicated.Replicas = &[]uint64{0}[0]
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_, err = e.ServiceUpdate(ctx, enforcement.Deployment.GetId(), service.Version, service.Spec, swarmTypes.ServiceUpdateOptions{})
+	return
+}
+
+func (e *enforcer) unsatisfiableNodeConstraint(enforcement *enforcers.DeploymentEnforcement) (err error) {
+	service, ok := enforcement.OriginalSpec.(swarm.Service)
+	if !ok {
+		return fmt.Errorf("%+v is not of type swarm service", enforcement.OriginalSpec)
+	}
+
+	task := &service.Spec.TaskTemplate
+	if task.Placement == nil {
+		task.Placement = &swarm.Placement{}
+	}
+
+	placement := task.Placement
+	placement.Constraints = append(placement.Constraints, fmt.Sprintf("%s==%s", enforcers.UnsatisfiableNodeConstraintKey, enforcement.AlertID))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

@@ -3,6 +3,7 @@ package enforcer
 import (
 	"testing"
 
+	"bitbucket.org/stack-rox/apollo/pkg/enforcers"
 	pkgKubernetes "bitbucket.org/stack-rox/apollo/pkg/kubernetes"
 	"github.com/stretchr/testify/assert"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
@@ -40,8 +41,8 @@ func TestApplyNodeConstraint(t *testing.T) {
 	for resourceType, constraint := range nodeConstraints {
 		t.Run(resourceType, func(t *testing.T) {
 			assert.NotNil(t, constraint)
-			assert.Contains(t, constraint, pkgKubernetes.UnsatisfiableNodeConstraintKey)
-			assert.Equal(t, constraint[pkgKubernetes.UnsatisfiableNodeConstraintKey], "alertID")
+			assert.Contains(t, constraint, enforcers.UnsatisfiableNodeConstraintKey)
+			assert.Equal(t, constraint[enforcers.UnsatisfiableNodeConstraintKey], "alertID")
 		})
 	}
 }

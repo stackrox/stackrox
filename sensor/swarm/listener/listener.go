@@ -53,7 +53,6 @@ func (dl *listener) Start() {
 	for {
 		select {
 		case event := <-events:
-			log.Infof("Event: %#v", event)
 			dl.pipeDeploymentEvent(event)
 		case err := <-errors:
 			log.Infof("Reopening stream due to error: %+v", err)

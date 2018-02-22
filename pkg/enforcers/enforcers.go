@@ -2,6 +2,11 @@ package enforcers
 
 import "bitbucket.org/stack-rox/apollo/generated/api/v1"
 
+// Label key used for unsatisfiable node constraint enforcement.
+const (
+	UnsatisfiableNodeConstraintKey = `BlockedByStackRoxPrevent`
+)
+
 // DeploymentEnforcement wraps a request to take an enforcement action on a particular deployment.
 type DeploymentEnforcement struct {
 	Deployment   *v1.Deployment
