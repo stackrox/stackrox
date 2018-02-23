@@ -186,6 +186,7 @@
   version = "v0.3.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/docker/go-units"
   packages = ["."]
   revision = "0dadbb0345b35ec7ef35e228dabb8de89a65bf52"
@@ -343,6 +344,7 @@
   revision = "2bcd89a1743fd4b373f7370ce8ddc14dfbd18229"
 
 [[projects]]
+  branch = "master"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
   packages = [
     ".",
@@ -360,17 +362,20 @@
     "runtime/internal",
     "utilities"
   ]
-  revision = "c323909dd41de182a54b4d1610f26034da5e097e"
+  revision = "07f5e79768022f9a3265235f0db4ac8c3f675fec"
+  version = "v1.3.1"
 
 [[projects]]
+  branch = "master"
   name = "github.com/hashicorp/golang-lru"
   packages = [
     ".",
     "simplelru"
   ]
-  revision = "0a025b7e63adc15a622f29b0b2c4c3848243bbf6"
+  revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
+  branch = "master"
   name = "github.com/heroku/docker-registry-client"
   packages = ["registry"]
   revision = "c0382be6e46b7f52b8c6dd0a91c1253e891645f8"
@@ -502,7 +507,8 @@
 [[projects]]
   name = "github.com/satori/go.uuid"
   packages = ["."]
-  revision = "5bf94b69c6b68ee1b541973bb8e1144db23a194b"
+  revision = "879c5887cd475cd7864858769793b2ceb0d44feb"
+  version = "v1.1.0"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -560,6 +566,7 @@
   revision = "1875d0a70c90e57f11972aefd42276df65e895b9"
 
 [[projects]]
+  branch = "master"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -606,6 +613,7 @@
   revision = "e19ae1496984b1c655b8044a65c0300a3c878dd3"
 
 [[projects]]
+  branch = "master"
   name = "google.golang.org/genproto"
   packages = [
     "googleapis/api/annotations",
@@ -817,6 +825,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9ecc3c4c0bc568654ded1f2d69b9e0212a96952f3be9bcf790417038bd7e6253"
+  inputs-digest = "c724514426488a37869880c56126f3be389b2be0107a05534af4973d1004fcc8"
   solver-name = "gps-cdcl"
   solver-version = 1
