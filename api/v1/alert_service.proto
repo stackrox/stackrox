@@ -102,7 +102,7 @@ service AlertService {
 
     rpc GetAlert (ResourceByID) returns (Alert) {
         option (google.api.http) = {
-            get: "/v1/alert/{id}"
+            get: "/v1/alerts/{id}"
         };
     }
 
@@ -114,19 +114,19 @@ service AlertService {
 
     rpc GetAlertsGroup (GetAlertsRequest) returns (GetAlertsGroupResponse) {
         option (google.api.http) = {
-            get: "/v1/alerts/groups"
+            get: "/v1/alerts/summary/groups"
         };
     }
 
     rpc GetAlertsCounts (GetAlertsCountsRequest) returns (GetAlertsCountsResponse) {
         option (google.api.http) = {
-            get: "/v1/alerts/counts"
+            get: "/v1/alerts/summary/counts"
         };
     }
 
     rpc GetAlertTimeseries(GetAlertsRequest) returns (GetAlertTimeseriesResponse) {
         option (google.api.http) = {
-            get: "/v1/alerts/timeseries"
+            get: "/v1/alerts/summary/timeseries"
         };
     }
     // No post/put API for alerts

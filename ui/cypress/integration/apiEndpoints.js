@@ -1,6 +1,6 @@
 export const alerts = {
-    countsByCluster: /v1\/alerts\/counts\?group_by=CLUSTER.*/,
-    countsByCategory: /v1\/alerts\/counts\?group_by=CATEGORY.*/
+    countsByCluster: /v1\/alerts\/summary\/counts\?group_by=CLUSTER.*/,
+    countsByCategory: /v1\/alerts\/summary\/counts\?group_by=CATEGORY.*/
 };
 
 export const clusters = {

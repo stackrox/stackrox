@@ -96,7 +96,7 @@ class DashboardPage extends Component {
 
     getViolationsByPolicyCategory = () =>
         axios
-            .get('/v1/alerts/counts', {
+            .get('/v1/alerts/summary/counts', {
                 params: { group_by: 'CATEGORY', 'request.stale': false }
             })
             .then(response => {
@@ -110,7 +110,7 @@ class DashboardPage extends Component {
 
     getViolationsByCluster = () =>
         axios
-            .get('/v1/alerts/counts', {
+            .get('/v1/alerts/summary/counts', {
                 params: { group_by: 'CLUSTER', 'request.stale': false }
             })
             .then(response => {
@@ -124,7 +124,7 @@ class DashboardPage extends Component {
 
     getAlertsByTime = () =>
         axios
-            .get('/v1/alerts/timeseries')
+            .get('/v1/alerts/summary/timeseries')
             .then(response => {
                 const alertsByTime = response.data.alertEvents;
                 if (!alertsByTime) return;

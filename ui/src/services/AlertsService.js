@@ -22,7 +22,7 @@ export function fetchAlertNumsByPolicy(filters = {}) {
         ...filters,
         stale: false
     });
-    return axios.get(`${baseUrl}/groups?${params}`).then(response => ({
+    return axios.get(`${baseUrl}/summary/groups?${params}`).then(response => ({
         response: normalize(response.data, alertNumsByPolicySchema)
     }));
 }
@@ -52,8 +52,7 @@ export function fetchAlertsByPolicy(policyId) {
  * @returns {Promise<Object, Error>} fulfilled with normalized response
  */
 export function fetchAlert(alertId) {
-    // TODO-ivan: fix alert API to start with baseUrl
-    return axios.get(`/v1/alert/${alertId}`).then(response => ({
+    return axios.get(`${baseUrl}/${alertId}`).then(response => ({
         response: normalize(response.data, alertSchema)
     }));
 }
