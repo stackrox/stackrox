@@ -405,9 +405,9 @@ const api = {
     authProviders: {
         save: data =>
             data.id !== undefined && data.id !== ''
-                ? axios.put(`/v1/authservices/${data.id}`, data)
+                ? axios.put(`/v1/authProviders/${data.id}`, data)
                 : axios.post('/v1/authProviders', data),
-        delete: data => axios.delete(`/v1/authservices/${data.id}`)
+        delete: data => axios.delete(`/v1/authProviders/${data.id}`)
     },
     registries: {
         save: data =>
