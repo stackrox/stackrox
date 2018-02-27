@@ -5,7 +5,7 @@ git_repository(
 )
 load("@io_bazel_rules_go//go:def.bzl", "go_rules_dependencies", "go_register_toolchains")
 go_rules_dependencies()
-go_register_toolchains()
+go_register_toolchains(go_version="1.9.4")
 
 # Get the Google API annotations, needed for gRPC-gateway.
 # See https://stackoverflow.com/questions/47930973 for a bit of explanation.
