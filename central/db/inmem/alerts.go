@@ -30,7 +30,7 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 	untilStaleTime, untilStaleTimeErr := ptypes.Timestamp(request.GetUntilStale())
 
 	severitySet := severitiesWrap(request.GetSeverity()).asSet()
-	categoriesSet := categoriesWrap(request.GetCategory()).asSet()
+	categoriesSet := stringWrap(request.GetCategory()).asSet()
 	policyIDsSet := stringWrap(request.GetPolicyId()).asSet()
 	policyNamesSet := stringWrap(request.GetPolicyName()).asSet()
 	clusterSet := stringWrap(request.GetCluster()).asSet()
@@ -113,7 +113,7 @@ func (s *alertStore) GetAlerts(request *v1.GetAlertsRequest) (filtered []*v1.Ale
 	return
 }
 
-func (s *alertStore) matchCategories(alertCategories []v1.Policy_Category, categorySet map[v1.Policy_Category]struct{}) bool {
+func (s *alertStore) matchCategories(alertCategories []string, categorySet map[string]struct{}) bool {
 	for _, c := range alertCategories {
 		if _, ok := categorySet[c]; ok {
 			return true
@@ -130,18 +130,6 @@ func (wrap severitiesWrap) asSet() map[v1.Severity]struct{} {
 
 	for _, s := range wrap {
 		output[s] = struct{}{}
-	}
-
-	return output
-}
-
-type categoriesWrap []v1.Policy_Category
-
-func (wrap categoriesWrap) asSet() map[v1.Policy_Category]struct{} {
-	output := make(map[v1.Policy_Category]struct{})
-
-	for _, c := range wrap {
-		output[c] = struct{}{}
 	}
 
 	return output

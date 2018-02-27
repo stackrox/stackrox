@@ -46,7 +46,7 @@ message Policy {
     string rationale                            = 5;
     string remediation                          = 6;
     bool disabled                               = 7;
-    repeated Policy_Category categories         = 8;
+    repeated string categories                  = 8;
     repeated Scope scope                        = 9;
     EnforcementAction enforcement               = 10;
 
@@ -59,16 +59,9 @@ message Policy {
     repeated Whitelist whitelists               = 15;
 }
 
-enum Policy_Category {
-    UNSET_CATEGORY              = 0;
-    IMAGE_ASSURANCE             = 1;
-    PRIVILEGES_CAPABILITIES     = 2;
-    CONTAINER_CONFIGURATION     = 3;
-}
-
 message GetPoliciesRequest {
     repeated string name                = 1;
-    repeated Policy_Category category   = 2;
+    repeated string category            = 2;
     repeated Severity severity          = 3;
     repeated bool disabled              = 4;
 }
@@ -88,6 +81,19 @@ message DryRunResponse {
         Whitelist whitelist = 2;
     }
     repeated Excluded excluded     = 2;
+}
+
+message PolicyCategoriesResponse {
+    repeated string categories = 1;
+}
+
+message RenamePolicyCategoryRequest {
+    string old_category = 1;
+    string new_category = 2;
+}
+
+message DeletePolicyCategoryRequest {
+    string category = 1;
 }
 
 service PolicyService {
@@ -137,4 +143,22 @@ service PolicyService {
         };
     }
 
+    rpc GetPolicyCategories (google.protobuf.Empty) returns (PolicyCategoriesResponse) {
+        option (google.api.http) = {
+            get: "/v1/policyCategories"
+        };
+    }
+
+    rpc RenamePolicyCategory (RenamePolicyCategoryRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/v1/policyCategories/{old_category}"
+            body: "*"
+        };
+    }
+
+    rpc DeletePolicyCategory (DeletePolicyCategoryRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/policyCategories/{category}"
+        };
+    }
 }

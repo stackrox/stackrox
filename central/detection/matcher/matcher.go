@@ -24,17 +24,14 @@ func New(policy *v1.Policy) (*Policy, error) {
 		Policy: policy,
 	}
 
-	for _, c := range policy.GetCategories() {
-		compiler, ok := processors.PolicyCategoryCompiler[c]
-		if !ok {
-			return nil, fmt.Errorf("policy compiler not found for %s", c)
+	for _, c := range processors.PolicySegmentCompilers {
+		if compiled, exist, err := c(policy); !exist {
+			continue
+		} else if err != nil {
+			return nil, fmt.Errorf("policy %s failed to compile: %s", p, err)
+		} else {
+			p.compiled = append(p.compiled, compiled)
 		}
-		compiled, err := compiler(policy)
-		if err != nil {
-			return nil, fmt.Errorf("policy Category %s failed to compile: %s", c, err)
-		}
-
-		p.compiled = append(p.compiled, compiled)
 	}
 
 	return p, nil

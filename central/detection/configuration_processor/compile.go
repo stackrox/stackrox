@@ -44,51 +44,51 @@ type compiledPortPolicy struct {
 }
 
 func init() {
-	processors.PolicyCategoryCompiler[v1.Policy_Category_CONTAINER_CONFIGURATION] = NewCompiledConfigurationPolicy
+	processors.PolicySegmentCompilers = append(processors.PolicySegmentCompilers, NewCompiledConfigurationPolicy)
 }
 
 // NewCompiledConfigurationPolicy returns a new compiledConfigurationPolicy.
-func NewCompiledConfigurationPolicy(policy *v1.Policy) (compiledP processors.CompiledPolicy, err error) {
+func NewCompiledConfigurationPolicy(policy *v1.Policy) (compiledP processors.CompiledPolicy, exist bool, err error) {
 	if policy.GetConfigurationPolicy() == nil {
-		return nil, fmt.Errorf("policy %s must contain container configuration policy", policy.GetName())
+		return
 	}
-
+	exist = true
 	configurationPolicy := policy.GetConfigurationPolicy()
 	compiled := new(compiledConfigurationPolicy)
 	compiled.Original = policy
 
 	compiled.Env, err = newCompiledEnvironmentPolicy(configurationPolicy.GetEnv())
 	if err != nil {
-		return nil, fmt.Errorf("env: %s", err)
+		return nil, exist, fmt.Errorf("env: %s", err)
 	}
 
 	compiled.Args, err = processors.CompileStringRegex(configurationPolicy.GetArgs())
 	if err != nil {
-		return nil, fmt.Errorf("args: %s", err)
+		return nil, exist, fmt.Errorf("args: %s", err)
 	}
 
 	compiled.Command, err = processors.CompileStringRegex(configurationPolicy.GetCommand())
 	if err != nil {
-		return nil, fmt.Errorf("command: %s", err)
+		return nil, exist, fmt.Errorf("command: %s", err)
 	}
 
 	compiled.Directory, err = processors.CompileStringRegex(configurationPolicy.GetDirectory())
 	if err != nil {
-		return nil, fmt.Errorf("directory: %s", err)
+		return nil, exist, fmt.Errorf("directory: %s", err)
 	}
 
 	compiled.User, err = processors.CompileStringRegex(configurationPolicy.GetUser())
 	if err != nil {
-		return nil, fmt.Errorf("user: %s", err)
+		return nil, exist, fmt.Errorf("user: %s", err)
 	}
 
 	compiled.Volume, err = newCompiledVolumePolicy(configurationPolicy.GetVolumePolicy())
 	if err != nil {
-		return nil, fmt.Errorf("volume: %s", err)
+		return nil, exist, fmt.Errorf("volume: %s", err)
 	}
 
 	compiled.Port = newCompiledPortPolicy(configurationPolicy.GetPortPolicy())
-	return compiled, nil
+	return compiled, exist, nil
 }
 
 func newCompiledEnvironmentPolicy(envPolicy *v1.ConfigurationPolicy_EnvironmentPolicy) (compiled *compiledEnvironmentPolicy, err error) {

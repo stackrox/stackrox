@@ -123,6 +123,8 @@ type PolicyStorage interface {
 	AddPolicy(*v1.Policy) (string, error)
 	UpdatePolicy(*v1.Policy) error
 	RemovePolicy(id string) error
+	RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error
+	DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error
 }
 
 // RegistryStorage provide storage functionality for registries.

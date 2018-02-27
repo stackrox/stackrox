@@ -2,6 +2,7 @@ package boltdb
 
 import (
 	"fmt"
+	"sort"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -110,5 +111,66 @@ func (b *BoltDB) RemovePolicy(id string) error {
 			return err
 		}
 		return b.Delete(key)
+	})
+}
+
+// RenamePolicyCategory renames all occurrence of a policy category to the new requested category.
+func (b *BoltDB) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
+	return b.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(policyBucket))
+		return b.ForEach(func(k, v []byte) error {
+			var policy v1.Policy
+			if err := proto.Unmarshal(v, &policy); err != nil {
+				return err
+			}
+
+			modified := false
+			for i, c := range policy.GetCategories() {
+				if c == request.GetOldCategory() {
+					policy.Categories[i] = request.GetNewCategory()
+					modified = true
+				}
+			}
+
+			if modified {
+				sort.Strings(policy.Categories)
+				bytes, err := proto.Marshal(&policy)
+				if err != nil {
+					return err
+				}
+				return b.Put([]byte(policy.GetId()), bytes)
+			}
+			return nil
+		})
+	})
+}
+
+// DeletePolicyCategory removes a category from all policies.
+func (b *BoltDB) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error {
+	return b.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(policyBucket))
+		return b.ForEach(func(k, v []byte) error {
+			var policy v1.Policy
+			if err := proto.Unmarshal(v, &policy); err != nil {
+				return err
+			}
+
+			removed := policy.GetCategories()[:0]
+			for _, c := range policy.GetCategories() {
+				if c != request.GetCategory() {
+					removed = append(removed, c)
+				}
+			}
+
+			if len(removed) != len(policy.GetCategories()) {
+				policy.Categories = removed
+				bytes, err := proto.Marshal(&policy)
+				if err != nil {
+					return err
+				}
+				return b.Put([]byte(policy.GetId()), bytes)
+			}
+			return nil
+		})
 	})
 }

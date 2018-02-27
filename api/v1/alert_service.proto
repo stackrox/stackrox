@@ -30,7 +30,7 @@ message Alert {
 }
 
 message GetAlertsRequest {
-    repeated Policy_Category category      = 1;
+    repeated string category               = 1;
     repeated string policy_id              = 2;
     repeated string policy_name            = 3;
     repeated Severity severity             = 4;

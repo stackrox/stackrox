@@ -262,9 +262,9 @@ func verifyAlertCounts(t *testing.T, service v1.AlertServiceClient) {
 	var imageGroup, containerGroup *v1.GetAlertsCountsResponse_AlertGroup
 
 	for _, g := range alertCounts.GetGroups() {
-		if g.Group == v1.Policy_Category_IMAGE_ASSURANCE.String() {
+		if g.Group == "IMAGE_ASSURANCE" {
 			imageGroup = g
-		} else if g.Group == v1.Policy_Category_CONTAINER_CONFIGURATION.String() {
+		} else if g.Group == "CONTAINER_CONFIGURATION" {
 			containerGroup = g
 		}
 	}

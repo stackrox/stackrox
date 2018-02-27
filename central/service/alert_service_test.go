@@ -22,7 +22,7 @@ func TestGroupAlerts(t *testing.T) {
 				{
 					Id: "id1",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Categories: []string{"IMAGE_ASSURANCE"},
 						Id:         "id1",
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
@@ -32,7 +32,7 @@ func TestGroupAlerts(t *testing.T) {
 				{
 					Id: "id2",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Categories: []string{"IMAGE_ASSURANCE"},
 						Id:         "id2",
 						Name:       "policy2",
 						Severity:   v1.Severity_HIGH_SEVERITY,
@@ -42,7 +42,7 @@ func TestGroupAlerts(t *testing.T) {
 				{
 					Id: "id3",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Categories: []string{"IMAGE_ASSURANCE"},
 						Id:         "id1",
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
@@ -54,7 +54,7 @@ func TestGroupAlerts(t *testing.T) {
 				AlertsByPolicies: []*v1.GetAlertsGroupResponse_PolicyGroup{
 					{
 						Policy: &v1.Policy{
-							Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+							Categories: []string{"IMAGE_ASSURANCE"},
 							Id:         "id1",
 							Name:       "policy1",
 							Severity:   v1.Severity_LOW_SEVERITY,
@@ -63,7 +63,7 @@ func TestGroupAlerts(t *testing.T) {
 					},
 					{
 						Policy: &v1.Policy{
-							Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+							Categories: []string{"IMAGE_ASSURANCE"},
 							Id:         "id2",
 							Name:       "policy2",
 							Severity:   v1.Severity_HIGH_SEVERITY,
@@ -79,7 +79,7 @@ func TestGroupAlerts(t *testing.T) {
 				{
 					Id: "id1",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Categories: []string{"IMAGE_ASSURANCE"},
 						Id:         "id1",
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
@@ -89,7 +89,7 @@ func TestGroupAlerts(t *testing.T) {
 				{
 					Id: "id2",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_PRIVILEGES_CAPABILITIES},
+						Categories: []string{"IMAGE_ASSURANCE", "PRIVILEGES_CAPABILITIES"},
 						Id:         "id2",
 						Name:       "policy2",
 						Severity:   v1.Severity_HIGH_SEVERITY,
@@ -99,7 +99,7 @@ func TestGroupAlerts(t *testing.T) {
 				{
 					Id: "id3",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_CONTAINER_CONFIGURATION},
+						Categories: []string{"CONTAINER_CONFIGURATION"},
 						Id:         "id30",
 						Name:       "policy30",
 						Severity:   v1.Severity_CRITICAL_SEVERITY,
@@ -109,7 +109,7 @@ func TestGroupAlerts(t *testing.T) {
 				{
 					Id: "id4",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Categories: []string{"IMAGE_ASSURANCE"},
 						Id:         "id1",
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
@@ -121,7 +121,7 @@ func TestGroupAlerts(t *testing.T) {
 				AlertsByPolicies: []*v1.GetAlertsGroupResponse_PolicyGroup{
 					{
 						Policy: &v1.Policy{
-							Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+							Categories: []string{"IMAGE_ASSURANCE"},
 							Id:         "id1",
 							Name:       "policy1",
 							Severity:   v1.Severity_LOW_SEVERITY,
@@ -130,7 +130,7 @@ func TestGroupAlerts(t *testing.T) {
 					},
 					{
 						Policy: &v1.Policy{
-							Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_PRIVILEGES_CAPABILITIES},
+							Categories: []string{"IMAGE_ASSURANCE", "PRIVILEGES_CAPABILITIES"},
 							Id:         "id2",
 							Name:       "policy2",
 							Severity:   v1.Severity_HIGH_SEVERITY,
@@ -139,7 +139,7 @@ func TestGroupAlerts(t *testing.T) {
 					},
 					{
 						Policy: &v1.Policy{
-							Categories: []v1.Policy_Category{v1.Policy_Category_CONTAINER_CONFIGURATION},
+							Categories: []string{"CONTAINER_CONFIGURATION"},
 							Id:         "id30",
 							Name:       "policy30",
 							Severity:   v1.Severity_CRITICAL_SEVERITY,
@@ -178,7 +178,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id1",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Categories: []string{"IMAGE_ASSURANCE"},
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
 					},
@@ -190,7 +190,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id2",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_CONTAINER_CONFIGURATION},
+						Categories: []string{"CONTAINER_CONFIGURATION"},
 						Name:       "policy2",
 						Severity:   v1.Severity_CRITICAL_SEVERITY,
 					},
@@ -202,7 +202,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id3",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Categories: []string{"IMAGE_ASSURANCE"},
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
 					},
@@ -214,7 +214,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id4",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_PRIVILEGES_CAPABILITIES},
+						Categories: []string{"PRIVILEGES_CAPABILITIES"},
 						Name:       "policy3",
 						Severity:   v1.Severity_MEDIUM_SEVERITY,
 					},
@@ -226,7 +226,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id5",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_CONTAINER_CONFIGURATION},
+						Categories: []string{"IMAGE_ASSURANCE", "CONTAINER_CONFIGURATION"},
 						Name:       "policy4",
 						Severity:   v1.Severity_HIGH_SEVERITY,
 					},
@@ -238,7 +238,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id6",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_CONTAINER_CONFIGURATION},
+						Categories: []string{"IMAGE_ASSURANCE", "CONTAINER_CONFIGURATION"},
 						Name:       "policy4",
 						Severity:   v1.Severity_HIGH_SEVERITY,
 					},
@@ -281,7 +281,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id1",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Categories: []string{"IMAGE_ASSURANCE"},
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
 					},
@@ -293,7 +293,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id2",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_CONTAINER_CONFIGURATION},
+						Categories: []string{"CONTAINER_CONFIGURATION"},
 						Name:       "policy2",
 						Severity:   v1.Severity_CRITICAL_SEVERITY,
 					},
@@ -305,7 +305,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id3",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Categories: []string{"IMAGE_ASSURANCE"},
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
 					},
@@ -317,7 +317,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id4",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_PRIVILEGES_CAPABILITIES},
+						Categories: []string{"PRIVILEGES_CAPABILITIES"},
 						Name:       "policy3",
 						Severity:   v1.Severity_MEDIUM_SEVERITY,
 					},
@@ -329,7 +329,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id5",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_CONTAINER_CONFIGURATION},
+						Categories: []string{"IMAGE_ASSURANCE", "CONTAINER_CONFIGURATION"},
 						Name:       "policy4",
 						Severity:   v1.Severity_HIGH_SEVERITY,
 					},
@@ -341,7 +341,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id6",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_CONTAINER_CONFIGURATION},
+						Categories: []string{"IMAGE_ASSURANCE", "CONTAINER_CONFIGURATION"},
 						Name:       "policy4",
 						Severity:   v1.Severity_HIGH_SEVERITY,
 					},
@@ -355,7 +355,7 @@ func TestCountAlerts(t *testing.T) {
 			expected: &v1.GetAlertsCountsResponse{
 				Groups: []*v1.GetAlertsCountsResponse_AlertGroup{
 					{
-						Group: v1.Policy_Category_CONTAINER_CONFIGURATION.String(),
+						Group: "CONTAINER_CONFIGURATION",
 						Counts: []*v1.GetAlertsCountsResponse_AlertGroup_AlertCounts{
 							{
 								Severity: v1.Severity_HIGH_SEVERITY,
@@ -368,7 +368,7 @@ func TestCountAlerts(t *testing.T) {
 						},
 					},
 					{
-						Group: v1.Policy_Category_IMAGE_ASSURANCE.String(),
+						Group: "IMAGE_ASSURANCE",
 						Counts: []*v1.GetAlertsCountsResponse_AlertGroup_AlertCounts{
 							{
 								Severity: v1.Severity_LOW_SEVERITY,
@@ -381,7 +381,7 @@ func TestCountAlerts(t *testing.T) {
 						},
 					},
 					{
-						Group: v1.Policy_Category_PRIVILEGES_CAPABILITIES.String(),
+						Group: "PRIVILEGES_CAPABILITIES",
 						Counts: []*v1.GetAlertsCountsResponse_AlertGroup_AlertCounts{
 							{
 								Severity: v1.Severity_MEDIUM_SEVERITY,
@@ -398,7 +398,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id1",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Categories: []string{"IMAGE_ASSURANCE"},
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
 					},
@@ -410,7 +410,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id2",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_CONTAINER_CONFIGURATION},
+						Categories: []string{"CONTAINER_CONFIGURATION"},
 						Name:       "policy2",
 						Severity:   v1.Severity_CRITICAL_SEVERITY,
 					},
@@ -422,7 +422,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id3",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+						Categories: []string{"IMAGE_ASSURANCE"},
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
 					},
@@ -434,7 +434,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id4",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_PRIVILEGES_CAPABILITIES},
+						Categories: []string{"PRIVILEGES_CAPABILITIES"},
 						Name:       "policy3",
 						Severity:   v1.Severity_MEDIUM_SEVERITY,
 					},
@@ -446,7 +446,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id5",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_CONTAINER_CONFIGURATION},
+						Categories: []string{"IMAGE_ASSURANCE", "CONTAINER_CONFIGURATION"},
 						Name:       "policy4",
 						Severity:   v1.Severity_HIGH_SEVERITY,
 					},
@@ -458,7 +458,7 @@ func TestCountAlerts(t *testing.T) {
 				{
 					Id: "id6",
 					Policy: &v1.Policy{
-						Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_CONTAINER_CONFIGURATION},
+						Categories: []string{"IMAGE_ASSURANCE", "CONTAINER_CONFIGURATION"},
 						Name:       "policy4",
 						Severity:   v1.Severity_HIGH_SEVERITY,
 					},

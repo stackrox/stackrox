@@ -49,15 +49,16 @@ type imageNamePolicyRegex struct {
 }
 
 func init() {
-	processors.PolicyCategoryCompiler[v1.Policy_Category_IMAGE_ASSURANCE] = NewCompiledImagePolicy
+	processors.PolicySegmentCompilers = append(processors.PolicySegmentCompilers, NewCompiledImagePolicy)
 }
 
 // NewCompiledImagePolicy returns a new compiledImagePolicy.
-func NewCompiledImagePolicy(policy *v1.Policy) (compiledP processors.CompiledPolicy, err error) {
+func NewCompiledImagePolicy(policy *v1.Policy) (compiledP processors.CompiledPolicy, exist bool, err error) {
 	imagePolicy := policy.GetImagePolicy()
 	if imagePolicy == nil {
-		return nil, fmt.Errorf("policy %s must contain image policy", policy.GetName())
+		return
 	}
+	exist = true
 
 	var imageAge, scanAge *int64
 	if imagePolicy.GetSetImageAgeDays() != nil {
@@ -75,7 +76,7 @@ func NewCompiledImagePolicy(policy *v1.Policy) (compiledP processors.CompiledPol
 	}
 
 	if imagePolicy.GetCvss().GetValue() < 0 || imagePolicy.GetCvss().GetValue() > 10 {
-		return nil, fmt.Errorf("policy %s must have CVSS score between 0-10 (actual: %v)", policy.GetName(), imagePolicy.GetCvss().GetValue())
+		return nil, exist, fmt.Errorf("policy %s must have CVSS score between 0-10 (actual: %v)", policy.GetName(), imagePolicy.GetCvss().GetValue())
 	}
 
 	compiled := &compiledImagePolicy{
@@ -88,22 +89,22 @@ func NewCompiledImagePolicy(policy *v1.Policy) (compiledP processors.CompiledPol
 
 	compiled.ImageNamePolicy, err = compileImageNamePolicyRegex(imagePolicy.GetImageName())
 	if err != nil {
-		return nil, fmt.Errorf("image name: %s", err)
+		return nil, exist, fmt.Errorf("image name: %s", err)
 	}
 	compiled.LineRule, err = compileLineRuleFieldRegex(imagePolicy.GetLineRule())
 	if err != nil {
-		return nil, fmt.Errorf("image line: %s", err)
+		return nil, exist, fmt.Errorf("image line: %s", err)
 	}
 	compiled.Component, err = compileComponent(imagePolicy.GetComponent())
 	if err != nil {
-		return nil, fmt.Errorf("image component: %s", err)
+		return nil, exist, fmt.Errorf("image component: %s", err)
 	}
 	compiled.CVE, err = processors.CompileStringRegex(imagePolicy.GetCve())
 	if err != nil {
-		return nil, fmt.Errorf("image cve: %s", err)
+		return nil, exist, fmt.Errorf("image cve: %s", err)
 	}
 
-	return compiled, nil
+	return compiled, exist, nil
 }
 
 func compileImageNamePolicyRegex(policy *v1.ImageNamePolicy) (*imageNamePolicyRegex, error) {

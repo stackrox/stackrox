@@ -3,26 +3,9 @@ package matcher
 import (
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/central/detection/processors"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestCompilersInit(t *testing.T) {
-	t.Parallel()
-
-	for c := range v1.Policy_Category_name {
-		category := v1.Policy_Category(c)
-
-		if category == v1.Policy_Category_UNSET_CATEGORY {
-			continue
-		}
-
-		if _, ok := processors.PolicyCategoryCompiler[category]; !ok {
-			t.Errorf("Policy Compiler not found for %s", category)
-		}
-	}
-}
 
 func TestMatch(t *testing.T) {
 	t.Parallel()
@@ -39,7 +22,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+				Categories: []string{"IMAGE_ASSURANCE"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
@@ -68,7 +51,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_PRIVILEGES_CAPABILITIES},
+				Categories: []string{"IMAGE_ASSURANCE", "PRIVILEGES_CAPABILITIES"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
@@ -102,7 +85,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_PRIVILEGES_CAPABILITIES},
+				Categories: []string{"IMAGE_ASSURANCE", "PRIVILEGES_CAPABILITIES"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
@@ -147,7 +130,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_PRIVILEGES_CAPABILITIES},
+				Categories: []string{"IMAGE_ASSURANCE", "PRIVILEGES_CAPABILITIES"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
@@ -192,7 +175,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE, v1.Policy_Category_PRIVILEGES_CAPABILITIES},
+				Categories: []string{"IMAGE_ASSURANCE", "PRIVILEGES_CAPABILITIES"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
@@ -237,7 +220,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+				Categories: []string{"IMAGE_ASSURANCE"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
@@ -282,7 +265,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+				Categories: []string{"IMAGE_ASSURANCE"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
@@ -331,7 +314,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []v1.Policy_Category{v1.Policy_Category_IMAGE_ASSURANCE},
+				Categories: []string{"IMAGE_ASSURANCE"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",

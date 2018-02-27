@@ -342,7 +342,8 @@ func TestMatch(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		compiled, err := NewCompiledConfigurationPolicy(c.policy)
+		compiled, exist, err := NewCompiledConfigurationPolicy(c.policy)
+		assert.True(t, exist)
 		assert.NoError(t, err)
 
 		var violations []*v1.Alert_Violation

@@ -30,14 +30,16 @@ type compiledSELinuxPolicy struct {
 }
 
 func init() {
-	processors.PolicyCategoryCompiler[v1.Policy_Category_PRIVILEGES_CAPABILITIES] = NewCompiledPrivilegePolicy
+	processors.PolicySegmentCompilers = append(processors.PolicySegmentCompilers, NewCompiledPrivilegePolicy)
 }
 
 // NewCompiledPrivilegePolicy returns a new compiledPrivilegePolicy.
-func NewCompiledPrivilegePolicy(policy *v1.Policy) (compiledP processors.CompiledPolicy, err error) {
+func NewCompiledPrivilegePolicy(policy *v1.Policy) (compiledP processors.CompiledPolicy, exist bool, err error) {
 	if policy.GetPrivilegePolicy() == nil {
-		return nil, fmt.Errorf("policy %s must contain privilege policy", policy.GetName())
+		return
 	}
+
+	exist = true
 	privilegePolicy := policy.GetPrivilegePolicy()
 	compiled := new(compiledPrivilegePolicy)
 	compiled.Original = policy
@@ -48,7 +50,7 @@ func NewCompiledPrivilegePolicy(policy *v1.Policy) (compiledP processors.Compile
 	}
 	compiled.SELinux, err = newCompiledSELinuxPolicy(privilegePolicy.GetSelinux())
 	if err != nil {
-		return nil, fmt.Errorf("SELinux: %s", err)
+		return nil, exist, fmt.Errorf("SELinux: %s", err)
 	}
 
 	compiled.dropCap = make(map[string]struct{})
@@ -61,7 +63,7 @@ func NewCompiledPrivilegePolicy(policy *v1.Policy) (compiledP processors.Compile
 		compiled.addCap[strings.ToUpper(cap)] = struct{}{}
 	}
 
-	return compiled, nil
+	return compiled, exist, nil
 }
 
 func newCompiledSELinuxPolicy(policy *v1.PrivilegePolicy_SELinuxPolicy) (compiled *compiledSELinuxPolicy, err error) {

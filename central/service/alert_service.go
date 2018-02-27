@@ -201,7 +201,7 @@ var (
 		v1.GetAlertsCountsRequest_UNSET: func(*v1.Alert) []string { return []string{""} },
 		v1.GetAlertsCountsRequest_CATEGORY: func(a *v1.Alert) (output []string) {
 			for _, c := range a.GetPolicy().GetCategories() {
-				output = append(output, c.String())
+				output = append(output, c)
 			}
 			return
 		},

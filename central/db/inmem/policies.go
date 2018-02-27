@@ -22,7 +22,7 @@ func (s *policyStore) GetPolicies(request *v1.GetPoliciesRequest) ([]*v1.Policy,
 		return nil, err
 	}
 	namesSet := stringWrap(request.GetName()).asSet()
-	categoriesSet := categoriesWrap(request.GetCategory()).asSet()
+	categoriesSet := stringWrap(request.GetCategory()).asSet()
 	severitiesSet := severitiesWrap(request.GetSeverity()).asSet()
 
 	filteredPolicies := policies[:0]
@@ -48,7 +48,7 @@ func (s *policyStore) GetPolicies(request *v1.GetPoliciesRequest) ([]*v1.Policy,
 	return filteredPolicies, nil
 }
 
-func (s *policyStore) matchCategories(alertCategories []v1.Policy_Category, categorySet map[v1.Policy_Category]struct{}) bool {
+func (s *policyStore) matchCategories(alertCategories []string, categorySet map[string]struct{}) bool {
 	for _, c := range alertCategories {
 		if _, ok := categorySet[c]; ok {
 			return true

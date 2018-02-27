@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"sort"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/detection"
@@ -16,6 +17,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+const (
+	uncategorizedCategory = `Uncategorized`
 )
 
 var (
@@ -69,12 +74,20 @@ func (s *PolicyService) GetPolicy(ctx context.Context, request *v1.ResourceByID)
 	if !exists {
 		return nil, status.Errorf(codes.NotFound, "policy with id '%s' does not exist", request.GetId())
 	}
+	if len(policy.GetCategories()) == 0 {
+		policy.Categories = []string{uncategorizedCategory}
+	}
 	return policy, nil
 }
 
 // GetPolicies retrieves all policies according to the request.
 func (s *PolicyService) GetPolicies(ctx context.Context, request *v1.GetPoliciesRequest) (*v1.PoliciesResponse, error) {
 	policies, err := s.policyStorage.GetPolicies(request)
+	for _, p := range policies {
+		if len(p.GetCategories()) == 0 {
+			p.Categories = []string{uncategorizedCategory}
+		}
+	}
 	return &v1.PoliciesResponse{Policies: policies}, err
 }
 
@@ -155,6 +168,54 @@ func (s *PolicyService) DryRunPolicy(ctx context.Context, request *v1.Policy) (*
 	return &resp, nil
 }
 
+// GetPolicyCategories returns the categories of all policies.
+func (s *PolicyService) GetPolicyCategories(context.Context, *empty.Empty) (*v1.PolicyCategoriesResponse, error) {
+	categorySet, err := s.getPolicyCategorySet()
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	response := new(v1.PolicyCategoriesResponse)
+	response.Categories = make([]string, 0, len(categorySet))
+	for c := range categorySet {
+		response.Categories = append(response.Categories, c)
+	}
+	sort.Strings(response.Categories)
+
+	return response, nil
+}
+
+// RenamePolicyCategory changes all usage of the category in policies to the requsted name.
+func (s *PolicyService) RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) (*empty.Empty, error) {
+	if request.GetOldCategory() == request.GetNewCategory() {
+		return &empty.Empty{}, nil
+	}
+
+	if err := s.policyStorage.RenamePolicyCategory(request); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &empty.Empty{}, nil
+}
+
+// DeletePolicyCategory removes all usage of the category in policies. Policies may end up with no configured category.
+func (s *PolicyService) DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) (*empty.Empty, error) {
+	categorySet, err := s.getPolicyCategorySet()
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	if _, ok := categorySet[request.GetCategory()]; !ok {
+		return nil, status.Errorf(codes.NotFound, "Policy Category %s does not exist", request.GetCategory())
+	}
+
+	if err := s.policyStorage.DeletePolicyCategory(request); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &empty.Empty{}, nil
+}
+
 func (s *PolicyService) validateScope(scope *v1.Scope) error {
 	if scope.GetCluster() == "" {
 		return nil
@@ -199,14 +260,22 @@ func (s *PolicyService) validateWhitelist(whitelist *v1.Whitelist) error {
 
 func (s *PolicyService) validatePolicy(policy *v1.Policy) (*matcher.Policy, error) {
 	if policy.GetName() == "" {
-		return nil, errors.New("policy must have a set name")
+		return nil, errors.New("policy must have a name")
 	}
 	if policy.GetSeverity() == v1.Severity_UNSET_SEVERITY {
-		return nil, errors.New("policy must have a set severity")
+		return nil, errors.New("policy must have a severity")
 	}
-	if len(policy.GetCategories()) == 0 {
-		return nil, errors.New("policy must have at least one category")
+	if policy.GetImagePolicy() == nil && policy.GetConfigurationPolicy() == nil && policy.GetPrivilegePolicy() == nil {
+		return nil, errors.New("policy must have at least one segment configured")
 	}
+	categorySet := make(map[string]struct{})
+	for _, c := range policy.GetCategories() {
+		categorySet[c] = struct{}{}
+	}
+	if len(categorySet) != len(policy.GetCategories()) {
+		return nil, errors.New("policy cannot contain duplicate categories")
+	}
+
 	for _, n := range policy.GetNotifiers() {
 		_, exists, err := s.notifierStorage.GetNotifier(n)
 		if err != nil {
@@ -233,4 +302,20 @@ func (s *PolicyService) validatePolicy(policy *v1.Policy) (*matcher.Policy, erro
 		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
 	}
 	return matcherPolicy, nil
+}
+
+func (s *PolicyService) getPolicyCategorySet() (map[string]struct{}, error) {
+	policies, err := s.policyStorage.GetPolicies(&v1.GetPoliciesRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	categorySet := make(map[string]struct{})
+	for _, p := range policies {
+		for _, c := range p.GetCategories() {
+			categorySet[c] = struct{}{}
+		}
+	}
+
+	return categorySet, nil
 }

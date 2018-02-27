@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	// PolicyCategoryCompiler is a map of categories to their corresponding compiler function.
-	PolicyCategoryCompiler = map[v1.Policy_Category]func(*v1.Policy) (CompiledPolicy, error){}
+	// PolicySegmentCompilers is a list of policy compiler function.
+	PolicySegmentCompilers []func(*v1.Policy) (CompiledPolicy, bool, error)
 )
 
 // CompiledPolicy allows matching against a container in a deployment.
