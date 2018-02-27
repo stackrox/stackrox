@@ -111,7 +111,7 @@ and that the build for that commit has completed.
 ```bash
 git checkout master
 git pull
-export RELEASE_COMMIT="$(git log | head -n 1 | cut -f 2 -d ' ')"
+export RELEASE_COMMIT="$(git rev-parse HEAD)"
 echo "Preparing to release ${RELEASE_COMMIT}"
 ```
 
@@ -126,7 +126,7 @@ By convention, we do not currently use a `v` prefix for release branches and
 tags (that is, we push branches like `release/0.5` and tags like `0.5`,
 not `release/v0.5` and `v0.5`).
 
-### Create a Release Branch
+### Create a Release Branch (for non-patch releases)
 ```bash
 git checkout -b release/${RELEASE_VERSION}
 git push -u origin release/${RELEASE_VERSION}
@@ -164,6 +164,12 @@ release version git and Docker image tags.
 1. Run through the entire document and make sure that everything works.
 1. If there are new features to showcase, consider modifying the demo
 instructions to demonstrate them.
+
+### Update JIRA release
+Mark this version "Released" in JIRA. Create the next one if it does not exist.
+
+Find all bugs that are still open and affect a previous release.
+Add this release to the "Affects Version(s)" list for those bugs.
 
 ### Publish a Confluence Page for the Version
 Copy the "Latest Stable Version" page, update it, and replace the link on
