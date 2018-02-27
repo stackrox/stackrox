@@ -1,8 +1,10 @@
 startup --batch --host_jvm_args=-Dbazel.DigestFunction=sha256
-build --spawn_strategy=remote
-build --strategy=Javac=remote
-build --genrule_strategy=remote
-build --strategy=Closure=remote
-build --remote_rest_cache=https://bc-ext.rox.systems/$BAZEL_CACHE_SECRET_URL/
+
+# See https://docs.bazel.build/versions/master/remote-caching.html
+build --spawn_strategy=remote --genrule_strategy=remote
+build --strategy=Javac=remote --strategy=Closure=remote
+build --remote_http_cache=https://storage.googleapis.com/bazelcache
+build --google_credentials=/tmp/gcp.json
 build --remote_local_fallback
 build --remote_upload_local_results
+build --jobs 4

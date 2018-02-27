@@ -2,7 +2,7 @@ defaults: &defaults
   docker:
     # This image is the standard circleci/golang:1.9.2 image, plus bazel
     # and other necessary build tools like goimports, dep, yarn, gcloud, kubectl, and envsubst.
-    - image: stackrox/apollo:circleci@sha256:515de5bc8add6d1b916a362037b760412b129cfa1b5c942f7f58d87630cfa494
+    - image: stackrox/apollo:circleci@sha256:5151069b4250092d099909e2da5de530dba3410cacc7b1be81d6c9e4a3adee2b
       auth:
         username: $DOCKERHUB_USERNAME
         password: $DOCKERHUB_PASSWORD
@@ -32,6 +32,10 @@ jobs:
 
       - *restoreNPM
       - *restoreDep
+
+      - run:
+          name: Setup Bazel cache access
+          command: echo "$GKE_SERVICE_ACCOUNT" > /tmp/gcp.json
 
       - run:
           name: Build all
@@ -76,9 +80,9 @@ jobs:
             echo 'export REGISTRY_USERNAME="$DOCKERHUB_USERNAME"' >> $BASH_ENV
             echo 'export REGISTRY_PASSWORD="$DOCKERHUB_PASSWORD"' >> $BASH_ENV
             echo 'export PREVENT_IMAGE_TAG="$CIRCLE_SHA1"' >> $BASH_ENV
-            echo $GKE_SERVICE_ACCOUNT > /tmp/gke.json
-            echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gke.json' >> $BASH_ENV
-            gcloud auth activate-service-account --key-file /tmp/gke.json
+            echo $GKE_SERVICE_ACCOUNT > /tmp/gcp.json
+            echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json' >> $BASH_ENV
+            gcloud auth activate-service-account --key-file /tmp/gcp.json
 
       - run:
           name: Deploy to a remote cluster
