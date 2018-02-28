@@ -1,12 +1,13 @@
 package notifiers
 
 import (
+	"fmt"
+
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/notifications/types"
 )
 
 // Creator is a function stub for a function that creates a Notifier
-type Creator func(notifier *v1.Notifier) (types.Notifier, error)
+type Creator func(notifier *v1.Notifier) (Notifier, error)
 
 // Registry is the map of plugin names to their creation functions
 var Registry = map[string]Creator{}
@@ -14,4 +15,14 @@ var Registry = map[string]Creator{}
 // Add registers a plugin with their creator function
 func Add(name string, creator Creator) {
 	Registry[name] = creator
+}
+
+// CreateNotifier checks to make sure the integration exists and then tries to generate a new Notifier
+// returns an error if the creation was unsuccessful
+func CreateNotifier(notifier *v1.Notifier) (Notifier, error) {
+	creator, exists := Registry[notifier.Type]
+	if !exists {
+		return nil, fmt.Errorf("Notifier with type '%v' does not exist", notifier.Type)
+	}
+	return creator(notifier)
 }

@@ -56,6 +56,13 @@ service RegistryService {
         };
     }
 
+    rpc TestRegistry(Registry) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/registries/test"
+            body: "*"
+        };
+    }
+
     rpc DeleteRegistry(ResourceByID) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             delete: "/v1/registries/{id}"

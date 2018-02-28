@@ -130,13 +130,9 @@ func (s *NotifierService) PostNotifier(ctx context.Context, request *v1.Notifier
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new notifier")
 	}
-	notifierCreator, ok := notifiers.Registry[request.Type]
-	if !ok {
-		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("Notifier type %v is not a valid notifier type", request.Type))
-	}
-	notifier, err := notifierCreator(request)
+	notifier, err := notifiers.CreateNotifier(request)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	id, err := s.storage.AddNotifier(request)
 	if err != nil {
@@ -145,6 +141,21 @@ func (s *NotifierService) PostNotifier(ctx context.Context, request *v1.Notifier
 	request.Id = id
 	s.processor.UpdateNotifier(notifier)
 	return request, nil
+}
+
+// TestNotifier tests to see if the config is setup properly
+func (s *NotifierService) TestNotifier(ctx context.Context, request *v1.Notifier) (*empty.Empty, error) {
+	if err := validateNotifier(request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	notifier, err := notifiers.CreateNotifier(request)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := notifier.Test(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	return &empty.Empty{}, nil
 }
 
 // DeleteNotifier deletes a notifier from the system

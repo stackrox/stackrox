@@ -414,6 +414,7 @@ const api = {
             data.id !== undefined && data.id !== ''
                 ? axios.put(`/v1/registries/${data.id}`, data)
                 : axios.post('/v1/registries', data),
+        test: data => axios.post(`/v1/registries/test`, data),
         delete: data => axios.delete(`/v1/registries/${data.id}`)
     },
     scanners: {
@@ -421,6 +422,7 @@ const api = {
             data.id !== undefined && data.id !== ''
                 ? axios.put(`/v1/scanners/${data.id}`, data)
                 : axios.post('/v1/scanners', data),
+        test: data => axios.post(`/v1/scanners/test`, data),
         delete: data => axios.delete(`/v1/scanners/${data.id}`)
     },
     notifiers: {
@@ -428,6 +430,7 @@ const api = {
             data.id !== undefined && data.id !== ''
                 ? axios.put(`/v1/notifiers/${data.id}`, data)
                 : axios.post('/v1/notifiers', data),
+        test: data => axios.post(`/v1/notifiers/test`, data),
         delete: data => axios.delete(`/v1/notifiers/${data.id}`)
     }
 };
@@ -436,10 +439,12 @@ const reducer = (action, prevState, nextState) => {
     switch (action) {
         case 'EDIT_INTEGRATION':
             return { editIntegration: nextState.editIntegration };
+        case 'CLEAR_MESSAGES':
+            return { errorMessage: '', successMessage: '' };
         case 'ERROR_MESSAGE':
-            return { message: nextState.message };
-        case 'CLEAR_ERROR_MESSAGE':
-            return { message: '' };
+            return { errorMessage: nextState.errorMessage };
+        case 'SUCCESS_MESSAGE':
+            return { successMessage: nextState.successMessage };
         default:
             return prevState;
     }
@@ -465,17 +470,33 @@ class IntegrationModal extends Component {
 
         this.state = {
             editIntegration: null,
-            message: ''
+            errorMessage: '',
+            successMessage: ''
         };
     }
 
     onRequestClose = isSuccessful => {
-        this.update('CLEAR_ERROR_MESSAGE');
+        this.update('CLEAR_MESSAGES');
         this.props.onRequestClose(isSuccessful);
     };
 
+    onTest = () => {
+        this.update('CLEAR_MESSAGES');
+        const data = this.addDefaultFormValues(this.formApi.values);
+        api[this.props.source]
+            .test(data)
+            .then(() => {
+                this.update('SUCCESS_MESSAGE', {
+                    successMessage: 'Integration test was successful'
+                });
+            })
+            .catch(error => {
+                this.update('ERROR_MESSAGE', { errorMessage: error.response.data.error });
+            });
+    };
+
     onSubmit = formData => {
-        this.update('CLEAR_ERROR_MESSAGE');
+        this.update('CLEAR_MESSAGES');
         const data = this.addDefaultFormValues(formData);
         api[this.props.source]
             .save(data)
@@ -489,7 +510,7 @@ class IntegrationModal extends Component {
                 this.update('EDIT_INTEGRATION', { editIntegration: null });
             })
             .catch(error => {
-                this.update('ERROR_MESSAGE', { message: error.response.data.error });
+                this.update('ERROR_MESSAGE', { errorMessage: error.response.data.error });
             });
     };
 
@@ -652,6 +673,18 @@ class IntegrationModal extends Component {
                 }
             }
         ];
+        if (this.props.source !== 'authProviders') {
+            const testButton = {
+                renderIcon: () => <Icon.Check className="h-4 w-4" />,
+                text: `Test Integration`,
+                className:
+                    'flex py-1 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
+                onClick: () => {
+                    this.onTest();
+                }
+            };
+            buttons.splice(1, 0, testButton);
+        }
         const key = this.state.editIntegration
             ? this.state.editIntegration.name
             : 'new-integration';
@@ -689,8 +722,15 @@ class IntegrationModal extends Component {
                     </span>
                     <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.onRequestClose} />
                 </header>
-                {this.state.message !== '' && (
-                    <div className="px-4 py-2 bg-high-500 text-white">{this.state.message}</div>
+                {this.state.errorMessage !== '' && (
+                    <div className="px-4 py-2 bg-high-500 text-white">
+                        {this.state.errorMessage}
+                    </div>
+                )}
+                {this.state.successMessage !== '' && (
+                    <div className="px-4 py-2 bg-success-500 text-white">
+                        {this.state.successMessage}
+                    </div>
                 )}
                 <div className="flex flex-1 w-full bg-white">
                     {this.renderTable()}

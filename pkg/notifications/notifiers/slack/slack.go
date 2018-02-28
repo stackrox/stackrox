@@ -12,7 +12,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
-	"bitbucket.org/stack-rox/apollo/pkg/notifications/types"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 )
 
@@ -216,7 +215,7 @@ func GetAttachmentColor(s v1.Severity) string {
 }
 
 func init() {
-	notifiers.Add("slack", func(notifier *v1.Notifier) (types.Notifier, error) {
+	notifiers.Add("slack", func(notifier *v1.Notifier) (notifiers.Notifier, error) {
 		s, err := newSlack(notifier)
 		return s, err
 	})

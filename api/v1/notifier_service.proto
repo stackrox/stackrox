@@ -64,6 +64,13 @@ service NotifierService {
         };
     }
 
+    rpc TestNotifier(Notifier) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/notifiers/test"
+            body: "*"
+        };
+    }
+
     rpc DeleteNotifier(DeleteNotifierRequest) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             delete: "/v1/notifiers/{id}"

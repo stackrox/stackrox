@@ -140,6 +140,21 @@ func (s *ScannerService) PutScanner(ctx context.Context, request *v1.Scanner) (*
 	return &empty.Empty{}, nil
 }
 
+// TestScanner tests to see if the config is setup properly
+func (s *ScannerService) TestScanner(ctx context.Context, request *v1.Scanner) (*empty.Empty, error) {
+	if err := validateScanner(request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	scanner, err := scanners.CreateScanner(request)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := scanner.Test(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	return &empty.Empty{}, nil
+}
+
 // DeleteScanner deletes a scanner from the system
 func (s *ScannerService) DeleteScanner(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
 	if request.GetId() == "" {

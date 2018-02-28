@@ -11,7 +11,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
-	"bitbucket.org/stack-rox/apollo/pkg/notifications/types"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 	jiraLib "github.com/andygrunwald/go-jira"
 )
@@ -214,7 +213,7 @@ func severityToPriority(sev v1.Severity) string {
 }
 
 func init() {
-	notifiers.Add("jira", func(notifier *v1.Notifier) (types.Notifier, error) {
+	notifiers.Add("jira", func(notifier *v1.Notifier) (notifiers.Notifier, error) {
 		j, err := newJira(notifier)
 		return j, err
 	})

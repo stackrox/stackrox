@@ -8,7 +8,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
-	"bitbucket.org/stack-rox/apollo/pkg/notifications/types"
 )
 
 const (
@@ -24,7 +23,7 @@ var (
 type Processor struct {
 	alertChan     chan *v1.Alert
 	benchmarkChan chan *v1.BenchmarkSchedule
-	notifiers     map[string]types.Notifier
+	notifiers     map[string]notifiers.Notifier
 	notifiersLock sync.Mutex
 
 	notifiersToPolicies     map[string]map[string]*v1.Policy
@@ -38,7 +37,7 @@ func NewNotificationProcessor(database db.NotifierStorage) (*Processor, error) {
 	processor := &Processor{
 		alertChan:           make(chan *v1.Alert, alertChanSize),
 		benchmarkChan:       make(chan *v1.BenchmarkSchedule, benchmarkChanSize),
-		notifiers:           make(map[string]types.Notifier),
+		notifiers:           make(map[string]notifiers.Notifier),
 		notifiersToPolicies: make(map[string]map[string]*v1.Policy),
 		database:            database,
 	}
@@ -136,7 +135,7 @@ func (p *Processor) RemoveNotifier(id string) {
 }
 
 // UpdateNotifier updates or adds the passed notifier into memory
-func (p *Processor) UpdateNotifier(notifier types.Notifier) {
+func (p *Processor) UpdateNotifier(notifier notifiers.Notifier) {
 	p.notifiersLock.Lock()
 	defer p.notifiersLock.Unlock()
 	p.notifiers[notifier.ProtoNotifier().GetId()] = notifier

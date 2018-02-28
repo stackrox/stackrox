@@ -50,6 +50,7 @@ type v1Compatibility struct {
 type client interface {
 	Manifest(repository, reference string) (*manifestV1.SignedManifest, error)
 	Repositories() ([]string, error)
+	Ping() error
 }
 
 type nilClient struct {
@@ -62,6 +63,10 @@ func (n nilClient) Manifest(repository, reference string) (*manifestV1.SignedMan
 
 func (n nilClient) Repositories() ([]string, error) {
 	return nil, n.error
+}
+
+func (n nilClient) Ping() error {
+	return n.error
 }
 
 func newRegistry(protoRegistry *v1.Registry) (*dockerRegistry, error) {
@@ -218,8 +223,7 @@ func (d *dockerRegistry) ProtoRegistry() *v1.Registry {
 
 // Test tests the current registry and makes sure that it is working properly
 func (d *dockerRegistry) Test() error {
-	_, err := d.client().Repositories()
-	return err
+	return d.client().Ping()
 }
 
 // Match decides if the image is contained within this registry

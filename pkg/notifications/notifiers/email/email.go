@@ -13,7 +13,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
-	"bitbucket.org/stack-rox/apollo/pkg/notifications/types"
 )
 
 var (
@@ -253,7 +252,7 @@ func (e *email) ProtoNotifier() *v1.Notifier {
 }
 
 func init() {
-	notifiers.Add("email", func(notifier *v1.Notifier) (types.Notifier, error) {
+	notifiers.Add("email", func(notifier *v1.Notifier) (notifiers.Notifier, error) {
 		e, err := newEmail(notifier)
 		return e, err
 	})

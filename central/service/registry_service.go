@@ -58,7 +58,7 @@ func (s *RegistryService) GetRegistry(ctx context.Context, request *v1.ResourceB
 		return nil, err
 	}
 	if !exists {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("Scanner %v not found", request.GetId()))
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("Registry %v not found", request.GetId()))
 	}
 	return registry, nil
 }
@@ -144,6 +144,21 @@ func (s *RegistryService) PostRegistry(ctx context.Context, request *v1.Registry
 	request.Id = id
 	s.detector.UpdateRegistry(registry)
 	return request, nil
+}
+
+// TestRegistry tests to see if the config is setup properly
+func (s *RegistryService) TestRegistry(ctx context.Context, request *v1.Registry) (*empty.Empty, error) {
+	if err := validateRegistry(request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	registry, err := registries.CreateRegistry(request)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := registry.Test(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	return &empty.Empty{}, nil
 }
 
 // DeleteRegistry deletes a registry from the system

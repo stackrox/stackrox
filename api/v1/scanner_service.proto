@@ -56,6 +56,13 @@ service ScannerService {
         };
     }
 
+    rpc TestScanner(Scanner) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/v1/scanners/test"
+            body: "*"
+        };
+    }
+
     rpc DeleteScanner(ResourceByID) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             delete: "/v1/scanners/{id}"
