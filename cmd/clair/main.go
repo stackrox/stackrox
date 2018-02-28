@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
@@ -73,7 +74,7 @@ func evaluateRegistryOverride() {
 	}
 	csv := strings.Split(overrides, ",")
 	for _, c := range csv {
-		spl := strings.Split(c, "=")
+		spl := strings.SplitN(c, "=", 2)
 		if len(spl) != 2 {
 			log.Fatalf("Environment variable section PREVENT_REGISTRY_OVERRIDE '%v' must be separated with an = sign", c)
 		}
@@ -82,11 +83,43 @@ func evaluateRegistryOverride() {
 	}
 }
 
+// This is mostly to avoid Mac issues due to osxkeychain
+// e.g. PREVENT_REGISTRY_AUTH=registry-1.docker.io=<base64 encoded>
+func overrideRegistryAuth() {
+	overrides, ok := os.LookupEnv("PREVENT_REGISTRY_AUTH")
+	if !ok {
+		return
+	}
+	csv := strings.Split(overrides, ",")
+	for _, c := range csv {
+		spl := strings.SplitN(c, "=", 2)
+		if len(spl) != 2 {
+			log.Fatalf("Environment variable section PREVENT_REGISTRY_AUTH '%v' must be separated with an = sign", c)
+		}
+		registry := strings.TrimSpace(spl[0])
+
+		sDec, err := base64.URLEncoding.DecodeString(spl[1])
+		if err != nil {
+			log.Fatalf("Could not base64 decode '%v'", spl[1])
+		}
+
+		authSpl := strings.SplitN(string(sDec), ":", 2)
+		if len(spl) != 2 {
+			log.Fatalf("Could not parse registry auth from environment variable for %v", registry)
+		}
+		registryAuth[registry] = &basicAuth{
+			username: strings.TrimSpace(authSpl[0]),
+			password: strings.TrimSpace(authSpl[1]),
+		}
+	}
+}
+
 func populateRegistryAuth(file string) {
 	var err error
 	registryAuth, err = readDockerConfig(file)
 	if err != nil {
-		log.Fatal(err)
+		log.Errorf("Unable to read docker config: %s", err)
+		registryAuth = make(map[string]*basicAuth)
 	}
 }
 
@@ -111,6 +144,7 @@ func run(cfg config) error {
 
 	populateRegistryAuth(cfg.dockerConfigPath)
 	evaluateRegistryOverride()
+	overrideRegistryAuth()
 
 	if cfg.image != "" {
 		// Parse Image

@@ -174,3 +174,64 @@ Add this release to the "Affects Version(s)" list for those bugs.
 ### Publish a Confluence Page for the Version
 Copy the "Latest Stable Version" page, update it, and replace the link on
 [Prevent wiki homepage](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/233242976/StackRox+Prevent).
+
+## POC with Clair
+
+### Launch Clair
+Clair requires persistence.
+If everything is running on one host, then use the below
+```bash
+docker run -d -p 6060:6060 \
+    -e  "LANG=en_US.utf8" \
+    -e  "PGDATA=/var/lib/postgresql/data" \
+    -e "CLAIR_MINIMUM_SEVERITY=Low" \
+    stackrox/scanner:latest
+```
+
+### Upload to Clair
+
+This will launch the clair integration from the Prevent image.
+It pushes all active images in Prevent to Clair.
+This could take quite a while.
+```bash
+docker run -it --entrypoint=/prevent/clair \
+    --net=host \
+    -v $HOME/.docker:/config \
+    stackrox/prevent:latest \
+    --clair http://localhost:6060 \
+    -m ${LOCAL_API_ENDPOINT}
+```
+
+### Manual steps
+
+* Add registry integrations through UI
+* Add Clair integration through UI
+* If nothing is showing up, you may want to hit `reassess` just to reprocess all of the data 
+
+### Notes
+
+To send an individual image to Clair, run:
+```bash
+docker run -it \
+    --entrypoint=/prevent/clair \
+    --net=host -v $HOME/.docker:/config \
+    stackrox/prevent:latest \
+    --clair http://localhost:6060 \
+    --image docker.io/stackrox/prevent:latest
+```
+
+Overrides for registries can be done using "PREVENT_REGISTRY_OVERRIDE"
+```bash
+PREVENT_REGISTRY_OVERRIDE=example.io=http://example.io,docker.io=registry-1.docker.io
+```
+Overrides are necessary for http registries
+
+Password overrides for Mac where we can't read the docker config
+e.g. `PREVENT_REGISTRY_AUTH=docker.io=<base64 password>`
+```bash
+echo "Enter image registry (e.g. docker.io)" && \
+read registry && \
+echo "Enter username and password separated by a colon" && \
+read -s auth && \
+echo ${registry}=$(echo $auth | base64 | tr -- '+=/' '-_~')
+```
