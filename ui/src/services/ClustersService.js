@@ -7,5 +7,7 @@ import axios from 'axios';
  */
 export default function fetchClusters() {
     const clustersUrl = '/v1/clusters';
-    return axios.get(clustersUrl).then(response => response.data.clusters);
+    return axios.get(clustersUrl).then(response => ({
+        response: response.data
+    }));
 }

@@ -15,7 +15,7 @@ const baseUrl = '/v1/alerts';
  * Returns normalized response with policy entities extracted.
  *
  * @param {Object} [filters={}] map of filters "filter -> value"
- * @returns {Promise<Object, Error>} fulfilled with normalized response
+ * @returns {Promise<Object, Error>}
  */
 export function fetchAlertNumsByPolicy(filters = {}) {
     const params = queryString.stringify({
@@ -32,7 +32,7 @@ export function fetchAlertNumsByPolicy(filters = {}) {
  * Returns normalized response with alert entities extracted.
  *
  * @param {!string} policyId
- * @returns {Promise<Object, Error>} fulfilled with normalized response
+ * @returns {Promise<Object, Error>}
  */
 export function fetchAlertsByPolicy(policyId) {
     const params = queryString.stringify({
@@ -54,5 +54,46 @@ export function fetchAlertsByPolicy(policyId) {
 export function fetchAlert(alertId) {
     return axios.get(`${baseUrl}/${alertId}`).then(response => ({
         response: normalize(response.data, alertSchema)
+    }));
+}
+
+/**
+ * Fetches severity counts of non-stale alerts by policy categories.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function fetchAlertCountsByPolicyCategories() {
+    const params = queryString.stringify({
+        group_by: 'CATEGORY',
+        'request.stale': false
+    });
+    return axios.get(`${baseUrl}/summary/counts?${params}`).then(response => ({
+        response: response.data
+    }));
+}
+
+/**
+ * Fetches severity counts of non-stale alerts by cluster.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function fetchAlertCountsByCluster() {
+    const params = queryString.stringify({
+        group_by: 'CLUSTER',
+        'request.stale': false
+    });
+    return axios.get(`${baseUrl}/summary/counts?${params}`).then(response => ({
+        response: response.data
+    }));
+}
+
+/**
+ * Fetches non-stale alerts by time for timeseries.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function fetchAlertsByTimeseries() {
+    return axios.get(`${baseUrl}/summary/timeseries`).then(response => ({
+        response: response.data
     }));
 }

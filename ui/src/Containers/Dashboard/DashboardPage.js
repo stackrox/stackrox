@@ -12,18 +12,17 @@ import {
     Legend,
     ResponsiveContainer
 } from 'recharts';
-import axios from 'axios';
 import { format, subDays } from 'date-fns';
 import * as Icon from 'react-feather';
+import { connect } from 'react-redux';
+import { createSelector, createStructuredSelector } from 'reselect';
 
 import TwoLevelPieChart from 'Components/visuals/TwoLevelPieChart';
 import CustomLineChart from 'Components/visuals/CustomLineChart';
 import DashboardBenchmarks from 'Containers/Dashboard/DashboardBenchmarks';
 import SeverityTile from 'Containers/Dashboard/SeverityTile';
-import { fetchBenchmarks, fetchLastScan } from 'services/BenchmarksService';
-import fetchClusters from 'services/ClustersService';
-
 import { severityLabels } from 'messages/common';
+import { selectors } from 'reducers';
 
 //  @TODO: Have one source of truth for severity colors
 const severityColorMap = {
@@ -48,138 +47,83 @@ const policyCategoriesMap = {
     }
 };
 
-const reducer = (action, prevState, nextState) => {
-    switch (action) {
-        case 'UPDATE_VIOLATIONS_BY_POLICY_CATEGORY':
-            return { violatonsByPolicyCategory: nextState.violatonsByPolicyCategory };
-        case 'UPDATE_VIOLATIONS_BY_CLUSTERS':
-            return { violationsByCluster: nextState.violationsByCluster };
-        case 'UPDATE_ALERTS_BY_TIME':
-            return { alertsByTime: nextState.alertsByTime };
-        case 'UPDATE_BENCHMARKS':
-            return { benchmarks: nextState.benchmarks };
-        case 'UPDATE_CLUSTERS':
-            return { clustersByName: nextState.clustersByName };
-        default:
-            return prevState;
-    }
-};
+const benchmarkPropType = PropTypes.arrayOf(
+    PropTypes.shape({
+        checks: PropTypes.arrayOf(
+            PropTypes.shape({
+                aggregatedResults: PropTypes.shape({
+                    PASS: PropTypes.number,
+                    INFO: PropTypes.number,
+                    WARN: PropTypes.number,
+                    NOTE: PropTypes.number
+                }),
+                definition: PropTypes.shape({
+                    description: PropTypes.string,
+                    name: PropTypes.string
+                }),
+                hostResults: PropTypes.arrayOf(
+                    PropTypes.shape({
+                        host: PropTypes.string,
+                        notes: PropTypes.arrayOf(PropTypes.string),
+                        result: PropTypes.string
+                    })
+                )
+            })
+        )
+    })
+);
+
+const severityPropType = PropTypes.oneOf([
+    'CRITICAL_SEVERITY',
+    'HIGH_SEVERITY',
+    'MEDIUM_SEVERITY',
+    'LOW_SEVERITY'
+]);
+
+const groupedViolationsPropType = PropTypes.arrayOf(
+    PropTypes.shape({
+        counts: PropTypes.arrayOf(
+            PropTypes.shape({
+                count: PropTypes.string.isRequired,
+                severity: severityPropType
+            })
+        ),
+        group: PropTypes.string.isRequired
+    })
+);
 
 class DashboardPage extends Component {
     static propTypes = {
+        violatonsByPolicyCategory: groupedViolationsPropType.isRequired,
+        violationsByCluster: groupedViolationsPropType.isRequired,
+        alertsByTimeseries: PropTypes.arrayOf(
+            PropTypes.shape({
+                id: PropTypes.string.isRequired,
+                severity: severityPropType.isRequired,
+                time: PropTypes.string.isRequired,
+                type: PropTypes.string.isRequired
+            })
+        ).isRequired,
+        benchmarks: PropTypes.shape({
+            'CIS Docker v1.1.0 Benchmark': benchmarkPropType,
+            'CIS Swarm v1.1.0 Benchmark': benchmarkPropType,
+            'CIS Kubernetes v1.2.0 Benchmark': benchmarkPropType
+        }).isRequired,
+        clustersByName: PropTypes.object.isRequired, // eslint-disable-line react/forbid-prop-types
         history: PropTypes.shape({
             push: PropTypes.func.isRequired
         }).isRequired
     };
 
-    constructor(props) {
-        super(props);
-
-        this.colorBy = d => d.color;
-
-        this.state = {
-            violatonsByPolicyCategory: [],
-            violationsByCluster: [],
-            benchmarks: {},
-            alertsByTime: [],
-            clustersByName: {}
-        };
-    }
-
-    componentDidMount() {
-        this.getViolationsByPolicyCategory();
-        this.getViolationsByCluster();
-        this.getAlertsByTime();
-        this.getBenchmarks();
-        this.getClusters();
-    }
-
-    getViolationsByPolicyCategory = () =>
-        axios
-            .get('/v1/alerts/summary/counts', {
-                params: { group_by: 'CATEGORY', 'request.stale': false }
-            })
-            .then(response => {
-                const violatonsByPolicyCategory = response.data.groups;
-                if (!violatonsByPolicyCategory) return;
-                this.update('UPDATE_VIOLATIONS_BY_POLICY_CATEGORY', { violatonsByPolicyCategory });
-            })
-            .catch(error => {
-                console.error(error);
-            });
-
-    getViolationsByCluster = () =>
-        axios
-            .get('/v1/alerts/summary/counts', {
-                params: { group_by: 'CLUSTER', 'request.stale': false }
-            })
-            .then(response => {
-                const violationsByCluster = response.data.groups;
-                if (!violationsByCluster) return;
-                this.update('UPDATE_VIOLATIONS_BY_CLUSTERS', { violationsByCluster });
-            })
-            .catch(error => {
-                console.error(error);
-            });
-
-    getAlertsByTime = () =>
-        axios
-            .get('/v1/alerts/summary/timeseries')
-            .then(response => {
-                const alertsByTime = response.data.alertEvents;
-                if (!alertsByTime) return;
-                this.update('UPDATE_ALERTS_BY_TIME', { alertsByTime });
-            })
-            .catch(error => {
-                console.error(error);
-            });
-
-    async getBenchmarks() {
-        try {
-            const allBenchmarks = await fetchBenchmarks();
-            const lastScans = await Promise.all(
-                allBenchmarks.filter(b => b.available).map(b => fetchLastScan(b.name))
-            );
-            const benchmarks = lastScans.reduce(
-                (result, scan) =>
-                    scan ? { ...result, [scan.metadata.benchmark]: [scan.data] } : result,
-                {}
-            );
-            this.update('UPDATE_BENCHMARKS', { benchmarks });
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    async getClusters() {
-        try {
-            const clusters = await fetchClusters();
-            const clustersByName = clusters.reduce(
-                (result, cluster) => ({
-                    ...result,
-                    [cluster.name]: cluster
-                }),
-                {}
-            );
-            this.update('UPDATE_CLUSTERS', { clustersByName });
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
     makeBarClickHandler = (clusterName, severity) => () => {
-        const cluster = this.state.clustersByName[clusterName];
+        const cluster = this.props.clustersByName[clusterName];
         // if clusters are not loaded yet, at least we can redirect to unfiltered violations
         const clusterQuery = cluster ? `cluster=${cluster.id}` : '';
         this.props.history.push(`/main/violations?severity=${severity}&${clusterQuery}`);
     };
 
-    update = (action, nextState) => {
-        this.setState(prevState => reducer(action, prevState, nextState));
-    };
-
-    renderAlertsByTime = () => {
-        if (!this.state.alertsByTime) return '';
+    renderAlertsByTimeseries = () => {
+        if (!this.props.alertsByTimeseries) return '';
         const timeAlertMap = {};
         const xAxisBuckets = [];
         for (let i = 6; i >= 0; i -= 1) {
@@ -188,7 +132,7 @@ class DashboardPage extends Component {
             xAxisBuckets.push(key);
         }
         let startCount = 0;
-        this.state.alertsByTime.forEach(alert => {
+        this.props.alertsByTimeseries.forEach(alert => {
             const time = format(parseInt(alert.time, 10), 'MMM DD');
             const alerts = timeAlertMap[time];
             if (alerts !== undefined) {
@@ -233,8 +177,8 @@ class DashboardPage extends Component {
     };
 
     renderViolationsByCluster = () => {
-        if (!this.state.violationsByCluster) return '';
-        const data = this.state.violationsByCluster.map(cluster => {
+        if (!this.props.violationsByCluster) return '';
+        const data = this.props.violationsByCluster.map(cluster => {
             const dataPoint = {
                 name: cluster.group,
                 Critical: 0,
@@ -299,8 +243,8 @@ class DashboardPage extends Component {
     };
 
     renderViolationsByPolicyCategory = () => {
-        if (!this.state.violatonsByPolicyCategory) return '';
-        return this.state.violatonsByPolicyCategory.map(policyType => {
+        if (!this.props.violatonsByPolicyCategory) return '';
+        return this.props.violatonsByPolicyCategory.map(policyType => {
             const data = policyType.counts.map(d => ({
                 name: severityLabels[d.severity],
                 value: parseInt(d.count, 10),
@@ -334,7 +278,7 @@ class DashboardPage extends Component {
             MEDIUM_SEVERITY: 0,
             LOW_SEVERITY: 0
         };
-        this.state.violationsByCluster.forEach(cluster => {
+        this.props.violationsByCluster.forEach(cluster => {
             cluster.counts.forEach(d => {
                 const count = parseInt(d.count, 10);
                 counts[d.severity] += count;
@@ -366,7 +310,7 @@ class DashboardPage extends Component {
             <h2 className="flex items-center text-xl text-base font-sans text-base-600 pb-8 tracking-wide font-500">
                 Benchmarks
             </h2>
-            <DashboardBenchmarks benchmarks={this.state.benchmarks} />
+            <DashboardBenchmarks benchmarks={this.props.benchmarks} />
         </div>
     );
 
@@ -402,7 +346,7 @@ class DashboardPage extends Component {
                                         Active Violations by Time
                                     </h2>
                                     <div className="flex flex-1 m-4 h-64">
-                                        {this.renderAlertsByTime()}
+                                        {this.renderAlertsByTimeseries()}
                                     </div>
                                 </div>
                             </div>
@@ -419,4 +363,22 @@ class DashboardPage extends Component {
     }
 }
 
-export default DashboardPage;
+const getClustersByName = createSelector([selectors.getClusters], clusters =>
+    clusters.reduce(
+        (result, cluster) => ({
+            ...result,
+            [cluster.name]: cluster
+        }),
+        {}
+    )
+);
+
+const mapStateToProps = createStructuredSelector({
+    violatonsByPolicyCategory: selectors.getAlertCountsByPolicyCategories,
+    violationsByCluster: selectors.getAlertCountsByCluster,
+    alertsByTimeseries: selectors.getAlertsByTimeseries,
+    benchmarks: selectors.getBenchmarks,
+    clustersByName: getClustersByName
+});
+
+export default connect(mapStateToProps)(DashboardPage);

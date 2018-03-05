@@ -19,7 +19,7 @@ export async function fetchBenchmarks() {
     const configsUrl = `${baseUrl}/configs`;
 
     const [clusters, benchmarks] = await Promise.all([
-        fetchClusters(),
+        fetchClusters().then(({ response }) => response.clusters),
         axios.get(configsUrl).then(response => response.data.benchmarks)
     ]);
     const clusterTypes = new Set(clusters.map(c => c.type));
@@ -139,4 +139,16 @@ export function deleteSchedule(benchmarkName) {
 export function triggerScan(benchmarkName) {
     const triggerUrl = `${baseUrl}/triggers/${benchmarkName}`;
     return axios.post(triggerUrl, {});
+}
+
+export async function fetchUpdatedBenchmarks() {
+    const allBenchmarks = await fetchBenchmarks();
+    const lastScans = await Promise.all(
+        allBenchmarks.filter(b => b.available).map(b => fetchLastScan(b.name))
+    );
+    const benchmarks = lastScans.reduce(
+        (result, scan) => (scan ? { ...result, [scan.metadata.benchmark]: [scan.data] } : result),
+        {}
+    );
+    return { response: benchmarks };
 }

@@ -7,6 +7,7 @@ import { actions, types } from 'reducers/alerts';
 import { types as locationActionTypes } from 'reducers/routes';
 import { selectors } from 'reducers';
 
+const dashboardPath = '/main/dashboard';
 const violationsPath = '/main/violations';
 
 function* getAlert({ params: alertId }) {
@@ -25,6 +26,36 @@ function* getAlertNumsByPolicy(filters) {
         yield put(actions.fetchAlertNumsByPolicy.success(result.response));
     } catch (error) {
         yield put(actions.fetchAlertNumsByPolicy.failure(error, filters));
+        throw error;
+    }
+}
+
+function* getAlertCountsByPolicyCategories() {
+    try {
+        const result = yield call(service.fetchAlertCountsByPolicyCategories);
+        yield put(actions.fetchAlertCountsByPolicyCategories.success(result.response));
+    } catch (error) {
+        yield put(actions.fetchAlertCountsByPolicyCategories.failure(error));
+        throw error;
+    }
+}
+
+function* getAlertCountsByCluster() {
+    try {
+        const result = yield call(service.fetchAlertCountsByCluster);
+        yield put(actions.fetchAlertCountsByCluster.success(result.response));
+    } catch (error) {
+        yield put(actions.fetchAlertCountsByCluster.failure(error));
+        throw error;
+    }
+}
+
+function* getAlertsByTimeseries() {
+    try {
+        const result = yield call(service.fetchAlertsByTimeseries);
+        yield put(actions.fetchAlertsByTimeseries.success(result.response));
+    } catch (error) {
+        yield put(actions.fetchAlertsByTimeseries.failure(error));
         throw error;
     }
 }
@@ -74,6 +105,21 @@ function* watchViolationsLocation() {
     }
 }
 
+function* watchDashboardLocation() {
+    while (true) {
+        const action = yield take(locationActionTypes.LOCATION_CHANGE);
+        const { payload: location } = action;
+
+        if (location && location.pathname && location.pathname.startsWith(dashboardPath)) {
+            yield all([
+                fork(getAlertCountsByPolicyCategories),
+                fork(getAlertCountsByCluster),
+                fork(getAlertsByTimeseries)
+            ]);
+        }
+    }
+}
+
 function* watchAlertRequest() {
     yield takeLatest(types.FETCH_ALERT.REQUEST, getAlert);
 }
@@ -85,6 +131,7 @@ function* watchSelectedViolatedPolicy() {
 export default function* alerts() {
     yield all([
         fork(watchViolationsLocation),
+        fork(watchDashboardLocation),
         fork(watchSelectedViolatedPolicy),
         fork(watchAlertRequest)
     ]);
