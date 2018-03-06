@@ -136,6 +136,7 @@ git push -u origin release/${RELEASE_VERSION}
 ```bash
 git tag -a -m "v${RELEASE_VERSION}" "${RELEASE_VERSION}"
 git tag -ln "${RELEASE_VERSION}"
+git push origin "${RELEASE_VERSION}"
 ```
 
 ### Push to Docker Hub
