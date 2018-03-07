@@ -19,6 +19,7 @@ const AuthService = {
             .then(response => {
                 const providers = response.data.authProviders;
                 authProviders = providers;
+                return { response: response.data };
             })
             .catch(error => console.error(error))
 };

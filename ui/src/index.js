@@ -14,6 +14,9 @@ import AppPage from 'Containers/AppPage';
 import registerServiceWorker from 'registerServiceWorker';
 import configureStore from 'store/configureStore';
 
+apiInterceptors.addRequestTokenInterceptor();
+apiInterceptors.addResponseInterceptor();
+
 const rootNode = document.getElementById('root');
 const history = createHistory();
 const store = configureStore(undefined, history);
@@ -27,6 +30,4 @@ ReactDOM.render(
     rootNode
 );
 
-apiInterceptors.addRequestTokenInterceptor();
-apiInterceptors.addResponseInterceptor();
 registerServiceWorker();

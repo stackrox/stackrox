@@ -16,7 +16,6 @@ function* getAlert({ params: alertId }) {
         yield put(actions.fetchAlert.success(result.response));
     } catch (error) {
         yield put(actions.fetchAlert.failure(error, alertId));
-        throw error;
     }
 }
 
@@ -26,7 +25,6 @@ function* getAlertNumsByPolicy(filters) {
         yield put(actions.fetchAlertNumsByPolicy.success(result.response));
     } catch (error) {
         yield put(actions.fetchAlertNumsByPolicy.failure(error, filters));
-        throw error;
     }
 }
 
@@ -36,7 +34,6 @@ function* getAlertCountsByPolicyCategories() {
         yield put(actions.fetchAlertCountsByPolicyCategories.success(result.response));
     } catch (error) {
         yield put(actions.fetchAlertCountsByPolicyCategories.failure(error));
-        throw error;
     }
 }
 
@@ -46,7 +43,6 @@ function* getAlertCountsByCluster() {
         yield put(actions.fetchAlertCountsByCluster.success(result.response));
     } catch (error) {
         yield put(actions.fetchAlertCountsByCluster.failure(error));
-        throw error;
     }
 }
 
@@ -56,7 +52,6 @@ function* getAlertsByTimeseries() {
         yield put(actions.fetchAlertsByTimeseries.success(result.response));
     } catch (error) {
         yield put(actions.fetchAlertsByTimeseries.failure(error));
-        throw error;
     }
 }
 
@@ -68,7 +63,6 @@ function* getAlertsByPolicy() {
         yield put(actions.fetchAlertsByPolicy.success(result.response, policyId));
     } catch (error) {
         yield put(actions.fetchAlertsByPolicy.failure(error, policyId));
-        throw error;
     }
 }
 

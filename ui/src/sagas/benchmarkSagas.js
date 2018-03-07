@@ -12,7 +12,6 @@ export function* getBenchmarks() {
         yield put(actions.fetchBenchmarks.success(result.response));
     } catch (error) {
         yield put(actions.fetchBenchmarks.failure(error));
-        throw error;
     }
 }
 

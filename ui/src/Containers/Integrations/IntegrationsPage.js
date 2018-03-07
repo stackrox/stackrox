@@ -1,10 +1,15 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import { ToastContainer, toast } from 'react-toastify';
-import axios from 'axios';
+import { connect } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
 
 import IntegrationModal from 'Containers/Integrations/IntegrationModal';
 import IntegrationTile from 'Containers/Integrations/IntegrationTile';
 import ClustersModal from 'Containers/Integrations/ClustersModal';
+import { actions as authActions } from 'reducers/auth';
+import { actions } from 'reducers/integrations';
+import { selectors } from 'reducers';
 
 import auth0 from 'images/auth0.svg';
 import docker from 'images/docker.svg';
@@ -160,16 +165,35 @@ const reducer = (action, prevState, nextState) => {
                     clusterType: null
                 }
             };
-        case 'UPDATE_ENTITIES': {
-            const { entities, source } = nextState;
-            return { [source]: entities };
-        }
         default:
             return prevState;
     }
 };
 
 class IntegrationsPage extends Component {
+    static propTypes = {
+        /* eslint-disable */
+        authProviders: PropTypes.arrayOf(
+            PropTypes.shape({
+                config: PropTypes.shape({
+                    audience: PropTypes.string.isRequired,
+                    client_id: PropTypes.string.isRequired,
+                    domain: PropTypes.string.isRequired
+                }),
+                name: PropTypes.string.isRequired
+            })
+        ).isRequired,
+        clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
+        notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
+        registries: PropTypes.arrayOf(PropTypes.object).isRequired,
+        scanners: PropTypes.arrayOf(PropTypes.object).isRequired,
+        /* eslint-enable */
+        fetchAuthProviders: PropTypes.func.isRequired,
+        fetchNotifiers: PropTypes.func.isRequired,
+        fetchRegistries: PropTypes.func.isRequired,
+        fetchScanners: PropTypes.func.isRequired
+    };
+
     constructor(props) {
         super(props);
 
@@ -183,45 +207,38 @@ class IntegrationsPage extends Component {
             clustersModal: {
                 open: false,
                 clusters: []
-            },
-            authProviders: [],
-            clusters: [],
-            notifiers: [],
-            registries: [],
-            scanners: []
+            }
         };
     }
 
-    componentDidMount() {
-        this.getEntities('authProviders');
-        this.getEntities('clusters');
-        this.getEntities('notifiers');
-        this.getEntities('registries');
-        this.getEntities('scanners');
-    }
-
     getEntities = source => {
-        axios
-            .get(`/v1/${source}`)
-            .then(response => {
-                const { [source]: entities } = response.data;
-                console.log(source, entities, response.data);
-                this.update('UPDATE_ENTITIES', { entities, source });
-            })
-            .catch(error => {
-                console.error(error.response);
-            });
+        switch (source) {
+            case 'authProviders':
+                this.props.fetchAuthProviders();
+                break;
+            case 'scanners':
+                this.props.fetchScanners();
+                break;
+            case 'registries':
+                this.props.fetchRegistries();
+                break;
+            case 'notifiers':
+                this.props.fetchNotifiers();
+                break;
+            default:
+                throw new Error(`Unknown source ${source}`);
+        }
     };
 
     getClustersForOrchestrator = orchestrator => {
         const { clusterType } = orchestrator;
-        const clusters = this.state.clusters.filter(cluster => cluster.type === clusterType);
+        const clusters = this.props.clusters.filter(cluster => cluster.type === clusterType);
         return clusters;
     };
 
     openIntegrationModal = integrationCategory => {
         const { source, type } = integrationCategory;
-        const integrations = this.state[source].filter(i => i.type === type.toLowerCase());
+        const integrations = this.props[source].filter(i => i.type === type.toLowerCase());
         this.update('OPEN_INTEGRATION_MODAL', { integrations, source, type });
     };
 
@@ -245,7 +262,7 @@ class IntegrationsPage extends Component {
     };
 
     findIntegrations = (source, type) => {
-        const integrations = this.state[source];
+        const integrations = this.props[source];
         return integrations.filter(obj => obj.type === type);
     };
 
@@ -256,7 +273,7 @@ class IntegrationsPage extends Component {
     renderIntegrationModal() {
         const { integrationModal: { source, type, open } } = this.state;
         if (!open) return null;
-        const integrations = this.state[source].filter(i => i.type === type.toLowerCase());
+        const integrations = this.props[source].filter(i => i.type === type.toLowerCase());
         return (
             <IntegrationModal
                 integrations={integrations}
@@ -357,21 +374,18 @@ class IntegrationsPage extends Component {
                         </h2>
                         <div className="flex">{orchestrators}</div>
                     </div>
-
                     <div className="mb-6">
                         <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
                             Scanning &amp; Governance Tools
                         </h2>
                         <div className="flex flex-wrap">{scanners}</div>
                     </div>
-
                     <div className="mb-6">
                         <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
                             Plugins
                         </h2>
                         <div className="flex flex-wrap">{plugins}</div>
                     </div>
-
                     <div className="mb-6">
                         <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
                             Authentication Providers
@@ -386,4 +400,19 @@ class IntegrationsPage extends Component {
     }
 }
 
-export default IntegrationsPage;
+const mapStateToProps = createStructuredSelector({
+    authProviders: selectors.getAuthProviders,
+    clusters: selectors.getClusters,
+    notifiers: selectors.getNotifiers,
+    registries: selectors.getRegistries,
+    scanners: selectors.getScanners
+});
+
+const mapDispatchToProps = dispatch => ({
+    fetchAuthProviders: () => dispatch(authActions.fetchAuthProviders.request()),
+    fetchNotifiers: () => dispatch(actions.fetchNotifiers.request()),
+    fetchRegistries: () => dispatch(actions.fetchRegistries.request()),
+    fetchScanners: () => dispatch(actions.fetchScanners.request())
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(IntegrationsPage);
