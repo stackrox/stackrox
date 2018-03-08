@@ -8,3 +8,11 @@ build --google_credentials=/tmp/gcp.json
 build --remote_local_fallback
 build --remote_upload_local_results
 build --jobs 4
+
+# Workaround https://github.com/bazelbuild/bazel/issues/3645
+# Bazel doesn't calculate the memory limit correctly when running under Docker.
+# Limit Bazel to the resources of the default CircleCI "medium" class:
+# https://circleci.com/docs/2.0/configuration-reference/#resource_class
+# This workaround is sourced from:
+# https://github.com/angular/angular/blob/8ec21fc325f3c4263d0c9a3af2af40efb5b0ce38/.circleci/bazel.rc
+build --local_resources=3072,2.0,1.0
