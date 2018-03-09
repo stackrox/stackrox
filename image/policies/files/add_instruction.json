@@ -10,5 +10,6 @@
       "instruction": "ADD",
       "value": ".*"
     }
-  }
+  },
+  "disabled": true
 }

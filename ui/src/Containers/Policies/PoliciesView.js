@@ -105,7 +105,11 @@ const fieldsMap = {
     },
     whitelists: {
         label: 'Whitelisted Deployments',
-        formatValue: d => d.map(obj => obj.deployment.name).join(', ')
+        formatValue: d =>
+            d
+                .filter(obj => obj.deployment.name !== undefined)
+                .map(obj => obj.deployment.name)
+                .join(', ')
     },
     imageName: {
         label: 'Image',

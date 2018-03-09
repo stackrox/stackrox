@@ -461,10 +461,12 @@ class PolicyCreationForm extends Component {
     setDeploymentWhitelistOptions = () => {
         const { policyFields } = this.state;
         const { deployments } = this.props;
-        const deploymentOptions = deployments.map(deployment => ({
-            label: deployment.name,
-            value: deployment.name
-        }));
+        const deploymentOptions = deployments
+            .filter(obj => obj.name !== undefined)
+            .map(deployment => ({
+                label: deployment.name,
+                value: deployment.name
+            }));
 
         policyFields.policyDetails = policyFields.policyDetails.map(field => {
             const newField = field;

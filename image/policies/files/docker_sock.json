@@ -12,15 +12,25 @@
   "remediation": "Access Orchestrator APIs to launch new services or access node data.",
   "whitelists": [
     {
-      "name": "Don't alert on the StackRox Prevent sensor",
+      "name": "Don't alert on StackRox Prevent",
       "deployment": {
-        "name": "prevent_sensor"
+        "scope": {
+          "label": {
+            "key": "com.docker.stack.namespace",
+            "value": "prevent"
+          }
+        }
       }
     },
     {
-      "name": "Don't alert on StackRox Prevent benchmarks",
+      "name": "Don't alert on StackRox Detect and Respond",
       "deployment": {
-        "name": "benchmark"
+        "scope": {
+          "label": {
+            "key": "com.docker.stack.namespace",
+            "value": "stackrox"
+          }
+        }
       }
     },
     {
