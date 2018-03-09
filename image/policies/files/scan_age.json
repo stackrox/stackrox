@@ -2,7 +2,7 @@
   "name": "30-Day Scan Age",
   "description": "Alert on deployments with images that haven't been scanned in 30 days",
   "severity": "MEDIUM_SEVERITY",
-  "categories": ["IMAGE_ASSURANCE"],
+  "categories": ["Image Assurance"],
   "image_policy": {
     "scan_age_days": 30
   },

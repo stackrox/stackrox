@@ -14,12 +14,6 @@ import Table from 'Components/Table';
 import PolicyAlertsSidePanel from './PolicyAlertsSidePanel';
 import ViolationsModal from './ViolationsModal';
 
-const policyCategoriesLabels = {
-    CONTAINER_CONFIGURATION: 'Container Configuration',
-    IMAGE_ASSURANCE: 'Image Assurance',
-    PRIVILEGES_CAPABILITIES: 'Privileges and Capabilities'
-};
-
 const severityLabels = {
     CRITICAL_SEVERITY: 'Critical',
     HIGH_SEVERITY: 'High',
@@ -40,9 +34,9 @@ const getSeverityClassName = severityValue => {
 };
 
 const categoryOptions = [
-    { label: 'Image Assurance', value: 'IMAGE_ASSURANCE' },
-    { label: 'Container Configuration', value: 'CONTAINER_CONFIGURATION' },
-    { label: 'Privileges & Capabilities', value: 'PRIVILEGES_CAPABILITIES' }
+    { label: 'Image Assurance', value: 'Image Assurance' },
+    { label: 'Container Configuration', value: 'Container Configuration' },
+    { label: 'Privileges & Capabilities', value: 'Privileges & Capabilities' }
 ];
 
 const severityOptions = [
@@ -126,9 +120,8 @@ class ViolationsPage extends Component {
             {
                 key: 'categories',
                 label: 'Categories',
-                keyValueFunc: obj => (obj.length > 1 ? 'Multiple' : policyCategoriesLabels[obj[0]]),
-                tooltip: categories =>
-                    categories.map(category => policyCategoriesLabels[category]).join(' | ')
+                keyValueFunc: obj => (obj.length > 1 ? 'Multiple' : obj[0]),
+                tooltip: categories => categories.join(' | ')
             },
             {
                 key: 'severity',

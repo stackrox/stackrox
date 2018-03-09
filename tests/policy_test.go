@@ -20,7 +20,7 @@ var (
 		Name:        "test policy " + time.Now().String(),
 		Description: "description",
 		Severity:    v1.Severity_HIGH_SEVERITY,
-		Categories:  []string{"IMAGE_ASSURANCE", "PRIVILEGES_CAPABILITIES"},
+		Categories:  []string{"Image Assurance", "Privileges Capabilities"},
 		Disabled:    false,
 		ImagePolicy: &v1.ImagePolicy{
 			ImageName: &v1.ImageNamePolicy{

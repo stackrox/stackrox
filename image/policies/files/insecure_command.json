@@ -2,7 +2,7 @@
   "name": "Insecure specified in CMD",
   "description": "Alert on deployments using 'insecure' in the command",
   "severity": "LOW_SEVERITY",
-  "categories": ["IMAGE_ASSURANCE"],
+  "categories": ["Image Assurance"],
   "image_policy": {
     "line_rule": {
       "instruction": "CMD",

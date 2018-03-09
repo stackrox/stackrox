@@ -2,7 +2,7 @@
   "name": "Privileged Container",
   "description": "Alert on deployments with containers running in privileged mode",
   "severity": "MEDIUM_SEVERITY",
-  "categories": ["PRIVILEGES_CAPABILITIES"],
+  "categories": ["Privileges Capabilities"],
   "privilege_policy": {
     "privileged": true
   },

@@ -13,12 +13,6 @@ import FormField from 'Components/FormField';
 import NumericInput from 'react-numeric-input';
 import CustomSelect from 'Components/Select';
 
-const categoriesMap = {
-    imagePolicy: 'IMAGE_ASSURANCE',
-    configurationPolicy: 'CONTAINER_CONFIGURATION',
-    privilegePolicy: 'PRIVILEGES_CAPABILITIES'
-};
-
 const reducer = (action, prevState, nextState) => {
     switch (action) {
         case 'UPDATE_POLICY_FIELDS':
@@ -488,7 +482,7 @@ class PolicyCreationForm extends Component {
         newObj.categories = intersection(
             Object.keys(this.state.policyFields).filter(o => o !== 'policyDetails'),
             Object.keys(obj)
-        ).map(o => categoriesMap[o]);
+        );
         return newObj;
     };
 

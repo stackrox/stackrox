@@ -10,11 +10,6 @@ const common = Object.freeze({
         DOCKER_EE_CLUSTER: 'Docker EE Clusters',
         SWARM_CLUSTER: 'Swarm Clusters',
         OPENSHIFT_CLUSTER: 'OpenShift Clusters'
-    },
-    categoriesLabels: {
-        IMAGE_ASSURANCE: 'Image Assurance',
-        CONTAINER_CONFIGURATION: 'Container Configuration',
-        PRIVILEGES_CAPABILITIES: 'Privileges and Capabilities'
     }
 });
 

@@ -33,16 +33,13 @@ const severityColorMap = {
 };
 
 const policyCategoriesMap = {
-    CONTAINER_CONFIGURATION: {
-        label: 'Container Configuration',
+    'Container Configuration': {
         icon: <Icon.Grid className="h-4 w-4 mr-3" />
     },
-    IMAGE_ASSURANCE: {
-        label: 'Image Assurance',
+    'Image Assurance': {
         icon: <Icon.Copy className="h-4 w-4 mr-3" />
     },
-    PRIVILEGES_CAPABILITIES: {
-        label: 'Privileges and Capabilities',
+    'Privileges and Capabilities': {
         icon: <Icon.Lock className="h-4 w-4 mr-3" />
     }
 };
@@ -260,7 +257,7 @@ class DashboardPage extends Component {
                     <div className="flex flex-col p-4 bg-white rounded-sm shadow">
                         <h2 className="flex items-center text-lg text-base font-sans text-base-600 py-4 tracking-wide">
                             {policyCategoriesMap[policyType.group].icon}
-                            {policyCategoriesMap[policyType.group].label}
+                            {policyType.group}
                         </h2>
                         <div className="flex flex-1 m-4 h-64">
                             <TwoLevelPieChart data={data} />

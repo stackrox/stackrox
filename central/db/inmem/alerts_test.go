@@ -91,7 +91,7 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 	alert1 := &v1.Alert{
 		Id: "id1",
 		Policy: &v1.Policy{
-			Categories: []string{"IMAGE_ASSURANCE"},
+			Categories: []string{"Image Assurance"},
 			Name:       "policy1",
 			Id:         "policyID1",
 			Severity:   v1.Severity_LOW_SEVERITY,
@@ -112,7 +112,7 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 	alert2 := &v1.Alert{
 		Id: "id2",
 		Policy: &v1.Policy{
-			Categories: []string{"IMAGE_ASSURANCE"},
+			Categories: []string{"Image Assurance"},
 			Name:       "policy2",
 			Id:         "policyID2",
 			Severity:   v1.Severity_HIGH_SEVERITY,
@@ -161,7 +161,7 @@ func (suite *AlertsTestSuite) TestGetAlertsFilters() {
 		{
 			name: "category",
 			request: &v1.GetAlertsRequest{
-				Category: []string{"IMAGE_ASSURANCE"},
+				Category: []string{"Image Assurance"},
 			},
 			expected: []*v1.Alert{alert2, alert1},
 		},

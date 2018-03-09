@@ -5,8 +5,6 @@ import omitBy from 'lodash/omitBy';
 import difference from 'lodash/difference';
 import pick from 'lodash/pick';
 
-import { categoriesLabels } from 'messages/common';
-
 const categoryGroupsMap = {
     imagePolicy: 'Image Assurance',
     configurationPolicy: 'Container Configuration',
@@ -101,7 +99,7 @@ const fieldsMap = {
     },
     categories: {
         label: 'Categories',
-        formatValue: d => d.map(obj => categoriesLabels[obj]).join(', ')
+        formatValue: d => d.join(', ')
     },
     whitelists: {
         label: 'Whitelisted Deployments',

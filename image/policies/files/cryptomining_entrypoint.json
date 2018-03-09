@@ -2,7 +2,7 @@
   "name": "Cryptomining Entrypoint",
   "description": "Alert on deployments with an entrypoint that contains `minerd`",
   "severity": "HIGH_SEVERITY",
-  "categories": ["IMAGE_ASSURANCE"],
+  "categories": ["Image Assurance"],
   "image_policy": {
     "line_rule": {
       "instruction": "ENTRYPOINT",

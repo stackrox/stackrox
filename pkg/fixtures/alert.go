@@ -20,7 +20,7 @@ func GetAlert() *v1.Alert {
 		Time: ptypes.TimestampNow(),
 		Policy: &v1.Policy{
 			Name:        "Vulnerable Container",
-			Categories:  []string{"IMAGE_ASSURANCE", "PRIVILEGES_CAPABILITIES", "CONTAINER_CONFIGURATION"},
+			Categories:  []string{"Image Assurance", "Privileges Capabilities", "Container Configuration"},
 			Description: "Alert if the container contains vulnerabilities",
 			Severity:    v1.Severity_LOW_SEVERITY,
 			ImagePolicy: &v1.ImagePolicy{

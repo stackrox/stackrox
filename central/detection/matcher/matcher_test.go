@@ -22,7 +22,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []string{"IMAGE_ASSURANCE"},
+				Categories: []string{"Image Assurance"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
@@ -51,7 +51,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []string{"IMAGE_ASSURANCE", "PRIVILEGES_CAPABILITIES"},
+				Categories: []string{"Image Assurance", "Privileges Capabilities"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
@@ -85,7 +85,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []string{"IMAGE_ASSURANCE", "PRIVILEGES_CAPABILITIES"},
+				Categories: []string{"Image Assurance", "Privileges Capabilities"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
@@ -130,7 +130,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []string{"IMAGE_ASSURANCE", "PRIVILEGES_CAPABILITIES"},
+				Categories: []string{"Image Assurance", "Privileges Capabilities"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
@@ -175,7 +175,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []string{"IMAGE_ASSURANCE", "PRIVILEGES_CAPABILITIES"},
+				Categories: []string{"Image Assurance", "Privileges Capabilities"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
@@ -220,7 +220,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []string{"IMAGE_ASSURANCE"},
+				Categories: []string{"Image Assurance"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
@@ -265,7 +265,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []string{"IMAGE_ASSURANCE"},
+				Categories: []string{"Image Assurance"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
@@ -314,7 +314,7 @@ func TestMatch(t *testing.T) {
 			policy: &v1.Policy{
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
-				Categories: []string{"IMAGE_ASSURANCE"},
+				Categories: []string{"Image Assurance"},
 				ImagePolicy: &v1.ImagePolicy{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",

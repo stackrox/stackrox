@@ -9,7 +9,7 @@ import dateFns from 'date-fns';
 import { actions as alertActions } from 'reducers/alerts';
 import { selectors } from 'reducers';
 import * as service from 'services/PoliciesService';
-import { severityLabels, categoriesLabels } from 'messages/common';
+import { severityLabels } from 'messages/common';
 import Modal from 'Components/Modal';
 
 class ViolationsModal extends Component {
@@ -159,9 +159,7 @@ class ViolationsModal extends Component {
                     {alert.deployment.containers.map(container => this.renderContainer(container))}
                     <div className="py-2 px-3 truncate">
                         <span className="font-bold text-primary-500">Categories: </span>
-                        {alert.policy.categories
-                            .map(category => categoriesLabels[category])
-                            .join(', ')}
+                        {alert.policy.categories.join(', ')}
                     </div>
                     <div>
                         {' '}
