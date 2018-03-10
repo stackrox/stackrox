@@ -83,12 +83,23 @@ jobs:
             echo $GKE_SERVICE_ACCOUNT > /tmp/gcp.json
             echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json' >> $BASH_ENV
             gcloud auth activate-service-account --key-file /tmp/gcp.json
+            gcloud config set project ultra-current-825
+            gcloud config set compute/zone us-central1-f
 
       - run:
-          name: Deploy to a remote cluster
+          name: Create GKE cluster
           command: |
-            source /dev/stdin <<< "$(curl -sL $CI_SETUP_URL_K8S)"
-            ./scripts/k8s/cleanup.sh
+            gcloud container clusters create --machine-type n1-standard-1 --num-nodes 2 "mitigate-ci-${CIRCLE_BUILD_NUM}"
+
+      # See https://stackoverflow.com/a/46316672 for why we have to use user/pass.
+      # This step requires the GCP IAM permission "Kubernetes Engine Admin".
+      - run:
+          name: Deploy to remote cluster
+          command: |
+            kubectl \
+              --username="$(gcloud container clusters describe "mitigate-ci-${CIRCLE_BUILD_NUM}" --format json | jq -r .masterAuth.username)" \
+              --password="$(gcloud container clusters describe "mitigate-ci-${CIRCLE_BUILD_NUM}" --format json | jq -r .masterAuth.password)" \
+              create clusterrolebinding stackrox-admin --clusterrole=cluster-admin --serviceaccount=stackrox:default
             ./deploy/k8s/deploy.sh
 
       - run:
@@ -97,7 +108,7 @@ jobs:
           background: true
 
       - run:
-          name: Wait for the server being up
+          name: Wait for the API server to be up
           command: |
             export PING_URL=https://127.0.0.1:${LOCAL_PORT}/v1/ping
             curl -k --connect-timeout 5 --max-time 10 --retry 10 --retry-connrefused --retry-delay 1 --retry-max-time 30 ${PING_URL}
@@ -113,6 +124,12 @@ jobs:
           command: |
             export UI_BASE_URL=https://localhost:${LOCAL_PORT}
             make -C ui test-e2e-ci
+
+      - run:
+          name: Tear down GKE cluster
+          command: |
+            gcloud container clusters delete --async "mitigate-ci-${CIRCLE_BUILD_NUM}"
+          when: always
 
       - store_test_results:
           path: ui/cypress/reports
