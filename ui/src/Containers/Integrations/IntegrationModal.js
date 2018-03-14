@@ -277,12 +277,6 @@ const sourceMap = {
                 placeholder: 'registry-1.docker.io'
             },
             {
-                label: 'Image Registry',
-                key: 'imageRegistry',
-                type: 'text',
-                placeholder: 'docker.io'
-            },
-            {
                 label: 'Docker Username',
                 key: 'config.username',
                 type: 'text',

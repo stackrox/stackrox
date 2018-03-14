@@ -56,23 +56,15 @@ const tableColumnDescriptor = Object.freeze({
         docker: [
             { key: 'name', label: 'Name' },
             { key: 'endpoint', label: 'Registry Endpoint' },
-            { key: 'imageRegistry', label: 'Image Registry' }
+            { key: 'config.username', label: 'Username' }
         ],
-        tenable: [
-            { key: 'name', label: 'Name' },
-            { key: 'endpoint', label: 'Registry Endpoint' },
-            { key: 'imageRegistry', label: 'Image Registry' }
-        ],
+        tenable: [{ key: 'name', label: 'Name' }, { key: 'endpoint', label: 'Registry Endpoint' }],
         dtr: [
             { key: 'name', label: 'Name' },
             { key: 'endpoint', label: 'Registry Endpoint' },
-            { key: 'imageRegistries', label: 'Image Registry' }
+            { key: 'config.username', label: 'Username' }
         ],
-        quay: [
-            { key: 'name', label: 'Name' },
-            { key: 'endpoint', label: 'Registry Endpoint' },
-            { key: 'imageRegistry', label: 'Image Registry' }
-        ]
+        quay: [{ key: 'name', label: 'Name' }, { key: 'endpoint', label: 'Registry Endpoint' }]
     }
 });
 

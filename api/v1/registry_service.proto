@@ -13,10 +13,9 @@ message Registry {
     string name                = 2;
     string type                = 3;
     string endpoint            = 4;
-    string image_registry      = 5;
-    map<string, string> config = 6;
+    map<string, string> config = 5;
     // If a list of clusters is provided, the integration will only be accessed from the specified clusters' sensors.
-    repeated string clusters   = 7;
+    repeated string clusters   = 6;
 }
 
 message GetRegistriesRequest {

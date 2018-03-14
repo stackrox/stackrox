@@ -70,10 +70,6 @@ func (n nilClient) Ping() error {
 }
 
 func newRegistry(protoRegistry *v1.Registry) (*dockerRegistry, error) {
-	if protoRegistry.GetImageRegistry() == "" {
-		return nil, errors.New("Image registry must be specified")
-	}
-
 	username, hasUsername := protoRegistry.Config["username"]
 	password, hasPassword := protoRegistry.Config["password"]
 
@@ -84,17 +80,23 @@ func newRegistry(protoRegistry *v1.Registry) (*dockerRegistry, error) {
 		return nil, errors.New("Config parameter 'password' must be defined for all non Docker Hub registries")
 	}
 
-	if (!hasUsername && !hasPassword) && !strings.Contains(protoRegistry.Endpoint, "docker.io") {
+	if (!hasUsername && !hasPassword) && !strings.Contains(protoRegistry.GetEndpoint(), "docker.io") {
 		return nil, errors.New("Config parameters 'username' and 'password' must be defined for all non Docker Hub registries")
 	}
 
-	url, err := urlfmt.FormatURL(protoRegistry.Endpoint, true, false)
+	url, err := urlfmt.FormatURL(protoRegistry.GetEndpoint(), true, false)
 	if err != nil {
 		return nil, err
 	}
+	// if the registry endpoint contains docker.io then the image will be docker.io/namespace/repo:tag
+	registry := urlfmt.GetServerFromURL(url)
+	if strings.Contains(protoRegistry.GetEndpoint(), "docker.io") {
+		registry = "docker.io"
+	}
+
 	return &dockerRegistry{
 		protoRegistry: protoRegistry,
-		registry:      protoRegistry.Endpoint,
+		registry:      registry,
 		url:           url,
 		username:      username,
 		password:      password,
@@ -228,7 +230,7 @@ func (d *dockerRegistry) Test() error {
 
 // Match decides if the image is contained within this registry
 func (d *dockerRegistry) Match(image *v1.Image) bool {
-	return d.protoRegistry.GetImageRegistry() == image.GetName().GetRegistry()
+	return d.registry == image.GetName().GetRegistry()
 }
 
 func (d *dockerRegistry) Global() bool {

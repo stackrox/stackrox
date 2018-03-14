@@ -38,3 +38,13 @@ func FullyQualifiedURL(endpoint string, values url.Values, args ...string) (stri
 	url.RawQuery = values.Encode()
 	return url.String(), nil
 }
+
+// GetServerFromURL takes a url and returns the server and port without a scheme or the rest of the URL path.
+// In order for this to parse correctly, the endpoint must contain a scheme
+func GetServerFromURL(endpoint string) string {
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return ""
+	}
+	return u.Host
+}

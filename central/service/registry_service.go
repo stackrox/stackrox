@@ -98,9 +98,6 @@ func validateRegistry(reg *v1.Registry) error {
 	if reg.GetEndpoint() == "" {
 		errs = append(errs, "Registry endpoint must be defined")
 	}
-	if reg.GetImageRegistry() == "" {
-		errs = append(errs, "Registry image registry must be defined")
-	}
 	if len(errs) > 0 {
 		return errorHelpers.FormatErrorStrings("Validation", errs)
 	}
