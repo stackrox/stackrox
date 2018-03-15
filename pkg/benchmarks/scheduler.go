@@ -376,6 +376,7 @@ func uniqueScanID(t time.Time, benchmarkName, triggerType string) string {
 func (s *SchedulerClient) Start() {
 	// Initialize triggers that have results from this sensor
 	s.initializeTriggers()
+
 	for {
 		select {
 		case <-s.updateTicker.C:

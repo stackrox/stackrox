@@ -9,8 +9,11 @@ import (
 	pkgKubernetes "bitbucket.org/stack-rox/apollo/pkg/kubernetes"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
+	v1beta12 "k8s.io/api/extensions/v1beta1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/typed/extensions/v1beta1"
 	"k8s.io/client-go/rest"
 )
 
@@ -47,14 +50,27 @@ func setupClient() (client *kubernetes.Clientset, err error) {
 	return kubernetes.NewForConfig(config)
 }
 
+func (k *kubernetesOrchestrator) launch(setInterface v1beta1.DaemonSetInterface, ds *v1beta12.DaemonSet) error {
+	for i := 0; i < 3; i++ {
+		if _, err := k.client.ExtensionsV1beta1().DaemonSets(k.namespace).Create(ds); err != nil {
+			if statusErr, ok := err.(*errors.StatusError); ok && statusErr.Status().Reason == metav1.StatusReasonAlreadyExists {
+				time.Sleep(10 * time.Second)
+				continue
+			}
+			return err
+		}
+		return nil
+	}
+	return nil
+}
+
 func (k *kubernetesOrchestrator) Launch(service orchestrators.SystemService) (string, error) {
 	if service.Global {
 		ds := k.converter.asDaemonSet(k.newServiceWrap(service))
-		if _, err := k.client.ExtensionsV1beta1().DaemonSets(k.namespace).Create(ds); err != nil {
+		if err := k.launch(k.client.ExtensionsV1beta1().DaemonSets(k.namespace), ds); err != nil {
 			logger.Errorf("unable to create daemonset %s: %s", service.Name, err)
 			return "", err
 		}
-
 		return service.Name, nil
 	}
 
