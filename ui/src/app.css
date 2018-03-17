@@ -225,15 +225,19 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
     min-width: 16rem !important;
 }
 
-.login-bg {
-    background: -webkit-linear-gradient(right, hsl(var(--primary), var(--s-50), var(--l-50)), hsl(var(--primary), var(--s-60), var(--l-50)));
-    background: -o-linear-gradient(right, hsl(var(--primary), var(--s-50), var(--l-50)), hsl(var(--primary), var(--s-60), var(--l-50)));
-    background: linear-gradient(to left, hsl(var(--primary), var(--s-50), var(--l-50)), hsl(var(--primary), var(--s-60), var(--l-50)));
+.transform-rotate-half-turn {
+    transform: rotate(0.5turn);
+}
+
+.login-border-t {
+    background: linear-gradient(90deg, hsl(26, 94%, 73%) 0%, hsl(4, 100%, 82%) 44.95%, hsl(262, 85%, 74%) 100%);
+    height: 5px;
 }
 
 .text-transparent {
     color: transparent;
 }
+
 
 
 @tailwind utilities;

@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
+import { withRouter, Link } from 'react-router-dom';
 import Select from 'react-select';
 import { ClipLoader } from 'react-spinners';
 
-import Logo from 'Components/icons/logo';
 import AuthService from 'services/AuthService';
+
+import logoPrevent from 'images/logo-prevent.svg';
+import loginStripes from 'images/login-stripes.svg';
 
 const reducer = (action, prevState, nextState) => {
     switch (action) {
@@ -19,10 +20,6 @@ const reducer = (action, prevState, nextState) => {
 };
 
 class LoginPage extends Component {
-    static propTypes = {
-        history: ReactRouterPropTypes.history.isRequired
-    };
-
     constructor(props) {
         super(props);
 
@@ -61,26 +58,13 @@ class LoginPage extends Component {
         this.setState(prevState => reducer(action, prevState, nextState));
     };
 
-    renderLogin = () => {
-        if (!this.state.authProviders) {
-            return (
-                <button className="p-4 h-12 text-lg rounded-sm bg-white text-transparent uppercase text-center">
-                    <ClipLoader color="black" loading size={15} />
-                </button>
-            );
-        }
-        if (AuthService.getAccessToken() || !AuthService.getAuthProviders().length) {
-            const buttonHandler = () => () => {
-                this.props.history.go('/');
-            };
-            return (
-                <button
-                    className="p-4 h-12 text-lg rounded-sm bg-white text-transparent uppercase text-center mt-8"
-                    onClick={buttonHandler()}
-                >
-                    Go to Dashboard
-                </button>
-            );
+    renderAuthProviders = () => {
+        if (
+            !this.state.authProviders ||
+            AuthService.getAccessToken() ||
+            !AuthService.getAuthProviders().length
+        ) {
+            return '';
         }
         const { selectedAuthProvider } = this.state;
         const options = this.state.authProviders
@@ -91,9 +75,10 @@ class LoginPage extends Component {
             this.update('UPDATE_SELECTED_AUTH_PROVIDER', { selectedAuthProvider: option });
         };
         return (
-            <div className="flex flex-row mt-8">
+            <div className="py-8 items-center w-2/3">
+                <div className="text-primary-600 pb-3">Select an auth provider</div>
                 <Select
-                    className="text-base-600 font-400 w-64"
+                    className="text-base-600 font-400 w-full"
                     value={value}
                     name="select-auth-providers"
                     simpleValue
@@ -102,8 +87,36 @@ class LoginPage extends Component {
                     onChange={handleChange()}
                     options={options}
                 />
+            </div>
+        );
+    };
+
+    renderLoginButton = () => {
+        if (!this.state.authProviders) {
+            return (
+                <div className="border-t border-base-300 p-6 w-full text-center">
+                    <button className="p-3 px-6 rounded-sm bg-primary-600 text-white uppercase text-center tracking-wide">
+                        <ClipLoader color="white" loading size={15} />
+                    </button>
+                </div>
+            );
+        }
+        if (AuthService.getAccessToken() || !AuthService.getAuthProviders().length) {
+            return (
+                <div className="border-t border-base-300 p-8 w-full text-center">
+                    <Link
+                        className="p-3 px-6 rounded-sm bg-primary-600 text-white uppercase text-center tracking-wide no-underline"
+                        to="/main/dashboard"
+                    >
+                        Go to Dashboard
+                    </Link>
+                </div>
+            );
+        }
+        return (
+            <div className="border-t border-base-300 p-6 w-full text-center">
                 <button
-                    className="ml-4 p-2 px-4 rounded-sm bg-white text-transparent uppercase text-center"
+                    className="p-3 px-6 rounded-sm bg-primary-600 text-white uppercase text-center tracking-wide"
                     onClick={this.login}
                 >
                     Login
@@ -114,16 +127,20 @@ class LoginPage extends Component {
 
     render() {
         return (
-            <section className="flex flex-col items-center justify-center h-full login-bg">
-                <div className="flex flex-col items-center justify-center mb-8">
-                    <Logo className="fill-current text-white h-24 w-24" />
-                    <h1 className="text-2xl font-sans text-white tracking-wide mb-4">
-                        Welcome to StackRox Prevent
-                    </h1>
-                    <h2 className="text-xl font-sans text-white tracking-wide text-center">
-                        Addressing pre-runtime security use cases for your container deployments
-                    </h2>
-                    {this.renderLogin()}
+            <section className="flex flex-col items-center justify-center h-full bg-primary-600">
+                <div className="flex flex-col items-center justify-center bg-white w-2/5 relative">
+                    <img className="absolute pin-l pin-t" src={loginStripes} alt="" />
+                    <img
+                        className="absolute pin-r pin-b transform-rotate-half-turn"
+                        src={loginStripes}
+                        alt=""
+                    />
+                    <div className="login-border-t h-1 w-full" />
+                    <div className="flex flex-col items-center justify-center w-full">
+                        <img className="h-40 h-40 py-6" src={logoPrevent} alt="StackRox" />
+                        {this.renderAuthProviders()}
+                    </div>
+                    {this.renderLoginButton()}
                 </div>
             </section>
         );

@@ -21,7 +21,7 @@ class AuthRedirectRoute extends Component {
 
     render() {
         return (
-            <section className="flex flex-col items-center justify-center h-full login-bg">
+            <section className="flex flex-col items-center justify-center h-full bg-primary-600">
                 <ClipLoader color="white" loading size={20} />
                 <div className="text-lg font-sans text-white tracking-wide mt-4">
                     Redirecting...
