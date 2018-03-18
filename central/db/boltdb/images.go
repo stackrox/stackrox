@@ -5,6 +5,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
 )
@@ -24,9 +25,10 @@ func (b *BoltDB) getImage(sha string, bucket *bolt.Bucket) (image *v1.Image, exi
 
 // GetImage returns image with given id.
 func (b *BoltDB) GetImage(sha string) (image *v1.Image, exists bool, err error) {
+	digest := images.NewDigest(sha).Digest()
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(imageBucket))
-		image, exists, err = b.getImage(sha, bucket)
+		image, exists, err = b.getImage(digest, bucket)
 		return err
 	})
 	return
@@ -53,41 +55,53 @@ func (b *BoltDB) GetImages(*v1.GetImagesRequest) ([]*v1.Image, error) {
 func (b *BoltDB) AddImage(image *v1.Image) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(imageBucket))
-		_, exists, err := b.getImage(image.GetName().GetSha(), bucket)
+		digest := images.NewDigest(image.GetName().GetSha()).Digest()
+		_, exists, err := b.getImage(digest, bucket)
 		if err != nil {
 			return err
 		}
 		if exists {
-			return fmt.Errorf("Image %v cannot be added because it already exists", image.GetName().GetSha())
+			return fmt.Errorf("Image %s cannot be added because it already exists", digest)
 		}
 		bytes, err := proto.Marshal(image)
 		if err != nil {
 			return err
 		}
-		return bucket.Put([]byte(image.GetName().GetSha()), bytes)
+		if err := bucket.Put([]byte(digest), bytes); err != nil {
+			return err
+		}
+		return b.indexer.AddImage(image)
 	})
 }
 
 // UpdateImage updates a image to bolt
 func (b *BoltDB) UpdateImage(image *v1.Image) error {
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(imageBucket))
+		bucket := tx.Bucket([]byte(imageBucket))
 		bytes, err := proto.Marshal(image)
 		if err != nil {
 			return err
 		}
-		return b.Put([]byte(image.GetName().GetSha()), bytes)
+		digest := images.NewDigest(image.GetName().GetSha()).Digest()
+		if err := bucket.Put([]byte(digest), bytes); err != nil {
+			return err
+		}
+		return b.indexer.AddImage(image)
 	})
 }
 
 // RemoveImage removes the image from bolt
 func (b *BoltDB) RemoveImage(sha string) error {
+	digest := images.NewDigest(sha).Digest()
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(imageBucket))
-		key := []byte(sha)
-		if exists := b.Get(key) != nil; !exists {
+		bucket := tx.Bucket([]byte(imageBucket))
+		key := []byte(digest)
+		if exists := bucket.Get(key) != nil; !exists {
 			return db.ErrNotFound{Type: "Image", ID: string(key)}
 		}
-		return b.Delete(key)
+		if err := bucket.Delete(key); err != nil {
+			return err
+		}
+		return b.indexer.DeleteImage(digest)
 	})
 }

@@ -10,6 +10,7 @@ import (
 	_ "bitbucket.org/stack-rox/apollo/central/detection/configuration_processor"
 	_ "bitbucket.org/stack-rox/apollo/central/detection/image_processor"
 	_ "bitbucket.org/stack-rox/apollo/central/detection/privilege_processor"
+	"bitbucket.org/stack-rox/apollo/pkg/images"
 )
 
 // Policy wraps the original v1 Policy and compiled policy suitable for computing matches against deployments.
@@ -136,7 +137,10 @@ func (p *Policy) matchesContainerWhitelist(whitelist *v1.Whitelist_Container, co
 	}
 	whitelistName := whitelist.GetImageName()
 	containerName := container.GetImage().GetName()
-	if whitelistName.GetSha() != "" && whitelistName.GetSha() != containerName.GetSha() {
+	whitelistDigest := images.NewDigest(whitelistName.GetSha()).Digest()
+	containerDigest := images.NewDigest(containerName.GetSha()).Digest()
+
+	if whitelistName.GetSha() != "" && whitelistDigest != containerDigest {
 		return false
 	}
 	if whitelistName.GetRegistry() != "" && whitelistName.GetRegistry() != containerName.GetRegistry() {

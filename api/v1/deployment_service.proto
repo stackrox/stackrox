@@ -101,7 +101,7 @@ service DeploymentService {
 
     rpc GetDeployment(ResourceByID) returns (Deployment) {
         option (google.api.http) = {
-            get: "/v1/deployment/{id}"
+            get: "/v1/deployments/{id}"
         };
     }
 
@@ -113,7 +113,7 @@ service DeploymentService {
 
     rpc GetLabels(google.protobuf.Empty) returns (DeploymentLabelsResponse) {
         option (google.api.http) = {
-            get: "/v1/deployments/labels"
+            get: "/v1/deployments/metadata/labels"
         };
     }
 }

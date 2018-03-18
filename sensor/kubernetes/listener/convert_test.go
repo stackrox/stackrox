@@ -257,7 +257,7 @@ func TestConvert(t *testing.T) {
 									Registry: "docker.io",
 									Remote:   "stackrox/policy-engine",
 									Tag:      "1.3",
-									Sha:      "6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
+									Sha:      "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 								},
 							},
 							SecurityContext: &pkgV1.SecurityContext{

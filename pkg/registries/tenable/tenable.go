@@ -2,7 +2,6 @@ package tenable
 
 import (
 	"errors"
-	"strings"
 	"sync"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -96,7 +95,7 @@ func (d *tenableRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 	if err != nil {
 		return nil, err
 	}
-	image.Name.Sha = strings.TrimPrefix(manifest.Config.Digest.String(), "sha256:")
+	image.Name.Sha = manifest.Config.Digest.String()
 	return nil, nil
 }
 

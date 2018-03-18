@@ -162,7 +162,7 @@ func TestGetDeployments(t *testing.T) {
 
 	// Filter by image sha
 	deployments, err = storage.GetDeployments(&v1.GetDeploymentsRequest{
-		ImageSha: []string{"25baa3ba19031d81309549af43f75c45aaaab318f34f5e4d5380a9fea304dddb",
+		ImageSha: []string{"sha256:25baa3ba19031d81309549af43f75c45aaaab318f34f5e4d5380a9fea304dddb",
 			"not a sha"},
 	})
 	assert.Nil(t, err)

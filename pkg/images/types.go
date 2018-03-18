@@ -87,25 +87,48 @@ func (i Wrapper) String() string {
 	return fmt.Sprintf("%v/%v:%v", i.GetName().GetRegistry(), i.GetName().GetRemote(), i.GetName().GetTag())
 }
 
-// GetSHA returns the trimmed sha of the image
-func (i Wrapper) GetSHA() string {
-	return strings.TrimPrefix(i.GetName().GetSha(), "sha256:")
-}
-
-// GetPrefixedSHA returns the SHA prefixed with sha256:
-func (i Wrapper) GetPrefixedSHA() string {
-	if strings.HasPrefix(i.GetName().GetSha(), "sha256:") {
-		return i.GetName().GetSha()
-	}
-	return "sha256:" + i.GetName().GetSha()
-}
-
 // ShortID returns the SHA truncated to 12 characters.
 func (i Wrapper) ShortID() string {
-	sha := strings.TrimPrefix(i.GetName().GetSha(), "sha256:")
-
-	if len(sha) <= 12 {
-		return sha
+	withoutAlgorithm := NewDigest(i.GetName().GetSha()).Hash()
+	if len(withoutAlgorithm) <= 12 {
+		return withoutAlgorithm
 	}
-	return sha[:12]
+	return withoutAlgorithm[:12]
+}
+
+// Digest is a wrapper around a SHA so we can access it with or without a prefix
+type Digest struct {
+	algorithm string
+	hash      string
+}
+
+// NewDigest returns an internal representation of a SHA.
+func NewDigest(sha string) *Digest {
+	var hash, algorithm string
+	if idx := strings.Index(sha, ":"); idx != -1 {
+		algorithm = sha[:idx]
+		hash = sha[idx+1:]
+	} else {
+		algorithm = "sha256"
+		hash = sha
+	}
+	return &Digest{
+		algorithm: algorithm,
+		hash:      hash,
+	}
+}
+
+// Algorithm returns the algorithm used in the Digest
+func (d Digest) Algorithm() string {
+	return d.algorithm + ":" + d.hash
+}
+
+// Digest returns the entire Digest
+func (d Digest) Digest() string {
+	return d.algorithm + ":" + d.hash
+}
+
+// Hash returns the SHA without the sha256: prefix.
+func (d Digest) Hash() string {
+	return d.hash
 }

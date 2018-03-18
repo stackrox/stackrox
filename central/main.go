@@ -19,6 +19,8 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db/inmem"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/central/notifications"
+	"bitbucket.org/stack-rox/apollo/central/search"
+	"bitbucket.org/stack-rox/apollo/central/search/blevesearch"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
 	pkgGRPC "bitbucket.org/stack-rox/apollo/pkg/grpc"
@@ -40,8 +42,13 @@ var (
 func main() {
 	central := newCentral()
 
-	var err error
-	persistence, err := boltdb.NewWithDefaults(env.DBPath.Setting())
+	indexer, err := blevesearch.NewIndexer()
+	if err != nil {
+		panic(err)
+	}
+	central.indexer = indexer
+
+	persistence, err := boltdb.NewWithDefaults(env.DBPath.Setting(), indexer)
 	if err != nil {
 		panic(err)
 	}
@@ -67,6 +74,7 @@ type central struct {
 	detector              *detection.Detector
 	notificationProcessor *notifications.Processor
 	database              db.Storage
+	indexer               search.Indexer
 	server                pkgGRPC.API
 }
 
@@ -116,6 +124,7 @@ func (c *central) startGRPCServer() {
 	c.server.Register(service.NewPolicyService(c.database, c.detector))
 	c.server.Register(service.NewRegistryService(c.database, c.detector))
 	c.server.Register(service.NewScannerService(c.database, c.detector))
+	c.server.Register(service.NewSearchService(c.indexer))
 	c.server.Register(idService)
 	c.server.Register(service.NewSensorEventService(c.detector, c.database))
 	c.server.Start()
@@ -191,8 +200,8 @@ func (c *central) processForever() {
 		case sig := <-c.signalsC:
 			log.Infof("Caught %s signal", sig)
 			c.detector.Stop()
-			log.Infof("Central" +
-				" terminated")
+			c.database.Close()
+			log.Infof("Central terminated")
 			return
 		}
 	}

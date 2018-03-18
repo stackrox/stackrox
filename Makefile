@@ -71,6 +71,7 @@ API_SERVICES += ping_service
 API_SERVICES += policy_service
 API_SERVICES += registry_service
 API_SERVICES += scanner_service
+API_SERVICES += search_service
 API_SERVICES += sensor_event_service
 API_SERVICES += service_identity_service
 

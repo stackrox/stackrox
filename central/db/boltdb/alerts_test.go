@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"bitbucket.org/stack-rox/apollo/central/search/blevesearch"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/stretchr/testify/suite"
 )
@@ -24,7 +25,11 @@ func boltFromTmpDir() (*BoltDB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return New(filepath.Join(tmpDir, "prevent.db"))
+	indexer, err := blevesearch.NewIndexer()
+	if err != nil {
+		return nil, err
+	}
+	return New(filepath.Join(tmpDir, "prevent.db"), indexer)
 }
 
 func (suite *BoltAlertsTestSuite) SetupSuite() {

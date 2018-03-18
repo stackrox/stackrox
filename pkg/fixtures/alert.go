@@ -19,10 +19,21 @@ func GetAlert() *v1.Alert {
 		},
 		Time: ptypes.TimestampNow(),
 		Policy: &v1.Policy{
+			Id:          "Policy ID",
 			Name:        "Vulnerable Container",
 			Categories:  []string{"Image Assurance", "Privileges Capabilities", "Container Configuration"},
 			Description: "Alert if the container contains vulnerabilities",
 			Severity:    v1.Severity_LOW_SEVERITY,
+			Scope: []*v1.Scope{
+				{
+					Cluster:   "prod cluster",
+					Namespace: "stackrox",
+					Label: &v1.Scope_Label{
+						Key:   "com.docker.stack.namespace",
+						Value: "prevent",
+					},
+				},
+			},
 			ImagePolicy: &v1.ImagePolicy{
 				ImageName: &v1.ImageNamePolicy{
 					Registry:  "docker.io",
@@ -89,16 +100,32 @@ func GetAlert() *v1.Alert {
 			},
 		},
 		Deployment: &v1.Deployment{
-			Name:      "nginx_server",
-			Id:        "s79mdvmb6dsl",
-			ClusterId: "prod cluster",
+			Name:        "nginx_server",
+			Id:          "s79mdvmb6dsl",
+			ClusterId:   "prod cluster",
+			ClusterName: "prod cluster",
+			Namespace:   "stackrox",
+			Labels: map[string]string{
+				"com.docker.stack.namespace":    "prevent",
+				"com.docker.swarm.service.name": "prevent_sensor",
+			},
 			Containers: []*v1.Container{
 				{
 					Image: &v1.Image{
 						Name: &v1.ImageName{
-							Sha:      "SHA",
+							Sha:      "sha256:SHA1",
 							Registry: "docker.io",
 							Remote:   "library/nginx",
+							Tag:      "1.10",
+						},
+					},
+				},
+				{
+					Image: &v1.Image{
+						Name: &v1.ImageName{
+							Sha:      "sha256:SHA2",
+							Registry: "stackrox.io",
+							Remote:   "srox/mongo",
 							Tag:      "latest",
 						},
 					},

@@ -64,30 +64,39 @@ func (b *BoltDB) AddDeployment(deployment *v1.Deployment) error {
 		if err != nil {
 			return err
 		}
-		return bucket.Put([]byte(deployment.Id), bytes)
+		if err := bucket.Put([]byte(deployment.Id), bytes); err != nil {
+			return err
+		}
+		return b.indexer.AddDeployment(deployment)
 	})
 }
 
 // UpdateDeployment updates a deployment to bolt
 func (b *BoltDB) UpdateDeployment(deployment *v1.Deployment) error {
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(deploymentBucket))
+		bucket := tx.Bucket([]byte(deploymentBucket))
 		bytes, err := proto.Marshal(deployment)
 		if err != nil {
 			return err
 		}
-		return b.Put([]byte(deployment.Id), bytes)
+		if err := bucket.Put([]byte(deployment.Id), bytes); err != nil {
+			return err
+		}
+		return b.indexer.AddDeployment(deployment)
 	})
 }
 
 // RemoveDeployment removes a deployment.
 func (b *BoltDB) RemoveDeployment(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(deploymentBucket))
+		bucket := tx.Bucket([]byte(deploymentBucket))
 		key := []byte(id)
-		if exists := b.Get(key) != nil; !exists {
+		if exists := bucket.Get(key) != nil; !exists {
 			return db.ErrNotFound{Type: "Deployment", ID: string(key)}
 		}
-		return b.Delete(key)
+		if err := bucket.Delete(key); err != nil {
+			return err
+		}
+		return b.indexer.DeleteDeployment(id)
 	})
 }

@@ -123,7 +123,8 @@ func (q *quay) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	values := url.Values{}
 	values.Add("features", "true")
 	values.Add("vulnerabilities", "true")
-	body, status, err := q.sendRequest("GET", values, "api", "v1", "repository", image.GetName().GetRemote(), "manifest", images.Wrapper{Image: image}.GetPrefixedSHA(), "security")
+	digest := images.NewDigest(image.GetName().GetSha()).Digest()
+	body, status, err := q.sendRequest("GET", values, "api", "v1", "repository", image.GetName().GetRemote(), "manifest", digest, "security")
 	if err != nil {
 		return nil, err
 	} else if status != http.StatusOK {

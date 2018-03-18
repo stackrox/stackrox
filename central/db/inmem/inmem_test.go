@@ -7,6 +7,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/db/boltdb"
+	"bitbucket.org/stack-rox/apollo/central/search/blevesearch"
 )
 
 func createBoltDB() (db.Storage, error) {
@@ -14,7 +15,11 @@ func createBoltDB() (db.Storage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get temporary directory: %v", err.Error())
 	}
-	db, err := boltdb.New(filepath.Join(tmpDir, "prevent.db"))
+	indexer, err := blevesearch.NewIndexer()
+	if err != nil {
+		return nil, err
+	}
+	db, err := boltdb.New(filepath.Join(tmpDir, "prevent.db"), indexer)
 	if err != nil {
 		return nil, err
 	}

@@ -5,6 +5,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/images"
 )
 
 type deploymentStore struct {
@@ -51,7 +52,8 @@ func (s *deploymentStore) GetDeployments(request *v1.GetDeploymentsRequest) ([]*
 
 func (s *deploymentStore) matchImageSha(imageShaSet map[string]struct{}, containers []*v1.Container) bool {
 	for _, c := range containers {
-		if _, ok := imageShaSet[c.GetImage().GetName().GetSha()]; !ok {
+		digest := images.NewDigest(c.GetImage().GetName().GetSha()).Digest()
+		if _, ok := imageShaSet[digest]; !ok {
 			return false
 		}
 	}

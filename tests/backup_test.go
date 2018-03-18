@@ -65,7 +65,7 @@ func TestBackup(t *testing.T) {
 
 	out.Close()
 
-	b, err := boltdb.New("backup.db")
+	b, err := boltdb.New("backup.db", nil)
 	require.NoError(t, err)
 
 	deployments, err := b.GetDeployments(&v1.GetDeploymentsRequest{})

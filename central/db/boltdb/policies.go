@@ -76,7 +76,10 @@ func (b *BoltDB) AddPolicy(policy *v1.Policy) (string, error) {
 		if err != nil {
 			return err
 		}
-		return bucket.Put([]byte(policy.GetId()), bytes)
+		if err := bucket.Put([]byte(policy.GetId()), bytes); err != nil {
+			return err
+		}
+		return b.indexer.AddPolicy(policy)
 	})
 	return policy.Id, err
 }
@@ -84,7 +87,7 @@ func (b *BoltDB) AddPolicy(policy *v1.Policy) (string, error) {
 // UpdatePolicy updates a policy to bolt
 func (b *BoltDB) UpdatePolicy(policy *v1.Policy) error {
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(policyBucket))
+		bucket := tx.Bucket([]byte(policyBucket))
 		// If the update is changing the name, check if the name has already been taken
 		if getCurrentUniqueKey(tx, policyBucket, policy.GetId()) != policy.GetName() {
 			if err := checkUniqueKeyExistsAndInsert(tx, policyBucket, policy.GetId(), policy.GetName()); err != nil {
@@ -95,22 +98,28 @@ func (b *BoltDB) UpdatePolicy(policy *v1.Policy) error {
 		if err != nil {
 			return err
 		}
-		return b.Put([]byte(policy.GetId()), bytes)
+		if err := bucket.Put([]byte(policy.GetId()), bytes); err != nil {
+			return err
+		}
+		return b.indexer.AddPolicy(policy)
 	})
 }
 
 // RemovePolicy removes a policy.
 func (b *BoltDB) RemovePolicy(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(policyBucket))
+		bucket := tx.Bucket([]byte(policyBucket))
 		key := []byte(id)
-		if exists := b.Get(key) != nil; !exists {
+		if exists := bucket.Get(key) != nil; !exists {
 			return db.ErrNotFound{Type: "Policy", ID: string(key)}
 		}
 		if err := removeUniqueKey(tx, policyBucket, id); err != nil {
 			return err
 		}
-		return b.Delete(key)
+		if err := bucket.Delete(key); err != nil {
+			return err
+		}
+		return b.indexer.DeletePolicy(id)
 	})
 }
 

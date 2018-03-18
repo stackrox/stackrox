@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "api/v1/common.proto";
+
+package v1;
+
+enum SearchCategory {
+    SEARCH_UNSET = 0;
+    ALERTS       = 1;
+    IMAGES       = 2;
+    BENCHMARKS   = 3;
+    POLICIES     = 4;
+    DEPLOYMENTS  = 5;
+    // TODO support Benchmarks
+}
+
+message SearchRequest {
+    repeated SearchCategory   categories = 1;
+    repeated Scope            scopes     = 2;
+    message Values {
+        repeated string values  = 1;
+    }
+    map<string, Values>       fields     = 3;
+}
+
+message SearchResult {
+    SearchCategory  category = 1;
+    repeated string ids      = 2;
+}
+
+message SearchResponse {
+    repeated SearchResult results = 1;
+}
+
+service SearchService {
+
+    rpc Search(SearchRequest) returns (SearchResponse) {
+        option (google.api.http) = {
+            post: "/v1/search"
+            body: "*"
+        };
+    }
+
+}

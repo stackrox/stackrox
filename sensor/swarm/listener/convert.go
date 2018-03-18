@@ -173,7 +173,7 @@ func (s serviceWrap) getSHAFromTask(client *client.Client) string {
 		// TODO(cg): If the image is specified only as a tag, and Swarm can't
 		// resolve to a SHA256 digest when launching, the image SHA may actually
 		// differ between tasks on different nodes.
-		return container.Image
+		return images.NewDigest(container.Image).Digest()
 	}
 	return ""
 }

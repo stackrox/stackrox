@@ -118,7 +118,7 @@ func (w *wrap) populateImageShas(spec reflect.Value, lister podLister) {
 		for _, c := range p.Status.ContainerStatuses {
 			img := images.GenerateImageFromString(c.Image)
 			if sha := images.ExtractImageSha(c.ImageID); sha != "" {
-				imageMap[*img.GetName()] = sha
+				imageMap[*img.GetName()] = images.NewDigest(sha).Digest()
 			}
 		}
 	}

@@ -64,29 +64,35 @@ func (b *BoltDB) AddAlert(alert *v1.Alert) error {
 		if err != nil {
 			return err
 		}
-		err = bucket.Put([]byte(alert.Id), bytes)
-		return err
+		if err := bucket.Put([]byte(alert.Id), bytes); err != nil {
+			return err
+		}
+		return b.indexer.AddAlert(alert)
 	})
 }
 
 // UpdateAlert upserts an alert into Bolt
 func (b *BoltDB) UpdateAlert(alert *v1.Alert) error {
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(alertBucket))
+		bucket := tx.Bucket([]byte(alertBucket))
 		bytes, err := proto.Marshal(alert)
 		if err != nil {
 			return err
 		}
-		err = b.Put([]byte(alert.Id), bytes)
-		return err
+		if err := bucket.Put([]byte(alert.Id), bytes); err != nil {
+			return err
+		}
+		return b.indexer.AddAlert(alert)
 	})
 }
 
 // RemoveAlert removes an alert into Bolt
 func (b *BoltDB) RemoveAlert(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(alertBucket))
-		err := b.Delete([]byte(id))
-		return err
+		bucket := tx.Bucket([]byte(alertBucket))
+		if err := bucket.Delete([]byte(id)); err != nil {
+			return err
+		}
+		return b.indexer.DeleteAlert(id)
 	})
 }

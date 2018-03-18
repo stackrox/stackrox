@@ -135,7 +135,8 @@ func (c *clair) getLastScanFromV2Metadata(image *v1.Image) (*clairV1.LayerEnvelo
 }
 
 func (c *clair) getLastScanFromV1Metadata(image *v1.Image) (*clairV1.LayerEnvelope, bool) {
-	layerEnvelope, err := c.retrieveLayerData(image.GetName().GetSha())
+	digest := images.NewDigest(image.GetName().GetSha()).Digest()
+	layerEnvelope, err := c.retrieveLayerData(digest)
 	if err == nil {
 		return layerEnvelope, true
 	} else if err != errNotExists {
