@@ -95,6 +95,7 @@ func verifyNoMetadata(t *testing.T, conn *grpc.ClientConn) {
 }
 
 func verifyMetadataPopulated(t *testing.T, conn *grpc.ClientConn) {
+	t.Skip("Skipping metadata populated - AP-391")
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
@@ -109,6 +110,7 @@ func verifyMetadataPopulated(t *testing.T, conn *grpc.ClientConn) {
 			}
 		case <-timer.C:
 			t.Error("image metadata not populated after 1 minute")
+			return
 		}
 	}
 }
