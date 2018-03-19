@@ -66,7 +66,7 @@ func TestSlackBenchmarkNotify(t *testing.T) {
 		},
 	}
 	schedule := &v1.BenchmarkSchedule{
-		Name: "CIS Docker Benchmark",
+		BenchmarkName: "CIS Docker Benchmark",
 	}
 	assert.NoError(t, s.BenchmarkNotify(schedule))
 }

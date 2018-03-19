@@ -9,13 +9,13 @@ import "google/protobuf/timestamp.proto";
 package v1;
 
 message BenchmarkTrigger {
-    string name                    = 1;
+    string id                      = 1;
     google.protobuf.Timestamp time = 2;
     repeated string cluster_ids    = 3;
 }
 
 message GetBenchmarkTriggersRequest {
-    repeated string names               = 1;
+    repeated string ids                 = 1;
     repeated string cluster_ids         = 2;
     google.protobuf.Timestamp from_time = 3;
     google.protobuf.Timestamp to_time   = 4;
@@ -36,7 +36,7 @@ service BenchmarkTriggerService {
 
     rpc Trigger (BenchmarkTrigger) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            post: "/v1/benchmarks/triggers/{name}"
+            post: "/v1/benchmarks/triggers/{id}"
             body: "*"
         };
     }

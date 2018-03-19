@@ -49,18 +49,18 @@ type AuthProviderStorage interface {
 
 // BenchmarkStorage provides storage functionality for benchmarks results.
 type BenchmarkStorage interface {
-	GetBenchmark(name string) (*v1.Benchmark, bool, error)
+	GetBenchmark(id string) (*v1.Benchmark, bool, error)
 	GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*v1.Benchmark, error)
-	AddBenchmark(benchmark *v1.Benchmark) error
+	AddBenchmark(benchmark *v1.Benchmark) (string, error)
 	UpdateBenchmark(benchmark *v1.Benchmark) error
-	RemoveBenchmark(name string) error
+	RemoveBenchmark(id string) error
 }
 
 // BenchmarkScheduleStorage provides storage functionality for benchmark schedules.
 type BenchmarkScheduleStorage interface {
 	GetBenchmarkSchedule(name string) (*v1.BenchmarkSchedule, bool, error)
 	GetBenchmarkSchedules(request *v1.GetBenchmarkSchedulesRequest) ([]*v1.BenchmarkSchedule, error)
-	AddBenchmarkSchedule(schedule *v1.BenchmarkSchedule) error
+	AddBenchmarkSchedule(schedule *v1.BenchmarkSchedule) (string, error)
 	UpdateBenchmarkSchedule(schedule *v1.BenchmarkSchedule) error
 	RemoveBenchmarkSchedule(name string) error
 }

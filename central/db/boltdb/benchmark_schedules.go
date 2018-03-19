@@ -5,15 +5,16 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
 )
 
 const benchmarkScheduleBucket = "benchmark_schedules"
 
-func (b *BoltDB) getBenchmarkSchedule(name string, bucket *bolt.Bucket) (schedule *v1.BenchmarkSchedule, exists bool, err error) {
+func (b *BoltDB) getBenchmarkSchedule(id string, bucket *bolt.Bucket) (schedule *v1.BenchmarkSchedule, exists bool, err error) {
 	schedule = new(v1.BenchmarkSchedule)
-	val := bucket.Get([]byte(name))
+	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
 	}
@@ -23,10 +24,10 @@ func (b *BoltDB) getBenchmarkSchedule(name string, bucket *bolt.Bucket) (schedul
 }
 
 // GetBenchmarkSchedule returns a benchmark schedule with given id.
-func (b *BoltDB) GetBenchmarkSchedule(name string) (schedule *v1.BenchmarkSchedule, exists bool, err error) {
+func (b *BoltDB) GetBenchmarkSchedule(id string) (schedule *v1.BenchmarkSchedule, exists bool, err error) {
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(benchmarkScheduleBucket))
-		schedule, exists, err = b.getBenchmarkSchedule(name, bucket)
+		schedule, exists, err = b.getBenchmarkSchedule(id, bucket)
 		return err
 	})
 	return
@@ -47,27 +48,42 @@ func (b *BoltDB) GetBenchmarkSchedules(request *v1.GetBenchmarkSchedulesRequest)
 		})
 		return err
 	})
-	return schedules, err
+	filteredSchedules := schedules[:0]
+	benchmarkIDSet := newStringSet(request.GetBenchmarkIds())
+	requestClusterSet := newStringSet(request.GetClusters())
+	for _, schedule := range schedules {
+		if benchmarkIDSet.Cardinality() != 0 && !benchmarkIDSet.Contains(schedule.GetBenchmarkId()) {
+			continue
+		}
+		clusterSet := newStringSet(schedule.GetClusterIds())
+		if requestClusterSet.Cardinality() != 0 && clusterSet.Cardinality() != 0 && requestClusterSet.Intersect(clusterSet).Cardinality() == 0 {
+			continue
+		}
+		filteredSchedules = append(filteredSchedules, schedule)
+	}
+	return filteredSchedules, err
 }
 
 // AddBenchmarkSchedule adds a benchmark schedule to bolt
-func (b *BoltDB) AddBenchmarkSchedule(schedule *v1.BenchmarkSchedule) error {
-	return b.Update(func(tx *bolt.Tx) error {
+func (b *BoltDB) AddBenchmarkSchedule(schedule *v1.BenchmarkSchedule) (string, error) {
+	schedule.Id = uuid.NewV4().String()
+	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(benchmarkScheduleBucket))
-		_, exists, err := b.getBenchmarkSchedule(schedule.GetName(), bucket)
+		_, exists, err := b.getBenchmarkSchedule(schedule.GetId(), bucket)
 		if err != nil {
 			return err
 		}
 		if exists {
-			return fmt.Errorf("Benchmark Schedule %v cannot be added because it already exists", schedule.GetName())
+			return fmt.Errorf("Benchmark Schedule %v cannot be added because it already exists", schedule.GetId())
 		}
 		bytes, err := proto.Marshal(schedule)
 		if err != nil {
 			return err
 		}
-		err = bucket.Put([]byte(schedule.GetName()), bytes)
+		err = bucket.Put([]byte(schedule.GetId()), bytes)
 		return err
 	})
+	return schedule.Id, err
 }
 
 // UpdateBenchmarkSchedule updates a benchmark schedule to bolt
@@ -78,18 +94,18 @@ func (b *BoltDB) UpdateBenchmarkSchedule(schedule *v1.BenchmarkSchedule) error {
 		if err != nil {
 			return err
 		}
-		err = b.Put([]byte(schedule.GetName()), bytes)
+		err = b.Put([]byte(schedule.GetId()), bytes)
 		return err
 	})
 }
 
 // RemoveBenchmarkSchedule removes a benchmark schedule
-func (b *BoltDB) RemoveBenchmarkSchedule(name string) error {
+func (b *BoltDB) RemoveBenchmarkSchedule(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(benchmarkScheduleBucket))
-		key := []byte(name)
+		key := []byte(id)
 		if exists := b.Get(key) != nil; !exists {
-			return db.ErrNotFound{Type: "Benchmark Schedule", ID: name}
+			return db.ErrNotFound{Type: "Benchmark Schedule", ID: id}
 		}
 		return b.Delete(key)
 	})

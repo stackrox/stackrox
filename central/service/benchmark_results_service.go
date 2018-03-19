@@ -66,12 +66,12 @@ func (s *BenchmarkResultsService) PostBenchmarkResult(ctx context.Context, reque
 			return &empty.Empty{}, nil
 		}
 		s.cache.Add(request.GetScanId(), struct{}{})
-		schedule, exists, err := s.scheduleStore.GetBenchmarkSchedule(request.GetName())
+		schedule, exists, err := s.scheduleStore.GetBenchmarkSchedule(request.GetId())
 		if err != nil {
-			log.Errorf("Error retrieving benchmark schedule %v: %+v", request.GetName(), err)
+			log.Errorf("Error retrieving benchmark schedule %v: %+v", request.GetId(), err)
 			return &empty.Empty{}, nil
 		} else if !exists {
-			log.Errorf("Benchmark schedule %v does not exist", request.GetName())
+			log.Errorf("Benchmark schedule %v does not exist", request.GetId())
 			return &empty.Empty{}, nil
 		}
 		s.notificationsProcessor.ProcessBenchmark(schedule)

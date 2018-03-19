@@ -85,11 +85,11 @@ func (p *Processor) notifyBenchmark(schedule *v1.BenchmarkSchedule) {
 	for _, id := range schedule.Notifiers {
 		notifier, exists := p.notifiers[id]
 		if !exists {
-			log.Errorf("Could not send notification to notifier id %v for benchmark %v because it does not exist", id, schedule.GetName())
+			log.Errorf("Could not send notification to notifier id %v for benchmark %v because it does not exist", id, schedule.GetBenchmarkName())
 			continue
 		}
 		if err := notifier.BenchmarkNotify(schedule); err != nil {
-			log.Errorf("Unable to send notification to %v (%v) for benchmark %v: %v", id, notifier.ProtoNotifier().GetName(), schedule.GetName(), err)
+			log.Errorf("Unable to send notification to %v (%v) for benchmark %v: %v", id, notifier.ProtoNotifier().GetName(), schedule.GetBenchmarkName(), err)
 		}
 	}
 }

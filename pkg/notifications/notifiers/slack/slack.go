@@ -130,7 +130,7 @@ func (s *slack) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
 	}
 	jsonPayload, err := json.Marshal(&notification)
 	if err != nil {
-		return fmt.Errorf("Could not marshal notification for benchmark %v", schedule.GetName())
+		return fmt.Errorf("Could not marshal notification for benchmark %v", schedule.GetBenchmarkName())
 	}
 	return postMessage(s.Webhook, jsonPayload)
 }

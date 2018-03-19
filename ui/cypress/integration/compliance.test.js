@@ -9,12 +9,12 @@ describe('Compliance page', () => {
         cy.fixture('benchmarks/configs.json').as('configs');
         cy.route('GET', api.benchmarks.configs, '@configs').as('benchConfigs');
         cy.fixture('benchmarks/dockerBenchScans.json').as('dockerBenchScans');
-        cy.route('GET', api.benchmarks.cisDockerScans, '@dockerBenchScans').as('scansMetadata');
+        cy.route('GET', api.benchmarks.cisDockerScans, '@dockerBenchScans').as('scanMetadata');
         cy.fixture('benchmarks/dockerBenchScan1.json').as('dockerBenchScan1');
         cy.route('GET', api.benchmarks.scans, '@dockerBenchScan1').as('benchScan');
 
         cy.visit(complianceUrl);
-        cy.wait(['@clusters', '@benchConfigs', '@scansMetadata', '@benchScan']);
+        cy.wait(['@clusters', '@benchConfigs', '@scanMetadata', '@benchScan']);
     };
 
     it('should have selected item in nav bar', () => {

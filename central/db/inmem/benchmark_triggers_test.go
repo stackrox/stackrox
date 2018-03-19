@@ -17,11 +17,11 @@ func testBenchmarksTriggers(t *testing.T, insertStorage, retrievalStorage db.Ben
 
 	triggers := []*v1.BenchmarkTrigger{
 		{
-			Name: "trigger1",
+			Id:   "trigger1",
 			Time: triggerTime1,
 		},
 		{
-			Name: "trigger2",
+			Id:   "trigger2",
 			Time: triggerTime2,
 		},
 	}
@@ -71,18 +71,18 @@ func TestBenchmarkTriggersFiltering(t *testing.T) {
 
 	storage := newBenchmarkTriggerStore(persistent)
 	trigger1 := &v1.BenchmarkTrigger{
-		Name:       "trigger1",
+		Id:         "trigger1",
 		Time:       triggerTime1,
 		ClusterIds: []string{cluster1},
 	}
 	trigger2 := &v1.BenchmarkTrigger{
-		Name:       "trigger2",
+		Id:         "trigger2",
 		Time:       triggerTime2,
 		ClusterIds: []string{cluster2a, cluster2b},
 	}
 	// trigger with no cluster
 	trigger3 := &v1.BenchmarkTrigger{
-		Name: "trigger3",
+		Id:   "trigger3",
 		Time: triggerTime3,
 	}
 	triggers := []*v1.BenchmarkTrigger{
@@ -101,7 +101,7 @@ func TestBenchmarkTriggersFiltering(t *testing.T) {
 	assert.Equal(t, triggers, actualTriggers)
 
 	actualTriggers, err = storage.GetBenchmarkTriggers(&v1.GetBenchmarkTriggersRequest{
-		Names: []string{"trigger1"},
+		Ids: []string{"trigger1"},
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, []*v1.BenchmarkTrigger{trigger1}, actualTriggers)

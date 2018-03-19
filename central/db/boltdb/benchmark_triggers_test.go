@@ -34,11 +34,11 @@ func (suite *BoltBenchmarkTriggersTestSuite) TeardownSuite() {
 func (suite *BoltBenchmarkTriggersTestSuite) TestTriggers() {
 	triggers := []*v1.BenchmarkTrigger{
 		{
-			Name: "trigger1",
+			Id:   "trigger1",
 			Time: ptypes.TimestampNow(),
 		},
 		{
-			Name: "trigger2",
+			Id:   "trigger2",
 			Time: ptypes.TimestampNow(),
 		},
 	}

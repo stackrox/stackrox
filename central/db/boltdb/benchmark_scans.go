@@ -28,7 +28,7 @@ func (b *BoltDB) AddScan(request *v1.BenchmarkScanMetadata) error {
 		// Create benchmark bucket if does not already exist
 		// Add scan id into that bucket
 		topLevelBenchmarkBucket := tx.Bucket([]byte(benchmarksToScansBucket))
-		benchmarkBucket, err := topLevelBenchmarkBucket.CreateBucketIfNotExists([]byte(request.GetBenchmark()))
+		benchmarkBucket, err := topLevelBenchmarkBucket.CreateBucketIfNotExists([]byte(request.GetBenchmarkId()))
 		if err != nil {
 			return err
 		}
@@ -205,7 +205,7 @@ func (b *BoltDB) ListBenchmarkScans(request *v1.ListBenchmarkScansRequest) ([]*v
 	clusterSet := newStringSet(request.GetClusterIds())
 	filtered := scansMetadata[:0]
 	for _, scan := range scansMetadata {
-		if request.GetBenchmark() != "" && request.GetBenchmark() != scan.GetBenchmark() {
+		if request.GetBenchmarkId() != "" && request.GetBenchmarkId() != scan.GetBenchmarkId() {
 			continue
 		}
 		scanClusterSet := newStringSet(request.GetClusterIds())

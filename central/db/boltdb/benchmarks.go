@@ -5,15 +5,16 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
 )
 
 const benchmarkBucket = "benchmarks"
 
-func (b *BoltDB) getBenchmark(name string, bucket *bolt.Bucket) (benchmark *v1.Benchmark, exists bool, err error) {
+func (b *BoltDB) getBenchmark(id string, bucket *bolt.Bucket) (benchmark *v1.Benchmark, exists bool, err error) {
 	benchmark = new(v1.Benchmark)
-	val := bucket.Get([]byte(name))
+	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
 	}
@@ -23,10 +24,10 @@ func (b *BoltDB) getBenchmark(name string, bucket *bolt.Bucket) (benchmark *v1.B
 }
 
 // GetBenchmark returns benchmark with given id.
-func (b *BoltDB) GetBenchmark(name string) (benchmark *v1.Benchmark, exists bool, err error) {
+func (b *BoltDB) GetBenchmark(id string) (benchmark *v1.Benchmark, exists bool, err error) {
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(benchmarkBucket))
-		benchmark, exists, err = b.getBenchmark(name, bucket)
+		benchmark, exists, err = b.getBenchmark(id, bucket)
 		return err
 	})
 	return
@@ -50,58 +51,71 @@ func (b *BoltDB) GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*v1.Benchmar
 }
 
 // AddBenchmark adds a benchmark to bolt
-func (b *BoltDB) AddBenchmark(benchmark *v1.Benchmark) error {
-	return b.Update(func(tx *bolt.Tx) error {
+func (b *BoltDB) AddBenchmark(benchmark *v1.Benchmark) (string, error) {
+	benchmark.Id = uuid.NewV4().String()
+	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(benchmarkBucket))
-		_, exists, err := b.getBenchmark(benchmark.Name, bucket)
+		_, exists, err := b.getBenchmark(benchmark.GetId(), bucket)
 		if err != nil {
 			return err
 		}
 		if exists {
-			return fmt.Errorf("Benchmark %v cannot be added because it already exists", benchmark.GetName())
+			return fmt.Errorf("Benchmark %v cannot be added because it already exists", benchmark.GetId())
+		}
+		if err := checkUniqueKeyExistsAndInsert(tx, benchmarkBucket, benchmark.GetId(), benchmark.GetName()); err != nil {
+			return fmt.Errorf("Could not add benchmark due to name validation: %s", err)
 		}
 		bytes, err := proto.Marshal(benchmark)
 		if err != nil {
 			return err
 		}
-		return bucket.Put([]byte(benchmark.Name), bytes)
+		return bucket.Put([]byte(benchmark.GetId()), bytes)
 	})
+	return benchmark.GetId(), err
 }
 
 // UpdateBenchmark updates a benchmark to bolt
 func (b *BoltDB) UpdateBenchmark(benchmark *v1.Benchmark) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(benchmarkBucket))
-		currBenchmark, exists, err := b.getBenchmark(benchmark.Name, bucket)
+		currBenchmark, exists, err := b.getBenchmark(benchmark.GetId(), bucket)
 		if err != nil {
 			return err
 		}
 		if exists && !currBenchmark.Editable {
-			return fmt.Errorf("Cannot update benchmark %v because it cannot be edited", benchmark.Name)
+			return fmt.Errorf("Cannot update benchmark %v because it cannot be edited", benchmark.GetId())
 		}
-		// TODO(cgorman) None of these are editable and we'll need to move this to id (AP-328). At that point check naming uniqueness
+		// If the update is changing the name, check if the name has already been taken
+		if getCurrentUniqueKey(tx, benchmarkBucket, benchmark.GetId()) != benchmark.GetName() {
+			if err := checkUniqueKeyExistsAndInsert(tx, benchmarkBucket, benchmark.GetId(), benchmark.GetName()); err != nil {
+				return fmt.Errorf("Could not update benchmark due to name validation: %s", err)
+			}
+		}
 		bytes, err := proto.Marshal(benchmark)
 		if err != nil {
 			return err
 		}
-		return bucket.Put([]byte(benchmark.Name), bytes)
+		return bucket.Put([]byte(benchmark.GetId()), bytes)
 	})
 }
 
 // RemoveBenchmark removes a benchmark.
-func (b *BoltDB) RemoveBenchmark(name string) error {
+func (b *BoltDB) RemoveBenchmark(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(benchmarkBucket))
-		benchmark, exists, err := b.getBenchmark(name, bucket)
+		benchmark, exists, err := b.getBenchmark(id, bucket)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			return db.ErrNotFound{Type: "Benchmark", ID: name}
+			return db.ErrNotFound{Type: "Benchmark", ID: id}
 		}
 		if exists && !benchmark.Editable {
-			return fmt.Errorf("Cannot remove benchmark %v because it cannot be edited", benchmark.Name)
+			return fmt.Errorf("Cannot remove benchmark %v because it cannot be edited", benchmark.GetId())
 		}
-		return bucket.Delete([]byte(name))
+		if err := removeUniqueKey(tx, benchmarkBucket, benchmark.GetId()); err != nil {
+			return err
+		}
+		return bucket.Delete([]byte(id))
 	})
 }

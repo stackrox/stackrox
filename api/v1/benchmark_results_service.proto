@@ -33,7 +33,7 @@ message CheckResult {
 
 message BenchmarkResult {
     string id                            = 1;
-    string name                          = 2;
+    string benchmark_id                  = 2;
     repeated CheckResult results         = 3;
     google.protobuf.Timestamp start_time = 4;
     google.protobuf.Timestamp end_time   = 5;

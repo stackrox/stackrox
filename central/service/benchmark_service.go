@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"regexp"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -14,10 +13,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
-
-const benchmarkNameRegex = `^[a-zA-Z0-9]([-a-zA-Z0-9.\s]*[a-zA-Z0-9])?$`
-
-var benchmarkNameRegexp = regexp.MustCompile(benchmarkNameRegex)
 
 // NewBenchmarkService returns the BenchmarkService API.
 func NewBenchmarkService(storage db.BenchmarkStorage) *BenchmarkService {
@@ -47,13 +42,13 @@ func (s *BenchmarkService) AuthFuncOverride(ctx context.Context, fullMethodName 
 }
 
 // GetBenchmark returns the benchmark by the passed name
-func (s *BenchmarkService) GetBenchmark(ctx context.Context, request *v1.GetBenchmarkRequest) (*v1.Benchmark, error) {
-	benchmark, exists, err := s.storage.GetBenchmark(request.Name)
+func (s *BenchmarkService) GetBenchmark(ctx context.Context, request *v1.ResourceByID) (*v1.Benchmark, error) {
+	benchmark, exists, err := s.storage.GetBenchmark(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if !exists {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("Benchmark with name %v is not found", request.Name))
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("Benchmark with id %v is not found", request.GetId()))
 	}
 	return benchmark, nil
 }
@@ -73,21 +68,23 @@ func (s *BenchmarkService) GetBenchmarks(ctx context.Context, request *v1.GetBen
 }
 
 // PostBenchmark creates a new benchmark
-func (s *BenchmarkService) PostBenchmark(ctx context.Context, request *v1.Benchmark) (*empty.Empty, error) {
-	if !benchmarkNameRegexp.MatchString(request.GetName()) {
-		return nil, fmt.Errorf("benchmark name must start and end with an alphanumeric character and otherwise contain . - or whitespace")
+func (s *BenchmarkService) PostBenchmark(ctx context.Context, request *v1.Benchmark) (*v1.Benchmark, error) {
+	if request.GetId() != "" {
+		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new benchmark")
 	}
 	request.Editable = true // all user generated benchmarks are editable
-	if err := s.storage.AddBenchmark(request); err != nil {
+	id, err := s.storage.AddBenchmark(request)
+	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return &empty.Empty{}, nil
+	request.Id = id
+	return request, nil
 }
 
 // PutBenchmark updates a benchmark
 func (s *BenchmarkService) PutBenchmark(ctx context.Context, request *v1.Benchmark) (*empty.Empty, error) {
-	if !benchmarkNameRegexp.MatchString(request.GetName()) {
-		return nil, fmt.Errorf("benchmark name must start and end with an alphanumeric character and otherwise contain . - or whitespace")
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Id field should be specified when updating a benchmark")
 	}
 	if err := s.storage.UpdateBenchmark(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -96,8 +93,8 @@ func (s *BenchmarkService) PutBenchmark(ctx context.Context, request *v1.Benchma
 }
 
 // DeleteBenchmark removes a benchmark
-func (s *BenchmarkService) DeleteBenchmark(ctx context.Context, request *v1.DeleteBenchmarkRequest) (*empty.Empty, error) {
-	if err := s.storage.RemoveBenchmark(request.Name); err != nil {
+func (s *BenchmarkService) DeleteBenchmark(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
+	if err := s.storage.RemoveBenchmark(request.GetId()); err != nil {
 		return nil, returnErrorCode(err)
 	}
 	return &empty.Empty{}, nil

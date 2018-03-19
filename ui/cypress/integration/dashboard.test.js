@@ -61,6 +61,7 @@ describe('Dashboard page', () => {
         cy
             .get('@benchmarkSummaries')
             .find('a')
+            .first()
             .should('have.text', 'CIS Docker v1.1.0 Benchmark');
 
         cy
@@ -77,6 +78,7 @@ describe('Dashboard page', () => {
         cy
             .get('@benchmarkSummaries')
             .find('a')
+            .first()
             .click();
         cy.location().should(location => {
             expect(location.pathname).to.eq(complianceUrl);

@@ -58,7 +58,7 @@ func TestJiraTest(t *testing.T) {
 func TestJiraBenchmarkNotify(t *testing.T) {
 	j := getJira(t)
 	schedule := &v1.BenchmarkSchedule{
-		Name: "CIS Docker Benchmark",
+		BenchmarkName: "CIS Docker Benchmark",
 	}
 	assert.NoError(t, j.BenchmarkNotify(schedule))
 }

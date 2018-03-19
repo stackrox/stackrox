@@ -31,14 +31,14 @@ func RunBenchmark() *v1.BenchmarkResult {
 	checkResults := runBenchmark()
 	protoEndTime := ptypes.TimestampNow()
 	result := &v1.BenchmarkResult{
-		Id:        uuid.NewV4().String(),
-		Results:   checkResults,
-		StartTime: protoStartTime,
-		EndTime:   protoEndTime,
-		Host:      hostname,
-		ScanId:    env.ScanID.Setting(),
-		Name:      env.BenchmarkName.Setting(),
-		Reason:    v1.BenchmarkReason(v1.BenchmarkReason_value[env.BenchmarkReason.Setting()]),
+		Id:          uuid.NewV4().String(),
+		Results:     checkResults,
+		StartTime:   protoStartTime,
+		EndTime:     protoEndTime,
+		Host:        hostname,
+		ScanId:      env.ScanID.Setting(),
+		BenchmarkId: env.BenchmarkID.Setting(),
+		Reason:      v1.BenchmarkReason(v1.BenchmarkReason_value[env.BenchmarkReason.Setting()]),
 	}
 	return result
 }

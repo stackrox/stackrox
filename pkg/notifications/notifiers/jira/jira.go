@@ -95,7 +95,7 @@ func (j *jira) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
 
 	i := &jiraLib.Issue{
 		Fields: &jiraLib.IssueFields{
-			Summary: fmt.Sprintf("New Benchmark Results for %v", schedule.GetName()),
+			Summary: fmt.Sprintf("New Benchmark Results for %v", schedule.GetBenchmarkName()),
 			Type: jiraLib.IssueType{
 				Name: j.issueType,
 			},

@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import emitter from 'emitter';
+import { connect } from 'react-redux';
+import { selectors } from 'reducers';
+import { createSelector, createStructuredSelector } from 'reselect';
+import { actions as benchmarkActions } from 'reducers/benchmarks';
 import dateFns from 'date-fns';
 import { ClipLoader } from 'react-spinners';
 import { sortNumber } from 'sorters/sorters';
@@ -8,159 +11,100 @@ import { sortNumber } from 'sorters/sorters';
 import Table from 'Components/Table';
 import Select from 'Components/Select';
 import BenchmarksSidePanel from 'Containers/Compliance/BenchmarksSidePanel';
-import * as service from 'services/BenchmarksService';
-
-const reducer = (action, prevState, nextState) => {
-    switch (action) {
-        case 'UPDATE_BENCHMARKS':
-            return {
-                benchmarks: nextState.benchmarks,
-                lastScanned: nextState.lastScanned,
-                scanning: false
-            };
-        case 'START_SCANNING':
-            return { scanning: true };
-        case 'STOP_SCANNING':
-            return { scanning: false };
-        case 'UPDATE_SCHEDULE':
-            return { schedule: nextState.schedule };
-        default:
-            return prevState;
-    }
-};
+import HostResultModal from 'Containers/Compliance/HostResultModal';
 
 class BenchmarksPage extends Component {
     static propTypes = {
-        benchmarkName: PropTypes.string.isRequired
+        benchmarkScanResults: PropTypes.arrayOf(PropTypes.object).isRequired,
+        lastScannedTime: PropTypes.string.isRequired,
+        benchmarkName: PropTypes.string.isRequired,
+        benchmarkId: PropTypes.string.isRequired,
+        startPollBenchmarkScanResults: PropTypes.func.isRequired,
+        stopPollBenchmarkScanResults: PropTypes.func.isRequired,
+        selectBenchmarkScheduleDay: PropTypes.func.isRequired,
+        selectBenchmarkScheduleHour: PropTypes.func.isRequired,
+        selectBenchmarkScanResult: PropTypes.func.isRequired,
+        selectBenchmarkHostResult: PropTypes.func.isRequired,
+        fetchBenchmarkSchedule: PropTypes.func.isRequired,
+        schedule: PropTypes.shape({
+            day: PropTypes.string,
+            hour: PropTypes.string
+        }).isRequired,
+        triggerBenchmarkScan: PropTypes.func.isRequired,
+        selectedBenchmarkScanResult: PropTypes.shape({
+            definition: PropTypes.shape({ name: PropTypes.string }),
+            hostResults: PropTypes.arrayOf(PropTypes.object)
+        }),
+        selectedBenchmarkHostResult: PropTypes.shape({
+            host: PropTypes.string,
+            notes: PropTypes.arrayOf(PropTypes.string)
+        })
+    };
+
+    static defaultProps = {
+        selectedBenchmarkScanResult: null,
+        selectedBenchmarkHostResult: null
     };
 
     constructor(props) {
         super(props);
 
-        this.params = {};
-
-        this.pollTimeoutId = null;
-
         this.state = {
-            benchmarks: [],
-            lastScanned: '',
-            scanning: false,
-            schedule: {
-                name: this.props.benchmarkName,
-                day: '',
-                hour: '',
-                active: false,
-                timezone_offset: new Date().getTimezoneOffset() / 60
-            }
+            scanning: false
         };
     }
 
     componentDidMount() {
-        this.pollBenchmarks();
-        this.retrieveSchedule();
+        this.props.startPollBenchmarkScanResults(this.props.benchmarkId);
+        this.props.fetchBenchmarkSchedule(this.props.benchmarkId);
+    }
+
+    componentWillReceiveProps(nextProps) {
+        if (nextProps.lastScannedTime !== this.props.lastScannedTime) {
+            // if new benchmark results are loaded then stop the button scanning if it is scanning
+            this.setState({ scanning: false });
+        }
     }
 
     componentWillUnmount() {
-        if (this.pollTimeoutId) {
-            clearTimeout(this.pollTimeoutId);
-            this.pollTimeoutId = null;
-        }
+        this.props.stopPollBenchmarkScanResults();
     }
 
     onTriggerScan = () => {
-        this.update('START_SCANNING');
-        service.triggerScan(this.props.benchmarkName).catch(() => {
-            this.update('STOP_SCANNING');
-        });
+        this.setState({ scanning: true });
+        this.props.triggerBenchmarkScan(this.props.benchmarkId);
     };
 
-    onRowClick = row => {
-        emitter.emit('ComplianceTable:row-selected', row);
+    onRowClick = benchmarkScanResult => {
+        this.props.selectBenchmarkScanResult(benchmarkScanResult);
+    };
+
+    onCloseSidePanel = () => {
+        this.props.selectBenchmarkScanResult(null);
+    };
+
+    onHostResultClick = benchmarkHostResult => {
+        this.props.selectBenchmarkHostResult(benchmarkHostResult);
+    };
+
+    onBenchmarkHostResultModalClose = () => {
+        this.props.selectBenchmarkHostResult(null);
     };
 
     onScheduleDayChange = value => {
-        const { schedule } = this.state;
-        if (value === 'None') {
-            schedule.day = '';
-            schedule.hour = '';
-            this.update('UPDATE_SCHEDULE', { schedule });
-            this.removeSchedule();
-        } else {
-            schedule.day = value;
-            this.update('UPDATE_SCHEDULE', { schedule });
-            this.updateSchedule();
-        }
+        this.props.selectBenchmarkScheduleDay(
+            this.props.benchmarkId,
+            this.props.benchmarkName,
+            value
+        );
     };
 
     onScheduleHourChange = value => {
-        const { schedule } = this.state;
-        schedule.hour = value;
-        this.update('UPDATE_SCHEDULE', { schedule });
-        this.updateSchedule();
-    };
-
-    async getBenchmarks() {
-        try {
-            const lastScan = await service.fetchLastScan(this.props.benchmarkName);
-            if (!lastScan) return;
-
-            const scanTime = dateFns.format(lastScan.metadata.time, 'MM/DD/YYYY h:mm:ss A');
-            const { checks } = lastScan.data;
-            if (scanTime !== this.state.lastScanned) {
-                this.update('UPDATE_BENCHMARKS', {
-                    benchmarks: checks,
-                    lastScanned: scanTime
-                });
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    async retrieveSchedule() {
-        try {
-            const schedule = await service.fetchSchedule(this.props.benchmarkName);
-            if (!schedule) return;
-            schedule.active = true;
-            this.update('UPDATE_SCHEDULE', { schedule });
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    pollBenchmarks = () => {
-        this.getBenchmarks().then(() => {
-            this.pollTimeoutId = setTimeout(this.pollBenchmarks, 5000);
-        });
-    };
-
-    async removeSchedule() {
-        try {
-            const schedule = { ...this.state.schedule, active: false };
-            this.update('UPDATE_SCHEDULE', { schedule });
-            await service.deleteSchedule(this.props.benchmarkName);
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    async updateSchedule() {
-        if (this.state.schedule.hour === '' || this.state.schedule.day === '') return;
-        try {
-            if (this.state.schedule.active) {
-                await service.updateSchedule(this.props.benchmarkName, this.state.schedule);
-            } else {
-                const schedule = { ...this.state.schedule, active: true };
-                this.update('UPDATE_SCHEDULE', { schedule });
-                await service.createSchedule(schedule);
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    update = (action, nextState) => {
-        this.setState(prevState => reducer(action, prevState, nextState));
+        this.props.selectBenchmarkScheduleHour(
+            this.props.benchmarkId,
+            this.props.benchmarkName,
+            value
+        );
     };
 
     renderScanOptions = () => {
@@ -179,7 +123,7 @@ class BenchmarksPage extends Component {
         return (
             <Select
                 className="block w-full border bg-base-100 border-base-200 text-base-500 p-3 pr-8 rounded"
-                value={this.state.schedule.day}
+                value={this.props.schedule.day}
                 placeholder="No scheduled scanning"
                 options={category.options}
                 onChange={this.onScheduleDayChange}
@@ -219,7 +163,7 @@ class BenchmarksPage extends Component {
         return (
             <Select
                 className="block w-full border bg-base-100 border-base-200 text-base-500 p-3 pr-8 rounded"
-                value={this.state.schedule.hour}
+                value={this.props.schedule.hour}
                 placeholder="None"
                 options={category.options}
                 onChange={this.onScheduleHourChange}
@@ -278,17 +222,39 @@ class BenchmarksPage extends Component {
                     sortMethod: sortNumber('aggregatedResults.NOTE')
                 }
             ],
-            rows: this.state.benchmarks
+            rows: this.props.benchmarkScanResults
         };
         return <Table columns={table.columns} rows={table.rows} onRowClick={this.onRowClick} />;
     };
+
+    renderModal() {
+        if (!this.props.selectedBenchmarkHostResult) return '';
+        return (
+            <HostResultModal
+                benchmarkHostResult={this.props.selectedBenchmarkHostResult}
+                onClose={this.onBenchmarkHostResultModalClose}
+            />
+        );
+    }
+
+    renderBenchmarksSidePanel() {
+        if (!this.props.selectedBenchmarkScanResult) return '';
+        return (
+            <BenchmarksSidePanel
+                header={this.props.selectedBenchmarkScanResult.definition.name}
+                hostResults={this.props.selectedBenchmarkScanResult.hostResults}
+                onClose={this.onCloseSidePanel}
+                onRowClick={this.onHostResultClick}
+            />
+        );
+    }
 
     render() {
         return (
             <div className="flex flex-col h-full">
                 <div className="flex w-full mb-3 px-3 items-center">
                     <span className="flex flex-1 text-xl font-500 text-primary-500 self-end">
-                        Last Scanned: {this.state.lastScanned || 'Never'}
+                        Last Scanned: {this.props.lastScannedTime || 'Never'}
                     </span>
                     <div className="flex self-center justify-end pr-5 border-r border-primary-200">
                         <span className="mr-4">{this.renderScanOptions()}</span>
@@ -300,11 +266,52 @@ class BenchmarksPage extends Component {
                     <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow">
                         {this.renderTable()}
                     </div>
-                    <BenchmarksSidePanel />
+                    {this.renderBenchmarksSidePanel()}
+                    {this.renderModal()}
                 </div>
             </div>
         );
     }
 }
 
-export default BenchmarksPage;
+const getBenchmarkScanResults = createSelector([selectors.getLastScan], data => {
+    const lastScan = data.response;
+    if (!lastScan || !lastScan.metadata) return [];
+    const { checks } = lastScan.data;
+    return checks;
+});
+
+const getLastScannedTime = createSelector([selectors.getLastScan], data => {
+    const lastScan = data.response;
+    if (!lastScan || !lastScan.metadata) return '';
+    const scanTime = dateFns.format(lastScan.metadata.time, 'MM/DD/YYYY h:mm:ss A');
+    return scanTime || '';
+});
+
+const mapStateToProps = createStructuredSelector({
+    benchmarkScanResults: getBenchmarkScanResults,
+    lastScannedTime: getLastScannedTime,
+    schedule: selectors.getBenchmarkSchedule,
+    selectedBenchmarkScanResult: selectors.getSelectedBenchmarkScanResult,
+    selectedBenchmarkHostResult: selectors.getSelectedBenchmarkHostResult
+});
+
+const mapDispatchToProps = dispatch => ({
+    startPollBenchmarkScanResults: benchmarkId =>
+        dispatch(benchmarkActions.pollBenchmarkScanResults.start(benchmarkId)),
+    stopPollBenchmarkScanResults: () => dispatch(benchmarkActions.pollBenchmarkScanResults.stop()),
+    selectBenchmarkScheduleDay: (benchmarkId, benchmarkName, value) =>
+        dispatch(benchmarkActions.selectBenchmarkScheduleDay(benchmarkId, benchmarkName, value)),
+    selectBenchmarkScheduleHour: (benchmarkId, benchmarkName, value) =>
+        dispatch(benchmarkActions.selectBenchmarkScheduleHour(benchmarkId, benchmarkName, value)),
+    fetchBenchmarkSchedule: benchmarkId =>
+        dispatch(benchmarkActions.fetchBenchmarkSchedule.request(benchmarkId)),
+    triggerBenchmarkScan: benchmarkId =>
+        dispatch(benchmarkActions.triggerBenchmarkScan.request(benchmarkId)),
+    selectBenchmarkScanResult: benchmarkScanResult =>
+        dispatch(benchmarkActions.selectBenchmarkScanResult(benchmarkScanResult)),
+    selectBenchmarkHostResult: benchmarkHostResult =>
+        dispatch(benchmarkActions.selectBenchmarkHostResult(benchmarkHostResult))
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(BenchmarksPage);

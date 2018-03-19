@@ -5,6 +5,7 @@ option go_package = "v1";
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "api/v1/cluster_service.proto";
+import "api/v1/common.proto";
 
 package v1;
 
@@ -18,10 +19,11 @@ message GetChecksResponse {
 }
 
 message Benchmark {
-    string name                             = 1;
-    bool editable                           = 2;
-    repeated string checks                  = 3;
-    repeated ClusterType cluster_types      = 4;
+    string id                               = 1;
+    string name                             = 2;
+    bool editable                           = 3;
+    repeated string checks                  = 4;
+    repeated ClusterType cluster_types      = 5;
 }
 
 message GetBenchmarkRequest {
@@ -48,9 +50,9 @@ service BenchmarkService {
         };
     }
 
-    rpc GetBenchmark(GetBenchmarkRequest) returns (Benchmark) {
+    rpc GetBenchmark(ResourceByID) returns (Benchmark) {
         option (google.api.http) = {
-            get: "/v1/benchmarks/configs/{name}"
+            get: "/v1/benchmarks/configs/{id}"
         };
     }
 
@@ -60,7 +62,7 @@ service BenchmarkService {
         };
     }
 
-    rpc PostBenchmark(Benchmark) returns (google.protobuf.Empty) {
+    rpc PostBenchmark(Benchmark) returns (Benchmark) {
         option (google.api.http) = {
             post: "/v1/benchmarks/configs"
             body: "*"
@@ -69,14 +71,14 @@ service BenchmarkService {
 
     rpc PutBenchmark(Benchmark) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            put: "/v1/benchmarks/configs/{name}"
+            put: "/v1/benchmarks/configs/{id}"
             body: "*"
         };
     }
 
-    rpc DeleteBenchmark(DeleteBenchmarkRequest) returns (google.protobuf.Empty) {
+    rpc DeleteBenchmark(ResourceByID) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            delete: "/v1/benchmarks/configs/{name}"
+            delete: "/v1/benchmarks/configs/{id}"
         };
     }
 

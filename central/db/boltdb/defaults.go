@@ -49,7 +49,7 @@ func (b *BoltDB) loadDefaultBenchmarks() error {
 	}
 
 	for _, bench := range benchmarks {
-		if err := b.AddBenchmark(bench); err != nil {
+		if _, err := b.AddBenchmark(bench); err != nil {
 			return err
 		}
 	}

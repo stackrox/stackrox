@@ -6,7 +6,6 @@ import { ClipLoader } from 'react-spinners';
 import AuthService from 'services/AuthService';
 
 import logoPrevent from 'images/logo-prevent.svg';
-import loginStripes from 'images/login-stripes.svg';
 
 const reducer = (action, prevState, nextState) => {
     switch (action) {
@@ -95,7 +94,7 @@ class LoginPage extends Component {
         if (!this.state.authProviders) {
             return (
                 <div className="border-t border-base-300 p-6 w-full text-center">
-                    <button className="p-3 px-6 rounded-sm bg-primary-600 text-white uppercase text-center tracking-wide">
+                    <button className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-500 text-white uppercase text-center tracking-wide">
                         <ClipLoader color="white" loading size={15} />
                     </button>
                 </div>
@@ -105,7 +104,7 @@ class LoginPage extends Component {
             return (
                 <div className="border-t border-base-300 p-8 w-full text-center">
                     <Link
-                        className="p-3 px-6 rounded-sm bg-primary-600 text-white uppercase text-center tracking-wide no-underline"
+                        className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-500 text-white uppercase text-center tracking-wide no-underline"
                         to="/main/dashboard"
                     >
                         Go to Dashboard
@@ -116,7 +115,7 @@ class LoginPage extends Component {
         return (
             <div className="border-t border-base-300 p-6 w-full text-center">
                 <button
-                    className="p-3 px-6 rounded-sm bg-primary-600 text-white uppercase text-center tracking-wide"
+                    className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-500 text-white uppercase text-center tracking-wide"
                     onClick={this.login}
                 >
                     Login
@@ -128,13 +127,7 @@ class LoginPage extends Component {
     render() {
         return (
             <section className="flex flex-col items-center justify-center h-full bg-primary-600">
-                <div className="flex flex-col items-center justify-center bg-white w-2/5 relative">
-                    <img className="absolute pin-l pin-t" src={loginStripes} alt="" />
-                    <img
-                        className="absolute pin-r pin-b transform-rotate-half-turn"
-                        src={loginStripes}
-                        alt=""
-                    />
+                <div className="flex flex-col items-center justify-center bg-white w-2/5 w-4/5 md:w-3/5 xl:w-2/5 relative login-bg">
                     <div className="login-border-t h-1 w-full" />
                     <div className="flex flex-col items-center justify-center w-full">
                         <img className="h-40 h-40 py-6" src={logoPrevent} alt="StackRox" />

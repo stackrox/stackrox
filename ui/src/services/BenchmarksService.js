@@ -23,26 +23,29 @@ export async function fetchBenchmarks() {
         axios.get(configsUrl).then(response => response.data.benchmarks)
     ]);
     const clusterTypes = new Set(clusters.map(c => c.type));
-    return benchmarks.map(benchmark => {
-        const available = benchmark.clusterTypes.reduce(
-            (val, type) => val || clusterTypes.has(type),
-            false
-        );
-        return {
-            name: benchmark.name,
-            available
-        };
-    });
+    return {
+        response: benchmarks.map(benchmark => {
+            const available = benchmark.clusterTypes.reduce(
+                (val, type) => val || clusterTypes.has(type),
+                false
+            );
+            return {
+                id: benchmark.id,
+                name: benchmark.name,
+                available
+            };
+        })
+    };
 }
 
 /**
  * Fetches scans metadata for the given benchmark.
  *
- * @param {!string} benchmarkName name of the benchmark
+ * @param {!string} benchmarkId id of the benchmark
  * @returns {Promise<Object, Error>} fulfilled with scan metadata (type defined in .proto)
  */
-export function fetchScanMetadata(benchmarkName) {
-    const scanMetadataUrl = `${baseUrl}/scans?benchmark=${benchmarkName}`;
+export function fetchScanMetadata(benchmarkId) {
+    const scanMetadataUrl = `${baseUrl}/scans?benchmarkId=${benchmarkId}`;
     return axios.get(scanMetadataUrl).then(response => response.data.scanMetadata);
 }
 
@@ -55,13 +58,12 @@ export function fetchScanMetadata(benchmarkName) {
 /**
  * Fetches scans metadata for the given benchmark.
  *
- * @param {!string} benchmarkName name of the benchmark
+ * @param {!string} benchmarkId id of the benchmark
  * @returns {Promise<?ScanWithMetadata, Error>} fulfilled with scan data and metadata or `null` if no scans exist
  */
-export async function fetchLastScan(benchmarkName) {
-    const scanMetadata = await fetchScanMetadata(benchmarkName);
+export async function fetchLastScan(benchmarkId) {
+    const scanMetadata = await fetchScanMetadata(benchmarkId);
     if (!scanMetadata || !scanMetadata.length) return null;
-
     const lastScanMetadata = scanMetadata[0];
     const scanUrl = `${baseUrl}/scans/${lastScanMetadata.scanId}`;
     const lastScanData = await axios.get(scanUrl).then(response => response.data);
@@ -74,14 +76,34 @@ export async function fetchLastScan(benchmarkName) {
 /**
  * Fetches scan schedule for the given benchmark.
  *
- * @param {!string} benchmarkName name of the benchmark
+ * @param {!string} benchmarkId id of the benchmark
  * @returns {Promise<?Object, Error>} fulfilled with schedule data or `null` if schedule isn't configured
  */
-export function fetchSchedule(benchmarkName) {
-    const scheduleUrl = `${baseUrl}/schedules/${benchmarkName}`;
-    return axios
+export async function fetchSchedule(benchmarkId) {
+    const scheduleUrl = `${baseUrl}/schedules?benchmarkId=${benchmarkId}`;
+    const value = await axios
         .get(scheduleUrl)
         .then(response => response.data)
+        .catch(error => {
+            if (error.response && error.response.status === 404) {
+                return null; // schedule doesn't exist
+            }
+            return Promise.reject(error);
+        });
+    return value;
+}
+
+/**
+ * Fetches scan schedules for the given benchmark.
+ *
+ * @param {!string} benchmarkId id of the benchmark
+ * @returns {Promise<?Object, Error>} fulfilled with schedule data or `null` if schedule isn't configured
+ */
+export function fetchSchedules(benchmarkId) {
+    const scheduleUrl = `${baseUrl}/schedules?benchmarkIds=${benchmarkId}`;
+    return axios
+        .get(scheduleUrl)
+        .then(response => response.data.schedules)
         .catch(error => {
             if (error.response && error.response.status === 404) {
                 return null; // schedule doesn't exist
@@ -98,29 +120,37 @@ export function fetchSchedule(benchmarkName) {
  */
 export function createSchedule(schedule) {
     const schedulesUrl = `${baseUrl}/schedules`;
-    return axios.post(schedulesUrl, schedule);
+    const formattedSchedule = Object.assign(schedule, {
+        benchmark_id: schedule.benchmarkId,
+        benchmark_name: schedule.benchmarkName
+    });
+    return axios.post(schedulesUrl, formattedSchedule);
 }
 
 /**
  * Updates scan schedule for the given benchmark.
  *
- * @param {!string} benchmarkName name of the benchmark with which the schedule is associated
+ * @param {!string} benchmarkId id of the benchmark with which the schedule is associated
  * @param {!Object} schedule schedule (as defined in .proto)
  * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
  */
-export function updateSchedule(benchmarkName, schedule) {
-    const scheduleUrl = `${baseUrl}/schedules/${benchmarkName}`;
-    return axios.put(scheduleUrl, schedule);
+export function updateSchedule(benchmarkId, schedule) {
+    const scheduleUrl = `${baseUrl}/schedules/${benchmarkId}`;
+    const formattedSchedule = Object.assign(schedule, {
+        benchmark_id: schedule.benchmarkId,
+        benchmark_name: schedule.benchmarkName
+    });
+    return axios.put(scheduleUrl, formattedSchedule);
 }
 
 /**
  * Deletes any scan schedule associated with the given benchmark.
  *
- * @param {!string} benchmarkName name of the benchmark with which the schedule is associated
+ * @param {!string} benchmarkId id of the benchmark with which the schedule is associated
  * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
  */
-export function deleteSchedule(benchmarkName) {
-    const scheduleUrl = `${baseUrl}/schedules/${benchmarkName}`;
+export function deleteSchedule(benchmarkId) {
+    const scheduleUrl = `${baseUrl}/schedules/${benchmarkId}`;
     return axios.delete(scheduleUrl).catch(error => {
         if (error.response && error.response.status === 404) {
             return null; // schedule didn't exist, no harm done
@@ -132,22 +162,34 @@ export function deleteSchedule(benchmarkName) {
 /**
  * Triggers benchmark scanning.
  *
- * @param {!string} benchmarkName name of the benchmark with which the schedule is associated
+ * @param {!string} benchmarkId id of the benchmark with which the schedule is associated
  * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success of trigger (not scanning) operation
  * or rejected with an error
  */
-export function triggerScan(benchmarkName) {
-    const triggerUrl = `${baseUrl}/triggers/${benchmarkName}`;
+export function triggerScan(benchmarkId) {
+    const triggerUrl = `${baseUrl}/triggers/${benchmarkId}`;
     return axios.post(triggerUrl, {});
 }
 
-export async function fetchUpdatedBenchmarks() {
+/**
+ * Fetches a map of benchmarks and last scans for them
+ *
+ * @returns {Promise<Object, Error>} fulfilled in case of success or rejected with an error
+ */
+export async function fetchLastScansByBenchmark() {
     const allBenchmarks = await fetchBenchmarks();
     const lastScans = await Promise.all(
-        allBenchmarks.filter(b => b.available).map(b => fetchLastScan(b.name))
+        allBenchmarks.response.filter(b => b.available).map(b => {
+            const promise = fetchLastScan(b.id);
+            promise.then(obj => {
+                if (obj) return Object.assign(obj, { benchmarkName: b.name });
+                return obj;
+            });
+            return promise;
+        })
     );
     const benchmarks = lastScans.reduce(
-        (result, scan) => (scan ? { ...result, [scan.metadata.benchmark]: [scan.data] } : result),
+        (result, scan) => (scan ? { ...result, [scan.benchmarkName]: [scan.data] } : result),
         {}
     );
     return { response: benchmarks };

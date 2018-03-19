@@ -1,54 +1,53 @@
-import React, { Component } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { selectors } from 'reducers';
+import { createSelector, createStructuredSelector } from 'reselect';
 
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import BenchmarksPage from 'Containers/Compliance/BenchmarksPage';
-import { fetchBenchmarks } from 'services/BenchmarksService';
 
-class CompliancePage extends Component {
-    constructor(props) {
-        super(props);
+const CompliancePage = props => (
+    <section className="flex flex-1 h-full">
+        <div className="flex flex-1">
+            <Tabs className="bg-white" headers={props.benchmarkTabs}>
+                {props.benchmarkTabs.map(benchmark => (
+                    <TabContent key={benchmark.benchmarkName}>
+                        <BenchmarksPage
+                            benchmarkName={benchmark.benchmarkName}
+                            benchmarkId={benchmark.benchmarkId}
+                        />
+                    </TabContent>
+                ))}
+            </Tabs>
+        </div>
+    </section>
+);
 
-        this.state = {
-            benchmarkTabs: []
-        };
-    }
+CompliancePage.propTypes = {
+    benchmarkTabs: PropTypes.arrayOf(
+        PropTypes.shape({
+            benchmarkName: PropTypes.string,
+            text: PropTypes.string,
+            disabled: PropTypes.bool
+        })
+    ).isRequired
+};
 
-    componentDidMount() {
-        this.getBenchmarks();
-    }
+const getBenchmarkTabs = createSelector([selectors.getBenchmarks], benchmarks =>
+    benchmarks
+        .map(benchmark => ({
+            benchmarkName: benchmark.name,
+            benchmarkId: benchmark.id,
+            text: benchmark.name,
+            disabled: !benchmark.available
+        }))
+        .sort((a, b) => (a.disabled < b.disabled ? -1 : a.disabled > b.disabled))
+);
 
-    async getBenchmarks() {
-        try {
-            const benchmarks = await fetchBenchmarks();
-            const benchmarkTabs = benchmarks
-                .map(benchmark => ({
-                    benchmarkName: benchmark.name,
-                    text: benchmark.name,
-                    disabled: !benchmark.available
-                }))
-                .sort((a, b) => (a.disabled < b.disabled ? -1 : a.disabled > b.disabled));
-            this.setState({ benchmarkTabs });
-        } catch (error) {
-            console.error(error);
-        }
-    }
+const mapStateToProps = createStructuredSelector({
+    benchmarkTabs: getBenchmarkTabs
+});
 
-    render() {
-        return (
-            <section className="flex flex-1 h-full">
-                <div className="flex flex-1">
-                    <Tabs className="bg-white" headers={this.state.benchmarkTabs}>
-                        {this.state.benchmarkTabs.map(benchmark => (
-                            <TabContent key={benchmark.benchmarkName}>
-                                <BenchmarksPage benchmarkName={benchmark.benchmarkName} />
-                            </TabContent>
-                        ))}
-                    </Tabs>
-                </div>
-            </section>
-        );
-    }
-}
-
-export default CompliancePage;
+export default connect(mapStateToProps)(CompliancePage);

@@ -24,11 +24,11 @@ func (s *benchmarkTriggerStore) GetBenchmarkTriggers(request *v1.GetBenchmarkTri
 	if err != nil {
 		return nil, err
 	}
-	nameSet := stringWrap(request.GetNames()).asSet()
+	idSet := stringWrap(request.GetIds()).asSet()
 	clusterSet := stringWrap(request.GetClusterIds()).asSet()
 	filteredTriggers := triggers[:0]
 	for _, trigger := range triggers {
-		if _, ok := nameSet[trigger.GetName()]; len(nameSet) > 0 && !ok {
+		if _, ok := idSet[trigger.GetId()]; len(idSet) > 0 && !ok {
 			continue
 		}
 		// If request clusters is empty then return all

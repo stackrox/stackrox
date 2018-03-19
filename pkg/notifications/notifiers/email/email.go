@@ -162,7 +162,7 @@ func (e *email) AlertNotify(alert *v1.Alert) error {
 
 // BenchmarkNotify takes in an benchmark and generates the email
 func (e *email) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
-	subject := fmt.Sprintf("New Benchmark Results for %v", schedule.GetName())
+	subject := fmt.Sprintf("New Benchmark Results for %v", schedule.GetBenchmarkName())
 	body, err := e.plainTextBenchmark(schedule)
 	if err != nil {
 		return err

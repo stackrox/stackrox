@@ -6,5 +6,5 @@ export const selectors = {
     scanNowButton: 'button.rounded-sm.bg-success-500',
     checkRows: 'div.overflow-y-scroll table tbody tr',
     passColumns: 'div.overflow-y-scroll table tbody tr td:nth-child(3)',
-    hostColumns: 'aside table tbody tr td:nth-child(1)'
+    hostColumns: 'div.overflow-auto table tbody tr td:nth-child(1)'
 };

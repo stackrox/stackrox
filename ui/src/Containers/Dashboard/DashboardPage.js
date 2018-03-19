@@ -374,7 +374,7 @@ const mapStateToProps = createStructuredSelector({
     violatonsByPolicyCategory: selectors.getAlertCountsByPolicyCategories,
     violationsByCluster: selectors.getAlertCountsByCluster,
     alertsByTimeseries: selectors.getAlertsByTimeseries,
-    benchmarks: selectors.getBenchmarks,
+    benchmarks: selectors.getUpdatedBenchmarks,
     clustersByName: getClustersByName
 });
 

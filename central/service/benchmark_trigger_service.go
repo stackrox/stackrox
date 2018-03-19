@@ -44,12 +44,12 @@ func (s *BenchmarkTriggerService) AuthFuncOverride(ctx context.Context, fullMeth
 
 // Trigger triggers a benchmark launch asynchronously.
 func (s *BenchmarkTriggerService) Trigger(ctx context.Context, request *v1.BenchmarkTrigger) (*empty.Empty, error) {
-	_, exists, err := s.storage.GetBenchmark(request.GetName())
+	_, exists, err := s.storage.GetBenchmark(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if !exists {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("Benchmark with name %v does not exist", request.Name))
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("Benchmark with id %v does not exist", request.GetId()))
 	}
 	request.Time = ptypes.TimestampNow()
 	if err := s.storage.AddBenchmarkTrigger(request); err != nil {

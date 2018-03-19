@@ -46,11 +46,13 @@ func (suite *BoltBenchmarkTestSuite) TestBenchmarks() {
 
 	// Test Add
 	for _, b := range benchmarks {
-		suite.NoError(suite.AddBenchmark(b))
+		id, err := suite.AddBenchmark(b)
+		suite.NoError(err)
+		suite.NotEmpty(id)
 	}
 
 	for _, b := range benchmarks {
-		got, exists, err := suite.GetBenchmark(b.Name)
+		got, exists, err := suite.GetBenchmark(b.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, b)
@@ -58,18 +60,20 @@ func (suite *BoltBenchmarkTestSuite) TestBenchmarks() {
 
 	// Test Remove
 	for _, b := range benchmarks {
-		suite.NoError(suite.RemoveBenchmark(b.GetName()))
+		suite.NoError(suite.RemoveBenchmark(b.GetId()))
 	}
 
 	for _, b := range benchmarks {
-		_, exists, err := suite.GetBenchmark(b.GetName())
+		_, exists, err := suite.GetBenchmark(b.GetId())
 		suite.NoError(err)
 		suite.False(exists)
 	}
 
 	// Test Add again with no editable
 	for _, b := range benchmarks {
-		suite.NoError(suite.AddBenchmark(b))
+		id, err := suite.AddBenchmark(b)
+		suite.NoError(err)
+		suite.NotEmpty(id)
 	}
 
 	// Test Update
@@ -83,7 +87,7 @@ func (suite *BoltBenchmarkTestSuite) TestBenchmarks() {
 	}
 
 	for _, b := range benchmarks {
-		suite.Error(suite.RemoveBenchmark(b.Name))
+		suite.Error(suite.RemoveBenchmark(b.GetId()))
 	}
 
 }

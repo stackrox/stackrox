@@ -36,22 +36,26 @@ func (suite *BoltBenchmarkSchedulesTestSuite) TestSchedules() {
 	cluster2 := uuid.NewV4().String()
 	schedules := []*v1.BenchmarkSchedule{
 		{
-			Name:       "bench1",
-			ClusterIds: []string{cluster1},
+			Id:          "id1",
+			BenchmarkId: "bench1",
+			ClusterIds:  []string{cluster1},
 		},
 		{
-			Name:       "bench2",
-			ClusterIds: []string{cluster2},
+			Id:          "id2",
+			BenchmarkId: "bench2",
+			ClusterIds:  []string{cluster2},
 		},
 	}
 
 	// Test Add
 	for _, b := range schedules {
-		suite.NoError(suite.AddBenchmarkSchedule(b))
+		id, err := suite.AddBenchmarkSchedule(b)
+		suite.NoError(err)
+		suite.NotEmpty(id)
 	}
 
 	for _, b := range schedules {
-		got, exists, err := suite.GetBenchmarkSchedule(b.Name)
+		got, exists, err := suite.GetBenchmarkSchedule(b.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, b)
@@ -68,7 +72,7 @@ func (suite *BoltBenchmarkSchedulesTestSuite) TestSchedules() {
 	}
 
 	for _, b := range schedules {
-		got, exists, err := suite.GetBenchmarkSchedule(b.GetName())
+		got, exists, err := suite.GetBenchmarkSchedule(b.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, b)
@@ -76,11 +80,11 @@ func (suite *BoltBenchmarkSchedulesTestSuite) TestSchedules() {
 
 	// Test Remove
 	for _, b := range schedules {
-		suite.NoError(suite.RemoveBenchmarkSchedule(b.GetName()))
+		suite.NoError(suite.RemoveBenchmarkSchedule(b.GetId()))
 	}
 
 	for _, b := range schedules {
-		_, exists, err := suite.GetBenchmarkSchedule(b.GetName())
+		_, exists, err := suite.GetBenchmarkSchedule(b.GetId())
 		suite.NoError(err)
 		suite.False(exists)
 	}

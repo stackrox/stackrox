@@ -37,18 +37,18 @@ func (suite *BoltBenchmarkScansTestSuite) TestResults() {
 	cluster2 := uuid.NewV4().String()
 	scanMetadata := []*v1.BenchmarkScanMetadata{
 		{
-			ScanId:     "scan1",
-			Benchmark:  "benchmark1",
-			ClusterIds: []string{cluster1, cluster2},
-			Checks:     []string{"check1", "check2"},
-			Reason:     v1.BenchmarkReason_SCHEDULED,
+			ScanId:      "scan1",
+			BenchmarkId: "benchmark1",
+			ClusterIds:  []string{cluster1, cluster2},
+			Checks:      []string{"check1", "check2"},
+			Reason:      v1.BenchmarkReason_SCHEDULED,
 		},
 		{
-			ScanId:     "scan2",
-			Benchmark:  "benchmark2",
-			ClusterIds: []string{cluster1, cluster2},
-			Checks:     []string{"check1", "check2"},
-			Reason:     v1.BenchmarkReason_SCHEDULED,
+			ScanId:      "scan2",
+			BenchmarkId: "benchmark2",
+			ClusterIds:  []string{cluster1, cluster2},
+			Checks:      []string{"check1", "check2"},
+			Reason:      v1.BenchmarkReason_SCHEDULED,
 		},
 	}
 	for _, m := range scanMetadata {
@@ -57,12 +57,12 @@ func (suite *BoltBenchmarkScansTestSuite) TestResults() {
 
 	benchmarks := []*v1.BenchmarkResult{
 		{
-			Name:      "benchmark1",
-			ScanId:    "scan1",
-			StartTime: ptypes.TimestampNow(),
-			EndTime:   ptypes.TimestampNow(),
-			Host:      "host1",
-			ClusterId: cluster1,
+			BenchmarkId: "benchmark1",
+			ScanId:      "scan1",
+			StartTime:   ptypes.TimestampNow(),
+			EndTime:     ptypes.TimestampNow(),
+			Host:        "host1",
+			ClusterId:   cluster1,
 			Results: []*v1.CheckResult{
 				{
 					Definition: &v1.CheckDefinition{
@@ -81,12 +81,12 @@ func (suite *BoltBenchmarkScansTestSuite) TestResults() {
 			},
 		},
 		{
-			Name:      "benchmark1",
-			ScanId:    "scan1",
-			StartTime: ptypes.TimestampNow(),
-			EndTime:   ptypes.TimestampNow(),
-			Host:      "host2",
-			ClusterId: cluster2,
+			BenchmarkId: "benchmark1",
+			ScanId:      "scan1",
+			StartTime:   ptypes.TimestampNow(),
+			EndTime:     ptypes.TimestampNow(),
+			Host:        "host2",
+			ClusterId:   cluster2,
 			Results: []*v1.CheckResult{
 				{
 					Definition: &v1.CheckDefinition{
@@ -113,7 +113,7 @@ func (suite *BoltBenchmarkScansTestSuite) TestResults() {
 		suite.NoError(suite.AddBenchmarkResult(b))
 	}
 
-	res, err := suite.ListBenchmarkScans(&v1.ListBenchmarkScansRequest{Benchmark: "benchmark1"})
+	res, err := suite.ListBenchmarkScans(&v1.ListBenchmarkScansRequest{BenchmarkId: "benchmark1"})
 	suite.NoError(err)
 	suite.Len(res, 1)
 

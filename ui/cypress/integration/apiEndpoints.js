@@ -10,6 +10,6 @@ export const clusters = {
 export const benchmarks = {
     configs: 'v1/benchmarks/configs',
     scans: 'v1/benchmarks/scans/*',
-    cisDockerScans: /v1\/benchmarks\/scans\?benchmark=CIS Docker v1\.1\.0 Benchmark/,
+    cisDockerScans: 'v1/benchmarks/scans?benchmarkId=*',
     triggers: 'v1/benchmarks/triggers/*'
 };
