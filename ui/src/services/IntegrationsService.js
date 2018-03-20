@@ -1,37 +1,47 @@
 import axios from 'axios';
 
+const sourceMap = {
+    notifiers: '/v1/notifiers',
+    registries: '/v1/registries',
+    scanners: '/v1/scanners'
+};
+
 /**
- * Fetches list of registered notifiers.
+ * Fetches list of registered integrations based on source.
  *
- * @returns {Promise<Object, Error>} fulfilled with array of notifiers (as defined in .proto)
+ * @returns {Promise<Object, Error>} fulfilled with array of the integration source
  */
-export function fetchNotifiers() {
-    const notifiersUrl = '/v1/notifiers';
-    return axios.get(notifiersUrl).then(response => ({
+export function fetchIntegration(source) {
+    return axios.get(sourceMap[source]).then(response => ({
         response: response.data
     }));
 }
 
 /**
- * Fetches list of registered registries.
+ * Saves an integration by source.
  *
- * @returns {Promise<Object, Error>} fulfilled with array of registries (as defined in .proto)
+ * @returns {Promise<Object, Error>}
  */
-export function fetchRegistries() {
-    const registriesUrl = '/v1/registries';
-    return axios.get(registriesUrl).then(response => ({
-        response: response.data
-    }));
+export function saveIntegration(source, data) {
+    return data.id !== undefined && data.id !== ''
+        ? axios.put(`${sourceMap[source]}/${data.id}`, data)
+        : axios.post(sourceMap[source], data);
 }
 
 /**
- * Fetches list of registered scanners.
+ * Tests an integration by source.
  *
- * @returns {Promise<Object, Error>} fulfilled with array of scanners (as defined in .proto)
+ * @returns {Promise<Object, Error>}
  */
-export function fetchScanners() {
-    const scannersUrl = '/v1/scanners';
-    return axios.get(scannersUrl).then(response => ({
-        response: response.data
-    }));
+export function testIntegration(source, data) {
+    return axios.post(`${sourceMap[source]}/test`, data);
+}
+
+/**
+ * Deletes a list of integrations by source.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function deleteIntegration(source, data) {
+    return axios.delete(`${sourceMap[source]}/${data.id}`);
 }

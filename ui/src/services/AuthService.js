@@ -2,6 +2,7 @@ import store from 'store';
 import axios from 'axios';
 
 let authProviders = [];
+const authProvidersUrl = '/v1/authProviders';
 
 const AuthService = {
     login: token => {
@@ -15,13 +16,18 @@ const AuthService = {
     getAuthProviders: () => authProviders,
     updateAuthProviders: () =>
         axios
-            .get('/v1/authProviders')
+            .get(authProvidersUrl)
             .then(response => {
                 const providers = response.data.authProviders;
                 authProviders = providers;
                 return { response: response.data };
             })
-            .catch(error => console.error(error))
+            .catch(error => console.error(error)),
+    saveAuthProviders: data =>
+        data.id !== undefined && data.id !== ''
+            ? axios.put(`${authProvidersUrl}/${data.id}`, data)
+            : axios.post(authProvidersUrl, data),
+    deleteAuthProviders: data => axios.delete(`${authProvidersUrl}/${data.id}`)
 };
 
 export default AuthService;

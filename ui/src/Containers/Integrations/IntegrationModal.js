@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 import { Form, Text, Select } from 'react-form';
 import { withRouter } from 'react-router-dom';
 import MultiSelect from 'react-select';
-import axios from 'axios';
 import * as Icon from 'react-feather';
 
 import Modal from 'Components/Modal';
@@ -12,6 +11,7 @@ import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import tableColumnDescriptor from 'Containers/Integrations/tableColumnDescriptor';
 import AuthService from 'services/AuthService';
+import { saveIntegration, testIntegration, deleteIntegration } from 'services/IntegrationsService';
 
 const sourceMap = {
     authProviders: {
@@ -395,40 +395,6 @@ const SOURCE_LABELS = Object.freeze({
     notifiers: 'plugin'
 });
 
-const api = {
-    authProviders: {
-        save: data =>
-            data.id !== undefined && data.id !== ''
-                ? axios.put(`/v1/authProviders/${data.id}`, data)
-                : axios.post('/v1/authProviders', data),
-        delete: data => axios.delete(`/v1/authProviders/${data.id}`)
-    },
-    registries: {
-        save: data =>
-            data.id !== undefined && data.id !== ''
-                ? axios.put(`/v1/registries/${data.id}`, data)
-                : axios.post('/v1/registries', data),
-        test: data => axios.post(`/v1/registries/test`, data),
-        delete: data => axios.delete(`/v1/registries/${data.id}`)
-    },
-    scanners: {
-        save: data =>
-            data.id !== undefined && data.id !== ''
-                ? axios.put(`/v1/scanners/${data.id}`, data)
-                : axios.post('/v1/scanners', data),
-        test: data => axios.post(`/v1/scanners/test`, data),
-        delete: data => axios.delete(`/v1/scanners/${data.id}`)
-    },
-    notifiers: {
-        save: data =>
-            data.id !== undefined && data.id !== ''
-                ? axios.put(`/v1/notifiers/${data.id}`, data)
-                : axios.post('/v1/notifiers', data),
-        test: data => axios.post(`/v1/notifiers/test`, data),
-        delete: data => axios.delete(`/v1/notifiers/${data.id}`)
-    }
-};
-
 const reducer = (action, prevState, nextState) => {
     switch (action) {
         case 'EDIT_INTEGRATION':
@@ -477,8 +443,7 @@ class IntegrationModal extends Component {
     onTest = () => {
         this.update('CLEAR_MESSAGES');
         const data = this.addDefaultFormValues(this.formApi.values);
-        api[this.props.source]
-            .test(data)
+        testIntegration(this.props.source, data)
             .then(() => {
                 this.update('SUCCESS_MESSAGE', {
                     successMessage: 'Integration test was successful'
@@ -492,20 +457,30 @@ class IntegrationModal extends Component {
     onSubmit = formData => {
         this.update('CLEAR_MESSAGES');
         const data = this.addDefaultFormValues(formData);
-        api[this.props.source]
-            .save(data)
-            .then(() => {
-                if (!this.props.integrations.length && this.props.source === 'authProviders') {
-                    AuthService.logout();
-                    this.props.history.go('/login');
-                    return;
-                }
-                this.props.onIntegrationsUpdate(this.props.source);
-                this.update('EDIT_INTEGRATION', { editIntegration: null });
-            })
-            .catch(error => {
-                this.update('ERROR_MESSAGE', { errorMessage: error.response.data.error });
-            });
+        if (this.props.source === 'authProviders') {
+            AuthService.saveAuthProviders(data)
+                .then(() => {
+                    if (!this.props.integrations.length) {
+                        AuthService.logout();
+                        this.props.history.go('/login');
+                        return;
+                    }
+                    this.props.onIntegrationsUpdate(this.props.source);
+                    this.update('EDIT_INTEGRATION', { editIntegration: null });
+                })
+                .catch(error => {
+                    this.update('ERROR_MESSAGE', { errorMessage: error.response.data.error });
+                });
+        } else {
+            saveIntegration(this.props.source, data)
+                .then(() => {
+                    this.props.onIntegrationsUpdate(this.props.source);
+                    this.update('EDIT_INTEGRATION', { editIntegration: null });
+                })
+                .catch(error => {
+                    this.update('ERROR_MESSAGE', { errorMessage: error.response.data.error });
+                });
+        }
     };
 
     addDefaultFormValues = formData => {
@@ -524,7 +499,10 @@ class IntegrationModal extends Component {
     deleteIntegration = () => {
         const promises = [];
         this.policyTable.getSelectedRows().forEach(data => {
-            const promise = api[this.props.source].delete(data);
+            const promise =
+                this.props.source === 'authProviders'
+                    ? AuthService.deleteAuthProviders(data)
+                    : deleteIntegration(this.props.source, data);
             promises.push(promise);
         });
         Promise.all(promises).then(() => {

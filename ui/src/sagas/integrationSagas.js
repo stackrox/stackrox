@@ -1,6 +1,6 @@
 import { all, take, call, fork, put } from 'redux-saga/effects';
 
-import { fetchNotifiers, fetchRegistries, fetchScanners } from 'services/IntegrationsService';
+import { fetchIntegration } from 'services/IntegrationsService';
 import { actions, types } from 'reducers/integrations';
 import { types as locationActionTypes } from 'reducers/routes';
 
@@ -8,7 +8,7 @@ const integrationsPath = '/main/integrations';
 
 export function* getNotifiers() {
     try {
-        const result = yield call(fetchNotifiers);
+        const result = yield call(fetchIntegration, ['notifiers']);
         yield put(actions.fetchNotifiers.success(result.response));
     } catch (error) {
         yield put(actions.fetchNotifiers.failure(error));
@@ -17,7 +17,7 @@ export function* getNotifiers() {
 
 export function* getRegistries() {
     try {
-        const result = yield call(fetchRegistries);
+        const result = yield call(fetchIntegration, ['registries']);
         yield put(actions.fetchRegistries.success(result.response));
     } catch (error) {
         yield put(actions.fetchRegistries.failure(error));
@@ -26,7 +26,7 @@ export function* getRegistries() {
 
 export function* getScanners() {
     try {
-        const result = yield call(fetchScanners);
+        const result = yield call(fetchIntegration, ['scanners']);
         yield put(actions.fetchScanners.success(result.response));
     } catch (error) {
         yield put(actions.fetchScanners.failure(error));
