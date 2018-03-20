@@ -268,6 +268,9 @@ func (s *PolicyService) validatePolicy(policy *v1.Policy) (*matcher.Policy, erro
 	if policy.GetImagePolicy() == nil && policy.GetConfigurationPolicy() == nil && policy.GetPrivilegePolicy() == nil {
 		return nil, errors.New("policy must have at least one segment configured")
 	}
+	if len(policy.GetCategories()) == 0 {
+		return nil, errors.New("policy must have at least one category configured")
+	}
 	categorySet := make(map[string]struct{})
 	for _, c := range policy.GetCategories() {
 		categorySet[c] = struct{}{}

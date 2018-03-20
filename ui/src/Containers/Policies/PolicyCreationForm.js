@@ -5,7 +5,6 @@ import MultiSelect from 'react-select';
 import flatten from 'flat';
 import flattenObject from 'utils/flattenObject';
 import differenceBy from 'lodash/differenceBy';
-import intersection from 'lodash/intersection';
 import omitBy from 'lodash/omitBy';
 
 import 'react-select/dist/react-select.css';
@@ -25,6 +24,7 @@ const reducer = (action, prevState, nextState) => {
 class PolicyCreationForm extends Component {
     static propTypes = {
         policy: PropTypes.shape({}).isRequired,
+        policyCategories: PropTypes.arrayOf(PropTypes.string).isRequired,
         notifiers: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string.isRequired
@@ -101,6 +101,13 @@ class PolicyCreationForm extends Component {
                         exclude: false,
                         type: 'select',
                         options: [{ label: 'Yes', value: false }, { label: 'No', value: true }],
+                        required: true
+                    },
+                    {
+                        label: 'Categories',
+                        value: 'categories',
+                        type: 'multiselect-creatable',
+                        options: [],
                         required: true
                     },
                     {
@@ -416,10 +423,26 @@ class PolicyCreationForm extends Component {
 
     componentDidMount() {
         this.setFormFields();
+        this.setPolicyCategoriesFieldOptions();
         this.setNotifierFieldOptions();
         this.setClusterFieldOptions();
         this.setDeploymentWhitelistOptions();
     }
+
+    setPolicyCategoriesFieldOptions = () => {
+        const { policyFields } = this.state;
+        const { policyCategories } = this.props;
+        policyFields.policyDetails = policyFields.policyDetails.map(field => {
+            const newField = field;
+            if (field.value === 'categories')
+                newField.options = policyCategories.map(category => ({
+                    label: category,
+                    value: category
+                }));
+            return newField;
+        });
+        this.update('UPDATE_POLICY_FIELDS', { policyFields });
+    };
 
     setNotifierFieldOptions = () => {
         const { policyFields } = this.state;
@@ -477,15 +500,6 @@ class PolicyCreationForm extends Component {
         this.props.formApi.setAllValues(filteredPolicy);
     };
 
-    setCategories = obj => {
-        const newObj = Object.assign({}, obj);
-        newObj.categories = intersection(
-            Object.keys(this.state.policyFields).filter(o => o !== 'policyDetails'),
-            Object.keys(obj)
-        );
-        return newObj;
-    };
-
     preFormatScopeField = obj => {
         const newObj = Object.assign({}, obj);
         if (obj.scope) newObj.scope = obj.scope.map(o => o.cluster);
@@ -519,7 +533,6 @@ class PolicyCreationForm extends Component {
 
     preSubmit = policy => {
         let newPolicy = this.removeEmptyFields(policy);
-        newPolicy = this.setCategories(newPolicy);
         newPolicy = this.postFormatScopeField(newPolicy);
         newPolicy = this.postFormatWhitelistField(newPolicy);
         return newPolicy;
@@ -632,6 +645,25 @@ class PolicyCreationForm extends Component {
 
                 return (
                     <MultiSelect
+                        key={field.value}
+                        multi
+                        onChange={handleMultiSelectChange}
+                        options={field.options}
+                        placeholder="Select options"
+                        removeSelected
+                        simpleValue
+                        value={value}
+                        className="text-base-600 font-400 w-full"
+                    />
+                );
+            case 'multiselect-creatable':
+                handleMultiSelectChange = newValue => {
+                    const values = newValue !== '' ? newValue.split(',') : [];
+                    this.props.formApi.setValue(field.value, values);
+                };
+
+                return (
+                    <MultiSelect.Creatable
                         key={field.value}
                         multi
                         onChange={handleMultiSelectChange}

@@ -32,18 +32,6 @@ const severityColorMap = {
     LOW_SEVERITY: 'hsl(42, 100%, 84%)'
 };
 
-const policyCategoriesMap = {
-    'Container Configuration': {
-        icon: <Icon.Grid className="h-4 w-4 mr-3" />
-    },
-    'Image Assurance': {
-        icon: <Icon.Copy className="h-4 w-4 mr-3" />
-    },
-    'Privileges and Capabilities': {
-        icon: <Icon.Lock className="h-4 w-4 mr-3" />
-    }
-};
-
 const benchmarkPropType = PropTypes.arrayOf(
     PropTypes.shape({
         checks: PropTypes.arrayOf(
@@ -256,7 +244,7 @@ class DashboardPage extends Component {
                 <div className="p-8 w-full lg:w-1/2" key={policyType.group}>
                     <div className="flex flex-col p-4 bg-white rounded-sm shadow">
                         <h2 className="flex items-center text-lg text-base font-sans text-base-600 py-4 tracking-wide">
-                            {policyCategoriesMap[policyType.group].icon}
+                            <Icon.BarChart className="h-4 w-4 mr-3" />
                             {policyType.group}
                         </h2>
                         <div className="flex flex-1 m-4 h-64">

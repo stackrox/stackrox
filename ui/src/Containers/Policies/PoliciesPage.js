@@ -47,6 +47,7 @@ class PoliciesPage extends Component {
 
         this.state = {
             policies: [],
+            policyCategories: [],
             notifiers: [],
             clusters: [],
             deployments: [],
@@ -60,6 +61,7 @@ class PoliciesPage extends Component {
 
     componentDidMount() {
         this.pollPolicies();
+        this.retrievePolicyCategories();
         this.retrieveNotifiers();
         this.retrieveClusters();
         this.retrieveDeployments();
@@ -103,9 +105,20 @@ class PoliciesPage extends Component {
             });
     };
 
+    getPolicyCategories = () => axios.get('/v1/policyCategories');
+
     getNotifiers = () => axios.get('/v1/notifiers');
 
     getClusters = () => axios.get('/v1/clusters');
+
+    retrievePolicyCategories = () => {
+        this.getPolicyCategories().then(response => {
+            if (!response.data.categories) return;
+            const { categories } = response.data;
+            const policyCategories = categories;
+            this.setState({ policyCategories });
+        });
+    };
 
     retrieveNotifiers = () => {
         this.getNotifiers().then(response => {
@@ -372,6 +385,7 @@ class PoliciesPage extends Component {
         const { notifiers } = this.state;
         const { clusters } = this.state;
         const { deployments } = this.state;
+        const { policyCategories } = this.state;
         const policy = this.state.editingPolicy;
         const hide = policy === null;
         if (hide || this.state.showPreviewPolicy) return '';
@@ -396,6 +410,7 @@ class PoliciesPage extends Component {
                             deployments={deployments}
                             notifiers={notifiers}
                             policy={policy}
+                            policyCategories={policyCategories}
                             formApi={formApi}
                             ref={policyCreationForm => {
                                 this.policyCreationForm = policyCreationForm;
