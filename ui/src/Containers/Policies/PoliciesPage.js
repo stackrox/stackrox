@@ -7,8 +7,10 @@ import isEqual from 'lodash/isEqual';
 
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
+
 import PolicyCreationForm from 'Containers/Policies/PolicyCreationForm';
 import PolicyView from 'Containers/Policies/PoliciesView';
+import PoliciesPreview from 'Containers/Policies/PoliciesPreview';
 
 import { severityLabels } from 'messages/common';
 import { sortSeverity } from 'sorters/sorters';
@@ -18,7 +20,12 @@ const reducer = (action, prevState, nextState) => {
         case 'UPDATE_POLICIES':
             return { policies: nextState.policies };
         case 'SELECT_POLICY':
-            return { selectedPolicy: nextState.policy, editingPolicy: null, addingPolicy: false };
+            return {
+                selectedPolicy: nextState.policy,
+                editingPolicy: null,
+                addingPolicy: false,
+                showPreviewPolicy: false
+            };
         case 'UNSELECT_POLICY':
             return { selectedPolicy: null, editingPolicy: null, addingPolicy: false };
         case 'EDIT_POLICY':
@@ -45,7 +52,9 @@ class PoliciesPage extends Component {
             deployments: [],
             selectedPolicy: null,
             editingPolicy: null,
-            addingPolicy: false
+            addingPolicy: false,
+            policyDryRun: null,
+            showPreviewPolicy: false
         };
     }
 
@@ -75,6 +84,24 @@ class PoliciesPage extends Component {
             const { policies } = response.data;
             this.update('UPDATE_POLICIES', { policies });
         });
+
+    getPolicyDryRun = policy => {
+        let filteredPolicy = this.policyCreationForm.removeEmptyFields(policy);
+        filteredPolicy = this.policyCreationForm.postFormatWhitelistField(filteredPolicy);
+        filteredPolicy = this.policyCreationForm.postFormatScopeField(filteredPolicy);
+        this.update('EDIT_POLICY', { policy: filteredPolicy });
+        axios
+            .post('/v1/policies/dryrun', filteredPolicy)
+            .then(response => {
+                if (!response.data) return;
+                const policyDryRun = response.data;
+                this.setState({ policyDryRun, showPreviewPolicy: true });
+            })
+            .catch(error => {
+                console.error(error);
+                if (error.response) toast(error.response.data.error);
+            });
+    };
 
     getNotifiers = () => axios.get('/v1/notifiers');
 
@@ -209,6 +236,17 @@ class PoliciesPage extends Component {
         this.setState(prevState => reducer(action, prevState, nextState));
     };
 
+    closePreviewPanel = () => {
+        this.setState({ showPreviewPolicy: false });
+        return this.cancelEditingPolicy();
+    };
+
+    closeEditPanel = () => {
+        const newPolicy = this.state.addingPolicy;
+        if (newPolicy) return this.cancelAddingPolicy();
+        return this.cancelEditingPolicy();
+    };
+
     renderTablePanel = () => {
         const header = `${this.state.policies.length} Policies`;
         const buttons = [
@@ -231,7 +269,7 @@ class PoliciesPage extends Component {
             },
             {
                 renderIcon: () => <Icon.Plus className="h-4 w-4" />,
-                text: 'Add Policy',
+                text: 'Add',
                 className:
                     'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
                 onClick: this.addPolicy,
@@ -314,23 +352,17 @@ class PoliciesPage extends Component {
         const buttons = [
             {
                 renderIcon: () => <Icon.Edit className="h-4 w-4" />,
-                text: 'Edit Policy',
+                text: 'Edit',
                 className:
                     'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
                 onClick: () => {
                     const { selectedPolicy } = this.state;
                     this.editPolicy(selectedPolicy);
                 }
-            },
-            {
-                renderIcon: () => <Icon.X className="h-4 w-4" />,
-                className:
-                    'flex py-1 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
-                onClick: this.unselectPolicy
             }
         ];
         return (
-            <Panel header={header} buttons={buttons} width="w-2/3">
+            <Panel header={header} buttons={buttons} onClose={this.unselectPolicy} width="w-2/3">
                 <PolicyView notifiers={notifiers} policy={policy} />
             </Panel>
         );
@@ -342,32 +374,21 @@ class PoliciesPage extends Component {
         const { deployments } = this.state;
         const policy = this.state.editingPolicy;
         const hide = policy === null;
-        if (hide) return '';
+        if (hide || this.state.showPreviewPolicy) return '';
         const header = this.state.editingPolicy.name;
         const buttons = [
             {
-                renderIcon: () => <Icon.X className="h-4 w-4" />,
-                text: 'Cancel',
+                renderIcon: () => <Icon.ArrowRight className="h-4 w-4" />,
+                text: 'Next',
                 className:
                     'flex py-1 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
                 onClick: () => {
-                    const newPolicy = this.state.addingPolicy;
-                    if (newPolicy) return this.cancelAddingPolicy();
-                    return this.cancelEditingPolicy();
-                }
-            },
-            {
-                renderIcon: () => <Icon.Save className="h-4 w-4" />,
-                text: 'Save Policy',
-                className:
-                    'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
-                onClick: () => {
-                    this.policyCreationForm.submitForm();
+                    this.getPolicyDryRun(this.formApi.values);
                 }
             }
         ];
         return (
-            <Panel header={header} buttons={buttons} width="w-2/3">
+            <Panel header={header} buttons={buttons} onClose={this.closeEditPanel} width="w-2/3">
                 <Form onSubmit={this.onSubmit} preSubmit={this.preSubmit}>
                     {formApi => (
                         <PolicyCreationForm
@@ -378,10 +399,45 @@ class PoliciesPage extends Component {
                             formApi={formApi}
                             ref={policyCreationForm => {
                                 this.policyCreationForm = policyCreationForm;
+                                this.formApi = formApi;
                             }}
                         />
                     )}
                 </Form>
+            </Panel>
+        );
+    };
+
+    renderPreviewPanel = () => {
+        if (!this.state.showPreviewPolicy) return '';
+        const policy = this.state.editingPolicy;
+        const hide = policy === null;
+        if (hide) return '';
+        const header = this.state.editingPolicy.name;
+        const buttons = [
+            {
+                renderIcon: () => <Icon.ArrowLeft className="h-4 w-4" />,
+                text: 'Previous',
+                className:
+                    'flex py-1 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
+                onClick: () => {
+                    this.setState({ showPreviewPolicy: false });
+                }
+            },
+            {
+                renderIcon: () => <Icon.Save className="h-4 w-4" />,
+                text: 'Save',
+                className:
+                    'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                onClick: () => {
+                    this.setState({ showPreviewPolicy: false });
+                    this.onSubmit(this.state.editingPolicy);
+                }
+            }
+        ];
+        return (
+            <Panel header={header} buttons={buttons} onClose={this.closePreviewPanel} width="w-2/3">
+                <PoliciesPreview dryrun={this.state.policyDryRun} />
             </Panel>
         );
     };
@@ -399,6 +455,7 @@ class PoliciesPage extends Component {
                         {this.renderTablePanel()}
                         {this.renderViewPanel()}
                         {this.renderEditPanel()}
+                        {this.renderPreviewPanel()}
                     </div>
                 </div>
             </section>

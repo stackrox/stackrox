@@ -36,6 +36,7 @@
     "react-tooltip": "^3.4.0",
     "react-transition-group": "^2.2.1",
     "recharts": "^1.0.0-beta.9",
+    "react-collapsible": "^2.0.4",
     "redux": "^3.7.2",
     "redux-saga": "^0.16.0",
     "reselect": "^3.0.1",

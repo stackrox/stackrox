@@ -2,7 +2,10 @@ export const url = '/main/policies';
 
 export const selectors = {
     navLink: 'nav li:contains("Policies") a',
-    addPolicyButton: 'button:contains("Add Policy")',
-    editPolicyButton: 'button:contains("Edit Policy")',
-    savePolicyButton: 'button:contains("Save Policy")'
+    addPolicyButton: 'button:contains("Add")',
+    editPolicyButton: 'button:contains("Edit")',
+    savePolicyButton: 'button:contains("Save")',
+    nextButton: 'button:contains("Next")',
+    prevButton: 'button:contains("Previous")',
+    cancelButton: 'button.cancel'
 };
