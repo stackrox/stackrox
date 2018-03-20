@@ -504,7 +504,9 @@ class PolicyCreationForm extends Component {
             return policy;
         }
         const clientPolicy = Object.assign({}, policy);
-        clientPolicy.deployments = whitelists.map(o => o.deployment.name);
+        clientPolicy.deployments = whitelists
+            .filter(o => o.deployment.name !== undefined)
+            .map(o => o.deployment.name);
         return clientPolicy;
     };
 
