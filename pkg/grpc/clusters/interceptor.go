@@ -10,6 +10,8 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -19,6 +21,7 @@ var (
 // ContactTimeUpdater contains the storage-access functions that this
 // interceptor requires.
 type ContactTimeUpdater interface {
+	GetCluster(id string) (*v1.Cluster, bool, error)
 	UpdateClusterContactTime(id string, t time.Time) error
 }
 
@@ -74,8 +77,18 @@ func (cw ClusterWatcher) recordCheckin(ctx context.Context) error {
 		return err
 	}
 
-	if id.Name.ServiceType == v1.ServiceType_SENSOR_SERVICE && id.Name.Identifier != "" {
-		return cw.db.UpdateClusterContactTime(id.Name.Identifier, time.Now())
+	if id.Name.ServiceType != v1.ServiceType_SENSOR_SERVICE {
+		return nil
 	}
-	return nil
+
+	if id.Name.Identifier == "" {
+		return status.Error(codes.Unauthenticated, "Cluster ID not provided")
+	}
+
+	_, exists, _ := cw.db.GetCluster(id.Name.Identifier)
+	if !exists {
+		return status.Error(codes.Unauthenticated, "Cluster does not exist")
+	}
+
+	return cw.db.UpdateClusterContactTime(id.Name.Identifier, time.Now())
 }
