@@ -6,7 +6,6 @@ import { createStructuredSelector } from 'reselect';
 
 import IntegrationModal from 'Containers/Integrations/IntegrationModal';
 import IntegrationTile from 'Containers/Integrations/IntegrationTile';
-import ClustersModal from 'Containers/Integrations/ClustersModal';
 import { actions as authActions } from 'reducers/auth';
 import { actions } from 'reducers/integrations';
 import { selectors } from 'reducers';
@@ -27,8 +26,7 @@ const dataSources = {
             label: 'Auth0',
             type: 'auth0',
             source: 'authProviders',
-            image: auth0,
-            disabled: false
+            image: auth0
         }
     ],
     registries: [
@@ -36,72 +34,65 @@ const dataSources = {
             label: 'Docker Registry',
             type: 'docker',
             source: 'registries',
-            image: docker,
-            disabled: false
+            image: docker
         },
         {
             label: 'Tenable Registry',
             type: 'tenable',
             source: 'registries',
-            image: tenable,
-            disabled: false
+            image: tenable
         },
         {
             label: 'Quay Registry',
             type: 'quay',
             source: 'registries',
-            image: quay,
-            disabled: false
+            image: quay
         }
     ],
-    orchestratorsAndContainerPlatforms: [
+    orchestrators: [
         {
             label: 'Docker Enterprise Edition',
             image: docker,
-            disabled: false,
-            clusterType: 'DOCKER_EE_CLUSTER'
+            source: 'clusters',
+            type: 'DOCKER_EE_CLUSTER'
         },
         {
             label: 'Kubernetes',
             image: kubernetes,
-            disabled: false,
-            clusterType: 'KUBERNETES_CLUSTER'
+            source: 'clusters',
+            type: 'KUBERNETES_CLUSTER'
         },
         {
             label: 'Docker Swarm',
             image: docker,
-            disabled: false,
-            clusterType: 'SWARM_CLUSTER'
+            source: 'clusters',
+            type: 'SWARM_CLUSTER'
         }
     ],
-    scanningAndGovernanceTools: [
+    scanners: [
         {
             label: 'Docker Trusted Registry',
             type: 'dtr',
             source: 'scanners',
-            image: docker,
-            disabled: false
+            image: docker
         },
         {
             label: 'Tenable',
             type: 'tenable',
             source: 'scanners',
-            image: tenable,
-            disabled: false
+            image: tenable
         },
         {
             label: 'Quay',
             type: 'quay',
             source: 'scanners',
-            image: quay,
-            disabled: false
+            image: quay
         },
         {
             label: 'Clair',
             type: 'clair',
             source: 'scanners',
-            image: clair,
-            disabled: false
+            image: clair
         }
     ],
     plugins: [
@@ -109,22 +100,19 @@ const dataSources = {
             label: 'Slack',
             type: 'slack',
             source: 'notifiers',
-            image: slack,
-            disabled: false
+            image: slack
         },
         {
             label: 'Jira',
             type: 'jira',
             source: 'notifiers',
-            image: jira,
-            disabled: false
+            image: jira
         },
         {
             label: 'Email',
             type: 'email',
             source: 'notifiers',
-            image: email,
-            disabled: false
+            image: email
         }
     ]
 };
@@ -147,22 +135,6 @@ const reducer = (action, prevState, nextState) => {
                     integrations: [],
                     source: '',
                     type: ''
-                }
-            };
-        case 'OPEN_CLUSTERS_MODAL':
-            return {
-                clustersModal: {
-                    open: true,
-                    clusters: nextState.clusters,
-                    clusterType: nextState.clusterType
-                }
-            };
-        case 'CLOSE_CLUSTERS_MODAL':
-            return {
-                clustersModal: {
-                    open: false,
-                    clusters: [],
-                    clusterType: null
                 }
             };
         default:
@@ -203,10 +175,6 @@ class IntegrationsPage extends Component {
                 integrations: [],
                 source: '',
                 type: ''
-            },
-            clustersModal: {
-                open: false,
-                clusters: []
             }
         };
     }
@@ -231,14 +199,17 @@ class IntegrationsPage extends Component {
     };
 
     getClustersForOrchestrator = orchestrator => {
-        const { clusterType } = orchestrator;
-        const clusters = this.props.clusters.filter(cluster => cluster.type === clusterType);
+        const { type } = orchestrator;
+        const clusters = this.props.clusters.filter(cluster => cluster.type === type);
         return clusters;
     };
 
     openIntegrationModal = integrationCategory => {
         const { source, type } = integrationCategory;
-        const integrations = this.props[source].filter(i => i.type === type.toLowerCase());
+        const integrations =
+            source !== 'clusters'
+                ? this.props[source].filter(i => i.type === type.toLowerCase())
+                : this.props.clusters.filter(cluster => cluster.type === type);
         this.update('OPEN_INTEGRATION_MODAL', { integrations, source, type });
     };
 
@@ -251,18 +222,8 @@ class IntegrationsPage extends Component {
         this.update('CLOSE_INTEGRATION_MODAL');
     };
 
-    openClustersModal = orchestrator => {
-        const clusters = this.getClustersForOrchestrator(orchestrator);
-        const { clusterType } = orchestrator;
-        this.update('OPEN_CLUSTERS_MODAL', { clusters, clusterType });
-    };
-
-    closeClustersModal = () => {
-        this.update('CLOSE_CLUSTERS_MODAL');
-    };
-
     findIntegrations = (source, type) => {
-        const integrations = this.props[source];
+        const integrations = this.props[source].filter(i => i.type === type.toLowerCase());
         return integrations.filter(obj => obj.type === type);
     };
 
@@ -273,7 +234,10 @@ class IntegrationsPage extends Component {
     renderIntegrationModal() {
         const { integrationModal: { source, type, open } } = this.state;
         if (!open) return null;
-        const integrations = this.props[source].filter(i => i.type === type.toLowerCase());
+        const integrations =
+            source !== 'clusters'
+                ? this.props[source].filter(i => i.type === type.toLowerCase())
+                : this.props.clusters.filter(cluster => cluster.type === type);
         return (
             <IntegrationModal
                 integrations={integrations}
@@ -285,71 +249,26 @@ class IntegrationsPage extends Component {
         );
     }
 
-    renderClustersModal() {
-        const { clustersModal: { open, clusters, clusterType } } = this.state;
-        if (!open) return null;
-        return (
-            <ClustersModal
-                clusters={clusters}
-                clusterType={clusterType}
-                onRequestClose={this.closeClustersModal}
+    renderIntegrationTiles = source =>
+        dataSources[source].map(tile => (
+            <IntegrationTile
+                key={tile.label}
+                integration={tile}
+                onClick={this.openIntegrationModal}
+                numIntegrations={
+                    source !== 'orchestrators'
+                        ? this.findIntegrations(tile.source, tile.type).length
+                        : this.getClustersForOrchestrator(tile).length
+                }
             />
-        );
-    }
+        ));
 
     render() {
-        const registries = dataSources.registries.map(registry => (
-            <IntegrationTile
-                key={registry.label}
-                integration={registry}
-                onClick={this.openIntegrationModal}
-                disabled={registry.disabled}
-                numIntegrations={this.findIntegrations(registry.source, registry.type).length}
-            />
-        ));
-
-        const orchestrators = dataSources.orchestratorsAndContainerPlatforms.map(orchestrator => {
-            const clustersCount = this.getClustersForOrchestrator(orchestrator).length;
-            return (
-                <IntegrationTile
-                    key={orchestrator.label}
-                    integration={orchestrator}
-                    onClick={this.openClustersModal}
-                    disabled={clustersCount === 0}
-                    numIntegrations={clustersCount}
-                />
-            );
-        });
-
-        const scanners = dataSources.scanningAndGovernanceTools.map(tool => (
-            <IntegrationTile
-                key={tool.label}
-                integration={tool}
-                onClick={this.openIntegrationModal}
-                disabled={tool.disabled}
-                numIntegrations={this.findIntegrations(tool.source, tool.type).length}
-            />
-        ));
-
-        const plugins = dataSources.plugins.map(plugin => (
-            <IntegrationTile
-                key={plugin.label}
-                integration={plugin}
-                onClick={this.openIntegrationModal}
-                disabled={plugin.disabled}
-                numIntegrations={this.findIntegrations(plugin.source, plugin.type).length}
-            />
-        ));
-
-        const authProviders = dataSources.authProviders.map(plugin => (
-            <IntegrationTile
-                key={plugin.label}
-                integration={plugin}
-                onClick={this.openIntegrationModal}
-                disabled={plugin.disabled}
-                numIntegrations={this.findIntegrations(plugin.source, plugin.type).length}
-            />
-        ));
+        const registries = this.renderIntegrationTiles('registries');
+        const orchestrators = this.renderIntegrationTiles('orchestrators');
+        const scanners = this.renderIntegrationTiles('scanners');
+        const plugins = this.renderIntegrationTiles('plugins');
+        const authProviders = this.renderIntegrationTiles('authProviders');
 
         return (
             <section className="flex">
@@ -372,7 +291,7 @@ class IntegrationsPage extends Component {
                         <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
                             Orchestrators &amp; Container Platforms
                         </h2>
-                        <div className="flex">{orchestrators}</div>
+                        <div className="flex flex-wrap">{orchestrators}</div>
                     </div>
                     <div className="mb-6">
                         <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
@@ -394,7 +313,6 @@ class IntegrationsPage extends Component {
                     </div>
                 </div>
                 {this.renderIntegrationModal()}
-                {this.renderClustersModal()}
             </section>
         );
     }

@@ -8,12 +8,10 @@ class IntegrationTile extends Component {
             image: PropTypes.string.isRequired
         }).isRequired,
         onClick: PropTypes.func.isRequired,
-        disabled: PropTypes.bool,
         numIntegrations: PropTypes.number
     };
 
     static defaultProps = {
-        disabled: false,
         numIntegrations: 0
     };
 
@@ -29,13 +27,12 @@ class IntegrationTile extends Component {
     };
 
     render() {
-        const { integration, disabled } = this.props;
+        const { integration, numIntegrations } = this.props;
         return (
             <div className="p-3 w-1/4">
                 <button
-                    className={`w-full p-4 bg-white rounded-sm shadow text-center relative ${
-                        disabled ? 'disabled' : ''
-                    } ${this.props.numIntegrations !== 0 && 'border-2 border-success-400'}`}
+                    className={`w-full p-4 bg-white rounded-sm shadow text-center relative 
+                    ${numIntegrations !== 0 && 'border-2 border-success-400'}`}
                     onClick={this.onClick}
                 >
                     {this.renderIndicator()}

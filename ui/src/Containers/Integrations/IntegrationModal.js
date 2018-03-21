@@ -13,6 +13,8 @@ import tableColumnDescriptor from 'Containers/Integrations/tableColumnDescriptor
 import AuthService from 'services/AuthService';
 import { saveIntegration, testIntegration, deleteIntegration } from 'services/IntegrationsService';
 
+import { clusterTypeLabels } from 'messages/common';
+
 const sourceMap = {
     authProviders: {
         auth0: [
@@ -417,8 +419,13 @@ class IntegrationModal extends Component {
                 type: PropTypes.string.isRequired
             })
         ).isRequired,
-        source: PropTypes.oneOf(['registries', 'scanners', 'notifiers', 'authProviders'])
-            .isRequired,
+        source: PropTypes.oneOf([
+            'registries',
+            'scanners',
+            'notifiers',
+            'authProviders',
+            'clusters'
+        ]).isRequired,
         type: PropTypes.string.isRequired,
         onRequestClose: PropTypes.func.isRequired,
         onIntegrationsUpdate: PropTypes.func.isRequired,
@@ -516,42 +523,62 @@ class IntegrationModal extends Component {
     };
 
     renderTable = () => {
-        const header = `${this.props.type.toUpperCase()} Integrations`;
-        const buttons = [
-            {
-                renderIcon: () => <Icon.Trash2 className="h-4 w-4" />,
-                text: 'Delete',
-                className:
-                    'flex py-1 px-2 rounded-sm text-danger-600 hover:text-white hover:bg-danger-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-danger-400',
-                onClick: this.deleteIntegration,
-                disabled: this.state.editIntegration !== null
-            },
-            {
-                renderIcon: () => <Icon.Plus className="h-4 w-4" />,
-                text: 'Add Integration',
-                className:
-                    'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
-                onClick: this.addIntegration,
-                disabled: this.state.editIntegration !== null
-            }
-        ];
-        const columns = tableColumnDescriptor[this.props.source][this.props.type];
+        const header = `${
+            this.props.source !== 'clusters' ? this.props.type : clusterTypeLabels[this.props.type]
+        } Integrations`;
+        const buttons =
+            this.props.source !== 'clusters'
+                ? [
+                      {
+                          renderIcon: () => <Icon.Trash2 className="h-4 w-4" />,
+                          text: 'Delete',
+                          className:
+                              'flex py-1 px-2 rounded-sm text-danger-600 hover:text-white hover:bg-danger-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-danger-400',
+                          onClick: this.deleteIntegration,
+                          disabled: this.state.editIntegration !== null
+                      },
+                      {
+                          renderIcon: () => <Icon.Plus className="h-4 w-4" />,
+                          text: 'Add Integration',
+                          className:
+                              'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                          onClick: this.addIntegration,
+                          disabled: this.state.editIntegration !== null
+                      }
+                  ]
+                : [];
+        const columns =
+            this.props.source !== 'clusters'
+                ? tableColumnDescriptor[this.props.source][this.props.type]
+                : tableColumnDescriptor[this.props.source];
         const rows = this.props.integrations;
         const onRowClickHandler = () => integration => {
-            this.update('EDIT_INTEGRATION', { editIntegration: integration });
+            if (this.props.source !== 'clusters')
+                this.update('EDIT_INTEGRATION', { editIntegration: integration });
         };
+
         return (
             <div className="flex flex-1">
                 <Panel header={header} buttons={buttons}>
-                    <Table
-                        columns={columns}
-                        rows={rows}
-                        checkboxes
-                        onRowClick={onRowClickHandler()}
-                        ref={table => {
-                            this.policyTable = table;
-                        }}
-                    />
+                    {rows.length !== 0 ? (
+                        <Table
+                            columns={columns}
+                            rows={rows}
+                            checkboxes={this.props.source !== 'clusters'}
+                            onRowClick={onRowClickHandler()}
+                            ref={table => {
+                                this.policyTable = table;
+                            }}
+                        />
+                    ) : (
+                        <div className="p3 w-full my-auto text-center capitalize">
+                            {`No ${
+                                this.props.source !== 'clusters'
+                                    ? this.props.type
+                                    : clusterTypeLabels[this.props.type]
+                            } integrations`}
+                        </div>
+                    )}
                 </Panel>
             </div>
         );
@@ -690,7 +717,9 @@ class IntegrationModal extends Component {
             <Modal isOpen onRequestClose={this.onRequestClose} className="w-5/6 h-full">
                 <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
                     <span className="flex flex-1">
-                        Configure {type} {SOURCE_LABELS[source]}
+                        {source !== 'clusters'
+                            ? `Configure ${type} ${SOURCE_LABELS[source]}`
+                            : `Configure ${clusterTypeLabels[type]}`}
                     </span>
                     <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.onRequestClose} />
                 </header>

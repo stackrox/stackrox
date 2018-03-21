@@ -1,9 +1,19 @@
 import React from 'react';
+import dateFns from 'date-fns';
 
 const tableColumnDescriptor = Object.freeze({
     authProviders: {
         auth0: [{ key: 'name', label: 'Name' }, { key: 'config.domain', label: 'Auth0 Domain' }]
     },
+    clusters: [
+        { key: 'name', label: 'Name' },
+        { key: 'preventImage', label: 'StackRox Image' },
+        {
+            key: 'lastContact',
+            label: 'Last Check-In',
+            keyValueFunc: date => dateFns.format(date, 'MM/DD/YYYY h:mm:ss A')
+        }
+    ],
     notifiers: {
         slack: [
             { key: 'name', label: 'Name' },
