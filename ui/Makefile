@@ -4,7 +4,7 @@ UI_BASE_URL ?= https://localhost:8000
 all: deps lint test build
 
 deps: package.json
-	yarn install
+	yarn install --frozen-lockfile
 	@touch deps
 
 SOURCES := $(shell ls *.json) tailwind.js yarn.lock
