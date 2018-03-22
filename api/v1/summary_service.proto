@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+package v1;
+
+message SummaryCountsResponse {
+    int64 num_alerts            = 1;
+    int64 num_clusters          = 2;
+    int64 num_deployments       = 3;
+    int64 num_images            = 4;
+}
+
+service SummaryService {
+    rpc GetSummaryCounts (google.protobuf.Empty) returns (SummaryCountsResponse) {
+        option (google.api.http) = {
+            get: "/v1/summary/counts"
+        };
+    }
+}

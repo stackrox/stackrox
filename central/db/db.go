@@ -33,6 +33,7 @@ type Storage interface {
 type AlertStorage interface {
 	GetAlert(id string) (*v1.Alert, bool, error)
 	GetAlerts(request *v1.GetAlertsRequest) ([]*v1.Alert, error)
+	CountAlerts() (int, error)
 	AddAlert(alert *v1.Alert) error
 	UpdateAlert(alert *v1.Alert) error
 	RemoveAlert(id string) error
@@ -83,6 +84,7 @@ type BenchmarkTriggerStorage interface {
 type ClusterStorage interface {
 	GetCluster(id string) (*v1.Cluster, bool, error)
 	GetClusters() ([]*v1.Cluster, error)
+	CountClusters() (int, error)
 	AddCluster(cluster *v1.Cluster) (string, error)
 	UpdateCluster(cluster *v1.Cluster) error
 	RemoveCluster(id string) error
@@ -93,6 +95,7 @@ type ClusterStorage interface {
 type DeploymentStorage interface {
 	GetDeployment(id string) (*v1.Deployment, bool, error)
 	GetDeployments(request *v1.GetDeploymentsRequest) ([]*v1.Deployment, error)
+	CountDeployments() (int, error)
 	AddDeployment(deployment *v1.Deployment) error
 	UpdateDeployment(deployment *v1.Deployment) error
 	RemoveDeployment(id string) error
@@ -102,6 +105,7 @@ type DeploymentStorage interface {
 type ImageStorage interface {
 	GetImage(sha string) (*v1.Image, bool, error)
 	GetImages(request *v1.GetImagesRequest) ([]*v1.Image, error)
+	CountImages() (int, error)
 	AddImage(image *v1.Image) error
 	UpdateImage(image *v1.Image) error
 	RemoveImage(id string) error

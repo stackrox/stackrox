@@ -81,7 +81,7 @@ func (s *BenchmarkScheduleService) validateBenchmarkSchedule(request *v1.Benchma
 		errs = append(errs, fmt.Sprintf("'%v' is not a valid day of the week", request.GetDay()))
 	}
 	if len(errs) > 0 {
-		return errorHelpers.FormatErrorStrings("Validation", errs)
+		return errorhelpers.FormatErrorStrings("Validation", errs)
 	}
 	return nil
 }

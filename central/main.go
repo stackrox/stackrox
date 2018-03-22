@@ -127,6 +127,7 @@ func (c *central) startGRPCServer() {
 	c.server.Register(service.NewSearchService(c.indexer))
 	c.server.Register(idService)
 	c.server.Register(service.NewSensorEventService(c.detector, c.database))
+	c.server.Register(service.NewSummaryService(c.database))
 	c.server.Start()
 }
 

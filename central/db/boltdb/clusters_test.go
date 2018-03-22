@@ -89,6 +89,11 @@ func (suite *BoltClusterTestSuite) TestClusters() {
 		suite.Equal(got, b)
 	}
 
+	// Test Count
+	count, err := suite.CountClusters()
+	suite.NoError(err)
+	suite.Equal(len(clusters), count)
+
 	// Test Remove
 	for _, b := range clusters {
 		suite.NoError(suite.RemoveCluster(b.GetId()))

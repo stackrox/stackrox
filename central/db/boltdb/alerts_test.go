@@ -68,6 +68,10 @@ func (suite *BoltAlertsTestSuite) TestAlerts() {
 	suite.Nil(err)
 	suite.Equal([]*v1.Alert{alert1, alert2}, alerts)
 
+	count, err := suite.CountAlerts()
+	suite.Nil(err)
+	suite.Equal(2, count)
+
 	alert1.Policy.Severity = v1.Severity_HIGH_SEVERITY
 	suite.UpdateAlert(alert1)
 	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{})

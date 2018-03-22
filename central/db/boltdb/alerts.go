@@ -49,6 +49,19 @@ func (b *BoltDB) GetAlerts(*v1.GetAlertsRequest) ([]*v1.Alert, error) {
 	return alerts, err
 }
 
+// CountAlerts returns the number of non-stale alerts.
+func (b *BoltDB) CountAlerts() (count int, err error) {
+	err = b.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(alertBucket))
+		return b.ForEach(func(k, v []byte) error {
+			count++
+			return nil
+		})
+	})
+
+	return
+}
+
 // AddAlert adds an alert into Bolt
 func (b *BoltDB) AddAlert(alert *v1.Alert) error {
 	return b.Update(func(tx *bolt.Tx) error {

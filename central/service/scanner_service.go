@@ -98,7 +98,7 @@ func validateScanner(scanner *v1.Scanner) error {
 		errs = append(errs, "Scanner endpoint must be defined")
 	}
 	if len(errs) > 0 {
-		return errorHelpers.FormatErrorStrings("Validation", errs)
+		return errorhelpers.FormatErrorStrings("Validation", errs)
 	}
 	return nil
 }

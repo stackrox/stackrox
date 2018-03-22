@@ -99,7 +99,7 @@ func validateRegistry(reg *v1.Registry) error {
 		errs = append(errs, "Registry endpoint must be defined")
 	}
 	if len(errs) > 0 {
-		return errorHelpers.FormatErrorStrings("Validation", errs)
+		return errorhelpers.FormatErrorStrings("Validation", errs)
 	}
 	return nil
 }

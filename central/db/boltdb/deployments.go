@@ -49,6 +49,19 @@ func (b *BoltDB) GetDeployments(request *v1.GetDeploymentsRequest) ([]*v1.Deploy
 	return deployments, err
 }
 
+// CountDeployments returns the number of deployments.
+func (b *BoltDB) CountDeployments() (count int, err error) {
+	err = b.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(deploymentBucket))
+		return b.ForEach(func(k, v []byte) error {
+			count++
+			return nil
+		})
+	})
+
+	return
+}
+
 // AddDeployment adds a deployment to bolt
 func (b *BoltDB) AddDeployment(deployment *v1.Deployment) error {
 	return b.Update(func(tx *bolt.Tx) error {

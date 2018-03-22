@@ -1,7 +1,7 @@
 // This code is adapted from https://github.com/boltdb/bolt/blob/master/cmd/bolt/main.go
 // which is licensed under the MIT License
 
-package boltHelper
+package bolthelper
 
 import (
 	"github.com/boltdb/bolt"

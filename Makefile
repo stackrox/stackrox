@@ -74,6 +74,7 @@ API_SERVICES += scanner_service
 API_SERVICES += search_service
 API_SERVICES += sensor_event_service
 API_SERVICES += service_identity_service
+API_SERVICES += summary_service
 
 # These .proto files do not contain gRPC methods and thus don't need gateway files.
 PB_COMMON_FILES  = common

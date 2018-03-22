@@ -97,7 +97,7 @@ func validateNotifier(notifier *v1.Notifier) error {
 		errs = append(errs, "Notifier UI endpoint must be defined")
 	}
 	if len(errs) > 0 {
-		return errorHelpers.FormatErrorStrings("Validation", errs)
+		return errorhelpers.FormatErrorStrings("Validation", errs)
 	}
 	return nil
 }

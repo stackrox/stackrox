@@ -78,6 +78,11 @@ func (suite *BoltDeploymentTestSuite) TestDeployments() {
 		suite.Equal(got, d)
 	}
 
+	// Test Count
+	count, err := suite.CountDeployments()
+	suite.NoError(err)
+	suite.Equal(len(deployments), count)
+
 	// Test Remove
 	for _, d := range deployments {
 		suite.NoError(suite.RemoveDeployment(d.GetId()))

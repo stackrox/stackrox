@@ -51,6 +51,19 @@ func (b *BoltDB) GetImages(*v1.GetImagesRequest) ([]*v1.Image, error) {
 	return images, err
 }
 
+// CountImages returns the number of images.
+func (b *BoltDB) CountImages() (count int, err error) {
+	err = b.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(imageBucket))
+		return b.ForEach(func(k, v []byte) error {
+			count++
+			return nil
+		})
+	})
+
+	return
+}
+
 // AddImage adds a image to bolt
 func (b *BoltDB) AddImage(image *v1.Image) error {
 	return b.Update(func(tx *bolt.Tx) error {

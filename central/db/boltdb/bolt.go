@@ -228,7 +228,7 @@ func (b *BoltDB) ExportHandler() http.Handler {
 			handleError(w, err)
 			return
 		}
-		if err := boltHelper.Compact(newDB, exportDB.DB); err != nil {
+		if err := bolthelper.Compact(newDB, exportDB.DB); err != nil {
 			handleError(w, err)
 			return
 		}

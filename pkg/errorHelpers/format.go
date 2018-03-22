@@ -1,4 +1,4 @@
-package errorHelpers
+package errorhelpers
 
 import (
 	"fmt"

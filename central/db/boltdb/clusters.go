@@ -70,6 +70,19 @@ func (b *BoltDB) GetClusters() ([]*v1.Cluster, error) {
 	return clusters, err
 }
 
+// CountClusters returns the number of clusters.
+func (b *BoltDB) CountClusters() (count int, err error) {
+	err = b.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(clusterBucket))
+		return b.ForEach(func(k, v []byte) error {
+			count++
+			return nil
+		})
+	})
+
+	return
+}
+
 // AddCluster adds a cluster to bolt
 func (b *BoltDB) AddCluster(cluster *v1.Cluster) (string, error) {
 	cluster.Id = uuid.NewV4().String()

@@ -53,6 +53,10 @@ func (suite *BoltImagesTestSuite) TestImages() {
 	suite.Nil(err)
 	suite.Equal([]*v1.Image{image1, image2}, images)
 
+	count, err := suite.CountImages()
+	suite.NoError(err)
+	suite.Equal(2, count)
+
 	image1.Name.Registry = "stackrox.io"
 	err = suite.UpdateImage(image1)
 	suite.Nil(err)
