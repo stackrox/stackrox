@@ -80,13 +80,13 @@ class Panel extends Component {
         return (
             <div className={`flex flex-col bg-white border border-base-300 ${this.props.width}`}>
                 <div className="flex shadow-underline font-bold bg-primary-100">
-                    <div className="flex px-3 py-3 flex-1 text-base-600 uppercase items-center tracking-wide">
+                    <div className="flex px-3 py-3 flex-1 text-lg text-base-600 uppercase items-center tracking-wide">
                         {this.props.header}
                     </div>
                     <div className="flex px-3 py-3 items-center">{this.renderButtons()}</div>
                     <div
-                        className={`flex items-end ml-2 border-base-300 items-center hover:bg-base-300
-                        ${this.props.onClose ? 'border-l-2' : ''}`}
+                        className={`flex items-end ml-2 border-base-300 items-center hover:bg-primary-300
+                        ${this.props.onClose ? 'border-l' : ''}`}
                     >
                         {this.renderCancelButton()}
                     </div>

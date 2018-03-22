@@ -1,3 +1,6 @@
+@import "../node_modules/slick-carousel/slick/slick.css";
+@import "../node_modules/slick-carousel/slick/slick-theme.css";
+
 :root {
     /* Theme-light */
     --theme-light-base: 220;

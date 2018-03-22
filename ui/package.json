@@ -31,6 +31,7 @@
     "react-router-redux": "^5.0.0-alpha.9",
     "react-scripts": "1.0.17",
     "react-select": "^1.1.0",
+    "react-slick": "^0.21.0",
     "react-spinners": "^0.2.5",
     "react-toastify": "^3.2.1",
     "react-tooltip": "^3.4.0",
@@ -38,8 +39,10 @@
     "recharts": "^1.0.0-beta.9",
     "react-collapsible": "^2.0.4",
     "redux": "^3.7.2",
+    "redux-form": "^7.3.0",
     "redux-saga": "^0.16.0",
     "reselect": "^3.0.1",
+    "slick-carousel": "^1.8.1",
     "store": "^2.0.12",
     "tailwindcss": "^0.3.0"
   },
@@ -48,11 +51,13 @@
     "build": "tailwind build ./src/app.css -c ./tailwind.js -o ./src/index.css && NODE_PATH=src react-scripts build",
     "test": "NODE_PATH=src react-scripts test --env=jsdom --coverage",
     "test-watch": "NODE_PATH=src react-scripts test --env=jsdom",
-    "lint": "eslint src prod cypress",
+    "lint": "NODE_PATH=src eslint src prod cypress",
     "cypress-open": "cypress open",
     "test-e2e-local": "cypress run",
     "test-e2e-ci": "cypress run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.json",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "storybook": "NODE_PATH=src start-storybook -p 9009 -s public",
+    "build-storybook": "build-storybook -s public"
   },
   "proxy": {
     "/v1": {
@@ -62,6 +67,11 @@
     }
   },
   "devDependencies": {
+    "@storybook/addon-actions": "^3.3.15",
+    "@storybook/addon-links": "^3.3.15",
+    "@storybook/addons": "^3.3.15",
+    "@storybook/react": "^3.3.15",
+    "babel-core": "^6.26.0",
     "babel-eslint": "^8.0.3",
     "cypress": "1.4.2",
     "eslint": "^4.14.0",
