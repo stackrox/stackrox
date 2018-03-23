@@ -8,7 +8,7 @@ class ClustersSuccessPage extends Component {
                 <Icon.CheckCircle />
             </div>
             <div className="flex-3 pl-2">
-                Success! The cluster has been recognized properly by Apollo.You may now save the
+                Success! The cluster has been recognized properly by Prevent.You may now save the
                 configuration
             </div>
         </div>

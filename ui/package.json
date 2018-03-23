@@ -38,6 +38,8 @@
     "react-tooltip": "^3.4.0",
     "react-transition-group": "^2.2.1",
     "recharts": "^1.0.0-beta.9",
+    "react-collapsible": "^2.0.4",
+    "file-saver": "^1.3.4",
     "redux": "^3.7.2",
     "redux-form": "^7.3.0",
     "redux-saga": "^0.16.0",
@@ -61,6 +63,11 @@
   },
   "proxy": {
     "/v1": {
+      "target": "https://localhost:8080",
+      "changeOrigin": true,
+      "secure": false
+    },
+    "/api": {
       "target": "https://localhost:8080",
       "changeOrigin": true,
       "secure": false

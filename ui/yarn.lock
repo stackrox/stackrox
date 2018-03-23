@@ -4056,12 +4056,9 @@ file-entry-cache@^2.0.0:
     flat-cache "^1.2.1"
     object-assign "^4.0.1"
 
-file-loader@1.1.5:
-  version "1.1.5"
-  resolved "https://registry.yarnpkg.com/file-loader/-/file-loader-1.1.5.tgz#91c25b6b6fbe56dae99f10a425fd64933b5c9daa"
-  dependencies:
-    loader-utils "^1.0.2"
-    schema-utils "^0.3.0"
+file-saver@^1.3.4:
+  version "1.3.4"
+  resolved "https://registry.yarnpkg.com/file-saver/-/file-saver-1.3.4.tgz#4fb5a84699676d1414547083225acc6a8be8553b"
 
 file-loader@^1.1.6:
   version "1.1.11"
