@@ -37,18 +37,16 @@ export function* getLastScannedBenchmark(action) {
 }
 
 export function* updateBenchmarkSchedule() {
-    const schedule = yield select(selectors.getBenchmarkSchedule);
+    const schedule = Object.assign({}, yield select(selectors.getBenchmarkSchedule));
     try {
         if (schedule.hour === '' || schedule.day === '') {
-            const newSchedule = Object.assign({}, schedule);
-            newSchedule.active = false;
+            schedule.active = false;
             yield call(service.deleteSchedule, schedule.id);
         } else if (schedule.active) {
             yield call(service.updateSchedule, schedule.benchmarkId, schedule);
         } else {
-            const newSchedule = Object.assign({}, schedule);
-            newSchedule.active = true;
-            yield call(service.createSchedule, newSchedule);
+            schedule.active = true;
+            yield call(service.createSchedule, schedule);
         }
     } catch (error) {
         yield put(actions.fetchLastScan.failure(error));
@@ -75,7 +73,6 @@ export function* triggerBenchmarkScan({ params: benchmarkId }) {
 function* pollBenchmarkScanResults({ params: benchmarkId }) {
     while (true) {
         try {
-            console.log(benchmarkId);
             const result = yield call(service.fetchLastScan, benchmarkId);
             yield put(actions.fetchLastScan.success(result));
             yield call(delay, 5000); // poll every 5 sec

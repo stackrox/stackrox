@@ -1,4 +1,5 @@
 import { combineReducers } from 'redux';
+import { reducer as formReducer } from 'redux-form';
 
 import bindSelectors from 'utils/bindSelectors';
 import alerts, { selectors as alertSelectors } from './alerts';
@@ -22,6 +23,7 @@ const appReducer = combineReducers({
 
 const rootReducer = combineReducers({
     route,
+    form: formReducer,
     app: appReducer
 });
 

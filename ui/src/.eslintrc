@@ -34,7 +34,11 @@
         }],
         
         // TODO-ivan: rules below are to be removed after fixing all violations in the code
-        "react/no-array-index-key": "warn"
+        "react/no-array-index-key": "warn",
+
+        "import/no-extraneous-dependencies": [ "error", {
+            "devDependencies": true
+        }]
     },
     "overrides": [
         {
