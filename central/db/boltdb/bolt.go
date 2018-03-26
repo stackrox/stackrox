@@ -10,7 +10,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/boltHelper"
+	"bitbucket.org/stack-rox/apollo/pkg/bolthelper"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/boltdb/bolt"
 )
