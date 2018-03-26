@@ -51,6 +51,14 @@ func (s *SearchService) getSearchFuncs() map[v1.SearchCategory]searchFunc {
 	}
 }
 
+func getAllCategories() (categories []v1.SearchCategory) {
+	categories = make([]v1.SearchCategory, 0, len(v1.SearchCategory_name)-1)
+	for i := 1; i < len(v1.SearchCategory_name); i++ {
+		categories = append(categories, v1.SearchCategory(i))
+	}
+	return
+}
+
 func validateRequest(request *v1.SearchRequest) error {
 	for field, values := range request.GetFields() {
 		if len(values.GetValues()) == 0 {
@@ -80,4 +88,15 @@ func (s *SearchService) Search(ctx context.Context, request *v1.SearchRequest) (
 		response.Results = append(response.Results, &v1.SearchResult{Category: category, Ids: ids})
 	}
 	return response, nil
+}
+
+// Options returns the options available for the categories specified in the request
+func (s *SearchService) Options(ctx context.Context, request *v1.SearchOptionsRequest) (*v1.SearchOptionsResponse, error) {
+	categories := request.GetCategories()
+	if len(categories) == 0 {
+		categories = getAllCategories()
+	}
+	return &v1.SearchOptionsResponse{
+		Options: search.GetOptions(categories),
+	}, nil
 }

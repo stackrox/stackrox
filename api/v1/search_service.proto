@@ -35,12 +35,27 @@ message SearchResponse {
     repeated SearchResult results = 1;
 }
 
+message SearchOptionsRequest {
+    repeated SearchCategory categories = 1;
+}
+
+message SearchOptionsResponse {
+    repeated string options = 1;
+}
+
 service SearchService {
 
     rpc Search(SearchRequest) returns (SearchResponse) {
         option (google.api.http) = {
             post: "/v1/search"
             body: "*"
+        };
+    }
+
+
+    rpc Options(SearchOptionsRequest) returns (SearchOptionsResponse) {
+        option (google.api.http) = {
+            get: "/v1/search/metadata/options"
         };
     }
 

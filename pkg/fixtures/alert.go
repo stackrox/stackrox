@@ -118,6 +118,50 @@ func GetAlert() *v1.Alert {
 							Remote:   "library/nginx",
 							Tag:      "1.10",
 						},
+						Metadata: &v1.ImageMetadata{
+							Layers: []*v1.ImageLayer{
+								{
+									Instruction: "ADD",
+									Value:       "FILE:blah",
+								},
+							},
+						},
+						Scan: &v1.ImageScan{
+							Components: []*v1.ImageScanComponents{
+								{
+									Name: "name",
+									Vulns: []*v1.Vulnerability{
+										{
+											Cve:     "cve",
+											Cvss:    10,
+											Summary: "Vuln summary",
+										},
+									},
+								},
+							},
+						},
+					},
+					SecurityContext: &v1.SecurityContext{
+						Privileged:       true,
+						AddCapabilities:  []string{"SYS_ADMIN"},
+						DropCapabilities: []string{"SYS_MODULE"},
+					},
+					Config: &v1.ContainerConfig{
+						Env: []*v1.ContainerConfig_EnvironmentConfig{
+							{
+								Key:   "envkey",
+								Value: "envvalue",
+							},
+						},
+					},
+					Volumes: []*v1.Volume{
+						{
+							Name:        "vol1",
+							Source:      "/vol1",
+							Destination: "/vol2",
+							Type:        "host",
+							ReadOnly:    true,
+						},
 					},
 				},
 				{

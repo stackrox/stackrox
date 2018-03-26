@@ -21,3 +21,10 @@ func StringSliceFromSet(s mapset.Set) []string {
 	}
 	return strs
 }
+
+// AppendStringMapKeys adds all keys of the passed map[string]string to the set
+func AppendStringMapKeys(s mapset.Set, m map[string]string) {
+	for k := range m {
+		s.Add(k)
+	}
+}
