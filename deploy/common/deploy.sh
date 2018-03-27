@@ -70,8 +70,20 @@ function get_cluster_zip {
     fi
     export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"prevent_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\" $EXTRA_JSON}"
 
+    TMP=$(mktemp)
     STATUS=$(curl -X POST \
         -d "$CLUSTER_JSON" \
+        -k \
+        -s \
+        -o $TMP \
+        -w "%{http_code}\n" \
+        https://$LOCAL_API_ENDPOINT/v1/clusters)
+    >&2 echo "Status: $STATUS"
+    ID="$(cat ${TMP} | jq -r .cluster.id)"
+
+    echo "Getting zip file for cluster ${ID}"
+    STATUS=$(curl -X POST \
+        -d "{\"id\": \"$ID\"}" \
         -k \
         -s \
         -o $OUTPUT_DIR/sensor-deploy.zip \

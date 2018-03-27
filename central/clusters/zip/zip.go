@@ -43,8 +43,8 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var cluster v1.Cluster
-	err := jsonpb.Unmarshal(r.Body, &cluster)
+	var clusterID v1.ResourceByID
+	err := jsonpb.Unmarshal(r.Body, &clusterID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		writeGRPCStyleError(w, codes.InvalidArgument, err)
@@ -57,7 +57,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Add cluster YAML and command
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	resp, err := z.clusterService.PostCluster(ctx, &cluster)
+	resp, err := z.clusterService.GetCluster(ctx, &clusterID)
 	if err != nil {
 		writeGRPCStyleError(w, codes.Internal, err)
 		return
