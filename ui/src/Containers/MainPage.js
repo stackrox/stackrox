@@ -10,6 +10,7 @@ import IntegrationsPage from 'Containers/Integrations/IntegrationsPage';
 import ViolationsPage from 'Containers/Violations/ViolationsPage';
 import PoliciesPage from 'Containers/Policies/PoliciesPage';
 import CompliancePage from 'Containers/Compliance/CompliancePage';
+import RiskPage from 'Containers/Risk/RiskPage';
 import AuthService from 'services/AuthService';
 
 const navLinks = [
@@ -30,6 +31,12 @@ const navLinks = [
         align: 'left',
         to: '/main/compliance',
         renderIcon: () => <Icon.CheckSquare className="h-4 w-4 mr-3" />
+    },
+    {
+        text: 'Risk',
+        align: 'left',
+        to: '/main/risk',
+        renderIcon: () => <Icon.Shield className="h-4 w-4 mr-3" />
     },
     {
         text: 'Policies',
@@ -130,6 +137,7 @@ class MainPage extends Component {
                                 component={ViolationsPage}
                             />
                             <ProtectedRoute path="/main/compliance" component={CompliancePage} />
+                            <ProtectedRoute path="/main/risk" component={RiskPage} />
                             <ProtectedRoute
                                 path="/main/integrations"
                                 component={IntegrationsPage}

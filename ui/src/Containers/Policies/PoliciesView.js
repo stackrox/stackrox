@@ -219,12 +219,6 @@ class PolicyView extends Component {
         ).isRequired
     };
 
-    constructor(props) {
-        super(props);
-
-        this.state = {};
-    }
-
     removeEmptyFields = obj => {
         const flattenedObj = flatten(obj);
         const omittedObj = omitBy(

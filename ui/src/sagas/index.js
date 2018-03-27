@@ -4,6 +4,7 @@ import alerts from './alertSagas';
 import authProviders from './authSagas';
 import benchmarks from './benchmarkSagas';
 import clusters from './clusterSagas';
+import deployments from './riskSagas';
 import integrations from './integrationSagas';
 
 export default function* root() {
@@ -12,6 +13,7 @@ export default function* root() {
         fork(authProviders),
         fork(benchmarks),
         fork(clusters),
+        fork(deployments),
         fork(integrations)
     ]);
 }
