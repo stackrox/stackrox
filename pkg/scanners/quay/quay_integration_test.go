@@ -24,15 +24,14 @@ type QuayIntegrationSuite struct {
 }
 
 func (suite *QuayIntegrationSuite) SetupSuite() {
-	protoScanner := &v1.Scanner{
-		Endpoint:   "quay.io",
-		Registries: []string{"quay.io"},
+	protoImageIntegration := &v1.ImageIntegration{
 		Config: map[string]string{
 			"oauthToken": testOauthToken,
+			"endpoint":   "quay.io",
 		},
 	}
 
-	q, err := newScanner(protoScanner)
+	q, err := newScanner(protoImageIntegration)
 	suite.NoError(err)
 	suite.quay = q
 }

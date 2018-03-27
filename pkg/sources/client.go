@@ -1,4 +1,4 @@
-package registries
+package sources
 
 import (
 	"context"
@@ -22,8 +22,8 @@ const (
 type Client struct {
 	updateTicker *time.Ticker
 
-	registries []ImageRegistry
-	lock       sync.RWMutex
+	integrations []*ImageIntegration
+	lock         sync.RWMutex
 
 	clusterID       string
 	centralEndpoint string
@@ -31,8 +31,8 @@ type Client struct {
 	done chan struct{}
 }
 
-// NewRegistriesClient returns a new client of the registries API
-func NewRegistriesClient(centralEndpoint string, clusterID string) *Client {
+// NewImageIntegrationsClient returns a new client of the integrations API
+func NewImageIntegrationsClient(centralEndpoint string, clusterID string) *Client {
 	return &Client{
 		updateTicker:    time.NewTicker(updateInterval),
 		clusterID:       clusterID,
@@ -60,46 +60,46 @@ func (c *Client) doUpdate() {
 	}
 	defer conn.Close()
 
-	cli := v1.NewRegistryServiceClient(conn)
+	cli := v1.NewImageIntegrationServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	resp, err := cli.GetRegistries(ctx, &v1.GetRegistriesRequest{Cluster: c.clusterID})
+	resp, err := cli.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{Cluster: c.clusterID})
 	if err != nil {
-		log.Errorf("Error checking registries: %s", err)
+		log.Errorf("Error checking integrations: %s", err)
 		return
 	}
-	c.replaceRegistries(resp)
+	c.replaceImageIntegrations(resp)
 }
-func (c *Client) replaceRegistries(resp *v1.GetRegistriesResponse) {
+func (c *Client) replaceImageIntegrations(resp *v1.GetImageIntegrationsResponse) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	c.registries = nil
-	for _, registry := range resp.GetRegistries() {
-		s, err := CreateRegistry(registry)
+	c.integrations = nil
+	for _, integration := range resp.GetIntegrations() {
+		s, err := NewImageIntegration(integration)
 		if err != nil {
-			log.Errorf("Could not instantiate registry %v: %s", registry, err)
+			log.Errorf("Could not instantiate integration %v: %s", integration, err)
 			continue
 		}
-		c.registries = append(c.registries, s)
+		c.integrations = append(c.integrations, s)
 	}
 }
 
-// Stop stops polling for new registries.
+// Stop stops polling for new integrations.
 func (c *Client) Stop() {
 	c.done <- struct{}{}
 }
 
-// Registries returns the currently-defined set of image registries.
-func (c *Client) Registries() []ImageRegistry {
+// Integrations returns the currently-defined set of image integrations.
+func (c *Client) Integrations() []*ImageIntegration {
 	if c == nil {
 		return nil
 	}
 
 	c.lock.RLock()
 	defer c.lock.RUnlock()
-	registries := make([]ImageRegistry, len(c.registries))
-	for i, s := range c.registries {
-		registries[i] = s
+	integrations := make([]*ImageIntegration, len(c.integrations))
+	for i, s := range c.integrations {
+		integrations[i] = s
 	}
-	return registries
+	return integrations
 }

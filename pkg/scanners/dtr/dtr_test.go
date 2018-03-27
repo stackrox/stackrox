@@ -69,17 +69,17 @@ func (suite *DTRSuite) SetupSuite() {
 	masterServer := httptest.NewServer(masterRouter)
 	suite.server = masterServer
 
-	protoScanner := &v1.Scanner{
-		Endpoint: "http://" + masterServer.Listener.Addr().String(),
+	protoImageIntegration := &v1.ImageIntegration{
 		Config: map[string]string{
 			"username": "user",
 			"password": "password",
+			"endpoint": "http://" + masterServer.Listener.Addr().String(),
 		},
 	}
 
 	var err error
 	// newScanner is tested within setup
-	suite.dtr, err = newScanner(protoScanner)
+	suite.dtr, err = newScanner(protoImageIntegration)
 	if err != nil {
 		suite.FailNow("Could not setup DTR scanner: " + err.Error())
 	}

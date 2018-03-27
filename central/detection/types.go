@@ -9,8 +9,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/notifications"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
-	scannerTypes "bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"bitbucket.org/stack-rox/apollo/pkg/sources"
 )
 
 var (
@@ -81,24 +80,13 @@ type Task struct {
 	policy     *matcher.Policy
 }
 
-// UpdateRegistry updates image processors map of active registries
-func (d *Detector) UpdateRegistry(registry registries.ImageRegistry) {
-	d.enricher.UpdateRegistry(registry)
-	go d.reprocessRegistry(registry)
+// UpdateImageIntegration updates the map of active integrations
+func (d *Detector) UpdateImageIntegration(integration *sources.ImageIntegration) {
+	d.enricher.UpdateImageIntegration(integration)
+	go d.reprocessImageIntegration(integration)
 }
 
-// RemoveRegistry removes a registry from image processors map of active registries
-func (d *Detector) RemoveRegistry(id string) {
-	d.enricher.RemoveRegistry(id)
-}
-
-// UpdateScanner updates image processors map of active scanners
-func (d *Detector) UpdateScanner(scanner scannerTypes.ImageScanner) {
-	d.enricher.UpdateScanner(scanner)
-	go d.reprocessScanner(scanner)
-}
-
-// RemoveScanner removes a scanner from image processors map of active scanners
-func (d *Detector) RemoveScanner(id string) {
-	d.enricher.RemoveScanner(id)
+// RemoveImageIntegration removes an image integration
+func (d *Detector) RemoveImageIntegration(id string) {
+	d.enricher.RemoveImageIntegration(id)
 }

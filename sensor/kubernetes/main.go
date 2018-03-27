@@ -5,12 +5,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
+
+	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
 	"bitbucket.org/stack-rox/apollo/pkg/sensor"
+	"bitbucket.org/stack-rox/apollo/pkg/sources"
 	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/enforcer"
 	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/listener"
 	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/orchestrator"
@@ -49,8 +49,7 @@ func initializeSensor() *sensor.Sensor {
 	if err != nil {
 		s.Logger.Fatal(err)
 	}
-	s.ScannerPoller = scanners.NewScannersClient(s.CentralEndpoint, s.ClusterID)
-	s.RegistryPoller = registries.NewRegistriesClient(s.CentralEndpoint, s.ClusterID)
+	s.ImageIntegrationPoller = sources.NewImageIntegrationsClient(s.CentralEndpoint, s.ClusterID)
 
 	s.Orchestrator, err = orchestrator.New()
 	if err != nil {

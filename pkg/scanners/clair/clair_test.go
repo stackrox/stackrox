@@ -43,8 +43,10 @@ func (suite *ClairSuite) SetupSuite() {
 	// Set the global variable of the Clair endpoint
 	suite.server = masterServer
 
-	protoScanner := &v1.Scanner{
-		Endpoint: "http://" + masterServer.Listener.Addr().String(),
+	protoScanner := &v1.ImageIntegration{
+		Config: map[string]string{
+			"endpoint": "http://" + masterServer.Listener.Addr().String(),
+		},
 	}
 
 	var err error

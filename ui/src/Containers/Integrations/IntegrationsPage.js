@@ -20,7 +20,7 @@ import email from 'images/email.svg';
 import quay from 'images/quay.svg';
 import clair from 'images/clair.svg';
 
-const dataSources = {
+const integrationsList = {
     authProviders: [
         {
             label: 'Auth0',
@@ -29,24 +29,46 @@ const dataSources = {
             image: auth0
         }
     ],
-    registries: [
+    imageIntegrations: [
         {
-            label: 'Docker Registry',
+            label: 'Generic Docker Registry',
             type: 'docker',
-            source: 'registries',
-            image: docker
+            categories: 'Registry',
+            source: 'imageIntegrations',
+            image: docker,
+            disabled: false
         },
         {
-            label: 'Tenable Registry',
+            label: 'Docker Trusted Registry',
+            type: 'dtr',
+            categories: 'Registry + Scanner',
+            source: 'imageIntegrations',
+            image: docker,
+            disabled: false
+        },
+        {
+            label: 'Tenable.io',
             type: 'tenable',
-            source: 'registries',
-            image: tenable
+            categories: 'Registry + Scanner',
+            source: 'imageIntegrations',
+            image: tenable,
+            disabled: false
         },
         {
-            label: 'Quay Registry',
+            label: 'Quay.io',
             type: 'quay',
-            source: 'registries',
-            image: quay
+            categories: 'Registry + Scanner',
+            source: 'imageIntegrations',
+            image: quay,
+            disabled: false
+        },
+        {
+            label: 'CoreOS Clair',
+            type: 'clair',
+            categories: 'Scanner',
+            source: 'imageIntegrations',
+            image: clair,
+            disabled: false
         }
     ],
     orchestrators: [
@@ -67,32 +89,6 @@ const dataSources = {
             image: docker,
             source: 'clusters',
             type: 'SWARM_CLUSTER'
-        }
-    ],
-    scanners: [
-        {
-            label: 'Docker Trusted Registry',
-            type: 'dtr',
-            source: 'scanners',
-            image: docker
-        },
-        {
-            label: 'Tenable',
-            type: 'tenable',
-            source: 'scanners',
-            image: tenable
-        },
-        {
-            label: 'Quay',
-            type: 'quay',
-            source: 'scanners',
-            image: quay
-        },
-        {
-            label: 'Clair',
-            type: 'clair',
-            source: 'scanners',
-            image: clair
         }
     ],
     plugins: [
@@ -157,13 +153,11 @@ class IntegrationsPage extends Component {
         ).isRequired,
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
         notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
-        registries: PropTypes.arrayOf(PropTypes.object).isRequired,
-        scanners: PropTypes.arrayOf(PropTypes.object).isRequired,
+        imageIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
         /* eslint-enable */
         fetchAuthProviders: PropTypes.func.isRequired,
         fetchNotifiers: PropTypes.func.isRequired,
-        fetchRegistries: PropTypes.func.isRequired,
-        fetchScanners: PropTypes.func.isRequired
+        fetchImageIntegrations: PropTypes.func.isRequired
     };
 
     constructor(props) {
@@ -184,11 +178,8 @@ class IntegrationsPage extends Component {
             case 'authProviders':
                 this.props.fetchAuthProviders();
                 break;
-            case 'scanners':
-                this.props.fetchScanners();
-                break;
-            case 'registries':
-                this.props.fetchRegistries();
+            case 'imageIntegrations':
+                this.props.fetchImageIntegrations();
                 break;
             case 'notifiers':
                 this.props.fetchNotifiers();
@@ -250,7 +241,7 @@ class IntegrationsPage extends Component {
     }
 
     renderIntegrationTiles = source =>
-        dataSources[source].map(tile => (
+        integrationsList[source].map(tile => (
             <IntegrationTile
                 key={tile.label}
                 integration={tile}
@@ -264,12 +255,10 @@ class IntegrationsPage extends Component {
         ));
 
     render() {
-        const registries = this.renderIntegrationTiles('registries');
+        const imageIntegrations = this.renderIntegrationTiles('imageIntegrations');
         const orchestrators = this.renderIntegrationTiles('orchestrators');
-        const scanners = this.renderIntegrationTiles('scanners');
         const plugins = this.renderIntegrationTiles('plugins');
         const authProviders = this.renderIntegrationTiles('authProviders');
-
         return (
             <section className="flex">
                 <ToastContainer
@@ -279,25 +268,19 @@ class IntegrationsPage extends Component {
                 />
                 <div className="md:w-full border-r border-primary-300 pt-4">
                     <h1 className="font-500 mx-3 border-b border-primary-300 pb-4 uppercase text-xl font-800 text-primary-600 tracking-wide">
-                        Data sources
+                        Integrations
                     </h1>
                     <div>
                         <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 pb-3">
-                            Registries
+                            Image Integrations
                         </h2>
-                        <div className="flex flex-wrap">{registries}</div>
+                        <div className="flex flex-wrap">{imageIntegrations}</div>
                     </div>
                     <div>
                         <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
                             Orchestrators &amp; Container Platforms
                         </h2>
                         <div className="flex flex-wrap">{orchestrators}</div>
-                    </div>
-                    <div className="mb-6">
-                        <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
-                            Scanning &amp; Governance Tools
-                        </h2>
-                        <div className="flex flex-wrap">{scanners}</div>
                     </div>
                     <div className="mb-6">
                         <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
@@ -322,15 +305,13 @@ const mapStateToProps = createStructuredSelector({
     authProviders: selectors.getAuthProviders,
     clusters: selectors.getClusters,
     notifiers: selectors.getNotifiers,
-    registries: selectors.getRegistries,
-    scanners: selectors.getScanners
+    imageIntegrations: selectors.getImageIntegrations
 });
 
 const mapDispatchToProps = dispatch => ({
     fetchAuthProviders: () => dispatch(authActions.fetchAuthProviders.request()),
     fetchNotifiers: () => dispatch(actions.fetchNotifiers.request()),
-    fetchRegistries: () => dispatch(actions.fetchRegistries.request()),
-    fetchScanners: () => dispatch(actions.fetchScanners.request())
+    fetchImageIntegrations: () => dispatch(actions.fetchImageIntegrations.request())
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(IntegrationsPage);

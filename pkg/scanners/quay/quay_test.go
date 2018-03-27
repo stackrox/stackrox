@@ -82,16 +82,16 @@ func (suite *QuaySuite) SetupSuite() {
 	// Set the global variable of the Tenable endpoint
 	suite.server = masterServer
 
-	protoScanner := &v1.Scanner{
-		Endpoint: "http://" + masterServer.Listener.Addr().String(),
+	protoImageIntegration := &v1.ImageIntegration{
 		Config: map[string]string{
 			"oauthToken": "token",
+			"endpoint":   "http://" + masterServer.Listener.Addr().String(),
 		},
 	}
 
 	var err error
 	// newScanner is tested within setup
-	suite.scanner, err = newScanner(protoScanner)
+	suite.scanner, err = newScanner(protoImageIntegration)
 	if err != nil {
 		suite.FailNow("Could not setup Quay scanner: " + err.Error())
 	}

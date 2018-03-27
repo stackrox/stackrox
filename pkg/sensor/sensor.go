@@ -14,8 +14,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"bitbucket.org/stack-rox/apollo/pkg/sources"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -29,8 +28,7 @@ type Sensor struct {
 	BenchScheduler          *benchmarks.SchedulerClient
 	Orchestrator            orchestrators.Orchestrator
 	ServiceRegistrationFunc func(a *Sensor)
-	ScannerPoller           *scanners.Client
-	RegistryPoller          *registries.Client
+	ImageIntegrationPoller  *sources.Client
 
 	ClusterID          string
 	CentralEndpoint    string
@@ -71,11 +69,8 @@ func (a *Sensor) Start() {
 	if a.BenchScheduler != nil {
 		go a.BenchScheduler.Start()
 	}
-	if a.ScannerPoller != nil {
-		go a.ScannerPoller.Start()
-	}
-	if a.RegistryPoller != nil {
-		go a.RegistryPoller.Start()
+	if a.ImageIntegrationPoller != nil {
+		go a.ImageIntegrationPoller.Start()
 	}
 
 	a.waitUntilCentralIsReady()
@@ -93,11 +88,8 @@ func (a *Sensor) Stop() {
 	if a.BenchScheduler != nil {
 		a.BenchScheduler.Stop()
 	}
-	if a.ScannerPoller != nil {
-		a.ScannerPoller.Stop()
-	}
-	if a.RegistryPoller != nil {
-		a.RegistryPoller.Stop()
+	if a.ImageIntegrationPoller != nil {
+		a.ImageIntegrationPoller.Stop()
 	}
 }
 
@@ -168,22 +160,25 @@ func (a *Sensor) reportDeploymentEvent(ev *v1.DeploymentEvent) (resp *v1.Deploym
 }
 
 func (a *Sensor) enrichImages(ev *v1.DeploymentEvent) {
+	// TODO(cgorman) can reuse code from central to implement this
 	for _, c := range ev.GetDeployment().GetContainers() {
 		img := c.GetImage()
-		for _, r := range a.RegistryPoller.Registries() {
-			if r.Match(img) {
-				meta, err := r.Metadata(img)
+		for _, integration := range a.ImageIntegrationPoller.Integrations() {
+			registry := integration.Registry
+			if registry != nil && registry.Match(img) {
+				meta, err := registry.Metadata(img)
 				if err != nil {
 					a.Logger.Warnf("Couldn't get metadata for %v: %s", img, err)
 				}
 				img.Metadata = meta
 			}
 		}
-		for _, s := range a.ScannerPoller.Scanners() {
-			if s.Match(img) {
-				scan, err := s.GetLastScan(img)
+		for _, integration := range a.ImageIntegrationPoller.Integrations() {
+			scanner := integration.Scanner
+			if scanner != nil && scanner.Match(img) {
+				scan, err := scanner.GetLastScan(img)
 				if err != nil {
-					a.Logger.Warnf("Couldn't get last scan for %v: %s", img, err)
+					a.Logger.Warnf("Couldn't get metadata for %v: %s", img, err)
 				}
 				img.Scan = scan
 			}

@@ -93,7 +93,7 @@ func (suite *TenableSuite) SetupSuite() {
 
 	suite.server = masterServer
 
-	protoScanner := &v1.Scanner{
+	protoImageIntegration := &v1.ImageIntegration{
 		Config: map[string]string{
 			"accessKey": "key1",
 			"secretKey": "key2",
@@ -102,7 +102,7 @@ func (suite *TenableSuite) SetupSuite() {
 
 	var err error
 	// newScanner is tested within setup
-	suite.scanner, err = newScanner(protoScanner)
+	suite.scanner, err = newScanner(protoImageIntegration)
 	if err != nil {
 		suite.FailNow("Could not setup DTR scanner: " + err.Error())
 	}

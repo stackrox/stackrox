@@ -5,7 +5,8 @@ class IntegrationTile extends Component {
     static propTypes = {
         integration: PropTypes.shape({
             label: PropTypes.string.isRequired,
-            image: PropTypes.string.isRequired
+            image: PropTypes.string.isRequired,
+            categories: PropTypes.string.isOptional
         }).isRequired,
         onClick: PropTypes.func.isRequired,
         numIntegrations: PropTypes.number
@@ -41,9 +42,13 @@ class IntegrationTile extends Component {
                         src={integration.image}
                         alt={integration.label}
                     />
-                    <div className="font-bold text-xl pt-4  border-t border-base-200">
-                        {integration.label}
-                    </div>
+                    <div className="font-bold pt-4 text-xl">{integration.label}</div>
+                    {integration.categories !== '' &&
+                        integration.categories !== undefined && (
+                            <div className="text-l mt-2 pt-4 border-t border-base-200">
+                                {integration.categories}
+                            </div>
+                        )}
                 </button>
             </div>
         );

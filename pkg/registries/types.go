@@ -6,7 +6,6 @@ import (
 
 // ImageRegistry is the interface that all image registries must implement
 type ImageRegistry interface {
-	ProtoRegistry() *v1.Registry
 	Match(image *v1.Image) bool
 	Metadata(image *v1.Image) (*v1.ImageMetadata, error)
 	Test() error

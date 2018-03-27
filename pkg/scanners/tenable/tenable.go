@@ -38,15 +38,15 @@ type tenable struct {
 
 	reg *dockerRegistry.Registry
 
-	protoScanner *v1.Scanner
+	protoImageIntegration *v1.ImageIntegration
 }
 
-func newScanner(protoScanner *v1.Scanner) (*tenable, error) {
-	accessKey, ok := protoScanner.Config["accessKey"]
+func newScanner(protoImageIntegration *v1.ImageIntegration) (*tenable, error) {
+	accessKey, ok := protoImageIntegration.Config["accessKey"]
 	if !ok {
 		return nil, errors.New("'accessKey' parameter must be defined for Tenable.io")
 	}
-	secretKey, ok := protoScanner.Config["secretKey"]
+	secretKey, ok := protoImageIntegration.Config["secretKey"]
 	if !ok {
 		return nil, errors.New("'secretKey' parameter must be defined for Tenable.io")
 	}
@@ -66,8 +66,6 @@ func newScanner(protoScanner *v1.Scanner) (*tenable, error) {
 		accessKey: accessKey,
 		secretKey: secretKey,
 		reg:       reg,
-
-		protoScanner: protoScanner,
 	}
 	return scanner, nil
 }
@@ -100,10 +98,6 @@ func (d *tenable) Test() error {
 			status, apiEndpoint+"/container-security/api/v1/container/list", string(body))
 	}
 	return nil
-}
-
-func (d *tenable) ProtoScanner() *v1.Scanner {
-	return d.protoScanner
 }
 
 func (d *tenable) populateSHA(image *v1.Image) error {
@@ -149,12 +143,12 @@ func (d *tenable) Match(image *v1.Image) bool {
 }
 
 func (d *tenable) Global() bool {
-	return len(d.protoScanner.GetClusters()) == 0
+	return len(d.protoImageIntegration.GetClusters()) == 0
 }
 
 func init() {
-	scanners.Registry["tenable"] = func(scanner *v1.Scanner) (scanners.ImageScanner, error) {
-		scan, err := newScanner(scanner)
+	scanners.Registry["tenable"] = func(integration *v1.ImageIntegration) (scanners.ImageScanner, error) {
+		scan, err := newScanner(integration)
 		return scan, err
 	}
 }

@@ -26,8 +26,7 @@ type InMemoryStore struct {
 	*benchmarkTriggerStore
 	*deploymentStore
 	*policyStore
-	*registryStore
-	*scannerStore
+	*imageIntegrationStore
 
 	persistent db.Storage
 }
@@ -49,8 +48,7 @@ func New(persistentStorage db.Storage) *InMemoryStore {
 		benchmarkTriggerStore: newBenchmarkTriggerStore(persistentStorage),
 		deploymentStore:       newDeploymentStore(persistentStorage),
 		policyStore:           newPolicyStore(persistentStorage),
-		registryStore:         newRegistryStore(persistentStorage),
-		scannerStore:          newScannerStore(persistentStorage),
+		imageIntegrationStore: newImageIntegrationStore(persistentStorage),
 	}
 }
 

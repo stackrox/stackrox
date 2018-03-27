@@ -1,9 +1,8 @@
 import axios from 'axios';
 
 const sourceMap = {
-    notifiers: '/v1/notifiers',
-    registries: '/v1/registries',
-    scanners: '/v1/scanners'
+    imageIntegrations: '/v1/imageintegrations',
+    notifiers: '/v1/notifiers'
 };
 
 /**

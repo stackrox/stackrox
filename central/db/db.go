@@ -20,12 +20,11 @@ type Storage interface {
 	BenchmarkStorage
 	BenchmarkTriggerStorage
 	ClusterStorage
+	ImageIntegrationStorage
 	DeploymentStorage
 	PolicyStorage
 	ImageStorage
 	NotifierStorage
-	RegistryStorage
-	ScannerStorage
 	ServiceIdentityStorage
 }
 
@@ -91,6 +90,15 @@ type ClusterStorage interface {
 	UpdateClusterContactTime(id string, t time.Time) error
 }
 
+// ImageIntegrationStorage provide storage functionality for image integrations.
+type ImageIntegrationStorage interface {
+	GetImageIntegration(id string) (*v1.ImageIntegration, bool, error)
+	GetImageIntegrations(integration *v1.GetImageIntegrationsRequest) ([]*v1.ImageIntegration, error)
+	AddImageIntegration(integration *v1.ImageIntegration) (string, error)
+	UpdateImageIntegration(integration *v1.ImageIntegration) error
+	RemoveImageIntegration(id string) error
+}
+
 // DeploymentStorage provides storage functionality for deployments.
 type DeploymentStorage interface {
 	GetDeployment(id string) (*v1.Deployment, bool, error)
@@ -129,24 +137,6 @@ type PolicyStorage interface {
 	RemovePolicy(id string) error
 	RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error
 	DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error
-}
-
-// RegistryStorage provide storage functionality for registries.
-type RegistryStorage interface {
-	GetRegistry(id string) (*v1.Registry, bool, error)
-	GetRegistries(request *v1.GetRegistriesRequest) ([]*v1.Registry, error)
-	AddRegistry(registry *v1.Registry) (string, error)
-	UpdateRegistry(registry *v1.Registry) error
-	RemoveRegistry(id string) error
-}
-
-// ScannerStorage provide storage functionality for scanner.
-type ScannerStorage interface {
-	GetScanner(id string) (*v1.Scanner, bool, error)
-	GetScanners(request *v1.GetScannersRequest) ([]*v1.Scanner, error)
-	AddScanner(scanner *v1.Scanner) (string, error)
-	UpdateScanner(scanner *v1.Scanner) error
-	RemoveScanner(id string) error
 }
 
 // ServiceIdentityStorage provides storage functionality for service identities.

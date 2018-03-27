@@ -15,21 +15,12 @@ export function* getNotifiers() {
     }
 }
 
-export function* getRegistries() {
+export function* getImageIntegrations() {
     try {
-        const result = yield call(fetchIntegration, ['registries']);
-        yield put(actions.fetchRegistries.success(result.response));
+        const result = yield call(fetchIntegration, ['imageIntegrations']);
+        yield put(actions.fetchImageIntegrations.success(result.response));
     } catch (error) {
-        yield put(actions.fetchRegistries.failure(error));
-    }
-}
-
-export function* getScanners() {
-    try {
-        const result = yield call(fetchIntegration, ['scanners']);
-        yield put(actions.fetchScanners.success(result.response));
-    } catch (error) {
-        yield put(actions.fetchScanners.failure(error));
+        yield put(actions.fetchImageIntegrations.failure(error));
     }
 }
 
@@ -39,7 +30,7 @@ export function* watchIntegrationsLocation() {
         const { payload: location } = action;
 
         if (location && location.pathname && location.pathname.startsWith(integrationsPath)) {
-            yield all([fork(getNotifiers), fork(getRegistries), fork(getScanners)]);
+            yield all([fork(getNotifiers), fork(getImageIntegrations)]);
         }
     }
 }
@@ -48,18 +39,14 @@ export function* watchFetchRequest() {
     while (true) {
         const action = yield take([
             types.FETCH_NOTIFIERS.REQUEST,
-            types.FETCH_REGISTRIES.REQUEST,
-            types.FETCH_SCANNERS.REQUEST
+            types.FETCH_IMAGE_INTEGRATIONS.REQUEST
         ]);
         switch (action.type) {
             case types.FETCH_NOTIFIERS.REQUEST:
                 yield fork(getNotifiers);
                 break;
-            case types.FETCH_REGISTRIES.REQUEST:
-                yield fork(getRegistries);
-                break;
-            case types.FETCH_SCANNERS.REQUEST:
-                yield fork(getScanners);
+            case types.FETCH_IMAGE_INTEGRATIONS.REQUEST:
+                yield fork(getImageIntegrations);
                 break;
             default:
                 throw new Error(`Unknown action type ${action.type}`);

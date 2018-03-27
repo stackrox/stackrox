@@ -22,17 +22,26 @@ var (
 	log = logging.LoggerForModule()
 )
 
-type dockerRegistry struct {
-	protoRegistry *v1.Registry
-
-	registry string
+// Registry is the basic docker registry implementation
+type Registry struct {
+	cfg                   Config
+	protoImageIntegration *v1.ImageIntegration
 
 	getClientOnce sync.Once
 	clientObj     client
 
 	url      string
-	username string
-	password string
+	registry string // This is the registry portion of the image
+}
+
+// Config is the basic config for the docker registry
+type Config struct {
+	// Endpoint defines the Docker Registry URL
+	Endpoint string
+	// Username defines the Username for the Docker Registry
+	Username string
+	// Password defines the password for the Docker Registry
+	Password string
 }
 
 type v1Config struct {
@@ -69,43 +78,65 @@ func (n nilClient) Ping() error {
 	return n.error
 }
 
-func newRegistry(protoRegistry *v1.Registry) (*dockerRegistry, error) {
-	username, hasUsername := protoRegistry.Config["username"]
-	password, hasPassword := protoRegistry.Config["password"]
+func (c Config) validate() error {
+	username := c.Username
+	password := c.Password
+	hasUsername := username != ""
+	hasPassword := password != ""
 
 	if hasUsername != hasPassword {
 		if !hasUsername {
-			return nil, errors.New("Config parameter 'username' must be defined for all non Docker Hub registries")
+			return errors.New("Config parameter 'username' must be defined for all non Docker Hub registries")
 		}
-		return nil, errors.New("Config parameter 'password' must be defined for all non Docker Hub registries")
+		return errors.New("Config parameter 'password' must be defined for all non Docker Hub registries")
+	}
+	if c.Endpoint == "" {
+		return errors.New("Config parameter 'endpoint' must be defined")
 	}
 
-	if (!hasUsername && !hasPassword) && !strings.Contains(protoRegistry.GetEndpoint(), "docker.io") {
-		return nil, errors.New("Config parameters 'username' and 'password' must be defined for all non Docker Hub registries")
+	if (!hasUsername && !hasPassword) && !strings.Contains(c.Endpoint, "docker.io") {
+		return errors.New("Config parameters 'username' and 'password' must be defined for all non Docker Hub registries")
 	}
+	return nil
+}
 
-	url, err := urlfmt.FormatURL(protoRegistry.GetEndpoint(), true, false)
+// NewDockerRegistry creates a new instantiation of the docker registry
+// TODO(cgorman) AP-386 - properly put the base docker registry into another pkg
+func NewDockerRegistry(cfg Config, integration *v1.ImageIntegration) (*Registry, error) {
+	if err := cfg.validate(); err != nil {
+		return nil, err
+	}
+	url, err := urlfmt.FormatURL(cfg.Endpoint, true, false)
 	if err != nil {
 		return nil, err
 	}
 	// if the registry endpoint contains docker.io then the image will be docker.io/namespace/repo:tag
 	registry := urlfmt.GetServerFromURL(url)
-	if strings.Contains(protoRegistry.GetEndpoint(), "docker.io") {
+	if strings.Contains(cfg.Endpoint, "docker.io") {
 		registry = "docker.io"
 	}
 
-	return &dockerRegistry{
-		protoRegistry: protoRegistry,
-		registry:      registry,
-		url:           url,
-		username:      username,
-		password:      password,
+	return &Registry{
+		url:      url,
+		registry: registry,
+
+		cfg: cfg,
+		protoImageIntegration: integration,
 	}, nil
 }
 
-func (d *dockerRegistry) client() (c client) {
+func newRegistry(integration *v1.ImageIntegration) (*Registry, error) {
+	cfg := Config{
+		Endpoint: integration.Config["endpoint"],
+		Username: integration.Config["username"],
+		Password: integration.Config["password"],
+	}
+	return NewDockerRegistry(cfg, integration)
+}
+
+func (d *Registry) client() (c client) {
 	d.getClientOnce.Do(func() {
-		reg, err := registry.New(d.url, d.username, d.password)
+		reg, err := registry.New(d.url, d.cfg.Username, d.cfg.Password)
 		if err != nil {
 			d.clientObj = nilClient{err}
 			return
@@ -164,7 +195,7 @@ func compareProtoTimestamps(t1, t2 *timestamp.Timestamp) bool {
 	return t1.Nanos < t2.Nanos
 }
 
-func (d *dockerRegistry) getV2Metadata(image *v1.Image) *v1.V2Metadata {
+func (d *Registry) getV2Metadata(image *v1.Image) *v1.V2Metadata {
 	metadata, err := d.client().(*registry.Registry).ManifestV2(image.GetName().GetRemote(), image.GetName().GetTag())
 	if err != nil {
 		return nil
@@ -179,8 +210,18 @@ func (d *dockerRegistry) getV2Metadata(image *v1.Image) *v1.V2Metadata {
 	}
 }
 
+// Match decides if the image is contained within this registry
+func (d *Registry) Match(image *v1.Image) bool {
+	return d.registry == image.GetName().GetRegistry()
+}
+
+// Global returns whether or not this registry is available from all clusters
+func (d *Registry) Global() bool {
+	return len(d.protoImageIntegration.GetClusters()) == 0
+}
+
 // Metadata returns the metadata via this registries implementation
-func (d *dockerRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
+func (d *Registry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 	log.Infof("Getting metadata for image %s", images.Wrapper{Image: image})
 	if image == nil {
 		return nil, nil
@@ -219,29 +260,16 @@ func (d *dockerRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 	return imageMetadata, nil
 }
 
-func (d *dockerRegistry) ProtoRegistry() *v1.Registry {
-	return d.protoRegistry
-}
-
 // Test tests the current registry and makes sure that it is working properly
-func (d *dockerRegistry) Test() error {
+func (d *Registry) Test() error {
 	return d.client().Ping()
 }
 
-// Match decides if the image is contained within this registry
-func (d *dockerRegistry) Match(image *v1.Image) bool {
-	return d.registry == image.GetName().GetRegistry()
-}
-
-func (d *dockerRegistry) Global() bool {
-	return len(d.protoRegistry.GetClusters()) == 0
-}
-
 func init() {
-	f := func(registry *v1.Registry) (registries.ImageRegistry, error) {
-		reg, err := newRegistry(registry)
+	f := func(integration *v1.ImageIntegration) (registries.ImageRegistry, error) {
+		reg, err := newRegistry(integration)
 		return reg, err
 	}
+	registries.Registry["dtr"] = f
 	registries.Registry["docker"] = f
-	registries.Registry["quay"] = f
 }

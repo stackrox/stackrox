@@ -7,16 +7,16 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 
 export const types = {
     FETCH_NOTIFIERS: createFetchingActionTypes('notifiers/FETCH_NOTIFIERS'),
-    FETCH_REGISTRIES: createFetchingActionTypes('registries/FETCH_REGISTRIES'),
-    FETCH_SCANNERS: createFetchingActionTypes('scanners/FETCH_SCANNERS')
+    FETCH_IMAGE_INTEGRATIONS: createFetchingActionTypes(
+        'imageIntegrations/FETCH_IMAGE_INTEGRATIONS'
+    )
 };
 
 // Actions
 
 export const actions = {
     fetchNotifiers: createFetchingActions(types.FETCH_NOTIFIERS),
-    fetchRegistries: createFetchingActions(types.FETCH_REGISTRIES),
-    fetchScanners: createFetchingActions(types.FETCH_SCANNERS)
+    fetchImageIntegrations: createFetchingActions(types.FETCH_IMAGE_INTEGRATIONS)
 };
 
 // Reducers
@@ -28,36 +28,26 @@ const notifiers = (state = [], action) => {
     return state;
 };
 
-const registries = (state = [], action) => {
-    if (action.type === types.FETCH_REGISTRIES.SUCCESS) {
-        return isEqual(action.response.registries, state) ? state : action.response.registries;
-    }
-    return state;
-};
-
-const scanners = (state = [], action) => {
-    if (action.type === types.FETCH_SCANNERS.SUCCESS) {
-        return isEqual(action.response.scanners, state) ? state : action.response.scanners;
+const imageIntegrations = (state = [], action) => {
+    if (action.type === types.FETCH_IMAGE_INTEGRATIONS.SUCCESS) {
+        return isEqual(action.response.integrations, state) ? state : action.response.integrations;
     }
     return state;
 };
 
 const reducer = combineReducers({
     notifiers,
-    registries,
-    scanners
+    imageIntegrations
 });
 
 // Selectors
 
 const getNotifiers = state => state.notifiers;
-const getRegistries = state => state.registries;
-const getScanners = state => state.scanners;
+const getImageIntegrations = state => state.imageIntegrations;
 
 export const selectors = {
     getNotifiers,
-    getRegistries,
-    getScanners
+    getImageIntegrations
 };
 
 export default reducer;

@@ -20,10 +20,12 @@ func TestGetMetadataIntegration(t *testing.T) {
 	username := ""
 	password := ""
 
-	dockerHubClient := &dockerRegistry{
-		url:      url,
-		username: username,
-		password: password,
+	dockerHubClient := &Registry{
+		url: url,
+		cfg: Config{
+			Username: username,
+			Password: password,
+		},
 	}
 
 	image := v1.Image{

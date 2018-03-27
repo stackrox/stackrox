@@ -13,10 +13,8 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
-	"bitbucket.org/stack-rox/apollo/pkg/set"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 	clairV1 "github.com/coreos/clair/api/v1"
-	"github.com/deckarep/golang-set"
 )
 
 const (
@@ -29,14 +27,18 @@ var (
 )
 
 type clair struct {
-	client       *http.Client
-	endpoint     string
-	protoScanner *v1.Scanner
-	registrySet  mapset.Set
+	client                *http.Client
+	endpoint              string
+	protoImageIntegration *v1.ImageIntegration
 }
 
-func newScanner(protoScanner *v1.Scanner) (*clair, error) {
-	endpoint, err := urlfmt.FormatURL(protoScanner.GetEndpoint(), true, false)
+func newScanner(protoImageIntegration *v1.ImageIntegration) (*clair, error) {
+	endpoint, ok := protoImageIntegration.Config["endpoint"]
+	if !ok {
+		return nil, errors.New("endpoint parameter must be defined for Clair")
+	}
+
+	endpoint, err := urlfmt.FormatURL(endpoint, true, false)
 	if err != nil {
 		return nil, err
 	}
@@ -44,10 +46,9 @@ func newScanner(protoScanner *v1.Scanner) (*clair, error) {
 		Timeout: requestTimeout,
 	}
 	scanner := &clair{
-		client:       client,
-		endpoint:     endpoint,
-		protoScanner: protoScanner,
-		registrySet:  set.NewSetFromStringSlice(protoScanner.GetRegistries()),
+		client:                client,
+		endpoint:              endpoint,
+		protoImageIntegration: protoImageIntegration,
 	}
 	return scanner, nil
 }
@@ -82,10 +83,6 @@ func (c *clair) Test() error {
 		return fmt.Errorf("Received status code %v, but expected 200", code)
 	}
 	return nil
-}
-
-func (c *clair) ProtoScanner() *v1.Scanner {
-	return c.protoScanner
 }
 
 func (c *clair) retrieveLayerData(layer string) (*clairV1.LayerEnvelope, error) {
@@ -170,16 +167,16 @@ func (c *clair) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 
 // Match decides if the image is contained within this scanner
 func (c *clair) Match(image *v1.Image) bool {
-	return c.registrySet.Cardinality() == 0 || c.registrySet.Contains(image.GetName().GetRegistry())
+	return true
 }
 
 func (c *clair) Global() bool {
-	return len(c.protoScanner.GetClusters()) == 0
+	return len(c.protoImageIntegration.GetClusters()) == 0
 }
 
 func init() {
-	scanners.Registry["clair"] = func(scanner *v1.Scanner) (scanners.ImageScanner, error) {
-		scan, err := newScanner(scanner)
+	scanners.Registry["clair"] = func(integration *v1.ImageIntegration) (scanners.ImageScanner, error) {
+		scan, err := newScanner(integration)
 		return scan, err
 	}
 }

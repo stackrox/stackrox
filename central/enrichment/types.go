@@ -7,8 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
-	scannerTypes "bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"bitbucket.org/stack-rox/apollo/pkg/sources"
 )
 
 var (
@@ -20,15 +19,11 @@ type Enricher struct {
 	storage interface {
 		db.DeploymentStorage
 		db.ImageStorage
-		db.RegistryStorage
-		db.ScannerStorage
+		db.ImageIntegrationStorage
 	}
 
-	registryMutex sync.Mutex
-	registries    map[string]registries.ImageRegistry
-
-	scannerMutex sync.Mutex
-	scanners     map[string]scannerTypes.ImageScanner
+	imageIntegrationMutex sync.Mutex
+	imageIntegrations     map[string]*sources.ImageIntegration
 }
 
 // New creates and returns a new Enricher.
@@ -36,46 +31,40 @@ func New(storage db.Storage) (*Enricher, error) {
 	e := &Enricher{
 		storage: storage,
 	}
-	if err := e.initializeRegistries(); err != nil {
+	if err := e.initializeImageIntegrations(); err != nil {
 		return nil, err
 	}
-	if err := e.initializeScanners(); err != nil {
-		return nil, err
-	}
-
 	return e, nil
 }
 
-func (e *Enricher) initializeRegistries() error {
-	protoRegistries, err := e.storage.GetRegistries(&v1.GetRegistriesRequest{})
+func (e *Enricher) initializeImageIntegrations() error {
+	protoImageIntegrations, err := e.storage.GetImageIntegrations(&v1.GetImageIntegrationsRequest{})
 	if err != nil {
 		return err
 	}
-	e.registries = make(map[string]registries.ImageRegistry, len(protoRegistries))
-	for _, protoRegistry := range protoRegistries {
-		registry, err := registries.CreateRegistry(protoRegistry)
+	e.imageIntegrations = make(map[string]*sources.ImageIntegration, len(protoImageIntegrations))
+	for _, protoImageIntegration := range protoImageIntegrations {
+		integration, err := sources.NewImageIntegration(protoImageIntegration)
 		if err != nil {
-			return fmt.Errorf("error generating a registry from persisted registry data: %+v", err)
+			return fmt.Errorf("error generating an image integration from a persisted image integration: %s", err)
 		}
-		e.registries[protoRegistry.GetId()] = registry
+		e.imageIntegrations[protoImageIntegration.GetId()] = integration
 	}
 	return nil
 }
 
-func (e *Enricher) initializeScanners() error {
-	protoScanners, err := e.storage.GetScanners(&v1.GetScannersRequest{})
-	if err != nil {
-		return err
-	}
-	e.scanners = make(map[string]scannerTypes.ImageScanner, len(protoScanners))
-	for _, protoScanner := range protoScanners {
-		scanner, err := scannerTypes.CreateScanner(protoScanner)
-		if err != nil {
-			return fmt.Errorf("error generating a scanner from persisted scanner data: %+v", err)
-		}
-		e.scanners[protoScanner.GetId()] = scanner
-	}
-	return nil
+// UpdateImageIntegration updates the enricher's map of active image integratinos
+func (e *Enricher) UpdateImageIntegration(integration *sources.ImageIntegration) {
+	e.imageIntegrationMutex.Lock()
+	defer e.imageIntegrationMutex.Unlock()
+	e.imageIntegrations[integration.GetId()] = integration
+}
+
+// RemoveImageIntegration removes a image integration from the enricher's map of active image integrations
+func (e *Enricher) RemoveImageIntegration(id string) {
+	e.imageIntegrationMutex.Lock()
+	defer e.imageIntegrationMutex.Unlock()
+	delete(e.imageIntegrations, id)
 }
 
 // Enrich enriches a deployment with data from registries and scanners.
@@ -93,6 +82,29 @@ func (e *Enricher) Enrich(deployment *v1.Deployment) (enriched bool, err error) 
 	}
 
 	return
+}
+
+// EnrichWithImageIntegration takes in a deployment and integration
+func (e *Enricher) EnrichWithImageIntegration(deployment *v1.Deployment, integration *sources.ImageIntegration) bool {
+	e.imageIntegrationMutex.Lock()
+	defer e.imageIntegrationMutex.Unlock()
+	var wasUpdated bool
+	// TODO(cgorman) These may have a real ordering that we need to adhere to
+	for _, category := range integration.GetCategories() {
+		switch category {
+		case v1.ImageIntegrationCategory_REGISTRY:
+			updated := e.enrichWithRegistry(deployment, integration.Registry)
+			if !wasUpdated {
+				wasUpdated = updated
+			}
+		case v1.ImageIntegrationCategory_SCANNER:
+			updated := e.enrichWithScanner(deployment, integration.Scanner)
+			if !wasUpdated {
+				wasUpdated = updated
+			}
+		}
+	}
+	return wasUpdated
 }
 
 func (e *Enricher) enrichImage(image *v1.Image) (bool, error) {

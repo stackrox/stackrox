@@ -12,9 +12,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
-	"bitbucket.org/stack-rox/apollo/pkg/set"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
-	"github.com/deckarep/golang-set"
 	dockerRegistry "github.com/heroku/docker-registry-client/registry"
 )
 
@@ -32,22 +30,27 @@ type quay struct {
 
 	endpoint   string
 	oauthToken string
+	registry   string
 
 	reg *dockerRegistry.Registry
 
-	protoScanner *v1.Scanner
-	registrySet  mapset.Set
+	protoImageIntegration *v1.ImageIntegration
 }
 
-func newScanner(protoScanner *v1.Scanner) (*quay, error) {
-	oauthToken, ok := protoScanner.Config["oauthToken"]
+func newScanner(protoImageIntegration *v1.ImageIntegration) (*quay, error) {
+	oauthToken, ok := protoImageIntegration.Config["oauthToken"]
 	if !ok {
 		return nil, errors.New("'oauthToken' parameter must be defined for Quay.io")
 	}
-	endpoint, err := urlfmt.FormatURL(protoScanner.GetEndpoint(), true, false)
+	endpoint, ok := protoImageIntegration.Config["endpoint"]
+	if !ok {
+		return nil, errors.New("'endpoint' parameter must be defined for Quay.io")
+	}
+	endpoint, err := urlfmt.FormatURL(endpoint, true, false)
 	if err != nil {
 		return nil, err
 	}
+	registry := urlfmt.GetServerFromURL(endpoint)
 	reg, err := dockerRegistry.New(endpoint, username, oauthToken)
 	if err != nil {
 		return nil, err
@@ -59,10 +62,10 @@ func newScanner(protoScanner *v1.Scanner) (*quay, error) {
 		client:     client,
 		reg:        reg,
 		endpoint:   endpoint,
+		registry:   registry,
 		oauthToken: oauthToken,
 
-		protoScanner: protoScanner,
-		registrySet:  set.NewSetFromStringSlice(protoScanner.GetRegistries()),
+		protoImageIntegration: protoImageIntegration,
 	}
 	return scanner, nil
 }
@@ -93,10 +96,6 @@ func (q *quay) sendRequest(method string, values url.Values, pathSegments ...str
 func (q *quay) Test() error {
 	_, err := q.reg.Repositories()
 	return err
-}
-
-func (q *quay) ProtoScanner() *v1.Scanner {
-	return q.protoScanner
 }
 
 func (q *quay) populateSHA(image *v1.Image) error {
@@ -142,16 +141,16 @@ func (q *quay) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 
 // Match decides if the image is contained within this scanner
 func (q *quay) Match(image *v1.Image) bool {
-	return q.registrySet.Cardinality() == 0 || q.registrySet.Contains(image.GetName().GetRegistry())
+	return q.registry == image.GetName().GetRegistry()
 }
 
 func (q *quay) Global() bool {
-	return len(q.protoScanner.GetClusters()) == 0
+	return len(q.protoImageIntegration.GetClusters()) == 0
 }
 
 func init() {
-	scanners.Registry["quay"] = func(scanner *v1.Scanner) (scanners.ImageScanner, error) {
-		scan, err := newScanner(scanner)
+	scanners.Registry["quay"] = func(integration *v1.ImageIntegration) (scanners.ImageScanner, error) {
+		scan, err := newScanner(integration)
 		return scan, err
 	}
 }

@@ -9,9 +9,8 @@ import (
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
 
 	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	"bitbucket.org/stack-rox/apollo/pkg/sensor"
+	"bitbucket.org/stack-rox/apollo/pkg/sources"
 	"bitbucket.org/stack-rox/apollo/sensor/swarm/enforcer"
 	"bitbucket.org/stack-rox/apollo/sensor/swarm/listener"
 	"bitbucket.org/stack-rox/apollo/sensor/swarm/orchestrator"
@@ -58,8 +57,7 @@ func initializeSensor() *sensor.Sensor {
 	if err != nil {
 		panic(err)
 	}
-	a.ScannerPoller = scanners.NewScannersClient(a.CentralEndpoint, a.ClusterID)
-	a.RegistryPoller = registries.NewRegistriesClient(a.CentralEndpoint, a.ClusterID)
+	a.ImageIntegrationPoller = sources.NewImageIntegrationsClient(a.CentralEndpoint, a.ClusterID)
 
 	a.ServiceRegistrationFunc = registerAPIServices
 

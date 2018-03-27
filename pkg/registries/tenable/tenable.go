@@ -22,9 +22,7 @@ var (
 )
 
 type tenableRegistry struct {
-	protoRegistry *v1.Registry
-
-	registry string
+	protoImageIntegration *v1.ImageIntegration
 
 	getClientOnce sync.Once
 	clientObj     client
@@ -51,12 +49,12 @@ func (n nilClient) Repositories() ([]string, error) {
 	return nil, n.error
 }
 
-func newRegistry(protoRegistry *v1.Registry) (*tenableRegistry, error) {
-	accessKey, ok := protoRegistry.Config["accessKey"]
+func newRegistry(integration *v1.ImageIntegration) (*tenableRegistry, error) {
+	accessKey, ok := integration.Config["accessKey"]
 	if !ok {
 		return nil, errors.New("Config parameter 'accessKey' must be defined for Tenable registries")
 	}
-	secretKey, ok := protoRegistry.Config["secretKey"]
+	secretKey, ok := integration.Config["secretKey"]
 	if !ok {
 		return nil, errors.New("Config parameter 'secretKey' must be defined for Tenable registries")
 	}
@@ -66,11 +64,10 @@ func newRegistry(protoRegistry *v1.Registry) (*tenableRegistry, error) {
 	}
 
 	return &tenableRegistry{
-		protoRegistry: protoRegistry,
-		registry:      protoRegistry.Endpoint,
-		accessKey:     accessKey,
-		secretKey:     secretKey,
-		transport:     tran,
+		accessKey:             accessKey,
+		secretKey:             secretKey,
+		transport:             tran,
+		protoImageIntegration: integration,
 	}, nil
 }
 
@@ -99,11 +96,6 @@ func (d *tenableRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 	return nil, nil
 }
 
-// ProtoRegistry returns the Proto Registry this registry is based on
-func (d *tenableRegistry) ProtoRegistry() *v1.Registry {
-	return d.protoRegistry
-}
-
 // Test tests the current registry and makes sure that it is working properly
 func (d *tenableRegistry) Test() error {
 	_, err := d.client().Repositories()
@@ -116,12 +108,12 @@ func (d *tenableRegistry) Match(image *v1.Image) bool {
 }
 
 func (d *tenableRegistry) Global() bool {
-	return len(d.protoRegistry.GetClusters()) == 0
+	return len(d.protoImageIntegration.GetClusters()) == 0
 }
 
 func init() {
-	registries.Registry["tenable"] = func(registry *v1.Registry) (registries.ImageRegistry, error) {
-		reg, err := newRegistry(registry)
+	registries.Registry["tenable"] = func(integration *v1.ImageIntegration) (registries.ImageRegistry, error) {
+		reg, err := newRegistry(integration)
 		return reg, err
 	}
 }

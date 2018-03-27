@@ -5,8 +5,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
-	scannerTypes "bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"bitbucket.org/stack-rox/apollo/pkg/sources"
 )
 
 func (d *Detector) reprocessLoop() {
@@ -84,7 +83,7 @@ func (d *Detector) reprocessPolicy(policy *matcher.Policy) {
 	}
 }
 
-func (d *Detector) reprocessRegistry(registry registries.ImageRegistry) {
+func (d *Detector) reprocessImageIntegration(integration *sources.ImageIntegration) {
 	deployments, err := d.database.GetDeployments(&v1.GetDeploymentsRequest{})
 	if err != nil {
 		logger.Error(err)
@@ -94,23 +93,7 @@ func (d *Detector) reprocessRegistry(registry registries.ImageRegistry) {
 	policies := d.getCurrentPolicies()
 
 	for _, deploy := range deployments {
-		if d.enricher.EnrichWithRegistry(deploy, registry) {
-			d.queueTasks(deploy, policies)
-		}
-	}
-}
-
-func (d *Detector) reprocessScanner(scanner scannerTypes.ImageScanner) {
-	deployments, err := d.database.GetDeployments(&v1.GetDeploymentsRequest{})
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-
-	policies := d.getCurrentPolicies()
-
-	for _, deploy := range deployments {
-		if d.enricher.EnrichWithScanner(deploy, scanner) {
+		if d.enricher.EnrichWithImageIntegration(deploy, integration) {
 			d.queueTasks(deploy, policies)
 		}
 	}

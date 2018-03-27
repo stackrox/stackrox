@@ -6,25 +6,12 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
 )
 
-// UpdateRegistry updates image processors map of active registries
-func (e *Enricher) UpdateRegistry(registry registries.ImageRegistry) {
-	e.registryMutex.Lock()
-	defer e.registryMutex.Unlock()
-	e.registries[registry.ProtoRegistry().GetId()] = registry
-}
-
-// RemoveRegistry removes a registry from image processors map of active registries
-func (e *Enricher) RemoveRegistry(id string) {
-	e.registryMutex.Lock()
-	defer e.registryMutex.Unlock()
-	delete(e.registries, id)
-}
-
 func (e *Enricher) enrichWithMetadata(image *v1.Image) (updated bool, err error) {
-	e.registryMutex.Lock()
-	defer e.registryMutex.Unlock()
-	for _, registry := range e.registries {
-		if updated, err = e.enrichImageWithRegistry(image, registry); err != nil {
+	for _, integration := range e.imageIntegrations {
+		if integration.Registry == nil {
+			continue
+		}
+		if updated, err = e.enrichImageWithRegistry(image, integration.Registry); err != nil {
 			return
 		} else if updated {
 			return
@@ -33,8 +20,8 @@ func (e *Enricher) enrichWithMetadata(image *v1.Image) (updated bool, err error)
 	return
 }
 
-// EnrichWithRegistry enriches a deployment with a specific registry.
-func (e *Enricher) EnrichWithRegistry(deployment *v1.Deployment, registry registries.ImageRegistry) (updated bool) {
+// enrichWithRegistry enriches a deployment with a specific registry.
+func (e *Enricher) enrichWithRegistry(deployment *v1.Deployment, registry registries.ImageRegistry) (updated bool) {
 	for _, c := range deployment.GetContainers() {
 		if ok, err := e.enrichImageWithRegistry(c.GetImage(), registry); err != nil {
 			logger.Error(err)

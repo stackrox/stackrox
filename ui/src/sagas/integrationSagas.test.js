@@ -1,14 +1,9 @@
 import { all, fork, take } from 'redux-saga/effects';
 import { types as locationActionTypes } from 'reducers/routes';
-import {
-    getNotifiers,
-    getRegistries,
-    getScanners,
-    watchIntegrationsLocation
-} from './integrationSagas';
+import { getNotifiers, getImageIntegrations, watchIntegrationsLocation } from './integrationSagas';
 
 describe('Auth Sagas Test', () => {
-    it('Should do a service call to get scanners, notifiers, registries when location changes to integrations', () => {
+    it('Should do a service call to get image integrations, and notifiers when location changes to integrations', () => {
         const gen = watchIntegrationsLocation();
         let { value } = gen.next();
         expect(value).toEqual(take(locationActionTypes.LOCATION_CHANGE));
@@ -18,9 +13,9 @@ describe('Auth Sagas Test', () => {
                 pathname: '/main/integrations'
             }
         }));
-        expect(value).toEqual(all([fork(getNotifiers), fork(getRegistries), fork(getScanners)]));
+        expect(value).toEqual(all([fork(getNotifiers), fork(getImageIntegrations)]));
     });
-    it("Shouldn't do a service call to get scanners, notifiers, registries when location changes to violations, policies, etc.", () => {
+    it("Shouldn't do a service call to get image integrations, and notifiers when location changes to violations, policies, etc.", () => {
         const gen = watchIntegrationsLocation();
         let { value } = gen.next();
         expect(value).toEqual(take(locationActionTypes.LOCATION_CHANGE));
@@ -30,8 +25,6 @@ describe('Auth Sagas Test', () => {
                 pathname: '/main/violations'
             }
         }));
-        expect(value).not.toEqual(
-            all([fork(getNotifiers), fork(getRegistries), fork(getScanners)])
-        );
+        expect(value).not.toEqual(all([fork(getNotifiers), fork(getImageIntegrations)]));
     });
 });

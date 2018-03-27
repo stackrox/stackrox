@@ -23,11 +23,13 @@ type ClairIntegrationSuite struct {
 }
 
 func (suite *ClairIntegrationSuite) SetupSuite() {
-	protoScanner := &v1.Scanner{
-		Endpoint: "http://localhost:6060",
+	protoImageIntegration := &v1.ImageIntegration{
+		Config: map[string]string{
+			"endpoint": "http://localhost:6060",
+		},
 	}
 
-	c, err := newScanner(protoScanner)
+	c, err := newScanner(protoImageIntegration)
 	suite.NoError(err)
 	suite.clair = c
 }
@@ -48,12 +50,11 @@ func (suite *ClairIntegrationSuite) TestGetLastScan() {
 	}
 
 	creator := registries.Registry["docker"]
-	s, err := creator(&v1.Registry{
-		Endpoint:      "registry-1.docker.io",
-		ImageRegistry: "docker.io",
+	s, err := creator(&v1.ImageIntegration{
 		Config: map[string]string{
 			"username": "",
 			"password": "",
+			"endpoint": "registry-1.docker.io",
 		},
 	})
 	if err != nil {

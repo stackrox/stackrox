@@ -148,26 +148,23 @@ const sourceMap = {
             }
         ]
     },
-    scanners: {
+    imageIntegrations: {
         tenable: [
             {
                 label: 'Integration Name',
                 key: 'name',
                 type: 'text',
-                placeholder: 'Tenable Scanner'
+                placeholder: 'Tenable'
             },
             {
-                label: 'Scanner Endpoint',
-                key: 'endpoint',
-                type: 'text',
-                placeholder: 'https://cloud.tenable.com'
-            },
-            {
-                label: 'Image Registries',
-                key: 'registries',
+                label: 'Source Inputs',
+                key: 'categories',
                 type: 'multiselect',
-                options: [],
-                placeholder: 'registry.cloud.tenable.com (default: all)'
+                options: [
+                    { value: 'REGISTRY', label: 'Registry' },
+                    { value: 'SCANNER', label: 'Scanner' }
+                ],
+                placeholder: ''
             },
             {
                 label: 'Access Key',
@@ -182,25 +179,61 @@ const sourceMap = {
                 placeholder: ''
             }
         ],
+        docker: [
+            {
+                label: 'Integration Name',
+                key: 'name',
+                type: 'text',
+                placeholder: 'Docker Registry'
+            },
+            {
+                label: 'Types',
+                key: 'categories',
+                type: 'multiselect',
+                options: [{ value: 'REGISTRY', label: 'Registry', clearableValue: false }],
+                placeholder: ''
+            },
+            {
+                label: 'Endpoint',
+                key: 'config.endpoint',
+                type: 'text',
+                placeholder: 'registry-1.docker.io'
+            },
+            {
+                label: 'Username',
+                key: 'config.username',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                label: 'Password',
+                key: 'config.password',
+                type: 'password',
+                placeholder: ''
+            }
+        ],
         dtr: [
             {
                 label: 'Integration Name',
                 key: 'name',
                 type: 'text',
-                placeholder: 'DTR Scanner'
+                placeholder: 'Prod Docker Trusted Registry'
             },
             {
-                label: 'Scanner Endpoint',
-                key: 'endpoint',
-                type: 'text',
-                placeholder: 'example-dtr.rox.systems'
-            },
-            {
-                label: 'Image Registries',
-                key: 'registries',
+                label: 'Types',
+                key: 'categories',
                 type: 'multiselect',
-                options: [],
-                placeholder: 'example-dtr.rox.systems (default: all)'
+                options: [
+                    { value: 'REGISTRY', label: 'Registry' },
+                    { value: 'SCANNER', label: 'Scanner' }
+                ],
+                placeholder: ''
+            },
+            {
+                label: 'Endpoint',
+                key: 'config.endpoint',
+                type: 'text',
+                placeholder: 'dtr.example.com'
             },
             {
                 label: 'Username',
@@ -220,20 +253,23 @@ const sourceMap = {
                 label: 'Integration Name',
                 key: 'name',
                 type: 'text',
-                placeholder: 'Quay Scanner'
+                placeholder: 'Quay'
             },
             {
-                label: 'Scanner Endpoint',
-                key: 'endpoint',
+                label: 'Types',
+                key: 'categories',
+                type: 'multiselect',
+                options: [
+                    { value: 'REGISTRY', label: 'Registry' },
+                    { value: 'SCANNER', label: 'Scanner' }
+                ],
+                placeholder: ''
+            },
+            {
+                label: 'Endpoint',
+                key: 'config.endpoint',
                 type: 'text',
                 placeholder: 'quay.io'
-            },
-            {
-                label: 'Image Registries',
-                key: 'registries',
-                type: 'multiselect',
-                options: [],
-                placeholder: 'quay.io (default: all)'
             },
             {
                 label: 'OAuth Token',
@@ -247,144 +283,20 @@ const sourceMap = {
                 label: 'Integration Name',
                 key: 'name',
                 type: 'text',
-                placeholder: 'Clair Scanner'
+                placeholder: 'Clair'
             },
             {
-                label: 'Scanner Endpoint',
-                key: 'endpoint',
+                label: 'Types',
+                key: 'categories',
+                type: 'multiselect',
+                options: [{ value: 'SCANNER', label: 'Scanner', clearableValue: false }],
+                placeholder: ''
+            },
+            {
+                label: 'Endpoint',
+                key: 'config.endpoint',
                 type: 'text',
                 placeholder: 'https://clair.example.com'
-            },
-            {
-                label: 'Image Registries',
-                key: 'registries',
-                type: 'multiselect',
-                options: [],
-                placeholder: '(default: all)'
-            }
-        ]
-    },
-    registries: {
-        docker: [
-            {
-                label: 'Integration Name',
-                key: 'name',
-                type: 'text',
-                placeholder: 'Docker Registry'
-            },
-            {
-                label: 'Registry Endpoint',
-                key: 'endpoint',
-                type: 'text',
-                placeholder: 'registry-1.docker.io'
-            },
-            {
-                label: 'Docker Username',
-                key: 'config.username',
-                type: 'text',
-                placeholder: ''
-            },
-            {
-                label: 'Docker Password',
-                key: 'config.password',
-                type: 'password',
-                placeholder: ''
-            }
-        ],
-        tenable: [
-            {
-                label: 'Integration Name',
-                key: 'name',
-                type: 'text',
-                placeholder: 'Tenable Registry'
-            },
-            {
-                label: 'Registry Endpoint',
-                key: 'endpoint',
-                type: 'text',
-                placeholder: 'registry.cloud.tenable.com'
-            },
-            {
-                label: 'Image Registry',
-                key: 'imageRegistry',
-                type: 'text',
-                placeholder: 'registry.cloud.tenable.com'
-            },
-            {
-                label: 'Access Key',
-                key: 'config.accessKey',
-                type: 'text',
-                placeholder: ''
-            },
-            {
-                label: 'Secret Key',
-                key: 'config.secretKey',
-                type: 'text',
-                placeholder: ''
-            }
-        ],
-        dtr: [
-            {
-                label: 'Integration Name',
-                key: 'name',
-                type: 'text',
-                placeholder: 'DTR Registry'
-            },
-            {
-                label: 'Registry Endpoint',
-                key: 'endpoint',
-                type: 'text',
-                placeholder: 'example-dtr.rox.systems'
-            },
-            {
-                label: 'Image Registry',
-                key: 'imageRegistry',
-                type: 'text',
-                placeholder: 'example-dtr.rox.systems'
-            },
-            {
-                label: 'Docker Username',
-                key: 'config.username',
-                type: 'text',
-                placeholder: ''
-            },
-            {
-                label: 'Docker Password',
-                key: 'config.password',
-                type: 'password',
-                placeholder: ''
-            }
-        ],
-        quay: [
-            {
-                label: 'Integration Name',
-                key: 'name',
-                type: 'text',
-                placeholder: 'Quay Registry'
-            },
-            {
-                label: 'Registry Endpoint',
-                key: 'endpoint',
-                type: 'text',
-                placeholder: 'quay.io'
-            },
-            {
-                label: 'Image Registry',
-                key: 'imageRegistry',
-                type: 'text',
-                placeholder: 'quay.io'
-            },
-            {
-                label: 'Username',
-                key: 'config.username',
-                type: 'text',
-                placeholder: '$oauthtoken'
-            },
-            {
-                label: 'Password',
-                key: 'config.password',
-                type: 'password',
-                placeholder: ''
             }
         ]
     }
@@ -392,8 +304,7 @@ const sourceMap = {
 
 const SOURCE_LABELS = Object.freeze({
     authProviders: 'authentication provider',
-    registries: 'registry',
-    scanners: 'scanner',
+    imageIntegrations: 'image integrations',
     notifiers: 'plugin'
 });
 
@@ -419,13 +330,8 @@ class IntegrationModal extends Component {
                 type: PropTypes.string.isRequired
             })
         ).isRequired,
-        source: PropTypes.oneOf([
-            'registries',
-            'scanners',
-            'notifiers',
-            'authProviders',
-            'clusters'
-        ]).isRequired,
+        source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders', 'clusters'])
+            .isRequired,
         type: PropTypes.string.isRequired,
         onRequestClose: PropTypes.func.isRequired,
         onIntegrationsUpdate: PropTypes.func.isRequired,
@@ -622,7 +528,7 @@ class IntegrationModal extends Component {
                 );
             case 'multiselect':
                 return (
-                    <MultiSelect.Creatable
+                    <MultiSelect
                         key={field.key}
                         multi
                         onChange={handleMultiSelectChange()}

@@ -12,9 +12,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
-	"bitbucket.org/stack-rox/apollo/pkg/set"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
-	"github.com/deckarep/golang-set"
 )
 
 const (
@@ -33,40 +31,46 @@ type dtr struct {
 	server   string
 	username string
 	password string
+	registry string
 
-	protoScanner *v1.Scanner
-	registrySet  mapset.Set
+	protoImageIntegration *v1.ImageIntegration
 
 	metadata *scannerMetadata
 	features *metadataFeatures
 }
 
-func newScanner(protoScanner *v1.Scanner) (*dtr, error) {
-	username, ok := protoScanner.Config["username"]
+func newScanner(protoImageIntegration *v1.ImageIntegration) (*dtr, error) {
+	username, ok := protoImageIntegration.Config["username"]
 	if !ok {
 		return nil, errors.New("username parameter must be defined for DTR")
 	}
-	password, ok := protoScanner.Config["password"]
+	password, ok := protoImageIntegration.Config["password"]
 	if !ok {
 		return nil, errors.New("password parameter must be defined for DTR")
 	}
+	endpoint, ok := protoImageIntegration.Config["endpoint"]
+	if !ok {
+		return nil, errors.New("endpoint parameter must be defined for DTR")
+	}
+
 	client := &http.Client{
 		Timeout: requestTimeout,
 	}
 	// Trim any trailing slashes as the expectation will be that the input is in the form
 	// https://12.12.12.12:8080 or https://dtr.com
-	endpoint, err := urlfmt.FormatURL(protoScanner.GetEndpoint(), true, false)
+	endpoint, err := urlfmt.FormatURL(endpoint, true, false)
 	if err != nil {
 		return nil, err
 	}
+	registry := urlfmt.GetServerFromURL(endpoint)
 	scanner := &dtr{
-		client:         client,
-		server:         endpoint,
-		username:       username,
-		password:       password,
-		metadataTicker: time.NewTicker(metadataRefreshInterval),
-		protoScanner:   protoScanner,
-		registrySet:    set.NewSetFromStringSlice(protoScanner.GetRegistries()),
+		client:                client,
+		server:                endpoint,
+		username:              username,
+		registry:              registry,
+		password:              password,
+		metadataTicker:        time.NewTicker(metadataRefreshInterval),
+		protoImageIntegration: protoImageIntegration,
 	}
 
 	if err := scanner.fetchMetadata(); err != nil {
@@ -198,10 +202,6 @@ func (d *dtr) Test() error {
 	return nil
 }
 
-func (d *dtr) ProtoScanner() *v1.Scanner {
-	return d.protoScanner
-}
-
 // GetLastScan retrieves the most recent scan
 func (d *dtr) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	log.Infof("Getting latest scan for image %v", image)
@@ -217,16 +217,16 @@ func (d *dtr) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 
 // Match decides if the image is contained within this registry
 func (d *dtr) Match(image *v1.Image) bool {
-	return d.registrySet.Cardinality() == 0 || d.registrySet.Contains(image.GetName().GetRegistry())
+	return d.registry == image.GetName().GetRegistry()
 }
 
 func (d *dtr) Global() bool {
-	return len(d.protoScanner.GetClusters()) == 0
+	return len(d.protoImageIntegration.GetClusters()) == 0
 }
 
 func init() {
-	scanners.Registry["dtr"] = func(scanner *v1.Scanner) (scanners.ImageScanner, error) {
-		scan, err := newScanner(scanner)
+	scanners.Registry["dtr"] = func(integration *v1.ImageIntegration) (scanners.ImageScanner, error) {
+		scan, err := newScanner(integration)
 		return scan, err
 	}
 }

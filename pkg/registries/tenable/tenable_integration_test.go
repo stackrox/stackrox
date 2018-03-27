@@ -16,24 +16,26 @@ const (
 )
 
 func TestTenable(t *testing.T) {
-	protoRegistry := &v1.Registry{
+	protoImageIntegration := &v1.ImageIntegration{
 		Config: map[string]string{
 			"accessKey": accessKey,
 			"secretKey": secretKey,
 		},
 	}
-	reg, err := newRegistry(protoRegistry)
+	reg, err := newRegistry(protoImageIntegration)
 	require.NoError(t, err)
 
 	i := &v1.Image{
-		Remote: "srox/nginx",
-		Tag:    "1.10",
+		Name: &v1.ImageName{
+			Remote: "srox/nginx",
+			Tag:    "1.10",
+		},
 	}
 
 	metadata, err := reg.Metadata(i)
 	require.NoError(t, err)
 	assert.Nil(t, metadata)
-	assert.Equal(t, "0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455", i.Sha)
+	assert.Equal(t, "0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455", i.Name.GetSha())
 
 	err = reg.Test()
 	assert.NoError(t, err)

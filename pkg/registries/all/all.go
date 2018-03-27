@@ -6,4 +6,6 @@ import (
 	_ "bitbucket.org/stack-rox/apollo/pkg/registries/tenable"
 	// Docker
 	_ "bitbucket.org/stack-rox/apollo/pkg/registries/docker"
+	// Quay
+	_ "bitbucket.org/stack-rox/apollo/pkg/registries/quay"
 )

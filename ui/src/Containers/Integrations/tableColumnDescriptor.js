@@ -40,41 +40,20 @@ const tableColumnDescriptor = Object.freeze({
             { key: 'config.server', label: 'Server' }
         ]
     },
-    scanners: {
-        tenable: [
-            { key: 'name', label: 'Name' },
-            { key: 'endpoint', label: 'Scanner Endpoint' },
-            { key: 'registries', label: 'Registries', keyValueFunc: obj => obj.join(', ') }
-        ],
-        dtr: [
-            { key: 'name', label: 'Name' },
-            { key: 'endpoint', label: 'Scanner Endpoint' },
-            { key: 'registries', label: 'Registries', keyValueFunc: obj => obj.join(', ') }
-        ],
-        quay: [
-            { key: 'name', label: 'Name' },
-            { key: 'endpoint', label: 'Scanner Endpoint' },
-            { key: 'registries', label: 'Registries', keyValueFunc: obj => obj.join(', ') }
-        ],
-        clair: [
-            { key: 'name', label: 'Name' },
-            { key: 'endpoint', label: 'Scanner Endpoint' },
-            { key: 'registries', label: 'Registries', keyValueFunc: obj => obj.join(', ') }
-        ]
-    },
-    registries: {
+    imageIntegrations: {
         docker: [
             { key: 'name', label: 'Name' },
-            { key: 'endpoint', label: 'Registry Endpoint' },
+            { key: 'config.endpoint', label: 'Endpoint' },
             { key: 'config.username', label: 'Username' }
         ],
-        tenable: [{ key: 'name', label: 'Name' }, { key: 'endpoint', label: 'Registry Endpoint' }],
+        tenable: [{ key: 'name', label: 'Name' }],
         dtr: [
             { key: 'name', label: 'Name' },
-            { key: 'endpoint', label: 'Registry Endpoint' },
+            { key: 'config.endpoint', label: 'Endpoint' },
             { key: 'config.username', label: 'Username' }
         ],
-        quay: [{ key: 'name', label: 'Name' }, { key: 'endpoint', label: 'Registry Endpoint' }]
+        quay: [{ key: 'name', label: 'Name' }, { key: 'config.endpoint', label: 'Endpoint' }],
+        clair: [{ key: 'name', label: 'Name' }, { key: 'config.endpoint', label: 'Endpoint' }]
     }
 });
 

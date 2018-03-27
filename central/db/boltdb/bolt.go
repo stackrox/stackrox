@@ -89,12 +89,11 @@ func (b *BoltDB) initializeTables() error {
 		checkResultsBucket,
 		clusterBucket,
 		clusterStatusBucket,
+		imageIntegrationBucket,
 		deploymentBucket,
 		imageBucket,
 		policyBucket,
 		notifierBucket,
-		registryBucket,
-		scannerBucket,
 		scanMetadataBucket,
 		scansToCheckBucket,
 		serviceIdentityBucket,
@@ -190,26 +189,14 @@ func (b *BoltDB) ExportHandler() http.Handler {
 				return
 			}
 		}
-		registries, err := exportDB.GetRegistries(&v1.GetRegistriesRequest{})
+		integrations, err := exportDB.GetImageIntegrations(&v1.GetImageIntegrationsRequest{})
 		if err != nil {
 			handleError(w, err)
 			return
 		}
-		for _, r := range registries {
-			r.Config = nil
-			if err := exportDB.UpdateRegistry(r); err != nil {
-				handleError(w, err)
-				return
-			}
-		}
-		scanners, err := exportDB.GetScanners(&v1.GetScannersRequest{})
-		if err != nil {
-			handleError(w, err)
-			return
-		}
-		for _, s := range scanners {
-			s.Config = nil
-			if err := exportDB.UpdateScanner(s); err != nil {
+		for _, d := range integrations {
+			d.Config = nil
+			if err := exportDB.UpdateImageIntegration(d); err != nil {
 				handleError(w, err)
 				return
 			}

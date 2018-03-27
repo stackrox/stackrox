@@ -21,14 +21,17 @@ const (
 )
 
 var (
-	dockerRegistry = &v1.Registry{
-		Name:     "public dockerhub",
-		Type:     "docker",
-		Endpoint: "registry-1.docker.io",
+	integration = &v1.ImageIntegration{
+		Name: "public dockerhub",
+		Type: "docker",
+		Config: map[string]string{
+			"endpoint": "registry-1.docker.io",
+		},
+		Categories: []v1.ImageIntegrationCategory{v1.ImageIntegrationCategory_REGISTRY},
 	}
 )
 
-func TestRegistry(t *testing.T) {
+func TestImageIntegration(t *testing.T) {
 	defer teardownAlpineDeployment(t)
 	setupAlpineDeployment(t)
 
@@ -45,19 +48,19 @@ func TestRegistry(t *testing.T) {
 		},
 		{
 			name: "create",
-			test: verifyCreateRegistry,
+			test: verifyCreateImageIntegration,
 		},
 		{
 			name: "read",
-			test: verifyReadRegistry,
+			test: verifyReadImageIntegration,
 		},
 		{
 			name: "update",
-			test: verifyUpdateRegistry,
+			test: verifyUpdateImageIntegration,
 		},
 		{
 			name: "delete",
-			test: verifyDeleteRegistry,
+			test: verifyDeleteImageIntegration,
 		},
 		{
 			name: "metadata populated",
@@ -180,59 +183,59 @@ func verifyImageMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v
 	return false
 }
 
-func verifyCreateRegistry(t *testing.T, conn *grpc.ClientConn) {
+func verifyCreateImageIntegration(t *testing.T, conn *grpc.ClientConn) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	service := v1.NewRegistryServiceClient(conn)
+	service := v1.NewImageIntegrationServiceClient(conn)
 
-	postResp, err := service.PostRegistry(ctx, dockerRegistry)
+	postResp, err := service.PostImageIntegration(ctx, integration)
 	require.NoError(t, err)
 
-	dockerRegistry.Id = postResp.GetId()
-	assert.Equal(t, dockerRegistry, postResp)
+	integration.Id = postResp.GetId()
+	assert.Equal(t, integration, postResp)
 }
 
-func verifyReadRegistry(t *testing.T, conn *grpc.ClientConn) {
+func verifyReadImageIntegration(t *testing.T, conn *grpc.ClientConn) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	service := v1.NewRegistryServiceClient(conn)
+	service := v1.NewImageIntegrationServiceClient(conn)
 
-	getResp, err := service.GetRegistry(ctx, &v1.ResourceByID{Id: dockerRegistry.GetId()})
+	getResp, err := service.GetImageIntegration(ctx, &v1.ResourceByID{Id: integration.GetId()})
 	require.NoError(t, err)
-	assert.Equal(t, dockerRegistry, getResp)
+	assert.Equal(t, integration, getResp)
 
-	getManyResp, err := service.GetRegistries(ctx, &v1.GetRegistriesRequest{Name: dockerRegistry.GetName()})
+	getManyResp, err := service.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{Name: integration.GetName()})
 	require.NoError(t, err)
-	assert.Equal(t, 1, len(getManyResp.GetRegistries()))
-	if len(getManyResp.GetRegistries()) > 0 {
-		assert.Equal(t, dockerRegistry, getManyResp.GetRegistries()[0])
+	assert.Equal(t, 1, len(getManyResp.GetIntegrations()))
+	if len(getManyResp.GetIntegrations()) > 0 {
+		assert.Equal(t, integration, getManyResp.GetIntegrations()[0])
 	}
 }
 
-func verifyUpdateRegistry(t *testing.T, conn *grpc.ClientConn) {
+func verifyUpdateImageIntegration(t *testing.T, conn *grpc.ClientConn) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	service := v1.NewRegistryServiceClient(conn)
+	service := v1.NewImageIntegrationServiceClient(conn)
 
-	dockerRegistry.Name = "updated docker registry"
+	integration.Name = "updated docker registry"
 
-	_, err := service.PutRegistry(ctx, dockerRegistry)
+	_, err := service.PutImageIntegration(ctx, integration)
 	require.NoError(t, err)
 
-	getResp, err := service.GetRegistry(ctx, &v1.ResourceByID{Id: dockerRegistry.GetId()})
+	getResp, err := service.GetImageIntegration(ctx, &v1.ResourceByID{Id: integration.GetId()})
 	require.NoError(t, err)
-	assert.Equal(t, dockerRegistry, getResp)
+	assert.Equal(t, integration, getResp)
 }
 
-func verifyDeleteRegistry(t *testing.T, conn *grpc.ClientConn) {
+func verifyDeleteImageIntegration(t *testing.T, conn *grpc.ClientConn) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	service := v1.NewRegistryServiceClient(conn)
+	service := v1.NewImageIntegrationServiceClient(conn)
 
-	_, err := service.DeleteRegistry(ctx, &v1.ResourceByID{Id: dockerRegistry.GetId()})
+	_, err := service.DeleteImageIntegration(ctx, &v1.ResourceByID{Id: integration.GetId()})
 	require.NoError(t, err)
 
-	_, err = service.GetRegistry(ctx, &v1.ResourceByID{Id: dockerRegistry.GetId()})
+	_, err = service.GetImageIntegration(ctx, &v1.ResourceByID{Id: integration.GetId()})
 	s, ok := status.FromError(err)
 	assert.True(t, ok)
 	assert.Equal(t, codes.NotFound, s.Code())
