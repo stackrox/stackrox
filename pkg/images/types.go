@@ -35,9 +35,10 @@ func GenerateImageFromString(imageStr string) *v1.Image {
 	if ok {
 		tag = namedTagged.Tag()
 	}
+	image.Name.Registry = reference.Domain(named)
 	image.Name.Remote = reference.Path(named)
 	image.Name.Tag = tag
-	image.Name.Registry = reference.Domain(named)
+	image.Name.FullName = fmt.Sprintf("%s/%s:%s", image.Name.Registry, image.Name.Remote, image.Name.Tag)
 	return &image
 }
 
@@ -72,7 +73,7 @@ type SliceWrapper []*v1.Image
 func (s SliceWrapper) String() string {
 	output := make([]string, len(s))
 	for i, img := range s {
-		output[i] = Wrapper{img}.String()
+		output[i] = img.GetName().GetFullName()
 	}
 
 	return strings.Join(output, ", ")
@@ -81,10 +82,6 @@ func (s SliceWrapper) String() string {
 // Wrapper provides helper functions for an image.
 type Wrapper struct {
 	*v1.Image
-}
-
-func (i Wrapper) String() string {
-	return fmt.Sprintf("%v/%v:%v", i.GetName().GetRegistry(), i.GetName().GetRemote(), i.GetName().GetTag())
 }
 
 // ShortID returns the SHA truncated to 12 characters.

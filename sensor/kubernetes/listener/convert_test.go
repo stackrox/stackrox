@@ -205,6 +205,7 @@ func TestConvert(t *testing.T) {
 									Registry: "docker.io",
 									Remote:   "stackrox/kafka",
 									Tag:      "latest",
+									FullName: "docker.io/stackrox/kafka:latest",
 								},
 							},
 							Ports: []*pkgV1.PortConfig{
@@ -258,6 +259,7 @@ func TestConvert(t *testing.T) {
 									Remote:   "stackrox/policy-engine",
 									Tag:      "1.3",
 									Sha:      "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
+									FullName: "docker.io/stackrox/policy-engine:1.3",
 								},
 							},
 							SecurityContext: &pkgV1.SecurityContext{

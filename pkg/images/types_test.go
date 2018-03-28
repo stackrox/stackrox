@@ -14,6 +14,7 @@ func TestNewImage(t *testing.T) {
 			Remote:   "library/nginx",
 			Tag:      "latest",
 			Sha:      "adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
+			FullName: "docker.io/library/nginx:latest",
 		},
 	}
 	newImage := GenerateImageFromString("nginx:latest@sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401")

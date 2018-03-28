@@ -115,7 +115,7 @@ func (q *quay) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	// If SHA is empty, then retrieve it from the Quay registry
 	if image.GetName().GetSha() == "" {
 		if err := q.populateSHA(image); err != nil {
-			return nil, fmt.Errorf("unable to retrieve SHA for image %v due to: %+v", images.Wrapper{Image: image}.String(), err)
+			return nil, fmt.Errorf("unable to retrieve SHA for image %v due to: %+v", image.GetName().GetFullName(), err)
 		}
 	}
 
@@ -134,7 +134,7 @@ func (q *quay) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 		return nil, err
 	}
 	if scan.Data.Layer == nil {
-		return nil, fmt.Errorf("Layer for image %s was not found", images.Wrapper{Image: image})
+		return nil, fmt.Errorf("Layer for image %s was not found", image.GetName().GetFullName())
 	}
 	return convertScanToImageScan(image, scan), nil
 }

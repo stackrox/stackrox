@@ -160,7 +160,7 @@ func (c *clair) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 		le, found = c.getLastScanFromV1Metadata(image)
 	}
 	if le == nil || le.Layer == nil {
-		return nil, fmt.Errorf("No scan data found for image %v", images.Wrapper{Image: image})
+		return nil, fmt.Errorf("No scan data found for image %s", image.GetName().GetFullName())
 	}
 	return convertLayerToImageScan(image, le), nil
 }

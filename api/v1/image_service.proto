@@ -64,6 +64,7 @@ message ImageName {
     string registry                         = 2;
     string remote                           = 3;
     string tag                              = 4;
+    string full_name                        = 5;
 }
 
 message ImageScan {

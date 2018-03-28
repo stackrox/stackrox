@@ -163,7 +163,7 @@ func run(cfg config) error {
 	for _, image := range images {
 		log.Infof("Processing image '%v'", imagefmt.Wrapper{Image: image})
 		if err := runImage(image); err != nil {
-			log.Errorf("Error analyzing image %v: %+v", imagefmt.Wrapper{Image: image}, err)
+			log.Errorf("Error analyzing image %v: %+v", image.GetName().GetFullName(), err)
 		}
 	}
 	return nil

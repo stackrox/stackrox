@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 	"github.com/heroku/docker-registry-client/registry"
 )
@@ -47,7 +46,7 @@ func (p *scanProcessor) processImage(image *v1.Image) error {
 		return err
 	}
 	if len(layers) == 0 {
-		return fmt.Errorf("No layers to process for image %s", images.Wrapper{Image: image})
+		return fmt.Errorf("No layers to process for image %s", image.GetName().GetFullName())
 	}
 	headers := p.getHeaders()
 	return p.clair.analyzeRemoteImage(p.dockerRegistry.URL, image, layers, headers)

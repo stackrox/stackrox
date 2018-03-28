@@ -116,6 +116,7 @@ func TestAsDeployment(t *testing.T) {
 								Registry: "docker.io",
 								Remote:   "library/nginx",
 								Tag:      "latest",
+								FullName: "docker.io/library/nginx:latest",
 							},
 						},
 						SecurityContext: &v1.SecurityContext{

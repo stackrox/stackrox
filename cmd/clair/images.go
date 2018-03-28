@@ -7,7 +7,6 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
-	imagefmt "bitbucket.org/stack-rox/apollo/pkg/images"
 	"github.com/deckarep/golang-set"
 	"github.com/docker/docker/registry"
 )
@@ -50,8 +49,8 @@ func getImages(endpoint string) ([]*v1.Image, error) {
 	imageSet := mapset.NewSet()
 	var images []*v1.Image
 	for _, i := range imagesResp.GetImages() {
-		if !imageSet.Contains(imagefmt.Wrapper{Image: i}.String()) {
-			imageSet.Add(imagefmt.Wrapper{Image: i}.String())
+		if !imageSet.Contains(i.GetName().GetFullName()) {
+			imageSet.Add(i.GetName().GetFullName())
 			images = append(images, i)
 		}
 	}

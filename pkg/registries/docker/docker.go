@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
@@ -222,7 +221,7 @@ func (d *Registry) Global() bool {
 
 // Metadata returns the metadata via this registries implementation
 func (d *Registry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
-	log.Infof("Getting metadata for image %s", images.Wrapper{Image: image})
+	log.Infof("Getting metadata for image %s", image.GetName().GetFullName())
 	if image == nil {
 		return nil, nil
 	}

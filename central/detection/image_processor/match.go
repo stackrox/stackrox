@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"github.com/golang/protobuf/ptypes"
 )
 
@@ -201,7 +200,7 @@ func (policy *compiledImagePolicy) matchImageName(image *v1.Image) (violations [
 		return
 	}
 	violations = append(violations, &v1.Alert_Violation{
-		Message: fmt.Sprintf("Image name '%s' matches the name policy '%s'", images.Wrapper{Image: image}, policy.ImageNamePolicy),
+		Message: fmt.Sprintf("Image name '%s' matches the name policy '%s'", image.GetName().GetFullName(), policy.ImageNamePolicy),
 	})
 	return
 }
@@ -257,7 +256,7 @@ func (policy *compiledImagePolicy) matchScanExists(image *v1.Image) (violations 
 	policyExists = true
 	if *policy.ScanExists && image.GetScan() == nil {
 		violations = append(violations, &v1.Alert_Violation{
-			Message: fmt.Sprintf("Image '%v' has not been scanned", images.Wrapper{Image: image}),
+			Message: fmt.Sprintf("Image '%s' has not been scanned", image.GetName().GetFullName()),
 		})
 	}
 	return
