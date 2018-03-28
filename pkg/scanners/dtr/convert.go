@@ -1,7 +1,6 @@
 package dtr
 
 import (
-	"fmt"
 	"strings"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -67,14 +66,8 @@ func convertTagScanSummariesToImageScans(server string, tagScanSummaries []*tagS
 		}
 
 		imageScans = append(imageScans, &v1.ImageScan{
-			Name: &v1.ImageName{
-				Registry: server,
-				Remote:   fmt.Sprintf("%v/%v", tagScan.Namespace, tagScan.RepoName),
-				Tag:      tagScan.Tag,
-			},
-			State:      convertScanState(tagScan.LastScanStatus),
-			Components: convertedLayers,
 			ScanTime:   completedAt,
+			Components: convertedLayers,
 		})
 	}
 	return imageScans

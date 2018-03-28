@@ -28,13 +28,7 @@ func getTestScan() (*scanResult, *v1.ImageScan, *v1.Image) {
 		},
 	}
 	protoScan := &v1.ImageScan{
-		State:      v1.ImageScanState_COMPLETED,
 		Components: protoComponents,
-		Name: &v1.ImageName{
-			Registry: image.GetName().GetRegistry(),
-			Remote:   image.GetName().GetRemote(),
-			Tag:      image.GetName().GetTag(),
-		},
 	}
 	return quayScan, protoScan, image
 }

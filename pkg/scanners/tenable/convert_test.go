@@ -187,13 +187,6 @@ func TestConvertScanToImageScan(t *testing.T) {
 	scanTime, err := ptypes.TimestampProto(updated)
 	assert.NoError(t, err)
 	expectedScan := &v1.ImageScan{
-		Name: &v1.ImageName{
-			Sha:      "56eefbfef9aa918410e5cfb97a1e83a52d7ac3989ca9e4fe8baa9db8156372bd",
-			Registry: registry,
-			Remote:   "srox/nginx",
-			Tag:      "1.10",
-		},
-		State:      v1.ImageScanState_COMPLETED,
 		Components: components,
 		ScanTime:   scanTime,
 	}

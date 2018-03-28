@@ -68,12 +68,8 @@ message ImageName {
 }
 
 message ImageScan {
-    ImageName name                          = 1;
-    // This indicates which version of the CVE DB this was scanned against. Used to determine if rescan needed
-    string cve_db_identifier                = 2;
-    ImageScanState state                    = 3;
-    repeated ImageScanComponents components = 4;
-    google.protobuf.Timestamp scan_time     = 5;
+    google.protobuf.Timestamp scan_time     = 1;
+    repeated ImageScanComponents components = 2;
 }
 
 message Image {
