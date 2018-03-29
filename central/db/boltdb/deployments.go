@@ -77,10 +77,7 @@ func (b *BoltDB) AddDeployment(deployment *v1.Deployment) error {
 		if err != nil {
 			return err
 		}
-		if err := bucket.Put([]byte(deployment.Id), bytes); err != nil {
-			return err
-		}
-		return b.indexer.AddDeployment(deployment)
+		return bucket.Put([]byte(deployment.Id), bytes)
 	})
 }
 
@@ -92,10 +89,7 @@ func (b *BoltDB) UpdateDeployment(deployment *v1.Deployment) error {
 		if err != nil {
 			return err
 		}
-		if err := bucket.Put([]byte(deployment.Id), bytes); err != nil {
-			return err
-		}
-		return b.indexer.AddDeployment(deployment)
+		return bucket.Put([]byte(deployment.Id), bytes)
 	})
 }
 
@@ -107,9 +101,6 @@ func (b *BoltDB) RemoveDeployment(id string) error {
 		if exists := bucket.Get(key) != nil; !exists {
 			return db.ErrNotFound{Type: "Deployment", ID: string(key)}
 		}
-		if err := bucket.Delete(key); err != nil {
-			return err
-		}
-		return b.indexer.DeleteDeployment(id)
+		return bucket.Delete(key)
 	})
 }

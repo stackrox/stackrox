@@ -11,24 +11,35 @@ enum SearchCategory {
     SEARCH_UNSET = 0;
     ALERTS       = 1;
     IMAGES       = 2;
-    BENCHMARKS   = 3;
-    POLICIES     = 4;
-    DEPLOYMENTS  = 5;
+    POLICIES     = 3;
+    DEPLOYMENTS  = 4;
     // TODO support Benchmarks
 }
 
-message SearchRequest {
-    repeated SearchCategory   categories = 1;
-    repeated Scope            scopes     = 2;
+message RawSearchRequest {
+    string query                       = 1;
+    repeated SearchCategory categories = 2;
+}
+
+message ParsedSearchRequest {
+    repeated SearchCategory   categories   = 1;
+    repeated Scope            scopes       = 2;
     message Values {
         repeated string values  = 1;
     }
-    map<string, Values>       fields     = 3;
+    map<string, Values>       fields       = 3;
+    string                    string_query = 4;
 }
 
 message SearchResult {
-    SearchCategory  category = 1;
-    repeated string ids      = 2;
+    string id                             = 1;
+    string name                           = 2;
+    SearchCategory category               = 3;
+    message Matches {
+        repeated string values = 1;
+    }
+    map<string, Matches> field_to_matches = 4;
+    double score                          = 5;
 }
 
 message SearchResponse {
@@ -45,10 +56,9 @@ message SearchOptionsResponse {
 
 service SearchService {
 
-    rpc Search(SearchRequest) returns (SearchResponse) {
+    rpc Search(RawSearchRequest) returns (SearchResponse) {
         option (google.api.http) = {
-            post: "/v1/search"
-            body: "*"
+            get: "/v1/search"
         };
     }
 

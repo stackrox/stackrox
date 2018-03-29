@@ -120,4 +120,4 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
 
 [[constraint]]
   name = "github.com/blevesearch/bleve"
-  version = "v0.7.0"
+  branch = "master"

@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/bolthelper"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -25,11 +24,10 @@ var (
 // BoltDB returns an instantiation of the storage interface. Exported for test purposes
 type BoltDB struct {
 	*bolt.DB
-	indexer search.Indexer
 }
 
 // New returns an instance of the persistent BoltDB store
-func New(path string, indexer search.Indexer) (*BoltDB, error) {
+func New(path string) (*BoltDB, error) {
 	dirPath := filepath.Dir(path)
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 		err = os.MkdirAll(dirPath, 0600)
@@ -45,8 +43,7 @@ func New(path string, indexer search.Indexer) (*BoltDB, error) {
 	}
 
 	b := &BoltDB{
-		DB:      db,
-		indexer: indexer,
+		DB: db,
 	}
 
 	if err := b.initializeTables(); err != nil {
@@ -59,12 +56,12 @@ func New(path string, indexer search.Indexer) (*BoltDB, error) {
 }
 
 // NewWithDefaults returns an instance of the persistent BoltDB store with default values loaded.
-func NewWithDefaults(dbPath string, indexer search.Indexer) (*BoltDB, error) {
+func NewWithDefaults(dbPath string) (*BoltDB, error) {
 	if filepath.Ext(dbPath) != ".db" {
 		dbPath = filepath.Join(dbPath, "prevent.db")
 	}
 
-	db, err := New(dbPath, indexer)
+	db, err := New(dbPath)
 	if err != nil {
 		return db, err
 	}
@@ -113,9 +110,6 @@ func (b *BoltDB) initializeTables() error {
 
 // Close closes the database
 func (b *BoltDB) Close() {
-	if err := b.indexer.Close(); err != nil {
-		log.Errorf("unable to close indexer: %s", err)
-	}
 	if err := b.DB.Close(); err != nil {
 		log.Errorf("unable to close bolt db: %s", err)
 	}
@@ -169,8 +163,7 @@ func (b *BoltDB) ExportHandler() http.Handler {
 			return
 		}
 
-		// TODO(cgorman) if we ever index the integrations, then there will be extreme sadness
-		exportDB, err := New(exportedFilepath, nil)
+		exportDB, err := New(exportedFilepath)
 		if err != nil {
 			handleError(w, err)
 			return

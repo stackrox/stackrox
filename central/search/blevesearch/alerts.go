@@ -1,6 +1,7 @@
 package blevesearch
 
 import (
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
@@ -26,18 +27,21 @@ func (b *Indexer) DeleteAlert(id string) error {
 func scopeToAlertQuery(scope *v1.Scope) *query.ConjunctionQuery {
 	conjunctionQuery := bleve.NewConjunctionQuery()
 	if scope.GetCluster() != "" {
-		conjunctionQuery.AddQuery(newMatchQuery("deployment.cluster_name", scope.GetCluster()))
+		conjunctionQuery.AddQuery(newTermMatch("deployment.cluster_name", scope.GetCluster()))
 	}
 	if scope.GetNamespace() != "" {
-		conjunctionQuery.AddQuery(newMatchQuery("deployment.namespace", scope.GetNamespace()))
+		conjunctionQuery.AddQuery(newTermMatch("deployment.namespace", scope.GetNamespace()))
 	}
 	if scope.GetLabel() != nil {
-		conjunctionQuery.AddQuery(newMatchQuery("deployment.labels."+scope.GetLabel().GetKey(), scope.GetLabel().GetValue()))
+		conjunctionQuery.AddQuery(newTermMatch("deployment.labels."+scope.GetLabel().GetKey(), scope.GetLabel().GetValue()))
+	}
+	if len(conjunctionQuery.Conjuncts) == 0 {
+		return nil
 	}
 	return conjunctionQuery
 }
 
 // SearchAlerts takes a SearchRequest and finds any matches
-func (b *Indexer) SearchAlerts(request *v1.SearchRequest) ([]string, error) {
+func (b *Indexer) SearchAlerts(request *v1.ParsedSearchRequest) ([]search.Result, error) {
 	return runSearchRequest(request, b.alertIndex, scopeToAlertQuery, alertObjectMap)
 }

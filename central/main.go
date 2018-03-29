@@ -14,12 +14,11 @@ import (
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
 
 	clustersZip "bitbucket.org/stack-rox/apollo/central/clusters/zip"
-	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/datastore"
 	"bitbucket.org/stack-rox/apollo/central/db/boltdb"
 	"bitbucket.org/stack-rox/apollo/central/db/inmem"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/central/notifications"
-	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/central/search/blevesearch"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
@@ -42,24 +41,25 @@ var (
 func main() {
 	central := newCentral()
 
+	persistence, err := boltdb.NewWithDefaults(env.DBPath.Setting())
+	if err != nil {
+		panic(err)
+	}
+	database := inmem.New(persistence)
+
 	indexer, err := blevesearch.NewIndexer()
 	if err != nil {
 		panic(err)
 	}
-	central.indexer = indexer
 
-	persistence, err := boltdb.NewWithDefaults(env.DBPath.Setting(), indexer)
-	if err != nil {
-		panic(err)
-	}
-	central.database = inmem.New(persistence)
+	central.datastore = datastore.NewDataStore(database, indexer)
 
-	central.notificationProcessor, err = notifications.NewNotificationProcessor(central.database)
+	central.notificationProcessor, err = notifications.NewNotificationProcessor(central.datastore)
 	if err != nil {
 		panic(err)
 	}
 	go central.notificationProcessor.Start()
-	central.detector, err = detection.New(central.database, central.notificationProcessor)
+	central.detector, err = detection.New(central.datastore, central.notificationProcessor)
 	if err != nil {
 		panic(err)
 	}
@@ -73,8 +73,7 @@ type central struct {
 	signalsC              chan os.Signal
 	detector              *detection.Detector
 	notificationProcessor *notifications.Processor
-	database              db.Storage
-	indexer               search.Indexer
+	datastore             *datastore.DataStore
 	server                pkgGRPC.API
 }
 
@@ -89,10 +88,10 @@ func newCentral() *central {
 }
 
 func (c *central) startGRPCServer() {
-	idService := service.NewServiceIdentityService(c.database)
-	clusterService := service.NewClusterService(c.database)
-	clusterWatcher := clusters.NewClusterWatcher(c.database)
-	userAuth := authnUser.NewAuthInterceptor(c.database)
+	idService := service.NewServiceIdentityService(c.datastore)
+	clusterService := service.NewClusterService(c.datastore)
+	clusterWatcher := clusters.NewClusterWatcher(c.datastore)
+	userAuth := authnUser.NewAuthInterceptor(c.datastore)
 
 	config := pkgGRPC.Config{
 		CustomRoutes: c.customRoutes(userAuth, clusterService, idService),
@@ -108,25 +107,25 @@ func (c *central) startGRPCServer() {
 	}
 
 	c.server = pkgGRPC.NewAPI(config)
-	c.server.Register(service.NewAlertService(c.database))
+	c.server.Register(service.NewAlertService(c.datastore))
 	c.server.Register(service.NewAuthService())
-	c.server.Register(service.NewAuthProviderService(c.database, userAuth))
-	c.server.Register(service.NewBenchmarkService(c.database))
-	c.server.Register(service.NewBenchmarkScansService(c.database))
-	c.server.Register(service.NewBenchmarkScheduleService(c.database))
-	c.server.Register(service.NewBenchmarkResultsService(c.database, c.notificationProcessor))
-	c.server.Register(service.NewBenchmarkTriggerService(c.database))
+	c.server.Register(service.NewAuthProviderService(c.datastore, userAuth))
+	c.server.Register(service.NewBenchmarkService(c.datastore))
+	c.server.Register(service.NewBenchmarkScansService(c.datastore))
+	c.server.Register(service.NewBenchmarkScheduleService(c.datastore))
+	c.server.Register(service.NewBenchmarkResultsService(c.datastore, c.notificationProcessor))
+	c.server.Register(service.NewBenchmarkTriggerService(c.datastore))
 	c.server.Register(clusterService)
-	c.server.Register(service.NewImageIntegrationService(c.database, c.detector))
-	c.server.Register(service.NewDeploymentService(c.database))
-	c.server.Register(service.NewImageService(c.database))
-	c.server.Register(service.NewNotifierService(c.database, c.notificationProcessor, c.detector))
+	c.server.Register(service.NewDeploymentService(c.datastore))
+	c.server.Register(service.NewImageService(c.datastore))
+	c.server.Register(service.NewImageIntegrationService(c.datastore, c.detector))
+	c.server.Register(service.NewNotifierService(c.datastore, c.notificationProcessor, c.detector))
 	c.server.Register(service.NewPingService())
-	c.server.Register(service.NewPolicyService(c.database, c.detector))
-	c.server.Register(service.NewSearchService(c.indexer))
+	c.server.Register(service.NewPolicyService(c.datastore, c.detector))
+	c.server.Register(service.NewSearchService(c.datastore))
 	c.server.Register(idService)
-	c.server.Register(service.NewSensorEventService(c.detector, c.database))
-	c.server.Register(service.NewSummaryService(c.database))
+	c.server.Register(service.NewSensorEventService(c.detector, c.datastore))
+	c.server.Register(service.NewSummaryService(c.datastore))
 	c.server.Start()
 }
 
@@ -147,13 +146,13 @@ func (c *central) customRoutes(userAuth *authnUser.AuthInterceptor, clusterServi
 		"/db/backup": {
 			AuthInterceptor: userAuth.HTTPInterceptor,
 			Authorizer:      authzUser.Any(),
-			ServerHandler:   c.database.BackupHandler(),
+			ServerHandler:   c.datastore.BackupHandler(),
 			Compression:     true,
 		},
 		"/db/export": {
 			AuthInterceptor: userAuth.HTTPInterceptor,
 			Authorizer:      authzUser.Any(),
-			ServerHandler:   c.database.ExportHandler(),
+			ServerHandler:   c.datastore.ExportHandler(),
 			Compression:     true,
 		},
 	}
@@ -200,7 +199,7 @@ func (c *central) processForever() {
 		case sig := <-c.signalsC:
 			log.Infof("Caught %s signal", sig)
 			c.detector.Stop()
-			c.database.Close()
+			c.datastore.Close()
 			log.Infof("Central terminated")
 			return
 		}

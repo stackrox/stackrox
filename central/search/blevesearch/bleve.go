@@ -27,25 +27,15 @@ func NewIndexer() (*Indexer, error) {
 }
 
 func (b *Indexer) initializeIndices() error {
-	var err error
-
-	b.alertIndex, err = bleve.NewMemOnly(bleve.NewIndexMapping())
+	allIndex, err := bleve.NewMemOnly(bleve.NewIndexMapping())
 	if err != nil {
 		return err
 	}
-
-	b.deploymentIndex, err = bleve.NewMemOnly(bleve.NewIndexMapping())
-	if err != nil {
-		return err
-	}
-
-	b.imageIndex, err = bleve.NewMemOnly(bleve.NewIndexMapping())
-	if err != nil {
-		return err
-	}
-
-	b.policyIndex, err = bleve.NewMemOnly(bleve.NewIndexMapping())
-	return err
+	b.alertIndex = allIndex
+	b.deploymentIndex = allIndex
+	b.imageIndex = allIndex
+	b.policyIndex = allIndex
+	return nil
 }
 
 // Close closes the open indexes

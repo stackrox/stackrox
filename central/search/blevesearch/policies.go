@@ -1,6 +1,7 @@
 package blevesearch
 
 import (
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
@@ -24,7 +25,7 @@ func scopeToPolicyQuery(scope *v1.Scope) *query.ConjunctionQuery {
 	conjunctionQuery := bleve.NewConjunctionQuery()
 	if scope.GetCluster() != "" {
 		disjunction := bleve.NewDisjunctionQuery()
-		disjunction.AddQuery(newMatchQuery("scope.cluster", scope.GetCluster()))
+		disjunction.AddQuery(newTermMatch("scope.cluster", scope.GetCluster()))
 		// Match everything then negate it
 		regexQuery := bleve.NewRegexpQuery(".*")
 		regexQuery.FieldVal = "scope.cluster"
@@ -37,18 +38,21 @@ func scopeToPolicyQuery(scope *v1.Scope) *query.ConjunctionQuery {
 		conjunctionQuery.AddQuery(disjunction)
 	}
 	if scope.GetNamespace() != "" {
-		conjunctionQuery.AddQuery(newMatchQuery("scope.namespace", scope.GetNamespace()))
+		conjunctionQuery.AddQuery(newTermMatch("scope.namespace", scope.GetNamespace()))
 	}
 	if scope.GetLabel().GetKey() != "" {
-		conjunctionQuery.AddQuery(newMatchQuery("scope.label.key", scope.GetLabel().GetKey()))
+		conjunctionQuery.AddQuery(newTermMatch("scope.label.key", scope.GetLabel().GetKey()))
 	}
 	if scope.GetLabel().GetValue() != "" {
-		conjunctionQuery.AddQuery(newMatchQuery("scope.label.value", scope.GetLabel().GetValue()))
+		conjunctionQuery.AddQuery(newTermMatch("scope.label.value", scope.GetLabel().GetValue()))
+	}
+	if len(conjunctionQuery.Conjuncts) == 0 {
+		return nil
 	}
 	return conjunctionQuery
 }
 
 // SearchPolicies takes a SearchRequest and finds any matches
-func (b *Indexer) SearchPolicies(request *v1.SearchRequest) ([]string, error) {
+func (b *Indexer) SearchPolicies(request *v1.ParsedSearchRequest) ([]search.Result, error) {
 	return runSearchRequest(request, b.policyIndex, scopeToPolicyQuery, policyObjectMap)
 }

@@ -30,7 +30,7 @@ func (suite *SearchTestSuite) TeardownSuite() {
 }
 
 func (suite *SearchTestSuite) TestValuesToDisjunctionQuery() {
-	values := &v1.SearchRequest_Values{
+	values := &v1.ParsedSearchRequest_Values{
 		Values: []string{
 			"blah",
 			"docker.io",
@@ -40,9 +40,9 @@ func (suite *SearchTestSuite) TestValuesToDisjunctionQuery() {
 	results, err := runQuery(query, suite.alertIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
-	suite.Equal(results[0], "Alert1")
+	suite.Equal("Alert1", results[0].ID)
 
-	values = &v1.SearchRequest_Values{
+	values = &v1.ParsedSearchRequest_Values{
 		Values: []string{
 			"blah",
 		},
@@ -54,7 +54,7 @@ func (suite *SearchTestSuite) TestValuesToDisjunctionQuery() {
 }
 
 func (suite *SearchTestSuite) TestFieldsToQuery() {
-	fieldMap := map[string]*v1.SearchRequest_Values{
+	fieldMap := map[string]*v1.ParsedSearchRequest_Values{
 		"policy.image_policy.image_name.registry": {
 			Values: []string{
 				"blah",
@@ -71,10 +71,10 @@ func (suite *SearchTestSuite) TestFieldsToQuery() {
 	results, err := runQuery(query, suite.alertIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
-	suite.Equal("Alert1", results[0])
+	suite.Equal("Alert1", results[0].ID)
 
 	// Add a field that does not exist and this should fail
-	fieldMap["blah"] = &v1.SearchRequest_Values{
+	fieldMap["blah"] = &v1.ParsedSearchRequest_Values{
 		Values: []string{"blah"},
 	}
 	query = fieldsToQuery(fieldMap, alertObjectMap)
@@ -85,8 +85,8 @@ func (suite *SearchTestSuite) TestFieldsToQuery() {
 
 func (suite *SearchTestSuite) TestRunRequest() {
 	// No scopes search
-	request := &v1.SearchRequest{
-		Fields: map[string]*v1.SearchRequest_Values{
+	request := &v1.ParsedSearchRequest{
+		Fields: map[string]*v1.ParsedSearchRequest_Values{
 			"id": {
 				Values: []string{"Alert1"},
 			},
@@ -95,10 +95,10 @@ func (suite *SearchTestSuite) TestRunRequest() {
 	results, err := runSearchRequest(request, suite.alertIndex, scopeToAlertQuery, alertObjectMap)
 	suite.NoError(err)
 	suite.Len(results, 1)
-	suite.Equal("Alert1", results[0])
+	suite.Equal("Alert1", results[0].ID)
 
 	// No fields search
-	request = &v1.SearchRequest{
+	request = &v1.ParsedSearchRequest{
 		Scopes: []*v1.Scope{
 			{
 				Cluster:   "prod cluster",
@@ -111,8 +111,8 @@ func (suite *SearchTestSuite) TestRunRequest() {
 	suite.Len(results, 1)
 
 	// Combined search with success
-	request = &v1.SearchRequest{
-		Fields: map[string]*v1.SearchRequest_Values{
+	request = &v1.ParsedSearchRequest{
+		Fields: map[string]*v1.ParsedSearchRequest_Values{
 			"id": {
 				Values: []string{"Alert1"},
 			},
@@ -130,11 +130,11 @@ func (suite *SearchTestSuite) TestRunRequest() {
 	results, err = runSearchRequest(request, suite.alertIndex, scopeToAlertQuery, alertObjectMap)
 	suite.NoError(err)
 	suite.Len(results, 1)
-	suite.Equal("Alert1", results[0])
+	suite.Equal("Alert1", results[0].ID)
 
 	// Combined search with failure
-	request = &v1.SearchRequest{
-		Fields: map[string]*v1.SearchRequest_Values{
+	request = &v1.ParsedSearchRequest{
+		Fields: map[string]*v1.ParsedSearchRequest_Values{
 			"id": {
 				Values: []string{"NoID"},
 			},
@@ -155,20 +155,20 @@ func (suite *SearchTestSuite) TestRunRequest() {
 }
 
 func (suite *SearchTestSuite) TestRunQuery() {
-	query := newMatchQuery("id", "Alert1")
+	query := newFuzzyQuery("id", "Alert1", fuzzyPrefix)
 	results, err := runQuery(query, suite.alertIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
-	suite.Equal("Alert1", results[0])
+	suite.Equal("Alert1", results[0].ID)
 
-	query = newMatchQuery("id", "blah")
+	query = newFuzzyQuery("id", "blahblah", fuzzyPrefix)
 	results, err = runQuery(query, suite.alertIndex)
 	suite.NoError(err)
 	suite.Len(results, 0)
 }
 
 func (suite *SearchTestSuite) TestTransformFields() {
-	fields := map[string]*v1.SearchRequest_Values{
+	fields := map[string]*v1.ParsedSearchRequest_Values{
 		"image.name.sha": {
 			Values: []string{"sha"},
 		},
@@ -180,7 +180,7 @@ func (suite *SearchTestSuite) TestTransformFields() {
 		},
 	}
 
-	expectedFields := map[string]*v1.SearchRequest_Values{
+	expectedFields := map[string]*v1.ParsedSearchRequest_Values{
 		"deployment.containers.image.name.sha": {
 			Values: []string{"sha"},
 		},
@@ -191,6 +191,5 @@ func (suite *SearchTestSuite) TestTransformFields() {
 			Values: []string{"name"},
 		},
 	}
-
 	suite.Equal(expectedFields, transformFields(fields, alertObjectMap))
 }

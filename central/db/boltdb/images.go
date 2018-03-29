@@ -80,10 +80,7 @@ func (b *BoltDB) AddImage(image *v1.Image) error {
 		if err != nil {
 			return err
 		}
-		if err := bucket.Put([]byte(digest), bytes); err != nil {
-			return err
-		}
-		return b.indexer.AddImage(image)
+		return bucket.Put([]byte(digest), bytes)
 	})
 }
 
@@ -96,10 +93,7 @@ func (b *BoltDB) UpdateImage(image *v1.Image) error {
 			return err
 		}
 		digest := images.NewDigest(image.GetName().GetSha()).Digest()
-		if err := bucket.Put([]byte(digest), bytes); err != nil {
-			return err
-		}
-		return b.indexer.AddImage(image)
+		return bucket.Put([]byte(digest), bytes)
 	})
 }
 
@@ -112,9 +106,6 @@ func (b *BoltDB) RemoveImage(sha string) error {
 		if exists := bucket.Get(key) != nil; !exists {
 			return db.ErrNotFound{Type: "Image", ID: string(key)}
 		}
-		if err := bucket.Delete(key); err != nil {
-			return err
-		}
-		return b.indexer.DeleteImage(digest)
+		return bucket.Delete(key)
 	})
 }

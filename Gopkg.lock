@@ -65,6 +65,7 @@
   revision = "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
 
 [[projects]]
+  branch = "master"
   name = "github.com/blevesearch/bleve"
   packages = [
     ".",
@@ -83,7 +84,6 @@
     "index/scorch",
     "index/scorch/mergeplan",
     "index/scorch/segment",
-    "index/scorch/segment/mem",
     "index/scorch/segment/zap",
     "index/store",
     "index/store/boltdb",
@@ -102,10 +102,10 @@
     "search/highlight/highlighter/simple",
     "search/query",
     "search/scorer",
-    "search/searcher"
+    "search/searcher",
+    "size"
   ]
-  revision = "1a319cdf5bf77dc8cee35a6b99f908792c2547ef"
-  version = "v0.7.0"
+  revision = "7a98d75fc573261c0345dec9a96076a1f3aaa030"
 
 [[projects]]
   name = "github.com/blevesearch/go-porterstemmer"
@@ -950,6 +950,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e1b2c4ef8f94c70aca62df87ef473c9fd06bcb73963f9b99fba6ec4acdcb02b8"
+  inputs-digest = "5bc3b85d6f436fa173072d2c90551cc0b97079157c200803c1d47f6f7bf9550e"
   solver-name = "gps-cdcl"
   solver-version = 1

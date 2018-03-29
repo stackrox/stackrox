@@ -15,6 +15,9 @@ func NewSetFromStringSlice(strs []string) mapset.Set {
 
 // StringSliceFromSet converts a Set to a slice of strings
 func StringSliceFromSet(s mapset.Set) []string {
+	if s == nil {
+		return nil
+	}
 	strs := make([]string, 0, s.Cardinality())
 	for str := range s.Iter() {
 		strs = append(strs, str.(string))

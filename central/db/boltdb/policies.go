@@ -76,10 +76,7 @@ func (b *BoltDB) AddPolicy(policy *v1.Policy) (string, error) {
 		if err != nil {
 			return err
 		}
-		if err := bucket.Put([]byte(policy.GetId()), bytes); err != nil {
-			return err
-		}
-		return b.indexer.AddPolicy(policy)
+		return bucket.Put([]byte(policy.GetId()), bytes)
 	})
 	return policy.Id, err
 }
@@ -98,10 +95,7 @@ func (b *BoltDB) UpdatePolicy(policy *v1.Policy) error {
 		if err != nil {
 			return err
 		}
-		if err := bucket.Put([]byte(policy.GetId()), bytes); err != nil {
-			return err
-		}
-		return b.indexer.AddPolicy(policy)
+		return bucket.Put([]byte(policy.GetId()), bytes)
 	})
 }
 
@@ -116,10 +110,7 @@ func (b *BoltDB) RemovePolicy(id string) error {
 		if err := removeUniqueKey(tx, policyBucket, id); err != nil {
 			return err
 		}
-		if err := bucket.Delete(key); err != nil {
-			return err
-		}
-		return b.indexer.DeletePolicy(id)
+		return bucket.Delete(key)
 	})
 }
 

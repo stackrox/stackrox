@@ -1,6 +1,7 @@
 package blevesearch
 
 import (
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
@@ -24,18 +25,21 @@ func (b *Indexer) DeleteDeployment(id string) error {
 func scopeToDeploymentQuery(scope *v1.Scope) *query.ConjunctionQuery {
 	conjunctionQuery := bleve.NewConjunctionQuery()
 	if scope.GetCluster() != "" {
-		conjunctionQuery.AddQuery(newMatchQuery("cluster_name", scope.GetCluster()))
+		conjunctionQuery.AddQuery(newTermMatch("cluster_name", scope.GetCluster()))
 	}
 	if scope.GetNamespace() != "" {
-		conjunctionQuery.AddQuery(newMatchQuery("namespace", scope.GetNamespace()))
+		conjunctionQuery.AddQuery(newTermMatch("namespace", scope.GetNamespace()))
 	}
 	if scope.GetLabel() != nil {
-		conjunctionQuery.AddQuery(newMatchQuery("labels."+scope.GetLabel().GetKey(), scope.GetLabel().GetValue()))
+		conjunctionQuery.AddQuery(newTermMatch("labels."+scope.GetLabel().GetKey(), scope.GetLabel().GetValue()))
+	}
+	if len(conjunctionQuery.Conjuncts) == 0 {
+		return nil
 	}
 	return conjunctionQuery
 }
 
 // SearchDeployments takes a SearchRequest and finds any matches
-func (b *Indexer) SearchDeployments(request *v1.SearchRequest) ([]string, error) {
+func (b *Indexer) SearchDeployments(request *v1.ParsedSearchRequest) ([]search.Result, error) {
 	return runSearchRequest(request, b.deploymentIndex, scopeToDeploymentQuery, deploymentObjectMap)
 }

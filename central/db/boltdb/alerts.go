@@ -77,10 +77,7 @@ func (b *BoltDB) AddAlert(alert *v1.Alert) error {
 		if err != nil {
 			return err
 		}
-		if err := bucket.Put([]byte(alert.Id), bytes); err != nil {
-			return err
-		}
-		return b.indexer.AddAlert(alert)
+		return bucket.Put([]byte(alert.Id), bytes)
 	})
 }
 
@@ -92,10 +89,7 @@ func (b *BoltDB) UpdateAlert(alert *v1.Alert) error {
 		if err != nil {
 			return err
 		}
-		if err := bucket.Put([]byte(alert.Id), bytes); err != nil {
-			return err
-		}
-		return b.indexer.AddAlert(alert)
+		return bucket.Put([]byte(alert.Id), bytes)
 	})
 }
 
@@ -103,9 +97,6 @@ func (b *BoltDB) UpdateAlert(alert *v1.Alert) error {
 func (b *BoltDB) RemoveAlert(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(alertBucket))
-		if err := bucket.Delete([]byte(id)); err != nil {
-			return err
-		}
-		return b.indexer.DeleteAlert(id)
+		return bucket.Delete([]byte(id))
 	})
 }

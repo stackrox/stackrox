@@ -35,7 +35,7 @@ func (suite *ImageTestSuite) TeardownSuite() {
 
 func (suite *ImageTestSuite) TestSearchImages() {
 	// Test just cluster -> should give all images
-	request := &v1.SearchRequest{
+	request := &v1.ParsedSearchRequest{
 		Scopes: []*v1.Scope{
 			{
 				Cluster: "prod cluster",
@@ -48,13 +48,13 @@ func (suite *ImageTestSuite) TestSearchImages() {
 	suite.Len(results, 2)
 
 	// Test both scopes and fields defined
-	request = &v1.SearchRequest{
+	request = &v1.ParsedSearchRequest{
 		Scopes: []*v1.Scope{
 			{
 				Cluster: "prod cluster",
 			},
 		},
-		Fields: map[string]*v1.SearchRequest_Values{
+		Fields: map[string]*v1.ParsedSearchRequest_Values{
 			"image.name.registry": {
 				Values: []string{"docker.io", "stackrox.io"},
 			},

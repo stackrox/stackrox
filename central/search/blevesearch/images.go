@@ -3,9 +3,9 @@ package blevesearch
 import (
 	"reflect"
 
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
-	"bitbucket.org/stack-rox/apollo/pkg/set"
 	"github.com/blevesearch/bleve"
 	"github.com/deckarep/golang-set"
 )
@@ -25,7 +25,7 @@ func (b *Indexer) DeleteImage(sha string) error {
 	return b.imageIndex.Delete(sha)
 }
 
-func (b *Indexer) getImageSHAsFromScope(request *v1.SearchRequest) (mapset.Set, error) {
+func (b *Indexer) getImageSHAsFromScope(request *v1.ParsedSearchRequest) (mapset.Set, error) {
 	if scopesQuery := getScopesQuery(request.GetScopes(), scopeToDeploymentQuery); scopesQuery != nil {
 		searchRequest := bleve.NewSearchRequest(scopesQuery)
 		searchRequest.Fields = []string{"containers.image.name.sha"}
@@ -62,25 +62,36 @@ func (b *Indexer) getImageSHAsFromScope(request *v1.SearchRequest) (mapset.Set, 
 // SearchImages takes a SearchRequest and finds any matches
 // It is different from other requests because it requires that we actually search the deployments
 // for the image that may match the criteria
-func (b *Indexer) SearchImages(request *v1.SearchRequest) ([]string, error) {
+func (b *Indexer) SearchImages(request *v1.ParsedSearchRequest) ([]search.Result, error) {
 	shaSetFromDeployment, err := b.getImageSHAsFromScope(request)
 	if err != nil {
 		return nil, err
 	}
 	// If there is only scope defined, then we should return all images
-	if len(request.GetFields()) == 0 {
-		return set.StringSliceFromSet(shaSetFromDeployment), nil
+	if len(request.GetFields()) == 0 && request.GetStringQuery() == "" {
+		searchResults := make([]search.Result, 0, shaSetFromDeployment.Cardinality())
+		for sha := range shaSetFromDeployment.Iter() {
+			searchResults = append(searchResults, search.Result{ID: sha.(string)})
+		}
+		return searchResults, nil
 	}
-
 	imageQuery := fieldsToQuery(request.GetFields(), imageObjectMap)
+	if request.GetStringQuery() != "" {
+		imageQuery.AddQuery(bleve.NewQueryStringQuery(request.GetStringQuery()))
+	}
 	results, err := runQuery(imageQuery, b.imageIndex)
 	if err != nil {
 		return nil, err
 	}
-	// If we retrieve images from scope, then find the intersection of the results
+	// Filter results by which fields exist in the results retrieved from the deployments
 	if shaSetFromDeployment != nil {
-		imageSet := set.NewSetFromStringSlice(results)
-		return set.StringSliceFromSet(imageSet.Intersect(shaSetFromDeployment)), nil
+		filteredResults := results[:0]
+		for _, result := range results {
+			if shaSetFromDeployment.Contains(result.ID) {
+				filteredResults = append(filteredResults, result)
+			}
+		}
+		results = filteredResults
 	}
 	return results, nil
 }
