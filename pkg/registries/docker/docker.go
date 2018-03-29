@@ -271,4 +271,5 @@ func init() {
 	}
 	registries.Registry["dtr"] = f
 	registries.Registry["docker"] = f
+	registries.Registry["artifactory"] = f
 }
