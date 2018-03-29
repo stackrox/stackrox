@@ -17,10 +17,10 @@ import (
 )
 
 type resourceWatchLister interface {
-	watch()
+	watch(serviceWatchLister *serviceWatchLister)
 	stop()
 	initialize()
-	listObjects() []metav1.ObjectMeta
+	listObjects() (objs []interface{}, deploymentEvents []*pkgV1.DeploymentEvent)
 	resourceType() string
 }
 
@@ -31,7 +31,9 @@ type reflectionWatchLister struct {
 	objectType             runtime.Object
 	metaFieldIndex         []int
 	initialObjectsConsumed bool
-	podLister              podLister
+
+	podLister          podLister
+	serviceWatchLister *serviceWatchLister
 
 	eventC chan<- *listeners.DeploymentEventWrap
 }
@@ -47,6 +49,7 @@ func newReflectionWatcher(watchLister watchLister, resourceType string, objectTy
 		logger.Errorf("Type %s does not have an ObjectMeta field", ty.Name())
 		return nil
 	}
+
 	return &reflectionWatchLister{
 		watchLister:    watchLister,
 		rt:             resourceType,
@@ -57,9 +60,11 @@ func newReflectionWatcher(watchLister watchLister, resourceType string, objectTy
 	}
 }
 
-func (wl *reflectionWatchLister) watch() {
+func (wl *reflectionWatchLister) watch(serviceWatchLister *serviceWatchLister) {
 	// We use the lowercase'd version of the resource type plus a plural "s" as the type of objects to watch.
-	go wl.watchLister.watch(strings.ToLower(wl.rt)+"s", wl.objectType, wl.resourceChanged)
+	wl.serviceWatchLister = serviceWatchLister
+	wl.setupWatch(strings.ToLower(wl.rt)+"s", wl.objectType, wl.resourceChanged)
+	go wl.watchLister.startWatch()
 	go wl.initialize()
 }
 
@@ -77,6 +82,8 @@ func (wl *reflectionWatchLister) resourceChanged(obj interface{}, action pkgV1.R
 	}
 
 	if d := newDeploymentEventFromResource(obj, action, wl.metaFieldIndex, wl.resourceType(), wl.podLister); d != nil {
+		wl.serviceWatchLister.updatePortExposureFromStore(d)
+
 		wl.eventC <- &listeners.DeploymentEventWrap{
 			DeploymentEvent: d,
 			OriginalSpec:    obj,
@@ -98,15 +105,12 @@ func (wl *reflectionWatchLister) initialize() {
 	}
 }
 
-func (wl *reflectionWatchLister) listObjects() (objects []metav1.ObjectMeta) {
+func (wl *reflectionWatchLister) listObjects() (objs []interface{}, deploymentEvents []*pkgV1.DeploymentEvent) {
 	for _, obj := range wl.store.List() {
-		objValue := reflect.Indirect(reflect.ValueOf(obj))
-		meta, ok := objValue.FieldByIndex(wl.metaFieldIndex).Interface().(metav1.ObjectMeta)
-		if !ok {
-			logger.Errorf("obj %+v does not have an ObjectMeta field of the correct type", obj)
-			continue
+		if d := newDeploymentEventFromResource(obj, pkgV1.ResourceAction_UPDATE_RESOURCE, wl.metaFieldIndex, wl.resourceType(), wl.podLister); d != nil {
+			objs = append(objs, obj)
+			deploymentEvents = append(deploymentEvents, d)
 		}
-		objects = append(objects, meta)
 	}
 	return
 }

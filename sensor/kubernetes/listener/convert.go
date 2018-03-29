@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/containers"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/volumes"
 	"github.com/golang/protobuf/ptypes"
@@ -264,6 +265,7 @@ func (w *wrap) populatePorts(podSpec v1.PodSpec) {
 				Name:          p.Name,
 				ContainerPort: p.ContainerPort,
 				Protocol:      string(p.Protocol),
+				Exposure:      containers.Internal,
 			})
 		}
 	}

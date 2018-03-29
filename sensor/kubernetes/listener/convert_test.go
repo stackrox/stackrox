@@ -213,11 +213,13 @@ func TestConvert(t *testing.T) {
 									Name:          "api",
 									ContainerPort: 9092,
 									Protocol:      "TCP",
+									Exposure:      "internal",
 								},
 								{
 									Name:          "status",
 									ContainerPort: 443,
 									Protocol:      "UCP",
+									Exposure:      "internal",
 								},
 							},
 							SecurityContext: &pkgV1.SecurityContext{

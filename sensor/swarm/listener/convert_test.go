@@ -32,9 +32,10 @@ func TestAsDeployment(t *testing.T) {
 				Endpoint: swarm.Endpoint{
 					Ports: []swarm.PortConfig{
 						{
-							Name:       "api",
-							TargetPort: 80,
-							Protocol:   swarm.PortConfigProtocolTCP,
+							Name:          "api",
+							TargetPort:    80,
+							PublishedPort: 8080,
+							Protocol:      swarm.PortConfigProtocolTCP,
 						},
 					},
 				},
@@ -132,6 +133,7 @@ func TestAsDeployment(t *testing.T) {
 								Name:          "api",
 								ContainerPort: 80,
 								Protocol:      "tcp",
+								Exposure:      `external`,
 							},
 						},
 						Volumes: []*v1.Volume{

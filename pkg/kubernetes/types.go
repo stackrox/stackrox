@@ -12,6 +12,8 @@ const (
 	ReplicationController = `ReplicationController`
 	ReplicaSet            = `ReplicaSet`
 	StatefulSet           = `StatefulSet`
+
+	Service = `Service`
 )
 
 // Kubernetes delete options that ensure that dependent objects (e.g. pods) are deleted when

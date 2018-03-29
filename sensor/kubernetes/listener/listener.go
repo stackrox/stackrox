@@ -29,6 +29,7 @@ type kubernetesListener struct {
 
 	podWL       *podWatchLister
 	resourcesWL []resourceWatchLister
+	serviceWL   *serviceWatchLister
 }
 
 // New returns a new kubernetes listener.
@@ -50,8 +51,10 @@ func (k *kubernetesListener) Start() {
 	k.podWL.blockUntilSynced()
 
 	for _, wl := range k.resourcesWL {
-		go wl.watch()
+		go wl.watch(k.serviceWL)
 	}
+
+	go k.serviceWL.startWatch()
 }
 
 func (k *kubernetesListener) createResourceWatchers() {
@@ -64,6 +67,13 @@ func (k *kubernetesListener) createResourceWatchers() {
 		newDeploymentWatcher(k.client.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL),
 		newStatefulSetWatchLister(k.client.AppsV1beta1().RESTClient(), k.eventsC, k.podWL),
 	}
+
+	var deploymentGetters []func() (objs []interface{}, deploymentEvents []*pkgV1.DeploymentEvent)
+	for _, wl := range k.resourcesWL {
+		deploymentGetters = append(deploymentGetters, wl.listObjects)
+	}
+
+	k.serviceWL = newServiceWatchLister(k.client.CoreV1().RESTClient(), k.eventsC, deploymentGetters...)
 }
 
 func (k *kubernetesListener) setupClient() {
@@ -90,6 +100,8 @@ func (k *kubernetesListener) Stop() {
 	for _, wl := range k.resourcesWL {
 		wl.stop()
 	}
+
+	k.serviceWL.stop()
 }
 
 func (k *kubernetesListener) Events() <-chan *listeners.DeploymentEventWrap {
@@ -110,7 +122,7 @@ func newWatchLister(client rest.Interface) watchLister {
 	}
 }
 
-func (wl *watchLister) watch(object string, objectType runtime.Object, changedFunc func(interface{}, pkgV1.ResourceAction)) {
+func (wl *watchLister) setupWatch(object string, objectType runtime.Object, changedFunc func(interface{}, pkgV1.ResourceAction)) {
 	watchlist := cache.NewListWatchFromClient(wl.client, object, v1.NamespaceAll, fields.Everything())
 
 	wl.store, wl.controller = cache.NewInformer(
@@ -130,7 +142,9 @@ func (wl *watchLister) watch(object string, objectType runtime.Object, changedFu
 			},
 		},
 	)
+}
 
+func (wl *watchLister) startWatch() {
 	wl.controller.Run(wl.stopC)
 }
 
