@@ -11,7 +11,6 @@ import stringUtil from 'utils/string';
 
 import apiInterceptors from 'services/apiInterceptors';
 import AppPage from 'Containers/AppPage';
-import registerServiceWorker from 'registerServiceWorker';
 import configureStore from 'store/configureStore';
 
 apiInterceptors.addRequestTokenInterceptor();
@@ -29,5 +28,3 @@ ReactDOM.render(
     </Provider>,
     rootNode
 );
-
-registerServiceWorker();
