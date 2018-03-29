@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/scans"
 	clairV1 "github.com/coreos/clair/api/v1"
 )
 
@@ -17,6 +18,9 @@ type cvss struct {
 
 // ConvertVulnerability converts a clair vulnerability to a proto vulnerability
 func ConvertVulnerability(v clairV1.Vulnerability) *v1.Vulnerability {
+	if v.Link == "" {
+		v.Link = scans.GetVulnLink(v.Name)
+	}
 	vul := &v1.Vulnerability{
 		Cve:     v.Name,
 		Summary: v.Description,

@@ -12,7 +12,8 @@ func (e *Enricher) enrichWithScan(image *v1.Image) (bool, error) {
 			continue
 		}
 		if updated, err := e.enrichImageWithScanner(image, integration.Scanner); err != nil {
-			return false, err
+			logger.Errorf("Error enriching with scanner %s", integration.Name)
+			continue
 		} else if updated {
 			return true, nil
 		}

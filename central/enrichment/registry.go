@@ -12,7 +12,8 @@ func (e *Enricher) enrichWithMetadata(image *v1.Image) (updated bool, err error)
 			continue
 		}
 		if updated, err = e.enrichImageWithRegistry(image, integration.Registry); err != nil {
-			return
+			logger.Errorf("Error enriching with registry %s", integration.Name)
+			continue
 		} else if updated {
 			return
 		}

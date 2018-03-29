@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/scans"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/assert"
 )
@@ -105,6 +106,7 @@ func getFindingsAndPackages() ([]*finding, []pkg, []*v1.ImageScanComponents) {
 					Cve:     "CVE-2016-2109",
 					Cvss:    10.0,
 					Summary: "CVE Description",
+					Link:    scans.GetVulnLink("CVE-2016-2109"),
 				},
 			},
 		},
@@ -116,6 +118,7 @@ func getFindingsAndPackages() ([]*finding, []pkg, []*v1.ImageScanComponents) {
 					Cve:     "CVE-2016-2109",
 					Cvss:    10.0,
 					Summary: "CVE Description",
+					Link:    scans.GetVulnLink("CVE-2016-2109"),
 				},
 			},
 		},
@@ -127,6 +130,7 @@ func getFindingsAndPackages() ([]*finding, []pkg, []*v1.ImageScanComponents) {
 					Cve:     "CVE-2017-9936",
 					Cvss:    5.0,
 					Summary: "Description 2",
+					Link:    scans.GetVulnLink("CVE-2017-9936"),
 				},
 			},
 		},

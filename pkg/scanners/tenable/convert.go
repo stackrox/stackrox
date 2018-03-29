@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/scans"
 	"github.com/golang/protobuf/ptypes"
 )
 
@@ -19,6 +20,7 @@ func convertNVDFindingsAndPackagesToComponents(findings []*finding, packages []p
 			Cvss:    float32(cvssScore),
 			Cve:     finding.NVDFinding.CVE,
 			Summary: finding.NVDFinding.Description,
+			Link:    scans.GetVulnLink(finding.NVDFinding.CVE),
 		}
 		for _, affectedPackage := range finding.Packages {
 			packagesToVulnerabilities[affectedPackage] = append(packagesToVulnerabilities[affectedPackage], vulnerability)

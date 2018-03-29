@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/scans"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/assert"
 )
@@ -31,11 +32,13 @@ func getTestVulns() ([]*vulnerabilityDetails, []*v1.Vulnerability) {
 			Cve:     "CVE-2016-0682",
 			Cvss:    6.9,
 			Summary: "Unspecified vulnerability in the DataStore component in Oracle Berkeley DB 11.2.5.0.32, 11.2.5.1.29, 11.2.5.2.42, 11.2.5.3.28, 12.1.6.0.35, and 12.1.6.1.26 allows local users to affect confidentiality, integrity, and availability via unknown vectors, a different vulnerability than CVE-2016-0689, CVE-2016-0692, CVE-2016-0694, and CVE-2016-3418.",
+			Link:    scans.GetVulnLink("CVE-2016-0682"),
 		},
 		{
 			Cve:     "CVE-2016-0689",
 			Cvss:    6.9,
 			Summary: "Unspecified vulnerability in the DataStore component in Oracle Berkeley DB 11.2.5.0.32, 11.2.5.1.29, 11.2.5.2.42, 11.2.5.3.28, 12.1.6.0.35, and 12.1.6.1.26 allows local users to affect confidentiality, integrity, and availability via unknown vectors, a different vulnerability than CVE-2016-0682, CVE-2016-0692, CVE-2016-0694, and CVE-2016-3418.",
+			Link:    scans.GetVulnLink("CVE-2016-0689"),
 		},
 	}
 	return dockerVulnDetails, v1Vulns

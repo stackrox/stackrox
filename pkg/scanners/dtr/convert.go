@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/scans"
 	"github.com/golang/protobuf/ptypes"
 )
 
@@ -15,6 +16,7 @@ func convertVulns(dockerVulnDetails []*vulnerabilityDetails) []*v1.Vulnerability
 			Cve:     vuln.CVE,
 			Cvss:    vuln.CVSS,
 			Summary: vuln.Summary,
+			Link:    scans.GetVulnLink(vuln.CVE),
 		}
 	}
 	return vulns
