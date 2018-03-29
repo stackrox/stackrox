@@ -22,9 +22,14 @@ type serviceWrap swarm.Service
 func (s serviceWrap) asDeployment(client *client.Client, retryGetImageSha bool) *v1.Deployment {
 	var updatedTime *timestamp.Timestamp
 	up := s.UpdateStatus
+	var err error
 	if up != nil && up.CompletedAt != nil {
-		var err error
 		updatedTime, err = ptypes.TimestampProto(*up.CompletedAt)
+		if err != nil {
+			log.Error(err)
+		}
+	} else {
+		updatedTime, err = ptypes.TimestampProto(s.CreatedAt)
 		if err != nil {
 			log.Error(err)
 		}
