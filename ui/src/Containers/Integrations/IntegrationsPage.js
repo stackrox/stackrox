@@ -19,6 +19,7 @@ import tenable from 'images/tenable.svg';
 import email from 'images/email.svg';
 import quay from 'images/quay.svg';
 import clair from 'images/clair.svg';
+import artifactory from 'images/artifactory.svg';
 
 const integrationsList = {
     authProviders: [
@@ -52,6 +53,14 @@ const integrationsList = {
             categories: 'Registry + Scanner',
             source: 'imageIntegrations',
             image: tenable,
+            disabled: false
+        },
+        {
+            label: 'JFrog Artifactory',
+            type: 'artifactory',
+            categories: 'Registry',
+            source: 'imageIntegrations',
+            image: artifactory,
             disabled: false
         },
         {

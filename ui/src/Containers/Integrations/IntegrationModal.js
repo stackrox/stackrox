@@ -248,6 +248,39 @@ const sourceMap = {
                 placeholder: ''
             }
         ],
+        artifactory: [
+            {
+                label: 'Integration Name',
+                key: 'name',
+                type: 'text',
+                placeholder: 'Artifactory'
+            },
+            {
+                label: 'Types',
+                key: 'categories',
+                type: 'multiselect',
+                options: [{ value: 'REGISTRY', label: 'Registry', clearableValue: false }],
+                placeholder: ''
+            },
+            {
+                label: 'Endpoint',
+                key: 'config.endpoint',
+                type: 'text',
+                placeholder: 'artifactory.example.com'
+            },
+            {
+                label: 'Username',
+                key: 'config.username',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                label: 'Password',
+                key: 'config.password',
+                type: 'password',
+                placeholder: ''
+            }
+        ],
         quay: [
             {
                 label: 'Integration Name',
