@@ -4,7 +4,8 @@ export const alerts = {
 };
 
 export const clusters = {
-    list: 'v1/clusters'
+    list: 'v1/clusters',
+    zip: 'api/extensions/clusters/zip'
 };
 
 export const benchmarks = {
