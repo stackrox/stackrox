@@ -62,32 +62,31 @@ class Panel extends Component {
     renderCancelButton() {
         if (!this.props.onClose) return '';
         return (
-            <span>
-                <button
-                    className="cancel flex text-primary-600 px-3 py-4 text-center text-sm items-center hover:text-white"
-                    onClick={this.props.onClose}
-                    data-tip
-                    data-for="button-cancel"
-                >
-                    <Icon.X className="h-4 w-4" />
-                    {this.renderToolTip('Cancel')}
-                </button>
-            </span>
+            <div className="flex items-end border-base-300 items-center hover:bg-primary-300 ml-2 border-l">
+                <span>
+                    <button
+                        className="cancel flex text-primary-600 p-4 text-center text-sm items-center hover:text-white"
+                        onClick={this.props.onClose}
+                        data-tip
+                        data-for="button-cancel"
+                    >
+                        <Icon.X className="h-4 w-4" />
+                        {this.renderToolTip('Cancel')}
+                    </button>
+                </span>
+            </div>
         );
     }
 
     render() {
         return (
             <div className={`flex flex-col bg-white border border-base-300 ${this.props.width}`}>
-                <div className="flex shadow-underline font-bold bg-primary-100">
-                    <div className="flex px-3 py-3 flex-1 text-lg text-base-600 uppercase items-center tracking-wide">
-                        {this.props.header}
-                    </div>
-                    <div className="flex px-3 py-3 items-center">{this.renderButtons()}</div>
-                    <div
-                        className={`flex items-end ml-2 border-base-300 items-center hover:bg-primary-300
-                        ${this.props.onClose ? 'border-l' : ''}`}
-                    >
+                <div className="shadow-underline font-bold bg-primary-100">
+                    <div className="flex flex-row w-full">
+                        <div className="flex flex-1 text-base-600 uppercase items-center tracking-wide py-2 px-4">
+                            {this.props.header}
+                        </div>
+                        <div className="flex items-center py-2 px-4">{this.renderButtons()}</div>
                         {this.renderCancelButton()}
                     </div>
                 </div>

@@ -11,7 +11,10 @@ const tableColumnDescriptor = Object.freeze({
         {
             key: 'lastContact',
             label: 'Last Check-In',
-            keyValueFunc: date => dateFns.format(date, 'MM/DD/YYYY h:mm:ss A')
+            keyValueFunc: date => {
+                if (date) return dateFns.format(date, 'MM/DD/YYYY h:mm:ss A');
+                return 'N/A';
+            }
         }
     ],
     notifiers: {

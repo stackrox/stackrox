@@ -25,6 +25,7 @@ class Table extends Component {
             })
         ).isRequired,
         onRowClick: PropTypes.func,
+        onRowChecked: PropTypes.func,
         checkboxes: PropTypes.bool,
         actions: PropTypes.arrayOf(
             PropTypes.shape({
@@ -39,6 +40,7 @@ class Table extends Component {
 
     static defaultProps = {
         onRowClick: null,
+        onRowChecked: null,
         checkboxes: false,
         actions: []
     };
@@ -79,6 +81,7 @@ class Table extends Component {
         if (!checked.has(row)) checked.add(row);
         else checked.delete(row);
         this.setState({ checked });
+        if (this.props.onRowChecked) this.props.onRowChecked(Array.from(this.state.checked));
     };
 
     rowClickHandler = row => () => {

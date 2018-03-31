@@ -444,7 +444,7 @@ class IntegrationModal extends Component {
 
     deleteIntegration = () => {
         const promises = [];
-        this.policyTable.getSelectedRows().forEach(data => {
+        this.integrationTable.getSelectedRows().forEach(data => {
             const promise =
                 this.props.source === 'authProviders'
                     ? AuthService.deleteAuthProviders(data)
@@ -452,7 +452,7 @@ class IntegrationModal extends Component {
             promises.push(promise);
         });
         Promise.all(promises).then(() => {
-            this.policyTable.clearSelectedRows();
+            this.integrationTable.clearSelectedRows();
             this.props.onIntegrationsUpdate(this.props.source);
         });
     };
@@ -485,7 +485,24 @@ class IntegrationModal extends Component {
                           disabled: this.state.editIntegration !== null
                       }
                   ]
-                : [];
+                : [
+                      {
+                          renderIcon: () => <Icon.Trash2 className="h-4 w-4" />,
+                          text: 'Delete',
+                          className:
+                              'flex py-1 px-2 rounded-sm text-danger-600 hover:text-white hover:bg-danger-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-danger-400',
+                          onClick: this.deleteIntegration,
+                          disabled: this.state.editIntegration !== null
+                      },
+                      {
+                          renderIcon: () => <Icon.Plus className="h-4 w-4" />,
+                          text: 'Add Integration',
+                          className:
+                              'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                          onClick: this.addIntegration,
+                          disabled: this.state.editIntegration !== null
+                      }
+                  ];
         const columns =
             this.props.source !== 'clusters'
                 ? tableColumnDescriptor[this.props.source][this.props.type]
@@ -506,7 +523,7 @@ class IntegrationModal extends Component {
                             checkboxes={this.props.source !== 'clusters'}
                             onRowClick={onRowClickHandler()}
                             ref={table => {
-                                this.policyTable = table;
+                                this.integrationTable = table;
                             }}
                         />
                     ) : (

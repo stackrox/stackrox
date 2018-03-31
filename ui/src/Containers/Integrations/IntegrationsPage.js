@@ -4,10 +4,12 @@ import { ToastContainer, toast } from 'react-toastify';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
+import ClustersModal from 'Containers/Integrations/ClustersModal';
 import IntegrationModal from 'Containers/Integrations/IntegrationModal';
 import IntegrationTile from 'Containers/Integrations/IntegrationTile';
 import { actions as authActions } from 'reducers/auth';
-import { actions } from 'reducers/integrations';
+import { actions as integrationActions } from 'reducers/integrations';
+import { actions as clusterActions } from 'reducers/clusters';
 import { selectors } from 'reducers';
 
 import auth0 from 'images/auth0.svg';
@@ -164,9 +166,16 @@ class IntegrationsPage extends Component {
         notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
         imageIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
         /* eslint-enable */
+        selectedClusterType: PropTypes.string,
+        selectClusterType: PropTypes.func.isRequired,
+        closeClustersModal: PropTypes.func.isRequired,
         fetchAuthProviders: PropTypes.func.isRequired,
         fetchNotifiers: PropTypes.func.isRequired,
         fetchImageIntegrations: PropTypes.func.isRequired
+    };
+
+    static defaultProps = {
+        selectedClusterType: null
     };
 
     constructor(props) {
@@ -205,12 +214,16 @@ class IntegrationsPage extends Component {
     };
 
     openIntegrationModal = integrationCategory => {
-        const { source, type } = integrationCategory;
-        const integrations =
-            source !== 'clusters'
-                ? this.props[source].filter(i => i.type === type.toLowerCase())
-                : this.props.clusters.filter(cluster => cluster.type === type);
-        this.update('OPEN_INTEGRATION_MODAL', { integrations, source, type });
+        if (integrationCategory.source === 'clusters') {
+            this.props.selectClusterType(integrationCategory.type);
+        } else {
+            const { source, type } = integrationCategory;
+            const integrations =
+                source !== 'clusters'
+                    ? this.props[source].filter(i => i.type === type.toLowerCase())
+                    : this.props.clusters.filter(cluster => cluster.type === type);
+            this.update('OPEN_INTEGRATION_MODAL', { integrations, source, type });
+        }
     };
 
     closeIntegrationModal = isSuccessful => {
@@ -230,6 +243,21 @@ class IntegrationsPage extends Component {
     update = (action, nextState) => {
         this.setState(prevState => reducer(action, prevState, nextState));
     };
+
+    renderClustersModal() {
+        const { selectedClusterType } = this.props;
+        if (!selectedClusterType) return null;
+        const clusters = this.props.clusters.filter(
+            cluster => cluster.type === selectedClusterType
+        );
+        return (
+            <ClustersModal
+                clusters={clusters}
+                selectedClusterType={selectedClusterType}
+                onRequestClose={this.props.closeClustersModal}
+            />
+        );
+    }
 
     renderIntegrationModal() {
         const { integrationModal: { source, type, open } } = this.state;
@@ -305,6 +333,7 @@ class IntegrationsPage extends Component {
                     </div>
                 </div>
                 {this.renderIntegrationModal()}
+                {this.renderClustersModal()}
             </section>
         );
     }
@@ -313,14 +342,19 @@ class IntegrationsPage extends Component {
 const mapStateToProps = createStructuredSelector({
     authProviders: selectors.getAuthProviders,
     clusters: selectors.getClusters,
+    selectedClusterType: selectors.getSelectedClusterType,
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations
 });
 
 const mapDispatchToProps = dispatch => ({
     fetchAuthProviders: () => dispatch(authActions.fetchAuthProviders.request()),
-    fetchNotifiers: () => dispatch(actions.fetchNotifiers.request()),
-    fetchImageIntegrations: () => dispatch(actions.fetchImageIntegrations.request())
+    fetchNotifiers: () => dispatch(integrationActions.fetchNotifiers.request()),
+    fetchImageIntegrations: () => dispatch(integrationActions.fetchImageIntegrations.request()),
+    fetchRegistries: () => dispatch(integrationActions.fetchRegistries.request()),
+    fetchScanners: () => dispatch(integrationActions.fetchScanners.request()),
+    closeClustersModal: () => dispatch(clusterActions.selectClusterType(null)),
+    selectClusterType: clusterType => dispatch(clusterActions.selectClusterType(clusterType))
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(IntegrationsPage);
