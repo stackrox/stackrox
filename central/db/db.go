@@ -24,6 +24,7 @@ type Storage interface {
 	DeploymentStorage
 	PolicyStorage
 	ImageStorage
+	MultiplierStorage
 	NotifierStorage
 	ServiceIdentityStorage
 }
@@ -117,6 +118,14 @@ type ImageStorage interface {
 	AddImage(image *v1.Image) error
 	UpdateImage(image *v1.Image) error
 	RemoveImage(id string) error
+}
+
+// MultiplierStorage provides the storage functionality for risk scoring multipliers
+type MultiplierStorage interface {
+	GetMultipliers() ([]*v1.Multiplier, error)
+	AddMultiplier(multiplier *v1.Multiplier) (string, error)
+	UpdateMultiplier(multiplier *v1.Multiplier) error
+	RemoveMultiplier(id string) error
 }
 
 // NotifierStorage provide storage functionality for notifiers

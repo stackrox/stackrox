@@ -3,6 +3,7 @@ package service
 import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/detection"
+	"bitbucket.org/stack-rox/apollo/central/risk"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/idcheck"
@@ -15,9 +16,10 @@ import (
 )
 
 // NewSensorEventService returns the SensorEventService API.
-func NewSensorEventService(detector *detection.Detector, database db.Storage) *SensorEventService {
+func NewSensorEventService(detector *detection.Detector, database db.Storage, scorer *risk.Scorer) *SensorEventService {
 	return &SensorEventService{
 		detector: detector,
+		scorer:   scorer,
 		storage:  database,
 	}
 }
@@ -25,6 +27,7 @@ func NewSensorEventService(detector *detection.Detector, database db.Storage) *S
 // SensorEventService is the struct that manages the SensorEvent API
 type SensorEventService struct {
 	detector *detection.Detector
+	scorer   *risk.Scorer
 	storage  db.Storage
 }
 
@@ -67,6 +70,9 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 		}
 	}
 
+	// score the deployment so that it will at least have the default scoring without enrichment
+	// it will be overwritten if data is enriched
+	request.Deployment.Risk = s.scorer.Score(request.GetDeployment())
 	if err := s.handlePersistence(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

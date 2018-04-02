@@ -11,6 +11,7 @@ import (
 	_ "bitbucket.org/stack-rox/apollo/central/detection/image_processor"
 	_ "bitbucket.org/stack-rox/apollo/central/detection/privilege_processor"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
+	"bitbucket.org/stack-rox/apollo/pkg/scopecomp"
 )
 
 // Policy wraps the original v1 Policy and compiled policy suitable for computing matches against deployments.
@@ -122,7 +123,7 @@ func (p *Policy) matchesDeploymentWhitelist(whitelist *v1.Whitelist_Deployment, 
 	if whitelist == nil {
 		return false
 	}
-	if whitelist.GetScope() != nil && !p.withinScope(whitelist.GetScope(), deployment) {
+	if whitelist.GetScope() != nil && !scopecomp.WithinScope(whitelist.GetScope(), deployment) {
 		return false
 	}
 	if whitelist.GetName() != "" && whitelist.GetName() != deployment.GetName() {

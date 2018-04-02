@@ -90,6 +90,7 @@ func (b *BoltDB) initializeTables() error {
 		deploymentBucket,
 		imageBucket,
 		policyBucket,
+		multiplierBucket,
 		notifierBucket,
 		scanMetadataBucket,
 		scansToCheckBucket,

@@ -18,7 +18,9 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db/boltdb"
 	"bitbucket.org/stack-rox/apollo/central/db/inmem"
 	"bitbucket.org/stack-rox/apollo/central/detection"
+	"bitbucket.org/stack-rox/apollo/central/enrichment"
 	"bitbucket.org/stack-rox/apollo/central/notifications"
+	"bitbucket.org/stack-rox/apollo/central/risk"
 	"bitbucket.org/stack-rox/apollo/central/search/blevesearch"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
@@ -59,7 +61,13 @@ func main() {
 		panic(err)
 	}
 	go central.notificationProcessor.Start()
-	central.detector, err = detection.New(central.datastore, central.notificationProcessor)
+
+	central.scorer = risk.NewScorer()
+	if central.enricher, err = enrichment.New(central.datastore, central.scorer); err != nil {
+		panic(err)
+	}
+
+	central.detector, err = detection.New(central.datastore, central.enricher, central.notificationProcessor)
 	if err != nil {
 		panic(err)
 	}
@@ -72,9 +80,11 @@ func main() {
 type central struct {
 	signalsC              chan os.Signal
 	detector              *detection.Detector
+	enricher              *enrichment.Enricher
 	notificationProcessor *notifications.Processor
 	datastore             *datastore.DataStore
 	server                pkgGRPC.API
+	scorer                *risk.Scorer
 }
 
 func newCentral() *central {
@@ -116,7 +126,7 @@ func (c *central) startGRPCServer() {
 	c.server.Register(service.NewBenchmarkResultsService(c.datastore, c.notificationProcessor))
 	c.server.Register(service.NewBenchmarkTriggerService(c.datastore))
 	c.server.Register(clusterService)
-	c.server.Register(service.NewDeploymentService(c.datastore))
+	c.server.Register(service.NewDeploymentService(c.datastore, c.enricher))
 	c.server.Register(service.NewImageService(c.datastore))
 	c.server.Register(service.NewImageIntegrationService(c.datastore, c.detector))
 	c.server.Register(service.NewNotifierService(c.datastore, c.notificationProcessor, c.detector))
@@ -124,7 +134,7 @@ func (c *central) startGRPCServer() {
 	c.server.Register(service.NewPolicyService(c.datastore, c.detector))
 	c.server.Register(service.NewSearchService(c.datastore))
 	c.server.Register(idService)
-	c.server.Register(service.NewSensorEventService(c.detector, c.datastore))
+	c.server.Register(service.NewSensorEventService(c.detector, c.datastore, c.scorer))
 	c.server.Register(service.NewSummaryService(c.datastore))
 	c.server.Start()
 }

@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/risk"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/sources"
@@ -20,18 +21,26 @@ type Enricher struct {
 		db.DeploymentStorage
 		db.ImageStorage
 		db.ImageIntegrationStorage
+		db.MultiplierStorage
 	}
 
 	imageIntegrationMutex sync.Mutex
 	imageIntegrations     map[string]*sources.ImageIntegration
+
+	scorerMutex sync.Mutex
+	scorer      *risk.Scorer
 }
 
 // New creates and returns a new Enricher.
-func New(storage db.Storage) (*Enricher, error) {
+func New(storage db.Storage, scorer *risk.Scorer) (*Enricher, error) {
 	e := &Enricher{
 		storage: storage,
+		scorer:  scorer,
 	}
 	if err := e.initializeImageIntegrations(); err != nil {
+		return nil, err
+	}
+	if err := e.initializeMultipliers(); err != nil {
 		return nil, err
 	}
 	return e, nil
@@ -67,6 +76,17 @@ func (e *Enricher) RemoveImageIntegration(id string) {
 	delete(e.imageIntegrations, id)
 }
 
+func (e *Enricher) initializeMultipliers() error {
+	protoMultipliers, err := e.storage.GetMultipliers()
+	if err != nil {
+		return err
+	}
+	for _, mult := range protoMultipliers {
+		e.scorer.UpdateUserDefinedMultiplier(mult)
+	}
+	return nil
+}
+
 // Enrich enriches a deployment with data from registries and scanners.
 func (e *Enricher) Enrich(deployment *v1.Deployment) (enriched bool, err error) {
 	for _, c := range deployment.GetContainers() {
@@ -78,6 +98,9 @@ func (e *Enricher) Enrich(deployment *v1.Deployment) (enriched bool, err error) 
 	}
 
 	if enriched {
+		// Score the deployment
+		deployment.Risk = e.scorer.Score(deployment)
+		// Always enrich because the risk could be updated
 		err = e.storage.UpdateDeployment(deployment)
 	}
 

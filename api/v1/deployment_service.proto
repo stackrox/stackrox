@@ -16,6 +16,16 @@ enum EnforcementAction {
     UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT   = 2;
 }
 
+message Risk {
+    float           score   = 1;
+    message Result {
+        string name             = 1;
+        repeated string factors = 2;
+        float score             = 3;
+    }
+    repeated Result results = 2;
+}
+
 message Deployment {
     string id                                  = 1;
     string name                                = 2;
@@ -29,6 +39,7 @@ message Deployment {
     string cluster_name                        = 10;
 
     repeated Container containers              = 11;
+    Risk risk                                  = 12;
 }
 
 message Container {
@@ -98,6 +109,17 @@ message DeploymentLabelsResponse {
     repeated string values              = 2;
 }
 
+message Multiplier {
+    string id   = 1;
+    string name = 2;
+    Scope scope = 3;
+    float value = 4;
+}
+
+message GetMultipliersResponse {
+    repeated Multiplier multipliers = 1;
+}
+
 service DeploymentService {
 
     rpc GetDeployment(ResourceByID) returns (Deployment) {
@@ -115,6 +137,31 @@ service DeploymentService {
     rpc GetLabels(google.protobuf.Empty) returns (DeploymentLabelsResponse) {
         option (google.api.http) = {
             get: "/v1/deployments/metadata/labels"
+        };
+    }
+
+    rpc GetMultipliers(google.protobuf.Empty) returns (GetMultipliersResponse) {
+        option (google.api.http) = {
+            get: "/v1/deployments/metadata/multipliers"
+        };
+    }
+
+    rpc AddMultiplier(Multiplier) returns (Multiplier) {
+        option (google.api.http) = {
+            post: "/v1/deployments/metadata/multipliers"
+            body: "*"
+        };
+    }
+
+    rpc UpdateMultiplier(Multiplier) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/v1/deployments/metadata/multipliers/{id}"
+        };
+    }
+
+    rpc RemoveMultiplier(ResourceByID) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/deployments/metadata/multipliers/{id}"
         };
     }
 }

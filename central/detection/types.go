@@ -35,16 +35,13 @@ type Detector struct {
 }
 
 // New creates a new detector and initializes the registries and scanners from the DB if they exist.
-func New(database db.Storage, notificationsProcessor *notifications.Processor) (d *Detector, err error) {
+func New(database db.Storage, enricher *enrichment.Enricher, notificationsProcessor *notifications.Processor) (d *Detector, err error) {
 	d = &Detector{
 		database:              database,
+		enricher:              enricher,
 		notificationProcessor: notificationsProcessor,
 		taskC:    make(chan Task, 40),
 		stoppedC: make(chan struct{}),
-	}
-
-	if d.enricher, err = enrichment.New(database); err != nil {
-		return nil, err
 	}
 
 	if err = d.initializePolicies(); err != nil {
