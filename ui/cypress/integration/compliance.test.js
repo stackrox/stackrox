@@ -1,4 +1,4 @@
-import { url as complianceUrl, selectors } from './pages/CompliancePage';
+import { selectors, url as complianceUrl } from './pages/CompliancePage';
 import * as api from './apiEndpoints';
 
 describe('Compliance page', () => {
@@ -18,8 +18,10 @@ describe('Compliance page', () => {
     };
 
     it('should have selected item in nav bar', () => {
-        cy.visit(complianceUrl);
-        cy.get(selectors.navLink).should('have.class', 'bg-primary-600');
+        cy.visit('/');
+        cy.get(selectors.compliance).click();
+        cy.get(selectors.navLink).click();
+        cy.get(selectors.compliance).should('have.class', 'bg-primary-600');
         // first tab selected by default
         cy
             .get(selectors.benchmarkTabs)

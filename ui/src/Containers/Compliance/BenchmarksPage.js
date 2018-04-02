@@ -19,6 +19,7 @@ class BenchmarksPage extends Component {
         lastScannedTime: PropTypes.string.isRequired,
         benchmarkName: PropTypes.string.isRequired,
         benchmarkId: PropTypes.string.isRequired,
+        clusterId: PropTypes.string.isRequired,
         startPollBenchmarkScanResults: PropTypes.func.isRequired,
         stopPollBenchmarkScanResults: PropTypes.func.isRequired,
         selectBenchmarkScheduleDay: PropTypes.func.isRequired,
@@ -55,8 +56,14 @@ class BenchmarksPage extends Component {
     }
 
     componentDidMount() {
-        this.props.startPollBenchmarkScanResults(this.props.benchmarkId);
-        this.props.fetchBenchmarkSchedule(this.props.benchmarkId);
+        this.props.startPollBenchmarkScanResults({
+            benchmarkId: this.props.benchmarkId,
+            clusterId: this.props.clusterId
+        });
+        this.props.fetchBenchmarkSchedule({
+            benchmarkId: this.props.benchmarkId,
+            clusterId: this.props.clusterId
+        });
     }
 
     componentWillReceiveProps(nextProps) {
@@ -72,7 +79,10 @@ class BenchmarksPage extends Component {
 
     onTriggerScan = () => {
         this.setState({ scanning: true });
-        this.props.triggerBenchmarkScan(this.props.benchmarkId);
+        this.props.triggerBenchmarkScan({
+            benchmarkId: this.props.benchmarkId,
+            clusterId: this.props.clusterId
+        });
     };
 
     onRowClick = benchmarkScanResult => {
@@ -103,7 +113,8 @@ class BenchmarksPage extends Component {
         this.props.selectBenchmarkScheduleHour(
             this.props.benchmarkId,
             this.props.benchmarkName,
-            value
+            value,
+            this.props.clusterId
         );
     };
 
@@ -297,17 +308,31 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = dispatch => ({
-    startPollBenchmarkScanResults: benchmarkId =>
-        dispatch(benchmarkActions.pollBenchmarkScanResults.start(benchmarkId)),
+    startPollBenchmarkScanResults: benchmark =>
+        dispatch(benchmarkActions.pollBenchmarkScanResults.start(benchmark)),
     stopPollBenchmarkScanResults: () => dispatch(benchmarkActions.pollBenchmarkScanResults.stop()),
-    selectBenchmarkScheduleDay: (benchmarkId, benchmarkName, value) =>
-        dispatch(benchmarkActions.selectBenchmarkScheduleDay(benchmarkId, benchmarkName, value)),
-    selectBenchmarkScheduleHour: (benchmarkId, benchmarkName, value) =>
-        dispatch(benchmarkActions.selectBenchmarkScheduleHour(benchmarkId, benchmarkName, value)),
-    fetchBenchmarkSchedule: benchmarkId =>
-        dispatch(benchmarkActions.fetchBenchmarkSchedule.request(benchmarkId)),
-    triggerBenchmarkScan: benchmarkId =>
-        dispatch(benchmarkActions.triggerBenchmarkScan.request(benchmarkId)),
+    selectBenchmarkScheduleDay: (benchmarkId, benchmarkName, value, clusterId) =>
+        dispatch(
+            benchmarkActions.selectBenchmarkScheduleDay(
+                benchmarkId,
+                benchmarkName,
+                value,
+                clusterId
+            )
+        ),
+    selectBenchmarkScheduleHour: (benchmarkId, benchmarkName, value, clusterId) =>
+        dispatch(
+            benchmarkActions.selectBenchmarkScheduleHour(
+                benchmarkId,
+                benchmarkName,
+                value,
+                clusterId
+            )
+        ),
+    fetchBenchmarkSchedule: benchmark =>
+        dispatch(benchmarkActions.fetchBenchmarkSchedule.request(benchmark)),
+    triggerBenchmarkScan: benchmark =>
+        dispatch(benchmarkActions.triggerBenchmarkScan.request(benchmark)),
     selectBenchmarkScanResult: benchmarkScanResult =>
         dispatch(benchmarkActions.selectBenchmarkScanResult(benchmarkScanResult)),
     selectBenchmarkHostResult: benchmarkHostResult =>

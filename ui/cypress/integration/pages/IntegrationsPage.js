@@ -1,7 +1,8 @@
-export const url = 'main/integrations';
+export const url = '/main/integrations';
 
 export const selectors = {
-    navLink: 'nav li:contains("Integrations") a',
+    configure: 'nav.left-navigation li:contains("Configure") a',
+    navLink: '.navigation-panel li:contains("Environment Integrations") a',
     dockerSwarmTile: 'button:contains("Docker Swarm")',
     clusters: {
         swarmCluster1: 'tr:contains("Swarm Cluster 1")'

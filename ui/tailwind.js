@@ -294,6 +294,10 @@ module.exports = {
   */
 
   fonts: {
+    condensed:[
+      "Open Sans Condensed",
+      "sans-serif"
+    ],
     sans: [
       "Open Sans",
       "-apple-system",

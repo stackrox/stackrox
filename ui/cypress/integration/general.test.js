@@ -12,8 +12,8 @@ describe('General sanity checks', () => {
 
     it('should render navbar with Dashboard selected', () => {
         cy.visit('/');
-        cy.get('nav li:first a').as('firstNavItem');
-        cy.get('nav li:not(:first) a').as('otherNavItems');
+        cy.get('nav.left-navigation li:first a').as('firstNavItem');
+        cy.get('nav.left-navigation li:not(:first) a').as('otherNavItems');
 
         // redirect should happen
         cy.url().should('contain', dashboardUrl);
@@ -24,5 +24,14 @@ describe('General sanity checks', () => {
 
         // nothing else is selected
         cy.get('@otherNavItems').should('not.have.class', 'bg-primary-600');
+
+        cy.get('nav.top-navigation li').as('topNavItems');
+        cy.get('@topNavItems').should($lis => {
+            expect($lis).to.have.length(4);
+            expect($lis.eq(0)).to.contain('Alerts');
+            expect($lis.eq(1)).to.contain('Clusters');
+            expect($lis.eq(2)).to.contain('Deployments');
+            expect($lis.eq(3)).to.contain('Images');
+        });
     });
 });

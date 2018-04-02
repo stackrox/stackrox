@@ -53,27 +53,27 @@ export function* updateBenchmarkSchedule() {
     }
 }
 
-export function* getBenchmarkSchedule({ params: benchmarkId }) {
+export function* getBenchmarkSchedule({ params: benchmark }) {
     try {
-        const result = yield call(service.fetchSchedule, benchmarkId);
+        const result = yield call(service.fetchSchedule, benchmark);
         yield put(actions.fetchBenchmarkSchedule.success(result));
     } catch (error) {
         yield put(actions.fetchBenchmarkSchedule.failure(error));
     }
 }
 
-export function* triggerBenchmarkScan({ params: benchmarkId }) {
+export function* triggerBenchmarkScan({ params: benchmark }) {
     try {
-        yield call(service.triggerScan, benchmarkId);
+        yield call(service.triggerScan, benchmark);
     } catch (error) {
         yield put(actions.triggerScan.failure(error));
     }
 }
 
-function* pollBenchmarkScanResults({ params: benchmarkId }) {
+function* pollBenchmarkScanResults({ params: benchmark }) {
     while (true) {
         try {
-            const result = yield call(service.fetchLastScan, benchmarkId);
+            const result = yield call(service.fetchLastScan, benchmark);
             yield put(actions.fetchLastScan.success(result));
             yield call(delay, 5000); // poll every 5 sec
         } catch (error) {

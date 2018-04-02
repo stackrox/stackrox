@@ -7,6 +7,13 @@ import { createSelector, createStructuredSelector } from 'reselect';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import BenchmarksPage from 'Containers/Compliance/BenchmarksPage';
+import ReactRouterPropTypes from 'react-router-prop-types';
+
+const getClusterId = pathname => {
+    const clusterId = pathname.substr(pathname.lastIndexOf('/') + 1);
+    if (clusterId === 'compliance') return false;
+    return clusterId;
+};
 
 const CompliancePage = props => (
     <section className="flex flex-1 h-full">
@@ -17,6 +24,7 @@ const CompliancePage = props => (
                         <BenchmarksPage
                             benchmarkName={benchmark.benchmarkName}
                             benchmarkId={benchmark.benchmarkId}
+                            clusterId={getClusterId(props.location.pathname)}
                         />
                     </TabContent>
                 ))}
@@ -32,7 +40,14 @@ CompliancePage.propTypes = {
             text: PropTypes.string,
             disabled: PropTypes.bool
         })
-    ).isRequired
+    ).isRequired,
+    location: PropTypes.shape({
+        pathname: PropTypes.string
+    }).isRequired
+};
+
+CompliancePage.defaultPropTypes = {
+    location: ReactRouterPropTypes.location.required
 };
 
 const getBenchmarkTabs = createSelector([selectors.getBenchmarks], benchmarks =>

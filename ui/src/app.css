@@ -260,4 +260,18 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
     color: transparent;
 }
 
+.navigation-gradient {
+    height: 2px;
+    background-image: linear-gradient(90deg, #FBB078 0%, #FFA9A3 44%, #E584F5 99%);
+}
+
+.navigation-panel {
+    position: absolute;
+    left: 89px;
+    z-index: 10;
+    top: 0;
+    height: 100%;
+    width: 100%;
+}
+
 @tailwind utilities;

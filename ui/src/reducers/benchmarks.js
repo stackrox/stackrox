@@ -35,17 +35,19 @@ export const types = {
 
 export const actions = {
     pollBenchmarkScanResults: createPollingActions(types.POLL_BENCHMARK_SCAN_RESULTS),
-    selectBenchmarkScheduleDay: (benchmarkId, benchmarkName, value) => ({
+    selectBenchmarkScheduleDay: (benchmarkId, benchmarkName, value, clusterId) => ({
         type: types.SELECT_BENCHMARK_SCHEDULE_DAY,
         benchmarkId,
         benchmarkName,
-        value
+        value,
+        clusterId
     }),
-    selectBenchmarkScheduleHour: (benchmarkId, benchmarkName, value) => ({
+    selectBenchmarkScheduleHour: (benchmarkId, benchmarkName, value, clusterId) => ({
         type: types.SELECT_BENCHMARK_SCHEDULE_HOUR,
         benchmarkId,
         benchmarkName,
-        value
+        value,
+        clusterId
     }),
     selectBenchmarkScanResult: benchmarkScanResult => ({
         type: types.SELECT_BENCHMARK_SCAN_RESULT,
@@ -111,6 +113,7 @@ const benchmarkSchedule = (state = initialBenchmarkSchedule, action) => {
         const schedule = Object.assign({}, state);
         schedule.benchmarkId = action.benchmarkId;
         schedule.benchmarkName = action.benchmarkName;
+        schedule.clusterId = action.clusterId;
         if (action.value === 'None') {
             schedule.day = '';
             schedule.hour = '';
@@ -123,6 +126,7 @@ const benchmarkSchedule = (state = initialBenchmarkSchedule, action) => {
         const schedule = Object.assign({}, state);
         schedule.benchmarkId = action.benchmarkId;
         schedule.benchmarkName = action.benchmarkName;
+        schedule.clusterId = action.clusterId;
         schedule.hour = action.value;
         return schedule;
     }

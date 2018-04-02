@@ -1,13 +1,15 @@
-import { url as integrationsUrl, selectors } from './pages/IntegrationsPage';
+import { selectors } from './pages/IntegrationsPage';
 import * as api from './apiEndpoints';
 
 describe('Integrations page', () => {
     beforeEach(() => {
-        cy.visit(integrationsUrl);
+        cy.visit('/');
+        cy.get(selectors.configure).click();
+        cy.get(selectors.navLink).click();
     });
 
     it('should have selected item in nav bar', () => {
-        cy.get(selectors.navLink).should('have.class', 'bg-primary-600');
+        cy.get(selectors.configure).should('have.class', 'bg-primary-600');
     });
 
     it('should allow integration with Slack', () => {
@@ -25,7 +27,9 @@ describe('Cluster Creation Flow', () => {
         cy.route('GET', api.clusters.list, '@singleCluster').as('clusters');
         cy.route('POST', api.clusters.zip, {}).as('download');
         cy.route('POST', api.clusters.list, { id: 'kubeCluster1' }).as('addCluster');
-        cy.visit(integrationsUrl);
+        cy.visit('/');
+        cy.get(selectors.configure).click();
+        cy.get(selectors.navLink).click();
         cy.wait('@clusters');
     });
 

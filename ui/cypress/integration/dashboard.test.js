@@ -125,8 +125,7 @@ describe('Dashboard page', () => {
             .get(selectors.sectionHeaders.violationsByClusters)
             .next()
             .find(selectors.chart.xAxis)
-            .should('contain', 'Swarm Cluster 1')
-            .and('contain', 'Kubernetes Cluster 1');
+            .should('contain', 'Kubernetes Cluster 1');
     });
 
     it('should display events by time charts', () => {

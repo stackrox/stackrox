@@ -1,12 +1,14 @@
-import { url as policiesUrl, selectors } from './pages/PoliciesPage';
+import { selectors } from './pages/PoliciesPage';
 
 describe('Policies page', () => {
     beforeEach(() => {
-        cy.visit(policiesUrl);
+        cy.visit('/');
+        cy.get(selectors.configure).click();
+        cy.get(selectors.navLink).click();
     });
 
     it('should have selected item in nav bar', () => {
-        cy.get('nav li:contains("Policies") a').should('have.class', 'bg-primary-600');
+        cy.get(selectors.configure).should('have.class', 'bg-primary-600');
     });
 
     it('should allow updating policy name', () => {
