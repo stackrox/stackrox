@@ -21,6 +21,7 @@ import TwoLevelPieChart from 'Components/visuals/TwoLevelPieChart';
 import CustomLineChart from 'Components/visuals/CustomLineChart';
 import DashboardBenchmarks from 'Containers/Dashboard/DashboardBenchmarks';
 import SeverityTile from 'Containers/Dashboard/SeverityTile';
+import TopRiskyDeployments from 'Containers/Dashboard/TopRiskyDeployments';
 import { severityLabels } from 'messages/common';
 import { selectors } from 'reducers';
 
@@ -94,7 +95,8 @@ class DashboardPage extends Component {
             'CIS Swarm v1.1.0 Benchmark': benchmarkPropType,
             'CIS Kubernetes v1.2.0 Benchmark': benchmarkPropType
         }).isRequired,
-        clustersByName: PropTypes.object.isRequired, // eslint-disable-line react/forbid-prop-types
+        clustersByName: PropTypes.object.isRequired, // eslint-disable-line react/forbid-prop-types,
+        deployments: PropTypes.arrayOf(PropTypes.object).isRequired,
         history: PropTypes.shape({
             push: PropTypes.func.isRequired
         }).isRequired
@@ -299,6 +301,11 @@ class DashboardPage extends Component {
         </div>
     );
 
+    renderTopRiskyDeployments = () => {
+        if (!this.props.deployments) return '';
+        return <TopRiskyDeployments deployments={this.props.deployments} />;
+    };
+
     render() {
         return (
             <section className="w-full h-full transition">
@@ -340,6 +347,9 @@ class DashboardPage extends Component {
                     <div className="flex flex-col w-full">
                         <div className="flex w-full flex-wrap">
                             {this.renderViolationsByPolicyCategory()}
+                            <div className="p-8 md:w-full lg:w-1/2">
+                                {this.renderTopRiskyDeployments()}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -363,6 +373,7 @@ const mapStateToProps = createStructuredSelector({
     violationsByCluster: selectors.getAlertCountsByCluster,
     alertsByTimeseries: selectors.getAlertsByTimeseries,
     benchmarks: selectors.getUpdatedBenchmarks,
+    deployments: selectors.getDeployments,
     clustersByName: getClustersByName
 });
 

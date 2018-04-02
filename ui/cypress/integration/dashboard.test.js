@@ -156,4 +156,27 @@ describe('Dashboard page', () => {
 
         // TODO: validate clicking on any sector (for some reason '.click()' isn't stable for D3 chart)
     });
+
+    it('should display top risky deployments', () => {
+        cy.server();
+        cy.fixture('risks/riskyDeployments.json').as('riskyDeployments');
+        cy.route('GET', api.risks.riskyDeployments, '@riskyDeployments').as('riskyDeployments');
+
+        cy.visit(dashboardUrl);
+        cy.wait('@riskyDeployments');
+
+        cy
+            .get(selectors.sectionHeaders.topRiskyDeployments)
+            .next()
+            .as('list');
+        cy
+            .get('@list')
+            .find('li')
+            .should('have.length', 2);
+
+        cy.get(selectors.buttons.more).click();
+        cy.url().should('match', /\/main\/risk/);
+
+        // TODO: validate clicking on any sector (for some reason '.click()' isn't stable for D3 chart)
+    });
 });

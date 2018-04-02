@@ -5,6 +5,7 @@ import { actions } from 'reducers/risk';
 import { types as locationActionTypes } from 'reducers/routes';
 
 const riskPath = '/main/risk';
+const dashboardPath = '/main/dashboard';
 
 export function* getDeployments() {
     try {
@@ -20,7 +21,11 @@ export function* watchLocation() {
         const action = yield take(locationActionTypes.LOCATION_CHANGE);
         const { payload: location } = action;
 
-        if (location && location.pathname && location.pathname.startsWith(riskPath)) {
+        if (
+            location &&
+            location.pathname &&
+            (location.pathname.startsWith(riskPath) || location.pathname.startsWith(dashboardPath))
+        ) {
             yield fork(getDeployments);
         }
     }

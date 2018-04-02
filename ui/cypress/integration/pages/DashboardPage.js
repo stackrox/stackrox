@@ -9,12 +9,16 @@ const severityColors = {
 
 export const selectors = {
     navLink: 'nav li:contains("Dashboard") a',
+    buttons: {
+        more: 'button:contains("More")'
+    },
     sectionHeaders: {
         environmentRisk: 'h2:contains("Environment Risk")',
         benchmarks: 'h2:contains("Benchmarks")',
         violationsByClusters: 'h2:contains("Violations by Cluster")',
         eventsByTime: 'h2:contains("Active Violations by Time")',
-        containerConfiguration: 'h2:contains("Container Configuration")'
+        containerConfiguration: 'h2:contains("Container Configuration")',
+        topRiskyDeployments: 'h2:contains("Top Risky Deployments")'
     },
     chart: {
         xAxis: 'g.xAxis',
