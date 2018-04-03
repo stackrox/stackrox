@@ -7,6 +7,7 @@ import authProviders, { selectors as authProviderSelectors } from './auth';
 import benchmarks, { selectors as benchmarkSelectors } from './benchmarks';
 import clusters, { selectors as clusterSelectors } from './clusters';
 import deployments, { selectors as deploymentSelectors } from './risk';
+import images, { selectors as imageSelectors } from './images';
 import integrations, { selectors as integrationSelectors } from './integrations';
 import policies, { selectors as policySelectors } from './policies';
 import route, { selectors as routeSelectors } from './routes';
@@ -19,6 +20,7 @@ const appReducer = combineReducers({
     benchmarks,
     clusters,
     deployments,
+    images,
     integrations,
     policies
 });
@@ -40,6 +42,7 @@ const getAuthProviders = state => getApp(state).authProviders;
 const getBenchmarks = state => getApp(state).benchmarks;
 const getClusters = state => getApp(state).clusters;
 const getDeployments = state => getApp(state).deployments;
+const getImages = state => getApp(state).images;
 const getIntegrations = state => getApp(state).integrations;
 const getPolicies = state => getApp(state).policies;
 
@@ -49,6 +52,7 @@ const boundSelectors = {
     ...bindSelectors(getBenchmarks, benchmarkSelectors),
     ...bindSelectors(getClusters, clusterSelectors),
     ...bindSelectors(getDeployments, deploymentSelectors),
+    ...bindSelectors(getImages, imageSelectors),
     ...bindSelectors(getIntegrations, integrationSelectors),
     ...bindSelectors(getPolicies, policySelectors),
     ...bindSelectors(getRoute, routeSelectors)

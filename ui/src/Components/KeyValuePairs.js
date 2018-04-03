@@ -44,7 +44,8 @@ class KeyValuePairs extends Component {
         const { data } = this.props;
         const mapping = this.props.keyValueMap;
         return keys.map(key => {
-            if (!data[key] || !mapping[key] || isEmpty(data[key])) return '';
+            if (!data[key] || !mapping[key] || (isObject(data[key]) && isEmpty(data[key])))
+                return '';
             const { label } = mapping[key];
             const value = mapping[key].formatValue
                 ? mapping[key].formatValue(data[key])

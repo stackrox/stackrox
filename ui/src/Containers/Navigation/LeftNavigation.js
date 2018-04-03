@@ -26,11 +26,11 @@ const navLinks = [
         to: '/main/risk',
         renderIcon: () => <Icon.ShieldOff className="h-4 w-4 mb-1" />
     },
-    // {
-    //     text: 'Images',
-    //     to: '/main/images',
-    //     renderIcon: () => <Icon.FileMinus className="h-4 w-4 mb-1" />
-    // },
+    {
+        text: 'Images',
+        to: '/main/images',
+        renderIcon: () => <Icon.FileMinus className="h-4 w-4 mb-1" />
+    },
     {
         text: 'Configure',
         to: '',

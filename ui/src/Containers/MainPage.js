@@ -5,6 +5,7 @@ import DashboardPage from 'Containers/Dashboard/DashboardPage';
 import IntegrationsPage from 'Containers/Integrations/IntegrationsPage';
 import ViolationsPage from 'Containers/Violations/ViolationsPage';
 import PoliciesPage from 'Containers/Policies/PoliciesPage';
+import ImagesPage from 'Containers/Images/ImagesPage';
 import CompliancePage from 'Containers/Compliance/CompliancePage';
 import RiskPage from 'Containers/Risk/RiskPage';
 import TopNavigation from 'Containers/Navigation/TopNavigation';
@@ -20,6 +21,7 @@ class MainPage extends Component {
                 <ProtectedRoute path="/main/imageintegrations" component={IntegrationsPage} />
                 <ProtectedRoute path="/main/policies" component={PoliciesPage} />
                 <ProtectedRoute path="/main/risk" component={RiskPage} />
+                <ProtectedRoute path="/main/images" component={ImagesPage} />
                 <Redirect from="/main" to="/main/dashboard" />
             </Switch>
         </section>

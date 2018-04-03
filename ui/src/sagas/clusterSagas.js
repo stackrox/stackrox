@@ -33,7 +33,6 @@ export function* watchLocation() {
             (location.pathname.startsWith(integrationsPath) ||
                 location.pathname.startsWith(dashboardPath))
         ) {
-            yield fork(getClusters);
             pollTask = yield fork(getClusters);
         }
     }
