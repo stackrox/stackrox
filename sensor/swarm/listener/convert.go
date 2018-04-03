@@ -17,6 +17,10 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
+const (
+	defaultNamespace = "default"
+)
+
 type serviceWrap swarm.Service
 
 func (s serviceWrap) asDeployment(client *client.Client, retryGetImageSha bool) *v1.Deployment {
@@ -49,11 +53,17 @@ func (s serviceWrap) asDeployment(client *client.Client, retryGetImageSha bool) 
 		}
 	}
 
+	namespace := defaultNamespace
+	if stackNamespace, ok := s.Spec.Labels["com.docker.stack.namespace"]; ok {
+		namespace = stackNamespace
+	}
+
 	m := modeWrap(s.Spec.Mode)
 
 	return &v1.Deployment{
 		Id:        s.ID,
 		Name:      s.Spec.Name,
+		Namespace: namespace,
 		Version:   fmt.Sprintf("%d", s.Version.Index),
 		Type:      m.asType(),
 		Replicas:  m.asReplica(),
