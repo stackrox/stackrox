@@ -7,6 +7,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "api/v1/common.proto";
 import "api/v1/image_service.proto";
+import "api/v1/search_service.proto";
 
 package v1;
 
@@ -91,12 +92,6 @@ message PortConfig {
     string exposure         = 4;
 }
 
-message GetDeploymentsRequest {
-    repeated string name                = 1;
-    repeated string type                = 2;
-    repeated string image_sha           = 3;
-}
-
 message GetDeploymentsResponse {
     repeated Deployment deployments = 1;
 }
@@ -128,7 +123,7 @@ service DeploymentService {
         };
     }
 
-    rpc GetDeployments(GetDeploymentsRequest) returns (GetDeploymentsResponse) {
+    rpc GetDeployments(RawQuery) returns (GetDeploymentsResponse) {
         option (google.api.http) = {
             get: "/v1/deployments"
         };

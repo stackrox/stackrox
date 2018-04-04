@@ -9,11 +9,6 @@ import (
 	"github.com/blevesearch/bleve/search/query"
 )
 
-const (
-	fuzzyPrefix = 3
-	fuzziness   = 3 // this is the Levenshtein distance that is allowable
-)
-
 func transformFields(fields map[string]*v1.ParsedSearchRequest_Values, objectMap map[string]string) map[string]*v1.ParsedSearchRequest_Values {
 	newMap := make(map[string]*v1.ParsedSearchRequest_Values, len(fields))
 	for k, v := range fields {
@@ -46,11 +41,19 @@ func collapseResults(searchResult *bleve.SearchResult) (results []searchPkg.Resu
 	return
 }
 
+func splitFunc(r rune) bool {
+	return r == ' ' || r == '-'
+}
+
+func splitByDelimiters(field string) []string {
+	return strings.FieldsFunc(field, splitFunc)
+}
+
 // These are exact matches for things like cluster, namespace and labels
 func newTermMatch(field, text string) query.Query {
 	// Must split the fields via the spaces
 	var conjunction query.ConjunctionQuery
-	for _, val := range strings.Split(text, " ") {
+	for _, val := range splitByDelimiters(text) {
 		val = strings.ToLower(val)
 		termQuery := bleve.NewTermQuery(val)
 		termQuery.SetField(field)
@@ -60,16 +63,15 @@ func newTermMatch(field, text string) query.Query {
 }
 
 // These are inexact matches and the allowable distance is dictated by the global fuzziness
-func newFuzzyQuery(field, text string, prefix int) query.Query {
+func newPrefixQuery(field, prefix string) query.Query {
 	// Must split the fields via the spaces
 	var conjunction query.ConjunctionQuery
-	for _, val := range strings.Split(text, " ") {
+	// todo(cgorman) replace this by MultiPhrasePrefixQuery when it gets merged into master (or we can cherry-pick)
+	for _, val := range splitByDelimiters(prefix) {
 		val = strings.ToLower(val)
-		fuzzyQuery := bleve.NewFuzzyQuery(val)
-		fuzzyQuery.SetField(field)
-		fuzzyQuery.SetPrefix(prefix)
-		fuzzyQuery.SetFuzziness(fuzziness)
-		conjunction.AddQuery(fuzzyQuery)
+		prefixQuery := bleve.NewPrefixQuery(val)
+		prefixQuery.SetField(field)
+		conjunction.AddQuery(prefixQuery)
 	}
 	return &conjunction
 }
@@ -77,7 +79,7 @@ func newFuzzyQuery(field, text string, prefix int) query.Query {
 func valuesToDisjunctionQuery(field string, values *v1.ParsedSearchRequest_Values) query.Query {
 	disjunctionQuery := bleve.NewDisjunctionQuery()
 	for _, v := range values.GetValues() {
-		disjunctionQuery.AddQuery(newFuzzyQuery(field, v, fuzzyPrefix))
+		disjunctionQuery.AddQuery(newPrefixQuery(field, v))
 	}
 	return disjunctionQuery
 }
@@ -114,7 +116,7 @@ func buildQuery(request *v1.ParsedSearchRequest, scopeToQuery func(scope *v1.Sco
 		conjunctionQuery.AddQuery(fieldsToQuery(request.Fields, objectMap))
 	}
 	if request.GetStringQuery() != "" {
-		conjunctionQuery.AddQuery(newFuzzyQuery("", request.GetStringQuery(), 0))
+		conjunctionQuery.AddQuery(newPrefixQuery("", request.GetStringQuery()))
 	}
 	return conjunctionQuery
 }

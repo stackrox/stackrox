@@ -39,7 +39,9 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 	require.NoError(t, err)
 
 	service := v1.NewPolicyServiceClient(conn)
-	resp, err := service.GetPolicies(ctx, &v1.GetPoliciesRequest{Name: []string{expectedLatestTagPolicy}})
+	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
+		Query: getPolicyQuery(expectedLatestTagPolicy),
+	})
 	require.NoError(t, err)
 	require.Len(t, resp.Policies, 1)
 
@@ -56,9 +58,8 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 
 	alertService := v1.NewAlertServiceClient(conn)
 	waitForAlert(t, alertService, &v1.GetAlertsRequest{
-		DeploymentName: []string{nginxDeploymentName},
-		PolicyId:       []string{latestPolicy.GetId()},
-		Stale:          []bool{false},
+		Query: getDeploymentQuery(nginxDeploymentName) + "+" + getPolicyQuery(latestPolicy.GetName()),
+		Stale: []bool{false},
 	}, 0)
 }
 
@@ -70,7 +71,9 @@ func verifyAlertForWhitelistRemoval(t *testing.T) {
 	require.NoError(t, err)
 
 	service := v1.NewPolicyServiceClient(conn)
-	resp, err := service.GetPolicies(ctx, &v1.GetPoliciesRequest{Name: []string{expectedLatestTagPolicy}})
+	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
+		Query: getPolicyQuery(expectedLatestTagPolicy),
+	})
 	require.NoError(t, err)
 	require.Len(t, resp.Policies, 1)
 
@@ -81,9 +84,8 @@ func verifyAlertForWhitelistRemoval(t *testing.T) {
 
 	alertService := v1.NewAlertServiceClient(conn)
 	waitForAlert(t, alertService, &v1.GetAlertsRequest{
-		DeploymentName: []string{nginxDeploymentName},
-		PolicyId:       []string{latestPolicy.GetId()},
-		Stale:          []bool{false},
+		Query: getDeploymentQuery(nginxDeploymentName) + "+" + getPolicyQuery(latestPolicy.GetName()),
+		Stale: []bool{false},
 	}, 1)
 }
 

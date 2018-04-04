@@ -41,7 +41,7 @@ func (b *BoltDB) GetPolicy(id string) (policy *v1.Policy, exists bool, err error
 }
 
 // GetPolicies retrieves policies matching the request from bolt
-func (b *BoltDB) GetPolicies(request *v1.GetPoliciesRequest) ([]*v1.Policy, error) {
+func (b *BoltDB) GetPolicies() ([]*v1.Policy, error) {
 	var policies []*v1.Policy
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))

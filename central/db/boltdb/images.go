@@ -35,7 +35,7 @@ func (b *BoltDB) GetImage(sha string) (image *v1.Image, exists bool, err error) 
 }
 
 // GetImages returns all images regardless of request
-func (b *BoltDB) GetImages(*v1.GetImagesRequest) ([]*v1.Image, error) {
+func (b *BoltDB) GetImages() ([]*v1.Image, error) {
 	var images []*v1.Image
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(imageBucket))

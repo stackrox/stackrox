@@ -7,6 +7,7 @@ import clusters from './clusterSagas';
 import deployments from './riskSagas';
 import images from './imageSagas';
 import integrations from './integrationSagas';
+import searches from './searchSagas';
 
 export default function* root() {
     yield all([
@@ -16,6 +17,7 @@ export default function* root() {
         fork(clusters),
         fork(deployments),
         fork(images),
-        fork(integrations)
+        fork(integrations),
+        fork(searches)
     ]);
 }

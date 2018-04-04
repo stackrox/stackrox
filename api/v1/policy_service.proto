@@ -11,6 +11,7 @@ import "api/v1/image_policy.proto";
 import "api/v1/privilege_policy.proto";
 import "api/v1/image_service.proto";
 import "api/v1/deployment_service.proto";
+import "api/v1/search_service.proto";
 
 package v1;
 
@@ -47,13 +48,6 @@ message Policy {
     ConfigurationPolicy configuration_policy    = 14;
 
     repeated Whitelist whitelists               = 15;
-}
-
-message GetPoliciesRequest {
-    repeated string name                = 1;
-    repeated string category            = 2;
-    repeated Severity severity          = 3;
-    repeated bool disabled              = 4;
 }
 
 message PoliciesResponse {
@@ -94,7 +88,7 @@ service PolicyService {
         };
     }
 
-    rpc GetPolicies (GetPoliciesRequest) returns (PoliciesResponse) {
+    rpc GetPolicies (RawQuery) returns (PoliciesResponse) {
         option (google.api.http) = {
             get: "/v1/policies"
         };

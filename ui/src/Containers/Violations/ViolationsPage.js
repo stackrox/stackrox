@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import MultiSelect from 'react-select';
 import queryString from 'query-string';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
@@ -10,6 +9,8 @@ import { sortNumber, sortSeverity } from 'sorters/sorters';
 import { actions as alertActions } from 'reducers/alerts';
 import { selectors } from 'reducers';
 
+import PageHeader from 'Components/PageHeader';
+import SearchInput from 'Components/SearchInput';
 import Table from 'Components/Table';
 import PolicyAlertsSidePanel from './PolicyAlertsSidePanel';
 import ViolationsModal from './ViolationsModal';
@@ -33,19 +34,6 @@ const getSeverityClassName = severityValue => {
     throw new Error(`Unknown severity: ${severityValue}`);
 };
 
-const categoryOptions = [
-    { label: 'Image Assurance', value: 'Image Assurance' },
-    { label: 'Container Configuration', value: 'Container Configuration' },
-    { label: 'Privileges & Capabilities', value: 'Privileges & Capabilities' }
-];
-
-const severityOptions = [
-    { label: 'Critical Severity', value: 'CRITICAL_SEVERITY' },
-    { label: 'High Severity', value: 'HIGH_SEVERITY' },
-    { label: 'Medium Severity', value: 'MEDIUM_SEVERITY' },
-    { label: 'Low Severity', value: 'LOW_SEVERITY' }
-];
-
 class ViolationsPage extends Component {
     static propTypes = {
         violatedPolicies: PropTypes.arrayOf(
@@ -66,7 +54,14 @@ class ViolationsPage extends Component {
         selectViolatedPolicy: PropTypes.func.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
         location: ReactRouterPropTypes.location.isRequired,
-        match: ReactRouterPropTypes.match.isRequired
+        match: ReactRouterPropTypes.match.isRequired,
+        searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
+        searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
+        searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
+        setSearchOptions: PropTypes.func.isRequired,
+        setSearchModifiers: PropTypes.func.isRequired,
+        setSearchSuggestions: PropTypes.func.isRequired,
+        isViewFiltered: PropTypes.bool.isRequired
     };
 
     static defaultProps = {
@@ -168,31 +163,17 @@ class ViolationsPage extends Component {
     render() {
         return (
             <section className="flex flex-1 h-full">
-                <div className="flex flex-1 mt-3 flex-col">
-                    <div className="flex mb-3 mx-3 self-end justify-end">
-                        <div className="flex ml-3">
-                            <MultiSelect
-                                multi
-                                onChange={this.onFilterChange('category')}
-                                options={categoryOptions}
-                                placeholder="Select categories"
-                                removeSelected
-                                value={this.getFilterParams().category}
-                                className="text-base-600 font-400 min-w-64"
-                            />
-                        </div>
-                        <div className="flex ml-3">
-                            <MultiSelect
-                                multi
-                                onChange={this.onFilterChange('severity')}
-                                options={severityOptions}
-                                placeholder="Select severities"
-                                removeSelected
-                                value={this.getFilterParams().severity}
-                                className="text-base-600 font-400 min-w-64"
-                            />
-                        </div>
-                    </div>
+                <div className="flex flex-1 flex-col">
+                    <PageHeader header="Violations" isViewFiltered={this.props.isViewFiltered}>
+                        <SearchInput
+                            searchOptions={this.props.searchOptions}
+                            searchModifiers={this.props.searchModifiers}
+                            searchSuggestions={this.props.searchSuggestions}
+                            setSearchOptions={this.props.setSearchOptions}
+                            setSearchModifiers={this.props.setSearchModifiers}
+                            setSearchSuggestions={this.props.setSearchSuggestions}
+                        />
+                    </PageHeader>
                     <div className="flex flex-1">
                         <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow border-t border-primary-300 bg-base-100">
                             {this.renderTable()}
@@ -228,14 +209,28 @@ const getSelectedPolicy = createSelector(
     (policiesById, policyId) => policiesById[policyId]
 );
 
+const isViewFiltered = createSelector(
+    [selectors.getAlertsSearchOptions],
+    searchOptions => searchOptions.length !== 0
+);
+
 const mapStateToProps = createStructuredSelector({
     violatedPolicies: getViolatedPolicies,
     alertsForSelectedPolicy: getAlertsForSelectedPolicy,
-    selectedPolicy: getSelectedPolicy
+    selectedPolicy: getSelectedPolicy,
+    searchOptions: selectors.getAlertsSearchOptions,
+    searchModifiers: selectors.getAlertsSearchModifiers,
+    searchSuggestions: selectors.getAlertsSearchSuggestions,
+    isViewFiltered
 });
 
 const mapDispatchToProps = dispatch => ({
-    selectViolatedPolicy: policyId => dispatch(alertActions.selectViolatedPolicy(policyId))
+    selectViolatedPolicy: policyId => dispatch(alertActions.selectViolatedPolicy(policyId)),
+    setSearchOptions: searchOptions => dispatch(alertActions.setAlertsSearchOptions(searchOptions)),
+    setSearchModifiers: searchModifiers =>
+        dispatch(alertActions.setAlertsSearchModifiers(searchModifiers)),
+    setSearchSuggestions: searchSuggestions =>
+        dispatch(alertActions.setAlertsSearchSuggestions(searchSuggestions))
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(ViolationsPage);

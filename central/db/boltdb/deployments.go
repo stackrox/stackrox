@@ -33,7 +33,7 @@ func (b *BoltDB) GetDeployment(id string) (deployment *v1.Deployment, exists boo
 }
 
 // GetDeployments retrieves deployments matching the request from bolt
-func (b *BoltDB) GetDeployments(request *v1.GetDeploymentsRequest) ([]*v1.Deployment, error) {
+func (b *BoltDB) GetDeployments() ([]*v1.Deployment, error) {
 	var deployments []*v1.Deployment
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(deploymentBucket))

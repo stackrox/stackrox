@@ -16,5 +16,5 @@ export const benchmarks = {
 };
 
 export const risks = {
-    riskyDeployments: 'v1/deployments'
+    riskyDeployments: 'v1/deployments*'
 };

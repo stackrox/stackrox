@@ -28,7 +28,7 @@ func checkDeploymentExists(t *testing.T) {
 
 	// 10 seconds should be enough for a deployment to be returned
 	for i := 0; i < 5; i++ {
-		resp, err := service.GetDeployments(ctx, &v1.GetDeploymentsRequest{})
+		resp, err := service.GetDeployments(ctx, &v1.RawQuery{})
 		require.NoError(t, err)
 		if len(resp.Deployments) != 0 {
 			return
@@ -68,7 +68,7 @@ func TestBackup(t *testing.T) {
 	b, err := boltdb.New("backup.db")
 	require.NoError(t, err)
 
-	deployments, err := b.GetDeployments(&v1.GetDeploymentsRequest{})
+	deployments, err := b.GetDeployments()
 	require.NoError(t, err)
 	assert.NotEmpty(t, deployments)
 }

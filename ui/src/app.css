@@ -274,4 +274,18 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
     width: 100%;
 }
 
+.search-option-categories {
+    background-color: hsl(229, 89%, 96%);
+    color: hsl(45, 4%, 35%);
+    font-family: Open Sans;
+    padding: 2px;
+    border: 2px solid hsl(230, 81%, 90%);
+}
+
+.Select--multi .Select-value.Select-create-option-placeholder {
+    background-color: hsl(228, 45%, 98%) !important;
+    border: 1px solid hsl(229, 47%, 93%) !important;
+    color: hsl(230, 20%, 40%) !important;
+}
+
 @tailwind utilities;

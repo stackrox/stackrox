@@ -1,12 +1,15 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
+import { createSelector, createStructuredSelector } from 'reselect';
 import * as Icon from 'react-feather';
 import Collapsible from 'react-collapsible';
 
 import { selectors } from 'reducers';
+import { actions as riskActions } from 'reducers/risk';
 
+import PageHeader from 'Components/PageHeader';
+import SearchInput from 'Components/SearchInput';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';
@@ -74,7 +77,14 @@ const reducer = (action, prevState, nextState) => {
 
 class RiskPage extends Component {
     static propTypes = {
-        deployments: PropTypes.arrayOf(PropTypes.object).isRequired
+        deployments: PropTypes.arrayOf(PropTypes.object).isRequired,
+        searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
+        searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
+        searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
+        setSearchOptions: PropTypes.func.isRequired,
+        setSearchModifiers: PropTypes.func.isRequired,
+        setSearchSuggestions: PropTypes.func.isRequired,
+        isViewFiltered: PropTypes.bool.isRequired
     };
 
     constructor(props) {
@@ -144,14 +154,10 @@ class RiskPage extends Component {
     renderTab = tabText => {
         switch (tabText) {
             case 'risk indicators':
-                return (
-                    <div className="flex flex-1 flex-col bg-base-100">
-                        {this.renderRiskIndicators()}
-                    </div>
-                );
+                return <div className="flex flex-1 flex-col">{this.renderRiskIndicators()}</div>;
             case 'deployment details':
                 return (
-                    <div className="flex flex-1 flex-col bg-base-100">
+                    <div className="flex flex-1 flex-col">
                         {this.renderOverview()}
                         {this.renderContainerConfig()}
                     </div>
@@ -168,7 +174,7 @@ class RiskPage extends Component {
             <div className="px-3 py-4">
                 {risk.results.map(result => (
                     <div
-                        className="alert-preview bg-white shadow text-primary-600 tracking-wide"
+                        className="alert-preview bg-white shadow text-primary-600 tracking-wide border border-base-200"
                         key={result.name}
                     >
                         <Collapsible
@@ -194,7 +200,7 @@ class RiskPage extends Component {
         const title = 'Overview';
         return (
             <div className="px-3 py-4">
-                <div className="alert-preview bg-white shadow text-primary-600 tracking-wide">
+                <div className="alert-preview bg-white shadow text-primary-600 tracking-wide border border-base-200">
                     <Collapsible
                         open
                         trigger={this.renderCollapsibleCard(title, 'up')}
@@ -217,7 +223,7 @@ class RiskPage extends Component {
         const title = 'Container configuration';
         return (
             <div className="px-3 py-4">
-                <div className="alert-preview bg-white shadow text-primary-600 tracking-wide">
+                <div className="alert-preview bg-white shadow text-primary-600 tracking-wide border border-base-200">
                     <Collapsible
                         open
                         trigger={this.renderCollapsibleCard(title, 'up')}
@@ -242,10 +248,19 @@ class RiskPage extends Component {
     render() {
         return (
             <section className="flex flex-1 h-full">
-                <div className="flex flex-1 mt-3 flex-col">
-                    <div className="flex mb-3 mx-3 self-end justify-end" />
+                <div className="flex flex-1 flex-col">
+                    <PageHeader header="Risk" isViewFiltered={this.props.isViewFiltered}>
+                        <SearchInput
+                            searchOptions={this.props.searchOptions}
+                            searchModifiers={this.props.searchModifiers}
+                            searchSuggestions={this.props.searchSuggestions}
+                            setSearchOptions={this.props.setSearchOptions}
+                            setSearchModifiers={this.props.setSearchModifiers}
+                            setSearchSuggestions={this.props.setSearchSuggestions}
+                        />
+                    </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow border-t border-primary-300 bg-base-100">
+                        <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow bg-base-100">
                             {this.renderTable()}
                         </div>
                         {this.renderSidePanel()}
@@ -256,8 +271,26 @@ class RiskPage extends Component {
     }
 }
 
+const isViewFiltered = createSelector(
+    [selectors.getDeploymentsSearchOptions],
+    searchOptions => searchOptions.length !== 0
+);
+
 const mapStateToProps = createStructuredSelector({
-    deployments: selectors.getDeployments
+    deployments: selectors.getDeployments,
+    searchOptions: selectors.getDeploymentsSearchOptions,
+    searchModifiers: selectors.getDeploymentsSearchModifiers,
+    searchSuggestions: selectors.getDeploymentsSearchSuggestions,
+    isViewFiltered
 });
 
-export default connect(mapStateToProps)(RiskPage);
+const mapDispatchToProps = dispatch => ({
+    setSearchOptions: searchOptions =>
+        dispatch(riskActions.setDeploymentsSearchOptions(searchOptions)),
+    setSearchModifiers: searchModifiers =>
+        dispatch(riskActions.setDeploymentsSearchModifiers(searchModifiers)),
+    setSearchSuggestions: searchSuggestions =>
+        dispatch(riskActions.setDeploymentsSearchSuggestions(searchSuggestions))
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(RiskPage);

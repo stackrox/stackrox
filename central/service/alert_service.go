@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/datastore"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -15,15 +15,15 @@ import (
 )
 
 // NewAlertService returns the AlertService object.
-func NewAlertService(storage db.AlertStorage) *AlertService {
+func NewAlertService(datastore *datastore.DataStore) *AlertService {
 	return &AlertService{
-		storage: storage,
+		datastore: datastore,
 	}
 }
 
 // AlertService provides APIs for alerts.
 type AlertService struct {
-	storage db.AlertStorage
+	datastore *datastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -43,7 +43,7 @@ func (s *AlertService) AuthFuncOverride(ctx context.Context, fullMethodName stri
 
 // GetAlert returns the alert with given id.
 func (s *AlertService) GetAlert(ctx context.Context, request *v1.ResourceByID) (*v1.Alert, error) {
-	alert, exists, err := s.storage.GetAlert(request.GetId())
+	alert, exists, err := s.datastore.GetAlert(request.GetId())
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -57,18 +57,16 @@ func (s *AlertService) GetAlert(ctx context.Context, request *v1.ResourceByID) (
 
 // GetAlerts returns alerts according to the request.
 func (s *AlertService) GetAlerts(ctx context.Context, request *v1.GetAlertsRequest) (*v1.GetAlertsResponse, error) {
-	alerts, err := s.storage.GetAlerts(request)
+	alerts, err := s.datastore.GetAlerts(request)
 	if err != nil {
-		log.Error(err)
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
-
 	return &v1.GetAlertsResponse{Alerts: alerts}, nil
 }
 
 // GetAlertsGroup returns alerts according to the request, grouped by category and policy.
 func (s *AlertService) GetAlertsGroup(ctx context.Context, request *v1.GetAlertsRequest) (*v1.GetAlertsGroupResponse, error) {
-	alerts, err := s.storage.GetAlerts(request)
+	alerts, err := s.datastore.GetAlerts(request)
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -81,7 +79,7 @@ func (s *AlertService) GetAlertsGroup(ctx context.Context, request *v1.GetAlerts
 // GetAlertsCounts returns alert counts by severity according to the request.
 // Counts can be grouped by policy category or cluster.
 func (s *AlertService) GetAlertsCounts(ctx context.Context, request *v1.GetAlertsCountsRequest) (*v1.GetAlertsCountsResponse, error) {
-	alerts, err := s.storage.GetAlerts(request.GetRequest())
+	alerts, err := s.datastore.GetAlerts(request.GetRequest())
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -187,7 +185,7 @@ func getEventsFromAlerts(alerts []*v1.Alert) (events []*v1.AlertEvent) {
 
 // GetAlertTimeseries returns the timeseries format of the events based on the request parameters
 func (s *AlertService) GetAlertTimeseries(ctx context.Context, req *v1.GetAlertsRequest) (*v1.GetAlertTimeseriesResponse, error) {
-	alerts, err := s.storage.GetAlerts(req)
+	alerts, err := s.datastore.GetAlerts(req)
 	if err != nil {
 		return nil, err
 	}

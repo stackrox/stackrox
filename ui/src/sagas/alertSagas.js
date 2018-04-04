@@ -21,7 +21,10 @@ function* getAlert({ params: alertId }) {
 
 function* getAlertNumsByPolicy(filters) {
     try {
-        const result = yield call(service.fetchAlertNumsByPolicy, filters);
+        const searchQuery = yield select(selectors.getAlertsSearchQuery);
+        const newFilters = Object.assign({}, filters);
+        newFilters.query = searchQuery;
+        const result = yield call(service.fetchAlertNumsByPolicy, newFilters);
         yield put(actions.fetchAlertNumsByPolicy.success(result.response));
     } catch (error) {
         yield put(actions.fetchAlertNumsByPolicy.failure(error, filters));
@@ -122,11 +125,22 @@ function* watchSelectedViolatedPolicy() {
     yield takeLatest(types.SELECT_VIOLATED_POLICY, getAlertsByPolicy);
 }
 
+function* watchAlertsSearchOptions() {
+    const action = yield take(locationActionTypes.LOCATION_CHANGE);
+    const { payload: location } = action;
+    yield takeLatest(
+        types.SET_SEARCH_OPTIONS,
+        getAlertNumsByPolicy,
+        queryString.parse(location.search)
+    );
+}
+
 export default function* alerts() {
     yield all([
         fork(watchViolationsLocation),
         fork(watchDashboardLocation),
         fork(watchSelectedViolatedPolicy),
-        fork(watchAlertRequest)
+        fork(watchAlertRequest),
+        fork(watchAlertsSearchOptions)
     ]);
 }

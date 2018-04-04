@@ -66,7 +66,7 @@ func (d *Detector) processTask(task Task) (alert *v1.Alert, enforcement v1.Enfor
 	return
 }
 
-func (d *Detector) markExistingAlertsAsStale(deploymentID string, policyID string) {
+func (d *Detector) markExistingAlertsAsStale(deploymentID, policyID string) {
 	existingAlerts := d.getExistingAlert(deploymentID, policyID)
 
 	for _, a := range existingAlerts {
@@ -78,12 +78,12 @@ func (d *Detector) markExistingAlertsAsStale(deploymentID string, policyID strin
 	}
 }
 
-func (d *Detector) getExistingAlert(deploymentID string, policyID string) (existingAlerts []*v1.Alert) {
+func (d *Detector) getExistingAlert(deploymentID, policyID string) (existingAlerts []*v1.Alert) {
 	var err error
 	existingAlerts, err = d.database.GetAlerts(&v1.GetAlertsRequest{
-		DeploymentId: []string{deploymentID},
-		PolicyId:     []string{policyID},
 		Stale:        []bool{false},
+		DeploymentId: deploymentID,
+		PolicyId:     policyID,
 	})
 	if err != nil {
 		logger.Errorf("unable to get alert: %s", err)

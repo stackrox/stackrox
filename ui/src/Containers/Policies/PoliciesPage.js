@@ -4,10 +4,8 @@ import { Form } from 'react-form';
 import axios from 'axios';
 import * as Icon from 'react-feather';
 import isEqual from 'lodash/isEqual';
-
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
-
 import PolicyCreationForm from 'Containers/Policies/PolicyCreationForm';
 import PolicyView from 'Containers/Policies/PoliciesView';
 import PoliciesPreview from 'Containers/Policies/PoliciesPreview';
@@ -459,13 +457,13 @@ class PoliciesPage extends Component {
 
     render() {
         return (
-            <section className="flex flex-1 h-full">
+            <section className="h-full">
                 <ToastContainer
                     toastClassName="font-sans text-base-600 text-white font-600 bg-black"
                     hideProgressBar
                     autoClose={3000}
                 />
-                <div className="flex flex-1 border-t border-primary-300 bg-base-100">
+                <div className="flex flex-1 bg-base-100">
                     <div className="flex flex-row w-full overflow-y-scroll bg-white rounded-sm shadow">
                         {this.renderTablePanel()}
                         {this.renderViewPanel()}

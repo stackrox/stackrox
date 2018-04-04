@@ -9,7 +9,7 @@ import (
 
 func TestParseRawQuery(t *testing.T) {
 	// clusters only
-	query := "cluster:cluster1 cluster:cluster2"
+	query := "Cluster:cluster1,cluster2"
 	expectedRequest := &v1.ParsedSearchRequest{
 		Fields: make(map[string]*v1.ParsedSearchRequest_Values),
 		Scopes: []*v1.Scope{
@@ -21,12 +21,12 @@ func TestParseRawQuery(t *testing.T) {
 			},
 		},
 	}
-	actualRequest, err := ParseRawQuery(&v1.RawSearchRequest{Query: query})
+	actualRequest, err := ParseRawQuery(query)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRequest, actualRequest)
 
 	// namespaces only
-	query = "namespace:namespace1 namespace:namespace2"
+	query = "Namespace:namespace1,namespace2"
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: make(map[string]*v1.ParsedSearchRequest_Values),
 		Scopes: []*v1.Scope{
@@ -38,12 +38,12 @@ func TestParseRawQuery(t *testing.T) {
 			},
 		},
 	}
-	actualRequest, err = ParseRawQuery(&v1.RawSearchRequest{Query: query})
+	actualRequest, err = ParseRawQuery(query)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRequest, actualRequest)
 
 	// labels only
-	query = "label:key1=value1 label:key1=value1"
+	query = "Label:key1=value1,key2=value2"
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: make(map[string]*v1.ParsedSearchRequest_Values),
 		Scopes: []*v1.Scope{
@@ -55,29 +55,29 @@ func TestParseRawQuery(t *testing.T) {
 			},
 			{
 				Label: &v1.Scope_Label{
-					Key:   "key1",
-					Value: "value1",
+					Key:   "key2",
+					Value: "value2",
 				},
 			},
 		},
 	}
-	actualRequest, err = ParseRawQuery(&v1.RawSearchRequest{Query: query})
+	actualRequest, err = ParseRawQuery(query)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRequest, actualRequest)
 
 	// bad labels
-	query = "label:key1value1"
-	actualRequest, err = ParseRawQuery(&v1.RawSearchRequest{Query: query})
+	query = "Label:key1value1"
+	actualRequest, err = ParseRawQuery(query)
 	assert.Error(t, err)
 
 	// clusters, namespaces, and labels
-	query = "cluster:cluster1 cluster:cluster2 namespace:namespace1 namespace:namespace2 label:key1=value1 label:key2=value2"
+	query = "Cluster:cluster1,cluster2+Namespace:name space1,namespace2+Label:key1=value1,key2=value2"
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: make(map[string]*v1.ParsedSearchRequest_Values),
 		Scopes: []*v1.Scope{
 			{
 				Cluster:   "cluster1",
-				Namespace: "namespace1",
+				Namespace: "name space1",
 				Label: &v1.Scope_Label{
 					Key:   "key1",
 					Value: "value1",
@@ -93,7 +93,7 @@ func TestParseRawQuery(t *testing.T) {
 			},
 			{
 				Cluster:   "cluster1",
-				Namespace: "namespace1",
+				Namespace: "name space1",
 				Label: &v1.Scope_Label{
 					Key:   "key2",
 					Value: "value2",
@@ -109,7 +109,7 @@ func TestParseRawQuery(t *testing.T) {
 			},
 			{
 				Cluster:   "cluster2",
-				Namespace: "namespace1",
+				Namespace: "name space1",
 				Label: &v1.Scope_Label{
 					Key:   "key1",
 					Value: "value1",
@@ -125,7 +125,7 @@ func TestParseRawQuery(t *testing.T) {
 			},
 			{
 				Cluster:   "cluster2",
-				Namespace: "namespace1",
+				Namespace: "name space1",
 				Label: &v1.Scope_Label{
 					Key:   "key2",
 					Value: "value2",
@@ -141,42 +141,42 @@ func TestParseRawQuery(t *testing.T) {
 			},
 		},
 	}
-	actualRequest, err = ParseRawQuery(&v1.RawSearchRequest{Query: query})
+	actualRequest, err = ParseRawQuery(query)
 	assert.NoError(t, err)
 	// Elements match because the ordering of the scopes does not matter and is an implementation detail
 	assert.ElementsMatch(t, expectedRequest.GetScopes(), actualRequest.GetScopes())
 
 	// fields without scope
-	query = "field1:field1 field1:field12 field2:field2"
+	query = "Deployment Name:field1,field12+Category:field2"
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			"field1": {
+			"deployment.name": {
 				Values: []string{"field1", "field12"},
 			},
-			"field2": {
+			"policy.categories": {
 				Values: []string{"field2"},
 			},
 		},
 	}
 
-	actualRequest, err = ParseRawQuery(&v1.RawSearchRequest{Query: query})
+	actualRequest, err = ParseRawQuery(query)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRequest, actualRequest)
 
 	// fields with raw query
-	query = "field1:field1 field2:field2 rawquery"
+	query = "Deployment Name:field1+Category:field2+has:rawquery"
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			"field1": {
+			"deployment.name": {
 				Values: []string{"field1"},
 			},
-			"field2": {
+			"policy.categories": {
 				Values: []string{"field2"},
 			},
 		},
 		StringQuery: "rawquery",
 	}
-	actualRequest, err = ParseRawQuery(&v1.RawSearchRequest{Query: query})
+	actualRequest, err = ParseRawQuery(query)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRequest, actualRequest)
 }

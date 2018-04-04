@@ -54,7 +54,10 @@ func main() {
 		panic(err)
 	}
 
-	central.datastore = datastore.NewDataStore(database, indexer)
+	central.datastore, err = datastore.NewDataStore(database, indexer)
+	if err != nil {
+		panic(err)
+	}
 
 	central.notificationProcessor, err = notifications.NewNotificationProcessor(central.datastore)
 	if err != nil {

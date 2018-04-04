@@ -49,7 +49,7 @@ func (suite *BoltImagesTestSuite) TestImages() {
 	err = suite.AddImage(image2)
 	suite.Nil(err)
 	// Get all alerts
-	images, err := suite.GetImages(&v1.GetImagesRequest{})
+	images, err := suite.GetImages()
 	suite.Nil(err)
 	suite.Equal([]*v1.Image{image1, image2}, images)
 
@@ -60,13 +60,13 @@ func (suite *BoltImagesTestSuite) TestImages() {
 	image1.Name.Registry = "stackrox.io"
 	err = suite.UpdateImage(image1)
 	suite.Nil(err)
-	images, err = suite.GetImages(&v1.GetImagesRequest{})
+	images, err = suite.GetImages()
 	suite.Nil(err)
 	suite.Equal([]*v1.Image{image1, image2}, images)
 
 	err = suite.RemoveImage(image1.GetName().GetSha())
 	suite.Nil(err)
-	images, err = suite.GetImages(&v1.GetImagesRequest{})
+	images, err = suite.GetImages()
 	suite.Nil(err)
 	suite.Equal([]*v1.Image{image2}, images)
 }

@@ -42,7 +42,7 @@ func getImages(endpoint string) ([]*v1.Image, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	imagesResp, err := client.GetImages(ctx, &v1.GetImagesRequest{})
+	imagesResp, err := client.GetImages(ctx, &v1.RawQuery{})
 	if err != nil {
 		return nil, err
 	}

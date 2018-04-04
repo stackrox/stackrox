@@ -2,7 +2,9 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
@@ -20,12 +22,18 @@ const (
 	expectedSecretEnvPolicy = `Don't use environment variables with secrets`
 )
 
+func getDeploymentQuery(args ...string) string {
+	return fmt.Sprintf("Deployment Name:%s", strings.Join(args, ","))
+}
+
+func getPolicyQuery(name string) string {
+	return fmt.Sprintf("Policy Name:%s", name)
+}
+
 var (
 	alertRequestOptions = v1.GetAlertsRequest{
-		DeploymentName: []string{nginxDeploymentName},
-		LabelKey:       "hello",
-		LabelValue:     "world",
-		Stale:          []bool{false},
+		Query: getDeploymentQuery(nginxDeploymentName) + "+Label:hello=world",
+		Stale: []bool{false},
 	}
 )
 
@@ -102,7 +110,10 @@ func waitForDeployment(t *testing.T, deploymentName string) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		deployments, err := service.GetDeployments(ctx, &v1.GetDeploymentsRequest{Name: []string{deploymentName}})
+		deployments, err := service.GetDeployments(ctx, &v1.RawQuery{
+			Query: getDeploymentQuery(deploymentName),
+		},
+		)
 		if err != nil && ctx.Err() == context.DeadlineExceeded {
 			t.Fatal(err)
 		}
@@ -130,7 +141,9 @@ func waitForTermination(t *testing.T, deploymentName string) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		deployments, err := service.GetDeployments(ctx, &v1.GetDeploymentsRequest{Name: []string{deploymentName}})
+		deployments, err := service.GetDeployments(ctx, &v1.RawQuery{
+			Query: fmt.Sprintf("Deployment Name:%s", deploymentName),
+		})
 		if err != nil && ctx.Err() == context.DeadlineExceeded {
 			t.Fatal(err)
 		}
@@ -159,7 +172,9 @@ func addPolicyClusterScope(t *testing.T, policyName string) {
 
 	policyService := v1.NewPolicyServiceClient(conn)
 
-	policyResp, err := policyService.GetPolicies(ctx, &v1.GetPoliciesRequest{Name: []string{policyName}})
+	policyResp, err := policyService.GetPolicies(ctx, &v1.RawQuery{
+		Query: fmt.Sprintf("Policy Name:%s", policyName),
+	})
 	require.NoError(t, err)
 	require.Len(t, policyResp.GetPolicies(), 1)
 
@@ -181,7 +196,9 @@ func revertPolicyScopeChange(t *testing.T, policyName string) {
 
 	policyService := v1.NewPolicyServiceClient(conn)
 
-	policyResp, err := policyService.GetPolicies(ctx, &v1.GetPoliciesRequest{Name: []string{policyName}})
+	policyResp, err := policyService.GetPolicies(ctx, &v1.RawQuery{
+		Query: getPolicyQuery(policyName),
+	})
 	require.NoError(t, err)
 	require.Len(t, policyResp.GetPolicies(), 1)
 

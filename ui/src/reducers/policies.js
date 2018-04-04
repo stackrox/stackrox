@@ -1,6 +1,23 @@
 import { combineReducers } from 'redux';
-
 import mergeEntitiesById from 'utils/mergeEntitiesById';
+import {
+    types as searchTypes,
+    getActions as getSearchActions,
+    reducers as searchReducers,
+    getSelectors as getSearchSelectors
+} from 'reducers/pageSearch';
+
+// Action types
+
+export const types = {
+    ...searchTypes('policies')
+};
+
+// Actions
+
+export const actions = {
+    ...getSearchActions('policies')
+};
 
 // Reducers
 
@@ -12,7 +29,8 @@ const byId = (state = {}, action) => {
 };
 
 const reducer = combineReducers({
-    byId
+    byId,
+    ...searchReducers('policies')
 });
 
 export default reducer;
@@ -24,5 +42,6 @@ const getPolicy = (state, id) => getPoliciesById(state)[id];
 
 export const selectors = {
     getPoliciesById,
-    getPolicy
+    getPolicy,
+    ...getSearchSelectors('policies')
 };

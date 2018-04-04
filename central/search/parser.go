@@ -69,54 +69,95 @@ func populateLabels(labels []string) (scopes []v1.Scope, err error) {
 	return
 }
 
+func parsePair(pair string) (key string, values string, valid bool) {
+	pair = strings.TrimSpace(pair)
+	if len(pair) == 0 {
+		return
+	}
+	spl := strings.SplitN(pair, ":", 2)
+	// len < 2 implies there isn't a colon and the second check verifies that the : wasn't the last char
+	if len(spl) < 2 || spl[1] == "" {
+		return
+	}
+	return spl[0], spl[1], true
+}
+
+func addStringQuery(request *v1.ParsedSearchRequest, key, value string) (added bool, err error) {
+	// Check if its a raw query
+	if strings.EqualFold(key, "has") {
+		if request.GetStringQuery() != "" {
+			err = fmt.Errorf("There can only be 1 raw string query")
+			return
+		}
+		added = true
+		request.StringQuery = value
+	}
+	return
+}
+
+func addScopeField(scopeFields map[string][]string, key string, values []string) bool {
+	// if value is a scope field, then added it to the scope fields which are mapped separately
+	if vals, ok := scopeFields[key]; ok {
+		scopeFields[key] = append(vals, values...)
+		return true
+	}
+	return false
+}
+
+func addGeneralField(request *v1.ParsedSearchRequest, key string, values []string) error {
+	// transform the key into its mapped form
+	transformedKey, ok := allOptionsMaps[key]
+	if !ok {
+		return fmt.Errorf("Key %s is not a valid search option", key)
+	}
+	if _, ok := request.Fields[transformedKey]; !ok {
+		request.Fields[transformedKey] = new(v1.ParsedSearchRequest_Values)
+	}
+	// Append the fields < key: [value value] >
+	request.Fields[transformedKey].Values = append(request.Fields[transformedKey].Values, values...)
+	return nil
+}
+
 // ParseRawQuery takes the text based query and converts to the ParsedSearchRequest proto
-func ParseRawQuery(request *v1.RawSearchRequest) (*v1.ParsedSearchRequest, error) {
-	if request.GetQuery() == "" {
+func ParseRawQuery(query string) (*v1.ParsedSearchRequest, error) {
+	if query == "" {
 		return nil, errors.New("Query cannot be empty")
 	}
-
-	pairs := strings.Split(request.GetQuery(), " ")
+	pairs := strings.Split(query, "+")
 	parsedRequest := &v1.ParsedSearchRequest{
 		Fields: make(map[string]*v1.ParsedSearchRequest_Values),
 	}
-
 	var scopeFields = map[string][]string{
-		"cluster":   {},
-		"namespace": {},
-		"label":     {},
+		"Cluster":   {},
+		"Namespace": {},
+		"Label":     {},
 	}
 
 	for _, pair := range pairs {
-		pair = strings.TrimSpace(pair)
-		if len(pair) == 0 {
+		key, values, valid := parsePair(pair)
+		if !valid {
 			continue
 		}
-		values := strings.Split(pair, ":")
-		if len(values) == 1 {
-			if parsedRequest.GetStringQuery() != "" {
-				return nil, fmt.Errorf("There can only be 1 raw string query")
-			}
-			parsedRequest.StringQuery = values[0]
-			continue
-		} else if len(values) != 2 {
-			return nil, fmt.Errorf("Extra colon was found in '%s', but they are not allowed in search strings", pair)
-		}
-		k, v := values[0], values[1]
-		if vals, ok := scopeFields[k]; ok {
-			scopeFields[k] = append(vals, v)
+		if added, err := addStringQuery(parsedRequest, key, values); err != nil {
+			return nil, err
+		} else if added {
 			continue
 		}
-		if _, ok := parsedRequest.Fields[k]; !ok {
-			parsedRequest.Fields[k] = new(v1.ParsedSearchRequest_Values)
+		valuesSlice := strings.Split(values, ",")
+		if added := addScopeField(scopeFields, key, valuesSlice); added {
+			continue
 		}
-		parsedRequest.Fields[k].Values = append(parsedRequest.Fields[k].Values, v)
+		if err := addGeneralField(parsedRequest, key, valuesSlice); err != nil {
+			return nil, err
+		}
 	}
-	scopes, err := populateLabels(scopeFields["label"])
+	// Compute the cross product of the scopes
+	scopes, err := populateLabels(scopeFields["Label"])
 	if err != nil {
 		return nil, err
 	}
-	scopes = populateNamespaces(scopes, scopeFields["namespace"])
-	scopes = populateClusters(scopes, scopeFields["cluster"])
+	scopes = populateNamespaces(scopes, scopeFields["Namespace"])
+	scopes = populateClusters(scopes, scopeFields["Cluster"])
 	if len(scopes) == 0 {
 		return parsedRequest, nil
 	}

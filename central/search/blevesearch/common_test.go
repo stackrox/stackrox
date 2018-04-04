@@ -155,13 +155,13 @@ func (suite *SearchTestSuite) TestRunRequest() {
 }
 
 func (suite *SearchTestSuite) TestRunQuery() {
-	query := newFuzzyQuery("id", "Alert1", fuzzyPrefix)
+	query := newPrefixQuery("id", "Alert1")
 	results, err := runQuery(query, suite.alertIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 	suite.Equal("Alert1", results[0].ID)
 
-	query = newFuzzyQuery("id", "blahblah", fuzzyPrefix)
+	query = newPrefixQuery("id", "blahblah")
 	results, err = runQuery(query, suite.alertIndex)
 	suite.NoError(err)
 	suite.Len(results, 0)

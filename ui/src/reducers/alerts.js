@@ -3,6 +3,12 @@ import isEqual from 'lodash/isEqual';
 
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
 import mergeEntitiesById from 'utils/mergeEntitiesById';
+import {
+    types as searchTypes,
+    getActions as getSearchActions,
+    reducers as searchReducers,
+    getSelectors as getSearchSelectors
+} from 'reducers/pageSearch';
 
 // Action types
 
@@ -17,7 +23,8 @@ export const types = {
     FETCH_ALERT_COUNTS_BY_CLUSTER: createFetchingActionTypes(
         'alerts/FETCH_ALERT_COUNTS_BY_CLUSTER'
     ),
-    FETCH_ALERTS_BY_TIMESERIES: createFetchingActionTypes('alerts/FETCH_ALERTS_BY_TIMESERIES')
+    FETCH_ALERTS_BY_TIMESERIES: createFetchingActionTypes('alerts/FETCH_ALERTS_BY_TIMESERIES'),
+    ...searchTypes('alerts')
 };
 
 // Actions
@@ -31,7 +38,8 @@ export const actions = {
         types.FETCH_ALERT_COUNTS_BY_POLICY_CATEGORIES
     ),
     fetchAlertCountsByCluster: createFetchingActions(types.FETCH_ALERT_COUNTS_BY_CLUSTER),
-    fetchAlertsByTimeseries: createFetchingActions(types.FETCH_ALERTS_BY_TIMESERIES)
+    fetchAlertsByTimeseries: createFetchingActions(types.FETCH_ALERTS_BY_TIMESERIES),
+    ...getSearchActions('alerts')
 };
 
 // Reducers
@@ -103,7 +111,8 @@ const reducer = combineReducers({
     alertsByPolicy,
     alertCountsByPolicyCategories,
     alertCountsByCluster,
-    alertsByTimeseries
+    alertsByTimeseries,
+    ...searchReducers('alerts')
 });
 
 export default reducer;
@@ -127,5 +136,6 @@ export const selectors = {
     getAlertsByPolicy,
     getAlertCountsByPolicyCategories,
     getAlertCountsByCluster,
-    getAlertsByTimeseries
+    getAlertsByTimeseries,
+    ...getSearchSelectors('alerts')
 };

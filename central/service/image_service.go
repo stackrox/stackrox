@@ -1,7 +1,8 @@
 package service
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/datastore"
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -12,15 +13,15 @@ import (
 )
 
 // NewImageService returns the ImageService API.
-func NewImageService(storage db.ImageStorage) *ImageService {
+func NewImageService(datastore *datastore.DataStore) *ImageService {
 	return &ImageService{
-		storage: storage,
+		datastore: datastore,
 	}
 }
 
 // ImageService is the struct that manages Images API
 type ImageService struct {
-	storage db.ImageStorage
+	datastore *datastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -40,7 +41,7 @@ func (s *ImageService) AuthFuncOverride(ctx context.Context, fullMethodName stri
 
 // GetImage returns an image with given sha if it exists.
 func (s *ImageService) GetImage(ctx context.Context, request *v1.ResourceByID) (*v1.Image, error) {
-	image, exists, err := s.storage.GetImage(request.GetId())
+	image, exists, err := s.datastore.GetImage(request.GetId())
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -54,10 +55,24 @@ func (s *ImageService) GetImage(ctx context.Context, request *v1.ResourceByID) (
 }
 
 // GetImages retrieves all images.
-func (s *ImageService) GetImages(ctx context.Context, request *v1.GetImagesRequest) (*v1.GetImagesResponse, error) {
-	images, err := s.storage.GetImages(request)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+func (s *ImageService) GetImages(ctx context.Context, request *v1.RawQuery) (*v1.GetImagesResponse, error) {
+	resp := new(v1.GetImagesResponse)
+	if request.GetQuery() == "" {
+		images, err := s.datastore.GetImages()
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		resp.Images = images
+	} else {
+		parsedQuery, err := search.ParseRawQuery(request.GetQuery())
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		images, err := s.datastore.SearchRawImages(parsedQuery)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		resp.Images = images
 	}
-	return &v1.GetImagesResponse{Images: images}, nil
+	return resp, nil
 }

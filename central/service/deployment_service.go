@@ -4,8 +4,10 @@ import (
 	"context"
 	"sort"
 
+	"bitbucket.org/stack-rox/apollo/central/datastore"
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/enrichment"
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
@@ -17,7 +19,7 @@ import (
 )
 
 // NewDeploymentService returns a DeploymentService object.
-func NewDeploymentService(storage db.Storage, enricher *enrichment.Enricher) *DeploymentService {
+func NewDeploymentService(storage *datastore.DataStore, enricher *enrichment.Enricher) *DeploymentService {
 	return &DeploymentService{
 		storage:  storage,
 		enricher: enricher,
@@ -26,7 +28,7 @@ func NewDeploymentService(storage db.Storage, enricher *enrichment.Enricher) *De
 
 // DeploymentService provides APIs for deployments.
 type DeploymentService struct {
-	storage  db.Storage
+	storage  *datastore.DataStore
 	enricher *enrichment.Enricher
 }
 
@@ -59,18 +61,31 @@ func (s *DeploymentService) GetDeployment(ctx context.Context, request *v1.Resou
 }
 
 // GetDeployments returns deployments according to the request.
-func (s *DeploymentService) GetDeployments(ctx context.Context, request *v1.GetDeploymentsRequest) (*v1.GetDeploymentsResponse, error) {
-	deployments, err := s.storage.GetDeployments(request)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+func (s *DeploymentService) GetDeployments(ctx context.Context, request *v1.RawQuery) (*v1.GetDeploymentsResponse, error) {
+	resp := new(v1.GetDeploymentsResponse)
+	if request.GetQuery() == "" {
+		deployments, err := s.storage.GetDeployments()
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		resp.Deployments = deployments
+	} else {
+		parsedQuery, err := search.ParseRawQuery(request.GetQuery())
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		deployments, err := s.storage.SearchRawDeployments(parsedQuery)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		resp.Deployments = deployments
 	}
-
-	return &v1.GetDeploymentsResponse{Deployments: deployments}, nil
+	return resp, nil
 }
 
 // GetLabels returns label keys and values for current deployments.
 func (s *DeploymentService) GetLabels(context.Context, *empty.Empty) (*v1.DeploymentLabelsResponse, error) {
-	deployments, err := s.storage.GetDeployments(&v1.GetDeploymentsRequest{})
+	deployments, err := s.storage.GetDeployments()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

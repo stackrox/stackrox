@@ -2,13 +2,12 @@ package detection
 
 import (
 	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 )
 
 func (d *Detector) initializePolicies() error {
 	d.policies = make(map[string]*matcher.Policy)
 
-	policies, err := d.database.GetPolicies(&v1.GetPoliciesRequest{})
+	policies, err := d.database.GetPolicies()
 	if err != nil {
 		return err
 	}

@@ -55,7 +55,9 @@ func TestDeployments(t *testing.T) {
 
 	service := v1.NewDeploymentServiceClient(conn)
 
-	deployments, err := service.GetDeployments(ctx, &v1.GetDeploymentsRequest{Name: []string{"central", "sensor"}})
+	deployments, err := service.GetDeployments(ctx, &v1.RawQuery{
+		Query: getDeploymentQuery("central", "sensor"),
+	})
 	require.NoError(t, err)
 	require.Len(t, deployments.GetDeployments(), 2)
 
@@ -142,7 +144,7 @@ func TestImages(t *testing.T) {
 
 	service := v1.NewImageServiceClient(conn)
 
-	images, err := service.GetImages(ctx, &v1.GetImagesRequest{})
+	images, err := service.GetImages(ctx, &v1.RawQuery{})
 	require.NoError(t, err)
 
 	require.NotEmpty(t, images.GetImages())

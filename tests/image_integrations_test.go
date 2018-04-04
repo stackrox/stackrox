@@ -127,7 +127,9 @@ func verifyMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.Ima
 	defer cancel()
 
 	deploymentService := v1.NewDeploymentServiceClient(conn)
-	deployments, err := deploymentService.GetDeployments(ctx, &v1.GetDeploymentsRequest{Name: []string{alpineDeploymentName}})
+	deployments, err := deploymentService.GetDeployments(ctx, &v1.RawQuery{
+		Query: getDeploymentQuery(alpineDeploymentName),
+	})
 	require.NoError(t, err)
 	require.NotEmpty(t, deployments.GetDeployments())
 
@@ -143,7 +145,8 @@ func verifyMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.Ima
 	alertService := v1.NewAlertServiceClient(conn)
 
 	alerts, err := alertService.GetAlerts(ctx, &v1.GetAlertsRequest{
-		PolicyName: []string{expectedPort22Policy}, DeploymentName: []string{alpineDeploymentName}, Stale: []bool{false}})
+		Query: getPolicyQuery(expectedPort22Policy) + "+" + getDeploymentQuery(alpineDeploymentName),
+	})
 	require.NoError(t, err)
 	require.NotEmpty(t, alerts.GetAlerts())
 

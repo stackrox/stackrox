@@ -31,20 +31,15 @@ message Alert {
 
 message GetAlertsRequest {
     repeated string category               = 1;
-    repeated string policy_id              = 2;
-    repeated string policy_name            = 3;
-    repeated Severity severity             = 4;
-    google.protobuf.Timestamp since        = 5;
-    google.protobuf.Timestamp until        = 6;
-    google.protobuf.Timestamp sinceStale   = 7;
-    google.protobuf.Timestamp untilStale   = 8;
-    repeated bool stale                    = 9;
-    repeated string cluster                = 10;
-    repeated string deployment_id          = 11;
-    repeated string deployment_name        = 12;
-
-    string label_key                       = 13;
-    string label_value                     = 14;
+    string policy_id                       = 2;
+    repeated Severity severity             = 3;
+    google.protobuf.Timestamp since        = 4;
+    google.protobuf.Timestamp until        = 5;
+    google.protobuf.Timestamp sinceStale   = 6;
+    google.protobuf.Timestamp untilStale   = 7;
+    repeated bool stale                    = 8;
+    string deployment_id                   = 9;
+    string query                           = 10;
 }
 
 message GetAlertsResponse {

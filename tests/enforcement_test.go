@@ -48,7 +48,9 @@ func verifyDeploymentScaledToZero(t *testing.T) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		deployments, err := service.GetDeployments(ctx, &v1.GetDeploymentsRequest{Name: []string{nginxDeploymentName}})
+		deployments, err := service.GetDeployments(ctx, &v1.RawQuery{
+			Query: getDeploymentQuery(nginxDeploymentName),
+		})
 		if err != nil && ctx.Err() == context.DeadlineExceeded {
 			t.Fatal(err)
 		}
@@ -73,9 +75,8 @@ func verifyAlertWithEnforcement(t *testing.T) {
 	service := v1.NewAlertServiceClient(conn)
 
 	alerts, err := service.GetAlerts(ctx, &v1.GetAlertsRequest{
-		DeploymentName: []string{nginxDeploymentName},
-		PolicyName:     []string{expectedLatestTagPolicy},
-		Stale:          []bool{true},
+		Query: getDeploymentQuery(nginxDeploymentName) + "+" + getPolicyQuery(expectedLatestTagPolicy),
+		Stale: []bool{true},
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, alerts.GetAlerts())
@@ -104,7 +105,9 @@ func togglePolicyEnforcement(t *testing.T, conn *grpc.ClientConn, enable bool) {
 
 	service := v1.NewPolicyServiceClient(conn)
 
-	resp, err := service.GetPolicies(ctx, &v1.GetPoliciesRequest{Name: []string{expectedLatestTagPolicy}})
+	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
+		Query: getPolicyQuery(expectedLatestTagPolicy),
+	})
 	require.NoError(t, err)
 	require.Len(t, resp.GetPolicies(), 1)
 

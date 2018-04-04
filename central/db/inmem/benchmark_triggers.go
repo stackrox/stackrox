@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
+	"bitbucket.org/stack-rox/apollo/pkg/set"
 )
 
 type benchmarkTriggerStore struct {
@@ -24,19 +25,19 @@ func (s *benchmarkTriggerStore) GetBenchmarkTriggers(request *v1.GetBenchmarkTri
 	if err != nil {
 		return nil, err
 	}
-	idSet := stringWrap(request.GetIds()).asSet()
-	clusterSet := stringWrap(request.GetClusterIds()).asSet()
+	idSet := set.NewSetFromStringSlice(request.GetIds())
+	clusterSet := set.NewSetFromStringSlice(request.GetClusterIds())
 	filteredTriggers := triggers[:0]
 	for _, trigger := range triggers {
-		if _, ok := idSet[trigger.GetId()]; len(idSet) > 0 && !ok {
+		if idSet.Cardinality() > 0 && !idSet.Contains(trigger.GetId()) {
 			continue
 		}
 		// If request clusters is empty then return all
 		// If the trigger has no cluster set, then it applies to all clusters
-		if len(clusterSet) != 0 && len(trigger.ClusterIds) != 0 {
+		if clusterSet.Cardinality() != 0 && len(trigger.ClusterIds) != 0 {
 			var clusterMatch bool
 			for _, cluster := range trigger.ClusterIds {
-				if _, ok := clusterSet[cluster]; ok {
+				if clusterSet.Contains(cluster) {
 					clusterMatch = true
 					break
 				}

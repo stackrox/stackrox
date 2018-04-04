@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/image/policies"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"bitbucket.org/stack-rox/apollo/pkg/defaults"
+	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -17,7 +19,7 @@ import (
 
 var (
 	policy = &v1.Policy{
-		Name:        "test policy " + time.Now().String(),
+		Name:        "test policy " + fmt.Sprintf("%d", time.Now().UnixNano()),
 		Description: "description",
 		Severity:    v1.Severity_HIGH_SEVERITY,
 		Categories:  []string{"Image Assurance", "Privileges Capabilities"},
@@ -33,6 +35,8 @@ var (
 			},
 		},
 	}
+
+	logger = logging.LoggerForModule()
 )
 
 func TestDefaultPolicies(t *testing.T) {
@@ -47,7 +51,7 @@ func TestDefaultPolicies(t *testing.T) {
 	require.NoError(t, err)
 
 	service := v1.NewPolicyServiceClient(conn)
-	resp, err := service.GetPolicies(ctx, &v1.GetPoliciesRequest{})
+	resp, err := service.GetPolicies(ctx, &v1.RawQuery{})
 	require.NoError(t, err)
 
 	policiesMap := make(map[string]*v1.Policy)
@@ -117,7 +121,10 @@ func verifyReadPolicy(t *testing.T, service v1.PolicyServiceClient) {
 	require.NoError(t, err)
 	assert.Equal(t, policy, getResp)
 
-	getManyResp, err := service.GetPolicies(ctx, &v1.GetPoliciesRequest{Name: []string{policy.GetName()}})
+	logger.Infof("Policy name: %s", getPolicyQuery(policy.GetName()))
+	getManyResp, err := service.GetPolicies(ctx, &v1.RawQuery{
+		Query: getPolicyQuery(policy.GetName()),
+	})
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(getManyResp.GetPolicies()))
 	if len(getManyResp.GetPolicies()) > 0 {

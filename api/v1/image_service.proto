@@ -5,6 +5,7 @@ option go_package = "v1";
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
+import "api/v1/search_service.proto";
 
 package v1;
 
@@ -79,9 +80,6 @@ message Image {
     ImageScan scan          = 3;
 }
 
-message GetImagesRequest {
-}
-
 message GetImagesResponse {
     repeated Image images = 1;
 }
@@ -94,7 +92,7 @@ service ImageService {
         };
     }
 
-    rpc GetImages(GetImagesRequest) returns (GetImagesResponse) {
+    rpc GetImages(RawQuery) returns (GetImagesResponse) {
         option (google.api.http) = {
             get: "/v1/images"
         };

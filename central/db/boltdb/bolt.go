@@ -16,9 +16,6 @@ import (
 
 var (
 	log = logging.LoggerForModule()
-
-	// var so this can be modified in tests
-	defaultBenchmarksPath = `/data/benchmarks`
 )
 
 // BoltDB returns an instantiation of the storage interface. Exported for test purposes
@@ -64,12 +61,6 @@ func NewWithDefaults(dbPath string) (*BoltDB, error) {
 	db, err := New(dbPath)
 	if err != nil {
 		return db, err
-	}
-
-	if err := db.loadDefaults(); err != nil {
-		log.Errorf("unable to load defaults: %s", err)
-		db.Close()
-		return nil, err
 	}
 
 	return db, nil

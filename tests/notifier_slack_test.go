@@ -103,7 +103,9 @@ func addNotifierToPolicy(t *testing.T, conn *grpc.ClientConn) {
 
 	service := v1.NewPolicyServiceClient(conn)
 
-	resp, err := service.GetPolicies(ctx, &v1.GetPoliciesRequest{Name: []string{expectedLatestTagPolicy}})
+	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
+		Query: getPolicyQuery(expectedLatestTagPolicy),
+	})
 	require.NoError(t, err)
 	require.Len(t, resp.GetPolicies(), 1)
 
@@ -148,7 +150,9 @@ func verifyPolicyHasNoNotifier(t *testing.T, conn *grpc.ClientConn) {
 
 	service := v1.NewPolicyServiceClient(conn)
 
-	resp, err := service.GetPolicies(ctx, &v1.GetPoliciesRequest{Name: []string{expectedLatestTagPolicy}})
+	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
+		Query: getPolicyQuery(expectedLatestTagPolicy),
+	})
 	require.NoError(t, err)
 	require.Len(t, resp.GetPolicies(), 1)
 
@@ -167,9 +171,8 @@ func verifyAlertsForLatestTag(t *testing.T, alert *v1.Alert) {
 	service := v1.NewAlertServiceClient(conn)
 
 	alerts, err := service.GetAlerts(ctx, &v1.GetAlertsRequest{
-		DeploymentName: []string{nginxDeploymentName},
-		PolicyName:     []string{expectedLatestTagPolicy},
-		Stale:          []bool{false},
+		Query: getDeploymentQuery(nginxDeploymentName) + "+" + getPolicyQuery(expectedLatestTagPolicy),
+		Stale: []bool{false},
 	})
 	require.NoError(t, err)
 	require.Len(t, alerts.GetAlerts(), 1)

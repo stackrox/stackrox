@@ -16,6 +16,10 @@ enum SearchCategory {
     // TODO support Benchmarks
 }
 
+message RawQuery {
+    string query = 1; // A query is a formatted string like Cluster:dev+Namespace:stackrox+Image Name:nginx
+}
+
 message RawSearchRequest {
     string query                       = 1;
     repeated SearchCategory categories = 2;

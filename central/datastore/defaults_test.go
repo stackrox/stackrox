@@ -1,7 +1,6 @@
-package boltdb
+package datastore
 
 import (
-	"os"
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
@@ -12,11 +11,6 @@ import (
 )
 
 func TestGetDefaultPolicies(t *testing.T) {
-	db, err := boltFromTmpDir()
-	require.NoError(t, err)
-	defer db.Close()
-	defer os.Remove(db.Path())
-
 	defaults.PoliciesPath = policies.Directory()
 	policies, err := defaults.Policies()
 	require.NoError(t, err)

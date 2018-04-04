@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"sort"
 
-	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/datastore"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -28,23 +29,17 @@ var (
 )
 
 // NewPolicyService returns the PolicyService API.
-func NewPolicyService(storage db.Storage, detector *detection.Detector) *PolicyService {
+func NewPolicyService(storage *datastore.DataStore, detector *detection.Detector) *PolicyService {
 	return &PolicyService{
-		deploymentStorage: storage,
-		policyStorage:     storage,
-		notifierStorage:   storage,
-		clusterStorage:    storage,
-		detector:          detector,
+		datastore: storage,
+		detector:  detector,
 	}
 }
 
 // PolicyService is the struct that manages Policies API
 type PolicyService struct {
-	deploymentStorage db.DeploymentStorage
-	policyStorage     db.PolicyStorage
-	notifierStorage   db.NotifierStorage
-	clusterStorage    db.ClusterStorage
-	detector          *detection.Detector
+	datastore *datastore.DataStore
+	detector  *detection.Detector
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -67,7 +62,7 @@ func (s *PolicyService) GetPolicy(ctx context.Context, request *v1.ResourceByID)
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Policy id must be provided")
 	}
-	policy, exists, err := s.policyStorage.GetPolicy(request.GetId())
+	policy, exists, err := s.datastore.GetPolicy(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -81,14 +76,27 @@ func (s *PolicyService) GetPolicy(ctx context.Context, request *v1.ResourceByID)
 }
 
 // GetPolicies retrieves all policies according to the request.
-func (s *PolicyService) GetPolicies(ctx context.Context, request *v1.GetPoliciesRequest) (*v1.PoliciesResponse, error) {
-	policies, err := s.policyStorage.GetPolicies(request)
-	for _, p := range policies {
-		if len(p.GetCategories()) == 0 {
-			p.Categories = []string{uncategorizedCategory}
+func (s *PolicyService) GetPolicies(ctx context.Context, request *v1.RawQuery) (*v1.PoliciesResponse, error) {
+	resp := new(v1.PoliciesResponse)
+	if request.GetQuery() == "" {
+		policies, err := s.datastore.GetPolicies()
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
 		}
+		resp.Policies = policies
+	} else {
+		parsedQuery, err := search.ParseRawQuery(request.GetQuery())
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		policies, err := s.datastore.SearchRawPolicies(parsedQuery)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		resp.Policies = policies
 	}
-	return &v1.PoliciesResponse{Policies: policies}, err
+	sort.SliceStable(resp.Policies, func(i, j int) bool { return resp.Policies[i].GetName() < resp.Policies[j].GetName() })
+	return resp, nil
 }
 
 // PostPolicy inserts a new policy into the system.
@@ -100,7 +108,7 @@ func (s *PolicyService) PostPolicy(ctx context.Context, request *v1.Policy) (*v1
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	id, err := s.policyStorage.AddPolicy(request)
+	id, err := s.datastore.AddPolicy(request)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +125,7 @@ func (s *PolicyService) PutPolicy(ctx context.Context, request *v1.Policy) (*emp
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	s.detector.UpdatePolicy(policy)
-	if err := s.policyStorage.UpdatePolicy(request); err != nil {
+	if err := s.datastore.UpdatePolicy(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &empty.Empty{}, nil
@@ -128,7 +136,7 @@ func (s *PolicyService) DeletePolicy(ctx context.Context, request *v1.ResourceBy
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "A policy id must be specified to delete a Policy")
 	}
-	if err := s.policyStorage.RemovePolicy(request.GetId()); err != nil {
+	if err := s.datastore.RemovePolicy(request.GetId()); err != nil {
 		return nil, returnErrorCode(err)
 	}
 	s.detector.RemovePolicy(request.GetId())
@@ -149,7 +157,7 @@ func (s *PolicyService) DryRunPolicy(ctx context.Context, request *v1.Policy) (*
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	var resp v1.DryRunResponse
-	deployments, err := s.deploymentStorage.GetDeployments(&v1.GetDeploymentsRequest{})
+	deployments, err := s.datastore.GetDeployments()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -191,7 +199,7 @@ func (s *PolicyService) RenamePolicyCategory(ctx context.Context, request *v1.Re
 		return &empty.Empty{}, nil
 	}
 
-	if err := s.policyStorage.RenamePolicyCategory(request); err != nil {
+	if err := s.datastore.RenamePolicyCategory(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -209,7 +217,7 @@ func (s *PolicyService) DeletePolicyCategory(ctx context.Context, request *v1.De
 		return nil, status.Errorf(codes.NotFound, "Policy Category %s does not exist", request.GetCategory())
 	}
 
-	if err := s.policyStorage.DeletePolicyCategory(request); err != nil {
+	if err := s.datastore.DeletePolicyCategory(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -220,7 +228,7 @@ func (s *PolicyService) validateScope(scope *v1.Scope) error {
 	if scope.GetCluster() == "" {
 		return nil
 	}
-	_, exists, err := s.clusterStorage.GetCluster(scope.GetCluster())
+	_, exists, err := s.datastore.GetCluster(scope.GetCluster())
 	if err != nil {
 		return fmt.Errorf("unable to get cluster id %s: %s", scope.GetCluster(), err)
 	}
@@ -280,7 +288,7 @@ func (s *PolicyService) validatePolicy(policy *v1.Policy) (*matcher.Policy, erro
 	}
 
 	for _, n := range policy.GetNotifiers() {
-		_, exists, err := s.notifierStorage.GetNotifier(n)
+		_, exists, err := s.datastore.GetNotifier(n)
 		if err != nil {
 			return nil, fmt.Errorf("Error checking if notifier %v is valid", n)
 		}
@@ -308,7 +316,7 @@ func (s *PolicyService) validatePolicy(policy *v1.Policy) (*matcher.Policy, erro
 }
 
 func (s *PolicyService) getPolicyCategorySet() (map[string]struct{}, error) {
-	policies, err := s.policyStorage.GetPolicies(&v1.GetPoliciesRequest{})
+	policies, err := s.datastore.GetPolicies()
 	if err != nil {
 		return nil, err
 	}

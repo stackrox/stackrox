@@ -63,7 +63,7 @@ func getAllCategories() (categories []v1.SearchCategory) {
 
 // Search implements the ability to search through indexes for data
 func (s *SearchService) Search(ctx context.Context, request *v1.RawSearchRequest) (*v1.SearchResponse, error) {
-	parsedRequest, err := search.ParseRawQuery(request)
+	parsedRequest, err := search.ParseRawQuery(request.GetQuery())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

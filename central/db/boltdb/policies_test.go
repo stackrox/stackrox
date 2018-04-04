@@ -47,7 +47,7 @@ func (suite *BoltPoliciesTestSuite) TestPolicies() {
 	}
 
 	// Get all alerts
-	retrievedPolicies, err := suite.GetPolicies(&v1.GetPoliciesRequest{})
+	retrievedPolicies, err := suite.GetPolicies()
 	suite.Nil(err)
 	suite.ElementsMatch(policies, retrievedPolicies)
 
@@ -55,7 +55,7 @@ func (suite *BoltPoliciesTestSuite) TestPolicies() {
 		p.Severity = v1.Severity_MEDIUM_SEVERITY
 		suite.NoError(suite.UpdatePolicy(p))
 	}
-	retrievedPolicies, err = suite.GetPolicies(&v1.GetPoliciesRequest{})
+	retrievedPolicies, err = suite.GetPolicies()
 	suite.Nil(err)
 	suite.ElementsMatch(policies, retrievedPolicies)
 
@@ -63,7 +63,7 @@ func (suite *BoltPoliciesTestSuite) TestPolicies() {
 		suite.NoError(suite.RemovePolicy(p.GetId()))
 	}
 
-	retrievedPolicies, err = suite.GetPolicies(&v1.GetPoliciesRequest{})
+	retrievedPolicies, err = suite.GetPolicies()
 	suite.NoError(err)
 	suite.Empty(retrievedPolicies)
 }

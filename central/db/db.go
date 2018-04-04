@@ -103,7 +103,7 @@ type ImageIntegrationStorage interface {
 // DeploymentStorage provides storage functionality for deployments.
 type DeploymentStorage interface {
 	GetDeployment(id string) (*v1.Deployment, bool, error)
-	GetDeployments(request *v1.GetDeploymentsRequest) ([]*v1.Deployment, error)
+	GetDeployments() ([]*v1.Deployment, error)
 	CountDeployments() (int, error)
 	AddDeployment(deployment *v1.Deployment) error
 	UpdateDeployment(deployment *v1.Deployment) error
@@ -113,7 +113,7 @@ type DeploymentStorage interface {
 // ImageStorage provide storage functionality for images.
 type ImageStorage interface {
 	GetImage(sha string) (*v1.Image, bool, error)
-	GetImages(request *v1.GetImagesRequest) ([]*v1.Image, error)
+	GetImages() ([]*v1.Image, error)
 	CountImages() (int, error)
 	AddImage(image *v1.Image) error
 	UpdateImage(image *v1.Image) error
@@ -140,7 +140,7 @@ type NotifierStorage interface {
 // PolicyStorage provides storage functionality for policies.
 type PolicyStorage interface {
 	GetPolicy(id string) (*v1.Policy, bool, error)
-	GetPolicies(request *v1.GetPoliciesRequest) ([]*v1.Policy, error)
+	GetPolicies() ([]*v1.Policy, error)
 	AddPolicy(*v1.Policy) (string, error)
 	UpdatePolicy(*v1.Policy) error
 	RemovePolicy(id string) error
