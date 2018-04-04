@@ -9,8 +9,8 @@ const navLinks = [
         to: '/main/policies'
     },
     {
-        text: 'Environment Integrations',
-        to: '/main/imageintegrations'
+        text: 'Integrations',
+        to: '/main/integrations'
     }
 ];
 

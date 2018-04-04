@@ -18,7 +18,7 @@ class MainPage extends Component {
                 <ProtectedRoute path="/main/dashboard" component={DashboardPage} />
                 <ProtectedRoute path="/main/violations/:alertId?" component={ViolationsPage} />
                 <ProtectedRoute path="/main/compliance/:clusterId?" component={CompliancePage} />
-                <ProtectedRoute path="/main/imageintegrations" component={IntegrationsPage} />
+                <ProtectedRoute path="/main/integrations" component={IntegrationsPage} />
                 <ProtectedRoute path="/main/policies" component={PoliciesPage} />
                 <ProtectedRoute path="/main/risk" component={RiskPage} />
                 <ProtectedRoute path="/main/images" component={ImagesPage} />
