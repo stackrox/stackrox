@@ -20,9 +20,10 @@ func (sk secretKeys) shouldScrub(key string) bool {
 }
 
 var scrubber = newSecretKeys([]string{
+	"oauthToken",
 	"password",
-	"token",
 	"secretKey",
+	"serviceAccount",
 })
 
 // ScrubSecrets removes secret keys from a map[string]string and returns a new copy without secrets.
