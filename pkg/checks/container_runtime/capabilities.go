@@ -18,31 +18,12 @@ func (c *capabilitiesBenchmark) Definition() utils.Definition {
 	}
 }
 
-func newExpectedCapDrop() map[string]bool {
-	return map[string]bool{
-		"NET_ADMIN":  false,
-		"SYS_ADMIN":  false,
-		"SYS_MODULE": false,
-	}
-}
-
 func (c *capabilitiesBenchmark) Run() (result v1.CheckResult) {
-	utils.Pass(&result)
+	utils.Info(&result)
 	for _, container := range utils.ContainersRunning {
 		if len(container.HostConfig.CapAdd) > 0 {
-			utils.Warn(&result)
-			utils.AddNotef(&result, "Container '%v' (%v) adds capabilities: %v", container.ID, container.Name, strings.Join(container.HostConfig.CapAdd, ","))
+			utils.AddNotef(&result, "Container '%s' (%s) adds capabilities: %v", container.ID, container.Name, strings.Join(container.HostConfig.CapAdd, ","))
 			continue
-		}
-		capDropMap := newExpectedCapDrop()
-		for _, drop := range container.HostConfig.CapDrop {
-			capDropMap[drop] = true
-		}
-		for k, v := range capDropMap {
-			if !v {
-				utils.Warn(&result)
-				utils.AddNotef(&result, "Expected container '%v' (%v) to drop capability '%v'", container.ID, container.Name, k)
-			}
 		}
 	}
 	return

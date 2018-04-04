@@ -116,7 +116,7 @@ func TestRuntimeBenchmarksWarn(t *testing.T) {
 	expectedResults := []v1.CheckStatus{
 		v1.CheckStatus_WARN, // 1
 		v1.CheckStatus_WARN,
-		v1.CheckStatus_WARN,
+		v1.CheckStatus_INFO,
 		v1.CheckStatus_WARN,
 		v1.CheckStatus_WARN, // 5
 		v1.CheckStatus_NOTE,
@@ -235,7 +235,7 @@ func TestRuntimeBenchmarksPass(t *testing.T) {
 	expectedResults := []v1.CheckStatus{
 		v1.CheckStatus_PASS, // 1
 		v1.CheckStatus_PASS,
-		v1.CheckStatus_PASS,
+		v1.CheckStatus_INFO,
 		v1.CheckStatus_PASS,
 		v1.CheckStatus_PASS, // 5
 		v1.CheckStatus_NOTE,
