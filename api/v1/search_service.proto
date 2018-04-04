@@ -40,6 +40,7 @@ message SearchResult {
     }
     map<string, Matches> field_to_matches = 4;
     double score                          = 5;
+    string location                       = 6;
 }
 
 message SearchResponse {

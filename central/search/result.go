@@ -1,6 +1,8 @@
 package search
 
 import (
+	"fmt"
+
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 )
@@ -15,12 +17,14 @@ func getProtoMatchesMap(m map[string][]string) map[string]*v1.SearchResult_Match
 
 // ConvertAlert returns proto search result from an alert object and the internal search result
 func ConvertAlert(alert *v1.Alert, result Result) *v1.SearchResult {
+	deployment := alert.GetDeployment()
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_ALERTS,
 		Id:             alert.GetId(),
 		Name:           alert.GetPolicy().GetName(),
 		FieldToMatches: getProtoMatchesMap(result.Matches),
 		Score:          result.Score,
+		Location:       fmt.Sprintf("/%s/%s/%s", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName()),
 	}
 }
 
@@ -32,6 +36,7 @@ func ConvertDeployment(deployment *v1.Deployment, result Result) *v1.SearchResul
 		Name:           deployment.GetName(),
 		FieldToMatches: getProtoMatchesMap(result.Matches),
 		Score:          result.Score,
+		Location:       fmt.Sprintf("/%s/%s", deployment.GetClusterName(), deployment.GetNamespace()),
 	}
 }
 
@@ -51,7 +56,7 @@ func ConvertImage(image *v1.Image, result Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_IMAGES,
 		Id:             images.NewDigest(image.GetName().GetSha()).Digest(),
-		Name:           images.Wrapper{Image: image}.String(),
+		Name:           image.GetName().GetFullName(),
 		FieldToMatches: getProtoMatchesMap(result.Matches),
 		Score:          result.Score,
 	}
