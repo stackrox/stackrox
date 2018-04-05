@@ -2,17 +2,25 @@ import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
 
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
+import {
+    types as searchTypes,
+    getActions as getSearchActions,
+    reducers as searchReducers,
+    getSelectors as getSearchSelectors
+} from 'reducers/pageSearch';
 
 // Action types
 
 export const types = {
-    FETCH_IMAGES: createFetchingActionTypes('images/FETCH_IMAGES')
+    FETCH_IMAGES: createFetchingActionTypes('images/FETCH_IMAGES'),
+    ...searchTypes('images')
 };
 
 // Actions
 
 export const actions = {
-    fetchImages: createFetchingActions(types.FETCH_IMAGES)
+    fetchImages: createFetchingActions(types.FETCH_IMAGES),
+    ...getSearchActions('images')
 };
 
 // Reducers
@@ -25,7 +33,8 @@ const images = (state = [], action) => {
 };
 
 const reducer = combineReducers({
-    images
+    images,
+    ...searchReducers('images')
 });
 
 export default reducer;
@@ -35,5 +44,6 @@ export default reducer;
 const getImages = state => state.images;
 
 export const selectors = {
-    getImages
+    getImages,
+    ...getSearchSelectors('images')
 };

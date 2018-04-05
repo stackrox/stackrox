@@ -3,12 +3,14 @@ import { take, fork, put, call } from 'redux-saga/effects';
 import { actions as alertActions } from 'reducers/alerts';
 import { actions as riskActions } from 'reducers/risk';
 import { actions as policiesActions } from 'reducers/policies';
+import { actions as imagesActions } from 'reducers/images';
 import { types as locationActionTypes } from 'reducers/routes';
 import fetchOptions from 'services/SearchService';
 
 const violationsPath = '/main/violations';
 const riskPath = '/main/risk';
 const policiesPath = '/main/policies';
+const imagesPath = '/main/images';
 
 export function* getSearchOptions(setSearchModifiers, setSearchSuggestions, query = '') {
     try {
@@ -46,6 +48,13 @@ export function* watchLocation() {
                 policiesActions.setPoliciesSearchModifiers,
                 policiesActions.setPoliciesSearchSuggestions,
                 'categories=POLICIES'
+            );
+        } else if (location && location.pathname && location.pathname.startsWith(imagesPath)) {
+            yield fork(
+                getSearchOptions,
+                imagesActions.setImagesSearchModifiers,
+                imagesActions.setImagesSearchSuggestions,
+                'categories=IMAGES'
             );
         }
     }

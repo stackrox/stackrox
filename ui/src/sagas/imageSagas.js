@@ -1,22 +1,31 @@
 import { delay } from 'redux-saga';
-import { take, call, fork, put, cancel } from 'redux-saga/effects';
+import { all, take, takeLatest, call, fork, put, cancel, select } from 'redux-saga/effects';
 
 import fetchImages from 'services/ImagesService';
-import { actions } from 'reducers/images';
+import { actions, types } from 'reducers/images';
 import { types as locationActionTypes } from 'reducers/routes';
+import { selectors } from 'reducers';
 
 const imagesPath = '/main/images';
 
 export function* getImages() {
     while (true) {
         try {
-            const result = yield call(fetchImages);
+            const searchQuery = yield select(selectors.getImagesSearchQuery);
+            const filters = {
+                query: searchQuery
+            };
+            const result = yield call(fetchImages, filters);
             yield put(actions.fetchImages.success(result.response));
         } catch (error) {
             yield put(actions.fetchImages.failure(error));
         }
         yield delay(5000);
     }
+}
+
+function* watchImagesSearchOptions() {
+    yield takeLatest(types.SET_SEARCH_OPTIONS, getImages);
 }
 
 export function* watchLocation() {
@@ -33,5 +42,5 @@ export function* watchLocation() {
 }
 
 export default function* images() {
-    yield fork(watchLocation);
+    yield all([fork(watchLocation), fork(watchImagesSearchOptions)]);
 }

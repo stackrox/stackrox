@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
+import { createSelector, createStructuredSelector } from 'reselect';
 import * as Icon from 'react-feather';
 import Collapsible from 'react-collapsible';
 import dateFns from 'date-fns';
@@ -12,7 +12,10 @@ import ReactTable from 'react-table';
 import 'react-table/react-table.css';
 
 import { selectors } from 'reducers';
+import { actions as imagesActions } from 'reducers/images';
 
+import PageHeader from 'Components/PageHeader';
+import SearchInput from 'Components/SearchInput';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import KeyValuePairs from 'Components/KeyValuePairs';
@@ -53,7 +56,14 @@ const reducer = (action, prevState, nextState) => {
 
 class ImagesPage extends Component {
     static propTypes = {
-        images: PropTypes.arrayOf(PropTypes.object).isRequired
+        images: PropTypes.arrayOf(PropTypes.object).isRequired,
+        searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
+        searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
+        searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
+        setSearchOptions: PropTypes.func.isRequired,
+        setSearchModifiers: PropTypes.func.isRequired,
+        setSearchSuggestions: PropTypes.func.isRequired,
+        isViewFiltered: PropTypes.bool.isRequired
     };
 
     constructor(props) {
@@ -330,10 +340,19 @@ class ImagesPage extends Component {
     render() {
         return (
             <section className="flex flex-1 h-full">
-                <div className="flex flex-1 mt-3 flex-col">
-                    <div className="flex mb-3 mx-3 self-end justify-end" />
+                <div className="flex flex-1 flex-col">
+                    <PageHeader header="Images" isViewFiltered={this.props.isViewFiltered}>
+                        <SearchInput
+                            searchOptions={this.props.searchOptions}
+                            searchModifiers={this.props.searchModifiers}
+                            searchSuggestions={this.props.searchSuggestions}
+                            setSearchOptions={this.props.setSearchOptions}
+                            setSearchModifiers={this.props.setSearchModifiers}
+                            setSearchSuggestions={this.props.setSearchSuggestions}
+                        />
+                    </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow border-t border-primary-300 bg-base-100">
+                        <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow bg-base-100">
                             {this.renderTable()}
                         </div>
                         {this.renderSidePanel()}
@@ -345,8 +364,26 @@ class ImagesPage extends Component {
     }
 }
 
+const isViewFiltered = createSelector(
+    [selectors.getImagesSearchOptions],
+    searchOptions => searchOptions.length !== 0
+);
+
 const mapStateToProps = createStructuredSelector({
-    images: selectors.getImages
+    images: selectors.getImages,
+    searchOptions: selectors.getImagesSearchOptions,
+    searchModifiers: selectors.getImagesSearchModifiers,
+    searchSuggestions: selectors.getImagesSearchSuggestions,
+    isViewFiltered
 });
 
-export default connect(mapStateToProps)(ImagesPage);
+const mapDispatchToProps = dispatch => ({
+    setSearchOptions: searchOptions =>
+        dispatch(imagesActions.setImagesSearchOptions(searchOptions)),
+    setSearchModifiers: searchModifiers =>
+        dispatch(imagesActions.setImagesSearchModifiers(searchModifiers)),
+    setSearchSuggestions: searchSuggestions =>
+        dispatch(imagesActions.setImagesSearchSuggestions(searchSuggestions))
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(ImagesPage);
