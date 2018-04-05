@@ -5,10 +5,10 @@ import (
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1alpha1"
 )
 
-func (c *googleScanner) convertComponent(occurrence *containeranalysis.Occurrence) (string, *v1.ImageScanComponents) {
+func (c *googleScanner) convertComponent(occurrence *containeranalysis.Occurrence) (string, *v1.ImageScanComponent) {
 	location := occurrence.GetInstallation().GetLocation()[0]
 	version := location.GetVersion()
-	component := &v1.ImageScanComponents{
+	component := &v1.ImageScanComponent{
 		Name:    occurrence.GetInstallation().GetName(),
 		Version: version.GetName() + "-" + version.GetRevision(),
 	}

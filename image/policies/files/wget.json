@@ -1,0 +1,13 @@
+{
+  "name": "Wget in Image",
+  "description": "Alert on deployments with wget present",
+  "severity": "LOW_SEVERITY",
+  "categories": ["Image Assurance"],
+  "image_policy": {
+    "component": {
+      "name": "^wget$"
+    }
+  },
+  "rationale": "Leaving download tools like wget in an image makes it easier for attackers to use compromised containers, since they can easily download software.",
+  "remediation": "Use your package manager's \"remove\" command to remove wget from the image build for production containers."
+}

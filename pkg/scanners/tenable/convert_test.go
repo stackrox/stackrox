@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func getFindingsAndPackages() ([]*finding, []pkg, []*v1.ImageScanComponents) {
+func getFindingsAndPackages() ([]*finding, []pkg, []*v1.ImageScanComponent) {
 	findings := []*finding{
 		{
 			NVDFinding: nvdFinding{
@@ -97,7 +97,7 @@ func getFindingsAndPackages() ([]*finding, []pkg, []*v1.ImageScanComponents) {
 		},
 	}
 
-	components := []*v1.ImageScanComponents{
+	components := []*v1.ImageScanComponent{
 		{
 			Name:    "libssl1.0.0",
 			Version: "1.0.1t-1+deb8u6",
@@ -142,7 +142,7 @@ func getFindingsAndPackages() ([]*finding, []pkg, []*v1.ImageScanComponents) {
 	return findings, packages, components
 }
 
-func sortComponents(c []*v1.ImageScanComponents) {
+func sortComponents(c []*v1.ImageScanComponent) {
 	sort.SliceStable(c, func(i, j int) bool { return c[i].Name < c[j].Name })
 }
 

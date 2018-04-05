@@ -41,10 +41,10 @@ func ConvertVulnerability(v clairV1.Vulnerability) *v1.Vulnerability {
 }
 
 // ConvertFeatures converts clair features to proto components
-func ConvertFeatures(features []clairV1.Feature) (components []*v1.ImageScanComponents) {
-	components = make([]*v1.ImageScanComponents, 0, len(features))
+func ConvertFeatures(features []clairV1.Feature) (components []*v1.ImageScanComponent) {
+	components = make([]*v1.ImageScanComponent, 0, len(features))
 	for _, feature := range features {
-		component := &v1.ImageScanComponents{
+		component := &v1.ImageScanComponent{
 			Name:    feature.Name,
 			Version: feature.Version,
 		}

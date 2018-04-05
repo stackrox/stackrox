@@ -41,7 +41,7 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*v1.Vulnerability) {
 }
 
 // GetTestFeatures returns test clair features and also the expected converted proto components
-func GetTestFeatures() ([]clairV1.Feature, []*v1.ImageScanComponents) {
+func GetTestFeatures() ([]clairV1.Feature, []*v1.ImageScanComponent) {
 	quayVulns, protoVulns := GetTestVulns()
 	quayFeatures := []clairV1.Feature{
 		{
@@ -54,7 +54,7 @@ func GetTestFeatures() ([]clairV1.Feature, []*v1.ImageScanComponents) {
 			Vulnerabilities: quayVulns,
 		},
 	}
-	protoComponents := []*v1.ImageScanComponents{
+	protoComponents := []*v1.ImageScanComponent{
 		{
 			Name:    "nginx-module-geoip",
 			Version: "1.10.3-1~jessie",

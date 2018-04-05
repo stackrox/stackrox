@@ -29,7 +29,7 @@ func getMockDeployment() *v1.Deployment {
 				},
 				Image: &v1.Image{
 					Scan: &v1.ImageScan{
-						Components: []*v1.ImageScanComponents{
+						Components: []*v1.ImageScanComponent{
 							{
 								Vulns: []*v1.Vulnerability{
 									{

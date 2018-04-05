@@ -40,7 +40,7 @@ func (e *Enricher) enrichWithScanner(deployment *v1.Deployment, scanner scannerT
 	return
 }
 
-func (e *Enricher) equalComponents(components1, components2 []*v1.ImageScanComponents) bool {
+func (e *Enricher) equalComponents(components1, components2 []*v1.ImageScanComponent) bool {
 	if len(components1) != len(components2) {
 		return false
 	}

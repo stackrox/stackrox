@@ -127,7 +127,7 @@ func GetAlert() *v1.Alert {
 							},
 						},
 						Scan: &v1.ImageScan{
-							Components: []*v1.ImageScanComponents{
+							Components: []*v1.ImageScanComponent{
 								{
 									Name: "name",
 									Vulns: []*v1.Vulnerability{

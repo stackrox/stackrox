@@ -33,11 +33,11 @@ func convertLicense(license *license) *v1.License {
 	}
 }
 
-func convertComponents(dockerComponents []*component) []*v1.ImageScanComponents {
-	components := make([]*v1.ImageScanComponents, len(dockerComponents))
+func convertComponents(dockerComponents []*component) []*v1.ImageScanComponent {
+	components := make([]*v1.ImageScanComponent, len(dockerComponents))
 	for i, component := range dockerComponents {
 		convertedVulns := convertVulns(component.Vulnerabilities)
-		components[i] = &v1.ImageScanComponents{
+		components[i] = &v1.ImageScanComponent{
 			Name:    component.Component,
 			Version: component.Version,
 			License: convertLicense(component.License),
@@ -47,8 +47,8 @@ func convertComponents(dockerComponents []*component) []*v1.ImageScanComponents 
 	return components
 }
 
-func convertLayers(layerDetails []*detailedSummary) []*v1.ImageScanComponents {
-	components := make([]*v1.ImageScanComponents, 0, len(layerDetails))
+func convertLayers(layerDetails []*detailedSummary) []*v1.ImageScanComponent {
+	components := make([]*v1.ImageScanComponent, 0, len(layerDetails))
 	for _, layerDetail := range layerDetails {
 		convertedComponents := convertComponents(layerDetail.Components)
 		components = append(components, convertedComponents...)

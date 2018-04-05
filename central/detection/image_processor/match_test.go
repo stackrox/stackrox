@@ -20,7 +20,7 @@ func getTestImage() *v1.Image {
 	return &v1.Image{
 		Scan: &v1.ImageScan{
 			ScanTime: ptypes.TimestampNow(),
-			Components: []*v1.ImageScanComponents{
+			Components: []*v1.ImageScanComponent{
 				{
 					Name: "berkeleyDB",
 					Vulns: []*v1.Vulnerability{

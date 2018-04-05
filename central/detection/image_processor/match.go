@@ -55,14 +55,30 @@ func (policy *compiledImagePolicy) matchComponent(image *v1.Image) (violations [
 	}
 	policyExists = true
 	for _, component := range image.GetScan().GetComponents() {
-		if policy.Component.Name.MatchString(component.GetName()) && policy.Component.Version.MatchString(component.GetVersion()) {
-			violation := &v1.Alert_Violation{
-				Message: fmt.Sprintf("Component '%v:%v' matches name regex %+v and value regex %+v", component.GetName(), component.GetVersion(), policy.Component.Name, policy.Component.Version),
-			}
-			violations = append(violations, violation)
+		if v := policy.matchOneComponent(component); v != nil {
+			violations = append(violations, v)
 		}
 	}
 	return
+}
+
+func (policy *compiledImagePolicy) matchOneComponent(component *v1.ImageScanComponent) *v1.Alert_Violation {
+	var matches []string
+	if policy.Component.Name != nil {
+		if !policy.Component.Name.MatchString(component.GetName()) {
+			return nil
+		}
+		matches = append(matches, fmt.Sprintf("name regex %+v", policy.Component.Name))
+	}
+	if policy.Component.Version != nil {
+		if !policy.Component.Version.MatchString(component.GetVersion()) {
+			return nil
+		}
+		matches = append(matches, fmt.Sprintf("value regex %+v", policy.Component.Version))
+	}
+	return &v1.Alert_Violation{
+		Message: fmt.Sprintf("Component '%v:%v' matches %s", component.GetName(), component.GetVersion(), strings.Join(matches, " and ")),
+	}
 }
 
 func (policy *compiledImagePolicy) matchLineRule(image *v1.Image) (violations []*v1.Alert_Violation, policyExists bool) {

@@ -59,7 +59,7 @@ func getTestLicense() (*license, *v1.License) {
 	return dockerLicense, v1License
 }
 
-func getTestComponents() ([]*component, []*v1.ImageScanComponents) {
+func getTestComponents() ([]*component, []*v1.ImageScanComponent) {
 	dockerLicense, v1License := getTestLicense()
 	dockerVulns, v1Vulns := getTestVulns()
 
@@ -71,7 +71,7 @@ func getTestComponents() ([]*component, []*v1.ImageScanComponents) {
 			Vulnerabilities: dockerVulns,
 		},
 	}
-	v1Components := []*v1.ImageScanComponents{
+	v1Components := []*v1.ImageScanComponent{
 		{
 			Name:    "berkeleydb",
 			Version: "5.3.28-9",
@@ -82,7 +82,7 @@ func getTestComponents() ([]*component, []*v1.ImageScanComponents) {
 	return dockerComponents, v1Components
 }
 
-func getTestLayers() ([]*detailedSummary, []*v1.ImageScanComponents) {
+func getTestLayers() ([]*detailedSummary, []*v1.ImageScanComponent) {
 	dockerComponents, v1Components := getTestComponents()
 
 	dockerLayers := []*detailedSummary{

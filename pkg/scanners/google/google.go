@@ -128,8 +128,8 @@ func generalizeName(name string) string {
 // getComponents returns a map of cpeURIs -> map of generalized component names to components
 // the cpeURIs are for determining which summary is correct for the distribution
 // The names are generalized because google doesn't do direct correlation so pkg mysql should match mysql-5.5
-func (c *googleScanner) getComponents(image *v1.Image) (map[string]map[string]*v1.ImageScanComponents, error) {
-	cpeToComponentMap := make(map[string]map[string]*v1.ImageScanComponents)
+func (c *googleScanner) getComponents(image *v1.Image) (map[string]map[string]*v1.ImageScanComponent, error) {
+	cpeToComponentMap := make(map[string]map[string]*v1.ImageScanComponent)
 	filter := fmt.Sprintf(`kind="PACKAGE_MANAGER" AND resourceUrl="%s"`, getResourceURL(image))
 	occurenceReq := &containeranalysis.ListOccurrencesRequest{
 		Parent:   "projects/" + c.project,
@@ -147,7 +147,7 @@ func (c *googleScanner) getComponents(image *v1.Image) (map[string]map[string]*v
 		cpeURI, component := c.convertComponent(occurrence)
 		componentMap, ok := cpeToComponentMap[cpeURI]
 		if !ok {
-			componentMap = make(map[string]*v1.ImageScanComponents)
+			componentMap = make(map[string]*v1.ImageScanComponent)
 			cpeToComponentMap[cpeURI] = componentMap
 		}
 		componentMap[generalizeName(component.GetName())] = component
@@ -157,7 +157,7 @@ func (c *googleScanner) getComponents(image *v1.Image) (map[string]map[string]*v
 
 // this function matches against package substrings in an attempt to limit the number of vulns that cannot be correlated to matches
 // this function is expensive
-func vulnSubstringMatch(componentMap map[string]*v1.ImageScanComponents, pkg string, vulnerability *v1.Vulnerability) bool {
+func vulnSubstringMatch(componentMap map[string]*v1.ImageScanComponent, pkg string, vulnerability *v1.Vulnerability) bool {
 	for k, comp := range componentMap {
 		if strings.Contains(k, pkg) {
 			comp.Vulns = append(comp.Vulns, vulnerability)
@@ -168,7 +168,7 @@ func vulnSubstringMatch(componentMap map[string]*v1.ImageScanComponents, pkg str
 }
 
 // getVulns takes in the cpeToComponentMap and uses it to correlate its vulns to the components
-func (c *googleScanner) getVulns(cpeToComponentMap map[string]map[string]*v1.ImageScanComponents, image *v1.Image) error {
+func (c *googleScanner) getVulns(cpeToComponentMap map[string]map[string]*v1.ImageScanComponent, image *v1.Image) error {
 	filter := fmt.Sprintf(`kind="PACKAGE_VULNERABILITY" AND resourceUrl="%s"`, getResourceURL(image))
 	occurenceReq := &containeranalysis.ListOccurrencesRequest{
 		Parent:   "projects/" + c.project,
@@ -217,7 +217,7 @@ func (c *googleScanner) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	if err := c.getVulns(cpeToComponentMap, image); err != nil {
 		return nil, err
 	}
-	var components []*v1.ImageScanComponents
+	var components []*v1.ImageScanComponent
 	for _, v := range cpeToComponentMap {
 		for _, component := range v {
 			components = append(components, component)
