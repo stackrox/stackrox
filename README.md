@@ -86,6 +86,11 @@ use this variant instead:
 ./deploy/swarm/deploy-local.sh
 ```
 
+Monitoring on Swarm. This will create a prometheus instance
+```bash
+docker stack deploy -c prometheus/swarm.yaml prevent-health
+```
+
 ### Kubernetes
 Set your Docker image-pull credentials as `REGISTRY_USERNAME` and
 `REGISTRY_PASSWORD`, then run:
@@ -99,6 +104,11 @@ optionally create a LoadBalancer service to access Central instead.
 
 ```bash
 kubectl create -f deploy/k8s/lb.yaml
+```
+
+Monitoring on Kubernetes. Port forward to the pod at 9090 to access the UI
+```bash
+kubectl create -f prometheus/k8s.yaml
 ```
 
 ## How to Release a New Version

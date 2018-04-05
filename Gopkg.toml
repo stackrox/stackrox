@@ -121,3 +121,7 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
 [[constraint]]
   name = "github.com/blevesearch/bleve"
   branch = "master"
+
+[[constraint]]
+  name = "github.com/prometheus/client_golang"
+  version = "v0.8.0"

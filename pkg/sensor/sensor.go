@@ -10,12 +10,14 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/enforcers"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/routes"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
 	"bitbucket.org/stack-rox/apollo/pkg/sources"
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -41,8 +43,6 @@ type Sensor struct {
 // New returns a new Sensor.
 func New() *Sensor {
 	return &Sensor{
-		Server: grpc.NewAPI(grpc.Config{TLS: verifier.NonCA{}}),
-
 		ClusterID:          env.ClusterID.Setting(),
 		CentralEndpoint:    env.CentralEndpoint.Setting(),
 		AdvertisedEndpoint: env.AdvertisedEndpoint.Setting(),
@@ -52,8 +52,25 @@ func New() *Sensor {
 	}
 }
 
+func (a *Sensor) customRoutes() map[string]routes.CustomRoute {
+	routeMap := map[string]routes.CustomRoute{
+		"/metrics": {
+			ServerHandler: promhttp.Handler(),
+			Compression:   false,
+		},
+	}
+	return routeMap
+}
+
 // Start starts all subroutines and the API server.
 func (a *Sensor) Start() {
+	// Create grpc server with custom routes
+	config := grpc.Config{
+		TLS:          verifier.NonCA{},
+		CustomRoutes: a.customRoutes(),
+	}
+	a.Server = grpc.NewAPI(config)
+
 	a.Logger.Infof("Connecting to Central server %s", a.CentralEndpoint)
 	if a.ServiceRegistrationFunc != nil {
 		a.ServiceRegistrationFunc(a)

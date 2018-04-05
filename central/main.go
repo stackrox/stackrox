@@ -19,6 +19,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db/inmem"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/central/enrichment"
+	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/central/notifications"
 	"bitbucket.org/stack-rox/apollo/central/risk"
 	"bitbucket.org/stack-rox/apollo/central/search/blevesearch"
@@ -33,6 +34,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	"bitbucket.org/stack-rox/apollo/pkg/ui"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 )
 
@@ -168,6 +170,12 @@ func (c *central) customRoutes(userAuth *authnUser.AuthInterceptor, clusterServi
 			ServerHandler:   c.datastore.ExportHandler(),
 			Compression:     true,
 		},
+		"/metrics": {
+			AuthInterceptor: userAuth.HTTPInterceptor,
+			Authorizer:      allow.Anonymous(),
+			ServerHandler:   promhttp.Handler(),
+			Compression:     false,
+		},
 	}
 
 	c.addDebugRoutes(routeMap, userAuth)
@@ -202,6 +210,7 @@ func (c *central) addDebugRoutes(routeMap map[string]routes.CustomRoute, userAut
 func (c *central) processForever() {
 	defer func() {
 		if r := recover(); r != nil {
+			metrics.IncrementPanicCounter(getPanicFunc())
 			log.Errorf("Caught panic in process loop; restarting. Stack: %s", string(debug.Stack()))
 			c.processForever()
 		}

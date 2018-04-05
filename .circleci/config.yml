@@ -60,6 +60,10 @@ jobs:
             docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
             docker push stackrox/prevent:$CIRCLE_SHA1
 
+            docker tag stackrox/prevent-health:latest stackrox/prevent-health:$CIRCLE_SHA1
+            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+            docker push stackrox/prevent-health:$CIRCLE_SHA1
+
   deploy-k8s:
     <<: *defaults
     environment:
