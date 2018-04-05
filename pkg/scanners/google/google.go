@@ -15,6 +15,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1alpha1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/oauth"
 )
 
@@ -68,6 +69,7 @@ func getGRPCConnection(serviceAccount string) (*grpc.ClientConn, error) {
 	}
 	creds := oauth.TokenSource{tokenSource.TokenSource}
 	conn, err := grpc.Dial(containerAnalysisEndpoint,
+		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithPerRPCCredentials(
 			oauth.TokenSource{
 				TokenSource: creds.TokenSource,
