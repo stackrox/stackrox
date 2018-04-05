@@ -1,0 +1,13 @@
+{
+  "name": "Aptitude Package Manager (apt) in Image",
+  "description": "Alert on deployments with the Aptitude package manager (apt), commonly used in Debian and Ubuntu, present",
+  "severity": "LOW_SEVERITY",
+  "categories": ["Image Assurance"],
+  "image_policy": {
+    "component": {
+      "name": "^apt$"
+    }
+  },
+  "rationale": "Package managers make it easier for attackers to use compromised containers, since they can easily add software.",
+  "remediation": "Run `apt-get remove -y --allow-remove-essential apt` in the image build for production containers."
+}

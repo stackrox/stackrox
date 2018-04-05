@@ -1,0 +1,13 @@
+{
+  "name": "DNF Package Manager (dnf) in Image",
+  "description": "Alert on deployments with the DNF package manager (dnf), commonly used in Red Hat-family distributions, present",
+  "severity": "LOW_SEVERITY",
+  "categories": ["Image Assurance"],
+  "image_policy": {
+    "component": {
+      "name": "^dnf$"
+    }
+  },
+  "rationale": "Package managers make it easier for attackers to use compromised containers, since they can easily add software.",
+  "remediation": "Run `rpm -e $(rpm -qa *rpm*) $(rpm -qa *dnf*) $(rpm -qa *libsolv*) $(rpm -qa *hawkey*)` in the image build for production containers."
+}
