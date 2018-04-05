@@ -69,9 +69,6 @@ func getTestComponents() ([]*component, []*v1.ImageScanComponents) {
 			Version:         "5.3.28-9",
 			License:         dockerLicense,
 			Vulnerabilities: dockerVulns,
-			FullPath: []string{
-				"usr/lib/x86_64-linux-gnu/libdb-5.3.so",
-			},
 		},
 	}
 	v1Components := []*v1.ImageScanComponents{
@@ -79,10 +76,7 @@ func getTestComponents() ([]*component, []*v1.ImageScanComponents) {
 			Name:    "berkeleydb",
 			Version: "5.3.28-9",
 			License: v1License,
-			FullPath: []string{
-				"usr/lib/x86_64-linux-gnu/libdb-5.3.so",
-			},
-			Vulns: v1Vulns,
+			Vulns:   v1Vulns,
 		},
 	}
 	return dockerComponents, v1Components

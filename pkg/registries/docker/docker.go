@@ -15,6 +15,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/heroku/docker-registry-client/registry"
+	"github.com/opencontainers/go-digest"
 )
 
 var (
@@ -57,6 +58,8 @@ type v1Compatibility struct {
 
 type client interface {
 	Manifest(repository, reference string) (*manifestV1.SignedManifest, error)
+	ManifestDigest(repository, reference string) (digest.Digest, error)
+	SignedManifest(repository, reference string) (*manifestV1.SignedManifest, error)
 	Repositories() ([]string, error)
 	Ping() error
 }
@@ -66,6 +69,14 @@ type nilClient struct {
 }
 
 func (n nilClient) Manifest(repository, reference string) (*manifestV1.SignedManifest, error) {
+	return nil, n.error
+}
+
+func (n nilClient) ManifestDigest(repository, reference string) (digest.Digest, error) {
+	return digest.Digest(""), n.error
+}
+
+func (n nilClient) SignedManifest(repository, reference string) (*manifestV1.SignedManifest, error) {
 	return nil, n.error
 }
 
@@ -226,9 +237,18 @@ func (d *Registry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 		return nil, nil
 	}
 
-	manifest, err := d.client().Manifest(image.GetName().GetRemote(), image.GetName().GetTag())
+	// fetch the digest from registry because it is more correct than from the orchestrator
+	digest, err := d.client().ManifestDigest(image.GetName().GetRemote(), image.GetName().GetTag())
 	if err != nil {
 		return nil, err
+	}
+	image.Name.Sha = digest.String()
+	manifest, err := d.client().SignedManifest(image.GetName().GetRemote(), image.GetName().GetTag())
+	if err != nil {
+		manifest, err = d.client().Manifest(image.GetName().GetRemote(), image.GetName().GetTag())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Get the latest layer and author

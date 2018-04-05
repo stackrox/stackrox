@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "cloud.google.com/go"
+  packages = ["compute/metadata"]
+  revision = "4b98a6370e36d7a85192e7bad08a4ebd82eac2a8"
+  version = "v0.20.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/Azure/go-ansiterm"
   packages = [
@@ -470,10 +476,10 @@
   revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
-  branch = "master"
+  branch = "signed-manifests"
   name = "github.com/heroku/docker-registry-client"
   packages = ["registry"]
-  revision = "c0382be6e46b7f52b8c6dd0a91c1253e891645f8"
+  revision = "1a178f6aa0ea3931fd190f5f565e40bba86466f4"
   source = "git@bitbucket.org:stack-rox/docker-registry-client.git"
 
 [[projects]]
@@ -708,6 +714,18 @@
 
 [[projects]]
   branch = "master"
+  name = "golang.org/x/oauth2"
+  packages = [
+    ".",
+    "google",
+    "internal",
+    "jws",
+    "jwt"
+  ]
+  revision = "921ae394b9430ed4fb549668d7b087601bd60a81"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = [
     "unix",
@@ -738,13 +756,34 @@
   revision = "e19ae1496984b1c655b8044a65c0300a3c878dd3"
 
 [[projects]]
+  name = "google.golang.org/appengine"
+  packages = [
+    ".",
+    "internal",
+    "internal/app_identity",
+    "internal/base",
+    "internal/datastore",
+    "internal/log",
+    "internal/modules",
+    "internal/remote_api",
+    "internal/urlfetch",
+    "urlfetch"
+  ]
+  revision = "150dc57a1b433e64154302bdc40b6bb8aefa313a"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   name = "google.golang.org/genproto"
   packages = [
     "googleapis/api/annotations",
-    "googleapis/rpc/status"
+    "googleapis/devtools/containeranalysis/v1alpha1",
+    "googleapis/iam/v1",
+    "googleapis/longrunning",
+    "googleapis/rpc/status",
+    "protobuf/field_mask"
   ]
-  revision = "f676e0f3ac6395ff1a529ae59a6670878a8371a6"
+  revision = "35de2414665fc36f56b72d982c5af480d86de5ab"
 
 [[projects]]
   name = "google.golang.org/grpc"
@@ -756,6 +795,7 @@
     "codes",
     "connectivity",
     "credentials",
+    "credentials/oauth",
     "encoding",
     "grpclb/grpc_lb_v1/messages",
     "grpclog",
@@ -950,6 +990,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5bc3b85d6f436fa173072d2c90551cc0b97079157c200803c1d47f6f7bf9550e"
+  inputs-digest = "32893f16b4bfa03f2100b2347aaa15a7243f3f4dc63b36eaa2a377e48a38ecec"
   solver-name = "gps-cdcl"
   solver-version = 1

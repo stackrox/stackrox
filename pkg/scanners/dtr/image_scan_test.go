@@ -108,9 +108,6 @@ func getExpectedImageScans() ([]*tagScanSummary, error) {
 									},
 								},
 							},
-							FullPath: []string{
-								"usr/lib/x86_64-linux-gnu/libdb-5.3.so",
-							},
 						},
 					},
 				},

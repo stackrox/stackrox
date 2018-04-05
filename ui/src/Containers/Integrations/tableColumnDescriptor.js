@@ -61,7 +61,8 @@ const tableColumnDescriptor = Object.freeze({
             { key: 'config.username', label: 'Username' }
         ],
         quay: [{ key: 'name', label: 'Name' }, { key: 'config.endpoint', label: 'Endpoint' }],
-        clair: [{ key: 'name', label: 'Name' }, { key: 'config.endpoint', label: 'Endpoint' }]
+        clair: [{ key: 'name', label: 'Name' }, { key: 'config.endpoint', label: 'Endpoint' }],
+        google: [{ key: 'name', label: 'Name' }, { key: 'config.endpoint', label: 'Endpoint' }]
     }
 });
 

@@ -56,8 +56,7 @@ message ImageScanComponents {
     string name                  = 1;
     string version               = 2;
     License license              = 3;
-    repeated string full_path    = 4; // Unsure if needed
-    repeated Vulnerability vulns = 5;
+    repeated Vulnerability vulns = 4;
 }
 
 message ImageName {

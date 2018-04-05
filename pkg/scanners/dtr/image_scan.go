@@ -78,7 +78,6 @@ type component struct {
 	Version         string                  `json:"version"`
 	License         *license                `json:"license"`
 	Vulnerabilities []*vulnerabilityDetails `json:"vulns"`
-	FullPath        []string                `json:"fullpath"`
 }
 
 type license struct {

@@ -96,12 +96,16 @@ func newMockRegistry() {
 	masterRouter := http.NewServeMux()
 	// Handle
 	masterRouter.HandleFunc("/v2/library/nginx/manifests/1.10", func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Accept") != manifestV1.MediaTypeManifest {
-			w.WriteHeader(http.StatusNotFound)
-			return
+		if r.Method == "GET" {
+			if r.Header.Get("Accept") != manifestV1.MediaTypeManifest {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, getMetadataPayload)
+		} else if r.Method == "HEAD" {
+			w.Header().Add("Docker-Content-Digest", "sha256:693e49e96066feacf922ff62bb87dfae3865cca7621bdf22afd053bf1c0cc37d")
 		}
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, getMetadataPayload)
 	})
 	masterRouter.HandleFunc("/v2/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

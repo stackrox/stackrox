@@ -38,11 +38,10 @@ func convertComponents(dockerComponents []*component) []*v1.ImageScanComponents 
 	for i, component := range dockerComponents {
 		convertedVulns := convertVulns(component.Vulnerabilities)
 		components[i] = &v1.ImageScanComponents{
-			Name:     component.Component,
-			Version:  component.Version,
-			License:  convertLicense(component.License),
-			FullPath: component.FullPath,
-			Vulns:    convertedVulns,
+			Name:    component.Component,
+			Version: component.Version,
+			License: convertLicense(component.License),
+			Vulns:   convertedVulns,
 		}
 	}
 	return components

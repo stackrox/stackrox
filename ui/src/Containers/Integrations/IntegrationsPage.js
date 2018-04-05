@@ -22,6 +22,7 @@ import email from 'images/email.svg';
 import quay from 'images/quay.svg';
 import clair from 'images/clair.svg';
 import artifactory from 'images/artifactory.svg';
+import google from 'images/google-cloud.svg';
 
 const integrationsList = {
     authProviders: [
@@ -79,6 +80,14 @@ const integrationsList = {
             categories: 'Scanner',
             source: 'imageIntegrations',
             image: clair,
+            disabled: false
+        },
+        {
+            label: 'Google Cloud',
+            type: 'google',
+            categories: 'Registry + Scanner',
+            source: 'imageIntegrations',
+            image: google,
             disabled: false
         }
     ],

@@ -331,6 +331,42 @@ const sourceMap = {
                 type: 'text',
                 placeholder: 'https://clair.example.com'
             }
+        ],
+        google: [
+            {
+                label: 'Integration Name',
+                key: 'name',
+                type: 'text',
+                placeholder: 'Google Registry and Scanner'
+            },
+            {
+                label: 'Types',
+                key: 'categories',
+                type: 'multiselect',
+                options: [
+                    { value: 'REGISTRY', label: 'Registry' },
+                    { value: 'SCANNER', label: 'Scanner' }
+                ],
+                placeholder: ''
+            },
+            {
+                label: 'Registry Endpoint',
+                key: 'config.endpoint',
+                type: 'text',
+                placeholder: 'gcr.io'
+            },
+            {
+                label: 'Project',
+                key: 'config.project',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                label: 'Service Account',
+                key: 'config.serviceAccount',
+                type: 'text',
+                placeholder: ''
+            }
         ]
     }
 };
