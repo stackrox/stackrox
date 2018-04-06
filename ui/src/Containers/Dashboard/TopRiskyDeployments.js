@@ -17,21 +17,23 @@ const TopRiskyDeployments = props => (
                 </Link>
             </span>
         </h2>
-        <ul className="p-0">
+        <ul className="p-0 list-reset">
             {props.deployments.map(deployment => (
-                <li
-                    key={deployment.name}
-                    className="flex flex-row justify-between border-b p-4 border-primary-200 "
-                >
-                    <div>{deployment.name}</div>
-                    <div className="text-base-400 font-400">
-                        <span className="pr-1 border-r inline-block">
-                            {dateFns.format(deployment.updatedAt, 'MM/DD')}
-                        </span>
-                        <span className="pl-1">
-                            {dateFns.format(deployment.updatedAt, 'h:mm:ss A')}
-                        </span>
-                    </div>
+                <li key={deployment.id}>
+                    <Link
+                        to={`/main/risk/${deployment.id}`}
+                        className="no-underline flex flex-row justify-between border-b p-4 border-primary-200 hover:bg-base-100"
+                    >
+                        <div className="text-base-600">{deployment.name}</div>
+                        <div className="text-base-400 font-400">
+                            <span className="pr-1 border-r inline-block">
+                                {dateFns.format(deployment.updatedAt, 'MM/DD')}
+                            </span>
+                            <span className="pl-1">
+                                {dateFns.format(deployment.updatedAt, 'h:mm:ss A')}
+                            </span>
+                        </div>
+                    </Link>
                 </li>
             ))}
         </ul>

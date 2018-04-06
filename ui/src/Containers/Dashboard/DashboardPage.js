@@ -303,7 +303,8 @@ class DashboardPage extends Component {
 
     renderTopRiskyDeployments = () => {
         if (!this.props.deployments) return '';
-        return <TopRiskyDeployments deployments={this.props.deployments} />;
+        const deployments = this.props.deployments.slice(0, 5);
+        return <TopRiskyDeployments deployments={deployments} />;
     };
 
     render() {
