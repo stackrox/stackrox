@@ -44,7 +44,8 @@ class Tabs extends Component {
     getHeaders() {
         const { activeIndex } = this.state;
         return this.props.headers.map((header, i) => {
-            let tabClass = activeIndex === i ? 'tab tab-active mt-2' : 'tab mt-2';
+            let tabClass =
+                activeIndex === i ? 'tab tab-active bg-base-100 border-t-2 mt-2' : 'tab mt-2';
             if (header.disabled) tabClass = 'tab disabled mt-2';
             return (
                 <button
@@ -71,14 +72,12 @@ class Tabs extends Component {
     render() {
         return (
             <div className="w-full bg-white flex flex-col">
-                <div
-                    className={`flex shadow-underline font-bold mb-3 bg-primary-100 pl-3 ${
-                        this.props.className
-                    }`}
-                >
+                <div className={`flex shadow-underline font-bold pl-3 ${this.props.className}`}>
                     {this.getHeaders()}
                 </div>
-                <div className="overflow-hidden h-full flex-1">{this.renderChildren()}</div>
+                <div className="overflow-hidden pt-3 h-full flex-1 bg-base-100">
+                    {this.renderChildren()}
+                </div>
             </div>
         );
     }

@@ -15,6 +15,7 @@ class Table extends Component {
                 keyValueFunc: PropTypes.func,
                 align: PropTypes.string,
                 classFunc: PropTypes.func,
+                className: PropTypes.string,
                 default: PropTypes.any,
                 sortMethod: PropTypes.func
             })
@@ -149,7 +150,7 @@ class Table extends Component {
         const tableHeaders = this.props.columns.map(column => {
             const className = `p-3 text-primary-500 border-b border-base-300 hover:text-primary-600 cursor-pointer truncate ${
                 column.align === 'right' ? 'text-right' : 'text-left'
-            }`;
+            } ${column.className}`;
             return (
                 <th className={className} key={column.key} onClick={this.sortRows(column.key)}>
                     {column.label + this.getDirection(this.state.sortDir[column.key])}
@@ -181,9 +182,13 @@ class Table extends Component {
         const { columns, rows } = this.props;
         const rowClickable = !!this.props.onRowClick;
         return rows.map((row, i) => {
-            const tableCells = columns.map(column => (
-                <TableCell column={column} row={row} key={`${column.key}`} />
-            ));
+            const tableCells = columns.map(column => {
+                const rowObj = Object.assign({}, row);
+                if (column.key === 'index') {
+                    rowObj.index = i + 1;
+                }
+                return <TableCell column={column} row={rowObj} key={`${column.key}`} />;
+            });
             if (this.props.checkboxes) {
                 tableCells.unshift(
                     <td className="p-3 text-center" key="checkboxTableCell">

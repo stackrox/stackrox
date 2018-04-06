@@ -80,7 +80,11 @@ class Panel extends Component {
 
     render() {
         return (
-            <div className={`flex flex-col bg-white border border-base-300 ${this.props.width}`}>
+            <div
+                className={`flex flex-col bg-white border border-t-0 border-base-300 ${
+                    this.props.width
+                }`}
+            >
                 <div className="shadow-underline font-bold bg-primary-100">
                     <div className="flex flex-row w-full">
                         <div className="flex flex-1 text-base-600 uppercase items-center tracking-wide py-2 px-4">

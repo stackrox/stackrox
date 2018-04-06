@@ -32,12 +32,14 @@ class DockerFileModal extends Component {
             {
                 key: 'created',
                 label: 'Created',
+                align: 'right',
+                className: 'w-1/5',
                 keyValueFunc: timestamp => dateFns.format(timestamp, 'MM/DD/YYYY -- h:mm:ss A')
             }
         ];
         const rows = this.props.data;
         return (
-            <div className="flex flex-1 overflow-y-scroll">
+            <div className="flex flex-1 p-3 overflow-y-scroll">
                 <div className="flex flex-col w-full">
                     <Table columns={columns} rows={rows} />
                 </div>

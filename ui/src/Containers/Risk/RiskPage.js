@@ -116,7 +116,7 @@ class RiskPage extends Component {
             { key: 'name', label: 'Name' },
             { key: 'clusterName', label: 'Cluster' },
             { key: 'namespace', label: 'Namespace' },
-            { key: 'risk.score', label: 'Priority' }
+            { key: 'index', label: 'Priority' }
         ];
         const rows = this.props.deployments;
         return <Table columns={columns} rows={rows} onRowClick={this.onDeploymentClick} />;
@@ -137,7 +137,7 @@ class RiskPage extends Component {
     };
 
     renderSidePanel = () => {
-        if (!this.state.selectedDeployment) return '';
+        if (!this.state.selectedDeployment || this.props.isViewFiltered) return '';
         const header = this.state.selectedDeployment.name;
         const riskPanelTabs = [{ text: 'risk indicators' }, { text: 'deployment details' }];
         return (
@@ -170,30 +170,30 @@ class RiskPage extends Component {
     renderRiskIndicators = () => {
         if (!this.state.selectedDeployment.risk) return '';
         const { risk } = this.state.selectedDeployment;
-        return (
-            <div className="px-3 py-4">
-                {risk.results.map(result => (
-                    <div
-                        className="alert-preview bg-white shadow text-primary-600 tracking-wide border border-base-200"
-                        key={result.name}
+        return risk.results.map(result => (
+            <div className="px-3 py-4" key={result.name}>
+                <div
+                    className="alert-preview bg-white shadow text-primary-600 tracking-wide"
+                    key={result.name}
+                >
+                    <Collapsible
+                        open
+                        trigger={this.renderCollapsibleCard(result.name, 'up')}
+                        triggerWhenOpen={this.renderCollapsibleCard(result.name, 'down')}
+                        transitionTime={100}
                     >
-                        <Collapsible
-                            open
-                            trigger={this.renderCollapsibleCard(result.name, 'up')}
-                            triggerWhenOpen={this.renderCollapsibleCard(result.name, 'down')}
-                            transitionTime={100}
-                        >
-                            {result.factors.map(factor => (
-                                <div className="h-full p-3 font-500" key={factor}>
+                        {result.factors.map(factor => (
+                            <div className="flex h-full p-3 font-500" key={factor}>
+                                <div>
                                     <Icon.Circle className="h-2 w-2 mr-3" />
-                                    {factor}
                                 </div>
-                            ))}
-                        </Collapsible>
-                    </div>
-                ))}
+                                <div className="pl-1">{factor}</div>
+                            </div>
+                        ))}
+                    </Collapsible>
+                </div>
             </div>
-        );
+        ));
     };
 
     renderOverview = () => {
@@ -231,13 +231,16 @@ class RiskPage extends Component {
                         transitionTime={100}
                     >
                         <div className="h-full p-3">
-                            {this.state.selectedDeployment.containers.map((container, index) => (
-                                <KeyValuePairs
-                                    data={container.config}
-                                    keyValueMap={containerConfigMap}
-                                    key={index}
-                                />
-                            ))}
+                            {this.state.selectedDeployment.containers.map((container, index) => {
+                                if (!container.config) return null;
+                                return (
+                                    <KeyValuePairs
+                                        data={container.config}
+                                        keyValueMap={containerConfigMap}
+                                        key={index}
+                                    />
+                                );
+                            })}
                         </div>
                     </Collapsible>
                 </div>
