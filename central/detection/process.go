@@ -31,35 +31,60 @@ func (d *Detector) ProcessDeploymentEvent(deployment *v1.Deployment, action v1.R
 	return
 }
 
+func mergeAlerts(old, new *v1.Alert) *v1.Alert {
+	new.Id = old.GetId()
+	new.Enforcement = old.GetEnforcement()
+	new.FirstOccurred = old.GetFirstOccurred()
+	return new
+}
+
 func (d *Detector) processTask(task Task) (alert *v1.Alert, enforcement v1.EnforcementAction) {
-	d.markExistingAlertsAsStale(task.deployment.GetId(), task.policy.GetId())
+	existingAlerts := d.getExistingAlert(task.deployment.GetId(), task.policy.GetId())
 
 	// No further processing is needed when a deployment is removed.
 	if task.action == v1.ResourceAction_REMOVE_RESOURCE {
-		return
-	}
-
-	deploy, exists, err := d.database.GetDeployment(task.deployment.GetId())
-	if err != nil {
-		logger.Error(err)
-	} else if !exists || deploy.Version != task.deployment.Version {
+		d.markExistingAlertsAsStale(existingAlerts)
 		return
 	}
 
 	// The third argument is if the task matched a whitelist
 	var excluded *v1.DryRunResponse_Excluded
 	alert, enforcement, excluded = d.Detect(task)
+	// If the task is now whitelisted, whether the policy has whitelisted it or
+	// the deployment now falls within the whitelisted scope then remove all alerts
+	// and return
+	if excluded != nil {
+		d.markExistingAlertsAsStale(existingAlerts)
+		return
+	}
+
 	if alert != nil {
-		logger.Debugf("Alert Generated: %v with Severity %v due to policy %v", alert.Id, alert.GetPolicy().GetSeverity().String(), alert.GetPolicy().GetName())
-		for _, violation := range alert.GetViolations() {
-			logger.Debugf("\t %v", violation.Message)
+		switch {
+		case len(existingAlerts) == 0:
+			logger.Debugf("Alert Generated: %s with Severity %s due to policy %s", alert.Id, alert.GetPolicy().GetSeverity().String(), alert.GetPolicy().GetName())
+			for _, violation := range alert.GetViolations() {
+				logger.Debugf("\t %v", violation.Message)
+			}
+			alert.FirstOccurred = ptypes.TimestampNow()
+			if err := d.database.AddAlert(alert); err != nil {
+				logger.Error(err)
+			} else {
+				// Don't notify if the save failed. Otherwise, the user can't look up any of the data in the UI
+				d.notificationProcessor.ProcessAlert(alert)
+			}
+		case len(existingAlerts) > 1:
+			logger.Errorf("Found more than 1 existing alert for deployment '%s' and policy '%s'", task.deployment.Id, task.policy.Id)
+			d.markExistingAlertsAsStale(existingAlerts[1:])
+			fallthrough
+		case len(existingAlerts) == 1:
+			alert = mergeAlerts(existingAlerts[0], alert)
+			logger.Debugf("Alert Updated: %s with Severity %s due to policy %s", alert.Id, alert.GetPolicy().GetSeverity().String(), alert.GetPolicy().GetName())
+			if err := d.database.UpdateAlert(alert); err != nil {
+				logger.Error(err)
+			}
 		}
-		if err := d.database.AddAlert(alert); err != nil {
-			logger.Error(err)
-		}
-		d.notificationProcessor.ProcessAlert(alert)
-	} else if excluded != nil {
-		logger.Infof("Alert for policy '%v' on deployment '%v' was NOT generated due to whitelist '%v'", task.policy.GetName(), task.deployment.GetName(), excluded.GetWhitelist().GetName())
+	} else {
+		d.markExistingAlertsAsStale(existingAlerts)
 	}
 	// This is the best place to assess risk (which is relatively cheap at the moment), because enrichment must have occurred at this point
 	// Any new violations (which will soon be integrated into the risk score) will also trigger the reprocessing
@@ -70,9 +95,7 @@ func (d *Detector) processTask(task Task) (alert *v1.Alert, enforcement v1.Enfor
 	return
 }
 
-func (d *Detector) markExistingAlertsAsStale(deploymentID, policyID string) {
-	existingAlerts := d.getExistingAlert(deploymentID, policyID)
-
+func (d *Detector) markExistingAlertsAsStale(existingAlerts []*v1.Alert) {
 	for _, a := range existingAlerts {
 		a.Stale = true
 		a.MarkedStale = ptypes.TimestampNow()

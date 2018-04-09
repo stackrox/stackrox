@@ -80,7 +80,7 @@ func verifyAlertWithEnforcement(t *testing.T) {
 
 	alerts, err := service.GetAlerts(ctx, &v1.GetAlertsRequest{
 		Query: getDeploymentQuery(nginxDeploymentName) + "+" + getPolicyQuery(expectedLatestTagPolicy),
-		Stale: []bool{true},
+		Stale: []bool{false},
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, alerts.GetAlerts())
