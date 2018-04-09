@@ -39,6 +39,8 @@ func init() {
 }
 
 func TestNotification(t *testing.T) {
+	t.Skip("Skipping due to broken auth token. Tracked in AP-515")
+
 	require.NotEmpty(t, slackAuthToken)
 
 	defer teardownTestNotification(t)
