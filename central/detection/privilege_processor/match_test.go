@@ -257,64 +257,6 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
-		{
-			deployment: &v1.Deployment{
-				Containers: []*v1.Container{
-					{
-						SecurityContext: &v1.SecurityContext{
-							AddCapabilities:  []string{"CAP_SYS_ADMIN", "CAP_SYS_MODULE"},
-							DropCapabilities: []string{"CAP_CHOWN"},
-							Selinux: &v1.SecurityContext_SELinux{
-								User:  "user",
-								Role:  "role",
-								Type:  "type",
-								Level: "level",
-							},
-						},
-					},
-				},
-			},
-			policy: &v1.Policy{
-				PrivilegePolicy: &v1.PrivilegePolicy{
-					Selinux: &v1.PrivilegePolicy_SELinuxPolicy{
-						User:  "us.*",
-						Level: "level|something",
-					},
-				},
-			},
-			expectedViolations: []*v1.Alert_Violation{
-				{
-					Message: "SELinux user:\"user\" role:\"role\" type:\"type\" level:\"level\"  matched configured policy user=us.*, level=level|something",
-				},
-			},
-		},
-		{
-			deployment: &v1.Deployment{
-				Containers: []*v1.Container{
-					{
-						SecurityContext: &v1.SecurityContext{
-							AddCapabilities:  []string{"CAP_SYS_ADMIN", "CAP_SYS_MODULE"},
-							DropCapabilities: []string{"CAP_CHOWN"},
-							Selinux: &v1.SecurityContext_SELinux{
-								User:  "user",
-								Role:  "role",
-								Type:  "type",
-								Level: "level",
-							},
-						},
-					},
-				},
-			},
-			policy: &v1.Policy{
-				PrivilegePolicy: &v1.PrivilegePolicy{
-					Selinux: &v1.PrivilegePolicy_SELinuxPolicy{
-						User:  "user",
-						Type:  "not a match",
-						Level: "level",
-					},
-				},
-			},
-		},
 	}
 
 	for _, c := range cases {

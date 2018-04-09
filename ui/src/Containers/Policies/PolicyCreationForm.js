@@ -379,30 +379,6 @@ class PolicyCreationForm extends Component {
                         required: false
                     },
                     {
-                        label: 'SELinux User',
-                        value: 'privilegePolicy.selinux.user',
-                        type: 'text',
-                        required: false
-                    },
-                    {
-                        label: 'SELinux Role',
-                        value: 'privilegePolicy.selinux.role',
-                        type: 'text',
-                        required: false
-                    },
-                    {
-                        label: 'SELinux Type',
-                        value: 'privilegePolicy.selinux.type',
-                        type: 'text',
-                        required: false
-                    },
-                    {
-                        label: 'SELinux Level',
-                        value: 'privilegePolicy.selinux.level',
-                        type: 'text',
-                        required: false
-                    },
-                    {
                         label: 'Drop Capabilities',
                         value: 'privilegePolicy.dropCapabilities',
                         type: 'multiselect',

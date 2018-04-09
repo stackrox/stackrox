@@ -91,12 +91,6 @@ func GetAlert() *v1.Alert {
 				SetPrivileged: &v1.PrivilegePolicy_Privileged{
 					Privileged: true,
 				},
-				Selinux: &v1.PrivilegePolicy_SELinuxPolicy{
-					User:  "user",
-					Role:  "role",
-					Type:  "type",
-					Level: "level",
-				},
 			},
 		},
 		Deployment: &v1.Deployment{

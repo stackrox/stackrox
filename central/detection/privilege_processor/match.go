@@ -24,7 +24,6 @@ func (p *compiledPrivilegePolicy) Match(deployment *v1.Deployment, container *v1
 		p.matchPrivileged,
 		p.matchAddCap,
 		p.matchDropCap,
-		p.SELinux.match,
 	}
 
 	var violations, vs []*v1.Alert_Violation
@@ -100,37 +99,6 @@ func (p *compiledPrivilegePolicy) matchAddCap(security *v1.SecurityContext) (vio
 			Message: fmt.Sprintf("Container with add capabilities %+v matches policy %+v", security.GetAddCapabilities(), p.Original.GetPrivilegePolicy().GetAddCapabilities()),
 		})
 	}
-
-	return
-}
-
-func (p *compiledSELinuxPolicy) match(security *v1.SecurityContext) (violations []*v1.Alert_Violation, exists bool) {
-	if p == nil {
-		return
-	}
-
-	exists = true
-	selinux := security.GetSelinux()
-	if selinux == nil {
-		return
-	}
-
-	if p.User != nil && !p.User.MatchString(selinux.GetUser()) {
-		return
-	}
-	if p.Role != nil && !p.Role.MatchString(selinux.GetRole()) {
-		return
-	}
-	if p.Type != nil && !p.Type.MatchString(selinux.GetType()) {
-		return
-	}
-	if p.Level != nil && !p.Level.MatchString(selinux.GetLevel()) {
-		return
-	}
-
-	violations = append(violations, &v1.Alert_Violation{
-		Message: fmt.Sprintf("SELinux %+v matched configured policy %s", selinux, p),
-	})
 
 	return
 }

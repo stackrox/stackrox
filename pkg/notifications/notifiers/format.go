@@ -66,12 +66,6 @@ const policyFormat = `
 			{{range .Policy.PrivilegePolicy.DropCapabilities}}{{nestedList .}}
 			{{end}}
 		{{end}}
-		{{if .Policy.PrivilegePolicy.Selinux}}{{list "SELinux Security Context"}}
-			{{if .Policy.PrivilegePolicy.Selinux.User}}{{stringify "User:" .Policy.PrivilegePolicy.Selinux.User | nestedList}}{{end}}
-			{{if .Policy.PrivilegePolicy.Selinux.Role}}{{stringify "Role:" .Policy.PrivilegePolicy.Selinux.Role | nestedList}}{{end}}
-			{{if .Policy.PrivilegePolicy.Selinux.Type}}{{stringify "Type:" .Policy.PrivilegePolicy.Selinux.Type | nestedList}}{{end}}
-			{{if .Policy.PrivilegePolicy.Selinux.Level}}{{stringify "Level:" .Policy.PrivilegePolicy.Selinux.Level | nestedList}}{{end}}
-		{{end}}
 		{{if .Policy.PrivilegePolicy.SetPrivileged}}{{stringify "Privileged:" .Policy.PrivilegePolicy.GetPrivileged | list}}{{end}}
 	{{end}}
 	{{if .Policy.ConfigurationPolicy }}{{subheader "Configuration Assurance:"}}

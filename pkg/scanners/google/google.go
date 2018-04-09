@@ -67,7 +67,7 @@ func getGRPCConnection(serviceAccount string) (*grpc.ClientConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	creds := oauth.TokenSource{tokenSource.TokenSource}
+	creds := oauth.TokenSource{TokenSource: tokenSource.TokenSource}
 	conn, err := grpc.Dial(containerAnalysisEndpoint,
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithPerRPCCredentials(
