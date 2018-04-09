@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import ReactRouterPropTypes from 'react-router-prop-types';
 import { ToastContainer, toast } from 'react-toastify';
 import { Form } from 'react-form';
 import axios from 'axios';
@@ -40,6 +41,10 @@ const reducer = (action, prevState, nextState) => {
 };
 
 class PoliciesPage extends Component {
+    static propTypes = {
+        match: ReactRouterPropTypes.match.isRequired
+    };
+
     constructor(props) {
         super(props);
 
@@ -63,6 +68,7 @@ class PoliciesPage extends Component {
         this.retrieveNotifiers();
         this.retrieveClusters();
         this.retrieveDeployments();
+        console.log(this.props);
     }
 
     componentWillUnmount() {
@@ -77,12 +83,24 @@ class PoliciesPage extends Component {
         else this.savePolicy(policy);
     };
 
+    getPolicyFromId = policies => {
+        if (this.props.match.params.id) {
+            policies.map(policy => {
+                if (policy.id === this.props.match.params.id) {
+                    this.selectPolicy(policy);
+                }
+                return null;
+            });
+        }
+    };
+
     getPolicies = () =>
         axios.get('/v1/policies', { params: this.params }).then(response => {
             if (!response.data.policies || isEqual(this.state.policies, response.data.policies))
                 return;
             const { policies } = response.data;
             this.update('UPDATE_POLICIES', { policies });
+            this.getPolicyFromId(policies);
         });
 
     getPolicyDryRun = policy => {

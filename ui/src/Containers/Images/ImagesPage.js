@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import * as Icon from 'react-feather';
@@ -39,12 +40,8 @@ const imageDetailsMap = {
     }
 };
 
-const reducer = (action, prevState, nextState) => {
+const reducer = (action, prevState) => {
     switch (action) {
-        case 'SELECT_IMAGE':
-            return { selectedImage: nextState.image };
-        case 'UNSELECT_IMAGE':
-            return { selectedImage: null };
         case 'OPEN_MODAL':
             return { modalOpen: true };
         case 'CLOSE_MODAL':
@@ -63,28 +60,25 @@ class ImagesPage extends Component {
         setSearchOptions: PropTypes.func.isRequired,
         setSearchModifiers: PropTypes.func.isRequired,
         setSearchSuggestions: PropTypes.func.isRequired,
-        isViewFiltered: PropTypes.bool.isRequired
+        isViewFiltered: PropTypes.bool.isRequired,
+        history: ReactRouterPropTypes.history.isRequired,
+        location: ReactRouterPropTypes.location.isRequired,
+        match: ReactRouterPropTypes.match.isRequired
     };
 
     constructor(props) {
         super(props);
 
         this.state = {
-            selectedImage: null,
             modalOpen: false
         };
     }
 
-    onImageClick = image => {
-        this.selectImage(image);
-    };
-
-    selectImage = image => {
-        this.update('SELECT_IMAGE', { image });
-    };
-
-    unselectImage = () => {
-        this.update('UNSELECT_IMAGE');
+    getSelectedImage = () => {
+        if (this.props.match.params.sha) {
+            return this.props.images.find(image => image.name.sha === this.props.match.params.sha);
+        }
+        return null;
     };
 
     openModal = () => {
@@ -95,8 +89,16 @@ class ImagesPage extends Component {
         this.update('CLOSE_MODAL');
     };
 
-    update = (action, nextState) => {
-        this.setState(prevState => reducer(action, prevState, nextState));
+    update = action => {
+        this.setState(prevState => reducer(action, prevState));
+    };
+
+    updateSelectedImage = image => {
+        const urlSuffix = image && image.name && image.name.sha ? `/${image.name.sha}` : '';
+        this.props.history.push({
+            pathname: `/main/images${urlSuffix}`,
+            search: this.props.location.search
+        });
     };
 
     renderTable() {
@@ -119,7 +121,7 @@ class ImagesPage extends Component {
             }
         ];
         const rows = this.props.images;
-        return <Table columns={columns} rows={rows} onRowClick={this.onImageClick} />;
+        return <Table columns={columns} rows={rows} onRowClick={this.updateSelectedImage} />;
     }
 
     renderCollapsibleCard = (title, direction) => {
@@ -137,11 +139,11 @@ class ImagesPage extends Component {
     };
 
     renderSidePanel = () => {
-        if (!this.state.selectedImage) return '';
-        const { selectedImage } = this.state;
+        const selectedImage = this.getSelectedImage();
+        if (!selectedImage) return '';
         const header = selectedImage.name.fullName;
         return (
-            <Panel header={header} onClose={this.unselectImage} width="w-2/3">
+            <Panel header={header} onClose={this.updateSelectedImage} width="w-2/3">
                 <div className="flex flex-col overflow-y-scroll w-full bg-primary-100">
                     {this.renderOverview()}
                     {this.renderCVEs()}
@@ -152,7 +154,8 @@ class ImagesPage extends Component {
 
     renderOverview = () => {
         const title = 'OVERVIEW';
-        const { selectedImage } = this.state;
+        const selectedImage = this.getSelectedImage();
+        if (!selectedImage) return null;
         const imageDetail = {
             scanTime: selectedImage.scan ? selectedImage.scan.scanTime : '',
             sha: selectedImage.name.sha,
@@ -297,7 +300,8 @@ class ImagesPage extends Component {
                 headerClassName: 'font-600 text-right'
             }
         ];
-        const { scan } = this.state.selectedImage;
+        const selectedImage = this.getSelectedImage();
+        const { scan } = selectedImage;
         return (
             <div className="px-3 py-4">
                 <div className="alert-preview bg-white shadow text-primary-600 tracking-wide">
@@ -328,13 +332,9 @@ class ImagesPage extends Component {
     };
 
     renderDockerFileModal() {
-        if (!this.state.modalOpen || !this.state.selectedImage.metadata) return null;
-        return (
-            <DockerFileModal
-                data={this.state.selectedImage.metadata.layers}
-                onClose={this.closeModal}
-            />
-        );
+        const selectedImage = this.getSelectedImage();
+        if (!this.state.modalOpen || !selectedImage || !selectedImage.metadata) return null;
+        return <DockerFileModal data={selectedImage.metadata.layers} onClose={this.closeModal} />;
     }
 
     render() {

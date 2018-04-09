@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import * as Icon from 'react-feather';
@@ -64,17 +65,6 @@ const containerConfigMap = {
     }
 };
 
-const reducer = (action, prevState, nextState) => {
-    switch (action) {
-        case 'SELECT_DEPLOYMENT':
-            return { selectedDeployment: nextState.deployment };
-        case 'UNSELECT_DEPLOYMENT':
-            return { selectedDeployment: null };
-        default:
-            return prevState;
-    }
-};
-
 class RiskPage extends Component {
     static propTypes = {
         deployments: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -84,31 +74,27 @@ class RiskPage extends Component {
         setSearchOptions: PropTypes.func.isRequired,
         setSearchModifiers: PropTypes.func.isRequired,
         setSearchSuggestions: PropTypes.func.isRequired,
-        isViewFiltered: PropTypes.bool.isRequired
+        isViewFiltered: PropTypes.bool.isRequired,
+        history: ReactRouterPropTypes.history.isRequired,
+        location: ReactRouterPropTypes.location.isRequired,
+        match: ReactRouterPropTypes.match.isRequired
     };
 
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            selectedDeployment: null
-        };
-    }
-
-    onDeploymentClick = deployment => {
-        this.selectDeployment(deployment);
+    getSelectedDeployment = () => {
+        if (this.props.match.params.id) {
+            return this.props.deployments.find(
+                deployment => deployment.id === this.props.match.params.id
+            );
+        }
+        return null;
     };
 
-    selectDeployment = deployment => {
-        this.update('SELECT_DEPLOYMENT', { deployment });
-    };
-
-    unselectDeployment = () => {
-        this.update('UNSELECT_DEPLOYMENT');
-    };
-
-    update = (action, nextState) => {
-        this.setState(prevState => reducer(action, prevState, nextState));
+    updateSelectedDeployment = deployment => {
+        const urlSuffix = deployment && deployment.id ? `/${deployment.id}` : '';
+        this.props.history.push({
+            pathname: `/main/risk${urlSuffix}`,
+            search: this.props.location.search
+        });
     };
 
     renderTable() {
@@ -119,7 +105,7 @@ class RiskPage extends Component {
             { key: 'index', label: 'Priority' }
         ];
         const rows = this.props.deployments;
-        return <Table columns={columns} rows={rows} onRowClick={this.onDeploymentClick} />;
+        return <Table columns={columns} rows={rows} onRowClick={this.updateSelectedDeployment} />;
     }
 
     renderCollapsibleCard = (title, direction) => {
@@ -137,11 +123,12 @@ class RiskPage extends Component {
     };
 
     renderSidePanel = () => {
-        if (!this.state.selectedDeployment || this.props.isViewFiltered) return '';
-        const header = this.state.selectedDeployment.name;
+        const selectedDeployment = this.getSelectedDeployment();
+        if (!selectedDeployment || this.props.isViewFiltered) return null;
+        const header = selectedDeployment.name;
         const riskPanelTabs = [{ text: 'risk indicators' }, { text: 'deployment details' }];
         return (
-            <Panel header={header} onClose={this.unselectDeployment} width="w-2/3">
+            <Panel header={header} onClose={this.updateSelectedDeployment} width="w-2/3">
                 <Tabs headers={riskPanelTabs}>
                     {riskPanelTabs.map(tab => (
                         <TabContent key={tab.text}>{this.renderTab(tab.text)}</TabContent>
@@ -168,8 +155,9 @@ class RiskPage extends Component {
     };
 
     renderRiskIndicators = () => {
-        if (!this.state.selectedDeployment.risk) return '';
-        const { risk } = this.state.selectedDeployment;
+        const selectedDeployment = this.getSelectedDeployment();
+        if (!selectedDeployment || !selectedDeployment.risk) return null;
+        const { risk } = selectedDeployment;
         return risk.results.map(result => (
             <div className="px-3 py-4" key={result.name}>
                 <div
@@ -197,6 +185,7 @@ class RiskPage extends Component {
     };
 
     renderOverview = () => {
+        const selectedDeployment = this.getSelectedDeployment();
         const title = 'Overview';
         return (
             <div className="px-3 py-4">
@@ -209,7 +198,7 @@ class RiskPage extends Component {
                     >
                         <div className="h-full p-3">
                             <KeyValuePairs
-                                data={this.state.selectedDeployment}
+                                data={selectedDeployment}
                                 keyValueMap={deploymentDetailsMap}
                             />
                         </div>
@@ -220,6 +209,7 @@ class RiskPage extends Component {
     };
 
     renderContainerConfig = () => {
+        const selectedDeployment = this.getSelectedDeployment();
         const title = 'Container configuration';
         return (
             <div className="px-3 py-4">
@@ -231,7 +221,7 @@ class RiskPage extends Component {
                         transitionTime={100}
                     >
                         <div className="h-full p-3">
-                            {this.state.selectedDeployment.containers.map((container, index) => {
+                            {selectedDeployment.containers.map((container, index) => {
                                 if (!container.config) return null;
                                 return (
                                     <KeyValuePairs

@@ -19,9 +19,9 @@ class MainPage extends Component {
                 <ProtectedRoute path="/main/violations/:alertId?" component={ViolationsPage} />
                 <ProtectedRoute path="/main/compliance/:clusterId?" component={CompliancePage} />
                 <ProtectedRoute path="/main/integrations" component={IntegrationsPage} />
-                <ProtectedRoute path="/main/policies" component={PoliciesPage} />
-                <ProtectedRoute path="/main/risk" component={RiskPage} />
-                <ProtectedRoute path="/main/images" component={ImagesPage} />
+                <ProtectedRoute path="/main/policies/:id?" component={PoliciesPage} />
+                <ProtectedRoute path="/main/risk/:id?" component={RiskPage} />
+                <ProtectedRoute path="/main/images/:sha?" component={ImagesPage} />
                 <Redirect from="/main" to="/main/dashboard" />
             </Switch>
         </section>
