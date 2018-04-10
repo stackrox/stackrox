@@ -25,13 +25,13 @@ func (b *Indexer) DeleteDeployment(id string) error {
 func scopeToDeploymentQuery(scope *v1.Scope) *query.ConjunctionQuery {
 	conjunctionQuery := bleve.NewConjunctionQuery()
 	if scope.GetCluster() != "" {
-		conjunctionQuery.AddQuery(newTermMatch("cluster_name", scope.GetCluster()))
+		conjunctionQuery.AddQuery(newPrefixQuery("cluster_name", scope.GetCluster()))
 	}
 	if scope.GetNamespace() != "" {
-		conjunctionQuery.AddQuery(newTermMatch("namespace", scope.GetNamespace()))
+		conjunctionQuery.AddQuery(newPrefixQuery("namespace", scope.GetNamespace()))
 	}
 	if scope.GetLabel() != nil {
-		conjunctionQuery.AddQuery(newTermMatch("labels."+scope.GetLabel().GetKey(), scope.GetLabel().GetValue()))
+		conjunctionQuery.AddQuery(newPrefixQuery("labels."+scope.GetLabel().GetKey(), scope.GetLabel().GetValue()))
 	}
 	if len(conjunctionQuery.Conjuncts) == 0 {
 		return nil
