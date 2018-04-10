@@ -124,7 +124,7 @@ class RiskPage extends Component {
 
     renderSidePanel = () => {
         const selectedDeployment = this.getSelectedDeployment();
-        if (!selectedDeployment || this.props.isViewFiltered) return null;
+        if (!selectedDeployment) return null;
         const header = selectedDeployment.name;
         const riskPanelTabs = [{ text: 'risk indicators' }, { text: 'deployment details' }];
         return (
@@ -224,11 +224,22 @@ class RiskPage extends Component {
                             {selectedDeployment.containers.map((container, index) => {
                                 if (!container.config) return null;
                                 return (
-                                    <KeyValuePairs
-                                        data={container.config}
-                                        keyValueMap={containerConfigMap}
-                                        key={index}
-                                    />
+                                    <div key={index}>
+                                        <KeyValuePairs
+                                            data={container.config}
+                                            keyValueMap={containerConfigMap}
+                                        />
+                                        {container.image &&
+                                            container.image.name &&
+                                            container.image.name.fullName && (
+                                                <div className="flex py-3">
+                                                    <div className="pr-1">Image Name:</div>
+                                                    <div className="font-500">
+                                                        {container.image.name.fullName}
+                                                    </div>
+                                                </div>
+                                            )}
+                                    </div>
                                 );
                             })}
                         </div>
