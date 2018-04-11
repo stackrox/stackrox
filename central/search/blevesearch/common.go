@@ -49,19 +49,6 @@ func splitByDelimiters(field string) []string {
 	return strings.FieldsFunc(field, splitFunc)
 }
 
-// These are exact matches for things like cluster, namespace and labels
-func newTermMatch(field, text string) query.Query {
-	// Must split the fields via the spaces
-	var conjunction query.ConjunctionQuery
-	for _, val := range splitByDelimiters(text) {
-		val = strings.ToLower(val)
-		termQuery := bleve.NewTermQuery(val)
-		termQuery.SetField(field)
-		conjunction.AddQuery(termQuery)
-	}
-	return &conjunction
-}
-
 // These are inexact matches and the allowable distance is dictated by the global fuzziness
 func newPrefixQuery(field, prefix string) query.Query {
 	// Must split the fields via the spaces

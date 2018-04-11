@@ -29,8 +29,7 @@ var ImageOptionsMap = map[string]string{
 	"Dockerfile Instruction": "image.metadata.layers.instruction",
 	"Image Name":             "image.name.fullname",
 	"Image Registry":         "image.name.registry",
-	"Image Namespace":        "image.name.namespace",
-	"Image Repo":             "image.name.repo",
+	"Image Remote":           "image.name.remote",
 	"Image Tag":              "image.name.tag",
 }
 
@@ -67,8 +66,7 @@ var allOptionsMaps = map[string]string{
 	"Dockerfile Instruction": "image.metadata.layers.instruction",
 	"Image Name":             "image.name.full_name",
 	"Image Registry":         "image.name.registry",
-	"Image Namespace":        "image.name.namespace",
-	"Image Repo":             "image.name.repo",
+	"Image Remote":           "image.name.remote",
 	"Image Tag":              "image.name.tag",
 
 	// DeploymentOptions

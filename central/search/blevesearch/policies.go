@@ -25,7 +25,7 @@ func scopeToPolicyQuery(scope *v1.Scope) *query.ConjunctionQuery {
 	conjunctionQuery := bleve.NewConjunctionQuery()
 	if scope.GetCluster() != "" {
 		disjunction := bleve.NewDisjunctionQuery()
-		disjunction.AddQuery(newTermMatch("scope.cluster", scope.GetCluster()))
+		disjunction.AddQuery(newPrefixQuery("scope.cluster", scope.GetCluster()))
 		// Match everything then negate it
 		regexQuery := bleve.NewRegexpQuery(".*")
 		regexQuery.FieldVal = "scope.cluster"
@@ -38,13 +38,13 @@ func scopeToPolicyQuery(scope *v1.Scope) *query.ConjunctionQuery {
 		conjunctionQuery.AddQuery(disjunction)
 	}
 	if scope.GetNamespace() != "" {
-		conjunctionQuery.AddQuery(newTermMatch("scope.namespace", scope.GetNamespace()))
+		conjunctionQuery.AddQuery(newPrefixQuery("scope.namespace", scope.GetNamespace()))
 	}
 	if scope.GetLabel().GetKey() != "" {
-		conjunctionQuery.AddQuery(newTermMatch("scope.label.key", scope.GetLabel().GetKey()))
+		conjunctionQuery.AddQuery(newPrefixQuery("scope.label.key", scope.GetLabel().GetKey()))
 	}
 	if scope.GetLabel().GetValue() != "" {
-		conjunctionQuery.AddQuery(newTermMatch("scope.label.value", scope.GetLabel().GetValue()))
+		conjunctionQuery.AddQuery(newPrefixQuery("scope.label.value", scope.GetLabel().GetValue()))
 	}
 	if len(conjunctionQuery.Conjuncts) == 0 {
 		return nil

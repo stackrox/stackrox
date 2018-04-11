@@ -27,13 +27,13 @@ func (b *Indexer) DeleteAlert(id string) error {
 func scopeToAlertQuery(scope *v1.Scope) *query.ConjunctionQuery {
 	conjunctionQuery := bleve.NewConjunctionQuery()
 	if scope.GetCluster() != "" {
-		conjunctionQuery.AddQuery(newTermMatch("deployment.cluster_name", scope.GetCluster()))
+		conjunctionQuery.AddQuery(newPrefixQuery("deployment.cluster_name", scope.GetCluster()))
 	}
 	if scope.GetNamespace() != "" {
-		conjunctionQuery.AddQuery(newTermMatch("deployment.namespace", scope.GetNamespace()))
+		conjunctionQuery.AddQuery(newPrefixQuery("deployment.namespace", scope.GetNamespace()))
 	}
 	if scope.GetLabel() != nil {
-		conjunctionQuery.AddQuery(newTermMatch("deployment.labels."+scope.GetLabel().GetKey(), scope.GetLabel().GetValue()))
+		conjunctionQuery.AddQuery(newPrefixQuery("deployment.labels."+scope.GetLabel().GetKey(), scope.GetLabel().GetValue()))
 	}
 	if len(conjunctionQuery.Conjuncts) == 0 {
 		return nil
