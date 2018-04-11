@@ -288,4 +288,21 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
     color: hsl(230, 20%, 40%) !important;
 }
 
+.slick-initialized.slick-slider, .slick-list, .slick-track {
+    height:100%;
+}
+
+.carousel-prev-arrow, .carousel-next-arrow {
+    position: absolute;
+    top: -22%;
+}
+
+.carousel-prev-arrow {
+    left: 86%;
+}
+
+.carousel-next-arrow {
+    left: 91%;
+}
+
 @tailwind utilities;

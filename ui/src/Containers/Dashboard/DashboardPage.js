@@ -14,6 +14,8 @@ import {
 } from 'recharts';
 import { format, subDays } from 'date-fns';
 import * as Icon from 'react-feather';
+import Slider from 'react-slick';
+import { CarouselNextArrow, CarouselPrevArrow } from 'Components/CarouselArrows';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 
@@ -165,67 +167,100 @@ class DashboardPage extends Component {
 
     renderViolationsByCluster = () => {
         if (!this.props.violationsByCluster) return '';
-        const data = this.props.violationsByCluster.map(cluster => {
-            const dataPoint = {
-                name: cluster.group,
-                Critical: 0,
-                High: 0,
-                Medium: 0,
-                Low: 0
-            };
-            cluster.counts.forEach(d => {
-                dataPoint[severityLabels[d.severity]] = parseInt(d.count, 10);
-            });
-            return dataPoint;
-        });
+        const clusterCharts = [];
+        const settings = {
+            dots: false,
+            nextArrow: <CarouselNextArrow />,
+            prevArrow: <CarouselPrevArrow />
+        };
+
+        let i = 0;
+        const limit = 4;
+        while (i < this.props.violationsByCluster.length) {
+            let j = i;
+            let groupIndex = 0;
+            const barCharts = [];
+            while (j < this.props.violationsByCluster.length && groupIndex < limit) {
+                const cluster = this.props.violationsByCluster[j];
+                const dataPoint = {
+                    name: cluster.group,
+                    Critical: 0,
+                    High: 0,
+                    Medium: 0,
+                    Low: 0
+                };
+                cluster.counts.forEach(d => {
+                    dataPoint[severityLabels[d.severity]] = parseInt(d.count, 10);
+                });
+                barCharts.push(dataPoint);
+                j += 1;
+                groupIndex += 1;
+            }
+            clusterCharts.push(barCharts);
+            i += 4;
+        }
         return (
-            <ResponsiveContainer>
-                <BarChart
-                    data={data}
-                    margin={{
-                        top: 5,
-                        right: 30,
-                        left: 20,
-                        bottom: 5
-                    }}
-                >
-                    <XAxis dataKey="name" />
-                    <YAxis
-                        domain={[0, 'dataMax']}
-                        allowDecimals={false}
-                        label={{
-                            value: 'Count',
-                            angle: -90,
-                            position: 'insideLeft',
-                            textAnchor: 'middle'
-                        }}
-                    />
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <Tooltip />
-                    <Legend horizontalAlign="right" wrapperStyle={{ lineHeight: '40px' }} />
-                    {Object.keys(severityLabels).map(severity => {
-                        const arr = [];
-                        const bar = (
-                            <Bar
-                                name={severityLabels[severity]}
-                                key={severityLabels[severity]}
-                                dataKey={severityLabels[severity]}
-                                fill={severityColorMap[severity]}
-                            >
-                                {data.map(entry => (
-                                    <Cell
-                                        key={entry.name}
-                                        className="cursor-pointer"
-                                        onClick={this.makeBarClickHandler(entry.name, severity)}
+            <div className="p-0 h-full w-full">
+                <Slider {...settings}>
+                    {clusterCharts.map((data, index) => (
+                        <div key={index}>
+                            <ResponsiveContainer className="flex-1 h-full w-full">
+                                <BarChart
+                                    data={data}
+                                    margin={{
+                                        top: 5,
+                                        right: 30,
+                                        left: 20,
+                                        bottom: 5
+                                    }}
+                                >
+                                    <XAxis dataKey="name" />
+                                    <YAxis
+                                        domain={[0, 'dataMax']}
+                                        allowDecimals={false}
+                                        label={{
+                                            value: 'Count',
+                                            angle: -90,
+                                            position: 'insideLeft',
+                                            textAnchor: 'middle'
+                                        }}
                                     />
-                                ))}
-                            </Bar>
-                        );
-                        arr.push(bar);
-                        return arr;
-                    })}
-                </BarChart>
-            </ResponsiveContainer>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <Tooltip />
+                                    <Legend
+                                        horizontalAlign="right"
+                                        wrapperStyle={{ lineHeight: '40px' }}
+                                    />
+                                    {Object.keys(severityLabels).map(severity => {
+                                        const arr = [];
+                                        const bar = (
+                                            <Bar
+                                                name={severityLabels[severity]}
+                                                key={severityLabels[severity]}
+                                                dataKey={severityLabels[severity]}
+                                                fill={severityColorMap[severity]}
+                                            >
+                                                {data.map(entry => (
+                                                    <Cell
+                                                        key={entry.name}
+                                                        className="cursor-pointer"
+                                                        onClick={this.makeBarClickHandler(
+                                                            entry.name,
+                                                            severity
+                                                        )}
+                                                    />
+                                                ))}
+                                            </Bar>
+                                        );
+                                        arr.push(bar);
+                                        return arr;
+                                    })}
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    ))}
+                </Slider>
+            </div>
         );
     };
 
