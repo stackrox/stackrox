@@ -59,6 +59,9 @@ spec:
         ports:
         - name: api
           containerPort: 443
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
         volumeMounts:
         - name: certs
           mountPath: /run/secrets/stackrox.io/

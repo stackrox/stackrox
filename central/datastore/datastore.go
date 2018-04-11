@@ -296,12 +296,16 @@ func (ds *DataStore) searchDeployments(request *v1.ParsedSearchRequest) ([]*v1.D
 		deployments = append(deployments, deployment)
 		newResults = append(newResults, result)
 	}
+
 	return deployments, newResults, nil
 }
 
 // SearchRawDeployments retrieves deployments from the indexer and storage
 func (ds *DataStore) SearchRawDeployments(request *v1.ParsedSearchRequest) ([]*v1.Deployment, error) {
 	deployments, _, err := ds.searchDeployments(request)
+	if err != nil {
+		return nil, err
+	}
 	return deployments, err
 }
 

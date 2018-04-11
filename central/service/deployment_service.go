@@ -80,6 +80,9 @@ func (s *DeploymentService) GetDeployments(ctx context.Context, request *v1.RawQ
 		}
 		resp.Deployments = deployments
 	}
+	sort.SliceStable(resp.Deployments, func(i, j int) bool {
+		return resp.Deployments[i].GetRisk().GetScore() > resp.Deployments[j].GetRisk().GetScore()
+	})
 	return resp, nil
 }
 

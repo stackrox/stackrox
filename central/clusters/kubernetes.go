@@ -50,6 +50,9 @@ spec:
     spec:
       containers:
       - image: {{.Image}}
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
         env:
         - name: {{.PublicEndpointEnv}}
           value: {{.PublicEndpoint}}
