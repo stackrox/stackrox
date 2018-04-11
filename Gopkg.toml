@@ -125,3 +125,7 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
 [[constraint]]
   name = "github.com/prometheus/client_golang"
   version = "v0.8.0"
+
+[[constraint]]
+  name = "github.com/grpc-ecosystem/go-grpc-prometheus"
+  version = "v1.1"

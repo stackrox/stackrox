@@ -17,13 +17,22 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-const grpcAddr = ":443"
-const endpoint = "localhost" + grpcAddr
+const (
+	grpcAddr = ":443"
+	endpoint = "localhost" + grpcAddr
+
+	maxGRPCMsgSize = 10 * 1024 * 1024 // 10MB
+)
+
+func init() {
+	grpc_prometheus.EnableHandlingTimeHistogram()
+}
 
 var (
 	log = logging.LoggerForModule()
@@ -73,6 +82,7 @@ func (a *apiImpl) Register(service APIService) {
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	u := []grpc.UnaryServerInterceptor{
+		grpc_prometheus.UnaryServerInterceptor,
 		grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
 		mtls.UnaryInterceptor(),
 	}
@@ -87,6 +97,7 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 
 func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	s := []grpc.StreamServerInterceptor{
+		grpc_prometheus.StreamServerInterceptor,
 		grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
 		mtls.StreamInterceptor(),
 	}
@@ -137,6 +148,8 @@ func (a *apiImpl) run() {
 		grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(a.unaryInterceptors()...),
 		),
+		grpc.MaxRecvMsgSize(maxGRPCMsgSize),
+		grpc.MaxSendMsgSize(maxGRPCMsgSize),
 	)
 
 	for _, service := range a.apiServices {
