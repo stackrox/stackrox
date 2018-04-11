@@ -204,13 +204,13 @@ func (d *dtr) Test() error {
 
 // GetLastScan retrieves the most recent scan
 func (d *dtr) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
-	log.Infof("Getting latest scan for image %v", image)
+	log.Infof("Getting latest scan for image %v", image.GetName().GetFullName())
 	imageScans, err := d.GetScans(image)
 	if err != nil {
 		return nil, err
 	}
 	if len(imageScans) == 0 {
-		return nil, fmt.Errorf("no scans were found for image %v", image.String())
+		return nil, fmt.Errorf("no scans were found for image %v", image.GetName().GetFullName())
 	}
 	return imageScans[0], nil
 }

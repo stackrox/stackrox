@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -32,6 +33,8 @@ type Sensor struct {
 	ServiceRegistrationFunc func(a *Sensor)
 	ImageIntegrationPoller  *sources.Client
 
+	DeploymentCache map[string]*v1.Deployment
+
 	ClusterID          string
 	CentralEndpoint    string
 	AdvertisedEndpoint string
@@ -43,6 +46,8 @@ type Sensor struct {
 // New returns a new Sensor.
 func New() *Sensor {
 	return &Sensor{
+		DeploymentCache: make(map[string]*v1.Deployment),
+
 		ClusterID:          env.ClusterID.Setting(),
 		CentralEndpoint:    env.CentralEndpoint.Setting(),
 		AdvertisedEndpoint: env.AdvertisedEndpoint.Setting(),
@@ -114,6 +119,20 @@ func (a *Sensor) relayEvents() {
 	for {
 		select {
 		case ev := <-a.Listener.Events():
+			if pastDeployment, ok := a.DeploymentCache[ev.Deployment.GetId()]; ok && ev.Action != v1.ResourceAction_REMOVE_RESOURCE {
+				pastDeployment.UpdatedAt = ev.Deployment.GetUpdatedAt()
+				pastDeployment.Version = ev.Deployment.GetVersion()
+				if reflect.DeepEqual(pastDeployment, ev.Deployment) {
+					a.Logger.Infof("De-duping deployment '%s' ('%s') as there have been no tracked changes to the deployment", pastDeployment.GetId(), pastDeployment.GetName())
+					continue
+				}
+			}
+			if ev.Action == v1.ResourceAction_REMOVE_RESOURCE {
+				delete(a.DeploymentCache, ev.Deployment.GetId())
+			} else {
+				a.DeploymentCache[ev.Deployment.GetId()] = ev.DeploymentEvent.Deployment
+			}
+
 			if resp, err := a.reportDeploymentEvent(ev.DeploymentEvent); err != nil {
 				a.Logger.Errorf("Couldn't report event %s for deployment %s: %+v", ev.GetAction(), ev.GetDeployment().GetName(), err)
 			} else {
