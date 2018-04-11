@@ -49,6 +49,11 @@ message SearchResult {
 
 message SearchResponse {
     repeated SearchResult results = 1;
+    message Count {
+        SearchCategory category = 1;
+        int64 count             = 2;
+    }
+    repeated Count counts         = 2;
 }
 
 message SearchOptionsRequest {

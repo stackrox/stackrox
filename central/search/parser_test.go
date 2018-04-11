@@ -157,6 +157,7 @@ func TestParseRawQuery(t *testing.T) {
 				Values: []string{"field2"},
 			},
 		},
+		Scopes: []*v1.Scope{},
 	}
 
 	actualRequest, err = ParseRawQuery(query)
@@ -174,6 +175,7 @@ func TestParseRawQuery(t *testing.T) {
 				Values: []string{"field2"},
 			},
 		},
+		Scopes:      []*v1.Scope{},
 		StringQuery: "rawquery",
 	}
 	actualRequest, err = ParseRawQuery(query)

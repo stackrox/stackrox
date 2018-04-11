@@ -158,13 +158,15 @@ func ParseRawQuery(query string) (*v1.ParsedSearchRequest, error) {
 	}
 	scopes = populateNamespaces(scopes, scopeFields["Namespace"])
 	scopes = populateClusters(scopes, scopeFields["Cluster"])
-	if len(scopes) == 0 {
-		return parsedRequest, nil
-	}
 	parsedRequest.Scopes = make([]*v1.Scope, 0, len(scopes))
+
 	for _, scope := range scopes {
 		diffScope := scope
 		parsedRequest.Scopes = append(parsedRequest.Scopes, &diffScope)
+	}
+
+	if len(parsedRequest.GetScopes()) == 0 && len(parsedRequest.GetFields()) == 0 && parsedRequest.GetStringQuery() == "" {
+		return nil, errors.New("After parsing, query is empty")
 	}
 	return parsedRequest, nil
 }

@@ -73,7 +73,6 @@ func (s *SearchService) Search(ctx context.Context, request *v1.RawSearchRequest
 	if len(categories) == 0 {
 		categories = getAllCategories()
 	}
-
 	for _, category := range categories {
 		searchFunc, ok := searchFuncMap[category]
 		if !ok {
@@ -84,6 +83,7 @@ func (s *SearchService) Search(ctx context.Context, request *v1.RawSearchRequest
 			log.Error(err)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
+		response.Counts = append(response.Counts, &v1.SearchResponse_Count{Category: category, Count: int64(len(results))})
 		response.Results = append(response.Results, results...)
 	}
 	// Sort from highest score to lowest
