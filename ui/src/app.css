@@ -305,4 +305,8 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
     left: 91%;
 }
 
+.recharts-responsive-container .recharts-tooltip-cursor{
+    fill-opacity: 0.0;
+}
+
 @tailwind utilities;
