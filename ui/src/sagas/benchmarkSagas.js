@@ -2,37 +2,48 @@ import { delay } from 'redux-saga';
 import { all, take, takeLatest, call, fork, put, select, race } from 'redux-saga/effects';
 
 import * as service from 'services/BenchmarksService';
+import { fetchClusters } from 'services/ClustersService';
 import { selectors } from 'reducers';
-import { actions, types } from 'reducers/benchmarks';
+import { actions as benchmarkActions, types } from 'reducers/benchmarks';
+import { actions as clusterActions } from 'reducers/clusters';
 import { types as locationActionTypes } from 'reducers/routes';
 
 const dashboardPath = '/main/dashboard';
 const compliancePath = '/main/compliance';
 
+export function* getClusters() {
+    try {
+        const result = yield call(fetchClusters);
+        yield put(clusterActions.fetchClusters.success(result.response));
+    } catch (error) {
+        yield put(clusterActions.fetchClusters.failure(error));
+    }
+}
+
 export function* getBenchmarks() {
     try {
         const result = yield call(service.fetchBenchmarks);
-        yield put(actions.fetchBenchmarks.success(result.response));
+        yield put(benchmarkActions.fetchBenchmarks.success(result.response));
     } catch (error) {
-        yield put(actions.fetchBenchmarks.failure(error));
+        yield put(benchmarkActions.fetchBenchmarks.failure(error));
     }
 }
 
 export function* getUpdatedBenchmarks() {
     try {
         const result = yield call(service.fetchLastScansByBenchmark);
-        yield put(actions.fetchLastScansByBenchmark.success(result.response));
+        yield put(benchmarkActions.fetchLastScansByBenchmark.success(result.response));
     } catch (error) {
-        yield put(actions.fetchLastScansByBenchmark.failure(error));
+        yield put(benchmarkActions.fetchLastScansByBenchmark.failure(error));
     }
 }
 
 export function* getLastScannedBenchmark(action) {
     try {
         const result = yield call(service.fetchLastScan, action.benchmarkName);
-        yield put(actions.fetchLastScan.success(result));
+        yield put(benchmarkActions.fetchLastScan.success(result));
     } catch (error) {
-        yield put(actions.fetchLastScan.failure(error));
+        yield put(benchmarkActions.fetchLastScan.failure(error));
     }
 }
 
@@ -49,16 +60,16 @@ export function* updateBenchmarkSchedule() {
             yield call(service.createSchedule, schedule);
         }
     } catch (error) {
-        yield put(actions.fetchLastScan.failure(error));
+        yield put(benchmarkActions.fetchLastScan.failure(error));
     }
 }
 
 export function* getBenchmarkSchedule({ params: benchmark }) {
     try {
         const result = yield call(service.fetchSchedule, benchmark);
-        yield put(actions.fetchBenchmarkSchedule.success(result));
+        yield put(benchmarkActions.fetchBenchmarkSchedule.success(result));
     } catch (error) {
-        yield put(actions.fetchBenchmarkSchedule.failure(error));
+        yield put(benchmarkActions.fetchBenchmarkSchedule.failure(error));
     }
 }
 
@@ -66,7 +77,7 @@ export function* triggerBenchmarkScan({ params: benchmark }) {
     try {
         yield call(service.triggerScan, benchmark);
     } catch (error) {
-        yield put(actions.triggerScan.failure(error));
+        yield put(benchmarkActions.triggerScan.failure(error));
     }
 }
 
@@ -74,10 +85,10 @@ function* pollBenchmarkScanResults({ params: benchmark }) {
     while (true) {
         try {
             const result = yield call(service.fetchLastScan, benchmark);
-            yield put(actions.fetchLastScan.success(result));
+            yield put(benchmarkActions.fetchLastScan.success(result));
             yield call(delay, 5000); // poll every 5 sec
         } catch (error) {
-            yield put(actions.fetchLastScan.failure(error));
+            yield put(benchmarkActions.fetchLastScan.failure(error));
         }
     }
 }
@@ -114,6 +125,7 @@ export function* watchLocation() {
         }
         if (location && location.pathname && location.pathname.startsWith(compliancePath)) {
             yield fork(getBenchmarks);
+            yield fork(getClusters);
         }
     }
 }

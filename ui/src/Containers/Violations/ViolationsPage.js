@@ -161,10 +161,11 @@ class ViolationsPage extends Component {
     }
 
     render() {
+        const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
         return (
             <section className="flex flex-1 h-full">
                 <div className="flex flex-1 flex-col">
-                    <PageHeader header="Violations" isViewFiltered={this.props.isViewFiltered}>
+                    <PageHeader header="Violations" subHeader={subHeader}>
                         <SearchInput
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}

@@ -17,7 +17,7 @@ describe('Benchmark Sagas Test', () => {
         ({ value } = gen.next({
             type: locationActionTypes.LOCATION_CHANGE,
             payload: {
-                pathname: '/main/dashboard'
+                pathname: '/main/dashboard/'
             }
         }));
         expect(value).toEqual(fork(getUpdatedBenchmarks));
@@ -29,7 +29,7 @@ describe('Benchmark Sagas Test', () => {
         ({ value } = gen.next({
             type: locationActionTypes.LOCATION_CHANGE,
             payload: {
-                pathname: '/main/compliance'
+                pathname: '/main/compliance/'
             }
         }));
         expect(value).toEqual(fork(getBenchmarks));
@@ -41,7 +41,7 @@ describe('Benchmark Sagas Test', () => {
         ({ value } = gen.next({
             type: locationActionTypes.LOCATION_CHANGE,
             payload: {
-                pathname: '/main/violations'
+                pathname: '/main/violations/'
             }
         }));
         expect(value).not.toEqual(fork(getUpdatedBenchmarks));
