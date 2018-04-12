@@ -166,7 +166,11 @@ class DashboardPage extends Component {
     };
 
     renderViolationsByCluster = () => {
-        if (!this.props.violationsByCluster) return '';
+        if (!this.props.violationsByCluster || !this.props.violationsByCluster.length) {
+            return (
+                <div className="flex flex-1 items-center justify-center">No Clusters Available</div>
+            );
+        }
         const clusterCharts = [];
         const settings = {
             dots: false,

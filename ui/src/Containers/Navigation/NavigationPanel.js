@@ -71,6 +71,11 @@ class NavigationPanel extends Component {
                 <li className="border-b-2 border-primary-800 px-1 py-5 pl-2 pr-2 text-white text-base-800">
                     View Benchmarks per Cluster
                 </li>
+                {!this.state.clusters.length && (
+                    <li className="flex flex-col flex-1 pl-2 pr-2 justify-center text-center text-white text-sm">
+                        No clusters available
+                    </li>
+                )}
                 {this.state.clusters.map(cluster => (
                     <li key={cluster.id} className="flex flex-col text-sm">
                         <Link
