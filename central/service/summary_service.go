@@ -1,7 +1,7 @@
 package service
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/datastore"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -13,15 +13,15 @@ import (
 )
 
 // NewSummaryService returns the SummaryService object.
-func NewSummaryService(storage db.Storage) *SummaryService {
+func NewSummaryService(datastore *datastore.DataStore) *SummaryService {
 	return &SummaryService{
-		storage: storage,
+		datastore: datastore,
 	}
 }
 
 // SummaryService serves Summary APIs.
 type SummaryService struct {
-	storage db.Storage
+	datastore *datastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -41,25 +41,25 @@ func (s *SummaryService) AuthFuncOverride(ctx context.Context, fullMethodName st
 
 // GetSummaryCounts returns the global counts of alerts, clusters, deployments, and images.
 func (s *SummaryService) GetSummaryCounts(context.Context, *empty.Empty) (*v1.SummaryCountsResponse, error) {
-	alerts, err := s.storage.CountAlerts()
+	alerts, err := s.datastore.CountAlerts()
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	clusters, err := s.storage.CountClusters()
+	clusters, err := s.datastore.CountClusters()
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	deployments, err := s.storage.CountDeployments()
+	deployments, err := s.datastore.CountDeployments()
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	images, err := s.storage.CountImages()
+	images, err := s.datastore.CountImages()
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())

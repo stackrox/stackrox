@@ -55,6 +55,12 @@ func (ds *DataStore) UpdateAlert(alert *v1.Alert) error {
 	return ds.indexer.AddAlert(alert)
 }
 
+// CountAlerts returns the number of alerts that are active
+func (ds *DataStore) CountAlerts() (int, error) {
+	alerts, err := ds.GetAlerts(&v1.GetAlertsRequest{Stale: []bool{false}})
+	return len(alerts), err
+}
+
 // RemoveAlert removes an alert from the storage and the indexer
 func (ds *DataStore) RemoveAlert(id string) error {
 	if err := ds.Storage.RemoveAlert(id); err != nil {
