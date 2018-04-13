@@ -44,7 +44,8 @@ class LeftNavigation extends Component {
         super(props);
         this.state = {
             panelType: null,
-            showPanel: false
+            clickOnPanelItem: false,
+            selectedPanel: ''
         };
     }
 
@@ -52,8 +53,8 @@ class LeftNavigation extends Component {
         window.onpopstate = e => {
             const url = e.srcElement.location.pathname;
             const link = find(navLinks, navLink => url === navLink.to);
-            if (this.state.showPanel || link) {
-                this.setState({ panelType: null, showPanel: false });
+            if (this.state.panelType || link) {
+                this.setState({ panelType: null });
             }
         };
     }
@@ -64,28 +65,34 @@ class LeftNavigation extends Component {
         }
         if (navLink.to === '') {
             if (this.state.panelType && this.state.panelType === navLink.panelType) {
-                if (!this.state.showPanel) {
-                    return 'bg-primary-600 text-white';
-                }
                 return 'text-white bg-primary-700';
+            } else if (
+                !this.state.panelType &&
+                this.state.clickOnPanelItem &&
+                this.state.selectedPanel === navLink.text.toLowerCase()
+            ) {
+                return 'text-white bg-primary-600';
             }
             return 'bg-primary-800';
         }
         return '';
     };
 
-    closePanel = clickOutside => () => {
-        if (clickOutside) this.setState({ panelType: null });
-        this.setState({ showPanel: false });
+    closePanel = (clickOnPanelItem, selectedPanel) => () => {
+        if (clickOnPanelItem) this.setState({ clickOnPanelItem, selectedPanel });
+        this.setState({ panelType: null });
     };
 
     showNavigationPanel = navLink => e => {
-        if (navLink.panelType) {
+        if (navLink.panelType && this.state.panelType !== navLink.panelType) {
             e.preventDefault();
-            this.setState({ panelType: navLink.panelType, showPanel: true });
-            return;
+            this.setState({ panelType: navLink.panelType });
+        } else {
+            if (this.state.panelType === navLink.panelType) {
+                e.preventDefault();
+            }
+            this.setState({ panelType: null, clickOnPanelItem: false });
         }
-        this.setState({ panelType: null, showPanel: false });
     };
 
     renderLink = (navLink, i, arr) => (
@@ -113,7 +120,7 @@ class LeftNavigation extends Component {
     );
 
     renderNavigationPanel = () => {
-        if (!this.state.showPanel) return '';
+        if (!this.state.panelType) return '';
         return <NavigationPanel panelType={this.state.panelType} onClose={this.closePanel} />;
     };
 
