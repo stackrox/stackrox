@@ -128,12 +128,11 @@ func setupNginxLatestTagDeployment(t *testing.T) {
 }
 
 func teardownNotifier(t *testing.T, conn *grpc.ClientConn) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	service := v1.NewNotifierServiceClient(conn)
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := service.DeleteNotifier(ctx, &v1.DeleteNotifierRequest{Id: notifierConfig.GetId(), Force: true})
+	cancel()
 	require.NoError(t, err)
 	notifierConfig.Id = ""
 }
@@ -147,14 +146,12 @@ func teardownNginxLatestTagDeployment(t *testing.T) {
 }
 
 func verifyPolicyHasNoNotifier(t *testing.T, conn *grpc.ClientConn) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	service := v1.NewPolicyServiceClient(conn)
-
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
 		Query: getPolicyQuery(expectedLatestTagPolicy),
 	})
+	cancel()
 	require.NoError(t, err)
 	require.Len(t, resp.GetPolicies(), 1)
 
@@ -164,18 +161,17 @@ func verifyPolicyHasNoNotifier(t *testing.T, conn *grpc.ClientConn) {
 }
 
 func verifyAlertsForLatestTag(t *testing.T, alert *v1.Alert) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
 	require.NoError(t, err)
 
 	service := v1.NewAlertServiceClient(conn)
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	alerts, err := service.GetAlerts(ctx, &v1.GetAlertsRequest{
 		Query: getDeploymentQuery(nginxDeploymentName) + "+" + getPolicyQuery(expectedLatestTagPolicy),
 		Stale: []bool{false},
 	})
+	cancel()
 	require.NoError(t, err)
 	require.Len(t, alerts.GetAlerts(), 1)
 

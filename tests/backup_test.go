@@ -18,9 +18,6 @@ import (
 
 // This doesn't actually check for the existence of a specific deployment, but any deployment
 func checkDeploymentExists(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
 	require.NoError(t, err)
 
@@ -28,7 +25,9 @@ func checkDeploymentExists(t *testing.T) {
 
 	// 10 seconds should be enough for a deployment to be returned
 	for i := 0; i < 5; i++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		resp, err := service.GetDeployments(ctx, &v1.RawQuery{})
+		cancel()
 		require.NoError(t, err)
 		if len(resp.Deployments) != 0 {
 			return

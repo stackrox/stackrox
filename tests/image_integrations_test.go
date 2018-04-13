@@ -123,13 +123,12 @@ func verifyMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.Ima
 		return false
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	deploymentService := v1.NewDeploymentServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	deployments, err := deploymentService.GetDeployments(ctx, &v1.RawQuery{
 		Query: getDeploymentQuery(alpineDeploymentName),
 	})
+	cancel()
 	require.NoError(t, err)
 	require.NotEmpty(t, deployments.GetDeployments())
 
@@ -143,10 +142,11 @@ func verifyMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.Ima
 	}
 
 	alertService := v1.NewAlertServiceClient(conn)
-
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	alerts, err := alertService.GetAlerts(ctx, &v1.GetAlertsRequest{
 		Query: getPolicyQuery(expectedPort22Policy) + "+" + getDeploymentQuery(alpineDeploymentName),
 	})
+	cancel()
 	require.NoError(t, err)
 	require.NotEmpty(t, alerts.GetAlerts())
 
@@ -163,35 +163,39 @@ func verifyMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.Ima
 }
 
 func verifyImageMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.ImageMetadata) bool) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	imageService := v1.NewImageServiceClient(conn)
 
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		image, err := imageService.GetImage(ctx, &v1.ResourceByID{Id: alpineImageSha})
-		if err != nil && ctx.Err() == context.DeadlineExceeded {
-			t.Error(err)
+	timer := time.NewTimer(1 * time.Minute)
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			image, err := imageService.GetImage(ctx, &v1.ResourceByID{Id: alpineImageSha})
+			cancel()
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+			if err == nil && image != nil {
+				return assertFunc(image.GetMetadata())
+			}
+		case <-timer.C:
+			logger.Error("Failed to verify image metadata")
 			return false
 		}
-
-		if err == nil && image != nil {
-			return assertFunc(image.GetMetadata())
-		}
 	}
-
-	return false
 }
 
 func verifyCreateImageIntegration(t *testing.T, conn *grpc.ClientConn) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	service := v1.NewImageIntegrationServiceClient(conn)
-
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	postResp, err := service.PostImageIntegration(ctx, integration)
+	cancel()
 	require.NoError(t, err)
 
 	integration.Id = postResp.GetId()
@@ -199,15 +203,17 @@ func verifyCreateImageIntegration(t *testing.T, conn *grpc.ClientConn) {
 }
 
 func verifyReadImageIntegration(t *testing.T, conn *grpc.ClientConn) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	service := v1.NewImageIntegrationServiceClient(conn)
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	getResp, err := service.GetImageIntegration(ctx, &v1.ResourceByID{Id: integration.GetId()})
+	cancel()
 	require.NoError(t, err)
 	assert.Equal(t, integration, getResp)
 
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	getManyResp, err := service.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{Name: integration.GetName()})
+	cancel()
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(getManyResp.GetIntegrations()))
 	if len(getManyResp.GetIntegrations()) > 0 {
@@ -216,29 +222,31 @@ func verifyReadImageIntegration(t *testing.T, conn *grpc.ClientConn) {
 }
 
 func verifyUpdateImageIntegration(t *testing.T, conn *grpc.ClientConn) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	service := v1.NewImageIntegrationServiceClient(conn)
 
 	integration.Name = "updated docker registry"
-
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := service.PutImageIntegration(ctx, integration)
+	cancel()
 	require.NoError(t, err)
 
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	getResp, err := service.GetImageIntegration(ctx, &v1.ResourceByID{Id: integration.GetId()})
+	cancel()
 	require.NoError(t, err)
 	assert.Equal(t, integration, getResp)
 }
 
 func verifyDeleteImageIntegration(t *testing.T, conn *grpc.ClientConn) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 	service := v1.NewImageIntegrationServiceClient(conn)
-
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := service.DeleteImageIntegration(ctx, &v1.ResourceByID{Id: integration.GetId()})
+	cancel()
 	require.NoError(t, err)
 
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	_, err = service.GetImageIntegration(ctx, &v1.ResourceByID{Id: integration.GetId()})
+	cancel()
 	s, ok := status.FromError(err)
 	assert.True(t, ok)
 	assert.Equal(t, codes.NotFound, s.Code())

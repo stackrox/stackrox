@@ -36,9 +36,6 @@ func setupNginxLatestTagDeploymentForEnforcement(t *testing.T) {
 }
 
 func verifyDeploymentScaledToZero(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
 	require.NoError(t, err)
 
@@ -48,9 +45,11 @@ func verifyDeploymentScaledToZero(t *testing.T) {
 	defer ticker.Stop()
 
 	for range ticker.C {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		deployments, err := service.GetDeployments(ctx, &v1.RawQuery{
 			Query: getDeploymentQuery(nginxDeploymentName),
 		})
+		cancel()
 		if err != nil && ctx.Err() == context.DeadlineExceeded {
 			t.Fatal(err)
 		}
@@ -100,14 +99,12 @@ func teardownTestEnforcement(t *testing.T) {
 }
 
 func togglePolicyEnforcement(t *testing.T, conn *grpc.ClientConn, enable bool) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	service := v1.NewPolicyServiceClient(conn)
-
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
 		Query: getPolicyQuery(expectedLatestTagPolicy),
 	})
+	cancel()
 	require.NoError(t, err)
 	require.Len(t, resp.GetPolicies(), 1)
 
@@ -118,7 +115,8 @@ func togglePolicyEnforcement(t *testing.T, conn *grpc.ClientConn, enable bool) {
 	} else {
 		p.Enforcement = v1.EnforcementAction_UNSET_ENFORCEMENT
 	}
-
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	_, err = service.PutPolicy(ctx, p)
+	cancel()
 	require.NoError(t, err)
 }

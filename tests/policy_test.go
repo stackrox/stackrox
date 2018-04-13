@@ -115,16 +115,16 @@ func verifyCreatePolicy(t *testing.T, service v1.PolicyServiceClient) {
 
 func verifyReadPolicy(t *testing.T, service v1.PolicyServiceClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	getResp, err := service.GetPolicy(ctx, &v1.ResourceByID{Id: policy.GetId()})
+	cancel()
 	require.NoError(t, err)
 	assert.Equal(t, policy, getResp)
 
-	logger.Infof("Policy name: %s", getPolicyQuery(policy.GetName()))
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	getManyResp, err := service.GetPolicies(ctx, &v1.RawQuery{
 		Query: getPolicyQuery(policy.GetName()),
 	})
+	cancel()
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(getManyResp.GetPolicies()))
 	if len(getManyResp.GetPolicies()) > 0 {
@@ -133,31 +133,34 @@ func verifyReadPolicy(t *testing.T, service v1.PolicyServiceClient) {
 }
 
 func verifyUpdatePolicy(t *testing.T, service v1.PolicyServiceClient) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	policy.Severity = v1.Severity_LOW_SEVERITY
 	policy.Description = "updated description"
 	policy.Disabled = true
 	policy.ImagePolicy.SetScanAgeDays = &v1.ImagePolicy_ScanAgeDays{ScanAgeDays: 10}
 	policy.PrivilegePolicy.AddCapabilities = []string{"CAP_SYS_MODULE"}
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := service.PutPolicy(ctx, policy)
+	cancel()
 	require.NoError(t, err)
 
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	getResp, err := service.GetPolicy(ctx, &v1.ResourceByID{Id: policy.GetId()})
+	cancel()
 	require.NoError(t, err)
 	assert.Equal(t, policy, getResp)
 }
 
 func verifyDeletePolicy(t *testing.T, service v1.PolicyServiceClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	_, err := service.DeletePolicy(ctx, &v1.ResourceByID{Id: policy.GetId()})
+	cancel()
+
 	require.NoError(t, err)
 
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	_, err = service.GetPolicy(ctx, &v1.ResourceByID{Id: policy.GetId()})
+	cancel()
 	s, ok := status.FromError(err)
 	assert.True(t, ok)
 	assert.Equal(t, codes.NotFound, s.Code())

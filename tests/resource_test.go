@@ -15,15 +15,15 @@ import (
 )
 
 func TestClusters(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 
 	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
 	require.NoError(t, err)
 
 	service := v1.NewClustersServiceClient(conn)
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	clusters, err := service.GetClusters(ctx, &empty.Empty{})
+	cancel()
 	require.NoError(t, err)
 	require.Len(t, clusters.GetClusters(), 1)
 
@@ -37,7 +37,9 @@ func TestClusters(t *testing.T) {
 		assert.Equal(t, sha, img.GetName().GetTag())
 	}
 
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	cByID, err := service.GetCluster(ctx, &v1.ResourceByID{Id: c.GetId()})
+	cancel()
 	require.NoError(t, err)
 
 	cByID.GetCluster().LastContact = c.GetLastContact()

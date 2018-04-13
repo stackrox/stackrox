@@ -98,9 +98,6 @@ func teardownNginxDeployment(t *testing.T) {
 }
 
 func waitForDeployment(t *testing.T, deploymentName string) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
 	require.NoError(t, err)
 
@@ -109,29 +106,37 @@ func waitForDeployment(t *testing.T, deploymentName string) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		deployments, err := service.GetDeployments(ctx, &v1.RawQuery{
-			Query: getDeploymentQuery(deploymentName),
-		},
-		)
-		if err != nil && ctx.Err() == context.DeadlineExceeded {
-			t.Fatal(err)
-		}
+	timer := time.NewTimer(1 * time.Minute)
+	defer timer.Stop()
 
-		if err == nil && len(deployments.GetDeployments()) > 0 {
-			d := deployments.GetDeployments()[0]
-
-			if len(d.GetContainers()) > 0 && d.GetContainers()[0].GetImage().GetName().GetSha() != "" {
-				return
+	for {
+		select {
+		case <-ticker.C:
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			deployments, err := service.GetDeployments(ctx, &v1.RawQuery{
+				Query: getDeploymentQuery(deploymentName),
+			},
+			)
+			cancel()
+			if err != nil {
+				logger.Error(err)
+				continue
 			}
+
+			if err == nil && len(deployments.GetDeployments()) > 0 {
+				d := deployments.GetDeployments()[0]
+
+				if len(d.GetContainers()) > 0 && d.GetContainers()[0].GetImage().GetName().GetSha() != "" {
+					return
+				}
+			}
+		case <-timer.C:
+			t.Fatalf("Timed out waiting for deployment %s", deploymentName)
 		}
 	}
 }
 
 func waitForTermination(t *testing.T, deploymentName string) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
 	require.NoError(t, err)
 
@@ -140,30 +145,39 @@ func waitForTermination(t *testing.T, deploymentName string) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		deployments, err := service.GetDeployments(ctx, &v1.RawQuery{
-			Query: fmt.Sprintf("Deployment Name:%s", deploymentName),
-		})
-		if err != nil && ctx.Err() == context.DeadlineExceeded {
-			t.Fatal(err)
-		}
+	timer := time.NewTimer(1 * time.Minute)
+	defer timer.Stop()
 
-		if err == nil && len(deployments.GetDeployments()) == 0 {
-			return
+	for {
+		select {
+		case <-ticker.C:
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			deployments, err := service.GetDeployments(ctx, &v1.RawQuery{
+				Query: fmt.Sprintf("Deployment Name:%s", deploymentName),
+			})
+			cancel()
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+
+			if err == nil && len(deployments.GetDeployments()) == 0 {
+				return
+			}
+		case <-timer.C:
+			t.Fatalf("Timed out waiting for deployment %s to stop", deploymentName)
 		}
 	}
 }
 
 func addPolicyClusterScope(t *testing.T, policyName string) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
 	require.NoError(t, err)
 
 	clusterService := v1.NewClustersServiceClient(conn)
-
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	clusters, err := clusterService.GetClusters(ctx, &empty.Empty{})
+	cancel()
 	require.NoError(t, err)
 	require.Len(t, clusters.GetClusters(), 1)
 
@@ -172,9 +186,11 @@ func addPolicyClusterScope(t *testing.T, policyName string) {
 
 	policyService := v1.NewPolicyServiceClient(conn)
 
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	policyResp, err := policyService.GetPolicies(ctx, &v1.RawQuery{
 		Query: fmt.Sprintf("Policy Name:%s", policyName),
 	})
+	cancel()
 	require.NoError(t, err)
 	require.Len(t, policyResp.GetPolicies(), 1)
 
@@ -182,37 +198,36 @@ func addPolicyClusterScope(t *testing.T, policyName string) {
 	policy.Scope = append(policy.Scope, &v1.Scope{
 		Cluster: clusterID,
 	})
-
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	_, err = policyService.PutPolicy(ctx, policy)
+	cancel()
 	require.NoError(t, err)
 }
 
 func revertPolicyScopeChange(t *testing.T, policyName string) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
 	require.NoError(t, err)
 
 	policyService := v1.NewPolicyServiceClient(conn)
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	policyResp, err := policyService.GetPolicies(ctx, &v1.RawQuery{
 		Query: getPolicyQuery(policyName),
 	})
+	cancel()
 	require.NoError(t, err)
 	require.Len(t, policyResp.GetPolicies(), 1)
 
 	policy := policyResp.GetPolicies()[0]
 	policy.Scope = policy.Scope[:len(policy.GetScope())-1]
 
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	_, err = policyService.PutPolicy(ctx, policy)
+	cancel()
 	require.NoError(t, err)
 }
 
 func verifyStaleAlerts(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
 	require.NoError(t, err)
 
@@ -220,16 +235,17 @@ func verifyStaleAlerts(t *testing.T) {
 	request := alertRequestOptions
 	request.Stale = []bool{true}
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	alerts, err := service.GetAlerts(ctx, &request)
+	cancel()
 	require.NoError(t, err)
 	assert.NotEmpty(t, alerts.GetAlerts())
 }
 
 func verifyAlerts(t *testing.T, service v1.AlertServiceClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	alerts, err := service.GetAlerts(ctx, &alertRequestOptions)
+	cancel()
 	require.NoError(t, err)
 	assert.Len(t, alerts.GetAlerts(), 3)
 
@@ -242,7 +258,9 @@ func verifyAlerts(t *testing.T, service v1.AlertServiceClient) {
 	require.Len(t, alertMap, 3)
 
 	for id, expected := range alertMap {
+		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		a, err := service.GetAlert(ctx, &v1.ResourceByID{Id: id})
+		cancel()
 		require.NoError(t, err)
 
 		assert.Equal(t, expected, a)
@@ -250,17 +268,18 @@ func verifyAlerts(t *testing.T, service v1.AlertServiceClient) {
 }
 
 func verifyAlertCounts(t *testing.T, service v1.AlertServiceClient) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	// Ungrouped
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	alerts, err := service.GetAlertsCounts(ctx, &v1.GetAlertsCountsRequest{Request: &alertRequestOptions})
+	cancel()
 	require.NoError(t, err)
 	require.Len(t, alerts.GetGroups(), 1)
 	assert.NotEmpty(t, alerts.GetGroups()[0].GetCounts())
 
 	// Group by cluster.
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	alertCounts, err := service.GetAlertsCounts(ctx, &v1.GetAlertsCountsRequest{Request: &alertRequestOptions, GroupBy: v1.GetAlertsCountsRequest_CLUSTER})
+	cancel()
 	require.NoError(t, err)
 
 	require.Len(t, alertCounts.GetGroups(), 1)
@@ -271,7 +290,9 @@ func verifyAlertCounts(t *testing.T, service v1.AlertServiceClient) {
 	assert.NotEmpty(t, group.GetCounts())
 
 	// Group by category.
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	alertCounts, err = service.GetAlertsCounts(ctx, &v1.GetAlertsCountsRequest{Request: &alertRequestOptions, GroupBy: v1.GetAlertsCountsRequest_CATEGORY})
+	cancel()
 	require.NoError(t, err)
 
 	require.Len(t, alertCounts.GetGroups(), 2)
@@ -295,9 +316,8 @@ func verifyAlertCounts(t *testing.T, service v1.AlertServiceClient) {
 
 func verifyAlertGroups(t *testing.T, service v1.AlertServiceClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	alerts, err := service.GetAlertsGroup(ctx, &alertRequestOptions)
+	cancel()
 	require.NoError(t, err)
 
 	require.True(t, len(alerts.GetAlertsByPolicies()) >= 3)
@@ -322,9 +342,8 @@ func verifyAlertGroups(t *testing.T, service v1.AlertServiceClient) {
 
 func verifyAlertTimeseries(t *testing.T, service v1.AlertServiceClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	alerts, err := service.GetAlerts(ctx, &alertRequestOptions)
+	cancel()
 	require.NoError(t, err)
 
 	alertMap := make(map[string]*v1.Alert)
@@ -335,7 +354,9 @@ func verifyAlertTimeseries(t *testing.T, service v1.AlertServiceClient) {
 	}
 	require.Len(t, alertMap, 3)
 
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	timeseries, err := service.GetAlertTimeseries(ctx, &alertRequestOptions)
+	cancel()
 	require.NoError(t, err)
 
 	assert.True(t, len(timeseries.GetAlertEvents()) >= 3)

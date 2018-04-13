@@ -74,9 +74,8 @@ func TestNotifierCRUD(t *testing.T) {
 
 func verifyCreateNotifier(t *testing.T, service v1.NotifierServiceClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	postResp, err := service.PostNotifier(ctx, notifierConfig)
+	cancel()
 	require.NoError(t, err)
 
 	notifierConfig.Id = postResp.GetId()
@@ -84,14 +83,16 @@ func verifyCreateNotifier(t *testing.T, service v1.NotifierServiceClient) {
 }
 
 func verifyReadNotifier(t *testing.T, service v1.NotifierServiceClient) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	getResp, err := service.GetNotifier(ctx, &v1.ResourceByID{Id: notifierConfig.GetId()})
+	cancel()
 	require.NoError(t, err)
 	assert.Equal(t, notifierConfig, getResp)
 
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	getManyResp, err := service.GetNotifiers(ctx, &v1.GetNotifiersRequest{Name: notifierConfig.GetName()})
+	cancel()
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(getManyResp.GetNotifiers()))
 	if len(getManyResp.GetNotifiers()) > 0 {
@@ -100,28 +101,30 @@ func verifyReadNotifier(t *testing.T, service v1.NotifierServiceClient) {
 }
 
 func verifyUpdateNotifier(t *testing.T, service v1.NotifierServiceClient) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	notifierConfig.UiEndpoint = "http://localhost:3000"
 	notifierConfig.Config["description"] = "A Slack Notifier"
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := service.PutNotifier(ctx, notifierConfig)
+	cancel()
 	require.NoError(t, err)
 
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	getResp, err := service.GetNotifier(ctx, &v1.ResourceByID{Id: notifierConfig.GetId()})
+	cancel()
 	require.NoError(t, err)
 	assert.Equal(t, notifierConfig, getResp)
 }
 
 func verifyDeleteNotifier(t *testing.T, service v1.NotifierServiceClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
 	_, err := service.DeleteNotifier(ctx, &v1.DeleteNotifierRequest{Id: notifierConfig.GetId()})
+	cancel()
 	require.NoError(t, err)
 
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	_, err = service.GetNotifier(ctx, &v1.ResourceByID{Id: notifierConfig.GetId()})
+	cancel()
 	s, ok := status.FromError(err)
 	assert.True(t, ok)
 	assert.Equal(t, codes.NotFound, s.Code())
