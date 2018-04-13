@@ -130,6 +130,16 @@ jobs:
             make -C ui test-e2e-ci
 
       - run:
+          name: Collect k8s logs
+          command: |
+            ./scripts/ci/collect-service-logs.sh central
+            ./scripts/ci/collect-service-logs.sh sensor
+
+      - store_artifacts:
+          path: /tmp/k8s-service-logs
+          destination: k8s-service-logs
+
+      - run:
           name: Tear down GKE cluster
           command: |
             gcloud container clusters delete --async "mitigate-ci-${CIRCLE_BUILD_NUM}"
