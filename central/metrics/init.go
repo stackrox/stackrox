@@ -11,6 +11,6 @@ var (
 
 func init() {
 	// general
-	logger.Infof("Registering panic counter")
 	prometheus.MustRegister(panicCounter)
+	prometheus.MustRegister(searchDurationHistogram)
 }
