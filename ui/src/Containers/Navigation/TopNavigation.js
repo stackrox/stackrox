@@ -6,6 +6,13 @@ import AuthService from 'services/AuthService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 
+const titleMap = {
+    numAlerts: 'Violation',
+    numClusters: 'Cluster',
+    numDeployments: 'Deployment',
+    numImages: 'Image'
+};
+
 class TopNavigation extends Component {
     static propTypes = {
         history: ReactRouterPropTypes.history.isRequired
@@ -61,7 +68,10 @@ class TopNavigation extends Component {
                         className="flex flex-col border-r border-base-300 px-4 no-underline py-3 text-base-500 items-center"
                     >
                         <div className="text-xl">{this.state.counts[key]}</div>
-                        <div className="text-sm pt-1">{key.replace('num', '')}</div>
+                        <div className="text-sm pt-1">
+                            {titleMap[key]}
+                            {this.state.counts[key] === '1' ? '' : 's'}
+                        </div>
                     </li>
                 ))}
             </ul>
