@@ -134,6 +134,7 @@ jobs:
           command: |
             ./scripts/ci/collect-service-logs.sh central
             ./scripts/ci/collect-service-logs.sh sensor
+          when: always
 
       - store_artifacts:
           path: /tmp/k8s-service-logs
