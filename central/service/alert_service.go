@@ -170,28 +170,53 @@ func (s *AlertService) getMapOfAlertCounts(alerts []*v1.Alert, groupByFunc func(
 	return
 }
 
-func getEventsFromAlerts(alerts []*v1.Alert) (events []*v1.AlertEvent) {
-	// Optimization: The final size is guaranteed to be at least len(alerts)
-	events = make([]*v1.AlertEvent, 0, len(alerts))
-	for _, a := range alerts {
-		events = append(events, &v1.AlertEvent{Time: a.GetTime().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_CREATED, Severity: a.GetPolicy().GetSeverity()})
-		if a.GetStale() {
-			events = append(events, &v1.AlertEvent{Time: a.GetMarkedStale().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_REMOVED, Severity: a.GetPolicy().GetSeverity()})
-		}
-	}
-	sort.SliceStable(events, func(i, j int) bool { return events[i].GetTime() < events[j].GetTime() })
-	return
-}
-
 // GetAlertTimeseries returns the timeseries format of the events based on the request parameters
 func (s *AlertService) GetAlertTimeseries(ctx context.Context, req *v1.GetAlertsRequest) (*v1.GetAlertTimeseriesResponse, error) {
 	alerts, err := s.datastore.GetAlerts(req)
 	if err != nil {
 		return nil, err
 	}
+
 	response := new(v1.GetAlertTimeseriesResponse)
-	response.AlertEvents = getEventsFromAlerts(alerts)
+	for cluster, severityMap := range getGroupToAlertEvents(alerts) {
+		alertCluster := &v1.GetAlertTimeseriesResponse_ClusterAlerts{Cluster: cluster}
+		for severity, alertEvents := range severityMap {
+			// Sort the alert events so they are chronological
+			sort.SliceStable(alertEvents, func(i, j int) bool { return alertEvents[i].GetTime() < alertEvents[j].GetTime() })
+			alertCluster.Severities = append(alertCluster.Severities, &v1.GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents{
+				Severity: severity,
+				Events:   alertEvents,
+			})
+		}
+		sort.Slice(alertCluster.Severities, func(i, j int) bool { return alertCluster.Severities[i].Severity < alertCluster.Severities[j].Severity })
+		response.Clusters = append(response.Clusters, alertCluster)
+	}
+	sort.SliceStable(response.Clusters, func(i, j int) bool { return response.Clusters[i].Cluster < response.Clusters[j].Cluster })
 	return response, nil
+}
+
+func getGroupToAlertEvents(alerts []*v1.Alert) (clusters map[string]map[v1.Severity][]*v1.AlertEvent) {
+	clusters = make(map[string]map[v1.Severity][]*v1.AlertEvent)
+	for _, a := range alerts {
+		alertCluster := a.GetDeployment().GetClusterName()
+		if clusters[alertCluster] == nil {
+			clusters[alertCluster] = make(map[v1.Severity][]*v1.AlertEvent)
+		}
+		eventList := clusters[alertCluster][a.GetPolicy().GetSeverity()]
+		eventList = append(eventList, &v1.AlertEvent{Time: a.GetTime().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_CREATED})
+		if a.GetStale() {
+			eventList = append(eventList, &v1.AlertEvent{Time: a.GetMarkedStale().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_REMOVED})
+		}
+		clusters[alertCluster][a.GetPolicy().GetSeverity()] = eventList
+	}
+
+	for _, v1 := range clusters {
+		for k2, v2 := range v1 {
+			sort.SliceStable(v2, func(i, j int) bool { return v2[i].GetTime() < v2[j].GetTime() })
+			v1[k2] = v2
+		}
+	}
+	return
 }
 
 var (

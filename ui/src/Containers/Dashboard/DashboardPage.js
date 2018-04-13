@@ -24,6 +24,7 @@ import CustomLineChart from 'Components/visuals/CustomLineChart';
 import DashboardBenchmarks from 'Containers/Dashboard/DashboardBenchmarks';
 import SeverityTile from 'Containers/Dashboard/SeverityTile';
 import TopRiskyDeployments from 'Containers/Dashboard/TopRiskyDeployments';
+import cloneDeep from 'lodash/cloneDeep';
 import { severityLabels } from 'messages/common';
 import { selectors } from 'reducers';
 
@@ -68,6 +69,12 @@ const severityPropType = PropTypes.oneOf([
     'LOW_SEVERITY'
 ]);
 
+const slickSettings = {
+    dots: false,
+    nextArrow: <CarouselNextArrow />,
+    prevArrow: <CarouselPrevArrow />
+};
+
 const groupedViolationsPropType = PropTypes.arrayOf(
     PropTypes.shape({
         counts: PropTypes.arrayOf(
@@ -84,14 +91,7 @@ class DashboardPage extends Component {
     static propTypes = {
         violatonsByPolicyCategory: groupedViolationsPropType.isRequired,
         violationsByCluster: groupedViolationsPropType.isRequired,
-        alertsByTimeseries: PropTypes.arrayOf(
-            PropTypes.shape({
-                id: PropTypes.string.isRequired,
-                severity: severityPropType.isRequired,
-                time: PropTypes.string.isRequired,
-                type: PropTypes.string.isRequired
-            })
-        ).isRequired,
+        alertsByTimeseries: PropTypes.arrayOf(PropTypes.shape()).isRequired,
         benchmarks: PropTypes.shape({
             'CIS Docker v1.1.0 Benchmark': benchmarkPropType,
             'CIS Swarm v1.1.0 Benchmark': benchmarkPropType,
@@ -111,57 +111,98 @@ class DashboardPage extends Component {
         this.props.history.push(`/main/violations?severity=${severity}&${clusterQuery}`);
     };
 
-    renderAlertsByTimeseries = () => {
-        if (!this.props.alertsByTimeseries) return '';
-        const timeAlertMap = {};
+    formatTimeseriesData = clusterData => {
+        if (!clusterData) return '';
+        // set a baseline zero'd object for the past week
+        const baselineData = {};
         const xAxisBuckets = [];
         for (let i = 6; i >= 0; i -= 1) {
             const key = format(subDays(new Date(), i), 'MMM DD');
-            timeAlertMap[key] = 0;
+            baselineData[key] = 0;
             xAxisBuckets.push(key);
         }
-        let startCount = 0;
-        this.props.alertsByTimeseries.forEach(alert => {
-            const time = format(parseInt(alert.time, 10), 'MMM DD');
-            const alerts = timeAlertMap[time];
-            if (alerts !== undefined) {
-                switch (alert.type) {
-                    case 'CREATED':
-                        timeAlertMap[time] += 1;
-                        break;
-                    case 'REMOVED':
-                        timeAlertMap[time] -= 1;
-                        break;
-                    default:
-                        break;
-                }
-            } else {
-                switch (alert.type) {
-                    case 'CREATED':
-                        startCount += 1;
-                        break;
-                    case 'REMOVED':
-                        startCount -= 1;
-                        break;
-                    default:
-                        break;
-                }
-            }
+        // set severities in timeAlertMap to have this zero'd data
+        const timeAlertMap = {};
+        Object.keys(severityColorMap).forEach(severity => {
+            timeAlertMap[severity] = cloneDeep(baselineData);
         });
-        let runningSum = startCount;
-        xAxisBuckets.forEach(key => {
-            const prevVal = timeAlertMap[key];
-            timeAlertMap[key] += runningSum;
-            runningSum += prevVal;
+        // populate actual data into timeAlertMap
+        clusterData.severities.forEach(severityObj => {
+            const { severity, events } = severityObj;
+            events.forEach(alert => {
+                const time = format(parseInt(alert.time, 10), 'MMM DD');
+                const alerts = timeAlertMap[severity][time];
+                if (alerts !== undefined) {
+                    switch (alert.type) {
+                        case 'CREATED':
+                            timeAlertMap[severity][time] += 1;
+                            break;
+                        case 'REMOVED':
+                            timeAlertMap[severity][time] -= 1;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            });
         });
-        const data = Object.keys(timeAlertMap).map(time => ({
+
+        // set data format for line chart
+        const cluster = {};
+        cluster.data = Object.keys(baselineData).map(time => ({
             time,
-            violations: timeAlertMap[time]
+            low: timeAlertMap.LOW_SEVERITY[time],
+            medium: timeAlertMap.MEDIUM_SEVERITY[time],
+            high: timeAlertMap.HIGH_SEVERITY[time],
+            critical: timeAlertMap.CRITICAL_SEVERITY[time]
         }));
+        cluster.name = clusterData.cluster;
+
+        return cluster;
+    };
+
+    renderAlertsByTimeseries = () => {
+        if (!this.props.alertsByTimeseries) return '';
+
         return (
-            <CustomLineChart data={data} xAxisDataKey="time" yAxisDataKey="">
-                <Line type="monotone" dataKey="violations" stroke="#82ca9d" />
-            </CustomLineChart>
+            <div className="p-0 h-full w-full">
+                <Slider {...slickSettings}>
+                    {this.props.alertsByTimeseries.map(cluster => {
+                        const { data, name } = this.formatTimeseriesData(cluster);
+                        return (
+                            <div className="h-64" key={name}>
+                                <CustomLineChart
+                                    data={data}
+                                    name={name}
+                                    xAxisDataKey="time"
+                                    yAxisDataKey=""
+                                >
+                                    <Line
+                                        type="monotone"
+                                        dataKey="low"
+                                        stroke={severityColorMap.LOW_SEVERITY}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="medium"
+                                        stroke={severityColorMap.MEDIUM_SEVERITY}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="high"
+                                        stroke={severityColorMap.HIGH_SEVERITY}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="critical"
+                                        stroke={severityColorMap.CRITICAL_SEVERITY}
+                                    />
+                                </CustomLineChart>
+                            </div>
+                        );
+                    })}
+                </Slider>
+            </div>
         );
     };
 
@@ -172,11 +213,6 @@ class DashboardPage extends Component {
             );
         }
         const clusterCharts = [];
-        const settings = {
-            dots: false,
-            nextArrow: <CarouselNextArrow />,
-            prevArrow: <CarouselPrevArrow />
-        };
 
         let i = 0;
         const limit = 4;
@@ -205,7 +241,7 @@ class DashboardPage extends Component {
         }
         return (
             <div className="p-0 h-full w-full">
-                <Slider {...settings}>
+                <Slider {...slickSettings}>
                     {clusterCharts.map((data, index) => (
                         <div key={index}>
                             <ResponsiveContainer className="flex-1 h-full w-full">

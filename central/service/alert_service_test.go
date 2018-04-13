@@ -532,31 +532,83 @@ func TestGenerateTimeseries(t *testing.T) {
 			MarkedStale: &timestamp.Timestamp{
 				Seconds: 8,
 			},
+			Deployment: &v1.Deployment{ClusterName: "dev"},
+			Policy:     &v1.Policy{Severity: v1.Severity_CRITICAL_SEVERITY},
 		},
 		{
 			Id: "id2",
 			Time: &timestamp.Timestamp{
 				Seconds: 6,
 			},
+			Deployment: &v1.Deployment{ClusterName: "dev"},
+			Policy:     &v1.Policy{Severity: v1.Severity_HIGH_SEVERITY},
+		},
+		{
+			Id: "id3",
+			Time: &timestamp.Timestamp{
+				Seconds: 1,
+			},
+			Stale: true,
+			MarkedStale: &timestamp.Timestamp{
+				Seconds: 8,
+			},
+			Deployment: &v1.Deployment{ClusterName: "prod"},
+			Policy:     &v1.Policy{Severity: v1.Severity_LOW_SEVERITY},
+		},
+		{
+			Id: "id4",
+			Time: &timestamp.Timestamp{
+				Seconds: 6,
+			},
+			Deployment: &v1.Deployment{ClusterName: "prod"},
+			Policy:     &v1.Policy{Severity: v1.Severity_MEDIUM_SEVERITY},
 		},
 	}
-	expectedEvents := []*v1.AlertEvent{
-		{
-			Time: 1000,
-			Id:   "id1",
-			Type: v1.Type_CREATED,
+
+	expectedEvents := map[string]map[v1.Severity][]*v1.AlertEvent{
+		"dev": {
+			v1.Severity_CRITICAL_SEVERITY: []*v1.AlertEvent{
+				{
+					Time: 1000,
+					Id:   "id1",
+					Type: v1.Type_CREATED,
+				},
+				{
+					Time: 8000,
+					Id:   "id1",
+					Type: v1.Type_REMOVED,
+				},
+			},
+			v1.Severity_HIGH_SEVERITY: []*v1.AlertEvent{
+				{
+					Time: 6000,
+					Id:   "id2",
+					Type: v1.Type_CREATED,
+				},
+			},
 		},
-		{
-			Time: 6000,
-			Id:   "id2",
-			Type: v1.Type_CREATED,
-		},
-		{
-			Time: 8000,
-			Id:   "id1",
-			Type: v1.Type_REMOVED,
+		"prod": {
+			v1.Severity_LOW_SEVERITY: []*v1.AlertEvent{
+				{
+					Time: 1000,
+					Id:   "id3",
+					Type: v1.Type_CREATED,
+				},
+				{
+					Time: 8000,
+					Id:   "id3",
+					Type: v1.Type_REMOVED,
+				},
+			},
+			v1.Severity_MEDIUM_SEVERITY: []*v1.AlertEvent{
+				{
+					Time: 6000,
+					Id:   "id4",
+					Type: v1.Type_CREATED,
+				},
+			},
 		},
 	}
-	assert.Empty(t, getEventsFromAlerts(nil))
-	assert.Equal(t, expectedEvents, getEventsFromAlerts(alerts))
+	assert.Empty(t, getGroupToAlertEvents(nil))
+	assert.Equal(t, expectedEvents, getGroupToAlertEvents(alerts))
 }

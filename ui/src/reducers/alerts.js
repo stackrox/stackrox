@@ -98,8 +98,8 @@ const alertCountsByCluster = (state = [], action) => {
 
 const alertsByTimeseries = (state = [], action) => {
     if (action.type === types.FETCH_ALERTS_BY_TIMESERIES.SUCCESS) {
-        const { alertEvents } = action.response;
-        return isEqual(alertEvents, state) ? state : alertEvents;
+        const { clusters } = action.response;
+        return isEqual(clusters, state) ? state : clusters;
     }
     return state;
 };

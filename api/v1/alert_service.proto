@@ -86,11 +86,18 @@ message AlertEvent {
     int64 time        = 1;
     Type type         = 2;
     string id         = 3;
-    Severity severity = 4;
 }
 
 message GetAlertTimeseriesResponse {
-    repeated AlertEvent alert_events = 1;
+    message ClusterAlerts {
+        string cluster                   = 1;
+        message AlertEvents {
+            Severity severity          = 1;
+            repeated AlertEvent events = 2;
+        }
+        repeated AlertEvents severities  = 2;
+    }
+    repeated ClusterAlerts clusters = 1;
 }
 
 service AlertService {

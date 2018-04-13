@@ -358,19 +358,20 @@ func verifyAlertTimeseries(t *testing.T, service v1.AlertServiceClient) {
 	timeseries, err := service.GetAlertTimeseries(ctx, &alertRequestOptions)
 	cancel()
 	require.NoError(t, err)
-
-	assert.True(t, len(timeseries.GetAlertEvents()) >= 3)
+	require.Len(t, timeseries.Clusters, 1)
+	cluster := timeseries.Clusters[0]
 
 	numCreatedEvents := 0
 
-	for _, e := range timeseries.GetAlertEvents() {
-		if e.Type == v1.Type_CREATED {
-			numCreatedEvents++
-		}
-
-		if alert, ok := alertMap[e.GetId()]; ok && e.Type == v1.Type_CREATED {
-			assert.Equal(t, alert.GetTime().GetSeconds()*1000, e.GetTime())
-			assert.Equal(t, alert.GetPolicy().GetSeverity(), e.GetSeverity())
+	for _, alertGroups := range cluster.GetSeverities() {
+		for _, e := range alertGroups.GetEvents() {
+			if e.Type == v1.Type_CREATED {
+				numCreatedEvents++
+			}
+			if alert, ok := alertMap[e.GetId()]; ok && e.Type == v1.Type_CREATED {
+				assert.Equal(t, alert.GetTime().GetSeconds()*1000, e.GetTime())
+				assert.Equal(t, alert.GetPolicy().GetSeverity(), alertGroups.GetSeverity())
+			}
 		}
 	}
 

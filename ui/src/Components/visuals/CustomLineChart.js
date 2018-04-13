@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import {
     ResponsiveContainer,
     LineChart,
+    Label,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -14,6 +15,7 @@ import {
 class CustomLineChart extends Component {
     static propTypes = {
         data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+        name: PropTypes.string.isRequired,
         xAxisDataKey: PropTypes.string.isRequired,
         yAxisDataKey: PropTypes.string.isRequired,
         children: PropTypes.node.isRequired
@@ -34,10 +36,12 @@ class CustomLineChart extends Component {
                         top: 5,
                         right: 30,
                         left: 20,
-                        bottom: 5
+                        bottom: 20
                     }}
                 >
-                    <XAxis dataKey={this.props.xAxisDataKey} />
+                    <XAxis dataKey={this.props.xAxisDataKey}>
+                        <Label value={this.props.name} offset={25} position="bottom" />
+                    </XAxis>
                     <YAxis
                         domain={[0, 'dataMax']}
                         allowDecimals={false}
