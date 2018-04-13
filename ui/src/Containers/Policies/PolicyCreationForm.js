@@ -566,6 +566,7 @@ class PolicyCreationForm extends Component {
 
     renderFieldInput = (field, value) => {
         let handleMultiSelectChange = () => {};
+        let handleNumericInputChange = () => {};
         switch (field.type) {
             case 'text':
                 return (
@@ -579,6 +580,9 @@ class PolicyCreationForm extends Component {
                     />
                 );
             case 'number':
+                handleNumericInputChange = newValue => {
+                    this.props.formApi.setValue(field.value, newValue);
+                };
                 return (
                     <NumericInput
                         max={field.max}
@@ -586,7 +590,9 @@ class PolicyCreationForm extends Component {
                         key={field.value}
                         field={field.value}
                         id={field.value}
+                        value={value}
                         placeholder={field.placeholder}
+                        onChange={handleNumericInputChange}
                         style={{ style: false }}
                         className="border rounded-l p-3 border-base-300 w-full font-400"
                     />
@@ -673,7 +679,7 @@ class PolicyCreationForm extends Component {
         return (
             <div className="h-full p-3">
                 {filteredFields.map(field => {
-                    const value = this.props.formApi.values[field.value];
+                    const value = flattenObject(this.props.formApi.values)[field.value];
                     const removeField = !field.required ? this.removeField : null;
                     return (
                         <FormField
