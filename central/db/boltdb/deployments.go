@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 )
 
 const deploymentBucket = "deployments"
@@ -81,26 +82,42 @@ func (b *BoltDB) AddDeployment(deployment *v1.Deployment) error {
 	})
 }
 
+func (b *BoltDB) updateDeployment(deployment *v1.Deployment, bucket *bolt.Bucket) error {
+	bytes, err := proto.Marshal(deployment)
+	if err != nil {
+		return err
+	}
+	return bucket.Put([]byte(deployment.Id), bytes)
+}
+
 // UpdateDeployment updates a deployment to bolt
 func (b *BoltDB) UpdateDeployment(deployment *v1.Deployment) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
-		bytes, err := proto.Marshal(deployment)
+		existingDeployment, exists, err := b.getDeployment(deployment.GetId(), bucket)
 		if err != nil {
 			return err
 		}
-		return bucket.Put([]byte(deployment.Id), bytes)
+		// Apply the tombstone to the update. This update should have more up to date info so worth saving
+		if exists && existingDeployment.GetTombstone() != nil {
+			deployment.Tombstone = existingDeployment.GetTombstone()
+		}
+		return b.updateDeployment(deployment, tx.Bucket([]byte(deploymentBucket)))
 	})
 }
 
-// RemoveDeployment removes a deployment.
+// RemoveDeployment updates a deployment with a tombstone
 func (b *BoltDB) RemoveDeployment(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
-		key := []byte(id)
-		if exists := bucket.Get(key) != nil; !exists {
-			return db.ErrNotFound{Type: "Deployment", ID: string(key)}
+		deployment, exists, err := b.getDeployment(id, bucket)
+		if err != nil {
+			return err
 		}
-		return bucket.Delete(key)
+		if !exists {
+			return db.ErrNotFound{Type: "Deployment", ID: id}
+		}
+		deployment.Tombstone = ptypes.TimestampNow()
+		return b.updateDeployment(deployment, bucket)
 	})
 }

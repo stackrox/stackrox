@@ -1,7 +1,7 @@
 package service
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/datastore"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/central/risk"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -16,19 +16,19 @@ import (
 )
 
 // NewSensorEventService returns the SensorEventService API.
-func NewSensorEventService(detector *detection.Detector, database db.Storage, scorer *risk.Scorer) *SensorEventService {
+func NewSensorEventService(detector *detection.Detector, datastore *datastore.DataStore, scorer *risk.Scorer) *SensorEventService {
 	return &SensorEventService{
-		detector: detector,
-		scorer:   scorer,
-		storage:  database,
+		detector:  detector,
+		scorer:    scorer,
+		datastore: datastore,
 	}
 }
 
 // SensorEventService is the struct that manages the SensorEvent API
 type SensorEventService struct {
-	detector *detection.Detector
-	scorer   *risk.Scorer
-	storage  db.Storage
+	detector  *detection.Detector
+	scorer    *risk.Scorer
+	datastore *datastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -65,7 +65,7 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 	// If it's a create and we already have the deployment, ignore it.
 	// We don't want new alerts, and don't need to bother the database again.
 	if request.GetAction() == v1.ResourceAction_CREATE_RESOURCE {
-		if _, ok, err := s.storage.GetDeployment(d.GetId()); err != nil && ok {
+		if _, ok, err := s.datastore.GetDeployment(d.GetId()); err != nil && ok {
 			return response, nil
 		}
 	}
@@ -89,7 +89,7 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 			continue
 		}
 
-		if err := s.storage.UpdateImage(i); err != nil {
+		if err := s.datastore.UpdateImage(i); err != nil {
 			log.Error(err)
 		}
 	}
@@ -115,7 +115,7 @@ func (s *SensorEventService) resetClusterData(ctx context.Context, d *v1.Deploym
 	}
 
 	d.ClusterId = identity.Name.Identifier
-	cluster, clusterExists, err := s.storage.GetCluster(d.ClusterId)
+	cluster, clusterExists, err := s.datastore.GetCluster(d.ClusterId)
 	switch {
 	case err != nil:
 		log.Warnf("Couldn't get name of cluster: %s", err)
@@ -133,17 +133,17 @@ func (s *SensorEventService) handlePersistence(event *v1.DeploymentEvent) error 
 	case v1.ResourceAction_PREEXISTING_RESOURCE:
 		fallthrough
 	case v1.ResourceAction_CREATE_RESOURCE:
-		if err := s.storage.UpdateDeployment(deployment); err != nil {
+		if err := s.datastore.UpdateDeployment(deployment); err != nil {
 			log.Errorf("unable to add deployment %s: %s", deployment.GetId(), err)
 			return err
 		}
 	case v1.ResourceAction_UPDATE_RESOURCE:
-		if err := s.storage.UpdateDeployment(deployment); err != nil {
+		if err := s.datastore.UpdateDeployment(deployment); err != nil {
 			log.Errorf("unable to update deployment %s: %s", deployment.GetId(), err)
 			return err
 		}
 	case v1.ResourceAction_REMOVE_RESOURCE:
-		if err := s.storage.RemoveDeployment(deployment.GetId()); err != nil {
+		if err := s.datastore.RemoveDeployment(deployment.GetId()); err != nil {
 			log.Errorf("unable to remove deployment %s: %s", deployment.GetId(), err)
 			return err
 		}

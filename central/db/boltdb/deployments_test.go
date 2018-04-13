@@ -89,8 +89,8 @@ func (suite *BoltDeploymentTestSuite) TestDeployments() {
 	}
 
 	for _, d := range deployments {
-		_, exists, err := suite.GetDeployment(d.GetId())
+		deployment, _, err := suite.GetDeployment(d.GetId())
 		suite.NoError(err)
-		suite.False(exists)
+		suite.NotNil(deployment.GetTombstone())
 	}
 }

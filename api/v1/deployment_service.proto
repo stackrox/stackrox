@@ -41,6 +41,7 @@ message Deployment {
 
     repeated Container containers              = 11;
     Risk risk                                  = 12;
+    google.protobuf.Timestamp tombstone        = 13;
 }
 
 message Container {

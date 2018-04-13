@@ -283,6 +283,33 @@ func (ds *DataStore) SearchPolicies(request *v1.ParsedSearchRequest) ([]*v1.Sear
 	return protoResults, nil
 }
 
+func filterAliveDeployments(deployments []*v1.Deployment) (liveDeployments []*v1.Deployment) {
+	for _, d := range deployments {
+		if d.GetTombstone() == nil {
+			liveDeployments = append(liveDeployments, d)
+		}
+	}
+	return liveDeployments
+}
+
+// GetDeployments returns all live deployments
+func (ds *DataStore) GetDeployments() ([]*v1.Deployment, error) {
+	deployments, err := ds.Storage.GetDeployments()
+	if err != nil {
+		return nil, err
+	}
+	return filterAliveDeployments(deployments), nil
+}
+
+// CountDeployments returns the number of active deployments
+func (ds *DataStore) CountDeployments() (int, error) {
+	deployments, err := ds.GetDeployments()
+	if err != nil {
+		return 0, err
+	}
+	return len(deployments), nil
+}
+
 func (ds *DataStore) searchDeployments(request *v1.ParsedSearchRequest) ([]*v1.Deployment, []search.Result, error) {
 	results, err := ds.indexer.SearchDeployments(request)
 	if err != nil {
@@ -346,6 +373,7 @@ func (ds *DataStore) UpdateDeployment(deployment *v1.Deployment) error {
 
 // RemoveDeployment removes a deployment from the storage and the indexer
 func (ds *DataStore) RemoveDeployment(id string) error {
+	// Even though RemoveDeployment just marks with a tombstone, for now let's not index tombstoned deployments
 	if err := ds.Storage.RemoveDeployment(id); err != nil {
 		return err
 	}
