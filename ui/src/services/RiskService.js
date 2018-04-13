@@ -11,7 +11,12 @@ export default function fetchDeployments(filters) {
         ...filters
     });
     const deploymentsUrl = '/v1/deployments';
-    return axios.get(`${deploymentsUrl}?${params}`).then(response => ({
-        response: response.data
-    }));
+    return axios.get(`${deploymentsUrl}?${params}`).then(response => {
+        const transformedData = response.data.deployments.map((o, index) => {
+            const item = Object.assign({}, o);
+            item.priority = index + 1;
+            return item;
+        });
+        return { response: { deployments: transformedData } };
+    });
 }

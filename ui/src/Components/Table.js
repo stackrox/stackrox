@@ -53,9 +53,20 @@ class Table extends Component {
             sortBy: null,
             sortDir: {},
             checked: new Set(),
-            selected: null
+            selected: null,
+            sortedRows: new Set()
         };
     }
+
+    componentWillMount() {
+        this.setState({ sortedRows: this.props.rows });
+    }
+
+    componentWillReceiveProps = props => {
+        if (props.rows !== this.props.rows) {
+            this.setState({ sortedRows: props.rows });
+        }
+    };
 
     getSelectedRows = () => Array.from(this.state.checked);
 
@@ -109,7 +120,6 @@ class Table extends Component {
             sortDir = 'DESC';
         }
 
-        const { rows } = this.props;
         const column = find(this.props.columns, o => o.key === sortBy);
         const sortFn = (a, b) => {
             let sortVal = 0;
@@ -125,8 +135,8 @@ class Table extends Component {
             }
             return sortVal;
         };
-        rows.sort(sortFn);
-        this.setState({ sortBy, sortDir: { [key]: sortDir } });
+        const sortedRows = [...this.state.sortedRows].sort(sortFn);
+        this.setState({ sortBy, sortDir: { [key]: sortDir }, sortedRows });
     };
 
     renderActionButtons = row =>
@@ -179,16 +189,12 @@ class Table extends Component {
     }
 
     renderBody() {
-        const { columns, rows } = this.props;
+        const { columns } = this.props;
         const rowClickable = !!this.props.onRowClick;
-        return rows.map((row, i) => {
-            const tableCells = columns.map(column => {
-                const rowObj = Object.assign({}, row);
-                if (column.key === 'index') {
-                    rowObj.index = i + 1;
-                }
-                return <TableCell column={column} row={rowObj} key={`${column.key}`} />;
-            });
+        return [...this.state.sortedRows].map((row, i) => {
+            const tableCells = columns.map(column => (
+                <TableCell column={column} row={row} key={`${column.key}`} />
+            ));
             if (this.props.checkboxes) {
                 tableCells.unshift(
                     <td className="p-3 text-center" key="checkboxTableCell">

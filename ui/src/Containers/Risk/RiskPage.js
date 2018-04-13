@@ -17,6 +17,7 @@ import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import KeyValuePairs from 'Components/KeyValuePairs';
 import { Link } from 'react-router-dom';
+import { sortNumber } from 'sorters/sorters';
 
 const deploymentDetailsMap = {
     id: {
@@ -103,7 +104,7 @@ class RiskPage extends Component {
             { key: 'name', label: 'Name' },
             { key: 'clusterName', label: 'Cluster' },
             { key: 'namespace', label: 'Namespace' },
-            { key: 'index', label: 'Priority' }
+            { key: 'priority', label: 'Priority', sortMethod: sortNumber('priority') }
         ];
         const rows = this.props.deployments;
         return <Table columns={columns} rows={rows} onRowClick={this.updateSelectedDeployment} />;

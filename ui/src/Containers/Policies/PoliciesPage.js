@@ -68,7 +68,6 @@ class PoliciesPage extends Component {
         this.retrieveNotifiers();
         this.retrieveClusters();
         this.retrieveDeployments();
-        console.log(this.props);
     }
 
     componentWillUnmount() {
