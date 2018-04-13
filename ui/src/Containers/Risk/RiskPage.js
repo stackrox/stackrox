@@ -16,6 +16,7 @@ import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import KeyValuePairs from 'Components/KeyValuePairs';
+import { Link } from 'react-router-dom';
 
 const deploymentDetailsMap = {
     id: {
@@ -234,9 +235,14 @@ class RiskPage extends Component {
                                             container.image.name.fullName && (
                                                 <div className="flex py-3">
                                                     <div className="pr-1">Image Name:</div>
-                                                    <div className="font-500">
+                                                    <Link
+                                                        className="font-500 text-primary-600 hover:text-primary-800"
+                                                        to={`/main/images/${
+                                                            container.image.name.sha
+                                                        }`}
+                                                    >
                                                         {container.image.name.fullName}
-                                                    </div>
+                                                    </Link>
                                                 </div>
                                             )}
                                     </div>
