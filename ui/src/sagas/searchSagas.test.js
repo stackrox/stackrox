@@ -3,10 +3,29 @@ import { types as locationActionTypes } from 'reducers/routes';
 import { actions as alertActions } from 'reducers/alerts';
 import { actions as riskActions } from 'reducers/risk';
 import { actions as policiesActions } from 'reducers/policies';
-import fetchOptions from 'services/SearchService';
+import { actions as globalSearchActions } from 'reducers/globalSearch';
+import { fetchOptions } from 'services/SearchService';
 import { getSearchOptions, watchLocation } from './searchSagas';
 
 describe('Search Sagas Test', () => {
+    it('Should load search modifiers/suggestions for Global Search when location changes', () => {
+        const gen = watchLocation();
+        let { value } = gen.next();
+        expect(value).toEqual(take(locationActionTypes.LOCATION_CHANGE));
+        ({ value } = gen.next({
+            type: locationActionTypes.LOCATION_CHANGE,
+            payload: {
+                pathname: '/main/violations'
+            }
+        }));
+        expect(value).toEqual(
+            fork(
+                getSearchOptions,
+                globalSearchActions.setGlobalSearchModifiers,
+                globalSearchActions.setGlobalSearchSuggestions
+            )
+        );
+    });
     it('Should load search modifiers/suggestions for Alerts when location changes to Violations Page', () => {
         const gen = watchLocation();
         let { value } = gen.next();
@@ -17,6 +36,14 @@ describe('Search Sagas Test', () => {
                 pathname: '/main/violations'
             }
         }));
+        expect(value).toEqual(
+            fork(
+                getSearchOptions,
+                globalSearchActions.setGlobalSearchModifiers,
+                globalSearchActions.setGlobalSearchSuggestions
+            )
+        );
+        ({ value } = gen.next());
         expect(value).toEqual(
             fork(
                 getSearchOptions,
@@ -39,6 +66,14 @@ describe('Search Sagas Test', () => {
         expect(value).toEqual(
             fork(
                 getSearchOptions,
+                globalSearchActions.setGlobalSearchModifiers,
+                globalSearchActions.setGlobalSearchSuggestions
+            )
+        );
+        ({ value } = gen.next());
+        expect(value).toEqual(
+            fork(
+                getSearchOptions,
                 riskActions.setDeploymentsSearchModifiers,
                 riskActions.setDeploymentsSearchSuggestions,
                 'categories=DEPLOYMENTS'
@@ -55,6 +90,14 @@ describe('Search Sagas Test', () => {
                 pathname: '/main/policies'
             }
         }));
+        expect(value).toEqual(
+            fork(
+                getSearchOptions,
+                globalSearchActions.setGlobalSearchModifiers,
+                globalSearchActions.setGlobalSearchSuggestions
+            )
+        );
+        ({ value } = gen.next());
         expect(value).toEqual(
             fork(
                 getSearchOptions,
@@ -76,6 +119,6 @@ describe('Search Sagas Test', () => {
         ({ value } = gen.next(result));
         expect(value).toEqual(put(setSearchModifiers(result.options)));
         ({ value } = gen.next());
-        put(setSearchSuggestions(result.options));
+        expect(value).toEqual(put(setSearchSuggestions(result.options)));
     });
 });

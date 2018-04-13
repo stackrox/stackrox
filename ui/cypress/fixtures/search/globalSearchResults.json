@@ -1,0 +1,48 @@
+{
+    "results": [
+        {
+            "id": "6f68ef75-a96d-4121-ad89-92cf8cde0062",
+            "name": "Latest tag",
+            "category": "ALERTS",
+            "fieldToMatches": {
+                "deployment.cluster_name": {
+                    "values": [
+                        "<mark>remote</mark>"
+                    ]
+                }
+            },
+            "score": 3.1972245773362196,
+            "location": "/remote/prevent/prevent_sensor"
+        },
+        {
+            "id": "ppqqu24i8x16j7annv2bjphyy",
+            "name": "boring_edison",
+            "category": "DEPLOYMENTS",
+            "fieldToMatches": {
+                "cluster_name": {
+                    "values": [
+                        "<mark>remote</mark>"
+                    ]
+                }
+            },
+            "score": 2.9095425048844383,
+            "location": "/remote/default"
+        },
+        {
+            "id": "0ea8d235-b02a-41ee-a61d-edcb2c1b0eac",
+            "name": "Container Port 22",
+            "category": "POLICIES",
+            "fieldToMatches": {},
+            "score": 0.11336086618061797,
+            "location": ""
+        },
+        {
+            "id": "sha256:9342f82b178a4325aec19f997400e866bf7c6bf9d59dd74e1358f971159dd7b8",
+            "name": "apollo-dtr.rox.systems/srox/nginx:1.12",
+            "category": "IMAGES",
+            "fieldToMatches": {},
+            "score": 0,
+            "location": ""
+        }
+    ]
+}

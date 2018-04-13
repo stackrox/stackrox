@@ -6,7 +6,13 @@ import TabContent from 'Components/TabContent';
 class Tabs extends Component {
     static defaultProps = {
         children: [],
-        className: ''
+        className: '',
+        onTabClick: null,
+        default: null,
+        tabClass: 'tab mt-2',
+        tabActiveClass: 'tab tab-active bg-base-100 border-t-2 mt-2',
+        tabDisabledClass: 'tab disabled mt-2',
+        tabContentBgColor: 'bg-base-100'
     };
 
     static propTypes = {
@@ -30,26 +36,33 @@ class Tabs extends Component {
             });
             return error;
         },
-        className: PropTypes.string
+        className: PropTypes.string,
+        onTabClick: PropTypes.func,
+        default: PropTypes.shape({}),
+        tabClass: PropTypes.string,
+        tabActiveClass: PropTypes.string,
+        tabDisabledClass: PropTypes.string,
+        tabContentBgColor: PropTypes.string
     };
 
     constructor(props) {
         super(props);
 
+        const index = props.headers.indexOf(props.default);
+
         this.state = {
-            activeIndex: 0
+            activeIndex: index === -1 ? 0 : index
         };
     }
 
     getHeaders() {
         const { activeIndex } = this.state;
         return this.props.headers.map((header, i) => {
-            let tabClass =
-                activeIndex === i ? 'tab tab-active bg-base-100 border-t-2 mt-2' : 'tab mt-2';
-            if (header.disabled) tabClass = 'tab disabled mt-2';
+            let tabClass = activeIndex === i ? this.props.tabActiveClass : this.props.tabClass;
+            if (header.disabled) tabClass = this.props.tabDisabledClass;
             return (
                 <button
-                    className={tabClass}
+                    className={`${tabClass} ${i === 0 ? 'ml-3' : ''}`}
                     key={`${header.text}`}
                     onClick={this.tabClickHandler(header, i)}
                 >
@@ -61,6 +74,7 @@ class Tabs extends Component {
 
     tabClickHandler = (header, i) => () => {
         if (header.disabled) return;
+        if (this.props.onTabClick) this.props.onTabClick(header);
         this.setState({ activeIndex: i });
     };
 
@@ -72,10 +86,12 @@ class Tabs extends Component {
     render() {
         return (
             <div className="w-full bg-white flex flex-col">
-                <div className={`flex shadow-underline font-bold pl-3 ${this.props.className}`}>
+                <div className={`flex shadow-underline font-bold ${this.props.className}`}>
                     {this.getHeaders()}
                 </div>
-                <div className="overflow-hidden pt-3 h-full flex-1 bg-base-100">
+                <div
+                    className={`overflow-hidden pt-3 h-full flex-1 ${this.props.tabContentBgColor}`}
+                >
                     {this.renderChildren()}
                 </div>
             </div>

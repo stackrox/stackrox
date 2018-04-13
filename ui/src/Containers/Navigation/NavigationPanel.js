@@ -41,13 +41,11 @@ class NavigationPanel extends Component {
             this.setState({ clusters });
         });
 
-    handleKeyDown = () => {
-        console.log('key down');
-    };
+    handleKeyDown = () => {};
 
     renderConfigurePanel = () => (
         <ul className="flex flex-col list-reset uppercase tracking-wide bg-primary-700 border-r border-primary-800">
-            <li className="border-b-2 border-primary-800 px-1 py-5 pl-2 pr-2 text-white text-base-800">
+            <li className="border-b-2 border-primary-800 px-4 py-5 text-white text-base-800">
                 Configure Prevent Settings
             </li>
             {navLinks.map(navLink => (
@@ -55,7 +53,7 @@ class NavigationPanel extends Component {
                     <Link
                         to={navLink.to}
                         onClick={this.props.onClose(false)}
-                        className="no-underline text-white px-1 border-b py-5 border-primary-400 pl-2 pr-2 hover:bg-primary-600"
+                        className="no-underline text-white px-4 border-b py-5 border-primary-400 hover:bg-primary-600"
                     >
                         {navLink.text}
                     </Link>
@@ -68,7 +66,7 @@ class NavigationPanel extends Component {
         if (!this.state.clusters) return '';
         return (
             <ul className="flex flex-col list-reset uppercase tracking-wide bg-primary-700 border-r border-primary-800">
-                <li className="border-b-2 border-primary-800 px-1 py-5 pl-2 pr-2 text-white text-base-800">
+                <li className="border-b-2 border-primary-800 px-4 py-5  text-white text-base-800">
                     View Benchmarks per Cluster
                 </li>
                 {!this.state.clusters.length && (
@@ -81,7 +79,7 @@ class NavigationPanel extends Component {
                         <Link
                             to={`/main/compliance/${cluster.id}`}
                             onClick={this.props.onClose(false)}
-                            className="no-underline text-white px-1 border-b py-5 border-primary-400 pl-2 pr-2 hover:bg-primary-600"
+                            className="no-underline text-white px-4 border-b py-5 border-primary-400 hover:bg-primary-600"
                         >
                             {cluster.name}
                         </Link>
@@ -98,7 +96,7 @@ class NavigationPanel extends Component {
                 <div
                     role="button"
                     tabIndex="0"
-                    className="flex-1 opacity-50 bg-primary-700"
+                    className="flex-1"
                     onClick={this.props.onClose(true)}
                     onKeyDown={this.handleKeyDown}
                 />

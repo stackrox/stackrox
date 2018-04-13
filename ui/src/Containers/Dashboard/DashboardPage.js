@@ -318,7 +318,7 @@ class DashboardPage extends Component {
                 }
             }));
             return (
-                <div className="p-8 w-full lg:w-1/2" key={policyType.group}>
+                <div className="p-6 w-full lg:w-1/2" key={policyType.group}>
                     <div className="flex flex-col p-4 bg-white rounded-sm shadow">
                         <h2 className="flex items-center text-lg text-base font-sans text-base-600 py-4 tracking-wide">
                             <Icon.BarChart className="h-4 w-4 mr-3" />
@@ -386,17 +386,17 @@ class DashboardPage extends Component {
         return (
             <section className="w-full h-full transition">
                 <div className="flex bg-white border-b border-primary-500">
-                    <div className="flex flex-1 flex-col w-1/2 p-8">
+                    <div className="flex flex-1 flex-col w-1/2 p-6">
                         {this.renderEnvironmentRisk()}
                     </div>
-                    <div className="flex flex-1 flex-col w-1/2 p-8 border-l border-primary-200">
+                    <div className="flex flex-1 flex-col w-1/2 p-6 border-l border-primary-200">
                         {this.renderBenchmarks()}
                     </div>
                 </div>
-                <div className="overflow-auto">
+                <div className="overflow-auto bg-base-100">
                     <div className="flex flex-col w-full">
                         <div className="flex w-full flex-wrap">
-                            <div className="p-8 md:w-full lg:w-1/2">
+                            <div className="p-6 md:w-full lg:w-1/2">
                                 <div className="flex flex-col p-4 bg-white rounded-sm shadow">
                                     <h2 className="flex items-center text-lg text-base font-sans text-base-600 py-4 tracking-wide">
                                         <Icon.Layers className="h-4 w-4 mr-3" />
@@ -407,7 +407,7 @@ class DashboardPage extends Component {
                                     </div>
                                 </div>
                             </div>
-                            <div className="p-8 md:w-full lg:w-1/2">
+                            <div className="p-6 md:w-full lg:w-1/2">
                                 <div className="flex flex-col p-4 bg-white rounded-sm shadow">
                                     <h2 className="flex items-center text-lg text-base font-sans text-base-600 py-4 tracking-wide">
                                         <Icon.AlertTriangle className="h-4 w-4 mr-3" />
@@ -423,7 +423,7 @@ class DashboardPage extends Component {
                     <div className="flex flex-col w-full">
                         <div className="flex w-full flex-wrap">
                             {this.renderViolationsByPolicyCategory()}
-                            <div className="p-8 md:w-full lg:w-1/2">
+                            <div className="p-6 md:w-full lg:w-1/2">
                                 {this.renderTopRiskyDeployments()}
                             </div>
                         </div>

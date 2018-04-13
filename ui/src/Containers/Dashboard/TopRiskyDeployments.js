@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import dateFns from 'date-fns';
 
 const TopRiskyDeployments = props => (
-    <div className="flex flex-col p-4 bg-white rounded-sm shadow">
+    <div className="flex flex-col p-4 bg-white rounded-sm shadow h-full">
         <h2 className="flex items-center text-lg text-base font-sans text-base-600 pb-4 tracking-wide border-primary-200 border-b">
             <Icon.File className="h-4 w-4 mr-3" />
             Top Risky Deployments

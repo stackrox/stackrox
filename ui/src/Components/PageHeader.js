@@ -7,7 +7,7 @@ const renderSubHeader = subHeader => {
 };
 
 const PageHeader = props => (
-    <div className="flex flex-row bg-white py-3 px-4 border-b border-primary-300 h-16">
+    <div className="flex flex-row bg-white py-3 px-4 border-b border-primary-300 h-16 w-full">
         <div className="w-48 self-center">
             <div className="text-base-600 uppercase text-lg tracking-wide">{props.header}</div>
             {renderSubHeader(props.subHeader)}

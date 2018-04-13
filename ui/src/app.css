@@ -267,11 +267,25 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
 
 .navigation-panel {
     position: absolute;
-    left: 89px;
+    left: 81px;
     z-index: 10;
     top: 0;
     height: 100%;
-    width: 100%;
+     background-color: hsla(0, 0%, 21%, 0.85);
+}
+
+.navigation-panel ul {
+    width: 270px;
+}
+
+.search-modal {
+    position: absolute;
+    left: 0;
+    z-index: 10;
+    top: 59px;
+    height: 100%;
+    background-color: hsla(230, 30%, 21%, 0.85);
+    padding-bottom: 145px;
 }
 
 .search-option-categories {
@@ -308,5 +322,17 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
 .recharts-responsive-container .recharts-tooltip-cursor{
     fill-opacity: 0.0;
 }
+
+.left-navigation {
+    width: 81px;
+}
+
+.bg-global-search-empty-state {
+    background-image: url('images/globalSearchEmptyState.svg');
+    background-repeat: no-repeat;
+    background-position-x: 50%;
+    background-position-y: 50%;
+}
+
 
 @tailwind utilities;

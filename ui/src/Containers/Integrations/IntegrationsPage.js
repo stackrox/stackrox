@@ -312,7 +312,7 @@ class IntegrationsPage extends Component {
                     hideProgressBar
                     autoClose={3000}
                 />
-                <div className="md:w-full border-r border-primary-300 pt-4">
+                <div className="md:w-full border-r border-primary-300 pt-4 bg-base-100">
                     <h1 className="font-500 mx-3 border-b border-primary-300 pb-4 uppercase text-xl font-800 text-primary-600 tracking-wide">
                         Integrations
                     </h1>

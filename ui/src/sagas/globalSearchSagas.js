@@ -1,0 +1,59 @@
+import { takeLatest, all, call, fork, put, select } from 'redux-saga/effects';
+
+import { fetchGlobalSearchResults } from 'services/SearchService';
+import { actions, types } from 'reducers/globalSearch';
+import { actions as alertsActions } from 'reducers/alerts';
+import { actions as imagesActions } from 'reducers/images';
+import { actions as riskActions } from 'reducers/risk';
+import { selectors } from 'reducers';
+
+export function* getGlobalSearchResults() {
+    try {
+        const searchQuery = yield select(selectors.getGlobalSearchQuery);
+        const category = yield select(selectors.getGlobalSearchCategory);
+        const filters = {
+            query: searchQuery
+        };
+        if (category !== '') filters.categories = category;
+        const result = yield call(fetchGlobalSearchResults, filters);
+        yield put(actions.fetchGlobalSearchResults.success(result.response));
+    } catch (error) {
+        yield put(actions.fetchGlobalSearchResults.failure(error));
+    }
+}
+
+export function* passthroughGlobalSearchOptions({ searchOptions, category }) {
+    switch (category) {
+        case 'IMAGES':
+            yield put(imagesActions.setImagesSearchOptions(searchOptions));
+            break;
+        case 'ALERTS':
+            yield put(alertsActions.setAlertsSearchOptions(searchOptions));
+            break;
+        case 'DEPLOYMENTS':
+            yield put(riskActions.setDeploymentsSearchOptions(searchOptions));
+            break;
+        default:
+            break;
+    }
+}
+
+function* watchGlobalsearchSearchOptions() {
+    yield takeLatest(types.SET_SEARCH_OPTIONS, getGlobalSearchResults);
+}
+
+function* watchSetGlobalSearchCategory() {
+    yield takeLatest(types.SET_GLOBAL_SEARCH_CATEGORY, getGlobalSearchResults);
+}
+
+function* watchPassthroughGlobalSearchOptions() {
+    yield takeLatest(types.PASSTHROUGH_GLOBAL_SEARCH_OPTIONS, passthroughGlobalSearchOptions);
+}
+
+export default function* globalSearch() {
+    yield all([
+        fork(watchGlobalsearchSearchOptions),
+        fork(watchSetGlobalSearchCategory),
+        fork(watchPassthroughGlobalSearchOptions)
+    ]);
+}

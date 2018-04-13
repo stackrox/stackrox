@@ -7,6 +7,7 @@ import clusters from './clusterSagas';
 import deployments from './riskSagas';
 import images from './imageSagas';
 import integrations from './integrationSagas';
+import globalSearch from './globalSearchSagas';
 import searches from './searchSagas';
 
 export default function* root() {
@@ -18,6 +19,7 @@ export default function* root() {
         fork(deployments),
         fork(images),
         fork(integrations),
+        fork(globalSearch),
         fork(searches)
     ]);
 }

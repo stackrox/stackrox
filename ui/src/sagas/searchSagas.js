@@ -4,13 +4,15 @@ import { actions as alertActions } from 'reducers/alerts';
 import { actions as riskActions } from 'reducers/risk';
 import { actions as policiesActions } from 'reducers/policies';
 import { actions as imagesActions } from 'reducers/images';
+import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { types as locationActionTypes } from 'reducers/routes';
-import fetchOptions from 'services/SearchService';
+import { fetchOptions } from 'services/SearchService';
 
 const violationsPath = '/main/violations';
 const riskPath = '/main/risk';
 const policiesPath = '/main/policies';
 const imagesPath = '/main/images';
+const mainPath = '/main';
 
 export function* getSearchOptions(setSearchModifiers, setSearchSuggestions, query = '') {
     try {
@@ -24,9 +26,24 @@ export function* getSearchOptions(setSearchModifiers, setSearchSuggestions, quer
 }
 
 export function* watchLocation() {
+    let globalSearchDone = false;
     while (true) {
         const action = yield take(locationActionTypes.LOCATION_CHANGE);
         const { payload: location } = action;
+
+        if (
+            location &&
+            location.pathname &&
+            location.pathname.startsWith(mainPath) &&
+            !globalSearchDone
+        ) {
+            yield fork(
+                getSearchOptions,
+                globalSearchActions.setGlobalSearchModifiers,
+                globalSearchActions.setGlobalSearchSuggestions
+            );
+            globalSearchDone = true;
+        }
 
         if (location && location.pathname && location.pathname.startsWith(violationsPath)) {
             yield fork(

@@ -27,7 +27,6 @@ class SearchInput extends Component {
     onInputChange = value => value;
 
     setOptions = searchOptions => {
-        console.log(searchOptions);
         const searchModifiers = this.props.searchModifiers.slice();
         let searchSuggestions = [];
         if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
