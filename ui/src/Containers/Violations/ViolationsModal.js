@@ -156,6 +156,10 @@ class ViolationsModal extends Component {
                         <span className="font-bold text-primary-500">Deployment ID:</span>{' '}
                         {alert.deployment.id}
                     </div>
+                    <div className="py-2 px-3 truncate">
+                        <span className="font-bold text-primary-500">Cluster:</span>{' '}
+                        {alert.deployment.clusterName}
+                    </div>
                     {alert.deployment.containers.map(container => this.renderContainer(container))}
                     <div className="py-2 px-3 truncate">
                         <span className="font-bold text-primary-500">Categories: </span>

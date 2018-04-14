@@ -23,6 +23,7 @@ class PolicyAlertsSidePanel extends Component {
     renderTable = () => {
         const columns = [
             { key: 'deployment.name', label: 'Deployment' },
+            { key: 'deployment.clusterName', label: 'Cluster' },
             { key: 'time', label: 'Time', sortMethod: sortTime }
         ];
         const rows = this.props.alerts.map(alert => {
