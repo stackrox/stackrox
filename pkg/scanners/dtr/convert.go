@@ -1,8 +1,6 @@
 package dtr
 
 import (
-	"strings"
-
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/scans"
 	"github.com/golang/protobuf/ptypes"
@@ -72,10 +70,4 @@ func convertTagScanSummariesToImageScans(server string, tagScanSummaries []*tagS
 		})
 	}
 	return imageScans
-}
-
-func convertScanState(status scanStatus) v1.ImageScanState {
-	upper := strings.ToUpper(status.String())
-	val := v1.ImageScanState_value[upper]
-	return v1.ImageScanState(val)
 }

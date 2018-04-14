@@ -30,34 +30,36 @@ func (b *Indexer) DeleteImage(sha string) error {
 }
 
 func (b *Indexer) getImageSHAsFromScope(request *v1.ParsedSearchRequest) (mapset.Set, error) {
-	if scopesQuery := getScopesQuery(request.GetScopes(), scopeToDeploymentQuery); scopesQuery != nil {
-		searchRequest := bleve.NewSearchRequest(scopesQuery)
-		searchRequest.Fields = []string{"containers.image.name.sha"}
-		searchRequest.Size = maxDeploymentsReturned
-		searchResult, err := b.deploymentIndex.Search(searchRequest)
-		if err != nil {
-			return nil, err
+	scopesQuery := getScopesQuery(request.GetScopes(), scopeToDeploymentQuery)
+	searchRequest := bleve.NewSearchRequest(scopesQuery)
+	searchRequest.Fields = []string{"containers.image.name.sha"}
+	searchRequest.Size = maxDeploymentsReturned
+	searchResult, err := b.deploymentIndex.Search(searchRequest)
+	if err != nil {
+		return nil, err
+	}
+	shaSetFromDeployment := mapset.NewSet()
+	for _, hit := range searchResult.Hits {
+		shaObj := hit.Fields["containers.image.name.sha"]
+		if shaObj == nil {
+			continue
 		}
-		shaSetFromDeployment := mapset.NewSet()
-		for _, hit := range searchResult.Hits {
-			shaObj := hit.Fields["containers.image.name.sha"]
-			t := reflect.TypeOf(shaObj)
-			kind := t.Kind()
-			switch kind {
-			case reflect.Slice:
-				strSlice, ok := shaObj.([]interface{})
-				if !ok {
-					logger.Errorf("Unexpected Slice type %s for image sha", t)
-					continue
-				}
-				for _, s := range strSlice {
-					shaSetFromDeployment.Add(s.(string))
-				}
-			case reflect.String:
-				shaSetFromDeployment.Add(shaObj.(string))
-			default:
-				logger.Errorf("Unexpected type %s for image sha", t)
+		t := reflect.TypeOf(shaObj)
+		kind := t.Kind()
+		switch kind {
+		case reflect.Slice:
+			strSlice, ok := shaObj.([]interface{})
+			if !ok {
+				logger.Errorf("Unexpected Slice type %s for image sha", t)
+				continue
 			}
+			for _, s := range strSlice {
+				shaSetFromDeployment.Add(s.(string))
+			}
+		case reflect.String:
+			shaSetFromDeployment.Add(shaObj.(string))
+		default:
+			logger.Errorf("Unexpected type %s for image sha", t)
 		}
 		return shaSetFromDeployment, nil
 	}
@@ -80,7 +82,10 @@ func (b *Indexer) SearchImages(request *v1.ParsedSearchRequest) ([]search.Result
 		}
 		return searchResults, nil
 	}
-	imageQuery := fieldsToQuery(request.GetFields(), imageObjectMap)
+	imageQuery, err := fieldsToQuery(request.GetFields(), imageObjectMap)
+	if err != nil {
+		return nil, err
+	}
 	if request.GetStringQuery() != "" {
 		imageQuery.AddQuery(bleve.NewQueryStringQuery(request.GetStringQuery()))
 	}
@@ -89,7 +94,7 @@ func (b *Indexer) SearchImages(request *v1.ParsedSearchRequest) ([]search.Result
 		return nil, err
 	}
 	// Filter results by which fields exist in the results retrieved from the deployments
-	if shaSetFromDeployment != nil {
+	if len(request.GetScopes()) != 0 {
 		filteredResults := results[:0]
 		for _, result := range results {
 			if shaSetFromDeployment.Contains(result.ID) {

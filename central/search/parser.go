@@ -106,15 +106,17 @@ func addScopeField(scopeFields map[string][]string, key string, values []string)
 
 func addGeneralField(request *v1.ParsedSearchRequest, key string, values []string) error {
 	// transform the key into its mapped form
-	transformedKey, ok := allOptionsMaps[key]
+	field, ok := allOptionsMaps[key]
 	if !ok {
 		return fmt.Errorf("Key %s is not a valid search option", key)
 	}
-	if _, ok := request.Fields[transformedKey]; !ok {
-		request.Fields[transformedKey] = new(v1.ParsedSearchRequest_Values)
+	if _, ok := request.Fields[field.FieldPath]; !ok {
+		request.Fields[field.FieldPath] = &v1.ParsedSearchRequest_Values{
+			Field: field,
+		}
 	}
 	// Append the fields < key: [value value] >
-	request.Fields[transformedKey].Values = append(request.Fields[transformedKey].Values, values...)
+	request.Fields[field.FieldPath].Values = append(request.Fields[field.FieldPath].Values, values...)
 	return nil
 }
 

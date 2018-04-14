@@ -21,7 +21,7 @@ func (b *Indexer) DeletePolicy(id string) error {
 	return b.policyIndex.Delete(id)
 }
 
-func scopeToPolicyQuery(scope *v1.Scope) *query.ConjunctionQuery {
+func scopeToPolicyQuery(scope *v1.Scope) query.Query {
 	conjunctionQuery := bleve.NewConjunctionQuery()
 	if scope.GetCluster() != "" {
 		disjunction := bleve.NewDisjunctionQuery()
@@ -47,7 +47,7 @@ func scopeToPolicyQuery(scope *v1.Scope) *query.ConjunctionQuery {
 		conjunctionQuery.AddQuery(newPrefixQuery("scope.label.value", scope.GetLabel().GetValue()))
 	}
 	if len(conjunctionQuery.Conjuncts) == 0 {
-		return nil
+		return bleve.NewMatchNoneQuery()
 	}
 	return conjunctionQuery
 }

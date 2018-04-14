@@ -1,6 +1,8 @@
 package blevesearch
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 
 	"bitbucket.org/stack-rox/apollo/central/metrics"
@@ -12,24 +14,17 @@ import (
 
 const maxSearchResponses = 100
 
-func transformFields(fields map[string]*v1.ParsedSearchRequest_Values, objectMap map[string]string) map[string]*v1.ParsedSearchRequest_Values {
-	newMap := make(map[string]*v1.ParsedSearchRequest_Values, len(fields))
-	for k, v := range fields {
-		// first field
-		spl := strings.SplitN(k, ".", 2)
-		transformed, ok := objectMap[spl[0]]
-		if !ok {
-			newMap[k] = v
-			continue
-		}
-		// this implies that the field is a top level object of this struct
-		if transformed == "" {
-			newMap[spl[1]] = v
-		} else {
-			newMap[transformed+"."+spl[1]] = v
-		}
+func transformKey(key string, objectMap map[string]string) string {
+	spl := strings.SplitN(key, ".", 2)
+	transformed, ok := objectMap[spl[0]]
+	if !ok {
+		return key
 	}
-	return newMap
+	// this implies that the field is a top level object of this struct
+	if transformed == "" {
+		return spl[1]
+	}
+	return transformed + "." + spl[1]
 }
 
 func collapseResults(searchResult *bleve.SearchResult) (results []searchPkg.Result) {
@@ -74,45 +69,39 @@ func valuesToDisjunctionQuery(field string, values *v1.ParsedSearchRequest_Value
 	return disjunctionQuery
 }
 
-func fieldsToQuery(fieldMap map[string]*v1.ParsedSearchRequest_Values, objectMap map[string]string) *query.ConjunctionQuery {
-	newFieldMap := transformFields(fieldMap, objectMap)
-	conjunctionQuery := bleve.NewConjunctionQuery()
-	for field, values := range newFieldMap {
-		conjunctionQuery.AddQuery(valuesToDisjunctionQuery(field, values))
-	}
-	return conjunctionQuery
-}
-
-func getScopesQuery(scopes []*v1.Scope, scopeToQuery func(scope *v1.Scope) *query.ConjunctionQuery) *query.DisjunctionQuery {
+func getScopesQuery(scopes []*v1.Scope, scopeToQuery func(scope *v1.Scope) query.Query) query.Query {
 	if len(scopes) != 0 {
 		disjunctionQuery := bleve.NewDisjunctionQuery()
 		for _, scope := range scopes {
 			// Check if nil as some resources may not be applicable to scopes
-			if q := scopeToQuery(scope); q != nil {
-				disjunctionQuery.AddQuery(scopeToQuery(scope))
-			}
+			disjunctionQuery.AddQuery(scopeToQuery(scope))
 		}
 		return disjunctionQuery
 	}
-	return nil
+	return bleve.NewMatchAllQuery()
 }
 
-func buildQuery(request *v1.ParsedSearchRequest, scopeToQuery func(scope *v1.Scope) *query.ConjunctionQuery, objectMap map[string]string) *query.ConjunctionQuery {
+func buildQuery(request *v1.ParsedSearchRequest, scopeToQuery func(scope *v1.Scope) query.Query, objectMap map[string]string) (*query.ConjunctionQuery, error) {
 	conjunctionQuery := bleve.NewConjunctionQuery()
-	if scopesQuery := getScopesQuery(request.GetScopes(), scopeToQuery); scopesQuery != nil {
-		conjunctionQuery.AddQuery(scopesQuery)
-	}
+	conjunctionQuery.AddQuery(getScopesQuery(request.GetScopes(), scopeToQuery))
 	if request.GetFields() != nil && len(request.GetFields()) != 0 {
-		conjunctionQuery.AddQuery(fieldsToQuery(request.Fields, objectMap))
+		q, err := fieldsToQuery(request.GetFields(), objectMap)
+		if err != nil {
+			return nil, err
+		}
+		conjunctionQuery.AddQuery(q)
 	}
 	if request.GetStringQuery() != "" {
 		conjunctionQuery.AddQuery(newPrefixQuery("", request.GetStringQuery()))
 	}
-	return conjunctionQuery
+	return conjunctionQuery, nil
 }
 
-func runSearchRequest(request *v1.ParsedSearchRequest, index bleve.Index, scopeToQuery func(scope *v1.Scope) *query.ConjunctionQuery, objectMap map[string]string) ([]searchPkg.Result, error) {
-	conjunctionQuery := buildQuery(request, scopeToQuery, objectMap)
+func runSearchRequest(request *v1.ParsedSearchRequest, index bleve.Index, scopeToQuery func(scope *v1.Scope) query.Query, objectMap map[string]string) ([]searchPkg.Result, error) {
+	conjunctionQuery, err := buildQuery(request, scopeToQuery, objectMap)
+	if err != nil {
+		return nil, err
+	}
 	return runQuery(conjunctionQuery, index)
 }
 
@@ -128,4 +117,172 @@ func runQuery(query query.Query, index bleve.Index) ([]searchPkg.Result, error) 
 	}
 	metrics.SetAPIRequestDurationTime(searchResult.Took)
 	return collapseResults(searchResult), nil
+}
+
+var datatypeToQueryFunc = map[v1.SearchDataType]func(string, []string) (query.Query, error){
+	v1.SearchDataType_SEARCH_STRING:      newStringQuery,
+	v1.SearchDataType_SEARCH_BOOL:        newBoolQuery,
+	v1.SearchDataType_SEARCH_NUMERIC:     newNumericQuery,
+	v1.SearchDataType_SEARCH_SEVERITY:    newSeverityQuery,
+	v1.SearchDataType_SEARCH_ENFORCEMENT: newEnforcementQuery,
+}
+
+func newStringQuery(field string, values []string) (query.Query, error) {
+	d := bleve.NewDisjunctionQuery()
+	for _, val := range values {
+		d.AddQuery(newPrefixQuery(field, val))
+	}
+	return d, nil
+}
+
+func newBoolQuery(field string, values []string) (query.Query, error) {
+	d := bleve.NewDisjunctionQuery()
+	for _, val := range values {
+		b, err := strconv.ParseBool(val)
+		if err != nil {
+			return nil, err
+		}
+		q := bleve.NewBoolFieldQuery(b)
+		q.FieldVal = field
+		d.AddQuery(q)
+	}
+	return d, nil
+}
+
+func floatPtr(f float64) *float64 {
+	return &f
+}
+
+func boolPtr(b bool) *bool {
+	return &b
+}
+
+func parseNumericStringToPtr(s string) (*float64, error) {
+	val, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return nil, err
+	}
+	return &val, nil
+}
+
+func parseNumericValue(num string) (min *float64, max *float64, inclusive *bool, err error) {
+	if strings.HasPrefix(num, "<=") {
+		inclusive = boolPtr(true)
+		max, err = parseNumericStringToPtr(strings.TrimPrefix(num, "<="))
+	} else if strings.HasPrefix(num, "<") {
+		inclusive = boolPtr(false)
+		max, err = parseNumericStringToPtr(strings.TrimPrefix(num, "<"))
+	} else if strings.HasPrefix(num, ">=") {
+		inclusive = boolPtr(true)
+		min, err = parseNumericStringToPtr(strings.TrimPrefix(num, ">="))
+	} else if strings.HasPrefix(num, ">") {
+		inclusive = boolPtr(false)
+		min, err = parseNumericStringToPtr(strings.TrimPrefix(num, ">"))
+	} else {
+		inclusive = boolPtr(true)
+		min, err = parseNumericStringToPtr(num)
+		max = min
+	}
+	return
+}
+
+func newNumericQuery(field string, values []string) (query.Query, error) {
+	d := bleve.NewDisjunctionQuery()
+	for _, val := range values {
+		min, max, inclusive, err := parseNumericValue(val)
+		if err != nil {
+			return nil, err
+		}
+		q := bleve.NewNumericRangeInclusiveQuery(min, max, inclusive, inclusive)
+		q.FieldVal = field
+		d.AddQuery(q)
+	}
+	return d, nil
+}
+
+func stringToSeverity(s string) (v1.Severity, error) {
+	s = strings.ToLower(s)
+	if strings.Contains(s, "l") {
+		return v1.Severity_LOW_SEVERITY, nil
+	}
+	if strings.Contains(s, "m") {
+		return v1.Severity_MEDIUM_SEVERITY, nil
+	}
+	if strings.Contains(s, "h") {
+		return v1.Severity_HIGH_SEVERITY, nil
+	}
+	if strings.Contains(s, "c") {
+		return v1.Severity_CRITICAL_SEVERITY, nil
+	}
+	return v1.Severity_UNSET_SEVERITY, fmt.Errorf("Could not parse severity '%s'. Valid options are low, medium, high, critical", s)
+}
+
+func newExactNumericMatch(field string, f float64) query.Query {
+	t := true
+	q := bleve.NewNumericRangeInclusiveQuery(&f, &f, &t, &t)
+	q.FieldVal = field
+	return q
+}
+
+func newSeverityQuery(field string, values []string) (query.Query, error) {
+	d := bleve.NewDisjunctionQuery()
+	for _, v := range values {
+		sev, err := stringToSeverity(v)
+		if err != nil {
+			return nil, err
+		}
+		d.AddQuery(newExactNumericMatch(field, float64(sev)))
+	}
+	return d, nil
+}
+
+func stringToEnforcement(s string) (v1.EnforcementAction, error) {
+	s = strings.ToLower(s)
+	if strings.Contains(s, "scale") {
+		return v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, nil
+	}
+	if strings.Contains(s, "node") {
+		return v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, nil
+	}
+	if strings.Contains(s, "none") {
+		return v1.EnforcementAction_UNSET_ENFORCEMENT, nil
+	}
+	return v1.EnforcementAction_UNSET_ENFORCEMENT, fmt.Errorf("Could not parse enforcement '%s'. Valid options are node, and scale", s)
+}
+
+func newEnforcementQuery(field string, values []string) (query.Query, error) {
+	d := bleve.NewDisjunctionQuery()
+	for _, v := range values {
+		en, err := stringToEnforcement(v)
+		if err != nil {
+			return nil, err
+		}
+		d.AddQuery(newExactNumericMatch(field, float64(en)))
+	}
+	return d, nil
+}
+
+func fieldsToQuery(fieldMap map[string]*v1.ParsedSearchRequest_Values, objectMap map[string]string) (*query.ConjunctionQuery, error) {
+	newFieldMap := transformFields(fieldMap, objectMap)
+	conjunctionQuery := bleve.NewConjunctionQuery()
+	for field, queryValues := range newFieldMap {
+		queryFunc, ok := datatypeToQueryFunc[queryValues.GetField().GetType()]
+		if !ok {
+			return nil, fmt.Errorf("Query for type %s is not implemented", queryValues.GetField().GetType())
+		}
+		conjunct, err := queryFunc(field, queryValues.GetValues())
+		if err != nil {
+			return nil, err
+		}
+		conjunctionQuery.AddQuery(conjunct)
+	}
+	return conjunctionQuery, nil
+}
+
+func transformFields(fields map[string]*v1.ParsedSearchRequest_Values, objectMap map[string]string) map[string]*v1.ParsedSearchRequest_Values {
+	newMap := make(map[string]*v1.ParsedSearchRequest_Values, len(fields))
+	for k, v := range fields {
+		newMap[transformKey(k, objectMap)] = v
+	}
+	return newMap
 }

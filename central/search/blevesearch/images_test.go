@@ -56,6 +56,10 @@ func (suite *ImageTestSuite) TestSearchImages() {
 		},
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
 			"image.name.registry": {
+				Field: &v1.SearchField{
+					FieldPath: "image.name.registry",
+					Type:      v1.SearchDataType_SEARCH_STRING,
+				},
 				Values: []string{"docker.io", "stackrox.io"},
 			},
 		},
@@ -64,9 +68,4 @@ func (suite *ImageTestSuite) TestSearchImages() {
 	results, err = suite.SearchImages(request)
 	suite.NoError(err)
 	suite.Len(results, 2)
-
-	// Test No scopes and should image
-
-	// Test Failure
-
 }

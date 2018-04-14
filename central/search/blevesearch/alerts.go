@@ -24,7 +24,7 @@ func (b *Indexer) DeleteAlert(id string) error {
 	return b.alertIndex.Delete(id)
 }
 
-func scopeToAlertQuery(scope *v1.Scope) *query.ConjunctionQuery {
+func scopeToAlertQuery(scope *v1.Scope) query.Query {
 	conjunctionQuery := bleve.NewConjunctionQuery()
 	if scope.GetCluster() != "" {
 		conjunctionQuery.AddQuery(newPrefixQuery("deployment.cluster_name", scope.GetCluster()))
@@ -36,7 +36,7 @@ func scopeToAlertQuery(scope *v1.Scope) *query.ConjunctionQuery {
 		conjunctionQuery.AddQuery(newPrefixQuery("deployment.labels."+scope.GetLabel().GetKey(), scope.GetLabel().GetValue()))
 	}
 	if len(conjunctionQuery.Conjuncts) == 0 {
-		return nil
+		return bleve.NewMatchNoneQuery()
 	}
 	return conjunctionQuery
 }

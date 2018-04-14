@@ -5,6 +5,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -56,18 +57,28 @@ func (suite *SearchTestSuite) TestValuesToDisjunctionQuery() {
 func (suite *SearchTestSuite) TestFieldsToQuery() {
 	fieldMap := map[string]*v1.ParsedSearchRequest_Values{
 		"policy.image_policy.image_name.registry": {
+			Field: &v1.SearchField{
+				FieldPath: "policy.image_policy.image_name.registry",
+				Type:      v1.SearchDataType_SEARCH_STRING,
+			},
 			Values: []string{
 				"blah",
 				"docker.io",
 			},
 		},
 		"policy.image_policy.image_name.namespace": {
+			Field: &v1.SearchField{
+				FieldPath: "policy.image_policy.image_name.namespace",
+				Type:      v1.SearchDataType_SEARCH_STRING,
+			},
 			Values: []string{
 				"stackrox",
 			},
 		},
 	}
-	query := fieldsToQuery(fieldMap, alertObjectMap)
+	query, err := fieldsToQuery(fieldMap, alertObjectMap)
+	suite.NoError(err)
+
 	results, err := runQuery(query, suite.alertIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
@@ -75,9 +86,14 @@ func (suite *SearchTestSuite) TestFieldsToQuery() {
 
 	// Add a field that does not exist and this should fail
 	fieldMap["blah"] = &v1.ParsedSearchRequest_Values{
+		Field: &v1.SearchField{
+			FieldPath: "blah",
+			Type:      v1.SearchDataType_SEARCH_STRING,
+		},
 		Values: []string{"blah"},
 	}
-	query = fieldsToQuery(fieldMap, alertObjectMap)
+	query, err = fieldsToQuery(fieldMap, alertObjectMap)
+	suite.NoError(err)
 	results, err = runQuery(query, suite.alertIndex)
 	suite.NoError(err)
 	suite.Empty(results)
@@ -88,6 +104,10 @@ func (suite *SearchTestSuite) TestRunRequest() {
 	request := &v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
 			"id": {
+				Field: &v1.SearchField{
+					FieldPath: "id",
+					Type:      v1.SearchDataType_SEARCH_STRING,
+				},
 				Values: []string{"Alert1"},
 			},
 		},
@@ -114,9 +134,17 @@ func (suite *SearchTestSuite) TestRunRequest() {
 	request = &v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
 			"id": {
+				Field: &v1.SearchField{
+					FieldPath: "id",
+					Type:      v1.SearchDataType_SEARCH_STRING,
+				},
 				Values: []string{"Alert1"},
 			},
 			"policy.name": {
+				Field: &v1.SearchField{
+					FieldPath: "policy.name",
+					Type:      v1.SearchDataType_SEARCH_STRING,
+				},
 				Values: []string{"vulnerable"},
 			},
 		},
@@ -136,9 +164,17 @@ func (suite *SearchTestSuite) TestRunRequest() {
 	request = &v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
 			"id": {
+				Field: &v1.SearchField{
+					FieldPath: "id",
+					Type:      v1.SearchDataType_SEARCH_STRING,
+				},
 				Values: []string{"NoID"},
 			},
 			"policy.name": {
+				Field: &v1.SearchField{
+					FieldPath: "policy.name",
+					Type:      v1.SearchDataType_SEARCH_STRING,
+				},
 				Values: []string{"vulnerable"},
 			},
 		},
@@ -170,26 +206,134 @@ func (suite *SearchTestSuite) TestRunQuery() {
 func (suite *SearchTestSuite) TestTransformFields() {
 	fields := map[string]*v1.ParsedSearchRequest_Values{
 		"image.name.sha": {
+			Field: &v1.SearchField{
+				FieldPath: "image.name.sha",
+				Type:      v1.SearchDataType_SEARCH_STRING,
+			},
 			Values: []string{"sha"},
 		},
 		"blah": {
+			Field: &v1.SearchField{
+				FieldPath: "blah",
+				Type:      v1.SearchDataType_SEARCH_STRING,
+			},
 			Values: []string{"blah"},
 		},
 		"alert.deployment.name": {
+			Field: &v1.SearchField{
+				FieldPath: "alert.deployment.name",
+				Type:      v1.SearchDataType_SEARCH_STRING,
+			},
 			Values: []string{"name"},
 		},
 	}
 
 	expectedFields := map[string]*v1.ParsedSearchRequest_Values{
 		"deployment.containers.image.name.sha": {
+			Field: &v1.SearchField{
+				FieldPath: "image.name.sha",
+				Type:      v1.SearchDataType_SEARCH_STRING,
+			},
 			Values: []string{"sha"},
 		},
 		"blah": {
+			Field: &v1.SearchField{
+				FieldPath: "blah",
+				Type:      v1.SearchDataType_SEARCH_STRING,
+			},
 			Values: []string{"blah"},
 		},
 		"deployment.name": {
+			Field: &v1.SearchField{
+				FieldPath: "alert.deployment.name",
+				Type:      v1.SearchDataType_SEARCH_STRING,
+			},
 			Values: []string{"name"},
 		},
 	}
 	suite.Equal(expectedFields, transformFields(fields, alertObjectMap))
+}
+
+func TestParseNumericValue(t *testing.T) {
+	t.Parallel()
+	type expected struct {
+		min       *float64
+		max       *float64
+		inclusive *bool
+		hasError  bool
+	}
+	tests := []struct {
+		input        string
+		expectedVals expected
+	}{
+		{
+			input: "<=3",
+			expectedVals: expected{
+				min:       nil,
+				max:       floatPtr(float64(3)),
+				inclusive: boolPtr(true),
+				hasError:  false,
+			},
+		},
+		{
+			input: "<3",
+			expectedVals: expected{
+				min:       nil,
+				max:       floatPtr(float64(3)),
+				inclusive: boolPtr(false),
+				hasError:  false,
+			},
+		},
+		{
+			input: ">=3",
+			expectedVals: expected{
+				min:       floatPtr(float64(3)),
+				max:       nil,
+				inclusive: boolPtr(true),
+				hasError:  false,
+			},
+		},
+		{
+			input: ">3",
+			expectedVals: expected{
+				min:       floatPtr(float64(3)),
+				max:       nil,
+				inclusive: boolPtr(false),
+				hasError:  false,
+			},
+		},
+		{
+			input: "3",
+			expectedVals: expected{
+				min:       floatPtr(float64(3)),
+				max:       floatPtr(float64(3)),
+				inclusive: boolPtr(true),
+				hasError:  false,
+			},
+		},
+		{
+			input: ">=h",
+			expectedVals: expected{
+				hasError: true,
+			},
+		},
+		{
+			input: "=>3",
+			expectedVals: expected{
+				hasError: true,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		min, max, inclusive, err := parseNumericValue(test.input)
+		if test.expectedVals.hasError {
+			assert.Error(t, err)
+			continue
+		}
+		assert.Equal(t, test.expectedVals.min, min)
+		assert.Equal(t, test.expectedVals.max, max)
+		assert.Equal(t, test.expectedVals.inclusive, inclusive)
+	}
+
 }

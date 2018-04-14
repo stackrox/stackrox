@@ -119,16 +119,6 @@ func TestConvertLayers(t *testing.T) {
 	assert.Equal(t, expectedLayers, actualLayers)
 }
 
-func TestConvertScanState(t *testing.T) {
-	assert.Equal(t, v1.ImageScanState_FAILED, convertScanState(failed))
-	assert.Equal(t, v1.ImageScanState_UNSCANNED, convertScanState(unscanned))
-	assert.Equal(t, v1.ImageScanState_SCANNING, convertScanState(scanning))
-	assert.Equal(t, v1.ImageScanState_PENDING, convertScanState(pending))
-	assert.Equal(t, v1.ImageScanState_SCANNED, convertScanState(scanned))
-	assert.Equal(t, v1.ImageScanState_CHECKING, convertScanState(checking))
-	assert.Equal(t, v1.ImageScanState_COMPLETED, convertScanState(completed))
-}
-
 func TestConvertTagScanSummariesToImageScans(t *testing.T) {
 	dockerLayers, expectedComponents := getTestLayers()
 	tagScanSummaries := []*tagScanSummary{

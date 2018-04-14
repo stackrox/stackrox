@@ -9,16 +9,6 @@ import "api/v1/search_service.proto";
 
 package v1;
 
-enum ImageScanState {
-    FAILED    = 0;
-    UNSCANNED = 1;
-    SCANNING  = 2;
-    PENDING   = 3;
-    SCANNED   = 4;
-    CHECKING  = 5;
-    COMPLETED = 6;
-}
-
 message ImageLayer {
     string instruction                 = 1;
     string value                       = 2;

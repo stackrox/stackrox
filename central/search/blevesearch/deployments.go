@@ -22,7 +22,7 @@ func (b *Indexer) DeleteDeployment(id string) error {
 	return b.deploymentIndex.Delete(id)
 }
 
-func scopeToDeploymentQuery(scope *v1.Scope) *query.ConjunctionQuery {
+func scopeToDeploymentQuery(scope *v1.Scope) query.Query {
 	conjunctionQuery := bleve.NewConjunctionQuery()
 	if scope.GetCluster() != "" {
 		conjunctionQuery.AddQuery(newPrefixQuery("cluster_name", scope.GetCluster()))
@@ -34,7 +34,7 @@ func scopeToDeploymentQuery(scope *v1.Scope) *query.ConjunctionQuery {
 		conjunctionQuery.AddQuery(newPrefixQuery("labels."+scope.GetLabel().GetKey(), scope.GetLabel().GetValue()))
 	}
 	if len(conjunctionQuery.Conjuncts) == 0 {
-		return nil
+		return bleve.NewMatchNoneQuery()
 	}
 	return conjunctionQuery
 }

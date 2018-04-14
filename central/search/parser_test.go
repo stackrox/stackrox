@@ -151,9 +151,17 @@ func TestParseRawQuery(t *testing.T) {
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
 			"deployment.name": {
+				Field: &v1.SearchField{
+					FieldPath: "deployment.name",
+					Type:      v1.SearchDataType_SEARCH_STRING,
+				},
 				Values: []string{"field1", "field12"},
 			},
 			"policy.categories": {
+				Field: &v1.SearchField{
+					FieldPath: "policy.categories",
+					Type:      v1.SearchDataType_SEARCH_STRING,
+				},
 				Values: []string{"field2"},
 			},
 		},
@@ -169,9 +177,17 @@ func TestParseRawQuery(t *testing.T) {
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
 			"deployment.name": {
+				Field: &v1.SearchField{
+					FieldPath: "deployment.name",
+					Type:      v1.SearchDataType_SEARCH_STRING,
+				},
 				Values: []string{"field1"},
 			},
 			"policy.categories": {
+				Field: &v1.SearchField{
+					FieldPath: "policy.categories",
+					Type:      v1.SearchDataType_SEARCH_STRING,
+				},
 				Values: []string{"field2"},
 			},
 		},

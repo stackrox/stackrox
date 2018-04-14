@@ -16,6 +16,17 @@ enum SearchCategory {
     // TODO support Benchmarks
 }
 
+enum SearchDataType {
+    SEARCH_BOOL     = 0;
+    SEARCH_NUMERIC  = 1;
+    SEARCH_STRING   = 2;
+    SEARCH_DATETIME = 3;
+
+    // Enums must be accounted for because they will all be handled on an individual basis
+    SEARCH_ENFORCEMENT = 4;
+    SEARCH_SEVERITY    = 5;
+}
+
 message RawQuery {
     string query = 1; // A query is a formatted string like Cluster:dev+Namespace:stackrox+Image Name:nginx
 }
@@ -25,11 +36,17 @@ message RawSearchRequest {
     repeated SearchCategory categories = 2;
 }
 
+message SearchField {
+    string field_path   = 1;
+    SearchDataType type = 2;
+}
+
 message ParsedSearchRequest {
     repeated SearchCategory   categories   = 1;
     repeated Scope            scopes       = 2;
     message Values {
         repeated string values  = 1;
+        SearchField field       = 2;
     }
     map<string, Values>       fields       = 3;
     string                    string_query = 4;
