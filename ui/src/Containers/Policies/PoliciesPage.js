@@ -5,6 +5,7 @@ import { Form } from 'react-form';
 import axios from 'axios';
 import * as Icon from 'react-feather';
 import isEqual from 'lodash/isEqual';
+import find from 'lodash/find';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import PolicyCreationForm from 'Containers/Policies/PolicyCreationForm';
@@ -28,7 +29,7 @@ const reducer = (action, prevState, nextState) => {
         case 'UNSELECT_POLICY':
             return { selectedPolicy: null, editingPolicy: null, addingPolicy: false };
         case 'EDIT_POLICY':
-            return { editingPolicy: nextState.policy, addingPolicy: false };
+            return { editingPolicy: nextState.policy };
         case 'ADD_POLICY':
             return { editingPolicy: nextState.policy, addingPolicy: true };
         case 'CANCEL_EDIT_POLICY':
@@ -225,8 +226,9 @@ class PoliciesPage extends Component {
             .post('/v1/policies', policy)
             .then(() => {
                 this.cancelAddingPolicy();
-                this.getPolicies();
-                this.selectPolicy(policy);
+                this.getPolicies().then(() => {
+                    this.selectPolicy(find(this.state.policies, ['name', policy.name]));
+                });
             })
             .catch(error => {
                 console.error(error);
@@ -480,8 +482,8 @@ class PoliciesPage extends Component {
                     hideProgressBar
                     autoClose={3000}
                 />
-                <div className="flex flex-1 bg-base-100">
-                    <div className="flex flex-row w-full overflow-y-scroll bg-white rounded-sm shadow">
+                <div className="flex flex-1 bg-base-100 h-full">
+                    <div className="flex flex-row w-full h-full bg-white rounded-sm shadow">
                         {this.renderTablePanel()}
                         {this.renderViewPanel()}
                         {this.renderEditPanel()}
