@@ -59,6 +59,7 @@ in your shell to ensure that you get the version you want.
 
 ### Docker Swarm
 
+#### Deploy
 Set `LOCAL_API_ENDPOINT` to a `hostname:port` string appropriate for your
 local host, VM, or cluster, then:
 
@@ -86,12 +87,16 @@ use this variant instead:
 ./deploy/swarm/deploy-local.sh
 ```
 
-Monitoring on Swarm. This will create a prometheus instance
+#### Monitoring
+You can deploy Prometheus to monitor the services:
+
 ```bash
 docker stack deploy -c prometheus/swarm.yaml prevent-health
 ```
 
 ### Kubernetes
+
+#### Deploy
 Set your Docker image-pull credentials as `REGISTRY_USERNAME` and
 `REGISTRY_PASSWORD`, then run:
 
@@ -99,6 +104,7 @@ Set your Docker image-pull credentials as `REGISTRY_USERNAME` and
 ./deploy/k8s/deploy.sh
 ```
 
+#### Exposing the UI
 The script will provide access the UI using a local port-forward, but you can
 optionally create a LoadBalancer service to access Central instead.
 
@@ -106,10 +112,25 @@ optionally create a LoadBalancer service to access Central instead.
 kubectl create -f deploy/k8s/lb.yaml
 ```
 
-Monitoring on Kubernetes. Port forward to the pod at 9090 to access the UI
+#### RBAC
+If you are deploying Sensor into a cluster with RBAC enabled (generally,
+this applies to Kubernetes >=1.8), you need to create RBAC bindings.
+
+In some environments, you may need to elevate privileges to execute this;
+for instance, in GKE, you need to pass kubectl `--username` and `--password`
+from `gcloud container clusters describe --format=json [NAME] | jq .masterAuth`.)
+
+```bash
+kubectl create -f deploy/k8s/rbac.yaml
+```
+
+#### Monitoring
+You can deploy Prometheus to monitor the services:
+
 ```bash
 kubectl create -f prometheus/k8s.yaml
 ```
+Create a port forward to the pod on port 9090 to access the UI.
 
 ## How to Release a New Version
 Releasing a new version of StackRox Prevent requires only a few steps.
@@ -217,7 +238,7 @@ docker run -it --entrypoint=/prevent/clair \
 
 * Add registry integrations through UI
 * Add Clair integration through UI
-* If nothing is showing up, you may want to hit `reassess` just to reprocess all of the data 
+* If nothing is showing up, you may want to hit "Reassess" just to reprocess all of the data
 
 ### Notes
 

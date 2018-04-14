@@ -80,6 +80,7 @@ spec:
         - name: certs
           mountPath: /run/secrets/stackrox.io/
           readOnly: true
+      serviceAccount: sensor
       imagePullSecrets:
       - name: {{.ImagePullSecret}}
       volumes:
@@ -106,7 +107,13 @@ spec:
     targetPort: 443
   selector:
     app: sensor
-  type: ClusterIP`
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sensor
+  namespace: {{.Namespace}}`
 
 	k8sCmd = commandPrefix + `kubectl create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/central-ca.pem"
 kubectl create -f "$DIR/sensor-deploy.yaml"

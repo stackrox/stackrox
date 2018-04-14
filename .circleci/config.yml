@@ -103,7 +103,7 @@ jobs:
             kubectl \
               --username="$(gcloud container clusters describe "mitigate-ci-${CIRCLE_BUILD_NUM}" --format json | jq -r .masterAuth.username)" \
               --password="$(gcloud container clusters describe "mitigate-ci-${CIRCLE_BUILD_NUM}" --format json | jq -r .masterAuth.password)" \
-              create clusterrolebinding stackrox-admin --clusterrole=cluster-admin --serviceaccount=stackrox:default
+              create -f ./deploy/k8s/rbac.yaml
             ./deploy/k8s/deploy.sh
 
       - run:
