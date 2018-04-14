@@ -10,6 +10,8 @@ import (
 	"github.com/blevesearch/bleve/search/query"
 )
 
+const maxSearchResponses = 100
+
 func transformFields(fields map[string]*v1.ParsedSearchRequest_Values, objectMap map[string]string) map[string]*v1.ParsedSearchRequest_Values {
 	newMap := make(map[string]*v1.ParsedSearchRequest_Values, len(fields))
 	for k, v := range fields {
@@ -117,7 +119,7 @@ func runSearchRequest(request *v1.ParsedSearchRequest, index bleve.Index, scopeT
 func runQuery(query query.Query, index bleve.Index) ([]searchPkg.Result, error) {
 	searchRequest := bleve.NewSearchRequest(query)
 	// Initial size is 10 which seems small
-	searchRequest.Size = 50
+	searchRequest.Size = maxSearchResponses
 	searchRequest.Highlight = bleve.NewHighlight()
 	searchRequest.Fields = []string{"*"}
 	searchResult, err := index.Search(searchRequest)

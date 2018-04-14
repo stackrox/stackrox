@@ -10,6 +10,10 @@ import (
 	"github.com/deckarep/golang-set"
 )
 
+// maxDeploymentsReturned is for the specific scoped request to deployments which is then joined with images
+// so we need to return as many deployments as possible to not exclude relevant images
+const maxDeploymentsReturned = 500
+
 var imageObjectMap = map[string]string{
 	"image": "",
 }
@@ -29,6 +33,7 @@ func (b *Indexer) getImageSHAsFromScope(request *v1.ParsedSearchRequest) (mapset
 	if scopesQuery := getScopesQuery(request.GetScopes(), scopeToDeploymentQuery); scopesQuery != nil {
 		searchRequest := bleve.NewSearchRequest(scopesQuery)
 		searchRequest.Fields = []string{"containers.image.name.sha"}
+		searchRequest.Size = maxDeploymentsReturned
 		searchResult, err := b.deploymentIndex.Search(searchRequest)
 		if err != nil {
 			return nil, err
