@@ -170,19 +170,17 @@ git tag -ln "${RELEASE_VERSION}"
 git push origin "${RELEASE_VERSION}"
 ```
 
-### Push to Docker Hub
-```bash
-export FROM="stackrox/prevent:${RELEASE_COMMIT}"
-export TO="stackrox/prevent:${RELEASE_VERSION}"
-docker pull "${FROM}"
-docker tag "${FROM}" "${TO}"
-docker push "${TO}"
-```
+When you push the tag to Bitbucket, CircleCI will start a build and will push
+the image as `stackrox/prevent:[your-release-tag]`,
+for example `stackrox/prevent:0.10`.
 
 ### Push to stackrox.io
+Once the build has completed, "promote" it from Docker Hub to `stackrox.io`.
+
 ```bash
 export FROM="stackrox/prevent:${RELEASE_VERSION}"
 export TO="stackrox.io/prevent:${RELEASE_VERSION}"
+docker pull "${FROM}"
 docker tag "${FROM}" "${TO}"
 docker push "${TO}"
 ```
