@@ -33,7 +33,7 @@ func TestClusters(t *testing.T) {
 
 	img := images.GenerateImageFromString(c.GetPreventImage())
 	assert.Equal(t, `stackrox/prevent`, img.GetName().GetRemote())
-	if sha, ok := os.LookupEnv(`CIRCLE_SHA1`); ok {
+	if sha, ok := os.LookupEnv(`PREVENT_IMAGE_TAG`); ok {
 		assert.Equal(t, sha, img.GetName().GetTag())
 	}
 
@@ -96,7 +96,7 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
 	c := centralDeployment.GetContainers()[0]
 
 	assert.Equal(t, `stackrox/prevent`, c.GetImage().GetName().GetRemote())
-	if sha, ok := os.LookupEnv(`CIRCLE_SHA1`); ok {
+	if sha, ok := os.LookupEnv(`PREVENT_IMAGE_TAG`); ok {
 		assert.Equal(t, sha, c.GetImage().GetName().GetTag())
 	}
 
@@ -119,7 +119,7 @@ func verifySensorDeployment(t *testing.T, sensorDeployment *v1.Deployment) {
 	c := sensorDeployment.GetContainers()[0]
 
 	assert.Equal(t, `stackrox/prevent`, c.GetImage().GetName().GetRemote())
-	if sha, ok := os.LookupEnv(`CIRCLE_SHA1`); ok {
+	if sha, ok := os.LookupEnv(`PREVENT_IMAGE_TAG`); ok {
 		assert.Equal(t, sha, c.GetImage().GetName().GetTag())
 	}
 
@@ -166,7 +166,7 @@ func TestImages(t *testing.T) {
 		if img.GetName().GetRemote() == `stackrox/prevent` {
 			foundPreventImage = true
 
-			if sha, ok := os.LookupEnv(`CIRCLE_SHA1`); ok {
+			if sha, ok := os.LookupEnv(`PREVENT_IMAGE_TAG`); ok {
 				assert.Equal(t, sha, img.GetName().GetTag())
 			}
 		}

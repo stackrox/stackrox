@@ -2,7 +2,7 @@ defaults: &defaults
   docker:
     # This image is the standard circleci/golang:1.9.5 image, plus bazel
     # and other necessary build tools like goimports, dep, yarn, gcloud, kubectl, and envsubst.
-    - image: stackrox/apollo-ci:0.1.1-1-ge16a83f
+    - image: stackrox/apollo-ci:0.1.2
       auth:
         username: $DOCKERHUB_USERNAME
         password: $DOCKERHUB_PASSWORD
@@ -56,13 +56,13 @@ jobs:
       - run:
           name: Push new Docker image
           command: |
-            docker tag stackrox/prevent:latest stackrox/prevent:$CIRCLE_SHA1
+            docker tag stackrox/prevent:latest stackrox/prevent:$(git describe --tags)
             docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-            docker push stackrox/prevent:$CIRCLE_SHA1
+            docker push stackrox/prevent:$(git describe --tags)
 
-            docker tag stackrox/prevent-health:latest stackrox/prevent-health:$CIRCLE_SHA1
+            docker tag stackrox/prevent-health:latest stackrox/prevent-health:$(git describe --tags)
             docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-            docker push stackrox/prevent-health:$CIRCLE_SHA1
+            docker push stackrox/prevent-health:$(git describe --tags)
 
   deploy-k8s:
     <<: *defaults
@@ -83,7 +83,7 @@ jobs:
             docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
             echo 'export REGISTRY_USERNAME="$DOCKERHUB_USERNAME"' >> $BASH_ENV
             echo 'export REGISTRY_PASSWORD="$DOCKERHUB_PASSWORD"' >> $BASH_ENV
-            echo 'export PREVENT_IMAGE_TAG="$CIRCLE_SHA1"' >> $BASH_ENV
+            echo 'export PREVENT_IMAGE_TAG="$(git describe --tags)"' >> $BASH_ENV
             echo $GKE_SERVICE_ACCOUNT > /tmp/gcp.json
             echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json' >> $BASH_ENV
             gcloud auth activate-service-account --key-file /tmp/gcp.json
@@ -157,35 +157,17 @@ jobs:
           path: ui/cypress/screenshots
           destination: ui-e2e-screenshots
 
-  retag:
-    docker:
-      - image: circleci/golang:1.9.2
-        auth:
-          username: $DOCKERHUB_USERNAME
-          password: $DOCKERHUB_PASSWORD
-    steps:
-      - setup_remote_docker
-
-      - run:
-          name: Retag
-          command: |
-            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-            docker pull stackrox/prevent:$CIRCLE_SHA1
-            docker tag stackrox/prevent:$CIRCLE_SHA1 stackrox/prevent:latest
-            docker push stackrox/prevent:latest
-
 workflows:
   version: 2
   build_all:
     jobs:
-      - build
+      - build:
+          filters:
+            tags:
+              only: /.*/
       - deploy-k8s:
           requires:
             - build
-      - retag:
-          requires:
-            - build
           filters:
-            branches:
-              only:
-                - master
+            tags:
+              only: /.*/
