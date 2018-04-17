@@ -21,6 +21,7 @@ import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import KeyValuePairs from 'Components/KeyValuePairs';
 import DockerFileModal from 'Containers/Images/DockerFileModal';
+import { sortNumber, sortDate } from 'sorters/sorters';
 
 const imageDetailsMap = {
     scanTime: {
@@ -109,15 +110,22 @@ class ImagesPage extends Component {
                 label: 'Created at',
                 default: '-',
                 keyValueFunc: timestamp =>
-                    timestamp ? dateFns.format(timestamp, 'MM/DD/YYYY h:mm:ss A') : '-'
+                    timestamp ? dateFns.format(timestamp, 'MM/DD/YYYY h:mm:ss A') : '-',
+                sortMethod: sortDate('metadata.created')
             },
-            { key: 'scan.components.length', label: 'Components', default: '-' },
             {
-                key: 'scan.components',
+                key: 'scanComponentsLength',
+                label: 'Components',
+                default: '-',
+                keyValueFunc: componentsLength => componentsLength || '-',
+                sortMethod: sortNumber('scanComponentsLength')
+            },
+            {
+                key: 'scanComponentsSum',
                 label: 'CVEs',
                 default: '-',
-                keyValueFunc: arr =>
-                    reduce(arr, (sum, component) => sum + component.vulns.length, 0)
+                keyValueFunc: componentsSum => componentsSum || '-',
+                sortMethod: sortNumber('scanComponentsSum')
             }
         ];
         const rows = this.props.images;

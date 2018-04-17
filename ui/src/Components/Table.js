@@ -77,7 +77,9 @@ class Table extends Component {
 
     getValue = (obj, key) => {
         let val = Object.assign({}, flattenObject(obj))[key];
-        val = typeof val === 'string' ? val : val[0];
+        if (val) {
+            val = typeof val === 'string' ? val : val[0];
+        }
         return val;
     };
 
@@ -128,7 +130,11 @@ class Table extends Component {
             } else {
                 const aValue = this.getValue(a, sortBy);
                 const bValue = this.getValue(b, sortBy);
-                sortVal = aValue.localeCompare(bValue);
+                if (aValue === bValue) sortVal = 0;
+                if (aValue === undefined) sortVal = -1;
+                if (bValue === undefined) sortVal = 1;
+                if (aValue !== undefined && bValue !== undefined)
+                    sortVal = aValue.localeCompare(bValue);
             }
             if (sortDir === 'DESC') {
                 sortVal *= -1;

@@ -48,3 +48,15 @@ const sortNumber = key => (a, b) => {
     return aValue - bValue;
 };
 export { sortNumber };
+
+const sortDate = key => (a, b) => {
+    const aValue = Object.assign({}, flattenObject(a))[key];
+    const bValue = Object.assign({}, flattenObject(b))[key];
+    const aDate = aValue && new Date(aValue);
+    const bDate = bValue && new Date(bValue);
+    if (aDate === bDate) return 0;
+    if (aDate === undefined) return -1;
+    if (bValue === undefined) return 1;
+    return aDate - bDate;
+};
+export { sortDate };
