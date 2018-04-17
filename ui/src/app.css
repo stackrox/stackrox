@@ -334,5 +334,12 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
     background-position-y: 50%;
 }
 
+.text-critical-severity {
+    color: hsl(7, 50%, 55%);
+}
+
+.text-high-severity {
+    color: hsl(349, 50%, 78%);
+}
 
 @tailwind utilities;

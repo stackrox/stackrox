@@ -334,9 +334,9 @@ class PoliciesPage extends Component {
                         case 'Medium':
                             return 'text-medium-500';
                         case 'High':
-                            return 'text-high-500';
+                            return 'text-high-severity';
                         case 'Critical':
-                            return 'text-critical-500';
+                            return 'text-critical-severity';
                         default:
                             return '';
                     }
