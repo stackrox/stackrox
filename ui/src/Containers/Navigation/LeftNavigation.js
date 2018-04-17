@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import * as Icon from 'react-feather';
 import { withRouter, NavLink as Link } from 'react-router-dom';
+import ReactRouterPropTypes from 'react-router-prop-types';
 import find from 'lodash/find';
 import NavigationPanel from './NavigationPanel';
 
@@ -40,6 +41,9 @@ const navLinks = [
 ];
 
 class LeftNavigation extends Component {
+    static propTypes = {
+        location: ReactRouterPropTypes.location.isRequired
+    };
     constructor(props) {
         super(props);
         this.state = {
@@ -60,6 +64,19 @@ class LeftNavigation extends Component {
     }
 
     getActiveClassName = navLink => {
+        const { pathname } = this.props.location;
+        const navText = navLink.text.toLowerCase();
+        if (pathname.includes('compliance') && navText === 'compliance') {
+            return 'text-white bg-primary-600';
+        }
+
+        if (
+            (pathname.includes('policies') || pathname.includes('integrations')) &&
+            navText === 'configure'
+        ) {
+            return 'text-white bg-primary-600';
+        }
+
         if (navLink.to !== '') {
             return 'text-white bg-primary-600';
         }
@@ -69,7 +86,7 @@ class LeftNavigation extends Component {
             } else if (
                 !this.state.panelType &&
                 this.state.clickOnPanelItem &&
-                this.state.selectedPanel === navLink.text.toLowerCase()
+                this.state.selectedPanel === navText
             ) {
                 return 'text-white bg-primary-600';
             }
