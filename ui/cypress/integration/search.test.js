@@ -9,7 +9,7 @@ describe('Global Search Modal', () => {
         cy
             .route('GET', api.search.globalSearchWithResults, '@globalSearchResultsJson')
             .as('globalSearchResults');
-        cy.visit('/main/violations');
+        cy.visit('/main/dashboard');
         cy.get(selectors.searchBtn).click();
     });
 

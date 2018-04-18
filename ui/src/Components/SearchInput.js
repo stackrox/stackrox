@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-import { Creatable } from 'react-select';
+import Select from 'react-select';
 import * as Icon from 'react-feather';
 import differenceBy from 'lodash/differenceBy';
 
@@ -57,8 +57,6 @@ class SearchInput extends Component {
         }
     };
 
-    promptTextCreator = label => `Search for: "${label}"`;
-
     renderArrow = () => (
         <span className="text-base-400">
             <Icon.ChevronDown color="currentColor" size={18} />
@@ -80,23 +78,22 @@ class SearchInput extends Component {
         );
         const searchOptions = this.props.searchOptions.slice();
         const searchSuggestions = this.props.searchSuggestions.slice();
-        return (
-            <Creatable
-                className={`search-input ${this.props.className}`}
-                name="search-input"
-                placeholder={searchIcon}
-                onInputChange={this.onInputChange}
-                options={searchSuggestions}
-                optionRenderer={this.renderOption}
-                arrowRenderer={this.renderArrow}
-                value={searchOptions}
-                onChange={this.setOptions}
-                promptTextCreator={this.promptTextCreator}
-                filterOptions={this.filterOptions}
-                ignoreCase
-                multi
-            />
-        );
+        const props = {
+            className: `search-input ${this.props.className}`,
+            name: 'search-input',
+            placeholder: searchIcon,
+            onInputChange: this.onInputChange,
+            options: searchSuggestions,
+            optionRenderer: this.renderOption,
+            arrowRenderer: this.renderArrow,
+            value: searchOptions,
+            onChange: this.setOptions,
+            filterOptions: this.filterOptions,
+            ignoreCase: true,
+            multi: true
+        };
+        if (this.props.searchOptions.length === 0) return <Select {...props} autoFocus />;
+        return <Select.Creatable {...props} autoFocus />;
     }
 }
 

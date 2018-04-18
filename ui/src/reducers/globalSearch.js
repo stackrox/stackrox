@@ -54,6 +54,9 @@ const globalSearchResults = (state = [], action) => {
     if (action.type === types.FETCH_GLOBAL_SEARCH_RESULTS.SUCCESS) {
         const results = action.response.results || [];
         return isEqual(results, state) ? state : results;
+    } else if (action.type === types.FETCH_GLOBAL_SEARCH_RESULTS.FAILURE) {
+        const results = [];
+        return isEqual(results, state) ? state : results;
     }
     return state;
 };

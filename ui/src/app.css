@@ -342,4 +342,8 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
     color: hsl(349, 50%, 78%);
 }
 
+.Select-menu-outer .Select-create-option-placeholder {
+    display: none;
+}
+
 @tailwind utilities;

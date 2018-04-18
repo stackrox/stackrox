@@ -18,6 +18,7 @@ import RiskPage from 'Containers/Risk/RiskPage';
 import TopNavigation from 'Containers/Navigation/TopNavigation';
 import LeftNavigation from 'Containers/Navigation/LeftNavigation';
 import SearchModal from 'Containers/Search/SearchModal';
+import { ToastContainer } from 'react-toastify';
 
 class MainPage extends Component {
     static propTypes = {
@@ -54,6 +55,11 @@ class MainPage extends Component {
     render() {
         return (
             <section className="flex flex-1 flex-col h-full relative">
+                <ToastContainer
+                    toastClassName="font-sans text-base-600 text-white font-600 bg-black"
+                    hideProgressBar
+                    autoClose={3000}
+                />
                 <div className="navigation-gradient" />
                 <header className="flex">
                     <TopNavigation />

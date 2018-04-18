@@ -7,6 +7,8 @@ import { actions as imagesActions } from 'reducers/images';
 import { actions as riskActions } from 'reducers/risk';
 import { selectors } from 'reducers';
 
+import { toast } from 'react-toastify';
+
 export function* getGlobalSearchResults() {
     try {
         const searchQuery = yield select(selectors.getGlobalSearchQuery);
@@ -19,6 +21,8 @@ export function* getGlobalSearchResults() {
         yield put(actions.fetchGlobalSearchResults.success(result.response));
     } catch (error) {
         yield put(actions.fetchGlobalSearchResults.failure(error));
+        if (error.response && error.response.status >= 500 && error.response.data.error)
+            toast.error(error.response.data.error);
     }
 }
 
