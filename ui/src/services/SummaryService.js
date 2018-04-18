@@ -5,9 +5,9 @@ import axios from 'axios';
  * @returns {Promise<Object, Error>} fulfilled with response
  */
 
-export default function fetchSummary() {
+export default function fetchSummaryCounts() {
     const countsUrl = '/v1/summary/counts';
     return axios.get(countsUrl).then(response => ({
-        data: response.data
+        response: response.data
     }));
 }

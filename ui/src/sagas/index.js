@@ -9,6 +9,7 @@ import images from './imageSagas';
 import integrations from './integrationSagas';
 import globalSearch from './globalSearchSagas';
 import searches from './searchSagas';
+import summaries from './summarySagas';
 
 export default function* root() {
     yield all([
@@ -20,6 +21,7 @@ export default function* root() {
         fork(images),
         fork(integrations),
         fork(globalSearch),
-        fork(searches)
+        fork(searches),
+        fork(summaries)
     ]);
 }

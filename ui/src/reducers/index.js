@@ -11,6 +11,7 @@ import images, { selectors as imageSelectors } from './images';
 import integrations, { selectors as integrationSelectors } from './integrations';
 import globalSearch, { selectors as globalSearchSelectors } from './globalSearch';
 import policies, { selectors as policySelectors } from './policies';
+import summaries, { selectors as summarySelectors } from './summaries';
 import route, { selectors as routeSelectors } from './routes';
 
 // Reducers
@@ -24,7 +25,8 @@ const appReducer = combineReducers({
     images,
     integrations,
     globalSearch,
-    policies
+    policies,
+    summaries
 });
 
 const rootReducer = combineReducers({
@@ -48,6 +50,7 @@ const getImages = state => getApp(state).images;
 const getIntegrations = state => getApp(state).integrations;
 const getGlobalSearches = state => getApp(state).globalSearch;
 const getPolicies = state => getApp(state).policies;
+const getSummaries = state => getApp(state).summaries;
 
 const boundSelectors = {
     ...bindSelectors(getAlerts, alertSelectors),
@@ -59,7 +62,8 @@ const boundSelectors = {
     ...bindSelectors(getIntegrations, integrationSelectors),
     ...bindSelectors(getGlobalSearches, globalSearchSelectors),
     ...bindSelectors(getPolicies, policySelectors),
-    ...bindSelectors(getRoute, routeSelectors)
+    ...bindSelectors(getRoute, routeSelectors),
+    ...bindSelectors(getSummaries, summarySelectors)
 };
 
 export const selectors = {

@@ -126,7 +126,7 @@ class ViolationsPage extends Component {
             },
             {
                 key: 'numAlerts',
-                label: 'Alerts',
+                label: 'Violations',
                 align: 'right',
                 sortMethod: sortNumber('numAlerts')
             }

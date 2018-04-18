@@ -1,13 +1,15 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import * as Icon from 'react-feather';
-import Logo from 'Components/icons/logo';
-import fetchSummary from 'services/SummaryService';
-import AuthService from 'services/AuthService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
+import { createStructuredSelector } from 'reselect';
+import { selectors } from 'reducers';
+
+import * as Icon from 'react-feather';
+import Logo from 'Components/icons/logo';
+import AuthService from 'services/AuthService';
 
 const titleMap = {
     numAlerts: 'Violation',
@@ -19,24 +21,18 @@ const titleMap = {
 class TopNavigation extends Component {
     static propTypes = {
         history: ReactRouterPropTypes.history.isRequired,
-        toggleGlobalSearchView: PropTypes.func.isRequired
+        toggleGlobalSearchView: PropTypes.func.isRequired,
+        summaryCounts: PropTypes.shape({
+            numAlerts: PropTypes.string,
+            numClusters: PropTypes.string,
+            numDeployments: PropTypes.string,
+            numImages: PropTypes.string
+        })
     };
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            counts: null
-        };
-    }
-
-    componentDidMount() {
-        this.getCounts();
-    }
-
-    getCounts = () =>
-        fetchSummary().then(response => {
-            this.setState({ counts: response.data });
-        });
+    static defaultProps = {
+        summaryCounts: null
+    };
 
     renderLogoutButton = () => {
         if (!AuthService.isLoggedIn()) return '';
@@ -66,18 +62,19 @@ class TopNavigation extends Component {
     );
 
     renderSummaryCounts = () => {
-        if (!this.state.counts) return '';
+        const { summaryCounts } = this.props;
+        if (!summaryCounts) return '';
         return (
             <ul className="flex uppercase text-sm p-0 w-full">
-                {Object.keys(this.state.counts).map(key => (
+                {Object.keys(summaryCounts).map(key => (
                     <li
                         key={key}
                         className="flex flex-1 flex-col border-r border-base-300 px-4 no-underline py-3 text-base-500 items-center"
                     >
-                        <div className="text-xl">{this.state.counts[key]}</div>
+                        <div className="text-xl">{summaryCounts[key]}</div>
                         <div className="text-sm pt-1">
                             {titleMap[key]}
-                            {this.state.counts[key] === '1' ? '' : 's'}
+                            {summaryCounts[key] === '1' ? '' : 's'}
                         </div>
                     </li>
                 ))}
@@ -103,8 +100,12 @@ class TopNavigation extends Component {
     }
 }
 
+const mapStateToProps = createStructuredSelector({
+    summaryCounts: selectors.getSummaryCounts
+});
+
 const mapDispatchToProps = dispatch => ({
     toggleGlobalSearchView: () => dispatch(globalSearchActions.toggleGlobalSearchView())
 });
 
-export default withRouter(connect(null, mapDispatchToProps)(TopNavigation));
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(TopNavigation));
