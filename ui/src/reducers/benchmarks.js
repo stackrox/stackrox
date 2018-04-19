@@ -1,5 +1,6 @@
 import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
+import snakeCase from 'lodash/snakeCase';
 
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
 import { createPollingActionTypes, createPollingActions } from 'utils/pollingReduxRoutines';
@@ -105,7 +106,13 @@ const selectedBenchmarkHostResult = (state = null, action) => {
 
 const benchmarkSchedule = (state = initialBenchmarkSchedule, action) => {
     if (action.type === types.FETCH_BENCHMARK_SCHEDULE.SUCCESS) {
-        const schedule = Object.assign({}, action.response.schedules[0]);
+        const schedule = Object.assign({}, state);
+        if (action.response.schedules.length !== 0) {
+            Object.keys(action.response.schedules[0]).forEach(key => {
+                schedule[snakeCase(key)] = action.response.schedules[0][key];
+            });
+        }
+        schedule.timezone_offset = new Date().getTimezoneOffset() / 60;
         schedule.active = true;
         return isEqual(schedule, state) ? state : schedule;
     }

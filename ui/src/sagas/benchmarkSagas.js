@@ -51,8 +51,10 @@ export function* updateBenchmarkSchedule() {
     const schedule = Object.assign({}, yield select(selectors.getBenchmarkSchedule));
     try {
         if (schedule.hour === '' || schedule.day === '') {
-            schedule.active = false;
-            yield call(service.deleteSchedule, schedule.id);
+            if (schedule.hour === schedule.day) {
+                schedule.active = false;
+                yield call(service.deleteSchedule, schedule.id);
+            }
         } else if (schedule.active) {
             yield call(service.updateSchedule, schedule.benchmarkId, schedule);
         } else {
