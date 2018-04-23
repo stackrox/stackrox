@@ -202,16 +202,16 @@ func newNumericQuery(field string, values []string) (query.Query, error) {
 
 func stringToSeverity(s string) (v1.Severity, error) {
 	s = strings.ToLower(s)
-	if strings.Contains(s, "l") {
+	if strings.HasPrefix(s, "l") {
 		return v1.Severity_LOW_SEVERITY, nil
 	}
-	if strings.Contains(s, "m") {
+	if strings.HasPrefix(s, "m") {
 		return v1.Severity_MEDIUM_SEVERITY, nil
 	}
-	if strings.Contains(s, "h") {
+	if strings.HasPrefix(s, "h") {
 		return v1.Severity_HIGH_SEVERITY, nil
 	}
-	if strings.Contains(s, "c") {
+	if strings.HasPrefix(s, "c") {
 		return v1.Severity_CRITICAL_SEVERITY, nil
 	}
 	return v1.Severity_UNSET_SEVERITY, fmt.Errorf("Could not parse severity '%s'. Valid options are low, medium, high, critical", s)
