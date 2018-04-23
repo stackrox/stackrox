@@ -242,7 +242,6 @@ func (d *Registry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 	if err != nil {
 		return nil, err
 	}
-	image.Name.Sha = digest.String()
 	manifest, err := d.client().SignedManifest(image.GetName().GetRemote(), image.GetName().GetTag())
 	if err != nil {
 		manifest, err = d.client().Manifest(image.GetName().GetRemote(), image.GetName().GetTag())
@@ -270,11 +269,12 @@ func (d *Registry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 		fsLayers = append(fsLayers, fsLayer.BlobSum.String())
 	}
 	imageMetadata := &v1.ImageMetadata{
-		Created:  latest.Created,
-		Author:   latest.Author,
-		Layers:   layers,
-		FsLayers: fsLayers,
-		V2:       d.getV2Metadata(image),
+		Created:     latest.Created,
+		Author:      latest.Author,
+		Layers:      layers,
+		FsLayers:    fsLayers,
+		V2:          d.getV2Metadata(image),
+		RegistrySha: digest.String(),
 	}
 	return imageMetadata, nil
 }

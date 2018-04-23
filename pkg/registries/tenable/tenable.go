@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/transports"
@@ -92,8 +93,18 @@ func (d *tenableRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 	if err != nil {
 		return nil, err
 	}
-	image.Name.Sha = manifest.Config.Digest.String()
-	return nil, nil
+	digest := images.NewDigest(manifest.Config.Digest.String()).Digest()
+	layers := make([]string, 0, len(manifest.Layers))
+	for _, layer := range manifest.Layers {
+		layers = append(layers, layer.Digest.String())
+	}
+	return &v1.ImageMetadata{
+		RegistrySha: digest,
+		V2: &v1.V2Metadata{
+			Digest: digest,
+			Layers: layers,
+		},
+	}, nil
 }
 
 // Test tests the current registry and makes sure that it is working properly

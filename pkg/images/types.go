@@ -16,13 +16,13 @@ func GenerateImageFromString(imageStr string) *v1.Image {
 
 	// Check if its a sha and return if it is
 	if strings.HasPrefix(imageStr, "sha256:") {
-		image.Name.Sha = strings.TrimPrefix(imageStr, "sha256:")
+		image.Name.Sha = imageStr
 		return &image
 	}
 
 	// Cut off @sha256:
 	if idx := strings.Index(imageStr, "@sha256:"); idx != -1 {
-		image.Name.Sha = imageStr[idx+len("@sha256:"):]
+		image.Name.Sha = imageStr[idx+1:]
 		imageStr = imageStr[:idx]
 	}
 
@@ -84,9 +84,9 @@ type Wrapper struct {
 	*v1.Image
 }
 
-// ShortID returns the SHA truncated to 12 characters.
-func (i Wrapper) ShortID() string {
-	withoutAlgorithm := NewDigest(i.GetName().GetSha()).Hash()
+// ShortRegistrySHA returns the SHA from the registry truncated to 12 characters.
+func (i Wrapper) ShortRegistrySHA() string {
+	withoutAlgorithm := NewDigest(i.GetMetadata().GetRegistrySha()).Hash()
 	if len(withoutAlgorithm) <= 12 {
 		return withoutAlgorithm
 	}

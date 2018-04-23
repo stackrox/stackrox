@@ -132,7 +132,7 @@ func (c *clair) getLastScanFromV2Metadata(image *v1.Image) (*clairV1.LayerEnvelo
 }
 
 func (c *clair) getLastScanFromV1Metadata(image *v1.Image) (*clairV1.LayerEnvelope, bool) {
-	digest := images.NewDigest(image.GetName().GetSha()).Digest()
+	digest := images.NewDigest(image.GetMetadata().GetRegistrySha()).Digest()
 	layerEnvelope, err := c.retrieveLayerData(digest)
 	if err == nil {
 		return layerEnvelope, true

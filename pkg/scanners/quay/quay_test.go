@@ -113,6 +113,9 @@ func (suite *QuaySuite) TestGetLastScan() {
 			Remote:   "integration/nginx",
 			Tag:      "1.10",
 		},
+		Metadata: &v1.ImageMetadata{
+			RegistrySha: "sha256:0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455",
+		},
 	}
 	scan, err := suite.scanner.GetLastScan(image)
 	suite.NoError(err)

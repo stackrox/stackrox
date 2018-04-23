@@ -115,7 +115,7 @@ func (c *googleScanner) Test() error {
 }
 
 func getResourceURL(image *v1.Image) string {
-	return fmt.Sprintf("https://%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), images.NewDigest(image.GetName().GetSha()).Digest())
+	return fmt.Sprintf("https://%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), images.NewDigest(image.GetMetadata().GetRegistrySha()).Digest())
 }
 
 func generalizeName(name string) string {

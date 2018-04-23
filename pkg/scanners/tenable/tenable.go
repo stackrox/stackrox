@@ -100,29 +100,14 @@ func (d *tenable) Test() error {
 	return nil
 }
 
-func (d *tenable) populateSHA(image *v1.Image) error {
-	manifest, err := d.reg.ManifestV2(image.GetName().GetRemote(), image.GetName().GetTag())
-	if err != nil {
-		return err
-	}
-	image.Name.Sha = manifest.Config.Digest.String()
-	return nil
-}
-
 // GetLastScan retrieves the most recent scan
 func (d *tenable) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}
-	// If SHA is empty, then retrieve it from the Tenable registry
-	if image.GetName().GetSha() == "" {
-		if err := d.populateSHA(image); err != nil {
-			return nil, fmt.Errorf("unable to retrieve SHA for image %v due to: %+v", images.Wrapper{Image: image}.String(), err)
-		}
-	}
 
 	getScanURL := fmt.Sprintf("/container-security/api/v1/reports/by_image?image_id=%v",
-		images.Wrapper{Image: image}.ShortID())
+		images.Wrapper{Image: image}.ShortRegistrySHA())
 
 	body, status, err := d.sendRequest("GET", getScanURL)
 	if err != nil {

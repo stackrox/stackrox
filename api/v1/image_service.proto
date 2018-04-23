@@ -27,6 +27,7 @@ message ImageMetadata {
     repeated ImageLayer layers         = 3;
     repeated string fs_layers          = 4;
     V2Metadata v2                      = 5;
+    string registry_sha                = 6;
 }
 
 message License {

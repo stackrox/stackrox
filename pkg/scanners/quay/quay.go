@@ -98,31 +98,16 @@ func (q *quay) Test() error {
 	return err
 }
 
-func (q *quay) populateSHA(image *v1.Image) error {
-	manifest, err := q.reg.ManifestV2(image.GetName().GetRemote(), image.GetName().GetTag())
-	if err != nil {
-		return err
-	}
-	image.Name.Sha = manifest.Config.Digest.String()
-	return nil
-}
-
 // GetLastScan retrieves the most recent scan
 func (q *quay) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}
-	// If SHA is empty, then retrieve it from the Quay registry
-	if image.GetName().GetSha() == "" {
-		if err := q.populateSHA(image); err != nil {
-			return nil, fmt.Errorf("unable to retrieve SHA for image %v due to: %+v", image.GetName().GetFullName(), err)
-		}
-	}
 
 	values := url.Values{}
 	values.Add("features", "true")
 	values.Add("vulnerabilities", "true")
-	digest := images.NewDigest(image.GetName().GetSha()).Digest()
+	digest := images.NewDigest(image.GetMetadata().GetRegistrySha()).Digest()
 	body, status, err := q.sendRequest("GET", values, "api", "v1", "repository", image.GetName().GetRemote(), "manifest", digest, "security")
 	if err != nil {
 		return nil, err

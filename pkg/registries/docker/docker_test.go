@@ -138,8 +138,9 @@ func TestGetMetadata(t *testing.T) {
 	author := `NGINX Docker Maintainers "docker-maint@nginx.com"`
 
 	expectedMetadata := &v1.ImageMetadata{
-		Author:  author,
-		Created: getProtoTimestamp(1490644114817993292),
+		Author:      author,
+		Created:     getProtoTimestamp(1490644114817993292),
+		RegistrySha: "sha256:693e49e96066feacf922ff62bb87dfae3865cca7621bdf22afd053bf1c0cc37d",
 		Layers: []*v1.ImageLayer{
 			{
 				Instruction: "CMD",
