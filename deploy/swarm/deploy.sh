@@ -5,59 +5,15 @@ SWARM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 COMMON_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/../common && pwd)"
 
 source $COMMON_DIR/deploy.sh
+source $SWARM_DIR/launch.sh
 
 export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.prevent_net:443}"
 echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 
-export PREVENT_IMAGE="stackrox/prevent:${PREVENT_IMAGE_TAG:-latest}"
+export NAMESPACE="stackrox"
+export CLUSTER="remote"
 
-echo "Generating central config..."
-OLD_DOCKER_HOST="$DOCKER_HOST"
-OLD_DOCKER_CERT_PATH="$DOCKER_CERT_PATH"
-OLD_DOCKER_TLS_VERIFY="$DOCKER_TLS_VERIFY"
-unset DOCKER_HOST DOCKER_CERT_PATH DOCKER_TLS_VERIFY
+launch_central "$SWARM_DIR" "$PREVENT_IMAGE" "$NAMESPACE" "$LOCAL_API_ENDPOINT" "$PREVENT_DISABLE_REGISTRY_AUTH"
 
-docker run "$PREVENT_IMAGE" -t swarm -i "$PREVENT_IMAGE" -p 8080 > "$SWARM_DIR/central.zip"
+launch_sensor "$SWARM_DIR" "$PREVENT_IMAGE" "$CLUSTER" "$NAMESPACE" "$CLUSTER_API_ENDPOINT" "$LOCAL_API_ENDPOINT" "$PREVENT_DISABLE_REGISTRY_AUTH"
 
-export DOCKER_HOST="$OLD_DOCKER_HOST"
-export DOCKER_CERT_PATH="$OLD_DOCKER_CERT_PATH"
-export DOCKER_TLS_VERIFY="$OLD_DOCKER_TLS_VERIFY"
-
-UNZIP_DIR="$SWARM_DIR/central-deploy/"
-rm -rf "$UNZIP_DIR"
-unzip "$SWARM_DIR/central.zip" -d "$UNZIP_DIR"
-echo
-
-echo "Deploying Central..."
-if [ "$PREVENT_DISABLE_REGISTRY_AUTH" = "true" ]; then
-    cp "$UNZIP_DIR/deploy.sh" "$UNZIP_DIR/tmp"
-    cat "$UNZIP_DIR/tmp" | sed "s/--with-registry-auth//" > "$UNZIP_DIR/deploy.sh"
-    rm "$UNZIP_DIR/tmp"
-fi
-$UNZIP_DIR/deploy.sh
-echo
-
-wait_for_central "$LOCAL_API_ENDPOINT"
-CLUSTER="remote"
-EXTRA_CONFIG=""
-if [ "$DOCKER_CERT_PATH" = "" ]; then
-    EXTRA_CONFIG="\"disableSwarmTls\":true"
-fi
-get_cluster_zip "$LOCAL_API_ENDPOINT" "$CLUSTER" SWARM_CLUSTER "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$SWARM_DIR" "$EXTRA_CONFIG"
-
-echo "Deploying Sensor..."
-UNZIP_DIR="$SWARM_DIR/sensor-deploy/"
-rm -rf "$UNZIP_DIR"
-unzip "$SWARM_DIR/sensor-deploy.zip" -d "$UNZIP_DIR"
-
-if [ "$PREVENT_DISABLE_REGISTRY_AUTH" = "true" ]; then
-    cp "$UNZIP_DIR/sensor-deploy.sh" "$UNZIP_DIR/tmp"
-    cat "$UNZIP_DIR/tmp" | sed "s/--with-registry-auth//" > "$UNZIP_DIR/sensor-deploy.sh"
-    rm "$UNZIP_DIR/tmp"
-fi
-
-$UNZIP_DIR/sensor-deploy.sh
-echo
-
-echo "Successfully deployed!"
-echo "Access the UI at: https://$LOCAL_API_ENDPOINT"

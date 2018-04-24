@@ -9,15 +9,14 @@ source $K8S_DIR/launch.sh
 
 export NAMESPACE="${NAMESPACE:-stackrox}"
 echo "Kubernetes namespace set to $NAMESPACE"
-kubectl create ns "$NAMESPACE" || true
 
 export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.stackrox:443}"
 echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 echo
 
-export PREVENT_IMAGE="stackrox/prevent:${PREVENT_IMAGE_TAG:-latest}"
+if [[ -z $NON_INTERACTIVE ]]; then
+  read -p "Review the above variables and hit enter to continue: "
+fi
+kubectl create ns "$NAMESPACE" || true
 
 launch_central "$K8S_DIR" "$PREVENT_IMAGE" "$NAMESPACE"
-
-launch_sensor "localhost:8000" "remote" "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "$NAMESPACE"
-
