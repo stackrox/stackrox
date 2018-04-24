@@ -118,6 +118,11 @@ jobs:
             curl -k --connect-timeout 5 --max-time 10 --retry 10 --retry-connrefused --retry-delay 1 --retry-max-time 30 ${PING_URL}
 
       - run:
+          name: Wait for the Sensor to be running K8s
+          command: |
+            ./scripts/ci/sensor-wait.sh
+
+      - run:
           name: API tests
           command: |
             export API_ENDPOINT=localhost:${LOCAL_PORT}

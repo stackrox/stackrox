@@ -20,6 +20,8 @@ const (
 	expectedLatestTagPolicy = `Latest tag`
 	expectedPort22Policy    = `Container Port 22`
 	expectedSecretEnvPolicy = `Don't use environment variables with secrets`
+
+	waitTimeout = 2 * time.Minute
 )
 
 func getDeploymentQuery(args ...string) string {
@@ -106,7 +108,7 @@ func waitForDeployment(t *testing.T, deploymentName string) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	timer := time.NewTimer(1 * time.Minute)
+	timer := time.NewTimer(waitTimeout)
 	defer timer.Stop()
 
 	for {
@@ -124,11 +126,13 @@ func waitForDeployment(t *testing.T, deploymentName string) {
 			}
 
 			if err == nil && len(deployments.GetDeployments()) > 0 {
+				logger.Infof("%s: Found %+v deployments", t.Name(), deployments.GetDeployments())
 				d := deployments.GetDeployments()[0]
 
 				if len(d.GetContainers()) > 0 && d.GetContainers()[0].GetImage().GetName().GetSha() != "" {
 					return
 				}
+				logger.Infof("%s: Found %+v containers", t.Name(), d.GetContainers())
 			}
 		case <-timer.C:
 			t.Fatalf("Timed out waiting for deployment %s", deploymentName)
@@ -145,7 +149,7 @@ func waitForTermination(t *testing.T, deploymentName string) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	timer := time.NewTimer(1 * time.Minute)
+	timer := time.NewTimer(waitTimeout)
 	defer timer.Stop()
 
 	for {
@@ -164,6 +168,7 @@ func waitForTermination(t *testing.T, deploymentName string) {
 			if err == nil && len(deployments.GetDeployments()) == 0 {
 				return
 			}
+			logger.Infof("%s: Found %+v deployments", t.Name(), deployments.GetDeployments())
 		case <-timer.C:
 			t.Fatalf("Timed out waiting for deployment %s to stop", deploymentName)
 		}
