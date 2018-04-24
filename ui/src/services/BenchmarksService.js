@@ -173,10 +173,10 @@ export function deleteSchedule(benchmarkId) {
  * or rejected with an error
  */
 export function triggerScan(benchmark) {
-    const triggerUrl = `${baseUrl}/triggers/${benchmark.benchmarkId}${
-        benchmark.clusterId ? `?clusterIds=${benchmark.clusterId}` : ''
-    }`;
-    return axios.post(triggerUrl, {});
+    const triggerUrl = `${baseUrl}/triggers/${benchmark.benchmarkId}`;
+    return axios.post(triggerUrl, {
+        clusterIds: [benchmark.clusterId]
+    });
 }
 
 /**

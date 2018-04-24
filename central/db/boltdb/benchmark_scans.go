@@ -208,7 +208,7 @@ func (b *BoltDB) ListBenchmarkScans(request *v1.ListBenchmarkScansRequest) ([]*v
 		if request.GetBenchmarkId() != "" && request.GetBenchmarkId() != scan.GetBenchmarkId() {
 			continue
 		}
-		scanClusterSet := newStringSet(request.GetClusterIds())
+		scanClusterSet := newStringSet(scan.GetClusterIds())
 		// This means none of the items intersect in the two clusters so we should skip this scan
 		if clusterSet.Cardinality() != 0 && clusterSet.Intersect(scanClusterSet).Cardinality() == 0 {
 			continue
