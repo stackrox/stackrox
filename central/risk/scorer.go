@@ -21,11 +21,12 @@ type Scorer struct {
 }
 
 // NewScorer returns a new scorer that encompasses both static and user defined multipliers
-func NewScorer() *Scorer {
+func NewScorer(getter AlertGetter) *Scorer {
 	return &Scorer{
 		ConfiguredMultipliers: []Multiplier{
 			NewServiceConfigMultiplier(),
 			NewVulnerabilitiesMultiplier(),
+			NewViolationsMultiplier(getter),
 		},
 		UserDefinedMultipliers: make(map[string]Multiplier),
 	}

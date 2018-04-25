@@ -57,12 +57,22 @@ func getMockDeployment() *v1.Deployment {
 }
 
 func TestScore(t *testing.T) {
-	scorer := NewScorer()
-
 	deployment := getMockDeployment()
+	scorer := NewScorer(&mockGetter{
+		alerts: []*v1.Alert{
+			{
+				Deployment: deployment,
+				Policy: &v1.Policy{
+					Name:     "Test",
+					Severity: v1.Severity_CRITICAL_SEVERITY,
+				},
+			},
+		},
+	})
+
 	// Without user defined function
 	expectedRisk := &v1.Risk{
-		Score: 2.1,
+		Score: 2.52,
 		Results: []*v1.Risk_Result{
 			{
 				Name: "Service Configuration Heuristic",
@@ -74,6 +84,11 @@ func TestScore(t *testing.T) {
 					"A container in the deployment is privileged",
 				},
 				Score: 2.0,
+			},
+			{
+				Name:    policyViolationsHeuristic,
+				Factors: []string{"Deployment violates policy Test (severity: Critical)"},
+				Score:   1.2,
 			},
 			{
 				Name: "Vulnerability Heuristic",
@@ -97,7 +112,7 @@ func TestScore(t *testing.T) {
 	}
 	scorer.UpdateUserDefinedMultiplier(mult)
 	expectedRisk = &v1.Risk{
-		Score: 4.2,
+		Score: 5.04,
 		Results: []*v1.Risk_Result{
 			{
 				Name: "Service Configuration Heuristic",
@@ -116,6 +131,11 @@ func TestScore(t *testing.T) {
 					"Deployment matched scope 'cluster:cluster'",
 				},
 				Score: 2.0,
+			},
+			{
+				Name:    policyViolationsHeuristic,
+				Factors: []string{"Deployment violates policy Test (severity: Critical)"},
+				Score:   1.2,
 			},
 			{
 				Name: "Vulnerability Heuristic",

@@ -67,7 +67,7 @@ func main() {
 	}
 	go central.notificationProcessor.Start()
 
-	central.scorer = risk.NewScorer()
+	central.scorer = risk.NewScorer(central.datastore)
 	if central.enricher, err = enrichment.New(central.datastore, central.scorer); err != nil {
 		panic(err)
 	}
