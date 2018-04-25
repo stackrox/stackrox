@@ -53,9 +53,9 @@ func TestViolationsScore(t *testing.T) {
 				},
 			},
 			expected: &v1.Risk_Result{
-				Name: policyViolationsHeuristic,
+				Name: policyViolationsHeading,
 				Factors: []string{
-					"Deployment violates policy Policy 1 (severity: Critical)",
+					"Policy 1 (severity: Critical)",
 				},
 				Score: 1.2,
 			},
@@ -71,9 +71,9 @@ func TestViolationsScore(t *testing.T) {
 				},
 			},
 			expected: &v1.Risk_Result{
-				Name: policyViolationsHeuristic,
+				Name: policyViolationsHeading,
 				Factors: []string{
-					"Deployment violates policy Policy 1 (severity: Critical)",
+					"Policy 1 (severity: Critical)",
 				},
 				Score: 1.2,
 			},
@@ -101,11 +101,11 @@ func TestViolationsScore(t *testing.T) {
 				},
 			},
 			expected: &v1.Risk_Result{
-				Name: policyViolationsHeuristic,
+				Name: policyViolationsHeading,
 				Factors: []string{
-					"Deployment violates policy Policy 1 (severity: High)",
-					"Deployment violates policy Policy 2 (severity: Medium)",
-					"Deployment violates policy Policy 3 (severity: Low)",
+					"Policy 1 (severity: High)",
+					"Policy 2 (severity: Medium)",
+					"Policy 3 (severity: Low)",
 				},
 				Score: 1.3,
 			},
@@ -133,11 +133,11 @@ func TestViolationsScore(t *testing.T) {
 				},
 			},
 			expected: &v1.Risk_Result{
-				Name: policyViolationsHeuristic,
+				Name: policyViolationsHeading,
 				Factors: []string{
-					"Deployment violates policy Policy 1 (severity: Critical)",
-					"Deployment violates policy Policy 2 (severity: High)",
-					"Deployment violates policy Policy 3 (severity: Low)",
+					"Policy 1 (severity: Critical)",
+					"Policy 2 (severity: High)",
+					"Policy 3 (severity: Low)",
 				},
 				Score: 1.4,
 			},
@@ -186,11 +186,11 @@ func TestViolationsScore(t *testing.T) {
 				},
 			},
 			expected: &v1.Risk_Result{
-				Name: policyViolationsHeuristic,
+				Name: policyViolationsHeading,
 				Factors: []string{
-					"Deployment violates policy Policy 1 (severity: Low)",
-					"Deployment violates policy Policy 2 (severity: High)",
-					"Deployment violates policy Policy 3 (severity: Critical)",
+					"Policy 3 (severity: Critical)",
+					"Policy 2 (severity: High)",
+					"Policy 1 (severity: Low)",
 				},
 				Score: 1.4,
 			},

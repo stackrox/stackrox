@@ -75,7 +75,7 @@ func TestScore(t *testing.T) {
 		Score: 2.52,
 		Results: []*v1.Risk_Result{
 			{
-				Name: "Service Configuration Heuristic",
+				Name: serviceConfigHeading,
 				Factors: []string{
 					"Volumes rw volume were mounted RW",
 					"Secrets secret are used inside the deployment",
@@ -86,12 +86,12 @@ func TestScore(t *testing.T) {
 				Score: 2.0,
 			},
 			{
-				Name:    policyViolationsHeuristic,
-				Factors: []string{"Deployment violates policy Test (severity: Critical)"},
+				Name:    policyViolationsHeading,
+				Factors: []string{"Test (severity: Critical)"},
 				Score:   1.2,
 			},
 			{
-				Name: "Vulnerability Heuristic",
+				Name: vulnsHeading,
 				Factors: []string{
 					"Image contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0",
 				},
@@ -115,7 +115,7 @@ func TestScore(t *testing.T) {
 		Score: 5.04,
 		Results: []*v1.Risk_Result{
 			{
-				Name: "Service Configuration Heuristic",
+				Name: serviceConfigHeading,
 				Factors: []string{
 					"Volumes rw volume were mounted RW",
 					"Secrets secret are used inside the deployment",
@@ -133,12 +133,12 @@ func TestScore(t *testing.T) {
 				Score: 2.0,
 			},
 			{
-				Name:    policyViolationsHeuristic,
-				Factors: []string{"Deployment violates policy Test (severity: Critical)"},
+				Name:    policyViolationsHeading,
+				Factors: []string{"Test (severity: Critical)"},
 				Score:   1.2,
 			},
 			{
-				Name: "Vulnerability Heuristic",
+				Name: vulnsHeading,
 				Factors: []string{
 					"Image contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0",
 				},

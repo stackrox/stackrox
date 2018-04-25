@@ -9,13 +9,18 @@ import (
 )
 
 const (
-	policyViolationsHeuristic = "Policy Violations Heuristic"
-	policySaturation          = 20
+	policyViolationsHeading = "Policy Violations"
+	policySaturation        = 20
 )
 
 // ViolationsMultiplier is a scorer for the violations on a deployment
 type ViolationsMultiplier struct {
 	getter AlertGetter
+}
+
+type policyFactor struct {
+	name     string
+	severity v1.Severity
 }
 
 // An AlertGetter provides the required access to alerts for risk scoring.
@@ -47,9 +52,6 @@ func severityImpact(severity v1.Severity) float32 {
 
 // Score takes a deployment and evaluates its risk based on policy violations.
 func (v *ViolationsMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
-	var severitySum float32
-	var count int
-	var policies []*v1.Policy
 	alerts, err := v.getter.GetAlerts(&v1.GetAlertsRequest{
 		DeploymentId: deployment.GetId(),
 		Stale:        []bool{false},
@@ -58,11 +60,19 @@ func (v *ViolationsMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result 
 		logger.Errorf("Couldn't get risk violations for %s: %s", deployment.GetId(), err)
 		return nil
 	}
+
+	var severitySum float32
+	var count int
+	var factors []policyFactor
 	for _, alert := range alerts {
 		count++
 		severitySum += severityImpact(alert.GetPolicy().GetSeverity())
-		policies = append(policies, alert.GetPolicy())
+		factors = append(factors, policyFactor{
+			name:     alert.GetPolicy().GetName(),
+			severity: alert.GetPolicy().GetSeverity(),
+		})
 	}
+
 	// This does not contribute to the overall risk of the container
 	if severitySum == 0 {
 		return nil
@@ -71,8 +81,8 @@ func (v *ViolationsMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result 
 	}
 	score := (severitySum / policySaturation) + 1
 	return &v1.Risk_Result{
-		Name:    policyViolationsHeuristic,
-		Factors: policyFactors(policies),
+		Name:    policyViolationsHeading,
+		Factors: policyFactors(factors),
 		Score:   score,
 	}
 }
@@ -82,10 +92,17 @@ func severityString(s v1.Severity) string {
 	return strings.ToUpper(trim[:1]) + strings.ToLower(trim[1:])
 }
 
-func policyFactors(policies []*v1.Policy) (factors []string) {
-	for _, p := range policies {
-		factors = append(factors, fmt.Sprintf("Deployment violates policy %s (severity: %s)", p.GetName(), severityString(p.GetSeverity())))
+func policyFactors(pfs []policyFactor) (factors []string) {
+	sort.Slice(pfs, func(i, j int) bool {
+		if pfs[i].severity == pfs[j].severity {
+			// Break ties using the name.
+			return pfs[i].name < pfs[j].name
+		}
+		// Otherwise use the impact score.
+		return severityImpact(pfs[i].severity) > severityImpact(pfs[j].severity)
+	})
+	for _, pf := range pfs {
+		factors = append(factors, fmt.Sprintf("%s (severity: %s)", pf.name, severityString(pf.severity)))
 	}
-	sort.Strings(factors)
 	return
 }

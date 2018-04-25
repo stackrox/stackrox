@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	maxScore = 8
+	serviceConfigHeading = "Service Configuration"
+	maxScore             = 8
 )
 
 // ServiceConfigMultiplier is a scorer for the service configuration
@@ -85,7 +86,7 @@ func (s *ServiceConfigMultiplier) scorePrivilege(deployment *v1.Deployment) stri
 // Score takes a deployment and evaluates its risk based on the service configuration
 func (s *ServiceConfigMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
 	riskResult := &v1.Risk_Result{
-		Name: "Service Configuration Heuristic",
+		Name: serviceConfigHeading,
 	}
 	var overallScore float32
 	volumeFactor, secretFactor := s.scoreVolumesAndSecrets(deployment)

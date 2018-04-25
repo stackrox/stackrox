@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	vulnsHeading      = "Image Vulnerabilities"
 	saturationCeiling = 100
 )
 
@@ -47,7 +48,7 @@ func (c *VulnerabilitiesMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Re
 	}
 	score := (cvssSum / saturationCeiling) + 1
 	return &v1.Risk_Result{
-		Name: "Vulnerability Heuristic",
+		Name: vulnsHeading,
 		Factors: []string{
 			fmt.Sprintf("Image contains %d CVEs with CVSS scores ranging between %0.1f and %0.1f", numCVEs, cvssMin, cvssMax),
 		},
