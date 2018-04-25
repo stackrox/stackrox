@@ -30,6 +30,10 @@ func NewDataStore(storage db.Storage, indexer search.Indexer) (*DataStore, error
 	if err := ds.loadDefaults(); err != nil {
 		return nil, err
 	}
+	if err := ds.buildSearchIndexes(); err != nil {
+		return nil, err
+	}
+
 	return ds, nil
 }
 
@@ -37,6 +41,50 @@ func NewDataStore(storage db.Storage, indexer search.Indexer) (*DataStore, error
 func (ds *DataStore) Close() {
 	ds.Storage.Close()
 	ds.indexer.Close()
+}
+
+func (ds *DataStore) buildSearchIndexes() error {
+	// Alert Index
+	alerts, err := ds.GetAlerts(&v1.GetAlertsRequest{})
+	if err != nil {
+		return err
+	}
+	for _, a := range alerts {
+		if err := ds.indexer.AddAlert(a); err != nil {
+			logger.Errorf("Error inserting alert %s (%s) into index: %s", a.GetId(), a.GetPolicy().GetName(), err)
+		}
+	}
+
+	deployments, err := ds.GetDeployments()
+	if err != nil {
+		return err
+	}
+	for _, d := range deployments {
+		if err := ds.indexer.AddDeployment(d); err != nil {
+			logger.Errorf("Error inserting deployment %s (%s) into index: %s", d.GetId(), d.GetName(), err)
+		}
+	}
+
+	policies, err := ds.GetPolicies()
+	if err != nil {
+		return err
+	}
+	for _, p := range policies {
+		if err := ds.indexer.AddPolicy(p); err != nil {
+			logger.Errorf("Error inserting policy %s (%s) into index: %s", p.GetId(), p.GetName(), err)
+		}
+	}
+
+	images, err := ds.GetImages()
+	if err != nil {
+		return err
+	}
+	for _, i := range images {
+		if err := ds.indexer.AddImage(i); err != nil {
+			logger.Errorf("Error inserting image %s (%s) into index: %s", i.GetName().GetSha(), i.GetName().GetFullName(), err)
+		}
+	}
+	return nil
 }
 
 // AddAlert inserts an alert into storage and into the indexer

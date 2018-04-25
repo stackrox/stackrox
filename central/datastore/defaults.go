@@ -34,7 +34,7 @@ func (ds *DataStore) loadDefaultPolicies() error {
 	}
 
 	for _, p := range policies {
-		if _, err := ds.AddPolicy(p); err != nil {
+		if _, err := ds.Storage.AddPolicy(p); err != nil {
 			return err
 		}
 	}
