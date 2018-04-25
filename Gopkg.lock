@@ -2,6 +2,16 @@
 
 
 [[projects]]
+  name = "bitbucket.org/stack-rox/cscc"
+  packages = [
+    "client",
+    "findings"
+  ]
+  revision = "e8f6ce3fb40d9fc1e21786c074a4874535ac4b53"
+  source = "git@bitbucket.org:stack-rox/cscc.git"
+  version = "0.1.0"
+
+[[projects]]
   name = "cloud.google.com/go"
   packages = ["compute/metadata"]
   revision = "4b98a6370e36d7a85192e7bad08a4ebd82eac2a8"
@@ -999,6 +1009,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ff9e57925f64188efd2b282069dda39caafda8065d5f8b4aa70ced296ed82016"
+  inputs-digest = "6c19d752674724df1bca21b0a413df1de8fc81c03b0bf7cda18faef3c6a2131d"
   solver-name = "gps-cdcl"
   solver-version = 1

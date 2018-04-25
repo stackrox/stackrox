@@ -41,6 +41,10 @@ const tableColumnDescriptor = Object.freeze({
             { key: 'name', label: 'Name' },
             { key: 'config.recipient', label: 'Recipient' },
             { key: 'config.server', label: 'Server' }
+        ],
+        cscc: [
+            { key: 'name', label: 'Name' },
+            { key: 'config.gcpOrgID', label: 'Google Cloud Platform Org ID' }
         ]
     },
     imageIntegrations: {

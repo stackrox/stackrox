@@ -129,6 +129,12 @@ const integrationsList = {
             type: 'email',
             source: 'notifiers',
             image: email
+        },
+        {
+            label: 'Google Cloud Security Command Center',
+            type: 'cscc',
+            source: 'notifiers',
+            image: google
         }
     ]
 };

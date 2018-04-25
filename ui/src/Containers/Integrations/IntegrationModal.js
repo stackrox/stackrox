@@ -146,6 +146,32 @@ const sourceMap = {
                 type: 'text',
                 placeholder: '#slack-channel'
             }
+        ],
+        cscc: [
+            {
+                label: 'Integration Name',
+                key: 'name',
+                type: 'text',
+                placeholder: 'CSCC'
+            },
+            {
+                label: 'GCP Organization ID Number',
+                key: 'config.gcpOrgID',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                label: 'GCP Project',
+                key: 'config.gcpProject',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                label: 'Service Account Key (JSON)',
+                key: 'config.serviceAccount',
+                type: 'text',
+                placeholder: ''
+            }
         ]
     },
     imageIntegrations: {
@@ -362,7 +388,7 @@ const sourceMap = {
                 placeholder: ''
             },
             {
-                label: 'Service Account',
+                label: 'Service Account Key (JSON)',
                 key: 'config.serviceAccount',
                 type: 'text',
                 placeholder: ''
