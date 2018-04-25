@@ -34,3 +34,9 @@ func (e *Enricher) ReprocessRisk() error {
 	}
 	return nil
 }
+
+// ReprocessDeploymentRisk will reprocess the passed deployments risk and save the results
+func (e *Enricher) ReprocessDeploymentRisk(deployment *v1.Deployment) error {
+	deployment.Risk = e.scorer.Score(deployment)
+	return e.storage.UpdateDeployment(deployment)
+}

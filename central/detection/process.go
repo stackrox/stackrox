@@ -6,9 +6,9 @@ import (
 )
 
 // ProcessDeploymentEvent takes in a deployment event and return alerts.
-func (d *Detector) ProcessDeploymentEvent(deployment *v1.Deployment, action v1.ResourceAction) (alertID string, enforcement v1.EnforcementAction, err error) {
-	if _, err = d.enricher.Enrich(deployment); err != nil {
-		return
+func (d *Detector) ProcessDeploymentEvent(deployment *v1.Deployment, action v1.ResourceAction) (alertID string, enforcement v1.EnforcementAction) {
+	if _, err := d.enricher.Enrich(deployment); err != nil {
+		logger.Errorf("Error enriching deployment %s: %s", deployment.GetName(), err)
 	}
 
 	var enforcementActions []alertWithEnforcement
@@ -61,6 +61,12 @@ func (d *Detector) processTask(task Task) (alert *v1.Alert, enforcement v1.Enfor
 		d.notificationProcessor.ProcessAlert(alert)
 	} else if excluded != nil {
 		logger.Infof("Alert for policy '%v' on deployment '%v' was NOT generated due to whitelist '%v'", task.policy.GetName(), task.deployment.GetName(), excluded.GetWhitelist().GetName())
+	}
+
+	// This is the best place to assess risk (which is relatively cheap at the moment), because enrichment must have occurred at this point
+	// Any new violations (which will soon be integrated into the risk score) will also trigger the reprocessing
+	if err := d.enricher.ReprocessDeploymentRisk(task.deployment); err != nil {
+		logger.Errorf("Error enriching deployment %s: %s", task.deployment.GetName(), err)
 	}
 
 	return

@@ -70,18 +70,22 @@ func (s *SensorEventService) ReportDeploymentEvent(ctx context.Context, request 
 		}
 	}
 
-	// score the deployment so that it will at least have the default scoring without enrichment
-	// it will be overwritten if data is enriched
-	request.Deployment.Risk = s.scorer.Score(request.GetDeployment())
 	if err := s.handlePersistence(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	alertID, enforcement, err := s.detector.ProcessDeploymentEvent(d, request.GetAction())
-	if err != nil {
-		log.Error(err)
-		return nil, status.Error(codes.Internal, err.Error())
+	// Update the deployment with the most recent image version
+	for _, c := range d.GetContainers() {
+		img, exists, err := s.datastore.GetImage(c.GetImage().GetName().GetSha())
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+		if exists {
+			c.Image = img
+		}
 	}
+	alertID, enforcement := s.detector.ProcessDeploymentEvent(d, request.GetAction())
 
 	for _, i := range images.FromContainers(d.GetContainers()).Images() {
 		if i.GetName().GetSha() == "" {

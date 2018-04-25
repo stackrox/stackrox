@@ -22,6 +22,7 @@ type Enricher struct {
 		db.ImageStorage
 		db.ImageIntegrationStorage
 		db.MultiplierStorage
+		db.AlertStorage
 	}
 
 	imageIntegrationMutex sync.Mutex
@@ -98,9 +99,6 @@ func (e *Enricher) Enrich(deployment *v1.Deployment) (enriched bool, err error) 
 	}
 
 	if enriched {
-		// Score the deployment
-		deployment.Risk = e.scorer.Score(deployment)
-		// Always enrich because the risk could be updated
 		err = e.storage.UpdateDeployment(deployment)
 	}
 
