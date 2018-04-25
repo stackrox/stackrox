@@ -19,17 +19,17 @@ import (
 )
 
 // NewDeploymentService returns a DeploymentService object.
-func NewDeploymentService(storage *datastore.DataStore, enricher *enrichment.Enricher) *DeploymentService {
+func NewDeploymentService(datastore *datastore.DataStore, enricher *enrichment.Enricher) *DeploymentService {
 	return &DeploymentService{
-		storage:  storage,
-		enricher: enricher,
+		datastore: datastore,
+		enricher:  enricher,
 	}
 }
 
 // DeploymentService provides APIs for deployments.
 type DeploymentService struct {
-	storage  *datastore.DataStore
-	enricher *enrichment.Enricher
+	datastore *datastore.DataStore
+	enricher  *enrichment.Enricher
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -49,7 +49,7 @@ func (s *DeploymentService) AuthFuncOverride(ctx context.Context, fullMethodName
 
 // GetDeployment returns the deployment with given id.
 func (s *DeploymentService) GetDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.Deployment, error) {
-	deployment, exists, err := s.storage.GetDeployment(request.GetId())
+	deployment, exists, err := s.datastore.GetDeployment(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -64,7 +64,7 @@ func (s *DeploymentService) GetDeployment(ctx context.Context, request *v1.Resou
 func (s *DeploymentService) GetDeployments(ctx context.Context, request *v1.RawQuery) (*v1.GetDeploymentsResponse, error) {
 	resp := new(v1.GetDeploymentsResponse)
 	if request.GetQuery() == "" {
-		deployments, err := s.storage.GetDeployments()
+		deployments, err := s.datastore.GetDeployments()
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -74,7 +74,7 @@ func (s *DeploymentService) GetDeployments(ctx context.Context, request *v1.RawQ
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		deployments, err := s.storage.SearchRawDeployments(parsedQuery)
+		deployments, err := s.datastore.SearchRawDeployments(parsedQuery)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -88,7 +88,7 @@ func (s *DeploymentService) GetDeployments(ctx context.Context, request *v1.RawQ
 
 // GetLabels returns label keys and values for current deployments.
 func (s *DeploymentService) GetLabels(context.Context, *empty.Empty) (*v1.DeploymentLabelsResponse, error) {
-	deployments, err := s.storage.GetDeployments()
+	deployments, err := s.datastore.GetDeployments()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -140,7 +140,7 @@ func labelsMapFromDeployments(deployments []*v1.Deployment) (keyValuesMap map[st
 
 // GetMultipliers returns all multipliers
 func (s *DeploymentService) GetMultipliers(ctx context.Context, request *empty.Empty) (*v1.GetMultipliersResponse, error) {
-	multipliers, err := s.storage.GetMultipliers()
+	multipliers, err := s.datastore.GetMultipliers()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -169,7 +169,7 @@ func (s *DeploymentService) AddMultiplier(ctx context.Context, request *v1.Multi
 	if err := validateMultiplier(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	id, err := s.storage.AddMultiplier(request)
+	id, err := s.datastore.AddMultiplier(request)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -180,7 +180,7 @@ func (s *DeploymentService) AddMultiplier(ctx context.Context, request *v1.Multi
 
 // UpdateMultiplier updates the specified multiplier
 func (s *DeploymentService) UpdateMultiplier(ctx context.Context, request *v1.Multiplier) (*empty.Empty, error) {
-	if err := s.storage.UpdateMultiplier(request); err != nil {
+	if err := s.datastore.UpdateMultiplier(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	s.enricher.UpdateMultiplier(request)
@@ -192,7 +192,7 @@ func (s *DeploymentService) RemoveMultiplier(ctx context.Context, request *v1.Re
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "ID must be specified when removing a multiplier")
 	}
-	if err := s.storage.RemoveMultiplier(request.GetId()); err != nil {
+	if err := s.datastore.RemoveMultiplier(request.GetId()); err != nil {
 		if _, ok := err.(db.ErrNotFound); ok {
 			return nil, status.Error(codes.NotFound, err.Error())
 		}

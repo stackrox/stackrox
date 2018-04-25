@@ -330,7 +330,7 @@ func (ds *DataStore) searchDeployments(request *v1.ParsedSearchRequest) ([]*v1.D
 		newResults = append(newResults, result)
 	}
 
-	return deployments, newResults, nil
+	return filterAliveDeployments(deployments), newResults, nil
 }
 
 // SearchRawDeployments retrieves deployments from the indexer and storage
