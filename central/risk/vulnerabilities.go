@@ -2,6 +2,7 @@ package risk
 
 import (
 	"fmt"
+	"math"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 )
@@ -21,6 +22,8 @@ func NewVulnerabilitiesMultiplier() *VulnerabilitiesMultiplier {
 // Score takes a deployment and evaluates its risk based on vulnerabilties
 func (c *VulnerabilitiesMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
 	var cvssSum float32
+	cvssMin := math.MaxFloat64
+	cvssMax := -math.MaxFloat64
 	var numCVEs int
 	for _, container := range deployment.GetContainers() {
 		for _, component := range container.GetImage().GetScan().GetComponents() {
@@ -29,6 +32,8 @@ func (c *VulnerabilitiesMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Re
 				if vuln.GetCvss() == 0 {
 					continue
 				}
+				cvssMax = math.Max(float64(vuln.GetCvss()), cvssMax)
+				cvssMin = math.Min(float64(vuln.GetCvss()), cvssMin)
 				cvssSum += vuln.GetCvss() * vuln.GetCvss() / 10
 				numCVEs++
 			}
@@ -44,7 +49,7 @@ func (c *VulnerabilitiesMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Re
 	return &v1.Risk_Result{
 		Name: "Vulnerability Heuristic",
 		Factors: []string{
-			fmt.Sprintf("Normalized and discounted sum of %d CVSS scores", numCVEs),
+			fmt.Sprintf("Image contains %d CVEs with CVSS scores ranging between %0.1f and %0.1f", numCVEs, cvssMin, cvssMax),
 		},
 		Score: score,
 	}

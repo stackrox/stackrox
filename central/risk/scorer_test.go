@@ -78,7 +78,7 @@ func TestScore(t *testing.T) {
 			{
 				Name: "Vulnerability Heuristic",
 				Factors: []string{
-					"Normalized and discounted sum of 2 CVSS scores",
+					"Image contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0",
 				},
 				Score: 1.05,
 			},
@@ -120,7 +120,7 @@ func TestScore(t *testing.T) {
 			{
 				Name: "Vulnerability Heuristic",
 				Factors: []string{
-					"Normalized and discounted sum of 2 CVSS scores",
+					"Image contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0",
 				},
 				Score: 1.05,
 			},
