@@ -122,9 +122,12 @@ class DashboardPage extends Component {
         }
         // set severities in timeAlertMap to have this zero'd data
         const timeAlertMap = {};
+        const timeAlertInitialMap = {}; // this is the number of initial alerts that have come before
         Object.keys(severityColorMap).forEach(severity => {
             timeAlertMap[severity] = cloneDeep(baselineData);
+            timeAlertInitialMap[severity] = 0;
         });
+
         // populate actual data into timeAlertMap
         clusterData.severities.forEach(severityObj => {
             const { severity, events } = severityObj;
@@ -142,7 +145,18 @@ class DashboardPage extends Component {
                         default:
                             break;
                     }
+                } else {
+                    timeAlertInitialMap[severity] += 1;
                 }
+            });
+        });
+
+        Object.keys(severityColorMap).forEach(severity => {
+            let runningSum = timeAlertInitialMap[severity];
+            Object.keys(baselineData).forEach(time => {
+                const prevVal = timeAlertMap[severity][time];
+                timeAlertMap[severity][time] += runningSum;
+                runningSum += prevVal;
             });
         });
 
