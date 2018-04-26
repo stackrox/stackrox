@@ -130,13 +130,15 @@ class RiskPage extends Component {
         const header = selectedDeployment.name;
         const riskPanelTabs = [{ text: 'risk indicators' }, { text: 'deployment details' }];
         return (
-            <Panel header={header} onClose={this.updateSelectedDeployment} width="w-2/3">
-                <Tabs headers={riskPanelTabs}>
-                    {riskPanelTabs.map(tab => (
-                        <TabContent key={tab.text}>{this.renderTab(tab.text)}</TabContent>
-                    ))}
-                </Tabs>
-            </Panel>
+            <div className="w-1/2">
+                <Panel header={header} onClose={this.updateSelectedDeployment}>
+                    <Tabs headers={riskPanelTabs}>
+                        {riskPanelTabs.map(tab => (
+                            <TabContent key={tab.text}>{this.renderTab(tab.text)}</TabContent>
+                        ))}
+                    </Tabs>
+                </Panel>
+            </div>
         );
     };
 
@@ -272,7 +274,7 @@ class RiskPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow bg-base-100">
+                        <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow bg-base-100 flex flex-1">
                             {this.renderTable()}
                         </div>
                         {this.renderSidePanel()}

@@ -5,6 +5,8 @@ import isObject from 'lodash/isObject';
 import isArray from 'lodash/isArray';
 import isEmpty from 'lodash/isEmpty';
 
+const isNumeric = x => (typeof x === 'number' || typeof x === 'string') && Number(x) >= 0;
+
 class KeyValuePairs extends Component {
     static propTypes = {
         data: PropTypes.shape({}).isRequired,
@@ -18,23 +20,27 @@ class KeyValuePairs extends Component {
     getKeys = () => Object.keys(this.props.data);
 
     getNestedValue = data => {
-        let keys = data;
-        if (isObject(data)) {
-            keys = Object.keys(data);
+        let nestedData = data;
+        let keys = nestedData;
+        if (isObject(nestedData)) {
+            keys = Object.keys(nestedData);
+            if (keys.includes('key') && keys.includes('value') && keys.length === 2) {
+                const o = { [nestedData.key]: nestedData.value };
+                nestedData = o;
+                keys = Object.keys(o);
+            }
         }
+
         return keys.map(key => (
-            <div className="flex py-2" key={key}>
-                <div className="pr-1">{key}:</div>
-                <div className="italic text-accent-400">
-                    {isObject(data[key]) ? (
-                        <div>
-                            <br />
-                            {this.getNestedValue(data[key])}
-                        </div>
-                    ) : (
-                        data[key]
-                    )}
-                </div>
+            <div className="py-2 max-w-md truncate text-accent-400" key={key}>
+                {!isNumeric(key) ? <span className="pr-1 text-primary-600">{key}:</span> : ''}
+                {isObject(nestedData[key]) ? (
+                    this.getNestedValue(nestedData[key])
+                ) : (
+                    <span title={nestedData[key]} className="italic text-accent-400">
+                        {nestedData[key]}
+                    </span>
+                )}
             </div>
         ));
     };
@@ -54,7 +60,7 @@ class KeyValuePairs extends Component {
             return (
                 <div className="flex py-3" key={key}>
                     <div className="pr-1">{label}:</div>
-                    <div className={`font-500 ${(isObject(value) || isArray(value)) && '-ml-8'}`}>
+                    <div className={`flex-1 min-w-0 font-500 ${isObject(value) || isArray(value)}`}>
                         {isObject(value) || isArray(value) ? (
                             <div>
                                 <br />
