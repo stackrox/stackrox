@@ -59,7 +59,7 @@ const mapping = {
     ALERTS: {
         filterOn: [],
         viewOn: ['VIOLATIONS'],
-        name: 'Alert Name'
+        name: 'Policy Name'
     }
 };
 

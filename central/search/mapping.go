@@ -81,74 +81,51 @@ var DeploymentOptionsMap = map[string]*v1.SearchField{
 
 // AlertOptionsMap is exposed for e2e test
 var AlertOptionsMap = map[string]*v1.SearchField{
-	"Alert Name": newStringField("alert.policy.name"),
-	"Violation":  newStringField("alert.violations.message"),
-	"Stale":      newBoolField("alert.stale"),
+	"Violation": newStringField("alert.violations.message"),
+	"Stale":     newBoolField("alert.stale"),
 }
 
-// allOptionsMaps is the list of all options
-var allOptionsMaps = map[string]*v1.SearchField{
-	// Alert Options
-	"Alert Name": newStringField("alert.policy.name"),
-	"Violation":  newStringField("alert.violations.message"),
-	"Stale":      newBoolField("alert.stale"),
-
-	// PolicyOptions
-	"Enforcement": newEnforcementField("policy.enforcement"),
-	"Policy Name": newStringField("policy.name"),
-	"Description": newStringField("policy.description"),
-	"Category":    newStringField("policy.categories"),
-	"Severity":    newSeverityField("policy.severity"),
-
-	// ImageOptions
-	"CVE":                    newStringField("image.scan.components.vulns.cve"),
-	"CVSS":                   newNumericField("image.scan.components.vulns.cvss"),
-	"Component":              newStringField("image.scan.components.name"),
-	"Dockerfile Instruction": newStringField("image.metadata.layers.instruction"),
-	"Image Name":             newStringField("image.name.full_name"),
-	"Image Registry":         newStringField("image.name.registry"),
-	"Image Remote":           newStringField("image.name.remote"),
-	"Image Tag":              newStringField("image.name.tag"),
-
-	// DeploymentOptions
-	"Add Capabilities":   newStringField("deployment.containers.security_context.add_capabilities"),
-	"Deployment Name":    newStringField("deployment.name"),
-	"Deployment Type":    newStringField("deployment.type"),
-	"Drop Capabilities":  newStringField("deployment.containers.security_context.drop_capabilities"),
-	"Environment Key":    newStringField("deployment.containers.config.env.key"),
-	"Environment Value":  newStringField("deployment.containers.config.env.value"),
-	"Privileged":         newBoolField("deployment.containers.security_context.privileged"),
-	"Volume Name":        newStringField("deployment.containers.volumes.name"),
-	"Volume Source":      newStringField("deployment.containers.volumes.source"),
-	"Volume Destination": newStringField("deployment.containers.volumes.destination"),
-	"Volume ReadOnly":    newBoolField("deployment.containers.volumes.read_only"),
-	"Volume Type":        newStringField("deployment.containers.volumes.type"),
-}
-
-func appendStringMapKeys(s mapset.Set, m map[string]*v1.SearchField) {
-	for k := range m {
-		s.Add(k)
+func generateAllOptionsMap() map[string]*v1.SearchField {
+	m := make(map[string]*v1.SearchField)
+	for k, v := range PolicyOptionsMap {
+		m[k] = v
 	}
+	for k, v := range ImageOptionsMap {
+		m[k] = v
+	}
+	for k, v := range DeploymentOptionsMap {
+		m[k] = v
+	}
+	for k, v := range AlertOptionsMap {
+		m[k] = v
+	}
+	return m
+}
+
+var allOptionsMaps = generateAllOptionsMap()
+
+func generateSetFromOptionsMap(maps ...map[string]*v1.SearchField) mapset.Set {
+	s := mapset.NewSet()
+	for _, m := range maps {
+		for k := range m {
+			s.Add(k)
+		}
+	}
+	return s
+}
+
+var categoryOptionsMap = map[v1.SearchCategory]mapset.Set{
+	v1.SearchCategory_ALERTS:      generateSetFromOptionsMap(AlertOptionsMap, PolicyOptionsMap, DeploymentOptionsMap, ImageOptionsMap),
+	v1.SearchCategory_POLICIES:    generateSetFromOptionsMap(PolicyOptionsMap),
+	v1.SearchCategory_DEPLOYMENTS: generateSetFromOptionsMap(DeploymentOptionsMap, ImageOptionsMap),
+	v1.SearchCategory_IMAGES:      generateSetFromOptionsMap(ImageOptionsMap),
 }
 
 // GetOptions returns the searchable fields for the specified categories
 func GetOptions(categories []v1.SearchCategory) []string {
 	optionsSet := set.NewSetFromStringSlice(GlobalOptions)
 	for _, category := range categories {
-		switch category {
-		case v1.SearchCategory_ALERTS:
-			appendStringMapKeys(optionsSet, AlertOptionsMap)
-			appendStringMapKeys(optionsSet, PolicyOptionsMap)
-			appendStringMapKeys(optionsSet, DeploymentOptionsMap)
-			appendStringMapKeys(optionsSet, ImageOptionsMap)
-		case v1.SearchCategory_POLICIES:
-			appendStringMapKeys(optionsSet, PolicyOptionsMap)
-		case v1.SearchCategory_DEPLOYMENTS:
-			appendStringMapKeys(optionsSet, DeploymentOptionsMap)
-			appendStringMapKeys(optionsSet, ImageOptionsMap)
-		case v1.SearchCategory_IMAGES:
-			appendStringMapKeys(optionsSet, ImageOptionsMap)
-		}
+		optionsSet = optionsSet.Union(categoryOptionsMap[category])
 	}
 	slice := set.StringSliceFromSet(optionsSet)
 	sort.Strings(slice)
