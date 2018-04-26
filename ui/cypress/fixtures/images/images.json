@@ -1,0 +1,37 @@
+{
+    "images": [
+        {
+            "name": {
+                "sha": "18156dcd747677b03968621b2729d46021ce83a5bc15118e5bcced925fb4ebb9",
+                "registry": "docker.io",
+                "remote": "library/nginx",
+                "tag": "latest",
+                "fullName": "docker.io/library/nginx:latest"
+            },
+            "metadata": null,
+            "scan": null
+        },
+        {
+            "name": {
+                "sha": "9342f82b178a4325aec19f997400e866bf7c6bf9d59dd74e1358f971159dd7b8",
+                "registry": "apollo-dtr.rox.systems",
+                "remote": "srox/nginx",
+                "tag": "1.12",
+                "fullName": "apollo-dtr.rox.systems/srox/nginx:1.12"
+            },
+            "metadata": null,
+            "scan": null
+        },
+        {
+            "name": {
+                "sha": "sha256:9ade5f6ffaaacdb4e48fd8fc1802f2dd7b4b481cee897198eed5d6cc14e5d1f3",
+                "registry": "docker.io",
+                "remote": "stackrox/prevent",
+                "tag": "latest",
+                "fullName": "docker.io/stackrox/prevent:latest"
+            },
+            "metadata": null,
+            "scan": null
+        }
+    ]
+}

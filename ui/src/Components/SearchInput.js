@@ -7,6 +7,7 @@ import differenceBy from 'lodash/differenceBy';
 
 class SearchInput extends Component {
     static propTypes = {
+        id: PropTypes.string,
         className: PropTypes.string,
         placeholder: PropTypes.string,
         searchOptions: PropTypes.arrayOf(PropTypes.object),
@@ -17,6 +18,7 @@ class SearchInput extends Component {
     };
 
     static defaultProps = {
+        id: '',
         placeholder: 'Page filters',
         className: '',
         searchOptions: [],
@@ -79,7 +81,9 @@ class SearchInput extends Component {
         const searchOptions = this.props.searchOptions.slice();
         const searchSuggestions = this.props.searchSuggestions.slice();
         const props = {
-            className: `search-input ${this.props.className}`,
+            className: this.props.id
+                ? `${this.props.id}-search-input ${this.props.className}`
+                : `search-input ${this.props.className}`,
             name: 'search-input',
             placeholder: searchIcon,
             onInputChange: this.onInputChange,

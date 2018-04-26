@@ -23,3 +23,7 @@ export const search = {
     globalSearchWithResults: '/v1/search?query=Cluster:remote',
     globalSearchWithNoResults: '/v1/search?query=Cluster:'
 };
+
+export const images = {
+    list: '/v1/images*'
+};

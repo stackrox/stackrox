@@ -8,12 +8,12 @@ import Collapsible from 'react-collapsible';
 import dateFns from 'date-fns';
 import ReactTooltip from 'react-tooltip';
 import reduce from 'lodash/reduce';
-import { Link } from 'react-router-dom';
 import ReactTable from 'react-table';
 import 'react-table/react-table.css';
 
 import { selectors } from 'reducers';
 import { actions as imagesActions } from 'reducers/images';
+import { actions as riskActions } from 'reducers/risk';
 
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
@@ -64,7 +64,9 @@ class ImagesPage extends Component {
         isViewFiltered: PropTypes.bool.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
         location: ReactRouterPropTypes.location.isRequired,
-        match: ReactRouterPropTypes.match.isRequired
+        match: ReactRouterPropTypes.match.isRequired,
+        deploymentsSearchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
+        setDeploymentsSearchOptions: PropTypes.func.isRequired
     };
 
     constructor(props) {
@@ -74,6 +76,23 @@ class ImagesPage extends Component {
             modalOpen: false
         };
     }
+
+    onViewDeploymentsClick = () => {
+        const imageName = this.getSelectedImage().name.fullName;
+        const deploymentsSearchOptions = this.props.deploymentsSearchOptions.splice();
+        deploymentsSearchOptions.push({
+            label: 'Image Name:',
+            value: 'Image Name:',
+            type: 'categoryOption'
+        });
+        deploymentsSearchOptions.push({
+            label: imageName,
+            value: imageName,
+            className: 'Select-create-option-placeholder'
+        });
+        this.props.setDeploymentsSearchOptions(deploymentsSearchOptions);
+        this.props.history.push('/main/risk');
+    };
 
     getSelectedImage = () => {
         if (this.props.match.params.sha) {
@@ -187,12 +206,12 @@ class ImagesPage extends Component {
                             </div>
                             <div className="flex bg-primary-100">
                                 <span className="w-1/2">
-                                    <Link
+                                    <button
                                         className="flex mx-auto my-2 py-3 px-2 w-5/6 rounded-sm text-primary-600 no-underline hover:text-white hover:bg-primary-400 uppercase justify-center text-sm items-center bg-white border-2 border-primary-400"
-                                        to="/main/risk"
+                                        onClick={this.onViewDeploymentsClick}
                                     >
                                         View Deployments
-                                    </Link>
+                                    </button>
                                 </span>
                                 <span
                                     className="w-1/2 border-low-100 border-l-2"
@@ -352,6 +371,7 @@ class ImagesPage extends Component {
                 <div className="flex flex-1 flex-col">
                     <PageHeader header="Images" subHeader={subHeader}>
                         <SearchInput
+                            id="images"
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}
                             searchSuggestions={this.props.searchSuggestions}
@@ -380,6 +400,7 @@ const isViewFiltered = createSelector(
 
 const mapStateToProps = createStructuredSelector({
     images: selectors.getImages,
+    deploymentsSearchOptions: selectors.getDeploymentsSearchOptions,
     searchOptions: selectors.getImagesSearchOptions,
     searchModifiers: selectors.getImagesSearchModifiers,
     searchSuggestions: selectors.getImagesSearchSuggestions,
@@ -387,6 +408,8 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = dispatch => ({
+    setDeploymentsSearchOptions: searchOptions =>
+        dispatch(riskActions.setDeploymentsSearchOptions(searchOptions)),
     setSearchOptions: searchOptions =>
         dispatch(imagesActions.setImagesSearchOptions(searchOptions)),
     setSearchModifiers: searchModifiers =>
