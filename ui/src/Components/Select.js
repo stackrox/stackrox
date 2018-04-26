@@ -14,7 +14,7 @@ class Select extends Component {
     static defaultProps = {
         placeholder: '',
         className:
-            'block w-full border bg-white border-base-300 text-base-600 p-3 pr-8 rounded cursor-pointer z-1 focus:border-base-300',
+            'block w-full border bg-white border-base-300 text-base-600 p-3 pr-8 rounded z-1 focus:border-base-300',
         value: ''
     };
 
@@ -26,7 +26,11 @@ class Select extends Component {
         const { className, options, placeholder, value } = this.props;
         return (
             <div className="relative">
-                <select className={className} onChange={this.onClick} value={value}>
+                <select
+                    className={`${className} cursor-pointer`}
+                    onChange={this.onClick}
+                    value={value}
+                >
                     <option value="" disabled>
                         {placeholder}
                     </option>
@@ -36,7 +40,7 @@ class Select extends Component {
                         </option>
                     ))}
                 </select>
-                <div className="absolute pin-y pin-r flex items-center px-2 cursor-pointer z-0">
+                <div className="absolute pin-y pin-r flex items-center px-2 cursor-pointer z-0 pointer-events-none">
                     <Icon.ChevronDown className="h-4 w-4" />
                 </div>
             </div>
