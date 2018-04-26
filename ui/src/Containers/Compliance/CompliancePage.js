@@ -10,12 +10,6 @@ import TabContent from 'Components/TabContent';
 import BenchmarksPage from 'Containers/Compliance/BenchmarksPage';
 import PageHeader from 'Components/PageHeader';
 
-const getClusterId = pathname => {
-    const clusterId = pathname.substr(pathname.lastIndexOf('/') + 1);
-    if (clusterId === 'compliance') return false;
-    return clusterId;
-};
-
 const CompliancePage = props => (
     <section className="flex flex-1 h-full">
         <div className="flex flex-1 flex-col">
@@ -27,7 +21,6 @@ const CompliancePage = props => (
                             <BenchmarksPage
                                 benchmarkName={benchmark.benchmarkName}
                                 benchmarkId={benchmark.benchmarkId}
-                                clusterId={getClusterId(props.location.pathname)}
                             />
                         </TabContent>
                     ))}
@@ -45,9 +38,6 @@ CompliancePage.propTypes = {
             disabled: PropTypes.bool
         })
     ).isRequired,
-    location: PropTypes.shape({
-        pathname: PropTypes.string
-    }).isRequired,
     clusterName: PropTypes.string.isRequired
 };
 

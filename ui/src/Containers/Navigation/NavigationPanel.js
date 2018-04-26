@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
-import { NavLink as Link } from 'react-router-dom';
+import { NavLink as Link, withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
+
 import { fetchClusters } from 'services/ClustersService';
 
 const navLinks = [
@@ -17,7 +20,12 @@ const navLinks = [
 class NavigationPanel extends Component {
     static propTypes = {
         panelType: PropTypes.string.isRequired,
-        onClose: PropTypes.func.isRequired
+        onClose: PropTypes.func.isRequired,
+        selectedClusterId: PropTypes.string
+    };
+
+    static defaultProps = {
+        selectedClusterId: ''
     };
 
     constructor(props) {
@@ -40,6 +48,8 @@ class NavigationPanel extends Component {
             const { clusters } = response.response;
             this.setState({ clusters });
         });
+
+    isSelectedCluster = clusterId => clusterId === this.props.selectedClusterId;
 
     handleKeyDown = () => {};
 
@@ -79,7 +89,9 @@ class NavigationPanel extends Component {
                         <Link
                             to={`/main/compliance/${cluster.id}`}
                             onClick={this.props.onClose(true, 'compliance')}
-                            className="no-underline text-white px-1 border-b py-5 border-primary-400 pl-2 pr-2 hover:bg-primary-600"
+                            className={`no-underline text-white px-1 border-b py-5 border-primary-400 pl-2 pr-2 hover:bg-primary-600 ${
+                                this.isSelectedCluster(cluster.id) ? 'bg-primary-600' : ''
+                            }`}
                         >
                             {cluster.name}
                         </Link>
@@ -105,4 +117,10 @@ class NavigationPanel extends Component {
     }
 }
 
-export default NavigationPanel;
+const getSelectedClusterId = (state, props) => props.location.pathname.split('/').pop();
+
+const mapStateToProps = createStructuredSelector({
+    selectedClusterId: getSelectedClusterId
+});
+
+export default withRouter(connect(mapStateToProps)(NavigationPanel));

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import { withRouter } from 'react-router-dom';
 import { selectors } from 'reducers';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { actions as benchmarkActions } from 'reducers/benchmarks';
@@ -56,20 +57,20 @@ class BenchmarksPage extends Component {
     }
 
     componentDidMount() {
-        this.props.startPollBenchmarkScanResults({
-            benchmarkId: this.props.benchmarkId,
-            clusterId: this.props.clusterId
-        });
-        this.props.fetchBenchmarkSchedule({
-            benchmarkId: this.props.benchmarkId,
-            clusterId: this.props.clusterId
-        });
+        this.setUpComponent();
     }
 
     componentWillReceiveProps(nextProps) {
         if (nextProps.lastScannedTime !== this.props.lastScannedTime) {
             // if new benchmark results are loaded then stop the button scanning if it is scanning
             this.setState({ scanning: false });
+        }
+    }
+
+    componentDidUpdate(prevProps) {
+        if (prevProps.clusterId !== this.props.clusterId) {
+            this.props.stopPollBenchmarkScanResults();
+            this.setUpComponent();
         }
     }
 
@@ -116,6 +117,17 @@ class BenchmarksPage extends Component {
             value,
             this.props.clusterId
         );
+    };
+
+    setUpComponent = () => {
+        this.props.startPollBenchmarkScanResults({
+            benchmarkId: this.props.benchmarkId,
+            clusterId: this.props.clusterId
+        });
+        this.props.fetchBenchmarkSchedule({
+            benchmarkId: this.props.benchmarkId,
+            clusterId: this.props.clusterId
+        });
     };
 
     renderScanOptions = () => {
@@ -299,12 +311,15 @@ const getLastScannedTime = createSelector([selectors.getLastScan], data => {
     return scanTime || '';
 });
 
+const getClusterId = (state, props) => props.match.params.clusterId;
+
 const mapStateToProps = createStructuredSelector({
     benchmarkScanResults: getBenchmarkScanResults,
     lastScannedTime: getLastScannedTime,
     schedule: selectors.getBenchmarkSchedule,
     selectedBenchmarkScanResult: selectors.getSelectedBenchmarkScanResult,
-    selectedBenchmarkHostResult: selectors.getSelectedBenchmarkHostResult
+    selectedBenchmarkHostResult: selectors.getSelectedBenchmarkHostResult,
+    clusterId: getClusterId
 });
 
 const mapDispatchToProps = dispatch => ({
@@ -339,4 +354,4 @@ const mapDispatchToProps = dispatch => ({
         dispatch(benchmarkActions.selectBenchmarkHostResult(benchmarkHostResult))
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(BenchmarksPage);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(BenchmarksPage));
