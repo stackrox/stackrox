@@ -13,7 +13,10 @@ import SimpleForm from 'Components/SimpleForm';
 import KeyValuePairs from 'Components/KeyValuePairs';
 import ClustersDownloadPage from 'Containers/Integrations/ClustersDownloadPage';
 import ClustersSuccessPage from 'Containers/Integrations/ClustersSuccessPage';
-import clusterCreationFormDescriptor from 'Containers/Integrations/clusterCreationFormDescriptor';
+import {
+    clusterCreationFormDescriptor,
+    swarmClusterCreationFormDescriptor
+} from 'Containers/Integrations/clusterCreationFormDescriptor';
 import { ToastContainer, toast } from 'react-toastify';
 
 const clusterDetailsMap = {
@@ -34,10 +37,12 @@ const clusterDetailsMap = {
     },
     imagePullSecret: {
         label: 'Image Pull Secret Name'
-    },
-    disableSwarmTls: {
-        label: 'Swarm TLS Disabled'
     }
+};
+
+const swarmClusterDetailsMap = Object.assign({}, clusterDetailsMap);
+swarmClusterDetailsMap.disableSwarmTls = {
+    label: 'Swarm TLS Disabled'
 };
 
 const formDataKeys = clusterCreationFormDescriptor.map(obj => obj.value);
@@ -49,7 +54,8 @@ class ClusterCreationPanel extends Component {
         isClusterSuccessfullyConfigured: PropTypes.bool,
         formData: PropTypes.shape().isRequired,
         setCreatedClusterId: PropTypes.func.isRequired,
-        createdClusterId: PropTypes.string
+        createdClusterId: PropTypes.string,
+        clusterType: PropTypes.string.isRequired
     };
 
     static defaultProps = {
@@ -73,7 +79,9 @@ class ClusterCreationPanel extends Component {
     onNext = index => {
         const promise = new Promise((resolve, reject) => {
             if (index === 0) {
-                const createClusterPromise = createCluster(this.props.formData);
+                const data = this.props.formData;
+                data.type = this.props.clusterType;
+                const createClusterPromise = createCluster(data);
                 createClusterPromise
                     .then(result => {
                         this.props.setCreatedClusterId(result.data.cluster.id);
@@ -90,14 +98,29 @@ class ClusterCreationPanel extends Component {
         return promise;
     };
 
-    renderKeyValuePairs = () => (
-        <div className="p-4">
-            <KeyValuePairs data={this.props.editingCluster} keyValueMap={clusterDetailsMap} />
-        </div>
-    );
+    renderKeyValuePairs = () => {
+        if (this.props.clusterType === 'SWARM_CLUSTER') {
+            return (
+                <div className="p-4">
+                    <KeyValuePairs
+                        data={this.props.editingCluster}
+                        keyValueMap={swarmClusterDetailsMap}
+                    />
+                </div>
+            );
+        }
+        return (
+            <div className="p-4">
+                <KeyValuePairs data={this.props.editingCluster} keyValueMap={clusterDetailsMap} />
+            </div>
+        );
+    };
 
     renderFormPanel = () => {
-        let fields = clusterCreationFormDescriptor;
+        let fields =
+            this.props.clusterType === 'SWARM_CLUSTER'
+                ? swarmClusterCreationFormDescriptor
+                : clusterCreationFormDescriptor;
         // if viewing an existing cluster, disable the fields
         if (this.props.editingCluster.id) {
             fields = fields.map(field => {
@@ -108,6 +131,7 @@ class ClusterCreationPanel extends Component {
         }
         return (
             <SimpleForm
+                id="cluster"
                 fields={fields}
                 onSubmit={this.submit}
                 initialValues={this.props.editingCluster}
@@ -200,7 +224,8 @@ const mapStateToProps = createStructuredSelector({
     editingCluster: getEditingCluster,
     isClusterSuccessfullyConfigured: getSuccessfullyConfiguredCluster,
     formData: getFormData,
-    createdClusterId: selectors.getCreatedClusterId
+    createdClusterId: selectors.getCreatedClusterId,
+    clusterType: selectors.getSelectedClusterType
 });
 
 const mapDispatchToProps = dispatch => ({

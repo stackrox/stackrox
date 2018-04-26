@@ -55,6 +55,10 @@ const editingCluster = (state = null, action) => {
         }
         return null;
     }
+    // if the modal is opened or closed, the cluster edit form should go away
+    if (action.type === types.SELECT_CLUSTER_TYPE) {
+        return null;
+    }
     if (state && action.type === types.FETCH_CLUSTERS.SUCCESS) {
         // received a new list of clusters and it doesn't contain the cluster that was being edited: unselect
         if (state.id && !action.response.clusters.map(cluster => cluster.id).includes(state.id)) {

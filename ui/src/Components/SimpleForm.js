@@ -4,6 +4,7 @@ import { reduxForm, Field } from 'redux-form';
 
 class SimpleForm extends Component {
     static propTypes = {
+        id: PropTypes.string,
         handleSubmit: PropTypes.func.isRequired,
         fields: PropTypes.arrayOf(
             PropTypes.shape({
@@ -14,6 +15,10 @@ class SimpleForm extends Component {
                 options: PropTypes.string
             })
         ).isRequired
+    };
+
+    static defaultProps = {
+        id: ''
     };
 
     renderTextField = field => (
@@ -56,8 +61,9 @@ class SimpleForm extends Component {
     };
 
     render() {
+        const formId = this.props.id ? `${this.props.id}-form` : '';
         return (
-            <form onSubmit={this.props.handleSubmit} className="p-4 w-full mb-8">
+            <form onSubmit={this.props.handleSubmit} className={`${formId} p-4 w-full mb-8`}>
                 {this.renderFields()}
             </form>
         );

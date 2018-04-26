@@ -12,6 +12,11 @@ export const selectors = {
         next: 'button:contains("Next")',
         download: 'button:contains("Download")'
     },
-    form: 'form input',
+    form: {
+        cluster: {
+            inputs: '.cluster-form input:not(:last)',
+            checkbox: '.cluster-form input:last'
+        }
+    },
     readOnlyView: '.overflow-auto > .p-4 > div'
 };

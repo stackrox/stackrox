@@ -71,29 +71,26 @@ describe('Cluster Creation Flow', () => {
         cy.get(selectors.buttons.addCluster).click();
 
         cy
-            .get(selectors.form)
+            .get(selectors.form.cluster.inputs)
             .eq(0)
             .type('Kubernetes Cluster 1');
         cy
-            .get(selectors.form)
+            .get(selectors.form.cluster.inputs)
             .eq(1)
             .type('KUBERNETES_CLUSTER');
         cy
-            .get(selectors.form)
+            .get(selectors.form.cluster.inputs)
             .eq(2)
             .type('stackrox/prevent:latest');
         cy
-            .get(selectors.form)
+            .get(selectors.form.cluster.inputs)
             .eq(3)
             .type('central.prevent_net:443');
         cy
-            .get(selectors.form)
+            .get(selectors.form.cluster.inputs)
             .eq(4)
             .type('stackrox');
-        cy
-            .get(selectors.form)
-            .eq(6)
-            .click();
+        cy.get(selectors.form.cluster.checkbox).check();
 
         cy.get(selectors.buttons.next).click();
         cy.wait('@addCluster');
