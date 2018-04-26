@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import queryString from 'query-string';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 
@@ -68,16 +67,6 @@ class ViolationsPage extends Component {
         selectedPolicy: null
     };
 
-    onFilterChange = type => options => {
-        this.props.history.push({
-            pathname: this.props.location.pathname,
-            search: queryString.stringify({
-                ...this.getFilterParams(),
-                [type]: options.map(c => c.value)
-            })
-        });
-    };
-
     onViolatedPolicyClick = policy => {
         this.props.selectViolatedPolicy(policy.id);
     };
@@ -93,12 +82,6 @@ class ViolationsPage extends Component {
     onAlertModalClose = () => {
         this.updateAlertUrl();
     };
-
-    getFilterParams() {
-        const { search } = this.props.location;
-        const params = queryString.parse(search);
-        return params;
-    }
 
     updateAlertUrl(alertId) {
         const urlSuffix = alertId ? `/${alertId}` : '';

@@ -49,6 +49,7 @@ describe('Search Sagas Test', () => {
                 getSearchOptions,
                 alertActions.setAlertsSearchModifiers,
                 alertActions.setAlertsSearchSuggestions,
+                alertActions.setAlertsSearchOptions,
                 'categories=ALERTS'
             )
         );
@@ -76,6 +77,7 @@ describe('Search Sagas Test', () => {
                 getSearchOptions,
                 riskActions.setDeploymentsSearchModifiers,
                 riskActions.setDeploymentsSearchSuggestions,
+                riskActions.setDeploymentsSearchOptions,
                 'categories=DEPLOYMENTS'
             )
         );
@@ -103,6 +105,7 @@ describe('Search Sagas Test', () => {
                 getSearchOptions,
                 policiesActions.setPoliciesSearchModifiers,
                 policiesActions.setPoliciesSearchSuggestions,
+                policiesActions.setPoliciesSearchOptions,
                 'categories=POLICIES'
             )
         );
@@ -113,7 +116,13 @@ describe('Search Sagas Test', () => {
         };
         const setSearchModifiers = alertActions.setAlertsSearchModifiers;
         const setSearchSuggestions = alertActions.setAlertsSearchSuggestions;
-        const gen = getSearchOptions(setSearchModifiers, setSearchSuggestions, 'categories=TEST');
+        const setSearchOptions = alertActions.setAlertsSearchOptions;
+        const gen = getSearchOptions(
+            setSearchModifiers,
+            setSearchSuggestions,
+            setSearchOptions,
+            'categories=TEST'
+        );
         let { value } = gen.next();
         expect(value).toEqual(call(fetchOptions, 'categories=TEST'));
         ({ value } = gen.next(result));

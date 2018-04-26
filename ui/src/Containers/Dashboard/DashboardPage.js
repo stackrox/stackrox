@@ -105,9 +105,8 @@ class DashboardPage extends Component {
     };
 
     makeBarClickHandler = (clusterName, severity) => () => {
-        const cluster = this.props.clustersByName[clusterName];
         // if clusters are not loaded yet, at least we can redirect to unfiltered violations
-        const clusterQuery = cluster ? `cluster=${cluster.id}` : '';
+        const clusterQuery = clusterName !== '' ? `cluster=${clusterName}` : '';
         this.props.history.push(`/main/violations?severity=${severity}&${clusterQuery}`);
     };
 

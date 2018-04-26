@@ -19,15 +19,15 @@ function* getAlert({ params: alertId }) {
     }
 }
 
-function* getAlertNumsByPolicy(filters) {
+function* getAlertNumsByPolicy() {
     try {
         const searchQuery = yield select(selectors.getAlertsSearchQuery);
-        const newFilters = Object.assign({}, filters);
+        const newFilters = {};
         newFilters.query = searchQuery;
         const result = yield call(service.fetchAlertNumsByPolicy, newFilters);
         yield put(actions.fetchAlertNumsByPolicy.success(result.response));
     } catch (error) {
-        yield put(actions.fetchAlertNumsByPolicy.failure(error, filters));
+        yield put(actions.fetchAlertNumsByPolicy.failure(error));
     }
 }
 
@@ -69,11 +69,11 @@ function* getAlertsByPolicy() {
     }
 }
 
-function* pollAlertsByPolicy(filters) {
+function* pollAlertsByPolicy() {
     while (true) {
         let failsCount = 0;
         try {
-            yield all([call(getAlertNumsByPolicy, filters), call(getAlertsByPolicy)]);
+            yield all([call(getAlertNumsByPolicy), call(getAlertsByPolicy)]);
             failsCount = 0;
         } catch (err) {
             console.error('Error during alerts polling', err);
