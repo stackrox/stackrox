@@ -127,6 +127,8 @@ build: gazelle
 test: gazelle
 # PURE is so that the test and image stages can share artifacts on Linux.
 # action_env args are for running with remote Docker in CircleCI.
+	-rm vendor/github.com/coreos/pkg/BUILD
+	-rm vendor/github.com/cloudflare/cfssl/script/BUILD
 	bazel test \
 	    --test_output=errors \
 	    --action_env=CIRCLECI=$(CIRCLECI) \
