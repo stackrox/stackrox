@@ -9,6 +9,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/containers"
 	"bitbucket.org/stack-rox/apollo/pkg/docker"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
+	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
@@ -67,7 +68,7 @@ func (s serviceWrap) asDeployment(client *client.Client, retryGetImageSha bool) 
 		Version:   fmt.Sprintf("%d", s.Version.Index),
 		Type:      m.asType(),
 		Replicas:  m.asReplica(),
-		Labels:    s.Spec.Labels,
+		Labels:    protoconv.ConvertDeploymentKeyValueMap(s.Spec.Labels),
 		UpdatedAt: updatedTime,
 		Containers: []*v1.Container{
 			{

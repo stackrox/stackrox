@@ -32,8 +32,11 @@ func scopeToAlertQuery(scope *v1.Scope) query.Query {
 	if scope.GetNamespace() != "" {
 		conjunctionQuery.AddQuery(newPrefixQuery("deployment.namespace", scope.GetNamespace()))
 	}
-	if scope.GetLabel() != nil {
-		conjunctionQuery.AddQuery(newPrefixQuery("deployment.labels."+scope.GetLabel().GetKey(), scope.GetLabel().GetValue()))
+	if scope.GetLabel().GetKey() != "" {
+		conjunctionQuery.AddQuery(newPrefixQuery("deployment.labels.key", scope.GetLabel().GetKey()))
+	}
+	if scope.GetLabel().GetValue() != "" {
+		conjunctionQuery.AddQuery(newPrefixQuery("deployment.labels.value", scope.GetLabel().GetValue()))
 	}
 	if len(conjunctionQuery.Conjuncts) == 0 {
 		return bleve.NewMatchNoneQuery()

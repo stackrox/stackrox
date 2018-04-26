@@ -26,6 +26,8 @@ services:
     entrypoint: ["central"]
     networks:
       net:
+    deploy:
+       labels: [owner=stackrox,email=support@stackrox.com]
     ports:
       - target: 443
         published: {{.PublicPort}}

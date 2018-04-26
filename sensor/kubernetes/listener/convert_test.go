@@ -55,6 +55,10 @@ func TestConvert(t *testing.T) {
 						"key":      "value",
 						"question": "answer",
 					},
+					Annotations: map[string]string{
+						"annotationkey1": "annotationvalue1",
+						"annotationkey2": "annotationvalue2",
+					},
 					ResourceVersion:   "100",
 					CreationTimestamp: metav1.NewTime(time.Unix(1000, 0)),
 				},
@@ -183,9 +187,25 @@ func TestConvert(t *testing.T) {
 					Type:      kubernetes.Deployment,
 					Version:   "100",
 					Replicas:  15,
-					Labels: map[string]string{
-						"key":      "value",
-						"question": "answer",
+					Labels: []*pkgV1.Deployment_KeyValue{
+						{
+							Key:   "key",
+							Value: "value",
+						},
+						{
+							Key:   "question",
+							Value: "answer",
+						},
+					},
+					Annotations: []*pkgV1.Deployment_KeyValue{
+						{
+							Key:   "annotationkey1",
+							Value: "annotationvalue1",
+						},
+						{
+							Key:   "annotationkey2",
+							Value: "annotationvalue2",
+						},
 					},
 					UpdatedAt: &timestamp.Timestamp{Seconds: 1000},
 					Containers: []*pkgV1.Container{
@@ -287,6 +307,9 @@ func TestConvert(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, c.action, c.metaFieldIndex, c.resourceType, c.podLister)
+
+			logger.Infof("Expected: %+v", c.expectedDeploymentEvent)
+			logger.Infof("Actual: %+v", actual)
 
 			assert.Equal(t, c.expectedDeploymentEvent, actual)
 		})

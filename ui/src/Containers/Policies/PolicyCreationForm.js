@@ -313,6 +313,42 @@ class PolicyCreationForm extends Component {
                         required: false
                     },
                     {
+                        label: 'Required Label',
+                        value: 'configurationPolicy.requiredLabel',
+                        type: 'group',
+                        values: [
+                            {
+                                value: 'configurationPolicy.requiredLabel.key',
+                                type: 'text',
+                                placeholder: 'owner'
+                            },
+                            {
+                                value: 'configurationPolicy.requiredLabel.value',
+                                type: 'text',
+                                placeholder: '.*'
+                            }
+                        ],
+                        required: false
+                    },
+                    {
+                        label: 'Required Annotation',
+                        value: 'configurationPolicy.requiredAnnotation',
+                        type: 'group',
+                        values: [
+                            {
+                                value: 'configurationPolicy.requiredAnnotation.key',
+                                type: 'text',
+                                placeholder: 'owner'
+                            },
+                            {
+                                value: 'configurationPolicy.requiredAnnotation.value',
+                                type: 'text',
+                                placeholder: '.*'
+                            }
+                        ],
+                        required: false
+                    },
+                    {
                         label: 'Command',
                         value: 'configurationPolicy.command',
                         type: 'text',

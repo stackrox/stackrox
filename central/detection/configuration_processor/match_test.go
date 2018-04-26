@@ -59,7 +59,7 @@ func TestMatch(t *testing.T) {
 			},
 			policy: &v1.Policy{
 				ConfigurationPolicy: &v1.ConfigurationPolicy{
-					Env: &v1.ConfigurationPolicy_EnvironmentPolicy{
+					Env: &v1.ConfigurationPolicy_KeyValuePolicy{
 						Key: "Sensitive",
 					},
 				},
@@ -93,7 +93,7 @@ func TestMatch(t *testing.T) {
 			},
 			policy: &v1.Policy{
 				ConfigurationPolicy: &v1.ConfigurationPolicy{
-					Env: &v1.ConfigurationPolicy_EnvironmentPolicy{
+					Env: &v1.ConfigurationPolicy_KeyValuePolicy{
 						Key:   "Sensitive",
 						Value: "^Value",
 					},
@@ -123,7 +123,7 @@ func TestMatch(t *testing.T) {
 			},
 			policy: &v1.Policy{
 				ConfigurationPolicy: &v1.ConfigurationPolicy{
-					Env: &v1.ConfigurationPolicy_EnvironmentPolicy{
+					Env: &v1.ConfigurationPolicy_KeyValuePolicy{
 						Key:   "Key",
 						Value: "Value",
 					},

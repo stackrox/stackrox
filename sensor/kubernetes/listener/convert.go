@@ -6,6 +6,7 @@ import (
 	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/containers"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
+	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/volumes"
 	"github.com/golang/protobuf/ptypes"
 	"k8s.io/api/core/v1"
@@ -41,17 +42,17 @@ func newWrap(meta metav1.ObjectMeta, action pkgV1.ResourceAction, resourceType s
 	if err != nil {
 		logger.Error(err)
 	}
-
 	return wrap{
 		&pkgV1.DeploymentEvent{
 			Deployment: &pkgV1.Deployment{
-				Id:        string(meta.UID),
-				Name:      meta.Name,
-				Type:      resourceType,
-				Version:   meta.ResourceVersion,
-				Namespace: meta.Namespace,
-				Labels:    meta.Labels,
-				UpdatedAt: updatedTime,
+				Id:          string(meta.UID),
+				Name:        meta.Name,
+				Type:        resourceType,
+				Version:     meta.ResourceVersion,
+				Namespace:   meta.Namespace,
+				Labels:      protoconv.ConvertDeploymentKeyValueMap(meta.Labels),
+				Annotations: protoconv.ConvertDeploymentKeyValueMap(meta.Annotations),
+				UpdatedAt:   updatedTime,
 			},
 			Action: action,
 		},

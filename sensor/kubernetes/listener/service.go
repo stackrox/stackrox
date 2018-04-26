@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/containers"
 	"bitbucket.org/stack-rox/apollo/pkg/kubernetes"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
+	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/rest"
@@ -109,14 +110,15 @@ func (swl *serviceWatchLister) updatePortExposure(serviceObj interface{}, d *pkg
 
 type serviceWrap v1.Service
 
-func (s serviceWrap) matchSelector(labels map[string]string) bool {
+func (s serviceWrap) matchSelector(labels []*pkgV1.Deployment_KeyValue) bool {
 	// Ignoring services without selectors.
 	if len(s.Spec.Selector) == 0 {
 		return false
 	}
 
+	labelMap := protoconv.ConvertDeploymentKeyValues(labels)
 	for k, v := range s.Spec.Selector {
-		if labels[k] != v {
+		if labelMap[k] != v {
 			return false
 		}
 	}

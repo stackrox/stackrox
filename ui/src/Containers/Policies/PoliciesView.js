@@ -161,6 +161,22 @@ const fieldsMap = {
             return `${key}=${value}`;
         }
     },
+    requiredLabel: {
+        label: 'Required Label',
+        formatValue: d => {
+            const key = d.key ? `${d.key}` : '';
+            const value = d.value ? d.value : '';
+            return `${key}=${value}`;
+        }
+    },
+    requiredAnnotation: {
+        label: 'Required Annotation',
+        formatValue: d => {
+            const key = d.key ? `${d.key}` : '';
+            const value = d.value ? d.value : '';
+            return `${key}=${value}`;
+        }
+    },
     command: {
         label: 'Command',
         formatValue: d => d

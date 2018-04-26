@@ -389,9 +389,15 @@ func TestScope(t *testing.T) {
 			deployment: &v1.Deployment{
 				ClusterId: "clusterA",
 				Namespace: "namespace",
-				Labels: map[string]string{
-					"key": "value",
-					"foo": "bar",
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key",
+						Value: "value",
+					},
+					{
+						Key:   "foo",
+						Value: "bar",
+					},
 				},
 				Containers: []*v1.Container{
 					{
@@ -420,9 +426,15 @@ func TestScope(t *testing.T) {
 			deployment: &v1.Deployment{
 				ClusterId: "clusterA",
 				Namespace: "namespace",
-				Labels: map[string]string{
-					"key": "value",
-					"foo": "bar",
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key",
+						Value: "value",
+					},
+					{
+						Key:   "foo",
+						Value: "bar",
+					},
 				},
 				Containers: []*v1.Container{
 					{
@@ -452,9 +464,15 @@ func TestScope(t *testing.T) {
 			deployment: &v1.Deployment{
 				ClusterId: "clusterA",
 				Namespace: "namespace",
-				Labels: map[string]string{
-					"key": "value",
-					"foo": "bar",
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key",
+						Value: "value",
+					},
+					{
+						Key:   "foo",
+						Value: "bar",
+					},
 				},
 				Containers: []*v1.Container{
 					{
@@ -488,9 +506,15 @@ func TestScope(t *testing.T) {
 			deployment: &v1.Deployment{
 				ClusterId: "clusterA",
 				Namespace: "namespace",
-				Labels: map[string]string{
-					"key": "value",
-					"foo": "bar",
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key",
+						Value: "value",
+					},
+					{
+						Key:   "foo",
+						Value: "bar",
+					},
 				},
 				Containers: []*v1.Container{
 					{
@@ -519,9 +543,15 @@ func TestScope(t *testing.T) {
 			deployment: &v1.Deployment{
 				ClusterId: "clusterA",
 				Namespace: "namespace",
-				Labels: map[string]string{
-					"key": "value",
-					"foo": "bar",
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key",
+						Value: "value",
+					},
+					{
+						Key:   "foo",
+						Value: "bar",
+					},
 				},
 				Containers: []*v1.Container{
 					{
@@ -555,9 +585,15 @@ func TestScope(t *testing.T) {
 			deployment: &v1.Deployment{
 				ClusterId: "clusterA",
 				Namespace: "namespace",
-				Labels: map[string]string{
-					"key": "value",
-					"foo": "bar",
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key",
+						Value: "value",
+					},
+					{
+						Key:   "foo",
+						Value: "bar",
+					},
 				},
 				Containers: []*v1.Container{
 					{
@@ -590,9 +626,15 @@ func TestScope(t *testing.T) {
 			deployment: &v1.Deployment{
 				ClusterId: "clusterA",
 				Namespace: "namespace",
-				Labels: map[string]string{
-					"key": "value",
-					"foo": "bar",
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key",
+						Value: "value",
+					},
+					{
+						Key:   "foo",
+						Value: "bar",
+					},
 				},
 				Containers: []*v1.Container{
 					{
@@ -650,9 +692,15 @@ func TestDeploymentWhitelist(t *testing.T) {
 			deployment: &v1.Deployment{
 				ClusterId: "clusterA",
 				Namespace: "namespace",
-				Labels: map[string]string{
-					"key": "value",
-					"foo": "bar",
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key",
+						Value: "value",
+					},
+					{
+						Key:   "foo",
+						Value: "bar",
+					},
 				},
 				Containers: []*v1.Container{
 					{

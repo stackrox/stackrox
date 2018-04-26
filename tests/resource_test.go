@@ -9,6 +9,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
+	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -90,7 +91,7 @@ func TestDeployments(t *testing.T) {
 
 func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
 	verifyDeployment(t, centralDeployment)
-	assert.Equal(t, "central", centralDeployment.GetLabels()["app"])
+	assert.Equal(t, "central", protoconv.ConvertDeploymentKeyValues(centralDeployment.GetLabels())["app"])
 
 	require.Len(t, centralDeployment.GetContainers(), 1)
 	c := centralDeployment.GetContainers()[0]
@@ -113,7 +114,7 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
 
 func verifySensorDeployment(t *testing.T, sensorDeployment *v1.Deployment) {
 	verifyDeployment(t, sensorDeployment)
-	assert.Equal(t, "sensor", sensorDeployment.GetLabels()["app"])
+	assert.Equal(t, "sensor", protoconv.ConvertDeploymentKeyValues(sensorDeployment.GetLabels())["app"])
 
 	require.Len(t, sensorDeployment.GetContainers(), 1)
 	c := sensorDeployment.GetContainers()[0]

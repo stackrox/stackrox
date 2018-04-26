@@ -90,9 +90,15 @@ func TestAsDeployment(t *testing.T) {
 				Namespace: defaultNamespace,
 				Type:      "Replicated",
 				Replicas:  10,
-				Labels: map[string]string{
-					"key":      "value",
-					"question": "answer",
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key",
+						Value: "value",
+					},
+					{
+						Key:   "question",
+						Value: "answer",
+					},
 				},
 				UpdatedAt: &timestamp.Timestamp{Seconds: 100},
 				Containers: []*v1.Container{
@@ -220,10 +226,19 @@ func TestAsDeployment(t *testing.T) {
 				Namespace: "stackrox",
 				Type:      "Replicated",
 				Replicas:  10,
-				Labels: map[string]string{
-					"key":                        "value",
-					"question":                   "answer",
-					"com.docker.stack.namespace": "stackrox",
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "com.docker.stack.namespace",
+						Value: "stackrox",
+					},
+					{
+						Key:   "key",
+						Value: "value",
+					},
+					{
+						Key:   "question",
+						Value: "answer",
+					},
 				},
 				UpdatedAt: &timestamp.Timestamp{Seconds: 100},
 				Containers: []*v1.Container{

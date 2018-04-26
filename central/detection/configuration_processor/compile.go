@@ -14,7 +14,9 @@ import (
 type compiledConfigurationPolicy struct {
 	Original *v1.Policy
 
-	Env *compiledEnvironmentPolicy
+	Env                *compiledEnvironmentPolicy
+	RequiredLabel      *requiredLabelPolicy
+	RequiredAnnotation *requiredAnnotationPolicy
 
 	Args      *regexp.Regexp
 	Command   *regexp.Regexp
@@ -25,9 +27,21 @@ type compiledConfigurationPolicy struct {
 	Port   *compiledPortPolicy
 }
 
-type compiledEnvironmentPolicy struct {
+type keyValuePolicy struct {
 	Key   *regexp.Regexp
 	Value *regexp.Regexp
+}
+
+type requiredLabelPolicy struct {
+	*keyValuePolicy
+}
+
+type requiredAnnotationPolicy struct {
+	*keyValuePolicy
+}
+
+type compiledEnvironmentPolicy struct {
+	*keyValuePolicy
 }
 
 type compiledVolumePolicy struct {
@@ -62,6 +76,16 @@ func NewCompiledConfigurationPolicy(policy *v1.Policy) (compiledP processors.Com
 		return nil, exist, fmt.Errorf("env: %s", err)
 	}
 
+	compiled.RequiredLabel, err = newRequiredLabelPolicy(configurationPolicy.GetRequiredLabel())
+	if err != nil {
+		return nil, exist, fmt.Errorf("missing label: %s", err)
+	}
+
+	compiled.RequiredAnnotation, err = newRequiredAnnotationPolicy(configurationPolicy.GetRequiredAnnotation())
+	if err != nil {
+		return nil, exist, fmt.Errorf("missing annotation: %s", err)
+	}
+
 	compiled.Args, err = processors.CompileStringRegex(configurationPolicy.GetArgs())
 	if err != nil {
 		return nil, exist, fmt.Errorf("args: %s", err)
@@ -91,21 +115,60 @@ func NewCompiledConfigurationPolicy(policy *v1.Policy) (compiledP processors.Com
 	return compiled, exist, nil
 }
 
-func newCompiledEnvironmentPolicy(envPolicy *v1.ConfigurationPolicy_EnvironmentPolicy) (compiled *compiledEnvironmentPolicy, err error) {
-	if envPolicy == nil {
+func newCompiledEnvironmentPolicy(kvPolicy *v1.ConfigurationPolicy_KeyValuePolicy) (compiled *compiledEnvironmentPolicy, err error) {
+	if kvPolicy == nil {
 		return
 	}
-	if envPolicy.GetKey() == "" && envPolicy.GetValue() == "" {
+	requiredKVPolicy, err := newRequiredKeyValuePolicy(kvPolicy)
+	if err != nil {
+		return nil, err
+	}
+	return &compiledEnvironmentPolicy{
+		keyValuePolicy: requiredKVPolicy,
+	}, nil
+}
+
+func newRequiredLabelPolicy(kvPolicy *v1.ConfigurationPolicy_KeyValuePolicy) (compiled *requiredLabelPolicy, err error) {
+	if kvPolicy == nil {
+		return
+	}
+	requiredKVPolicy, err := newRequiredKeyValuePolicy(kvPolicy)
+	if err != nil {
+		return nil, err
+	}
+	return &requiredLabelPolicy{
+		keyValuePolicy: requiredKVPolicy,
+	}, nil
+}
+
+func newRequiredAnnotationPolicy(kvPolicy *v1.ConfigurationPolicy_KeyValuePolicy) (compiled *requiredAnnotationPolicy, err error) {
+	if kvPolicy == nil {
+		return
+	}
+	requiredKVPolicy, err := newRequiredKeyValuePolicy(kvPolicy)
+	if err != nil {
+		return nil, err
+	}
+	return &requiredAnnotationPolicy{
+		keyValuePolicy: requiredKVPolicy,
+	}, nil
+}
+
+func newRequiredKeyValuePolicy(kvPolicy *v1.ConfigurationPolicy_KeyValuePolicy) (compiled *keyValuePolicy, err error) {
+	if kvPolicy == nil {
+		return
+	}
+	if kvPolicy.GetKey() == "" && kvPolicy.GetValue() == "" {
 		return nil, errors.New("Both key and value cannot be empty")
 	}
 
-	compiled = new(compiledEnvironmentPolicy)
-	compiled.Key, err = processors.CompileStringRegex(envPolicy.GetKey())
+	compiled = new(keyValuePolicy)
+	compiled.Key, err = processors.CompileStringRegex(kvPolicy.GetKey())
 	if err != nil {
 		return
 	}
 
-	compiled.Value, err = processors.CompileStringRegex(envPolicy.GetValue())
+	compiled.Value, err = processors.CompileStringRegex(kvPolicy.GetValue())
 	return
 }
 

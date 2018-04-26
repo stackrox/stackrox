@@ -63,7 +63,7 @@ func GetAlert() *v1.Alert {
 				},
 			},
 			ConfigurationPolicy: &v1.ConfigurationPolicy{
-				Env: &v1.ConfigurationPolicy_EnvironmentPolicy{
+				Env: &v1.ConfigurationPolicy_KeyValuePolicy{
 					Key:   "key",
 					Value: "value",
 				},
@@ -99,9 +99,15 @@ func GetAlert() *v1.Alert {
 			ClusterId:   "prod cluster",
 			ClusterName: "prod cluster",
 			Namespace:   "stackrox",
-			Labels: map[string]string{
-				"com.docker.stack.namespace":    "prevent",
-				"com.docker.swarm.service.name": "prevent_sensor",
+			Labels: []*v1.Deployment_KeyValue{
+				{
+					Key:   "com.docker.stack.namespace",
+					Value: "prevent",
+				},
+				{
+					Key:   "com.docker.swarm.service.name",
+					Value: "prevent_sensor",
+				},
 			},
 			Containers: []*v1.Container{
 				{

@@ -39,6 +39,9 @@ metadata:
   namespace: {{.Namespace}}
   labels:
     app: central
+  annotations:
+    owner: stackrox
+    email: support@stackrox.com
 spec:
   replicas: 1
   selector:

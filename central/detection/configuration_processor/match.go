@@ -7,7 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 )
 
-type matchFunc func(*v1.Container) ([]*v1.Alert_Violation, bool)
+type matchFunc func(*v1.Deployment, *v1.Container) ([]*v1.Alert_Violation, bool)
 
 func (p *compiledConfigurationPolicy) Match(deployment *v1.Deployment, container *v1.Container) (output []*v1.Alert_Violation) {
 	matchFunctions := []matchFunc{
@@ -15,6 +15,8 @@ func (p *compiledConfigurationPolicy) Match(deployment *v1.Deployment, container
 		p.Env.match,
 		p.Volume.match,
 		p.Port.match,
+		p.RequiredLabel.match,
+		p.RequiredAnnotation.match,
 	}
 
 	var violations, vs []*v1.Alert_Violation
@@ -22,7 +24,7 @@ func (p *compiledConfigurationPolicy) Match(deployment *v1.Deployment, container
 
 	// Every sub-policy that exists must match and return violations for the policy to match.
 	for _, f := range matchFunctions {
-		if vs, exists = f(container); exists && len(vs) == 0 {
+		if vs, exists = f(deployment, container); exists && len(vs) == 0 {
 			return
 		}
 		violations = append(violations, vs...)
@@ -32,7 +34,7 @@ func (p *compiledConfigurationPolicy) Match(deployment *v1.Deployment, container
 	return
 }
 
-func (p *compiledConfigurationPolicy) matchConfigs(container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
+func (p *compiledConfigurationPolicy) matchConfigs(_ *v1.Deployment, container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
 	if p.Args == nil && p.Command == nil && p.Directory == nil && p.User == nil {
 		return
 	}
@@ -80,7 +82,7 @@ func (p *compiledConfigurationPolicy) matchCommand(commands []string) bool {
 	return false
 }
 
-func (p *compiledEnvironmentPolicy) match(container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
+func (p *compiledEnvironmentPolicy) match(_ *v1.Deployment, container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
 	if p == nil {
 		return
 	}
@@ -113,7 +115,55 @@ func (p *compiledEnvironmentPolicy) match(container *v1.Container) (violations [
 	return
 }
 
-func (p *compiledVolumePolicy) match(container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
+func (p *requiredAnnotationPolicy) match(deployment *v1.Deployment, _ *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
+	if p == nil {
+		return
+	}
+	exists = true
+	violations = matchRequiredKeyValue(deployment.GetAnnotations(), p.keyValuePolicy, "annotation")
+	return
+}
+
+func (p *requiredLabelPolicy) match(deployment *v1.Deployment, _ *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
+	if p == nil {
+		return
+	}
+	exists = true
+	violations = matchRequiredKeyValue(deployment.GetLabels(), p.keyValuePolicy, "label")
+	return
+}
+
+func matchRequiredKeyValue(deploymentKeyValues []*v1.Deployment_KeyValue, policy *keyValuePolicy, name string) []*v1.Alert_Violation {
+	for _, keyValue := range deploymentKeyValues {
+		if policy.Key != nil && policy.Value != nil {
+			if policy.Key.MatchString(keyValue.GetKey()) && policy.Value.MatchString(keyValue.GetValue()) {
+				return nil
+			}
+		} else if policy.Key != nil {
+			if policy.Key.MatchString(keyValue.GetKey()) {
+				return nil
+			}
+		} else if policy.Value != nil {
+			if policy.Value.MatchString(keyValue.GetValue()) {
+				return nil
+			}
+		}
+	}
+	var fields []string
+	if policy.Key != nil {
+		fields = append(fields, fmt.Sprintf("key='%s'", policy.Key))
+	}
+	if policy.Value != nil {
+		fields = append(fields, fmt.Sprintf("value='%s'", policy.Value))
+	}
+	return []*v1.Alert_Violation{
+		{
+			Message: fmt.Sprintf("Could not find %s that matched required %s policy (%s)", name, name, strings.Join(fields, ",")),
+		},
+	}
+}
+
+func (p *compiledVolumePolicy) match(_ *v1.Deployment, container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
 	if p == nil {
 		return
 	}
@@ -152,7 +202,7 @@ func (p *compiledVolumePolicy) matchVolume(vol *v1.Volume) (violations []*v1.Ale
 	return
 }
 
-func (p *compiledPortPolicy) match(container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
+func (p *compiledPortPolicy) match(_ *v1.Deployment, container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
 	if p == nil {
 		return
 	}

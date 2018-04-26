@@ -34,6 +34,9 @@ services:
     networks:
       net:
     deploy:
+      labels:
+        owner: stackrox
+        email: support@stackrox.com
       placement:
         constraints:
           - node.role==manager

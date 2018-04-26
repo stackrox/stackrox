@@ -1,0 +1,28 @@
+{
+  "name": "Required Label: Owner",
+  "severity": "LOW_SEVERITY",
+  "description": "Alert on deployments missing the 'owner' label",
+  "rationale": "The 'owner' label should always be specified so that the deployment can quickly be associated with a specific user or team.",
+  "remediation": "Redeploy your service and set the 'owner' label to yourself or your team per organizational standards.",
+  "categories": [
+    "Container Configuration"
+  ],
+  "enforcement": "UNSET_ENFORCEMENT",
+  "configurationPolicy": {
+    "requiredLabel": {
+      "key": "owner",
+      "value": ".+"
+    }
+  },
+  "whitelists": [
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    }
+  ],
+  "disabled": true
+}

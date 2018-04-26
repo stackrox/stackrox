@@ -20,8 +20,11 @@ func TestLabelsMap(t *testing.T) {
 			name: "one deployment",
 			deployments: []*v1.Deployment{
 				{
-					Labels: map[string]string{
-						"key": "value",
+					Labels: []*v1.Deployment_KeyValue{
+						{
+							Key:   "key",
+							Value: "value",
+						},
 					},
 				},
 			},
@@ -38,23 +41,47 @@ func TestLabelsMap(t *testing.T) {
 			name: "multiple deployments",
 			deployments: []*v1.Deployment{
 				{
-					Labels: map[string]string{
-						"key":   "value",
-						"hello": "world",
-						"foo":   "bar",
+					Labels: []*v1.Deployment_KeyValue{
+						{
+							Key:   "key",
+							Value: "value",
+						},
+						{
+							Key:   "hello",
+							Value: "world",
+						},
+						{
+							Key:   "foo",
+							Value: "bar",
+						},
 					},
 				},
 				{
-					Labels: map[string]string{
-						"key": "hole",
-						"app": "data",
-						"foo": "bar",
+					Labels: []*v1.Deployment_KeyValue{
+						{
+							Key:   "key",
+							Value: "hole",
+						},
+						{
+							Key:   "app",
+							Value: "data",
+						},
+						{
+							Key:   "foo",
+							Value: "bar",
+						},
 					},
 				},
 				{
-					Labels: map[string]string{
-						"hello": "bob",
-						"foo":   "boo",
+					Labels: []*v1.Deployment_KeyValue{
+						{
+							Key:   "hello",
+							Value: "bob",
+						},
+						{
+							Key:   "foo",
+							Value: "boo",
+						},
 					},
 				},
 			},

@@ -95,28 +95,12 @@ func (p *Policy) ShouldProcess(deployment *v1.Deployment) bool {
 	}
 
 	for _, s := range p.GetScope() {
-		if p.withinScope(s, deployment) {
+		if scopecomp.WithinScope(s, deployment) {
 			return true
 		}
 	}
 
 	return false
-}
-
-func (p *Policy) withinScope(scope *v1.Scope, deployment *v1.Deployment) bool {
-	if cluster := scope.GetCluster(); cluster != "" && deployment.GetClusterId() != cluster {
-		return false
-	}
-
-	if namespace := scope.GetNamespace(); namespace != "" && deployment.GetNamespace() != namespace {
-		return false
-	}
-
-	if label := scope.GetLabel(); label != nil && deployment.GetLabels()[label.GetKey()] != label.GetValue() {
-		return false
-	}
-
-	return true
 }
 
 func (p *Policy) matchesDeploymentWhitelist(whitelist *v1.Whitelist_Deployment, deployment *v1.Deployment) bool {

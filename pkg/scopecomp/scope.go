@@ -12,8 +12,16 @@ func WithinScope(scope *v1.Scope, deployment *v1.Deployment) bool {
 		return false
 	}
 
-	if label := scope.GetLabel(); label != nil && deployment.GetLabels()[label.GetKey()] != label.GetValue() {
-		return false
+	labelMap := make(map[string]string, len(deployment.GetLabels()))
+	for _, label := range deployment.GetLabels() {
+		labelMap[label.GetKey()] = label.GetValue()
+	}
+	if scope.GetLabel() != nil {
+		for _, deploymentLabel := range deployment.GetLabels() {
+			if deploymentLabel.GetKey() == scope.GetLabel().GetKey() && deploymentLabel.GetValue() != scope.GetLabel().GetValue() {
+				return false
+			}
+		}
 	}
 
 	return true
