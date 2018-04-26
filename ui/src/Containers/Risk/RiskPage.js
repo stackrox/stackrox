@@ -18,6 +18,8 @@ import TabContent from 'Components/TabContent';
 import KeyValuePairs from 'Components/KeyValuePairs';
 import { Link } from 'react-router-dom';
 import { sortNumber } from 'sorters/sorters';
+import lowerCase from 'lodash/lowerCase';
+import capitalize from 'lodash/capitalize';
 
 const deploymentDetailsMap = {
     id: {
@@ -37,9 +39,6 @@ const deploymentDetailsMap = {
     },
     ports: {
         label: 'Port configuration'
-    },
-    mounts: {
-        label: 'Mounts'
     },
     volume: {
         label: 'Volume'
@@ -233,6 +232,46 @@ class RiskPage extends Component {
                                             data={container.config}
                                             keyValueMap={containerConfigMap}
                                         />
+                                        <div className="flex py-3">
+                                            <div className="pr-1">Mounts:</div>
+                                            <div className="-ml-8 mt-4 w-full">
+                                                {container.volumes &&
+                                                    container.volumes.length &&
+                                                    container.volumes.map((volume, idx) => (
+                                                        <div
+                                                            key={idx}
+                                                            className={`py-2 ${
+                                                                idx === container.volumes.length - 1
+                                                                    ? ''
+                                                                    : 'border-base-300 border-b'
+                                                            }`}
+                                                        >
+                                                            {Object.keys(volume).map(
+                                                                (key, id) =>
+                                                                    volume[key] !== '' && (
+                                                                        <div
+                                                                            key={`${
+                                                                                volume.name
+                                                                            }-${id}`}
+                                                                            className="py-1 font-500"
+                                                                        >
+                                                                            <span className=" pr-1">
+                                                                                {capitalize(
+                                                                                    lowerCase(key)
+                                                                                )}:
+                                                                            </span>
+                                                                            <span className="text-accent-400 italic">
+                                                                                {volume[
+                                                                                    key
+                                                                                ].toString()}
+                                                                            </span>
+                                                                        </div>
+                                                                    )
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        </div>
                                         {container.image &&
                                             container.image.name &&
                                             container.image.name.fullName && (
