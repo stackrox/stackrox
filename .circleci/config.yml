@@ -93,7 +93,7 @@ jobs:
       - run:
           name: Create GKE cluster
           command: |
-            gcloud container clusters create --machine-type n1-standard-1 --num-nodes 2 "mitigate-ci-${CIRCLE_BUILD_NUM}"
+            gcloud container clusters create --machine-type n1-standard-1 --num-nodes 2 "prevent-ci-${CIRCLE_BUILD_NUM}"
 
       # See https://stackoverflow.com/a/46316672 for why we have to use user/pass.
       # This step requires the GCP IAM permission "Kubernetes Engine Admin".
@@ -101,8 +101,8 @@ jobs:
           name: Deploy to remote cluster
           command: |
             kubectl \
-              --username="$(gcloud container clusters describe "mitigate-ci-${CIRCLE_BUILD_NUM}" --format json | jq -r .masterAuth.username)" \
-              --password="$(gcloud container clusters describe "mitigate-ci-${CIRCLE_BUILD_NUM}" --format json | jq -r .masterAuth.password)" \
+              --username="$(gcloud container clusters describe "prevent-ci-${CIRCLE_BUILD_NUM}" --format json | jq -r .masterAuth.username)" \
+              --password="$(gcloud container clusters describe "prevent-ci-${CIRCLE_BUILD_NUM}" --format json | jq -r .masterAuth.password)" \
               create -f ./deploy/k8s/rbac.yaml
             ./deploy/k8s/deploy.sh
 
@@ -148,7 +148,7 @@ jobs:
       - run:
           name: Tear down GKE cluster
           command: |
-            gcloud container clusters delete --async "mitigate-ci-${CIRCLE_BUILD_NUM}"
+            gcloud container clusters delete --async "prevent-ci-${CIRCLE_BUILD_NUM}"
           when: always
 
       - store_test_results:
