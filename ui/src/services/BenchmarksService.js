@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-import { fetchClusters } from 'services/ClustersService';
-
 const baseUrl = '/v1/benchmarks';
 
 /**
@@ -11,31 +9,13 @@ const baseUrl = '/v1/benchmarks';
  */
 
 /**
- * Fetches list of existing benchmarks with their availablity.
+ * Fetches list of existing benchmarks.
  *
  * @returns {Promise<Benchmark[], Error>}
  */
 export async function fetchBenchmarks() {
     const configsUrl = `${baseUrl}/configs`;
-
-    const [clusters, benchmarks] = await Promise.all([
-        fetchClusters().then(({ response }) => response.clusters),
-        axios.get(configsUrl).then(response => response.data.benchmarks)
-    ]);
-    const clusterTypes = new Set(clusters.map(c => c.type));
-    return {
-        response: benchmarks.map(benchmark => {
-            const available = benchmark.clusterTypes.reduce(
-                (val, type) => val || clusterTypes.has(type),
-                false
-            );
-            return {
-                id: benchmark.id,
-                name: benchmark.name,
-                available
-            };
-        })
-    };
+    return axios.get(configsUrl).then(response => response.data.benchmarks);
 }
 
 /**
@@ -187,7 +167,7 @@ export function triggerScan(benchmark) {
 export async function fetchLastScansByBenchmark() {
     const allBenchmarks = await fetchBenchmarks();
     const lastScans = await Promise.all(
-        allBenchmarks.response.filter(b => b.available).map(b => {
+        allBenchmarks.map(b => {
             const promise = fetchLastScan({ benchmarkId: b.id });
             promise.then(obj => {
                 if (obj) return Object.assign(obj, { benchmarkName: b.name });

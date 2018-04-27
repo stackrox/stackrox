@@ -1,43 +1,48 @@
-import { delay } from 'redux-saga';
-import { take, call, fork, put, cancel } from 'redux-saga/effects';
+import { take, call, fork, put, all } from 'redux-saga/effects';
 
 import { fetchClusters } from 'services/ClustersService';
-import { actions } from 'reducers/clusters';
+import { actions, types } from 'reducers/clusters';
 import { types as locationActionTypes } from 'reducers/routes';
 
-const dashboardPath = '/main/dashboard';
 const integrationsPath = '/main/integrations';
+const dashboardPath = '/main/dashboard';
 
 export function* getClusters() {
-    while (true) {
-        try {
-            const result = yield call(fetchClusters);
-            yield put(actions.fetchClusters.success(result.response));
-        } catch (error) {
-            yield put(actions.fetchClusters.failure(error));
-        }
-        yield delay(5000); // poll every 5 sec
+    try {
+        const result = yield call(fetchClusters);
+        yield put(actions.fetchClusters.success(result.response));
+    } catch (error) {
+        yield put(actions.fetchClusters.failure(error));
     }
 }
 
 export function* watchLocation() {
-    let pollTask;
     while (true) {
         const action = yield take(locationActionTypes.LOCATION_CHANGE);
         const { payload: location } = action;
 
-        if (pollTask) yield cancel(pollTask); // cancel polling in any case
         if (
-            location &&
-            location.pathname &&
-            (location.pathname.startsWith(integrationsPath) ||
-                location.pathname.startsWith(dashboardPath))
+            (location && location.pathname && location.pathname.startsWith(integrationsPath)) ||
+            location.pathname.startsWith(dashboardPath)
         ) {
-            pollTask = yield fork(getClusters);
+            yield fork(getClusters);
         }
     }
 }
 
-export default function* benchmarks() {
-    yield fork(watchLocation);
+export function* watchFetchRequest() {
+    while (true) {
+        const action = yield take([types.FETCH_CLUSTERS.REQUEST]);
+        switch (action.type) {
+            case types.FETCH_CLUSTERS.REQUEST:
+                yield fork(getClusters);
+                break;
+            default:
+                throw new Error(`Unknown action type ${action.type}`);
+        }
+    }
+}
+
+export default function* clusters() {
+    yield all([fork(watchLocation), fork(watchFetchRequest)]);
 }

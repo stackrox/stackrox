@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { selectors } from 'reducers';
 import { createSelector, createStructuredSelector } from 'reselect';
@@ -13,7 +12,7 @@ import PageHeader from 'Components/PageHeader';
 const CompliancePage = props => (
     <section className="flex flex-1 h-full">
         <div className="flex flex-1 flex-col">
-            <PageHeader header={props.clusterName} />
+            <PageHeader header={props.cluster ? props.cluster.name : ''} />
             <div className="flex flex-1">
                 <Tabs className="bg-white" headers={props.benchmarkTabs}>
                     {props.benchmarkTabs.map(benchmark => (
@@ -38,37 +37,47 @@ CompliancePage.propTypes = {
             disabled: PropTypes.bool
         })
     ).isRequired,
-    clusterName: PropTypes.string.isRequired
+    cluster: PropTypes.shape({
+        name: PropTypes.string.isRequired,
+        id: PropTypes.string.isRequired
+    }).isRequired
 };
 
-CompliancePage.defaultPropTypes = {
-    location: ReactRouterPropTypes.location.required
-};
+const getClusterId = (state, props) => props.match.params.clusterId;
 
-const getBenchmarkTabs = createSelector([selectors.getBenchmarks], benchmarks =>
-    benchmarks
-        .map(benchmark => ({
-            benchmarkName: benchmark.name,
-            benchmarkId: benchmark.id,
-            text: benchmark.name,
-            disabled: !benchmark.available
-        }))
-        .sort((a, b) => (a.disabled < b.disabled ? -1 : a.disabled > b.disabled))
-);
+const getBenchmarkTabs = createSelector(
+    [selectors.getBenchmarks, selectors.getClusters, getClusterId],
+    (benchmarks, clusters, clusterId) => {
+        let selectedCluster = clusters.find(obj => obj.id === clusterId);
+        if (!selectedCluster) [selectedCluster] = clusters;
+        const result = benchmarks
+            .map(benchmark => {
+                const available = benchmark.clusterTypes.reduce(
+                    (val, type) => val || (selectedCluster && selectedCluster.type === type),
+                    false
+                );
 
-const getClusterName = createSelector(
-    [selectors.getClusters, selectors.getLocation],
-    (clusters, location) => {
-        const id = location.pathname.split('/').pop();
-        const cluster = clusters.find(obj => obj.id === id);
-        if (cluster) return cluster.name;
-        return '';
+                return {
+                    benchmarkName: benchmark.name,
+                    benchmarkId: benchmark.id,
+                    text: benchmark.name,
+                    disabled: !available
+                };
+            })
+            .sort((a, b) => (a.disabled < b.disabled ? -1 : a.disabled > b.disabled));
+        return result;
     }
 );
 
+const getCluster = createSelector([selectors.getClusters, getClusterId], (clusters, clusterId) => {
+    let selectedCluster = clusters.find(obj => obj.id === clusterId);
+    if (!selectedCluster) [selectedCluster] = clusters;
+    return selectedCluster;
+});
+
 const mapStateToProps = createStructuredSelector({
     benchmarkTabs: getBenchmarkTabs,
-    clusterName: getClusterName
+    cluster: getCluster
 });
 
 export default connect(mapStateToProps)(CompliancePage);

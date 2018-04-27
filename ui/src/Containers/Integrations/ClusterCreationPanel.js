@@ -55,7 +55,8 @@ class ClusterCreationPanel extends Component {
         formData: PropTypes.shape().isRequired,
         setCreatedClusterId: PropTypes.func.isRequired,
         createdClusterId: PropTypes.string,
-        clusterType: PropTypes.string.isRequired
+        clusterType: PropTypes.string.isRequired,
+        fetchClusters: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -66,6 +67,7 @@ class ClusterCreationPanel extends Component {
 
     onFinish = () => {
         this.props.editCluster(null);
+        this.props.fetchClusters();
     };
 
     onCancelEdit = () => {
@@ -232,7 +234,8 @@ const mapDispatchToProps = dispatch => ({
     saveCluster: cluster => dispatch(clusterActions.saveCluster(cluster)),
     submitForm: () => dispatch(submit('simpleform')),
     editCluster: clusterId => dispatch(clusterActions.editCluster(clusterId)),
-    setCreatedClusterId: clusterId => dispatch(clusterActions.setCreatedClusterId(clusterId))
+    setCreatedClusterId: clusterId => dispatch(clusterActions.setCreatedClusterId(clusterId)),
+    fetchClusters: () => dispatch(clusterActions.fetchClusters.request())
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(ClusterCreationPanel);

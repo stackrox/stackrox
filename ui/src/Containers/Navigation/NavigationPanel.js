@@ -3,8 +3,8 @@ import { NavLink as Link, withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-
-import { fetchClusters } from 'services/ClustersService';
+import { selectors } from 'reducers';
+import { actions as clusterActions } from 'reducers/clusters';
 
 const navLinks = [
     {
@@ -19,9 +19,11 @@ const navLinks = [
 
 class NavigationPanel extends Component {
     static propTypes = {
+        clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
         panelType: PropTypes.string.isRequired,
         onClose: PropTypes.func.isRequired,
-        selectedClusterId: PropTypes.string
+        selectedClusterId: PropTypes.string,
+        fetchClusters: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -30,9 +32,6 @@ class NavigationPanel extends Component {
 
     constructor(props) {
         super(props);
-        this.state = {
-            clusters: null
-        };
         this.panels = {
             configure: this.renderConfigurePanel,
             compliance: this.renderCompliancePanel
@@ -40,14 +39,8 @@ class NavigationPanel extends Component {
     }
 
     componentDidMount() {
-        this.getClusters();
+        this.props.fetchClusters();
     }
-
-    getClusters = () =>
-        fetchClusters().then(response => {
-            const { clusters } = response.response;
-            this.setState({ clusters });
-        });
 
     isSelectedCluster = clusterId => clusterId === this.props.selectedClusterId;
 
@@ -73,18 +66,18 @@ class NavigationPanel extends Component {
     );
 
     renderCompliancePanel = () => {
-        if (!this.state.clusters) return '';
+        if (!this.props.clusters) return '';
         return (
             <ul className="flex flex-col list-reset uppercase tracking-wide bg-primary-700 border-r border-primary-800">
                 <li className="border-b-2 border-primary-800 px-1 py-5 pl-2 pr-2 text-white text-base-800">
                     View Benchmarks per Cluster
                 </li>
-                {!this.state.clusters.length && (
+                {!this.props.clusters.length && (
                     <li className="flex flex-col flex-1 pl-2 pr-2 justify-center text-center text-white text-sm">
                         No clusters available
                     </li>
                 )}
-                {this.state.clusters.map(cluster => (
+                {this.props.clusters.map(cluster => (
                     <li key={cluster.id} className="flex flex-col text-sm">
                         <Link
                             to={`/main/compliance/${cluster.id}`}
@@ -120,7 +113,12 @@ class NavigationPanel extends Component {
 const getSelectedClusterId = (state, props) => props.location.pathname.split('/').pop();
 
 const mapStateToProps = createStructuredSelector({
-    selectedClusterId: getSelectedClusterId
+    selectedClusterId: getSelectedClusterId,
+    clusters: selectors.getClusters
 });
 
-export default withRouter(connect(mapStateToProps)(NavigationPanel));
+const mapDispatchToProps = dispatch => ({
+    fetchClusters: () => dispatch(clusterActions.fetchClusters.request())
+});
+
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(NavigationPanel));

@@ -23,7 +23,7 @@ export function* getClusters() {
 export function* getBenchmarks() {
     try {
         const result = yield call(service.fetchBenchmarks);
-        yield put(benchmarkActions.fetchBenchmarks.success(result.response));
+        yield put(benchmarkActions.fetchBenchmarks.success(result));
     } catch (error) {
         yield put(benchmarkActions.fetchBenchmarks.failure(error));
     }

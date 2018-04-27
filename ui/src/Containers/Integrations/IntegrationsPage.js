@@ -186,7 +186,8 @@ class IntegrationsPage extends Component {
         closeClustersModal: PropTypes.func.isRequired,
         fetchAuthProviders: PropTypes.func.isRequired,
         fetchNotifiers: PropTypes.func.isRequired,
-        fetchImageIntegrations: PropTypes.func.isRequired
+        fetchImageIntegrations: PropTypes.func.isRequired,
+        fetchClusters: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -216,6 +217,9 @@ class IntegrationsPage extends Component {
                 break;
             case 'notifiers':
                 this.props.fetchNotifiers();
+                break;
+            case 'clusters':
+                this.props.fetchClusters();
                 break;
             default:
                 throw new Error(`Unknown source ${source}`);
@@ -368,6 +372,7 @@ const mapDispatchToProps = dispatch => ({
     fetchImageIntegrations: () => dispatch(integrationActions.fetchImageIntegrations.request()),
     fetchRegistries: () => dispatch(integrationActions.fetchRegistries.request()),
     fetchScanners: () => dispatch(integrationActions.fetchScanners.request()),
+    fetchClusters: () => dispatch(clusterActions.fetchClusters.request()),
     closeClustersModal: () => dispatch(clusterActions.selectClusterType(null)),
     selectClusterType: clusterType => dispatch(clusterActions.selectClusterType(clusterType))
 });

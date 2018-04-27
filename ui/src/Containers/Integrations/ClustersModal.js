@@ -21,7 +21,8 @@ class ClustersModal extends Component {
         onRequestClose: PropTypes.func.isRequired,
         editCluster: PropTypes.func.isRequired,
         editingCluster: PropTypes.shape(),
-        selectedClusterType: PropTypes.string.isRequired
+        selectedClusterType: PropTypes.string.isRequired,
+        fetchClusters: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -62,6 +63,7 @@ class ClustersModal extends Component {
         });
         Promise.all(promises).then(() => {
             this.clusterTable.clearSelectedRows();
+            this.props.fetchClusters();
         });
     };
 
@@ -156,6 +158,7 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = dispatch => ({
+    fetchClusters: () => dispatch(clusterActions.fetchClusters.request()),
     editCluster: clusterId => dispatch(clusterActions.editCluster(clusterId))
 });
 
