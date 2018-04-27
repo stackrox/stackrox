@@ -8,7 +8,7 @@ import (
 )
 
 func TestUserScore(t *testing.T) {
-	mult := NewUserDefinedMultiplier(&v1.Multiplier{
+	mult := newUserDefinedMultiplier(&v1.Multiplier{
 		Scope: &v1.Scope{
 			Cluster: "cluster",
 		},
@@ -19,7 +19,7 @@ func TestUserScore(t *testing.T) {
 	assert.Equal(t, float32(1.3), result.GetScore())
 	assert.Len(t, result.GetFactors(), 1)
 
-	mult = NewUserDefinedMultiplier(&v1.Multiplier{
+	mult = newUserDefinedMultiplier(&v1.Multiplier{
 		Scope: &v1.Scope{
 			Cluster: "blah",
 		},

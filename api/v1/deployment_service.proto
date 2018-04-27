@@ -95,7 +95,13 @@ message PortConfig {
     string name             = 1;
     int32 container_port    = 2;
     string protocol         = 3;
-    string exposure         = 4;
+    enum Exposure {
+        UNSET    = 0;
+        EXTERNAL = 1;
+        NODE     = 2;
+        INTERNAL = 3;
+    }
+    Exposure exposure       = 4;
 }
 
 message GetDeploymentsResponse {

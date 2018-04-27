@@ -7,7 +7,7 @@ import (
 )
 
 func TestScoreVolumesAndSecrets(t *testing.T) {
-	mult := NewServiceConfigMultiplier()
+	mult := newServiceConfigMultiplier()
 	deployment := getMockDeployment()
 	volumeFactor, secretFactor := mult.scoreVolumesAndSecrets(deployment)
 	assert.NotEmpty(t, volumeFactor)
@@ -25,7 +25,7 @@ func TestScoreVolumesAndSecrets(t *testing.T) {
 }
 
 func TestScoreCapabilities(t *testing.T) {
-	mult := NewServiceConfigMultiplier()
+	mult := newServiceConfigMultiplier()
 	deployment := getMockDeployment()
 	addFactor, dropFactor := mult.scoreCapabilities(deployment)
 	assert.NotEmpty(t, addFactor)
@@ -44,7 +44,7 @@ func TestScoreCapabilities(t *testing.T) {
 }
 
 func TestScorePrivileged(t *testing.T) {
-	mult := NewServiceConfigMultiplier()
+	mult := newServiceConfigMultiplier()
 	deployment := getMockDeployment()
 	factor := mult.scorePrivilege(deployment)
 	assert.NotEmpty(t, factor)
@@ -56,7 +56,7 @@ func TestScorePrivileged(t *testing.T) {
 
 func TestConfigScore(t *testing.T) {
 	// Hit all values
-	mult := NewServiceConfigMultiplier()
+	mult := newServiceConfigMultiplier()
 	deployment := getMockDeployment()
 	result := mult.Score(deployment)
 	assert.Equal(t, result.GetScore(), float32(2))

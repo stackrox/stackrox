@@ -11,18 +11,18 @@ import (
 
 const (
 	serviceConfigHeading = "Service Configuration"
-	maxScore             = 8
+	configSaturation     = 8
 )
 
-// ServiceConfigMultiplier is a scorer for the service configuration
-type ServiceConfigMultiplier struct{}
+// serviceConfigMultiplier is a scorer for the service configuration
+type serviceConfigMultiplier struct{}
 
-// NewServiceConfigMultiplier scores the data based on the service configuration
-func NewServiceConfigMultiplier() *ServiceConfigMultiplier {
-	return &ServiceConfigMultiplier{}
+// newServiceConfigMultiplier scores the data based on the service configuration
+func newServiceConfigMultiplier() *serviceConfigMultiplier {
+	return &serviceConfigMultiplier{}
 }
 
-func (s *ServiceConfigMultiplier) scoreVolumesAndSecrets(deployment *v1.Deployment) (volumeFactor, secretFactor string) {
+func (s *serviceConfigMultiplier) scoreVolumesAndSecrets(deployment *v1.Deployment) (volumeFactor, secretFactor string) {
 	var volumeNames []string
 	var secrets []string
 	for _, container := range deployment.GetContainers() {
@@ -50,7 +50,7 @@ var capAdds = map[string]struct{}{
 	"CAP_SYS_MODULE": {},
 }
 
-func (s *ServiceConfigMultiplier) scoreCapabilities(deployment *v1.Deployment) (capAddFactor, capDropFactor string) {
+func (s *serviceConfigMultiplier) scoreCapabilities(deployment *v1.Deployment) (capAddFactor, capDropFactor string) {
 	capsAdded := mapset.NewSet()
 	capsDropped := mapset.NewSet()
 	for _, container := range deployment.GetContainers() {
@@ -74,7 +74,7 @@ func (s *ServiceConfigMultiplier) scoreCapabilities(deployment *v1.Deployment) (
 	return
 }
 
-func (s *ServiceConfigMultiplier) scorePrivilege(deployment *v1.Deployment) string {
+func (s *serviceConfigMultiplier) scorePrivilege(deployment *v1.Deployment) string {
 	for _, container := range deployment.GetContainers() {
 		if container.GetSecurityContext().GetPrivileged() {
 			return "A container in the deployment is privileged"
@@ -84,7 +84,7 @@ func (s *ServiceConfigMultiplier) scorePrivilege(deployment *v1.Deployment) stri
 }
 
 // Score takes a deployment and evaluates its risk based on the service configuration
-func (s *ServiceConfigMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
+func (s *serviceConfigMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
 	riskResult := &v1.Risk_Result{
 		Name: serviceConfigHeading,
 	}
@@ -115,6 +115,6 @@ func (s *ServiceConfigMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Resu
 		riskResult.Factors = append(riskResult.Factors, factor)
 	}
 	// riskResult.Score is the normalized [1.0,2.0] score
-	riskResult.Score = (overallScore / maxScore) + 1
+	riskResult.Score = (overallScore / configSaturation) + 1
 	return riskResult
 }

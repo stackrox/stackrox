@@ -199,7 +199,7 @@ func TestViolationsScore(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			mult := NewViolationsMultiplier(&mockGetter{
+			mult := newViolationsMultiplier(&mockGetter{
 				alerts: c.alerts,
 			})
 			deployment := getMockDeployment()

@@ -13,7 +13,8 @@ func getMockDeployment() *v1.Deployment {
 		Containers: []*v1.Container{
 			{
 				Volumes: []*v1.Volume{
-					{Name: "readonly",
+					{
+						Name:     "readonly",
 						ReadOnly: true,
 					},
 					{
@@ -28,6 +29,12 @@ func getMockDeployment() *v1.Deployment {
 					Privileged: true,
 				},
 				Image: &v1.Image{
+					Name: &v1.ImageName{
+						FullName: "docker.io/library/nginx:1.10",
+						Registry: "docker.io",
+						Remote:   "library/nginx",
+						Tag:      "1.10",
+					},
 					Scan: &v1.ImageScan{
 						Components: []*v1.ImageScanComponent{
 							{
@@ -41,6 +48,23 @@ func getMockDeployment() *v1.Deployment {
 								},
 							},
 						},
+					},
+				},
+				Ports: []*v1.PortConfig{
+					{
+						Name:          "Port1",
+						ContainerPort: 22,
+						Exposure:      v1.PortConfig_EXTERNAL,
+					},
+					{
+						Name:          "Port2",
+						ContainerPort: 23,
+						Exposure:      v1.PortConfig_INTERNAL,
+					},
+					{
+						Name:          "Port3",
+						ContainerPort: 8080,
+						Exposure:      v1.PortConfig_NODE,
 					},
 				},
 			},
@@ -72,7 +96,7 @@ func TestScore(t *testing.T) {
 
 	// Without user defined function
 	expectedRisk := &v1.Risk{
-		Score: 2.52,
+		Score: 4.032,
 		Results: []*v1.Risk_Result{
 			{
 				Name: serviceConfigHeading,
@@ -84,6 +108,15 @@ func TestScore(t *testing.T) {
 					"A container in the deployment is privileged",
 				},
 				Score: 2.0,
+			},
+			{
+				Name: reachabilityHeading,
+				Factors: []string{
+					"Container library/nginx exposes port 22 to external clients",
+					"Container library/nginx exposes port 23 in the cluster",
+					"Container library/nginx exposes port 8080 on node interfaces",
+				},
+				Score: 1.6,
 			},
 			{
 				Name:    policyViolationsHeading,
@@ -112,7 +145,7 @@ func TestScore(t *testing.T) {
 	}
 	scorer.UpdateUserDefinedMultiplier(mult)
 	expectedRisk = &v1.Risk{
-		Score: 5.04,
+		Score: 8.064,
 		Results: []*v1.Risk_Result{
 			{
 				Name: serviceConfigHeading,
@@ -131,6 +164,15 @@ func TestScore(t *testing.T) {
 					"Deployment matched scope 'cluster:cluster'",
 				},
 				Score: 2.0,
+			},
+			{
+				Name: reachabilityHeading,
+				Factors: []string{
+					"Container library/nginx exposes port 22 to external clients",
+					"Container library/nginx exposes port 23 in the cluster",
+					"Container library/nginx exposes port 8080 on node interfaces",
+				},
+				Score: 1.6,
 			},
 			{
 				Name:    policyViolationsHeading,

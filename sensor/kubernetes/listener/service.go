@@ -139,7 +139,7 @@ func (s serviceWrap) updatePorts(container *pkgV1.Container) (updated bool) {
 func (s serviceWrap) resetPorts(container *pkgV1.Container) (updated bool) {
 	for _, portConfig := range container.GetPorts() {
 		if s.matchPort(portConfig) {
-			portConfig.Exposure = containers.Internal
+			portConfig.Exposure = pkgV1.PortConfig_INTERNAL
 			updated = true
 		}
 	}
@@ -170,13 +170,13 @@ func (s serviceWrap) updateExposure(portConfig *pkgV1.PortConfig) bool {
 	return false
 }
 
-func (s serviceWrap) asExposureLevel() string {
+func (s serviceWrap) asExposureLevel() pkgV1.PortConfig_Exposure {
 	switch s.Spec.Type {
 	case v1.ServiceTypeLoadBalancer:
-		return containers.External
+		return pkgV1.PortConfig_EXTERNAL
 	case v1.ServiceTypeNodePort:
-		return containers.Node
+		return pkgV1.PortConfig_NODE
 	default:
-		return containers.Internal
+		return pkgV1.PortConfig_INTERNAL
 	}
 }

@@ -28,8 +28,8 @@ type AlertGetter interface {
 	GetAlerts(request *v1.GetAlertsRequest) ([]*v1.Alert, error)
 }
 
-// NewViolationsMultiplier scores the data based on the number and severity of policy violations.
-func NewViolationsMultiplier(getter AlertGetter) *ViolationsMultiplier {
+// newViolationsMultiplier scores the data based on the number and severity of policy violations.
+func newViolationsMultiplier(getter AlertGetter) *ViolationsMultiplier {
 	return &ViolationsMultiplier{
 		getter: getter,
 	}

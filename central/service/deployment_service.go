@@ -148,10 +148,10 @@ func (s *DeploymentService) GetMultipliers(ctx context.Context, request *empty.E
 func validateMultiplier(mult *v1.Multiplier) error {
 	var errs []string
 	if mult.GetName() == "" {
-		errs = append(errs, "Multiplier name must be specified")
+		errs = append(errs, "multiplier name must be specified")
 	}
 	if mult.GetValue() < 1 || mult.GetValue() > 2 {
-		errs = append(errs, "Multiplier must have a value between 1 and 2 inclusive")
+		errs = append(errs, "multiplier must have a value between 1 and 2 inclusive")
 	}
 	if len(errs) > 0 {
 		return errorhelpers.FormatErrorStrings("Validation", errs)

@@ -1,21 +1,16 @@
 package containers
 
-// Exposure levels for ports.
-const (
-	Internal = `internal`
-	Node     = `node`
-	External = `external`
-)
+import "bitbucket.org/stack-rox/apollo/generated/api/v1"
 
 // IncreasedExposureLevel returns whether the new level carries increased exposure.
-func IncreasedExposureLevel(old, new string) bool {
+func IncreasedExposureLevel(old, new v1.PortConfig_Exposure) bool {
 	switch old {
-	case "":
+	case v1.PortConfig_UNSET:
 		return true
-	case Internal:
-		return new == Node || new == External
-	case Node:
-		return new == External
+	case v1.PortConfig_INTERNAL:
+		return new == v1.PortConfig_NODE || new == v1.PortConfig_EXTERNAL
+	case v1.PortConfig_NODE:
+		return new == v1.PortConfig_EXTERNAL
 	default:
 		return false
 	}

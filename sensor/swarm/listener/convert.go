@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/containers"
 	"bitbucket.org/stack-rox/apollo/pkg/docker"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
@@ -136,12 +135,12 @@ func (s serviceWrap) getPorts() []*v1.PortConfig {
 	return output
 }
 
-func isPublished(port uint32) string {
+func isPublished(port uint32) v1.PortConfig_Exposure {
 	if port == 0 {
-		return containers.Internal
+		return v1.PortConfig_INTERNAL
 	}
 
-	return containers.External
+	return v1.PortConfig_EXTERNAL
 }
 
 func (s serviceWrap) getVolumes() []*v1.Volume {

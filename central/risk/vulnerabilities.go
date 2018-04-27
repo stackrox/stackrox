@@ -12,16 +12,16 @@ const (
 	saturationCeiling = 100
 )
 
-// VulnerabilitiesMultiplier is a scorer for the vulnerabilities in a deployment
-type VulnerabilitiesMultiplier struct{}
+// vulnerabilitiesMultiplier is a scorer for the vulnerabilities in a deployment
+type vulnerabilitiesMultiplier struct{}
 
-// NewVulnerabilitiesMultiplier scores the data based on the CVSS scores and number of CVEs
-func NewVulnerabilitiesMultiplier() *VulnerabilitiesMultiplier {
-	return &VulnerabilitiesMultiplier{}
+// newVulnerabilitiesMultiplier scores the data based on the CVSS scores and number of CVEs
+func newVulnerabilitiesMultiplier() *vulnerabilitiesMultiplier {
+	return &vulnerabilitiesMultiplier{}
 }
 
 // Score takes a deployment and evaluates its risk based on vulnerabilties
-func (c *VulnerabilitiesMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
+func (c *vulnerabilitiesMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
 	var cvssSum float32
 	cvssMin := math.MaxFloat64
 	cvssMax := -math.MaxFloat64

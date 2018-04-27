@@ -28,9 +28,9 @@ describe('General sanity checks', () => {
         cy.get('nav.top-navigation li').as('topNavItems');
         cy.get('@topNavItems').should($lis => {
             expect($lis).to.have.length(4);
-            expect($lis.eq(0)).to.contain('Violations');
+            expect($lis.eq(0)).to.contain('Violation');
             expect($lis.eq(1)).to.contain('Cluster');
-            expect($lis.eq(2)).to.contain('Deployments');
+            expect($lis.eq(2)).to.contain('Deployment');
             expect($lis.eq(3)).to.contain('Image');
         });
     });

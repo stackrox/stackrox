@@ -14,8 +14,8 @@ var (
 
 // Scorer is the object that encompasses the multipliers for evaluating risk
 type Scorer struct {
-	ConfiguredMultipliers  []Multiplier
-	UserDefinedMultipliers map[string]Multiplier
+	ConfiguredMultipliers  []multiplier
+	UserDefinedMultipliers map[string]multiplier
 
 	multLock sync.Mutex
 }
@@ -23,12 +23,13 @@ type Scorer struct {
 // NewScorer returns a new scorer that encompasses both static and user defined multipliers
 func NewScorer(getter AlertGetter) *Scorer {
 	return &Scorer{
-		ConfiguredMultipliers: []Multiplier{
-			NewServiceConfigMultiplier(),
-			NewVulnerabilitiesMultiplier(),
-			NewViolationsMultiplier(getter),
+		ConfiguredMultipliers: []multiplier{
+			newServiceConfigMultiplier(),
+			newVulnerabilitiesMultiplier(),
+			newViolationsMultiplier(getter),
+			newReachabilityMultiplier(),
 		},
-		UserDefinedMultipliers: make(map[string]Multiplier),
+		UserDefinedMultipliers: make(map[string]multiplier),
 	}
 }
 
@@ -36,7 +37,7 @@ func NewScorer(getter AlertGetter) *Scorer {
 func (s *Scorer) UpdateUserDefinedMultiplier(mult *v1.Multiplier) {
 	s.multLock.Lock()
 	defer s.multLock.Unlock()
-	s.UserDefinedMultipliers[mult.GetId()] = NewUserDefinedMultiplier(mult)
+	s.UserDefinedMultipliers[mult.GetId()] = newUserDefinedMultiplier(mult)
 }
 
 // RemoveUserDefinedMultiplier removes the specific multiplier

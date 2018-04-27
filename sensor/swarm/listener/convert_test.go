@@ -140,7 +140,7 @@ func TestAsDeployment(t *testing.T) {
 								Name:          "api",
 								ContainerPort: 80,
 								Protocol:      "tcp",
-								Exposure:      `external`,
+								Exposure:      v1.PortConfig_EXTERNAL,
 							},
 						},
 						Volumes: []*v1.Volume{
@@ -280,7 +280,7 @@ func TestAsDeployment(t *testing.T) {
 								Name:          "api",
 								ContainerPort: 80,
 								Protocol:      "tcp",
-								Exposure:      `external`,
+								Exposure:      v1.PortConfig_EXTERNAL,
 							},
 						},
 						Volumes: []*v1.Volume{

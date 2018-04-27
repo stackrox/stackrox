@@ -8,14 +8,14 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/scopecomp"
 )
 
-// UserDefinedMultiplier is a wrapper around a proto multiplier
-type UserDefinedMultiplier struct {
+// userDefinedMultiplier is a wrapper around a proto multiplier
+type userDefinedMultiplier struct {
 	*v1.Multiplier
 }
 
-// NewUserDefinedMultiplier generates a new wrapper around the proto Multiplier that implements the generic Multiplier interface
-func NewUserDefinedMultiplier(mult *v1.Multiplier) Multiplier {
-	return &UserDefinedMultiplier{
+// newUserDefinedMultiplier generates a new wrapper around the proto multiplier that implements the generic multiplier interface
+func newUserDefinedMultiplier(mult *v1.Multiplier) multiplier {
+	return &userDefinedMultiplier{
 		Multiplier: mult,
 	}
 }
@@ -35,7 +35,7 @@ func formatScope(scope *v1.Scope) string {
 }
 
 // Score returns a risk result
-func (u *UserDefinedMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
+func (u *userDefinedMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
 	if !scopecomp.WithinScope(u.GetScope(), deployment) {
 		return nil
 	}

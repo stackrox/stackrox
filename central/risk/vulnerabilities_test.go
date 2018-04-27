@@ -7,7 +7,7 @@ import (
 )
 
 func TestVulnerabilitiesScore(t *testing.T) {
-	mult := NewVulnerabilitiesMultiplier()
+	mult := newVulnerabilitiesMultiplier()
 	deployment := getMockDeployment()
 	result := mult.Score(deployment)
 	// The first deployment to be processed will always be 2.0
