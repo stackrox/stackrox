@@ -48,6 +48,26 @@ message GetBenchmarkScanRequest {
     repeated string hosts       = 3;
 }
 
+message StatusCount {
+    CheckStatus status = 1;
+    int64       count  = 2;
+}
+
+message BenchmarkGroup {
+    string               benchmark = 1;
+    repeated StatusCount counts    = 2;
+}
+
+message ClusterGroup {
+    string                  cluster_id   = 1;
+    string                  cluster_name = 2;
+    repeated BenchmarkGroup benchmarks   = 3;
+}
+
+message GetBenchmarkScansSummaryResponse {
+    repeated ClusterGroup clusters = 1;
+}
+
 service BenchmarkScanService {
 
     rpc PostBenchmarkScan(BenchmarkScanMetadata) returns (google.protobuf.Empty) {
@@ -69,4 +89,9 @@ service BenchmarkScanService {
         };
     }
 
+    rpc GetBenchmarkScansSummary(google.protobuf.Empty) returns (GetBenchmarkScansSummaryResponse) {
+        option (google.api.http) = {
+            get: "/v1/benchmarks/summary/scans"
+        };
+    }
 }
