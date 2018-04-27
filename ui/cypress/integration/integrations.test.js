@@ -8,6 +8,14 @@ describe('Integrations page', () => {
         cy.get(selectors.navLink).click();
     });
 
+    it('Plugin tiles should all be the same height', () => {
+        let value = null;
+        cy.get(selectors.plugins).each($el => {
+            if (value) expect($el[0].clientHeight).to.equal(value);
+            else value = $el[0].clientHeight;
+        });
+    });
+
     it('should have selected item in nav bar', () => {
         cy.get(selectors.configure).should('have.class', 'bg-primary-600');
     });

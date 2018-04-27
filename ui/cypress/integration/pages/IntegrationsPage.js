@@ -18,5 +18,6 @@ export const selectors = {
             checkbox: '.cluster-form input:last'
         }
     },
-    readOnlyView: '.overflow-auto > .p-4 > div'
+    readOnlyView: '.overflow-auto > .p-4 > div',
+    plugins: '.mb-6:first button'
 };

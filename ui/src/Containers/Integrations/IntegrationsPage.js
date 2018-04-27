@@ -131,7 +131,7 @@ const integrationsList = {
             image: email
         },
         {
-            label: 'Google Cloud Security Command Center',
+            label: 'Google Cloud SCC',
             type: 'cscc',
             source: 'notifiers',
             image: google
