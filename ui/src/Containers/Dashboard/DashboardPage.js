@@ -36,32 +36,6 @@ const severityColorMap = {
     LOW_SEVERITY: 'hsl(42, 100%, 84%)'
 };
 
-const benchmarkPropType = PropTypes.arrayOf(
-    PropTypes.shape({
-        checks: PropTypes.arrayOf(
-            PropTypes.shape({
-                aggregatedResults: PropTypes.shape({
-                    PASS: PropTypes.number,
-                    INFO: PropTypes.number,
-                    WARN: PropTypes.number,
-                    NOTE: PropTypes.number
-                }),
-                definition: PropTypes.shape({
-                    description: PropTypes.string,
-                    name: PropTypes.string
-                }),
-                hostResults: PropTypes.arrayOf(
-                    PropTypes.shape({
-                        host: PropTypes.string,
-                        notes: PropTypes.arrayOf(PropTypes.string),
-                        result: PropTypes.string
-                    })
-                )
-            })
-        )
-    })
-);
-
 const severityPropType = PropTypes.oneOf([
     'CRITICAL_SEVERITY',
     'HIGH_SEVERITY',
@@ -92,11 +66,7 @@ class DashboardPage extends Component {
         violatonsByPolicyCategory: groupedViolationsPropType.isRequired,
         violationsByCluster: groupedViolationsPropType.isRequired,
         alertsByTimeseries: PropTypes.arrayOf(PropTypes.shape()).isRequired,
-        benchmarks: PropTypes.shape({
-            'CIS Docker v1.1.0 Benchmark': benchmarkPropType,
-            'CIS Swarm v1.1.0 Benchmark': benchmarkPropType,
-            'CIS Kubernetes v1.2.0 Benchmark': benchmarkPropType
-        }).isRequired,
+        benchmarks: PropTypes.arrayOf(PropTypes.shape()).isRequired,
         clustersByName: PropTypes.object.isRequired, // eslint-disable-line react/forbid-prop-types,
         deployments: PropTypes.arrayOf(PropTypes.object).isRequired,
         history: PropTypes.shape({
@@ -381,11 +351,14 @@ class DashboardPage extends Component {
     };
 
     renderBenchmarks = () => (
-        <div className="flex flex-1 flex-col w-full">
-            <h2 className="flex items-center text-xl text-base font-sans text-base-600 pb-8 tracking-wide font-500">
-                Benchmarks
-            </h2>
-            <DashboardBenchmarks benchmarks={this.props.benchmarks} />
+        <div className="p-0 h-full w-full dashboard-benchmarks">
+            <Slider {...slickSettings}>
+                {this.props.benchmarks.map((cluster, index) => (
+                    <div key={index}>
+                        <DashboardBenchmarks cluster={cluster} />
+                    </div>
+                ))}
+            </Slider>
         </div>
     );
 
@@ -399,10 +372,8 @@ class DashboardPage extends Component {
         return (
             <section className="w-full h-full transition">
                 <div className="flex bg-white border-b border-primary-500">
-                    <div className="flex flex-1 flex-col w-1/2 p-6">
-                        {this.renderEnvironmentRisk()}
-                    </div>
-                    <div className="flex flex-1 flex-col w-1/2 p-6 border-l border-primary-200">
+                    <div className="w-1/2 p-6">{this.renderEnvironmentRisk()}</div>
+                    <div className="w-1/2 p-6 border-l border-primary-200">
                         {this.renderBenchmarks()}
                     </div>
                 </div>
@@ -410,7 +381,7 @@ class DashboardPage extends Component {
                     <div className="flex flex-col w-full">
                         <div className="flex w-full flex-wrap">
                             <div className="p-6 md:w-full lg:w-1/2">
-                                <div className="flex flex-col p-4 bg-white rounded-sm shadow">
+                                <div className="flex flex-col p-4 bg-white rounded-sm shadow h-full">
                                     <h2 className="flex items-center text-lg text-base font-sans text-base-600 py-4 tracking-wide">
                                         <Icon.Layers className="h-4 w-4 mr-3" />
                                         Violations by Cluster
@@ -461,7 +432,7 @@ const mapStateToProps = createStructuredSelector({
     violatonsByPolicyCategory: selectors.getAlertCountsByPolicyCategories,
     violationsByCluster: selectors.getAlertCountsByCluster,
     alertsByTimeseries: selectors.getAlertsByTimeseries,
-    benchmarks: selectors.getUpdatedBenchmarks,
+    benchmarks: selectors.getBenchmarksByCluster,
     deployments: selectors.getDeployments,
     clustersByName: getClustersByName
 });

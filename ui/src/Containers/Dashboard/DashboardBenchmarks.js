@@ -11,13 +11,17 @@ const benchmarkResultsMap = {
 
 class DashboardBenchmarks extends Component {
     static propTypes = {
-        benchmarks: PropTypes.shape({}).isRequired
+        cluster: PropTypes.shape({
+            benchmarks: PropTypes.arrayOf(PropTypes.shape()).isRequired,
+            clusterId: PropTypes.string.isRequired,
+            clusterName: PropTypes.string.isRequired
+        }).isRequired
     };
 
     hasBenchmarks = () => {
         let doesHaveBenchmarks = false;
-        Object.keys(this.props.benchmarks).forEach(benchmarkName => {
-            if (this.props.benchmarks[benchmarkName].length) {
+        this.props.cluster.benchmarks.forEach(benchmark => {
+            if (benchmark.counts.length) {
                 doesHaveBenchmarks = true;
             }
         });
@@ -25,9 +29,8 @@ class DashboardBenchmarks extends Component {
     };
 
     renderBenchmarks = () =>
-        Object.keys(this.props.benchmarks).map(benchmarkName => {
-            const benchmarks = this.props.benchmarks[benchmarkName];
-            if (!benchmarks.length) return '';
+        this.props.cluster.benchmarks.map(benchmark => {
+            if (!benchmark.counts.length) return '';
             const results = {
                 PASS: 0,
                 WARN: 0,
@@ -35,22 +38,18 @@ class DashboardBenchmarks extends Component {
                 NOTE: 0
             };
             let total = 0;
-            benchmarks[0].checks.forEach(result => {
-                Object.keys(result.aggregatedResults).forEach(aggregatedResult => {
-                    if (results[aggregatedResult] !== undefined) {
-                        const value = parseInt(result.aggregatedResults[aggregatedResult], 10);
-                        results[aggregatedResult] += value;
-                        total += value;
-                    }
-                });
+            benchmark.counts.forEach(count => {
+                const value = parseInt(count.count, 10);
+                results[count.status] += value;
+                total += value;
             });
             return (
-                <div className="pb-3 flex w-full" key={benchmarkName}>
+                <div className="pb-3 flex w-full" key={benchmark.benchmark}>
                     <Link
                         className="text-sm text-primary-500 tracking-wide underline w-1/3 text-left"
-                        to="/main/compliance"
+                        to={`/main/compliance/${this.props.cluster.clusterId}`}
                     >
-                        {benchmarkName}
+                        {benchmark.benchmark}
                     </Link>
                     <div className="flex flex-1 w-2/3 h-2">
                         {Object.keys(results).map(result => {
@@ -89,12 +88,22 @@ class DashboardBenchmarks extends Component {
     render() {
         if (!this.hasBenchmarks()) {
             return (
-                <div className="flex flex-1 items-center justify-center">No Benchmark Results</div>
+                <div className="h-full">
+                    <h2 className="flex text-xl text-base font-sans text-base-600 tracking-wide font-500 capitalize">
+                        {this.props.cluster.clusterName} Benchmarks
+                    </h2>
+                    <div className="flex flex-1 items-center justify-center h-full">
+                        No Benchmark Results
+                    </div>
+                </div>
             );
         }
         return (
             <div>
-                <div>{this.renderBenchmarks()}</div>
+                <h2 className="flex text-xl text-base font-sans text-base-600 pb-4 tracking-wide font-500 capitalize">
+                    {this.props.cluster.clusterName} Benchmarks
+                </h2>
+                <div className="pt-4">{this.renderBenchmarks()}</div>
                 <div className="flex flex-1 w-full pt-4">{this.renderLegend()}</div>
             </div>
         );

@@ -43,15 +43,14 @@ describe('Dashboard page', () => {
 
     it('should display benchmarks data', () => {
         cy.server();
-        cy.fixture('benchmarks/configs.json').as('configs');
-        cy.route('GET', api.benchmarks.configs, '@configs').as('benchConfigs');
-        cy.fixture('benchmarks/dockerBenchScans.json').as('dockerBenchScans');
-        cy.route('GET', api.benchmarks.cisDockerScans, '@dockerBenchScans').as('scansMetadata');
-        cy.fixture('benchmarks/dockerBenchScan1.json').as('dockerBenchScan1');
-        cy.route('GET', api.benchmarks.scans, '@dockerBenchScan1').as('benchScan');
+
+        cy.fixture('benchmarks/summary.json').as('benchmarksSummary');
+        cy
+            .route('GET', api.benchmarks.summary, '@benchmarksSummary')
+            .as('benchmarksSummaryByCluster');
 
         cy.visit(dashboardUrl);
-        cy.wait(['@benchConfigs', '@scansMetadata', '@benchScan']);
+        cy.wait('@benchmarksSummaryByCluster');
 
         cy
             .get(selectors.sectionHeaders.benchmarks)
@@ -70,10 +69,10 @@ describe('Dashboard page', () => {
             .next()
             .children()
             .spread((pass, warn, info, note) => {
-                expect(pass.getAttribute('style')).to.have.string('width: 20%');
-                expect(warn.getAttribute('style')).to.have.string('width: 40%');
-                expect(info.getAttribute('style')).to.have.string('width: 20%');
-                expect(note.getAttribute('style')).to.have.string('width: 20%');
+                expect(pass.getAttribute('style')).to.have.string('width: 30%');
+                expect(warn.getAttribute('style')).to.have.string('width: 31%');
+                expect(info.getAttribute('style')).to.have.string('width: 9%');
+                expect(note.getAttribute('style')).to.have.string('width: 32%');
             });
         cy
             .get('@benchmarkSummaries')
@@ -81,8 +80,14 @@ describe('Dashboard page', () => {
             .first()
             .click();
         cy.location().should(location => {
-            expect(location.pathname).to.eq(complianceUrl);
+            expect(location.pathname).to.eq(
+                `${complianceUrl}/422642b9-1e4e-47a5-a739-e4fb39230822`
+            );
         });
+
+        cy.visit(dashboardUrl);
+        cy.get(selectors.slick.dashboardBenchmarks.nextButton).click();
+        cy.get(selectors.slick.dashboardBenchmarks.currentSlide).contains('No Benchmark Results');
     });
 
     it('should display violations by cluster chart for single cluster', () => {

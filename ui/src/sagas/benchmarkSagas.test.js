@@ -2,7 +2,7 @@ import { fork, take, select, call } from 'redux-saga/effects';
 import { types as locationActionTypes } from 'reducers/routes';
 import {
     getBenchmarks,
-    getUpdatedBenchmarks,
+    getBenchmarksByCluster,
     watchLocation,
     updateBenchmarkSchedule
 } from './benchmarkSagas';
@@ -20,7 +20,7 @@ describe('Benchmark Sagas Test', () => {
                 pathname: '/main/dashboard/'
             }
         }));
-        expect(value).toEqual(fork(getUpdatedBenchmarks));
+        expect(value).toEqual(fork(getBenchmarksByCluster));
     });
     it('Should do a service call to get benchmarks when location changes to compliance', () => {
         const gen = watchLocation();
@@ -44,7 +44,7 @@ describe('Benchmark Sagas Test', () => {
                 pathname: '/main/violations/'
             }
         }));
-        expect(value).not.toEqual(fork(getUpdatedBenchmarks));
+        expect(value).not.toEqual(fork(getBenchmarksByCluster));
     });
     it('Should delete the schedule when no day/hour is selected', () => {
         const removedSchedule = {

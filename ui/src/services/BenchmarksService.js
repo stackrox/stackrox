@@ -202,3 +202,14 @@ export async function fetchLastScansByBenchmark() {
     );
     return { response: benchmarks };
 }
+
+/**
+ * Fetches a map of benchmarks for each cluster
+ *
+ * @returns {Promise<Object, Error>} fulfilled in case of success or rejected with an error
+ */
+export async function fetchBenchmarksByCluster() {
+    const benchmarksSummaryUrl = `${baseUrl}/summary/scans`;
+
+    return axios.get(benchmarksSummaryUrl).then(response => response.data.clusters, error => error);
+}

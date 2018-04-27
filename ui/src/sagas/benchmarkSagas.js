@@ -38,6 +38,15 @@ export function* getUpdatedBenchmarks() {
     }
 }
 
+export function* getBenchmarksByCluster() {
+    try {
+        const result = yield call(service.fetchBenchmarksByCluster);
+        yield put(benchmarkActions.fetchBenchmarksByCluster.success(result));
+    } catch (error) {
+        yield put(benchmarkActions.fetchBenchmarksByCluster.failure(error));
+    }
+}
+
 export function* getLastScannedBenchmark(action) {
     try {
         const result = yield call(service.fetchLastScan, action.benchmarkName);
@@ -123,7 +132,7 @@ export function* watchLocation() {
         const action = yield take(locationActionTypes.LOCATION_CHANGE);
         const { payload: location } = action;
         if (location && location.pathname && location.pathname.startsWith(dashboardPath)) {
-            yield fork(getUpdatedBenchmarks);
+            yield fork(getBenchmarksByCluster);
         }
         if (location && location.pathname && location.pathname.startsWith(compliancePath)) {
             yield fork(getBenchmarks);

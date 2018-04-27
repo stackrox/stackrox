@@ -27,5 +27,13 @@ export const selectors = {
         lowSeverityBar: `g.recharts-bar-rectangle path[fill="${severityColors.LOW_SEVERITY}"]`,
         medSeveritySector: `g.recharts-pie-sector path[fill="${severityColors.MEDIUM_SEVERITY}"]`,
         legendItem: `span.recharts-legend-item-text`
+    },
+    slick: {
+        dashboardBenchmarks: {
+            prevButton: '.dashboard-benchmarks .carousel-prev-arrow',
+            nextButton: '.dashboard-benchmarks .carousel-next-arrow',
+            list: '.dashboard-benchmarks .slick-slide',
+            currentSlide: '.dashboard-benchmarks .slick-slide.slick-active.slick-current'
+        }
     }
 };

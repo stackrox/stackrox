@@ -268,7 +268,7 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
 .navigation-panel {
     position: absolute;
     left: 81px;
-    z-index: 10;
+    z-index: 1001;
     top: 0;
     height: 100%;
      background-color: hsla(0, 0%, 21%, 0.85);
@@ -309,6 +309,7 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
 .carousel-prev-arrow, .carousel-next-arrow {
     position: absolute;
     top: -22%;
+    z-index: 1000;
 }
 
 .carousel-prev-arrow {
@@ -321,6 +322,10 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
 
 .recharts-responsive-container .recharts-tooltip-cursor{
     fill-opacity: 0.0;
+}
+
+.dashboard-benchmarks .carousel-prev-arrow, .dashboard-benchmarks .carousel-next-arrow {
+    top: -5%;
 }
 
 .left-navigation {

@@ -12,7 +12,8 @@ export const benchmarks = {
     configs: 'v1/benchmarks/configs',
     scans: 'v1/benchmarks/scans/*',
     cisDockerScans: 'v1/benchmarks/scans?benchmarkId=*',
-    triggers: 'v1/benchmarks/triggers/*'
+    triggers: 'v1/benchmarks/triggers/*',
+    summary: 'v1/benchmarks/summary/scans'
 };
 
 export const risks = {
