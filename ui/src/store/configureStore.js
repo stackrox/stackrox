@@ -4,6 +4,8 @@ import createSagaMiddleware from 'redux-saga';
 
 import rootSaga from 'sagas';
 import rootReducer from 'reducers';
+import { actions as authActions } from 'reducers/auth';
+import * as AuthService from 'services/AuthService';
 
 const sagaMiddleware = createSagaMiddleware();
 
@@ -31,6 +33,10 @@ export default function configureStore(initialState = {}, history) {
     /* eslint-enable */
     const store = createStore(rootReducer, initialState, composeEnhancers(...enhancers));
 
+    // add auth interceptors before any HTTP request to APIs (i.e. before running sagas)
+    AuthService.addAuthInterceptors(error =>
+        store.dispatch(authActions.handleAuthHttpError(error))
+    );
     sagaMiddleware.run(rootSaga);
     return store;
 }

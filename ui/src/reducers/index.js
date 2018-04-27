@@ -3,7 +3,7 @@ import { reducer as formReducer } from 'redux-form';
 
 import bindSelectors from 'utils/bindSelectors';
 import alerts, { selectors as alertSelectors } from './alerts';
-import authProviders, { selectors as authProviderSelectors } from './auth';
+import auth, { selectors as authSelectors } from './auth';
 import benchmarks, { selectors as benchmarkSelectors } from './benchmarks';
 import clusters, { selectors as clusterSelectors } from './clusters';
 import deployments, { selectors as deploymentSelectors } from './risk';
@@ -18,7 +18,7 @@ import route, { selectors as routeSelectors } from './routes';
 
 const appReducer = combineReducers({
     alerts,
-    authProviders,
+    auth,
     benchmarks,
     clusters,
     deployments,
@@ -42,7 +42,7 @@ export default rootReducer;
 const getRoute = state => state.route;
 const getApp = state => state.app;
 const getAlerts = state => getApp(state).alerts;
-const getAuthProviders = state => getApp(state).authProviders;
+const getAuth = state => getApp(state).auth;
 const getBenchmarks = state => getApp(state).benchmarks;
 const getClusters = state => getApp(state).clusters;
 const getDeployments = state => getApp(state).deployments;
@@ -54,7 +54,7 @@ const getSummaries = state => getApp(state).summaries;
 
 const boundSelectors = {
     ...bindSelectors(getAlerts, alertSelectors),
-    ...bindSelectors(getAuthProviders, authProviderSelectors),
+    ...bindSelectors(getAuth, authSelectors),
     ...bindSelectors(getBenchmarks, benchmarkSelectors),
     ...bindSelectors(getClusters, clusterSelectors),
     ...bindSelectors(getDeployments, deploymentSelectors),

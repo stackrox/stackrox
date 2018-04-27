@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
 import { Form, Text, Select } from 'react-form';
 import { withRouter } from 'react-router-dom';
@@ -10,7 +9,7 @@ import Modal from 'Components/Modal';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import tableColumnDescriptor from 'Containers/Integrations/tableColumnDescriptor';
-import AuthService from 'services/AuthService';
+import * as AuthService from 'services/AuthService';
 import { saveIntegration, testIntegration, deleteIntegration } from 'services/IntegrationsService';
 
 import { clusterTypeLabels } from 'messages/common';
@@ -429,8 +428,7 @@ class IntegrationModal extends Component {
             .isRequired,
         type: PropTypes.string.isRequired,
         onRequestClose: PropTypes.func.isRequired,
-        onIntegrationsUpdate: PropTypes.func.isRequired,
-        history: ReactRouterPropTypes.history.isRequired
+        onIntegrationsUpdate: PropTypes.func.isRequired
     };
 
     constructor(props) {
@@ -465,30 +463,18 @@ class IntegrationModal extends Component {
     onSubmit = formData => {
         this.update('CLEAR_MESSAGES');
         const data = this.addDefaultFormValues(formData);
-        if (this.props.source === 'authProviders') {
-            AuthService.saveAuthProviders(data)
-                .then(() => {
-                    if (!this.props.integrations.length) {
-                        AuthService.logout();
-                        this.props.history.go('/login');
-                        return;
-                    }
-                    this.props.onIntegrationsUpdate(this.props.source);
-                    this.update('EDIT_INTEGRATION', { editIntegration: null });
-                })
-                .catch(error => {
-                    this.update('ERROR_MESSAGE', { errorMessage: error.response.data.error });
-                });
-        } else {
-            saveIntegration(this.props.source, data)
-                .then(() => {
-                    this.props.onIntegrationsUpdate(this.props.source);
-                    this.update('EDIT_INTEGRATION', { editIntegration: null });
-                })
-                .catch(error => {
-                    this.update('ERROR_MESSAGE', { errorMessage: error.response.data.error });
-                });
-        }
+        const promise =
+            this.props.source === 'authProviders'
+                ? AuthService.saveAuthProvider(data)
+                : saveIntegration(this.props.source, data);
+        promise
+            .then(() => {
+                this.props.onIntegrationsUpdate(this.props.source);
+                this.update('EDIT_INTEGRATION', { editIntegration: null });
+            })
+            .catch(error => {
+                this.update('ERROR_MESSAGE', { errorMessage: error.response.data.error });
+            });
     };
 
     addDefaultFormValues = formData => {
@@ -509,7 +495,7 @@ class IntegrationModal extends Component {
         this.integrationTable.getSelectedRows().forEach(data => {
             const promise =
                 this.props.source === 'authProviders'
-                    ? AuthService.deleteAuthProviders(data)
+                    ? AuthService.deleteAuthProvider(data.id)
                     : deleteIntegration(this.props.source, data);
             promises.push(promise);
         });

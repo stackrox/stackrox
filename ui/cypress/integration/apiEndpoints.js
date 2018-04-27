@@ -27,3 +27,8 @@ export const search = {
 export const images = {
     list: '/v1/images*'
 };
+
+export const auth = {
+    authProviders: 'v1/authProviders*',
+    authStatus: '/v1/auth/status'
+};

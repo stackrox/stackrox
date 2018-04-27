@@ -17,6 +17,7 @@ describe('Summary Sagas Test', () => {
         }));
         expect(value).toEqual(fork(pollSummaryCounts));
     });
+
     it('Should not call pollSummaryCounts a second time when location changes from /main/violations to /main/images', () => {
         const gen = watchLocation();
         let { value } = gen.next();
@@ -36,6 +37,7 @@ describe('Summary Sagas Test', () => {
         }));
         expect(value).not.toEqual(fork(pollSummaryCounts));
     });
+
     it('Should call pollSummaryCounts with a success every 5 seconds', () => {
         const gen = pollSummaryCounts();
         let { value } = gen.next();
@@ -58,7 +60,8 @@ describe('Summary Sagas Test', () => {
         ({ value } = gen.next());
         expect(value).toEqual(call(delay, 5000));
     });
-    it('Should call pollSummaryCounts with a fail and not poll every 5 seconds', () => {
+
+    it('Should call pollSummaryCounts with a fail', () => {
         const error = new Error('POLL_ERROR');
         const gen = pollSummaryCounts();
         let { value } = gen.next();
@@ -75,7 +78,5 @@ describe('Summary Sagas Test', () => {
                 channel: null
             }
         });
-        ({ value } = gen.next());
-        expect(value).not.toEqual(call(delay, 5000));
     });
 });

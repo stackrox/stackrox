@@ -1,37 +1,140 @@
-import { all, take, call, fork, put } from 'redux-saga/effects';
+import { all, take, call, fork, put, takeLatest, takeEvery, select } from 'redux-saga/effects';
+import { delay } from 'redux-saga';
+import { push } from 'react-router-redux';
+import queryString from 'query-string';
 
-import AuthService from 'services/AuthService';
-import { actions, types } from 'reducers/auth';
+import * as AuthService from 'services/AuthService';
+import { selectors } from 'reducers';
+import { actions, types, AUTH_STATUS } from 'reducers/auth';
 import { types as locationActionTypes } from 'reducers/routes';
 
+const loginPath = '/login';
 const integrationsPath = '/main/integrations';
+const openIdConnectResponsePath = '/auth/response/oidc';
+
+function* evaluateUserAccess() {
+    const authProviders = yield select(selectors.getAuthProviders);
+    const authStatus = yield select(selectors.getAuthStatus);
+    const tokenExists = yield call(AuthService.isTokenPresent);
+
+    if (authProviders.length === 0) {
+        if (authStatus !== AUTH_STATUS.ANONYMOUS_ACCESS) {
+            // whatever auth status was before, no auth providers mean anonymous access is allowed
+            yield call(AuthService.clearAccessToken);
+            yield put(actions.grantAnonymousAccess());
+        }
+        return;
+    }
+
+    if (!tokenExists && authStatus !== AUTH_STATUS.LOGGED_OUT) {
+        // it can happen if user had ANONYMOUS access before, but now auth provider was added to the system
+        yield put(actions.logout());
+        return;
+    }
+
+    if (tokenExists && authStatus !== AUTH_STATUS.LOGGED_IN) {
+        // typical situation if token was stored before and then auth providers were loaded
+        try {
+            yield call(AuthService.fetchAuthStatus);
+            // call didn't fail, meaning that the token is fine (should we check the returned result?)
+            yield put(actions.login());
+        } catch (e) {
+            // call failed, assuming that the token is invalid
+            yield put(actions.logout());
+        }
+    }
+}
+
+function* watchNewAuthProviders() {
+    yield takeLatest(types.FETCH_AUTH_PROVIDERS.SUCCESS, evaluateUserAccess);
+}
 
 export function* getAuthProviders() {
     try {
-        const result = yield call(AuthService.updateAuthProviders);
+        const result = yield call(AuthService.fetchAuthProviders);
         yield put(actions.fetchAuthProviders.success(result.response));
     } catch (error) {
         yield put(actions.fetchAuthProviders.failure(error));
     }
 }
 
-export function* watchIntegrationsLocation() {
+function* watchLocation() {
     while (true) {
         const action = yield take(locationActionTypes.LOCATION_CHANGE);
         const { payload: location } = action;
-        if (location && location.pathname && location.pathname.startsWith(integrationsPath)) {
+        if (!location.pathname) return;
+
+        if (location.pathname.startsWith(integrationsPath)) {
             yield fork(getAuthProviders);
+        } else if (location.pathname.startsWith(loginPath)) {
+            const { state } = location;
+            if (state && state.from && !state.from.startsWith(loginPath)) {
+                // we were redirected to login page from another page
+                yield call(AuthService.storeRequestedLocation, state.from);
+            }
         }
     }
 }
 
-function* watchFetchRequest() {
-    while (true) {
-        yield take(types.FETCH_AUTH_PROVIDERS.REQUEST);
+function* watchAuthProvidersFetchRequest() {
+    yield takeLatest(types.FETCH_AUTH_PROVIDERS.REQUEST, getAuthProviders);
+}
+
+function* logout() {
+    yield call(AuthService.clearAccessToken);
+}
+
+function* watchLogout() {
+    yield takeLatest(types.LOGOUT, logout);
+}
+
+function* handleOidcResponse(location) {
+    const accessToken = queryString.parse(location.hash).access_token;
+    yield call(AuthService.storeAccessToken, accessToken);
+
+    // TODO-ivan: seems like react-router-redux doesn't like pushing an action synchronously while handling LOCATION_CHANGE,
+    // the bug is that it doesn't produce LOCATION_CHANGE event for this next push. Waiting here should be ok for an user.
+    yield delay(10);
+
+    const storedLocation = yield call(AuthService.getAndClearRequestedLocation);
+    yield put(push(storedLocation || '/')); // try to restore requested path
+    yield call(getAuthProviders);
+}
+
+function* handleHttpError(action) {
+    const { error } = action;
+    if (error.isAccessDenied()) {
+        // TODO-ivan: for now leave it to individual calls to deal with (e.g. popup message etc.)
+    } else {
+        // access was revoked or auth mode was enabled, need to update auth providers
         yield fork(getAuthProviders);
+        yield put(actions.logout());
     }
 }
 
+function* watchAuthHttpErrors() {
+    yield takeEvery(types.AUTH_HTTP_ERROR, handleHttpError);
+}
+
 export default function* auth() {
-    yield all([fork(watchIntegrationsLocation), fork(watchFetchRequest)]);
+    // start by monitoring auth providers to re-evaluate user access
+    yield fork(watchNewAuthProviders);
+
+    // take the first location change, i.e. the location where user landed first time
+    const action = yield take(locationActionTypes.LOCATION_CHANGE);
+    const { payload: location } = action;
+    if (location.pathname && location.pathname.startsWith(openIdConnectResponsePath)) {
+        // if it was a redirect after authentication, handle it properly
+        yield fork(handleOidcResponse, location);
+    } else {
+        // otherwise we still need to fetch auth providers to check if user can access the app
+        yield fork(getAuthProviders);
+    }
+
+    yield all([
+        fork(watchLocation),
+        fork(watchAuthProvidersFetchRequest),
+        fork(watchLogout),
+        fork(watchAuthHttpErrors)
+    ]);
 }

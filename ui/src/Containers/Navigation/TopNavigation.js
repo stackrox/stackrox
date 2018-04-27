@@ -1,15 +1,14 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
-
 import * as Icon from 'react-feather';
+
 import Logo from 'Components/icons/logo';
-import AuthService from 'services/AuthService';
+import { actions as authActions, AUTH_STATUS } from 'reducers/auth';
 
 const titleMap = {
     numAlerts: 'Violation',
@@ -20,7 +19,8 @@ const titleMap = {
 
 class TopNavigation extends Component {
     static propTypes = {
-        history: ReactRouterPropTypes.history.isRequired,
+        authStatus: PropTypes.oneOf(Object.values(AUTH_STATUS)).isRequired,
+        logout: PropTypes.func.isRequired,
         toggleGlobalSearchView: PropTypes.func.isRequired,
         summaryCounts: PropTypes.shape({
             numAlerts: PropTypes.string,
@@ -35,14 +35,10 @@ class TopNavigation extends Component {
     };
 
     renderLogoutButton = () => {
-        if (!AuthService.isLoggedIn()) return '';
-        const logout = () => () => {
-            AuthService.logout();
-            this.props.history.push('/login');
-        };
+        if (this.props.authStatus !== AUTH_STATUS.LOGGED_IN) return null;
         return (
             <button
-                onClick={logout()}
+                onClick={this.props.logout}
                 className="flex flex-end border-l border-r border-base-300 px-4 no-underline py-3 text-base-600 hover:bg-base-200 items-center cursor-pointer"
             >
                 <Icon.LogOut className="h-4 w-4 mr-3" />
@@ -101,11 +97,13 @@ class TopNavigation extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
-    summaryCounts: selectors.getSummaryCounts
+    summaryCounts: selectors.getSummaryCounts,
+    authStatus: selectors.getAuthStatus
 });
 
 const mapDispatchToProps = dispatch => ({
-    toggleGlobalSearchView: () => dispatch(globalSearchActions.toggleGlobalSearchView())
+    toggleGlobalSearchView: () => dispatch(globalSearchActions.toggleGlobalSearchView()),
+    logout: () => dispatch(authActions.logout())
 });
 
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(TopNavigation));

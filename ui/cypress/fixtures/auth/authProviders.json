@@ -1,0 +1,17 @@
+{
+    "authProviders": [
+        {
+            "id": "authProvider-id1",
+            "name": "auth-provider-name",
+            "type": "auth0",
+            "enabled": true,
+            "config": {
+                "audience": "audience",
+                "client_id": "client_id",
+                "domain": "domain"
+            },
+            "loginUrl": "/auth/response/oidc#access_token=my-token",
+            "uiEndpoint": "does not matter"
+        }
+    ]
+}

@@ -1,89 +1,69 @@
 import React, { Component } from 'react';
-import { withRouter, Link } from 'react-router-dom';
+import PropTypes from 'prop-types';
+import { Link } from 'react-router-dom';
+import { connect } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
 import Select from 'react-select';
 import { ClipLoader } from 'react-spinners';
 
-import AuthService from 'services/AuthService';
-
 import logoPrevent from 'images/logo-prevent.svg';
 
-const reducer = (action, prevState, nextState) => {
-    switch (action) {
-        case 'UPDATE_AUTH_PROVIDERS':
-            return { authProviders: nextState.authProviders };
-        case 'UPDATE_SELECTED_AUTH_PROVIDER':
-            return { selectedAuthProvider: nextState.selectedAuthProvider };
-        default:
-            return prevState;
-    }
-};
+import { AUTH_STATUS } from 'reducers/auth';
+import { selectors } from 'reducers';
 
 class LoginPage extends Component {
+    static propTypes = {
+        authStatus: PropTypes.oneOf(Object.values(AUTH_STATUS)).isRequired,
+        authProviders: PropTypes.arrayOf(PropTypes.object).isRequired
+    };
+
     constructor(props) {
         super(props);
-
+        const { authProviders } = props;
         this.state = {
-            selectedAuthProvider: '',
-            authProviders: null
+            selectedAuthProviderId: authProviders.length > 0 ? authProviders[0].id : null
         };
     }
 
-    componentDidMount() {
-        this.getAuthProviders();
+    componentWillReceiveProps(nextProps) {
+        // pre-select first auth provider
+        if (!this.state.selectedAuthProviderId && nextProps.authProviders.length > 0) {
+            this.setState({ selectedAuthProviderId: nextProps.authProviders[0].id });
+        }
     }
 
-    getAuthProviders = () => {
-        AuthService.updateAuthProviders()
-            .then(() => {
-                const authProviders = AuthService.getAuthProviders();
-                this.update('UPDATE_AUTH_PROVIDERS', { authProviders });
-                if (authProviders.length)
-                    this.update('UPDATE_SELECTED_AUTH_PROVIDER', {
-                        selectedAuthProvider: authProviders[0].id
-                    });
-            })
-            .catch(error => {
-                console.error(error);
-            });
-    };
+    onAuthProviderSelected = id => this.setState({ selectedAuthProviderId: id });
 
     login = () => {
-        const { selectedAuthProvider } = this.state;
-        const authProvider = this.state.authProviders.find(obj => obj.id === selectedAuthProvider);
-        if (authProvider) window.location = authProvider.loginUrl;
-    };
-
-    update = (action, nextState) => {
-        this.setState(prevState => reducer(action, prevState, nextState));
+        const { selectedAuthProviderId } = this.state;
+        const authProvider = this.props.authProviders.find(ap => ap.id === selectedAuthProviderId);
+        window.location = authProvider.loginUrl; // redirect to external URL, so no react-router
     };
 
     renderAuthProviders = () => {
+        const { authStatus, authProviders } = this.props;
         if (
-            !this.state.authProviders ||
-            AuthService.getAccessToken() ||
-            !AuthService.getAuthProviders().length
+            authStatus === AUTH_STATUS.LOADING ||
+            authStatus === AUTH_STATUS.LOGGED_IN ||
+            authStatus === AUTH_STATUS.ANONYMOUS_ACCESS
         ) {
-            return '';
+            return null;
         }
-        const { selectedAuthProvider } = this.state;
-        const options = this.state.authProviders
+        const options = authProviders
             .filter(obj => obj.enabled)
             .map(authProvider => ({ label: authProvider.name, value: authProvider.id }));
-        const value = selectedAuthProvider || selectedAuthProvider.value;
-        const handleChange = () => option => {
-            this.update('UPDATE_SELECTED_AUTH_PROVIDER', { selectedAuthProvider: option });
-        };
+        const { selectedAuthProviderId } = this.state;
         return (
             <div className="py-8 items-center w-2/3">
                 <div className="text-primary-600 pb-3">Select an auth provider</div>
                 <Select
                     className="text-base-600 font-400 w-full"
-                    value={value}
+                    value={selectedAuthProviderId}
                     name="select-auth-providers"
                     simpleValue
                     clearable={false}
-                    disabled={this.state.authProviders.length === 1}
-                    onChange={handleChange()}
+                    disabled={authProviders.length === 1}
+                    onChange={this.onAuthProviderSelected}
                     options={options}
                 />
             </div>
@@ -91,7 +71,8 @@ class LoginPage extends Component {
     };
 
     renderLoginButton = () => {
-        if (!this.state.authProviders) {
+        const { authStatus } = this.props;
+        if (authStatus === AUTH_STATUS.LOADING) {
             return (
                 <div className="border-t border-base-300 p-6 w-full text-center">
                     <button className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-500 text-white uppercase text-center tracking-wide">
@@ -100,7 +81,7 @@ class LoginPage extends Component {
                 </div>
             );
         }
-        if (AuthService.getAccessToken() || !AuthService.getAuthProviders().length) {
+        if (authStatus === AUTH_STATUS.LOGGED_IN || authStatus === AUTH_STATUS.ANONYMOUS_ACCESS) {
             return (
                 <div className="border-t border-base-300 p-8 w-full text-center">
                     <Link
@@ -140,4 +121,9 @@ class LoginPage extends Component {
     }
 }
 
-export default withRouter(LoginPage);
+const mapStateToProps = createStructuredSelector({
+    authProviders: selectors.getAuthProviders,
+    authStatus: selectors.getAuthStatus
+});
+
+export default connect(mapStateToProps)(LoginPage);
