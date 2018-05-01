@@ -40,7 +40,10 @@ PROTOC_GEN_GO := $(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go
 
 $(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go:
 	@echo "+ $@"
-	@go get -u github.com/golang/protobuf/protoc-gen-go
+	# This pins protoc-gen-go to v1.0.0, which is the same version of golang/protobuf that we vendor.
+	@go get -u -d github.com/golang/protobuf/protoc-gen-go
+	@git --git-dir="$(GOPATH)/src/github.com/golang/protobuf/.git" --work-tree="$(GOPATH)/src/github.com/golang/protobuf" checkout -q v1.0.0
+	@go install github.com/golang/protobuf/protoc-gen-go
 
 $(PROTOC_FILE):
 	@echo "+ $@"
@@ -113,8 +116,8 @@ PROTOC_GEN_GOVALIDATORS := $(GOPATH)/src/github.com/mwitkow/go-proto-validators
 
 $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway:
 	@echo "+ $@"
-	@go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/...
-	@go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/...
+	@go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/...
+	@go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/...
 
 $(GOPATH)/src/github.com/mwitkow/go-proto-validators:
 	@echo "+ $@"
