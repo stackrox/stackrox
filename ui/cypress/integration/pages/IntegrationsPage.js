@@ -10,7 +10,8 @@ export const selectors = {
     buttons: {
         addCluster: 'button:contains("Add")',
         next: 'button:contains("Next")',
-        download: 'button:contains("Download")'
+        download: 'button:contains("Download")',
+        delete: 'button:contains("Delete")'
     },
     form: {
         cluster: {
@@ -19,5 +20,7 @@ export const selectors = {
         }
     },
     readOnlyView: '.overflow-auto > .p-4 > div',
-    plugins: '.mb-6:first button'
+    plugins: '.mb-6:first button',
+    dialog: '.dialog',
+    checkboxes: 'input'
 };

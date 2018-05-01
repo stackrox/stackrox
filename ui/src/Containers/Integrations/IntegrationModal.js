@@ -5,6 +5,7 @@ import { withRouter } from 'react-router-dom';
 import MultiSelect from 'react-select';
 import * as Icon from 'react-feather';
 
+import Dialog from 'Components/Dialog';
 import Modal from 'Components/Modal';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
@@ -437,7 +438,8 @@ class IntegrationModal extends Component {
         this.state = {
             editIntegration: null,
             errorMessage: '',
-            successMessage: ''
+            successMessage: '',
+            showConfirmationDialog: false
         };
     }
 
@@ -501,8 +503,17 @@ class IntegrationModal extends Component {
         });
         Promise.all(promises).then(() => {
             this.integrationTable.clearSelectedRows();
+            this.hideConfirmationDialog();
             this.props.onIntegrationsUpdate(this.props.source);
         });
+    };
+
+    showConfirmationDialog = () => {
+        this.setState({ showConfirmationDialog: true });
+    };
+
+    hideConfirmationDialog = () => {
+        this.setState({ showConfirmationDialog: false });
     };
 
     update = (action, nextState) => {
@@ -519,16 +530,14 @@ class IntegrationModal extends Component {
                       {
                           renderIcon: () => <Icon.Trash2 className="h-4 w-4" />,
                           text: 'Delete',
-                          className:
-                              'flex py-1 px-2 rounded-sm text-danger-600 hover:text-white hover:bg-danger-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-danger-400',
-                          onClick: this.deleteIntegration,
+                          className: 'btn-danger',
+                          onClick: this.showConfirmationDialog,
                           disabled: this.state.editIntegration !== null
                       },
                       {
                           renderIcon: () => <Icon.Plus className="h-4 w-4" />,
-                          text: 'Add Integration',
-                          className:
-                              'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                          text: 'Add',
+                          className: 'btn-success',
                           onClick: this.addIntegration,
                           disabled: this.state.editIntegration !== null
                       }
@@ -660,17 +669,15 @@ class IntegrationModal extends Component {
             {
                 renderIcon: () => <Icon.X className="h-4 w-4" />,
                 text: 'Cancel',
-                className:
-                    'flex py-1 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
+                className: 'btn-primary',
                 onClick: () => {
                     this.update('EDIT_INTEGRATION', { editIntegration: null });
                 }
             },
             {
                 renderIcon: () => <Icon.Save className="h-4 w-4" />,
-                text: `${this.state.editIntegration.name ? 'Save' : 'Create'} Integration`,
-                className:
-                    'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                text: `${this.state.editIntegration.name ? 'Save' : 'Create'}`,
+                className: 'btn-success',
                 onClick: () => {
                     this.formApi.submitForm();
                 }
@@ -679,9 +686,8 @@ class IntegrationModal extends Component {
         if (this.props.source !== 'authProviders') {
             const testButton = {
                 renderIcon: () => <Icon.Check className="h-4 w-4" />,
-                text: `Test Integration`,
-                className:
-                    'flex py-1 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
+                text: 'Test',
+                className: 'btn-primary',
                 onClick: () => {
                     this.onTest();
                 }
@@ -715,6 +721,20 @@ class IntegrationModal extends Component {
         );
     };
 
+    renderConfirmationDialog = () => {
+        const numSelectedRows = this.integrationTable
+            ? this.integrationTable.getSelectedRows().length
+            : 0;
+        return (
+            <Dialog
+                isOpen={this.state.showConfirmationDialog}
+                text={`Are you sure you want to delete ${numSelectedRows} integration(s)?`}
+                onConfirm={this.deleteIntegration}
+                onCancel={this.hideConfirmationDialog}
+            />
+        );
+    };
+
     render() {
         const { source, type } = this.props;
         return (
@@ -741,6 +761,7 @@ class IntegrationModal extends Component {
                     {this.renderTable()}
                     {this.renderForm()}
                 </div>
+                {this.renderConfirmationDialog()}
             </Modal>
         );
     }

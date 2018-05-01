@@ -6,6 +6,7 @@ import axios from 'axios';
 import * as Icon from 'react-feather';
 import isEqual from 'lodash/isEqual';
 import find from 'lodash/find';
+import Dialog from 'Components/Dialog';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import PolicyCreationForm from 'Containers/Policies/PolicyCreationForm';
@@ -59,7 +60,8 @@ class PoliciesPage extends Component {
             editingPolicy: null,
             addingPolicy: false,
             policyDryRun: null,
-            showPreviewPolicy: false
+            showPreviewPolicy: false,
+            showConfirmationDialog: false
         };
     }
 
@@ -193,6 +195,7 @@ class PoliciesPage extends Component {
         });
         Promise.all(promises).then(() => {
             this.policyTable.clearSelectedRows();
+            this.hideConfirmationDialog();
             this.getPolicies();
         });
     };
@@ -277,22 +280,28 @@ class PoliciesPage extends Component {
         return this.cancelEditingPolicy();
     };
 
+    showConfirmationDialog = () => {
+        this.setState({ showConfirmationDialog: true });
+    };
+
+    hideConfirmationDialog = () => {
+        this.setState({ showConfirmationDialog: false });
+    };
+
     renderTablePanel = () => {
         const header = `${this.state.policies.length} Policies`;
         const buttons = [
             {
                 renderIcon: () => <Icon.Trash2 className="h-4 w-4" />,
                 text: 'Delete Policies',
-                className:
-                    'flex py-1 px-2 rounded-sm text-danger-600 hover:text-white hover:bg-danger-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-danger-400',
-                onClick: this.deletePolicies,
+                className: 'btn-danger',
+                onClick: this.showConfirmationDialog,
                 disabled: this.state.editingPolicy !== null
             },
             {
                 renderIcon: () => <Icon.FileText className="h-4 w-4" />,
                 text: 'Reassess Policies',
-                className:
-                    'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                className: 'btn-success',
                 onClick: this.reassessPolicies,
                 disabled: this.state.editingPolicy !== null,
                 tooltip: 'Manually enrich external data'
@@ -300,8 +309,7 @@ class PoliciesPage extends Component {
             {
                 renderIcon: () => <Icon.Plus className="h-4 w-4" />,
                 text: 'Add',
-                className:
-                    'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                className: 'btn-success',
                 onClick: this.addPolicy,
                 disabled: this.state.editingPolicy !== null
             }
@@ -383,8 +391,7 @@ class PoliciesPage extends Component {
             {
                 renderIcon: () => <Icon.Edit className="h-4 w-4" />,
                 text: 'Edit',
-                className:
-                    'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                className: 'btn-success',
                 onClick: () => {
                     const { selectedPolicy } = this.state;
                     this.editPolicy(selectedPolicy);
@@ -411,8 +418,7 @@ class PoliciesPage extends Component {
             {
                 renderIcon: () => <Icon.ArrowRight className="h-4 w-4" />,
                 text: 'Next',
-                className:
-                    'flex py-1 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
+                className: 'btn-primary',
                 onClick: () => {
                     this.getPolicyDryRun(this.formApi.values);
                 }
@@ -450,8 +456,7 @@ class PoliciesPage extends Component {
             {
                 renderIcon: () => <Icon.ArrowLeft className="h-4 w-4" />,
                 text: 'Previous',
-                className:
-                    'flex py-1 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
+                className: 'btn-primary',
                 onClick: () => {
                     this.setState({ showPreviewPolicy: false });
                 }
@@ -459,8 +464,7 @@ class PoliciesPage extends Component {
             {
                 renderIcon: () => <Icon.Save className="h-4 w-4" />,
                 text: 'Save',
-                className:
-                    'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
+                className: 'btn-success',
                 onClick: () => {
                     this.setState({ showPreviewPolicy: false });
                     this.onSubmit(this.state.editingPolicy);
@@ -471,6 +475,20 @@ class PoliciesPage extends Component {
             <Panel header={header} buttons={buttons} onClose={this.closePreviewPanel} width="w-2/3">
                 <PoliciesPreview dryrun={this.state.policyDryRun} />
             </Panel>
+        );
+    };
+
+    renderConfirmationDialog = () => {
+        const numSelectedRows = this.policyTable ? this.policyTable.getSelectedRows().length : 0;
+        return (
+            <Dialog
+                isOpen={this.state.showConfirmationDialog}
+                text={`Are you sure you want to delete ${numSelectedRows} ${
+                    numSelectedRows === 1 ? 'policy' : 'policies'
+                }?`}
+                onConfirm={this.deletePolicies}
+                onCancel={this.hideConfirmationDialog}
+            />
         );
     };
 
@@ -490,6 +508,7 @@ class PoliciesPage extends Component {
                         {this.renderPreviewPanel()}
                     </div>
                 </div>
+                {this.renderConfirmationDialog()}
             </section>
         );
     }

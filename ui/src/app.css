@@ -224,6 +224,10 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
     @apply .text-primary-500;
 }
 
+.min-w-24 {
+    min-width: 6rem !important;
+}
+
 .min-w-64 {
     min-width: 16rem !important;
 }
@@ -349,6 +353,42 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
 
 .Select-menu-outer .Select-create-option-placeholder {
     display: none;
+}
+
+.btn {
+    @apply .flex .py-2 .px-2 .rounded-sm .font-400 .uppercase .text-center .text-sm .items-center .ml-2 .min-w-24 .justify-center .bg-white .border
+}
+
+.btn-success {
+    @apply .btn .text-success-500 .border-success-400
+}
+
+.btn-success:hover {
+    @apply .bg-success-400 .text-white
+}
+
+.btn-danger {
+    @apply .btn .text-danger-500 .border-danger-400
+}
+
+.btn-danger:hover {
+    @apply .bg-danger-400 .text-white
+}
+
+.btn-primary {
+    @apply .btn .text-primary-500 .border-primary-400
+}
+
+.btn-primary:hover {
+    @apply .bg-primary-400 .text-white
+}
+
+.btn-base {
+    @apply .btn .text-base-500 .border-base-400
+}
+
+.btn-base:hover {
+    @apply .bg-base-400 .text-white
 }
 
 @tailwind utilities;

@@ -41,6 +41,14 @@ describe('Cluster Creation Flow', () => {
         cy.wait('@clusters');
     });
 
+    it('Should show a confirmation dialog when trying to delete clusters', () => {
+        cy.get(selectors.dockerSwarmTile).click();
+        cy.get(selectors.dialog).should('not.exist');
+        cy.get(selectors.checkboxes).check();
+        cy.get(selectors.buttons.delete).click();
+        cy.get(selectors.dialog);
+    });
+
     it('Should show the remote cluster when clicking the Docker Swarm tile', () => {
         cy.get(selectors.dockerSwarmTile).click();
 

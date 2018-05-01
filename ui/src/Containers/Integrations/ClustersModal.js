@@ -6,6 +6,7 @@ import { createSelector, createStructuredSelector } from 'reselect';
 import { actions as clusterActions } from 'reducers/clusters';
 import { selectors } from 'reducers';
 
+import Dialog from 'Components/Dialog';
 import Modal from 'Components/Modal';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
@@ -33,7 +34,8 @@ class ClustersModal extends Component {
         super(props);
 
         this.state = {
-            disableDeleteButton: true
+            disableDeleteButton: true,
+            showConfirmationDialog: false
         };
     }
 
@@ -63,12 +65,21 @@ class ClustersModal extends Component {
         });
         Promise.all(promises).then(() => {
             this.clusterTable.clearSelectedRows();
+            this.hideConfirmationDialog();
             this.props.fetchClusters();
         });
     };
 
     addCluster = () => {
         this.props.editCluster(undefined);
+    };
+
+    showConfirmationDialog = () => {
+        this.setState({ showConfirmationDialog: true });
+    };
+
+    hideConfirmationDialog = () => {
+        this.setState({ showConfirmationDialog: false });
     };
 
     renderTable = () => {
@@ -79,7 +90,7 @@ class ClustersModal extends Component {
                 text: 'Delete',
                 className:
                     'flex py-2 px-2 rounded-sm font-400 uppercase text-center text-sm items-center ml-2 w-24 justify-center text-danger-500 hover:text-white bg-white hover:bg-danger-400 border border-danger-400',
-                onClick: this.deleteCluster,
+                onClick: this.showConfirmationDialog,
                 disabled: this.state.disableDeleteButton
             },
             {
@@ -121,6 +132,18 @@ class ClustersModal extends Component {
         );
     };
 
+    renderConfirmationDialog = () => {
+        const numSelectedRows = this.clusterTable ? this.clusterTable.getSelectedRows().length : 0;
+        return (
+            <Dialog
+                isOpen={this.state.showConfirmationDialog}
+                text={`Are you sure you want to delete ${numSelectedRows} cluster(s)?`}
+                onConfirm={this.deleteCluster}
+                onCancel={this.hideConfirmationDialog}
+            />
+        );
+    };
+
     render() {
         const { selectedClusterType, onRequestClose } = this.props;
         return (
@@ -133,6 +156,7 @@ class ClustersModal extends Component {
                     {this.renderTable()}
                     {this.renderClusterCreationPanel()}
                 </div>
+                {this.renderConfirmationDialog()}
             </Modal>
         );
     }
