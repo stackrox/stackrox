@@ -29,8 +29,31 @@ describe('Dashboard page', () => {
             cy.wrap(aHigh).should('have.text', '0High');
             cy.wrap(aCritical).should('have.text', '0Critical');
         });
+    });
 
-        // check clicking Low tile
+    it('should not navigate to the violations page when clicking the critical severity risk tile', () => {
+        cy
+            .get(selectors.sectionHeaders.environmentRisk)
+            .next('div')
+            .children()
+            .as('riskTiles');
+
+        cy
+            .get('@riskTiles')
+            .first()
+            .click();
+        cy.location().should(location => {
+            expect(location.pathname).to.eq(dashboardUrl);
+        });
+    });
+
+    it('should navigate to violations page when clicking the low severity tile', () => {
+        cy
+            .get(selectors.sectionHeaders.environmentRisk)
+            .next('div')
+            .children()
+            .as('riskTiles');
+
         cy
             .get('@riskTiles')
             .last()

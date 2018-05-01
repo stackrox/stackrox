@@ -4,7 +4,8 @@
             "group": "Swarm Cluster 1",
             "counts": [
                 { "severity": "LOW_SEVERITY", "count": "2" },
-                { "severity": "MEDIUM_SEVERITY", "count": "1" }
+                { "severity": "MEDIUM_SEVERITY", "count": "1" },
+                { "severity": "CRITICAL_SEVERITY", "count": "0" }
             ]
         }
     ]
