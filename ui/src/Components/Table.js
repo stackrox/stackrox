@@ -164,13 +164,16 @@ class Table extends Component {
 
     renderHeaders() {
         const tableHeaders = this.props.columns.map(column => {
-            const className = `p-3 text-primary-500 border-b border-base-300 hover:text-primary-600 cursor-pointer truncate ${
+            const className = `p-3 text-primary-500 border-b border-base-300 hover:text-primary-600 cursor-pointer truncate select-none relative ${
                 column.align === 'right' ? 'text-right' : 'text-left'
             } ${column.className}`;
             const key = column.label;
             return (
                 <th className={className} key={key} onClick={this.sortRows(column.key)}>
-                    {column.label + this.getDirection(this.state.sortDir[column.key])}
+                    {column.label}
+                    <span className="absolute">
+                        {this.getDirection(this.state.sortDir[column.key])}
+                    </span>
                 </th>
             );
         });
