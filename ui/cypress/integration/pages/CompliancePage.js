@@ -7,5 +7,9 @@ export const selectors = {
     scanNowButton: 'button.rounded-sm.bg-success-500',
     checkRows: 'div.overflow-y-scroll table tbody tr',
     passColumns: 'div.overflow-y-scroll table tbody tr td:nth-child(3)',
-    hostColumns: '.border-t > .flex-col tbody tr'
+    hostColumns: '.border-t > .flex-col tbody tr',
+    select: {
+        day: 'select:first',
+        time: 'select:last'
+    }
 };

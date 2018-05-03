@@ -65,7 +65,7 @@ export function* updateBenchmarkSchedule() {
                 yield call(service.deleteSchedule, schedule.id);
             }
         } else if (schedule.active) {
-            yield call(service.updateSchedule, schedule.benchmarkId, schedule);
+            yield call(service.updateSchedule, schedule.id, schedule);
         } else {
             schedule.active = true;
             yield call(service.createSchedule, schedule);

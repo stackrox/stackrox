@@ -43,34 +43,21 @@ describe('Compliance page', () => {
 
     it('should allow to set schedule', () => {
         cy.visit(complianceUrl);
-        cy
-            .get(selectors.scanNowButton)
-            .prev()
-            .find('select')
-            .as('scheduleControls');
-        cy
-            .get('@scheduleControls')
-            .first()
-            .as('daySelect');
-        cy
-            .get('@scheduleControls')
-            .last()
-            .as('timeSelect');
 
-        cy.get('@daySelect').select('Friday');
-        cy.get('@timeSelect').select('05:00 PM');
+        cy.get('select:first').select('Friday', { force: true });
+        cy.get('select:last').select('05:00 PM', { force: true });
         cy.reload(); // retrieve data from the server
-        cy.get('@daySelect').should('have.value', 'Friday');
-        cy.get('@timeSelect').should('have.value', '05:00 PM');
+        cy.get('select:first').should('have.value', 'Friday');
+        cy.get('select:last').should('have.value', '05:00 PM');
 
         // update schedule
-        cy.get('@timeSelect').select('06:00 PM');
+        cy.get('select:last').select('06:00 PM', { force: true });
         cy.reload();
-        cy.get('@timeSelect').should('have.value', '06:00 PM');
+        cy.get('select:last').should('have.value', '06:00 PM');
 
         // remove schedule
-        cy.get('@daySelect').select('None');
-        cy.get('@timeSelect').should('have.value', null);
+        cy.get('select:first').select('None', { force: true });
+        cy.get('select:last').should('have.value', null);
     });
 
     it('should show scan results', () => {

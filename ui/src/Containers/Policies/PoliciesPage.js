@@ -110,8 +110,11 @@ class PoliciesPage extends Component {
         filteredPolicy = this.policyCreationForm.postFormatWhitelistField(filteredPolicy);
         filteredPolicy = this.policyCreationForm.postFormatScopeField(filteredPolicy);
         this.update('EDIT_POLICY', { policy: filteredPolicy });
+        const data = Object.assign({}, filteredPolicy);
+        // set disabled to false for dryrun so that we can see what deployments the policy will affect
+        data.disabled = false;
         axios
-            .post('/v1/policies/dryrun', filteredPolicy)
+            .post('/v1/policies/dryrun', data)
             .then(response => {
                 if (!response.data) return;
                 const policyDryRun = response.data;
@@ -473,7 +476,10 @@ class PoliciesPage extends Component {
         ];
         return (
             <Panel header={header} buttons={buttons} onClose={this.closePreviewPanel} width="w-2/3">
-                <PoliciesPreview dryrun={this.state.policyDryRun} />
+                <PoliciesPreview
+                    dryrun={this.state.policyDryRun}
+                    policyDisabled={this.state.editingPolicy.disabled || false}
+                />
             </Panel>
         );
     };

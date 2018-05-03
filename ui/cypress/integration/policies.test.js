@@ -1,4 +1,4 @@
-import { selectors } from './pages/PoliciesPage';
+import { selectors, text } from './pages/PoliciesPage';
 
 describe('Policies page', () => {
     beforeEach(() => {
@@ -39,5 +39,13 @@ describe('Policies page', () => {
 
     it('should open the panel to create a new policy', () => {
         cy.get(selectors.addPolicyButton).click();
+    });
+
+    it('should show a specific message when editing a policy with "enabled" value as "no"', () => {
+        cy.get(selectors.policies.latest).click();
+        cy.get(selectors.editPolicyButton).click();
+        cy.get(selectors.form.disabled).select('No');
+        cy.get(selectors.nextButton).click();
+        cy.get(selectors.policyPreview.message).should('have.text', text.policyPreview.message);
     });
 });

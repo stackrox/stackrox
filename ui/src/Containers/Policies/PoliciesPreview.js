@@ -18,12 +18,19 @@ class PoliciesPreview extends Component {
                     deployment: PropTypes.string.isRequired
                 })
             ).isRequired
-        }).isRequired
+        }).isRequired,
+        policyDisabled: PropTypes.bool.isRequired
     };
 
     renderWarnMessage = () => {
-        const message =
-            'The policy settings you have selected will generate the following alerts on your system, Please verify that this seems accurate before saving.';
+        let message = '';
+        if (this.props.policyDisabled) {
+            message =
+                'This policy is not currently enabled. If enabled, the policy would generate violations for the following deployments on your system.';
+        } else {
+            message =
+                'The policy settings you have selected will generate violations for the following deployments on your system, Please verify that this seems accurate before saving.';
+        }
         return <Message message={message} type="warn" />;
     };
 
@@ -41,9 +48,9 @@ class PoliciesPreview extends Component {
         );
     };
 
-    renderAlertPreview = () => {
+    renderViolationsPreview = () => {
         if (!this.props.dryrun.alerts) return '';
-        const title = 'Alert Preview';
+        const title = 'Violations Preview';
         const columns = [
             {
                 key: 'deployment',
@@ -57,7 +64,6 @@ class PoliciesPreview extends Component {
             }
         ];
         const rows = this.props.dryrun.alerts;
-
         return (
             <div className="px-3 pb-4">
                 <div className="alert-preview bg-white shadow text-primary-600 tracking-wide">
@@ -67,16 +73,22 @@ class PoliciesPreview extends Component {
                         triggerWhenOpen={this.renderPanel(title, 'down')}
                         transitionTime={200}
                     >
-                        <Table columns={columns} rows={rows} />
+                        {rows.length ? (
+                            <Table columns={columns} rows={rows} />
+                        ) : (
+                            <div className="p-3">
+                                No violations will be generated for this policy at this time.
+                            </div>
+                        )}
                     </Collapsible>
                 </div>
             </div>
         );
     };
 
-    renderWhiteListExclusions = () => {
+    renderWhitelistedDeployments = () => {
         if (!this.props.dryrun.excluded) return '';
-        const title = 'Whitelist Exclusions';
+        const title = 'Whitelisted Deployments';
         const columns = [
             {
                 key: 'deployment',
@@ -95,7 +107,13 @@ class PoliciesPreview extends Component {
                         triggerWhenOpen={this.renderPanel(title, 'down')}
                         transitionTime={200}
                     >
-                        <Table columns={columns} rows={rows} />
+                        {rows.length ? (
+                            <Table columns={columns} rows={rows} />
+                        ) : (
+                            <div className="p-3">
+                                No deployments will be whitelisted at this time.
+                            </div>
+                        )}
                     </Collapsible>
                 </div>
             </div>
@@ -106,8 +124,8 @@ class PoliciesPreview extends Component {
         return (
             <div className="bg-base-100">
                 {this.renderWarnMessage()}
-                {this.renderAlertPreview()}
-                {this.renderWhiteListExclusions()}
+                {this.renderViolationsPreview()}
+                {this.renderWhitelistedDeployments()}
             </div>
         );
     }
