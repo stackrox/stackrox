@@ -5,7 +5,10 @@ import FormFieldRemoveButton from 'Components/FormFieldRemoveButton';
 
 const FormField = props => (
     <div className="mb-4 transition">
-        <div className="py-2 text-primary-500">{props.label}</div>
+        <div className="py-2 text-primary-500">
+            <span>{props.label}</span>
+            {props.required ? <span className="required text-danger-500 ml-2">*</span> : ''}
+        </div>
         <div className="flex">
             {props.children}
             {props.onRemove && (
@@ -24,7 +27,8 @@ FormField.propTypes = {
     children: PropTypes.node.isRequired,
     onRemove: PropTypes.func,
     label: PropTypes.string.isRequired,
-    value: PropTypes.string
+    value: PropTypes.string,
+    required: PropTypes.bool.isRequired
 };
 
 export default FormField;

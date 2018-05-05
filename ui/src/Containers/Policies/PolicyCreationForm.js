@@ -59,7 +59,8 @@ class PolicyCreationForm extends Component {
                         label: 'Name',
                         value: 'name',
                         type: 'text',
-                        required: true
+                        required: true,
+                        default: true
                     },
                     {
                         label: 'Severity',
@@ -72,28 +73,32 @@ class PolicyCreationForm extends Component {
                             { label: 'Low', value: 'LOW_SEVERITY' }
                         ],
                         placeholder: 'Select a severity level',
-                        required: true
+                        required: true,
+                        default: true
                     },
                     {
                         label: 'Description',
                         value: 'description',
                         type: 'textarea',
                         placeholder: 'What does this policy do?',
-                        required: true
+                        required: false,
+                        default: true
                     },
                     {
                         label: 'Rationale',
                         value: 'rationale',
                         type: 'textarea',
                         placeholder: 'Why does this policy exist?',
-                        required: true
+                        required: false,
+                        default: true
                     },
                     {
                         label: 'Remediation',
                         value: 'remediation',
                         type: 'textarea',
                         placeholder: 'What can an operator do to resolve any violations?',
-                        required: true
+                        required: false,
+                        default: true
                     },
                     {
                         label: 'Enable',
@@ -101,14 +106,16 @@ class PolicyCreationForm extends Component {
                         exclude: false,
                         type: 'select',
                         options: [{ label: 'Yes', value: false }, { label: 'No', value: true }],
-                        required: true
+                        required: false,
+                        default: true
                     },
                     {
                         label: 'Categories',
                         value: 'categories',
                         type: 'multiselect-creatable',
                         options: [],
-                        required: true
+                        required: true,
+                        default: true
                     },
                     {
                         label: 'Enforcement Action',
@@ -122,28 +129,32 @@ class PolicyCreationForm extends Component {
                                 value: 'UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT'
                             }
                         ],
-                        required: true
+                        required: false,
+                        default: true
                     },
                     {
                         label: 'Notifications',
                         value: 'notifiers',
                         type: 'multiselect',
                         options: [],
-                        required: true
+                        required: false,
+                        default: true
                     },
                     {
                         label: 'Restrict to Clusters',
                         value: 'scope',
                         type: 'multiselect',
                         options: [],
-                        required: true
+                        required: false,
+                        default: true
                     },
                     {
                         label: 'Deployments Whitelist',
                         value: 'deployments',
                         type: 'multiselect',
                         options: [],
-                        required: true
+                        required: false,
+                        default: true
                     }
                 ],
                 imagePolicy: [
@@ -152,41 +163,47 @@ class PolicyCreationForm extends Component {
                         value: 'imagePolicy.imageName.registry',
                         type: 'text',
                         placeholder: 'docker.io',
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Image Namespace',
                         value: 'imagePolicy.imageName.namespace',
                         type: 'text',
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Image Repository',
                         value: 'imagePolicy.imageName.repo',
                         type: 'text',
                         placeholder: 'nginx',
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Image Tag',
                         value: 'imagePolicy.imageName.tag',
                         type: 'text',
                         placeholder: 'latest',
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Days since Image created',
                         value: 'imagePolicy.imageAgeDays',
                         type: 'number',
                         placeholder: '1 Day Ago',
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Days since Image scanned',
                         value: 'imagePolicy.scanAgeDays',
                         type: 'number',
                         placeholder: '1 Day Ago',
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Dockerfile Line',
@@ -218,13 +235,16 @@ class PolicyCreationForm extends Component {
                                 placeholder: '.*example.*'
                             }
                         ],
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Image is NOT Scanned',
                         value: 'imagePolicy.scanExists',
                         type: 'select',
-                        options: [{ label: 'True', value: true }]
+                        options: [{ label: 'True', value: true }],
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'CVSS',
@@ -265,14 +285,16 @@ class PolicyCreationForm extends Component {
                                 min: 0
                             }
                         ],
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'CVE',
                         value: 'imagePolicy.cve',
                         type: 'text',
                         placeholder: 'CVE-2017-11882',
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Component',
@@ -290,7 +312,8 @@ class PolicyCreationForm extends Component {
                                 placeholder: '^v1.2.0$'
                             }
                         ],
-                        required: false
+                        required: false,
+                        default: false
                     }
                 ],
                 configurationPolicy: [
@@ -310,7 +333,8 @@ class PolicyCreationForm extends Component {
                                 placeholder: 'Value'
                             }
                         ],
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Required Label',
@@ -328,7 +352,8 @@ class PolicyCreationForm extends Component {
                                 placeholder: '.*'
                             }
                         ],
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Required Annotation',
@@ -346,64 +371,74 @@ class PolicyCreationForm extends Component {
                                 placeholder: '.*'
                             }
                         ],
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Command',
                         value: 'configurationPolicy.command',
                         type: 'text',
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Arguments',
                         value: 'configurationPolicy.args',
                         type: 'text',
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Directory',
                         value: 'configurationPolicy.directory',
                         type: 'text',
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'User',
                         value: 'configurationPolicy.user',
                         type: 'text',
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Volume Name',
                         value: 'configurationPolicy.volumePolicy.name',
                         type: 'text',
                         placeholder: '/var/run/docker.sock',
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Volume Path',
                         value: 'configurationPolicy.volumePolicy.path',
                         type: 'text',
                         placeholder: '^/var/run/docker.sock$',
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Volume Type',
                         value: 'configurationPolicy.volumePolicy.type',
                         type: 'text',
                         placeholder: 'bind, secret',
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Protocol',
                         value: 'configurationPolicy.portPolicy.protocol',
                         type: 'text',
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Port',
                         value: 'configurationPolicy.portPolicy.port',
                         type: 'number',
-                        required: false
+                        required: false,
+                        default: false
                     }
                 ],
                 privilegePolicy: [
@@ -412,21 +447,24 @@ class PolicyCreationForm extends Component {
                         value: 'privilegePolicy.privileged',
                         type: 'select',
                         options: [{ label: 'Yes', value: true }, { label: 'No', value: false }],
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Drop Capabilities',
                         value: 'privilegePolicy.dropCapabilities',
                         type: 'multiselect',
                         options: [],
-                        required: false
+                        required: false,
+                        default: false
                     },
                     {
                         label: 'Add Capabilities',
                         value: 'privilegePolicy.addCapabilities',
                         type: 'multiselect',
                         options: [],
-                        required: false
+                        required: false,
+                        default: false
                     }
                 ]
             }
@@ -707,7 +745,7 @@ class PolicyCreationForm extends Component {
         const formFields = Object.keys(flattenObject(this.props.formApi.values));
         const filteredFields = possibleFields.filter(obj => {
             if (obj.type === 'group') return formFields.find(o => o.includes(obj.value));
-            return formFields.indexOf(obj.value) !== -1 || obj.required === true;
+            return formFields.indexOf(obj.value) !== -1 || obj.default;
         });
         if (!filteredFields.length) {
             return <div className="p-3 text-base-500 font-500">No Fields Added</div>;
@@ -716,12 +754,13 @@ class PolicyCreationForm extends Component {
             <div className="h-full p-3">
                 {filteredFields.map(field => {
                     const value = flattenObject(this.props.formApi.values)[field.value];
-                    const removeField = !field.required ? this.removeField : null;
+                    const removeField = !field.default ? this.removeField : null;
                     return (
                         <FormField
                             key={field.value}
                             label={field.label}
                             value={field.value}
+                            required={field.required}
                             onRemove={removeField}
                         >
                             {this.renderFieldInput(field, value)}
@@ -738,7 +777,7 @@ class PolicyCreationForm extends Component {
         }));
         const availableFields = differenceBy(possibleFields, formFields, 'value').filter(obj => {
             if (obj.type === 'group') return !formFields.find(o => o.value.includes(obj.value));
-            return !obj.required;
+            return !obj.default;
         });
         const placeholder = 'Add a field';
         if (!availableFields.length) return '';

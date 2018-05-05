@@ -7,6 +7,25 @@ describe('Policies page', () => {
         cy.get(selectors.navLink).click();
     });
 
+    it('should show the required "*" next to the required fields', () => {
+        cy.get(selectors.addPolicyButton).click();
+        cy
+            .get(selectors.form.required)
+            .eq(0)
+            .prev()
+            .should('have.text', 'Name');
+        cy
+            .get(selectors.form.required)
+            .eq(1)
+            .prev()
+            .should('have.text', 'Severity');
+        cy
+            .get(selectors.form.required)
+            .eq(2)
+            .prev()
+            .should('have.text', 'Categories');
+    });
+
     it('should have selected item in nav bar', () => {
         cy.get(selectors.configure).should('have.class', 'bg-primary-600');
     });

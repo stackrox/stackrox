@@ -13,7 +13,8 @@ export const selectors = {
         latest: 'tbody > tr:contains("latest")'
     },
     form: {
-        disabled: 'form #disabled'
+        disabled: 'form #disabled',
+        required: 'form .required'
     },
     policyPreview: {
         message: '.warn-message',
