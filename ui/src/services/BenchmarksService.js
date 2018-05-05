@@ -21,7 +21,7 @@ export async function fetchBenchmarks() {
 /**
  * Fetches scans metadata for the given benchmark.
  *
- * @param {!string} benchmarkId id of the benchmark
+ * @param {!string} benchmark benchmark
  * @returns {Promise<Object, Error>} fulfilled with scan metadata (type defined in .proto)
  */
 export function fetchScanMetadata(benchmark) {
@@ -58,7 +58,7 @@ export async function fetchLastScan(benchmarkId) {
 /**
  * Fetches scan schedule for the given benchmark.
  *
- * @param {!string} benchmarkId id of the benchmark
+ * @param {!Object} benchmark
  * @returns {Promise<?Object, Error>} fulfilled with schedule data or `null` if schedule isn't configured
  */
 export async function fetchSchedule(benchmark) {
@@ -80,7 +80,7 @@ export async function fetchSchedule(benchmark) {
 /**
  * Fetches scan schedules for the given benchmark.
  *
- * @param {!string} benchmarkId id of the benchmark
+ * @param {!Object} benchmark benchmark
  * @returns {Promise<?Object, Error>} fulfilled with schedule data or `null` if schedule isn't configured
  */
 export function fetchSchedules(benchmark) {
@@ -160,30 +160,6 @@ export function triggerScan(benchmark) {
 }
 
 /**
- * Fetches a map of benchmarks and last scans for them
- *
- * @returns {Promise<Object, Error>} fulfilled in case of success or rejected with an error
- */
-export async function fetchLastScansByBenchmark() {
-    const allBenchmarks = await fetchBenchmarks();
-    const lastScans = await Promise.all(
-        allBenchmarks.map(b => {
-            const promise = fetchLastScan({ benchmarkId: b.id });
-            promise.then(obj => {
-                if (obj) return Object.assign(obj, { benchmarkName: b.name });
-                return obj;
-            });
-            return promise;
-        })
-    );
-    const benchmarks = lastScans.reduce(
-        (result, scan) => (scan ? { ...result, [scan.benchmarkName]: [scan.data] } : result),
-        {}
-    );
-    return { response: benchmarks };
-}
-
-/**
  * Fetches a map of benchmarks for each cluster
  *
  * @returns {Promise<Object, Error>} fulfilled in case of success or rejected with an error
@@ -191,5 +167,5 @@ export async function fetchLastScansByBenchmark() {
 export async function fetchBenchmarksByCluster() {
     const benchmarksSummaryUrl = `${baseUrl}/summary/scans`;
 
-    return axios.get(benchmarksSummaryUrl).then(response => response.data.clusters, error => error);
+    return axios.get(benchmarksSummaryUrl).then(response => response.data.clusters);
 }

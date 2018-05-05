@@ -297,15 +297,13 @@ class BenchmarksPage extends Component {
     }
 }
 
-const getBenchmarkScanResults = createSelector([selectors.getLastScan], data => {
-    const lastScan = data.response;
+const getBenchmarkScanResults = createSelector([selectors.getLastScan], lastScan => {
     if (!lastScan || !lastScan.metadata) return [];
     const { checks } = lastScan.data;
     return checks;
 });
 
-const getLastScannedTime = createSelector([selectors.getLastScan], data => {
-    const lastScan = data.response;
+const getLastScannedTime = createSelector([selectors.getLastScan], lastScan => {
     if (!lastScan || !lastScan.metadata) return '';
     const scanTime = dateFns.format(lastScan.metadata.time, 'MM/DD/YYYY h:mm:ss A');
     return scanTime || '';

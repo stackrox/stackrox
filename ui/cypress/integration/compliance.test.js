@@ -9,12 +9,25 @@ describe('Compliance page', () => {
         cy.fixture('benchmarks/configs.json').as('configs');
         cy.route('GET', api.benchmarks.configs, '@configs').as('benchConfigs');
         cy.fixture('benchmarks/dockerBenchScans.json').as('dockerBenchScans');
-        cy.route('GET', api.benchmarks.cisDockerScans, '@dockerBenchScans').as('scanMetadata');
+        cy.route('GET', api.benchmarks.benchmarkScans, '@dockerBenchScans').as('scanMetadata');
         cy.fixture('benchmarks/dockerBenchScan1.json').as('dockerBenchScan1');
         cy.route('GET', api.benchmarks.scans, '@dockerBenchScan1').as('benchScan');
 
         cy.visit(complianceUrl);
         cy.wait(['@clusters', '@benchConfigs', '@scanMetadata', '@benchScan']);
+    };
+
+    const loadCompliancePage = () => {
+        cy.visit(complianceUrl);
+        cy.server();
+        cy.route(api.clusters.list).as('clusters');
+        cy.route(api.benchmarks.configs).as('benchConfigs');
+        cy.route(api.benchmarks.benchmarkScans).as('benchScans');
+        cy.visit(complianceUrl);
+
+        // wait for all the data to come back, otherwise re-rendering can lead to detached elements,
+        // see https://docs.cypress.io/guides/references/error-messages.html#cy-failed-because-the-element-you-are-chaining-off-of-has-become-detached-or-removed-from-the-dom
+        cy.wait(['@clusters', '@benchConfigs', '@benchScans']);
     };
 
     it('should have selected item in nav bar', () => {
@@ -32,7 +45,7 @@ describe('Compliance page', () => {
     it('should allow scanning initiation', () => {
         cy.server();
         cy.route('POST', api.benchmarks.triggers, {}).as('trigger');
-        cy.visit(complianceUrl);
+        loadCompliancePage();
         cy.get(selectors.scanNowButton).as('scanNow');
 
         cy.get('@scanNow').should('contain', 'Scan now');
@@ -42,7 +55,7 @@ describe('Compliance page', () => {
     });
 
     it('should allow to set schedule', () => {
-        cy.visit(complianceUrl);
+        loadCompliancePage();
 
         cy.get('select:first').select('Friday', { force: true });
         cy.get('select:last').select('05:00 PM', { force: true });

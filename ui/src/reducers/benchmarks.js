@@ -64,7 +64,6 @@ export const actions = {
     fetchBenchmarkSchedule: createFetchingActions(types.FETCH_BENCHMARK_SCHEDULE),
     fetchBenchmarks: createFetchingActions(types.FETCH_BENCHMARKS),
     fetchBenchmarksByCluster: createFetchingActions(types.FETCH_BENCHMARKS_BY_CLUSTER),
-    fetchLastScansByBenchmark: createFetchingActions(types.FETCH_LAST_SCANS_BY_BENCHMARK),
     fetchLastScan: createFetchingActions(types.FETCH_LAST_SCAN)
 };
 
@@ -86,17 +85,10 @@ const benchmarksByCluster = (state = [], action) => {
     return state;
 };
 
-const updatedBenchmarks = (state = {}, action) => {
-    if (action.type === types.FETCH_LAST_SCANS_BY_BENCHMARK.SUCCESS) {
-        const { response } = action;
-        return isEqual(response, state) ? state : response;
-    }
-    return state;
-};
-
 const lastScan = (state = {}, action) => {
     if (action.type === types.FETCH_LAST_SCAN.SUCCESS) {
-        return isEqual(action, state) ? state : action;
+        const { response } = action;
+        return isEqual(response, state) ? state : response;
     }
     return state;
 };
@@ -149,7 +141,6 @@ const benchmarkSchedule = (state = initialBenchmarkSchedule, action) => {
 const reducer = combineReducers({
     benchmarks,
     benchmarksByCluster,
-    updatedBenchmarks,
     lastScan,
     benchmarkSchedule,
     selectedBenchmarkScanResult,
@@ -162,7 +153,6 @@ export default reducer;
 
 const getBenchmarks = state => state.benchmarks;
 const getBenchmarksByCluster = state => state.benchmarksByCluster;
-const getUpdatedBenchmarks = state => state.updatedBenchmarks;
 const getLastScan = state => state.lastScan;
 const getBenchmarkSchedule = state => state.benchmarkSchedule;
 const getSelectedBenchmarkScanResult = state => state.selectedBenchmarkScanResult;
@@ -171,7 +161,6 @@ const getSelectedBenchmarkHostResult = state => state.selectedBenchmarkHostResul
 export const selectors = {
     getBenchmarks,
     getBenchmarksByCluster,
-    getUpdatedBenchmarks,
     getLastScan,
     getBenchmarkSchedule,
     getSelectedBenchmarkScanResult,

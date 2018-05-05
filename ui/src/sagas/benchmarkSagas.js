@@ -2,23 +2,12 @@ import { delay } from 'redux-saga';
 import { all, take, takeLatest, call, fork, put, select, race } from 'redux-saga/effects';
 
 import * as service from 'services/BenchmarksService';
-import { fetchClusters } from 'services/ClustersService';
 import { selectors } from 'reducers';
 import { actions as benchmarkActions, types } from 'reducers/benchmarks';
-import { actions as clusterActions } from 'reducers/clusters';
 import { types as locationActionTypes } from 'reducers/routes';
 
 const dashboardPath = '/main/dashboard';
 const compliancePath = '/main/compliance';
-
-export function* getClusters() {
-    try {
-        const result = yield call(fetchClusters);
-        yield put(clusterActions.fetchClusters.success(result.response));
-    } catch (error) {
-        yield put(clusterActions.fetchClusters.failure(error));
-    }
-}
 
 export function* getBenchmarks() {
     try {
@@ -29,30 +18,12 @@ export function* getBenchmarks() {
     }
 }
 
-export function* getUpdatedBenchmarks() {
-    try {
-        const result = yield call(service.fetchLastScansByBenchmark);
-        yield put(benchmarkActions.fetchLastScansByBenchmark.success(result.response));
-    } catch (error) {
-        yield put(benchmarkActions.fetchLastScansByBenchmark.failure(error));
-    }
-}
-
 export function* getBenchmarksByCluster() {
     try {
         const result = yield call(service.fetchBenchmarksByCluster);
         yield put(benchmarkActions.fetchBenchmarksByCluster.success(result));
     } catch (error) {
         yield put(benchmarkActions.fetchBenchmarksByCluster.failure(error));
-    }
-}
-
-export function* getLastScannedBenchmark(action) {
-    try {
-        const result = yield call(service.fetchLastScan, action.benchmarkName);
-        yield put(benchmarkActions.fetchLastScan.success(result));
-    } catch (error) {
-        yield put(benchmarkActions.fetchLastScan.failure(error));
     }
 }
 
@@ -97,10 +68,10 @@ function* pollBenchmarkScanResults({ params: benchmark }) {
         try {
             const result = yield call(service.fetchLastScan, benchmark);
             yield put(benchmarkActions.fetchLastScan.success(result));
-            yield call(delay, 5000); // poll every 5 sec
         } catch (error) {
             yield put(benchmarkActions.fetchLastScan.failure(error));
         }
+        yield call(delay, 5000); // poll every 5 sec
     }
 }
 
@@ -136,7 +107,6 @@ export function* watchLocation() {
         }
         if (location && location.pathname && location.pathname.startsWith(compliancePath)) {
             yield fork(getBenchmarks);
-            yield fork(getClusters);
         }
     }
 }

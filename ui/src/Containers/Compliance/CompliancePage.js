@@ -40,7 +40,11 @@ CompliancePage.propTypes = {
     cluster: PropTypes.shape({
         name: PropTypes.string.isRequired,
         id: PropTypes.string.isRequired
-    }).isRequired
+    })
+};
+
+CompliancePage.defaultProps = {
+    cluster: null // cluster data is being loaded
 };
 
 const getClusterId = (state, props) => props.match.params.clusterId;

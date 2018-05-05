@@ -1,4 +1,4 @@
-import { take, call, fork, put, all } from 'redux-saga/effects';
+import { take, takeLatest, call, fork, put, all } from 'redux-saga/effects';
 
 import { fetchClusters } from 'services/ClustersService';
 import { actions, types } from 'reducers/clusters';
@@ -6,6 +6,7 @@ import { types as locationActionTypes } from 'reducers/routes';
 
 const integrationsPath = '/main/integrations';
 const dashboardPath = '/main/dashboard';
+const compliancePath = '/main/compliance';
 
 export function* getClusters() {
     try {
@@ -22,8 +23,11 @@ export function* watchLocation() {
         const { payload: location } = action;
 
         if (
-            (location && location.pathname && location.pathname.startsWith(integrationsPath)) ||
-            location.pathname.startsWith(dashboardPath)
+            location &&
+            location.pathname &&
+            (location.pathname.startsWith(integrationsPath) ||
+                location.pathname.startsWith(dashboardPath) ||
+                location.pathname.startsWith(compliancePath))
         ) {
             yield fork(getClusters);
         }
@@ -31,16 +35,7 @@ export function* watchLocation() {
 }
 
 export function* watchFetchRequest() {
-    while (true) {
-        const action = yield take([types.FETCH_CLUSTERS.REQUEST]);
-        switch (action.type) {
-            case types.FETCH_CLUSTERS.REQUEST:
-                yield fork(getClusters);
-                break;
-            default:
-                throw new Error(`Unknown action type ${action.type}`);
-        }
-    }
+    yield takeLatest(types.FETCH_CLUSTERS.REQUEST, getClusters);
 }
 
 export default function* clusters() {

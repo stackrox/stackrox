@@ -7,7 +7,7 @@ import { severityLabels } from 'messages/common';
 class SeverityTile extends Component {
     static propTypes = {
         severity: PropTypes.string.isRequired,
-        count: PropTypes.string.isRequired,
+        count: PropTypes.number.isRequired,
         index: PropTypes.number.isRequired,
         color: PropTypes.string.isRequired
     };
