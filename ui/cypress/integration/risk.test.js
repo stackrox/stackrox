@@ -12,10 +12,17 @@ describe('Risk page', () => {
 
     it('should open the panel to view risk indicators', () => {
         cy.get('table tr.cursor-pointer:first').click();
-        cy
-            .get(selectors.panelTabs)
-            .first()
-            .should('have.class', 'tab-active');
+        cy.get(selectors.panelTabs.riskIndicators).should('have.class', 'tab-active');
         cy.get(selectors.cancelButton).click();
+    });
+
+    it('should navigate from Risk Page to Images Page', () => {
+        cy.get('table tr.cursor-pointer:first').click();
+        cy.get(selectors.panelTabs.deploymentDetails).click();
+        cy
+            .get(selectors.imageLink)
+            .first()
+            .click();
+        cy.url().should('contain', '/main/images');
     });
 });
