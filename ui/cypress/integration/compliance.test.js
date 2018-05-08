@@ -2,6 +2,14 @@ import { selectors, url as complianceUrl } from './pages/CompliancePage';
 import * as api from './apiEndpoints';
 
 describe('Compliance page', () => {
+    const setupMultipleClustersFixture = () => {
+        cy.server();
+        cy.fixture('clusters/couple.json').as('coupleCluster');
+        cy.route('GET', api.clusters.list, '@coupleCluster').as('clusters');
+        cy.visit('/');
+        cy.get(selectors.compliance).click();
+        cy.wait(['@clusters']);
+    };
     const setupSingleClusterFixtures = () => {
         cy.server();
         cy.fixture('clusters/single.json').as('singleCluster');
@@ -30,16 +38,24 @@ describe('Compliance page', () => {
         cy.wait(['@clusters', '@benchConfigs', '@benchScans']);
     };
 
-    it('should have selected item in nav bar', () => {
-        cy.visit('/');
-        cy.get(selectors.compliance).click();
-        cy.get(selectors.navLink).click();
+    it('should have selected first cluster in Compliance nav bar', () => {
+        setupMultipleClustersFixture();
+        cy.get(selectors.firstNavLink).click();
         cy.get(selectors.compliance).should('have.class', 'bg-primary-600');
+        cy.url().should('contain', '/main/compliance/swarmCluster1');
         // first tab selected by default
         cy
             .get(selectors.benchmarkTabs)
             .first()
             .should('have.class', 'tab-active');
+        cy.get(selectors.benchmarkTabs).should('contain', 'CIS Swarm v1.1.0 Benchmark');
+    });
+
+    it('should have selected second cluster in Compliance nav bar', () => {
+        setupMultipleClustersFixture();
+        cy.get(selectors.secondNavLink).click();
+        cy.url().should('contain', '/main/compliance/kubeCluster1');
+        cy.get(selectors.benchmarkTabs).should('contain', 'CIS Kubernetes v1.2.0 Benchmark');
     });
 
     it('should allow scanning initiation', () => {
