@@ -10,8 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const serviceAccount = `account`
-
 func TestConvertDeployment(t *testing.T) {
 	t.Parallel()
 
@@ -74,7 +72,6 @@ func TestConvertDeployment(t *testing.T) {
 									},
 								},
 							},
-							ServiceAccountName: serviceAccount,
 							ImagePullSecrets: []v1.LocalObjectReference{
 								{
 									Name: `stackrox`,
@@ -102,7 +99,6 @@ func TestConvertDeployment(t *testing.T) {
 	}
 
 	convert := &converter{
-		serviceAccount:   serviceAccount,
 		imagePullSecrets: []string{`stackrox`, `pullSecret`},
 	}
 
@@ -176,7 +172,6 @@ func TestCovertDaemonSet(t *testing.T) {
 									},
 								},
 							},
-							ServiceAccountName: serviceAccount,
 							ImagePullSecrets: []v1.LocalObjectReference{
 								{
 									Name: `stackrox`,
@@ -212,7 +207,6 @@ func TestCovertDaemonSet(t *testing.T) {
 	}
 
 	convert := &converter{
-		serviceAccount:   serviceAccount,
 		imagePullSecrets: []string{`stackrox`, `pullSecret`},
 	}
 

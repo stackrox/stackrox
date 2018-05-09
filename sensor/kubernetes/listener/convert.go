@@ -1,15 +1,21 @@
 package listener
 
 import (
+	"encoding/json"
 	"reflect"
 
 	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
+	"bitbucket.org/stack-rox/apollo/pkg/kubernetes"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/volumes"
 	"github.com/golang/protobuf/ptypes"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	openshiftEncodedDeploymentConfigAnnotation = `openshift.io/encoded-deployment-config`
 )
 
 type wrap struct {
@@ -29,11 +35,33 @@ func newDeploymentEventFromResource(obj interface{}, action pkgV1.ResourceAction
 		return
 	}
 
+	// This only applies to OpenShift
+	if encDeploymentConfig, ok := meta.Annotations[openshiftEncodedDeploymentConfigAnnotation]; ok {
+		newMeta, newResourceType, err := extractDeploymentConfig(encDeploymentConfig)
+		if err != nil {
+			logger.Error(err)
+		} else {
+			meta = newMeta
+			resourceType = newResourceType
+		}
+	}
+
 	wrap := newWrap(meta, action, resourceType)
 
 	wrap.populateFields(objValue, action, lister)
 
 	return wrap.DeploymentEvent
+}
+
+func extractDeploymentConfig(encodedDeploymentConfig string) (metav1.ObjectMeta, string, error) {
+	// Anonymous struct that only contains the fields we are interested in (note: json.Unmarshal silently ignores
+	// fields that are not in the destination object).
+	dc := struct {
+		Kind     string            `json:"kind"`
+		MetaData metav1.ObjectMeta `json:"metadata"`
+	}{}
+	err := json.Unmarshal([]byte(encodedDeploymentConfig), &dc)
+	return dc.MetaData, dc.Kind, err
 }
 
 func newWrap(meta metav1.ObjectMeta, action pkgV1.ResourceAction, resourceType string) wrap {
@@ -67,7 +95,18 @@ func (w *wrap) populateFields(objValue reflect.Value, action pkgV1.ResourceActio
 
 	w.populateReplicas(spec)
 
-	podTemplate, ok := spec.FieldByName("Template").Interface().(v1.PodTemplateSpec)
+	var podTemplate v1.PodTemplateSpec
+	var ok bool
+	if w.GetDeployment().GetType() == kubernetes.DeploymentConfig {
+		var podTemplatePtr *v1.PodTemplateSpec
+		// DeploymentConfig has a pointer to the PodTemplateSpec
+		podTemplatePtr, ok = spec.FieldByName("Template").Interface().(*v1.PodTemplateSpec)
+		if ok {
+			podTemplate = *podTemplatePtr
+		}
+	} else {
+		podTemplate, ok = spec.FieldByName("Template").Interface().(v1.PodTemplateSpec)
+	}
 	if !ok {
 		logger.Errorf("Spec obj %+v does not have a Template field", spec)
 		return

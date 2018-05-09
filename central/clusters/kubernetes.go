@@ -13,7 +13,7 @@ func init() {
 
 func newKubernetes() deployer {
 	return &basicDeployer{
-		deploy:    template.Must(template.New("kubernetes").Parse(k8sDeploy)),
+		deploy:    template.Must(template.New("kubernetes").Parse(k8sDeploy + k8sSeparator + k8sServiceAccount)),
 		cmd:       template.Must(template.New("kubernetes").Parse(k8sCmd)),
 		addFields: addKubernetesFields,
 	}
@@ -27,9 +27,19 @@ func addKubernetesFields(c Wrap, fields map[string]string) {
 	fields["Namespace"] = namespace
 	fields["ImagePullSecretEnv"] = env.ImagePullSecrets.EnvVar()
 	fields["ImagePullSecret"] = c.ImagePullSecret
+
+	benchmarkServiceAccount := "benchmark"
+	if clusterKube, ok := c.OrchestratorParams.(*v1.Cluster_Kubernetes); ok {
+		benchmarkServiceAccount = clusterKube.Kubernetes.BenchmarkServiceAccount
+	}
+	fields["BenchmarkServiceAccountEnv"] = env.BenchmarkServiceAccount.EnvVar()
+	fields["BenchmarkServiceAccount"] = benchmarkServiceAccount
 }
 
 var (
+	k8sSeparator = `---
+`
+
 	k8sDeploy = `apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -67,6 +77,8 @@ spec:
           value: sensor.{{.Namespace}}:443
         - name: {{.ImagePullSecretEnv}}
           value: {{.ImagePullSecret}}
+        - name: {{.BenchmarkServiceAccountEnv}}
+          value: {{.BenchmarkServiceAccount}}
         - name: ROX_PREVENT_NAMESPACE
           valueFrom:
             fieldRef:
@@ -111,12 +123,15 @@ spec:
   selector:
     app: sensor
   type: ClusterIP
----
+`
+
+	k8sServiceAccount = `
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: sensor
-  namespace: {{.Namespace}}`
+  namespace: {{.Namespace}}
+`
 
 	k8sCmd = commandPrefix + `kubectl create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/central-ca.pem"
 kubectl create -f "$DIR/sensor-deploy.yaml"

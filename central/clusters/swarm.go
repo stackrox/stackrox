@@ -21,7 +21,11 @@ func newSwarm() deployer {
 }
 
 func addSwarmFields(c Wrap, fields map[string]string) {
-	fields["DisableSwarmTLS"] = strconv.FormatBool(c.DisableSwarmTls)
+	var disableSwarmTLS bool
+	if clusterSwarm, ok := c.OrchestratorParams.(*v1.Cluster_Swarm); ok {
+		disableSwarmTLS = clusterSwarm.Swarm.DisableSwarmTls
+	}
+	fields["DisableSwarmTLS"] = strconv.FormatBool(disableSwarmTLS)
 }
 
 var (

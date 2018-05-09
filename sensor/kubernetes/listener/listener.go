@@ -6,6 +6,7 @@ import (
 	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	openshift "github.com/openshift/client-go/apps/clientset/versioned"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,9 +23,13 @@ var (
 	logger = logging.LoggerForModule()
 )
 
-type kubernetesListener struct {
-	client *kubernetes.Clientset
+type clientSet struct {
+	k8s       *kubernetes.Clientset
+	openshift *openshift.Clientset
+}
 
+type kubernetesListener struct {
+	clients *clientSet
 	eventsC chan *listeners.DeploymentEventWrap
 
 	podWL       *podWatchLister
@@ -58,14 +63,16 @@ func (k *kubernetesListener) Start() {
 }
 
 func (k *kubernetesListener) createResourceWatchers() {
-	k.podWL = newPodWatchLister(k.client.CoreV1().RESTClient())
+	k.podWL = newPodWatchLister(k.clients.k8s.CoreV1().RESTClient())
 
 	k.resourcesWL = []resourceWatchLister{
-		newReplicaSetWatchLister(k.client.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL),
-		newDaemonSetWatchLister(k.client.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL),
-		newReplicationControllerWatchLister(k.client.CoreV1().RESTClient(), k.eventsC, k.podWL),
-		newDeploymentWatcher(k.client.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL),
-		newStatefulSetWatchLister(k.client.AppsV1beta1().RESTClient(), k.eventsC, k.podWL),
+		newReplicaSetWatchLister(k.clients.k8s.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL),
+		newDaemonSetWatchLister(k.clients.k8s.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL),
+		newReplicationControllerWatchLister(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, k.podWL),
+		newDeploymentWatcher(k.clients.k8s.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL),
+		newStatefulSetWatchLister(k.clients.k8s.AppsV1beta1().RESTClient(), k.eventsC, k.podWL),
+
+		newDeploymentConfigWatcher(k.clients.openshift.AppsV1().RESTClient(), k.eventsC, k.podWL),
 	}
 
 	var deploymentGetters []func() (objs []interface{}, deploymentEvents []*pkgV1.DeploymentEvent)
@@ -73,25 +80,29 @@ func (k *kubernetesListener) createResourceWatchers() {
 		deploymentGetters = append(deploymentGetters, wl.listObjects)
 	}
 
-	k.serviceWL = newServiceWatchLister(k.client.CoreV1().RESTClient(), k.eventsC, deploymentGetters...)
+	k.serviceWL = newServiceWatchLister(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, deploymentGetters...)
 }
 
 func (k *kubernetesListener) setupClient() {
-	c, err := getClient()
-	if err != nil {
-		logger.Fatalf("Unable to get kubernetes client")
-	}
-
-	k.client = c
-}
-
-func getClient() (client *kubernetes.Clientset, err error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		return
+		logger.Fatalf("Unable to get cluster config: %s", err)
 	}
 
-	return kubernetes.NewForConfig(config)
+	k8s, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		logger.Fatalf("Unable to get k8s client: %s", err)
+	}
+
+	oc, err := openshift.NewForConfig(config)
+	if err != nil {
+		logger.Warn("Could not generate openshift client: %s", err)
+	}
+
+	k.clients = &clientSet{
+		k8s:       k8s,
+		openshift: oc,
+	}
 }
 
 func (k *kubernetesListener) Stop() {

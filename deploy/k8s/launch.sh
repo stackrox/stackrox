@@ -67,10 +67,13 @@ function launch_sensor {
     CLUSTER_API_ENDPOINT="$4"
     K8S_DIR="$5"
     NAMESPACE="$6"
+    BENCHMARK_SERVICE_ACCOUNT="${7-benchmark}"
+
+    EXTRA_CONFIG="\"namespace\": \"$NAMESPACE\", \"imagePullSecret\": \"stackrox\", \"kubernetes\": { \"benchmarkServiceAccount\":\"$BENCHMARK_SERVICE_ACCOUNT\" } }"
 
     create_registry_secrets
 
-    get_cluster_zip "$LOCAL_API_ENDPOINT" "$CLUSTER" KUBERNETES_CLUSTER "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "\"namespace\": \"$NAMESPACE\", \"imagePullSecret\": \"stackrox\""
+    get_cluster_zip "$LOCAL_API_ENDPOINT" "$CLUSTER" KUBERNETES_CLUSTER "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "$EXTRA_CONFIG"
 
     echo "Deploying Sensor..."
     kubectl delete secret -n "$NAMESPACE" sensor-tls || true

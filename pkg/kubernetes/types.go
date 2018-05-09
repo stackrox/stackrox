@@ -14,6 +14,9 @@ const (
 	StatefulSet           = `StatefulSet`
 
 	Service = `Service`
+
+	// OpenShift specific
+	DeploymentConfig = `DeploymentConfig`
 )
 
 // Kubernetes delete options that ensure that dependent objects (e.g. pods) are deleted when

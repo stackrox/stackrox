@@ -27,7 +27,6 @@ type serviceWrap struct {
 }
 
 type converter struct {
-	serviceAccount   string
 	imagePullSecrets []string
 }
 
@@ -35,7 +34,6 @@ func newConverter() converter {
 	ips := env.ImagePullSecrets.Setting()
 
 	return converter{
-		serviceAccount:   env.ServiceAccount.Setting(),
 		imagePullSecrets: strings.Split(ips, ","),
 	}
 }
@@ -81,7 +79,7 @@ func (c converter) asKubernetesPod(service *serviceWrap) v1.PodTemplateSpec {
 		},
 		Spec: v1.PodSpec{
 			Containers:         c.asContainers(service),
-			ServiceAccountName: c.serviceAccount,
+			ServiceAccountName: service.ServiceAccount,
 			ImagePullSecrets:   c.asImagePullSecrets(),
 			RestartPolicy:      v1.RestartPolicyAlways,
 			Volumes:            c.asVolumes(service),

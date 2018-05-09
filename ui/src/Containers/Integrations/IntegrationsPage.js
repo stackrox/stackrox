@@ -12,17 +12,18 @@ import { actions as integrationActions } from 'reducers/integrations';
 import { actions as clusterActions } from 'reducers/clusters';
 import { selectors } from 'reducers';
 
+import artifactory from 'images/artifactory.svg';
 import auth0 from 'images/auth0.svg';
+import clair from 'images/clair.svg';
 import docker from 'images/docker.svg';
+import email from 'images/email.svg';
+import google from 'images/google-cloud.svg';
 import jira from 'images/jira.svg';
 import kubernetes from 'images/kubernetes.svg';
+import openshift from 'images/openshift.svg';
+import quay from 'images/quay.svg';
 import slack from 'images/slack.svg';
 import tenable from 'images/tenable.svg';
-import email from 'images/email.svg';
-import quay from 'images/quay.svg';
-import clair from 'images/clair.svg';
-import artifactory from 'images/artifactory.svg';
-import google from 'images/google-cloud.svg';
 
 const integrationsList = {
     authProviders: [
@@ -93,16 +94,22 @@ const integrationsList = {
     ],
     orchestrators: [
         {
-            label: 'Docker Enterprise Edition',
-            image: docker,
-            source: 'clusters',
-            type: 'DOCKER_EE_CLUSTER'
-        },
-        {
             label: 'Kubernetes',
             image: kubernetes,
             source: 'clusters',
             type: 'KUBERNETES_CLUSTER'
+        },
+        {
+            label: 'OpenShift',
+            image: openshift,
+            source: 'clusters',
+            type: 'OPENSHIFT_CLUSTER'
+        },
+        {
+            label: 'Docker Enterprise Edition',
+            image: docker,
+            source: 'clusters',
+            type: 'DOCKER_EE_CLUSTER'
         },
         {
             label: 'Docker Swarm',

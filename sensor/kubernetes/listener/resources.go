@@ -8,6 +8,7 @@ import (
 	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/kubernetes"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
+	ocappsv1 "github.com/openshift/api/apps/v1"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -135,4 +136,9 @@ func newDeploymentWatcher(client rest.Interface, eventsC chan<- *listeners.Deplo
 
 func newStatefulSetWatchLister(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap, lister podLister) resourceWatchLister {
 	return newReflectionWatcherFromClient(client, kubernetes.StatefulSet, &appsv1beta1.StatefulSet{}, eventsC, lister)
+}
+
+// OpenShift specific
+func newDeploymentConfigWatcher(client rest.Interface, eventsC chan<- *listeners.DeploymentEventWrap, lister podLister) resourceWatchLister {
+	return newReflectionWatcherFromClient(client, kubernetes.DeploymentConfig, &ocappsv1.DeploymentConfig{}, eventsC, lister)
 }

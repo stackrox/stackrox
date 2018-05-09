@@ -81,32 +81,14 @@ describe('Cluster Creation Flow', () => {
             .should('have.text', 'Central API Endpoint:central.stackrox:443');
     });
 
-    it('Should be able to view a form with the necessary cluster entity fields when clicking "Add"', () => {
+    it('Should be able to fill out the Swarm form and download a ZIP when clicking "Add"', () => {
         cy.get(selectors.dockerSwarmTile).click();
 
         cy.get(selectors.buttons.addCluster).click();
 
-        cy
-            .get(selectors.form.cluster.inputs)
-            .eq(0)
-            .type('Kubernetes Cluster 1');
-        cy
-            .get(selectors.form.cluster.inputs)
-            .eq(1)
-            .type('KUBERNETES_CLUSTER');
-        cy
-            .get(selectors.form.cluster.inputs)
-            .eq(2)
-            .type('stackrox/prevent:latest');
-        cy
-            .get(selectors.form.cluster.inputs)
-            .eq(3)
-            .type('central.prevent_net:443');
-        cy
-            .get(selectors.form.cluster.inputs)
-            .eq(4)
-            .type('stackrox');
-        cy.get(selectors.form.cluster.checkbox).check();
+        cy.get(selectors.form.cluster.inputName).type('Swarm Cluster 1');
+        cy.get(selectors.form.cluster.inputImage).type('stackrox/prevent:latest');
+        cy.get(selectors.form.cluster.inputEndpoint).type('central.prevent_net:443');
 
         cy.get(selectors.buttons.next).click();
         cy.wait('@addCluster');

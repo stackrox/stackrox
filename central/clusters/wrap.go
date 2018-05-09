@@ -2,7 +2,6 @@ package clusters
 
 import (
 	"bytes"
-	"strconv"
 	"text/template"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -92,7 +91,6 @@ func (d basicDeployer) fields(c Wrap) map[string]string {
 		"ClusterID":             c.Id,
 		"AdvertisedEndpointEnv": env.AdvertisedEndpoint.EnvVar(),
 		"AdvertisedEndpoint":    env.AdvertisedEndpoint.Setting(),
-		"DisableSwarmTLS":       strconv.FormatBool(c.DisableSwarmTls),
 	}
 	if d.addFields != nil {
 		d.addFields(c, fields)

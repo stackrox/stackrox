@@ -203,8 +203,9 @@ func (s *SchedulerClient) Launch(scan *v1.BenchmarkScanMetadata) error {
 			env.Combine(env.BenchmarkID.EnvVar(), scan.GetBenchmarkId()),
 			env.Combine(env.BenchmarkReason.EnvVar(), scan.GetReason().String()),
 		},
-		Image:  s.image,
-		Global: true,
+		Image:          s.image,
+		Global:         true,
+		ServiceAccount: env.BenchmarkServiceAccount.Setting(),
 	}
 	_, err := s.orchestrator.LaunchBenchmark(service)
 	if err != nil {

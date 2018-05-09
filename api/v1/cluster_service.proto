@@ -17,6 +17,14 @@ enum ClusterType {
     DOCKER_EE_CLUSTER  = 4;
 }
 
+message KubernetesParams {
+    string benchmark_service_account = 1;
+}
+
+message SwarmParams {
+    bool disable_swarm_tls = 1;
+}
+
 message Cluster {
     string                    id                   = 1;
     string                    name                 = 2;
@@ -26,7 +34,11 @@ message Cluster {
     string                    namespace            = 6;
     string                    image_pull_secret    = 7;
     google.protobuf.Timestamp last_contact         = 8;
-    bool                      disable_swarm_tls    = 16;
+
+    oneof orchestrator_params {
+        KubernetesParams kubernetes = 9;
+        SwarmParams      swarm      = 10;
+  }
 }
 
 message ClusterResponse {

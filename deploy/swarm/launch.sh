@@ -48,7 +48,7 @@ function launch_sensor {
 
     EXTRA_CONFIG=""
     if [ "$DOCKER_CERT_PATH" = "" ]; then
-        EXTRA_CONFIG="\"disableSwarmTls\":true"
+        EXTRA_CONFIG="\"swarm\": { \"disableSwarmTls\":true } }"
     fi
     get_cluster_zip "$LOCAL_API_ENDPOINT" "$CLUSTER" SWARM_CLUSTER "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$SWARM_DIR" "$EXTRA_CONFIG"
 

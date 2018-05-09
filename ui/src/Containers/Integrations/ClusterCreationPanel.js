@@ -14,8 +14,8 @@ import KeyValuePairs from 'Components/KeyValuePairs';
 import ClustersDownloadPage from 'Containers/Integrations/ClustersDownloadPage';
 import ClustersSuccessPage from 'Containers/Integrations/ClustersSuccessPage';
 import {
-    clusterCreationFormDescriptor,
-    swarmClusterCreationFormDescriptor
+    k8sCreationFormDescriptor,
+    dockerClusterCreationFormDescriptor
 } from 'Containers/Integrations/clusterCreationFormDescriptor';
 import { ToastContainer, toast } from 'react-toastify';
 
@@ -40,12 +40,12 @@ const clusterDetailsMap = {
     }
 };
 
-const swarmClusterDetailsMap = Object.assign({}, clusterDetailsMap);
-swarmClusterDetailsMap.disableSwarmTls = {
+const dockerClusterDetailsMap = Object.assign({}, clusterDetailsMap);
+dockerClusterDetailsMap.disableSwarmTls = {
     label: 'Swarm TLS Disabled'
 };
 
-const formDataKeys = clusterCreationFormDescriptor.map(obj => obj.value);
+const formDataKeys = k8sCreationFormDescriptor.map(obj => obj.value);
 
 class ClusterCreationPanel extends Component {
     static propTypes = {
@@ -101,12 +101,15 @@ class ClusterCreationPanel extends Component {
     };
 
     renderKeyValuePairs = () => {
-        if (this.props.clusterType === 'SWARM_CLUSTER') {
+        if (
+            this.props.clusterType === 'SWARM_CLUSTER' ||
+            this.props.clusterType === 'DOCKER_EE_CLUSTER'
+        ) {
             return (
                 <div className="p-4">
                     <KeyValuePairs
                         data={this.props.editingCluster}
-                        keyValueMap={swarmClusterDetailsMap}
+                        keyValueMap={dockerClusterDetailsMap}
                     />
                 </div>
             );
@@ -120,9 +123,10 @@ class ClusterCreationPanel extends Component {
 
     renderFormPanel = () => {
         let fields =
-            this.props.clusterType === 'SWARM_CLUSTER'
-                ? swarmClusterCreationFormDescriptor
-                : clusterCreationFormDescriptor;
+            this.props.clusterType === 'SWARM_CLUSTER' ||
+            this.props.clusterType === 'DOCKER_EE_CLUSTER'
+                ? dockerClusterCreationFormDescriptor
+                : k8sCreationFormDescriptor;
         // if viewing an existing cluster, disable the fields
         if (this.props.editingCluster.id) {
             fields = fields.map(field => {
