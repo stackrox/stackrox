@@ -16,6 +16,13 @@ describe('Risk page', () => {
         cy.get(selectors.cancelButton).click();
     });
 
+    it('should show mounts in deployment details tab', () => {
+        cy.get('table tr.cursor-pointer:first').click();
+        cy.get(selectors.panelTabs.deploymentDetails).click();
+        cy.get(selectors.mounts.label).should('be.visible');
+        cy.get(selectors.mounts.items).should('have.length', 2);
+    });
+
     it('should navigate from Risk Page to Images Page', () => {
         cy.get('table tr.cursor-pointer:first').click();
         cy.get(selectors.panelTabs.deploymentDetails).click();

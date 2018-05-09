@@ -234,11 +234,11 @@ class RiskPage extends Component {
                                         />
                                         <div className="flex py-3">
                                             <div className="pr-1">Mounts:</div>
-                                            <div className="-ml-8 mt-4 w-full">
+                                            <ul className="-ml-8 mt-4 w-full list-reset">
                                                 {container.volumes &&
                                                     container.volumes.length &&
                                                     container.volumes.map((volume, idx) => (
-                                                        <div
+                                                        <li
                                                             key={idx}
                                                             className={`py-2 ${
                                                                 idx === container.volumes.length - 1
@@ -268,9 +268,9 @@ class RiskPage extends Component {
                                                                         </div>
                                                                     )
                                                             )}
-                                                        </div>
+                                                        </li>
                                                     ))}
-                                            </div>
+                                            </ul>
                                         </div>
                                         {container.image &&
                                             container.image.name &&
