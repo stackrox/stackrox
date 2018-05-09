@@ -1,6 +1,10 @@
 package scopecomp
 
-import "bitbucket.org/stack-rox/apollo/generated/api/v1"
+import (
+	"strings"
+
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+)
 
 // WithinScope evaluates if the deployment is within the scope
 func WithinScope(scope *v1.Scope, deployment *v1.Deployment) bool {
@@ -12,16 +16,17 @@ func WithinScope(scope *v1.Scope, deployment *v1.Deployment) bool {
 		return false
 	}
 
+	if scope.GetLabel() == nil {
+		return true
+	}
+
 	labelMap := make(map[string]string, len(deployment.GetLabels()))
 	for _, label := range deployment.GetLabels() {
-		labelMap[label.GetKey()] = label.GetValue()
+		labelMap[strings.ToLower(label.GetKey())] = strings.ToLower(label.GetValue())
 	}
-	if scope.GetLabel() != nil {
-		for _, deploymentLabel := range deployment.GetLabels() {
-			if deploymentLabel.GetKey() == scope.GetLabel().GetKey() && deploymentLabel.GetValue() != scope.GetLabel().GetValue() {
-				return false
-			}
-		}
+
+	if value, ok := labelMap[strings.ToLower(scope.GetLabel().GetKey())]; !ok || strings.ToLower(value) != scope.GetLabel().GetValue() {
+		return false
 	}
 
 	return true

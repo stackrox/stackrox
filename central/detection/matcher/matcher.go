@@ -61,7 +61,7 @@ func (p *Policy) Match(deployment *v1.Deployment) (violations []*v1.Alert_Violat
 	// each container is considered independently.
 	for _, c := range deployment.GetContainers() {
 		if p.matchesContainerWhitelists(p.GetWhitelists(), c) {
-			break
+			continue
 		}
 		violations = append(violations, p.matchContainer(deployment, c)...)
 	}
@@ -113,6 +113,7 @@ func (p *Policy) matchesDeploymentWhitelist(whitelist *v1.Whitelist_Deployment, 
 	if whitelist.GetName() != "" && whitelist.GetName() != deployment.GetName() {
 		return false
 	}
+
 	return true
 }
 
