@@ -1,6 +1,9 @@
 package blevesearch
 
 import (
+	"time"
+
+	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/blevesearch/bleve"
@@ -16,11 +19,13 @@ var alertObjectMap = map[string]string{
 
 // AddAlert adds the alert to the index
 func (b *Indexer) AddAlert(alert *v1.Alert) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), "Add", "Alert")
 	return b.alertIndex.Index(alert.GetId(), alert)
 }
 
 // DeleteAlert deletes the alert from the index
 func (b *Indexer) DeleteAlert(id string) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "Alert")
 	return b.alertIndex.Delete(id)
 }
 
@@ -46,5 +51,6 @@ func scopeToAlertQuery(scope *v1.Scope) query.Query {
 
 // SearchAlerts takes a SearchRequest and finds any matches
 func (b *Indexer) SearchAlerts(request *v1.ParsedSearchRequest) ([]search.Result, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Alert")
 	return runSearchRequest(request, b.alertIndex, scopeToAlertQuery, alertObjectMap)
 }

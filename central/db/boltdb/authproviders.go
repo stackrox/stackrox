@@ -2,8 +2,10 @@ package boltdb
 
 import (
 	"fmt"
+	"time"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
@@ -25,6 +27,7 @@ func (b *BoltDB) getAuthProvider(id string, bucket *bolt.Bucket) (authProvider *
 
 // GetAuthProvider returns authProvider with given id.
 func (b *BoltDB) GetAuthProvider(id string) (authProvider *v1.AuthProvider, exists bool, err error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "AuthProvider")
 	authProvider = new(v1.AuthProvider)
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(authProviderBucket))
@@ -36,6 +39,7 @@ func (b *BoltDB) GetAuthProvider(id string) (authProvider *v1.AuthProvider, exis
 
 // GetAuthProviders retrieves authProviders from bolt
 func (b *BoltDB) GetAuthProviders(request *v1.GetAuthProvidersRequest) ([]*v1.AuthProvider, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "AuthProvider")
 	var authProviders []*v1.AuthProvider
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(authProviderBucket))
@@ -53,6 +57,7 @@ func (b *BoltDB) GetAuthProviders(request *v1.GetAuthProvidersRequest) ([]*v1.Au
 
 // AddAuthProvider adds an auth provider into bolt
 func (b *BoltDB) AddAuthProvider(authProvider *v1.AuthProvider) (string, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "AuthProvider")
 	authProvider.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(authProviderBucket))
@@ -77,6 +82,7 @@ func (b *BoltDB) AddAuthProvider(authProvider *v1.AuthProvider) (string, error) 
 
 // UpdateAuthProvider upserts an auth provider into bolt
 func (b *BoltDB) UpdateAuthProvider(authProvider *v1.AuthProvider) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "AuthProvider")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(authProviderBucket))
 		// If the update is changing the name, check if the name has already been taken
@@ -95,6 +101,7 @@ func (b *BoltDB) UpdateAuthProvider(authProvider *v1.AuthProvider) error {
 
 // RemoveAuthProvider removes an auth provider from bolt
 func (b *BoltDB) RemoveAuthProvider(id string) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "AuthProvider")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(authProviderBucket))
 		key := []byte(id)

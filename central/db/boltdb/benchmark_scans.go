@@ -3,8 +3,10 @@ package boltdb
 import (
 	"fmt"
 	"sort"
+	"time"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
@@ -24,6 +26,7 @@ const (
 // The first bucket is the benchmarksToScansBucket which is a mapping of benchmark identifier (currently Name) -> Scan Ids
 // The second bucket is the scanMetadataBucket which is a mapping of scan IDs -> scan metadata
 func (b *BoltDB) AddScan(request *v1.BenchmarkScanMetadata) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "Scan")
 	return b.Update(func(tx *bolt.Tx) error {
 		// Create benchmark bucket if does not already exist
 		// Add scan id into that bucket
@@ -52,6 +55,7 @@ func (b *BoltDB) AddScan(request *v1.BenchmarkScanMetadata) error {
 // 1. scansToCheckBucket consists of ( scan id -> buckets based on top level check identifier (name for now, e.g. CIS 1.1). Inside that bucket is check result id -> empty
 // 2. Flat check results bucket is a mapping of check result id -> check result
 func (b *BoltDB) AddBenchmarkResult(result *v1.BenchmarkResult) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "BenchmarkResult")
 	return b.Update(func(tx *bolt.Tx) error {
 		// iterate over all checks and add them into buckets with key (Name)
 		scansToCheck := tx.Bucket([]byte(scansToCheckBucket))
@@ -128,6 +132,7 @@ func (b *BoltDB) GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (scan *v1
 		err = fmt.Errorf("Scan id must be defined when retrieving results")
 		return
 	}
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "BenchmarkScan")
 	clusterSet := newStringSet(request.GetClusterIds())
 	hostSet := newStringSet(request.GetHosts())
 	scan = new(v1.BenchmarkScan)
@@ -184,6 +189,7 @@ func (b *BoltDB) GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (scan *v1
 
 // ListBenchmarkScans filters the scans by the request parameters
 func (b *BoltDB) ListBenchmarkScans(request *v1.ListBenchmarkScansRequest) ([]*v1.BenchmarkScanMetadata, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "List", "BenchmarkScan")
 	var scansMetadata []*v1.BenchmarkScanMetadata
 	err := b.View(func(tx *bolt.Tx) error {
 		scanBucket := tx.Bucket([]byte(scanMetadataBucket))

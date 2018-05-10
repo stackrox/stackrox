@@ -1,6 +1,8 @@
 package boltdb
 
-import "github.com/deckarep/golang-set"
+import (
+	"github.com/deckarep/golang-set"
+)
 
 func newStringSet(strs []string) mapset.Set {
 	set := mapset.NewSet()

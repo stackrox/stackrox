@@ -2,7 +2,9 @@ package boltdb
 
 import (
 	"strconv"
+	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
@@ -12,6 +14,7 @@ const serviceIdentityBucket = "service_identities"
 
 // GetServiceIdentities retrieves serviceIdentities from Bolt.
 func (b *BoltDB) GetServiceIdentities() ([]*v1.ServiceIdentity, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "ServiceIdentity")
 	var serviceIdentities []*v1.ServiceIdentity
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(serviceIdentityBucket))
@@ -41,6 +44,7 @@ func (b *BoltDB) upsertServiceIdentity(serviceIdentity *v1.ServiceIdentity) erro
 
 // AddServiceIdentity adds a serviceIdentity to bolt
 func (b *BoltDB) AddServiceIdentity(serviceIdentity *v1.ServiceIdentity) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "ServiceIdentity")
 	return b.upsertServiceIdentity(serviceIdentity)
 }
 

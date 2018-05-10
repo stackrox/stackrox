@@ -2,8 +2,10 @@ package boltdb
 
 import (
 	"fmt"
+	"time"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"github.com/boltdb/bolt"
@@ -25,6 +27,7 @@ func (b *BoltDB) getImage(sha string, bucket *bolt.Bucket) (image *v1.Image, exi
 
 // GetImage returns image with given id.
 func (b *BoltDB) GetImage(sha string) (image *v1.Image, exists bool, err error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "Image")
 	digest := images.NewDigest(sha).Digest()
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(imageBucket))
@@ -53,6 +56,7 @@ func (b *BoltDB) GetImages() ([]*v1.Image, error) {
 
 // CountImages returns the number of images.
 func (b *BoltDB) CountImages() (count int, err error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Count", "Image")
 	err = b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(imageBucket))
 		return b.ForEach(func(k, v []byte) error {
@@ -66,6 +70,7 @@ func (b *BoltDB) CountImages() (count int, err error) {
 
 // AddImage adds a image to bolt
 func (b *BoltDB) AddImage(image *v1.Image) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "Image")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(imageBucket))
 		digest := images.NewDigest(image.GetName().GetSha()).Digest()
@@ -86,6 +91,7 @@ func (b *BoltDB) AddImage(image *v1.Image) error {
 
 // UpdateImage updates a image to bolt
 func (b *BoltDB) UpdateImage(image *v1.Image) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "Image")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(imageBucket))
 		bytes, err := proto.Marshal(image)
@@ -99,6 +105,7 @@ func (b *BoltDB) UpdateImage(image *v1.Image) error {
 
 // RemoveImage removes the image from bolt
 func (b *BoltDB) RemoveImage(sha string) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "Image")
 	digest := images.NewDigest(sha).Digest()
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(imageBucket))

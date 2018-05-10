@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
@@ -44,6 +45,7 @@ func (b *BoltDB) addContactTime(cluster *v1.Cluster) {
 
 // GetCluster returns cluster with given id.
 func (b *BoltDB) GetCluster(id string) (cluster *v1.Cluster, exists bool, err error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "Cluster")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(clusterBucket))
 		cluster, exists, err = b.getCluster(id, bucket)
@@ -54,6 +56,7 @@ func (b *BoltDB) GetCluster(id string) (cluster *v1.Cluster, exists bool, err er
 
 // GetClusters retrieves clusters matching the request from bolt
 func (b *BoltDB) GetClusters() ([]*v1.Cluster, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "Cluster")
 	var clusters []*v1.Cluster
 	err := b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(clusterBucket))
@@ -72,6 +75,7 @@ func (b *BoltDB) GetClusters() ([]*v1.Cluster, error) {
 
 // CountClusters returns the number of clusters.
 func (b *BoltDB) CountClusters() (count int, err error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Count", "Cluster")
 	err = b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(clusterBucket))
 		return b.ForEach(func(k, v []byte) error {
@@ -85,6 +89,7 @@ func (b *BoltDB) CountClusters() (count int, err error) {
 
 // AddCluster adds a cluster to bolt
 func (b *BoltDB) AddCluster(cluster *v1.Cluster) (string, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "Cluster")
 	cluster.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(clusterBucket))
@@ -109,6 +114,7 @@ func (b *BoltDB) AddCluster(cluster *v1.Cluster) (string, error) {
 
 // UpdateCluster updates a cluster to bolt
 func (b *BoltDB) UpdateCluster(cluster *v1.Cluster) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "Cluster")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(clusterBucket))
 		// If the update is changing the name, check if the name has already been taken
@@ -127,6 +133,7 @@ func (b *BoltDB) UpdateCluster(cluster *v1.Cluster) error {
 
 // RemoveCluster removes a cluster.
 func (b *BoltDB) RemoveCluster(id string) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "Cluster")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(clusterBucket))
 		key := []byte(id)
@@ -144,6 +151,7 @@ func (b *BoltDB) RemoveCluster(id string) error {
 // talked with Central. This is maintained separately to avoid being clobbered
 // by updates to the main Cluster config object.
 func (b *BoltDB) UpdateClusterContactTime(id string, t time.Time) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "UpdateContactTime", "Cluster")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(clusterStatusBucket))
 		tsProto, err := ptypes.TimestampProto(t)

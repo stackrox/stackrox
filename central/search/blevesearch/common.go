@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/central/metrics"
 	searchPkg "bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/blevesearch/bleve"
@@ -115,7 +114,6 @@ func runQuery(query query.Query, index bleve.Index) ([]searchPkg.Result, error) 
 	if err != nil {
 		return nil, err
 	}
-	metrics.SetAPIRequestDurationTime(searchResult.Took)
 	return collapseResults(searchResult), nil
 }
 

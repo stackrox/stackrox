@@ -2,8 +2,10 @@ package boltdb
 
 import (
 	"fmt"
+	"time"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/boltdb/bolt"
 	"github.com/golang/protobuf/proto"
@@ -25,6 +27,7 @@ func (b *BoltDB) getDeployment(id string, bucket *bolt.Bucket) (deployment *v1.D
 
 // GetDeployment returns deployment with given id.
 func (b *BoltDB) GetDeployment(id string) (deployment *v1.Deployment, exists bool, err error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "Deployment")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
 		deployment, exists, err = b.getDeployment(id, bucket)
@@ -35,6 +38,7 @@ func (b *BoltDB) GetDeployment(id string) (deployment *v1.Deployment, exists boo
 
 // GetDeployments retrieves deployments matching the request from bolt
 func (b *BoltDB) GetDeployments() ([]*v1.Deployment, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "Deployment")
 	var deployments []*v1.Deployment
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(deploymentBucket))
@@ -52,6 +56,7 @@ func (b *BoltDB) GetDeployments() ([]*v1.Deployment, error) {
 
 // CountDeployments returns the number of deployments.
 func (b *BoltDB) CountDeployments() (count int, err error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Count", "Deployment")
 	err = b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(deploymentBucket))
 		return b.ForEach(func(k, v []byte) error {
@@ -65,6 +70,7 @@ func (b *BoltDB) CountDeployments() (count int, err error) {
 
 // AddDeployment adds a deployment to bolt
 func (b *BoltDB) AddDeployment(deployment *v1.Deployment) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "Deployment")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
 		_, exists, err := b.getDeployment(deployment.Id, bucket)
@@ -92,6 +98,7 @@ func (b *BoltDB) updateDeployment(deployment *v1.Deployment, bucket *bolt.Bucket
 
 // UpdateDeployment updates a deployment to bolt
 func (b *BoltDB) UpdateDeployment(deployment *v1.Deployment) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "Deployment")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
 		existingDeployment, exists, err := b.getDeployment(deployment.GetId(), bucket)
@@ -108,6 +115,7 @@ func (b *BoltDB) UpdateDeployment(deployment *v1.Deployment) error {
 
 // RemoveDeployment updates a deployment with a tombstone
 func (b *BoltDB) RemoveDeployment(id string) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "Deployment")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
 		deployment, exists, err := b.getDeployment(id, bucket)

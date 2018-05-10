@@ -2,8 +2,10 @@ package boltdb
 
 import (
 	"fmt"
+	"time"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
@@ -25,6 +27,7 @@ func (b *BoltDB) getMultiplier(id string, bucket *bolt.Bucket) (multiplier *v1.M
 
 // GetMultiplier returns multiplier with given id.
 func (b *BoltDB) GetMultiplier(id string) (multiplier *v1.Multiplier, exists bool, err error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "Multiplier")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(multiplierBucket))
 		multiplier, exists, err = b.getMultiplier(id, bucket)
@@ -35,6 +38,7 @@ func (b *BoltDB) GetMultiplier(id string) (multiplier *v1.Multiplier, exists boo
 
 // GetMultipliers retrieves multipliers from bolt
 func (b *BoltDB) GetMultipliers() ([]*v1.Multiplier, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "Multiplier")
 	var multipliers []*v1.Multiplier
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(multiplierBucket))
@@ -52,6 +56,7 @@ func (b *BoltDB) GetMultipliers() ([]*v1.Multiplier, error) {
 
 // AddMultiplier adds a multiplier into bolt
 func (b *BoltDB) AddMultiplier(multiplier *v1.Multiplier) (string, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "Multiplier")
 	multiplier.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(multiplierBucket))
@@ -76,6 +81,7 @@ func (b *BoltDB) AddMultiplier(multiplier *v1.Multiplier) (string, error) {
 
 // UpdateMultiplier upserts a multiplier into bolt
 func (b *BoltDB) UpdateMultiplier(multiplier *v1.Multiplier) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "Multiplier")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(multiplierBucket))
 		// If the update is changing the name, check if the name has already been taken
@@ -94,6 +100,7 @@ func (b *BoltDB) UpdateMultiplier(multiplier *v1.Multiplier) error {
 
 // RemoveMultiplier removes a multiplier from bolt
 func (b *BoltDB) RemoveMultiplier(id string) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "Multiplier")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(multiplierBucket))
 		key := []byte(id)

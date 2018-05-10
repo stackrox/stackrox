@@ -20,14 +20,23 @@ var (
 		Help:      "Number of panic calls within Central.",
 	}, []string{"FunctionName"})
 
-	searchDurationHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+	indexOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.Namespace,
 		Subsystem: subsystem,
-		Name:      "search_duration_ms",
-		Help:      "Time taken to process search query",
+		Name:      "index_op_duration",
+		Help:      "Time taken to perform an index operation",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
-	})
+	}, []string{"Operation", "Type"})
+
+	boltOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.Namespace,
+		Subsystem: subsystem,
+		Name:      "bolt_op_duration",
+		Help:      "Time taken to perform a bolt operation",
+		// We care more about precision at lower latencies, or outliers at higher latencies.
+		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Operation", "Type"})
 )
 
 // IncrementPanicCounter increments the number of panic calls seen in a function
@@ -35,8 +44,17 @@ func IncrementPanicCounter(functionName string) {
 	panicCounter.With(prometheus.Labels{"FunctionName": functionName}).Inc()
 }
 
-//SetAPIRequestDurationTime records the duration of a search request
-func SetAPIRequestDurationTime(took time.Duration) {
-	ms := float64(took.Nanoseconds()) / float64(time.Millisecond)
-	searchDurationHistogram.Observe(ms)
+func startTimeToMS(t time.Time) float64 {
+	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)
+}
+
+// SetBoltOperationDurationTime times how long a particular bolt operation took on a particular resource
+func SetBoltOperationDurationTime(start time.Time, op string, t string) {
+	boltOperationHistogramVec.With(prometheus.Labels{"Operation": op, "Type": t}).Observe(startTimeToMS(start))
+}
+
+// SetIndexOperationDurationTime times how long a particular index operation took on a particular resource
+func SetIndexOperationDurationTime(start time.Time, op string, t string) {
+	indexOperationHistogramVec.With(prometheus.Labels{"Operation": op, "Type": t}).Observe(startTimeToMS(start))
+
 }

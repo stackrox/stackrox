@@ -2,7 +2,9 @@ package blevesearch
 
 import (
 	"reflect"
+	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
@@ -20,12 +22,14 @@ var imageObjectMap = map[string]string{
 
 // AddImage adds the image to the index
 func (b *Indexer) AddImage(image *v1.Image) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), "Add", "Image")
 	digest := images.NewDigest(image.GetName().GetSha()).Digest()
 	return b.imageIndex.Index(digest, image)
 }
 
 // DeleteImage deletes the image from the index
 func (b *Indexer) DeleteImage(sha string) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "Image")
 	return b.imageIndex.Delete(sha)
 }
 
@@ -70,6 +74,7 @@ func (b *Indexer) getImageSHAsFromScope(request *v1.ParsedSearchRequest) (mapset
 // It is different from other requests because it requires that we actually search the deployments
 // for the image that may match the criteria
 func (b *Indexer) SearchImages(request *v1.ParsedSearchRequest) ([]search.Result, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Image")
 	shaSetFromDeployment, err := b.getImageSHAsFromScope(request)
 	if err != nil {
 		return nil, err

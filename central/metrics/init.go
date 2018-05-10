@@ -12,5 +12,6 @@ var (
 func init() {
 	// general
 	prometheus.MustRegister(panicCounter)
-	prometheus.MustRegister(searchDurationHistogram)
+	prometheus.MustRegister(boltOperationHistogramVec)
+	prometheus.MustRegister(indexOperationHistogramVec)
 }

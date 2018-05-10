@@ -1,6 +1,9 @@
 package blevesearch
 
 import (
+	"time"
+
+	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/blevesearch/bleve"
@@ -13,11 +16,13 @@ var policyObjectMap = map[string]string{
 
 // AddPolicy adds the policy to the index
 func (b *Indexer) AddPolicy(policy *v1.Policy) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), "Add", "Policy")
 	return b.policyIndex.Index(policy.GetId(), policy)
 }
 
 // DeletePolicy deletes the policy from the index
 func (b *Indexer) DeletePolicy(id string) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "Policy")
 	return b.policyIndex.Delete(id)
 }
 
@@ -54,5 +59,6 @@ func scopeToPolicyQuery(scope *v1.Scope) query.Query {
 
 // SearchPolicies takes a SearchRequest and finds any matches
 func (b *Indexer) SearchPolicies(request *v1.ParsedSearchRequest) ([]search.Result, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Policy")
 	return runSearchRequest(request, b.policyIndex, scopeToPolicyQuery, policyObjectMap)
 }
