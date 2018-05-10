@@ -1,12 +1,13 @@
 import { all, take, takeLatest, call, fork, put, select } from 'redux-saga/effects';
 
-import fetchDeployments from 'services/RiskService';
-import { actions, types } from 'reducers/risk';
+import fetchDeployments from 'services/DeploymentsService';
+import { actions, types } from 'reducers/deployments';
 import { types as locationActionTypes } from 'reducers/routes';
 import { selectors } from 'reducers';
 
 const riskPath = '/main/risk';
 const dashboardPath = '/main/dashboard';
+const policiesPath = '/main/policies';
 
 export function* getDeployments() {
     try {
@@ -29,11 +30,12 @@ export function* watchLocation() {
     while (true) {
         const action = yield take(locationActionTypes.LOCATION_CHANGE);
         const { payload: location } = action;
+        const { pathname } = location;
 
         if (
-            location &&
-            location.pathname &&
-            (location.pathname.startsWith(riskPath) || location.pathname.startsWith(dashboardPath))
+            (location && pathname && pathname.startsWith(riskPath)) ||
+            pathname.startsWith(dashboardPath) ||
+            pathname.startsWith(policiesPath)
         ) {
             yield fork(getDeployments);
         }

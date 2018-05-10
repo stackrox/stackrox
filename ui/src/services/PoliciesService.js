@@ -1,9 +1,11 @@
 import axios from 'axios';
 import { normalize } from 'normalizr';
+import queryString from 'query-string';
 
 import { policy as policySchema } from './schemas';
 
 const baseUrl = '/v1/policies';
+const policyCategoriesUrl = '/v1/policyCategories';
 
 /**
  * Fetches policy details for a given policy ID.
@@ -17,6 +19,82 @@ export function fetchPolicy(policyId) {
         response: normalize(response.data, policySchema)
     }));
 }
+
+/**
+ * Fetches a list of policies.
+ *
+ * @param {!string} filters
+ * @returns {Promise<Object, Error>} fulfilled with array of policies (as defined in .proto)
+ */
+export function fetchPolicies(filters) {
+    const params = queryString.stringify({
+        ...filters
+    });
+    return axios.get(`${baseUrl}?${params}`).then(response => ({
+        response: response.data
+    }));
+}
+
+/**
+ * Fetches a list of policy categories.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function fetchPolicyCategories() {
+    return axios.get(policyCategoriesUrl).then(response => ({
+        response: response.data
+    }));
+}
+
+/**
+ * Reassesses policies.
+ *
+ * @returns {Promise<AxiosResponse, Error>}
+ */
+export function reassessPolicies() {
+    return axios.post(`${baseUrl}/reassess`);
+}
+
+/**
+ * Deletes a policy with a given id.
+ *
+ * @param {!string} policyId
+ * @returns {Promise<AxiosResponse, Error>}
+ */
+export function deletePolicy(policyId) {
+    return axios.delete(`${baseUrl}/${policyId}`);
+}
+
+/**
+ * Saves a given policy.
+ *
+ * @param {!object} policy
+ * @returns {Promise<AxiosResponse, Error>}
+ */
+export function savePolicy(policy) {
+    return axios.put(`${baseUrl}/${policy.id}`, policy);
+}
+
+/**
+ * Creates a new policy.
+ *
+ * @param {!object} policy
+ * @returns {Promise<AxiosResponse, Error>}
+ */
+export function createPolicy(policy) {
+    return axios.post(`${baseUrl}`, policy);
+}
+
+/**
+ * Gets a dry run for a given policy.
+ *
+ * @param {!object} policy
+ * @returns {Promise<AxiosResponse, Error>}
+ */
+export function getDryRun(policy) {
+    return axios.post(`${baseUrl}/dryrun`, policy);
+}
+
 /**
  * Updates policy with a given ID to add deployment into the whitelisted entries.
  *

@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { selectors } from 'reducers';
+import { createStructuredSelector } from 'reselect';
 import { Text, TextArea, Select } from 'react-form';
 import MultiSelect from 'react-select';
 import flatten from 'flat';
@@ -11,6 +14,13 @@ import 'react-select/dist/react-select.css';
 import FormField from 'Components/FormField';
 import NumericInput from 'react-numeric-input';
 import CustomSelect from 'Components/Select';
+import {
+    preFormatScopeField,
+    postFormatScopeField,
+    preFormatWhitelistField,
+    postFormatWhitelistField,
+    removeEmptyFields
+} from 'Containers/Policies/policyFormUtils';
 
 const reducer = (action, prevState, nextState) => {
     switch (action) {
@@ -544,47 +554,16 @@ class PolicyCreationForm extends Component {
     };
 
     setFormFields = () => {
-        let filteredPolicy = this.removeEmptyFields(this.props.policy);
-        filteredPolicy = this.preFormatWhitelistField(filteredPolicy);
-        filteredPolicy = this.preFormatScopeField(filteredPolicy);
+        let filteredPolicy = removeEmptyFields(this.props.policy);
+        filteredPolicy = preFormatWhitelistField(filteredPolicy);
+        filteredPolicy = preFormatScopeField(filteredPolicy);
         this.props.formApi.setAllValues(filteredPolicy);
     };
 
-    preFormatScopeField = obj => {
-        const newObj = Object.assign({}, obj);
-        if (obj.scope) newObj.scope = obj.scope.map(o => o.cluster);
-        return newObj;
-    };
-
-    postFormatScopeField = obj => {
-        const newObj = Object.assign({}, obj);
-        if (newObj.scope) newObj.scope = obj.scope.map(o => ({ cluster: o }));
-        return newObj;
-    };
-
-    preFormatWhitelistField = policy => {
-        const { whitelists } = policy;
-        if (!whitelists || !whitelists.length) {
-            return policy;
-        }
-        const clientPolicy = Object.assign({}, policy);
-        clientPolicy.deployments = whitelists
-            .filter(o => o.deployment.name !== undefined)
-            .map(o => o.deployment.name);
-        return clientPolicy;
-    };
-
-    postFormatWhitelistField = policy => {
-        const serverPolicy = Object.assign({}, policy);
-        if (policy.deployments)
-            serverPolicy.whitelists = policy.deployments.map(o => ({ deployment: { name: o } }));
-        return serverPolicy;
-    };
-
     preSubmit = policy => {
-        let newPolicy = this.removeEmptyFields(policy);
-        newPolicy = this.postFormatScopeField(newPolicy);
-        newPolicy = this.postFormatWhitelistField(newPolicy);
+        let newPolicy = removeEmptyFields(policy);
+        newPolicy = postFormatScopeField(newPolicy);
+        newPolicy = postFormatWhitelistField(newPolicy);
         return newPolicy;
     };
 
@@ -828,4 +807,11 @@ class PolicyCreationForm extends Component {
     }
 }
 
-export default PolicyCreationForm;
+const mapStateToProps = createStructuredSelector({
+    notifiers: selectors.getNotifiers,
+    clusters: selectors.getClusters,
+    deployments: selectors.getDeployments,
+    policyCategories: selectors.getPolicyCategories
+});
+
+export default connect(mapStateToProps)(PolicyCreationForm);

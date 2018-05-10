@@ -5,6 +5,7 @@ import { actions, types } from 'reducers/integrations';
 import { types as locationActionTypes } from 'reducers/routes';
 
 const integrationsPath = '/main/integrations';
+const policiesPath = '/main/policies';
 
 export function* getNotifiers() {
     try {
@@ -24,13 +25,17 @@ export function* getImageIntegrations() {
     }
 }
 
-export function* watchIntegrationsLocation() {
+export function* watchLocation() {
     while (true) {
         const action = yield take(locationActionTypes.LOCATION_CHANGE);
         const { payload: location } = action;
 
         if (location && location.pathname && location.pathname.startsWith(integrationsPath)) {
             yield all([fork(getNotifiers), fork(getImageIntegrations)]);
+        }
+
+        if (location && location.pathname && location.pathname.startsWith(policiesPath)) {
+            yield fork(getNotifiers);
         }
     }
 }
@@ -55,5 +60,5 @@ export function* watchFetchRequest() {
 }
 
 export default function* integrations() {
-    yield all([fork(watchIntegrationsLocation), fork(watchFetchRequest)]);
+    yield all([fork(watchLocation), fork(watchFetchRequest)]);
 }

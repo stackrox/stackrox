@@ -6,7 +6,7 @@ import alerts, { selectors as alertSelectors } from './alerts';
 import auth, { selectors as authSelectors } from './auth';
 import benchmarks, { selectors as benchmarkSelectors } from './benchmarks';
 import clusters, { selectors as clusterSelectors } from './clusters';
-import deployments, { selectors as deploymentSelectors } from './risk';
+import deployments, { selectors as deploymentSelectors } from './deployments';
 import images, { selectors as imageSelectors } from './images';
 import integrations, { selectors as integrationSelectors } from './integrations';
 import globalSearch, { selectors as globalSearchSelectors } from './globalSearch';

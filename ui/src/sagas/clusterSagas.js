@@ -7,6 +7,7 @@ import { types as locationActionTypes } from 'reducers/routes';
 const integrationsPath = '/main/integrations';
 const dashboardPath = '/main/dashboard';
 const compliancePath = '/main/compliance';
+const policiesPath = '/main/policies';
 
 export function* getClusters() {
     try {
@@ -21,13 +22,13 @@ export function* watchLocation() {
     while (true) {
         const action = yield take(locationActionTypes.LOCATION_CHANGE);
         const { payload: location } = action;
-
+        const { pathname } = location;
         if (
-            location &&
-            location.pathname &&
-            (location.pathname.startsWith(integrationsPath) ||
-                location.pathname.startsWith(dashboardPath) ||
-                location.pathname.startsWith(compliancePath))
+            pathname &&
+            (pathname.startsWith(integrationsPath) ||
+                pathname.startsWith(dashboardPath) ||
+                pathname.startsWith(policiesPath) ||
+                pathname.startsWith(compliancePath))
         ) {
             yield fork(getClusters);
         }

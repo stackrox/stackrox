@@ -4,7 +4,7 @@ import { fetchGlobalSearchResults } from 'services/SearchService';
 import { actions, types } from 'reducers/globalSearch';
 import { actions as alertsActions } from 'reducers/alerts';
 import { actions as imagesActions } from 'reducers/images';
-import { actions as riskActions } from 'reducers/risk';
+import { actions as deploymentsActions } from 'reducers/deployments';
 import { selectors } from 'reducers';
 
 import { toast } from 'react-toastify';
@@ -35,7 +35,7 @@ export function* passthroughGlobalSearchOptions({ searchOptions, category }) {
             yield put(alertsActions.setAlertsSearchOptions(searchOptions));
             break;
         case 'DEPLOYMENTS':
-            yield put(riskActions.setDeploymentsSearchOptions(searchOptions));
+            yield put(deploymentsActions.setDeploymentsSearchOptions(searchOptions));
             break;
         default:
             break;

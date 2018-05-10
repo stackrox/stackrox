@@ -1,7 +1,7 @@
 import { take, fork, put, call } from 'redux-saga/effects';
 import { types as locationActionTypes } from 'reducers/routes';
 import { actions as alertActions } from 'reducers/alerts';
-import { actions as riskActions } from 'reducers/risk';
+import { actions as deploymentsActions } from 'reducers/deployments';
 import { actions as policiesActions } from 'reducers/policies';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { fetchOptions } from 'services/SearchService';
@@ -75,9 +75,9 @@ describe('Search Sagas Test', () => {
         expect(value).toEqual(
             fork(
                 getSearchOptions,
-                riskActions.setDeploymentsSearchModifiers,
-                riskActions.setDeploymentsSearchSuggestions,
-                riskActions.setDeploymentsSearchOptions,
+                deploymentsActions.setDeploymentsSearchModifiers,
+                deploymentsActions.setDeploymentsSearchSuggestions,
+                deploymentsActions.setDeploymentsSearchOptions,
                 'categories=DEPLOYMENTS'
             )
         );

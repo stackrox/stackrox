@@ -1,5 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter } from 'react-router-dom';
+import { connect } from 'react-redux';
+import { selectors } from 'reducers';
+import { createSelector, createStructuredSelector } from 'reselect';
 import flatten from 'flat';
 import omitBy from 'lodash/omitBy';
 import difference from 'lodash/difference';
@@ -232,7 +237,8 @@ class PolicyView extends Component {
             PropTypes.shape({
                 name: PropTypes.string.isRequired
             })
-        ).isRequired
+        ).isRequired,
+        history: ReactRouterPropTypes.history.isRequired
     };
 
     removeEmptyFields = obj => {
@@ -243,6 +249,13 @@ class PolicyView extends Component {
         );
         const newObj = flatten.unflatten(omittedObj);
         return newObj;
+    };
+
+    updateSelectedPolicy = policy => {
+        const urlSuffix = policy && policy.id ? `/${policy.id}` : '';
+        this.props.history.push({
+            pathname: `/main/policies${urlSuffix}`
+        });
     };
 
     renderFields = () => {
@@ -309,6 +322,9 @@ class PolicyView extends Component {
     };
 
     render() {
+        const { policy } = this.props;
+        if (!policy) return null;
+
         return (
             <div className="flex flex-1 flex-col bg-base-100">
                 {this.renderFields()}
@@ -318,4 +334,17 @@ class PolicyView extends Component {
     }
 }
 
-export default PolicyView;
+const getPolicyId = (state, props) => props.match.params.id;
+
+const getPolicy = createSelector([selectors.getPolicies, getPolicyId], (policies, policyId) => {
+    const selectedPolicy = policies.find(policy => policy.id === policyId);
+    if (!selectedPolicy) return null;
+    return selectedPolicy;
+});
+
+const mapStateToProps = createStructuredSelector({
+    notifiers: selectors.getNotifiers,
+    policy: getPolicy
+});
+
+export default withRouter(connect(mapStateToProps)(PolicyView));

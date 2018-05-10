@@ -7,7 +7,7 @@ import * as Icon from 'react-feather';
 import Collapsible from 'react-collapsible';
 
 import { selectors } from 'reducers';
-import { actions as riskActions } from 'reducers/risk';
+import { actions as deploymentsActions } from 'reducers/deployments';
 
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
@@ -340,11 +340,11 @@ const mapStateToProps = createStructuredSelector({
 
 const mapDispatchToProps = dispatch => ({
     setSearchOptions: searchOptions =>
-        dispatch(riskActions.setDeploymentsSearchOptions(searchOptions)),
+        dispatch(deploymentsActions.setDeploymentsSearchOptions(searchOptions)),
     setSearchModifiers: searchModifiers =>
-        dispatch(riskActions.setDeploymentsSearchModifiers(searchModifiers)),
+        dispatch(deploymentsActions.setDeploymentsSearchModifiers(searchModifiers)),
     setSearchSuggestions: searchSuggestions =>
-        dispatch(riskActions.setDeploymentsSearchSuggestions(searchSuggestions))
+        dispatch(deploymentsActions.setDeploymentsSearchSuggestions(searchSuggestions))
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(RiskPage);

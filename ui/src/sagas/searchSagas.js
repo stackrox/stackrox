@@ -1,7 +1,7 @@
 import { take, fork, put, call } from 'redux-saga/effects';
 
 import { actions as alertActions } from 'reducers/alerts';
-import { actions as riskActions } from 'reducers/risk';
+import { actions as deploymentsActions } from 'reducers/deployments';
 import { actions as policiesActions } from 'reducers/policies';
 import { actions as imagesActions } from 'reducers/images';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
@@ -106,9 +106,9 @@ export function* watchLocation() {
         } else if (location && location.pathname && location.pathname.startsWith(riskPath)) {
             yield fork(
                 getSearchOptions,
-                riskActions.setDeploymentsSearchModifiers,
-                riskActions.setDeploymentsSearchSuggestions,
-                riskActions.setDeploymentsSearchOptions,
+                deploymentsActions.setDeploymentsSearchModifiers,
+                deploymentsActions.setDeploymentsSearchSuggestions,
+                deploymentsActions.setDeploymentsSearchOptions,
                 'categories=DEPLOYMENTS'
             );
         } else if (location && location.pathname && location.pathname.startsWith(policiesPath)) {

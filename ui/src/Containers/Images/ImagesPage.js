@@ -13,7 +13,7 @@ import 'react-table/react-table.css';
 
 import { selectors } from 'reducers';
 import { actions as imagesActions } from 'reducers/images';
-import { actions as riskActions } from 'reducers/risk';
+import { actions as deploymentsActions } from 'reducers/deployments';
 
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
@@ -409,7 +409,7 @@ const mapStateToProps = createStructuredSelector({
 
 const mapDispatchToProps = dispatch => ({
     setDeploymentsSearchOptions: searchOptions =>
-        dispatch(riskActions.setDeploymentsSearchOptions(searchOptions)),
+        dispatch(deploymentsActions.setDeploymentsSearchOptions(searchOptions)),
     setSearchOptions: searchOptions =>
         dispatch(imagesActions.setImagesSearchOptions(searchOptions)),
     setSearchModifiers: searchModifiers =>
