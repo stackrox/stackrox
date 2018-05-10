@@ -1,4 +1,5 @@
 import { url as dashboardUrl } from './pages/DashboardPage';
+import selectors from './pages/GeneralPage';
 
 //
 // Sanity / general checks for UI being up and running
@@ -12,8 +13,8 @@ describe('General sanity checks', () => {
 
     it('should render navbar with Dashboard selected', () => {
         cy.visit('/');
-        cy.get('nav.left-navigation li:first a').as('firstNavItem');
-        cy.get('nav.left-navigation li:not(:first) a').as('otherNavItems');
+        cy.get(selectors.navLinks.first).as('firstNavItem');
+        cy.get(selectors.navLinks.others).as('otherNavItems');
 
         // redirect should happen
         cy.url().should('contain', dashboardUrl);
@@ -25,7 +26,7 @@ describe('General sanity checks', () => {
         // nothing else is selected
         cy.get('@otherNavItems').should('not.have.class', 'bg-primary-600');
 
-        cy.get('nav.top-navigation li').as('topNavItems');
+        cy.get(selectors.navLinks.list).as('topNavItems');
         cy.get('@topNavItems').should($lis => {
             expect($lis).to.have.length(4);
             expect($lis.eq(0)).to.contain('Violation');
@@ -33,5 +34,19 @@ describe('General sanity checks', () => {
             expect($lis.eq(2)).to.contain('Deployment');
             expect($lis.eq(3)).to.contain('Image');
         });
+    });
+
+    it('should handle toggle click on Compliance navigation link', () => {
+        cy.visit('/');
+
+        cy.get(selectors.navLinks.compliance).as('compliance');
+
+        cy.get('@compliance').click();
+
+        cy.get(selectors.sidePanel).should('be.visible');
+
+        cy.get('@compliance').click();
+
+        cy.get('.navigation-panel').should('not.be.visible');
     });
 });
