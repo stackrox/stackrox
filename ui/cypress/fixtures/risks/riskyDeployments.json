@@ -1,4 +1,5 @@
-{ "deployments": [{
+{ "deployments": [
+  {
     "id": "o4l7wy14ejlxfevca4gf609js",
     "name": "prevent_sensor",
     "version": "9301",
@@ -78,7 +79,8 @@
       }],
       "ports": []
     }]
-  }, {
+  },
+  {
     "id": "rug2mk6mokve2kansenxl2lbx",
     "name": "prevent_central",
     "version": "9289",
@@ -133,5 +135,330 @@
         "exposure": "external"
       }]
     }]
-  }]
+  },
+  {
+    "id": "o4l7wy14ejlxfevca4gf609jp",
+    "name": "prevent_sensor1",
+    "version": "9301",
+    "type": "Replicated",
+    "namespace": "",
+    "replicas": "1",
+    "labels": {
+      "com.docker.stack.image": "stackrox/prevent:latest",
+      "com.docker.stack.namespace": "prevent"
+    },
+    "updatedAt": "2018-03-29T20:38:01.064862691Z",
+    "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
+    "clusterName": "remote",
+    "containers": [{
+      "config": {
+        "env": [{
+          "key": "ROX_CENTRAL_ENDPOINT",
+          "value": "central.prevent_net:443"
+        }, {
+          "key": "ROX_PREVENT_ADVERTISED_ENDPOINT",
+          "value": "sensor.prevent_net:443"
+        }, {
+          "key": "ROX_PREVENT_CLUSTER_ID",
+          "value": "f01f284a-aa22-4445-9f3e-8619df46b5a1"
+        }, {
+          "key": "ROX_PREVENT_IMAGE",
+          "value": "stackrox/prevent:latest"
+        }],
+        "command": ["swarm-sensor"],
+        "args": [],
+        "directory": "",
+        "user": "",
+        "uid": "0"
+      },
+      "image": {
+        "name": {
+          "sha": "sha256:e1b3db0717ac65be6891c443dc0883a5a79c24ce587fabc43f1f977e2b68cf80",
+          "registry": "docker.io",
+          "remote": "stackrox/prevent",
+          "tag": "latest",
+          "fullName": "docker.io/stackrox/prevent:latest"
+        },
+        "metadata": null,
+        "scan": null
+      },
+      "securityContext": null,
+      "volumes": [{
+        "name": "/var/run/docker.sock",
+        "source": "/var/run/docker.sock",
+        "destination": "/var/run/docker.sock",
+        "readOnly": false,
+        "type": "bind"
+      }, {
+        "name": "prevent_central_certificate",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/ca.pem",
+        "readOnly": false,
+        "type": "secret"
+      }, {
+        "name": "prevent_registry_auth",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/registry_auth",
+        "readOnly": false,
+        "type": "secret"
+      }, {
+        "name": "prevent_sensor_certificate",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/cert.pem",
+        "readOnly": false,
+        "type": "secret"
+      }, {
+        "name": "prevent_sensor_private_key",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/key.pem",
+        "readOnly": false,
+        "type": "secret"
+      }],
+      "ports": []
+    }]
+  },
+  {
+    "id": "o4l7wy14ejlxfevca4gf609jq",
+    "name": "prevent_sensor2",
+    "version": "9301",
+    "type": "Replicated",
+    "namespace": "",
+    "replicas": "1",
+    "labels": {
+      "com.docker.stack.image": "stackrox/prevent:latest",
+      "com.docker.stack.namespace": "prevent"
+    },
+    "updatedAt": "2018-03-29T20:38:01.064862691Z",
+    "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
+    "clusterName": "remote",
+    "containers": [{
+      "config": {
+        "env": [{
+          "key": "ROX_CENTRAL_ENDPOINT",
+          "value": "central.prevent_net:443"
+        }, {
+          "key": "ROX_PREVENT_ADVERTISED_ENDPOINT",
+          "value": "sensor.prevent_net:443"
+        }, {
+          "key": "ROX_PREVENT_CLUSTER_ID",
+          "value": "f01f284a-aa22-4445-9f3e-8619df46b5a1"
+        }, {
+          "key": "ROX_PREVENT_IMAGE",
+          "value": "stackrox/prevent:latest"
+        }],
+        "command": ["swarm-sensor"],
+        "args": [],
+        "directory": "",
+        "user": "",
+        "uid": "0"
+      },
+      "image": {
+        "name": {
+          "sha": "sha256:e1b3db0717ac65be6891c443dc0883a5a79c24ce587fabc43f1f977e2b68cf80",
+          "registry": "docker.io",
+          "remote": "stackrox/prevent",
+          "tag": "latest",
+          "fullName": "docker.io/stackrox/prevent:latest"
+        },
+        "metadata": null,
+        "scan": null
+      },
+      "securityContext": null,
+      "volumes": [{
+        "name": "/var/run/docker.sock",
+        "source": "/var/run/docker.sock",
+        "destination": "/var/run/docker.sock",
+        "readOnly": false,
+        "type": "bind"
+      }, {
+        "name": "prevent_central_certificate",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/ca.pem",
+        "readOnly": false,
+        "type": "secret"
+      }, {
+        "name": "prevent_registry_auth",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/registry_auth",
+        "readOnly": false,
+        "type": "secret"
+      }, {
+        "name": "prevent_sensor_certificate",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/cert.pem",
+        "readOnly": false,
+        "type": "secret"
+      }, {
+        "name": "prevent_sensor_private_key",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/key.pem",
+        "readOnly": false,
+        "type": "secret"
+      }],
+      "ports": []
+    }]
+  },
+  {
+    "id": "o4l7wy14ejlxfevca4gf609jr",
+    "name": "prevent_sensor3",
+    "version": "9301",
+    "type": "Replicated",
+    "namespace": "",
+    "replicas": "1",
+    "labels": {
+      "com.docker.stack.image": "stackrox/prevent:latest",
+      "com.docker.stack.namespace": "prevent"
+    },
+    "updatedAt": "2018-03-29T20:38:01.064862691Z",
+    "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
+    "clusterName": "remote",
+    "containers": [{
+      "config": {
+        "env": [{
+          "key": "ROX_CENTRAL_ENDPOINT",
+          "value": "central.prevent_net:443"
+        }, {
+          "key": "ROX_PREVENT_ADVERTISED_ENDPOINT",
+          "value": "sensor.prevent_net:443"
+        }, {
+          "key": "ROX_PREVENT_CLUSTER_ID",
+          "value": "f01f284a-aa22-4445-9f3e-8619df46b5a1"
+        }, {
+          "key": "ROX_PREVENT_IMAGE",
+          "value": "stackrox/prevent:latest"
+        }],
+        "command": ["swarm-sensor"],
+        "args": [],
+        "directory": "",
+        "user": "",
+        "uid": "0"
+      },
+      "image": {
+        "name": {
+          "sha": "sha256:e1b3db0717ac65be6891c443dc0883a5a79c24ce587fabc43f1f977e2b68cf80",
+          "registry": "docker.io",
+          "remote": "stackrox/prevent",
+          "tag": "latest",
+          "fullName": "docker.io/stackrox/prevent:latest"
+        },
+        "metadata": null,
+        "scan": null
+      },
+      "securityContext": null,
+      "volumes": [{
+        "name": "/var/run/docker.sock",
+        "source": "/var/run/docker.sock",
+        "destination": "/var/run/docker.sock",
+        "readOnly": false,
+        "type": "bind"
+      }, {
+        "name": "prevent_central_certificate",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/ca.pem",
+        "readOnly": false,
+        "type": "secret"
+      }, {
+        "name": "prevent_registry_auth",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/registry_auth",
+        "readOnly": false,
+        "type": "secret"
+      }, {
+        "name": "prevent_sensor_certificate",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/cert.pem",
+        "readOnly": false,
+        "type": "secret"
+      }, {
+        "name": "prevent_sensor_private_key",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/key.pem",
+        "readOnly": false,
+        "type": "secret"
+      }],
+      "ports": []
+    }]
+  },
+  {
+    "id": "o4l7wy14ejlxfevca4gf609jt",
+    "name": "prevent_sensor4",
+    "version": "9301",
+    "type": "Replicated",
+    "namespace": "",
+    "replicas": "1",
+    "labels": {
+      "com.docker.stack.image": "stackrox/prevent:latest",
+      "com.docker.stack.namespace": "prevent"
+    },
+    "updatedAt": "2018-03-29T20:38:01.064862691Z",
+    "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
+    "clusterName": "remote",
+    "containers": [{
+      "config": {
+        "env": [{
+          "key": "ROX_CENTRAL_ENDPOINT",
+          "value": "central.prevent_net:443"
+        }, {
+          "key": "ROX_PREVENT_ADVERTISED_ENDPOINT",
+          "value": "sensor.prevent_net:443"
+        }, {
+          "key": "ROX_PREVENT_CLUSTER_ID",
+          "value": "f01f284a-aa22-4445-9f3e-8619df46b5a1"
+        }, {
+          "key": "ROX_PREVENT_IMAGE",
+          "value": "stackrox/prevent:latest"
+        }],
+        "command": ["swarm-sensor"],
+        "args": [],
+        "directory": "",
+        "user": "",
+        "uid": "0"
+      },
+      "image": {
+        "name": {
+          "sha": "sha256:e1b3db0717ac65be6891c443dc0883a5a79c24ce587fabc43f1f977e2b68cf80",
+          "registry": "docker.io",
+          "remote": "stackrox/prevent",
+          "tag": "latest",
+          "fullName": "docker.io/stackrox/prevent:latest"
+        },
+        "metadata": null,
+        "scan": null
+      },
+      "securityContext": null,
+      "volumes": [{
+        "name": "/var/run/docker.sock",
+        "source": "/var/run/docker.sock",
+        "destination": "/var/run/docker.sock",
+        "readOnly": false,
+        "type": "bind"
+      }, {
+        "name": "prevent_central_certificate",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/ca.pem",
+        "readOnly": false,
+        "type": "secret"
+      }, {
+        "name": "prevent_registry_auth",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/registry_auth",
+        "readOnly": false,
+        "type": "secret"
+      }, {
+        "name": "prevent_sensor_certificate",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/cert.pem",
+        "readOnly": false,
+        "type": "secret"
+      }, {
+        "name": "prevent_sensor_private_key",
+        "source": "",
+        "destination": "/run/secrets/stackrox.io/key.pem",
+        "readOnly": false,
+        "type": "secret"
+      }],
+      "ports": []
+    }]
+  }
+]
 }

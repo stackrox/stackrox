@@ -197,10 +197,12 @@ describe('Dashboard page', () => {
             .get(selectors.sectionHeaders.topRiskyDeployments)
             .next()
             .as('list');
+
+        // Should only display the top 5 risky deployments
         cy
             .get('@list')
             .find('li')
-            .should('have.length', 2);
+            .should('have.length', 5);
 
         cy.get(selectors.buttons.more).click();
         cy.url().should('match', /\/main\/risk/);
