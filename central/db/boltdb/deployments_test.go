@@ -39,6 +39,7 @@ func (suite *BoltDeploymentTestSuite) TestDeployments() {
 			Version:   "100",
 			Type:      "Replicated",
 			UpdatedAt: ptypes.TimestampNow(),
+			Priority:  1,
 		},
 		{
 			Id:        "barID",
@@ -46,6 +47,7 @@ func (suite *BoltDeploymentTestSuite) TestDeployments() {
 			Version:   "400",
 			Type:      "Global",
 			UpdatedAt: ptypes.TimestampNow(),
+			Priority:  1,
 		},
 	}
 

@@ -62,29 +62,45 @@ func (s *DeploymentService) GetDeployment(ctx context.Context, request *v1.Resou
 	return deployment, nil
 }
 
-// GetDeployments returns deployments according to the request.
-func (s *DeploymentService) GetDeployments(ctx context.Context, request *v1.RawQuery) (*v1.GetDeploymentsResponse, error) {
-	resp := new(v1.GetDeploymentsResponse)
+func convertDeploymentsToDeploymentsList(deployments []*v1.Deployment) []*v1.ListDeployment {
+	sort.SliceStable(deployments, func(i, j int) bool {
+		return deployments[i].GetPriority() < deployments[j].GetPriority()
+	})
+	listDeployments := make([]*v1.ListDeployment, 0, len(deployments))
+	for _, d := range deployments {
+		listDeployments = append(listDeployments, &v1.ListDeployment{
+			Id:        d.GetId(),
+			Name:      d.GetName(),
+			Cluster:   d.GetClusterName(),
+			Namespace: d.GetNamespace(),
+			UpdatedAt: d.GetUpdatedAt(),
+			Priority:  d.GetPriority(),
+		})
+	}
+	return listDeployments
+}
+
+// ListDeployments returns ListDeployments according to the request.
+func (s *DeploymentService) ListDeployments(ctx context.Context, request *v1.RawQuery) (*v1.ListDeploymentsResponse, error) {
+	resp := new(v1.ListDeploymentsResponse)
+	var deployments []*v1.Deployment
+	var err error
 	if request.GetQuery() == "" {
-		deployments, err := s.datastore.GetDeployments()
+		deployments, err = s.datastore.GetDeployments()
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
-		resp.Deployments = deployments
 	} else {
 		parsedQuery, err := search.ParseRawQuery(request.GetQuery())
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		deployments, err := s.datastore.SearchRawDeployments(parsedQuery)
+		deployments, err = s.datastore.SearchRawDeployments(parsedQuery)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
-		resp.Deployments = deployments
 	}
-	sort.SliceStable(resp.Deployments, func(i, j int) bool {
-		return resp.Deployments[i].GetRisk().GetScore() > resp.Deployments[j].GetRisk().GetScore()
-	})
+	resp.Deployments = convertDeploymentsToDeploymentsList(deployments)
 	return resp, nil
 }
 

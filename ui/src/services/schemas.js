@@ -9,3 +9,5 @@ export const alert = new schema.Entity('alert');
 
 export const alerts = { alerts: [alert] };
 export const alertNumsByPolicy = { alertsByPolicies: [{ policy }] };
+
+export const deployment = new schema.Entity('deployment');

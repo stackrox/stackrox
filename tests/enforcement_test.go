@@ -46,7 +46,7 @@ func verifyDeploymentScaledToZero(t *testing.T) {
 
 	for range ticker.C {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		deployments, err := service.GetDeployments(ctx, &v1.RawQuery{
+		listDeployments, err := service.ListDeployments(ctx, &v1.RawQuery{
 			Query: getDeploymentQuery(nginxDeploymentName),
 		})
 		cancel()
@@ -54,8 +54,13 @@ func verifyDeploymentScaledToZero(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err == nil && len(deployments.GetDeployments()) > 0 {
-			d := deployments.GetDeployments()[0]
+		deployments, err := retrieveDeployments(service, listDeployments.GetDeployments())
+		if err != nil {
+			logger.Errorf("Error retrieving deployments: %s", err)
+		}
+
+		if err == nil && len(deployments) > 0 {
+			d := deployments[0]
 
 			if d.GetReplicas() == 0 {
 				return

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/ranking"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/bolthelper"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -21,6 +22,7 @@ var (
 // BoltDB returns an instantiation of the storage interface. Exported for test purposes
 type BoltDB struct {
 	*bolt.DB
+	ranker *ranking.Ranker
 }
 
 // New returns an instance of the persistent BoltDB store
@@ -40,7 +42,8 @@ func New(path string) (*BoltDB, error) {
 	}
 
 	b := &BoltDB{
-		DB: db,
+		DB:     db,
+		ranker: ranking.NewRanker(),
 	}
 
 	if err := b.initializeTables(); err != nil {

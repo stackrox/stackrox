@@ -1,22 +1,34 @@
 import axios from 'axios';
 import queryString from 'query-string';
+import { normalize } from 'normalizr';
+
+import { deployment as deploymentSchema } from './schemas';
+import searchOptionsToQuery from './searchOptionsToQuery';
+
+const deploymentsUrl = '/v1/deployments';
 
 /**
- * Fetches list of registered risks.
+ * Fetches list of registered deployments.
  *
- * @returns {Promise<Object[], Error>} fulfilled with array of risks (as defined in .proto)
+ * @returns {Promise<Object[], Error>} fulfilled with array of deployments (as defined in .proto)
  */
-export default function fetchDeployments(filters) {
+export function fetchDeployments(searchOptions = []) {
     const params = queryString.stringify({
-        ...filters
+        query: searchOptionsToQuery(searchOptions)
     });
-    const deploymentsUrl = '/v1/deployments';
-    return axios.get(`${deploymentsUrl}?${params}`).then(response => {
-        const transformedData = response.data.deployments.map((o, index) => {
-            const item = Object.assign({}, o);
-            item.priority = index + 1;
-            return item;
-        });
-        return { response: { deployments: transformedData } };
-    });
+    return axios
+        .get(`${deploymentsUrl}?${params}`)
+        .then(response => ({ response: normalize(response.data.deployments, [deploymentSchema]) }));
+}
+
+/**
+ * Fetches a deployment by its ID.
+ *
+ * @returns {Promise<Object, Error>} fulfilled with a deployment object (as defined in .proto)
+ */
+export function fetchDeployment(id) {
+    if (!id) throw new Error('Deployment ID must be specified');
+    return axios
+        .get(`${deploymentsUrl}/${id}`)
+        .then(response => ({ response: normalize(response.data, deploymentSchema) }));
 }

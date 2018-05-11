@@ -3,8 +3,6 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
-import * as Icon from 'react-feather';
-import Collapsible from 'react-collapsible';
 import dateFns from 'date-fns';
 import ReactTooltip from 'react-tooltip';
 import reduce from 'lodash/reduce';
@@ -16,6 +14,7 @@ import { actions as imagesActions } from 'reducers/images';
 import { actions as deploymentsActions } from 'reducers/deployments';
 
 import PageHeader from 'Components/PageHeader';
+import CollapsibleCard from 'Components/CollapsibleCard';
 import SearchInput from 'Components/SearchInput';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
@@ -151,20 +150,6 @@ class ImagesPage extends Component {
         return <Table columns={columns} rows={rows} onRowClick={this.updateSelectedImage} />;
     }
 
-    renderCollapsibleCard = (title, direction) => {
-        const icons = {
-            up: <Icon.ChevronUp className="h-4 w-4" />,
-            down: <Icon.ChevronDown className="h-4 w-4" />
-        };
-
-        return (
-            <div className="p-3 border-b border-base-300 text-primary-600 tracking-wide cursor-pointer flex justify-between">
-                <div>{title}</div>
-                <div>{icons[direction]}</div>
-            </div>
-        );
-    };
-
     renderSidePanel = () => {
         const selectedImage = this.getSelectedImage();
         if (!selectedImage) return '';
@@ -194,12 +179,7 @@ class ImagesPage extends Component {
         return (
             <div className="px-3 py-4">
                 <div className="alert-preview bg-white shadow text-primary-600 tracking-wide">
-                    <Collapsible
-                        open
-                        trigger={this.renderCollapsibleCard(title, 'up')}
-                        triggerWhenOpen={this.renderCollapsibleCard(title, 'down')}
-                        transitionTime={100}
-                    >
+                    <CollapsibleCard title={title}>
                         <div className="h-full">
                             <div className="p-3">
                                 <KeyValuePairs data={imageDetail} keyValueMap={imageDetailsMap} />
@@ -238,7 +218,7 @@ class ImagesPage extends Component {
                                 </span>
                             </div>
                         </div>
-                    </Collapsible>
+                    </CollapsibleCard>
                 </div>
             </div>
         );
@@ -332,12 +312,7 @@ class ImagesPage extends Component {
         return (
             <div className="px-3 py-4">
                 <div className="alert-preview bg-white shadow text-primary-600 tracking-wide">
-                    <Collapsible
-                        open
-                        trigger={this.renderCollapsibleCard(title, 'up')}
-                        triggerWhenOpen={this.renderCollapsibleCard(title, 'down')}
-                        transitionTime={100}
-                    >
+                    <CollapsibleCard title={title}>
                         <div className="h-full p-3 font-500">
                             {scan && (
                                 <ReactTable
@@ -352,7 +327,7 @@ class ImagesPage extends Component {
                                 <div className="font-500">No scanner setup for this registry</div>
                             )}
                         </div>
-                    </Collapsible>
+                    </CollapsibleCard>
                 </div>
             </div>
         );
@@ -407,15 +382,11 @@ const mapStateToProps = createStructuredSelector({
     isViewFiltered
 });
 
-const mapDispatchToProps = dispatch => ({
-    setDeploymentsSearchOptions: searchOptions =>
-        dispatch(deploymentsActions.setDeploymentsSearchOptions(searchOptions)),
-    setSearchOptions: searchOptions =>
-        dispatch(imagesActions.setImagesSearchOptions(searchOptions)),
-    setSearchModifiers: searchModifiers =>
-        dispatch(imagesActions.setImagesSearchModifiers(searchModifiers)),
-    setSearchSuggestions: searchSuggestions =>
-        dispatch(imagesActions.setImagesSearchSuggestions(searchSuggestions))
-});
+const mapDispatchToProps = {
+    setDeploymentsSearchOptions: deploymentsActions.setDeploymentsSearchOptions,
+    setSearchOptions: imagesActions.setImagesSearchOptions,
+    setSearchModifiers: imagesActions.setImagesSearchModifiers,
+    setSearchSuggestions: imagesActions.setImagesSearchSuggestions
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(ImagesPage);

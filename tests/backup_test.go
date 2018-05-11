@@ -26,7 +26,7 @@ func checkDeploymentExists(t *testing.T) {
 	// 10 seconds should be enough for a deployment to be returned
 	for i := 0; i < 5; i++ {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		resp, err := service.GetDeployments(ctx, &v1.RawQuery{})
+		resp, err := service.ListDeployments(ctx, &v1.RawQuery{})
 		cancel()
 		require.NoError(t, err)
 		if len(resp.Deployments) != 0 {

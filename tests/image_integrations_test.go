@@ -125,14 +125,19 @@ func verifyMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.Ima
 
 	deploymentService := v1.NewDeploymentServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	deployments, err := deploymentService.GetDeployments(ctx, &v1.RawQuery{
+	listDeployments, err := deploymentService.ListDeployments(ctx, &v1.RawQuery{
 		Query: getDeploymentQuery(alpineDeploymentName),
 	})
 	cancel()
 	require.NoError(t, err)
-	require.NotEmpty(t, deployments.GetDeployments())
+	require.NotEmpty(t, listDeployments.GetDeployments())
 
-	for _, d := range deployments.GetDeployments() {
+	deployments, err := retrieveDeployments(deploymentService, listDeployments.GetDeployments())
+	if err != nil {
+		return false
+	}
+
+	for _, d := range deployments {
 		require.NotEmpty(t, d.GetContainers())
 		c := d.GetContainers()[0]
 

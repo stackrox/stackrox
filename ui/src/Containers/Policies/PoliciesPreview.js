@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import Collapsible from 'react-collapsible';
-import * as Icon from 'react-feather';
+
 import Table from 'Components/Table';
 import Message from 'Components/Message';
+import CollapsibleCard from 'Components/CollapsibleCard';
 
 class PoliciesPreview extends Component {
     static propTypes = {
@@ -34,20 +34,6 @@ class PoliciesPreview extends Component {
         return <Message message={message} type="warn" />;
     };
 
-    renderPanel = (title, direction) => {
-        const icons = {
-            up: <Icon.ChevronUp className="h-4 w-4" />,
-            down: <Icon.ChevronDown className="h-4 w-4" />
-        };
-
-        return (
-            <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide cursor-pointer flex justify-between">
-                <div>{title}</div>
-                <div>{icons[direction]}</div>
-            </div>
-        );
-    };
-
     renderViolationsPreview = () => {
         if (!this.props.dryrun.alerts) return '';
         const title = 'Violations Preview';
@@ -67,12 +53,7 @@ class PoliciesPreview extends Component {
         return (
             <div className="px-3 pb-4">
                 <div className="alert-preview bg-white shadow text-primary-600 tracking-wide">
-                    <Collapsible
-                        open
-                        trigger={this.renderPanel(title, 'up')}
-                        triggerWhenOpen={this.renderPanel(title, 'down')}
-                        transitionTime={200}
-                    >
+                    <CollapsibleCard title={title}>
                         {rows.length ? (
                             <Table columns={columns} rows={rows} />
                         ) : (
@@ -80,7 +61,7 @@ class PoliciesPreview extends Component {
                                 No violations will be generated for this policy at this time.
                             </div>
                         )}
-                    </Collapsible>
+                    </CollapsibleCard>
                 </div>
             </div>
         );
@@ -101,12 +82,7 @@ class PoliciesPreview extends Component {
         return (
             <div className="px-3 pb-4">
                 <div className="whitelist-exclusions bg-white shadow text-primary-600 tracking-wide">
-                    <Collapsible
-                        open
-                        trigger={this.renderPanel(title, 'up')}
-                        triggerWhenOpen={this.renderPanel(title, 'down')}
-                        transitionTime={200}
-                    >
+                    <CollapsibleCard title={title}>
                         {rows.length ? (
                             <Table columns={columns} rows={rows} />
                         ) : (
@@ -114,7 +90,7 @@ class PoliciesPreview extends Component {
                                 No deployments will be whitelisted at this time.
                             </div>
                         )}
-                    </Collapsible>
+                    </CollapsibleCard>
                 </div>
             </div>
         );

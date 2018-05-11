@@ -47,6 +47,7 @@ message Deployment {
     Risk risk                                  = 12;
     google.protobuf.Timestamp tombstone        = 13;
     repeated KeyValue annotations              = 14;
+    int64 priority                             = 15;
 }
 
 message Container {
@@ -104,10 +105,6 @@ message PortConfig {
     Exposure exposure       = 4;
 }
 
-message GetDeploymentsResponse {
-    repeated Deployment deployments = 1;
-}
-
 message DeploymentLabelsResponse {
     message LabelValues {
         repeated string values = 1;
@@ -127,6 +124,23 @@ message GetMultipliersResponse {
     repeated Multiplier multipliers = 1;
 }
 
+message ListDeployment {
+    string                    id         = 1;
+    string                    name       = 2;
+    string                    cluster    = 3;
+    string                    namespace  = 4;
+    google.protobuf.Timestamp updated_at = 5;
+    int64                     priority   = 6;
+}
+
+message ListDeploymentsResponse {
+    repeated ListDeployment deployments = 1;
+}
+
+message GetDeploymentsResponse {
+    repeated Deployment deployments = 1;
+}
+
 service DeploymentService {
 
     rpc GetDeployment(ResourceByID) returns (Deployment) {
@@ -135,7 +149,7 @@ service DeploymentService {
         };
     }
 
-    rpc GetDeployments(RawQuery) returns (GetDeploymentsResponse) {
+    rpc ListDeployments(RawQuery) returns (ListDeploymentsResponse) {
         option (google.api.http) = {
             get: "/v1/deployments"
         };

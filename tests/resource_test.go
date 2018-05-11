@@ -58,7 +58,7 @@ func TestDeployments(t *testing.T) {
 
 	service := v1.NewDeploymentServiceClient(conn)
 
-	deployments, err := service.GetDeployments(ctx, &v1.RawQuery{
+	deployments, err := service.ListDeployments(ctx, &v1.RawQuery{
 		Query: getDeploymentQuery("central", "sensor"),
 	})
 	require.NoError(t, err)
@@ -68,9 +68,11 @@ func TestDeployments(t *testing.T) {
 
 	for _, d := range deployments.GetDeployments() {
 		if d.GetName() == `central` {
-			centralDeployment = d
+			centralDeployment, err = retrieveDeployment(service, d)
+			require.NoError(t, err)
 		} else if d.GetName() == `sensor` {
-			sensorDeployment = d
+			sensorDeployment, err = retrieveDeployment(service, d)
+			require.NoError(t, err)
 		}
 	}
 

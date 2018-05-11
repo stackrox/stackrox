@@ -364,8 +364,7 @@ class DashboardPage extends Component {
 
     renderTopRiskyDeployments = () => {
         if (!this.props.deployments) return '';
-        const deployments = this.props.deployments.slice(0, 5);
-        return <TopRiskyDeployments deployments={deployments} />;
+        return <TopRiskyDeployments deployments={this.props.deployments} />;
     };
 
     render() {
@@ -418,6 +417,12 @@ class DashboardPage extends Component {
     }
 }
 
+const getTopRiskyDeployments = createSelector([selectors.getDeploymentsById], deploymentsById =>
+    Object.values(deploymentsById)
+        .sort((a, b) => a.priority - b.priority)
+        .slice(0, 5)
+);
+
 const getClustersByName = createSelector([selectors.getClusters], clusters =>
     clusters.reduce(
         (result, cluster) => ({
@@ -433,7 +438,7 @@ const mapStateToProps = createStructuredSelector({
     violationsByCluster: selectors.getAlertCountsByCluster,
     alertsByTimeseries: selectors.getAlertsByTimeseries,
     benchmarks: selectors.getBenchmarksByCluster,
-    deployments: selectors.getDeployments,
+    deployments: getTopRiskyDeployments,
     clustersByName: getClustersByName
 });
 

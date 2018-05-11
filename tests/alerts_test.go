@@ -99,6 +99,24 @@ func teardownNginxDeployment(t *testing.T) {
 	}
 }
 
+func retrieveDeployment(service v1.DeploymentServiceClient, listDeployment *v1.ListDeployment) (*v1.Deployment, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	return service.GetDeployment(ctx, &v1.ResourceByID{Id: listDeployment.GetId()})
+}
+
+func retrieveDeployments(service v1.DeploymentServiceClient, deps []*v1.ListDeployment) ([]*v1.Deployment, error) {
+	deployments := make([]*v1.Deployment, 0, len(deps))
+	for _, d := range deps {
+		deployment, err := retrieveDeployment(service, d)
+		if err != nil {
+			return nil, err
+		}
+		deployments = append(deployments, deployment)
+	}
+	return deployments, nil
+}
+
 func waitForDeployment(t *testing.T, deploymentName string) {
 	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
 	require.NoError(t, err)
@@ -115,19 +133,25 @@ func waitForDeployment(t *testing.T, deploymentName string) {
 		select {
 		case <-ticker.C:
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			deployments, err := service.GetDeployments(ctx, &v1.RawQuery{
+			listDeployments, err := service.ListDeployments(ctx, &v1.RawQuery{
 				Query: getDeploymentQuery(deploymentName),
 			},
 			)
 			cancel()
 			if err != nil {
-				logger.Error(err)
+				logger.Errorf("Error listing deployments: %s", err)
 				continue
 			}
 
-			if err == nil && len(deployments.GetDeployments()) > 0 {
-				logger.Infof("%s: Found %+v deployments", t.Name(), deployments.GetDeployments())
-				d := deployments.GetDeployments()[0]
+			deployments, err := retrieveDeployments(service, listDeployments.GetDeployments())
+			if err != nil {
+				logger.Errorf("Error retrieving deployments: %s", err)
+				continue
+			}
+
+			if err == nil && len(deployments) > 0 {
+				logger.Infof("%s: Found %+v deployments", t.Name(), deployments)
+				d := deployments[0]
 
 				if len(d.GetContainers()) > 0 && d.GetContainers()[0].GetImage().GetName().GetSha() != "" {
 					return
@@ -156,7 +180,7 @@ func waitForTermination(t *testing.T, deploymentName string) {
 		select {
 		case <-ticker.C:
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			deployments, err := service.GetDeployments(ctx, &v1.RawQuery{
+			listDeployments, err := service.ListDeployments(ctx, &v1.RawQuery{
 				Query: fmt.Sprintf("Deployment Name:%s", deploymentName),
 			})
 			cancel()
@@ -164,11 +188,16 @@ func waitForTermination(t *testing.T, deploymentName string) {
 				logger.Error(err)
 				continue
 			}
+			deployments, err := retrieveDeployments(service, listDeployments.GetDeployments())
+			if err != nil {
+				logger.Errorf("Error retrieving deployments: %s", err)
+				continue
+			}
 
-			if err == nil && len(deployments.GetDeployments()) == 0 {
+			if err == nil && len(deployments) == 0 {
 				return
 			}
-			logger.Infof("%s: Found %+v deployments", t.Name(), deployments.GetDeployments())
+			logger.Infof("%s: Found %+v deployments", t.Name(), deployments)
 		case <-timer.C:
 			t.Fatalf("Timed out waiting for deployment %s to stop", deploymentName)
 		}

@@ -3,8 +3,7 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
-import * as Icon from 'react-feather';
-import Collapsible from 'react-collapsible';
+import { ClipLoader } from 'react-spinners';
 
 import { selectors } from 'reducers';
 import { actions as deploymentsActions } from 'reducers/deployments';
@@ -15,56 +14,9 @@ import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
-import KeyValuePairs from 'Components/KeyValuePairs';
-import { Link } from 'react-router-dom';
 import { sortNumber } from 'sorters/sorters';
-import lowerCase from 'lodash/lowerCase';
-import capitalize from 'lodash/capitalize';
-
-const deploymentDetailsMap = {
-    id: {
-        label: 'Deployment ID'
-    },
-    clusterName: {
-        label: 'Cluster'
-    },
-    namespace: {
-        label: 'Namespace'
-    },
-    replicas: {
-        label: 'Replicas'
-    },
-    labels: {
-        label: 'Labels'
-    },
-    ports: {
-        label: 'Port configuration'
-    },
-    volume: {
-        label: 'Volume'
-    }
-};
-
-const containerConfigMap = {
-    args: {
-        label: 'Args'
-    },
-    command: {
-        label: 'Command'
-    },
-    directory: {
-        label: 'Directory'
-    },
-    env: {
-        label: 'Environment'
-    },
-    uid: {
-        label: 'User ID'
-    },
-    user: {
-        label: 'User'
-    }
-};
+import RiskDetails from './RiskDetails';
+import DeploymentDetails from './DeploymentDetails';
 
 class RiskPage extends Component {
     static propTypes = {
@@ -101,7 +53,7 @@ class RiskPage extends Component {
     renderTable() {
         const columns = [
             { key: 'name', label: 'Name' },
-            { key: 'clusterName', label: 'Cluster' },
+            { key: 'cluster', label: 'Cluster' },
             { key: 'namespace', label: 'Namespace' },
             { key: 'priority', label: 'Priority', sortMethod: sortNumber('priority') }
         ];
@@ -109,190 +61,38 @@ class RiskPage extends Component {
         return <Table columns={columns} rows={rows} onRowClick={this.updateSelectedDeployment} />;
     }
 
-    renderCollapsibleCard = (title, direction) => {
-        const icons = {
-            up: <Icon.ChevronUp className="h-4 w-4" />,
-            down: <Icon.ChevronDown className="h-4 w-4" />
-        };
-
-        return (
-            <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide cursor-pointer flex justify-between">
-                <div>{title}</div>
-                <div>{icons[direction]}</div>
-            </div>
-        );
-    };
-
     renderSidePanel = () => {
         const selectedDeployment = this.getSelectedDeployment();
         if (!selectedDeployment) return null;
-        const header = selectedDeployment.name;
-        const riskPanelTabs = [{ text: 'risk indicators' }, { text: 'deployment details' }];
+
+        const riskPanelTabs = [{ text: 'Risk Indicators' }, { text: 'Deployment Details' }];
+        const isLoading = !selectedDeployment.risk; // TODO: poor-man loading check until a proper one in place
+
+        const content = isLoading ? (
+            <div className="flex flex-col items-center justify-center h-full w-full">
+                <ClipLoader loading size={20} />
+                <div className="text-lg font-sans tracking-wide mt-4">Loading...</div>
+            </div>
+        ) : (
+            <Tabs headers={riskPanelTabs}>
+                <TabContent>
+                    <div className="flex flex-1 flex-col">
+                        <RiskDetails risk={selectedDeployment.risk} />
+                    </div>
+                </TabContent>
+                <TabContent>
+                    <div className="flex flex-1 flex-col">
+                        <DeploymentDetails deployment={selectedDeployment} />
+                    </div>
+                </TabContent>
+            </Tabs>
+        );
+
         return (
             <div className="w-1/2">
-                <Panel header={header} onClose={this.updateSelectedDeployment}>
-                    <Tabs headers={riskPanelTabs}>
-                        {riskPanelTabs.map(tab => (
-                            <TabContent key={tab.text}>{this.renderTab(tab.text)}</TabContent>
-                        ))}
-                    </Tabs>
+                <Panel header={selectedDeployment.name} onClose={this.updateSelectedDeployment}>
+                    {content}
                 </Panel>
-            </div>
-        );
-    };
-
-    renderTab = tabText => {
-        switch (tabText) {
-            case 'risk indicators':
-                return <div className="flex flex-1 flex-col">{this.renderRiskIndicators()}</div>;
-            case 'deployment details':
-                return (
-                    <div className="flex flex-1 flex-col">
-                        {this.renderOverview()}
-                        {this.renderContainerConfig()}
-                    </div>
-                );
-            default:
-                return '';
-        }
-    };
-
-    renderRiskIndicators = () => {
-        const selectedDeployment = this.getSelectedDeployment();
-        if (!selectedDeployment || !selectedDeployment.risk) return null;
-        const { risk } = selectedDeployment;
-        return risk.results.map(result => (
-            <div className="px-3 py-4" key={result.name}>
-                <div
-                    className="alert-preview bg-white shadow text-primary-600 tracking-wide"
-                    key={result.name}
-                >
-                    <Collapsible
-                        open
-                        trigger={this.renderCollapsibleCard(result.name, 'up')}
-                        triggerWhenOpen={this.renderCollapsibleCard(result.name, 'down')}
-                        transitionTime={100}
-                    >
-                        {result.factors.map(factor => (
-                            <div className="flex h-full p-3 font-500" key={factor}>
-                                <div>
-                                    <Icon.Circle className="h-2 w-2 mr-3" />
-                                </div>
-                                <div className="pl-1">{factor}</div>
-                            </div>
-                        ))}
-                    </Collapsible>
-                </div>
-            </div>
-        ));
-    };
-
-    renderOverview = () => {
-        const selectedDeployment = this.getSelectedDeployment();
-        const title = 'Overview';
-        return (
-            <div className="px-3 py-4">
-                <div className="alert-preview bg-white shadow text-primary-600 tracking-wide border border-base-200">
-                    <Collapsible
-                        open
-                        trigger={this.renderCollapsibleCard(title, 'up')}
-                        triggerWhenOpen={this.renderCollapsibleCard(title, 'down')}
-                        transitionTime={100}
-                    >
-                        <div className="h-full p-3">
-                            <KeyValuePairs
-                                data={selectedDeployment}
-                                keyValueMap={deploymentDetailsMap}
-                            />
-                        </div>
-                    </Collapsible>
-                </div>
-            </div>
-        );
-    };
-
-    renderContainerConfig = () => {
-        const selectedDeployment = this.getSelectedDeployment();
-        const title = 'Container configuration';
-        return (
-            <div className="px-3 py-4">
-                <div className="alert-preview bg-white shadow text-primary-600 tracking-wide border border-base-200">
-                    <Collapsible
-                        open
-                        trigger={this.renderCollapsibleCard(title, 'up')}
-                        triggerWhenOpen={this.renderCollapsibleCard(title, 'down')}
-                        transitionTime={100}
-                    >
-                        <div className="h-full p-3">
-                            {selectedDeployment.containers.map((container, index) => {
-                                if (!container.config) return null;
-                                return (
-                                    <div key={index}>
-                                        <KeyValuePairs
-                                            data={container.config}
-                                            keyValueMap={containerConfigMap}
-                                        />
-                                        <div className="flex py-3">
-                                            <div className="pr-1">Mounts:</div>
-                                            <ul className="-ml-8 mt-4 w-full list-reset">
-                                                {container.volumes &&
-                                                    container.volumes.length &&
-                                                    container.volumes.map((volume, idx) => (
-                                                        <li
-                                                            key={idx}
-                                                            className={`py-2 ${
-                                                                idx === container.volumes.length - 1
-                                                                    ? ''
-                                                                    : 'border-base-300 border-b'
-                                                            }`}
-                                                        >
-                                                            {Object.keys(volume).map(
-                                                                (key, id) =>
-                                                                    volume[key] !== '' && (
-                                                                        <div
-                                                                            key={`${
-                                                                                volume.name
-                                                                            }-${id}`}
-                                                                            className="py-1 font-500"
-                                                                        >
-                                                                            <span className=" pr-1">
-                                                                                {capitalize(
-                                                                                    lowerCase(key)
-                                                                                )}:
-                                                                            </span>
-                                                                            <span className="text-accent-400 italic">
-                                                                                {volume[
-                                                                                    key
-                                                                                ].toString()}
-                                                                            </span>
-                                                                        </div>
-                                                                    )
-                                                            )}
-                                                        </li>
-                                                    ))}
-                                            </ul>
-                                        </div>
-                                        {container.image &&
-                                            container.image.name &&
-                                            container.image.name.fullName && (
-                                                <div className="flex py-3">
-                                                    <div className="pr-1">Image Name:</div>
-                                                    <Link
-                                                        className="font-500 text-primary-600 hover:text-primary-800"
-                                                        to={`/main/images/${
-                                                            container.image.name.sha
-                                                        }`}
-                                                    >
-                                                        {container.image.name.fullName}
-                                                    </Link>
-                                                </div>
-                                            )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </Collapsible>
-                </div>
             </div>
         );
     };
@@ -331,20 +131,17 @@ const isViewFiltered = createSelector(
 );
 
 const mapStateToProps = createStructuredSelector({
-    deployments: selectors.getDeployments,
+    deployments: selectors.getFilteredDeployments,
     searchOptions: selectors.getDeploymentsSearchOptions,
     searchModifiers: selectors.getDeploymentsSearchModifiers,
     searchSuggestions: selectors.getDeploymentsSearchSuggestions,
     isViewFiltered
 });
 
-const mapDispatchToProps = dispatch => ({
-    setSearchOptions: searchOptions =>
-        dispatch(deploymentsActions.setDeploymentsSearchOptions(searchOptions)),
-    setSearchModifiers: searchModifiers =>
-        dispatch(deploymentsActions.setDeploymentsSearchModifiers(searchModifiers)),
-    setSearchSuggestions: searchSuggestions =>
-        dispatch(deploymentsActions.setDeploymentsSearchSuggestions(searchSuggestions))
-});
+const mapDispatchToProps = {
+    setSearchOptions: deploymentsActions.setDeploymentsSearchOptions,
+    setSearchModifiers: deploymentsActions.setDeploymentsSearchModifiers,
+    setSearchSuggestions: deploymentsActions.setDeploymentsSearchSuggestions
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(RiskPage);

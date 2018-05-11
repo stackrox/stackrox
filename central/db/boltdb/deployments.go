@@ -31,7 +31,14 @@ func (b *BoltDB) GetDeployment(id string) (deployment *v1.Deployment, exists boo
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
 		deployment, exists, err = b.getDeployment(id, bucket)
-		return err
+		if err != nil {
+			return err
+		}
+		if exists {
+			deployment.Priority = b.ranker.Get(id)
+		}
+
+		return nil
 	})
 	return
 }
@@ -41,12 +48,13 @@ func (b *BoltDB) GetDeployments() ([]*v1.Deployment, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "Deployment")
 	var deployments []*v1.Deployment
 	err := b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(deploymentBucket))
-		return b.ForEach(func(k, v []byte) error {
+		bucket := tx.Bucket([]byte(deploymentBucket))
+		return bucket.ForEach(func(k, v []byte) error {
 			var deployment v1.Deployment
 			if err := proto.Unmarshal(v, &deployment); err != nil {
 				return err
 			}
+			deployment.Priority = b.ranker.Get(deployment.GetId())
 			deployments = append(deployments, &deployment)
 			return nil
 		})
@@ -80,6 +88,7 @@ func (b *BoltDB) AddDeployment(deployment *v1.Deployment) error {
 		if exists {
 			return fmt.Errorf("Deployment %v cannot be added because it already exists", deployment.GetId())
 		}
+		b.ranker.Add(deployment.GetId(), deployment.GetRisk().GetScore())
 		bytes, err := proto.Marshal(deployment)
 		if err != nil {
 			return err
@@ -109,6 +118,7 @@ func (b *BoltDB) UpdateDeployment(deployment *v1.Deployment) error {
 		if exists && existingDeployment.GetTombstone() != nil {
 			deployment.Tombstone = existingDeployment.GetTombstone()
 		}
+		b.ranker.Add(deployment.GetId(), deployment.GetRisk().GetScore())
 		return b.updateDeployment(deployment, tx.Bucket([]byte(deploymentBucket)))
 	})
 }
@@ -126,6 +136,7 @@ func (b *BoltDB) RemoveDeployment(id string) error {
 			return db.ErrNotFound{Type: "Deployment", ID: id}
 		}
 		deployment.Tombstone = ptypes.TimestampNow()
+		b.ranker.Remove(id)
 		return b.updateDeployment(deployment, bucket)
 	})
 }
