@@ -65,9 +65,8 @@ func (b *Indexer) getImageSHAsFromScope(request *v1.ParsedSearchRequest) (mapset
 		default:
 			logger.Errorf("Unexpected type %s for image sha", t)
 		}
-		return shaSetFromDeployment, nil
 	}
-	return nil, nil
+	return shaSetFromDeployment, nil
 }
 
 // SearchImages takes a SearchRequest and finds any matches
