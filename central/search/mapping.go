@@ -53,14 +53,15 @@ var PolicyOptionsMap = map[string]*v1.SearchField{
 
 // ImageOptionsMap is exposed for e2e test
 var ImageOptionsMap = map[string]*v1.SearchField{
-	"CVE":                    newStringField("image.scan.components.vulns.cve"),
-	"CVSS":                   newNumericField("image.scan.components.vulns.cvss"),
-	"Component":              newStringField("image.scan.components.name"),
-	"Dockerfile Instruction": newStringField("image.scan.components.vulns.cve"),
-	"Image Name":             newStringField("image.scan.components.full_name"),
-	"Image Registry":         newStringField("image.name.registry"),
-	"Image Remote":           newStringField("image.name.remote"),
-	"Image Tag":              newStringField("image.name.tag"),
+	"CVE":                            newStringField("image.scan.components.vulns.cve"),
+	"CVSS":                           newNumericField("image.scan.components.vulns.cvss"),
+	"Component":                      newStringField("image.scan.components.name"),
+	"Dockerfile Instruction Keyword": newStringField("image.metadata.layers.instruction"),
+	"Dockerfile Instruction Value":   newStringField("image.metadata.layers.value"),
+	"Image Name":                     newStringField("image.name.full_name"),
+	"Image Registry":                 newStringField("image.name.registry"),
+	"Image Remote":                   newStringField("image.name.remote"),
+	"Image Tag":                      newStringField("image.name.tag"),
 }
 
 // DeploymentOptionsMap is exposed for e2e test

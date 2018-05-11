@@ -38,26 +38,11 @@ func collapseResults(searchResult *bleve.SearchResult) (results []searchPkg.Resu
 	return
 }
 
-func splitFunc(r rune) bool {
-	return r == ' ' || r == '-'
-}
-
-func splitByDelimiters(field string) []string {
-	return strings.FieldsFunc(field, splitFunc)
-}
-
 // These are inexact matches and the allowable distance is dictated by the global fuzziness
 func newPrefixQuery(field, prefix string) query.Query {
-	// Must split the fields via the spaces
-	var conjunction query.ConjunctionQuery
-	// todo(cgorman) replace this by MultiPhrasePrefixQuery when it gets merged into master (or we can cherry-pick)
-	for _, val := range splitByDelimiters(prefix) {
-		val = strings.ToLower(val)
-		prefixQuery := bleve.NewPrefixQuery(val)
-		prefixQuery.SetField(field)
-		conjunction.AddQuery(prefixQuery)
-	}
-	return &conjunction
+	prefixQuery := bleve.NewPrefixQuery(strings.ToLower(prefix))
+	prefixQuery.SetField(field)
+	return prefixQuery
 }
 
 func valuesToDisjunctionQuery(field string, values *v1.ParsedSearchRequest_Values) query.Query {

@@ -3,6 +3,10 @@ package blevesearch
 import (
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/analysis/analyzer/custom"
+	"github.com/blevesearch/bleve/analysis/token/lowercase"
+	"github.com/blevesearch/bleve/analysis/tokenizer/single"
+	"github.com/blevesearch/bleve/mapping"
 )
 
 var (
@@ -26,8 +30,30 @@ func NewIndexer() (*Indexer, error) {
 	return b, nil
 }
 
+// This is the custom analyzer definition
+func singleTermAnalyzer() map[string]interface{} {
+	return map[string]interface{}{
+		"type":         custom.Name,
+		"char_filters": []string{},
+		// single tokenizer means that it takes each field string as a single token (e.g. "the quick brown fox" is not delimited by spaces)
+		"tokenizer": single.Name,
+		// Ignore case sensitivity
+		"token_filters": []string{
+			lowercase.Name,
+		},
+	}
+}
+
+func getIndexMapping() *mapping.IndexMappingImpl {
+	indexMapping := bleve.NewIndexMapping()
+	indexMapping.AddCustomAnalyzer("single_term", singleTermAnalyzer())
+	indexMapping.DefaultAnalyzer = "single_term" // Default to our analyzer
+	return indexMapping
+}
+
 func (b *Indexer) initializeIndices() error {
-	allIndex, err := bleve.NewMemOnly(bleve.NewIndexMapping())
+	indexMapping := getIndexMapping()
+	allIndex, err := bleve.NewMemOnly(indexMapping)
 	if err != nil {
 		return err
 	}

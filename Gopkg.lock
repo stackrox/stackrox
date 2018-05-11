@@ -86,6 +86,7 @@
   packages = [
     ".",
     "analysis",
+    "analysis/analyzer/custom",
     "analysis/analyzer/standard",
     "analysis/datetime/flexible",
     "analysis/datetime/optional",
@@ -93,6 +94,7 @@
     "analysis/token/lowercase",
     "analysis/token/porter",
     "analysis/token/stop",
+    "analysis/tokenizer/single",
     "analysis/tokenizer/unicode",
     "document",
     "geo",
@@ -1025,6 +1027,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ace749fac4090437a58b96c21906e6252711a8c480ce10a45d9d4363b9cebb68"
+  inputs-digest = "850763695eca0099ed5b41b0e6665728945dfae089e0b49f5587f859d024d509"
   solver-name = "gps-cdcl"
   solver-version = 1
