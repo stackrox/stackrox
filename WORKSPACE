@@ -1,11 +1,11 @@
 git_repository(
     name = "io_bazel_rules_go",
     remote = "https://github.com/bazelbuild/rules_go.git",
-    tag = "0.10.0",
+    tag = "0.11.1",
 )
 load("@io_bazel_rules_go//go:def.bzl", "go_rules_dependencies", "go_register_toolchains")
 go_rules_dependencies()
-go_register_toolchains(go_version="1.9.4")
+go_register_toolchains(go_version="1.10.2")
 
 # Get the Google API annotations, needed for gRPC-gateway.
 # See https://stackoverflow.com/questions/47930973 for a bit of explanation.
