@@ -40,7 +40,7 @@ PROTOC_GEN_GO := $(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go
 
 $(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go:
 	@echo "+ $@"
-	# This pins protoc-gen-go to v1.0.0, which is the same version of golang/protobuf that we vendor.
+# This pins protoc-gen-go to v1.0.0, which is the same version of golang/protobuf that we vendor.
 	@$(BASE_PATH)/scripts/go-get-version.sh github.com/golang/protobuf/protoc-gen-go v1.0.0
 
 $(PROTOC_FILE):
@@ -114,7 +114,8 @@ PROTOC_GEN_GOVALIDATORS := $(GOPATH)/src/github.com/mwitkow/go-proto-validators
 
 $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway:
 	@echo "+ $@"
-	# This pins grpc-gateway to the commit just before the one where they've updated to support golang/protobuf v1.1.0
+# This pins grpc-gateway to the commit just before the one where they've updated to support golang/protobuf v1.1.0
+	@$(BASE_PATH)/scripts/go-get-version.sh google.golang.org/genproto/googleapis/... 86e600f69ee4704c6efbf6a2a40a5c10700e76c2 --skip-install
 	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/... 87a1b0cb44173e21230d0778389c8fa16b146a2d
 	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/... 87a1b0cb44173e21230d0778389c8fa16b146a2d
 
