@@ -6,6 +6,7 @@ import { selectors } from 'reducers';
 import { actions as benchmarkActions, types as benchmarkTypes } from 'reducers/benchmarks';
 import { types as dashboardType } from 'reducers/dashboard';
 import { types as locationActionTypes } from 'reducers/routes';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
 const dashboardPath = '/main/dashboard';
 const compliancePath = '/main/compliance';
@@ -83,9 +84,9 @@ function* pollBenchmarkScanResults({ params: benchmark }) {
 }
 
 function* filterDashboardPageBySearch() {
-    const searchQuery = yield select(selectors.getDashboardSearchQuery);
+    const searchOptions = yield select(selectors.getDashboardSearchOptions);
     const filters = {
-        query: searchQuery
+        query: searchOptionsToQuery(searchOptions)
     };
     yield fork(getBenchmarksByCluster, filters);
 }

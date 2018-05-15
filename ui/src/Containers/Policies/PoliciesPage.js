@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { selectors } from 'reducers';
-import { actions as policyActions } from 'reducers/policies';
-import { createStructuredSelector } from 'reselect';
+import { actions as policiesActions } from 'reducers/policies';
+import { createSelector, createStructuredSelector } from 'reselect';
 
 import { ToastContainer, toast } from 'react-toastify';
 import { Form } from 'react-form';
@@ -27,6 +27,8 @@ import {
 import PolicyCreationForm from 'Containers/Policies/PolicyCreationForm';
 import PolicyView from 'Containers/Policies/PoliciesView';
 import PoliciesPreview from 'Containers/Policies/PoliciesPreview';
+import PageHeader from 'Components/PageHeader';
+import SearchInput from 'Components/SearchInput';
 
 import { severityLabels } from 'messages/common';
 import { sortSeverity } from 'sorters/sorters';
@@ -57,7 +59,14 @@ class PoliciesPage extends Component {
         policies: PropTypes.arrayOf(PropTypes.object).isRequired,
         fetchPolicies: PropTypes.func.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
-        match: ReactRouterPropTypes.match.isRequired
+        match: ReactRouterPropTypes.match.isRequired,
+        searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
+        searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
+        searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
+        setSearchOptions: PropTypes.func.isRequired,
+        setSearchModifiers: PropTypes.func.isRequired,
+        setSearchSuggestions: PropTypes.func.isRequired,
+        isViewFiltered: PropTypes.bool.isRequired
     };
 
     constructor(props) {
@@ -422,14 +431,28 @@ class PoliciesPage extends Component {
     };
 
     render() {
+        const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
         return (
-            <section className="h-full">
+            <section className="flex flex-1 flex-col h-full">
                 <ToastContainer
                     toastClassName="font-sans text-base-600 text-white font-600 bg-black"
                     hideProgressBar
                     autoClose={3000}
                 />
-                <div className="flex flex-1 bg-base-100 h-full">
+                <div>
+                    <PageHeader header="Policies" subHeader={subHeader}>
+                        <SearchInput
+                            id="risk"
+                            searchOptions={this.props.searchOptions}
+                            searchModifiers={this.props.searchModifiers}
+                            searchSuggestions={this.props.searchSuggestions}
+                            setSearchOptions={this.props.setSearchOptions}
+                            setSearchModifiers={this.props.setSearchModifiers}
+                            setSearchSuggestions={this.props.setSearchSuggestions}
+                        />
+                    </PageHeader>
+                </div>
+                <div className="flex flex-1 bg-base-100">
                     <div className="flex flex-row w-full h-full bg-white rounded-sm shadow">
                         {this.renderTablePanel()}
                         {this.renderViewPanel()}
@@ -443,12 +466,27 @@ class PoliciesPage extends Component {
     }
 }
 
+const isViewFiltered = createSelector(
+    [selectors.getPoliciesSearchOptions],
+    searchOptions => searchOptions.length !== 0
+);
+
 const mapStateToProps = createStructuredSelector({
-    policies: selectors.getPolicies
+    policies: selectors.getPolicies,
+    searchOptions: selectors.getPoliciesSearchOptions,
+    searchModifiers: selectors.getPoliciesSearchModifiers,
+    searchSuggestions: selectors.getPoliciesSearchSuggestions,
+    isViewFiltered
 });
 
 const mapDispatchToProps = dispatch => ({
-    fetchPolicies: () => dispatch(policyActions.fetchPolicies.request())
+    fetchPolicies: () => dispatch(policiesActions.fetchPolicies.request()),
+    setSearchOptions: searchOptions =>
+        dispatch(policiesActions.setPoliciesSearchOptions(searchOptions)),
+    setSearchModifiers: searchModifiers =>
+        dispatch(policiesActions.setPoliciesSearchModifiers(searchModifiers)),
+    setSearchSuggestions: searchSuggestions =>
+        dispatch(policiesActions.setPoliciesSearchSuggestions(searchSuggestions))
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(PoliciesPage);

@@ -1,8 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import capitalize from 'lodash/capitalize';
 
-import searchOptionsToQuery from 'services/searchOptionsToQuery';
-
 // Action types
 
 export const types = prefix => ({
@@ -63,7 +61,5 @@ export const getSelectors = prefix => {
     selectors[`get${capitalize(prefix)}SearchOptions`] = state => state.searchOptions;
     selectors[`get${capitalize(prefix)}SearchModifiers`] = state => state.searchModifiers;
     selectors[`get${capitalize(prefix)}SearchSuggestions`] = state => state.searchSuggestions;
-    selectors[`get${capitalize(prefix)}SearchQuery`] = state =>
-        searchOptionsToQuery(state.searchOptions);
     return selectors;
 };

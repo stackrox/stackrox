@@ -64,9 +64,7 @@ describe('Deployment Sagas', () => {
             )
             .dispatch({
                 type: types.SET_SEARCH_OPTIONS,
-                payload: {
-                    options: deploymentTypeSearchOptions
-                }
+                payload: { options: deploymentTypeSearchOptions }
             })
             .dispatch(createLocationChange('/main/risk'))
             .silentRun();
@@ -89,9 +87,7 @@ describe('Deployment Sagas', () => {
             )
             .dispatch({
                 type: types.SET_SEARCH_OPTIONS,
-                payload: {
-                    options: deploymentTypeSearchOptions
-                }
+                payload: { options: deploymentTypeSearchOptions }
             })
             .dispatch(actions.setDeploymentsSearchOptions(deploymentTypeSearchOptions))
             .silentRun();

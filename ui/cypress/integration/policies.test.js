@@ -1,10 +1,28 @@
 import { selectors, text } from './pages/PoliciesPage';
+import * as api from './apiEndpoints';
 
 describe('Policies page', () => {
     beforeEach(() => {
+        cy.server();
+        cy.fixture('search/metadataOptions.json').as('metadataOptionsJson');
+        cy.route('GET', api.search.options, '@metadataOptionsJson').as('metadataOptions');
+
         cy.visit('/');
+        cy.wait('@metadataOptions');
         cy.get(selectors.configure).click();
         cy.get(selectors.navLink).click();
+    });
+
+    it('should display and send a query using the search input', () => {
+        cy.route('/v1/policies?query=Category:Image Assurance').as('newSearchQuery');
+        cy.get(selectors.searchInput).type('Category:{enter}', { force: true });
+        cy.get(selectors.searchInput).type('Image Assurance{enter}', { force: true });
+        cy.wait('@newSearchQuery');
+        cy.get(selectors.searchInput).type('{del}{del}', { force: true });
+        cy.route('/v1/policies?query=Cluster:remote').as('newSearchQuery');
+        cy.get(selectors.searchInput).type('Cluster:{enter}', { force: true });
+        cy.get(selectors.searchInput).type('remote{enter}', { force: true });
+        cy.wait('@newSearchQuery');
     });
 
     it('should show the required "*" next to the required fields', () => {

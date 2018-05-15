@@ -22,7 +22,8 @@ export const risks = {
 
 export const search = {
     globalSearchWithResults: '/v1/search?query=Cluster:remote',
-    globalSearchWithNoResults: '/v1/search?query=Cluster:'
+    globalSearchWithNoResults: '/v1/search?query=Cluster:',
+    options: '/v1/search/metadata/options*'
 };
 
 export const images = {

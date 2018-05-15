@@ -4,14 +4,15 @@ import fetchImages from 'services/ImagesService';
 import { actions, types } from 'reducers/images';
 import { types as locationActionTypes } from 'reducers/routes';
 import { selectors } from 'reducers';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
 const imagesPath = '/main/images';
 
 export function* getImages() {
     try {
-        const searchQuery = yield select(selectors.getImagesSearchQuery);
+        const searchOptions = yield select(selectors.getImagesSearchOptions);
         const filters = {
-            query: searchQuery
+            query: searchOptionsToQuery(searchOptions)
         };
         const result = yield call(fetchImages, filters);
         yield put(actions.fetchImages.success(result.response));

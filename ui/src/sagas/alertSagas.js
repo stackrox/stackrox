@@ -7,6 +7,7 @@ import { actions, types } from 'reducers/alerts';
 import { types as dashboardTypes } from 'reducers/dashboard';
 import { types as locationActionTypes } from 'reducers/routes';
 import { selectors } from 'reducers';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
 const dashboardPath = '/main/dashboard';
 const violationsPath = '/main/violations';
@@ -22,9 +23,9 @@ function* getAlert({ params: alertId }) {
 
 function* getAlertNumsByPolicy() {
     try {
-        const searchQuery = yield select(selectors.getAlertsSearchQuery);
+        const searchOptions = yield select(selectors.getAlertsSearchOptions);
         const newFilters = {};
-        newFilters.query = searchQuery;
+        newFilters.query = searchOptionsToQuery(searchOptions);
         const result = yield call(service.fetchAlertNumsByPolicy, newFilters);
         yield put(actions.fetchAlertNumsByPolicy.success(result.response));
     } catch (error) {
@@ -126,9 +127,9 @@ function* pollAlertsByPolicy() {
 }
 
 function* filterDashboardPageBySearch() {
-    const searchQuery = yield select(selectors.getDashboardSearchQuery);
+    const searchOptions = yield select(selectors.getDashboardSearchOptions);
     const filters = {
-        query: searchQuery
+        query: searchOptionsToQuery(searchOptions)
     };
     yield fork(getGlobalAlertCounts, {});
     yield fork(getAlertCountsByPolicyCategories, filters);

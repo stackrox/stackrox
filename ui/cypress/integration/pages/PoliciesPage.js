@@ -21,7 +21,8 @@ export const selectors = {
         alertPreview: {
             table: '.alert-preview table'
         }
-    }
+    },
+    searchInput: '.Select-input > input'
 };
 
 export const text = {

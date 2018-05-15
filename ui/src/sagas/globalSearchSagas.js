@@ -6,15 +6,16 @@ import { actions as alertsActions } from 'reducers/alerts';
 import { actions as imagesActions } from 'reducers/images';
 import { actions as deploymentsActions } from 'reducers/deployments';
 import { selectors } from 'reducers';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
 import { toast } from 'react-toastify';
 
 export function* getGlobalSearchResults() {
     try {
-        const searchQuery = yield select(selectors.getGlobalSearchQuery);
+        const searchOptions = yield select(selectors.getGlobalSearchOptions);
         const category = yield select(selectors.getGlobalSearchCategory);
         const filters = {
-            query: searchQuery
+            query: searchOptionsToQuery(searchOptions)
         };
         if (category !== '') filters.categories = category;
         const result = yield call(fetchGlobalSearchResults, filters);
