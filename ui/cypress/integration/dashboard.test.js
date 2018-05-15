@@ -9,6 +9,55 @@ describe('Dashboard page', () => {
         cy.get(selectors.navLink).should('have.class', 'bg-primary-600');
     });
 
+    it('should display benchmarks data', () => {
+        cy.server();
+
+        cy.fixture('benchmarks/summary.json').as('benchmarksSummary');
+        cy
+            .route('GET', api.benchmarks.summary, '@benchmarksSummary')
+            .as('benchmarksSummaryByCluster');
+
+        cy.visit(dashboardUrl);
+        cy.wait('@benchmarksSummaryByCluster');
+
+        cy
+            .get(selectors.sectionHeaders.benchmarks)
+            .next()
+            .children()
+            .as('benchmarkSummaries');
+        cy
+            .get('@benchmarkSummaries')
+            .find('a')
+            .first()
+            .should('have.text', 'CIS Docker v1.1.0 Benchmark');
+
+        cy
+            .get('@benchmarkSummaries')
+            .find('a')
+            .next()
+            .children()
+            .spread((pass, warn, info, note) => {
+                expect(pass.getAttribute('style')).to.have.string('width: 30%');
+                expect(warn.getAttribute('style')).to.have.string('width: 31%');
+                expect(info.getAttribute('style')).to.have.string('width: 9%');
+                expect(note.getAttribute('style')).to.have.string('width: 32%');
+            });
+        cy
+            .get('@benchmarkSummaries')
+            .find('a')
+            .first()
+            .click();
+        cy.location().should(location => {
+            expect(location.pathname).to.eq(
+                `${complianceUrl}/422642b9-1e4e-47a5-a739-e4fb39230822`
+            );
+        });
+
+        cy.visit(dashboardUrl);
+        cy.get(selectors.slick.dashboardBenchmarks.nextButton).click();
+        cy.get(selectors.slick.dashboardBenchmarks.currentSlide).contains('No Benchmark Results');
+    });
+
     it('should display environment risk tiles', () => {
         cy.server();
         cy.fixture('alerts/countsByCluster-single.json').as('countsByCluster');
@@ -62,55 +111,6 @@ describe('Dashboard page', () => {
             expect(location.pathname).to.eq(violationsUrl);
             expect(location.search).to.eq('?severity=LOW_SEVERITY');
         });
-    });
-
-    it('should display benchmarks data', () => {
-        cy.server();
-
-        cy.fixture('benchmarks/summary.json').as('benchmarksSummary');
-        cy
-            .route('GET', api.benchmarks.summary, '@benchmarksSummary')
-            .as('benchmarksSummaryByCluster');
-
-        cy.visit(dashboardUrl);
-        cy.wait('@benchmarksSummaryByCluster');
-
-        cy
-            .get(selectors.sectionHeaders.benchmarks)
-            .next()
-            .children()
-            .as('benchmarkSummaries');
-        cy
-            .get('@benchmarkSummaries')
-            .find('a')
-            .first()
-            .should('have.text', 'CIS Docker v1.1.0 Benchmark');
-
-        cy
-            .get('@benchmarkSummaries')
-            .find('a')
-            .next()
-            .children()
-            .spread((pass, warn, info, note) => {
-                expect(pass.getAttribute('style')).to.have.string('width: 30%');
-                expect(warn.getAttribute('style')).to.have.string('width: 31%');
-                expect(info.getAttribute('style')).to.have.string('width: 9%');
-                expect(note.getAttribute('style')).to.have.string('width: 32%');
-            });
-        cy
-            .get('@benchmarkSummaries')
-            .find('a')
-            .first()
-            .click();
-        cy.location().should(location => {
-            expect(location.pathname).to.eq(
-                `${complianceUrl}/422642b9-1e4e-47a5-a739-e4fb39230822`
-            );
-        });
-
-        cy.visit(dashboardUrl);
-        cy.get(selectors.slick.dashboardBenchmarks.nextButton).click();
-        cy.get(selectors.slick.dashboardBenchmarks.currentSlide).contains('No Benchmark Results');
     });
 
     it('should display violations by cluster chart for single cluster', () => {
@@ -208,5 +208,29 @@ describe('Dashboard page', () => {
         cy.url().should('match', /\/main\/risk/);
 
         // TODO: validate clicking on any sector (for some reason '.click()' isn't stable for D3 chart)
+    });
+
+    it('should display a search input with only the cluster search modifier', () => {
+        cy.visit(dashboardUrl);
+        cy.get(selectors.searchInput).type('Cluster:{enter}', { force: true });
+        cy.get(selectors.searchInput).type('remote{enter}', { force: true });
+    });
+
+    it('should show the proper empty states', () => {
+        cy.server();
+        cy.route('GET', api.alerts.countsByCategory, { groups: [] }).as('alertsByCategory');
+        cy.route('GET', api.alerts.countsByCluster, { groups: [] }).as('alertsByCluster');
+
+        cy.visit(dashboardUrl);
+        cy.wait('@alertsByCategory');
+        cy.wait('@alertsByCluster');
+
+        cy.get(selectors.sectionHeaders.containerConfiguration).should('not.exist');
+        cy.get(selectors.sectionHeaders.imageAssurance).should('not.exist');
+
+        cy
+            .get(selectors.sectionHeaders.violationsByClusters)
+            .next()
+            .should('have.text', 'No Clusters Available');
     });
 });

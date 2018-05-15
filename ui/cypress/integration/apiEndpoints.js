@@ -1,6 +1,6 @@
 export const alerts = {
     countsByCluster: /v1\/alerts\/summary\/counts\?group_by=CLUSTER.*/,
-    countsByCategory: /v1\/alerts\/summary\/counts\?group_by=CATEGORY.*/
+    countsByCategory: '/v1/alerts/summary/counts?group_by=CATEGORY*'
 };
 
 export const clusters = {
@@ -13,7 +13,7 @@ export const benchmarks = {
     scans: 'v1/benchmarks/scans/*',
     benchmarkScans: 'v1/benchmarks/scans?benchmarkId=*',
     triggers: 'v1/benchmarks/triggers/*',
-    summary: 'v1/benchmarks/summary/scans'
+    summary: 'v1/benchmarks/summary/scans*'
 };
 
 export const risks = {

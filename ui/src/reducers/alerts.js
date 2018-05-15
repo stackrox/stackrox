@@ -17,6 +17,7 @@ export const types = {
     FETCH_ALERTS_BY_POLICY: createFetchingActionTypes('alerts/FETCH_ALERTS_BY_POLICY'),
     FETCH_ALERT_NUMS_BY_POLICY: createFetchingActionTypes('alerts/FETCH_ALERT_NUMS_BY_POLICY'),
     FETCH_ALERT: createFetchingActionTypes('alerts/FETCH_ALERT'),
+    FETCH_GLOBAL_ALERT_COUNTS: createFetchingActionTypes('alerts/FETCH_GLOBAL_ALERT_COUNTS'),
     FETCH_ALERT_COUNTS_BY_POLICY_CATEGORIES: createFetchingActionTypes(
         'alerts/FETCH_ALERT_COUNTS_BY_POLICY_CATEGORIES'
     ),
@@ -34,6 +35,7 @@ export const actions = {
     fetchAlertsByPolicy: createFetchingActions(types.FETCH_ALERTS_BY_POLICY),
     fetchAlertNumsByPolicy: createFetchingActions(types.FETCH_ALERT_NUMS_BY_POLICY),
     fetchAlert: createFetchingActions(types.FETCH_ALERT),
+    fetchGlobalAlertCounts: createFetchingActions(types.FETCH_GLOBAL_ALERT_COUNTS),
     fetchAlertCountsByPolicyCategories: createFetchingActions(
         types.FETCH_ALERT_COUNTS_BY_POLICY_CATEGORIES
     ),
@@ -80,6 +82,14 @@ const alertsByPolicy = (state = {}, action) => {
     return state;
 };
 
+const globalAlertCounts = (state = [], action) => {
+    if (action.type === types.FETCH_GLOBAL_ALERT_COUNTS.SUCCESS) {
+        const { groups } = action.response;
+        return isEqual(groups, state) ? state : groups;
+    }
+    return state;
+};
+
 const alertCountsByPolicyCategories = (state = [], action) => {
     if (action.type === types.FETCH_ALERT_COUNTS_BY_POLICY_CATEGORIES.SUCCESS) {
         const { groups } = action.response;
@@ -109,6 +119,7 @@ const reducer = combineReducers({
     numsByPolicy,
     selectedViolatedPolicy,
     alertsByPolicy,
+    globalAlertCounts,
     alertCountsByPolicyCategories,
     alertCountsByCluster,
     alertsByTimeseries,
@@ -124,6 +135,7 @@ const getAlert = (state, id) => getAlertsById(state)[id];
 const getAlertNumsByPolicy = state => state.numsByPolicy;
 const getSelectedViolatedPolicyId = state => state.selectedViolatedPolicy;
 const getAlertsByPolicy = state => state.alertsByPolicy;
+const getGlobalAlertCounts = state => state.globalAlertCounts;
 const getAlertCountsByPolicyCategories = state => state.alertCountsByPolicyCategories;
 const getAlertCountsByCluster = state => state.alertCountsByCluster;
 const getAlertsByTimeseries = state => state.alertsByTimeseries;
@@ -134,6 +146,7 @@ export const selectors = {
     getAlert,
     getSelectedViolatedPolicyId,
     getAlertsByPolicy,
+    getGlobalAlertCounts,
     getAlertCountsByPolicyCategories,
     getAlertCountsByCluster,
     getAlertsByTimeseries,

@@ -12,7 +12,8 @@ import LoadingSection from 'Components/LoadingSection';
 class ProtectedRoute extends Component {
     static propTypes = {
         component: PropTypes.func.isRequired,
-        authStatus: PropTypes.oneOf(Object.values(AUTH_STATUS)).isRequired,
+        authStatus: PropTypes.oneOf(Object.keys(AUTH_STATUS).map(key => AUTH_STATUS[key]))
+            .isRequired,
         location: ReactRouterPropTypes.location.isRequired
     };
 

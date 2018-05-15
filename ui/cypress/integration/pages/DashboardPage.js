@@ -18,6 +18,7 @@ export const selectors = {
         violationsByClusters: 'h2:contains("Violations by Cluster")',
         eventsByTime: 'h2:contains("Active Violations by Time")',
         containerConfiguration: 'h2:contains("Container Configuration")',
+        imageAssurance: 'h2:contains("Image Assurance")',
         topRiskyDeployments: 'h2:contains("Top Risky Deployments")'
     },
     chart: {
@@ -33,7 +34,8 @@ export const selectors = {
             prevButton: '.dashboard-benchmarks .carousel-prev-arrow',
             nextButton: '.dashboard-benchmarks .carousel-next-arrow',
             list: '.dashboard-benchmarks .slick-slide',
-            currentSlide: '.dashboard-benchmarks .slick-slide.slick-active.slick-current'
+            currentSlide: '.dashboard-benchmarks .slick-current'
         }
-    }
+    },
+    searchInput: '.Select-input > input'
 };

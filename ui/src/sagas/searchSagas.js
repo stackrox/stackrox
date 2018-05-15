@@ -4,11 +4,13 @@ import { actions as alertActions } from 'reducers/alerts';
 import { actions as deploymentsActions } from 'reducers/deployments';
 import { actions as policiesActions } from 'reducers/policies';
 import { actions as imagesActions } from 'reducers/images';
+import { actions as dashboardActions } from 'reducers/dashboard';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { types as locationActionTypes } from 'reducers/routes';
 import { fetchOptions } from 'services/SearchService';
 import capitalize from 'lodash/capitalize';
 
+const dashboardPath = '/main/dashboard';
 const violationsPath = '/main/violations';
 const riskPath = '/main/risk';
 const policiesPath = '/main/policies';
@@ -126,6 +128,13 @@ export function* watchLocation() {
                 imagesActions.setImagesSearchSuggestions,
                 imagesActions.setImagesSearchOptions,
                 'categories=IMAGES'
+            );
+        } else if (location && location.pathname && location.pathname.startsWith(dashboardPath)) {
+            yield fork(
+                getSearchOptions,
+                dashboardActions.setDashboardSearchModifiers,
+                dashboardActions.setDashboardSearchSuggestions,
+                dashboardActions.setDashboardSearchOptions
             );
         }
     }

@@ -2,11 +2,21 @@
     "groups": [
         {
             "group": "Container Configuration",
-            "counts": [{ "severity": "MEDIUM_SEVERITY", "count": "2" }]
+            "counts": [
+                {
+                    "severity": "MEDIUM_SEVERITY",
+                    "count": "2"
+                }
+            ]
         },
-        { 
+        {
             "group": "Image Assurance",
-            "counts": [{ "severity": "LOW_SEVERITY", "count": "3" }]
+            "counts": [
+                {
+                    "severity": "LOW_SEVERITY",
+                    "count": "3"
+                }
+            ]
         }
     ]
 }

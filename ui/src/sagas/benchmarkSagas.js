@@ -3,7 +3,8 @@ import { all, take, takeLatest, call, fork, put, select, race } from 'redux-saga
 
 import * as service from 'services/BenchmarksService';
 import { selectors } from 'reducers';
-import { actions as benchmarkActions, types } from 'reducers/benchmarks';
+import { actions as benchmarkActions, types as benchmarkTypes } from 'reducers/benchmarks';
+import { types as dashboardType } from 'reducers/dashboard';
 import { types as locationActionTypes } from 'reducers/routes';
 
 const dashboardPath = '/main/dashboard';
@@ -18,10 +19,16 @@ export function* getBenchmarks() {
     }
 }
 
-export function* getBenchmarksByCluster() {
+export function* getBenchmarksByCluster(filters) {
     try {
-        const result = yield call(service.fetchBenchmarksByCluster);
-        yield put(benchmarkActions.fetchBenchmarksByCluster.success(result));
+        const result = yield call(service.fetchBenchmarksByCluster, filters);
+        // This is a hack. Will need to remove it. Backend API should allow filtering the response using the search query
+        let filteredResult = result.slice();
+        if (filters && filters.query) {
+            const clusterName = filters.query.replace('Cluster:', '');
+            if (clusterName) filteredResult = result.filter(obj => obj.clusterName === clusterName);
+        }
+        yield put(benchmarkActions.fetchBenchmarksByCluster.success(filteredResult));
     } catch (error) {
         yield put(benchmarkActions.fetchBenchmarksByCluster.failure(error));
     }
@@ -75,27 +82,35 @@ function* pollBenchmarkScanResults({ params: benchmark }) {
     }
 }
 
+function* filterDashboardPageBySearch() {
+    const searchQuery = yield select(selectors.getDashboardSearchQuery);
+    const filters = {
+        query: searchQuery
+    };
+    yield fork(getBenchmarksByCluster, filters);
+}
+
 function* watchBenchmarkScanResults() {
     while (true) {
-        const action = yield take(types.POLL_BENCHMARK_SCAN_RESULTS.START);
+        const action = yield take(benchmarkTypes.POLL_BENCHMARK_SCAN_RESULTS.START);
         yield race([
             call(pollBenchmarkScanResults, action),
-            take(types.POLL_BENCHMARK_SCAN_RESULTS.STOP)
+            take(benchmarkTypes.POLL_BENCHMARK_SCAN_RESULTS.STOP)
         ]);
     }
 }
 
 function* watchUpdateBenchmarkSchedule() {
-    yield takeLatest(types.SELECT_BENCHMARK_SCHEDULE_DAY, updateBenchmarkSchedule);
-    yield takeLatest(types.SELECT_BENCHMARK_SCHEDULE_HOUR, updateBenchmarkSchedule);
+    yield takeLatest(benchmarkTypes.SELECT_BENCHMARK_SCHEDULE_DAY, updateBenchmarkSchedule);
+    yield takeLatest(benchmarkTypes.SELECT_BENCHMARK_SCHEDULE_HOUR, updateBenchmarkSchedule);
 }
 
 function* watchFetchBenchmarkScheduleRequest() {
-    yield takeLatest(types.FETCH_BENCHMARK_SCHEDULE.REQUEST, getBenchmarkSchedule);
+    yield takeLatest(benchmarkTypes.FETCH_BENCHMARK_SCHEDULE.REQUEST, getBenchmarkSchedule);
 }
 
 function* watchTriggerBenchmarkScan() {
-    yield takeLatest(types.TRIGGER_BENCHMARK_SCAN.REQUEST, triggerBenchmarkScan);
+    yield takeLatest(benchmarkTypes.TRIGGER_BENCHMARK_SCAN.REQUEST, triggerBenchmarkScan);
 }
 
 export function* watchLocation() {
@@ -111,12 +126,17 @@ export function* watchLocation() {
     }
 }
 
+function* watchDashboardSearchOptions() {
+    yield takeLatest(dashboardType.SET_SEARCH_OPTIONS, filterDashboardPageBySearch);
+}
+
 export default function* benchmarks() {
     yield all([
         fork(watchLocation),
         fork(watchBenchmarkScanResults),
         fork(watchUpdateBenchmarkSchedule),
         fork(watchFetchBenchmarkScheduleRequest),
-        fork(watchTriggerBenchmarkScan)
+        fork(watchTriggerBenchmarkScan),
+        fork(watchDashboardSearchOptions)
     ]);
 }

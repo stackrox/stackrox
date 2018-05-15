@@ -4,6 +4,7 @@ import queryString from 'query-string';
 
 import * as service from 'services/AlertsService';
 import { actions, types } from 'reducers/alerts';
+import { types as dashboardTypes } from 'reducers/dashboard';
 import { types as locationActionTypes } from 'reducers/routes';
 import { selectors } from 'reducers';
 
@@ -31,27 +32,64 @@ function* getAlertNumsByPolicy() {
     }
 }
 
-function* getAlertCountsByPolicyCategories() {
+function* getGlobalAlertCounts(filters) {
     try {
-        const result = yield call(service.fetchAlertCountsByPolicyCategories);
+        const newFilters = { ...filters };
+        newFilters.group_by = 'CLUSTER';
+        const result = yield call(service.fetchAlertCounts, newFilters);
+        yield put(actions.fetchGlobalAlertCounts.success(result.response));
+    } catch (error) {
+        yield put(actions.fetchGlobalAlertCounts.failure(error));
+    }
+}
+
+function* getAlertCountsByPolicyCategories(filters) {
+    try {
+        const newFilters = { ...filters };
+        newFilters.group_by = 'CATEGORY';
+        const result = yield call(service.fetchAlertCounts, newFilters);
         yield put(actions.fetchAlertCountsByPolicyCategories.success(result.response));
     } catch (error) {
         yield put(actions.fetchAlertCountsByPolicyCategories.failure(error));
     }
 }
 
-function* getAlertCountsByCluster() {
+function* getAlertCountsByCluster(filters) {
     try {
-        const result = yield call(service.fetchAlertCountsByCluster);
+        const newFilters = { ...filters };
+        newFilters.group_by = 'CLUSTER';
+        const result = yield call(service.fetchAlertCounts, newFilters);
+        /*
+         * @TODO This is a hack. Will need to remove it. Backend API should allow filtering the response using the search query
+         */
+        const filteredResult = Object.assign({}, result);
+        if (filters && filters.query) {
+            const clusterName = filters.query.replace('Cluster:', '');
+            if (clusterName)
+                filteredResult.response.groups = result.response.groups.filter(
+                    obj => obj.group === clusterName
+                );
+        }
         yield put(actions.fetchAlertCountsByCluster.success(result.response));
     } catch (error) {
         yield put(actions.fetchAlertCountsByCluster.failure(error));
     }
 }
 
-function* getAlertsByTimeseries() {
+function* getAlertsByTimeseries(filters) {
     try {
-        const result = yield call(service.fetchAlertsByTimeseries);
+        const result = yield call(service.fetchAlertsByTimeseries, filters);
+        /*
+         * @TODO This is a hack. Will need to remove it. Backend API should allow filtering the response using the search query
+         */
+        const filteredResult = Object.assign({}, result);
+        if (filters && filters.query) {
+            const clusterName = filters.query.replace('Cluster:', '');
+            if (clusterName)
+                filteredResult.response.clusters = result.response.clusters.filter(
+                    obj => obj.cluster === clusterName
+                );
+        }
         yield put(actions.fetchAlertsByTimeseries.success(result.response));
     } catch (error) {
         yield put(actions.fetchAlertsByTimeseries.failure(error));
@@ -87,7 +125,18 @@ function* pollAlertsByPolicy() {
     }
 }
 
-function* watchViolationsLocation() {
+function* filterDashboardPageBySearch() {
+    const searchQuery = yield select(selectors.getDashboardSearchQuery);
+    const filters = {
+        query: searchQuery
+    };
+    yield fork(getGlobalAlertCounts, {});
+    yield fork(getAlertCountsByPolicyCategories, filters);
+    yield fork(getAlertCountsByCluster, filters);
+    yield fork(getAlertsByTimeseries, filters);
+}
+
+function* watchLocation() {
     let pollTask;
     while (true) {
         // it's a tricky/hack-y behavior here when deployment whitelisting happens: UI closes the dialog,
@@ -96,23 +145,11 @@ function* watchViolationsLocation() {
         const { payload: location } = action;
 
         if (pollTask) yield cancel(pollTask); // cancel polling in any case
+
         if (location && location.pathname && location.pathname.startsWith(violationsPath)) {
             pollTask = yield fork(pollAlertsByPolicy, queryString.parse(location.search));
-        }
-    }
-}
-
-function* watchDashboardLocation() {
-    while (true) {
-        const action = yield take(locationActionTypes.LOCATION_CHANGE);
-        const { payload: location } = action;
-
-        if (location && location.pathname && location.pathname.startsWith(dashboardPath)) {
-            yield all([
-                fork(getAlertCountsByPolicyCategories),
-                fork(getAlertCountsByCluster),
-                fork(getAlertsByTimeseries)
-            ]);
+        } else if (location && location.pathname && location.pathname.startsWith(dashboardPath)) {
+            yield fork(filterDashboardPageBySearch);
         }
     }
 }
@@ -135,12 +172,16 @@ function* watchAlertsSearchOptions() {
     );
 }
 
+function* watchDashboardSearchOptions() {
+    yield takeLatest(dashboardTypes.SET_SEARCH_OPTIONS, filterDashboardPageBySearch);
+}
+
 export default function* alerts() {
     yield all([
-        fork(watchViolationsLocation),
-        fork(watchDashboardLocation),
+        fork(watchLocation),
         fork(watchSelectedViolatedPolicy),
         fork(watchAlertRequest),
-        fork(watchAlertsSearchOptions)
+        fork(watchAlertsSearchOptions),
+        fork(watchDashboardSearchOptions)
     ]);
 }

@@ -19,7 +19,8 @@ const titleMap = {
 
 class TopNavigation extends Component {
     static propTypes = {
-        authStatus: PropTypes.oneOf(Object.values(AUTH_STATUS)).isRequired,
+        authStatus: PropTypes.oneOf(Object.keys(AUTH_STATUS).map(key => AUTH_STATUS[key]))
+            .isRequired,
         logout: PropTypes.func.isRequired,
         toggleGlobalSearchView: PropTypes.func.isRequired,
         summaryCounts: PropTypes.shape({

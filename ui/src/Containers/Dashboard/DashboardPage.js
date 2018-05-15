@@ -19,6 +19,9 @@ import { CarouselNextArrow, CarouselPrevArrow } from 'Components/CarouselArrows'
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 
+import NoResultsMessage from 'Components/NoResultsMessage';
+import PageHeader from 'Components/PageHeader';
+import SearchInput from 'Components/SearchInput';
 import TwoLevelPieChart from 'Components/visuals/TwoLevelPieChart';
 import CustomLineChart from 'Components/visuals/CustomLineChart';
 import DashboardBenchmarks from 'Containers/Dashboard/DashboardBenchmarks';
@@ -27,6 +30,7 @@ import TopRiskyDeployments from 'Containers/Dashboard/TopRiskyDeployments';
 import cloneDeep from 'lodash/cloneDeep';
 import { severityLabels } from 'messages/common';
 import { selectors } from 'reducers';
+import { actions as dashboardActions } from 'reducers/dashboard';
 
 //  @TODO: Have one source of truth for severity colors
 const severityColorMap = {
@@ -64,6 +68,7 @@ const groupedViolationsPropType = PropTypes.arrayOf(
 class DashboardPage extends Component {
     static propTypes = {
         violatonsByPolicyCategory: groupedViolationsPropType.isRequired,
+        globalViolationsCounts: groupedViolationsPropType.isRequired,
         violationsByCluster: groupedViolationsPropType.isRequired,
         alertsByTimeseries: PropTypes.arrayOf(PropTypes.shape()).isRequired,
         benchmarks: PropTypes.arrayOf(PropTypes.shape()).isRequired,
@@ -71,7 +76,14 @@ class DashboardPage extends Component {
         deployments: PropTypes.arrayOf(PropTypes.object).isRequired,
         history: PropTypes.shape({
             push: PropTypes.func.isRequired
-        }).isRequired
+        }).isRequired,
+        searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
+        searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
+        searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
+        setSearchOptions: PropTypes.func.isRequired,
+        setSearchModifiers: PropTypes.func.isRequired,
+        setSearchSuggestions: PropTypes.func.isRequired,
+        isViewFiltered: PropTypes.bool.isRequired
     };
 
     makeBarClickHandler = (clusterName, severity) => () => {
@@ -145,10 +157,11 @@ class DashboardPage extends Component {
     };
 
     renderAlertsByTimeseries = () => {
-        if (!this.props.alertsByTimeseries) return '';
-
+        if (!this.props.alertsByTimeseries || !this.props.alertsByTimeseries.length) {
+            return <NoResultsMessage message="No Violations Available. Please refine search" />;
+        }
         return (
-            <div className="p-0 h-full w-full">
+            <div className="p-0 h-64 w-full">
                 <Slider {...slickSettings}>
                     {this.props.alertsByTimeseries.map(cluster => {
                         const { data, name } = this.formatTimeseriesData(cluster);
@@ -191,9 +204,7 @@ class DashboardPage extends Component {
 
     renderViolationsByCluster = () => {
         if (!this.props.violationsByCluster || !this.props.violationsByCluster.length) {
-            return (
-                <div className="flex flex-1 items-center justify-center">No Clusters Available</div>
-            );
+            return <NoResultsMessage message="No Clusters Available. Please refine search" />;
         }
         const clusterCharts = [];
 
@@ -223,7 +234,7 @@ class DashboardPage extends Component {
             i += 4;
         }
         return (
-            <div className="p-0 h-full w-full">
+            <div className="p-0 h-64 w-full">
                 <Slider {...slickSettings}>
                     {clusterCharts.map((data, index) => (
                         <div key={index}>
@@ -302,12 +313,12 @@ class DashboardPage extends Component {
             }));
             return (
                 <div className="p-6 w-full lg:w-1/2" key={policyType.group}>
-                    <div className="flex flex-col p-4 bg-white rounded-sm shadow">
-                        <h2 className="flex items-center text-lg text-base font-sans text-base-600 py-4 tracking-wide">
-                            <Icon.BarChart className="h-4 w-4 mr-3" />
-                            {policyType.group}
+                    <div className="bg-white rounded-sm shadow h-full">
+                        <h2 className="flex flex-row items-center text-lg text-base font-sans text-base-600 tracking-wide border-primary-200 border-b">
+                            <Icon.BarChart className="h-4 w-4 ml-3" />
+                            <span className="px-4 py-6">{policyType.group}</span>
                         </h2>
-                        <div className="flex flex-1 m-4 h-64">
+                        <div className="m-4 h-64">
                             <TwoLevelPieChart data={data} />
                         </div>
                     </div>
@@ -323,8 +334,8 @@ class DashboardPage extends Component {
             MEDIUM_SEVERITY: 0,
             LOW_SEVERITY: 0
         };
-        this.props.violationsByCluster.forEach(cluster => {
-            cluster.counts.forEach(d => {
+        this.props.globalViolationsCounts.forEach(group => {
+            group.counts.forEach(d => {
                 const count = parseInt(d.count, 10);
                 counts[d.severity] += count;
             });
@@ -350,17 +361,22 @@ class DashboardPage extends Component {
         );
     };
 
-    renderBenchmarks = () => (
-        <div className="p-0 h-full w-full dashboard-benchmarks">
-            <Slider {...slickSettings}>
-                {this.props.benchmarks.map((cluster, index) => (
-                    <div key={index}>
-                        <DashboardBenchmarks cluster={cluster} />
-                    </div>
-                ))}
-            </Slider>
-        </div>
-    );
+    renderClusterBenchmarks = () => {
+        if (!this.props.benchmarks || !this.props.benchmarks.length) {
+            return <NoResultsMessage message="No Clusters Available. Please refine search" />;
+        }
+        return (
+            <div className="p-0 h-full w-full dashboard-benchmarks">
+                <Slider {...slickSettings}>
+                    {this.props.benchmarks.map((cluster, index) => (
+                        <div key={index}>
+                            <DashboardBenchmarks cluster={cluster} />
+                        </div>
+                    ))}
+                </Slider>
+            </div>
+        );
+    };
 
     renderTopRiskyDeployments = () => {
         if (!this.props.deployments) return '';
@@ -368,46 +384,64 @@ class DashboardPage extends Component {
     };
 
     render() {
+        const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
         return (
-            <section className="w-full h-full transition">
-                <div className="flex bg-white border-b border-primary-500">
-                    <div className="w-1/2 p-6">{this.renderEnvironmentRisk()}</div>
-                    <div className="w-1/2 p-6 border-l border-primary-200">
-                        {this.renderBenchmarks()}
+            <section className="flex flex-1 h-full w-full">
+                <div className="flex flex-1 flex-col w-full">
+                    <div>
+                        <PageHeader header="Dashboard" subHeader={subHeader}>
+                            <SearchInput
+                                id="images"
+                                searchOptions={this.props.searchOptions}
+                                searchModifiers={this.props.searchModifiers}
+                                searchSuggestions={this.props.searchSuggestions}
+                                setSearchOptions={this.props.setSearchOptions}
+                                setSearchModifiers={this.props.setSearchModifiers}
+                                setSearchSuggestions={this.props.setSearchSuggestions}
+                            />
+                        </PageHeader>
                     </div>
-                </div>
-                <div className="overflow-auto bg-base-100">
-                    <div className="flex flex-col w-full">
-                        <div className="flex w-full flex-wrap">
-                            <div className="p-6 md:w-full lg:w-1/2">
-                                <div className="flex flex-col p-4 bg-white rounded-sm shadow h-full">
-                                    <h2 className="flex items-center text-lg text-base font-sans text-base-600 py-4 tracking-wide">
-                                        <Icon.Layers className="h-4 w-4 mr-3" />
-                                        Violations by Cluster
-                                    </h2>
-                                    <div className="flex flex-1 m-4 h-64">
-                                        {this.renderViolationsByCluster()}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="p-6 md:w-full lg:w-1/2">
-                                <div className="flex flex-col p-4 bg-white rounded-sm shadow">
-                                    <h2 className="flex items-center text-lg text-base font-sans text-base-600 py-4 tracking-wide">
-                                        <Icon.AlertTriangle className="h-4 w-4 mr-3" />
-                                        Active Violations by Time
-                                    </h2>
-                                    <div className="flex flex-1 m-4 h-64">
-                                        {this.renderAlertsByTimeseries()}
-                                    </div>
-                                </div>
+                    <div className="overflow-auto">
+                        <div className="flex bg-white border-b border-primary-500">
+                            <div className="w-1/2 p-6">{this.renderEnvironmentRisk()}</div>
+                            <div className="w-1/2 p-6 border-l border-primary-200">
+                                {this.renderClusterBenchmarks()}
                             </div>
                         </div>
-                    </div>
-                    <div className="flex flex-col w-full">
-                        <div className="flex w-full flex-wrap">
-                            {this.renderViolationsByPolicyCategory()}
-                            <div className="p-6 md:w-full lg:w-1/2">
-                                {this.renderTopRiskyDeployments()}
+                        <div className="overflow-auto bg-base-100">
+                            <div className="flex flex-col w-full">
+                                <div className="flex w-full flex-wrap">
+                                    <div className="p-6 w-full lg:w-1/2">
+                                        <div className="flex flex-col bg-white rounded-sm shadow h-full">
+                                            <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-primary-200 border-b">
+                                                <Icon.Layers className="h-4 w-4 ml-3" />
+                                                <span className="px-4 py-6">
+                                                    Violations by Cluster
+                                                </span>
+                                            </h2>
+                                            <div className="m-4 h-64">
+                                                {this.renderViolationsByCluster()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="p-6 w-full lg:w-1/2">
+                                        <div className="flex flex-col bg-white rounded-sm shadow h-full">
+                                            <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-primary-200 border-b">
+                                                <Icon.AlertTriangle className="h-4 w-4 ml-3" />
+                                                <span className="px-4 py-6">
+                                                    Active Violations by Time
+                                                </span>
+                                            </h2>
+                                            <div className="m-4 h-64">
+                                                {this.renderAlertsByTimeseries()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {this.renderViolationsByPolicyCategory()}
+                                    <div className="p-6 md:w-full lg:w-1/2">
+                                        {this.renderTopRiskyDeployments()}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -417,10 +451,8 @@ class DashboardPage extends Component {
     }
 }
 
-const getTopRiskyDeployments = createSelector([selectors.getDeploymentsById], deploymentsById =>
-    Object.values(deploymentsById)
-        .sort((a, b) => a.priority - b.priority)
-        .slice(0, 5)
+const getTopRiskyDeployments = createSelector([selectors.getFilteredDeployments], deployments =>
+    deployments.sort((a, b) => a.priority - b.priority).slice(0, 5)
 );
 
 const getClustersByName = createSelector([selectors.getClusters], clusters =>
@@ -433,13 +465,32 @@ const getClustersByName = createSelector([selectors.getClusters], clusters =>
     )
 );
 
+const isViewFiltered = createSelector(
+    [selectors.getDashboardSearchOptions],
+    searchOptions => searchOptions.length !== 0
+);
+
 const mapStateToProps = createStructuredSelector({
     violatonsByPolicyCategory: selectors.getAlertCountsByPolicyCategories,
+    globalViolationsCounts: selectors.getGlobalAlertCounts,
     violationsByCluster: selectors.getAlertCountsByCluster,
     alertsByTimeseries: selectors.getAlertsByTimeseries,
     benchmarks: selectors.getBenchmarksByCluster,
     deployments: getTopRiskyDeployments,
-    clustersByName: getClustersByName
+    clustersByName: getClustersByName,
+    searchOptions: selectors.getDashboardSearchOptions,
+    searchModifiers: selectors.getDashboardSearchModifiers,
+    searchSuggestions: selectors.getDashboardSearchSuggestions,
+    isViewFiltered
 });
 
-export default connect(mapStateToProps)(DashboardPage);
+const mapDispatchToProps = dispatch => ({
+    setSearchOptions: searchOptions =>
+        dispatch(dashboardActions.setDashboardSearchOptions(searchOptions)),
+    setSearchModifiers: searchModifiers =>
+        dispatch(dashboardActions.setDashboardSearchModifiers(searchModifiers)),
+    setSearchSuggestions: searchSuggestions =>
+        dispatch(dashboardActions.setDashboardSearchSuggestions(searchSuggestions))
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(DashboardPage);

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import queryString from 'query-string';
 
 const baseUrl = '/v1/benchmarks';
 
@@ -164,8 +165,10 @@ export function triggerScan(benchmark) {
  *
  * @returns {Promise<Object, Error>} fulfilled in case of success or rejected with an error
  */
-export async function fetchBenchmarksByCluster() {
-    const benchmarksSummaryUrl = `${baseUrl}/summary/scans`;
-
+export async function fetchBenchmarksByCluster(filters) {
+    const params = queryString.stringify({
+        ...filters
+    });
+    const benchmarksSummaryUrl = `${baseUrl}/summary/scans?${params}`;
     return axios.get(benchmarksSummaryUrl).then(response => response.data.clusters);
 }

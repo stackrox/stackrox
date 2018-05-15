@@ -58,29 +58,14 @@ export function fetchAlert(alertId) {
 }
 
 /**
- * Fetches severity counts of non-stale alerts by policy categories.
+ * Fetches severity counts
  *
  * @returns {Promise<Object, Error>}
  */
-export function fetchAlertCountsByPolicyCategories() {
+export function fetchAlertCounts(filters) {
     const params = queryString.stringify({
-        group_by: 'CATEGORY',
-        'request.stale': false
-    });
-    return axios.get(`${baseUrl}/summary/counts?${params}`).then(response => ({
-        response: response.data
-    }));
-}
-
-/**
- * Fetches severity counts of non-stale alerts by cluster.
- *
- * @returns {Promise<Object, Error>}
- */
-export function fetchAlertCountsByCluster() {
-    const params = queryString.stringify({
-        group_by: 'CLUSTER',
-        'request.stale': false
+        'request.stale': false,
+        ...filters
     });
     return axios.get(`${baseUrl}/summary/counts?${params}`).then(response => ({
         response: response.data
@@ -92,8 +77,11 @@ export function fetchAlertCountsByCluster() {
  *
  * @returns {Promise<Object, Error>}
  */
-export function fetchAlertsByTimeseries() {
-    return axios.get(`${baseUrl}/summary/timeseries`).then(response => ({
+export function fetchAlertsByTimeseries(filters) {
+    const params = queryString.stringify({
+        ...filters
+    });
+    return axios.get(`${baseUrl}/summary/timeseries?${params}`).then(response => ({
         response: response.data
     }));
 }

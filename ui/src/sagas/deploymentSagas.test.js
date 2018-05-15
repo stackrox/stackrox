@@ -3,7 +3,7 @@ import { expectSaga } from 'redux-saga-test-plan';
 import { dynamic } from 'redux-saga-test-plan/providers';
 
 import { selectors } from 'reducers';
-import { actions } from 'reducers/deployments';
+import { actions, types } from 'reducers/deployments';
 import { types as locationActionTypes } from 'reducers/routes';
 import { fetchDeployments, fetchDeployment } from 'services/DeploymentsService';
 import saga from './deploymentSagas';
@@ -20,6 +20,8 @@ const deploymentTypeSearchOptions = [
     }
 ];
 
+const dashboardTypeSearchOptions = deploymentTypeSearchOptions.slice();
+
 const createLocationChange = pathname => ({
     type: locationActionTypes.LOCATION_CHANGE,
     payload: { pathname }
@@ -32,12 +34,15 @@ describe('Deployment Sagas', () => {
 
         return expectSaga(saga)
             .provide([
-                [select(selectors.getDeploymentsSearchOptions), deploymentTypeSearchOptions],
+                [select(selectors.getDeploymentsSearchOptions), []],
+                [select(selectors.getDashboardSearchOptions), []],
                 [call(fetchDeployments, []), dynamic(fetchMock)]
             ])
             .put(actions.fetchDeployments.success(deployments, { options: [] }))
+            .dispatch({ type: types.SET_SEARCH_OPTIONS, payload: { options: [] } })
             .dispatch(createLocationChange('/main/dashboard'))
             .put(actions.fetchDeployments.success(deployments, { options: [] }))
+            .dispatch({ type: types.SET_SEARCH_OPTIONS, payload: { options: [] } })
             .dispatch(createLocationChange('/main/policies/policyId'))
             .silentRun();
     });
@@ -49,6 +54,7 @@ describe('Deployment Sagas', () => {
         return expectSaga(saga)
             .provide([
                 [select(selectors.getDeploymentsSearchOptions), deploymentTypeSearchOptions],
+                [select(selectors.getDashboardSearchOptions), dashboardTypeSearchOptions],
                 [call(fetchDeployments, deploymentTypeSearchOptions), dynamic(fetchMock)]
             ])
             .put(
@@ -56,21 +62,37 @@ describe('Deployment Sagas', () => {
                     options: deploymentTypeSearchOptions
                 })
             )
+            .dispatch({
+                type: types.SET_SEARCH_OPTIONS,
+                payload: {
+                    options: deploymentTypeSearchOptions
+                }
+            })
             .dispatch(createLocationChange('/main/risk'))
             .silentRun();
     });
 
-    it('should re-fetch deployments with new search options', () => {
+    it('should re-fetch deployments with new deployments search options', () => {
         const deployments = ['dep1', 'dep2'];
         const fetchMock = jest.fn().mockReturnValueOnce({ response: deployments });
 
         return expectSaga(saga)
-            .provide([[call(fetchDeployments, deploymentTypeSearchOptions), dynamic(fetchMock)]])
+            .provide([
+                [select(selectors.getDeploymentsSearchOptions), deploymentTypeSearchOptions],
+                [select(selectors.getDashboardSearchOptions), dashboardTypeSearchOptions],
+                [call(fetchDeployments, deploymentTypeSearchOptions), dynamic(fetchMock)]
+            ])
             .put(
                 actions.fetchDeployments.success(deployments, {
                     options: deploymentTypeSearchOptions
                 })
             )
+            .dispatch({
+                type: types.SET_SEARCH_OPTIONS,
+                payload: {
+                    options: deploymentTypeSearchOptions
+                }
+            })
             .dispatch(actions.setDeploymentsSearchOptions(deploymentTypeSearchOptions))
             .silentRun();
     });
@@ -82,6 +104,7 @@ describe('Deployment Sagas', () => {
         return expectSaga(saga)
             .provide([
                 [select(selectors.getDeploymentsSearchOptions), []],
+                [select(selectors.getDashboardSearchOptions), []],
                 [call(fetchDeployment, deployment.id), dynamic(fetchMock)]
             ])
             .put(actions.fetchDeployment.success(deployment, { id: deployment.id }))
