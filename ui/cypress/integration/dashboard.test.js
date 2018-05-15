@@ -231,6 +231,6 @@ describe('Dashboard page', () => {
         cy
             .get(selectors.sectionHeaders.violationsByClusters)
             .next()
-            .should('have.text', 'No Clusters Available');
+            .should('have.text', 'No Clusters Available. Please refine search');
     });
 });
