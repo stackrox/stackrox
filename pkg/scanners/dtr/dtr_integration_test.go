@@ -3,17 +3,14 @@
 package dtr
 
 import (
-	"crypto/tls"
-	"net/http"
 	"testing"
-	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/stretchr/testify/suite"
 )
 
 const (
-	dtrServer = "https://apollo-dtr.rox.systems"
+	dtrServer = "35.185.243.97"
 	user      = "srox"
 	password  = "f6Ptzm3fUc0cy5HhZ2Rihqpvb5A0Atdv"
 )
@@ -29,19 +26,21 @@ type DTRIntegrationSuite struct {
 }
 
 func (suite *DTRIntegrationSuite) SetupSuite() {
-	dtr := &dtr{
-		client: &http.Client{
-			Timeout: 5 * time.Second,
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	integration := &v1.ImageIntegration{
+		IntegrationConfig: &v1.ImageIntegration_Dtr{
+			Dtr: &v1.DTRConfig{
+				Username: user,
+				Password: password,
+				Endpoint: dtrServer,
+				Insecure: true,
 			},
 		},
-		server:   dtrServer,
-		username: user,
-		password: password,
 	}
 
-	err := dtr.fetchMetadata()
+	dtr, err := newScanner(integration)
+	suite.NoError(err)
+
+	err = dtr.fetchMetadata()
 	suite.NoError(err)
 	suite.dtr = dtr
 }

@@ -19,7 +19,7 @@ import {
 } from 'Containers/Integrations/clusterCreationFormDescriptor';
 import { ToastContainer, toast } from 'react-toastify';
 
-const clusterDetailsMap = {
+const commonDetailsMap = {
     name: {
         label: 'Name'
     },
@@ -31,21 +31,26 @@ const clusterDetailsMap = {
     },
     centralApiEndpoint: {
         label: 'Central API Endpoint'
-    },
-    namespace: {
-        label: 'Namespace'
-    },
-    imagePullSecret: {
-        label: 'Image Pull Secret Name'
     }
 };
 
-const dockerClusterDetailsMap = Object.assign({}, clusterDetailsMap);
+const k8sClusterDetailsMap = Object.assign({}, commonDetailsMap);
+k8sClusterDetailsMap.namespace = {
+    label: 'Namespace'
+};
+k8sClusterDetailsMap.imagePullSecret = {
+    label: 'Image Pull Secret Name'
+};
+
+const dockerClusterDetailsMap = Object.assign({}, commonDetailsMap);
 dockerClusterDetailsMap.disableSwarmTls = {
     label: 'Swarm TLS Disabled'
 };
 
-const formDataKeys = k8sCreationFormDescriptor.map(obj => obj.value);
+const k8sDataKeys = k8sCreationFormDescriptor.map(obj => obj.value);
+const dockerDataKeys = dockerClusterCreationFormDescriptor.map(obj => obj.value);
+
+const formDataKeys = [...k8sDataKeys, ...dockerDataKeys];
 
 class ClusterCreationPanel extends Component {
     static propTypes = {
@@ -116,7 +121,10 @@ class ClusterCreationPanel extends Component {
         }
         return (
             <div className="p-4">
-                <KeyValuePairs data={this.props.editingCluster} keyValueMap={clusterDetailsMap} />
+                <KeyValuePairs
+                    data={this.props.editingCluster}
+                    keyValueMap={k8sClusterDetailsMap}
+                />
             </div>
         );
     };

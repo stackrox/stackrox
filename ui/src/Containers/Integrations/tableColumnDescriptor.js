@@ -56,8 +56,8 @@ const tableColumnDescriptor = Object.freeze({
         tenable: [{ key: 'name', label: 'Name' }],
         dtr: [
             { key: 'name', label: 'Name' },
-            { key: 'config.endpoint', label: 'Endpoint' },
-            { key: 'config.username', label: 'Username' }
+            { key: 'dtr.endpoint', label: 'Endpoint' },
+            { key: 'dtr.username', label: 'Username' }
         ],
         artifactory: [
             { key: 'name', label: 'Name' },

@@ -42,6 +42,8 @@ type Config struct {
 	Username string
 	// Password defines the password for the Docker Registry
 	Password string
+	// Insecure defines if the registry should be insecure
+	Insecure bool
 }
 
 type v1Config struct {
@@ -146,7 +148,13 @@ func newRegistry(integration *v1.ImageIntegration) (*Registry, error) {
 
 func (d *Registry) client() (c client) {
 	d.getClientOnce.Do(func() {
-		reg, err := registry.New(d.url, d.cfg.Username, d.cfg.Password)
+		var reg *registry.Registry
+		var err error
+		if d.cfg.Insecure {
+			reg, err = registry.NewInsecure(d.url, d.cfg.Username, d.cfg.Password)
+		} else {
+			reg, err = registry.New(d.url, d.cfg.Username, d.cfg.Password)
+		}
 		if err != nil {
 			d.clientObj = nilClient{err}
 			return
@@ -289,7 +297,6 @@ func init() {
 		reg, err := newRegistry(integration)
 		return reg, err
 	}
-	registries.Registry["dtr"] = f
 	registries.Registry["docker"] = f
 	registries.Registry["artifactory"] = f
 }

@@ -57,5 +57,11 @@ export const dockerClusterCreationFormDescriptor = [
         value: 'centralApiEndpoint',
         placeholder: 'central.prevent_net:443',
         disabled: false
+    },
+    {
+        label: 'Disable Swarm TLS',
+        type: 'checkbox',
+        value: 'swarm.disableSwarmTls',
+        disabled: false
     }
 ];

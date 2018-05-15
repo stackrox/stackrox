@@ -1,6 +1,7 @@
 package dtr
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
@@ -28,9 +30,7 @@ type dtr struct {
 	client         *http.Client
 	metadataTicker *time.Ticker
 
-	server   string
-	username string
-	password string
+	conf     config
 	registry string
 
 	protoImageIntegration *v1.ImageIntegration
@@ -39,36 +39,53 @@ type dtr struct {
 	features *metadataFeatures
 }
 
+type config v1.DTRConfig
+
+func (c config) validate() error {
+	var errors []string
+	if c.Username == "" {
+		errors = append(errors, "username parameter must be defined for DTR")
+	}
+	if c.Password == "" {
+		errors = append(errors, "password parameter must be defined for DTR")
+	}
+	if c.Endpoint == "" {
+		errors = append(errors, "endpoint parameter must be defined for DTR")
+	}
+	return errorhelpers.FormatErrorStrings("Validation", errors)
+}
+
 func newScanner(protoImageIntegration *v1.ImageIntegration) (*dtr, error) {
-	username, ok := protoImageIntegration.Config["username"]
+	dtrConfig, ok := protoImageIntegration.IntegrationConfig.(*v1.ImageIntegration_Dtr)
 	if !ok {
-		return nil, errors.New("username parameter must be defined for DTR")
+		return nil, fmt.Errorf("DTR configuration required")
 	}
-	password, ok := protoImageIntegration.Config["password"]
-	if !ok {
-		return nil, errors.New("password parameter must be defined for DTR")
-	}
-	endpoint, ok := protoImageIntegration.Config["endpoint"]
-	if !ok {
-		return nil, errors.New("endpoint parameter must be defined for DTR")
+	conf := config(*dtrConfig.Dtr)
+	if err := conf.validate(); err != nil {
+		return nil, err
 	}
 
-	client := &http.Client{
-		Timeout: requestTimeout,
-	}
 	// Trim any trailing slashes as the expectation will be that the input is in the form
 	// https://12.12.12.12:8080 or https://dtr.com
-	endpoint, err := urlfmt.FormatURL(endpoint, true, false)
+	var err error
+	conf.Endpoint, err = urlfmt.FormatURL(conf.Endpoint, true, false)
 	if err != nil {
 		return nil, err
 	}
-	registry := urlfmt.GetServerFromURL(endpoint)
+	registry := urlfmt.GetServerFromURL(conf.Endpoint)
+	client := &http.Client{
+		Timeout: requestTimeout,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: conf.Insecure,
+			},
+		},
+	}
+
 	scanner := &dtr{
 		client:                client,
-		server:                endpoint,
-		username:              username,
 		registry:              registry,
-		password:              password,
+		conf:                  conf,
 		metadataTicker:        time.NewTicker(metadataRefreshInterval),
 		protoImageIntegration: protoImageIntegration,
 	}
@@ -84,7 +101,7 @@ func newScanner(protoImageIntegration *v1.ImageIntegration) (*dtr, error) {
 func parseMetadata(body []byte) (*scannerMetadata, error) {
 	var meta scannerMetadata
 	if err := json.Unmarshal(body, &meta); err != nil {
-		return nil, err
+		return nil, fmt.Errorf(string(body))
 	}
 	return &meta, nil
 }
@@ -92,7 +109,7 @@ func parseMetadata(body []byte) (*scannerMetadata, error) {
 func parseFeatures(body []byte) (*metadataFeatures, error) {
 	var meta metadataFeatures
 	if err := json.Unmarshal(body, &meta); err != nil {
-		return nil, err
+		return nil, fmt.Errorf(string(body))
 	}
 	return &meta, nil
 }
@@ -116,11 +133,11 @@ func (d *dtr) fetchMetadata() error {
 }
 
 func (d *dtr) sendRequest(method, urlPrefix string) ([]byte, error) {
-	req, err := http.NewRequest(method, d.server+urlPrefix, nil)
+	req, err := http.NewRequest(method, d.conf.Endpoint+urlPrefix, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.SetBasicAuth(d.username, d.password)
+	req.SetBasicAuth(d.conf.Username, d.conf.Password)
 	resp, err := d.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -177,7 +194,7 @@ func (d *dtr) GetScans(image *v1.Image) ([]*v1.ImageScan, error) {
 	}
 	// After should sort in descending order based on completion
 	sort.SliceStable(scans, func(i, j int) bool { return scans[i].CheckCompletedAt.After(scans[j].CheckCompletedAt) })
-	return convertTagScanSummariesToImageScans(d.server, scans), nil
+	return convertTagScanSummariesToImageScans(d.conf.Endpoint, scans), nil
 }
 
 //GET /api/v0/imagescan/repositories/{namespace}/{reponame}/{tag}?detailed=true

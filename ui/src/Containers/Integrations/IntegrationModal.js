@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Form, Text, Select } from 'react-form';
+import { Form, Text, Select, Checkbox } from 'react-form';
 import { withRouter } from 'react-router-dom';
 import MultiSelect from 'react-select';
 import * as Icon from 'react-feather';
@@ -257,20 +257,26 @@ const sourceMap = {
             },
             {
                 label: 'Endpoint',
-                key: 'config.endpoint',
+                key: 'dtr.endpoint',
                 type: 'text',
                 placeholder: 'dtr.example.com'
             },
             {
                 label: 'Username',
-                key: 'config.username',
+                key: 'dtr.username',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Password',
-                key: 'config.password',
+                key: 'dtr.password',
                 type: 'password',
+                placeholder: ''
+            },
+            {
+                label: 'Insecure',
+                key: 'dtr.insecure',
+                type: 'checkbox',
                 placeholder: ''
             }
         ],
@@ -603,6 +609,8 @@ class IntegrationModal extends Component {
             this.formApi.setValue(field.key, values);
         };
         switch (field.type) {
+            case 'checkbox':
+                return <Checkbox field={field.key} name={field.key} disabled={field.disabled} />;
             case 'text':
                 return (
                     <Text
@@ -633,6 +641,7 @@ class IntegrationModal extends Component {
                         className="border rounded w-full p-3 border-base-300"
                     />
                 );
+
             case 'multiselect':
                 return (
                     <MultiSelect

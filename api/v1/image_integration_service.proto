@@ -13,6 +13,13 @@ enum ImageIntegrationCategory {
     SCANNER  = 1;
 }
 
+message DTRConfig {
+    string username = 1;
+    string password = 2;
+    string endpoint = 3;
+    bool insecure   = 4;
+}
+
 message ImageIntegration {
     string id                                    = 1;
     string name                                  = 2;
@@ -21,6 +28,9 @@ message ImageIntegration {
     // If a list of clusters is provided, the integration will only be accessed from the specified clusters' sensors.
     repeated string clusters                     = 5;
     repeated ImageIntegrationCategory categories = 6;
+    oneof IntegrationConfig {
+        DTRConfig dtr = 7;
+    }
 }
 
 message GetImageIntegrationsRequest {

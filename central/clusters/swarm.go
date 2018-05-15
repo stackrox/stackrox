@@ -111,7 +111,7 @@ cd $DIR
 # Create registry-auth secret, used to pull the benchmark image.
 if [ -z "$REGISTRY_USERNAME" ]; then
   echo -n "Registry username for StackRox Prevent image: "
-  read -s REGISTRY_USERNAME
+  read REGISTRY_USERNAME
   echo
 fi
 if [ -z "$REGISTRY_PASSWORD" ]; then

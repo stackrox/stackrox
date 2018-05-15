@@ -70,10 +70,12 @@ func (suite *DTRSuite) SetupSuite() {
 	suite.server = masterServer
 
 	protoImageIntegration := &v1.ImageIntegration{
-		Config: map[string]string{
-			"username": "user",
-			"password": "password",
-			"endpoint": "http://" + masterServer.Listener.Addr().String(),
+		IntegrationConfig: &v1.ImageIntegration_Dtr{
+			Dtr: &v1.DTRConfig{
+				Username: "user",
+				Password: "password",
+				Endpoint: "http://" + masterServer.Listener.Addr().String(),
+			},
 		},
 	}
 
@@ -116,7 +118,7 @@ func (suite *DTRSuite) TestGetScans() {
 	suite.NoError(err)
 
 	// convert scans here. It relies on converting the scan but is not the conversion test
-	expectedScans := convertTagScanSummariesToImageScans(d.server, expectedScanSummaries)
+	expectedScans := convertTagScanSummariesToImageScans(d.conf.Endpoint, expectedScanSummaries)
 	suite.Equal(expectedScans, scans)
 }
 
@@ -137,7 +139,7 @@ func (suite *DTRSuite) TestGetLastScan() {
 	suite.NoError(err)
 
 	// convert scans here. It relies on converting the scan but is not the conversion test
-	expectedScans := convertTagScanSummariesToImageScans(d.server, expectedScanSummaries)
+	expectedScans := convertTagScanSummariesToImageScans(d.conf.Endpoint, expectedScanSummaries)
 	suite.Equal(expectedScans[0], scan)
 }
 
