@@ -2,6 +2,7 @@ package transports
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -38,21 +39,29 @@ func (t *PersistentTokenTransport) refreshToken() error {
 	if err != nil {
 		return err
 	}
+
 	var client http.Client
 	req.SetBasicAuth(t.Username, t.Password)
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf(resp.Status)
+	}
+
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
+
 	var tokenResp tokenResp
 	if err := json.Unmarshal(body, &tokenResp); err != nil {
 		return err
 	}
+
 	t.Token = tokenResp.Token
 	return nil
 }
