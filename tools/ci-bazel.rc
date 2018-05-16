@@ -1,9 +1,9 @@
-startup --batch --host_jvm_args=-Dbazel.DigestFunction=sha256
+startup --batch
 
 # See https://docs.bazel.build/versions/master/remote-caching.html
 build --spawn_strategy=remote --genrule_strategy=remote
 build --strategy=Javac=remote --strategy=Closure=remote
-build --remote_http_cache=https://storage.googleapis.com/bazelcache
+build --remote_http_cache=https://storage.googleapis.com/apollo-bazel-cache
 build --google_credentials=/tmp/gcp.json
 build --remote_local_fallback
 build --remote_upload_local_results
