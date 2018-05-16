@@ -8,6 +8,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
+	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"bitbucket.org/stack-rox/cscc/client"
 	"bitbucket.org/stack-rox/cscc/findings"
 )
@@ -122,7 +123,7 @@ func (c *cscc) AlertNotify(alert *v1.Alert) error {
 			ID:      alert.GetDeployment().GetClusterName(),
 		}.AssetID()},
 		SourceID:  findings.SourceID,
-		Timestamp: alert.GetTime(),
+		Timestamp: protoconv.ConvertGoGoProtoTimeToGolangProtoTime(alert.GetTime()),
 		URL:       alertLink,
 		Properties: findings.Properties{
 			SCCCategory:     category,

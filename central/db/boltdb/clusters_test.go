@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"github.com/golang/protobuf/ptypes"
+	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -60,7 +60,7 @@ func (suite *BoltClusterTestSuite) TestClusters() {
 		suite.NotEmpty(id)
 
 		// Add the timestamp in the second list.
-		t, err := ptypes.Timestamp(b.GetLastContact())
+		t, err := ptypes.TimestampFromProto(b.GetLastContact())
 		suite.NoError(err)
 		err = suite.UpdateClusterContactTime(b.GetId(), t)
 		suite.NoError(err)

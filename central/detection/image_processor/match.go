@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"github.com/golang/protobuf/ptypes"
+	ptypes "github.com/gogo/protobuf/types"
 )
 
 type matchFunc func(image *v1.Image) ([]*v1.Alert_Violation, bool)
@@ -222,7 +222,7 @@ func (policy *compiledImagePolicy) matchImageAge(image *v1.Image) (violations []
 	if created == nil {
 		return
 	}
-	createdTime, err := ptypes.Timestamp(created)
+	createdTime, err := ptypes.TimestampFromProto(created)
 	if err != nil {
 		log.Error(err) // Log just in case, though in reality this should not occur
 	}
@@ -244,7 +244,7 @@ func (policy *compiledImagePolicy) matchScanAge(image *v1.Image) (violations []*
 	if scanned == nil {
 		return
 	}
-	scannedTime, err := ptypes.Timestamp(scanned)
+	scannedTime, err := ptypes.TimestampFromProto(scanned)
 	if err != nil {
 		log.Error(err) // Log just in case, though in reality this should not occur
 	}

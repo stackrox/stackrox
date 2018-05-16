@@ -8,7 +8,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/set"
-	"github.com/golang/protobuf/ptypes"
+	ptypes "github.com/gogo/protobuf/types"
 )
 
 var (
@@ -148,10 +148,10 @@ func (ds *DataStore) GetAlerts(request *v1.GetAlertsRequest) ([]*v1.Alert, error
 			return nil, err
 		}
 	}
-	sinceTime, sinceTimeErr := ptypes.Timestamp(request.GetSince())
-	untilTime, untilTimeErr := ptypes.Timestamp(request.GetUntil())
-	sinceStaleTime, sinceStaleTimeErr := ptypes.Timestamp(request.GetSinceStale())
-	untilStaleTime, untilStaleTimeErr := ptypes.Timestamp(request.GetUntilStale())
+	sinceTime, sinceTimeErr := ptypes.TimestampFromProto(request.GetSince())
+	untilTime, untilTimeErr := ptypes.TimestampFromProto(request.GetUntil())
+	sinceStaleTime, sinceStaleTimeErr := ptypes.TimestampFromProto(request.GetSinceStale())
+	untilStaleTime, untilStaleTimeErr := ptypes.TimestampFromProto(request.GetUntilStale())
 
 	severitySet := severitiesWrap(request.GetSeverity()).asSet()
 	categorySet := set.NewSetFromStringSlice(request.GetCategory())
@@ -177,22 +177,22 @@ func (ds *DataStore) GetAlerts(request *v1.GetAlertsRequest) ([]*v1.Alert, error
 			continue
 		}
 		if sinceTimeErr == nil && !sinceTime.IsZero() {
-			if alertTime, alertTimeErr := ptypes.Timestamp(alert.GetTime()); alertTimeErr == nil && !sinceTime.Before(alertTime) {
+			if alertTime, alertTimeErr := ptypes.TimestampFromProto(alert.GetTime()); alertTimeErr == nil && !sinceTime.Before(alertTime) {
 				continue
 			}
 		}
 		if untilTimeErr == nil && !untilTime.IsZero() {
-			if alertTime, alertTimeErr := ptypes.Timestamp(alert.GetTime()); alertTimeErr == nil && !untilTime.After(alertTime) {
+			if alertTime, alertTimeErr := ptypes.TimestampFromProto(alert.GetTime()); alertTimeErr == nil && !untilTime.After(alertTime) {
 				continue
 			}
 		}
 		if sinceStaleTimeErr == nil && !sinceStaleTime.IsZero() {
-			if alertTime, alertTimeErr := ptypes.Timestamp(alert.GetTime()); alertTimeErr == nil && !sinceStaleTime.Before(alertTime) {
+			if alertTime, alertTimeErr := ptypes.TimestampFromProto(alert.GetTime()); alertTimeErr == nil && !sinceStaleTime.Before(alertTime) {
 				continue
 			}
 		}
 		if untilStaleTimeErr == nil && !untilStaleTime.IsZero() {
-			if alertTime, alertTimeErr := ptypes.Timestamp(alert.GetTime()); alertTimeErr == nil && !untilStaleTime.After(alertTime) {
+			if alertTime, alertTimeErr := ptypes.TimestampFromProto(alert.GetTime()); alertTimeErr == nil && !untilStaleTime.After(alertTime) {
 				continue
 			}
 		}

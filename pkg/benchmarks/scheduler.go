@@ -15,7 +15,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/deckarep/golang-set"
-	"github.com/golang/protobuf/ptypes"
+	ptypes "github.com/gogo/protobuf/types"
 )
 
 var (
@@ -154,7 +154,7 @@ func (s *SchedulerClient) initializeTriggers() {
 		return
 	}
 	for _, trigger := range triggers {
-		triggered, err := ptypes.Timestamp(trigger.GetTime())
+		triggered, err := ptypes.TimestampFromProto(trigger.GetTime())
 		if err != nil {
 			log.Errorf("Could not convert triggered time %v to golang type", trigger.GetTime())
 			continue
@@ -266,7 +266,7 @@ func (s *SchedulerClient) updateTriggers() {
 	for _, trigger := range triggers {
 		key := trigger.GetTime().String()
 		if _, ok := s.triggers[key]; !ok {
-			t, err := ptypes.Timestamp(trigger.GetTime())
+			t, err := ptypes.TimestampFromProto(trigger.GetTime())
 			if err != nil {
 				log.Error(err)
 				continue

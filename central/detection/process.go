@@ -2,7 +2,7 @@ package detection
 
 import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"github.com/golang/protobuf/ptypes"
+	ptypes "github.com/gogo/protobuf/types"
 )
 
 // ProcessDeploymentEvent takes in a deployment event and return alerts.
@@ -49,11 +49,10 @@ func (d *Detector) processTask(task Task) (alert *v1.Alert, enforcement v1.Enfor
 	// The third argument is if the task matched a whitelist
 	var excluded *v1.DryRunResponse_Excluded
 	alert, enforcement, excluded = d.Detect(task)
-
 	if alert != nil {
-		logger.Warnf("Alert Generated: %v with Severity %v due to policy %v", alert.Id, alert.GetPolicy().GetSeverity().String(), alert.GetPolicy().GetName())
+		logger.Debugf("Alert Generated: %v with Severity %v due to policy %v", alert.Id, alert.GetPolicy().GetSeverity().String(), alert.GetPolicy().GetName())
 		for _, violation := range alert.GetViolations() {
-			logger.Warnf("\t %v", violation.Message)
+			logger.Debugf("\t %v", violation.Message)
 		}
 		if err := d.database.AddAlert(alert); err != nil {
 			logger.Error(err)
@@ -62,7 +61,6 @@ func (d *Detector) processTask(task Task) (alert *v1.Alert, enforcement v1.Enfor
 	} else if excluded != nil {
 		logger.Infof("Alert for policy '%v' on deployment '%v' was NOT generated due to whitelist '%v'", task.policy.GetName(), task.deployment.GetName(), excluded.GetWhitelist().GetName())
 	}
-
 	// This is the best place to assess risk (which is relatively cheap at the moment), because enrichment must have occurred at this point
 	// Any new violations (which will soon be integrated into the risk score) will also trigger the reprocessing
 	if err := d.enricher.ReprocessDeploymentRisk(task.deployment); err != nil {

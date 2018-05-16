@@ -38,6 +38,19 @@ PROTOC_INCLUDES := $(PROTOC_TMP)/include/google
 
 PROTOC_GEN_GO := $(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go
 
+PROTOC_GEN_GO_BIN := $(GOPATH)/bin/protoc-gen-gofast
+
+$(GOPATH)/src/github.com/gogo/protobuf/types:
+	@echo "+ $@"
+	go get github.com/gogo/protobuf/types
+
+$(PROTOC_GEN_GO_BIN): $(GOPATH)/src/github.com/gogo/protobuf/types
+	@echo "+ $@"
+	go get github.com/gogo/protobuf/protoc-gen-gofast
+
+GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types
+
+
 $(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go:
 	@echo "+ $@"
 # This pins protoc-gen-go to v1.0.0, which is the same version of golang/protobuf that we vendor.
@@ -65,6 +78,7 @@ proto-fmt:
 	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src \
+		-I$(GOPATH)/src/github.com/gogo/protobuf/protobuf \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
 		--lint_out=. \
 		--proto_path=$(BASE_PATH) \
@@ -130,14 +144,14 @@ $(GENERATED_API_PATH):
 # Generate all of the proto messages and gRPC services with one invocation of
 # protoc when any of the .pb.go sources don't exist or when any of the .proto
 # files change.
-$(GENERATED_API_PATH)/%.pb.go: $(PROTO_DEPS) $(PROTOC_GEN_GO) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GOVALIDATORS) $(PROTO_API_PROTOS)
+$(GENERATED_API_PATH)/%.pb.go: $(PROTO_DEPS) $(PROTOC_GEN_GO) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GOVALIDATORS) $(PROTO_API_PROTOS) $(PROTOC_GEN_GO_BIN)
 	@echo "+ $@"
 	@mkdir -p $(GENERATED_API_PATH)
 	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
 		--proto_path=$(BASE_PATH) \
-		--go_out=plugins=grpc:$(GENERATED_BASE_PATH) \
+		--gofast_out=$(GOGO_M_STR),$(M_ARGS_STR),plugins=grpc:$(GENERATED_BASE_PATH) \
 		$(PROTO_API_PROTOS)
 
 # Generate all of the reverse-proxies (gRPC-Gateways) with one invocation of

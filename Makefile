@@ -22,12 +22,12 @@ fmt:
 ifdef CI
 		@echo "The environment indicates we are in CI; checking gofmt."
 		@echo 'If this fails, run `make style`.'
-		@$(eval FMT=`find . -name vendor -prune -name generated -prune -o -name '*.go' -print | xargs gofmt -s -l`)
+		@$(eval FMT=`find . -name vendor -prune -o -name generated -prune -o -name '*.go' -print | xargs gofmt -s -l`)
 		@echo "gofmt problems in the following files, if any:"
 		@echo $(FMT)
 		@test -z "$(FMT)"
 endif
-	@find . -name vendor -prune -name generated -prune -o -name '*.go' -print | xargs gofmt -s -l -w
+	@find . -name vendor -prune -o -name generated -prune -o -name '*.go' -print | xargs gofmt -s -l -w
 
 .PHONY: imports
 imports:
@@ -35,7 +35,7 @@ imports:
 ifdef CI
 		@echo "The environment indicates we are in CI; checking goimports."
 		@echo 'If this fails, run `make style`.'
-		@$(eval IMPORTS=`find . -name vendor -prune -name generated -prune -o -name '*.go' -print | xargs goimports -l`)
+		@$(eval IMPORTS=`find . -name vendor -prune -o -name generated -prune -o -name '*.go' -print | xargs goimports -l`)
 		@echo "goimports problems in the following files, if any:"
 		@echo $(IMPORTS)
 		@test -z "$(IMPORTS)"

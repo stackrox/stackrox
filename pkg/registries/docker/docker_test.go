@@ -9,8 +9,8 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	ptypes "github.com/gogo/protobuf/types"
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

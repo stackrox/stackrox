@@ -3,7 +3,7 @@ package detection
 import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
-	"github.com/golang/protobuf/ptypes"
+	ptypes "github.com/gogo/protobuf/types"
 )
 
 // Detect takes a Task and returns whether an alert and an enforcement action would be taken

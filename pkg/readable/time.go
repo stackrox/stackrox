@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	ptypes "github.com/gogo/protobuf/types"
+	timestamp "github.com/gogo/protobuf/types"
 )
 
 var (
@@ -15,7 +15,7 @@ var (
 
 // ProtoTime takes a proto time type and converts it to a human readable string down to seconds
 func ProtoTime(ts *timestamp.Timestamp) string {
-	t, err := ptypes.Timestamp(ts)
+	t, err := ptypes.TimestampFromProto(ts)
 	if err != nil {
 		log.Error(err)
 		return "<malformed time>"

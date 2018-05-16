@@ -142,3 +142,7 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
 [[constraint]]
   name = "github.com/openshift/client-go"
   version = "v3.9.0"
+
+[[constraint]]
+  name = "github.com/gogo/protobuf"
+  version = "v1.0.0"
