@@ -3,13 +3,16 @@ package service
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 
 	"bitbucket.org/stack-rox/apollo/central/datastore"
+	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
 	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -33,6 +36,8 @@ func NewPolicyService(storage *datastore.DataStore, detector *detection.Detector
 	return &PolicyService{
 		datastore: storage,
 		detector:  detector,
+
+		validator: newPolicyValidator(storage, storage),
 	}
 }
 
@@ -40,6 +45,8 @@ func NewPolicyService(storage *datastore.DataStore, detector *detection.Detector
 type PolicyService struct {
 	datastore *datastore.DataStore
 	detector  *detection.Detector
+
+	validator *policyValidator
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -104,10 +111,15 @@ func (s *PolicyService) PostPolicy(ctx context.Context, request *v1.Policy) (*v1
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new policy")
 	}
-	policy, err := s.validatePolicy(request)
-	if err != nil {
+	if err := s.validator.validate(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+
+	policy, err := matcher.New(request)
+	if err != nil {
+		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
+	}
+
 	id, err := s.datastore.AddPolicy(request)
 	if err != nil {
 		return nil, err
@@ -120,10 +132,15 @@ func (s *PolicyService) PostPolicy(ctx context.Context, request *v1.Policy) (*v1
 
 // PutPolicy updates a current policy in the system.
 func (s *PolicyService) PutPolicy(ctx context.Context, request *v1.Policy) (*empty.Empty, error) {
-	policy, err := s.validatePolicy(request)
-	if err != nil {
+	if err := s.validator.validate(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+
+	policy, err := matcher.New(request)
+	if err != nil {
+		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
+	}
+
 	s.detector.UpdatePolicy(policy)
 	if err := s.datastore.UpdatePolicy(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -152,10 +169,15 @@ func (s *PolicyService) ReassessPolicies(context.Context, *empty.Empty) (*empty.
 
 // DryRunPolicy runs a dry run of the policy and determines what deployments would
 func (s *PolicyService) DryRunPolicy(ctx context.Context, request *v1.Policy) (*v1.DryRunResponse, error) {
-	policy, err := s.validatePolicy(request)
-	if err != nil {
+	if err := s.validator.validate(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+
+	policy, err := matcher.New(request)
+	if err != nil {
+		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
+	}
+
 	var resp v1.DryRunResponse
 	deployments, err := s.datastore.GetDeployments()
 	if err != nil {
@@ -224,97 +246,6 @@ func (s *PolicyService) DeletePolicyCategory(ctx context.Context, request *v1.De
 	return &empty.Empty{}, nil
 }
 
-func (s *PolicyService) validateScope(scope *v1.Scope) error {
-	if scope.GetCluster() == "" {
-		return nil
-	}
-	_, exists, err := s.datastore.GetCluster(scope.GetCluster())
-	if err != nil {
-		return fmt.Errorf("unable to get cluster id %s: %s", scope.GetCluster(), err)
-	}
-	if !exists {
-		return fmt.Errorf("Cluster %s does not exist", scope.GetCluster())
-	}
-	return nil
-}
-
-func (s *PolicyService) validateWhitelist(whitelist *v1.Whitelist) error {
-	// TODO(cgorman) once we have real whitelist support in UI, add validation for whitelist name
-	if whitelist.GetContainer() == nil && whitelist.GetDeployment() == nil {
-		return errors.New("All whitelists must have some criteria to match on")
-	}
-	if whitelist.GetContainer() != nil {
-		imageName := whitelist.GetContainer().GetImageName()
-		if imageName == nil {
-			return errors.New("If container whitelist is defined, then image name must also be defined")
-		}
-		if imageName.GetSha() == "" && imageName.GetRegistry() == "" && imageName.GetRemote() == "" && imageName.GetTag() == "" {
-			return errors.New("At least one field of image name must be populated (sha, registry, remote, tag)")
-		}
-	}
-	if whitelist.GetDeployment() != nil {
-		deployment := whitelist.GetDeployment()
-		if deployment.GetScope() == nil && deployment.GetName() == "" {
-			return errors.New("At least one field of deployment whitelist must be defined")
-		}
-		if deployment.GetScope() != nil {
-			if err := s.validateScope(deployment.GetScope()); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (s *PolicyService) validatePolicy(policy *v1.Policy) (*matcher.Policy, error) {
-	if policy.GetName() == "" {
-		return nil, errors.New("policy must have a name")
-	}
-	if policy.GetSeverity() == v1.Severity_UNSET_SEVERITY {
-		return nil, errors.New("policy must have a severity")
-	}
-	if policy.GetImagePolicy() == nil && policy.GetConfigurationPolicy() == nil && policy.GetPrivilegePolicy() == nil {
-		return nil, errors.New("policy must have at least one segment configured")
-	}
-	if len(policy.GetCategories()) == 0 {
-		return nil, errors.New("policy must have at least one category configured")
-	}
-	categorySet := make(map[string]struct{})
-	for _, c := range policy.GetCategories() {
-		categorySet[c] = struct{}{}
-	}
-	if len(categorySet) != len(policy.GetCategories()) {
-		return nil, errors.New("policy cannot contain duplicate categories")
-	}
-
-	for _, n := range policy.GetNotifiers() {
-		_, exists, err := s.datastore.GetNotifier(n)
-		if err != nil {
-			return nil, fmt.Errorf("Error checking if notifier %v is valid", n)
-		}
-		if !exists {
-			return nil, fmt.Errorf("Notifier %v does not exist", n)
-		}
-	}
-	for _, scope := range policy.GetScope() {
-		if err := s.validateScope(scope); err != nil {
-			return nil, err
-		}
-	}
-
-	for _, whitelist := range policy.GetWhitelists() {
-		if err := s.validateWhitelist(whitelist); err != nil {
-			return nil, err
-		}
-	}
-
-	matcherPolicy, err := matcher.New(policy)
-	if err != nil {
-		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
-	}
-	return matcherPolicy, nil
-}
-
 func (s *PolicyService) getPolicyCategorySet() (map[string]struct{}, error) {
 	policies, err := s.datastore.GetPolicies()
 	if err != nil {
@@ -329,4 +260,182 @@ func (s *PolicyService) getPolicyCategorySet() (map[string]struct{}, error) {
 	}
 
 	return categorySet, nil
+}
+
+// Below is the validation to be run on new policies.
+/////////////////////////////////////////////////////
+
+func newPolicyValidator(notifierStorage db.NotifierStorage, clusterStorage db.ClusterStorage) *policyValidator {
+	return &policyValidator{
+		notifierStorage:      notifierStorage,
+		clusterStorage:       clusterStorage,
+		nameValidator:        regexp.MustCompile(`^[^\n\r\$]{5,64}$`),
+		descriptionValidator: regexp.MustCompile(`^[^\$]{1,256}$`),
+	}
+}
+
+// policyValidator validates the incoming policy.
+type policyValidator struct {
+	notifierStorage      db.NotifierStorage
+	clusterStorage       db.ClusterStorage
+	nameValidator        *regexp.Regexp
+	descriptionValidator *regexp.Regexp
+}
+
+func (s *policyValidator) validate(policy *v1.Policy) error {
+	errors := make([]error, 0)
+	if err := s.validateName(policy); err != nil {
+		errors = append(errors, err)
+	}
+	if err := s.validateDescription(policy); err != nil {
+		errors = append(errors, err)
+	}
+	if err := s.validateSeverity(policy); err != nil {
+		errors = append(errors, err)
+	}
+	if err := s.validateImagePolicy(policy); err != nil {
+		errors = append(errors, err)
+	}
+	if err := s.validateCategories(policy); err != nil {
+		errors = append(errors, err)
+	}
+	if err := s.validateScopes(policy); err != nil {
+		errors = append(errors, err)
+	}
+	if err := s.validateWhitelists(policy); err != nil {
+		errors = append(errors, err)
+	}
+	if len(errors) > 0 {
+		return errorhelpers.FormatErrors("policy invalid", errors)
+	}
+	return nil
+}
+
+func (s *policyValidator) validateName(policy *v1.Policy) error {
+	if policy.GetName() == "" || !s.nameValidator.MatchString(policy.GetName()) {
+		return errors.New("policy must have a name, at least 5 chars long, and contain no punctuation or special characters")
+	}
+	return nil
+}
+
+func (s *policyValidator) validateDescription(policy *v1.Policy) error {
+	if policy.GetDescription() != "" && !s.descriptionValidator.MatchString(policy.GetDescription()) {
+		return errors.New("description, when present, should be of sentence form, and not contain more than 200 characters")
+	}
+	return nil
+}
+
+func (s *policyValidator) validateSeverity(policy *v1.Policy) error {
+	if policy.GetSeverity() == v1.Severity_UNSET_SEVERITY {
+		return errors.New("a policy must have a severity")
+	}
+	return nil
+}
+
+func (s *policyValidator) validateImagePolicy(policy *v1.Policy) error {
+	if policy.GetImagePolicy() == nil && policy.GetConfigurationPolicy() == nil && policy.GetPrivilegePolicy() == nil {
+		return errors.New("a policy must have at least one segment configured")
+	}
+	return nil
+}
+
+func (s *policyValidator) validateCategories(policy *v1.Policy) error {
+	if len(policy.GetCategories()) == 0 {
+		return errors.New("a policy must have one of Image Policy, Configuration Policy, or Privilege Policy")
+	}
+	categorySet := make(map[string]struct{})
+	for _, c := range policy.GetCategories() {
+		categorySet[c] = struct{}{}
+	}
+	if len(categorySet) != len(policy.GetCategories()) {
+		return errors.New("a policy cannot contain duplicate categories")
+	}
+	return nil
+}
+
+func (s *policyValidator) validateNotifiers(policy *v1.Policy) error {
+	for _, n := range policy.GetNotifiers() {
+		_, exists, err := s.notifierStorage.GetNotifier(n)
+		if err != nil {
+			return fmt.Errorf("error checking if notifier %s is valid", n)
+		}
+		if !exists {
+			return fmt.Errorf("notifier %s does not exist", n)
+		}
+	}
+	return nil
+}
+
+func (s *policyValidator) validateScopes(policy *v1.Policy) error {
+	for _, scope := range policy.GetScope() {
+		if err := s.validateScope(scope); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *policyValidator) validateWhitelists(policy *v1.Policy) error {
+	for _, whitelist := range policy.GetWhitelists() {
+		if err := s.validateWhitelist(whitelist); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *policyValidator) validateWhitelist(whitelist *v1.Whitelist) error {
+	// TODO(cgorman) once we have real whitelist support in UI, add validation for whitelist name
+	if whitelist.GetContainer() == nil && whitelist.GetDeployment() == nil {
+		return errors.New("all whitelists must have some criteria to match on")
+	}
+	if whitelist.GetContainer() != nil {
+		if err := s.validateContainerWhitelist(whitelist); err != nil {
+			return err
+		}
+	}
+	if whitelist.GetDeployment() != nil {
+		if err := s.validateDeploymentWhitelist(whitelist); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *policyValidator) validateContainerWhitelist(whitelist *v1.Whitelist) error {
+	imageName := whitelist.GetContainer().GetImageName()
+	if imageName == nil {
+		return errors.New("if container whitelist is defined, then image name must also be defined")
+	}
+	if imageName.GetSha() == "" && imageName.GetRegistry() == "" && imageName.GetRemote() == "" && imageName.GetTag() == "" {
+		return errors.New("at least one field of image name must be populated (sha, registry, remote, tag)")
+	}
+	return nil
+}
+
+func (s *policyValidator) validateDeploymentWhitelist(whitelist *v1.Whitelist) error {
+	deployment := whitelist.GetDeployment()
+	if deployment.GetScope() == nil && deployment.GetName() == "" {
+		return errors.New("at least one field of deployment whitelist must be defined")
+	}
+	if deployment.GetScope() != nil {
+		if err := s.validateScope(deployment.GetScope()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *policyValidator) validateScope(scope *v1.Scope) error {
+	if scope.GetCluster() == "" {
+		return nil
+	}
+	_, exists, err := s.clusterStorage.GetCluster(scope.GetCluster())
+	if err != nil {
+		return fmt.Errorf("unable to get cluster id %s: %s", scope.GetCluster(), err)
+	}
+	if !exists {
+		return fmt.Errorf("cluster %s does not exist", scope.GetCluster())
+	}
+	return nil
 }

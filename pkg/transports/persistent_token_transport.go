@@ -52,6 +52,7 @@ func (t *PersistentTokenTransport) refreshToken() error {
 	}
 
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
