@@ -8,6 +8,7 @@ import { sortNumber, sortSeverity } from 'sorters/sorters';
 import { actions as alertActions } from 'reducers/alerts';
 import { selectors } from 'reducers';
 
+import NoResultsMessage from 'Components/NoResultsMessage';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import Table from 'Components/Table';
@@ -118,6 +119,8 @@ class ViolationsPage extends Component {
             ...policy,
             severity: severityLabels[policy.severity]
         }));
+        if (!rows.length)
+            return <NoResultsMessage message="No results found. Please refine your search." />;
         return <Table columns={columns} rows={rows} onRowClick={this.onViolatedPolicyClick} />;
     }
 
@@ -208,9 +211,14 @@ const mapStateToProps = createStructuredSelector({
     isViewFiltered
 });
 
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch, props) => ({
     selectViolatedPolicy: policyId => dispatch(alertActions.selectViolatedPolicy(policyId)),
-    setSearchOptions: searchOptions => dispatch(alertActions.setAlertsSearchOptions(searchOptions)),
+    setSearchOptions: searchOptions => {
+        if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
+            props.history.push('/main/violations');
+        }
+        dispatch(alertActions.setAlertsSearchOptions(searchOptions));
+    },
     setSearchModifiers: searchModifiers =>
         dispatch(alertActions.setAlertsSearchModifiers(searchModifiers)),
     setSearchSuggestions: searchSuggestions =>

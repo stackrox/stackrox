@@ -13,6 +13,7 @@ import { selectors } from 'reducers';
 import { actions as imagesActions } from 'reducers/images';
 import { actions as deploymentsActions } from 'reducers/deployments';
 
+import NoResultsMessage from 'Components/NoResultsMessage';
 import PageHeader from 'Components/PageHeader';
 import CollapsibleCard from 'Components/CollapsibleCard';
 import SearchInput from 'Components/SearchInput';
@@ -147,6 +148,8 @@ class ImagesPage extends Component {
             }
         ];
         const rows = this.props.images;
+        if (!rows.length)
+            return <NoResultsMessage message="No results found. Please refine your search." />;
         return <Table columns={columns} rows={rows} onRowClick={this.updateSelectedImage} />;
     }
 
@@ -381,12 +384,17 @@ const mapStateToProps = createStructuredSelector({
     searchSuggestions: selectors.getImagesSearchSuggestions,
     isViewFiltered
 });
-
-const mapDispatchToProps = {
-    setDeploymentsSearchOptions: deploymentsActions.setDeploymentsSearchOptions,
-    setSearchOptions: imagesActions.setImagesSearchOptions,
+const mapDispatchToProps = (dispatch, props) => ({
+    setDeploymentsSearchOptions: searchOptions => {
+        dispatch(deploymentsActions.setDeploymentsSearchOptions(searchOptions));
+    },
+    setSearchOptions: searchOptions => {
+        if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
+            props.history.push('/main/images');
+        }
+        dispatch(imagesActions.setImagesSearchOptions(searchOptions));
+    },
     setSearchModifiers: imagesActions.setImagesSearchModifiers,
     setSearchSuggestions: imagesActions.setImagesSearchSuggestions
-};
-
+});
 export default connect(mapStateToProps, mapDispatchToProps)(ImagesPage);

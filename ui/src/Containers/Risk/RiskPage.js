@@ -8,6 +8,7 @@ import { ClipLoader } from 'react-spinners';
 import { selectors } from 'reducers';
 import { actions as deploymentsActions } from 'reducers/deployments';
 
+import NoResultsMessage from 'Components/NoResultsMessage';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import Table from 'Components/Table';
@@ -58,6 +59,8 @@ class RiskPage extends Component {
             { key: 'priority', label: 'Priority', sortMethod: sortNumber('priority') }
         ];
         const rows = this.props.deployments;
+        if (!rows.length)
+            return <NoResultsMessage message="No results found. Please refine your search." />;
         return <Table columns={columns} rows={rows} onRowClick={this.updateSelectedDeployment} />;
     }
 
@@ -138,10 +141,15 @@ const mapStateToProps = createStructuredSelector({
     isViewFiltered
 });
 
-const mapDispatchToProps = {
-    setSearchOptions: deploymentsActions.setDeploymentsSearchOptions,
+const mapDispatchToProps = (dispatch, props) => ({
+    setSearchOptions: searchOptions => {
+        if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
+            props.history.push('/main/risk');
+        }
+        dispatch(deploymentsActions.setDeploymentsSearchOptions(searchOptions));
+    },
     setSearchModifiers: deploymentsActions.setDeploymentsSearchModifiers,
     setSearchSuggestions: deploymentsActions.setDeploymentsSearchSuggestions
-};
+});
 
 export default connect(mapStateToProps, mapDispatchToProps)(RiskPage);

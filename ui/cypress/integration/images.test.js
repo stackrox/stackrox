@@ -1,6 +1,7 @@
 import { url as imagesUrl, selectors as imageSelectors } from './pages/ImagesPage';
 import { url as riskUrl, selectors as riskSelectors } from './pages/RiskPage';
 import * as api from './apiEndpoints';
+import selectors from './pages/SearchPage';
 
 describe('Images page', () => {
     beforeEach(() => {
@@ -42,5 +43,11 @@ describe('Images page', () => {
         cy.url().should('contain', riskUrl);
         cy.get(riskSelectors.search.searchModifier).should('contain', 'Image Name:');
         cy.get(riskSelectors.search.searchWord).should('contain', 'docker.io/library/nginx:latest');
+    });
+
+    it('should close the side panel on search filter', () => {
+        cy.get(selectors.searchInput).type('Cluster:{enter}', { force: true });
+        cy.get(selectors.searchInput).type('remote{enter}', { force: true });
+        cy.get('.side-panel').should('not.be.visible');
     });
 });

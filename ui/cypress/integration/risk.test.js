@@ -1,35 +1,45 @@
-import { selectors } from './pages/RiskPage';
+import { selectors as RiskPageSelectors } from './pages/RiskPage';
+import selectors from './pages/SearchPage';
 
 describe('Risk page', () => {
     beforeEach(() => {
         cy.visit('/');
-        cy.get(selectors.risk).click();
+        cy.get(RiskPageSelectors.risk).click();
     });
 
     it('should have selected item in nav bar', () => {
-        cy.get(selectors.risk).should('have.class', 'bg-primary-600');
+        cy.get(RiskPageSelectors.risk).should('have.class', 'bg-primary-600');
     });
 
     it('should open the panel to view risk indicators', () => {
         cy.get('table tr.cursor-pointer:first').click();
-        cy.get(selectors.panelTabs.riskIndicators).should('have.class', 'tab-active');
-        cy.get(selectors.cancelButton).click();
+        cy
+            .get(RiskPageSelectors.panelTabs.riskIndicators)
+            .first()
+            .should('have.class', 'tab-active');
+        cy.get(RiskPageSelectors.cancelButton).click();
     });
 
     it('should show mounts in deployment details tab', () => {
         cy.get('table tr.cursor-pointer:first').click();
-        cy.get(selectors.panelTabs.deploymentDetails).click();
-        cy.get(selectors.mounts.label).should('be.visible');
-        cy.get(selectors.mounts.items).should('have.length', 2);
+        cy.get(RiskPageSelectors.panelTabs.deploymentDetails).click();
+        cy.get(RiskPageSelectors.mounts.label).should('be.visible');
+        cy.get(RiskPageSelectors.mounts.items).should('have.length', 2);
     });
 
     it('should navigate from Risk Page to Images Page', () => {
         cy.get('table tr.cursor-pointer:first').click();
-        cy.get(selectors.panelTabs.deploymentDetails).click();
+        cy.get(RiskPageSelectors.panelTabs.deploymentDetails).click();
         cy
-            .get(selectors.imageLink)
+            .get(RiskPageSelectors.imageLink)
             .first()
             .click();
         cy.url().should('contain', '/main/images');
+    });
+
+    it('should close the side panel on search filter', () => {
+        cy.get(selectors.searchInput).type('Cluster:{enter}', { force: true });
+        cy.get(selectors.searchInput).type('remote{enter}', { force: true });
+        cy.get('.side-panel').should('not.be.visible');
     });
 });

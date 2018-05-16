@@ -81,7 +81,7 @@ class Panel extends Component {
     render() {
         return (
             <div
-                className={`flex flex-col bg-white border h-full border-t-0 border-base-300 ${
+                className={`side-panel flex flex-col bg-white border h-full border-t-0 border-base-300 ${
                     this.props.width
                 }`}
             >
