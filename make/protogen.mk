@@ -54,7 +54,7 @@ GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/
 $(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go:
 	@echo "+ $@"
 # This pins protoc-gen-go to v1.0.0, which is the same version of golang/protobuf that we vendor.
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/golang/protobuf/protoc-gen-go v1.0.0
+	@$(BASE_PATH)/scripts/go-get-version.sh github.com/golang/protobuf/protoc-gen-go v1.1.0
 
 $(PROTOC_FILE):
 	@echo "+ $@"
@@ -128,10 +128,9 @@ PROTOC_GEN_GOVALIDATORS := $(GOPATH)/src/github.com/mwitkow/go-proto-validators
 
 $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway:
 	@echo "+ $@"
-# This pins grpc-gateway to the commit just before the one where they've updated to support golang/protobuf v1.1.0
-	@$(BASE_PATH)/scripts/go-get-version.sh google.golang.org/genproto/googleapis/... 86e600f69ee4704c6efbf6a2a40a5c10700e76c2 --skip-install
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/... 87a1b0cb44173e21230d0778389c8fa16b146a2d
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/... 87a1b0cb44173e21230d0778389c8fa16b146a2d
+	@$(BASE_PATH)/scripts/go-get-version.sh google.golang.org/genproto/googleapis 7bb2a897381c9c5ab2aeb8614f758d7766af68ff --skip-install
+	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/... c2b051dd2f71ce445909aab7b28479fd84d00086
+	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/... c2b051dd2f71ce445909aab7b28479fd84d00086
 
 $(GOPATH)/src/github.com/mwitkow/go-proto-validators:
 	@echo "+ $@"
@@ -205,6 +204,7 @@ $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(PROTOC_GEN_GRPC_GATEWAY)
 clean-protos:
 	@rm -rf $(GOPATH)/src/github.com/grpc-ecosystem
 	@rm -rf $(GOPATH)/src/github.com/golang/protobuf
+	@rm -rf $(GOPATH)/src/golang.google.org/genproto/googleapis
 	@rm -f $(GOPATH)/bin/protoc-gen-grpc-gateway
 	@rm -f $(GOPATH)/bin/protoc-gen-go
 	@rm -rf $(PROTOC_TMP)

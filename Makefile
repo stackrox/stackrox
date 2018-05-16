@@ -129,6 +129,7 @@ test: gazelle
 # action_env args are for running with remote Docker in CircleCI.
 	-rm vendor/github.com/coreos/pkg/BUILD
 	-rm vendor/github.com/cloudflare/cfssl/script/BUILD
+	-rm vendor/github.com/grpc-ecosystem/grpc-gateway/BUILD
 	bazel test \
 	    --test_output=errors \
 	    --action_env=CIRCLECI=$(CIRCLECI) \
