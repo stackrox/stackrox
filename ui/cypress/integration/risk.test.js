@@ -38,8 +38,8 @@ describe('Risk page', () => {
     });
 
     it('should close the side panel on search filter', () => {
-        cy.get(selectors.searchInput).type('Cluster:{enter}', { force: true });
-        cy.get(selectors.searchInput).type('remote{enter}', { force: true });
+        cy.get(selectors.pageSearchInput).type('Cluster:{enter}', { force: true });
+        cy.get(selectors.pageSearchInput).type('remote{enter}', { force: true });
         cy.get('.side-panel').should('not.be.visible');
     });
 });
