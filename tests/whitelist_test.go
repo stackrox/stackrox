@@ -28,7 +28,7 @@ func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.GetAlerts
 		}
 		time.Sleep(2 * time.Second)
 	}
-	require.Fail(t, "Failed to have %d alerts", desired)
+	require.Failf(t, "failed waiting for alerts", "Failed to have %d alerts", desired)
 }
 
 func verifyNoAlertForWhitelist(t *testing.T) {

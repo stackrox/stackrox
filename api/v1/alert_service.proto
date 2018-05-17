@@ -11,22 +11,23 @@ import "api/v1/deployment_service.proto";
 package v1;
 
 message Alert {
-    string id                               = 1;
-    Policy policy                           = 2;
-    Deployment deployment                   = 3;
+    string id                                = 1;
+    Policy policy                            = 2;
+    Deployment deployment                    = 3;
     message Violation {
         string message    = 1;
         string link       = 2;
     }
-    repeated Violation violations           = 4;
+    repeated Violation violations            = 4;
     message Enforcement {
         EnforcementAction action = 1;
         string message           = 2;
     }
-    Enforcement enforcement                 = 5;
-    google.protobuf.Timestamp time          = 6;
-    bool stale                              = 7;
-    google.protobuf.Timestamp marked_stale  = 8;
+    Enforcement enforcement                  = 5;
+    google.protobuf.Timestamp time           = 6;
+    bool stale                               = 7;
+    google.protobuf.Timestamp marked_stale   = 8;
+    google.protobuf.Timestamp first_occurred = 9;
 }
 
 message GetAlertsRequest {
