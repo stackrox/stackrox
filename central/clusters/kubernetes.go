@@ -131,6 +131,12 @@ kind: ServiceAccount
 metadata:
   name: sensor
   namespace: {{.Namespace}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{.BenchmarkServiceAccount}}
+  namespace: {{.Namespace}}
 `
 
 	k8sCmd = commandPrefix + `kubectl create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/central-ca.pem"
