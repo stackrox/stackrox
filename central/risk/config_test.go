@@ -9,18 +9,30 @@ import (
 func TestScoreVolumesAndSecrets(t *testing.T) {
 	mult := newServiceConfigMultiplier()
 	deployment := getMockDeployment()
-	volumeFactor, secretFactor := mult.scoreVolumesAndSecrets(deployment)
+	volumeFactor := mult.scoreVolumes(deployment)
 	assert.NotEmpty(t, volumeFactor)
-	assert.NotEmpty(t, secretFactor)
 
 	assert.Contains(t, volumeFactor, "rw volume")
-	assert.Contains(t, secretFactor, "secret")
 
 	for _, container := range deployment.GetContainers() {
 		container.Volumes = nil
 	}
-	volumeFactor, secretFactor = mult.scoreVolumesAndSecrets(deployment)
+	volumeFactor = mult.scoreVolumes(deployment)
 	assert.Empty(t, volumeFactor)
+}
+
+func TestScoreSecrets(t *testing.T) {
+	mult := newServiceConfigMultiplier()
+	deployment := getMockDeployment()
+	secretFactor := mult.scoreSecrets(deployment)
+	assert.NotEmpty(t, secretFactor)
+
+	assert.Contains(t, secretFactor, "secret")
+
+	for _, container := range deployment.GetContainers() {
+		container.Secrets = nil
+	}
+	secretFactor = mult.scoreSecrets(deployment)
 	assert.Empty(t, secretFactor)
 }
 

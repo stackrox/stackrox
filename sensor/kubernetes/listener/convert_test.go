@@ -242,21 +242,19 @@ func TestConvert(t *testing.T) {
 									Exposure:      pkgV1.PortConfig_INTERNAL,
 								},
 							},
+							Secrets: []*pkgV1.Secret{
+								{
+									Id:   "secretVol1",
+									Name: "secretVol1",
+									Path: "/var/secrets",
+								},
+							},
 							SecurityContext: &pkgV1.SecurityContext{
 								Selinux: &pkgV1.SecurityContext_SELinux{
 									User:  "user",
 									Role:  "role",
 									Type:  "type",
 									Level: "level",
-								},
-							},
-							Volumes: []*pkgV1.Volume{
-								{
-									Name:        "secretVol1",
-									Source:      "private_key",
-									Destination: "/var/secrets",
-									ReadOnly:    true,
-									Type:        "Secret",
 								},
 							},
 						},
@@ -307,10 +305,6 @@ func TestConvert(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, c.action, c.metaFieldIndex, c.resourceType, c.podLister)
-
-			logger.Infof("Expected: %+v", c.expectedDeploymentEvent)
-			logger.Infof("Actual: %+v", actual)
-
 			assert.Equal(t, c.expectedDeploymentEvent, actual)
 		})
 	}

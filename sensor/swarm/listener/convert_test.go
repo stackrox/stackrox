@@ -76,6 +76,15 @@ func TestAsDeployment(t *testing.T) {
 									Target:   "/var/data",
 								},
 							},
+							Secrets: []*swarm.SecretReference{
+								{
+									File: &swarm.SecretReferenceFileTarget{
+										Name: "path",
+									},
+									SecretID:   "id",
+									SecretName: "name",
+								},
+							},
 						},
 					},
 				},
@@ -125,6 +134,13 @@ func TestAsDeployment(t *testing.T) {
 								Remote:   "library/nginx",
 								Tag:      "latest",
 								FullName: "docker.io/library/nginx:latest",
+							},
+						},
+						Secrets: []*v1.Secret{
+							{
+								Id:   "id",
+								Name: "name",
+								Path: "/run/secrets/path",
 							},
 						},
 						SecurityContext: &v1.SecurityContext{
@@ -212,6 +228,15 @@ func TestAsDeployment(t *testing.T) {
 									Target:   "/var/data",
 								},
 							},
+							Secrets: []*swarm.SecretReference{
+								{
+									File: &swarm.SecretReferenceFileTarget{
+										Name: "path",
+									},
+									SecretID:   "id",
+									SecretName: "name",
+								},
+							},
 						},
 					},
 				},
@@ -265,6 +290,13 @@ func TestAsDeployment(t *testing.T) {
 								Remote:   "library/nginx",
 								Tag:      "latest",
 								FullName: "docker.io/library/nginx:latest",
+							},
+						},
+						Secrets: []*v1.Secret{
+							{
+								Id:   "id",
+								Name: "name",
+								Path: "/run/secrets/path",
 							},
 						},
 						SecurityContext: &v1.SecurityContext{

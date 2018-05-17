@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -103,10 +104,9 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
 		assert.Equal(t, sha, c.GetImage().GetName().GetTag())
 	}
 
-	require.Len(t, c.GetVolumes(), 1)
-	v := c.GetVolumes()[0]
-	assert.Equal(t, "/run/secrets/stackrox.io/", v.GetDestination())
-	assert.True(t, v.GetReadOnly())
+	require.Len(t, c.GetSecrets(), 1)
+	s := c.GetSecrets()[0]
+	assert.True(t, strings.HasPrefix(s.GetPath(), "/run/secrets/stackrox.io"))
 
 	require.Len(t, c.GetPorts(), 1)
 	p := c.GetPorts()[0]
@@ -126,10 +126,9 @@ func verifySensorDeployment(t *testing.T, sensorDeployment *v1.Deployment) {
 		assert.Equal(t, sha, c.GetImage().GetName().GetTag())
 	}
 
-	require.Len(t, c.GetVolumes(), 1)
-	v := c.GetVolumes()[0]
-	assert.Equal(t, "/run/secrets/stackrox.io/", v.GetDestination())
-	assert.True(t, v.GetReadOnly())
+	require.Len(t, c.GetSecrets(), 1)
+	s := c.GetSecrets()[0]
+	assert.True(t, strings.HasPrefix(s.GetPath(), "/run/secrets/stackrox.io/"))
 }
 
 func verifyDeployment(t *testing.T, deployment *v1.Deployment) {

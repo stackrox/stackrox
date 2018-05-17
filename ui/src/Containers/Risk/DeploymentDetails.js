@@ -65,7 +65,7 @@ class DeploymentDetails extends Component {
     };
 
     renderContainerVolumes = volumes => {
-        if (!volumes || !volumes.length) return null;
+        if (!volumes || !volumes.length) return <span className="py-1 font-500 italic">None</span>;
         return volumes.map((volume, idx) => (
             <li
                 key={idx}
@@ -83,6 +83,22 @@ class DeploymentDetails extends Component {
                         )
                 )}
             </li>
+        ));
+    };
+
+    renderContainerSecrets = secrets => {
+        if (!secrets || !secrets.length) return <span className="py-1 font-500 italic">None</span>;
+        return secrets.map((secret, idx) => (
+            <div key={idx} className="py-2">
+                <div key={`${secret.name}-${idx}`} className="py-1 font-500">
+                    <span className=" pr-1">Name:</span>
+                    <span className="text-accent-400 italic">{secret.name}</span>
+                </div>
+                <div key={`${secret.path}-${idx}`} className="py-1 font-500">
+                    <span className=" pr-1">Container Path:</span>
+                    <span className="text-accent-400 italic">{secret.path}</span>
+                </div>
+            </div>
         ));
     };
 
@@ -106,6 +122,12 @@ class DeploymentDetails extends Component {
                                             <div className="pr-1">Mounts:</div>
                                             <ul className="-ml-8 mt-4 w-full list-reset">
                                                 {this.renderContainerVolumes(container.volumes)}
+                                            </ul>
+                                        </div>
+                                        <div className="flex py-3">
+                                            <div className="pr-1">Secrets:</div>
+                                            <ul className="-ml-8 mt-4 w-full list-reset">
+                                                {this.renderContainerSecrets(container.secrets)}
                                             </ul>
                                         </div>
                                         {this.renderContainerImage(container.image)}

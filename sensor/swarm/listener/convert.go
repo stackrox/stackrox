@@ -76,6 +76,7 @@ func (s serviceWrap) asDeployment(client *client.Client, retryGetImageSha bool) 
 				SecurityContext: s.getSecurityContext(),
 				Volumes:         s.getVolumes(),
 				Ports:           s.getPorts(),
+				Secrets:         s.getSecrets(),
 			},
 		},
 	}
@@ -157,19 +158,24 @@ func (s serviceWrap) getVolumes() []*v1.Volume {
 			ReadOnly:    m.ReadOnly,
 		}
 	}
+	return output
+}
 
+func (s serviceWrap) getSecrets() []*v1.Secret {
+	spec := s.Spec.TaskTemplate.ContainerSpec
+	secrets := make([]*v1.Secret, 0, len(spec.Secrets))
 	for _, secret := range spec.Secrets {
 		path := ""
 		if secret.File != nil {
 			path = `/run/secrets/` + secret.File.Name
 		}
-		output = append(output, &v1.Volume{
-			Name:        secret.SecretName,
-			Destination: path,
-			Type:        `secret`,
+		secrets = append(secrets, &v1.Secret{
+			Id:   secret.SecretID,
+			Name: secret.SecretName,
+			Path: path,
 		})
 	}
-	return output
+	return secrets
 }
 
 func (s serviceWrap) getSHAFromTask(client *client.Client) string {

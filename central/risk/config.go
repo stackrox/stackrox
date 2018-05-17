@@ -22,25 +22,32 @@ func newServiceConfigMultiplier() *serviceConfigMultiplier {
 	return &serviceConfigMultiplier{}
 }
 
-func (s *serviceConfigMultiplier) scoreVolumesAndSecrets(deployment *v1.Deployment) (volumeFactor, secretFactor string) {
+func (s *serviceConfigMultiplier) scoreVolumes(deployment *v1.Deployment) string {
 	var volumeNames []string
-	var secrets []string
 	for _, container := range deployment.GetContainers() {
 		for _, volume := range container.GetVolumes() {
-			if volume.GetType() == "secret" {
-				secrets = append(secrets, volume.GetName())
-			} else if !volume.GetReadOnly() {
+			if !volume.GetReadOnly() {
 				volumeNames = append(volumeNames, volume.GetName())
 			}
 		}
 	}
 	if len(volumeNames) != 0 {
-		volumeFactor = fmt.Sprintf("Volumes %s were mounted RW", strings.Join(volumeNames, ", "))
+		return fmt.Sprintf("Volumes %s were mounted RW", strings.Join(volumeNames, ", "))
+	}
+	return ""
+}
+
+func (s *serviceConfigMultiplier) scoreSecrets(deployment *v1.Deployment) string {
+	var secrets []string
+	for _, container := range deployment.GetContainers() {
+		for _, secret := range container.GetSecrets() {
+			secrets = append(secrets, secret.GetName())
+		}
 	}
 	if len(secrets) != 0 {
-		secretFactor = fmt.Sprintf("Secrets %s are used inside the deployment", strings.Join(secrets, ", "))
+		return fmt.Sprintf("Secrets %s are used inside the deployment", strings.Join(secrets, ", "))
 	}
-	return
+	return ""
 }
 
 var capAdds = map[string]struct{}{
@@ -89,12 +96,11 @@ func (s *serviceConfigMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Resu
 		Name: serviceConfigHeading,
 	}
 	var overallScore float32
-	volumeFactor, secretFactor := s.scoreVolumesAndSecrets(deployment)
-	if volumeFactor != "" {
+	if volumeFactor := s.scoreVolumes(deployment); volumeFactor != "" {
 		overallScore++
 		riskResult.Factors = append(riskResult.Factors, volumeFactor)
 	}
-	if secretFactor != "" {
+	if secretFactor := s.scoreSecrets(deployment); secretFactor != "" {
 		overallScore++
 		riskResult.Factors = append(riskResult.Factors, secretFactor)
 	}

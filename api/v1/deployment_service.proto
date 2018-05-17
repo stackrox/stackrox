@@ -56,6 +56,7 @@ message Container {
     SecurityContext security_context    = 3;
     repeated Volume volumes             = 4;
     repeated PortConfig ports           = 5;
+    repeated Secret secrets             = 6;
 }
 
 message ContainerConfig {
@@ -82,6 +83,12 @@ message SecurityContext {
     SELinux selinux                     = 2;
     repeated string drop_capabilities   = 3;
     repeated string add_capabilities    = 4;
+}
+
+message Secret {
+    string id   = 1;
+    string name = 2;
+    string path = 3;
 }
 
 message Volume {

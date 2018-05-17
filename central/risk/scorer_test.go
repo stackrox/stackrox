@@ -17,9 +17,10 @@ func getMockDeployment() *v1.Deployment {
 						Name:     "readonly",
 						ReadOnly: true,
 					},
+				},
+				Secrets: []*v1.Secret{
 					{
 						Name: "secret",
-						Type: "secret",
 					},
 				},
 				SecurityContext: &v1.SecurityContext{

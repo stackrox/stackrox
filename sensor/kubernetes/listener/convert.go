@@ -128,7 +128,7 @@ func (w *wrap) populateContainers(podSpec v1.PodSpec) {
 	w.populateContainerConfigs(podSpec)
 	w.populateImages(podSpec)
 	w.populateSecurityContext(podSpec)
-	w.populateVolumes(podSpec)
+	w.populateVolumesAndSecrets(podSpec)
 	w.populatePorts(podSpec)
 }
 
@@ -278,13 +278,21 @@ func (w *wrap) getVolumeSourceMap(podSpec v1.PodSpec) map[string]volumes.VolumeS
 	return volumeSourceMap
 }
 
-func (w *wrap) populateVolumes(podSpec v1.PodSpec) {
+func (w *wrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
 	volumeSourceMap := w.getVolumeSourceMap(podSpec)
 	for i, c := range podSpec.Containers {
 		for _, v := range c.VolumeMounts {
 			sourceVolume, ok := volumeSourceMap[v.Name]
 			if !ok {
 				sourceVolume = &volumes.Unimplemented{}
+			}
+			if sourceVolume.Type() == "Secret" {
+				w.Deployment.Containers[i].Secrets = append(w.Deployment.Containers[i].Secrets, &pkgV1.Secret{
+					Id:   v.Name,
+					Name: v.Name,
+					Path: v.MountPath,
+				})
+				continue
 			}
 			w.Deployment.Containers[i].Volumes = append(w.Deployment.Containers[i].Volumes, &pkgV1.Volume{
 				Name:        v.Name,

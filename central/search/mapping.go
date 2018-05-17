@@ -73,6 +73,8 @@ var DeploymentOptionsMap = map[string]*v1.SearchField{
 	"Environment Key":    newStringField("deployment.containers.config.env.key"),
 	"Environment Value":  newStringField("deployment.containers.config.env.value"),
 	"Privileged":         newBoolField("deployment.containers.security_context.privileged"),
+	"Secret Name":        newStringField("deployment.containers.secrets.name"),
+	"Secret Path":        newStringField("deployment.containers.secrets.path"),
 	"Volume Name":        newStringField("deployment.containers.volumes.name"),
 	"Volume Source":      newStringField("deployment.containers.volumes.source"),
 	"Volume Destination": newStringField("deployment.containers.volumes.destination"),
