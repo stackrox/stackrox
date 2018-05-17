@@ -1,6 +1,7 @@
 import axios from 'axios';
 import queryString from 'query-string';
 import { normalize } from 'normalizr';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
 import { deployment as deploymentSchema } from './schemas';
 
@@ -11,9 +12,9 @@ const deploymentsUrl = '/v1/deployments';
  *
  * @returns {Promise<Object[], Error>} fulfilled with array of deployments (as defined in .proto)
  */
-export function fetchDeployments(filters) {
+export function fetchDeployments(options) {
     const params = queryString.stringify({
-        ...filters
+        query: searchOptionsToQuery(options)
     });
     return axios
         .get(`${deploymentsUrl}?${params}`)

@@ -34,7 +34,8 @@ function* filterDashboardPageBySearch() {
 }
 
 function* filterPoliciesPageBySearch() {
-    yield fork(getDeployments, {});
+    const options = yield select(selectors.getPoliciesSearchOptions);
+    yield fork(getDeployments, { options });
 }
 
 function* filterRiskPageBySearch() {
