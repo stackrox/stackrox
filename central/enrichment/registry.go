@@ -1,6 +1,9 @@
 package enrichment
 
 import (
+	"context"
+
+	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"bitbucket.org/stack-rox/apollo/pkg/registries"
@@ -47,10 +50,23 @@ func (e *Enricher) enrichImageWithRegistry(image *v1.Image, registry registries.
 	if !registry.Match(image) {
 		return false, nil
 	}
-	metadata, err := registry.Metadata(image)
-	if err != nil {
-		logger.Error(err)
-		return false, err
+	// Wait until limiter allows entrance
+	var metadata *v1.ImageMetadata
+	metadataItem := e.metadataCache.Get(image.GetName().GetFullName())
+	if metadataItem == nil {
+		metrics.IncrementMetadataCacheMiss()
+		e.metadataLimiter.Wait(context.Background())
+
+		var err error
+		metadata, err = registry.Metadata(image)
+		if err != nil {
+			logger.Error(err)
+			return false, err
+		}
+		e.metadataCache.Set(image.GetName().GetFullName(), metadata, imageDataExpiration)
+	} else {
+		metrics.IncrementMetadataCacheHit()
+		metadata = metadataItem.Value().(*v1.ImageMetadata)
 	}
 
 	if protoconv.CompareProtoTimestamps(image.GetMetadata().GetCreated(), metadata.GetCreated()) != 0 {

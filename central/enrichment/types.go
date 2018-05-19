@@ -3,12 +3,22 @@ package enrichment
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/risk"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/sources"
+	"github.com/karlseguin/ccache"
+	"golang.org/x/time/rate"
+)
+
+const (
+	imageDataExpiration = 10 * time.Minute
+
+	maxCacheSize = 500
+	itemsToPrune = 100
 )
 
 var (
@@ -28,6 +38,12 @@ type Enricher struct {
 	imageIntegrationMutex sync.Mutex
 	imageIntegrations     map[string]*sources.ImageIntegration
 
+	metadataLimiter *rate.Limiter
+	metadataCache   *ccache.Cache
+
+	scanLimiter *rate.Limiter
+	scanCache   *ccache.Cache
+
 	scorerMutex sync.Mutex
 	scorer      *risk.Scorer
 }
@@ -35,8 +51,12 @@ type Enricher struct {
 // New creates and returns a new Enricher.
 func New(storage db.Storage, scorer *risk.Scorer) (*Enricher, error) {
 	e := &Enricher{
-		storage: storage,
-		scorer:  scorer,
+		storage:         storage,
+		scorer:          scorer,
+		metadataLimiter: rate.NewLimiter(rate.Every(5*time.Second), 3),
+		metadataCache:   ccache.New(ccache.Configure().MaxSize(maxCacheSize).ItemsToPrune(itemsToPrune)),
+		scanLimiter:     rate.NewLimiter(rate.Every(5*time.Second), 3),
+		scanCache:       ccache.New(ccache.Configure().MaxSize(maxCacheSize).ItemsToPrune(itemsToPrune)),
 	}
 	if err := e.initializeImageIntegrations(); err != nil {
 		return nil, err

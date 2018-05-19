@@ -14,4 +14,8 @@ func init() {
 	prometheus.MustRegister(panicCounter)
 	prometheus.MustRegister(boltOperationHistogramVec)
 	prometheus.MustRegister(indexOperationHistogramVec)
+	prometheus.MustRegister(metadataCacheHits)
+	prometheus.MustRegister(metadataCacheMisses)
+	prometheus.MustRegister(scanCacheHits)
+	prometheus.MustRegister(scanCacheMisses)
 }

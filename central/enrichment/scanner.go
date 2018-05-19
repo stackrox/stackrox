@@ -1,6 +1,9 @@
 package enrichment
 
 import (
+	"context"
+
+	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	scannerTypes "bitbucket.org/stack-rox/apollo/pkg/scanners"
@@ -68,18 +71,24 @@ func (e *Enricher) enrichImageWithScanner(image *v1.Image, scanner scannerTypes.
 	if !scanner.Match(image) {
 		return false, nil
 	}
+	var scan *v1.ImageScan
+	scanItem := e.scanCache.Get(image.GetName().GetSha())
+	if scanItem == nil {
+		metrics.IncrementScanCacheMiss()
+		e.scanLimiter.Wait(context.Background())
 
-	if image.GetName().GetSha() == "" {
-		if _, err := e.enrichWithMetadata(image); err != nil {
+		var err error
+		scan, err := scanner.GetLastScan(image)
+		if err != nil {
+			logger.Error(err)
 			return false, err
 		}
+		e.scanCache.Set(image.GetName().GetSha(), scan, imageDataExpiration)
+	} else {
+		metrics.IncrementScanCacheHit()
+		scan = scanItem.Value().(*v1.ImageScan)
 	}
 
-	scan, err := scanner.GetLastScan(image)
-	if err != nil {
-		logger.Error(err)
-		return false, err
-	}
 	if protoconv.CompareProtoTimestamps(image.GetScan().GetScanTime(), scan.GetScanTime()) != 0 || !e.equalComponents(image.GetScan().GetComponents(), scan.GetComponents()) {
 		image.Scan = scan
 		if err := e.storage.UpdateImage(image); err != nil {

@@ -19,6 +19,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/sources"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"golang.org/x/time/rate"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -41,6 +42,8 @@ type Sensor struct {
 	Image              string
 
 	Logger *logging.Logger
+
+	eventLimiter *rate.Limiter
 }
 
 // New returns a new Sensor.
@@ -54,6 +57,8 @@ func New() *Sensor {
 		Image:              env.Image.Setting(),
 
 		Logger: logging.NewOrGet("main"),
+
+		eventLimiter: rate.NewLimiter(rate.Every(1*time.Second), 3),
 	}
 }
 
@@ -115,6 +120,26 @@ func (a *Sensor) Stop() {
 	}
 }
 
+func (a *Sensor) handleEvent(ev *listeners.DeploymentEventWrap) {
+
+	a.eventLimiter.Wait(context.Background())
+
+	if resp, err := a.reportDeploymentEvent(ev.DeploymentEvent); err != nil {
+		a.Logger.Errorf("Couldn't report event %s for deployment %s: %+v", ev.GetAction(), ev.GetDeployment().GetName(), err)
+	} else {
+		a.Logger.Infof("Successfully reported event %s for deployment %s", ev.GetAction(), ev.GetDeployment().GetName())
+		if resp.GetEnforcement() != v1.EnforcementAction_UNSET_ENFORCEMENT {
+			a.Logger.Infof("Event requested enforcement %s for deployment %s", resp.GetEnforcement(), ev.GetDeployment().GetName())
+			a.Enforcer.Actions() <- &enforcers.DeploymentEnforcement{
+				Deployment:   ev.GetDeployment(),
+				OriginalSpec: ev.OriginalSpec,
+				Enforcement:  resp.GetEnforcement(),
+				AlertID:      resp.GetAlertId(),
+			}
+		}
+	}
+}
+
 func (a *Sensor) relayEvents() {
 	for {
 		select {
@@ -132,21 +157,7 @@ func (a *Sensor) relayEvents() {
 			} else {
 				a.DeploymentCache[ev.Deployment.GetId()] = ev.DeploymentEvent.Deployment
 			}
-
-			if resp, err := a.reportDeploymentEvent(ev.DeploymentEvent); err != nil {
-				a.Logger.Errorf("Couldn't report event %s for deployment %s: %+v", ev.GetAction(), ev.GetDeployment().GetName(), err)
-			} else {
-				a.Logger.Infof("Successfully reported event %s for deployment %s", ev.GetAction(), ev.GetDeployment().GetName())
-				if resp.GetEnforcement() != v1.EnforcementAction_UNSET_ENFORCEMENT {
-					a.Logger.Infof("Event requested enforcement %s for deployment %s", resp.GetEnforcement(), ev.GetDeployment().GetName())
-					a.Enforcer.Actions() <- &enforcers.DeploymentEnforcement{
-						Deployment:   ev.GetDeployment(),
-						OriginalSpec: ev.OriginalSpec,
-						Enforcement:  resp.GetEnforcement(),
-						AlertID:      resp.GetAlertId(),
-					}
-				}
-			}
+			go a.handleEvent(ev)
 		}
 	}
 }
