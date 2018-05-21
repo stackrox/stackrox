@@ -44,7 +44,7 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
 [[constraint]]
   name = "github.com/heroku/docker-registry-client"
   source = "git@bitbucket.org:stack-rox/docker-registry-client.git"
-  branch = "signed-manifests"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/satori/go.uuid"
