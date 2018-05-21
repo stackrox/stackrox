@@ -15,7 +15,7 @@ import (
 )
 
 // NewServiceIdentityService returns the IdentityService API.
-func NewServiceIdentityService(storage db.Storage) *IdentityService {
+func NewServiceIdentityService(storage db.ServiceIdentityStorage) *IdentityService {
 	return &IdentityService{
 		storage: storage,
 	}

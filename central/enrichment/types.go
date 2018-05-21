@@ -27,13 +27,11 @@ var (
 
 // Enricher enriches images with data from registries and scanners.
 type Enricher struct {
-	storage interface {
-		db.DeploymentStorage
-		db.ImageStorage
-		db.ImageIntegrationStorage
-		db.MultiplierStorage
-		db.AlertStorage
-	}
+	deploymentStorage       db.DeploymentStorage
+	imageStorage            db.ImageStorage
+	imageIntegrationStorage db.ImageIntegrationStorage
+	multiplierStorage       db.MultiplierStorage
+	alertStorage            db.AlertStorage
 
 	imageIntegrationMutex sync.Mutex
 	imageIntegrations     map[string]*sources.ImageIntegration
@@ -49,14 +47,23 @@ type Enricher struct {
 }
 
 // New creates and returns a new Enricher.
-func New(storage db.Storage, scorer *risk.Scorer) (*Enricher, error) {
+func New(deploymentStorage db.DeploymentStorage,
+	imageStorage db.ImageStorage,
+	imageIntegrationStorage db.ImageIntegrationStorage,
+	multiplierStorage db.MultiplierStorage,
+	alertStorage db.AlertStorage,
+	scorer *risk.Scorer) (*Enricher, error) {
 	e := &Enricher{
-		storage:         storage,
-		scorer:          scorer,
-		metadataLimiter: rate.NewLimiter(rate.Every(5*time.Second), 3),
-		metadataCache:   ccache.New(ccache.Configure().MaxSize(maxCacheSize).ItemsToPrune(itemsToPrune)),
-		scanLimiter:     rate.NewLimiter(rate.Every(5*time.Second), 3),
-		scanCache:       ccache.New(ccache.Configure().MaxSize(maxCacheSize).ItemsToPrune(itemsToPrune)),
+		deploymentStorage:       deploymentStorage,
+		imageStorage:            imageStorage,
+		imageIntegrationStorage: imageIntegrationStorage,
+		multiplierStorage:       multiplierStorage,
+		alertStorage:            alertStorage,
+		scorer:                  scorer,
+		metadataLimiter:         rate.NewLimiter(rate.Every(5*time.Second), 3),
+		metadataCache:           ccache.New(ccache.Configure().MaxSize(maxCacheSize).ItemsToPrune(itemsToPrune)),
+		scanLimiter:             rate.NewLimiter(rate.Every(5*time.Second), 3),
+		scanCache:               ccache.New(ccache.Configure().MaxSize(maxCacheSize).ItemsToPrune(itemsToPrune)),
 	}
 	if err := e.initializeImageIntegrations(); err != nil {
 		return nil, err
@@ -68,7 +75,7 @@ func New(storage db.Storage, scorer *risk.Scorer) (*Enricher, error) {
 }
 
 func (e *Enricher) initializeImageIntegrations() error {
-	protoImageIntegrations, err := e.storage.GetImageIntegrations(&v1.GetImageIntegrationsRequest{})
+	protoImageIntegrations, err := e.imageIntegrationStorage.GetImageIntegrations(&v1.GetImageIntegrationsRequest{})
 	if err != nil {
 		return err
 	}
@@ -98,7 +105,7 @@ func (e *Enricher) RemoveImageIntegration(id string) {
 }
 
 func (e *Enricher) initializeMultipliers() error {
-	protoMultipliers, err := e.storage.GetMultipliers()
+	protoMultipliers, err := e.multiplierStorage.GetMultipliers()
 	if err != nil {
 		return err
 	}
@@ -119,7 +126,7 @@ func (e *Enricher) Enrich(deployment *v1.Deployment) (enriched bool, err error) 
 	}
 
 	if enriched {
-		err = e.storage.UpdateDeployment(deployment)
+		err = e.deploymentStorage.UpdateDeployment(deployment)
 	}
 
 	return
@@ -159,7 +166,7 @@ func (e *Enricher) enrichImage(image *v1.Image) (bool, error) {
 	}
 	if image.GetName().GetSha() != "" && (updatedMetadata || updatedScan) {
 		// Store image in the database
-		return true, e.storage.UpdateImage(image)
+		return true, e.imageStorage.UpdateImage(image)
 	}
 	return false, nil
 }

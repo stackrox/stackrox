@@ -32,18 +32,26 @@ var (
 )
 
 // NewPolicyService returns the PolicyService API.
-func NewPolicyService(storage *datastore.DataStore, detector *detection.Detector) *PolicyService {
+func NewPolicyService(policies datastore.PolicyDataStore, clusters datastore.ClusterDataStore, deployments datastore.DeploymentDataStore, notifiers db.NotifierStorage, detector *detection.Detector) *PolicyService {
 	return &PolicyService{
-		datastore: storage,
+		policies:    policies,
+		clusters:    clusters,
+		deployments: deployments,
+
+		notifiers: notifiers,
 		detector:  detector,
 
-		validator: newPolicyValidator(storage, storage),
+		validator: newPolicyValidator(notifiers, clusters),
 	}
 }
 
 // PolicyService is the struct that manages Policies API
 type PolicyService struct {
-	datastore *datastore.DataStore
+	policies    datastore.PolicyDataStore
+	clusters    datastore.ClusterDataStore
+	deployments datastore.DeploymentDataStore
+
+	notifiers db.NotifierStorage
 	detector  *detection.Detector
 
 	validator *policyValidator
@@ -69,7 +77,7 @@ func (s *PolicyService) GetPolicy(ctx context.Context, request *v1.ResourceByID)
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Policy id must be provided")
 	}
-	policy, exists, err := s.datastore.GetPolicy(request.GetId())
+	policy, exists, err := s.policies.GetPolicy(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -86,7 +94,7 @@ func (s *PolicyService) GetPolicy(ctx context.Context, request *v1.ResourceByID)
 func (s *PolicyService) GetPolicies(ctx context.Context, request *v1.RawQuery) (*v1.PoliciesResponse, error) {
 	resp := new(v1.PoliciesResponse)
 	if request.GetQuery() == "" {
-		policies, err := s.datastore.GetPolicies()
+		policies, err := s.policies.GetPolicies()
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -96,7 +104,7 @@ func (s *PolicyService) GetPolicies(ctx context.Context, request *v1.RawQuery) (
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		policies, err := s.datastore.SearchRawPolicies(parsedQuery)
+		policies, err := s.policies.SearchRawPolicies(parsedQuery)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -120,7 +128,7 @@ func (s *PolicyService) PostPolicy(ctx context.Context, request *v1.Policy) (*v1
 		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
 	}
 
-	id, err := s.datastore.AddPolicy(request)
+	id, err := s.policies.AddPolicy(request)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +150,7 @@ func (s *PolicyService) PutPolicy(ctx context.Context, request *v1.Policy) (*emp
 	}
 
 	s.detector.UpdatePolicy(policy)
-	if err := s.datastore.UpdatePolicy(request); err != nil {
+	if err := s.policies.UpdatePolicy(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &empty.Empty{}, nil
@@ -153,7 +161,7 @@ func (s *PolicyService) DeletePolicy(ctx context.Context, request *v1.ResourceBy
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "A policy id must be specified to delete a Policy")
 	}
-	if err := s.datastore.RemovePolicy(request.GetId()); err != nil {
+	if err := s.policies.RemovePolicy(request.GetId()); err != nil {
 		return nil, returnErrorCode(err)
 	}
 	s.detector.RemovePolicy(request.GetId())
@@ -179,7 +187,7 @@ func (s *PolicyService) DryRunPolicy(ctx context.Context, request *v1.Policy) (*
 	}
 
 	var resp v1.DryRunResponse
-	deployments, err := s.datastore.GetDeployments()
+	deployments, err := s.deployments.GetDeployments()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -221,7 +229,7 @@ func (s *PolicyService) RenamePolicyCategory(ctx context.Context, request *v1.Re
 		return &empty.Empty{}, nil
 	}
 
-	if err := s.datastore.RenamePolicyCategory(request); err != nil {
+	if err := s.policies.RenamePolicyCategory(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -239,7 +247,7 @@ func (s *PolicyService) DeletePolicyCategory(ctx context.Context, request *v1.De
 		return nil, status.Errorf(codes.NotFound, "Policy Category %s does not exist", request.GetCategory())
 	}
 
-	if err := s.datastore.DeletePolicyCategory(request); err != nil {
+	if err := s.policies.DeletePolicyCategory(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -247,7 +255,7 @@ func (s *PolicyService) DeletePolicyCategory(ctx context.Context, request *v1.De
 }
 
 func (s *PolicyService) getPolicyCategorySet() (map[string]struct{}, error) {
-	policies, err := s.datastore.GetPolicies()
+	policies, err := s.policies.GetPolicies()
 	if err != nil {
 		return nil, err
 	}

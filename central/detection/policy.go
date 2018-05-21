@@ -7,7 +7,7 @@ import (
 func (d *Detector) initializePolicies() error {
 	d.policies = make(map[string]*matcher.Policy)
 
-	policies, err := d.database.GetPolicies()
+	policies, err := d.policyStorage.GetPolicies()
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (d *Detector) RemoveNotifier(id string) {
 
 		if len(p.GetNotifiers()) != len(filtered) {
 			p.Notifiers = filtered
-			if err := d.database.UpdatePolicy(p.Policy); err != nil {
+			if err := d.policyStorage.UpdatePolicy(p.Policy); err != nil {
 				logger.Errorf("unable to update policy: %s", err)
 			}
 		}

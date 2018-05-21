@@ -17,15 +17,15 @@ import (
 const cacheSize = 100
 
 // NewBenchmarkResultsService returns the BenchmarkResultsService API for Central.
-func NewBenchmarkResultsService(storage db.Storage, notificationsProcessor *notifications.Processor) *BenchmarkResultsService {
+func NewBenchmarkResultsService(resultStore db.BenchmarkScansStorage, scheduleStore db.BenchmarkScheduleStorage, notificationsProcessor *notifications.Processor) *BenchmarkResultsService {
 	cache, err := lru.New(cacheSize)
 	if err != nil {
 		// This only happens in extreme cases (at this time, for invalid size only).
 		panic(err)
 	}
 	return &BenchmarkResultsService{
-		resultStore:   storage,
-		scheduleStore: storage,
+		resultStore:   resultStore,
+		scheduleStore: scheduleStore,
 		cache:         cache,
 		notificationsProcessor: notificationsProcessor,
 	}

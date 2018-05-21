@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 
+	"bitbucket.org/stack-rox/apollo/central/datastore"
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
@@ -18,15 +19,17 @@ import (
 )
 
 // NewBenchmarkScheduleService returns the BenchmarkService API.
-func NewBenchmarkScheduleService(storage db.Storage) *BenchmarkScheduleService {
+func NewBenchmarkScheduleService(datastore datastore.BenchmarkDataStore, storage db.BenchmarkScheduleStorage) *BenchmarkScheduleService {
 	return &BenchmarkScheduleService{
-		storage: storage,
+		datastore: datastore,
+		storage:   storage,
 	}
 }
 
 // BenchmarkScheduleService is the struct that manages the benchmark API
 type BenchmarkScheduleService struct {
-	storage db.Storage
+	datastore datastore.BenchmarkDataStore
+	storage   db.BenchmarkScheduleStorage
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -64,7 +67,7 @@ func (s *BenchmarkScheduleService) validateBenchmarkSchedule(request *v1.Benchma
 	if request.GetBenchmarkId() == "" {
 		errs = append(errs, "Benchmark id must be defined ")
 	}
-	_, exists, err := s.storage.GetBenchmark(request.GetBenchmarkId())
+	_, exists, err := s.datastore.GetBenchmark(request.GetBenchmarkId())
 	if err != nil {
 		return err
 	}

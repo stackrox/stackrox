@@ -15,7 +15,7 @@ import (
 )
 
 // NewAlertService returns the AlertService object.
-func NewAlertService(datastore *datastore.DataStore) *AlertService {
+func NewAlertService(datastore datastore.AlertDataStore) *AlertService {
 	return &AlertService{
 		datastore: datastore,
 	}
@@ -23,7 +23,7 @@ func NewAlertService(datastore *datastore.DataStore) *AlertService {
 
 // AlertService provides APIs for alerts.
 type AlertService struct {
-	datastore *datastore.DataStore
+	datastore datastore.AlertDataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

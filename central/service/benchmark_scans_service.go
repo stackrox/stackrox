@@ -20,19 +20,19 @@ import (
 )
 
 // NewBenchmarkScansService returns the BenchmarkScansService API.
-func NewBenchmarkScansService(datastore *datastore.DataStore) *BenchmarkScansService {
+func NewBenchmarkScansService(benchmarkScanStorage db.BenchmarkScansStorage, benchmarkDataStore datastore.BenchmarkDataStore, clusterDataStore datastore.ClusterDataStore) *BenchmarkScansService {
 	return &BenchmarkScansService{
-		benchmarkScanStorage: datastore,
-		benchmarkStorage:     datastore,
-		clusterStorage:       datastore,
+		benchmarkScanStorage: benchmarkScanStorage,
+		benchmarkStorage:     benchmarkDataStore,
+		clusterStorage:       clusterDataStore,
 	}
 }
 
 // BenchmarkScansService is the struct that manages the benchmark API
 type BenchmarkScansService struct {
-	benchmarkStorage     db.BenchmarkStorage
 	benchmarkScanStorage db.BenchmarkScansStorage
-	clusterStorage       db.ClusterStorage
+	benchmarkStorage     datastore.BenchmarkDataStore
+	clusterStorage       datastore.ClusterDataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

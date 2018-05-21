@@ -66,7 +66,7 @@ func (d *Detector) processTask(task Task) (alert *v1.Alert, enforcement v1.Enfor
 				logger.Debugf("\t %v", violation.Message)
 			}
 			alert.FirstOccurred = ptypes.TimestampNow()
-			if err := d.database.AddAlert(alert); err != nil {
+			if err := d.alertStorage.AddAlert(alert); err != nil {
 				logger.Error(err)
 			} else {
 				// Don't notify if the save failed. Otherwise, the user can't look up any of the data in the UI
@@ -79,7 +79,7 @@ func (d *Detector) processTask(task Task) (alert *v1.Alert, enforcement v1.Enfor
 		case len(existingAlerts) == 1:
 			alert = mergeAlerts(existingAlerts[0], alert)
 			logger.Debugf("Alert Updated: %s with Severity %s due to policy %s", alert.Id, alert.GetPolicy().GetSeverity().String(), alert.GetPolicy().GetName())
-			if err := d.database.UpdateAlert(alert); err != nil {
+			if err := d.alertStorage.UpdateAlert(alert); err != nil {
 				logger.Error(err)
 			}
 		}
@@ -99,7 +99,7 @@ func (d *Detector) markExistingAlertsAsStale(existingAlerts []*v1.Alert) {
 	for _, a := range existingAlerts {
 		a.Stale = true
 		a.MarkedStale = ptypes.TimestampNow()
-		if err := d.database.UpdateAlert(a); err != nil {
+		if err := d.alertStorage.UpdateAlert(a); err != nil {
 			logger.Errorf("unable to update alert staleness: %s", err)
 		}
 	}
@@ -107,7 +107,7 @@ func (d *Detector) markExistingAlertsAsStale(existingAlerts []*v1.Alert) {
 
 func (d *Detector) getExistingAlert(deploymentID, policyID string) (existingAlerts []*v1.Alert) {
 	var err error
-	existingAlerts, err = d.database.GetAlerts(&v1.GetAlertsRequest{
+	existingAlerts, err = d.alertStorage.GetAlerts(&v1.GetAlertsRequest{
 		Stale:        []bool{false},
 		DeploymentId: deploymentID,
 		PolicyId:     policyID,

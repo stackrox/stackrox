@@ -6,8 +6,8 @@ import (
 	"path"
 	"path/filepath"
 
+	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/defaults"
 	"github.com/golang/protobuf/jsonpb"
 )
 
@@ -16,34 +16,29 @@ var (
 	defaultBenchmarksPath = `/data/benchmarks`
 )
 
-func (ds *DataStore) loadDefaults() error {
-	if err := ds.loadDefaultPolicies(); err != nil {
-		return err
-	}
-	return ds.loadDefaultBenchmarks()
+// BenchmarkDataStore is an intermediary to BenchmarkStorage.
+type BenchmarkDataStore interface {
+	db.BenchmarkStorage
 }
 
-func (ds *DataStore) loadDefaultPolicies() error {
-	if policies, err := ds.GetPolicies(); err == nil && len(policies) > 0 {
-		return nil
+// NewBenchmarkDataStore provides a new instance of BenchmarkDataStore
+func NewBenchmarkDataStore(storage db.BenchmarkStorage) (BenchmarkDataStore, error) {
+	ds := &benchmarkDataStoreImpl{
+		BenchmarkStorage: storage,
 	}
-
-	policies, err := defaults.Policies()
-	if err != nil {
-		return err
+	if err := ds.loadDefaults(); err != nil {
+		return nil, err
 	}
-
-	for _, p := range policies {
-		if _, err := ds.Storage.AddPolicy(p); err != nil {
-			return err
-		}
-	}
-
-	logger.Infof("Loaded %ds default Policies", len(policies))
-	return nil
+	return ds, nil
 }
 
-func (ds *DataStore) loadDefaultBenchmarks() error {
+// benchmarkDataStoreImpl provides an intermediary implementation layer for BenchmarkStorage.
+type benchmarkDataStoreImpl struct {
+	// This is an embedded type so we don't have to override all functions. Indexing is a subset of Storage
+	db.BenchmarkStorage
+}
+
+func (ds *benchmarkDataStoreImpl) loadDefaults() error {
 	if benchmarks, err := ds.GetBenchmarks(&v1.GetBenchmarksRequest{}); err == nil && len(benchmarks) > 0 {
 		return nil
 	}
@@ -63,7 +58,7 @@ func (ds *DataStore) loadDefaultBenchmarks() error {
 	return nil
 }
 
-func (ds *DataStore) getDefaultBenchmarks() (benchmarks []*v1.Benchmark, err error) {
+func (ds *benchmarkDataStoreImpl) getDefaultBenchmarks() (benchmarks []*v1.Benchmark, err error) {
 	files, err := ioutil.ReadDir(defaultBenchmarksPath)
 	if err != nil {
 		logger.Errorf("Unable to list files in directory: %s", err)
@@ -88,7 +83,7 @@ func (ds *DataStore) getDefaultBenchmarks() (benchmarks []*v1.Benchmark, err err
 	return
 }
 
-func (ds *DataStore) readBenchmarkFile(path string) (*v1.Benchmark, error) {
+func (ds *benchmarkDataStoreImpl) readBenchmarkFile(path string) (*v1.Benchmark, error) {
 	contents, err := ioutil.ReadFile(path)
 	if err != nil {
 		logger.Errorf("Unable to read file %s: %s", path, err)

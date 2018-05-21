@@ -22,13 +22,13 @@ func (e *Enricher) RemoveMultiplier(id string) {
 
 // ReprocessRisk iterates over all of the deployments and reprocesses the risk for them
 func (e *Enricher) ReprocessRisk() error {
-	deployments, err := e.storage.GetDeployments()
+	deployments, err := e.deploymentStorage.GetDeployments()
 	if err != nil {
 		return err
 	}
 	for _, deployment := range deployments {
 		deployment.Risk = e.scorer.Score(deployment)
-		if err := e.storage.UpdateDeployment(deployment); err != nil {
+		if err := e.deploymentStorage.UpdateDeployment(deployment); err != nil {
 			return err
 		}
 	}
@@ -38,5 +38,5 @@ func (e *Enricher) ReprocessRisk() error {
 // ReprocessDeploymentRisk will reprocess the passed deployments risk and save the results
 func (e *Enricher) ReprocessDeploymentRisk(deployment *v1.Deployment) error {
 	deployment.Risk = e.scorer.Score(deployment)
-	return e.storage.UpdateDeployment(deployment)
+	return e.deploymentStorage.UpdateDeployment(deployment)
 }

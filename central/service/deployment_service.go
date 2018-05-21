@@ -21,17 +21,19 @@ import (
 )
 
 // NewDeploymentService returns a DeploymentService object.
-func NewDeploymentService(datastore *datastore.DataStore, enricher *enrichment.Enricher) *DeploymentService {
+func NewDeploymentService(datastore datastore.DeploymentDataStore, multipliers db.MultiplierStorage, enricher *enrichment.Enricher) *DeploymentService {
 	return &DeploymentService{
-		datastore: datastore,
-		enricher:  enricher,
+		datastore:   datastore,
+		multipliers: multipliers,
+		enricher:    enricher,
 	}
 }
 
 // DeploymentService provides APIs for deployments.
 type DeploymentService struct {
-	datastore *datastore.DataStore
-	enricher  *enrichment.Enricher
+	datastore   datastore.DeploymentDataStore
+	multipliers db.MultiplierStorage
+	enricher    *enrichment.Enricher
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -152,7 +154,7 @@ func labelsMapFromDeployments(deployments []*v1.Deployment) (keyValuesMap map[st
 
 // GetMultipliers returns all multipliers
 func (s *DeploymentService) GetMultipliers(ctx context.Context, request *empty.Empty) (*v1.GetMultipliersResponse, error) {
-	multipliers, err := s.datastore.GetMultipliers()
+	multipliers, err := s.multipliers.GetMultipliers()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -181,7 +183,7 @@ func (s *DeploymentService) AddMultiplier(ctx context.Context, request *v1.Multi
 	if err := validateMultiplier(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	id, err := s.datastore.AddMultiplier(request)
+	id, err := s.multipliers.AddMultiplier(request)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -192,7 +194,7 @@ func (s *DeploymentService) AddMultiplier(ctx context.Context, request *v1.Multi
 
 // UpdateMultiplier updates the specified multiplier
 func (s *DeploymentService) UpdateMultiplier(ctx context.Context, request *v1.Multiplier) (*empty.Empty, error) {
-	if err := s.datastore.UpdateMultiplier(request); err != nil {
+	if err := s.multipliers.UpdateMultiplier(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	s.enricher.UpdateMultiplier(request)
@@ -204,7 +206,7 @@ func (s *DeploymentService) RemoveMultiplier(ctx context.Context, request *v1.Re
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "ID must be specified when removing a multiplier")
 	}
-	if err := s.datastore.RemoveMultiplier(request.GetId()); err != nil {
+	if err := s.multipliers.RemoveMultiplier(request.GetId()); err != nil {
 		if _, ok := err.(db.ErrNotFound); ok {
 			return nil, status.Error(codes.NotFound, err.Error())
 		}

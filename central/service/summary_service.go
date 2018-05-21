@@ -13,15 +13,21 @@ import (
 )
 
 // NewSummaryService returns the SummaryService object.
-func NewSummaryService(datastore *datastore.DataStore) *SummaryService {
+func NewSummaryService(alerts datastore.AlertDataStore, clusters datastore.ClusterDataStore, deployments datastore.DeploymentDataStore, images datastore.ImageDataStore) *SummaryService {
 	return &SummaryService{
-		datastore: datastore,
+		alerts:      alerts,
+		clusters:    clusters,
+		deployments: deployments,
+		images:      images,
 	}
 }
 
 // SummaryService serves Summary APIs.
 type SummaryService struct {
-	datastore *datastore.DataStore
+	alerts      datastore.AlertDataStore
+	clusters    datastore.ClusterDataStore
+	deployments datastore.DeploymentDataStore
+	images      datastore.ImageDataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -41,25 +47,25 @@ func (s *SummaryService) AuthFuncOverride(ctx context.Context, fullMethodName st
 
 // GetSummaryCounts returns the global counts of alerts, clusters, deployments, and images.
 func (s *SummaryService) GetSummaryCounts(context.Context, *empty.Empty) (*v1.SummaryCountsResponse, error) {
-	alerts, err := s.datastore.CountAlerts()
+	alerts, err := s.alerts.CountAlerts()
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	clusters, err := s.datastore.CountClusters()
+	clusters, err := s.clusters.CountClusters()
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	deployments, err := s.datastore.CountDeployments()
+	deployments, err := s.deployments.CountDeployments()
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	images, err := s.datastore.CountImages()
+	images, err := s.images.CountImages()
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())

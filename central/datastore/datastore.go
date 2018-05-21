@@ -1,478 +1,243 @@
 package datastore
 
 import (
-	"sort"
+	"net/http"
+	"sync"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/db/boltdb"
+	"bitbucket.org/stack-rox/apollo/central/db/inmem"
 	"bitbucket.org/stack-rox/apollo/central/search"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/central/search/blevesearch"
+	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/set"
-	ptypes "github.com/gogo/protobuf/types"
 )
 
 var (
 	logger = logging.LoggerForModule()
+
+	mutex    sync.RWMutex
+	registry *DataStore
 )
 
-// DataStore is a wrapper around the flow of data
+// DataStore provides access to datastores for reading and modifying saved data.
+// It restrict access to the interfaces provided here and doesn't allow access to the lower level constructs.
 type DataStore struct {
-	db.Storage // This is an embedded type so we don't have to override all functions. Indexing is a subset of Storage
-	indexer    search.Indexer
+	// Base objects that underly datastores.
+	inmem   db.Storage
+	indexer search.Indexer
+
+	// Datastore objects.
+	alerts      AlertDataStore
+	benchmarks  BenchmarkDataStore
+	clusters    ClusterDataStore
+	deployments DeploymentDataStore
+	images      ImageDataStore
+	policies    PolicyDataStore
 }
 
-// NewDataStore takes in a storage implementation and and indexer implementation
-func NewDataStore(storage db.Storage, indexer search.Indexer) (*DataStore, error) {
-	ds := &DataStore{
-		Storage: storage,
+// Init takes in a storage implementation and and indexer implementation
+func Init() error {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if registry != nil {
+		panic("datastore initialized more than once")
+	}
+
+	persistence, err := boltdb.NewWithDefaults(env.DBPath.Setting())
+	if err != nil {
+		return err
+	}
+	inmem := inmem.New(persistence)
+
+	indexer, err := blevesearch.NewIndexer()
+	if err != nil {
+		return err
+	}
+
+	// Include any storage types you'd like to override.
+	alerts, err := NewAlertDataStore(inmem, indexer)
+	if err != nil {
+		return err
+	}
+	benchmarks, err := NewBenchmarkDataStore(inmem)
+	if err != nil {
+		return err
+	}
+	deployments, err := NewDeploymentDataStore(inmem, indexer)
+	if err != nil {
+		return err
+	}
+	images, err := NewImageDataStore(inmem, indexer)
+	if err != nil {
+		return err
+	}
+	policies, err := NewPolicyDataStore(inmem, indexer)
+	if err != nil {
+		return err
+	}
+	clusters := NewClusterDataStore(inmem, deployments, alerts)
+	if err != nil {
+		return err
+	}
+
+	// Build and return the datastore.
+	registry = &DataStore{
+		inmem:   inmem,
 		indexer: indexer,
-	}
-	if err := ds.loadDefaults(); err != nil {
-		return nil, err
-	}
-	if err := ds.buildSearchIndexes(); err != nil {
-		return nil, err
-	}
 
-	return ds, nil
-}
-
-// Close closes both the database and the indexer
-func (ds *DataStore) Close() {
-	ds.Storage.Close()
-	ds.indexer.Close()
-}
-
-func (ds *DataStore) buildSearchIndexes() error {
-	// Alert Index
-	alerts, err := ds.GetAlerts(&v1.GetAlertsRequest{})
-	if err != nil {
-		return err
-	}
-	for _, a := range alerts {
-		if err := ds.indexer.AddAlert(a); err != nil {
-			logger.Errorf("Error inserting alert %s (%s) into index: %s", a.GetId(), a.GetPolicy().GetName(), err)
-		}
-	}
-
-	deployments, err := ds.GetDeployments()
-	if err != nil {
-		return err
-	}
-	for _, d := range deployments {
-		if err := ds.indexer.AddDeployment(d); err != nil {
-			logger.Errorf("Error inserting deployment %s (%s) into index: %s", d.GetId(), d.GetName(), err)
-		}
-	}
-
-	policies, err := ds.GetPolicies()
-	if err != nil {
-		return err
-	}
-	for _, p := range policies {
-		if err := ds.indexer.AddPolicy(p); err != nil {
-			logger.Errorf("Error inserting policy %s (%s) into index: %s", p.GetId(), p.GetName(), err)
-		}
-	}
-
-	images, err := ds.GetImages()
-	if err != nil {
-		return err
-	}
-	for _, i := range images {
-		if err := ds.indexer.AddImage(i); err != nil {
-			logger.Errorf("Error inserting image %s (%s) into index: %s", i.GetName().GetSha(), i.GetName().GetFullName(), err)
-		}
+		alerts:      alerts,
+		benchmarks:  benchmarks,
+		clusters:    clusters,
+		deployments: deployments,
+		images:      images,
+		policies:    policies,
 	}
 	return nil
 }
 
-// AddAlert inserts an alert into storage and into the indexer
-func (ds *DataStore) AddAlert(alert *v1.Alert) error {
-	if err := ds.Storage.AddAlert(alert); err != nil {
-		return err
+// Close closes the registry, which closes the underlying inmem db, and the indexer.
+func Close() {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if registry != nil {
+		panic("datastore closed when not open")
 	}
-	return ds.indexer.AddAlert(alert)
+
+	registry.inmem.Close()
+	registry.indexer.Close()
+
+	registry.inmem = nil
+	registry.indexer = nil
+
+	registry.alerts = nil
+	registry.benchmarks = nil
+	registry.clusters = nil
+	registry.deployments = nil
+	registry.images = nil
+	registry.policies = nil
 }
 
-// UpdateAlert updates an alert in storage and in the indexer
-func (ds *DataStore) UpdateAlert(alert *v1.Alert) error {
-	if err := ds.Storage.UpdateAlert(alert); err != nil {
-		return err
-	}
-	return ds.indexer.AddAlert(alert)
+// Export and Backup handlers served from the inmem object.
+///////////////////////////////////////////////////////////
+
+// BackupHandler provides the http.Handler from the inderlying in memory db.
+func BackupHandler() http.Handler {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.inmem.ExportHandler()
 }
 
-// CountAlerts returns the number of alerts that are active
-func (ds *DataStore) CountAlerts() (int, error) {
-	alerts, err := ds.GetAlerts(&v1.GetAlertsRequest{Stale: []bool{false}})
-	return len(alerts), err
+// ExportHandler provides the http.Handler from the inderlying in memory db.
+func ExportHandler() http.Handler {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.inmem.BackupHandler()
 }
 
-// RemoveAlert removes an alert from the storage and the indexer
-func (ds *DataStore) RemoveAlert(id string) error {
-	if err := ds.Storage.RemoveAlert(id); err != nil {
-		return err
-	}
-	return ds.indexer.DeleteAlert(id)
+// Use the registries datastore objects.
+////////////////////////////////////////
+
+// GetAlertDataStore provides an instance of AlertDataStore created by the registry.
+func GetAlertDataStore() AlertDataStore {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.alerts
 }
 
-type severitiesWrap []v1.Severity
-
-func (wrap severitiesWrap) asSet() map[v1.Severity]struct{} {
-	output := make(map[v1.Severity]struct{})
-
-	for _, s := range wrap {
-		output[s] = struct{}{}
-	}
-
-	return output
+// GetBenchmarkDataStore provides an instance of BenchmarkDataStore created by the registry.
+func GetBenchmarkDataStore() BenchmarkDataStore {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.benchmarks
 }
 
-// GetAlerts fetches the data from the database or searches for it based on the passed filters
-func (ds *DataStore) GetAlerts(request *v1.GetAlertsRequest) ([]*v1.Alert, error) {
-	var alerts []*v1.Alert
-	var err error
-	if request.GetQuery() == "" {
-		alerts, err = ds.Storage.GetAlerts(request)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		parsedQuery, err := search.ParseRawQuery(request.GetQuery())
-		if err != nil {
-			return nil, err
-		}
-		alerts, err = ds.SearchRawAlerts(parsedQuery)
-		if err != nil {
-			return nil, err
-		}
-	}
-	sinceTime, sinceTimeErr := ptypes.TimestampFromProto(request.GetSince())
-	untilTime, untilTimeErr := ptypes.TimestampFromProto(request.GetUntil())
-	sinceStaleTime, sinceStaleTimeErr := ptypes.TimestampFromProto(request.GetSinceStale())
-	untilStaleTime, untilStaleTimeErr := ptypes.TimestampFromProto(request.GetUntilStale())
-
-	severitySet := severitiesWrap(request.GetSeverity()).asSet()
-	categorySet := set.NewSetFromStringSlice(request.GetCategory())
-	filtered := alerts[:0]
-
-	for _, alert := range alerts {
-		if len(request.GetStale()) == 1 && alert.GetStale() != request.GetStale()[0] {
-			continue
-		}
-		if request.GetDeploymentId() != "" && request.GetDeploymentId() != alert.GetDeployment().GetId() {
-			continue
-		}
-
-		if request.GetPolicyId() != "" && request.GetPolicyId() != alert.GetPolicy().GetId() {
-			continue
-		}
-
-		if _, ok := severitySet[alert.GetPolicy().GetSeverity()]; len(severitySet) > 0 && !ok {
-			continue
-		}
-		alertCategoriesSet := set.NewSetFromStringSlice(alert.GetPolicy().GetCategories())
-		if categorySet.Cardinality() != 0 && categorySet.Intersect(alertCategoriesSet).Cardinality() == 0 {
-			continue
-		}
-		if sinceTimeErr == nil && !sinceTime.IsZero() {
-			if alertTime, alertTimeErr := ptypes.TimestampFromProto(alert.GetTime()); alertTimeErr == nil && !sinceTime.Before(alertTime) {
-				continue
-			}
-		}
-		if untilTimeErr == nil && !untilTime.IsZero() {
-			if alertTime, alertTimeErr := ptypes.TimestampFromProto(alert.GetTime()); alertTimeErr == nil && !untilTime.After(alertTime) {
-				continue
-			}
-		}
-		if sinceStaleTimeErr == nil && !sinceStaleTime.IsZero() {
-			if alertTime, alertTimeErr := ptypes.TimestampFromProto(alert.GetTime()); alertTimeErr == nil && !sinceStaleTime.Before(alertTime) {
-				continue
-			}
-		}
-		if untilStaleTimeErr == nil && !untilStaleTime.IsZero() {
-			if alertTime, alertTimeErr := ptypes.TimestampFromProto(alert.GetTime()); alertTimeErr == nil && !untilStaleTime.After(alertTime) {
-				continue
-			}
-		}
-		filtered = append(filtered, alert)
-	}
-	// Sort by descending timestamp.
-	sort.SliceStable(filtered, func(i, j int) bool {
-		if sI, sJ := filtered[i].GetTime().GetSeconds(), filtered[j].GetTime().GetSeconds(); sI != sJ {
-			return sI > sJ
-		}
-		return filtered[i].GetTime().GetNanos() > filtered[j].GetTime().GetNanos()
-	})
-	return filtered, nil
+// GetClusterDataStore provides an instance of ClusterDataStore created by the registry.
+func GetClusterDataStore() ClusterDataStore {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.clusters
 }
 
-func (ds *DataStore) searchAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, []search.Result, error) {
-	results, err := ds.indexer.SearchAlerts(request)
-	if err != nil {
-		return nil, nil, err
-	}
-	var alerts []*v1.Alert
-	var newResults []search.Result
-	for _, result := range results {
-		alert, exists, err := ds.GetAlert(result.ID)
-		if err != nil {
-			return nil, nil, err
-		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		alerts = append(alerts, alert)
-		newResults = append(newResults, result)
-	}
-	return alerts, newResults, nil
+// GetDeploymentDataStore provides an instance of DeploymentDataStore created by the registry.
+func GetDeploymentDataStore() DeploymentDataStore {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.deployments
 }
 
-// SearchAlerts retrieves SearchResults from the indexer and storage
-func (ds *DataStore) SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
-	alerts, results, err := ds.searchAlerts(request)
-	if err != nil {
-		return nil, err
-	}
-	protoResults := make([]*v1.SearchResult, 0, len(alerts))
-	for i, alert := range alerts {
-		protoResults = append(protoResults, search.ConvertAlert(alert, results[i]))
-	}
-	return protoResults, nil
+// GetImageDataStore provides an instance of ImageDataStore created by the registry.
+func GetImageDataStore() ImageDataStore {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.images
 }
 
-// SearchRawAlerts retrieves Alerts from the indexer and storage
-func (ds *DataStore) SearchRawAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, error) {
-	alerts, _, err := ds.searchAlerts(request)
-	return alerts, err
+// GetPolicyDataStore provides an instance of PolicyDataStore created by the registry.
+func GetPolicyDataStore() PolicyDataStore {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.policies
 }
 
-func (ds *DataStore) searchImages(request *v1.ParsedSearchRequest) ([]*v1.Image, []search.Result, error) {
-	results, err := ds.indexer.SearchImages(request)
-	if err != nil {
-		return nil, nil, err
-	}
-	var images []*v1.Image
-	var newResults []search.Result
-	for _, result := range results {
-		image, exists, err := ds.GetImage(result.ID)
-		if err != nil {
-			return nil, nil, err
-		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		images = append(images, image)
-		newResults = append(newResults, result)
-	}
-	return images, newResults, nil
+// Use the registries underlying storage object as sub-interfaces in a type-safe way.
+// These are basically pass through in functionality, using the DB directly.
+////////////////////////////////////////////////////////////////////////////
+
+// GetAuthProviderStorage provide storage functionality for authProvider.
+func GetAuthProviderStorage() db.AuthProviderStorage {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.inmem.(db.AuthProviderStorage)
 }
 
-// SearchImages retrieves SearchResults from the indexer and storage
-func (ds *DataStore) SearchImages(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
-	images, results, err := ds.searchImages(request)
-	if err != nil {
-		return nil, err
-	}
-	protoResults := make([]*v1.SearchResult, 0, len(images))
-	for i, image := range images {
-		protoResults = append(protoResults, search.ConvertImage(image, results[i]))
-	}
-	return protoResults, nil
+// GetBenchmarkScheduleStorage provides storage functionality for benchmark schedules.
+func GetBenchmarkScheduleStorage() db.BenchmarkScheduleStorage {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.inmem.(db.BenchmarkScheduleStorage)
 }
 
-// SearchRawImages retrieves SearchResults from the indexer and storage
-func (ds *DataStore) SearchRawImages(request *v1.ParsedSearchRequest) ([]*v1.Image, error) {
-	images, _, err := ds.searchImages(request)
-	return images, err
+// GetBenchmarkScansStorage provides storage functionality for benchmarks scans.
+func GetBenchmarkScansStorage() db.BenchmarkScansStorage {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.inmem.(db.BenchmarkScansStorage)
 }
 
-func (ds *DataStore) searchPolicies(request *v1.ParsedSearchRequest) ([]*v1.Policy, []search.Result, error) {
-	results, err := ds.indexer.SearchPolicies(request)
-	if err != nil {
-		return nil, nil, err
-	}
-	var policies []*v1.Policy
-	var newResults []search.Result
-	for _, result := range results {
-		policy, exists, err := ds.GetPolicy(result.ID)
-		if err != nil {
-			return nil, nil, err
-		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		policies = append(policies, policy)
-		newResults = append(newResults, result)
-	}
-	return policies, newResults, nil
+// GetBenchmarkTriggerStorage provides storage functionality for benchmarks triggers.
+func GetBenchmarkTriggerStorage() db.BenchmarkTriggerStorage {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.inmem.(db.BenchmarkTriggerStorage)
 }
 
-// SearchRawPolicies retrieves Policies from the indexer and storage
-func (ds *DataStore) SearchRawPolicies(request *v1.ParsedSearchRequest) ([]*v1.Policy, error) {
-	policies, _, err := ds.searchPolicies(request)
-	return policies, err
+// GetImageIntegrationStorage provide storage functionality for image integrations.
+func GetImageIntegrationStorage() db.ImageIntegrationStorage {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.inmem.(db.ImageIntegrationStorage)
 }
 
-// SearchPolicies retrieves SearchResults from the indexer and storage
-func (ds *DataStore) SearchPolicies(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
-	policies, results, err := ds.searchPolicies(request)
-	if err != nil {
-		return nil, err
-	}
-	protoResults := make([]*v1.SearchResult, 0, len(policies))
-	for i, policy := range policies {
-		protoResults = append(protoResults, search.ConvertPolicy(policy, results[i]))
-	}
-	return protoResults, nil
+// GetMultiplierStorage provides the storage functionality for risk scoring multipliers
+func GetMultiplierStorage() db.MultiplierStorage {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.inmem.(db.MultiplierStorage)
 }
 
-func filterAliveDeployments(deployments []*v1.Deployment) (liveDeployments []*v1.Deployment) {
-	for _, d := range deployments {
-		if d.GetTombstone() == nil {
-			liveDeployments = append(liveDeployments, d)
-		}
-	}
-	return liveDeployments
+// GetNotifierStorage provide storage functionality for notifiers
+func GetNotifierStorage() db.NotifierStorage {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.inmem.(db.NotifierStorage)
 }
 
-// GetDeployments returns all live deployments
-func (ds *DataStore) GetDeployments() ([]*v1.Deployment, error) {
-	deployments, err := ds.Storage.GetDeployments()
-	if err != nil {
-		return nil, err
-	}
-	return filterAliveDeployments(deployments), nil
-}
-
-// CountDeployments returns the number of active deployments
-func (ds *DataStore) CountDeployments() (int, error) {
-	deployments, err := ds.GetDeployments()
-	if err != nil {
-		return 0, err
-	}
-	return len(deployments), nil
-}
-
-func (ds *DataStore) searchDeployments(request *v1.ParsedSearchRequest) ([]*v1.Deployment, []search.Result, error) {
-	results, err := ds.indexer.SearchDeployments(request)
-	if err != nil {
-		return nil, nil, err
-	}
-	var deployments []*v1.Deployment
-	var newResults []search.Result
-	for _, result := range results {
-		deployment, exists, err := ds.GetDeployment(result.ID)
-		if err != nil {
-			return nil, nil, err
-		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		deployments = append(deployments, deployment)
-		newResults = append(newResults, result)
-	}
-
-	return filterAliveDeployments(deployments), newResults, nil
-}
-
-// SearchRawDeployments retrieves deployments from the indexer and storage
-func (ds *DataStore) SearchRawDeployments(request *v1.ParsedSearchRequest) ([]*v1.Deployment, error) {
-	deployments, _, err := ds.searchDeployments(request)
-	if err != nil {
-		return nil, err
-	}
-	return deployments, err
-}
-
-// SearchDeployments retrieves SearchResults from the indexer and storage
-func (ds *DataStore) SearchDeployments(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
-	deployments, results, err := ds.searchDeployments(request)
-	if err != nil {
-		return nil, err
-	}
-	protoResults := make([]*v1.SearchResult, 0, len(deployments))
-	for i, deployment := range deployments {
-		protoResults = append(protoResults, search.ConvertDeployment(deployment, results[i]))
-	}
-	return protoResults, nil
-}
-
-// AddDeployment adds a deployment into the storage and the indexer
-func (ds *DataStore) AddDeployment(deployment *v1.Deployment) error {
-	if err := ds.Storage.AddDeployment(deployment); err != nil {
-		return err
-	}
-	return ds.indexer.AddDeployment(deployment)
-}
-
-// UpdateDeployment updates a deployment in the storage and the indexer
-func (ds *DataStore) UpdateDeployment(deployment *v1.Deployment) error {
-	if err := ds.Storage.UpdateDeployment(deployment); err != nil {
-		return err
-	}
-	return ds.indexer.AddDeployment(deployment)
-}
-
-// RemoveDeployment removes a deployment from the storage and the indexer
-func (ds *DataStore) RemoveDeployment(id string) error {
-	// Even though RemoveDeployment just marks with a tombstone, for now let's not index tombstoned deployments
-	if err := ds.Storage.RemoveDeployment(id); err != nil {
-		return err
-	}
-	return ds.indexer.DeleteDeployment(id)
-}
-
-// AddPolicy inserts a policy into the storage and the indexer
-func (ds *DataStore) AddPolicy(policy *v1.Policy) (string, error) {
-	id, err := ds.Storage.AddPolicy(policy)
-	if err != nil {
-		return id, err
-	}
-	return id, ds.indexer.AddPolicy(policy)
-}
-
-// UpdatePolicy updates a policy from the storage and the indexer
-func (ds *DataStore) UpdatePolicy(policy *v1.Policy) error {
-	if err := ds.Storage.UpdatePolicy(policy); err != nil {
-		return err
-	}
-	return ds.indexer.AddPolicy(policy)
-}
-
-// RemovePolicy removes a policy from the storage and the indexer
-func (ds *DataStore) RemovePolicy(id string) error {
-	if err := ds.Storage.RemovePolicy(id); err != nil {
-		return err
-	}
-	return ds.indexer.DeletePolicy(id)
-}
-
-// AddImage adds an image to the storage and the indexer
-func (ds *DataStore) AddImage(image *v1.Image) error {
-	if err := ds.Storage.AddImage(image); err != nil {
-		return err
-	}
-	return ds.indexer.AddImage(image)
-}
-
-// UpdateImage updates an image in storage and the indexer
-func (ds *DataStore) UpdateImage(image *v1.Image) error {
-	if err := ds.Storage.UpdateImage(image); err != nil {
-		return err
-	}
-	return ds.indexer.AddImage(image)
-}
-
-// RemoveImage removes an image from storage and the indexer
-func (ds *DataStore) RemoveImage(id string) error {
-	if err := ds.Storage.RemoveImage(id); err != nil {
-		return err
-	}
-	return ds.indexer.DeleteImage(id)
+// GetServiceIdentityStorage provides storage functionality for service identities.
+func GetServiceIdentityStorage() db.ServiceIdentityStorage {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.inmem.(db.ServiceIdentityStorage)
 }

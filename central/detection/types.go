@@ -18,11 +18,9 @@ var (
 
 // Detector processes deployments and reports alerts if policies are violated.
 type Detector struct {
-	database interface {
-		db.AlertStorage
-		db.DeploymentStorage
-		db.PolicyStorage
-	}
+	alertStorage      db.AlertStorage
+	deploymentStorage db.DeploymentStorage
+	policyStorage     db.PolicyStorage
 
 	enricher              *enrichment.Enricher
 	notificationProcessor *notifications.Processor
@@ -35,9 +33,15 @@ type Detector struct {
 }
 
 // New creates a new detector and initializes the registries and scanners from the DB if they exist.
-func New(database db.Storage, enricher *enrichment.Enricher, notificationsProcessor *notifications.Processor) (d *Detector, err error) {
+func New(alertStorage db.AlertStorage,
+	deploymentStorage db.DeploymentStorage,
+	policyStorage db.PolicyStorage,
+	enricher *enrichment.Enricher,
+	notificationsProcessor *notifications.Processor) (d *Detector, err error) {
 	d = &Detector{
-		database:              database,
+		alertStorage:          alertStorage,
+		deploymentStorage:     deploymentStorage,
+		policyStorage:         policyStorage,
 		enricher:              enricher,
 		notificationProcessor: notificationsProcessor,
 		taskC:    make(chan Task, 40),

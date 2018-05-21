@@ -6,6 +6,7 @@ import (
 	"context"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/datastore"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -18,23 +19,16 @@ var (
 	logger = logging.LoggerForModule()
 )
 
-// ContactTimeUpdater contains the storage-access functions that this
-// interceptor requires.
-type ContactTimeUpdater interface {
-	GetCluster(id string) (*v1.Cluster, bool, error)
-	UpdateClusterContactTime(id string, t time.Time) error
-}
-
 // A ClusterWatcher provides gRPC interceptors that record cluster checkin
 // times based on authentication metadata.
 type ClusterWatcher struct {
-	db ContactTimeUpdater
+	clusters datastore.ClusterDataStore
 }
 
 // NewClusterWatcher creates a new ClusterWatcher.
-func NewClusterWatcher(storage ContactTimeUpdater) *ClusterWatcher {
+func NewClusterWatcher(clusters datastore.ClusterDataStore) *ClusterWatcher {
 	return &ClusterWatcher{
-		db: storage,
+		clusters: clusters,
 	}
 }
 
@@ -85,10 +79,10 @@ func (cw ClusterWatcher) recordCheckin(ctx context.Context) error {
 		return status.Error(codes.Unauthenticated, "Cluster ID not provided")
 	}
 
-	_, exists, _ := cw.db.GetCluster(id.Name.Identifier)
+	_, exists, _ := cw.clusters.GetCluster(id.Name.Identifier)
 	if !exists {
 		return status.Error(codes.Unauthenticated, "Cluster does not exist")
 	}
 
-	return cw.db.UpdateClusterContactTime(id.Name.Identifier, time.Now())
+	return cw.clusters.UpdateClusterContactTime(id.Name.Identifier, time.Now())
 }

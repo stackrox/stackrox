@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 
+	"bitbucket.org/stack-rox/apollo/central/datastore"
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
@@ -16,15 +17,17 @@ import (
 )
 
 // NewBenchmarkTriggerService returns the BenchmarkService API.
-func NewBenchmarkTriggerService(storage db.Storage) *BenchmarkTriggerService {
+func NewBenchmarkTriggerService(storage datastore.BenchmarkDataStore, triggerStorage db.BenchmarkTriggerStorage) *BenchmarkTriggerService {
 	return &BenchmarkTriggerService{
-		storage: storage,
+		storage:        storage,
+		triggerStorage: triggerStorage,
 	}
 }
 
 // BenchmarkTriggerService is the struct that manages the benchmark API
 type BenchmarkTriggerService struct {
-	storage db.Storage
+	storage        datastore.BenchmarkDataStore
+	triggerStorage db.BenchmarkTriggerStorage
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -52,7 +55,7 @@ func (s *BenchmarkTriggerService) Trigger(ctx context.Context, request *v1.Bench
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("Benchmark with id %v does not exist", request.GetId()))
 	}
 	request.Time = ptypes.TimestampNow()
-	if err := s.storage.AddBenchmarkTrigger(request); err != nil {
+	if err := s.triggerStorage.AddBenchmarkTrigger(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &empty.Empty{}, nil
@@ -60,7 +63,7 @@ func (s *BenchmarkTriggerService) Trigger(ctx context.Context, request *v1.Bench
 
 // GetTriggers triggers returns all of the manual benchmark triggers.
 func (s *BenchmarkTriggerService) GetTriggers(ctx context.Context, request *v1.GetBenchmarkTriggersRequest) (*v1.GetBenchmarkTriggersResponse, error) {
-	triggers, err := s.storage.GetBenchmarkTriggers(request)
+	triggers, err := s.triggerStorage.GetBenchmarkTriggers(request)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

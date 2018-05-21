@@ -26,15 +26,13 @@ type AuthLister interface {
 
 // An AuthInterceptor provides gRPC interceptors that authenticates users.
 type AuthInterceptor struct {
-	db        AuthLister
 	providers map[string]authproviders.Authenticator
 	lock      sync.RWMutex
 }
 
 // NewAuthInterceptor creates a new AuthInterceptor.
-func NewAuthInterceptor(storage AuthLister) *AuthInterceptor {
+func NewAuthInterceptor() *AuthInterceptor {
 	return &AuthInterceptor{
-		db:        storage,
 		providers: make(map[string]authproviders.Authenticator),
 	}
 }

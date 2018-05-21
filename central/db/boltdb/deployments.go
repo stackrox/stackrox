@@ -13,6 +13,7 @@ import (
 )
 
 const deploymentBucket = "deployments"
+const deploymentGraveyard = "deployments_graveyard"
 
 func (b *BoltDB) getDeployment(id string, bucket *bolt.Bucket) (deployment *v1.Deployment, exists bool, err error) {
 	deployment = new(v1.Deployment)
@@ -86,7 +87,7 @@ func (b *BoltDB) AddDeployment(deployment *v1.Deployment) error {
 			return err
 		}
 		if exists {
-			return fmt.Errorf("Deployment %v cannot be added because it already exists", deployment.GetId())
+			return fmt.Errorf("deployment %s cannot be added because it already exists", deployment.GetId())
 		}
 		b.ranker.Add(deployment.GetId(), deployment.GetRisk().GetScore())
 		bytes, err := proto.Marshal(deployment)
@@ -126,17 +127,70 @@ func (b *BoltDB) UpdateDeployment(deployment *v1.Deployment) error {
 // RemoveDeployment updates a deployment with a tombstone
 func (b *BoltDB) RemoveDeployment(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "Deployment")
-	return b.Update(func(tx *bolt.Tx) error {
+
+	var deployment *v1.Deployment
+	var exists bool
+	var err error
+	b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
-		deployment, exists, err := b.getDeployment(id, bucket)
+
+		deployment, exists, err = b.getDeployment(id, bucket)
 		if err != nil {
 			return err
 		}
 		if !exists {
 			return db.ErrNotFound{Type: "Deployment", ID: id}
 		}
-		deployment.Tombstone = ptypes.TimestampNow()
+
 		b.ranker.Remove(id)
-		return b.updateDeployment(deployment, bucket)
+		return bucket.Delete([]byte(id))
 	})
+
+	if deployment != nil {
+		b.addDeploymentToGraveyard(deployment)
+	}
+	return err
+}
+
+// GetTombstonedDeployments returns all of the deployments that have been tombstoned.
+func (b *BoltDB) GetTombstonedDeployments() ([]*v1.Deployment, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "TombstonedDeployment")
+	var deployments []*v1.Deployment
+	err := b.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(deploymentGraveyard))
+		return bucket.ForEach(func(k, v []byte) error {
+			var deployment v1.Deployment
+			if err := proto.Unmarshal(v, &deployment); err != nil {
+				return err
+			}
+
+			deployments = append(deployments, &deployment)
+			return nil
+		})
+	})
+	return deployments, err
+}
+
+func (b *BoltDB) addDeploymentToGraveyard(deployment *v1.Deployment) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "TombstonedDeployment")
+	err := b.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(deploymentGraveyard))
+
+		if val := bucket.Get([]byte(deployment.GetId())); val != nil {
+			return fmt.Errorf("deployment %s cannot be tombstoned because it already has been", deployment.GetId())
+		}
+
+		deployment.Tombstone = ptypes.TimestampNow()
+		bytes, err := proto.Marshal(deployment)
+		if err != nil {
+			return err
+		}
+
+		return bucket.Put([]byte(deployment.GetId()), bytes)
+	})
+
+	// If there is an error stuffing a deployment in the graveyard, then just abandon it in the street.
+	if err != nil {
+		log.Errorf("unable to tombstone deployment", err)
+	}
 }

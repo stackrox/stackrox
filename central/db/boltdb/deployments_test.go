@@ -91,8 +91,15 @@ func (suite *BoltDeploymentTestSuite) TestDeployments() {
 	}
 
 	for _, d := range deployments {
-		deployment, _, err := suite.GetDeployment(d.GetId())
+		_, exists, err := suite.GetDeployment(d.GetId())
 		suite.NoError(err)
-		suite.NotNil(deployment.GetTombstone())
+		suite.False(exists)
+	}
+
+	// Test tombstones are set
+	tombstoned, err := suite.GetTombstonedDeployments()
+	for _, d := range tombstoned {
+		suite.NoError(err)
+		suite.NotNil(d.GetTombstone())
 	}
 }

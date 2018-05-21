@@ -28,7 +28,7 @@ func (d *Detector) periodicallyEnrich() {
 
 // EnrichAndReprocess enriches all deployments. If new data is available, it re-assesses all policies for that deployment.
 func (d *Detector) EnrichAndReprocess() {
-	deployments, err := d.database.GetDeployments()
+	deployments, err := d.deploymentStorage.GetDeployments()
 	if err != nil {
 		logger.Error(err)
 		return
@@ -45,7 +45,7 @@ func (d *Detector) EnrichAndReprocess() {
 }
 
 func (d *Detector) reprocessPolicy(policy *matcher.Policy) {
-	deployments, err := d.database.GetDeployments()
+	deployments, err := d.deploymentStorage.GetDeployments()
 	if err != nil {
 		logger.Error(err)
 		return
@@ -63,7 +63,7 @@ func (d *Detector) reprocessPolicy(policy *matcher.Policy) {
 		deploymentMap[deploy.GetId()] = struct{}{}
 	}
 
-	alerts, err := d.database.GetAlerts(&v1.GetAlertsRequest{
+	alerts, err := d.alertStorage.GetAlerts(&v1.GetAlertsRequest{
 		Stale:    []bool{false},
 		PolicyId: policy.GetId(),
 	})
@@ -84,7 +84,7 @@ func (d *Detector) reprocessPolicy(policy *matcher.Policy) {
 }
 
 func (d *Detector) reprocessImageIntegration(integration *sources.ImageIntegration) {
-	deployments, err := d.database.GetDeployments()
+	deployments, err := d.deploymentStorage.GetDeployments()
 	if err != nil {
 		logger.Error(err)
 		return

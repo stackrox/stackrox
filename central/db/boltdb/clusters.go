@@ -19,30 +19,6 @@ const (
 	clusterStatusBucket = "clusters_status"
 )
 
-func (b *BoltDB) getCluster(id string, bucket *bolt.Bucket) (cluster *v1.Cluster, exists bool, err error) {
-	cluster = new(v1.Cluster)
-	val := bucket.Get([]byte(id))
-	if val == nil {
-		return
-	}
-	exists = true
-	err = proto.Unmarshal(val, cluster)
-	if err != nil {
-		return
-	}
-	b.addContactTime(cluster)
-	return
-}
-
-func (b *BoltDB) addContactTime(cluster *v1.Cluster) {
-	t, err := b.getClusterContactTime(cluster.GetId())
-	if err != nil {
-		log.Warnf("Could not get cluster last-contact time for '%s': %s", cluster.GetId(), err)
-		return
-	}
-	cluster.LastContact = t
-}
-
 // GetCluster returns cluster with given id.
 func (b *BoltDB) GetCluster(id string) (cluster *v1.Cluster, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "Cluster")
@@ -167,6 +143,30 @@ func (b *BoltDB) UpdateClusterContactTime(id string, t time.Time) error {
 		}
 		return bucket.Put([]byte(id), bytes)
 	})
+}
+
+func (b *BoltDB) getCluster(id string, bucket *bolt.Bucket) (cluster *v1.Cluster, exists bool, err error) {
+	cluster = new(v1.Cluster)
+	val := bucket.Get([]byte(id))
+	if val == nil {
+		return
+	}
+	exists = true
+	err = proto.Unmarshal(val, cluster)
+	if err != nil {
+		return
+	}
+	b.addContactTime(cluster)
+	return
+}
+
+func (b *BoltDB) addContactTime(cluster *v1.Cluster) {
+	t, err := b.getClusterContactTime(cluster.GetId())
+	if err != nil {
+		log.Warnf("Could not get cluster last-contact time for '%s': %s", cluster.GetId(), err)
+		return
+	}
+	cluster.LastContact = t
 }
 
 func (b *BoltDB) getClusterContactTime(id string) (t *timestamp.Timestamp, err error) {

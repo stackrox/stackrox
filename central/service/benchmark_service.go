@@ -3,7 +3,7 @@ package service
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/datastore"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -15,7 +15,7 @@ import (
 )
 
 // NewBenchmarkService returns the BenchmarkService API.
-func NewBenchmarkService(storage db.BenchmarkStorage) *BenchmarkService {
+func NewBenchmarkService(storage datastore.BenchmarkDataStore) *BenchmarkService {
 	return &BenchmarkService{
 		storage: storage,
 	}
@@ -23,7 +23,7 @@ func NewBenchmarkService(storage db.BenchmarkStorage) *BenchmarkService {
 
 // BenchmarkService is the struct that manages the benchmark API
 type BenchmarkService struct {
-	storage db.BenchmarkStorage
+	storage datastore.BenchmarkDataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

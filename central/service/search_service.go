@@ -16,15 +16,21 @@ import (
 )
 
 // NewSearchService returns the SearchService object.
-func NewSearchService(datastore *datastore.DataStore) *SearchService {
+func NewSearchService(alerts datastore.AlertDataStore, deployments datastore.DeploymentDataStore, images datastore.ImageDataStore, policies datastore.PolicyDataStore) *SearchService {
 	return &SearchService{
-		datastore: datastore,
+		alerts:      alerts,
+		deployments: deployments,
+		images:      images,
+		policies:    policies,
 	}
 }
 
 // SearchService provides APIs for search.
 type SearchService struct {
-	datastore *datastore.DataStore
+	alerts      datastore.AlertDataStore
+	deployments datastore.DeploymentDataStore
+	images      datastore.ImageDataStore
+	policies    datastore.PolicyDataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -46,10 +52,10 @@ type searchFunc func(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error
 
 func (s *SearchService) getSearchFuncs() map[v1.SearchCategory]searchFunc {
 	return map[v1.SearchCategory]searchFunc{
-		v1.SearchCategory_ALERTS:      s.datastore.SearchAlerts,
-		v1.SearchCategory_DEPLOYMENTS: s.datastore.SearchDeployments,
-		v1.SearchCategory_IMAGES:      s.datastore.SearchImages,
-		v1.SearchCategory_POLICIES:    s.datastore.SearchPolicies,
+		v1.SearchCategory_ALERTS:      s.alerts.SearchAlerts,
+		v1.SearchCategory_DEPLOYMENTS: s.deployments.SearchDeployments,
+		v1.SearchCategory_IMAGES:      s.images.SearchImages,
+		v1.SearchCategory_POLICIES:    s.policies.SearchPolicies,
 	}
 }
 

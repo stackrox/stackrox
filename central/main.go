@@ -15,16 +15,12 @@ import (
 
 	clustersZip "bitbucket.org/stack-rox/apollo/central/clusters/zip"
 	"bitbucket.org/stack-rox/apollo/central/datastore"
-	"bitbucket.org/stack-rox/apollo/central/db/boltdb"
-	"bitbucket.org/stack-rox/apollo/central/db/inmem"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/central/enrichment"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/central/notifications"
 	"bitbucket.org/stack-rox/apollo/central/risk"
-	"bitbucket.org/stack-rox/apollo/central/search/blevesearch"
 	"bitbucket.org/stack-rox/apollo/central/service"
-	"bitbucket.org/stack-rox/apollo/pkg/env"
 	pkgGRPC "bitbucket.org/stack-rox/apollo/pkg/grpc"
 	authnUser "bitbucket.org/stack-rox/apollo/pkg/grpc/authn/user"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/allow"
@@ -45,34 +41,32 @@ var (
 func main() {
 	central := newCentral()
 
-	persistence, err := boltdb.NewWithDefaults(env.DBPath.Setting())
-	if err != nil {
-		panic(err)
-	}
-	database := inmem.New(persistence)
-
-	indexer, err := blevesearch.NewIndexer()
+	err := datastore.Init()
 	if err != nil {
 		panic(err)
 	}
 
-	central.datastore, err = datastore.NewDataStore(database, indexer)
-	if err != nil {
-		panic(err)
-	}
-
-	central.notificationProcessor, err = notifications.NewNotificationProcessor(central.datastore)
+	central.notificationProcessor, err = notifications.NewNotificationProcessor(datastore.GetNotifierStorage())
 	if err != nil {
 		panic(err)
 	}
 	go central.notificationProcessor.Start()
 
-	central.scorer = risk.NewScorer(central.datastore)
-	if central.enricher, err = enrichment.New(central.datastore, central.scorer); err != nil {
+	central.scorer = risk.NewScorer(datastore.GetAlertDataStore())
+	if central.enricher, err = enrichment.New(datastore.GetDeploymentDataStore(),
+		datastore.GetImageDataStore(),
+		datastore.GetImageIntegrationStorage(),
+		datastore.GetMultiplierStorage(),
+		datastore.GetAlertDataStore(),
+		central.scorer); err != nil {
 		panic(err)
 	}
 
-	central.detector, err = detection.New(central.datastore, central.enricher, central.notificationProcessor)
+	central.detector, err = detection.New(datastore.GetAlertDataStore(),
+		datastore.GetDeploymentDataStore(),
+		datastore.GetPolicyDataStore(),
+		central.enricher,
+		central.notificationProcessor)
 	if err != nil {
 		panic(err)
 	}
@@ -87,7 +81,6 @@ type central struct {
 	detector              *detection.Detector
 	enricher              *enrichment.Enricher
 	notificationProcessor *notifications.Processor
-	datastore             *datastore.DataStore
 	server                pkgGRPC.API
 	scorer                *risk.Scorer
 }
@@ -103,10 +96,10 @@ func newCentral() *central {
 }
 
 func (c *central) startGRPCServer() {
-	idService := service.NewServiceIdentityService(c.datastore)
-	clusterService := service.NewClusterService(c.datastore)
-	clusterWatcher := clusters.NewClusterWatcher(c.datastore)
-	userAuth := authnUser.NewAuthInterceptor(c.datastore)
+	idService := service.NewServiceIdentityService(datastore.GetServiceIdentityStorage())
+	clusterService := service.NewClusterService(datastore.GetClusterDataStore())
+	clusterWatcher := clusters.NewClusterWatcher(datastore.GetClusterDataStore())
+	userAuth := authnUser.NewAuthInterceptor()
 
 	config := pkgGRPC.Config{
 		CustomRoutes: c.customRoutes(userAuth, clusterService, idService),
@@ -122,25 +115,27 @@ func (c *central) startGRPCServer() {
 	}
 
 	c.server = pkgGRPC.NewAPI(config)
-	c.server.Register(service.NewAlertService(c.datastore))
+
+	c.server.Register(service.NewAlertService(datastore.GetAlertDataStore()))
 	c.server.Register(service.NewAuthService())
-	c.server.Register(service.NewAuthProviderService(c.datastore, userAuth))
-	c.server.Register(service.NewBenchmarkService(c.datastore))
-	c.server.Register(service.NewBenchmarkScansService(c.datastore))
-	c.server.Register(service.NewBenchmarkScheduleService(c.datastore))
-	c.server.Register(service.NewBenchmarkResultsService(c.datastore, c.notificationProcessor))
-	c.server.Register(service.NewBenchmarkTriggerService(c.datastore))
+	c.server.Register(service.NewAuthProviderService(datastore.GetAuthProviderStorage(), userAuth))
+	c.server.Register(service.NewBenchmarkService(datastore.GetBenchmarkDataStore()))
+	c.server.Register(service.NewBenchmarkScansService(datastore.GetBenchmarkScansStorage(), datastore.GetBenchmarkDataStore(), datastore.GetClusterDataStore()))
+	c.server.Register(service.NewBenchmarkScheduleService(datastore.GetBenchmarkDataStore(), datastore.GetBenchmarkScheduleStorage()))
+	c.server.Register(service.NewBenchmarkResultsService(datastore.GetBenchmarkScansStorage(), datastore.GetBenchmarkScheduleStorage(), c.notificationProcessor))
+	c.server.Register(service.NewBenchmarkTriggerService(datastore.GetBenchmarkDataStore(), datastore.GetBenchmarkTriggerStorage()))
 	c.server.Register(clusterService)
-	c.server.Register(service.NewDeploymentService(c.datastore, c.enricher))
-	c.server.Register(service.NewImageService(c.datastore))
-	c.server.Register(service.NewImageIntegrationService(c.datastore, c.detector))
-	c.server.Register(service.NewNotifierService(c.datastore, c.notificationProcessor, c.detector))
+	c.server.Register(service.NewDeploymentService(datastore.GetDeploymentDataStore(), datastore.GetMultiplierStorage(), c.enricher))
+	c.server.Register(service.NewImageService(datastore.GetImageDataStore()))
+	c.server.Register(service.NewImageIntegrationService(datastore.GetImageIntegrationStorage(), c.detector))
+	c.server.Register(service.NewNotifierService(datastore.GetNotifierStorage(), c.notificationProcessor, c.detector))
 	c.server.Register(service.NewPingService())
-	c.server.Register(service.NewPolicyService(c.datastore, c.detector))
-	c.server.Register(service.NewSearchService(c.datastore))
+	c.server.Register(service.NewPolicyService(datastore.GetPolicyDataStore(), datastore.GetClusterDataStore(), datastore.GetDeploymentDataStore(), datastore.GetNotifierStorage(), c.detector))
+	c.server.Register(service.NewSearchService(datastore.GetAlertDataStore(), datastore.GetDeploymentDataStore(), datastore.GetImageDataStore(), datastore.GetPolicyDataStore()))
 	c.server.Register(idService)
-	c.server.Register(service.NewSensorEventService(c.detector, c.datastore, c.scorer))
-	c.server.Register(service.NewSummaryService(c.datastore))
+	c.server.Register(service.NewSensorEventService(c.detector, datastore.GetImageDataStore(), datastore.GetDeploymentDataStore(), datastore.GetClusterDataStore(), c.scorer))
+	c.server.Register(service.NewSummaryService(datastore.GetAlertDataStore(), datastore.GetClusterDataStore(), datastore.GetDeploymentDataStore(), datastore.GetImageDataStore()))
+
 	c.server.Start()
 }
 
@@ -161,13 +156,13 @@ func (c *central) customRoutes(userAuth *authnUser.AuthInterceptor, clusterServi
 		"/db/backup": {
 			AuthInterceptor: userAuth.HTTPInterceptor,
 			Authorizer:      authzUser.Any(),
-			ServerHandler:   c.datastore.BackupHandler(),
+			ServerHandler:   datastore.BackupHandler(),
 			Compression:     true,
 		},
 		"/db/export": {
 			AuthInterceptor: userAuth.HTTPInterceptor,
 			Authorizer:      authzUser.Any(),
-			ServerHandler:   c.datastore.ExportHandler(),
+			ServerHandler:   datastore.ExportHandler(),
 			Compression:     true,
 		},
 		"/metrics": {
@@ -221,7 +216,7 @@ func (c *central) processForever() {
 		case sig := <-c.signalsC:
 			log.Infof("Caught %s signal", sig)
 			c.detector.Stop()
-			c.datastore.Close()
+			datastore.Close()
 			log.Infof("Central terminated")
 			return
 		}

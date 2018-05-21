@@ -2,7 +2,7 @@ package service
 
 import (
 	"bitbucket.org/stack-rox/apollo/central/clusters"
-	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/datastore"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -14,15 +14,15 @@ import (
 )
 
 // NewClusterService returns the ClusterService API.
-func NewClusterService(storage db.Storage) *ClusterService {
+func NewClusterService(clusters datastore.ClusterDataStore) *ClusterService {
 	return &ClusterService{
-		storage: storage,
+		clusters: clusters,
 	}
 }
 
 // ClusterService is the struct that manages the cluster API
 type ClusterService struct {
-	storage db.ClusterStorage
+	clusters datastore.ClusterDataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -45,7 +45,7 @@ func (s *ClusterService) PostCluster(ctx context.Context, request *v1.Cluster) (
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new cluster")
 	}
-	id, err := s.storage.AddCluster(request)
+	id, err := s.clusters.AddCluster(request)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (s *ClusterService) PutCluster(ctx context.Context, request *v1.Cluster) (*
 	if request.GetName() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Name must be provided")
 	}
-	err := s.storage.UpdateCluster(request)
+	err := s.clusters.UpdateCluster(request)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -77,7 +77,7 @@ func (s *ClusterService) GetCluster(ctx context.Context, request *v1.ResourceByI
 }
 
 func (s *ClusterService) getCluster(id string) (*v1.ClusterResponse, error) {
-	cluster, ok, err := s.storage.GetCluster(id)
+	cluster, ok, err := s.clusters.GetCluster(id)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not get cluster: %s", err)
 	}
@@ -101,7 +101,7 @@ func (s *ClusterService) getCluster(id string) (*v1.ClusterResponse, error) {
 
 // GetClusters returns the currently defined clusters.
 func (s *ClusterService) GetClusters(ctx context.Context, _ *empty.Empty) (*v1.ClustersList, error) {
-	clusters, err := s.storage.GetClusters()
+	clusters, err := s.clusters.GetClusters()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -115,7 +115,7 @@ func (s *ClusterService) DeleteCluster(ctx context.Context, request *v1.Resource
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Request must have a id")
 	}
-	if err := s.storage.RemoveCluster(request.GetId()); err != nil {
+	if err := s.clusters.RemoveCluster(request.GetId()); err != nil {
 		return nil, returnErrorCode(err)
 	}
 	return &empty.Empty{}, nil

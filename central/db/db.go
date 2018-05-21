@@ -108,6 +108,7 @@ type DeploymentStorage interface {
 	AddDeployment(deployment *v1.Deployment) error
 	UpdateDeployment(deployment *v1.Deployment) error
 	RemoveDeployment(id string) error
+	GetTombstonedDeployments() ([]*v1.Deployment, error)
 }
 
 // ImageStorage provide storage functionality for images.

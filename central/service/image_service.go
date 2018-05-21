@@ -13,7 +13,7 @@ import (
 )
 
 // NewImageService returns the ImageService API.
-func NewImageService(datastore *datastore.DataStore) *ImageService {
+func NewImageService(datastore datastore.ImageDataStore) *ImageService {
 	return &ImageService{
 		datastore: datastore,
 	}
@@ -21,7 +21,7 @@ func NewImageService(datastore *datastore.DataStore) *ImageService {
 
 // ImageService is the struct that manages Images API
 type ImageService struct {
-	datastore *datastore.DataStore
+	datastore datastore.ImageDataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
