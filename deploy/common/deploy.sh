@@ -2,9 +2,6 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-export LOCAL_API_ENDPOINT="${LOCAL_API_ENDPOINT:-localhost:8080}"
-echo "Local StackRox Prevent endpoint set to $LOCAL_API_ENDPOINT"
-
 export PREVENT_IMAGE_TAG="${PREVENT_IMAGE_TAG:-latest}"
 echo "StackRox Prevent image tag set to $PREVENT_IMAGE_TAG"
 

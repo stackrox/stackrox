@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 function launch_central {
-    SWARM_DIR="$1"
-    PREVENT_IMAGE="$2"
-    NAMESPACE="$3"
+    ROX_CENTRAL_DASHBOARD_PORT="$1"
+    SWARM_DIR="$2"
+    PREVENT_IMAGE="$3"
     LOCAL_API_ENDPOINT="$4"
     PREVENT_DISABLE_REGISTRY_AUTH="$5"
 
@@ -13,7 +13,7 @@ function launch_central {
     OLD_DOCKER_TLS_VERIFY="$DOCKER_TLS_VERIFY"
     unset DOCKER_HOST DOCKER_CERT_PATH DOCKER_TLS_VERIFY
 
-    docker run "$PREVENT_IMAGE" -t swarm -i "$PREVENT_IMAGE" -p 8080 > "$SWARM_DIR/central.zip"
+    docker run "$PREVENT_IMAGE" -t swarm -i "$PREVENT_IMAGE" -p ${ROX_CENTRAL_DASHBOARD_PORT} > "$SWARM_DIR/central.zip"
 
     export DOCKER_HOST="$OLD_DOCKER_HOST"
     export DOCKER_CERT_PATH="$OLD_DOCKER_CERT_PATH"
@@ -41,10 +41,9 @@ function launch_sensor {
     SWARM_DIR="$1"
     PREVENT_IMAGE="$2"
     CLUSTER="$3"
-    NAMESPACE="$4"
-    CLUSTER_API_ENDPOINT="$5"
-    LOCAL_API_ENDPOINT="$6"
-    PREVENT_DISABLE_REGISTRY_AUTH="$7"
+    CLUSTER_API_ENDPOINT="$4"
+    LOCAL_API_ENDPOINT="$5"
+    PREVENT_DISABLE_REGISTRY_AUTH="$6"
 
     EXTRA_CONFIG=""
     if [ "$DOCKER_CERT_PATH" = "" ]; then

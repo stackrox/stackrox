@@ -19,9 +19,11 @@ function create_registry_secrets {
 }
 
 function launch_central {
-    K8S_DIR="$1"
-    PREVENT_IMAGE="$2"
-    NAMESPACE="$3"
+    ROX_CENTRAL_DASHBOARD_PORT="$1"
+    LOCAL_API_ENDPOINT="$2"
+    K8S_DIR="$3"
+    PREVENT_IMAGE="$4"
+    NAMESPACE="$5"
 
     set -u
 
@@ -49,10 +51,9 @@ function launch_central {
 
     pkill -f "kubectl port-forward -n ${NAMESPACE}" || true
     export CENTRAL_POD="$(kubectl get pod -n $NAMESPACE --selector 'app=central' --output=jsonpath='{.items..metadata.name} {.items..status.phase}' | grep Running | cut -f 1 -d ' ')"
-    kubectl port-forward -n "$NAMESPACE" "$CENTRAL_POD" 8000:443 &> /dev/null &
+    kubectl port-forward -n "$NAMESPACE" "$CENTRAL_POD" ${ROX_CENTRAL_DASHBOARD_PORT}:443 &> /dev/null &
     PID="$!"
     echo "Port-forward launched with PID: $PID"
-    LOCAL_API_ENDPOINT=localhost:8000
     echo "Set local API endpoint to: $LOCAL_API_ENDPOINT"
 
     wait_for_central "$LOCAL_API_ENDPOINT"
