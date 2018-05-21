@@ -94,7 +94,6 @@ func runQuery(query query.Query, index bleve.Index) ([]searchPkg.Result, error) 
 	// Initial size is 10 which seems small
 	searchRequest.Size = maxSearchResponses
 	searchRequest.Highlight = bleve.NewHighlight()
-	searchRequest.Fields = []string{"*"}
 	searchResult, err := index.Search(searchRequest)
 	if err != nil {
 		return nil, err

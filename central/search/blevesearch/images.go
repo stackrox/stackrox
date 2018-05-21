@@ -33,15 +33,79 @@ func (b *Indexer) DeleteImage(sha string) error {
 	return b.imageIndex.Delete(sha)
 }
 
-func (b *Indexer) getImageSHAsFromScope(request *v1.ParsedSearchRequest) (mapset.Set, error) {
-	scopesQuery := getScopesQuery(request.GetScopes(), scopeToDeploymentQuery)
+// SearchImages takes a SearchRequest and finds any matches
+// It is different from other requests because it requires that we actually search the deployments
+// for the image that may match the criteria
+func (b *Indexer) SearchImages(request *v1.ParsedSearchRequest) (results []search.Result, err error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Image")
+	// If we have scopes set, or the request has nothing set, get the list of image SHAs from the deployments.
+	// If no scopes are set, this returns ALL image SHAs present in deployments.
+	var imageSHAs mapset.Set
+	if len(request.GetScopes()) > 0 || (len(request.GetFields()) == 0 && request.GetStringQuery() == "") {
+		if imageSHAs, err = b.getImageSHAsFromScopes(request.GetScopes()); err != nil {
+			return
+		}
+	}
+
+	// If there is not query or query files, then we don't need to filter our image set.
+	if len(request.GetFields()) == 0 && request.GetStringQuery() == "" {
+		results, err = shasToResults(imageSHAs)
+		return
+	}
+
+	// Create and run query for fields, and input string query, if it exists.
+	imageQuery, err := fieldsToQuery(request.GetFields(), imageObjectMap)
+	if err != nil {
+		return nil, err
+	}
+	if request.GetStringQuery() != "" {
+		imageQuery.AddQuery(bleve.NewQueryStringQuery(request.GetStringQuery()))
+	}
+	results, err = runQuery(imageQuery, b.imageIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter results by which fields exist in the results retrieved from the deployments.
+	if imageSHAs != nil {
+		filteredResults := results[:0]
+		for _, result := range results {
+			if imageSHAs.Contains(result.ID) {
+				filteredResults = append(filteredResults, result)
+			}
+		}
+		results = filteredResults
+	}
+	return
+}
+
+func (b *Indexer) getImageSHAsFromScopes(scopes []*v1.Scope) (mapset.Set, error) {
+	scopesQuery := getScopesQuery(scopes, scopeToDeploymentQuery)
 	searchRequest := bleve.NewSearchRequest(scopesQuery)
 	searchRequest.Fields = []string{"containers.image.name.sha"}
 	searchRequest.Size = maxDeploymentsReturned
+
 	searchResult, err := b.deploymentIndex.Search(searchRequest)
 	if err != nil {
 		return nil, err
 	}
+
+	return deploymentResultsToShaSet(searchResult)
+}
+
+func shasToResults(shas mapset.Set) ([]search.Result, error) {
+	if shas == nil {
+		return nil, nil
+	}
+
+	searchResults := make([]search.Result, 0, shas.Cardinality())
+	for sha := range shas.Iter() {
+		searchResults = append(searchResults, search.Result{ID: sha.(string)})
+	}
+	return searchResults, nil
+}
+
+func deploymentResultsToShaSet(searchResult *bleve.SearchResult) (mapset.Set, error) {
 	shaSetFromDeployment := mapset.NewSet()
 	for _, hit := range searchResult.Hits {
 		shaObj := hit.Fields["containers.image.name.sha"]
@@ -67,45 +131,4 @@ func (b *Indexer) getImageSHAsFromScope(request *v1.ParsedSearchRequest) (mapset
 		}
 	}
 	return shaSetFromDeployment, nil
-}
-
-// SearchImages takes a SearchRequest and finds any matches
-// It is different from other requests because it requires that we actually search the deployments
-// for the image that may match the criteria
-func (b *Indexer) SearchImages(request *v1.ParsedSearchRequest) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Image")
-	shaSetFromDeployment, err := b.getImageSHAsFromScope(request)
-	if err != nil {
-		return nil, err
-	}
-	// If there is only scope defined, then we should return all images
-	if len(request.GetFields()) == 0 && request.GetStringQuery() == "" {
-		searchResults := make([]search.Result, 0, shaSetFromDeployment.Cardinality())
-		for sha := range shaSetFromDeployment.Iter() {
-			searchResults = append(searchResults, search.Result{ID: sha.(string)})
-		}
-		return searchResults, nil
-	}
-	imageQuery, err := fieldsToQuery(request.GetFields(), imageObjectMap)
-	if err != nil {
-		return nil, err
-	}
-	if request.GetStringQuery() != "" {
-		imageQuery.AddQuery(bleve.NewQueryStringQuery(request.GetStringQuery()))
-	}
-	results, err := runQuery(imageQuery, b.imageIndex)
-	if err != nil {
-		return nil, err
-	}
-	// Filter results by which fields exist in the results retrieved from the deployments
-	if len(request.GetScopes()) != 0 {
-		filteredResults := results[:0]
-		for _, result := range results {
-			if shaSetFromDeployment.Contains(result.ID) {
-				filteredResults = append(filteredResults, result)
-			}
-		}
-		results = filteredResults
-	}
-	return results, nil
 }
