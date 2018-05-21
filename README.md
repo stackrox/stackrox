@@ -172,18 +172,7 @@ git push origin "${RELEASE_VERSION}"
 
 When you push the tag to Bitbucket, CircleCI will start a build and will push
 the image as `stackrox/prevent:[your-release-tag]`,
-for example `stackrox/prevent:0.10`.
-
-### Push to stackrox.io
-Once the build has completed, "promote" it from Docker Hub to `stackrox.io`.
-
-```bash
-export FROM="stackrox/prevent:${RELEASE_VERSION}"
-export TO="stackrox.io/prevent:${RELEASE_VERSION}"
-docker pull "${FROM}"
-docker tag "${FROM}" "${TO}"
-docker push "${TO}"
-```
+for example `stackrox/prevent:1.0` and `stackrox.io/prevent:1.0`.
 
 ### Modify Demo Instructions
 The StackRox Prevent demo instructions live in a [Google Drive folder](https://drive.google.com/drive/folders/1gem9vG0Z0hzokF7S_r4WGwXDCCXi6fbT).
