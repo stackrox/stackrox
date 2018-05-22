@@ -34,6 +34,8 @@ func addKubernetesFields(c Wrap, fields map[string]string) {
 	}
 	fields["BenchmarkServiceAccountEnv"] = env.BenchmarkServiceAccount.EnvVar()
 	fields["BenchmarkServiceAccount"] = benchmarkServiceAccount
+	fields["OpenshiftAPIEnv"] = env.OpenshiftAPI.EnvVar()
+	fields["OpenshiftAPI"] = `"false"`
 }
 
 var (
@@ -79,6 +81,8 @@ spec:
           value: {{.ImagePullSecret}}
         - name: {{.BenchmarkServiceAccountEnv}}
           value: {{.BenchmarkServiceAccount}}
+        - name: {{.OpenshiftAPIEnv}}
+          value: {{.OpenshiftAPI}}
         - name: ROX_PREVENT_NAMESPACE
           valueFrom:
             fieldRef:

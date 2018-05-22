@@ -4,6 +4,7 @@ import (
 	"time"
 
 	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	openshift "github.com/openshift/client-go/apps/clientset/versioned"
@@ -71,8 +72,10 @@ func (k *kubernetesListener) createResourceWatchers() {
 		newReplicationControllerWatchLister(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, k.podWL),
 		newDeploymentWatcher(k.clients.k8s.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL),
 		newStatefulSetWatchLister(k.clients.k8s.AppsV1beta1().RESTClient(), k.eventsC, k.podWL),
+	}
 
-		newDeploymentConfigWatcher(k.clients.openshift.AppsV1().RESTClient(), k.eventsC, k.podWL),
+	if env.OpenshiftAPI.Setting() == "true" {
+		k.resourcesWL = append(k.resourcesWL, newDeploymentConfigWatcher(k.clients.openshift.AppsV1().RESTClient(), k.eventsC, k.podWL))
 	}
 
 	var deploymentGetters []func() (objs []interface{}, deploymentEvents []*pkgV1.DeploymentEvent)

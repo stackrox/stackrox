@@ -14,8 +14,14 @@ func newOpenshift() deployer {
 	return &basicDeployer{
 		deploy:    template.Must(template.New("openshift").Parse(k8sDeploy)),
 		cmd:       template.Must(template.New("openshift").Parse(openshiftCmd)),
-		addFields: addKubernetesFields,
+		addFields: addOpenShiftFields,
 	}
+}
+
+func addOpenShiftFields(c Wrap, fields map[string]string) {
+	addKubernetesFields(c, fields)
+
+	fields["OpenshiftAPI"] = `"true"`
 }
 
 var openshiftCmd = commandPrefix + `oc create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/central-ca.pem"
