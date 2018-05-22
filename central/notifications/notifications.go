@@ -24,7 +24,7 @@ type Processor struct {
 	alertChan     chan *v1.Alert
 	benchmarkChan chan *v1.BenchmarkSchedule
 	notifiers     map[string]notifiers.Notifier
-	notifiersLock sync.Mutex
+	notifiersLock sync.RWMutex
 
 	notifiersToPolicies     map[string]map[string]*v1.Policy
 	notifiersToPoliciesLock sync.RWMutex
@@ -65,8 +65,8 @@ func (p *Processor) initializeNotifiers() error {
 }
 
 func (p *Processor) notifyAlert(alert *v1.Alert) {
-	p.notifiersLock.Lock()
-	defer p.notifiersLock.Unlock()
+	p.notifiersLock.RLock()
+	defer p.notifiersLock.RUnlock()
 	for _, id := range alert.Policy.Notifiers {
 		notifier, exists := p.notifiers[id]
 		if !exists {
@@ -80,8 +80,8 @@ func (p *Processor) notifyAlert(alert *v1.Alert) {
 }
 
 func (p *Processor) notifyBenchmark(schedule *v1.BenchmarkSchedule) {
-	p.notifiersLock.Lock()
-	defer p.notifiersLock.Unlock()
+	p.notifiersLock.RLock()
+	defer p.notifiersLock.RUnlock()
 	for _, id := range schedule.Notifiers {
 		notifier, exists := p.notifiers[id]
 		if !exists {

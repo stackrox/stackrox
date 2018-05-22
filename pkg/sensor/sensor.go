@@ -7,7 +7,6 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
-	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"bitbucket.org/stack-rox/apollo/pkg/enforcers"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc"
@@ -20,6 +19,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/time/rate"
+	grpcLib "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -44,10 +44,12 @@ type Sensor struct {
 	Logger *logging.Logger
 
 	eventLimiter *rate.Limiter
+
+	Conn *grpcLib.ClientConn
 }
 
 // New returns a new Sensor.
-func New() *Sensor {
+func New(conn *grpcLib.ClientConn) *Sensor {
 	return &Sensor{
 		DeploymentCache: make(map[string]*v1.Deployment),
 
@@ -55,6 +57,7 @@ func New() *Sensor {
 		CentralEndpoint:    env.CentralEndpoint.Setting(),
 		AdvertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 		Image:              env.Image.Setting(),
+		Conn:               conn,
 
 		Logger: logging.NewOrGet("main"),
 
@@ -148,7 +151,7 @@ func (a *Sensor) relayEvents() {
 				pastDeployment.UpdatedAt = ev.Deployment.GetUpdatedAt()
 				pastDeployment.Version = ev.Deployment.GetVersion()
 				if reflect.DeepEqual(pastDeployment, ev.Deployment) {
-					a.Logger.Infof("De-duping deployment '%s' ('%s') as there have been no tracked changes to the deployment", pastDeployment.GetId(), pastDeployment.GetName())
+					a.Logger.Debugf("De-duping deployment '%s' ('%s') as there have been no tracked changes to the deployment", pastDeployment.GetId(), pastDeployment.GetName())
 					continue
 				}
 			}
@@ -163,12 +166,8 @@ func (a *Sensor) relayEvents() {
 }
 
 func (a *Sensor) waitUntilCentralIsReady() {
-	conn, err := clientconn.GRPCConnection(a.CentralEndpoint)
-	if err != nil {
-		a.Logger.Fatal(err)
-	}
-	pingService := v1.NewPingServiceClient(conn)
-	err = pingWithTimeout(pingService)
+	pingService := v1.NewPingServiceClient(a.Conn)
+	err := pingWithTimeout(pingService)
 	for err != nil {
 		a.Logger.Infof("Ping to Central failed: %s. Retrying...", err)
 		time.Sleep(2 * time.Second)
@@ -184,11 +183,7 @@ func pingWithTimeout(svc v1.PingServiceClient) (err error) {
 }
 
 func (a *Sensor) reportDeploymentEvent(ev *v1.DeploymentEvent) (resp *v1.DeploymentEventResponse, err error) {
-	conn, err := clientconn.GRPCConnection(a.CentralEndpoint)
-	if err != nil {
-		return nil, err
-	}
-	cli := v1.NewSensorEventServiceClient(conn)
+	cli := v1.NewSensorEventServiceClient(a.Conn)
 
 	a.enrichImages(ev)
 
@@ -234,7 +229,7 @@ func (a *Sensor) enrichImages(ev *v1.DeploymentEvent) {
 }
 
 func (a *Sensor) reportWithTimeout(cli v1.SensorEventServiceClient, ev *v1.DeploymentEvent) (resp *v1.DeploymentEventResponse, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 	resp, err = cli.ReportDeploymentEvent(ctx, ev)
 	return

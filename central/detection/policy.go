@@ -75,8 +75,8 @@ func (d *Detector) RemoveNotifier(id string) {
 }
 
 func (d *Detector) getCurrentPolicies() (policies []*matcher.Policy) {
-	d.policyMutex.Lock()
-	defer d.policyMutex.Unlock()
+	d.policyMutex.RLock()
+	defer d.policyMutex.RUnlock()
 
 	for _, p := range d.policies {
 		policies = append(policies, p)

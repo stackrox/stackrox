@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
@@ -16,6 +15,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/deckarep/golang-set"
 	ptypes "github.com/gogo/protobuf/types"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -50,9 +50,10 @@ type SchedulerClient struct {
 	orchestrator   orchestrators.Orchestrator
 
 	advertisedEndpoint string
-	centralEndpoint    string
 	clusterID          string
 	image              string
+
+	conn *grpc.ClientConn
 
 	started bool
 	done    chan struct{}
@@ -65,15 +66,15 @@ type SchedulerClient struct {
 }
 
 // NewSchedulerClient returns a new scheduler
-func NewSchedulerClient(orchestrator orchestrators.Orchestrator, centralEndpoint, advertisedEndpoint, image string, clusterID string) (*SchedulerClient, error) {
+func NewSchedulerClient(orchestrator orchestrators.Orchestrator, advertisedEndpoint, image string, conn *grpc.ClientConn, clusterID string) (*SchedulerClient, error) {
 	return &SchedulerClient{
 		updateTicker:       time.NewTicker(updateInterval),
 		orchestrator:       orchestrator,
 		done:               make(chan struct{}),
 		clusterID:          clusterID,
-		centralEndpoint:    centralEndpoint,
 		advertisedEndpoint: advertisedEndpoint,
 		image:              image,
+		conn:               conn,
 
 		schedules: make(map[string]*scheduleMetadata),
 		triggers:  make(map[string]*v1.BenchmarkTrigger),
@@ -87,15 +88,9 @@ func grpcContext() (context.Context, context.CancelFunc) {
 }
 
 func (s *SchedulerClient) getSchedules() ([]*v1.BenchmarkSchedule, error) {
-	conn, err := clientconn.GRPCConnection(s.centralEndpoint)
-	if err != nil {
-		return nil, err
-	}
-	defer conn.Close()
-
 	ctx, cancel := grpcContext()
 	defer cancel()
-	scheduleResp, err := v1.NewBenchmarkScheduleServiceClient(conn).GetBenchmarkSchedules(ctx, &v1.GetBenchmarkSchedulesRequest{
+	scheduleResp, err := v1.NewBenchmarkScheduleServiceClient(s.conn).GetBenchmarkSchedules(ctx, &v1.GetBenchmarkSchedulesRequest{
 		Clusters: []string{s.clusterID},
 	})
 	if err != nil {
@@ -105,16 +100,10 @@ func (s *SchedulerClient) getSchedules() ([]*v1.BenchmarkSchedule, error) {
 }
 
 func (s *SchedulerClient) benchmarkScanExists(scanID, benchmarkName string) (bool, error) {
-	conn, err := clientconn.GRPCConnection(s.centralEndpoint)
-	if err != nil {
-		return false, err
-	}
-	defer conn.Close()
-
 	ctx, cancel := grpcContext()
 	defer cancel()
 	log.Infof("Fetching benchmark scan: %v", scanID)
-	scan, err := v1.NewBenchmarkScanServiceClient(conn).GetBenchmarkScan(ctx, &v1.GetBenchmarkScanRequest{
+	scan, err := v1.NewBenchmarkScanServiceClient(s.conn).GetBenchmarkScan(ctx, &v1.GetBenchmarkScanRequest{
 		ScanId:     scanID,
 		ClusterIds: []string{s.clusterID},
 	})
@@ -125,18 +114,12 @@ func (s *SchedulerClient) benchmarkScanExists(scanID, benchmarkName string) (boo
 }
 
 func (s *SchedulerClient) getTriggers() ([]*v1.BenchmarkTrigger, error) {
-	conn, err := clientconn.GRPCConnection(s.centralEndpoint)
-	if err != nil {
-		return nil, err
-	}
-	defer conn.Close()
-
 	ctx, cancel := grpcContext()
 	defer cancel()
 
 	ts := ptypes.TimestampNow()
 	ts.Seconds -= int64(triggerTimespan.Seconds())
-	triggerResp, err := v1.NewBenchmarkTriggerServiceClient(conn).GetTriggers(ctx, &v1.GetBenchmarkTriggersRequest{
+	triggerResp, err := v1.NewBenchmarkTriggerServiceClient(s.conn).GetTriggers(ctx, &v1.GetBenchmarkTriggersRequest{
 		ClusterIds: []string{s.clusterID},
 		FromTime:   ts,
 	})
@@ -344,15 +327,9 @@ func (s *SchedulerClient) updateSchedules() {
 }
 
 func (s *SchedulerClient) launchBenchmark(scan *v1.BenchmarkScanMetadata) error {
-	conn, err := clientconn.GRPCConnection(s.centralEndpoint)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
-	benchmark, err := v1.NewBenchmarkServiceClient(conn).GetBenchmark(ctx, &v1.ResourceByID{Id: scan.GetBenchmarkId()})
+	benchmark, err := v1.NewBenchmarkServiceClient(s.conn).GetBenchmark(ctx, &v1.ResourceByID{Id: scan.GetBenchmarkId()})
 	if err != nil {
 		return err
 	}
@@ -360,7 +337,7 @@ func (s *SchedulerClient) launchBenchmark(scan *v1.BenchmarkScanMetadata) error 
 	// Send report back to master (may need retries, saying that we are trying to launch)
 	ctx, cancel = context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
-	_, err = v1.NewBenchmarkScanServiceClient(conn).PostBenchmarkScan(ctx, scan)
+	_, err = v1.NewBenchmarkScanServiceClient(s.conn).PostBenchmarkScan(ctx, scan)
 	if err != nil {
 		return err
 	}

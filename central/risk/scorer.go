@@ -17,7 +17,7 @@ type Scorer struct {
 	ConfiguredMultipliers  []multiplier
 	UserDefinedMultipliers map[string]multiplier
 
-	multLock sync.Mutex
+	multLock sync.RWMutex
 }
 
 // NewScorer returns a new scorer that encompasses both static and user defined multipliers
@@ -47,10 +47,10 @@ func (s *Scorer) RemoveUserDefinedMultiplier(id string) {
 	delete(s.UserDefinedMultipliers, id)
 }
 
-// Score takes a deployment and evaluates its risk
-func (s *Scorer) Score(deployment *v1.Deployment) *v1.Risk {
-	s.multLock.Lock()
-	defer s.multLock.Unlock()
+// This is threadsafe inside multLock
+func (s *Scorer) score(deployment *v1.Deployment) ([]*v1.Risk_Result, float32) {
+	s.multLock.RLock()
+	defer s.multLock.RUnlock()
 	riskResults := make([]*v1.Risk_Result, 0, len(s.ConfiguredMultipliers)+len(s.UserDefinedMultipliers))
 	overallScore := float32(1.0)
 	for _, mult := range s.ConfiguredMultipliers {
@@ -65,9 +65,15 @@ func (s *Scorer) Score(deployment *v1.Deployment) *v1.Risk {
 			riskResults = append(riskResults, riskResult)
 		}
 	}
+	return riskResults, overallScore
+}
+
+// Score takes a deployment and evaluates its risk
+func (s *Scorer) Score(deployment *v1.Deployment) *v1.Risk {
+	riskResults, score := s.score(deployment)
 	sort.SliceStable(riskResults, func(i, j int) bool { return riskResults[i].Score > riskResults[j].Score })
 	return &v1.Risk{
-		Score:   overallScore,
+		Score:   score,
 		Results: riskResults,
 	}
 }

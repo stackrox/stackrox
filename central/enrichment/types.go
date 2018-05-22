@@ -33,7 +33,7 @@ type Enricher struct {
 	multiplierStorage       db.MultiplierStorage
 	alertStorage            db.AlertStorage
 
-	imageIntegrationMutex sync.Mutex
+	imageIntegrationMutex sync.RWMutex
 	imageIntegrations     map[string]*sources.ImageIntegration
 
 	metadataLimiter *rate.Limiter
@@ -134,8 +134,8 @@ func (e *Enricher) Enrich(deployment *v1.Deployment) (enriched bool, err error) 
 
 // EnrichWithImageIntegration takes in a deployment and integration
 func (e *Enricher) EnrichWithImageIntegration(deployment *v1.Deployment, integration *sources.ImageIntegration) bool {
-	e.imageIntegrationMutex.Lock()
-	defer e.imageIntegrationMutex.Unlock()
+	e.imageIntegrationMutex.RLock()
+	defer e.imageIntegrationMutex.RUnlock()
 	var wasUpdated bool
 	// TODO(cgorman) These may have a real ordering that we need to adhere to
 	for _, category := range integration.GetCategories() {

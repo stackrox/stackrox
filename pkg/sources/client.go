@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -25,6 +25,8 @@ type Client struct {
 	integrations []*ImageIntegration
 	lock         sync.RWMutex
 
+	conn *grpc.ClientConn
+
 	clusterID       string
 	centralEndpoint string
 
@@ -32,12 +34,12 @@ type Client struct {
 }
 
 // NewImageIntegrationsClient returns a new client of the integrations API
-func NewImageIntegrationsClient(centralEndpoint string, clusterID string) *Client {
+func NewImageIntegrationsClient(conn *grpc.ClientConn, clusterID string) *Client {
 	return &Client{
-		updateTicker:    time.NewTicker(updateInterval),
-		clusterID:       clusterID,
-		centralEndpoint: centralEndpoint,
-		done:            make(chan struct{}),
+		updateTicker: time.NewTicker(updateInterval),
+		clusterID:    clusterID,
+		conn:         conn,
+		done:         make(chan struct{}),
 	}
 }
 
@@ -54,13 +56,7 @@ func (c *Client) Start() {
 }
 
 func (c *Client) doUpdate() {
-	conn, err := clientconn.GRPCConnection(c.centralEndpoint)
-	if err != nil {
-		panic(err)
-	}
-	defer conn.Close()
-
-	cli := v1.NewImageIntegrationServiceClient(conn)
+	cli := v1.NewImageIntegrationServiceClient(c.conn)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	resp, err := cli.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{Cluster: c.clusterID})

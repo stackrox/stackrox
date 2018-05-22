@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/hashicorp/golang-lru"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -32,6 +32,7 @@ type LRURelayer struct {
 	cache *lru.Cache
 
 	centralEndpoint string
+	conn            *grpc.ClientConn
 
 	tick  *time.Ticker
 	stopC chan struct{}
@@ -40,18 +41,18 @@ type LRURelayer struct {
 }
 
 // NewLRURelayer creates a new LRURelayer, which must then be started.
-func NewLRURelayer(centralEndpoint string) *LRURelayer {
+func NewLRURelayer(conn *grpc.ClientConn) *LRURelayer {
 	cache, err := lru.New(cacheSize)
 	if err != nil {
 		// This only happens in extreme cases (at this time, for invalid size only).
 		panic(err)
 	}
 	return &LRURelayer{
-		centralEndpoint: centralEndpoint,
-		cache:           cache,
-		tick:            time.NewTicker(interval),
-		stopC:           make(chan struct{}),
-		logger:          logging.NewOrGet("relayer"),
+		conn:   conn,
+		cache:  cache,
+		tick:   time.NewTicker(interval),
+		stopC:  make(chan struct{}),
+		logger: logging.NewOrGet("relayer"),
 	}
 }
 
@@ -103,15 +104,11 @@ func (r *LRURelayer) run() {
 }
 
 func (r *LRURelayer) relay(payload *v1.BenchmarkResult) error {
-	conn, err := clientconn.GRPCConnection(r.centralEndpoint)
-	if err != nil {
-		return err
-	}
-	cli := v1.NewBenchmarkResultsServiceClient(conn)
+	cli := v1.NewBenchmarkResultsServiceClient(r.conn)
 
 	r.logger.Infof("Relaying payload %s", payloadKey(payload))
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
-	_, err = cli.PostBenchmarkResult(ctx, payload)
+	_, err := cli.PostBenchmarkResult(ctx, payload)
 	return err
 }

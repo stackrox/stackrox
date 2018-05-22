@@ -28,7 +28,7 @@ type Detector struct {
 	stopping              bool
 	stoppedC              chan struct{}
 
-	policyMutex sync.Mutex
+	policyMutex sync.RWMutex
 	policies    map[string]*matcher.Policy
 }
 

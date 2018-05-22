@@ -9,11 +9,18 @@ import (
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
 
 	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
+	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
+	"bitbucket.org/stack-rox/apollo/pkg/env"
+	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/sensor"
 	"bitbucket.org/stack-rox/apollo/pkg/sources"
 	"bitbucket.org/stack-rox/apollo/sensor/swarm/enforcer"
 	"bitbucket.org/stack-rox/apollo/sensor/swarm/listener"
 	"bitbucket.org/stack-rox/apollo/sensor/swarm/orchestrator"
+)
+
+var (
+	logger = logging.LoggerForModule()
 )
 
 func main() {
@@ -37,8 +44,12 @@ func main() {
 }
 
 func initializeSensor() *sensor.Sensor {
-	a := sensor.New()
-	var err error
+	centralConn, err := clientconn.GRPCConnection(env.CentralEndpoint.Setting())
+	if err != nil {
+		logger.Fatalf("Error connecting to central: %s", err)
+	}
+
+	a := sensor.New(centralConn)
 
 	a.Listener, err = listener.New()
 	if err != nil {
@@ -53,11 +64,11 @@ func initializeSensor() *sensor.Sensor {
 		panic(err)
 	}
 
-	a.BenchScheduler, err = benchmarks.NewSchedulerClient(a.Orchestrator, a.CentralEndpoint, a.AdvertisedEndpoint, a.Image, a.ClusterID)
+	a.BenchScheduler, err = benchmarks.NewSchedulerClient(a.Orchestrator, a.AdvertisedEndpoint, a.Image, centralConn, a.ClusterID)
 	if err != nil {
 		panic(err)
 	}
-	a.ImageIntegrationPoller = sources.NewImageIntegrationsClient(a.CentralEndpoint, a.ClusterID)
+	a.ImageIntegrationPoller = sources.NewImageIntegrationsClient(centralConn, a.ClusterID)
 
 	a.ServiceRegistrationFunc = registerAPIServices
 
@@ -66,6 +77,6 @@ func initializeSensor() *sensor.Sensor {
 }
 
 func registerAPIServices(a *sensor.Sensor) {
-	a.Server.Register(benchmarks.NewBenchmarkResultsService(benchmarks.NewLRURelayer(a.CentralEndpoint)))
+	a.Server.Register(benchmarks.NewBenchmarkResultsService(benchmarks.NewLRURelayer(a.Conn)))
 	a.Logger.Info("API services registered")
 }

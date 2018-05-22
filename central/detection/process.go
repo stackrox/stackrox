@@ -11,11 +11,15 @@ func (d *Detector) ProcessDeploymentEvent(deployment *v1.Deployment, action v1.R
 		logger.Errorf("Error enriching deployment %s: %s", deployment.GetName(), err)
 	}
 
+	enforcementActions := d.evaluatePolicies(deployment, action)
+	alertID, enforcement = d.determineEnforcementResponse(enforcementActions)
+	return
+}
+
+func (d *Detector) evaluatePolicies(deployment *v1.Deployment, action v1.ResourceAction) []alertWithEnforcement {
+	d.policyMutex.RLock()
+	defer d.policyMutex.RUnlock()
 	var enforcementActions []alertWithEnforcement
-
-	d.policyMutex.Lock()
-	defer d.policyMutex.Unlock()
-
 	for _, policy := range d.policies {
 		alert, enforceAction := d.processTask(Task{deployment, action, policy})
 
@@ -26,9 +30,7 @@ func (d *Detector) ProcessDeploymentEvent(deployment *v1.Deployment, action v1.R
 			})
 		}
 	}
-
-	alertID, enforcement = d.determineEnforcementResponse(enforcementActions)
-	return
+	return enforcementActions
 }
 
 func mergeAlerts(old, new *v1.Alert) *v1.Alert {
