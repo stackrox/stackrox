@@ -124,9 +124,6 @@ func (a *Sensor) Stop() {
 }
 
 func (a *Sensor) handleEvent(ev *listeners.DeploymentEventWrap) {
-
-	a.eventLimiter.Wait(context.Background())
-
 	if resp, err := a.reportDeploymentEvent(ev.DeploymentEvent); err != nil {
 		a.Logger.Errorf("Couldn't report event %s for deployment %s: %+v", ev.GetAction(), ev.GetDeployment().GetName(), err)
 	} else {
@@ -160,7 +157,7 @@ func (a *Sensor) relayEvents() {
 			} else {
 				a.DeploymentCache[ev.Deployment.GetId()] = ev.DeploymentEvent.Deployment
 			}
-			go a.handleEvent(ev)
+			a.handleEvent(ev)
 		}
 	}
 }
