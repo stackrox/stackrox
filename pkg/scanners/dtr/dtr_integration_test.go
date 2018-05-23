@@ -40,21 +40,11 @@ func (suite *DTRIntegrationSuite) SetupSuite() {
 	dtr, err := newScanner(integration)
 	suite.NoError(err)
 
-	err = dtr.fetchMetadata()
-	suite.NoError(err)
+	suite.NoError(dtr.Test())
 	suite.dtr = dtr
 }
 
 func (suite *DTRIntegrationSuite) TearDownSuite() {}
-
-func (suite *DTRIntegrationSuite) TestGetStatus() {
-	scannerStatus, features, err := suite.getStatus()
-	suite.Nil(err)
-	suite.NotNil(scannerStatus)
-	suite.NotEqual(scannerStatus.DBVersion, 0)
-	suite.NotNil(features)
-	suite.True(features.ScanningEnabled)
-}
 
 func (suite *DTRIntegrationSuite) TestGetScans() {
 	image := &v1.Image{

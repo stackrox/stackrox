@@ -73,13 +73,8 @@ func getExpectedImageScans() ([]*tagScanSummary, error) {
 			Namespace:        "docker",
 			Tag:              "1.10",
 			RepoName:         "nginx",
-			Critical:         8,
-			Major:            25,
-			Minor:            3,
 			LastScanStatus:   6,
 			CheckCompletedAt: complete,
-			ShouldRescan:     true,
-			HasForeignLayers: true,
 			LayerDetails: []*detailedSummary{
 				{
 					SHA256Sum: "ef24d3d19d383c557b3bb92c21cc1b3e0c4ca6735160b6d3c684fb92ba0b3569",

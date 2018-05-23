@@ -63,13 +63,8 @@ type tagScanSummary struct {
 	RepoName  string `json:"reponame"`
 	Tag       string `json:"tag"`
 
-	Critical         int                `json:"critical"` // (int) number of critical issues, where CVSS >= 7.0
-	Major            int                `json:"major"`    // (int) number of major issues, where CVSS >= 4.0 && CVSS < 7
-	Minor            int                `json:"minor"`    // (int) number of minor issues, where CVSS > 0 && CVSS < 4.0
 	CheckCompletedAt time.Time          `json:"check_completed_at"`
 	LastScanStatus   scanStatus         `json:"last_scan_status"`
-	ShouldRescan     bool               `json:"should_rescan"`
-	HasForeignLayers bool               `json:"has_foreign_layers"`
 	LayerDetails     []*detailedSummary `json:"layer_details"`
 }
 

@@ -2,7 +2,6 @@ package dtr
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -18,8 +17,7 @@ import (
 )
 
 const (
-	metadataRefreshInterval = 5 * time.Minute
-	requestTimeout          = 5 * time.Second
+	requestTimeout = 30 * time.Second
 )
 
 var (
@@ -27,16 +25,12 @@ var (
 )
 
 type dtr struct {
-	client         *http.Client
-	metadataTicker *time.Ticker
+	client *http.Client
 
 	conf     config
 	registry string
 
 	protoImageIntegration *v1.ImageIntegration
-
-	metadata *scannerMetadata
-	features *metadataFeatures
 }
 
 type config v1.DTRConfig
@@ -83,53 +77,13 @@ func newScanner(protoImageIntegration *v1.ImageIntegration) (*dtr, error) {
 	}
 
 	scanner := &dtr{
-		client:                client,
-		registry:              registry,
-		conf:                  conf,
-		metadataTicker:        time.NewTicker(metadataRefreshInterval),
+		client:   client,
+		registry: registry,
+		conf:     conf,
 		protoImageIntegration: protoImageIntegration,
 	}
 
-	if err := scanner.fetchMetadata(); err != nil {
-		return nil, err
-	}
-
-	go scanner.refreshMetadata()
 	return scanner, nil
-}
-
-func parseMetadata(body []byte) (*scannerMetadata, error) {
-	var meta scannerMetadata
-	if err := json.Unmarshal(body, &meta); err != nil {
-		return nil, fmt.Errorf(string(body))
-	}
-	return &meta, nil
-}
-
-func parseFeatures(body []byte) (*metadataFeatures, error) {
-	var meta metadataFeatures
-	if err := json.Unmarshal(body, &meta); err != nil {
-		return nil, fmt.Errorf(string(body))
-	}
-	return &meta, nil
-}
-
-func (d *dtr) refreshMetadata() {
-	for range d.metadataTicker.C {
-		if err := d.fetchMetadata(); err != nil {
-			log.Error(err)
-		}
-	}
-}
-
-func (d *dtr) fetchMetadata() error {
-	meta, features, err := d.getStatus()
-	if err != nil {
-		return err
-	}
-	d.metadata = meta
-	d.features = features
-	return nil
 }
 
 func (d *dtr) sendRequest(method, urlPrefix string) ([]byte, error) {
@@ -142,29 +96,15 @@ func (d *dtr) sendRequest(method, urlPrefix string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := errorFromStatusCode(resp.StatusCode); err != nil {
+		return nil, err
+	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 	return body, nil
-}
-
-func (d *dtr) getStatus() (*scannerMetadata, *metadataFeatures, error) {
-	body, err := d.sendRequest("GET", "/api/v0/imagescan/status")
-	if err != nil {
-		return nil, nil, err
-	}
-	meta, err := parseMetadata(body)
-	if err != nil {
-		return nil, nil, err
-	}
-	body, err = d.sendRequest("GET", "/api/v0/meta/features")
-	features, err := parseFeatures(body)
-	if err != nil {
-		return nil, nil, err
-	}
-	return meta, features, nil
 }
 
 // GetScan takes in an id and returns the image scan for that id if applicable
@@ -201,22 +141,32 @@ func (d *dtr) GetScans(image *v1.Image) ([]*v1.ImageScan, error) {
 // Scan initiates a scan of the passed id
 func (d *dtr) Scan(image *v1.Image) error {
 	_, err := d.sendRequest("POST", fmt.Sprintf("/api/v0/imagescan/scan/%v/%v/linux/amd64", image.GetName().GetRemote(), image.GetName().GetTag()))
-	if err != nil {
-		return err
+	return err
+}
+
+func errorFromStatusCode(status int) error {
+	switch status {
+	case 400:
+		return fmt.Errorf("HTTP 400: Scanning is not enabled")
+	case 401:
+		return fmt.Errorf("HTTP 401: The client is not authenticated")
+	case 405:
+		return fmt.Errorf("HTTP 405: Method Not Allowed")
+	case 406:
+		return fmt.Errorf("HTTP 406: Not Acceptable")
+	case 415:
+		return fmt.Errorf("HTTP 415: Unsupported Media Type")
+	case 200:
+	default:
+		return nil
 	}
 	return nil
 }
 
 // Test initiates a test of the DTR which verifies that we have the proper scan permissions
 func (d *dtr) Test() error {
-	_, features, err := d.getStatus()
-	if err != nil {
-		return err
-	}
-	if !features.ScanningEnabled {
-		return errors.New("Scanning is not currently enabled on your Docker Trusted Registry")
-	}
-	return nil
+	_, err := d.sendRequest("GET", "/api/v0/imagescan/status")
+	return err
 }
 
 // GetLastScan retrieves the most recent scan

@@ -22,6 +22,22 @@ type DTRSuite struct {
 	dtr    scanners.ImageScanner
 }
 
+var statusPayload = `{
+  "state": 0,
+  "scanner_version": 3,
+  "scanner_updated_at": "20171116T21:07:18.934766247Z",
+  "db_version": 279,
+  "db_updated_at": "20171117T03:14:02.63437292Z",
+  "last_db_update_failed": true,
+  "replicas": {
+   "d8ae913ef3a1": {
+    "db_updated_at": "20171116T00:35:27.408476Z",
+    "version": "279",
+    "replica_id": "d8ae913ef3a1"
+   }
+  }
+ }`
+
 func handleAuth(r *http.Request) error {
 	if r.Header.Get("Authorization") != "Basic dXNlcjpwYXNzd29yZA==" {
 		return fmt.Errorf("Not Authorization for request: %v", r.URL.String())
@@ -54,16 +70,7 @@ func (suite *DTRSuite) SetupSuite() {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, metadataPayload)
-	})
-
-	masterRouter.HandleFunc("/api/v0/meta/features", func(w http.ResponseWriter, r *http.Request) {
-		if err := handleAuth(r); err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, featurePayload)
+		fmt.Fprintf(w, statusPayload)
 	})
 
 	masterServer := httptest.NewServer(masterRouter)
@@ -91,14 +98,9 @@ func (suite *DTRSuite) TearDownSuite() {
 	suite.server.Close()
 }
 
-func (suite *DTRSuite) TestGetStatus() {
+func (suite *DTRSuite) TestTestFunc() {
 	d := suite.dtr.(*dtr)
-	meta, features, err := d.getStatus()
-	suite.NoError(err)
-
-	expectedMeta, err := getExpectedMetadata()
-	suite.Equal(expectedMeta, meta)
-	suite.Equal(getExpectedFeatures(), features)
+	suite.NoError(d.Test())
 }
 
 func (suite *DTRSuite) TestGetScans() {
