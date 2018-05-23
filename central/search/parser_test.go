@@ -43,7 +43,7 @@ func TestParseRawQuery(t *testing.T) {
 	assert.Equal(t, expectedRequest, actualRequest)
 
 	// labels only
-	query = "Label:key1=value1,key2=value2"
+	query = "Label Key:key1+Label Value:value1,value2"
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: make(map[string]*v1.ParsedSearchRequest_Values),
 		Scopes: []*v1.Scope{
@@ -55,7 +55,7 @@ func TestParseRawQuery(t *testing.T) {
 			},
 			{
 				Label: &v1.Scope_Label{
-					Key:   "key2",
+					Key:   "key1",
 					Value: "value2",
 				},
 			},
@@ -65,13 +65,8 @@ func TestParseRawQuery(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRequest, actualRequest)
 
-	// bad labels
-	query = "Label:key1value1"
-	actualRequest, err = ParseRawQuery(query)
-	assert.Error(t, err)
-
 	// clusters, namespaces, and labels
-	query = "Cluster:cluster1,cluster2+Namespace:name space1,namespace2+Label:key1=value1,key2=value2"
+	query = "Cluster:cluster1,cluster2+Namespace:name space1,namespace2+Label Key:key1+Label Value:value1,value2"
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: make(map[string]*v1.ParsedSearchRequest_Values),
 		Scopes: []*v1.Scope{
@@ -84,8 +79,8 @@ func TestParseRawQuery(t *testing.T) {
 				},
 			},
 			{
-				Cluster:   "cluster1",
-				Namespace: "namespace2",
+				Cluster:   "cluster2",
+				Namespace: "name space1",
 				Label: &v1.Scope_Label{
 					Key:   "key1",
 					Value: "value1",
@@ -93,23 +88,7 @@ func TestParseRawQuery(t *testing.T) {
 			},
 			{
 				Cluster:   "cluster1",
-				Namespace: "name space1",
-				Label: &v1.Scope_Label{
-					Key:   "key2",
-					Value: "value2",
-				},
-			},
-			{
-				Cluster:   "cluster1",
 				Namespace: "namespace2",
-				Label: &v1.Scope_Label{
-					Key:   "key2",
-					Value: "value2",
-				},
-			},
-			{
-				Cluster:   "cluster2",
-				Namespace: "name space1",
 				Label: &v1.Scope_Label{
 					Key:   "key1",
 					Value: "value1",
@@ -124,10 +103,26 @@ func TestParseRawQuery(t *testing.T) {
 				},
 			},
 			{
+				Cluster:   "cluster1",
+				Namespace: "name space1",
+				Label: &v1.Scope_Label{
+					Key:   "key1",
+					Value: "value2",
+				},
+			},
+			{
 				Cluster:   "cluster2",
 				Namespace: "name space1",
 				Label: &v1.Scope_Label{
-					Key:   "key2",
+					Key:   "key1",
+					Value: "value2",
+				},
+			},
+			{
+				Cluster:   "cluster1",
+				Namespace: "namespace2",
+				Label: &v1.Scope_Label{
+					Key:   "key1",
 					Value: "value2",
 				},
 			},
@@ -135,7 +130,7 @@ func TestParseRawQuery(t *testing.T) {
 				Cluster:   "cluster2",
 				Namespace: "namespace2",
 				Label: &v1.Scope_Label{
-					Key:   "key2",
+					Key:   "key1",
 					Value: "value2",
 				},
 			},
@@ -143,6 +138,7 @@ func TestParseRawQuery(t *testing.T) {
 	}
 	actualRequest, err = ParseRawQuery(query)
 	assert.NoError(t, err)
+
 	// Elements match because the ordering of the scopes does not matter and is an implementation detail
 	assert.ElementsMatch(t, expectedRequest.GetScopes(), actualRequest.GetScopes())
 

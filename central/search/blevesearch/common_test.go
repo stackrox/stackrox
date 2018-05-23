@@ -34,10 +34,10 @@ func (suite *SearchTestSuite) TestValuesToDisjunctionQuery() {
 	values := &v1.ParsedSearchRequest_Values{
 		Values: []string{
 			"blah",
-			"docker.io",
+			"vuln",
 		},
 	}
-	query := valuesToDisjunctionQuery("policy.image_policy.image_name.registry", values)
+	query := valuesToDisjunctionQuery("alert.policy.name", values)
 	results, err := runQuery(query, suite.alertIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
@@ -48,7 +48,7 @@ func (suite *SearchTestSuite) TestValuesToDisjunctionQuery() {
 			"blah",
 		},
 	}
-	query = valuesToDisjunctionQuery("policy.image_policy.image_name.registry", values)
+	query = valuesToDisjunctionQuery("alert.policy.name", values)
 	results, err = runQuery(query, suite.alertIndex)
 	suite.NoError(err)
 	suite.Empty(results)
@@ -56,23 +56,23 @@ func (suite *SearchTestSuite) TestValuesToDisjunctionQuery() {
 
 func (suite *SearchTestSuite) TestFieldsToQuery() {
 	fieldMap := map[string]*v1.ParsedSearchRequest_Values{
-		"policy.image_policy.image_name.registry": {
+		"policy.name": {
 			Field: &v1.SearchField{
-				FieldPath: "policy.image_policy.image_name.registry",
+				FieldPath: "policy.name",
 				Type:      v1.SearchDataType_SEARCH_STRING,
 			},
 			Values: []string{
 				"blah",
-				"docker.io",
+				"vuln",
 			},
 		},
-		"policy.image_policy.image_name.namespace": {
+		"policy.description": {
 			Field: &v1.SearchField{
-				FieldPath: "policy.image_policy.image_name.namespace",
+				FieldPath: "alert.policy.description",
 				Type:      v1.SearchDataType_SEARCH_STRING,
 			},
 			Values: []string{
-				"stackrox",
+				"alert",
 			},
 		},
 	}
@@ -103,16 +103,16 @@ func (suite *SearchTestSuite) TestRunRequest() {
 	// No scopes search
 	request := &v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			"id": {
+			"policy.name": {
 				Field: &v1.SearchField{
-					FieldPath: "id",
+					FieldPath: "alert.policy.name",
 					Type:      v1.SearchDataType_SEARCH_STRING,
 				},
-				Values: []string{"Alert1"},
+				Values: []string{"vuln"},
 			},
 		},
 	}
-	results, err := runSearchRequest(request, suite.alertIndex, scopeToAlertQuery, alertObjectMap)
+	results, err := runSearchRequest(v1.SearchCategory_ALERTS.String(), request, suite.alertIndex, scopeToAlertQuery, alertObjectMap)
 	suite.NoError(err)
 	suite.Len(results, 1)
 	suite.Equal("Alert1", results[0].ID)
@@ -126,19 +126,19 @@ func (suite *SearchTestSuite) TestRunRequest() {
 			},
 		},
 	}
-	results, err = runSearchRequest(request, suite.alertIndex, scopeToAlertQuery, alertObjectMap)
+	results, err = runSearchRequest(v1.SearchCategory_ALERTS.String(), request, suite.alertIndex, scopeToAlertQuery, alertObjectMap)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
 	// Combined search with success
 	request = &v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			"id": {
+			"policy.description": {
 				Field: &v1.SearchField{
-					FieldPath: "id",
+					FieldPath: "policy.description",
 					Type:      v1.SearchDataType_SEARCH_STRING,
 				},
-				Values: []string{"Alert1"},
+				Values: []string{"alert"},
 			},
 			"policy.name": {
 				Field: &v1.SearchField{
@@ -155,7 +155,7 @@ func (suite *SearchTestSuite) TestRunRequest() {
 			},
 		},
 	}
-	results, err = runSearchRequest(request, suite.alertIndex, scopeToAlertQuery, alertObjectMap)
+	results, err = runSearchRequest(v1.SearchCategory_ALERTS.String(), request, suite.alertIndex, scopeToAlertQuery, alertObjectMap)
 	suite.NoError(err)
 	suite.Len(results, 1)
 	suite.Equal("Alert1", results[0].ID)
@@ -163,14 +163,14 @@ func (suite *SearchTestSuite) TestRunRequest() {
 	// Combined search with failure
 	request = &v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			"id": {
+			"alert.id": {
 				Field: &v1.SearchField{
 					FieldPath: "id",
 					Type:      v1.SearchDataType_SEARCH_STRING,
 				},
 				Values: []string{"NoID"},
 			},
-			"policy.name": {
+			"alert.policy.name": {
 				Field: &v1.SearchField{
 					FieldPath: "policy.name",
 					Type:      v1.SearchDataType_SEARCH_STRING,
@@ -185,13 +185,13 @@ func (suite *SearchTestSuite) TestRunRequest() {
 			},
 		},
 	}
-	results, err = runSearchRequest(request, suite.alertIndex, scopeToAlertQuery, alertObjectMap)
+	results, err = runSearchRequest(v1.SearchCategory_ALERTS.String(), request, suite.alertIndex, scopeToAlertQuery, alertObjectMap)
 	suite.NoError(err)
 	suite.Len(results, 0)
 }
 
 func (suite *SearchTestSuite) TestRunQuery() {
-	query := newPrefixQuery("id", "Alert1")
+	query := newPrefixQuery("alert.policy.name", "vuln")
 	results, err := runQuery(query, suite.alertIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
@@ -219,9 +219,9 @@ func (suite *SearchTestSuite) TestTransformFields() {
 			},
 			Values: []string{"blah"},
 		},
-		"alert.deployment.name": {
+		"deployment.name": {
 			Field: &v1.SearchField{
-				FieldPath: "alert.deployment.name",
+				FieldPath: "deployment.name",
 				Type:      v1.SearchDataType_SEARCH_STRING,
 			},
 			Values: []string{"name"},
@@ -229,7 +229,7 @@ func (suite *SearchTestSuite) TestTransformFields() {
 	}
 
 	expectedFields := map[string]*v1.ParsedSearchRequest_Values{
-		"deployment.containers.image.name.sha": {
+		"alert.deployment.containers.image.name.sha": {
 			Field: &v1.SearchField{
 				FieldPath: "image.name.sha",
 				Type:      v1.SearchDataType_SEARCH_STRING,
@@ -243,9 +243,9 @@ func (suite *SearchTestSuite) TestTransformFields() {
 			},
 			Values: []string{"blah"},
 		},
-		"deployment.name": {
+		"alert.deployment.name": {
 			Field: &v1.SearchField{
-				FieldPath: "alert.deployment.name",
+				FieldPath: "deployment.name",
 				Type:      v1.SearchDataType_SEARCH_STRING,
 			},
 			Values: []string{"name"},

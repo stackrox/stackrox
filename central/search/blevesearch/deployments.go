@@ -10,15 +10,15 @@ import (
 	"github.com/blevesearch/bleve/search/query"
 )
 
-var deploymentObjectMap = map[string]string{
-	"image":      "containers.image",
-	"deployment": "",
+type deploymentWrapper struct {
+	*v1.Deployment `json:"deployment"`
+	Type           string `json:"type"`
 }
 
 // AddDeployment adds the deployment to the index
 func (b *Indexer) AddDeployment(deployment *v1.Deployment) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Add", "Deployment")
-	return b.deploymentIndex.Index(deployment.GetId(), deployment)
+	return b.deploymentIndex.Index(deployment.GetId(), &deploymentWrapper{Type: v1.SearchCategory_DEPLOYMENTS.String(), Deployment: deployment})
 }
 
 // DeleteDeployment deletes the deployment from the index
@@ -30,16 +30,16 @@ func (b *Indexer) DeleteDeployment(id string) error {
 func scopeToDeploymentQuery(scope *v1.Scope) query.Query {
 	conjunctionQuery := bleve.NewConjunctionQuery()
 	if scope.GetCluster() != "" {
-		conjunctionQuery.AddQuery(newPrefixQuery("cluster_name", scope.GetCluster()))
+		conjunctionQuery.AddQuery(newPrefixQuery("deployment.cluster_name", scope.GetCluster()))
 	}
 	if scope.GetNamespace() != "" {
-		conjunctionQuery.AddQuery(newPrefixQuery("namespace", scope.GetNamespace()))
+		conjunctionQuery.AddQuery(newPrefixQuery("deployment.namespace", scope.GetNamespace()))
 	}
 	if scope.GetLabel().GetKey() != "" {
-		conjunctionQuery.AddQuery(newPrefixQuery("labels.key", scope.GetLabel().GetKey()))
+		conjunctionQuery.AddQuery(newPrefixQuery("deployment.labels.key", scope.GetLabel().GetKey()))
 	}
 	if scope.GetLabel().GetValue() != "" {
-		conjunctionQuery.AddQuery(newPrefixQuery("labels.value", scope.GetLabel().GetValue()))
+		conjunctionQuery.AddQuery(newPrefixQuery("deployment.labels.value", scope.GetLabel().GetValue()))
 	}
 	if len(conjunctionQuery.Conjuncts) == 0 {
 		return bleve.NewMatchNoneQuery()
@@ -50,5 +50,5 @@ func scopeToDeploymentQuery(scope *v1.Scope) query.Query {
 // SearchDeployments takes a SearchRequest and finds any matches
 func (b *Indexer) SearchDeployments(request *v1.ParsedSearchRequest) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Deployment")
-	return runSearchRequest(request, b.deploymentIndex, scopeToDeploymentQuery, deploymentObjectMap)
+	return runSearchRequest(v1.SearchCategory_DEPLOYMENTS.String(), request, b.deploymentIndex, scopeToDeploymentQuery, deploymentObjectMap)
 }

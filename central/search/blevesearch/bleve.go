@@ -1,6 +1,7 @@
 package blevesearch
 
 import (
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/analysis/analyzer/custom"
@@ -48,6 +49,19 @@ func getIndexMapping() *mapping.IndexMappingImpl {
 	indexMapping := bleve.NewIndexMapping()
 	indexMapping.AddCustomAnalyzer("single_term", singleTermAnalyzer())
 	indexMapping.DefaultAnalyzer = "single_term" // Default to our analyzer
+
+	indexMapping.IndexDynamic = false
+	indexMapping.StoreDynamic = false
+	indexMapping.TypeField = "Type"
+
+	indexMapping.AddDocumentMapping(v1.SearchCategory_ALERTS.String(), alertDocumentMap)
+	indexMapping.AddDocumentMapping(v1.SearchCategory_IMAGES.String(), imageDocumentMap)
+	indexMapping.AddDocumentMapping(v1.SearchCategory_POLICIES.String(), policyDocumentMap)
+	indexMapping.AddDocumentMapping(v1.SearchCategory_DEPLOYMENTS.String(), deploymentDocumentMap)
+
+	disabledSection := bleve.NewDocumentDisabledMapping()
+	indexMapping.AddDocumentMapping("_all", disabledSection)
+
 	return indexMapping
 }
 
@@ -57,6 +71,7 @@ func (b *Indexer) initializeIndices() error {
 	if err != nil {
 		return err
 	}
+
 	b.alertIndex = allIndex
 	b.deploymentIndex = allIndex
 	b.imageIndex = allIndex

@@ -8,65 +8,105 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 )
 
-func populateNamespaces(scopes []v1.Scope, namespaces []string) []v1.Scope {
+func cloneScope(s *v1.Scope) (scope *v1.Scope) {
+	scope = new(v1.Scope)
+	scope.Cluster = s.GetCluster()
+	scope.Namespace = s.GetNamespace()
+	if s.GetLabel() != nil {
+		scope.Label = &v1.Scope_Label{
+			Key:   s.GetLabel().GetKey(),
+			Value: s.GetLabel().GetValue(),
+		}
+	}
+	return
+}
+
+func populateNamespaces(scopes []*v1.Scope, namespaces []string) []*v1.Scope {
 	if len(namespaces) == 0 {
 		return scopes
 	}
 	if len(scopes) == 0 {
-		newScopes := make([]v1.Scope, 0, len(namespaces))
+		newScopes := make([]*v1.Scope, 0, len(namespaces))
 		for _, namespace := range namespaces {
-			newScopes = append(newScopes, v1.Scope{Namespace: namespace})
+			newScopes = append(newScopes, &v1.Scope{Namespace: namespace})
 		}
 		return newScopes
 	}
-	newScopes := make([]v1.Scope, 0, len(scopes)*len(namespaces))
+	newScopes := make([]*v1.Scope, 0, len(scopes)*len(namespaces))
 	for _, scope := range scopes {
-		tmpScope := scope
 		for _, namespace := range namespaces {
-			tmpScope.Namespace = namespace
-			newScopes = append(newScopes, tmpScope)
+			newScope := cloneScope(scope)
+			newScope.Namespace = namespace
+			newScopes = append(newScopes, newScope)
 		}
 	}
 	return newScopes
 }
 
-func populateClusters(scopes []v1.Scope, clusters []string) []v1.Scope {
+func populateClusters(scopes []*v1.Scope, clusters []string) []*v1.Scope {
 	if len(clusters) == 0 {
 		return scopes
 	}
 	if len(scopes) == 0 {
-		newScopes := make([]v1.Scope, 0, len(clusters))
+		newScopes := make([]*v1.Scope, 0, len(clusters))
 		for _, cluster := range clusters {
-			newScopes = append(newScopes, v1.Scope{Cluster: cluster})
+			newScopes = append(newScopes, &v1.Scope{Cluster: cluster})
 		}
 		return newScopes
 	}
-	newScopes := make([]v1.Scope, 0, len(scopes)*len(clusters))
+	newScopes := make([]*v1.Scope, 0, len(scopes)*len(clusters))
 	for _, scope := range scopes {
-		tmpScope := scope
 		for _, cluster := range clusters {
-			tmpScope.Cluster = cluster
-			newScopes = append(newScopes, tmpScope)
+			newScope := cloneScope(scope)
+			newScope.Cluster = cluster
+			newScopes = append(newScopes, newScope)
 		}
 	}
 	return newScopes
 }
 
-func populateLabels(labels []string) (scopes []v1.Scope, err error) {
-	for _, label := range labels {
-		var scope v1.Scope
-		values := strings.Split(label, "=")
-		if len(values) != 2 {
-			err = fmt.Errorf("Labels must container an '=' between the key and value: %s", label)
-			return
-		}
+func populateLabelKeys(keys []string) []*v1.Scope {
+	scopes := make([]*v1.Scope, 0, len(keys))
+	for _, key := range keys {
+		scope := new(v1.Scope)
 		scope.Label = &v1.Scope_Label{
-			Key:   values[0],
-			Value: values[1],
+			Key: key,
 		}
-		scopes = append(scopes, scope)
+		scopes = append(scopes, &v1.Scope{
+			Label: &v1.Scope_Label{
+				Key: key,
+			},
+		})
 	}
-	return
+	return scopes
+}
+
+func populateLabelValues(scopes []*v1.Scope, values []string) []*v1.Scope {
+	if len(values) == 0 {
+		return scopes
+	}
+	if len(scopes) == 0 {
+		newScopes := make([]*v1.Scope, 0, len(values))
+		for _, value := range values {
+			newScopes = append(newScopes, &v1.Scope{Label: &v1.Scope_Label{Value: value}})
+		}
+		return newScopes
+	}
+	newScopes := make([]*v1.Scope, 0, len(scopes)*len(values))
+	for _, scope := range scopes {
+		for _, value := range values {
+			newScope := cloneScope(scope)
+			if scope.GetLabel() == nil {
+				newScope.Label = &v1.Scope_Label{
+					Value: value,
+				}
+			} else {
+				newScope.Label.Value = value
+			}
+			newScopes = append(newScopes, newScope)
+		}
+	}
+	return newScopes
 }
 
 func parsePair(pair string) (key string, values string, valid bool) {
@@ -130,9 +170,10 @@ func ParseRawQuery(query string) (*v1.ParsedSearchRequest, error) {
 		Fields: make(map[string]*v1.ParsedSearchRequest_Values),
 	}
 	var scopeFields = map[string][]string{
-		"Cluster":   {},
-		"Namespace": {},
-		"Label":     {},
+		"Cluster":     {},
+		"Namespace":   {},
+		"Label Key":   {},
+		"Label Value": {},
 	}
 
 	for _, pair := range pairs {
@@ -154,17 +195,15 @@ func ParseRawQuery(query string) (*v1.ParsedSearchRequest, error) {
 		}
 	}
 	// Compute the cross product of the scopes
-	scopes, err := populateLabels(scopeFields["Label"])
-	if err != nil {
-		return nil, err
-	}
+	scopes := populateLabelKeys(scopeFields["Label Key"])
+	scopes = populateLabelValues(scopes, scopeFields["Label Value"])
 	scopes = populateNamespaces(scopes, scopeFields["Namespace"])
 	scopes = populateClusters(scopes, scopeFields["Cluster"])
 	parsedRequest.Scopes = make([]*v1.Scope, 0, len(scopes))
 
 	for _, scope := range scopes {
-		diffScope := scope
-		parsedRequest.Scopes = append(parsedRequest.Scopes, &diffScope)
+		diffScope := cloneScope(scope)
+		parsedRequest.Scopes = append(parsedRequest.Scopes, diffScope)
 	}
 
 	if len(parsedRequest.GetScopes()) == 0 && len(parsedRequest.GetFields()) == 0 && parsedRequest.GetStringQuery() == "" {

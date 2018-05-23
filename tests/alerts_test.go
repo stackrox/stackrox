@@ -34,7 +34,7 @@ func getPolicyQuery(name string) string {
 
 var (
 	alertRequestOptions = v1.GetAlertsRequest{
-		Query: getDeploymentQuery(nginxDeploymentName) + "+Label:hello=world",
+		Query: getDeploymentQuery(nginxDeploymentName) + "+Label Key:hello+Label Value:world",
 		Stale: []bool{false},
 	}
 )

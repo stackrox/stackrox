@@ -16,15 +16,16 @@ import (
 // so we need to return as many deployments as possible to not exclude relevant images
 const maxDeploymentsReturned = 500
 
-var imageObjectMap = map[string]string{
-	"image": "",
+type imageWrapper struct {
+	*v1.Image `json:"image"`
+	Type      string `json:"type"`
 }
 
 // AddImage adds the image to the index
 func (b *Indexer) AddImage(image *v1.Image) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Add", "Image")
 	digest := images.NewDigest(image.GetName().GetSha()).Digest()
-	return b.imageIndex.Index(digest, image)
+	return b.imageIndex.Index(digest, &imageWrapper{Type: v1.SearchCategory_IMAGES.String(), Image: image})
 }
 
 // DeleteImage deletes the image from the index
@@ -82,7 +83,7 @@ func (b *Indexer) SearchImages(request *v1.ParsedSearchRequest) (results []searc
 func (b *Indexer) getImageSHAsFromScopes(scopes []*v1.Scope) (mapset.Set, error) {
 	scopesQuery := getScopesQuery(scopes, scopeToDeploymentQuery)
 	searchRequest := bleve.NewSearchRequest(scopesQuery)
-	searchRequest.Fields = []string{"containers.image.name.sha"}
+	searchRequest.Fields = []string{"deployment.containers.image.name.sha"}
 	searchRequest.Size = maxDeploymentsReturned
 
 	searchResult, err := b.deploymentIndex.Search(searchRequest)
@@ -108,7 +109,7 @@ func shasToResults(shas mapset.Set) ([]search.Result, error) {
 func deploymentResultsToShaSet(searchResult *bleve.SearchResult) (mapset.Set, error) {
 	shaSetFromDeployment := mapset.NewSet()
 	for _, hit := range searchResult.Hits {
-		shaObj := hit.Fields["containers.image.name.sha"]
+		shaObj := hit.Fields["deployment.containers.image.name.sha"]
 		if shaObj == nil {
 			continue
 		}

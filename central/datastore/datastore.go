@@ -73,6 +73,7 @@ func Init() error {
 	if err != nil {
 		return err
 	}
+
 	policies, err := NewPolicyDataStore(inmem, indexer)
 	if err != nil {
 		return err
@@ -81,7 +82,6 @@ func Init() error {
 	if err != nil {
 		return err
 	}
-
 	// Build and return the datastore.
 	registry = &DataStore{
 		inmem:   inmem,

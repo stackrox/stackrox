@@ -18,39 +18,43 @@ func TestOptions(t *testing.T) {
 
 	service := v1.NewSearchServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	resp, err := service.Options(ctx, &v1.SearchOptionsRequest{Categories: []v1.SearchCategory{v1.SearchCategory_ALERTS}})
+	categories := []v1.SearchCategory{v1.SearchCategory_ALERTS}
+	resp, err := service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})
 	cancel()
 	require.NoError(t, err)
-	assert.Equal(t, len(search.AlertOptionsMap)+len(search.DeploymentOptionsMap)+len(search.ImageOptionsMap)+len(search.PolicyOptionsMap)+len(search.GlobalOptions), len(resp.GetOptions()))
+	assert.ElementsMatch(t, search.GetOptions(categories), resp.GetOptions())
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS}})
+	categories = []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS}
+	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})
 	cancel()
 	require.NoError(t, err)
-	assert.Equal(t, len(search.DeploymentOptionsMap)+len(search.ImageOptionsMap)+len(search.GlobalOptions), len(resp.GetOptions()))
+	assert.ElementsMatch(t, search.GetOptions(categories), resp.GetOptions())
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: []v1.SearchCategory{v1.SearchCategory_IMAGES}})
+	categories = []v1.SearchCategory{v1.SearchCategory_IMAGES}
+	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})
 	cancel()
 	require.NoError(t, err)
-	assert.Equal(t, len(search.ImageOptionsMap)+len(search.GlobalOptions), len(resp.GetOptions()))
+	assert.ElementsMatch(t, search.GetOptions(categories), resp.GetOptions())
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: []v1.SearchCategory{v1.SearchCategory_POLICIES}})
+	categories = []v1.SearchCategory{v1.SearchCategory_POLICIES}
+	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})
 	cancel()
 	require.NoError(t, err)
-	assert.Equal(t, len(search.PolicyOptionsMap)+len(search.GlobalOptions), len(resp.GetOptions()))
+	assert.ElementsMatch(t, search.GetOptions(categories), resp.GetOptions())
 
-	globalLen := len(search.ImageOptionsMap) + len(search.DeploymentOptionsMap) + len(search.PolicyOptionsMap) + len(search.AlertOptionsMap) + len(search.GlobalOptions)
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: []v1.SearchCategory{v1.SearchCategory_ALERTS, v1.SearchCategory_DEPLOYMENTS, v1.SearchCategory_IMAGES, v1.SearchCategory_POLICIES}})
+	categories = []v1.SearchCategory{v1.SearchCategory_ALERTS, v1.SearchCategory_DEPLOYMENTS, v1.SearchCategory_IMAGES, v1.SearchCategory_POLICIES}
+	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})
 	cancel()
 	require.NoError(t, err)
-	assert.Equal(t, globalLen, len(resp.GetOptions()))
+	assert.ElementsMatch(t, search.GetOptions(categories), resp.GetOptions())
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{})
 	cancel()
 	require.NoError(t, err)
-	assert.Equal(t, globalLen, len(resp.GetOptions()))
+	assert.Equal(t, search.GetOptions(categories), resp.GetOptions())
 }

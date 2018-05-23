@@ -10,17 +10,15 @@ import (
 	"github.com/blevesearch/bleve/search/query"
 )
 
-// This map converts generic definitions of resource targets to the scoped version
-// e.g. image.name.registry becomes deployment.containers.image.name.registry in the alert struct
-var alertObjectMap = map[string]string{
-	"image": "deployment.containers.image",
-	"alert": "",
+type alertWrapper struct {
+	*v1.Alert `json:"alert"`
+	Type      string `json:"type"`
 }
 
 // AddAlert adds the alert to the index
 func (b *Indexer) AddAlert(alert *v1.Alert) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Add", "Alert")
-	return b.alertIndex.Index(alert.GetId(), alert)
+	return b.alertIndex.Index(alert.GetId(), &alertWrapper{Type: v1.SearchCategory_ALERTS.String(), Alert: alert})
 }
 
 // DeleteAlert deletes the alert from the index
@@ -32,16 +30,16 @@ func (b *Indexer) DeleteAlert(id string) error {
 func scopeToAlertQuery(scope *v1.Scope) query.Query {
 	conjunctionQuery := bleve.NewConjunctionQuery()
 	if scope.GetCluster() != "" {
-		conjunctionQuery.AddQuery(newPrefixQuery("deployment.cluster_name", scope.GetCluster()))
+		conjunctionQuery.AddQuery(newPrefixQuery("alert.deployment.cluster_name", scope.GetCluster()))
 	}
 	if scope.GetNamespace() != "" {
-		conjunctionQuery.AddQuery(newPrefixQuery("deployment.namespace", scope.GetNamespace()))
+		conjunctionQuery.AddQuery(newPrefixQuery("alert.deployment.namespace", scope.GetNamespace()))
 	}
 	if scope.GetLabel().GetKey() != "" {
-		conjunctionQuery.AddQuery(newPrefixQuery("deployment.labels.key", scope.GetLabel().GetKey()))
+		conjunctionQuery.AddQuery(newPrefixQuery("alert.deployment.labels.key", scope.GetLabel().GetKey()))
 	}
 	if scope.GetLabel().GetValue() != "" {
-		conjunctionQuery.AddQuery(newPrefixQuery("deployment.labels.value", scope.GetLabel().GetValue()))
+		conjunctionQuery.AddQuery(newPrefixQuery("alert.deployment.labels.value", scope.GetLabel().GetValue()))
 	}
 	if len(conjunctionQuery.Conjuncts) == 0 {
 		return bleve.NewMatchNoneQuery()
@@ -52,5 +50,5 @@ func scopeToAlertQuery(scope *v1.Scope) query.Query {
 // SearchAlerts takes a SearchRequest and finds any matches
 func (b *Indexer) SearchAlerts(request *v1.ParsedSearchRequest) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Alert")
-	return runSearchRequest(request, b.alertIndex, scopeToAlertQuery, alertObjectMap)
+	return runSearchRequest(v1.SearchCategory_ALERTS.String(), request, b.alertIndex, scopeToAlertQuery, alertObjectMap)
 }

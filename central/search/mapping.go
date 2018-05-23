@@ -9,41 +9,48 @@ import (
 )
 
 func newStringField(name string) *v1.SearchField {
-	return newField(name, v1.SearchDataType_SEARCH_STRING)
+	return newField(name, v1.SearchDataType_SEARCH_STRING, false)
 }
 
 func newBoolField(name string) *v1.SearchField {
-	return newField(name, v1.SearchDataType_SEARCH_BOOL)
+	return newField(name, v1.SearchDataType_SEARCH_BOOL, false)
 }
 
 func newNumericField(name string) *v1.SearchField {
-	return newField(name, v1.SearchDataType_SEARCH_NUMERIC)
+	return newField(name, v1.SearchDataType_SEARCH_NUMERIC, false)
 }
 
 func newSeverityField(name string) *v1.SearchField {
-	return newField(name, v1.SearchDataType_SEARCH_SEVERITY)
+	return newField(name, v1.SearchDataType_SEARCH_SEVERITY, false)
 }
 
 func newEnforcementField(name string) *v1.SearchField {
-	return newField(name, v1.SearchDataType_SEARCH_ENFORCEMENT)
+	return newField(name, v1.SearchDataType_SEARCH_ENFORCEMENT, false)
 }
 
-func newField(path string, t v1.SearchDataType) *v1.SearchField {
+func newField(path string, t v1.SearchDataType, store bool) *v1.SearchField {
 	return &v1.SearchField{
 		Type:      t,
 		FieldPath: path,
+		Store:     store,
 	}
 }
 
 // GlobalOptions is exposed for e2e test
 var GlobalOptions = []string{
 	"Cluster",
-	"Label",
 	"Namespace",
+	"Label Key",
+	"Label Value",
 }
 
 // PolicyOptionsMap is exposed for e2e test
 var PolicyOptionsMap = map[string]*v1.SearchField{
+	"Cluster":     newStringField("policy.scope.cluster"),
+	"Namespace":   newStringField("policy.scope.namespace"),
+	"Label Key":   newStringField("policy.scope.label.key"),
+	"Label Value": newStringField("policy.scope.label.value"),
+
 	"Enforcement": newEnforcementField("policy.enforcement"),
 	"Policy Name": newStringField("policy.name"),
 	"Description": newStringField("policy.description"),
@@ -59,6 +66,7 @@ var ImageOptionsMap = map[string]*v1.SearchField{
 	"Dockerfile Instruction Keyword": newStringField("image.metadata.layers.instruction"),
 	"Dockerfile Instruction Value":   newStringField("image.metadata.layers.value"),
 	"Image Name":                     newStringField("image.name.full_name"),
+	"Image Sha":                      newField("image.name.sha", v1.SearchDataType_SEARCH_STRING, true),
 	"Image Registry":                 newStringField("image.name.registry"),
 	"Image Remote":                   newStringField("image.name.remote"),
 	"Image Tag":                      newStringField("image.name.tag"),
@@ -66,9 +74,14 @@ var ImageOptionsMap = map[string]*v1.SearchField{
 
 // DeploymentOptionsMap is exposed for e2e test
 var DeploymentOptionsMap = map[string]*v1.SearchField{
-	"Add Capabilities":   newStringField("deployment.containers.security_context.add_capabilities"),
+	"Cluster":     newStringField("deployment.cluster_name"),
+	"Namespace":   newStringField("deployment.namespace"),
+	"Label Key":   newStringField("deployment.labels.key"),
+	"Label Value": newStringField("deployment.labels.value"),
+
 	"Deployment Name":    newStringField("deployment.name"),
 	"Deployment Type":    newStringField("deployment.type"),
+	"Add Capabilities":   newStringField("deployment.containers.security_context.add_capabilities"),
 	"Drop Capabilities":  newStringField("deployment.containers.security_context.drop_capabilities"),
 	"Environment Key":    newStringField("deployment.containers.config.env.key"),
 	"Environment Value":  newStringField("deployment.containers.config.env.value"),

@@ -65,27 +65,35 @@ func getScopesQuery(scopes []*v1.Scope, scopeToQuery func(scope *v1.Scope) query
 	return bleve.NewMatchAllQuery()
 }
 
-func buildQuery(request *v1.ParsedSearchRequest, scopeToQuery func(scope *v1.Scope) query.Query, objectMap map[string]string) (*query.ConjunctionQuery, error) {
-	conjunctionQuery := bleve.NewConjunctionQuery()
-	conjunctionQuery.AddQuery(getScopesQuery(request.GetScopes(), scopeToQuery))
+func buildQuery(request *v1.ParsedSearchRequest, scopeToQuery func(scope *v1.Scope) query.Query, objectMap map[string]string) ([]query.Query, error) {
+	var queries []query.Query
+	queries = append(queries, getScopesQuery(request.GetScopes(), scopeToQuery))
 	if request.GetFields() != nil && len(request.GetFields()) != 0 {
 		q, err := fieldsToQuery(request.GetFields(), objectMap)
 		if err != nil {
 			return nil, err
 		}
-		conjunctionQuery.AddQuery(q)
+		queries = append(queries, q)
 	}
 	if request.GetStringQuery() != "" {
-		conjunctionQuery.AddQuery(newPrefixQuery("", request.GetStringQuery()))
+		queries = append(queries, newPrefixQuery("", request.GetStringQuery()))
 	}
-	return conjunctionQuery, nil
+	return queries, nil
 }
 
-func runSearchRequest(request *v1.ParsedSearchRequest, index bleve.Index, scopeToQuery func(scope *v1.Scope) query.Query, objectMap map[string]string) ([]searchPkg.Result, error) {
-	conjunctionQuery, err := buildQuery(request, scopeToQuery, objectMap)
+func typeQuery(objType string) query.Query {
+	q := bleve.NewMatchQuery(objType)
+	q.SetField("type")
+	return q
+}
+
+func runSearchRequest(objType string, request *v1.ParsedSearchRequest, index bleve.Index, scopeToQuery func(scope *v1.Scope) query.Query, objectMap map[string]string) ([]searchPkg.Result, error) {
+	conjunctionQuery := bleve.NewConjunctionQuery(typeQuery(objType))
+	queries, err := buildQuery(request, scopeToQuery, objectMap)
 	if err != nil {
 		return nil, err
 	}
+	conjunctionQuery.AddQuery(queries...)
 	return runQuery(conjunctionQuery, index)
 }
 
