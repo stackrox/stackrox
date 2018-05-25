@@ -78,7 +78,7 @@ func (e *Enricher) enrichImageWithScanner(image *v1.Image, scanner scannerTypes.
 		e.scanLimiter.Wait(context.Background())
 
 		var err error
-		scan, err := scanner.GetLastScan(image)
+		scan, err = scanner.GetLastScan(image)
 		if err != nil {
 			logger.Error(err)
 			return false, err
