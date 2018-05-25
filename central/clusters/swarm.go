@@ -119,8 +119,19 @@ if [ -z "$REGISTRY_PASSWORD" ]; then
   read -s REGISTRY_PASSWORD
   echo
 fi
-REGISTRY_AUTH="{\"username\": \"$REGISTRY_USERNAME\", \"password\": \"$REGISTRY_PASSWORD\"}"
-echo -n "$REGISTRY_AUTH" | base64 | tr -- '+=/' '-_~' > registry-auth
+
+# unset the host path so we can get the registry auth locally
+OLD_DOCKER_HOST="$DOCKER_HOST"
+OLD_DOCKER_CERT_PATH="$DOCKER_CERT_PATH"
+OLD_DOCKER_TLS_VERIFY="$DOCKER_TLS_VERIFY"
+unset DOCKER_HOST DOCKER_CERT_PATH DOCKER_TLS_VERIFY
+
+docker run --rm --entrypoint=base64 -e REGISTRY_USERNAME="$REGISTRY_USERNAME" -e REGISTRY_PASSWORD="$REGISTRY_PASSWORD" {{.Image}} > registry-auth
+
+export DOCKER_HOST="$OLD_DOCKER_HOST"
+export DOCKER_CERT_PATH="$OLD_DOCKER_CERT_PATH"
+export DOCKER_TLS_VERIFY="$OLD_DOCKER_TLS_VERIFY"
+
 
 # Gather client cert bundle if it is present.
 if [ -n "$DOCKER_CERT_PATH" ]; then

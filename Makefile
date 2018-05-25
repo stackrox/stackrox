@@ -150,6 +150,7 @@ image: gazelle clean-image
 	@echo "+ $@"
 	bazel build $(BAZEL_FLAGS) \
 		//central \
+		//cmd/base64 \
 		//cmd/clair \
 		//cmd/deploy \
 		//benchmarks \
@@ -161,6 +162,7 @@ image: gazelle clean-image
 
 # TODO(cg): Replace with native bazel Docker build.
 	cp -r ui/build image/ui/
+	cp bazel-bin/cmd/base64/linux_amd64_pure_stripped/base64 image/bin/base64
 	cp bazel-bin/central/linux_amd64_pure_stripped/central image/bin/central
 	cp bazel-bin/cmd/clair/linux_amd64_pure_stripped/clair image/bin/clair
 	cp bazel-bin/cmd/deploy/linux_amd64_pure_stripped/deploy image/bin/deploy
