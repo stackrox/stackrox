@@ -24,7 +24,7 @@ func (b *BoltDB) GetCluster(id string) (cluster *v1.Cluster, exists bool, err er
 	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "Cluster")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(clusterBucket))
-		cluster, exists, err = b.getCluster(id, bucket)
+		cluster, exists, err = b.getCluster(tx, id, bucket)
 		return err
 	})
 	return
@@ -41,7 +41,7 @@ func (b *BoltDB) GetClusters() ([]*v1.Cluster, error) {
 			if err := proto.Unmarshal(v, &cluster); err != nil {
 				return err
 			}
-			b.addContactTime(&cluster)
+			b.populateProtoContactTime(tx, &cluster)
 			clusters = append(clusters, &cluster)
 			return nil
 		})
@@ -69,7 +69,7 @@ func (b *BoltDB) AddCluster(cluster *v1.Cluster) (string, error) {
 	cluster.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(clusterBucket))
-		currCluster, exists, err := b.getCluster(cluster.GetId(), bucket)
+		currCluster, exists, err := b.getCluster(tx, cluster.GetId(), bucket)
 		if err != nil {
 			return err
 		}
@@ -145,7 +145,7 @@ func (b *BoltDB) UpdateClusterContactTime(id string, t time.Time) error {
 	})
 }
 
-func (b *BoltDB) getCluster(id string, bucket *bolt.Bucket) (cluster *v1.Cluster, exists bool, err error) {
+func (b *BoltDB) getCluster(tx *bolt.Tx, id string, bucket *bolt.Bucket) (cluster *v1.Cluster, exists bool, err error) {
 	cluster = new(v1.Cluster)
 	val := bucket.Get([]byte(id))
 	if val == nil {
@@ -156,12 +156,12 @@ func (b *BoltDB) getCluster(id string, bucket *bolt.Bucket) (cluster *v1.Cluster
 	if err != nil {
 		return
 	}
-	b.addContactTime(cluster)
+	b.populateProtoContactTime(tx, cluster)
 	return
 }
 
-func (b *BoltDB) addContactTime(cluster *v1.Cluster) {
-	t, err := b.getClusterContactTime(cluster.GetId())
+func (b *BoltDB) populateProtoContactTime(tx *bolt.Tx, cluster *v1.Cluster) {
+	t, err := b.getClusterContactTime(tx, cluster.GetId())
 	if err != nil {
 		log.Warnf("Could not get cluster last-contact time for '%s': %s", cluster.GetId(), err)
 		return
@@ -169,20 +169,17 @@ func (b *BoltDB) addContactTime(cluster *v1.Cluster) {
 	cluster.LastContact = t
 }
 
-func (b *BoltDB) getClusterContactTime(id string) (t *timestamp.Timestamp, err error) {
-	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(clusterStatusBucket))
-		val := bucket.Get([]byte(id))
-		if val == nil {
-			return nil
-		}
-		status := new(v1.ClusterStatus)
-		err = proto.Unmarshal(val, status)
-		if err != nil {
-			return err
-		}
-		t = status.GetLastContact()
-		return nil
-	})
+func (b *BoltDB) getClusterContactTime(tx *bolt.Tx, id string) (t *timestamp.Timestamp, err error) {
+	bucket := tx.Bucket([]byte(clusterStatusBucket))
+	val := bucket.Get([]byte(id))
+	if val == nil {
+		return
+	}
+	status := new(v1.ClusterStatus)
+	err = proto.Unmarshal(val, status)
+	if err != nil {
+		return
+	}
+	t = status.GetLastContact()
 	return
 }
