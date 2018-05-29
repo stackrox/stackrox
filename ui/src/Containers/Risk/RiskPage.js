@@ -3,10 +3,9 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
-import { ClipLoader } from 'react-spinners';
 
 import { selectors } from 'reducers';
-import { actions as deploymentsActions } from 'reducers/deployments';
+import { actions as deploymentsActions, types } from 'reducers/deployments';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import PageHeader from 'Components/PageHeader';
@@ -14,6 +13,7 @@ import SearchInput from 'Components/SearchInput';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';
+import Loader from 'Components/Loader';
 import TabContent from 'Components/TabContent';
 import { sortNumber } from 'sorters/sorters';
 import RiskDetails from './RiskDetails';
@@ -31,7 +31,8 @@ class RiskPage extends Component {
         isViewFiltered: PropTypes.bool.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
         location: ReactRouterPropTypes.location.isRequired,
-        match: ReactRouterPropTypes.match.isRequired
+        match: ReactRouterPropTypes.match.isRequired,
+        isFetchingDeployment: PropTypes.bool.isRequired
     };
 
     getSelectedDeployment = () => {
@@ -69,13 +70,8 @@ class RiskPage extends Component {
         if (!selectedDeployment) return null;
 
         const riskPanelTabs = [{ text: 'Risk Indicators' }, { text: 'Deployment Details' }];
-        const isLoading = !selectedDeployment.risk; // TODO: poor-man loading check until a proper one in place
-
-        const content = isLoading ? (
-            <div className="flex flex-col items-center justify-center h-full w-full">
-                <ClipLoader loading size={20} />
-                <div className="text-lg font-sans tracking-wide mt-4">Loading...</div>
-            </div>
+        const content = this.props.isFetchingDeployment ? (
+            <Loader />
         ) : (
             <Tabs headers={riskPanelTabs}>
                 <TabContent>
@@ -138,7 +134,8 @@ const mapStateToProps = createStructuredSelector({
     searchOptions: selectors.getDeploymentsSearchOptions,
     searchModifiers: selectors.getDeploymentsSearchModifiers,
     searchSuggestions: selectors.getDeploymentsSearchSuggestions,
-    isViewFiltered
+    isViewFiltered,
+    isFetchingDeployment: state => selectors.getLoadingStatus(state, types.FETCH_DEPLOYMENT)
 });
 
 const mapDispatchToProps = (dispatch, props) => ({

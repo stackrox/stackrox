@@ -12,7 +12,9 @@ import integrations, { selectors as integrationSelectors } from './integrations'
 import globalSearch, { selectors as globalSearchSelectors } from './globalSearch';
 import policies, { selectors as policySelectors } from './policies';
 import summaries, { selectors as summarySelectors } from './summaries';
+
 import dashboard, { selectors as dashboardSelectors } from './dashboard';
+import loading, { selectors as loadingSelectors } from './loading';
 import route, { selectors as routeSelectors } from './routes';
 
 // Reducers
@@ -28,7 +30,8 @@ const appReducer = combineReducers({
     globalSearch,
     policies,
     summaries,
-    dashboard
+    dashboard,
+    loading
 });
 
 const rootReducer = combineReducers({
@@ -54,6 +57,7 @@ const getGlobalSearches = state => getApp(state).globalSearch;
 const getPolicies = state => getApp(state).policies;
 const getSummaries = state => getApp(state).summaries;
 const getDashboard = state => getApp(state).dashboard;
+const getLoadingStatus = state => getApp(state).loading;
 
 const boundSelectors = {
     ...bindSelectors(getAlerts, alertSelectors),
@@ -67,7 +71,8 @@ const boundSelectors = {
     ...bindSelectors(getPolicies, policySelectors),
     ...bindSelectors(getRoute, routeSelectors),
     ...bindSelectors(getSummaries, summarySelectors),
-    ...bindSelectors(getDashboard, dashboardSelectors)
+    ...bindSelectors(getDashboard, dashboardSelectors),
+    ...bindSelectors(getLoadingStatus, loadingSelectors)
 };
 
 export const selectors = {

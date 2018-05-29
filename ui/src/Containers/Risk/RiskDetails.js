@@ -2,9 +2,12 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import CollapsibleCard from 'Components/CollapsibleCard';
 import * as Icon from 'react-feather';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
-const RiskDetails = ({ risk }) =>
-    risk.results.map(result => (
+const RiskDetails = ({ risk }) => {
+    if (!risk) return <NoResultsMessage message="No Risk Details Available" />;
+
+    return risk.results.map(result => (
         <div className="px-3 py-4" key={result.name}>
             <div
                 className="alert-preview bg-white shadow text-primary-600 tracking-wide"
@@ -23,6 +26,7 @@ const RiskDetails = ({ risk }) =>
             </div>
         </div>
     ));
+};
 
 RiskDetails.propTypes = {
     risk: PropTypes.shape({

@@ -20,6 +20,7 @@ export function* getDeployments({ options = [] }) {
 }
 
 export function* getDeployment(id) {
+    yield put(actions.fetchDeployment.request());
     try {
         const result = yield call(fetchDeployment, id);
         yield put(actions.fetchDeployment.success(result.response, { id }));
