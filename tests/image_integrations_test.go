@@ -24,8 +24,10 @@ var (
 	integration = &v1.ImageIntegration{
 		Name: "public dockerhub",
 		Type: "docker",
-		Config: map[string]string{
-			"endpoint": "registry-1.docker.io",
+		IntegrationConfig: &v1.ImageIntegration_Docker{
+			Docker: &v1.DockerConfig{
+				Endpoint: "registry-1.docker.io",
+			},
 		},
 		Categories: []v1.ImageIntegrationCategory{v1.ImageIntegrationCategory_REGISTRY},
 	}

@@ -50,8 +50,8 @@ const tableColumnDescriptor = Object.freeze({
     imageIntegrations: {
         docker: [
             { key: 'name', label: 'Name' },
-            { key: 'config.endpoint', label: 'Endpoint' },
-            { key: 'config.username', label: 'Username' }
+            { key: 'docker.endpoint', label: 'Endpoint' },
+            { key: 'docker.username', label: 'Username' }
         ],
         tenable: [{ key: 'name', label: 'Name' }],
         dtr: [
@@ -61,11 +61,12 @@ const tableColumnDescriptor = Object.freeze({
         ],
         artifactory: [
             { key: 'name', label: 'Name' },
-            { key: 'config.endpoint', label: 'Endpoint' },
-            { key: 'config.username', label: 'Username' }
+            { key: 'docker.endpoint', label: 'Endpoint' },
+            { key: 'docker.username', label: 'Username' }
         ],
         quay: [{ key: 'name', label: 'Name' }, { key: 'config.endpoint', label: 'Endpoint' }],
         clair: [{ key: 'name', label: 'Name' }, { key: 'config.endpoint', label: 'Endpoint' }],
+        clairify: [{ key: 'name', label: 'Name' }, { key: 'clairify.endpoint', label: 'Endpoint' }],
         google: [{ key: 'name', label: 'Name' }, { key: 'config.endpoint', label: 'Endpoint' }]
     }
 });

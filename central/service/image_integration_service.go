@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
 	"bitbucket.org/stack-rox/apollo/pkg/secrets"
 	"bitbucket.org/stack-rox/apollo/pkg/sources"
@@ -46,6 +47,11 @@ func (s *ImageIntegrationService) AuthFuncOverride(ctx context.Context, fullMeth
 	return ctx, returnErrorCode(or.SensorOrUser().Authorized(ctx))
 }
 
+func scrubImageIntegration(i *v1.ImageIntegration) {
+	i.Config = secrets.ScrubSecretsFromMap(i.Config)
+	secrets.ScrubSecretsFromStruct(i)
+}
+
 // GetImageIntegration retrieves the integration based on the id passed
 func (s *ImageIntegrationService) GetImageIntegration(ctx context.Context, request *v1.ResourceByID) (*v1.ImageIntegration, error) {
 	if request.GetId() == "" {
@@ -58,6 +64,7 @@ func (s *ImageIntegrationService) GetImageIntegration(ctx context.Context, reque
 	if !exists {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("Image integration %s not found", request.GetId()))
 	}
+	scrubImageIntegration(integration)
 	return integration, nil
 }
 
@@ -67,10 +74,18 @@ func (s *ImageIntegrationService) GetImageIntegrations(ctx context.Context, requ
 	if err != nil {
 		return nil, err
 	}
-
+	identity, err := authn.FromTLSContext(ctx)
+	switch {
+	case err == authn.ErrNoContext:
+		log.Debugf("No authentication context provided")
+	case err != nil:
+		log.Warnf("Error getting client identity: %s", err)
+	case err == nil && identity.Name.ServiceType == v1.ServiceType_SENSOR_SERVICE:
+		return &v1.GetImageIntegrationsResponse{Integrations: integrations}, nil
+	}
 	// Remove secrets for other API accessors.
-	for _, r := range integrations {
-		r.Config = secrets.ScrubSecrets(r.Config)
+	for _, i := range integrations {
+		scrubImageIntegration(i)
 	}
 	return &v1.GetImageIntegrationsResponse{Integrations: integrations}, nil
 }

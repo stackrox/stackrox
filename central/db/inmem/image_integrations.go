@@ -27,6 +27,9 @@ func (s *imageIntegrationStore) GetImageIntegrations(request *v1.GetImageIntegra
 		if len(request.GetCluster()) != 0 && !clusterSet.Contains(request.GetCluster()) {
 			continue
 		}
+		if request.GetName() != "" && request.GetName() != integration.GetName() {
+			continue
+		}
 		integrationSlice = append(integrationSlice, integration)
 	}
 	return integrationSlice, nil

@@ -84,6 +84,14 @@ const integrationsList = {
             disabled: false
         },
         {
+            label: 'Clairify',
+            type: 'clairify',
+            categories: 'Scanner',
+            source: 'imageIntegrations',
+            image: clair,
+            disabled: false
+        },
+        {
             label: 'Google Cloud',
             type: 'google',
             categories: 'Registry + Scanner',

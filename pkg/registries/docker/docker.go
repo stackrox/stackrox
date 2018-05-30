@@ -2,7 +2,7 @@ package docker
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -90,34 +90,9 @@ func (n nilClient) Ping() error {
 	return n.error
 }
 
-func (c Config) validate() error {
-	username := c.Username
-	password := c.Password
-	hasUsername := username != ""
-	hasPassword := password != ""
-
-	if hasUsername != hasPassword {
-		if !hasUsername {
-			return errors.New("Config parameter 'username' must be defined for all non Docker Hub registries")
-		}
-		return errors.New("Config parameter 'password' must be defined for all non Docker Hub registries")
-	}
-	if c.Endpoint == "" {
-		return errors.New("Config parameter 'endpoint' must be defined")
-	}
-
-	if (!hasUsername && !hasPassword) && !strings.Contains(c.Endpoint, "docker.io") {
-		return errors.New("Config parameters 'username' and 'password' must be defined for all non Docker Hub registries")
-	}
-	return nil
-}
-
 // NewDockerRegistry creates a new instantiation of the docker registry
 // TODO(cgorman) AP-386 - properly put the base docker registry into another pkg
 func NewDockerRegistry(cfg Config, integration *v1.ImageIntegration) (*Registry, error) {
-	if err := cfg.validate(); err != nil {
-		return nil, err
-	}
 	url, err := urlfmt.FormatURL(cfg.Endpoint, true, false)
 	if err != nil {
 		return nil, err
@@ -138,10 +113,15 @@ func NewDockerRegistry(cfg Config, integration *v1.ImageIntegration) (*Registry,
 }
 
 func newRegistry(integration *v1.ImageIntegration) (*Registry, error) {
+	dockerConfig, ok := integration.IntegrationConfig.(*v1.ImageIntegration_Docker)
+	if !ok {
+		return nil, fmt.Errorf("Docker configuration required")
+	}
 	cfg := Config{
-		Endpoint: integration.Config["endpoint"],
-		Username: integration.Config["username"],
-		Password: integration.Config["password"],
+		Endpoint: dockerConfig.Docker.GetEndpoint(),
+		Username: dockerConfig.Docker.GetUsername(),
+		Password: dockerConfig.Docker.GetPassword(),
+		Insecure: dockerConfig.Docker.GetInsecure(),
 	}
 	return NewDockerRegistry(cfg, integration)
 }

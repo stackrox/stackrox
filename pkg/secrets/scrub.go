@@ -1,6 +1,9 @@
 package secrets
 
-import "strings"
+import (
+	"reflect"
+	"strings"
+)
 
 // secretKeys lists keys that have secret values that should be scrubbed
 // out of a config before returning it in the API.
@@ -26,8 +29,8 @@ var scrubber = newSecretKeys([]string{
 	"serviceAccount",
 })
 
-// ScrubSecrets removes secret keys from a map[string]string and returns a new copy without secrets.
-func ScrubSecrets(m map[string]string) map[string]string {
+// ScrubSecretsFromMap removes secret keys from a map[string]string and returns a new copy without secrets.
+func ScrubSecretsFromMap(m map[string]string) map[string]string {
 	newMap := make(map[string]string)
 	for k, v := range m {
 		if !scrubber.shouldScrub(k) {
@@ -35,4 +38,30 @@ func ScrubSecrets(m map[string]string) map[string]string {
 		}
 	}
 	return newMap
+}
+
+// ScrubSecretsFromStruct removes secret keys from an object
+func ScrubSecretsFromStruct(obj interface{}) {
+	value := reflect.ValueOf(obj)
+	if value.Kind() == reflect.Ptr {
+		value = value.Elem()
+	}
+	if value.Kind() != reflect.Struct {
+		return
+	}
+	for i := 0; i < value.NumField(); i++ {
+		fieldKind := value.Field(i).Kind()
+		switch fieldKind {
+		case reflect.Struct:
+			in := value.Field(i).Interface()
+			ScrubSecretsFromStruct(&in)
+		case reflect.Ptr, reflect.Interface:
+			if !value.Field(i).IsNil() {
+				ScrubSecretsFromStruct(value.Field(i).Interface())
+			}
+		}
+		if scrubber.shouldScrub(value.Type().Field(i).Name) {
+			value.Field(i).Set(reflect.ValueOf(""))
+		}
+	}
 }

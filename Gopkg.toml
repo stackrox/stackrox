@@ -154,3 +154,7 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
 [[constraint]]
   name = "github.com/karlseguin/ccache"
   branch = "master"
+
+[[constraint]]
+  name = "bitbucket.org/stack-rox/clairify"
+  branch = "master"

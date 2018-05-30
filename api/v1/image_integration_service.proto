@@ -13,11 +13,30 @@ enum ImageIntegrationCategory {
     SCANNER  = 1;
 }
 
+message DockerConfig {
+    string endpoint = 1;
+    string username = 2;
+    string password = 3;
+    bool insecure   = 4;
+}
+
 message DTRConfig {
     string username = 1;
     string password = 2;
     string endpoint = 3;
     bool insecure   = 4;
+}
+
+message ClairifyConfig {
+    string endpoint              = 1;
+    message Registry {
+        string image_repo = 1;
+        string url        = 2;
+        string username   = 3;
+        string password   = 4;
+        bool insecure     = 5;
+    }
+    Registry registry             = 2;
 }
 
 message ImageIntegration {
@@ -29,7 +48,9 @@ message ImageIntegration {
     repeated string clusters                     = 5;
     repeated ImageIntegrationCategory categories = 6;
     oneof IntegrationConfig {
-        DTRConfig dtr = 7;
+        DTRConfig dtr           = 7;
+        ClairifyConfig clairify = 8;
+        DockerConfig docker     = 9;
     }
 }
 

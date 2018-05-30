@@ -4,6 +4,8 @@ package all
 import (
 	// Clair
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/clair"
+	// Clairify
+	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/clairify"
 	// DTR
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/dtr"
 	// Google
