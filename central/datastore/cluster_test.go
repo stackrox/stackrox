@@ -37,7 +37,7 @@ func (suite *PolicyValidatorTestSuite) TestRemoveTombstonesDeploymentsAndMarksAl
 	// We expect alerts to be fetched, and all to be updated.
 	alerts := getAlerts(2)
 	suite.alertDataStore.On("GetAlerts",
-		mock.MatchedBy(func(req *v1.GetAlertsRequest) bool { return req.DeploymentId == "deployment1" })).Return(alerts, nil)
+		mock.MatchedBy(func(req *v1.ListAlertsRequest) bool { return req.DeploymentId == "deployment1" })).Return(alerts, nil)
 	for _, alert := range alerts {
 		suite.alertDataStore.On("UpdateAlert", alert).Return(nil)
 	}
@@ -140,13 +140,13 @@ func (suite *PolicyValidatorTestSuite) TestHandlesErrorTombstoningDeployments() 
 	// We expect alerts to be fetched, and all to be updated.
 	alerts := getAlerts(2)
 	suite.alertDataStore.On("GetAlerts",
-		mock.MatchedBy(func(req *v1.GetAlertsRequest) bool { return req.DeploymentId == "deployment1" })).Return(alerts, nil)
+		mock.MatchedBy(func(req *v1.ListAlertsRequest) bool { return req.DeploymentId == "deployment1" })).Return(alerts, nil)
 	for _, alert := range alerts {
 		suite.alertDataStore.On("UpdateAlert", alert).Return(nil)
 	}
 
 	suite.alertDataStore.On("GetAlerts",
-		mock.MatchedBy(func(req *v1.GetAlertsRequest) bool { return req.DeploymentId == "deployment2" })).Return(alerts, nil)
+		mock.MatchedBy(func(req *v1.ListAlertsRequest) bool { return req.DeploymentId == "deployment2" })).Return(alerts, nil)
 	for _, alert := range alerts {
 		suite.alertDataStore.On("UpdateAlert", alert).Return(nil)
 	}
@@ -179,7 +179,7 @@ func (suite *PolicyValidatorTestSuite) TestHandlesErrorTombstoningDeployments() 
 func (suite *PolicyValidatorTestSuite) TestHandlesNoAlerts() {
 	// If No alerts exist, everything should still work smoothly.
 	suite.alertDataStore.On("GetAlerts",
-		mock.MatchedBy(func(req *v1.GetAlertsRequest) bool { return req.DeploymentId == "deployment1" })).Return(([]*v1.Alert)(nil), nil)
+		mock.MatchedBy(func(req *v1.ListAlertsRequest) bool { return req.DeploymentId == "deployment1" })).Return(([]*v1.Alert)(nil), nil)
 
 	// We expect deployments to be fetched, and only those for cluster1 to be tombstoned.
 	deployments := getDeployments(map[string]string{"deployment1": "cluster1", "deployment2": "cluster2"})
@@ -208,7 +208,7 @@ func (suite *PolicyValidatorTestSuite) TestHandlesErrorGettingAlerts() {
 	// We expect alerts to be fetched, and all to be updated.
 	expectedErr := fmt.Errorf("issues need tissues")
 	suite.alertDataStore.On("GetAlerts",
-		mock.MatchedBy(func(req *v1.GetAlertsRequest) bool { return req.DeploymentId == "deployment1" })).Return(([]*v1.Alert)(nil), expectedErr)
+		mock.MatchedBy(func(req *v1.ListAlertsRequest) bool { return req.DeploymentId == "deployment1" })).Return(([]*v1.Alert)(nil), expectedErr)
 
 	// We expect deployments to be fetched, and only those for cluster1 to be tombstoned.
 	deployments := getDeployments(map[string]string{"deployment1": "cluster1", "deployment2": "cluster2"})
@@ -236,7 +236,7 @@ func (suite *PolicyValidatorTestSuite) TestHandlesErrorUpdatingAlert() {
 	// We expect alerts to be fetched, and all to be updated.
 	alerts := getAlerts(2)
 	suite.alertDataStore.On("GetAlerts",
-		mock.MatchedBy(func(req *v1.GetAlertsRequest) bool { return req.DeploymentId == "deployment1" })).Return(alerts, nil)
+		mock.MatchedBy(func(req *v1.ListAlertsRequest) bool { return req.DeploymentId == "deployment1" })).Return(alerts, nil)
 
 	// Let one alert succeed at being updated and one fail.
 	expectedErr := fmt.Errorf("issues need tissues")

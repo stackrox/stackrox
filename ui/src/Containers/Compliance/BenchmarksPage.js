@@ -275,8 +275,8 @@ class BenchmarksPage extends Component {
     render() {
         return (
             <div className="flex flex-col h-full">
-                <div className="flex w-full mb-3 px-3 items-center">
-                    <span className="flex flex-1 text-xl font-500 text-primary-500 self-end">
+                <div className="flex w-full my-3 px-3 items-center">
+                    <span className="flex flex-1 text-xl font-500 text-primary-500 self-center">
                         Last Scanned: {this.props.lastScannedTime || 'Never'}
                     </span>
                     <div className="flex self-center justify-end pr-5 border-r border-primary-200">

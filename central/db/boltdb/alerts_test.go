@@ -59,7 +59,7 @@ func (suite *BoltAlertsTestSuite) TestAlerts() {
 	suite.Nil(err)
 
 	// Get all alerts
-	alerts, err := suite.GetAlerts(&v1.GetAlertsRequest{})
+	alerts, err := suite.GetAlerts(&v1.ListAlertsRequest{})
 	suite.Nil(err)
 	suite.Equal([]*v1.Alert{alert1, alert2}, alerts)
 
@@ -69,12 +69,12 @@ func (suite *BoltAlertsTestSuite) TestAlerts() {
 
 	alert1.Policy.Severity = v1.Severity_HIGH_SEVERITY
 	suite.UpdateAlert(alert1)
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{})
+	alerts, err = suite.GetAlerts(&v1.ListAlertsRequest{})
 	suite.Nil(err)
 	suite.Equal([]*v1.Alert{alert1, alert2}, alerts)
 
 	suite.RemoveAlert(alert1.Id)
-	alerts, err = suite.GetAlerts(&v1.GetAlertsRequest{})
+	alerts, err = suite.GetAlerts(&v1.ListAlertsRequest{})
 	suite.Nil(err)
 	suite.Equal([]*v1.Alert{alert2}, alerts)
 }

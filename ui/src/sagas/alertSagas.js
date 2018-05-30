@@ -1,35 +1,33 @@
+import { all, take, takeLatest, call, fork, put, select, race } from 'redux-saga/effects';
 import { delay } from 'redux-saga';
-import { all, take, takeLatest, call, cancel, fork, put, select } from 'redux-saga/effects';
-import queryString from 'query-string';
 
+import watchLocation from 'utils/watchLocation';
 import * as service from 'services/AlertsService';
 import { actions, types } from 'reducers/alerts';
 import { types as dashboardTypes } from 'reducers/dashboard';
-import { types as locationActionTypes } from 'reducers/routes';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import { whitelistDeployment } from 'services/PoliciesService';
 
+const basePath = '/';
 const dashboardPath = '/main/dashboard';
-const violationsPath = '/main/violations';
+const violationsPath = '/main/violations/:alertId?';
 
-function* getAlert({ params: alertId }) {
+function* getAlerts(filters) {
     try {
-        const result = yield call(service.fetchAlert, alertId);
-        yield put(actions.fetchAlert.success(result.response));
+        const result = yield call(service.fetchAlerts, filters);
+        yield put(actions.fetchAlerts.success(result.response));
     } catch (error) {
-        yield put(actions.fetchAlert.failure(error, alertId));
+        yield put(actions.fetchAlerts.failure(error));
     }
 }
 
-function* getAlertNumsByPolicy() {
+function* getAlert(id) {
     try {
-        const searchOptions = yield select(selectors.getAlertsSearchOptions);
-        const newFilters = {};
-        newFilters.query = searchOptionsToQuery(searchOptions);
-        const result = yield call(service.fetchAlertNumsByPolicy, newFilters);
-        yield put(actions.fetchAlertNumsByPolicy.success(result.response));
+        const result = yield call(service.fetchAlert, id);
+        yield put(actions.fetchAlert.success(result.response, { id }));
     } catch (error) {
-        yield put(actions.fetchAlertNumsByPolicy.failure(error));
+        yield put(actions.fetchAlert.failure(error));
     }
 }
 
@@ -97,33 +95,21 @@ function* getAlertsByTimeseries(filters) {
     }
 }
 
-function* getAlertsByPolicy() {
-    const policyId = yield select(selectors.getSelectedViolatedPolicyId);
-    if (!policyId) return;
+function* sendWhitelistDeployment({ params }) {
     try {
-        const result = yield call(service.fetchAlertsByPolicy, policyId);
-        yield put(actions.fetchAlertsByPolicy.success(result.response, policyId));
+        const result = yield call(whitelistDeployment, params.policy.id, params.deployment.name);
+        yield put(actions.whitelistDeployment.success(result.response));
     } catch (error) {
-        yield put(actions.fetchAlertsByPolicy.failure(error, policyId));
+        yield put(actions.whitelistDeployment.failure(error));
     }
 }
 
-function* pollAlertsByPolicy() {
-    while (true) {
-        let failsCount = 0;
-        try {
-            yield all([call(getAlertNumsByPolicy), call(getAlertsByPolicy)]);
-            failsCount = 0;
-        } catch (err) {
-            console.error('Error during alerts polling', err);
-            failsCount += 1;
-            if (failsCount === 2) {
-                // complain when retry didn't help
-                yield put(actions.fetchAlertsByPolicy.failure('Cannot reach the server.'));
-            }
-        }
-        yield delay(5000); // poll every 5 sec
-    }
+function* filterViolationsPageBySearch() {
+    const searchOptions = yield select(selectors.getAlertsSearchOptions);
+    const filters = {
+        query: searchOptionsToQuery(searchOptions)
+    };
+    yield fork(getAlerts, filters);
 }
 
 function* filterDashboardPageBySearch() {
@@ -137,52 +123,69 @@ function* filterDashboardPageBySearch() {
     yield fork(getAlertsByTimeseries, filters);
 }
 
-function* watchLocation() {
-    let pollTask;
-    while (true) {
-        // it's a tricky/hack-y behavior here when deployment whitelisting happens: UI closes the dialog,
-        // it causes location to update and therefore we're re-fetching everything for alerts
-        const action = yield take(locationActionTypes.LOCATION_CHANGE);
-        const { payload: location } = action;
+function* loadViolationsPage(match) {
+    yield put(actions.pollAlerts.start());
 
-        if (pollTask) yield cancel(pollTask); // cancel polling in any case
-
-        if (location && location.pathname && location.pathname.startsWith(violationsPath)) {
-            pollTask = yield fork(pollAlertsByPolicy, queryString.parse(location.search));
-        } else if (location && location.pathname && location.pathname.startsWith(dashboardPath)) {
-            yield fork(filterDashboardPageBySearch);
-        }
+    const { alertId } = match.params;
+    if (alertId) {
+        yield fork(getAlert, alertId);
     }
 }
 
-function* watchAlertRequest() {
-    yield takeLatest(types.FETCH_ALERT.REQUEST, getAlert);
+function* loadDashboardPage() {
+    yield fork(filterDashboardPageBySearch);
 }
 
-function* watchSelectedViolatedPolicy() {
-    yield takeLatest(types.SELECT_VIOLATED_POLICY, getAlertsByPolicy);
+function* pollAlerts() {
+    while (true) {
+        let failsCount = 0;
+        try {
+            yield all([call(filterViolationsPageBySearch)]);
+            failsCount = 0;
+        } catch (err) {
+            console.error('Error during alerts polling', err);
+            failsCount += 1;
+            if (failsCount === 2) {
+                // complain when retry didn't help
+                yield put(actions.fetchAlerts.failure('Cannot reach the server.'));
+            }
+        }
+        yield delay(5000); // poll every 5 sec
+    }
+}
+
+// place all actions to stop polling in this function
+function* cancelPolling() {
+    yield put(actions.pollAlerts.stop());
 }
 
 function* watchAlertsSearchOptions() {
-    const action = yield take(locationActionTypes.LOCATION_CHANGE);
-    const { payload: location } = action;
-    yield takeLatest(
-        types.SET_SEARCH_OPTIONS,
-        getAlertNumsByPolicy,
-        queryString.parse(location.search)
-    );
+    yield takeLatest(types.SET_SEARCH_OPTIONS, filterViolationsPageBySearch);
 }
 
 function* watchDashboardSearchOptions() {
     yield takeLatest(dashboardTypes.SET_SEARCH_OPTIONS, filterDashboardPageBySearch);
 }
 
+function* watchWhitelistDeployment() {
+    yield takeLatest(types.WHITELIST_DEPLOYMENT.REQUEST, sendWhitelistDeployment);
+}
+
+function* pollSagaWatcher() {
+    while (true) {
+        yield take(types.POLL_ALERTS.START);
+        yield race([call(pollAlerts), take(types.POLL_ALERTS.STOP)]);
+    }
+}
+
 export default function* alerts() {
     yield all([
-        fork(watchLocation),
-        fork(watchSelectedViolatedPolicy),
-        fork(watchAlertRequest),
+        fork(watchLocation, basePath, cancelPolling),
+        fork(watchLocation, violationsPath, loadViolationsPage),
+        fork(watchLocation, dashboardPath, loadDashboardPage),
         fork(watchAlertsSearchOptions),
-        fork(watchDashboardSearchOptions)
+        fork(watchDashboardSearchOptions),
+        fork(watchWhitelistDeployment),
+        fork(pollSagaWatcher)
     ]);
 }

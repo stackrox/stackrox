@@ -10,7 +10,9 @@ const isNumeric = x => (typeof x === 'number' || typeof x === 'string') && Numbe
 class KeyValuePairs extends Component {
     static propTypes = {
         data: PropTypes.shape({}).isRequired,
-        keyValueMap: PropTypes.shape({})
+        keyValueMap: PropTypes.shape({
+            label: PropTypes.string
+        })
     };
 
     static defaultProps = {

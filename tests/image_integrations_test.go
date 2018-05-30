@@ -33,6 +33,12 @@ var (
 	}
 )
 
+func getAlert(service v1.AlertServiceClient, id string) (*v1.Alert, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	return service.GetAlert(ctx, &v1.ResourceByID{Id: id})
+}
+
 func TestImageIntegration(t *testing.T) {
 	defer teardownAlpineDeployment(t)
 	setupAlpineDeployment(t)
@@ -150,7 +156,7 @@ func verifyMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.Ima
 
 	alertService := v1.NewAlertServiceClient(conn)
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	alerts, err := alertService.GetAlerts(ctx, &v1.GetAlertsRequest{
+	alerts, err := alertService.ListAlerts(ctx, &v1.ListAlertsRequest{
 		Query: getPolicyQuery(expectedPort22Policy) + "+" + getDeploymentQuery(alpineDeploymentName),
 	})
 	cancel()
@@ -158,8 +164,10 @@ func verifyMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.Ima
 	require.NotEmpty(t, alerts.GetAlerts())
 
 	for _, a := range alerts.GetAlerts() {
-		require.NotEmpty(t, a.GetDeployment().GetContainers())
-		c := a.GetDeployment().GetContainers()[0]
+		alert, err := getAlert(alertService, a.GetId())
+		require.NoError(t, err)
+		require.NotEmpty(t, alert.GetDeployment().GetContainers())
+		c := alert.GetDeployment().GetContainers()[0]
 
 		if assertion := assertFunc(c.GetImage().GetMetadata()); !assertion {
 			return false

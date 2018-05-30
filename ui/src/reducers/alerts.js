@@ -1,7 +1,10 @@
 import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
+import pick from 'lodash/pick';
+import { createSelector } from 'reselect';
 
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
+import { createPollingActionTypes, createPollingActions } from 'utils/pollingReduxRoutines';
 import mergeEntitiesById from 'utils/mergeEntitiesById';
 import {
     types as searchTypes,
@@ -14,8 +17,8 @@ import {
 
 export const types = {
     SELECT_VIOLATED_POLICY: 'alerts/SELECT_VIOLATED_POLICY',
-    FETCH_ALERTS_BY_POLICY: createFetchingActionTypes('alerts/FETCH_ALERTS_BY_POLICY'),
-    FETCH_ALERT_NUMS_BY_POLICY: createFetchingActionTypes('alerts/FETCH_ALERT_NUMS_BY_POLICY'),
+    FETCH_ALERTS: createFetchingActionTypes('alerts/FETCH_ALERTS'),
+    POLL_ALERTS: createPollingActionTypes('alerts/POLL_ALERTS'),
     FETCH_ALERT: createFetchingActionTypes('alerts/FETCH_ALERT'),
     FETCH_GLOBAL_ALERT_COUNTS: createFetchingActionTypes('alerts/FETCH_GLOBAL_ALERT_COUNTS'),
     FETCH_ALERT_COUNTS_BY_POLICY_CATEGORIES: createFetchingActionTypes(
@@ -25,6 +28,7 @@ export const types = {
         'alerts/FETCH_ALERT_COUNTS_BY_CLUSTER'
     ),
     FETCH_ALERTS_BY_TIMESERIES: createFetchingActionTypes('alerts/FETCH_ALERTS_BY_TIMESERIES'),
+    WHITELIST_DEPLOYMENT: createFetchingActionTypes('alerts/WHITELIST_DEPLOYMENT'),
     ...searchTypes('alerts')
 };
 
@@ -32,8 +36,8 @@ export const types = {
 
 export const actions = {
     selectViolatedPolicy: policyId => ({ type: types.SELECT_VIOLATED_POLICY, policyId }),
-    fetchAlertsByPolicy: createFetchingActions(types.FETCH_ALERTS_BY_POLICY),
-    fetchAlertNumsByPolicy: createFetchingActions(types.FETCH_ALERT_NUMS_BY_POLICY),
+    fetchAlerts: createFetchingActions(types.FETCH_ALERTS),
+    pollAlerts: createPollingActions(types.POLL_ALERTS),
     fetchAlert: createFetchingActions(types.FETCH_ALERT),
     fetchGlobalAlertCounts: createFetchingActions(types.FETCH_GLOBAL_ALERT_COUNTS),
     fetchAlertCountsByPolicyCategories: createFetchingActions(
@@ -41,6 +45,7 @@ export const actions = {
     ),
     fetchAlertCountsByCluster: createFetchingActions(types.FETCH_ALERT_COUNTS_BY_CLUSTER),
     fetchAlertsByTimeseries: createFetchingActions(types.FETCH_ALERTS_BY_TIMESERIES),
+    whitelistDeployment: createFetchingActions(types.WHITELIST_DEPLOYMENT),
     ...getSearchActions('alerts')
 };
 
@@ -48,36 +53,25 @@ export const actions = {
 
 const byId = (state = {}, action) => {
     if (action.response && action.response.entities && action.response.entities.alert) {
-        return mergeEntitiesById(state, action.response.entities.alert);
+        const alertsById = action.response.entities.alert;
+        const newState = mergeEntitiesById(state, alertsById);
+        if (
+            action.type === types.FETCH_ALERTS.SUCCESS &&
+            (!action.params || !action.params.options || !action.params.options.length)
+        ) {
+            // fetched all alerts without any filter/search options, leave only those alerts
+            const onlyExisting = pick(newState, Object.keys(alertsById));
+            return isEqual(onlyExisting, state) ? state : onlyExisting;
+        }
+        return newState;
     }
     return state;
 };
 
-const numsByPolicy = (state = [], action) => {
-    if (action.type === types.FETCH_ALERT_NUMS_BY_POLICY.SUCCESS) {
-        const { alertsByPolicies } = action.response.result;
-        return isEqual(alertsByPolicies, state) ? state : alertsByPolicies;
-    }
-    return state;
-};
-
-const selectedViolatedPolicy = (state = null, action) => {
-    if (action.type === types.SELECT_VIOLATED_POLICY) {
-        return action.policyId || null;
-    }
-    if (state && action.type === types.FETCH_ALERT_NUMS_BY_POLICY.SUCCESS) {
-        const { alertsByPolicies } = action.response.result;
-        // received a new list of violated policies and it doesn't contain selected policy: unselect
-        if (!alertsByPolicies.map(alertNum => alertNum.policy).includes(state)) return null;
-    }
-    return state;
-};
-
-const alertsByPolicy = (state = {}, action) => {
-    if (action.type === types.FETCH_ALERTS_BY_POLICY.SUCCESS) {
-        const { alerts } = action.response.result;
-        const { params: policyId } = action;
-        return isEqual(state[policyId], alerts) ? state : { ...state, [policyId]: alerts };
+const filteredIds = (state = [], action) => {
+    if (action.type === types.FETCH_ALERTS.SUCCESS) {
+        const alertIds = action.response.result ? action.response.result.alerts : [];
+        return isEqual(alertIds, state) ? state : alertIds;
     }
     return state;
 };
@@ -116,9 +110,7 @@ const alertsByTimeseries = (state = [], action) => {
 
 const reducer = combineReducers({
     byId,
-    numsByPolicy,
-    selectedViolatedPolicy,
-    alertsByPolicy,
+    filteredIds,
     globalAlertCounts,
     alertCountsByPolicyCategories,
     alertCountsByCluster,
@@ -131,24 +123,26 @@ export default reducer;
 // Selectors
 
 const getAlertsById = state => state.byId;
+const getAlerts = state => Object.values(getAlertsById(state));
+const getFilteredIds = state => state.filteredIds;
 const getAlert = (state, id) => getAlertsById(state)[id];
-const getAlertNumsByPolicy = state => state.numsByPolicy;
-const getSelectedViolatedPolicyId = state => state.selectedViolatedPolicy;
-const getAlertsByPolicy = state => state.alertsByPolicy;
 const getGlobalAlertCounts = state => state.globalAlertCounts;
 const getAlertCountsByPolicyCategories = state => state.alertCountsByPolicyCategories;
 const getAlertCountsByCluster = state => state.alertCountsByCluster;
 const getAlertsByTimeseries = state => state.alertsByTimeseries;
+const getFilteredAlerts = createSelector([getAlertsById, getFilteredIds], (alerts, ids) =>
+    ids.map(id => alerts[id])
+);
 
 export const selectors = {
     getAlertsById,
-    getAlertNumsByPolicy,
+    getAlerts,
+    getFilteredIds,
     getAlert,
-    getSelectedViolatedPolicyId,
-    getAlertsByPolicy,
     getGlobalAlertCounts,
     getAlertCountsByPolicyCategories,
     getAlertCountsByCluster,
     getAlertsByTimeseries,
+    getFilteredAlerts,
     ...getSearchSelectors('alerts')
 };

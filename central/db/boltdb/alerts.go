@@ -36,7 +36,7 @@ func (b *BoltDB) GetAlert(id string) (alert *v1.Alert, exists bool, err error) {
 }
 
 // GetAlerts ignores the request and gives all values
-func (b *BoltDB) GetAlerts(*v1.GetAlertsRequest) ([]*v1.Alert, error) {
+func (b *BoltDB) GetAlerts(*v1.ListAlertsRequest) ([]*v1.Alert, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "Alert")
 	var alerts []*v1.Alert
 	err := b.View(func(tx *bolt.Tx) error {

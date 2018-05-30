@@ -167,7 +167,7 @@ func verifyAlertsForLatestTag(t *testing.T, alert *v1.Alert) {
 	service := v1.NewAlertServiceClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	alerts, err := service.GetAlerts(ctx, &v1.GetAlertsRequest{
+	alerts, err := service.ListAlerts(ctx, &v1.ListAlertsRequest{
 		Query: getDeploymentQuery(nginxDeploymentName) + "+" + getPolicyQuery(expectedLatestTagPolicy),
 		Stale: []bool{false},
 	})
@@ -175,7 +175,10 @@ func verifyAlertsForLatestTag(t *testing.T, alert *v1.Alert) {
 	require.NoError(t, err)
 	require.Len(t, alerts.GetAlerts(), 1)
 
-	*alert = *alerts.GetAlerts()[0]
+	newAlert, err := getAlert(service, alerts.GetAlerts()[0].GetId())
+	require.NoError(t, err)
+
+	*alert = *newAlert
 }
 
 func verifySlack(t *testing.T, alert *v1.Alert) {

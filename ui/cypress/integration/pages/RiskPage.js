@@ -12,8 +12,13 @@ export const selectors = {
         searchWord: '.risk-search-input #react-select-3--value > :nth-child(2)'
     },
     mounts: {
-        label: 'div:contains("Mounts")',
-        items: 'div:contains("Mounts") + ul > li'
+        label: 'div:contains("Mounts"):last',
+        items: 'div:contains("Mounts"):last + ul li div'
     },
-    imageLink: 'div:contains("Image Name") + a'
+    imageLink: 'div:contains("Image Name") + a',
+    table: {
+        row: {
+            prevent_sensor: 'table tr.cursor-pointer:contains("sensor")'
+        }
+    }
 };

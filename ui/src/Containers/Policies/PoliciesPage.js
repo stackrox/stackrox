@@ -25,7 +25,7 @@ import {
     getDryRun
 } from 'services/PoliciesService';
 import PolicyCreationForm from 'Containers/Policies/PolicyCreationForm';
-import PolicyView from 'Containers/Policies/PoliciesView';
+import PolicyDetails from 'Containers/Policies/PolicyDetails';
 import PoliciesPreview from 'Containers/Policies/PoliciesPreview';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
@@ -344,7 +344,7 @@ class PoliciesPage extends Component {
         ];
         return (
             <Panel header={header} buttons={buttons} onClose={this.unselectPolicy} width="w-2/3">
-                <PolicyView />
+                <PolicyDetails policyId={policy.id} />
             </Panel>
         );
     };

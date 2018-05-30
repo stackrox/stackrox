@@ -1,0 +1,61 @@
+{
+    "alerts": [
+        {
+            "id": "fa338227-7461-4a1e-875a-eb5c601313f6",
+            "time": "2018-05-21T18:06:04.385651124Z",
+            "policy": {
+                "id": "b9a5bba4-c118-4bc7-bf36-b54bcb496113",
+                "name": "Latest tag",
+                "severity": "LOW_SEVERITY",
+                "description": "Alert on deployments with images using tag 'latest'",
+                "categories": [
+                    "Image Assurance"
+                ]
+            },
+            "deployment": {
+                "id": "z1137vn6nnmipffzpozr0f0ri",
+                "name": "tender_edison",
+                "updatedAt": "2018-05-20T18:46:59.558089270Z",
+                "clusterName": "remote"
+            }
+        },
+        {
+            "id": "4f450a61-6062-44d7-8726-757e53a74416",
+            "time": "2018-05-21T18:06:04.324834148Z",
+            "policy": {
+                "id": "b9a5bba4-c118-4bc7-bf36-b54bcb496113",
+                "name": "Latest tag",
+                "severity": "LOW_SEVERITY",
+                "description": "Alert on deployments with images using tag 'latest'",
+                "categories": [
+                    "Image Assurance"
+                ]
+            },
+            "deployment": {
+                "id": "rb1lzc2up2fl2dg26n3naeeyy",
+                "name": "sharp_noyce",
+                "updatedAt": "2018-05-20T19:24:10.929173294Z",
+                "clusterName": "remote"
+            }
+        },
+        {
+            "id": "41b17c7d-9738-454d-986c-937b113c74fd",
+            "time": "2018-05-21T18:06:04.188799699Z",
+            "policy": {
+                "id": "b9a5bba4-c118-4bc7-bf36-b54bcb496113",
+                "name": "Latest tag",
+                "severity": "LOW_SEVERITY",
+                "description": "Alert on deployments with images using tag 'latest'",
+                "categories": [
+                    "Image Assurance"
+                ]
+            },
+            "deployment": {
+                "id": "idhh3a7k3b6xysprfvopoai74",
+                "name": "blissful_dijkstra",
+                "updatedAt": "2018-05-20T19:24:20.917353907Z",
+                "clusterName": "remote"
+            }
+        }
+    ]
+}

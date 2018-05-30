@@ -3,27 +3,39 @@ import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import lowerCase from 'lodash/lowerCase';
 import capitalize from 'lodash/capitalize';
+import dateFns from 'date-fns';
 
 import KeyValuePairs from 'Components/KeyValuePairs';
 import CollapsibleCard from 'Components/CollapsibleCard';
 
 const deploymentDetailsMap = {
     id: { label: 'Deployment ID' },
+    type: { label: 'Deployment Type' },
     clusterName: { label: 'Cluster' },
     namespace: { label: 'Namespace' },
     replicas: { label: 'Replicas' },
+    updatedAt: {
+        label: 'Updated',
+        formatValue: timestamp =>
+            timestamp ? dateFns.format(timestamp, 'MM/DD/YYYY h:mm:ss A') : 'not available'
+    },
     labels: { label: 'Labels' },
-    ports: { label: 'Port configuration' },
-    volume: { label: 'Volume' }
+    annotations: { label: 'Annotations' },
+    ports: { label: 'Port configuration' }
 };
 
 const containerConfigMap = {
-    args: { label: 'Args' },
-    command: { label: 'Command' },
-    directory: { label: 'Directory' },
-    env: { label: 'Environment' },
-    uid: { label: 'User ID' },
-    user: { label: 'User' }
+    commands: { label: 'Commands' },
+    args: { label: 'Arguments' },
+    ports: { label: 'Ports' },
+    volumes: { label: 'Volumes' },
+    secrets: { label: 'Secrets' }
+};
+
+const containerSecurityContextMap = {
+    privileged: { label: 'Privileged' },
+    add_capabilities: { label: 'Add Capabilities' },
+    drop_capabilities: { label: 'Drop Capabilities' }
 };
 
 class DeploymentDetails extends Component {
@@ -31,20 +43,28 @@ class DeploymentDetails extends Component {
         deployment: PropTypes.shape({ id: PropTypes.string.isRequired }).isRequired
     };
 
+    getContainerConfigurations = container => {
+        const { commands, args, ports, volumes, secrets } = container.config;
+        return { commands, args, ports, volumes, secrets };
+    };
+
+    getSecurityContext = container => {
+        const { privileged, add_capabilities, drop_capabilities } = container.securityContext; // eslint-disable-line
+        return { privileged, add_capabilities, drop_capabilities };
+    };
+
     renderOverview() {
         const title = 'Overview';
         return (
             <div className="px-3 py-4">
-                <div className="bg-white shadow text-primary-600 tracking-wide border border-base-200">
-                    <CollapsibleCard title={title}>
-                        <div className="h-full p-3">
-                            <KeyValuePairs
-                                data={this.props.deployment}
-                                keyValueMap={deploymentDetailsMap}
-                            />
-                        </div>
-                    </CollapsibleCard>
-                </div>
+                <CollapsibleCard title={title}>
+                    <div className="h-full p-3">
+                        <KeyValuePairs
+                            data={this.props.deployment}
+                            keyValueMap={deploymentDetailsMap}
+                        />
+                    </div>
+                </CollapsibleCard>
             </div>
         );
     }
@@ -105,36 +125,66 @@ class DeploymentDetails extends Component {
     renderContainerConfigurations = () => {
         const { deployment } = this.props;
         const title = 'Container configuration';
+        let containers = [];
+        if (deployment.containers) {
+            containers = deployment.containers.map((container, index) => {
+                const data = this.getContainerConfigurations(container);
+                return (
+                    <div key={index}>
+                        {this.renderContainerImage(container.image)}
+                        <KeyValuePairs data={data} keyValueMap={containerConfigMap} />
+                        <div className="flex py-3">
+                            <div className="pr-1">Mounts:</div>
+                            <ul className="-ml-8 mt-4 w-full list-reset">
+                                {this.renderContainerVolumes(container.volumes)}
+                            </ul>
+                        </div>
+                        <div className="flex py-3">
+                            <div className="pr-1">Secrets:</div>
+                            <ul className="-ml-8 mt-4 w-full list-reset">
+                                {this.renderContainerSecrets(container.secrets)}
+                            </ul>
+                        </div>
+                    </div>
+                );
+            });
+        } else {
+            containers = <span className="py-1 font-500 italic">None</span>;
+        }
+        return (
+            <div className="px-3 py-4">
+                <CollapsibleCard title={title}>
+                    <div className="h-full p-3">{containers}</div>
+                </CollapsibleCard>
+            </div>
+        );
+    };
+
+    renderSecurityContext = () => {
+        const { deployment } = this.props;
+        const title = 'Security Context';
+        let containers = [];
+        if (deployment.containers) {
+            containers = deployment.containers
+                .filter(container => container.securityContext)
+                .map((container, index) => {
+                    const data = this.getSecurityContext(container);
+                    if (data === {}) return null;
+                    return (
+                        <div key={index}>
+                            <KeyValuePairs data={data} keyValueMap={containerSecurityContextMap} />
+                        </div>
+                    );
+                });
+            if (!containers.length) containers = <span className="py-1 font-500 italic">None</span>;
+        } else {
+            containers = <span className="py-1 font-500 italic">None</span>;
+        }
         return (
             <div className="px-3 py-4">
                 <div className="bg-white shadow text-primary-600 tracking-wide border border-base-200">
                     <CollapsibleCard title={title}>
-                        <div className="h-full p-3">
-                            {deployment.containers.map((container, index) => {
-                                if (!container.config) return null;
-                                return (
-                                    <div key={index}>
-                                        <KeyValuePairs
-                                            data={container.config}
-                                            keyValueMap={containerConfigMap}
-                                        />
-                                        <div className="flex py-3">
-                                            <div className="pr-1">Mounts:</div>
-                                            <ul className="-ml-8 mt-4 w-full list-reset">
-                                                {this.renderContainerVolumes(container.volumes)}
-                                            </ul>
-                                        </div>
-                                        <div className="flex py-3">
-                                            <div className="pr-1">Secrets:</div>
-                                            <ul className="-ml-8 mt-4 w-full list-reset">
-                                                {this.renderContainerSecrets(container.secrets)}
-                                            </ul>
-                                        </div>
-                                        {this.renderContainerImage(container.image)}
-                                    </div>
-                                );
-                            })}
-                        </div>
+                        <div className="h-full p-3">{containers}</div>
                     </CollapsibleCard>
                 </div>
             </div>
@@ -143,9 +193,10 @@ class DeploymentDetails extends Component {
 
     render() {
         return (
-            <div>
+            <div className="w-full">
                 {this.renderOverview()}
                 {this.renderContainerConfigurations()}
+                {this.renderSecurityContext()}
             </div>
         );
     }

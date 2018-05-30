@@ -36,6 +36,7 @@ describe('Deployment Sagas', () => {
             .provide([
                 [select(selectors.getDeploymentsSearchOptions), []],
                 [select(selectors.getDashboardSearchOptions), []],
+                [select(selectors.getPoliciesSearchOptions), []],
                 [call(fetchDeployments, []), dynamic(fetchMock)]
             ])
             .put(actions.fetchDeployments.success(deployments, { options: [] }))
@@ -55,6 +56,7 @@ describe('Deployment Sagas', () => {
             .provide([
                 [select(selectors.getDeploymentsSearchOptions), deploymentTypeSearchOptions],
                 [select(selectors.getDashboardSearchOptions), dashboardTypeSearchOptions],
+                [select(selectors.getPoliciesSearchOptions), []],
                 [call(fetchDeployments, deploymentTypeSearchOptions), dynamic(fetchMock)]
             ])
             .put(
@@ -78,6 +80,7 @@ describe('Deployment Sagas', () => {
             .provide([
                 [select(selectors.getDeploymentsSearchOptions), deploymentTypeSearchOptions],
                 [select(selectors.getDashboardSearchOptions), dashboardTypeSearchOptions],
+                [select(selectors.getPoliciesSearchOptions), []],
                 [call(fetchDeployments, deploymentTypeSearchOptions), dynamic(fetchMock)]
             ])
             .put(
@@ -101,6 +104,7 @@ describe('Deployment Sagas', () => {
             .provide([
                 [select(selectors.getDeploymentsSearchOptions), []],
                 [select(selectors.getDashboardSearchOptions), []],
+                [select(selectors.getPoliciesSearchOptions), []],
                 [call(fetchDeployment, deployment.id), dynamic(fetchMock)]
             ])
             .put(actions.fetchDeployment.success(deployment, { id: deployment.id }))

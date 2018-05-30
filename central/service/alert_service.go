@@ -55,17 +55,41 @@ func (s *AlertService) GetAlert(ctx context.Context, request *v1.ResourceByID) (
 	return alert, nil
 }
 
-// GetAlerts returns alerts according to the request.
-func (s *AlertService) GetAlerts(ctx context.Context, request *v1.GetAlertsRequest) (*v1.GetAlertsResponse, error) {
+func convertAlertsToListAlerts(alerts []*v1.Alert) []*v1.ListAlert {
+	listAlerts := make([]*v1.ListAlert, 0, len(alerts))
+	for _, a := range alerts {
+		listAlerts = append(listAlerts, &v1.ListAlert{
+			Id:   a.GetId(),
+			Time: a.GetTime(),
+			Policy: &v1.ListAlert_Policy{
+				Id:          a.GetPolicy().GetId(),
+				Name:        a.GetPolicy().GetName(),
+				Severity:    a.GetPolicy().GetSeverity(),
+				Description: a.GetPolicy().GetDescription(),
+				Categories:  a.GetPolicy().GetCategories(),
+			},
+			Deployment: &v1.ListAlert_Deployment{
+				Id:          a.GetDeployment().GetId(),
+				Name:        a.GetDeployment().GetName(),
+				UpdatedAt:   a.GetDeployment().GetUpdatedAt(),
+				ClusterName: a.GetDeployment().GetClusterName(),
+			},
+		})
+	}
+	return listAlerts
+}
+
+// ListAlerts returns ListAlerts according to the request.
+func (s *AlertService) ListAlerts(ctx context.Context, request *v1.ListAlertsRequest) (*v1.ListAlertsResponse, error) {
 	alerts, err := s.datastore.GetAlerts(request)
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetAlertsResponse{Alerts: alerts}, nil
+	return &v1.ListAlertsResponse{Alerts: convertAlertsToListAlerts(alerts)}, nil
 }
 
 // GetAlertsGroup returns alerts according to the request, grouped by category and policy.
-func (s *AlertService) GetAlertsGroup(ctx context.Context, request *v1.GetAlertsRequest) (*v1.GetAlertsGroupResponse, error) {
+func (s *AlertService) GetAlertsGroup(ctx context.Context, request *v1.ListAlertsRequest) (*v1.GetAlertsGroupResponse, error) {
 	alerts, err := s.datastore.GetAlerts(request)
 	if err != nil {
 		log.Error(err)
@@ -171,7 +195,7 @@ func (s *AlertService) getMapOfAlertCounts(alerts []*v1.Alert, groupByFunc func(
 }
 
 // GetAlertTimeseries returns the timeseries format of the events based on the request parameters
-func (s *AlertService) GetAlertTimeseries(ctx context.Context, req *v1.GetAlertsRequest) (*v1.GetAlertTimeseriesResponse, error) {
+func (s *AlertService) GetAlertTimeseries(ctx context.Context, req *v1.ListAlertsRequest) (*v1.GetAlertTimeseriesResponse, error) {
 	alerts, err := s.datastore.GetAlerts(req)
 	if err != nil {
 		return nil, err

@@ -3,47 +3,40 @@ import * as api from './apiEndpoints';
 import selectors from './pages/SearchPage';
 
 describe('Violations page', () => {
-    const setUpAlertsByPolicies = () => {
+    beforeEach(() => {
         cy.server();
-        cy.fixture('alerts/alertsByPolicies.json').as('alertsByPolicies');
-        cy.route('GET', api.alerts.alertsByPolicies, '@alertsByPolicies').as('alertsByPolicies');
-        cy.wait('@alertsByPolicies');
-    };
+        cy.fixture('alerts/alerts.json').as('alerts');
+        cy.route('GET', api.alerts.alerts, '@alerts').as('alerts');
+        cy.fixture('alerts/alertById.json').as('alertById');
+        cy.route('GET', api.alerts.alertById, '@alertById').as('alertById');
+        cy.visit(violationsUrl);
+        cy.wait('@alerts');
+    });
 
-    const setUpAlertsByPolicyId = () => {
-        cy.fixture('alerts/alertsByPolicyId.json').as('alertsByPolicyId');
-        cy.route('GET', api.alerts.alertsByPolicyId, '@alertsByPolicyId').as('alertsByPolicyId');
-        cy.wait('@alertsByPolicyId');
-    };
+    it('should show the side panel on row click', () => {
+        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
+        cy.wait('@alertById');
+        cy.get(ViolationsPageSelectors.sidePanel.panel).should('be.visible');
+    });
 
     it('should select item in nav bar', () => {
-        cy.visit(violationsUrl);
         cy.get(ViolationsPageSelectors.navLink).should('have.class', 'bg-primary-600');
     });
 
     it('should have violations in table', () => {
-        setUpAlertsByPolicies();
-        cy.get(ViolationsPageSelectors.rows).should('have.length', 2);
+        cy.get(ViolationsPageSelectors.rows).should('have.length', 3);
     });
 
     it('should show side panel with panel header', () => {
-        setUpAlertsByPolicies();
         cy.get(ViolationsPageSelectors.firstTableRow).click();
-        setUpAlertsByPolicyId();
-        cy.get(ViolationsPageSelectors.panelHeader).should('have.text', 'abcd');
+        cy.wait('@alertById');
+        cy
+            .get(ViolationsPageSelectors.sidePanel.header)
+            .should('have.text', 'tender_edison (z1137vn6nnmipffzpozr0f0ri)');
     });
 
     it('should have cluster column in table', () => {
         cy.get(ViolationsPageSelectors.clusterTableHeader).should('be.visible');
-    });
-
-    it('should click on first row in side panel and launch modal', () => {
-        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
-        cy.get(ViolationsPageSelectors.modal).should('be.visible');
-    });
-
-    it('should have cluster field in modal', () => {
-        cy.get(ViolationsPageSelectors.clusterFieldInModal).should('be.visible');
     });
 
     it('should close the side panel on search filter', () => {
@@ -51,5 +44,54 @@ describe('Violations page', () => {
         cy.get(selectors.pageSearchInput).type('Cluster:{enter}', { force: true });
         cy.get(selectors.pageSearchInput).type('remote{enter}', { force: true });
         cy.get('.side-panel').should('not.be.visible');
+    });
+
+    it('should have 3 tabs in the sidepanel', () => {
+        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
+        cy.wait('@alertById');
+        cy.get(ViolationsPageSelectors.sidePanel.tabs).should('have.length', 3);
+        cy
+            .get(ViolationsPageSelectors.sidePanel.tabs)
+            .eq(0)
+            .should('have.text', 'Violations');
+        cy
+            .get(ViolationsPageSelectors.sidePanel.tabs)
+            .eq(1)
+            .should('have.text', 'Deployment Details');
+        cy
+            .get(ViolationsPageSelectors.sidePanel.tabs)
+            .eq(2)
+            .should('have.text', 'Policy Details');
+    });
+
+    it('should have a message in the Violations tab', () => {
+        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
+        cy.wait('@alertById');
+        cy.get(ViolationsPageSelectors.sidePanel.getTabByIndex(0)).click();
+        cy.get(ViolationsPageSelectors.collapsible.header).should('have.text', 'Violations');
+        cy
+            .get(ViolationsPageSelectors.collapsible.body)
+            .contains(
+                "Image name 'docker.io/library/redis:latest' matches the name policy 'tag=latest'"
+            );
+    });
+
+    it('should have deployment information in the Deployment Details tab', () => {
+        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
+        cy.wait('@alertById');
+        cy.get(ViolationsPageSelectors.sidePanel.getTabByIndex(1)).click();
+        cy.get(ViolationsPageSelectors.collapsible.header).should('have.length', 3);
+        cy
+            .get(ViolationsPageSelectors.collapsible.header)
+            .eq(0)
+            .should('have.text', 'Overview');
+        cy
+            .get(ViolationsPageSelectors.collapsible.header)
+            .eq(1)
+            .should('have.text', 'Container configuration');
+        cy
+            .get(ViolationsPageSelectors.collapsible.header)
+            .eq(2)
+            .should('have.text', 'Security Context');
     });
 });

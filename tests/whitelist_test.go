@@ -17,10 +17,10 @@ func TestWhitelist(t *testing.T) {
 	verifyAlertForWhitelistRemoval(t)
 }
 
-func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.GetAlertsRequest, desired int) {
+func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlertsRequest, desired int) {
 	for i := 0; i < 5; i++ {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		resp, err := service.GetAlerts(ctx, req)
+		resp, err := service.ListAlerts(ctx, req)
 		cancel()
 		require.NoError(t, err)
 		if len(resp.GetAlerts()) == desired {
@@ -58,7 +58,7 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 	require.NoError(t, err)
 
 	alertService := v1.NewAlertServiceClient(conn)
-	waitForAlert(t, alertService, &v1.GetAlertsRequest{
+	waitForAlert(t, alertService, &v1.ListAlertsRequest{
 		Query: getDeploymentQuery(nginxDeploymentName) + "+" + getPolicyQuery(latestPolicy.GetName()),
 		Stale: []bool{false},
 	}, 0)
@@ -85,7 +85,7 @@ func verifyAlertForWhitelistRemoval(t *testing.T) {
 	require.NoError(t, err)
 
 	alertService := v1.NewAlertServiceClient(conn)
-	waitForAlert(t, alertService, &v1.GetAlertsRequest{
+	waitForAlert(t, alertService, &v1.ListAlertsRequest{
 		Query: getDeploymentQuery(nginxDeploymentName) + "+" + getPolicyQuery(latestPolicy.GetName()),
 		Stale: []bool{false},
 	}, 1)

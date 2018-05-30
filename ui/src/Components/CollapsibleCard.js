@@ -22,7 +22,7 @@ class CollapsibleCard extends Component {
 
         return (
             <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide cursor-pointer flex justify-between">
-                <div>{this.props.title}</div>
+                <h1 className="text-base font-600">{this.props.title}</h1>
                 <div>{icons[cardState]}</div>
             </div>
         );
@@ -30,14 +30,16 @@ class CollapsibleCard extends Component {
 
     render() {
         return (
-            <Collapsible
-                open={this.props.open}
-                trigger={this.renderTriggerElement('closed')}
-                triggerWhenOpen={this.renderTriggerElement('opened')}
-                transitionTime={100}
-            >
-                {this.props.children}
-            </Collapsible>
+            <div className="bg-white shadow text-primary-600 tracking-wide border border-base-200">
+                <Collapsible
+                    open={this.props.open}
+                    trigger={this.renderTriggerElement('closed')}
+                    triggerWhenOpen={this.renderTriggerElement('opened')}
+                    transitionTime={100}
+                >
+                    {this.props.children}
+                </Collapsible>
+            </div>
         );
     }
 }

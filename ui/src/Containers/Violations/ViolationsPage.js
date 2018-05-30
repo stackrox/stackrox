@@ -4,16 +4,16 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 
-import { sortNumber, sortSeverity } from 'sorters/sorters';
+import { sortTime, sortSeverity } from 'sorters/sorters';
 import { actions as alertActions } from 'reducers/alerts';
 import { selectors } from 'reducers';
+import dateFns from 'date-fns';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import Table from 'Components/Table';
-import PolicyAlertsSidePanel from './PolicyAlertsSidePanel';
-import ViolationsModal from './ViolationsModal';
+import ViolationsPanel from './ViolationsPanel';
 
 const severityLabels = {
     CRITICAL_SEVERITY: 'Critical',
@@ -38,20 +38,9 @@ class ViolationsPage extends Component {
     static propTypes = {
         violatedPolicies: PropTypes.arrayOf(
             PropTypes.shape({
-                id: PropTypes.string.isRequired,
-                numAlerts: PropTypes.string.isRequired
-            })
-        ).isRequired,
-        alertsForSelectedPolicy: PropTypes.arrayOf(
-            PropTypes.shape({
                 id: PropTypes.string.isRequired
             })
         ).isRequired,
-        selectedPolicy: PropTypes.shape({
-            id: PropTypes.string.isRequired,
-            name: PropTypes.string.isRequired
-        }),
-        selectViolatedPolicy: PropTypes.func.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
         location: ReactRouterPropTypes.location.isRequired,
         match: ReactRouterPropTypes.match.isRequired,
@@ -64,28 +53,16 @@ class ViolationsPage extends Component {
         isViewFiltered: PropTypes.bool.isRequired
     };
 
-    static defaultProps = {
-        selectedPolicy: null
-    };
-
-    onViolatedPolicyClick = policy => {
-        this.props.selectViolatedPolicy(policy.id);
-    };
-
-    onCloseSidePanel = () => {
-        this.props.selectViolatedPolicy(null);
-    };
-
-    onAlertClick = alert => {
+    onViolationClick = alert => {
         this.updateAlertUrl(alert.id);
     };
 
-    onAlertModalClose = () => {
+    onPanelClose = () => {
         this.updateAlertUrl();
     };
 
-    updateAlertUrl(alertId) {
-        const urlSuffix = alertId ? `/${alertId}` : '';
+    updateAlertUrl(id) {
+        const urlSuffix = id ? `/${id}` : '';
         this.props.history.push({
             pathname: `/main/violations${urlSuffix}`,
             search: this.props.location.search
@@ -94,57 +71,47 @@ class ViolationsPage extends Component {
 
     renderTable() {
         const columns = [
-            { key: 'name', label: 'Name' },
-            { key: 'description', label: 'Description' },
+            { key: 'deployment.name', label: 'Deployment' },
+            { key: 'deployment.clusterName', label: 'Cluster' },
+            { key: 'policy.name', label: 'Violation' },
+            { key: 'policy.description', label: 'Description' },
             {
-                key: 'categories',
+                key: 'policy.categories',
                 label: 'Categories',
                 keyValueFunc: obj => (obj.length > 1 ? 'Multiple' : obj[0]),
                 tooltip: categories => categories.join(' | ')
             },
             {
-                key: 'severity',
+                key: 'policy.severity',
+                keyValueFunc: severity => severityLabels[severity],
                 label: 'Severity',
                 classFunc: getSeverityClassName,
                 sortMethod: sortSeverity
             },
             {
-                key: 'numAlerts',
-                label: 'Violations',
-                align: 'right',
-                sortMethod: sortNumber('numAlerts')
+                key: 'time',
+                keyValueFunc: time =>
+                    `${dateFns.format(time, 'MM/DD/YYYY')} ${dateFns.format(time, 'h:mm:ss A')}`,
+                label: 'Time',
+                sortMethod: sortTime
             }
         ];
-        const rows = this.props.violatedPolicies.map(policy => ({
-            ...policy,
-            severity: severityLabels[policy.severity]
-        }));
+        const rows = this.props.violatedPolicies;
         if (!rows.length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
-        return <Table columns={columns} rows={rows} onRowClick={this.onViolatedPolicyClick} />;
+        return <Table columns={columns} rows={rows} onRowClick={this.onViolationClick} />;
     }
 
-    renderModal() {
+    renderSidePanel = () => {
         if (!this.props.match.params.alertId) return null;
         return (
-            <ViolationsModal
+            <ViolationsPanel
+                key={this.props.match.params.alertId}
                 alertId={this.props.match.params.alertId}
-                onClose={this.onAlertModalClose}
+                onClose={this.onPanelClose}
             />
         );
-    }
-
-    renderPolicyAlertsPanel() {
-        if (!this.props.selectedPolicy) return null;
-        return (
-            <PolicyAlertsSidePanel
-                header={this.props.selectedPolicy.name}
-                alerts={this.props.alertsForSelectedPolicy}
-                onClose={this.onCloseSidePanel}
-                onRowClick={this.onAlertClick}
-            />
-        );
-    }
+    };
 
     render() {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
@@ -165,8 +132,7 @@ class ViolationsPage extends Component {
                         <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow border-t border-primary-300 bg-base-100">
                             {this.renderTable()}
                         </div>
-                        {this.renderPolicyAlertsPanel()}
-                        {this.renderModal()}
+                        {this.renderSidePanel()}
                     </div>
                 </div>
             </section>
@@ -174,37 +140,13 @@ class ViolationsPage extends Component {
     }
 }
 
-const getViolatedPolicies = createSelector(
-    [selectors.getPoliciesById, selectors.getAlertNumsByPolicy],
-    (policiesById, alertNumsByPolicy) =>
-        alertNumsByPolicy.map(alertNum => ({
-            ...policiesById[alertNum.policy],
-            numAlerts: alertNum.numAlerts
-        }))
-);
-
-const getAlertsForSelectedPolicy = createSelector(
-    [selectors.getAlertsById, selectors.getSelectedViolatedPolicyId, selectors.getAlertsByPolicy],
-    (alerts, policyId, alertsByPolicy) => {
-        if (!policyId || !alertsByPolicy[policyId]) return [];
-        return alertsByPolicy[policyId].map(alertId => alerts[alertId]);
-    }
-);
-
-const getSelectedPolicy = createSelector(
-    [selectors.getPoliciesById, selectors.getSelectedViolatedPolicyId],
-    (policiesById, policyId) => policiesById[policyId]
-);
-
 const isViewFiltered = createSelector(
     [selectors.getAlertsSearchOptions],
     searchOptions => searchOptions.length !== 0
 );
 
 const mapStateToProps = createStructuredSelector({
-    violatedPolicies: getViolatedPolicies,
-    alertsForSelectedPolicy: getAlertsForSelectedPolicy,
-    selectedPolicy: getSelectedPolicy,
+    violatedPolicies: selectors.getFilteredAlerts,
     searchOptions: selectors.getAlertsSearchOptions,
     searchModifiers: selectors.getAlertsSearchModifiers,
     searchSuggestions: selectors.getAlertsSearchSuggestions,
@@ -212,7 +154,6 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = (dispatch, props) => ({
-    selectViolatedPolicy: policyId => dispatch(alertActions.selectViolatedPolicy(policyId)),
     setSearchOptions: searchOptions => {
         if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
             props.history.push('/main/violations');

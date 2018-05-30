@@ -1,12 +1,13 @@
 import { all, take, takeLatest, call, fork, put, select } from 'redux-saga/effects';
 
+import watchLocation from 'utils/watchLocation';
 import { fetchPolicies, fetchPolicyCategories } from 'services/PoliciesService';
 import { actions, types } from 'reducers/policies';
-import { types as locationActionTypes } from 'reducers/routes';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
 const policiesPath = '/main/policies';
+const violationsPath = '/main/violations';
 
 export function* getPolicies(filters) {
     try {
@@ -26,7 +27,7 @@ export function* getPolicyCategories() {
     }
 }
 
-function* filterPoliciesPageBySearch() {
+export function* filterPoliciesPageBySearch() {
     const searchOptions = yield select(selectors.getPoliciesSearchOptions);
     const filters = {
         query: searchOptionsToQuery(searchOptions)
@@ -34,16 +35,12 @@ function* filterPoliciesPageBySearch() {
     yield fork(getPolicies, filters);
 }
 
-export function* watchLocation() {
-    while (true) {
-        const action = yield take(locationActionTypes.LOCATION_CHANGE);
-        const { payload: location } = action;
-        const { pathname } = location;
+export function* loadViolationsPage() {
+    yield fork(getPolicies, {});
+}
 
-        if (location && pathname && pathname.startsWith(policiesPath)) {
-            yield all([fork(filterPoliciesPageBySearch), fork(getPolicyCategories)]);
-        }
-    }
+export function* loadPoliciesPage() {
+    yield all([fork(filterPoliciesPageBySearch), fork(getPolicyCategories)]);
 }
 
 export function* watchFetchRequest() {
@@ -60,5 +57,10 @@ function* watchPoliciesSearchOptions() {
 }
 
 export default function* policies() {
-    yield all([fork(watchLocation), fork(watchFetchRequest), fork(watchPoliciesSearchOptions)]);
+    yield all([
+        fork(watchLocation, policiesPath, loadPoliciesPage),
+        fork(watchLocation, violationsPath, loadViolationsPage),
+        fork(watchFetchRequest),
+        fork(watchPoliciesSearchOptions)
+    ]);
 }

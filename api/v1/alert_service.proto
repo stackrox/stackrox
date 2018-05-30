@@ -30,7 +30,7 @@ message Alert {
     google.protobuf.Timestamp first_occurred = 9;
 }
 
-message GetAlertsRequest {
+message ListAlertsRequest {
     repeated string category               = 1;
     string policy_id                       = 2;
     repeated Severity severity             = 3;
@@ -43,8 +43,28 @@ message GetAlertsRequest {
     string query                           = 10;
 }
 
-message GetAlertsResponse {
-    repeated Alert alerts = 1;
+message ListAlert {
+    string id                               = 1;
+    google.protobuf.Timestamp time          = 2;
+    message Policy {
+        string id                                   = 1;
+        string name                                 = 2;
+        Severity severity                           = 3;
+        string description                          = 4;
+        repeated string categories                  = 5;
+    }
+    Policy policy                           = 3;
+    message Deployment {
+        string id                                  = 1;
+        string name                                = 2;
+        google.protobuf.Timestamp updated_at       = 3;
+        string cluster_name                        = 4;
+    }
+    Deployment deployment                   = 4;
+}
+
+message ListAlertsResponse {
+    repeated ListAlert alerts = 1;
 }
 
 message GetAlertsGroupResponse {
@@ -57,7 +77,7 @@ message GetAlertsGroupResponse {
 }
 
 message GetAlertsCountsRequest {
-    GetAlertsRequest request    = 1;
+    ListAlertsRequest request   = 1;
     enum RequestGroup {
         UNSET       = 0;
         CATEGORY    = 1;
@@ -109,13 +129,13 @@ service AlertService {
         };
     }
 
-    rpc GetAlerts (GetAlertsRequest) returns (GetAlertsResponse) {
+    rpc ListAlerts (ListAlertsRequest) returns (ListAlertsResponse) {
         option (google.api.http) = {
             get: "/v1/alerts"
         };
     }
 
-    rpc GetAlertsGroup (GetAlertsRequest) returns (GetAlertsGroupResponse) {
+    rpc GetAlertsGroup (ListAlertsRequest) returns (GetAlertsGroupResponse) {
         option (google.api.http) = {
             get: "/v1/alerts/summary/groups"
         };
@@ -127,7 +147,7 @@ service AlertService {
         };
     }
 
-    rpc GetAlertTimeseries(GetAlertsRequest) returns (GetAlertTimeseriesResponse) {
+    rpc GetAlertTimeseries(ListAlertsRequest) returns (GetAlertTimeseriesResponse) {
         option (google.api.http) = {
             get: "/v1/alerts/summary/timeseries"
         };

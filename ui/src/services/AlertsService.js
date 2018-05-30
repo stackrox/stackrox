@@ -2,41 +2,20 @@ import { normalize } from 'normalizr';
 import axios from 'axios';
 import queryString from 'query-string';
 
-import {
-    alert as alertSchema,
-    alertNumsByPolicy as alertNumsByPolicySchema,
-    alerts as alertsSchema
-} from './schemas';
+import { alert as alertSchema, alerts as alertsSchema } from './schemas';
 
 const baseUrl = '/v1/alerts';
 
 /**
- * Fetches non-stale alert counts grouped by policy.
- * Returns normalized response with policy entities extracted.
+ * Fetches alert details for a given alert ID.
+ * Returns normalized response with alert entity extracted.
  *
- * @param {Object} [filters={}] map of filters "filter -> value"
- * @returns {Promise<Object, Error>}
+ * @param {!string} alertId
+ * @returns {Promise<Object, Error>} fulfilled with normalized response
  */
-export function fetchAlertNumsByPolicy(filters = {}) {
+export function fetchAlerts(filters) {
     const params = queryString.stringify({
         ...filters,
-        stale: false
-    });
-    return axios.get(`${baseUrl}/summary/groups?${params}`).then(response => ({
-        response: normalize(response.data, alertNumsByPolicySchema)
-    }));
-}
-
-/**
- * Fetches non-stale alerts for a given policy.
- * Returns normalized response with alert entities extracted.
- *
- * @param {!string} policyId
- * @returns {Promise<Object, Error>}
- */
-export function fetchAlertsByPolicy(policyId) {
-    const params = queryString.stringify({
-        policyId,
         stale: false
     });
     return axios.get(`${baseUrl}?${params}`).then(response => ({

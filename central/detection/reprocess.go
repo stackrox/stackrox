@@ -63,7 +63,7 @@ func (d *Detector) reprocessPolicy(policy *matcher.Policy) {
 		deploymentMap[deploy.GetId()] = struct{}{}
 	}
 
-	alerts, err := d.alertStorage.GetAlerts(&v1.GetAlertsRequest{
+	alerts, err := d.alertStorage.GetAlerts(&v1.ListAlertsRequest{
 		Stale:    []bool{false},
 		PolicyId: policy.GetId(),
 	})

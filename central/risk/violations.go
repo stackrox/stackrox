@@ -25,7 +25,7 @@ type policyFactor struct {
 
 // An AlertGetter provides the required access to alerts for risk scoring.
 type AlertGetter interface {
-	GetAlerts(request *v1.GetAlertsRequest) ([]*v1.Alert, error)
+	GetAlerts(request *v1.ListAlertsRequest) ([]*v1.Alert, error)
 }
 
 // newViolationsMultiplier scores the data based on the number and severity of policy violations.
@@ -52,7 +52,7 @@ func severityImpact(severity v1.Severity) float32 {
 
 // Score takes a deployment and evaluates its risk based on policy violations.
 func (v *ViolationsMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
-	alerts, err := v.getter.GetAlerts(&v1.GetAlertsRequest{
+	alerts, err := v.getter.GetAlerts(&v1.ListAlertsRequest{
 		DeploymentId: deployment.GetId(),
 		Stale:        []bool{false},
 	})

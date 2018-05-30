@@ -78,14 +78,16 @@ func verifyAlertWithEnforcement(t *testing.T) {
 
 	service := v1.NewAlertServiceClient(conn)
 
-	alerts, err := service.GetAlerts(ctx, &v1.GetAlertsRequest{
+	alerts, err := service.ListAlerts(ctx, &v1.ListAlertsRequest{
 		Query: getDeploymentQuery(nginxDeploymentName) + "+" + getPolicyQuery(expectedLatestTagPolicy),
 		Stale: []bool{false},
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, alerts.GetAlerts())
 
-	for _, alert := range alerts.GetAlerts() {
+	for _, a := range alerts.GetAlerts() {
+		alert, err := getAlert(service, a.GetId())
+		assert.NoError(t, err)
 		if alert.GetEnforcement().GetAction() == v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT {
 			assert.NotEmpty(t, alert.GetEnforcement().GetMessage())
 			return

@@ -12,7 +12,7 @@ describe('Risk page', () => {
     });
 
     it('should open the panel to view risk indicators', () => {
-        cy.get('table tr.cursor-pointer:first').click();
+        cy.get(RiskPageSelectors.table.row.prevent_sensor).click();
         cy
             .get(RiskPageSelectors.panelTabs.riskIndicators)
             .first()
@@ -20,15 +20,14 @@ describe('Risk page', () => {
         cy.get(RiskPageSelectors.cancelButton).click();
     });
 
-    it('should show mounts in deployment details tab', () => {
-        cy.get('table tr.cursor-pointer:first').click();
-        cy.get(RiskPageSelectors.panelTabs.deploymentDetails).click();
-        cy.get(RiskPageSelectors.mounts.label).should('be.visible');
-        cy.get(RiskPageSelectors.mounts.items).should('have.length', 2);
+    it('should open the panel to view deployment details', () => {
+        cy.get(RiskPageSelectors.table.row.prevent_sensor).click();
+        cy.get(RiskPageSelectors.panelTabs.deploymentDetails);
+        cy.get(RiskPageSelectors.cancelButton).click();
     });
 
     it('should navigate from Risk Page to Images Page', () => {
-        cy.get('table tr.cursor-pointer:first').click();
+        cy.get(RiskPageSelectors.table.row.prevent_sensor).click();
         cy.get(RiskPageSelectors.panelTabs.deploymentDetails).click();
         cy
             .get(RiskPageSelectors.imageLink)

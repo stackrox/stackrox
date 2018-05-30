@@ -13,7 +13,7 @@ type mockGetter struct {
 
 // GetAlerts supports a limited set of request parameters.
 // It only needs to be as specific as the production code.
-func (m mockGetter) GetAlerts(req *v1.GetAlertsRequest) (alerts []*v1.Alert, err error) {
+func (m mockGetter) GetAlerts(req *v1.ListAlertsRequest) (alerts []*v1.Alert, err error) {
 	for _, a := range m.alerts {
 		match := true
 		if len(req.Stale) != 0 {

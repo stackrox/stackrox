@@ -40,7 +40,7 @@ type alertDataStoreImpl struct {
 
 func (ds *alertDataStoreImpl) buildIndex() error {
 	// Alert Index
-	alerts, err := ds.GetAlerts(&v1.GetAlertsRequest{})
+	alerts, err := ds.GetAlerts(&v1.ListAlertsRequest{})
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (ds *alertDataStoreImpl) UpdateAlert(alert *v1.Alert) error {
 
 // CountAlerts returns the number of alerts that are active
 func (ds *alertDataStoreImpl) CountAlerts() (int, error) {
-	alerts, err := ds.GetAlerts(&v1.GetAlertsRequest{Stale: []bool{false}})
+	alerts, err := ds.GetAlerts(&v1.ListAlertsRequest{Stale: []bool{false}})
 	return len(alerts), err
 }
 
@@ -114,7 +114,7 @@ func (wrap severitiesWrap) asSet() map[v1.Severity]struct{} {
 }
 
 // GetAlerts fetches the data from the database or searches for it based on the passed filters
-func (ds *alertDataStoreImpl) GetAlerts(request *v1.GetAlertsRequest) ([]*v1.Alert, error) {
+func (ds *alertDataStoreImpl) GetAlerts(request *v1.ListAlertsRequest) ([]*v1.Alert, error) {
 	var alerts []*v1.Alert
 	var err error
 	if request.GetQuery() == "" {

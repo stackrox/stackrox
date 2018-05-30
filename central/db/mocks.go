@@ -19,7 +19,7 @@ func (m *MockAlertStorage) GetAlert(id string) (*v1.Alert, bool, error) {
 }
 
 // GetAlerts is a mock implementation of GetAlerts
-func (m *MockAlertStorage) GetAlerts(request *v1.GetAlertsRequest) ([]*v1.Alert, error) {
+func (m *MockAlertStorage) GetAlerts(request *v1.ListAlertsRequest) ([]*v1.Alert, error) {
 	args := m.Called(request)
 	return args.Get(0).([]*v1.Alert), args.Error(1)
 }

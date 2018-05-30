@@ -32,7 +32,7 @@ type Storage interface {
 // AlertStorage provides storage functionality for alerts.
 type AlertStorage interface {
 	GetAlert(id string) (*v1.Alert, bool, error)
-	GetAlerts(request *v1.GetAlertsRequest) ([]*v1.Alert, error)
+	GetAlerts(request *v1.ListAlertsRequest) ([]*v1.Alert, error)
 	CountAlerts() (int, error)
 	AddAlert(alert *v1.Alert) error
 	UpdateAlert(alert *v1.Alert) error

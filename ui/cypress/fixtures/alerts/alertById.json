@@ -1,0 +1,98 @@
+{
+    "id": "fa338227-7461-4a1e-875a-eb5c601313f6",
+    "policy": {
+        "id": "b9a5bba4-c118-4bc7-bf36-b54bcb496113",
+        "name": "Latest tag",
+        "severity": "LOW_SEVERITY",
+        "description": "Alert on deployments with images using tag 'latest'",
+        "rationale": "Using latest tag can result in running heterogenous versions of code. Many Docker hosts cache the Docker images, which means newer versions of the latest tag will not be picked up. See https://docs.docker.com/develop/dev-best-practices for more best practices.",
+        "remediation": "Consider moving to semantic versioning based on code releases (semver.org) or using the first 12 characters of the source control SHA. This will allow you to tie the Docker image to the code.",
+        "disabled": false,
+        "categories": [
+            "Image Assurance"
+        ],
+        "scope": [],
+        "enforcement": "UNSET_ENFORCEMENT",
+        "notifiers": [],
+        "imagePolicy": {
+            "imageName": {
+                "registry": "",
+                "namespace": "",
+                "repo": "",
+                "tag": "latest"
+            },
+            "lineRule": null,
+            "cvss": null,
+            "cve": "",
+            "component": null
+        },
+        "privilegePolicy": null,
+        "configurationPolicy": null,
+        "whitelists": []
+    },
+    "deployment": {
+        "id": "z1137vn6nnmipffzpozr0f0ri",
+        "name": "tender_edison",
+        "version": "24",
+        "type": "Replicated",
+        "namespace": "default",
+        "replicas": "1",
+        "labels": [],
+        "updatedAt": "2018-05-20T18:46:59.558089270Z",
+        "clusterId": "42684ac0-387b-4f3c-9cd1-864095ad763e",
+        "clusterName": "remote",
+        "containers": [
+            {
+                "config": {
+                    "env": [],
+                    "command": [],
+                    "args": [],
+                    "directory": "",
+                    "user": "",
+                    "uid": "0"
+                },
+                "image": {
+                    "name": {
+                        "sha": "sha256:4aed8ea5a5fc4cf05c8d5341b4ae4a4f7c0f9301082a74f6f9a5f321140e0cd3",
+                        "registry": "docker.io",
+                        "remote": "library/redis",
+                        "tag": "latest",
+                        "fullName": "docker.io/library/redis:latest"
+                    },
+                    "metadata": null,
+                    "scan": null
+                },
+                "securityContext": null,
+                "volumes": [],
+                "ports": [],
+                "secrets": []
+            }
+        ],
+        "risk": {
+            "score": 1.125,
+            "results": [
+                {
+                    "name": "Service Configuration",
+                    "factors": [
+                        "No capabilities were dropped"
+                    ],
+                    "score": 1.125
+                }
+            ]
+        },
+        "tombstone": null,
+        "annotations": [],
+        "priority": "0"
+    },
+    "violations": [
+        {
+            "message": "Image name 'docker.io/library/redis:latest' matches the name policy 'tag=latest'",
+            "link": ""
+        }
+    ],
+    "enforcement": null,
+    "time": "2018-05-21T18:06:04.385651124Z",
+    "stale": false,
+    "markedStale": null,
+    "firstOccurred": "2018-05-21T18:06:04.385661919Z"
+}

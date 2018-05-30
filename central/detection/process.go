@@ -109,7 +109,7 @@ func (d *Detector) markExistingAlertsAsStale(existingAlerts []*v1.Alert) {
 
 func (d *Detector) getExistingAlert(deploymentID, policyID string) (existingAlerts []*v1.Alert) {
 	var err error
-	existingAlerts, err = d.alertStorage.GetAlerts(&v1.GetAlertsRequest{
+	existingAlerts, err = d.alertStorage.GetAlerts(&v1.ListAlertsRequest{
 		Stale:        []bool{false},
 		DeploymentId: deploymentID,
 		PolicyId:     policyID,

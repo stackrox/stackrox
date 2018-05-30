@@ -33,7 +33,7 @@ func getPolicyQuery(name string) string {
 }
 
 var (
-	alertRequestOptions = v1.GetAlertsRequest{
+	alertRequestOptions = v1.ListAlertsRequest{
 		Query: getDeploymentQuery(nginxDeploymentName) + "+Label Key:hello+Label Value:world",
 		Stale: []bool{false},
 	}
@@ -270,7 +270,7 @@ func verifyStaleAlerts(t *testing.T) {
 	request.Stale = []bool{true}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	alerts, err := service.GetAlerts(ctx, &request)
+	alerts, err := service.ListAlerts(ctx, &request)
 	cancel()
 	require.NoError(t, err)
 	assert.NotEmpty(t, alerts.GetAlerts())
@@ -278,12 +278,12 @@ func verifyStaleAlerts(t *testing.T) {
 
 func verifyAlerts(t *testing.T, service v1.AlertServiceClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	alerts, err := service.GetAlerts(ctx, &alertRequestOptions)
+	alerts, err := service.ListAlerts(ctx, &alertRequestOptions)
 	cancel()
 	require.NoError(t, err)
 	assert.Len(t, alerts.GetAlerts(), 3)
 
-	alertMap := make(map[string]*v1.Alert)
+	alertMap := make(map[string]*v1.ListAlert)
 	for _, a := range alerts.GetAlerts() {
 		if n := a.GetPolicy().GetName(); n == expectedLatestTagPolicy || n == expectedPort22Policy || n == expectedSecretEnvPolicy {
 			alertMap[a.GetId()] = a
@@ -291,13 +291,11 @@ func verifyAlerts(t *testing.T, service v1.AlertServiceClient) {
 	}
 	require.Len(t, alertMap, 3)
 
-	for id, expected := range alertMap {
+	for id := range alertMap {
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-		a, err := service.GetAlert(ctx, &v1.ResourceByID{Id: id})
+		_, err := service.GetAlert(ctx, &v1.ResourceByID{Id: id})
 		cancel()
 		require.NoError(t, err)
-
-		assert.Equal(t, expected, a)
 	}
 }
 
@@ -376,11 +374,11 @@ func verifyAlertGroups(t *testing.T, service v1.AlertServiceClient) {
 
 func verifyAlertTimeseries(t *testing.T, service v1.AlertServiceClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	alerts, err := service.GetAlerts(ctx, &alertRequestOptions)
+	alerts, err := service.ListAlerts(ctx, &alertRequestOptions)
 	cancel()
 	require.NoError(t, err)
 
-	alertMap := make(map[string]*v1.Alert)
+	alertMap := make(map[string]*v1.ListAlert)
 	for _, a := range alerts.GetAlerts() {
 		if n := a.GetPolicy().GetName(); n == expectedLatestTagPolicy || n == expectedPort22Policy || n == expectedSecretEnvPolicy {
 			alertMap[a.GetId()] = a

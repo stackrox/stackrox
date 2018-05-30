@@ -94,7 +94,7 @@ func (ds *clusterDataStoreImpl) getDeployments(cluster *v1.Cluster) ([]*v1.Deplo
 
 // TODO(cgorman) Make this a search once the document mapping goes in
 func (ds *clusterDataStoreImpl) getAlerts(deployment *v1.Deployment) ([]*v1.Alert, error) {
-	existingAlerts, err := ds.alerts.GetAlerts(&v1.GetAlertsRequest{
+	existingAlerts, err := ds.alerts.GetAlerts(&v1.ListAlertsRequest{
 		Stale:        []bool{false},
 		DeploymentId: deployment.GetId(),
 	})

@@ -228,7 +228,7 @@ const fieldsMap = {
     }
 };
 
-class PolicyView extends Component {
+class PolicyDetails extends Component {
     static propTypes = {
         policy: PropTypes.shape({}).isRequired,
         // 'notifiers' prop is being used indirectly
@@ -264,7 +264,7 @@ class PolicyView extends Component {
         const policyDetails = difference(fields, categories);
         if (!policyDetails) return '';
         return (
-            <div className="px-3 py-4 border-b border-base-300">
+            <div className="px-3 py-4">
                 <div className="bg-white border border-base-200 shadow">
                     <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">
                         Policy Details
@@ -334,7 +334,7 @@ class PolicyView extends Component {
     }
 }
 
-const getPolicyId = (state, props) => props.match.params.id;
+const getPolicyId = (state, props) => props.policyId;
 
 const getPolicy = createSelector([selectors.getPolicies, getPolicyId], (policies, policyId) => {
     const selectedPolicy = policies.find(policy => policy.id === policyId);
@@ -347,4 +347,4 @@ const mapStateToProps = createStructuredSelector({
     policy: getPolicy
 });
 
-export default withRouter(connect(mapStateToProps)(PolicyView));
+export default withRouter(connect(mapStateToProps)(PolicyDetails));
