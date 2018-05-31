@@ -172,3 +172,13 @@ export async function fetchBenchmarksByCluster(filters) {
     const benchmarksSummaryUrl = `${baseUrl}/summary/scans?${params}`;
     return axios.get(benchmarksSummaryUrl).then(response => response.data.clusters);
 }
+
+/**
+ * Fetches benchmark scan result by scanId and checkName
+ *
+ * @returns {Promise<Object, Error>} fulfilled in case of success or rejected with an error
+ */
+export async function fetchBenchmarkCheckHostResults({ scanId, checkName }) {
+    const benchmarkCheckHostsResultUrl = `${baseUrl}/scans/${scanId}/${checkName}`;
+    return axios.get(benchmarkCheckHostsResultUrl).then(response => response.data);
+}

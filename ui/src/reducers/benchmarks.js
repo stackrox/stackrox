@@ -25,6 +25,9 @@ export const types = {
     TRIGGER_BENCHMARK_SCAN: createFetchingActionTypes('benchmarks/TRIGGER_BENCHMARK_SCAN'),
     FETCH_BENCHMARK_SCHEDULE: createFetchingActionTypes('benchmarks/FETCH_BENCHMARK_SCHEDULE'),
     FETCH_BENCHMARKS: createFetchingActionTypes('benchmarks/FETCH_BENCHMARKS'),
+    FETCH_BENCHMARK_CHECK_HOST_RESULTS: createFetchingActionTypes(
+        'benchmarks/FETCH_BENCHMARK_CHECK_HOST_RESULTS'
+    ),
     FETCH_BENCHMARKS_BY_CLUSTER: createFetchingActionTypes(
         'benchmarks/FETCH_BENCHMARKS_BY_CLUSTER'
     ),
@@ -63,6 +66,7 @@ export const actions = {
     triggerBenchmarkScan: createFetchingActions(types.TRIGGER_BENCHMARK_SCAN),
     fetchBenchmarkSchedule: createFetchingActions(types.FETCH_BENCHMARK_SCHEDULE),
     fetchBenchmarks: createFetchingActions(types.FETCH_BENCHMARKS),
+    fetchBenchmarkCheckHostResults: createFetchingActions(types.FETCH_BENCHMARK_CHECK_HOST_RESULTS),
     fetchBenchmarksByCluster: createFetchingActions(types.FETCH_BENCHMARKS_BY_CLUSTER),
     fetchLastScan: createFetchingActions(types.FETCH_LAST_SCAN)
 };
@@ -71,6 +75,14 @@ export const actions = {
 
 const benchmarks = (state = [], action) => {
     if (action.type === types.FETCH_BENCHMARKS.SUCCESS) {
+        const { response } = action;
+        return isEqual(response, state) ? state : response;
+    }
+    return state;
+};
+
+const benchmarkCheckHostResults = (state = null, action) => {
+    if (action.type === types.FETCH_BENCHMARK_CHECK_HOST_RESULTS.SUCCESS) {
         const { response } = action;
         return isEqual(response, state) ? state : response;
     }
@@ -140,6 +152,7 @@ const benchmarkSchedule = (state = initialBenchmarkSchedule, action) => {
 
 const reducer = combineReducers({
     benchmarks,
+    benchmarkCheckHostResults,
     benchmarksByCluster,
     lastScan,
     benchmarkSchedule,
@@ -152,6 +165,7 @@ export default reducer;
 // Selectors
 
 const getBenchmarks = state => state.benchmarks;
+const getBenchmarkCheckHostResults = state => state.benchmarkCheckHostResults;
 const getBenchmarksByCluster = state => state.benchmarksByCluster;
 const getLastScan = state => state.lastScan;
 const getBenchmarkSchedule = state => state.benchmarkSchedule;
@@ -160,6 +174,7 @@ const getSelectedBenchmarkHostResult = state => state.selectedBenchmarkHostResul
 
 export const selectors = {
     getBenchmarks,
+    getBenchmarkCheckHostResults,
     getBenchmarksByCluster,
     getLastScan,
     getBenchmarkSchedule,

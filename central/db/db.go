@@ -71,6 +71,7 @@ type BenchmarkScansStorage interface {
 	AddScan(request *v1.BenchmarkScanMetadata) error
 	ListBenchmarkScans(*v1.ListBenchmarkScansRequest) ([]*v1.BenchmarkScanMetadata, error)
 	GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (*v1.BenchmarkScan, bool, error)
+	GetHostResults(request *v1.GetHostResultsRequest) (*v1.HostResults, bool, error)
 	AddBenchmarkResult(benchmark *v1.BenchmarkResult) error
 }
 

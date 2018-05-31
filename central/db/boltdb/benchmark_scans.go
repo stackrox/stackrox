@@ -119,11 +119,6 @@ func (b *BoltDB) getCheckResult(tx *bolt.Tx, k []byte) (*v1.CheckResult, error) 
 func (b *BoltDB) fillScanCheck(check *v1.BenchmarkScan_Check, result *v1.CheckResult) {
 	check.Definition = result.GetDefinition()
 	check.AggregatedResults[result.GetResult().String()]++
-	check.HostResults = append(check.GetHostResults(), &v1.BenchmarkScan_Check_HostResult{
-		Host:   result.GetHost(),
-		Result: result.GetResult(),
-		Notes:  result.GetNotes(),
-	})
 }
 
 // GetBenchmarkScan retrieves a scan from the database
@@ -135,7 +130,9 @@ func (b *BoltDB) GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (scan *v1
 	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "BenchmarkScan")
 	clusterSet := newStringSet(request.GetClusterIds())
 	hostSet := newStringSet(request.GetHosts())
-	scan = new(v1.BenchmarkScan)
+	scan = &v1.BenchmarkScan{
+		Id: request.GetScanId(),
+	}
 	err = b.View(func(tx *bolt.Tx) error {
 		metadata, err := b.getScanMetadata(tx, request.GetScanId())
 		if err != nil {
@@ -179,7 +176,6 @@ func (b *BoltDB) GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (scan *v1
 			if err != nil {
 				return err
 			}
-			sort.SliceStable(scanCheck.HostResults, func(i, j int) bool { return scanCheck.HostResults[i].GetHost() < scanCheck.HostResults[j].GetHost() })
 			scan.Checks = append(scan.GetChecks(), scanCheck)
 		}
 		return nil
@@ -225,4 +221,45 @@ func (b *BoltDB) ListBenchmarkScans(request *v1.ListBenchmarkScansRequest) ([]*v
 		return protoconv.CompareProtoTimestamps(filtered[i].GetTime(), filtered[j].GetTime()) == 1
 	})
 	return filtered, nil
+}
+
+// GetHostResults returns the results for all the hosts based on the scan id and the particular check
+func (b *BoltDB) GetHostResults(request *v1.GetHostResultsRequest) (*v1.HostResults, bool, error) {
+	if request.GetScanId() == "" {
+		return nil, false, fmt.Errorf("Scan id must be defined when retrieving host results")
+	}
+	if request.GetCheckName() == "" {
+		return nil, false, fmt.Errorf("Check name must be defined when retrieving host results")
+	}
+	hostResults := new(v1.HostResults)
+	err := b.View(func(tx *bolt.Tx) error {
+		// grab from scan id -> checks -> check ids
+		scanToChecks := tx.Bucket([]byte(scansToCheckBucket)).Bucket([]byte(request.GetScanId()))
+		if scanToChecks == nil {
+			return db.ErrNotFound{Type: "Results for scan", ID: request.GetScanId()}
+		}
+
+		resultBucket := scanToChecks.Bucket([]byte(request.GetCheckName()))
+		if resultBucket == nil {
+			return db.ErrNotFound{Type: "Results for check", ID: request.GetCheckName()}
+		}
+		// Iterate over the checks that are included in the desired scan and fetch them
+		err := resultBucket.ForEach(func(k, v []byte) error {
+			result, err := b.getCheckResult(tx, k)
+			if err != nil {
+				return err
+			}
+			hostResults.HostResults = append(hostResults.HostResults, &v1.HostResults_HostResult{
+				Host:   result.GetHost(),
+				Result: result.GetResult(),
+				Notes:  result.GetNotes(),
+			})
+			return nil
+		})
+		return err
+	})
+	if err != nil {
+		return nil, false, err
+	}
+	return hostResults, true, nil
 }

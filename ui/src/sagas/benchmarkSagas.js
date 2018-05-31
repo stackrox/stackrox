@@ -20,6 +20,15 @@ export function* getBenchmarks() {
     }
 }
 
+export function* getBenchmarkCheckHostResults({ params: benchmark }) {
+    try {
+        const result = yield call(service.fetchBenchmarkCheckHostResults, benchmark);
+        yield put(benchmarkActions.fetchBenchmarkCheckHostResults.success(result));
+    } catch (error) {
+        yield put(benchmarkActions.fetchBenchmarkCheckHostResults.failure(error));
+    }
+}
+
 export function* getBenchmarksByCluster(filters) {
     try {
         const result = yield call(service.fetchBenchmarksByCluster, filters);
@@ -101,6 +110,13 @@ function* watchBenchmarkScanResults() {
     }
 }
 
+export function* watchBenchmarkCheckHostResults() {
+    yield takeLatest(
+        benchmarkTypes.FETCH_BENCHMARK_CHECK_HOST_RESULTS.REQUEST,
+        getBenchmarkCheckHostResults
+    );
+}
+
 function* watchUpdateBenchmarkSchedule() {
     yield takeLatest(benchmarkTypes.SELECT_BENCHMARK_SCHEDULE_DAY, updateBenchmarkSchedule);
     yield takeLatest(benchmarkTypes.SELECT_BENCHMARK_SCHEDULE_HOUR, updateBenchmarkSchedule);
@@ -138,6 +154,7 @@ export default function* benchmarks() {
         fork(watchUpdateBenchmarkSchedule),
         fork(watchFetchBenchmarkScheduleRequest),
         fork(watchTriggerBenchmarkScan),
-        fork(watchDashboardSearchOptions)
+        fork(watchDashboardSearchOptions),
+        fork(watchBenchmarkCheckHostResults)
     ]);
 }

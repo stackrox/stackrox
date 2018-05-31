@@ -1,9 +1,12 @@
-import { fork, take, select, call } from 'redux-saga/effects';
+import { fork, take, takeLatest, select, call } from 'redux-saga/effects';
 import { types as locationActionTypes } from 'reducers/routes';
+
 import {
     getBenchmarks,
+    getBenchmarkCheckHostResults,
     getBenchmarksByCluster,
     watchLocation,
+    watchBenchmarkCheckHostResults,
     updateBenchmarkSchedule
 } from './benchmarkSagas';
 import * as service from '../services/BenchmarksService';
@@ -96,5 +99,25 @@ describe('Benchmark Sagas Test', () => {
         ({ value } = gen.next(newSchedule));
         const modifiedSchedule = Object.assign(newSchedule, { active: true });
         expect(value).toEqual(call(service.createSchedule, modifiedSchedule));
+    });
+
+    it('should fetch benchmark details on a Compliance page with benchmark scan selected', () => {
+        let gen = watchBenchmarkCheckHostResults();
+        let { value } = gen.next();
+        expect(value).toEqual(
+            takeLatest(
+                'benchmarks/FETCH_BENCHMARK_CHECK_HOST_RESULTS_REQUEST',
+                getBenchmarkCheckHostResults
+            )
+        );
+
+        const benchmark = {
+            scanId: '123',
+            checkName: 'CIS 1.1'
+        };
+
+        gen = getBenchmarkCheckHostResults({ params: benchmark });
+        ({ value } = gen.next());
+        expect(value).toEqual(call(service.fetchBenchmarkCheckHostResults, benchmark));
     });
 });

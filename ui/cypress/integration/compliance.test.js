@@ -20,7 +20,6 @@ describe('Compliance page', () => {
         cy.route('GET', api.benchmarks.benchmarkScans, '@dockerBenchScans').as('scanMetadata');
         cy.fixture('benchmarks/dockerBenchScan1.json').as('dockerBenchScan1');
         cy.route('GET', api.benchmarks.scans, '@dockerBenchScan1').as('benchScan');
-
         cy.visit(complianceUrl);
         cy.wait(['@clusters', '@benchConfigs', '@scanMetadata', '@benchScan']);
     };
@@ -99,15 +98,24 @@ describe('Compliance page', () => {
         cy
             .get(selectors.passColumns)
             .last()
-            .should('have.text', '1');
+            .should('have.text', '0');
     });
 
     it('should show benchmark host results', () => {
         setupSingleClusterFixtures();
         cy
+            .route(
+                'GET',
+                api.benchmarks.scanHostResults,
+                'fx:benchmarks/dockerBenchmarkHostResults.json'
+            )
+            .as('dockerBenchmarkHostResults');
+
+        cy
             .get(selectors.passColumns)
-            .last()
+            .first()
             .click();
+        cy.wait('@dockerBenchmarkHostResults');
         cy
             .get(selectors.hostColumns)
             .should('have.length', 1)

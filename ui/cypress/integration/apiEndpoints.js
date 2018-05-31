@@ -12,8 +12,9 @@ export const clusters = {
 
 export const benchmarks = {
     configs: 'v1/benchmarks/configs',
-    scans: 'v1/benchmarks/scans/*',
     benchmarkScans: 'v1/benchmarks/scans?benchmarkId=*',
+    scanHostResults: '/v1/benchmarks/scans/*/*',
+    scans: '/v1/benchmarks/scans/*',
     triggers: 'v1/benchmarks/triggers/*',
     summary: 'v1/benchmarks/summary/scans*'
 };

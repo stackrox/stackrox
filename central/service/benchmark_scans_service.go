@@ -87,7 +87,7 @@ func (s *BenchmarkScansService) GetBenchmarkScan(ctx context.Context, request *v
 	return scan, nil
 }
 
-func convertScanDataToBenchmarkGroup(benchmarkName string, scan *v1.BenchmarkScan) *v1.BenchmarkGroup {
+func (s *BenchmarkScansService) convertScanDataToBenchmarkGroup(benchmarkName string, scan *v1.BenchmarkScan) (*v1.BenchmarkGroup, error) {
 	var scanMap = map[v1.CheckStatus]int64{
 		v1.CheckStatus_PASS: 0,
 		v1.CheckStatus_NOTE: 0,
@@ -95,7 +95,17 @@ func convertScanDataToBenchmarkGroup(benchmarkName string, scan *v1.BenchmarkSca
 		v1.CheckStatus_WARN: 0,
 	}
 	for _, c := range scan.Checks {
-		for _, result := range c.GetHostResults() {
+		results, exists, err := s.benchmarkScanStorage.GetHostResults(&v1.GetHostResultsRequest{
+			ScanId:    scan.GetId(),
+			CheckName: c.GetDefinition().GetName(),
+		})
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			continue
+		}
+		for _, result := range results.HostResults {
 			scanMap[result.GetResult()]++
 		}
 	}
@@ -110,7 +120,7 @@ func convertScanDataToBenchmarkGroup(benchmarkName string, scan *v1.BenchmarkSca
 	return &v1.BenchmarkGroup{
 		Benchmark: benchmarkName,
 		Counts:    counts,
-	}
+	}, nil
 }
 
 func (s *BenchmarkScansService) getMostRecentScanData(clusterID string, benchmark *v1.Benchmark) (*v1.BenchmarkGroup, error) {
@@ -138,7 +148,7 @@ func (s *BenchmarkScansService) getMostRecentScanData(clusterID string, benchmar
 	if scan == nil {
 		return nil, nil
 	}
-	return convertScanDataToBenchmarkGroup(benchmark.GetName(), scan), nil
+	return s.convertScanDataToBenchmarkGroup(benchmark.GetName(), scan)
 }
 
 func (s *BenchmarkScansService) getBenchmarkScansSummaryResponse(clusters []*v1.Cluster, benchmarks []*v1.Benchmark) (*v1.GetBenchmarkScansSummaryResponse, error) {
@@ -180,4 +190,16 @@ func (s *BenchmarkScansService) GetBenchmarkScansSummary(context.Context, *empty
 		return nil, err
 	}
 	return s.getBenchmarkScansSummaryResponse(clusters, benchmarks)
+}
+
+// GetHostResults returns the check results for the scanid and check name specified
+func (s *BenchmarkScansService) GetHostResults(ctx context.Context, request *v1.GetHostResultsRequest) (*v1.HostResults, error) {
+	hostResults, exists, err := s.benchmarkScanStorage.GetHostResults(request)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("Could not find scan id %s", request.GetScanId()))
+	}
+	return hostResults, nil
 }

@@ -28,39 +28,45 @@ func (*mockStorage) GetBenchmarkScan(req *v1.GetBenchmarkScanRequest) (*v1.Bench
 		return nil, false, nil
 	}
 }
+func (*mockStorage) GetHostResults(request *v1.GetHostResultsRequest) (*v1.HostResults, bool, error) {
+	switch request.GetCheckName() {
+	case "check1":
+		return &v1.HostResults{HostResults: []*v1.HostResults_HostResult{
+			{
+				Result: v1.CheckStatus_PASS,
+			},
+			{
+				Result: v1.CheckStatus_INFO,
+			},
+		},
+		}, true, nil
+	case "check2":
+		return &v1.HostResults{
+			HostResults: []*v1.HostResults_HostResult{
+				{
+					Result: v1.CheckStatus_WARN,
+				},
+				{
+					Result: v1.CheckStatus_WARN,
+				},
+			},
+		}, true, nil
+	}
+	return nil, false, nil
+}
 func (*mockStorage) AddScan(*v1.BenchmarkScanMetadata) error      { return nil }
 func (*mockStorage) AddBenchmarkResult(*v1.BenchmarkResult) error { return nil }
 
 var scan = &v1.BenchmarkScan{
 	Checks: []*v1.BenchmarkScan_Check{
 		{
-			HostResults: []*v1.BenchmarkScan_Check_HostResult{
-				{
-					Result: v1.CheckStatus_PASS,
-				},
-				{
-					Result: v1.CheckStatus_NOTE,
-				},
+			Definition: &v1.CheckDefinition{
+				Name: "check1",
 			},
 		},
 		{
-			HostResults: []*v1.BenchmarkScan_Check_HostResult{
-				{
-					Result: v1.CheckStatus_WARN,
-				},
-				{
-					Result: v1.CheckStatus_NOTE,
-				},
-			},
-		},
-		{
-			HostResults: []*v1.BenchmarkScan_Check_HostResult{
-				{
-					Result: v1.CheckStatus_WARN,
-				},
-				{
-					Result: v1.CheckStatus_WARN,
-				},
+			Definition: &v1.CheckDefinition{
+				Name: "check2",
 			},
 		},
 	},
@@ -71,15 +77,15 @@ var expectedGroup = &v1.BenchmarkGroup{
 	Counts: []*v1.StatusCount{
 		{
 			Status: v1.CheckStatus_INFO,
-			Count:  0,
+			Count:  1,
 		},
 		{
 			Status: v1.CheckStatus_WARN,
-			Count:  3,
+			Count:  2,
 		},
 		{
 			Status: v1.CheckStatus_NOTE,
-			Count:  2,
+			Count:  0,
 		},
 		{
 			Status: v1.CheckStatus_PASS,
@@ -89,7 +95,12 @@ var expectedGroup = &v1.BenchmarkGroup{
 }
 
 func TestConvertScanDataToBenchmarkGroup(t *testing.T) {
-	actualGroup := convertScanDataToBenchmarkGroup("benchmark", scan)
+	storage := &mockStorage{}
+	service := &BenchmarkScansService{
+		benchmarkScanStorage: storage,
+	}
+	actualGroup, err := service.convertScanDataToBenchmarkGroup("benchmark", scan)
+	assert.NoError(t, err)
 	assert.Equal(t, expectedGroup, actualGroup)
 }
 

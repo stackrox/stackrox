@@ -11,31 +11,40 @@ import "api/v1/benchmark_results_service.proto";
 package v1;
 
 message BenchmarkScanMetadata {
-    string scan_id                 = 1;
-    string benchmark_id            = 2;
-    repeated string cluster_ids    = 3;
-    repeated string checks         = 4;
-    google.protobuf.Timestamp time = 5;
-    BenchmarkReason reason         = 6;
+    string                    scan_id       = 1;
+    string                    benchmark_id  = 2;
+    repeated string           cluster_ids   = 3;
+    repeated string           checks        = 4;
+    google.protobuf.Timestamp time          = 5;
+    BenchmarkReason           reason        = 6;
 }
 
 message BenchmarkScan {
+    string id = 1;
     message Check {
-        CheckDefinition definition = 1;
-        message HostResult {
-            string host            = 1;
-            CheckStatus result     = 2;
-            repeated string notes  = 3;
-        }
-        repeated HostResult host_results     = 2;
-        map<string,int32> aggregated_results = 3;
+        CheckDefinition   definition         = 1;
+        map<string,int32> aggregated_results = 2;
     }
-    repeated Check checks = 1;
+    repeated Check checks = 2;
+}
+
+message HostResults {
+    message HostResult {
+        string          host   = 1;
+        CheckStatus     result = 2;
+        repeated string notes  = 3;
+    }
+    repeated HostResult host_results = 1;
+}
+
+message GetHostResultsRequest {
+    string scan_id    = 1;
+    string check_name = 2;
 }
 
 message ListBenchmarkScansRequest {
-    string benchmark_id         = 1;
-    repeated string cluster_ids = 2;
+    string          benchmark_id = 1;
+    repeated string cluster_ids  = 2;
 }
 
 message ListBenchmarkScansResponse {
@@ -43,7 +52,7 @@ message ListBenchmarkScansResponse {
 }
 
 message GetBenchmarkScanRequest {
-    string scan_id              = 1;
+    string          scan_id     = 1;
     repeated string cluster_ids = 2;
     repeated string hosts       = 3;
 }
@@ -86,6 +95,12 @@ service BenchmarkScanService {
     rpc GetBenchmarkScan(GetBenchmarkScanRequest) returns (BenchmarkScan) {
         option (google.api.http) = {
             get: "/v1/benchmarks/scans/{scan_id}"
+        };
+    }
+
+    rpc GetHostResults(GetHostResultsRequest) returns (HostResults) {
+        option (google.api.http) = {
+            get: "/v1/benchmarks/scans/{scan_id}/{check_name}"
         };
     }
 

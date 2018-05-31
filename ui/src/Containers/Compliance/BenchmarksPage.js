@@ -18,6 +18,7 @@ class BenchmarksPage extends Component {
     static propTypes = {
         benchmarkScanResults: PropTypes.arrayOf(PropTypes.object).isRequired,
         lastScannedTime: PropTypes.string.isRequired,
+        lastScannedId: PropTypes.string.isRequired,
         benchmarkName: PropTypes.string.isRequired,
         benchmarkId: PropTypes.string.isRequired,
         clusterId: PropTypes.string.isRequired,
@@ -40,7 +41,8 @@ class BenchmarksPage extends Component {
         selectedBenchmarkHostResult: PropTypes.shape({
             host: PropTypes.string,
             notes: PropTypes.arrayOf(PropTypes.string)
-        })
+        }),
+        fetchBenchmarkCheckHostResults: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -86,8 +88,12 @@ class BenchmarksPage extends Component {
         });
     };
 
-    onRowClick = benchmarkScanResult => {
-        this.props.selectBenchmarkScanResult(benchmarkScanResult);
+    onRowClick = row => {
+        this.props.fetchBenchmarkCheckHostResults({
+            scanId: this.props.lastScannedId,
+            checkName: row.definition.name
+        });
+        this.props.selectBenchmarkScanResult(row);
     };
 
     onCloseSidePanel = () => {
@@ -261,7 +267,11 @@ class BenchmarksPage extends Component {
     }
 
     renderBenchmarksSidePanel() {
-        if (!this.props.selectedBenchmarkScanResult) return '';
+        if (
+            !this.props.selectedBenchmarkScanResult.definition ||
+            !this.props.selectedBenchmarkScanResult.hostResults
+        )
+            return '';
         return (
             <BenchmarksSidePanel
                 header={this.props.selectedBenchmarkScanResult.definition.name}
@@ -309,13 +319,28 @@ const getLastScannedTime = createSelector([selectors.getLastScan], lastScan => {
     return scanTime || '';
 });
 
+const getLastScanId = createSelector([selectors.getLastScan], lastScan => {
+    if (!lastScan || !lastScan.data) return '';
+    const { id } = lastScan.data;
+    return id || '';
+});
+
+const getSelectedBenchmarkScanResult = createSelector(
+    [selectors.getSelectedBenchmarkScanResult, selectors.getBenchmarkCheckHostResults],
+    (selectedScan, selectedScanHostsResults) => {
+        const result = Object.assign({}, selectedScan, selectedScanHostsResults);
+        return result;
+    }
+);
+
 const getClusterId = (state, props) => props.match.params.clusterId;
 
 const mapStateToProps = createStructuredSelector({
     benchmarkScanResults: getBenchmarkScanResults,
     lastScannedTime: getLastScannedTime,
+    lastScannedId: getLastScanId,
     schedule: selectors.getBenchmarkSchedule,
-    selectedBenchmarkScanResult: selectors.getSelectedBenchmarkScanResult,
+    selectedBenchmarkScanResult: getSelectedBenchmarkScanResult,
     selectedBenchmarkHostResult: selectors.getSelectedBenchmarkHostResult,
     clusterId: getClusterId
 });
@@ -349,7 +374,10 @@ const mapDispatchToProps = dispatch => ({
     selectBenchmarkScanResult: benchmarkScanResult =>
         dispatch(benchmarkActions.selectBenchmarkScanResult(benchmarkScanResult)),
     selectBenchmarkHostResult: benchmarkHostResult =>
-        dispatch(benchmarkActions.selectBenchmarkHostResult(benchmarkHostResult))
+        dispatch(benchmarkActions.selectBenchmarkHostResult(benchmarkHostResult)),
+    fetchBenchmarkCheckHostResults: benchmark => {
+        dispatch(benchmarkActions.fetchBenchmarkCheckHostResults.request(benchmark));
+    }
 });
 
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(BenchmarksPage));

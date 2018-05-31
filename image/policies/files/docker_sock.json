@@ -44,6 +44,12 @@
       "deployment": {
         "name": "ucp-agent-s390x"
       }
+    },
+    {
+      "name": "Don't alert on benchmark",
+      "deployment": {
+        "name": "benchmark"
+      }
     }
   ]
 }

@@ -122,22 +122,12 @@ func (suite *BoltBenchmarkScansTestSuite) TestResults() {
 	suite.True(exists)
 
 	expectedScan := &v1.BenchmarkScan{
+		Id: "scan1",
 		Checks: []*v1.BenchmarkScan_Check{
 			{
 				Definition: &v1.CheckDefinition{
 					Name:        "check1",
 					Description: "desc1",
-				},
-				HostResults: []*v1.BenchmarkScan_Check_HostResult{
-					{
-						Host:   "host1",
-						Result: v1.CheckStatus_PASS,
-					},
-					{
-						Host:   "host2",
-						Result: v1.CheckStatus_WARN,
-						Notes:  []string{"note1"},
-					},
 				},
 				AggregatedResults: map[string]int32{
 					v1.CheckStatus_PASS.String(): 1,
@@ -148,17 +138,6 @@ func (suite *BoltBenchmarkScansTestSuite) TestResults() {
 				Definition: &v1.CheckDefinition{
 					Name:        "check2",
 					Description: "desc2",
-				},
-				HostResults: []*v1.BenchmarkScan_Check_HostResult{
-					{
-						Host:   "host1",
-						Result: v1.CheckStatus_PASS,
-					},
-					{
-						Host:   "host2",
-						Result: v1.CheckStatus_WARN,
-						Notes:  []string{"note2"},
-					},
 				},
 				AggregatedResults: map[string]int32{
 					v1.CheckStatus_PASS.String(): 1,
