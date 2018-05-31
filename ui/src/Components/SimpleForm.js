@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { reduxForm, Field } from 'redux-form';
+import { reduxForm } from 'redux-form';
+import ReduxTextField from 'Components/forms/ReduxTextField';
+import ReduxCheckboxField from 'Components/forms/ReduxCheckboxField';
 
 class SimpleForm extends Component {
     static propTypes = {
@@ -8,11 +10,7 @@ class SimpleForm extends Component {
         handleSubmit: PropTypes.func.isRequired,
         fields: PropTypes.arrayOf(
             PropTypes.shape({
-                label: PropTypes.string,
-                value: PropTypes.string,
-                placeholder: PropTypes.string,
-                type: PropTypes.string,
-                options: PropTypes.string
+                label: PropTypes.string
             })
         ).isRequired
     };
@@ -21,30 +19,18 @@ class SimpleForm extends Component {
         id: ''
     };
 
-    renderTextField = field => (
-        <Field
-            name={field.value}
-            component="input"
-            type="text"
-            className={`border rounded-l p-3 border-base-300 w-full font-400 ${
-                field.disabled ? 'bg-base-100' : ''
-            }`}
-            disabled={field.disabled}
-            autoComplete=""
-            placeholder={field.placeholder}
-        />
-    );
-
-    renderCheckboxField = field => (
-        <Field name={field.value} component="input" type="checkbox" disabled={field.disabled} />
-    );
-
     renderField = field => {
         switch (field.type) {
             case 'text':
-                return this.renderTextField(field);
+                return (
+                    <ReduxTextField
+                        name={field.jsonpath}
+                        disabled={field.disabled}
+                        placeholder={field.placeholder}
+                    />
+                );
             case 'checkbox':
-                return this.renderCheckboxField(field);
+                return <ReduxCheckboxField name={field.jsonpath} disabled={field.disabled} />;
             default:
                 return null;
         }

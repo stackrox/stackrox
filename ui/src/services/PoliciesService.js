@@ -31,7 +31,7 @@ export function fetchPolicies(filters) {
         ...filters
     });
     return axios.get(`${baseUrl}?${params}`).then(response => ({
-        response: response.data
+        response: normalize(response.data, { policies: [policySchema] })
     }));
 }
 
@@ -72,6 +72,7 @@ export function deletePolicy(policyId) {
  * @returns {Promise<AxiosResponse, Error>}
  */
 export function savePolicy(policy) {
+    if (!policy.id) throw new Error('Policy entity must have an id to be saved');
     return axios.put(`${baseUrl}/${policy.id}`, policy);
 }
 

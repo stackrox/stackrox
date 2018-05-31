@@ -15,6 +15,9 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 export const types = {
     FETCH_POLICIES: createFetchingActionTypes('policies/FETCH_POLICIES'),
     FETCH_POLICY_CATEGORIES: createFetchingActionTypes('policies/FETCH_POLICY_CATEGORIES'),
+    SET_POLICY_WIZARD_STATE: 'policies/SET_POLICY_WIZARD_STATE',
+    UPDATE_POLICY: 'policies/UPDATE_POLICY',
+    REASSESS_POLICIES: 'policies/REASSESS_POLICIES',
     ...searchTypes('policies')
 };
 
@@ -23,17 +26,13 @@ export const types = {
 export const actions = {
     fetchPolicies: createFetchingActions(types.FETCH_POLICIES),
     fetchPolicyCategories: createFetchingActions(types.FETCH_POLICY_CATEGORIES),
+    setPolicyWizardState: state => ({ type: types.SET_POLICY_WIZARD_STATE, state }),
+    reassessPolicies: () => ({ type: types.REASSESS_POLICIES }),
+    updatePolicy: policy => ({ type: types.UPDATE_POLICY, policy }),
     ...getSearchActions('policies')
 };
 
 // Reducers
-
-const policies = (state = [], action) => {
-    if (action.type === types.FETCH_POLICIES.SUCCESS) {
-        return isEqual(action.response.policies, state) ? state : action.response.policies;
-    }
-    return state;
-};
 
 const policyCategories = (state = [], action) => {
     if (action.type === types.FETCH_POLICY_CATEGORIES.SUCCESS) {
@@ -49,10 +48,22 @@ const byId = (state = {}, action) => {
     return state;
 };
 
+const defaultWizardState = {
+    current: '',
+    policy: null
+};
+const policyWizardState = (state = defaultWizardState, action) => {
+    if (action.type === types.SET_POLICY_WIZARD_STATE) {
+        const newState = Object.assign({}, state, action.state);
+        return newState;
+    }
+    return state;
+};
+
 const reducer = combineReducers({
     policyCategories,
-    policies,
     byId,
+    policyWizardState,
     ...searchReducers('policies')
 });
 
@@ -60,15 +71,15 @@ export default reducer;
 
 // Selectors
 
-const getPolicies = state => state.policies;
 const getPoliciesById = state => state.byId;
 const getPolicy = (state, id) => getPoliciesById(state)[id];
 const getPolicyCategories = state => state.policyCategories;
+const getPolicyWizardState = state => state.policyWizardState;
 
 export const selectors = {
-    getPolicies,
     getPoliciesById,
     getPolicy,
     getPolicyCategories,
+    getPolicyWizardState,
     ...getSearchSelectors('policies')
 };

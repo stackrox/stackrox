@@ -81,7 +81,8 @@ describe('Policies page', () => {
     it('should show a specific message when editing a policy with "enabled" value as "no"', () => {
         cy.get(selectors.policies.latest).click();
         cy.get(selectors.editPolicyButton).click();
-        cy.get(selectors.form.disabled).select('No');
+        cy.get(`${selectors.form.disabled} .Select-arrow`).click();
+        cy.get(`${selectors.form.disabled} div[role="option"]:contains("No")`).click();
         cy.get(selectors.nextButton).click();
         cy.get(selectors.policyPreview.message).should('have.text', text.policyPreview.message);
     });

@@ -9,6 +9,7 @@ import clusters, { selectors as clusterSelectors } from './clusters';
 import deployments, { selectors as deploymentSelectors } from './deployments';
 import images, { selectors as imageSelectors } from './images';
 import integrations, { selectors as integrationSelectors } from './integrations';
+import notifications, { selectors as notificationSelectors } from './notifications';
 import globalSearch, { selectors as globalSearchSelectors } from './globalSearch';
 import policies, { selectors as policySelectors } from './policies';
 import summaries, { selectors as summarySelectors } from './summaries';
@@ -27,6 +28,7 @@ const appReducer = combineReducers({
     deployments,
     images,
     integrations,
+    notifications,
     globalSearch,
     policies,
     summaries,
@@ -53,6 +55,7 @@ const getClusters = state => getApp(state).clusters;
 const getDeployments = state => getApp(state).deployments;
 const getImages = state => getApp(state).images;
 const getIntegrations = state => getApp(state).integrations;
+const getNotifications = state => getApp(state).notifications;
 const getGlobalSearches = state => getApp(state).globalSearch;
 const getPolicies = state => getApp(state).policies;
 const getSummaries = state => getApp(state).summaries;
@@ -67,6 +70,7 @@ const boundSelectors = {
     ...bindSelectors(getDeployments, deploymentSelectors),
     ...bindSelectors(getImages, imageSelectors),
     ...bindSelectors(getIntegrations, integrationSelectors),
+    ...bindSelectors(getNotifications, notificationSelectors),
     ...bindSelectors(getGlobalSearches, globalSearchSelectors),
     ...bindSelectors(getPolicies, policySelectors),
     ...bindSelectors(getRoute, routeSelectors),

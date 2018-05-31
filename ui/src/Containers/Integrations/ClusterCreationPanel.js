@@ -47,8 +47,8 @@ dockerClusterDetailsMap.disableSwarmTls = {
     label: 'Swarm TLS Disabled'
 };
 
-const k8sDataKeys = k8sCreationFormDescriptor.map(obj => obj.value);
-const dockerDataKeys = dockerClusterCreationFormDescriptor.map(obj => obj.value);
+const k8sDataKeys = k8sCreationFormDescriptor.map(obj => obj.jsonpath);
+const dockerDataKeys = dockerClusterCreationFormDescriptor.map(obj => obj.jsonpath);
 
 const formDataKeys = [...k8sDataKeys, ...dockerDataKeys];
 

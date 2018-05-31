@@ -9,7 +9,7 @@ const FormField = props => (
             <span>{props.label}</span>
             {props.required ? <span className="required text-danger-500 ml-2">*</span> : ''}
         </div>
-        <div className="flex">
+        <div className="flex" id={props.value}>
             {props.children}
             {props.onRemove && (
                 <FormFieldRemoveButton field={props.value} onClick={props.onRemove} />

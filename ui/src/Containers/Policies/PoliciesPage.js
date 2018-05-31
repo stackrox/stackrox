@@ -3,61 +3,38 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { selectors } from 'reducers';
-import { actions as policiesActions } from 'reducers/policies';
+import { actions as policyActions } from 'reducers/policies';
 import { createSelector, createStructuredSelector } from 'reselect';
 
-import { ToastContainer, toast } from 'react-toastify';
-import { Form } from 'react-form';
+import { formValueSelector } from 'redux-form';
 import * as Icon from 'react-feather';
 import Dialog from 'Components/Dialog';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
-import {
-    postFormatScopeField,
-    postFormatWhitelistField,
-    removeEmptyFields
-} from 'Containers/Policies/policyFormUtils';
-import {
-    reassessPolicies,
-    deletePolicy,
-    savePolicy,
-    createPolicy,
-    getDryRun
-} from 'services/PoliciesService';
-import PolicyCreationForm from 'Containers/Policies/PolicyCreationForm';
+import { formatPolicyFields, getPolicyFormDataKeys } from 'Containers/Policies/policyFormUtils';
+import { deletePolicy } from 'services/PoliciesService';
 import PolicyDetails from 'Containers/Policies/PolicyDetails';
-import PoliciesPreview from 'Containers/Policies/PoliciesPreview';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 
 import { severityLabels } from 'messages/common';
 import { sortSeverity } from 'sorters/sorters';
-
-const reducer = (action, prevState, nextState) => {
-    switch (action) {
-        case 'UPDATE_POLICIES':
-            return { policies: nextState.policies };
-        case 'SELECT_POLICY':
-            return {
-                editingPolicy: null,
-                addingPolicy: false,
-                showPreviewPolicy: false
-            };
-        case 'UNSELECT_POLICY':
-            return { editingPolicy: null, addingPolicy: false };
-        case 'EDIT_POLICY':
-            return { editingPolicy: nextState.policy };
-        case 'ADD_POLICY':
-            return { editingPolicy: nextState.policy, addingPolicy: true };
-        default:
-            return prevState;
-    }
-};
+import PolicyCreationWizard from 'Containers/Policies/PolicyCreationWizard';
 
 class PoliciesPage extends Component {
     static propTypes = {
         policies: PropTypes.arrayOf(PropTypes.object).isRequired,
         fetchPolicies: PropTypes.func.isRequired,
+        reassessPolicies: PropTypes.func.isRequired,
+        updatePolicy: PropTypes.func.isRequired,
+        formData: PropTypes.shape({}),
+        wizardState: PropTypes.shape({
+            current: PropTypes.string,
+            policy: PropTypes.shape({}),
+            isNew: PropTypes.bool,
+            disabled: PropTypes.bool
+        }).isRequired,
+        setWizardState: PropTypes.func.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
         match: ReactRouterPropTypes.match.isRequired,
         searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -69,41 +46,92 @@ class PoliciesPage extends Component {
         isViewFiltered: PropTypes.bool.isRequired
     };
 
+    static defaultProps = {
+        formData: {}
+    };
+
     constructor(props) {
         super(props);
 
         this.state = {
-            editingPolicy: null,
-            addingPolicy: false,
-            policyDryRun: null,
-            showPreviewPolicy: false,
             showConfirmationDialog: false
         };
     }
 
-    onSubmit = policy => {
-        if (this.state.addingPolicy) this.createPolicy(policy);
-        else this.savePolicy(policy);
+    componentWillUnmount() {
+        this.props.setWizardState({ current: '' });
+    }
+
+    onSubmit = () => {
+        const selectedPolicy = this.getSelectedPolicy();
+        const { isNew, policy, disabled } = this.props.wizardState;
+        const newPolicy = Object.assign({}, selectedPolicy, policy);
+        const newState = {};
+        newState.current = isNew ? 'CREATE' : 'SAVE';
+        newState.policy = newPolicy;
+        if (disabled) newState.policy.disabled = disabled;
+        this.props.setWizardState(newState);
     };
 
-    getPolicyDryRun = policy => {
-        let filteredPolicy = removeEmptyFields(policy);
-        filteredPolicy = postFormatWhitelistField(filteredPolicy);
-        filteredPolicy = postFormatScopeField(filteredPolicy);
-        this.update('EDIT_POLICY', { policy: filteredPolicy });
-        const data = Object.assign({}, filteredPolicy);
+    getPanelButtons = () => {
+        switch (this.props.wizardState.current) {
+            case 'EDIT':
+            case 'PRE_PREVIEW':
+                return [
+                    {
+                        renderIcon: () => <Icon.ArrowRight className="h-4 w-4" />,
+                        text: 'Next',
+                        className: 'btn-primary',
+                        onClick: () => {
+                            this.getPolicyDryRun();
+                        }
+                    }
+                ];
+            case 'PREVIEW':
+                return [
+                    {
+                        renderIcon: () => <Icon.ArrowLeft className="h-4 w-4" />,
+                        text: 'Previous',
+                        className: 'btn-primary',
+                        onClick: () => {
+                            this.props.setWizardState({ current: 'EDIT' });
+                        }
+                    },
+                    {
+                        renderIcon: () => <Icon.Save className="h-4 w-4" />,
+                        text: 'Save',
+                        className: 'btn-success',
+                        onClick: () => {
+                            this.onSubmit();
+                        }
+                    }
+                ];
+            default:
+                return [
+                    {
+                        renderIcon: () => <Icon.Edit className="h-4 w-4" />,
+                        text: 'Edit',
+                        className: 'btn-success',
+                        onClick: () => {
+                            this.props.setWizardState({ current: 'EDIT', policy: null });
+                        }
+                    }
+                ];
+        }
+    };
+
+    getPolicyDryRun = () => {
+        const serverFormattedPolicy = formatPolicyFields(this.props.formData);
+        const enabledPolicy = Object.assign({}, serverFormattedPolicy);
         // set disabled to false for dryrun so that we can see what deployments the policy will affect
-        data.disabled = false;
-        getDryRun(data)
-            .then(response => {
-                if (!response.data) return;
-                const policyDryRun = response.data;
-                this.setState({ policyDryRun, showPreviewPolicy: true });
-            })
-            .catch(error => {
-                console.error(error);
-                if (error.response) toast(error.response.data.error);
-            });
+        enabledPolicy.disabled = false;
+
+        const wizardState = {
+            current: 'PRE_PREVIEW',
+            policy: enabledPolicy,
+            disabled: serverFormattedPolicy.disabled
+        };
+        this.props.setWizardState(wizardState);
     };
 
     getSelectedPolicy = () => {
@@ -113,30 +141,17 @@ class PoliciesPage extends Component {
         return null;
     };
 
-    updateSelectedPolicy = policy => {
+    setSelectedPolicy = policy => {
         const urlSuffix = policy && policy.id ? `/${policy.id}` : '';
         this.props.history.push({
             pathname: `/main/policies${urlSuffix}`
         });
+        this.props.setWizardState({ current: '', isNew: false });
     };
 
     preSubmit = policy => {
-        let newPolicy = removeEmptyFields(policy);
-        newPolicy = postFormatScopeField(newPolicy);
-        newPolicy = postFormatWhitelistField(newPolicy);
+        const newPolicy = formatPolicyFields(policy);
         return newPolicy;
-    };
-
-    reassessPolicies = () => {
-        reassessPolicies()
-            .then(() => {
-                toast('Policies were reassessed');
-                this.policyTable.clearSelectedRows();
-            })
-            .catch(error => {
-                console.error(error);
-                if (error.response) toast(error.response.data.error);
-            });
     };
 
     deletePolicies = () => {
@@ -144,7 +159,7 @@ class PoliciesPage extends Component {
         this.policyTable.getSelectedRows().forEach(row => {
             // close the view panel if that policy is being deleted
             if (row.id === this.props.match.params.id) {
-                this.unselectPolicy();
+                this.setSelectedPolicy();
             }
             const promise = deletePolicy(row.id);
             promises.push(promise);
@@ -157,73 +172,12 @@ class PoliciesPage extends Component {
     };
 
     addPolicy = () => {
-        this.update('ADD_POLICY', { policy: {} });
-    };
-
-    selectPolicy = policy => {
-        this.update('SELECT_POLICY');
-        this.updateSelectedPolicy(policy);
-    };
-
-    unselectPolicy = () => {
-        this.update('UNSELECT_POLICY');
-        this.updateSelectedPolicy();
-    };
-
-    editPolicy = policy => {
-        this.update('EDIT_POLICY', { policy });
-        this.updateSelectedPolicy(policy);
-    };
-
-    createPolicy = policy => {
-        createPolicy(policy)
-            .then(response => {
-                const createdPolicy = response.data;
-                this.selectPolicy(createdPolicy);
-            })
-            .catch(error => {
-                console.error(error);
-                if (error.response) toast(error.response.data.error);
-            });
-    };
-
-    updatePolicy = policy =>
-        savePolicy(policy)
-            .then(() => {
-                this.props.fetchPolicies();
-            })
-            .catch(error => {
-                console.error(error);
-                if (error.response) toast(error.response.data.error);
-                return error;
-            });
-
-    savePolicy = policy => {
-        this.updatePolicy(policy).then(error => {
-            if (error !== undefined) return;
-            this.selectPolicy(policy);
-        });
+        this.setSelectedPolicy();
+        this.props.setWizardState({ current: 'EDIT', policy: null, isNew: true });
     };
 
     toggleEnabledDisabledPolicy = policy => {
-        const newPolicy = Object.assign({}, policy);
-        newPolicy.disabled = !policy.disabled;
-        this.updatePolicy(newPolicy);
-    };
-
-    update = (action, nextState) => {
-        this.setState(prevState => reducer(action, prevState, nextState));
-    };
-
-    closePreviewPanel = () => {
-        this.setState({ showPreviewPolicy: false });
-        return this.unselectPolicy();
-    };
-
-    closeEditPanel = () => {
-        const newPolicy = this.state.addingPolicy;
-        if (newPolicy) return this.unselectPolicy();
-        return this.unselectPolicy();
+        this.props.updatePolicy({ ...policy, disabled: !policy.disabled });
     };
 
     showConfirmationDialog = () => {
@@ -242,14 +196,14 @@ class PoliciesPage extends Component {
                 text: 'Delete Policies',
                 className: 'btn-danger',
                 onClick: this.showConfirmationDialog,
-                disabled: this.state.editingPolicy !== null
+                disabled: this.props.wizardState.current !== ''
             },
             {
                 renderIcon: () => <Icon.FileText className="h-4 w-4" />,
                 text: 'Reassess Policies',
                 className: 'btn-success',
-                onClick: this.reassessPolicies,
-                disabled: this.state.editingPolicy !== null,
+                onClick: this.props.reassessPolicies,
+                disabled: this.props.wizardState.current !== '',
                 tooltip: 'Manually enrich external data'
             },
             {
@@ -257,7 +211,7 @@ class PoliciesPage extends Component {
                 text: 'Add',
                 className: 'btn-success',
                 onClick: this.addPolicy,
-                disabled: this.state.editingPolicy !== null
+                disabled: this.props.wizardState.current !== ''
             }
         ];
         const columns = [
@@ -316,7 +270,7 @@ class PoliciesPage extends Component {
                 <Table
                     columns={columns}
                     rows={rows}
-                    onRowClick={this.selectPolicy}
+                    onRowClick={this.setSelectedPolicy}
                     actions={actions}
                     checkboxes
                     ref={table => {
@@ -327,91 +281,20 @@ class PoliciesPage extends Component {
         );
     };
 
-    renderViewPanel = () => {
-        const policy = this.getSelectedPolicy();
-        const hide = policy === null || policy === undefined || this.state.editingPolicy !== null;
-        if (hide) return '';
-        const header = policy.name;
-        const buttons = [
-            {
-                renderIcon: () => <Icon.Edit className="h-4 w-4" />,
-                text: 'Edit',
-                className: 'btn-success',
-                onClick: () => {
-                    this.editPolicy(policy);
-                }
-            }
-        ];
-        return (
-            <Panel header={header} buttons={buttons} onClose={this.unselectPolicy} width="w-2/3">
-                <PolicyDetails policyId={policy.id} />
-            </Panel>
-        );
-    };
+    renderSidePanel = () => {
+        const selectedPolicy = this.getSelectedPolicy();
+        if (!this.props.wizardState.current && !selectedPolicy) return null;
 
-    renderEditPanel = () => {
-        const policy = this.state.editingPolicy;
-        const hide = policy === null;
-        if (hide || this.state.showPreviewPolicy) return '';
-        const header = this.state.editingPolicy.name;
-        const buttons = [
-            {
-                renderIcon: () => <Icon.ArrowRight className="h-4 w-4" />,
-                text: 'Next',
-                className: 'btn-primary',
-                onClick: () => {
-                    this.getPolicyDryRun(this.formApi.values);
-                }
-            }
-        ];
+        const editingPolicy = Object.assign({}, selectedPolicy, this.props.wizardState.policy);
+        const header = editingPolicy ? editingPolicy.name : '';
+        const buttons = this.getPanelButtons();
         return (
-            <Panel header={header} buttons={buttons} onClose={this.closeEditPanel} width="w-2/3">
-                <Form onSubmit={this.onSubmit} preSubmit={this.preSubmit}>
-                    {formApi => (
-                        <PolicyCreationForm
-                            policy={policy}
-                            formApi={formApi}
-                            ref={() => {
-                                this.formApi = formApi;
-                            }}
-                        />
-                    )}
-                </Form>
-            </Panel>
-        );
-    };
-
-    renderPreviewPanel = () => {
-        if (!this.state.showPreviewPolicy) return '';
-        const policy = this.state.editingPolicy;
-        const hide = policy === null;
-        if (hide) return '';
-        const header = this.state.editingPolicy.name;
-        const buttons = [
-            {
-                renderIcon: () => <Icon.ArrowLeft className="h-4 w-4" />,
-                text: 'Previous',
-                className: 'btn-primary',
-                onClick: () => {
-                    this.setState({ showPreviewPolicy: false });
-                }
-            },
-            {
-                renderIcon: () => <Icon.Save className="h-4 w-4" />,
-                text: 'Save',
-                className: 'btn-success',
-                onClick: () => {
-                    this.setState({ showPreviewPolicy: false });
-                    this.onSubmit(this.state.editingPolicy);
-                }
-            }
-        ];
-        return (
-            <Panel header={header} buttons={buttons} onClose={this.closePreviewPanel} width="w-2/3">
-                <PoliciesPreview
-                    dryrun={this.state.policyDryRun}
-                    policyDisabled={this.state.editingPolicy.disabled || false}
-                />
+            <Panel header={header} buttons={buttons} onClose={this.setSelectedPolicy} width="w-2/3">
+                {this.props.wizardState.current === '' ? (
+                    <PolicyDetails policyId={selectedPolicy.id} />
+                ) : (
+                    <PolicyCreationWizard />
+                )}
             </Panel>
         );
     };
@@ -434,11 +317,6 @@ class PoliciesPage extends Component {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
         return (
             <section className="flex flex-1 flex-col h-full">
-                <ToastContainer
-                    toastClassName="font-sans text-base-600 text-white font-600 bg-black"
-                    hideProgressBar
-                    autoClose={3000}
-                />
                 <div>
                     <PageHeader header="Policies" subHeader={subHeader}>
                         <SearchInput
@@ -455,9 +333,7 @@ class PoliciesPage extends Component {
                 <div className="flex flex-1 bg-base-100">
                     <div className="flex flex-row w-full h-full bg-white rounded-sm shadow">
                         {this.renderTablePanel()}
-                        {this.renderViewPanel()}
-                        {this.renderEditPanel()}
-                        {this.renderPreviewPanel()}
+                        {this.renderSidePanel()}
                     </div>
                 </div>
                 {this.renderConfirmationDialog()}
@@ -471,22 +347,27 @@ const isViewFiltered = createSelector(
     searchOptions => searchOptions.length !== 0
 );
 
+const getFormData = state =>
+    formValueSelector('policyCreationForm')(state, ...getPolicyFormDataKeys());
+
 const mapStateToProps = createStructuredSelector({
-    policies: selectors.getPolicies,
+    policies: state => Object.values(selectors.getPoliciesById(state)),
+    formData: getFormData,
+    wizardState: selectors.getPolicyWizardState,
     searchOptions: selectors.getPoliciesSearchOptions,
     searchModifiers: selectors.getPoliciesSearchModifiers,
     searchSuggestions: selectors.getPoliciesSearchSuggestions,
     isViewFiltered
 });
 
-const mapDispatchToProps = dispatch => ({
-    fetchPolicies: () => dispatch(policiesActions.fetchPolicies.request()),
-    setSearchOptions: searchOptions =>
-        dispatch(policiesActions.setPoliciesSearchOptions(searchOptions)),
-    setSearchModifiers: searchModifiers =>
-        dispatch(policiesActions.setPoliciesSearchModifiers(searchModifiers)),
-    setSearchSuggestions: searchSuggestions =>
-        dispatch(policiesActions.setPoliciesSearchSuggestions(searchSuggestions))
-});
+const mapDispatchToProps = {
+    setSearchOptions: policyActions.setPoliciesSearchOptions,
+    setSearchModifiers: policyActions.setPoliciesSearchModifiers,
+    setSearchSuggestions: policyActions.setPoliciesSearchSuggestions,
+    fetchPolicies: policyActions.fetchPolicies.request,
+    reassessPolicies: policyActions.reassessPolicies,
+    updatePolicy: policyActions.updatePolicy,
+    setWizardState: policyActions.setPolicyWizardState
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(PoliciesPage);

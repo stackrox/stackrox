@@ -35,7 +35,7 @@ class Select extends Component {
                         {placeholder}
                     </option>
                     {options.map(option => (
-                        <option key={option.label} value={option.value}>
+                        <option key={option.label} value={option.jsonpath}>
                             {option.label}
                         </option>
                     ))}
