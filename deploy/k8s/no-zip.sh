@@ -14,7 +14,7 @@ export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.stackrox:443}"
 echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 echo
 
-export PREVENT_IMAGE="stackrox/prevent:${PREVENT_IMAGE_TAG:-latest}"
+export PREVENT_IMAGE="stackrox/prevent:${PREVENT_IMAGE_TAG:-$(git describe --tags --abbrev=10 --dirty)}"
 
 set -u
 

@@ -1,6 +1,5 @@
 # Set these variables only if not set by the including Makefile.
 IMAGE ?= $(ROX_PROJECT)
-IMAGE_TAG ?= latest
 PROJECT_SUBDIR ?= $(ROX_PROJECT)
 BINARY ?= $(ROX_PROJECT)
 BASE_PATH ?= $(CURDIR)/..

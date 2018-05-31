@@ -9,7 +9,7 @@ source $COMMON_DIR/deploy.sh
 export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.prevent_net:443}"
 echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 
-export PREVENT_IMAGE="stackrox/prevent:${PREVENT_IMAGE_TAG:-latest}"
+export PREVENT_IMAGE="stackrox/prevent:${PREVENT_IMAGE_TAG:-$(git describe --tags --abbrev=10 --dirty)}"
 
 echo "Generating central config..."
 OLD_DOCKER_HOST="$DOCKER_HOST"

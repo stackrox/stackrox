@@ -19,7 +19,7 @@ Instead follow the instructions below.
 The following steps assume that your working directory is the root `apollo` directory (not `apollo/ui` where this `README.md` is placed).
 
 1. `docker login` - login to Docker Hub with your Docker ID
-2. `docker pull stackrox/prevent:latest` - pull the latest Prevent image
+2. `docker pull stackrox/prevent:$(git describe --tags --abbrev=10 --dirty origin/master)` - pull the latest Prevent image
 3. `docker swarm init` - initialize local Swarm cluster
 4. `./deploy/swarm/deploy-local.sh` - deploy Prevent to a local Swarm cluster
 5. `make -C ui start` - start a dev server to serve UI
@@ -27,9 +27,9 @@ The following steps assume that your working directory is the root `apollo` dire
 ### IDEs
 
 This project is IDE agnostic. For the best dev experience it's recommended to add / configure support for [ESLint](https://eslint.org/) and [Prettier](https://prettier.io/) in IDE of your choice.
-  
+
 Examples of configuration for some IDEs:
- 
+
 * [Visual Studio Code](https://code.visualstudio.com/): Install plugins [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) and [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode), then add configuration:
 
  ```

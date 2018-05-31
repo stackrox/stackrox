@@ -58,11 +58,9 @@ jobs:
           command: |
             docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
 
-            docker tag stackrox/prevent:latest stackrox/prevent:$(git describe --tags)
-            docker push stackrox/prevent:$(git describe --tags)
+            docker push stackrox/prevent:$(git describe --tags --abbrev=10 --dirty)
 
-            docker tag stackrox/prevent-health:latest stackrox/prevent-health:$(git describe --tags)
-            docker push stackrox/prevent-health:$(git describe --tags)
+            docker push stackrox/prevent-health:$(git describe --tags --abbrev=10 --dirty)
 
   deploy-k8s:
     <<: *defaults
@@ -83,7 +81,7 @@ jobs:
             docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
             echo 'export REGISTRY_USERNAME="$DOCKERHUB_USERNAME"' >> $BASH_ENV
             echo 'export REGISTRY_PASSWORD="$DOCKERHUB_PASSWORD"' >> $BASH_ENV
-            echo 'export PREVENT_IMAGE_TAG="$(git describe --tags)"' >> $BASH_ENV
+            echo 'export PREVENT_IMAGE_TAG="$(git describe --tags --abbrev=10 --dirty)"' >> $BASH_ENV
             echo $GKE_SERVICE_ACCOUNT > /tmp/gcp.json
             echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json' >> $BASH_ENV
             gcloud auth activate-service-account --key-file /tmp/gcp.json
@@ -174,13 +172,13 @@ jobs:
             docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
             docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD" stackrox.io
 
-            docker pull stackrox/prevent:$(git describe --tags)
-            docker tag stackrox/prevent:$(git describe --tags) stackrox.io/prevent:$(git describe --tags)
-            docker push stackrox.io/prevent:$(git describe --tags)
+            docker pull stackrox/prevent:$(git describe --tags --abbrev=10 --dirty)
+            docker tag stackrox/prevent:$(git describe --tags --abbrev=10 --dirty) stackrox.io/prevent:$(git describe --tags --abbrev=10 --dirty)
+            docker push stackrox.io/prevent:$(git describe --tags --abbrev=10 --dirty)
 
-            docker pull stackrox/prevent-health:$(git describe --tags)
-            docker tag stackrox/prevent-health:$(git describe --tags) stackrox.io/prevent-health:$(git describe --tags)
-            docker push stackrox.io/prevent-health:$(git describe --tags)
+            docker pull stackrox/prevent-health:$(git describe --tags --abbrev=10 --dirty)
+            docker tag stackrox/prevent-health:$(git describe --tags --abbrev=10 --dirty) stackrox.io/prevent-health:$(git describe --tags --abbrev=10 --dirty)
+            docker push stackrox.io/prevent-health:$(git describe --tags --abbrev=10 --dirty)
 
 
 workflows:

@@ -21,7 +21,8 @@ required to completely build that image and run tests:
 make image
 ```
 
-This will create `stackrox/prevent:latest`. This is the only image required
+This will create `stackrox/prevent` with a tag defined by
+`git describe --tags --abbrev=10 --dirty`. This is the only image required
 to run StackRox Prevent.
 
 ## How to Test

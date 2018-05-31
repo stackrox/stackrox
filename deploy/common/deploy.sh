@@ -2,7 +2,7 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-export PREVENT_IMAGE_TAG="${PREVENT_IMAGE_TAG:-latest}"
+export PREVENT_IMAGE_TAG="${PREVENT_IMAGE_TAG:-$(git describe --tags --abbrev=10 --dirty)}"
 echo "StackRox Prevent image tag set to $PREVENT_IMAGE_TAG"
 
 export PREVENT_IMAGE="${PREVENT_IMAGE:-stackrox/prevent:$PREVENT_IMAGE_TAG}"
@@ -48,7 +48,7 @@ function wait_for_central {
 #   - central API server endpoint reachable from this host
 #   - name of cluster
 #   - type of cluster (e.g., SWARM_CLUSTER)
-#   - image reference (e.g., stackrox/prevent:latest)
+#   - image reference (e.g., stackrox/prevent:$(git describe --tags --abbrev=10 --dirty))
 #   - central API endpoint reachable from the container (e.g., my-host:8080)
 #   - directory to drop files in
 #   - extra fields in JSON format
@@ -96,7 +96,7 @@ function get_cluster_zip {
 #   - central API server endpoint reachable from this host
 #   - name of cluster
 #   - type of cluster (e.g., SWARM_CLUSTER)
-#   - image reference (e.g., stackrox/prevent:latest)
+#   - image reference (e.g., stackrox/prevent:$(git describe --tags --abbrev=10 --dirty))
 #   - central API endpoint reachable from the container (e.g., my-host:8080)
 #   - directory to drop files in
 #   - extra fields in JSON format
