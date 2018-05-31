@@ -53,6 +53,11 @@ jobs:
           paths:
             - /go/pkg/dep
 
+      - persist_to_workspace:
+          root: /go
+          paths:
+          - src/bitbucket.org/stack-rox/apollo
+
       - run:
           name: Push new Docker image
           command: |
@@ -70,10 +75,8 @@ jobs:
       - checkout
       - setup_remote_docker
 
-      - *restoreNPM
-      - *restoreDep
-
-      - run: make deps generated-srcs
+      - attach_workspace:
+          at: /go
 
       - run:
           name: Setup deployment env
