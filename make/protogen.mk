@@ -5,12 +5,13 @@ BASE_PATH ?= $(CURDIR)
 GENERATED_BASE_PATH = $(BASE_PATH)/generated
 GENERATED_API_PATH = $(GENERATED_BASE_PATH)/api/v1
 GENERATED_DOC_PATH = docs
-MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/v1/swagger.json
-GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/v1/reference
+MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/api/v1/swagger.json
+GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/api/v1/reference
 GENERATED_PB_SRCS = $(API_SERVICES:%=$(GENERATED_API_PATH)/%.pb.go) $(PB_COMMON_FILES:%=$(GENERATED_API_PATH)/%.pb.go)
 GENERATED_API_GW_SRCS = $(API_SERVICES:%=$(GENERATED_API_PATH)/%.pb.gw.go)
 GENERATED_API_VALIDATOR_SRCS = $(API_SERVICES:%=$(GENERATED_API_PATH)/%.validator.pb.go)
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICES:%=$(GENERATED_DOC_PATH)/%.swagger.json)
+
 PROTO_API_PATH = $(BASE_PATH)/api/v1
 PROTO_API_PROTOS = $(API_SERVICES:%=$(PROTO_API_PATH)/%.proto) $(PB_COMMON_FILES:%=$(PROTO_API_PATH)/%.proto)
 
@@ -136,9 +137,9 @@ $(GOPATH)/src/github.com/mwitkow/go-proto-validators:
 	@echo "+ $@"
 	@go get -u github.com/mwitkow/go-proto-validators/protoc-gen-govalidators
 
-$(GENERATED_API_PATH):
+$(GENERATED_DOC_PATH):
 	@echo "+ $@"
-	@mkdir -p $(GENERATED_API_PATH)
+	@mkdir -p $(GENERATED_DOC_PATH)
 
 # Generate all of the proto messages and gRPC services with one invocation of
 # protoc when any of the .pb.go sources don't exist or when any of the .proto
@@ -193,7 +194,7 @@ $(GENERATED_DOC_PATH)/%.swagger.json: $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $
 # Generate the docs from the merged swagger specs.
 $(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS)
 	@echo "+ $@"
-	$(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_DOC_PATH)/v1
+	$(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_DOC_PATH)/api/v1
 
 # Generate the docs from the merged swagger specs.
 $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(PROTOC_GEN_GRPC_GATEWAY)

@@ -124,6 +124,15 @@ gazelle: deps $(GENERATED_SRCS) cleanup
 build: gazelle
 	bazel build $(BAZEL_FLAGS) -- //... -vendor/...
 
+.PHONY: gendocs
+gendocs: $(GENERATED_API_DOCS)
+	@echo "+ $@"
+
+# We don't need to do anything here, because the $(MERGED_API_SWAGGER_SPEC) target already performs validation.
+.PHONY: testdocs
+testdocs: $(MERGED_API_SWAGGER_SPEC)
+	@echo "+ $@"
+
 .PHONY: test
 test: gazelle
 # PURE is so that the test and image stages can share artifacts on Linux.
