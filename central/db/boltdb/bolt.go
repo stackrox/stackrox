@@ -84,6 +84,7 @@ func (b *BoltDB) initializeTables() error {
 		deploymentGraveyard,
 		imageIntegrationBucket,
 		imageBucket,
+		logsBucket,
 		multiplierBucket,
 		notifierBucket,
 		policyBucket,

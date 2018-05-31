@@ -21,6 +21,7 @@ type InMemoryStore struct {
 	db.ClusterStorage
 	db.DeploymentStorage
 	db.ImageStorage
+	db.LogsStorage
 	db.MultiplierStorage
 	db.NotifierStorage
 	db.PolicyStorage
@@ -43,6 +44,7 @@ func New(persistentStorage db.Storage) *InMemoryStore {
 		ClusterStorage:           persistentStorage,
 		DeploymentStorage:        persistentStorage,
 		ImageStorage:             persistentStorage,
+		LogsStorage:              persistentStorage,
 		MultiplierStorage:        persistentStorage,
 		NotifierStorage:          persistentStorage,
 		PolicyStorage:            persistentStorage,

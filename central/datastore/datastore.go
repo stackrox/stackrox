@@ -221,6 +221,13 @@ func GetImageIntegrationStorage() db.ImageIntegrationStorage {
 	return registry.inmem.(db.ImageIntegrationStorage)
 }
 
+// GetLogsStorage provide storage functionality for logs sent to prevent central.
+func GetLogsStorage() db.LogsStorage {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.inmem.(db.LogsStorage)
+}
+
 // GetMultiplierStorage provides the storage functionality for risk scoring multipliers
 func GetMultiplierStorage() db.MultiplierStorage {
 	mutex.RLock()

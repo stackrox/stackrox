@@ -21,6 +21,7 @@ type Storage interface {
 	BenchmarkTriggerStorage
 	ClusterStorage
 	ImageIntegrationStorage
+	LogsStorage
 	DeploymentStorage
 	PolicyStorage
 	ImageStorage
@@ -120,6 +121,15 @@ type ImageStorage interface {
 	AddImage(image *v1.Image) error
 	UpdateImage(image *v1.Image) error
 	RemoveImage(id string) error
+}
+
+// LogsStorage provide storage functionality for logs.
+type LogsStorage interface {
+	GetLogs() ([]string, error)
+	CountLogs() (count int, err error)
+	GetLogsRange() (start int64, end int64, err error)
+	AddLog(log string) error
+	RemoveLogs(from, to int64) error
 }
 
 // MultiplierStorage provides the storage functionality for risk scoring multipliers

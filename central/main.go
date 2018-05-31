@@ -17,6 +17,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/datastore"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/central/enrichment"
+	"bitbucket.org/stack-rox/apollo/central/log_imbue"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/central/notifications"
 	"bitbucket.org/stack-rox/apollo/central/risk"
@@ -151,6 +152,12 @@ func (c *central) customRoutes(userAuth *authnUser.AuthInterceptor, clusterServi
 			AuthInterceptor: userAuth.HTTPInterceptor,
 			Authorizer:      authzUser.Any(),
 			ServerHandler:   clustersZip.Handler(clusterService, idService),
+			Compression:     false,
+		},
+		"/api/logimbue": {
+			AuthInterceptor: userAuth.HTTPInterceptor,
+			Authorizer:      authzUser.Any(),
+			ServerHandler:   logimbue.Handler(datastore.GetLogsStorage()),
 			Compression:     false,
 		},
 		"/db/backup": {
