@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { selectors } from 'reducers';
 import { createSelector, createStructuredSelector } from 'reselect';
-import { actions as benchmarkActions } from 'reducers/benchmarks';
+import { actions as benchmarkActions, types } from 'reducers/benchmarks';
 import dateFns from 'date-fns';
 import { ClipLoader } from 'react-spinners';
 import { sortNumber } from 'sorters/sorters';
@@ -13,6 +13,7 @@ import Table from 'Components/Table';
 import Select from 'Components/Select';
 import BenchmarksSidePanel from 'Containers/Compliance/BenchmarksSidePanel';
 import HostResultModal from 'Containers/Compliance/HostResultModal';
+import Loader from 'Components/Loader';
 
 class BenchmarksPage extends Component {
     static propTypes = {
@@ -42,12 +43,14 @@ class BenchmarksPage extends Component {
             host: PropTypes.string,
             notes: PropTypes.arrayOf(PropTypes.string)
         }),
-        fetchBenchmarkCheckHostResults: PropTypes.func.isRequired
+        fetchBenchmarkCheckHostResults: PropTypes.func.isRequired,
+        isFetchingBenchmarkCheckHostResults: PropTypes.bool
     };
 
     static defaultProps = {
         selectedBenchmarkScanResult: null,
-        selectedBenchmarkHostResult: null
+        selectedBenchmarkHostResult: null,
+        isFetchingBenchmarkCheckHostResults: false
     };
 
     constructor(props) {
@@ -267,6 +270,12 @@ class BenchmarksPage extends Component {
     }
 
     renderBenchmarksSidePanel() {
+        if (this.props.isFetchingBenchmarkCheckHostResults)
+            return (
+                <div className="w-2/3">
+                    <Loader />
+                </div>
+            );
         if (
             !this.props.selectedBenchmarkScanResult.definition ||
             !this.props.selectedBenchmarkScanResult.hostResults
@@ -342,7 +351,9 @@ const mapStateToProps = createStructuredSelector({
     schedule: selectors.getBenchmarkSchedule,
     selectedBenchmarkScanResult: getSelectedBenchmarkScanResult,
     selectedBenchmarkHostResult: selectors.getSelectedBenchmarkHostResult,
-    clusterId: getClusterId
+    clusterId: getClusterId,
+    isFetchingBenchmarkCheckHostResults: state =>
+        selectors.getLoadingStatus(state, types.FETCH_BENCHMARK_CHECK_HOST_RESULTS)
 });
 
 const mapDispatchToProps = dispatch => ({
