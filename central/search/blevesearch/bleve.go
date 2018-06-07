@@ -7,6 +7,8 @@ import (
 	"github.com/blevesearch/bleve/analysis/analyzer/custom"
 	"github.com/blevesearch/bleve/analysis/token/lowercase"
 	"github.com/blevesearch/bleve/analysis/tokenizer/single"
+	"github.com/blevesearch/bleve/index/store/moss"
+	"github.com/blevesearch/bleve/index/upsidedown"
 	"github.com/blevesearch/bleve/mapping"
 )
 
@@ -23,9 +25,9 @@ type Indexer struct {
 }
 
 // NewIndexer creates a new Indexer based on Bleve
-func NewIndexer() (*Indexer, error) {
+func NewIndexer(path string) (*Indexer, error) {
 	b := &Indexer{}
-	if err := b.initializeIndices(); err != nil {
+	if err := b.initializeIndices(path); err != nil {
 		return nil, err
 	}
 	return b, nil
@@ -65,9 +67,14 @@ func getIndexMapping() *mapping.IndexMappingImpl {
 	return indexMapping
 }
 
-func (b *Indexer) initializeIndices() error {
+func (b *Indexer) initializeIndices(mossPath string) error {
 	indexMapping := getIndexMapping()
-	allIndex, err := bleve.NewMemOnly(indexMapping)
+
+	kvconfig := map[string]interface{}{
+		"mossLowerLevelStoreName": "mossStore",
+	}
+
+	allIndex, err := bleve.NewUsing(mossPath, indexMapping, upsidedown.Name, moss.Name, kvconfig)
 	if err != nil {
 		return err
 	}

@@ -1,5 +1,5 @@
 export const alerts = {
-    countsByCluster: /v1\/alerts\/summary\/counts\?group_by=CLUSTER.*/,
+    countsByCluster: 'v1/alerts/summary/counts?group_by=CLUSTER*',
     countsByCategory: '/v1/alerts/summary/counts?group_by=CATEGORY*',
     alerts: '/v1/alerts?*',
     alertById: '/v1/alerts/*'
@@ -24,8 +24,8 @@ export const risks = {
 };
 
 export const search = {
-    globalSearchWithResults: '/v1/search?query=Cluster:remote',
-    globalSearchWithNoResults: '/v1/search?query=Cluster:',
+    globalSearchWithResults: '/v1/search?query=Stale:false+Cluster:remote',
+    globalSearchWithNoResults: '/v1/search?query=Stale:false+Cluster:',
     options: '/v1/search/metadata/options*'
 };
 

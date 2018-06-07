@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
 )
@@ -94,9 +95,10 @@ func (ds *clusterDataStoreImpl) getDeployments(cluster *v1.Cluster) ([]*v1.Deplo
 
 // TODO(cgorman) Make this a search once the document mapping goes in
 func (ds *clusterDataStoreImpl) getAlerts(deployment *v1.Deployment) ([]*v1.Alert, error) {
+	qb := search.NewQueryBuilder().AddBool(search.Stale, false).AddString(search.DeploymentID, deployment.GetId())
+
 	existingAlerts, err := ds.alerts.GetAlerts(&v1.ListAlertsRequest{
-		Stale:        []bool{false},
-		DeploymentId: deployment.GetId(),
+		Query: qb.Query(),
 	})
 	if err != nil {
 		logger.Errorf("unable to get alert: %s", err)

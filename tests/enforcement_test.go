@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"github.com/stretchr/testify/assert"
@@ -44,10 +45,12 @@ func verifyDeploymentScaledToZero(t *testing.T) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
+	qb := search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName)
+
 	for range ticker.C {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		listDeployments, err := service.ListDeployments(ctx, &v1.RawQuery{
-			Query: getDeploymentQuery(nginxDeploymentName),
+			Query: qb.Query(),
 		})
 		cancel()
 		if err != nil && ctx.Err() == context.DeadlineExceeded {
@@ -78,9 +81,9 @@ func verifyAlertWithEnforcement(t *testing.T) {
 
 	service := v1.NewAlertServiceClient(conn)
 
+	qb := search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName).AddString(search.PolicyName, expectedLatestTagPolicy).AddBool(search.Stale, false)
 	alerts, err := service.ListAlerts(ctx, &v1.ListAlertsRequest{
-		Query: getDeploymentQuery(nginxDeploymentName) + "+" + getPolicyQuery(expectedLatestTagPolicy),
-		Stale: []bool{false},
+		Query: qb.Query(),
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, alerts.GetAlerts())
@@ -108,8 +111,11 @@ func teardownTestEnforcement(t *testing.T) {
 func togglePolicyEnforcement(t *testing.T, conn *grpc.ClientConn, enable bool) {
 	service := v1.NewPolicyServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+
+	qb := search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy)
+
 	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
-		Query: getPolicyQuery(expectedLatestTagPolicy),
+		Query: qb.Query(),
 	})
 	cancel()
 	require.NoError(t, err)

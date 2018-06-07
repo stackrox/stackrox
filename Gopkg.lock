@@ -115,6 +115,7 @@
     "index/store",
     "index/store/boltdb",
     "index/store/gtreap",
+    "index/store/moss",
     "index/upsidedown",
     "mapping",
     "numeric",
@@ -198,6 +199,17 @@
   packages = ["timeutil"]
   revision = "3ac0863d7acf3bc44daf49afef8919af12f704ef"
   version = "v3"
+
+[[projects]]
+  name = "github.com/couchbase/ghistogram"
+  packages = ["."]
+  revision = "d910dd063dd68fb4d2a1ba344440f834ebb4ef62"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/couchbase/moss"
+  packages = ["."]
+  revision = "929cc75f09a3bec7da9f993b041fbd7c9a0daa92"
 
 [[projects]]
   branch = "master"
@@ -1056,6 +1068,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "92129451cb9d19d1d21213e68806d1cbdadda7e4204af07b57cba0e04f528914"
+  inputs-digest = "e3c066340831ea9e5330bf5bccb9345c3bf7900dc77a42723189976f51d926c9"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
@@ -59,8 +60,9 @@ func TestDeployments(t *testing.T) {
 
 	service := v1.NewDeploymentServiceClient(conn)
 
+	qb := search.NewQueryBuilder().AddString(search.DeploymentName, "central").AddString(search.DeploymentName, "sensor")
 	deployments, err := service.ListDeployments(ctx, &v1.RawQuery{
-		Query: getDeploymentQuery("central", "sensor"),
+		Query: qb.Query(),
 	})
 	require.NoError(t, err)
 	require.Len(t, deployments.GetDeployments(), 2)

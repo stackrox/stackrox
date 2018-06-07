@@ -9,7 +9,7 @@ import (
 )
 
 func TestImage(t *testing.T) {
-	indexer, err := NewIndexer()
+	indexer, err := NewTmpIndexer()
 	assert.NoError(t, err)
 	image := &v1.Image{
 		Name: &v1.ImageName{
@@ -36,7 +36,7 @@ func TestImage(t *testing.T) {
 }
 
 func TestAlert(t *testing.T) {
-	indexer, err := NewIndexer()
+	indexer, err := NewTmpIndexer()
 	assert.NoError(t, err)
 
 	alert := fixtures.GetAlert()
@@ -61,7 +61,7 @@ func TestAlert(t *testing.T) {
 }
 
 func TestPolicy(t *testing.T) {
-	indexer, err := NewIndexer()
+	indexer, err := NewTmpIndexer()
 	assert.NoError(t, err)
 
 	policy := &v1.Policy{
@@ -90,7 +90,7 @@ func TestPolicy(t *testing.T) {
 }
 
 func TestDeployment(t *testing.T) {
-	indexer, err := NewIndexer()
+	indexer, err := NewTmpIndexer()
 	assert.NoError(t, err)
 
 	deployment := fixtures.GetAlert().GetDeployment()

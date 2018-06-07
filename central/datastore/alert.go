@@ -6,8 +6,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/set"
-	ptypes "github.com/gogo/protobuf/types"
 )
 
 // AlertDataStore is an intermediary to AlertStorage.
@@ -89,7 +87,11 @@ func (ds *alertDataStoreImpl) UpdateAlert(alert *v1.Alert) error {
 
 // CountAlerts returns the number of alerts that are active
 func (ds *alertDataStoreImpl) CountAlerts() (int, error) {
-	alerts, err := ds.GetAlerts(&v1.ListAlertsRequest{Stale: []bool{false}})
+	qb := search.NewQueryBuilder().AddBool(search.Stale, false)
+	// Do not call GetAlerts because they returns full alert objects which are expensive
+	alerts, err := ds.GetAlerts(&v1.ListAlertsRequest{
+		Query: qb.Query(),
+	})
 	return len(alerts), err
 }
 
@@ -99,18 +101,6 @@ func (ds *alertDataStoreImpl) RemoveAlert(id string) error {
 		return err
 	}
 	return ds.indexer.DeleteAlert(id)
-}
-
-type severitiesWrap []v1.Severity
-
-func (wrap severitiesWrap) asSet() map[v1.Severity]struct{} {
-	output := make(map[v1.Severity]struct{})
-
-	for _, s := range wrap {
-		output[s] = struct{}{}
-	}
-
-	return output
 }
 
 // GetAlerts fetches the data from the database or searches for it based on the passed filters
@@ -132,64 +122,14 @@ func (ds *alertDataStoreImpl) GetAlerts(request *v1.ListAlertsRequest) ([]*v1.Al
 			return nil, err
 		}
 	}
-	sinceTime, sinceTimeErr := ptypes.TimestampFromProto(request.GetSince())
-	untilTime, untilTimeErr := ptypes.TimestampFromProto(request.GetUntil())
-	sinceStaleTime, sinceStaleTimeErr := ptypes.TimestampFromProto(request.GetSinceStale())
-	untilStaleTime, untilStaleTimeErr := ptypes.TimestampFromProto(request.GetUntilStale())
-
-	severitySet := severitiesWrap(request.GetSeverity()).asSet()
-	categorySet := set.NewSetFromStringSlice(request.GetCategory())
-	filtered := alerts[:0]
-
-	for _, alert := range alerts {
-		if len(request.GetStale()) == 1 && alert.GetStale() != request.GetStale()[0] {
-			continue
-		}
-		if request.GetDeploymentId() != "" && request.GetDeploymentId() != alert.GetDeployment().GetId() {
-			continue
-		}
-
-		if request.GetPolicyId() != "" && request.GetPolicyId() != alert.GetPolicy().GetId() {
-			continue
-		}
-
-		if _, ok := severitySet[alert.GetPolicy().GetSeverity()]; len(severitySet) > 0 && !ok {
-			continue
-		}
-		alertCategoriesSet := set.NewSetFromStringSlice(alert.GetPolicy().GetCategories())
-		if categorySet.Cardinality() != 0 && categorySet.Intersect(alertCategoriesSet).Cardinality() == 0 {
-			continue
-		}
-		if sinceTimeErr == nil && !sinceTime.IsZero() {
-			if alertTime, alertTimeErr := ptypes.TimestampFromProto(alert.GetTime()); alertTimeErr == nil && !sinceTime.Before(alertTime) {
-				continue
-			}
-		}
-		if untilTimeErr == nil && !untilTime.IsZero() {
-			if alertTime, alertTimeErr := ptypes.TimestampFromProto(alert.GetTime()); alertTimeErr == nil && !untilTime.After(alertTime) {
-				continue
-			}
-		}
-		if sinceStaleTimeErr == nil && !sinceStaleTime.IsZero() {
-			if alertTime, alertTimeErr := ptypes.TimestampFromProto(alert.GetTime()); alertTimeErr == nil && !sinceStaleTime.Before(alertTime) {
-				continue
-			}
-		}
-		if untilStaleTimeErr == nil && !untilStaleTime.IsZero() {
-			if alertTime, alertTimeErr := ptypes.TimestampFromProto(alert.GetTime()); alertTimeErr == nil && !untilStaleTime.After(alertTime) {
-				continue
-			}
-		}
-		filtered = append(filtered, alert)
-	}
 	// Sort by descending timestamp.
-	sort.SliceStable(filtered, func(i, j int) bool {
-		if sI, sJ := filtered[i].GetTime().GetSeconds(), filtered[j].GetTime().GetSeconds(); sI != sJ {
+	sort.SliceStable(alerts, func(i, j int) bool {
+		if sI, sJ := alerts[i].GetTime().GetSeconds(), alerts[j].GetTime().GetSeconds(); sI != sJ {
 			return sI > sJ
 		}
-		return filtered[i].GetTime().GetNanos() > filtered[j].GetTime().GetNanos()
+		return alerts[i].GetTime().GetNanos() > alerts[j].GetTime().GetNanos()
 	})
-	return filtered, nil
+	return alerts, nil
 }
 
 func (ds *alertDataStoreImpl) searchAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, []search.Result, error) {

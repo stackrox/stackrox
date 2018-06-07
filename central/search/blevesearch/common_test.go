@@ -3,11 +3,21 @@ package blevesearch
 import (
 	"testing"
 
+	"io/ioutil"
+
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
+
+func NewTmpIndexer() (*Indexer, error) {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return nil, err
+	}
+	return NewIndexer(dir)
+}
 
 func TestSearch(t *testing.T) {
 	suite.Run(t, new(SearchTestSuite))
@@ -19,7 +29,7 @@ type SearchTestSuite struct {
 }
 
 func (suite *SearchTestSuite) SetupSuite() {
-	indexer, err := NewIndexer()
+	indexer, err := NewTmpIndexer()
 	suite.Require().NoError(err)
 
 	suite.Indexer = indexer

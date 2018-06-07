@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 )
 
@@ -52,9 +53,10 @@ func severityImpact(severity v1.Severity) float32 {
 
 // Score takes a deployment and evaluates its risk based on policy violations.
 func (v *ViolationsMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
+	qb := search.NewQueryBuilder().AddString(search.DeploymentID, deployment.GetId()).AddBool(search.Stale, false)
+
 	alerts, err := v.getter.GetAlerts(&v1.ListAlertsRequest{
-		DeploymentId: deployment.GetId(),
-		Stale:        []bool{false},
+		Query: qb.Query(),
 	})
 	if err != nil {
 		logger.Errorf("Couldn't get risk violations for %s: %s", deployment.GetId(), err)

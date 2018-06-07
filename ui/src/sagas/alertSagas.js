@@ -8,6 +8,7 @@ import { types as dashboardTypes } from 'reducers/dashboard';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { whitelistDeployment } from 'services/PoliciesService';
+import { setStaleSearchOption } from 'utils/searchUtils';
 
 const basePath = '/';
 const dashboardPath = '/main/dashboard';
@@ -16,11 +17,13 @@ const violationsPath = '/main/violations/:alertId?';
 function filterTimeseriesResultsByClusterSearchOptions(result, filters) {
     const filteredResult = Object.assign({}, result);
     if (filters && filters.query) {
-        const clusterNames = filters.query.replace('Cluster:', '').split(',');
-        if (clusterNames.length && clusterNames[0] !== '')
+        let clusterNames = filters.query.split('+').filter(obj => obj.includes('Cluster:'));
+        if (clusterNames.length) clusterNames = clusterNames[0].replace('Cluster:', '').split(',');
+        if (clusterNames.length && clusterNames[0] !== '') {
             filteredResult.response.clusters = result.response.clusters.filter(obj =>
                 clusterNames.includes(obj.cluster)
             );
+        }
     }
     return filteredResult;
 }
@@ -28,12 +31,12 @@ function filterTimeseriesResultsByClusterSearchOptions(result, filters) {
 function filterCountsResultByClusterSearchOption(result, filters) {
     const filteredResult = Object.assign({}, result);
     if (filters && filters.query) {
-        const clusterNames = filters.query.replace('Cluster:', '').split(',');
-        if (clusterNames.length && clusterNames[0] !== '') {
+        let clusterNames = filters.query.split('+').filter(obj => obj.includes('Cluster:'));
+        if (clusterNames.length) clusterNames = clusterNames.replace('Cluster:', '').split(',');
+        if (clusterNames.length && clusterNames[0] !== '')
             filteredResult.response.groups = result.response.groups.filter(obj =>
                 clusterNames.includes(obj.group)
             );
-        }
     }
     return filteredResult;
 }
@@ -67,6 +70,7 @@ function* getGlobalAlertCounts(filters) {
         const filteredResult = filterCountsResultByClusterSearchOption(result, filters);
         yield put(actions.fetchGlobalAlertCounts.success(filteredResult.response));
     } catch (error) {
+        console.error(error);
         yield put(actions.fetchGlobalAlertCounts.failure(error));
     }
 }
@@ -93,6 +97,7 @@ function* getAlertCountsByCluster(filters) {
         const filteredResult = filterCountsResultByClusterSearchOption(result, filters);
         yield put(actions.fetchAlertCountsByCluster.success(filteredResult.response));
     } catch (error) {
+        console.error(error);
         yield put(actions.fetchAlertCountsByCluster.failure(error));
     }
 }
@@ -106,6 +111,7 @@ function* getAlertsByTimeseries(filters) {
         const filteredResult = filterTimeseriesResultsByClusterSearchOptions(result, filters);
         yield put(actions.fetchAlertsByTimeseries.success(filteredResult.response));
     } catch (error) {
+        console.error(error);
         yield put(actions.fetchAlertsByTimeseries.failure(error));
     }
 }
@@ -127,13 +133,20 @@ function* filterViolationsPageBySearch() {
     yield fork(getAlerts, filters);
 }
 
+function* setStaleSearchOptionInViolations() {
+    let searchOptions = yield select(selectors.getAlertsSearchOptions);
+    searchOptions = setStaleSearchOption(searchOptions);
+    yield put(actions.setAlertsSearchOptions(searchOptions));
+}
+
 function* filterDashboardPageBySearch() {
     const searchOptions = yield select(selectors.getDashboardSearchOptions);
+    const newSearchOptions = setStaleSearchOption(searchOptions);
     const filters = {
-        query: searchOptionsToQuery(searchOptions)
+        query: searchOptionsToQuery(newSearchOptions)
     };
     const nestedFilter = {
-        'request.query': searchOptionsToQuery(searchOptions)
+        'request.query': searchOptionsToQuery(newSearchOptions)
     };
     yield fork(getGlobalAlertCounts, nestedFilter);
     yield fork(getAlertCountsByCluster, nestedFilter);
@@ -142,6 +155,7 @@ function* filterDashboardPageBySearch() {
 }
 
 function* loadViolationsPage(match) {
+    yield fork(setStaleSearchOptionInViolations);
     yield put(actions.pollAlerts.start());
 
     const { alertId } = match.params;

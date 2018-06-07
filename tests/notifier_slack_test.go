@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
@@ -104,9 +105,9 @@ func addNotifierToPolicy(t *testing.T, conn *grpc.ClientConn) {
 	defer cancel()
 
 	service := v1.NewPolicyServiceClient(conn)
-
+	qb := search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy)
 	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
-		Query: getPolicyQuery(expectedLatestTagPolicy),
+		Query: qb.Query(),
 	})
 	require.NoError(t, err)
 	require.Len(t, resp.GetPolicies(), 1)
@@ -147,9 +148,10 @@ func teardownNginxLatestTagDeployment(t *testing.T) {
 
 func verifyPolicyHasNoNotifier(t *testing.T, conn *grpc.ClientConn) {
 	service := v1.NewPolicyServiceClient(conn)
+	qb := search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
-		Query: getPolicyQuery(expectedLatestTagPolicy),
+		Query: qb.Query(),
 	})
 	cancel()
 	require.NoError(t, err)
@@ -166,10 +168,11 @@ func verifyAlertsForLatestTag(t *testing.T, alert *v1.Alert) {
 
 	service := v1.NewAlertServiceClient(conn)
 
+	qb := search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName).AddString(search.PolicyName, expectedLatestTagPolicy).AddBool(search.Stale, false)
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	alerts, err := service.ListAlerts(ctx, &v1.ListAlertsRequest{
-		Query: getDeploymentQuery(nginxDeploymentName) + "+" + getPolicyQuery(expectedLatestTagPolicy),
-		Stale: []bool{false},
+		Query: qb.Query(),
 	})
 	cancel()
 	require.NoError(t, err)

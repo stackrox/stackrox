@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-	"strings"
 	"testing"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -24,18 +24,13 @@ const (
 	waitTimeout = 2 * time.Minute
 )
 
-func getDeploymentQuery(args ...string) string {
-	return fmt.Sprintf("Deployment Name:%s", strings.Join(args, ","))
-}
-
-func getPolicyQuery(name string) string {
-	return fmt.Sprintf("Policy Name:%s", name)
-}
+var alertQuery = func() string {
+	return search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName).AddString(search.LabelKey, "hello").AddString(search.LabelValue, "world").AddBool(search.Stale, false).Query()
+}()
 
 var (
 	alertRequestOptions = v1.ListAlertsRequest{
-		Query: getDeploymentQuery(nginxDeploymentName) + "+Label Key:hello+Label Value:world",
-		Stale: []bool{false},
+		Query: alertQuery,
 	}
 )
 
@@ -129,12 +124,14 @@ func waitForDeployment(t *testing.T, deploymentName string) {
 	timer := time.NewTimer(waitTimeout)
 	defer timer.Stop()
 
+	qb := search.NewQueryBuilder().AddString(search.DeploymentName, deploymentName)
+
 	for {
 		select {
 		case <-ticker.C:
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			listDeployments, err := service.ListDeployments(ctx, &v1.RawQuery{
-				Query: getDeploymentQuery(deploymentName),
+				Query: qb.Query(),
 			},
 			)
 			cancel()
@@ -222,7 +219,7 @@ func addPolicyClusterScope(t *testing.T, policyName string) {
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	policyResp, err := policyService.GetPolicies(ctx, &v1.RawQuery{
-		Query: fmt.Sprintf("Policy Name:%s", policyName),
+		Query: search.NewQueryBuilder().AddString(search.PolicyName, policyName).Query(),
 	})
 	cancel()
 	require.NoError(t, err)
@@ -243,10 +240,10 @@ func revertPolicyScopeChange(t *testing.T, policyName string) {
 	require.NoError(t, err)
 
 	policyService := v1.NewPolicyServiceClient(conn)
-
+	qb := search.NewQueryBuilder().AddString(search.PolicyName, policyName)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	policyResp, err := policyService.GetPolicies(ctx, &v1.RawQuery{
-		Query: getPolicyQuery(policyName),
+		Query: qb.Query(),
 	})
 	cancel()
 	require.NoError(t, err)
@@ -267,7 +264,8 @@ func verifyStaleAlerts(t *testing.T) {
 
 	service := v1.NewAlertServiceClient(conn)
 	request := alertRequestOptions
-	request.Stale = []bool{true}
+	qb := search.NewQueryBuilder().AddBool(search.Stale, true)
+	request.Query = qb.Query()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	alerts, err := service.ListAlerts(ctx, &request)

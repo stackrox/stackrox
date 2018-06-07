@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"github.com/stretchr/testify/assert"
@@ -132,9 +133,10 @@ func verifyMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.Ima
 	}
 
 	deploymentService := v1.NewDeploymentServiceClient(conn)
+	qb := search.NewQueryBuilder().AddString(search.DeploymentName, alpineDeploymentName)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	listDeployments, err := deploymentService.ListDeployments(ctx, &v1.RawQuery{
-		Query: getDeploymentQuery(alpineDeploymentName),
+		Query: qb.Query(),
 	})
 	cancel()
 	require.NoError(t, err)
@@ -155,9 +157,11 @@ func verifyMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.Ima
 	}
 
 	alertService := v1.NewAlertServiceClient(conn)
+	qb = search.NewQueryBuilder().AddString(search.PolicyName, expectedPort22Policy).AddString(search.DeploymentName, alpineDeploymentName)
+
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	alerts, err := alertService.ListAlerts(ctx, &v1.ListAlertsRequest{
-		Query: getPolicyQuery(expectedPort22Policy) + "+" + getDeploymentQuery(alpineDeploymentName),
+		Query: qb.Query(),
 	})
 	cancel()
 	require.NoError(t, err)

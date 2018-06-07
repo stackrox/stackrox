@@ -18,7 +18,7 @@ type PolicyTestSuite struct {
 }
 
 func (suite *PolicyTestSuite) SetupSuite() {
-	indexer, err := NewIndexer()
+	indexer, err := NewTmpIndexer()
 	suite.Require().NoError(err)
 
 	suite.Indexer = indexer

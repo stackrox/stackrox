@@ -14,7 +14,8 @@ const compliancePath = '/main/compliance';
 function filterResultByClusterSearchOption(result, filters) {
     let filteredResult = result.slice();
     if (filters && filters.query) {
-        const clusterNames = filters.query.replace('Cluster:', '').split(',');
+        let clusterNames = filters.query.split('+').filter(obj => obj.includes('Cluster:'));
+        if (clusterNames.length) clusterNames = clusterNames[0].replace('Cluster:', '').split(',');
         if (clusterNames.length && clusterNames[0] !== '')
             filteredResult = result.filter(obj => clusterNames.includes(obj.clusterName));
     }

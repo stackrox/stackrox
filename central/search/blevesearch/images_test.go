@@ -18,7 +18,7 @@ type ImageTestSuite struct {
 }
 
 func (suite *ImageTestSuite) SetupSuite() {
-	indexer, err := NewIndexer()
+	indexer, err := NewTmpIndexer()
 	suite.Require().NoError(err)
 
 	suite.Indexer = indexer

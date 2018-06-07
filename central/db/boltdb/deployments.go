@@ -141,7 +141,6 @@ func (b *BoltDB) RemoveDeployment(id string) error {
 		if !exists {
 			return db.ErrNotFound{Type: "Deployment", ID: id}
 		}
-
 		b.ranker.Remove(id)
 		return bucket.Delete([]byte(id))
 	})

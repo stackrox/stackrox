@@ -18,7 +18,7 @@ type DeploymentTestSuite struct {
 }
 
 func (suite *DeploymentTestSuite) SetupSuite() {
-	indexer, err := NewIndexer()
+	indexer, err := NewTmpIndexer()
 	suite.Require().NoError(err)
 
 	suite.Indexer = indexer

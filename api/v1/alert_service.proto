@@ -31,16 +31,8 @@ message Alert {
 }
 
 message ListAlertsRequest {
-    repeated string category               = 1;
-    string policy_id                       = 2;
-    repeated Severity severity             = 3;
-    google.protobuf.Timestamp since        = 4;
-    google.protobuf.Timestamp until        = 5;
-    google.protobuf.Timestamp sinceStale   = 6;
-    google.protobuf.Timestamp untilStale   = 7;
-    repeated bool stale                    = 8;
-    string deployment_id                   = 9;
-    string query                           = 10;
+    reserved 1 to 9; // Removed individual filtered fields and moved towards querying
+    string query = 10;
 }
 
 message ListAlert {

@@ -3,6 +3,9 @@ package risk
 import (
 	"testing"
 
+	"fmt"
+
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,12 +17,17 @@ type mockGetter struct {
 // GetAlerts supports a limited set of request parameters.
 // It only needs to be as specific as the production code.
 func (m mockGetter) GetAlerts(req *v1.ListAlertsRequest) (alerts []*v1.Alert, err error) {
+	parsedRequest, err := search.ParseRawQuery(req.GetQuery())
+	if err != nil {
+		return nil, err
+	}
 	for _, a := range m.alerts {
 		match := true
-		if len(req.Stale) != 0 {
+		staleValues := parsedRequest.Fields["alert.stale"].GetValues()
+		if len(staleValues) != 0 {
 			match = false
-			for _, v := range req.Stale {
-				if a.Stale == v {
+			for _, v := range staleValues {
+				if fmt.Sprintf("%t", a.Stale) == v {
 					match = true
 				}
 			}

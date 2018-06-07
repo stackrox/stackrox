@@ -51,7 +51,7 @@ func Init() error {
 	}
 	inmem := inmem.New(persistence)
 
-	indexer, err := blevesearch.NewIndexer()
+	indexer, err := blevesearch.NewIndexer("/tmp/moss.bleve")
 	if err != nil {
 		return err
 	}

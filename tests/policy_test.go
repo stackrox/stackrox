@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/image/policies"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
@@ -121,8 +122,9 @@ func verifyReadPolicy(t *testing.T, service v1.PolicyServiceClient) {
 	assert.Equal(t, policy, getResp)
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	qb := search.NewQueryBuilder().AddString(search.PolicyName, policy.GetName())
 	getManyResp, err := service.GetPolicies(ctx, &v1.RawQuery{
-		Query: getPolicyQuery(policy.GetName()),
+		Query: qb.Query(),
 	})
 	cancel()
 	require.NoError(t, err)

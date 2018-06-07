@@ -48,6 +48,7 @@ message Deployment {
     google.protobuf.Timestamp tombstone        = 13;
     repeated KeyValue annotations              = 14;
     int64 priority                             = 15;
+    bool inactive                              = 16;
 }
 
 message Container {

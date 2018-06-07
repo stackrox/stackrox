@@ -3,6 +3,11 @@
 
 ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
 
+# github.com/couchbase/moss has the incorrect version and doesn't run
+[[override]]
+  name = "github.com/couchbase/ghistogram"
+  revision = "d910dd063dd68fb4d2a1ba344440f834ebb4ef62"
+
 [[constraint]]
   name = "github.com/boltdb/bolt"
   version = "1.3.1"

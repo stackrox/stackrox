@@ -7,8 +7,12 @@ import { actions as imagesActions } from 'reducers/images';
 import { actions as deploymentsActions } from 'reducers/deployments';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import { setStaleSearchOption } from 'utils/searchUtils';
+import watchLocation from 'utils/watchLocation';
 
 import { toast } from 'react-toastify';
+
+const mainPath = '/main';
 
 export function* getGlobalSearchResults() {
     try {
@@ -43,6 +47,12 @@ export function* passthroughGlobalSearchOptions({ searchOptions, category }) {
     }
 }
 
+function* setStaleSearchOptionInGlobalSearch() {
+    let searchOptions = yield select(selectors.getGlobalSearchOptions);
+    searchOptions = setStaleSearchOption(searchOptions);
+    yield put(actions.setGlobalSearchOptions(searchOptions));
+}
+
 function* watchGlobalsearchSearchOptions() {
     yield takeLatest(types.SET_SEARCH_OPTIONS, getGlobalSearchResults);
 }
@@ -57,6 +67,7 @@ function* watchPassthroughGlobalSearchOptions() {
 
 export default function* globalSearch() {
     yield all([
+        fork(watchLocation, mainPath, setStaleSearchOptionInGlobalSearch),
         fork(watchGlobalsearchSearchOptions),
         fork(watchSetGlobalSearchCategory),
         fork(watchPassthroughGlobalSearchOptions)

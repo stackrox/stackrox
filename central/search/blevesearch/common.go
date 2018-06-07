@@ -11,7 +11,7 @@ import (
 	"github.com/blevesearch/bleve/search/query"
 )
 
-const maxSearchResponses = 100
+const maxSearchResponses = 2000
 
 func transformKey(key string, objectMap map[string]string) string {
 	spl := strings.SplitN(key, ".", 2)

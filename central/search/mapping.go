@@ -38,67 +38,69 @@ func newField(path string, t v1.SearchDataType, store bool) *v1.SearchField {
 
 // GlobalOptions is exposed for e2e test
 var GlobalOptions = []string{
-	"Cluster",
-	"Namespace",
-	"Label Key",
-	"Label Value",
+	Cluster,
+	Namespace,
+	LabelKey,
+	LabelValue,
 }
 
 // PolicyOptionsMap is exposed for e2e test
 var PolicyOptionsMap = map[string]*v1.SearchField{
-	"Cluster":     newStringField("policy.scope.cluster"),
-	"Namespace":   newStringField("policy.scope.namespace"),
-	"Label Key":   newStringField("policy.scope.label.key"),
-	"Label Value": newStringField("policy.scope.label.value"),
+	Cluster:    newStringField("policy.scope.cluster"),
+	Namespace:  newStringField("policy.scope.namespace"),
+	LabelKey:   newStringField("policy.scope.label.key"),
+	LabelValue: newStringField("policy.scope.label.value"),
 
-	"Enforcement": newEnforcementField("policy.enforcement"),
-	"Policy Name": newStringField("policy.name"),
-	"Description": newStringField("policy.description"),
-	"Category":    newStringField("policy.categories"),
-	"Severity":    newSeverityField("policy.severity"),
+	PolicyID:    newStringField("policy.id"),
+	Enforcement: newEnforcementField("policy.enforcement"),
+	PolicyName:  newStringField("policy.name"),
+	Description: newStringField("policy.description"),
+	Category:    newStringField("policy.categories"),
+	Severity:    newSeverityField("policy.severity"),
 }
 
 // ImageOptionsMap is exposed for e2e test
 var ImageOptionsMap = map[string]*v1.SearchField{
-	"CVE":                            newStringField("image.scan.components.vulns.cve"),
-	"CVSS":                           newNumericField("image.scan.components.vulns.cvss"),
-	"Component":                      newStringField("image.scan.components.name"),
-	"Dockerfile Instruction Keyword": newStringField("image.metadata.layers.instruction"),
-	"Dockerfile Instruction Value":   newStringField("image.metadata.layers.value"),
-	"Image Name":                     newStringField("image.name.full_name"),
-	"Image Sha":                      newField("image.name.sha", v1.SearchDataType_SEARCH_STRING, true),
-	"Image Registry":                 newStringField("image.name.registry"),
-	"Image Remote":                   newStringField("image.name.remote"),
-	"Image Tag":                      newStringField("image.name.tag"),
+	CVE:                          newStringField("image.scan.components.vulns.cve"),
+	CVSS:                         newNumericField("image.scan.components.vulns.cvss"),
+	Component:                    newStringField("image.scan.components.name"),
+	DockerfileInstructionKeyword: newStringField("image.metadata.layers.instruction"),
+	DockerfileInstructionValue:   newStringField("image.metadata.layers.value"),
+	ImageName:                    newStringField("image.name.full_name"),
+	ImageSHA:                     newField("image.name.sha", v1.SearchDataType_SEARCH_STRING, true),
+	ImageRegistry:                newStringField("image.name.registry"),
+	ImageRemote:                  newStringField("image.name.remote"),
+	ImageTag:                     newStringField("image.name.tag"),
 }
 
 // DeploymentOptionsMap is exposed for e2e test
 var DeploymentOptionsMap = map[string]*v1.SearchField{
-	"Cluster":     newStringField("deployment.cluster_name"),
-	"Namespace":   newStringField("deployment.namespace"),
-	"Label Key":   newStringField("deployment.labels.key"),
-	"Label Value": newStringField("deployment.labels.value"),
+	Cluster:    newStringField("deployment.cluster_name"),
+	Namespace:  newStringField("deployment.namespace"),
+	LabelKey:   newStringField("deployment.labels.key"),
+	LabelValue: newStringField("deployment.labels.value"),
 
-	"Deployment Name":    newStringField("deployment.name"),
-	"Deployment Type":    newStringField("deployment.type"),
-	"Add Capabilities":   newStringField("deployment.containers.security_context.add_capabilities"),
-	"Drop Capabilities":  newStringField("deployment.containers.security_context.drop_capabilities"),
-	"Environment Key":    newStringField("deployment.containers.config.env.key"),
-	"Environment Value":  newStringField("deployment.containers.config.env.value"),
-	"Privileged":         newBoolField("deployment.containers.security_context.privileged"),
-	"Secret Name":        newStringField("deployment.containers.secrets.name"),
-	"Secret Path":        newStringField("deployment.containers.secrets.path"),
-	"Volume Name":        newStringField("deployment.containers.volumes.name"),
-	"Volume Source":      newStringField("deployment.containers.volumes.source"),
-	"Volume Destination": newStringField("deployment.containers.volumes.destination"),
-	"Volume ReadOnly":    newBoolField("deployment.containers.volumes.read_only"),
-	"Volume Type":        newStringField("deployment.containers.volumes.type"),
+	DeploymentID:      newStringField("deployment.id"),
+	DeploymentName:    newStringField("deployment.name"),
+	DeploymentType:    newStringField("deployment.type"),
+	AddCapabilities:   newStringField("deployment.containers.security_context.add_capabilities"),
+	DropCapabilities:  newStringField("deployment.containers.security_context.drop_capabilities"),
+	EnvironmentKey:    newStringField("deployment.containers.config.env.key"),
+	EnvironmentValue:  newStringField("deployment.containers.config.env.value"),
+	Privileged:        newBoolField("deployment.containers.security_context.privileged"),
+	SecretName:        newStringField("deployment.containers.secrets.name"),
+	SecretPath:        newStringField("deployment.containers.secrets.path"),
+	VolumeName:        newStringField("deployment.containers.volumes.name"),
+	VolumeSource:      newStringField("deployment.containers.volumes.source"),
+	VolumeDestination: newStringField("deployment.containers.volumes.destination"),
+	VolumeReadonly:    newBoolField("deployment.containers.volumes.read_only"),
+	VolumeType:        newStringField("deployment.containers.volumes.type"),
 }
 
 // AlertOptionsMap is exposed for e2e test
 var AlertOptionsMap = map[string]*v1.SearchField{
-	"Violation": newStringField("alert.violations.message"),
-	"Stale":     newBoolField("alert.stale"),
+	Violation: newStringField("alert.violations.message"),
+	Stale:     newBoolField("alert.stale"),
 }
 
 func generateAllOptionsMap() map[string]*v1.SearchField {

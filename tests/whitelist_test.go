@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"github.com/stretchr/testify/require"
@@ -36,9 +37,10 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 	require.NoError(t, err)
 
 	service := v1.NewPolicyServiceClient(conn)
+	qb := search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
-		Query: getPolicyQuery(expectedLatestTagPolicy),
+		Query: qb.Query(),
 	})
 	cancel()
 	require.NoError(t, err)
@@ -57,10 +59,12 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 	cancel()
 	require.NoError(t, err)
 
+	qb = search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName).AddString(search.PolicyName, latestPolicy.GetName()).AddBool(search.Stale, false)
+
 	alertService := v1.NewAlertServiceClient(conn)
+
 	waitForAlert(t, alertService, &v1.ListAlertsRequest{
-		Query: getDeploymentQuery(nginxDeploymentName) + "+" + getPolicyQuery(latestPolicy.GetName()),
-		Stale: []bool{false},
+		Query: qb.Query(),
 	}, 0)
 }
 
@@ -69,9 +73,10 @@ func verifyAlertForWhitelistRemoval(t *testing.T) {
 	require.NoError(t, err)
 
 	service := v1.NewPolicyServiceClient(conn)
+	qb := search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
-		Query: getPolicyQuery(expectedLatestTagPolicy),
+		Query: qb.Query(),
 	})
 	cancel()
 	require.NoError(t, err)
@@ -85,9 +90,10 @@ func verifyAlertForWhitelistRemoval(t *testing.T) {
 	require.NoError(t, err)
 
 	alertService := v1.NewAlertServiceClient(conn)
+
+	qb = search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName).AddString(search.PolicyName, latestPolicy.GetName()).AddBool(search.Stale, false)
 	waitForAlert(t, alertService, &v1.ListAlertsRequest{
-		Query: getDeploymentQuery(nginxDeploymentName) + "+" + getPolicyQuery(latestPolicy.GetName()),
-		Stale: []bool{false},
+		Query: qb.Query(),
 	}, 1)
 }
 

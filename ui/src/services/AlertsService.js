@@ -15,8 +15,7 @@ const baseUrl = '/v1/alerts';
  */
 export function fetchAlerts(filters) {
     const params = queryString.stringify({
-        ...filters,
-        stale: false
+        ...filters
     });
     return axios.get(`${baseUrl}?${params}`).then(response => ({
         response: normalize(response.data, alertsSchema)
@@ -43,7 +42,6 @@ export function fetchAlert(alertId) {
  */
 export function fetchAlertCounts(filters) {
     const params = queryString.stringify({
-        'request.stale': false,
         ...filters
     });
     return axios.get(`${baseUrl}/summary/counts?${params}`).then(response => ({
@@ -52,7 +50,7 @@ export function fetchAlertCounts(filters) {
 }
 
 /**
- * Fetches non-stale alerts by time for timeseries.
+ * Fetches alerts by time for timeseries.
  *
  * @returns {Promise<Object, Error>}
  */
