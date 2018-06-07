@@ -13,6 +13,31 @@ const basePath = '/';
 const dashboardPath = '/main/dashboard';
 const violationsPath = '/main/violations/:alertId?';
 
+function filterTimeseriesResultsByClusterSearchOptions(result, filters) {
+    const filteredResult = Object.assign({}, result);
+    if (filters && filters.query) {
+        const clusterNames = filters.query.replace('Cluster:', '').split(',');
+        if (clusterNames.length && clusterNames[0] !== '')
+            filteredResult.response.clusters = result.response.clusters.filter(obj =>
+                clusterNames.includes(obj.cluster)
+            );
+    }
+    return filteredResult;
+}
+
+function filterCountsResultByClusterSearchOption(result, filters) {
+    const filteredResult = Object.assign({}, result);
+    if (filters && filters.query) {
+        const clusterNames = filters.query.replace('Cluster:', '').split(',');
+        if (clusterNames.length && clusterNames[0] !== '') {
+            filteredResult.response.groups = result.response.groups.filter(obj =>
+                clusterNames.includes(obj.group)
+            );
+        }
+    }
+    return filteredResult;
+}
+
 function* getAlerts(filters) {
     try {
         const result = yield call(service.fetchAlerts, filters);
@@ -36,7 +61,11 @@ function* getGlobalAlertCounts(filters) {
         const newFilters = { ...filters };
         newFilters.group_by = 'CLUSTER';
         const result = yield call(service.fetchAlertCounts, newFilters);
-        yield put(actions.fetchGlobalAlertCounts.success(result.response));
+        /*
+         * @TODO This is a hack. Will need to remove it. Backend API should allow filtering the response using the search query
+         */
+        const filteredResult = filterCountsResultByClusterSearchOption(result, filters);
+        yield put(actions.fetchGlobalAlertCounts.success(filteredResult.response));
     } catch (error) {
         yield put(actions.fetchGlobalAlertCounts.failure(error));
     }
@@ -61,15 +90,8 @@ function* getAlertCountsByCluster(filters) {
         /*
          * @TODO This is a hack. Will need to remove it. Backend API should allow filtering the response using the search query
          */
-        const filteredResult = Object.assign({}, result);
-        if (filters && filters.query) {
-            const clusterName = filters.query.replace('Cluster:', '');
-            if (clusterName)
-                filteredResult.response.groups = result.response.groups.filter(
-                    obj => obj.group === clusterName
-                );
-        }
-        yield put(actions.fetchAlertCountsByCluster.success(result.response));
+        const filteredResult = filterCountsResultByClusterSearchOption(result, filters);
+        yield put(actions.fetchAlertCountsByCluster.success(filteredResult.response));
     } catch (error) {
         yield put(actions.fetchAlertCountsByCluster.failure(error));
     }
@@ -81,15 +103,8 @@ function* getAlertsByTimeseries(filters) {
         /*
          * @TODO This is a hack. Will need to remove it. Backend API should allow filtering the response using the search query
          */
-        const filteredResult = Object.assign({}, result);
-        if (filters && filters.query) {
-            const clusterName = filters.query.replace('Cluster:', '');
-            if (clusterName)
-                filteredResult.response.clusters = result.response.clusters.filter(
-                    obj => obj.cluster === clusterName
-                );
-        }
-        yield put(actions.fetchAlertsByTimeseries.success(result.response));
+        const filteredResult = filterTimeseriesResultsByClusterSearchOptions(result, filters);
+        yield put(actions.fetchAlertsByTimeseries.success(filteredResult.response));
     } catch (error) {
         yield put(actions.fetchAlertsByTimeseries.failure(error));
     }
@@ -117,10 +132,13 @@ function* filterDashboardPageBySearch() {
     const filters = {
         query: searchOptionsToQuery(searchOptions)
     };
-    yield fork(getGlobalAlertCounts, {});
-    yield fork(getAlertCountsByPolicyCategories, filters);
-    yield fork(getAlertCountsByCluster, filters);
+    const nestedFilter = {
+        'request.query': searchOptionsToQuery(searchOptions)
+    };
+    yield fork(getGlobalAlertCounts, nestedFilter);
+    yield fork(getAlertCountsByCluster, nestedFilter);
     yield fork(getAlertsByTimeseries, filters);
+    yield fork(getAlertCountsByPolicyCategories, nestedFilter);
 }
 
 function* loadViolationsPage(match) {

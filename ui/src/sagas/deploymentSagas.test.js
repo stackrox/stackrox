@@ -4,9 +4,9 @@ import { dynamic } from 'redux-saga-test-plan/providers';
 
 import { selectors } from 'reducers';
 import { actions, types } from 'reducers/deployments';
-import { types as locationActionTypes } from 'reducers/routes';
 import { fetchDeployments, fetchDeployment } from 'services/DeploymentsService';
 import saga from './deploymentSagas';
+import createLocationChange from './sagaTestUtils';
 
 const deploymentTypeSearchOptions = [
     {
@@ -22,11 +22,6 @@ const deploymentTypeSearchOptions = [
 
 const dashboardTypeSearchOptions = deploymentTypeSearchOptions.slice();
 
-const createLocationChange = pathname => ({
-    type: locationActionTypes.LOCATION_CHANGE,
-    payload: { pathname }
-});
-
 describe('Deployment Sagas', () => {
     it('should get unfiltered list of deployments on a Dashboard and Policies pages', () => {
         const deployments = ['dep1', 'dep2'];
@@ -39,12 +34,12 @@ describe('Deployment Sagas', () => {
                 [select(selectors.getPoliciesSearchOptions), []],
                 [call(fetchDeployments, []), dynamic(fetchMock)]
             ])
-            .put(actions.fetchDeployments.success(deployments, { options: [] }))
-            .dispatch({ type: types.SET_SEARCH_OPTIONS, payload: { options: [] } })
             .dispatch(createLocationChange('/main/dashboard'))
-            .put(actions.fetchDeployments.success(deployments, { options: [] }))
             .dispatch({ type: types.SET_SEARCH_OPTIONS, payload: { options: [] } })
+            .put(actions.fetchDeployments.success(deployments, { options: [] }))
             .dispatch(createLocationChange('/main/policies/policyId'))
+            .dispatch({ type: types.SET_SEARCH_OPTIONS, payload: { options: [] } })
+            .put(actions.fetchDeployments.success(deployments, { options: [] }))
             .silentRun();
     });
 

@@ -5,19 +5,14 @@ import { dynamic, throwError } from 'redux-saga-test-plan/providers';
 
 import { selectors } from 'reducers';
 import { actions, AUTH_STATUS } from 'reducers/auth';
-import { types as locationActionTypes } from 'reducers/routes';
 import * as AuthService from 'services/AuthService';
 import saga from './authSagas';
+import createLocationChange from './sagaTestUtils';
 
 const createStateSelectors = (authProviders = [], authStatus = AUTH_STATUS.LOADING) => [
     [select(selectors.getAuthProviders), authProviders],
     [select(selectors.getAuthStatus), authStatus]
 ];
-
-const createLocationChange = (pathname, from, hash) => ({
-    type: locationActionTypes.LOCATION_CHANGE,
-    payload: { pathname, hash, state: { from } }
-});
 
 describe('Auth Sagas', () => {
     it('should get and put auth providers when on integrations page', () => {

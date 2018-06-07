@@ -11,6 +11,16 @@ import searchOptionsToQuery from 'services/searchOptionsToQuery';
 const dashboardPath = '/main/dashboard';
 const compliancePath = '/main/compliance';
 
+function filterResultByClusterSearchOption(result, filters) {
+    let filteredResult = result.slice();
+    if (filters && filters.query) {
+        const clusterNames = filters.query.replace('Cluster:', '').split(',');
+        if (clusterNames.length && clusterNames[0] !== '')
+            filteredResult = result.filter(obj => clusterNames.includes(obj.clusterName));
+    }
+    return filteredResult;
+}
+
 export function* getBenchmarks() {
     try {
         const result = yield call(service.fetchBenchmarks);
@@ -33,11 +43,7 @@ export function* getBenchmarksByCluster(filters) {
     try {
         const result = yield call(service.fetchBenchmarksByCluster, filters);
         // This is a hack. Will need to remove it. Backend API should allow filtering the response using the search query
-        let filteredResult = result.slice();
-        if (filters && filters.query) {
-            const clusterName = filters.query.replace('Cluster:', '');
-            if (clusterName) filteredResult = result.filter(obj => obj.clusterName === clusterName);
-        }
+        const filteredResult = filterResultByClusterSearchOption(result, filters);
         yield put(benchmarkActions.fetchBenchmarksByCluster.success(filteredResult));
     } catch (error) {
         yield put(benchmarkActions.fetchBenchmarksByCluster.failure(error));
