@@ -28,6 +28,13 @@ services:
       net:
     deploy:
        labels: [owner=stackrox,email=support@stackrox.com]
+       resources:
+         reservations:
+           cpus: '1.0'
+           memory: 2G
+         limits:
+           cpus: '2.0'
+           memory: 8G
     ports:
       - target: 443
         published: {{.PublicPort}}

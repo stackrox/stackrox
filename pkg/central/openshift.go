@@ -56,6 +56,13 @@ spec:
       containers:
       - name: central
         image: {{.Image}}
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "8Gi"
+            cpu: "2000m"
         imagePullPolicy: Always
         command:
         - central

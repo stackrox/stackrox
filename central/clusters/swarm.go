@@ -44,6 +44,13 @@ services:
       placement:
         constraints:
           - node.role==manager
+      resources:
+        reservations:
+          cpus: '0.2'
+          memory: 200M
+        limits:
+          cpus: '0.5'
+          memory: 500M
     volumes:
       - type: bind
         source: /var/run/docker.sock

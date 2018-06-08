@@ -65,6 +65,13 @@ spec:
     spec:
       containers:
       - image: {{.Image}}
+        resources:
+          requests:
+            memory: "200Mi"
+            cpu: "200m"
+          limits:
+            memory: "500Mi"
+            cpu: "500m"
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
