@@ -5,6 +5,7 @@ import (
 	"text/template"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/zip"
 )
 
 func init() {
@@ -12,20 +13,41 @@ func init() {
 	deployers[v1.ClusterType_DOCKER_EE_CLUSTER] = newSwarm()
 }
 
-func newSwarm() deployer {
-	return &basicDeployer{
-		deploy:    template.Must(template.New("swarm").Parse(swarmDeploy)),
-		cmd:       template.Must(template.New("swarm").Parse(swarmCmd)),
-		addFields: addSwarmFields,
+type swarm struct {
+	deploy *template.Template
+	cmd    *template.Template
+}
+
+func newSwarm() Deployer {
+	return &swarm{
+		deploy: template.Must(template.New("swarm").Parse(swarmDeploy)),
+		cmd:    template.Must(template.New("swarm").Parse(swarmCmd)),
 	}
 }
 
-func addSwarmFields(c Wrap, fields map[string]string) {
-	var disableSwarmTLS bool
-	if clusterSwarm, ok := c.OrchestratorParams.(*v1.Cluster_Swarm); ok {
-		disableSwarmTLS = clusterSwarm.Swarm.DisableSwarmTls
+func (s *swarm) Render(c Wrap) ([]*v1.File, error) {
+	var swarmParams *v1.SwarmParams
+	clusterSwarm, ok := c.OrchestratorParams.(*v1.Cluster_Swarm)
+	if ok {
+		swarmParams = clusterSwarm.Swarm
 	}
-	fields["DisableSwarmTLS"] = strconv.FormatBool(disableSwarmTLS)
+
+	fields := fieldsFromWrap(c)
+	fields["DisableSwarmTLS"] = strconv.FormatBool(swarmParams.GetDisableSwarmTls())
+
+	var files []*v1.File
+	data, err := executeTemplate(s.deploy, fields)
+	if err != nil {
+		return nil, err
+	}
+	files = append(files, zip.NewFile("deploy.yaml", data, false))
+
+	data, err = executeTemplate(s.cmd, fields)
+	if err != nil {
+		return nil, err
+	}
+	files = append(files, zip.NewFile("deploy.sh", data, true))
+	return files, nil
 }
 
 var (
@@ -60,11 +82,11 @@ services:
       - "{{.ClusterIDEnv}}={{.ClusterID}}"
       - "{{.AdvertisedEndpointEnv}}={{.AdvertisedEndpoint}}"
       - "{{.ImageEnv}}={{.Image}}"
-{{ if ne .DisableSwarmTLS "true" }}
+{{if ne .DisableSwarmTLS "true" }}
       - "DOCKER_CERT_PATH=/run/secrets/stackrox.io/docker/"
       - "DOCKER_HOST=$DOCKER_HOST"
       - "DOCKER_TLS_VERIFY=$DOCKER_TLS_VERIFY"
-{{ end }}
+{{- end}}
     secrets:
       - source: sensor_certificate
         target: stackrox.io/cert.pem
@@ -75,7 +97,7 @@ services:
       - source: central_certificate
         target: stackrox.io/ca.pem
         mode: 400
-{{ if ne .DisableSwarmTLS "true" }}
+{{if ne .DisableSwarmTLS "true" }}
       - source: docker_client_ca_pem
         target: stackrox.io/docker/ca.pem
         mode: 400
@@ -85,7 +107,7 @@ services:
       - source: docker_client_key_pem
         target: stackrox.io/docker/key.pem
         mode: 400
-{{ end }}
+{{- end}}
       - source: registry_auth
         target: stackrox.io/registry_auth
         mode: 400
@@ -100,14 +122,14 @@ secrets:
     file: sensor-cert.pem
   central_certificate:
     file: central-ca.pem
-{{ if ne .DisableSwarmTLS "true" }}
+{{if ne .DisableSwarmTLS "true"}}
   docker_client_ca_pem:
     file: docker-ca.pem
   docker_client_cert_pem:
     file: docker-cert.pem
   docker_client_key_pem:
     file: docker-key.pem
-{{ end }}
+{{- end}}
   registry_auth:
     file: registry-auth
 `
@@ -148,7 +170,7 @@ if [ -n "$DOCKER_CERT_PATH" ]; then
 fi
 
 # Deploy.
-docker stack deploy -c ./sensor-deploy.yaml prevent --with-registry-auth
+docker stack deploy -c ./deploy.yaml prevent --with-registry-auth
 
 # Clean up temporary files.
 rm registry-auth

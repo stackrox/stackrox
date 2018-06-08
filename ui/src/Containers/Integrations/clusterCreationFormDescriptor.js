@@ -10,7 +10,7 @@ export const k8sCreationFormDescriptor = [
         label: 'Image name (Prevent location)',
         type: 'text',
         jsonpath: 'preventImage',
-        placeholder: 'stackrox/prevent:[current-version]',
+        placeholder: 'stackrox.io/prevent:[current-version]',
         disabled: false
     },
     {
@@ -36,6 +36,37 @@ export const k8sCreationFormDescriptor = [
     }
 ];
 
+export const openshiftCreationFormDescriptor = [
+    {
+        label: 'Name',
+        type: 'text',
+        jsonpath: 'name',
+        placeholder: 'Cluster name',
+        disabled: false
+    },
+    {
+        label: 'Image name (Prevent location)',
+        type: 'text',
+        jsonpath: 'preventImage',
+        placeholder: 'docker-registry.default.svc:5000/stackrox/prevent:[current-version]',
+        disabled: false
+    },
+    {
+        label: 'Central API Endpoint',
+        type: 'text',
+        jsonpath: 'centralApiEndpoint',
+        placeholder: 'central.stackrox:443',
+        disabled: false
+    },
+    {
+        label: 'Namespace',
+        type: 'text',
+        jsonpath: 'namespace',
+        placeholder: 'stackrox',
+        disabled: false
+    }
+];
+
 export const dockerClusterCreationFormDescriptor = [
     {
         label: 'Name',
@@ -48,7 +79,7 @@ export const dockerClusterCreationFormDescriptor = [
         label: 'Image name (Prevent location)',
         type: 'text',
         jsonpath: 'preventImage',
-        placeholder: 'stackrox/prevent:[current-version]',
+        placeholder: 'stackrox.io/prevent:[current-version]',
         disabled: false
     },
     {

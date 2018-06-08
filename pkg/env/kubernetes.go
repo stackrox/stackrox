@@ -3,8 +3,7 @@ package env
 import "os"
 
 const (
-	defaultNamespace        = `stackrox`
-	defaultImagePullSecrets = `stackrox`
+	defaultNamespace = `stackrox`
 )
 
 var (
@@ -48,9 +47,5 @@ func (imagePullSecrets) EnvVar() string {
 
 // Values interpreted as comma separated list of secret names.
 func (ips imagePullSecrets) Setting() string {
-	if ss, ok := os.LookupEnv(ips.EnvVar()); ok {
-		return ss
-	}
-
-	return defaultImagePullSecrets
+	return os.Getenv(ips.EnvVar())
 }

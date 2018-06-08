@@ -31,10 +31,12 @@ type converter struct {
 }
 
 func newConverter() converter {
-	ips := env.ImagePullSecrets.Setting()
-
+	var secrets []string
+	if pullSecrets := env.ImagePullSecrets.Setting(); pullSecrets != "" {
+		secrets = strings.Split(pullSecrets, ",")
+	}
 	return converter{
-		imagePullSecrets: strings.Split(ips, ","),
+		imagePullSecrets: secrets,
 	}
 }
 

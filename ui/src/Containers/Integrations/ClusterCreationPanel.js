@@ -15,6 +15,7 @@ import ClustersDownloadPage from 'Containers/Integrations/ClustersDownloadPage';
 import ClustersSuccessPage from 'Containers/Integrations/ClustersSuccessPage';
 import {
     k8sCreationFormDescriptor,
+    openshiftCreationFormDescriptor,
     dockerClusterCreationFormDescriptor
 } from 'Containers/Integrations/clusterCreationFormDescriptor';
 import { ToastContainer, toast } from 'react-toastify';
@@ -34,6 +35,7 @@ const commonDetailsMap = {
     }
 };
 
+// K8s cluster
 const k8sClusterDetailsMap = Object.assign({}, commonDetailsMap);
 k8sClusterDetailsMap.namespace = {
     label: 'Namespace'
@@ -42,15 +44,23 @@ k8sClusterDetailsMap.imagePullSecret = {
     label: 'Image Pull Secret Name'
 };
 
+// openshift cluster
+const openshiftClusterDetailsMap = Object.assign({}, commonDetailsMap);
+openshiftClusterDetailsMap.namespace = {
+    label: 'Namespace'
+};
+
+// Docker cluster
 const dockerClusterDetailsMap = Object.assign({}, commonDetailsMap);
 dockerClusterDetailsMap.disableSwarmTls = {
     label: 'Swarm TLS Disabled'
 };
 
 const k8sDataKeys = k8sCreationFormDescriptor.map(obj => obj.jsonpath);
+const openshiftDataKeys = openshiftCreationFormDescriptor.map(obj => obj.jsonpath);
 const dockerDataKeys = dockerClusterCreationFormDescriptor.map(obj => obj.jsonpath);
 
-const formDataKeys = [...k8sDataKeys, ...dockerDataKeys];
+const formDataKeys = [...k8sDataKeys, ...dockerDataKeys, ...openshiftDataKeys];
 
 class ClusterCreationPanel extends Component {
     static propTypes = {
@@ -105,36 +115,41 @@ class ClusterCreationPanel extends Component {
         return promise;
     };
 
-    renderKeyValuePairs = () => {
+    getClusterDetailsMap = () => {
         if (
             this.props.clusterType === 'SWARM_CLUSTER' ||
             this.props.clusterType === 'DOCKER_EE_CLUSTER'
         ) {
-            return (
-                <div className="p-4">
-                    <KeyValuePairs
-                        data={this.props.editingCluster}
-                        keyValueMap={dockerClusterDetailsMap}
-                    />
-                </div>
-            );
+            return dockerClusterDetailsMap;
+        } else if (this.props.clusterType === 'OPENSHIFT_CLUSTER') {
+            return openshiftClusterDetailsMap;
         }
+        return k8sClusterDetailsMap;
+    };
+
+    getCreationFormDescriptor = () => {
+        if (
+            this.props.clusterType === 'SWARM_CLUSTER' ||
+            this.props.clusterType === 'DOCKER_EE_CLUSTER'
+        ) {
+            return dockerClusterCreationFormDescriptor;
+        } else if (this.props.clusterType === 'OPENSHIFT_CLUSTER') {
+            return openshiftCreationFormDescriptor;
+        }
+        return k8sCreationFormDescriptor;
+    };
+
+    renderKeyValuePairs = () => {
+        const detailsMap = this.getClusterDetailsMap();
         return (
             <div className="p-4">
-                <KeyValuePairs
-                    data={this.props.editingCluster}
-                    keyValueMap={k8sClusterDetailsMap}
-                />
+                <KeyValuePairs data={this.props.editingCluster} keyValueMap={detailsMap} />
             </div>
         );
     };
 
     renderFormPanel = () => {
-        let fields =
-            this.props.clusterType === 'SWARM_CLUSTER' ||
-            this.props.clusterType === 'DOCKER_EE_CLUSTER'
-                ? dockerClusterCreationFormDescriptor
-                : k8sCreationFormDescriptor;
+        let fields = this.getCreationFormDescriptor();
         // if viewing an existing cluster, disable the fields
         if (this.props.editingCluster.id) {
             fields = fields.map(field => {

@@ -5,43 +5,83 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
+	kubernetesPkg "bitbucket.org/stack-rox/apollo/pkg/kubernetes"
+	"bitbucket.org/stack-rox/apollo/pkg/zip"
 )
 
 func init() {
 	deployers[v1.ClusterType_KUBERNETES_CLUSTER] = newKubernetes()
 }
 
-func newKubernetes() deployer {
-	return &basicDeployer{
-		deploy:    template.Must(template.New("kubernetes").Parse(k8sDeploy + k8sSeparator + k8sServiceAccount)),
-		cmd:       template.Must(template.New("kubernetes").Parse(k8sCmd)),
-		addFields: addKubernetesFields,
+type kubernetes struct {
+	deploy *template.Template
+	cmd    *template.Template
+	rbac   *template.Template
+}
+
+func newKubernetes() Deployer {
+	return &kubernetes{
+		deploy: template.Must(template.New("kubernetes").Parse(k8sDeploy)),
+		cmd:    template.Must(template.New("kubernetes").Parse(k8sCmd)),
+		rbac:   template.Must(template.New("kubernetes").Parse(k8sRBAC)),
 	}
 }
 
-func addKubernetesFields(c Wrap, fields map[string]string) {
-	namespace := "default"
-	if len(c.Namespace) != 0 {
-		namespace = c.Namespace
+func nonEmptyOrDefault(new, def string) string {
+	if new != "" {
+		return new
 	}
-	fields["Namespace"] = namespace
-	fields["ImagePullSecretEnv"] = env.ImagePullSecrets.EnvVar()
-	fields["ImagePullSecret"] = c.ImagePullSecret
+	return def
+}
 
-	benchmarkServiceAccount := "benchmark"
-	if clusterKube, ok := c.OrchestratorParams.(*v1.Cluster_Kubernetes); ok {
-		benchmarkServiceAccount = clusterKube.Kubernetes.BenchmarkServiceAccount
+func addCommonKubernetesParams(params *v1.CommonKubernetesParams, fields map[string]string) {
+	fields["Namespace"] = nonEmptyOrDefault(params.GetNamespace(), "stackrox")
+}
+
+func (k *kubernetes) Render(c Wrap) ([]*v1.File, error) {
+	var kubernetesParams *v1.KubernetesParams
+	clusterKube, ok := c.OrchestratorParams.(*v1.Cluster_Kubernetes)
+	if ok {
+		kubernetesParams = clusterKube.Kubernetes
 	}
-	fields["BenchmarkServiceAccountEnv"] = env.BenchmarkServiceAccount.EnvVar()
-	fields["BenchmarkServiceAccount"] = benchmarkServiceAccount
+
+	fields := fieldsFromWrap(c)
+	addCommonKubernetesParams(kubernetesParams.GetParams(), fields)
+
 	fields["OpenshiftAPIEnv"] = env.OpenshiftAPI.EnvVar()
 	fields["OpenshiftAPI"] = `"false"`
+
+	fields["ImagePullSecretEnv"] = env.ImagePullSecrets.EnvVar()
+	fields["ImagePullSecret"] = nonEmptyOrDefault(kubernetesParams.GetParams().GetImagePullSecret(), "stackrox")
+
+	var err error
+	fields["Registry"], err = kubernetesPkg.GetResolvedRegistry(c.PreventImage)
+	if err != nil {
+		return nil, err
+	}
+
+	var files []*v1.File
+	data, err := executeTemplate(k.deploy, fields)
+	if err != nil {
+		return nil, err
+	}
+	files = append(files, zip.NewFile("deploy.yaml", data, false))
+
+	data, err = executeTemplate(k.cmd, fields)
+	if err != nil {
+		return nil, err
+	}
+	files = append(files, zip.NewFile("deploy.sh", data, true))
+
+	data, err = executeTemplate(k.rbac, fields)
+	if err != nil {
+		return nil, err
+	}
+	files = append(files, zip.NewFile("rbac.yaml", data, false))
+	return files, nil
 }
 
 var (
-	k8sSeparator = `---
-`
-
 	k8sDeploy = `apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -84,10 +124,10 @@ spec:
           value: {{.Image}}
         - name: {{.AdvertisedEndpointEnv}}
           value: sensor.{{.Namespace}}:443
+{{if .ImagePullSecret }}
         - name: {{.ImagePullSecretEnv}}
           value: {{.ImagePullSecret}}
-        - name: {{.BenchmarkServiceAccountEnv}}
-          value: {{.BenchmarkServiceAccount}}
+{{- end}}
         - name: {{.OpenshiftAPIEnv}}
           value: {{.OpenshiftAPI}}
         - name: ROX_PREVENT_NAMESPACE
@@ -107,8 +147,10 @@ spec:
           mountPath: /run/secrets/stackrox.io/
           readOnly: true
       serviceAccount: sensor
+{{if .ImagePullSecret }}
       imagePullSecrets:
       - name: {{.ImagePullSecret}}
+{{- end}}
       volumes:
       - name: certs
         secret:
@@ -136,7 +178,7 @@ spec:
   type: ClusterIP
 `
 
-	k8sServiceAccount = `
+	k8sRBAC = `
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -146,11 +188,53 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{.BenchmarkServiceAccount}}
+  name: benchmark
   namespace: {{.Namespace}}
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{.Namespace}}:monitor-deployments
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{.Namespace}}
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{.Namespace}}:enforce-policies
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{.Namespace}}
+roleRef:
+  kind: ClusterRole
+  name: edit
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: launch-benchmarks
+  namespace: {{.Namespace}}
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{.Namespace}}
+roleRef:
+  kind: ClusterRole
+  name: edit
+  apiGroup: rbac.authorization.k8s.io
 `
 
-	k8sCmd = commandPrefix + `kubectl create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/central-ca.pem"
-kubectl create -f "$DIR/sensor-deploy.yaml"
+	k8sCmd = commandPrefix + kubernetesPkg.GetCreateSecretTemplate("{{.Namespace}}", "{{.Registry}}", "{{.ImagePullSecret}}") + `
+kubectl create -f "$DIR/rbac.yaml"
+kubectl create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/central-ca.pem"
+kubectl create -f "$DIR/deploy.yaml"
 `
 )

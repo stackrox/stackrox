@@ -84,18 +84,20 @@ func (s *ClusterService) getCluster(id string) (*v1.ClusterResponse, error) {
 	if !ok {
 		return nil, status.Error(codes.NotFound, "Not found")
 	}
-	dep, err := clusters.Wrap(*cluster).Deployment()
+
+	deployer, err := clusters.NewDeployer(cluster)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not create deployment YAML: %s", err)
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
-	cmd, err := clusters.Wrap(*cluster).Command()
+
+	files, err := deployer.Render(clusters.Wrap(*cluster))
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not create deployment command: %s", err)
+		return nil, status.Errorf(codes.Internal, "Could not render all files: %s", err)
 	}
+
 	return &v1.ClusterResponse{
-		Cluster:           cluster,
-		DeploymentYaml:    dep,
-		DeploymentCommand: cmd,
+		Cluster: cluster,
+		Files:   files,
 	}, nil
 }
 

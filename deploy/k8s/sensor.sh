@@ -13,10 +13,4 @@ if [[ -z $CLUSTER ]]; then
 fi
 echo "CLUSTER set to $CLUSTER"
 
-if [[ -z $NON_INTERACTIVE ]]; then
-  read -p "Review the above variables and hit enter to continue: "
-fi
-
-kubectl create ns "$NAMESPACE" || true
-
 launch_sensor "$LOCAL_API_ENDPOINT" "$CLUSTER" "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "$NAMESPACE"

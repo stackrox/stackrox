@@ -21,9 +21,6 @@ var (
 
 	// BenchmarkReason is used to provide the benchmark service with why the benchmark was run (e.g. SCHEDULED or TRIGGERED)
 	BenchmarkReason = Setting(benchmarkReason{})
-
-	// BenchmarkServiceAccount is used to provide a benchmark service account in k8s based clusters
-	BenchmarkServiceAccount = Setting(benchmarkServiceAccount{})
 )
 
 type scanID struct{}
@@ -77,17 +74,4 @@ func (c benchmarkReason) Setting() string {
 		return val
 	}
 	return v1.BenchmarkReason_SCHEDULED.String()
-}
-
-type benchmarkServiceAccount struct{}
-
-func (c benchmarkServiceAccount) EnvVar() string {
-	return "ROX_PREVENT_BENCHMARK_SERVICE_ACCOUNT"
-}
-
-func (c benchmarkServiceAccount) Setting() string {
-	if val, ok := os.LookupEnv(c.EnvVar()); ok {
-		return val
-	}
-	return `benchmark`
 }

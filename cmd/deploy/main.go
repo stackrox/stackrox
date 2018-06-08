@@ -9,6 +9,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/central"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	zipPkg "bitbucket.org/stack-rox/apollo/pkg/zip"
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
 	"github.com/spf13/cobra"
@@ -18,20 +19,10 @@ var (
 	logger = logging.LoggerForModule()
 )
 
-func clusterType(ct string) v1.ClusterType {
-	switch ct {
-	case "kubernetes", "k8s":
-		return v1.ClusterType_KUBERNETES_CLUSTER
-	case "openshift":
-		return v1.ClusterType_OPENSHIFT_CLUSTER
-	case "swarm":
-		return v1.ClusterType_SWARM_CLUSTER
-	case "ee", "dockeree":
-		return v1.ClusterType_DOCKER_EE_CLUSTER
-	default:
-		return v1.ClusterType_GENERIC_CLUSTER
-	}
-}
+var (
+	tag   = "1.3"
+	image = "prevent:" + tag
+)
 
 // ServeHTTP serves a ZIP file for the cluster upon request.
 func outputZip(config central.Config, clusterType v1.ClusterType) error {
@@ -42,21 +33,16 @@ func outputZip(config central.Config, clusterType v1.ClusterType) error {
 	if !ok {
 		return fmt.Errorf("Undefined cluster deployment generator: %s", clusterType)
 	}
-	dep, err := d.Deployment(config)
-	if err != nil {
-		return fmt.Errorf("Could not generate deployment: %s", err)
-	}
-	if err := addFile(zipW, "deploy.yaml", dep); err != nil {
-		return fmt.Errorf("Failed to write deploy.yaml: %s", err)
-	}
-	cmd, err := d.Command(config)
-	if err != nil {
-		logger.Fatalf("Could not generate command: %s", err)
-	}
-	if err := addExecutableFile(zipW, "deploy.sh", cmd); err != nil {
-		return fmt.Errorf("Failed to write deploy.sh: %s", err)
-	}
 
+	files, err := d.Render(config)
+	if err != nil {
+		return fmt.Errorf("Could not render files: %s", err)
+	}
+	for _, f := range files {
+		if err := zipPkg.AddFile(zipW, f); err != nil {
+			return fmt.Errorf("Failed to write '%s': %s", f.Name, err)
+		}
+	}
 	// Add MTLS files
 	req := csr.CertificateRequest{
 		CN:         "StackRox Prevent Certificate Authority",
@@ -66,10 +52,10 @@ func outputZip(config central.Config, clusterType v1.ClusterType) error {
 	if err != nil {
 		return fmt.Errorf("Could not generate keypair: %s", err)
 	}
-	if err := addFile(zipW, "ca.pem", string(cert)); err != nil {
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("ca.pem", string(cert), false)); err != nil {
 		return fmt.Errorf("Failed to write cert.pem: %s", err)
 	}
-	if err := addFile(zipW, "ca-key.pem", string(key)); err != nil {
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("ca-key.pem", string(key), false)); err != nil {
 		return fmt.Errorf("Failed to write key.pem: %s", err)
 	}
 
@@ -85,59 +71,51 @@ func outputZip(config central.Config, clusterType v1.ClusterType) error {
 	return err
 }
 
-func addFile(zipW *zip.Writer, name, contents string) error {
-	f, err := zipW.Create(name)
-	if err != nil {
-		return fmt.Errorf("file creation: %s", err)
+func root() *cobra.Command {
+	c := &cobra.Command{
+		Use:          "root",
+		SilenceUsage: true,
 	}
-	_, err = f.Write([]byte(contents))
-	if err != nil {
-		return fmt.Errorf("file writing: %s", err)
-	}
-	return nil
+	c.AddCommand(interactive())
+	c.AddCommand(cmd())
+	return c
 }
 
-func addExecutableFile(zipW *zip.Writer, name, contents string) error {
-	hdr := &zip.FileHeader{
-		Name: name,
+func interactive() *cobra.Command {
+	return &cobra.Command{
+		Use: "interactive",
+		RunE: func(c *cobra.Command, args []string) error {
+			c = cmd()
+			c.SilenceUsage = true
+			return runInteractive(c)
+		},
+		SilenceUsage: true,
 	}
-	hdr.SetMode(os.ModePerm & 0755)
-	f, err := zipW.CreateHeader(hdr)
-	if err != nil {
-		return fmt.Errorf("file creation: %s", err)
-	}
-	_, err = f.Write([]byte(contents))
-	if err != nil {
-		return fmt.Errorf("file writing: %s", err)
-	}
-	return nil
 }
 
 func cmd() *cobra.Command {
-	var cfg central.Config
-	var clusterTypeInput string
 	c := &cobra.Command{
 		Use:   "deploy",
 		Short: "Deploy generates deployment files for StackRox Prevent Central",
 		Long: `Deploy generates deployment files for StackRox Prevent Central.
 Output is a zip file printed to stdout.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cluster := clusterType(clusterTypeInput)
-			if cluster == v1.ClusterType_GENERIC_CLUSTER {
-				return fmt.Errorf("Unknown cluster type '%s'", clusterTypeInput)
-			}
-			return outputZip(cfg, cluster)
+		Run: func(*cobra.Command, []string) {
+			printToStderr("Orchestrator is required\n")
 		},
 	}
-	c.Flags().StringVarP(&clusterTypeInput, "type", "t", "", "cluster type (kubernetes, k8s, openshift, swarm, ee, dockeree)")
-	c.Flags().StringVarP(&cfg.Image, "image", "i", "stackrox.io/prevent", "image to use") // TODO(cg): -X flag should provide version tag
-	c.Flags().StringVarP(&cfg.Namespace, "namespace", "n", "stackrox", "namespace [Kubernetes/OpenShift]")
-	c.Flags().IntVarP(&cfg.PublicPort, "port", "p", 443, "public port to expose [Docker Swarm/Docker EE]")
+	c.AddCommand(k8s())
+	c.AddCommand(openshift())
+	c.AddCommand(dockerBasedOrchestrator("dockeree", "Docker EE", v1.ClusterType_DOCKER_EE_CLUSTER))
+	c.AddCommand(dockerBasedOrchestrator("swarm", "Docker Swarm", v1.ClusterType_SWARM_CLUSTER))
 	return c
 }
 
+func runInteractive(cmd *cobra.Command) error {
+	// Overwrite os.Args because cobra uses them
+	os.Args = walkTree(cmd)
+	return cmd.Execute()
+}
+
 func main() {
-	if err := cmd().Execute(); err != nil {
-		logger.Errorf("unable to execute: %s", err)
-	}
+	root().Execute()
 }

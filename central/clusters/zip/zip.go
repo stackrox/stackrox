@@ -6,12 +6,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	zipPkg "bitbucket.org/stack-rox/apollo/pkg/zip"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -62,11 +62,12 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeGRPCStyleError(w, codes.Internal, err)
 		return
 	}
-	if !addFile(w, zipW, "sensor-deploy.yaml", resp.GetDeploymentYaml()) {
-		return
-	}
-	if !addExecutableFile(w, zipW, "sensor-deploy.sh", resp.GetDeploymentCommand()) {
-		return
+
+	for _, f := range resp.GetFiles() {
+		if err := zipPkg.AddFile(zipW, f); err != nil {
+			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", f.GetName(), err))
+			return
+		}
 	}
 
 	// Add MTLS files
@@ -81,12 +82,16 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeGRPCStyleError(w, codes.Internal, err)
 		return
 	}
-	if !addFile(w, zipW, "sensor-cert.pem", id.GetCertificate()) {
+
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("sensor-cert.pem", id.GetCertificate(), false)); err != nil {
+		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "sensor-cert.pem", err))
 		return
 	}
-	if !addFile(w, zipW, "sensor-key.pem", id.GetPrivateKey()) {
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("sensor-key.pem", id.GetPrivateKey(), false)); err != nil {
+		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "sensor-key.pem", err))
 		return
 	}
+
 	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	authority, err := z.identityService.GetAuthorities(ctx, &empty.Empty{})
@@ -96,8 +101,11 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(authority.GetAuthorities()) != 1 {
 		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("authority: got %d authorities", len(authority.GetAuthorities())))
+		return
 	}
-	if !addFile(w, zipW, "central-ca.pem", authority.GetAuthorities()[0].GetCertificate()) {
+
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("central-ca.pem", authority.GetAuthorities()[0].GetCertificate(), false)); err != nil {
+		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "central-ca.pem", err))
 		return
 	}
 
@@ -109,38 +117,6 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Tell the browser this is a download.
 	w.Header().Add("Content-Disposition", `attachment; filename="sensor-deploy.zip"`)
 	w.Write(buf.Bytes())
-}
-
-func addFile(w http.ResponseWriter, zipW *zip.Writer, name, contents string) (ok bool) {
-	f, err := zipW.Create(name)
-	if err != nil {
-		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s creation: %s", name, err))
-		return false
-	}
-	_, err = f.Write([]byte(contents))
-	if err != nil {
-		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", name, err))
-		return false
-	}
-	return true
-}
-
-func addExecutableFile(w http.ResponseWriter, zipW *zip.Writer, name, contents string) (ok bool) {
-	hdr := &zip.FileHeader{
-		Name: name,
-	}
-	hdr.SetMode(os.ModePerm & 0755)
-	f, err := zipW.CreateHeader(hdr)
-	if err != nil {
-		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s creation: %s", name, err))
-		return false
-	}
-	_, err = f.Write([]byte(contents))
-	if err != nil {
-		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", name, err))
-		return false
-	}
-	return true
 }
 
 func writeGRPCStyleError(w http.ResponseWriter, c codes.Code, err error) {

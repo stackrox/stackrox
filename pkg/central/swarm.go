@@ -4,6 +4,7 @@ import (
 	"text/template"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/zip"
 )
 
 func init() {
@@ -11,18 +12,39 @@ func init() {
 	Deployers[v1.ClusterType_DOCKER_EE_CLUSTER] = newSwarm()
 }
 
+type swarm struct {
+	deploy *template.Template
+	cmd    *template.Template
+}
+
 func newSwarm() deployer {
-	return &basicDeployer{
+	return &swarm{
 		deploy: template.Must(template.New("swarm").Parse(swarmDeploy)),
 		cmd:    template.Must(template.New("swarm").Parse(swarmCmd)),
 	}
+}
+
+func (s *swarm) Render(c Config) ([]*v1.File, error) {
+	var files []*v1.File
+	data, err := executeTemplate(s.deploy, c)
+	if err != nil {
+		return nil, err
+	}
+	files = append(files, zip.NewFile("deploy.yaml", data, false))
+
+	data, err = executeTemplate(s.cmd, c)
+	if err != nil {
+		return nil, err
+	}
+	files = append(files, zip.NewFile("deploy.sh", data, true))
+	return files, nil
 }
 
 var (
 	swarmDeploy = `version: "3.2"
 services:
   central:
-    image: {{.Image}}
+    image: {{.SwarmConfig.Image}}
     entrypoint: ["central"]
     networks:
       net:
@@ -35,9 +57,13 @@ services:
          limits:
            cpus: '2.0'
            memory: 8G
+       {{if .HostPath -}}
+       placement:
+         constraints: [{{.HostPath.NodeSelectorKey}} == {{.HostPath.NodeSelectorValue}}]
+       {{- end}}
     ports:
       - target: 443
-        published: {{.PublicPort}}
+        published: {{.SwarmConfig.PublicPort}}
         protocol: tcp
         mode: ingress
     secrets:
@@ -47,6 +73,14 @@ services:
       - source: prevent_certificate
         target: stackrox.io/ca.pem
         mode: 400
+    {{if .HostPath -}}
+    volumes:
+      - {{.HostPath.HostPath}}:{{.HostPath.MountPath}}
+    {{- end}}
+    {{if .External -}}
+    volumes:
+      - {{.External.Name}}:{{.External.MountPath}}
+    {{- end}}
 networks:
   net:
     driver: overlay
@@ -56,6 +90,11 @@ secrets:
     file: ./ca-key.pem
   prevent_certificate:
     file: ./ca.pem
+{{if .External -}}
+volumes:
+  {{.External.Name}}:
+    external: true
+{{- end}}
 `
 
 	swarmCmd = commandPrefix + `WD=$(pwd)

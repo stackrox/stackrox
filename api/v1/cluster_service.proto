@@ -17,8 +17,17 @@ enum ClusterType {
     DOCKER_EE_CLUSTER  = 4;
 }
 
+message CommonKubernetesParams {
+    string namespace                 = 1;
+    string image_pull_secret         = 2;
+}
+
 message KubernetesParams {
-    string benchmark_service_account = 1;
+    CommonKubernetesParams params = 1;
+}
+
+message OpenshiftParams {
+    CommonKubernetesParams params = 1;
 }
 
 message SwarmParams {
@@ -31,20 +40,24 @@ message Cluster {
     ClusterType               type                 = 3;
     string                    prevent_image        = 4;
     string                    central_api_endpoint = 5;
-    string                    namespace            = 6;
-    string                    image_pull_secret    = 7;
-    google.protobuf.Timestamp last_contact         = 8;
+    google.protobuf.Timestamp last_contact         = 6;
 
     oneof orchestrator_params {
         KubernetesParams kubernetes = 9;
         SwarmParams      swarm      = 10;
+        OpenshiftParams  openshift  = 11;
   }
+}
+
+message File {
+    string name     = 1;
+    string content  = 2;
+    bool executable = 3;
 }
 
 message ClusterResponse {
     Cluster cluster            = 1;
-    string  deployment_yaml    = 2;
-    string  deployment_command = 3;
+    repeated File files        = 2;
 }
 
 message ClustersList {

@@ -101,10 +101,6 @@ jobs:
       - run:
           name: Deploy to remote cluster
           command: |
-            kubectl \
-              --username="$(gcloud container clusters describe "prevent-ci-${CIRCLE_BUILD_NUM}" --format json | jq -r .masterAuth.username)" \
-              --password="$(gcloud container clusters describe "prevent-ci-${CIRCLE_BUILD_NUM}" --format json | jq -r .masterAuth.password)" \
-              create -f ./deploy/k8s/rbac.yaml
             ./deploy/k8s/deploy.sh
 
       - run:

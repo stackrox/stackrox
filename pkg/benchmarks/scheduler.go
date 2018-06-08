@@ -29,7 +29,8 @@ const (
 	// triggerTimespan is how long we should check for unfired triggers
 	triggerTimespan = 5 * time.Minute
 
-	benchmarkServiceName = "benchmark"
+	benchmarkServiceName    = "benchmark"
+	benchmarkServiceAccount = "benchmark"
 )
 
 var (
@@ -188,7 +189,7 @@ func (s *SchedulerClient) Launch(scan *v1.BenchmarkScanMetadata) error {
 		},
 		Image:          s.image,
 		Global:         true,
-		ServiceAccount: env.BenchmarkServiceAccount.Setting(),
+		ServiceAccount: benchmarkServiceAccount,
 	}
 	_, err := s.orchestrator.LaunchBenchmark(service)
 	if err != nil {
