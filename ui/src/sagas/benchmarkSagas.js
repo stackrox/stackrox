@@ -54,16 +54,16 @@ export function* getBenchmarksByCluster(filters) {
 export function* updateBenchmarkSchedule() {
     const schedule = Object.assign({}, yield select(selectors.getBenchmarkSchedule));
     try {
-        if (schedule.hour === '' || schedule.day === '') {
-            if (schedule.hour === schedule.day) {
-                schedule.active = false;
-                yield call(service.deleteSchedule, schedule.id);
+        const isDayScheduled = !!schedule.day;
+        const isHourScheduled = !!schedule.hour;
+        if (!isDayScheduled && !isHourScheduled) {
+            yield call(service.deleteSchedule, schedule.id);
+        } else if (isDayScheduled && isHourScheduled) {
+            if (schedule.id) {
+                yield call(service.updateSchedule, schedule);
+            } else {
+                yield call(service.createSchedule, schedule);
             }
-        } else if (schedule.active) {
-            yield call(service.updateSchedule, schedule.id, schedule);
-        } else {
-            schedule.active = true;
-            yield call(service.createSchedule, schedule);
         }
     } catch (error) {
         yield put(benchmarkActions.fetchLastScan.failure(error));

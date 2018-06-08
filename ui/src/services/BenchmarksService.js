@@ -79,27 +79,6 @@ export async function fetchSchedule(benchmark) {
 }
 
 /**
- * Fetches scan schedules for the given benchmark.
- *
- * @param {!Object} benchmark benchmark
- * @returns {Promise<?Object, Error>} fulfilled with schedule data or `null` if schedule isn't configured
- */
-export function fetchSchedules(benchmark) {
-    const scheduleUrl = `${baseUrl}/schedules?benchmarkIds=${benchmark.benchmarkId}${
-        benchmark.clusterId ? `&clusterIds=${benchmark.clusterId}` : ''
-    }`;
-    return axios
-        .get(scheduleUrl)
-        .then(response => response.data.schedules)
-        .catch(error => {
-            if (error.response && error.response.status === 404) {
-                return null; // schedule doesn't exist
-            }
-            return Promise.reject(error);
-        });
-}
-
-/**
  * Creates new scan schedule.
  *
  * @param {!Object} schedule schedule (as defined in .proto)
@@ -121,8 +100,9 @@ export function createSchedule(schedule) {
  * @param {!Object} schedule schedule (as defined in .proto)
  * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
  */
-export function updateSchedule(benchmarkId, schedule) {
-    const scheduleUrl = `${baseUrl}/schedules/${benchmarkId}`;
+export function updateSchedule(schedule) {
+    if (!schedule || !schedule.id) throw new Error('Schedule does not have an id');
+    const scheduleUrl = `${baseUrl}/schedules/${schedule.id}`;
     const formattedSchedule = Object.assign(schedule, {
         benchmark_id: schedule.benchmarkId,
         benchmark_name: schedule.benchmarkName

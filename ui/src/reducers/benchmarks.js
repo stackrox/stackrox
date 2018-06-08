@@ -10,7 +10,6 @@ const initialBenchmarkSchedule = {
     benchmarkName: '',
     day: '',
     hour: '',
-    active: false,
     timezone_offset: new Date().getTimezoneOffset() / 60
 };
 
@@ -123,14 +122,18 @@ const benchmarkSchedule = (state = initialBenchmarkSchedule, action) => {
     if (action.type === types.FETCH_BENCHMARK_SCHEDULE.SUCCESS) {
         const schedule = Object.assign({}, action.response.schedules[0]);
         schedule.timezone_offset = new Date().getTimezoneOffset() / 60;
-        schedule.active = true;
         return isEqual(schedule, state) ? state : schedule;
     }
+    const addToClusters = (scheduleClusterIds, clusterId) => {
+        if (!scheduleClusterIds) return [clusterId];
+        if (!scheduleClusterIds.includes(clusterId)) return [...scheduleClusterIds, clusterId];
+        return scheduleClusterIds;
+    };
     if (action.type === types.SELECT_BENCHMARK_SCHEDULE_DAY) {
         const schedule = Object.assign({}, state);
         schedule.benchmarkId = action.benchmarkId;
         schedule.benchmarkName = action.benchmarkName;
-        schedule.clusterId = action.clusterId;
+        schedule.clusterIds = addToClusters(schedule.clusterIds, action.clusterId);
         if (action.value === 'None') {
             schedule.day = '';
             schedule.hour = '';
@@ -143,7 +146,7 @@ const benchmarkSchedule = (state = initialBenchmarkSchedule, action) => {
         const schedule = Object.assign({}, state);
         schedule.benchmarkId = action.benchmarkId;
         schedule.benchmarkName = action.benchmarkName;
-        schedule.clusterId = action.clusterId;
+        schedule.clusterIds = addToClusters(schedule.clusterIds, action.clusterId);
         schedule.hour = action.value;
         return schedule;
     }

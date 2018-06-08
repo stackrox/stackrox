@@ -115,7 +115,8 @@ class BenchmarksPage extends Component {
         this.props.selectBenchmarkScheduleDay(
             this.props.benchmarkId,
             this.props.benchmarkName,
-            value
+            value,
+            this.props.clusterId
         );
     };
 

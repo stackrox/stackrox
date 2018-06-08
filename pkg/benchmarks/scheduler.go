@@ -91,7 +91,7 @@ func (s *SchedulerClient) getSchedules() ([]*v1.BenchmarkSchedule, error) {
 	ctx, cancel := grpcContext()
 	defer cancel()
 	scheduleResp, err := v1.NewBenchmarkScheduleServiceClient(s.conn).GetBenchmarkSchedules(ctx, &v1.GetBenchmarkSchedulesRequest{
-		Clusters: []string{s.clusterID},
+		ClusterIds: []string{s.clusterID},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("Error checking schedule: %s", err)

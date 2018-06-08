@@ -100,12 +100,11 @@ describe('Benchmark Sagas Test', () => {
 
     it('should delete the schedule when no day/hour is selected', () => {
         const schedule = {
-            id: '',
+            id: undefined,
             benchmarkId: '27ec04c3-0d28-4f5f-82bf-5f746250f11b',
             benchmarkName: 'CIS Swarm v1.1.0 Benchmark',
             day: '',
             hour: '',
-            active: false,
             timezone_offset: new Date().getTimezoneOffset() / 60
         };
 
@@ -124,7 +123,7 @@ describe('Benchmark Sagas Test', () => {
 
     it('should update the schedule when a day and time is selected, and the schedule is active', () => {
         const schedule = {
-            active: true,
+            id: 'scheduleId',
             benchmarkId: '27ec04c3-0d28-4f5f-82bf-5f746250f11b',
             benchmarkName: 'CIS Swarm v1.1.0 Benchmark',
             clusterId: 'b5c6f9a2-c80e-4dea-aca2-501420931c67',
@@ -155,6 +154,7 @@ describe('Benchmark Sagas Test', () => {
 
     it('Should create a new schedule when a day and time is selected, and the schedule is not active', () => {
         const schedule = {
+            id: undefined,
             active: false,
             benchmarkId: '27ec04c3-0d28-4f5f-82bf-5f746250f11b',
             benchmarkName: 'CIS Swarm v1.1.0 Benchmark',

@@ -53,7 +53,7 @@ func (b *BoltDB) GetBenchmarkSchedules(request *v1.GetBenchmarkSchedulesRequest)
 		return err
 	})
 	filteredSchedules := schedules[:0]
-	requestClusterSet := newStringSet(request.GetClusters())
+	requestClusterSet := newStringSet(request.GetClusterIds())
 	for _, schedule := range schedules {
 		if request.GetBenchmarkId() != "" && schedule.GetBenchmarkId() != request.GetBenchmarkId() {
 			continue
