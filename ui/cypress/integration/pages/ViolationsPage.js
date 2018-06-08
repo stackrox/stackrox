@@ -5,6 +5,7 @@ export const selectors = {
     rows: 'tbody > tr',
     firstTableRow: 'tbody > tr:first',
     firstPanelTableRow: 'table > tbody > tr:first',
+    lastTableRow: 'table > tbody > tr:last-child',
     sidePanel: {
         panel: '.side-panel',
         header: '.side-panel .flex-row > .flex-1',
@@ -18,5 +19,6 @@ export const selectors = {
     collapsible: {
         header: '.Collapsible__trigger h1',
         body: '.Collapsible__contentInner'
-    }
+    },
+    containerConfiguration: '[data-test-id="deployment-container-configuration"]'
 };

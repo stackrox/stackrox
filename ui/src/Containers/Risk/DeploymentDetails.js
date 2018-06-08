@@ -25,7 +25,7 @@ const deploymentDetailsMap = {
 };
 
 const containerConfigMap = {
-    commands: { label: 'Commands' },
+    command: { label: 'Commands' },
     args: { label: 'Arguments' },
     ports: { label: 'Ports' },
     volumes: { label: 'Volumes' },
@@ -44,11 +44,13 @@ class DeploymentDetails extends Component {
     };
 
     getContainerConfigurations = container => {
-        const { commands, args, ports, volumes, secrets } = container.config;
-        return { commands, args, ports, volumes, secrets };
+        if (!container.config) return null;
+        const { command, args, ports, volumes, secrets } = container.config;
+        return { command, args, ports, volumes, secrets };
     };
 
     getSecurityContext = container => {
+        if (!container.securityContext) return null;
         const { privileged, add_capabilities, drop_capabilities } = container.securityContext; // eslint-disable-line
         return { privileged, add_capabilities, drop_capabilities };
     };
@@ -130,9 +132,9 @@ class DeploymentDetails extends Component {
             containers = deployment.containers.map((container, index) => {
                 const data = this.getContainerConfigurations(container);
                 return (
-                    <div key={index}>
+                    <div key={index} data-test-id="deployment-container-configuration">
                         {this.renderContainerImage(container.image)}
-                        <KeyValuePairs data={data} keyValueMap={containerConfigMap} />
+                        {data && <KeyValuePairs data={data} keyValueMap={containerConfigMap} />}
                         <div className="flex py-3">
                             <div className="pr-1">Mounts:</div>
                             <ul className="-ml-8 mt-4 w-full list-reset">
@@ -172,7 +174,12 @@ class DeploymentDetails extends Component {
                     if (data === {}) return null;
                     return (
                         <div key={index}>
-                            <KeyValuePairs data={data} keyValueMap={containerSecurityContextMap} />
+                            {data && (
+                                <KeyValuePairs
+                                    data={data}
+                                    keyValueMap={containerSecurityContextMap}
+                                />
+                            )}
                         </div>
                     );
                 });

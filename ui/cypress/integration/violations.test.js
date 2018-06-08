@@ -7,13 +7,24 @@ describe('Violations page', () => {
         cy.server();
         cy.fixture('alerts/alerts.json').as('alerts');
         cy.route('GET', api.alerts.alerts, '@alerts').as('alerts');
-        cy.fixture('alerts/alertById.json').as('alertById');
-        cy.route('GET', api.alerts.alertById, '@alertById').as('alertById');
         cy.visit(violationsUrl);
         cy.wait('@alerts');
     });
 
+    const mockGetAlert = () => {
+        cy.fixture('alerts/alertById.json').as('alertById');
+        cy.route('GET', api.alerts.alertById, '@alertById').as('alertById');
+    };
+
+    const mockGetAlertWithEmptyContainerConfig = () => {
+        cy.fixture('alerts/alertWithEmptyContainerConfig.json').as('alertWithEmptyContainerConfig');
+        cy
+            .route('GET', api.alerts.alertById, '@alertWithEmptyContainerConfig')
+            .as('alertWithEmptyContainerConfig');
+    };
+
     it('should show the side panel on row click', () => {
+        mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
         cy.get(ViolationsPageSelectors.sidePanel.panel).should('be.visible');
@@ -24,10 +35,11 @@ describe('Violations page', () => {
     });
 
     it('should have violations in table', () => {
-        cy.get(ViolationsPageSelectors.rows).should('have.length', 3);
+        cy.get(ViolationsPageSelectors.rows).should('have.length', 4);
     });
 
     it('should show side panel with panel header', () => {
+        mockGetAlert();
         cy.get(ViolationsPageSelectors.firstTableRow).click();
         cy.wait('@alertById');
         cy
@@ -47,6 +59,7 @@ describe('Violations page', () => {
     });
 
     it('should have 3 tabs in the sidepanel', () => {
+        mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
         cy.get(ViolationsPageSelectors.sidePanel.tabs).should('have.length', 3);
@@ -65,6 +78,7 @@ describe('Violations page', () => {
     });
 
     it('should have a message in the Violations tab', () => {
+        mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
         cy.get(ViolationsPageSelectors.sidePanel.getTabByIndex(0)).click();
@@ -77,6 +91,7 @@ describe('Violations page', () => {
     });
 
     it('should have deployment information in the Deployment Details tab', () => {
+        mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
         cy.get(ViolationsPageSelectors.sidePanel.getTabByIndex(1)).click();
@@ -93,5 +108,13 @@ describe('Violations page', () => {
             .get(ViolationsPageSelectors.collapsible.header)
             .eq(2)
             .should('have.text', 'Security Context');
+    });
+
+    it('should show deployment information in the Deployment Details tab with no container configuration values', () => {
+        mockGetAlertWithEmptyContainerConfig();
+        cy.get(ViolationsPageSelectors.lastTableRow).click();
+        cy.wait('@alertWithEmptyContainerConfig');
+        cy.get(ViolationsPageSelectors.sidePanel.getTabByIndex(1)).click();
+        cy.get(ViolationsPageSelectors.containerConfiguration).should('not.have.text', 'Commands');
     });
 });

@@ -1,0 +1,108 @@
+{
+  "id": "0a5a12eb-b951-4fae-9358-05c7caf1ce16",
+  "policy": {
+    "id": "a2d1eda2-5fde-40af-aa70-9b1efce859bd",
+    "name": "Latest tag",
+    "severity": "LOW_SEVERITY",
+    "description": "Alert on deployments with images using tag 'latest'",
+    "rationale": "Using latest tag can result in running heterogenous versions of code. Many Docker hosts cache the Docker images, which means newer versions of the latest tag will not be picked up. See https://docs.docker.com/develop/dev-best-practices for more best practices.",
+    "remediation": "Consider moving to semantic versioning based on code releases (semver.org) or using the first 12 characters of the source control SHA. This will allow you to tie the Docker image to the code.",
+    "disabled": false,
+    "categories": [
+      "Image Assurance"
+    ],
+    "scope": [],
+    "enforcement": "UNSET_ENFORCEMENT",
+    "notifiers": [],
+    "imagePolicy": {
+      "imageName": {
+        "registry": "",
+        "namespace": "",
+        "repo": "",
+        "tag": "latest"
+      },
+      "lineRule": null,
+      "cvss": null,
+      "cve": "",
+      "component": null
+    },
+    "privilegePolicy": null,
+    "configurationPolicy": null,
+    "whitelists": []
+  },
+  "deployment": {
+    "id": "e841ea9b-6a96-11e8-b4ce-42010a8a01d4",
+    "name": "nginx",
+    "version": "26839",
+    "type": "Deployment",
+    "namespace": "default",
+    "replicas": "1",
+    "labels": [
+      {
+        "key": "run",
+        "value": "nginx"
+      }
+    ],
+    "updatedAt": "2018-06-07T21:08:20Z",
+    "clusterId": "4ba47118-068e-4677-ab45-413ebc4f0f17",
+    "clusterName": "K8s",
+    "containers": [
+      {
+        "config": null,
+        "image": {
+          "name": {
+            "sha": "sha256:1f9c00b4c95ef931afa097823d902e7602aebc3ec5532e907e066978075ca3e0",
+            "registry": "docker.io",
+            "remote": "library/nginx",
+            "tag": "latest",
+            "fullName": "docker.io/library/nginx:latest"
+          },
+          "metadata": null,
+          "scan": null
+        },
+        "securityContext": null,
+        "volumes": [],
+        "ports": [],
+        "secrets": []
+      }
+    ],
+    "risk": {
+      "score": 1.18125,
+      "results": [
+        {
+          "name": "Service Configuration",
+          "factors": [
+            "No capabilities were dropped"
+          ],
+          "score": 1.125
+        },
+        {
+          "name": "Policy Violations",
+          "factors": [
+            "Latest tag (severity: Low)"
+          ],
+          "score": 1.05
+        }
+      ]
+    },
+    "tombstone": null,
+    "annotations": [
+      {
+        "key": "deployment.kubernetes.io/revision",
+        "value": "1"
+      }
+    ],
+    "priority": "0"
+  },
+  "violations": [
+    {
+      "message": "Image name 'docker.io/library/nginx:latest' matches the name policy 'tag=latest'",
+      "link": ""
+    }
+  ],
+  "enforcement": null,
+  "time": "2018-06-07T21:08:27.541697138Z",
+  "stale": false,
+  "markedStale": null,
+  "firstOccurred": "2018-06-07T21:08:20.943322501Z"
+}
