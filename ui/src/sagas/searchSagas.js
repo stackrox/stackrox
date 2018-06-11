@@ -1,21 +1,22 @@
-import { take, fork, put, call } from 'redux-saga/effects';
+import { all, put, call } from 'redux-saga/effects';
 
+import {
+    mainPath,
+    dashboardPath,
+    violationsPath,
+    riskPath,
+    policiesPath,
+    imagesPath
+} from 'routePaths';
+import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 import { actions as alertActions } from 'reducers/alerts';
 import { actions as deploymentsActions } from 'reducers/deployments';
 import { actions as policiesActions } from 'reducers/policies';
 import { actions as imagesActions } from 'reducers/images';
 import { actions as dashboardActions } from 'reducers/dashboard';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
-import { types as locationActionTypes } from 'reducers/routes';
 import { fetchOptions } from 'services/SearchService';
 import capitalize from 'lodash/capitalize';
-
-const dashboardPath = '/main/dashboard';
-const violationsPath = '/main/violations';
-const riskPath = '/main/risk';
-const policiesPath = '/main/policies';
-const imagesPath = '/main/images';
-const mainPath = '/main';
 
 const getParams = url => {
     const params = {};
@@ -57,12 +58,7 @@ const getQuery = () => {
     return queryOptions;
 };
 
-export function* getSearchOptions(
-    setSearchModifiers,
-    setSearchSuggestions,
-    setSearchOptions,
-    query = ''
-) {
+function* getSearchOptions(setSearchModifiers, setSearchSuggestions, setSearchOptions, query = '') {
     try {
         const result = yield call(fetchOptions, query);
         yield put(setSearchModifiers(result.options));
@@ -77,69 +73,53 @@ export function* getSearchOptions(
     }
 }
 
-export function* watchLocation() {
-    let globalSearchDone = false;
-    while (true) {
-        const action = yield take(locationActionTypes.LOCATION_CHANGE);
-        const { payload: location } = action;
-
-        if (
-            location &&
-            location.pathname &&
-            location.pathname.startsWith(mainPath) &&
-            !globalSearchDone
-        ) {
-            yield fork(
-                getSearchOptions,
-                globalSearchActions.setGlobalSearchModifiers,
-                globalSearchActions.setGlobalSearchSuggestions
-            );
-            globalSearchDone = true;
-        }
-
-        if (location && location.pathname && location.pathname.startsWith(violationsPath)) {
-            yield fork(
-                getSearchOptions,
-                alertActions.setAlertsSearchModifiers,
-                alertActions.setAlertsSearchSuggestions,
-                alertActions.setAlertsSearchOptions,
-                `categories=ALERTS`
-            );
-        } else if (location && location.pathname && location.pathname.startsWith(riskPath)) {
-            yield fork(
-                getSearchOptions,
-                deploymentsActions.setDeploymentsSearchModifiers,
-                deploymentsActions.setDeploymentsSearchSuggestions,
-                deploymentsActions.setDeploymentsSearchOptions,
-                'categories=DEPLOYMENTS'
-            );
-        } else if (location && location.pathname && location.pathname.startsWith(policiesPath)) {
-            yield fork(
-                getSearchOptions,
-                policiesActions.setPoliciesSearchModifiers,
-                policiesActions.setPoliciesSearchSuggestions,
-                policiesActions.setPoliciesSearchOptions,
-                'categories=POLICIES'
-            );
-        } else if (location && location.pathname && location.pathname.startsWith(imagesPath)) {
-            yield fork(
-                getSearchOptions,
-                imagesActions.setImagesSearchModifiers,
-                imagesActions.setImagesSearchSuggestions,
-                imagesActions.setImagesSearchOptions,
-                'categories=IMAGES'
-            );
-        } else if (location && location.pathname && location.pathname.startsWith(dashboardPath)) {
-            yield fork(
-                getSearchOptions,
-                dashboardActions.setDashboardSearchModifiers,
-                dashboardActions.setDashboardSearchSuggestions,
-                dashboardActions.setDashboardSearchOptions
-            );
-        }
-    }
-}
-
 export default function* searches() {
-    yield fork(watchLocation);
+    yield all([
+        takeEveryNewlyMatchedLocation(
+            mainPath,
+            getSearchOptions,
+            globalSearchActions.setGlobalSearchModifiers,
+            globalSearchActions.setGlobalSearchSuggestions
+        ),
+        takeEveryNewlyMatchedLocation(
+            violationsPath,
+            getSearchOptions,
+            alertActions.setAlertsSearchModifiers,
+            alertActions.setAlertsSearchSuggestions,
+            alertActions.setAlertsSearchOptions,
+            `categories=ALERTS`
+        ),
+        takeEveryNewlyMatchedLocation(
+            riskPath,
+            getSearchOptions,
+            deploymentsActions.setDeploymentsSearchModifiers,
+            deploymentsActions.setDeploymentsSearchSuggestions,
+            deploymentsActions.setDeploymentsSearchOptions,
+            'categories=DEPLOYMENTS'
+        ),
+        takeEveryNewlyMatchedLocation(
+            policiesPath,
+            getSearchOptions,
+            policiesActions.setPoliciesSearchModifiers,
+            policiesActions.setPoliciesSearchSuggestions,
+            policiesActions.setPoliciesSearchOptions,
+            'categories=POLICIES'
+        ),
+        takeEveryNewlyMatchedLocation(
+            imagesPath,
+            getSearchOptions,
+            imagesActions.setImagesSearchModifiers,
+            imagesActions.setImagesSearchSuggestions,
+            imagesActions.setImagesSearchOptions,
+            'categories=IMAGES'
+        ),
+        takeEveryNewlyMatchedLocation(
+            dashboardPath,
+            getSearchOptions,
+            dashboardActions.setDashboardSearchModifiers,
+            dashboardActions.setDashboardSearchSuggestions,
+            dashboardActions.setDashboardSearchOptions,
+            null
+        )
+    ]);
 }

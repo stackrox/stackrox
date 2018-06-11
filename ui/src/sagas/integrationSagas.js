@@ -1,13 +1,11 @@
 import { all, take, call, fork, put } from 'redux-saga/effects';
 
+import { integrationsPath, policiesPath } from 'routePaths';
 import { fetchIntegration } from 'services/IntegrationsService';
 import { actions, types } from 'reducers/integrations';
-import { types as locationActionTypes } from 'reducers/routes';
+import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
-const integrationsPath = '/main/integrations';
-const policiesPath = '/main/policies';
-
-export function* getNotifiers() {
+function* getNotifiers() {
     try {
         const result = yield call(fetchIntegration, ['notifiers']);
         yield put(actions.fetchNotifiers.success(result.response));
@@ -16,7 +14,7 @@ export function* getNotifiers() {
     }
 }
 
-export function* getImageIntegrations() {
+function* getImageIntegrations() {
     try {
         const result = yield call(fetchIntegration, ['imageIntegrations']);
         yield put(actions.fetchImageIntegrations.success(result.response));
@@ -25,22 +23,16 @@ export function* getImageIntegrations() {
     }
 }
 
-export function* watchLocation() {
-    while (true) {
-        const action = yield take(locationActionTypes.LOCATION_CHANGE);
-        const { payload: location } = action;
-
-        if (location && location.pathname && location.pathname.startsWith(integrationsPath)) {
-            yield all([fork(getNotifiers), fork(getImageIntegrations)]);
-        }
-
-        if (location && location.pathname && location.pathname.startsWith(policiesPath)) {
-            yield fork(getNotifiers);
-        }
-    }
+function* watchLocation() {
+    const effects = [integrationsPath, policiesPath].map(path =>
+        takeEveryNewlyMatchedLocation(path, getNotifiers)
+    );
+    yield all(
+        effects.concat(takeEveryNewlyMatchedLocation(integrationsPath, getImageIntegrations))
+    );
 }
 
-export function* watchFetchRequest() {
+function* watchFetchRequest() {
     while (true) {
         const action = yield take([
             types.FETCH_NOTIFIERS.REQUEST,

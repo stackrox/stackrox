@@ -1,10 +1,10 @@
 import { take, call, fork, put, cancel } from 'redux-saga/effects';
 import { delay } from 'redux-saga';
+
+import { mainPath } from 'routePaths';
 import fetchSummaryCounts from 'services/SummaryService';
 import { actions } from 'reducers/summaries';
 import { types as locationActionTypes } from 'reducers/routes';
-
-const mainPath = '/main/';
 
 export function* pollSummaryCounts() {
     while (true) {

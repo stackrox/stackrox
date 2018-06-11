@@ -1,14 +1,11 @@
 import { all, takeLatest, call, fork, put, select } from 'redux-saga/effects';
 
-import watchLocation from 'utils/watchLocation';
+import { riskPath, dashboardPath, policiesPath } from 'routePaths';
 import { fetchDeployments, fetchDeployment } from 'services/DeploymentsService';
 import { actions, types } from 'reducers/deployments';
 import { types as dashboardTypes } from 'reducers/dashboard';
 import { selectors } from 'reducers';
-
-const riskPath = '/main/risk/:deploymentId?';
-const dashboardPath = '/main/dashboard';
-const policiesPath = '/main/policies';
+import { takeEveryLocation, takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
 export function* getDeployments({ options = [] }) {
     try {
@@ -44,12 +41,10 @@ function* filterRiskPageBySearch() {
     yield fork(getDeployments, { options });
 }
 
-function* loadRiskPage(match) {
-    yield fork(filterRiskPageBySearch);
-
+function* getSelectedDeployment({ match }) {
     const { deploymentId } = match.params;
     if (deploymentId) {
-        yield fork(getDeployment, deploymentId);
+        yield call(getDeployment, deploymentId);
     }
 }
 
@@ -63,9 +58,10 @@ function* watchDashboardSearchOptions() {
 
 export default function* deployments() {
     yield all([
-        fork(watchLocation, dashboardPath, filterDashboardPageBySearch),
-        fork(watchLocation, policiesPath, filterPoliciesPageBySearch),
-        fork(watchLocation, riskPath, loadRiskPage),
+        takeEveryNewlyMatchedLocation(dashboardPath, filterDashboardPageBySearch),
+        takeEveryNewlyMatchedLocation(policiesPath, filterPoliciesPageBySearch),
+        takeEveryNewlyMatchedLocation(riskPath, filterRiskPageBySearch),
+        takeEveryLocation(riskPath, getSelectedDeployment),
         fork(watchDeploymentsSearchOptions),
         fork(watchDashboardSearchOptions)
     ]);

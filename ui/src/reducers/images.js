@@ -42,8 +42,10 @@ export default reducer;
 // Selectors
 
 const getImages = state => state.images;
+const getImage = (state, sha) => getImages(state).find(image => image.name.sha === sha);
 
 export const selectors = {
     getImages,
+    getImage,
     ...getSearchSelectors('images')
 };

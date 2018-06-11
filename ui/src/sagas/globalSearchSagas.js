@@ -1,5 +1,6 @@
 import { takeLatest, all, call, fork, put, select } from 'redux-saga/effects';
 
+import { mainPath } from 'routePaths';
 import { fetchGlobalSearchResults } from 'services/SearchService';
 import { actions, types } from 'reducers/globalSearch';
 import { actions as alertsActions } from 'reducers/alerts';
@@ -8,11 +9,9 @@ import { actions as deploymentsActions } from 'reducers/deployments';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { setStaleSearchOption } from 'utils/searchUtils';
-import watchLocation from 'utils/watchLocation';
+import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
 import { toast } from 'react-toastify';
-
-const mainPath = '/main';
 
 export function* getGlobalSearchResults() {
     try {
@@ -67,7 +66,7 @@ function* watchPassthroughGlobalSearchOptions() {
 
 export default function* globalSearch() {
     yield all([
-        fork(watchLocation, mainPath, setStaleSearchOptionInGlobalSearch),
+        takeEveryNewlyMatchedLocation(mainPath, setStaleSearchOptionInGlobalSearch),
         fork(watchGlobalsearchSearchOptions),
         fork(watchSetGlobalSearchCategory),
         fork(watchPassthroughGlobalSearchOptions)

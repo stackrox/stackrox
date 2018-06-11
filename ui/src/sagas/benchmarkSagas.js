@@ -1,15 +1,13 @@
 import { delay } from 'redux-saga';
 import { all, take, takeLatest, call, fork, put, select, race } from 'redux-saga/effects';
 
+import { dashboardPath, compliancePath } from 'routePaths';
+import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 import * as service from 'services/BenchmarksService';
 import { selectors } from 'reducers';
 import { actions as benchmarkActions, types as benchmarkTypes } from 'reducers/benchmarks';
 import { types as dashboardType } from 'reducers/dashboard';
-import { types as locationActionTypes } from 'reducers/routes';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
-
-const dashboardPath = '/main/dashboard';
-const compliancePath = '/main/compliance';
 
 function filterResultByClusterSearchOption(result, filters) {
     let filteredResult = result.slice();
@@ -40,7 +38,7 @@ export function* getBenchmarkCheckHostResults({ params: benchmark }) {
     }
 }
 
-export function* getBenchmarksByCluster(filters) {
+function* getBenchmarksByCluster(filters) {
     try {
         const result = yield call(service.fetchBenchmarksByCluster, filters);
         // This is a hack. Will need to remove it. Backend API should allow filtering the response using the search query
@@ -137,26 +135,14 @@ function* watchTriggerBenchmarkScan() {
     yield takeLatest(benchmarkTypes.TRIGGER_BENCHMARK_SCAN.REQUEST, triggerBenchmarkScan);
 }
 
-export function* watchLocation() {
-    while (true) {
-        const action = yield take(locationActionTypes.LOCATION_CHANGE);
-        const { payload: location } = action;
-        if (location && location.pathname && location.pathname.startsWith(dashboardPath)) {
-            yield fork(getBenchmarksByCluster);
-        }
-        if (location && location.pathname && location.pathname.startsWith(compliancePath)) {
-            yield fork(getBenchmarks);
-        }
-    }
-}
-
 function* watchDashboardSearchOptions() {
     yield takeLatest(dashboardType.SET_SEARCH_OPTIONS, filterDashboardPageBySearch);
 }
 
 export default function* benchmarks() {
     yield all([
-        fork(watchLocation),
+        takeEveryNewlyMatchedLocation(dashboardPath, getBenchmarksByCluster, null),
+        takeEveryNewlyMatchedLocation(compliancePath, getBenchmarks, null),
         fork(watchBenchmarkScanResults),
         fork(watchUpdateBenchmarkSchedule),
         fork(watchFetchBenchmarkScheduleRequest),

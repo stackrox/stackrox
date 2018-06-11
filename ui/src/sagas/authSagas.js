@@ -3,14 +3,12 @@ import { delay } from 'redux-saga';
 import { push } from 'react-router-redux';
 import queryString from 'query-string';
 
+import { loginPath, integrationsPath, oidcResponsePath } from 'routePaths';
+import { takeEveryLocation } from 'utils/sagaEffects';
 import * as AuthService from 'services/AuthService';
 import { selectors } from 'reducers';
 import { actions, types, AUTH_STATUS } from 'reducers/auth';
 import { types as locationActionTypes } from 'reducers/routes';
-
-const loginPath = '/login';
-const integrationsPath = '/main/integrations';
-const openIdConnectResponsePath = '/auth/response/oidc';
 
 function* evaluateUserAccess() {
     const authProviders = yield select(selectors.getAuthProviders);
@@ -58,24 +56,6 @@ export function* getAuthProviders() {
     }
 }
 
-function* watchLocation() {
-    while (true) {
-        const action = yield take(locationActionTypes.LOCATION_CHANGE);
-        const { payload: location } = action;
-        if (!location.pathname) return;
-
-        if (location.pathname.startsWith(integrationsPath)) {
-            yield fork(getAuthProviders);
-        } else if (location.pathname.startsWith(loginPath)) {
-            const { state } = location;
-            if (state && state.from && !state.from.startsWith(loginPath)) {
-                // we were redirected to login page from another page
-                yield call(AuthService.storeRequestedLocation, state.from);
-            }
-        }
-    }
-}
-
 function* watchAuthProvidersFetchRequest() {
     yield takeLatest(types.FETCH_AUTH_PROVIDERS.REQUEST, getAuthProviders);
 }
@@ -86,6 +66,14 @@ function* logout() {
 
 function* watchLogout() {
     yield takeLatest(types.LOGOUT, logout);
+}
+
+function* handleLoginPageRedirect({ location }) {
+    const { state } = location;
+    if (state && state.from && !state.from.startsWith(loginPath)) {
+        // we were redirected to login page from another page
+        yield call(AuthService.storeRequestedLocation, state.from);
+    }
 }
 
 function* handleOidcResponse(location) {
@@ -123,7 +111,7 @@ export default function* auth() {
     // take the first location change, i.e. the location where user landed first time
     const action = yield take(locationActionTypes.LOCATION_CHANGE);
     const { payload: location } = action;
-    if (location.pathname && location.pathname.startsWith(openIdConnectResponsePath)) {
+    if (location.pathname && location.pathname.startsWith(oidcResponsePath)) {
         // if it was a redirect after authentication, handle it properly
         yield fork(handleOidcResponse, location);
     } else {
@@ -132,7 +120,8 @@ export default function* auth() {
     }
 
     yield all([
-        fork(watchLocation),
+        takeEveryLocation(integrationsPath, getAuthProviders),
+        takeEveryLocation(loginPath, handleLoginPageRedirect),
         fork(watchAuthProvidersFetchRequest),
         fork(watchLogout),
         fork(watchAuthHttpErrors)

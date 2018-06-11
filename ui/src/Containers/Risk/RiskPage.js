@@ -22,6 +22,9 @@ import DeploymentDetails from './DeploymentDetails';
 class RiskPage extends Component {
     static propTypes = {
         deployments: PropTypes.arrayOf(PropTypes.object).isRequired,
+        selectedDeployment: PropTypes.shape({
+            id: PropTypes.string.isRequired
+        }),
         searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
         searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
         searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -31,17 +34,11 @@ class RiskPage extends Component {
         isViewFiltered: PropTypes.bool.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
         location: ReactRouterPropTypes.location.isRequired,
-        match: ReactRouterPropTypes.match.isRequired,
         isFetchingDeployment: PropTypes.bool.isRequired
     };
 
-    getSelectedDeployment = () => {
-        if (this.props.match.params.id) {
-            return this.props.deployments.find(
-                deployment => deployment.id === this.props.match.params.id
-            );
-        }
-        return null;
+    static defaultProps = {
+        selectedDeployment: null
     };
 
     updateSelectedDeployment = deployment => {
@@ -66,7 +63,7 @@ class RiskPage extends Component {
     }
 
     renderSidePanel = () => {
-        const selectedDeployment = this.getSelectedDeployment();
+        const { selectedDeployment } = this.props;
         if (!selectedDeployment) return null;
 
         const riskPanelTabs = [{ text: 'Risk Indicators' }, { text: 'Deployment Details' }];
@@ -129,8 +126,14 @@ const isViewFiltered = createSelector(
     searchOptions => searchOptions.length !== 0
 );
 
+const getSelectedDeployment = (state, props) => {
+    const { deploymentId } = props.match.params;
+    return deploymentId ? selectors.getDeployment(state, deploymentId) : null;
+};
+
 const mapStateToProps = createStructuredSelector({
     deployments: selectors.getFilteredDeployments,
+    selectedDeployment: getSelectedDeployment,
     searchOptions: selectors.getDeploymentsSearchOptions,
     searchModifiers: selectors.getDeploymentsSearchModifiers,
     searchSuggestions: selectors.getDeploymentsSearchSuggestions,

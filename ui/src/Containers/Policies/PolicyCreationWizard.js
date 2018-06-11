@@ -70,7 +70,7 @@ class PolicyCreationWizard extends Component {
     }
 }
 
-const getPolicyId = (state, props) => props.match.params.id;
+const getPolicyId = (state, props) => props.match.params.policyId;
 
 const getPolicy = createSelector(
     [selectors.getPolicyWizardState, selectors.getPoliciesById, getPolicyId],

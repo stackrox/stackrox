@@ -55,6 +55,9 @@ const reducer = (action, prevState) => {
 class ImagesPage extends Component {
     static propTypes = {
         images: PropTypes.arrayOf(PropTypes.object).isRequired,
+        selectedImage: PropTypes.shape({
+            name: PropTypes.object.isRequired
+        }),
         searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
         searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
         searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -64,9 +67,12 @@ class ImagesPage extends Component {
         isViewFiltered: PropTypes.bool.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
         location: ReactRouterPropTypes.location.isRequired,
-        match: ReactRouterPropTypes.match.isRequired,
         deploymentsSearchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
         setDeploymentsSearchOptions: PropTypes.func.isRequired
+    };
+
+    static defaultProps = {
+        selectedImage: null
     };
 
     constructor(props) {
@@ -78,7 +84,7 @@ class ImagesPage extends Component {
     }
 
     onViewDeploymentsClick = () => {
-        const imageName = this.getSelectedImage().name.fullName;
+        const imageName = this.props.selectedImage.name.fullName;
         const deploymentsSearchOptions = this.props.deploymentsSearchOptions.splice();
         deploymentsSearchOptions.push({
             label: 'Image Name:',
@@ -92,13 +98,6 @@ class ImagesPage extends Component {
         });
         this.props.setDeploymentsSearchOptions(deploymentsSearchOptions);
         this.props.history.push('/main/risk');
-    };
-
-    getSelectedImage = () => {
-        if (this.props.match.params.sha) {
-            return this.props.images.find(image => image.name.sha === this.props.match.params.sha);
-        }
-        return null;
     };
 
     openModal = () => {
@@ -154,7 +153,7 @@ class ImagesPage extends Component {
     }
 
     renderSidePanel = () => {
-        const selectedImage = this.getSelectedImage();
+        const { selectedImage } = this.props;
         if (!selectedImage) return '';
         const header = selectedImage.name.fullName;
         return (
@@ -169,7 +168,7 @@ class ImagesPage extends Component {
 
     renderOverview = () => {
         const title = 'OVERVIEW';
-        const selectedImage = this.getSelectedImage();
+        const { selectedImage } = this.props;
         if (!selectedImage) return null;
         const imageDetail = {
             scanTime: selectedImage.scan ? selectedImage.scan.scanTime : '',
@@ -310,7 +309,7 @@ class ImagesPage extends Component {
                 headerClassName: 'font-600 text-right'
             }
         ];
-        const selectedImage = this.getSelectedImage();
+        const { selectedImage } = this.props;
         const { scan } = selectedImage;
         return (
             <div className="px-3 py-4">
@@ -337,7 +336,7 @@ class ImagesPage extends Component {
     };
 
     renderDockerFileModal() {
-        const selectedImage = this.getSelectedImage();
+        const { selectedImage } = this.props;
         if (!this.state.modalOpen || !selectedImage || !selectedImage.metadata) return null;
         return <DockerFileModal data={selectedImage.metadata.layers} onClose={this.closeModal} />;
     }
@@ -376,8 +375,14 @@ const isViewFiltered = createSelector(
     searchOptions => searchOptions.length !== 0
 );
 
+const getSelectedImage = (state, props) => {
+    const { imageSha } = props.match.params;
+    return imageSha ? selectors.getImage(state, imageSha) : null;
+};
+
 const mapStateToProps = createStructuredSelector({
     images: selectors.getImages,
+    selectedImage: getSelectedImage,
     deploymentsSearchOptions: selectors.getDeploymentsSearchOptions,
     searchOptions: selectors.getImagesSearchOptions,
     searchModifiers: selectors.getImagesSearchModifiers,

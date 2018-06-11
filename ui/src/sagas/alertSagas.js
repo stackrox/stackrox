@@ -1,7 +1,19 @@
-import { all, take, takeLatest, call, fork, put, select, race } from 'redux-saga/effects';
+import {
+    all,
+    take,
+    takeLatest,
+    call,
+    fork,
+    put,
+    select,
+    race,
+    takeEvery
+} from 'redux-saga/effects';
 import { delay } from 'redux-saga';
+import { LOCATION_CHANGE } from 'react-router-redux';
 
-import watchLocation from 'utils/watchLocation';
+import { violationsPath, dashboardPath } from 'routePaths';
+import { takeEveryLocation } from 'utils/sagaEffects';
 import * as service from 'services/AlertsService';
 import { actions, types } from 'reducers/alerts';
 import { types as dashboardTypes } from 'reducers/dashboard';
@@ -9,10 +21,6 @@ import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { whitelistDeployment } from 'services/PoliciesService';
 import { setStaleSearchOption } from 'utils/searchUtils';
-
-const basePath = '/';
-const dashboardPath = '/main/dashboard';
-const violationsPath = '/main/violations/:alertId?';
 
 function filterTimeseriesResultsByClusterSearchOptions(result, filters) {
     const filteredResult = Object.assign({}, result);
@@ -154,7 +162,7 @@ function* filterDashboardPageBySearch() {
     yield fork(getAlertCountsByPolicyCategories, nestedFilter);
 }
 
-function* loadViolationsPage(match) {
+function* loadViolationsPage({ match }) {
     yield fork(setStaleSearchOptionInViolations);
     yield put(actions.pollAlerts.start());
 
@@ -212,9 +220,9 @@ function* pollSagaWatcher() {
 
 export default function* alerts() {
     yield all([
-        fork(watchLocation, basePath, cancelPolling),
-        fork(watchLocation, violationsPath, loadViolationsPage),
-        fork(watchLocation, dashboardPath, loadDashboardPage),
+        takeEvery(LOCATION_CHANGE, cancelPolling),
+        takeEveryLocation(violationsPath, loadViolationsPage),
+        takeEveryLocation(dashboardPath, loadDashboardPage),
         fork(watchAlertsSearchOptions),
         fork(watchDashboardSearchOptions),
         fork(watchWhitelistDeployment),

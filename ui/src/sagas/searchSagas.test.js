@@ -1,133 +1,55 @@
-import { take, fork, put, call } from 'redux-saga/effects';
-import { types as locationActionTypes } from 'reducers/routes';
+import { call } from 'redux-saga/effects';
+import { expectSaga } from 'redux-saga-test-plan';
+import * as matchers from 'redux-saga-test-plan/matchers';
+
 import { actions as alertActions } from 'reducers/alerts';
 import { actions as deploymentsActions } from 'reducers/deployments';
 import { actions as policiesActions } from 'reducers/policies';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { fetchOptions } from 'services/SearchService';
-import { getSearchOptions, watchLocation } from './searchSagas';
+import createLocationChange from './sagaTestUtils';
+import saga from './searchSagas';
 
 describe('Search Sagas Test', () => {
-    it('Should load search modifiers/suggestions for Global Search when location changes', () => {
-        const gen = watchLocation();
-        let { value } = gen.next();
-        expect(value).toEqual(take(locationActionTypes.LOCATION_CHANGE));
-        ({ value } = gen.next({
-            type: locationActionTypes.LOCATION_CHANGE,
-            payload: {
-                pathname: '/main/violations'
-            }
-        }));
-        expect(value).toEqual(
-            fork(
-                getSearchOptions,
-                globalSearchActions.setGlobalSearchModifiers,
-                globalSearchActions.setGlobalSearchSuggestions
-            )
-        );
+    it('Should load search modifiers/suggestions for Global Search once when hit any `main` location', () => {
+        const options = ['option1', 'option2'];
+        return expectSaga(saga)
+            .provide([[matchers.call.fn(fetchOptions), { options }]])
+            .put(globalSearchActions.setGlobalSearchModifiers(options))
+            .put(globalSearchActions.setGlobalSearchSuggestions(options))
+            .not.put(globalSearchActions.setGlobalSearchModifiers(options)) // should not do it second time
+            .dispatch(createLocationChange('/main/dashboard'))
+            .dispatch(createLocationChange('/main/policies'))
+            .silentRun();
     });
+
     it('Should load search modifiers/suggestions for Alerts when location changes to Violations Page', () => {
-        const gen = watchLocation();
-        let { value } = gen.next();
-        expect(value).toEqual(take(locationActionTypes.LOCATION_CHANGE));
-        ({ value } = gen.next({
-            type: locationActionTypes.LOCATION_CHANGE,
-            payload: {
-                pathname: '/main/violations'
-            }
-        }));
-        expect(value).toEqual(
-            fork(
-                getSearchOptions,
-                globalSearchActions.setGlobalSearchModifiers,
-                globalSearchActions.setGlobalSearchSuggestions
-            )
-        );
-        ({ value } = gen.next());
-        expect(value).toEqual(
-            fork(
-                getSearchOptions,
-                alertActions.setAlertsSearchModifiers,
-                alertActions.setAlertsSearchSuggestions,
-                alertActions.setAlertsSearchOptions,
-                'categories=ALERTS'
-            )
-        );
+        const options = ['option1', 'option2'];
+        return expectSaga(saga)
+            .provide([[call(fetchOptions, 'categories=ALERTS'), { options }]])
+            .put(alertActions.setAlertsSearchModifiers(options))
+            .put(alertActions.setAlertsSearchSuggestions(options))
+            .dispatch(createLocationChange('/main/violations'))
+            .silentRun();
     });
+
     it('Should load search modifiers/suggestions for Deployments when location changes to Risk Page', () => {
-        const gen = watchLocation();
-        let { value } = gen.next();
-        expect(value).toEqual(take(locationActionTypes.LOCATION_CHANGE));
-        ({ value } = gen.next({
-            type: locationActionTypes.LOCATION_CHANGE,
-            payload: {
-                pathname: '/main/risk'
-            }
-        }));
-        expect(value).toEqual(
-            fork(
-                getSearchOptions,
-                globalSearchActions.setGlobalSearchModifiers,
-                globalSearchActions.setGlobalSearchSuggestions
-            )
-        );
-        ({ value } = gen.next());
-        expect(value).toEqual(
-            fork(
-                getSearchOptions,
-                deploymentsActions.setDeploymentsSearchModifiers,
-                deploymentsActions.setDeploymentsSearchSuggestions,
-                deploymentsActions.setDeploymentsSearchOptions,
-                'categories=DEPLOYMENTS'
-            )
-        );
+        const options = ['option1', 'option2'];
+        return expectSaga(saga)
+            .provide([[call(fetchOptions, 'categories=DEPLOYMENTS'), { options }]])
+            .put(deploymentsActions.setDeploymentsSearchModifiers(options))
+            .put(deploymentsActions.setDeploymentsSearchSuggestions(options))
+            .dispatch(createLocationChange('/main/risk'))
+            .silentRun();
     });
+
     it('Should load search modifiers/suggestions for Policies when location changes to Policies Page', () => {
-        const gen = watchLocation();
-        let { value } = gen.next();
-        expect(value).toEqual(take(locationActionTypes.LOCATION_CHANGE));
-        ({ value } = gen.next({
-            type: locationActionTypes.LOCATION_CHANGE,
-            payload: {
-                pathname: '/main/policies'
-            }
-        }));
-        expect(value).toEqual(
-            fork(
-                getSearchOptions,
-                globalSearchActions.setGlobalSearchModifiers,
-                globalSearchActions.setGlobalSearchSuggestions
-            )
-        );
-        ({ value } = gen.next());
-        expect(value).toEqual(
-            fork(
-                getSearchOptions,
-                policiesActions.setPoliciesSearchModifiers,
-                policiesActions.setPoliciesSearchSuggestions,
-                policiesActions.setPoliciesSearchOptions,
-                'categories=POLICIES'
-            )
-        );
-    });
-    it('Should set searchModifiers, and searchSuggestions when getSearchOptions is called', () => {
-        const result = {
-            options: ['OPTION 1', 'OPTION 2', 'OPTION 3']
-        };
-        const setSearchModifiers = alertActions.setAlertsSearchModifiers;
-        const setSearchSuggestions = alertActions.setAlertsSearchSuggestions;
-        const setSearchOptions = alertActions.setAlertsSearchOptions;
-        const gen = getSearchOptions(
-            setSearchModifiers,
-            setSearchSuggestions,
-            setSearchOptions,
-            'categories=TEST'
-        );
-        let { value } = gen.next();
-        expect(value).toEqual(call(fetchOptions, 'categories=TEST'));
-        ({ value } = gen.next(result));
-        expect(value).toEqual(put(setSearchModifiers(result.options)));
-        ({ value } = gen.next());
-        expect(value).toEqual(put(setSearchSuggestions(result.options)));
+        const options = ['option1', 'option2'];
+        return expectSaga(saga)
+            .provide([[call(fetchOptions, 'categories=POLICIES'), { options }]])
+            .put(policiesActions.setPoliciesSearchModifiers(options))
+            .put(policiesActions.setPoliciesSearchSuggestions(options))
+            .dispatch(createLocationChange('/main/policies'))
+            .silentRun();
     });
 });

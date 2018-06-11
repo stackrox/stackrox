@@ -1,42 +1,39 @@
-import { fork, take } from 'redux-saga/effects';
-import { types as locationActionTypes } from 'reducers/routes';
-import { getClusters, watchLocation } from './clusterSagas';
+import { call } from 'redux-saga/effects';
+import { expectSaga } from 'redux-saga-test-plan';
+import { dynamic } from 'redux-saga-test-plan/providers';
+
+import { fetchClusters } from 'services/ClustersService';
+import { actions } from 'reducers/clusters';
+import saga from './clusterSagas';
+import createLocationChange from './sagaTestUtils';
 
 describe('Cluster Sagas Test', () => {
-    it('Should do a service call to get clusters when location changes to dashboard', () => {
-        const gen = watchLocation();
-        let { value } = gen.next();
-        expect(value).toEqual(take(locationActionTypes.LOCATION_CHANGE));
-        ({ value } = gen.next({
-            type: locationActionTypes.LOCATION_CHANGE,
-            payload: {
-                pathname: '/main/dashboard'
-            }
-        }));
-        expect(value).toEqual(fork(getClusters));
+    it('should fetch clusters when location changes to dashboard, integrations, policies, compliance', () => {
+        const clusters = ['cluster1', 'cluster2'];
+        const fetchMock = jest.fn().mockReturnValue({ response: clusters });
+        return expectSaga(saga)
+            .provide([[call(fetchClusters), dynamic(fetchMock)]])
+            .put(actions.fetchClusters.success(clusters))
+            .dispatch(createLocationChange('/main/dashboard'))
+            .dispatch(createLocationChange('/main/integrations'))
+            .dispatch(createLocationChange('/main/policies'))
+            .dispatch(createLocationChange('/main/compliance'))
+            .silentRun()
+            .then(() => {
+                expect(fetchMock.mock.calls.length).toBe(4);
+            });
     });
-    it('Should do a service call to get clusters when location changes to integrations', () => {
-        const gen = watchLocation();
-        let { value } = gen.next();
-        expect(value).toEqual(take(locationActionTypes.LOCATION_CHANGE));
-        ({ value } = gen.next({
-            type: locationActionTypes.LOCATION_CHANGE,
-            payload: {
-                pathname: '/main/integrations'
-            }
-        }));
-        expect(value).toEqual(fork(getClusters));
-    });
-    it("Shouldn't do a service call to get clusters when location changes to violations, policies, etc.", () => {
-        const gen = watchLocation();
-        let { value } = gen.next();
-        expect(value).toEqual(take(locationActionTypes.LOCATION_CHANGE));
-        ({ value } = gen.next({
-            type: locationActionTypes.LOCATION_CHANGE,
-            payload: {
-                pathname: '/main/violations'
-            }
-        }));
-        expect(value).not.toEqual(fork(getClusters));
+
+    it("shouldn't do a service call to get clusters when location changes to violations, images, risk", () => {
+        const fetchMock = jest.fn();
+        return expectSaga(saga)
+            .provide([[call(fetchClusters), dynamic(fetchMock)]])
+            .dispatch(createLocationChange('/main/violations'))
+            .dispatch(createLocationChange('/main/images'))
+            .dispatch(createLocationChange('/main/risk'))
+            .silentRun()
+            .then(() => {
+                expect(fetchMock.mock.calls.length).toBe(0);
+            });
     });
 });

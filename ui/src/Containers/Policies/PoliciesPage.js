@@ -24,6 +24,9 @@ import PolicyCreationWizard from 'Containers/Policies/PolicyCreationWizard';
 class PoliciesPage extends Component {
     static propTypes = {
         policies: PropTypes.arrayOf(PropTypes.object).isRequired,
+        selectedPolicy: PropTypes.shape({
+            id: PropTypes.string.isRequired
+        }),
         fetchPolicies: PropTypes.func.isRequired,
         reassessPolicies: PropTypes.func.isRequired,
         updatePolicy: PropTypes.func.isRequired,
@@ -47,6 +50,7 @@ class PoliciesPage extends Component {
     };
 
     static defaultProps = {
+        selectedPolicy: null,
         formData: {}
     };
 
@@ -63,7 +67,7 @@ class PoliciesPage extends Component {
     }
 
     onSubmit = () => {
-        const selectedPolicy = this.getSelectedPolicy();
+        const { selectedPolicy } = this.props;
         const { isNew, policy, disabled } = this.props.wizardState;
         const newPolicy = Object.assign({}, selectedPolicy, policy);
         const newState = {};
@@ -132,13 +136,6 @@ class PoliciesPage extends Component {
             disabled: serverFormattedPolicy.disabled
         };
         this.props.setWizardState(wizardState);
-    };
-
-    getSelectedPolicy = () => {
-        if (this.props.match.params.id && this.props.policies.length !== 0) {
-            return this.props.policies.find(policy => policy.id === this.props.match.params.id);
-        }
-        return null;
     };
 
     setSelectedPolicy = policy => {
@@ -282,7 +279,7 @@ class PoliciesPage extends Component {
     };
 
     renderSidePanel = () => {
-        const selectedPolicy = this.getSelectedPolicy();
+        const { selectedPolicy } = this.props;
         if (!this.props.wizardState.current && !selectedPolicy) return null;
 
         const editingPolicy = Object.assign({}, selectedPolicy, this.props.wizardState.policy);
@@ -350,8 +347,14 @@ const isViewFiltered = createSelector(
 const getFormData = state =>
     formValueSelector('policyCreationForm')(state, ...getPolicyFormDataKeys());
 
+const getSelectedPolicy = (state, props) => {
+    const { policyId } = props.match.params;
+    return policyId ? selectors.getPolicy(state, policyId) : null;
+};
+
 const mapStateToProps = createStructuredSelector({
     policies: state => Object.values(selectors.getPoliciesById(state)),
+    selectedPolicy: getSelectedPolicy,
     formData: getFormData,
     wizardState: selectors.getPolicyWizardState,
     searchOptions: selectors.getPoliciesSearchOptions,

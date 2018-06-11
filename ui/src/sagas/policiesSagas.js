@@ -1,15 +1,13 @@
 import { all, take, call, fork, put, takeLatest, select } from 'redux-saga/effects';
 import { push } from 'react-router-redux';
 
-import watchLocation from 'utils/watchLocation';
+import { policiesPath, violationsPath } from 'routePaths';
 import * as service from 'services/PoliciesService';
 import { actions, types } from 'reducers/policies';
 import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
-
-const policiesPath = '/main/policies';
-const violationsPath = '/main/violations';
+import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
 export function* getPolicies(filters) {
     try {
@@ -163,8 +161,8 @@ function* watchWizardState() {
 
 export default function* policies() {
     yield all([
-        fork(watchLocation, policiesPath, loadPoliciesPage),
-        fork(watchLocation, violationsPath, loadViolationsPage),
+        takeEveryNewlyMatchedLocation(policiesPath, loadPoliciesPage),
+        takeEveryNewlyMatchedLocation(violationsPath, loadViolationsPage),
         fork(watchFetchRequest),
         fork(watchWizardState),
         fork(watchReassessPolicies),

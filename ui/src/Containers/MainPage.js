@@ -4,6 +4,17 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { Redirect, Switch } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
+
+import {
+    mainPath,
+    dashboardPath,
+    violationsPath,
+    compliancePath,
+    integrationsPath,
+    policiesPath,
+    riskPath,
+    imagesPath
+} from 'routePaths';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 
@@ -40,14 +51,14 @@ class MainPage extends Component {
     renderRouter = () => (
         <section className="flex-auto overflow-auto">
             <Switch>
-                <ProtectedRoute path="/main/dashboard" component={DashboardPage} />
-                <ProtectedRoute path="/main/violations/:alertId?" component={ViolationsPage} />
-                <ProtectedRoute path="/main/compliance/:clusterId?" component={CompliancePage} />
-                <ProtectedRoute path="/main/integrations" component={IntegrationsPage} />
-                <ProtectedRoute path="/main/policies/:id?" component={PoliciesPage} />
-                <ProtectedRoute path="/main/risk/:id?" component={RiskPage} />
-                <ProtectedRoute path="/main/images/:sha?" component={ImagesPage} />
-                <Redirect from="/main" to="/main/dashboard" />
+                <ProtectedRoute path={dashboardPath} component={DashboardPage} />
+                <ProtectedRoute path={violationsPath} component={ViolationsPage} />
+                <ProtectedRoute path={compliancePath} component={CompliancePage} />
+                <ProtectedRoute path={integrationsPath} component={IntegrationsPage} />
+                <ProtectedRoute path={policiesPath} component={PoliciesPage} />
+                <ProtectedRoute path={riskPath} component={RiskPage} />
+                <ProtectedRoute path={imagesPath} component={ImagesPage} />
+                <Redirect from={mainPath} to={dashboardPath} />
             </Switch>
         </section>
     );

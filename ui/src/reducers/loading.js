@@ -26,7 +26,7 @@ export default reducer;
 
 const getLoadingStatus = (state, type) => {
     const action = getFetchingActionName(type);
-    return state.loading[action];
+    return state.loading[action] || false;
 };
 
 export const selectors = {

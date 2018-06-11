@@ -6,7 +6,7 @@ import { actions as benchmarkActions, types as benchmarkTypes } from 'reducers/b
 import { types as dashboardTypes } from 'reducers/dashboard';
 import saga from './benchmarkSagas';
 import { selectors } from '../reducers';
-import * as services from '../services/BenchmarksService';
+import * as service from '../services/BenchmarksService';
 import createLocationChange from './sagaTestUtils';
 
 const dashboardSearchOptions = [
@@ -52,7 +52,7 @@ describe('Benchmark Sagas Test', () => {
         return expectSaga(saga)
             .provide([
                 [select(selectors.getDashboardSearchOptions), []],
-                [call(services.fetchBenchmarksByCluster, { query: '' }), dynamic(fetchMock)]
+                [call(service.fetchBenchmarksByCluster, { query: '' }), dynamic(fetchMock)]
             ])
             .dispatch(createLocationChange('/main/dashboard'))
             .dispatch({
@@ -69,7 +69,7 @@ describe('Benchmark Sagas Test', () => {
         return expectSaga(saga)
             .provide([
                 [select(selectors.getDashboardSearchOptions), dashboardSearchOptions],
-                [call(services.fetchBenchmarksByCluster, dashboardSearchQuery), dynamic(fetchMock)]
+                [call(service.fetchBenchmarksByCluster, dashboardSearchQuery), dynamic(fetchMock)]
             ])
             .dispatch(createLocationChange('/main/dashboard'))
             .dispatch({
@@ -80,7 +80,7 @@ describe('Benchmark Sagas Test', () => {
             .silentRun();
     });
 
-    it('should do a service call to get benchmarks when location changes to dashboard', () => {
+    it('should do a service call to get benchmarks when location changes to Compliance page', () => {
         const benchmarks = [
             {
                 id: '27ec04c3-0d28-4f5f-82bf-5f746250f11b',
@@ -92,10 +92,26 @@ describe('Benchmark Sagas Test', () => {
         const fetchMock = jest.fn().mockReturnValueOnce(benchmarks);
 
         return expectSaga(saga)
-            .provide([[call(services.fetchBenchmarks), dynamic(fetchMock)]])
+            .provide([[call(service.fetchBenchmarks), dynamic(fetchMock)]])
             .dispatch(createLocationChange('/main/compliance'))
             .put(benchmarkActions.fetchBenchmarks.success(benchmarks))
             .silentRun();
+    });
+
+    it('should not fetch benchmarks when location changes to violations, policies, etc.', () => {
+        const fetchBenchmarksByClusterMock = jest.fn();
+        const fetchBenchmarksMock = jest.fn();
+
+        return expectSaga(saga)
+            .provide([[call(service.fetchBenchmarks), dynamic(fetchBenchmarksMock)]])
+            .dispatch(createLocationChange('/main/violations'))
+            .dispatch(createLocationChange('/main/policies'))
+            .dispatch(createLocationChange('/main/integrations'))
+            .silentRun()
+            .then(() => {
+                expect(fetchBenchmarksByClusterMock.mock.calls.length).toBe(0);
+                expect(fetchBenchmarksMock.mock.calls.length).toBe(0);
+            });
     });
 
     it('should delete the schedule when no day/hour is selected', () => {
@@ -117,7 +133,7 @@ describe('Benchmark Sagas Test', () => {
                 benchmarkName: 'CIS Swarm v1.1.0 Benchmark',
                 value: 'None'
             })
-            .call.like({ fn: services.deleteSchedule })
+            .call.like({ fn: service.deleteSchedule })
             .silentRun();
     });
 
@@ -148,7 +164,7 @@ describe('Benchmark Sagas Test', () => {
                 value: '02:00 AM',
                 clusterId: 'b5c6f9a2-c80e-4dea-aca2-501420931c67'
             })
-            .call.like({ fn: services.updateSchedule })
+            .call.like({ fn: service.updateSchedule })
             .silentRun();
     });
 
@@ -180,7 +196,7 @@ describe('Benchmark Sagas Test', () => {
                 value: '02:00 AM',
                 clusterId: 'b5c6f9a2-c80e-4dea-aca2-501420931c67'
             })
-            .call.like({ fn: services.createSchedule })
+            .call.like({ fn: service.createSchedule })
             .silentRun();
     });
 });
