@@ -115,6 +115,9 @@ type Digest struct {
 
 // NewDigest returns an internal representation of a SHA.
 func NewDigest(sha string) *Digest {
+	if sha == "" {
+		return nil
+	}
 	var hash, algorithm string
 	if idx := strings.Index(sha, ":"); idx != -1 {
 		algorithm = sha[:idx]
@@ -130,16 +133,25 @@ func NewDigest(sha string) *Digest {
 }
 
 // Algorithm returns the algorithm used in the Digest
-func (d Digest) Algorithm() string {
+func (d *Digest) Algorithm() string {
+	if d == nil {
+		return ""
+	}
 	return d.algorithm + ":" + d.hash
 }
 
 // Digest returns the entire Digest
-func (d Digest) Digest() string {
+func (d *Digest) Digest() string {
+	if d == nil {
+		return ""
+	}
 	return d.algorithm + ":" + d.hash
 }
 
 // Hash returns the SHA without the sha256: prefix.
-func (d Digest) Hash() string {
+func (d *Digest) Hash() string {
+	if d == nil {
+		return ""
+	}
 	return d.hash
 }

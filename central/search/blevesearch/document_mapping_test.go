@@ -13,6 +13,7 @@ func TestImage(t *testing.T) {
 	assert.NoError(t, err)
 	image := &v1.Image{
 		Name: &v1.ImageName{
+			Sha:      "sha",
 			FullName: "docker.io/nginx",
 		},
 	}
