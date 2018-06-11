@@ -60,7 +60,7 @@ in your shell to ensure that you get the version you want.
 
 ### Docker Swarm
 
-#### Deploy
+#### Deploy for Development
 Set `LOCAL_API_ENDPOINT` to a `hostname:port` string appropriate for your
 local host, VM, or cluster, then:
 
@@ -88,6 +88,38 @@ use this variant instead:
 ./deploy/swarm/deploy-local.sh
 ```
 
+#### Deploy for Customer
+
+Note: you may need to run `unset DOCKER_HOST DOCKER_CERT_PATH DOCKER_TLS_VERIFY`
+on a fresh terminal locally so that you don't try to run an interactive container remotely.
+```
+docker run -i --rm stackrox.io/prevent:<tag> interactive 1>swarm.zip
+```
+
+This will run you through an installer as follows and generates a swarm.zip file:
+```$xslt
+docker run -i --rm stackrox.io/prevent:1.2 interactive 1>swarm.zip
+Enter orchestrator (dockeree, k8s, openshift, swarm): swarm
+Enter image to use (default: 'stackrox.io/prevent:1.3'): stackrox.io/prevent:1.2
+Enter public port to expose (default: '443'): 
+Enter volume (optional) (external, hostpath): hostpath
+Enter path on the host (default: '/var/lib/prevent'): 
+Enter mount path inside the container (default: '/var/lib/prevent'): 
+Enter hostpath volume name (default: 'prevent-db'): 
+Enter node selector key (default: 'node.hostname'): 
+Enter node selector value: roxbase2
+```
+
+```$xslt
+unzip swarm.zip -d swarm
+```
+
+Note: This should be run in an environment that does have the proper cert bundle
+```$xslt
+bash swarm/deploy.sh
+```
+Now central has been deployed and use the UI to deploy sensor
+
 #### Monitoring
 You can deploy Prometheus to monitor the services:
 
@@ -97,13 +129,40 @@ docker stack deploy -c prometheus/swarm.yaml prevent-health
 
 ### Kubernetes
 
-#### Deploy
+#### Deploy for Development
 Set your Docker image-pull credentials as `REGISTRY_USERNAME` and
 `REGISTRY_PASSWORD`, then run:
 
 ```bash
 ./deploy/k8s/deploy.sh
 ```
+
+#### Deploying for Customer
+
+```
+docker run -i --rm stackrox.io/prevent:<tag> interactive 1>k8s.zip
+```
+
+This will run you through an installer as follows and generates a k8s.zip file. 
+The below works on GKE and creates an external volume
+```$xslt
+docker run -i --rm stackrox.io/prevent:1.2 interactive 1>k8s.zip
+Enter orchestrator (dockeree, k8s, openshift, swarm): k8s
+Enter image to use (default: 'stackrox.io/prevent:1.3'): stackrox.io/prevent:1.2
+Enter image pull secret (default: 'stackrox'): 
+Enter namespace (default: 'stackrox'): 
+Enter volume (optional) (external, hostpath): external
+Enter mount path inside the container (default: '/var/lib/prevent'): 
+```
+
+```$xslt
+unzip k8s.zip -d k8s
+```
+
+```$xslt
+bash k8s/deploy.sh
+```
+Now central has been deployed and use the UI to deploy sensor
 
 #### Exposing the UI
 The script will provide access the UI using a local port-forward, but you can
@@ -132,6 +191,41 @@ You can deploy Prometheus to monitor the services:
 kubectl create -f prometheus/k8s.yaml
 ```
 Create a port forward to the pod on port 9090 to access the UI.
+
+### OpenShift
+
+#### Deployment for Customer
+
+Note: If using a host mount, you need to allow the container to access it by using
+`sudo chcon -Rt svirt_sandbox_file_t <full volume path>`
+
+Take the image-setup.sh script from this repo and run it to do the pull/push to local OpenShift registry
+This is a prerequisite for every new cluster
+```
+bash image-setup.sh
+```
+
+```
+docker run -i --rm stackrox.io/prevent:<tag> interactive 1>k8s.zip
+```
+
+This will run you through an installer as follows and generates a openshift.zip file. 
+```$xslt
+docker run -i --rm stackrox.io/prevent:1.2 interactive 1>openshift.zip
+Enter orchestrator (dockeree, k8s, openshift, swarm): openshift
+Enter image to use (default: 'docker-registry.default.svc:5000/stackrox/prevent:1.3'): docker-registry.default.svc:5000/stackrox/prevent:1.2
+Enter namespace (default: 'stackrox'): 
+Enter volume (optional) (external, hostpath): 
+```
+
+```$xslt
+unzip openshift.zip -d openshift
+```
+
+```$xslt
+bash openshift/deploy.sh
+```
+
 
 ## How to Release a New Version
 Releasing a new version of StackRox Prevent requires only a few steps.
