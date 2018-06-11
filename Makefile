@@ -161,7 +161,6 @@ image: gazelle clean-image
 	bazel build $(BAZEL_FLAGS) \
 		//central \
 		//cmd/base64 \
-		//cmd/clair \
 		//cmd/deploy \
 		//benchmarks \
 		//benchmark-bootstrap \
@@ -174,7 +173,6 @@ image: gazelle clean-image
 	cp -r ui/build image/ui/
 	cp bazel-bin/cmd/base64/linux_amd64_pure_stripped/base64 image/bin/base64
 	cp bazel-bin/central/linux_amd64_pure_stripped/central image/bin/central
-	cp bazel-bin/cmd/clair/linux_amd64_pure_stripped/clair image/bin/clair
 	cp bazel-bin/cmd/deploy/linux_amd64_pure_stripped/deploy image/bin/deploy
 	cp bazel-bin/benchmarks/linux_amd64_pure_stripped/benchmarks image/bin/benchmarks
 	cp bazel-bin/benchmark-bootstrap/linux_amd64_pure_stripped/benchmark-bootstrap image/bin/benchmark-bootstrap
