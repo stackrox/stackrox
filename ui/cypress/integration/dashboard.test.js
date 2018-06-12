@@ -157,12 +157,15 @@ describe('Dashboard page', () => {
     });
 
     it('should display events by time charts', () => {
+        cy.server();
+        cy.fixture('alerts/alertsByTimeseries.json').as('alertsByTimeseries');
+        cy.route('GET', api.dashboard.timeseries, '@alertsByTimeseries').as('alertsByTimeseries');
         cy.visit(dashboardUrl);
+        cy.wait('@alertsByTimeseries');
         cy
             .get(selectors.sectionHeaders.eventsByTime)
             .next()
-            .find('svg.recharts-surface')
-            .should('not.have.length', 0);
+            .find(selectors.timeseries);
     });
 
     it('should display violations category chart', () => {

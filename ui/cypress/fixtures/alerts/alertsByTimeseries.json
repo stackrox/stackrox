@@ -1,0 +1,24 @@
+{
+    "clusters": [
+        {
+            "cluster": "remote",
+            "severities": [
+                {
+                    "severity": "LOW_SEVERITY",
+                    "events": [
+                        {
+                            "time": "1528498246000",
+                            "type": "CREATED",
+                            "id": "77a5431a-c980-4845-b7f8-23037bfb378a"
+                        },
+                        {
+                            "time": "1528498259000",
+                            "type": "CREATED",
+                            "id": "e8f1648d-f28c-4421-ae78-ef1ee731dd5f"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

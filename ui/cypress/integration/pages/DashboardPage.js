@@ -37,5 +37,6 @@ export const selectors = {
             currentSlide: '.dashboard-benchmarks .slick-current'
         }
     },
+    timeseries: 'svg.recharts-surface',
     searchInput: '.Select-input > input'
 };

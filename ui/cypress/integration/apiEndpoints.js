@@ -37,3 +37,7 @@ export const auth = {
     authProviders: 'v1/authProviders*',
     authStatus: '/v1/auth/status'
 };
+
+export const dashboard = {
+    timeseries: '/v1/alerts/summary/timeseries?*'
+};
