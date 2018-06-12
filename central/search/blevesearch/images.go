@@ -25,13 +25,13 @@ type imageWrapper struct {
 func (b *Indexer) AddImage(image *v1.Image) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Add", "Image")
 	digest := images.NewDigest(image.GetName().GetSha()).Digest()
-	return b.imageIndex.Index(digest, &imageWrapper{Type: v1.SearchCategory_IMAGES.String(), Image: image})
+	return b.globalIndex.Index(digest, &imageWrapper{Type: v1.SearchCategory_IMAGES.String(), Image: image})
 }
 
 // DeleteImage deletes the image from the index
 func (b *Indexer) DeleteImage(sha string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "Image")
-	return b.imageIndex.Delete(sha)
+	return b.globalIndex.Delete(sha)
 }
 
 // SearchImages takes a SearchRequest and finds any matches
@@ -62,7 +62,7 @@ func (b *Indexer) SearchImages(request *v1.ParsedSearchRequest) (results []searc
 	if request.GetStringQuery() != "" {
 		imageQuery.AddQuery(bleve.NewQueryStringQuery(request.GetStringQuery()))
 	}
-	results, err = runQuery(imageQuery, b.imageIndex)
+	results, err = runQuery(imageQuery, b.globalIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (b *Indexer) getImageSHAsFromScopes(scopes []*v1.Scope) (mapset.Set, error)
 	searchRequest.Fields = []string{"deployment.containers.image.name.sha"}
 	searchRequest.Size = maxDeploymentsReturned
 
-	searchResult, err := b.deploymentIndex.Search(searchRequest)
+	searchResult, err := b.globalIndex.Search(searchRequest)
 	if err != nil {
 		return nil, err
 	}

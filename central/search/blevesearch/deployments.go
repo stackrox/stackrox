@@ -18,13 +18,13 @@ type deploymentWrapper struct {
 // AddDeployment adds the deployment to the index
 func (b *Indexer) AddDeployment(deployment *v1.Deployment) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Add", "Deployment")
-	return b.deploymentIndex.Index(deployment.GetId(), &deploymentWrapper{Type: v1.SearchCategory_DEPLOYMENTS.String(), Deployment: deployment})
+	return b.globalIndex.Index(deployment.GetId(), &deploymentWrapper{Type: v1.SearchCategory_DEPLOYMENTS.String(), Deployment: deployment})
 }
 
 // DeleteDeployment deletes the deployment from the index
 func (b *Indexer) DeleteDeployment(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "Deployment")
-	return b.deploymentIndex.Delete(id)
+	return b.globalIndex.Delete(id)
 }
 
 func scopeToDeploymentQuery(scope *v1.Scope) query.Query {
@@ -50,5 +50,5 @@ func scopeToDeploymentQuery(scope *v1.Scope) query.Query {
 // SearchDeployments takes a SearchRequest and finds any matches
 func (b *Indexer) SearchDeployments(request *v1.ParsedSearchRequest) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Deployment")
-	return runSearchRequest(v1.SearchCategory_DEPLOYMENTS.String(), request, b.deploymentIndex, scopeToDeploymentQuery, deploymentObjectMap)
+	return runSearchRequest(v1.SearchCategory_DEPLOYMENTS.String(), request, b.globalIndex, scopeToDeploymentQuery, deploymentObjectMap)
 }

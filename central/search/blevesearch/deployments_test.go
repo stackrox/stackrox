@@ -36,14 +36,14 @@ func (suite *DeploymentTestSuite) TestScopeToDeploymentsQuery() {
 	scope := &v1.Scope{
 		Cluster: "prod cluster",
 	}
-	results, err := runQuery(scopeToDeploymentQuery(scope), suite.deploymentIndex)
+	results, err := runQuery(scopeToDeploymentQuery(scope), suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
 	scope = &v1.Scope{
 		Namespace: "stackrox",
 	}
-	results, err = runQuery(scopeToDeploymentQuery(scope), suite.deploymentIndex)
+	results, err = runQuery(scopeToDeploymentQuery(scope), suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
@@ -51,7 +51,7 @@ func (suite *DeploymentTestSuite) TestScopeToDeploymentsQuery() {
 		Cluster:   "prod cluster",
 		Namespace: "stackrox",
 	}
-	results, err = runQuery(scopeToDeploymentQuery(scope), suite.deploymentIndex)
+	results, err = runQuery(scopeToDeploymentQuery(scope), suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
@@ -63,7 +63,7 @@ func (suite *DeploymentTestSuite) TestScopeToDeploymentsQuery() {
 			Value: "prevent",
 		},
 	}
-	results, err = runQuery(scopeToDeploymentQuery(scope), suite.deploymentIndex)
+	results, err = runQuery(scopeToDeploymentQuery(scope), suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
@@ -71,7 +71,7 @@ func (suite *DeploymentTestSuite) TestScopeToDeploymentsQuery() {
 		Cluster:   "blah cluster",
 		Namespace: "stackrox",
 	}
-	results, err = runQuery(scopeToDeploymentQuery(scope), suite.deploymentIndex)
+	results, err = runQuery(scopeToDeploymentQuery(scope), suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 0)
 }

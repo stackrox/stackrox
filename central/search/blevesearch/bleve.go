@@ -18,10 +18,7 @@ var (
 
 // Indexer is the Bleve implementation of Indexer
 type Indexer struct {
-	alertIndex      bleve.Index
-	deploymentIndex bleve.Index
-	imageIndex      bleve.Index
-	policyIndex     bleve.Index
+	globalIndex bleve.Index
 }
 
 // NewIndexer creates a new Indexer based on Bleve
@@ -74,28 +71,16 @@ func (b *Indexer) initializeIndices(mossPath string) error {
 		"mossLowerLevelStoreName": "mossStore",
 	}
 
-	allIndex, err := bleve.NewUsing(mossPath, indexMapping, upsidedown.Name, moss.Name, kvconfig)
+	globalIndex, err := bleve.NewUsing(mossPath, indexMapping, upsidedown.Name, moss.Name, kvconfig)
 	if err != nil {
 		return err
 	}
 
-	b.alertIndex = allIndex
-	b.deploymentIndex = allIndex
-	b.imageIndex = allIndex
-	b.policyIndex = allIndex
+	b.globalIndex = globalIndex
 	return nil
 }
 
 // Close closes the open indexes
 func (b *Indexer) Close() error {
-	if err := b.alertIndex.Close(); err != nil {
-		return err
-	}
-	if err := b.deploymentIndex.Close(); err != nil {
-		return err
-	}
-	if err := b.imageIndex.Close(); err != nil {
-		return err
-	}
-	return b.policyIndex.Close()
+	return b.globalIndex.Close()
 }

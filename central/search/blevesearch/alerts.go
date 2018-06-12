@@ -18,13 +18,13 @@ type alertWrapper struct {
 // AddAlert adds the alert to the index
 func (b *Indexer) AddAlert(alert *v1.Alert) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Add", "Alert")
-	return b.alertIndex.Index(alert.GetId(), &alertWrapper{Type: v1.SearchCategory_ALERTS.String(), Alert: alert})
+	return b.globalIndex.Index(alert.GetId(), &alertWrapper{Type: v1.SearchCategory_ALERTS.String(), Alert: alert})
 }
 
 // DeleteAlert deletes the alert from the index
 func (b *Indexer) DeleteAlert(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "Alert")
-	return b.alertIndex.Delete(id)
+	return b.globalIndex.Delete(id)
 }
 
 func scopeToAlertQuery(scope *v1.Scope) query.Query {
@@ -60,5 +60,5 @@ func (b *Indexer) SearchAlerts(request *v1.ParsedSearchRequest) ([]search.Result
 			Field:  searchField,
 		}
 	}
-	return runSearchRequest(v1.SearchCategory_ALERTS.String(), request, b.alertIndex, scopeToAlertQuery, alertObjectMap)
+	return runSearchRequest(v1.SearchCategory_ALERTS.String(), request, b.globalIndex, scopeToAlertQuery, alertObjectMap)
 }

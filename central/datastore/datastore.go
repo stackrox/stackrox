@@ -102,7 +102,7 @@ func Close() {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	if registry != nil {
+	if registry == nil {
 		panic("datastore closed when not open")
 	}
 

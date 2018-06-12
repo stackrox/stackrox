@@ -35,14 +35,14 @@ func (suite *AlertTestSuite) TestScopeToAlertQuery() {
 	scope := &v1.Scope{
 		Cluster: "prod cluster",
 	}
-	results, err := runQuery(scopeToAlertQuery(scope), suite.alertIndex)
+	results, err := runQuery(scopeToAlertQuery(scope), suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
 	scope = &v1.Scope{
 		Namespace: "stackrox",
 	}
-	results, err = runQuery(scopeToAlertQuery(scope), suite.alertIndex)
+	results, err = runQuery(scopeToAlertQuery(scope), suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
@@ -50,7 +50,7 @@ func (suite *AlertTestSuite) TestScopeToAlertQuery() {
 		Cluster:   "prod cluster",
 		Namespace: "stackrox",
 	}
-	results, err = runQuery(scopeToAlertQuery(scope), suite.alertIndex)
+	results, err = runQuery(scopeToAlertQuery(scope), suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
@@ -62,7 +62,7 @@ func (suite *AlertTestSuite) TestScopeToAlertQuery() {
 			Value: "prevent",
 		},
 	}
-	results, err = runQuery(scopeToAlertQuery(scope), suite.alertIndex)
+	results, err = runQuery(scopeToAlertQuery(scope), suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
@@ -70,7 +70,7 @@ func (suite *AlertTestSuite) TestScopeToAlertQuery() {
 		Cluster:   "blah cluster",
 		Namespace: "stackrox",
 	}
-	results, err = runQuery(scopeToAlertQuery(scope), suite.alertIndex)
+	results, err = runQuery(scopeToAlertQuery(scope), suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 0)
 }

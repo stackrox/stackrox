@@ -48,7 +48,7 @@ func (suite *SearchTestSuite) TestValuesToDisjunctionQuery() {
 		},
 	}
 	query := valuesToDisjunctionQuery("alert.policy.name", values)
-	results, err := runQuery(query, suite.alertIndex)
+	results, err := runQuery(query, suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 	suite.Equal("Alert1", results[0].ID)
@@ -59,7 +59,7 @@ func (suite *SearchTestSuite) TestValuesToDisjunctionQuery() {
 		},
 	}
 	query = valuesToDisjunctionQuery("alert.policy.name", values)
-	results, err = runQuery(query, suite.alertIndex)
+	results, err = runQuery(query, suite.globalIndex)
 	suite.NoError(err)
 	suite.Empty(results)
 }
@@ -89,7 +89,7 @@ func (suite *SearchTestSuite) TestFieldsToQuery() {
 	query, err := fieldsToQuery(fieldMap, alertObjectMap)
 	suite.NoError(err)
 
-	results, err := runQuery(query, suite.alertIndex)
+	results, err := runQuery(query, suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 	suite.Equal("Alert1", results[0].ID)
@@ -104,7 +104,7 @@ func (suite *SearchTestSuite) TestFieldsToQuery() {
 	}
 	query, err = fieldsToQuery(fieldMap, alertObjectMap)
 	suite.NoError(err)
-	results, err = runQuery(query, suite.alertIndex)
+	results, err = runQuery(query, suite.globalIndex)
 	suite.NoError(err)
 	suite.Empty(results)
 }
@@ -122,7 +122,7 @@ func (suite *SearchTestSuite) TestRunRequest() {
 			},
 		},
 	}
-	results, err := runSearchRequest(v1.SearchCategory_ALERTS.String(), request, suite.alertIndex, scopeToAlertQuery, alertObjectMap)
+	results, err := runSearchRequest(v1.SearchCategory_ALERTS.String(), request, suite.globalIndex, scopeToAlertQuery, alertObjectMap)
 	suite.NoError(err)
 	suite.Len(results, 1)
 	suite.Equal("Alert1", results[0].ID)
@@ -136,7 +136,7 @@ func (suite *SearchTestSuite) TestRunRequest() {
 			},
 		},
 	}
-	results, err = runSearchRequest(v1.SearchCategory_ALERTS.String(), request, suite.alertIndex, scopeToAlertQuery, alertObjectMap)
+	results, err = runSearchRequest(v1.SearchCategory_ALERTS.String(), request, suite.globalIndex, scopeToAlertQuery, alertObjectMap)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
@@ -165,7 +165,7 @@ func (suite *SearchTestSuite) TestRunRequest() {
 			},
 		},
 	}
-	results, err = runSearchRequest(v1.SearchCategory_ALERTS.String(), request, suite.alertIndex, scopeToAlertQuery, alertObjectMap)
+	results, err = runSearchRequest(v1.SearchCategory_ALERTS.String(), request, suite.globalIndex, scopeToAlertQuery, alertObjectMap)
 	suite.NoError(err)
 	suite.Len(results, 1)
 	suite.Equal("Alert1", results[0].ID)
@@ -195,20 +195,20 @@ func (suite *SearchTestSuite) TestRunRequest() {
 			},
 		},
 	}
-	results, err = runSearchRequest(v1.SearchCategory_ALERTS.String(), request, suite.alertIndex, scopeToAlertQuery, alertObjectMap)
+	results, err = runSearchRequest(v1.SearchCategory_ALERTS.String(), request, suite.globalIndex, scopeToAlertQuery, alertObjectMap)
 	suite.NoError(err)
 	suite.Len(results, 0)
 }
 
 func (suite *SearchTestSuite) TestRunQuery() {
 	query := newPrefixQuery("alert.policy.name", "vuln")
-	results, err := runQuery(query, suite.alertIndex)
+	results, err := runQuery(query, suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 	suite.Equal("Alert1", results[0].ID)
 
 	query = newPrefixQuery("id", "blahblah")
-	results, err = runQuery(query, suite.alertIndex)
+	results, err = runQuery(query, suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 0)
 }

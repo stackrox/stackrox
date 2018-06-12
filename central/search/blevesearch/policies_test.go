@@ -36,14 +36,14 @@ func (suite *PolicyTestSuite) TestScopeToPolicyQuery() {
 	scope := &v1.Scope{
 		Cluster: "prod cluster",
 	}
-	results, err := runQuery(scopeToPolicyQuery(scope), suite.policyIndex)
+	results, err := runQuery(scopeToPolicyQuery(scope), suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
 	scope = &v1.Scope{
 		Namespace: "stackrox",
 	}
-	results, err = runQuery(scopeToPolicyQuery(scope), suite.policyIndex)
+	results, err = runQuery(scopeToPolicyQuery(scope), suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
@@ -51,7 +51,7 @@ func (suite *PolicyTestSuite) TestScopeToPolicyQuery() {
 		Cluster:   "prod cluster",
 		Namespace: "stackrox",
 	}
-	results, err = runQuery(scopeToPolicyQuery(scope), suite.policyIndex)
+	results, err = runQuery(scopeToPolicyQuery(scope), suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
@@ -63,7 +63,7 @@ func (suite *PolicyTestSuite) TestScopeToPolicyQuery() {
 			Value: "prevent",
 		},
 	}
-	results, err = runQuery(scopeToPolicyQuery(scope), suite.policyIndex)
+	results, err = runQuery(scopeToPolicyQuery(scope), suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
@@ -71,7 +71,7 @@ func (suite *PolicyTestSuite) TestScopeToPolicyQuery() {
 		Cluster:   "blah cluster",
 		Namespace: "stackrox",
 	}
-	results, err = runQuery(scopeToPolicyQuery(scope), suite.policyIndex)
+	results, err = runQuery(scopeToPolicyQuery(scope), suite.globalIndex)
 	suite.NoError(err)
 	suite.Len(results, 0)
 }

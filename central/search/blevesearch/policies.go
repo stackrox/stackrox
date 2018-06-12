@@ -18,13 +18,13 @@ type policyWrapper struct {
 // AddPolicy adds the policy to the index
 func (b *Indexer) AddPolicy(policy *v1.Policy) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Add", "Policy")
-	return b.policyIndex.Index(policy.GetId(), &policyWrapper{Type: v1.SearchCategory_POLICIES.String(), Policy: policy})
+	return b.globalIndex.Index(policy.GetId(), &policyWrapper{Type: v1.SearchCategory_POLICIES.String(), Policy: policy})
 }
 
 // DeletePolicy deletes the policy from the index
 func (b *Indexer) DeletePolicy(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "Policy")
-	return b.policyIndex.Delete(id)
+	return b.globalIndex.Delete(id)
 }
 
 func scopeToPolicyQuery(scope *v1.Scope) query.Query {
@@ -61,5 +61,5 @@ func scopeToPolicyQuery(scope *v1.Scope) query.Query {
 // SearchPolicies takes a SearchRequest and finds any matches
 func (b *Indexer) SearchPolicies(request *v1.ParsedSearchRequest) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Policy")
-	return runSearchRequest(v1.SearchCategory_POLICIES.String(), request, b.policyIndex, scopeToPolicyQuery, policyObjectMap)
+	return runSearchRequest(v1.SearchCategory_POLICIES.String(), request, b.globalIndex, scopeToPolicyQuery, policyObjectMap)
 }
