@@ -24,8 +24,8 @@ export const risks = {
 };
 
 export const search = {
-    globalSearchWithResults: '/v1/search?query=Stale:false+Cluster:remote',
-    globalSearchWithNoResults: '/v1/search?query=Stale:false+Cluster:',
+    globalSearchWithResults: '/v1/search?query=Cluster:remote',
+    globalSearchWithNoResults: '/v1/search?query=Cluster:',
     options: '/v1/search/metadata/options*'
 };
 

@@ -33,20 +33,3 @@ export function hasSearchModifier(searchOptions, modifier) {
         option => option.type === 'categoryOption' && option.value === modifier
     );
 }
-
-/**
- *  Adds the 'Stale:false' search option to searchOptions
- *
- *  @param {!Object[]} searchOptions an array of search options
- *  @returns {!Object[]} the modified search options
- */
-export function setStaleSearchOption(searchOptions) {
-    const hasStaleSearchModifier = hasSearchModifier(searchOptions, 'Stale:');
-    if (!hasStaleSearchModifier) {
-        let newSearchOptions;
-        newSearchOptions = addSearchModifier(searchOptions, 'Stale:');
-        newSearchOptions = addSearchKeyword(newSearchOptions, 'false');
-        return newSearchOptions;
-    }
-    return searchOptions;
-}

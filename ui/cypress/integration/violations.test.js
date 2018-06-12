@@ -23,19 +23,19 @@ describe('Violations page', () => {
             .as('alertWithEmptyContainerConfig');
     };
 
-    it('should show the side panel on row click', () => {
-        mockGetAlert();
-        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
-        cy.wait('@alertById');
-        cy.get(ViolationsPageSelectors.sidePanel.panel).should('be.visible');
-    });
-
     it('should select item in nav bar', () => {
         cy.get(ViolationsPageSelectors.navLink).should('have.class', 'bg-primary-600');
     });
 
     it('should have violations in table', () => {
         cy.get(ViolationsPageSelectors.rows).should('have.length', 4);
+    });
+
+    it('should show the side panel on row click', () => {
+        mockGetAlert();
+        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
+        cy.wait('@alertById');
+        cy.get(ViolationsPageSelectors.sidePanel.panel).should('be.visible');
     });
 
     it('should show side panel with panel header', () => {

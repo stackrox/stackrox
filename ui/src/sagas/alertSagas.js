@@ -20,7 +20,6 @@ import { types as dashboardTypes } from 'reducers/dashboard';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { whitelistDeployment } from 'services/PoliciesService';
-import { setStaleSearchOption } from 'utils/searchUtils';
 
 function filterTimeseriesResultsByClusterSearchOptions(result, filters) {
     const filteredResult = Object.assign({}, result);
@@ -141,20 +140,13 @@ function* filterViolationsPageBySearch() {
     yield fork(getAlerts, filters);
 }
 
-function* setStaleSearchOptionInViolations() {
-    let searchOptions = yield select(selectors.getAlertsSearchOptions);
-    searchOptions = setStaleSearchOption(searchOptions);
-    yield put(actions.setAlertsSearchOptions(searchOptions));
-}
-
 function* filterDashboardPageBySearch() {
     const searchOptions = yield select(selectors.getDashboardSearchOptions);
-    const newSearchOptions = setStaleSearchOption(searchOptions);
     const filters = {
-        query: searchOptionsToQuery(newSearchOptions)
+        query: searchOptionsToQuery(searchOptions)
     };
     const nestedFilter = {
-        'request.query': searchOptionsToQuery(newSearchOptions)
+        'request.query': searchOptionsToQuery(searchOptions)
     };
     yield fork(getGlobalAlertCounts, nestedFilter);
     yield fork(getAlertCountsByCluster, nestedFilter);
@@ -163,9 +155,7 @@ function* filterDashboardPageBySearch() {
 }
 
 function* loadViolationsPage({ match }) {
-    yield fork(setStaleSearchOptionInViolations);
     yield put(actions.pollAlerts.start());
-
     const { alertId } = match.params;
     if (alertId) {
         yield fork(getAlert, alertId);

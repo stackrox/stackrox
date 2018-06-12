@@ -160,10 +160,8 @@ const mapDispatchToProps = (dispatch, props) => ({
         }
         dispatch(alertActions.setAlertsSearchOptions(searchOptions));
     },
-    setSearchModifiers: searchModifiers =>
-        dispatch(alertActions.setAlertsSearchModifiers(searchModifiers)),
-    setSearchSuggestions: searchSuggestions =>
-        dispatch(alertActions.setAlertsSearchSuggestions(searchSuggestions))
+    setSearchModifiers: alertActions.setAlertsSearchModifiers,
+    setSearchSuggestions: alertActions.setAlertsSearchSuggestions
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(ViolationsPage);
