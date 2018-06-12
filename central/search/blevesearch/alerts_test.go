@@ -5,6 +5,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -72,4 +73,47 @@ func (suite *AlertTestSuite) TestScopeToAlertQuery() {
 	results, err = runQuery(scopeToAlertQuery(scope), suite.alertIndex)
 	suite.NoError(err)
 	suite.Len(results, 0)
+}
+
+func (suite *AlertTestSuite) TestDefaultStaleness() {
+
+	var cases = []struct {
+		name               string
+		values             []string
+		expectedViolations int
+	}{
+		{
+			name:               "no stale field",
+			values:             []string{},
+			expectedViolations: 1,
+		},
+		{
+			name:               "stale = false",
+			values:             []string{"false"},
+			expectedViolations: 1,
+		},
+		{
+			name:               "stale = true",
+			values:             []string{"true"},
+			expectedViolations: 0,
+		},
+	}
+
+	for _, c := range cases {
+		suite.T().Run(c.name, func(t *testing.T) {
+			alerts, err := suite.SearchAlerts(&v1.ParsedSearchRequest{
+				Fields: map[string]*v1.ParsedSearchRequest_Values{
+					"alert.stale": {
+						Field: &v1.SearchField{
+							FieldPath: "alert.stale",
+							Type:      v1.SearchDataType_SEARCH_BOOL,
+						},
+						Values: c.values,
+					},
+				},
+			})
+			assert.NoError(t, err)
+			assert.Len(t, alerts, c.expectedViolations)
+		})
+	}
 }

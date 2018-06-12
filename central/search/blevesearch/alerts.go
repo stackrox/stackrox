@@ -50,5 +50,15 @@ func scopeToAlertQuery(scope *v1.Scope) query.Query {
 // SearchAlerts takes a SearchRequest and finds any matches
 func (b *Indexer) SearchAlerts(request *v1.ParsedSearchRequest) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Alert")
+	searchField := search.AlertOptionsMap[search.Stale]
+	if request.Fields == nil {
+		request.Fields = make(map[string]*v1.ParsedSearchRequest_Values)
+	}
+	if values, ok := request.Fields[searchField.GetFieldPath()]; !ok || len(values.Values) == 0 {
+		request.Fields[searchField.GetFieldPath()] = &v1.ParsedSearchRequest_Values{
+			Values: []string{"false"},
+			Field:  searchField,
+		}
+	}
 	return runSearchRequest(v1.SearchCategory_ALERTS.String(), request, b.alertIndex, scopeToAlertQuery, alertObjectMap)
 }
