@@ -38,7 +38,7 @@ type alertDataStoreImpl struct {
 
 func (ds *alertDataStoreImpl) buildIndex() error {
 	// Alert Index
-	alerts, err := ds.GetAlerts(&v1.ListAlertsRequest{})
+	alerts, err := ds.AlertStorage.GetAlerts(&v1.ListAlertsRequest{})
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (ds *alertDataStoreImpl) GetAlerts(request *v1.ListAlertsRequest) ([]*v1.Al
 	var alerts []*v1.Alert
 	var err error
 	if request.GetQuery() == "" {
-		alerts, err = ds.AlertStorage.GetAlerts(request)
+		alerts, err = ds.SearchRawAlerts(&v1.ParsedSearchRequest{})
 		if err != nil {
 			return nil, err
 		}
