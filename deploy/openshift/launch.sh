@@ -11,9 +11,9 @@ function launch_central {
 
     echo "Generating central config..."
     docker run "$PREVENT_IMAGE" deploy openshift -n "$NAMESPACE" -i "$PREVENT_IMAGE" > $OPENSHIFT_DIR/central.zip
-    UNZIP_DIR="OPENSHIFT_DIR/central-deploy/"
+    UNZIP_DIR="$OPENSHIFT_DIR/central-deploy/"
     rm -rf "$UNZIP_DIR"
-    unzip "OPENSHIFT_DIR/central.zip" -d "$UNZIP_DIR"
+    unzip "$OPENSHIFT_DIR/central.zip" -d "$UNZIP_DIR"
     echo
 
     echo "Deploying Central..."

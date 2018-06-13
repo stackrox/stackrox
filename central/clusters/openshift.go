@@ -5,6 +5,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/env"
+	openshiftPkg "bitbucket.org/stack-rox/apollo/pkg/openshift"
 	"bitbucket.org/stack-rox/apollo/pkg/zip"
 )
 
@@ -56,7 +57,7 @@ func (o *openshift) Render(c Wrap) ([]*v1.File, error) {
 		return nil, err
 	}
 	files = append(files, zip.NewFile("rbac.yaml", data, false))
-
+	files = append(files, zip.NewFile("image-setup.sh", openshiftPkg.ImageSetup, true))
 	return files, nil
 }
 
