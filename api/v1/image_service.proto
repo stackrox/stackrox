@@ -70,8 +70,20 @@ message Image {
     ImageScan scan          = 3;
 }
 
-message GetImagesResponse {
-    repeated Image images = 1;
+message ListImage {
+    string sha                        = 1;
+    string name                       = 2;
+    oneof set_components {
+        int64 components              = 3;
+    }
+    oneof set_cves {
+        int64 cves                    = 4;
+    }
+    google.protobuf.Timestamp created = 5;
+}
+
+message ListImagesResponse {
+    repeated ListImage images = 1;
 }
 
 service ImageService {
@@ -82,7 +94,7 @@ service ImageService {
         };
     }
 
-    rpc GetImages(RawQuery) returns (GetImagesResponse) {
+    rpc ListImages(RawQuery) returns (ListImagesResponse) {
         option (google.api.http) = {
             get: "/v1/images"
         };

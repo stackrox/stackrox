@@ -147,7 +147,7 @@ class ClustersModal extends Component {
     render() {
         const { selectedClusterType, onRequestClose } = this.props;
         return (
-            <Modal isOpen onRequestClose={onRequestClose} className="w-5/6 h-full">
+            <Modal isOpen onRequestClose={onRequestClose} className="w-full lg:w-5/6 h-full">
                 <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
                     <span className="flex flex-1">{clusterTypeLabels[selectedClusterType]}</span>
                     <Icon.X className="h-4 w-4 cursor-pointer" onClick={onRequestClose} />

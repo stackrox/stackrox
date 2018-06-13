@@ -14,7 +14,7 @@ export function addSearchModifier(searchOptions, modifier) {
  *  Adds a search keyword to the searchOptions
  *
  *  @param {!Object[]} searchOptions an array of search options
- *  *  @param {!Object[]} keyword a keyword term (ie. 'remote')
+ *  @param {!Object[]} keyword a keyword term (ie. 'remote')
  *  @returns {!Object[]} the modified search options
  */
 export function addSearchKeyword(searchOptions, keyword) {

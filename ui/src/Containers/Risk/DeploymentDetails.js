@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import lowerCase from 'lodash/lowerCase';
 import capitalize from 'lodash/capitalize';
 import dateFns from 'date-fns';
+import dateTimeFormat from 'constants/dateTimeFormat';
 
 import KeyValuePairs from 'Components/KeyValuePairs';
 import CollapsibleCard from 'Components/CollapsibleCard';
@@ -17,7 +18,7 @@ const deploymentDetailsMap = {
     updatedAt: {
         label: 'Updated',
         formatValue: timestamp =>
-            timestamp ? dateFns.format(timestamp, 'MM/DD/YYYY h:mm:ss A') : 'not available'
+            timestamp ? dateFns.format(timestamp, dateTimeFormat) : 'not available'
     },
     labels: { label: 'Labels' },
     annotations: { label: 'Annotations' },

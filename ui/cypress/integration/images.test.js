@@ -13,15 +13,15 @@ describe('Images page', () => {
         cy.wait('@images');
     });
 
-    it('Should have no values for "Created at", "Components", and "CVEs" in the table rows', () => {
+    it('Should have values for "Created at", "Components", and "CVEs" in the table rows', () => {
         cy.get(imageSelectors.createdAtColumn).each($el => {
-            cy.wrap($el).should('have.text', '-');
+            cy.wrap($el).should('have.not.be.empty');
         });
         cy.get(imageSelectors.componentsColumn).each($el => {
-            cy.wrap($el).should('have.text', '-');
+            cy.wrap($el).should('have.not.be.empty');
         });
         cy.get(imageSelectors.cvesColumn).each($el => {
-            cy.wrap($el).should('have.text', '-');
+            cy.wrap($el).should('have.not.be.empty');
         });
     });
 
@@ -33,7 +33,7 @@ describe('Images page', () => {
     it('Should add the image id to the url when clicking a row', () => {
         cy.get(imageSelectors.firstTableRow).click();
         cy.fixture('images/images.json').then(json => {
-            cy.url().should('contain', `${imagesUrl}/${json.images[0].name.sha}`);
+            cy.url().should('contain', `${imagesUrl}/${json.images[0].sha}`);
         });
     });
 

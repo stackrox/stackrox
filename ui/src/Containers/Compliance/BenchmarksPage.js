@@ -6,6 +6,7 @@ import { selectors } from 'reducers';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { actions as benchmarkActions, types } from 'reducers/benchmarks';
 import dateFns from 'date-fns';
+import dateTimeFormat from 'constants/dateTimeFormat';
 import { ClipLoader } from 'react-spinners';
 import { sortNumber } from 'sorters/sorters';
 
@@ -325,7 +326,7 @@ const getBenchmarkScanResults = createSelector([selectors.getLastScan], lastScan
 
 const getLastScannedTime = createSelector([selectors.getLastScan], lastScan => {
     if (!lastScan || !lastScan.metadata) return '';
-    const scanTime = dateFns.format(lastScan.metadata.time, 'MM/DD/YYYY h:mm:ss A');
+    const scanTime = dateFns.format(lastScan.metadata.time, dateTimeFormat);
     return scanTime || '';
 });
 

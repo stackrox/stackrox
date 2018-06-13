@@ -9,3 +9,5 @@ export const deployment = new schema.Entity('deployment');
 export const alert = new schema.Entity('alert');
 
 export const alerts = { alerts: [alert] };
+
+export const image = new schema.Entity('image', {}, { idAttribute: 'sha' });

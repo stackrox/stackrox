@@ -34,10 +34,11 @@ class RiskPage extends Component {
         isViewFiltered: PropTypes.bool.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
         location: ReactRouterPropTypes.location.isRequired,
-        isFetchingDeployment: PropTypes.bool.isRequired
+        isFetchingDeployment: PropTypes.bool
     };
 
     static defaultProps = {
+        isFetchingDeployment: false,
         selectedDeployment: null
     };
 
@@ -85,7 +86,7 @@ class RiskPage extends Component {
         );
 
         return (
-            <div className="w-1/2">
+            <div className="w-2/3">
                 <Panel header={selectedDeployment.name} onClose={this.updateSelectedDeployment}>
                     {content}
                 </Panel>
@@ -110,7 +111,7 @@ class RiskPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow bg-base-100 flex flex-1">
+                        <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow bg-base-100">
                             {this.renderTable()}
                         </div>
                         {this.renderSidePanel()}

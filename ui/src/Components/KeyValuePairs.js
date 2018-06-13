@@ -11,7 +11,8 @@ class KeyValuePairs extends Component {
     static propTypes = {
         data: PropTypes.shape({}).isRequired,
         keyValueMap: PropTypes.shape({
-            label: PropTypes.string
+            label: PropTypes.string,
+            className: PropTypes.string
         })
     };
 
@@ -58,11 +59,12 @@ class KeyValuePairs extends Component {
             const value = mapping[key].formatValue
                 ? mapping[key].formatValue(data[key])
                 : data[key];
+            const { className = '' } = mapping[key];
             if (!value || (Array.isArray(value) && !value.length)) return '';
             return (
                 <div className="flex py-3" key={key}>
                     <div className="pr-1">{label}:</div>
-                    <div className={`flex-1 min-w-0 font-500 ${isObject(value) || isArray(value)}`}>
+                    <div className={`flex-1 min-w-0 font-500 ${className}`}>
                         {isObject(value) || isArray(value) ? (
                             <div>
                                 <br />

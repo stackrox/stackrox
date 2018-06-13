@@ -54,15 +54,42 @@ func (s *ImageService) GetImage(ctx context.Context, request *v1.ResourceByID) (
 	return image, nil
 }
 
-// GetImages retrieves all images.
-func (s *ImageService) GetImages(ctx context.Context, request *v1.RawQuery) (*v1.GetImagesResponse, error) {
-	resp := new(v1.GetImagesResponse)
+func convertImagesToListImages(images []*v1.Image) []*v1.ListImage {
+	listImages := make([]*v1.ListImage, 0, len(images))
+	for _, i := range images {
+		listImage := &v1.ListImage{
+			Sha:     i.GetName().GetSha(),
+			Name:    i.GetName().GetFullName(),
+			Created: i.GetMetadata().GetCreated(),
+		}
+
+		if i.GetScan() != nil {
+			listImage.SetComponents = &v1.ListImage_Components{
+				Components: int64(len(i.GetScan().GetComponents())),
+			}
+			var numVulns int64
+			for _, c := range i.GetScan().GetComponents() {
+				numVulns += int64(len(c.GetVulns()))
+			}
+			listImage.SetCves = &v1.ListImage_Cves{
+				Cves: numVulns,
+			}
+		}
+
+		listImages = append(listImages, listImage)
+	}
+	return listImages
+}
+
+// ListImages retrieves all images in minimal form.
+func (s *ImageService) ListImages(ctx context.Context, request *v1.RawQuery) (*v1.ListImagesResponse, error) {
+	resp := new(v1.ListImagesResponse)
 	if request.GetQuery() == "" {
 		images, err := s.datastore.GetImages()
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
-		resp.Images = images
+		resp.Images = convertImagesToListImages(images)
 	} else {
 		parsedQuery, err := search.ParseRawQuery(request.GetQuery())
 		if err != nil {
@@ -72,7 +99,7 @@ func (s *ImageService) GetImages(ctx context.Context, request *v1.RawQuery) (*v1
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
-		resp.Images = images
+		resp.Images = convertImagesToListImages(images)
 	}
 	return resp, nil
 }

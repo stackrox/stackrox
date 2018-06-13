@@ -35,7 +35,7 @@ class TableCell extends Component {
         }
         const className = `p-3 ${
             column.align === 'right' ? 'text-right' : 'text-left'
-        } ${customClassName}`;
+        } ${customClassName} ${column.className}`;
         if (column.tooltip) {
             result = (
                 <td className={className} key={`${column.key}`}>

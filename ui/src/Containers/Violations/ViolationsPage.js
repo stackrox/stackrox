@@ -8,6 +8,7 @@ import { sortTime, sortSeverity } from 'sorters/sorters';
 import { actions as alertActions } from 'reducers/alerts';
 import { selectors } from 'reducers';
 import dateFns from 'date-fns';
+import dateTimeFormat from 'constants/dateTimeFormat';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import PageHeader from 'Components/PageHeader';
@@ -90,8 +91,7 @@ class ViolationsPage extends Component {
             },
             {
                 key: 'time',
-                keyValueFunc: time =>
-                    `${dateFns.format(time, 'MM/DD/YYYY')} ${dateFns.format(time, 'h:mm:ss A')}`,
+                keyValueFunc: time => `${dateFns.format(time, dateTimeFormat)}`,
                 label: 'Time',
                 sortMethod: sortTime
             }
@@ -129,7 +129,7 @@ class ViolationsPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow border-t border-primary-300 bg-base-100">
+                        <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow border-primary-300 bg-base-100">
                             {this.renderTable()}
                         </div>
                         {this.renderSidePanel()}

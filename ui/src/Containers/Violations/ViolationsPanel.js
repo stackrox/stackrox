@@ -96,7 +96,7 @@ class ViolationsPanel extends Component {
             }
         ];
         return (
-            <Panel header={header} buttons={buttons} onClose={this.props.onClose}>
+            <Panel header={header} buttons={buttons} width="w-2/3" onClose={this.props.onClose}>
                 {this.renderTabs()}
             </Panel>
         );

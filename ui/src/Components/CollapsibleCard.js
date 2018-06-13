@@ -30,7 +30,7 @@ class CollapsibleCard extends Component {
 
     render() {
         return (
-            <div className="bg-white shadow text-primary-600 tracking-wide border border-base-200">
+            <div className="bg-white shadow text-primary-600 border border-base-200">
                 <Collapsible
                     open={this.props.open}
                     trigger={this.renderTriggerElement('closed')}

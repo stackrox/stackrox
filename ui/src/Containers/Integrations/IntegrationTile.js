@@ -30,7 +30,7 @@ class IntegrationTile extends Component {
     render() {
         const { integration, numIntegrations } = this.props;
         return (
-            <div className="p-3 w-1/4">
+            <div className="p-3 w-full md:w-1/2 lg:w-1/3 xl:w-1/4">
                 <button
                     className={`w-full p-4 bg-white rounded-sm shadow text-center relative 
                     ${numIntegrations !== 0 && 'border-2 border-success-400'}`}

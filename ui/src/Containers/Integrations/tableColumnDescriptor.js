@@ -1,18 +1,19 @@
 import React from 'react';
 import dateFns from 'date-fns';
+import dateTimeFormat from 'constants/dateTimeFormat';
 
 const tableColumnDescriptor = Object.freeze({
     authProviders: {
         auth0: [{ key: 'name', label: 'Name' }, { key: 'config.domain', label: 'Auth0 Domain' }]
     },
     clusters: [
-        { key: 'name', label: 'Name' },
-        { key: 'preventImage', label: 'StackRox Image' },
+        { key: 'name', label: 'Name', className: 'word-break' },
+        { key: 'preventImage', label: 'StackRox Image', className: 'word-break' },
         {
             key: 'lastContact',
             label: 'Last Check-In',
             keyValueFunc: date => {
-                if (date) return dateFns.format(date, 'MM/DD/YYYY h:mm:ss A');
+                if (date) return dateFns.format(date, dateTimeFormat);
                 return 'N/A';
             }
         }
@@ -20,7 +21,7 @@ const tableColumnDescriptor = Object.freeze({
     notifiers: {
         slack: [
             { key: 'name', label: 'Name' },
-            { key: 'config.webhook', label: 'Slack Webhook' },
+            { key: 'config.webhook', label: 'Slack Webhook', className: 'word-break' },
             { key: 'config.channel', label: 'Slack Channel' }
         ],
         jira: [

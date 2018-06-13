@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import dateFns from 'date-fns';
+import dateTimeFormat from 'constants/dateTimeFormat';
 
 import Modal from 'Components/Modal';
 import Table from 'Components/Table';
@@ -34,7 +35,7 @@ class DockerFileModal extends Component {
                 label: 'Created',
                 align: 'right',
                 className: 'w-1/5',
-                keyValueFunc: timestamp => dateFns.format(timestamp, 'MM/DD/YYYY -- h:mm:ss A')
+                keyValueFunc: timestamp => dateFns.format(timestamp, dateTimeFormat)
             }
         ];
         const rows = this.props.data;
@@ -49,7 +50,7 @@ class DockerFileModal extends Component {
 
     render() {
         return (
-            <Modal isOpen onRequestClose={this.props.onClose} className="w-2/3">
+            <Modal isOpen onRequestClose={this.props.onClose} className="w-full lg:w-2/3">
                 {this.renderHeader()}
                 {this.renderTable()}
             </Modal>

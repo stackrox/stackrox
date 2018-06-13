@@ -155,14 +155,16 @@ func TestImages(t *testing.T) {
 
 	service := v1.NewImageServiceClient(conn)
 
-	images, err := service.GetImages(ctx, &v1.RawQuery{})
+	images, err := service.ListImages(ctx, &v1.RawQuery{})
 	require.NoError(t, err)
 
 	require.NotEmpty(t, images.GetImages())
 
 	imageMap := make(map[string][]*v1.Image)
 	for _, img := range images.GetImages() {
-		imageMap[img.GetName().GetRegistry()] = append(imageMap[img.GetName().GetRegistry()], img)
+		image, err := service.GetImage(ctx, &v1.ResourceByID{Id: img.GetSha()})
+		assert.NoError(t, err)
+		imageMap[image.GetName().GetRegistry()] = append(imageMap[image.GetName().GetRegistry()], image)
 	}
 
 	const dockerRegistry = `docker.io`

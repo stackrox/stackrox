@@ -158,6 +158,14 @@ button[disabled] {
 their built-in classes, so this is a workaround to `bundle` the Firefox fix with every `flex-1` class by default*/
 }
 
+.word-break {
+    word-break: break-word;
+}
+
+ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
+    @apply break-words;
+}
+
 .react-modal-overlay {
     @apply .fixed .pin-t .pin-l .w-full .h-full;
     background-color: hsla(0, 0%, 21%, 0.85);
