@@ -1,5 +1,5 @@
-import { selectors } from './pages/IntegrationsPage';
-import * as api from './apiEndpoints';
+import { selectors } from './constants/IntegrationsPage';
+import * as api from './constants/apiEndpoints';
 
 describe('Integrations page', () => {
     beforeEach(() => {

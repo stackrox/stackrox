@@ -1,5 +1,5 @@
-import selectors from './pages/SearchPage';
-import * as api from './apiEndpoints';
+import selectors from './constants/SearchPage';
+import * as api from './constants/apiEndpoints';
 
 describe('Global Search Modal', () => {
     beforeEach(() => {

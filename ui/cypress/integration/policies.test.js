@@ -1,5 +1,5 @@
-import { selectors, text } from './pages/PoliciesPage';
-import * as api from './apiEndpoints';
+import { selectors, text } from './constants/PoliciesPage';
+import * as api from './constants/apiEndpoints';
 
 describe('Policies page', () => {
     beforeEach(() => {

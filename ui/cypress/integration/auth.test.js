@@ -1,6 +1,6 @@
-import { url as loginUrl, selectors } from './pages/LoginPage';
-import { url as complianceUrl } from './pages/CompliancePage';
-import * as api from './apiEndpoints';
+import { url as loginUrl, selectors } from './constants/LoginPage';
+import { url as complianceUrl } from './constants/CompliancePage';
+import * as api from './constants/apiEndpoints';
 
 describe('Authentication', () => {
     const setupAuth = (landingUrl, authStatusValid = true) => {

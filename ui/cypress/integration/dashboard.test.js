@@ -1,7 +1,7 @@
-import { url as dashboardUrl, selectors } from './pages/DashboardPage';
-import { url as complianceUrl } from './pages/CompliancePage';
-import { url as violationsUrl } from './pages/ViolationsPage';
-import * as api from './apiEndpoints';
+import { url as dashboardUrl, selectors } from './constants/DashboardPage';
+import { url as complianceUrl } from './constants/CompliancePage';
+import { url as violationsUrl } from './constants/ViolationsPage';
+import * as api from './constants/apiEndpoints';
 
 describe('Dashboard page', () => {
     it('should select item in nav bar', () => {

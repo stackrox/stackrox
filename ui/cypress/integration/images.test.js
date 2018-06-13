@@ -1,7 +1,7 @@
-import { url as imagesUrl, selectors as imageSelectors } from './pages/ImagesPage';
-import { url as riskUrl, selectors as riskSelectors } from './pages/RiskPage';
-import * as api from './apiEndpoints';
-import selectors from './pages/SearchPage';
+import { url as imagesUrl, selectors as imageSelectors } from './constants/ImagesPage';
+import { url as riskUrl, selectors as riskSelectors } from './constants/RiskPage';
+import * as api from './constants/apiEndpoints';
+import selectors from './constants/SearchPage';
 
 describe('Images page', () => {
     beforeEach(() => {

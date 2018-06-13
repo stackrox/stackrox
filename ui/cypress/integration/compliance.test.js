@@ -1,5 +1,5 @@
-import { selectors, url as complianceUrl } from './pages/CompliancePage';
-import * as api from './apiEndpoints';
+import { selectors, url as complianceUrl } from './constants/CompliancePage';
+import * as api from './constants/apiEndpoints';
 
 describe('Compliance page', () => {
     const setupMultipleClustersFixture = () => {

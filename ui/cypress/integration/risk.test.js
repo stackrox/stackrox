@@ -1,5 +1,5 @@
-import { selectors as RiskPageSelectors } from './pages/RiskPage';
-import selectors from './pages/SearchPage';
+import { selectors as RiskPageSelectors } from './constants/RiskPage';
+import selectors from './constants/SearchPage';
 
 describe('Risk page', () => {
     beforeEach(() => {

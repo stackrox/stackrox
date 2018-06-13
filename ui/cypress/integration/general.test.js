@@ -1,5 +1,5 @@
-import { url as dashboardUrl } from './pages/DashboardPage';
-import selectors from './pages/GeneralPage';
+import { url as dashboardUrl } from './constants/DashboardPage';
+import selectors from './constants/GeneralPage';
 
 //
 // Sanity / general checks for UI being up and running

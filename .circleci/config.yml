@@ -8,6 +8,11 @@ defaults: &defaults
         password: $DOCKERHUB_PASSWORD
   working_directory: /go/src/bitbucket.org/stack-rox/apollo
 
+restoreCypressBinary: &restoreCypressBinary
+  restore_cache:
+    keys:
+      - v1-prevent-cypress-binary-{{ checksum "ui/yarn.lock" }}
+
 restoreNPM: &restoreNPM
   restore_cache:
     keys:
@@ -30,8 +35,9 @@ jobs:
           name: Refresh base image
           command: docker pull alpine:3.7
 
-      - *restoreNPM
       - *restoreDep
+      - *restoreNPM
+      - *restoreCypressBinary
 
       - run:
           name: Setup Bazel cache access
@@ -47,6 +53,11 @@ jobs:
           key: v1-prevent-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
           paths:
             - ui/node_modules
+
+      - save-cache:
+          key: v1-prevent-cypress-binary-{{ checksum "ui/yarn.lock" }}
+          paths:
+            - ~/.cache/Cypress  # Cypress binary will be put there, see https://docs.cypress.io/guides/guides/continuous-integration.html#Example-circle-yml-v2-config-file-with-yarn
 
       - save-cache:
           key: v1-prevent-go-pkg-dep-{{ checksum "Gopkg.lock" }}
@@ -124,6 +135,8 @@ jobs:
           command: |
             export API_ENDPOINT=localhost:${LOCAL_PORT}
             make -C tests
+
+      - *restoreCypressBinary
 
       - run:
           name: UI e2e tests

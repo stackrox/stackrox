@@ -1,6 +1,9 @@
-import { url as violationsUrl, selectors as ViolationsPageSelectors } from './pages/ViolationsPage';
-import * as api from './apiEndpoints';
-import selectors from './pages/SearchPage';
+import {
+    url as violationsUrl,
+    selectors as ViolationsPageSelectors
+} from './constants/ViolationsPage';
+import * as api from './constants/apiEndpoints';
+import selectors from './constants/SearchPage';
 
 describe('Violations page', () => {
     beforeEach(() => {
