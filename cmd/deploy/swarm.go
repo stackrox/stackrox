@@ -12,12 +12,13 @@ func dockerBasedOrchestrator(shortName, longName string, cluster v1.ClusterType)
 	c := orchestratorCommand(shortName, longName, cluster)
 	c.PersistentPreRun = func(*cobra.Command, []string) {
 		cfg.SwarmConfig = swarmConfig
+		cfg.ClusterType = cluster
 	}
 	c.RunE = func(*cobra.Command, []string) error {
-		if err := validateConfig(cfg, cluster); err != nil {
+		if err := validateConfig(cfg); err != nil {
 			return err
 		}
-		return outputZip(cfg, cluster)
+		return outputZip(cfg)
 	}
 	c.AddCommand(externalVolume(cluster))
 	c.AddCommand(hostPathVolume(cluster))

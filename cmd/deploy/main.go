@@ -25,13 +25,13 @@ var (
 )
 
 // ServeHTTP serves a ZIP file for the cluster upon request.
-func outputZip(config central.Config, clusterType v1.ClusterType) error {
+func outputZip(config central.Config) error {
 	buf := new(bytes.Buffer)
 	zipW := zip.NewWriter(buf)
 
-	d, ok := central.Deployers[clusterType]
+	d, ok := central.Deployers[config.ClusterType]
 	if !ok {
-		return fmt.Errorf("Undefined cluster deployment generator: %s", clusterType)
+		return fmt.Errorf("Undefined cluster deployment generator: %s", config.ClusterType)
 	}
 
 	files, err := d.Render(config)

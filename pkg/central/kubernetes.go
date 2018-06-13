@@ -107,6 +107,12 @@ spec:
       nodeSelector:
         {{.HostPath.NodeSelectorKey}}: {{.HostPath.NodeSelectorValue}}
       {{- end}}
+      {{if eq .ClusterType.String "KUBERNETES_CLUSTER" }}
+      imagePullSecrets:
+      - name: {{.K8sConfig.ImagePullSecret}}
+      {{else}}
+      serviceAccount: central
+      {{- end}}
       containers:
       - name: central
         image: {{.K8sConfig.Image}}
@@ -138,8 +144,6 @@ spec:
         - name: {{.External.Name}}
           mountPath: {{.External.MountPath}}
         {{- end}}
-      imagePullSecrets:
-      - name: {{.K8sConfig.ImagePullSecret}}
       volumes:
       - name: certs
         secret:

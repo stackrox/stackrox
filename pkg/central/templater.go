@@ -59,6 +59,7 @@ type SwarmConfig struct {
 
 // Config configures the deployer for the central service.
 type Config struct {
+	ClusterType v1.ClusterType
 	K8sConfig   *K8sConfig
 	SwarmConfig *SwarmConfig
 

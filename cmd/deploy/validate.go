@@ -11,8 +11,8 @@ var (
 	cfg central.Config
 )
 
-func validateConfig(c central.Config, cluster v1.ClusterType) error {
-	if err := validateExternal(c.External, cluster); err != nil {
+func validateConfig(c central.Config) error {
+	if err := validateExternal(c.External, c.ClusterType); err != nil {
 		return err
 	}
 	return validateHostPath(c.HostPath)

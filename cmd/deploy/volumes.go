@@ -27,10 +27,10 @@ func externalVolume(cluster v1.ClusterType) *cobra.Command {
 	c := volumeCommand("external")
 	c.RunE = func(c *cobra.Command, args []string) error {
 		cfg.External = external
-		if err := validateConfig(cfg, cluster); err != nil {
+		if err := validateConfig(cfg); err != nil {
 			return err
 		}
-		return outputZip(cfg, cluster)
+		return outputZip(cfg)
 	}
 	c.Flags().StringVarP(&external.Name, "name", "", "prevent-db", "external volume name")
 	c.Flags().StringVarP(&external.MountPath, "mount-path", "", "/var/lib/prevent", "mount path inside the container")
@@ -42,10 +42,10 @@ func hostPathVolume(cluster v1.ClusterType) *cobra.Command {
 	c := volumeCommand("hostpath")
 	c.RunE = func(c *cobra.Command, args []string) error {
 		cfg.HostPath = hostpath
-		if err := validateConfig(cfg, cluster); err != nil {
+		if err := validateConfig(cfg); err != nil {
 			return err
 		}
-		return outputZip(cfg, cluster)
+		return outputZip(cfg)
 	}
 	c.Flags().StringVarP(&hostpath.Name, "name", "", "prevent-db", "hostpath volume name")
 	c.Flags().StringVarP(&hostpath.HostPath, "hostpath", "", "/var/lib/prevent", "path on the host")

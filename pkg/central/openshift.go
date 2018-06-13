@@ -20,7 +20,7 @@ type openshift struct {
 
 func newOpenshift() deployer {
 	return &openshift{
-		deploy:      template.Must(template.New("openshift").Parse(openshiftDeploy)),
+		deploy:      template.Must(template.New("openshift").Parse(k8sDeploy)),
 		cmd:         template.Must(template.New("openshift").Parse(openshiftCmd)),
 		portForward: template.Must(template.New("openshift").Parse(getPortForwardTemplate("oc"))),
 		rbac:        template.Must(template.New("openshift").Parse(openshiftCentralRBAC)),
@@ -56,71 +56,6 @@ func (o *openshift) Render(c Config) ([]*v1.File, error) {
 }
 
 var (
-	openshiftDeploy = `apiVersion: v1
-kind: Service
-metadata:
-  name: central
-  namespace: {{.K8sConfig.Namespace}}
-spec:
-  ports:
-  - name: https
-    port: 443
-    targetPort: 443
-  selector:
-    app: central
-  type: ClusterIP
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: central
-  namespace: {{.K8sConfig.Namespace}}
-  labels:
-    app: central
-  annotations:
-    owner: stackrox
-    email: support@stackrox.com
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: central
-  template:
-    metadata:
-      namespace: {{.K8sConfig.Namespace}}
-      labels:
-        app: central
-    spec:
-      containers:
-      - name: central
-        image: {{.K8sConfig.Image}}
-        resources:
-          requests:
-            memory: "2Gi"
-            cpu: "1000m"
-          limits:
-            memory: "8Gi"
-            cpu: "2000m"
-        imagePullPolicy: Always
-        command:
-        - central
-        ports:
-        - name: api
-          containerPort: 443
-        securityContext:
-          capabilities:
-            drop: ["NET_RAW"]
-        volumeMounts:
-        - name: certs
-          mountPath: /run/secrets/stackrox.io/
-          readOnly: true
-      volumes:
-      - name: certs
-        secret:
-          secretName: central-tls
-      serviceAccount: central
-`
-
 	openshiftCmd = commandPrefix + `
 OC_PROJECT="{{.K8sConfig.Namespace}}"
 OC_NAMESPACE="{{.K8sConfig.Namespace}}"
@@ -158,5 +93,8 @@ seccompProfiles:
 - '*'
 volumes:
 - '*'
+{{if .HostPath -}}
+allowHostDirVolumePlugin: true
+{{- end}}
 `
 )
