@@ -27,6 +27,7 @@ version: 2
 jobs:
   build:
     <<: *defaults
+    resource_class: large
     steps:
       - checkout
       - setup_remote_docker
@@ -174,6 +175,7 @@ jobs:
 
   push-release:
     <<: *defaults
+    resource_class: small
     steps:
       - checkout
       - setup_remote_docker
