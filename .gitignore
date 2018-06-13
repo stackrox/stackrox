@@ -35,5 +35,8 @@ BUILD.bazel
 *.tokens
 .idea/
 
+# Mac OS hidden file
+.DS_Store
+
 # Integration configs used in development
 /*.json
