@@ -189,14 +189,15 @@ func (policy *compiledImagePolicy) matchImageName(image *v1.Image) (violations [
 	if policy.ImageNamePolicy.Registry != nil && !policy.ImageNamePolicy.Registry.MatchString(image.GetName().GetRegistry()) {
 		return
 	}
+
+	var namespace, repo string
 	remoteSplit := strings.Split(image.GetName().GetRemote(), "/")
 	if len(remoteSplit) < 2 {
-		// This really should never happen because image populates with defaults in the form of namespace/repo
-		log.Errorf("'%v' must be of the format namespace/repo", image.GetName().GetRemote())
-		return
+		repo = remoteSplit[0] // e.g. stackrox.io/prevent:1.0 has prevent as the repo with no namespace
+	} else {
+		namespace = remoteSplit[0]
+		repo = remoteSplit[1]
 	}
-	namespace := remoteSplit[0]
-	repo := remoteSplit[1]
 	if policy.ImageNamePolicy.Namespace != nil && !policy.ImageNamePolicy.Namespace.MatchString(namespace) {
 		return
 	}

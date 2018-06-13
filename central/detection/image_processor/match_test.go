@@ -160,6 +160,13 @@ func TestMatchImageName(t *testing.T) {
 	violations, exists = policy.matchImageName(image)
 	assert.True(t, exists)
 	assert.Equal(t, 0, len(violations))
+
+	policy.ImageNamePolicy.Registry = regexp.MustCompile("^stackrox.io$")
+	policy.ImageNamePolicy.Namespace = regexp.MustCompile("^prevent")
+	image = images.GenerateImageFromString("stackrox.io/prevent:latest")
+	violations, exists = policy.matchImageName(image)
+	assert.True(t, exists)
+	assert.Equal(t, 0, len(violations))
 }
 
 func createTestPolicy(comparator v1.Comparator, op v1.MathOP, value float32) *compiledImagePolicy {

@@ -6,7 +6,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	clairConv "bitbucket.org/stack-rox/apollo/pkg/clair"
 	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/resolver"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
@@ -80,22 +79,12 @@ func convertLayerToImageScan(layerEnvelope *clairV1.LayerEnvelope) *v1.ImageScan
 	}
 }
 
-// Image contains image naming metadata.
-type Image struct {
-	SHA       string `json:"sha"`
-	Registry  string `json:"registry"`
-	Namespace string `json:"namespace"`
-	Repo      string `json:"repo"`
-	Tag       string `json:"tag"`
-}
-
 func v1ImageToClairifyImage(i *v1.Image) *types.Image {
 	return &types.Image{
-		SHA:       i.GetMetadata().GetRegistrySha(),
-		Registry:  i.GetName().GetRegistry(),
-		Namespace: images.Wrapper{Image: i}.Namespace(),
-		Repo:      images.Wrapper{Image: i}.Repo(),
-		Tag:       i.GetName().GetTag(),
+		SHA:      i.GetMetadata().GetRegistrySha(),
+		Registry: i.GetName().GetRegistry(),
+		Remote:   i.GetName().GetRemote(),
+		Tag:      i.GetName().GetTag(),
 	}
 }
 

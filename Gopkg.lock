@@ -8,7 +8,7 @@
     "client",
     "types"
   ]
-  revision = "1106073e96aabc4e4067632592968bc234008757"
+  revision = "550bee547e26fadb947b71b005b1c79827cae857"
 
 [[projects]]
   name = "bitbucket.org/stack-rox/cscc"
@@ -519,7 +519,7 @@
   branch = "master"
   name = "github.com/heroku/docker-registry-client"
   packages = ["registry"]
-  revision = "2569502409eb68392fe8059dfea198c50f6c93f7"
+  revision = "07595425806a8a28eda142cc95a7a01d9ae1ecb3"
   source = "git@bitbucket.org:stack-rox/docker-registry-client.git"
 
 [[projects]]
