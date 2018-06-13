@@ -25,7 +25,6 @@ describe('Compliance page', () => {
     };
 
     const loadCompliancePage = () => {
-        cy.visit(complianceUrl);
         cy.server();
         cy.route(api.clusters.list).as('clusters');
         cy.route(api.benchmarks.configs).as('benchConfigs');
@@ -36,6 +35,29 @@ describe('Compliance page', () => {
         // see https://docs.cypress.io/guides/references/error-messages.html#cy-failed-because-the-element-you-are-chaining-off-of-has-become-detached-or-removed-from-the-dom
         cy.wait(['@clusters', '@benchConfigs', '@benchScans']);
     };
+
+    it('should allow to set schedule', () => {
+        cy.server();
+        cy.route(api.benchmarks.schedules).as('setSchedule');
+        loadCompliancePage();
+
+        cy.get('select:first').select('Friday', { force: true });
+        cy.get('select:last').select('05:00 PM', { force: true });
+        cy.wait('@setSchedule');
+        cy.reload(); // retrieve data from the server
+        cy.get('select:first').should('have.value', 'Friday');
+        cy.get('select:last').should('have.value', '05:00 PM');
+
+        // update schedule
+        cy.get('select:last').select('06:00 PM', { force: true });
+        cy.wait('@setSchedule');
+        cy.reload();
+        cy.get('select:last').should('have.value', '06:00 PM');
+
+        // remove schedule
+        cy.get('select:first').select('None', { force: true });
+        cy.get('select:last').should('have.value', null);
+    });
 
     it('should have selected first cluster in Compliance nav bar', () => {
         setupMultipleClustersFixture();
@@ -67,25 +89,6 @@ describe('Compliance page', () => {
         cy.get('@scanNow').click();
         cy.wait('@trigger');
         cy.get('@scanNow').should('not.contain', 'Scan now'); // spinner
-    });
-
-    it('should allow to set schedule', () => {
-        loadCompliancePage();
-
-        cy.get('select:first').select('Friday', { force: true });
-        cy.get('select:last').select('05:00 PM', { force: true });
-        cy.reload(); // retrieve data from the server
-        cy.get('select:first').should('have.value', 'Friday');
-        cy.get('select:last').should('have.value', '05:00 PM');
-
-        // update schedule
-        cy.get('select:last').select('06:00 PM', { force: true });
-        cy.reload();
-        cy.get('select:last').should('have.value', '06:00 PM');
-
-        // remove schedule
-        cy.get('select:first').select('None', { force: true });
-        cy.get('select:last').should('have.value', null);
     });
 
     it('should show scan results', () => {

@@ -16,7 +16,8 @@ export const benchmarks = {
     scanHostResults: '/v1/benchmarks/scans/*/*',
     scans: '/v1/benchmarks/scans/*',
     triggers: 'v1/benchmarks/triggers/*',
-    summary: 'v1/benchmarks/summary/scans*'
+    summary: 'v1/benchmarks/summary/scans*',
+    schedules: '/v1/benchmarks/schedules*'
 };
 
 export const risks = {
