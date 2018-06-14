@@ -370,7 +370,10 @@ class IntegrationModal extends Component {
                     <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.onRequestClose} />
                 </header>
                 {this.state.errorMessage !== '' && (
-                    <div className="px-4 py-2 bg-high-500 text-white">
+                    <div
+                        className="px-4 py-2 bg-high-500 text-white"
+                        data-test-id="integration-error"
+                    >
                         {this.state.errorMessage}
                     </div>
                 )}

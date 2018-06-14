@@ -204,20 +204,26 @@ const sourceMap = {
             },
             {
                 label: 'Endpoint',
-                key: 'config.endpoint',
+                key: 'docker.endpoint',
                 type: 'text',
                 placeholder: 'registry-1.docker.io'
             },
             {
                 label: 'Username',
-                key: 'config.username',
+                key: 'docker.username',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Password',
-                key: 'config.password',
+                key: 'docker.password',
                 type: 'password',
+                placeholder: ''
+            },
+            {
+                label: 'Insecure',
+                key: 'docker.insecure',
+                type: 'checkbox',
                 placeholder: ''
             }
         ],
@@ -345,6 +351,54 @@ const sourceMap = {
                 key: 'config.endpoint',
                 type: 'text',
                 placeholder: 'https://clair.example.com'
+            }
+        ],
+        clairify: [
+            {
+                label: 'Integration Name',
+                key: 'name',
+                type: 'text',
+                placeholder: 'Clairify'
+            },
+            {
+                label: 'Types',
+                key: 'categories',
+                type: 'multiselect',
+                options: [{ value: 'SCANNER', label: 'Scanner', clearableValue: false }],
+                placeholder: ''
+            },
+            {
+                label: 'Endpoint',
+                key: 'clairify.endpoint',
+                type: 'text',
+                placeholder: 'https://clairify.example.com'
+            },
+            {
+                label: 'Registry Image Repo (optional)',
+                key: 'clairify.registry.imageRepo',
+                type: 'text',
+                placeholder: 'docker.io'
+            },
+            {
+                label: 'Registry URL (optional)',
+                key: 'clairify.registry.url',
+                type: 'text',
+                placeholder: 'https://clairify.example.com'
+            },
+            {
+                label: 'Username (optional)',
+                key: 'clairify.registry.username',
+                type: 'text'
+            },
+            {
+                label: 'Password (optional)',
+                key: 'clairify.registry.password',
+                type: 'password'
+            },
+            {
+                label: 'Insecure (skip certificate verification)',
+                key: 'clairify.registry.insecure',
+                type: 'checkbox'
             }
         ],
         google: [

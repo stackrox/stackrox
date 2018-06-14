@@ -5,21 +5,32 @@ export const selectors = {
     navLink: '.navigation-panel li:contains("Integrations") a',
     dockerSwarmTile: 'button:contains("Docker Swarm")',
     kubernetesTile: 'button:contains("Kubernetes")',
+    dockerRegistryTile: 'button:contains("Generic Docker Registry")',
+    clairTile: 'button:contains("CoreOS Clair")',
+    clairifyTile: 'button:contains("Clairify")',
+    slackTile: 'button:contains("Slack")',
     clusters: {
         swarmCluster1: 'tr:contains("Swarm Cluster 1")'
     },
+    integrationError: 'div[data-test-id="integration-error"',
     buttons: {
-        addCluster: 'button:contains("Add")',
+        add: 'button:contains("Add")',
         next: 'button:contains("Next")',
         download: 'button:contains("Download")',
-        delete: 'button:contains("Delete")'
+        delete: 'button:contains("Delete")',
+        test: 'button:contains("Test")',
+        create: 'button:contains("Create")',
+        confirm: 'button:contains("Confirm")'
     },
-    form: {
-        cluster: {
-            inputName: ".cluster-form input[name='name']",
-            inputImage: ".cluster-form input[name='preventImage']",
-            inputEndpoint: ".cluster-form input[name='centralApiEndpoint']"
-        }
+    clusterForm: {
+        nameInput: ".cluster-form input[name='name']",
+        imageInput: ".cluster-form input[name='preventImage']",
+        endpointInput: ".cluster-form input[name='centralApiEndpoint']"
+    },
+    dockerRegistryForm: {
+        nameInput: "form label[for='name'] input",
+        typesSelect: "form label[for='categories'] div.Select",
+        endpointInput: "form label[for='docker.endpoint'] input"
     },
     readOnlyView: '.overflow-auto > .p-4 > div',
     plugins: '.mb-6:first button',

@@ -23,8 +23,41 @@ describe('Integrations page', () => {
     it('should allow integration with Slack', () => {
         cy.get('div.ReactModalPortal').should('not.exist');
 
-        cy.get('button:contains("Slack")').click();
+        cy.get(selectors.slackTile).click();
         cy.get('div.ReactModalPortal');
+    });
+
+    it.only('should add an integration with DockerHub', () => {
+        cy.get(selectors.dockerRegistryTile).click();
+        cy.get(selectors.buttons.add).click();
+
+        const name = `Docker Registry ${Math.random()
+            .toString(36)
+            .substring(7)}`;
+        cy.get(selectors.dockerRegistryForm.nameInput).type(name);
+
+        cy.get(`${selectors.dockerRegistryForm.typesSelect} .Select-arrow`).click();
+        cy
+            .get(
+                `${
+                    selectors.dockerRegistryForm.typesSelect
+                } div[role="option"]:contains("Registry")`
+            )
+            .click();
+
+        // test that validation error happens when form is incomplete
+        cy.get(selectors.buttons.test).click();
+        cy.get(selectors.integrationError);
+
+        cy.get(selectors.dockerRegistryForm.endpointInput).type('registry-1.docker.io');
+
+        cy.get(selectors.buttons.create).click();
+
+        // delete the integration after to clean up
+        cy.get(`table tr:contains("${name}") td input[type="checkbox"]`).check();
+        cy.get(selectors.buttons.delete).click();
+        cy.get(selectors.buttons.confirm).click();
+        cy.get(`table tr:contains("${name}")`).should('not.exist');
     });
 });
 
@@ -84,11 +117,11 @@ describe('Cluster Creation Flow', () => {
     it('Should be able to fill out the Swarm form and download a ZIP when clicking "Add"', () => {
         cy.get(selectors.dockerSwarmTile).click();
 
-        cy.get(selectors.buttons.addCluster).click();
+        cy.get(selectors.buttons.add).click();
 
-        cy.get(selectors.form.cluster.inputName).type('Swarm Cluster 1');
-        cy.get(selectors.form.cluster.inputImage).type('stackrox/prevent:latest');
-        cy.get(selectors.form.cluster.inputEndpoint).type('central.prevent_net:443');
+        cy.get(selectors.clusterForm.nameInput).type('Swarm Cluster 1');
+        cy.get(selectors.clusterForm.imageInput).type('stackrox/prevent:latest');
+        cy.get(selectors.clusterForm.endpointInput).type('central.prevent_net:443');
 
         cy.get(selectors.buttons.next).click();
         cy.wait('@addCluster');
