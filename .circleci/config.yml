@@ -106,7 +106,12 @@ jobs:
       - run:
           name: Create GKE cluster
           command: |
-            gcloud container clusters create --machine-type n1-standard-2 --num-nodes 2 "prevent-ci-${CIRCLE_BUILD_NUM}"
+            gcloud container clusters create \
+              --machine-type n1-standard-2 \
+              --num-nodes 2 \
+              --create-subnetwork range=/19 \
+              --enable-ip-alias \
+              "prevent-ci-${CIRCLE_BUILD_NUM}"
 
       # See https://stackoverflow.com/a/46316672 for why we have to use user/pass.
       # This step requires the GCP IAM permission "Kubernetes Engine Admin".
