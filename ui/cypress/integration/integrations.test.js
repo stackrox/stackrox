@@ -27,7 +27,7 @@ describe('Integrations page', () => {
         cy.get('div.ReactModalPortal');
     });
 
-    it.only('should add an integration with DockerHub', () => {
+    it('should add an integration with DockerHub', () => {
         cy.get(selectors.dockerRegistryTile).click();
         cy.get(selectors.buttons.add).click();
 
