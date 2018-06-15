@@ -16,7 +16,7 @@ restoreCypressBinary: &restoreCypressBinary
 restoreNPM: &restoreNPM
   restore_cache:
     keys:
-      - v1-prevent-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
+      - v2-prevent-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
 
 restoreDep: &restoreDep
   restore_cache:
@@ -51,7 +51,7 @@ jobs:
             make all
 
       - save-cache:
-          key: v1-prevent-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
+          key: v2-prevent-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
           paths:
             - ui/node_modules
 
