@@ -31,7 +31,8 @@ func newDeploymentEventFromResource(obj interface{}, action pkgV1.ResourceAction
 	}
 
 	// Ignore resources that are owned by another resource.
-	if len(meta.OwnerReferences) > 0 {
+	// DeploymentConfigs can be owned by TemplateInstance which we don't care about
+	if len(meta.OwnerReferences) > 0 && resourceType != kubernetes.DeploymentConfig {
 		return
 	}
 
