@@ -45,7 +45,7 @@ func (s *SearchService) RegisterServiceHandlerFromEndpoint(ctx context.Context, 
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *SearchService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(user.Any().Authorized(ctx))
+	return ctx, ReturnErrorCode(user.Any().Authorized(ctx))
 }
 
 type searchFunc func(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)

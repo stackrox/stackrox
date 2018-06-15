@@ -11,7 +11,9 @@ type StatusError interface {
 	Status() codes.Code
 }
 
-func returnErrorCode(err error) error {
+// ReturnErrorCode is a helper function that formats an error with a status code if one is not already
+// available.
+func ReturnErrorCode(err error) error {
 	if err == nil {
 		return nil
 	}

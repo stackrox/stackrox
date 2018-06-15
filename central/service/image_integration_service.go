@@ -44,7 +44,7 @@ func (s *ImageIntegrationService) RegisterServiceHandlerFromEndpoint(ctx context
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *ImageIntegrationService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(or.SensorOrUser().Authorized(ctx))
+	return ctx, ReturnErrorCode(or.SensorOrUser().Authorized(ctx))
 }
 
 func scrubImageIntegration(i *v1.ImageIntegration) {
@@ -141,7 +141,7 @@ func (s *ImageIntegrationService) DeleteImageIntegration(ctx context.Context, re
 		return nil, status.Error(codes.InvalidArgument, "Image integration id must be provided")
 	}
 	if err := s.storage.RemoveImageIntegration(request.GetId()); err != nil {
-		return nil, returnErrorCode(err)
+		return nil, ReturnErrorCode(err)
 	}
 	s.detector.RemoveImageIntegration(request.GetId())
 	return &empty.Empty{}, nil

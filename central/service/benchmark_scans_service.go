@@ -53,7 +53,7 @@ func (s *BenchmarkScansService) AuthFuncOverride(ctx context.Context, fullMethod
 			"/v1.BenchmarkScansService/PostBenchmarkScan": idcheck.SensorsOnly(),
 		},
 	}
-	return ctx, returnErrorCode(pr.Authorized(ctx, fullMethodName))
+	return ctx, ReturnErrorCode(pr.Authorized(ctx, fullMethodName))
 }
 
 // PostBenchmarkScan inserts a scan into the database

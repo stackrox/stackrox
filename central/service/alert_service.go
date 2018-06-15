@@ -38,7 +38,7 @@ func (s *AlertService) RegisterServiceHandlerFromEndpoint(ctx context.Context, m
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *AlertService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(user.Any().Authorized(ctx))
+	return ctx, ReturnErrorCode(user.Any().Authorized(ctx))
 }
 
 // GetAlert returns the alert with given id.

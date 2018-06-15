@@ -20,9 +20,10 @@ type Storage interface {
 	BenchmarkStorage
 	BenchmarkTriggerStorage
 	ClusterStorage
+	DeploymentStorage
+	DeploymentEventStorage
 	ImageIntegrationStorage
 	LogsStorage
-	DeploymentStorage
 	PolicyStorage
 	ImageStorage
 	MultiplierStorage
@@ -93,15 +94,6 @@ type ClusterStorage interface {
 	UpdateClusterContactTime(id string, t time.Time) error
 }
 
-// ImageIntegrationStorage provide storage functionality for image integrations.
-type ImageIntegrationStorage interface {
-	GetImageIntegration(id string) (*v1.ImageIntegration, bool, error)
-	GetImageIntegrations(integration *v1.GetImageIntegrationsRequest) ([]*v1.ImageIntegration, error)
-	AddImageIntegration(integration *v1.ImageIntegration) (string, error)
-	UpdateImageIntegration(integration *v1.ImageIntegration) error
-	RemoveImageIntegration(id string) error
-}
-
 // DeploymentStorage provides storage functionality for deployments.
 type DeploymentStorage interface {
 	GetDeployment(id string) (*v1.Deployment, bool, error)
@@ -111,6 +103,24 @@ type DeploymentStorage interface {
 	UpdateDeployment(deployment *v1.Deployment) error
 	RemoveDeployment(id string) error
 	GetTombstonedDeployments() ([]*v1.Deployment, error)
+}
+
+// DeploymentEventStorage provides storage for DeploymentEvents not yet processed by central.
+type DeploymentEventStorage interface {
+	GetDeploymentEvent(id uint64) (*v1.DeploymentEvent, bool, error)
+	GetDeploymentEventIds(clusterID string) ([]uint64, map[string]uint64, error)
+	AddDeploymentEvent(deployment *v1.DeploymentEvent) (uint64, error)
+	UpdateDeploymentEvent(id uint64, deployment *v1.DeploymentEvent) error
+	RemoveDeploymentEvent(id uint64) error
+}
+
+// ImageIntegrationStorage provide storage functionality for image integrations.
+type ImageIntegrationStorage interface {
+	GetImageIntegration(id string) (*v1.ImageIntegration, bool, error)
+	GetImageIntegrations(integration *v1.GetImageIntegrationsRequest) ([]*v1.ImageIntegration, error)
+	AddImageIntegration(integration *v1.ImageIntegration) (string, error)
+	UpdateImageIntegration(integration *v1.ImageIntegration) error
+	RemoveImageIntegration(id string) error
 }
 
 // ImageStorage provide storage functionality for images.

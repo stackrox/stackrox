@@ -22,6 +22,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/notifications"
 	"bitbucket.org/stack-rox/apollo/central/risk"
 	"bitbucket.org/stack-rox/apollo/central/service"
+	"bitbucket.org/stack-rox/apollo/central/service/sensorevent"
 	pkgGRPC "bitbucket.org/stack-rox/apollo/pkg/grpc"
 	authnUser "bitbucket.org/stack-rox/apollo/pkg/grpc/authn/user"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/allow"
@@ -134,7 +135,7 @@ func (c *central) startGRPCServer() {
 	c.server.Register(service.NewPolicyService(datastore.GetPolicyDataStore(), datastore.GetClusterDataStore(), datastore.GetDeploymentDataStore(), datastore.GetNotifierStorage(), c.detector))
 	c.server.Register(service.NewSearchService(datastore.GetAlertDataStore(), datastore.GetDeploymentDataStore(), datastore.GetImageDataStore(), datastore.GetPolicyDataStore()))
 	c.server.Register(idService)
-	c.server.Register(service.NewSensorEventService(c.detector, datastore.GetImageDataStore(), datastore.GetDeploymentDataStore(), datastore.GetClusterDataStore(), c.scorer))
+	c.server.Register(sensorevent.NewService(c.detector, datastore.GetDeploymentEventStorage(), datastore.GetImageDataStore(), datastore.GetDeploymentDataStore(), datastore.GetClusterDataStore(), c.scorer))
 	c.server.Register(service.NewSummaryService(datastore.GetAlertDataStore(), datastore.GetClusterDataStore(), datastore.GetDeploymentDataStore(), datastore.GetImageDataStore()))
 
 	c.server.Start()

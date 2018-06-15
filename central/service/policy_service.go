@@ -69,7 +69,7 @@ func (s *PolicyService) RegisterServiceHandlerFromEndpoint(ctx context.Context, 
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *PolicyService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(user.Any().Authorized(ctx))
+	return ctx, ReturnErrorCode(user.Any().Authorized(ctx))
 }
 
 // GetPolicy returns a policy by name.
@@ -162,7 +162,7 @@ func (s *PolicyService) DeletePolicy(ctx context.Context, request *v1.ResourceBy
 		return nil, status.Error(codes.InvalidArgument, "A policy id must be specified to delete a Policy")
 	}
 	if err := s.policies.RemovePolicy(request.GetId()); err != nil {
-		return nil, returnErrorCode(err)
+		return nil, ReturnErrorCode(err)
 	}
 	s.detector.RemovePolicy(request.GetId())
 	return &empty.Empty{}, nil

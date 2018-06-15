@@ -42,7 +42,7 @@ func (s *SummaryService) RegisterServiceHandlerFromEndpoint(ctx context.Context,
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *SummaryService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(user.Any().Authorized(ctx))
+	return ctx, ReturnErrorCode(user.Any().Authorized(ctx))
 }
 
 // GetSummaryCounts returns the global counts of alerts, clusters, deployments, and images.

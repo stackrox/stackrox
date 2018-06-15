@@ -52,7 +52,7 @@ func (s *BenchmarkResultsService) RegisterServiceHandlerFromEndpoint(ctx context
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *BenchmarkResultsService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(idcheck.SensorsOnly().Authorized(ctx))
+	return ctx, ReturnErrorCode(idcheck.SensorsOnly().Authorized(ctx))
 }
 
 // PostBenchmarkResult inserts a new benchmark result into the system

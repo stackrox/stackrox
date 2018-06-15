@@ -25,10 +25,11 @@ message DeploymentEvent {
 message DeploymentEventResponse {
     string alert_id               = 1;
     EnforcementAction enforcement = 2;
+    string deployment_id          = 3;
 }
 
 service SensorEventService {
-    rpc ReportDeploymentEvent(DeploymentEvent) returns (DeploymentEventResponse) {
+    rpc RecordEvent(stream DeploymentEvent) returns (stream DeploymentEventResponse) {
         option (google.api.http) = {
             post: "/v1/sensor/events/deployment"
             body: "*"

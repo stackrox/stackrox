@@ -33,7 +33,7 @@ func (s *AuthService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *AuthService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(allow.Anonymous().Authorized(ctx))
+	return ctx, ReturnErrorCode(allow.Anonymous().Authorized(ctx))
 }
 
 // GetAuthStatus retrieves the auth status based on the credentials given to the server.

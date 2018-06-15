@@ -48,7 +48,7 @@ func (s *DeploymentService) RegisterServiceHandlerFromEndpoint(ctx context.Conte
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *DeploymentService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(user.Any().Authorized(ctx))
+	return ctx, ReturnErrorCode(user.Any().Authorized(ctx))
 }
 
 // GetDeployment returns the deployment with given id.

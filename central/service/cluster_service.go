@@ -37,7 +37,7 @@ func (s *ClusterService) RegisterServiceHandlerFromEndpoint(ctx context.Context,
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *ClusterService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(or.SensorOrUser().Authorized(ctx))
+	return ctx, ReturnErrorCode(or.SensorOrUser().Authorized(ctx))
 }
 
 // PostCluster creates a new cluster.
@@ -118,7 +118,7 @@ func (s *ClusterService) DeleteCluster(ctx context.Context, request *v1.Resource
 		return nil, status.Error(codes.InvalidArgument, "Request must have a id")
 	}
 	if err := s.clusters.RemoveCluster(request.GetId()); err != nil {
-		return nil, returnErrorCode(err)
+		return nil, ReturnErrorCode(err)
 	}
 	return &empty.Empty{}, nil
 }

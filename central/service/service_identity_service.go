@@ -38,7 +38,7 @@ func (s *IdentityService) RegisterServiceHandlerFromEndpoint(ctx context.Context
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *IdentityService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(user.Any().Authorized(ctx))
+	return ctx, ReturnErrorCode(user.Any().Authorized(ctx))
 }
 
 // GetServiceIdentities returns the currently defined service identities.

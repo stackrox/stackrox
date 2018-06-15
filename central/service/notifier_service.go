@@ -52,7 +52,7 @@ func (s *NotifierService) RegisterServiceHandlerFromEndpoint(ctx context.Context
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *NotifierService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(user.Any().Authorized(ctx))
+	return ctx, ReturnErrorCode(user.Any().Authorized(ctx))
 }
 
 func scrubNotifier(notifier *v1.Notifier) {
@@ -189,7 +189,7 @@ func (s *NotifierService) DeleteNotifier(ctx context.Context, request *v1.Delete
 	}
 
 	if err := s.storage.RemoveNotifier(request.GetId()); err != nil {
-		return nil, returnErrorCode(err)
+		return nil, ReturnErrorCode(err)
 	}
 	s.processor.RemoveNotifier(request.GetId())
 	s.detector.RemoveNotifier(request.GetId())

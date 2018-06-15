@@ -36,7 +36,7 @@ func (s *ImageService) RegisterServiceHandlerFromEndpoint(ctx context.Context, m
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *ImageService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(user.Any().Authorized(ctx))
+	return ctx, ReturnErrorCode(user.Any().Authorized(ctx))
 }
 
 // GetImage returns an image with given sha if it exists.

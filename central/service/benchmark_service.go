@@ -38,7 +38,7 @@ func (s *BenchmarkService) RegisterServiceHandlerFromEndpoint(ctx context.Contex
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *BenchmarkService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(or.SensorOrUser().Authorized(ctx))
+	return ctx, ReturnErrorCode(or.SensorOrUser().Authorized(ctx))
 }
 
 // GetBenchmark returns the benchmark by the passed name
@@ -95,7 +95,7 @@ func (s *BenchmarkService) PutBenchmark(ctx context.Context, request *v1.Benchma
 // DeleteBenchmark removes a benchmark
 func (s *BenchmarkService) DeleteBenchmark(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
 	if err := s.storage.RemoveBenchmark(request.GetId()); err != nil {
-		return nil, returnErrorCode(err)
+		return nil, ReturnErrorCode(err)
 	}
 	return &empty.Empty{}, nil
 }

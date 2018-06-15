@@ -58,7 +58,7 @@ func (d *Detector) reprocessPolicy(policy *matcher.Policy) {
 		d.taskC <- Task{
 			deployment: deploy,
 			policy:     policy,
-			action:     v1.ResourceAction_REFRESH_RESOURCE,
+			action:     v1.ResourceAction_UPDATE_RESOURCE,
 		}
 
 		deploymentMap[deploy.GetId()] = struct{}{}
@@ -105,7 +105,7 @@ func (d *Detector) queueTasks(deployment *v1.Deployment, policies []*matcher.Pol
 		d.taskC <- Task{
 			deployment: deployment,
 			policy:     p,
-			action:     v1.ResourceAction_REFRESH_RESOURCE,
+			action:     v1.ResourceAction_UPDATE_RESOURCE,
 		}
 	}
 }

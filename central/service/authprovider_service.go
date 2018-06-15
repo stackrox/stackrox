@@ -57,7 +57,7 @@ func (s *AuthProviderService) AuthFuncOverride(ctx context.Context, fullMethodNa
 			"/v1.AuthProviderService/GetAuthProviders": allow.Anonymous(),
 		},
 	}
-	return ctx, returnErrorCode(pr.Authorized(ctx, fullMethodName))
+	return ctx, ReturnErrorCode(pr.Authorized(ctx, fullMethodName))
 }
 
 // GetAuthProvider retrieves the authProvider based on the id passed
@@ -136,7 +136,7 @@ func (s *AuthProviderService) DeleteAuthProvider(ctx context.Context, request *v
 		return nil, status.Error(codes.InvalidArgument, "Auth Provider id is required")
 	}
 	if err := s.storage.RemoveAuthProvider(request.GetId()); err != nil {
-		return nil, returnErrorCode(err)
+		return nil, ReturnErrorCode(err)
 	}
 	s.auth.RemoveProvider(request.GetId())
 	return &empty.Empty{}, nil

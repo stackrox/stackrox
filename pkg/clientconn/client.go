@@ -3,11 +3,13 @@ package clientconn
 import (
 	"crypto/tls"
 	"fmt"
+	"time"
 
 	"bitbucket.org/stack-rox/apollo/pkg/mtls"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 )
 
 // GRPCConnection returns a grpc.ClientConn object.
@@ -32,7 +34,7 @@ func AuthenticatedGRPCConnection(endpoint string) (conn *grpc.ClientConn, err er
 		ServerName:   mtls.CentralCN.String(), // This is required!
 	}
 	creds := credentials.NewTLS(tlsConfig)
-	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds))
+	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds), keepAliveDialOption())
 }
 
 // UnauthenticatedGRPCConnection returns a grpc.ClientConn object that does not use credentials.
@@ -45,4 +47,17 @@ func UnauthenticatedGRPCConnection(endpoint string) (conn *grpc.ClientConn, err 
 	}
 	creds := credentials.NewTLS(tlsConfig)
 	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds))
+}
+
+// Parameters for keep alive.
+func keepAliveDialOption() grpc.DialOption {
+	// Since we are holding open a GRPC stream, enable keep alive.
+	// Ping every minute of inactivity, and wait 30 seconds. Do this even when no streams are open (though
+	// one should always be open with central.)
+	params := keepalive.ClientParameters{
+		Time:                1 * time.Minute,
+		Timeout:             30 * time.Second,
+		PermitWithoutStream: true,
+	}
+	return grpc.WithKeepaliveParams(params)
 }

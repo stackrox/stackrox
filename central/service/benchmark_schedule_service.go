@@ -44,7 +44,7 @@ func (s *BenchmarkScheduleService) RegisterServiceHandlerFromEndpoint(ctx contex
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *BenchmarkScheduleService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(or.SensorOrUser().Authorized(ctx))
+	return ctx, ReturnErrorCode(or.SensorOrUser().Authorized(ctx))
 }
 
 // GetBenchmarkSchedule returns the current benchmark schedules
@@ -132,7 +132,7 @@ func (s *BenchmarkScheduleService) GetBenchmarkSchedules(ctx context.Context, re
 // DeleteBenchmarkSchedule removes a benchmark schedule
 func (s *BenchmarkScheduleService) DeleteBenchmarkSchedule(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
 	if err := s.storage.RemoveBenchmarkSchedule(request.GetId()); err != nil {
-		return nil, returnErrorCode(err)
+		return nil, ReturnErrorCode(err)
 	}
 	return &empty.Empty{}, nil
 }

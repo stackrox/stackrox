@@ -31,7 +31,7 @@ func (s *PingService) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *PingService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(allow.Anonymous().Authorized(ctx))
+	return ctx, ReturnErrorCode(allow.Anonymous().Authorized(ctx))
 }
 
 // Ping implements v1.PingServiceServer, and it always returns a v1.PongMessage object.

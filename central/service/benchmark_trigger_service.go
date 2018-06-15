@@ -42,7 +42,7 @@ func (s *BenchmarkTriggerService) RegisterServiceHandlerFromEndpoint(ctx context
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *BenchmarkTriggerService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(or.SensorOrUser().Authorized(ctx))
+	return ctx, ReturnErrorCode(or.SensorOrUser().Authorized(ctx))
 }
 
 // Trigger triggers a benchmark launch asynchronously.

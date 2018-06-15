@@ -214,6 +214,13 @@ func GetBenchmarkTriggerStorage() db.BenchmarkTriggerStorage {
 	return registry.inmem.(db.BenchmarkTriggerStorage)
 }
 
+// GetDeploymentEventStorage provide storage functionality for events while they are queued for processing.
+func GetDeploymentEventStorage() db.DeploymentEventStorage {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.inmem.(db.DeploymentEventStorage)
+}
+
 // GetImageIntegrationStorage provide storage functionality for image integrations.
 func GetImageIntegrationStorage() db.ImageIntegrationStorage {
 	mutex.RLock()
