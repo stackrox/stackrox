@@ -80,7 +80,7 @@ func (e *Enricher) enrichImageWithScanner(image *v1.Image, scanner scannerTypes.
 		var err error
 		scan, err = scanner.GetLastScan(image)
 		if err != nil {
-			logger.Error(err)
+			logger.Errorf("Error getting last scan for %s: %s", image.GetName().GetFullName(), err)
 			return false, err
 		}
 		e.scanCache.Set(image.GetName().GetSha(), scan, imageDataExpiration)

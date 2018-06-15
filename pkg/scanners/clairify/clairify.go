@@ -134,20 +134,25 @@ func (c *clairify) scan(image *v1.Image) error {
 		reg := c.conf.Registry
 		_, err := c.client.AddImage(reg.GetUsername(), reg.GetPassword(), &types.ImageRequest{
 			Image:    image.GetName().GetFullName(),
-			Registry: resolver.Registry(reg.GetUrl(), reg.GetInsecure()),
+			Registry: resolver.Registry(reg.GetUrl()),
+			Insecure: reg.GetInsecure(),
 		})
 		return err
 	}
 	_, err := c.client.AddImage("", "", &types.ImageRequest{
 		Image:    image.GetName().GetFullName(),
-		Registry: resolver.Registry(image.GetName().GetRegistry(), false),
+		Registry: resolver.Registry(image.GetName().GetRegistry()),
+		Insecure: true,
 	})
 	return err
 }
 
 // Match decides if the image is contained within this scanner
 func (c *clairify) Match(image *v1.Image) bool {
-	return true
+	if c.conf.GetRegistry().GetImageRepo() == "" {
+		return true
+	}
+	return c.conf.GetRegistry().GetImageRepo() == image.GetName().GetRegistry()
 }
 
 func (c *clairify) Global() bool {
