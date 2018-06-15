@@ -1,4 +1,4 @@
-const sourceMap = {
+const formDescriptors = {
     authProviders: {
         auth0: [
             {
@@ -440,4 +440,4 @@ const sourceMap = {
     }
 };
 
-export default sourceMap;
+export default formDescriptors;

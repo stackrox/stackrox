@@ -1,18 +1,17 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Form, Text, Select, Checkbox } from 'react-form';
 import { withRouter } from 'react-router-dom';
-import MultiSelect from 'react-select';
 import * as Icon from 'react-feather';
 
 import Dialog from 'Components/Dialog';
+import Form from 'Containers/Integrations/Form';
 import Modal from 'Components/Modal';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
+
 import tableColumnDescriptor from 'Containers/Integrations/tableColumnDescriptor';
-import sourceMap from 'Containers/Integrations/integrationsSourceMap';
 import * as AuthService from 'services/AuthService';
-import { saveIntegration, testIntegration, deleteIntegration } from 'services/IntegrationsService';
+import { deleteIntegration } from 'services/IntegrationsService';
 
 import { clusterTypeLabels } from 'messages/common';
 
@@ -67,44 +66,27 @@ class IntegrationModal extends Component {
         this.props.onRequestClose(isSuccessful);
     };
 
-    onTest = () => {
-        this.update('CLEAR_MESSAGES');
-        const data = this.addDefaultFormValues(this.formApi.values);
-        testIntegration(this.props.source, data)
-            .then(() => {
-                this.update('SUCCESS_MESSAGE', {
-                    successMessage: 'Integration test was successful'
-                });
-            })
-            .catch(error => {
-                this.update('ERROR_MESSAGE', { errorMessage: error.response.data.error });
-            });
+    onFormCancel = () => {
+        this.update('EDIT_INTEGRATION', { editIntegration: null });
     };
 
-    onSubmit = formData => {
+    onFormRequest = () => {
         this.update('CLEAR_MESSAGES');
-        const data = this.addDefaultFormValues(formData);
-        const promise =
-            this.props.source === 'authProviders'
-                ? AuthService.saveAuthProvider(data)
-                : saveIntegration(this.props.source, data);
-        promise
-            .then(() => {
-                this.props.onIntegrationsUpdate(this.props.source);
-                this.update('EDIT_INTEGRATION', { editIntegration: null });
-            })
-            .catch(error => {
-                this.update('ERROR_MESSAGE', { errorMessage: error.response.data.error });
-            });
     };
 
-    addDefaultFormValues = formData => {
-        const data = formData;
-        const { location } = window;
-        data.uiEndpoint = this.props.source === 'authProviders' ? location.host : location.origin;
-        data.type = this.props.type;
-        data.enabled = true;
-        return data;
+    onFormError = errorMessage => {
+        this.update('ERROR_MESSAGE', { errorMessage });
+    };
+
+    onFormSubmitSuccess = () => {
+        this.props.onIntegrationsUpdate(this.props.source);
+        this.update('EDIT_INTEGRATION', { editIntegration: null });
+    };
+
+    onFormTestSuccess = () => {
+        this.update('SUCCESS_MESSAGE', {
+            successMessage: 'Integration test was successful'
+        });
     };
 
     addIntegration = () => {
@@ -216,132 +198,20 @@ class IntegrationModal extends Component {
         );
     };
 
-    renderField = field => {
-        const handleMultiSelectChange = () => newValue => {
-            const values = newValue !== '' ? newValue.split(',') : [];
-            this.formApi.setValue(field.key, values);
-        };
-        switch (field.type) {
-            case 'checkbox':
-                return <Checkbox field={field.key} name={field.key} disabled={field.disabled} />;
-            case 'text':
-                return (
-                    <Text
-                        type="text"
-                        className="border rounded w-full p-3 border-base-300"
-                        field={field.key}
-                        id={field.key}
-                        placeholder={field.placeholder}
-                    />
-                );
-            case 'password':
-                return (
-                    <Text
-                        type="password"
-                        className="border rounded w-full p-3 border-base-300"
-                        field={field.key}
-                        id={field.key}
-                        placeholder={field.placeholder}
-                    />
-                );
-            case 'select':
-                return (
-                    <Select
-                        field={field.key}
-                        id={field.key}
-                        options={field.options}
-                        placeholder={field.placeholder}
-                        className="border rounded w-full p-3 border-base-300"
-                    />
-                );
-
-            case 'multiselect':
-                return (
-                    <MultiSelect
-                        key={field.key}
-                        multi
-                        onChange={handleMultiSelectChange()}
-                        options={field.options}
-                        placeholder={field.placeholder}
-                        removeSelected
-                        simpleValue
-                        value={this.formApi.values[field.key]}
-                        className="text-base-600 font-400 w-full"
-                    />
-                );
-            default:
-                return '';
-        }
-    };
-
-    renderFields = () => {
-        const fields = sourceMap[this.props.source][this.props.type];
-        return fields.map(field => (
-            <label className="flex mt-4" htmlFor={field.key} key={field.label}>
-                <div className="mr-4 flex items-center w-2/3 capitalize">{field.label}</div>
-                {this.renderField(field)}
-            </label>
-        ));
-    };
-
-    renderForm = () => {
-        if (!this.state.editIntegration) return '';
-        const header = this.state.editIntegration.name || 'New Integration';
-        const buttons = [
-            {
-                renderIcon: () => <Icon.X className="h-4 w-4" />,
-                text: 'Cancel',
-                className: 'btn-primary',
-                onClick: () => {
-                    this.update('EDIT_INTEGRATION', { editIntegration: null });
-                }
-            },
-            {
-                renderIcon: () => <Icon.Save className="h-4 w-4" />,
-                text: `${this.state.editIntegration.name ? 'Save' : 'Create'}`,
-                className: 'btn-success',
-                onClick: () => {
-                    this.formApi.submitForm();
-                }
-            }
-        ];
-        if (this.props.source !== 'authProviders') {
-            const testButton = {
-                renderIcon: () => <Icon.Check className="h-4 w-4" />,
-                text: 'Test',
-                className: 'btn-primary',
-                onClick: () => {
-                    this.onTest();
-                }
-            };
-            buttons.splice(1, 0, testButton);
-        }
-        const key = this.state.editIntegration
-            ? this.state.editIntegration.name
-            : 'new-integration';
-        const FormContent = props => {
-            this.formApi = props.formApi;
-            return (
-                <form onSubmit={props.formApi.submitForm} className="w-full p-4">
-                    <div>{this.renderFields()}</div>
-                </form>
-            );
-        };
-        return (
-            <div className="flex flex-1">
-                <Panel header={header} buttons={buttons}>
-                    <Form
-                        onSubmit={this.onSubmit}
-                        validateSuccess={this.validateSuccess}
-                        defaultValues={this.state.editIntegration}
-                        key={key}
-                    >
-                        <FormContent />
-                    </Form>
-                </Panel>
-            </div>
-        );
-    };
+    renderForm = () => (
+        <Form
+            initialValues={this.state.editIntegration}
+            source={this.props.source}
+            type={this.props.type}
+            onCancel={this.onFormCancel}
+            onSubmitRequest={this.onFormRequest}
+            onSubmitSuccess={this.onFormSubmitSuccess}
+            onSubmitError={this.onFormError}
+            onTestRequest={this.onFormRequest}
+            onTestSuccess={this.onFormTestSuccess}
+            onTestError={this.onFormError}
+        />
+    );
 
     renderConfirmationDialog = () => {
         const numSelectedRows = this.integrationTable
