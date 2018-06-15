@@ -44,6 +44,11 @@ func (e *Enricher) enrichWithScanner(deployment *v1.Deployment, scanner scannerT
 }
 
 func (e *Enricher) equalComponents(components1, components2 []*v1.ImageScanComponent) bool {
+	if components1 == nil && components2 == nil {
+		return true
+	} else if components1 == nil || components2 == nil {
+		return false
+	}
 	if len(components1) != len(components2) {
 		return false
 	}
@@ -97,6 +102,5 @@ func (e *Enricher) enrichImageWithScanner(image *v1.Image, scanner scannerTypes.
 		}
 		return true, nil
 	}
-
 	return false, nil
 }
