@@ -84,10 +84,14 @@ class Panel extends Component {
                 className={`side-panel flex flex-col bg-white border h-full border-t-0 border-base-300 ${
                     this.props.width
                 }`}
+                data-test-id="side-panel"
             >
                 <div className="shadow-underline font-bold bg-primary-100">
                     <div className="flex flex-row w-full">
-                        <div className="flex flex-1 text-base-600 uppercase items-center tracking-wide py-2 px-4">
+                        <div
+                            className="flex flex-1 text-base-600 uppercase items-center tracking-wide py-2 px-4"
+                            data-test-id="side-panel-header"
+                        >
                             {this.props.header}
                         </div>
                         <div className="flex items-center py-2 px-4">{this.renderButtons()}</div>

@@ -29,7 +29,7 @@ func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlert
 		}
 		time.Sleep(2 * time.Second)
 	}
-	require.Failf(t, "failed waiting for alerts", "Failed to have %d alerts", desired)
+	require.Fail(t, "Failed to have %d alerts", desired)
 }
 
 func verifyNoAlertForWhitelist(t *testing.T) {
@@ -37,16 +37,19 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 	require.NoError(t, err)
 
 	service := v1.NewPolicyServiceClient(conn)
-	qb := search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
-		Query: qb.Query(),
+	resp, err := service.ListPolicies(ctx, &v1.RawQuery{
+		Query: search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy).Query(),
 	})
 	cancel()
 	require.NoError(t, err)
 	require.Len(t, resp.Policies, 1)
 
-	latestPolicy := resp.Policies[0]
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	latestPolicy, err := service.GetPolicy(ctx, &v1.ResourceByID{
+		Id: resp.GetPolicies()[0].GetId(),
+	})
+
 	latestPolicy.Whitelists = []*v1.Whitelist{
 		{
 			Deployment: &v1.Whitelist_Deployment{
@@ -59,10 +62,8 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 	cancel()
 	require.NoError(t, err)
 
-	qb = search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName).AddString(search.PolicyName, latestPolicy.GetName()).AddBool(search.Stale, false)
-
+	qb := search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName).AddString(search.PolicyName, latestPolicy.GetName()).AddBool(search.Stale, false)
 	alertService := v1.NewAlertServiceClient(conn)
-
 	waitForAlert(t, alertService, &v1.ListAlertsRequest{
 		Query: qb.Query(),
 	}, 0)
@@ -73,16 +74,21 @@ func verifyAlertForWhitelistRemoval(t *testing.T) {
 	require.NoError(t, err)
 
 	service := v1.NewPolicyServiceClient(conn)
+
 	qb := search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
+	resp, err := service.ListPolicies(ctx, &v1.RawQuery{
 		Query: qb.Query(),
 	})
 	cancel()
 	require.NoError(t, err)
 	require.Len(t, resp.Policies, 1)
 
-	latestPolicy := resp.Policies[0]
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	latestPolicy, err := service.GetPolicy(ctx, &v1.ResourceByID{
+		Id: resp.GetPolicies()[0].GetId(),
+	})
+
 	latestPolicy.Whitelists = nil
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	_, err = service.PutPolicy(ctx, latestPolicy)
@@ -90,7 +96,6 @@ func verifyAlertForWhitelistRemoval(t *testing.T) {
 	require.NoError(t, err)
 
 	alertService := v1.NewAlertServiceClient(conn)
-
 	qb = search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName).AddString(search.PolicyName, latestPolicy.GetName()).AddBool(search.Stale, false)
 	waitForAlert(t, alertService, &v1.ListAlertsRequest{
 		Query: qb.Query(),

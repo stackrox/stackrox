@@ -92,8 +92,8 @@ class Table extends Component {
     rowCheckedHandler = row => event => {
         event.stopPropagation();
         const { checked } = this.state;
-        if (!checked.has(row)) checked.add(row);
-        else checked.delete(row);
+        if (!checked.has(row.id)) checked.add(row.id);
+        else checked.delete(row.id);
         this.setState({ checked });
         if (this.props.onRowChecked) this.props.onRowChecked(Array.from(this.state.checked));
     };
@@ -213,7 +213,7 @@ class Table extends Component {
                             type="checkbox"
                             className="h-4 w-4 cursor-pointer"
                             onClick={this.rowCheckedHandler(row)}
-                            checked={this.state.checked.has(row)}
+                            checked={this.state.checked.has(row.id)}
                         />
                     </td>
                 );

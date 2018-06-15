@@ -106,13 +106,17 @@ func addNotifierToPolicy(t *testing.T, conn *grpc.ClientConn) {
 
 	service := v1.NewPolicyServiceClient(conn)
 	qb := search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy)
-	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
+	resp, err := service.ListPolicies(ctx, &v1.RawQuery{
 		Query: qb.Query(),
 	})
 	require.NoError(t, err)
 	require.Len(t, resp.GetPolicies(), 1)
 
-	p := resp.GetPolicies()[0]
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	p, err := service.GetPolicy(ctx, &v1.ResourceByID{
+		Id: resp.GetPolicies()[0].GetId(),
+	})
+	cancel()
 
 	p.Notifiers = append(p.Notifiers, notifierConfig.GetId())
 
@@ -148,16 +152,19 @@ func teardownNginxLatestTagDeployment(t *testing.T) {
 
 func verifyPolicyHasNoNotifier(t *testing.T, conn *grpc.ClientConn) {
 	service := v1.NewPolicyServiceClient(conn)
-	qb := search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
-		Query: qb.Query(),
+	resp, err := service.ListPolicies(ctx, &v1.RawQuery{
+		Query: search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy).Query(),
 	})
 	cancel()
 	require.NoError(t, err)
 	require.Len(t, resp.GetPolicies(), 1)
 
-	p := resp.GetPolicies()[0]
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	p, err := service.GetPolicy(ctx, &v1.ResourceByID{
+		Id: resp.GetPolicies()[0].GetId(),
+	})
+	cancel()
 
 	assert.Empty(t, p.GetNotifiers())
 }
@@ -169,7 +176,6 @@ func verifyAlertsForLatestTag(t *testing.T, alert *v1.Alert) {
 	service := v1.NewAlertServiceClient(conn)
 
 	qb := search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName).AddString(search.PolicyName, expectedLatestTagPolicy).AddBool(search.Stale, false)
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	alerts, err := service.ListAlerts(ctx, &v1.ListAlertsRequest{
 		Query: qb.Query(),

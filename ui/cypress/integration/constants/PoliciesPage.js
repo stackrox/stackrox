@@ -22,7 +22,10 @@ export const selectors = {
             table: '.alert-preview table'
         }
     },
-    searchInput: '.Select-input > input'
+    searchInput: '.Select-input > input',
+    sidePanel: '[data-test-id="side-panel"]',
+    sidePanelHeader: '[data-test-id="side-panel-header"]',
+    tableFirstRow: 'table tr.cursor-pointer:first'
 };
 
 export const text = {

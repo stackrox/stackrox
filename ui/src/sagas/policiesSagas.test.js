@@ -101,6 +101,20 @@ describe('Policies Sagas', () => {
             .silentRun();
     });
 
+    it('should fetch policy details on Policies page with policy selected', () => {
+        const policyId = '12345';
+        const fetchMock = jest.fn().mockReturnValueOnce({ response: policy });
+
+        return expectSaga(saga)
+            .provide([
+                [select(selectors.getPoliciesSearchOptions), []],
+                [call(service.fetchPolicy, policyId), dynamic(fetchMock)]
+            ])
+            .put(actions.fetchPolicy.success(policy))
+            .dispatch(createLocationChange(`/main/policies/${policyId}`))
+            .silentRun();
+    });
+
     it('should reassess policies and show toast', () =>
         expectSaga(saga)
             .provide([[call(service.reassessPolicies), {}]])
@@ -109,11 +123,23 @@ describe('Policies Sagas', () => {
             .dispatch({ type: types.REASSESS_POLICIES })
             .silentRun());
 
+    it('should delete policies', () =>
+        expectSaga(saga)
+            .provide([
+                [select(selectors.getPoliciesSearchOptions), []],
+                [call(service.deletePolicies), ['12345', '6789']]
+            ])
+            .dispatch({ type: types.DELETE_POLICIES })
+            .silentRun());
+
     it('should update given policy', () => {
         const saveMock = jest.fn().mockReturnValueOnce({});
 
         return expectSaga(saga)
-            .provide([[call(service.savePolicy, policy), dynamic(saveMock)]])
+            .provide([
+                [select(selectors.getPoliciesSearchOptions), []],
+                [call(service.savePolicy, policy), dynamic(saveMock)]
+            ])
             .dispatch({ type: types.UPDATE_POLICY, policy })
             .silentRun()
             .then(() => {
@@ -125,7 +151,10 @@ describe('Policies Sagas', () => {
         const createMock = jest.fn().mockReturnValueOnce({ data: policy });
 
         return expectSaga(saga)
-            .provide([[call(service.createPolicy, policy), dynamic(createMock)]])
+            .provide([
+                [select(selectors.getPoliciesSearchOptions), []],
+                [call(service.createPolicy, policy), dynamic(createMock)]
+            ])
             .put(actions.setPolicyWizardState({ current: '', isNew: false }))
             .put(push(`/main/policies/${policy.id}`))
             .dispatch({
@@ -142,7 +171,10 @@ describe('Policies Sagas', () => {
         const saveMock = jest.fn().mockReturnValueOnce({ data: policy });
 
         return expectSaga(saga)
-            .provide([[call(service.savePolicy, policy), dynamic(saveMock)]])
+            .provide([
+                [select(selectors.getPoliciesSearchOptions), []],
+                [call(service.savePolicy, policy), dynamic(saveMock)]
+            ])
             .put(actions.setPolicyWizardState({ current: '', isNew: false }))
             .dispatch({
                 type: types.SET_POLICY_WIZARD_STATE,

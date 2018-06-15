@@ -7,7 +7,7 @@ import { actions, types } from 'reducers/policies';
 import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
-import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
+import { takeEveryNewlyMatchedLocation, takeEveryLocation } from 'utils/sagaEffects';
 
 export function* getPolicies(filters) {
     try {
@@ -15,6 +15,16 @@ export function* getPolicies(filters) {
         yield put(actions.fetchPolicies.success(result.response));
     } catch (error) {
         yield put(actions.fetchPolicies.failure(error));
+    }
+}
+
+export function* getPolicy(policyId) {
+    yield put(actions.fetchPolicy.request());
+    try {
+        const result = yield call(service.fetchPolicy, policyId);
+        yield put(actions.fetchPolicy.success(result.response));
+    } catch (error) {
+        yield put(actions.fetchPolicy.failure(error));
     }
 }
 
@@ -44,6 +54,7 @@ function* createPolicy(policy) {
         const { data } = yield call(service.createPolicy, policy);
         yield put(actions.setPolicyWizardState({ current: '', isNew: false }));
         yield put(push(`/main/policies/${data.id}`));
+        yield fork(filterPoliciesPageBySearch);
     } catch (error) {
         console.error(error);
         if (error.response) {
@@ -58,7 +69,7 @@ function* savePolicy(policy) {
     try {
         yield call(service.savePolicy, policy);
         yield put(actions.setPolicyWizardState({ current: '', isNew: false }));
-        yield fork(getPolicies);
+        yield fork(filterPoliciesPageBySearch);
     } catch (error) {
         console.error(error);
         if (error.response) {
@@ -69,10 +80,19 @@ function* savePolicy(policy) {
     }
 }
 
+function* deletePolicies({ policyIds }) {
+    try {
+        yield call(service.deletePolicies, policyIds);
+        yield fork(filterPoliciesPageBySearch);
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 function* updatePolicy(action) {
     try {
         yield call(service.savePolicy, action.policy);
-        yield fork(getPolicies);
+        yield fork(filterPoliciesPageBySearch);
     } catch (error) {
         console.error(error);
         if (error.response) {
@@ -119,12 +139,10 @@ export function* loadPoliciesPage() {
     yield all([fork(filterPoliciesPageBySearch), fork(getPolicyCategories)]);
 }
 
-export function* watchFetchRequest() {
-    while (true) {
-        const action = yield take(types.FETCH_POLICIES.REQUEST);
-        if (action.type === types.FETCH_POLICIES.REQUEST) {
-            yield fork(filterPoliciesPageBySearch);
-        }
+export function* loadPolicy({ match }) {
+    const { policyId } = match.params;
+    if (policyId) {
+        yield fork(getPolicy, policyId);
     }
 }
 
@@ -138,6 +156,19 @@ function* watchUpdateRequest() {
 
 function* watchReassessPolicies() {
     yield takeLatest(types.REASSESS_POLICIES, reassessPolicies);
+}
+
+export function* watchFetchRequest() {
+    while (true) {
+        const action = yield take(types.FETCH_POLICIES.REQUEST);
+        if (action.type === types.FETCH_POLICIES.REQUEST) {
+            yield fork(filterPoliciesPageBySearch);
+        }
+    }
+}
+
+function* watchDeletePolicies() {
+    yield takeLatest(types.DELETE_POLICIES, deletePolicies);
 }
 
 function* watchWizardState() {
@@ -162,10 +193,12 @@ function* watchWizardState() {
 export default function* policies() {
     yield all([
         takeEveryNewlyMatchedLocation(policiesPath, loadPoliciesPage),
+        takeEveryLocation(policiesPath, loadPolicy),
         takeEveryNewlyMatchedLocation(violationsPath, loadViolationsPage),
         fork(watchFetchRequest),
         fork(watchWizardState),
         fork(watchReassessPolicies),
+        fork(watchDeletePolicies),
         fork(watchUpdateRequest),
         fork(watchPoliciesSearchOptions)
     ]);

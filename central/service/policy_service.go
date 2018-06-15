@@ -90,15 +90,29 @@ func (s *PolicyService) GetPolicy(ctx context.Context, request *v1.ResourceByID)
 	return policy, nil
 }
 
-// GetPolicies retrieves all policies according to the request.
-func (s *PolicyService) GetPolicies(ctx context.Context, request *v1.RawQuery) (*v1.PoliciesResponse, error) {
-	resp := new(v1.PoliciesResponse)
+func convertPoliciesToListPolicies(policies []*v1.Policy) []*v1.ListPolicy {
+	listPolicies := make([]*v1.ListPolicy, 0, len(policies))
+	for _, p := range policies {
+		listPolicies = append(listPolicies, &v1.ListPolicy{
+			Id:          p.GetId(),
+			Name:        p.GetName(),
+			Description: p.GetDescription(),
+			Severity:    p.GetSeverity(),
+			Disabled:    p.GetDisabled(),
+		})
+	}
+	return listPolicies
+}
+
+// ListPolicies retrieves all policies in ListPolicy form according to the request.
+func (s *PolicyService) ListPolicies(ctx context.Context, request *v1.RawQuery) (*v1.ListPoliciesResponse, error) {
+	resp := new(v1.ListPoliciesResponse)
 	if request.GetQuery() == "" {
 		policies, err := s.policies.GetPolicies()
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
-		resp.Policies = policies
+		resp.Policies = convertPoliciesToListPolicies(policies)
 	} else {
 		parsedQuery, err := search.ParseRawQuery(request.GetQuery())
 		if err != nil {
@@ -108,7 +122,7 @@ func (s *PolicyService) GetPolicies(ctx context.Context, request *v1.RawQuery) (
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
-		resp.Policies = policies
+		resp.Policies = convertPoliciesToListPolicies(policies)
 	}
 	sort.SliceStable(resp.Policies, func(i, j int) bool { return resp.Policies[i].GetName() < resp.Policies[j].GetName() })
 	return resp, nil

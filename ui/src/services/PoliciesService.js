@@ -66,6 +66,16 @@ export function deletePolicy(policyId) {
 }
 
 /**
+ * Deletes a list of policies by policyId.
+ *
+ * @param {string[]} policyIds
+ * @returns {Promise<AxiosResponse, Error>}
+ */
+export function deletePolicies(policyIds = []) {
+    return Promise.all(policyIds.map(policyId => deletePolicy(policyId)));
+}
+
+/**
  * Saves a given policy.
  *
  * @param {!object} policy

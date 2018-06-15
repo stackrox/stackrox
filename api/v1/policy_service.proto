@@ -50,10 +50,6 @@ message Policy {
     repeated Whitelist whitelists               = 15;
 }
 
-message PoliciesResponse {
-    repeated Policy policies = 1;
-}
-
 message DryRunResponse {
     message Alert {
         string deployment          = 1;
@@ -80,6 +76,18 @@ message DeletePolicyCategoryRequest {
     string category = 1;
 }
 
+message ListPolicy {
+    string   id          = 1;
+    string   name        = 2;
+    string   description = 3;
+    Severity severity    = 4;
+    bool     disabled    = 5;
+}
+
+message ListPoliciesResponse {
+    repeated ListPolicy policies = 1;
+}
+
 service PolicyService {
 
     rpc GetPolicy (ResourceByID) returns (Policy) {
@@ -88,7 +96,7 @@ service PolicyService {
         };
     }
 
-    rpc GetPolicies (RawQuery) returns (PoliciesResponse) {
+    rpc ListPolicies (RawQuery) returns (ListPoliciesResponse) {
         option (google.api.http) = {
             get: "/v1/policies"
         };

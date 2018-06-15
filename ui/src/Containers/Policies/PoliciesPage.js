@@ -3,16 +3,16 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { selectors } from 'reducers';
-import { actions as policyActions } from 'reducers/policies';
+import { actions as policyActions, types } from 'reducers/policies';
 import { createSelector, createStructuredSelector } from 'reselect';
 
 import { formValueSelector } from 'redux-form';
 import * as Icon from 'react-feather';
 import Dialog from 'Components/Dialog';
+import Loader from 'Components/Loader';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import { formatPolicyFields, getPolicyFormDataKeys } from 'Containers/Policies/policyFormUtils';
-import { deletePolicy } from 'services/PoliciesService';
 import PolicyDetails from 'Containers/Policies/PolicyDetails';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
@@ -27,8 +27,8 @@ class PoliciesPage extends Component {
         selectedPolicy: PropTypes.shape({
             id: PropTypes.string.isRequired
         }),
-        fetchPolicies: PropTypes.func.isRequired,
         reassessPolicies: PropTypes.func.isRequired,
+        deletePolicies: PropTypes.func.isRequired,
         updatePolicy: PropTypes.func.isRequired,
         formData: PropTypes.shape({}),
         wizardState: PropTypes.shape({
@@ -46,12 +46,14 @@ class PoliciesPage extends Component {
         setSearchOptions: PropTypes.func.isRequired,
         setSearchModifiers: PropTypes.func.isRequired,
         setSearchSuggestions: PropTypes.func.isRequired,
-        isViewFiltered: PropTypes.bool.isRequired
+        isViewFiltered: PropTypes.bool.isRequired,
+        isFetchingPolicy: PropTypes.bool
     };
 
     static defaultProps = {
         selectedPolicy: null,
-        formData: {}
+        formData: {},
+        isFetchingPolicy: false
     };
 
     constructor(props) {
@@ -152,20 +154,17 @@ class PoliciesPage extends Component {
     };
 
     deletePolicies = () => {
-        const promises = [];
-        this.policyTable.getSelectedRows().forEach(row => {
+        const policyIds = [];
+        this.policyTable.getSelectedRows().forEach(rowId => {
             // close the view panel if that policy is being deleted
-            if (row.id === this.props.match.params.id) {
+            if (rowId === this.props.match.params.policyId) {
                 this.setSelectedPolicy();
             }
-            const promise = deletePolicy(row.id);
-            promises.push(promise);
+            policyIds.push(rowId);
         });
-        Promise.all(promises).then(() => {
-            this.policyTable.clearSelectedRows();
-            this.hideConfirmationDialog();
-            this.props.fetchPolicies();
-        });
+        this.policyTable.clearSelectedRows();
+        this.hideConfirmationDialog();
+        this.props.deletePolicies(policyIds);
     };
 
     addPolicy = () => {
@@ -278,20 +277,23 @@ class PoliciesPage extends Component {
         );
     };
 
+    renderSidePanelView = selectedPolicy => {
+        if (this.props.isFetchingPolicy) return <Loader />;
+
+        if (this.props.wizardState.current === '')
+            return <PolicyDetails policyId={selectedPolicy.id} />;
+        return <PolicyCreationWizard />;
+    };
+
     renderSidePanel = () => {
         const { selectedPolicy } = this.props;
         if (!this.props.wizardState.current && !selectedPolicy) return null;
-
-        const editingPolicy = Object.assign({}, selectedPolicy, this.props.wizardState.policy);
+        const editingPolicy = Object.assign({}, this.props.wizardState.policy, selectedPolicy);
         const header = editingPolicy ? editingPolicy.name : '';
         const buttons = this.getPanelButtons();
         return (
             <Panel header={header} buttons={buttons} onClose={this.setSelectedPolicy} width="w-2/3">
-                {this.props.wizardState.current === '' ? (
-                    <PolicyDetails policyId={selectedPolicy.id} />
-                ) : (
-                    <PolicyCreationWizard />
-                )}
+                {this.renderSidePanelView(selectedPolicy)}
             </Panel>
         );
     };
@@ -353,22 +355,23 @@ const getSelectedPolicy = (state, props) => {
 };
 
 const mapStateToProps = createStructuredSelector({
-    policies: state => Object.values(selectors.getPoliciesById(state)),
+    policies: selectors.getFilteredPolicies,
     selectedPolicy: getSelectedPolicy,
     formData: getFormData,
     wizardState: selectors.getPolicyWizardState,
     searchOptions: selectors.getPoliciesSearchOptions,
     searchModifiers: selectors.getPoliciesSearchModifiers,
     searchSuggestions: selectors.getPoliciesSearchSuggestions,
-    isViewFiltered
+    isViewFiltered,
+    isFetchingPolicy: state => selectors.getLoadingStatus(state, types.FETCH_POLICY)
 });
 
 const mapDispatchToProps = {
     setSearchOptions: policyActions.setPoliciesSearchOptions,
     setSearchModifiers: policyActions.setPoliciesSearchModifiers,
     setSearchSuggestions: policyActions.setPoliciesSearchSuggestions,
-    fetchPolicies: policyActions.fetchPolicies.request,
     reassessPolicies: policyActions.reassessPolicies,
+    deletePolicies: policyActions.deletePolicies,
     updatePolicy: policyActions.updatePolicy,
     setWizardState: policyActions.setPolicyWizardState
 };

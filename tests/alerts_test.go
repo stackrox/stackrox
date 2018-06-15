@@ -218,14 +218,18 @@ func addPolicyClusterScope(t *testing.T, policyName string) {
 	policyService := v1.NewPolicyServiceClient(conn)
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	policyResp, err := policyService.GetPolicies(ctx, &v1.RawQuery{
+	policyResp, err := policyService.ListPolicies(ctx, &v1.RawQuery{
 		Query: search.NewQueryBuilder().AddString(search.PolicyName, policyName).Query(),
 	})
 	cancel()
 	require.NoError(t, err)
 	require.Len(t, policyResp.GetPolicies(), 1)
 
-	policy := policyResp.GetPolicies()[0]
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	policy, err := policyService.GetPolicy(ctx, &v1.ResourceByID{
+		Id: policyResp.GetPolicies()[0].GetId(),
+	})
+
 	policy.Scope = append(policy.Scope, &v1.Scope{
 		Cluster: clusterID,
 	})
@@ -240,16 +244,18 @@ func revertPolicyScopeChange(t *testing.T, policyName string) {
 	require.NoError(t, err)
 
 	policyService := v1.NewPolicyServiceClient(conn)
-	qb := search.NewQueryBuilder().AddString(search.PolicyName, policyName)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	policyResp, err := policyService.GetPolicies(ctx, &v1.RawQuery{
-		Query: qb.Query(),
+	policyResp, err := policyService.ListPolicies(ctx, &v1.RawQuery{
+		Query: search.NewQueryBuilder().AddString(search.PolicyName, policyName).Query(),
 	})
 	cancel()
 	require.NoError(t, err)
 	require.Len(t, policyResp.GetPolicies(), 1)
 
-	policy := policyResp.GetPolicies()[0]
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	policy, err := policyService.GetPolicy(ctx, &v1.ResourceByID{
+		Id: policyResp.GetPolicies()[0].GetId(),
+	})
 	policy.Scope = policy.Scope[:len(policy.GetScope())-1]
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
@@ -264,8 +270,7 @@ func verifyStaleAlerts(t *testing.T) {
 
 	service := v1.NewAlertServiceClient(conn)
 	request := alertRequestOptions
-	qb := search.NewQueryBuilder().AddBool(search.Stale, true)
-	request.Query = qb.Query()
+	request.Query = search.NewQueryBuilder().AddBool(search.Stale, true).Query()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	alerts, err := service.ListAlerts(ctx, &request)
@@ -284,6 +289,7 @@ func verifyAlerts(t *testing.T, service v1.AlertServiceClient) {
 	alertMap := make(map[string]*v1.ListAlert)
 	for _, a := range alerts.GetAlerts() {
 		if n := a.GetPolicy().GetName(); n == expectedLatestTagPolicy || n == expectedPort22Policy || n == expectedSecretEnvPolicy {
+
 			alertMap[a.GetId()] = a
 		}
 	}

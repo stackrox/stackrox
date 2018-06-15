@@ -41,6 +41,6 @@ export function testIntegration(source, data) {
  *
  * @returns {Promise<Object, Error>}
  */
-export function deleteIntegration(source, data) {
-    return axios.delete(`${sourceMap[source]}/${data.id}`);
+export function deleteIntegration(source, id) {
+    return axios.delete(`${sourceMap[source]}/${id}`);
 }

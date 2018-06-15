@@ -40,6 +40,12 @@ var (
 	logger = logging.LoggerForModule()
 )
 
+func getPolicy(service v1.PolicyServiceClient, id string) (*v1.Policy, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	return service.GetPolicy(ctx, &v1.ResourceByID{Id: id})
+}
+
 func TestDefaultPolicies(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
@@ -52,16 +58,18 @@ func TestDefaultPolicies(t *testing.T) {
 	require.NoError(t, err)
 
 	service := v1.NewPolicyServiceClient(conn)
-	resp, err := service.GetPolicies(ctx, &v1.RawQuery{})
+	listResp, err := service.ListPolicies(ctx, &v1.RawQuery{})
 	require.NoError(t, err)
 
 	policiesMap := make(map[string]*v1.Policy)
-	for _, p := range resp.GetPolicies() {
-		p.Id = ""
-		policiesMap[p.GetName()] = p
+	for _, listPolicy := range listResp.GetPolicies() {
+		policy, err := getPolicy(service, listPolicy.GetId())
+		assert.NoError(t, err)
+		policy.Id = ""
+		policiesMap[listPolicy.GetName()] = policy
 	}
 
-	assert.Equal(t, len(defaultPolicies), len(resp.GetPolicies()))
+	assert.Equal(t, len(defaultPolicies), len(policiesMap))
 
 	for _, p := range defaultPolicies {
 		assert.Equal(t, p, policiesMap[p.GetName()])
@@ -122,15 +130,14 @@ func verifyReadPolicy(t *testing.T, service v1.PolicyServiceClient) {
 	assert.Equal(t, policy, getResp)
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	qb := search.NewQueryBuilder().AddString(search.PolicyName, policy.GetName())
-	getManyResp, err := service.GetPolicies(ctx, &v1.RawQuery{
-		Query: qb.Query(),
+	getManyResp, err := service.ListPolicies(ctx, &v1.RawQuery{
+		Query: search.NewQueryBuilder().AddString(search.PolicyName, policy.GetName()).Query(),
 	})
 	cancel()
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(getManyResp.GetPolicies()))
 	if len(getManyResp.GetPolicies()) > 0 {
-		assert.Equal(t, policy, getManyResp.GetPolicies()[0])
+		assert.Equal(t, policy.GetId(), getManyResp.GetPolicies()[0].GetId())
 	}
 }
 

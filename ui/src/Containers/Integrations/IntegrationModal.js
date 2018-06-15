@@ -95,11 +95,11 @@ class IntegrationModal extends Component {
 
     deleteIntegration = () => {
         const promises = [];
-        this.integrationTable.getSelectedRows().forEach(data => {
+        this.integrationTable.getSelectedRows().forEach(id => {
             const promise =
                 this.props.source === 'authProviders'
-                    ? AuthService.deleteAuthProvider(data.id)
-                    : deleteIntegration(this.props.source, data);
+                    ? AuthService.deleteAuthProvider(id)
+                    : deleteIntegration(this.props.source, id);
             promises.push(promise);
         });
         Promise.all(promises).then(() => {

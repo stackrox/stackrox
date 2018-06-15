@@ -51,16 +51,16 @@ class ClustersModal extends Component {
      */
     deleteCluster = () => {
         const promises = [];
-        this.clusterTable.getSelectedRows().forEach(obj => {
+        this.clusterTable.getSelectedRows().forEach(id => {
             // close the view panel if that policy is being deleted
             if (
                 this.props.editingCluster &&
                 this.props.editingCluster.id &&
-                obj.id === this.props.editingCluster.id
+                id === this.props.editingCluster.id
             ) {
                 this.props.editCluster(null);
             }
-            const promise = deleteCluster(obj.id);
+            const promise = deleteCluster(id);
             promises.push(promise);
         });
         Promise.all(promises).then(() => {

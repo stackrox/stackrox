@@ -48,6 +48,12 @@ describe('Policies page', () => {
         cy.get(selectors.configure).should('have.class', 'bg-primary-600');
     });
 
+    it('should open side panel and check for the policy name', () => {
+        cy.get(selectors.tableFirstRow).click();
+        cy.get(selectors.sidePanel).should('exist');
+        cy.get(selectors.sidePanelHeader).contains('30-Day Scan Age');
+    });
+
     it('should allow updating policy name', () => {
         const updatePolicyName = typeStr => {
             cy.get(selectors.editPolicyButton).click();
@@ -58,14 +64,14 @@ describe('Policies page', () => {
         const secretSuffix = ':secretSuffix:';
         const deleteSuffix = '{backspace}'.repeat(secretSuffix.length);
 
-        cy.get('table tr.cursor-pointer:first').click();
+        cy.get(selectors.tableFirstRow).click();
         updatePolicyName(secretSuffix);
         cy.get(`table tr td:contains("${secretSuffix}")`);
         updatePolicyName(deleteSuffix); // revert back
     });
 
     it('should open the preview panel to view policy dry run', () => {
-        cy.get('table tr.cursor-pointer:first').click();
+        cy.get(selectors.tableFirstRow).click();
         cy.get(selectors.editPolicyButton).click();
         cy.get(selectors.nextButton).click();
         cy.get('.warn-message').should('exist');

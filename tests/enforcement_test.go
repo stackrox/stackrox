@@ -41,11 +41,10 @@ func verifyDeploymentScaledToZero(t *testing.T) {
 	require.NoError(t, err)
 
 	service := v1.NewDeploymentServiceClient(conn)
+	qb := search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName)
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
-
-	qb := search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName)
 
 	for range ticker.C {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -80,7 +79,6 @@ func verifyAlertWithEnforcement(t *testing.T) {
 	require.NoError(t, err)
 
 	service := v1.NewAlertServiceClient(conn)
-
 	qb := search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName).AddString(search.PolicyName, expectedLatestTagPolicy).AddBool(search.Stale, false)
 	alerts, err := service.ListAlerts(ctx, &v1.ListAlertsRequest{
 		Query: qb.Query(),
@@ -110,18 +108,19 @@ func teardownTestEnforcement(t *testing.T) {
 
 func togglePolicyEnforcement(t *testing.T, conn *grpc.ClientConn, enable bool) {
 	service := v1.NewPolicyServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-
 	qb := search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy)
-
-	resp, err := service.GetPolicies(ctx, &v1.RawQuery{
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	resp, err := service.ListPolicies(ctx, &v1.RawQuery{
 		Query: qb.Query(),
 	})
 	cancel()
 	require.NoError(t, err)
 	require.Len(t, resp.GetPolicies(), 1)
 
-	p := resp.GetPolicies()[0]
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	p, err := service.GetPolicy(ctx, &v1.ResourceByID{
+		Id: resp.GetPolicies()[0].GetId(),
+	})
 
 	if enable {
 		p.Enforcement = v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT
