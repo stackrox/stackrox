@@ -170,6 +170,21 @@ func (s *PolicyService) PutPolicy(ctx context.Context, request *v1.Policy) (*emp
 	return &empty.Empty{}, nil
 }
 
+// PatchPolicy patches a current policy in the system.
+func (s *PolicyService) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRequest) (*empty.Empty, error) {
+	policy, exists, err := s.policies.GetPolicy(request.GetId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if !exists {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("Policy with id '%s' not found", request.GetId()))
+	}
+	if request.SetDisabled != nil {
+		policy.Disabled = request.GetDisabled()
+	}
+	return s.PutPolicy(ctx, policy)
+}
+
 // DeletePolicy deletes an policy from the system.
 func (s *PolicyService) DeletePolicy(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
 	if request.GetId() == "" {

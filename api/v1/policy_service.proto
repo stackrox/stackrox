@@ -88,6 +88,13 @@ message ListPoliciesResponse {
     repeated ListPolicy policies = 1;
 }
 
+message PatchPolicyRequest {
+    string id         = 1;
+    oneof set_disabled {
+        bool disabled = 2;
+    }
+}
+
 service PolicyService {
 
     rpc GetPolicy (ResourceByID) returns (Policy) {
@@ -112,6 +119,13 @@ service PolicyService {
     rpc PutPolicy (Policy) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             put: "/v1/policies/{id}"
+            body: "*"
+        };
+    }
+
+    rpc PatchPolicy (PatchPolicyRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            patch: "/v1/policies/{id}"
             body: "*"
         };
     }
