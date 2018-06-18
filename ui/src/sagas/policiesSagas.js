@@ -90,7 +90,8 @@ function* deletePolicies({ policyIds }) {
         yield call(service.deletePolicies, policyIds);
         yield fork(filterPoliciesPageBySearch);
     } catch (error) {
-        console.error(error);
+        // TODO-ivan: use global user notification system to display the problem to the user as well
+        Raven.captureException(error);
     }
 }
 
