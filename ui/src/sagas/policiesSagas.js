@@ -1,5 +1,6 @@
 import { all, take, call, fork, put, takeLatest, select } from 'redux-saga/effects';
 import { push } from 'react-router-redux';
+import Raven from 'raven-js';
 
 import { policiesPath, violationsPath } from 'routePaths';
 import * as service from 'services/PoliciesService';
@@ -56,10 +57,12 @@ function* createPolicy(policy) {
         yield put(push(`/main/policies/${data.id}`));
         yield fork(filterPoliciesPageBySearch);
     } catch (error) {
-        console.error(error);
         if (error.response) {
             yield put(notificationActions.addNotification(error.response.data.error));
             yield put(notificationActions.removeOldestNotification());
+        } else {
+            // TODO-ivan: use global user notification system to display the problem to the user as well
+            Raven.captureException(error);
         }
         yield put(actions.setPolicyWizardState({ current: 'PREVIEW', policy }));
     }
@@ -71,10 +74,12 @@ function* savePolicy(policy) {
         yield put(actions.setPolicyWizardState({ current: '', isNew: false }));
         yield fork(filterPoliciesPageBySearch);
     } catch (error) {
-        console.error(error);
         if (error.response) {
             yield put(notificationActions.addNotification(error.response.data.error));
             yield put(notificationActions.removeOldestNotification());
+        } else {
+            // TODO-ivan: use global user notification system to display the problem to the user as well
+            Raven.captureException(error);
         }
         yield put(actions.setPolicyWizardState({ current: 'PREVIEW', policy }));
     }
@@ -94,10 +99,12 @@ function* updatePolicy(action) {
         yield call(service.savePolicy, action.policy);
         yield fork(filterPoliciesPageBySearch);
     } catch (error) {
-        console.error(error);
         if (error.response) {
             yield put(notificationActions.addNotification(error.response.data.error));
             yield put(notificationActions.removeOldestNotification());
+        } else {
+            // TODO-ivan: use global user notification system to display the problem to the user as well
+            Raven.captureException(error);
         }
     }
 }
@@ -108,10 +115,12 @@ function* reassessPolicies() {
         yield put(notificationActions.addNotification('Policies were reassessed'));
         yield put(notificationActions.removeOldestNotification());
     } catch (error) {
-        console.error(error);
         if (error.response) {
             yield put(notificationActions.addNotification(error.response.data.error));
             yield put(notificationActions.removeOldestNotification());
+        } else {
+            // TODO-ivan: use global user notification system to display the problem to the user as well
+            Raven.captureException(error);
         }
     }
 }
@@ -127,10 +136,12 @@ function* getDryRun(policy) {
             })
         );
     } catch (error) {
-        console.error(error);
         if (error.response) {
             yield put(notificationActions.addNotification(error.response.data.error));
             yield put(notificationActions.removeOldestNotification());
+        } else {
+            // TODO-ivan: use global user notification system to display the problem to the user as well
+            Raven.captureException(error);
         }
     }
 }

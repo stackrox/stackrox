@@ -1,16 +1,22 @@
 import { createStore, applyMiddleware, compose } from 'redux';
 import { routerMiddleware } from 'react-router-redux';
 import createSagaMiddleware from 'redux-saga';
+import createRavenMiddleware from 'raven-for-redux';
+import Raven from 'raven-js';
 
 import rootSaga from 'sagas';
 import rootReducer from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 import * as AuthService from 'services/AuthService';
 
-const sagaMiddleware = createSagaMiddleware();
+const sagaMiddleware = createSagaMiddleware({
+    onError: error => Raven.captureException(error)
+});
+
+const ravenMiddleware = createRavenMiddleware(Raven);
 
 export default function configureStore(initialState = {}, history) {
-    const middlewares = [sagaMiddleware, routerMiddleware(history)];
+    const middlewares = [sagaMiddleware, routerMiddleware(history), ravenMiddleware];
     if (process.env.NODE_ENV !== 'production') {
         // disable ESLint for next line since we need to make dev only dependency import
         // eslint-disable-next-line

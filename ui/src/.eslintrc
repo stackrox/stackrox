@@ -32,6 +32,9 @@
             "specialLink": [ "to", "hrefLeft", "hrefRight" ],
             "aspects": [ "noHref", "invalidHref", "preferButton" ]
         }],
+
+        // disallow use of console in favor of raven-js for error capturing
+        "no-console": "error",
         
         // TODO-ivan: rules below are to be removed after fixing all violations in the code
         "react/no-array-index-key": "warn",

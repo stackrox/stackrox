@@ -1,5 +1,6 @@
 import axios from 'axios';
 import saveAs from 'file-saver';
+import Raven from 'raven-js';
 
 /**
  * Common download service to download different types of files.
@@ -27,6 +28,6 @@ export default function DownloadService({ url, data }) {
             }
         })
         .catch(error => {
-            console.error(error);
+            Raven.captureException(error);
         });
 }

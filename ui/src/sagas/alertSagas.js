@@ -77,7 +77,6 @@ function* getGlobalAlertCounts(filters) {
         const filteredResult = filterCountsResultByClusterSearchOption(result, filters);
         yield put(actions.fetchGlobalAlertCounts.success(filteredResult.response));
     } catch (error) {
-        console.error(error);
         yield put(actions.fetchGlobalAlertCounts.failure(error));
     }
 }
@@ -104,7 +103,6 @@ function* getAlertCountsByCluster(filters) {
         const filteredResult = filterCountsResultByClusterSearchOption(result, filters);
         yield put(actions.fetchAlertCountsByCluster.success(filteredResult.response));
     } catch (error) {
-        console.error(error);
         yield put(actions.fetchAlertCountsByCluster.failure(error));
     }
 }
@@ -118,7 +116,6 @@ function* getAlertsByTimeseries(filters) {
         const filteredResult = filterTimeseriesResultsByClusterSearchOptions(result, filters);
         yield put(actions.fetchAlertsByTimeseries.success(filteredResult.response));
     } catch (error) {
-        console.error(error);
         yield put(actions.fetchAlertsByTimeseries.failure(error));
     }
 }
@@ -173,7 +170,6 @@ function* pollAlerts() {
             yield all([call(filterViolationsPageBySearch)]);
             failsCount = 0;
         } catch (err) {
-            console.error('Error during alerts polling', err);
             failsCount += 1;
             if (failsCount === 2) {
                 // complain when retry didn't help

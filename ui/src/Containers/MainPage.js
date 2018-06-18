@@ -30,6 +30,7 @@ import RiskPage from 'Containers/Risk/RiskPage';
 import TopNavigation from 'Containers/Navigation/TopNavigation';
 import LeftNavigation from 'Containers/Navigation/LeftNavigation';
 import SearchModal from 'Containers/Search/SearchModal';
+import ErrorBoundary from 'Containers/ErrorBoundary';
 
 class MainPage extends Component {
     static propTypes = {
@@ -50,16 +51,18 @@ class MainPage extends Component {
 
     renderRouter = () => (
         <section className="flex-auto overflow-auto">
-            <Switch>
-                <ProtectedRoute path={dashboardPath} component={DashboardPage} />
-                <ProtectedRoute path={violationsPath} component={ViolationsPage} />
-                <ProtectedRoute path={compliancePath} component={CompliancePage} />
-                <ProtectedRoute path={integrationsPath} component={IntegrationsPage} />
-                <ProtectedRoute path={policiesPath} component={PoliciesPage} />
-                <ProtectedRoute path={riskPath} component={RiskPage} />
-                <ProtectedRoute path={imagesPath} component={ImagesPage} />
-                <Redirect from={mainPath} to={dashboardPath} />
-            </Switch>
+            <ErrorBoundary>
+                <Switch>
+                    <ProtectedRoute path={dashboardPath} component={DashboardPage} />
+                    <ProtectedRoute path={violationsPath} component={ViolationsPage} />
+                    <ProtectedRoute path={compliancePath} component={CompliancePage} />
+                    <ProtectedRoute path={integrationsPath} component={IntegrationsPage} />
+                    <ProtectedRoute path={policiesPath} component={PoliciesPage} />
+                    <ProtectedRoute path={riskPath} component={RiskPage} />
+                    <ProtectedRoute path={imagesPath} component={ImagesPage} />
+                    <Redirect from={mainPath} to={dashboardPath} />
+                </Switch>
+            </ErrorBoundary>
         </section>
     );
 
