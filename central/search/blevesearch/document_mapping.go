@@ -91,7 +91,7 @@ var deploymentDocumentMap = func() *mapping.DocumentMapping {
 	documentMap := fieldsToDocumentMapping(search.DeploymentOptionsMap)
 	addDefaultTypeField(documentMap)
 
-	documentMap.Properties["deployment"].AddSubDocumentMapping("containers", imageDocumentMap)
+	documentMap.Properties["deployment"].Properties["containers"].AddSubDocumentMapping("image", imageDocumentMap.Properties["image"])
 	return documentMap
 }()
 
