@@ -22,10 +22,15 @@ export const selectors = {
             table: '.alert-preview table'
         }
     },
+    policyDetailsPanel: {
+        enabledValueDiv: 'div.text-primary-500:contains("Enabled") + div'
+    },
     searchInput: '.Select-input > input',
     sidePanel: '[data-test-id="side-panel"]',
     sidePanelHeader: '[data-test-id="side-panel-header"]',
-    tableFirstRow: 'table tr.cursor-pointer:first'
+    tableFirstRow: 'table tr.cursor-pointer:first',
+    enableDisableButton: 'td > button',
+    enabledPolicyButtonColorClass: 'text-success-500'
 };
 
 export const text = {

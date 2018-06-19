@@ -19,6 +19,7 @@ export const types = {
     FETCH_POLICY_CATEGORIES: createFetchingActionTypes('policies/FETCH_POLICY_CATEGORIES'),
     SET_POLICY_WIZARD_STATE: 'policies/SET_POLICY_WIZARD_STATE',
     UPDATE_POLICY: 'policies/UPDATE_POLICY',
+    UPDATE_POLICY_DISABLED_STATE: 'policies/UPDATE_POLICY_DISABLED_STATE',
     REASSESS_POLICIES: 'policies/REASSESS_POLICIES',
     DELETE_POLICIES: 'policies/DELETE_POLICIES',
     ...searchTypes('policies')
@@ -34,6 +35,11 @@ export const actions = {
     reassessPolicies: () => ({ type: types.REASSESS_POLICIES }),
     deletePolicies: policyIds => ({ type: types.DELETE_POLICIES, policyIds }),
     updatePolicy: policy => ({ type: types.UPDATE_POLICY, policy }),
+    updatePolicyDisabledState: ({ policyId, disabled }) => ({
+        type: types.UPDATE_POLICY_DISABLED_STATE,
+        policyId,
+        disabled
+    }),
     ...getSearchActions('policies')
 };
 

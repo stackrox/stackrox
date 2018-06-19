@@ -1,4 +1,4 @@
-import { all, take, call, fork, put, takeLatest, select } from 'redux-saga/effects';
+import { all, take, takeEvery, call, fork, put, takeLatest, select } from 'redux-saga/effects';
 import { push } from 'react-router-redux';
 import Raven from 'raven-js';
 
@@ -202,6 +202,16 @@ function* watchWizardState() {
     }
 }
 
+function* updatePolicyDisabledState({ policyId, disabled }) {
+    try {
+        yield call(service.updatePolicyDisabledState, policyId, disabled);
+        yield fork(filterPoliciesPageBySearch);
+    } catch (error) {
+        // TODO-ivan: use global user notification system to display the problem to the user as well
+        Raven.captureException(error);
+    }
+}
+
 export default function* policies() {
     yield all([
         takeEveryNewlyMatchedLocation(policiesPath, loadPoliciesPage),
@@ -212,6 +222,7 @@ export default function* policies() {
         fork(watchReassessPolicies),
         fork(watchDeletePolicies),
         fork(watchUpdateRequest),
-        fork(watchPoliciesSearchOptions)
+        fork(watchPoliciesSearchOptions),
+        takeEvery(types.UPDATE_POLICY_DISABLED_STATE, updatePolicyDisabledState)
     ]);
 }

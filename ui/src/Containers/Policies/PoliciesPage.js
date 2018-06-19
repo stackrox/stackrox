@@ -29,7 +29,7 @@ class PoliciesPage extends Component {
         }),
         reassessPolicies: PropTypes.func.isRequired,
         deletePolicies: PropTypes.func.isRequired,
-        updatePolicy: PropTypes.func.isRequired,
+        updatePolicyDisabledState: PropTypes.func.isRequired,
         formData: PropTypes.shape({}),
         wizardState: PropTypes.shape({
             current: PropTypes.string,
@@ -173,7 +173,7 @@ class PoliciesPage extends Component {
     };
 
     toggleEnabledDisabledPolicy = policy => {
-        this.props.updatePolicy({ ...policy, disabled: !policy.disabled });
+        this.props.updatePolicyDisabledState({ policyId: policy.id, disabled: !policy.disabled });
     };
 
     showConfirmationDialog = () => {
@@ -372,7 +372,7 @@ const mapDispatchToProps = {
     setSearchSuggestions: policyActions.setPoliciesSearchSuggestions,
     reassessPolicies: policyActions.reassessPolicies,
     deletePolicies: policyActions.deletePolicies,
-    updatePolicy: policyActions.updatePolicy,
+    updatePolicyDisabledState: policyActions.updatePolicyDisabledState,
     setWizardState: policyActions.setPolicyWizardState
 };
 

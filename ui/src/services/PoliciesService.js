@@ -123,3 +123,14 @@ export async function whitelistDeployment(policyId, deploymentName) {
     policy.whitelists = [...policy.whitelists, deploymentEntry];
     return axios.put(`${baseUrl}/${policy.id}`, policy);
 }
+
+/**
+ * Send request to enable / disable policy with a given ID.
+ *
+ * @param {!string} policyId
+ * @param {!boolean} disabled if policy should be disabled
+ * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
+ */
+export function updatePolicyDisabledState(policyId, disabled) {
+    return axios.patch(`${baseUrl}/${policyId}`, { disabled });
+}

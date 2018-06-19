@@ -1,4 +1,4 @@
-import { selectors, text } from './constants/PoliciesPage';
+import { selectors, text, url } from './constants/PoliciesPage';
 import * as api from './constants/apiEndpoints';
 
 describe('Policies page', () => {
@@ -6,11 +6,15 @@ describe('Policies page', () => {
         cy.server();
         cy.fixture('search/metadataOptions.json').as('metadataOptionsJson');
         cy.route('GET', api.search.options, '@metadataOptionsJson').as('metadataOptions');
-
-        cy.visit('/');
+        cy.visit(url);
         cy.wait('@metadataOptions');
+    });
+
+    it('should navigate using the left nav', () => {
+        cy.visit('/');
         cy.get(selectors.configure).click();
         cy.get(selectors.navLink).click();
+        cy.location('pathname').should('eq', url);
     });
 
     it('should display and send a query using the search input', () => {
@@ -91,5 +95,30 @@ describe('Policies page', () => {
         cy.get(`${selectors.form.disabled} div[role="option"]:contains("No")`).click();
         cy.get(selectors.nextButton).click();
         cy.get(selectors.policyPreview.message).should('have.text', text.policyPreview.message);
+    });
+
+    it('should allow disable/enable policy from the policies table', () => {
+        const firstRowEnableDisableButton = `${selectors.tableFirstRow} ${
+            selectors.enableDisableButton
+        }`;
+        // initiatilize to have enabled policy
+        cy.get(`${firstRowEnableDisableButton} svg`).then(svg => {
+            if (!svg.hasClass(selectors.enabledPolicyButtonColorClass))
+                cy.get(firstRowEnableDisableButton).click();
+        });
+
+        cy.get(firstRowEnableDisableButton).click(); // disable policy
+        cy
+            .get(`${firstRowEnableDisableButton} svg`)
+            .should('not.have.class', selectors.enabledPolicyButtonColorClass);
+
+        cy.get(selectors.tableFirstRow).click();
+        cy.get(selectors.policyDetailsPanel.enabledValueDiv).should('contain', 'No');
+
+        cy.get(firstRowEnableDisableButton).click(); // enable policy
+        cy.get(selectors.policyDetailsPanel.enabledValueDiv).should('contain', 'Yes');
+        cy
+            .get(`${firstRowEnableDisableButton} svg`)
+            .should('have.class', selectors.enabledPolicyButtonColorClass);
     });
 });
