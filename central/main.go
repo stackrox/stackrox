@@ -119,25 +119,32 @@ func (c *central) startGRPCServer() {
 
 	c.server = pkgGRPC.NewAPI(config)
 
-	c.server.Register(service.NewAlertService(datastore.GetAlertDataStore()))
-	c.server.Register(service.NewAuthService())
-	c.server.Register(service.NewAuthProviderService(datastore.GetAuthProviderStorage(), userAuth))
-	c.server.Register(service.NewBenchmarkService(datastore.GetBenchmarkDataStore()))
-	c.server.Register(service.NewBenchmarkScansService(datastore.GetBenchmarkScansStorage(), datastore.GetBenchmarkDataStore(), datastore.GetClusterDataStore()))
-	c.server.Register(service.NewBenchmarkScheduleService(datastore.GetBenchmarkDataStore(), datastore.GetBenchmarkScheduleStorage()))
-	c.server.Register(service.NewBenchmarkResultsService(datastore.GetBenchmarkScansStorage(), datastore.GetBenchmarkScheduleStorage(), c.notificationProcessor))
-	c.server.Register(service.NewBenchmarkTriggerService(datastore.GetBenchmarkDataStore(), datastore.GetBenchmarkTriggerStorage()))
-	c.server.Register(clusterService)
-	c.server.Register(service.NewDeploymentService(datastore.GetDeploymentDataStore(), datastore.GetMultiplierStorage(), c.enricher))
-	c.server.Register(service.NewImageService(datastore.GetImageDataStore()))
-	c.server.Register(service.NewImageIntegrationService(datastore.GetImageIntegrationStorage(), c.detector))
-	c.server.Register(service.NewNotifierService(datastore.GetNotifierStorage(), c.notificationProcessor, c.detector))
-	c.server.Register(service.NewPingService())
-	c.server.Register(service.NewPolicyService(datastore.GetPolicyDataStore(), datastore.GetClusterDataStore(), datastore.GetDeploymentDataStore(), datastore.GetNotifierStorage(), c.detector))
-	c.server.Register(service.NewSearchService(datastore.GetAlertDataStore(), datastore.GetDeploymentDataStore(), datastore.GetImageDataStore(), datastore.GetPolicyDataStore()))
-	c.server.Register(idService)
-	c.server.Register(sensorevent.NewService(c.detector, datastore.GetDeploymentEventStorage(), datastore.GetImageDataStore(), datastore.GetDeploymentDataStore(), datastore.GetClusterDataStore(), c.scorer))
-	c.server.Register(service.NewSummaryService(datastore.GetAlertDataStore(), datastore.GetClusterDataStore(), datastore.GetDeploymentDataStore(), datastore.GetImageDataStore()))
+	services := []pkgGRPC.APIService{
+		service.NewAlertService(datastore.GetAlertDataStore()),
+		service.NewAuthService(),
+		service.NewAuthProviderService(datastore.GetAuthProviderStorage(), userAuth),
+		service.NewBenchmarkService(datastore.GetBenchmarkDataStore()),
+		service.NewBenchmarkScansService(datastore.GetBenchmarkScansStorage(), datastore.GetBenchmarkDataStore(), datastore.GetClusterDataStore()),
+		service.NewBenchmarkScheduleService(datastore.GetBenchmarkDataStore(), datastore.GetBenchmarkScheduleStorage()),
+		service.NewBenchmarkResultsService(datastore.GetBenchmarkScansStorage(), datastore.GetBenchmarkScheduleStorage(), c.notificationProcessor),
+		service.NewBenchmarkTriggerService(datastore.GetBenchmarkDataStore(), datastore.GetBenchmarkTriggerStorage()),
+		clusterService,
+		service.NewDeploymentService(datastore.GetDeploymentDataStore(), datastore.GetMultiplierStorage(), c.enricher),
+		service.NewDNRIntegrationService(datastore.GetDNRIntegrationStorage(), datastore.GetClusterDataStore()),
+		idService,
+		service.NewImageService(datastore.GetImageDataStore()),
+		service.NewImageIntegrationService(datastore.GetImageIntegrationStorage(), c.detector),
+		service.NewNotifierService(datastore.GetNotifierStorage(), c.notificationProcessor, c.detector),
+		service.NewPingService(),
+		service.NewPolicyService(datastore.GetPolicyDataStore(), datastore.GetClusterDataStore(), datastore.GetDeploymentDataStore(), datastore.GetNotifierStorage(), c.detector),
+		service.NewSearchService(datastore.GetAlertDataStore(), datastore.GetDeploymentDataStore(), datastore.GetImageDataStore(), datastore.GetPolicyDataStore()),
+		sensorevent.NewService(c.detector, datastore.GetDeploymentEventStorage(), datastore.GetImageDataStore(), datastore.GetDeploymentDataStore(), datastore.GetClusterDataStore(), c.scorer),
+		service.NewSummaryService(datastore.GetAlertDataStore(), datastore.GetClusterDataStore(), datastore.GetDeploymentDataStore(), datastore.GetImageDataStore()),
+	}
+
+	for _, svc := range services {
+		c.server.Register(svc)
+	}
 
 	c.server.Start()
 }

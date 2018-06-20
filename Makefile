@@ -70,6 +70,7 @@ API_SERVICES += benchmark_schedule_service
 API_SERVICES += benchmark_service
 API_SERVICES += benchmark_trigger_service
 API_SERVICES += cluster_service
+API_SERVICES += dnr_integration_service
 API_SERVICES += image_integration_service
 API_SERVICES += deployment_service
 API_SERVICES += image_service

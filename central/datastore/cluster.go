@@ -15,11 +15,13 @@ type ClusterDataStore interface {
 }
 
 // NewClusterDataStore provides a new instance of ClusterDataStore
-func NewClusterDataStore(clusters db.ClusterStorage, deployments DeploymentDataStore, alerts AlertDataStore) ClusterDataStore {
+func NewClusterDataStore(clusters db.ClusterStorage, deployments DeploymentDataStore, alerts AlertDataStore,
+	dnrIntegrations db.DNRIntegrationStorage) ClusterDataStore {
 	return &clusterDataStoreImpl{
-		ClusterStorage: clusters,
-		deployments:    deployments,
-		alerts:         alerts,
+		ClusterStorage:  clusters,
+		deployments:     deployments,
+		alerts:          alerts,
+		dnrIntegrations: dnrIntegrations,
 	}
 }
 
@@ -27,11 +29,37 @@ type clusterDataStoreImpl struct {
 	// Default to storage implementations.
 	db.ClusterStorage
 
-	deployments DeploymentDataStore
-	alerts      AlertDataStore
+	deployments     DeploymentDataStore
+	alerts          AlertDataStore
+	dnrIntegrations db.DNRIntegrationStorage
 }
 
-// RemoveCluster removes an cluster from the storage and the indexer
+// If we remove a cluster, we remove the DNR integration from it, if there is one.
+func (ds *clusterDataStoreImpl) removeDNRIntegrationIfExists(clusterID string) error {
+	dnrIntegrations, err := ds.dnrIntegrations.GetDNRIntegrations(&v1.GetDNRIntegrationsRequest{
+		ClusterId: clusterID,
+	})
+	if err != nil {
+		return fmt.Errorf("fetching DNR integrations: %s", err)
+	}
+
+	// There should be either 0 or 1 DNR integrations, but this is not the place to assert that.
+	// We'll just log a message here, and remove all the integrations.
+	if len(dnrIntegrations) > 1 {
+		logger.Errorf("Found more than 1 D&R integration for cluster %s: %#v",
+			clusterID, dnrIntegrations)
+	}
+
+	for _, integration := range dnrIntegrations {
+		err = ds.dnrIntegrations.RemoveDNRIntegration(integration.GetId())
+		if err != nil {
+			return fmt.Errorf("removing DNR integration %s: %s", integration.GetId(), err)
+		}
+	}
+	return nil
+}
+
+// RemoveCluster removes a cluster from the storage and the indexer
 func (ds *clusterDataStoreImpl) RemoveCluster(id string) error {
 	// Fetch the cluster an confirm it exists.
 	cluster, exists, err := ds.ClusterStorage.GetCluster(id)
@@ -71,6 +99,11 @@ func (ds *clusterDataStoreImpl) RemoveCluster(id string) error {
 	}
 	if len(errors) > 0 {
 		return errorhelpers.FormatErrors("unable to complete cluster removal", errors)
+	}
+
+	err = ds.removeDNRIntegrationIfExists(id)
+	if err != nil {
+		return err
 	}
 
 	return ds.ClusterStorage.RemoveCluster(id)

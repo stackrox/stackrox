@@ -78,7 +78,7 @@ func Init() error {
 	if err != nil {
 		return err
 	}
-	clusters := NewClusterDataStore(inmem, deployments, alerts)
+	clusters := NewClusterDataStore(inmem, deployments, alerts, inmem.DNRIntegrationStorage)
 	if err != nil {
 		return err
 	}
@@ -219,6 +219,13 @@ func GetDeploymentEventStorage() db.DeploymentEventStorage {
 	mutex.RLock()
 	defer mutex.RUnlock()
 	return registry.inmem.(db.DeploymentEventStorage)
+}
+
+// GetDNRIntegrationStorage provides storage functionality for integrations with Detect & Respond.
+func GetDNRIntegrationStorage() db.DNRIntegrationStorage {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return registry.inmem.(db.DNRIntegrationStorage)
 }
 
 // GetImageIntegrationStorage provide storage functionality for image integrations.

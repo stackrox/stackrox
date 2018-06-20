@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 )
@@ -13,10 +14,15 @@ type ErrNotFound struct {
 }
 
 func (e ErrNotFound) Error() string {
+	sb := strings.Builder{}
 	if e.Type != "" {
-		return fmt.Sprintf("%s '%s' not found", e.Type, e.ID)
+		sb.WriteString(fmt.Sprintf("%s ", e.Type))
 	}
-	return fmt.Sprintf("'%s' not found", e.ID)
+	if e.ID != "" {
+		sb.WriteString(fmt.Sprintf("'%s' ", e.ID))
+	}
+	sb.WriteString("not found")
+	return sb.String()
 }
 
 // Status implements the StatusError interface.

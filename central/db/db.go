@@ -22,6 +22,7 @@ type Storage interface {
 	ClusterStorage
 	DeploymentStorage
 	DeploymentEventStorage
+	DNRIntegrationStorage
 	ImageIntegrationStorage
 	LogsStorage
 	PolicyStorage
@@ -112,6 +113,15 @@ type DeploymentEventStorage interface {
 	AddDeploymentEvent(deployment *v1.DeploymentEvent) (uint64, error)
 	UpdateDeploymentEvent(id uint64, deployment *v1.DeploymentEvent) error
 	RemoveDeploymentEvent(id uint64) error
+}
+
+// DNRIntegrationStorage provides storage functionality for the DNR integration
+type DNRIntegrationStorage interface {
+	GetDNRIntegration(id string) (*v1.DNRIntegration, bool, error)
+	GetDNRIntegrations(request *v1.GetDNRIntegrationsRequest) ([]*v1.DNRIntegration, error)
+	AddDNRIntegration(integration *v1.DNRIntegration) (string, error)
+	UpdateDNRIntegration(integration *v1.DNRIntegration) error
+	RemoveDNRIntegration(id string) error
 }
 
 // ImageIntegrationStorage provide storage functionality for image integrations.
