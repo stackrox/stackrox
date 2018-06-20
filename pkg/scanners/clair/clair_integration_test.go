@@ -5,6 +5,7 @@ package clair
 import (
 	"testing"
 
+	// This is needed to register Docker registries.
 	_ "bitbucket.org/stack-rox/apollo/pkg/registries/docker"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"

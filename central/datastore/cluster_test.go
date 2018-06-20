@@ -2,9 +2,8 @@ package datastore
 
 import (
 	"fmt"
-	"testing"
-
 	"strings"
+	"testing"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"

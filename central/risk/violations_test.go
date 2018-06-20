@@ -1,9 +1,8 @@
 package risk
 
 import (
-	"testing"
-
 	"fmt"
+	"testing"
 
 	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"

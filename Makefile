@@ -10,7 +10,7 @@ all: deps style test image
 ## Style ##
 ###########
 .PHONY: style
-style: fmt imports lint vet ui-lint
+style: fmt imports lint vet blanks ui-lint
 
 .PHONY: ui-lint
 ui-lint:
@@ -52,6 +52,11 @@ lint:
 vet:
 	@echo "+ $@"
 	@$(BASE_DIR)/tools/go-vet.sh $(shell go list -e ./... | grep -v generated | grep -v vendor)
+
+.PHONY: blanks
+blanks:
+	@echo "+ $@"
+	@find . \( \( -name vendor -o -name generated \) -type d -prune \) -o \( -name \*.go -print0 \) | xargs -0 $(BASE_PATH)/tools/import_validate.py
 
 #####################################
 ## Generated Code and Dependencies ##

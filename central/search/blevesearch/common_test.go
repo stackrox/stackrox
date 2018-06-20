@@ -1,9 +1,8 @@
 package blevesearch
 
 import (
-	"testing"
-
 	"io/ioutil"
+	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/fixtures"

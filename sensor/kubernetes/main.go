@@ -7,6 +7,7 @@ import (
 	"syscall"
 	"time"
 
+	// This registers all registries and scanners.
 	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
 

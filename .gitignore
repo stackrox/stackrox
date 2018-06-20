@@ -38,5 +38,8 @@ BUILD.bazel
 # Mac OS hidden file
 .DS_Store
 
+# Vim swap files
+*.swp
+
 # Integration configs used in development
 /*.json

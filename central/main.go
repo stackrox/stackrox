@@ -8,6 +8,7 @@ import (
 	"runtime/debug"
 	"syscall"
 
+	// These imports are required to register things from the respective packages.
 	_ "bitbucket.org/stack-rox/apollo/pkg/authproviders/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"

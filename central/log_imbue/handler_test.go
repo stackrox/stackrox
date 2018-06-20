@@ -1,12 +1,11 @@
 package logimbue
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/central/db"
 	"github.com/stretchr/testify/mock"
