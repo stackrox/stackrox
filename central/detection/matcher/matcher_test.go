@@ -23,7 +23,7 @@ func TestMatch(t *testing.T) {
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
 				Categories: []string{"Image Assurance"},
-				ImagePolicy: &v1.ImagePolicy{
+				Fields: &v1.PolicyFields{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
 					},
@@ -52,13 +52,11 @@ func TestMatch(t *testing.T) {
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
 				Categories: []string{"Image Assurance", "Privileges Capabilities"},
-				ImagePolicy: &v1.ImagePolicy{
+				Fields: &v1.PolicyFields{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
 					},
-				},
-				PrivilegePolicy: &v1.PrivilegePolicy{
-					SetPrivileged: &v1.PrivilegePolicy_Privileged{
+					SetPrivileged: &v1.PolicyFields_Privileged{
 						Privileged: true,
 					},
 				},
@@ -86,13 +84,11 @@ func TestMatch(t *testing.T) {
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
 				Categories: []string{"Image Assurance", "Privileges Capabilities"},
-				ImagePolicy: &v1.ImagePolicy{
+				Fields: &v1.PolicyFields{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
 					},
-				},
-				PrivilegePolicy: &v1.PrivilegePolicy{
-					SetPrivileged: &v1.PrivilegePolicy_Privileged{
+					SetPrivileged: &v1.PolicyFields_Privileged{
 						Privileged: true,
 					},
 				},
@@ -131,13 +127,11 @@ func TestMatch(t *testing.T) {
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
 				Categories: []string{"Image Assurance", "Privileges Capabilities"},
-				ImagePolicy: &v1.ImagePolicy{
+				Fields: &v1.PolicyFields{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
 					},
-				},
-				PrivilegePolicy: &v1.PrivilegePolicy{
-					SetPrivileged: &v1.PrivilegePolicy_Privileged{
+					SetPrivileged: &v1.PolicyFields_Privileged{
 						Privileged: true,
 					},
 				},
@@ -176,13 +170,11 @@ func TestMatch(t *testing.T) {
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
 				Categories: []string{"Image Assurance", "Privileges Capabilities"},
-				ImagePolicy: &v1.ImagePolicy{
+				Fields: &v1.PolicyFields{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
 					},
-				},
-				PrivilegePolicy: &v1.PrivilegePolicy{
-					SetPrivileged: &v1.PrivilegePolicy_Privileged{
+					SetPrivileged: &v1.PolicyFields_Privileged{
 						Privileged: true,
 					},
 				},
@@ -221,7 +213,7 @@ func TestMatch(t *testing.T) {
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
 				Categories: []string{"Image Assurance"},
-				ImagePolicy: &v1.ImagePolicy{
+				Fields: &v1.PolicyFields{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
 					},
@@ -266,7 +258,7 @@ func TestMatch(t *testing.T) {
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
 				Categories: []string{"Image Assurance"},
-				ImagePolicy: &v1.ImagePolicy{
+				Fields: &v1.PolicyFields{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
 					},
@@ -315,7 +307,7 @@ func TestMatch(t *testing.T) {
 				Name:       "latest",
 				Severity:   v1.Severity_LOW_SEVERITY,
 				Categories: []string{"Image Assurance"},
-				ImagePolicy: &v1.ImagePolicy{
+				Fields: &v1.PolicyFields{
 					ImageName: &v1.ImageNamePolicy{
 						Tag: "latest",
 					},

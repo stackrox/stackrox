@@ -24,6 +24,8 @@ func GetAlert() *v1.Alert {
 			Categories:  []string{"Image Assurance", "Privileges Capabilities", "Container Configuration"},
 			Description: "Alert if the container contains vulnerabilities",
 			Severity:    v1.Severity_LOW_SEVERITY,
+			Rationale:   "This is the rationale",
+			Remediation: "This is the remediation",
 			Scope: []*v1.Scope{
 				{
 					Cluster:   "prod cluster",
@@ -34,14 +36,14 @@ func GetAlert() *v1.Alert {
 					},
 				},
 			},
-			ImagePolicy: &v1.ImagePolicy{
+			Fields: &v1.PolicyFields{
 				ImageName: &v1.ImageNamePolicy{
 					Registry:  "docker.io",
 					Namespace: "stackrox",
 					Repo:      "nginx",
 					Tag:       "1.10",
 				},
-				SetImageAgeDays: &v1.ImagePolicy_ImageAgeDays{
+				SetImageAgeDays: &v1.PolicyFields_ImageAgeDays{
 					ImageAgeDays: 30,
 				},
 				LineRule: &v1.DockerfileLineRuleField{
@@ -54,16 +56,14 @@ func GetAlert() *v1.Alert {
 					Value:  5,
 				},
 				Cve: "CVE-1234",
-				Component: &v1.ImagePolicy_Component{
+				Component: &v1.Component{
 					Name:    "berkeley*",
 					Version: ".*",
 				},
-				SetScanAgeDays: &v1.ImagePolicy_ScanAgeDays{
+				SetScanAgeDays: &v1.PolicyFields_ScanAgeDays{
 					ScanAgeDays: 10,
 				},
-			},
-			ConfigurationPolicy: &v1.ConfigurationPolicy{
-				Env: &v1.ConfigurationPolicy_KeyValuePolicy{
+				Env: &v1.KeyValuePolicy{
 					Key:   "key",
 					Value: "value",
 				},
@@ -71,24 +71,22 @@ func GetAlert() *v1.Alert {
 				Args:      "arg1 arg2 arg3",
 				Directory: "/directory",
 				User:      "root",
-				VolumePolicy: &v1.ConfigurationPolicy_VolumePolicy{
+				VolumePolicy: &v1.VolumePolicy{
 					Name:        "name",
 					Source:      "10.0.0.1/export",
 					Destination: "/etc/network",
-					SetReadOnly: &v1.ConfigurationPolicy_VolumePolicy_ReadOnly{
+					SetReadOnly: &v1.VolumePolicy_ReadOnly{
 						ReadOnly: true,
 					},
 					Type: "nfs",
 				},
-				PortPolicy: &v1.ConfigurationPolicy_PortPolicy{
+				PortPolicy: &v1.PortPolicy{
 					Port:     8080,
 					Protocol: "tcp",
 				},
-			},
-			PrivilegePolicy: &v1.PrivilegePolicy{
 				AddCapabilities:  []string{"ADD1", "ADD2"},
 				DropCapabilities: []string{"DROP1", "DROP2"},
-				SetPrivileged: &v1.PrivilegePolicy_Privileged{
+				SetPrivileged: &v1.PolicyFields_Privileged{
 					Privileged: true,
 				},
 			},

@@ -3,7 +3,7 @@
   "description": "Alert on deployments with images using tag 'latest'",
   "severity": "LOW_SEVERITY",
   "categories": ["Image Assurance"],
-  "image_policy": {
+  "fields": {
     "image_name": {
       "tag": "latest"
     }

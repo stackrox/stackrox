@@ -5,19 +5,9 @@ import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { selectors } from 'reducers';
 import { createSelector, createStructuredSelector } from 'reselect';
-import flatten from 'flat';
-import omitBy from 'lodash/omitBy';
-import difference from 'lodash/difference';
-import pick from 'lodash/pick';
 import fieldsMap from 'Containers/Policies/policyViewDescriptors';
-
-const categoryGroupsMap = {
-    imagePolicy: 'Image Assurance',
-    configurationPolicy: 'Container Configuration',
-    privilegePolicy: 'Privileges and Capabilities'
-};
-
-const categories = Object.keys(categoryGroupsMap);
+import policyFormFields from 'Containers/Policies/policyCreationFormDescriptor';
+import { removeEmptyFields } from 'Containers/Policies/policyFormUtils';
 
 class PolicyDetails extends Component {
     static propTypes = {
@@ -36,16 +26,6 @@ class PolicyDetails extends Component {
         policy: null
     };
 
-    removeEmptyFields = obj => {
-        const flattenedObj = flatten(obj);
-        const omittedObj = omitBy(
-            flattenedObj,
-            value => value === null || value === undefined || value === '' || value === []
-        );
-        const newObj = flatten.unflatten(omittedObj);
-        return newObj;
-    };
-
     updateSelectedPolicy = policy => {
         const urlSuffix = policy && policy.id ? `/${policy.id}` : '';
         this.props.history.push({
@@ -54,22 +34,21 @@ class PolicyDetails extends Component {
     };
 
     renderFields = () => {
-        const policy = this.removeEmptyFields(this.props.policy);
+        const { policy } = this.props;
         const fields = Object.keys(policy);
-        const policyDetails = difference(fields, categories);
-        if (!policyDetails) return '';
+        if (!fields) return '';
         return (
-            <div className="px-3 py-4">
+            <div className="px-3 py-4 border-b border-base-300">
                 <div className="bg-white border border-base-200 shadow">
                     <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">
                         Policy Details
                     </div>
                     <div className="h-full p-3">
-                        {policyDetails.map(field => {
+                        {fields.map(field => {
                             if (!fieldsMap[field]) return '';
                             const { label } = fieldsMap[field];
                             const value = fieldsMap[field].formatValue(policy[field], this.props);
-                            if (!value || (Array.isArray(value) && !value.length)) return '';
+                            if (!value) return '';
                             return (
                                 <div className="mb-4" key={field}>
                                     <div className="py-2 text-primary-500">{label}</div>
@@ -83,37 +62,32 @@ class PolicyDetails extends Component {
         );
     };
 
-    renderFieldsByPolicyCategories = () => {
-        const policy = this.removeEmptyFields(this.props.policy);
-        const policyCategoryFields = Object.keys(pick(policy, categories));
-        return policyCategoryFields.map(category => {
-            const policyCategoryLabel = categoryGroupsMap[category];
-            const fields = Object.keys(policy[category]);
-            if (!fields.length) return '';
-            return (
-                <div className="px-3 py-4 border-b border-base-300" key={category}>
-                    <div className="bg-white border border-base-200 shadow">
-                        <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">
-                            {policyCategoryLabel}
-                        </div>
-                        <div className="h-full p-3">
-                            {fields.map(field => {
-                                if (!fieldsMap[field]) return '';
-                                const { label } = fieldsMap[field];
-                                const value = fieldsMap[field].formatValue(policy[category][field]);
-                                if (!value || (Array.isArray(value) && !value.length)) return '';
-                                return (
-                                    <div className="mb-4" key={field}>
-                                        <div className="py-2 text-primary-500">{label}</div>
-                                        <div className="flex">{value}</div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+    renderPolicyConfigurationFields = () => {
+        const { policy } = this.props;
+        const fieldKeys = Object.keys(policy.fields);
+        if (!fieldKeys.length) return '';
+        return (
+            <div className="px-3 py-4">
+                <div className="bg-white border border-base-200 shadow">
+                    <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">
+                        {policyFormFields.policyConfiguration.header}
+                    </div>
+                    <div className="h-full p-3">
+                        {fieldKeys.map(key => {
+                            if (!fieldsMap[key]) return '';
+                            const { label } = fieldsMap[key];
+                            const value = fieldsMap[key].formatValue(policy.fields[key]);
+                            return (
+                                <div className="mb-4" key={key}>
+                                    <div className="py-2 text-primary-500">{label}</div>
+                                    <div className="flex">{value}</div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
-            );
-        });
+            </div>
+        );
     };
 
     render() {
@@ -123,7 +97,7 @@ class PolicyDetails extends Component {
         return (
             <div className="flex flex-1 flex-col bg-base-100">
                 {this.renderFields()}
-                {this.renderFieldsByPolicyCategories()}
+                {this.renderPolicyConfigurationFields()}
             </div>
         );
     }
@@ -134,7 +108,7 @@ const getPolicyId = (state, props) => props.policyId;
 const getPolicy = createSelector(
     [selectors.getPoliciesById, getPolicyId],
     (policiesById, policyId) => {
-        const selectedPolicy = policiesById[policyId];
+        const selectedPolicy = removeEmptyFields(policiesById[policyId]);
         if (!selectedPolicy) return null;
         return selectedPolicy;
     }

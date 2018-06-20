@@ -9,7 +9,7 @@ import (
 
 type matchFunc func(*v1.Deployment, *v1.Container) ([]*v1.Alert_Violation, bool)
 
-func (p *compiledConfigurationPolicy) Match(deployment *v1.Deployment, container *v1.Container) (output []*v1.Alert_Violation) {
+func (p *compiledConfigurationPolicy) Match(deployment *v1.Deployment, container *v1.Container) (output []*v1.Alert_Violation, valid bool) {
 	matchFunctions := []matchFunc{
 		p.matchConfigs,
 		p.Env.match,
@@ -24,7 +24,11 @@ func (p *compiledConfigurationPolicy) Match(deployment *v1.Deployment, container
 
 	// Every sub-policy that exists must match and return violations for the policy to match.
 	for _, f := range matchFunctions {
-		if vs, exists = f(deployment, container); exists && len(vs) == 0 {
+		vs, exists = f(deployment, container)
+		if exists {
+			valid = true
+		}
+		if exists && len(vs) == 0 {
 			return
 		}
 		violations = append(violations, vs...)

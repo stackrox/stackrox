@@ -64,7 +64,12 @@ export function removeEmptyFields(obj) {
     const flattenedObj = flatten(obj);
     const omittedObj = omitBy(
         flattenedObj,
-        value => value === null || value === undefined || value === '' || value === []
+        value =>
+            value === null ||
+            value === undefined ||
+            value === '' ||
+            value === [] ||
+            (Array.isArray(value) && !value.length)
     );
     const newObj = flatten.unflatten(omittedObj);
     return newObj;
@@ -92,10 +97,8 @@ export function mapDescriptorToKey(descriptor) {
 }
 
 export function getPolicyFormDataKeys() {
-    const { policyDetails, imagePolicy, configurationPolicy, privilegePolicy } = policyFormFields;
+    const { policyDetails, policyConfiguration } = policyFormFields;
     const policyDetailsKeys = mapDescriptorToKey(policyDetails.descriptor);
-    const imagePolicyKeys = mapDescriptorToKey(imagePolicy.descriptor);
-    const configurationPolicyKeys = mapDescriptorToKey(configurationPolicy.descriptor);
-    const privilegePolicyKeys = mapDescriptorToKey(privilegePolicy.descriptor);
-    return policyDetailsKeys.concat(imagePolicyKeys, configurationPolicyKeys, privilegePolicyKeys);
+    const policyConfigurationKeys = mapDescriptorToKey(policyConfiguration.descriptor);
+    return [...policyDetailsKeys, ...policyConfigurationKeys];
 }

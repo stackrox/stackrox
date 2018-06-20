@@ -3,7 +3,7 @@
   "description": "Alert on deployments with nginx:1.10 image from 'docker.io'",
   "severity": "MEDIUM_SEVERITY",
   "categories": ["Image Assurance"],
-  "image_policy": {
+  "fields": {
     "image_name": {
       "registry": "docker.io",
       "repo": "nginx",

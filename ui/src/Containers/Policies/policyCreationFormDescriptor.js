@@ -102,10 +102,10 @@ const policyDetailsFormDescriptor = [
     }
 ];
 
-const imagePolicyFormDescriptor = [
+const policyConfigurationDescriptor = [
     {
         label: 'Image Registry',
-        jsonpath: 'imagePolicy.imageName.registry',
+        jsonpath: 'fields.imageName.registry',
         type: 'text',
         placeholder: 'docker.io',
         required: false,
@@ -113,14 +113,14 @@ const imagePolicyFormDescriptor = [
     },
     {
         label: 'Image Namespace',
-        jsonpath: 'imagePolicy.imageName.namespace',
+        jsonpath: 'fields.imageName.namespace',
         type: 'text',
         required: false,
         default: false
     },
     {
         label: 'Image Repository',
-        jsonpath: 'imagePolicy.imageName.repo',
+        jsonpath: 'fields.imageName.repo',
         type: 'text',
         placeholder: 'nginx',
         required: false,
@@ -128,7 +128,7 @@ const imagePolicyFormDescriptor = [
     },
     {
         label: 'Image Tag',
-        jsonpath: 'imagePolicy.imageName.tag',
+        jsonpath: 'fields.imageName.tag',
         type: 'text',
         placeholder: 'latest',
         required: false,
@@ -136,31 +136,27 @@ const imagePolicyFormDescriptor = [
     },
     {
         label: 'Days since Image created',
-        jsonpath: 'imagePolicy.imageAgeDays',
+        jsonpath: 'fields.imageAgeDays',
         type: 'number',
         placeholder: '1 Day Ago',
-        min: 1,
-        max: Number.MAX_SAFE_INTEGER,
         required: false,
         default: false
     },
     {
         label: 'Days since Image scanned',
-        jsonpath: 'imagePolicy.scanAgeDays',
+        jsonpath: 'fields.scanAgeDays',
         type: 'number',
         placeholder: '1 Day Ago',
-        min: 1,
-        max: Number.MAX_SAFE_INTEGER,
         required: false,
         default: false
     },
     {
         label: 'Dockerfile Line',
-        jsonpath: 'imagePolicy.lineRule',
+        jsonpath: 'fields.lineRule',
         type: 'group',
         jsonpaths: [
             {
-                jsonpath: 'imagePolicy.lineRule.instruction',
+                jsonpath: 'fields.lineRule.instruction',
                 type: 'select',
                 options: [
                     { label: 'FROM', value: 'FROM' },
@@ -179,7 +175,7 @@ const imagePolicyFormDescriptor = [
                 ]
             },
             {
-                jsonpath: 'imagePolicy.lineRule.value',
+                jsonpath: 'fields.lineRule.value',
                 type: 'text',
                 placeholder: '.*example.*'
             }
@@ -189,7 +185,7 @@ const imagePolicyFormDescriptor = [
     },
     {
         label: 'Image is NOT Scanned',
-        jsonpath: 'imagePolicy.scanExists',
+        jsonpath: 'fields.scanExists',
         type: 'select',
         options: [{ label: 'True', value: true }],
         required: false,
@@ -197,11 +193,11 @@ const imagePolicyFormDescriptor = [
     },
     {
         label: 'CVSS',
-        jsonpath: 'imagePolicy.cvss',
+        jsonpath: 'fields.cvss',
         type: 'group',
         jsonpaths: [
             {
-                jsonpath: 'imagePolicy.cvss.mathOp',
+                jsonpath: 'fields.cvss.mathOp',
                 type: 'select',
                 options: [
                     { label: 'Max score', value: 'MAX' },
@@ -210,7 +206,7 @@ const imagePolicyFormDescriptor = [
                 ]
             },
             {
-                jsonpath: 'imagePolicy.cvss.op',
+                jsonpath: 'fields.cvss.op',
                 type: 'select',
                 options: [
                     { label: 'Is greater than', value: 'GREATER_THAN' },
@@ -227,7 +223,7 @@ const imagePolicyFormDescriptor = [
                 ]
             },
             {
-                jsonpath: 'imagePolicy.cvss.value',
+                jsonpath: 'fields.cvss.value',
                 type: 'number',
                 placeholder: '0-10',
                 max: 10,
@@ -239,7 +235,7 @@ const imagePolicyFormDescriptor = [
     },
     {
         label: 'CVE',
-        jsonpath: 'imagePolicy.cve',
+        jsonpath: 'fields.cve',
         type: 'text',
         placeholder: 'CVE-2017-11882',
         required: false,
@@ -247,38 +243,35 @@ const imagePolicyFormDescriptor = [
     },
     {
         label: 'Component',
-        jsonpath: 'imagePolicy.component',
+        jsonpath: 'fields.component',
         type: 'group',
         jsonpaths: [
             {
-                jsonpath: 'imagePolicy.component.name',
+                jsonpath: 'fields.component.name',
                 type: 'text',
                 placeholder: '^example*'
             },
             {
-                jsonpath: 'imagePolicy.component.version',
+                jsonpath: 'fields.component.version',
                 type: 'text',
                 placeholder: '^v1.2.0$'
             }
         ],
         required: false,
         default: false
-    }
-];
-
-const configurationPolicyFormDescriptor = [
+    },
     {
         label: 'Environment',
-        jsonpath: 'configurationPolicy.env',
+        jsonpath: 'fields.env',
         type: 'group',
         jsonpaths: [
             {
-                jsonpath: 'configurationPolicy.env.key',
+                jsonpath: 'fields.env.key',
                 type: 'text',
                 placeholder: 'Key'
             },
             {
-                jsonpath: 'configurationPolicy.env.value',
+                jsonpath: 'fields.env.value',
                 type: 'text',
                 placeholder: 'Value'
             }
@@ -288,16 +281,16 @@ const configurationPolicyFormDescriptor = [
     },
     {
         label: 'Required Label',
-        jsonpath: 'configurationPolicy.requiredLabel',
+        jsonpath: 'fields.requiredLabel',
         type: 'group',
         jsonpaths: [
             {
-                jsonpath: 'configurationPolicy.requiredLabel.key',
+                jsonpath: 'fields.requiredLabel.key',
                 type: 'text',
                 placeholder: 'owner'
             },
             {
-                jsonpath: 'configurationPolicy.requiredLabel.value',
+                jsonpath: 'fields.requiredLabel.value',
                 type: 'text',
                 placeholder: '.*'
             }
@@ -307,16 +300,16 @@ const configurationPolicyFormDescriptor = [
     },
     {
         label: 'Required Annotation',
-        jsonpath: 'configurationPolicy.requiredAnnotation',
+        jsonpath: 'fields.requiredAnnotation',
         type: 'group',
         jsonpaths: [
             {
-                jsonpath: 'configurationPolicy.requiredAnnotation.key',
+                jsonpath: 'fields.requiredAnnotation.key',
                 type: 'text',
                 placeholder: 'owner'
             },
             {
-                jsonpath: 'configurationPolicy.requiredAnnotation.value',
+                jsonpath: 'fields.requiredAnnotation.value',
                 type: 'text',
                 placeholder: '.*'
             }
@@ -326,35 +319,35 @@ const configurationPolicyFormDescriptor = [
     },
     {
         label: 'Command',
-        jsonpath: 'configurationPolicy.command',
+        jsonpath: 'fields.command',
         type: 'text',
         required: false,
         default: false
     },
     {
         label: 'Arguments',
-        jsonpath: 'configurationPolicy.args',
+        jsonpath: 'fields.args',
         type: 'text',
         required: false,
         default: false
     },
     {
         label: 'Directory',
-        jsonpath: 'configurationPolicy.directory',
+        jsonpath: 'fields.directory',
         type: 'text',
         required: false,
         default: false
     },
     {
         label: 'User',
-        jsonpath: 'configurationPolicy.user',
+        jsonpath: 'fields.user',
         type: 'text',
         required: false,
         default: false
     },
     {
         label: 'Volume Name',
-        jsonpath: 'configurationPolicy.volumePolicy.name',
+        jsonpath: 'fields.volumePolicy.name',
         type: 'text',
         placeholder: '/var/run/docker.sock',
         required: false,
@@ -362,7 +355,7 @@ const configurationPolicyFormDescriptor = [
     },
     {
         label: 'Volume Path',
-        jsonpath: 'configurationPolicy.volumePolicy.path',
+        jsonpath: 'fields.volumePolicy.path',
         type: 'text',
         placeholder: '^/var/run/docker.sock$',
         required: false,
@@ -370,7 +363,7 @@ const configurationPolicyFormDescriptor = [
     },
     {
         label: 'Volume Type',
-        jsonpath: 'configurationPolicy.volumePolicy.type',
+        jsonpath: 'fields.volumePolicy.type',
         type: 'text',
         placeholder: 'bind, secret',
         required: false,
@@ -378,24 +371,21 @@ const configurationPolicyFormDescriptor = [
     },
     {
         label: 'Protocol',
-        jsonpath: 'configurationPolicy.portPolicy.protocol',
+        jsonpath: 'fields.portPolicy.protocol',
         type: 'text',
         required: false,
         default: false
     },
     {
         label: 'Port',
-        jsonpath: 'configurationPolicy.portPolicy.port',
+        jsonpath: 'fields.portPolicy.port',
         type: 'number',
         required: false,
         default: false
-    }
-];
-
-const privilegePolicyFormDescriptor = [
+    },
     {
         label: 'Privileged',
-        jsonpath: 'privilegePolicy.privileged',
+        jsonpath: 'fields.privileged',
         type: 'select',
         options: [{ label: 'Yes', value: true }, { label: 'No', value: false }],
         required: false,
@@ -403,7 +393,7 @@ const privilegePolicyFormDescriptor = [
     },
     {
         label: 'Drop Capabilities',
-        jsonpath: 'privilegePolicy.dropCapabilities',
+        jsonpath: 'fields.dropCapabilities',
         type: 'multiselect',
         options: [],
         required: false,
@@ -411,7 +401,7 @@ const privilegePolicyFormDescriptor = [
     },
     {
         label: 'Add Capabilities',
-        jsonpath: 'privilegePolicy.addCapabilities',
+        jsonpath: 'fields.addCapabilities',
         type: 'multiselect',
         options: [],
         required: false,
@@ -424,17 +414,9 @@ const policyFormFields = {
         header: 'Policy Details',
         descriptor: policyDetailsFormDescriptor
     },
-    imagePolicy: {
-        header: 'Image Assurance',
-        descriptor: imagePolicyFormDescriptor
-    },
-    configurationPolicy: {
-        header: 'Container Configuration',
-        descriptor: configurationPolicyFormDescriptor
-    },
-    privilegePolicy: {
-        header: 'Privileges and Capabilities',
-        descriptor: privilegePolicyFormDescriptor
+    policyConfiguration: {
+        header: 'Policy Configuration',
+        descriptor: policyConfigurationDescriptor
     }
 };
 

@@ -3,7 +3,7 @@
   "description": "Alert on deployments with images containing Heartbleed vulnerability (CVE-2014-0160)",
   "severity": "CRITICAL_SEVERITY",
   "categories": ["Image Assurance"],
-  "image_policy": {
+  "fields": {
     "cve": "CVE-2014-0160"
   },
   "rationale": "Heartbleed is a serious and easily-exploitable vulnerability in OpenSSL.",

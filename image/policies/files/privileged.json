@@ -3,7 +3,7 @@
   "description": "Alert on deployments with containers running in privileged mode",
   "severity": "MEDIUM_SEVERITY",
   "categories": ["Privileges Capabilities"],
-  "privilege_policy": {
+  "fields": {
     "privileged": true
   },
   "rationale": "Containers running as privileged represent greater post-exploitation risk by allowing an attacker to access all host devices, run a daemon in the container, etc.",

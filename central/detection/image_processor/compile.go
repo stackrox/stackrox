@@ -53,58 +53,54 @@ func init() {
 }
 
 // NewCompiledImagePolicy returns a new compiledImagePolicy.
-func NewCompiledImagePolicy(policy *v1.Policy) (compiledP processors.CompiledPolicy, exist bool, err error) {
-	imagePolicy := policy.GetImagePolicy()
-	if imagePolicy == nil {
-		return
-	}
-	exist = true
+func NewCompiledImagePolicy(policy *v1.Policy) (compiledP processors.CompiledPolicy, err error) {
+	fields := policy.GetFields()
 
 	var imageAge, scanAge *int64
-	if imagePolicy.GetSetImageAgeDays() != nil {
-		tmp := imagePolicy.GetImageAgeDays()
+	if fields.GetSetImageAgeDays() != nil {
+		tmp := fields.GetImageAgeDays()
 		imageAge = &tmp
 	}
-	if imagePolicy.GetSetScanAgeDays() != nil {
-		tmp := imagePolicy.GetScanAgeDays()
+	if fields.GetSetScanAgeDays() != nil {
+		tmp := fields.GetScanAgeDays()
 		scanAge = &tmp
 	}
 	var scanExists *bool
-	if imagePolicy.GetSetScanExists() != nil {
-		tmp := imagePolicy.GetScanExists()
+	if fields.GetSetScanExists() != nil {
+		tmp := fields.GetScanExists()
 		scanExists = &tmp
 	}
 
-	if imagePolicy.GetCvss().GetValue() < 0 || imagePolicy.GetCvss().GetValue() > 10 {
-		return nil, exist, fmt.Errorf("policy %s must have CVSS score between 0-10 (actual: %v)", policy.GetName(), imagePolicy.GetCvss().GetValue())
+	if fields.GetCvss().GetValue() < 0 || fields.GetCvss().GetValue() > 10 {
+		return nil, fmt.Errorf("policy %s must have CVSS score between 0-10 (actual: %v)", policy.GetName(), fields.GetCvss().GetValue())
 	}
 
 	compiled := &compiledImagePolicy{
 		Original:     policy,
 		ImageAgeDays: imageAge,
-		CVSS:         imagePolicy.GetCvss(),
+		CVSS:         fields.GetCvss(),
 		ScanAgeDays:  scanAge,
 		ScanExists:   scanExists,
 	}
 
-	compiled.ImageNamePolicy, err = compileImageNamePolicyRegex(imagePolicy.GetImageName())
+	compiled.ImageNamePolicy, err = compileImageNamePolicyRegex(fields.GetImageName())
 	if err != nil {
-		return nil, exist, fmt.Errorf("image name: %s", err)
+		return nil, fmt.Errorf("image name: %s", err)
 	}
-	compiled.LineRule, err = compileLineRuleFieldRegex(imagePolicy.GetLineRule())
+	compiled.LineRule, err = compileLineRuleFieldRegex(fields.GetLineRule())
 	if err != nil {
-		return nil, exist, fmt.Errorf("image line: %s", err)
+		return nil, fmt.Errorf("image line: %s", err)
 	}
-	compiled.Component, err = compileComponent(imagePolicy.GetComponent())
+	compiled.Component, err = compileComponent(fields.GetComponent())
 	if err != nil {
-		return nil, exist, fmt.Errorf("image component: %s", err)
+		return nil, fmt.Errorf("image component: %s", err)
 	}
-	compiled.CVE, err = processors.CompileStringRegex(imagePolicy.GetCve())
+	compiled.CVE, err = processors.CompileStringRegex(fields.GetCve())
 	if err != nil {
-		return nil, exist, fmt.Errorf("image cve: %s", err)
+		return nil, fmt.Errorf("image cve: %s", err)
 	}
 
-	return compiled, exist, nil
+	return compiled, nil
 }
 
 func compileImageNamePolicyRegex(policy *v1.ImageNamePolicy) (*imageNamePolicyRegex, error) {
@@ -135,7 +131,7 @@ func compileImageNamePolicyRegex(policy *v1.ImageNamePolicy) (*imageNamePolicyRe
 	}, nil
 }
 
-func compileComponent(comp *v1.ImagePolicy_Component) (*componentRegex, error) {
+func compileComponent(comp *v1.Component) (*componentRegex, error) {
 	if comp == nil {
 		return nil, nil
 	}

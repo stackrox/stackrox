@@ -3,7 +3,7 @@
   "description": "Alert on deployments with an entrypoint that contains `minerd`",
   "severity": "HIGH_SEVERITY",
   "categories": ["Image Assurance"],
-  "image_policy": {
+  "fields": {
     "line_rule": {
       "instruction": "ENTRYPOINT",
       "value": ".*minerd.*"

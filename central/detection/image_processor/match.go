@@ -13,7 +13,7 @@ import (
 type matchFunc func(image *v1.Image) ([]*v1.Alert_Violation, bool)
 
 // Match matches the policy if *ALL* conditions of the policy are satisfied.
-func (policy *compiledImagePolicy) Match(deployment *v1.Deployment, container *v1.Container) (violations []*v1.Alert_Violation) {
+func (policy *compiledImagePolicy) Match(deployment *v1.Deployment, container *v1.Container) (violations []*v1.Alert_Violation, valid bool) {
 	image := container.GetImage()
 	if image == nil {
 		return
@@ -31,11 +31,14 @@ func (policy *compiledImagePolicy) Match(deployment *v1.Deployment, container *v
 	}
 	// This ensures that the policy exists and if there isn't a violation of the field then it should not return any violations
 	for _, f := range matchFunctions {
-		calculatedViolations, exists := f(image)
-		if exists && len(calculatedViolations) == 0 {
-			return nil
+		vs, exists := f(image)
+		if exists {
+			valid = true
 		}
-		violations = append(violations, calculatedViolations...)
+		if exists && len(vs) == 0 {
+			return
+		}
+		violations = append(violations, vs...)
 	}
 
 	return

@@ -330,9 +330,6 @@ func (s *policyValidator) validate(policy *v1.Policy) error {
 	if err := s.validateSeverity(policy); err != nil {
 		errors = append(errors, err)
 	}
-	if err := s.validateImagePolicy(policy); err != nil {
-		errors = append(errors, err)
-	}
 	if err := s.validateCategories(policy); err != nil {
 		errors = append(errors, err)
 	}
@@ -365,13 +362,6 @@ func (s *policyValidator) validateDescription(policy *v1.Policy) error {
 func (s *policyValidator) validateSeverity(policy *v1.Policy) error {
 	if policy.GetSeverity() == v1.Severity_UNSET_SEVERITY {
 		return errors.New("a policy must have a severity")
-	}
-	return nil
-}
-
-func (s *policyValidator) validateImagePolicy(policy *v1.Policy) error {
-	if policy.GetImagePolicy() == nil && policy.GetConfigurationPolicy() == nil && policy.GetPrivilegePolicy() == nil {
-		return errors.New("a policy must have at least one segment configured")
 	}
 	return nil
 }

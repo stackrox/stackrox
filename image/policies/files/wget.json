@@ -3,7 +3,7 @@
   "description": "Alert on deployments with wget present",
   "severity": "LOW_SEVERITY",
   "categories": ["Image Assurance"],
-  "image_policy": {
+  "fields": {
     "component": {
       "name": "^wget$"
     }

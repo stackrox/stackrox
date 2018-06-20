@@ -65,7 +65,9 @@ export default reducer;
 // Selectors
 
 const getDeploymentsById = state => state.byId;
-const getDeployments = state => Object.values(getDeploymentsById(state));
+const getDeployments = createSelector([getDeploymentsById], deployments =>
+    Object.values(deployments)
+);
 const getFilteredIds = state => state.filteredIds;
 const getDeployment = (state, id) => getDeploymentsById(state)[id];
 const getFilteredDeployments = createSelector(

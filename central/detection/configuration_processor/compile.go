@@ -62,60 +62,56 @@ func init() {
 }
 
 // NewCompiledConfigurationPolicy returns a new compiledConfigurationPolicy.
-func NewCompiledConfigurationPolicy(policy *v1.Policy) (compiledP processors.CompiledPolicy, exist bool, err error) {
-	if policy.GetConfigurationPolicy() == nil {
-		return
-	}
-	exist = true
-	configurationPolicy := policy.GetConfigurationPolicy()
+func NewCompiledConfigurationPolicy(policy *v1.Policy) (compiledP processors.CompiledPolicy, err error) {
+	configurationPolicy := policy.GetFields()
 	compiled := new(compiledConfigurationPolicy)
 	compiled.Original = policy
 
 	compiled.Env, err = newCompiledEnvironmentPolicy(configurationPolicy.GetEnv())
 	if err != nil {
-		return nil, exist, fmt.Errorf("env: %s", err)
+		return nil, fmt.Errorf("env: %s", err)
 	}
 
 	compiled.RequiredLabel, err = newRequiredLabelPolicy(configurationPolicy.GetRequiredLabel())
 	if err != nil {
-		return nil, exist, fmt.Errorf("missing label: %s", err)
+		return nil, fmt.Errorf("missing label: %s", err)
 	}
 
 	compiled.RequiredAnnotation, err = newRequiredAnnotationPolicy(configurationPolicy.GetRequiredAnnotation())
 	if err != nil {
-		return nil, exist, fmt.Errorf("missing annotation: %s", err)
+		return nil, fmt.Errorf("missing annotation: %s", err)
 	}
 
 	compiled.Args, err = processors.CompileStringRegex(configurationPolicy.GetArgs())
 	if err != nil {
-		return nil, exist, fmt.Errorf("args: %s", err)
+		return nil, fmt.Errorf("args: %s", err)
 	}
 
 	compiled.Command, err = processors.CompileStringRegex(configurationPolicy.GetCommand())
 	if err != nil {
-		return nil, exist, fmt.Errorf("command: %s", err)
+		return nil, fmt.Errorf("command: %s", err)
 	}
 
 	compiled.Directory, err = processors.CompileStringRegex(configurationPolicy.GetDirectory())
 	if err != nil {
-		return nil, exist, fmt.Errorf("directory: %s", err)
+		return nil, fmt.Errorf("directory: %s", err)
 	}
 
 	compiled.User, err = processors.CompileStringRegex(configurationPolicy.GetUser())
 	if err != nil {
-		return nil, exist, fmt.Errorf("user: %s", err)
+		return nil, fmt.Errorf("user: %s", err)
 	}
 
 	compiled.Volume, err = newCompiledVolumePolicy(configurationPolicy.GetVolumePolicy())
 	if err != nil {
-		return nil, exist, fmt.Errorf("volume: %s", err)
+		return nil, fmt.Errorf("volume: %s", err)
 	}
 
 	compiled.Port = newCompiledPortPolicy(configurationPolicy.GetPortPolicy())
-	return compiled, exist, nil
+	return compiled, nil
 }
 
-func newCompiledEnvironmentPolicy(kvPolicy *v1.ConfigurationPolicy_KeyValuePolicy) (compiled *compiledEnvironmentPolicy, err error) {
+func newCompiledEnvironmentPolicy(kvPolicy *v1.KeyValuePolicy) (compiled *compiledEnvironmentPolicy, err error) {
 	if kvPolicy == nil {
 		return
 	}
@@ -128,7 +124,7 @@ func newCompiledEnvironmentPolicy(kvPolicy *v1.ConfigurationPolicy_KeyValuePolic
 	}, nil
 }
 
-func newRequiredLabelPolicy(kvPolicy *v1.ConfigurationPolicy_KeyValuePolicy) (compiled *requiredLabelPolicy, err error) {
+func newRequiredLabelPolicy(kvPolicy *v1.KeyValuePolicy) (compiled *requiredLabelPolicy, err error) {
 	if kvPolicy == nil {
 		return
 	}
@@ -141,7 +137,7 @@ func newRequiredLabelPolicy(kvPolicy *v1.ConfigurationPolicy_KeyValuePolicy) (co
 	}, nil
 }
 
-func newRequiredAnnotationPolicy(kvPolicy *v1.ConfigurationPolicy_KeyValuePolicy) (compiled *requiredAnnotationPolicy, err error) {
+func newRequiredAnnotationPolicy(kvPolicy *v1.KeyValuePolicy) (compiled *requiredAnnotationPolicy, err error) {
 	if kvPolicy == nil {
 		return
 	}
@@ -154,7 +150,7 @@ func newRequiredAnnotationPolicy(kvPolicy *v1.ConfigurationPolicy_KeyValuePolicy
 	}, nil
 }
 
-func newRequiredKeyValuePolicy(kvPolicy *v1.ConfigurationPolicy_KeyValuePolicy) (compiled *keyValuePolicy, err error) {
+func newRequiredKeyValuePolicy(kvPolicy *v1.KeyValuePolicy) (compiled *keyValuePolicy, err error) {
 	if kvPolicy == nil {
 		return
 	}
@@ -172,7 +168,7 @@ func newRequiredKeyValuePolicy(kvPolicy *v1.ConfigurationPolicy_KeyValuePolicy) 
 	return
 }
 
-func newCompiledVolumePolicy(volumePolicy *v1.ConfigurationPolicy_VolumePolicy) (compiled *compiledVolumePolicy, err error) {
+func newCompiledVolumePolicy(volumePolicy *v1.VolumePolicy) (compiled *compiledVolumePolicy, err error) {
 	if volumePolicy == nil || (!volumePolicy.GetReadOnly() && volumePolicy.GetName() == "" && volumePolicy.GetSource() == "" && volumePolicy.GetDestination() == "" && volumePolicy.GetType() == "") {
 		return
 	}
@@ -206,7 +202,7 @@ func newCompiledVolumePolicy(volumePolicy *v1.ConfigurationPolicy_VolumePolicy) 
 	return
 }
 
-func newCompiledPortPolicy(portPolicy *v1.ConfigurationPolicy_PortPolicy) *compiledPortPolicy {
+func newCompiledPortPolicy(portPolicy *v1.PortPolicy) *compiledPortPolicy {
 	if portPolicy == nil {
 		return nil
 	}

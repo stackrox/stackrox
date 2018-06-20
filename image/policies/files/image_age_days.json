@@ -3,7 +3,7 @@
   "description": "Alert on deployments with images that haven't been updated in 90 days",
   "severity": "LOW_SEVERITY",
   "categories": ["Image Assurance"],
-  "image_policy": {
+  "fields": {
     "image_age_days": 90
   },
   "rationale": "Base images are updated frequently with bug fixes and vulnerability patches. Image age exceeding 90 days may indicate a higher risk of vulnerabilities existing in the image.",

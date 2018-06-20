@@ -78,9 +78,6 @@ API_SERVICES += summary_service
 
 # These .proto files do not contain gRPC methods and thus don't need gateway files.
 PB_COMMON_FILES  = common
-PB_COMMON_FILES += configuration_policy
-PB_COMMON_FILES += image_policy
-PB_COMMON_FILES += privilege_policy
 
 GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_GW_SRCS)
 

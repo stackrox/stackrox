@@ -8,12 +8,12 @@ import (
 
 var (
 	// PolicySegmentCompilers is a list of policy compiler function.
-	PolicySegmentCompilers []func(*v1.Policy) (CompiledPolicy, bool, error)
+	PolicySegmentCompilers []func(*v1.Policy) (CompiledPolicy, error)
 )
 
 // CompiledPolicy allows matching against a container in a deployment.
 type CompiledPolicy interface {
-	Match(*v1.Deployment, *v1.Container) []*v1.Alert_Violation
+	Match(*v1.Deployment, *v1.Container) ([]*v1.Alert_Violation, bool)
 }
 
 // CompileStringRegex returns the compiled regex if string is not empty,

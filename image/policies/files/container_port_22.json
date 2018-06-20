@@ -3,7 +3,7 @@
   "description": "Alert on deployments exposing port 22",
   "severity": "HIGH_SEVERITY",
   "categories": ["Container Configuration"],
-  "configuration_policy": {
+  "fields": {
     "port_policy": {
       "port": 22,
       "protocol": "tcp"

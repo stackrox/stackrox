@@ -118,30 +118,6 @@ func (suite *PolicyValidatorTestSuite) TestValidateSeverity() {
 	suite.Error(err, "severity should fail when not set")
 }
 
-func (suite *PolicyValidatorTestSuite) TestValidateImagePolicy() {
-	policy := &v1.Policy{
-		ImagePolicy: &v1.ImagePolicy{},
-	}
-	err := suite.validator.validateImagePolicy(policy)
-	suite.NoError(err, "should succeed if an image policy is set")
-
-	policy = &v1.Policy{
-		ConfigurationPolicy: &v1.ConfigurationPolicy{},
-	}
-	err = suite.validator.validateImagePolicy(policy)
-	suite.NoError(err, "should succeed if a configuration policy is set")
-
-	policy = &v1.Policy{
-		PrivilegePolicy: &v1.PrivilegePolicy{},
-	}
-	err = suite.validator.validateImagePolicy(policy)
-	suite.NoError(err, "should succeed if a privilege policy is set")
-
-	policy = &v1.Policy{}
-	err = suite.validator.validateImagePolicy(policy)
-	suite.Error(err, "one of image, configuration, and privilege policy need to be set or validation should fail")
-}
-
 func (suite *PolicyValidatorTestSuite) TestValidateCategories() {
 	policy := &v1.Policy{}
 	err := suite.validator.validateCategories(policy)

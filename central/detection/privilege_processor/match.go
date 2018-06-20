@@ -14,7 +14,7 @@ var (
 
 type matchFunc func(*v1.SecurityContext) ([]*v1.Alert_Violation, bool)
 
-func (p *compiledPrivilegePolicy) Match(deployment *v1.Deployment, container *v1.Container) (output []*v1.Alert_Violation) {
+func (p *compiledPrivilegePolicy) Match(deployment *v1.Deployment, container *v1.Container) (output []*v1.Alert_Violation, valid bool) {
 	security := container.GetSecurityContext()
 	if security == nil {
 		return
@@ -31,7 +31,11 @@ func (p *compiledPrivilegePolicy) Match(deployment *v1.Deployment, container *v1
 
 	// Every sub-policy that exists must match and return violations for the policy to match.
 	for _, f := range matchFunctions {
-		if vs, exists = f(security); exists && len(vs) == 0 {
+		vs, exists = f(security)
+		if exists {
+			valid = true
+		}
+		if exists && len(vs) == 0 {
 			return
 		}
 		violations = append(violations, vs...)
@@ -46,11 +50,11 @@ func (p *compiledPrivilegePolicy) matchPrivileged(security *v1.SecurityContext) 
 		return
 	}
 
+	exists = true
 	if security.GetPrivileged() != *p.privileged {
 		return
 	}
 
-	exists = true
 	violations = append(violations, &v1.Alert_Violation{
 		Message: fmt.Sprintf("Container privileged set to %t matched configured policy", security.GetPrivileged()),
 	})
@@ -74,7 +78,7 @@ func (p *compiledPrivilegePolicy) matchDropCap(security *v1.SecurityContext) (vi
 
 	if matchedCap < len(p.dropCap) {
 		violations = append(violations, &v1.Alert_Violation{
-			Message: fmt.Sprintf("Container with drop capabilities %+v did not contain all configured drop capabilities %+v", security.GetDropCapabilities(), p.Original.GetPrivilegePolicy().GetDropCapabilities()),
+			Message: fmt.Sprintf("Container with drop capabilities %+v did not contain all configured drop capabilities %+v", security.GetDropCapabilities(), p.Original.GetFields().GetDropCapabilities()),
 		})
 	}
 
@@ -96,7 +100,7 @@ func (p *compiledPrivilegePolicy) matchAddCap(security *v1.SecurityContext) (vio
 
 	if len(p.addCap) == matchedCap {
 		violations = append(violations, &v1.Alert_Violation{
-			Message: fmt.Sprintf("Container with add capabilities %+v matches policy %+v", security.GetAddCapabilities(), p.Original.GetPrivilegePolicy().GetAddCapabilities()),
+			Message: fmt.Sprintf("Container with add capabilities %+v matches policy %+v", security.GetAddCapabilities(), p.Original.GetFields().GetAddCapabilities()),
 		})
 	}
 

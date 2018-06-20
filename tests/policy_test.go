@@ -25,13 +25,11 @@ var (
 		Severity:    v1.Severity_HIGH_SEVERITY,
 		Categories:  []string{"Image Assurance", "Privileges Capabilities"},
 		Disabled:    false,
-		ImagePolicy: &v1.ImagePolicy{
+		Fields: &v1.PolicyFields{
 			ImageName: &v1.ImageNamePolicy{
 				Tag: "latest",
 			},
-		},
-		PrivilegePolicy: &v1.PrivilegePolicy{
-			SetPrivileged: &v1.PrivilegePolicy_Privileged{
+			SetPrivileged: &v1.PolicyFields_Privileged{
 				Privileged: true,
 			},
 		},
@@ -145,8 +143,8 @@ func verifyUpdatePolicy(t *testing.T, service v1.PolicyServiceClient) {
 	policy.Severity = v1.Severity_LOW_SEVERITY
 	policy.Description = "updated description"
 	policy.Disabled = true
-	policy.ImagePolicy.SetScanAgeDays = &v1.ImagePolicy_ScanAgeDays{ScanAgeDays: 10}
-	policy.PrivilegePolicy.AddCapabilities = []string{"CAP_SYS_MODULE"}
+	policy.Fields.SetScanAgeDays = &v1.PolicyFields_ScanAgeDays{ScanAgeDays: 10}
+	policy.Fields.AddCapabilities = []string{"CAP_SYS_MODULE"}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := service.PutPolicy(ctx, policy)

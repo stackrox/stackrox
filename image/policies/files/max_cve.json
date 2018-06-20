@@ -3,7 +3,7 @@
   "description": "Alert on deployments with a max CVSS >= 7",
   "severity": "HIGH_SEVERITY",
   "categories": ["Image Assurance"],
-  "image_policy": {
+  "fields": {
     "cvss": {
       "op": "GREATER_THAN_OR_EQUALS",
       "math_op": "MAX",

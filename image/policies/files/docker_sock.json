@@ -3,7 +3,7 @@
   "description": "Alert on deployments with volume mount on docker socket",
   "severity": "MEDIUM_SEVERITY",
   "categories": ["Container Configuration"],
-  "configuration_policy": {
+  "fields": {
     "volume_policy": {
       "source": "^/var/run/docker.sock$"
     }

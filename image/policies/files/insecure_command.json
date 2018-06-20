@@ -3,7 +3,7 @@
   "description": "Alert on deployments using 'insecure' in the command",
   "severity": "LOW_SEVERITY",
   "categories": ["Image Assurance"],
-  "image_policy": {
+  "fields": {
     "line_rule": {
       "instruction": "CMD",
       "value": ".*insecure.*"

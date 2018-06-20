@@ -74,7 +74,7 @@ func TestMatchComponent(t *testing.T) {
 
 	image := getTestImage()
 
-	componentRegex, err := compileComponent(&v1.ImagePolicy_Component{
+	componentRegex, err := compileComponent(&v1.Component{
 		Name:    "^berkeley*",
 		Version: ".*",
 	})
@@ -87,7 +87,7 @@ func TestMatchComponent(t *testing.T) {
 	assert.True(t, exists)
 	assert.Equal(t, 2, len(violations))
 
-	componentRegex, err = compileComponent(&v1.ImagePolicy_Component{
+	componentRegex, err = compileComponent(&v1.Component{
 		Name:    "^berkeleyD.*",
 		Version: "^v1.5.0$",
 	})
@@ -341,12 +341,13 @@ func TestMatchScanAge(t *testing.T) {
 
 func TestMatchPolicyToImage(t *testing.T) {
 	// If empty then no violations
-	violations := emptyRegexImagePolicy().Match(nil, &v1.Container{})
+	violations, valid := emptyRegexImagePolicy().Match(nil, &v1.Container{})
+	assert.False(t, valid)
 	assert.Nil(t, violations)
 
 	image := getTestImage()
 
-	componentRegex, err := compileComponent(&v1.ImagePolicy_Component{
+	componentRegex, err := compileComponent(&v1.Component{
 		Name:    "^berkeley*",
 		Version: ".*",
 	})
@@ -365,11 +366,12 @@ func TestMatchPolicyToImage(t *testing.T) {
 	}
 
 	// Make sure if two are specified and both have violations that we receive the violations
-	violations = policy.Match(nil, &v1.Container{Image: image})
+	violations, valid = policy.Match(nil, &v1.Container{Image: image})
+	assert.True(t, valid)
 	assert.NotNil(t, violations)
 	assert.Equal(t, 3, len(violations))
 
-	componentRegex, err = compileComponent(&v1.ImagePolicy_Component{
+	componentRegex, err = compileComponent(&v1.Component{
 		Name:    "^blah*",
 		Version: ".*",
 	})
@@ -377,6 +379,6 @@ func TestMatchPolicyToImage(t *testing.T) {
 
 	// Make sure if two are specified, but one does not have a violation that we receive no violations
 	policy.Component = componentRegex // should make ComponentMatch generate no violations so overall alert fails
-	violations = policy.Match(nil, &v1.Container{Image: image})
+	violations, _ = policy.Match(nil, &v1.Container{Image: image})
 	assert.Nil(t, violations)
 }

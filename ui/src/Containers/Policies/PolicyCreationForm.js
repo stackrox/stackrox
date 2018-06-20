@@ -10,7 +10,7 @@ import pull from 'lodash/pull';
 import 'react-select/dist/react-select.css';
 import FormField from 'Components/FormField';
 import CustomSelect from 'Components/Select';
-import { getPolicyFormDataKeys } from 'Containers/Policies/policyFormUtils';
+import { getPolicyFormDataKeys, removeEmptyFields } from 'Containers/Policies/policyFormUtils';
 import policyFormFields from 'Containers/Policies/policyCreationFormDescriptor';
 
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
@@ -116,9 +116,12 @@ class PolicyCreationForm extends Component {
         this.setState({ fields });
     };
 
-    renderFormFieldsBuilder = fields => {
-        const availableFields = fields.filter(
-            obj => !this.state.fields.find(o => o === obj.jsonpath) && !obj.default
+    renderFieldsDropdown = (formFields, formData) => {
+        const availableFields = formFields.filter(
+            field =>
+                !this.state.fields.find(jsonpath => jsonpath === field.jsonpath) &&
+                !field.default &&
+                !formData.find(jsonpath => jsonpath.includes(field.jsonpath))
         );
         const placeholder = 'Add a field';
         if (!availableFields.length) return '';
@@ -137,12 +140,15 @@ class PolicyCreationForm extends Component {
         );
     };
 
-    renderFields = fields => {
-        const formFields = Object.keys(flattenObject(this.props.formData));
-        const filteredFields = fields.filter(obj => {
+    renderFields = (formFields, formData) => {
+        const filteredFields = formFields.filter(field => {
             const isAddedField =
-                this.state.fields.length !== 0 && this.state.fields.find(o => o === obj.jsonpath);
-            return formFields.indexOf(obj.jsonpath) !== -1 || obj.default || isAddedField;
+                this.state.fields.length !== 0 && this.state.fields.find(o => o === field.jsonpath);
+            return (
+                field.default ||
+                isAddedField ||
+                formData.find(jsonpath => jsonpath.includes(field.jsonpath))
+            );
         });
         if (!filteredFields.length) {
             return <div className="p-3 text-base-500 font-500">No Fields Added</div>;
@@ -167,19 +173,20 @@ class PolicyCreationForm extends Component {
         );
     };
 
-    renderGroupedFields = () => {
+    renderFieldGroupCards = () => {
         const fieldGroups = Object.keys(this.props.policyFormFields);
+        const formData = Object.keys(flattenObject(removeEmptyFields(this.props.formData)));
         return fieldGroups.map(fieldGroup => {
             const fieldGroupName = fieldGroup.replace(/([A-Z])/g, ' $1');
             const fields = this.props.policyFormFields[fieldGroup].descriptor;
             return (
-                <div className="px-3 py-4 bg-base-100 border-b border-base-300" key={fieldGroup}>
+                <div className="px-3 py-4 border-b border-base-300" key={fieldGroup}>
                     <div className="bg-white border border-base-200 shadow">
                         <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">
                             {fieldGroupName}
                         </div>
-                        {this.renderFields(fields)}
-                        {this.renderFormFieldsBuilder(fields)}
+                        {this.renderFields(fields, formData)}
+                        {this.renderFieldsDropdown(fields, formData)}
                     </div>
                 </div>
             );
@@ -189,7 +196,9 @@ class PolicyCreationForm extends Component {
     render() {
         return (
             <div className="flex flex-1 flex-col">
-                <form id="dynamic-form">{this.renderGroupedFields()}</form>
+                <form id="dynamic-form" className="bg-base-100">
+                    {this.renderFieldGroupCards()}
+                </form>
             </div>
         );
     }
@@ -243,8 +252,9 @@ const getPolicyFormFields = createSelector(
     }
 );
 
-const getFormData = state =>
+const formFields = state =>
     formValueSelector('policyCreationForm')(state, ...getPolicyFormDataKeys());
+const getFormData = createSelector([formFields], formData => formData);
 
 const mapStateToProps = createStructuredSelector({
     policyFormFields: getPolicyFormFields,

@@ -3,7 +3,7 @@
   "description": "Alert on deployments with any vulnerabilities",
   "severity": "LOW_SEVERITY",
   "categories": ["Image Assurance"],
-  "image_policy": {
+  "fields": {
     "cvss": {
       "op": "GREATER_THAN",
       "math_op": "MAX",

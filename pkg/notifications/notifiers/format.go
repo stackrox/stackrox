@@ -37,54 +37,49 @@ const policyFormat = `
 	{{"Remediation:" | subheader}}
 	{{.Policy.Remediation | list}}
 
-	{{if .Policy.ImagePolicy }}{{ subheader "Image Assurance:"}}
-		{{if .Policy.ImagePolicy.ImageName}}{{list "Image Name"}}
-			{{if .Policy.ImagePolicy.ImageName.Registry}}{{stringify "Registry:" .Policy.ImagePolicy.ImageName.Registry | nestedList}}{{end}}
-			{{if .Policy.ImagePolicy.ImageName.Namespace}}{{stringify "Namespace:" .Policy.ImagePolicy.ImageName.Namespace | nestedList}}{{end}}
-			{{if .Policy.ImagePolicy.ImageName.Repo}}{{stringify "Repo:" .Policy.ImagePolicy.ImageName.Repo | nestedList}}{{end}}
-			{{if .Policy.ImagePolicy.ImageName.Tag}}{{stringify "Tag:" .Policy.ImagePolicy.ImageName.Tag | nestedList}}{{end}}
-		{{end}}
-		{{if .Policy.ImagePolicy.LineRule}}{{list "Dockerfile Line"}}
-			{{if .Policy.ImagePolicy.LineRule.Instruction}}{{stringify "Instruction:" .Policy.ImagePolicy.LineRule.Instruction | nestedList}}{{end}}
-			{{if .Policy.ImagePolicy.LineRule.Value}}{{stringify "Value:" .Policy.ImagePolicy.LineRule.Value | nestedList}}{{end}}
-		{{end}}
-		{{if .Policy.ImagePolicy.SetImageAgeDays}}{{stringify "Image Age >" .Policy.ImagePolicy.GetImageAgeDays "days" | list}}{{end}}
-		{{if .Policy.ImagePolicy.Cvss}}{{stringify .CVSS | list}}{{end}}
-		{{if .Policy.ImagePolicy.Cve}}{{stringify "CVE:" .Policy.ImagePolicy.Cve | list}}{{end}}
-		{{if .Policy.ImagePolicy.Component}}{{list "Component"}}
-			{{if .Policy.ImagePolicy.Component.Name}}{{stringify "Name:" .Policy.ImagePolicy.Component.Name | nestedList}}{{end}}
-			{{if .Policy.ImagePolicy.Component.Version}}{{stringify "Version:" .Policy.ImagePolicy.Component.Version | nestedList}}{{end}}
-		{{end}}
-		{{if .Policy.ImagePolicy.SetScanAgeDays}}{{stringify "Scan Age >" .Policy.ImagePolicy.GetScanAgeDays "days" | list}}{{end}}
+	{{ subheader "Policy Fields:"}}
+	{{if .Policy.Fields.ImageName}}{{list "Image Name"}}
+		{{if .Policy.Fields.ImageName.Registry}}{{stringify "Registry:" .Policy.Fields.ImageName.Registry | nestedList}}{{end}}
+		{{if .Policy.Fields.ImageName.Namespace}}{{stringify "Namespace:" .Policy.Fields.ImageName.Namespace | nestedList}}{{end}}
+		{{if .Policy.Fields.ImageName.Repo}}{{stringify "Repo:" .Policy.Fields.ImageName.Repo | nestedList}}{{end}}
+		{{if .Policy.Fields.ImageName.Tag}}{{stringify "Tag:" .Policy.Fields.ImageName.Tag | nestedList}}{{end}}
 	{{end}}
-	{{if .Policy.PrivilegePolicy }}{{subheader "Privilege Assurance:"}}
-		{{if .Policy.PrivilegePolicy.AddCapabilities}}{{list "Disallowed Add-Capabilities"}}
-			{{range .Policy.PrivilegePolicy.AddCapabilities}}{{nestedList .}}
-			{{end}}
-		{{end}}
-		{{if .Policy.PrivilegePolicy.DropCapabilities}}{{list "Required Drop-Capabilities"}}
-			{{range .Policy.PrivilegePolicy.DropCapabilities}}{{nestedList .}}
-			{{end}}
-		{{end}}
-		{{if .Policy.PrivilegePolicy.SetPrivileged}}{{stringify "Privileged:" .Policy.PrivilegePolicy.GetPrivileged | list}}{{end}}
+	{{if .Policy.Fields.LineRule}}{{list "Dockerfile Line"}}
+		{{if .Policy.Fields.LineRule.Instruction}}{{stringify "Instruction:" .Policy.Fields.LineRule.Instruction | nestedList}}{{end}}
+		{{if .Policy.Fields.LineRule.Value}}{{stringify "Value:" .Policy.Fields.LineRule.Value | nestedList}}{{end}}
 	{{end}}
-	{{if .Policy.ConfigurationPolicy }}{{subheader "Configuration Assurance:"}}
-		{{if .Policy.ConfigurationPolicy.Directory}}{{stringify "Directory:" .Policy.ConfigurationPolicy.Directory | list}}{{end}}
-		{{if .Policy.ConfigurationPolicy.Args}}{{stringify "Args:" .Policy.ConfigurationPolicy.Args | list}}{{end}}
-		{{if .Policy.ConfigurationPolicy.Command}}{{stringify "Command:" .Policy.ConfigurationPolicy.Command | list}}{{end}}
-		{{if .Policy.ConfigurationPolicy.Env}}{{list "Disallowed Environment Variable"}}
-			{{if .Policy.ConfigurationPolicy.Env.Key}}{{stringify "Key:" .Policy.ConfigurationPolicy.Env.Key | nestedList}}{{end}}
-			{{if .Policy.ConfigurationPolicy.Env.Value}}{{stringify "Value:" .Policy.ConfigurationPolicy.Env.Value | nestedList}}{{end}}
+	{{if .Policy.Fields.SetImageAgeDays}}{{stringify "Image Age >" .Policy.Fields.GetImageAgeDays "days" | list}}{{end}}
+	{{if .Policy.Fields.Cvss}}{{stringify .CVSS | list}}{{end}}
+	{{if .Policy.Fields.Cve}}{{stringify "CVE:" .Policy.Fields.Cve | list}}{{end}}
+	{{if .Policy.Fields.Component}}{{list "Component"}}
+		{{if .Policy.Fields.Component.Name}}{{stringify "Name:" .Policy.Fields.Component.Name | nestedList}}{{end}}
+		{{if .Policy.Fields.Component.Version}}{{stringify "Version:" .Policy.Fields.Component.Version | nestedList}}{{end}}
+	{{end}}
+	{{if .Policy.Fields.SetScanAgeDays}}{{stringify "Scan Age >" .Policy.Fields.GetScanAgeDays "days" | list}}{{end}}
+	{{if .Policy.Fields.AddCapabilities}}{{list "Disallowed Add-Capabilities"}}
+		{{range .Policy.Fields.AddCapabilities}}{{nestedList .}}
 		{{end}}
-		{{if .Policy.ConfigurationPolicy.PortPolicy}}{{stringify "Port:" .Port | list}}{{end}}
-		{{if .Policy.ConfigurationPolicy.User}}{{stringify "User:" .Policy.ConfigurationPolicy.User | list}}{{end}}
-		{{if .Policy.ConfigurationPolicy.VolumePolicy}}{{list "Volume"}}
-			{{if .Policy.ConfigurationPolicy.VolumePolicy.Name}}{{stringify "Name:" .Policy.ConfigurationPolicy.VolumePolicy.Name | nestedList}}{{end}}
-			{{if .Policy.ConfigurationPolicy.VolumePolicy.Type}}{{stringify "Type:" .Policy.ConfigurationPolicy.VolumePolicy.Type | nestedList}}{{end}}
-			{{if .Policy.ConfigurationPolicy.VolumePolicy.Source}}{{stringify "Source:" .Policy.ConfigurationPolicy.VolumePolicy.Source | nestedList}}{{end}}
-			{{if .Policy.ConfigurationPolicy.VolumePolicy.Destination}}{{stringify "Destination:" .Policy.ConfigurationPolicy.VolumePolicy.Destination | nestedList}}{{end}}
-			{{if .Policy.ConfigurationPolicy.VolumePolicy.SetReadOnly}}{{stringify "ReadOnly:" .Policy.ConfigurationPolicy.VolumePolicy.GetReadOnly | nestedList}}{{end}}
+	{{end}}
+	{{if .Policy.Fields.DropCapabilities}}{{list "Required Drop-Capabilities"}}
+		{{range .Policy.Fields.DropCapabilities}}{{nestedList .}}
 		{{end}}
+	{{end}}
+	{{if .Policy.Fields.SetPrivileged}}{{stringify "Privileged:" .Policy.Fields.GetPrivileged | list}}{{end}}
+	{{if .Policy.Fields.Directory}}{{stringify "Directory:" .Policy.Fields.Directory | list}}{{end}}
+	{{if .Policy.Fields.Args}}{{stringify "Args:" .Policy.Fields.Args | list}}{{end}}
+	{{if .Policy.Fields.Command}}{{stringify "Command:" .Policy.Fields.Command | list}}{{end}}
+	{{if .Policy.Fields.Env}}{{list "Disallowed Environment Variable"}}
+		{{if .Policy.Fields.Env.Key}}{{stringify "Key:" .Policy.Fields.Env.Key | nestedList}}{{end}}
+		{{if .Policy.Fields.Env.Value}}{{stringify "Value:" .Policy.Fields.Env.Value | nestedList}}{{end}}
+	{{end}}
+	{{if .Policy.Fields.PortPolicy}}{{stringify "Port:" .Port | list}}{{end}}
+	{{if .Policy.Fields.User}}{{stringify "User:" .Policy.Fields.User | list}}{{end}}
+	{{if .Policy.Fields.VolumePolicy}}{{list "Volume"}}
+		{{if .Policy.Fields.VolumePolicy.Name}}{{stringify "Name:" .Policy.Fields.VolumePolicy.Name | nestedList}}{{end}}
+		{{if .Policy.Fields.VolumePolicy.Type}}{{stringify "Type:" .Policy.Fields.VolumePolicy.Type | nestedList}}{{end}}
+		{{if .Policy.Fields.VolumePolicy.Source}}{{stringify "Source:" .Policy.Fields.VolumePolicy.Source | nestedList}}{{end}}
+		{{if .Policy.Fields.VolumePolicy.Destination}}{{stringify "Destination:" .Policy.Fields.VolumePolicy.Destination | nestedList}}{{end}}
+		{{if .Policy.Fields.VolumePolicy.SetReadOnly}}{{stringify "ReadOnly:" .Policy.Fields.VolumePolicy.GetReadOnly | nestedList}}{{end}}
 	{{end}}
 	{{if .Deployment}}{{subheader "Deployment:"}}
 		{{stringify "ID:" .Deployment.Id | list}}
@@ -114,12 +109,12 @@ func FormatPolicy(alert *v1.Alert, alertLink string, funcMap template.FuncMap) (
 		}
 	}
 	funcMap["stringify"] = stringify
-	portPolicy := alert.GetPolicy().GetConfigurationPolicy().GetPortPolicy()
+	portPolicy := alert.GetPolicy().GetFields().GetPortPolicy()
 	portStr := fmt.Sprintf("%v/%v", portPolicy.GetPort(), portPolicy.GetProtocol())
 	data := policyFormatStruct{
 		Alert:     alert,
 		AlertLink: alertLink,
-		CVSS:      readable.NumericalPolicy(alert.GetPolicy().GetImagePolicy().GetCvss(), "cvss"),
+		CVSS:      readable.NumericalPolicy(alert.GetPolicy().GetFields().GetCvss(), "cvss"),
 		Images:    images.FromContainers(alert.GetDeployment().GetContainers()).String(),
 		Port:      portStr,
 		Severity:  SeverityString(alert.Policy.Severity),

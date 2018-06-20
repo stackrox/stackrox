@@ -33,9 +33,7 @@ func TestMatch(t *testing.T) {
 					},
 				},
 			},
-			policy: &v1.Policy{
-				PrivilegePolicy: &v1.PrivilegePolicy{},
-			},
+			policy: &v1.Policy{},
 		},
 		{
 			deployment: &v1.Deployment{
@@ -56,8 +54,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 			policy: &v1.Policy{
-				PrivilegePolicy: &v1.PrivilegePolicy{
-					SetPrivileged: &v1.PrivilegePolicy_Privileged{
+				Fields: &v1.PolicyFields{
+					SetPrivileged: &v1.PolicyFields_Privileged{
 						Privileged: true,
 					},
 				},
@@ -87,8 +85,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 			policy: &v1.Policy{
-				PrivilegePolicy: &v1.PrivilegePolicy{
-					SetPrivileged: &v1.PrivilegePolicy_Privileged{
+				Fields: &v1.PolicyFields{
+					SetPrivileged: &v1.PolicyFields_Privileged{
 						Privileged: false,
 					},
 				},
@@ -118,8 +116,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 			policy: &v1.Policy{
-				PrivilegePolicy: &v1.PrivilegePolicy{
-					SetPrivileged: &v1.PrivilegePolicy_Privileged{
+				Fields: &v1.PolicyFields{
+					SetPrivileged: &v1.PolicyFields_Privileged{
 						Privileged: true,
 					},
 					AddCapabilities: []string{"CAP_IPC_LOCK"},
@@ -145,8 +143,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 			policy: &v1.Policy{
-				PrivilegePolicy: &v1.PrivilegePolicy{
-					SetPrivileged: &v1.PrivilegePolicy_Privileged{
+				Fields: &v1.PolicyFields{
+					SetPrivileged: &v1.PolicyFields_Privileged{
 						Privileged: true,
 					},
 					AddCapabilities: []string{"CAP_SYS_ADMIN"},
@@ -180,8 +178,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 			policy: &v1.Policy{
-				PrivilegePolicy: &v1.PrivilegePolicy{
-					SetPrivileged: &v1.PrivilegePolicy_Privileged{
+				Fields: &v1.PolicyFields{
+					SetPrivileged: &v1.PolicyFields_Privileged{
 						Privileged: true,
 					},
 					AddCapabilities:  []string{"CAP_SYS_ADMIN", "CAP_SYS_MODULE"},
@@ -224,8 +222,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 			policy: &v1.Policy{
-				PrivilegePolicy: &v1.PrivilegePolicy{
-					SetPrivileged: &v1.PrivilegePolicy_Privileged{
+				Fields: &v1.PolicyFields{
+					SetPrivileged: &v1.PolicyFields_Privileged{
 						Privileged: true,
 					},
 					AddCapabilities: []string{"CAP_SYS_ADMIN", "CAP_IPC_LOCK", "CAP_SYS_MODULE"},
@@ -250,8 +248,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 			policy: &v1.Policy{
-				PrivilegePolicy: &v1.PrivilegePolicy{
-					SetPrivileged: &v1.PrivilegePolicy_Privileged{
+				Fields: &v1.PolicyFields{
+					SetPrivileged: &v1.PolicyFields_Privileged{
 						Privileged: true,
 					},
 				},
@@ -260,13 +258,12 @@ func TestMatch(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		compiled, exist, err := NewCompiledPrivilegePolicy(c.policy)
-		assert.True(t, exist)
+		compiled, err := NewCompiledPrivilegePolicy(c.policy)
 		assert.NoError(t, err)
 
 		var violations []*v1.Alert_Violation
 		for _, container := range c.deployment.GetContainers() {
-			vs := compiled.Match(c.deployment, container)
+			vs, _ := compiled.Match(c.deployment, container)
 			violations = append(violations, vs...)
 		}
 

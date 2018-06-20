@@ -27,13 +27,11 @@ func New(policy *v1.Policy) (*Policy, error) {
 	}
 
 	for _, c := range processors.PolicySegmentCompilers {
-		if compiled, exist, err := c(policy); !exist {
-			continue
-		} else if err != nil {
+		compiled, err := c(policy)
+		if err != nil {
 			return nil, fmt.Errorf("policy %s failed to compile: %s", p, err)
-		} else {
-			p.compiled = append(p.compiled, compiled)
 		}
+		p.compiled = append(p.compiled, compiled)
 	}
 
 	return p, nil
@@ -71,13 +69,11 @@ func (p *Policy) Match(deployment *v1.Deployment) (violations []*v1.Alert_Violat
 
 func (p *Policy) matchContainer(deployment *v1.Deployment, container *v1.Container) (violations []*v1.Alert_Violation) {
 	for _, c := range p.compiled {
-		vs := c.Match(deployment, container)
-
-		// All policy categories must match, otherwise no violations are returned
-		if len(vs) == 0 {
+		vs, valid := c.Match(deployment, container)
+		// All valid policy categories must match, otherwise no violations are returned
+		if valid && len(vs) == 0 {
 			return nil
 		}
-
 		violations = append(violations, vs...)
 	}
 

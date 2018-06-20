@@ -3,7 +3,7 @@
   "description": "Alert on deployments with the Yum package manager (yum), commonly used in Red Hat-family distributions, present",
   "severity": "LOW_SEVERITY",
   "categories": ["Image Assurance"],
-  "image_policy": {
+  "fields": {
     "component": {
       "name": "^yum$"
     }

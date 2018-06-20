@@ -32,9 +32,7 @@ func TestMatch(t *testing.T) {
 					},
 				},
 			},
-			policy: &v1.Policy{
-				ConfigurationPolicy: &v1.ConfigurationPolicy{},
-			},
+			policy: &v1.Policy{},
 		},
 		{
 			deployment: &v1.Deployment{
@@ -58,8 +56,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 			policy: &v1.Policy{
-				ConfigurationPolicy: &v1.ConfigurationPolicy{
-					Env: &v1.ConfigurationPolicy_KeyValuePolicy{
+				Fields: &v1.PolicyFields{
+					Env: &v1.KeyValuePolicy{
 						Key: "Sensitive",
 					},
 				},
@@ -92,8 +90,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 			policy: &v1.Policy{
-				ConfigurationPolicy: &v1.ConfigurationPolicy{
-					Env: &v1.ConfigurationPolicy_KeyValuePolicy{
+				Fields: &v1.PolicyFields{
+					Env: &v1.KeyValuePolicy{
 						Key:   "Sensitive",
 						Value: "^Value",
 					},
@@ -122,8 +120,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 			policy: &v1.Policy{
-				ConfigurationPolicy: &v1.ConfigurationPolicy{
-					Env: &v1.ConfigurationPolicy_KeyValuePolicy{
+				Fields: &v1.PolicyFields{
+					Env: &v1.KeyValuePolicy{
 						Key:   "Key",
 						Value: "Value",
 					},
@@ -181,9 +179,9 @@ func TestMatch(t *testing.T) {
 				},
 			},
 			policy: &v1.Policy{
-				ConfigurationPolicy: &v1.ConfigurationPolicy{
-					VolumePolicy: &v1.ConfigurationPolicy_VolumePolicy{
-						SetReadOnly: &v1.ConfigurationPolicy_VolumePolicy_ReadOnly{
+				Fields: &v1.PolicyFields{
+					VolumePolicy: &v1.VolumePolicy{
+						SetReadOnly: &v1.VolumePolicy_ReadOnly{
 							ReadOnly: true,
 						},
 						Type: "secret",
@@ -234,9 +232,9 @@ func TestMatch(t *testing.T) {
 				},
 			},
 			policy: &v1.Policy{
-				ConfigurationPolicy: &v1.ConfigurationPolicy{
-					VolumePolicy: &v1.ConfigurationPolicy_VolumePolicy{
-						SetReadOnly: &v1.ConfigurationPolicy_VolumePolicy_ReadOnly{
+				Fields: &v1.PolicyFields{
+					VolumePolicy: &v1.VolumePolicy{
+						SetReadOnly: &v1.VolumePolicy_ReadOnly{
 							ReadOnly: true,
 						},
 						Type: "secret",
@@ -278,8 +276,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 			policy: &v1.Policy{
-				ConfigurationPolicy: &v1.ConfigurationPolicy{
-					PortPolicy: &v1.ConfigurationPolicy_PortPolicy{
+				Fields: &v1.PolicyFields{
+					PortPolicy: &v1.PortPolicy{
 						Protocol: "TCP",
 					},
 				},
@@ -327,8 +325,8 @@ func TestMatch(t *testing.T) {
 				},
 			},
 			policy: &v1.Policy{
-				ConfigurationPolicy: &v1.ConfigurationPolicy{
-					PortPolicy: &v1.ConfigurationPolicy_PortPolicy{
+				Fields: &v1.PolicyFields{
+					PortPolicy: &v1.PortPolicy{
 						Port: 80,
 					},
 				},
@@ -342,13 +340,12 @@ func TestMatch(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		compiled, exist, err := NewCompiledConfigurationPolicy(c.policy)
-		assert.True(t, exist)
+		compiled, err := NewCompiledConfigurationPolicy(c.policy)
 		assert.NoError(t, err)
 
 		var violations []*v1.Alert_Violation
 		for _, container := range c.deployment.GetContainers() {
-			vs := compiled.Match(c.deployment, container)
+			vs, _ := compiled.Match(c.deployment, container)
 			violations = append(violations, vs...)
 		}
 

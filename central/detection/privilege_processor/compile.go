@@ -24,29 +24,24 @@ func init() {
 }
 
 // NewCompiledPrivilegePolicy returns a new compiledPrivilegePolicy.
-func NewCompiledPrivilegePolicy(policy *v1.Policy) (compiledP processors.CompiledPolicy, exist bool, err error) {
-	if policy.GetPrivilegePolicy() == nil {
-		return
-	}
-
-	exist = true
-	privilegePolicy := policy.GetPrivilegePolicy()
+func NewCompiledPrivilegePolicy(policy *v1.Policy) (compiledP processors.CompiledPolicy, err error) {
+	fields := policy.GetFields()
 	compiled := new(compiledPrivilegePolicy)
 	compiled.Original = policy
 
-	if privilegePolicy.GetSetPrivileged() != nil {
-		priv := privilegePolicy.GetPrivileged()
+	if fields.GetSetPrivileged() != nil {
+		priv := fields.GetPrivileged()
 		compiled.privileged = &priv
 	}
 	compiled.dropCap = make(map[string]struct{})
-	for _, cap := range privilegePolicy.GetDropCapabilities() {
+	for _, cap := range fields.GetDropCapabilities() {
 		compiled.dropCap[strings.ToUpper(cap)] = struct{}{}
 	}
 
 	compiled.addCap = make(map[string]struct{})
-	for _, cap := range privilegePolicy.GetAddCapabilities() {
+	for _, cap := range fields.GetAddCapabilities() {
 		compiled.addCap[strings.ToUpper(cap)] = struct{}{}
 	}
 
-	return compiled, exist, nil
+	return compiled, nil
 }

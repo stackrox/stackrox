@@ -6,9 +6,6 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
-import "api/v1/configuration_policy.proto";
-import "api/v1/image_policy.proto";
-import "api/v1/privilege_policy.proto";
 import "api/v1/image_service.proto";
 import "api/v1/deployment_service.proto";
 import "api/v1/search_service.proto";
@@ -29,6 +26,105 @@ message Whitelist {
     google.protobuf.Timestamp expiration = 6;
 }
 
+message DockerfileLineRuleField {
+    string instruction  = 1;
+    string value        = 2;
+}
+
+enum Comparator {
+    LESS_THAN              = 0;
+    LESS_THAN_OR_EQUALS    = 1;
+    EQUALS                 = 2;
+    GREATER_THAN_OR_EQUALS = 3;
+    GREATER_THAN           = 4;
+}
+
+enum MathOP {
+    MIN = 0;
+    MAX = 1;
+    AVG = 2;
+}
+
+message NumericalPolicy {
+    Comparator op  = 1;
+    MathOP math_op = 2;
+    float value    = 3;
+}
+
+// Image Name
+message ImageNamePolicy {
+    string registry        = 1; // e.g. docker.io
+    string namespace       = 2; // e.g. stackrox
+    string repo            = 3; // e.g. container-summarizer
+    string tag             = 4; // e.g. latest
+}
+
+message Component {
+    string name    = 1;
+    string version = 2;
+}
+
+message KeyValuePolicy {
+    string key   = 1;
+    string value = 2;
+}
+
+message VolumePolicy {
+    string name         = 1;
+    string source       = 2;
+    string destination  = 3;
+    oneof set_read_only {
+        bool read_only  = 4;
+    }
+    string type         = 5;
+}
+
+message PortPolicy {
+    int32 port          = 1;
+    string protocol     = 2;
+}
+
+message PolicyFields {
+    ImageNamePolicy image_name          = 1;
+
+    // Registry metadata
+    oneof set_image_age_days {
+        int64 image_age_days            = 2;
+    }
+    DockerfileLineRuleField line_rule   = 3;
+
+    // Scan Metadata
+    NumericalPolicy cvss                = 4;
+    string cve                          = 5;
+
+    Component component                 = 6;
+    oneof set_scan_age_days {
+        int64 scan_age_days             = 7;
+    }
+    oneof set_scan_exists {
+        bool scan_exists                = 8;
+    }
+
+    KeyValuePolicy env                   = 9;
+    string command                       = 10;
+    string args                          = 11;
+    string directory                     = 12;
+    string user                          = 13;
+
+    VolumePolicy volume_policy           = 14;
+
+
+    PortPolicy port_policy                = 15;
+    KeyValuePolicy required_label         = 16;
+    KeyValuePolicy required_annotation    = 17;
+
+    oneof set_privileged {
+        bool privileged                   = 18;
+    }
+    repeated string drop_capabilities     = 19;
+    repeated string add_capabilities      = 20;
+}
+
 message Policy {
     string id                                   = 1;
     string name                                 = 2;
@@ -43,11 +139,9 @@ message Policy {
 
     repeated string notifiers                   = 11;
 
-    ImagePolicy image_policy                    = 12;
-    PrivilegePolicy privilege_policy            = 13;
-    ConfigurationPolicy configuration_policy    = 14;
+    PolicyFields fields                         = 12;
 
-    repeated Whitelist whitelists               = 15;
+    repeated Whitelist whitelists               = 13;
 }
 
 message DryRunResponse {
