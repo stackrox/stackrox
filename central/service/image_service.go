@@ -57,28 +57,31 @@ func (s *ImageService) GetImage(ctx context.Context, request *v1.ResourceByID) (
 func convertImagesToListImages(images []*v1.Image) []*v1.ListImage {
 	listImages := make([]*v1.ListImage, 0, len(images))
 	for _, i := range images {
-		listImage := &v1.ListImage{
-			Sha:     i.GetName().GetSha(),
-			Name:    i.GetName().GetFullName(),
-			Created: i.GetMetadata().GetCreated(),
-		}
-
-		if i.GetScan() != nil {
-			listImage.SetComponents = &v1.ListImage_Components{
-				Components: int64(len(i.GetScan().GetComponents())),
-			}
-			var numVulns int64
-			for _, c := range i.GetScan().GetComponents() {
-				numVulns += int64(len(c.GetVulns()))
-			}
-			listImage.SetCves = &v1.ListImage_Cves{
-				Cves: numVulns,
-			}
-		}
-
-		listImages = append(listImages, listImage)
+		listImages = append(listImages, convertImageToListImage(i))
 	}
 	return listImages
+}
+
+func convertImageToListImage(i *v1.Image) *v1.ListImage {
+	listImage := &v1.ListImage{
+		Sha:     i.GetName().GetSha(),
+		Name:    i.GetName().GetFullName(),
+		Created: i.GetMetadata().GetCreated(),
+	}
+
+	if i.GetScan() != nil {
+		listImage.SetComponents = &v1.ListImage_Components{
+			Components: int64(len(i.GetScan().GetComponents())),
+		}
+		var numVulns int64
+		for _, c := range i.GetScan().GetComponents() {
+			numVulns += int64(len(c.GetVulns()))
+		}
+		listImage.SetCves = &v1.ListImage_Cves{
+			Cves: numVulns,
+		}
+	}
+	return listImage
 }
 
 // ListImages retrieves all images in minimal form.
