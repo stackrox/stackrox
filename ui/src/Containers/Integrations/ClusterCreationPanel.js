@@ -2,10 +2,14 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
+import { ToastContainer, toast } from 'react-toastify';
+import Raven from 'raven-js';
+
 import { actions as clusterActions } from 'reducers/clusters';
 import { selectors } from 'reducers';
 import { submit, formValueSelector } from 'redux-form';
 import { createCluster } from 'services/ClustersService';
+import { saveFile } from 'services/DownloadService';
 
 import Panel from 'Components/Panel';
 import PanelSlider from 'Components/PanelSlider';
@@ -18,7 +22,6 @@ import {
     openshiftCreationFormDescriptor,
     dockerClusterCreationFormDescriptor
 } from 'Containers/Integrations/clusterCreationFormDescriptor';
-import { ToastContainer, toast } from 'react-toastify';
 
 const commonDetailsMap = {
     name: {
@@ -90,7 +93,14 @@ class ClusterCreationPanel extends Component {
     };
 
     onDownload = () => {
-        this.downloadPage.downloadYamlFile(this.props.createdClusterId);
+        const options = {
+            url: '/api/extensions/clusters/zip',
+            data: { id: this.props.createdClusterId }
+        };
+        saveFile(options).catch(error => {
+            toast('Error while downloading a file');
+            Raven.captureException(error);
+        });
     };
 
     onNext = index => {
@@ -174,10 +184,7 @@ class ClusterCreationPanel extends Component {
             <div>
                 <ClustersDownloadPage
                     cluster={this.props.editingCluster}
-                    onClick={this.onDownload}
-                    ref={downloadPage => {
-                        this.downloadPage = downloadPage;
-                    }}
+                    onFileDownload={this.onDownload}
                 />
                 <ClustersSuccessPage success={this.props.isClusterSuccessfullyConfigured} />
             </div>
