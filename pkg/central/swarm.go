@@ -13,14 +13,16 @@ func init() {
 }
 
 type swarm struct {
-	deploy *template.Template
-	cmd    *template.Template
+	clairifyYaml *template.Template
+	cmd          *template.Template
+	deploy       *template.Template
 }
 
 func newSwarm() deployer {
 	return &swarm{
-		deploy: template.Must(template.New("swarm").Parse(swarmDeploy)),
-		cmd:    template.Must(template.New("swarm").Parse(swarmCmd)),
+		clairifyYaml: template.Must(template.New("swarm").Parse(swarmClairifyYAML)),
+		cmd:          template.Must(template.New("swarm").Parse(swarmCmd)),
+		deploy:       template.Must(template.New("swarm").Parse(swarmDeploy)),
 	}
 }
 
@@ -37,6 +39,14 @@ func (s *swarm) Render(c Config) ([]*v1.File, error) {
 		return nil, err
 	}
 	files = append(files, zip.NewFile("deploy.sh", data, true))
+
+	data, err = executeTemplate(s.clairifyYaml, c)
+	if err != nil {
+		return nil, err
+	}
+	files = append(files, zip.NewFile("clairify.yaml", data, false))
+
+	files = append(files, zip.NewFile("clairify.sh", swarmClairifyScript, true))
 	return files, nil
 }
 
@@ -44,7 +54,7 @@ var (
 	swarmDeploy = `version: "3.2"
 services:
   central:
-    image: {{.SwarmConfig.Image}}
+    image: {{.SwarmConfig.PreventImage}}
     entrypoint: ["central"]
     networks:
       net:
@@ -103,5 +113,31 @@ cd $DIR
 docker stack deploy -c ./deploy.yaml prevent --with-registry-auth
 
 cd $WD
+`
+
+	swarmClairifyYAML = `
+version: "3.2"
+services:
+  clairify:
+    image: {{.SwarmConfig.ClairifyImage}}
+    entrypoint:
+      - /init
+      - /clairify
+    environment:
+      - CLAIR_ARGS=-insecure-tls
+    networks:
+      net:
+    deploy:
+      labels:
+        owner: stackrox
+        email: support@stackrox.com
+networks:
+  net:
+    driver: overlay
+    attachable: true
+`
+
+	swarmClairifyScript = commandPrefix + `
+docker stack deploy -c ${DIR}/clairify.yaml prevent --with-registry-auth
 `
 )

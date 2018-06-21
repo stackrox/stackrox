@@ -38,7 +38,8 @@ type HostPathPersistence struct {
 // Image is an example as it can be parameterized per orchestrator with different defaults so it cannot be placed
 // at the top level
 type CommonConfig struct {
-	Image string
+	PreventImage  string
+	ClairifyImage string
 }
 
 // K8sConfig contains k8s fields

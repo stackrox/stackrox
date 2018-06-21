@@ -15,6 +15,7 @@ func init() {
 
 type kubernetes struct {
 	deploy      *template.Template
+	clairify    *template.Template
 	cmd         *template.Template
 	lb          *template.Template
 	portForward *template.Template
@@ -23,6 +24,7 @@ type kubernetes struct {
 func newKubernetes() deployer {
 	return &kubernetes{
 		deploy:      template.Must(template.New("kubernetes").Parse(k8sDeploy)),
+		clairify:    template.Must(template.New("kubernetes").Parse(k8sClairifyYAML)),
 		cmd:         template.Must(template.New("kubernetes").Parse(k8sCmd)),
 		lb:          template.Must(template.New("kubernetes").Parse(k8sLB)),
 		portForward: template.Must(template.New("kubernetes").Parse(getPortForwardTemplate("kubectl"))),
@@ -31,7 +33,7 @@ func newKubernetes() deployer {
 
 func (k *kubernetes) Render(c Config) ([]*v1.File, error) {
 	var err error
-	c.K8sConfig.Registry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.Image)
+	c.K8sConfig.Registry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.PreventImage)
 	if err != nil {
 		return nil, err
 	}
@@ -60,6 +62,13 @@ func (k *kubernetes) Render(c Config) ([]*v1.File, error) {
 	}
 	files = append(files, zip.NewFile("port-forward.sh", data, true))
 
+	data, err = executeTemplate(k.clairify, c)
+	if err != nil {
+		return nil, err
+	}
+	files = append(files, zip.NewFile("clairify.yaml", data, false))
+	files = append(files, zip.NewFile("clairify.sh", k8sClairifyScript, true))
+
 	return files, nil
 }
 
@@ -68,6 +77,10 @@ func getPortForwardTemplate(cmd string) string {
 }
 
 var (
+	k8sSeparator = `
+---
+`
+
 	k8sDeploy = `apiVersion: v1
 kind: Service
 metadata:
@@ -115,7 +128,7 @@ spec:
       {{- end}}
       containers:
       - name: central
-        image: {{.K8sConfig.Image}}
+        image: {{.K8sConfig.PreventImage}}
         resources:
           requests:
             memory: "2Gi"
@@ -210,6 +223,75 @@ done
 export CENTRAL_POD="$(%s get pod -n {{.K8sConfig.Namespace}} --selector 'app=central' --output=jsonpath='{.items..metadata.name} {.items..status.phase}' | grep Running | cut -f 1 -d ' ')"
 %s port-forward -n "{{.K8sConfig.Namespace}}" "${CENTRAL_POD}" $1:443 > /dev/null &
 echo "Access central on localhost:$1"
+`
 
+	k8sClairifyYAML = `
+apiVersion: v1
+kind: Service
+metadata:
+  name: clairify
+  namespace: {{.K8sConfig.Namespace}}
+spec:
+  ports:
+  - name: clair-http
+    port: 6060
+    targetPort: 6060
+  - name: clairify-http
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: clairify
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: clairify
+  namespace: {{.K8sConfig.Namespace}}
+  labels:
+    app: clairify
+  annotations:
+    owner: stackrox
+    email: support@stackrox.com
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clairify
+  template:
+    metadata:
+      namespace: {{.K8sConfig.Namespace}}
+      labels:
+        app: clairify
+    spec:
+      containers:
+      - name: clairify
+        image: {{.K8sConfig.ClairifyImage}}
+        env:
+        - name: CLAIR_ARGS
+          value: "-insecure-tls"
+        command:
+          - /init
+          - /clairify
+        imagePullPolicy: Always
+        ports:
+        - name: clair
+          containerPort: 6060
+        - name: clairify
+          containerPort: 8080
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+      {{if eq .ClusterType.String "KUBERNETES_CLUSTER" }}
+      imagePullSecrets:
+      - name: {{.K8sConfig.ImagePullSecret}}
+      {{else}}
+      serviceAccount: clairify
+      {{- end}}
+`
+
+	k8sClairifyScript = commandPrefix + `
+
+kubectl create -f clairify.yaml
 `
 )

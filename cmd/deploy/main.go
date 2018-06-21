@@ -20,8 +20,10 @@ var (
 )
 
 var (
-	tag   = "1.3"
-	image = "prevent:" + tag
+	clairifyTag   = "0.3.1"
+	clairifyImage = "clairify:" + clairifyTag
+	preventTag    = "1.3"
+	preventImage  = "prevent:" + preventTag
 )
 
 // ServeHTTP serves a ZIP file for the cluster upon request.
