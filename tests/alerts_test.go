@@ -150,7 +150,7 @@ func waitForDeployment(t *testing.T, deploymentName string) {
 				logger.Infof("%s: Found %+v deployments", t.Name(), deployments)
 				d := deployments[0]
 
-				if len(d.GetContainers()) > 0 && d.GetContainers()[0].GetImage().GetName().GetSha() != "" {
+				if len(d.GetContainers()) > 0 {
 					return
 				}
 				logger.Infof("%s: Found %+v containers", t.Name(), d.GetContainers())
