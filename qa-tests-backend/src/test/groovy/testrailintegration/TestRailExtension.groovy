@@ -1,7 +1,6 @@
-package testrailIntegration
+package testrailintegration
 
 import org.spockframework.runtime.extension.AbstractAnnotationDrivenExtension
-
 
 class TestRailExtension extends AbstractAnnotationDrivenExtension<TestRail> {
 

@@ -1,10 +1,10 @@
-package OrchestratorManager
+package orchestratormanager
 
 interface OrchestratorMain {
     def setup()
     def cleanup()
 
-    String getDeploymentName(int port)
+    String getDeploymentName()
     void setDeploymentName(String metaName)
     void addMetaLables(String labelName, String labelValue)
     void setReplicasNum(int replicasNum)

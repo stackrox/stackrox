@@ -1,23 +1,31 @@
-package OrchestratorManager
+package orchestratormanager
 
 class OrchestratorCommon {
-    static COMMAND_EXEC_TIMEOUT = 30000
+    static final COMMAND_EXEC_TIMEOUT = 30000
 
     static CommandResults runCommand(cmd, List<String> envVariables = null, Boolean print = false) {
         def stdOut = new StringBuffer()
         def stdErr = new StringBuffer()
 
-        if(print) println ">>> RUNNING COMMAND: ${cmd.join(" ")}"
+        if (print) {
+            println ">>> RUNNING COMMAND: ${cmd.join(" ")}"
+        }
 
         def process = cmd.execute(envVariables, null)
         process.consumeProcessOutput(stdOut, stdErr)
         process.waitForOrKill(COMMAND_EXEC_TIMEOUT)
 
-        if(process.exitValue() == 143) println "runCommand killed due to timeout (${COMMAND_EXEC_TIMEOUT} ms)"
+        if (process.exitValue() == 143) {
+            println "runCommand killed due to timeout (${COMMAND_EXEC_TIMEOUT} ms)"
+        }
 
-        if(print) {
-            if(stdOut.toString().trim() != "") println "Standard Output: ${stdOut.toString().trim()}"
-            if(stdErr.toString().trim() != "") println "Standard Error: ${stdErr.toString().trim()}"
+        if (print) {
+            if (stdOut.toString().trim() != "") {
+                println "Standard Output: ${stdOut.toString().trim()}"
+            }
+            if (stdErr.toString().trim() != "") {
+                println "Standard Error: ${stdErr.toString().trim()}"
+            }
             println "Exit Value: ${process.exitValue()}"
         }
 
@@ -35,9 +43,9 @@ class OrchestratorCommon {
             args.split("\\s").each {
                 def arg = it
 
-                if(temp != "") {
+                if (temp != "") {
                     temp += " " + arg
-                    if(temp.endsWith(temp.charAt(0).toString())) {
+                    if (temp.endsWith(temp.charAt(0).toString())) {
                         cmdsList.add(temp)
                         temp = ""
                     }
@@ -46,7 +54,9 @@ class OrchestratorCommon {
                     if ((arg.startsWith("'") || arg.startsWith("\"")) && !arg.endsWith(arg.charAt(0).toString())) {
                         temp = arg
                     }
-                    else cmdsList.add(arg)
+                    else {
+                        cmdsList.add(arg)
+                    }
                 }
             }
         }
@@ -59,5 +69,3 @@ class CommandResults {
     def standardOutput
     def standardError
 }
-
-

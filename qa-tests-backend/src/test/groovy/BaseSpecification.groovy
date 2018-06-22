@@ -1,22 +1,21 @@
 import spock.lang.Specification
-import OrchestratorManager.OrchestratorMain
-import OrchestratorManager.OrchestratorType
-import OrchestratorManager.OrchestratorTypes
+import orchestratormanager.OrchestratorMain
+import orchestratormanager.OrchestratorType
+import orchestratormanager.OrchestratorTypes
 import spock.lang.Shared
 import groovy.util.logging.Slf4j
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
 import com.jayway.restassured.RestAssured
-import testrailIntegration.TestRailconfig
-
+import testrailintegration.TestRailconfig
 
 @Slf4j
 class BaseSpecification extends Specification {
     @Rule
-    def Timeout globalTimeout = new Timeout(200000)
+    Timeout globalTimeout = new Timeout(200000)
     @Rule
-    def TestName name = new TestName()
+    TestName name = new TestName()
     @Shared
     boolean isTestrail = System.getenv("testrail")
     @Shared
@@ -25,7 +24,6 @@ class BaseSpecification extends Specification {
     def resultMap = [:]
     @Shared
     OrchestratorMain orchestrator = OrchestratorType.create(OrchestratorTypes.valueOf(System.getenv("cluster")), "qa")
-
 
     def setupSpec() {
         RestAssured.useRelaxedHTTPSValidation()
@@ -48,7 +46,6 @@ class BaseSpecification extends Specification {
                 Integer testcaseId = Integer.parseInt(entry.value.toString());
                 tc.addStatusForCase(testcaseId, status);
             }
-
 
         }*/
     }

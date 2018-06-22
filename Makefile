@@ -10,7 +10,12 @@ all: deps style test image
 ## Style ##
 ###########
 .PHONY: style
-style: fmt imports lint vet blanks ui-lint
+style: fmt imports lint vet blanks ui-lint qa-tests-style
+
+.PHONY: qa-tests-style
+qa-tests-style:
+	@echo "+ $@"
+	make -C qa-tests-backend/ style
 
 .PHONY: ui-lint
 ui-lint:

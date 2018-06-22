@@ -1,4 +1,4 @@
-package Objects
+package objects
 
 /**
  * Created by parulshukla on 5/31/18.
@@ -19,7 +19,7 @@ class Policy {
     def configurationPolicy
 }
 
-class PolicyResults{
+class PolicyResults {
     List<Policy> policies
 }
 
@@ -28,7 +28,6 @@ class AlertByPolicy {
     def numAlerts
 }
 
-class AlertsByPolicy{
-   List<AlertByPolicy> alertsByPolicies
-
+class AlertsByPolicy {
+    List<AlertByPolicy> alertsByPolicies
 }

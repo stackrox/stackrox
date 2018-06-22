@@ -1,11 +1,11 @@
-package Objects
+package objects
 
 import java.util.Map.Entry
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 
-class KubernetesDeployment{
+class KubernetesDeployment {
     String apiVersion
     String kindJson
     String deploymentName
@@ -30,7 +30,7 @@ class KubernetesDeployment{
         this.metaLabels.put("app", "test")
         this.templateLabels.put("app", "test")
     }
-    String getDeploymentName(){
+    String getDeploymentName() {
         return this.deploymentName
     }
     void setDeploymentName(String deploymentName) {

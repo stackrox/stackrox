@@ -1,23 +1,23 @@
-package OrchestratorManager
+package orchestratormanager
 
-import Objects.KubernetesDeployment
+import objects.KubernetesDeployment
 
-class Kubernetes extends OrchestratorCommon implements OrchestratorMain{
-    private String namespace
-    private KubernetesDeployment kubernetesDeployment
-    private String cliCommand = "kubectl"
+class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
+    private final String namespace
+    private final KubernetesDeployment kubernetesDeployment
+    private final String cliCommand = "kubectl"
 
-    Kubernetes(String ns){
+    Kubernetes(String ns) {
         namespace = ns
         ensureNamespaceExists(namespace)
         kubernetesDeployment = new KubernetesDeployment()
     }
-    Kubernetes(){
+
+    Kubernetes() {
         Kubernetes("default")
     }
 
-
-    def portForward(String podId){
+    def portForward(String podId) {
         String cmd = "${cliCommand} -n stackrox port-forward ${podId} 8000:443 &"
         def result = runCommand(cmd).standardOutput
         System.out.println(result)
@@ -27,7 +27,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain{
         def getNamespaces = "${cliCommand} get namespaces -o jsonpath={.items[*].metadata.name}"
         def namespaces = runCommand(getNamespaces).standardOutput.split(" ")
 
-        if(!namespaces.contains(namespace)) {
+        if (!namespaces.contains(namespace)) {
             def createNamespace = "${cliCommand} create namespace ${namespace}"
             runCommand(createNamespace)
             println "Created namespace ${namespace}"
@@ -37,7 +37,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain{
     void setDeploymentName(String metaName) {
         kubernetesDeployment.setDeploymentName(metaName)
     }
-    String getDeploymentName(int port) {
+    String getDeploymentName() {
         return kubernetesDeployment.getDeploymentName()
     }
     void addMetaLables(String labelName, String labelValue) {
@@ -59,16 +59,17 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain{
         kubernetesDeployment.addContainerPort(port)
     }
 
-    def setup(){
-
+    def setup() {
         //TODO: create secret for DTR
         def containerID = this.getPodOrContainerIds("central", "stackrox")
         this.portForward(containerID[0])
     }
-    def cleanup(){
+
+    @Override
+    def cleanup() {
     }
 
-    boolean createDeployment(){
+    boolean createDeployment() {
         String ns = this.namespace
         String jsonDeployment = kubernetesDeployment.generateDeployment()
         def deploymentName = kubernetesDeployment.getDeploymentName()
@@ -79,24 +80,27 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain{
             inputFile.write(jsonDeployment)
             String cmd = "${cliCommand} -n ${ns} create -f ${inputFile}"
             println(cmd)
-            exitCode = runCommand(cmd,null,true).exitValue
+            exitCode = runCommand(cmd, null, true).exitValue
             inputFile.deleteOnExit()
-        } catch (IOException ioException){
+        } catch (IOException ioException) {
             println(ioException.toString())
         }
-        if(exitCode){
+        if (exitCode) {
             println "deployment failed..."
             return false
-        } else {
-            println "waiting for all pods to be in running state..."
-
-            def replicasCmd = "${cliCommand} -n ${ns}  get deploy --field-selector metadata.name=${deploymentName} -o jsonpath={.items[0].spec.replicas}"
-            def replicas = runCommand(replicasCmd).standardOutput.trim()
-            def status = "0"
-            def runningCmd = "${cliCommand} -n ${ns}  get deploy --field-selector metadata.name=${deploymentName} -o jsonpath={.items[0].status.availableReplicas}"
-            while (status.trim() != replicas) status = runCommand(runningCmd).standardOutput
-            println "Deployment created."
         }
+        println "waiting for all pods to be in running state..."
+
+        def replicasCmd = "${cliCommand} -n ${ns} " +
+                "get deploy --field-selector metadata.name=${deploymentName} -o jsonpath={.items[0].spec.replicas}"
+        def replicas = runCommand(replicasCmd).standardOutput.trim()
+        def status = "0"
+        def runningCmd = "${cliCommand} -n ${ns} get deploy " +
+                "--field-selector metadata.name=${deploymentName} -o jsonpath={.items[0].status.availableReplicas}"
+        while (status.trim() != replicas) {
+            status = runCommand(runningCmd).standardOutput
+        }
+        println "Deployment created."
 
         return true
     }
@@ -105,8 +109,10 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain{
         List<String> podIds = new ArrayList<>()
         def cmd = "${cliCommand} -n ${ns} get pods --no-headers --output=custom-columns=NAME:.metadata.name"
         def podNames = runCommand(cmd).standardOutput.split("\\r?\\n")
-        for(String podName : podNames) {
-            if(podName.startsWith(deploymentName)) podIds.add(podName)
+        for (String podName : podNames) {
+            if (podName.startsWith(deploymentName)) {
+                podIds.add(podName)
+            }
         }
         return podIds.toArray()
     }
@@ -116,7 +122,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain{
         String ns = namespace
         String cmd = "${cliCommand} -n ${ns}  delete deployment ${deploymentName}"
         def exitCode = runCommand(cmd).exitValue
-        while(exitCode != 0) {
+        while (exitCode != 0) {
             exitCode = runCommand(cmd).exitValue
         }
 

@@ -1,4 +1,4 @@
-package OrchestratorManager
+package orchestratormanager
 
 /**
  * Created by parulshukla on 5/22/18.
@@ -11,22 +11,15 @@ class OrchestratorType {
             case OrchestratorTypes.K8S:
                 orchestrator = new Kubernetes(namespace)
                 return orchestrator
-                break
-
             case OrchestratorTypes.DDC2:
                 orchestrator = new DockerEE()
                 return orchestrator
-                break
-
             case OrchestratorTypes.OPENSHIFT:
                 orchestrator = new OpenShift()
                 return orchestrator
-                break
-
         }
     }
 }
-
 
 enum OrchestratorTypes {
     K8S,

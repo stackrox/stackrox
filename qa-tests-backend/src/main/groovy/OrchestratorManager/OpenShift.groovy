@@ -1,4 +1,0 @@
-package OrchestratorManager
-
-class OpenShift {
-}
