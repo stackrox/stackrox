@@ -25,6 +25,9 @@ type compiledConfigurationPolicy struct {
 
 	Volume *compiledVolumePolicy
 	Port   *compiledPortPolicy
+
+	ContainerResources *v1.ResourcePolicy
+	TotalResources     *v1.ResourcePolicy
 }
 
 type keyValuePolicy struct {
@@ -108,6 +111,10 @@ func NewCompiledConfigurationPolicy(policy *v1.Policy) (compiledP processors.Com
 	}
 
 	compiled.Port = newCompiledPortPolicy(configurationPolicy.GetPortPolicy())
+
+	compiled.ContainerResources = configurationPolicy.GetContainerResourcePolicy()
+	compiled.TotalResources = configurationPolicy.GetTotalResourcePolicy()
+
 	return compiled, nil
 }
 

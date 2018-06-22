@@ -76,7 +76,7 @@ func TestAlerts(t *testing.T) {
 }
 
 func setupNginxDeployment(t *testing.T) {
-	cmd := exec.Command(`kubectl`, `run`, nginxDeploymentName, `--image=nginx`, `--port=22`, `--env=SECRET=true`, `--labels=hello=world`)
+	cmd := exec.Command(`kubectl`, `run`, nginxDeploymentName, `--image=nginx`, `--port=22`, `--env=SECRET=true`, `--labels=hello=world`, `--limits=cpu=10m,memory=50M`, `--requests=cpu=10m,memory=50M`)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
 

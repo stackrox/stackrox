@@ -14,10 +14,14 @@ var (
 
 type matchFunc func(*v1.SecurityContext) ([]*v1.Alert_Violation, bool)
 
-func (p *compiledPrivilegePolicy) Match(deployment *v1.Deployment, container *v1.Container) (output []*v1.Alert_Violation, valid bool) {
+func (p *compiledPrivilegePolicy) MatchDeployment(*v1.Deployment) ([]*v1.Alert_Violation, bool) {
+	return nil, false
+}
+
+func (p *compiledPrivilegePolicy) MatchContainer(container *v1.Container) ([]*v1.Alert_Violation, bool) {
 	security := container.GetSecurityContext()
 	if security == nil {
-		return
+		return nil, false
 	}
 
 	matchFunctions := []matchFunc{
@@ -26,23 +30,20 @@ func (p *compiledPrivilegePolicy) Match(deployment *v1.Deployment, container *v1
 		p.matchDropCap,
 	}
 
-	var violations, vs []*v1.Alert_Violation
+	var violations []*v1.Alert_Violation
 	var exists bool
 
 	// Every sub-policy that exists must match and return violations for the policy to match.
 	for _, f := range matchFunctions {
-		vs, exists = f(security)
-		if exists {
-			valid = true
-		}
-		if exists && len(vs) == 0 {
-			return
+		vs, valid := f(security)
+		if valid && len(vs) == 0 {
+			return nil, true
+		} else if valid {
+			exists = true
 		}
 		violations = append(violations, vs...)
 	}
-
-	output = violations
-	return
+	return violations, exists
 }
 
 func (p *compiledPrivilegePolicy) matchPrivileged(security *v1.SecurityContext) (violations []*v1.Alert_Violation, exists bool) {

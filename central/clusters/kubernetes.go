@@ -146,6 +146,13 @@ spec:
         - name: certs
           mountPath: /run/secrets/stackrox.io/
           readOnly: true
+        resources:
+          requests:
+            memory: "200Mi"
+            cpu: "200m"
+          limits:
+            memory: "500Mi"
+            cpu: "500m"
       serviceAccount: sensor
 {{if .ImagePullSecret }}
       imagePullSecrets:

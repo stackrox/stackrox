@@ -19,6 +19,9 @@ import (
 
 const (
 	defaultNamespace = "default"
+
+	nanoCPUS = 1000 * 1000 * 1000
+	megabyte = 1024 * 1024
 )
 
 type serviceWrap swarm.Service
@@ -77,9 +80,35 @@ func (s serviceWrap) asDeployment(client *client.Client, retryGetImageSha bool) 
 				Volumes:         s.getVolumes(),
 				Ports:           s.getPorts(),
 				Secrets:         s.getSecrets(),
+				Resources:       s.getResources(),
 			},
 		},
 	}
+}
+
+func convertNanoCPUsToCores(nanos int64) float32 {
+	return float32(float64(nanos) / nanoCPUS)
+}
+
+func convertMemoryBytesToMb(bytes int64) float32 {
+	return float32(float64(bytes) / megabyte)
+}
+
+func (s serviceWrap) getResources() *v1.Resources {
+	resources := s.Spec.TaskTemplate.Resources
+	if resources == nil {
+		return nil
+	}
+	var v1Resources v1.Resources
+	if resources.Limits != nil {
+		v1Resources.CpuCoresLimit = convertNanoCPUsToCores(resources.Limits.NanoCPUs)
+		v1Resources.MemoryMbLimit = convertMemoryBytesToMb(resources.Limits.MemoryBytes)
+	}
+	if resources.Reservations != nil {
+		v1Resources.CpuCoresRequest = convertNanoCPUsToCores(resources.Reservations.NanoCPUs)
+		v1Resources.MemoryMbRequest = convertMemoryBytesToMb(resources.Reservations.MemoryBytes)
+	}
+	return &v1Resources
 }
 
 func (s serviceWrap) getContainerConfig() *v1.ContainerConfig {

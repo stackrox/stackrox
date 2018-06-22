@@ -13,7 +13,8 @@ var (
 
 // CompiledPolicy allows matching against a container in a deployment.
 type CompiledPolicy interface {
-	Match(*v1.Deployment, *v1.Container) ([]*v1.Alert_Violation, bool)
+	MatchContainer(*v1.Container) ([]*v1.Alert_Violation, bool)
+	MatchDeployment(*v1.Deployment) ([]*v1.Alert_Violation, bool)
 }
 
 // CompileStringRegex returns the compiled regex if string is not empty,

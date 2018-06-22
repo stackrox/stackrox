@@ -1,6 +1,8 @@
 package listener
 
 import (
+	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -105,6 +108,16 @@ func TestConvert(t *testing.T) {
 											Name:      "secretVol1",
 											MountPath: "/var/secrets",
 											ReadOnly:  true,
+										},
+									},
+									Resources: v1.ResourceRequirements{
+										Requests: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("100m"),
+											v1.ResourceMemory: resource.MustParse("1Gi"),
+										},
+										Limits: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("200m"),
+											v1.ResourceMemory: resource.MustParse("2Gi"),
 										},
 									},
 								},
@@ -257,6 +270,12 @@ func TestConvert(t *testing.T) {
 									Level: "level",
 								},
 							},
+							Resources: &pkgV1.Resources{
+								CpuCoresRequest: 0.1,
+								CpuCoresLimit:   0.2,
+								MemoryMbRequest: 1024.00,
+								MemoryMbLimit:   2048.00,
+							},
 						},
 						{
 							Config: &pkgV1.ContainerConfig{
@@ -295,6 +314,7 @@ func TestConvert(t *testing.T) {
 									Type:        "HostPath",
 								},
 							},
+							Resources: &pkgV1.Resources{},
 						},
 					},
 				},
@@ -309,6 +329,76 @@ func TestConvert(t *testing.T) {
 		})
 	}
 }
+
+func verifyFloat(t *testing.T, f string, float float32) {
+	floatStr := fmt.Sprintf("%0.2f", float)
+	assert.Equal(t, f, floatStr)
+}
+
+func TestConvertQuantityToCores(t *testing.T) {
+	cases := []struct {
+		quantity resource.Quantity
+		expected float32
+	}{
+		{
+			quantity: resource.MustParse("20m"),
+			expected: 0.02,
+		},
+		{
+			quantity: resource.MustParse("200m"),
+			expected: 0.2,
+		},
+		{
+			quantity: resource.MustParse("2"),
+			expected: 2.0,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.quantity.String(), func(t *testing.T) {
+			assert.Equal(t, c.expected, convertQuantityToCores(&c.quantity))
+		})
+	}
+}
+
+func TestConvertQuantityToMb(t *testing.T) {
+	cases := []struct {
+		quantity resource.Quantity
+		expected float32
+	}{
+		{
+			quantity: resource.MustParse("128974848"),
+			expected: 123,
+		},
+		{
+			quantity: resource.MustParse("129e6"),
+			expected: 123,
+		},
+		{
+			quantity: resource.MustParse("129M"),
+			expected: 123,
+		},
+		{
+			quantity: resource.MustParse("123Mi"),
+			expected: 123,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.quantity.String(), func(t *testing.T) {
+			assert.True(t, math.Abs(float64(c.expected-convertQuantityToMb(&c.quantity))) < 0.1)
+		})
+	}
+}
+
+//
+//func TestConvertMemoryBytesToMb(t *testing.T) {
+//	verifyFloat(t, "1.00", convertMemoryBytesToMb(megabyte))
+//	verifyFloat(t, "0.00", convertMemoryBytesToMb(0))
+//	verifyFloat(t, "1024.00", convertMemoryBytesToMb(1024*1024*1024))
+//	verifyFloat(t, "1.10", convertMemoryBytesToMb(megabyte+megabyte/10))
+//	verifyFloat(t, "512000.00", convertMemoryBytesToMb(500*1024*1024*1024)) // This is the kubernetes example
+//}
 
 func TestGetVolumeSourceMap(t *testing.T) {
 	t.Parallel()

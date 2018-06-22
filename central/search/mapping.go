@@ -80,6 +80,8 @@ var DeploymentOptionsMap = map[string]*v1.SearchField{
 	LabelKey:   newStringField("deployment.labels.key"),
 	LabelValue: newStringField("deployment.labels.value"),
 
+	CPUCoresLimit:     newNumericField("deployment.containers.resources.cpu_cores_limit"),
+	CPUCoresRequest:   newNumericField("deployment.containers.resources.cpu_cores_request"),
 	DeploymentID:      newStringField("deployment.id"),
 	DeploymentName:    newStringField("deployment.name"),
 	DeploymentType:    newStringField("deployment.type"),
@@ -87,6 +89,8 @@ var DeploymentOptionsMap = map[string]*v1.SearchField{
 	DropCapabilities:  newStringField("deployment.containers.security_context.drop_capabilities"),
 	EnvironmentKey:    newStringField("deployment.containers.config.env.key"),
 	EnvironmentValue:  newStringField("deployment.containers.config.env.value"),
+	MemoryLimit:       newNumericField("deployment.containers.resources.memory_mb_limit"),
+	MemoryRequest:     newNumericField("deployment.containers.resources.memory_mb_request"),
 	Privileged:        newBoolField("deployment.containers.security_context.privileged"),
 	SecretName:        newStringField("deployment.containers.secrets.name"),
 	SecretPath:        newStringField("deployment.containers.secrets.path"),

@@ -1,6 +1,7 @@
 package listener
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -86,6 +87,16 @@ func TestAsDeployment(t *testing.T) {
 								},
 							},
 						},
+						Resources: &swarm.ResourceRequirements{
+							Reservations: &swarm.Resources{
+								NanoCPUs:    1 * nanoCPUS,
+								MemoryBytes: 1 * 1024 * 1024,
+							},
+							Limits: &swarm.Resources{
+								NanoCPUs:    2 * nanoCPUS,
+								MemoryBytes: 2 * 1024 * 1024,
+							},
+						},
 					},
 				},
 				UpdateStatus: &swarm.UpdateStatus{
@@ -168,6 +179,12 @@ func TestAsDeployment(t *testing.T) {
 								Destination: "/var/data",
 							},
 						},
+						Resources: &v1.Resources{
+							CpuCoresRequest: 1,
+							CpuCoresLimit:   2,
+							MemoryMbRequest: 1.00,
+							MemoryMbLimit:   2.00,
+						},
 					},
 				},
 			},
@@ -236,6 +253,16 @@ func TestAsDeployment(t *testing.T) {
 									SecretID:   "id",
 									SecretName: "name",
 								},
+							},
+						},
+						Resources: &swarm.ResourceRequirements{
+							Reservations: &swarm.Resources{
+								NanoCPUs:    1 * nanoCPUS,
+								MemoryBytes: 1 * 1024 * 1024,
+							},
+							Limits: &swarm.Resources{
+								NanoCPUs:    2 * nanoCPUS,
+								MemoryBytes: 2 * 1024 * 1024,
 							},
 						},
 					},
@@ -324,6 +351,12 @@ func TestAsDeployment(t *testing.T) {
 								Destination: "/var/data",
 							},
 						},
+						Resources: &v1.Resources{
+							CpuCoresRequest: 1,
+							CpuCoresLimit:   2,
+							MemoryMbRequest: 1.00,
+							MemoryMbLimit:   2.00,
+						},
 					},
 				},
 			},
@@ -334,11 +367,67 @@ func TestAsDeployment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	for _, c := range cases {
 		got := serviceWrap(c.service).asDeployment(cli, false)
 
 		assert.Equal(t, c.expected, got)
 	}
+}
 
+func TestConvertNanoCPUsToCores(t *testing.T) {
+	cases := []struct {
+		expected float32
+		value    int64
+	}{
+		{
+			expected: 1,
+			value:    nanoCPUS,
+		},
+		{
+			expected: 0,
+			value:    0,
+		},
+		{
+			expected: 1000,
+			value:    1000000000000,
+		},
+		{
+			expected: 1.1,
+			value:    nanoCPUS + nanoCPUS/10,
+		},
+	}
+	for _, c := range cases {
+		t.Run(strconv.FormatFloat(float64(c.expected), 'e', -1, 32), func(t *testing.T) {
+			assert.InDelta(t, c.expected, convertNanoCPUsToCores(c.value), 0.01)
+		})
+	}
+}
+
+func TestConvertMemoryBytesToMb(t *testing.T) {
+	cases := []struct {
+		expected float32
+		value    int64
+	}{
+		{
+			expected: 1,
+			value:    megabyte,
+		},
+		{
+			expected: 0,
+			value:    0,
+		},
+		{
+			expected: 1024,
+			value:    1024 * 1024 * 1024,
+		},
+		{
+			expected: 1.1,
+			value:    megabyte + megabyte/10,
+		},
+	}
+	for _, c := range cases {
+		t.Run(strconv.FormatFloat(float64(c.expected), 'e', -1, 32), func(t *testing.T) {
+			assert.InDelta(t, c.expected, convertMemoryBytesToMb(c.value), 0.01)
+		})
+	}
 }

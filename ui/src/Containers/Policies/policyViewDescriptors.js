@@ -1,16 +1,35 @@
-const cvssMap = {
-    mathOp: {
-        MAX: 'Max score',
-        AVG: 'Avg score',
-        MIN: 'Min score'
-    },
-    op: {
-        GREATER_THAN: 'Is greater than',
-        GREATER_THAN_OR_EQUALS: 'Is greater than or equal to',
-        EQUALS: 'Is equal to',
-        LESS_THAN_OR_EQUALS: 'Is less than or equal to',
-        LESS_THAN: 'Is less than'
+const comparatorOp = {
+    GREATER_THAN: '>',
+    GREATER_THAN_OR_EQUALS: '>=',
+    EQUALS: '=',
+    LESS_THAN_OR_EQUALS: '<=',
+    LESS_THAN: '<'
+};
+
+const mathOp = {
+    MAX: 'Max score',
+    AVG: 'Avg score',
+    MIN: 'Min score'
+};
+
+const formatResourceValue = (prefix, value, suffix) =>
+    `${prefix} ${comparatorOp[value.op]} ${value.value} ${suffix}`;
+
+const formatResources = resource => {
+    const output = [];
+    if (resource.memoryResourceRequest !== undefined) {
+        output.push(formatResourceValue('Memory request', resource.memoryResourceRequest, 'MB'));
     }
+    if (resource.memoryResourceLimit !== undefined) {
+        output.push(formatResourceValue('Memory limit', resource.memoryResourceLimit, 'MB'));
+    }
+    if (resource.cpuResourceRequest !== undefined) {
+        output.push(formatResourceValue('CPU request', resource.cpuResourceRequest, 'Cores'));
+    }
+    if (resource.cpuResourceLimit !== undefined) {
+        output.push(formatResourceValue('CPU limit', resource.cpuResourceLimit, 'Cores'));
+    }
+    return output.join(', ');
 };
 
 const fieldsMap = {
@@ -124,7 +143,7 @@ const fieldsMap = {
     },
     cvss: {
         label: 'CVSS',
-        formatValue: d => `${cvssMap.mathOp[d.mathOp]} ${cvssMap.op[d.op]} ${d.value}`
+        formatValue: d => `${mathOp[d.mathOp]} ${comparatorOp[d.op]} ${d.value}`
     },
     cve: {
         label: 'CVE',
@@ -181,9 +200,20 @@ const fieldsMap = {
     volumePolicy: {
         label: 'Volume Policy',
         formatValue: d => {
-            const type = d.type ? `${d.type} ` : '';
-            const path = d.path ? d.path : '';
-            return `${type}${path}`;
+            const output = [];
+            if (d.name) {
+                output.push(`Name: ${d.name}`);
+            }
+            if (d.type) {
+                output.push(`Type: ${d.type}`);
+            }
+            if (d.source) {
+                output.push(`Source: ${d.source}`);
+            }
+            if (d.destination) {
+                output.push(`Dest: ${d.destination}`);
+            }
+            return output.join(', ');
         }
     },
     portPolicy: {
@@ -205,6 +235,14 @@ const fieldsMap = {
     privileged: {
         label: 'Privileged',
         formatValue: d => (d === true ? 'Yes' : 'No')
+    },
+    containerResourcePolicy: {
+        label: 'Container Resources',
+        formatValue: formatResources
+    },
+    totalResourcePolicy: {
+        label: 'Total Deployment Resources',
+        formatValue: formatResources
     }
 };
 

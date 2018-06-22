@@ -337,6 +337,61 @@ func TestMatch(t *testing.T) {
 				},
 			},
 		},
+		{
+			deployment: &v1.Deployment{
+				Containers: []*v1.Container{
+					{
+						Image: &v1.Image{
+							Name: &v1.ImageName{
+								Remote: "nginx",
+							},
+						},
+						Resources: &v1.Resources{
+							CpuCoresRequest: 1.0,
+							CpuCoresLimit:   2.0,
+							MemoryMbRequest: 3.0,
+							MemoryMbLimit:   4.0,
+						},
+					},
+				},
+			},
+			policy: &v1.Policy{
+				Fields: &v1.PolicyFields{
+					ContainerResourcePolicy: &v1.ResourcePolicy{
+						CpuResourceRequest: &v1.ResourcePolicy_NumericalPolicy{
+							Op:    v1.Comparator_LESS_THAN_OR_EQUALS,
+							Value: 1.1,
+						},
+						CpuResourceLimit: &v1.ResourcePolicy_NumericalPolicy{
+							Op:    v1.Comparator_EQUALS,
+							Value: 2.0,
+						},
+						MemoryResourceRequest: &v1.ResourcePolicy_NumericalPolicy{
+							Op:    v1.Comparator_EQUALS,
+							Value: 3.0,
+						},
+						MemoryResourceLimit: &v1.ResourcePolicy_NumericalPolicy{
+							Op:    v1.Comparator_GREATER_THAN_OR_EQUALS,
+							Value: 3.9,
+						},
+					},
+				},
+			},
+			expectedViolations: []*v1.Alert_Violation{
+				{
+					Message: "The CPU resource request of 1.00 for container nginx is less than or equal to the threshold of 1.1",
+				},
+				{
+					Message: "The CPU resource limit of 2.00 for container nginx is equal to the threshold of 2",
+				},
+				{
+					Message: "The Memory resource request of 3.00 for container nginx is equal to the threshold of 3",
+				},
+				{
+					Message: "The Memory resource limit of 4.00 for container nginx is greater than or equal to the threshold of 3.9",
+				},
+			},
+		},
 	}
 
 	for _, c := range cases {
@@ -345,7 +400,7 @@ func TestMatch(t *testing.T) {
 
 		var violations []*v1.Alert_Violation
 		for _, container := range c.deployment.GetContainers() {
-			vs, _ := compiled.Match(c.deployment, container)
+			vs, _ := compiled.MatchContainer(container)
 			violations = append(violations, vs...)
 		}
 

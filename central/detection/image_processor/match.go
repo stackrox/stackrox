@@ -12,11 +12,15 @@ import (
 
 type matchFunc func(image *v1.Image) ([]*v1.Alert_Violation, bool)
 
+func (policy *compiledImagePolicy) MatchDeployment(deployment *v1.Deployment) ([]*v1.Alert_Violation, bool) {
+	return nil, false
+}
+
 // Match matches the policy if *ALL* conditions of the policy are satisfied.
-func (policy *compiledImagePolicy) Match(deployment *v1.Deployment, container *v1.Container) (violations []*v1.Alert_Violation, valid bool) {
+func (policy *compiledImagePolicy) MatchContainer(container *v1.Container) ([]*v1.Alert_Violation, bool) {
 	image := container.GetImage()
 	if image == nil {
-		return
+		return nil, false
 	}
 
 	matchFunctions := []matchFunc{
@@ -29,19 +33,21 @@ func (policy *compiledImagePolicy) Match(deployment *v1.Deployment, container *v
 		policy.matchScanAge,
 		policy.matchScanExists,
 	}
+	var violations []*v1.Alert_Violation
+	var exists bool
+
 	// This ensures that the policy exists and if there isn't a violation of the field then it should not return any violations
 	for _, f := range matchFunctions {
-		vs, exists := f(image)
-		if exists {
-			valid = true
-		}
-		if exists && len(vs) == 0 {
-			return
+		vs, valid := f(image)
+		if valid && len(vs) == 0 {
+			return nil, true
+		} else if valid {
+			exists = true
 		}
 		violations = append(violations, vs...)
 	}
 
-	return
+	return violations, exists
 }
 
 func min(x, y float32) float32 {

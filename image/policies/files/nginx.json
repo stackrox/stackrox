@@ -1,5 +1,5 @@
 {
-  "name": "DockerHub Nginx 1.10",
+  "name": "DockerHub NGINX 1.10",
   "description": "Alert on deployments with nginx:1.10 image from 'docker.io'",
   "severity": "MEDIUM_SEVERITY",
   "categories": ["Image Assurance"],

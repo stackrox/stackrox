@@ -27,6 +27,13 @@ message Risk {
     repeated Result results = 2;
 }
 
+message Resources {
+    float cpu_cores_request = 1;
+    float cpu_cores_limit   = 2;
+    float memory_mb_request = 3;
+    float memory_mb_limit   = 4;
+}
+
 message Deployment {
     string id                                  = 1;
     string name                                = 2;
@@ -58,6 +65,7 @@ message Container {
     repeated Volume volumes             = 4;
     repeated PortConfig ports           = 5;
     repeated Secret secrets             = 6;
+    Resources resources                 = 7;
 }
 
 message ContainerConfig {

@@ -3,6 +3,7 @@ package listener
 import (
 	"encoding/json"
 	"reflect"
+	"strconv"
 
 	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
@@ -11,11 +12,15 @@ import (
 	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/volumes"
 	ptypes "github.com/gogo/protobuf/types"
 	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	openshiftEncodedDeploymentConfigAnnotation = `openshift.io/encoded-deployment-config`
+
+	nanoCPUS = 1000 * 1000 * 1000
+	megabyte = 1024 * 1024
 )
 
 type wrap struct {
@@ -125,12 +130,12 @@ func (w *wrap) populateContainers(podSpec v1.PodSpec) {
 	for i := range w.Deployment.Containers {
 		w.Deployment.Containers[i] = new(pkgV1.Container)
 	}
-
 	w.populateContainerConfigs(podSpec)
 	w.populateImages(podSpec)
 	w.populateSecurityContext(podSpec)
 	w.populateVolumesAndSecrets(podSpec)
 	w.populatePorts(podSpec)
+	w.populateResources(podSpec)
 }
 
 func (w *wrap) populateReplicas(spec reflect.Value) {
@@ -190,6 +195,7 @@ func (w *wrap) getLabelSelector(spec reflect.Value) map[string]string {
 
 func (w *wrap) populateContainerConfigs(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
+
 		// Skip if there's nothing to add.
 		if len(c.Command) == 0 && len(c.Args) == 0 && len(c.WorkingDir) == 0 && len(c.Env) == 0 && c.SecurityContext == nil {
 			continue
@@ -277,6 +283,30 @@ func (w *wrap) getVolumeSourceMap(podSpec v1.PodSpec) map[string]volumes.VolumeS
 		}
 	}
 	return volumeSourceMap
+}
+
+func convertQuantityToCores(q *resource.Quantity) float32 {
+	// kubernetes does not like floating point values so they make you jump through hoops
+	f, err := strconv.ParseFloat(q.AsDec().String(), 32)
+	if err != nil {
+		logger.Error(err)
+	}
+	return float32(f)
+}
+
+func convertQuantityToMb(q *resource.Quantity) float32 {
+	return float32(float64(q.Value()) / megabyte)
+}
+
+func (w *wrap) populateResources(podSpec v1.PodSpec) {
+	for i, c := range podSpec.Containers {
+		w.Deployment.Containers[i].Resources = &pkgV1.Resources{
+			CpuCoresRequest: convertQuantityToCores(c.Resources.Requests.Cpu()),
+			CpuCoresLimit:   convertQuantityToCores(c.Resources.Limits.Cpu()),
+			MemoryMbRequest: convertQuantityToMb(c.Resources.Requests.Memory()),
+			MemoryMbLimit:   convertQuantityToMb(c.Resources.Limits.Memory()),
+		}
+	}
 }
 
 func (w *wrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {

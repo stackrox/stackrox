@@ -25,6 +25,8 @@ const (
 	ImageRemote                  = "Image Remote"
 	ImageTag                     = "Image Tag"
 
+	CPUCoresLimit     = "CPU Cores Limit"
+	CPUCoresRequest   = "CPU Cores Request"
 	DeploymentID      = "Deployment Id"
 	DeploymentName    = "Deployment Name"
 	DeploymentType    = "Deployment Type"
@@ -32,6 +34,8 @@ const (
 	DropCapabilities  = "Drop Capabilities"
 	EnvironmentKey    = "Environment Key"
 	EnvironmentValue  = "Environment Value"
+	MemoryLimit       = "Memory Limit (MB)"
+	MemoryRequest     = "Memory Request (MB)"
 	Privileged        = "Privileged"
 	SecretName        = "Secret Name"
 	SecretPath        = "Secret Path"

@@ -2,13 +2,13 @@
 
 
 [[projects]]
-  branch = "master"
   name = "bitbucket.org/stack-rox/clairify"
   packages = [
     "client",
     "types"
   ]
   revision = "550bee547e26fadb947b71b005b1c79827cae857"
+  version = "0.3"
 
 [[projects]]
   name = "bitbucket.org/stack-rox/cscc"
@@ -519,7 +519,7 @@
   branch = "master"
   name = "github.com/heroku/docker-registry-client"
   packages = ["registry"]
-  revision = "07595425806a8a28eda142cc95a7a01d9ae1ecb3"
+  revision = "2569502409eb68392fe8059dfea198c50f6c93f7"
   source = "git@bitbucket.org:stack-rox/docker-registry-client.git"
 
 [[projects]]
@@ -1068,6 +1068,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "984aadcb427432a4086e4aa26b27e32b470a106711c68fe4bee67ccbab36be3d"
+  inputs-digest = "0a1d85c42723888e06cde387ec65857dc7f63b066df14407c50711530cbd12e5"
   solver-name = "gps-cdcl"
   solver-version = 1

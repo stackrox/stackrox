@@ -87,6 +87,18 @@ class DeploymentDetails extends Component {
         );
     };
 
+    renderResources = resources => {
+        if (!resources) return <span className="py-1 font-500 italic">None</span>;
+        const resourceMap = {
+            cpuCoresRequest: { label: 'CPU Request (cores)' },
+            cpuCoresLimit: { label: 'CPU Limit (cores)' },
+            memoryMbRequest: { label: 'Memory Request (MB)' },
+            memoryMbLimit: { label: 'Memory Limit (MB)' }
+        };
+
+        return <KeyValuePairs data={resources} keyValueMap={resourceMap} />;
+    };
+
     renderContainerVolumes = volumes => {
         if (!volumes || !volumes.length) return <span className="py-1 font-500 italic">None</span>;
         return volumes.map((volume, idx) => (
@@ -136,6 +148,12 @@ class DeploymentDetails extends Component {
                     <div key={index} data-test-id="deployment-container-configuration">
                         {this.renderContainerImage(container.image)}
                         {data && <KeyValuePairs data={data} keyValueMap={containerConfigMap} />}
+                        <div className="flex py-3">
+                            <div className="pr-1">Resources:</div>
+                            <ul className="-ml-8 mt-4 w-full list-reset">
+                                {this.renderResources(container.resources)}
+                            </ul>
+                        </div>
                         <div className="flex py-3">
                             <div className="pr-1">Mounts:</div>
                             <ul className="-ml-8 mt-4 w-full list-reset">

@@ -341,8 +341,7 @@ func TestMatchScanAge(t *testing.T) {
 
 func TestMatchPolicyToImage(t *testing.T) {
 	// If empty then no violations
-	violations, valid := emptyRegexImagePolicy().Match(nil, &v1.Container{})
-	assert.False(t, valid)
+	violations, _ := emptyRegexImagePolicy().MatchContainer(&v1.Container{})
 	assert.Nil(t, violations)
 
 	image := getTestImage()
@@ -366,8 +365,8 @@ func TestMatchPolicyToImage(t *testing.T) {
 	}
 
 	// Make sure if two are specified and both have violations that we receive the violations
-	violations, valid = policy.Match(nil, &v1.Container{Image: image})
-	assert.True(t, valid)
+
+	violations, _ = policy.MatchContainer(&v1.Container{Image: image})
 	assert.NotNil(t, violations)
 	assert.Equal(t, 3, len(violations))
 
@@ -379,6 +378,6 @@ func TestMatchPolicyToImage(t *testing.T) {
 
 	// Make sure if two are specified, but one does not have a violation that we receive no violations
 	policy.Component = componentRegex // should make ComponentMatch generate no violations so overall alert fails
-	violations, _ = policy.Match(nil, &v1.Container{Image: image})
+	violations, _ = policy.MatchContainer(&v1.Container{Image: image})
 	assert.Nil(t, violations)
 }

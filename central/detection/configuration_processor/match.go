@@ -2,43 +2,64 @@ package configurationprocessor
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 )
 
-type matchFunc func(*v1.Deployment, *v1.Container) ([]*v1.Alert_Violation, bool)
+type containerMatchFunc func(*v1.Container) ([]*v1.Alert_Violation, bool)
+type deploymentMatchFunc func(*v1.Deployment) ([]*v1.Alert_Violation, bool)
 
-func (p *compiledConfigurationPolicy) Match(deployment *v1.Deployment, container *v1.Container) (output []*v1.Alert_Violation, valid bool) {
-	matchFunctions := []matchFunc{
-		p.matchConfigs,
-		p.Env.match,
-		p.Volume.match,
-		p.Port.match,
+func (p *compiledConfigurationPolicy) MatchDeployment(deployment *v1.Deployment) ([]*v1.Alert_Violation, bool) {
+	matchFunctions := []deploymentMatchFunc{
 		p.RequiredLabel.match,
 		p.RequiredAnnotation.match,
+		p.matchTotalResourcePolicy,
 	}
 
-	var violations, vs []*v1.Alert_Violation
+	var violations []*v1.Alert_Violation
 	var exists bool
-
 	// Every sub-policy that exists must match and return violations for the policy to match.
 	for _, f := range matchFunctions {
-		vs, exists = f(deployment, container)
-		if exists {
-			valid = true
-		}
-		if exists && len(vs) == 0 {
-			return
+		vs, valid := f(deployment)
+		if valid && len(vs) == 0 {
+			return nil, true
+		} else if valid {
+			exists = true
 		}
 		violations = append(violations, vs...)
 	}
 
-	output = violations
-	return
+	return violations, exists
 }
 
-func (p *compiledConfigurationPolicy) matchConfigs(_ *v1.Deployment, container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
+func (p *compiledConfigurationPolicy) MatchContainer(container *v1.Container) ([]*v1.Alert_Violation, bool) {
+	matchFunctions := []containerMatchFunc{
+		p.matchConfigs,
+		p.Env.match,
+		p.Volume.match,
+		p.Port.match,
+		p.matchTopLevelContainerResourcePolicy,
+	}
+
+	var violations []*v1.Alert_Violation
+	var exists bool
+
+	// Every sub-policy that exists must match and return violations for the policy to match.
+	for _, f := range matchFunctions {
+		vs, valid := f(container)
+		if valid && len(vs) == 0 {
+			return nil, true
+		} else if valid {
+			exists = true
+		}
+		violations = append(violations, vs...)
+	}
+	return violations, exists
+}
+
+func (p *compiledConfigurationPolicy) matchConfigs(container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
 	if p.Args == nil && p.Command == nil && p.Directory == nil && p.User == nil {
 		return
 	}
@@ -86,7 +107,7 @@ func (p *compiledConfigurationPolicy) matchCommand(commands []string) bool {
 	return false
 }
 
-func (p *compiledEnvironmentPolicy) match(_ *v1.Deployment, container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
+func (p *compiledEnvironmentPolicy) match(container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
 	if p == nil {
 		return
 	}
@@ -119,7 +140,7 @@ func (p *compiledEnvironmentPolicy) match(_ *v1.Deployment, container *v1.Contai
 	return
 }
 
-func (p *requiredAnnotationPolicy) match(deployment *v1.Deployment, _ *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
+func (p *requiredAnnotationPolicy) match(deployment *v1.Deployment) (violations []*v1.Alert_Violation, exists bool) {
 	if p == nil {
 		return
 	}
@@ -128,7 +149,7 @@ func (p *requiredAnnotationPolicy) match(deployment *v1.Deployment, _ *v1.Contai
 	return
 }
 
-func (p *requiredLabelPolicy) match(deployment *v1.Deployment, _ *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
+func (p *requiredLabelPolicy) match(deployment *v1.Deployment) (violations []*v1.Alert_Violation, exists bool) {
 	if p == nil {
 		return
 	}
@@ -167,7 +188,7 @@ func matchRequiredKeyValue(deploymentKeyValues []*v1.Deployment_KeyValue, policy
 	}
 }
 
-func (p *compiledVolumePolicy) match(_ *v1.Deployment, container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
+func (p *compiledVolumePolicy) match(container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
 	if p == nil {
 		return
 	}
@@ -206,7 +227,7 @@ func (p *compiledVolumePolicy) matchVolume(vol *v1.Volume) (violations []*v1.Ale
 	return
 }
 
-func (p *compiledPortPolicy) match(_ *v1.Deployment, container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
+func (p *compiledPortPolicy) match(container *v1.Container) (violations []*v1.Alert_Violation, exists bool) {
 	if p == nil {
 		return
 	}
@@ -234,5 +255,98 @@ func (p *compiledPortPolicy) matchPort(port *v1.PortConfig) (violations []*v1.Al
 		Message: fmt.Sprintf("Port %+v matched configured policy %s", port, p),
 	})
 
+	return
+}
+
+func matchNumericalPolicy(prefix, id string, value float32, p *v1.ResourcePolicy_NumericalPolicy) (violations []*v1.Alert_Violation, policyExists bool) {
+	if p == nil {
+		return
+	}
+	policyExists = true
+	var comparatorFunc func(x, y float32) bool
+	var comparatorString string
+	switch p.GetOp() {
+	case v1.Comparator_LESS_THAN:
+		comparatorFunc = func(x, y float32) bool { return x < y }
+		comparatorString = "less than"
+	case v1.Comparator_LESS_THAN_OR_EQUALS:
+		comparatorFunc = func(x, y float32) bool { return x <= y }
+		comparatorString = "less than or equal to"
+	case v1.Comparator_EQUALS:
+		comparatorFunc = func(x, y float32) bool { return math.Abs(float64(x-y)) <= 1e-5 }
+		comparatorString = "equal to"
+	case v1.Comparator_GREATER_THAN_OR_EQUALS:
+		comparatorFunc = func(x, y float32) bool { return x >= y }
+		comparatorString = "greater than or equal to"
+	case v1.Comparator_GREATER_THAN:
+		comparatorFunc = func(x, y float32) bool { return x > y }
+		comparatorString = "greater than"
+	}
+	if comparatorFunc(value, p.GetValue()) {
+		violations = append(violations, &v1.Alert_Violation{
+			Message: fmt.Sprintf("The %s of %0.2f for %s is %s the threshold of %v", prefix, value,
+				id, comparatorString, p.GetValue()),
+		})
+	}
+	return
+}
+
+func (p *compiledConfigurationPolicy) matchTotalResourcePolicy(deployment *v1.Deployment) (violations []*v1.Alert_Violation, policyExists bool) {
+	var resource v1.Resources
+	for _, c := range deployment.GetContainers() {
+		resource.CpuCoresRequest += c.GetResources().GetCpuCoresRequest() * float32(deployment.GetReplicas())
+		resource.CpuCoresLimit += c.GetResources().GetCpuCoresLimit() * float32(deployment.GetReplicas())
+		resource.MemoryMbRequest += c.GetResources().GetMemoryMbRequest() * float32(deployment.GetReplicas())
+		resource.MemoryMbLimit += c.GetResources().GetMemoryMbLimit() * float32(deployment.GetReplicas())
+	}
+
+	return p.matchResources(p.TotalResources, &resource, "deployment")
+}
+
+func (p *compiledConfigurationPolicy) matchTopLevelContainerResourcePolicy(container *v1.Container) (violations []*v1.Alert_Violation, policyExists bool) {
+	return p.matchResources(p.ContainerResources, container.GetResources(), fmt.Sprintf("container %s", container.GetImage().GetName().GetRemote()))
+}
+
+func (p *compiledConfigurationPolicy) matchResources(policy *v1.ResourcePolicy, resource *v1.Resources, identifier string) (violations []*v1.Alert_Violation, policyExists bool) {
+	if policy == nil {
+		return
+	}
+	policyExists = true
+	matchFunctions := []func(*v1.ResourcePolicy, *v1.Resources, string) ([]*v1.Alert_Violation, bool){
+		p.matchCPUResourceRequest,
+		p.matchCPUResourceLimit,
+		p.matchMemoryResourceRequest,
+		p.matchMemoryResourceLimit,
+	}
+
+	// OR the violations together
+	for _, f := range matchFunctions {
+		vs, _ := f(policy, resource, identifier)
+		violations = append(violations, vs...)
+	}
+	return
+}
+
+func (p *compiledConfigurationPolicy) matchCPUResourceRequest(rp *v1.ResourcePolicy, resources *v1.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
+	violations, policyExists = matchNumericalPolicy("CPU resource request",
+		id, resources.GetCpuCoresRequest(), rp.GetCpuResourceRequest())
+	return
+}
+
+func (p *compiledConfigurationPolicy) matchCPUResourceLimit(rp *v1.ResourcePolicy, resources *v1.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
+	violations, policyExists = matchNumericalPolicy("CPU resource limit",
+		id, resources.GetCpuCoresLimit(), rp.GetCpuResourceLimit())
+	return
+}
+
+func (p *compiledConfigurationPolicy) matchMemoryResourceRequest(rp *v1.ResourcePolicy, resources *v1.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
+	violations, policyExists = matchNumericalPolicy("Memory resource request",
+		id, resources.GetMemoryMbRequest(), rp.GetMemoryResourceRequest())
+	return
+}
+
+func (p *compiledConfigurationPolicy) matchMemoryResourceLimit(rp *v1.ResourcePolicy, resources *v1.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
+	violations, policyExists = matchNumericalPolicy("Memory resource limit",
+		id, resources.GetMemoryMbLimit(), rp.GetMemoryResourceLimit())
 	return
 }

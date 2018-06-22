@@ -1,3 +1,59 @@
+const equalityOptions = [
+    { label: 'Is greater than', value: 'GREATER_THAN' },
+    {
+        label: 'Is greater than or equal to',
+        value: 'GREATER_THAN_OR_EQUALS'
+    },
+    { label: 'Is equal to', value: 'EQUALS' },
+    {
+        label: 'Is less than or equal to',
+        value: 'LESS_THAN_OR_EQUALS'
+    },
+    { label: 'Is less than', value: 'LESS_THAN' }
+];
+
+const cpuResource = (label, policy, field) => ({
+    label,
+    jsonpath: `fields.${policy}.${field}`,
+    type: 'group',
+    jsonpaths: [
+        {
+            jsonpath: `fields.${policy}.${field}.op`,
+            type: 'select',
+            options: equalityOptions
+        },
+        {
+            jsonpath: `fields.${policy}.${field}.value`,
+            type: 'number',
+            placeholder: '# of cores',
+            min: 0
+        }
+    ],
+    required: false,
+    default: false
+});
+
+const memoryResource = (label, policy, field) => ({
+    label,
+    jsonpath: `fields.${policy}.${field}`,
+    type: 'group',
+    jsonpaths: [
+        {
+            jsonpath: `fields.${policy}.${field}.op`,
+            type: 'select',
+            options: equalityOptions
+        },
+        {
+            jsonpath: `fields.${policy}.${field}.value`,
+            type: 'number',
+            placeholder: '# MB',
+            min: 0
+        }
+    ],
+    required: false,
+    default: false
+});
+
 const policyDetailsFormDescriptor = [
     {
         label: 'Name',
@@ -208,19 +264,7 @@ const policyConfigurationDescriptor = [
             {
                 jsonpath: 'fields.cvss.op',
                 type: 'select',
-                options: [
-                    { label: 'Is greater than', value: 'GREATER_THAN' },
-                    {
-                        label: 'Is greater than or equal to',
-                        value: 'GREATER_THAN_OR_EQUALS'
-                    },
-                    { label: 'Is equal to', value: 'EQUALS' },
-                    {
-                        label: 'Is less than or equal to',
-                        value: 'LESS_THAN_OR_EQUALS'
-                    },
-                    { label: 'Is less than', value: 'LESS_THAN' }
-                ]
+                options: equalityOptions
             },
             {
                 jsonpath: 'fields.cvss.value',
@@ -354,8 +398,16 @@ const policyConfigurationDescriptor = [
         default: false
     },
     {
-        label: 'Volume Path',
-        jsonpath: 'fields.volumePolicy.path',
+        label: 'Volume Source',
+        jsonpath: 'configurationPolicy.volumePolicy.source',
+        type: 'text',
+        placeholder: '^/var/run/docker.sock$',
+        required: false,
+        default: false
+    },
+    {
+        label: 'Volume Destination',
+        jsonpath: 'configurationPolicy.volumePolicy.destination',
         type: 'text',
         placeholder: '^/var/run/docker.sock$',
         required: false,
@@ -383,6 +435,15 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false
     },
+    cpuResource('Container CPU Request', 'containerResourcePolicy', 'cpuResourceRequest'),
+    cpuResource('Container CPU Limit', 'containerResourcePolicy', 'cpuResourceLimit'),
+    memoryResource('Container Memory Request', 'containerResourcePolicy', 'memoryResourceRequest'),
+    memoryResource('Container Memory Limit', 'containerResourcePolicy', 'memoryResourceLimit'),
+
+    cpuResource('Total CPU Request', 'totalResourcePolicy', 'cpuResourceRequest'),
+    cpuResource('Total CPU Limit', 'totalResourcePolicy', 'cpuResourceLimit'),
+    memoryResource('Total Memory Request', 'totalResourcePolicy', 'memoryResourceRequest'),
+    memoryResource('Total Memory Limit', 'totalResourcePolicy', 'memoryResourceLimit'),
     {
         label: 'Privileged',
         jsonpath: 'fields.privileged',

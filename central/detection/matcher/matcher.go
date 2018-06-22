@@ -56,6 +56,9 @@ func (p *Policy) Match(deployment *v1.Deployment) (violations []*v1.Alert_Violat
 			}
 		}
 	}
+
+	violations = p.matchDeployment(deployment)
+
 	// each container is considered independently.
 	for _, c := range deployment.GetContainers() {
 		if p.matchesContainerWhitelists(p.GetWhitelists(), c) {
@@ -67,11 +70,25 @@ func (p *Policy) Match(deployment *v1.Deployment) (violations []*v1.Alert_Violat
 	return
 }
 
+func (p *Policy) matchDeployment(deployment *v1.Deployment) []*v1.Alert_Violation {
+	var violations []*v1.Alert_Violation
+	for _, c := range p.compiled {
+		vs, exists := c.MatchDeployment(deployment)
+		// All policy categories must match, otherwise no violations are returned
+		if exists && len(vs) == 0 {
+			return nil
+		}
+		violations = append(violations, vs...)
+	}
+	return violations
+}
+
 func (p *Policy) matchContainer(deployment *v1.Deployment, container *v1.Container) (violations []*v1.Alert_Violation) {
 	for _, c := range p.compiled {
-		vs, valid := c.Match(deployment, container)
-		// All valid policy categories must match, otherwise no violations are returned
-		if valid && len(vs) == 0 {
+		vs, exists := c.MatchContainer(container)
+
+		// All policy categories must match, otherwise no violations are returned
+		if exists && len(vs) == 0 {
 			return nil
 		}
 		violations = append(violations, vs...)

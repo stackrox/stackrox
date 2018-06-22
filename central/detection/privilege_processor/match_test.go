@@ -263,7 +263,7 @@ func TestMatch(t *testing.T) {
 
 		var violations []*v1.Alert_Violation
 		for _, container := range c.deployment.GetContainers() {
-			vs, _ := compiled.Match(c.deployment, container)
+			vs, _ := compiled.MatchContainer(container)
 			violations = append(violations, vs...)
 		}
 
