@@ -339,6 +339,9 @@ func (s *policyValidator) validate(policy *v1.Policy) error {
 	if err := s.validateWhitelists(policy); err != nil {
 		errors = append(errors, err)
 	}
+	if policy.GetFields() == nil {
+		errors = append(errors, fmt.Errorf("At least one field must be specified"))
+	}
 	if len(errors) > 0 {
 		return errorhelpers.FormatErrors("policy invalid", errors)
 	}
