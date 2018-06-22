@@ -101,12 +101,12 @@ This will run you through an installer as follows and generates a swarm.zip file
 docker run -i --rm stackrox.io/prevent:1.2 interactive 1>swarm.zip
 Enter orchestrator (dockeree, k8s, openshift, swarm): swarm
 Enter image to use (default: 'stackrox.io/prevent:1.3'): stackrox.io/prevent:1.2
-Enter public port to expose (default: '443'): 
+Enter public port to expose (default: '443'):
 Enter volume (optional) (external, hostpath): hostpath
-Enter path on the host (default: '/var/lib/prevent'): 
-Enter mount path inside the container (default: '/var/lib/prevent'): 
-Enter hostpath volume name (default: 'prevent-db'): 
-Enter node selector key (default: 'node.hostname'): 
+Enter path on the host (default: '/var/lib/prevent'):
+Enter mount path inside the container (default: '/var/lib/prevent'):
+Enter hostpath volume name (default: 'prevent-db'):
+Enter node selector key (default: 'node.hostname'):
 Enter node selector value: roxbase2
 ```
 
@@ -143,16 +143,16 @@ Set your Docker image-pull credentials as `REGISTRY_USERNAME` and
 docker run -i --rm stackrox.io/prevent:<tag> interactive 1>k8s.zip
 ```
 
-This will run you through an installer as follows and generates a k8s.zip file. 
+This will run you through an installer as follows and generates a k8s.zip file.
 The below works on GKE and creates an external volume
 ```$xslt
 docker run -i --rm stackrox.io/prevent:1.2 interactive 1>k8s.zip
 Enter orchestrator (dockeree, k8s, openshift, swarm): k8s
 Enter image to use (default: 'stackrox.io/prevent:1.3'): stackrox.io/prevent:1.2
-Enter image pull secret (default: 'stackrox'): 
-Enter namespace (default: 'stackrox'): 
+Enter image pull secret (default: 'stackrox'):
+Enter namespace (default: 'stackrox'):
 Enter volume (optional) (external, hostpath): external
-Enter mount path inside the container (default: '/var/lib/prevent'): 
+Enter mount path inside the container (default: '/var/lib/prevent'):
 ```
 
 ```$xslt
@@ -209,13 +209,13 @@ bash image-setup.sh
 docker run -i --rm stackrox.io/prevent:<tag> interactive 1>k8s.zip
 ```
 
-This will run you through an installer as follows and generates a openshift.zip file. 
+This will run you through an installer as follows and generates a openshift.zip file.
 ```$xslt
 docker run -i --rm stackrox.io/prevent:1.2 interactive 1>openshift.zip
 Enter orchestrator (dockeree, k8s, openshift, swarm): openshift
 Enter image to use (default: 'docker-registry.default.svc:5000/stackrox/prevent:1.3'): docker-registry.default.svc:5000/stackrox/prevent:1.2
-Enter namespace (default: 'stackrox'): 
-Enter volume (optional) (external, hostpath): 
+Enter namespace (default: 'stackrox'):
+Enter volume (optional) (external, hostpath):
 ```
 
 ```$xslt
@@ -289,63 +289,5 @@ Add this release to the "Affects Version(s)" list for those bugs.
 Copy the "Latest Stable Version" page, update it, and replace the link on
 [Prevent wiki homepage](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/233242976/StackRox+Prevent).
 
-## POC with Clair
-
-### Launch Clair
-Clair requires persistence.
-If everything is running on one host, then use the below
-```bash
-docker run -d -p 6060:6060 \
-    -e  "LANG=en_US.utf8" \
-    -e  "PGDATA=/var/lib/postgresql/data" \
-    -e "CLAIR_MINIMUM_SEVERITY=Low" \
-    stackrox/scanner:latest
-```
-
-### Upload to Clair
-
-This will launch the clair integration from the Prevent image.
-It pushes all active images in Prevent to Clair.
-This could take quite a while.
-```bash
-docker run -it --entrypoint=/prevent/clair \
-    --net=host \
-    -v $HOME/.docker:/config \
-    stackrox/prevent:latest \
-    --clair http://localhost:6060 \
-    -m ${LOCAL_API_ENDPOINT}
-```
-
-### Manual steps
-
-* Add registry integrations through UI
-* Add Clair integration through UI
-* If nothing is showing up, you may want to hit "Reassess" just to reprocess all of the data
-
-### Notes
-
-To send an individual image to Clair, run:
-```bash
-docker run -it \
-    --entrypoint=/prevent/clair \
-    --net=host -v $HOME/.docker:/config \
-    stackrox/prevent:latest \
-    --clair http://localhost:6060 \
-    --image docker.io/stackrox/prevent:latest
-```
-
-Overrides for registries can be done using "PREVENT_REGISTRY_OVERRIDE"
-```bash
-PREVENT_REGISTRY_OVERRIDE=example.io=http://example.io,docker.io=registry-1.docker.io
-```
-Overrides are necessary for http registries
-
-Password overrides for Mac where we can't read the docker config
-e.g. `PREVENT_REGISTRY_AUTH=docker.io=<base64 password>`
-```bash
-echo "Enter image registry (e.g. docker.io)" && \
-read registry && \
-echo "Enter username and password separated by a colon" && \
-read -s auth && \
-echo ${registry}=$(echo $auth | base64 | tr -- '+=/' '-_~')
-```
+Also, update the [current releases page](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/591593496/Current+product+releases)
+so that the team knows which versions to deploy to customers.
