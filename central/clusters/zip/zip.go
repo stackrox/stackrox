@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/central/service"
@@ -21,6 +23,10 @@ import (
 
 var (
 	logger = logging.LoggerForModule()
+
+	separators                = regexp.MustCompile(`[ &_=+:/]`)
+	alphanumericNameAndDashes = regexp.MustCompile(`[^[:alnum:]\-]`)
+	dashes                    = regexp.MustCompile(`[\-]+`)
 )
 
 // Handler returns a handler for the cluster zip method.
@@ -34,6 +40,18 @@ func Handler(c *service.ClusterService, s *service.IdentityService) http.Handler
 type zipHandler struct {
 	clusterService  *service.ClusterService
 	identityService *service.IdentityService
+}
+
+func getSafeFilename(s string) string {
+	// Lowercase to be compatible with all systems. Don't end with a space
+	s = strings.ToLower(strings.TrimSpace(s))
+	// Replace separators with dash
+	s = separators.ReplaceAllString(s, "-")
+	// Remove all unknown chars
+	s = alphanumericNameAndDashes.ReplaceAllString(s, "")
+	// multiple dashes to 1 dash
+	s = dashes.ReplaceAllString(s, "-")
+	return s
 }
 
 // ServeHTTP serves a ZIP file for the cluster upon request.
@@ -114,8 +132,10 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		logger.Warnf("Couldn't close zip writer: %s", err)
 	}
 
+	zipAttachment := fmt.Sprintf(`attachment; filename="sensor-%s.zip"`, getSafeFilename(resp.GetCluster().GetName()))
+
 	// Tell the browser this is a download.
-	w.Header().Add("Content-Disposition", `attachment; filename="sensor-deploy.zip"`)
+	w.Header().Add("Content-Disposition", zipAttachment)
 	w.Write(buf.Bytes())
 }
 
