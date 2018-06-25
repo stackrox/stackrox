@@ -30,13 +30,6 @@ function launch_central {
         cat "$UNZIP_DIR/tmp" | sed "s/--with-registry-auth//" > "$UNZIP_DIR/deploy.sh"
         rm "$UNZIP_DIR/tmp"
     fi
-    if [ "$LOW_RESOURCES" = "true" ]; then
-
-        sed -i "s/'2.0'/'0.1'/" "$UNZIP_DIR/deploy.yaml"
-        sed -i "s/8G/500M/" "$UNZIP_DIR/deploy.yaml"
-        sed -i "s/'1.0'/'0.1'/" "$UNZIP_DIR/deploy.yaml"
-        sed -i "s/4G/100M/" "$UNZIP_DIR/deploy.yaml"
-    fi
 
     $UNZIP_DIR/deploy.sh
     echo
