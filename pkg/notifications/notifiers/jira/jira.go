@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
@@ -27,9 +28,7 @@ var (
 type jira struct {
 	client *jiraLib.Client
 
-	username  string
-	project   string
-	issueType string
+	conf *v1.Jira
 
 	*v1.Notifier
 }
@@ -68,14 +67,15 @@ func (j *jira) AlertNotify(alert *v1.Alert) error {
 		return err
 	}
 
+	project := notifiers.GetLabelValue(alert, j.GetLabelKey(), j.GetLabelDefault())
 	i := &jiraLib.Issue{
 		Fields: &jiraLib.IssueFields{
 			Summary: fmt.Sprintf("Deployment %v (%v) violates '%v' Policy", alert.Deployment.Name, alert.Deployment.Id, alert.Policy.Name),
 			Type: jiraLib.IssueType{
-				Name: j.issueType,
+				Name: j.conf.GetIssueType(),
 			},
 			Project: jiraLib.Project{
-				Key: j.project,
+				Key: project,
 			},
 			Description: description,
 			Priority: &jiraLib.Priority{
@@ -97,10 +97,10 @@ func (j *jira) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
 		Fields: &jiraLib.IssueFields{
 			Summary: fmt.Sprintf("New Benchmark Results for %v", schedule.GetBenchmarkName()),
 			Type: jiraLib.IssueType{
-				Name: j.issueType,
+				Name: j.conf.GetIssueType(),
 			},
 			Project: jiraLib.Project{
-				Key: j.project,
+				Key: j.GetLabelDefault(),
 			},
 			Description: description,
 			Priority: &jiraLib.Priority{
@@ -111,29 +111,34 @@ func (j *jira) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
 	return j.createIssue(i)
 }
 
-func newJira(protoNotifier *v1.Notifier) (*jira, error) {
-	username, ok := protoNotifier.Config["username"]
-	if !ok {
-		return nil, fmt.Errorf("username must be defined in the Jira Configuration")
+func validate(jira *v1.Jira) error {
+	var errors []string
+	if jira.GetIssueType() == "" {
+		errors = append(errors, "Issue Type must be specified")
 	}
-	password, ok := protoNotifier.Config["password"]
-	if !ok {
-		return nil, fmt.Errorf("password must be defined in the Jira Configuration")
+	if jira.GetUrl() == "" {
+		errors = append(errors, "URL must be specified")
 	}
-	project, ok := protoNotifier.Config["project"]
-	if !ok {
-		return nil, fmt.Errorf("project must be defined in the Jira Configuration")
+	if jira.GetUsername() == "" {
+		errors = append(errors, "Username must be specified")
 	}
-	issueType, ok := protoNotifier.Config["issue_type"]
-	if !ok {
-		return nil, fmt.Errorf("issue_type must be defined in the Jira Configuration")
+	if jira.GetPassword() == "" {
+		errors = append(errors, "Password must be specified")
 	}
-	url, ok := protoNotifier.Config["url"]
+	return errorhelpers.FormatErrorStrings("Jira validation", errors)
+}
+
+func newJira(notifier *v1.Notifier) (*jira, error) {
+	jiraConfig, ok := notifier.GetConfig().(*v1.Notifier_Jira)
 	if !ok {
-		return nil, fmt.Errorf("url must be defined in the Jira Configuration")
+		return nil, fmt.Errorf("Jira configuration required")
+	}
+	conf := jiraConfig.Jira
+	if err := validate(conf); err != nil {
+		return nil, err
 	}
 
-	url, err := urlfmt.FormatURL(url, true, true)
+	url, err := urlfmt.FormatURL(conf.GetUrl(), true, true)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +149,7 @@ func newJira(protoNotifier *v1.Notifier) (*jira, error) {
 	if err != nil {
 		return nil, err
 	}
-	res, err := client.Authentication.AcquireSessionCookie(username, password)
+	res, err := client.Authentication.AcquireSessionCookie(conf.GetUsername(), conf.GetPassword())
 	if err != nil {
 		return nil, err
 	}
@@ -152,14 +157,11 @@ func newJira(protoNotifier *v1.Notifier) (*jira, error) {
 		return nil, errors.New("Result of authentication is false")
 	}
 	// forces the auth to use basic auth per request
-	client.Authentication.SetBasicAuth(username, password)
+	client.Authentication.SetBasicAuth(conf.GetUsername(), conf.GetPassword())
 
 	return &jira{
-		client:    client,
-		Notifier:  protoNotifier,
-		project:   project,
-		username:  username,
-		issueType: issueType,
+		client:   client,
+		Notifier: notifier,
 	}, nil
 }
 
@@ -183,10 +185,10 @@ func (j *jira) Test() error {
 		Fields: &jiraLib.IssueFields{
 			Description: "StackRox Test Issue",
 			Type: jiraLib.IssueType{
-				Name: j.issueType,
+				Name: j.conf.GetIssueType(),
 			},
 			Project: jiraLib.Project{
-				Key: j.project,
+				Key: j.GetLabelDefault(),
 			},
 			Summary: "This is a test issue created to test integration with StackRox.",
 			Priority: &jiraLib.Priority{

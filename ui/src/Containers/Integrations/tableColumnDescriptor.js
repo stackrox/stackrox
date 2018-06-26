@@ -21,15 +21,15 @@ const tableColumnDescriptor = Object.freeze({
     notifiers: {
         slack: [
             { key: 'name', label: 'Name' },
-            { key: 'config.webhook', label: 'Slack Webhook', className: 'word-break' },
-            { key: 'config.channel', label: 'Slack Channel' }
+            { key: 'labelDefault', label: 'Default Webhook', className: 'word-break' },
+            { key: 'labelKey', label: 'Webhook Label Key' }
         ],
         jira: [
             { key: 'name', label: 'Name' },
-            { key: 'config.project', label: 'Project' },
-            { key: 'config.issue_type', label: 'Issue Type' },
+            { key: 'labelDefault', label: 'Default Project' },
+            { key: 'labelKey', label: 'Project Label Key' },
             {
-                key: 'config.url',
+                key: 'jira.url',
                 keyValueFunc: url => (
                     <a href={url} target="_blank">
                         {url}
@@ -40,12 +40,13 @@ const tableColumnDescriptor = Object.freeze({
         ],
         email: [
             { key: 'name', label: 'Name' },
-            { key: 'config.recipient', label: 'Recipient' },
-            { key: 'config.server', label: 'Server' }
+            { key: 'labelDefault', label: 'Default Recipient' },
+            { key: 'labelKey', label: 'Recipient Label Key' },
+            { key: 'email.server', label: 'Server' }
         ],
         cscc: [
             { key: 'name', label: 'Name' },
-            { key: 'config.gcpOrgID', label: 'Google Cloud Platform Org ID' }
+            { key: 'cscc.gcpOrgId', label: 'Google Cloud Platform Org ID' }
         ]
     },
     imageIntegrations: {

@@ -12,57 +12,43 @@ import (
 )
 
 const testWebhookEnv = "SLACK_WEBHOOK"
-const testChannelEnv = "SLACK_CHANNEL"
 
-func skip(t *testing.T) (string, string) {
+func skip(t *testing.T) string {
 	webhook := os.Getenv(testWebhookEnv)
 	if webhook == "" {
 		t.Skipf("Skipping slack integration test because %v is not defined", testWebhookEnv)
 	}
-	channel := os.Getenv(testChannelEnv)
-	if channel == "" {
-		t.Skipf("Skipping slack integration test because %v is not defined", testChannelEnv)
-	}
-	return webhook, channel
+	return webhook
 }
 
 func TestSlackAlertNotify(t *testing.T) {
-	webhook, channel := skip(t)
+	webhook := skip(t)
 	s := slack{
-		config: config{
-			Webhook: webhook,
-			Channel: channel,
-		},
 		Notifier: &v1.Notifier{
-			UiEndpoint: "http://google.com",
+			UiEndpoint:   "http://google.com",
+			LabelDefault: webhook,
 		},
 	}
 	assert.NoError(t, s.AlertNotify(fixtures.GetAlert()))
 }
 
 func TestSlackTest(t *testing.T) {
-	webhook, channel := skip(t)
+	webhook := skip(t)
 	s := slack{
-		config: config{
-			Webhook: webhook,
-			Channel: channel,
-		},
 		Notifier: &v1.Notifier{
-			UiEndpoint: "http://google.com",
+			UiEndpoint:   "http://google.com",
+			LabelDefault: webhook,
 		},
 	}
 	assert.NoError(t, s.Test())
 }
 
 func TestSlackBenchmarkNotify(t *testing.T) {
-	webhook, channel := skip(t)
+	webhook := skip(t)
 	s := slack{
-		config: config{
-			Webhook: webhook,
-			Channel: channel,
-		},
 		Notifier: &v1.Notifier{
-			UiEndpoint: "http://google.com",
+			UiEndpoint:   "http://google.com",
+			LabelDefault: webhook,
 		},
 	}
 	schedule := &v1.BenchmarkSchedule{

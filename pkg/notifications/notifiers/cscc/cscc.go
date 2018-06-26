@@ -2,6 +2,7 @@ package cscc
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -151,10 +152,16 @@ func (c *cscc) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
 }
 
 func newCSCC(protoNotifier *v1.Notifier) (*cscc, error) {
+	csccConfig, ok := protoNotifier.GetConfig().(*v1.Notifier_Cscc)
+	if !ok {
+		return nil, fmt.Errorf("CSCC config is required")
+	}
+	conf := csccConfig.Cscc
+
 	cfg := &config{
-		ServiceAccount: protoNotifier.Config["serviceAccount"],
-		GCPOrgID:       protoNotifier.Config["gcpOrgID"],
-		GCPProject:     protoNotifier.Config["gcpProject"],
+		ServiceAccount: conf.ServiceAccount,
+		GCPOrgID:       conf.GcpOrgId,
+		GCPProject:     conf.GcpProject,
 	}
 	if err := cfg.validate(); err != nil {
 		return nil, err

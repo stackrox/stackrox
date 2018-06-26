@@ -33,14 +33,14 @@ func (suite *BoltNotifierTestSuite) TeardownSuite() {
 func (suite *BoltNotifierTestSuite) TestNotifiers() {
 	notifiers := []*v1.Notifier{
 		{
-			Name:   "slack1",
-			Type:   "slack",
-			Config: map[string]string{"username": "srox"},
+			Name:         "slack1",
+			Type:         "slack",
+			LabelDefault: "label1",
 		},
 		{
-			Name:   "pagerduty1",
-			Type:   "pagerduty",
-			Config: map[string]string{"username": "srox"},
+			Name:         "pagerduty1",
+			Type:         "pagerduty",
+			LabelDefault: "label2",
 		},
 	}
 
@@ -60,7 +60,7 @@ func (suite *BoltNotifierTestSuite) TestNotifiers() {
 
 	// Test Update
 	for _, b := range notifiers {
-		b.Config["newparam"] = "value"
+		b.LabelDefault += "1"
 		suite.NoError(suite.UpdateNotifier(b))
 	}
 

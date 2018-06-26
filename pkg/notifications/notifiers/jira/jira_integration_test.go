@@ -31,13 +31,15 @@ func getJira(t *testing.T) *jira {
 	user, password := skip(t)
 	notifier := &v1.Notifier{
 		UiEndpoint: "http://google.com",
-		Config: map[string]string{
-			"username":   user,
-			"password":   password,
-			"project":    "AJIT",
-			"issue_type": "Bug",
-			"url":        "https://stack-rox.atlassian.net/",
+		Config: &v1.Notifier_Jira{
+			Jira: &v1.Jira{
+				Username:  user,
+				Password:  password,
+				IssueType: "Bug",
+				Url:       "https://stack-rox.atlassian.net/",
+			},
 		},
+		LabelDefault: "AJIT",
 	}
 
 	j, err := newJira(notifier)

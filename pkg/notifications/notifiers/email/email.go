@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
 )
@@ -21,13 +22,7 @@ var (
 
 // email notifier plugin
 type email struct {
-	server    string
-	sender    string
-	recipient string
-	username  string
-	password  string
-	tls       bool
-
+	config     *v1.Email
 	smtpServer smtpServer
 
 	notifier *v1.Notifier
@@ -55,55 +50,46 @@ func (s *smtpServer) endpoint() string {
 	return fmt.Sprintf("%v:%v", s.host, s.port)
 }
 
+func validate(email *v1.Email) error {
+	var errors []string
+	if email.GetServer() == "" {
+		errors = append(errors, "SMTP Server must be specified")
+	}
+	if email.GetSender() == "" {
+		errors = append(errors, "Sender must be specified")
+	}
+	if email.GetUsername() == "" {
+		errors = append(errors, "Username must be specified")
+	}
+	if email.GetPassword() == "" {
+		errors = append(errors, "Password must be specified")
+	}
+	return errorhelpers.FormatErrorStrings("Email validation", errors)
+}
+
 func newEmail(notifier *v1.Notifier) (*email, error) {
-	var err error
-	server, ok := notifier.Config["server"]
+	emailConfig, ok := notifier.GetConfig().(*v1.Notifier_Email)
 	if !ok {
-		return nil, fmt.Errorf("SMTP Server must be defined in the Email Configuration")
+		return nil, fmt.Errorf("Email configuration required")
 	}
-	sender, ok := notifier.Config["sender"]
-	if !ok {
-		return nil, fmt.Errorf("Sender must be defined in the Email Configuration")
-	}
-	recipient, ok := notifier.Config["recipient"]
-	if !ok {
-		return nil, fmt.Errorf("Recipient must be defined in the Email Configuration")
-	}
-	username, ok := notifier.Config["username"]
-	if !ok {
-		return nil, fmt.Errorf("Username must be defined in the Email Configuration")
-	}
-	password, ok := notifier.Config["password"]
-	if !ok {
-		return nil, fmt.Errorf("Password must be defined in the Email Configuration")
-	}
-	// This parameter is optional
-	tlsStr, ok := notifier.Config["tls"]
-	tls := true
-	if ok {
-		tls, err = strconv.ParseBool(tlsStr)
-		if err != nil {
-			return nil, fmt.Errorf("TLS parameter cannot be '%v' and must be either true/false", tls)
-		}
+	conf := emailConfig.Email
+	if err := validate(conf); err != nil {
+		return nil, err
 	}
 
 	port := 465 // default TLS SMTP Port
-	host := server
+	server := conf.GetServer()
+	host := conf.GetServer()
 	idx := strings.Index(server, ":")
 	if idx != -1 && idx != len(server)-1 {
-		port, err = strconv.Atoi(server[idx+1:])
+		port, err := strconv.Atoi(server[idx+1:])
 		if err != nil || port < 0 || port > 65535 {
 			return nil, fmt.Errorf("Port number cannot be '%v' and must be valid port between 0-65535", server[idx+1:])
 		}
 		host = server[:idx]
 	}
 	return &email{
-		server:    server,
-		sender:    sender,
-		recipient: recipient,
-		username:  username,
-		password:  password,
-		tls:       tls,
+		config: conf,
 		smtpServer: smtpServer{
 			host: host,
 			port: port,
@@ -157,7 +143,9 @@ func (e *email) AlertNotify(alert *v1.Alert) error {
 	if err != nil {
 		return err
 	}
-	return e.sendEmail(subject, body)
+
+	recipient := notifiers.GetLabelValue(alert, e.notifier.GetLabelKey(), body)
+	return e.sendEmail(recipient, subject, body)
 }
 
 // BenchmarkNotify takes in an benchmark and generates the email
@@ -167,20 +155,20 @@ func (e *email) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
 	if err != nil {
 		return err
 	}
-	return e.sendEmail(subject, body)
+	return e.sendEmail(e.notifier.GetLabelDefault(), subject, body)
 }
 
 // Test sends a test notification
 func (e *email) Test() error {
 	subject := "StackRox Test Email"
 	body := fmt.Sprintf("%v\r\n", "This is a test email created to test integration with StackRox.")
-	err := e.sendEmail(subject, body)
+	err := e.sendEmail(e.notifier.GetLabelDefault(), subject, body)
 	return err
 }
 
-func (e *email) sendEmail(subject, body string) error {
+func (e *email) sendEmail(recipient, subject, body string) error {
 	msg := message{
-		To:      e.recipient,
+		To:      recipient,
 		Subject: subject,
 		Body:    body,
 	}
@@ -193,7 +181,7 @@ func (e *email) sendEmail(subject, body string) error {
 	}
 
 	var auth smtp.Auth
-	if e.tls {
+	if !e.config.GetDisableTLS() {
 		tlsconfig := &tls.Config{
 			ServerName: e.smtpServer.host,
 		}
@@ -202,14 +190,14 @@ func (e *email) sendEmail(subject, body string) error {
 			log.Error(err)
 			return err
 		}
-		auth = tlsPlainAuth("", e.sender, e.password, e.smtpServer.host)
+		auth = tlsPlainAuth("", e.config.GetUsername(), e.config.GetPassword(), e.smtpServer.host)
 	} else {
 		conn, err = dialer.Dial("tcp", e.smtpServer.endpoint())
 		if err != nil {
 			log.Error(err)
 			return err
 		}
-		auth = smtp.PlainAuth("", e.sender, e.password, e.smtpServer.host)
+		auth = smtp.PlainAuth("", e.config.GetServer(), e.config.GetPassword(), e.smtpServer.host)
 	}
 	client, err := smtp.NewClient(conn, e.smtpServer.host)
 	if err != nil {
@@ -222,11 +210,11 @@ func (e *email) sendEmail(subject, body string) error {
 		return err
 	}
 
-	if err = client.Mail(e.sender); err != nil {
+	if err = client.Mail(e.config.GetSender()); err != nil {
 		log.Error(err)
 		return err
 	}
-	if err = client.Rcpt(e.recipient); err != nil {
+	if err = client.Rcpt(recipient); err != nil {
 		log.Error(err)
 		return err
 	}

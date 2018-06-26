@@ -37,33 +37,38 @@ const formDescriptors = {
             },
             {
                 label: 'Username',
-                key: 'config.username',
+                key: 'jira.username',
                 type: 'text',
                 placeholder: 'user@example.com'
             },
             {
                 label: 'Password',
-                key: 'config.password',
+                key: 'jira.password',
                 type: 'password',
                 placeholder: ''
             },
             {
-                label: 'Project Key',
-                key: 'config.project',
-                type: 'text',
-                placeholder: 'PROJ'
-            },
-            {
                 label: 'Issue Type',
-                key: 'config.issue_type',
+                key: 'jira.issue_type',
                 type: 'text',
                 placeholder: 'Task, Sub-task, Story, Bug, or Epic'
             },
             {
                 label: 'Jira URL',
-                key: 'config.url',
+                key: 'jira.url',
                 type: 'text',
-                placeholder: 'https://example.atlassian.net'
+                placeholder: 'https://stack-rox.atlassian.net'
+            },
+            {
+                label: 'Default Project',
+                key: 'labelDefault',
+                type: 'text',
+                placeholder: 'PROJ'
+            },
+            {
+                label: 'Label/Annotation Key for Project',
+                key: 'labelKey',
+                type: 'text'
             }
         ],
         email: [
@@ -75,39 +80,45 @@ const formDescriptors = {
             },
             {
                 label: 'Email Server',
-                key: 'config.server',
+                key: 'email.server',
                 type: 'text',
                 placeholder: 'smtp.example.com:465'
             },
             {
                 label: 'Username',
-                key: 'config.username',
+                key: 'email.username',
                 type: 'text',
                 placeholder: 'postmaster@example.com'
             },
             {
                 label: 'Password',
-                key: 'config.password',
+                key: 'email.password',
                 type: 'password'
             },
             {
                 label: 'Sender',
-                key: 'config.sender',
+                key: 'email.sender',
                 type: 'text',
                 placeholder: 'prevent-notifier@example.com'
             },
             {
-                label: 'Recipient',
-                key: 'config.recipient',
+                label: 'Default Recipient',
+                key: 'labelDefault',
                 type: 'text',
                 placeholder: 'prevent-alerts@example.com'
             },
             {
-                label: 'TLS',
-                key: 'config.tls',
+                label: 'Label/Annotation Key for Recipient',
+                key: 'labelKey',
+                type: 'text',
+                placeholder: 'email'
+            },
+            {
+                label: 'Disable TLS',
+                key: 'email.tls',
                 type: 'select',
                 options: [{ label: 'On', value: 'true' }, { label: 'Off', value: 'false' }],
-                placeholder: 'Enable TLS?'
+                placeholder: 'Disable TLS?'
             }
         ],
         slack: [
@@ -118,16 +129,16 @@ const formDescriptors = {
                 placeholder: 'Slack Integration'
             },
             {
-                label: 'Slack Webhook',
-                key: 'config.webhook',
+                label: 'Default Slack Webhook',
+                key: 'labelDefault',
                 type: 'text',
                 placeholder: 'https://hooks.slack.com/services/EXAMPLE'
             },
             {
-                label: 'Slack Channel',
-                key: 'config.channel',
+                label: 'Label/Annotation Key for Slack Webhook',
+                key: 'labelKey',
                 type: 'text',
-                placeholder: '#slack-channel'
+                placeholder: 'slack'
             }
         ],
         cscc: [
@@ -139,19 +150,19 @@ const formDescriptors = {
             },
             {
                 label: 'GCP Organization ID Number',
-                key: 'config.gcpOrgID',
+                key: 'cscc.gcpOrgId',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'GCP Project',
-                key: 'config.gcpProject',
+                key: 'cscc.gcpProject',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Service Account Key (JSON)',
-                key: 'config.serviceAccount',
+                key: 'cscc.serviceAccount',
                 type: 'text',
                 placeholder: ''
             }
@@ -371,7 +382,7 @@ const formDescriptors = {
                 label: 'Endpoint',
                 key: 'clairify.endpoint',
                 type: 'text',
-                placeholder: 'https://clairify.example.com'
+                placeholder: 'http://clairify.example:8080'
             },
             {
                 label: 'Registry Image Repo (optional)',
@@ -420,19 +431,19 @@ const formDescriptors = {
             },
             {
                 label: 'Registry Endpoint',
-                key: 'config.endpoint',
+                key: 'cscc.endpoint',
                 type: 'text',
                 placeholder: 'gcr.io'
             },
             {
                 label: 'Project',
-                key: 'config.project',
+                key: 'cscc.project',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Service Account Key (JSON)',
-                key: 'config.serviceAccount',
+                key: 'cscc.serviceAccount',
                 type: 'text',
                 placeholder: ''
             }

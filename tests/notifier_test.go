@@ -20,9 +20,6 @@ const (
 
 var (
 	notifierConfig = &v1.Notifier{
-		Config: map[string]string{
-			"channel": `#slack-test`,
-		},
 		Enabled:    true,
 		Name:       slackNotifierName,
 		Type:       `slack`,
@@ -31,12 +28,11 @@ var (
 )
 
 func init() {
-	notifierConfig.Config["webhook"] = os.Getenv(slackTestChannelWebhookEnvVar)
-
+	notifierConfig.LabelDefault = os.Getenv(slackTestChannelWebhookEnvVar)
 }
 
 func TestNotifierCRUD(t *testing.T) {
-	require.NotEmpty(t, notifierConfig.Config["webhook"])
+	require.NotEmpty(t, notifierConfig.LabelDefault)
 
 	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
 	require.NoError(t, err)
@@ -102,7 +98,7 @@ func verifyReadNotifier(t *testing.T, service v1.NotifierServiceClient) {
 
 func verifyUpdateNotifier(t *testing.T, service v1.NotifierServiceClient) {
 	notifierConfig.UiEndpoint = "http://localhost:3000"
-	notifierConfig.Config["description"] = "A Slack Notifier"
+	notifierConfig.Name += "1"
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := service.PutNotifier(ctx, notifierConfig)

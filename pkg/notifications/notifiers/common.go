@@ -59,3 +59,21 @@ func SeverityString(s v1.Severity) string {
 		panic("The severity enum has been updated, but this switch statement hasn't")
 	}
 }
+
+// GetLabelValue returns the value based on the label in the deployment or the default value if it does not exist
+func GetLabelValue(alert *v1.Alert, labelKey, def string) string {
+	deployment := alert.GetDeployment()
+	// Annotations will most likely be used for k8s
+	for _, annotation := range deployment.GetAnnotations() {
+		if annotation.GetKey() == labelKey {
+			return annotation.GetValue()
+		}
+	}
+	// Labels will most likely be used for docker
+	for _, label := range deployment.GetLabels() {
+		if label.GetKey() == labelKey {
+			return label.GetValue()
+		}
+	}
+	return def
+}

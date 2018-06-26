@@ -29,19 +29,11 @@ const (
 
 // slack notifier plugin
 type slack struct {
-	config
 	*v1.Notifier
-}
-
-// config for slack plugin
-type config struct {
-	Webhook string `json:"webhook"`
-	Channel string `json:"channel"`
 }
 
 // notification json struct for richly-formatted notifications
 type notification struct {
-	Channel     string       `json:"channel" validate:"printascii"`
 	Attachments []attachment `json:"attachments"`
 	Text        string       `json:"text"`
 }
@@ -106,13 +98,19 @@ func (s *slack) AlertNotify(alert *v1.Alert) error {
 	}
 	notification := notification{
 		Attachments: attachments,
-		Channel:     s.Channel,
 	}
 	jsonPayload, err := json.Marshal(&notification)
 	if err != nil {
 		return fmt.Errorf("Could not marshal notification for alert %v", alert.Id)
 	}
-	return postMessage(s.Webhook, jsonPayload)
+
+	webhookURL := notifiers.GetLabelValue(alert, s.GetLabelKey(), s.GetLabelDefault())
+	webhook, err := urlfmt.FormatURL(webhookURL, true, false)
+	if err != nil {
+		return err
+	}
+
+	return postMessage(webhook, jsonPayload)
 }
 
 // BenchmarkNotify takes in an benchmark schedule and generates the Slack message
@@ -126,36 +124,23 @@ func (s *slack) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
 	}
 	notification := notification{
 		Attachments: attachments,
-		Channel:     s.Channel,
 	}
 	jsonPayload, err := json.Marshal(&notification)
 	if err != nil {
 		return fmt.Errorf("Could not marshal notification for benchmark %v", schedule.GetBenchmarkName())
 	}
-	return postMessage(s.Webhook, jsonPayload)
+
+	webhook, err := urlfmt.FormatURL(s.GetLabelDefault(), true, false)
+	if err != nil {
+		return err
+	}
+
+	return postMessage(webhook, jsonPayload)
 }
 
-func newSlack(protoNotifier *v1.Notifier) (*slack, error) {
-	webhook, ok := protoNotifier.Config["webhook"]
-	if !ok {
-		return nil, fmt.Errorf("Webhook must be defined in the Slack Configuration")
-	}
-	channel, ok := protoNotifier.Config["channel"]
-	if !ok {
-		return nil, fmt.Errorf("Channel must be defined in the Slack Configuration")
-	}
-
-	webhook, err := urlfmt.FormatURL(webhook, true, false)
-	if err != nil {
-		return nil, err
-	}
-
+func newSlack(notifier *v1.Notifier) (*slack, error) {
 	return &slack{
-		config: config{
-			Webhook: webhook,
-			Channel: channel,
-		},
-		Notifier: protoNotifier,
+		Notifier: notifier,
 	}, nil
 }
 
@@ -165,14 +150,19 @@ func (s *slack) ProtoNotifier() *v1.Notifier {
 
 func (s *slack) Test() error {
 	n := notification{
-		Channel: s.Channel,
-		Text:    "This is a test message created to test integration with StackRox.",
+		Text: "This is a test message created to test integration with StackRox.",
 	}
 	jsonPayload, err := json.Marshal(&n)
 	if err != nil {
 		return errors.New("Could not marshal test notification")
 	}
-	return postMessage(s.Webhook, jsonPayload)
+
+	webhook, err := urlfmt.FormatURL(s.GetLabelDefault(), true, false)
+	if err != nil {
+		return err
+	}
+
+	return postMessage(webhook, jsonPayload)
 }
 
 func postMessage(url string, jsonPayload []byte) (err error) {

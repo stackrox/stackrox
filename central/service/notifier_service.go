@@ -55,11 +55,6 @@ func (s *NotifierService) AuthFuncOverride(ctx context.Context, fullMethodName s
 	return ctx, ReturnErrorCode(user.Any().Authorized(ctx))
 }
 
-func scrubNotifier(notifier *v1.Notifier) {
-	notifier.Config = secrets.ScrubSecretsFromMap(notifier.Config)
-	secrets.ScrubSecretsFromStruct(notifier)
-}
-
 // GetNotifier retrieves all registries that matches the request filters
 func (s *NotifierService) GetNotifier(ctx context.Context, request *v1.ResourceByID) (*v1.Notifier, error) {
 	if request.GetId() == "" {
@@ -72,7 +67,7 @@ func (s *NotifierService) GetNotifier(ctx context.Context, request *v1.ResourceB
 	if !exists {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("Notifier %v not found", request.GetId()))
 	}
-	scrubNotifier(notifier)
+	secrets.ScrubSecretsFromStruct(notifier)
 	s.populatePolicies(notifier)
 	return notifier, nil
 }
@@ -84,7 +79,7 @@ func (s *NotifierService) GetNotifiers(ctx context.Context, request *v1.GetNotif
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	for _, n := range notifiers {
-		scrubNotifier(n)
+		secrets.ScrubSecretsFromStruct(n)
 		s.populatePolicies(n)
 	}
 	return &v1.GetNotifiersResponse{Notifiers: notifiers}, nil
