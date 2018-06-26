@@ -75,7 +75,7 @@ services:
       - target: 443
         published: {{.SwarmConfig.PublicPort}}
         protocol: tcp
-        mode: ingress
+        mode: {{.SwarmConfig.NetworkMode}}
     secrets:
       - source: prevent_private_key
         target: stackrox.io/ca-key.pem

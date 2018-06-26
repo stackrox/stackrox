@@ -55,7 +55,8 @@ type K8sConfig struct {
 type SwarmConfig struct {
 	CommonConfig
 
-	PublicPort int
+	NetworkMode string
+	PublicPort  int
 }
 
 // Config configures the deployer for the central service.
