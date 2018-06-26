@@ -3,10 +3,12 @@ package detection
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/db"
+	alertDataStore "bitbucket.org/stack-rox/apollo/central/alert/datastore"
+	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
 	"bitbucket.org/stack-rox/apollo/central/enrichment"
-	"bitbucket.org/stack-rox/apollo/central/notifications"
+	notifierProcessor "bitbucket.org/stack-rox/apollo/central/notifier/processor"
+	policyDataStore "bitbucket.org/stack-rox/apollo/central/policy/datastore"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/sources"
@@ -18,12 +20,12 @@ var (
 
 // Detector processes deployments and reports alerts if policies are violated.
 type Detector struct {
-	alertStorage      db.AlertStorage
-	deploymentStorage db.DeploymentStorage
-	policyStorage     db.PolicyStorage
+	alertStorage      alertDataStore.DataStore
+	deploymentStorage deploymentDataStore.DataStore
+	policyStorage     policyDataStore.DataStore
 
 	enricher              *enrichment.Enricher
-	notificationProcessor *notifications.Processor
+	notificationProcessor notifierProcessor.Processor
 	taskC                 chan Task
 	stopping              bool
 	stoppedC              chan struct{}
@@ -33,11 +35,11 @@ type Detector struct {
 }
 
 // New creates a new detector and initializes the registries and scanners from the DB if they exist.
-func New(alertStorage db.AlertStorage,
-	deploymentStorage db.DeploymentStorage,
-	policyStorage db.PolicyStorage,
+func New(alertStorage alertDataStore.DataStore,
+	deploymentStorage deploymentDataStore.DataStore,
+	policyStorage policyDataStore.DataStore,
 	enricher *enrichment.Enricher,
-	notificationsProcessor *notifications.Processor) (d *Detector, err error) {
+	notificationsProcessor notifierProcessor.Processor) (d *Detector, err error) {
 	d = &Detector{
 		alertStorage:          alertStorage,
 		deploymentStorage:     deploymentStorage,

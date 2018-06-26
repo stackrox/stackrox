@@ -9,8 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/db/boltdb"
+	deploymenStore "bitbucket.org/stack-rox/apollo/central/deployment/store"
+	"bitbucket.org/stack-rox/apollo/central/ranking"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/bolthelper"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -64,10 +66,11 @@ func TestBackup(t *testing.T) {
 
 	out.Close()
 
-	b, err := boltdb.New("backup.db")
+	b, err := bolthelper.New("backup.db")
 	require.NoError(t, err)
 
-	deployments, err := b.GetDeployments()
+	depStore := deploymenStore.New(b, ranking.NewRanker())
+	deployments, err := depStore.GetDeployments()
 	require.NoError(t, err)
 	assert.NotEmpty(t, deployments)
 }

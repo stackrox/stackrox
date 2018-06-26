@@ -1,0 +1,63 @@
+package service
+
+import (
+	benchmarkscanStore "bitbucket.org/stack-rox/apollo/central/benchmarkscan/store"
+	benchmarkscheduleStore "bitbucket.org/stack-rox/apollo/central/benchmarkschedule/store"
+	notifierProcessor "bitbucket.org/stack-rox/apollo/central/notifier/processor"
+	"bitbucket.org/stack-rox/apollo/central/service"
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/idcheck"
+	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/hashicorp/golang-lru"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+type serviceImpl struct {
+	resultStore            benchmarkscanStore.Store
+	scheduleStore          benchmarkscheduleStore.Store
+	notificationsProcessor notifierProcessor.Processor
+	cache                  *lru.Cache
+}
+
+// RegisterServiceServer registers this service with the given gRPC Server.
+func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
+	v1.RegisterBenchmarkResultsServiceServer(grpcServer, s)
+}
+
+// RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
+func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
+	return v1.RegisterBenchmarkResultsServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+}
+
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, service.ReturnErrorCode(idcheck.SensorsOnly().Authorized(ctx))
+}
+
+// PostBenchmarkResult inserts a new benchmark result into the system
+func (s *serviceImpl) PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkResult) (*empty.Empty, error) {
+	if err := s.resultStore.AddBenchmarkResult(request); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if request.GetReason() == v1.BenchmarkReason_SCHEDULED {
+		if _, ok := s.cache.Get(request.GetScanId()); ok {
+			// This means that the scan id has already been processed and an alert about benchmarks coming in was already sent
+			return &empty.Empty{}, nil
+		}
+		s.cache.Add(request.GetScanId(), struct{}{})
+		schedule, exists, err := s.scheduleStore.GetBenchmarkSchedule(request.GetId())
+		if err != nil {
+			log.Errorf("Error retrieving benchmark schedule %v: %+v", request.GetId(), err)
+			return &empty.Empty{}, nil
+		} else if !exists {
+			log.Errorf("Benchmark schedule %v does not exist", request.GetId())
+			return &empty.Empty{}, nil
+		}
+		s.notificationsProcessor.ProcessBenchmark(schedule)
+	}
+	return &empty.Empty{}, nil
+}

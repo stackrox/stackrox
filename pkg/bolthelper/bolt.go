@@ -4,10 +4,90 @@
 package bolthelper
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
+	"bitbucket.org/stack-rox/apollo/pkg/secondarykey"
 	"github.com/boltdb/bolt"
 )
 
 const txMaxSize = 65536
+
+// NewBoltDB returns an instance of the persistent BoltDB store
+func NewBoltDB(path string) (*bolt.DB, error) {
+	dirPath := filepath.Dir(path)
+	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		err = os.MkdirAll(dirPath, 0600)
+		if err != nil {
+			return nil, fmt.Errorf("Error creating db path %v: %+v", dirPath, err)
+		}
+	} else if err != nil {
+		return nil, err
+	}
+	db, err := bolt.Open(path, 0600, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+// New returns an instance of the persistent BoltDB store
+func New(path string) (*bolt.DB, error) {
+	dirPath := filepath.Dir(path)
+	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		err = os.MkdirAll(dirPath, 0600)
+		if err != nil {
+			return nil, fmt.Errorf("Error creating db path %v: %+v", dirPath, err)
+		}
+	} else if err != nil {
+		return nil, err
+	}
+	db, err := bolt.Open(path, 0600, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+// NewWithDefaults returns an instance of the persistent BoltDB store with default values loaded.
+func NewWithDefaults(dbPath string) (*bolt.DB, error) {
+	if filepath.Ext(dbPath) != ".db" {
+		dbPath = filepath.Join(dbPath, "prevent.db")
+	}
+
+	db, err := New(dbPath)
+	if err != nil {
+		return db, err
+	}
+
+	return db, nil
+}
+
+// NewTemp creates a new DB, but places it in the host temporary directory.
+func NewTemp(dbPath string) (*bolt.DB, error) {
+	tmpDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return nil, err
+	}
+	return New(filepath.Join(tmpDir, dbPath))
+}
+
+// RegisterBucket registers a new bucket in the global DB.
+func RegisterBucket(db *bolt.DB, bucket string) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		if _, err := tx.CreateBucketIfNotExists([]byte(bucket)); err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		if err := secondarykey.CreateUniqueKeyBucket(tx, bucket); err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		return nil
+	})
+}
 
 // Compact compacts the BoltDB from src to dst
 func Compact(dst, src *bolt.DB) error {

@@ -14,27 +14,41 @@ import (
 	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
 
+	alertService "bitbucket.org/stack-rox/apollo/central/alert/service"
+	authService "bitbucket.org/stack-rox/apollo/central/auth/service"
+	authproviderService "bitbucket.org/stack-rox/apollo/central/authprovider/service"
+	benchmarkService "bitbucket.org/stack-rox/apollo/central/benchmark/service"
+	brService "bitbucket.org/stack-rox/apollo/central/benchmarkresult/service"
+	bsService "bitbucket.org/stack-rox/apollo/central/benchmarkscan/service"
+	bshService "bitbucket.org/stack-rox/apollo/central/benchmarkschedule/service"
+	btService "bitbucket.org/stack-rox/apollo/central/benchmarktrigger/service"
+	clusterService "bitbucket.org/stack-rox/apollo/central/cluster/service"
 	clustersZip "bitbucket.org/stack-rox/apollo/central/clusters/zip"
-	"bitbucket.org/stack-rox/apollo/central/datastore"
-	"bitbucket.org/stack-rox/apollo/central/detection"
-	"bitbucket.org/stack-rox/apollo/central/enrichment"
-	"bitbucket.org/stack-rox/apollo/central/log_imbue"
+	deploymentService "bitbucket.org/stack-rox/apollo/central/deployment/service"
+	detectionSingletons "bitbucket.org/stack-rox/apollo/central/detection/singletons"
+	dnrIntegrationService "bitbucket.org/stack-rox/apollo/central/dnrintegration/service"
+	"bitbucket.org/stack-rox/apollo/central/globaldb"
+	globaldbSingletons "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
+	imageService "bitbucket.org/stack-rox/apollo/central/image/service"
+	iiService "bitbucket.org/stack-rox/apollo/central/imageintegration/service"
+	interceptorSingletons "bitbucket.org/stack-rox/apollo/central/interceptor/singletons"
+	logimbueHandler "bitbucket.org/stack-rox/apollo/central/logimbue/handler"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
-	"bitbucket.org/stack-rox/apollo/central/notifications"
-	"bitbucket.org/stack-rox/apollo/central/risk"
-	"bitbucket.org/stack-rox/apollo/central/service"
-	"bitbucket.org/stack-rox/apollo/central/service/sensorevent"
+	notifierService "bitbucket.org/stack-rox/apollo/central/notifier/service"
+	pingService "bitbucket.org/stack-rox/apollo/central/ping/service"
+	policyService "bitbucket.org/stack-rox/apollo/central/policy/service"
+	searchService "bitbucket.org/stack-rox/apollo/central/search/service"
+	seService "bitbucket.org/stack-rox/apollo/central/sensorevent/service"
+	siService "bitbucket.org/stack-rox/apollo/central/serviceidentities/service"
+	summaryService "bitbucket.org/stack-rox/apollo/central/summary/service"
 	pkgGRPC "bitbucket.org/stack-rox/apollo/pkg/grpc"
-	authnUser "bitbucket.org/stack-rox/apollo/pkg/grpc/authn/user"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/allow"
 	authzUser "bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/clusters"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/routes"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	"bitbucket.org/stack-rox/apollo/pkg/ui"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"google.golang.org/grpc"
 )
 
 var (
@@ -44,48 +58,14 @@ var (
 func main() {
 	central := newCentral()
 
-	err := datastore.Init()
-	if err != nil {
-		panic(err)
-	}
-
-	central.notificationProcessor, err = notifications.NewNotificationProcessor(datastore.GetNotifierStorage())
-	if err != nil {
-		panic(err)
-	}
-	go central.notificationProcessor.Start()
-
-	central.scorer = risk.NewScorer(datastore.GetAlertDataStore())
-	if central.enricher, err = enrichment.New(datastore.GetDeploymentDataStore(),
-		datastore.GetImageDataStore(),
-		datastore.GetImageIntegrationStorage(),
-		datastore.GetMultiplierStorage(),
-		datastore.GetAlertDataStore(),
-		central.scorer); err != nil {
-		panic(err)
-	}
-
-	central.detector, err = detection.New(datastore.GetAlertDataStore(),
-		datastore.GetDeploymentDataStore(),
-		datastore.GetPolicyDataStore(),
-		central.enricher,
-		central.notificationProcessor)
-	if err != nil {
-		panic(err)
-	}
-
 	go central.startGRPCServer()
 
 	central.processForever()
 }
 
 type central struct {
-	signalsC              chan os.Signal
-	detector              *detection.Detector
-	enricher              *enrichment.Enricher
-	notificationProcessor *notifications.Processor
-	server                pkgGRPC.API
-	scorer                *risk.Scorer
+	signalsC chan os.Signal
+	server   pkgGRPC.API
 }
 
 func newCentral() *central {
@@ -99,102 +79,85 @@ func newCentral() *central {
 }
 
 func (c *central) startGRPCServer() {
-	idService := service.NewServiceIdentityService(datastore.GetServiceIdentityStorage())
-	clusterService := service.NewClusterService(datastore.GetClusterDataStore())
-	clusterWatcher := clusters.NewClusterWatcher(datastore.GetClusterDataStore())
-	userAuth := authnUser.NewAuthInterceptor()
-
 	config := pkgGRPC.Config{
-		CustomRoutes: c.customRoutes(userAuth, clusterService, idService),
-		TLS:          verifier.CA{},
-		UnaryInterceptors: []grpc.UnaryServerInterceptor{
-			userAuth.UnaryInterceptor(),
-			clusterWatcher.UnaryInterceptor(),
-		},
-		StreamInterceptors: []grpc.StreamServerInterceptor{
-			userAuth.StreamInterceptor(),
-			clusterWatcher.StreamInterceptor(),
-		},
+		CustomRoutes:       c.customRoutes(),
+		TLS:                verifier.CA{},
+		UnaryInterceptors:  interceptorSingletons.GrpcUnaryInterceptor(),
+		StreamInterceptors: interceptorSingletons.GrpsStreamInterceptors(),
 	}
 
 	c.server = pkgGRPC.NewAPI(config)
 
-	services := []pkgGRPC.APIService{
-		service.NewAlertService(datastore.GetAlertDataStore()),
-		service.NewAuthService(),
-		service.NewAuthProviderService(datastore.GetAuthProviderStorage(), userAuth),
-		service.NewBenchmarkService(datastore.GetBenchmarkDataStore()),
-		service.NewBenchmarkScansService(datastore.GetBenchmarkScansStorage(), datastore.GetBenchmarkDataStore(), datastore.GetClusterDataStore()),
-		service.NewBenchmarkScheduleService(datastore.GetBenchmarkDataStore(), datastore.GetBenchmarkScheduleStorage()),
-		service.NewBenchmarkResultsService(datastore.GetBenchmarkScansStorage(), datastore.GetBenchmarkScheduleStorage(), c.notificationProcessor),
-		service.NewBenchmarkTriggerService(datastore.GetBenchmarkDataStore(), datastore.GetBenchmarkTriggerStorage()),
-		clusterService,
-		service.NewDeploymentService(datastore.GetDeploymentDataStore(), datastore.GetMultiplierStorage(), c.enricher),
-		service.NewDNRIntegrationService(datastore.GetDNRIntegrationStorage(), datastore.GetClusterDataStore()),
-		idService,
-		service.NewImageService(datastore.GetImageDataStore()),
-		service.NewImageIntegrationService(datastore.GetImageIntegrationStorage(), c.detector),
-		service.NewNotifierService(datastore.GetNotifierStorage(), c.notificationProcessor, c.detector),
-		service.NewPingService(),
-		service.NewPolicyService(datastore.GetPolicyDataStore(), datastore.GetClusterDataStore(), datastore.GetDeploymentDataStore(), datastore.GetNotifierStorage(), c.detector),
-		service.NewSearchService(datastore.GetAlertDataStore(), datastore.GetDeploymentDataStore(), datastore.GetImageDataStore(), datastore.GetPolicyDataStore()),
-		sensorevent.NewService(c.detector, datastore.GetDeploymentEventStorage(), datastore.GetImageDataStore(), datastore.GetDeploymentDataStore(), datastore.GetClusterDataStore(), c.scorer),
-		service.NewSummaryService(datastore.GetAlertDataStore(), datastore.GetClusterDataStore(), datastore.GetDeploymentDataStore(), datastore.GetImageDataStore()),
-	}
-
-	for _, svc := range services {
-		c.server.Register(svc)
-	}
+	c.server.Register(alertService.Singleton())
+	c.server.Register(authService.Singleton())
+	c.server.Register(authproviderService.Singleton())
+	c.server.Register(benchmarkService.Singleton())
+	c.server.Register(bsService.Singleton())
+	c.server.Register(bshService.Singleton())
+	c.server.Register(brService.Singleton())
+	c.server.Register(btService.Singleton())
+	c.server.Register(clusterService.Singleton())
+	c.server.Register(deploymentService.Singleton())
+	c.server.Register(dnrIntegrationService.Singleton())
+	c.server.Register(imageService.Singleton())
+	c.server.Register(iiService.Singleton())
+	c.server.Register(notifierService.Singleton())
+	c.server.Register(pingService.Singleton())
+	c.server.Register(policyService.Singleton())
+	c.server.Register(searchService.Singleton())
+	c.server.Register(siService.Singleton())
+	c.server.Register(seService.Singleton())
+	c.server.Register(summaryService.Singleton())
 
 	c.server.Start()
 }
 
-func (c *central) customRoutes(userAuth *authnUser.AuthInterceptor, clusterService *service.ClusterService, idService *service.IdentityService) (routeMap map[string]routes.CustomRoute) {
+func (c *central) customRoutes() (routeMap map[string]routes.CustomRoute) {
 	routeMap = map[string]routes.CustomRoute{
 		"/": {
-			AuthInterceptor: userAuth.HTTPInterceptor,
+			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
 			Authorizer:      allow.Anonymous(),
 			ServerHandler:   ui.Mux(),
 			Compression:     true,
 		},
 		"/api/extensions/clusters/zip": {
-			AuthInterceptor: userAuth.HTTPInterceptor,
+			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
 			Authorizer:      authzUser.Any(),
-			ServerHandler:   clustersZip.Handler(clusterService, idService),
+			ServerHandler:   clustersZip.Handler(clusterService.Singleton(), siService.Singleton()),
 			Compression:     false,
 		},
 		"/api/logimbue": {
-			AuthInterceptor: userAuth.HTTPInterceptor,
+			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
 			Authorizer:      authzUser.Any(),
-			ServerHandler:   logimbue.Handler(datastore.GetLogsStorage()),
+			ServerHandler:   logimbueHandler.Singleton(),
 			Compression:     false,
 		},
 		"/db/backup": {
-			AuthInterceptor: userAuth.HTTPInterceptor,
+			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
 			Authorizer:      authzUser.Any(),
-			ServerHandler:   datastore.BackupHandler(),
+			ServerHandler:   globaldb.BackupHandler(globaldbSingletons.GetGlobalDB()),
 			Compression:     true,
 		},
 		"/db/export": {
-			AuthInterceptor: userAuth.HTTPInterceptor,
+			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
 			Authorizer:      authzUser.Any(),
-			ServerHandler:   datastore.ExportHandler(),
+			ServerHandler:   globaldb.ExportHandler(globaldbSingletons.GetGlobalDB()),
 			Compression:     true,
 		},
 		"/metrics": {
-			AuthInterceptor: userAuth.HTTPInterceptor,
+			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
 			Authorizer:      allow.Anonymous(),
 			ServerHandler:   promhttp.Handler(),
 			Compression:     false,
 		},
 	}
 
-	c.addDebugRoutes(routeMap, userAuth)
+	c.addDebugRoutes(routeMap)
 
 	return
 }
 
-func (c *central) addDebugRoutes(routeMap map[string]routes.CustomRoute, userAuth *authnUser.AuthInterceptor) {
+func (c *central) addDebugRoutes(routeMap map[string]routes.CustomRoute) {
 	rs := map[string]http.Handler{
 		"/debug/pprof":         http.HandlerFunc(pprof.Index),
 		"/debug/pprof/cmdline": http.HandlerFunc(pprof.Cmdline),
@@ -210,7 +173,7 @@ func (c *central) addDebugRoutes(routeMap map[string]routes.CustomRoute, userAut
 
 	for r, h := range rs {
 		routeMap[r] = routes.CustomRoute{
-			AuthInterceptor: userAuth.HTTPInterceptor,
+			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
 			Authorizer:      authzUser.Any(),
 			ServerHandler:   h,
 			Compression:     true,
@@ -231,8 +194,8 @@ func (c *central) processForever() {
 		select {
 		case sig := <-c.signalsC:
 			log.Infof("Caught %s signal", sig)
-			c.detector.Stop()
-			datastore.Close()
+			detectionSingletons.GetDetector().Stop()
+			globaldbSingletons.Close()
 			log.Infof("Central terminated")
 			return
 		}

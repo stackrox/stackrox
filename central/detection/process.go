@@ -1,8 +1,8 @@
 package detection
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/search"
 	ptypes "github.com/gogo/protobuf/types"
 )
 
@@ -109,7 +109,10 @@ func (d *Detector) markExistingAlertsAsStale(existingAlerts []*v1.Alert) {
 }
 
 func (d *Detector) getExistingAlert(deploymentID, policyID string) (existingAlerts []*v1.Alert) {
-	qb := search.NewQueryBuilder().AddBool(search.Stale, false).AddString(search.DeploymentID, deploymentID).AddString(search.PolicyID, policyID)
+	qb := search.NewQueryBuilder().
+		AddBool(search.Stale, false).
+		AddString(search.DeploymentID, deploymentID).
+		AddString(search.PolicyID, policyID)
 
 	var err error
 	existingAlerts, err = d.alertStorage.GetAlerts(&v1.ListAlertsRequest{

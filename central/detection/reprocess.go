@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
-	"bitbucket.org/stack-rox/apollo/central/search"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/search"
 	"bitbucket.org/stack-rox/apollo/pkg/sources"
 )
 
@@ -64,7 +64,9 @@ func (d *Detector) reprocessPolicy(policy *matcher.Policy) {
 		deploymentMap[deploy.GetId()] = struct{}{}
 	}
 
-	qb := search.NewQueryBuilder().AddBool(search.Stale, false).AddString(search.PolicyID, policy.GetId())
+	qb := search.NewQueryBuilder().
+		AddBool(search.Stale, false).
+		AddString(search.PolicyID, policy.GetId())
 	alerts, err := d.alertStorage.GetAlerts(&v1.ListAlertsRequest{
 		Query: qb.Query(),
 	})

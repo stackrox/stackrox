@@ -78,6 +78,21 @@
   revision = "7265e41f48f15fd61751e16da866af3c704bb3ab"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/alecthomas/template"
+  packages = [
+    ".",
+    "parse"
+  ]
+  revision = "a0175ee3bccc567396460bf5acd36800cb10c49c"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/alecthomas/units"
+  packages = ["."]
+  revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
+
+[[projects]]
   name = "github.com/andygrunwald/go-jira"
   packages = ["."]
   revision = "acbc88d59582a4885dbd82fd775caa7c15245171"
@@ -667,6 +682,7 @@
   packages = [
     "expfmt",
     "internal/bitbucket.org/ww/goautoneg",
+    "log",
     "model"
   ]
   revision = "89604d197083d4781071d3c65855d24ecfb0a563"
@@ -801,7 +817,9 @@
   name = "golang.org/x/sys"
   packages = [
     "unix",
-    "windows"
+    "windows",
+    "windows/registry",
+    "windows/svc/eventlog"
   ]
   revision = "3dbebcf8efb6a5011a60c2b4591c1022a759af8a"
 
@@ -892,6 +910,12 @@
   ]
   revision = "6b51017f791ae1cfbec89c52efdf444b13b550ef"
   version = "v1.9.2"
+
+[[projects]]
+  name = "gopkg.in/alecthomas/kingpin.v2"
+  packages = ["."]
+  revision = "947dcec5ba9c011838740e680966fd7087a71d0d"
+  version = "v2.2.6"
 
 [[projects]]
   name = "gopkg.in/inf.v0"
@@ -1068,6 +1092,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0a1d85c42723888e06cde387ec65857dc7f63b066df14407c50711530cbd12e5"
+  inputs-digest = "108f217f9f234066740c488de8a54e9515bb8d8893e17f2ce146773c063129ad"
   solver-name = "gps-cdcl"
   solver-version = 1

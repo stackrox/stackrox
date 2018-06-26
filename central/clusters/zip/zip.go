@@ -10,7 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/service"
+	clusterService "bitbucket.org/stack-rox/apollo/central/cluster/service"
+	serviceIdentitiesService "bitbucket.org/stack-rox/apollo/central/serviceidentities/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	zipPkg "bitbucket.org/stack-rox/apollo/pkg/zip"
@@ -30,7 +31,7 @@ var (
 )
 
 // Handler returns a handler for the cluster zip method.
-func Handler(c *service.ClusterService, s *service.IdentityService) http.Handler {
+func Handler(c clusterService.Service, s serviceIdentitiesService.Service) http.Handler {
 	return zipHandler{
 		clusterService:  c,
 		identityService: s,
@@ -38,8 +39,8 @@ func Handler(c *service.ClusterService, s *service.IdentityService) http.Handler
 }
 
 type zipHandler struct {
-	clusterService  *service.ClusterService
-	identityService *service.IdentityService
+	clusterService  clusterService.Service
+	identityService serviceIdentitiesService.Service
 }
 
 func getSafeFilename(s string) string {

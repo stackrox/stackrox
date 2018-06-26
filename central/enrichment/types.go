@@ -5,7 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/db"
+	alertDS "bitbucket.org/stack-rox/apollo/central/alert/datastore"
+	deploymentDS "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
+	imageDS "bitbucket.org/stack-rox/apollo/central/image/datastore"
+	imageIntegrationDS "bitbucket.org/stack-rox/apollo/central/imageintegration/datastore"
+	multiplierDS "bitbucket.org/stack-rox/apollo/central/multiplier/store"
 	"bitbucket.org/stack-rox/apollo/central/risk"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -27,11 +31,11 @@ var (
 
 // Enricher enriches images with data from registries and scanners.
 type Enricher struct {
-	deploymentStorage       db.DeploymentStorage
-	imageStorage            db.ImageStorage
-	imageIntegrationStorage db.ImageIntegrationStorage
-	multiplierStorage       db.MultiplierStorage
-	alertStorage            db.AlertStorage
+	deploymentStorage       deploymentDS.DataStore
+	imageStorage            imageDS.DataStore
+	imageIntegrationStorage imageIntegrationDS.DataStore
+	multiplierStorage       multiplierDS.Store
+	alertStorage            alertDS.DataStore
 
 	imageIntegrationMutex sync.RWMutex
 	imageIntegrations     map[string]*sources.ImageIntegration
@@ -47,11 +51,11 @@ type Enricher struct {
 }
 
 // New creates and returns a new Enricher.
-func New(deploymentStorage db.DeploymentStorage,
-	imageStorage db.ImageStorage,
-	imageIntegrationStorage db.ImageIntegrationStorage,
-	multiplierStorage db.MultiplierStorage,
-	alertStorage db.AlertStorage,
+func New(deploymentStorage deploymentDS.DataStore,
+	imageStorage imageDS.DataStore,
+	imageIntegrationStorage imageIntegrationDS.DataStore,
+	multiplierStorage multiplierDS.Store,
+	alertStorage alertDS.DataStore,
 	scorer *risk.Scorer) (*Enricher, error) {
 	e := &Enricher{
 		deploymentStorage:       deploymentStorage,

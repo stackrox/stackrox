@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/db"
+	siStore "bitbucket.org/stack-rox/apollo/central/serviceidentities/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/cloudflare/cfssl/config"
 	cfcsr "github.com/cloudflare/cfssl/csr"
@@ -118,7 +118,7 @@ func signingPolicy() *config.Signing {
 }
 
 // IssueNewCert generates a new key and certificate chain for a sensor.
-func IssueNewCert(cn CommonName, storage db.ServiceIdentityStorage) (certPEM, keyPEM []byte, identity *v1.ServiceIdentity, err error) {
+func IssueNewCert(cn CommonName, storage siStore.Store) (certPEM, keyPEM []byte, identity *v1.ServiceIdentity, err error) {
 	returnErr := func(err error, prefix string) ([]byte, []byte, *v1.ServiceIdentity, error) {
 		return nil, nil, nil, fmt.Errorf("%s: %s", prefix, err)
 	}

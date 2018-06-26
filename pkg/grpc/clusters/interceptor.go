@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/datastore"
+	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -22,11 +22,11 @@ var (
 // A ClusterWatcher provides gRPC interceptors that record cluster checkin
 // times based on authentication metadata.
 type ClusterWatcher struct {
-	clusters datastore.ClusterDataStore
+	clusters clusterDataStore.DataStore
 }
 
 // NewClusterWatcher creates a new ClusterWatcher.
-func NewClusterWatcher(clusters datastore.ClusterDataStore) *ClusterWatcher {
+func NewClusterWatcher(clusters clusterDataStore.DataStore) *ClusterWatcher {
 	return &ClusterWatcher{
 		clusters: clusters,
 	}
