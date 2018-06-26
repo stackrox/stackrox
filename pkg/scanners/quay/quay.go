@@ -1,7 +1,6 @@
 package quay
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,14 +10,14 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	quayRegistry "bitbucket.org/stack-rox/apollo/pkg/registries/quay"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
-	dockerRegistry "github.com/heroku/docker-registry-client/registry"
 )
 
 const (
 	requestTimeout = 5 * time.Second
-	username       = "$oauthtoken"
 )
 
 var (
@@ -30,28 +29,24 @@ type quay struct {
 
 	endpoint   string
 	oauthToken string
-	registry   string
-
-	reg *dockerRegistry.Registry
+	registry   registries.ImageRegistry
 
 	protoImageIntegration *v1.ImageIntegration
 }
 
 func newScanner(protoImageIntegration *v1.ImageIntegration) (*quay, error) {
-	oauthToken, ok := protoImageIntegration.Config["oauthToken"]
+	quayConfig, ok := protoImageIntegration.IntegrationConfig.(*v1.ImageIntegration_Quay)
 	if !ok {
-		return nil, errors.New("'oauthToken' parameter must be defined for Quay.io")
+		return nil, fmt.Errorf("Quay config must be specified")
 	}
-	endpoint, ok := protoImageIntegration.Config["endpoint"]
-	if !ok {
-		return nil, errors.New("'endpoint' parameter must be defined for Quay.io")
-	}
-	endpoint, err := urlfmt.FormatURL(endpoint, true, false)
+	config := quayConfig.Quay
+
+	registry, err := quayRegistry.NewRegistryFromConfig(quayConfig.Quay, protoImageIntegration)
 	if err != nil {
 		return nil, err
 	}
-	registry := urlfmt.GetServerFromURL(endpoint)
-	reg, err := dockerRegistry.New(endpoint, username, oauthToken)
+
+	endpoint, err := urlfmt.FormatURL(config.GetEndpoint(), true, false)
 	if err != nil {
 		return nil, err
 	}
@@ -59,11 +54,11 @@ func newScanner(protoImageIntegration *v1.ImageIntegration) (*quay, error) {
 		Timeout: requestTimeout,
 	}
 	scanner := &quay{
-		client:     client,
-		reg:        reg,
-		endpoint:   endpoint,
+		client: client,
+
 		registry:   registry,
-		oauthToken: oauthToken,
+		endpoint:   endpoint,
+		oauthToken: config.GetOauthToken(),
 
 		protoImageIntegration: protoImageIntegration,
 	}
@@ -79,7 +74,9 @@ func (q *quay) sendRequest(method string, values url.Values, pathSegments ...str
 	if err != nil {
 		return nil, -1, err
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %v", q.oauthToken))
+	if q.oauthToken != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %v", q.oauthToken))
+	}
 	resp, err := q.client.Do(req)
 	if err != nil {
 		return nil, -1, err
@@ -94,8 +91,7 @@ func (q *quay) sendRequest(method string, values url.Values, pathSegments ...str
 
 // Test initiates a test of the Quay Scanner which verifies that we have the proper scan permissions
 func (q *quay) Test() error {
-	_, err := q.reg.Repositories()
-	return err
+	return q.registry.Test()
 }
 
 // GetLastScan retrieves the most recent scan
@@ -126,7 +122,7 @@ func (q *quay) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 
 // Match decides if the image is contained within this scanner
 func (q *quay) Match(image *v1.Image) bool {
-	return q.registry == image.GetName().GetRegistry()
+	return q.registry.Match(image)
 }
 
 func (q *quay) Global() bool {

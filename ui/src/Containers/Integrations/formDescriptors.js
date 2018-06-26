@@ -332,13 +332,13 @@ const formDescriptors = {
             },
             {
                 label: 'Endpoint',
-                key: 'config.endpoint',
+                key: 'quay.endpoint',
                 type: 'text',
                 placeholder: 'quay.io'
             },
             {
                 label: 'OAuth Token',
-                key: 'config.oauthToken',
+                key: 'quay.oauthToken',
                 type: 'text',
                 placeholder: ''
             }

@@ -25,14 +25,17 @@ type QuayIntegrationSuite struct {
 
 func (suite *QuayIntegrationSuite) SetupSuite() {
 	protoImageIntegration := &v1.ImageIntegration{
-		Config: map[string]string{
-			"oauthToken": testOauthToken,
-			"endpoint":   "quay.io",
+		IntegrationConfig: &v1.ImageIntegration_Quay{
+			Quay: &v1.QuayConfig{
+				OauthToken: testOauthToken,
+				Endpoint:   "quay.io",
+			},
 		},
 	}
 
 	q, err := newScanner(protoImageIntegration)
 	suite.NoError(err)
+	suite.NoError(q.Test())
 	suite.quay = q
 }
 
@@ -46,10 +49,13 @@ func (suite *QuayIntegrationSuite) TestScanTest() {
 func (suite *QuayIntegrationSuite) TestGetLastScan() {
 	image := &v1.Image{
 		Name: &v1.ImageName{
-			Sha:      "d088ff453bb180ade5c97c8e7961afbbb6921f0131982563de431e8d3d9bb606",
+			Sha:      "sha256:d088ff453bb180ade5c97c8e7961afbbb6921f0131982563de431e8d3d9bb606",
 			Registry: "quay.io",
 			Remote:   "integration/nginx",
 			Tag:      "1.10",
+		},
+		Metadata: &v1.ImageMetadata{
+			RegistrySha: "sha256:d088ff453bb180ade5c97c8e7961afbbb6921f0131982563de431e8d3d9bb606",
 		},
 	}
 	scan, err := suite.quay.GetLastScan(image)

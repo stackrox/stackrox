@@ -83,9 +83,11 @@ func (suite *QuaySuite) SetupSuite() {
 	suite.server = masterServer
 
 	protoImageIntegration := &v1.ImageIntegration{
-		Config: map[string]string{
-			"oauthToken": "token",
-			"endpoint":   "http://" + masterServer.Listener.Addr().String(),
+		IntegrationConfig: &v1.ImageIntegration_Quay{
+			Quay: &v1.QuayConfig{
+				OauthToken: "token",
+				Endpoint:   "http://" + masterServer.Listener.Addr().String(),
+			},
 		},
 	}
 

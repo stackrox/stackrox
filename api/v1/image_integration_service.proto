@@ -39,6 +39,11 @@ message ClairifyConfig {
     Registry registry             = 2;
 }
 
+message QuayConfig {
+    string endpoint   = 1;
+    string oauthToken = 2;
+}
+
 message ImageIntegration {
     string id                                    = 1;
     string name                                  = 2;
@@ -48,9 +53,10 @@ message ImageIntegration {
     repeated string clusters                     = 5;
     repeated ImageIntegrationCategory categories = 6;
     oneof IntegrationConfig {
-        DTRConfig dtr           = 7;
+        DTRConfig      dtr      = 7;
         ClairifyConfig clairify = 8;
-        DockerConfig docker     = 9;
+        DockerConfig   docker   = 9;
+        QuayConfig     quay     = 10;
     }
 }
 
