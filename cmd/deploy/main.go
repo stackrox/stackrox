@@ -107,7 +107,6 @@ Output is a zip file printed to stdout.`,
 	}
 	c.AddCommand(k8s())
 	c.AddCommand(openshift())
-	c.AddCommand(dockerBasedOrchestrator("dockeree", "Docker EE", v1.ClusterType_DOCKER_EE_CLUSTER))
 	c.AddCommand(dockerBasedOrchestrator("swarm", "Docker Swarm", v1.ClusterType_SWARM_CLUSTER))
 	return c
 }

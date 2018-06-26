@@ -63,9 +63,11 @@ services:
       labels:
         owner: stackrox
         email: support@stackrox.com
+{{if eq .DisableSwarmTLS "true" }}
       placement:
         constraints:
           - node.role==manager
+{{- end}}
       resources:
         reservations:
           cpus: '0.2'
