@@ -6,7 +6,7 @@ interface OrchestratorMain {
 
     String getDeploymentName()
     void setDeploymentName(String metaName)
-    void addMetaLables(String labelName, String labelValue)
+    void addMetaLabels(String labelName, String labelValue)
     void setReplicasNum(int replicasNum)
     void addTemplateLabels(String labelName, String labelValue)
     void setContainersImage(String containersImage)

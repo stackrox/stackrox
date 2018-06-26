@@ -27,7 +27,6 @@ class BaseSpecification extends Specification {
 
     def setupSpec() {
         RestAssured.useRelaxedHTTPSValidation()
-        orchestrator.setup()
     /*    if (isTestrail == true) {
             tc.createTestRailInstance()
             tc.setProjectSectionId("Prevent", "Policies")
@@ -35,7 +34,9 @@ class BaseSpecification extends Specification {
 
         }*/
     }
-
+    def setup() {
+        orchestrator.setup()
+    }
     def cleanupSpec() {
        /* if (isTestrail == true) {
             List<Integer> caseids = new ArrayList<Integer>(resultMap.keySet());

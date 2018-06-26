@@ -79,6 +79,10 @@ jobs:
 
             docker push stackrox/prevent-health:$(git describe --tags --abbrev=10 --dirty)
 
+      - store_artifacts:
+          path: qa-tests-backend/build/reports/codenarc
+          destination: reports/codenarc
+
   deploy-k8s:
     <<: *defaults
     environment:

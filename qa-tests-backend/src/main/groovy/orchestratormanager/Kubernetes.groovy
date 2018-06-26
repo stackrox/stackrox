@@ -4,13 +4,14 @@ import objects.KubernetesDeployment
 
 class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     private final String namespace
-    private final KubernetesDeployment kubernetesDeployment
     private final String cliCommand = "kubectl"
+    private KubernetesDeployment kubernetesDeployment
 
     Kubernetes(String ns) {
+        //TODO: create secret for DTR
         namespace = ns
-        ensureNamespaceExists(namespace)
-        kubernetesDeployment = new KubernetesDeployment()
+        def containerID = this.getPodOrContainerIds("central", "stackrox")
+        this.portForward(containerID[0])
     }
 
     Kubernetes() {
@@ -40,8 +41,8 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     String getDeploymentName() {
         return kubernetesDeployment.getDeploymentName()
     }
-    void addMetaLables(String labelName, String labelValue) {
-        kubernetesDeployment.addMetaLables(labelName, labelValue)
+    void addMetaLabels(String labelName, String labelValue) {
+        kubernetesDeployment.addMetaLabels(labelName, labelValue)
     }
     void setReplicasNum(int replicasNum) {
         kubernetesDeployment.setReplicasNum(replicasNum)
@@ -60,13 +61,12 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     }
 
     def setup() {
-        //TODO: create secret for DTR
-        def containerID = this.getPodOrContainerIds("central", "stackrox")
-        this.portForward(containerID[0])
+        kubernetesDeployment = new KubernetesDeployment()
+        ensureNamespaceExists(namespace)
     }
 
-    @Override
     def cleanup() {
+        this.deleteDeployment(this.kubernetesDeployment.getDeploymentName())
     }
 
     boolean createDeployment() {

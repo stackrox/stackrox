@@ -1,7 +1,6 @@
 package objects
 
 import java.util.Map.Entry
-
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 
@@ -68,7 +67,6 @@ class KubernetesDeployment {
             while (labelIt.hasNext()) {
                 Map.Entry<String, String> pair = (Map.Entry<String, String>)labelIt.next()
                 metaLabelsJO.addProperty(pair.getKey(), pair.getValue())
-                labelIt.remove()
             }
             metaDataJO.add("labels", metaLabelsJO)
         }
@@ -86,7 +84,6 @@ class KubernetesDeployment {
             while (labelIt.hasNext()) {
                 Map.Entry<String, String> pair = (Map.Entry<String, String>)labelIt.next()
                 templateMetaDataLablesJO.addProperty(pair.getKey(), pair.getValue())
-                labelIt.remove()
             }
             templateMetaDataJO.add("labels", templateMetaDataLablesJO)
         }
