@@ -1,8 +1,4 @@
-startup --batch
-
 # See https://docs.bazel.build/versions/master/remote-caching.html
-build --spawn_strategy=remote --genrule_strategy=remote
-build --strategy=Javac=remote --strategy=Closure=remote
 build --remote_http_cache=https://storage.googleapis.com/apollo-bazel-cache
 build --google_credentials=/tmp/gcp.json
 build --remote_local_fallback
@@ -11,7 +7,7 @@ build --jobs 16
 
 # Workaround https://github.com/bazelbuild/bazel/issues/3645
 # Bazel doesn't calculate the memory limit correctly when running under Docker.
-# Limit Bazel to the resources of the default CircleCI "xlarge" class:
+# Limit Bazel to the resources of the default CircleCI "large" class:
 # https://circleci.com/docs/2.0/configuration-reference/#resource_class
 # This workaround is sourced from:
 # https://github.com/angular/angular/blob/8ec21fc325f3c4263d0c9a3af2af40efb5b0ce38/.circleci/bazel.rc

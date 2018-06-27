@@ -1,8 +1,8 @@
 defaults: &defaults
   docker:
-    # This image is the standard circleci/golang:1.10.2 image, plus bazel
+    # This image is the standard circleci/golang:1.10.3 image, plus bazel
     # and other necessary build tools like goimports, dep, yarn, gcloud, kubectl, envsubst and gradle.
-    - image: stackrox/apollo-ci:0.1.8
+    - image: stackrox/apollo-ci:0.1.9
       auth:
         username: $DOCKERHUB_USERNAME
         password: $DOCKERHUB_PASSWORD
