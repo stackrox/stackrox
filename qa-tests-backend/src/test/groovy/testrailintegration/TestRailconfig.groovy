@@ -2,13 +2,15 @@ package testrailintegration
 
 import com.codepine.api.testrail.TestRail
 import com.codepine.api.testrail.TestRail.Projects
-import com.codepine.api.testrail.model.Case
-import com.codepine.api.testrail.model.CaseField
-import com.codepine.api.testrail.model.Result
 import com.codepine.api.testrail.model.Project
-import com.codepine.api.testrail.model.Section
+import com.codepine.api.testrail.model.Result
 import com.codepine.api.testrail.model.Run
+import com.codepine.api.testrail.model.CaseField
+import com.codepine.api.testrail.model.Case
+import com.codepine.api.testrail.model.Section
+
 import groovy.util.logging.Slf4j
+
 import java.text.ParseException
 
 @Slf4j

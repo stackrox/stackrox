@@ -1,47 +1,47 @@
 import static Services.getPolicies
-import static Services.getViolations
+import static Services.waitForViolation
+import static Services.waitForDeployment
 
-import com.google.gson.GsonBuilder
+import objects.Deployment
 import org.junit.Test
-import objects.PolicyResults
-import objects.AlertsByPolicy
-import com.google.gson.Gson
+import java.util.stream.Collectors
 
 class SystemPoliciesTest extends  BaseSpecification  {
 
     @Test
-    def "Verify custom policy Latest tag can be added and Violation is triggered: C811"() {
-        String indexIP = System.getenv("index")
+    def "Verify custom policy Port 22 can be added and Violation is triggered: C811"() {
         List<String>violations = new ArrayList<>()
-        String deployName = "qaport22"
+        String deploymentName =  "qaport22"
+
+        Deployment deployment = new Deployment()
+                .setName(deploymentName)
+                .setImage("nginx")
+                .addPort(22)
+                .addLabel("app", "test")
 
         when:
-        "Pull image Port 22"
-        orchestrator.setDeploymentName(deployName)
-        orchestrator.addContainerPort(22)
-        assert orchestrator.createDeployment()
+        "Create image with Port 22 exposed"
+        orchestrator.createDeployment(deployment)
 
         and:
         "Policy is available to trigger the violations"
-        Gson gson = new GsonBuilder().create()
-        def res = getPolicies(indexIP)
-        PolicyResults jsonResultRule = gson.fromJson(res, PolicyResults)
-        assert jsonResultRule.policies.name.contains("Container Port 22")
+        assert getPolicies().stream()
+                .filter { f -> f.getName() == "Container Port 22" }
+                .collect(Collectors.toList()).size() == 1
+
+        and:
+        "Deployment has been registered"
+        assert waitForDeployment(deploymentName)
 
         then:
         "Verify Violations have been triggered"
-        def result = getViolations(indexIP)
-        AlertsByPolicy jsonResultViolations = gson.fromJson(result, AlertsByPolicy)
-        for (int i = 0; i < jsonResultViolations.alertsByPolicies.size(); i++) {
-            violations.add(jsonResultViolations.alertsByPolicies[i].policy.name)
-        }
-        assert violations.contains("Container Port 22")
+        assert waitForViolation(deploymentName, "Container Port 22", 20)
 
         cleanup:
         "Remove Deployment"
         def teststatus = tc.verifyAndAdd(violations, "Container Port 22", 811)
         resultMap.put(811, teststatus)
-        orchestrator.deleteDeployment(deployName)
+        orchestrator.deleteDeployment(deploymentName)
     }
 
 }

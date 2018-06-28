@@ -1,6 +1,9 @@
-apply plugin: 'java'
-apply plugin: 'groovy'
-apply plugin: 'codenarc'
+plugins {
+    id "com.google.protobuf" version "0.8.6"
+    id "java"
+    id "groovy"
+    id "codenarc"
+}
 
 sourceCompatibility = 1.8
 version = '1.0'
@@ -9,13 +12,50 @@ codenarc.configFile = file("./codenarc-rules.groovy")
 
 // In this section you declare where to find the dependencies of your project
 repositories {
-    // Use jcenter for resolving your dependencies.
-    // You can declare any Maven/Ivy/file repository here.
-   // jcenter()
     mavenCentral()
 }
 
+def grpcVersion = '1.13.1'
+def protocVersion = '3.6.0'
+def protobufVersion = '3.5.1'
+def nettyTcNativeVersion = '2.0.7.Final'
+
+protobuf {
+    protoc { artifact = "com.google.protobuf:protoc:${protocVersion}" }
+    plugins {
+        grpc { artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}" }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {
+                outputSubDir = "java"
+            }
+        }
+    }
+    generatedFilesBaseDir = "$projectDir/src"
+}
+
+
+sourceSets {
+
+    main {
+        java { srcDirs = [] }    // no source dirs for the java compiler
+        groovy { srcDirs = ["src/main/java", "src/main/groovy"] }
+        proto { }
+    }
+}
+
 dependencies {
+    // grpc and protobuf
+    compile "com.google.api.grpc:proto-google-common-protos:1.0.0"
+    compile "io.grpc:grpc-alts:${grpcVersion}"
+    compile "io.grpc:grpc-netty:${grpcVersion}"
+    compile "io.grpc:grpc-protobuf:${grpcVersion}"
+    compile "io.grpc:grpc-stub:${grpcVersion}"
+    compile "com.google.protobuf:protobuf-java-util:${protobufVersion}"
+    compile "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
+
+
     // Use the latest Groovy version for building this library
     compile 'org.codehaus.groovy:groovy-all:2.2.2'
     testCompile group: 'junit', name: 'junit', version: '4.11'
@@ -31,6 +71,14 @@ dependencies {
     compile group: 'com.google.protobuf', name: 'protobuf-java', version: '3.5.1'
     compile group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.5.1'
 
+    // Use the Kubernetes API
+    compile 'io.kubernetes:client-java:2.0.0-beta1'
+
+    compile group: 'com.github.docker-java', name: 'docker-java', version: '3.1.0-rc-3'
+
+    compile group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
+
+    compile 'com.google.api.grpc:googleapis-common-protos:0.0.3'
 
     // Use the awesome Spock testing and specification framework
     testCompile group: 'org.spockframework', name: 'spock-core', version: '1.1-groovy-2.0'
@@ -42,14 +90,15 @@ dependencies {
 test {
     testLogging.showStandardStreams = true
     useJUnit()
-    systemProperty "cluster", System.getProperty("cluster")
-    systemProperty "testrail", System.getProperty("testrail")
-    systemProperty "username", System.getProperty("username")
-    systemProperty "password", System.getProperty("password")
-    environment "cluster", System.getenv("cluster")
-    environment "testrail" , System.getenv("testrail")
-    environment "username" , System.getenv("username")
-    environment "password" , System.getenv("password")
+    systemProperty "cluster", System.getProperty("CLUSTER")
+    systemProperty "testrail", System.getProperty("TESTRAIL")
+    systemProperty "username", System.getProperty("USERNAME")
+    systemProperty "password", System.getProperty("PASSWORD")
+    environment "CLUSTER", System.getenv("CLUSTER")
+    environment "HOSTNAME",  System.getenv("HOSTNAME")
+    environment "PORT", System.getenv("PORT")
+    environment "TESTRAIL" , System.getenv("TESTRAIL")
+    environment "USERNAME" , System.getenv("USERNAME")
+    environment "PASSWORD" , System.getenv("PASSWORD")
 }
-
 

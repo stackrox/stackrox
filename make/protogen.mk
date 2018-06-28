@@ -151,7 +151,7 @@ $(GENERATED_API_PATH)/%.pb.go: $(PROTO_DEPS) $(PROTOC_GEN_GO) $(PROTOC_GEN_GRPC_
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
 		--proto_path=$(BASE_PATH) \
-		--gofast_out=$(GOGO_M_STR),$(M_ARGS_STR),plugins=grpc:$(GENERATED_BASE_PATH) \
+		--gofast_out=$(GOGO_M_STR),plugins=grpc:$(GENERATED_BASE_PATH) \
 		$(PROTO_API_PROTOS)
 
 # Generate all of the reverse-proxies (gRPC-Gateways) with one invocation of
