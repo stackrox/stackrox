@@ -259,7 +259,7 @@ class ImageDetails extends Component {
             </div>
         );
         return (
-            <Panel header={header} onClose={this.updateSelectedImage} width="w-2/3">
+            <Panel header={header} onClose={this.updateSelectedImage} className="w-2/3">
                 {content}
             </Panel>
         );

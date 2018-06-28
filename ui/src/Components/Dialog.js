@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import ReactModal from 'react-modal';
 
-const Modal = props => (
+const Dialog = props => (
     <ReactModal
         isOpen={props.isOpen}
         contentLabel="Modal"
@@ -22,11 +22,11 @@ const Modal = props => (
     </ReactModal>
 );
 
-Modal.propTypes = {
+Dialog.propTypes = {
     isOpen: PropTypes.bool.isRequired,
     text: PropTypes.string.isRequired,
     onCancel: PropTypes.func.isRequired,
     onConfirm: PropTypes.func.isRequired
 };
 
-export default Modal;
+export default Dialog;

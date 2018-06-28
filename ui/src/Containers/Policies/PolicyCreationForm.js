@@ -161,7 +161,7 @@ class PolicyCreationForm extends Component {
                         <FormField
                             key={field.jsonpath}
                             label={field.label}
-                            value={field.jsonpath}
+                            name={field.jsonpath}
                             required={field.required}
                             onRemove={removeField}
                         >

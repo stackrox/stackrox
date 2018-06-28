@@ -4,7 +4,7 @@
             "name": "CIS Docker v1.1.0 Benchmark",
             "editable": false,
             "checks": [],
-            "clusterTypes": ["KUBERNETES_CLUSTER", "SWARM_CLUSTER", "DOCKER_EE_CLUSTER"]
+            "clusterTypes": ["KUBERNETES_CLUSTER", "SWARM_CLUSTER"]
         },
         {
             "name": "CIS Kubernetes v1.2.0 Benchmark",
@@ -16,7 +16,7 @@
             "name": "CIS Swarm v1.1.0 Benchmark",
             "editable": false,
             "checks": [],
-            "clusterTypes": ["SWARM_CLUSTER", "DOCKER_EE_CLUSTER"]
+            "clusterTypes": ["SWARM_CLUSTER"]
         }
     ]
 }

@@ -12,6 +12,7 @@ import Dialog from 'Components/Dialog';
 import Loader from 'Components/Loader';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
+import PanelButton from 'Components/PanelButton';
 import { formatPolicyFields, getPolicyFormDataKeys } from 'Containers/Policies/policyFormUtils';
 import PolicyDetails from 'Containers/Policies/PolicyDetails';
 import PageHeader from 'Components/PageHeader';
@@ -79,52 +80,9 @@ class PoliciesPage extends Component {
         this.props.setWizardState(newState);
     };
 
-    getPanelButtons = () => {
-        switch (this.props.wizardState.current) {
-            case 'EDIT':
-            case 'PRE_PREVIEW':
-                return [
-                    {
-                        renderIcon: () => <Icon.ArrowRight className="h-4 w-4" />,
-                        text: 'Next',
-                        className: 'btn-primary',
-                        onClick: () => {
-                            this.getPolicyDryRun();
-                        }
-                    }
-                ];
-            case 'PREVIEW':
-                return [
-                    {
-                        renderIcon: () => <Icon.ArrowLeft className="h-4 w-4" />,
-                        text: 'Previous',
-                        className: 'btn-primary',
-                        onClick: () => {
-                            this.props.setWizardState({ current: 'EDIT' });
-                        }
-                    },
-                    {
-                        renderIcon: () => <Icon.Save className="h-4 w-4" />,
-                        text: 'Save',
-                        className: 'btn-success',
-                        onClick: () => {
-                            this.onSubmit();
-                        }
-                    }
-                ];
-            default:
-                return [
-                    {
-                        renderIcon: () => <Icon.Edit className="h-4 w-4" />,
-                        text: 'Edit',
-                        className: 'btn-success',
-                        onClick: () => {
-                            this.props.setWizardState({ current: 'EDIT', policy: null });
-                        }
-                    }
-                ];
-        }
-    };
+    onPolicyEdit = () => this.props.setWizardState({ current: 'EDIT', policy: null });
+
+    onBackToEditFields = () => this.props.setWizardState({ current: 'EDIT' });
 
     getPolicyDryRun = () => {
         const serverFormattedPolicy = formatPolicyFields(this.props.formData);
@@ -185,31 +143,6 @@ class PoliciesPage extends Component {
     };
 
     renderTablePanel = () => {
-        const header = `${this.props.policies.length} Policies`;
-        const buttons = [
-            {
-                renderIcon: () => <Icon.Trash2 className="h-4 w-4" />,
-                text: 'Delete Policies',
-                className: 'btn-danger',
-                onClick: this.showConfirmationDialog,
-                disabled: this.props.wizardState.current !== ''
-            },
-            {
-                renderIcon: () => <Icon.FileText className="h-4 w-4" />,
-                text: 'Reassess Policies',
-                className: 'btn-success',
-                onClick: this.props.reassessPolicies,
-                disabled: this.props.wizardState.current !== '',
-                tooltip: 'Manually enrich external data'
-            },
-            {
-                renderIcon: () => <Icon.Plus className="h-4 w-4" />,
-                text: 'Add',
-                className: 'btn-success',
-                onClick: this.addPolicy,
-                disabled: this.props.wizardState.current !== ''
-            }
-        ];
         const columns = [
             {
                 key: 'name',
@@ -260,12 +193,39 @@ class PoliciesPage extends Component {
                 onClick: this.toggleEnabledDisabledPolicy
             }
         ];
-        const rows = this.props.policies;
+
+        const buttonsDisabled = this.props.wizardState.current !== '';
+        const panelButtons = (
+            <React.Fragment>
+                <PanelButton
+                    icon={<Icon.Trash2 className="h-4 w-4" />}
+                    text="Delete"
+                    className="btn-danger"
+                    onClick={this.showConfirmationDialog}
+                    disabled={buttonsDisabled}
+                />
+                <PanelButton
+                    icon={<Icon.FileText className="h-4 w-4" />}
+                    text="Reassess Policies"
+                    className="btn-success"
+                    onClick={this.props.reassessPolicies}
+                    tooltip="Manually enrich external data"
+                    disabled={buttonsDisabled}
+                />
+                <PanelButton
+                    icon={<Icon.Plus className="h-4 w-4" />}
+                    text="Add"
+                    className="btn-success"
+                    onClick={this.addPolicy}
+                    disabled={buttonsDisabled}
+                />
+            </React.Fragment>
+        );
         return (
-            <Panel header={header} buttons={buttons}>
+            <Panel header={`${this.props.policies.length} Policies`} buttons={panelButtons}>
                 <Table
                     columns={columns}
-                    rows={rows}
+                    rows={this.props.policies}
                     onRowClick={this.setSelectedPolicy}
                     actions={actions}
                     checkboxes
@@ -275,6 +235,47 @@ class PoliciesPage extends Component {
                 />
             </Panel>
         );
+    };
+
+    renderSidePanelButtons = () => {
+        switch (this.props.wizardState.current) {
+            case 'EDIT':
+            case 'PRE_PREVIEW':
+                return (
+                    <PanelButton
+                        icon={<Icon.ArrowRight className="h-4 w-4" />}
+                        text="Next"
+                        className="btn-primary"
+                        onClick={this.getPolicyDryRun}
+                    />
+                );
+            case 'PREVIEW':
+                return (
+                    <React.Fragment>
+                        <PanelButton
+                            icon={<Icon.ArrowLeft className="h-4 w-4" />}
+                            text="Previous"
+                            className="btn-primary"
+                            onClick={this.onBackToEditFields}
+                        />
+                        <PanelButton
+                            icon={<Icon.Save className="h-4 w-4" />}
+                            text="Save"
+                            className="btn-success"
+                            onClick={this.onSubmit}
+                        />
+                    </React.Fragment>
+                );
+            default:
+                return (
+                    <PanelButton
+                        icon={<Icon.Edit className="h-4 w-4" />}
+                        text="Edit"
+                        className="btn-success"
+                        onClick={this.onPolicyEdit}
+                    />
+                );
+        }
     };
 
     renderSidePanelView = selectedPolicy => {
@@ -288,9 +289,10 @@ class PoliciesPage extends Component {
     renderSidePanel = () => {
         const { selectedPolicy } = this.props;
         if (!this.props.wizardState.current && !selectedPolicy) return null;
+
         const editingPolicy = Object.assign({}, this.props.wizardState.policy, selectedPolicy);
         const header = editingPolicy ? editingPolicy.name : '';
-        const buttons = this.getPanelButtons();
+        const buttons = this.renderSidePanelButtons();
         return (
             <Panel header={header} buttons={buttons} onClose={this.setSelectedPolicy} width="w-2/3">
                 {this.renderSidePanelView(selectedPolicy)}

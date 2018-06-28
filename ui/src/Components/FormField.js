@@ -7,28 +7,33 @@ const FormField = props => (
     <div className="mb-4 transition">
         <div className="py-2 text-primary-500">
             <span>{props.label}</span>
-            {props.required ? <span className="required text-danger-500 ml-2">*</span> : ''}
+            {props.required && (
+                <span data-test-id="required" className="text-danger-500 ml-1">
+                    *
+                </span>
+            )}
         </div>
-        <div className="flex" id={props.value}>
+        <div className="flex">
             {props.children}
             {props.onRemove && (
-                <FormFieldRemoveButton field={props.value} onClick={props.onRemove} />
+                <FormFieldRemoveButton field={props.name} onClick={props.onRemove} />
             )}
         </div>
     </div>
 );
 
 FormField.defaultProps = {
-    onRemove: null,
-    value: ''
+    name: '',
+    required: false,
+    onRemove: null
 };
 
 FormField.propTypes = {
-    children: PropTypes.node.isRequired,
-    onRemove: PropTypes.func,
+    name: PropTypes.string,
     label: PropTypes.string.isRequired,
-    value: PropTypes.string,
-    required: PropTypes.bool.isRequired
+    required: PropTypes.bool,
+    onRemove: PropTypes.func,
+    children: PropTypes.node.isRequired
 };
 
 export default FormField;

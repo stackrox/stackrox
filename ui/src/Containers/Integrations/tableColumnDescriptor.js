@@ -1,23 +1,9 @@
 import React from 'react';
-import dateFns from 'date-fns';
-import dateTimeFormat from 'constants/dateTimeFormat';
 
 const tableColumnDescriptor = Object.freeze({
     authProviders: {
         auth0: [{ key: 'name', label: 'Name' }, { key: 'config.domain', label: 'Auth0 Domain' }]
     },
-    clusters: [
-        { key: 'name', label: 'Name', className: 'word-break' },
-        { key: 'preventImage', label: 'StackRox Image', className: 'word-break' },
-        {
-            key: 'lastContact',
-            label: 'Last Check-In',
-            keyValueFunc: date => {
-                if (date) return dateFns.format(date, dateTimeFormat);
-                return 'N/A';
-            }
-        }
-    ],
     notifiers: {
         slack: [
             { key: 'name', label: 'Name' },

@@ -5,6 +5,7 @@ import * as Icon from 'react-feather';
 
 import FormFields from 'Containers/Integrations/FormFields';
 import Panel from 'Components/Panel';
+import PanelButton from 'Components/PanelButton';
 
 import * as AuthService from 'services/AuthService';
 import { saveIntegration, testIntegration } from 'services/IntegrationsService';
@@ -88,36 +89,30 @@ class Form extends Component {
         if (!this.props.initialValues) return '';
 
         const header = this.props.initialValues.name || 'New Integration';
-
-        const buttons = [
-            {
-                renderIcon: () => <Icon.X className="h-4 w-4" />,
-                text: 'Cancel',
-                className: 'btn-primary',
-                onClick: this.props.onCancel
-            },
-            {
-                renderIcon: () => <Icon.Save className="h-4 w-4" />,
-                text: `${this.props.initialValues.name ? 'Save' : 'Create'}`,
-                className: 'btn-success',
-                onClick: this.onSubmit
-            }
-        ];
-        if (this.props.source !== 'authProviders') {
-            const testButton = {
-                renderIcon: () => <Icon.Check className="h-4 w-4" />,
-                text: 'Test',
-                className: 'btn-primary',
-                onClick: this.onTest
-            };
-            buttons.splice(1, 0, testButton);
-        }
+        const buttons = (
+            <React.Fragment>
+                <PanelButton
+                    icon={<Icon.Save className="h-4 w-4" />}
+                    text={this.props.initialValues.name ? 'Save' : 'Create'}
+                    className="btn-success"
+                    onClick={this.onSubmit}
+                />
+                {this.props.source !== 'authProviders' && (
+                    <PanelButton
+                        icon={<Icon.Check className="h-4 w-4" />}
+                        text="Test"
+                        className="btn-primary"
+                        onClick={this.onTest}
+                    />
+                )}
+            </React.Fragment>
+        );
 
         const key = this.props.initialValues ? this.props.initialValues.name : 'new-integration';
 
         return (
             <div className="flex flex-1">
-                <Panel header={header} buttons={buttons}>
+                <Panel header={header} onClose={this.props.onCancel} buttons={buttons}>
                     <ReactForm
                         onSubmit={this.onSubmit}
                         validateSuccess={this.validateSuccess}

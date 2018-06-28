@@ -1,33 +1,64 @@
 import axios from 'axios';
+import { normalize } from 'normalizr';
+
+import { saveFile } from 'services/DownloadService';
+import { cluster as clusterSchema } from './schemas';
+
+const clustersUrl = '/v1/clusters';
 
 /**
  * Fetches list of registered clusters.
  *
- * @returns {Promise<Object[], Error>} fulfilled with array of clusters (as defined in .proto)
+ * @returns {Promise<Object, Error>} fulfilled with normalized list of clusters
  */
 export function fetchClusters() {
-    const clustersUrl = '/v1/clusters';
     return axios.get(clustersUrl).then(response => ({
-        response: response.data
+        response: normalize(response.data, { clusters: [clusterSchema] })
     }));
 }
 
 /**
- * Fetches list of registered clusters.
+ * Fetches cluster by its ID.
  *
- * @returns {Promise<Object[], Error>} fulfilled with array of clusters (as defined in .proto)
+ * @returns {Promise<Object, Error>} fulfilled with normalized cluster data
  */
-export function deleteCluster(id) {
-    const clustersUrl = '/v1/clusters/';
-    return axios.delete(`${clustersUrl}${id}`);
+export function fetchCluster(id) {
+    return axios.get(`${clustersUrl}/${id}`).then(response => ({
+        response: normalize(response.data, { cluster: clusterSchema })
+    }));
 }
 
 /**
- * Sends a POST to create a new cluster
+ * Deletes cluster given the cluster ID.
  *
- * @returns {Promise<Object[], Error>} fulfilled with id of cluster (as defined in .proto)
+ * @returns {Promise<undefined, Error>} resolved if operation was successful
  */
-export function createCluster(data) {
-    const clustersUrl = '/v1/clusters';
-    return axios.post(`${clustersUrl}`, data);
+export function deleteCluster(id) {
+    return axios.delete(`${clustersUrl}/${id}`);
+}
+
+/**
+ * Creates or updates a cluster given the cluster fields.
+ *
+ * @returns {Promise<Object, Error>} fulfilled with a saved cluster data
+ */
+export function saveCluster(cluster) {
+    const promise = cluster.id
+        ? axios.put(`${clustersUrl}/${cluster.id}`, cluster)
+        : axios.post(clustersUrl, cluster);
+    return promise.then(response => ({
+        response: normalize(response.data, { cluster: clusterSchema })
+    }));
+}
+
+/**
+ * Downloads cluster YAML configuration.
+ *
+ * @returns {Promise<undefined, Error>} resolved if operation was successful
+ */
+export function downloadClusterYaml(clusterId) {
+    return saveFile({
+        url: '/api/extensions/clusters/zip',
+        data: { id: clusterId }
+    });
 }

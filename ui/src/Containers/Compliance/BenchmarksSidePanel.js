@@ -3,8 +3,6 @@ import PropTypes from 'prop-types';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 
-import * as Icon from 'react-feather';
-
 class BenchmarksSidePanel extends Component {
     static propTypes = {
         header: PropTypes.string.isRequired,
@@ -26,16 +24,8 @@ class BenchmarksSidePanel extends Component {
 
     render() {
         const header = `Host results for "${this.props.header}"`;
-        const buttons = [
-            {
-                renderIcon: () => <Icon.X className="h-4 w-4" />,
-                className:
-                    'flex py-1 px-2 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-primary-400',
-                onClick: this.props.onClose
-            }
-        ];
         return (
-            <Panel header={header} buttons={buttons} width="w-2/3">
+            <Panel header={header} onClose={this.props.onClose} className="w-2/3">
                 {this.renderTable()}
             </Panel>
         );

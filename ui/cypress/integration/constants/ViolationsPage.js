@@ -7,10 +7,10 @@ export const selectors = {
     firstPanelTableRow: 'table > tbody > tr:first',
     lastTableRow: 'table > tbody > tr:last-child',
     sidePanel: {
-        panel: '.side-panel',
-        header: '.side-panel .flex-row > .flex-1',
-        tabs: '.side-panel button.tab',
-        getTabByIndex: index => `.side-panel button.tab:nth(${index})`
+        panel: 'div[data-test-id="panel"]',
+        header: 'div[data-test-id="panel"] .flex-row > .flex-1',
+        tabs: 'div[data-test-id="panel"] button.tab',
+        getTabByIndex: index => `div[data-test-id="panel"] button.tab:nth(${index})`
     },
     clusterTableHeader: 'table thead:contains("Cluster")',
     viewDeploymentsButton: 'button:contains("View Deployments")',

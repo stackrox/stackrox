@@ -8,13 +8,13 @@ export const selectors = {
     savePolicyButton: 'button:contains("Save")',
     nextButton: 'button:contains("Next")',
     prevButton: 'button:contains("Previous")',
-    cancelButton: 'button.cancel',
+    cancelButton: 'button[data-test-id="cancel"]',
     policies: {
         latest: 'tbody > tr:contains("latest")'
     },
     form: {
-        disabled: 'form #disabled',
-        required: 'form .required'
+        enableField: 'form div.text-primary-500:contains("Enable") + div',
+        required: 'form span[data-test-id="required"]'
     },
     policyPreview: {
         message: '.warn-message',
@@ -26,8 +26,8 @@ export const selectors = {
         enabledValueDiv: 'div.text-primary-500:contains("Enabled") + div'
     },
     searchInput: '.Select-input > input',
-    sidePanel: '[data-test-id="side-panel"]',
-    sidePanelHeader: '[data-test-id="side-panel-header"]',
+    sidePanel: '[data-test-id="panel"]',
+    sidePanelHeader: '[data-test-id="panel-header"]',
     tableFirstRow: 'table tr.cursor-pointer:first',
     enableDisableButton: 'td > button',
     enabledPolicyButtonColorClass: 'text-success-500'

@@ -10,6 +10,7 @@ import { actions } from 'reducers/alerts';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import Panel from 'Components/Panel';
+import PanelButton from 'Components/PanelButton';
 import DeploymentDetails from '../Risk/DeploymentDetails';
 import ViolationsDetails from './ViolationsDetails';
 import PolicyDetails from '../Policies/PolicyDetails';
@@ -37,7 +38,7 @@ class ViolationsPanel extends Component {
 
     whitelistDeploymentHandler = () => {
         this.props.whitelistDeployment(this.props.alert);
-        this.setState({ whitelisting: true });
+        this.setState({ whitelisting: true }); // hack: after whitelisting the violation will disappear and the panel will close
     };
 
     renderTabs = () => {
@@ -79,24 +80,31 @@ class ViolationsPanel extends Component {
     render() {
         const { alert } = this.props;
         if (!alert || !alert.policy || !alert.deployment) return null; // TODO: show loading
+
         const header = `${alert.deployment.name} (${alert.deployment.id})`;
-        const buttons = [
-            {
-                renderIcon: () => {
-                    if (this.state.whitelisting)
-                        return <ClipLoader color="currentColor" loading size={15} />;
-                    return <Icon.CheckSquare className="h-4 w-4" />;
-                },
-                text: 'Whitelist',
-                className: 'btn-success',
-                onClick: this.whitelistDeploymentHandler,
-                disabled: this.state.whitelisting,
-                tooltip:
-                    'Whitelist deployment for this policy. View whitelists in the policy editing page'
-            }
-        ];
+        const whitelistButton = (
+            <PanelButton
+                icon={
+                    this.state.whitelisting ? (
+                        <ClipLoader color="currentColor" loading size={15} />
+                    ) : (
+                        <Icon.CheckSquare className="h-4 w-4" />
+                    )
+                }
+                text="Whitelist"
+                className="btn-success"
+                onClick={this.whitelistDeploymentHandler}
+                disabled={this.state.whitelisting}
+                tooltip="Whitelist deployment for this policy. View whitelists in the policy editing page"
+            />
+        );
         return (
-            <Panel header={header} buttons={buttons} width="w-2/3" onClose={this.props.onClose}>
+            <Panel
+                header={header}
+                buttons={whitelistButton}
+                className="w-2/3"
+                onClose={this.props.onClose}
+            >
                 {this.renderTabs()}
             </Panel>
         );

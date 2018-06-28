@@ -23,9 +23,9 @@ export const selectors = {
         confirm: 'button:contains("Confirm")'
     },
     clusterForm: {
-        nameInput: ".cluster-form input[name='name']",
-        imageInput: ".cluster-form input[name='preventImage']",
-        endpointInput: ".cluster-form input[name='centralApiEndpoint']"
+        nameInput: 'form[data-test-id="cluster-form"] input[name="name"]',
+        imageInput: 'form[data-test-id="cluster-form"] input[name="preventImage"]',
+        endpointInput: 'form[data-test-id="cluster-form"] input[name="centralApiEndpoint"]'
     },
     dockerRegistryForm: {
         nameInput: "form label[for='name'] input",

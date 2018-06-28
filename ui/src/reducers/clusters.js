@@ -1,109 +1,115 @@
 import { combineReducers } from 'redux';
+import { createSelector } from 'reselect';
 import isEqual from 'lodash/isEqual';
+import pick from 'lodash/pick';
 
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
+import mergeEntitiesById from 'utils/mergeEntitiesById';
+
+export const clusterFormId = 'cluster-form';
+
+export const clusterTypes = ['SWARM_CLUSTER', 'OPENSHIFT_CLUSTER', 'KUBERNETES_CLUSTER'];
+
+export const wizardPages = Object.freeze({
+    FORM: 'FORM',
+    DEPLOYMENT: 'DEPLOYMENT'
+});
 
 // Action types
 
 export const types = {
     FETCH_CLUSTERS: createFetchingActionTypes('clusters/FETCH_CLUSTERS'),
+    FETCH_CLUSTER: createFetchingActionTypes('clusters/FETCH_CLUSTER'),
     SELECT_CLUSTER: 'clusters/SELECT_CLUSTER',
-    SELECT_CLUSTER_TYPE: 'clusters/SELECT_CLUSTER_TYPE',
-    EDIT_CLUSTER: 'clusters/EDIT_CLUSTER',
-    SET_CREATED_CLUSTER_ID: 'clusters/SET_CREATED_CLUSTER_ID'
+    START_WIZARD: 'clusters/START_WIZARD',
+    NEXT_WIZARD_PAGE: 'clusters/NEXT_WIZARD_PAGE',
+    PREV_WIZARD_PAGE: 'clusters/NEXT_WIZARD_PAGE',
+    UPDATE_WIZARD_STATE: 'clusters/UPDATE_WIZARD_STATE',
+    FINISH_WIZARD: 'clusters/FINISH_WIZARD',
+    SAVE_CLUSTER: createFetchingActionTypes('clusters/SAVE_CLUSTER')
 };
 
 // Actions
 
 export const actions = {
     fetchClusters: createFetchingActions(types.FETCH_CLUSTERS),
+    fetchCluster: createFetchingActions(types.FETCH_CLUSTER),
     selectCluster: clusterId => ({ type: types.SELECT_CLUSTER, clusterId }),
-    selectClusterType: clusterType => ({ type: types.SELECT_CLUSTER_TYPE, clusterType }),
-    editCluster: clusterId => ({ type: types.EDIT_CLUSTER, clusterId }),
-    setCreatedClusterId: clusterId => ({ type: types.SET_CREATED_CLUSTER_ID, clusterId })
+    startWizard: clusterId => ({ type: types.START_WIZARD, clusterId }),
+    nextWizardPage: () => ({ type: types.NEXT_WIZARD_PAGE }),
+    prevWizardPage: () => ({ type: types.PREV_WIZARD_PAGE }),
+    updateWizardState: (page, clusterId) => ({ type: types.UPDATE_WIZARD_STATE, page, clusterId }),
+    finishWizard: () => ({ type: types.FINISH_WIZARD }),
+    saveCluster: createFetchingActions(types.SAVE_CLUSTER)
 };
 
 // Reducers
 
-const clusters = (state = [], action) => {
-    if (action.type === types.FETCH_CLUSTERS.SUCCESS) {
-        return isEqual(action.response.clusters, state) ? state : action.response.clusters;
+const byId = (state = {}, action) => {
+    if (action.response && action.response.entities && action.response.entities.cluster) {
+        const clustersById = action.response.entities.cluster;
+        const newState = mergeEntitiesById(state, clustersById);
+        if (action.type === types.FETCH_CLUSTERS.SUCCESS) {
+            const onlyExisting = pick(newState, Object.keys(clustersById));
+            return isEqual(onlyExisting, state) ? state : onlyExisting;
+        }
+        return newState;
     }
     return state;
 };
 
 const selectedCluster = (state = null, action) => {
     if (action.type === types.SELECT_CLUSTER) {
-        return action.clusterId || null;
+        return action.clusterId;
     }
     if (state && action.type === types.FETCH_CLUSTERS.SUCCESS) {
+        const clusters = action.response.entities.cluster;
         // received a new list of clusters and it doesn't contain selected cluster: unselect
-        if (!action.response.clusters.map(cluster => cluster.id).includes(state)) return null;
+        if (!clusters[state]) return null;
+    }
+    if (state && action.type === types.START_WIZARD) {
+        // started add / edit wizard, deselect cluster if we're adding a new one
+        return state === action.clusterId ? state : null;
     }
     return state;
 };
 
-const editingCluster = (state = null, action) => {
-    if (action.type === types.SAVE_CLUSTER) {
-        return null;
-    }
-    if (action.type === types.EDIT_CLUSTER) {
-        if (action.clusterId === undefined) {
-            return { new: true } || null;
-        } else if (action.clusterId) {
-            return { id: action.clusterId, new: false } || null;
-        }
-        return null;
-    }
-    // if the modal is opened or closed, the cluster edit form should go away
-    if (action.type === types.SELECT_CLUSTER_TYPE) {
-        return null;
-    }
-    if (state && action.type === types.FETCH_CLUSTERS.SUCCESS) {
-        // received a new list of clusters and it doesn't contain the cluster that was being edited: unselect
-        if (state.id && !action.response.clusters.map(cluster => cluster.id).includes(state.id)) {
+const wizard = (state = null, { type, clusterId, page, response }) => {
+    switch (type) {
+        case types.START_WIZARD:
+            return { page: wizardPages.FORM, clusterId };
+        case types.UPDATE_WIZARD_STATE:
+            return { page, clusterId };
+        case types.FINISH_WIZARD:
             return null;
-        }
+        case types.FETCH_CLUSTERS.SUCCESS:
+            // check that wizard cluster is still there
+            return state && state.clusterId && !response.entities.cluster[clusterId] ? null : state;
+        default:
+            return state;
     }
-    return state;
-};
-
-const createdClusterId = (state = null, action) => {
-    if (action.type === types.SET_CREATED_CLUSTER_ID) {
-        return action.clusterId || null;
-    }
-    return state;
-};
-
-const selectedClusterType = (state = null, action) => {
-    if (action.type === types.SELECT_CLUSTER_TYPE) {
-        return action.clusterType || null;
-    }
-    return state;
 };
 
 const reducer = combineReducers({
-    clusters,
+    byId,
     selectedCluster,
-    editingCluster,
-    selectedClusterType,
-    createdClusterId
+    wizard
 });
 
 export default reducer;
 
 // Selectors
 
-const getClusters = state => state.clusters;
+const getClustersById = state => state.byId;
+const getClusters = createSelector([getClustersById], clusters => Object.values(clusters));
 const getSelectedClusterId = state => state.selectedCluster;
-const getEditingCluster = state => state.editingCluster;
-const getSelectedClusterType = state => state.selectedClusterType;
-const getCreatedClusterId = state => state.createdClusterId;
+const getWizardCurrentPage = state => (state.wizard ? state.wizard.page : null);
+const getWizardClusterId = state => (state.wizard ? state.wizard.clusterId : null);
 
 export const selectors = {
+    getClustersById,
     getClusters,
-    getSelectedClusterType,
     getSelectedClusterId,
-    getEditingCluster,
-    getCreatedClusterId
+    getWizardCurrentPage,
+    getWizardClusterId
 };

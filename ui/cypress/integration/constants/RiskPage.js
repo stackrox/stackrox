@@ -6,7 +6,7 @@ export const selectors = {
         riskIndicators: 'button.tab:contains("Risk Indicators")',
         deploymentDetails: 'button.tab:contains("Deployment Details")'
     },
-    cancelButton: 'button.cancel',
+    cancelButton: 'button[data-test-id="cancel"]',
     search: {
         searchModifier: '.risk-search-input #react-select-3--value > :nth-child(1)',
         searchWord: '.risk-search-input #react-select-3--value > :nth-child(2)'

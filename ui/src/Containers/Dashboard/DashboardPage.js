@@ -47,10 +47,11 @@ const severityPropType = PropTypes.oneOf([
     'LOW_SEVERITY'
 ]);
 
+const emptyFunc = () => null;
 const slickSettings = {
     dots: false,
-    nextArrow: <CarouselNextArrow />,
-    prevArrow: <CarouselPrevArrow />
+    nextArrow: <CarouselNextArrow onClick={emptyFunc} />,
+    prevArrow: <CarouselPrevArrow onClick={emptyFunc} />
 };
 
 const groupedViolationsPropType = PropTypes.arrayOf(

@@ -58,7 +58,7 @@ describe('Violations page', () => {
         cy.visit(violationsUrl);
         cy.get(selectors.pageSearchInput).type('Cluster:{enter}', { force: true });
         cy.get(selectors.pageSearchInput).type('remote{enter}', { force: true });
-        cy.get('.side-panel').should('not.be.visible');
+        cy.get('div[data-test-id="panel"]').should('not.be.visible');
     });
 
     it('should have 3 tabs in the sidepanel', () => {

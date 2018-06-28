@@ -8,12 +8,11 @@ import Form from 'Containers/Integrations/Form';
 import Modal from 'Components/Modal';
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
+import PanelButton from 'Components/PanelButton';
 
 import tableColumnDescriptor from 'Containers/Integrations/tableColumnDescriptor';
 import * as AuthService from 'services/AuthService';
 import { deleteIntegration } from 'services/IntegrationsService';
-
-import { clusterTypeLabels } from 'messages/common';
 
 const SOURCE_LABELS = Object.freeze({
     authProviders: 'authentication provider',
@@ -43,8 +42,7 @@ class IntegrationModal extends Component {
                 type: PropTypes.string.isRequired
             })
         ).isRequired,
-        source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders', 'clusters'])
-            .isRequired,
+        source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders']).isRequired,
         type: PropTypes.string.isRequired,
         onRequestClose: PropTypes.func.isRequired,
         onIntegrationsUpdate: PropTypes.func.isRequired
@@ -89,6 +87,10 @@ class IntegrationModal extends Component {
         });
     };
 
+    onIntegrationRowClick = integration => {
+        this.update('EDIT_INTEGRATION', { editIntegration: integration });
+    };
+
     addIntegration = () => {
         this.update('EDIT_INTEGRATION', { editIntegration: {} });
     };
@@ -122,75 +124,41 @@ class IntegrationModal extends Component {
     };
 
     renderTable = () => {
-        const header = `${
-            this.props.source !== 'clusters' ? this.props.type : clusterTypeLabels[this.props.type]
-        } Integrations`;
-        const buttons =
-            this.props.source !== 'clusters'
-                ? [
-                      {
-                          renderIcon: () => <Icon.Trash2 className="h-4 w-4" />,
-                          text: 'Delete',
-                          className: 'btn-danger',
-                          onClick: this.showConfirmationDialog,
-                          disabled: this.state.editIntegration !== null
-                      },
-                      {
-                          renderIcon: () => <Icon.Plus className="h-4 w-4" />,
-                          text: 'Add',
-                          className: 'btn-success',
-                          onClick: this.addIntegration,
-                          disabled: this.state.editIntegration !== null
-                      }
-                  ]
-                : [
-                      {
-                          renderIcon: () => <Icon.Trash2 className="h-4 w-4" />,
-                          text: 'Delete',
-                          className:
-                              'flex py-1 px-2 rounded-sm text-danger-600 hover:text-white hover:bg-danger-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-danger-400',
-                          onClick: this.deleteIntegration,
-                          disabled: this.state.editIntegration !== null
-                      },
-                      {
-                          renderIcon: () => <Icon.Plus className="h-4 w-4" />,
-                          text: 'Add Integration',
-                          className:
-                              'flex py-1 px-2 rounded-sm text-success-600 hover:text-white hover:bg-success-400 uppercase text-center text-sm items-center ml-2 bg-white border-2 border-success-400',
-                          onClick: this.addIntegration,
-                          disabled: this.state.editIntegration !== null
-                      }
-                  ];
-        const columns =
-            this.props.source !== 'clusters'
-                ? tableColumnDescriptor[this.props.source][this.props.type]
-                : tableColumnDescriptor[this.props.source];
-        const rows = this.props.integrations;
-        const onRowClickHandler = () => integration => {
-            if (this.props.source !== 'clusters')
-                this.update('EDIT_INTEGRATION', { editIntegration: integration });
-        };
+        const buttons = (
+            <React.Fragment>
+                <PanelButton
+                    icon={<Icon.Trash2 className="h-4 w-4" />}
+                    text="Delete"
+                    className="btn-danger"
+                    onClick={this.showConfirmationDialog}
+                    disabled={this.state.editIntegration !== null}
+                />
+                <PanelButton
+                    icon={<Icon.Plus className="h-4 w-4" />}
+                    text="Add"
+                    className="btn-success"
+                    onClick={this.addIntegration}
+                    disabled={this.state.editIntegration !== null}
+                />
+            </React.Fragment>
+        );
 
         return (
             <div className="flex flex-1">
-                <Panel header={header} buttons={buttons}>
-                    {rows.length !== 0 ? (
+                <Panel header={`${this.props.type} Integration`} buttons={buttons}>
+                    {this.props.integrations.length !== 0 ? (
                         <Table
-                            columns={columns}
-                            rows={rows}
-                            checkboxes={this.props.source !== 'clusters'}
-                            onRowClick={onRowClickHandler()}
+                            columns={tableColumnDescriptor[this.props.source][this.props.type]}
+                            rows={this.props.integrations}
+                            checkboxes
+                            onRowClick={this.onIntegrationRowClick}
                             ref={table => {
                                 this.integrationTable = table;
                             }}
                         />
                     ) : (
                         <div className="p3 w-full my-auto text-center capitalize">
-                            {`No ${
-                                this.props.source !== 'clusters'
-                                    ? this.props.type
-                                    : clusterTypeLabels[this.props.type]
-                            } integrations`}
+                            {`No ${this.props.type} integrations`}
                         </div>
                     )}
                 </Panel>
@@ -233,9 +201,7 @@ class IntegrationModal extends Component {
             <Modal isOpen onRequestClose={this.onRequestClose} className="w-full lg:w-5/6 h-full">
                 <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
                     <span className="flex flex-1">
-                        {source !== 'clusters'
-                            ? `Configure ${type} ${SOURCE_LABELS[source]}`
-                            : `Configure ${clusterTypeLabels[type]}`}
+                        {`Configure ${type} ${SOURCE_LABELS[source]}`}
                     </span>
                     <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.onRequestClose} />
                 </header>

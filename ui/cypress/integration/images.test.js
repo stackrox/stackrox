@@ -48,6 +48,6 @@ describe('Images page', () => {
     it('should close the side panel on search filter', () => {
         cy.get(selectors.pageSearchInput).type('Cluster:{enter}', { force: true });
         cy.get(selectors.pageSearchInput).type('remote{enter}', { force: true });
-        cy.get('.side-panel').should('not.be.visible');
+        cy.get('div[data-test-id="panel"]').should('not.be.visible');
     });
 });

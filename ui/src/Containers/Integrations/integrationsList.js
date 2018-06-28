@@ -100,12 +100,6 @@ const integrationsList = {
             type: 'OPENSHIFT_CLUSTER'
         },
         {
-            label: 'Docker Enterprise Edition',
-            image: docker,
-            source: 'clusters',
-            type: 'DOCKER_EE_CLUSTER'
-        },
-        {
             label: 'Docker Swarm',
             image: docker,
             source: 'clusters',

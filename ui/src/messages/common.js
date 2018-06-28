@@ -7,7 +7,6 @@ const common = Object.freeze({
     },
     clusterTypeLabels: {
         KUBERNETES_CLUSTER: 'Kubernetes Clusters',
-        DOCKER_EE_CLUSTER: 'Docker EE Clusters',
         SWARM_CLUSTER: 'Swarm Clusters',
         OPENSHIFT_CLUSTER: 'OpenShift Clusters'
     }

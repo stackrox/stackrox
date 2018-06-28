@@ -11,3 +11,5 @@ export const alert = new schema.Entity('alert');
 export const alerts = { alerts: [alert] };
 
 export const image = new schema.Entity('image', {}, { idAttribute: 'sha' });
+
+export const cluster = new schema.Entity('cluster');
