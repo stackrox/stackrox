@@ -64,9 +64,7 @@ func (d *Detector) reprocessPolicy(policy *matcher.Policy) {
 		deploymentMap[deploy.GetId()] = struct{}{}
 	}
 
-	qb := search.NewQueryBuilder().
-		AddBool(search.Stale, false).
-		AddString(search.PolicyID, policy.GetId())
+	qb := search.NewQueryBuilder().AddBools(search.Stale, false).AddStrings(search.PolicyID, policy.GetId())
 	alerts, err := d.alertStorage.GetAlerts(&v1.ListAlertsRequest{
 		Query: qb.Query(),
 	})

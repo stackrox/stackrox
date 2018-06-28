@@ -129,7 +129,7 @@ func verifyReadPolicy(t *testing.T, service v1.PolicyServiceClient) {
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	getManyResp, err := service.ListPolicies(ctx, &v1.RawQuery{
-		Query: search.NewQueryBuilder().AddString(search.PolicyName, policy.GetName()).Query(),
+		Query: search.NewQueryBuilder().AddStrings(search.PolicyName, policy.GetName()).Query(),
 	})
 	cancel()
 	require.NoError(t, err)

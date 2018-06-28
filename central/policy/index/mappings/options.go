@@ -12,7 +12,7 @@ var OptionsMap = map[string]*v1.SearchField{
 	search.LabelKey:   search.NewStringField("policy.scope.label.key"),
 	search.LabelValue: search.NewStringField("policy.scope.label.value"),
 
-	search.PolicyID:    search.NewStringField("policy.id"),
+	search.PolicyID:    search.NewField("policy.id", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
 	search.Enforcement: search.NewEnforcementField("policy.enforcement"),
 	search.PolicyName:  search.NewStringField("policy.name"),
 	search.Description: search.NewStringField("policy.description"),

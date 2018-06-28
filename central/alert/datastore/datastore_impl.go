@@ -67,7 +67,7 @@ func (ds *datastoreImpl) GetAlerts(request *v1.ListAlertsRequest) ([]*v1.Alert, 
 
 // CountAlerts returns the number of alerts that are active
 func (ds *datastoreImpl) CountAlerts() (int, error) {
-	qb := searchCommon.NewQueryBuilder().AddBool(searchCommon.Stale, false)
+	qb := searchCommon.NewQueryBuilder().AddBools(searchCommon.Stale, false)
 	// Do not call GetAlerts because they returns full alert objects which are expensive
 	alerts, err := ds.GetAlerts(&v1.ListAlertsRequest{
 		Query: qb.Query(),

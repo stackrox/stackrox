@@ -14,7 +14,7 @@ var OptionsMap = map[string]*v1.SearchField{
 
 	search.CPUCoresLimit:     search.NewNumericField("deployment.containers.resources.cpu_cores_limit"),
 	search.CPUCoresRequest:   search.NewNumericField("deployment.containers.resources.cpu_cores_request"),
-	search.DeploymentID:      search.NewStringField("deployment.id"),
+	search.DeploymentID:      search.NewField("deployment.id", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
 	search.DeploymentName:    search.NewStringField("deployment.name"),
 	search.DeploymentType:    search.NewStringField("deployment.type"),
 	search.AddCapabilities:   search.NewStringField("deployment.containers.security_context.add_capabilities"),

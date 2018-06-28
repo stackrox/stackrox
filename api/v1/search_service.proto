@@ -40,6 +40,7 @@ message SearchField {
     string field_path   = 1;
     SearchDataType type = 2;
     bool store          = 3;
+    bool hidden         = 4;
 }
 
 message ParsedSearchRequest {

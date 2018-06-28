@@ -37,9 +37,10 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 	require.NoError(t, err)
 
 	service := v1.NewPolicyServiceClient(conn)
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.ListPolicies(ctx, &v1.RawQuery{
-		Query: search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy).Query(),
+		Query: search.NewQueryBuilder().AddStrings(search.PolicyName, expectedLatestTagPolicy).Query(),
 	})
 	cancel()
 	require.NoError(t, err)
@@ -62,7 +63,7 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 	cancel()
 	require.NoError(t, err)
 
-	qb := search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName).AddString(search.PolicyName, latestPolicy.GetName()).AddBool(search.Stale, false)
+	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, latestPolicy.GetName()).AddBools(search.Stale, false)
 	alertService := v1.NewAlertServiceClient(conn)
 	waitForAlert(t, alertService, &v1.ListAlertsRequest{
 		Query: qb.Query(),
@@ -75,7 +76,7 @@ func verifyAlertForWhitelistRemoval(t *testing.T) {
 
 	service := v1.NewPolicyServiceClient(conn)
 
-	qb := search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy)
+	qb := search.NewQueryBuilder().AddStrings(search.PolicyName, expectedLatestTagPolicy)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.ListPolicies(ctx, &v1.RawQuery{
 		Query: qb.Query(),
@@ -96,7 +97,8 @@ func verifyAlertForWhitelistRemoval(t *testing.T) {
 	require.NoError(t, err)
 
 	alertService := v1.NewAlertServiceClient(conn)
-	qb = search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName).AddString(search.PolicyName, latestPolicy.GetName()).AddBool(search.Stale, false)
+
+	qb = search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, latestPolicy.GetName()).AddBools(search.Stale, false)
 	waitForAlert(t, alertService, &v1.ListAlertsRequest{
 		Query: qb.Query(),
 	}, 1)

@@ -53,7 +53,7 @@ func severityImpact(severity v1.Severity) float32 {
 
 // Score takes a deployment and evaluates its risk based on policy violations.
 func (v *ViolationsMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
-	qb := search.NewQueryBuilder().AddString(search.DeploymentID, deployment.GetId()).AddBool(search.Stale, false)
+	qb := search.NewQueryBuilder().AddStrings(search.DeploymentID, deployment.GetId()).AddBools(search.Stale, false)
 
 	alerts, err := v.getter.GetAlerts(&v1.ListAlertsRequest{
 		Query: qb.Query(),

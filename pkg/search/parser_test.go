@@ -9,7 +9,7 @@ import (
 
 func TestParseRawQuery(t *testing.T) {
 	// clusters only
-	query := "Cluster:cluster1,cluster2"
+	query := NewQueryBuilder().AddStrings(Cluster, "cluster1", "cluster2").Query()
 	expectedRequest := &v1.ParsedSearchRequest{
 		Fields: make(map[string]*v1.ParsedSearchRequest_Values),
 		Scopes: []*v1.Scope{
@@ -34,7 +34,7 @@ func TestParseRawQuery(t *testing.T) {
 	assert.Equal(t, expectedRequest, actualRequest)
 
 	// namespaces only
-	query = "Namespace:namespace1,namespace2"
+	query = NewQueryBuilder().AddStrings(Namespace, "namespace1", "namespace2").Query()
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: make(map[string]*v1.ParsedSearchRequest_Values),
 		Scopes: []*v1.Scope{
@@ -51,7 +51,7 @@ func TestParseRawQuery(t *testing.T) {
 	assert.Equal(t, expectedRequest, actualRequest)
 
 	// labels only
-	query = "Label Key:key1+Label Value:value1,value2"
+	query = NewQueryBuilder().AddStrings(LabelKey, "key1").AddStrings(LabelValue, "value1", "value2").Query()
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: make(map[string]*v1.ParsedSearchRequest_Values),
 		Scopes: []*v1.Scope{
@@ -74,7 +74,7 @@ func TestParseRawQuery(t *testing.T) {
 	assert.Equal(t, expectedRequest, actualRequest)
 
 	// clusters, namespaces, and labels
-	query = "Cluster:cluster1,cluster2+Namespace:name space1,namespace2+Label Key:key1+Label Value:value1,value2"
+	query = NewQueryBuilder().AddStrings(Cluster, "cluster1", "cluster2").AddStrings(Namespace, "name space1", "namespace2").AddStrings(LabelKey, "key1").AddStrings(LabelValue, "value1", "value2").Query()
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: make(map[string]*v1.ParsedSearchRequest_Values),
 		Scopes: []*v1.Scope{
@@ -151,7 +151,7 @@ func TestParseRawQuery(t *testing.T) {
 	assert.ElementsMatch(t, expectedRequest.GetScopes(), actualRequest.GetScopes())
 
 	// fields without scope
-	query = "Deployment Name:field1,field12+Category:field2"
+	query = NewQueryBuilder().AddStrings(DeploymentName, "field1", "field12").AddStrings(Category, "field2").Query()
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
 			"deployment.name": {
@@ -177,7 +177,7 @@ func TestParseRawQuery(t *testing.T) {
 	assert.Equal(t, expectedRequest, actualRequest)
 
 	// fields with raw query
-	query = "Deployment Name:field1+Category:field2+has:rawquery"
+	query = NewQueryBuilder().AddStrings(DeploymentName, "field1").AddStrings(Category, "field2").AddStringQuery("rawquery").Query()
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
 			"deployment.name": {

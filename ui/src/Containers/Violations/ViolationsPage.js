@@ -74,7 +74,7 @@ class ViolationsPage extends Component {
         const columns = [
             { key: 'deployment.name', label: 'Deployment' },
             { key: 'deployment.clusterName', label: 'Cluster' },
-            { key: 'policy.name', label: 'Violation' },
+            { key: 'policy.name', label: 'Policy' },
             { key: 'policy.description', label: 'Description' },
             {
                 key: 'policy.categories',

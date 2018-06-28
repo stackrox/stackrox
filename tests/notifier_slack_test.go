@@ -105,7 +105,7 @@ func addNotifierToPolicy(t *testing.T, conn *grpc.ClientConn) {
 	defer cancel()
 
 	service := v1.NewPolicyServiceClient(conn)
-	qb := search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy)
+	qb := search.NewQueryBuilder().AddStrings(search.PolicyName, expectedLatestTagPolicy)
 	resp, err := service.ListPolicies(ctx, &v1.RawQuery{
 		Query: qb.Query(),
 	})
@@ -154,7 +154,7 @@ func verifyPolicyHasNoNotifier(t *testing.T, conn *grpc.ClientConn) {
 	service := v1.NewPolicyServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.ListPolicies(ctx, &v1.RawQuery{
-		Query: search.NewQueryBuilder().AddString(search.PolicyName, expectedLatestTagPolicy).Query(),
+		Query: search.NewQueryBuilder().AddStrings(search.PolicyName, expectedLatestTagPolicy).Query(),
 	})
 	cancel()
 	require.NoError(t, err)
@@ -175,7 +175,7 @@ func verifyAlertsForLatestTag(t *testing.T, alert *v1.Alert) {
 
 	service := v1.NewAlertServiceClient(conn)
 
-	qb := search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName).AddString(search.PolicyName, expectedLatestTagPolicy).AddBool(search.Stale, false)
+	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, expectedLatestTagPolicy).AddBools(search.Stale, false)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	alerts, err := service.ListAlerts(ctx, &v1.ListAlertsRequest{
 		Query: qb.Query(),

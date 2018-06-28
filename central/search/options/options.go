@@ -52,8 +52,10 @@ var CategoryOptionsMap = map[v1.SearchCategory]mapset.Set{
 func generateSetFromOptionsMap(maps ...map[string]*v1.SearchField) mapset.Set {
 	s := mapset.NewSet()
 	for _, m := range maps {
-		for k := range m {
-			s.Add(k)
+		for k, v := range m {
+			if !v.GetHidden() {
+				s.Add(k)
+			}
 		}
 	}
 	return s

@@ -65,7 +65,7 @@ func TestDeployments(t *testing.T) {
 
 	service := v1.NewDeploymentServiceClient(conn)
 
-	qb := search.NewQueryBuilder().AddString(search.DeploymentName, "central").AddString(search.DeploymentName, "sensor")
+	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, "central").AddStrings(search.DeploymentName, "sensor")
 	deployments, err := service.ListDeployments(ctx, &v1.RawQuery{
 		Query: qb.Query(),
 	})

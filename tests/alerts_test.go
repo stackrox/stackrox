@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"fmt"
 	"os/exec"
 	"testing"
 	"time"
@@ -25,7 +24,7 @@ const (
 )
 
 var alertQuery = func() string {
-	return search.NewQueryBuilder().AddString(search.DeploymentName, nginxDeploymentName).AddString(search.LabelKey, "hello").AddString(search.LabelValue, "world").AddBool(search.Stale, false).Query()
+	return search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.LabelKey, "hello").AddStrings(search.LabelValue, "world").AddBools(search.Stale, false).Query()
 }()
 
 var (
@@ -124,7 +123,7 @@ func waitForDeployment(t *testing.T, deploymentName string) {
 	timer := time.NewTimer(waitTimeout)
 	defer timer.Stop()
 
-	qb := search.NewQueryBuilder().AddString(search.DeploymentName, deploymentName)
+	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentName)
 
 	for {
 		select {
@@ -173,12 +172,14 @@ func waitForTermination(t *testing.T, deploymentName string) {
 	timer := time.NewTimer(waitTimeout)
 	defer timer.Stop()
 
+	query := search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentName).Query()
+
 	for {
 		select {
 		case <-ticker.C:
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			listDeployments, err := service.ListDeployments(ctx, &v1.RawQuery{
-				Query: fmt.Sprintf("Deployment Name:%s", deploymentName),
+				Query: query,
 			})
 			cancel()
 			if err != nil {
@@ -219,7 +220,7 @@ func addPolicyClusterScope(t *testing.T, policyName string) {
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	policyResp, err := policyService.ListPolicies(ctx, &v1.RawQuery{
-		Query: search.NewQueryBuilder().AddString(search.PolicyName, policyName).Query(),
+		Query: search.NewQueryBuilder().AddStrings(search.PolicyName, policyName).Query(),
 	})
 	cancel()
 	require.NoError(t, err)
@@ -246,7 +247,7 @@ func revertPolicyScopeChange(t *testing.T, policyName string) {
 	policyService := v1.NewPolicyServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	policyResp, err := policyService.ListPolicies(ctx, &v1.RawQuery{
-		Query: search.NewQueryBuilder().AddString(search.PolicyName, policyName).Query(),
+		Query: search.NewQueryBuilder().AddStrings(search.PolicyName, policyName).Query(),
 	})
 	cancel()
 	require.NoError(t, err)
@@ -270,7 +271,7 @@ func verifyStaleAlerts(t *testing.T) {
 
 	service := v1.NewAlertServiceClient(conn)
 	request := alertRequestOptions
-	request.Query = search.NewQueryBuilder().AddBool(search.Stale, true).Query()
+	request.Query = search.NewQueryBuilder().AddBools(search.Stale, true).Query()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	alerts, err := service.ListAlerts(ctx, &request)
