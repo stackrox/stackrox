@@ -138,7 +138,7 @@ func newJira(notifier *v1.Notifier) (*jira, error) {
 		return nil, err
 	}
 
-	url, err := urlfmt.FormatURL(conf.GetUrl(), true, true)
+	url, err := urlfmt.FormatURL(conf.GetUrl(), urlfmt.HTTPS, urlfmt.TrailingSlash)
 	if err != nil {
 		return nil, err
 	}

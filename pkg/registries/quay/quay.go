@@ -75,7 +75,7 @@ func (q *Quay) Test() error {
 		return q.Registry.Test()
 	}
 
-	url, err := urlfmt.FormatURL(q.config.GetEndpoint(), true, false)
+	url, err := urlfmt.FormatURL(q.config.GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return err
 	}

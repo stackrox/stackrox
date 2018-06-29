@@ -105,7 +105,7 @@ func (s *slack) AlertNotify(alert *v1.Alert) error {
 	}
 
 	webhookURL := notifiers.GetLabelValue(alert, s.GetLabelKey(), s.GetLabelDefault())
-	webhook, err := urlfmt.FormatURL(webhookURL, true, false)
+	webhook, err := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,7 @@ func (s *slack) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
 		return fmt.Errorf("Could not marshal notification for benchmark %v", schedule.GetBenchmarkName())
 	}
 
-	webhook, err := urlfmt.FormatURL(s.GetLabelDefault(), true, false)
+	webhook, err := urlfmt.FormatURL(s.GetLabelDefault(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func (s *slack) Test() error {
 		return errors.New("Could not marshal test notification")
 	}
 
-	webhook, err := urlfmt.FormatURL(s.GetLabelDefault(), true, false)
+	webhook, err := urlfmt.FormatURL(s.GetLabelDefault(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return err
 	}

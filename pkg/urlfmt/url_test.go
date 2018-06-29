@@ -7,24 +7,24 @@ import (
 )
 
 func TestFormatURL(t *testing.T) {
-	val, err := FormatURL("server.smtp:8080", false, false)
+	val, err := FormatURL("server.smtp:8080", InsecureHTTP, NoTrailingSlash)
 	assert.NoError(t, err)
 	assert.Equal(t, "http://server.smtp:8080", val)
 
-	val, err = FormatURL("server.smtp:8080", true, false)
+	val, err = FormatURL("server.smtp:8080", HTTPS, NoTrailingSlash)
 	assert.NoError(t, err)
 	assert.Equal(t, "https://server.smtp:8080", val)
 
-	val, err = FormatURL("server.smtp:8080", true, true)
+	val, err = FormatURL("server.smtp:8080", HTTPS, TrailingSlash)
 	assert.NoError(t, err)
 	assert.Equal(t, "https://server.smtp:8080/", val)
 
 	// Scrub final slash
-	val, err = FormatURL("server.smtp:8080/", true, false)
+	val, err = FormatURL("server.smtp:8080/", HTTPS, NoTrailingSlash)
 	assert.NoError(t, err)
 	assert.Equal(t, "https://server.smtp:8080", val)
 
-	val, err = FormatURL("http://server.smtp:8080/////", true, false)
+	val, err = FormatURL("http://server.smtp:8080/////", HTTPS, NoTrailingSlash)
 	assert.NoError(t, err)
 	assert.Equal(t, "http://server.smtp:8080", val)
 }

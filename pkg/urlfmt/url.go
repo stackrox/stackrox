@@ -1,22 +1,48 @@
 package urlfmt
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 )
 
-// FormatURL takes in an endpoint, whether to prepend https if no scheme is specified and if the url should end in a slash
-func FormatURL(endpoint string, httpsDefault, endingSlash bool) (string, error) {
-	if !strings.HasPrefix(endpoint, "http") {
-		if httpsDefault {
-			endpoint = "https://" + endpoint
-		} else {
-			endpoint = "http://" + endpoint
-		}
+// Scheme defines which protocol a URL should use.
+type Scheme uint8
+
+// SlashHandling defines the way that slashes should be used in the URL.
+type SlashHandling uint8
+
+// These are the defined URL schemes.
+const (
+	HTTPS Scheme = iota
+	InsecureHTTP
+)
+
+// These are the defined slash-handling modes.
+const (
+	NoTrailingSlash SlashHandling = iota
+	TrailingSlash
+)
+
+func (s Scheme) String() string {
+	switch s {
+	case HTTPS:
+		return "https"
+	case InsecureHTTP:
+		return "http"
+	default:
+		return fmt.Sprintf("%d", s)
 	}
-	if endingSlash && !strings.HasSuffix(endpoint, "/") {
+}
+
+// FormatURL takes in an endpoint, whether to prepend https if no scheme is specified and if the url should end in a slash
+func FormatURL(endpoint string, defaultScheme Scheme, slash SlashHandling) (string, error) {
+	if !strings.HasPrefix(endpoint, "http") {
+		endpoint = fmt.Sprintf("%s://%s", defaultScheme, endpoint)
+	}
+	if slash == TrailingSlash && !strings.HasSuffix(endpoint, "/") {
 		return endpoint + "/", nil
-	} else if !endingSlash {
+	} else if slash == NoTrailingSlash {
 		return strings.TrimRight(endpoint, "/"), nil
 	}
 	return endpoint, nil

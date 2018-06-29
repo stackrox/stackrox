@@ -46,7 +46,7 @@ func newScanner(protoImageIntegration *v1.ImageIntegration) (*quay, error) {
 		return nil, err
 	}
 
-	endpoint, err := urlfmt.FormatURL(config.GetEndpoint(), true, false)
+	endpoint, err := urlfmt.FormatURL(config.GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return nil, err
 	}

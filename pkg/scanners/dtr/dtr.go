@@ -62,7 +62,7 @@ func newScanner(protoImageIntegration *v1.ImageIntegration) (*dtr, error) {
 	// Trim any trailing slashes as the expectation will be that the input is in the form
 	// https://12.12.12.12:8080 or https://dtr.com
 	var err error
-	conf.Endpoint, err = urlfmt.FormatURL(conf.Endpoint, true, false)
+	conf.Endpoint, err = urlfmt.FormatURL(conf.Endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return nil, err
 	}

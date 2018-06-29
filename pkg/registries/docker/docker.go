@@ -93,7 +93,7 @@ func (n nilClient) Ping() error {
 // NewDockerRegistry creates a new instantiation of the docker registry
 // TODO(cgorman) AP-386 - properly put the base docker registry into another pkg
 func NewDockerRegistry(cfg Config, integration *v1.ImageIntegration) (*Registry, error) {
-	url, err := urlfmt.FormatURL(cfg.Endpoint, true, false)
+	url, err := urlfmt.FormatURL(cfg.Endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return nil, err
 	}

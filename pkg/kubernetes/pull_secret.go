@@ -63,5 +63,5 @@ func GetCreateSecretTemplate(namespaceVar, registryVar, imagePullSecretVar strin
 // GetResolvedRegistry returns the registry endpoint from the image definition
 func GetResolvedRegistry(image string) (string, error) {
 	parsedImage := images.GenerateImageFromString(image)
-	return urlfmt.FormatURL(parsedImage.GetName().GetRegistry(), true, false)
+	return urlfmt.FormatURL(parsedImage.GetName().GetRegistry(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 }

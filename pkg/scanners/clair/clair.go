@@ -38,7 +38,7 @@ func newScanner(protoImageIntegration *v1.ImageIntegration) (*clair, error) {
 		return nil, errors.New("endpoint parameter must be defined for Clair")
 	}
 
-	endpoint, err := urlfmt.FormatURL(endpoint, true, false)
+	endpoint, err := urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return nil, err
 	}
