@@ -146,13 +146,11 @@ func waitForDeployment(t *testing.T, deploymentName string) {
 			}
 
 			if err == nil && len(deployments) > 0 {
-				logger.Infof("%s: Found %+v deployments", t.Name(), deployments)
 				d := deployments[0]
 
 				if len(d.GetContainers()) > 0 {
 					return
 				}
-				logger.Infof("%s: Found %+v containers", t.Name(), d.GetContainers())
 			}
 		case <-timer.C:
 			t.Fatalf("Timed out waiting for deployment %s", deploymentName)
@@ -195,7 +193,6 @@ func waitForTermination(t *testing.T, deploymentName string) {
 			if err == nil && len(deployments) == 0 {
 				return
 			}
-			logger.Infof("%s: Found %+v deployments", t.Name(), deployments)
 		case <-timer.C:
 			t.Fatalf("Timed out waiting for deployment %s to stop", deploymentName)
 		}
