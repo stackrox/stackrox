@@ -6,7 +6,7 @@ import (
 	alertDataStore "bitbucket.org/stack-rox/apollo/central/alert/datastore"
 	"bitbucket.org/stack-rox/apollo/central/cluster/store"
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	dnrStore "bitbucket.org/stack-rox/apollo/central/dnrintegration/store"
+	dnrDataStore "bitbucket.org/stack-rox/apollo/central/dnrintegration/datastore"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 )
@@ -28,7 +28,7 @@ type DataStore interface {
 }
 
 // New returns an instance of DataStore.
-func New(storage store.Store, ads alertDataStore.DataStore, dds deploymentDataStore.DataStore, dnr dnrStore.Store) DataStore {
+func New(storage store.Store, ads alertDataStore.DataStore, dds deploymentDataStore.DataStore, dnr dnrDataStore.DataStore) DataStore {
 	return &datastoreImpl{
 		storage: storage,
 		ads:     ads,

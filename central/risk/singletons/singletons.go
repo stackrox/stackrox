@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	alertDataStore "bitbucket.org/stack-rox/apollo/central/alert/datastore"
+	"bitbucket.org/stack-rox/apollo/central/dnrintegration/datastore"
 	"bitbucket.org/stack-rox/apollo/central/risk"
 )
 
@@ -13,7 +14,7 @@ var (
 )
 
 func initialize() {
-	scorer = risk.NewScorer(alertDataStore.Singleton())
+	scorer = risk.NewScorer(alertDataStore.Singleton(), datastore.Singleton())
 }
 
 // GetScorer returns the singleton Scorer object to use when scoring risk.

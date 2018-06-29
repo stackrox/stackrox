@@ -9,20 +9,20 @@ import (
 	"net/url"
 	"strings"
 	"time"
-
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 )
 
 var (
-	logger = logging.LoggerForModule()
+	// Reuse a long-lived client so we don't end up creating too many connections.
+	// Note that clients _are_ thread-safe.
+	client = &http.Client{
+		Timeout: 5 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
 )
-
-// DNRIntegration exposes all functionality that we expect to get through the integration with Detect & Respond.
-type DNRIntegration interface {
-	// Test tests the integration with D&R
-	Test() error
-}
 
 // validateAndParseDirectorEndpoint parses the director endpoint into
 // a URL object, making sure it's non-empty.
@@ -47,29 +47,6 @@ func validateAndParseDirectorEndpoint(directorEndpoint string) (*url.URL, error)
 	return directorURL, nil
 }
 
-// New returns a ready-to-use DNRIntegration object from the proto.
-func New(integration *v1.DNRIntegration) (DNRIntegration, error) {
-	directorURL, err := validateAndParseDirectorEndpoint(integration.GetDirectorEndpoint())
-	if err != nil {
-		return nil, fmt.Errorf("director URL failed validation/parsing: %s", err)
-	}
-
-	client := &http.Client{
-		Timeout: 5 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	return &dnrIntegrationImpl{
-		directorURL: directorURL,
-		authToken:   integration.GetAuthToken(),
-		client:      client,
-	}, nil
-}
-
 type dnrIntegrationImpl struct {
 	directorURL *url.URL
 	authToken   string
@@ -84,13 +61,15 @@ func (d *dnrIntegrationImpl) Test() error {
 	return nil
 }
 
-func (d *dnrIntegrationImpl) makeAuthenticatedRequest(method, path string) ([]byte, error) {
+func (d *dnrIntegrationImpl) makeAuthenticatedRequest(method, path string, params url.Values) ([]byte, error) {
 	pathURL, err := url.Parse(path)
 	if err != nil {
 		return nil, fmt.Errorf("path URL parsing: %s", err)
 	}
-	reqURL := d.directorURL.ResolveReference(pathURL).String()
-	req, err := http.NewRequest(method, reqURL, nil)
+	reqURL := d.directorURL.ResolveReference(pathURL)
+	reqURL.RawQuery = params.Encode()
+
+	req, err := http.NewRequest(method, reqURL.String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating request to D&R: %s", err)
 	}

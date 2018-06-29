@@ -42,7 +42,7 @@ func mergeAlerts(old, new *v1.Alert) *v1.Alert {
 }
 
 func (d *Detector) processTask(task Task) (alert *v1.Alert, enforcement v1.EnforcementAction) {
-	existingAlerts := d.getExistingAlert(task.deployment.GetId(), task.policy.GetId())
+	existingAlerts := d.getExistingAlerts(task.deployment.GetId(), task.policy.GetId())
 
 	// No further processing is needed when a deployment is removed.
 	if task.action == v1.ResourceAction_REMOVE_RESOURCE {
@@ -108,7 +108,7 @@ func (d *Detector) markExistingAlertsAsStale(existingAlerts []*v1.Alert) {
 	}
 }
 
-func (d *Detector) getExistingAlert(deploymentID, policyID string) (existingAlerts []*v1.Alert) {
+func (d *Detector) getExistingAlerts(deploymentID, policyID string) (existingAlerts []*v1.Alert) {
 	qb := search.NewQueryBuilder().AddBools(search.Stale, false).AddStrings(search.DeploymentID, deploymentID).AddStrings(search.PolicyID, policyID)
 
 	var err error

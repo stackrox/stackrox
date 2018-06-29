@@ -3,6 +3,7 @@ package service
 import (
 	"bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	"bitbucket.org/stack-rox/apollo/central/clusters"
+	"bitbucket.org/stack-rox/apollo/central/enrichment"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
@@ -17,6 +18,7 @@ import (
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
 	datastore datastore.DataStore
+	enricher  *enrichment.Enricher
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -114,5 +116,12 @@ func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByI
 	if err := s.datastore.RemoveCluster(request.GetId()); err != nil {
 		return nil, service.ReturnErrorCode(err)
 	}
+
+	go func() {
+		if err := s.enricher.ReprocessRisk(); err != nil {
+			log.Errorf("Error reprocessing risk during cluster removal %#v: %s", request, err)
+		}
+	}()
+
 	return &empty.Empty{}, nil
 }

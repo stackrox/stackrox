@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"bitbucket.org/stack-rox/apollo/central/cluster/datastore"
+	"bitbucket.org/stack-rox/apollo/central/enrichment"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -30,8 +31,9 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.DataStore) Service {
+func New(datastore datastore.DataStore, enricher *enrichment.Enricher) Service {
 	return &serviceImpl{
 		datastore: datastore,
+		enricher:  enricher,
 	}
 }

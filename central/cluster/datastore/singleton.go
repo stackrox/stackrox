@@ -6,7 +6,7 @@ import (
 	alertDataStore "bitbucket.org/stack-rox/apollo/central/alert/datastore"
 	"bitbucket.org/stack-rox/apollo/central/cluster/store"
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	dnrStore "bitbucket.org/stack-rox/apollo/central/dnrintegration/store"
+	dnrDataStore "bitbucket.org/stack-rox/apollo/central/dnrintegration/datastore"
 	globaldb "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
 )
 
@@ -21,7 +21,7 @@ var (
 func initialize() {
 	storage = store.New(globaldb.GetGlobalDB())
 
-	ad = New(storage, alertDataStore.Singleton(), deploymentDataStore.Singleton(), dnrStore.Singleton())
+	ad = New(storage, alertDataStore.Singleton(), deploymentDataStore.Singleton(), dnrDataStore.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.

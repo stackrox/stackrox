@@ -8,7 +8,7 @@ import (
 	alerts "bitbucket.org/stack-rox/apollo/central/alert/datastore"
 	"bitbucket.org/stack-rox/apollo/central/cluster/store"
 	deployments "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	dnrintegration "bitbucket.org/stack-rox/apollo/central/dnrintegration/store"
+	dnrintegration "bitbucket.org/stack-rox/apollo/central/dnrintegration/datastore"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -25,7 +25,7 @@ type ClusterDataStoreTestSuite struct {
 
 	clusters    *store.MockStore
 	deployments *deployments.MockDataStore
-	dnrInts     *dnrintegration.MockStore
+	dnrInts     *dnrintegration.MockDataStore
 	alerts      *alerts.MockDataStore
 
 	clusterDataStore DataStore
@@ -34,7 +34,7 @@ type ClusterDataStoreTestSuite struct {
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.clusters = &store.MockStore{}
 	suite.deployments = &deployments.MockDataStore{}
-	suite.dnrInts = &dnrintegration.MockStore{}
+	suite.dnrInts = &dnrintegration.MockDataStore{}
 	suite.alerts = &alerts.MockDataStore{}
 
 	suite.clusterDataStore = New(suite.clusters, suite.alerts, suite.deployments, suite.dnrInts)

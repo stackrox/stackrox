@@ -27,7 +27,6 @@ type Detector struct {
 	enricher              *enrichment.Enricher
 	notificationProcessor notifierProcessor.Processor
 	taskC                 chan Task
-	stopping              bool
 	stoppedC              chan struct{}
 
 	policyMutex sync.RWMutex
@@ -62,7 +61,6 @@ func New(alertStorage alertDataStore.DataStore,
 
 // Stop closes the Task reprocessing channel, and waits for remaining tasks to finish before returning.
 func (d *Detector) Stop() {
-	d.stopping = true
 	close(d.taskC)
 	<-d.stoppedC
 }

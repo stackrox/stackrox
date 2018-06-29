@@ -28,11 +28,7 @@ func (p *processorImpl) initializeNotifiers() error {
 		return err
 	}
 	for _, protoNotifier := range protoNotifiers {
-		notifierCreator, ok := notifiers.Registry[protoNotifier.Type]
-		if !ok {
-			return fmt.Errorf("Stored notifier type %v does not exist", protoNotifier.Type)
-		}
-		notifier, err := notifierCreator(protoNotifier)
+		notifier, err := notifiers.CreateNotifier(protoNotifier)
 		if err != nil {
 			return fmt.Errorf("Error creating notifier with %v (%v) and type %v: %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType(), err)
 		}

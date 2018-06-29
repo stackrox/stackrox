@@ -83,7 +83,7 @@ func getMockDeployment() *v1.Deployment {
 
 func TestScore(t *testing.T) {
 	deployment := getMockDeployment()
-	scorer := NewScorer(&mockGetter{
+	scorer := NewScorer(&mockAlertsGetter{
 		alerts: []*v1.Alert{
 			{
 				Deployment: deployment,
@@ -93,7 +93,7 @@ func TestScore(t *testing.T) {
 				},
 			},
 		},
-	})
+	}, &mockDNRIntegrationGetter{})
 
 	// Without user defined function
 	expectedRisk := &v1.Risk{

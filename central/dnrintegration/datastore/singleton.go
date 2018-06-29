@@ -1,23 +1,24 @@
-package store
+package datastore
 
 import (
 	"sync"
 
+	"bitbucket.org/stack-rox/apollo/central/dnrintegration/store"
 	globaldb "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
 )
 
 var (
 	once sync.Once
 
-	storage Store
+	datastore DataStore
 )
 
 func initialize() {
-	storage = New(globaldb.GetGlobalDB())
+	datastore = New(store.New(globaldb.GetGlobalDB()))
 }
 
 // Singleton provides the interface for non-service external interaction.
-func Singleton() Store {
+func Singleton() DataStore {
 	once.Do(initialize)
-	return storage
+	return datastore
 }

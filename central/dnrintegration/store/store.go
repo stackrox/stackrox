@@ -8,7 +8,7 @@ import (
 
 const dnrIntegrationBucket = "dnrintegration"
 
-// Store provides storage functionality for alerts.
+// Store provides storage functionality for DNR integrations.
 type Store interface {
 	GetDNRIntegration(id string) (*v1.DNRIntegration, bool, error)
 	GetDNRIntegrations(request *v1.GetDNRIntegrationsRequest) ([]*v1.DNRIntegration, error)

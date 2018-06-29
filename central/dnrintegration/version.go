@@ -3,6 +3,7 @@ package dnrintegration
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 )
 
 const versionEndpoint = "v1/version"
@@ -12,7 +13,7 @@ type versionResponse struct {
 }
 
 func (d *dnrIntegrationImpl) version() (string, error) {
-	bytes, err := d.makeAuthenticatedRequest("GET", versionEndpoint)
+	bytes, err := d.makeAuthenticatedRequest("GET", versionEndpoint, url.Values{})
 	if err != nil {
 		return "", err
 	}

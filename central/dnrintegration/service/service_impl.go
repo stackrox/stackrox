@@ -4,11 +4,13 @@ import (
 	"fmt"
 
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	tester "bitbucket.org/stack-rox/apollo/central/dnr_integration"
-	"bitbucket.org/stack-rox/apollo/central/dnrintegration/store"
+	"bitbucket.org/stack-rox/apollo/central/dnrintegration"
+	"bitbucket.org/stack-rox/apollo/central/dnrintegration/datastore"
+	"bitbucket.org/stack-rox/apollo/central/enrichment"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
+	"bitbucket.org/stack-rox/apollo/pkg/secrets"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
@@ -19,8 +21,9 @@ import (
 
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
-	storage  store.Store
-	clusters clusterDataStore.DataStore
+	datastore datastore.DataStore
+	clusters  clusterDataStore.DataStore
+	enricher  *enrichment.Enricher
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -40,14 +43,19 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetDNRIntegration retrieves a DNR integration by ID.
 func (s *serviceImpl) GetDNRIntegration(ctx context.Context, req *v1.ResourceByID) (*v1.DNRIntegration, error) {
-	return s.getDNRIntegrationByID(req.GetId())
+	integration, err := s.getDNRIntegrationByID(req.GetId())
+	secrets.ScrubSecretsFromStruct(integration)
+	return integration, err
 }
 
 // GetDNRIntegrations retrieves all DNR integrations.
 func (s *serviceImpl) GetDNRIntegrations(ctx context.Context, req *v1.GetDNRIntegrationsRequest) (*v1.GetDNRIntegrationsResponse, error) {
-	integrations, err := s.storage.GetDNRIntegrations(req)
+	integrations, err := s.datastore.GetDNRIntegrations(req)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("couldn't retrieve integrations: %s", err.Error()))
+	}
+	for _, integration := range integrations {
+		secrets.ScrubSecretsFromStruct(integration)
 	}
 	return &v1.GetDNRIntegrationsResponse{
 		Results: integrations,
@@ -64,11 +72,22 @@ func (s *serviceImpl) PostDNRIntegration(ctx context.Context, req *v1.DNRIntegra
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	id, err := s.storage.AddDNRIntegration(req)
+	err = dnrintegration.Validate(req)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	id, err := s.datastore.AddDNRIntegration(req)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	req.Id = id
+	go func() {
+		if err := s.enricher.ReprocessRisk(); err != nil {
+			log.Errorf("Error reprocessing risk from DNR integration POST %#v: %s", req, err)
+		}
+	}()
+
 	return req, nil
 }
 
@@ -85,27 +104,44 @@ func (s *serviceImpl) PutDNRIntegration(ctx context.Context, req *v1.DNRIntegrat
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	err = s.storage.UpdateDNRIntegration(req)
+	err = dnrintegration.Validate(req)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	err = s.datastore.UpdateDNRIntegration(req)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-
+	go func() {
+		if err := s.enricher.ReprocessRisk(); err != nil {
+			log.Errorf("Error reprocessing risk from DNR integration PUT %#v: %s", req, err)
+		}
+	}()
 	return req, nil
 }
 
 // DeleteDNRIntegration removes a DNR integration by ID.
 func (s *serviceImpl) DeleteDNRIntegration(ctx context.Context, req *v1.ResourceByID) (*empty.Empty, error) {
-	err := s.storage.RemoveDNRIntegration(req.GetId())
+	err := s.datastore.RemoveDNRIntegration(req.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-
+	go func() {
+		if err := s.enricher.ReprocessRisk(); err != nil {
+			log.Errorf("Error reprocessing risk from DNR integration DELETE %#v: %s", req, err)
+		}
+	}()
 	return &empty.Empty{}, nil
 }
 
 // TestDNRIntegration tests the DNR integration.
 func (s *serviceImpl) TestDNRIntegration(ctx context.Context, req *v1.DNRIntegration) (*empty.Empty, error) {
-	integration, err := tester.New(req)
+	err := dnrintegration.Validate(req)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	integration, err := dnrintegration.New(req)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -117,7 +153,7 @@ func (s *serviceImpl) TestDNRIntegration(ctx context.Context, req *v1.DNRIntegra
 }
 
 func (s *serviceImpl) getDNRIntegrationByID(id string) (*v1.DNRIntegration, error) {
-	integration, exists, err := s.storage.GetDNRIntegration(id)
+	integration, exists, err := s.datastore.GetDNRIntegration(id)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("couldn't retrieve integration %s: %s", id, err.Error()))
 	}
@@ -146,7 +182,7 @@ func (s *serviceImpl) validateClusterID(clusterID string, permittedDNRIntegratio
 	if !exists {
 		return fmt.Errorf("cluster with id %s does not exist", clusterID)
 	}
-	integrations, err := s.storage.GetDNRIntegrations(&v1.GetDNRIntegrationsRequest{ClusterId: clusterID})
+	integrations, err := s.datastore.GetDNRIntegrations(&v1.GetDNRIntegrationsRequest{ClusterId: clusterID})
 	if err != nil {
 		return fmt.Errorf("DNR integration retrieval: %s", err)
 	}

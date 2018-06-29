@@ -23,6 +23,7 @@ func (sk secretKeys) shouldScrub(key string) bool {
 }
 
 var scrubber = newSecretKeys([]string{
+	"authToken",
 	"oauthToken",
 	"password",
 	"secretKey",

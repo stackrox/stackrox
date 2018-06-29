@@ -37,7 +37,7 @@ func New(policy *v1.Policy) (*Policy, error) {
 	return p, nil
 }
 
-func (p *Policy) matchesContainerWhitelists(whitelists []*v1.Whitelist, container *v1.Container) bool {
+func (p *Policy) matchesContainerWhitelists(container *v1.Container) bool {
 	for _, whitelist := range p.GetWhitelists() {
 		if p.matchesContainerWhitelist(whitelist.GetContainer(), container) {
 			return true
@@ -61,7 +61,7 @@ func (p *Policy) Match(deployment *v1.Deployment) (violations []*v1.Alert_Violat
 
 	// each container is considered independently.
 	for _, c := range deployment.GetContainers() {
-		if p.matchesContainerWhitelists(p.GetWhitelists(), c) {
+		if p.matchesContainerWhitelists(c) {
 			continue
 		}
 		violations = append(violations, p.matchContainer(deployment, c)...)

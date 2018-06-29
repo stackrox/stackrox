@@ -27,8 +27,7 @@ func (e *Enricher) ReprocessRisk() error {
 		return err
 	}
 	for _, deployment := range deployments {
-		deployment.Risk = e.scorer.Score(deployment)
-		if err := e.deploymentStorage.UpdateDeployment(deployment); err != nil {
+		if err := e.ReprocessDeploymentRisk(deployment); err != nil {
 			return err
 		}
 	}

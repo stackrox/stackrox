@@ -10,13 +10,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type mockGetter struct {
+type mockAlertsGetter struct {
 	alerts []*v1.Alert
 }
 
 // GetAlerts supports a limited set of request parameters.
 // It only needs to be as specific as the production code.
-func (m mockGetter) GetAlerts(req *v1.ListAlertsRequest) (alerts []*v1.Alert, err error) {
+func (m mockAlertsGetter) GetAlerts(req *v1.ListAlertsRequest) (alerts []*v1.Alert, err error) {
 	parser := &search.QueryParser{
 		OptionsMap: options.AllOptionsMaps,
 	}
@@ -211,7 +211,7 @@ func TestViolationsScore(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			mult := newViolationsMultiplier(&mockGetter{
+			mult := newViolationsMultiplier(&mockAlertsGetter{
 				alerts: c.alerts,
 			})
 			deployment := getMockDeployment()
