@@ -106,7 +106,7 @@ describe('Cluster Creation Flow', () => {
         cy
             .get(selectors.readOnlyView)
             .eq(2)
-            .should('have.text', 'Image name (Prevent location):stackrox/prevent:latest');
+            .should('have.text', 'Prevent Image:stackrox/prevent:latest');
 
         cy
             .get(selectors.readOnlyView)

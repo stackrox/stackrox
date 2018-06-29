@@ -75,10 +75,11 @@ API_SERVICES += benchmark_schedule_service
 API_SERVICES += benchmark_service
 API_SERVICES += benchmark_trigger_service
 API_SERVICES += cluster_service
+API_SERVICES += deployment_service
 API_SERVICES += dnr_integration_service
 API_SERVICES += image_integration_service
-API_SERVICES += deployment_service
 API_SERVICES += image_service
+API_SERVICES += metadata_service
 API_SERVICES += notifier_service
 API_SERVICES += ping_service
 API_SERVICES += policy_service
@@ -186,11 +187,13 @@ image: gazelle clean-image
 	cp bazel-bin/benchmark-bootstrap/linux_amd64_pure_stripped/benchmark-bootstrap image/bin/benchmark-bootstrap
 	cp bazel-bin/sensor/swarm/linux_amd64_pure_stripped/swarm image/bin/swarm-sensor
 	cp bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-sensor
+	echo "$(TAG)" > image/VERSION
 	chmod +w image/bin/*
 	docker build -t stackrox/prevent:$(TAG) image/
 	docker build -t stackrox/prevent-health:$(TAG) prometheus/container
 	@echo "Built images with tag: $(TAG)"
 	@echo "You may wish to:       export PREVENT_IMAGE_TAG=$(TAG)"
+
 
 ###########
 ## Clean ##

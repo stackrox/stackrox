@@ -12,18 +12,18 @@ const CommonFields = () => (
         <FormField label="Name" required>
             <ReduxTextField name="name" placeholder="Cluster name" />
         </FormField>
-        <FormField label="Image name (Prevent location)" required>
-            <ReduxTextField
-                name="preventImage"
-                placeholder="stackrox.io/prevent:[current-version]"
-            />
-        </FormField>
     </React.Fragment>
 );
 
-const K8sFields = () => (
+const K8sFields = ({ metadata }) => (
     <React.Fragment>
         <CommonFields />
+        <FormField label="Prevent Image" required>
+            <ReduxTextField
+                name="preventImage"
+                placeholder={`stackrox.io/prevent:${metadata.version}`}
+            />
+        </FormField>
         <FormField label="Central API Endpoint" required>
             <ReduxTextField name="centralApiEndpoint" placeholder="central.stackrox:443" />
         </FormField>
@@ -36,9 +36,21 @@ const K8sFields = () => (
     </React.Fragment>
 );
 
-const OpenShiftFields = () => (
+K8sFields.propTypes = {
+    metadata: PropTypes.shape({ version: PropTypes.string }).isRequired
+};
+
+const OpenShiftFields = ({ metadata }) => (
     <React.Fragment>
         <CommonFields />
+        <FormField label="Prevent Image" required>
+            <ReduxTextField
+                name="preventImage"
+                placeholder={`docker-registry.default.svc.local:5000/stackrox/prevent:${
+                    metadata.version
+                }`}
+            />
+        </FormField>
         <FormField label="Central API Endpoint" required>
             <ReduxTextField name="centralApiEndpoint" placeholder="central.stackrox:443" />
         </FormField>
@@ -48,9 +60,19 @@ const OpenShiftFields = () => (
     </React.Fragment>
 );
 
-const DockerFields = () => (
+OpenShiftFields.propTypes = {
+    metadata: PropTypes.shape({ version: PropTypes.string }).isRequired
+};
+
+const DockerFields = ({ metadata }) => (
     <React.Fragment>
         <CommonFields />
+        <FormField label="Prevent Image" required>
+            <ReduxTextField
+                name="preventImage"
+                placeholder={`stackrox.io/prevent:${metadata.version}`}
+            />
+        </FormField>
         <FormField label="Central API Endpoint" required>
             <ReduxTextField name="centralApiEndpoint" placeholder="central.prevent_net:443" />
         </FormField>
@@ -60,23 +82,71 @@ const DockerFields = () => (
     </React.Fragment>
 );
 
+DockerFields.propTypes = {
+    metadata: PropTypes.shape({ version: PropTypes.string }).isRequired
+};
+
 const clusterFields = {
     SWARM_CLUSTER: DockerFields,
     OPENSHIFT_CLUSTER: OpenShiftFields,
     KUBERNETES_CLUSTER: K8sFields
 };
 
-const ClusterEditForm = ({ clusterType }) => {
+const ClusterEditForm = ({ clusterType, metadata }) => {
     const ClusterFields = clusterFields[clusterType];
     if (!ClusterFields) throw new Error(`Unknown cluster type "${clusterType}"`);
     return (
         <form className="p-4 w-full mb-8" data-test-id="cluster-form">
-            <ClusterFields />
+            <ClusterFields metadata={metadata} />
         </form>
     );
 };
 ClusterEditForm.propTypes = {
-    clusterType: PropTypes.oneOf(clusterTypes).isRequired
+    clusterType: PropTypes.oneOf(clusterTypes).isRequired,
+    metadata: PropTypes.shape({ version: PropTypes.string }).isRequired
 };
 
-export default reduxForm({ form: clusterFormId })(ClusterEditForm);
+const ConnectedForm = reduxForm({ form: clusterFormId })(ClusterEditForm);
+
+const initialValuesFactories = {
+    SWARM_CLUSTER: metadata => ({
+        preventImage: `stackrox.io/prevent:${metadata.version}`,
+        centralApiEndpoint: 'central.prevent_net:443'
+    }),
+    OPENSHIFT_CLUSTER: metadata => ({
+        preventImage: `docker-registry.default.svc.local:5000/stackrox/prevent:${metadata.version}`,
+        centralApiEndpoint: 'central.stackrox:443',
+        openshift: {
+            params: {
+                namespace: 'stackrox'
+            }
+        }
+    }),
+    KUBERNETES_CLUSTER: metadata => ({
+        preventImage: `stackrox.io/prevent:${metadata.version}`,
+        centralApiEndpoint: 'central.stackrox:443',
+        openshift: {
+            params: {
+                namespace: 'stackrox',
+                imagePullSecret: 'stackrox'
+            }
+        }
+    })
+};
+
+const FormWrapper = ({ metadata, clusterType }) => {
+    const initialValues = initialValuesFactories[clusterType](metadata);
+    return (
+        <ConnectedForm
+            clusterType={clusterType}
+            metadata={metadata}
+            initialValues={initialValues}
+        />
+    );
+};
+FormWrapper.propTypes = {
+    clusterType: PropTypes.oneOf(clusterTypes).isRequired,
+    metadata: PropTypes.shape({ version: PropTypes.string }).isRequired
+};
+
+export default FormWrapper;

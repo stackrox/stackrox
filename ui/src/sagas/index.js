@@ -11,6 +11,7 @@ import integrations from './integrationSagas';
 import globalSearch from './globalSearchSagas';
 import searches from './searchSagas';
 import summaries from './summarySagas';
+import metadata from './metadataSagas';
 
 export default function* root() {
     yield all([
@@ -24,6 +25,7 @@ export default function* root() {
         fork(integrations),
         fork(globalSearch),
         fork(searches),
-        fork(summaries)
+        fork(summaries),
+        fork(metadata)
     ]);
 }

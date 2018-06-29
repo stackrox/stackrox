@@ -33,6 +33,7 @@ import (
 	iiService "bitbucket.org/stack-rox/apollo/central/imageintegration/service"
 	interceptorSingletons "bitbucket.org/stack-rox/apollo/central/interceptor/singletons"
 	logimbueHandler "bitbucket.org/stack-rox/apollo/central/logimbue/handler"
+	metadataService "bitbucket.org/stack-rox/apollo/central/metadata/service"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	notifierService "bitbucket.org/stack-rox/apollo/central/notifier/service"
 	pingService "bitbucket.org/stack-rox/apollo/central/ping/service"
@@ -101,6 +102,7 @@ func (c *central) startGRPCServer() {
 	c.server.Register(dnrIntegrationService.Singleton())
 	c.server.Register(imageService.Singleton())
 	c.server.Register(iiService.Singleton())
+	c.server.Register(metadataService.New())
 	c.server.Register(notifierService.Singleton())
 	c.server.Register(pingService.Singleton())
 	c.server.Register(policyService.Singleton())

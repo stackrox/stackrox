@@ -13,6 +13,7 @@ import notifications, { selectors as notificationSelectors } from './notificatio
 import globalSearch, { selectors as globalSearchSelectors } from './globalSearch';
 import policies, { selectors as policySelectors } from './policies';
 import summaries, { selectors as summarySelectors } from './summaries';
+import metadata, { selectors as metadataSelectors } from './metadata';
 
 import dashboard, { selectors as dashboardSelectors } from './dashboard';
 import loading, { selectors as loadingSelectors } from './loading';
@@ -33,7 +34,8 @@ const appReducer = combineReducers({
     policies,
     summaries,
     dashboard,
-    loading
+    loading,
+    metadata
 });
 
 const rootReducer = combineReducers({
@@ -61,6 +63,7 @@ const getPolicies = state => getApp(state).policies;
 const getSummaries = state => getApp(state).summaries;
 const getDashboard = state => getApp(state).dashboard;
 const getLoadingStatus = state => getApp(state).loading;
+const getMetadata = state => getApp(state).metadata;
 
 const boundSelectors = {
     ...bindSelectors(getAlerts, alertSelectors),
@@ -76,7 +79,8 @@ const boundSelectors = {
     ...bindSelectors(getRoute, routeSelectors),
     ...bindSelectors(getSummaries, summarySelectors),
     ...bindSelectors(getDashboard, dashboardSelectors),
-    ...bindSelectors(getLoadingStatus, loadingSelectors)
+    ...bindSelectors(getLoadingStatus, loadingSelectors),
+    ...bindSelectors(getMetadata, metadataSelectors)
 };
 
 export const selectors = {

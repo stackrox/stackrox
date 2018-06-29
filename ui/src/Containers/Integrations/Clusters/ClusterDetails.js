@@ -15,7 +15,7 @@ const CommonDetails = ({ cluster }) => (
     <React.Fragment>
         <LabeledValue label="Name" value={cluster.name} />
         <LabeledValue label="Cluster Type" value={clusterTypeLabels[cluster.type]} />
-        <LabeledValue label="Image name (Prevent location)" value={cluster.preventImage} />
+        <LabeledValue label="Prevent Image" value={cluster.preventImage} />
         <LabeledValue label="Central API Endpoint" value={cluster.centralApiEndpoint} />
     </React.Fragment>
 );

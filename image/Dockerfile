@@ -17,6 +17,7 @@ COPY ./benchmarks/ /data/benchmarks
 COPY ./policies/ /data/policies
 COPY ./bin/ /prevent/
 COPY ./ui/build  /ui/
+COPY ./VERSION /VERSION
 
 EXPOSE 443
 

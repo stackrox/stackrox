@@ -9,6 +9,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/central"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/pkg/version"
 	zipPkg "bitbucket.org/stack-rox/apollo/pkg/zip"
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
@@ -17,14 +18,20 @@ import (
 
 var (
 	logger = logging.LoggerForModule()
-)
 
-var (
 	clairifyTag   = "0.3.1"
 	clairifyImage = "clairify:" + clairifyTag
-	preventTag    = "1.3"
+	preventTag    = getVersion()
 	preventImage  = "prevent:" + preventTag
 )
+
+func getVersion() string {
+	v, err := version.GetVersion()
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
 
 // ServeHTTP serves a ZIP file for the cluster upon request.
 func outputZip(config central.Config) error {

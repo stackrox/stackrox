@@ -23,6 +23,7 @@ deps
 report.xml
 test.log
 protoc-*
+image/VERSION
 
 # Bazel
 bazel-*

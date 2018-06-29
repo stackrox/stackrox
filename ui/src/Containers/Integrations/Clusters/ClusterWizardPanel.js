@@ -12,7 +12,7 @@ import { downloadClusterYaml } from 'services/ClustersService';
 
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
-import ClusterEditForm from './ClusterEditForm';
+import FormWrapper from './ClusterEditForm';
 import ClusterDeploymentPage from './ClusterDeploymentPage';
 
 class ClusterWizardPanel extends Component {
@@ -25,7 +25,8 @@ class ClusterWizardPanel extends Component {
         }),
         currentPage: PropTypes.oneOf(Object.values(wizardPages)).isRequired,
         onFinish: PropTypes.func.isRequired,
-        onNext: PropTypes.func.isRequired
+        onNext: PropTypes.func.isRequired,
+        metadata: PropTypes.shape({ version: PropTypes.string }).isRequired
     };
 
     static defaultProps = {
@@ -77,9 +78,10 @@ class ClusterWizardPanel extends Component {
         switch (this.props.currentPage) {
             case wizardPages.FORM:
                 return (
-                    <ClusterEditForm
+                    <FormWrapper
                         clusterType={this.props.clusterType}
                         initialValues={formInitialValues}
+                        metadata={this.props.metadata}
                     />
                 );
             case wizardPages.DEPLOYMENT:
@@ -123,7 +125,8 @@ const getCluster = createSelector(
 
 const mapStateToProps = createStructuredSelector({
     cluster: getCluster,
-    currentPage: selectors.getWizardCurrentPage
+    currentPage: selectors.getWizardCurrentPage,
+    metadata: selectors.getMetadata
 });
 
 const mapDispatchToProps = {
