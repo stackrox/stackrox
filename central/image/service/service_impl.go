@@ -53,6 +53,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.ResourceByID) (*
 func convertImagesToListImages(images []*v1.Image) []*v1.ListImage {
 	listImages := make([]*v1.ListImage, 0, len(images))
 	for _, i := range images {
+
 		listImages = append(listImages, convertImageToListImage(i))
 	}
 	return listImages

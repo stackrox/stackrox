@@ -3,6 +3,7 @@ package singletons
 import (
 	"sync"
 
+	authProviderStore "bitbucket.org/stack-rox/apollo/central/authprovider/store"
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	authnUser "bitbucket.org/stack-rox/apollo/pkg/grpc/authn/user"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/clusters"
@@ -20,7 +21,7 @@ var (
 func initialize() {
 	clusterWatcher := clusters.NewClusterWatcher(clusterDataStore.Singleton())
 
-	authInterceptor = authnUser.NewAuthInterceptor()
+	authInterceptor = authnUser.NewAuthInterceptor(authProviderStore.Singleton())
 	grpcUnaryInterceptors = []grpc.UnaryServerInterceptor{
 		authInterceptor.UnaryInterceptor(),
 		clusterWatcher.UnaryInterceptor(),
@@ -37,13 +38,13 @@ func AuthInterceptor() *authnUser.AuthInterceptor {
 	return authInterceptor
 }
 
-// GrpcUnaryInterceptor provides the unary interceptor to use with GRPC based services.
-func GrpcUnaryInterceptor() []grpc.UnaryServerInterceptor {
+// GrpcUnaryInterceptors provides the unary interceptors to use with GRPC based services.
+func GrpcUnaryInterceptors() []grpc.UnaryServerInterceptor {
 	once.Do(initialize)
 	return grpcUnaryInterceptors
 }
 
-// GrpsStreamInterceptors provides the stream interceptor to use with GRPC based services.
+// GrpsStreamInterceptors provides the stream interceptors to use with GRPC based services.
 func GrpsStreamInterceptors() []grpc.StreamServerInterceptor {
 	once.Do(initialize)
 	return grpsStreamInterceptors

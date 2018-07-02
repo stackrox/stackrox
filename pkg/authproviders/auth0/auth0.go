@@ -35,6 +35,8 @@ type config struct {
 	Endpoint string
 	// Enabled says whether the integration is enabled.
 	Enabled bool
+	// Validated says whether the integration has worked at some point.
+	Validated bool
 }
 
 type cacheElem struct {
@@ -73,11 +75,12 @@ func newAuth0(cfg config) *auth0 {
 // NewFromAPI creates a new Auth0 integration from an API object.
 func newFromAPI(a *v1.AuthProvider) (authproviders.Authenticator, error) {
 	cfg := config{
-		Domain:   a.Config["domain"],
-		ClientID: a.Config["client_id"],
-		Audience: a.Config["audience"],
-		Endpoint: a.GetUiEndpoint(),
-		Enabled:  a.GetEnabled(),
+		Domain:    a.Config["domain"],
+		ClientID:  a.Config["client_id"],
+		Audience:  a.Config["audience"],
+		Endpoint:  a.GetUiEndpoint(),
+		Enabled:   a.GetEnabled(),
+		Validated: a.GetValidated(),
 	}
 	if err := cfg.Validate(); err != nil {
 		return nil, err
@@ -95,6 +98,11 @@ func (c config) audience() string {
 // Enabled says if the integration is enabled.
 func (a auth0) Enabled() bool {
 	return a.config.Enabled
+}
+
+// Validated says if the integration is has been successfully used before.
+func (a auth0) Validated() bool {
+	return a.config.Validated
 }
 
 func (a auth0) issuer() string {

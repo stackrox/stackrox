@@ -6,11 +6,8 @@ import * as Icon from 'react-feather';
 import Dialog from 'Components/Dialog';
 import Form from 'Containers/Integrations/Form';
 import Modal from 'Components/Modal';
-import Table from 'Components/Table';
-import Panel from 'Components/Panel';
-import PanelButton from 'Components/PanelButton';
+import Table from 'Containers/Integrations/Table';
 
-import tableColumnDescriptor from 'Containers/Integrations/tableColumnDescriptor';
 import * as AuthService from 'services/AuthService';
 import { deleteIntegration } from 'services/IntegrationsService';
 
@@ -64,6 +61,22 @@ class IntegrationModal extends Component {
         this.props.onRequestClose(isSuccessful);
     };
 
+    onTableDelete = () => {
+        this.showConfirmationDialog();
+    };
+
+    onTableRowClick = integration => {
+        this.update('EDIT_INTEGRATION', { editIntegration: integration });
+    };
+
+    onTableActivate = () => {
+        this.update('EDIT_INTEGRATION', { editIntegration: {} });
+    };
+
+    onTableAdd = () => {
+        this.update('EDIT_INTEGRATION', { editIntegration: {} });
+    };
+
     onFormCancel = () => {
         this.update('EDIT_INTEGRATION', { editIntegration: null });
     };
@@ -87,15 +100,29 @@ class IntegrationModal extends Component {
         });
     };
 
-    onIntegrationRowClick = integration => {
-        this.update('EDIT_INTEGRATION', { editIntegration: integration });
+    setTableRef = table => {
+        this.integrationTable = table;
     };
 
-    addIntegration = () => {
-        this.update('EDIT_INTEGRATION', { editIntegration: {} });
+    update = (action, nextState) => {
+        this.setState(prevState => reducer(action, prevState, nextState));
     };
 
-    deleteIntegration = () => {
+    hideConfirmationDialog = () => {
+        this.setState({ showConfirmationDialog: false });
+    };
+
+    showConfirmationDialog = () => {
+        this.setState({ showConfirmationDialog: true });
+    };
+
+    activateAuthIntegration = integration => {
+        if (integration !== null && integration.loginUrl !== null && !integration.validated) {
+            window.location = integration.loginUrl;
+        }
+    };
+
+    deleteTableSelectedIntegrations = () => {
         const promises = [];
         this.integrationTable.getSelectedRows().forEach(id => {
             const promise =
@@ -111,60 +138,51 @@ class IntegrationModal extends Component {
         });
     };
 
-    showConfirmationDialog = () => {
-        this.setState({ showConfirmationDialog: true });
-    };
-
-    hideConfirmationDialog = () => {
-        this.setState({ showConfirmationDialog: false });
-    };
-
-    update = (action, nextState) => {
-        this.setState(prevState => reducer(action, prevState, nextState));
-    };
-
-    renderTable = () => {
-        const buttons = (
-            <React.Fragment>
-                <PanelButton
-                    icon={<Icon.Trash2 className="h-4 w-4" />}
-                    text="Delete"
-                    className="btn-danger"
-                    onClick={this.showConfirmationDialog}
-                    disabled={this.state.editIntegration !== null}
-                />
-                <PanelButton
-                    icon={<Icon.Plus className="h-4 w-4" />}
-                    text="Add"
-                    className="btn-success"
-                    onClick={this.addIntegration}
-                    disabled={this.state.editIntegration !== null}
-                />
-            </React.Fragment>
-        );
-
+    renderHeader = () => {
+        const { source, type } = this.props;
         return (
-            <div className="flex flex-1">
-                <Panel header={`${this.props.type} Integration`} buttons={buttons}>
-                    {this.props.integrations.length !== 0 ? (
-                        <Table
-                            columns={tableColumnDescriptor[this.props.source][this.props.type]}
-                            rows={this.props.integrations}
-                            checkboxes
-                            onRowClick={this.onIntegrationRowClick}
-                            ref={table => {
-                                this.integrationTable = table;
-                            }}
-                        />
-                    ) : (
-                        <div className="p3 w-full my-auto text-center capitalize">
-                            {`No ${this.props.type} integrations`}
-                        </div>
-                    )}
-                </Panel>
-            </div>
+            <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
+                <span className="flex flex-1">{`Configure ${type} ${SOURCE_LABELS[source]}`}</span>
+                <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.onRequestClose} />
+            </header>
         );
     };
+
+    renderErrorMessage = () => {
+        if (this.state.errorMessage !== '') {
+            return (
+                <div className="px-4 py-2 bg-high-500 text-white" data-test-id="integration-error">
+                    {this.state.errorMessage}
+                </div>
+            );
+        }
+        return null;
+    };
+
+    renderSuccessMessage = () => {
+        if (this.state.successMessage !== '') {
+            return (
+                <div className="px-4 py-2 bg-success-500 text-white">
+                    {this.state.successMessage}
+                </div>
+            );
+        }
+        return null;
+    };
+
+    renderTable = () => (
+        <Table
+            integrations={this.props.integrations}
+            source={this.props.source}
+            type={this.props.type}
+            buttonsEnabled={this.state.editIntegration === null}
+            onRowClick={this.onTableRowClick}
+            onActivate={this.activateAuthIntegration}
+            onAdd={this.onTableAdd}
+            onDelete={this.onTableDelete}
+            setTable={this.setTableRef}
+        />
+    );
 
     renderForm = () => (
         <Form
@@ -189,35 +207,18 @@ class IntegrationModal extends Component {
             <Dialog
                 isOpen={this.state.showConfirmationDialog}
                 text={`Are you sure you want to delete ${numSelectedRows} integration(s)?`}
-                onConfirm={this.deleteIntegration}
+                onConfirm={this.deleteTableSelectedIntegrations}
                 onCancel={this.hideConfirmationDialog}
             />
         );
     };
 
     render() {
-        const { source, type } = this.props;
         return (
             <Modal isOpen onRequestClose={this.onRequestClose} className="w-full lg:w-5/6 h-full">
-                <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
-                    <span className="flex flex-1">
-                        {`Configure ${type} ${SOURCE_LABELS[source]}`}
-                    </span>
-                    <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.onRequestClose} />
-                </header>
-                {this.state.errorMessage !== '' && (
-                    <div
-                        className="px-4 py-2 bg-high-500 text-white"
-                        data-test-id="integration-error"
-                    >
-                        {this.state.errorMessage}
-                    </div>
-                )}
-                {this.state.successMessage !== '' && (
-                    <div className="px-4 py-2 bg-success-500 text-white">
-                        {this.state.successMessage}
-                    </div>
-                )}
+                {this.renderHeader()}
+                {this.renderErrorMessage()}
+                {this.renderSuccessMessage()}
                 <div className="flex flex-1 w-full bg-white">
                     {this.renderTable()}
                     {this.renderForm()}

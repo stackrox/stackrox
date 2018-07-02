@@ -6,7 +6,10 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-const authProviderBucket = "authProviders"
+const (
+	authProviderBucket  = "authProviders"
+	authValidatedBucket = "authValidated"
+)
 
 // Store provides storage functionality for alerts.
 type Store interface {
@@ -15,11 +18,13 @@ type Store interface {
 	AddAuthProvider(authProvider *v1.AuthProvider) (string, error)
 	UpdateAuthProvider(authProvider *v1.AuthProvider) error
 	RemoveAuthProvider(id string) error
+	RecordAuthSuccess(id string) error
 }
 
 // New returns a new Store instance using the provided bolt DB instance.
 func New(db *bolt.DB) Store {
 	bolthelper.RegisterBucket(db, authProviderBucket)
+	bolthelper.RegisterBucket(db, authValidatedBucket)
 	return &storeImpl{
 		DB: db,
 	}

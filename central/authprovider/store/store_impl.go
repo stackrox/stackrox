@@ -11,6 +11,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 )
 
 type storeImpl struct {
@@ -25,16 +26,28 @@ func (b *storeImpl) getAuthProvider(id string, bucket *bolt.Bucket) (authProvide
 	}
 	exists = true
 	err = proto.Unmarshal(val, authProvider)
+	if err != nil {
+		return
+	}
 	return
 }
 
 // GetAuthProvider returns authProvider with given id.
 func (b *storeImpl) GetAuthProvider(id string) (authProvider *v1.AuthProvider, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "AuthProvider")
+
 	authProvider = new(v1.AuthProvider)
 	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(authProviderBucket))
-		authProvider, exists, err = b.getAuthProvider(id, bucket)
+		proB := tx.Bucket([]byte(authProviderBucket))
+		valB := tx.Bucket([]byte(authValidatedBucket))
+
+		authProvider, exists, err = b.getAuthProvider(id, proB)
+
+		// load whether or not it has been validated.
+		val := valB.Get([]byte(id))
+		if val != nil {
+			authProvider.Validated = true
+		}
 		return err
 	})
 	return
@@ -43,14 +56,24 @@ func (b *storeImpl) GetAuthProvider(id string) (authProvider *v1.AuthProvider, e
 // GetAuthProviders retrieves authProviders from bolt
 func (b *storeImpl) GetAuthProviders(request *v1.GetAuthProvidersRequest) ([]*v1.AuthProvider, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "AuthProvider")
+
 	var authProviders []*v1.AuthProvider
 	err := b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(authProviderBucket))
-		return b.ForEach(func(k, v []byte) error {
+		provB := tx.Bucket([]byte(authProviderBucket))
+		valB := tx.Bucket([]byte(authValidatedBucket))
+
+		return provB.ForEach(func(k, v []byte) error {
 			var authProvider v1.AuthProvider
 			if err := proto.Unmarshal(v, &authProvider); err != nil {
 				return err
 			}
+
+			// load whether or not it has been validated.
+			val := valB.Get(k)
+			if val != nil {
+				authProvider.Validated = true
+			}
+
 			authProviders = append(authProviders, &authProvider)
 			return nil
 		})
@@ -61,6 +84,7 @@ func (b *storeImpl) GetAuthProviders(request *v1.GetAuthProvidersRequest) ([]*v1
 // AddAuthProvider adds an auth provider into bolt
 func (b *storeImpl) AddAuthProvider(authProvider *v1.AuthProvider) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "AuthProvider")
+
 	authProvider.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(authProviderBucket))
@@ -86,6 +110,7 @@ func (b *storeImpl) AddAuthProvider(authProvider *v1.AuthProvider) (string, erro
 // UpdateAuthProvider upserts an auth provider into bolt
 func (b *storeImpl) UpdateAuthProvider(authProvider *v1.AuthProvider) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "AuthProvider")
+
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(authProviderBucket))
 		// If the update is changing the name, check if the name has already been taken
@@ -105,15 +130,38 @@ func (b *storeImpl) UpdateAuthProvider(authProvider *v1.AuthProvider) error {
 // RemoveAuthProvider removes an auth provider from bolt
 func (b *storeImpl) RemoveAuthProvider(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "AuthProvider")
+
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(authProviderBucket))
+		ab := tx.Bucket([]byte(authProviderBucket))
 		key := []byte(id)
-		if exists := b.Get(key) != nil; !exists {
+		if exists := ab.Get(key) != nil; !exists {
 			return dberrors.ErrNotFound{Type: "Auth Provider", ID: id}
 		}
 		if err := secondarykey.RemoveUniqueKey(tx, authProviderBucket, id); err != nil {
 			return err
 		}
-		return b.Delete(key)
+		if err := ab.Delete(key); err != nil {
+			return err
+		}
+
+		vb := tx.Bucket([]byte(authValidatedBucket))
+		return vb.Delete(key)
+	})
+}
+
+// RecordAuthSuccess adds an entry in the validated bucket for the provider, which indicates the provider
+// has been successfully used at least once previously.
+func (b *storeImpl) RecordAuthSuccess(id string) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "AuthValidated")
+
+	return b.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(authValidatedBucket))
+
+		timestamp := ptypes.TimestampNow()
+		bytes, err := proto.Marshal(timestamp)
+		if err != nil {
+			return err
+		}
+		return bucket.Put([]byte(id), bytes)
 	})
 }

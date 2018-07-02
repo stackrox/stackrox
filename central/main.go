@@ -83,7 +83,7 @@ func (c *central) startGRPCServer() {
 	config := pkgGRPC.Config{
 		CustomRoutes:       c.customRoutes(),
 		TLS:                verifier.CA{},
-		UnaryInterceptors:  interceptorSingletons.GrpcUnaryInterceptor(),
+		UnaryInterceptors:  interceptorSingletons.GrpcUnaryInterceptors(),
 		StreamInterceptors: interceptorSingletons.GrpsStreamInterceptors(),
 	}
 

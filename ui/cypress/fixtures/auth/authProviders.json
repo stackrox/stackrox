@@ -11,7 +11,8 @@
                 "domain": "domain"
             },
             "loginUrl": "/auth/response/oidc#access_token=my-token",
-            "uiEndpoint": "does not matter"
+            "uiEndpoint": "does not matter",
+            "validated": true
         }
     ]
 }

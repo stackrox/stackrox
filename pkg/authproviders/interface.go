@@ -12,6 +12,7 @@ type User struct {
 // or HTTP headers) into a User identity.
 type Authenticator interface {
 	Enabled() bool
+	Validated() bool
 	User(headers map[string][]string) (user User, expiration time.Time, err error)
 	LoginURL() string
 	RefreshURL() string

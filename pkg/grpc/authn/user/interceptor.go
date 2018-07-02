@@ -6,7 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/authproviders"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -18,22 +17,23 @@ var (
 	logger = logging.LoggerForModule()
 )
 
-// AuthLister contains the storage-access functions that this
-// interceptor requires.
-type AuthLister interface {
-	GetAuthProviders(request *v1.GetAuthProvidersRequest) ([]*v1.AuthProvider, error)
+// AuthMonitor allows us to validate an auth provider if it has not been previously validated.
+type AuthMonitor interface {
+	RecordAuthSuccess(id string) error
 }
 
 // An AuthInterceptor provides gRPC interceptors that authenticates users.
 type AuthInterceptor struct {
-	providers map[string]authproviders.Authenticator
-	lock      sync.RWMutex
+	authMonitor AuthMonitor
+	providers   map[string]authproviders.Authenticator
+	lock        sync.RWMutex
 }
 
 // NewAuthInterceptor creates a new AuthInterceptor.
-func NewAuthInterceptor() *AuthInterceptor {
+func NewAuthInterceptor(authMonitor AuthMonitor) *AuthInterceptor {
 	return &AuthInterceptor{
-		providers: make(map[string]authproviders.Authenticator),
+		authMonitor: authMonitor,
+		providers:   make(map[string]authproviders.Authenticator),
 	}
 }
 
@@ -90,31 +90,6 @@ func (a *AuthInterceptor) authStream(srv interface{}, stream grpc.ServerStream, 
 	return handler(srv, newStream)
 }
 
-func (a *AuthInterceptor) retrieveToken(ctx context.Context, headers map[string][]string) (newCtx context.Context) {
-	a.lock.RLock()
-	defer a.lock.RUnlock()
-	newCtx = authn.NewAuthConfigurationContext(ctx, authn.AuthConfiguration{
-		ProviderConfigured: a.countEnabled() > 0,
-	})
-	for _, p := range a.providers {
-		if !p.Enabled() {
-			continue
-		}
-		user, expiration, err := p.User(headers)
-		if err != nil {
-			logger.Debugf("User auth error: %s", err)
-			continue
-		}
-
-		return authn.NewUserContext(newCtx, authn.UserIdentity{
-			User:         user,
-			AuthProvider: p,
-			Expiration:   expiration,
-		})
-	}
-	return newCtx
-}
-
 func (a *AuthInterceptor) authToken(ctx context.Context) context.Context {
 	meta, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -123,11 +98,53 @@ func (a *AuthInterceptor) authToken(ctx context.Context) context.Context {
 	return a.retrieveToken(ctx, meta)
 }
 
-func (a *AuthInterceptor) countEnabled() (enabled int) {
+func (a *AuthInterceptor) retrieveToken(ctx context.Context, headers map[string][]string) (newCtx context.Context) {
+	a.lock.RLock()
+	defer a.lock.RUnlock()
+
+	userIdentity := a.getUserIdentity(headers)
+	newCtx = authn.NewAuthConfigurationContext(ctx, authn.AuthConfiguration{
+		ProviderConfigured: a.countEnabledAndValidated() > 0,
+	})
+
+	if userIdentity != nil {
+		return authn.NewUserContext(newCtx, *userIdentity)
+	}
+	return newCtx
+}
+
+func (a *AuthInterceptor) countEnabledAndValidated() (enabled int) {
 	for _, p := range a.providers {
-		if p.Enabled() {
+		if p.Enabled() && p.Validated() {
 			enabled++
 		}
 	}
 	return enabled
+}
+
+func (a *AuthInterceptor) getUserIdentity(headers map[string][]string) *authn.UserIdentity {
+	for id, p := range a.providers {
+		if !p.Enabled() {
+			continue
+		}
+
+		user, expiration, err := p.User(headers)
+		if err != nil {
+			logger.Debugf("user auth error: %s", err)
+			continue
+		}
+
+		if !p.Validated() {
+			if err := a.authMonitor.RecordAuthSuccess(id); err != nil {
+				logger.Errorf("error update auth provider status: %s", err)
+			}
+		}
+
+		return &authn.UserIdentity{
+			User:         user,
+			AuthProvider: p,
+			Expiration:   expiration,
+		}
+	}
+	return nil
 }
