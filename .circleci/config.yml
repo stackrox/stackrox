@@ -115,6 +115,7 @@ jobs:
               --num-nodes 2 \
               --create-subnetwork range=/19 \
               --enable-ip-alias \
+              --enable-network-policy \
               "prevent-ci-${CIRCLE_BUILD_NUM}"
 
       # See https://stackoverflow.com/a/46316672 for why we have to use user/pass.

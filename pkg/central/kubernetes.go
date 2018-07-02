@@ -186,6 +186,22 @@ spec:
     requests:
       storage: 10Gi
 {{- end}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ext-to-central
+  namespace: stackrox
+spec:
+  ingress:
+  - ports:
+    - port: 443
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: central
+  policyTypes:
+  - Ingress
 `
 
 	k8sCmd = commandPrefix + kubernetesPkg.GetCreateSecretTemplate("{{.K8sConfig.Namespace}}", "{{.K8sConfig.Registry}}", "{{.K8sConfig.ImagePullSecret}}") + `
