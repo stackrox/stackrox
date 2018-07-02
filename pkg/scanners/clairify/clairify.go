@@ -3,11 +3,11 @@ package clairify
 import (
 	"fmt"
 
+	"bitbucket.org/stack-rox/apollo/central/imageintegration/enricher"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	clairConv "bitbucket.org/stack-rox/apollo/pkg/clair"
 	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/resolver"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 	"bitbucket.org/stack-rox/clairify/client"
@@ -23,15 +23,6 @@ func validateConfig(c *v1.ClairifyConfig) error {
 	var errors []string
 	if c.GetEndpoint() == "" {
 		errors = append(errors, "endpoint parameter must be defined for Clairify")
-	}
-	// This is purposefully done because the registry is optional
-	if reg := c.GetRegistry(); reg != nil {
-		if reg.GetImageRepo() == "" {
-			errors = append(errors, "image repo parameter must be defined for Clairify registry")
-		}
-		if reg.GetUrl() == "" {
-			errors = append(errors, "url parameter must be defined for Clairify registry")
-		}
 	}
 	return errorhelpers.FormatErrorStrings("Validation", errors)
 }
@@ -130,29 +121,21 @@ func (c *clairify) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 }
 
 func (c *clairify) scan(image *v1.Image) error {
-	if image.GetName().GetRegistry() == c.conf.Registry.GetImageRepo() {
-		reg := c.conf.Registry
-		_, err := c.client.AddImage(reg.GetUsername(), reg.GetPassword(), &types.ImageRequest{
-			Image:    image.GetName().GetFullName(),
-			Registry: resolver.Registry(reg.GetUrl()),
-			Insecure: reg.GetInsecure(),
-		})
-		return err
+	rc := enricher.ImageEnricher.GetRegistryMetadataByImage(image)
+	if rc == nil {
+		return nil
 	}
-	_, err := c.client.AddImage("", "", &types.ImageRequest{
+
+	_, err := c.client.AddImage(rc.Username, rc.Password, &types.ImageRequest{
 		Image:    image.GetName().GetFullName(),
-		Registry: resolver.Registry(image.GetName().GetRegistry()),
-		Insecure: true,
-	})
+		Registry: rc.URL,
+		Insecure: rc.Insecure})
 	return err
 }
 
 // Match decides if the image is contained within this scanner
 func (c *clairify) Match(image *v1.Image) bool {
-	if c.conf.GetRegistry().GetImageRepo() == "" {
-		return true
-	}
-	return c.conf.GetRegistry().GetImageRepo() == image.GetName().GetRegistry()
+	return enricher.ImageEnricher.Match(image)
 }
 
 func (c *clairify) Global() bool {

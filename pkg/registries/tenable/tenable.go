@@ -122,6 +122,11 @@ func (d *tenableRegistry) Global() bool {
 	return len(d.protoImageIntegration.GetClusters()) == 0
 }
 
+func (d *tenableRegistry) Config() *registries.Config {
+	// Tenable cannot be used to pull down scans
+	return nil
+}
+
 func init() {
 	registries.Registry["tenable"] = func(integration *v1.ImageIntegration) (registries.ImageRegistry, error) {
 		reg, err := newRegistry(integration)

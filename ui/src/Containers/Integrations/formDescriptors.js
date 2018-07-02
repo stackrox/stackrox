@@ -382,34 +382,7 @@ const formDescriptors = {
                 label: 'Endpoint',
                 key: 'clairify.endpoint',
                 type: 'text',
-                placeholder: 'http://clairify.example:8080'
-            },
-            {
-                label: 'Registry Image Repo (optional)',
-                key: 'clairify.registry.imageRepo',
-                type: 'text',
-                placeholder: 'docker.io'
-            },
-            {
-                label: 'Registry URL (optional)',
-                key: 'clairify.registry.url',
-                type: 'text',
-                placeholder: 'https://clairify.example.com'
-            },
-            {
-                label: 'Username (optional)',
-                key: 'clairify.registry.username',
-                type: 'text'
-            },
-            {
-                label: 'Password (optional)',
-                key: 'clairify.registry.password',
-                type: 'password'
-            },
-            {
-                label: 'Insecure (skip certificate verification)',
-                key: 'clairify.registry.insecure',
-                type: 'checkbox'
+                placeholder: 'http://clairify.stackrox:8080'
             }
         ],
         google: [

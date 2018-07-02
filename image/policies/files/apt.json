@@ -1,6 +1,6 @@
 {
   "name": "Aptitude Package Manager (apt) in Image",
-  "description": "Alert on deployments with the Aptitude package manager (apt), commonly used in Debian and Ubuntu, present",
+  "description": "Alert on deployments with the Aptitude package manager (apt) present",
   "severity": "LOW_SEVERITY",
   "categories": ["Image Assurance"],
   "fields": {

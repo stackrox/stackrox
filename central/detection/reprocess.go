@@ -6,7 +6,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/search"
-	"bitbucket.org/stack-rox/apollo/pkg/sources"
 )
 
 func (d *Detector) reprocessLoop() {
@@ -80,22 +79,6 @@ func (d *Detector) reprocessPolicy(policy *matcher.Policy) {
 				policy:     policy,
 				action:     v1.ResourceAction_REMOVE_RESOURCE,
 			}
-		}
-	}
-}
-
-func (d *Detector) reprocessImageIntegration(integration *sources.ImageIntegration) {
-	deployments, err := d.deploymentStorage.GetDeployments()
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-
-	policies := d.getCurrentPolicies()
-
-	for _, deploy := range deployments {
-		if d.enricher.EnrichWithImageIntegration(deploy, integration) {
-			d.queueTasks(deploy, policies)
 		}
 	}
 }

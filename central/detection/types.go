@@ -7,6 +7,7 @@ import (
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
 	"bitbucket.org/stack-rox/apollo/central/enrichment"
+	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
 	notifierProcessor "bitbucket.org/stack-rox/apollo/central/notifier/processor"
 	policyDataStore "bitbucket.org/stack-rox/apollo/central/policy/datastore"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -23,6 +24,7 @@ type Detector struct {
 	alertStorage      alertDataStore.DataStore
 	deploymentStorage deploymentDataStore.DataStore
 	policyStorage     policyDataStore.DataStore
+	imageStorage      imageDataStore.DataStore
 
 	enricher              *enrichment.Enricher
 	notificationProcessor notifierProcessor.Processor
@@ -37,12 +39,14 @@ type Detector struct {
 func New(alertStorage alertDataStore.DataStore,
 	deploymentStorage deploymentDataStore.DataStore,
 	policyStorage policyDataStore.DataStore,
+	imageStorage imageDataStore.DataStore,
 	enricher *enrichment.Enricher,
 	notificationsProcessor notifierProcessor.Processor) (d *Detector, err error) {
 	d = &Detector{
 		alertStorage:          alertStorage,
 		deploymentStorage:     deploymentStorage,
 		policyStorage:         policyStorage,
+		imageStorage:          imageStorage,
 		enricher:              enricher,
 		notificationProcessor: notificationsProcessor,
 		taskC:    make(chan Task, 40),
@@ -84,7 +88,7 @@ type Task struct {
 // UpdateImageIntegration updates the map of active integrations
 func (d *Detector) UpdateImageIntegration(integration *sources.ImageIntegration) {
 	d.enricher.UpdateImageIntegration(integration)
-	go d.reprocessImageIntegration(integration)
+	go d.EnrichAndReprocess()
 }
 
 // RemoveImageIntegration removes an image integration

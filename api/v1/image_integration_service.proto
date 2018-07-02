@@ -30,14 +30,6 @@ message DTRConfig {
 
 message ClairifyConfig {
     string endpoint              = 1;
-    message Registry {
-        string image_repo = 1;
-        string url        = 2;
-        string username   = 3;
-        string password   = 4;
-        bool insecure     = 5;
-    }
-    Registry registry             = 2;
 }
 
 message QuayConfig {

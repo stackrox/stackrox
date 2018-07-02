@@ -7,6 +7,7 @@ import (
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	enrichmentSingletons "bitbucket.org/stack-rox/apollo/central/enrichment/singletons"
+	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
 	notifierProcessor "bitbucket.org/stack-rox/apollo/central/notifier/processor"
 	policyDataStore "bitbucket.org/stack-rox/apollo/central/policy/datastore"
 )
@@ -22,6 +23,7 @@ func initialize() {
 	detector, err = detection.New(alertDataStore.Singleton(),
 		deploymentDataStore.Singleton(),
 		policyDataStore.Singleton(),
+		imageDataStore.Singleton(),
 		enrichmentSingletons.GetEnricher(),
 		notifierProcessor.Singleton())
 	if err != nil {

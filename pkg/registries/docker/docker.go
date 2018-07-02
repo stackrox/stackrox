@@ -272,6 +272,17 @@ func (d *Registry) Test() error {
 	return d.client().Ping()
 }
 
+// Config returns the configuration of the docker registry
+func (d *Registry) Config() *registries.Config {
+	return &registries.Config{
+		Username:         d.cfg.Username,
+		Password:         d.cfg.Password,
+		Insecure:         d.cfg.Insecure,
+		URL:              d.url,
+		RegistryHostname: d.registry,
+	}
+}
+
 func init() {
 	f := func(integration *v1.ImageIntegration) (registries.ImageRegistry, error) {
 		reg, err := newRegistry(integration)
