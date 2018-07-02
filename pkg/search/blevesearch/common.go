@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	searchPkg "bitbucket.org/stack-rox/apollo/pkg/search"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
@@ -12,14 +13,16 @@ import (
 
 const maxSearchResponses = 2000
 
-// NewPrefixQuery does something
+var logger = logging.LoggerForModule()
+
+// NewPrefixQuery generates new query that matches prefixes
 func NewPrefixQuery(field, prefix string) query.Query {
 	prefixQuery := bleve.NewPrefixQuery(strings.ToLower(prefix))
 	prefixQuery.SetField(field)
 	return prefixQuery
 }
 
-// GetScopesQuery does something
+// GetScopesQuery generates a disjunct query based on the scope values
 func GetScopesQuery(scopes []*v1.Scope, scopeToQuery func(scope *v1.Scope) query.Query) query.Query {
 	if len(scopes) != 0 {
 		disjunctionQuery := bleve.NewDisjunctionQuery()
@@ -32,40 +35,19 @@ func GetScopesQuery(scopes []*v1.Scope, scopeToQuery func(scope *v1.Scope) query
 	return bleve.NewMatchAllQuery()
 }
 
-// RunSearchRequest does something
-func RunSearchRequest(objType string, request *v1.ParsedSearchRequest, index bleve.Index, scopeToQuery func(scope *v1.Scope) query.Query, objectMap map[string]string) ([]searchPkg.Result, error) {
-	conjunctionQuery := bleve.NewConjunctionQuery(typeQuery(objType))
-	queries, err := buildQuery(request, scopeToQuery, objectMap)
-	if err != nil {
-		return nil, err
-	}
-	conjunctionQuery.AddQuery(queries...)
-	return RunQuery(conjunctionQuery, index)
-}
-
-// RunQuery does something
-func RunQuery(query query.Query, index bleve.Index) ([]searchPkg.Result, error) {
-	searchRequest := bleve.NewSearchRequest(query)
-	// Initial size is 10 which seems small
-	searchRequest.Size = maxSearchResponses
-	searchRequest.Highlight = bleve.NewHighlight()
-	searchResult, err := index.Search(searchRequest)
-	if err != nil {
-		return nil, err
-	}
-	return collapseResults(searchResult), nil
-}
-
-// FieldsToQuery does something
-func FieldsToQuery(fieldMap map[string]*v1.ParsedSearchRequest_Values, objectMap map[string]string) (*query.ConjunctionQuery, error) {
-	newFieldMap := transformFields(fieldMap, objectMap)
+// FieldsToQuery converts a request and the options for the data type to Bleve types
+func FieldsToQuery(request *v1.ParsedSearchRequest, optionsMap map[string]*v1.SearchField) (*query.ConjunctionQuery, error) {
 	conjunctionQuery := bleve.NewConjunctionQuery()
-	for field, queryValues := range newFieldMap {
-		queryFunc, ok := datatypeToQueryFunc[queryValues.GetField().GetType()]
+	for fieldName, field := range request.GetFields() {
+		searchField, ok := optionsMap[fieldName]
 		if !ok {
-			return nil, fmt.Errorf("Query for type %s is not implemented", queryValues.GetField().GetType())
+			continue
 		}
-		conjunct, err := queryFunc(field, queryValues.GetValues())
+		queryFunc, ok := datatypeToQueryFunc[searchField.GetType()]
+		if !ok {
+			return nil, fmt.Errorf("Query for type %s is not implemented", searchField.GetType())
+		}
+		conjunct, err := queryFunc(searchField.GetFieldPath(), field.GetValues())
 		if err != nil {
 			return nil, err
 		}
@@ -74,11 +56,34 @@ func FieldsToQuery(fieldMap map[string]*v1.ParsedSearchRequest_Values, objectMap
 	return conjunctionQuery, nil
 }
 
-func buildQuery(request *v1.ParsedSearchRequest, scopeToQuery func(scope *v1.Scope) query.Query, objectMap map[string]string) ([]query.Query, error) {
+// RunSearchRequest does something
+func RunSearchRequest(objType string, request *v1.ParsedSearchRequest, index bleve.Index, scopeToQuery func(scope *v1.Scope) query.Query, optionsMap map[string]*v1.SearchField) ([]searchPkg.Result, error) {
+	conjunctionQuery := bleve.NewConjunctionQuery(typeQuery(objType))
+	queries, err := buildQuery(request, scopeToQuery, optionsMap)
+	if err != nil {
+		return nil, err
+	}
+	conjunctionQuery.AddQuery(queries...)
+	return RunQuery(conjunctionQuery, index)
+}
+
+// RunQuery runs the actual query and then collapses the results into a simpler format
+func RunQuery(query query.Query, index bleve.Index) ([]searchPkg.Result, error) {
+	searchRequest := bleve.NewSearchRequest(query)
+	// Initial size is 10 which seems small
+	searchRequest.Size = maxSearchResponses
+	searchResult, err := index.Search(searchRequest)
+	if err != nil {
+		return nil, err
+	}
+	return collapseResults(searchResult), nil
+}
+
+func buildQuery(request *v1.ParsedSearchRequest, scopeToQuery func(scope *v1.Scope) query.Query, optionsMap map[string]*v1.SearchField) ([]query.Query, error) {
 	var queries []query.Query
 	queries = append(queries, GetScopesQuery(request.GetScopes(), scopeToQuery))
 	if request.GetFields() != nil && len(request.GetFields()) != 0 {
-		q, err := FieldsToQuery(request.GetFields(), objectMap)
+		q, err := FieldsToQuery(request, optionsMap)
 		if err != nil {
 			return nil, err
 		}
@@ -106,25 +111,4 @@ func collapseResults(searchResult *bleve.SearchResult) (results []searchPkg.Resu
 		})
 	}
 	return
-}
-
-func transformKey(key string, objectMap map[string]string) string {
-	spl := strings.SplitN(key, ".", 2)
-	transformed, ok := objectMap[spl[0]]
-	if !ok {
-		return key
-	}
-	// this implies that the field is a top level object of this struct
-	if transformed == "" {
-		return spl[1]
-	}
-	return transformed + "." + spl[1]
-}
-
-func valuesToDisjunctionQuery(field string, values *v1.ParsedSearchRequest_Values) query.Query {
-	disjunctionQuery := bleve.NewDisjunctionQuery()
-	for _, v := range values.GetValues() {
-		disjunctionQuery.AddQuery(NewPrefixQuery(field, v))
-	}
-	return disjunctionQuery
 }

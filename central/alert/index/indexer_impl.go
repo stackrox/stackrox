@@ -36,17 +36,15 @@ func (b *indexerImpl) DeleteAlert(id string) error {
 // SearchAlerts takes a SearchRequest and finds any matches
 func (b *indexerImpl) SearchAlerts(request *v1.ParsedSearchRequest) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Alert")
-	searchField := mappings.OptionsMap[search.Stale]
 	if request.Fields == nil {
 		request.Fields = make(map[string]*v1.ParsedSearchRequest_Values)
 	}
-	if values, ok := request.Fields[searchField.GetFieldPath()]; !ok || len(values.Values) == 0 {
-		request.Fields[searchField.GetFieldPath()] = &v1.ParsedSearchRequest_Values{
+	if values, ok := request.Fields[search.Stale]; !ok || len(values.Values) == 0 {
+		request.Fields[search.Stale] = &v1.ParsedSearchRequest_Values{
 			Values: []string{"false"},
-			Field:  searchField,
 		}
 	}
-	return blevesearch.RunSearchRequest(v1.SearchCategory_ALERTS.String(), request, b.index, ScopeToAlertQuery, mappings.ObjectMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_ALERTS.String(), request, b.index, ScopeToAlertQuery, mappings.OptionsMap)
 }
 
 // ScopeToAlertQuery returns an alert query for the given scope.

@@ -6,7 +6,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/alert/index"
 	"bitbucket.org/stack-rox/apollo/central/alert/search"
 	"bitbucket.org/stack-rox/apollo/central/alert/store"
-	"bitbucket.org/stack-rox/apollo/central/search/options"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	searchCommon "bitbucket.org/stack-rox/apollo/pkg/search"
 )
@@ -42,9 +41,7 @@ func (ds *datastoreImpl) GetAlerts(request *v1.ListAlertsRequest) ([]*v1.Alert, 
 			return nil, err
 		}
 	} else {
-		parser := &searchCommon.QueryParser{
-			OptionsMap: options.AllOptionsMaps,
-		}
+		parser := &searchCommon.QueryParser{}
 		parsedQuery, err := parser.ParseRawQuery(request.GetQuery())
 		if err != nil {
 			return nil, err

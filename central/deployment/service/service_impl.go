@@ -7,7 +7,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	"bitbucket.org/stack-rox/apollo/central/enrichment"
 	multiplierStore "bitbucket.org/stack-rox/apollo/central/multiplier/store"
-	"bitbucket.org/stack-rox/apollo/central/search/options"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/dberrors"
@@ -87,9 +86,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 	} else {
-		parser := &search.QueryParser{
-			OptionsMap: options.AllOptionsMaps,
-		}
+		parser := &search.QueryParser{}
 		parsedQuery, err := parser.ParseRawQuery(request.GetQuery())
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())

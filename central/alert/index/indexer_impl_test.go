@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/globalindex"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
+	"bitbucket.org/stack-rox/apollo/pkg/search"
 	bleveHelpers "bitbucket.org/stack-rox/apollo/pkg/search/blevesearch"
 	"github.com/blevesearch/bleve"
 	"github.com/stretchr/testify/assert"
@@ -111,11 +112,7 @@ func (suite *AlertIndexTestSuite) TestDefaultStaleness() {
 		suite.T().Run(c.name, func(t *testing.T) {
 			alerts, err := suite.indexer.SearchAlerts(&v1.ParsedSearchRequest{
 				Fields: map[string]*v1.ParsedSearchRequest_Values{
-					"alert.stale": {
-						Field: &v1.SearchField{
-							FieldPath: "alert.stale",
-							Type:      v1.SearchDataType_SEARCH_BOOL,
-						},
+					search.Stale: {
 						Values: c.values,
 					},
 				},

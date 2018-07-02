@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"bitbucket.org/stack-rox/apollo/central/image/datastore"
-	"bitbucket.org/stack-rox/apollo/central/search/options"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
@@ -91,9 +90,7 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 		}
 		resp.Images = convertImagesToListImages(images)
 	} else {
-		parser := &search.QueryParser{
-			OptionsMap: options.AllOptionsMaps,
-		}
+		parser := &search.QueryParser{}
 		parsedQuery, err := parser.ParseRawQuery(request.GetQuery())
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())

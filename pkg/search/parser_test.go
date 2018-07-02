@@ -23,12 +23,7 @@ func TestParseRawQuery(t *testing.T) {
 	}
 
 	// Create a parser that can handle deployemnt name and policy category.
-	parser := &QueryParser{
-		OptionsMap: map[string]*v1.SearchField{
-			DeploymentName: NewStringField("deployment.name"),
-			Category:       NewStringField("policy.categories"),
-		},
-	}
+	parser := &QueryParser{}
 	actualRequest, err := parser.ParseRawQuery(query)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRequest, actualRequest)
@@ -154,18 +149,10 @@ func TestParseRawQuery(t *testing.T) {
 	query = NewQueryBuilder().AddStrings(DeploymentName, "field1", "field12").AddStrings(Category, "field2").Query()
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			"deployment.name": {
-				Field: &v1.SearchField{
-					FieldPath: "deployment.name",
-					Type:      v1.SearchDataType_SEARCH_STRING,
-				},
+			DeploymentName: {
 				Values: []string{"field1", "field12"},
 			},
-			"policy.categories": {
-				Field: &v1.SearchField{
-					FieldPath: "policy.categories",
-					Type:      v1.SearchDataType_SEARCH_STRING,
-				},
+			Category: {
 				Values: []string{"field2"},
 			},
 		},
@@ -180,18 +167,10 @@ func TestParseRawQuery(t *testing.T) {
 	query = NewQueryBuilder().AddStrings(DeploymentName, "field1").AddStrings(Category, "field2").AddStringQuery("rawquery").Query()
 	expectedRequest = &v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			"deployment.name": {
-				Field: &v1.SearchField{
-					FieldPath: "deployment.name",
-					Type:      v1.SearchDataType_SEARCH_STRING,
-				},
+			DeploymentName: {
 				Values: []string{"field1"},
 			},
-			"policy.categories": {
-				Field: &v1.SearchField{
-					FieldPath: "policy.categories",
-					Type:      v1.SearchDataType_SEARCH_STRING,
-				},
+			Category: {
 				Values: []string{"field2"},
 			},
 		},

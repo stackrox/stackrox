@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/globalindex"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
+	"bitbucket.org/stack-rox/apollo/pkg/search"
 	"github.com/blevesearch/bleve"
 	"github.com/stretchr/testify/suite"
 )
@@ -73,11 +74,7 @@ func (suite *ImageIndexTestSuite) TestSearchImages() {
 			},
 		},
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			"image.name.registry": {
-				Field: &v1.SearchField{
-					FieldPath: "image.name.registry",
-					Type:      v1.SearchDataType_SEARCH_STRING,
-				},
+			search.ImageRegistry: {
 				Values: []string{"stackrox.io"},
 			},
 		},
@@ -90,11 +87,7 @@ func (suite *ImageIndexTestSuite) TestSearchImages() {
 	// Test only fields defined
 	request = &v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			"image.name.registry": {
-				Field: &v1.SearchField{
-					FieldPath: "image.name.registry",
-					Type:      v1.SearchDataType_SEARCH_STRING,
-				},
+			search.ImageRegistry: {
 				Values: []string{"stackrox.io"},
 			},
 		},

@@ -5,7 +5,6 @@ import (
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
 	policyDataStore "bitbucket.org/stack-rox/apollo/central/policy/datastore"
-	"bitbucket.org/stack-rox/apollo/central/search/options"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/search"
@@ -36,8 +35,6 @@ func New(alerts alertDataStore.DataStore, deployments deploymentDataStore.DataSt
 		deployments: deployments,
 		images:      images,
 		policies:    policies,
-		parser: &search.QueryParser{
-			OptionsMap: options.AllOptionsMaps,
-		},
+		parser:      &search.QueryParser{},
 	}
 }

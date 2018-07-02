@@ -43,9 +43,9 @@ func generateAllOptionsMap() map[string]*v1.SearchField {
 
 // CategoryOptionsMap is a map of all option sets by category, with a category for each indexed data type.
 var CategoryOptionsMap = map[v1.SearchCategory]mapset.Set{
-	v1.SearchCategory_ALERTS:      generateSetFromOptionsMap(alertMappings.OptionsMap, policyMappings.OptionsMap, deploymentMappings.OptionsMap, imageMappings.OptionsMap),
+	v1.SearchCategory_ALERTS:      generateSetFromOptionsMap(alertMappings.OptionsMap),
 	v1.SearchCategory_POLICIES:    generateSetFromOptionsMap(policyMappings.OptionsMap),
-	v1.SearchCategory_DEPLOYMENTS: generateSetFromOptionsMap(deploymentMappings.OptionsMap, imageMappings.OptionsMap),
+	v1.SearchCategory_DEPLOYMENTS: generateSetFromOptionsMap(deploymentMappings.OptionsMap),
 	v1.SearchCategory_IMAGES:      generateSetFromOptionsMap(imageMappings.OptionsMap),
 }
 

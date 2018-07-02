@@ -152,11 +152,3 @@ func newEnforcementQuery(field string, values []string) (query.Query, error) {
 	}
 	return d, nil
 }
-
-func transformFields(fields map[string]*v1.ParsedSearchRequest_Values, objectMap map[string]string) map[string]*v1.ParsedSearchRequest_Values {
-	newMap := make(map[string]*v1.ParsedSearchRequest_Values, len(fields))
-	for k, v := range fields {
-		newMap[transformKey(k, objectMap)] = v
-	}
-	return newMap
-}

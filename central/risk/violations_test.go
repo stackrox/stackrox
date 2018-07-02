@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/central/search/options"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -17,9 +16,7 @@ type mockAlertsGetter struct {
 // GetAlerts supports a limited set of request parameters.
 // It only needs to be as specific as the production code.
 func (m mockAlertsGetter) GetAlerts(req *v1.ListAlertsRequest) (alerts []*v1.Alert, err error) {
-	parser := &search.QueryParser{
-		OptionsMap: options.AllOptionsMaps,
-	}
+	parser := &search.QueryParser{}
 	parsedRequest, err := parser.ParseRawQuery(req.GetQuery())
 	if err != nil {
 		return nil, err
@@ -27,7 +24,7 @@ func (m mockAlertsGetter) GetAlerts(req *v1.ListAlertsRequest) (alerts []*v1.Ale
 
 	for _, a := range m.alerts {
 		match := true
-		staleValues := parsedRequest.Fields["alert.stale"].GetValues()
+		staleValues := parsedRequest.Fields[search.Stale].GetValues()
 		if len(staleValues) != 0 {
 			match = false
 			for _, v := range staleValues {

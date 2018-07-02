@@ -57,8 +57,13 @@ func searchFieldToMapping(sf *v1.SearchField) *mapping.FieldMapping {
 }
 
 func setFieldMappingDefaults(m *mapping.FieldMapping, store bool) *mapping.FieldMapping {
+	// Allows for string query
 	m.IncludeInAll = true
+	// We don't use phrase queries so this term ordering is not important to us
 	m.IncludeTermVectors = false
+	// This allows us to retrieve the value out of the index (e.g. filtering images by cluster using image shas retrieved from a deployments query)
 	m.Store = store
+	// DocValues are used for sorting the values, which we don't do
+	m.DocValues = false
 	return m
 }

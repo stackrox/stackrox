@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/globalindex"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
+	"bitbucket.org/stack-rox/apollo/pkg/search"
 	bleveHelpers "bitbucket.org/stack-rox/apollo/pkg/search/blevesearch"
 	"github.com/blevesearch/bleve"
 	"github.com/stretchr/testify/suite"
@@ -82,4 +83,18 @@ func (suite *DeploymentIndexTestSuite) TestScopeToDeploymentsQuery() {
 	results, err = bleveHelpers.RunQuery(ScopeToDeploymentQuery(scope), suite.bleveIndex)
 	suite.NoError(err)
 	suite.Len(results, 0)
+}
+
+func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
+
+	results, err := suite.indexer.SearchDeployments(&v1.ParsedSearchRequest{
+		Fields: map[string]*v1.ParsedSearchRequest_Values{
+			search.DeploymentName: {
+				Values: []string{"nginx"},
+			},
+		},
+	})
+	suite.NoError(err)
+	suite.Len(results, 1)
+
 }

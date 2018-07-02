@@ -49,7 +49,6 @@ message ParsedSearchRequest {
     repeated Scope            scopes       = 2;
     message Values {
         repeated string values  = 1;
-        SearchField field       = 2;
     }
     map<string, Values>       fields       = 3;
     string                    string_query = 4;

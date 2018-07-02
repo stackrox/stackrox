@@ -6,7 +6,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	notifierStore "bitbucket.org/stack-rox/apollo/central/notifier/store"
 	"bitbucket.org/stack-rox/apollo/central/policy/datastore"
-	"bitbucket.org/stack-rox/apollo/central/search/options"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/search"
@@ -49,9 +48,7 @@ func New(policies datastore.DataStore, clusters clusterDataStore.DataStore, depl
 		notifiers:   notifiers,
 
 		detector: detector,
-		parser: &search.QueryParser{
-			OptionsMap: options.AllOptionsMaps,
-		},
+		parser:   &search.QueryParser{},
 
 		validator: newPolicyValidator(notifiers, clusters),
 	}

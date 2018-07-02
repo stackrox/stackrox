@@ -31,4 +31,13 @@ var OptionsMap = map[string]*v1.SearchField{
 	search.VolumeDestination: search.NewStringField("deployment.containers.volumes.destination"),
 	search.VolumeReadonly:    search.NewBoolField("deployment.containers.volumes.read_only"),
 	search.VolumeType:        search.NewStringField("deployment.containers.volumes.type"),
+
+	search.CVE:           search.NewStringField("deployment.containers.image.scan.components.vulns.cve"),
+	search.CVSS:          search.NewNumericField("deployment.containers.image.scan.components.vulns.cvss"),
+	search.Component:     search.NewStringField("deployment.containers.image.scan.components.name"),
+	search.ImageSHA:      search.NewField("deployment.containers.image.name.sha", v1.SearchDataType_SEARCH_STRING, search.OptionStore|search.OptionHidden),
+	search.ImageName:     search.NewStringField("deployment.containers.image.name.full_name"),
+	search.ImageRegistry: search.NewStringField("deployment.containers.image.name.registry"),
+	search.ImageRemote:   search.NewStringField("deployment.containers.image.name.remote"),
+	search.ImageTag:      search.NewStringField("deployment.containers.image.name.tag"),
 }

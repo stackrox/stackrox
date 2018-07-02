@@ -8,11 +8,9 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 )
 
-// QueryParser parses queries with the OptionsMap defining what query options are available
+// QueryParser parses queries
 // besides the standard scopes, and string queries.
-type QueryParser struct {
-	OptionsMap map[string]*v1.SearchField
-}
+type QueryParser struct{}
 
 // ParseRawQuery takes the text based query and converts to the ParsedSearchRequest proto
 func (q *QueryParser) ParseRawQuery(query string) (*v1.ParsedSearchRequest, error) {
@@ -215,17 +213,11 @@ func addScopeField(scopeFields map[string][]string, key string, values []string)
 
 func (q *QueryParser) addGeneralField(request *v1.ParsedSearchRequest, key string, values []string) error {
 	// transform the key into its mapped form
-	field, ok := q.OptionsMap[key]
-	if !ok {
-		return fmt.Errorf("Key %s is not a valid search option", key)
-	}
-	if _, ok := request.Fields[field.FieldPath]; !ok {
-		request.Fields[field.FieldPath] = &v1.ParsedSearchRequest_Values{
-			Field: field,
-		}
+	if _, ok := request.Fields[key]; !ok {
+		request.Fields[key] = &v1.ParsedSearchRequest_Values{}
 	}
 
 	// Append the fields < key: [value value] >
-	request.Fields[field.FieldPath].Values = append(request.Fields[field.FieldPath].Values, values...)
+	request.Fields[key].Values = append(request.Fields[key].Values, values...)
 	return nil
 }
