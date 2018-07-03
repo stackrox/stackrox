@@ -25,10 +25,16 @@ class BaseSpecification extends Specification {
     @Shared
     OrchestratorMain orchestrator = OrchestratorType.create(OrchestratorTypes.valueOf(System.getenv("CLUSTER")), "qa")
 
+    @Shared
+    private gdrId = ""
+    @Shared
+    private dtrId = ""
+
     def setupSpec() {
         RestAssured.useRelaxedHTTPSValidation()
-
         try {
+            gdrId = Services.addGenericDockerRegistry()
+            dtrId = Services.addDockerTrustedRegistry()
             orchestrator.setup()
         } catch (Exception e) {
             println "Error setting up orchestrator"
@@ -44,6 +50,13 @@ class BaseSpecification extends Specification {
     def setup() { }
 
     def cleanupSpec() {
+        try {
+            Services.deleteGenericDockerRegistry(gdrId)
+            Services.deleteDockerTrustedRegistry(dtrId)
+        } catch (Exception e) {
+            println "Error to clean up orchestrator"
+            throw e
+        }
        /* if (isTestrail == true) {
             List<Integer> caseids = new ArrayList<Integer>(resultMap.keySet());
             tc.updateRun(caseids)

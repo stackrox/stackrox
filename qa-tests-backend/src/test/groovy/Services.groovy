@@ -8,6 +8,9 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import stackrox.generated.AlertServiceGrpc
 import stackrox.generated.AlertServiceOuterClass.ListAlert
 import stackrox.generated.DeploymentServiceGrpc
+import stackrox.generated.ImageIntegrationServiceGrpc
+import stackrox.generated.ImageIntegrationServiceOuterClass
+import stackrox.generated.ImageIntegrationServiceOuterClass.ImageIntegration
 import stackrox.generated.PolicyServiceGrpc
 import stackrox.generated.PolicyServiceOuterClass.ListPolicy
 import stackrox.generated.PolicyServiceOuterClass.Policy
@@ -38,6 +41,10 @@ class Services {
 
     static ResourceByID getResourceByID(String id) {
         return ResourceByID.newBuilder().setId(id).build()
+    }
+
+    static getIntegrationClient() {
+        return ImageIntegrationServiceGrpc.newBlockingStub(getChannel())
     }
 
     static getPolicyClient() {
@@ -107,6 +114,60 @@ class Services {
             }
         }
         return false
+    }
+
+    static String addGenericDockerRegistry() {
+        return getIntegrationClient().postImageIntegration(
+            ImageIntegration.newBuilder()
+                .setName("dockerhub")
+                .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.REGISTRY)
+                .setType("docker")
+                .setDocker(
+                    ImageIntegrationServiceOuterClass.DockerConfig.newBuilder()
+                    .setUsername("")
+                    .setPassword("")
+                    .setEndpoint("registry-1.docker.io")
+                    .setInsecure(false)
+                    .build()
+                )
+                .build()
+        )
+        .getId()
+    }
+
+    static String addDockerTrustedRegistry() {
+        return getIntegrationClient().postImageIntegration(
+            ImageIntegration.newBuilder()
+                .setName("dtr")
+                .setType("dtr")
+                .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.REGISTRY)
+                .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.SCANNER)
+                .setDtr(ImageIntegrationServiceOuterClass.DTRConfig.newBuilder()
+                    .setEndpoint("https://apollo-dtr.rox.systems/")
+                    .setUsername("qa")
+                    .setPassword("W3g9xOPKyLTkBBMj")
+                    .setInsecure(false)
+                    .build()
+                )
+            .build()
+        )
+        .getId()
+    }
+
+    static deleteGenericDockerRegistry(String gdrId) {
+        getIntegrationClient().deleteImageIntegration(
+                ResourceByID.newBuilder()
+                        .setId(gdrId)
+                        .build()
+        )
+    }
+
+    static deleteDockerTrustedRegistry(String dtrId) {
+        getIntegrationClient().deleteImageIntegration(
+                ResourceByID.newBuilder()
+                        .setId(dtrId)
+                        .build()
+        )
     }
 
 }
