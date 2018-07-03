@@ -281,8 +281,7 @@ class PoliciesPage extends Component {
     renderSidePanelView = selectedPolicy => {
         if (this.props.isFetchingPolicy) return <Loader />;
 
-        if (this.props.wizardState.current === '')
-            return <PolicyDetails policyId={selectedPolicy.id} />;
+        if (this.props.wizardState.current === '') return <PolicyDetails policy={selectedPolicy} />;
         return <PolicyCreationWizard />;
     };
 

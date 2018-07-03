@@ -1,36 +1,24 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { selectors } from 'reducers';
-import { createSelector, createStructuredSelector } from 'reselect';
+import { createStructuredSelector } from 'reselect';
 import fieldsMap from 'Containers/Policies/policyViewDescriptors';
 import policyFormFields from 'Containers/Policies/policyCreationFormDescriptor';
 import { removeEmptyFields } from 'Containers/Policies/policyFormUtils';
 
 class PolicyDetails extends Component {
     static propTypes = {
-        policy: PropTypes.shape({}),
+        policy: PropTypes.shape({
+            fields: PropTypes.shape({}).isRequired
+        }).isRequired,
         // 'notifiers' prop is being used indirectly
         // eslint-disable-next-line  react/no-unused-prop-types
         notifiers: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string.isRequired
             })
-        ).isRequired,
-        history: ReactRouterPropTypes.history.isRequired
-    };
-
-    static defaultProps = {
-        policy: null
-    };
-
-    updateSelectedPolicy = policy => {
-        const urlSuffix = policy && policy.id ? `/${policy.id}` : '';
-        this.props.history.push({
-            pathname: `/main/policies${urlSuffix}`
-        });
+        ).isRequired
     };
 
     renderFields = () => {
@@ -38,7 +26,7 @@ class PolicyDetails extends Component {
         const fields = Object.keys(policy);
         if (!fields) return '';
         return (
-            <div className="px-3 py-4 border-b border-base-300">
+            <div className="px-3 py-4 border-b border-base-300 bg-base-100">
                 <div className="bg-white border border-base-200 shadow">
                     <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">
                         Policy Details
@@ -64,10 +52,11 @@ class PolicyDetails extends Component {
 
     renderPolicyConfigurationFields = () => {
         const { policy } = this.props;
-        const fieldKeys = Object.keys(policy.fields);
+        const fields = removeEmptyFields(policy.fields);
+        const fieldKeys = Object.keys(fields);
         if (!fieldKeys.length) return '';
         return (
-            <div className="px-3 py-4">
+            <div className="px-3 py-4 bg-base-100">
                 <div className="bg-white border border-base-200 shadow">
                     <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">
                         {policyFormFields.policyConfiguration.header}
@@ -95,7 +84,7 @@ class PolicyDetails extends Component {
         if (!policy) return null;
 
         return (
-            <div className="flex flex-1 flex-col bg-base-100">
+            <div className="flex flex-1 flex-col">
                 {this.renderFields()}
                 {this.renderPolicyConfigurationFields()}
             </div>
@@ -103,20 +92,8 @@ class PolicyDetails extends Component {
     }
 }
 
-const getPolicyId = (state, props) => props.policyId;
-
-const getPolicy = createSelector(
-    [selectors.getPoliciesById, getPolicyId],
-    (policiesById, policyId) => {
-        const selectedPolicy = removeEmptyFields(policiesById[policyId]);
-        if (!selectedPolicy) return null;
-        return selectedPolicy;
-    }
-);
-
 const mapStateToProps = createStructuredSelector({
-    notifiers: selectors.getNotifiers,
-    policy: getPolicy
+    notifiers: selectors.getNotifiers
 });
 
-export default withRouter(connect(mapStateToProps)(PolicyDetails));
+export default connect(mapStateToProps)(PolicyDetails);

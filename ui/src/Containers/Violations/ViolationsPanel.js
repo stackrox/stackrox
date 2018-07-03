@@ -49,7 +49,6 @@ class ViolationsPanel extends Component {
             { text: 'Policy Details' }
         ];
         const isLoading = !alert; // TODO: poor-man loading check until a proper one in place
-
         const content = isLoading ? (
             <div className="flex flex-col items-center justify-center h-full w-full">
                 <ClipLoader loading size={20} />
@@ -69,7 +68,7 @@ class ViolationsPanel extends Component {
                 </TabContent>
                 <TabContent>
                     <div className="flex flex-1 flex-col">
-                        <PolicyDetails policyId={alert.policy.id} />
+                        <PolicyDetails policy={alert.policy} />
                     </div>
                 </TabContent>
             </Tabs>
