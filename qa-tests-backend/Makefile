@@ -7,4 +7,9 @@ all: style
 .PHONY: style
 style:
 	@echo "+ $@"
-	gradle codenarcMain codenarcTest
+	gradle --continue codenarcMain codenarcTest
+
+.PHONY: style-fix
+style-fix:
+	@echo "+ $@"
+	@scripts/fix_lint.py .

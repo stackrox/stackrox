@@ -9,6 +9,7 @@ sourceCompatibility = 1.8
 version = '1.0'
 
 codenarc.configFile = file("./codenarc-rules.groovy")
+codenarc.reportFormat = 'text'
 
 // In this section you declare where to find the dependencies of your project
 repositories {
