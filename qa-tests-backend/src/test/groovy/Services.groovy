@@ -88,7 +88,7 @@ class Services {
         for (int i = 0; i < timeoutSeconds / intervalSeconds; i++) {
             try {
                 def violations = getViolations(ListAlertsRequest.newBuilder()
-                        .setQuery("Deployment Name:${deploymentName}+Policy Name:${policyName}").build())
+                        .setQuery("Deployment:${deploymentName}+Policy:${policyName}").build())
                 if (violations.size() == 1) {
                     return true
                 }
@@ -105,7 +105,7 @@ class Services {
         int intervalSeconds = 1
         for (int i = 0; i < timeoutSeconds / intervalSeconds; i++) {
             try {
-                def deployments = getDeployments(RawQuery.newBuilder().setQuery("Deployment Name:${name}").build())
+                def deployments = getDeployments(RawQuery.newBuilder().setQuery("Deployment:${name}").build())
                 if (deployments.size() == 1) {
                     return true
                 }
