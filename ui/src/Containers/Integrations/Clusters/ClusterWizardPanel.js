@@ -12,7 +12,7 @@ import { downloadClusterYaml } from 'services/ClustersService';
 
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
-import FormWrapper from './ClusterEditForm';
+import ClusterEditForm from './ClusterEditForm';
 import ClusterDeploymentPage from './ClusterDeploymentPage';
 
 class ClusterWizardPanel extends Component {
@@ -26,11 +26,14 @@ class ClusterWizardPanel extends Component {
         currentPage: PropTypes.oneOf(Object.values(wizardPages)).isRequired,
         onFinish: PropTypes.func.isRequired,
         onNext: PropTypes.func.isRequired,
-        metadata: PropTypes.shape({ version: PropTypes.string }).isRequired
+        metadata: PropTypes.shape({ version: PropTypes.string })
     };
 
     static defaultProps = {
-        cluster: null
+        cluster: null,
+        metadata: {
+            version: 'latest'
+        }
     };
 
     componentWillUnmount() {
@@ -70,17 +73,12 @@ class ClusterWizardPanel extends Component {
     }
 
     renderPage() {
-        const formInitialValues = {
-            type: this.props.clusterType,
-            ...this.props.cluster
-        };
-
         switch (this.props.currentPage) {
             case wizardPages.FORM:
                 return (
-                    <FormWrapper
+                    <ClusterEditForm
                         clusterType={this.props.clusterType}
-                        initialValues={formInitialValues}
+                        initialValues={this.props.cluster}
                         metadata={this.props.metadata}
                     />
                 );

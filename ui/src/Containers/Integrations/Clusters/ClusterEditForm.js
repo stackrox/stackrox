@@ -134,19 +134,28 @@ const initialValuesFactories = {
     })
 };
 
-const FormWrapper = ({ metadata, clusterType }) => {
-    const initialValues = initialValuesFactories[clusterType](metadata);
+const FormWrapper = ({ metadata, clusterType, initialValues }) => {
+    const combinedInitialValues = {
+        ...initialValuesFactories[clusterType](metadata),
+        type: clusterType,
+        ...initialValues // passed initial values can override anything
+    };
+
     return (
         <ConnectedForm
             clusterType={clusterType}
             metadata={metadata}
-            initialValues={initialValues}
+            initialValues={combinedInitialValues}
         />
     );
 };
 FormWrapper.propTypes = {
     clusterType: PropTypes.oneOf(clusterTypes).isRequired,
-    metadata: PropTypes.shape({ version: PropTypes.string }).isRequired
+    metadata: PropTypes.shape({ version: PropTypes.string }).isRequired,
+    initialValues: PropTypes.shape({})
+};
+FormWrapper.defaultProps = {
+    initialValues: {}
 };
 
 export default FormWrapper;

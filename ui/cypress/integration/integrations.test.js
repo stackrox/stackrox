@@ -67,7 +67,7 @@ describe('Cluster Creation Flow', () => {
         cy.fixture('clusters/single.json').as('singleCluster');
         cy.route('GET', api.clusters.list, '@singleCluster').as('clusters');
         cy.route('POST', api.clusters.zip, {}).as('download');
-        cy.route('POST', api.clusters.list, { cluster: { id: 'newCluster1' } }).as('addCluster');
+        cy.route('POST', api.clusters.list).as('addCluster');
         cy.visit('/');
         cy.get(selectors.configure).click();
         cy.get(selectors.navLink).click();
@@ -114,35 +114,47 @@ describe('Cluster Creation Flow', () => {
             .should('have.text', 'Central API Endpoint:central.stackrox:443');
     });
 
-    it('Should be able to fill out the Swarm form, download config files and see cluster checked-in', () => {
+    it.only('Should be able to fill out the Swarm form, download config files and see cluster checked-in', () => {
         cy.get(selectors.dockerSwarmTile).click();
 
         cy.get(selectors.buttons.add).click();
 
-        cy.get(selectors.clusterForm.nameInput).type('Swarm Cluster 1');
+        const clusterName = 'Swarm Cluster TestInstance';
+        cy.get(selectors.clusterForm.nameInput).type(clusterName);
         cy.get(selectors.clusterForm.imageInput).type('stackrox/prevent:latest');
         cy.get(selectors.clusterForm.endpointInput).type('central.prevent_net:443');
 
         cy.get(selectors.buttons.next).click();
-        cy.wait('@addCluster');
-
-        cy.get(selectors.buttons.download).click();
-        cy.wait('@download');
-
-        cy.get('div:contains("Waiting for the cluster to check-in successfully...")');
-
-        // make cluster to "check-in" by adding "lastContact"
         cy
-            .route('GET', `${api.clusters.list}/newCluster1`, {
-                cluster: {
-                    id: 'newCluster1',
-                    lastContact: '2018-06-25T19:12:44.955289Z'
-                }
-            })
-            .as('getCluster');
-        cy.wait('@getCluster');
-        cy.get(
-            'div:contains("Success! The cluster has been recognized properly by Prevent. You may now save the configuration.")'
-        );
+            .wait('@addCluster')
+            .its('responseBody')
+            .then(response => {
+                const clusterId = response.cluster.id;
+
+                cy.get(selectors.buttons.download).click();
+                cy.wait('@download');
+
+                cy.get('div:contains("Waiting for the cluster to check-in successfully...")');
+
+                // make cluster to "check-in" by adding "lastContact"
+                cy
+                    .route('GET', `${api.clusters.list}/${clusterId}`, {
+                        cluster: {
+                            id: clusterId,
+                            lastContact: '2018-06-25T19:12:44.955289Z'
+                        }
+                    })
+                    .as('getCluster');
+                cy.wait('@getCluster');
+                cy.get(
+                    'div:contains("Success! The cluster has been recognized properly by Prevent. You may now save the configuration.")'
+                );
+
+                // clean up after the test by deleting the cluster
+                cy.get(`table tr:contains("${clusterName}") td input[type="checkbox"]`).check();
+                cy.get(selectors.buttons.delete).click();
+                cy.get(selectors.buttons.confirm).click();
+                cy.get(`table tr:contains("${clusterName}")`).should('not.exist');
+            });
     });
 });
