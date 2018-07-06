@@ -3,7 +3,6 @@ import static Services.waitForDeployment
 import static Services.waitForViolation
 import spock.lang.Unroll
 import objects.Deployment
-import org.junit.Test
 import java.util.stream.Collectors
 
 class SystemPoliciesTest extends  BaseSpecification {
@@ -29,7 +28,6 @@ class SystemPoliciesTest extends  BaseSpecification {
          cleanup:
         "Remove Deployment #deploymentName"
         orchestrator.deleteDeployment(deploymentName)
-
 
         where:
         "Data inputs are :"
