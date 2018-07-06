@@ -14,7 +14,13 @@ export const selectors = {
     },
     form: {
         enableField: 'form div.text-primary-500:contains("Enable") + div',
-        required: 'form span[data-test-id="required"]'
+        required: 'form span[data-test-id="required"]',
+        select: 'form select'
+    },
+    imageRegistry: {
+        input: 'input[name="fields.imageName.registry"]',
+        deleteButton: 'input[name="fields.imageName.registry"] + div>button',
+        value: '[data-test-id="imageName"] div.flex'
     },
     policyPreview: {
         message: '.warn-message',

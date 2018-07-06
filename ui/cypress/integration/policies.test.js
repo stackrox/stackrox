@@ -97,6 +97,33 @@ describe('Policies page', () => {
         cy.get(selectors.policyPreview.message).should('have.text', text.policyPreview.message);
     });
 
+    it('should allow updating image fields in a policy', () => {
+        cy.get(selectors.policies.latest).click();
+
+        const editPolicy = () => {
+            cy.get(selectors.editPolicyButton).click();
+        };
+
+        const savePolicy = () => {
+            cy.get(selectors.nextButton).click();
+            cy.get(selectors.savePolicyButton).click();
+        };
+
+        editPolicy();
+        cy.get(selectors.form.select).select('fields.imageName.registry');
+        cy.get(selectors.imageRegistry.input).type('docker.io');
+        savePolicy();
+        cy
+            .get(selectors.imageRegistry.value)
+            .should(
+                'have.text',
+                'Alert on any namespaces using any repos using latest tag from docker.io registry'
+            );
+        editPolicy();
+        cy.get(selectors.imageRegistry.deleteButton).click();
+        savePolicy();
+    });
+
     it('should allow disable/enable policy from the policies table', () => {
         const firstRowEnableDisableButton = `${selectors.tableFirstRow} ${
             selectors.enableDisableButton

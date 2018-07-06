@@ -71,6 +71,7 @@ function* createPolicy(policy) {
 function* savePolicy(policy) {
     try {
         yield call(service.savePolicy, policy);
+        yield fork(getPolicy, policy.id);
         yield put(actions.setPolicyWizardState({ current: '', isNew: false }));
         yield fork(filterPoliciesPageBySearch);
     } catch (error) {

@@ -67,7 +67,7 @@ class PolicyDetails extends Component {
                             const { label } = fieldsMap[key];
                             const value = fieldsMap[key].formatValue(policy.fields[key]);
                             return (
-                                <div className="mb-4" key={key}>
+                                <div className="mb-4" key={key} data-test-id={key}>
                                     <div className="py-2 text-primary-500">{label}</div>
                                     <div className="flex">{value}</div>
                                 </div>
