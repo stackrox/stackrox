@@ -59,7 +59,7 @@ class ImageDetails extends Component {
     onViewDeploymentsClick = () => {
         const { name } = this.props.image;
         let searchOptions = [];
-        searchOptions = addSearchModifier(searchOptions, 'Image Name:');
+        searchOptions = addSearchModifier(searchOptions, 'Image:');
         searchOptions = addSearchKeyword(searchOptions, name);
         this.props.setDeploymentsSearchOptions(searchOptions);
         this.props.history.push('/main/risk');

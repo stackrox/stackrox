@@ -25,7 +25,7 @@ describe('Images page', () => {
         });
     });
 
-    it('Should show image name in panel header', () => {
+    it('Should show image in panel header', () => {
         cy.get(imageSelectors.firstTableRow).click();
         cy.get(imageSelectors.panelHeader).should('have.text', 'docker.io/library/nginx:latest');
     });
@@ -41,7 +41,7 @@ describe('Images page', () => {
         cy.get(imageSelectors.firstTableRow).click();
         cy.get(imageSelectors.viewDeploymentsButton).click();
         cy.url().should('contain', riskUrl);
-        cy.get(riskSelectors.search.searchModifier).should('contain', 'Image Name:');
+        cy.get(riskSelectors.search.searchModifier).should('contain', 'Image:');
         cy.get(riskSelectors.search.searchWord).should('contain', 'docker.io/library/nginx:latest');
     });
 
