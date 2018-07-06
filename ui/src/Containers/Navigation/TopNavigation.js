@@ -51,7 +51,7 @@ class TopNavigation extends Component {
     renderSearchButton = () => (
         <button
             onClick={this.props.toggleGlobalSearchView}
-            className="flex flex-end border-l border-r border-base-300 px-4 no-underline py-3 text-base-600 hover:bg-base-200 items-center cursor-pointer"
+            className="ignore-react-onclickoutside flex flex-end border-l border-r border-base-300 px-4 no-underline py-3 text-base-600 hover:bg-base-200 items-center cursor-pointer"
         >
             <Icon.Search className="h-4 w-4 mr-3" />
             <span className="uppercase text-sm tracking-wide">Search</span>
