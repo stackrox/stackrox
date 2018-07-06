@@ -1,7 +1,7 @@
-FROM alpine:3.7
+FROM alpine:3.8
 MAINTAINER StackRox <support@stackrox.com>
 
-RUN printf "http://apk.rox.systems/v3.7/main\nhttp://apk.rox.systems/v3.7/community" > /etc/apk/repositories
+RUN printf "http://apk.rox.systems/v3.8/main\nhttp://apk.rox.systems/v3.8/community" > /etc/apk/repositories
 
 RUN apk update && \
     apk add \

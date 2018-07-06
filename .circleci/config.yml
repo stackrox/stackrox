@@ -34,7 +34,7 @@ jobs:
 
       - run:
           name: Refresh base image
-          command: docker pull alpine:3.7
+          command: docker pull alpine:3.8
 
       - *restoreDep
       - *restoreNPM
