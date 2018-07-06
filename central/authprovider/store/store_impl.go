@@ -115,7 +115,7 @@ func (b *storeImpl) UpdateAuthProvider(authProvider *v1.AuthProvider) error {
 		b := tx.Bucket([]byte(authProviderBucket))
 		// If the update is changing the name, check if the name has already been taken
 		if secondarykey.GetCurrentUniqueKey(tx, authProviderBucket, authProvider.GetId()) != authProvider.GetName() {
-			if err := secondarykey.CheckUniqueKeyExistsAndInsert(tx, authProviderBucket, authProvider.GetId(), authProvider.GetName()); err != nil {
+			if err := secondarykey.UpdateUniqueKey(tx, authProviderBucket, authProvider.GetId(), authProvider.GetName()); err != nil {
 				return fmt.Errorf("Could not update auth provider due to name validation: %s", err)
 			}
 		}

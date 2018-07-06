@@ -89,7 +89,7 @@ func (b *storeImpl) UpdateImageIntegration(integration *v1.ImageIntegration) err
 		b := tx.Bucket([]byte(imageIntegrationBucket))
 		// If the update is changing the name, check if the name has already been taken
 		if secondarykey.GetCurrentUniqueKey(tx, imageIntegrationBucket, integration.GetId()) != integration.GetName() {
-			if err := secondarykey.CheckUniqueKeyExistsAndInsert(tx, imageIntegrationBucket, integration.GetId(), integration.GetName()); err != nil {
+			if err := secondarykey.UpdateUniqueKey(tx, imageIntegrationBucket, integration.GetId(), integration.GetName()); err != nil {
 				return fmt.Errorf("Could not update integration due to name validation: %s", err)
 			}
 		}

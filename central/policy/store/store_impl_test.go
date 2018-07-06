@@ -2,6 +2,7 @@ package store
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -53,13 +54,24 @@ func (suite *PolicyStoreTestSuite) TestPolicies() {
 		suite.NotEmpty(id)
 	}
 
-	// Get all alerts
+	// Get all policies
 	retrievedPolicies, err := suite.store.GetPolicies()
 	suite.Nil(err)
 	suite.ElementsMatch(policies, retrievedPolicies)
 
+	// Update policies with new severity and name.
 	for _, p := range policies {
 		p.Severity = v1.Severity_MEDIUM_SEVERITY
+		p.Name = p.Name + " "
+		suite.NoError(suite.store.UpdatePolicy(p))
+	}
+	retrievedPolicies, err = suite.store.GetPolicies()
+	suite.Nil(err)
+	suite.ElementsMatch(policies, retrievedPolicies)
+
+	// Revert policy name changes.
+	for _, p := range policies {
+		p.Name = strings.TrimSpace(p.Name)
 		suite.NoError(suite.store.UpdatePolicy(p))
 	}
 	retrievedPolicies, err = suite.store.GetPolicies()

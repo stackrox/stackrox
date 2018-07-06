@@ -96,7 +96,7 @@ func (b *storeImpl) UpdatePolicy(policy *v1.Policy) error {
 		bucket := tx.Bucket([]byte(policyBucket))
 		// If the update is changing the name, check if the name has already been taken
 		if secondarykey.GetCurrentUniqueKey(tx, policyBucket, policy.GetId()) != policy.GetName() {
-			if err := secondarykey.CheckUniqueKeyExistsAndInsert(tx, policyBucket, policy.GetId(), policy.GetName()); err != nil {
+			if err := secondarykey.UpdateUniqueKey(tx, policyBucket, policy.GetId(), policy.GetName()); err != nil {
 				return fmt.Errorf("Could not update policy due to name validation: %s", err)
 			}
 		}

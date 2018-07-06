@@ -30,6 +30,15 @@ func CheckUniqueKeyExistsAndInsert(tx *bolt.Tx, bucket string, id, k string) err
 	return b.Put([]byte(id), []byte(k))
 }
 
+// UpdateUniqueKey changes a current key to a new value.
+func UpdateUniqueKey(tx *bolt.Tx, bucket string, id, k string) error {
+	currentKey := GetCurrentUniqueKey(tx, bucket, id)
+	if currentKey != "" {
+		RemoveUniqueKey(tx, bucket, id)
+	}
+	return CheckUniqueKeyExistsAndInsert(tx, bucket, id, k)
+}
+
 // RemoveUniqueKey removes a secondary key.
 func RemoveUniqueKey(tx *bolt.Tx, bucket string, id string) error {
 	b := tx.Bucket(getMapperBucket(bucket))

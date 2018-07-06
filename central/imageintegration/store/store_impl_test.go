@@ -2,6 +2,7 @@ package store
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -71,7 +72,12 @@ func (suite *ImageIntegrationStoreTestSuite) TestIntegrations() {
 	for _, r := range integration {
 		r.Name += "-ext"
 	}
-
+	for _, r := range integration {
+		suite.NoError(suite.store.UpdateImageIntegration(r))
+	}
+	for _, r := range integration {
+		r.Name = strings.TrimSuffix(r.Name, "-ext")
+	}
 	for _, r := range integration {
 		suite.NoError(suite.store.UpdateImageIntegration(r))
 	}

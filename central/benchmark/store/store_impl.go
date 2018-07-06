@@ -96,7 +96,7 @@ func (b *storeImpl) UpdateBenchmark(benchmark *v1.Benchmark) error {
 		}
 		// If the update is changing the name, check if the name has already been taken
 		if secondarykey.GetCurrentUniqueKey(tx, benchmarkBucket, benchmark.GetId()) != benchmark.GetName() {
-			if err := secondarykey.CheckUniqueKeyExistsAndInsert(tx, benchmarkBucket, benchmark.GetId(), benchmark.GetName()); err != nil {
+			if err := secondarykey.UpdateUniqueKey(tx, benchmarkBucket, benchmark.GetId(), benchmark.GetName()); err != nil {
 				return fmt.Errorf("Could not update benchmark due to name validation: %s", err)
 			}
 		}
