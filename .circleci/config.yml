@@ -45,10 +45,23 @@ jobs:
           command: echo "$GKE_SERVICE_ACCOUNT" > /tmp/gcp.json
 
       - run:
-          name: Build all
+          name: Substitute env variables into bazel.rc
+          command: cat tools/ci-bazel.rc | envsubst > tools/bazel.rc
+
+      - run:
+          name: Build image
+          command: make image
+
+      - run:
+          name: Push new Docker image
           command: |
-            cat tools/ci-bazel.rc | envsubst > tools/bazel.rc
-            make all
+            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+            docker push stackrox/prevent:$(git describe --tags --abbrev=10 --dirty)
+            docker push stackrox/prevent-health:$(git describe --tags --abbrev=10 --dirty)
+
+      - run:
+          name: Run style checks and unit tests
+          command: make style test
 
       - save-cache:
           key: v2-prevent-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
@@ -69,15 +82,6 @@ jobs:
           root: /go
           paths:
           - src/bitbucket.org/stack-rox/apollo
-
-      - run:
-          name: Push new Docker image
-          command: |
-            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-
-            docker push stackrox/prevent:$(git describe --tags --abbrev=10 --dirty)
-
-            docker push stackrox/prevent-health:$(git describe --tags --abbrev=10 --dirty)
 
       - store_artifacts:
           path: qa-tests-backend/build/reports/codenarc
