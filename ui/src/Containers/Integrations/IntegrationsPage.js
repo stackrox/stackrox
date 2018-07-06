@@ -52,10 +52,12 @@ class IntegrationsPage extends Component {
             })
         ).isRequired,
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
+        dnrIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
         notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
         imageIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
         /* eslint-enable */
         fetchAuthProviders: PropTypes.func.isRequired,
+        fetchDNRIntegrations: PropTypes.func.isRequired,
         fetchNotifiers: PropTypes.func.isRequired,
         fetchImageIntegrations: PropTypes.func.isRequired,
         fetchClusters: PropTypes.func.isRequired
@@ -75,6 +77,9 @@ class IntegrationsPage extends Component {
         switch (source) {
             case 'authProviders':
                 this.props.fetchAuthProviders();
+                break;
+            case 'dnrIntegrations':
+                this.props.fetchDNRIntegrations();
                 break;
             case 'imageIntegrations':
                 this.props.fetchImageIntegrations();
@@ -121,8 +126,13 @@ class IntegrationsPage extends Component {
     closeClustersModal = () => this.setState({ selectedClusterType: null });
 
     findIntegrations = (source, type) => {
-        const integrations = this.props[source].filter(i => i.type === type.toLowerCase());
-        return integrations.filter(obj => obj.type === type);
+        if (source === 'dnrIntegrations') {
+            return this.props[source];
+        }
+        if (source === 'clusters') {
+            return this.getClustersForOrchestrator(type);
+        }
+        return this.props[source].filter(i => i.type === type.toLowerCase());
     };
 
     update = (action, nextState) => {
@@ -143,10 +153,7 @@ class IntegrationsPage extends Component {
     renderIntegrationModal() {
         const { integrationModal: { source, type, open } } = this.state;
         if (!open) return null;
-        const integrations =
-            source !== 'clusters'
-                ? this.props[source].filter(i => i.type === type.toLowerCase())
-                : this.props.clusters.filter(cluster => cluster.type === type);
+        const integrations = this.findIntegrations(source, type);
         return (
             <IntegrationModal
                 integrations={integrations}
@@ -154,6 +161,7 @@ class IntegrationsPage extends Component {
                 type={type}
                 onRequestClose={this.closeIntegrationModal}
                 onIntegrationsUpdate={this.getEntities}
+                clusters={this.props.clusters}
             />
         );
     }
@@ -173,6 +181,7 @@ class IntegrationsPage extends Component {
         ));
 
     render() {
+        const dnrIntegrations = this.renderIntegrationTiles('dnrIntegrations');
         const imageIntegrations = this.renderIntegrationTiles('imageIntegrations');
         const orchestrators = this.renderIntegrationTiles('orchestrators');
         const plugins = this.renderIntegrationTiles('plugins');
@@ -212,6 +221,12 @@ class IntegrationsPage extends Component {
                         </h2>
                         <div className="flex flex-wrap">{authProviders}</div>
                     </div>
+                    <div>
+                        <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
+                            StackRox
+                        </h2>
+                        <div className="flex flex-wrap">{dnrIntegrations}</div>
+                    </div>
                 </div>
                 {this.renderIntegrationModal()}
                 {this.renderClustersModal()}
@@ -223,12 +238,14 @@ class IntegrationsPage extends Component {
 const mapStateToProps = createStructuredSelector({
     authProviders: selectors.getAuthProviders,
     clusters: selectors.getClusters,
+    dnrIntegrations: selectors.getDNRIntegrations,
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations
 });
 
 const mapDispatchToProps = dispatch => ({
     fetchAuthProviders: () => dispatch(authActions.fetchAuthProviders.request()),
+    fetchDNRIntegrations: () => dispatch(integrationActions.fetchDNRIntegrations.request()),
     fetchNotifiers: () => dispatch(integrationActions.fetchNotifiers.request()),
     fetchImageIntegrations: () => dispatch(integrationActions.fetchImageIntegrations.request()),
     fetchRegistries: () => dispatch(integrationActions.fetchRegistries.request()),

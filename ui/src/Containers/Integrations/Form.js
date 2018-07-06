@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { Form as ReactForm } from 'react-form';
 import * as Icon from 'react-feather';
 
+import formDescriptors from 'Containers/Integrations/formDescriptors';
 import FormFields from 'Containers/Integrations/FormFields';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
@@ -16,9 +17,21 @@ class Form extends Component {
             name: PropTypes.string.isRequired
         }),
 
-        source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders', 'clusters'])
-            .isRequired,
+        source: PropTypes.oneOf([
+            'imageIntegrations',
+            'dnrIntegrations',
+            'notifiers',
+            'authProviders',
+            'clusters'
+        ]).isRequired,
         type: PropTypes.string.isRequired,
+
+        clusters: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string.isRequired,
+                id: PropTypes.string.isRequired
+            })
+        ),
 
         onCancel: PropTypes.func.isRequired,
         onSubmitRequest: PropTypes.func.isRequired,
@@ -30,7 +43,8 @@ class Form extends Component {
     };
 
     static defaultProps = {
-        initialValues: null
+        initialValues: {},
+        clusters: []
     };
 
     onTest = () => {
@@ -61,6 +75,42 @@ class Form extends Component {
             });
     };
 
+    getDNRntegrationFormFields = () => {
+        const options = this.props.clusters.map(({ id, name }) => ({ value: id, label: name }));
+        return [
+            {
+                label: 'Cluster',
+                key: 'clusterId',
+                type: 'select',
+                options,
+                placeholder: 'Choose cluster...'
+            },
+            {
+                label: 'Director Endpoint',
+                key: 'directorEndpoint',
+                type: 'text',
+                placeholder: 'https://director.stackrox'
+            },
+            {
+                label: 'Auth Token',
+                key: 'authToken',
+                type: 'text',
+                placeholder: ''
+            }
+        ];
+    };
+
+    getFormFields = () => {
+        if (this.props.source === 'dnrIntegrations') {
+            return this.getDNRntegrationFormFields();
+        }
+        return formDescriptors[this.props.source][this.props.type];
+    };
+
+    // isEditMode returns true if the form is editing an existing entity
+    // and false if it's creating a new entity.
+    isEditMode = () => !!this.props.initialValues.name;
+
     addDefaultFormValues = formData => {
         const data = formData;
         const { location } = window;
@@ -72,28 +122,23 @@ class Form extends Component {
 
     renderFormContent = formApi => {
         this.formApi = formApi;
+        const fields = this.getFormFields();
         return (
             <form onSubmit={this.formApi.submitForm} className="w-full p-4">
                 <div>
-                    <FormFields
-                        formApi={this.formApi}
-                        source={this.props.source}
-                        type={this.props.type}
-                    />
+                    <FormFields formApi={this.formApi} fields={fields} />
                 </div>
             </form>
         );
     };
 
     render() {
-        if (!this.props.initialValues) return '';
-
-        const header = this.props.initialValues.name || 'New Integration';
+        const header = this.isEditMode() ? this.props.initialValues.name : 'New Integration';
         const buttons = (
             <React.Fragment>
                 <PanelButton
                     icon={<Icon.Save className="h-4 w-4" />}
-                    text={this.props.initialValues.name ? 'Save' : 'Create'}
+                    text={this.isEditMode() ? 'Save' : 'Create'}
                     className="btn-success"
                     onClick={this.onSubmit}
                 />
@@ -108,7 +153,7 @@ class Form extends Component {
             </React.Fragment>
         );
 
-        const key = this.props.initialValues ? this.props.initialValues.name : 'new-integration';
+        const key = this.isEditMode() ? this.props.initialValues.name : 'new-integration';
 
         return (
             <div className="flex flex-1">

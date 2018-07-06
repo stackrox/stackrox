@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const sourceMap = {
+    dnrIntegrations: '/v1/dnrintegrations',
     imageIntegrations: '/v1/imageintegrations',
     notifiers: '/v1/notifiers'
 };

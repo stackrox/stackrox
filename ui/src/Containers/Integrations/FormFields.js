@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-import formDescriptors from 'Containers/Integrations/formDescriptors';
 import FormField from 'Containers/Integrations/FormField';
 
 class FormFields extends Component {
@@ -10,15 +9,19 @@ class FormFields extends Component {
             setValue: PropTypes.func.isRequired,
             values: PropTypes.object.isRequired
         }).isRequired,
-
-        source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders', 'clusters'])
-            .isRequired,
-        type: PropTypes.string.isRequired
+        fields: PropTypes.arrayOf(
+            PropTypes.shape({
+                label: PropTypes.string.isRequired,
+                key: PropTypes.string.isRequired,
+                type: PropTypes.string.isRequired,
+                placeholder: PropTypes.string,
+                options: PropTypes.arrayOf(PropTypes.object)
+            })
+        ).isRequired
     };
 
     render() {
-        const fields = formDescriptors[this.props.source][this.props.type];
-        return fields.map(field => (
+        return this.props.fields.map(field => (
             <label className="flex mt-4" htmlFor={field.key} key={field.label}>
                 <div className="mr-4 flex items-center w-2/3 capitalize">{field.label}</div>
                 <FormField formApi={this.props.formApi} field={field} />

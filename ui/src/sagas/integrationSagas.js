@@ -2,41 +2,47 @@ import { all, take, call, fork, put } from 'redux-saga/effects';
 
 import { integrationsPath, policiesPath } from 'routePaths';
 import { fetchIntegration } from 'services/IntegrationsService';
+import { types as clusterTypes } from 'reducers/clusters';
 import { actions, types } from 'reducers/integrations';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
-function* getNotifiers() {
+// Call fetchIntegration with the given source, and pass the response/failure
+// with the given action type.
+function* fetchIntegrationWrapper(source, action) {
     try {
-        const result = yield call(fetchIntegration, ['notifiers']);
-        yield put(actions.fetchNotifiers.success(result.response));
+        const result = yield call(fetchIntegration, [source]);
+        yield put(action.success(result.response));
     } catch (error) {
-        yield put(actions.fetchNotifiers.failure(error));
+        yield put(action.failure(error));
     }
+}
+
+function* getNotifiers() {
+    yield call(fetchIntegrationWrapper, 'notifiers', actions.fetchNotifiers);
+}
+
+function* getDNRIntegrations() {
+    yield call(fetchIntegrationWrapper, 'dnrIntegrations', actions.fetchDNRIntegrations);
 }
 
 function* getImageIntegrations() {
-    try {
-        const result = yield call(fetchIntegration, ['imageIntegrations']);
-        yield put(actions.fetchImageIntegrations.success(result.response));
-    } catch (error) {
-        yield put(actions.fetchImageIntegrations.failure(error));
-    }
+    yield call(fetchIntegrationWrapper, 'imageIntegrations', actions.fetchImageIntegrations);
 }
 
 function* watchLocation() {
-    const effects = [integrationsPath, policiesPath].map(path =>
-        takeEveryNewlyMatchedLocation(path, getNotifiers)
+    const effects = [getDNRIntegrations, getImageIntegrations, getNotifiers].map(fetchFunc =>
+        takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc)
     );
-    yield all(
-        effects.concat(takeEveryNewlyMatchedLocation(integrationsPath, getImageIntegrations))
-    );
+    yield all([...effects, takeEveryNewlyMatchedLocation(policiesPath, getNotifiers)]);
 }
 
 function* watchFetchRequest() {
     while (true) {
         const action = yield take([
-            types.FETCH_NOTIFIERS.REQUEST,
-            types.FETCH_IMAGE_INTEGRATIONS.REQUEST
+            clusterTypes.FETCH_CLUSTERS.SUCCESS,
+            types.FETCH_DNR_INTEGRATIONS.REQUEST,
+            types.FETCH_IMAGE_INTEGRATIONS.REQUEST,
+            types.FETCH_NOTIFIERS.REQUEST
         ]);
         switch (action.type) {
             case types.FETCH_NOTIFIERS.REQUEST:
@@ -44,6 +50,10 @@ function* watchFetchRequest() {
                 break;
             case types.FETCH_IMAGE_INTEGRATIONS.REQUEST:
                 yield fork(getImageIntegrations);
+                break;
+            case clusterTypes.FETCH_CLUSTERS.SUCCESS:
+            case types.FETCH_DNR_INTEGRATIONS.REQUEST:
+                yield fork(getDNRIntegrations);
                 break;
             default:
                 throw new Error(`Unknown action type ${action.type}`);

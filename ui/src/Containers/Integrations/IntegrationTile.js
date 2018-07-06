@@ -6,7 +6,7 @@ class IntegrationTile extends Component {
         integration: PropTypes.shape({
             label: PropTypes.string.isRequired,
             image: PropTypes.string.isRequired,
-            categories: PropTypes.string.isOptional
+            categories: PropTypes.string
         }).isRequired,
         onClick: PropTypes.func.isRequired,
         numIntegrations: PropTypes.number

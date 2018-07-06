@@ -13,43 +13,46 @@ import { deleteIntegration } from 'services/IntegrationsService';
 
 const SOURCE_LABELS = Object.freeze({
     authProviders: 'authentication provider',
+    dnrIntegrations: 'integrations', // type is set to D&R, so this will read as "D&R Integrations"
     imageIntegrations: 'image integrations',
     notifiers: 'plugin'
 });
-
-const reducer = (action, prevState, nextState) => {
-    switch (action) {
-        case 'EDIT_INTEGRATION':
-            return { editIntegration: nextState.editIntegration };
-        case 'CLEAR_MESSAGES':
-            return { errorMessage: '', successMessage: '' };
-        case 'ERROR_MESSAGE':
-            return { errorMessage: nextState.errorMessage };
-        case 'SUCCESS_MESSAGE':
-            return { successMessage: nextState.successMessage };
-        default:
-            return prevState;
-    }
-};
 
 class IntegrationModal extends Component {
     static propTypes = {
         integrations: PropTypes.arrayOf(
             PropTypes.shape({
-                type: PropTypes.string.isRequired
+                type: PropTypes.string
             })
         ).isRequired,
-        source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders']).isRequired,
+        source: PropTypes.oneOf([
+            'imageIntegrations',
+            'dnrIntegrations',
+            'notifiers',
+            'authProviders'
+        ]).isRequired,
         type: PropTypes.string.isRequired,
         onRequestClose: PropTypes.func.isRequired,
-        onIntegrationsUpdate: PropTypes.func.isRequired
+        onIntegrationsUpdate: PropTypes.func.isRequired,
+
+        clusters: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string.isRequired,
+                id: PropTypes.string.isRequired
+            })
+        )
+    };
+
+    static defaultProps = {
+        clusters: []
     };
 
     constructor(props) {
         super(props);
 
         this.state = {
-            editIntegration: null,
+            formIsOpen: false,
+            formValues: {},
             errorMessage: '',
             successMessage: '',
             showConfirmationDialog: false
@@ -57,7 +60,7 @@ class IntegrationModal extends Component {
     }
 
     onRequestClose = isSuccessful => {
-        this.update('CLEAR_MESSAGES');
+        this.clearMessages();
         this.props.onRequestClose(isSuccessful);
     };
 
@@ -65,37 +68,38 @@ class IntegrationModal extends Component {
         this.showConfirmationDialog();
     };
 
-    onTableRowClick = integration => {
-        this.update('EDIT_INTEGRATION', { editIntegration: integration });
-    };
-
-    onTableActivate = () => {
-        this.update('EDIT_INTEGRATION', { editIntegration: {} });
-    };
-
     onTableAdd = () => {
-        this.update('EDIT_INTEGRATION', { editIntegration: {} });
+        this.setState({
+            formIsOpen: true
+        });
+    };
+
+    onTableRowClick = integration => {
+        this.setState({
+            formIsOpen: true,
+            formValues: integration
+        });
     };
 
     onFormCancel = () => {
-        this.update('EDIT_INTEGRATION', { editIntegration: null });
+        this.closeIntegrationForm();
     };
 
     onFormRequest = () => {
-        this.update('CLEAR_MESSAGES');
+        this.clearMessages();
     };
 
     onFormError = errorMessage => {
-        this.update('ERROR_MESSAGE', { errorMessage });
+        this.setState({ errorMessage });
     };
 
     onFormSubmitSuccess = () => {
         this.props.onIntegrationsUpdate(this.props.source);
-        this.update('EDIT_INTEGRATION', { editIntegration: null });
+        this.closeIntegrationForm();
     };
 
     onFormTestSuccess = () => {
-        this.update('SUCCESS_MESSAGE', {
+        this.setState({
             successMessage: 'Integration test was successful'
         });
     };
@@ -104,16 +108,26 @@ class IntegrationModal extends Component {
         this.integrationTable = table;
     };
 
-    update = (action, nextState) => {
-        this.setState(prevState => reducer(action, prevState, nextState));
-    };
-
     hideConfirmationDialog = () => {
         this.setState({ showConfirmationDialog: false });
     };
 
     showConfirmationDialog = () => {
         this.setState({ showConfirmationDialog: true });
+    };
+
+    closeIntegrationForm = () => {
+        this.setState({
+            formIsOpen: false,
+            formValues: {}
+        });
+    };
+
+    clearMessages = () => {
+        this.setState({
+            errorMessage: '',
+            successMessage: ''
+        });
     };
 
     activateAuthIntegration = integration => {
@@ -172,10 +186,11 @@ class IntegrationModal extends Component {
 
     renderTable = () => (
         <Table
+            clusters={this.props.clusters}
             integrations={this.props.integrations}
             source={this.props.source}
             type={this.props.type}
-            buttonsEnabled={this.state.editIntegration === null}
+            buttonsEnabled={!this.state.formIsOpen}
             onRowClick={this.onTableRowClick}
             onActivate={this.activateAuthIntegration}
             onAdd={this.onTableAdd}
@@ -184,20 +199,26 @@ class IntegrationModal extends Component {
         />
     );
 
-    renderForm = () => (
-        <Form
-            initialValues={this.state.editIntegration}
-            source={this.props.source}
-            type={this.props.type}
-            onCancel={this.onFormCancel}
-            onSubmitRequest={this.onFormRequest}
-            onSubmitSuccess={this.onFormSubmitSuccess}
-            onSubmitError={this.onFormError}
-            onTestRequest={this.onFormRequest}
-            onTestSuccess={this.onFormTestSuccess}
-            onTestError={this.onFormError}
-        />
-    );
+    renderForm = () => {
+        if (!this.state.formIsOpen) {
+            return null;
+        }
+        return (
+            <Form
+                initialValues={this.state.formValues}
+                source={this.props.source}
+                type={this.props.type}
+                clusters={this.props.clusters}
+                onCancel={this.onFormCancel}
+                onSubmitRequest={this.onFormRequest}
+                onSubmitSuccess={this.onFormSubmitSuccess}
+                onSubmitError={this.onFormError}
+                onTestRequest={this.onFormRequest}
+                onTestSuccess={this.onFormTestSuccess}
+                onTestError={this.onFormError}
+            />
+        );
+    };
 
     renderConfirmationDialog = () => {
         const numSelectedRows = this.integrationTable

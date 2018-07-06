@@ -6,6 +6,7 @@ import email from 'images/email.svg';
 import google from 'images/google-cloud.svg';
 import jira from 'images/jira.svg';
 import kubernetes from 'images/kubernetes.svg';
+import logo from 'images/logo-tall.svg';
 import openshift from 'images/openshift.svg';
 import quay from 'images/quay.svg';
 import slack from 'images/slack.svg';
@@ -18,6 +19,14 @@ const integrationsList = {
             type: 'auth0',
             source: 'authProviders',
             image: auth0
+        }
+    ],
+    dnrIntegrations: [
+        {
+            label: 'StackRox Detect & Respond',
+            type: 'D&R',
+            source: 'dnrIntegrations',
+            image: logo
         }
     ],
     imageIntegrations: [

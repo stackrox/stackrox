@@ -10,14 +10,22 @@ import tableColumnDescriptor from 'Containers/Integrations/tableColumnDescriptor
 
 class Table extends Component {
     static propTypes = {
-        integrations: PropTypes.arrayOf(
-            PropTypes.shape({
-                type: PropTypes.string.isRequired
-            })
-        ).isRequired,
+        integrations: PropTypes.arrayOf(PropTypes.object).isRequired,
 
-        source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders']).isRequired,
+        source: PropTypes.oneOf([
+            'dnrIntegrations',
+            'imageIntegrations',
+            'notifiers',
+            'authProviders'
+        ]).isRequired,
         type: PropTypes.string.isRequired,
+
+        clusters: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string.isRequired,
+                id: PropTypes.string.isRequired
+            })
+        ),
 
         buttonsEnabled: PropTypes.bool.isRequired,
 
@@ -27,6 +35,10 @@ class Table extends Component {
         onDelete: PropTypes.func.isRequired,
 
         setTable: PropTypes.func.isRequired
+    };
+
+    static defaultProps = {
+        clusters: []
     };
 
     getPanelButtons = () => (
@@ -68,6 +80,22 @@ class Table extends Component {
         return actions;
     };
 
+    getRows = () => {
+        if (this.props.source === 'dnrIntegrations') {
+            return this.props.integrations.map(dnrIntegration => {
+                const cluster = this.props.clusters.find(
+                    ({ id }) => id === dnrIntegration.clusterId
+                );
+                const clusterName = cluster ? cluster.name : '';
+                return Object.assign({}, dnrIntegration, {
+                    clusterName,
+                    name: `D&R Integration for cluster ${clusterName}`
+                });
+            });
+        }
+        return this.props.integrations;
+    };
+
     renderEmpty = () => (
         <div className="p3 w-full my-auto text-center capitalize">
             {`No ${this.props.type} integrations`}
@@ -77,7 +105,7 @@ class Table extends Component {
     renderTableContent = () => (
         <ComponentTable
             columns={tableColumnDescriptor[this.props.source][this.props.type]}
-            rows={this.props.integrations}
+            rows={this.getRows()}
             actions={this.getActions()}
             checkboxes
             onRowClick={this.props.onRowClick}

@@ -35,6 +35,12 @@ const tableColumnDescriptor = Object.freeze({
             { key: 'cscc.gcpOrgId', label: 'Google Cloud Platform Org ID' }
         ]
     },
+    dnrIntegrations: {
+        'D&R': [
+            { key: 'clusterName', label: 'Cluster' },
+            { key: 'directorEndpoint', label: 'Director Endpoint' }
+        ]
+    },
     imageIntegrations: {
         docker: [
             { key: 'name', label: 'Name' },
