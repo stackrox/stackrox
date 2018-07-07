@@ -15,6 +15,16 @@ const CommonFields = () => (
     </React.Fragment>
 );
 
+const CentralAPIFormField = ({ placeholder }) => (
+    <FormField label="Central API Endpoint (include port)" required>
+        <ReduxTextField name="centralApiEndpoint" placeholder={`${placeholder}`} />
+    </FormField>
+);
+
+CentralAPIFormField.propTypes = {
+    placeholder: PropTypes.string.isRequired
+};
+
 const K8sFields = ({ metadata }) => (
     <React.Fragment>
         <CommonFields />
@@ -24,9 +34,7 @@ const K8sFields = ({ metadata }) => (
                 placeholder={`stackrox.io/prevent:${metadata.version}`}
             />
         </FormField>
-        <FormField label="Central API Endpoint" required>
-            <ReduxTextField name="centralApiEndpoint" placeholder="central.stackrox:443" />
-        </FormField>
+        <CentralAPIFormField placeholder="central.stackrox:443" />
         <FormField label="Namespace" required>
             <ReduxTextField name="kubernetes.params.namespace" placeholder="stackrox" />
         </FormField>
@@ -51,9 +59,7 @@ const OpenShiftFields = ({ metadata }) => (
                 }`}
             />
         </FormField>
-        <FormField label="Central API Endpoint" required>
-            <ReduxTextField name="centralApiEndpoint" placeholder="central.stackrox:443" />
-        </FormField>
+        <CentralAPIFormField placeholder="central.stackrox:443" />
         <FormField label="Namespace" required>
             <ReduxTextField name="openshift.params.namespace" placeholder="stackrox" />
         </FormField>
@@ -73,9 +79,7 @@ const DockerFields = ({ metadata }) => (
                 placeholder={`stackrox.io/prevent:${metadata.version}`}
             />
         </FormField>
-        <FormField label="Central API Endpoint" required>
-            <ReduxTextField name="centralApiEndpoint" placeholder="central.prevent_net:443" />
-        </FormField>
+        <CentralAPIFormField placeholder="central.prevent_net:443" />
         <FormField label="Disable Swarm TLS">
             <ReduxCheckboxField name="swarm.disableSwarmTls" />
         </FormField>
@@ -125,7 +129,7 @@ const initialValuesFactories = {
     KUBERNETES_CLUSTER: metadata => ({
         preventImage: `stackrox.io/prevent:${metadata.version}`,
         centralApiEndpoint: 'central.stackrox:443',
-        openshift: {
+        kubernetes: {
             params: {
                 namespace: 'stackrox',
                 imagePullSecret: 'stackrox'

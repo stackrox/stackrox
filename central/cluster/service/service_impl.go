@@ -1,11 +1,14 @@
 package service
 
 import (
+	"strings"
+
 	"bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	"bitbucket.org/stack-rox/apollo/central/clusters"
 	"bitbucket.org/stack-rox/apollo/central/enrichment"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -36,10 +39,36 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, service.ReturnErrorCode(or.SensorOrUser().Authorized(ctx))
 }
 
+func normalizeCluster(cluster *v1.Cluster) {
+	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
+	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")
+}
+
+func validateInput(cluster *v1.Cluster) error {
+	var errors []string
+	if cluster.GetName() == "" {
+		errors = append(errors, "Cluster name is required")
+	}
+	if cluster.GetPreventImage() == "" {
+		errors = append(errors, "Prevent Image is required")
+	}
+	if cluster.GetCentralApiEndpoint() == "" {
+		errors = append(errors, "Central API Endpoint is required")
+	} else if !strings.Contains(cluster.GetCentralApiEndpoint(), ":") {
+		errors = append(errors, "Central API Endpoint must have port specified")
+	}
+
+	return errorhelpers.FormatErrorStrings("Cluster Validation", errors)
+}
+
 // PostCluster creates a new cluster.
 func (s *serviceImpl) PostCluster(ctx context.Context, request *v1.Cluster) (*v1.ClusterResponse, error) {
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new cluster")
+	}
+	normalizeCluster(request)
+	if err := validateInput(request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	id, err := s.datastore.AddCluster(request)
 	if err != nil {
@@ -54,8 +83,9 @@ func (s *serviceImpl) PutCluster(ctx context.Context, request *v1.Cluster) (*v1.
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Id must be provided")
 	}
-	if request.GetName() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Name must be provided")
+	normalizeCluster(request)
+	if err := validateInput(request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	err := s.datastore.UpdateCluster(request)
 	if err != nil {
