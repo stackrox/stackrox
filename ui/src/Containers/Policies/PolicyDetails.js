@@ -9,11 +9,10 @@ import { removeEmptyFields } from 'Containers/Policies/policyFormUtils';
 
 class PolicyDetails extends Component {
     static propTypes = {
+        clustersById: PropTypes.shape({}).isRequired,
         policy: PropTypes.shape({
             fields: PropTypes.shape({}).isRequired
         }).isRequired,
-        // 'notifiers' prop is being used indirectly
-        // eslint-disable-next-line  react/no-unused-prop-types
         notifiers: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string.isRequired
@@ -35,7 +34,10 @@ class PolicyDetails extends Component {
                         {fields.map(field => {
                             if (!fieldsMap[field]) return '';
                             const { label } = fieldsMap[field];
-                            const value = fieldsMap[field].formatValue(policy[field], this.props);
+                            const value = fieldsMap[field].formatValue(policy[field], {
+                                clustersById: this.props.clustersById,
+                                notifiers: this.props.notifiers
+                            });
                             if (!value) return '';
                             return (
                                 <div className="mb-4" key={field}>
@@ -93,6 +95,7 @@ class PolicyDetails extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
+    clustersById: selectors.getClustersById,
     notifiers: selectors.getNotifiers
 });
 

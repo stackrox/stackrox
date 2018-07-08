@@ -80,7 +80,17 @@ const fieldsMap = {
     },
     scope: {
         label: 'Restricted to Clusters',
-        formatValue: d => d.map(o => o.cluster).join(', ')
+        formatValue: (d, props) =>
+            d
+                .map(o => {
+                    if (props.clustersById[o.cluster]) {
+                        return props.clustersById[o.cluster].name;
+                    }
+                    // Fall back to returning the cluster id, if we can't find
+                    // the mapping to the cluster name.
+                    return o.cluster;
+                })
+                .join(', ')
     },
     enforcement: {
         label: 'Enforcement Action',
