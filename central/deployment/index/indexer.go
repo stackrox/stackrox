@@ -13,7 +13,8 @@ var (
 
 // Indexer provides indexing of Deployment objects.
 type Indexer interface {
-	AddDeployment(alert *v1.Deployment) error
+	AddDeployment(deployment *v1.Deployment) error
+	AddDeployments(deployments []*v1.Deployment) error
 	DeleteDeployment(id string) error
 	SearchDeployments(request *v1.ParsedSearchRequest) ([]search.Result, error)
 }

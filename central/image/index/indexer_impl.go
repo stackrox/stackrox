@@ -36,6 +36,18 @@ func (b *indexerImpl) AddImage(image *v1.Image) error {
 	return b.index.Index(digest, &imageWrapper{Type: v1.SearchCategory_IMAGES.String(), Image: image})
 }
 
+// AddImages adds the images to the index
+func (b *indexerImpl) AddImages(imageList []*v1.Image) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), "AddBatch", "Image")
+
+	batch := b.index.NewBatch()
+	for _, image := range imageList {
+		digest := images.NewDigest(image.GetName().GetSha()).Digest()
+		batch.Index(digest, &imageWrapper{Type: v1.SearchCategory_IMAGES.String(), Image: image})
+	}
+	return b.index.Batch(batch)
+}
+
 // DeleteImage deletes the image from the index
 func (b *indexerImpl) DeleteImage(sha string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "Image")

@@ -14,6 +14,7 @@ var (
 // Indexer provides indexing of Alert objects.
 type Indexer interface {
 	AddImage(image *v1.Image) error
+	AddImages(imageList []*v1.Image) error
 	DeleteImage(id string) error
 	SearchImages(request *v1.ParsedSearchRequest) ([]search.Result, error)
 }

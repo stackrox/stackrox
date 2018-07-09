@@ -19,12 +19,7 @@ func (ds *searcherImpl) buildIndex() error {
 	if err != nil {
 		return err
 	}
-	for _, i := range images {
-		if err := ds.indexer.AddImage(i); err != nil {
-			log.Errorf("Error inserting image %s (%s) into index: %s", i.GetName().GetSha(), i.GetName().GetFullName(), err)
-		}
-	}
-	return nil
+	return ds.indexer.AddImages(images)
 }
 
 // SearchImages retrieves SearchResults from the indexer and storage

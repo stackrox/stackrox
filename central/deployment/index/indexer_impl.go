@@ -28,6 +28,17 @@ func (b *indexerImpl) AddDeployment(deployment *v1.Deployment) error {
 	return b.index.Index(deployment.GetId(), &deploymentWrapper{Type: v1.SearchCategory_DEPLOYMENTS.String(), Deployment: deployment})
 }
 
+// AddDeployments adds the deployments to the index
+func (b *indexerImpl) AddDeployments(deployments []*v1.Deployment) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), "AddBatch", "Deployment")
+
+	batch := b.index.NewBatch()
+	for _, deployment := range deployments {
+		batch.Index(deployment.GetId(), &deploymentWrapper{Type: v1.SearchCategory_DEPLOYMENTS.String(), Deployment: deployment})
+	}
+	return b.index.Batch(batch)
+}
+
 // DeleteDeployment deletes the deployment from the index
 func (b *indexerImpl) DeleteDeployment(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "Deployment")

@@ -20,12 +20,7 @@ func (ds *searcherImpl) buildIndex() error {
 	if err != nil {
 		return err
 	}
-	for _, d := range deployments {
-		if err := ds.indexer.AddDeployment(d); err != nil {
-			log.Errorf("Error inserting deployment %s (%s) into index: %s", d.GetId(), d.GetName(), err)
-		}
-	}
-	return nil
+	return ds.indexer.AddDeployments(deployments)
 }
 
 // SearchRawDeployments retrieves deployments from the indexer and storage

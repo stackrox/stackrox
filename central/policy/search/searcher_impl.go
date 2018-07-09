@@ -19,12 +19,7 @@ func (ds *searcherImpl) buildIndex() error {
 	if err != nil {
 		return err
 	}
-	for _, p := range policies {
-		if err := ds.indexer.AddPolicy(p); err != nil {
-			log.Errorf("Error inserting policy %s (%s) into index: %s", p.GetId(), p.GetName(), err)
-		}
-	}
-	return nil
+	return ds.indexer.AddPolicies(policies)
 }
 
 func (ds *searcherImpl) loadDefaults() error {

@@ -27,6 +27,16 @@ func (b *indexerImpl) AddAlert(alert *v1.Alert) error {
 	return b.index.Index(alert.GetId(), &alertWrapper{Type: v1.SearchCategory_ALERTS.String(), Alert: alert})
 }
 
+// AddAlerts adds the alerts to the indexer
+func (b *indexerImpl) AddAlerts(alerts []*v1.Alert) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), "AddBatch", "Alert")
+	batch := b.index.NewBatch()
+	for _, alert := range alerts {
+		batch.Index(alert.GetId(), &alertWrapper{Type: v1.SearchCategory_ALERTS.String(), Alert: alert})
+	}
+	return b.index.Batch(batch)
+}
+
 // DeleteAlert deletes the alert from the indexer
 func (b *indexerImpl) DeleteAlert(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "Alert")

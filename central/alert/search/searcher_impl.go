@@ -21,12 +21,7 @@ func (ds *searcherImpl) buildIndex() error {
 	if err != nil {
 		return err
 	}
-	for _, a := range alerts {
-		if err := ds.indexer.AddAlert(a); err != nil {
-			log.Errorf("Error inserting alert %s (%s) into index: %s", a.GetId(), a.GetPolicy().GetName(), err)
-		}
-	}
-	return nil
+	return ds.indexer.AddAlerts(alerts)
 }
 
 // SearchAlerts retrieves SearchResults from the indexer and storage

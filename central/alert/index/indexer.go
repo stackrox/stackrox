@@ -14,6 +14,7 @@ var (
 // Indexer provides indexing of Alert objects.
 type Indexer interface {
 	AddAlert(alert *v1.Alert) error
+	AddAlerts(alerts []*v1.Alert) error
 	DeleteAlert(id string) error
 	SearchAlerts(request *v1.ParsedSearchRequest) ([]search.Result, error)
 }

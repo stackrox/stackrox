@@ -28,6 +28,16 @@ func (b *indexerImpl) AddPolicy(policy *v1.Policy) error {
 	return b.index.Index(policy.GetId(), &policyWrapper{Type: v1.SearchCategory_POLICIES.String(), Policy: policy})
 }
 
+// AddPolicies adds the policies to the indexer
+func (b *indexerImpl) AddPolicies(policies []*v1.Policy) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), "AddBatch", "Policy")
+	batch := b.index.NewBatch()
+	for _, policy := range policies {
+		batch.Index(policy.GetId(), &policyWrapper{Type: v1.SearchCategory_POLICIES.String(), Policy: policy})
+	}
+	return b.index.Batch(batch)
+}
+
 // DeletePolicy deletes the policy from the index
 func (b *indexerImpl) DeletePolicy(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "Policy")
