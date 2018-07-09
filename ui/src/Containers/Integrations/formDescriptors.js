@@ -296,19 +296,19 @@ const formDescriptors = {
             },
             {
                 label: 'Endpoint',
-                key: 'config.endpoint',
+                key: 'docker.endpoint',
                 type: 'text',
                 placeholder: 'artifactory.example.com'
             },
             {
                 label: 'Username',
-                key: 'config.username',
+                key: 'docker.username',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Password',
-                key: 'config.password',
+                key: 'docker.password',
                 type: 'password',
                 placeholder: ''
             }
@@ -404,19 +404,19 @@ const formDescriptors = {
             },
             {
                 label: 'Registry Endpoint',
-                key: 'cscc.endpoint',
+                key: 'config.endpoint',
                 type: 'text',
                 placeholder: 'gcr.io'
             },
             {
                 label: 'Project',
-                key: 'cscc.project',
+                key: 'config.project',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Service Account Key (JSON)',
-                key: 'cscc.serviceAccount',
+                key: 'config.serviceAccount',
                 type: 'text',
                 placeholder: ''
             }
