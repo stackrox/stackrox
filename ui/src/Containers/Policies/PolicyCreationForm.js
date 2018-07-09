@@ -78,6 +78,7 @@ class PolicyCreationForm extends Component {
                         name={field.jsonpath}
                         min={field.min}
                         max={field.max}
+                        step={field.step}
                         placeholder={field.placeholder}
                     />
                 );
@@ -180,7 +181,11 @@ class PolicyCreationForm extends Component {
             const fieldGroupName = fieldGroup.replace(/([A-Z])/g, ' $1');
             const fields = this.props.policyFormFields[fieldGroup].descriptor;
             return (
-                <div className="px-3 py-4 border-b border-base-300" key={fieldGroup}>
+                <div
+                    className="px-3 py-4 border-b border-base-300"
+                    data-test-id={fieldGroup}
+                    key={fieldGroup}
+                >
                     <div className="bg-white border border-base-200 shadow">
                         <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">
                             {fieldGroupName}

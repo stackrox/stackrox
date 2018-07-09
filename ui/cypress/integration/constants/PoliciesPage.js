@@ -17,6 +17,12 @@ export const selectors = {
         required: 'form span[data-test-id="required"]',
         select: 'form select'
     },
+    configurationField: {
+        select: 'form [data-test-id="policyConfiguration"] select',
+        selectArrow: '[data-test-id="policyConfiguration"] div.Select .Select-arrow',
+        options: '[data-test-id="policyConfiguration"] div.Select div[role="option"]',
+        numericInput: '[data-test-id="policyConfiguration"] .react-numeric-input input'
+    },
     imageRegistry: {
         input: 'input[name="fields.imageName.registry"]',
         deleteButton: 'input[name="fields.imageName.registry"] + div>button',

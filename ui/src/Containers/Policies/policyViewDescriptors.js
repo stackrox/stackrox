@@ -17,16 +17,16 @@ const formatResourceValue = (prefix, value, suffix) =>
 
 const formatResources = resource => {
     const output = [];
-    if (resource.memoryResourceRequest !== undefined) {
+    if (resource.memoryResourceRequest !== null) {
         output.push(formatResourceValue('Memory request', resource.memoryResourceRequest, 'MB'));
     }
-    if (resource.memoryResourceLimit !== undefined) {
+    if (resource.memoryResourceLimit !== null) {
         output.push(formatResourceValue('Memory limit', resource.memoryResourceLimit, 'MB'));
     }
-    if (resource.cpuResourceRequest !== undefined) {
+    if (resource.cpuResourceRequest !== null) {
         output.push(formatResourceValue('CPU request', resource.cpuResourceRequest, 'Cores'));
     }
-    if (resource.cpuResourceLimit !== undefined) {
+    if (resource.cpuResourceLimit !== null) {
         output.push(formatResourceValue('CPU limit', resource.cpuResourceLimit, 'Cores'));
     }
     return output.join(', ');

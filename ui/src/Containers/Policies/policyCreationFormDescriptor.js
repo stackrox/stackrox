@@ -26,7 +26,8 @@ const cpuResource = (label, policy, field) => ({
             jsonpath: `fields.${policy}.${field}.value`,
             type: 'number',
             placeholder: '# of cores',
-            min: 0
+            min: 0,
+            step: 0.1
         }
     ],
     required: false,
@@ -271,7 +272,8 @@ const policyConfigurationDescriptor = [
                 type: 'number',
                 placeholder: '0-10',
                 max: 10,
-                min: 0
+                min: 0,
+                step: 0.1
             }
         ],
         required: false,

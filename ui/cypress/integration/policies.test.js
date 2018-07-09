@@ -74,6 +74,28 @@ describe('Policies page', () => {
         updatePolicyName(deleteSuffix); // revert back
     });
 
+    it('should allow floats for CPU and CVSS configuration fields', () => {
+        const addCPUField = () => {
+            cy.get(selectors.editPolicyButton).click();
+            cy
+                .get(selectors.configurationField.select)
+                .select('fields.containerResourcePolicy.cpuResourceRequest');
+            cy.get(selectors.configurationField.selectArrow).click();
+            cy
+                .get(selectors.configurationField.options)
+                .first()
+                .click();
+            cy
+                .get(selectors.configurationField.numericInput)
+                .last()
+                .type(2.2);
+            cy.get(selectors.nextButton).click();
+            cy.get(selectors.savePolicyButton).click();
+        };
+        cy.get(selectors.tableFirstRow).click();
+        addCPUField();
+    });
+
     it('should open the preview panel to view policy dry run', () => {
         cy.get(selectors.tableFirstRow).click();
         cy.get(selectors.editPolicyButton).click();
@@ -128,7 +150,7 @@ describe('Policies page', () => {
         const firstRowEnableDisableButton = `${selectors.tableFirstRow} ${
             selectors.enableDisableButton
         }`;
-        // initiatilize to have enabled policy
+        // initialize to have enabled policy
         cy.get(`${firstRowEnableDisableButton} svg`).then(svg => {
             if (!svg.hasClass(selectors.enabledPolicyButtonColorClass))
                 cy.get(firstRowEnableDisableButton).click();
