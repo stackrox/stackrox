@@ -34,6 +34,47 @@ const cpuResource = (label, policy, field) => ({
     default: false
 });
 
+const capabilities = [
+    { label: 'CAP_AUDIT_CONTROL', value: 'CAP_AUDIT_CONTROL' },
+    { label: 'CAP_AUDIT_READ', value: 'CAP_AUDIT_READ' },
+    { label: 'CAP_AUDIT_WRITE', value: 'CAP_AUDIT_WRITE' },
+    { label: 'CAP_BLOCK_SUSPEND', value: 'CAP_BLOCK_SUSPEND' },
+    { label: 'CAP_CHOWN', value: 'CAP_CHOWN' },
+    { label: 'CAP_DAC_OVERRIDE', value: 'CAP_DAC_OVERRIDE' },
+    { label: 'CAP_DAC_READ_SEARCH', value: 'CAP_DAC_READ_SEARCH' },
+    { label: 'CAP_FOWNER', value: 'CAP_FOWNER' },
+    { label: 'CAP_FSETID', value: 'CAP_FSETID' },
+    { label: 'CAP_IPC_LOCK', value: 'CAP_IPC_LOCK' },
+    { label: 'CAP_IPC_OWNER', value: 'CAP_IPC_OWNER' },
+    { label: 'CAP_KILL', value: 'CAP_KILL' },
+    { label: 'CAP_LEASE', value: 'CAP_LEASE' },
+    { label: 'CAP_LINUX_IMMUTABLE', value: 'CAP_LINUX_IMMUTABLE' },
+    { label: 'CAP_MAC_ADMIN', value: 'CAP_MAC_ADMIN' },
+    { label: 'CAP_MAC_OVERRIDE', value: 'CAP_MAC_OVERRIDE' },
+    { label: 'CAP_MKNOD', value: 'CAP_MKNOD' },
+    { label: 'CAP_NET_ADMIN', value: 'CAP_NET_ADMIN' },
+    { label: 'CAP_NET_BIND_SERVICE', value: 'CAP_NET_BIND_SERVICE' },
+    { label: 'CAP_NET_BROADCAST', value: 'CAP_NET_BROADCAST' },
+    { label: 'CAP_NET_RAW', value: 'CAP_NET_RAW' },
+    { label: 'CAP_SETGID', value: 'CAP_SETGID' },
+    { label: 'CAP_SETFCAP', value: 'CAP_SETFCAP' },
+    { label: 'CAP_SETPCAP', value: 'CAP_SETPCAP' },
+    { label: 'CAP_SETUID', value: 'CAP_SETUID' },
+    { label: 'CAP_SYS_ADMIN', value: 'CAP_SYS_ADMIN' },
+    { label: 'CAP_SYS_BOOT', value: 'CAP_SYS_BOOT' },
+    { label: 'CAP_SYS_CHROOT', value: 'CAP_SYS_CHROOT' },
+    { label: 'CAP_SYS_MODULE', value: 'CAP_SYS_MODULE' },
+    { label: 'CAP_SYS_NICE', value: 'CAP_SYS_NICE' },
+    { label: 'CAP_SYS_PACCT', value: 'CAP_SYS_PACCT' },
+    { label: 'CAP_SYS_PTRACE', value: 'CAP_SYS_PTRACE' },
+    { label: 'CAP_SYS_RAWIO', value: 'CAP_SYS_RAWIO' },
+    { label: 'CAP_SYS_RESOURCE', value: 'CAP_SYS_RESOURCE' },
+    { label: 'CAP_SYS_TIME', value: 'CAP_SYS_TIME' },
+    { label: 'CAP_SYS_TTY_CONFIG', value: 'CAP_SYS_TTY_CONFIG' },
+    { label: 'CAP_SYSLOG', value: 'CAP_SYSLOG' },
+    { label: 'CAP_WAKE_ALARM', value: 'CAP_WAKE_ALARM' }
+];
+
 const memoryResource = (label, policy, field) => ({
     label,
     jsonpath: `fields.${policy}.${field}`,
@@ -458,7 +499,7 @@ const policyConfigurationDescriptor = [
         label: 'Drop Capabilities',
         jsonpath: 'fields.dropCapabilities',
         type: 'multiselect',
-        options: [],
+        options: [...capabilities],
         required: false,
         default: false
     },
@@ -466,7 +507,7 @@ const policyConfigurationDescriptor = [
         label: 'Add Capabilities',
         jsonpath: 'fields.addCapabilities',
         type: 'multiselect',
-        options: [],
+        options: [...capabilities],
         required: false,
         default: false
     }

@@ -30,6 +30,17 @@ export function preFormatWhitelistField(policy) {
     return clientPolicy;
 }
 
+export function preFormatCapabilitiesField(policy) {
+    const newPolicy = Object.assign({}, policy);
+    const { fields } = newPolicy;
+    if (fields && fields.addCapabilities && fields.addCapabilities.length !== 0)
+        fields.addCapabilities = fields.addCapabilities.map(o => ({ label: o, value: o }));
+    if (fields && fields.dropCapabilities && fields.dropCapabilities.length !== 0)
+        fields.dropCapabilities = fields.dropCapabilities.map(o => ({ label: o, value: o }));
+    newPolicy.fields = fields;
+    return newPolicy;
+}
+
 export function postFormatWhitelistField(policy) {
     const serverPolicy = Object.assign({}, policy);
     if (policy.deployments && policy.deployments.length !== 0)
@@ -50,6 +61,17 @@ export function postFormatCategoriesField(policy) {
     const serverPolicy = Object.assign({}, policy);
     if (policy.categories && policy.categories.length !== 0)
         serverPolicy.categories = policy.categories.map(o => o.value);
+    return serverPolicy;
+}
+
+export function postFormatCapabilitiesField(policy) {
+    const serverPolicy = Object.assign({}, policy);
+    const { fields } = serverPolicy;
+    if (fields && fields.addCapabilities && fields.addCapabilities.length !== 0)
+        fields.addCapabilities = fields.addCapabilities.map(o => o.value);
+    if (fields && fields.dropCapabilities && fields.dropCapabilities.length !== 0)
+        fields.dropCapabilities = fields.dropCapabilities.map(o => o.value);
+    serverPolicy.fields = fields;
     return serverPolicy;
 }
 
@@ -80,6 +102,7 @@ export function preFormatPolicyFields(policy) {
     formattedPolicy = preFormatWhitelistField(formattedPolicy);
     formattedPolicy = preFormatScopeField(formattedPolicy);
     formattedPolicy = preFormatCategoriesField(formattedPolicy);
+    formattedPolicy = preFormatCapabilitiesField(formattedPolicy);
     return formattedPolicy;
 }
 
@@ -88,6 +111,7 @@ export function formatPolicyFields(policy) {
     serverPolicy = postFormatWhitelistField(serverPolicy);
     serverPolicy = postFormatScopeField(serverPolicy);
     serverPolicy = postFormatCategoriesField(serverPolicy);
+    serverPolicy = postFormatCapabilitiesField(serverPolicy);
     serverPolicy = postFormatNotifiersField(serverPolicy);
     return serverPolicy;
 }

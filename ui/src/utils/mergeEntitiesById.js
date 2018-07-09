@@ -1,5 +1,6 @@
 import isEqual from 'lodash/isEqual';
-import merge from 'lodash/merge';
+import mergeWith from 'lodash/mergeWith';
+import isArray from 'lodash/isArray';
 
 /**
  * Given the map of existing entities by their IDs and a map of updated entities (e.g. received from the server),
@@ -10,13 +11,17 @@ import merge from 'lodash/merge';
  * @param {!Object.<string, Object>} newEntitiesById map of "id -> entity" of potentially updated entities
  * @returns {Object.<string, Object>} map of "id -> entity" with updated entities deeply merged in
  */
+
 export default function mergeEntitiesById(existingEntitiesById, newEntitiesById) {
+    const updateArrayValue = (existingValue, newValue) =>
+        isArray(existingValue) && isArray(newValue) ? newValue : undefined;
+
     return Object.keys(newEntitiesById).reduce((result, id) => {
         if (!existingEntitiesById[id]) return { ...result, [id]: newEntitiesById[id] };
         if (isEqual(existingEntitiesById[id], newEntitiesById[id])) return result;
         return {
             ...result,
-            [id]: merge({}, existingEntitiesById[id], newEntitiesById[id])
+            [id]: mergeWith({}, existingEntitiesById[id], newEntitiesById[id], updateArrayValue)
         };
     }, existingEntitiesById);
 }

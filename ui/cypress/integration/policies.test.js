@@ -10,6 +10,19 @@ describe('Policies page', () => {
         cy.wait('@metadataOptions');
     });
 
+    const editPolicy = () => {
+        cy.get(selectors.editPolicyButton).click();
+    };
+
+    const closePolicySidePanel = () => {
+        cy.get(selectors.cancelButton).click();
+    };
+
+    const savePolicy = () => {
+        cy.get(selectors.nextButton).click();
+        cy.get(selectors.savePolicyButton).click();
+    };
+
     it('should navigate using the left nav', () => {
         cy.visit('/');
         cy.get(selectors.configure).click();
@@ -60,10 +73,9 @@ describe('Policies page', () => {
 
     it('should allow updating policy name', () => {
         const updatePolicyName = typeStr => {
-            cy.get(selectors.editPolicyButton).click();
+            editPolicy();
             cy.get('form input:first').type(typeStr);
-            cy.get(selectors.nextButton).click();
-            cy.get(selectors.savePolicyButton).click();
+            savePolicy();
         };
         const secretSuffix = ':secretSuffix:';
         const deleteSuffix = '{backspace}'.repeat(secretSuffix.length);
@@ -103,7 +115,7 @@ describe('Policies page', () => {
         cy.get('.warn-message').should('exist');
         cy.get('.alert-preview').should('exist');
         cy.get('.whitelist-exclusions').should('exist');
-        cy.get(selectors.cancelButton).click();
+        closePolicySidePanel();
     });
 
     it('should open the panel to create a new policy', () => {
@@ -112,7 +124,7 @@ describe('Policies page', () => {
 
     it('should show a specific message when editing a policy with "enabled" value as "no"', () => {
         cy.get(selectors.policies.latest).click();
-        cy.get(selectors.editPolicyButton).click();
+        editPolicy();
         cy.get(`${selectors.form.enableField} .Select-arrow`).click();
         cy.get(`${selectors.form.enableField} div[role="option"]:contains("No")`).click();
         cy.get(selectors.nextButton).click();
@@ -121,16 +133,6 @@ describe('Policies page', () => {
 
     it('should allow updating image fields in a policy', () => {
         cy.get(selectors.policies.latest).click();
-
-        const editPolicy = () => {
-            cy.get(selectors.editPolicyButton).click();
-        };
-
-        const savePolicy = () => {
-            cy.get(selectors.nextButton).click();
-            cy.get(selectors.savePolicyButton).click();
-        };
-
         editPolicy();
         cy.get(selectors.form.select).select('fields.imageName.registry');
         cy.get(selectors.imageRegistry.input).type('docker.io');
@@ -144,6 +146,13 @@ describe('Policies page', () => {
         editPolicy();
         cy.get(selectors.imageRegistry.deleteButton).click();
         savePolicy();
+    });
+
+    it('should show Add Capabilities value in edit mode', () => {
+        cy.get(selectors.policies.addCapabilities).click();
+        editPolicy();
+        cy.get(selectors.form.selectValue).contains('CAP_SYS_ADMIN');
+        closePolicySidePanel();
     });
 
     it('should allow disable/enable policy from the policies table', () => {

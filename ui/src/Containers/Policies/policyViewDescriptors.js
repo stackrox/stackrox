@@ -236,11 +236,11 @@ const fieldsMap = {
     },
     dropCapabilities: {
         label: 'Drop Capabilities',
-        formatValue: d => d
+        formatValue: d => d.join(', ')
     },
     addCapabilities: {
         label: 'Add Capabilities',
-        formatValue: d => d
+        formatValue: d => d.join(', ')
     },
     privileged: {
         label: 'Privileged',

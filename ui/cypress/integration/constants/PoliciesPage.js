@@ -10,12 +10,14 @@ export const selectors = {
     prevButton: 'button:contains("Previous")',
     cancelButton: 'button[data-test-id="cancel"]',
     policies: {
-        latest: 'tbody > tr:contains("latest")'
+        latest: 'tbody > tr:contains("latest")',
+        addCapabilities: 'tbody > tr:contains("CAP_SYS_ADMIN capability added")'
     },
     form: {
         enableField: 'form div.text-primary-500:contains("Enable") + div',
         required: 'form span[data-test-id="required"]',
-        select: 'form select'
+        select: 'form select',
+        selectValue: 'form .Select-value-label'
     },
     configurationField: {
         select: 'form [data-test-id="policyConfiguration"] select',
