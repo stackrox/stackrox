@@ -534,7 +534,7 @@
   branch = "master"
   name = "github.com/heroku/docker-registry-client"
   packages = ["registry"]
-  revision = "53bb9876104e5534093a4b4067141a45119ca6af"
+  revision = "30d35c12287750cdaed9925ef1bbd3d20214ecc1"
   source = "git@bitbucket.org:stack-rox/docker-registry-client.git"
 
 [[projects]]
@@ -1092,6 +1092,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ad16c05187c32f5ec4771f8134dc50f6517411aea41fe3adc2f7eed5465b5cda"
+  inputs-digest = "bd692f8661d2f75ac26fa8138ed7f6ea93cd34299ed6983ef4a71c394ce732ee"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -5,7 +5,7 @@ import (
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1alpha1"
 )
 
-func (c *googleScanner) convertComponent(occurrence *containeranalysis.Occurrence) (string, *v1.ImageScanComponent) {
+func (c *googleScanner) convertComponentFromPackageManagerOccurrence(occurrence *containeranalysis.Occurrence) (string, *v1.ImageScanComponent) {
 	location := occurrence.GetInstallation().GetLocation()[0]
 	version := location.GetVersion()
 	component := &v1.ImageScanComponent{
@@ -15,7 +15,7 @@ func (c *googleScanner) convertComponent(occurrence *containeranalysis.Occurrenc
 	return location.GetCpeUri(), component
 }
 
-func (c *googleScanner) convertVulnerability(occurrence *containeranalysis.Occurrence, note *containeranalysis.Note) (string, string, *v1.Vulnerability) {
+func (c *googleScanner) convertVulnerabilityFromPackageVulnerabilityOccurrence(occurrence *containeranalysis.Occurrence, note *containeranalysis.Note) (string, string, *v1.Vulnerability) {
 	packageIssues := occurrence.GetVulnerabilityDetails().GetPackageIssue()
 	if len(packageIssues) == 0 {
 		return "", "", nil

@@ -8,7 +8,7 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
   name = "github.com/couchbase/ghistogram"
   revision = "d910dd063dd68fb4d2a1ba344440f834ebb4ef62"
 
-[[constraint]]
+[[override]]
   name = "github.com/heroku/docker-registry-client"
   source = "git@bitbucket.org:stack-rox/docker-registry-client.git"
   branch = "master"
