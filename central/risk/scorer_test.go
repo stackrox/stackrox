@@ -18,7 +18,7 @@ func getMockDeployment() *v1.Deployment {
 						ReadOnly: true,
 					},
 				},
-				Secrets: []*v1.Secret{
+				Secrets: []*v1.EmbeddedSecret{
 					{
 						Name: "secret",
 					},

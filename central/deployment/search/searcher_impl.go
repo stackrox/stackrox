@@ -12,6 +12,7 @@ import (
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
 	storage store.Store
+
 	indexer index.Indexer
 }
 

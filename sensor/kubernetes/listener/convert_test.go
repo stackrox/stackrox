@@ -74,6 +74,7 @@ func TestConvert(t *testing.T) {
 						Spec: v1.PodSpec{
 							Containers: []v1.Container{
 								{
+									Name:    "container1",
 									Args:    []string{"lorem", "ipsum"},
 									Command: []string{"hello", "world"},
 									Env: []v1.EnvVar{
@@ -122,6 +123,7 @@ func TestConvert(t *testing.T) {
 									},
 								},
 								{
+									Name: "container2",
 									Args: []string{"--flag"},
 									Env: []v1.EnvVar{
 										{
@@ -223,6 +225,7 @@ func TestConvert(t *testing.T) {
 					UpdatedAt: &timestamp.Timestamp{Seconds: 1000},
 					Containers: []*pkgV1.Container{
 						{
+							Id: "FooID:container1",
 							Config: &pkgV1.ContainerConfig{
 								Command: []string{"hello", "world"},
 								Args:    []string{"lorem", "ipsum"},
@@ -255,7 +258,7 @@ func TestConvert(t *testing.T) {
 									Exposure:      pkgV1.PortConfig_INTERNAL,
 								},
 							},
-							Secrets: []*pkgV1.Secret{
+							Secrets: []*pkgV1.EmbeddedSecret{
 								{
 									Id:   "secretVol1",
 									Name: "secretVol1",
@@ -278,6 +281,7 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						{
+							Id: "FooID:container2",
 							Config: &pkgV1.ContainerConfig{
 								Args: []string{"--flag"},
 								Env: []*pkgV1.ContainerConfig_EnvironmentConfig{

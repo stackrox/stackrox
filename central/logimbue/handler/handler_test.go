@@ -52,7 +52,6 @@ func (suite *LogImbueHanlderTestSuite) TestPostWritesLogsToDb() {
 	suite.logsStorage.AssertExpectations(suite.T())
 }
 
-// Test the happy path.
 func (suite *LogImbueHanlderTestSuite) TestPostHandlesDbError() {
 	loggedMessage := `{ Log: "Something exploded" & % # @ * () derp }`
 	req := &http.Request{

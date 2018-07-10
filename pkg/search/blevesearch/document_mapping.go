@@ -15,26 +15,30 @@ func AddDefaultTypeField(docMap *mapping.DocumentMapping) {
 // FieldsToDocumentMapping does something
 func FieldsToDocumentMapping(fieldsMap map[string]*v1.SearchField) *mapping.DocumentMapping {
 	rootDocumentMapping := newDocumentMapping()
-	rootDocumentMapping.Dynamic = false
 	for _, field := range fieldsMap {
-		separators := strings.Split(field.FieldPath, ".")
-		// go to len(separators) - 2 because the last field is simply field mapping and not a sub document
-		priorDocumentMap := rootDocumentMapping
-		for i := 0; i < len(separators)-1; i++ {
-			separator := separators[i]
-			if priorDocumentMap == nil {
-				priorDocumentMap = rootDocumentMapping
-			}
-			currentDocMap, ok := priorDocumentMap.Properties[separator]
-			if !ok {
-				currentDocMap = newDocumentMapping()
-			}
-			priorDocumentMap.AddSubDocumentMapping(separator, currentDocMap)
-			priorDocumentMap = currentDocMap
-		}
-		priorDocumentMap.AddFieldMappingsAt(separators[len(separators)-1], searchFieldToMapping(field))
+		path := strings.Split(field.FieldPath, ".")
+		addToDocumentMapping(path, field, rootDocumentMapping)
 	}
 	return rootDocumentMapping
+}
+
+func addToDocumentMapping(path []string, searchField *v1.SearchField, docMap *mapping.DocumentMapping) {
+	// Base case is either no path or the leaf of the path, for which we add a field mapping.
+	if len(path) < 1 {
+		panic("path is empty, check that FieldPath is set in the search field")
+	}
+	if len(path) == 1 {
+		docMap.AddFieldMappingsAt(path[0], searchFieldToMapping(searchField))
+		return
+	}
+
+	// Otherwise, we need to add to a sub-document mapping, creating one if necessary.
+	childDocMapping, ok := docMap.Properties[path[0]]
+	if !ok {
+		childDocMapping = newDocumentMapping()
+		docMap.AddSubDocumentMapping(path[0], childDocMapping)
+	}
+	addToDocumentMapping(path[1:], searchField, childDocMapping)
 }
 
 func newDocumentMapping() *mapping.DocumentMapping {

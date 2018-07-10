@@ -60,13 +60,14 @@ message Deployment {
 }
 
 message Container {
-    ContainerConfig config              = 1;
-    Image image                         = 2;
-    SecurityContext security_context    = 3;
-    repeated Volume volumes             = 4;
-    repeated PortConfig ports           = 5;
-    repeated Secret secrets             = 6;
-    Resources resources                 = 7;
+    string id                           = 1;
+    ContainerConfig config              = 2;
+    Image image                         = 3;
+    SecurityContext security_context    = 4;
+    repeated Volume volumes             = 5;
+    repeated PortConfig ports           = 6;
+    repeated EmbeddedSecret secrets     = 7;
+    Resources resources                 = 8;
 }
 
 message ContainerConfig {
@@ -95,7 +96,7 @@ message SecurityContext {
     repeated string add_capabilities    = 4;
 }
 
-message Secret {
+message EmbeddedSecret {
     string id   = 1;
     string name = 2;
     string path = 3;

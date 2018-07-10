@@ -46,7 +46,7 @@ func TestOptions(t *testing.T) {
 	assert.ElementsMatch(t, options.GetOptions(categories), resp.GetOptions())
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	categories = []v1.SearchCategory{v1.SearchCategory_ALERTS, v1.SearchCategory_DEPLOYMENTS, v1.SearchCategory_IMAGES, v1.SearchCategory_POLICIES}
+	categories = []v1.SearchCategory{v1.SearchCategory_ALERTS, v1.SearchCategory_DEPLOYMENTS, v1.SearchCategory_IMAGES, v1.SearchCategory_POLICIES, v1.SearchCategory_SECRETS}
 	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})
 	cancel()
 	require.NoError(t, err)

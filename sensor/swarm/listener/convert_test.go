@@ -123,6 +123,7 @@ func TestAsDeployment(t *testing.T) {
 				UpdatedAt: &timestamp.Timestamp{Seconds: 100},
 				Containers: []*v1.Container{
 					{
+						Id: "c_fooID",
 						Config: &v1.ContainerConfig{
 							Args: []string{"--flags", "--args"},
 							Env: []*v1.ContainerConfig_EnvironmentConfig{
@@ -147,7 +148,7 @@ func TestAsDeployment(t *testing.T) {
 								FullName: "docker.io/library/nginx:latest",
 							},
 						},
-						Secrets: []*v1.Secret{
+						Secrets: []*v1.EmbeddedSecret{
 							{
 								Id:   "id",
 								Name: "name",
@@ -295,6 +296,7 @@ func TestAsDeployment(t *testing.T) {
 				UpdatedAt: &timestamp.Timestamp{Seconds: 100},
 				Containers: []*v1.Container{
 					{
+						Id: "c_fooID",
 						Config: &v1.ContainerConfig{
 							Args: []string{"--flags", "--args"},
 							Env: []*v1.ContainerConfig_EnvironmentConfig{
@@ -319,7 +321,7 @@ func TestAsDeployment(t *testing.T) {
 								FullName: "docker.io/library/nginx:latest",
 							},
 						},
-						Secrets: []*v1.Secret{
+						Secrets: []*v1.EmbeddedSecret{
 							{
 								Id:   "id",
 								Name: "name",

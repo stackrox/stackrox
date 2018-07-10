@@ -10,6 +10,7 @@ import (
 	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
 	policyDataStore "bitbucket.org/stack-rox/apollo/central/policy/datastore"
 	"bitbucket.org/stack-rox/apollo/central/search/options"
+	secretService "bitbucket.org/stack-rox/apollo/central/secret/service"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
@@ -28,6 +29,7 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]searchFunc {
 		v1.SearchCategory_DEPLOYMENTS: s.deployments.SearchDeployments,
 		v1.SearchCategory_IMAGES:      s.images.SearchImages,
 		v1.SearchCategory_POLICIES:    s.policies.SearchPolicies,
+		v1.SearchCategory_SECRETS:     secretService.ParsedSearchRequestHandler(),
 	}
 }
 

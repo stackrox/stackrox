@@ -84,6 +84,7 @@ API_SERVICES += notifier_service
 API_SERVICES += ping_service
 API_SERVICES += policy_service
 API_SERVICES += search_service
+API_SERVICES += secret_service
 API_SERVICES += sensor_event_service
 API_SERVICES += service_identity_service
 API_SERVICES += summary_service

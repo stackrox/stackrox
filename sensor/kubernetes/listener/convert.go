@@ -129,6 +129,7 @@ func (w *wrap) populateContainers(podSpec v1.PodSpec) {
 	w.Deployment.Containers = make([]*pkgV1.Container, len(podSpec.Containers))
 	for i := range w.Deployment.Containers {
 		w.Deployment.Containers[i] = new(pkgV1.Container)
+
 	}
 	w.populateContainerConfigs(podSpec)
 	w.populateImages(podSpec)
@@ -223,6 +224,7 @@ func (w *wrap) populateContainerConfigs(podSpec v1.PodSpec) {
 			}
 		}
 
+		w.Deployment.Containers[i].Id = w.Deployment.Id + ":" + c.Name
 		w.Deployment.Containers[i].Config = config
 	}
 }
@@ -318,7 +320,7 @@ func (w *wrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
 				sourceVolume = &volumes.Unimplemented{}
 			}
 			if sourceVolume.Type() == "Secret" {
-				w.Deployment.Containers[i].Secrets = append(w.Deployment.Containers[i].Secrets, &pkgV1.Secret{
+				w.Deployment.Containers[i].Secrets = append(w.Deployment.Containers[i].Secrets, &pkgV1.EmbeddedSecret{
 					Id:   v.Name,
 					Name: v.Name,
 					Path: v.MountPath,

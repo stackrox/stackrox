@@ -81,6 +81,7 @@ func (s serviceWrap) asDeployment(client *client.Client, retryGetImageSha bool) 
 				Ports:           s.getPorts(),
 				Secrets:         s.getSecrets(),
 				Resources:       s.getResources(),
+				Id:              "c_" + s.ID,
 			},
 		},
 	}
@@ -190,15 +191,15 @@ func (s serviceWrap) getVolumes() []*v1.Volume {
 	return output
 }
 
-func (s serviceWrap) getSecrets() []*v1.Secret {
+func (s serviceWrap) getSecrets() []*v1.EmbeddedSecret {
 	spec := s.Spec.TaskTemplate.ContainerSpec
-	secrets := make([]*v1.Secret, 0, len(spec.Secrets))
+	secrets := make([]*v1.EmbeddedSecret, 0, len(spec.Secrets))
 	for _, secret := range spec.Secrets {
 		path := ""
 		if secret.File != nil {
 			path = `/run/secrets/` + secret.File.Name
 		}
-		secrets = append(secrets, &v1.Secret{
+		secrets = append(secrets, &v1.EmbeddedSecret{
 			Id:   secret.SecretID,
 			Name: secret.SecretName,
 			Path: path,

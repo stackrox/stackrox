@@ -8,6 +8,7 @@ import (
 	deploymentMapping "bitbucket.org/stack-rox/apollo/central/deployment/index/mappings"
 	imageMapping "bitbucket.org/stack-rox/apollo/central/image/index/mappings"
 	policyMapping "bitbucket.org/stack-rox/apollo/central/policy/index/mappings"
+	"bitbucket.org/stack-rox/apollo/central/secret/index"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/analysis/analyzer/custom"
@@ -55,6 +56,9 @@ func getIndexMapping() *mapping.IndexMappingImpl {
 	indexMapping.AddDocumentMapping(v1.SearchCategory_IMAGES.String(), imageMapping.DocumentMap)
 	indexMapping.AddDocumentMapping(v1.SearchCategory_POLICIES.String(), policyMapping.DocumentMap)
 	indexMapping.AddDocumentMapping(v1.SearchCategory_DEPLOYMENTS.String(), deploymentMapping.DocumentMap)
+
+	// Support indexing secrets and relationships.
+	indexMapping.AddDocumentMapping("SecretAndRelationship", index.Mapping)
 
 	disabledSection := bleve.NewDocumentDisabledMapping()
 	indexMapping.AddDocumentMapping("_all", disabledSection)

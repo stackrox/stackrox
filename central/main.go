@@ -39,6 +39,7 @@ import (
 	pingService "bitbucket.org/stack-rox/apollo/central/ping/service"
 	policyService "bitbucket.org/stack-rox/apollo/central/policy/service"
 	searchService "bitbucket.org/stack-rox/apollo/central/search/service"
+	secretService "bitbucket.org/stack-rox/apollo/central/secret/service"
 	seService "bitbucket.org/stack-rox/apollo/central/sensorevent/service"
 	siService "bitbucket.org/stack-rox/apollo/central/serviceidentities/service"
 	summaryService "bitbucket.org/stack-rox/apollo/central/summary/service"
@@ -107,6 +108,7 @@ func (c *central) startGRPCServer() {
 	c.server.Register(pingService.Singleton())
 	c.server.Register(policyService.Singleton())
 	c.server.Register(searchService.Singleton())
+	c.server.Register(secretService.Singleton())
 	c.server.Register(siService.Singleton())
 	c.server.Register(seService.Singleton())
 	c.server.Register(summaryService.Singleton())

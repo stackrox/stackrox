@@ -6,7 +6,10 @@ import (
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	"bitbucket.org/stack-rox/apollo/central/detection"
+	globaldb "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
+	globalindex "bitbucket.org/stack-rox/apollo/central/globalindex/singletons"
 	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
+	secretUpdate "bitbucket.org/stack-rox/apollo/central/secret/datagraph/deploymentevent"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 )
@@ -67,6 +70,11 @@ func (s *pipelineImpl) runRemovePipeline(event *v1.DeploymentEvent) (*v1.Deploym
 		return nil, err
 	}
 
+	// Update secret service.
+	if err := secretUpdate.ProcessDeploymentEvent(globaldb.GetGlobalDB(), globalindex.GetGlobalIndex(), event); err != nil {
+		return nil, err
+	}
+
 	// Process the event (enrichment, alert generation, enforcement action generation.)
 	resp := s.createResponse.do(event)
 	return resp, nil
@@ -98,6 +106,11 @@ func (s *pipelineImpl) runGeneralPipeline(event *v1.DeploymentEvent) (*v1.Deploy
 	// We want to persist the images from the deployment in the event after processing (create response)
 	// TODO(rs): We should map out how images are updated in the pipeline so we don't do more writes than needed.
 	s.persistImages.do(event)
+
+	// Update secret service.
+	if err := secretUpdate.ProcessDeploymentEvent(globaldb.GetGlobalDB(), globalindex.GetGlobalIndex(), event); err != nil {
+		return nil, err
+	}
 
 	return resp, nil
 }

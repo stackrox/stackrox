@@ -56,15 +56,13 @@ func FieldsToQuery(request *v1.ParsedSearchRequest, optionsMap map[string]*v1.Se
 	return conjunctionQuery, nil
 }
 
-// RunSearchRequest does something
+// RunSearchRequest builds a query and runs it against the index.
 func RunSearchRequest(objType string, request *v1.ParsedSearchRequest, index bleve.Index, scopeToQuery func(scope *v1.Scope) query.Query, optionsMap map[string]*v1.SearchField) ([]searchPkg.Result, error) {
-	conjunctionQuery := bleve.NewConjunctionQuery(typeQuery(objType))
-	queries, err := buildQuery(request, scopeToQuery, optionsMap)
+	que, err := BuildQuery(objType, request, scopeToQuery, optionsMap)
 	if err != nil {
 		return nil, err
 	}
-	conjunctionQuery.AddQuery(queries...)
-	return RunQuery(conjunctionQuery, index)
+	return RunQuery(que, index)
 }
 
 // RunQuery runs the actual query and then collapses the results into a simpler format
@@ -77,6 +75,19 @@ func RunQuery(query query.Query, index bleve.Index) ([]searchPkg.Result, error) 
 		return nil, err
 	}
 	return collapseResults(searchResult), nil
+}
+
+// BuildQuery builds a query for the input.
+func BuildQuery(objType string, request *v1.ParsedSearchRequest, scopeToQuery func(scope *v1.Scope) query.Query, optionsMap map[string]*v1.SearchField) (query.Query, error) {
+	queries, err := buildQuery(request, scopeToQuery, optionsMap)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(queries) > 0 {
+		return bleve.NewConjunctionQuery(typeQuery(objType), bleve.NewConjunctionQuery(queries...)), nil
+	}
+	return typeQuery(objType), nil
 }
 
 func buildQuery(request *v1.ParsedSearchRequest, scopeToQuery func(scope *v1.Scope) query.Query, optionsMap map[string]*v1.SearchField) ([]query.Query, error) {

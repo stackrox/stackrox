@@ -22,8 +22,8 @@ var (
 )
 
 func initialize() {
-	storage = store.New(globaldb.GetGlobalDB(), ranking.NewRanker())
 	indexer = index.New(globalindex.GetGlobalIndex())
+	storage = store.New(globaldb.GetGlobalDB(), ranking.NewRanker())
 
 	var err error
 	searcher, err = search.New(storage, indexer)

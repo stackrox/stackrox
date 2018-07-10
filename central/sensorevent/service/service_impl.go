@@ -80,7 +80,7 @@ func receiveMessages(clientClusterID string, stream v1.SensorEventService_Record
 			return
 		}
 		if err != nil {
-			log.Error("error dequeueing deployment event", err)
+			log.Error("error dequeueing deployment event: ", err)
 			return
 		}
 
@@ -101,12 +101,12 @@ func sendMessages(stream v1.SensorEventService_RecordEventServer, pendingEvents 
 
 		response, err := eventProcessor.Run(event)
 		if err != nil {
-			log.Error("error processing deployment event response", err)
+			log.Error("error processing deployment event response: ", err)
 			continue
 		}
 
 		if err := stream.Send(response); err != nil {
-			log.Error("error sending deployment event response", err)
+			log.Error("error sending deployment event response: ", err)
 		}
 	}
 }
