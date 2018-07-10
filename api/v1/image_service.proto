@@ -38,10 +38,11 @@ message License {
 }
 
 message Vulnerability {
-    string cve     = 1;
-    float cvss     = 2;
-    string summary = 3;
-    string link    = 4;
+    string cve      = 1;
+    float  cvss     = 2;
+    string summary  = 3;
+    string link     = 4;
+    string fixed_by = 5;
 }
 
 message ImageScanComponent {
@@ -80,7 +81,10 @@ message ListImage {
     oneof set_cves {
         int64 cves                    = 4;
     }
-    google.protobuf.Timestamp created = 5;
+    oneof set_fixable {
+        int64 fixable_cves            = 5;
+    }
+    google.protobuf.Timestamp created = 6;
 }
 
 message ListImagesResponse {

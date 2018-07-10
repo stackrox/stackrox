@@ -70,11 +70,20 @@ func convertImageToListImage(i *v1.Image) *v1.ListImage {
 			Components: int64(len(i.GetScan().GetComponents())),
 		}
 		var numVulns int64
+		var numFixableVulns int64
 		for _, c := range i.GetScan().GetComponents() {
 			numVulns += int64(len(c.GetVulns()))
+			for _, v := range c.GetVulns() {
+				if v.FixedBy != "" {
+					numFixableVulns++
+				}
+			}
 		}
 		listImage.SetCves = &v1.ListImage_Cves{
 			Cves: numVulns,
+		}
+		listImage.SetFixable = &v1.ListImage_FixableCves{
+			FixableCves: numFixableVulns,
 		}
 	}
 	return listImage

@@ -45,7 +45,9 @@ func TestConvertImagesToListImages(t *testing.T) {
 						{
 							Vulns: []*v1.Vulnerability{
 								{},
-								{},
+								{
+									FixedBy: "hi",
+								},
 							},
 						},
 					},
@@ -60,6 +62,9 @@ func TestConvertImagesToListImages(t *testing.T) {
 				},
 				SetCves: &v1.ListImage_Cves{
 					Cves: 3,
+				},
+				SetFixable: &v1.ListImage_FixableCves{
+					FixableCves: 1,
 				},
 			},
 		},

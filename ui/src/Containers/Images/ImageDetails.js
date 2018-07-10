@@ -162,7 +162,14 @@ class ImageDetails extends Component {
                 Header: 'CVSS',
                 accessor: 'cvss',
                 width: 50,
-                headerClassName: 'font-600 text-right',
+                headerClassName: 'font-600',
+                className: 'text-right'
+            },
+            {
+                Header: 'Fixed',
+                accessor: 'fixedBy',
+                width: 130,
+                headerClassName: 'font-600',
                 className: 'text-right'
             }
         ];

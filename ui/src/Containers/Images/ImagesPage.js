@@ -66,6 +66,12 @@ class ImagesPage extends Component {
                 label: 'CVEs',
                 default: '-',
                 sortMethod: sortNumber('cves')
+            },
+            {
+                key: 'fixableCves',
+                label: 'Fixable',
+                default: '-',
+                sortMethod: sortNumber('fixableCves')
             }
         ];
         const rows = this.props.images;
