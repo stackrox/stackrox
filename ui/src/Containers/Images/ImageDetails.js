@@ -232,7 +232,7 @@ class ImageDetails extends Component {
             <ReactTable
                 data={scan.components}
                 columns={columns}
-                manual
+                pageSize={scan.components.length}
                 showPagination={false}
                 SubComponent={this.renderVulnsTable}
             />
