@@ -8,7 +8,6 @@ deps: package.json
 	@touch deps
 
 SOURCES := $(shell ls *.json) tailwind.js yarn.lock
-SOURCES += $(shell find prod)
 SOURCES += $(shell find public)
 SOURCES += $(shell find src -name '*.js' -print)
 SOURCES += $(shell find src -name '*.css' -print)

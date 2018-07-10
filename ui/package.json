@@ -57,7 +57,7 @@
     "build": "tailwind build ./src/app.css -c ./tailwind.js -o ./src/index.css && NODE_PATH=src react-scripts build",
     "test": "NODE_PATH=src react-scripts test --env=jsdom --coverage",
     "test-watch": "NODE_PATH=src react-scripts test --env=jsdom",
-    "lint": "NODE_PATH=src eslint src prod cypress",
+    "lint": "NODE_PATH=src eslint src cypress",
     "cypress-open": "cypress open",
     "test-e2e-local": "cypress run",
     "test-e2e-ci": "DEBUG=cypress:* cypress run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.json",
