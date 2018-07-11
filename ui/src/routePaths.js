@@ -13,3 +13,4 @@ export const integrationsPath = `${mainPath}/integrations`;
 export const policiesPath = `${mainPath}/policies/:policyId?`;
 export const riskPath = `${mainPath}/risk/:deploymentId?`;
 export const imagesPath = `${mainPath}/images/:imageSha?`;
+export const secretsPath = `${mainPath}/secrets/:secretId?`;

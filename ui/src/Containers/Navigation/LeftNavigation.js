@@ -33,6 +33,11 @@ const navLinks = [
         renderIcon: () => <Icon.FileMinus className="h-4 w-4 mb-1" />
     },
     {
+        text: 'Secrets',
+        to: '/main/secrets',
+        renderIcon: () => <Icon.Lock className="h-4 w-4 mb-1" />
+    },
+    {
         text: 'Configure',
         to: '',
         renderIcon: () => <Icon.Settings className="h-4 w-4 mb-1" />,

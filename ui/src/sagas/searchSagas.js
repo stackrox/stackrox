@@ -6,13 +6,15 @@ import {
     violationsPath,
     riskPath,
     policiesPath,
-    imagesPath
+    imagesPath,
+    secretsPath
 } from 'routePaths';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 import { actions as alertActions } from 'reducers/alerts';
 import { actions as deploymentsActions } from 'reducers/deployments';
 import { actions as policiesActions } from 'reducers/policies';
 import { actions as imagesActions } from 'reducers/images';
+import { actions as secretsActions } from 'reducers/secrets';
 import { actions as dashboardActions } from 'reducers/dashboard';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { fetchOptions } from 'services/SearchService';
@@ -112,6 +114,14 @@ export default function* searches() {
             imagesActions.setImagesSearchSuggestions,
             imagesActions.setImagesSearchOptions,
             'categories=IMAGES'
+        ),
+        takeEveryNewlyMatchedLocation(
+            secretsPath,
+            getSearchOptions,
+            secretsActions.setSecretsSearchModifiers,
+            secretsActions.setSecretsSearchSuggestions,
+            secretsActions.setSecretsSearchOptions,
+            'categories=SECRETS'
         ),
         takeEveryNewlyMatchedLocation(
             dashboardPath,

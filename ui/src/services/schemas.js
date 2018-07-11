@@ -13,3 +13,22 @@ export const alerts = { alerts: [alert] };
 export const image = new schema.Entity('image', {}, { idAttribute: 'sha' });
 
 export const cluster = new schema.Entity('cluster');
+
+const getSecretId = secretObj => secretObj.secret.id;
+
+const flattenSecretObj = secretObj => ({
+    id: secretObj.secret.id,
+    name: secretObj.secret.name,
+    clusterRelationship: secretObj.relationship.clusterRelationship,
+    namespaceRelationship: secretObj.relationship.namespaceRelationship,
+    deploymentRelationships: secretObj.relationship.deploymentRelationships
+});
+
+export const secret = new schema.Entity(
+    'secret',
+    {},
+    {
+        idAttribute: getSecretId,
+        processStrategy: flattenSecretObj
+    }
+);

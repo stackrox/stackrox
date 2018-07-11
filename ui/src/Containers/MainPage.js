@@ -13,7 +13,8 @@ import {
     integrationsPath,
     policiesPath,
     riskPath,
-    imagesPath
+    imagesPath,
+    secretsPath
 } from 'routePaths';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
@@ -27,6 +28,7 @@ import PoliciesPage from 'Containers/Policies/PoliciesPage';
 import ImagesPage from 'Containers/Images/ImagesPage';
 import CompliancePage from 'Containers/Compliance/CompliancePage';
 import RiskPage from 'Containers/Risk/RiskPage';
+import SecretsPage from 'Containers/Secrets/SecretsPage';
 import TopNavigation from 'Containers/Navigation/TopNavigation';
 import LeftNavigation from 'Containers/Navigation/LeftNavigation';
 import SearchModal from 'Containers/Search/SearchModal';
@@ -60,6 +62,7 @@ class MainPage extends Component {
                     <ProtectedRoute path={policiesPath} component={PoliciesPage} />
                     <ProtectedRoute path={riskPath} component={RiskPage} />
                     <ProtectedRoute path={imagesPath} component={ImagesPage} />
+                    <ProtectedRoute path={secretsPath} component={SecretsPage} />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
             </ErrorBoundary>

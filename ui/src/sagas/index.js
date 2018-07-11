@@ -11,6 +11,7 @@ import integrations from './integrationSagas';
 import globalSearch from './globalSearchSagas';
 import searches from './searchSagas';
 import summaries from './summarySagas';
+import secrets from './secretSagas';
 import metadata from './metadataSagas';
 
 export default function* root() {
@@ -26,6 +27,7 @@ export default function* root() {
         fork(globalSearch),
         fork(searches),
         fork(summaries),
+        fork(secrets),
         fork(metadata)
     ]);
 }
