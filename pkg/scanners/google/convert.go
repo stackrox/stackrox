@@ -20,7 +20,9 @@ func (c *googleScanner) convertVulnerabilityFromPackageVulnerabilityOccurrence(o
 	if len(packageIssues) == 0 {
 		return "", "", nil
 	}
-	affectedLocation := packageIssues[0].GetAffectedLocation()
+
+	pkgIssue := packageIssues[0]
+	affectedLocation := pkgIssue.GetAffectedLocation()
 	var link string
 	if len(note.GetRelatedUrl()) != 0 {
 		link = note.GetRelatedUrl()[0].GetUrl()
@@ -33,6 +35,7 @@ func (c *googleScanner) convertVulnerabilityFromPackageVulnerabilityOccurrence(o
 			Link:    link,
 			Cvss:    occurrence.GetVulnerabilityDetails().GetCvssScore(),
 			Summary: summary,
+			FixedBy: pkgIssue.GetFixedLocation().GetVersion().GetRevision(),
 		}
 }
 
