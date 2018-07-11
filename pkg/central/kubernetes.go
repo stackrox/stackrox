@@ -283,6 +283,13 @@ spec:
       containers:
       - name: clairify
         image: {{.K8sConfig.ClairifyImage}}
+        resources:
+          requests:
+            memory: "1000Mi"
+            cpu: "1000m"
+          limits:
+            memory: "2000Mi"
+            cpu: "2000m"
         env:
         - name: CLAIR_ARGS
           value: "-insecure-tls"
