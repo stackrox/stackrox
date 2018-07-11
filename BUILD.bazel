@@ -1,4 +1,4 @@
-# gazelle:proto disable
+# gazelle:proto disable_global
 load("@bazel_gazelle//:def.bzl", "gazelle")
 
 gazelle(
