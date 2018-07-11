@@ -54,7 +54,7 @@ const OpenShiftFields = ({ metadata }) => (
         <FormField label="Prevent Image" required>
             <ReduxTextField
                 name="preventImage"
-                placeholder={`docker-registry.default.svc.local:5000/stackrox/prevent:${
+                placeholder={`docker-registry.default.svc:5000/stackrox/prevent:${
                     metadata.version
                 }`}
             />
