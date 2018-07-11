@@ -3,8 +3,7 @@ package service
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/authprovider/store"
-	interceptor "bitbucket.org/stack-rox/apollo/central/interceptor/singletons"
+	"bitbucket.org/stack-rox/apollo/central/authprovider/cachedstore"
 )
 
 var (
@@ -14,7 +13,7 @@ var (
 )
 
 func initialize() {
-	as = New(store.Singleton(), interceptor.AuthInterceptor())
+	as = New(cachedstore.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

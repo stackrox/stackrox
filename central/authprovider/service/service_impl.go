@@ -19,16 +19,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// AuthProviderUpdater knows how to emplace or remove auth providers.
-type AuthProviderUpdater interface {
-	UpdateProvider(id string, provider authproviders.Authenticator)
-	RemoveProvider(id string)
-}
-
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
 	storage store.Store
-	auth    authProviderUpdater
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -88,17 +81,16 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.AuthProv
 	if request.GetLoginUrl() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Auth Provider loginUrl field must be empty")
 	}
-	p, err := authproviders.Create(request)
+	loginURL, err := authproviders.LoginURLFromProto(request)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	request.LoginUrl = p.LoginURL()
+	request.LoginUrl = loginURL
 	id, err := s.storage.AddAuthProvider(request)
 	if err != nil {
 		return nil, err
 	}
 	request.Id = id
-	s.auth.UpdateProvider(id, p)
 	return request, nil
 }
 
@@ -111,15 +103,14 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *v1.AuthProvi
 		return nil, status.Error(codes.InvalidArgument, "Auth Provider id is required")
 	}
 
-	p, err := authproviders.Create(request)
+	loginURL, err := authproviders.LoginURLFromProto(request)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	request.LoginUrl = p.LoginURL()
+	request.LoginUrl = loginURL
 	if err := s.storage.UpdateAuthProvider(request); err != nil {
 		return nil, err
 	}
-	s.auth.UpdateProvider(request.GetId(), p)
 	return &empty.Empty{}, nil
 }
 
@@ -131,6 +122,5 @@ func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.Resour
 	if err := s.storage.RemoveAuthProvider(request.GetId()); err != nil {
 		return nil, service.ReturnErrorCode(err)
 	}
-	s.auth.RemoveProvider(request.GetId())
 	return &empty.Empty{}, nil
 }

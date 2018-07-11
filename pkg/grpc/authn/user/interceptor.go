@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"strings"
-	"sync"
 
 	"bitbucket.org/stack-rox/apollo/pkg/authproviders"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
@@ -17,38 +16,20 @@ var (
 	logger = logging.LoggerForModule()
 )
 
-// AuthMonitor allows us to validate an auth provider if it has not been previously validated.
-type AuthMonitor interface {
+// AuthenticatorProvider gives us access to authenticators.
+type AuthenticatorProvider interface {
+	GetAuthenticators() map[string]authproviders.Authenticator
 	RecordAuthSuccess(id string) error
 }
 
 // An AuthInterceptor provides gRPC interceptors that authenticates users.
 type AuthInterceptor struct {
-	authMonitor AuthMonitor
-	providers   map[string]authproviders.Authenticator
-	lock        sync.RWMutex
+	authenticatorProvider AuthenticatorProvider
 }
 
 // NewAuthInterceptor creates a new AuthInterceptor.
-func NewAuthInterceptor(authMonitor AuthMonitor) *AuthInterceptor {
-	return &AuthInterceptor{
-		authMonitor: authMonitor,
-		providers:   make(map[string]authproviders.Authenticator),
-	}
-}
-
-// UpdateProvider updates the in-memory set of auth providers.
-func (a *AuthInterceptor) UpdateProvider(id string, provider authproviders.Authenticator) {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-	a.providers[id] = provider
-}
-
-// RemoveProvider removes a provider from the set of auth providers.
-func (a *AuthInterceptor) RemoveProvider(id string) {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-	delete(a.providers, id)
+func NewAuthInterceptor(authenticatorProvider AuthenticatorProvider) *AuthInterceptor {
+	return &AuthInterceptor{authenticatorProvider: authenticatorProvider}
 }
 
 // UnaryInterceptor parses authentication metadata to maintain the time for
@@ -99,12 +80,10 @@ func (a *AuthInterceptor) authToken(ctx context.Context) context.Context {
 }
 
 func (a *AuthInterceptor) retrieveToken(ctx context.Context, headers map[string][]string) (newCtx context.Context) {
-	a.lock.RLock()
-	defer a.lock.RUnlock()
-
-	userIdentity := a.getUserIdentity(headers)
+	authenticators := a.authenticatorProvider.GetAuthenticators()
+	userIdentity := a.getUserIdentity(headers, authenticators)
 	newCtx = authn.NewAuthConfigurationContext(ctx, authn.AuthConfiguration{
-		ProviderConfigured: a.countEnabledAndValidated() > 0,
+		ProviderConfigured: a.countEnabledAndValidated(authenticators) > 0,
 	})
 
 	if userIdentity != nil {
@@ -113,8 +92,8 @@ func (a *AuthInterceptor) retrieveToken(ctx context.Context, headers map[string]
 	return newCtx
 }
 
-func (a *AuthInterceptor) countEnabledAndValidated() (enabled int) {
-	for _, p := range a.providers {
+func (a *AuthInterceptor) countEnabledAndValidated(authenticators map[string]authproviders.Authenticator) (enabled int) {
+	for _, p := range authenticators {
 		if p.Enabled() && p.Validated() {
 			enabled++
 		}
@@ -122,27 +101,28 @@ func (a *AuthInterceptor) countEnabledAndValidated() (enabled int) {
 	return enabled
 }
 
-func (a *AuthInterceptor) getUserIdentity(headers map[string][]string) *authn.UserIdentity {
-	for id, p := range a.providers {
-		if !p.Enabled() {
+func (a *AuthInterceptor) getUserIdentity(headers map[string][]string, authenticators map[string]authproviders.Authenticator) *authn.UserIdentity {
+	for id, authenticator := range authenticators {
+		if !authenticator.Enabled() {
 			continue
 		}
 
-		user, expiration, err := p.User(headers)
+		user, expiration, err := authenticator.User(headers)
 		if err != nil {
 			logger.Debugf("user auth error: %s", err)
 			continue
 		}
 
-		if !p.Validated() {
-			if err := a.authMonitor.RecordAuthSuccess(id); err != nil {
-				logger.Errorf("error update auth provider status: %s", err)
+		if !authenticator.Validated() {
+			if err := a.authenticatorProvider.RecordAuthSuccess(id); err != nil {
+				logger.Errorf("Failed to update auth provider status for auth %s with "+
+					"loginURL %s: %s", id, authenticator.LoginURL(), err)
 			}
 		}
 
 		return &authn.UserIdentity{
 			User:         user,
-			AuthProvider: p,
+			AuthProvider: authenticator,
 			Expiration:   expiration,
 		}
 	}

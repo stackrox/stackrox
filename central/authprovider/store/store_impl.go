@@ -68,6 +68,14 @@ func (b *storeImpl) GetAuthProviders(request *v1.GetAuthProvidersRequest) ([]*v1
 				return err
 			}
 
+			// Make sure to only return matching results.
+			if request.GetName() != "" && request.GetName() != authProvider.GetName() {
+				return nil
+			}
+			if request.GetType() != "" && request.GetType() != authProvider.GetType() {
+				return nil
+			}
+
 			// load whether or not it has been validated.
 			val := valB.Get(k)
 			if val != nil {

@@ -11,7 +11,7 @@ const (
 	authValidatedBucket = "authValidated"
 )
 
-// Store provides storage functionality for alerts.
+// Store provides storage functionality for auth providers.
 type Store interface {
 	GetAuthProvider(id string) (*v1.AuthProvider, bool, error)
 	GetAuthProviders(request *v1.GetAuthProvidersRequest) ([]*v1.AuthProvider, error)

@@ -5,7 +5,6 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/authprovider/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/authproviders"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -28,16 +27,9 @@ type Service interface {
 	DeleteAuthProvider(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error)
 }
 
-// AuthProviderUpdater knows how to emplace or remove auth providers.
-type authProviderUpdater interface {
-	UpdateProvider(id string, provider authproviders.Authenticator)
-	RemoveProvider(id string)
-}
-
 // New returns a new Service instance using the given DataStore.
-func New(storage store.Store, auth authProviderUpdater) Service {
+func New(storage store.Store) Service {
 	return &serviceImpl{
 		storage: storage,
-		auth:    auth,
 	}
 }

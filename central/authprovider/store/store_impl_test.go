@@ -2,6 +2,7 @@ package store
 
 import (
 	"os"
+	"sort"
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -62,6 +63,29 @@ func (suite *AuthProviderStoreTestSuite) TestAuthProviders() {
 		suite.True(exists)
 		suite.Equal(got, r)
 	}
+
+	// Test GetAuthProviders
+	retrievedProviders, err := suite.store.GetAuthProviders(&v1.GetAuthProvidersRequest{})
+	suite.NoError(err)
+	suite.Len(retrievedProviders, len(authProviders))
+	// Sort them alphabetically by name (which is how we should keep our authProviders slice sorted).
+	sort.Slice(retrievedProviders, func(i, j int) bool {
+		return retrievedProviders[i].Name < retrievedProviders[j].Name
+	})
+	for i, retrievedProvider := range retrievedProviders {
+		suite.Equal(authProviders[i], retrievedProvider)
+	}
+
+	// Test GetAuthProviders with a non-empty request
+	retrievedProvidersByType, err := suite.store.GetAuthProviders(&v1.GetAuthProvidersRequest{Type: "Auth Provider 1"})
+	suite.NoError(err)
+	suite.Len(retrievedProvidersByType, 1)
+	suite.Equal(authProviders[0], retrievedProvidersByType[0])
+
+	retrievedProvidersByName, err := suite.store.GetAuthProviders(&v1.GetAuthProvidersRequest{Name: "authProvider1"})
+	suite.NoError(err)
+	suite.Len(retrievedProvidersByName, 1)
+	suite.Equal(authProviders[0], retrievedProvidersByName[0])
 
 	// Test Update
 	for _, r := range authProviders {

@@ -21,3 +21,13 @@ func Create(authProvider *v1.AuthProvider) (Authenticator, error) {
 	}
 	return creator(authProvider)
 }
+
+// LoginURLFromProto returns the LoginURL corresponding to this auth provider, returning
+// an error if the auth provider can't be instantiated.
+func LoginURLFromProto(authProvider *v1.AuthProvider) (string, error) {
+	authenticator, err := Create(authProvider)
+	if err != nil {
+		return "", fmt.Errorf("auth provider creation: %s", err)
+	}
+	return authenticator.LoginURL(), nil
+}

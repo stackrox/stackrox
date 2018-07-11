@@ -57,8 +57,8 @@ func userAuth(ctx context.Context) (*v1.AuthStatus, error) {
 		return nil, status.Errorf(codes.Internal, "expiration time: %s", err)
 	}
 	var url string
-	if id.User.AuthProvider != nil {
-		url = id.User.AuthProvider.RefreshURL()
+	if id.AuthProvider != nil {
+		url = id.AuthProvider.RefreshURL()
 	}
 	return &v1.AuthStatus{
 		Id:         &v1.AuthStatus_UserId{UserId: id.User.ID},
