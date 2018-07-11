@@ -26,8 +26,6 @@ import (
 const (
 	grpcAddr = ":443"
 	endpoint = "localhost" + grpcAddr
-
-	maxGRPCMsgSize = 10 * 1024 * 1024 // 10MB
 )
 
 func init() {
@@ -148,8 +146,6 @@ func (a *apiImpl) run() {
 		grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(a.unaryInterceptors()...),
 		),
-		grpc.MaxRecvMsgSize(maxGRPCMsgSize),
-		grpc.MaxSendMsgSize(maxGRPCMsgSize),
 	)
 
 	for _, service := range a.apiServices {
