@@ -118,7 +118,7 @@ const initialValuesFactories = {
         centralApiEndpoint: 'central.prevent_net:443'
     }),
     OPENSHIFT_CLUSTER: metadata => ({
-        preventImage: `docker-registry.default.svc.local:5000/stackrox/prevent:${metadata.version}`,
+        preventImage: `docker-registry.default.svc:5000/stackrox/prevent:${metadata.version}`,
         centralApiEndpoint: 'central.stackrox:443',
         openshift: {
             params: {
