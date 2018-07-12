@@ -4,6 +4,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { selectors } from 'reducers';
 import { actions as policyActions, types } from 'reducers/policies';
+import { actions as notificationActions } from 'reducers/notifications';
 import { createSelector, createStructuredSelector } from 'reselect';
 
 import { formValueSelector } from 'redux-form';
@@ -31,7 +32,9 @@ class PoliciesPage extends Component {
         reassessPolicies: PropTypes.func.isRequired,
         deletePolicies: PropTypes.func.isRequired,
         updatePolicyDisabledState: PropTypes.func.isRequired,
-        formData: PropTypes.shape({}),
+        formData: PropTypes.shape({
+            name: PropTypes.string
+        }),
         wizardState: PropTypes.shape({
             current: PropTypes.string,
             policy: PropTypes.shape({}),
@@ -48,12 +51,16 @@ class PoliciesPage extends Component {
         setSearchModifiers: PropTypes.func.isRequired,
         setSearchSuggestions: PropTypes.func.isRequired,
         isViewFiltered: PropTypes.bool.isRequired,
-        isFetchingPolicy: PropTypes.bool
+        isFetchingPolicy: PropTypes.bool,
+        addToast: PropTypes.func.isRequired,
+        removeToast: PropTypes.func.isRequired
     };
 
     static defaultProps = {
         selectedPolicy: null,
-        formData: {},
+        formData: {
+            name: ''
+        },
         isFetchingPolicy: false
     };
 
@@ -80,22 +87,28 @@ class PoliciesPage extends Component {
         this.props.setWizardState(newState);
     };
 
-    onPolicyEdit = () => this.props.setWizardState({ current: 'EDIT', policy: null });
+    onPolicyEdit = () => {
+        const wizardState = { current: 'EDIT', policy: null };
+        this.props.setWizardState(wizardState);
+    };
 
     onBackToEditFields = () => this.props.setWizardState({ current: 'EDIT' });
 
     getPolicyDryRun = () => {
-        const serverFormattedPolicy = formatPolicyFields(this.props.formData);
-        const enabledPolicy = Object.assign({}, serverFormattedPolicy);
-        // set disabled to false for dryrun so that we can see what deployments the policy will affect
-        enabledPolicy.disabled = false;
+        const dryRunOK = this.checkPreDryRun();
+        if (dryRunOK) {
+            const serverFormattedPolicy = formatPolicyFields(this.props.formData);
+            const enabledPolicy = Object.assign({}, serverFormattedPolicy);
+            // set disabled to false for dryrun so that we can see what deployments the policy will affect
+            enabledPolicy.disabled = false;
 
-        const wizardState = {
-            current: 'PRE_PREVIEW',
-            policy: enabledPolicy,
-            disabled: serverFormattedPolicy.disabled
-        };
-        this.props.setWizardState(wizardState);
+            const wizardState = {
+                current: 'PRE_PREVIEW',
+                policy: enabledPolicy,
+                disabled: serverFormattedPolicy.disabled
+            };
+            this.props.setWizardState(wizardState);
+        }
     };
 
     setSelectedPolicy = policy => {
@@ -106,9 +119,23 @@ class PoliciesPage extends Component {
         this.props.setWizardState({ current: '', isNew: false });
     };
 
-    preSubmit = policy => {
-        const newPolicy = formatPolicyFields(policy);
-        return newPolicy;
+    checkPreDryRun = () => {
+        if (!this.props.wizardState.isNew) return true;
+        // throw an error if adding new policy that has the same name
+        const policyNames = this.props.policies.map(policy => policy.name);
+        if (policyNames.find(name => name === this.props.formData.name)) {
+            const error = `Could not add policy due to name validation: "${
+                this.props.formData.name
+            }" already exists`;
+            this.showToast(error);
+            return false;
+        }
+        return true;
+    };
+
+    showToast = error => {
+        this.props.addToast(error);
+        setTimeout(this.props.removeToast, 500);
     };
 
     deletePolicies = () => {
@@ -374,7 +401,9 @@ const mapDispatchToProps = {
     reassessPolicies: policyActions.reassessPolicies,
     deletePolicies: policyActions.deletePolicies,
     updatePolicyDisabledState: policyActions.updatePolicyDisabledState,
-    setWizardState: policyActions.setPolicyWizardState
+    setWizardState: policyActions.setPolicyWizardState,
+    addToast: notificationActions.addNotification,
+    removeToast: notificationActions.removeOldestNotification
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(PoliciesPage);

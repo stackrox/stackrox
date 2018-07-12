@@ -10,6 +10,10 @@ describe('Policies page', () => {
         cy.wait('@metadataOptions');
     });
 
+    const addPolicy = () => {
+        cy.get(selectors.addPolicyButton).click();
+    };
+
     const editPolicy = () => {
         cy.get(selectors.editPolicyButton).click();
     };
@@ -43,7 +47,7 @@ describe('Policies page', () => {
     });
 
     it('should show the required "*" next to the required fields', () => {
-        cy.get(selectors.addPolicyButton).click();
+        addPolicy();
         cy
             .get(selectors.form.required)
             .eq(0)
@@ -74,7 +78,7 @@ describe('Policies page', () => {
     it('should allow updating policy name', () => {
         const updatePolicyName = typeStr => {
             editPolicy();
-            cy.get('form input:first').type(typeStr);
+            cy.get(selectors.form.nameInput).type(typeStr);
             savePolicy();
         };
         const secretSuffix = ':secretSuffix:';
@@ -86,9 +90,16 @@ describe('Policies page', () => {
         updatePolicyName(deleteSuffix); // revert back
     });
 
+    it('should not allow getting a dry run when creating a policy with a duplicate name', () => {
+        addPolicy();
+        cy.get(selectors.form.nameInput).type(text.policyLatestTagName);
+        cy.get(selectors.nextButton).click();
+        cy.get(selectors.nextButton).should('exist');
+    });
+
     it('should allow floats for CPU and CVSS configuration fields', () => {
         const addCPUField = () => {
-            cy.get(selectors.editPolicyButton).click();
+            editPolicy();
             cy
                 .get(selectors.configurationField.select)
                 .select('fields.containerResourcePolicy.cpuResourceRequest');
@@ -101,8 +112,7 @@ describe('Policies page', () => {
                 .get(selectors.configurationField.numericInput)
                 .last()
                 .type(2.2);
-            cy.get(selectors.nextButton).click();
-            cy.get(selectors.savePolicyButton).click();
+            savePolicy();
         };
         cy.get(selectors.tableFirstRow).click();
         addCPUField();
@@ -119,7 +129,8 @@ describe('Policies page', () => {
     });
 
     it('should open the panel to create a new policy', () => {
-        cy.get(selectors.addPolicyButton).click();
+        addPolicy();
+        cy.get(selectors.nextButton).should('exist');
     });
 
     it('should show a specific message when editing a policy with "enabled" value as "no"', () => {

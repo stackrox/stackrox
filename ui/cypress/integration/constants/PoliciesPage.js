@@ -14,6 +14,7 @@ export const selectors = {
         addCapabilities: 'tbody > tr:contains("CAP_SYS_ADMIN capability added")'
     },
     form: {
+        nameInput: 'form input:first',
         enableField: 'form div.text-primary-500:contains("Enable") + div',
         required: 'form span[data-test-id="required"]',
         select: 'form select',
@@ -53,6 +54,7 @@ export const selectors = {
 };
 
 export const text = {
+    policyLatestTagName: 'Latest tag',
     policyPreview: {
         message:
             'This policy is not currently enabled. If enabled, the policy would generate violations for the following deployments on your system.'
