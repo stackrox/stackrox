@@ -1,5 +1,9 @@
 import { url as dashboardUrl, selectors } from './constants/DashboardPage';
-import { url as complianceUrl } from './constants/CompliancePage';
+
+import {
+    url as complianceUrl,
+    selectors as compliancePageSelectors
+} from './constants/CompliancePage';
 import { url as violationsUrl } from './constants/ViolationsPage';
 import * as api from './constants/apiEndpoints';
 
@@ -235,5 +239,27 @@ describe('Dashboard page', () => {
             .get(selectors.sectionHeaders.violationsByClusters)
             .next()
             .should('have.text', 'No Clusters Available. Please refine search');
+    });
+    it('validate scans for multi clusters', () => {
+        cy.server();
+        cy.route('GET', '/v1/clusters').as('clusters');
+        cy.visit(dashboardUrl);
+        cy
+            .get(compliancePageSelectors.leftNavigation)
+            .contains('Compliance')
+            .click();
+        cy.wait('@clusters').then(cluster => {
+            const { clusters } = cluster.response.body;
+            clusters.forEach(clust => {
+                cy.route('GET', '/v1/benchmarks/scans**').as('scans');
+                cy.visit(`/main/compliance/${clust.id}`);
+                cy.get('button:contains("Scan now")').click();
+                cy.wait('@scans');
+                cy.visit(dashboardUrl);
+                cy
+                    .get(selectors.slick.dashboardBenchmarks.slickSlideHeader)
+                    .should('contain', clust.name);
+            });
+        });
     });
 });

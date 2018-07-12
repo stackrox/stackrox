@@ -12,5 +12,7 @@ export const selectors = {
     select: {
         day: 'select:first',
         time: 'select:last'
-    }
+    },
+    clusterList: '.navigation-panel ul > li',
+    leftNavigation: '.left-navigation'
 };
