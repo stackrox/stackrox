@@ -43,8 +43,11 @@ export function preFormatCapabilitiesField(policy) {
 
 export function postFormatWhitelistField(policy) {
     const serverPolicy = Object.assign({}, policy);
-    if (policy.deployments && policy.deployments.length !== 0)
+    serverPolicy.whitelists = [];
+    if (policy.deployments && policy.deployments.length !== 0) {
         serverPolicy.whitelists = policy.deployments.map(o => ({ deployment: { name: o.label } }));
+    }
+
     return serverPolicy;
 }
 

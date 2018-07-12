@@ -155,6 +155,19 @@ describe('Policies page', () => {
         closePolicySidePanel();
     });
 
+    it('should allow updating days since image scanned in a policy', () => {
+        cy.get(selectors.policies.latest).click();
+        editPolicy();
+        cy.get(selectors.form.select).select('fields.scanAgeDays');
+        cy.get(selectors.scanAgeDays.input).type('50');
+        savePolicy();
+        cy.get(selectors.scanAgeDays.value).should('have.text', '50 Days ago');
+        editPolicy();
+        cy.get(selectors.scanAgeDays.deleteButton).click();
+        savePolicy();
+        cy.get(selectors.scanAgeDays.value).should('not.exist');
+    });
+
     it('should allow disable/enable policy from the policies table', () => {
         const firstRowEnableDisableButton = `${selectors.tableFirstRow} ${
             selectors.enableDisableButton

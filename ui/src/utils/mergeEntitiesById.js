@@ -1,6 +1,5 @@
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
-import isArray from 'lodash/isArray';
 
 /**
  * Given the map of existing entities by their IDs and a map of updated entities (e.g. received from the server),
@@ -13,15 +12,14 @@ import isArray from 'lodash/isArray';
  */
 
 export default function mergeEntitiesById(existingEntitiesById, newEntitiesById) {
-    const updateArrayValue = (existingValue, newValue) =>
-        isArray(existingValue) && isArray(newValue) ? newValue : undefined;
+    const updateValue = (existingValue, newValue) => newValue;
 
     return Object.keys(newEntitiesById).reduce((result, id) => {
         if (!existingEntitiesById[id]) return { ...result, [id]: newEntitiesById[id] };
         if (isEqual(existingEntitiesById[id], newEntitiesById[id])) return result;
         return {
             ...result,
-            [id]: mergeWith({}, existingEntitiesById[id], newEntitiesById[id], updateArrayValue)
+            [id]: mergeWith({}, existingEntitiesById[id], newEntitiesById[id], updateValue)
         };
     }, existingEntitiesById);
 }
