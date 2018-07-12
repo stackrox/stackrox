@@ -88,7 +88,9 @@ class ClustersModal extends Component {
                     text="Add"
                     className="btn-success"
                     onClick={this.onAddCluster}
-                    disabled={this.props.isWizardActive}
+                    disabled={
+                        this.state.checkedClusterIds.length !== 0 || this.props.isWizardActive
+                    }
                 />
             </React.Fragment>
         );

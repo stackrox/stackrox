@@ -152,6 +152,7 @@ describe('Cluster Creation Flow', () => {
 
                 // clean up after the test by deleting the cluster
                 cy.get(`table tr:contains("${clusterName}") td input[type="checkbox"]`).check();
+                cy.get(selectors.buttons.add).should('be.disabled');
                 cy.get(selectors.buttons.delete).click();
                 cy.get(selectors.buttons.confirm).click();
                 cy.get(`table tr:contains("${clusterName}")`).should('not.exist');
