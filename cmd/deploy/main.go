@@ -19,7 +19,7 @@ import (
 var (
 	logger = logging.LoggerForModule()
 
-	clairifyTag   = "0.3.1"
+	clairifyTag   = "0.4"
 	clairifyImage = "clairify:" + clairifyTag
 	preventTag    = getVersion()
 	preventImage  = "prevent:" + preventTag
