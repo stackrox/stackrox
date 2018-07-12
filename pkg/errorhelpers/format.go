@@ -5,27 +5,36 @@ import (
 	"strings"
 )
 
-// FormatErrorStrings aggregates a slice of error messages into a single error.
-func FormatErrorStrings(start string, errors []string) error {
-	if len(errors) == 0 {
-		return nil
-	}
-
-	if len(errors) > 0 {
-		return fmt.Errorf("%s errors: [%s]", start, strings.Join(errors, ", "))
-	}
-	return nil
+// ErrorList is a wrapper around many errors
+type ErrorList struct {
+	start  string
+	errors []string
 }
 
-// FormatErrors aggregates a slice of errors into a single error.
-func FormatErrors(start string, errs []error) error {
-	if len(errs) == 0 {
-		return nil
+// NewErrorList returns a new ErrorList
+func NewErrorList(start string) *ErrorList {
+	return &ErrorList{
+		start: start,
 	}
+}
 
-	var errors []string
-	for _, err := range errs {
-		errors = append(errors, err.Error())
+// AddError adds the passes error to the list of errors if it is not nil
+func (e *ErrorList) AddError(err error) {
+	if err == nil {
+		return
 	}
-	return FormatErrorStrings(start, errors)
+	e.errors = append(e.errors, err.Error())
+}
+
+// AddString adds a string based error to the list
+func (e *ErrorList) AddString(err string) {
+	e.errors = append(e.errors, err)
+}
+
+// ToError returns an error if there were errors added or nil
+func (e *ErrorList) ToError() error {
+	if len(e.errors) > 0 {
+		return fmt.Errorf("%s errors: [%s]", e.start, strings.Join(e.errors, ", "))
+	}
+	return nil
 }

@@ -79,7 +79,7 @@ func (b *storeImpl) AddLog(log string) error {
 func (b *storeImpl) RemoveLogs(from, to int64) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "Logs")
 
-	errors := make([]error, 0)
+	errorList := errorhelpers.NewErrorList("errors deleting logs")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(logsBucket)).Cursor()
 
@@ -89,14 +89,8 @@ func (b *storeImpl) RemoveLogs(from, to int64) error {
 		binary.LittleEndian.PutUint64(endBytes, uint64(to))
 
 		for k, _ := bucket.Seek(startBytes); k != nil && bytes.Compare(k, endBytes) <= 0; k, _ = bucket.Next() {
-			if err := bucket.Delete(); err != nil {
-				errors = append(errors, err)
-			}
+			errorList.AddError(bucket.Delete())
 		}
-
-		if len(errors) == 0 {
-			return nil
-		}
-		return errorhelpers.FormatErrors("errors deleting logs", errors)
+		return errorList.ToError()
 	})
 }

@@ -7,6 +7,7 @@ import (
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	notifierStore "bitbucket.org/stack-rox/apollo/central/notifier/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -69,6 +70,55 @@ func (suite *PolicyValidatorTestSuite) TestValidatesName() {
 	}
 	err = suite.validator.validateName(policy)
 	suite.Error(err, "special characters should not be supported")
+}
+
+func (suite *PolicyValidatorTestSuite) TestsValidateCapabilities() {
+
+	cases := []struct {
+		name          string
+		adds          []string
+		drops         []string
+		expectedError bool
+	}{
+		{
+			name:          "no values",
+			expectedError: false,
+		},
+		{
+			name:          "adds only",
+			adds:          []string{"hi"},
+			expectedError: false,
+		},
+		{
+			name:          "drops only",
+			drops:         []string{"hi"},
+			expectedError: false,
+		},
+		{
+			name:          "different adds and drops",
+			adds:          []string{"hello"},
+			drops:         []string{"hey"},
+			expectedError: false,
+		},
+		{
+			name:          "same adds and drops",
+			adds:          []string{"hello"},
+			drops:         []string{"hello"},
+			expectedError: true,
+		},
+	}
+
+	for _, c := range cases {
+		suite.T().Run(c.name, func(t *testing.T) {
+			policy := &v1.Policy{
+				Fields: &v1.PolicyFields{
+					AddCapabilities:  c.adds,
+					DropCapabilities: c.drops,
+				},
+			}
+			assert.Equal(t, c.expectedError, suite.validator.validateCapabilities(policy) != nil)
+		})
+	}
 }
 
 func (suite *PolicyValidatorTestSuite) TestValidateDescription() {

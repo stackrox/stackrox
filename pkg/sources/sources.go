@@ -18,20 +18,17 @@ type ImageIntegration struct {
 }
 
 func validateCommonFields(source *v1.ImageIntegration) error {
-	var errs []string
+	errorList := errorhelpers.NewErrorList("Validation")
 	if source.GetName() == "" {
-		errs = append(errs, "Source name must be defined")
+		errorList.AddString("Source name must be defined")
 	}
 	if source.GetType() == "" {
-		errs = append(errs, "Source type must be defined")
+		errorList.AddString("Source type must be defined")
 	}
 	if len(source.GetCategories()) == 0 {
-		errs = append(errs, "At least one category must be defined")
+		errorList.AddString("At least one category must be defined")
 	}
-	if len(errs) > 0 {
-		return errorhelpers.FormatErrorStrings("Validation", errs)
-	}
-	return nil
+	return errorList.ToError()
 }
 
 var categoryOrder = map[v1.ImageIntegrationCategory]int{

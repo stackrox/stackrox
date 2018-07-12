@@ -74,20 +74,17 @@ func (s *serviceImpl) GetNotifiers(ctx context.Context, request *v1.GetNotifiers
 }
 
 func validateNotifier(notifier *v1.Notifier) error {
-	var errs []string
+	errorList := errorhelpers.NewErrorList("Validation")
 	if notifier.GetName() == "" {
-		errs = append(errs, "Notifier name must be defined")
+		errorList.AddString("Notifier name must be defined")
 	}
 	if notifier.GetType() == "" {
-		errs = append(errs, "Notifier type must be defined")
+		errorList.AddString("Notifier type must be defined")
 	}
 	if notifier.GetUiEndpoint() == "" {
-		errs = append(errs, "Notifier UI endpoint must be defined")
+		errorList.AddString("Notifier UI endpoint must be defined")
 	}
-	if len(errs) > 0 {
-		return errorhelpers.FormatErrorStrings("Validation", errs)
-	}
-	return nil
+	return errorList.ToError()
 }
 
 // PutNotifier updates a notifier in the system

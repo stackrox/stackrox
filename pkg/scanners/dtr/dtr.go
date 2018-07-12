@@ -36,17 +36,17 @@ type dtr struct {
 type config v1.DTRConfig
 
 func (c config) validate() error {
-	var errors []string
+	errorList := errorhelpers.NewErrorList("Validation")
 	if c.Username == "" {
-		errors = append(errors, "username parameter must be defined for DTR")
+		errorList.AddString("username parameter must be defined for DTR")
 	}
 	if c.Password == "" {
-		errors = append(errors, "password parameter must be defined for DTR")
+		errorList.AddString("password parameter must be defined for DTR")
 	}
 	if c.Endpoint == "" {
-		errors = append(errors, "endpoint parameter must be defined for DTR")
+		errorList.AddString("endpoint parameter must be defined for DTR")
 	}
-	return errorhelpers.FormatErrorStrings("Validation", errors)
+	return errorList.ToError()
 }
 
 func newScanner(protoImageIntegration *v1.ImageIntegration) (*dtr, error) {

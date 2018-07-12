@@ -6,7 +6,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/imageintegration/enricher"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	clairConv "bitbucket.org/stack-rox/apollo/pkg/clair"
-	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
@@ -20,11 +19,10 @@ var (
 )
 
 func validateConfig(c *v1.ClairifyConfig) error {
-	var errors []string
 	if c.GetEndpoint() == "" {
-		errors = append(errors, "endpoint parameter must be defined for Clairify")
+		return fmt.Errorf("endpoint parameter must be defined for Clairify")
 	}
-	return errorhelpers.FormatErrorStrings("Validation", errors)
+	return nil
 }
 
 type clairify struct {

@@ -112,20 +112,20 @@ func (j *jira) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
 }
 
 func validate(jira *v1.Jira) error {
-	var errors []string
+	errorList := errorhelpers.NewErrorList("Jira validation")
 	if jira.GetIssueType() == "" {
-		errors = append(errors, "Issue Type must be specified")
+		errorList.AddString("Issue Type must be specified")
 	}
 	if jira.GetUrl() == "" {
-		errors = append(errors, "URL must be specified")
+		errorList.AddString("URL must be specified")
 	}
 	if jira.GetUsername() == "" {
-		errors = append(errors, "Username must be specified")
+		errorList.AddString("Username must be specified")
 	}
 	if jira.GetPassword() == "" {
-		errors = append(errors, "Password must be specified")
+		errorList.AddString("Password must be specified")
 	}
-	return errorhelpers.FormatErrorStrings("Jira validation", errors)
+	return errorList.ToError()
 }
 
 func newJira(notifier *v1.Notifier) (*jira, error) {

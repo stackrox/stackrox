@@ -51,20 +51,20 @@ func (s *smtpServer) endpoint() string {
 }
 
 func validate(email *v1.Email) error {
-	var errors []string
+	errorList := errorhelpers.NewErrorList("Email validation")
 	if email.GetServer() == "" {
-		errors = append(errors, "SMTP Server must be specified")
+		errorList.AddString("SMTP Server must be specified")
 	}
 	if email.GetSender() == "" {
-		errors = append(errors, "Sender must be specified")
+		errorList.AddString("Sender must be specified")
 	}
 	if email.GetUsername() == "" {
-		errors = append(errors, "Username must be specified")
+		errorList.AddString("Username must be specified")
 	}
 	if email.GetPassword() == "" {
-		errors = append(errors, "Password must be specified")
+		errorList.AddString("Password must be specified")
 	}
-	return errorhelpers.FormatErrorStrings("Email validation", errors)
+	return errorList.ToError()
 }
 
 func newEmail(notifier *v1.Notifier) (*email, error) {

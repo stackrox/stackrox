@@ -56,30 +56,27 @@ func (s *serviceImpl) GetBenchmarkSchedule(ctx context.Context, request *v1.Reso
 }
 
 func (s *serviceImpl) validateBenchmarkSchedule(request *v1.BenchmarkSchedule) error {
-	var errs []string
+	errorList := errorhelpers.NewErrorList("Validation")
 	if request.GetBenchmarkId() == "" {
-		errs = append(errs, "Benchmark id must be defined ")
+		errorList.AddString("Benchmark id must be defined ")
 	}
 	_, exists, err := s.datastore.GetBenchmark(request.GetBenchmarkId())
 	if err != nil {
 		return err
 	}
 	if !exists {
-		errs = append(errs, fmt.Sprintf("Benchmark with id '%v' does not exist", request.GetBenchmarkId()))
+		errorList.AddString(fmt.Sprintf("Benchmark with id '%v' does not exist", request.GetBenchmarkId()))
 	}
 	if request.GetBenchmarkName() == "" {
-		errs = append(errs, "Benchmark name must be defined")
+		errorList.AddString("Benchmark name must be defined")
 	}
 	if _, err := benchmarks.ParseHour(request.GetHour()); err != nil {
-		errs = append(errs, fmt.Sprintf("Could not parse hour '%v'", request.GetHour()))
+		errorList.AddString(fmt.Sprintf("Could not parse hour '%v'", request.GetHour()))
 	}
 	if !benchmarks.ValidDay(request.GetDay()) {
-		errs = append(errs, fmt.Sprintf("'%v' is not a valid day of the week", request.GetDay()))
+		errorList.AddString(fmt.Sprintf("'%v' is not a valid day of the week", request.GetDay()))
 	}
-	if len(errs) > 0 {
-		return errorhelpers.FormatErrorStrings("Validation", errs)
-	}
-	return nil
+	return errorList.ToError()
 }
 
 // PostBenchmarkSchedule adds a new schedule

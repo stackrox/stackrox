@@ -158,18 +158,14 @@ func (s *serviceImpl) GetMultipliers(ctx context.Context, request *empty.Empty) 
 }
 
 func validateMultiplier(mult *v1.Multiplier) error {
-	var errs []string
+	errorList := errorhelpers.NewErrorList("Validation")
 	if mult.GetName() == "" {
-		errs = append(errs, "multiplier name must be specified")
+		errorList.AddString("multiplier name must be specified")
 	}
 	if mult.GetValue() < 1 || mult.GetValue() > 2 {
-		errs = append(errs, "multiplier must have a value between 1 and 2 inclusive")
+		errorList.AddString("multiplier must have a value between 1 and 2 inclusive")
 	}
-	if len(errs) > 0 {
-		return errorhelpers.FormatErrorStrings("Validation", errs)
-	}
-	return nil
-
+	return errorList.ToError()
 }
 
 // AddMultiplier inserts the specified multiplier

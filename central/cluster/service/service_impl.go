@@ -45,20 +45,19 @@ func normalizeCluster(cluster *v1.Cluster) {
 }
 
 func validateInput(cluster *v1.Cluster) error {
-	var errors []string
+	errorList := errorhelpers.NewErrorList("Cluster Validation")
 	if cluster.GetName() == "" {
-		errors = append(errors, "Cluster name is required")
+		errorList.AddString("Cluster name is required")
 	}
 	if cluster.GetPreventImage() == "" {
-		errors = append(errors, "Prevent Image is required")
+		errorList.AddString("Prevent Image is required")
 	}
 	if cluster.GetCentralApiEndpoint() == "" {
-		errors = append(errors, "Central API Endpoint is required")
+		errorList.AddString("Central API Endpoint is required")
 	} else if !strings.Contains(cluster.GetCentralApiEndpoint(), ":") {
-		errors = append(errors, "Central API Endpoint must have port specified")
+		errorList.AddString("Central API Endpoint must have port specified")
 	}
-
-	return errorhelpers.FormatErrorStrings("Cluster Validation", errors)
+	return errorList.ToError()
 }
 
 // PostCluster creates a new cluster.

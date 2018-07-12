@@ -16,17 +16,17 @@ const (
 )
 
 func main() {
-	var errors []string
+	errorList := errorhelpers.NewErrorList("Environment")
 	username, ok := os.LookupEnv(registryUsernameVar)
 	if !ok {
-		errors = append(errors, fmt.Sprintf("'%s' is required", registryUsernameVar))
+		errorList.AddString(fmt.Sprintf("'%s' is required", registryUsernameVar))
 	}
 	password, ok := os.LookupEnv(registryPasswordVar)
 	if !ok {
-		errors = append(errors, fmt.Sprintf("'%s' is required", registryPasswordVar))
+		errorList.AddString(fmt.Sprintf("'%s' is required", registryPasswordVar))
 	}
-	if len(errors) != 0 {
-		fmt.Println(errorhelpers.FormatErrorStrings("Environment", errors))
+	if err := errorList.ToError(); err != nil {
+		fmt.Print(err)
 		os.Exit(1)
 	}
 	authString := fmt.Sprintf(authTemplate, username, password)

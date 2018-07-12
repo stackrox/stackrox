@@ -69,28 +69,28 @@ func (ds *datastoreImpl) RemoveCluster(id string) error {
 	}
 
 	// Tombstone each deployment and mark alerts stale.
-	var errors []error
+	errorList := errorhelpers.NewErrorList("unable to complete cluster removal")
 	for _, deployment := range deployments {
 		alerts, err := ds.getAlerts(deployment)
 		if err != nil {
-			errors = append(errors, err)
+			errorList.AddError(err)
 			continue
 		}
 
 		err = ds.markAlertsStale(alerts)
 		if err != nil {
-			errors = append(errors, err)
+			errorList.AddError(err)
 			continue
 		}
 
 		err = ds.dds.RemoveDeployment(deployment.GetId())
 		if err != nil {
-			errors = append(errors, err)
+			errorList.AddError(err)
 			continue
 		}
 	}
-	if len(errors) > 0 {
-		return errorhelpers.FormatErrors("unable to complete cluster removal", errors)
+	if err := errorList.ToError(); err != nil {
+		return err
 	}
 
 	err = ds.removeDNRIntegrationIfExists(id)
@@ -133,14 +133,12 @@ func (ds *datastoreImpl) getAlerts(deployment *v1.Deployment) ([]*v1.Alert, erro
 }
 
 func (ds *datastoreImpl) markAlertsStale(alerts []*v1.Alert) error {
-	var errors []error
+	errorList := errorhelpers.NewErrorList("unable to mark some alerts stale")
 	for _, alert := range alerts {
 		alert.Stale = true
-		if err := ds.ads.UpdateAlert(alert); err != nil {
-			errors = append(errors, err)
-		}
+		errorList.AddError(ds.ads.UpdateAlert(alert))
 	}
-	return errorhelpers.FormatErrors("unable to mark some alerts stale", errors)
+	return errorList.ToError()
 }
 
 // If we remove a cluster, we remove the DNR integration from it, if there is one.

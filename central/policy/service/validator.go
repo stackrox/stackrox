@@ -4,11 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	notifierStore "bitbucket.org/stack-rox/apollo/central/notifier/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
+	"github.com/deckarep/golang-set"
 )
 
 func newPolicyValidator(notifierStorage notifierStore.Store, clusterStorage clusterDataStore.DataStore) *policyValidator {
@@ -29,29 +31,15 @@ type policyValidator struct {
 }
 
 func (s *policyValidator) validate(policy *v1.Policy) error {
-	errors := make([]error, 0)
-	if err := s.validateName(policy); err != nil {
-		errors = append(errors, err)
-	}
-	if err := s.validateDescription(policy); err != nil {
-		errors = append(errors, err)
-	}
-	if err := s.validateSeverity(policy); err != nil {
-		errors = append(errors, err)
-	}
-	if err := s.validateCategories(policy); err != nil {
-		errors = append(errors, err)
-	}
-	if err := s.validateScopes(policy); err != nil {
-		errors = append(errors, err)
-	}
-	if err := s.validateWhitelists(policy); err != nil {
-		errors = append(errors, err)
-	}
-	if len(errors) > 0 {
-		return errorhelpers.FormatErrors("policy invalid", errors)
-	}
-	return nil
+	errorList := errorhelpers.NewErrorList("policy invalid")
+	errorList.AddError(s.validateName(policy))
+	errorList.AddError(s.validateDescription(policy))
+	errorList.AddError(s.validateSeverity(policy))
+	errorList.AddError(s.validateCategories(policy))
+	errorList.AddError(s.validateScopes(policy))
+	errorList.AddError(s.validateWhitelists(policy))
+	errorList.AddError(s.validateCapabilities(policy))
+	return errorList.ToError()
 }
 
 func (s *policyValidator) validateName(policy *v1.Policy) error {
@@ -71,6 +59,23 @@ func (s *policyValidator) validateDescription(policy *v1.Policy) error {
 func (s *policyValidator) validateSeverity(policy *v1.Policy) error {
 	if policy.GetSeverity() == v1.Severity_UNSET_SEVERITY {
 		return errors.New("a policy must have a severity")
+	}
+	return nil
+}
+
+func (s *policyValidator) validateCapabilities(policy *v1.Policy) error {
+	set := mapset.NewSet()
+	for _, s := range policy.GetFields().GetAddCapabilities() {
+		set.Add(s)
+	}
+	var duplicates []string
+	for _, s := range policy.GetFields().GetDropCapabilities() {
+		if set.Contains(s) {
+			duplicates = append(duplicates, s)
+		}
+	}
+	if len(duplicates) != 0 {
+		return fmt.Errorf("Capabilities '%s' cannot be included in both add and drop", strings.Join(duplicates, ","))
 	}
 	return nil
 }
