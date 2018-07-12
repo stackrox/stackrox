@@ -29,7 +29,7 @@ func New(policy *v1.Policy) (*Policy, error) {
 	for _, c := range processors.PolicySegmentCompilers {
 		compiled, err := c(policy)
 		if err != nil {
-			return nil, fmt.Errorf("policy %s failed to compile: %s", p, err)
+			return nil, fmt.Errorf("policy %s failed to compile: %s", p.GetName(), err)
 		}
 		p.compiled = append(p.compiled, compiled)
 	}
