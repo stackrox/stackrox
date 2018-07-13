@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"sync"
 
-	globaldb "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
 	globalindex "bitbucket.org/stack-rox/apollo/central/globalindex/singletons"
 	"bitbucket.org/stack-rox/apollo/central/secret/index"
 	"bitbucket.org/stack-rox/apollo/central/secret/search"
+	"bitbucket.org/stack-rox/apollo/central/secret/search/transform"
 	"bitbucket.org/stack-rox/apollo/central/secret/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 )
@@ -15,17 +15,12 @@ import (
 var (
 	once sync.Once
 
-	storage store.Store
-
 	as Service
 )
 
 func initialize() {
-	// Register store buckets.
-	storage = store.New(globaldb.GetGlobalDB())
-
 	// load all of the secrets from the db.
-	secrets, err := storage.GetAllSecrets()
+	secrets, err := store.Singleton().GetAllSecrets()
 	if err != nil {
 		panic(err)
 	}
@@ -33,7 +28,7 @@ func initialize() {
 	// index them.
 	for _, secret := range secrets {
 		// Load the secrets relationships.
-		relationship, exists, err := storage.GetRelationship(secret.GetId())
+		relationship, exists, err := store.Singleton().GetRelationship(secret.GetId())
 		if err != nil {
 			panic(err)
 		} else if !exists {
@@ -41,7 +36,7 @@ func initialize() {
 		}
 
 		// Index the secret and the relationship.
-		err = index.SecretAndRelationship(globalindex.GetGlobalIndex(), &v1.SecretAndRelationship{
+		err = index.Singleton().SecretAndRelationship(&v1.SecretAndRelationship{
 			Secret:       secret,
 			Relationship: relationship,
 		})
@@ -50,7 +45,7 @@ func initialize() {
 		}
 	}
 
-	as = New(storage, globalindex.GetGlobalIndex())
+	as = New(store.Singleton(), search.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.
@@ -63,6 +58,6 @@ func Singleton() Service {
 func ParsedSearchRequestHandler() func(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
 	once.Do(initialize)
 	return func(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
-		return search.ParsedSearchRequestWrapper{ParsedSearchRequest: request}.ToSearchResults(storage, globalindex.GetGlobalIndex())
+		return transform.ParsedSearchRequestWrapper{ParsedSearchRequest: request}.ToSearchResults(store.Singleton(), globalindex.GetGlobalIndex())
 	}
 }

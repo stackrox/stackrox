@@ -1,7 +1,7 @@
-package search
+package transform
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/secret/index"
+	"bitbucket.org/stack-rox/apollo/central/secret/index/mapping"
 	"bitbucket.org/stack-rox/apollo/central/secret/search/options"
 	"bitbucket.org/stack-rox/apollo/central/secret/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -22,7 +22,7 @@ func (r ParsedSearchRequestWrapper) ToSearchResults(storage store.Store, index b
 	if err != nil {
 		return nil, err
 	}
-	return ResultsToSearchResults(storage, res)
+	return ResultsWrapper{Results: res}.ToSearchResults(storage)
 }
 
 // ToResults converts the given parsed request to the results of searching the bleve index.
@@ -38,13 +38,13 @@ func (r ParsedSearchRequestWrapper) ToResults(index bleve.Index) ([]search.Resul
 func (r ParsedSearchRequestWrapper) toQuery() (query.Query, error) {
 	// If the request is nil, just return all secrets.
 	if r.ParsedSearchRequest == nil {
-		sq := bleve.NewMatchQuery(index.IndexedType)
+		sq := bleve.NewMatchQuery(mapping.IndexedType)
 		sq.SetField("type")
 		return sq, nil
 	}
 
 	// We search the indices for matches in both secret and relationship fields.
-	sq, err := blevesearch.BuildQuery(index.IndexedType, r.ParsedSearchRequest, scopeToQuery, options.Map)
+	sq, err := blevesearch.BuildQuery(mapping.IndexedType, r.ParsedSearchRequest, scopeToQuery, options.Map)
 	if err != nil {
 		return nil, err
 	}

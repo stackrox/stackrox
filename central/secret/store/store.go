@@ -15,14 +15,14 @@ const (
 
 // Store provides access and update functions for secrets.
 type Store interface {
-	GetAllSecrets() (secrets []*v1.Secret, err error)
-	GetRelationship(id string) (relationships *v1.SecretRelationship, exists bool, err error)
-	GetRelationshipBatch(ids []string) ([]*v1.SecretRelationship, error)
-	GetSecret(id string) (secret *v1.Secret, exists bool, err error)
+	GetAllSecrets() ([]*v1.Secret, error)
+	GetSecret(id string) (*v1.Secret, bool, error)
 	GetSecretsBatch(ids []string) ([]*v1.Secret, error)
-
-	UpsertRelationship(relationship *v1.SecretRelationship) error
 	UpsertSecret(secret *v1.Secret) error
+
+	GetRelationship(id string) (*v1.SecretRelationship, bool, error)
+	GetRelationshipBatch(ids []string) ([]*v1.SecretRelationship, error)
+	UpsertRelationship(relationship *v1.SecretRelationship) error
 }
 
 // New returns an new Store instance on top of the input DB.

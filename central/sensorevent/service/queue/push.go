@@ -93,5 +93,5 @@ func (p *persistedEventQueue) dedupeEvents(firstEvent *v1.DeploymentEvent, secon
 	}
 
 	// Unrecognized duplication sequence, just return an error.
-	return nil, false, fmt.Errorf("unhandled duplicate deployment sequence")
+	return nil, false, fmt.Errorf("unhandled duplicate deployment sequence: %s %s", firstEvent.GetAction(), secondEvent.GetAction())
 }

@@ -6,10 +6,8 @@ import (
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	"bitbucket.org/stack-rox/apollo/central/detection"
-	globaldb "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
-	globalindex "bitbucket.org/stack-rox/apollo/central/globalindex/singletons"
 	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
-	secretUpdate "bitbucket.org/stack-rox/apollo/central/secret/datagraph/deploymentevent"
+	secretDataGraph "bitbucket.org/stack-rox/apollo/central/secret/datagraph"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 )
@@ -71,7 +69,7 @@ func (s *pipelineImpl) runRemovePipeline(event *v1.DeploymentEvent) (*v1.Deploym
 	}
 
 	// Update secret service.
-	if err := secretUpdate.ProcessDeploymentEvent(globaldb.GetGlobalDB(), globalindex.GetGlobalIndex(), event); err != nil {
+	if err := secretDataGraph.Singleton().ProcessDeploymentEvent(event); err != nil {
 		return nil, err
 	}
 
@@ -108,7 +106,7 @@ func (s *pipelineImpl) runGeneralPipeline(event *v1.DeploymentEvent) (*v1.Deploy
 	s.persistImages.do(event)
 
 	// Update secret service.
-	if err := secretUpdate.ProcessDeploymentEvent(globaldb.GetGlobalDB(), globalindex.GetGlobalIndex(), event); err != nil {
+	if err := secretDataGraph.Singleton().ProcessDeploymentEvent(event); err != nil {
 		return nil, err
 	}
 

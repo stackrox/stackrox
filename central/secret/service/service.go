@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
+	"bitbucket.org/stack-rox/apollo/central/secret/search"
 	"bitbucket.org/stack-rox/apollo/central/secret/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"github.com/blevesearch/bleve"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 )
@@ -22,9 +22,9 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DB and index.
-func New(storage store.Store, index bleve.Index) Service {
+func New(storage store.Store, searcher search.Searcher) Service {
 	return &serviceImpl{
-		storage: storage,
-		index:   index,
+		storage:  storage,
+		searcher: searcher,
 	}
 }

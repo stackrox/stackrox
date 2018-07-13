@@ -1,4 +1,4 @@
-package search
+package transform
 
 import (
 	"bitbucket.org/stack-rox/apollo/pkg/search"
