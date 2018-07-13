@@ -25,7 +25,7 @@ class SystemPoliciesTest extends  BaseSpecification {
         "Verify Violation #policyname is triggered"
         assert waitForViolation(deploymentName,  policyname, 10)
 
-         cleanup:
+        cleanup:
         "Remove Deployment #deploymentName"
         orchestrator.deleteDeployment(deploymentName)
 
@@ -96,3 +96,4 @@ class SystemPoliciesTest extends  BaseSpecification {
                 .addLabel ( "app", "test" ) | "C814" | "qaanyvul"
     }
 }
+

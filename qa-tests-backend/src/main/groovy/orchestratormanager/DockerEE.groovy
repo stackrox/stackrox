@@ -19,15 +19,27 @@ import java.util.stream.Collectors
 class DockerEE extends OrchestratorCommon implements OrchestratorMain {
     DockerClient docker
 
+    final String dockerHost = System.getenv("DOCKER_HOST")
+    final String dockerCertPath = System.getenv("DOCKER_CERT_PATH")
+    final String apiVersion = System.getenv("DOCKER_API_VERSION")
+    final String dockerUsername = "qa"
+    final String dockerPassword = "W3g9xOPKyLTkBBMj"
+    final String registryUrl = "https://apollo-dtr.rox.systems/"
+
     DockerEE() {
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-                .withApiVersion("1.23")
+                .withDockerHost(dockerHost)
+                .withDockerTlsVerify(true)
+                .withDockerCertPath(dockerCertPath)
+                .withApiVersion(apiVersion)
+                .withRegistryUsername(dockerUsername)
+                .withRegistryPassword(dockerPassword)
+                .withRegistryUrl(registryUrl)
                 .build()
         this.docker = DockerClientBuilder.getInstance(config).build()
     }
 
     def setup() { }
-
     def cleanup() { }
 
     def portToPortConfig = {

@@ -29,7 +29,7 @@ class Services {
                 .trustManager(InsecureTrustManagerFactory.INSTANCE)
                 .build()
 
-        Integer port = Integer.parseInt(System.getenv("PORT"))
+        int port = Integer.parseInt(System.getenv("PORT"))
 
         def channel = NettyChannelBuilder
                 .forAddress(System.getenv("HOSTNAME"), port)
@@ -83,7 +83,7 @@ class Services {
         return getDeploymentClient().getDeployment(getResourceByID(id))
     }
 
-    static waitForViolation(String deploymentName, String policyName, Integer timeoutSeconds) {
+    static waitForViolation(String deploymentName, String policyName, int timeoutSeconds) {
         int intervalSeconds = 1
         for (int i = 0; i < timeoutSeconds / intervalSeconds; i++) {
             try {
@@ -101,7 +101,7 @@ class Services {
         return false
     }
 
-    static boolean waitForDeployment(String name, Integer timeoutSeconds = 5) {
+    static boolean waitForDeployment(String name, int timeoutSeconds = 20) {
         int intervalSeconds = 1
         for (int i = 0; i < timeoutSeconds / intervalSeconds; i++) {
             try {
