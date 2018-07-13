@@ -77,10 +77,10 @@ services:
         protocol: tcp
         mode: {{.SwarmConfig.NetworkMode}}
     secrets:
-      - source: prevent_private_key
+      - source: central_private_key
         target: stackrox.io/ca-key.pem
         mode: 400
-      - source: prevent_certificate
+      - source: central_certificate
         target: stackrox.io/ca.pem
         mode: 400
     {{if .HostPath -}}
@@ -96,9 +96,9 @@ networks:
     driver: overlay
     attachable: true
 secrets:
-  prevent_private_key:
+  central_private_key:
     file: ./ca-key.pem
-  prevent_certificate:
+  central_certificate:
     file: ./ca.pem
 {{if .External -}}
 volumes:

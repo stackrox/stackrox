@@ -13,7 +13,7 @@ const (
 
 kubectl get namespace {{.NamespaceVar}} > /dev/null || kubectl create namespace {{.NamespaceVar}}
 
-if ! kubectl get secret -n {{.NamespaceVar}} | grep {{.ImagePullSecretVar}} | grep dockerconfigjson > /dev/null; then
+if ! kubectl get secret/{{.ImagePullSecretVar}} -n {{.NamespaceVar}} > /dev/null; then
   if [ -z "${REGISTRY_USERNAME}" ]; then
     echo -n "Username for {{.RegistryVar}}: "
     read REGISTRY_USERNAME

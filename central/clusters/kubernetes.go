@@ -17,6 +17,7 @@ type kubernetes struct {
 	deploy *template.Template
 	cmd    *template.Template
 	rbac   *template.Template
+	delete *template.Template
 }
 
 func newKubernetes() Deployer {
@@ -24,6 +25,7 @@ func newKubernetes() Deployer {
 		deploy: template.Must(template.New("kubernetes").Parse(k8sDeploy)),
 		cmd:    template.Must(template.New("kubernetes").Parse(k8sCmd)),
 		rbac:   template.Must(template.New("kubernetes").Parse(k8sRBAC)),
+		delete: template.Must(template.New("kubernetes").Parse(k8sDelete)),
 	}
 }
 
@@ -78,6 +80,11 @@ func (k *kubernetes) Render(c Wrap) ([]*v1.File, error) {
 		return nil, err
 	}
 	files = append(files, zip.NewFile("rbac.yaml", data, false))
+	data, err = executeTemplate(k.delete, fields)
+	if err != nil {
+		return nil, err
+	}
+	files = append(files, zip.NewFile("delete.sh", data, true))
 	return files, nil
 }
 
@@ -243,5 +250,10 @@ roleRef:
 kubectl create -f "$DIR/rbac.yaml"
 kubectl create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/central-ca.pem"
 kubectl create -f "$DIR/deploy.yaml"
+`
+
+	k8sDelete = commandPrefix + `
+	kubectl delete -f "$DIR/deploy.yaml"
+	kubectl delete -n {{.Namespace}} secret/sensor-tls
 `
 )

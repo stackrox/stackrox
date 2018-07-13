@@ -47,6 +47,7 @@ func (s *swarm) Render(c Wrap) ([]*v1.File, error) {
 		return nil, err
 	}
 	files = append(files, zip.NewFile("deploy.sh", data, true))
+	files = append(files, zip.NewFile("delete.sh", swarmDelete, true))
 	return files, nil
 }
 
@@ -181,5 +182,10 @@ if [ -n "$DOCKER_CERT_PATH" ]; then
 fi
 
 cd $WD
+`
+
+	swarmDelete = commandPrefix + `
+docker service rm prevent_sensor
+docker secret rm prevent_registry_auth prevent_sensor_certificate prevent_sensor_private_key
 `
 )

@@ -17,6 +17,7 @@ type openshift struct {
 	deploy *template.Template
 	cmd    *template.Template
 	rbac   *template.Template
+	delete *template.Template
 }
 
 func newOpenshift() Deployer {
@@ -24,6 +25,7 @@ func newOpenshift() Deployer {
 		deploy: template.Must(template.New("openshift").Parse(k8sDeploy)),
 		cmd:    template.Must(template.New("openshift").Parse(openshiftCmd)),
 		rbac:   template.Must(template.New("openshift").Parse(openshiftRBAC)),
+		delete: template.Must(template.New("openshift").Parse(openshiftDelete)),
 	}
 }
 
@@ -57,7 +59,15 @@ func (o *openshift) Render(c Wrap) ([]*v1.File, error) {
 		return nil, err
 	}
 	files = append(files, zip.NewFile("rbac.yaml", data, false))
+
+	data, err = executeTemplate(o.delete, fields)
+	if err != nil {
+		return nil, err
+	}
+	files = append(files, zip.NewFile("delete.sh", data, true))
+
 	files = append(files, zip.NewFile("image-setup.sh", openshiftPkg.ImageSetup, true))
+
 	return files, nil
 }
 
@@ -217,5 +227,10 @@ allowHostDirVolumePlugin: true
 allowHostPID: true
 volumes:
 - '*'
+`
+
+	openshiftDelete = commandPrefix + `
+	oc delete -f "$DIR/deploy.yaml"
+	oc delete -n {{.Namespace}} secret/sensor-tls
 `
 )
