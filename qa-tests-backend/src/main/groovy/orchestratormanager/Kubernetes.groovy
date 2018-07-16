@@ -5,6 +5,10 @@ import io.kubernetes.client.ApiException
 import io.kubernetes.client.Configuration
 import io.kubernetes.client.apis.CoreV1Api
 import io.kubernetes.client.apis.ExtensionsV1beta1Api
+import io.kubernetes.client.custom.IntOrString
+import io.kubernetes.client.models.V1Capabilities
+import io.kubernetes.client.models.V1LabelSelector
+import io.kubernetes.client.models.V1LocalObjectReference
 import io.kubernetes.client.models.V1ObjectMeta
 import io.kubernetes.client.models.V1Namespace
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment
@@ -14,14 +18,17 @@ import io.kubernetes.client.models.V1PodTemplateSpec
 import io.kubernetes.client.models.V1PodSpec
 import io.kubernetes.client.models.V1Container
 import io.kubernetes.client.models.V1DeleteOptions
-
+import io.kubernetes.client.models.V1SecurityContext
+import io.kubernetes.client.models.V1Service
+import io.kubernetes.client.models.V1ServicePort
+import io.kubernetes.client.models.V1ServiceSpec
 import io.kubernetes.client.util.Config
 import objects.Deployment
 
 import java.util.stream.Collectors
 
 class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
-    private final String namespace
+    private String namespace
 
     private CoreV1Api api
     private ExtensionsV1beta1Api beta1
@@ -95,19 +102,123 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         )
 
         beta1.createNamespacedDeployment(this.namespace, k8sDeployment, null)
+        println deployment.getName() + ": deployment created."
     }
 
-    def deleteDeployment(String name) {
+    def deleteDeployment(String name, String namespace = this.namespace) {
         this.beta1.deleteNamespacedDeployment(
                 name,
-                this.namespace, new V1DeleteOptions()
-                    .gracePeriodSeconds(0)
-                    .orphanDependents(false),
+                namespace, new V1DeleteOptions()
+                .gracePeriodSeconds(0)
+                .orphanDependents(false),
                 null,
                 0,
                 false,
-                null)
-        println "Deployment removed."
+                null
+        )
+        println name + ": deployment removed."
     }
 
+    def deleteService(String name, String namespace = this.namespace) {
+        this.api.deleteNamespacedService(
+                name,
+                namespace, new V1DeleteOptions()
+                .gracePeriodSeconds(0)
+                .orphanDependents(false),
+                null,
+                0,
+                false,
+                null
+        )
+    }
+
+    def createClairifyDeployment() {
+        //create clairify service
+        Map<String, String> selector = new HashMap<String, String>()
+        selector.put("app", "clairify")
+
+        V1Service clairifyService = new V1Service()
+                .apiVersion("v1")
+                .metadata(new V1ObjectMeta()
+                    .name("clairify")
+                    .namespace("stackrox"))
+                .spec(new V1ServiceSpec()
+                    .addPortsItem(new V1ServicePort()
+                        .name("clair-http")
+                        .port(6060)
+                        .targetPort(new IntOrString(6060)
+                        )
+                    )
+                    .addPortsItem(new V1ServicePort()
+                        .name("clairify-http")
+                        .port(8080)
+                        .targetPort(new IntOrString(8080)
+                        )
+                    )
+                    .type("ClusterIP")
+                    .selector(selector)
+                )
+        this.api.createNamespacedService("stackrox", clairifyService, null)
+
+        //create clairify deployment
+        Map<String, String> labels = new HashMap<>()
+        labels.put("app", "clairify")
+        Map<String, String> annotations = new HashMap<>()
+        annotations.put("owner", "stackrox")
+        annotations.put("email", "support@stackrox.com")
+
+        List<String> commands = new LinkedList<>()
+        commands.add("/init")
+        commands.add("/clairify")
+
+        V1Container clairContainer = new V1Container()
+                .name("clairify")
+                .image("stackrox/clairify:0.3.1")
+                .command(commands)
+                .imagePullPolicy("Always")
+                .addPortsItem(new V1ContainerPort()
+                    .name("clair-http")
+                    .containerPort(6060)
+                )
+                .addPortsItem(new V1ContainerPort()
+                    .name("clairify-http")
+                    .containerPort(8080)
+                )
+                .securityContext(new V1SecurityContext()
+                    .capabilities(new V1Capabilities()
+                        .addDropItem("NET_RAW")
+                    )
+                )
+
+        ExtensionsV1beta1Deployment clairifyDeployment = new ExtensionsV1beta1Deployment()
+                .metadata(new V1ObjectMeta()
+                    .name("clairify")
+                    .namespace("stackrox")
+                    .labels(labels).annotations(annotations)
+                )
+                .spec(new ExtensionsV1beta1DeploymentSpec()
+                    .replicas(1)
+                    .selector(new V1LabelSelector()
+                        .matchLabels(labels))
+                    .template(new V1PodTemplateSpec()
+                        .metadata(new V1ObjectMeta()
+                            .namespace("stackrox")
+                            .labels(labels))
+                        .spec(new V1PodSpec()
+                            .addContainersItem(clairContainer)
+                            .addImagePullSecretsItem(new V1LocalObjectReference()
+                                .name("stackrox")
+                            )
+                        )
+                    )
+                )
+
+        this.beta1.createNamespacedDeployment("stackrox", clairifyDeployment, null)
+
+        println "deployment created."
+    }
+
+    String getClairifyEndpoint() {
+        return "clairify.stackrox:8080"
+    }
 }

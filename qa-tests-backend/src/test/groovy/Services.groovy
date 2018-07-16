@@ -135,6 +135,14 @@ class Services {
         .getId()
     }
 
+    static deleteGenericDockerRegistry(String gdrId) {
+        getIntegrationClient().deleteImageIntegration(
+                ResourceByID.newBuilder()
+                        .setId(gdrId)
+                        .build()
+        )
+    }
+
     static String addDockerTrustedRegistry() {
         return getIntegrationClient().postImageIntegration(
             ImageIntegration.newBuilder()
@@ -154,14 +162,6 @@ class Services {
         .getId()
     }
 
-    static deleteGenericDockerRegistry(String gdrId) {
-        getIntegrationClient().deleteImageIntegration(
-                ResourceByID.newBuilder()
-                        .setId(gdrId)
-                        .build()
-        )
-    }
-
     static deleteDockerTrustedRegistry(String dtrId) {
         getIntegrationClient().deleteImageIntegration(
                 ResourceByID.newBuilder()
@@ -170,4 +170,26 @@ class Services {
         )
     }
 
+    static String addClairifyScanner(String clairifyEndpoint) {
+        return getIntegrationClient().postImageIntegration(
+            ImageIntegration.newBuilder()
+                .setName("clairify")
+                .setType("clairify")
+                .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.SCANNER)
+                .setClairify(ImageIntegrationServiceOuterClass.ClairifyConfig.newBuilder()
+                    .setEndpoint(clairifyEndpoint)
+                    .build()
+                )
+            .build()
+        )
+        .getId()
+    }
+
+    static deleteClairifyScanner(String clairifyId) {
+        getIntegrationClient().deleteImageIntegration(
+                ResourceByID.newBuilder()
+                        .setId(clairifyId)
+                        .build()
+        )
+    }
 }

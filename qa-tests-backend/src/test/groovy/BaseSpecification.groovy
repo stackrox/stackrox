@@ -53,6 +53,7 @@ class BaseSpecification extends Specification {
         try {
             Services.deleteGenericDockerRegistry(gdrId)
             Services.deleteDockerTrustedRegistry(dtrId)
+            orchestrator.cleanup()
         } catch (Exception e) {
             println "Error to clean up orchestrator"
             throw e

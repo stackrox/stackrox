@@ -75,9 +75,21 @@ class DockerEE extends OrchestratorCommon implements OrchestratorMain {
         println resp
     }
 
-    def deleteDeployment(String deploymentName) {
+    @Override
+    def deleteDeployment(String deploymentName, String namespace = "") {
         docker.removeServiceCmd(deploymentName).exec()
         println "Service removed."
     }
 
+    @Override
+    def deleteService(String serviceName, String namespace = "") {
+    }
+
+    @Override
+    def createClairifyDeployment() {
+    }
+
+    String getClairifyEndpoint() {
+        return "clairify.prevent_net:8080"
+    }
 }

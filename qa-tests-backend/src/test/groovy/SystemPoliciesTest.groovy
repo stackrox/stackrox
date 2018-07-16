@@ -5,7 +5,7 @@ import spock.lang.Unroll
 import objects.Deployment
 import java.util.stream.Collectors
 
-class SystemPoliciesTest extends  BaseSpecification {
+class SystemPoliciesTest extends BaseSpecification {
     @Unroll
     def "Verify policy #policyname is triggered" (String policyname, Deployment deployment,
                                                   String testId, String deploymentName) {
