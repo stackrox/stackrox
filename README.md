@@ -291,3 +291,4 @@ Copy the "Latest Stable Version" page, update it, and replace the link on
 
 Also, update the [current releases page](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/591593496/Current+product+releases)
 so that the team knows which versions to deploy to customers.
+.
