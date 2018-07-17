@@ -146,9 +146,10 @@ message ListDeployment {
     string                    id         = 1;
     string                    name       = 2;
     string                    cluster    = 3;
-    string                    namespace  = 4;
-    google.protobuf.Timestamp updated_at = 5;
-    int64                     priority   = 6;
+    string                    cluster_id = 4;
+    string                    namespace  = 5;
+    google.protobuf.Timestamp updated_at = 6;
+    int64                     priority   = 7;
 }
 
 message ListDeploymentsResponse {

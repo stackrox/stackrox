@@ -9,6 +9,7 @@ import (
 )
 
 const deploymentBucket = "deployments"
+const deploymentListBucket = "deployments_list"
 const deploymentGraveyard = "deployments_graveyard"
 
 var (
@@ -17,6 +18,9 @@ var (
 
 // Store provides storage functionality for alerts.
 type Store interface {
+	ListDeployment(id string) (*v1.ListDeployment, bool, error)
+	ListDeployments() ([]*v1.ListDeployment, error)
+
 	GetDeployment(id string) (*v1.Deployment, bool, error)
 	GetDeployments() ([]*v1.Deployment, error)
 	CountDeployments() (int, error)
@@ -30,6 +34,7 @@ type Store interface {
 func New(db *bolt.DB, ranker *ranking.Ranker) Store {
 	bolthelper.RegisterBucket(db, deploymentBucket)
 	bolthelper.RegisterBucket(db, deploymentGraveyard)
+	bolthelper.RegisterBucket(db, deploymentListBucket)
 	return &storeImpl{
 		DB:     db,
 		ranker: ranker,

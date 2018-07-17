@@ -18,6 +18,71 @@ type storeImpl struct {
 	ranker *ranking.Ranker
 }
 
+// GetListDeployment returns a list deployment with given id.
+func (b *storeImpl) ListDeployment(id string) (deployment *v1.ListDeployment, exists bool, err error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "ListDeployment")
+	err = b.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(deploymentListBucket))
+		deployment = new(v1.ListDeployment)
+		val := bucket.Get([]byte(id))
+		if val == nil {
+			return nil
+		}
+		exists = true
+		deployment.Priority = b.ranker.Get(deployment.GetId())
+		err = proto.Unmarshal(val, deployment)
+		return nil
+	})
+	return
+}
+
+// GetDeployments retrieves deployments matching the request from bolt
+func (b *storeImpl) ListDeployments() ([]*v1.ListDeployment, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "ListDeployment")
+	var deployments []*v1.ListDeployment
+	err := b.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(deploymentListBucket))
+		return bucket.ForEach(func(k, v []byte) error {
+			var deployment v1.ListDeployment
+			if err := proto.Unmarshal(v, &deployment); err != nil {
+				return err
+			}
+			deployment.Priority = b.ranker.Get(deployment.GetId())
+			deployments = append(deployments, &deployment)
+			return nil
+		})
+	})
+	return deployments, err
+}
+
+// Note: This is called within a txn and do not require an Update or View
+func (b *storeImpl) upsertListDeployment(bucket *bolt.Bucket, deployment *v1.Deployment) error {
+	listDeployment := convertDeploymentToDeploymentList(deployment)
+	bytes, err := proto.Marshal(listDeployment)
+	if err != nil {
+		return err
+	}
+	return bucket.Put([]byte(deployment.Id), bytes)
+}
+
+// Note: This is called within a txn and do not require an Update or View
+func (b *storeImpl) removeListDeployment(tx *bolt.Tx, id string) error {
+	bucket := tx.Bucket([]byte(deploymentListBucket))
+	return bucket.Delete([]byte(id))
+}
+
+func convertDeploymentToDeploymentList(d *v1.Deployment) *v1.ListDeployment {
+	return &v1.ListDeployment{
+		Id:        d.GetId(),
+		Name:      d.GetName(),
+		Cluster:   d.GetClusterName(),
+		ClusterId: d.GetClusterId(),
+		Namespace: d.GetNamespace(),
+		UpdatedAt: d.GetUpdatedAt(),
+		Priority:  d.GetPriority(),
+	}
+}
+
 func (b *storeImpl) getDeployment(id string, bucket *bolt.Bucket) (deployment *v1.Deployment, exists bool, err error) {
 	deployment = new(v1.Deployment)
 	val := bucket.Get([]byte(id))
@@ -98,7 +163,10 @@ func (b *storeImpl) AddDeployment(deployment *v1.Deployment) error {
 		if err != nil {
 			return err
 		}
-		return bucket.Put([]byte(deployment.Id), bytes)
+		if err := bucket.Put([]byte(deployment.Id), bytes); err != nil {
+			return err
+		}
+		return b.upsertListDeployment(tx.Bucket([]byte(deploymentListBucket)), deployment)
 	})
 }
 
@@ -124,7 +192,10 @@ func (b *storeImpl) UpdateDeployment(deployment *v1.Deployment) error {
 			deployment.Tombstone = existingDeployment.GetTombstone()
 		}
 		b.ranker.Add(deployment.GetId(), deployment.GetRisk().GetScore())
-		return b.updateDeployment(deployment, tx.Bucket([]byte(deploymentBucket)))
+		if err := b.updateDeployment(deployment, tx.Bucket([]byte(deploymentBucket))); err != nil {
+			return err
+		}
+		return b.upsertListDeployment(tx.Bucket([]byte(deploymentListBucket)), deployment)
 	})
 }
 
@@ -146,7 +217,10 @@ func (b *storeImpl) RemoveDeployment(id string) error {
 			return dberrors.ErrNotFound{Type: "Deployment", ID: id}
 		}
 		b.ranker.Remove(id)
-		return bucket.Delete([]byte(id))
+		if err := bucket.Delete([]byte(id)); err != nil {
+			return err
+		}
+		return b.removeListDeployment(tx, id)
 	})
 
 	if deployment != nil {

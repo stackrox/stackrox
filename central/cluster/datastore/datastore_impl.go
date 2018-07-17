@@ -101,17 +101,16 @@ func (ds *datastoreImpl) RemoveCluster(id string) error {
 	return ds.storage.RemoveCluster(id)
 }
 
-// TODO(cgorman) Make this a search once the document mapping goes in
 // RemoveCluster removes an cluster from the storage and the indexer
-func (ds *datastoreImpl) getDeployments(cluster *v1.Cluster) ([]*v1.Deployment, error) {
-	deployments, err := ds.dds.GetDeployments()
+func (ds *datastoreImpl) getDeployments(cluster *v1.Cluster) ([]*v1.ListDeployment, error) {
+	deployments, err := ds.dds.ListDeployments()
 	if err != nil {
 		return nil, err
 	}
 
-	wantedDeployments := make([]*v1.Deployment, 0)
+	wantedDeployments := make([]*v1.ListDeployment, 0)
 	for _, d := range deployments {
-		if d.GetClusterId() == cluster.Id {
+		if d.GetClusterId() == cluster.GetId() {
 			wantedDeployments = append(wantedDeployments, d)
 		}
 	}
@@ -119,7 +118,7 @@ func (ds *datastoreImpl) getDeployments(cluster *v1.Cluster) ([]*v1.Deployment, 
 }
 
 // TODO(cgorman) Make this a search once the document mapping goes in
-func (ds *datastoreImpl) getAlerts(deployment *v1.Deployment) ([]*v1.Alert, error) {
+func (ds *datastoreImpl) getAlerts(deployment *v1.ListDeployment) ([]*v1.Alert, error) {
 	qb := search.NewQueryBuilder().AddBools(search.Stale, false).AddStrings(search.DeploymentID, deployment.GetId())
 
 	existingAlerts, err := ds.ads.GetAlerts(&v1.ListAlertsRequest{

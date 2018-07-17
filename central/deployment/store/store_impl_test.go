@@ -65,10 +65,17 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 	}
 
 	for _, d := range deployments {
+		// Test retrieval of full objects
 		got, exists, err := suite.store.GetDeployment(d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, d)
+
+		// Test retrieval of list objects
+		gotList, exists, err := suite.store.ListDeployment(d.GetId())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.Equal(d.GetName(), gotList.GetName())
 	}
 
 	// Test Update
@@ -78,6 +85,7 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 	}
 
 	for _, d := range deployments {
+		d.Name += "-ext"
 		suite.NoError(suite.store.UpdateDeployment(d))
 	}
 
@@ -86,6 +94,11 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, d)
+
+		listGot, exists, err := suite.store.ListDeployment(d.GetId())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.Equal(listGot.GetName(), listGot.GetName())
 	}
 
 	// Test Count
@@ -100,6 +113,10 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 
 	for _, d := range deployments {
 		_, exists, err := suite.store.GetDeployment(d.GetId())
+		suite.NoError(err)
+		suite.False(exists)
+
+		_, exists, err = suite.store.ListDeployment(d.GetId())
 		suite.NoError(err)
 		suite.False(exists)
 	}

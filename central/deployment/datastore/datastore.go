@@ -11,6 +11,10 @@ import (
 type DataStore interface {
 	SearchDeployments(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)
 	SearchRawDeployments(request *v1.ParsedSearchRequest) ([]*v1.Deployment, error)
+	SearchListDeployments(request *v1.ParsedSearchRequest) ([]*v1.ListDeployment, error)
+
+	ListDeployment(id string) (*v1.ListDeployment, bool, error)
+	ListDeployments() ([]*v1.ListDeployment, error)
 
 	GetDeployment(id string) (*v1.Deployment, bool, error)
 	GetDeployments() ([]*v1.Deployment, error)

@@ -57,31 +57,12 @@ func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByI
 	return deployment, nil
 }
 
-func convertDeploymentsToDeploymentsList(deployments []*v1.Deployment) []*v1.ListDeployment {
-	sort.SliceStable(deployments, func(i, j int) bool {
-		return deployments[i].GetPriority() < deployments[j].GetPriority()
-	})
-	listDeployments := make([]*v1.ListDeployment, 0, len(deployments))
-	for _, d := range deployments {
-		listDeployments = append(listDeployments, &v1.ListDeployment{
-			Id:        d.GetId(),
-			Name:      d.GetName(),
-			Cluster:   d.GetClusterName(),
-			Namespace: d.GetNamespace(),
-			UpdatedAt: d.GetUpdatedAt(),
-			Priority:  d.GetPriority(),
-		})
-	}
-	return listDeployments
-}
-
 // ListDeployments returns ListDeployments according to the request.
 func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery) (*v1.ListDeploymentsResponse, error) {
-	resp := new(v1.ListDeploymentsResponse)
-	var deployments []*v1.Deployment
+	var deployments []*v1.ListDeployment
 	var err error
 	if request.GetQuery() == "" {
-		deployments, err = s.datastore.GetDeployments()
+		deployments, err = s.datastore.ListDeployments()
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -91,13 +72,17 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		deployments, err = s.datastore.SearchRawDeployments(parsedQuery)
+		deployments, err = s.datastore.SearchListDeployments(parsedQuery)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
-	resp.Deployments = convertDeploymentsToDeploymentsList(deployments)
-	return resp, nil
+	sort.SliceStable(deployments, func(i, j int) bool {
+		return deployments[i].GetPriority() < deployments[j].GetPriority()
+	})
+	return &v1.ListDeploymentsResponse{
+		Deployments: deployments,
+	}, nil
 }
 
 // GetLabels returns label keys and values for current deployments.

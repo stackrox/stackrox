@@ -13,6 +13,19 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
+func (ds *datastoreImpl) ListDeployment(id string) (*v1.ListDeployment, bool, error) {
+	return ds.storage.ListDeployment(id)
+}
+
+func (ds *datastoreImpl) SearchListDeployments(request *v1.ParsedSearchRequest) ([]*v1.ListDeployment, error) {
+	return ds.searcher.SearchListDeployments(request)
+}
+
+// ListDeployments returns all deployments in their minimal form
+func (ds *datastoreImpl) ListDeployments() ([]*v1.ListDeployment, error) {
+	return ds.storage.ListDeployments()
+}
+
 // SearchDeployments
 func (ds *datastoreImpl) SearchDeployments(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
 	return ds.searcher.SearchDeployments(request)

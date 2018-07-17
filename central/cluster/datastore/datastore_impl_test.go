@@ -51,12 +51,12 @@ func (suite *ClusterDataStoreTestSuite) TestDNRIntegrationsAreRemoved() {
 	}, nil)
 	suite.dnrInts.On("RemoveDNRIntegration", "DNRID").Return(nil)
 
-	cluster := &v1.Cluster{Id: fakeClusterID}
+	cluster := &v1.Cluster{Name: fakeClusterID}
 
 	suite.clusters.On("GetCluster", fakeClusterID).Return(cluster, true, nil)
 	suite.clusters.On("RemoveCluster", fakeClusterID).Return(nil)
 
-	suite.deployments.On("GetDeployments").Return(make([]*v1.Deployment, 0), nil)
+	suite.deployments.On("ListDeployments").Return(make([]*v1.ListDeployment, 0), nil)
 	suite.deployments.On("RemoveDeployment", "deployment1").Return(nil)
 
 	suite.clusterDataStore.RemoveCluster(fakeClusterID)
@@ -77,7 +77,7 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveTombstonesDeploymentsAndMarksA
 
 	// We expect deployments to be fetched, and only those for cluster1 to be tombstoned.
 	deployments := getDeployments(map[string]string{"deployment1": fakeClusterID, "deployment2": "cluster2"})
-	suite.deployments.On("GetDeployments").Return(deployments, nil)
+	suite.deployments.On("ListDeployments").Return(deployments, nil)
 	suite.deployments.On("RemoveDeployment", "deployment1").Return(nil)
 
 	// Return a cluster with an id that matches the deployments we want to tombstone.
@@ -130,7 +130,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingCluster() {
 func (suite *ClusterDataStoreTestSuite) TestHandlesNoDeployments() {
 	suite.mockOutDNRIntegrationMethod()
 	// Return an error trying to fetch the deployments for a cluster.
-	suite.deployments.On("GetDeployments").Return(([]*v1.Deployment)(nil), nil)
+	suite.deployments.On("ListDeployments").Return(([]*v1.ListDeployment)(nil), nil)
 
 	// Return a cluster with an id that matches the deployments we want to tombstone.
 	cluster := &v1.Cluster{
@@ -153,7 +153,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingDeployments() {
 	suite.mockOutDNRIntegrationMethod()
 	// Return an error trying to fetch the deployments for a cluster.
 	expectedErr := fmt.Errorf("issues need tissues")
-	suite.deployments.On("GetDeployments").Return(([]*v1.Deployment)(nil), expectedErr)
+	suite.deployments.On("ListDeployments").Return(([]*v1.ListDeployment)(nil), expectedErr)
 
 	// Return a cluster with an id that matches the deployments we want to tombstone.
 	cluster := &v1.Cluster{
@@ -191,7 +191,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorTombstoningDeployments()
 
 	// Return an error trying to remove the deployments for a cluster.
 	deployments := getDeployments(map[string]string{"deployment1": fakeClusterID, "deployment2": fakeClusterID})
-	suite.deployments.On("GetDeployments").Return(deployments, nil)
+	suite.deployments.On("ListDeployments").Return(deployments, nil)
 	expectedErr := fmt.Errorf("issues need tissues")
 	suite.deployments.On("RemoveDeployment", "deployment1").Return(expectedErr)
 	suite.deployments.On("RemoveDeployment", "deployment2").Return(nil)
@@ -222,7 +222,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesNoAlerts() {
 
 	// We expect deployments to be fetched, and only those for cluster1 to be tombstoned.
 	deployments := getDeployments(map[string]string{"deployment1": fakeClusterID, "deployment2": "cluster2"})
-	suite.deployments.On("GetDeployments").Return(deployments, nil)
+	suite.deployments.On("ListDeployments").Return(deployments, nil)
 	suite.deployments.On("RemoveDeployment", "deployment1").Return(nil)
 
 	// Return a cluster with an id that matches the deployments we want to tombstone.
@@ -252,7 +252,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingAlerts() {
 
 	// We expect deployments to be fetched, and only those for cluster1 to be tombstoned.
 	deployments := getDeployments(map[string]string{"deployment1": fakeClusterID, "deployment2": "cluster2"})
-	suite.deployments.On("GetDeployments").Return(deployments, nil)
+	suite.deployments.On("ListDeployments").Return(deployments, nil)
 
 	// Return a cluster with an id that matches the deployments we want to tombstone.
 	cluster := &v1.Cluster{
@@ -286,7 +286,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorUpdatingAlert() {
 
 	// We expect deployments to be fetched, and only those for cluster1 to be tombstoned.
 	deployments := getDeployments(map[string]string{"deployment1": fakeClusterID, "deployment2": "cluster2"})
-	suite.deployments.On("GetDeployments").Return(deployments, nil)
+	suite.deployments.On("ListDeployments").Return(deployments, nil)
 
 	// Return a cluster with an id that matches the deployments we want to tombstone.
 	cluster := &v1.Cluster{
@@ -322,10 +322,10 @@ func getAlerts(count int) []*v1.Alert {
 	return alerts
 }
 
-func getDeployments(deploymentToCluster map[string]string) []*v1.Deployment {
-	deployments := make([]*v1.Deployment, 0)
+func getDeployments(deploymentToCluster map[string]string) []*v1.ListDeployment {
+	deployments := make([]*v1.ListDeployment, 0)
 	for deploymentID, clusterID := range deploymentToCluster {
-		deployment := &v1.Deployment{
+		deployment := &v1.ListDeployment{
 			Id:        deploymentID,
 			ClusterId: clusterID,
 		}
