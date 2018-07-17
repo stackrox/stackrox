@@ -121,6 +121,7 @@ message PortConfig {
         INTERNAL = 3;
     }
     Exposure exposure       = 4;
+    int32 exposed_port      = 5;
 }
 
 message DeploymentLabelsResponse {

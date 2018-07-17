@@ -15,8 +15,7 @@ type datagraphImpl struct {
 }
 
 // ProcessDeploymentEvent updates the secrets service with a new deployment event.
-func (s *datagraphImpl) ProcessDeploymentEvent(event *v1.DeploymentEvent) error {
-	deployment := event.GetDeployment()
+func (s *datagraphImpl) ProcessDeploymentEvent(action v1.ResourceAction, deployment *v1.Deployment) error {
 	for _, container := range deployment.GetContainers() {
 		for _, embeddedSecret := range container.GetSecrets() {
 			// Merge relationship
@@ -25,7 +24,7 @@ func (s *datagraphImpl) ProcessDeploymentEvent(event *v1.DeploymentEvent) error 
 			if err != nil {
 				return err
 			}
-			if event.Action == v1.ResourceAction_REMOVE_RESOURCE {
+			if action == v1.ResourceAction_REMOVE_RESOURCE {
 				if exists {
 					removeRelationships(oldRelationship, relationship)
 				} else {

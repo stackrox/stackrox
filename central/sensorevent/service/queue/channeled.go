@@ -1,7 +1,7 @@
 package queue
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/deploymentevent/store"
+	"bitbucket.org/stack-rox/apollo/central/sensorevent/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 )
 
@@ -9,8 +9,8 @@ import (
 // All elements buffered in the queue (not available on the outgoing channel), get stored in a provided
 // storage instance, and added to the outgoing channel as it is consumed.
 type ChanneledEventQueue interface {
-	InChannel() chan<- *v1.DeploymentEvent
-	OutChannel() <-chan *v1.DeploymentEvent
+	InChannel() chan<- *v1.SensorEvent
+	OutChannel() <-chan *v1.SensorEvent
 	Open(clusterID string) error
 	Close()
 }
@@ -31,8 +31,8 @@ func NewChanneledEventQueue(eventStorage store.Store) ChanneledEventQueue {
 type channeledPersistedEventQueue struct {
 	queue EventQueue
 
-	inputChannel  chan *v1.DeploymentEvent
-	outputChannel chan *v1.DeploymentEvent
+	inputChannel  chan *v1.SensorEvent
+	outputChannel chan *v1.SensorEvent
 
 	pendingChannel chan struct{}
 	stopLoop       chan struct{}
@@ -40,12 +40,12 @@ type channeledPersistedEventQueue struct {
 }
 
 // InChannel returns the write-only channel that adds items to the queue.
-func (s *channeledPersistedEventQueue) InChannel() chan<- *v1.DeploymentEvent {
+func (s *channeledPersistedEventQueue) InChannel() chan<- *v1.SensorEvent {
 	return s.inputChannel
 }
 
 // OutChannel returns the read-only channel that pulls items from the queue.
-func (s *channeledPersistedEventQueue) OutChannel() <-chan *v1.DeploymentEvent {
+func (s *channeledPersistedEventQueue) OutChannel() <-chan *v1.SensorEvent {
 	return s.outputChannel
 }
 
@@ -55,9 +55,9 @@ func (s *channeledPersistedEventQueue) Open(clusterID string) error {
 		return err
 	}
 
-	s.inputChannel = make(chan *v1.DeploymentEvent)
+	s.inputChannel = make(chan *v1.SensorEvent)
 	s.pendingChannel = make(chan struct{}, 1)
-	s.outputChannel = make(chan *v1.DeploymentEvent)
+	s.outputChannel = make(chan *v1.SensorEvent)
 
 	go s.pushLoop()
 	go s.pullLoop()

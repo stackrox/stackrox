@@ -56,16 +56,19 @@ func getMockDeployment() *v1.Deployment {
 						Name:          "Port1",
 						ContainerPort: 22,
 						Exposure:      v1.PortConfig_EXTERNAL,
+						ExposedPort:   8082,
 					},
 					{
 						Name:          "Port2",
 						ContainerPort: 23,
 						Exposure:      v1.PortConfig_INTERNAL,
+						ExposedPort:   8083,
 					},
 					{
 						Name:          "Port3",
-						ContainerPort: 8080,
+						ContainerPort: 24,
 						Exposure:      v1.PortConfig_NODE,
+						ExposedPort:   8084,
 					},
 				},
 			},
@@ -113,9 +116,9 @@ func TestScore(t *testing.T) {
 			{
 				Name: reachabilityHeading,
 				Factors: []string{
-					"Container library/nginx exposes port 22 to external clients",
-					"Container library/nginx exposes port 23 in the cluster",
-					"Container library/nginx exposes port 8080 on node interfaces",
+					"Container library/nginx exposes port 8082 to external clients",
+					"Container library/nginx exposes port 8083 in the cluster",
+					"Container library/nginx exposes port 8084 on node interfaces",
 				},
 				Score: 1.6,
 			},
@@ -169,9 +172,9 @@ func TestScore(t *testing.T) {
 			{
 				Name: reachabilityHeading,
 				Factors: []string{
-					"Container library/nginx exposes port 22 to external clients",
-					"Container library/nginx exposes port 23 in the cluster",
-					"Container library/nginx exposes port 8080 on node interfaces",
+					"Container library/nginx exposes port 8082 to external clients",
+					"Container library/nginx exposes port 8083 in the cluster",
+					"Container library/nginx exposes port 8084 on node interfaces",
 				},
 				Score: 1.6,
 			},

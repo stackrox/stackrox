@@ -14,7 +14,7 @@ var (
 
 // Sensor interface allows you to start and stop the consumption/production loops.
 type Sensor interface {
-	Start(input <-chan *listeners.DeploymentEventWrap, output chan<- *enforcers.DeploymentEnforcement) error
+	Start(input <-chan *listeners.EventWrap, output chan<- *enforcers.DeploymentEnforcement) error
 	Stop()
 }
 
@@ -33,7 +33,7 @@ type sensorImpl struct {
 }
 
 // Start begins listening to the input channel, processing the item, and writing them out to the output channel.
-func (p *sensorImpl) Start(input <-chan *listeners.DeploymentEventWrap, output chan<- *enforcers.DeploymentEnforcement) error {
+func (p *sensorImpl) Start(input <-chan *listeners.EventWrap, output chan<- *enforcers.DeploymentEnforcement) error {
 	stream, err := p.centralStream.openStream()
 	if err != nil {
 		return err

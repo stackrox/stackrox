@@ -3,10 +3,15 @@ package service
 import (
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	deploymentEventStore "bitbucket.org/stack-rox/apollo/central/deploymentevent/store"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
+	namespaceDataStore "bitbucket.org/stack-rox/apollo/central/namespace/store"
+	networkPolicyStore "bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
 	"bitbucket.org/stack-rox/apollo/central/risk"
+	"bitbucket.org/stack-rox/apollo/central/sensorevent/service/pipeline/deploymentevents"
+	namespacePipeline "bitbucket.org/stack-rox/apollo/central/sensorevent/service/pipeline/namespaces"
+	"bitbucket.org/stack-rox/apollo/central/sensorevent/service/pipeline/networkpolicies"
+	deploymentEventStore "bitbucket.org/stack-rox/apollo/central/sensorevent/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -29,7 +34,10 @@ type Service interface {
 }
 
 // New returns a new instance of service.
-func New(detector *detection.Detector, scorer *risk.Scorer, deploymentEvents deploymentEventStore.Store, images imageDataStore.DataStore, deployments deploymentDataStore.DataStore, clusters clusterDataStore.DataStore) Service {
+func New(detector *detection.Detector, scorer *risk.Scorer, deploymentEvents deploymentEventStore.Store,
+	images imageDataStore.DataStore, deployments deploymentDataStore.DataStore,
+	clusters clusterDataStore.DataStore, networkPolicies networkPolicyStore.Store,
+	namespaces namespaceDataStore.Store) Service {
 	return &serviceImpl{
 		detector: detector,
 		scorer:   scorer,
@@ -38,5 +46,11 @@ func New(detector *detection.Detector, scorer *risk.Scorer, deploymentEvents dep
 		images:           images,
 		deployments:      deployments,
 		clusters:         clusters,
+		networkPolicies:  networkPolicies,
+		namespaces:       namespaces,
+
+		deploymentPipeline:    deploymentevents.NewPipeline(clusters, deployments, images, detector),
+		networkPolicyPipeline: networkpolicies.NewPipeline(clusters, networkPolicies),
+		namespacePipeline:     namespacePipeline.NewPipeline(clusters, namespaces),
 	}
 }

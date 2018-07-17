@@ -12,23 +12,21 @@ import (
 // newProcessLoops returns a new Sensor.
 func newProcessLoops(imageIntegrationPoller *sources.Client) *processLoopsImpl {
 	return &processLoopsImpl{
-		pendingCache:     newPendingDeployments(),
-		eventWrapToEvent: eventWrapToEvent(imageIntegrationPoller),
+		pendingCache: newPendingEvents(),
 	}
 }
 
 // processLoopsImpl is the master processing logic underlying Sensor. It consumes sensor's inputs and returns
 // it's outputs.
 type processLoopsImpl struct {
-	pendingCache     *pendingDeploymentEvents
-	eventWrapToEvent func(*listeners.DeploymentEventWrap) (*v1.DeploymentEvent, error)
+	pendingCache *pendingEvents
 
 	stopLoop    chan struct{}
 	loopStopped chan struct{}
 }
 
 // Starts the processing loops.
-func (p *processLoopsImpl) startLoops(input <-chan *listeners.DeploymentEventWrap, stream v1.SensorEventService_RecordEventClient, output chan<- *enforcers.DeploymentEnforcement) {
+func (p *processLoopsImpl) startLoops(input <-chan *listeners.EventWrap, stream v1.SensorEventService_RecordEventClient, output chan<- *enforcers.DeploymentEnforcement) {
 	p.stopLoop = make(chan struct{})
 	p.loopStopped = make(chan struct{})
 
@@ -50,14 +48,14 @@ func (p *processLoopsImpl) stopLoops() {
 //////////////////////////////////////////////////////////////////
 
 // Take in data from the input channel, pre-process it, then send it to central.
-func (p *processLoopsImpl) sendMessages(input <-chan *listeners.DeploymentEventWrap, stream v1.SensorEventService_RecordEventClient) {
+func (p *processLoopsImpl) sendMessages(eventInput <-chan *listeners.EventWrap, stream v1.SensorEventService_RecordEventClient) {
 	// When the input channel closes and looping stops and returns, we need to close the stream with central.
 	defer stream.CloseSend()
 
 	for {
 		select {
 		// Take in events from the inbound channel, pre-process, then send to central.
-		case eventWrap, ok := <-input:
+		case eventWrap, ok := <-eventInput:
 			// The loop stops when the input channel is closed.
 			if !ok {
 				return
@@ -70,14 +68,8 @@ func (p *processLoopsImpl) sendMessages(input <-chan *listeners.DeploymentEventW
 				p.pendingCache.remove(eventWrap)
 			}
 
-			event, err := p.eventWrapToEvent(eventWrap)
-			if err != nil {
-				log.Errorf("unable to handle event wrapper: %s", err)
-				continue
-			}
-
-			log.Infof("deployment already being processed %s", eventWrap.GetDeployment().GetId())
-			if err := stream.Send(event); err != nil {
+			log.Infof("Event already being processed %s", eventWrap.GetId())
+			if err := stream.Send(eventWrap.SensorEvent); err != nil {
 				log.Errorf("unable to send event: %s", err)
 			}
 
@@ -104,24 +96,37 @@ func (p *processLoopsImpl) receiveMessages(stream v1.SensorEventService_RecordEv
 			return
 		}
 
-		if eventResp.GetEnforcement() == v1.EnforcementAction_UNSET_ENFORCEMENT {
-			log.Infof("deployment processed but no enforcement needed %s", eventResp.GetDeploymentId())
-			continue
+		// Just to avoid panics, but we currently don't handle any responses not from deployments
+		switch x := eventResp.Resource.(type) {
+		case *v1.SensorEventResponse_Deployment:
+			p.processDeploymentResponse(eventResp, output)
+		case *v1.SensorEventResponse_NetworkPolicy, *v1.SensorEventResponse_Namespace:
+			// Purposefully eating the responses for these types because there is nothing to do for them
+		default:
+			logger.Errorf("Event response with type '%s' is not handled", x)
 		}
+	}
+}
 
-		log.Infof("enforcement requested for deployment %s", eventResp.GetDeploymentId())
-		eventWrap, exists := p.pendingCache.fetch(eventResp.GetDeploymentId())
-		if !exists {
-			log.Errorf("cannot find deployment event for deployment %s", eventResp.GetDeploymentId())
-			continue
-		}
+func (p *processLoopsImpl) processDeploymentResponse(eventResp *v1.SensorEventResponse, output chan<- *enforcers.DeploymentEnforcement) {
+	deploymentResp := eventResp.GetDeployment()
+	if deploymentResp.GetEnforcement() == v1.EnforcementAction_UNSET_ENFORCEMENT {
+		log.Infof("deployment processed but no enforcement needed %s", deploymentResp.GetDeploymentId())
+		return
+	}
 
-		log.Infof("performing enforcement %s on deployment %s", eventWrap.GetAction(), eventWrap.GetDeployment().GetName())
-		output <- &enforcers.DeploymentEnforcement{
-			Deployment:   eventWrap.GetDeployment(),
-			OriginalSpec: eventWrap.OriginalSpec,
-			Enforcement:  eventResp.GetEnforcement(),
-			AlertID:      eventResp.GetAlertId(),
-		}
+	log.Infof("enforcement requested for deployment %s", deploymentResp.GetDeploymentId())
+	eventWrap, exists := p.pendingCache.fetch(deploymentResp.GetDeploymentId())
+	if !exists {
+		log.Errorf("cannot find deployment event for deployment %s", deploymentResp.GetDeploymentId())
+		return
+	}
+
+	log.Infof("performing enforcement %s on deployment %s", eventWrap.GetAction(), eventWrap.GetDeployment().GetName())
+	output <- &enforcers.DeploymentEnforcement{
+		Deployment:   eventWrap.GetDeployment(),
+		OriginalSpec: eventWrap.OriginalSpec,
+		Enforcement:  deploymentResp.GetEnforcement(),
+		AlertID:      deploymentResp.GetAlertId(),
 	}
 }

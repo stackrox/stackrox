@@ -7,13 +7,12 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/listener/namespace"
+	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/listener/networkpolicy"
+	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/listener/resources"
 	openshift "github.com/openshift/client-go/apps/clientset/versioned"
-	"k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -31,17 +30,20 @@ type clientSet struct {
 
 type kubernetesListener struct {
 	clients *clientSet
-	eventsC chan *listeners.DeploymentEventWrap
+	eventsC chan *listeners.EventWrap
 
-	podWL       *podWatchLister
-	resourcesWL []resourceWatchLister
-	serviceWL   *serviceWatchLister
+	podWL       *resources.PodWatchLister
+	resourcesWL []resources.ResourceWatchLister
+	serviceWL   *resources.ServiceWatchLister
+
+	networkPolicyWL *networkpolicy.WatchLister
+	namespaceWL     *namespace.WatchLister
 }
 
 // New returns a new kubernetes listener.
 func New() listeners.Listener {
 	k := &kubernetesListener{
-		eventsC: make(chan *listeners.DeploymentEventWrap, 10),
+		eventsC: make(chan *listeners.EventWrap, 10),
 	}
 	k.initialize()
 	return k
@@ -50,40 +52,52 @@ func New() listeners.Listener {
 func (k *kubernetesListener) initialize() {
 	k.setupClient()
 	k.createResourceWatchers()
+	k.createNetworkPolicyWatcher()
+	k.createNamespaceWatcher()
 }
 
 func (k *kubernetesListener) Start() {
-	go k.podWL.watch()
-	k.podWL.blockUntilSynced()
+	go k.podWL.Watch()
+	k.podWL.BlockUntilSynced()
 
 	for _, wl := range k.resourcesWL {
-		go wl.watch(k.serviceWL)
+		go wl.Watch(k.serviceWL)
 	}
 
-	go k.serviceWL.startWatch()
+	go k.serviceWL.StartWatch()
+	go k.networkPolicyWL.StartWatch()
 }
 
 func (k *kubernetesListener) createResourceWatchers() {
-	k.podWL = newPodWatchLister(k.clients.k8s.CoreV1().RESTClient())
+	k.podWL = resources.NewPodWatchLister(k.clients.k8s.CoreV1().RESTClient(), resyncPeriod)
 
-	k.resourcesWL = []resourceWatchLister{
-		newReplicaSetWatchLister(k.clients.k8s.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL),
-		newDaemonSetWatchLister(k.clients.k8s.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL),
-		newReplicationControllerWatchLister(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, k.podWL),
-		newDeploymentWatcher(k.clients.k8s.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL),
-		newStatefulSetWatchLister(k.clients.k8s.AppsV1beta1().RESTClient(), k.eventsC, k.podWL),
+	k.resourcesWL = []resources.ResourceWatchLister{
+		resources.NewReplicaSetWatchLister(k.clients.k8s.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL, resyncPeriod),
+		resources.NewDaemonSetWatchLister(k.clients.k8s.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL, resyncPeriod),
+		resources.NewReplicationControllerWatchLister(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, k.podWL, resyncPeriod),
+		resources.NewDeploymentWatcher(k.clients.k8s.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL, resyncPeriod),
+		resources.NewStatefulSetWatchLister(k.clients.k8s.AppsV1beta1().RESTClient(), k.eventsC, k.podWL, resyncPeriod),
 	}
 
 	if env.OpenshiftAPI.Setting() == "true" {
-		k.resourcesWL = append(k.resourcesWL, newDeploymentConfigWatcher(k.clients.openshift.AppsV1().RESTClient(), k.eventsC, k.podWL))
+		k.resourcesWL = append(k.resourcesWL, resources.NewDeploymentConfigWatcher(k.clients.openshift.AppsV1().RESTClient(), k.eventsC, k.podWL, resyncPeriod))
 	}
 
-	var deploymentGetters []func() (objs []interface{}, deploymentEvents []*pkgV1.DeploymentEvent)
+	var deploymentGetters []func() (objs []interface{}, deploymentEvents []*pkgV1.Deployment)
 	for _, wl := range k.resourcesWL {
-		deploymentGetters = append(deploymentGetters, wl.listObjects)
+		deploymentGetters = append(deploymentGetters, wl.ListObjects)
 	}
 
-	k.serviceWL = newServiceWatchLister(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, deploymentGetters...)
+	k.serviceWL = resources.NewServiceWatchLister(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, resyncPeriod, deploymentGetters...)
+}
+
+func (k *kubernetesListener) createNetworkPolicyWatcher() {
+	k.networkPolicyWL = networkpolicy.NewWatchLister(k.clients.k8s.NetworkingV1().RESTClient(), k.eventsC, resyncPeriod)
+}
+
+func (k *kubernetesListener) createNamespaceWatcher() {
+	k.namespaceWL = namespace.NewWatchLister(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, resyncPeriod)
+
 }
 
 func (k *kubernetesListener) setupClient() {
@@ -109,59 +123,15 @@ func (k *kubernetesListener) setupClient() {
 }
 
 func (k *kubernetesListener) Stop() {
-	k.podWL.stop()
+	k.podWL.Stop()
 
 	for _, wl := range k.resourcesWL {
-		wl.stop()
+		wl.Stop()
 	}
 
-	k.serviceWL.stop()
+	k.serviceWL.Stop()
 }
 
-func (k *kubernetesListener) Events() <-chan *listeners.DeploymentEventWrap {
+func (k *kubernetesListener) Events() <-chan *listeners.EventWrap {
 	return k.eventsC
-}
-
-type watchLister struct {
-	client     rest.Interface
-	store      cache.Store
-	controller cache.Controller
-	stopC      chan struct{}
-}
-
-func newWatchLister(client rest.Interface) watchLister {
-	return watchLister{
-		client: client,
-		stopC:  make(chan struct{}),
-	}
-}
-
-func (wl *watchLister) setupWatch(object string, objectType runtime.Object, changedFunc func(interface{}, pkgV1.ResourceAction)) {
-	watchlist := cache.NewListWatchFromClient(wl.client, object, v1.NamespaceAll, fields.Everything())
-
-	wl.store, wl.controller = cache.NewInformer(
-		watchlist,
-		objectType,
-		resyncPeriod,
-		cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				// Once the initial objects are listed, the resource action changes to CREATE.
-				changedFunc(obj, pkgV1.ResourceAction_PREEXISTING_RESOURCE)
-			},
-			UpdateFunc: func(oldObj, newObj interface{}) {
-				changedFunc(newObj, pkgV1.ResourceAction_UPDATE_RESOURCE)
-			},
-			DeleteFunc: func(obj interface{}) {
-				changedFunc(obj, pkgV1.ResourceAction_REMOVE_RESOURCE)
-			},
-		},
-	)
-}
-
-func (wl *watchLister) startWatch() {
-	wl.controller.Run(wl.stopC)
-}
-
-func (wl *watchLister) stop() {
-	wl.stopC <- struct{}{}
 }

@@ -184,4 +184,3 @@ function get_authority {
     echo
 }
 
-

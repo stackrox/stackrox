@@ -53,10 +53,6 @@ func (suite *SecretDataGraphTestSuite) TestProcessCreateEvent() {
 			container,
 		},
 	}
-	deploymentEvent := &v1.DeploymentEvent{
-		Deployment: deployment,
-		Action:     v1.ResourceAction_CREATE_RESOURCE,
-	}
 
 	// Return relationships that match, so the upserted values should be the same.
 	secret := toSecret(embedded)
@@ -75,7 +71,7 @@ func (suite *SecretDataGraphTestSuite) TestProcessCreateEvent() {
 	suite.mockIndexer.On("SecretAndRelationship",
 		mock.MatchedBy(func(s *v1.SecretAndRelationship) bool { return reflect.DeepEqual(s, sar) })).Return(nil)
 
-	err := suite.datagraph.ProcessDeploymentEvent(deploymentEvent)
+	err := suite.datagraph.ProcessDeploymentEvent(v1.ResourceAction_CREATE_RESOURCE, deployment)
 	suite.NoError(err)
 
 	suite.mockStore.AssertExpectations(suite.T())
@@ -104,10 +100,6 @@ func (suite *SecretDataGraphTestSuite) TestProcessRemoveEvent() {
 			container,
 		},
 	}
-	deploymentEvent := &v1.DeploymentEvent{
-		Deployment: deployment,
-		Action:     v1.ResourceAction_REMOVE_RESOURCE,
-	}
 
 	// Return relationships that match the removed relationship.
 	secret := toSecret(embedded)
@@ -131,7 +123,7 @@ func (suite *SecretDataGraphTestSuite) TestProcessRemoveEvent() {
 	suite.mockIndexer.On("SecretAndRelationship",
 		mock.MatchedBy(func(s *v1.SecretAndRelationship) bool { return reflect.DeepEqual(s, sar) })).Return(nil)
 
-	err := suite.datagraph.ProcessDeploymentEvent(deploymentEvent)
+	err := suite.datagraph.ProcessDeploymentEvent(v1.ResourceAction_REMOVE_RESOURCE, deployment)
 	suite.NoError(err)
 
 	suite.mockStore.AssertExpectations(suite.T())

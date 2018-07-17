@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	deploymentEventStore "bitbucket.org/stack-rox/apollo/central/deploymentevent/store"
+	sensorEventStore "bitbucket.org/stack-rox/apollo/central/sensorevent/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -18,11 +18,11 @@ type PersistedEventQueueTestSuite struct {
 	suite.Suite
 
 	tested   *persistedEventQueue
-	eStorage *deploymentEventStore.MockStore
+	eStorage *sensorEventStore.MockStore
 }
 
 func (suite *PersistedEventQueueTestSuite) SetupTest() {
-	suite.eStorage = &deploymentEventStore.MockStore{}
+	suite.eStorage = &sensorEventStore.MockStore{}
 	suite.tested = &persistedEventQueue{
 		eventStorage: suite.eStorage,
 
@@ -36,20 +36,20 @@ func (suite *PersistedEventQueueTestSuite) TestBuildUpAndEmpty() {
 	events := fakeDeploymentEvents()
 
 	// We expect storage to hold all 4 events until we pull.
-	suite.eStorage.On("AddDeploymentEvent", events[0]).Return(uint64(0), nil)
-	suite.eStorage.On("AddDeploymentEvent", events[1]).Return(uint64(1), nil)
-	suite.eStorage.On("AddDeploymentEvent", events[2]).Return(uint64(2), nil)
-	suite.eStorage.On("AddDeploymentEvent", events[3]).Return(uint64(3), nil)
+	suite.eStorage.On("AddSensorEvent", events[0]).Return(uint64(0), nil)
+	suite.eStorage.On("AddSensorEvent", events[1]).Return(uint64(1), nil)
+	suite.eStorage.On("AddSensorEvent", events[2]).Return(uint64(2), nil)
+	suite.eStorage.On("AddSensorEvent", events[3]).Return(uint64(3), nil)
 
 	// Once we pull, we expect all 4 to be read and removed.
-	suite.eStorage.On("GetDeploymentEvent", uint64(0)).Return(events[0], true, nil)
-	suite.eStorage.On("RemoveDeploymentEvent", uint64(0)).Return(nil)
-	suite.eStorage.On("GetDeploymentEvent", uint64(1)).Return(events[1], true, nil)
-	suite.eStorage.On("RemoveDeploymentEvent", uint64(1)).Return(nil)
-	suite.eStorage.On("GetDeploymentEvent", uint64(2)).Return(events[2], true, nil)
-	suite.eStorage.On("RemoveDeploymentEvent", uint64(2)).Return(nil)
-	suite.eStorage.On("GetDeploymentEvent", uint64(3)).Return(events[3], true, nil)
-	suite.eStorage.On("RemoveDeploymentEvent", uint64(3)).Return(nil)
+	suite.eStorage.On("GetSensorEvent", uint64(0)).Return(events[0], true, nil)
+	suite.eStorage.On("RemoveSensorEvent", uint64(0)).Return(nil)
+	suite.eStorage.On("GetSensorEvent", uint64(1)).Return(events[1], true, nil)
+	suite.eStorage.On("RemoveSensorEvent", uint64(1)).Return(nil)
+	suite.eStorage.On("GetSensorEvent", uint64(2)).Return(events[2], true, nil)
+	suite.eStorage.On("RemoveSensorEvent", uint64(2)).Return(nil)
+	suite.eStorage.On("GetSensorEvent", uint64(3)).Return(events[3], true, nil)
+	suite.eStorage.On("RemoveSensorEvent", uint64(3)).Return(nil)
 
 	// Push all 4 events, then pull all 4.
 	suite.tested.Push(events[0])
@@ -76,29 +76,25 @@ func (suite *PersistedEventQueueTestSuite) TestBuildUpAndEmpty() {
 	// Pull one more time to get nil
 	suite.Equal(0, suite.tested.Count())
 	event, _ = suite.tested.Pull()
-	suite.Equal((*v1.DeploymentEvent)(nil), event)
+	suite.Equal((*v1.SensorEvent)(nil), event)
 }
 
 func (suite *PersistedEventQueueTestSuite) TestHandlesDuplicatesCreatePreexisting() {
-	first := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	first := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_CREATE_RESOURCE,
 	}
-	second := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	second := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_PREEXISTING_RESOURCE,
 	}
 
 	// Expect event one to get added, and then updated with the new action change.
-	suite.eStorage.On("AddDeploymentEvent", first).Return(uint64(0), nil)
-	suite.eStorage.On("GetDeploymentEvent", uint64(0)).Return(first, true, nil)
-	suite.eStorage.On("UpdateDeploymentEvent", uint64(0),
-		mock.MatchedBy(func(event *v1.DeploymentEvent) bool {
-			return event.GetDeployment().GetId() == "id1" && event.GetAction() == v1.ResourceAction_CREATE_RESOURCE
+	suite.eStorage.On("AddSensorEvent", first).Return(uint64(0), nil)
+	suite.eStorage.On("GetSensorEvent", uint64(0)).Return(first, true, nil)
+	suite.eStorage.On("UpdateSensorEvent", uint64(0),
+		mock.MatchedBy(func(event *v1.SensorEvent) bool {
+			return event.GetId() == "id1" && event.GetAction() == v1.ResourceAction_CREATE_RESOURCE
 		})).Return(nil)
 
 	// Push the two events
@@ -111,25 +107,21 @@ func (suite *PersistedEventQueueTestSuite) TestHandlesDuplicatesCreatePreexistin
 }
 
 func (suite *PersistedEventQueueTestSuite) TestHandlesDuplicatesCreateUpdate() {
-	first := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	first := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_CREATE_RESOURCE,
 	}
-	second := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	second := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_UPDATE_RESOURCE,
 	}
 
 	// Expect event one to get added, and then updated with the new action change.
-	suite.eStorage.On("AddDeploymentEvent", first).Return(uint64(0), nil)
-	suite.eStorage.On("GetDeploymentEvent", uint64(0)).Return(first, true, nil)
-	suite.eStorage.On("UpdateDeploymentEvent", uint64(0),
-		mock.MatchedBy(func(event *v1.DeploymentEvent) bool {
-			return event.GetDeployment().GetId() == "id1" && event.GetAction() == v1.ResourceAction_CREATE_RESOURCE
+	suite.eStorage.On("AddSensorEvent", first).Return(uint64(0), nil)
+	suite.eStorage.On("GetSensorEvent", uint64(0)).Return(first, true, nil)
+	suite.eStorage.On("UpdateSensorEvent", uint64(0),
+		mock.MatchedBy(func(event *v1.SensorEvent) bool {
+			return event.GetId() == "id1" && event.GetAction() == v1.ResourceAction_CREATE_RESOURCE
 		})).Return(nil)
 
 	// Push the two events
@@ -142,23 +134,19 @@ func (suite *PersistedEventQueueTestSuite) TestHandlesDuplicatesCreateUpdate() {
 }
 
 func (suite *PersistedEventQueueTestSuite) TestHandlesDuplicatesCreateRemove() {
-	first := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	first := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_CREATE_RESOURCE,
 	}
-	second := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	second := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_REMOVE_RESOURCE,
 	}
 
 	// Expect event one to get added, and then updated with the new action change.
-	suite.eStorage.On("AddDeploymentEvent", first).Return(uint64(0), nil)
-	suite.eStorage.On("GetDeploymentEvent", uint64(0)).Return(first, true, nil)
-	suite.eStorage.On("RemoveDeploymentEvent", uint64(0)).Return(nil)
+	suite.eStorage.On("AddSensorEvent", first).Return(uint64(0), nil)
+	suite.eStorage.On("GetSensorEvent", uint64(0)).Return(first, true, nil)
+	suite.eStorage.On("RemoveSensorEvent", uint64(0)).Return(nil)
 
 	// Push the two events
 	suite.tested.Push(first)
@@ -170,25 +158,21 @@ func (suite *PersistedEventQueueTestSuite) TestHandlesDuplicatesCreateRemove() {
 }
 
 func (suite *PersistedEventQueueTestSuite) TestHandlesDuplicatesUpdateUpdate() {
-	first := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	first := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_UPDATE_RESOURCE,
 	}
-	second := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	second := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_UPDATE_RESOURCE,
 	}
 
 	// Expect event one to get added, and then updated with the new action change.
-	suite.eStorage.On("AddDeploymentEvent", first).Return(uint64(0), nil)
-	suite.eStorage.On("GetDeploymentEvent", uint64(0)).Return(first, true, nil)
-	suite.eStorage.On("UpdateDeploymentEvent", uint64(0),
-		mock.MatchedBy(func(event *v1.DeploymentEvent) bool {
-			return event.GetDeployment().GetId() == "id1" && event.GetAction() == v1.ResourceAction_UPDATE_RESOURCE
+	suite.eStorage.On("AddSensorEvent", first).Return(uint64(0), nil)
+	suite.eStorage.On("GetSensorEvent", uint64(0)).Return(first, true, nil)
+	suite.eStorage.On("UpdateSensorEvent", uint64(0),
+		mock.MatchedBy(func(event *v1.SensorEvent) bool {
+			return event.GetId() == "id1" && event.GetAction() == v1.ResourceAction_UPDATE_RESOURCE
 		})).Return(nil)
 
 	// Push the two events
@@ -201,25 +185,21 @@ func (suite *PersistedEventQueueTestSuite) TestHandlesDuplicatesUpdateUpdate() {
 }
 
 func (suite *PersistedEventQueueTestSuite) TestHandlesDuplicatesUpdateRemove() {
-	first := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	first := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_UPDATE_RESOURCE,
 	}
-	second := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	second := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_REMOVE_RESOURCE,
 	}
 
 	// Expect event one to get added, and then updated with the new action change.
-	suite.eStorage.On("AddDeploymentEvent", first).Return(uint64(0), nil)
-	suite.eStorage.On("GetDeploymentEvent", uint64(0)).Return(first, true, nil)
-	suite.eStorage.On("UpdateDeploymentEvent", uint64(0),
-		mock.MatchedBy(func(event *v1.DeploymentEvent) bool {
-			return event.GetDeployment().GetId() == "id1" && event.GetAction() == v1.ResourceAction_REMOVE_RESOURCE
+	suite.eStorage.On("AddSensorEvent", first).Return(uint64(0), nil)
+	suite.eStorage.On("GetSensorEvent", uint64(0)).Return(first, true, nil)
+	suite.eStorage.On("UpdateSensorEvent", uint64(0),
+		mock.MatchedBy(func(event *v1.SensorEvent) bool {
+			return event.GetId() == "id1" && event.GetAction() == v1.ResourceAction_REMOVE_RESOURCE
 		})).Return(nil)
 
 	// Push the two events
@@ -232,21 +212,17 @@ func (suite *PersistedEventQueueTestSuite) TestHandlesDuplicatesUpdateRemove() {
 }
 
 func (suite *PersistedEventQueueTestSuite) TestReturnsErrorForUnhandledAction() {
-	first := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	first := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_DRYRUN_RESOURCE,
 	}
-	second := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	second := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_CREATE_RESOURCE,
 	}
 
 	// Expect event one to get added, and then updated with the new action change.
-	suite.eStorage.On("AddDeploymentEvent", second).Return(uint64(0), nil)
+	suite.eStorage.On("AddSensorEvent", second).Return(uint64(0), nil)
 
 	// Push the two events
 	err := suite.tested.Push(first)
@@ -260,22 +236,19 @@ func (suite *PersistedEventQueueTestSuite) TestReturnsErrorForUnhandledAction() 
 }
 
 func (suite *PersistedEventQueueTestSuite) TestReturnsErrorForUnhandledDuplication() {
-	first := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	first := &v1.SensorEvent{
+		Id: "id1",
+
 		Action: v1.ResourceAction_REMOVE_RESOURCE,
 	}
-	second := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	second := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_PREEXISTING_RESOURCE,
 	}
 
 	// Expect event one to get added, and then updated with the new action change.
-	suite.eStorage.On("AddDeploymentEvent", first).Return(uint64(0), nil)
-	suite.eStorage.On("GetDeploymentEvent", uint64(0)).Return(first, true, nil)
+	suite.eStorage.On("AddSensorEvent", first).Return(uint64(0), nil)
+	suite.eStorage.On("GetSensorEvent", uint64(0)).Return(first, true, nil)
 
 	// Push the two events
 	err := suite.tested.Push(first)
@@ -292,7 +265,7 @@ func (suite *PersistedEventQueueTestSuite) TestPushHandlesAddFailures() {
 	events := fakeDeploymentEvents()
 
 	// We expect storage to hold all 4 events until we pull.
-	suite.eStorage.On("AddDeploymentEvent", events[0]).Return(uint64(0), fmt.Errorf("derp"))
+	suite.eStorage.On("AddSensorEvent", events[0]).Return(uint64(0), fmt.Errorf("derp"))
 
 	// Push all 4 events, then pull all 4.
 	err := suite.tested.Push(events[0])
@@ -304,22 +277,18 @@ func (suite *PersistedEventQueueTestSuite) TestPushHandlesAddFailures() {
 }
 
 func (suite *PersistedEventQueueTestSuite) TestPushHandlesReadOnDuplicateFailures() {
-	first := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	first := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_UPDATE_RESOURCE,
 	}
-	second := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	second := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_UPDATE_RESOURCE,
 	}
 
 	// Expect event one to get added, and then updated with the new action change.
-	suite.eStorage.On("AddDeploymentEvent", first).Return(uint64(0), nil)
-	suite.eStorage.On("GetDeploymentEvent", uint64(0)).Return(first, true, fmt.Errorf("derp"))
+	suite.eStorage.On("AddSensorEvent", first).Return(uint64(0), nil)
+	suite.eStorage.On("GetSensorEvent", uint64(0)).Return(first, true, fmt.Errorf("derp"))
 
 	// Push the two events
 	suite.tested.Push(first)
@@ -332,25 +301,21 @@ func (suite *PersistedEventQueueTestSuite) TestPushHandlesReadOnDuplicateFailure
 }
 
 func (suite *PersistedEventQueueTestSuite) TestPushHandlesUpdateOnDuplicateFailures() {
-	first := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	first := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_UPDATE_RESOURCE,
 	}
-	second := &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+	second := &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_UPDATE_RESOURCE,
 	}
 
 	// Expect event one to get added, and then updated with the new action change.
-	suite.eStorage.On("AddDeploymentEvent", first).Return(uint64(0), nil)
-	suite.eStorage.On("GetDeploymentEvent", uint64(0)).Return(first, true, nil)
-	suite.eStorage.On("UpdateDeploymentEvent", uint64(0),
-		mock.MatchedBy(func(event *v1.DeploymentEvent) bool {
-			return event.GetDeployment().GetId() == "id1" && event.GetAction() == v1.ResourceAction_UPDATE_RESOURCE
+	suite.eStorage.On("AddSensorEvent", first).Return(uint64(0), nil)
+	suite.eStorage.On("GetSensorEvent", uint64(0)).Return(first, true, nil)
+	suite.eStorage.On("UpdateSensorEvent", uint64(0),
+		mock.MatchedBy(func(event *v1.SensorEvent) bool {
+			return event.GetId() == "id1" && event.GetAction() == v1.ResourceAction_UPDATE_RESOURCE
 		})).Return(fmt.Errorf("derp"))
 
 	// Push the two events
@@ -367,10 +332,10 @@ func (suite *PersistedEventQueueTestSuite) TestPullHandlesGetFailures() {
 	events := fakeDeploymentEvents()
 
 	// We expect storage to hold an event.
-	suite.eStorage.On("AddDeploymentEvent", events[0]).Return(uint64(0), nil)
+	suite.eStorage.On("AddSensorEvent", events[0]).Return(uint64(0), nil)
 
 	// Once we pull, we expect to fail reading the db.
-	suite.eStorage.On("GetDeploymentEvent", uint64(0)).Return(events[0], true, fmt.Errorf("derp"))
+	suite.eStorage.On("GetSensorEvent", uint64(0)).Return(events[0], true, fmt.Errorf("derp"))
 
 	// Push one event.
 	suite.tested.Push(events[0])
@@ -386,11 +351,11 @@ func (suite *PersistedEventQueueTestSuite) TestPullHandlesRemoveFailures() {
 	events := fakeDeploymentEvents()
 
 	// We expect storage to hold all 4 events until we pull.
-	suite.eStorage.On("AddDeploymentEvent", events[0]).Return(uint64(0), nil)
+	suite.eStorage.On("AddSensorEvent", events[0]).Return(uint64(0), nil)
 
 	// Once we pull, we expect to fail removing from the db.
-	suite.eStorage.On("GetDeploymentEvent", uint64(0)).Return(events[0], true, nil)
-	suite.eStorage.On("RemoveDeploymentEvent", uint64(0)).Return(fmt.Errorf("derp"))
+	suite.eStorage.On("GetSensorEvent", uint64(0)).Return(events[0], true, nil)
+	suite.eStorage.On("RemoveSensorEvent", uint64(0)).Return(fmt.Errorf("derp"))
 
 	// Push one event.
 	suite.tested.Push(events[0])
@@ -402,33 +367,25 @@ func (suite *PersistedEventQueueTestSuite) TestPullHandlesRemoveFailures() {
 	suite.eStorage.AssertExpectations(suite.T())
 }
 
-func fakeDeploymentEvents() []*v1.DeploymentEvent {
-	ret := make([]*v1.DeploymentEvent, 4, 4)
-	ret[0] = &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id1",
-		},
+func fakeDeploymentEvents() []*v1.SensorEvent {
+	ret := make([]*v1.SensorEvent, 4, 4)
+	ret[0] = &v1.SensorEvent{
+		Id:     "id1",
 		Action: v1.ResourceAction_CREATE_RESOURCE,
 	}
 
-	ret[1] = &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id2",
-		},
+	ret[1] = &v1.SensorEvent{
+		Id:     "id2",
 		Action: v1.ResourceAction_CREATE_RESOURCE,
 	}
 
-	ret[2] = &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id3",
-		},
+	ret[2] = &v1.SensorEvent{
+		Id:     "id3",
 		Action: v1.ResourceAction_CREATE_RESOURCE,
 	}
 
-	ret[3] = &v1.DeploymentEvent{
-		Deployment: &v1.Deployment{
-			Id: "id4",
-		},
+	ret[3] = &v1.SensorEvent{
+		Id:     "id4",
 		Action: v1.ResourceAction_CREATE_RESOURCE,
 	}
 	return ret

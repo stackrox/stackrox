@@ -14,9 +14,9 @@ func TestPortExposureScore(t *testing.T) {
 	expectedScore := &v1.Risk_Result{
 		Name: reachabilityHeading,
 		Factors: []string{
-			"Container library/nginx exposes port 22 to external clients",
-			"Container library/nginx exposes port 23 in the cluster",
-			"Container library/nginx exposes port 8080 on node interfaces",
+			"Container library/nginx exposes port 8082 to external clients",
+			"Container library/nginx exposes port 8083 in the cluster",
+			"Container library/nginx exposes port 8084 on node interfaces",
 		},
 		Score: 1.6,
 	}

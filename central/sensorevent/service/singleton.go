@@ -5,10 +5,12 @@ import (
 
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	deploymenteventStore "bitbucket.org/stack-rox/apollo/central/deploymentevent/store"
 	detection "bitbucket.org/stack-rox/apollo/central/detection/singletons"
 	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
+	namespaceStore "bitbucket.org/stack-rox/apollo/central/namespace/store"
+	networkPolicyStore "bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
 	risk "bitbucket.org/stack-rox/apollo/central/risk/singletons"
+	sensorEventDataStore "bitbucket.org/stack-rox/apollo/central/sensorevent/store"
 )
 
 var (
@@ -18,7 +20,9 @@ var (
 )
 
 func initialize() {
-	as = New(detection.GetDetector(), risk.GetScorer(), deploymenteventStore.Singleton(), imageDataStore.Singleton(), deploymentDataStore.Singleton(), clusterDataStore.Singleton())
+	as = New(detection.GetDetector(), risk.GetScorer(), sensorEventDataStore.Singleton(), imageDataStore.Singleton(),
+		deploymentDataStore.Singleton(), clusterDataStore.Singleton(), networkPolicyStore.Singleton(),
+		namespaceStore.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

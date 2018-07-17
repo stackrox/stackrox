@@ -3,7 +3,7 @@ package queue
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/deploymentevent/store"
+	"bitbucket.org/stack-rox/apollo/central/sensorevent/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 )
@@ -26,8 +26,8 @@ var (
 
 // EventQueue provides an interface for a queue that stores DeploymentEvents.
 type EventQueue interface {
-	Push(*v1.DeploymentEvent) error
-	Pull() (*v1.DeploymentEvent, error)
+	Push(*v1.SensorEvent) error
+	Pull() (*v1.SensorEvent, error)
 	Load(clusterID string) error
 	Count() int
 }

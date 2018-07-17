@@ -5,7 +5,7 @@ import "fmt"
 // Removes an event from the queue by deployment id if one exists.
 func (p *persistedEventQueue) remove(seqID uint64) error {
 	// If we can't load the event, or it doesn't exist, try the next id if one exists.
-	event, exists, err := p.eventStorage.GetDeploymentEvent(seqID)
+	event, exists, err := p.eventStorage.GetSensorEvent(seqID)
 	if err != nil {
 		return fmt.Errorf("unable to pull next event from db: %s", err)
 	}
@@ -13,11 +13,11 @@ func (p *persistedEventQueue) remove(seqID uint64) error {
 		return fmt.Errorf("next event does not exist in db: %d", seqID)
 	}
 
-	delete(p.depIDToSeqID, event.GetDeployment().GetId())
+	delete(p.depIDToSeqID, event.GetId())
 	p.removeFromSeq(seqID)
 
 	// Try to remove the event from storage since we are returning it.
-	if err := p.eventStorage.RemoveDeploymentEvent(seqID); err != nil {
+	if err := p.eventStorage.RemoveSensorEvent(seqID); err != nil {
 		return fmt.Errorf("cannot remove next event from the db: %s", err)
 	}
 	return nil

@@ -7,7 +7,7 @@ import (
 )
 
 // Push attempts to add an item to the queue, and returns an error if it is unable.
-func (p *persistedEventQueue) Push(event *v1.DeploymentEvent) error {
+func (p *persistedEventQueue) Push(event *v1.SensorEvent) error {
 	// We can ignore any unrecognized or unhandled actions.
 	if handled, known := handledActions[event.GetAction()]; !handled || !known {
 		return fmt.Errorf("unable to handle action %d", event.GetAction())
@@ -17,7 +17,7 @@ func (p *persistedEventQueue) Push(event *v1.DeploymentEvent) error {
 	defer p.mutex.Unlock()
 
 	// Add the item to the queue, or if it is already in the queue, run deduplication on it.
-	seqID, exists := p.depIDToSeqID[event.GetDeployment().GetId()]
+	seqID, exists := p.depIDToSeqID[event.GetId()]
 	if exists {
 		return p.pushExistingLockFree(event, seqID)
 	}
@@ -25,26 +25,26 @@ func (p *persistedEventQueue) Push(event *v1.DeploymentEvent) error {
 }
 
 // Push a new event into the queue.
-func (p *persistedEventQueue) pushNewLockFree(event *v1.DeploymentEvent) error {
-	id, err := p.eventStorage.AddDeploymentEvent(event)
+func (p *persistedEventQueue) pushNewLockFree(event *v1.SensorEvent) error {
+	id, err := p.eventStorage.AddSensorEvent(event)
 	if err != nil {
 		return fmt.Errorf("unable to add event to db: %s", err)
 	}
 
-	p.depIDToSeqID[event.GetDeployment().GetId()] = id
+	p.depIDToSeqID[event.GetId()] = id
 	p.seqIDQueue = append(p.seqIDQueue, id)
 	return nil
 }
 
 // Update an existing event in the queue
-func (p *persistedEventQueue) pushExistingLockFree(event *v1.DeploymentEvent, seqID uint64) error {
+func (p *persistedEventQueue) pushExistingLockFree(event *v1.SensorEvent, seqID uint64) error {
 	// Get the current deployment stored in the queue.
-	currentEvent, exists, err := p.eventStorage.GetDeploymentEvent(seqID)
+	currentEvent, exists, err := p.eventStorage.GetSensorEvent(seqID)
 	if err != nil {
 		return fmt.Errorf("unable to fetch stored event: %s", err)
 	}
 	if !exists {
-		delete(p.depIDToSeqID, event.GetDeployment().GetId())
+		delete(p.depIDToSeqID, event.GetId())
 		return fmt.Errorf("sequence stored but event missing: %s", err)
 	}
 
@@ -54,7 +54,7 @@ func (p *persistedEventQueue) pushExistingLockFree(event *v1.DeploymentEvent, se
 		return fmt.Errorf("unable to dedupe event: %s", err)
 	}
 	if updateToApply != nil {
-		return p.eventStorage.UpdateDeploymentEvent(seqID, updateToApply)
+		return p.eventStorage.UpdateSensorEvent(seqID, updateToApply)
 	}
 	if removeInstead {
 		return p.remove(seqID)
@@ -65,7 +65,7 @@ func (p *persistedEventQueue) pushExistingLockFree(event *v1.DeploymentEvent, se
 // dedupeEvents takes in two events, one already pending, and one we want to add to the set of pending, and
 // returns 3 values indicating if the current queue data needs to be update, removed, or if the sequence
 // cannot be handled (error condition).
-func (p *persistedEventQueue) dedupeEvents(firstEvent *v1.DeploymentEvent, secondEvent *v1.DeploymentEvent) (*v1.DeploymentEvent, bool, error) {
+func (p *persistedEventQueue) dedupeEvents(firstEvent *v1.SensorEvent, secondEvent *v1.SensorEvent) (*v1.SensorEvent, bool, error) {
 	// Sequences that require the old action on new data.
 	if firstEvent.GetAction() == v1.ResourceAction_CREATE_RESOURCE && secondEvent.GetAction() == v1.ResourceAction_PREEXISTING_RESOURCE {
 		secondEvent.Action = v1.ResourceAction_CREATE_RESOURCE

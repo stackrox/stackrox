@@ -121,7 +121,7 @@ func (a *apiImpl) muxer(tlsConf *tls.Config) http.Handler {
 	for prefix, route := range a.config.CustomRoutes {
 		mux.Handle(prefix, route.Handler())
 	}
-	// EmitDefaults marshals zero values into the output, instead of omitting them.
+
 	gwMux := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{EmitDefaults: true}))
 	for _, service := range a.apiServices {
 		if err := service.RegisterServiceHandlerFromEndpoint(ctx, gwMux, endpoint, dialOpts); err != nil {

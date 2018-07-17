@@ -35,6 +35,7 @@ import (
 	logimbueHandler "bitbucket.org/stack-rox/apollo/central/logimbue/handler"
 	metadataService "bitbucket.org/stack-rox/apollo/central/metadata/service"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
+	networkPolicyService "bitbucket.org/stack-rox/apollo/central/networkpolicies/service"
 	notifierService "bitbucket.org/stack-rox/apollo/central/notifier/service"
 	pingService "bitbucket.org/stack-rox/apollo/central/ping/service"
 	policyService "bitbucket.org/stack-rox/apollo/central/policy/service"
@@ -104,6 +105,7 @@ func (c *central) startGRPCServer() {
 	c.server.Register(imageService.Singleton())
 	c.server.Register(iiService.Singleton())
 	c.server.Register(metadataService.New())
+	c.server.Register(networkPolicyService.Singleton())
 	c.server.Register(notifierService.Singleton())
 	c.server.Register(pingService.Singleton())
 	c.server.Register(policyService.Singleton())

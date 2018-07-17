@@ -6,6 +6,6 @@ func (p *persistedEventQueue) Load(clusterID string) error {
 	defer p.mutex.Unlock()
 
 	var err error
-	p.seqIDQueue, p.depIDToSeqID, err = p.eventStorage.GetDeploymentEventIds(clusterID)
+	p.seqIDQueue, p.depIDToSeqID, err = p.eventStorage.GetSensorEventIds(clusterID)
 	return err
 }

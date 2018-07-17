@@ -8,7 +8,7 @@ import (
 
 // DataGraph provides the interface that updates secrets from deployment events.
 type DataGraph interface {
-	ProcessDeploymentEvent(event *v1.DeploymentEvent) error
+	ProcessDeploymentEvent(v1.ResourceAction, *v1.Deployment) error
 }
 
 // New returns a new Service instance using the given DB and index.

@@ -4,14 +4,14 @@ import (
 	"context"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/docker"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/sensor/swarm/listener/networks"
+	"bitbucket.org/stack-rox/apollo/sensor/swarm/listener/services"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/swarm"
 	dockerClient "github.com/docker/docker/client"
 )
 
@@ -19,12 +19,20 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// ResourceHandler defines an interface that will handle specific resources and docker events (e.g. services, networks)
+type ResourceHandler interface {
+	SendExistingResources()
+	HandleMessage(events.Message)
+}
+
 // listener provides functionality for listening to deployment events.
 type listener struct {
 	*dockerClient.Client
-	eventsC  chan *listeners.DeploymentEventWrap
+	eventsC  chan *listeners.EventWrap
 	stopC    chan struct{}
 	stoppedC chan struct{}
+
+	resourceHandlers map[string]ResourceHandler
 }
 
 // New returns a docker listener
@@ -36,24 +44,38 @@ func New() (listeners.Listener, error) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 	dockerClient.NegotiateAPIVersion(ctx)
+	eventsC := make(chan *listeners.EventWrap, 10)
 	return &listener{
 		Client:   dockerClient,
-		eventsC:  make(chan *listeners.DeploymentEventWrap, 10),
+		eventsC:  eventsC,
 		stopC:    make(chan struct{}),
 		stoppedC: make(chan struct{}),
+		resourceHandlers: map[string]ResourceHandler{
+			"service": services.NewServiceHandler(dockerClient, eventsC),
+			"network": networks.NewHandler(dockerClient, eventsC),
+		},
 	}, nil
 }
 
 // Start starts the listener
 func (dl *listener) Start() {
 	events, errors, cancel := dl.eventHandler()
-	dl.sendExistingDeployments()
+
+	// Send all existing resources
+	for _, handler := range dl.resourceHandlers {
+		handler.SendExistingResources()
+	}
 
 	log.Info("Swarm Listener Started")
 	for {
 		select {
 		case event := <-events:
-			dl.pipeDeploymentEvent(event)
+			handler, ok := dl.resourceHandlers[event.Type]
+			if !ok {
+				log.Warnf("Event type '%s' does not have a defined handler", event.Type)
+				continue
+			}
+			handler.HandleMessage(event)
 		case err := <-errors:
 			log.Infof("Reopening stream due to error: %+v", err)
 			// Provide a small amount of time for the potential issue to correct itself
@@ -73,107 +95,15 @@ func (dl *listener) eventHandler() (<-chan (events.Message), <-chan error, conte
 	filters := filters.NewArgs()
 	filters.Add("scope", "swarm")
 	filters.Add("type", "service")
+	filters.Add("type", "network")
 	events, errors := dl.Client.Events(ctx, types.EventsOptions{
 		Filters: filters,
 	})
-
 	return events, errors, cancel
 }
 
-func (dl *listener) sendExistingDeployments() {
-	existingDeployments, err := dl.getNewExistingDeployments()
-	if err != nil {
-		log.Errorf("unable to get existing deployments: %s", err)
-		return
-	}
-
-	for _, d := range existingDeployments {
-		d.Action = v1.ResourceAction_PREEXISTING_RESOURCE
-		dl.eventsC <- d
-	}
-}
-
-func (dl *listener) getNewExistingDeployments() ([]*listeners.DeploymentEventWrap, error) {
-	ctx, cancel := docker.TimeoutContext()
-	defer cancel()
-	swarmServices, err := dl.Client.ServiceList(ctx, types.ServiceListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	deployments := make([]*listeners.DeploymentEventWrap, len(swarmServices))
-	for i, service := range swarmServices {
-		d := serviceWrap(service).asDeployment(dl.Client, true)
-		deployments[i] = &listeners.DeploymentEventWrap{
-			OriginalSpec: service,
-			DeploymentEvent: &v1.DeploymentEvent{
-				Deployment: d,
-			},
-		}
-	}
-	return deployments, nil
-}
-
-func (dl *listener) getDeploymentFromServiceID(id string) (*v1.Deployment, swarm.Service, error) {
-	ctx, cancel := docker.TimeoutContext()
-	defer cancel()
-
-	serviceInfo, _, err := dl.Client.ServiceInspectWithRaw(ctx, id, types.ServiceInspectOptions{})
-	if err != nil {
-		return nil, swarm.Service{}, err
-	}
-	return serviceWrap(serviceInfo).asDeployment(dl.Client, true), serviceInfo, nil
-}
-
-func (dl *listener) pipeDeploymentEvent(msg events.Message) {
-	actor := msg.Type
-	id := msg.Actor.ID
-
-	var resourceAction v1.ResourceAction
-	var deployment *v1.Deployment
-	var originalSpec swarm.Service
-	var err error
-
-	switch msg.Action {
-	case "create":
-		resourceAction = v1.ResourceAction_CREATE_RESOURCE
-
-		if deployment, originalSpec, err = dl.getDeploymentFromServiceID(id); err != nil {
-			log.Errorf("unable to get deployment (actor=%v,id=%v): %s", actor, id, err)
-			return
-		}
-	case "update":
-		resourceAction = v1.ResourceAction_UPDATE_RESOURCE
-
-		if deployment, originalSpec, err = dl.getDeploymentFromServiceID(id); err != nil {
-			log.Errorf("unable to get deployment (actor=%v,id=%v): %s", actor, id, err)
-			return
-		}
-	case "remove":
-		resourceAction = v1.ResourceAction_REMOVE_RESOURCE
-
-		deployment = &v1.Deployment{
-			Id: id,
-		}
-	default:
-		resourceAction = v1.ResourceAction_UNSET_ACTION_RESOURCE
-		log.Warnf("unknown action: %s", msg.Action)
-		return
-	}
-
-	event := &listeners.DeploymentEventWrap{
-		DeploymentEvent: &v1.DeploymentEvent{
-			Deployment: deployment,
-			Action:     resourceAction,
-		},
-		OriginalSpec: originalSpec,
-	}
-
-	dl.eventsC <- event
-}
-
 // Events is the mechanism through which the events are propagated back to the event loop
-func (dl *listener) Events() <-chan *listeners.DeploymentEventWrap {
+func (dl *listener) Events() <-chan *listeners.EventWrap {
 	return dl.eventsC
 }
 
