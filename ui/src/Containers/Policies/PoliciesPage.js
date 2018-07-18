@@ -76,6 +76,12 @@ class PoliciesPage extends Component {
         this.props.setWizardState({ current: '' });
     }
 
+    onSearch = searchOptions => {
+        if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
+            this.props.history.push('/main/policies');
+        }
+    };
+
     onSubmit = () => {
         const { selectedPolicy } = this.props;
         const { isNew, policy, disabled } = this.props.wizardState;
@@ -205,7 +211,7 @@ class PoliciesPage extends Component {
                             return '';
                     }
                 },
-                sortMethod: sortSeverity
+                sortMethod: sortSeverity('severity')
             }
         ];
         const actions = [
@@ -354,6 +360,7 @@ class PoliciesPage extends Component {
                             setSearchOptions={this.props.setSearchOptions}
                             setSearchModifiers={this.props.setSearchModifiers}
                             setSearchSuggestions={this.props.setSearchSuggestions}
+                            onSearch={this.onSearch}
                         />
                     </PageHeader>
                 </div>

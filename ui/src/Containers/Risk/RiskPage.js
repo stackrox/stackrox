@@ -42,6 +42,12 @@ class RiskPage extends Component {
         selectedDeployment: null
     };
 
+    onSearch = searchOptions => {
+        if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
+            this.props.history.push('/main/risk');
+        }
+    };
+
     updateSelectedDeployment = deployment => {
         const urlSuffix = deployment && deployment.id ? `/${deployment.id}` : '';
         this.props.history.push({
@@ -108,6 +114,7 @@ class RiskPage extends Component {
                             setSearchOptions={this.props.setSearchOptions}
                             setSearchModifiers={this.props.setSearchModifiers}
                             setSearchSuggestions={this.props.setSearchSuggestions}
+                            onSearch={this.onSearch}
                         />
                     </PageHeader>
                     <div className="flex flex-1">
@@ -142,15 +149,10 @@ const mapStateToProps = createStructuredSelector({
     isFetchingDeployment: state => selectors.getLoadingStatus(state, types.FETCH_DEPLOYMENT)
 });
 
-const mapDispatchToProps = (dispatch, props) => ({
-    setSearchOptions: searchOptions => {
-        if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
-            props.history.push('/main/risk');
-        }
-        dispatch(deploymentsActions.setDeploymentsSearchOptions(searchOptions));
-    },
+const mapDispatchToProps = {
+    setSearchOptions: deploymentsActions.setDeploymentsSearchOptions,
     setSearchModifiers: deploymentsActions.setDeploymentsSearchModifiers,
     setSearchSuggestions: deploymentsActions.setDeploymentsSearchSuggestions
-});
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(RiskPage);

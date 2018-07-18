@@ -37,6 +37,12 @@ class ImagesPage extends Component {
         selectedImage: null
     };
 
+    onSearch = searchOptions => {
+        if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
+            this.props.history.push('/main/images');
+        }
+    };
+
     updateSelectedImage = image => {
         const urlSuffix = image && image.sha ? `/${image.sha}` : '';
         this.props.history.push({
@@ -100,6 +106,7 @@ class ImagesPage extends Component {
                             setSearchOptions={this.props.setSearchOptions}
                             setSearchModifiers={this.props.setSearchModifiers}
                             setSearchSuggestions={this.props.setSearchSuggestions}
+                            onSearch={this.onSearch}
                         />
                     </PageHeader>
                     <div className="flex flex-1">
@@ -134,15 +141,10 @@ const mapStateToProps = createStructuredSelector({
     isFetchingImage: state => selectors.getLoadingStatus(state, types.FETCH_IMAGE)
 });
 
-const mapDispatchToProps = (dispatch, props) => ({
-    setSearchOptions: searchOptions => {
-        if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
-            props.history.push('/main/images');
-        }
-        dispatch(imagesActions.setImagesSearchOptions(searchOptions));
-    },
+const mapDispatchToProps = {
+    setSearchOptions: imagesActions.setImagesSearchOptions,
     setSearchModifiers: imagesActions.setImagesSearchModifiers,
     setSearchSuggestions: imagesActions.setImagesSearchSuggestions,
     fetchImage: imagesActions.fetchImage
-});
+};
 export default connect(mapStateToProps, mapDispatchToProps)(ImagesPage);

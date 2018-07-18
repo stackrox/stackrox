@@ -34,6 +34,12 @@ class SecretPage extends Component {
         selectedSecret: null
     };
 
+    onSearch = searchOptions => {
+        if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
+            this.props.history.push('/main/secrets');
+        }
+    };
+
     updateSelectedSecret = secret => {
         const urlSuffix = secret && secret.id ? `/${secret.id}` : '';
         this.props.history.push({
@@ -81,6 +87,7 @@ class SecretPage extends Component {
                             setSearchOptions={this.props.setSearchOptions}
                             setSearchModifiers={this.props.setSearchModifiers}
                             setSearchSuggestions={this.props.setSearchSuggestions}
+                            onSearch={this.onSearch}
                         />
                     </PageHeader>
                     <div className="flex flex-1">
@@ -114,15 +121,10 @@ const mapStateToProps = createStructuredSelector({
     isViewFiltered
 });
 
-const mapDispatchToProps = (dispatch, props) => ({
-    setSearchOptions: searchOptions => {
-        if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
-            props.history.push('/main/secrets');
-        }
-        dispatch(secretsActions.setSecretsSearchOptions(searchOptions));
-    },
+const mapDispatchToProps = {
+    setSearchOptions: secretsActions.setSecretsSearchOptions,
     setSearchModifiers: secretsActions.setSecretsSearchModifiers,
     setSearchSuggestions: secretsActions.setSecretsSearchSuggestions
-});
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(SecretPage);

@@ -1,5 +1,6 @@
 const selectors = {
-    searchBtn: "button:contains('Search')",
+    searchBtn: 'button:contains("Search")',
+    pageSearchSuggestions: 'div.Select-menu-outer',
     categoryTabs: '.tab',
     searchInput: '.search-modal div.Select-input > input',
     pageSearchInput: 'div.Select-input > input',

@@ -14,7 +14,8 @@ class SearchInput extends Component {
         searchModifiers: PropTypes.arrayOf(PropTypes.object),
         searchSuggestions: PropTypes.arrayOf(PropTypes.object),
         setSearchOptions: PropTypes.func.isRequired,
-        setSearchSuggestions: PropTypes.func.isRequired
+        setSearchSuggestions: PropTypes.func.isRequired,
+        onSearch: PropTypes.func
     };
 
     static defaultProps = {
@@ -23,7 +24,8 @@ class SearchInput extends Component {
         className: '',
         searchOptions: [],
         searchModifiers: [],
-        searchSuggestions: []
+        searchSuggestions: [],
+        onSearch: null
     };
 
     onInputChange = value => value;
@@ -39,6 +41,7 @@ class SearchInput extends Component {
         }
         this.props.setSearchOptions(searchOptions);
         this.props.setSearchSuggestions(searchSuggestions);
+        if (this.props.onSearch) this.props.onSearch(searchOptions);
     };
 
     filterOptions = (options, filterString, excludeOptions, props) => {

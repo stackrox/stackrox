@@ -54,6 +54,12 @@ class ViolationsPage extends Component {
         isViewFiltered: PropTypes.bool.isRequired
     };
 
+    onSearch = searchOptions => {
+        if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
+            this.props.history.push('/main/violations');
+        }
+    };
+
     onViolationClick = alert => {
         this.updateAlertUrl(alert.id);
     };
@@ -87,7 +93,7 @@ class ViolationsPage extends Component {
                 keyValueFunc: severity => severityLabels[severity],
                 label: 'Severity',
                 classFunc: getSeverityClassName,
-                sortMethod: sortSeverity
+                sortMethod: sortSeverity('policy.severity')
             },
             {
                 key: 'time',
@@ -126,6 +132,7 @@ class ViolationsPage extends Component {
                             setSearchOptions={this.props.setSearchOptions}
                             setSearchModifiers={this.props.setSearchModifiers}
                             setSearchSuggestions={this.props.setSearchSuggestions}
+                            onSearch={this.onSearch}
                         />
                     </PageHeader>
                     <div className="flex flex-1">

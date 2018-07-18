@@ -1,5 +1,11 @@
 import flattenObject from 'utils/flattenObject';
 
+const flattenObjectProperties = (a, b, key) => {
+    const aValue = Object.assign({}, flattenObject(a))[key];
+    const bValue = Object.assign({}, flattenObject(b))[key];
+    return { aValue, bValue };
+};
+
 /**
  * Sort Severity
  * @param a
@@ -7,7 +13,8 @@ import flattenObject from 'utils/flattenObject';
  * @returns {number}
  */
 
-export function sortSeverity(a, b) {
+const sortSeverity = key => (a, b) => {
+    const { aValue, bValue } = flattenObjectProperties(a, b, key);
     const map = {
         Low: 'LOW_SEVERITY',
         Medium: 'MEDIUM_SEVERITY',
@@ -15,13 +22,13 @@ export function sortSeverity(a, b) {
         Critical: 'CRITICAL_SEVERITY'
     };
     const priorityArray = ['LOW_SEVERITY', 'MEDIUM_SEVERITY', 'HIGH_SEVERITY', 'CRITICAL_SEVERITY'];
-    const firstSeverity = map[a.severity] || a.severity;
-    const secondSeverity = map[b.severity] || b.severity;
+    const firstSeverity = map[aValue] || aValue;
+    const secondSeverity = map[bValue] || bValue;
 
     const firstPrio = priorityArray.indexOf(firstSeverity);
     const secPrio = priorityArray.indexOf(secondSeverity);
     return firstPrio - secPrio;
-}
+};
 
 /**
  * Sort Time
@@ -29,10 +36,10 @@ export function sortSeverity(a, b) {
  * @param b
  * @returns {number}
  */
-
-export function sortTime(a, b) {
-    return new Date(b.time) - new Date(a.time);
-}
+const sortTime = key => (a, b) => {
+    const { aValue, bValue } = flattenObjectProperties(a, b, key);
+    return new Date(bValue) - new Date(aValue);
+};
 
 /**
  * Sort Numbers by property name
@@ -40,18 +47,15 @@ export function sortTime(a, b) {
  * @returns {number}
  */
 const sortNumber = key => (a, b) => {
-    const aValue = Object.assign({}, flattenObject(a))[key];
-    const bValue = Object.assign({}, flattenObject(b))[key];
+    const { aValue, bValue } = flattenObjectProperties(a, b, key);
     if (aValue === bValue) return 0;
     if (aValue === undefined) return -1;
     if (bValue === undefined) return 1;
     return aValue - bValue;
 };
-export { sortNumber };
 
 const sortDate = key => (a, b) => {
-    const aValue = Object.assign({}, flattenObject(a))[key];
-    const bValue = Object.assign({}, flattenObject(b))[key];
+    const { aValue, bValue } = flattenObjectProperties(a, b, key);
     const aDate = aValue && new Date(aValue);
     const bDate = bValue && new Date(bValue);
     if (aDate === bDate) return 0;
@@ -59,4 +63,4 @@ const sortDate = key => (a, b) => {
     if (bValue === undefined) return 1;
     return aDate - bDate;
 };
-export { sortDate };
+export { sortSeverity, sortTime, sortNumber, sortDate };
