@@ -7,6 +7,7 @@ export const loginPath = '/login';
 export const oidcResponsePath = '/auth/response/oidc';
 
 export const dashboardPath = `${mainPath}/dashboard`;
+export const environmentPath = `${mainPath}/environment`;
 export const violationsPath = `${mainPath}/violations/:alertId?`;
 export const compliancePath = `${mainPath}/compliance/:clusterId?`;
 export const integrationsPath = `${mainPath}/integrations`;

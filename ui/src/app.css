@@ -363,6 +363,15 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     display: none;
 }
 
+.environment-grid-bg {
+    background-color: rgba(157, 163, 193, 0.1);
+    background-image: -webkit-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px), -webkit-linear-gradient(left, rgba(157, 163, 193, 0.3) 1px, transparent 1px), -webkit-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px), -webkit-linear-gradient(left, rgba(157, 163, 193, 0.2) 1px, transparent 1px);
+    background-image: -o-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px), -o-linear-gradient(left, rgba(157, 163, 193, 0.3) 1px, transparent 1px), -o-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px), -o-linear-gradient(left, rgba(157, 163, 193, 0.2) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(157, 163, 193, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(157, 163, 193, 0.2) 1px, transparent 1px), linear-gradient(rgba(157, 163, 193, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(157, 163, 193, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px, 20px 20px, 4px 4px, 4px 4px;
+    background-position: -2px -2px, -2px -2px, -2px -2px, -2px -2px;
+}
+
 .btn {
     @apply .flex .py-2 .px-2 .rounded-sm .font-400 .uppercase .text-center .text-sm .items-center .ml-2 .min-w-24 .justify-center .bg-white .border
 }

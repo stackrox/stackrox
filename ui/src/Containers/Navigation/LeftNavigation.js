@@ -3,6 +3,7 @@ import * as Icon from 'react-feather';
 import { withRouter, NavLink as Link } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import find from 'lodash/find';
+
 import NavigationPanel from './NavigationPanel';
 
 const navLinks = [

@@ -15,10 +15,10 @@ import policies, { selectors as policySelectors } from './policies';
 import summaries, { selectors as summarySelectors } from './summaries';
 import secrets, { selectors as secretSelectors } from './secrets';
 import metadata, { selectors as metadataSelectors } from './metadata';
-
 import dashboard, { selectors as dashboardSelectors } from './dashboard';
 import loading, { selectors as loadingSelectors } from './loading';
 import route, { selectors as routeSelectors } from './routes';
+import environment, { selectors as environmentSelectors } from './environment';
 
 // Reducers
 
@@ -37,7 +37,8 @@ const appReducer = combineReducers({
     secrets,
     dashboard,
     loading,
-    metadata
+    metadata,
+    environment
 });
 
 const rootReducer = combineReducers({
@@ -67,6 +68,7 @@ const getSecrets = state => getApp(state).secrets;
 const getDashboard = state => getApp(state).dashboard;
 const getLoadingStatus = state => getApp(state).loading;
 const getMetadata = state => getApp(state).metadata;
+const getEnvironment = state => getApp(state).environment;
 
 const boundSelectors = {
     ...bindSelectors(getAlerts, alertSelectors),
@@ -84,7 +86,8 @@ const boundSelectors = {
     ...bindSelectors(getSecrets, secretSelectors),
     ...bindSelectors(getDashboard, dashboardSelectors),
     ...bindSelectors(getLoadingStatus, loadingSelectors),
-    ...bindSelectors(getMetadata, metadataSelectors)
+    ...bindSelectors(getMetadata, metadataSelectors),
+    ...bindSelectors(getEnvironment, environmentSelectors)
 };
 
 export const selectors = {
