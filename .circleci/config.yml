@@ -102,7 +102,7 @@ jobs:
             echo $GKE_SERVICE_ACCOUNT > /tmp/gcp.json
             echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json' >> $BASH_ENV
             gcloud auth activate-service-account --key-file /tmp/gcp.json
-            gcloud config set project ultra-current-825
+            gcloud config set project stackrox-ci
             gcloud config set compute/zone us-central1-f
 
       - run:
