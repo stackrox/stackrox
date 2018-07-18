@@ -8,15 +8,11 @@ defaults: &defaults
         password: $DOCKERHUB_PASSWORD
   working_directory: /go/src/bitbucket.org/stack-rox/apollo
 
-restoreCypressBinary: &restoreCypressBinary
+restoreUI: &restoreUI
   restore_cache:
     keys:
-      - v1-prevent-cypress-binary-{{ checksum "ui/yarn.lock" }}
-
-restoreNPM: &restoreNPM
-  restore_cache:
-    keys:
-      - v2-prevent-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
+      - v1-prevent-ui-deps-{{ checksum "ui/yarn.lock" }}
+      - v1-prevent-ui-deps
 
 restoreDep: &restoreDep
   restore_cache:
@@ -37,8 +33,7 @@ jobs:
           command: docker pull alpine:3.8
 
       - *restoreDep
-      - *restoreNPM
-      - *restoreCypressBinary
+      - *restoreUI
 
       - run:
           name: Setup Bazel cache access
@@ -64,14 +59,10 @@ jobs:
           command: make style test
 
       - save-cache:
-          key: v2-prevent-ui-npm-deps-{{ checksum "ui/yarn.lock" }}
+          key: v1-prevent-ui-deps-{{ checksum "ui/yarn.lock" }}
           paths:
             - ui/node_modules
-
-      - save-cache:
-          key: v1-prevent-cypress-binary-{{ checksum "ui/yarn.lock" }}
-          paths:
-            - ~/.cache/Cypress  # Cypress binary will be put there, see https://docs.cypress.io/guides/guides/continuous-integration.html#Example-circle-yml-v2-config-file-with-yarn
+            - ~/.cache/Cypress # Cypress binary will be put there, see https://docs.cypress.io/guides/guides/continuous-integration.html#Example-circle-yml-v2-config-file-with-yarn
 
       - save-cache:
           key: v1-prevent-go-pkg-dep-{{ checksum "Gopkg.lock" }}
@@ -79,9 +70,12 @@ jobs:
             - /go/pkg/dep
 
       - persist_to_workspace:
-          root: /go
+          root: /go/src/bitbucket.org/stack-rox/apollo
           paths:
-          - src/bitbucket.org/stack-rox/apollo
+          - deps
+          - generated
+          - ui/deps
+          - vendor
 
       - store_artifacts:
           path: qa-tests-backend/build/reports/codenarc
@@ -96,7 +90,7 @@ jobs:
       - setup_remote_docker
 
       - attach_workspace:
-          at: /go
+          at: /go/src/bitbucket.org/stack-rox/apollo
 
       - run:
           name: Setup deployment env
@@ -151,7 +145,7 @@ jobs:
             export API_ENDPOINT=localhost:${LOCAL_PORT}
             make -C tests
 
-      - *restoreCypressBinary
+      - *restoreUI
 
       - run:
           name: UI e2e tests
