@@ -109,5 +109,5 @@ func (e *Enricher) Enrich(deployment *v1.Deployment) (bool, error) {
 			return false, err
 		}
 	}
-	return true, nil
+	return deploymentUpdated, nil
 }
