@@ -38,40 +38,56 @@ func (suite *AlertStoreTestSuite) TeardownSuite() {
 }
 
 func (suite *AlertStoreTestSuite) TestAlerts() {
-	alert1 := &v1.Alert{
-		Id: "id1",
-		Policy: &v1.Policy{
-			Severity: v1.Severity_LOW_SEVERITY,
+	alerts := []*v1.Alert{
+		{
+			Id: "id1",
+			Policy: &v1.Policy{
+				Severity: v1.Severity_LOW_SEVERITY,
+			},
+		},
+		{
+			Id: "id2",
+			Policy: &v1.Policy{
+				Severity: v1.Severity_HIGH_SEVERITY,
+			},
 		},
 	}
-	err := suite.store.AddAlert(alert1)
-	suite.Nil(err)
-	alert2 := &v1.Alert{
-		Id: "id2",
-		Policy: &v1.Policy{
-			Severity: v1.Severity_HIGH_SEVERITY,
-		},
+
+	for _, a := range alerts {
+		suite.NoError(suite.store.AddAlert(a))
 	}
-	err = suite.store.AddAlert(alert2)
-	suite.Nil(err)
 
-	// Get all alerts
-	alerts, err := suite.store.GetAlerts(&v1.ListAlertsRequest{})
-	suite.Nil(err)
-	suite.Equal([]*v1.Alert{alert1, alert2}, alerts)
+	retrievedAlerts, err := suite.store.GetAlerts()
+	suite.NoError(err)
+	suite.ElementsMatch(alerts, retrievedAlerts)
 
-	count, err := suite.store.CountAlerts()
-	suite.Nil(err)
-	suite.Equal(2, count)
+	for _, a := range alerts {
+		full, exists, err := suite.store.GetAlert(a.GetId())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.Equal(a, full)
 
-	alert1.Policy.Severity = v1.Severity_HIGH_SEVERITY
-	suite.store.UpdateAlert(alert1)
-	alerts, err = suite.store.GetAlerts(&v1.ListAlertsRequest{})
-	suite.Nil(err)
-	suite.Equal([]*v1.Alert{alert1, alert2}, alerts)
+		list, exists, err := suite.store.ListAlert(a.GetId())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.Equal(a.GetPolicy().GetSeverity(), list.GetPolicy().GetSeverity())
+	}
 
-	suite.store.RemoveAlert(alert1.Id)
-	alerts, err = suite.store.GetAlerts(&v1.ListAlertsRequest{})
-	suite.Nil(err)
-	suite.Equal([]*v1.Alert{alert2}, alerts)
+	for _, a := range alerts {
+		a.Policy.Severity = v1.Severity_MEDIUM_SEVERITY
+		suite.NoError(suite.store.UpdateAlert(a))
+	}
+
+	for _, a := range alerts {
+		full, exists, err := suite.store.GetAlert(a.GetId())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.Equal(a, full)
+
+		list, exists, err := suite.store.ListAlert(a.GetId())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.Equal(a.GetPolicy().GetSeverity(), list.GetPolicy().GetSeverity())
+	}
+
 }

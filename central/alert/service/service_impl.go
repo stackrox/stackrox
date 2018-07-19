@@ -49,42 +49,18 @@ func (s *serviceImpl) GetAlert(ctx context.Context, request *v1.ResourceByID) (*
 	return alert, nil
 }
 
-func convertAlertsToListAlerts(alerts []*v1.Alert) []*v1.ListAlert {
-	listAlerts := make([]*v1.ListAlert, 0, len(alerts))
-	for _, a := range alerts {
-		listAlerts = append(listAlerts, &v1.ListAlert{
-			Id:   a.GetId(),
-			Time: a.GetTime(),
-			Policy: &v1.ListAlert_Policy{
-				Id:          a.GetPolicy().GetId(),
-				Name:        a.GetPolicy().GetName(),
-				Severity:    a.GetPolicy().GetSeverity(),
-				Description: a.GetPolicy().GetDescription(),
-				Categories:  a.GetPolicy().GetCategories(),
-			},
-			Deployment: &v1.ListAlert_Deployment{
-				Id:          a.GetDeployment().GetId(),
-				Name:        a.GetDeployment().GetName(),
-				UpdatedAt:   a.GetDeployment().GetUpdatedAt(),
-				ClusterName: a.GetDeployment().GetClusterName(),
-			},
-		})
-	}
-	return listAlerts
-}
-
 // ListAlerts returns ListAlerts according to the request.
 func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequest) (*v1.ListAlertsResponse, error) {
-	alerts, err := s.datastore.GetAlerts(request)
+	alerts, err := s.datastore.ListAlerts(request)
 	if err != nil {
 		return nil, err
 	}
-	return &v1.ListAlertsResponse{Alerts: convertAlertsToListAlerts(alerts)}, nil
+	return &v1.ListAlertsResponse{Alerts: alerts}, nil
 }
 
 // GetAlertsGroup returns alerts according to the request, grouped by category and policy.
 func (s *serviceImpl) GetAlertsGroup(ctx context.Context, request *v1.ListAlertsRequest) (*v1.GetAlertsGroupResponse, error) {
-	alerts, err := s.datastore.GetAlerts(request)
+	alerts, err := s.datastore.ListAlerts(request)
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -97,7 +73,7 @@ func (s *serviceImpl) GetAlertsGroup(ctx context.Context, request *v1.ListAlerts
 // GetAlertsCounts returns alert counts by severity according to the request.
 // Counts can be grouped by policy category or cluster.
 func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlertsCountsRequest) (*v1.GetAlertsCountsResponse, error) {
-	alerts, err := s.datastore.GetAlerts(request.GetRequest())
+	alerts, err := s.datastore.ListAlerts(request.GetRequest())
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -111,8 +87,8 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 	return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("unknown group by: %v", request.GetGroupBy()))
 }
 
-func (s *serviceImpl) groupAlerts(alerts []*v1.Alert) (output *v1.GetAlertsGroupResponse) {
-	policiesMap := make(map[string]*v1.Policy)
+func (s *serviceImpl) groupAlerts(alerts []*v1.ListAlert) (output *v1.GetAlertsGroupResponse) {
+	policiesMap := make(map[string]*v1.ListAlertPolicy)
 	alertCountsByPolicy := make(map[string]int)
 
 	for _, a := range alerts {
@@ -139,7 +115,7 @@ func (s *serviceImpl) groupAlerts(alerts []*v1.Alert) (output *v1.GetAlertsGroup
 	return
 }
 
-func (s *serviceImpl) countAlerts(alerts []*v1.Alert, groupByFunc func(*v1.Alert) []string) (output *v1.GetAlertsCountsResponse) {
+func (s *serviceImpl) countAlerts(alerts []*v1.ListAlert, groupByFunc func(*v1.ListAlert) []string) (output *v1.GetAlertsCountsResponse) {
 	groups := s.getMapOfAlertCounts(alerts, groupByFunc)
 
 	output = new(v1.GetAlertsCountsResponse)
@@ -172,7 +148,7 @@ func (s *serviceImpl) countAlerts(alerts []*v1.Alert, groupByFunc func(*v1.Alert
 	return
 }
 
-func (s *serviceImpl) getMapOfAlertCounts(alerts []*v1.Alert, groupByFunc func(*v1.Alert) []string) (groups map[string]map[v1.Severity]int) {
+func (s *serviceImpl) getMapOfAlertCounts(alerts []*v1.ListAlert, groupByFunc func(alert *v1.ListAlert) []string) (groups map[string]map[v1.Severity]int) {
 	groups = make(map[string]map[v1.Severity]int)
 
 	for _, a := range alerts {
@@ -190,7 +166,7 @@ func (s *serviceImpl) getMapOfAlertCounts(alerts []*v1.Alert, groupByFunc func(*
 
 // GetAlertTimeseries returns the timeseries format of the events based on the request parameters
 func (s *serviceImpl) GetAlertTimeseries(ctx context.Context, req *v1.ListAlertsRequest) (*v1.GetAlertTimeseriesResponse, error) {
-	alerts, err := s.datastore.GetAlerts(req)
+	alerts, err := s.datastore.ListAlerts(req)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +189,7 @@ func (s *serviceImpl) GetAlertTimeseries(ctx context.Context, req *v1.ListAlerts
 	return response, nil
 }
 
-func getGroupToAlertEvents(alerts []*v1.Alert) (clusters map[string]map[v1.Severity][]*v1.AlertEvent) {
+func getGroupToAlertEvents(alerts []*v1.ListAlert) (clusters map[string]map[v1.Severity][]*v1.AlertEvent) {
 	clusters = make(map[string]map[v1.Severity][]*v1.AlertEvent)
 	for _, a := range alerts {
 		alertCluster := a.GetDeployment().GetClusterName()
@@ -238,14 +214,14 @@ func getGroupToAlertEvents(alerts []*v1.Alert) (clusters map[string]map[v1.Sever
 }
 
 var (
-	groupByFuncs = map[v1.GetAlertsCountsRequest_RequestGroup]func(*v1.Alert) []string{
-		v1.GetAlertsCountsRequest_UNSET: func(*v1.Alert) []string { return []string{""} },
-		v1.GetAlertsCountsRequest_CATEGORY: func(a *v1.Alert) (output []string) {
+	groupByFuncs = map[v1.GetAlertsCountsRequest_RequestGroup]func(*v1.ListAlert) []string{
+		v1.GetAlertsCountsRequest_UNSET: func(*v1.ListAlert) []string { return []string{""} },
+		v1.GetAlertsCountsRequest_CATEGORY: func(a *v1.ListAlert) (output []string) {
 			for _, c := range a.GetPolicy().GetCategories() {
 				output = append(output, c)
 			}
 			return
 		},
-		v1.GetAlertsCountsRequest_CLUSTER: func(a *v1.Alert) []string { return []string{a.GetDeployment().GetClusterName()} },
+		v1.GetAlertsCountsRequest_CLUSTER: func(a *v1.ListAlert) []string { return []string{a.GetDeployment().GetClusterName()} },
 	}
 )

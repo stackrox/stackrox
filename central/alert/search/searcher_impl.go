@@ -17,7 +17,7 @@ type searcherImpl struct {
 
 func (ds *searcherImpl) buildIndex() error {
 	// Alert Index
-	alerts, err := ds.storage.GetAlerts(&v1.ListAlertsRequest{})
+	alerts, err := ds.storage.GetAlerts()
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func (ds *searcherImpl) buildIndex() error {
 
 // SearchAlerts retrieves SearchResults from the indexer and storage
 func (ds *searcherImpl) SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
-	alerts, results, err := ds.searchAlerts(request)
+	alerts, results, err := ds.searchListAlerts(request)
 	if err != nil {
 		return nil, err
 	}
@@ -38,20 +38,27 @@ func (ds *searcherImpl) SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.Sea
 }
 
 // SearchRawAlerts retrieves Alerts from the indexer and storage
-func (ds *searcherImpl) SearchRawAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, error) {
-	alerts, _, err := ds.searchAlerts(request)
+func (ds *searcherImpl) SearchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.ListAlert, error) {
+	alerts, _, err := ds.searchListAlerts(request)
 	return alerts, err
 }
 
-func (ds *searcherImpl) searchAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, []search.Result, error) {
+// SearchRawAlerts retrieves Alerts from the indexer and storage
+func (ds *searcherImpl) SearchRawAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, error) {
+	alerts, err := ds.searchAlerts(request)
+	return alerts, err
+}
+
+func (ds *searcherImpl) searchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.ListAlert, []search.Result, error) {
+	log.Infof("Search Alerts: %+v", request)
 	results, err := ds.indexer.SearchAlerts(request)
 	if err != nil {
 		return nil, nil, err
 	}
-	var alerts []*v1.Alert
+	var alerts []*v1.ListAlert
 	var newResults []search.Result
 	for _, result := range results {
-		alert, exists, err := ds.storage.GetAlert(result.ID)
+		alert, exists, err := ds.storage.ListAlert(result.ID)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -62,11 +69,32 @@ func (ds *searcherImpl) searchAlerts(request *v1.ParsedSearchRequest) ([]*v1.Ale
 		alerts = append(alerts, alert)
 		newResults = append(newResults, result)
 	}
+	log.Infof("Results: %+v", newResults)
 	return alerts, newResults, nil
 }
 
+func (ds *searcherImpl) searchAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, error) {
+	results, err := ds.indexer.SearchAlerts(request)
+	if err != nil {
+		return nil, err
+	}
+	var alerts []*v1.Alert
+	for _, result := range results {
+		alert, exists, err := ds.storage.GetAlert(result.ID)
+		if err != nil {
+			return nil, err
+		}
+		// The result may not exist if the object was deleted after the search
+		if !exists {
+			continue
+		}
+		alerts = append(alerts, alert)
+	}
+	return alerts, nil
+}
+
 // ConvertAlert returns proto search result from an alert object and the internal search result
-func convertAlert(alert *v1.Alert, result search.Result) *v1.SearchResult {
+func convertAlert(alert *v1.ListAlert, result search.Result) *v1.SearchResult {
 	deployment := alert.GetDeployment()
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_ALERTS,

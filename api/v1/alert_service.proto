@@ -37,24 +37,29 @@ message ListAlertsRequest {
     string query = 10;
 }
 
+message ListAlertPolicy {
+    string id                                   = 1;
+    string name                                 = 2;
+    Severity severity                           = 3;
+    string description                          = 4;
+    repeated string categories                  = 5;
+}
+
+message ListAlertDeployment {
+    string id                                  = 1;
+    string name                                = 2;
+    google.protobuf.Timestamp updated_at       = 3;
+    string cluster_name                        = 4;
+    string namespace                           = 5;
+}
+
 message ListAlert {
     string id                               = 1;
     google.protobuf.Timestamp time          = 2;
-    message Policy {
-        string id                                   = 1;
-        string name                                 = 2;
-        Severity severity                           = 3;
-        string description                          = 4;
-        repeated string categories                  = 5;
-    }
-    Policy policy                           = 3;
-    message Deployment {
-        string id                                  = 1;
-        string name                                = 2;
-        google.protobuf.Timestamp updated_at       = 3;
-        string cluster_name                        = 4;
-    }
-    Deployment deployment                   = 4;
+    ListAlertPolicy policy                  = 3;
+    ListAlertDeployment deployment          = 4;
+    bool stale                              = 5;
+    google.protobuf.Timestamp marked_stale  = 6;
 }
 
 message ListAlertsResponse {
@@ -63,7 +68,7 @@ message ListAlertsResponse {
 
 message GetAlertsGroupResponse {
     message PolicyGroup {
-        Policy policy = 1;
+        ListAlertPolicy policy = 1;
         int64 num_alerts = 2;
     }
 

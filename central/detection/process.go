@@ -109,12 +109,14 @@ func (d *Detector) markExistingAlertsAsStale(existingAlerts []*v1.Alert) {
 }
 
 func (d *Detector) getExistingAlerts(deploymentID, policyID string) (existingAlerts []*v1.Alert) {
-	qb := search.NewQueryBuilder().AddBools(search.Stale, false).AddStrings(search.DeploymentID, deploymentID).AddStrings(search.PolicyID, policyID)
-
 	var err error
-	existingAlerts, err = d.alertStorage.GetAlerts(&v1.ListAlertsRequest{
-		Query: qb.Query(),
-	})
+	existingAlerts, err = d.alertStorage.SearchRawAlerts(
+		search.NewQueryBuilder().
+			AddBools(search.Stale, false).
+			AddStrings(search.DeploymentID, deploymentID).
+			AddStrings(search.PolicyID, policyID).
+			ToParsedSearchRequest())
+
 	if err != nil {
 		logger.Errorf("unable to get alert: %s", err)
 		return

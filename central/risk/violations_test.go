@@ -10,12 +10,12 @@ import (
 )
 
 type mockAlertsGetter struct {
-	alerts []*v1.Alert
+	alerts []*v1.ListAlert
 }
 
 // GetAlerts supports a limited set of request parameters.
 // It only needs to be as specific as the production code.
-func (m mockAlertsGetter) GetAlerts(req *v1.ListAlertsRequest) (alerts []*v1.Alert, err error) {
+func (m mockAlertsGetter) ListAlerts(req *v1.ListAlertsRequest) (alerts []*v1.ListAlert, err error) {
 	parser := &search.QueryParser{}
 	parsedRequest, err := parser.ParseRawQuery(req.GetQuery())
 	if err != nil {
@@ -43,7 +43,7 @@ func (m mockAlertsGetter) GetAlerts(req *v1.ListAlertsRequest) (alerts []*v1.Ale
 func TestViolationsScore(t *testing.T) {
 	cases := []struct {
 		name     string
-		alerts   []*v1.Alert
+		alerts   []*v1.ListAlert
 		expected *v1.Risk_Result
 	}{
 		{
@@ -53,9 +53,9 @@ func TestViolationsScore(t *testing.T) {
 		},
 		{
 			name: "One critical",
-			alerts: []*v1.Alert{
+			alerts: []*v1.ListAlert{
 				{
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 1",
 					},
@@ -71,9 +71,9 @@ func TestViolationsScore(t *testing.T) {
 		},
 		{
 			name: "Two critical",
-			alerts: []*v1.Alert{
+			alerts: []*v1.ListAlert{
 				{
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 1",
 					},
@@ -89,21 +89,21 @@ func TestViolationsScore(t *testing.T) {
 		},
 		{
 			name: "Mix of severities (1)",
-			alerts: []*v1.Alert{
+			alerts: []*v1.ListAlert{
 				{
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_HIGH_SEVERITY,
 						Name:     "Policy 1",
 					},
 				},
 				{
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_MEDIUM_SEVERITY,
 						Name:     "Policy 2",
 					},
 				},
 				{
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_LOW_SEVERITY,
 						Name:     "Policy 3",
 					},
@@ -121,21 +121,21 @@ func TestViolationsScore(t *testing.T) {
 		},
 		{
 			name: "Mix of severities (2)",
-			alerts: []*v1.Alert{
+			alerts: []*v1.ListAlert{
 				{
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 1",
 					},
 				},
 				{
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_HIGH_SEVERITY,
 						Name:     "Policy 2",
 					},
 				},
 				{
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_LOW_SEVERITY,
 						Name:     "Policy 3",
 					},
@@ -153,41 +153,41 @@ func TestViolationsScore(t *testing.T) {
 		},
 		{
 			name: "Don't include stale alerts",
-			alerts: []*v1.Alert{
+			alerts: []*v1.ListAlert{
 				{
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 3",
 					},
 				},
 				{
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_HIGH_SEVERITY,
 						Name:     "Policy 2",
 					},
 				},
 				{
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_LOW_SEVERITY,
 						Name:     "Policy 1",
 					},
 				},
 				{
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy Don't Show Me!",
 					},
 					Stale: true,
 				},
 				{
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_HIGH_SEVERITY,
 						Name:     "Policy Don't Show Me!",
 					},
 					Stale: true,
 				},
 				{
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_LOW_SEVERITY,
 						Name:     "Policy Don't Show Me!",
 					},

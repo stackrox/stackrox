@@ -87,10 +87,10 @@ func getMockDeployment() *v1.Deployment {
 func TestScore(t *testing.T) {
 	deployment := getMockDeployment()
 	scorer := NewScorer(&mockAlertsGetter{
-		alerts: []*v1.Alert{
+		alerts: []*v1.ListAlert{
 			{
-				Deployment: deployment,
-				Policy: &v1.Policy{
+				Deployment: &v1.ListAlertDeployment{},
+				Policy: &v1.ListAlertPolicy{
 					Name:     "Test",
 					Severity: v1.Severity_CRITICAL_SEVERITY,
 				},

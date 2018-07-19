@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 )
 
 // QueryBuilder builds a search query
@@ -51,4 +53,18 @@ func (qb *QueryBuilder) Query() string {
 		return fmt.Sprintf("Has:%s+", qb.raw) + strings.Join(pairs, "+")
 	}
 	return strings.Join(pairs, "+")
+}
+
+// ToParsedSearchRequest generates a search request from the query
+func (qb *QueryBuilder) ToParsedSearchRequest() *v1.ParsedSearchRequest {
+	parsedSearchRequest := &v1.ParsedSearchRequest{
+		StringQuery: qb.raw,
+		Fields:      make(map[string]*v1.ParsedSearchRequest_Values),
+	}
+	for f, values := range qb.query {
+		parsedSearchRequest.Fields[f] = &v1.ParsedSearchRequest_Values{
+			Values: values,
+		}
+	}
+	return parsedSearchRequest
 }

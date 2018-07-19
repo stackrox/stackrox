@@ -11,14 +11,16 @@ import (
 type DataStore interface {
 	SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)
 	SearchRawAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, error)
+	SearchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.ListAlert, error)
+
+	ListAlert(id string) (*v1.ListAlert, bool, error)
+	ListAlerts(request *v1.ListAlertsRequest) ([]*v1.ListAlert, error)
 
 	GetAlert(id string) (*v1.Alert, bool, error)
-	GetAlerts(request *v1.ListAlertsRequest) ([]*v1.Alert, error)
 	CountAlerts() (int, error)
-
 	AddAlert(alert *v1.Alert) error
 	UpdateAlert(alert *v1.Alert) error
-	RemoveAlert(id string) error
+	MarkAlertStale(id string) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

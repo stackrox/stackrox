@@ -13,15 +13,15 @@ func TestGroupAlerts(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		input    []*v1.Alert
+		input    []*v1.ListAlert
 		expected *v1.GetAlertsGroupResponse
 	}{
 		{
 			name: "one category",
-			input: []*v1.Alert{
+			input: []*v1.ListAlert{
 				{
 					Id: "id1",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance"},
 						Id:         "id1",
 						Name:       "policy1",
@@ -31,7 +31,7 @@ func TestGroupAlerts(t *testing.T) {
 				},
 				{
 					Id: "id2",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance"},
 						Id:         "id2",
 						Name:       "policy2",
@@ -41,7 +41,7 @@ func TestGroupAlerts(t *testing.T) {
 				},
 				{
 					Id: "id3",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance"},
 						Id:         "id1",
 						Name:       "policy1",
@@ -53,7 +53,7 @@ func TestGroupAlerts(t *testing.T) {
 			expected: &v1.GetAlertsGroupResponse{
 				AlertsByPolicies: []*v1.GetAlertsGroupResponse_PolicyGroup{
 					{
-						Policy: &v1.Policy{
+						Policy: &v1.ListAlertPolicy{
 							Categories: []string{"Image Assurance"},
 							Id:         "id1",
 							Name:       "policy1",
@@ -62,7 +62,7 @@ func TestGroupAlerts(t *testing.T) {
 						NumAlerts: 2,
 					},
 					{
-						Policy: &v1.Policy{
+						Policy: &v1.ListAlertPolicy{
 							Categories: []string{"Image Assurance"},
 							Id:         "id2",
 							Name:       "policy2",
@@ -75,10 +75,10 @@ func TestGroupAlerts(t *testing.T) {
 		},
 		{
 			name: "multiple categories",
-			input: []*v1.Alert{
+			input: []*v1.ListAlert{
 				{
 					Id: "id1",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance"},
 						Id:         "id1",
 						Name:       "policy1",
@@ -88,7 +88,7 @@ func TestGroupAlerts(t *testing.T) {
 				},
 				{
 					Id: "id2",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance", "Privileges Capabilities"},
 						Id:         "id2",
 						Name:       "policy2",
@@ -98,7 +98,7 @@ func TestGroupAlerts(t *testing.T) {
 				},
 				{
 					Id: "id3",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Container Configuration"},
 						Id:         "id30",
 						Name:       "policy30",
@@ -108,7 +108,7 @@ func TestGroupAlerts(t *testing.T) {
 				},
 				{
 					Id: "id4",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance"},
 						Id:         "id1",
 						Name:       "policy1",
@@ -120,7 +120,7 @@ func TestGroupAlerts(t *testing.T) {
 			expected: &v1.GetAlertsGroupResponse{
 				AlertsByPolicies: []*v1.GetAlertsGroupResponse_PolicyGroup{
 					{
-						Policy: &v1.Policy{
+						Policy: &v1.ListAlertPolicy{
 							Categories: []string{"Image Assurance"},
 							Id:         "id1",
 							Name:       "policy1",
@@ -129,7 +129,7 @@ func TestGroupAlerts(t *testing.T) {
 						NumAlerts: 2,
 					},
 					{
-						Policy: &v1.Policy{
+						Policy: &v1.ListAlertPolicy{
 							Categories: []string{"Image Assurance", "Privileges Capabilities"},
 							Id:         "id2",
 							Name:       "policy2",
@@ -138,7 +138,7 @@ func TestGroupAlerts(t *testing.T) {
 						NumAlerts: 1,
 					},
 					{
-						Policy: &v1.Policy{
+						Policy: &v1.ListAlertPolicy{
 							Categories: []string{"Container Configuration"},
 							Id:         "id30",
 							Name:       "policy30",
@@ -168,82 +168,64 @@ func TestCountAlerts(t *testing.T) {
 	// cases have the same alert inputs, but differ in group by function.
 	cases := []struct {
 		name        string
-		input       []*v1.Alert
-		groupByFunc func(*v1.Alert) []string
+		input       []*v1.ListAlert
+		groupByFunc func(*v1.ListAlert) []string
 		expected    *v1.GetAlertsCountsResponse
 	}{
 		{
 			name: "not grouped",
-			input: []*v1.Alert{
+			input: []*v1.ListAlert{
 				{
 					Id: "id1",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance"},
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
-					},
-					Deployment: &v1.Deployment{
-						ClusterId: "test",
 					},
 					Time: &timestamp.Timestamp{Seconds: 300},
 				},
 				{
 					Id: "id2",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Container Configuration"},
 						Name:       "policy2",
 						Severity:   v1.Severity_CRITICAL_SEVERITY,
-					},
-					Deployment: &v1.Deployment{
-						ClusterId: "test",
 					},
 					Time: &timestamp.Timestamp{Seconds: 200},
 				},
 				{
 					Id: "id3",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance"},
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
-					},
-					Deployment: &v1.Deployment{
-						ClusterId: "prod",
 					},
 					Time: &timestamp.Timestamp{Seconds: 130},
 				},
 				{
 					Id: "id4",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Privileges Capabilities"},
 						Name:       "policy3",
 						Severity:   v1.Severity_MEDIUM_SEVERITY,
-					},
-					Deployment: &v1.Deployment{
-						ClusterId: "prod",
 					},
 					Time: &timestamp.Timestamp{Seconds: 120},
 				},
 				{
 					Id: "id5",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance", "Container Configuration"},
 						Name:       "policy4",
 						Severity:   v1.Severity_HIGH_SEVERITY,
-					},
-					Deployment: &v1.Deployment{
-						ClusterId: "prod",
 					},
 					Time: &timestamp.Timestamp{Seconds: 120},
 				},
 				{
 					Id: "id6",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance", "Container Configuration"},
 						Name:       "policy4",
 						Severity:   v1.Severity_HIGH_SEVERITY,
-					},
-					Deployment: &v1.Deployment{
-						ClusterId: "test",
 					},
 					Time: &timestamp.Timestamp{Seconds: 110},
 				},
@@ -277,76 +259,58 @@ func TestCountAlerts(t *testing.T) {
 		},
 		{
 			name: "group by category",
-			input: []*v1.Alert{
+			input: []*v1.ListAlert{
 				{
 					Id: "id1",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance"},
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
-					},
-					Deployment: &v1.Deployment{
-						ClusterId: "test",
 					},
 					Time: &timestamp.Timestamp{Seconds: 300},
 				},
 				{
 					Id: "id2",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Container Configuration"},
 						Name:       "policy2",
 						Severity:   v1.Severity_CRITICAL_SEVERITY,
-					},
-					Deployment: &v1.Deployment{
-						ClusterId: "test",
 					},
 					Time: &timestamp.Timestamp{Seconds: 200},
 				},
 				{
 					Id: "id3",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance"},
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
-					},
-					Deployment: &v1.Deployment{
-						ClusterId: "prod",
 					},
 					Time: &timestamp.Timestamp{Seconds: 130},
 				},
 				{
 					Id: "id4",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Privileges Capabilities"},
 						Name:       "policy3",
 						Severity:   v1.Severity_MEDIUM_SEVERITY,
-					},
-					Deployment: &v1.Deployment{
-						ClusterId: "prod",
 					},
 					Time: &timestamp.Timestamp{Seconds: 120},
 				},
 				{
 					Id: "id5",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance", "Container Configuration"},
 						Name:       "policy4",
 						Severity:   v1.Severity_HIGH_SEVERITY,
-					},
-					Deployment: &v1.Deployment{
-						ClusterId: "prod",
 					},
 					Time: &timestamp.Timestamp{Seconds: 120},
 				},
 				{
 					Id: "id6",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance", "Container Configuration"},
 						Name:       "policy4",
 						Severity:   v1.Severity_HIGH_SEVERITY,
-					},
-					Deployment: &v1.Deployment{
-						ClusterId: "test",
 					},
 					Time: &timestamp.Timestamp{Seconds: 110},
 				},
@@ -394,75 +358,75 @@ func TestCountAlerts(t *testing.T) {
 		},
 		{
 			name: "group by cluster",
-			input: []*v1.Alert{
+			input: []*v1.ListAlert{
 				{
 					Id: "id1",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance"},
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
 					},
-					Deployment: &v1.Deployment{
+					Deployment: &v1.ListAlertDeployment{
 						ClusterName: "test",
 					},
 					Time: &timestamp.Timestamp{Seconds: 300},
 				},
 				{
 					Id: "id2",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Container Configuration"},
 						Name:       "policy2",
 						Severity:   v1.Severity_CRITICAL_SEVERITY,
 					},
-					Deployment: &v1.Deployment{
+					Deployment: &v1.ListAlertDeployment{
 						ClusterName: "test",
 					},
 					Time: &timestamp.Timestamp{Seconds: 200},
 				},
 				{
 					Id: "id3",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance"},
 						Name:       "policy1",
 						Severity:   v1.Severity_LOW_SEVERITY,
 					},
-					Deployment: &v1.Deployment{
+					Deployment: &v1.ListAlertDeployment{
 						ClusterName: "prod",
 					},
 					Time: &timestamp.Timestamp{Seconds: 130},
 				},
 				{
 					Id: "id4",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Privileges Capabilities"},
 						Name:       "policy3",
 						Severity:   v1.Severity_MEDIUM_SEVERITY,
 					},
-					Deployment: &v1.Deployment{
+					Deployment: &v1.ListAlertDeployment{
 						ClusterName: "prod",
 					},
 					Time: &timestamp.Timestamp{Seconds: 120},
 				},
 				{
 					Id: "id5",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance", "Container Configuration"},
 						Name:       "policy4",
 						Severity:   v1.Severity_HIGH_SEVERITY,
 					},
-					Deployment: &v1.Deployment{
+					Deployment: &v1.ListAlertDeployment{
 						ClusterName: "prod",
 					},
 					Time: &timestamp.Timestamp{Seconds: 120},
 				},
 				{
 					Id: "id6",
-					Policy: &v1.Policy{
+					Policy: &v1.ListAlertPolicy{
 						Categories: []string{"Image Assurance", "Container Configuration"},
 						Name:       "policy4",
 						Severity:   v1.Severity_HIGH_SEVERITY,
 					},
-					Deployment: &v1.Deployment{
+					Deployment: &v1.ListAlertDeployment{
 						ClusterName: "test",
 					},
 					Time: &timestamp.Timestamp{Seconds: 110},
@@ -522,7 +486,7 @@ func TestCountAlerts(t *testing.T) {
 }
 
 func TestGenerateTimeseries(t *testing.T) {
-	alerts := []*v1.Alert{
+	alerts := []*v1.ListAlert{
 		{
 			Id: "id1",
 			Time: &timestamp.Timestamp{
@@ -532,16 +496,16 @@ func TestGenerateTimeseries(t *testing.T) {
 			MarkedStale: &timestamp.Timestamp{
 				Seconds: 8,
 			},
-			Deployment: &v1.Deployment{ClusterName: "dev"},
-			Policy:     &v1.Policy{Severity: v1.Severity_CRITICAL_SEVERITY},
+			Deployment: &v1.ListAlertDeployment{ClusterName: "dev"},
+			Policy:     &v1.ListAlertPolicy{Severity: v1.Severity_CRITICAL_SEVERITY},
 		},
 		{
 			Id: "id2",
 			Time: &timestamp.Timestamp{
 				Seconds: 6,
 			},
-			Deployment: &v1.Deployment{ClusterName: "dev"},
-			Policy:     &v1.Policy{Severity: v1.Severity_HIGH_SEVERITY},
+			Deployment: &v1.ListAlertDeployment{ClusterName: "dev"},
+			Policy:     &v1.ListAlertPolicy{Severity: v1.Severity_HIGH_SEVERITY},
 		},
 		{
 			Id: "id3",
@@ -552,16 +516,16 @@ func TestGenerateTimeseries(t *testing.T) {
 			MarkedStale: &timestamp.Timestamp{
 				Seconds: 8,
 			},
-			Deployment: &v1.Deployment{ClusterName: "prod"},
-			Policy:     &v1.Policy{Severity: v1.Severity_LOW_SEVERITY},
+			Deployment: &v1.ListAlertDeployment{ClusterName: "prod"},
+			Policy:     &v1.ListAlertPolicy{Severity: v1.Severity_LOW_SEVERITY},
 		},
 		{
 			Id: "id4",
 			Time: &timestamp.Timestamp{
 				Seconds: 6,
 			},
-			Deployment: &v1.Deployment{ClusterName: "prod"},
-			Policy:     &v1.Policy{Severity: v1.Severity_MEDIUM_SEVERITY},
+			Deployment: &v1.ListAlertDeployment{ClusterName: "prod"},
+			Policy:     &v1.ListAlertPolicy{Severity: v1.Severity_MEDIUM_SEVERITY},
 		},
 	}
 

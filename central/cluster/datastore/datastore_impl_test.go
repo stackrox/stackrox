@@ -69,10 +69,10 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveTombstonesDeploymentsAndMarksA
 	suite.mockOutDNRIntegrationMethod()
 	// We expect alerts to be fetched, and all to be updated.
 	alerts := getAlerts(2)
-	suite.alerts.On("GetAlerts",
+	suite.alerts.On("ListAlerts",
 		mock.MatchedBy(func(req *v1.ListAlertsRequest) bool { return strings.Contains(req.Query, "deployment1") })).Return(alerts, nil)
 	for _, alert := range alerts {
-		suite.alerts.On("UpdateAlert", alert).Return(nil)
+		suite.alerts.On("MarkAlertStale", alert.GetId()).Return(nil)
 	}
 
 	// We expect deployments to be fetched, and only those for cluster1 to be tombstoned.
@@ -177,16 +177,16 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorTombstoningDeployments()
 	suite.mockOutDNRIntegrationMethod()
 	// We expect alerts to be fetched, and all to be updated.
 	alerts := getAlerts(2)
-	suite.alerts.On("GetAlerts",
+	suite.alerts.On("ListAlerts",
 		mock.MatchedBy(func(req *v1.ListAlertsRequest) bool { return strings.Contains(req.Query, "deployment1") })).Return(alerts, nil)
 	for _, alert := range alerts {
-		suite.alerts.On("UpdateAlert", alert).Return(nil)
+		suite.alerts.On("MarkAlertStale", alert.GetId()).Return(nil)
 	}
 
-	suite.alerts.On("GetAlerts",
+	suite.alerts.On("ListAlerts",
 		mock.MatchedBy(func(req *v1.ListAlertsRequest) bool { return strings.Contains(req.Query, "deployment2") })).Return(alerts, nil)
 	for _, alert := range alerts {
-		suite.alerts.On("UpdateAlert", alert).Return(nil)
+		suite.alerts.On("MarkAlertStale", alert.GetId()).Return(nil)
 	}
 
 	// Return an error trying to remove the deployments for a cluster.
@@ -217,8 +217,8 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorTombstoningDeployments()
 func (suite *ClusterDataStoreTestSuite) TestHandlesNoAlerts() {
 	suite.mockOutDNRIntegrationMethod()
 	// If No alerts exist, everything should still work smoothly.
-	suite.alerts.On("GetAlerts",
-		mock.MatchedBy(func(req *v1.ListAlertsRequest) bool { return strings.Contains(req.Query, "deployment1") })).Return(([]*v1.Alert)(nil), nil)
+	suite.alerts.On("ListAlerts",
+		mock.MatchedBy(func(req *v1.ListAlertsRequest) bool { return strings.Contains(req.Query, "deployment1") })).Return(([]*v1.ListAlert)(nil), nil)
 
 	// We expect deployments to be fetched, and only those for cluster1 to be tombstoned.
 	deployments := getDeployments(map[string]string{"deployment1": fakeClusterID, "deployment2": "cluster2"})
@@ -247,8 +247,8 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingAlerts() {
 	suite.mockOutDNRIntegrationMethod()
 	// We expect alerts to be fetched, and all to be updated.
 	expectedErr := fmt.Errorf("issues need tissues")
-	suite.alerts.On("GetAlerts",
-		mock.MatchedBy(func(req *v1.ListAlertsRequest) bool { return strings.Contains(req.Query, "deployment1") })).Return(([]*v1.Alert)(nil), expectedErr)
+	suite.alerts.On("ListAlerts",
+		mock.MatchedBy(func(req *v1.ListAlertsRequest) bool { return strings.Contains(req.Query, "deployment1") })).Return(([]*v1.ListAlert)(nil), expectedErr)
 
 	// We expect deployments to be fetched, and only those for cluster1 to be tombstoned.
 	deployments := getDeployments(map[string]string{"deployment1": fakeClusterID, "deployment2": "cluster2"})
@@ -276,13 +276,13 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorUpdatingAlert() {
 	suite.mockOutDNRIntegrationMethod()
 	// We expect alerts to be fetched, and all to be updated.
 	alerts := getAlerts(2)
-	suite.alerts.On("GetAlerts",
+	suite.alerts.On("ListAlerts",
 		mock.MatchedBy(func(req *v1.ListAlertsRequest) bool { return strings.Contains(req.Query, "deployment1") })).Return(alerts, nil)
 
 	// Let one alert succeed at being updated and one fail.
 	expectedErr := fmt.Errorf("issues need tissues")
-	suite.alerts.On("UpdateAlert", alerts[0]).Return(expectedErr)
-	suite.alerts.On("UpdateAlert", alerts[1]).Return(nil)
+	suite.alerts.On("MarkAlertStale", alerts[0].GetId()).Return(expectedErr)
+	suite.alerts.On("MarkAlertStale", alerts[1].GetId()).Return(nil)
 
 	// We expect deployments to be fetched, and only those for cluster1 to be tombstoned.
 	deployments := getDeployments(map[string]string{"deployment1": fakeClusterID, "deployment2": "cluster2"})
@@ -311,10 +311,10 @@ func (suite *ClusterDataStoreTestSuite) mockOutDNRIntegrationMethod() {
 	}).Return(nil, nil)
 }
 
-func getAlerts(count int) []*v1.Alert {
-	alerts := make([]*v1.Alert, 0)
+func getAlerts(count int) []*v1.ListAlert {
+	alerts := make([]*v1.ListAlert, 0)
 	for i := 0; i < count; i++ {
-		alert := &v1.Alert{
+		alert := &v1.ListAlert{
 			Id: string(i),
 		}
 		alerts = append(alerts, alert)

@@ -10,6 +10,30 @@ type MockDataStore struct {
 	mock.Mock
 }
 
+// SearchListAlerts implements a mock version of SearchListAlerts
+func (m *MockDataStore) SearchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.ListAlert, error) {
+	args := m.Called(request)
+	return args.Get(0).([]*v1.ListAlert), args.Error(1)
+}
+
+// ListAlert implements a mock version of ListAlert
+func (m *MockDataStore) ListAlert(id string) (*v1.ListAlert, bool, error) {
+	args := m.Called(id)
+	return args.Get(0).(*v1.ListAlert), args.Bool(1), args.Error(2)
+}
+
+// ListAlerts implements a mock version of ListAlerts
+func (m *MockDataStore) ListAlerts(request *v1.ListAlertsRequest) ([]*v1.ListAlert, error) {
+	args := m.Called(request)
+	return args.Get(0).([]*v1.ListAlert), args.Error(1)
+}
+
+// MarkAlertStale implements a mock version of MarkAlertStale
+func (m *MockDataStore) MarkAlertStale(id string) error {
+	args := m.Called(id)
+	return args.Error(0)
+}
+
 // SearchAlerts implements a mock version of SearchAlerts
 func (m *MockDataStore) SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
 	args := m.Called(request)

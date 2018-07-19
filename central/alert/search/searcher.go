@@ -15,6 +15,7 @@ var (
 type Searcher interface {
 	SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)
 	SearchRawAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, error)
+	SearchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.ListAlert, error)
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.

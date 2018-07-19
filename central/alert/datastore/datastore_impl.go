@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"fmt"
 	"sort"
 
 	"bitbucket.org/stack-rox/apollo/central/alert/index"
@@ -8,12 +9,51 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/alert/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	searchCommon "bitbucket.org/stack-rox/apollo/pkg/search"
+	"github.com/gogo/protobuf/types"
 )
 
 type datastoreImpl struct {
 	storage  store.Store
 	indexer  index.Indexer
 	searcher search.Searcher
+}
+
+func (ds *datastoreImpl) SearchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.ListAlert, error) {
+	return ds.searcher.SearchListAlerts(request)
+}
+
+func (ds *datastoreImpl) ListAlert(id string) (*v1.ListAlert, bool, error) {
+	return ds.storage.ListAlert(id)
+}
+
+func (ds *datastoreImpl) ListAlerts(request *v1.ListAlertsRequest) ([]*v1.ListAlert, error) {
+	var alerts []*v1.ListAlert
+	var err error
+	if request.GetQuery() == "" {
+		alerts, err = ds.SearchListAlerts(&v1.ParsedSearchRequest{})
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		parser := &searchCommon.QueryParser{}
+		parsedQuery, err := parser.ParseRawQuery(request.GetQuery())
+		if err != nil {
+			return nil, err
+		}
+		alerts, err = ds.SearchListAlerts(parsedQuery)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Sort by descending timestamp.
+	sort.SliceStable(alerts, func(i, j int) bool {
+		if sI, sJ := alerts[i].GetTime().GetSeconds(), alerts[j].GetTime().GetSeconds(); sI != sJ {
+			return sI > sJ
+		}
+		return alerts[i].GetTime().GetNanos() > alerts[j].GetTime().GetNanos()
+	})
+	return alerts, nil
 }
 
 // SearchAlerts returns search results for the given request.
@@ -31,44 +71,12 @@ func (ds *datastoreImpl) GetAlert(id string) (*v1.Alert, bool, error) {
 	return ds.storage.GetAlert(id)
 }
 
-// GetAlerts fetches the data from the database or searches for it based on the passed filters
-func (ds *datastoreImpl) GetAlerts(request *v1.ListAlertsRequest) ([]*v1.Alert, error) {
-	var alerts []*v1.Alert
-	var err error
-	if request.GetQuery() == "" {
-		alerts, err = ds.SearchRawAlerts(&v1.ParsedSearchRequest{})
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		parser := &searchCommon.QueryParser{}
-		parsedQuery, err := parser.ParseRawQuery(request.GetQuery())
-		if err != nil {
-			return nil, err
-		}
-		alerts, err = ds.SearchRawAlerts(parsedQuery)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Sort by descending timestamp.
-	sort.SliceStable(alerts, func(i, j int) bool {
-		if sI, sJ := alerts[i].GetTime().GetSeconds(), alerts[j].GetTime().GetSeconds(); sI != sJ {
-			return sI > sJ
-		}
-		return alerts[i].GetTime().GetNanos() > alerts[j].GetTime().GetNanos()
-	})
-	return alerts, nil
-}
-
 // CountAlerts returns the number of alerts that are active
 func (ds *datastoreImpl) CountAlerts() (int, error) {
-	qb := searchCommon.NewQueryBuilder().AddBools(searchCommon.Stale, false)
-	// Do not call GetAlerts because they returns full alert objects which are expensive
-	alerts, err := ds.GetAlerts(&v1.ListAlertsRequest{
-		Query: qb.Query(),
-	})
+	alerts, err := ds.searcher.SearchListAlerts(
+		searchCommon.NewQueryBuilder().
+			AddBools(searchCommon.Stale, false).
+			ToParsedSearchRequest())
 	return len(alerts), err
 }
 
@@ -88,10 +96,15 @@ func (ds *datastoreImpl) UpdateAlert(alert *v1.Alert) error {
 	return ds.indexer.AddAlert(alert)
 }
 
-// RemoveAlert removes an alert from the storage and the indexer
-func (ds *datastoreImpl) RemoveAlert(id string) error {
-	if err := ds.storage.RemoveAlert(id); err != nil {
+func (ds *datastoreImpl) MarkAlertStale(id string) error {
+	alert, exists, err := ds.GetAlert(id)
+	if err != nil {
 		return err
 	}
-	return ds.indexer.DeleteAlert(id)
+	if !exists {
+		return fmt.Errorf("Alert with id '%s' does not exist", id)
+	}
+	alert.Stale = true
+	alert.MarkedStale = types.TimestampNow()
+	return ds.UpdateAlert(alert)
 }
