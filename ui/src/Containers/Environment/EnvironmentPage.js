@@ -10,6 +10,8 @@ import SearchInput from 'Components/SearchInput';
 
 class EnvironmentPage extends Component {
     static propTypes = {
+        // eslint-disable-next-line
+        networkGraph: PropTypes.shape({}).isRequired,
         searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
         searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
         searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -19,7 +21,7 @@ class EnvironmentPage extends Component {
         isViewFiltered: PropTypes.bool.isRequired
     };
 
-    renderGraph = () => null;
+    renderGraph = () => {};
 
     render() {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
@@ -54,19 +56,17 @@ const isViewFiltered = createSelector(
 );
 
 const mapStateToProps = createStructuredSelector({
+    networkGraph: selectors.getNetworkGraph,
     searchOptions: selectors.getEnvironmentSearchOptions,
     searchModifiers: selectors.getEnvironmentSearchModifiers,
     searchSuggestions: selectors.getEnvironmentSearchSuggestions,
     isViewFiltered
 });
 
-const mapDispatchToProps = dispatch => ({
-    setSearchOptions: searchOptions =>
-        dispatch(environmentActions.setEnvironmentSearchOptions(searchOptions)),
-    setSearchModifiers: searchModifiers =>
-        dispatch(environmentActions.seEnvironmentSearchModifiers(searchModifiers)),
-    setSearchSuggestions: searchSuggestions =>
-        dispatch(environmentActions.setEnvironmentSearchSuggestions(searchSuggestions))
-});
+const mapDispatchToProps = {
+    setSearchOptions: environmentActions.setEnvironmentSearchOptions,
+    setSearchModifiers: environmentActions.setEnvironmentSearchModifiers,
+    setSearchSuggestions: environmentActions.setEnvironmentSearchSuggestions
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(EnvironmentPage);

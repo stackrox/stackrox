@@ -12,6 +12,7 @@ import globalSearch from './globalSearchSagas';
 import searches from './searchSagas';
 import summaries from './summarySagas';
 import secrets from './secretSagas';
+import environment from './environmentSagas';
 import metadata from './metadataSagas';
 
 export default function* root() {
@@ -28,6 +29,7 @@ export default function* root() {
         fork(searches),
         fork(summaries),
         fork(secrets),
+        fork(environment),
         fork(metadata)
     ]);
 }

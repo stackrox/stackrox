@@ -7,7 +7,8 @@ import {
     riskPath,
     policiesPath,
     imagesPath,
-    secretsPath
+    secretsPath,
+    environmentPath
 } from 'routePaths';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 import { actions as alertActions } from 'reducers/alerts';
@@ -16,6 +17,7 @@ import { actions as policiesActions } from 'reducers/policies';
 import { actions as imagesActions } from 'reducers/images';
 import { actions as secretsActions } from 'reducers/secrets';
 import { actions as dashboardActions } from 'reducers/dashboard';
+import { actions as environmentActions } from 'reducers/environment';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { fetchOptions } from 'services/SearchService';
 import capitalize from 'lodash/capitalize';
@@ -130,6 +132,14 @@ export default function* searches() {
             dashboardActions.setDashboardSearchSuggestions,
             dashboardActions.setDashboardSearchOptions,
             null
+        ),
+        takeEveryNewlyMatchedLocation(
+            environmentPath,
+            getSearchOptions,
+            environmentActions.setEnvironmentSearchModifiers,
+            environmentActions.setEnvironmentSearchSuggestions,
+            environmentActions.setEnvironmentSearchOptions,
+            'categories=DEPLOYMENTS'
         )
     ]);
 }
