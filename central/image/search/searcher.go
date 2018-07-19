@@ -15,6 +15,7 @@ var (
 type Searcher interface {
 	SearchImages(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)
 	SearchRawImages(request *v1.ParsedSearchRequest) ([]*v1.Image, error)
+	SearchListImages(request *v1.ParsedSearchRequest) ([]*v1.ListImage, error)
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.

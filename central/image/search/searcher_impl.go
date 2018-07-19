@@ -35,21 +35,41 @@ func (ds *searcherImpl) SearchImages(request *v1.ParsedSearchRequest) ([]*v1.Sea
 	return protoResults, nil
 }
 
-// SearchRawImages retrieves SearchResults from the indexer and storage
-func (ds *searcherImpl) SearchRawImages(request *v1.ParsedSearchRequest) ([]*v1.Image, error) {
+func (ds *searcherImpl) SearchListImages(request *v1.ParsedSearchRequest) ([]*v1.ListImage, error) {
 	images, _, err := ds.searchImages(request)
 	return images, err
 }
 
-func (ds *searcherImpl) searchImages(request *v1.ParsedSearchRequest) ([]*v1.Image, []search.Result, error) {
+// SearchRawImages retrieves SearchResults from the indexer and storage
+func (ds *searcherImpl) SearchRawImages(request *v1.ParsedSearchRequest) ([]*v1.Image, error) {
+	results, err := ds.indexer.SearchImages(request)
+	if err != nil {
+		return nil, err
+	}
+	var images []*v1.Image
+	for _, result := range results {
+		image, exists, err := ds.storage.GetImage(result.ID)
+		if err != nil {
+			return nil, err
+		}
+		// The result may not exist if the object was deleted after the search
+		if !exists {
+			continue
+		}
+		images = append(images, image)
+	}
+	return images, nil
+}
+
+func (ds *searcherImpl) searchImages(request *v1.ParsedSearchRequest) ([]*v1.ListImage, []search.Result, error) {
 	results, err := ds.indexer.SearchImages(request)
 	if err != nil {
 		return nil, nil, err
 	}
-	var images []*v1.Image
+	var images []*v1.ListImage
 	var newResults []search.Result
 	for _, result := range results {
-		image, exists, err := ds.storage.GetImage(result.ID)
+		image, exists, err := ds.storage.ListImage(result.ID)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -64,11 +84,11 @@ func (ds *searcherImpl) searchImages(request *v1.ParsedSearchRequest) ([]*v1.Ima
 }
 
 // ConvertImage returns proto search result from a image object and the internal search result
-func convertImage(image *v1.Image, result search.Result) *v1.SearchResult {
+func convertImage(image *v1.ListImage, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_IMAGES,
-		Id:             images.NewDigest(image.GetName().GetSha()).Digest(),
-		Name:           image.GetName().GetFullName(),
+		Id:             images.NewDigest(image.GetSha()).Digest(),
+		Name:           image.GetName(),
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,
 	}

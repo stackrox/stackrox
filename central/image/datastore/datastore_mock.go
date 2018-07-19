@@ -10,6 +10,24 @@ type MockDataStore struct {
 	mock.Mock
 }
 
+// SearchListImages implements a mock version of SearchListImages
+func (m *MockDataStore) SearchListImages(request *v1.ParsedSearchRequest) ([]*v1.ListImage, error) {
+	args := m.Called(request)
+	return args.Get(0).([]*v1.ListImage), args.Error(1)
+}
+
+// ListImage implements a mock version of ListImage
+func (m *MockDataStore) ListImage(id string) (*v1.ListImage, bool, error) {
+	args := m.Called(id)
+	return args.Get(0).(*v1.ListImage), args.Bool(1), args.Error(2)
+}
+
+// ListImages implements a mock version of ListImages
+func (m *MockDataStore) ListImages() ([]*v1.ListImage, error) {
+	args := m.Called()
+	return args.Get(0).([]*v1.ListImage), args.Error(1)
+}
+
 // SearchImages implements a mock version of SearchImages
 func (m *MockDataStore) SearchImages(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
 	args := m.Called(request)
@@ -49,11 +67,5 @@ func (m *MockDataStore) AddImage(image *v1.Image) error {
 // UpdateImage is a mock implementation of UpdateImage
 func (m *MockDataStore) UpdateImage(image *v1.Image) error {
 	args := m.Called(image)
-	return args.Error(0)
-}
-
-// RemoveImage is a mock implementation of RemoveImage
-func (m *MockDataStore) RemoveImage(sha string) error {
-	args := m.Called(sha)
 	return args.Error(0)
 }

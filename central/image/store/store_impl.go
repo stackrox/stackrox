@@ -6,7 +6,6 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/dberrors"
 	"bitbucket.org/stack-rox/apollo/pkg/images"
 	"github.com/boltdb/bolt"
 	"github.com/gogo/protobuf/proto"
@@ -14,6 +13,82 @@ import (
 
 type storeImpl struct {
 	*bolt.DB
+}
+
+// ListImage returns ListImage with given sha.
+func (b *storeImpl) ListImage(sha string) (image *v1.ListImage, exists bool, err error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "ListImage")
+	digest := images.NewDigest(sha).Digest()
+	err = b.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(listImageBucket))
+		image = new(v1.ListImage)
+		val := bucket.Get([]byte(digest))
+		if val == nil {
+			return nil
+		}
+		exists = true
+		return proto.Unmarshal(val, image)
+	})
+	return
+}
+
+// ListImages returns all ListImages
+func (b *storeImpl) ListImages() (images []*v1.ListImage, err error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "ListImage")
+	err = b.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(listImageBucket))
+		return b.ForEach(func(k, v []byte) error {
+			var image v1.ListImage
+			if err := proto.Unmarshal(v, &image); err != nil {
+				return err
+			}
+			images = append(images, &image)
+			return nil
+		})
+	})
+	return
+}
+
+func convertImageToListImage(i *v1.Image) *v1.ListImage {
+	listImage := &v1.ListImage{
+		Sha:     i.GetName().GetSha(),
+		Name:    i.GetName().GetFullName(),
+		Created: i.GetMetadata().GetCreated(),
+	}
+
+	if i.GetScan() != nil {
+		listImage.SetComponents = &v1.ListImage_Components{
+			Components: int64(len(i.GetScan().GetComponents())),
+		}
+		var numVulns int64
+		var numFixableVulns int64
+		for _, c := range i.GetScan().GetComponents() {
+			numVulns += int64(len(c.GetVulns()))
+			for _, v := range c.GetVulns() {
+				if v.FixedBy != "" {
+					numFixableVulns++
+				}
+			}
+		}
+		listImage.SetCves = &v1.ListImage_Cves{
+			Cves: numVulns,
+		}
+		listImage.SetFixable = &v1.ListImage_FixableCves{
+			FixableCves: numFixableVulns,
+		}
+	}
+	return listImage
+}
+
+func (b *storeImpl) upsertListImage(tx *bolt.Tx, image *v1.Image) error {
+	bucket := tx.Bucket([]byte(listImageBucket))
+	listImage := convertImageToListImage(image)
+	bytes, err := proto.Marshal(listImage)
+	if err != nil {
+		return err
+	}
+	digest := images.NewDigest(image.GetName().GetSha()).Digest()
+	return bucket.Put([]byte(digest), bytes)
 }
 
 func (b *storeImpl) getImage(sha string, bucket *bolt.Bucket) (image *v1.Image, exists bool, err error) {
@@ -87,7 +162,10 @@ func (b *storeImpl) AddImage(image *v1.Image) error {
 		if err != nil {
 			return err
 		}
-		return bucket.Put([]byte(digest), bytes)
+		if err := bucket.Put([]byte(digest), bytes); err != nil {
+			return err
+		}
+		return b.upsertListImage(tx, image)
 	})
 }
 
@@ -101,20 +179,9 @@ func (b *storeImpl) UpdateImage(image *v1.Image) error {
 			return err
 		}
 		digest := images.NewDigest(image.GetName().GetSha()).Digest()
-		return bucket.Put([]byte(digest), bytes)
-	})
-}
-
-// RemoveImage removes the image from bolt
-func (b *storeImpl) RemoveImage(sha string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "Image")
-	digest := images.NewDigest(sha).Digest()
-	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(imageBucket))
-		key := []byte(digest)
-		if exists := bucket.Get(key) != nil; !exists {
-			return dberrors.ErrNotFound{Type: "Image", ID: string(key)}
+		if err := bucket.Put([]byte(digest), bytes); err != nil {
+			return err
 		}
-		return bucket.Delete(key)
+		return b.upsertListImage(tx, image)
 	})
 }

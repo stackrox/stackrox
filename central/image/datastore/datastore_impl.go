@@ -13,6 +13,18 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
+func (ds *datastoreImpl) SearchListImages(request *v1.ParsedSearchRequest) ([]*v1.ListImage, error) {
+	return ds.searcher.SearchListImages(request)
+}
+
+func (ds *datastoreImpl) ListImage(sha string) (*v1.ListImage, bool, error) {
+	return ds.storage.ListImage(sha)
+}
+
+func (ds *datastoreImpl) ListImages() ([]*v1.ListImage, error) {
+	return ds.storage.ListImages()
+}
+
 // SearchImages
 func (ds *datastoreImpl) SearchImages(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
 	return ds.searcher.SearchImages(request)
@@ -52,12 +64,4 @@ func (ds *datastoreImpl) UpdateImage(alert *v1.Image) error {
 		return err
 	}
 	return ds.indexer.AddImage(alert)
-}
-
-// RemoveImage removes an alert from the storage and the indexer
-func (ds *datastoreImpl) RemoveImage(id string) error {
-	if err := ds.storage.RemoveImage(id); err != nil {
-		return err
-	}
-	return ds.indexer.DeleteImage(id)
 }

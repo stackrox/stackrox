@@ -49,66 +49,24 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.ResourceByID) (*
 	return image, nil
 }
 
-func convertImagesToListImages(images []*v1.Image) []*v1.ListImage {
-	listImages := make([]*v1.ListImage, 0, len(images))
-	for _, i := range images {
-
-		listImages = append(listImages, convertImageToListImage(i))
-	}
-	return listImages
-}
-
-func convertImageToListImage(i *v1.Image) *v1.ListImage {
-	listImage := &v1.ListImage{
-		Sha:     i.GetName().GetSha(),
-		Name:    i.GetName().GetFullName(),
-		Created: i.GetMetadata().GetCreated(),
-	}
-
-	if i.GetScan() != nil {
-		listImage.SetComponents = &v1.ListImage_Components{
-			Components: int64(len(i.GetScan().GetComponents())),
-		}
-		var numVulns int64
-		var numFixableVulns int64
-		for _, c := range i.GetScan().GetComponents() {
-			numVulns += int64(len(c.GetVulns()))
-			for _, v := range c.GetVulns() {
-				if v.FixedBy != "" {
-					numFixableVulns++
-				}
-			}
-		}
-		listImage.SetCves = &v1.ListImage_Cves{
-			Cves: numVulns,
-		}
-		listImage.SetFixable = &v1.ListImage_FixableCves{
-			FixableCves: numFixableVulns,
-		}
-	}
-	return listImage
-}
-
 // ListImages retrieves all images in minimal form.
 func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1.ListImagesResponse, error) {
-	resp := new(v1.ListImagesResponse)
+	var err error
+	var images []*v1.ListImage
 	if request.GetQuery() == "" {
-		images, err := s.datastore.GetImages()
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-		resp.Images = convertImagesToListImages(images)
+		images, err = s.datastore.ListImages()
 	} else {
 		parser := &search.QueryParser{}
 		parsedQuery, err := parser.ParseRawQuery(request.GetQuery())
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		images, err := s.datastore.SearchRawImages(parsedQuery)
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-		resp.Images = convertImagesToListImages(images)
+		images, err = s.datastore.SearchListImages(parsedQuery)
 	}
-	return resp, nil
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	return &v1.ListImagesResponse{
+		Images: images,
+	}, nil
 }
