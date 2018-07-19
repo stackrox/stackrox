@@ -21,3 +21,9 @@ func (m *MockSearcher) SearchRawImages(request *v1.ParsedSearchRequest) ([]*v1.I
 	args := m.Called(request)
 	return args.Get(0).([]*v1.Image), args.Error(1)
 }
+
+// SearchListImages implements a mock version of SearchListImages
+func (m *MockSearcher) SearchListImages(request *v1.ParsedSearchRequest) ([]*v1.ListImage, error) {
+	args := m.Called(request)
+	return args.Get(0).([]*v1.ListImage), args.Error(1)
+}

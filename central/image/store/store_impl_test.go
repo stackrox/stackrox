@@ -12,7 +12,94 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestConvertImagesToListImages(t *testing.T) {
+func TestImageStore(t *testing.T) {
+	suite.Run(t, new(ImageStoreTestSuite))
+}
+
+type ImageStoreTestSuite struct {
+	suite.Suite
+
+	db *bolt.DB
+
+	store Store
+}
+
+func (suite *ImageStoreTestSuite) SetupSuite() {
+	db, err := bolthelper.NewTemp(suite.T().Name() + ".db")
+	if err != nil {
+		suite.FailNow("Failed to make BoltDB", err.Error())
+	}
+
+	suite.db = db
+	suite.store = New(db)
+}
+
+func (suite *ImageStoreTestSuite) TeardownSuite() {
+	suite.db.Close()
+	os.Remove(suite.db.Path())
+}
+
+func (suite *ImageStoreTestSuite) TestImages() {
+	images := []*v1.Image{
+		{
+			Name: &v1.ImageName{
+				Sha:      "sha1",
+				FullName: "name1",
+			},
+		},
+		{
+			Name: &v1.ImageName{
+				Sha:      "sha2",
+				FullName: "name2",
+			},
+		},
+	}
+
+	// Test Add
+	for _, d := range images {
+		suite.NoError(suite.store.UpsertImage(d))
+	}
+
+	for _, d := range images {
+		got, exists, err := suite.store.GetImage(d.GetName().GetSha())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.Equal(got, d)
+
+		listGot, exists, err := suite.store.ListImage(d.GetName().GetSha())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.Equal(listGot.GetName(), d.GetName().GetFullName())
+	}
+
+	// Test Update
+	for _, d := range images {
+		d.Name.FullName += "1"
+	}
+
+	for _, d := range images {
+		suite.NoError(suite.store.UpsertImage(d))
+	}
+
+	for _, d := range images {
+		got, exists, err := suite.store.GetImage(d.GetName().GetSha())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.Equal(got, d)
+
+		listGot, exists, err := suite.store.ListImage(d.GetName().GetSha())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.Equal(listGot.GetName(), d.GetName().GetFullName())
+	}
+
+	// Test Count
+	count, err := suite.store.CountImages()
+	suite.NoError(err)
+	suite.Equal(len(images), count)
+}
+
+func (suite *ImageStoreTestSuite) TestConvertImagesToListImages() {
 	ts := timestamp.TimestampNow()
 	var cases = []struct {
 		input    *v1.Image
@@ -74,96 +161,37 @@ func TestConvertImagesToListImages(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		t.Run(c.input.GetName().GetFullName(), func(t *testing.T) {
+		suite.T().Run(c.input.GetName().GetFullName(), func(t *testing.T) {
 			assert.Equal(t, c.expected, convertImageToListImage(c.input))
 		})
 	}
 }
 
-func TestImageStore(t *testing.T) {
-	suite.Run(t, new(ImageStoreTestSuite))
-}
+func (suite *ImageStoreTestSuite) TestShas() {
+	sha1 := "sha1"
+	sha2 := "sha2"
+	regSha1 := "sha3"
+	regSha2 := "sha4"
 
-type ImageStoreTestSuite struct {
-	suite.Suite
+	// Upsert shas
+	err := suite.store.UpsertRegistrySha(sha1, regSha1)
+	suite.Nil(err)
 
-	db *bolt.DB
+	err = suite.store.UpsertRegistrySha(sha2, regSha2)
+	suite.Nil(err)
 
-	store Store
-}
+	// Get Sha
+	retrievedsha, exists, err := suite.store.GetRegistrySha(sha1)
+	suite.Nil(err)
+	suite.True(exists)
+	suite.Equal(regSha1, retrievedsha)
 
-func (suite *ImageStoreTestSuite) SetupSuite() {
-	db, err := bolthelper.NewTemp(suite.T().Name() + ".db")
-	if err != nil {
-		suite.FailNow("Failed to make BoltDB", err.Error())
-	}
+	// Delete sha
+	err = suite.store.DeleteRegistrySha("sha1")
+	suite.Nil(err)
 
-	suite.db = db
-	suite.store = New(db)
-}
-
-func (suite *ImageStoreTestSuite) TeardownSuite() {
-	suite.db.Close()
-	os.Remove(suite.db.Path())
-}
-
-func (suite *ImageStoreTestSuite) TestImages() {
-	images := []*v1.Image{
-		{
-			Name: &v1.ImageName{
-				Sha:      "sha1",
-				FullName: "name1",
-			},
-		},
-		{
-			Name: &v1.ImageName{
-				Sha:      "sha2",
-				FullName: "name2",
-			},
-		},
-	}
-
-	// Test Add
-	for _, d := range images {
-		suite.NoError(suite.store.AddImage(d))
-	}
-
-	for _, d := range images {
-		got, exists, err := suite.store.GetImage(d.GetName().GetSha())
-		suite.NoError(err)
-		suite.True(exists)
-		suite.Equal(got, d)
-
-		listGot, exists, err := suite.store.ListImage(d.GetName().GetSha())
-		suite.NoError(err)
-		suite.True(exists)
-		suite.Equal(listGot.GetName(), d.GetName().GetFullName())
-	}
-
-	// Test Update
-	for _, d := range images {
-		d.Name.FullName += "1"
-	}
-
-	for _, d := range images {
-		suite.NoError(suite.store.UpdateImage(d))
-	}
-
-	for _, d := range images {
-		got, exists, err := suite.store.GetImage(d.GetName().GetSha())
-		suite.NoError(err)
-		suite.True(exists)
-		suite.Equal(got, d)
-
-		listGot, exists, err := suite.store.ListImage(d.GetName().GetSha())
-		suite.NoError(err)
-		suite.True(exists)
-		suite.Equal(listGot.GetName(), d.GetName().GetFullName())
-	}
-
-	// Test Count
-	count, err := suite.store.CountImages()
-	suite.NoError(err)
-	suite.Equal(len(images), count)
-
+	// Get sha
+	retrievedsha, exists, err = suite.store.GetRegistrySha("sha1")
+	suite.Nil(err)
+	suite.False(exists)
 }

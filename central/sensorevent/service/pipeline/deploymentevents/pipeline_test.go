@@ -2,7 +2,6 @@ package deploymentevents
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
@@ -106,30 +105,12 @@ func (suite *PipelineTestSuite) TestPersistDeploymentRemove() {
 	suite.deployments.AssertExpectations(suite.T())
 }
 
-func (suite *PipelineTestSuite) TestPersistImages() {
-	events := fakeDeploymentEvents()
-
-	// Expect that our enforcement generator is called with expected data.
-	expectedImage0 := events[0].GetDeployment().GetContainers()[0].GetImage()
-	suite.images.On("UpdateImage", expectedImage0).Return(nil)
-
-	// Call function.
-	tested := &persistImagesImpl{
-		images: suite.images,
-	}
-	tested.do(events[0].GetDeployment())
-
-	// Pull one more time to get nil
-	suite.images.AssertExpectations(suite.T())
-}
-
 func (suite *PipelineTestSuite) TestUpdateImages() {
 	events := fakeDeploymentEvents()
 
 	// Expect that our enforcement generator is called with expected data.
-	expectedImage0 := &v1.Image{}
-	expectedImageSha0 := events[0].GetDeployment().GetContainers()[0].GetImage().GetName().GetSha()
-	suite.images.On("GetImage", expectedImageSha0).Return(expectedImage0, true, nil)
+	expectedImage0 := events[0].GetDeployment().GetContainers()[0].GetImage()
+	suite.images.On("UpsertDedupeImage", expectedImage0).Return(nil)
 
 	// Call function.
 	tested := &updateImagesImpl{
@@ -142,41 +123,27 @@ func (suite *PipelineTestSuite) TestUpdateImages() {
 	suite.images.AssertExpectations(suite.T())
 }
 
-func (suite *PipelineTestSuite) TestUpdateImagesNoUpdate() {
-	events := fakeDeploymentEvents()
+func (suite *PipelineTestSuite) TestUpdateImagesSkipped() {
+	deployment := &v1.Deployment{
+		Id: "id1",
+		Containers: []*v1.Container{
+			{
+				Image: &v1.Image{
+					Name: &v1.ImageName{
+						FullName: "derp",
+					},
+				},
+			},
+		},
+	}
 
-	// Expect that our enforcement generator is called with expected data.
-	expectedImage0 := events[0].GetDeployment().GetContainers()[0].GetImage()
-	expectedImageSha0 := events[0].GetDeployment().GetContainers()[0].GetImage().GetName().GetSha()
-	suite.images.On("GetImage", expectedImageSha0).Return(expectedImage0, false, nil)
-
-	// Call function.
+	// Call function. It shouldn't do anything because the only image has no sha.
 	tested := &updateImagesImpl{
 		images: suite.images,
 	}
-	tested.do(events[0].GetDeployment())
+	tested.do(deployment)
 
 	// Pull one more time to get nil
-	suite.Equal(expectedImage0, events[0].GetDeployment().GetContainers()[0].GetImage())
-	suite.images.AssertExpectations(suite.T())
-}
-
-func (suite *PipelineTestSuite) TestUpdateImagesError() {
-	events := fakeDeploymentEvents()
-
-	// Expect that our enforcement generator is called with expected data.
-	expectedImage0 := events[0].GetDeployment().GetContainers()[0].GetImage()
-	expectedImageSha0 := events[0].GetDeployment().GetContainers()[0].GetImage().GetName().GetSha()
-	suite.images.On("GetImage", expectedImageSha0).Return(expectedImage0, false, fmt.Errorf("oh noes"))
-
-	// Call function.
-	tested := &updateImagesImpl{
-		images: suite.images,
-	}
-	tested.do(events[0].GetDeployment())
-
-	// Pull one more time to get nil
-	suite.Equal(expectedImage0, events[0].GetDeployment().GetContainers()[0].GetImage())
 	suite.images.AssertExpectations(suite.T())
 }
 

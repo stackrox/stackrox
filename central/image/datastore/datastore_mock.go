@@ -40,12 +40,6 @@ func (m *MockDataStore) SearchRawImages(request *v1.ParsedSearchRequest) ([]*v1.
 	return args.Get(0).([]*v1.Image), args.Error(1)
 }
 
-// GetImage is a mock implementation of GetImage
-func (m *MockDataStore) GetImage(sha string) (*v1.Image, bool, error) {
-	args := m.Called(sha)
-	return args.Get(0).(*v1.Image), args.Bool(1), args.Error(2)
-}
-
 // GetImages is a mock implementation of GetImages
 func (m *MockDataStore) GetImages() ([]*v1.Image, error) {
 	args := m.Called()
@@ -53,19 +47,25 @@ func (m *MockDataStore) GetImages() ([]*v1.Image, error) {
 }
 
 // CountImages is a mock implementation of CountImages
-func (m *MockDataStore) CountImages() (count int, err error) {
+func (m *MockDataStore) CountImages() (int, error) {
 	args := m.Called()
 	return args.Int(0), args.Error(1)
 }
 
-// AddImage is a mock implementation of AddImage
-func (m *MockDataStore) AddImage(image *v1.Image) error {
-	args := m.Called(image)
-	return args.Error(0)
+// GetImage is a mock implementation of GetImage
+func (m *MockDataStore) GetImage(sha string) (*v1.Image, bool, error) {
+	args := m.Called(sha)
+	return args.Get(0).(*v1.Image), args.Bool(1), args.Error(2)
 }
 
-// UpdateImage is a mock implementation of UpdateImage
-func (m *MockDataStore) UpdateImage(image *v1.Image) error {
+// GetImagesBatch is a mock implementation of GetImagesBatch
+func (m *MockDataStore) GetImagesBatch(shas []string) ([]*v1.Image, error) {
+	args := m.Called(shas)
+	return args.Get(0).([]*v1.Image), args.Error(1)
+}
+
+// UpsertDedupeImage is a mock implementation of UpsertDedupeImage
+func (m *MockDataStore) UpsertDedupeImage(image *v1.Image) error {
 	args := m.Called(image)
 	return args.Error(0)
 }

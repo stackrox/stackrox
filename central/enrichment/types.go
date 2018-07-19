@@ -97,8 +97,8 @@ func (e *Enricher) initializeMultipliers() error {
 func (e *Enricher) Enrich(deployment *v1.Deployment) (bool, error) {
 	var deploymentUpdated bool
 	for _, c := range deployment.GetContainers() {
-		if updated := enricher.ImageEnricher.EnrichImage(c.GetImage()); updated {
-			if err := e.imageStorage.UpdateImage(c.GetImage()); err != nil {
+		if updated := enricher.ImageEnricher.EnrichImage(c.Image); updated {
+			if err := e.imageStorage.UpsertDedupeImage(c.Image); err != nil {
 				return false, err
 			}
 			deploymentUpdated = true

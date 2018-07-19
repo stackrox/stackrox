@@ -10,38 +10,68 @@ type MockStore struct {
 	mock.Mock
 }
 
-// GetImage is a mock implementation of GetImage
-func (m *MockStore) GetImage(sha string) (*v1.Image, bool, error) {
-	args := m.Called(sha)
-	return args.Get(0).(*v1.Image), args.Bool(1), args.Error(2)
+// ListImage is a mock implementation of ListImage.
+func (m *MockStore) ListImage(sha string) (*v1.ListImage, bool, error) {
+	args := m.Called()
+	return args.Get(0).(*v1.ListImage), args.Bool(1), args.Error(2)
 }
 
-// GetImages is a mock implementation of GetImages
+// ListImages is a mock implementation of ListImages.
+func (m *MockStore) ListImages() ([]*v1.ListImage, error) {
+	args := m.Called()
+	return args.Get(0).([]*v1.ListImage), args.Error(1)
+}
+
+// GetImages is a mock implementation of GetImages.
 func (m *MockStore) GetImages() ([]*v1.Image, error) {
 	args := m.Called()
 	return args.Get(0).([]*v1.Image), args.Error(1)
 }
 
-// CountImages is a mock implementation of CountImages
-func (m *MockStore) CountImages() (count int, err error) {
+// CountImages is a mock implementation of CountImages.
+func (m *MockStore) CountImages() (int, error) {
 	args := m.Called()
 	return args.Int(0), args.Error(1)
 }
 
-// AddImage is a mock implementation of AddImage
-func (m *MockStore) AddImage(image *v1.Image) error {
-	args := m.Called(image)
-	return args.Error(0)
-}
-
-// UpdateImage is a mock implementation of UpdateImage
-func (m *MockStore) UpdateImage(image *v1.Image) error {
-	args := m.Called(image)
-	return args.Error(0)
-}
-
-// RemoveImage is a mock implementation of RemoveImage
-func (m *MockStore) RemoveImage(sha string) error {
+// GetImage is a mock implementation of GetImage.
+func (m *MockStore) GetImage(sha string) (*v1.Image, bool, error) {
 	args := m.Called(sha)
+	return args.Get(0).(*v1.Image), args.Bool(1), args.Error(2)
+}
+
+// GetImagesBatch is a mock implementation of GetImagesBatch.
+func (m *MockStore) GetImagesBatch(shas []string) ([]*v1.Image, error) {
+	args := m.Called(shas)
+	return args.Get(0).([]*v1.Image), args.Error(1)
+}
+
+// UpsertImage is a mock implementation of UpsertImage.
+func (m *MockStore) UpsertImage(image *v1.Image) error {
+	args := m.Called(image)
+	return args.Error(0)
+}
+
+// DeleteImage is a mock implementation of DeleteImage.
+func (m *MockStore) DeleteImage(sha string) error {
+	args := m.Called(sha)
+	return args.Error(0)
+}
+
+// GetRegistrySha is a mock implementation of GetRegistrySha.
+func (m *MockStore) GetRegistrySha(orchSha string) (string, bool, error) {
+	args := m.Called(orchSha)
+	return args.String(0), args.Bool(1), args.Error(2)
+}
+
+// UpsertRegistrySha is a mock implementation of UpsertRegistrySha.
+func (m *MockStore) UpsertRegistrySha(orchSha string, regSha string) error {
+	args := m.Called(orchSha, regSha)
+	return args.Error(0)
+}
+
+// DeleteRegistrySha is a mock implementation of DeleteRegistrySha.
+func (m *MockStore) DeleteRegistrySha(orchSha string) error {
+	args := m.Called(orchSha)
 	return args.Error(0)
 }

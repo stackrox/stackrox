@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	imageBucket     = "images"
-	listImageBucket = "images_list"
+	orchShaToRegShaBucket = "orchShaToRegShaBucket"
+	imageBucket           = "imageBucket"
+	listImageBucket       = "images_list"
 )
 
 // Store provides storage functionality for alerts.
@@ -16,18 +17,25 @@ type Store interface {
 	ListImage(sha string) (*v1.ListImage, bool, error)
 	ListImages() ([]*v1.ListImage, error)
 
-	GetImage(sha string) (*v1.Image, bool, error)
 	GetImages() ([]*v1.Image, error)
 	CountImages() (int, error)
-	AddImage(image *v1.Image) error
-	UpdateImage(image *v1.Image) error
+	GetImage(sha string) (*v1.Image, bool, error)
+	GetImagesBatch(shas []string) ([]*v1.Image, error)
+
+	UpsertImage(image *v1.Image) error
+	DeleteImage(sha string) error
+
+	GetRegistrySha(orchSha string) (string, bool, error)
+	UpsertRegistrySha(orchSha string, regSha string) error
+	DeleteRegistrySha(orchSha string) error
 }
 
 // New returns a new Store instance using the provided bolt DB instance.
 func New(db *bolt.DB) Store {
+	bolthelper.RegisterBucket(db, orchShaToRegShaBucket)
 	bolthelper.RegisterBucket(db, imageBucket)
 	bolthelper.RegisterBucket(db, listImageBucket)
 	return &storeImpl{
-		DB: db,
+		db: db,
 	}
 }

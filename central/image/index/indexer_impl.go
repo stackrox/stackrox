@@ -51,7 +51,8 @@ func (b *indexerImpl) AddImages(imageList []*v1.Image) error {
 // DeleteImage deletes the image from the index
 func (b *indexerImpl) DeleteImage(sha string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "Image")
-	return b.index.Delete(sha)
+	digest := images.NewDigest(sha).Digest()
+	return b.index.Delete(digest)
 }
 
 // SearchImages takes a SearchRequest and finds any matches

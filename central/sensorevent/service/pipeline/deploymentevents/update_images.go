@@ -17,13 +17,16 @@ type updateImagesImpl struct {
 
 func (s *updateImagesImpl) do(deployment *v1.Deployment) {
 	for _, c := range deployment.GetContainers() {
-		img, exists, err := s.images.GetImage(c.GetImage().GetName().GetSha())
+		image := c.GetImage()
+		if image.GetName().GetSha() == "" {
+			log.Debugf("Skipping persistence of image without sha: %s", image.GetName().GetFullName())
+			continue
+		}
+
+		err := s.images.UpsertDedupeImage(image)
 		if err != nil {
 			log.Error(err)
 			continue
-		}
-		if exists {
-			c.Image = img
 		}
 	}
 }

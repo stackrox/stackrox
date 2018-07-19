@@ -26,7 +26,6 @@ func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentData
 		updateImages:      newUpdateImages(images),
 		persistDeployment: newPersistDeployment(deployments),
 		createResponse:    newCreateResponse(detector.ProcessDeploymentEvent),
-		persistImages:     newPersistImages(images),
 	}
 }
 
@@ -37,7 +36,6 @@ type pipelineImpl struct {
 	updateImages      *updateImagesImpl
 	persistDeployment *persistDeploymentImpl
 	createResponse    *createResponseImpl
-	persistImages     *persistImagesImpl
 }
 
 // Run runs the pipeline template on the input and returns the output.
@@ -99,7 +97,7 @@ func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, deployment *
 
 	// We want to persist the images from the deployment in the deployment after processing (create response)
 	// TODO(rs): We should map out how images are updated in the pipeline so we don't do more writes than needed.
-	s.persistImages.do(deployment)
+	s.updateImages.do(deployment)
 
 	if err := secretDataGraph.Singleton().ProcessDeploymentEvent(action, deployment); err != nil {
 		return nil, err

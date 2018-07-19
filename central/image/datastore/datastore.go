@@ -9,17 +9,18 @@ import (
 
 // DataStore is an intermediary to AlertStorage.
 type DataStore interface {
+	SearchListImages(request *v1.ParsedSearchRequest) ([]*v1.ListImage, error)
+	ListImage(sha string) (*v1.ListImage, bool, error)
+	ListImages() ([]*v1.ListImage, error)
+
 	SearchImages(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)
 	SearchRawImages(request *v1.ParsedSearchRequest) ([]*v1.Image, error)
-	SearchListImages(request *v1.ParsedSearchRequest) ([]*v1.ListImage, error)
 
-	ListImage(id string) (*v1.ListImage, bool, error)
-	ListImages() ([]*v1.ListImage, error)
-	GetImage(sha string) (*v1.Image, bool, error)
 	GetImages() ([]*v1.Image, error)
 	CountImages() (int, error)
-	AddImage(image *v1.Image) error
-	UpdateImage(image *v1.Image) error
+	GetImage(sha string) (*v1.Image, bool, error)
+	GetImagesBatch(shas []string) ([]*v1.Image, error)
+	UpsertDedupeImage(image *v1.Image) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
