@@ -5,6 +5,7 @@
   "private": true,
   "dependencies": {
     "axios": "^0.17.1",
+    "d3": "^5.5.0",
     "date-fns": "^1.29.0",
     "enzyme": "^3.2.0",
     "enzyme-adapter-react-16": "^1.1.1",

@@ -1,19 +1,31 @@
 import axios from 'axios';
 import queryString from 'query-string';
-import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
-const networkGraphUrl = '/v1/networkgraph';
+const baseUrl = '/v1/networkgraph';
 
 /**
- * Fetches network graph nodes.
+ * Fetches nodes and links for the environment graph.
+ * Returns response with nodes and links
  *
- * @returns {Promise<Object[], Error>} fulfilled with array of nodes and edges (as defined in .proto)
+ * @returns {Promise<Object, Error>}
  */
-export default function fetchNetworkGraph(options) {
+export function fetchEnvironmentGraph(filters) {
     const params = queryString.stringify({
-        query: searchOptionsToQuery(options)
+        ...filters
     });
-    return axios
-        .get(`${networkGraphUrl}?${params}`)
-        .then(response => ({ response: response.data }));
+    return axios.get(`${baseUrl}?${params}`).then(response => ({
+        response: response.data
+    }));
+}
+
+/**
+ * Fetches node details for a given ID.
+ *
+ * @param {!string} id
+ * @returns {Promise<Object, Error>}
+ */
+export function fetchNode(id) {
+    return axios.get(`${baseUrl}/${id}`).then(response => ({
+        response: response.data
+    }));
 }

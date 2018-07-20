@@ -7,21 +7,38 @@ import { actions as environmentActions } from 'reducers/environment';
 
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
+import EnvironmentGraph from 'Components/EnvironmentGraph';
 
 class EnvironmentPage extends Component {
     static propTypes = {
-        // eslint-disable-next-line
-        networkGraph: PropTypes.shape({}).isRequired,
         searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
         searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
         searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
         setSearchOptions: PropTypes.func.isRequired,
         setSearchModifiers: PropTypes.func.isRequired,
         setSearchSuggestions: PropTypes.func.isRequired,
-        isViewFiltered: PropTypes.bool.isRequired
+        isViewFiltered: PropTypes.bool.isRequired,
+        environmentGraph: PropTypes.shape({
+            nodes: PropTypes.arrayOf(
+                PropTypes.shape({
+                    id: PropTypes.string.isRequired
+                })
+            ),
+            edges: PropTypes.arrayOf(
+                PropTypes.shape({
+                    source: PropTypes.string.isRequired,
+                    target: PropTypes.string.isRequired
+                })
+            )
+        }).isRequired
     };
 
-    renderGraph = () => {};
+    renderGraph = () => (
+        <EnvironmentGraph
+            nodes={this.props.environmentGraph.nodes}
+            edges={this.props.environmentGraph.edges}
+        />
+    );
 
     render() {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
@@ -56,7 +73,7 @@ const isViewFiltered = createSelector(
 );
 
 const mapStateToProps = createStructuredSelector({
-    networkGraph: selectors.getNetworkGraph,
+    environmentGraph: selectors.getEnvironmentGraph,
     searchOptions: selectors.getEnvironmentSearchOptions,
     searchModifiers: selectors.getEnvironmentSearchModifiers,
     searchSuggestions: selectors.getEnvironmentSearchSuggestions,
