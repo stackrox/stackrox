@@ -14,8 +14,8 @@ skip_install="$3"
 
 package_without_trailing_dots="${package%/...}"
 go get -d -v "${package_without_trailing_dots}"
-cd "${GOPATH}/src/${package_without_trailing_dots}"
+cd "${GOPATH}/src/${package_without_trailing_dots}" || { echo "Couldn't cd to the directory!"; exit 1; }
 
 git rev-parse --git-dir > /dev/null 2>&1 || { echo "This script only supports git-based packages!"; exit 1; }
-git checkout -q "${hash_or_tag}"
-[[ "$skip_install" = "--skip-install" ]] || go install "${package}"
+git checkout -q "${hash_or_tag}" || { echo "git checkout failed!"; exit 1; }
+[[ "$skip_install" = "--skip-install" ]] || go install "${package}" || { echo "go install failed!"; exit 1; }

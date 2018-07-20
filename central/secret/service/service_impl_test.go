@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/central/secret/search"
-	"bitbucket.org/stack-rox/apollo/central/secret/store"
+	searchMocks "bitbucket.org/stack-rox/apollo/central/secret/search/mocks"
+	storeMocks "bitbucket.org/stack-rox/apollo/central/secret/store/mocks"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/stretchr/testify/suite"
 )
@@ -18,15 +18,15 @@ func TestSecretService(t *testing.T) {
 type SecretServiceTestSuite struct {
 	suite.Suite
 
-	mockStore    *store.MockStore
-	mockSearcher *search.MockSearcher
+	mockStore    *storeMocks.Store
+	mockSearcher *searchMocks.Searcher
 
 	service Service
 }
 
 func (suite *SecretServiceTestSuite) SetupTest() {
-	suite.mockStore = &store.MockStore{}
-	suite.mockSearcher = &search.MockSearcher{}
+	suite.mockStore = &storeMocks.Store{}
+	suite.mockSearcher = &searchMocks.Searcher{}
 
 	suite.service = New(suite.mockStore, suite.mockSearcher)
 }

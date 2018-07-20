@@ -12,6 +12,7 @@ var (
 )
 
 // Searcher provides search functionality on existing alerts
+//go:generate mockery -name=Searcher
 type Searcher interface {
 	SearchImages(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)
 	SearchRawImages(request *v1.ParsedSearchRequest) ([]*v1.Image, error)

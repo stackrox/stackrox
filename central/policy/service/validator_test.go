@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	notifierStore "bitbucket.org/stack-rox/apollo/central/notifier/store"
+	clusterMocks "bitbucket.org/stack-rox/apollo/central/cluster/datastore/mocks"
+	notifierMocks "bitbucket.org/stack-rox/apollo/central/notifier/store/mocks"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -18,13 +18,13 @@ func TestPolicyValidator(t *testing.T) {
 type PolicyValidatorTestSuite struct {
 	suite.Suite
 	validator *policyValidator
-	nStorage  *notifierStore.MockStore
-	cStorage  *clusterDataStore.MockDataStore
+	nStorage  *notifierMocks.Store
+	cStorage  *clusterMocks.DataStore
 }
 
 func (suite *PolicyValidatorTestSuite) SetupTest() {
-	suite.nStorage = &notifierStore.MockStore{}
-	suite.cStorage = &clusterDataStore.MockDataStore{}
+	suite.nStorage = &notifierMocks.Store{}
+	suite.cStorage = &clusterMocks.DataStore{}
 	suite.validator = newPolicyValidator(suite.nStorage, suite.cStorage)
 }
 

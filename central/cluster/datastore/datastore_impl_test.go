@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	alerts "bitbucket.org/stack-rox/apollo/central/alert/datastore"
-	"bitbucket.org/stack-rox/apollo/central/cluster/store"
-	deployments "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	dnrintegration "bitbucket.org/stack-rox/apollo/central/dnrintegration/datastore"
+	alertMocks "bitbucket.org/stack-rox/apollo/central/alert/datastore/mocks"
+	clusterMocks "bitbucket.org/stack-rox/apollo/central/cluster/store/mocks"
+	deploymentMocks "bitbucket.org/stack-rox/apollo/central/deployment/datastore/mocks"
+	dnrintegrationMocks "bitbucket.org/stack-rox/apollo/central/dnrintegration/datastore/mocks"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -23,19 +23,19 @@ func TestClusterDataStore(t *testing.T) {
 type ClusterDataStoreTestSuite struct {
 	suite.Suite
 
-	clusters    *store.MockStore
-	deployments *deployments.MockDataStore
-	dnrInts     *dnrintegration.MockDataStore
-	alerts      *alerts.MockDataStore
+	clusters    *clusterMocks.Store
+	deployments *deploymentMocks.DataStore
+	dnrInts     *dnrintegrationMocks.DataStore
+	alerts      *alertMocks.DataStore
 
 	clusterDataStore DataStore
 }
 
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
-	suite.clusters = &store.MockStore{}
-	suite.deployments = &deployments.MockDataStore{}
-	suite.dnrInts = &dnrintegration.MockDataStore{}
-	suite.alerts = &alerts.MockDataStore{}
+	suite.clusters = &clusterMocks.Store{}
+	suite.deployments = &deploymentMocks.DataStore{}
+	suite.dnrInts = &dnrintegrationMocks.DataStore{}
+	suite.alerts = &alertMocks.DataStore{}
 
 	suite.clusterDataStore = New(suite.clusters, suite.alerts, suite.deployments, suite.dnrInts)
 }

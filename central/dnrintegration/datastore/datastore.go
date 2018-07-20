@@ -13,6 +13,7 @@ var (
 
 // DataStore is an intermediary to the D&R integration storage.
 // This is the entrypoint for all interaction with D&R.
+//go:generate mockery -name=DataStore
 type DataStore interface {
 	GetDNRIntegration(id string) (*v1.DNRIntegration, bool, error)
 	GetDNRIntegrations(request *v1.GetDNRIntegrationsRequest) ([]*v1.DNRIntegration, error)

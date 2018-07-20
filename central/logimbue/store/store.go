@@ -8,6 +8,7 @@ import (
 const logsBucket = "logs"
 
 // Store provides storage functionality for alerts.
+//go:generate mockery -name=Store
 type Store interface {
 	GetLogs() ([]string, error)
 	CountLogs() (count int, err error)

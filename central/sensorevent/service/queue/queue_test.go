@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	sensorEventStore "bitbucket.org/stack-rox/apollo/central/sensorevent/store"
+	sensorEventMocks "bitbucket.org/stack-rox/apollo/central/sensorevent/store/mocks"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -18,11 +18,11 @@ type PersistedEventQueueTestSuite struct {
 	suite.Suite
 
 	tested   *persistedEventQueue
-	eStorage *sensorEventStore.MockStore
+	eStorage *sensorEventMocks.Store
 }
 
 func (suite *PersistedEventQueueTestSuite) SetupTest() {
-	suite.eStorage = &sensorEventStore.MockStore{}
+	suite.eStorage = &sensorEventMocks.Store{}
 	suite.tested = &persistedEventQueue{
 		eventStorage: suite.eStorage,
 

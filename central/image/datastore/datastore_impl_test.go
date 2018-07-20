@@ -3,9 +3,9 @@ package datastore
 import (
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/central/image/index"
-	"bitbucket.org/stack-rox/apollo/central/image/search"
-	"bitbucket.org/stack-rox/apollo/central/image/store"
+	indexMock "bitbucket.org/stack-rox/apollo/central/image/index/mocks"
+	searchMock "bitbucket.org/stack-rox/apollo/central/image/search/mocks"
+	storeMock "bitbucket.org/stack-rox/apollo/central/image/store/mocks"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	gTypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/suite"
@@ -18,17 +18,17 @@ func TestImageDataStore(t *testing.T) {
 type ImageDataStoreTestSuite struct {
 	suite.Suite
 
-	mockIndexer  *index.MockIndexer
-	mockSearcher *search.MockSearcher
-	mockStore    *store.MockStore
+	mockIndexer  *indexMock.Indexer
+	mockSearcher *searchMock.Searcher
+	mockStore    *storeMock.Store
 
 	datastore DataStore
 }
 
 func (suite *ImageDataStoreTestSuite) SetupTest() {
-	suite.mockIndexer = &index.MockIndexer{}
-	suite.mockSearcher = &search.MockSearcher{}
-	suite.mockStore = &store.MockStore{}
+	suite.mockIndexer = &indexMock.Indexer{}
+	suite.mockSearcher = &searchMock.Searcher{}
+	suite.mockStore = &storeMock.Store{}
 
 	suite.datastore = New(suite.mockStore, suite.mockIndexer, suite.mockSearcher)
 }

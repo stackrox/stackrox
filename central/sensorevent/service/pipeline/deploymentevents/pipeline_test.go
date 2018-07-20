@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
+	clusterMocks "bitbucket.org/stack-rox/apollo/central/cluster/datastore/mocks"
+	deploymentMocks "bitbucket.org/stack-rox/apollo/central/deployment/datastore/mocks"
+	imageMocks "bitbucket.org/stack-rox/apollo/central/image/datastore/mocks"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -20,16 +20,16 @@ type PipelineTestSuite struct {
 	suite.Suite
 
 	ctx         context.Context
-	clusters    *clusterDataStore.MockDataStore
-	deployments *deploymentDataStore.MockDataStore
-	images      *imageDataStore.MockDataStore
+	clusters    *clusterMocks.DataStore
+	deployments *deploymentMocks.DataStore
+	images      *imageMocks.DataStore
 	detector    *mockDetector
 }
 
 func (suite *PipelineTestSuite) SetupTest() {
-	suite.clusters = &clusterDataStore.MockDataStore{}
-	suite.deployments = &deploymentDataStore.MockDataStore{}
-	suite.images = &imageDataStore.MockDataStore{}
+	suite.clusters = &clusterMocks.DataStore{}
+	suite.deployments = &deploymentMocks.DataStore{}
+	suite.images = &imageMocks.DataStore{}
 	suite.detector = &mockDetector{}
 }
 

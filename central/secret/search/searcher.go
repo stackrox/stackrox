@@ -12,6 +12,7 @@ var (
 )
 
 // Searcher provides search functionality on existing secrets.
+//go:generate mockery -name=Searcher
 type Searcher interface {
 	SearchSecrets(rawQuery *v1.RawQuery) ([]*v1.SearchResult, error)
 	SearchRawSecrets(rawQuery *v1.RawQuery) ([]*v1.SecretAndRelationship, error)

@@ -7,26 +7,26 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/central/logimbue/store"
+	"bitbucket.org/stack-rox/apollo/central/logimbue/store/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestLogImbueHandler(t *testing.T) {
-	suite.Run(t, new(LogImbueHanlderTestSuite))
+	suite.Run(t, new(LogImbueHandlerTestSuite))
 }
 
-type LogImbueHanlderTestSuite struct {
+type LogImbueHandlerTestSuite struct {
 	suite.Suite
 
-	logsStorage        *store.MockStore
+	logsStorage        *mocks.Store
 	compressorProvider *mockCompressorProvider
 
 	logImbueHandler *handlerImpl
 }
 
-func (suite *LogImbueHanlderTestSuite) SetupTest() {
-	suite.logsStorage = &store.MockStore{}
+func (suite *LogImbueHandlerTestSuite) SetupTest() {
+	suite.logsStorage = &mocks.Store{}
 	suite.compressorProvider = &mockCompressorProvider{}
 
 	suite.logImbueHandler = &handlerImpl{
@@ -36,7 +36,7 @@ func (suite *LogImbueHanlderTestSuite) SetupTest() {
 }
 
 // Test the happy path.
-func (suite *LogImbueHanlderTestSuite) TestPostWritesLogsToDb() {
+func (suite *LogImbueHandlerTestSuite) TestPostWritesLogsToDb() {
 	loggedMessage := `{ Log: "Something exploded" & % # @ * () derp }`
 	req := &http.Request{
 		Method: http.MethodPost,
@@ -52,7 +52,7 @@ func (suite *LogImbueHanlderTestSuite) TestPostWritesLogsToDb() {
 	suite.logsStorage.AssertExpectations(suite.T())
 }
 
-func (suite *LogImbueHanlderTestSuite) TestPostHandlesDbError() {
+func (suite *LogImbueHandlerTestSuite) TestPostHandlesDbError() {
 	loggedMessage := `{ Log: "Something exploded" & % # @ * () derp }`
 	req := &http.Request{
 		Method: http.MethodPost,
@@ -69,7 +69,7 @@ func (suite *LogImbueHanlderTestSuite) TestPostHandlesDbError() {
 	suite.logsStorage.AssertExpectations(suite.T())
 }
 
-func (suite *LogImbueHanlderTestSuite) TestPostHandlesReadError() {
+func (suite *LogImbueHandlerTestSuite) TestPostHandlesReadError() {
 	req := &http.Request{
 		Method: http.MethodPost,
 		Body:   mockReadCloseReadError(fmt.Errorf("something when wrong reading input body")),
@@ -82,7 +82,7 @@ func (suite *LogImbueHanlderTestSuite) TestPostHandlesReadError() {
 	suite.logsStorage.AssertExpectations(suite.T())
 }
 
-func (suite *LogImbueHanlderTestSuite) TestPostHandlesCloseError() {
+func (suite *LogImbueHandlerTestSuite) TestPostHandlesCloseError() {
 	loggedMessage := `{ Log: "Something exploded" & % # @ * () derp }`
 	req := &http.Request{
 		Method: http.MethodPost,
@@ -96,7 +96,7 @@ func (suite *LogImbueHanlderTestSuite) TestPostHandlesCloseError() {
 	suite.logsStorage.AssertExpectations(suite.T())
 }
 
-func (suite *LogImbueHanlderTestSuite) TestGetReturnsLogsFromDb() {
+func (suite *LogImbueHandlerTestSuite) TestGetReturnsLogsFromDb() {
 	// Read the logs from the db.
 	loggedMessages := logs()
 	suite.logsStorage.On("GetLogs").Return(loggedMessages, nil)
@@ -124,7 +124,7 @@ func (suite *LogImbueHanlderTestSuite) TestGetReturnsLogsFromDb() {
 	suite.logsStorage.AssertExpectations(suite.T())
 }
 
-func (suite *LogImbueHanlderTestSuite) TestGetHandlesDBError() {
+func (suite *LogImbueHandlerTestSuite) TestGetHandlesDBError() {
 	// Fail to read the logs from the db.
 	dbErr := fmt.Errorf("no db logs for you bro")
 	suite.logsStorage.On("GetLogs").Return(([]string)(nil), dbErr)
@@ -139,7 +139,7 @@ func (suite *LogImbueHanlderTestSuite) TestGetHandlesDBError() {
 	suite.logsStorage.AssertExpectations(suite.T())
 }
 
-func (suite *LogImbueHanlderTestSuite) TestGetHandlesCompressionInitializationError() {
+func (suite *LogImbueHandlerTestSuite) TestGetHandlesCompressionInitializationError() {
 	// Read the logs from the db.
 	loggedMessages := logs()
 	suite.logsStorage.On("GetLogs").Return(loggedMessages, nil)
@@ -157,7 +157,7 @@ func (suite *LogImbueHanlderTestSuite) TestGetHandlesCompressionInitializationEr
 	suite.logsStorage.AssertExpectations(suite.T())
 }
 
-func (suite *LogImbueHanlderTestSuite) TestGetHandlesCompressionWriteError() {
+func (suite *LogImbueHandlerTestSuite) TestGetHandlesCompressionWriteError() {
 	// Read the logs from the db.
 	loggedMessages := logs()
 	suite.logsStorage.On("GetLogs").Return(loggedMessages, nil)
@@ -184,7 +184,7 @@ func (suite *LogImbueHanlderTestSuite) TestGetHandlesCompressionWriteError() {
 	suite.logsStorage.AssertExpectations(suite.T())
 }
 
-func (suite *LogImbueHanlderTestSuite) TestGetHandlesPartialCompressionWriteError() {
+func (suite *LogImbueHandlerTestSuite) TestGetHandlesPartialCompressionWriteError() {
 	// Read the logs from the db.
 	loggedMessages := logs()
 	suite.logsStorage.On("GetLogs").Return(loggedMessages, nil)
@@ -213,7 +213,7 @@ func (suite *LogImbueHanlderTestSuite) TestGetHandlesPartialCompressionWriteErro
 	suite.logsStorage.AssertExpectations(suite.T())
 }
 
-func (suite *LogImbueHanlderTestSuite) TestGetHandlesCompressionCloseError() {
+func (suite *LogImbueHandlerTestSuite) TestGetHandlesCompressionCloseError() {
 	// Read the logs from the db.
 	loggedMessages := logs()
 	suite.logsStorage.On("GetLogs").Return(loggedMessages, nil)

@@ -9,6 +9,7 @@ import (
 const sensorEventBucket = "sensorEvents"
 
 // Store provides storage functionality for alerts.
+//go:generate mockery -name=Store
 type Store interface {
 	GetSensorEvent(id uint64) (*v1.SensorEvent, bool, error)
 	GetSensorEventIds(clusterID string) ([]uint64, map[string]uint64, error)

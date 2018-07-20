@@ -14,6 +14,7 @@ const (
 )
 
 // Store provides access and update functions for secrets.
+//go:generate mockery -name=Store
 type Store interface {
 	GetAllSecrets() ([]*v1.Secret, error)
 	GetSecret(id string) (*v1.Secret, bool, error)

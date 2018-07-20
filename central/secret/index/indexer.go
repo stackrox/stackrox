@@ -6,6 +6,7 @@ import (
 )
 
 // Indexer indexes secret information.
+//go:generate mockery -name=Indexer
 type Indexer interface {
 	SecretAndRelationship(sar *v1.SecretAndRelationship) error
 }

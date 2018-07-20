@@ -12,6 +12,7 @@ var (
 )
 
 // Indexer provides indexing of Alert objects.
+//go:generate mockery -name=Indexer
 type Indexer interface {
 	AddImage(image *v1.Image) error
 	AddImages(imageList []*v1.Image) error

@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/central/secret/index"
-	"bitbucket.org/stack-rox/apollo/central/secret/store"
+	indexMocks "bitbucket.org/stack-rox/apollo/central/secret/index/mocks"
+	storeMocks "bitbucket.org/stack-rox/apollo/central/secret/store/mocks"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -18,15 +18,15 @@ func TestSecretDataGraph(t *testing.T) {
 type SecretDataGraphTestSuite struct {
 	suite.Suite
 
-	mockStore   *store.MockStore
-	mockIndexer *index.MockIndexer
+	mockStore   *storeMocks.Store
+	mockIndexer *indexMocks.Indexer
 
 	datagraph DataGraph
 }
 
 func (suite *SecretDataGraphTestSuite) SetupTest() {
-	suite.mockStore = &store.MockStore{}
-	suite.mockIndexer = &index.MockIndexer{}
+	suite.mockStore = &storeMocks.Store{}
+	suite.mockIndexer = &indexMocks.Indexer{}
 
 	suite.datagraph = New(suite.mockStore, suite.mockIndexer)
 }

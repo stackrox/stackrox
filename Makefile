@@ -97,8 +97,19 @@ GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_GW_SRCS)
 
 include make/protogen.mk
 
+MOCKERY_BIN := $(GOPATH)/bin/mockery
+
+$(MOCKERY_BIN):
+	@echo "+ $@"
+	@go get github.com/vektra/mockery/.../
+
+.PHONY: go-generated-srcs
+go-generated-srcs: $(MOCKERY_BIN)
+	@echo "+ $@"
+	go generate ./...
+
 .PHONY: generated-srcs
-generated-srcs: $(GENERATED_SRCS)
+generated-srcs: $(GENERATED_SRCS) go-generated-srcs
 
 .PHONY: clean-generated-srcs
 clean-generated-srcs:
@@ -125,7 +136,7 @@ LINUX_AMD64 := --cpu=k8
 BAZEL_FLAGS := $(PURE) $(LINUX_AMD64)
 cleanup:
 	@echo "Total BUILD.bazel files deleted: "
-	@find . -mindepth 2 -name BUILD.bazel -print | grep -v "^./image" | xargs rm | wc -l | xargs echo
+	@find . -mindepth 2 -name BUILD.bazel -print | grep -v "^./image" | xargs rm -v | wc -l
 
 .PHONY: gazelle
 gazelle: deps $(GENERATED_SRCS) cleanup
