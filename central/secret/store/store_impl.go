@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/boltdb/bolt"
@@ -16,7 +17,7 @@ type storeImpl struct {
 
 // GetAllSecrets returns all secrets in the given db.
 func (s *storeImpl) GetAllSecrets() (secrets []*v1.Secret, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetAll", "Secrets")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Secrets")
 
 	s.db.View(func(tx *bolt.Tx) error {
 		secrets, err = readAllSecrets(tx)
@@ -27,7 +28,7 @@ func (s *storeImpl) GetAllSecrets() (secrets []*v1.Secret, err error) {
 
 // GetRelationship returns the relationship for the given id.
 func (s *storeImpl) GetRelationship(id string) (relationships *v1.SecretRelationship, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "SecretRelationships")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "SecretRelationships")
 
 	err = s.db.View(func(tx *bolt.Tx) error {
 		if exists = hasRelationship(tx, id); !exists {
@@ -41,7 +42,7 @@ func (s *storeImpl) GetRelationship(id string) (relationships *v1.SecretRelation
 
 // GetRelationshipBatch returns the relationships for the given ids.
 func (s *storeImpl) GetRelationshipBatch(ids []string) ([]*v1.SecretRelationship, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetBatch", "SecretRelationships")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "SecretRelationships")
 
 	var relationships []*v1.SecretRelationship
 	err := s.db.View(func(tx *bolt.Tx) error {
@@ -59,7 +60,7 @@ func (s *storeImpl) GetRelationshipBatch(ids []string) ([]*v1.SecretRelationship
 
 // GetSecret returns the secret for the given id.
 func (s *storeImpl) GetSecret(id string) (secret *v1.Secret, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "Secret")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Secret")
 
 	err = s.db.View(func(tx *bolt.Tx) error {
 		if exists = hasSecret(tx, id); !exists {
@@ -73,7 +74,7 @@ func (s *storeImpl) GetSecret(id string) (secret *v1.Secret, exists bool, err er
 
 // GetSecretsBatch returns the secrets for the given ids.
 func (s *storeImpl) GetSecretsBatch(ids []string) ([]*v1.Secret, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetBatch", "Secrets")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Secrets")
 
 	var secrets []*v1.Secret
 	err := s.db.View(func(tx *bolt.Tx) error {
@@ -91,7 +92,7 @@ func (s *storeImpl) GetSecretsBatch(ids []string) ([]*v1.Secret, error) {
 
 // UpsertRelationship updates or sets the relationship in bolt.
 func (s *storeImpl) UpsertRelationship(relationship *v1.SecretRelationship) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Upsert", "SecretRelationship")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "SecretRelationship")
 
 	return s.db.Update(func(tx *bolt.Tx) error {
 		return writeRelationship(tx, relationship)
@@ -100,7 +101,7 @@ func (s *storeImpl) UpsertRelationship(relationship *v1.SecretRelationship) erro
 
 // UpsertSecret adds or updates the secret in the db.
 func (s *storeImpl) UpsertSecret(secret *v1.Secret) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Upsert", "Secret")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "Secret")
 
 	return s.db.Update(func(tx *bolt.Tx) error {
 		return writeSecret(tx, secret)

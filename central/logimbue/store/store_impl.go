@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
 	"github.com/boltdb/bolt"
@@ -16,7 +17,7 @@ type storeImpl struct {
 
 // GetLogs returns all of the logs stored in the DB.
 func (b *storeImpl) GetLogs() ([]string, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetRange", "Logs")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Logs")
 
 	logs := make([]string, 0)
 	err := b.View(func(tx *bolt.Tx) error {
@@ -32,7 +33,7 @@ func (b *storeImpl) GetLogs() ([]string, error) {
 
 // CountLogs returns the number of logs in the DB.
 func (b *storeImpl) CountLogs() (count int, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Count", "Logs")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "Logs")
 	err = b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(logsBucket))
 		count = b.Stats().KeyN
@@ -43,7 +44,7 @@ func (b *storeImpl) CountLogs() (count int, err error) {
 
 // GetLogsRange returns the time range (inclusive) in unix seconds of all the logs stored.
 func (b *storeImpl) GetLogsRange() (start int64, end int64, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetRange", "Logs")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Logs")
 
 	var min int64
 	var max int64
@@ -64,7 +65,7 @@ func (b *storeImpl) GetLogsRange() (start int64, end int64, err error) {
 func (b *storeImpl) AddLog(log string) error {
 	logTime := time.Now().Unix()
 
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "Logs")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Logs")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(logsBucket))
 
@@ -77,7 +78,7 @@ func (b *storeImpl) AddLog(log string) error {
 
 // RemoveLogs removes the logs in the specified time range (inclusive, unix seconds) from bolt.
 func (b *storeImpl) RemoveLogs(from, to int64) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "Logs")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Logs")
 
 	errorList := errorhelpers.NewErrorList("errors deleting logs")
 	return b.Update(func(tx *bolt.Tx) error {

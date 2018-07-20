@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	imagesPkg "bitbucket.org/stack-rox/apollo/pkg/images"
@@ -17,7 +18,7 @@ type storeImpl struct {
 
 // ListImage returns ListImage with given sha.
 func (b *storeImpl) ListImage(sha string) (image *v1.ListImage, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "ListImage")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ListImage")
 
 	digest := imagesPkg.NewDigest(sha).Digest()
 	err = b.db.View(func(tx *bolt.Tx) error {
@@ -35,7 +36,7 @@ func (b *storeImpl) ListImage(sha string) (image *v1.ListImage, exists bool, err
 
 // ListImages returns all ListImages
 func (b *storeImpl) ListImages() (images []*v1.ListImage, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "ListImage")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListImage")
 
 	err = b.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(listImageBucket))
@@ -53,7 +54,7 @@ func (b *storeImpl) ListImages() (images []*v1.ListImage, err error) {
 
 // GetImages returns all images regardless of request
 func (b *storeImpl) GetImages() (images []*v1.Image, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetAll", "Image")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Image")
 
 	err = b.db.View(func(tx *bolt.Tx) error {
 		images, err = readAllImages(tx)
@@ -64,7 +65,7 @@ func (b *storeImpl) GetImages() (images []*v1.Image, err error) {
 
 // CountImages returns all images regardless of request
 func (b *storeImpl) CountImages() (count int, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetAll", "Image")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Image")
 
 	err = b.db.View(func(tx *bolt.Tx) error {
 		count, err = countAllImages(tx)
@@ -75,7 +76,7 @@ func (b *storeImpl) CountImages() (count int, err error) {
 
 // GetImage returns image with given sha.
 func (b *storeImpl) GetImage(sha string) (image *v1.Image, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "Image")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Image")
 
 	err = b.db.View(func(tx *bolt.Tx) error {
 		exists = hasImage(tx, []byte(idForSha(sha)))
@@ -90,7 +91,7 @@ func (b *storeImpl) GetImage(sha string) (image *v1.Image, exists bool, err erro
 
 // GetImagesBatch returns image with given sha.
 func (b *storeImpl) GetImagesBatch(shas []string) (images []*v1.Image, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetBatch", "Image")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
 	err = b.db.View(func(tx *bolt.Tx) error {
 		for _, sha := range shas {
@@ -107,7 +108,7 @@ func (b *storeImpl) GetImagesBatch(shas []string) (images []*v1.Image, err error
 
 // UpdateImage updates a image to bolt.
 func (b *storeImpl) UpsertImage(image *v1.Image) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Upsert", "Image")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "Image")
 
 	return b.db.Update(func(tx *bolt.Tx) error {
 		err := writeImage(tx, image)
@@ -120,7 +121,7 @@ func (b *storeImpl) UpsertImage(image *v1.Image) error {
 
 // DeleteImage deletes an image an all it's data (but maintains the orch sha to registry sha mapping).
 func (b *storeImpl) DeleteImage(sha string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Delete", "Image")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Image")
 
 	return b.db.Update(func(tx *bolt.Tx) error {
 		err := deleteImage(tx, []byte(idForSha(sha)))
@@ -133,7 +134,7 @@ func (b *storeImpl) DeleteImage(sha string) error {
 
 // GetRegistrySha retrieves a sha to registry sha mapping.
 func (b *storeImpl) GetRegistrySha(orchSha string) (regSha string, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "ImageRegistrySha")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ImageRegistrySha")
 
 	err = b.db.View(func(tx *bolt.Tx) error {
 		exists = hasSha(tx, []byte(idForSha(orchSha)))

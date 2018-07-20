@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/dberrors"
@@ -31,7 +32,7 @@ func (b *storeImpl) getPolicy(id string, bucket *bolt.Bucket) (policy *v1.Policy
 
 // GetPolicy returns policy with given id.
 func (b *storeImpl) GetPolicy(id string) (policy *v1.Policy, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "Policy")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Policy")
 	policy = new(v1.Policy)
 	err = b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))
@@ -48,7 +49,7 @@ func (b *storeImpl) GetPolicy(id string) (policy *v1.Policy, exists bool, err er
 
 // GetPolicies retrieves policies matching the request from bolt
 func (b *storeImpl) GetPolicies() ([]*v1.Policy, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "Policy")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Policy")
 	var policies []*v1.Policy
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))
@@ -66,7 +67,7 @@ func (b *storeImpl) GetPolicies() ([]*v1.Policy, error) {
 
 // AddPolicy adds a policy to bolt
 func (b *storeImpl) AddPolicy(policy *v1.Policy) (string, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "Policy")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Policy")
 	policy.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(policyBucket))
@@ -91,7 +92,7 @@ func (b *storeImpl) AddPolicy(policy *v1.Policy) (string, error) {
 
 // UpdatePolicy updates a policy to bolt
 func (b *storeImpl) UpdatePolicy(policy *v1.Policy) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "Policy")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Policy")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(policyBucket))
 		// If the update is changing the name, check if the name has already been taken
@@ -110,7 +111,7 @@ func (b *storeImpl) UpdatePolicy(policy *v1.Policy) error {
 
 // RemovePolicy removes a policy.
 func (b *storeImpl) RemovePolicy(id string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "Policy")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Policy")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(policyBucket))
 		key := []byte(id)
@@ -126,7 +127,7 @@ func (b *storeImpl) RemovePolicy(id string) error {
 
 // RenamePolicyCategory renames all occurrence of a policy category to the new requested category.
 func (b *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Rename", "PolicyCategory")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Rename, "PolicyCategory")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))
 		return b.ForEach(func(k, v []byte) error {
@@ -158,7 +159,7 @@ func (b *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest
 
 // DeletePolicyCategory removes a category from all policies.
 func (b *storeImpl) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Delete", "PolicyCategory")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "PolicyCategory")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))
 		return b.ForEach(func(k, v []byte) error {

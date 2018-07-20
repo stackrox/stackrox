@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/dberrors"
@@ -30,7 +31,7 @@ func (b *storeImpl) getNotifier(id string, bucket *bolt.Bucket) (notifier *v1.No
 
 // GetNotifier returns notifier with given id.
 func (b *storeImpl) GetNotifier(id string) (notifier *v1.Notifier, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "Notifier")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Notifier")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(notifierBucket))
 		notifier, exists, err = b.getNotifier(id, bucket)
@@ -41,7 +42,7 @@ func (b *storeImpl) GetNotifier(id string) (notifier *v1.Notifier, exists bool, 
 
 // GetNotifiers retrieves notifiers matching the request from bolt
 func (b *storeImpl) GetNotifiers(request *v1.GetNotifiersRequest) ([]*v1.Notifier, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "Notifier")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Notifier")
 	var notifiers []*v1.Notifier
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(notifierBucket))
@@ -59,7 +60,7 @@ func (b *storeImpl) GetNotifiers(request *v1.GetNotifiersRequest) ([]*v1.Notifie
 
 // AddNotifier adds a notifier to bolt
 func (b *storeImpl) AddNotifier(notifier *v1.Notifier) (string, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "Notifier")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Notifier")
 	notifier.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(notifierBucket))
@@ -84,7 +85,7 @@ func (b *storeImpl) AddNotifier(notifier *v1.Notifier) (string, error) {
 
 // UpdateNotifier updates a notifier to bolt
 func (b *storeImpl) UpdateNotifier(notifier *v1.Notifier) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "Notifier")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Notifier")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(notifierBucket))
 		// If the update is changing the name, check if the name has already been taken
@@ -103,7 +104,7 @@ func (b *storeImpl) UpdateNotifier(notifier *v1.Notifier) error {
 
 // RemoveNotifier removes a notifier.
 func (b *storeImpl) RemoveNotifier(id string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "Notifier")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Notifier")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(notifierBucket))
 		key := []byte(id)

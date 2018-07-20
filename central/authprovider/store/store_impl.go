@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/dberrors"
@@ -34,7 +35,7 @@ func (b *storeImpl) getAuthProvider(id string, bucket *bolt.Bucket) (authProvide
 
 // GetAuthProvider returns authProvider with given id.
 func (b *storeImpl) GetAuthProvider(id string) (authProvider *v1.AuthProvider, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "AuthProvider")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "AuthProvider")
 
 	authProvider = new(v1.AuthProvider)
 	err = b.View(func(tx *bolt.Tx) error {
@@ -55,7 +56,7 @@ func (b *storeImpl) GetAuthProvider(id string) (authProvider *v1.AuthProvider, e
 
 // GetAuthProviders retrieves authProviders from bolt
 func (b *storeImpl) GetAuthProviders(request *v1.GetAuthProvidersRequest) ([]*v1.AuthProvider, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "AuthProvider")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "AuthProvider")
 
 	var authProviders []*v1.AuthProvider
 	err := b.View(func(tx *bolt.Tx) error {
@@ -91,7 +92,7 @@ func (b *storeImpl) GetAuthProviders(request *v1.GetAuthProvidersRequest) ([]*v1
 
 // AddAuthProvider adds an auth provider into bolt
 func (b *storeImpl) AddAuthProvider(authProvider *v1.AuthProvider) (string, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "AuthProvider")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "AuthProvider")
 
 	authProvider.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
@@ -117,7 +118,7 @@ func (b *storeImpl) AddAuthProvider(authProvider *v1.AuthProvider) (string, erro
 
 // UpdateAuthProvider upserts an auth provider into bolt
 func (b *storeImpl) UpdateAuthProvider(authProvider *v1.AuthProvider) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "AuthProvider")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "AuthProvider")
 
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(authProviderBucket))
@@ -137,7 +138,7 @@ func (b *storeImpl) UpdateAuthProvider(authProvider *v1.AuthProvider) error {
 
 // RemoveAuthProvider removes an auth provider from bolt
 func (b *storeImpl) RemoveAuthProvider(id string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "AuthProvider")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "AuthProvider")
 
 	return b.Update(func(tx *bolt.Tx) error {
 		ab := tx.Bucket([]byte(authProviderBucket))
@@ -160,7 +161,7 @@ func (b *storeImpl) RemoveAuthProvider(id string) error {
 // RecordAuthSuccess adds an entry in the validated bucket for the provider, which indicates the provider
 // has been successfully used at least once previously.
 func (b *storeImpl) RecordAuthSuccess(id string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "AuthValidated")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "AuthValidated")
 
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(authValidatedBucket))

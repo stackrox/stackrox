@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/boltdb/bolt"
@@ -16,7 +17,7 @@ type storeImpl struct {
 
 // GetServiceIdentities retrieves serviceIdentities from Bolt.
 func (b *storeImpl) GetServiceIdentities() ([]*v1.ServiceIdentity, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "ServiceIdentity")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ServiceIdentity")
 	var serviceIdentities []*v1.ServiceIdentity
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(serviceIdentityBucket))
@@ -46,7 +47,7 @@ func (b *storeImpl) upsertServiceIdentity(serviceIdentity *v1.ServiceIdentity) e
 
 // AddServiceIdentity adds a serviceIdentity to bolt
 func (b *storeImpl) AddServiceIdentity(serviceIdentity *v1.ServiceIdentity) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "ServiceIdentity")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "ServiceIdentity")
 	return b.upsertServiceIdentity(serviceIdentity)
 }
 

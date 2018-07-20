@@ -3,6 +3,7 @@ package metrics
 import (
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/pkg/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -74,8 +75,8 @@ func startTimeToMS(t time.Time) float64 {
 }
 
 // SetBoltOperationDurationTime times how long a particular bolt operation took on a particular resource
-func SetBoltOperationDurationTime(start time.Time, op string, t string) {
-	boltOperationHistogramVec.With(prometheus.Labels{"Operation": op, "Type": t}).Observe(startTimeToMS(start))
+func SetBoltOperationDurationTime(start time.Time, op ops.Op, t string) {
+	boltOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
 }
 
 // SetIndexOperationDurationTime times how long a particular index operation took on a particular resource

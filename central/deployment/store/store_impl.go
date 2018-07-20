@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/central/ranking"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -20,7 +21,7 @@ type storeImpl struct {
 
 // GetListDeployment returns a list deployment with given id.
 func (b *storeImpl) ListDeployment(id string) (deployment *v1.ListDeployment, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "ListDeployment")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ListDeployment")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentListBucket))
 		deployment = new(v1.ListDeployment)
@@ -38,7 +39,7 @@ func (b *storeImpl) ListDeployment(id string) (deployment *v1.ListDeployment, ex
 
 // GetDeployments retrieves deployments matching the request from bolt
 func (b *storeImpl) ListDeployments() ([]*v1.ListDeployment, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "ListDeployment")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListDeployment")
 	var deployments []*v1.ListDeployment
 	err := b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentListBucket))
@@ -96,7 +97,7 @@ func (b *storeImpl) getDeployment(id string, bucket *bolt.Bucket) (deployment *v
 
 // GetDeployment returns deployment with given id.
 func (b *storeImpl) GetDeployment(id string) (deployment *v1.Deployment, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "Deployment")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Deployment")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
 		deployment, exists, err = b.getDeployment(id, bucket)
@@ -114,7 +115,7 @@ func (b *storeImpl) GetDeployment(id string) (deployment *v1.Deployment, exists 
 
 // GetDeployments retrieves deployments matching the request from bolt
 func (b *storeImpl) GetDeployments() ([]*v1.Deployment, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "Deployment")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
 	var deployments []*v1.Deployment
 	err := b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
@@ -134,7 +135,7 @@ func (b *storeImpl) GetDeployments() ([]*v1.Deployment, error) {
 
 // CountDeployments returns the number of deployments.
 func (b *storeImpl) CountDeployments() (count int, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Count", "Deployment")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "Deployment")
 	err = b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(deploymentBucket))
 		return b.ForEach(func(k, v []byte) error {
@@ -148,7 +149,7 @@ func (b *storeImpl) CountDeployments() (count int, err error) {
 
 // AddDeployment adds a deployment to bolt
 func (b *storeImpl) AddDeployment(deployment *v1.Deployment) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "Deployment")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Deployment")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
 		_, exists, err := b.getDeployment(deployment.Id, bucket)
@@ -180,7 +181,7 @@ func (b *storeImpl) updateDeployment(deployment *v1.Deployment, bucket *bolt.Buc
 
 // UpdateDeployment updates a deployment to bolt
 func (b *storeImpl) UpdateDeployment(deployment *v1.Deployment) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "Deployment")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Deployment")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
 		existingDeployment, exists, err := b.getDeployment(deployment.GetId(), bucket)
@@ -201,7 +202,7 @@ func (b *storeImpl) UpdateDeployment(deployment *v1.Deployment) error {
 
 // RemoveDeployment updates a deployment with a tombstone
 func (b *storeImpl) RemoveDeployment(id string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "Deployment")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Deployment")
 
 	var deployment *v1.Deployment
 	var exists bool
@@ -231,7 +232,7 @@ func (b *storeImpl) RemoveDeployment(id string) error {
 
 // GetTombstonedDeployments returns all of the deployments that have been tombstoned.
 func (b *storeImpl) GetTombstonedDeployments() ([]*v1.Deployment, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "TombstonedDeployment")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "TombstonedDeployment")
 	var deployments []*v1.Deployment
 	err := b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentGraveyard))
@@ -249,7 +250,7 @@ func (b *storeImpl) GetTombstonedDeployments() ([]*v1.Deployment, error) {
 }
 
 func (b *storeImpl) addDeploymentToGraveyard(deployment *v1.Deployment) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "TombstonedDeployment")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "TombstonedDeployment")
 	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentGraveyard))
 

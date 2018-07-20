@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/dberrors"
@@ -30,7 +31,7 @@ func (b *storeImpl) getBenchmark(id string, bucket *bolt.Bucket) (benchmark *v1.
 
 // GetBenchmark returns benchmark with given id.
 func (b *storeImpl) GetBenchmark(id string) (benchmark *v1.Benchmark, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "Benchmark")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Benchmark")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(benchmarkBucket))
 		benchmark, exists, err = b.getBenchmark(id, bucket)
@@ -41,7 +42,7 @@ func (b *storeImpl) GetBenchmark(id string) (benchmark *v1.Benchmark, exists boo
 
 // GetBenchmarks retrieves benchmarks matching the request from bolt
 func (b *storeImpl) GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*v1.Benchmark, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "Benchmark")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Benchmark")
 	var benchmarks []*v1.Benchmark
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(benchmarkBucket))
@@ -59,7 +60,7 @@ func (b *storeImpl) GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*v1.Bench
 
 // AddBenchmark adds a benchmark to bolt
 func (b *storeImpl) AddBenchmark(benchmark *v1.Benchmark) (string, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "Benchmark")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Benchmark")
 	benchmark.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(benchmarkBucket))
@@ -84,7 +85,7 @@ func (b *storeImpl) AddBenchmark(benchmark *v1.Benchmark) (string, error) {
 
 // UpdateBenchmark updates a benchmark to bolt
 func (b *storeImpl) UpdateBenchmark(benchmark *v1.Benchmark) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "Benchmark")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Benchmark")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(benchmarkBucket))
 		currBenchmark, exists, err := b.getBenchmark(benchmark.GetId(), bucket)
@@ -110,7 +111,7 @@ func (b *storeImpl) UpdateBenchmark(benchmark *v1.Benchmark) error {
 
 // RemoveBenchmark removes a benchmark.
 func (b *storeImpl) RemoveBenchmark(id string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "Benchmark")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Benchmark")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(benchmarkBucket))
 		benchmark, exists, err := b.getBenchmark(id, bucket)

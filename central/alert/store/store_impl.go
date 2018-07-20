@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/boltdb/bolt"
@@ -25,7 +26,7 @@ func (b *storeImpl) upsertListAlert(bucket *bolt.Bucket, alert *v1.Alert) error 
 
 // GetAlert returns an alert with given id.
 func (b *storeImpl) ListAlert(id string) (alert *v1.ListAlert, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "ListAlert")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ListAlert")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(alertListBucket))
 		alert = new(v1.ListAlert)
@@ -43,7 +44,7 @@ func (b *storeImpl) ListAlert(id string) (alert *v1.ListAlert, exists bool, err 
 
 // GetAlerts ignores the request and gives all values
 func (b *storeImpl) ListAlerts() ([]*v1.ListAlert, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "ListAlert")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListAlert")
 
 	var alerts []*v1.ListAlert
 	err := b.View(func(tx *bolt.Tx) error {
@@ -96,7 +97,7 @@ func (b *storeImpl) getAlert(id string, bucket *bolt.Bucket) (alert *v1.Alert, e
 
 // GetAlert returns an alert with given id.
 func (b *storeImpl) GetAlert(id string) (alert *v1.Alert, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "Alert")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Alert")
 
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(alertBucket))
@@ -109,7 +110,7 @@ func (b *storeImpl) GetAlert(id string) (alert *v1.Alert, exists bool, err error
 
 // GetAlerts ignores the request and gives all values
 func (b *storeImpl) GetAlerts() ([]*v1.Alert, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "Alert")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Alert")
 
 	var alerts []*v1.Alert
 	err := b.View(func(tx *bolt.Tx) error {
@@ -128,7 +129,7 @@ func (b *storeImpl) GetAlerts() ([]*v1.Alert, error) {
 
 // CountAlerts returns the number of non-stale alerts.
 func (b *storeImpl) CountAlerts() (count int, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Count", "Alert")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "Alert")
 
 	err = b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(alertBucket))
@@ -143,7 +144,7 @@ func (b *storeImpl) CountAlerts() (count int, err error) {
 
 // AddAlert adds an alert into Bolt
 func (b *storeImpl) AddAlert(alert *v1.Alert) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "Alert")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Alert")
 
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(alertBucket))
@@ -168,7 +169,7 @@ func (b *storeImpl) AddAlert(alert *v1.Alert) error {
 
 // UpdateAlert upserts an alert into Bolt
 func (b *storeImpl) UpdateAlert(alert *v1.Alert) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "Alert")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Alert")
 
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(alertBucket))

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/dberrors"
@@ -19,7 +20,7 @@ type storeImpl struct {
 
 // GetSensorEvent returns sensor event with given id.
 func (b *storeImpl) GetSensorEvent(id uint64) (event *v1.SensorEvent, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "SensorEvent")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "SensorEvent")
 
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(sensorEventBucket))
@@ -38,7 +39,7 @@ func (b *storeImpl) GetSensorEvent(id uint64) (event *v1.SensorEvent, exists boo
 
 // GetSensorEventIds returns the list of all ids currently stored in bold.
 func (b *storeImpl) GetSensorEventIds(clusterID string) ([]uint64, map[string]uint64, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "SensorEvent")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "SensorEvent")
 
 	var ids []uint64
 	sensorIDToIds := make(map[string]uint64)
@@ -68,7 +69,7 @@ func (b *storeImpl) GetSensorEventIds(clusterID string) ([]uint64, map[string]ui
 
 // AddSensorEvent adds a sensor event to bolt
 func (b *storeImpl) AddSensorEvent(event *v1.SensorEvent) (uint64, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "SensorEvent")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "SensorEvent")
 
 	var id uint64
 	err := b.Update(func(tx *bolt.Tx) error {
@@ -97,7 +98,7 @@ func (b *storeImpl) AddSensorEvent(event *v1.SensorEvent) (uint64, error) {
 
 // UpdateSensorEvent updates a sensor event to bolt
 func (b *storeImpl) UpdateSensorEvent(id uint64, event *v1.SensorEvent) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "SensorEvent")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "SensorEvent")
 
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(sensorEventBucket))
@@ -117,7 +118,7 @@ func (b *storeImpl) UpdateSensorEvent(id uint64, event *v1.SensorEvent) error {
 
 // RemoveSensorEvent removes a sensor event from bolt.
 func (b *storeImpl) RemoveSensorEvent(id uint64) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "SensorEvent")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "SensorEvent")
 
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(sensorEventBucket))

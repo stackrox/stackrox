@@ -3,6 +3,7 @@ package store
 import (
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/boltdb/bolt"
@@ -15,7 +16,7 @@ type storeImpl struct {
 
 // GetNamespace returns namespace with given id.
 func (b *storeImpl) GetNamespace(id string) (namespace *v1.Namespace, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "Namespace")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Namespace")
 	namespace = new(v1.Namespace)
 	err = b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(namespaceBucket))
@@ -32,7 +33,7 @@ func (b *storeImpl) GetNamespace(id string) (namespace *v1.Namespace, exists boo
 
 // GetNamespaces retrieves namespaces matching the request from bolt
 func (b *storeImpl) GetNamespaces() ([]*v1.Namespace, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "Namespace")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Namespace")
 	var namespaces []*v1.Namespace
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(namespaceBucket))
@@ -50,7 +51,7 @@ func (b *storeImpl) GetNamespaces() ([]*v1.Namespace, error) {
 
 // AddNamespace adds a namespace to bolt
 func (b *storeImpl) AddNamespace(namespace *v1.Namespace) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "Namespace")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Namespace")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespaceBucket))
 		bytes, err := proto.Marshal(namespace)
@@ -64,7 +65,7 @@ func (b *storeImpl) AddNamespace(namespace *v1.Namespace) error {
 
 // UpdateNamespace updates a namespace to bolt
 func (b *storeImpl) UpdateNamespace(namespace *v1.Namespace) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "Namespace")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Namespace")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespaceBucket))
 		bytes, err := proto.Marshal(namespace)
@@ -77,7 +78,7 @@ func (b *storeImpl) UpdateNamespace(namespace *v1.Namespace) error {
 
 // RemoveNamespace removes a namespace.
 func (b *storeImpl) RemoveNamespace(id string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "Namespace")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Namespace")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespaceBucket))
 		return bucket.Delete([]byte(id))

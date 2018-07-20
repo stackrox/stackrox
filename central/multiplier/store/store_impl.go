@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/dberrors"
@@ -30,7 +31,7 @@ func (b *storeImpl) getMultiplier(id string, bucket *bolt.Bucket) (multiplier *v
 
 // GetMultiplier returns multiplier with given id.
 func (b *storeImpl) GetMultiplier(id string) (multiplier *v1.Multiplier, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "Multiplier")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Multiplier")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(multiplierBucket))
 		multiplier, exists, err = b.getMultiplier(id, bucket)
@@ -41,7 +42,7 @@ func (b *storeImpl) GetMultiplier(id string) (multiplier *v1.Multiplier, exists 
 
 // GetMultipliers retrieves multipliers from bolt
 func (b *storeImpl) GetMultipliers() ([]*v1.Multiplier, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "Multiplier")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Multiplier")
 	var multipliers []*v1.Multiplier
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(multiplierBucket))
@@ -59,7 +60,7 @@ func (b *storeImpl) GetMultipliers() ([]*v1.Multiplier, error) {
 
 // AddMultiplier adds a multiplier into bolt
 func (b *storeImpl) AddMultiplier(multiplier *v1.Multiplier) (string, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "Multiplier")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Multiplier")
 	multiplier.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(multiplierBucket))
@@ -84,7 +85,7 @@ func (b *storeImpl) AddMultiplier(multiplier *v1.Multiplier) (string, error) {
 
 // UpdateMultiplier upserts a multiplier into bolt
 func (b *storeImpl) UpdateMultiplier(multiplier *v1.Multiplier) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "Multiplier")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Multiplier")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(multiplierBucket))
 		// If the update is changing the name, check if the name has already been taken
@@ -103,7 +104,7 @@ func (b *storeImpl) UpdateMultiplier(multiplier *v1.Multiplier) error {
 
 // RemoveMultiplier removes a multiplier from bolt
 func (b *storeImpl) RemoveMultiplier(id string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "Multiplier")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Multiplier")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(multiplierBucket))
 		key := []byte(id)

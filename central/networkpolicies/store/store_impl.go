@@ -3,6 +3,7 @@ package store
 import (
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/boltdb/bolt"
@@ -26,7 +27,7 @@ func (b *storeImpl) upsertNetworkPolicy(np *v1.NetworkPolicy) error {
 
 // GetNetworkPolicy returns network policy with given id.
 func (b *storeImpl) GetNetworkPolicy(id string) (np *v1.NetworkPolicy, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "NetworkPolicy")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "NetworkPolicy")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(networkPolicyBucket))
 		np = new(v1.NetworkPolicy)
@@ -42,7 +43,7 @@ func (b *storeImpl) GetNetworkPolicy(id string) (np *v1.NetworkPolicy, exists bo
 
 // GetNetworkPolicies retrieves network policies matching the request from bolt
 func (b *storeImpl) GetNetworkPolicies() ([]*v1.NetworkPolicy, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "NetworkPolicy")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "NetworkPolicy")
 	var policies []*v1.NetworkPolicy
 	err := b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(networkPolicyBucket))
@@ -60,7 +61,7 @@ func (b *storeImpl) GetNetworkPolicies() ([]*v1.NetworkPolicy, error) {
 
 // CountNetworkPolicies returns the number of network policies.
 func (b *storeImpl) CountNetworkPolicies() (count int, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Count", "NetworkPolicy")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "NetworkPolicy")
 	err = b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(networkPolicyBucket))
 		return b.ForEach(func(k, v []byte) error {
@@ -74,19 +75,19 @@ func (b *storeImpl) CountNetworkPolicies() (count int, err error) {
 
 // AddNetworkPolicy adds a network policy to bolt
 func (b *storeImpl) AddNetworkPolicy(np *v1.NetworkPolicy) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "NetworkPolicy")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "NetworkPolicy")
 	return b.upsertNetworkPolicy(np)
 }
 
 // UpdateNetworkPolicy updates a network policy to bolt
 func (b *storeImpl) UpdateNetworkPolicy(np *v1.NetworkPolicy) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "NetworkPolicy")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "NetworkPolicy")
 	return b.upsertNetworkPolicy(np)
 }
 
 // RemoveNetworkPolicy removes a network policy
 func (b *storeImpl) RemoveNetworkPolicy(id string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "NetworkPolicy")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "NetworkPolicy")
 	var err error
 	b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(networkPolicyBucket))

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/dberrors"
@@ -19,7 +20,7 @@ type storeImpl struct {
 
 // GetDNRIntegration retrieves a DNR integration from Bolt.
 func (b *storeImpl) GetDNRIntegration(id string) (integration *v1.DNRIntegration, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "DNRIntegration")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "DNRIntegration")
 	err = b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(dnrIntegrationBucket))
 		key := []byte(id)
@@ -43,7 +44,7 @@ func (b *storeImpl) GetDNRIntegration(id string) (integration *v1.DNRIntegration
 
 // GetDNRIntegrations retrieves all D&R integrations from bolt
 func (b *storeImpl) GetDNRIntegrations(req *v1.GetDNRIntegrationsRequest) (integrations []*v1.DNRIntegration, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "DNRIntegration")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "DNRIntegration")
 	err = b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(dnrIntegrationBucket))
 		return b.ForEach(func(k, v []byte) error {
@@ -67,7 +68,7 @@ func (b *storeImpl) GetDNRIntegrations(req *v1.GetDNRIntegrationsRequest) (integ
 
 // AddDNRIntegration adds a DNR integration to Bolt.
 func (b *storeImpl) AddDNRIntegration(integration *v1.DNRIntegration) (string, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "DNRIntegration")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "DNRIntegration")
 	id := uuid.NewV4().String()
 	integration.Id = id
 	err := b.Update(func(tx *bolt.Tx) error {
@@ -87,7 +88,7 @@ func (b *storeImpl) AddDNRIntegration(integration *v1.DNRIntegration) (string, e
 
 // UpdateDNRIntegration updates the DNR integration in Bolt.
 func (b *storeImpl) UpdateDNRIntegration(integration *v1.DNRIntegration) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "DNRIntegration")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "DNRIntegration")
 	if integration.GetId() == "" {
 		return errors.New("cannot update; empty id provided")
 	}
@@ -107,7 +108,7 @@ func (b *storeImpl) UpdateDNRIntegration(integration *v1.DNRIntegration) error {
 
 // RemoveDNRIntegration removes the DNR integration from Bolt.
 func (b *storeImpl) RemoveDNRIntegration(id string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "DNRIntegration")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "DNRIntegration")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(dnrIntegrationBucket))
 		key := []byte(id)

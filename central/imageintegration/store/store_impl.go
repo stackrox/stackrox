@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/dberrors"
@@ -30,7 +31,7 @@ func (b *storeImpl) getImageIntegration(id string, bucket *bolt.Bucket) (integra
 
 // GetImageIntegration returns integration with given id.
 func (b *storeImpl) GetImageIntegration(id string) (integration *v1.ImageIntegration, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Get", "ImageIntegration")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ImageIntegration")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(imageIntegrationBucket))
 		integration, exists, err = b.getImageIntegration(id, bucket)
@@ -41,7 +42,7 @@ func (b *storeImpl) GetImageIntegration(id string) (integration *v1.ImageIntegra
 
 // GetImageIntegrations retrieves integrations from bolt
 func (b *storeImpl) GetImageIntegrations(request *v1.GetImageIntegrationsRequest) ([]*v1.ImageIntegration, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "GetMany", "ImageIntegration")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ImageIntegration")
 	var integrations []*v1.ImageIntegration
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(imageIntegrationBucket))
@@ -59,7 +60,7 @@ func (b *storeImpl) GetImageIntegrations(request *v1.GetImageIntegrationsRequest
 
 // AddImageIntegration adds a integration into bolt
 func (b *storeImpl) AddImageIntegration(integration *v1.ImageIntegration) (string, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Add", "ImageIntegration")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "ImageIntegration")
 	integration.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(imageIntegrationBucket))
@@ -84,7 +85,7 @@ func (b *storeImpl) AddImageIntegration(integration *v1.ImageIntegration) (strin
 
 // UpdateImageIntegration upserts a integration into bolt
 func (b *storeImpl) UpdateImageIntegration(integration *v1.ImageIntegration) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Update", "ImageIntegration")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "ImageIntegration")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(imageIntegrationBucket))
 		// If the update is changing the name, check if the name has already been taken
@@ -103,7 +104,7 @@ func (b *storeImpl) UpdateImageIntegration(integration *v1.ImageIntegration) err
 
 // RemoveImageIntegration removes a integration from bolt
 func (b *storeImpl) RemoveImageIntegration(id string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), "Remove", "ImageIntegration")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "ImageIntegration")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(imageIntegrationBucket))
 		key := []byte(id)
