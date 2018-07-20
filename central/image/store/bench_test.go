@@ -26,22 +26,14 @@ func BenchmarkAddImage(b *testing.B) {
 	store := getImageStore(b)
 	image := fixtures.GetImage()
 	for i := 0; i < b.N; i++ {
-		store.AddImage(image)
-	}
-}
-
-func BenchmarkUpdateImage(b *testing.B) {
-	store := getImageStore(b)
-	image := fixtures.GetImage()
-	for i := 0; i < b.N; i++ {
-		store.UpdateImage(image)
+		store.UpsertImage(image)
 	}
 }
 
 func BenchmarkGetImage(b *testing.B) {
 	store := getImageStore(b)
 	image := fixtures.GetImage()
-	store.AddImage(image)
+	store.UpsertImage(image)
 	for i := 0; i < b.N; i++ {
 		store.GetImage(image.GetName().GetSha())
 	}
@@ -50,7 +42,7 @@ func BenchmarkGetImage(b *testing.B) {
 func BenchmarkListImage(b *testing.B) {
 	store := getImageStore(b)
 	image := fixtures.GetImage()
-	store.AddImage(image)
+	store.UpsertImage(image)
 	for i := 0; i < b.N; i++ {
 		store.ListImage(image.GetName().GetSha())
 	}

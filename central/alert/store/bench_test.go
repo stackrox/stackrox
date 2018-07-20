@@ -52,14 +52,14 @@ func BenchmarkListAlerts(b *testing.B) {
 	listAlert := &v1.ListAlert{
 		Id:   uuid.NewDummy().String(),
 		Time: types.TimestampNow(),
-		Policy: &v1.ListAlert_Policy{
+		Policy: &v1.ListAlertPolicy{
 			Id:          uuid.NewV4().String(),
 			Name:        "this is my policy name",
 			Severity:    v1.Severity_MEDIUM_SEVERITY,
 			Description: "this is my description and it's fairly long, but typically descriptions are fairly long",
 			Categories:  []string{"Category 1", "Category 2", "Category 3"},
 		},
-		Deployment: &v1.ListAlert_Deployment{
+		Deployment: &v1.ListAlertDeployment{
 			Id:          uuid.NewV4().String(),
 			Name:        "quizzical_cat",
 			UpdatedAt:   types.TimestampNow(),
