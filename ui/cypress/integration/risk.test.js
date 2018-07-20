@@ -36,14 +36,10 @@ describe('Risk page', () => {
         cy.url().should('contain', '/main/images');
     });
 
-    it('should not show search suggestions if category option is selected', () => {
-        cy.get(selectors.pageSearchInput).type('Cluster:{enter}', { force: true });
-        cy.get(selectors.pageSearchSuggestions).should('not.be.visible');
-    });
-
     it('should close the side panel on search filter', () => {
         cy.get(selectors.pageSearchInput).type('Cluster:{enter}', { force: true });
         cy.get(selectors.pageSearchInput).type('remote{enter}', { force: true });
+        cy.get(selectors.pageSearchSuggestions).should('not.be.visible');
         cy.get('div[data-test-id="panel"]').should('not.be.visible');
     });
 });

@@ -4,6 +4,8 @@ import { actions, types } from 'reducers/globalSearch';
 import { actions as alertsActions } from 'reducers/alerts';
 import { actions as imagesActions } from 'reducers/images';
 import { actions as deploymentsActions } from 'reducers/deployments';
+import { actions as environmentActions } from 'reducers/environment';
+import { actions as secretsActions } from 'reducers/secrets';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
@@ -36,6 +38,12 @@ export function* passthroughGlobalSearchOptions({ searchOptions, category }) {
             break;
         case 'DEPLOYMENTS':
             yield put(deploymentsActions.setDeploymentsSearchOptions(searchOptions));
+            break;
+        case 'SECRETS':
+            yield put(secretsActions.setSecretsSearchOptions(searchOptions));
+            break;
+        case 'ENVIRONMENT':
+            yield put(environmentActions.setEnvironmentSearchOptions(searchOptions));
             break;
         default:
             break;

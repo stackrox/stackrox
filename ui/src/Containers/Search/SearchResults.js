@@ -37,6 +37,11 @@ const tabs = [
         text: 'Images',
         category: 'IMAGES',
         disabled: false
+    },
+    {
+        text: 'Secrets',
+        category: 'SECRETS',
+        disabled: false
     }
 ];
 
@@ -48,7 +53,7 @@ const mapping = {
     },
     DEPLOYMENTS: {
         filterOn: ['VIOLATIONS'],
-        viewOn: ['RISK'],
+        viewOn: ['ENVIRONMENT', 'RISK'],
         name: 'Deployment Name'
     },
     POLICIES: {
@@ -60,6 +65,11 @@ const mapping = {
         filterOn: [],
         viewOn: ['VIOLATIONS'],
         name: 'Policy Name'
+    },
+    SECRETS: {
+        filterOn: ['RISK'],
+        viewOn: ['SECRETS'],
+        name: 'Secret Name'
     }
 };
 
@@ -67,6 +77,8 @@ const filterOnMapping = {
     RISK: 'DEPLOYMENTS',
     VIOLATIONS: 'ALERTS'
 };
+
+const viewOnFilters = ['ENVIRONMENT'];
 
 class SearchResults extends Component {
     static propTypes = {
@@ -154,20 +166,23 @@ class SearchResults extends Component {
                 },
                 { key: 'category', keyValueFunc: value => capitalize(value), label: 'Type' },
                 {
-                    keys: ['category', 'id'],
+                    keys: ['category', 'id', 'name', 'score'],
                     label: 'View On:',
-                    keyValueFunc: (category, id) => (
-                        <ul className="p-0 list-reset">
+                    keyValueFunc: (category, id, name) => (
+                        <ul className="p-0 list-reset flex flex-row">
                             {!mapping[category] || !mapping[category].viewOn ? (
                                 <li className="text-base-400">N/A</li>
                             ) : (
-                                mapping[category].viewOn.map(item => (
-                                    <li key={id}>
+                                mapping[category].viewOn.map((item, index) => (
+                                    <li key={index}>
                                         <button
                                             onClick={this.onLinkHandler(
                                                 category,
-                                                category,
-                                                `/main/${lowerCase(item)}/${id}`
+                                                item,
+                                                `/main/${lowerCase(item)}${
+                                                    viewOnFilters.includes(item) ? '' : `/${id}`
+                                                }`,
+                                                viewOnFilters.includes(item) ? name : null
                                             )}
                                             className="inline-block py-1 px-2 no-underline text-center uppercase bg-primary-100 border-2 border-base-200 mr-1 rounded-sm text-sm text-base-600"
                                         >
@@ -183,12 +198,12 @@ class SearchResults extends Component {
                     keys: ['category', 'id', 'name'],
                     label: 'Filter On:',
                     keyValueFunc: (category, id, name) => (
-                        <ul className="p-0 list-reset flex">
+                        <ul className="p-0 list-reset flex flex-row">
                             {!mapping[category] || !mapping[category].filterOn ? (
                                 <li className="text-base-400">N/A</li>
                             ) : (
-                                mapping[category].filterOn.map(item => (
-                                    <li key={id}>
+                                mapping[category].filterOn.map((item, index) => (
+                                    <li key={index}>
                                         <button
                                             onClick={this.onLinkHandler(
                                                 category,
