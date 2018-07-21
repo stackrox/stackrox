@@ -53,7 +53,7 @@ func TestConvert(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID:       types.UID("FooID"),
 					Name:      "Foo",
-					Namespace: "World",
+					Namespace: "namespace",
 					Labels: map[string]string{
 						"key":      "value",
 						"question": "answer",
@@ -196,7 +196,7 @@ func TestConvert(t *testing.T) {
 			expectedDeployment: &pkgV1.Deployment{
 				Id:        "FooID",
 				Name:      "Foo",
-				Namespace: "World",
+				Namespace: "namespace",
 				Type:      kubernetes.Deployment,
 				Version:   "100",
 				Replicas:  15,
@@ -258,8 +258,8 @@ func TestConvert(t *testing.T) {
 						},
 						Secrets: []*pkgV1.EmbeddedSecret{
 							{
-								Id:   "secretVol1",
-								Name: "secretVol1",
+								Id:   "private_key",
+								Name: "private_key",
 								Path: "/var/secrets",
 							},
 						},
