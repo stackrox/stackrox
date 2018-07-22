@@ -75,6 +75,9 @@ func (p *persistedEventQueue) dedupeEvents(firstEvent *v1.SensorEvent, secondEve
 		secondEvent.Action = v1.ResourceAction_CREATE_RESOURCE
 		return secondEvent, false, nil
 	}
+	if firstEvent.GetAction() == v1.ResourceAction_PREEXISTING_RESOURCE && secondEvent.GetAction() == v1.ResourceAction_UPDATE_RESOURCE {
+		return secondEvent, false, nil
+	}
 
 	// Sequences that replace the old action and data.
 	if firstEvent.GetAction() == v1.ResourceAction_UPDATE_RESOURCE && secondEvent.GetAction() == v1.ResourceAction_UPDATE_RESOURCE {
