@@ -50,7 +50,6 @@ func (ds *searcherImpl) SearchRawAlerts(request *v1.ParsedSearchRequest) ([]*v1.
 }
 
 func (ds *searcherImpl) searchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.ListAlert, []search.Result, error) {
-	log.Infof("Search Alerts: %+v", request)
 	results, err := ds.indexer.SearchAlerts(request)
 	if err != nil {
 		return nil, nil, err
@@ -69,7 +68,6 @@ func (ds *searcherImpl) searchListAlerts(request *v1.ParsedSearchRequest) ([]*v1
 		alerts = append(alerts, alert)
 		newResults = append(newResults, result)
 	}
-	log.Infof("Results: %+v", newResults)
 	return alerts, newResults, nil
 }
 

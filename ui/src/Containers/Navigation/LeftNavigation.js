@@ -1,8 +1,13 @@
 import React, { Component } from 'react';
 import * as Icon from 'react-feather';
+import { connect } from 'react-redux';
 import { withRouter, NavLink as Link } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
+import { createStructuredSelector } from 'reselect';
 import find from 'lodash/find';
+import PropTypes from 'prop-types';
+
+import { selectors } from 'reducers';
 
 import NavigationPanel from './NavigationPanel';
 
@@ -48,8 +53,16 @@ const navLinks = [
 
 class LeftNavigation extends Component {
     static propTypes = {
-        location: ReactRouterPropTypes.location.isRequired
+        location: ReactRouterPropTypes.location.isRequired,
+        metadata: PropTypes.shape({ version: PropTypes.string })
     };
+
+    static defaultProps = {
+        metadata: {
+            version: 'latest'
+        }
+    };
+
     constructor(props) {
         super(props);
         this.state = {
@@ -142,6 +155,14 @@ class LeftNavigation extends Component {
         </ul>
     );
 
+    renderVersion = () => (
+        <div className="flex text-center">
+            <span className="left-navigation p-3 text-primary-400 word-break-all">
+                v{this.props.metadata.version}
+            </span>
+        </div>
+    );
+
     renderNavigationPanel = () => {
         if (!this.state.panelType) return '';
         return <NavigationPanel panelType={this.state.panelType} onClose={this.closePanel} />;
@@ -149,12 +170,17 @@ class LeftNavigation extends Component {
 
     render() {
         return (
-            <div className="flex flex-col bg-primary-800">
+            <div className="flex flex-col justify-between bg-primary-800">
                 <nav className="left-navigation">{this.renderLeftSideNavLinks()}</nav>
+                {this.renderVersion()}
                 {this.renderNavigationPanel()}
             </div>
         );
     }
 }
 
-export default withRouter(LeftNavigation);
+const mapStateToProps = createStructuredSelector({
+    metadata: selectors.getMetadata
+});
+
+export default withRouter(connect(mapStateToProps)(LeftNavigation));

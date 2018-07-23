@@ -162,6 +162,10 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
     word-break: break-word;
 }
 
+.word-break-all {
+    word-break: break-all;
+}
+
 ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     @apply break-words;
 }

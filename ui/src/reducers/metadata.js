@@ -16,7 +16,7 @@ export const actions = {
 
 // Reducers
 
-const metadata = (state = null, action) => {
+const metadata = (state = {}, action) => {
     if (action.type === types.FETCH_METADATA.SUCCESS) {
         return action.response;
     }
