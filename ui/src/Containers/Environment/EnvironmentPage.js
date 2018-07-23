@@ -8,6 +8,7 @@ import { actions as environmentActions } from 'reducers/environment';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import EnvironmentGraph from 'Components/EnvironmentGraph';
+import * as Icon from 'react-feather';
 
 class EnvironmentPage extends Component {
     static propTypes = {
@@ -18,6 +19,7 @@ class EnvironmentPage extends Component {
         setSearchModifiers: PropTypes.func.isRequired,
         setSearchSuggestions: PropTypes.func.isRequired,
         isViewFiltered: PropTypes.bool.isRequired,
+        fetchEnvironmentGraph: PropTypes.func.isRequired,
         environmentGraph: PropTypes.shape({
             nodes: PropTypes.arrayOf(
                 PropTypes.shape({
@@ -58,8 +60,15 @@ class EnvironmentPage extends Component {
                             />
                         </PageHeader>
                     </div>
-                    <section className="environment-grid-bg flex flex-1">
+                    <section className="environment-grid-bg flex flex-1 relative">
                         {this.renderGraph()}
+                        <button
+                            className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-300 rounded-sm text-sm"
+                            onClick={this.props.fetchEnvironmentGraph}
+                        >
+                            <Icon.Circle className="h-2 w-2" />
+                            <span className="pl-1">Node updates available</span>
+                        </button>
                     </section>
                 </div>
             </section>
@@ -81,6 +90,7 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = {
+    fetchEnvironmentGraph: environmentActions.fetchEnvironmentGraph.request,
     setSearchOptions: environmentActions.setEnvironmentSearchOptions,
     setSearchModifiers: environmentActions.setEnvironmentSearchModifiers,
     setSearchSuggestions: environmentActions.setEnvironmentSearchSuggestions

@@ -28,9 +28,14 @@ function* watchEnvironmentSearchOptions() {
     yield takeLatest(types.SET_SEARCH_OPTIONS, filterEnvironmentPageBySearch);
 }
 
+function* watchFetchEnvironmentGraphRequest() {
+    yield takeLatest(types.FETCH_ENVIRONMENT_GRAPH.REQUEST, filterEnvironmentPageBySearch);
+}
+
 export default function* environment() {
     yield all([
         takeEveryNewlyMatchedLocation(environmentPath, filterEnvironmentPageBySearch),
-        fork(watchEnvironmentSearchOptions)
+        fork(watchEnvironmentSearchOptions),
+        fork(watchFetchEnvironmentGraphRequest)
     ]);
 }
