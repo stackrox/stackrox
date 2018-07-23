@@ -78,6 +78,7 @@ func (d *dnrIntegrationImpl) makeAuthenticatedRequest(method, path string, param
 	if err != nil {
 		return nil, fmt.Errorf("request to D&R failed: %s", err)
 	}
+	defer resp.Body.Close()
 
 	// We read the results a little early so that, if the body exists,
 	// we can print it out in the response for easier debuggability.
