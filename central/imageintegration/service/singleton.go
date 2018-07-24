@@ -3,7 +3,7 @@ package service
 import (
 	"sync"
 
-	detection "bitbucket.org/stack-rox/apollo/central/detection/singletons"
+	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/central/imageintegration/datastore"
 )
 

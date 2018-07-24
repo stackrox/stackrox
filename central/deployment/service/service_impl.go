@@ -46,7 +46,7 @@ var (
 type serviceImpl struct {
 	datastore   datastore.DataStore
 	multipliers multiplierStore.Store
-	enricher    *enrichment.Enricher
+	enricher    enrichment.Enricher
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

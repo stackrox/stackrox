@@ -7,7 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/cluster/store"
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	dnrDataStore "bitbucket.org/stack-rox/apollo/central/dnrintegration/datastore"
-	globaldb "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
+	"bitbucket.org/stack-rox/apollo/central/globaldb"
 )
 
 var (

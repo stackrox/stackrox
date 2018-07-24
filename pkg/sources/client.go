@@ -69,6 +69,7 @@ func (c *Client) doUpdate() {
 func (c *Client) replaceImageIntegrations(resp *v1.GetImageIntegrationsResponse) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
+
 	c.integrations = nil
 	for _, integration := range resp.GetIntegrations() {
 		s, err := NewImageIntegration(integration)
@@ -93,6 +94,7 @@ func (c *Client) Integrations() []*ImageIntegration {
 
 	c.lock.RLock()
 	defer c.lock.RUnlock()
+
 	integrations := make([]*ImageIntegration, len(c.integrations))
 	for i, s := range c.integrations {
 		integrations[i] = s

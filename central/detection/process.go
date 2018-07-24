@@ -6,8 +6,13 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 )
 
+type alertWithEnforcement struct {
+	alert       *v1.Alert
+	enforcement v1.EnforcementAction
+}
+
 // ProcessDeploymentEvent takes in a deployment event and return alerts.
-func (d *Detector) ProcessDeploymentEvent(deployment *v1.Deployment, action v1.ResourceAction) (alertID string, enforcement v1.EnforcementAction) {
+func (d *detectorImpl) ProcessDeploymentEvent(deployment *v1.Deployment, action v1.ResourceAction) (alertID string, enforcement v1.EnforcementAction) {
 	if _, err := d.enricher.Enrich(deployment); err != nil {
 		logger.Errorf("Error enriching deployment %s: %s", deployment.GetName(), err)
 	}
@@ -17,9 +22,10 @@ func (d *Detector) ProcessDeploymentEvent(deployment *v1.Deployment, action v1.R
 	return
 }
 
-func (d *Detector) evaluatePolicies(deployment *v1.Deployment, action v1.ResourceAction) []alertWithEnforcement {
+func (d *detectorImpl) evaluatePolicies(deployment *v1.Deployment, action v1.ResourceAction) []alertWithEnforcement {
 	d.policyMutex.RLock()
 	defer d.policyMutex.RUnlock()
+
 	var enforcementActions []alertWithEnforcement
 	for _, policy := range d.policies {
 		alert, enforceAction := d.processTask(Task{deployment, action, policy})
@@ -34,14 +40,7 @@ func (d *Detector) evaluatePolicies(deployment *v1.Deployment, action v1.Resourc
 	return enforcementActions
 }
 
-func mergeAlerts(old, new *v1.Alert) *v1.Alert {
-	new.Id = old.GetId()
-	new.Enforcement = old.GetEnforcement()
-	new.FirstOccurred = old.GetFirstOccurred()
-	return new
-}
-
-func (d *Detector) processTask(task Task) (alert *v1.Alert, enforcement v1.EnforcementAction) {
+func (d *detectorImpl) processTask(task Task) (alert *v1.Alert, enforcement v1.EnforcementAction) {
 	existingAlerts := d.getExistingAlerts(task.deployment.GetId(), task.policy.GetId())
 
 	// No further processing is needed when a deployment is removed.
@@ -98,7 +97,7 @@ func (d *Detector) processTask(task Task) (alert *v1.Alert, enforcement v1.Enfor
 	return
 }
 
-func (d *Detector) markExistingAlertsAsStale(existingAlerts []*v1.Alert) {
+func (d *detectorImpl) markExistingAlertsAsStale(existingAlerts []*v1.Alert) {
 	for _, a := range existingAlerts {
 		a.Stale = true
 		a.MarkedStale = ptypes.TimestampNow()
@@ -108,7 +107,7 @@ func (d *Detector) markExistingAlertsAsStale(existingAlerts []*v1.Alert) {
 	}
 }
 
-func (d *Detector) getExistingAlerts(deploymentID, policyID string) (existingAlerts []*v1.Alert) {
+func (d *detectorImpl) getExistingAlerts(deploymentID, policyID string) (existingAlerts []*v1.Alert) {
 	var err error
 	existingAlerts, err = d.alertStorage.SearchRawAlerts(
 		search.NewQueryBuilder().
@@ -128,7 +127,7 @@ func (d *Detector) getExistingAlerts(deploymentID, policyID string) (existingAle
 // Each alert can have an enforcement response, but (assuming that enforcement is mutually exclusive) only one can be
 // taken per deployment.
 // Scale to Zero Replicas takes precedence over unsatisfiable node constraints.
-func (d *Detector) determineEnforcementResponse(enforcementActions []alertWithEnforcement) (alertID string, action v1.EnforcementAction) {
+func (d *detectorImpl) determineEnforcementResponse(enforcementActions []alertWithEnforcement) (alertID string, action v1.EnforcementAction) {
 	for _, enfAction := range enforcementActions {
 		if enfAction.enforcement == v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT {
 			return enfAction.alert.GetId(), v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT
@@ -143,7 +142,9 @@ func (d *Detector) determineEnforcementResponse(enforcementActions []alertWithEn
 	return
 }
 
-type alertWithEnforcement struct {
-	alert       *v1.Alert
-	enforcement v1.EnforcementAction
+func mergeAlerts(old, new *v1.Alert) *v1.Alert {
+	new.Id = old.GetId()
+	new.Enforcement = old.GetEnforcement()
+	new.FirstOccurred = old.GetFirstOccurred()
+	return new
 }

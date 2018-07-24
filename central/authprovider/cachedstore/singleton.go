@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"bitbucket.org/stack-rox/apollo/central/authprovider/store"
-	globaldb "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
+	"bitbucket.org/stack-rox/apollo/central/globaldb"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 )
 

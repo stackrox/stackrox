@@ -27,8 +27,8 @@ var logger = logging.LoggerForModule()
 
 // Service is the struct that manages the SensorEvent API
 type serviceImpl struct {
-	detector *detection.Detector
-	scorer   *risk.Scorer
+	detector detection.Detector
+	scorer   risk.Scorer
 
 	deploymentEvents sensorEventStore.Store
 

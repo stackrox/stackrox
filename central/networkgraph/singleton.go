@@ -5,7 +5,7 @@ import (
 
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	globaldb "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
+	"bitbucket.org/stack-rox/apollo/central/globaldb"
 	namespaceDataStore "bitbucket.org/stack-rox/apollo/central/namespace/store"
 	"bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
 	networkPolicyStore "bitbucket.org/stack-rox/apollo/central/networkpolicies/store"

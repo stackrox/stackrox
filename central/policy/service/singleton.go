@@ -5,7 +5,7 @@ import (
 
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	detection "bitbucket.org/stack-rox/apollo/central/detection/singletons"
+	"bitbucket.org/stack-rox/apollo/central/detection"
 	notifierStore "bitbucket.org/stack-rox/apollo/central/notifier/store"
 	"bitbucket.org/stack-rox/apollo/central/policy/datastore"
 )

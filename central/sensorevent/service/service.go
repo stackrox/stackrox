@@ -34,9 +34,13 @@ type Service interface {
 }
 
 // New returns a new instance of service.
-func New(detector *detection.Detector, scorer *risk.Scorer, deploymentEvents deploymentEventStore.Store,
-	images imageDataStore.DataStore, deployments deploymentDataStore.DataStore,
-	clusters clusterDataStore.DataStore, networkPolicies networkPolicyStore.Store,
+func New(detector detection.Detector,
+	scorer risk.Scorer,
+	deploymentEvents deploymentEventStore.Store,
+	images imageDataStore.DataStore,
+	deployments deploymentDataStore.DataStore,
+	clusters clusterDataStore.DataStore,
+	networkPolicies networkPolicyStore.Store,
 	namespaces namespaceDataStore.Store) Service {
 	return &serviceImpl{
 		detector: detector,

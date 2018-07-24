@@ -3,9 +3,9 @@ package clairify
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/central/imageintegration/enricher"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	clairConv "bitbucket.org/stack-rox/apollo/pkg/clair"
+	"bitbucket.org/stack-rox/apollo/pkg/imageenricher"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
@@ -29,6 +29,7 @@ type clairify struct {
 	client                *client.Clairify
 	conf                  *v1.ClairifyConfig
 	protoImageIntegration *v1.ImageIntegration
+	imageEnricher         imageenricher.ImageEnricher
 }
 
 func newScanner(protoImageIntegration *v1.ImageIntegration) (*clairify, error) {
@@ -119,7 +120,7 @@ func (c *clairify) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 }
 
 func (c *clairify) scan(image *v1.Image) error {
-	rc := enricher.ImageEnricher.GetRegistryMetadataByImage(image)
+	rc := c.imageEnricher.IntegrationSet().GetRegistryMetadataByImage(image)
 	if rc == nil {
 		return nil
 	}
@@ -133,7 +134,7 @@ func (c *clairify) scan(image *v1.Image) error {
 
 // Match decides if the image is contained within this scanner
 func (c *clairify) Match(image *v1.Image) bool {
-	return enricher.ImageEnricher.Match(image)
+	return c.imageEnricher.IntegrationSet().Match(image)
 }
 
 func (c *clairify) Global() bool {

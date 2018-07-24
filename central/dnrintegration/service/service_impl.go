@@ -42,7 +42,7 @@ var (
 type serviceImpl struct {
 	datastore datastore.DataStore
 	clusters  clusterDataStore.DataStore
-	enricher  *enrichment.Enricher
+	enricher  enrichment.Enricher
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -101,11 +101,7 @@ func (s *serviceImpl) PostDNRIntegration(ctx context.Context, req *v1.DNRIntegra
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	req.Id = id
-	go func() {
-		if err := s.enricher.ReprocessRisk(); err != nil {
-			log.Errorf("Error reprocessing risk from DNR integration POST %#v: %s", req, err)
-		}
-	}()
+	go s.enricher.ReprocessRisk()
 
 	return req, nil
 }
@@ -132,11 +128,8 @@ func (s *serviceImpl) PutDNRIntegration(ctx context.Context, req *v1.DNRIntegrat
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	go func() {
-		if err := s.enricher.ReprocessRisk(); err != nil {
-			log.Errorf("Error reprocessing risk from DNR integration PUT %#v: %s", req, err)
-		}
-	}()
+	go s.enricher.ReprocessRisk()
+
 	return req, nil
 }
 
@@ -146,11 +139,8 @@ func (s *serviceImpl) DeleteDNRIntegration(ctx context.Context, req *v1.Resource
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	go func() {
-		if err := s.enricher.ReprocessRisk(); err != nil {
-			log.Errorf("Error reprocessing risk from DNR integration DELETE %#v: %s", req, err)
-		}
-	}()
+	go s.enricher.ReprocessRisk()
+
 	return &empty.Empty{}, nil
 }
 

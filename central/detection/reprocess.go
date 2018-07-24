@@ -8,26 +8,8 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/search"
 )
 
-func (d *Detector) reprocessLoop() {
-	logger.Info("Detector started reprocess loop")
-	for t := range d.taskC {
-		d.processTask(t)
-	}
-	logger.Info("Detector stopped reprocess loop")
-	d.stoppedC <- struct{}{}
-}
-
-func (d *Detector) periodicallyEnrich() {
-	ticker := time.NewTicker(time.Hour)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		d.EnrichAndReprocess()
-	}
-}
-
 // EnrichAndReprocess enriches all deployments. If new data is available, it re-assesses all policies for that deployment.
-func (d *Detector) EnrichAndReprocess() {
+func (d *detectorImpl) EnrichAndReprocess() {
 	deployments, err := d.deploymentStorage.GetDeployments()
 	if err != nil {
 		logger.Error(err)
@@ -44,7 +26,25 @@ func (d *Detector) EnrichAndReprocess() {
 	}
 }
 
-func (d *Detector) reprocessPolicy(policy *matcher.Policy) {
+func (d *detectorImpl) reprocessLoop() {
+	logger.Info("Detector started reprocess loop")
+	for t := range d.taskC {
+		d.processTask(t)
+	}
+	logger.Info("Detector stopped reprocess loop")
+	d.stoppedC <- struct{}{}
+}
+
+func (d *detectorImpl) periodicallyEnrich() {
+	ticker := time.NewTicker(time.Hour)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		d.EnrichAndReprocess()
+	}
+}
+
+func (d *detectorImpl) reprocessPolicy(policy *matcher.Policy) {
 	deployments, err := d.deploymentStorage.GetDeployments()
 	if err != nil {
 		logger.Error(err)
@@ -84,7 +84,7 @@ func (d *Detector) reprocessPolicy(policy *matcher.Policy) {
 	}
 }
 
-func (d *Detector) queueTasks(deployment *v1.Deployment, policies []*matcher.Policy) {
+func (d *detectorImpl) queueTasks(deployment *v1.Deployment, policies []*matcher.Policy) {
 	for _, p := range policies {
 		d.taskC <- Task{
 			deployment: deployment,

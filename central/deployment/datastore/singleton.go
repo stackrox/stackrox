@@ -6,8 +6,8 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/deployment/index"
 	"bitbucket.org/stack-rox/apollo/central/deployment/search"
 	"bitbucket.org/stack-rox/apollo/central/deployment/store"
-	globaldb "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
-	globalindex "bitbucket.org/stack-rox/apollo/central/globalindex/singletons"
+	"bitbucket.org/stack-rox/apollo/central/globaldb"
+	"bitbucket.org/stack-rox/apollo/central/globalindex"
 	"bitbucket.org/stack-rox/apollo/central/ranking"
 )
 

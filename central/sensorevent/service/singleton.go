@@ -5,11 +5,11 @@ import (
 
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	detection "bitbucket.org/stack-rox/apollo/central/detection/singletons"
+	"bitbucket.org/stack-rox/apollo/central/detection"
 	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
 	namespaceStore "bitbucket.org/stack-rox/apollo/central/namespace/store"
 	networkPolicyStore "bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
-	risk "bitbucket.org/stack-rox/apollo/central/risk/singletons"
+	"bitbucket.org/stack-rox/apollo/central/risk"
 	sensorEventDataStore "bitbucket.org/stack-rox/apollo/central/sensorevent/store"
 )
 

@@ -6,7 +6,7 @@ import (
 	benchmarkDataStore "bitbucket.org/stack-rox/apollo/central/benchmark/datastore"
 	"bitbucket.org/stack-rox/apollo/central/benchmarkscan/store"
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	globaldb "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
+	"bitbucket.org/stack-rox/apollo/central/globaldb"
 )
 
 var (

@@ -6,8 +6,8 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/alert/index"
 	"bitbucket.org/stack-rox/apollo/central/alert/search"
 	"bitbucket.org/stack-rox/apollo/central/alert/store"
-	globaldb "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
-	globalindex "bitbucket.org/stack-rox/apollo/central/globalindex/singletons"
+	"bitbucket.org/stack-rox/apollo/central/globaldb"
+	"bitbucket.org/stack-rox/apollo/central/globalindex"
 )
 
 var (

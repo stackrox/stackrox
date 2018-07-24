@@ -57,7 +57,7 @@ type serviceImpl struct {
 	deployments deploymentDataStore.DataStore
 	notifiers   notifierStore.Store
 
-	detector *detection.Detector
+	detector detection.Detector
 	parser   *search.QueryParser
 
 	validator *policyValidator

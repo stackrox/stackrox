@@ -5,9 +5,126 @@ import (
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/central/dnrintegration"
+	"bitbucket.org/stack-rox/apollo/central/risk/getters"
+	"bitbucket.org/stack-rox/apollo/central/risk/multipliers"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestScore(t *testing.T) {
+	deployment := getMockDeployment()
+	scorer := NewScorer(&getters.MockAlertsGetter{
+		Alerts: []*v1.ListAlert{
+			{
+				Deployment: &v1.ListAlertDeployment{},
+				Policy: &v1.ListAlertPolicy{
+					Name:     "Test",
+					Severity: v1.Severity_CRITICAL_SEVERITY,
+				},
+			},
+		},
+	}, &getters.MockDNRIntegrationGetter{
+		MockDNRIntegration: &getters.MockDNRIntegration{
+			ExpectedNamespace:   "",
+			ExpectedServiceName: "",
+			MockAlerts: []dnrintegration.PolicyAlert{
+				{PolicyName: "FakePolicy0", SeverityWord: "CRITICAL", SeverityScore: 100},
+				{PolicyName: "FakePolicy1", SeverityWord: "MEDIUM", SeverityScore: 50},
+			},
+			MockError: nil,
+		},
+		Exists: true,
+	})
+
+	// Without user defined function
+	expectedRiskScore := 6.048
+	expectedRiskResults := []*v1.Risk_Result{
+		{
+			Name: multipliers.DnrAlertsHeading,
+			Factors: []string{
+				"FakePolicy0 (Severity: CRITICAL)",
+				"FakePolicy1 (Severity: MEDIUM)",
+			},
+			Score: 1.5,
+		},
+		{
+			Name:    multipliers.PolicyViolationsHeading,
+			Factors: []string{"Test (severity: Critical)"},
+			Score:   1.2,
+		},
+		{
+			Name: multipliers.VulnsHeading,
+			Factors: []string{
+				"Image contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0",
+			},
+			Score: 1.05,
+		},
+		{
+			Name: multipliers.ServiceConfigHeading,
+			Factors: []string{
+				"Volumes rw volume were mounted RW",
+				"Secrets secret are used inside the deployment",
+				"Capabilities ALL were added",
+				"No capabilities were dropped",
+				"A container in the deployment is privileged",
+			},
+			Score: 2.0,
+		},
+		{
+			Name: multipliers.ReachabilityHeading,
+			Factors: []string{
+				"Container library/nginx exposes port 8082 to external clients",
+				"Container library/nginx exposes port 8083 in the cluster",
+				"Container library/nginx exposes port 8084 on node interfaces",
+			},
+			Score: 1.6,
+		},
+	}
+	actualRisk := scorer.Score(deployment)
+	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
+	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
+
+	// With user defined function
+	for val := 1; val <= 3; val++ {
+		mult := &v1.Multiplier{
+			Id:   fmt.Sprintf("%d", val),
+			Name: fmt.Sprintf("Cluster multiplier %d", val),
+			Scope: &v1.Scope{
+				Cluster: "cluster",
+			},
+			Value: float32(val),
+		}
+		scorer.UpdateUserDefinedMultiplier(mult)
+	}
+
+	expectedRiskScore = 36.288
+	expectedRiskResults = append(expectedRiskResults, []*v1.Risk_Result{
+		{
+			Name: "Cluster multiplier 3",
+			Factors: []string{
+				"Deployment matched scope 'cluster:cluster'",
+			},
+			Score: 3.0,
+		},
+		{
+			Name: "Cluster multiplier 2",
+			Factors: []string{
+				"Deployment matched scope 'cluster:cluster'",
+			},
+			Score: 2.0,
+		},
+		{
+			Name: "Cluster multiplier 1",
+			Factors: []string{
+				"Deployment matched scope 'cluster:cluster'",
+			},
+			Score: 1.0,
+		},
+	}...)
+	actualRisk = scorer.Score(deployment)
+	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
+	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
+}
 
 func getMockDeployment() *v1.Deployment {
 	return &v1.Deployment{
@@ -84,119 +201,4 @@ func getMockDeployment() *v1.Deployment {
 			},
 		},
 	}
-}
-
-func TestScore(t *testing.T) {
-	deployment := getMockDeployment()
-	scorer := NewScorer(&mockAlertsGetter{
-		alerts: []*v1.ListAlert{
-			{
-				Deployment: &v1.ListAlertDeployment{},
-				Policy: &v1.ListAlertPolicy{
-					Name:     "Test",
-					Severity: v1.Severity_CRITICAL_SEVERITY,
-				},
-			},
-		},
-	}, &mockDNRIntegrationGetter{
-		mockDNRIntegration: &mockDNRIntegration{
-			expectedNamespace:   "",
-			expectedServiceName: "",
-			mockAlerts: []dnrintegration.PolicyAlert{
-				{PolicyName: "FakePolicy0", SeverityWord: "CRITICAL", SeverityScore: 100},
-				{PolicyName: "FakePolicy1", SeverityWord: "MEDIUM", SeverityScore: 50},
-			},
-			mockError: nil,
-		},
-		exists: true,
-	})
-
-	// Without user defined function
-	expectedRiskScore := 6.048
-	expectedRiskResults := []*v1.Risk_Result{
-		{
-			Name: dnrAlertsHeading,
-			Factors: []string{
-				"FakePolicy0 (Severity: CRITICAL)",
-				"FakePolicy1 (Severity: MEDIUM)",
-			},
-			Score: 1.5,
-		},
-		{
-			Name:    policyViolationsHeading,
-			Factors: []string{"Test (severity: Critical)"},
-			Score:   1.2,
-		},
-		{
-			Name: vulnsHeading,
-			Factors: []string{
-				"Image contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0",
-			},
-			Score: 1.05,
-		},
-		{
-			Name: serviceConfigHeading,
-			Factors: []string{
-				"Volumes rw volume were mounted RW",
-				"Secrets secret are used inside the deployment",
-				"Capabilities ALL were added",
-				"No capabilities were dropped",
-				"A container in the deployment is privileged",
-			},
-			Score: 2.0,
-		},
-		{
-			Name: reachabilityHeading,
-			Factors: []string{
-				"Container library/nginx exposes port 8082 to external clients",
-				"Container library/nginx exposes port 8083 in the cluster",
-				"Container library/nginx exposes port 8084 on node interfaces",
-			},
-			Score: 1.6,
-		},
-	}
-	actualRisk := scorer.Score(deployment)
-	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
-	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
-
-	// With user defined function
-	for val := 1; val <= 3; val++ {
-		mult := &v1.Multiplier{
-			Id:   fmt.Sprintf("%d", val),
-			Name: fmt.Sprintf("Cluster multiplier %d", val),
-			Scope: &v1.Scope{
-				Cluster: "cluster",
-			},
-			Value: float32(val),
-		}
-		scorer.UpdateUserDefinedMultiplier(mult)
-	}
-
-	expectedRiskScore = 36.288
-	expectedRiskResults = append(expectedRiskResults, []*v1.Risk_Result{
-		{
-			Name: "Cluster multiplier 3",
-			Factors: []string{
-				"Deployment matched scope 'cluster:cluster'",
-			},
-			Score: 3.0,
-		},
-		{
-			Name: "Cluster multiplier 2",
-			Factors: []string{
-				"Deployment matched scope 'cluster:cluster'",
-			},
-			Score: 2.0,
-		},
-		{
-			Name: "Cluster multiplier 1",
-			Factors: []string{
-				"Deployment matched scope 'cluster:cluster'",
-			},
-			Score: 1.0,
-		},
-	}...)
-	actualRisk = scorer.Score(deployment)
-	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
-	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 }

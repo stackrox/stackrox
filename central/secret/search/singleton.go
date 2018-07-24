@@ -3,7 +3,7 @@ package search
 import (
 	"sync"
 
-	globalIndex "bitbucket.org/stack-rox/apollo/central/globalindex/singletons"
+	"bitbucket.org/stack-rox/apollo/central/globalindex"
 	"bitbucket.org/stack-rox/apollo/central/secret/store"
 )
 
@@ -14,7 +14,7 @@ var (
 )
 
 func initialize() {
-	searcher = New(store.Singleton(), globalIndex.GetGlobalIndex())
+	searcher = New(store.Singleton(), globalindex.GetGlobalIndex())
 }
 
 // Singleton provides the instance of the Searcher interface to register.

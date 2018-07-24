@@ -17,31 +17,6 @@ type ImageIntegration struct {
 	Scanner  scanners.ImageScanner
 }
 
-func validateCommonFields(source *v1.ImageIntegration) error {
-	errorList := errorhelpers.NewErrorList("Validation")
-	if source.GetName() == "" {
-		errorList.AddString("Source name must be defined")
-	}
-	if source.GetType() == "" {
-		errorList.AddString("Source type must be defined")
-	}
-	if len(source.GetCategories()) == 0 {
-		errorList.AddString("At least one category must be defined")
-	}
-	return errorList.ToError()
-}
-
-var categoryOrder = map[v1.ImageIntegrationCategory]int{
-	v1.ImageIntegrationCategory_REGISTRY: 0,
-	v1.ImageIntegrationCategory_SCANNER:  1,
-}
-
-func sortCategories(request *v1.ImageIntegration) {
-	sort.SliceStable(request.GetCategories(), func(i, j int) bool {
-		return categoryOrder[request.GetCategories()[i]] < categoryOrder[request.GetCategories()[j]]
-	})
-}
-
 // NewImageIntegration takes a v1.ImageIntegration and returns an image integration that has created the inputs
 func NewImageIntegration(protoSource *v1.ImageIntegration) (*ImageIntegration, error) {
 	if err := validateCommonFields(protoSource); err != nil {
@@ -69,6 +44,31 @@ func NewImageIntegration(protoSource *v1.ImageIntegration) (*ImageIntegration, e
 		}
 	}
 	return integration, nil
+}
+
+func validateCommonFields(source *v1.ImageIntegration) error {
+	errorList := errorhelpers.NewErrorList("Validation")
+	if source.GetName() == "" {
+		errorList.AddString("Source name must be defined")
+	}
+	if source.GetType() == "" {
+		errorList.AddString("Source type must be defined")
+	}
+	if len(source.GetCategories()) == 0 {
+		errorList.AddString("At least one category must be defined")
+	}
+	return errorList.ToError()
+}
+
+var categoryOrder = map[v1.ImageIntegrationCategory]int{
+	v1.ImageIntegrationCategory_REGISTRY: 0,
+	v1.ImageIntegrationCategory_SCANNER:  1,
+}
+
+func sortCategories(request *v1.ImageIntegration) {
+	sort.SliceStable(request.GetCategories(), func(i, j int) bool {
+		return categoryOrder[request.GetCategories()[i]] < categoryOrder[request.GetCategories()[j]]
+	})
 }
 
 // Test iterates over the categories and test each of the inputs

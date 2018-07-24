@@ -40,7 +40,7 @@ var (
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
 	datastore datastore.DataStore
-	enricher  *enrichment.Enricher
+	enricher  enrichment.Enricher
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -164,12 +164,7 @@ func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByI
 	if err := s.datastore.RemoveCluster(request.GetId()); err != nil {
 		return nil, service.ReturnErrorCode(err)
 	}
-
-	go func() {
-		if err := s.enricher.ReprocessRisk(); err != nil {
-			log.Errorf("Error reprocessing risk during cluster removal %#v: %s", request, err)
-		}
-	}()
+	go s.enricher.ReprocessRisk()
 
 	return &empty.Empty{}, nil
 }

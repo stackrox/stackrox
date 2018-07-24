@@ -7,7 +7,7 @@ import (
 )
 
 // Detect takes a Task and returns whether an alert and an enforcement action would be taken
-func (d *Detector) Detect(task Task) (alert *v1.Alert, enforcement v1.EnforcementAction, excluded *v1.DryRunResponse_Excluded) {
+func (d *detectorImpl) Detect(task Task) (alert *v1.Alert, enforcement v1.EnforcementAction, excluded *v1.DryRunResponse_Excluded) {
 	if !task.policy.ShouldProcess(task.deployment) {
 		return
 	}
@@ -19,7 +19,7 @@ func (d *Detector) Detect(task Task) (alert *v1.Alert, enforcement v1.Enforcemen
 	return
 }
 
-func (d *Detector) generateAlert(task Task) (alert *v1.Alert, excluded *v1.DryRunResponse_Excluded) {
+func (d *detectorImpl) generateAlert(task Task) (alert *v1.Alert, excluded *v1.DryRunResponse_Excluded) {
 	var violations []*v1.Alert_Violation
 	violations, excluded = task.policy.Match(task.deployment)
 	if len(violations) == 0 {

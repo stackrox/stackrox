@@ -3,7 +3,7 @@ package store
 import (
 	"sync"
 
-	globaldb "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
+	"bitbucket.org/stack-rox/apollo/central/globaldb"
 )
 
 var (

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	globalindex "bitbucket.org/stack-rox/apollo/central/globalindex/singletons"
+	"bitbucket.org/stack-rox/apollo/central/globalindex"
 	"bitbucket.org/stack-rox/apollo/central/secret/index"
 	"bitbucket.org/stack-rox/apollo/central/secret/search"
 	"bitbucket.org/stack-rox/apollo/central/secret/search/transform"

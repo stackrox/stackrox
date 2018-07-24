@@ -3,7 +3,7 @@ package store
 import (
 	"sync"
 
-	globnalDB "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
+	"bitbucket.org/stack-rox/apollo/central/globaldb"
 )
 
 var (
@@ -13,7 +13,7 @@ var (
 )
 
 func initialize() {
-	storage = New(globnalDB.GetGlobalDB())
+	storage = New(globaldb.GetGlobalDB())
 }
 
 // Singleton provides the instance of the Store interface to register.

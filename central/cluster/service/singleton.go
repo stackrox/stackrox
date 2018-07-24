@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	"bitbucket.org/stack-rox/apollo/central/enrichment/singletons"
+	"bitbucket.org/stack-rox/apollo/central/enrichment"
 )
 
 var (
@@ -14,7 +14,7 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), singletons.GetEnricher())
+	as = New(datastore.Singleton(), enrichment.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

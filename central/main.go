@@ -26,10 +26,10 @@ import (
 	clusterService "bitbucket.org/stack-rox/apollo/central/cluster/service"
 	clustersZip "bitbucket.org/stack-rox/apollo/central/clusters/zip"
 	deploymentService "bitbucket.org/stack-rox/apollo/central/deployment/service"
-	detectionSingletons "bitbucket.org/stack-rox/apollo/central/detection/singletons"
+	"bitbucket.org/stack-rox/apollo/central/detection"
 	dnrIntegrationService "bitbucket.org/stack-rox/apollo/central/dnrintegration/service"
 	"bitbucket.org/stack-rox/apollo/central/globaldb"
-	globaldbSingletons "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
+	globaldbHandlers "bitbucket.org/stack-rox/apollo/central/globaldb/handlers"
 	imageService "bitbucket.org/stack-rox/apollo/central/image/service"
 	iiService "bitbucket.org/stack-rox/apollo/central/imageintegration/service"
 	interceptorSingletons "bitbucket.org/stack-rox/apollo/central/interceptor/singletons"
@@ -174,14 +174,14 @@ func (c *central) customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:           "/db/backup",
 			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
 			Authorizer:      dbExportOrBackupAuthorizer(),
-			ServerHandler:   globaldb.BackupHandler(globaldbSingletons.GetGlobalDB()),
+			ServerHandler:   globaldbHandlers.BackupDB(globaldb.GetGlobalDB()),
 			Compression:     true,
 		},
 		{
 			Route:           "/db/export",
 			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
 			Authorizer:      dbExportOrBackupAuthorizer(),
-			ServerHandler:   globaldb.ExportHandler(globaldbSingletons.GetGlobalDB()),
+			ServerHandler:   globaldbHandlers.ExportDB(globaldb.GetGlobalDB()),
 			Compression:     true,
 		},
 		{
@@ -255,8 +255,8 @@ func (c *central) processForever() {
 		select {
 		case sig := <-c.signalsC:
 			log.Infof("Caught %s signal", sig)
-			detectionSingletons.GetDetector().Stop()
-			globaldbSingletons.Close()
+			detection.GetDetector().Stop()
+			globaldb.Close()
 			log.Infof("Central terminated")
 			return
 		}

@@ -3,7 +3,7 @@ package index
 import (
 	"sync"
 
-	globalIndex "bitbucket.org/stack-rox/apollo/central/globalindex/singletons"
+	"bitbucket.org/stack-rox/apollo/central/globalindex"
 )
 
 var (
@@ -13,7 +13,7 @@ var (
 )
 
 func initialize() {
-	indexer = New(globalIndex.GetGlobalIndex())
+	indexer = New(globalindex.GetGlobalIndex())
 }
 
 // Singleton provides the instance of the Indexer interface to register.

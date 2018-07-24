@@ -3,8 +3,8 @@ package datastore
 import (
 	"sync"
 
-	globaldb "bitbucket.org/stack-rox/apollo/central/globaldb/singletons"
-	globalindex "bitbucket.org/stack-rox/apollo/central/globalindex/singletons"
+	"bitbucket.org/stack-rox/apollo/central/globaldb"
+	"bitbucket.org/stack-rox/apollo/central/globalindex"
 	"bitbucket.org/stack-rox/apollo/central/policy/index"
 	"bitbucket.org/stack-rox/apollo/central/policy/search"
 	"bitbucket.org/stack-rox/apollo/central/policy/store"

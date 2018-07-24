@@ -42,7 +42,7 @@ var (
 // ImageIntegrationService is the struct that manages the ImageIntegration API
 type serviceImpl struct {
 	datastore datastore.DataStore
-	detector  *detection.Detector
+	detector  detection.Detector
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
