@@ -37,7 +37,7 @@ const K8sDetails = ({ cluster }) => (
         />
         <LabeledValue
             label="Image Pull Secret Name"
-            value={get(cluster, 'kubernetes.params.imagePullSecret', 'N/A')}
+            value={get(cluster, 'kubernetes.imagePullSecret', 'N/A')}
         />
     </React.Fragment>
 );

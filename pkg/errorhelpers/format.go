@@ -40,6 +40,11 @@ func (e *ErrorList) AddString(err string) {
 	e.errors = append(e.errors, err)
 }
 
+// AddStrings adds multiple string based errors to the list.
+func (e *ErrorList) AddStrings(errs ...string) {
+	e.errors = append(e.errors, errs...)
+}
+
 // ToError returns an error if there were errors added or nil
 func (e *ErrorList) ToError() error {
 	if len(e.errors) > 0 {

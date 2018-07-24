@@ -121,8 +121,12 @@ describe('Cluster Creation Flow', () => {
 
         const clusterName = 'Swarm Cluster TestInstance';
         cy.get(selectors.clusterForm.nameInput).type(clusterName);
-        cy.get(selectors.clusterForm.imageInput).type('stackrox/prevent:latest');
-        cy.get(selectors.clusterForm.endpointInput).type('central.prevent_net:443');
+        // The image name should be pre-populated, so we don't type it in to test that the prepopulation works.
+        // (The backend WILL error out if the image is empty.)
+        cy
+            .get(selectors.clusterForm.endpointInput)
+            .clear()
+            .type('central.prevent_net:443');
 
         cy.get(selectors.buttons.next).click();
         cy

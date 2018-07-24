@@ -38,7 +38,7 @@ function launch_sensor {
     NAMESPACE="$6"
     BENCHMARK_SERVICE_ACCOUNT="${7-benchmark}"
 
-    COMMON_PARAMS="{ \"params\" : { \"namespace\": \"$NAMESPACE\", \"imagePullSecret\": \"stackrox\", \"benchmarkServiceAccount\":\"$BENCHMARK_SERVICE_ACCOUNT\" } }"
+    COMMON_PARAMS="{ \"params\" : { \"namespace\": \"$NAMESPACE\" }, \"imagePullSecret\": \"stackrox\" }"
 
     EXTRA_CONFIG="\"kubernetes\": $COMMON_PARAMS }"
 

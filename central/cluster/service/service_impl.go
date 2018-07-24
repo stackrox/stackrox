@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"strings"
 
 	"bitbucket.org/stack-rox/apollo/central/cluster/datastore"
@@ -15,12 +16,15 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
+	"bitbucket.org/stack-rox/apollo/pkg/stringutils"
+	"github.com/docker/distribution/reference"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 var (
@@ -63,19 +67,45 @@ func normalizeCluster(cluster *v1.Cluster) {
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")
 }
 
+// Validate a field that should adhere to DNS1123 standards,
+// and format a helpful error message so the end user
+// knows which field to fix.
+func validateDNS1123Field(fieldName, value string) error {
+	errors := validation.IsDNS1123Label(value)
+	if len(errors) == 0 {
+		return nil
+	}
+	errorList := errorhelpers.NewErrorList(fmt.Sprintf("%s validation failed", fieldName))
+	errorList.AddStrings(errors...)
+	return errorList.ToError()
+}
+
 func validateInput(cluster *v1.Cluster) error {
 	errorList := errorhelpers.NewErrorList("Cluster Validation")
 	if cluster.GetName() == "" {
 		errorList.AddString("Cluster name is required")
 	}
-	if cluster.GetPreventImage() == "" {
-		errorList.AddString("Prevent Image is required")
+	if _, err := reference.ParseAnyReference(cluster.GetPreventImage()); err != nil {
+		errorList.AddError(fmt.Errorf("invalid prevent image '%s': %s", cluster.GetPreventImage(), err))
 	}
 	if cluster.GetCentralApiEndpoint() == "" {
 		errorList.AddString("Central API Endpoint is required")
 	} else if !strings.Contains(cluster.GetCentralApiEndpoint(), ":") {
 		errorList.AddString("Central API Endpoint must have port specified")
 	}
+
+	if stringutils.ContainsWhitespace(cluster.GetCentralApiEndpoint()) {
+		errorList.AddString("Central API endpoint cannot contain whitespace")
+	}
+	switch orchSpecific := cluster.GetOrchestratorParams().(type) {
+	case *v1.Cluster_Kubernetes:
+		// Kube validates namespaces and secret names using the DNS1123 Label validator.
+		errorList.AddError(validateDNS1123Field("namespace", orchSpecific.Kubernetes.GetParams().GetNamespace()))
+		errorList.AddError(validateDNS1123Field("image pull secret", orchSpecific.Kubernetes.GetImagePullSecret()))
+	case *v1.Cluster_Openshift:
+		errorList.AddError(validateDNS1123Field("namespace", orchSpecific.Openshift.GetParams().GetNamespace()))
+	}
+
 	return errorList.ToError()
 }
 

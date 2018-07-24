@@ -29,15 +29,8 @@ func newKubernetes() Deployer {
 	}
 }
 
-func nonEmptyOrDefault(new, def string) string {
-	if new != "" {
-		return new
-	}
-	return def
-}
-
 func addCommonKubernetesParams(params *v1.CommonKubernetesParams, fields map[string]string) {
-	fields["Namespace"] = nonEmptyOrDefault(params.GetNamespace(), "stackrox")
+	fields["Namespace"] = params.GetNamespace()
 }
 
 func (k *kubernetes) Render(c Wrap) ([]*v1.File, error) {
@@ -54,7 +47,7 @@ func (k *kubernetes) Render(c Wrap) ([]*v1.File, error) {
 	fields["OpenshiftAPI"] = `"false"`
 
 	fields["ImagePullSecretEnv"] = env.ImagePullSecrets.EnvVar()
-	fields["ImagePullSecret"] = nonEmptyOrDefault(kubernetesParams.GetParams().GetImagePullSecret(), "stackrox")
+	fields["ImagePullSecret"] = kubernetesParams.GetImagePullSecret()
 
 	var err error
 	fields["Registry"], err = kubernetesPkg.GetResolvedRegistry(c.PreventImage)

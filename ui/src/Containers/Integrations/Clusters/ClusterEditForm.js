@@ -39,7 +39,7 @@ const K8sFields = ({ metadata }) => (
             <ReduxTextField name="kubernetes.params.namespace" placeholder="stackrox" />
         </FormField>
         <FormField label="Image Pull Secret Name" required>
-            <ReduxTextField name="kubernetes.params.imagePullSecret" placeholder="stackrox" />
+            <ReduxTextField name="kubernetes.imagePullSecret" placeholder="stackrox" />
         </FormField>
     </React.Fragment>
 );
@@ -130,9 +130,9 @@ const initialValuesFactories = {
         preventImage: `stackrox.io/prevent:${metadata.version}`,
         centralApiEndpoint: 'central.stackrox:443',
         kubernetes: {
+            imagePullSecret: 'stackrox',
             params: {
-                namespace: 'stackrox',
-                imagePullSecret: 'stackrox'
+                namespace: 'stackrox'
             }
         }
     })
