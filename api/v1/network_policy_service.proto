@@ -101,19 +101,19 @@ message GetNetworkGraphResponse {
 
 service NetworkPolicyService {
 
-    rpc GetNetworkPolicy(ResourceByID) returns (NetworkPolicy) {
+    rpc GetNetworkPolicy (ResourceByID) returns (NetworkPolicy) {
         option (google.api.http) = {
             get: "/v1/networkpolicies/{id}"
         };
     }
 
-    rpc ListNetworkPolicies(google.protobuf.Empty) returns (NetworkPoliciesResponse) {
+    rpc ListNetworkPolicies (google.protobuf.Empty) returns (NetworkPoliciesResponse) {
         option (google.api.http) = {
             get: "/v1/networkpolicies"
         };
     }
 
-    rpc GetNetworkGraph(RawQuery) returns (GetNetworkGraphResponse) {
+    rpc GetNetworkGraph (RawQuery) returns (GetNetworkGraphResponse) {
         option (google.api.http) = {
             get: "/v1/networkgraph"
         };

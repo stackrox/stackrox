@@ -78,10 +78,13 @@ services:
         mode: {{.SwarmConfig.NetworkMode}}
     secrets:
       - source: central_private_key
-        target: stackrox.io/ca-key.pem
+        target: stackrox.io/certs/ca-key.pem
         mode: 400
       - source: central_certificate
-        target: stackrox.io/ca.pem
+        target: stackrox.io/certs/ca.pem
+        mode: 400
+      - source: central_jwt_key
+        target: stackrox.io/jwt/jwt-key.der
         mode: 400
     {{if .HostPath -}}
     volumes:
@@ -100,6 +103,8 @@ secrets:
     file: ./ca-key.pem
   central_certificate:
     file: ./ca.pem
+  central_jwt_key:
+    file: ./jwt-key.der
 {{if .External -}}
 volumes:
   {{.External.Name}}:

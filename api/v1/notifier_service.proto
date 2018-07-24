@@ -67,40 +67,40 @@ message DeleteNotifierRequest {
 
 service NotifierService {
 
-    rpc GetNotifier(ResourceByID) returns (Notifier) {
+    rpc GetNotifier (ResourceByID) returns (Notifier) {
         option (google.api.http) = {
             get: "/v1/notifiers/{id}"
         };
     }
 
-    rpc GetNotifiers(GetNotifiersRequest) returns (GetNotifiersResponse) {
+    rpc GetNotifiers (GetNotifiersRequest) returns (GetNotifiersResponse) {
         option (google.api.http) = {
             get: "/v1/notifiers"
         };
     }
 
-    rpc PutNotifier(Notifier) returns (google.protobuf.Empty) {
+    rpc PutNotifier (Notifier) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             put: "/v1/notifiers/{id}"
             body: "*"
         };
     }
 
-    rpc PostNotifier(Notifier) returns (Notifier) {
+    rpc PostNotifier (Notifier) returns (Notifier) {
         option (google.api.http) = {
             post: "/v1/notifiers"
             body: "*"
         };
     }
 
-    rpc TestNotifier(Notifier) returns (google.protobuf.Empty) {
+    rpc TestNotifier (Notifier) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             post: "/v1/notifiers/test"
             body: "*"
         };
     }
 
-    rpc DeleteNotifier(DeleteNotifierRequest) returns (google.protobuf.Empty) {
+    rpc DeleteNotifier (DeleteNotifierRequest) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             delete: "/v1/notifiers/{id}"
         };

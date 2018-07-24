@@ -1,15 +1,10 @@
 package service
 
 import (
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/routes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
-
-// StatusError allows errors to be emitted with the proper status code.
-type StatusError interface {
-	error
-	Status() codes.Code
-}
 
 // ReturnErrorCode is a helper function that formats an error with a status code if one is not already
 // available.
@@ -18,7 +13,7 @@ func ReturnErrorCode(err error) error {
 		return nil
 	}
 
-	if e, ok := err.(StatusError); ok {
+	if e, ok := err.(routes.StatusError); ok {
 		return status.Error(e.Status(), e.Error())
 	}
 

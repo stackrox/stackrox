@@ -1,11 +1,16 @@
 package routes
 
-import "net/http"
+import (
+	"net/http"
 
-// HTTPStatus allows errors to be emitted with the proper HTTP status code.
-type HTTPStatus interface {
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"google.golang.org/grpc/codes"
+)
+
+// StatusError allows errors to be emitted with the proper status code.
+type StatusError interface {
 	error
-	HTTPStatus() int
+	Status() codes.Code
 }
 
 func writeHTTPStatus(w http.ResponseWriter, err error) {
@@ -13,8 +18,8 @@ func writeHTTPStatus(w http.ResponseWriter, err error) {
 		return
 	}
 
-	if e, ok := err.(HTTPStatus); ok {
-		http.Error(w, e.Error(), e.HTTPStatus())
+	if e, ok := err.(StatusError); ok {
+		http.Error(w, e.Error(), runtime.HTTPStatusFromCode(e.Status()))
 		return
 	}
 	http.Error(w, err.Error(), http.StatusInternalServerError)

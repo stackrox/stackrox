@@ -10,7 +10,8 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/authproviders"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/authproviders"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/tokenbased"
 	"bitbucket.org/stack-rox/apollo/pkg/jwt"
 )
 
@@ -19,7 +20,7 @@ const (
 )
 
 func init() {
-	authproviders.Registry["auth0"] = newFromAPI
+	authproviders.Register("auth0", newFromAPI)
 }
 
 // A Config sets up an Auth0 integration.
@@ -73,7 +74,7 @@ func newAuth0(cfg config) *auth0 {
 }
 
 // NewFromAPI creates a new Auth0 integration from an API object.
-func newFromAPI(a *v1.AuthProvider) (authproviders.Authenticator, error) {
+func newFromAPI(a *v1.AuthProvider) (authproviders.AuthProvider, error) {
 	cfg := config{
 		Domain:    a.Config["domain"],
 		ClientID:  a.Config["client_id"],
@@ -171,20 +172,22 @@ func (a auth0) RefreshURL() string {
 }
 
 // User validates the user, if possible, based on the headers.
-func (a auth0) User(headers map[string][]string) (u authproviders.User, exp time.Time, err error) {
+func (a auth0) Parse(headers map[string][]string, roleMapper tokenbased.RoleMapper) (identity tokenbased.Identity, err error) {
 	jwks := jwt.NewJWKSGetter(a.jwksURL())
 	validator := jwt.NewRS256Validator(jwks, a.issuer(), a.config.audience())
 	accessToken, claims, err := validator.Validate(headers)
 	if err != nil {
-		return authproviders.User{}, time.Time{}, fmt.Errorf("token validation: %s", err)
+		return nil, fmt.Errorf("token validation: %s", err)
 	}
 	email, err := a.getProfile(accessToken)
 	if err != nil {
-		return authproviders.User{}, time.Time{}, fmt.Errorf("user profile retrieval: %s", err)
+		return nil, fmt.Errorf("user profile retrieval: %s", err)
 	}
-	return authproviders.User{
-		ID: email,
-	}, claims.Expiry.Time(), nil
+	role, exists := roleMapper.Role(email)
+	if !exists {
+		return nil, fmt.Errorf("couldn't find role for email: %s", email)
+	}
+	return tokenbased.NewIdentity(email, role, claims.Expiry.Time()), nil
 }
 
 func (a auth0) getCachedProfile(token string) (*auth0Profile, bool) {

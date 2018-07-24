@@ -6,16 +6,35 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	"bitbucket.org/stack-rox/apollo/central/clusters"
 	"bitbucket.org/stack-rox/apollo/central/enrichment"
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
 	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(permissions.View(resources.Cluster)): {
+			"/v1.ClustersService/GetClusters",
+			"/v1.ClustersService/GetCluster",
+		},
+		user.With(permissions.Modify(resources.Cluster)): {
+			"/v1.ClustersService/PostCluster",
+			"/v1.ClustersService/PutCluster",
+			"/v1.ClustersService/DeleteCluster",
+		},
+	}))
 )
 
 // ClusterService is the struct that manages the cluster API
@@ -36,7 +55,7 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(or.SensorOrUser().Authorized(ctx))
+	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
 }
 
 func normalizeCluster(cluster *v1.Cluster) {

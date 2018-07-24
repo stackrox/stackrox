@@ -7,18 +7,35 @@ import (
 	benchmarkDataStore "bitbucket.org/stack-rox/apollo/central/benchmark/datastore"
 	"bitbucket.org/stack-rox/apollo/central/benchmarkscan/store"
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/idcheck"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
-	authService "bitbucket.org/stack-rox/apollo/pkg/grpc/authz/service"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		or.SensorOrAuthorizer(user.With(permissions.View(resources.BenchmarkScan))): {
+			"/v1.BenchmarkScanService/ListBenchmarkScans",
+			"/v1.BenchmarkScanService/GetBenchmarkScan",
+			"/v1.BenchmarkScanService/GetHostResults",
+			"/v1.BenchmarkScanService/GetBenchmarkScansSummary",
+		},
+		idcheck.SensorsOnly(): {
+			"/v1.BenchmarkScanService/PostBenchmarkScan",
+		},
+	})
 )
 
 // BenchmarkScansService is the struct that manages the benchmark API
@@ -40,13 +57,7 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	pr := authService.PerRPC{
-		Default: or.SensorOrUser(),
-		Authorizers: map[string]authz.Authorizer{
-			"/v1.BenchmarkScansService/PostBenchmarkScan": idcheck.SensorsOnly(),
-		},
-	}
-	return ctx, service.ReturnErrorCode(pr.Authorized(ctx, fullMethodName))
+	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
 }
 
 // PostBenchmarkScan inserts a scan into the database

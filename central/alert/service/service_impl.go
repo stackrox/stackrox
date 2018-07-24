@@ -6,13 +6,29 @@ import (
 	"sort"
 
 	"bitbucket.org/stack-rox/apollo/central/alert/datastore"
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(permissions.View(resources.Alert)): {
+			"/v1.AlertService/GetAlert",
+			"/v1.AlertService/ListAlerts",
+			"/v1.AlertService/GetAlertsGroup",
+			"/v1.AlertService/GetAlertsCounts",
+			"/v1.AlertService/GetAlertTimeseries",
+		},
+	})
 )
 
 // serviceImpl provides APIs for alerts.
@@ -32,7 +48,7 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(user.Any().Authorized(ctx))
+	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
 }
 
 // GetAlert returns the alert with given id.

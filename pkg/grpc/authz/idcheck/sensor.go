@@ -8,13 +8,13 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
 )
 
-// A ServiceType Authorizer checks that the client has the desired service type.
-type ServiceType struct {
+// A serviceType Authorizer checks that the client has the desired service type.
+type serviceType struct {
 	Type v1.ServiceType
 }
 
 // Authorized checks whether the TLS identity has the required service context.
-func (s ServiceType) Authorized(ctx context.Context) error {
+func (s serviceType) Authorized(ctx context.Context, _ string) error {
 	identity, err := authn.FromTLSContext(ctx)
 	if err != nil {
 		return authz.ErrNoCredentials{}
@@ -25,7 +25,7 @@ func (s ServiceType) Authorized(ctx context.Context) error {
 	return nil
 }
 
-// SensorsOnly returns a ServiceType authorizer that checks for the Sensor type.
-func SensorsOnly() ServiceType {
-	return ServiceType{Type: v1.ServiceType_SENSOR_SERVICE}
+// SensorsOnly returns a serviceType authorizer that checks for the Sensor type.
+func SensorsOnly() authz.Authorizer {
+	return serviceType{Type: v1.ServiceType_SENSOR_SERVICE}
 }

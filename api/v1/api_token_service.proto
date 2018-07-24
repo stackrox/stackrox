@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "stackrox.generated";
+
+import "google/api/annotations.proto";
+
+package v1;
+
+message GenerateTokenRequest {
+    string role = 1;
+}
+
+message Token {
+    string token = 1;
+}
+
+service APITokenService {
+
+    rpc GenerateToken (GenerateTokenRequest) returns (Token) {
+        option (google.api.http) = {
+            post: "/v1/apitoken/generate"
+            body: "*"
+        };
+    }
+
+}

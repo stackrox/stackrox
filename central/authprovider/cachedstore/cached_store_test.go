@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	// This import is required to register auth providers.
-	_ "bitbucket.org/stack-rox/apollo/pkg/authproviders/all"
+	_ "bitbucket.org/stack-rox/apollo/pkg/auth/authproviders/all"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
@@ -86,9 +86,9 @@ func newCachedStoreWithFakeProvider(t *testing.T) (cachedStore CachedStore, prov
 func TestCachedStoreCanAddAndRetrieve(t *testing.T) {
 	cachedStore, id := newCachedStoreWithFakeProvider(t)
 
-	authenticators := cachedStore.GetAuthenticators()
-	assert.Len(t, authenticators, 1)
-	got, ok := authenticators[id]
+	authProviders := cachedStore.GetParsedAuthProviders()
+	assert.Len(t, authProviders, 1)
+	got, ok := authProviders[id]
 	assert.True(t, ok)
 	assert.False(t, got.Enabled())
 	assert.False(t, got.Validated())
@@ -98,9 +98,9 @@ func TestCachedStoreUpdatesWhenAuthSuccessIsRecorded(t *testing.T) {
 	cachedStore, id := newCachedStoreWithFakeProvider(t)
 
 	cachedStore.RecordAuthSuccess(id)
-	authenticators := cachedStore.GetAuthenticators()
-	assert.Len(t, authenticators, 1)
-	got, ok := authenticators[id]
+	authProviders := cachedStore.GetParsedAuthProviders()
+	assert.Len(t, authProviders, 1)
+	got, ok := authProviders[id]
 	assert.True(t, ok)
 	assert.False(t, got.Enabled())
 
@@ -117,11 +117,11 @@ func TestCacheIsRefreshedToBeginWith(t *testing.T) {
 		fakeID: fakeAuthProviderWithID,
 	}
 	cachedStore := New(newMockStoreWithProviders(fakeProviders))
-	authenticators := cachedStore.GetAuthenticators()
-	if !assert.Len(t, authenticators, 1) {
+	authProviders := cachedStore.GetParsedAuthProviders()
+	if !assert.Len(t, authProviders, 1) {
 		t.Fatal("Didn't find exactly one authenticator")
 	}
-	got, ok := authenticators[fakeID]
+	got, ok := authProviders[fakeID]
 	if !assert.True(t, ok) {
 		t.Fatalf("Couldn't find authenticator with %s", fakeID)
 	}
@@ -142,7 +142,7 @@ func TestCachedStoreHandlesRace(t *testing.T) {
 		}()
 		go func() {
 			defer wg.Done()
-			cachedStore.GetAuthenticators()
+			cachedStore.GetParsedAuthProviders()
 		}()
 		go func() {
 			defer wg.Done()

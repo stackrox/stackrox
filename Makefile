@@ -67,6 +67,7 @@ blanks:
 ## Generated Code and Dependencies ##
 #####################################
 API_SERVICES  = alert_service
+API_SERVICES += api_token_service
 API_SERVICES += auth_service
 API_SERVICES += authprovider_service
 API_SERVICES += benchmark_results_service

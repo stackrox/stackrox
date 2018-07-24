@@ -146,7 +146,7 @@ service AlertService {
         };
     }
 
-    rpc GetAlertTimeseries(ListAlertsRequest) returns (GetAlertTimeseriesResponse) {
+    rpc GetAlertTimeseries (ListAlertsRequest) returns (GetAlertTimeseriesResponse) {
         option (google.api.http) = {
             get: "/v1/alerts/summary/timeseries"
         };

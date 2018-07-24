@@ -64,40 +64,40 @@ message GetImageIntegrationsResponse {
 
 service ImageIntegrationService {
 
-    rpc GetImageIntegration(ResourceByID) returns (ImageIntegration) {
+    rpc GetImageIntegration (ResourceByID) returns (ImageIntegration) {
         option (google.api.http) = {
             get: "/v1/imageintegrations/{id}"
         };
     }
 
-    rpc GetImageIntegrations(GetImageIntegrationsRequest) returns (GetImageIntegrationsResponse) {
+    rpc GetImageIntegrations (GetImageIntegrationsRequest) returns (GetImageIntegrationsResponse) {
         option (google.api.http) = {
             get: "/v1/imageintegrations"
         };
     }
 
-    rpc PostImageIntegration(ImageIntegration) returns (ImageIntegration) {
+    rpc PostImageIntegration (ImageIntegration) returns (ImageIntegration) {
         option (google.api.http) = {
             post: "/v1/imageintegrations"
             body: "*"
         };
     }
 
-    rpc PutImageIntegration(ImageIntegration) returns (google.protobuf.Empty) {
+    rpc PutImageIntegration (ImageIntegration) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             put: "/v1/imageintegrations/{id}"
             body: "*"
         };
     }
 
-    rpc TestImageIntegration(ImageIntegration) returns (google.protobuf.Empty) {
+    rpc TestImageIntegration (ImageIntegration) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             post: "/v1/imageintegrations/test"
             body: "*"
         };
     }
 
-    rpc DeleteImageIntegration(ResourceByID) returns (google.protobuf.Empty) {
+    rpc DeleteImageIntegration (ResourceByID) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             delete: "/v1/imageintegrations/{id}"
         };

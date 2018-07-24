@@ -163,44 +163,44 @@ message GetDeploymentsResponse {
 
 service DeploymentService {
 
-    rpc GetDeployment(ResourceByID) returns (Deployment) {
+    rpc GetDeployment (ResourceByID) returns (Deployment) {
         option (google.api.http) = {
             get: "/v1/deployments/{id}"
         };
     }
 
-    rpc ListDeployments(RawQuery) returns (ListDeploymentsResponse) {
+    rpc ListDeployments (RawQuery) returns (ListDeploymentsResponse) {
         option (google.api.http) = {
             get: "/v1/deployments"
         };
     }
 
-    rpc GetLabels(google.protobuf.Empty) returns (DeploymentLabelsResponse) {
+    rpc GetLabels (google.protobuf.Empty) returns (DeploymentLabelsResponse) {
         option (google.api.http) = {
             get: "/v1/deployments/metadata/labels"
         };
     }
 
-    rpc GetMultipliers(google.protobuf.Empty) returns (GetMultipliersResponse) {
+    rpc GetMultipliers (google.protobuf.Empty) returns (GetMultipliersResponse) {
         option (google.api.http) = {
             get: "/v1/deployments/metadata/multipliers"
         };
     }
 
-    rpc AddMultiplier(Multiplier) returns (Multiplier) {
+    rpc AddMultiplier (Multiplier) returns (Multiplier) {
         option (google.api.http) = {
             post: "/v1/deployments/metadata/multipliers"
             body: "*"
         };
     }
 
-    rpc UpdateMultiplier(Multiplier) returns (google.protobuf.Empty) {
+    rpc UpdateMultiplier (Multiplier) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             put: "/v1/deployments/metadata/multipliers/{id}"
         };
     }
 
-    rpc RemoveMultiplier(ResourceByID) returns (google.protobuf.Empty) {
+    rpc RemoveMultiplier (ResourceByID) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             delete: "/v1/deployments/metadata/multipliers/{id}"
         };

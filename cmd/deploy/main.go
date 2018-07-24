@@ -3,6 +3,9 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"fmt"
 	"os"
 
@@ -40,18 +43,29 @@ func outputZip(config central.Config) error {
 
 	d, ok := central.Deployers[config.ClusterType]
 	if !ok {
-		return fmt.Errorf("Undefined cluster deployment generator: %s", config.ClusterType)
+		return fmt.Errorf("undefined cluster deployment generator: %s", config.ClusterType)
 	}
 
 	files, err := d.Render(config)
 	if err != nil {
-		return fmt.Errorf("Could not render files: %s", err)
+		return fmt.Errorf("could not render files: %s", err)
 	}
 	for _, f := range files {
 		if err := zipPkg.AddFile(zipW, f); err != nil {
-			return fmt.Errorf("Failed to write '%s': %s", f.Name, err)
+			return fmt.Errorf("failed to write '%s': %s", f.Name, err)
 		}
 	}
+
+	// Generate the private key that we will use to sign JWTs for API keys.
+	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		return fmt.Errorf("couldn't generate private key: %s", err)
+	}
+	err = zipPkg.AddFile(zipW, zipPkg.NewFile("jwt-key.der", string(x509.MarshalPKCS1PrivateKey(privateKey)), false))
+	if err != nil {
+		return fmt.Errorf("failed to write jwt key: %s", err)
+	}
+
 	// Add MTLS files
 	req := csr.CertificateRequest{
 		CN:         "StackRox Prevent Certificate Authority",
@@ -59,23 +73,23 @@ func outputZip(config central.Config) error {
 	}
 	cert, _, key, err := initca.New(&req)
 	if err != nil {
-		return fmt.Errorf("Could not generate keypair: %s", err)
+		return fmt.Errorf("could not generate keypair: %s", err)
 	}
 	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("ca.pem", string(cert), false)); err != nil {
-		return fmt.Errorf("Failed to write cert.pem: %s", err)
+		return fmt.Errorf("failed to write cert.pem: %s", err)
 	}
 	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("ca-key.pem", string(key), false)); err != nil {
-		return fmt.Errorf("Failed to write key.pem: %s", err)
+		return fmt.Errorf("failed to write key.pem: %s", err)
 	}
 
 	err = zipW.Close()
 	if err != nil {
-		return fmt.Errorf("Couldn't close zip writer: %s", err)
+		return fmt.Errorf("couldn't close zip writer: %s", err)
 	}
 
 	_, err = os.Stdout.Write(buf.Bytes())
 	if err != nil {
-		return fmt.Errorf("Couldn't write zip file: %s", err)
+		return fmt.Errorf("couldn't write zip file: %s", err)
 	}
 	return err
 }

@@ -32,33 +32,33 @@ message GetAuthProvidersResponse {
 }
 
 service AuthProviderService {
-    rpc GetAuthProvider(ResourceByID) returns (AuthProvider) {
+    rpc GetAuthProvider (ResourceByID) returns (AuthProvider) {
         option (google.api.http) = {
             get: "/v1/authProviders/{id}"
         };
     }
 
-    rpc GetAuthProviders(GetAuthProvidersRequest) returns (GetAuthProvidersResponse) {
+    rpc GetAuthProviders (GetAuthProvidersRequest) returns (GetAuthProvidersResponse) {
         option (google.api.http) = {
             get: "/v1/authProviders"
         };
     }
 
-    rpc PostAuthProvider(AuthProvider) returns (AuthProvider) {
+    rpc PostAuthProvider (AuthProvider) returns (AuthProvider) {
         option (google.api.http) = {
             post: "/v1/authProviders"
             body: "*"
         };
     }
 
-    rpc PutAuthProvider(AuthProvider) returns (google.protobuf.Empty) {
+    rpc PutAuthProvider (AuthProvider) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             put: "/v1/authProviders/{id}"
             body: "*"
         };
     }
 
-    rpc DeleteAuthProvider(ResourceByID) returns (google.protobuf.Empty) {
+    rpc DeleteAuthProvider (ResourceByID) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             delete: "/v1/authProviders/{id}"
         };

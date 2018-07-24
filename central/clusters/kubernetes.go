@@ -151,7 +151,7 @@ spec:
         - kubernetes-sensor
         volumeMounts:
         - name: certs
-          mountPath: /run/secrets/stackrox.io/
+          mountPath: /run/secrets/stackrox.io/certs/
           readOnly: true
         resources:
           requests:

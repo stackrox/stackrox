@@ -146,8 +146,11 @@ spec:
           capabilities:
             drop: ["NET_RAW"]
         volumeMounts:
-        - name: certs
-          mountPath: /run/secrets/stackrox.io/
+        - name: central-certs-volume
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+        - name: central-jwt-volume
+          mountPath: /run/secrets/stackrox.io/jwt/
           readOnly: true
         {{if .HostPath -}}
         - name: {{.HostPath.Name}}
@@ -158,9 +161,12 @@ spec:
           mountPath: {{.External.MountPath}}
         {{- end}}
       volumes:
-      - name: certs
+      - name: central-certs-volume
         secret:
           secretName: central-tls
+      - name: central-jwt-volume
+        secret:
+          secretName: central-jwt
       {{if .HostPath -}}
       - name: {{.HostPath.Name}}
         hostPath:
@@ -206,6 +212,7 @@ spec:
 
 	k8sCmd = commandPrefix + kubernetesPkg.GetCreateSecretTemplate("{{.K8sConfig.Namespace}}", "{{.K8sConfig.Registry}}", "{{.K8sConfig.ImagePullSecret}}") + `
 kubectl create secret -n "{{.K8sConfig.Namespace}}" generic central-tls --from-file="$DIR/ca.pem" --from-file="$DIR/ca-key.pem"
+kubectl create secret -n "{{.K8sConfig.Namespace}}" generic central-jwt --from-file="$DIR/jwt-key.der"
 kubectl create -f "${DIR}/deploy.yaml"
 echo "Central has been deployed"
 `

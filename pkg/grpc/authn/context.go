@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/pkg/authproviders"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/tokenbased"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls"
 )
 
@@ -15,7 +15,7 @@ var (
 )
 
 type tlsContextKey struct{}
-type userContextKey struct{}
+type tokenBasedIdentityContextKey struct{}
 type authConfigurationContextKey struct{}
 
 // A TLSIdentity holds an identity extracted from service-to-service TLS credentials.
@@ -39,24 +39,17 @@ func FromTLSContext(ctx context.Context) (TLSIdentity, error) {
 	return val, nil
 }
 
-// A UserIdentity holds an identity extracted from a user authentication token.
-type UserIdentity struct {
-	authproviders.User
-	AuthProvider authproviders.Authenticator
-	Expiration   time.Time
+// NewTokenBasedIdentityContext adds the given Identity to the Context.
+func NewTokenBasedIdentityContext(ctx context.Context, id tokenbased.Identity) context.Context {
+	return context.WithValue(ctx, tokenBasedIdentityContextKey{}, id)
 }
 
-// NewUserContext adds the given Identity to the Context.
-func NewUserContext(ctx context.Context, id UserIdentity) context.Context {
-	return context.WithValue(ctx, userContextKey{}, id)
-}
-
-// FromUserContext retrieves identity information from the given context.
+// FromTokenBasedIdentityContext retrieves identity information from the given context.
 // The context must have been passed through the interceptors provided by this package.
-func FromUserContext(ctx context.Context) (UserIdentity, error) {
-	val, ok := ctx.Value(userContextKey{}).(UserIdentity)
+func FromTokenBasedIdentityContext(ctx context.Context) (tokenbased.Identity, error) {
+	val, ok := ctx.Value(tokenBasedIdentityContextKey{}).(tokenbased.Identity)
 	if !ok {
-		return UserIdentity{}, ErrNoContext
+		return nil, ErrNoContext
 	}
 	return val, nil
 }

@@ -4,12 +4,14 @@ import (
 	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/central/authprovider/store"
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/authproviders"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/authproviders"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/allow"
-	authService "bitbucket.org/stack-rox/apollo/pkg/grpc/authz/service"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -17,6 +19,20 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		allow.Anonymous(): {
+			"/v1.AuthProviderService/GetAuthProvider",
+			"/v1.AuthProviderService/GetAuthProviders",
+		},
+		user.With(permissions.Modify(resources.AuthProvider)): {
+			"/v1.AuthProviderService/PostAuthProvider",
+			"/v1.AuthProviderService/PutAuthProvider",
+			"/v1.AuthProviderService/DeleteAuthProvider",
+		},
+	})
 )
 
 // ClusterService is the struct that manages the cluster API
@@ -36,14 +52,7 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	pr := authService.PerRPC{
-		Default: user.Any(),
-		Authorizers: map[string]authz.Authorizer{
-			"/v1.AuthProviderService/GetAuthProvider":  allow.Anonymous(),
-			"/v1.AuthProviderService/GetAuthProviders": allow.Anonymous(),
-		},
-	}
-	return ctx, service.ReturnErrorCode(pr.Authorized(ctx, fullMethodName))
+	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
 }
 
 // GetAuthProvider retrieves the authProvider based on the id passed

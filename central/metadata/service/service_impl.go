@@ -28,7 +28,7 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(allow.Anonymous().Authorized(ctx))
+	return ctx, service.ReturnErrorCode(allow.Anonymous().Authorized(ctx, fullMethodName))
 }
 
 // GetMetadata returns the metadata for Prevent.

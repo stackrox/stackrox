@@ -93,13 +93,13 @@ message ListImagesResponse {
 
 service ImageService {
 
-    rpc GetImage(ResourceByID) returns (Image) {
+    rpc GetImage (ResourceByID) returns (Image) {
         option (google.api.http) = {
             get: "/v1/images/{id}"
         };
     }
 
-    rpc ListImages(RawQuery) returns (ListImagesResponse) {
+    rpc ListImages (RawQuery) returns (ListImagesResponse) {
         option (google.api.http) = {
             get: "/v1/images"
         };

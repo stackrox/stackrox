@@ -55,7 +55,7 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(idcheck.SensorsOnly().Authorized(ctx))
+	return ctx, service.ReturnErrorCode(idcheck.SensorsOnly().Authorized(ctx, fullMethodName))
 }
 
 // RecordEvent takes in a stream of deployment events and outputs a stream of alerts and enforcement actions.

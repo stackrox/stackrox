@@ -86,14 +86,14 @@ message SearchOptionsResponse {
 
 service SearchService {
 
-    rpc Search(RawSearchRequest) returns (SearchResponse) {
+    rpc Search (RawSearchRequest) returns (SearchResponse) {
         option (google.api.http) = {
             get: "/v1/search"
         };
     }
 
 
-    rpc Options(SearchOptionsRequest) returns (SearchOptionsResponse) {
+    rpc Options (SearchOptionsRequest) returns (SearchOptionsResponse) {
         option (google.api.http) = {
             get: "/v1/search/metadata/options"
         };

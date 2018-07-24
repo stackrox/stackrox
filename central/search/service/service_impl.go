@@ -9,10 +9,14 @@ import (
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
 	policyDataStore "bitbucket.org/stack-rox/apollo/central/policy/datastore"
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	"bitbucket.org/stack-rox/apollo/central/search/options"
 	secretService "bitbucket.org/stack-rox/apollo/central/secret/service"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	searchCommon "bitbucket.org/stack-rox/apollo/pkg/search"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -33,6 +37,21 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]searchFunc {
 	}
 }
 
+var (
+	// To access search, we require users to have view access to every searchable resource.
+	// We could consider allowing people to search across just the things they have access to,
+	// but that requires non-trivial refactoring, so we'll do it if we feel the need later.
+	// This variable is package-level to facilitate the unit test that asserts
+	// that it covers all the searchable categories.
+	searchCategoryToResource = map[v1.SearchCategory]permissions.Resource{
+		v1.SearchCategory_ALERTS:      resources.Alert,
+		v1.SearchCategory_DEPLOYMENTS: resources.Deployment,
+		v1.SearchCategory_IMAGES:      resources.Image,
+		v1.SearchCategory_POLICIES:    resources.Policy,
+		v1.SearchCategory_SECRETS:     resources.Secret,
+	}
+)
+
 // SearchService provides APIs for search.
 type serviceImpl struct {
 	alerts      alertDataStore.DataStore
@@ -41,6 +60,8 @@ type serviceImpl struct {
 	policies    policyDataStore.DataStore
 
 	parser *searchCommon.QueryParser
+
+	authorizer authz.Authorizer
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -53,9 +74,23 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 	return v1.RegisterSearchServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
 }
 
+func (s *serviceImpl) initializeAuthorizer() {
+	requiredPermissions := make([]permissions.Permission, 0, len(searchCategoryToResource))
+	for _, resource := range searchCategoryToResource {
+		requiredPermissions = append(requiredPermissions, permissions.View(resource))
+	}
+
+	s.authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(requiredPermissions...): {
+			"/v1.SearchService/Search",
+			"/v1.SearchService/Options",
+		},
+	})
+}
+
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(user.Any().Authorized(ctx))
+	return ctx, service.ReturnErrorCode(s.authorizer.Authorized(ctx, fullMethodName))
 }
 
 // Search implements the ability to search through indexes for data

@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -111,9 +112,21 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
 		assert.Equal(t, sha, c.GetImage().GetName().GetTag())
 	}
 
-	require.Len(t, c.GetSecrets(), 1)
-	s := c.GetSecrets()[0]
-	assert.True(t, strings.HasPrefix(s.GetPath(), "/run/secrets/stackrox.io"))
+	require.Len(t, c.GetSecrets(), 2)
+	paths := make([]string, 0, 2)
+	for _, secret := range c.GetSecrets() {
+		paths = append(paths, secret.GetPath())
+	}
+	sort.Slice(paths, func(i, j int) bool {
+		return paths[i] < paths[j]
+	})
+	expectedPathPrefixes := []string{
+		"/run/secrets/stackrox.io/certs",
+		"/run/secrets/stackrox.io/jwt",
+	}
+	for i, path := range paths {
+		assert.True(t, strings.HasPrefix(path, expectedPathPrefixes[i]))
+	}
 
 	require.Len(t, c.GetPorts(), 1)
 	p := c.GetPorts()[0]

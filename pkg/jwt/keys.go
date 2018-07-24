@@ -11,7 +11,14 @@ import (
 
 // KeyGetter is the interface that all providers of JSON Web Keys should implement.
 type KeyGetter interface {
-	Key(id string) *jose.JSONWebKey
+	// The key should be a type that go-jose understands. Valid types include:
+	// ed25519.PublicKey
+	// *rsa.PublicKey
+	// *ecdsa.PublicKey
+	// []byte
+	// jose.JSONWebKey
+	// *jose.JSONWebKey
+	Key(id string) (key interface{}, found bool)
 }
 
 // A JWKSGetter gets trusted keys from a JSON Web Key Set (JWKS) URL.
@@ -30,9 +37,10 @@ func NewJWKSGetter(url string) *JWKSGetter {
 }
 
 // Key returns the key with the given ID, if it is in the set.
-func (j *JWKSGetter) Key(id string) *jose.JSONWebKey {
+func (j *JWKSGetter) Key(id string) (interface{}, bool) {
 	j.fetchOnce.Do(j.fetch)
-	return j.known[id]
+	key, found := j.known[id]
+	return key, found
 }
 
 func (j *JWKSGetter) fetch() {

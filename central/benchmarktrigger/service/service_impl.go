@@ -5,9 +5,14 @@ import (
 
 	bDataStore "bitbucket.org/stack-rox/apollo/central/benchmark/datastore"
 	btDataStore "bitbucket.org/stack-rox/apollo/central/benchmarktrigger/datastore"
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -15,6 +20,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(permissions.View(resources.BenchmarkTrigger)): {
+			"/v1.BenchmarkTriggerService/GetTriggers",
+		},
+		user.With(permissions.Modify(resources.BenchmarkTrigger)): {
+			"/v1.BenchmarkTriggerService/Trigger",
+		},
+	}))
 )
 
 // BenchmarkTriggerService is the struct that manages the benchmark API
@@ -35,7 +51,7 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(or.SensorOrUser().Authorized(ctx))
+	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
 }
 
 // Trigger triggers a benchmark launch asynchronously.

@@ -5,14 +5,28 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/networkgraph"
 	"bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(permissions.View(resources.NetworkPolicy)): {
+			"/v1.NetworkPolicyService/GetNetworkPolicy",
+			"/v1.NetworkPolicyService/ListNetworkPolicies",
+			"/v1.NetworkPolicyService/GetNetworkGraph",
+		},
+	})
 )
 
 // serviceImpl provides APIs for alerts.
@@ -33,7 +47,7 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(user.Any().Authorized(ctx))
+	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
 }
 
 func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.ResourceByID) (*v1.NetworkPolicy, error) {

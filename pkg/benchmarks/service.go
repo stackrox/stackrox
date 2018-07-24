@@ -36,7 +36,7 @@ func (s *BenchmarkResultsService) RegisterServiceHandlerFromEndpoint(context.Con
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *BenchmarkResultsService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	// TODO(cg): AP-157: Provide credentials to the benchmark service and verify them here.
-	return ctx, allow.Anonymous().Authorized(ctx)
+	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
 }
 
 // PostBenchmarkResult inserts a new benchmark result into the system

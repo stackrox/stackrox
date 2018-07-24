@@ -177,14 +177,14 @@ func stop() {
 ////////////////////
 
 // Provides the custom routes to provide.
-func customRoutes() map[string]routes.CustomRoute {
-	routeMap := map[string]routes.CustomRoute{
-		"/metrics": {
+func customRoutes() []routes.CustomRoute {
+	return []routes.CustomRoute{
+		{
+			Route:         "/metrics",
 			ServerHandler: promhttp.Handler(),
 			Compression:   false,
 		},
 	}
-	return routeMap
 }
 
 // Registers our connection for benchmarking.

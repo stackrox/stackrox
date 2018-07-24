@@ -80,32 +80,32 @@ message GetBenchmarkScansSummaryResponse {
 
 service BenchmarkScanService {
 
-    rpc PostBenchmarkScan(BenchmarkScanMetadata) returns (google.protobuf.Empty) {
+    rpc PostBenchmarkScan (BenchmarkScanMetadata) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             post: "/v1/benchmarks/scans"
             body: "*"
         };
     }
 
-    rpc ListBenchmarkScans(ListBenchmarkScansRequest) returns (ListBenchmarkScansResponse) {
+    rpc ListBenchmarkScans (ListBenchmarkScansRequest) returns (ListBenchmarkScansResponse) {
         option (google.api.http) = {
             get: "/v1/benchmarks/scans"
         };
     }
 
-    rpc GetBenchmarkScan(GetBenchmarkScanRequest) returns (BenchmarkScan) {
+    rpc GetBenchmarkScan (GetBenchmarkScanRequest) returns (BenchmarkScan) {
         option (google.api.http) = {
             get: "/v1/benchmarks/scans/{scan_id}"
         };
     }
 
-    rpc GetHostResults(GetHostResultsRequest) returns (HostResults) {
+    rpc GetHostResults (GetHostResultsRequest) returns (HostResults) {
         option (google.api.http) = {
             get: "/v1/benchmarks/scans/{scan_id}/{check_name}"
         };
     }
 
-    rpc GetBenchmarkScansSummary(google.protobuf.Empty) returns (GetBenchmarkScansSummaryResponse) {
+    rpc GetBenchmarkScansSummary (google.protobuf.Empty) returns (GetBenchmarkScansSummaryResponse) {
         option (google.api.http) = {
             get: "/v1/benchmarks/summary/scans"
         };

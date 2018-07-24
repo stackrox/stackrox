@@ -1,0 +1,34 @@
+package store
+
+import (
+	"bitbucket.org/stack-rox/apollo/central/role"
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
+)
+
+// Store is the store for roles.
+// For now, roles are read-only, and valid roles are pre-defined in the code.
+// The store's interface can be expanded if we start allowing for the creation
+// of custom roles, or for the updating of existing roles.
+type Store interface {
+	GetRole(name string) (role permissions.Role, exists bool)
+}
+
+// defaultRolesMap returns the pre-defined roles that we allow.
+func defaultRolesMap() map[string]permissions.Role {
+	return map[string]permissions.Role{
+		role.Admin: permissions.NewAllAccessRole(role.Admin),
+		role.SensorCreator: permissions.NewRoleWithPermissions(role.SensorCreator,
+			permissions.View(resources.Cluster),
+			permissions.Modify(resources.Cluster),
+			permissions.View(resources.ServiceIdentity),
+		),
+	}
+}
+
+// New returns a new store.
+func New() Store {
+	return &storeImpl{
+		roles: defaultRolesMap(),
+	}
+}

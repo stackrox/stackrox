@@ -47,7 +47,7 @@ type API interface {
 	// Start runs the API in a goroutine.
 	Start()
 	// Register adds a new APIService to the list of API services
-	Register(service APIService)
+	Register(services ...APIService)
 }
 
 type apiImpl struct {
@@ -58,7 +58,7 @@ type apiImpl struct {
 // A Config configures the server.
 type Config struct {
 	TLS                verifier.TLSConfigurer
-	CustomRoutes       map[string]routes.CustomRoute
+	CustomRoutes       []routes.CustomRoute
 	UnaryInterceptors  []grpc.UnaryServerInterceptor
 	StreamInterceptors []grpc.StreamServerInterceptor
 }
@@ -74,8 +74,8 @@ func (a *apiImpl) Start() {
 	go a.run()
 }
 
-func (a *apiImpl) Register(service APIService) {
-	a.apiServices = append(a.apiServices, service)
+func (a *apiImpl) Register(services ...APIService) {
+	a.apiServices = append(a.apiServices, services...)
 }
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
@@ -118,8 +118,8 @@ func (a *apiImpl) muxer(tlsConf *tls.Config) http.Handler {
 	dialOpts := []grpc.DialOption{grpc.WithTransportCredentials(dialCreds)}
 
 	mux := http.NewServeMux()
-	for prefix, route := range a.config.CustomRoutes {
-		mux.Handle(prefix, route.Handler())
+	for _, route := range a.config.CustomRoutes {
+		mux.Handle(route.Route, route.Handler())
 	}
 
 	gwMux := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{EmitDefaults: true}))

@@ -7,10 +7,14 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	"bitbucket.org/stack-rox/apollo/central/enrichment"
 	multiplierStore "bitbucket.org/stack-rox/apollo/central/multiplier/store"
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
 	"bitbucket.org/stack-rox/apollo/pkg/dberrors"
 	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"bitbucket.org/stack-rox/apollo/pkg/search"
 	"bitbucket.org/stack-rox/apollo/pkg/set"
@@ -20,6 +24,22 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(permissions.View(resources.Deployment)): {
+			"/v1.DeploymentService/GetDeployment",
+			"/v1.DeploymentService/ListDeployments",
+			"/v1.DeploymentService/GetLabels",
+			"/v1.DeploymentService/GetMultipliers",
+		},
+		user.With(permissions.Modify(resources.Deployment)): {
+			"/v1.DeploymentService/AddMultiplier",
+			"/v1.DeploymentService/UpdateMultiplier",
+			"/v1.DeploymentService/RemoveMultiplier",
+		},
+	})
 )
 
 // serviceImpl provides APIs for alerts.
@@ -41,7 +61,7 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(user.Any().Authorized(ctx))
+	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
 }
 
 // GetDeployment returns the deployment with given id.

@@ -10,8 +10,12 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
 	notifierStore "bitbucket.org/stack-rox/apollo/central/notifier/store"
 	"bitbucket.org/stack-rox/apollo/central/policy/datastore"
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"bitbucket.org/stack-rox/apollo/pkg/search"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -20,6 +24,26 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(permissions.View(resources.Policy)): {
+			"/v1.PolicyService/GetPolicy",
+			"/v1.PolicyService/ListPolicies",
+			"/v1.PolicyService/ReassessPolicies",
+			"/v1.PolicyService/GetPolicyCategories",
+		},
+		user.With(permissions.Modify(resources.Policy)): {
+			"/v1.PolicyService/PostPolicy",
+			"/v1.PolicyService/PutPolicy",
+			"/v1.PolicyService/PatchPolicy",
+			"/v1.PolicyService/DeletePolicy",
+			"/v1.PolicyService/DryRunPolicy",
+			"/v1.PolicyService/RenamePolicyCategory",
+			"/v1.PolicyService/DeletePolicyCategory",
+		},
+	})
 )
 
 const (
@@ -51,7 +75,7 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(user.Any().Authorized(ctx))
+	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
 }
 
 // GetPolicy returns a policy by name.

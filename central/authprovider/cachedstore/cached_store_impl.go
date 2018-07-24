@@ -6,20 +6,20 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/authprovider/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/authproviders"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/authproviders"
 )
 
 type cachedStoreImpl struct {
 	store store.Store
-	cache map[string]authproviders.Authenticator
+	cache map[string]authproviders.AuthProvider
 	lock  sync.Mutex
 }
 
-// GetAuthenticators gets the cached map from id to the authenticator object.
-func (c *cachedStoreImpl) GetAuthenticators() map[string]authproviders.Authenticator {
+// GetParsedAuthProviders gets the cached map from id to the authenticator object.
+func (c *cachedStoreImpl) GetParsedAuthProviders() map[string]authproviders.AuthProvider {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	clone := make(map[string]authproviders.Authenticator)
+	clone := make(map[string]authproviders.AuthProvider)
 	for k, v := range c.cache {
 		clone[k] = v
 	}
@@ -31,7 +31,7 @@ func (c *cachedStoreImpl) RefreshCache() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	c.cache = make(map[string]authproviders.Authenticator)
+	c.cache = make(map[string]authproviders.AuthProvider)
 
 	providers, err := c.GetAuthProviders(&v1.GetAuthProvidersRequest{})
 	if err != nil {

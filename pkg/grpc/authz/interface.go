@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc/codes"
 )
 
@@ -12,7 +11,7 @@ import (
 type Authorizer interface {
 	// Authorized returns an error if authorization fails.
 	// If authorization is successful, it returns nil.
-	Authorized(context.Context) error
+	Authorized(ctx context.Context, fullMethodName string) error
 }
 
 // ErrNoCredentials occurs if no relevant credentials can be found.
@@ -25,11 +24,6 @@ func (e ErrNoCredentials) Error() string {
 // Status implements the StatusError interface.
 func (e ErrNoCredentials) Status() codes.Code {
 	return codes.Unauthenticated
-}
-
-// HTTPStatus implements the HTTPStatus interface
-func (e ErrNoCredentials) HTTPStatus() int {
-	return runtime.HTTPStatusFromCode(e.Status())
 }
 
 // ErrNotAuthorized occurs if credentials are found, but they are
@@ -47,11 +41,6 @@ func (e ErrNotAuthorized) Status() codes.Code {
 	return codes.PermissionDenied
 }
 
-// HTTPStatus implements the HTTPStatus interface
-func (e ErrNotAuthorized) HTTPStatus() int {
-	return runtime.HTTPStatusFromCode(e.Status())
-}
-
 // ErrNoAuthzConfigured occurs if authorization is not implemented for a
 // service. This is a programming error.
 type ErrNoAuthzConfigured struct{}
@@ -63,11 +52,6 @@ func (e ErrNoAuthzConfigured) Error() string {
 // Status implements the StatusError interface.
 func (e ErrNoAuthzConfigured) Status() codes.Code {
 	return codes.Unimplemented
-}
-
-// HTTPStatus implements the HTTPStatus interface
-func (e ErrNoAuthzConfigured) HTTPStatus() int {
-	return runtime.HTTPStatusFromCode(e.Status())
 }
 
 // ErrAuthnConfigMissing occurs if user authentication configuration is
@@ -83,9 +67,4 @@ func (e ErrAuthnConfigMissing) Error() string {
 // Status implements the StatusError interface.
 func (e ErrAuthnConfigMissing) Status() codes.Code {
 	return codes.Unimplemented
-}
-
-// HTTPStatus implements the HTTPStatus interface
-func (e ErrAuthnConfigMissing) HTTPStatus() int {
-	return runtime.HTTPStatusFromCode(e.Status())
 }

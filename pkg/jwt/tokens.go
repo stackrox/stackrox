@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"
@@ -80,14 +81,15 @@ func (v rs256Validator) Validate(hdrs map[string][]string) (string, *jwt.Claims,
 		return "", nil, ErrNoJWTHeaders
 	}
 
+	var errors []error
 	for _, h := range token.Headers {
 		claims, err := v.validateWithHeader(token, h)
 		if err == nil {
 			return raw, claims, nil
 		}
-		logger.Warnf("Validation error: %s", err)
+		errors = append(errors, err)
 	}
-	return "", nil, ErrUnverifiableToken
+	return "", nil, errorhelpers.NewErrorListWithErrors(fmt.Errorf("%s: ", ErrUnverifiableToken).Error(), errors).ToError()
 }
 
 func (v rs256Validator) validateWithHeader(token *jwt.JSONWebToken, header jose.Header) (*jwt.Claims, error) {
@@ -98,8 +100,8 @@ func (v rs256Validator) validateWithHeader(token *jwt.JSONWebToken, header jose.
 	if header.KeyID == "" {
 		return nil, ErrNoKeyID
 	}
-	key := v.keyGetter.Key(header.KeyID)
-	if key == nil {
+	key, exists := v.keyGetter.Key(header.KeyID)
+	if !exists {
 		return nil, ErrKeyNotFound
 	}
 

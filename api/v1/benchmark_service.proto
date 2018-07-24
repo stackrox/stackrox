@@ -45,39 +45,39 @@ message DeleteBenchmarkRequest {
 
 service BenchmarkService {
 
-    rpc GetChecks(google.protobuf.Empty) returns (GetChecksResponse) {
+    rpc GetChecks (google.protobuf.Empty) returns (GetChecksResponse) {
         option (google.api.http) = {
             get: "/v1/benchmarks/checks"
         };
     }
 
-    rpc GetBenchmark(ResourceByID) returns (Benchmark) {
+    rpc GetBenchmark (ResourceByID) returns (Benchmark) {
         option (google.api.http) = {
             get: "/v1/benchmarks/configs/{id}"
         };
     }
 
-    rpc GetBenchmarks(GetBenchmarksRequest) returns (GetBenchmarksResponse) {
+    rpc GetBenchmarks (GetBenchmarksRequest) returns (GetBenchmarksResponse) {
         option (google.api.http) = {
             get: "/v1/benchmarks/configs"
         };
     }
 
-    rpc PostBenchmark(Benchmark) returns (Benchmark) {
+    rpc PostBenchmark (Benchmark) returns (Benchmark) {
         option (google.api.http) = {
             post: "/v1/benchmarks/configs"
             body: "*"
         };
     }
 
-    rpc PutBenchmark(Benchmark) returns (google.protobuf.Empty) {
+    rpc PutBenchmark (Benchmark) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             put: "/v1/benchmarks/configs/{id}"
             body: "*"
         };
     }
 
-    rpc DeleteBenchmark(ResourceByID) returns (google.protobuf.Empty) {
+    rpc DeleteBenchmark (ResourceByID) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             delete: "/v1/benchmarks/configs/{id}"
         };

@@ -5,10 +5,15 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/central/imageintegration/datastore"
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"bitbucket.org/stack-rox/apollo/pkg/secrets"
 	"bitbucket.org/stack-rox/apollo/pkg/sources"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -17,6 +22,21 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(permissions.View(resources.ImageIntegration)): {
+			"/v1.ImageIntegrationService/GetImageIntegration",
+			"/v1.ImageIntegrationService/GetImageIntegrations",
+		},
+		user.With(permissions.Modify(resources.ImageIntegration)): {
+			"/v1.ImageIntegrationService/PostImageIntegration",
+			"/v1.ImageIntegrationService/PutImageIntegration",
+			"/v1.ImageIntegrationService/TestImageIntegration",
+			"/v1.ImageIntegrationService/DeleteImageIntegration",
+		},
+	}))
 )
 
 // ImageIntegrationService is the struct that manages the ImageIntegration API
@@ -37,7 +57,7 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(or.SensorOrUser().Authorized(ctx))
+	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
 }
 
 func scrubImageIntegration(i *v1.ImageIntegration) {

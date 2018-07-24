@@ -3,13 +3,13 @@ package cachedstore
 import (
 	"bitbucket.org/stack-rox/apollo/central/authprovider/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/authproviders"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/authproviders"
 )
 
 // CachedStore is an intermediary to storage that keeps an in-memory cache of auth providers.
 type CachedStore interface {
-	// GetAuthenticators gets the cached map from id to the authenticator object.
-	GetAuthenticators() map[string]authproviders.Authenticator
+	// GetParsedAuthProviders gets the cached map from id to the authenticator object.
+	GetParsedAuthProviders() map[string]authproviders.AuthProvider
 	// RefreshCache discards the cache and regenerates it from the persistent store.
 	RefreshCache()
 

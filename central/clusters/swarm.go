@@ -92,13 +92,13 @@ services:
 {{- end}}
     secrets:
       - source: sensor_certificate
-        target: stackrox.io/cert.pem
+        target: stackrox.io/certs/cert.pem
         mode: 400
       - source: sensor_private_key
-        target: stackrox.io/key.pem
+        target: stackrox.io/certs/key.pem
         mode: 400
       - source: central_certificate
-        target: stackrox.io/ca.pem
+        target: stackrox.io/certs/ca.pem
         mode: 400
 {{if ne .DisableSwarmTLS "true" }}
       - source: docker_client_ca_pem

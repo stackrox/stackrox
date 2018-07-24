@@ -4,15 +4,35 @@ import (
 	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/central/benchmark/datastore"
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(permissions.View(resources.Benchmark)): {
+			"/v1.BenchmarkService/GetChecks",
+			"/v1.BenchmarkService/GetBenchmark",
+			"/v1.BenchmarkService/GetBenchmarks",
+		},
+		user.With(permissions.Modify(resources.Benchmark)): {
+			"/v1.BenchmarkService/PostBenchmark",
+			"/v1.BenchmarkService/PutBenchmark",
+			"/v1.BenchmarkService/DeleteBenchmark",
+		},
+	}))
 )
 
 // ClusterService is the struct that manages the cluster API
@@ -32,7 +52,7 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(or.SensorOrUser().Authorized(ctx))
+	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
 }
 
 // GetBenchmark returns the benchmark by the passed name

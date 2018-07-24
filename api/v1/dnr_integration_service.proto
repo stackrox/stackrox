@@ -26,39 +26,39 @@ message GetDNRIntegrationsResponse {
 
 service DNRIntegrationService {
 
-    rpc GetDNRIntegration(ResourceByID) returns (DNRIntegration) {
+    rpc GetDNRIntegration (ResourceByID) returns (DNRIntegration) {
         option (google.api.http) = {
             get: "/v1/dnrintegrations/{id}"
         };
     }
 
-    rpc GetDNRIntegrations(GetDNRIntegrationsRequest) returns (GetDNRIntegrationsResponse) {
+    rpc GetDNRIntegrations (GetDNRIntegrationsRequest) returns (GetDNRIntegrationsResponse) {
         option (google.api.http) = {
             get: "/v1/dnrintegrations"
         };
     }
 
-    rpc PostDNRIntegration(DNRIntegration) returns (DNRIntegration) {
+    rpc PostDNRIntegration (DNRIntegration) returns (DNRIntegration) {
         option (google.api.http) = {
             post: "/v1/dnrintegrations"
             body: "*"
         };
     }
 
-    rpc PutDNRIntegration(DNRIntegration) returns (DNRIntegration) {
+    rpc PutDNRIntegration (DNRIntegration) returns (DNRIntegration) {
         option (google.api.http) = {
             put: "/v1/dnrintegrations/{id}"
             body: "*"
         };
     }
 
-    rpc DeleteDNRIntegration(ResourceByID) returns (google.protobuf.Empty) {
+    rpc DeleteDNRIntegration (ResourceByID) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             delete: "/v1/dnrintegrations/{id}"
         };
     }
 
-    rpc TestDNRIntegration(DNRIntegration) returns (google.protobuf.Empty) {
+    rpc TestDNRIntegration (DNRIntegration) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             post: "/v1/dnrintegrations/test"
             body: "*"

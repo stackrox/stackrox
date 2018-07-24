@@ -3,9 +3,13 @@ package service
 import (
 	"context"
 
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/central/serviceidentities/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"bitbucket.org/stack-rox/apollo/pkg/mtls"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -13,6 +17,18 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(permissions.View(resources.ServiceIdentity)): {
+			"/v1.ServiceIdentityService/GetServiceIdentities",
+			"/v1.ServiceIdentityService/GetAuthorities",
+		},
+		user.With(permissions.Modify(resources.ServiceIdentity)): {
+			"/v1.ServiceIdentityService/CreateServiceIdentity",
+		},
+	})
 )
 
 // IdentityService is the struct that manages the Service Identity API
@@ -32,7 +48,7 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(user.Any().Authorized(ctx))
+	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
 }
 
 // GetServiceIdentities returns the currently defined service identities.

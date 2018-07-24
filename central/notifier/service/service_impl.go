@@ -6,9 +6,13 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/notifier/processor"
 	"bitbucket.org/stack-rox/apollo/central/notifier/store"
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
 	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
 	"bitbucket.org/stack-rox/apollo/pkg/secrets"
@@ -19,6 +23,21 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(permissions.View(resources.Notifier)): {
+			"/v1.NotifierService/GetNotifier",
+			"/v1.NotifierService/GetNotifiers",
+		},
+		user.With(permissions.Modify(resources.Notifier)): {
+			"/v1.NotifierService/PutNotifier",
+			"/v1.NotifierService/PostNotifier",
+			"/v1.NotifierService/TestNotifier",
+			"/v1.NotifierService/DeleteNotifier",
+		},
+	})
 )
 
 // ClusterService is the struct that manages the cluster API
@@ -40,7 +59,7 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(user.Any().Authorized(ctx))
+	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
 }
 
 // GetNotifier retrieves all registries that matches the request filters

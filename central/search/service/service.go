@@ -30,11 +30,13 @@ type Service interface {
 
 // New returns a new Service instance using the given DataStore.
 func New(alerts alertDataStore.DataStore, deployments deploymentDataStore.DataStore, images imageDataStore.DataStore, policies policyDataStore.DataStore) Service {
-	return &serviceImpl{
+	s := &serviceImpl{
 		alerts:      alerts,
 		deployments: deployments,
 		images:      images,
 		policies:    policies,
 		parser:      &search.QueryParser{},
 	}
+	s.initializeAuthorizer()
+	return s
 }

@@ -5,11 +5,16 @@ import (
 
 	benchmarkDataStore "bitbucket.org/stack-rox/apollo/central/benchmark/datastore"
 	"bitbucket.org/stack-rox/apollo/central/benchmarkschedule/store"
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
 	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
 	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -17,6 +22,20 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(permissions.View(resources.BenchmarkSchedule)): {
+			"/v1.BenchmarkScheduleService/GetBenchmarkSchedule",
+			"/v1.BenchmarkScheduleService/GetBenchmarkSchedules",
+		},
+		user.With(permissions.Modify(resources.BenchmarkSchedule)): {
+			"/v1.BenchmarkScheduleService/PostBenchmarkSchedule",
+			"/v1.BenchmarkScheduleService/PutBenchmarkSchedule",
+			"/v1.BenchmarkScheduleService/DeleteBenchmarkSchedule",
+		},
+	}))
 )
 
 // BenchmarkScheduleService is the struct that manages the benchmark API
@@ -37,7 +56,7 @@ func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mu
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(or.SensorOrUser().Authorized(ctx))
+	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
 }
 
 // GetBenchmarkSchedule returns the current benchmark schedules

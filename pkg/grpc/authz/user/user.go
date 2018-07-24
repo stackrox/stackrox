@@ -2,14 +2,18 @@ package user
 
 import (
 	"context"
+	"fmt"
 
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
 )
 
-type anyUser struct{}
+type permissionChecker struct {
+	requiredPermissions []permissions.Permission
+}
 
-func (anyUser) Authorized(ctx context.Context) error {
+func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 	conf, err := authn.FromAuthConfigurationContext(ctx)
 	if err != nil {
 		return authz.ErrAuthnConfigMissing{}
@@ -21,18 +25,26 @@ func (anyUser) Authorized(ctx context.Context) error {
 		return nil
 	}
 
-	identity, err := authn.FromUserContext(ctx)
+	identity, err := authn.FromTokenBasedIdentityContext(ctx)
 	if err != nil {
 		return authz.ErrNoCredentials{}
 	}
-	if identity.User.ID == "" {
+	if identity.ID() == "" || identity.Role() == nil {
 		return authz.ErrNoCredentials{}
+	}
+	for _, permission := range p.requiredPermissions {
+		if !identity.Role().Has(permission) {
+			return authz.ErrNotAuthorized{
+				Explanation: fmt.Sprintf("not authorized to %s %s",
+					permission.Access, permission.Resource),
+			}
+		}
 	}
 	return nil
 }
 
-// Any returns an Authorizer that allows any authenticated user,
-// but denies unauthenticated clients.
-func Any() authz.Authorizer {
-	return anyUser{}
+// With returns an authorizer that only authorizes users/tokens
+// which satisfy all the given permissions.
+func With(requiredPermissions ...permissions.Permission) authz.Authorizer {
+	return &permissionChecker{requiredPermissions}
 }

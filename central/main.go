@@ -9,12 +9,13 @@ import (
 	"syscall"
 
 	// These imports are required to register things from the respective packages.
-	_ "bitbucket.org/stack-rox/apollo/pkg/authproviders/all"
+	_ "bitbucket.org/stack-rox/apollo/pkg/auth/authproviders/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
 
 	alertService "bitbucket.org/stack-rox/apollo/central/alert/service"
+	apiTokenService "bitbucket.org/stack-rox/apollo/central/apitoken/service"
 	authService "bitbucket.org/stack-rox/apollo/central/auth/service"
 	authproviderService "bitbucket.org/stack-rox/apollo/central/authprovider/service"
 	benchmarkService "bitbucket.org/stack-rox/apollo/central/benchmark/service"
@@ -39,13 +40,17 @@ import (
 	notifierService "bitbucket.org/stack-rox/apollo/central/notifier/service"
 	pingService "bitbucket.org/stack-rox/apollo/central/ping/service"
 	policyService "bitbucket.org/stack-rox/apollo/central/policy/service"
+	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	searchService "bitbucket.org/stack-rox/apollo/central/search/service"
 	secretService "bitbucket.org/stack-rox/apollo/central/secret/service"
 	seService "bitbucket.org/stack-rox/apollo/central/sensorevent/service"
 	siService "bitbucket.org/stack-rox/apollo/central/serviceidentities/service"
 	summaryService "bitbucket.org/stack-rox/apollo/central/summary/service"
+	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
 	pkgGRPC "bitbucket.org/stack-rox/apollo/pkg/grpc"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/allow"
+	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
 	authzUser "bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/routes"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -91,66 +96,96 @@ func (c *central) startGRPCServer() {
 
 	c.server = pkgGRPC.NewAPI(config)
 
-	c.server.Register(alertService.Singleton())
-	c.server.Register(authService.Singleton())
-	c.server.Register(authproviderService.Singleton())
-	c.server.Register(benchmarkService.Singleton())
-	c.server.Register(bsService.Singleton())
-	c.server.Register(bshService.Singleton())
-	c.server.Register(brService.Singleton())
-	c.server.Register(btService.Singleton())
-	c.server.Register(clusterService.Singleton())
-	c.server.Register(deploymentService.Singleton())
-	c.server.Register(dnrIntegrationService.Singleton())
-	c.server.Register(imageService.Singleton())
-	c.server.Register(iiService.Singleton())
-	c.server.Register(metadataService.New())
-	c.server.Register(networkPolicyService.Singleton())
-	c.server.Register(notifierService.Singleton())
-	c.server.Register(pingService.Singleton())
-	c.server.Register(policyService.Singleton())
-	c.server.Register(searchService.Singleton())
-	c.server.Register(secretService.Singleton())
-	c.server.Register(siService.Singleton())
-	c.server.Register(seService.Singleton())
-	c.server.Register(summaryService.Singleton())
+	c.server.Register(
+		alertService.Singleton(),
+		apiTokenService.Singleton(),
+		authService.Singleton(),
+		authproviderService.Singleton(),
+		benchmarkService.Singleton(),
+		bsService.Singleton(),
+		bshService.Singleton(),
+		brService.Singleton(),
+		btService.Singleton(),
+		clusterService.Singleton(),
+		deploymentService.Singleton(),
+		dnrIntegrationService.Singleton(),
+		imageService.Singleton(),
+		iiService.Singleton(),
+		metadataService.New(),
+		networkPolicyService.Singleton(),
+		notifierService.Singleton(),
+		pingService.Singleton(),
+		policyService.Singleton(),
+		searchService.Singleton(),
+		secretService.Singleton(),
+		seService.Singleton(),
+		siService.Singleton(),
+		summaryService.Singleton(),
+	)
 
 	c.server.Start()
 }
 
-func (c *central) customRoutes() (routeMap map[string]routes.CustomRoute) {
-	routeMap = map[string]routes.CustomRoute{
-		"/": {
+// To export the DB, you need to be able to view _everything_.
+// As new resource types are added, please ensure that you add
+// them to this method.
+// TODO(viswa): Figure out a way to make this easier or enforceable.
+func dbExportOrBackupAuthorizer() authz.Authorizer {
+	return authzUser.With(
+		permissions.View(resources.APIToken),
+		permissions.View(resources.Alert),
+		permissions.View(resources.AuthProvider),
+		permissions.View(resources.Benchmark),
+		permissions.View(resources.BenchmarkScan),
+		permissions.View(resources.BenchmarkSchedule),
+		permissions.View(resources.BenchmarkTrigger),
+		permissions.View(resources.Cluster),
+		permissions.View(resources.DebugMetrics),
+		permissions.View(resources.Deployment),
+		permissions.View(resources.DNRIntegration),
+		permissions.View(resources.Image),
+		permissions.View(resources.ImageIntegration),
+		permissions.View(resources.ImbuedLogs),
+		permissions.View(resources.Notifier),
+		permissions.View(resources.Policy),
+		permissions.View(resources.Secret),
+		permissions.View(resources.ServiceIdentity),
+	)
+}
+
+func (c *central) customRoutes() (customRoutes []routes.CustomRoute) {
+	customRoutes = []routes.CustomRoute{
+		{
+			Route:           "/",
 			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
 			Authorizer:      allow.Anonymous(),
 			ServerHandler:   ui.Mux(),
 			Compression:     true,
 		},
-		"/api/extensions/clusters/zip": {
+		{
+			Route:           "/api/extensions/clusters/zip",
 			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
-			Authorizer:      authzUser.Any(),
+			Authorizer:      authzUser.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity)),
 			ServerHandler:   clustersZip.Handler(clusterService.Singleton(), siService.Singleton()),
 			Compression:     false,
 		},
-		"/api/logimbue": {
+
+		{
+			Route:           "/db/backup",
 			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
-			Authorizer:      authzUser.Any(),
-			ServerHandler:   logimbueHandler.Singleton(),
-			Compression:     false,
-		},
-		"/db/backup": {
-			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
-			Authorizer:      authzUser.Any(),
+			Authorizer:      dbExportOrBackupAuthorizer(),
 			ServerHandler:   globaldb.BackupHandler(globaldbSingletons.GetGlobalDB()),
 			Compression:     true,
 		},
-		"/db/export": {
+		{
+			Route:           "/db/export",
 			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
-			Authorizer:      authzUser.Any(),
+			Authorizer:      dbExportOrBackupAuthorizer(),
 			ServerHandler:   globaldb.ExportHandler(globaldbSingletons.GetGlobalDB()),
 			Compression:     true,
 		},
-		"/metrics": {
+		{
+			Route:           "/metrics",
 			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
 			Authorizer:      allow.Anonymous(),
 			ServerHandler:   promhttp.Handler(),
@@ -158,12 +193,28 @@ func (c *central) customRoutes() (routeMap map[string]routes.CustomRoute) {
 		},
 	}
 
-	c.addDebugRoutes(routeMap)
-
+	logImbueRoute := "/api/logimbue"
+	customRoutes = append(customRoutes,
+		routes.CustomRoute{
+			Route:           logImbueRoute,
+			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
+			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
+				authzUser.With(permissions.View(resources.ImbuedLogs)): {
+					routes.RPCNameForHTTP(logImbueRoute, http.MethodGet),
+				},
+				authzUser.With(permissions.Modify(resources.ImbuedLogs)): {
+					routes.RPCNameForHTTP(logImbueRoute, http.MethodPost),
+				},
+			}),
+			ServerHandler: logimbueHandler.Singleton(),
+			Compression:   false,
+		},
+	)
+	customRoutes = append(customRoutes, c.debugRoutes()...)
 	return
 }
 
-func (c *central) addDebugRoutes(routeMap map[string]routes.CustomRoute) {
+func (c *central) debugRoutes() []routes.CustomRoute {
 	rs := map[string]http.Handler{
 		"/debug/pprof":         http.HandlerFunc(pprof.Index),
 		"/debug/pprof/cmdline": http.HandlerFunc(pprof.Cmdline),
@@ -177,14 +228,18 @@ func (c *central) addDebugRoutes(routeMap map[string]routes.CustomRoute) {
 		"/debug/threadcreate":  pprof.Handler(`threadcreate`),
 	}
 
+	customRoutes := make([]routes.CustomRoute, 0, len(rs))
+
 	for r, h := range rs {
-		routeMap[r] = routes.CustomRoute{
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:           r,
 			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
-			Authorizer:      authzUser.Any(),
+			Authorizer:      authzUser.With(permissions.View(resources.DebugMetrics)),
 			ServerHandler:   h,
 			Compression:     true,
-		}
+		})
 	}
+	return customRoutes
 }
 
 func (c *central) processForever() {
