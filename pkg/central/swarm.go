@@ -136,6 +136,13 @@ services:
       labels:
         owner: stackrox
         email: support@stackrox.com
+      resources:
+         reservations:
+           cpus: '0.5'
+           memory: 500M
+         limits:
+           cpus: '2.0'
+           memory: 2G
 networks:
   net:
     driver: overlay

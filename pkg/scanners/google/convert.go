@@ -35,7 +35,9 @@ func (c *googleScanner) convertVulnerabilityFromPackageVulnerabilityOccurrence(o
 			Link:    link,
 			Cvss:    occurrence.GetVulnerabilityDetails().GetCvssScore(),
 			Summary: summary,
-			FixedBy: pkgIssue.GetFixedLocation().GetVersion().GetRevision(),
+			SetFixedBy: &v1.Vulnerability_FixedBy{
+				FixedBy: pkgIssue.GetFixedLocation().GetVersion().GetRevision(),
+			},
 		}
 }
 

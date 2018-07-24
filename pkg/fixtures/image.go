@@ -15,7 +15,9 @@ func GetImage() *v1.Image {
 			Cvss:    10,
 			Summary: "GNU Bash through 4.3 processes trailing strings after function definitions in the values of environment variables, which allows remote attackers to execute arbitrary code via a crafted environment, as demonstrated by vectors involving the ForceCommand feature in OpenSSH sshd, the mod_cgi and mod_cgid modules in the Apache HTTP Server, scripts executed by unspecified DHCP clients, and other situations in which setting the environment occurs across a privilege boundary from Bash execution, aka \"ShellShock.\"  NOTE: the original fix for this issue was incorrect; CVE-2014-7169 has been assigned to cover the vulnerability that is still present after the incorrect fix.",
 			Link:    "https://nvd.nist.gov/vuln/detail/CVE-2014-6271",
-			FixedBy: "abcdefg",
+			SetFixedBy: &v1.Vulnerability_FixedBy{
+				FixedBy: "abcdefg",
+			},
 		})
 	}
 

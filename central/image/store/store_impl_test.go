@@ -137,7 +137,9 @@ func (suite *ImageStoreTestSuite) TestConvertImagesToListImages() {
 							Vulns: []*v1.Vulnerability{
 								{},
 								{
-									FixedBy: "hi",
+									SetFixedBy: &v1.Vulnerability_FixedBy{
+										FixedBy: "hi",
+									},
 								},
 							},
 						},

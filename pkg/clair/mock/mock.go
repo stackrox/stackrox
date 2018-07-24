@@ -9,8 +9,9 @@ import (
 func GetTestVulns() ([]clairV1.Vulnerability, []*v1.Vulnerability) {
 	quayVulns := []clairV1.Vulnerability{
 		{
-			Link: "https://security-tracker.debian.org/tracker/CVE-2017-16231",
-			Name: "CVE-2017-16231",
+			Link:    "https://security-tracker.debian.org/tracker/CVE-2017-16231",
+			Name:    "CVE-2017-16231",
+			FixedBy: "fixedby",
 		},
 		{
 			Link:        "https://security-tracker.debian.org/tracker/CVE-2017-7246",
@@ -29,12 +30,18 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*v1.Vulnerability) {
 		{
 			Cve:  "CVE-2017-16231",
 			Link: "https://security-tracker.debian.org/tracker/CVE-2017-16231",
+			SetFixedBy: &v1.Vulnerability_FixedBy{
+				FixedBy: "fixedby",
+			},
 		},
 		{
 			Cve:     "CVE-2017-7246",
 			Link:    "https://security-tracker.debian.org/tracker/CVE-2017-7246",
 			Summary: "Stack-based buffer overflow in the pcre32_copy_substring function in pcre_get.c in libpcre1 in PCRE 8.40 allows remote attackers to cause a denial of service (WRITE of size 268) or possibly have unspecified other impact via a crafted file.",
 			Cvss:    6.8,
+			SetFixedBy: &v1.Vulnerability_FixedBy{
+				FixedBy: "",
+			},
 		},
 	}
 	return quayVulns, protoVulns

@@ -25,7 +25,9 @@ func ConvertVulnerability(v clairV1.Vulnerability) *v1.Vulnerability {
 		Cve:     v.Name,
 		Summary: v.Description,
 		Link:    v.Link,
-		FixedBy: v.FixedBy,
+		SetFixedBy: &v1.Vulnerability_FixedBy{
+			FixedBy: v.FixedBy,
+		},
 	}
 	if nvdMap, ok := v.Metadata["NVD"]; ok {
 		d, err := json.Marshal(nvdMap)

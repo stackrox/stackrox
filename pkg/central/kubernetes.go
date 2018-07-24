@@ -292,8 +292,8 @@ spec:
         image: {{.K8sConfig.ClairifyImage}}
         resources:
           requests:
-            memory: "1000Mi"
-            cpu: "1000m"
+            memory: "500Mi"
+            cpu: "500m"
           limits:
             memory: "2000Mi"
             cpu: "2000m"
