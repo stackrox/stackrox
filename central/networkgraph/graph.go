@@ -7,6 +7,8 @@ import (
 	clusterDatastore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	deploymentsDatastore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	networkPolicyStore "bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
+	"bitbucket.org/stack-rox/apollo/pkg/set"
+	"github.com/deckarep/golang-set"
 )
 
 var logger = logging.LoggerForModule()
@@ -51,19 +53,14 @@ func (g *graphEvaluatorImpl) GetGraph() (*v1.GetNetworkGraphResponse, error) {
 }
 
 func (g *graphEvaluatorImpl) evaluate() (nodes []*v1.NetworkNode, edges []*v1.NetworkEdge, err error) {
-	var graphGroupNum int32
-	graphGroup := make(map[string]int32)
-
 	clusters, err := g.clustersStore.GetClusters()
 	if err != nil {
 		return
 	}
-
 	networkPolicies, err := g.networkPolicyStore.GetNetworkPolicies()
 	if err != nil {
 		return
 	}
-
 	for _, c := range clusters {
 		var deployments []*v1.Deployment
 		deployments, err = g.deploymentsStore.SearchRawDeployments(&v1.ParsedSearchRequest{
@@ -78,30 +75,117 @@ func (g *graphEvaluatorImpl) evaluate() (nodes []*v1.NetworkNode, edges []*v1.Ne
 		}
 
 		for _, d := range deployments {
-			val, ok := graphGroup[c.GetName()+"-"+d.GetNamespace()]
-			if !ok {
-				graphGroupNum++
-				graphGroup[c.GetName()+"-"+d.GetNamespace()] = graphGroupNum
-				val = graphGroupNum
-			}
-			nodes = append(nodes, &v1.NetworkNode{Id: d.GetId(), Group: val})
+			nodes = append(nodes, &v1.NetworkNode{Id: d.GetId(), Cluster: d.GetClusterName(), Namespace: d.GetNamespace()})
 		}
-		edges = append(g.evaluateCluster(deployments, networkPolicies))
+		edges = append(edges, g.evaluateCluster(deployments, networkPolicies)...)
 	}
 	return
 }
 
-func (g *graphEvaluatorImpl) evaluateCluster(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) []*v1.NetworkEdge {
-	var edges []*v1.NetworkEdge
+func networkPolicySelectorAppliesToDeployment(d *v1.Deployment, np *v1.NetworkPolicy, hasPolicy func([]v1.NetworkPolicyType) bool) bool {
+	spec := np.GetSpec()
+	// Check if the src matches the pod selector and deployment then the egress rules actually apply to that deployment
+	if !doesPodLabelsMatchLabel(d, spec.GetPodSelector()) || d.GetNamespace() != np.GetNamespace() {
+		return false
+	}
+	// If no egress rules are defined, then it doesn't apply
+	return hasPolicy(spec.GetPolicyTypes())
+}
 
-	for i1, d1 := range deployments {
-		for i2, d2 := range deployments {
-			if i1 == i2 {
+func (g *graphEvaluatorImpl) matchPolicyPeers(d *v1.Deployment, namespace string, peers []*v1.NetworkPolicyPeer) bool {
+	if len(peers) == 0 {
+		return true
+	}
+	for _, p := range peers {
+		if g.matchPolicyPeer(d, namespace, p) {
+			return true
+		}
+	}
+	return false
+}
+
+func (g *graphEvaluatorImpl) doesEgressNetworkPolicyRuleMatchDeployment(src *v1.Deployment, np *v1.NetworkPolicy) bool {
+	for _, egressRule := range np.GetSpec().GetEgress() {
+		if g.matchPolicyPeers(src, np.GetNamespace(), egressRule.GetTo()) {
+			return true
+		}
+	}
+	return false
+}
+
+func (g *graphEvaluatorImpl) doesIngressNetworkPolicyRuleMatchDeployment(src *v1.Deployment, np *v1.NetworkPolicy) bool {
+	for _, ingressRule := range np.GetSpec().GetIngress() {
+		if g.matchPolicyPeers(src, np.GetNamespace(), ingressRule.GetFrom()) {
+			return true
+		}
+	}
+	return false
+}
+
+func (g *graphEvaluatorImpl) evaluateCluster(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) []*v1.NetworkEdge {
+	selectedDeploymentsToIngressPolicies := make(map[string]mapset.Set)
+	selectedDeploymentsToEgressPolicies := make(map[string]mapset.Set)
+
+	matchedDeploymentsToIngressPolicies := make(map[string]mapset.Set)
+	matchedDeploymentsToEgressPolicies := make(map[string]mapset.Set)
+
+	for _, d := range deployments {
+		selectedDeploymentsToIngressPolicies[d.GetId()] = mapset.NewSet()
+		selectedDeploymentsToEgressPolicies[d.GetId()] = mapset.NewSet()
+		matchedDeploymentsToIngressPolicies[d.GetId()] = mapset.NewSet()
+		matchedDeploymentsToEgressPolicies[d.GetId()] = mapset.NewSet()
+
+		for _, n := range networkPolicies {
+			if n.GetSpec() == nil {
 				continue
 			}
-			if policyNames, hasEdge := g.evaluateDeploymentPair(d1, d2, networkPolicies); hasEdge {
-				edges = append(edges, &v1.NetworkEdge{Source: d1.GetId(), Target: d2.GetId(), PolicyNames: policyNames, Value: 1})
+			if networkPolicySelectorAppliesToDeployment(d, n, hasIngress) {
+				selectedDeploymentsToIngressPolicies[d.GetId()].Add(n.GetId())
 			}
+			if g.doesIngressNetworkPolicyRuleMatchDeployment(d, n) {
+				matchedDeploymentsToIngressPolicies[d.GetId()].Add(n.GetId())
+			}
+			if networkPolicySelectorAppliesToDeployment(d, n, hasEgress) {
+				selectedDeploymentsToEgressPolicies[d.GetId()].Add(n.GetId())
+			}
+			if g.doesEgressNetworkPolicyRuleMatchDeployment(d, n) {
+				matchedDeploymentsToEgressPolicies[d.GetId()].Add(n.GetId())
+			}
+		}
+	}
+
+	var edges []*v1.NetworkEdge
+	for _, src := range deployments {
+		for _, dst := range deployments {
+			if src.GetId() == dst.GetId() {
+				continue
+			}
+
+			// This set is the set of Egress policies that are applicable to the src
+			selectedEgressPoliciesSet := selectedDeploymentsToEgressPolicies[src.GetId()]
+			// This set is the set if Egress policies that have rules that are applicable to the dst
+			matchedEgressPoliciesSet := matchedDeploymentsToEgressPolicies[dst.GetId()]
+			// If there are no values in the src set of egress then it has no Egress rules and can talk to everything
+			// Otherwise, if it is not empty then ensure that the intersection of the policies that apply to the source and the rules that apply to the dst have at least one in common
+			if selectedEgressPoliciesSet.Cardinality() != 0 && selectedEgressPoliciesSet.Intersect(matchedEgressPoliciesSet).Cardinality() == 0 {
+				continue
+			}
+
+			// This set is the set of Ingress policies that are applicable to the dst
+			selectedIngressPoliciesSet := selectedDeploymentsToIngressPolicies[dst.GetId()]
+			// This set is the set if Ingress policies that have rules that are applicable to the src
+			matchedIngressPoliciesSet := matchedDeploymentsToIngressPolicies[src.GetId()]
+			// If there are no values in the src set of egress then it has no Egress rules and can talk to everything
+			// Otherwise, if it is not empty then ensure that the intersection of the policies that apply to the source and the rules that apply to the dst have at least one in common
+			if selectedIngressPoliciesSet.Cardinality() != 0 && selectedIngressPoliciesSet.Intersect(matchedIngressPoliciesSet).Cardinality() == 0 {
+				continue
+			}
+
+			var policyIDs []string
+			policyIDs = append(policyIDs, set.StringSliceFromSet(selectedIngressPoliciesSet.Intersect(matchedIngressPoliciesSet))...)
+			policyIDs = append(policyIDs, set.StringSliceFromSet(selectedEgressPoliciesSet.Intersect(matchedEgressPoliciesSet))...)
+
+			edges = append(edges, &v1.NetworkEdge{Source: src.GetId(), Target: dst.GetId(), PolicyIds: policyIDs, Value: 1})
 		}
 	}
 	return edges
@@ -145,127 +229,6 @@ func (g *graphEvaluatorImpl) matchPolicyPeer(deployment *v1.Deployment, policyNa
 		return doesPodLabelsMatchLabel(deployment, peer.GetPodSelector())
 	}
 	return true
-}
-
-func (g *graphEvaluatorImpl) evaluateDeploymentPairWithEgressNetworkPolicy(src, dst *v1.Deployment, np *v1.NetworkPolicy) (validEgress bool, match bool) {
-	spec := np.Spec
-
-	if spec == nil {
-		return
-	}
-
-	// Check if the src matches the pod selector and deployment then the egress rules actually apply to that deployment
-	if !doesPodLabelsMatchLabel(src, spec.GetPodSelector()) || src.GetNamespace() != np.GetNamespace() {
-		return false, false
-	}
-	// If no egress rules are defined, then it doesn't apply
-	if !hasEgress(spec.PolicyTypes) {
-		return false, false
-	}
-	validEgress = true
-	for _, egressRule := range spec.Egress {
-		if len(egressRule.To) == 0 {
-			match = true
-			return
-		}
-		for _, f := range egressRule.To {
-			if g.matchPolicyPeer(dst, np.GetNamespace(), f) {
-				match = true
-				return
-			}
-		}
-	}
-	return
-}
-
-func (g *graphEvaluatorImpl) evaluateDeploymentPairWithIngressNetworkPolicy(src, dst *v1.Deployment, np *v1.NetworkPolicy) (valid bool, match bool) {
-	spec := np.Spec
-	if spec == nil {
-		return
-	}
-
-	// Check if the src matches the pod selector and deployment then the egress rules actually apply to that deployment
-	if !doesPodLabelsMatchLabel(dst, spec.PodSelector) || dst.GetNamespace() != np.GetNamespace() {
-		return false, false
-	}
-	// If no egress rules are defined, then it doesn't apply
-	if !hasIngress(spec.PolicyTypes) {
-		return false, false
-	}
-	valid = true
-	for _, ingressRule := range spec.Ingress {
-		// If there is a rule with no values then it matches all
-		// This in contrast to if there are no spec.Ingress defined which blocks all
-		// Yeah, not very clear :(
-		if len(ingressRule.From) == 0 {
-			match = true
-			return
-		}
-		// TODO(cgorman) write test case for this function for this particular case :(
-		for _, f := range ingressRule.From {
-			if g.matchPolicyPeer(src, np.GetNamespace(), f) {
-				match = true
-				return
-			}
-		}
-	}
-	return
-}
-
-func (g *graphEvaluatorImpl) evaluateDeploymentPairIngress(src, dst *v1.Deployment, policies []*v1.NetworkPolicy) ([]string, bool) {
-	var policyNames []string
-	var ingressDefined bool
-	for _, np := range policies {
-		if validIngress, match := g.evaluateDeploymentPairWithIngressNetworkPolicy(src, dst, np); validIngress {
-			ingressDefined = true
-			if match {
-				policyNames = append(policyNames, np.GetName())
-			}
-		}
-	}
-
-	if len(policyNames) != 0 {
-		return policyNames, true
-	}
-
-	// If ingress is defined, but there was no match then ingress is not allowed
-	// If no ingress was defined, then ingress is allowed by default
-	return policyNames, !ingressDefined
-}
-
-func (g *graphEvaluatorImpl) evaluateDeploymentPairEgress(src, dst *v1.Deployment, policies []*v1.NetworkPolicy) ([]string, bool) {
-	var policyNames []string
-
-	var egressDefined bool
-	for _, np := range policies {
-		if validEgress, match := g.evaluateDeploymentPairWithEgressNetworkPolicy(src, dst, np); validEgress {
-			egressDefined = true
-			if match {
-				policyNames = append(policyNames, string(np.GetName()))
-			}
-		}
-	}
-
-	if len(policyNames) != 0 {
-		return policyNames, true
-	}
-
-	// If egress is defined, but there was no match then egress is not allowed
-	// If no egress was defined, then egress is allowed by default
-	return policyNames, !egressDefined
-}
-
-func (g *graphEvaluatorImpl) evaluateDeploymentPair(d1, d2 *v1.Deployment, networkPolicies []*v1.NetworkPolicy) ([]string, bool) {
-	ingressPolicyIDs, ingressMatch := g.evaluateDeploymentPairIngress(d1, d2, networkPolicies)
-	if !ingressMatch {
-		return nil, false
-	}
-
-	egressPolicyIDs, egressMatch := g.evaluateDeploymentPairEgress(d1, d2, networkPolicies)
-	if !egressMatch {
-		return nil, false
-	}
-	return append(ingressPolicyIDs, egressPolicyIDs...), true
 }
 
 func doesNamespaceMatchLabel(namespace *v1.Namespace, selector *v1.LabelSelector) bool {

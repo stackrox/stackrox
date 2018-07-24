@@ -86,7 +86,6 @@ func (s *Handler) HandleMessage(msg events.Message) {
 	}
 
 	s.eventsC <- networkPolicyEventWrap(resourceAction, np, originalSpec)
-	s.eventsC <- namespaceEventWrap(resourceAction, np, originalSpec)
 }
 
 func (s *Handler) getExistingNetworks() ([]*listeners.EventWrap, error) {
@@ -105,8 +104,17 @@ func (s *Handler) getExistingNetworks() ([]*listeners.EventWrap, error) {
 	for _, network := range swarmNetworks {
 		n := networkWrap(network).asNetworkPolicy()
 		events = append(events, networkPolicyEventWrap(v1.ResourceAction_PREEXISTING_RESOURCE, n, network))
-		events = append(events, namespaceEventWrap(v1.ResourceAction_PREEXISTING_RESOURCE, n, network))
 	}
+
+	// Add a network policy for default namespace so all randomly run services will at least be grouped nicely
+	defaultNetwork := types.NetworkResource{
+		ID:   "default",
+		Name: "default",
+	}
+	events = append(events,
+		networkPolicyEventWrap(v1.ResourceAction_PREEXISTING_RESOURCE, networkWrap(defaultNetwork).asNetworkPolicy(), defaultNetwork),
+	)
+
 	return events, nil
 }
 
@@ -117,22 +125,6 @@ func networkPolicyEventWrap(action v1.ResourceAction, networkPolicy *v1.NetworkP
 			Action: action,
 			Resource: &v1.SensorEvent_NetworkPolicy{
 				NetworkPolicy: networkPolicy,
-			},
-		},
-		OriginalSpec: obj,
-	}
-}
-
-func namespaceEventWrap(action v1.ResourceAction, networkPolicy *v1.NetworkPolicy, obj interface{}) *listeners.EventWrap {
-	return &listeners.EventWrap{
-		SensorEvent: &v1.SensorEvent{
-			Id:     string(networkPolicy.GetName()),
-			Action: action,
-			Resource: &v1.SensorEvent_Namespace{
-				Namespace: &v1.Namespace{
-					Id:   networkPolicy.GetId(),
-					Name: networkPolicy.GetName(),
-				},
 			},
 		},
 		OriginalSpec: obj,

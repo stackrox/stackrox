@@ -6,6 +6,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
+	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	k8sV1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -20,6 +21,7 @@ func init() {
 			panic(err)
 		}
 		np := protoconv.ConvertNetworkPolicy(&k8sNp)
+		np.Id = uuid.NewV4().String()
 		networkPolicyFixtures[np.GetName()] = np
 	}
 }
@@ -347,467 +349,124 @@ func TestMatchPolicyPeer(t *testing.T) {
 	}
 }
 
-func TestEvaluateDeploymentPairWithEgressNetworkPolicy(t *testing.T) {
-	g := newMockGraphEvaluator()
-
+func TestDoesNetworkPolicySelectorApplyToDeployment(t *testing.T) {
 	cases := []struct {
-		name                string
-		src                 *v1.Deployment
-		dst                 *v1.Deployment
-		np                  *v1.NetworkPolicy
-		expectedValidEgress bool
-		expectedMatch       bool
+		name      string
+		d         *v1.Deployment
+		np        *v1.NetworkPolicy
+		hasPolicy func([]v1.NetworkPolicyType) bool
+		expected  bool
 	}{
-		{
-			name: "pod labels don't match source",
-			src: &v1.Deployment{
-				Namespace: "default",
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "src",
-						Value: "value",
-					},
-				},
-			},
-			np: &v1.NetworkPolicy{
-				Spec: &v1.NetworkPolicySpec{
-					PodSelector: &v1.LabelSelector{
-						MatchLabels: map[string]string{
-							"key": "value",
-						},
-					},
-				},
-			},
-			expectedValidEgress: false,
-			expectedMatch:       false,
-		},
 		{
 			name: "namespace doesn't match source",
-			src: &v1.Deployment{
+			d: &v1.Deployment{
 				Namespace: "default",
 			},
 			np: &v1.NetworkPolicy{
 				Namespace: "stackrox",
 			},
-			expectedValidEgress: false,
-			expectedMatch:       false,
+			expected: false,
 		},
 		{
-			name: "no egress designation",
-			src: &v1.Deployment{
+			name: "pod selector doesn't match",
+			d: &v1.Deployment{
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key1",
+						Value: "value1",
+					},
+				},
 				Namespace: "default",
 			},
 			np: &v1.NetworkPolicy{
 				Namespace: "default",
-				Spec:      &v1.NetworkPolicySpec{}, // Empty policy types member means ingress only
-			},
-			expectedValidEgress: false,
-			expectedMatch:       false,
-		},
-		{
-			name: "egress designation, but no values",
-			src: &v1.Deployment{
-				Namespace: "default",
-			},
-			np: &v1.NetworkPolicy{
-				Namespace: "default",
-				Spec: &v1.NetworkPolicySpec{
-					PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
-				},
-			},
-			expectedValidEgress: true,
-			expectedMatch:       false,
-		},
-		{
-			name: "match egress rule",
-			src: &v1.Deployment{
-				Namespace: "default",
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "src",
-						Value: "value",
-					},
-				},
-			},
-			dst: &v1.Deployment{
-				Namespace: "default",
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "dst",
-						Value: "value",
-					},
-				},
-			},
-			np: &v1.NetworkPolicy{
-				Namespace: "default",
-				Spec: &v1.NetworkPolicySpec{
-					PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
-					Egress: []*v1.NetworkPolicyEgressRule{
-						{
-							To: []*v1.NetworkPolicyPeer{
-								{
-									PodSelector: &v1.LabelSelector{
-										MatchLabels: map[string]string{
-											"dst": "value", // This verifies that the egress rule matches the destination
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedValidEgress: true,
-			expectedMatch:       true,
-		},
-		{
-			name: "no match egress rule",
-			src: &v1.Deployment{
-				Namespace: "default",
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "src",
-						Value: "value",
-					},
-				},
-			},
-			dst: &v1.Deployment{
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "dst",
-						Value: "value",
-					},
-				},
-			},
-			np: &v1.NetworkPolicy{
-				Namespace: "default",
-				Spec: &v1.NetworkPolicySpec{
-					PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
-					Egress: []*v1.NetworkPolicyEgressRule{
-						{
-							To: []*v1.NetworkPolicyPeer{
-								{
-									PodSelector: &v1.LabelSelector{
-										MatchLabels: map[string]string{
-											"no": "match",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedValidEgress: true,
-			expectedMatch:       false,
-		},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			validEgress, match := g.evaluateDeploymentPairWithEgressNetworkPolicy(c.src, c.dst, c.np)
-			assert.Equal(t, c.expectedValidEgress, validEgress)
-			assert.Equal(t, c.expectedMatch, match)
-		})
-	}
-}
-
-func TestEvaluateDeploymentPairWithIngressNetworkPolicy(t *testing.T) {
-	g := newMockGraphEvaluator()
-
-	cases := []struct {
-		name                 string
-		src                  *v1.Deployment
-		dst                  *v1.Deployment
-		np                   *v1.NetworkPolicy
-		expectedValidIngress bool
-		expectedMatch        bool
-	}{
-		{
-			name: "pod labels don't match dest",
-			dst: &v1.Deployment{
-				Namespace: "default",
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "src",
-						Value: "value",
-					},
-				},
-			},
-			np: &v1.NetworkPolicy{
 				Spec: &v1.NetworkPolicySpec{
 					PodSelector: &v1.LabelSelector{
 						MatchLabels: map[string]string{
-							"key": "value",
+							"key1": "value2",
 						},
 					},
 				},
 			},
-			expectedValidIngress: false,
-			expectedMatch:        false,
+			expected: false,
 		},
 		{
-			name: "namespace doesn't match dst namespace",
-			dst: &v1.Deployment{
-				Namespace: "default",
-			},
-			np: &v1.NetworkPolicy{
-				Namespace: "stackrox",
-			},
-			expectedValidIngress: false,
-			expectedMatch:        false,
-		},
-		{
-			name: "no ingress designation",
-			dst: &v1.Deployment{
+			name: "all matches - has ingress",
+			d: &v1.Deployment{
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key1",
+						Value: "value1",
+					},
+				},
 				Namespace: "default",
 			},
 			np: &v1.NetworkPolicy{
 				Namespace: "default",
 				Spec: &v1.NetworkPolicySpec{
+					PodSelector: &v1.LabelSelector{
+						MatchLabels: map[string]string{
+							"key1": "value1",
+						},
+					},
+				},
+			},
+			hasPolicy: hasIngress,
+			expected:  true,
+		},
+		{
+			name: "all matches - doesn't have egress",
+			d: &v1.Deployment{
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key1",
+						Value: "value1",
+					},
+				},
+				Namespace: "default",
+			},
+			np: &v1.NetworkPolicy{
+				Namespace: "default",
+				Spec: &v1.NetworkPolicySpec{
+					PodSelector: &v1.LabelSelector{
+						MatchLabels: map[string]string{
+							"key1": "value1",
+						},
+					},
+				},
+			},
+			hasPolicy: hasEgress,
+			expected:  false,
+		},
+		{
+			name: "all matches - has egress",
+			d: &v1.Deployment{
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key1",
+						Value: "value1",
+					},
+				},
+				Namespace: "default",
+			},
+			np: &v1.NetworkPolicy{
+				Namespace: "default",
+				Spec: &v1.NetworkPolicySpec{
+					PodSelector: &v1.LabelSelector{
+						MatchLabels: map[string]string{
+							"key1": "value1",
+						},
+					},
 					PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
 				},
 			},
-			expectedValidIngress: false,
-			expectedMatch:        false,
-		},
-		{
-			name: "ingress designation, but no values",
-			dst: &v1.Deployment{
-				Namespace: "default",
-			},
-			np: &v1.NetworkPolicy{
-				Namespace: "default",
-				Spec:      &v1.NetworkPolicySpec{},
-			},
-			expectedValidIngress: true,
-			expectedMatch:        false,
-		},
-		{
-			name: "match ingress rule",
-			src: &v1.Deployment{
-				Namespace: "default",
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "src",
-						Value: "value",
-					},
-				},
-			},
-			dst: &v1.Deployment{
-				Namespace: "default",
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "dst",
-						Value: "value",
-					},
-				},
-			},
-			np: &v1.NetworkPolicy{
-				Namespace: "default",
-				Spec: &v1.NetworkPolicySpec{
-					Ingress: []*v1.NetworkPolicyIngressRule{
-						{
-							From: []*v1.NetworkPolicyPeer{
-								{
-									PodSelector: &v1.LabelSelector{
-										MatchLabels: map[string]string{
-											"src": "value", // This verifies that the ingress rule matches the source
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedValidIngress: true,
-			expectedMatch:        true,
-		},
-		{
-			name: "no match ingress rule",
-			src: &v1.Deployment{
-				Namespace: "default",
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "src",
-						Value: "value",
-					},
-				},
-			},
-			dst: &v1.Deployment{
-				Namespace: "default",
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "dst",
-						Value: "value",
-					},
-				},
-			},
-			np: &v1.NetworkPolicy{
-				Namespace: "default",
-				Spec: &v1.NetworkPolicySpec{
-					Ingress: []*v1.NetworkPolicyIngressRule{
-						{
-							From: []*v1.NetworkPolicyPeer{
-								{
-									PodSelector: &v1.LabelSelector{
-										MatchLabels: map[string]string{
-											"no": "match",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedValidIngress: true,
-			expectedMatch:        false,
+			hasPolicy: hasEgress,
+			expected:  true,
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			validEgress, match := g.evaluateDeploymentPairWithIngressNetworkPolicy(c.src, c.dst, c.np)
-			assert.Equal(t, c.expectedValidIngress, validEgress)
-			assert.Equal(t, c.expectedMatch, match)
-		})
-	}
-}
-
-func TestEvaluateDeploymentPairEgress(t *testing.T) {
-	g := newMockGraphEvaluator()
-
-	cases := []struct {
-		name     string
-		src      *v1.Deployment
-		dst      *v1.Deployment
-		nps      []*v1.NetworkPolicy
-		expected bool
-	}{
-		{
-			name:     "none defined",
-			expected: true,
-		},
-		{
-			name: "no egress policy",
-			nps: []*v1.NetworkPolicy{
-				{
-					Spec: &v1.NetworkPolicySpec{},
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "egress policy blocking all incoming",
-			nps: []*v1.NetworkPolicy{
-				{
-					Spec: &v1.NetworkPolicySpec{
-						PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
-					},
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "first egress policy blocking all, second allows",
-			nps: []*v1.NetworkPolicy{
-				{
-					Spec: &v1.NetworkPolicySpec{
-						PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
-					},
-				},
-				{
-					Spec: &v1.NetworkPolicySpec{
-						PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
-						Egress: []*v1.NetworkPolicyEgressRule{
-							{
-								To: []*v1.NetworkPolicyPeer{
-									{
-										PodSelector: &v1.LabelSelector{},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: true,
-		},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			_, match := g.evaluateDeploymentPairEgress(c.src, c.dst, c.nps)
-			assert.Equal(t, c.expected, match)
-		})
-	}
-}
-
-func TestEvaluateDeploymentPairIngress(t *testing.T) {
-	g := newMockGraphEvaluator()
-
-	cases := []struct {
-		name     string
-		src      *v1.Deployment
-		dst      *v1.Deployment
-		nps      []*v1.NetworkPolicy
-		expected bool
-	}{
-		{
-			name:     "none defined",
-			expected: true,
-		},
-		{
-			name: "egress policy defined, but no ingress policy",
-			nps: []*v1.NetworkPolicy{
-				{
-					Spec: &v1.NetworkPolicySpec{
-						PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
-					},
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "ingress policy blocking all incoming",
-			nps: []*v1.NetworkPolicy{
-				{
-					Spec: &v1.NetworkPolicySpec{
-						PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
-					},
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "first ingress policy blocking all, second allows",
-			nps: []*v1.NetworkPolicy{
-				{
-					Spec: &v1.NetworkPolicySpec{
-						PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
-					},
-				},
-				{
-					Spec: &v1.NetworkPolicySpec{
-						PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
-						Ingress: []*v1.NetworkPolicyIngressRule{
-							{
-								From: []*v1.NetworkPolicyPeer{
-									{
-										PodSelector: &v1.LabelSelector{},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: true,
-		},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			_, match := g.evaluateDeploymentPairIngress(c.src, c.dst, c.nps)
-			assert.Equal(t, c.expected, match)
+			assert.Equal(t, c.expected, networkPolicySelectorAppliesToDeployment(c.d, c.np, c.hasPolicy))
 		})
 	}
 }
@@ -1102,8 +761,6 @@ func TestEvaluateClusters(t *testing.T) {
 			edges: edgeCombiner(
 				fullyConnectedEdges("d2", "d3", "d4"),
 				egressEdges("d1", "d2", "d3", "d4"),
-				//ingressEdges("d5", "d1", "d2", "d3", "d4"),
-				//fullyConnectedEdges("d1", "d2", "d3", "d4"),
 			),
 			nps: []*v1.NetworkPolicy{
 				getExamplePolicy("web-deny-all"),
@@ -1188,7 +845,7 @@ func TestEvaluateClusters(t *testing.T) {
 
 func compareEdges(t *testing.T, expected, actual []*v1.NetworkEdge) {
 	for _, e := range actual {
-		e.PolicyNames = nil
+		e.PolicyIds = nil
 		e.Value = 0
 	}
 	assert.ElementsMatch(t, expected, actual)
