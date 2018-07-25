@@ -232,7 +232,7 @@ spec:
 `
 
 	k8sPortForwardTemplate = commandPrefix + `
-if [[ -z $1 ]]; then
+if [[ -z "$1" ]]; then
 	echo "usage: bash port-forward.sh 8000"
 	echo "The above would forward localhost:8000 to central:443."
 	exit 1
@@ -244,7 +244,7 @@ until [ "$(%s get pod -n {{.K8sConfig.Namespace}} --selector 'app=central' | gre
 done
 
 export CENTRAL_POD="$(%s get pod -n {{.K8sConfig.Namespace}} --selector 'app=central' --output=jsonpath='{.items..metadata.name} {.items..status.phase}' | grep Running | cut -f 1 -d ' ')"
-%s port-forward -n "{{.K8sConfig.Namespace}}" "${CENTRAL_POD}" $1:443 > /dev/null &
+%s port-forward -n "{{.K8sConfig.Namespace}}" "${CENTRAL_POD}" "$1:443" > /dev/null &
 echo "Access central on localhost:$1"
 `
 
@@ -322,6 +322,6 @@ spec:
 
 	k8sClairifyScript = commandPrefix + `
 
-kubectl create -f clairify.yaml
+kubectl create -f "${DIR}/clairify.yaml"
 `
 )

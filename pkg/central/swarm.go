@@ -113,11 +113,11 @@ volumes:
 `
 
 	swarmCmd = commandPrefix + `WD=$(pwd)
-cd $DIR
+cd "$DIR"
 
 docker stack deploy -c ./deploy.yaml prevent --with-registry-auth
 
-cd $WD
+cd "$WD"
 `
 
 	swarmClairifyYAML = `
@@ -150,6 +150,6 @@ networks:
 `
 
 	swarmClairifyScript = commandPrefix + `
-docker stack deploy -c ${DIR}/clairify.yaml prevent --with-registry-auth
+docker stack deploy -c "${DIR}/clairify.yaml" prevent --with-registry-auth
 `
 )
