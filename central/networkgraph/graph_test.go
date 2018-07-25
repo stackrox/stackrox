@@ -20,7 +20,7 @@ func init() {
 		if err := yaml.NewYAMLToJSONDecoder(bytes.NewReader([]byte(policyYAML))).Decode(&k8sNp); err != nil {
 			panic(err)
 		}
-		np := protoconv.ConvertNetworkPolicy(&k8sNp)
+		np := protoconv.KubernetesNetworkPolicyWrap{NetworkPolicy: &k8sNp}.ConvertNetworkPolicy()
 		np.Id = uuid.NewV4().String()
 		networkPolicyFixtures[np.GetName()] = np
 	}

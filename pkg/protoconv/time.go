@@ -1,6 +1,8 @@
 package protoconv
 
 import (
+	"time"
+
 	gogoTimestamp "github.com/gogo/protobuf/types"
 	golangTimestamp "github.com/golang/protobuf/ptypes/timestamp"
 )
@@ -36,4 +38,22 @@ func ConvertGoGoProtoTimeToGolangProtoTime(gogo *gogoTimestamp.Timestamp) *golan
 		Seconds: gogo.GetSeconds(),
 		Nanos:   gogo.GetNanos(),
 	}
+}
+
+// ConvertTimestampToTime converts a proto timestamp to a golang Time
+func ConvertTimestampToTime(gogo *gogoTimestamp.Timestamp) time.Time {
+	t, err := gogoTimestamp.TimestampFromProto(gogo)
+	if err != nil {
+		return time.Now()
+	}
+	return t
+}
+
+// ConvertTimeToTimestamp converts golang time to proto timestamp
+func ConvertTimeToTimestamp(goTime time.Time) *gogoTimestamp.Timestamp {
+	t, err := gogoTimestamp.TimestampProto(goTime)
+	if err != nil {
+		return gogoTimestamp.TimestampNow()
+	}
+	return t
 }

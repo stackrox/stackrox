@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"bitbucket.org/stack-rox/apollo/central/networkgraph"
 	"bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
@@ -12,11 +14,13 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
+	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
 
 var (
@@ -50,6 +54,18 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
 }
 
+func populateYAML(np *v1.NetworkPolicy) {
+	k8sNetworkPolicy := protoconv.ProtoNetworkPolicyWrap{NetworkPolicy: np}.ConvertNetworkPolicy()
+	encoder := json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil)
+
+	stringBuilder := &strings.Builder{}
+	err := encoder.Encode(k8sNetworkPolicy, stringBuilder)
+	if err != nil {
+		np.Yaml = fmt.Sprintf("Could not render Network Policy YAML: %s", err)
+	}
+	np.Yaml = stringBuilder.String()
+}
+
 func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.ResourceByID) (*v1.NetworkPolicy, error) {
 	networkPolicy, exists, err := s.store.GetNetworkPolicy(request.GetId())
 	if err != nil {
@@ -58,6 +74,7 @@ func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.Resource
 	if !exists {
 		return nil, status.Errorf(codes.NotFound, "network policy with id '%s' does not exist", request.GetId())
 	}
+	populateYAML(networkPolicy)
 	return networkPolicy, nil
 }
 

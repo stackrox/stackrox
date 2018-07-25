@@ -42,7 +42,7 @@ func (npwl *WatchLister) resourceChanged(networkPolicyObj interface{}, action pk
 			Id:     string(networkPolicy.UID),
 			Action: action,
 			Resource: &pkgV1.SensorEvent_NetworkPolicy{
-				NetworkPolicy: protoconv.ConvertNetworkPolicy(networkPolicy),
+				NetworkPolicy: protoconv.KubernetesNetworkPolicyWrap{NetworkPolicy: networkPolicy}.ConvertNetworkPolicy(),
 			},
 		},
 	}

@@ -4,6 +4,7 @@ option go_package = "v1";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
 import "api/v1/search_service.proto";
 
@@ -67,15 +68,18 @@ message NetworkPolicySpec {
 }
 
 message NetworkPolicy {
-    string              id            = 1;
-    string              name          = 2;
-    string              cluster_id    = 3;
-    string              cluster_name  = 4;
-    string              namespace     = 5;
-    map<string, string> labels        = 6;
-    map<string, string> annotations   = 7;
+    string                    id            = 1;
+    string                    name          = 2;
+    string                    cluster_id    = 3;
+    string                    cluster_name  = 4;
+    string                    namespace     = 5;
+    map<string, string>       labels        = 6;
+    map<string, string>       annotations   = 7;
 
-    NetworkPolicySpec   spec          = 8;
+    NetworkPolicySpec         spec          = 8;
+    string                    yaml          = 9;
+    string                    api_version   = 10;
+    google.protobuf.Timestamp created       = 11;
 }
 
 message NetworkPoliciesResponse {

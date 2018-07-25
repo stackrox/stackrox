@@ -115,6 +115,9 @@ go-generated-srcs: $(MOCKERY_BIN)
 	go generate ./...
 
 .PHONY: generated-srcs
+proto-generated-srcs: $(GENERATED_SRCS)
+
+.PHONY: generated-srcs
 generated-srcs: $(GENERATED_SRCS) go-generated-srcs
 
 .PHONY: clean-generated-srcs
