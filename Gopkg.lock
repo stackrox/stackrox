@@ -106,8 +106,9 @@
     "analysis/token/lowercase",
     "analysis/token/porter",
     "analysis/token/stop",
-    "analysis/tokenizer/single",
+    "analysis/tokenizer/character",
     "analysis/tokenizer/unicode",
+    "analysis/tokenizer/whitespace",
     "document",
     "geo",
     "index",
@@ -1002,6 +1003,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3ca9126fdbee77c456001bb682f6a7375aad9a2087ad2afa3198a3d41f9ec8d3"
+  inputs-digest = "14461015abd9b9e2277a93263fd507b28f0ff2d18bdbb19a723749b88174ff2e"
   solver-name = "gps-cdcl"
   solver-version = 1

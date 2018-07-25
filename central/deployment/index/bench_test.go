@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/globalindex"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
+	"bitbucket.org/stack-rox/apollo/pkg/search"
 )
 
 func getDeploymentIndex(b *testing.B) Indexer {
@@ -51,10 +52,18 @@ func BenchmarkAddDeployments(b *testing.B) {
 	}
 }
 
-func BenchmarkAddDeploymentssThen1(b *testing.B) {
+func BenchmarkAddDeploymentsThen1(b *testing.B) {
 	for i := 10; i <= 1000; i *= 10 {
 		b.Run(fmt.Sprintf("Add Deployments %d then 1", i), func(subB *testing.B) {
 			benchmarkAddDeploymentNumThen1(subB, i)
 		})
+	}
+}
+
+func BenchmarkSearchDeployment(b *testing.B) {
+	indexer := getDeploymentIndex(b)
+	qb := search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster")
+	for i := 0; i < b.N; i++ {
+		indexer.SearchDeployments(qb.ToParsedSearchRequest())
 	}
 }

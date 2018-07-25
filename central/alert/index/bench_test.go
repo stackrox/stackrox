@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/globalindex"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
+	"bitbucket.org/stack-rox/apollo/pkg/search"
 )
 
 func getAlertIndex() Indexer {
@@ -56,5 +57,13 @@ func BenchmarkAddAlertsThen1(b *testing.B) {
 		b.Run(fmt.Sprintf("Add Alerts %d then 1", i), func(subB *testing.B) {
 			benchmarkAddAlertNumThen1(subB, i)
 		})
+	}
+}
+
+func BenchmarkSearchAlert(b *testing.B) {
+	indexer := getAlertIndex()
+	qb := search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster")
+	for i := 0; i < b.N; i++ {
+		indexer.SearchAlerts(qb.ToParsedSearchRequest())
 	}
 }

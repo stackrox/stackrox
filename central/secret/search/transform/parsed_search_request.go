@@ -54,10 +54,10 @@ func (r ParsedSearchRequestWrapper) toQuery() (query.Query, error) {
 func scopeToQuery(scope *v1.Scope) query.Query {
 	conjunctionQuery := bleve.NewConjunctionQuery()
 	if scope.GetCluster() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewPrefixQuery("secret_and_relationship.relationship.cluster_relationship.name", scope.GetCluster()))
+		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("secret_and_relationship.relationship.cluster_relationship.name", scope.GetCluster()))
 	}
 	if scope.GetNamespace() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewPrefixQuery("secret_and_relationship.relationship.namespace_relationship.namespace", scope.GetNamespace()))
+		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("secret_and_relationship.relationship.namespace_relationship.namespace", scope.GetNamespace()))
 	}
 	if len(conjunctionQuery.Conjuncts) == 0 {
 		return bleve.NewMatchAllQuery()

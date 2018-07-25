@@ -13,7 +13,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/analysis/analyzer/custom"
 	"github.com/blevesearch/bleve/analysis/token/lowercase"
-	"github.com/blevesearch/bleve/analysis/tokenizer/single"
+	"github.com/blevesearch/bleve/analysis/tokenizer/whitespace"
 	"github.com/blevesearch/bleve/index/store/moss"
 	"github.com/blevesearch/bleve/index/upsidedown"
 	"github.com/blevesearch/bleve/mapping"
@@ -71,8 +71,7 @@ func singleTermAnalyzer() map[string]interface{} {
 	return map[string]interface{}{
 		"type":         custom.Name,
 		"char_filters": []string{},
-		// single tokenizer means that it takes each field string as a single token (e.g. "the quick brown fox" is not delimited by spaces)
-		"tokenizer": single.Name,
+		"tokenizer":    whitespace.Name,
 		// Ignore case sensitivity
 		"token_filters": []string{
 			lowercase.Name,

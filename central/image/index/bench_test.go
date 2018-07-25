@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/globalindex"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
+	"bitbucket.org/stack-rox/apollo/pkg/search"
 )
 
 func getImageIndex(b *testing.B) Indexer {
@@ -56,5 +57,13 @@ func BenchmarkAddImagesThen1(b *testing.B) {
 		b.Run(fmt.Sprintf("Add Images %d then 1", i), func(subB *testing.B) {
 			benchmarkAddImageNumThen1(subB, i)
 		})
+	}
+}
+
+func BenchmarkSearchImage(b *testing.B) {
+	indexer := getImageIndex(b)
+	qb := search.NewQueryBuilder().AddStrings(search.ImageTag, "latest")
+	for i := 0; i < b.N; i++ {
+		indexer.SearchImages(qb.ToParsedSearchRequest())
 	}
 }

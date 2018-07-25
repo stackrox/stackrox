@@ -61,16 +61,16 @@ func (b *indexerImpl) SearchAlerts(request *v1.ParsedSearchRequest) ([]search.Re
 func ScopeToAlertQuery(scope *v1.Scope) query.Query {
 	conjunctionQuery := bleve.NewConjunctionQuery()
 	if scope.GetCluster() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewPrefixQuery("alert.deployment.cluster_name", scope.GetCluster()))
+		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("alert.deployment.cluster_name", scope.GetCluster()))
 	}
 	if scope.GetNamespace() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewPrefixQuery("alert.deployment.namespace", scope.GetNamespace()))
+		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("alert.deployment.namespace", scope.GetNamespace()))
 	}
 	if scope.GetLabel().GetKey() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewPrefixQuery("alert.deployment.labels.key", scope.GetLabel().GetKey()))
+		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("alert.deployment.labels.key", scope.GetLabel().GetKey()))
 	}
 	if scope.GetLabel().GetValue() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewPrefixQuery("alert.deployment.labels.value", scope.GetLabel().GetValue()))
+		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("alert.deployment.labels.value", scope.GetLabel().GetValue()))
 	}
 	if len(conjunctionQuery.Conjuncts) == 0 {
 		return bleve.NewMatchNoneQuery()

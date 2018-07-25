@@ -21,7 +21,7 @@ var datatypeToQueryFunc = map[v1.SearchDataType]func(string, []string) (query.Qu
 func newStringQuery(field string, values []string) (query.Query, error) {
 	d := bleve.NewDisjunctionQuery()
 	for _, val := range values {
-		d.AddQuery(NewPrefixQuery(field, val))
+		d.AddQuery(NewMatchPhrasePrefixQuery(field, val))
 	}
 	return d, nil
 }
@@ -38,10 +38,6 @@ func newBoolQuery(field string, values []string) (query.Query, error) {
 		d.AddQuery(q)
 	}
 	return d, nil
-}
-
-func floatPtr(f float64) *float64 {
-	return &f
 }
 
 func boolPtr(b bool) *bool {

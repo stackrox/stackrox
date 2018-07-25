@@ -101,7 +101,7 @@ func buildQuery(request *v1.ParsedSearchRequest, scopeToQuery func(scope *v1.Sco
 		queries = append(queries, q)
 	}
 	if request.GetStringQuery() != "" {
-		queries = append(queries, NewPrefixQuery("", request.GetStringQuery()))
+		queries = append(queries, NewMatchPhrasePrefixQuery("", request.GetStringQuery()))
 	}
 	return queries, nil
 }
