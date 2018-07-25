@@ -89,14 +89,13 @@ message NetworkPoliciesResponse {
 message NetworkEdge {
     string          source       = 1;
     string          target       = 2;
-    repeated string policy_ids   = 3;
-    int32           value        = 4;
 }
 
 message NetworkNode {
-    string id        = 1;
-    string cluster   = 2;
-    string namespace = 3;
+    string id                        = 1;
+    string cluster                   = 2;
+    string namespace                 = 3;
+    repeated string policy_ids       = 4;
 }
 
 message GetNetworkGraphResponse {

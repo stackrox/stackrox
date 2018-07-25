@@ -1,12 +1,13 @@
 package networkgraph
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"sort"
 
 	clusterDatastore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	deploymentsDatastore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	networkPolicyStore "bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/set"
 	"github.com/deckarep/golang-set"
 )
@@ -74,10 +75,9 @@ func (g *graphEvaluatorImpl) evaluate() (nodes []*v1.NetworkNode, edges []*v1.Ne
 			return
 		}
 
-		for _, d := range deployments {
-			nodes = append(nodes, &v1.NetworkNode{Id: d.GetId(), Cluster: d.GetClusterName(), Namespace: d.GetNamespace()})
-		}
-		edges = append(edges, g.evaluateCluster(deployments, networkPolicies)...)
+		clusterNodes, clusterEdges := g.evaluateCluster(deployments, networkPolicies)
+		nodes = append(nodes, clusterNodes...)
+		edges = append(edges, clusterEdges...)
 	}
 	return
 }
@@ -122,13 +122,14 @@ func (g *graphEvaluatorImpl) doesIngressNetworkPolicyRuleMatchDeployment(src *v1
 	return false
 }
 
-func (g *graphEvaluatorImpl) evaluateCluster(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) []*v1.NetworkEdge {
+func (g *graphEvaluatorImpl) evaluateCluster(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) ([]*v1.NetworkNode, []*v1.NetworkEdge) {
 	selectedDeploymentsToIngressPolicies := make(map[string]mapset.Set)
 	selectedDeploymentsToEgressPolicies := make(map[string]mapset.Set)
 
 	matchedDeploymentsToIngressPolicies := make(map[string]mapset.Set)
 	matchedDeploymentsToEgressPolicies := make(map[string]mapset.Set)
 
+	var nodes []*v1.NetworkNode
 	for _, d := range deployments {
 		selectedDeploymentsToIngressPolicies[d.GetId()] = mapset.NewSet()
 		selectedDeploymentsToEgressPolicies[d.GetId()] = mapset.NewSet()
@@ -152,6 +153,16 @@ func (g *graphEvaluatorImpl) evaluateCluster(deployments []*v1.Deployment, netwo
 				matchedDeploymentsToEgressPolicies[d.GetId()].Add(n.GetId())
 			}
 		}
+
+		nodePoliciesSet := set.StringSliceFromSet(selectedDeploymentsToIngressPolicies[d.GetId()].Union(selectedDeploymentsToEgressPolicies[d.GetId()]))
+		sort.Strings(nodePoliciesSet)
+
+		nodes = append(nodes, &v1.NetworkNode{
+			Id:        d.GetId(),
+			Cluster:   d.GetClusterName(),
+			Namespace: d.GetNamespace(),
+			PolicyIds: nodePoliciesSet,
+		})
 	}
 
 	var edges []*v1.NetworkEdge
@@ -185,10 +196,10 @@ func (g *graphEvaluatorImpl) evaluateCluster(deployments []*v1.Deployment, netwo
 			policyIDs = append(policyIDs, set.StringSliceFromSet(selectedIngressPoliciesSet.Intersect(matchedIngressPoliciesSet))...)
 			policyIDs = append(policyIDs, set.StringSliceFromSet(selectedEgressPoliciesSet.Intersect(matchedEgressPoliciesSet))...)
 
-			edges = append(edges, &v1.NetworkEdge{Source: src.GetId(), Target: dst.GetId(), PolicyIds: policyIDs, Value: 1})
+			edges = append(edges, &v1.NetworkEdge{Source: src.GetId(), Target: dst.GetId()})
 		}
 	}
-	return edges
+	return nodes, edges
 }
 
 func (g *graphEvaluatorImpl) getNamespace(deployment *v1.Deployment) *v1.Namespace {

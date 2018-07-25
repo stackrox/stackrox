@@ -53,6 +53,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: web-deny-external-egress
+  namespace: default
 spec:
   podSelector:
     matchLabels:

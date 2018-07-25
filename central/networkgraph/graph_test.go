@@ -6,7 +6,6 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
-	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	k8sV1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -21,7 +20,7 @@ func init() {
 			panic(err)
 		}
 		np := protoconv.KubernetesNetworkPolicyWrap{NetworkPolicy: &k8sNp}.ConvertNetworkPolicy()
-		np.Id = uuid.NewV4().String()
+		np.Id = k8sNp.GetName()
 		networkPolicyFixtures[np.GetName()] = np
 	}
 }
@@ -516,6 +515,17 @@ func edgeCombiner(edges ...[]*v1.NetworkEdge) []*v1.NetworkEdge {
 	return finalEdges
 }
 
+func createNode(node string, namespace string, policies ...string) *v1.NetworkNode {
+	if policies == nil {
+		policies = []string{}
+	}
+	return &v1.NetworkNode{
+		Id:        node,
+		Namespace: namespace,
+		PolicyIds: policies,
+	}
+}
+
 func deploymentLabels(values ...string) []*v1.Deployment_KeyValue {
 	if len(values)%2 != 0 {
 		panic("values for deployments labels must be even")
@@ -535,24 +545,28 @@ func TestEvaluateClusters(t *testing.T) {
 
 	// These are the k8s examples from https://github.com/ahmetb/kubernetes-network-policy-recipes
 	// Seems like a good way to verify that the logic is correct
-
 	cases := []struct {
 		name        string
 		deployments []*v1.Deployment
 		nps         []*v1.NetworkPolicy
 		edges       []*v1.NetworkEdge
+		nodes       []*v1.NetworkNode
 	}{
 		{
 			name: "No policies - fully connected",
 			deployments: []*v1.Deployment{
 				{
-					Id: "id1",
+					Id: "d1",
 				},
 				{
-					Id: "id2",
+					Id: "d2",
 				},
 			},
-			edges: fullyConnectedEdges("id1", "id2"),
+			edges: fullyConnectedEdges("d1", "d2"),
+			nodes: []*v1.NetworkNode{
+				createNode("d1", ""),
+				createNode("d2", ""),
+			},
 		},
 		{
 			name: "deny all to app=web",
@@ -577,6 +591,11 @@ func TestEvaluateClusters(t *testing.T) {
 			),
 			nps: []*v1.NetworkPolicy{
 				getExamplePolicy("web-deny-all"),
+			},
+			nodes: []*v1.NetworkNode{
+				createNode("d1", "default", "web-deny-all"),
+				createNode("d2", "default"),
+				createNode("d3", "default"),
 			},
 		},
 		{
@@ -606,6 +625,11 @@ func TestEvaluateClusters(t *testing.T) {
 			nps: []*v1.NetworkPolicy{
 				getExamplePolicy("limit-traffic"),
 			},
+			nodes: []*v1.NetworkNode{
+				createNode("d1", "default", "limit-traffic"),
+				createNode("d2", "default"),
+				createNode("d3", "default"),
+			},
 		},
 		{
 			name: "allow all ingress even if deny all",
@@ -630,6 +654,11 @@ func TestEvaluateClusters(t *testing.T) {
 			nps: []*v1.NetworkPolicy{
 				getExamplePolicy("web-deny-all"),
 				getExamplePolicy("web-allow-all"),
+			},
+			nodes: []*v1.NetworkNode{
+				createNode("d1", "default", "web-allow-all", "web-deny-all"),
+				createNode("d2", "default"),
+				createNode("d3", "default"),
 			},
 		},
 		{
@@ -656,6 +685,11 @@ func TestEvaluateClusters(t *testing.T) {
 			nps: []*v1.NetworkPolicy{
 				getExamplePolicy("default-deny-all"),
 			},
+			nodes: []*v1.NetworkNode{
+				createNode("d1", "default", "default-deny-all"),
+				createNode("d2", "default", "default-deny-all"),
+				createNode("d3", "stackrox"),
+			},
 		},
 		{
 			name: "DENY all traffic from other namespaces",
@@ -680,6 +714,11 @@ func TestEvaluateClusters(t *testing.T) {
 			),
 			nps: []*v1.NetworkPolicy{
 				getExamplePolicy("deny-from-other-namespaces"),
+			},
+			nodes: []*v1.NetworkNode{
+				createNode("d1", "default", "deny-from-other-namespaces"),
+				createNode("d2", "default", "deny-from-other-namespaces"),
+				createNode("d3", "stackrox"),
 			},
 		},
 		{
@@ -708,6 +747,11 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("deny-from-other-namespaces"),
 				getExamplePolicy("web-allow-all-namespaces"),
 			},
+			nodes: []*v1.NetworkNode{
+				createNode("d1", "default", "deny-from-other-namespaces", "web-allow-all-namespaces"),
+				createNode("d2", "default", "deny-from-other-namespaces"),
+				createNode("d3", "stackrox"),
+			},
 		},
 		{
 			name: "Web allow all traffic from other namespaces",
@@ -733,6 +777,11 @@ func TestEvaluateClusters(t *testing.T) {
 			),
 			nps: []*v1.NetworkPolicy{
 				getExamplePolicy("web-allow-stackrox"),
+			},
+			nodes: []*v1.NetworkNode{
+				createNode("d1", "default", "web-allow-stackrox"),
+				createNode("d2", "other"),
+				createNode("d3", "stackrox"),
 			},
 		},
 		{
@@ -766,6 +815,12 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("web-deny-all"),
 				getExamplePolicy("allow-traffic-from-apps-using-multiple-selectors"),
 			},
+			nodes: []*v1.NetworkNode{
+				createNode("d1", "default", "web-deny-all"),
+				createNode("d2", "default"),
+				createNode("d3", "default"),
+				createNode("d4", "default"),
+			},
 		},
 		{
 			name: "web deny egress",
@@ -785,6 +840,10 @@ func TestEvaluateClusters(t *testing.T) {
 			),
 			nps: []*v1.NetworkPolicy{
 				getExamplePolicy("web-deny-egress"),
+			},
+			nodes: []*v1.NetworkNode{
+				createNode("d1", "default", "web-deny-egress"),
+				createNode("d2", "default"),
 			},
 		},
 		{
@@ -810,6 +869,11 @@ func TestEvaluateClusters(t *testing.T) {
 			nps: []*v1.NetworkPolicy{
 				getExamplePolicy("default-deny-all-egress"),
 			},
+			nodes: []*v1.NetworkNode{
+				createNode("d1", "default", "default-deny-all-egress"),
+				createNode("d2", "default", "default-deny-all-egress"),
+				createNode("d3", "stackrox"),
+			},
 		},
 		{
 			name: "deny external egress from cluster",
@@ -834,19 +898,18 @@ func TestEvaluateClusters(t *testing.T) {
 			nps: []*v1.NetworkPolicy{
 				getExamplePolicy("web-deny-external-egress"),
 			},
+			nodes: []*v1.NetworkNode{
+				createNode("d1", "default", "web-deny-external-egress"),
+				createNode("d2", "default"),
+				createNode("d3", "stackrox"),
+			},
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			compareEdges(t, c.edges, g.evaluateCluster(c.deployments, c.nps))
+			nodes, edges := g.evaluateCluster(c.deployments, c.nps)
+			assert.ElementsMatch(t, c.nodes, nodes)
+			assert.ElementsMatch(t, c.edges, edges)
 		})
 	}
-}
-
-func compareEdges(t *testing.T, expected, actual []*v1.NetworkEdge) {
-	for _, e := range actual {
-		e.PolicyIds = nil
-		e.Value = 0
-	}
-	assert.ElementsMatch(t, expected, actual)
 }
