@@ -119,6 +119,7 @@ func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *v1.Image
 	if err := s.toNotify.NotifyUpdated(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	go s.detector.EnrichAndReprocess()
 	return &empty.Empty{}, nil
 }
 
@@ -136,6 +137,7 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *v1.Imag
 	if err := s.toNotify.NotifyUpdated(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	go s.detector.EnrichAndReprocess()
 	return request, nil
 }
 
