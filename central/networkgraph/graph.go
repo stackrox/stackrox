@@ -2,6 +2,7 @@ package networkgraph
 
 import (
 	"sort"
+	"sync/atomic"
 
 	clusterDatastore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	deploymentsDatastore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
@@ -17,10 +18,14 @@ var logger = logging.LoggerForModule()
 // GraphEvaluator implements the interface for the network graph generator
 type GraphEvaluator interface {
 	GetGraph() (*v1.GetNetworkGraphResponse, error)
+	IncrementEpoch()
+	Epoch() uint32
 }
 
 // graphEvaluatorImpl handles all of the graph calculations
 type graphEvaluatorImpl struct {
+	epoch uint32
+
 	clustersStore      clusterDatastore.DataStore
 	deploymentsStore   deploymentsDatastore.DataStore
 	namespaceStore     ns
@@ -42,12 +47,22 @@ func newGraphEvaluator(clustersStore clusterDatastore.DataStore, deploymentsStor
 	}
 }
 
+func (g *graphEvaluatorImpl) IncrementEpoch() {
+	atomic.AddUint32(&g.epoch, 1)
+}
+
+func (g *graphEvaluatorImpl) Epoch() uint32 {
+	return atomic.LoadUint32(&g.epoch)
+}
+
 func (g *graphEvaluatorImpl) GetGraph() (*v1.GetNetworkGraphResponse, error) {
+	epoch := g.Epoch()
 	nodes, edges, err := g.evaluate()
 	if err != nil {
 		return nil, err
 	}
 	return &v1.GetNetworkGraphResponse{
+		Epoch: epoch,
 		Nodes: nodes,
 		Edges: edges,
 	}, nil

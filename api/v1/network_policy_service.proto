@@ -99,8 +99,13 @@ message NetworkNode {
 }
 
 message GetNetworkGraphResponse {
-    repeated NetworkNode nodes = 1;
-    repeated NetworkEdge edges = 2;
+    uint32               epoch = 1;
+    repeated NetworkNode nodes = 2;
+    repeated NetworkEdge edges = 3;
+}
+
+message GetNetworkGraphEpochResponse {
+    uint32 epoch = 1;
 }
 
 service NetworkPolicyService {
@@ -120,6 +125,12 @@ service NetworkPolicyService {
     rpc GetNetworkGraph (RawQuery) returns (GetNetworkGraphResponse) {
         option (google.api.http) = {
             get: "/v1/networkgraph"
+        };
+    }
+
+    rpc GetNetworkGraphEpoch (google.protobuf.Empty) returns (GetNetworkGraphEpochResponse) {
+        option (google.api.http) = {
+            get: "/v1/networkgraph/epoch"
         };
     }
 

@@ -5,6 +5,7 @@ import (
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
+	"bitbucket.org/stack-rox/apollo/central/networkgraph"
 	secretDataGraph "bitbucket.org/stack-rox/apollo/central/secret/datagraph"
 	"bitbucket.org/stack-rox/apollo/central/sensorevent/service/pipeline"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -19,13 +20,17 @@ var (
 //////////////////////////////////////////////////////////////////////////////////////
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentDataStore.DataStore, images imageDataStore.DataStore, detector detection.Detector) pipeline.Pipeline {
+func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentDataStore.DataStore,
+	images imageDataStore.DataStore, detector detection.Detector,
+	graphEvaluator networkgraph.GraphEvaluator) pipeline.Pipeline {
 	return &pipelineImpl{
 		validateInput:     newValidateInput(),
 		clusterEnrichment: newClusterEnrichment(clusters),
 		updateImages:      newUpdateImages(images),
 		persistDeployment: newPersistDeployment(deployments),
 		createResponse:    newCreateResponse(detector.ProcessDeploymentEvent),
+
+		graphEvaluator: graphEvaluator,
 	}
 }
 
@@ -36,6 +41,8 @@ type pipelineImpl struct {
 	updateImages      *updateImagesImpl
 	persistDeployment *persistDeploymentImpl
 	createResponse    *createResponseImpl
+
+	graphEvaluator networkgraph.GraphEvaluator
 }
 
 // Run runs the pipeline template on the input and returns the output.
@@ -66,6 +73,8 @@ func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, deployment *v
 	if err := secretDataGraph.Singleton().ProcessDeploymentEvent(action, deployment); err != nil {
 		return nil, err
 	}
+
+	s.graphEvaluator.IncrementEpoch()
 
 	// Process the deployment (enrichment, alert generation, enforcement action generation.)
 	resp := s.createResponse.do(action, deployment)
@@ -102,6 +111,7 @@ func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, deployment *
 	if err := secretDataGraph.Singleton().ProcessDeploymentEvent(action, deployment); err != nil {
 		return nil, err
 	}
+	s.graphEvaluator.IncrementEpoch()
 
 	return resp, nil
 }

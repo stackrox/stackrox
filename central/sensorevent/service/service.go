@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
 	namespaceDataStore "bitbucket.org/stack-rox/apollo/central/namespace/store"
+	"bitbucket.org/stack-rox/apollo/central/networkgraph"
 	networkPolicyStore "bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
 	"bitbucket.org/stack-rox/apollo/central/risk"
 	"bitbucket.org/stack-rox/apollo/central/sensorevent/service/pipeline/deploymentevents"
@@ -41,7 +42,8 @@ func New(detector detection.Detector,
 	deployments deploymentDataStore.DataStore,
 	clusters clusterDataStore.DataStore,
 	networkPolicies networkPolicyStore.Store,
-	namespaces namespaceDataStore.Store) Service {
+	namespaces namespaceDataStore.Store,
+	graphEvaluator networkgraph.GraphEvaluator) Service {
 	return &serviceImpl{
 		detector: detector,
 		scorer:   scorer,
@@ -53,8 +55,8 @@ func New(detector detection.Detector,
 		networkPolicies:  networkPolicies,
 		namespaces:       namespaces,
 
-		deploymentPipeline:    deploymentevents.NewPipeline(clusters, deployments, images, detector),
-		networkPolicyPipeline: networkpolicies.NewPipeline(clusters, networkPolicies),
-		namespacePipeline:     namespacePipeline.NewPipeline(clusters, namespaces),
+		deploymentPipeline:    deploymentevents.NewPipeline(clusters, deployments, images, detector, graphEvaluator),
+		networkPolicyPipeline: networkpolicies.NewPipeline(clusters, networkPolicies, graphEvaluator),
+		namespacePipeline:     namespacePipeline.NewPipeline(clusters, namespaces, graphEvaluator),
 	}
 }

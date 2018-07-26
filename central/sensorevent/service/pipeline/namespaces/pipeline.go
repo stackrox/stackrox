@@ -5,6 +5,7 @@ import (
 
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	namespaceDataStore "bitbucket.org/stack-rox/apollo/central/namespace/store"
+	"bitbucket.org/stack-rox/apollo/central/networkgraph"
 	"bitbucket.org/stack-rox/apollo/central/sensorevent/service/pipeline"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
@@ -18,16 +19,18 @@ var (
 //////////////////////////////////////////////////////////////////////////////////////
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(clusters clusterDataStore.DataStore, namespaces namespaceDataStore.Store) pipeline.Pipeline {
+func NewPipeline(clusters clusterDataStore.DataStore, namespaces namespaceDataStore.Store, graphEvaluator networkgraph.GraphEvaluator) pipeline.Pipeline {
 	return &pipelineImpl{
-		clusters:   clusters,
-		namespaces: namespaces,
+		clusters:       clusters,
+		namespaces:     namespaces,
+		graphEvaluator: graphEvaluator,
 	}
 }
 
 type pipelineImpl struct {
-	clusters   clusterDataStore.DataStore
-	namespaces namespaceDataStore.Store
+	clusters       clusterDataStore.DataStore
+	namespaces     namespaceDataStore.Store
+	graphEvaluator networkgraph.GraphEvaluator
 }
 
 // Run runs the pipeline template on the input and returns the output.
@@ -53,6 +56,7 @@ func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *v1.Nam
 	if err := s.persistNamespace(action, event); err != nil {
 		return nil, err
 	}
+	s.graphEvaluator.IncrementEpoch()
 
 	return s.createResponse(event), nil
 }
@@ -70,6 +74,7 @@ func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, ns *v1.Names
 	if err := s.persistNamespace(action, ns); err != nil {
 		return nil, err
 	}
+	s.graphEvaluator.IncrementEpoch()
 
 	return s.createResponse(ns), nil
 }

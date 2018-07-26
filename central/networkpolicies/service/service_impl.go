@@ -91,3 +91,9 @@ func (s *serviceImpl) ListNetworkPolicies(context.Context, *empty.Empty) (*v1.Ne
 func (s *serviceImpl) GetNetworkGraph(ctx context.Context, query *v1.RawQuery) (*v1.GetNetworkGraphResponse, error) {
 	return s.graphEvaluator.GetGraph()
 }
+
+func (s *serviceImpl) GetNetworkGraphEpoch(context.Context, *empty.Empty) (*v1.GetNetworkGraphEpochResponse, error) {
+	return &v1.GetNetworkGraphEpochResponse{
+		Epoch: s.graphEvaluator.Epoch(),
+	}, nil
+}
