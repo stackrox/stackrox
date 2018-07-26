@@ -63,7 +63,8 @@ func choseCommand(prompt string, c *cobra.Command) (args []string) {
 	for true {
 		cmdString, err := readUserInput(prompt)
 		if err != nil {
-			panic(err)
+			printToStderr("\nCould not read user input. Did you specify '-i' in the Docker run command?\n")
+			os.Exit(1)
 		}
 		if cmdString == "" {
 			return
