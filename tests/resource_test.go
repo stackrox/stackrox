@@ -10,7 +10,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
+	"bitbucket.org/stack-rox/apollo/pkg/images/utils"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"bitbucket.org/stack-rox/apollo/pkg/search"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -35,7 +35,7 @@ func TestClusters(t *testing.T) {
 	assert.Equal(t, v1.ClusterType_KUBERNETES_CLUSTER, c.GetType())
 	assert.Equal(t, `remote`, c.GetName())
 
-	img := images.GenerateImageFromString(c.GetPreventImage())
+	img := utils.GenerateImageFromString(c.GetPreventImage())
 	assert.Equal(t, `stackrox/prevent`, img.GetName().GetRemote())
 	if sha, ok := os.LookupEnv(`PREVENT_IMAGE_TAG`); ok {
 		assert.Equal(t, sha, img.GetName().GetTag())

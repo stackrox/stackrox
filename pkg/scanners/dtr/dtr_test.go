@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"bitbucket.org/stack-rox/apollo/pkg/scanners/types"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -19,7 +19,7 @@ type DTRSuite struct {
 	suite.Suite
 
 	server *httptest.Server
-	dtr    scanners.ImageScanner
+	dtr    types.ImageScanner
 }
 
 var statusPayload = `{

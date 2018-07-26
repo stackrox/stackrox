@@ -7,10 +7,6 @@ import (
 	"syscall"
 	"time"
 
-	// This registers all registries and scanners.
-	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
-	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
-
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
 	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
@@ -23,7 +19,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
 	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
 	"bitbucket.org/stack-rox/apollo/pkg/sensor"
-	"bitbucket.org/stack-rox/apollo/pkg/sources"
 	"bitbucket.org/stack-rox/apollo/sensor/swarm/enforcer"
 	"bitbucket.org/stack-rox/apollo/sensor/swarm/listener"
 	"bitbucket.org/stack-rox/apollo/sensor/swarm/orchestrator"
@@ -40,12 +35,11 @@ var (
 	advertisedEndpoint string
 	image              string
 
-	server                 grpc.API
-	listenerInstance       listeners.Listener
-	enforcerInstance       enforcers.Enforcer
-	benchScheduler         *benchmarks.SchedulerClient
-	orchestratorInstance   orchestrators.Orchestrator
-	imageIntegrationPoller *sources.Client
+	server               grpc.API
+	listenerInstance     listeners.Listener
+	enforcerInstance     enforcers.Enforcer
+	benchScheduler       *benchmarks.SchedulerClient
+	orchestratorInstance orchestrators.Orchestrator
 
 	conn *grpcLib.ClientConn
 
@@ -107,8 +101,6 @@ func initialize() {
 		panic(err)
 	}
 
-	imageIntegrationPoller = sources.NewImageIntegrationsClient(conn, clusterID)
-
 	logger.Info("Swarm Sensor Initialized")
 }
 
@@ -135,16 +127,13 @@ func start() {
 	if benchScheduler != nil {
 		go benchScheduler.Start()
 	}
-	if imageIntegrationPoller != nil {
-		go imageIntegrationPoller.Start()
-	}
 
 	// Wait for central so we can initiate our GRPC connection to send sensor events.
 	waitUntilCentralIsReady(conn)
 
 	// If everything is brought up correctly, start the sensor.
 	if listenerInstance != nil && enforcerInstance != nil {
-		sensorInstance = sensor.NewSensor(imageIntegrationPoller, conn)
+		sensorInstance = sensor.NewSensor(conn, clusterID)
 		sensorInstance.Start(listenerInstance.Events(), enforcerInstance.Actions())
 	}
 
@@ -165,9 +154,6 @@ func stop() {
 	}
 	if benchScheduler != nil {
 		benchScheduler.Stop()
-	}
-	if imageIntegrationPoller != nil {
-		imageIntegrationPoller.Stop()
 	}
 
 	logger.Info("Swarm Sensor Stopped")

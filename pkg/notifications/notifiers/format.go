@@ -7,7 +7,7 @@ import (
 	"text/template"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
+	"bitbucket.org/stack-rox/apollo/pkg/images/types"
 	"bitbucket.org/stack-rox/apollo/pkg/readable"
 )
 
@@ -115,7 +115,7 @@ func FormatPolicy(alert *v1.Alert, alertLink string, funcMap template.FuncMap) (
 		Alert:     alert,
 		AlertLink: alertLink,
 		CVSS:      readable.NumericalPolicy(alert.GetPolicy().GetFields().GetCvss(), "cvss"),
-		Images:    images.FromContainers(alert.GetDeployment().GetContainers()).String(),
+		Images:    types.FromContainers(alert.GetDeployment().GetContainers()).String(),
 		Port:      portStr,
 		Severity:  SeverityString(alert.Policy.Severity),
 		Time:      readable.ProtoTime(alert.Time),

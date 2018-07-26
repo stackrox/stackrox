@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"html/template"
 
-	"bitbucket.org/stack-rox/apollo/pkg/images"
+	"bitbucket.org/stack-rox/apollo/pkg/images/utils"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 )
 
@@ -62,6 +62,6 @@ func GetCreateSecretTemplate(namespaceVar, registryVar, imagePullSecretVar strin
 
 // GetResolvedRegistry returns the registry endpoint from the image definition
 func GetResolvedRegistry(image string) (string, error) {
-	parsedImage := images.GenerateImageFromString(image)
+	parsedImage := utils.GenerateImageFromString(image)
 	return urlfmt.FormatURL(parsedImage.GetName().GetRegistry(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 }

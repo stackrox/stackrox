@@ -5,10 +5,11 @@ import (
 
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
+	"bitbucket.org/stack-rox/apollo/central/imageintegration"
 	imageintegrationDataStore "bitbucket.org/stack-rox/apollo/central/imageintegration/datastore"
 	multiplierStore "bitbucket.org/stack-rox/apollo/central/multiplier/store"
 	"bitbucket.org/stack-rox/apollo/central/risk"
-	"bitbucket.org/stack-rox/apollo/pkg/imageenricher"
+	"bitbucket.org/stack-rox/apollo/pkg/images/enricher"
 )
 
 var (
@@ -23,7 +24,7 @@ func initialize() {
 		imageDataStore.Singleton(),
 		imageintegrationDataStore.Singleton(),
 		multiplierStore.Singleton(),
-		imageenricher.New(),
+		enricher.New(imageintegration.Set()),
 		risk.GetScorer()); err != nil {
 		panic(err)
 	}

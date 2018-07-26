@@ -4,7 +4,6 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/enforcers"
 	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/sources"
 	grpcLib "google.golang.org/grpc"
 )
 
@@ -19,10 +18,10 @@ type Sensor interface {
 }
 
 // NewSensor returns a new Sensor.
-func NewSensor(imageIntegrationPoller *sources.Client, conn *grpcLib.ClientConn) Sensor {
+func NewSensor(centralConn *grpcLib.ClientConn, clusterID string) Sensor {
 	return &sensorImpl{
-		centralStream: newCentralStream(conn),
-		processLoops:  newProcessLoops(imageIntegrationPoller),
+		centralStream: newCentralStream(centralConn),
+		processLoops:  newProcessLoops(centralConn, clusterID),
 	}
 }
 

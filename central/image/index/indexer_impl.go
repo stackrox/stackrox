@@ -8,7 +8,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/image/index/mappings"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
+	"bitbucket.org/stack-rox/apollo/pkg/images/types"
 	"bitbucket.org/stack-rox/apollo/pkg/search"
 	"bitbucket.org/stack-rox/apollo/pkg/search/blevesearch"
 	"github.com/blevesearch/bleve"
@@ -32,7 +32,7 @@ type imageWrapper struct {
 // AddImage adds the image to the index
 func (b *indexerImpl) AddImage(image *v1.Image) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Add", "Image")
-	digest := images.NewDigest(image.GetName().GetSha()).Digest()
+	digest := types.NewDigest(image.GetName().GetSha()).Digest()
 	return b.index.Index(digest, &imageWrapper{Type: v1.SearchCategory_IMAGES.String(), Image: image})
 }
 
@@ -42,7 +42,7 @@ func (b *indexerImpl) AddImages(imageList []*v1.Image) error {
 
 	batch := b.index.NewBatch()
 	for _, image := range imageList {
-		digest := images.NewDigest(image.GetName().GetSha()).Digest()
+		digest := types.NewDigest(image.GetName().GetSha()).Digest()
 		batch.Index(digest, &imageWrapper{Type: v1.SearchCategory_IMAGES.String(), Image: image})
 	}
 	return b.index.Batch(batch)
@@ -51,7 +51,7 @@ func (b *indexerImpl) AddImages(imageList []*v1.Image) error {
 // DeleteImage deletes the image from the index
 func (b *indexerImpl) DeleteImage(sha string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "Image")
-	digest := images.NewDigest(sha).Digest()
+	digest := types.NewDigest(sha).Digest()
 	return b.index.Delete(digest)
 }
 

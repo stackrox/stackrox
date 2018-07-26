@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
+	imageTypes "bitbucket.org/stack-rox/apollo/pkg/images/types"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"bitbucket.org/stack-rox/apollo/pkg/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 	clairV1 "github.com/coreos/clair/api/v1"
 )
@@ -25,6 +25,14 @@ var (
 	log          = logging.LoggerForModule()
 	errNotExists = errors.New("Layer does not exist")
 )
+
+// Creator provides the type an scanners.Creator to add to the scanners Registry.
+func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScanner, error)) {
+	return "clair", func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
+		scan, err := newScanner(integration)
+		return scan, err
+	}
+}
 
 type clair struct {
 	client                *http.Client
@@ -132,7 +140,7 @@ func (c *clair) getLastScanFromV2Metadata(image *v1.Image) (*clairV1.LayerEnvelo
 }
 
 func (c *clair) getLastScanFromV1Metadata(image *v1.Image) (*clairV1.LayerEnvelope, bool) {
-	digest := images.NewDigest(image.GetMetadata().GetRegistrySha()).Digest()
+	digest := imageTypes.NewDigest(image.GetMetadata().GetRegistrySha()).Digest()
 	layerEnvelope, err := c.retrieveLayerData(digest)
 	if err == nil {
 		return layerEnvelope, true
@@ -172,11 +180,4 @@ func (c *clair) Match(image *v1.Image) bool {
 
 func (c *clair) Global() bool {
 	return len(c.protoImageIntegration.GetClusters()) == 0
-}
-
-func init() {
-	scanners.Registry["clair"] = func(integration *v1.ImageIntegration) (scanners.ImageScanner, error) {
-		scan, err := newScanner(integration)
-		return scan, err
-	}
 }

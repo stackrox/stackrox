@@ -7,7 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
 	"bitbucket.org/stack-rox/apollo/central/metrics"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	imagesPkg "bitbucket.org/stack-rox/apollo/pkg/images"
+	"bitbucket.org/stack-rox/apollo/pkg/images/types"
 	"github.com/boltdb/bolt"
 	"github.com/gogo/protobuf/proto"
 )
@@ -20,7 +20,7 @@ type storeImpl struct {
 func (b *storeImpl) ListImage(sha string) (image *v1.ListImage, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ListImage")
 
-	digest := imagesPkg.NewDigest(sha).Digest()
+	digest := types.NewDigest(sha).Digest()
 	err = b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(listImageBucket))
 		image = new(v1.ListImage)
@@ -168,7 +168,7 @@ func (b *storeImpl) DeleteRegistrySha(orchSha string) error {
 ////////////////////////////
 
 func idForSha(sha string) string {
-	return imagesPkg.NewDigest(sha).Digest()
+	return types.NewDigest(sha).Digest()
 }
 
 func convertImageToListImage(i *v1.Image) *v1.ListImage {
@@ -333,7 +333,7 @@ func upsertListImage(tx *bolt.Tx, image *v1.Image) error {
 	if err != nil {
 		return err
 	}
-	digest := imagesPkg.NewDigest(image.GetName().GetSha()).Digest()
+	digest := types.NewDigest(image.GetName().GetSha()).Digest()
 	return bucket.Put([]byte(digest), bytes)
 }
 

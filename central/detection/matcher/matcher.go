@@ -10,7 +10,7 @@ import (
 	_ "bitbucket.org/stack-rox/apollo/central/detection/configuration_processor"
 	_ "bitbucket.org/stack-rox/apollo/central/detection/image_processor"
 	_ "bitbucket.org/stack-rox/apollo/central/detection/privilege_processor"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
+	"bitbucket.org/stack-rox/apollo/pkg/images/types"
 	"bitbucket.org/stack-rox/apollo/pkg/scopecomp"
 )
 
@@ -136,8 +136,8 @@ func (p *Policy) matchesContainerWhitelist(whitelist *v1.Whitelist_Container, co
 	}
 	whitelistName := whitelist.GetImageName()
 	containerName := container.GetImage().GetName()
-	whitelistDigest := images.NewDigest(whitelistName.GetSha()).Digest()
-	containerDigest := images.NewDigest(containerName.GetSha()).Digest()
+	whitelistDigest := types.NewDigest(whitelistName.GetSha()).Digest()
+	containerDigest := types.NewDigest(containerName.GetSha()).Digest()
 
 	if whitelistName.GetSha() != "" && whitelistDigest != containerDigest {
 		return false

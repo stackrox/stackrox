@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
+	imageTypes "bitbucket.org/stack-rox/apollo/pkg/images/types"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"bitbucket.org/stack-rox/apollo/pkg/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/transports"
 	dockerRegistry "github.com/heroku/docker-registry-client/registry"
 )
@@ -29,6 +29,14 @@ var (
 var (
 	log = logging.LoggerForModule()
 )
+
+// Creator provides the type an scanners.Creator to add to the scanners Registry.
+func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScanner, error)) {
+	return "tenable", func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
+		scan, err := newScanner(integration)
+		return scan, err
+	}
+}
 
 type tenable struct {
 	client *http.Client
@@ -107,7 +115,7 @@ func (d *tenable) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	}
 
 	getScanURL := fmt.Sprintf("/container-security/api/v1/reports/by_image?image_id=%v",
-		images.Wrapper{Image: image}.ShortRegistrySHA())
+		imageTypes.Wrapper{Image: image}.ShortRegistrySHA())
 
 	body, status, err := d.sendRequest("GET", getScanURL)
 	if err != nil {
@@ -129,11 +137,4 @@ func (d *tenable) Match(image *v1.Image) bool {
 
 func (d *tenable) Global() bool {
 	return len(d.protoImageIntegration.GetClusters()) == 0
-}
-
-func init() {
-	scanners.Registry["tenable"] = func(integration *v1.ImageIntegration) (scanners.ImageScanner, error) {
-		scan, err := newScanner(integration)
-		return scan, err
-	}
 }

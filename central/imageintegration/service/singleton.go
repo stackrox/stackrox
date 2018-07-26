@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"bitbucket.org/stack-rox/apollo/central/detection"
+	"bitbucket.org/stack-rox/apollo/central/imageintegration"
 	"bitbucket.org/stack-rox/apollo/central/imageintegration/datastore"
 )
 
@@ -14,7 +15,11 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), detection.GetDetector())
+	as = New(imageintegration.Set().RegistryFactory(),
+		imageintegration.Set().ScannerFactory(),
+		imageintegration.ToNotify(),
+		datastore.Singleton(),
+		detection.GetDetector())
 }
 
 // Singleton provides the instance of the Service interface to register.

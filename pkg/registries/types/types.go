@@ -1,4 +1,4 @@
-package registries
+package types
 
 import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"

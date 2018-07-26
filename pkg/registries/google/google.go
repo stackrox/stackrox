@@ -4,13 +4,21 @@ import (
 	"fmt"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/registries/docker"
+	"bitbucket.org/stack-rox/apollo/pkg/registries/types"
 )
 
 const (
 	username = "_json_key"
 )
+
+// Creator provides the type and registries.Creator to add to the registries Registry.
+func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageRegistry, error)) {
+	return "google", func(integration *v1.ImageIntegration) (types.ImageRegistry, error) {
+		reg, err := newRegistry(integration)
+		return reg, err
+	}
+}
 
 func newRegistry(integration *v1.ImageIntegration) (*docker.Registry, error) {
 	if _, ok := integration.Config["endpoint"]; !ok {
@@ -25,11 +33,4 @@ func newRegistry(integration *v1.ImageIntegration) (*docker.Registry, error) {
 		Endpoint: integration.Config["endpoint"],
 	}
 	return docker.NewDockerRegistry(cfg, integration)
-}
-
-func init() {
-	registries.Registry["google"] = func(integration *v1.ImageIntegration) (registries.ImageRegistry, error) {
-		reg, err := newRegistry(integration)
-		return reg, err
-	}
 }

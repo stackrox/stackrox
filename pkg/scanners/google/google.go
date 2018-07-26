@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
+	imageTypes "bitbucket.org/stack-rox/apollo/pkg/images/types"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"bitbucket.org/stack-rox/apollo/pkg/scanners/types"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1alpha1"
 	"google.golang.org/grpc"
@@ -31,6 +31,14 @@ const (
 var (
 	log = logging.LoggerForModule()
 )
+
+// Creator provides the type an scanners.Creator to add to the scanners Registry.
+func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScanner, error)) {
+	return "google", func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
+		scan, err := newScanner(integration)
+		return scan, err
+	}
+}
 
 type googleScanner struct {
 	client           containeranalysis.ContainerAnalysisClient
@@ -115,7 +123,7 @@ func (c *googleScanner) Test() error {
 }
 
 func getResourceURL(image *v1.Image) string {
-	return fmt.Sprintf("https://%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), images.NewDigest(image.GetMetadata().GetRegistrySha()).Digest())
+	return fmt.Sprintf("https://%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), imageTypes.NewDigest(image.GetMetadata().GetRegistrySha()).Digest())
 }
 
 func generalizeName(name string) string {
@@ -258,11 +266,4 @@ func (c *googleScanner) Match(image *v1.Image) bool {
 
 func (c *googleScanner) Global() bool {
 	return len(c.protoIntegration.GetClusters()) == 0
-}
-
-func init() {
-	scanners.Registry["google"] = func(integration *v1.ImageIntegration) (scanners.ImageScanner, error) {
-		scan, err := newScanner(integration)
-		return scan, err
-	}
 }

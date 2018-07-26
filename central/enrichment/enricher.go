@@ -7,9 +7,8 @@ import (
 	multiplierDS "bitbucket.org/stack-rox/apollo/central/multiplier/store"
 	"bitbucket.org/stack-rox/apollo/central/risk"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/imageenricher"
+	"bitbucket.org/stack-rox/apollo/pkg/images/enricher"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/sources"
 )
 
 var (
@@ -19,9 +18,6 @@ var (
 // Enricher enriches images with data from registries and scanners.
 type Enricher interface {
 	Enrich(deployment *v1.Deployment) (bool, error)
-
-	UpdateImageIntegration(integration *sources.ImageIntegration)
-	RemoveImageIntegration(id string)
 
 	UpdateMultiplier(multiplier *v1.Multiplier)
 	RemoveMultiplier(id string)
@@ -35,7 +31,7 @@ func New(deploymentStorage deploymentDS.DataStore,
 	imageStorage imageDS.DataStore,
 	imageIntegrationStorage imageIntegrationDS.DataStore,
 	multiplierStorage multiplierDS.Store,
-	imageEnricher imageenricher.ImageEnricher,
+	imageEnricher enricher.ImageEnricher,
 	scorer risk.Scorer) (Enricher, error) {
 	e := &enricherImpl{
 		deploymentStorage:       deploymentStorage,
@@ -44,9 +40,6 @@ func New(deploymentStorage deploymentDS.DataStore,
 		multiplierStorage:       multiplierStorage,
 		imageEnricher:           imageEnricher,
 		scorer:                  scorer,
-	}
-	if err := e.initializeImageIntegrations(); err != nil {
-		return nil, err
 	}
 	if err := e.initializeMultipliers(); err != nil {
 		return nil, err

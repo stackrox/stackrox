@@ -8,7 +8,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/detection/processors"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	registryTypes "bitbucket.org/stack-rox/apollo/pkg/registries/types"
 )
 
 var (
@@ -153,7 +153,7 @@ func compileLineRuleFieldRegex(line *v1.DockerfileLineRuleField) (*lineRuleField
 	if line == nil {
 		return nil, nil
 	}
-	if _, ok := registries.DockerfileInstructionSet[line.Instruction]; !ok {
+	if _, ok := registryTypes.DockerfileInstructionSet[line.Instruction]; !ok {
 		return nil, fmt.Errorf("%v is not a valid dockerfile instruction", line.Instruction)
 	}
 	value, err := processors.CompileStringRegex(line.Value)

@@ -4,7 +4,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/image/index"
 	"bitbucket.org/stack-rox/apollo/central/image/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
+	"bitbucket.org/stack-rox/apollo/pkg/images/types"
 	"bitbucket.org/stack-rox/apollo/pkg/search"
 )
 
@@ -87,7 +87,7 @@ func (ds *searcherImpl) searchImages(request *v1.ParsedSearchRequest) ([]*v1.Lis
 func convertImage(image *v1.ListImage, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_IMAGES,
-		Id:             images.NewDigest(image.GetSha()).Digest(),
+		Id:             types.NewDigest(image.GetSha()).Digest(),
 		Name:           image.GetName(),
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,

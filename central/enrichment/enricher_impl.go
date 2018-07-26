@@ -1,16 +1,13 @@
 package enrichment
 
 import (
-	"fmt"
-
 	deploymentDS "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	imageDS "bitbucket.org/stack-rox/apollo/central/image/datastore"
 	imageIntegrationDS "bitbucket.org/stack-rox/apollo/central/imageintegration/datastore"
 	multiplierDS "bitbucket.org/stack-rox/apollo/central/multiplier/store"
 	"bitbucket.org/stack-rox/apollo/central/risk"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/imageenricher"
-	"bitbucket.org/stack-rox/apollo/pkg/sources"
+	"bitbucket.org/stack-rox/apollo/pkg/images/enricher"
 )
 
 // enricherImpl enriches images with data from registries and scanners.
@@ -20,24 +17,8 @@ type enricherImpl struct {
 	imageIntegrationStorage imageIntegrationDS.DataStore
 	multiplierStorage       multiplierDS.Store
 
-	imageEnricher imageenricher.ImageEnricher
+	imageEnricher enricher.ImageEnricher
 	scorer        risk.Scorer
-}
-
-func (e *enricherImpl) initializeImageIntegrations() error {
-	protoImageIntegrations, err := e.imageIntegrationStorage.GetImageIntegrations(&v1.GetImageIntegrationsRequest{})
-	if err != nil {
-		return err
-	}
-
-	for _, protoImageIntegration := range protoImageIntegrations {
-		integration, err := sources.NewImageIntegration(protoImageIntegration)
-		if err != nil {
-			return fmt.Errorf("error generating an image integration from a persisted image integration: %s", err)
-		}
-		e.imageEnricher.IntegrationSet().UpdateImageIntegration(integration)
-	}
-	return nil
 }
 
 func (e *enricherImpl) initializeMultipliers() error {
@@ -68,16 +49,6 @@ func (e *enricherImpl) Enrich(deployment *v1.Deployment) (bool, error) {
 		}
 	}
 	return deploymentUpdated, nil
-}
-
-// UpdateImageIntegration updates the enricher's map of active image integratinos
-func (e *enricherImpl) UpdateImageIntegration(integration *sources.ImageIntegration) {
-	e.imageEnricher.IntegrationSet().UpdateImageIntegration(integration)
-}
-
-// RemoveImageIntegration removes a image integration from the enricher's map of active image integrations
-func (e *enricherImpl) RemoveImageIntegration(id string) {
-	e.imageEnricher.IntegrationSet().RemoveImageIntegration(id)
 }
 
 // UpdateMultiplier upserts a multiplier into the scorer

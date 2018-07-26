@@ -7,9 +7,8 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
 	"bitbucket.org/stack-rox/apollo/pkg/registries/docker"
+	"bitbucket.org/stack-rox/apollo/pkg/registries/types"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 )
 
@@ -17,9 +16,13 @@ const (
 	oauthTokenString = "$oauthtoken"
 )
 
-var (
-	logger = logging.LoggerForModule()
-)
+// Creator provides the type and registries.Creator to add to the registries Registry.
+func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageRegistry, error)) {
+	return "quay", func(integration *v1.ImageIntegration) (types.ImageRegistry, error) {
+		reg, err := newRegistry(integration)
+		return reg, err
+	}
+}
 
 // Quay is the implementation of the Docker Registry for Quay
 type Quay struct {
@@ -36,7 +39,7 @@ func validate(quay *v1.QuayConfig) error {
 }
 
 // NewRegistryFromConfig returns a new instantiation of the Quay registry
-func NewRegistryFromConfig(config *v1.QuayConfig, integration *v1.ImageIntegration) (registries.ImageRegistry, error) {
+func NewRegistryFromConfig(config *v1.QuayConfig, integration *v1.ImageIntegration) (types.ImageRegistry, error) {
 	if err := validate(config); err != nil {
 		return nil, err
 	}
@@ -61,7 +64,7 @@ func NewRegistryFromConfig(config *v1.QuayConfig, integration *v1.ImageIntegrati
 	}, nil
 }
 
-func newRegistry(integration *v1.ImageIntegration) (registries.ImageRegistry, error) {
+func newRegistry(integration *v1.ImageIntegration) (types.ImageRegistry, error) {
 	quayConfig, ok := integration.IntegrationConfig.(*v1.ImageIntegration_Quay)
 	if !ok {
 		return nil, fmt.Errorf("Quay config must be specified")
@@ -96,11 +99,4 @@ func (q *Quay) Test() error {
 		return fmt.Errorf("Error reaching quay.io with HTTP code %d: %s", resp.StatusCode, string(body))
 	}
 	return nil
-}
-
-func init() {
-	registries.Registry["quay"] = func(integration *v1.ImageIntegration) (registries.ImageRegistry, error) {
-		reg, err := newRegistry(integration)
-		return reg, err
-	}
 }

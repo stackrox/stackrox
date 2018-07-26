@@ -10,7 +10,6 @@ import (
 	policyDataStore "bitbucket.org/stack-rox/apollo/central/policy/datastore"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/sources"
 )
 
 var (
@@ -26,9 +25,6 @@ type Detector interface {
 	Detect(task Task) (alert *v1.Alert, enforcement v1.EnforcementAction, excluded *v1.DryRunResponse_Excluded)
 
 	ProcessDeploymentEvent(deployment *v1.Deployment, action v1.ResourceAction) (alertID string, enforcement v1.EnforcementAction)
-
-	UpdateImageIntegration(integration *sources.ImageIntegration)
-	RemoveImageIntegration(id string)
 
 	UpdatePolicy(policy *matcher.Policy)
 	RemovePolicy(id string)

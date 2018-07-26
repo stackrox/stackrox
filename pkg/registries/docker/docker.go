@@ -9,7 +9,7 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	"bitbucket.org/stack-rox/apollo/pkg/registries/types"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	ptypes "github.com/gogo/protobuf/types"
@@ -21,6 +21,14 @@ import (
 var (
 	log = logging.LoggerForModule()
 )
+
+// Creator provides the type and registries.Creator to add to the registries Registry.
+func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageRegistry, error)) {
+	return "docker", func(integration *v1.ImageIntegration) (types.ImageRegistry, error) {
+		reg, err := newRegistry(integration)
+		return reg, err
+	}
+}
 
 // Registry is the basic docker registry implementation
 type Registry struct {
@@ -156,7 +164,7 @@ func scrubDockerfileLines(compat v1Compatibility) *v1.ImageLayer {
 	}
 	line = strings.Join(strings.Fields(line), " ")
 	var lineInstruction string
-	for instruction := range registries.DockerfileInstructionSet {
+	for instruction := range types.DockerfileInstructionSet {
 		if strings.HasPrefix(line, instruction) {
 			lineInstruction = instruction
 			line = strings.TrimPrefix(line, instruction+" ")
@@ -273,21 +281,12 @@ func (d *Registry) Test() error {
 }
 
 // Config returns the configuration of the docker registry
-func (d *Registry) Config() *registries.Config {
-	return &registries.Config{
+func (d *Registry) Config() *types.Config {
+	return &types.Config{
 		Username:         d.cfg.Username,
 		Password:         d.cfg.Password,
 		Insecure:         d.cfg.Insecure,
 		URL:              d.url,
 		RegistryHostname: d.registry,
 	}
-}
-
-func init() {
-	f := func(integration *v1.ImageIntegration) (registries.ImageRegistry, error) {
-		reg, err := newRegistry(integration)
-		return reg, err
-	}
-	registries.Registry["docker"] = f
-	registries.Registry["artifactory"] = f
 }

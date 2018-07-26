@@ -5,34 +5,30 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	clairConv "bitbucket.org/stack-rox/apollo/pkg/clair"
-	"bitbucket.org/stack-rox/apollo/pkg/imageenricher"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	scannerTypes "bitbucket.org/stack-rox/apollo/pkg/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 	"bitbucket.org/stack-rox/clairify/client"
 	"bitbucket.org/stack-rox/clairify/types"
 	clairV1 "github.com/coreos/clair/api/v1"
 )
 
-var (
-	logger = logging.LoggerForModule()
-)
-
-func validateConfig(c *v1.ClairifyConfig) error {
-	if c.GetEndpoint() == "" {
-		return fmt.Errorf("endpoint parameter must be defined for Clairify")
+// Creator provides the type an scanners.Creator to add to the scanners Registry.
+func Creator(set registries.Set) (string, func(integration *v1.ImageIntegration) (scannerTypes.ImageScanner, error)) {
+	return "clairify", func(integration *v1.ImageIntegration) (scannerTypes.ImageScanner, error) {
+		scan, err := newScanner(integration, set)
+		return scan, err
 	}
-	return nil
 }
 
 type clairify struct {
 	client                *client.Clairify
 	conf                  *v1.ClairifyConfig
 	protoImageIntegration *v1.ImageIntegration
-	imageEnricher         imageenricher.ImageEnricher
+	activeRegistries      registries.Set
 }
 
-func newScanner(protoImageIntegration *v1.ImageIntegration) (*clairify, error) {
+func newScanner(protoImageIntegration *v1.ImageIntegration, activeRegistries registries.Set) (*clairify, error) {
 	clairifyConfig, ok := protoImageIntegration.IntegrationConfig.(*v1.ImageIntegration_Clairify)
 	if !ok {
 		return nil, fmt.Errorf("Clairify configuration required")
@@ -54,6 +50,7 @@ func newScanner(protoImageIntegration *v1.ImageIntegration) (*clairify, error) {
 		client: client,
 		conf:   conf,
 		protoImageIntegration: protoImageIntegration,
+		activeRegistries:      activeRegistries,
 	}
 	return scanner, nil
 }
@@ -61,6 +58,13 @@ func newScanner(protoImageIntegration *v1.ImageIntegration) (*clairify, error) {
 // Test initiates a test of the Clairify Scanner which verifies that we have the proper scan permissions
 func (c *clairify) Test() error {
 	return c.client.Ping()
+}
+
+func validateConfig(c *v1.ClairifyConfig) error {
+	if c.GetEndpoint() == "" {
+		return fmt.Errorf("endpoint parameter must be defined for Clairify")
+	}
+	return nil
 }
 
 func convertLayerToImageScan(layerEnvelope *clairV1.LayerEnvelope) *v1.ImageScan {
@@ -120,7 +124,7 @@ func (c *clairify) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 }
 
 func (c *clairify) scan(image *v1.Image) error {
-	rc := c.imageEnricher.IntegrationSet().GetRegistryMetadataByImage(image)
+	rc := c.activeRegistries.GetRegistryMetadataByImage(image)
 	if rc == nil {
 		return nil
 	}
@@ -134,16 +138,9 @@ func (c *clairify) scan(image *v1.Image) error {
 
 // Match decides if the image is contained within this scanner
 func (c *clairify) Match(image *v1.Image) bool {
-	return c.imageEnricher.IntegrationSet().Match(image)
+	return c.activeRegistries.Match(image)
 }
 
 func (c *clairify) Global() bool {
 	return len(c.protoImageIntegration.GetClusters()) == 0
-}
-
-func init() {
-	scanners.Registry["clairify"] = func(integration *v1.ImageIntegration) (scanners.ImageScanner, error) {
-		scan, err := newScanner(integration)
-		return scan, err
-	}
 }

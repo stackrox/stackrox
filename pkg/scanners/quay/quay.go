@@ -8,11 +8,10 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	imageTypes "bitbucket.org/stack-rox/apollo/pkg/images/types"
 	quayRegistry "bitbucket.org/stack-rox/apollo/pkg/registries/quay"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	registryTypes "bitbucket.org/stack-rox/apollo/pkg/registries/types"
+	"bitbucket.org/stack-rox/apollo/pkg/scanners/types"
 	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 )
 
@@ -20,16 +19,20 @@ const (
 	requestTimeout = 5 * time.Second
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+// Creator provides the type an scanners.Creator to add to the scanners Registry.
+func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScanner, error)) {
+	return "quay", func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
+		scan, err := newScanner(integration)
+		return scan, err
+	}
+}
 
 type quay struct {
 	client *http.Client
 
 	endpoint   string
 	oauthToken string
-	registry   registries.ImageRegistry
+	registry   registryTypes.ImageRegistry
 
 	protoImageIntegration *v1.ImageIntegration
 }
@@ -103,12 +106,12 @@ func (q *quay) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	values := url.Values{}
 	values.Add("features", "true")
 	values.Add("vulnerabilities", "true")
-	digest := images.NewDigest(image.GetMetadata().GetRegistrySha()).Digest()
+	digest := imageTypes.NewDigest(image.GetMetadata().GetRegistrySha()).Digest()
 	body, status, err := q.sendRequest("GET", values, "api", "v1", "repository", image.GetName().GetRemote(), "manifest", digest, "security")
 	if err != nil {
 		return nil, err
 	} else if status != http.StatusOK {
-		return nil, fmt.Errorf("Unexpected status code %d when retrieving image scan for %s", status, images.Wrapper{Image: image})
+		return nil, fmt.Errorf("Unexpected status code %d when retrieving image scan for %s", status, imageTypes.Wrapper{Image: image})
 	}
 	scan, err := parseImageScan(body)
 	if err != nil {
@@ -127,11 +130,4 @@ func (q *quay) Match(image *v1.Image) bool {
 
 func (q *quay) Global() bool {
 	return len(q.protoImageIntegration.GetClusters()) == 0
-}
-
-func init() {
-	scanners.Registry["quay"] = func(integration *v1.ImageIntegration) (scanners.ImageScanner, error) {
-		scan, err := newScanner(integration)
-		return scan, err
-	}
 }

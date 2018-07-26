@@ -1,8 +1,6 @@
-package scanners
+package types
 
-import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-)
+import "bitbucket.org/stack-rox/apollo/generated/api/v1"
 
 // ImageScanner is the interface that all scanners must implement
 type ImageScanner interface {

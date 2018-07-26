@@ -14,6 +14,7 @@ var (
 type DataStore interface {
 	GetImageIntegration(id string) (*v1.ImageIntegration, bool, error)
 	GetImageIntegrations(integration *v1.GetImageIntegrationsRequest) ([]*v1.ImageIntegration, error)
+
 	AddImageIntegration(integration *v1.ImageIntegration) (string, error)
 	UpdateImageIntegration(integration *v1.ImageIntegration) error
 	RemoveImageIntegration(id string) error

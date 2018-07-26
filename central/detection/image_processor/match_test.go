@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
+	imageUtils "bitbucket.org/stack-rox/apollo/pkg/images/utils"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -143,27 +143,27 @@ func TestMatchImageName(t *testing.T) {
 			Tag:       regexp.MustCompile("^latest$"),
 		},
 	}
-	image := images.GenerateImageFromString("nginx")
+	image := imageUtils.GenerateImageFromString("nginx")
 	violations, exists = policy.matchImageName(image)
 	assert.True(t, exists)
 	assert.Equal(t, 1, len(violations))
 
 	// If the image is totally different don't match
-	image = images.GenerateImageFromString("summarizer")
+	image = imageUtils.GenerateImageFromString("summarizer")
 	violations, exists = policy.matchImageName(image)
 	assert.True(t, exists)
 	assert.Equal(t, 0, len(violations))
 
 	// If one of the values doesn't match then don't return a violation. Image parameters are AND'd together
 	policy.ImageNamePolicy.Registry = regexp.MustCompile("^docker-registry$")
-	image = images.GenerateImageFromString("nginx")
+	image = imageUtils.GenerateImageFromString("nginx")
 	violations, exists = policy.matchImageName(image)
 	assert.True(t, exists)
 	assert.Equal(t, 0, len(violations))
 
 	policy.ImageNamePolicy.Registry = regexp.MustCompile("^stackrox.io$")
 	policy.ImageNamePolicy.Namespace = regexp.MustCompile("^prevent")
-	image = images.GenerateImageFromString("stackrox.io/prevent:latest")
+	image = imageUtils.GenerateImageFromString("stackrox.io/prevent:latest")
 	violations, exists = policy.matchImageName(image)
 	assert.True(t, exists)
 	assert.Equal(t, 0, len(violations))

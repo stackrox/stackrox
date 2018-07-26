@@ -7,7 +7,8 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/docker"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
+	imageTypes "bitbucket.org/stack-rox/apollo/pkg/images/types"
+	imageUtils "bitbucket.org/stack-rox/apollo/pkg/images/utils"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"github.com/docker/docker/api/types"
@@ -55,7 +56,7 @@ func (s serviceWrap) asDeployment(client *client.Client, retryGetImageSha bool) 
 		}
 	}
 
-	image := images.GenerateImageFromString(s.Spec.TaskTemplate.ContainerSpec.Image)
+	image := imageUtils.GenerateImageFromString(s.Spec.TaskTemplate.ContainerSpec.Image)
 
 	if retryGetImageSha {
 		retries := 0
@@ -251,7 +252,7 @@ func (s serviceWrap) getSHAFromTask(client *client.Client) string {
 		// TODO(cg): If the image is specified only as a tag, and Swarm can't
 		// resolve to a SHA256 digest when launching, the image SHA may actually
 		// differ between tasks on different nodes.
-		return images.NewDigest(container.Image).Digest()
+		return imageTypes.NewDigest(container.Image).Digest()
 	}
 	return ""
 }

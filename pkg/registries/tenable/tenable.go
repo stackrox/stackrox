@@ -5,9 +5,8 @@ import (
 	"sync"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	imageTypes "bitbucket.org/stack-rox/apollo/pkg/images/types"
+	"bitbucket.org/stack-rox/apollo/pkg/registries/types"
 	"bitbucket.org/stack-rox/apollo/pkg/transports"
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	"github.com/heroku/docker-registry-client/registry"
@@ -18,9 +17,13 @@ var (
 	remoteEndpoint = "https://" + remote
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+// Creator provides the type and registries.Creator to add to the registries Registry.
+func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageRegistry, error)) {
+	return "tenable", func(integration *v1.ImageIntegration) (types.ImageRegistry, error) {
+		reg, err := newRegistry(integration)
+		return reg, err
+	}
+}
 
 type tenableRegistry struct {
 	protoImageIntegration *v1.ImageIntegration
@@ -93,7 +96,7 @@ func (d *tenableRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 	if err != nil {
 		return nil, err
 	}
-	digest := images.NewDigest(manifest.Config.Digest.String()).Digest()
+	digest := imageTypes.NewDigest(manifest.Config.Digest.String()).Digest()
 	layers := make([]string, 0, len(manifest.Layers))
 	for _, layer := range manifest.Layers {
 		layers = append(layers, layer.Digest.String())
@@ -122,14 +125,7 @@ func (d *tenableRegistry) Global() bool {
 	return len(d.protoImageIntegration.GetClusters()) == 0
 }
 
-func (d *tenableRegistry) Config() *registries.Config {
+func (d *tenableRegistry) Config() *types.Config {
 	// Tenable cannot be used to pull down scans
 	return nil
-}
-
-func init() {
-	registries.Registry["tenable"] = func(integration *v1.ImageIntegration) (registries.ImageRegistry, error) {
-		reg, err := newRegistry(integration)
-		return reg, err
-	}
 }

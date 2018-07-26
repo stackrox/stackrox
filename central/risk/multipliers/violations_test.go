@@ -1,45 +1,12 @@
 package multipliers
 
 import (
-	"fmt"
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/central/risk/getters"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
-
-type mockAlertsGetter struct {
-	alerts []*v1.ListAlert
-}
-
-// GetAlerts supports a limited set of request parameters.
-// It only needs to be as specific as the production code.
-func (m mockAlertsGetter) ListAlerts(req *v1.ListAlertsRequest) (alerts []*v1.ListAlert, err error) {
-	parser := &search.QueryParser{}
-	parsedRequest, err := parser.ParseRawQuery(req.GetQuery())
-	if err != nil {
-		return nil, err
-	}
-
-	for _, a := range m.alerts {
-		match := true
-		staleValues := parsedRequest.Fields[search.Stale].GetValues()
-		if len(staleValues) != 0 {
-			match = false
-			for _, v := range staleValues {
-				if fmt.Sprintf("%t", a.Stale) == v {
-					match = true
-				}
-			}
-		}
-		if match {
-			alerts = append(alerts, a)
-		}
-	}
-	return
-}
 
 func TestViolationsScore(t *testing.T) {
 	cases := []struct {

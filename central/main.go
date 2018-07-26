@@ -11,8 +11,6 @@ import (
 	// These imports are required to register things from the respective packages.
 	_ "bitbucket.org/stack-rox/apollo/pkg/auth/authproviders/all"
 	_ "bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers/all"
-	_ "bitbucket.org/stack-rox/apollo/pkg/registries/all"
-	_ "bitbucket.org/stack-rox/apollo/pkg/scanners/all"
 
 	alertService "bitbucket.org/stack-rox/apollo/central/alert/service"
 	apiTokenService "bitbucket.org/stack-rox/apollo/central/apitoken/service"

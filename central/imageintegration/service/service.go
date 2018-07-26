@@ -6,7 +6,10 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/central/imageintegration/datastore"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/images/integration"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
@@ -32,9 +35,16 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.DataStore, detection detection.Detector) Service {
+func New(registryFactory registries.Factory,
+	scannerFactory scanners.Factory,
+	toNotify integration.ToNotify,
+	datastore datastore.DataStore,
+	detection detection.Detector) Service {
 	return &serviceImpl{
-		datastore: datastore,
-		detector:  detection,
+		registryFactory: registryFactory,
+		scannerFactory:  scannerFactory,
+		toNotify:        toNotify,
+		datastore:       datastore,
+		detector:        detection,
 	}
 }

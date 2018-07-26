@@ -14,8 +14,10 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/or"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
+	"bitbucket.org/stack-rox/apollo/pkg/images/integration"
+	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	"bitbucket.org/stack-rox/apollo/pkg/secrets"
-	"bitbucket.org/stack-rox/apollo/pkg/sources"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"golang.org/x/net/context"
@@ -41,6 +43,10 @@ var (
 
 // ImageIntegrationService is the struct that manages the ImageIntegration API
 type serviceImpl struct {
+	registryFactory registries.Factory
+	scannerFactory  scanners.Factory
+	toNotify        integration.ToNotify
+
 	datastore datastore.DataStore
 	detector  detection.Detector
 }
@@ -87,6 +93,7 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetI
 	if err != nil {
 		return nil, err
 	}
+
 	identity, err := authn.FromTLSContext(ctx)
 	switch {
 	case err == authn.ErrNoContext:
@@ -96,6 +103,7 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetI
 	case err == nil && identity.Name.ServiceType == v1.ServiceType_SENSOR_SERVICE:
 		return &v1.GetImageIntegrationsResponse{Integrations: integrations}, nil
 	}
+
 	// Remove secrets for other API accessors.
 	for _, i := range integrations {
 		scrubImageIntegration(i)
@@ -105,15 +113,12 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetI
 
 // PutImageIntegration updates an image integration in the system
 func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*empty.Empty, error) {
-	// creates and validates the configuration
-	source, err := sources.NewImageIntegration(request)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
 	if err := s.datastore.UpdateImageIntegration(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	s.detector.UpdateImageIntegration(source)
+	if err := s.toNotify.NotifyUpdated(request); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 	return &empty.Empty{}, nil
 }
 
@@ -122,30 +127,16 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *v1.Imag
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new image integration")
 	}
-	// creates and validates the configuration
-	source, err := sources.NewImageIntegration(request)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
 	id, err := s.datastore.AddImageIntegration(request)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	request.Id = id
-	s.detector.UpdateImageIntegration(source)
-	return request, nil
-}
 
-// TestImageIntegration tests to see if the config is setup properly
-func (s *serviceImpl) TestImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*empty.Empty, error) {
-	source, err := sources.NewImageIntegration(request)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+	if err := s.toNotify.NotifyUpdated(request); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if err := source.Test(); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-	return &empty.Empty{}, nil
+	return request, nil
 }
 
 // DeleteImageIntegration deletes an integration from the system
@@ -156,6 +147,56 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 	if err := s.datastore.RemoveImageIntegration(request.GetId()); err != nil {
 		return nil, service.ReturnErrorCode(err)
 	}
-	s.detector.RemoveImageIntegration(request.GetId())
+	if err := s.toNotify.NotifyRemoved(request.GetId()); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 	return &empty.Empty{}, nil
+}
+
+// TestImageIntegration tests to see if the config is setup properly
+func (s *serviceImpl) TestImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*empty.Empty, error) {
+	if len(request.GetCategories()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "integrations require a category")
+	}
+
+	var err error
+	for _, category := range request.GetCategories() {
+		if category == v1.ImageIntegrationCategory_REGISTRY {
+			err = s.testRegistryIntegration(request)
+			if err != nil {
+				return nil, status.Error(codes.InvalidArgument, err.Error())
+			}
+		}
+		if category == v1.ImageIntegrationCategory_SCANNER {
+			err = s.testScannerIntegration(request)
+			if err != nil {
+				return nil, status.Error(codes.InvalidArgument, err.Error())
+			}
+		}
+	}
+	return &empty.Empty{}, nil
+}
+
+// TestImageIntegration tests to see if the config is setup properly
+func (s *serviceImpl) testRegistryIntegration(integration *v1.ImageIntegration) error {
+	registry, err := s.registryFactory.CreateRegistry(integration)
+	if err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := registry.Test(); err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+	return nil
+}
+
+// TestImageIntegration tests to see if the config is setup properly
+func (s *serviceImpl) testScannerIntegration(integration *v1.ImageIntegration) error {
+	scanner, err := s.scannerFactory.CreateScanner(integration)
+	if err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := scanner.Test(); err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+	return nil
 }

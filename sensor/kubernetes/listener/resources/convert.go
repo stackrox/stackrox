@@ -6,7 +6,8 @@ import (
 	"strconv"
 
 	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images"
+	imageTypes "bitbucket.org/stack-rox/apollo/pkg/images/types"
+	imageUtils "bitbucket.org/stack-rox/apollo/pkg/images/utils"
 	"bitbucket.org/stack-rox/apollo/pkg/kubernetes"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
 	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/volumes"
@@ -159,9 +160,9 @@ func (w *wrap) populateImageShas(spec reflect.Value, lister podLister) {
 
 	for _, p := range pods {
 		for _, c := range p.Status.ContainerStatuses {
-			img := images.GenerateImageFromString(c.Image)
-			if sha := images.ExtractImageSha(c.ImageID); sha != "" {
-				imageMap[*img.GetName()] = images.NewDigest(sha).Digest()
+			img := imageUtils.GenerateImageFromString(c.Image)
+			if sha := imageUtils.ExtractImageSha(c.ImageID); sha != "" {
+				imageMap[*img.GetName()] = imageTypes.NewDigest(sha).Digest()
 			}
 		}
 	}
@@ -227,7 +228,7 @@ func (w *wrap) populateContainerConfigs(podSpec v1.PodSpec) {
 
 func (w *wrap) populateImages(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
-		w.Deployment.Containers[i].Image = images.GenerateImageFromString(c.Image)
+		w.Deployment.Containers[i].Image = imageUtils.GenerateImageFromString(c.Image)
 	}
 }
 
