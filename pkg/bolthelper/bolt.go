@@ -76,9 +76,9 @@ func NewTemp(dbPath string) (*bolt.DB, error) {
 	return New(filepath.Join(tmpDir, dbPath))
 }
 
-// RegisterBucket registers a new bucket in the global DB.
-func RegisterBucket(db *bolt.DB, bucket string) error {
-	return db.Update(func(tx *bolt.Tx) error {
+// RegisterBucketOrPanic registers a new bucket in the global DB, and panics if there's an error.
+func RegisterBucketOrPanic(db *bolt.DB, bucket string) {
+	err := db.Update(func(tx *bolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists([]byte(bucket)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
@@ -87,6 +87,9 @@ func RegisterBucket(db *bolt.DB, bucket string) error {
 		}
 		return nil
 	})
+	if err != nil {
+		panic(fmt.Sprintf("failed to register bucket %s: %s", bucket, err))
+	}
 }
 
 // Compact compacts the BoltDB from src to dst

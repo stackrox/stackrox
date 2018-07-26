@@ -21,7 +21,7 @@ type Store interface {
 
 // New returns a new Store instance using the provided bolt DB instance.
 func New(db *bolt.DB) Store {
-	bolthelper.RegisterBucket(db, policyBucket)
+	bolthelper.RegisterBucketOrPanic(db, policyBucket)
 	return &storeImpl{
 		DB: db,
 	}
