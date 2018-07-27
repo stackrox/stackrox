@@ -70,18 +70,12 @@ func (s serviceWrap) asDeployment(client *client.Client, retryGetImageSha bool) 
 		}
 	}
 
-	namespace := defaultNamespace
-	for _, n := range s.Spec.TaskTemplate.Networks {
-		if name, err := s.getNetworkName(client, n.Target); err == nil {
-			namespace = name
-		}
-	}
 	m := modeWrap(s.Spec.Mode)
 
 	return &v1.Deployment{
 		Id:        s.ID,
 		Name:      s.Spec.Name,
-		Namespace: namespace,
+		Namespace: defaultNamespace,
 		Version:   fmt.Sprintf("%d", s.Version.Index),
 		Type:      m.asType(),
 		Replicas:  m.asReplica(),
