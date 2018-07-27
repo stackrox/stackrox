@@ -57,6 +57,8 @@ message Deployment {
     repeated KeyValue annotations              = 14;
     int64 priority                             = 15;
     bool inactive                              = 16;
+    repeated string image_pull_secrets         = 17;
+    string service_account                     = 18;
 }
 
 message Container {

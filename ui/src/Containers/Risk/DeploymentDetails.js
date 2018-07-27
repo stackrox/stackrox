@@ -22,7 +22,12 @@ const deploymentDetailsMap = {
     },
     labels: { label: 'Labels' },
     annotations: { label: 'Annotations' },
-    ports: { label: 'Port configuration' }
+    ports: { label: 'Port configuration' },
+    serviceAccount: { label: 'Service Account' },
+    imagePullSecrets: {
+        label: 'Image Pull Secrets',
+        formatValue: v => v.join(', ')
+    }
 };
 
 const containerConfigMap = {

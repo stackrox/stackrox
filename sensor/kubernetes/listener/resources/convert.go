@@ -126,14 +126,28 @@ func (w *wrap) populateContainers(podSpec v1.PodSpec) {
 	w.Deployment.Containers = make([]*pkgV1.Container, len(podSpec.Containers))
 	for i := range w.Deployment.Containers {
 		w.Deployment.Containers[i] = new(pkgV1.Container)
-
 	}
+
+	w.populateServiceAccount(podSpec)
 	w.populateContainerConfigs(podSpec)
 	w.populateImages(podSpec)
 	w.populateSecurityContext(podSpec)
 	w.populateVolumesAndSecrets(podSpec)
 	w.populatePorts(podSpec)
 	w.populateResources(podSpec)
+	w.populateImagePullSecrets(podSpec)
+}
+
+func (w *wrap) populateServiceAccount(podSpec v1.PodSpec) {
+	w.ServiceAccount = podSpec.ServiceAccountName
+}
+
+func (w *wrap) populateImagePullSecrets(podSpec v1.PodSpec) {
+	secrets := make([]string, 0, len(podSpec.ImagePullSecrets))
+	for _, s := range podSpec.ImagePullSecrets {
+		secrets = append(secrets, s.Name)
+	}
+	w.ImagePullSecrets = secrets
 }
 
 func (w *wrap) populateReplicas(spec reflect.Value) {

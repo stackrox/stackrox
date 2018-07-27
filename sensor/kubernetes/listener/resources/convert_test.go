@@ -72,6 +72,15 @@ func TestConvert(t *testing.T) {
 					Replicas: &[]int32{15}[0],
 					Template: v1.PodTemplateSpec{
 						Spec: v1.PodSpec{
+							ServiceAccountName: "sensor",
+							ImagePullSecrets: []v1.LocalObjectReference{
+								{
+									Name: "pull-secret1",
+								},
+								{
+									Name: "pull-secret2",
+								},
+							},
 							Containers: []v1.Container{
 								{
 									Name:    "container1",
@@ -194,12 +203,14 @@ func TestConvert(t *testing.T) {
 				},
 			},
 			expectedDeployment: &pkgV1.Deployment{
-				Id:        "FooID",
-				Name:      "Foo",
-				Namespace: "namespace",
-				Type:      kubernetes.Deployment,
-				Version:   "100",
-				Replicas:  15,
+				Id:               "FooID",
+				Name:             "Foo",
+				Namespace:        "namespace",
+				Type:             kubernetes.Deployment,
+				Version:          "100",
+				Replicas:         15,
+				ServiceAccount:   "sensor",
+				ImagePullSecrets: []string{"pull-secret1", "pull-secret2"},
 				Labels: []*pkgV1.Deployment_KeyValue{
 					{
 						Key:   "key",
