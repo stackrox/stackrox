@@ -5,7 +5,8 @@
   "rationale": "The 'owner' label should always be specified so that the deployment can quickly be associated with a specific user or team.",
   "remediation": "Redeploy your service and set the 'owner' label to yourself or your team per organizational standards.",
   "categories": [
-    "Container Configuration"
+    "DevOps Best Practices",
+    "Security Best Practices"
   ],
   "enforcement": "UNSET_ENFORCEMENT",
   "fields": {

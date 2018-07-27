@@ -2,7 +2,7 @@
   "name": "Apache Struts: CVE-2017-5638",
   "description": "Alert on deployments with images containing Apache Struts vulnerability CVE-2017-5638",
   "severity": "CRITICAL_SEVERITY",
-  "categories": ["Image Assurance"],
+  "categories": ["Vuln Management"],
   "fields": {
     "cve": "CVE-2017-5638"
   },

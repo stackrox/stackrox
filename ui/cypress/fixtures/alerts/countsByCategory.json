@@ -1,7 +1,7 @@
 {
     "groups": [
         {
-            "group": "Container Configuration",
+            "group": "DevOps Best Practices",
             "counts": [
                 {
                     "severity": "MEDIUM_SEVERITY",
@@ -10,7 +10,7 @@
             ]
         },
         {
-            "group": "Image Assurance",
+            "group": "Security Best Practices",
             "counts": [
                 {
                     "severity": "LOW_SEVERITY",

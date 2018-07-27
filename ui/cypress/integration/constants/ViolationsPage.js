@@ -20,5 +20,5 @@ export const selectors = {
         header: '.Collapsible__trigger h1',
         body: '.Collapsible__contentInner'
     },
-    containerConfiguration: '[data-test-id="deployment-container-configuration"]'
+    securityBestPractices: '[data-test-id="deployment-security-practices"]'
 };

@@ -2,7 +2,7 @@
   "name": "Curl in Image",
   "description": "Alert on deployments with curl present",
   "severity": "LOW_SEVERITY",
-  "categories": ["Image Assurance"],
+  "categories": ["Security Best Practices"],
   "fields": {
     "component": {
       "name": "^curl$"

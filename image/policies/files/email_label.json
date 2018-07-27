@@ -5,7 +5,8 @@
   "rationale": "The 'email' label should always be specified so that issues with the deployment can quickly be routed to the proper party.",
   "remediation": "Redeploy your service and set the 'email' label as your email or your team's email.",
   "categories": [
-    "Container Configuration"
+    "DevOps Best Practices",
+    "Security Best Practices"
   ],
   "enforcement": "UNSET_ENFORCEMENT",
   "fields": {

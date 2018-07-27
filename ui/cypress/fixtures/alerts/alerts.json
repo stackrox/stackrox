@@ -9,7 +9,8 @@
                 "severity": "LOW_SEVERITY",
                 "description": "Alert on deployments with images using tag 'latest'",
                 "categories": [
-                    "Image Assurance"
+                    "DevOps Best Practices",
+                    "Security Best Practices"
                 ]
             },
             "deployment": {
@@ -28,7 +29,8 @@
                 "severity": "LOW_SEVERITY",
                 "description": "Alert on deployments with images using tag 'latest'",
                 "categories": [
-                    "Image Assurance"
+                    "DevOps Best Practices",
+                    "Security Best Practices"
                 ]
             },
             "deployment": {
@@ -47,7 +49,8 @@
                 "severity": "LOW_SEVERITY",
                 "description": "Alert on deployments with images using tag 'latest'",
                 "categories": [
-                    "Image Assurance"
+                    "DevOps Best Practices",
+                    "Security Best Practices"
                 ]
             },
             "deployment": {
@@ -66,7 +69,8 @@
                 "severity": "LOW_SEVERITY",
                 "description": "Alert on deployments with images using tag 'latest'",
                 "categories": [
-                    "Image Assurance"
+                    "DevOps Best Practices",
+                    "Security Best Practices"
                 ]
             },
             "deployment": {

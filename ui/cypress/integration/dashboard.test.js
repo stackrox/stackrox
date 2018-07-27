@@ -181,13 +181,13 @@ describe('Dashboard page', () => {
         cy.wait('@alertsByCategory');
 
         cy
-            .get(selectors.sectionHeaders.containerConfiguration)
+            .get(selectors.sectionHeaders.securityBestPractices)
             .next()
             .as('chart');
         cy
             .get('@chart')
             .find(selectors.chart.legendItem)
-            .should('have.text', 'Medium');
+            .should('have.text', 'Low');
 
         // TODO: validate clicking on any sector (for some reason '.click()' isn't stable for D3 chart)
     });
@@ -232,8 +232,8 @@ describe('Dashboard page', () => {
         cy.wait('@alertsByCategory');
         cy.wait('@alertsByCluster');
 
-        cy.get(selectors.sectionHeaders.containerConfiguration).should('not.exist');
-        cy.get(selectors.sectionHeaders.imageAssurance).should('not.exist');
+        cy.get(selectors.sectionHeaders.securityBestPractices).should('not.exist');
+        cy.get(selectors.sectionHeaders.devopsBestPractices).should('not.exist');
 
         cy
             .get(selectors.sectionHeaders.violationsByClusters)

@@ -2,7 +2,7 @@
   "name": "Latest tag",
   "description": "Alert on deployments with images using tag 'latest'",
   "severity": "LOW_SEVERITY",
-  "categories": ["Image Assurance"],
+  "categories": ["DevOps Best Practices"],
   "fields": {
     "image_name": {
       "tag": "latest"

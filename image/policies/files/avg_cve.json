@@ -2,7 +2,7 @@
   "name": "Average CVSS >= 7 and Privileged",
   "description": "Alert on deployments with an average CVSS score >= 7 and running in Privileged Mode",
   "severity": "HIGH_SEVERITY",
-  "categories": ["Image Assurance", "Privileges & Capabilities"],
+  "categories": ["Vuln Management", "Privileges"],
   "fields": {
     "cvss": {
       "op": "GREATER_THAN_OR_EQUALS",

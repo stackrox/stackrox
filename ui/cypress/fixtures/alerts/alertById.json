@@ -9,7 +9,8 @@
         "remediation": "Consider moving to semantic versioning based on code releases (semver.org) or using the first 12 characters of the source control SHA. This will allow you to tie the Docker image to the code.",
         "disabled": false,
         "categories": [
-            "Image Assurance"
+            "DevOps Best Practices",
+            "Security Best Practices"
         ],
         "scope": [],
         "enforcement": "UNSET_ENFORCEMENT",

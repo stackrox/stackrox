@@ -331,21 +331,21 @@ func verifyAlertCounts(t *testing.T, service v1.AlertServiceClient) {
 
 	require.Len(t, alertCounts.GetGroups(), 2)
 
-	var imageGroup, containerGroup *v1.GetAlertsCountsResponse_AlertGroup
+	var securityGroup, devopsGroups *v1.GetAlertsCountsResponse_AlertGroup
 
 	for _, g := range alertCounts.GetGroups() {
-		if g.Group == "Image Assurance" {
-			imageGroup = g
-		} else if g.Group == "Container Configuration" {
-			containerGroup = g
+		if g.Group == "Security Best Practices" {
+			securityGroup = g
+		} else if g.Group == "DevOps Best Practices" {
+			devopsGroups = g
 		}
 	}
 
-	require.NotNil(t, imageGroup)
-	require.NotNil(t, containerGroup)
+	require.NotNil(t, securityGroup)
+	require.NotNil(t, devopsGroups)
 
-	assert.NotEmpty(t, imageGroup.GetCounts())
-	assert.NotEmpty(t, containerGroup.GetCounts())
+	assert.NotEmpty(t, securityGroup.GetCounts())
+	assert.NotEmpty(t, devopsGroups.GetCounts())
 }
 
 func verifyAlertGroups(t *testing.T, service v1.AlertServiceClient) {

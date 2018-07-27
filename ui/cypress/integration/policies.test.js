@@ -35,9 +35,9 @@ describe('Policies page', () => {
     });
 
     it('should display and send a query using the search input', () => {
-        cy.route('/v1/policies?query=Category:Image Assurance').as('newSearchQuery');
+        cy.route('/v1/policies?query=Category:DevOps Best Practices').as('newSearchQuery');
         cy.get(selectors.searchInput).type('Category:{enter}', { force: true });
-        cy.get(selectors.searchInput).type('Image Assurance{enter}', { force: true });
+        cy.get(selectors.searchInput).type('DevOps Best Practices{enter}', { force: true });
         cy.wait('@newSearchQuery');
         cy.get(selectors.searchInput).type('{del}{del}', { force: true });
         cy.route('/v1/policies?query=Cluster:remote').as('newSearchQuery');

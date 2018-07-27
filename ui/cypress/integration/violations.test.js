@@ -118,6 +118,6 @@ describe('Violations page', () => {
         cy.get(ViolationsPageSelectors.lastTableRow).click();
         cy.wait('@alertWithEmptyContainerConfig');
         cy.get(ViolationsPageSelectors.sidePanel.getTabByIndex(1)).click();
-        cy.get(ViolationsPageSelectors.containerConfiguration).should('not.have.text', 'Commands');
+        cy.get(ViolationsPageSelectors.securityBestPractices).should('not.have.text', 'Commands');
     });
 });

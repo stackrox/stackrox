@@ -17,8 +17,8 @@ export const selectors = {
         benchmarks: 'h2:contains("Benchmarks")',
         violationsByClusters: 'h2:contains("Violations by Cluster")',
         eventsByTime: 'h2:contains("Active Violations by Time")',
-        containerConfiguration: 'h2:contains("Container Configuration")',
-        imageAssurance: 'h2:contains("Image Assurance")',
+        securityBestPractices: 'h2:contains("Security Best Practices")',
+        devopsBestPractices: 'h2:contains("DevOps Best Practices")',
         topRiskyDeployments: 'h2:contains("Top Risky Deployments")'
     },
     chart: {
