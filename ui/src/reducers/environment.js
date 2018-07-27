@@ -15,6 +15,7 @@ import {
 export const types = {
     FETCH_ENVIRONMENT_GRAPH: createFetchingActionTypes('environment/FETCH_ENVIRONMENT_GRAPH'),
     FETCH_NETWORK_POLICIES: createFetchingActionTypes('environment/FETCH_NETWORK_POLICIES'),
+    FETCH_NODE_UPDATES: createFetchingActionTypes('environment/FETCH_NODE_UPDATES'),
     SET_SELECTED_NODE_ID: { type: 'environment/SET_SELECTED_NODE_ID' },
     ...searchTypes('environment')
 };
@@ -24,6 +25,7 @@ export const types = {
 export const actions = {
     fetchEnvironmentGraph: createFetchingActions(types.FETCH_ENVIRONMENT_GRAPH),
     fetchNetworkPolicies: createFetchingActions(types.FETCH_NETWORK_POLICIES),
+    fetchNodeUpdates: createFetchingActions(types.FETCH_NODE_UPDATES),
     setSelectedNodeId: id => ({ type: types.SET_SELECTED_NODE_ID, id }),
     ...getSearchActions('environment')
 };
@@ -64,11 +66,19 @@ const networkPolicies = (state = [], action) => {
     return state;
 };
 
+const nodeUpdatesEpoch = (state = null, action) => {
+    if (action.type === types.FETCH_NODE_UPDATES.SUCCESS) {
+        return isEqual(action.response.epoch, state) ? state : action.response.epoch;
+    }
+    return state;
+};
+
 const reducer = combineReducers({
     environmentGraph,
     deployment,
     networkPolicies,
     selectedNodeId,
+    nodeUpdatesEpoch,
     ...searchReducers('environment')
 });
 
@@ -78,12 +88,14 @@ const getEnvironmentGraph = state => state.environmentGraph;
 const getDeployment = state => state.deployment;
 const getNetworkPolicies = state => state.networkPolicies;
 const getSelectedNodeId = state => state.selectedNodeId;
+const getNodeUpdatesEpoch = state => state.nodeUpdatesEpoch;
 
 export const selectors = {
     getEnvironmentGraph,
     getDeployment,
     getNetworkPolicies,
     getSelectedNodeId,
+    getNodeUpdatesEpoch,
     ...getSearchSelectors('environment')
 };
 

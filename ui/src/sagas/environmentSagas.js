@@ -1,4 +1,5 @@
-import { all, takeLatest, call, fork, put, select } from 'redux-saga/effects';
+import { all, take, takeLatest, call, fork, put, select, cancel } from 'redux-saga/effects';
+import { delay } from 'redux-saga';
 
 import { selectors } from 'reducers';
 
@@ -8,6 +9,7 @@ import { environmentPath } from 'routePaths';
 import * as service from 'services/EnvironmentService';
 import { actions, types } from 'reducers/environment';
 import { types as deploymentTypes } from 'reducers/deployments';
+import { types as locationActionTypes } from 'reducers/routes';
 import { getDeployment } from './deploymentSagas';
 
 function* getNetworkGraph(filters) {
@@ -29,6 +31,36 @@ export function* getNetworkPolicies({ params }) {
         yield put(actions.fetchNetworkPolicies.success(result.response, { params }));
     } catch (error) {
         yield put(actions.fetchNetworkPolicies.failure(error));
+    }
+}
+
+export function* pollNodeUpdates() {
+    while (true) {
+        try {
+            const result = yield call(service.fetchNodeUpdates);
+            yield put(actions.fetchNodeUpdates.success(result.response));
+        } catch (error) {
+            yield put(actions.fetchNodeUpdates.failure(error));
+        }
+        yield call(delay, 5000); // poll every 5 sec
+    }
+}
+
+function* watchLocation() {
+    let pollTask = null;
+    while (true) {
+        const action = yield take(locationActionTypes.LOCATION_CHANGE);
+        const { payload: location } = action;
+
+        if (location && location.pathname && location.pathname.startsWith(environmentPath)) {
+            // start only if it's not already in progress
+            if (!pollTask) {
+                pollTask = yield fork(pollNodeUpdates);
+            }
+        } else if (pollTask) {
+            yield cancel(pollTask);
+            pollTask = null;
+        }
     }
 }
 
@@ -62,6 +94,7 @@ export default function* environment() {
         fork(watchEnvironmentSearchOptions),
         fork(watchFetchEnvironmentGraphRequest),
         fork(watchNetworkPoliciesRequest),
-        fork(watchFetchDeploymentRequest)
+        fork(watchFetchDeploymentRequest),
+        fork(watchLocation)
     ]);
 }

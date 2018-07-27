@@ -414,6 +414,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 
 .btn-graph-refresh circle {
     fill: #3F4884;
+    stroke: #3f4884;
 }
 
 @tailwind utilities;

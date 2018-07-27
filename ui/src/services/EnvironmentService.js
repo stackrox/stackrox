@@ -33,3 +33,15 @@ export function fetchNetworkPolicies(policyIds) {
         .all([...networkPoliciesPromises])
         .then(response => ({ response: response.map(networkPolicy => networkPolicy.data) }));
 }
+
+/**
+ * Fetches Node updates.
+ *
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function fetchNodeUpdates() {
+    return axios.get(`${baseUrl}/epoch`).then(response => ({
+        response: response.data
+    }));
+}

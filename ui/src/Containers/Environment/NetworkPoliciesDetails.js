@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import removeEmptyFields from 'utils/removeEmptyFields';
 import removeEmptyObjects from 'utils/removeEmptyObjects';
+import removeEmptyFields from 'utils/removeEmptyFields';
 
 import KeyValuePairs from 'Components/KeyValuePairs';
 import CollapsibleCard from 'Components/CollapsibleCard';

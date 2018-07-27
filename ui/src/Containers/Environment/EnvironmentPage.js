@@ -48,17 +48,20 @@ class EnvironmentPage extends Component {
                     source: PropTypes.string.isRequired,
                     target: PropTypes.string.isRequired
                 })
-            )
+            ),
+            epoch: PropTypes.number
         }).isRequired,
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
-        isFetchingNode: PropTypes.bool
+        isFetchingNode: PropTypes.bool,
+        nodeUpdatesEpoch: PropTypes.number
     };
 
     static defaultProps = {
         isFetchingNode: false,
         selectedNodeId: null,
         networkPolicies: [],
-        deployment: {}
+        deployment: {},
+        nodeUpdatesEpoch: null
     };
 
     state = {
@@ -85,6 +88,11 @@ class EnvironmentPage extends Component {
         this.props.fetchNetworkPolicies([...node.policyIds]);
     };
 
+    getNodeUpdates = () => {
+        const { environmentGraph, nodeUpdatesEpoch } = this.props;
+        return nodeUpdatesEpoch - environmentGraph.epoch;
+    };
+
     closeSidePanel = () => {
         this.props.setSelectedNodeId(null);
     };
@@ -100,7 +108,6 @@ class EnvironmentPage extends Component {
     renderSidePanel = () => {
         const { selectedNodeId, deployment, networkPolicies } = this.props;
         if (!selectedNodeId) return null;
-
         const envGraphPanelTabs = [{ text: 'Deployment Details' }, { text: 'Network Policies' }];
         const content = this.props.isFetchingNode ? (
             <Loader />
@@ -156,6 +163,7 @@ class EnvironmentPage extends Component {
 
     render() {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
+        const nodeUpdatesCount = this.getNodeUpdates();
         return (
             <section className="flex flex-1 h-full w-full">
                 <div className="flex flex-1 flex-col w-full">
@@ -176,13 +184,17 @@ class EnvironmentPage extends Component {
                     </div>
                     <section className="environment-grid-bg flex flex-1 relative">
                         {this.renderGraph()}
-                        <button
-                            className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-300 rounded-sm text-sm"
-                            onClick={this.props.fetchEnvironmentGraph}
-                        >
-                            <Icon.Circle className="h-2 w-2" />
-                            <span className="pl-1">Node updates available</span>
-                        </button>
+                        {nodeUpdatesCount > 0 && (
+                            <button
+                                className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-300 hover:bg-primary-200 rounded-sm text-sm text-white"
+                                onClick={this.props.fetchEnvironmentGraph}
+                            >
+                                <Icon.Circle className="h-2 w-2 border-primary-300" />
+                                <span className="pl-1">{`${nodeUpdatesCount} Node ${
+                                    nodeUpdatesCount === 1 ? 'update' : 'updates'
+                                } available`}</span>
+                            </button>
+                        )}
                         {this.renderSidePanel()}
                     </section>
                 </div>
@@ -202,6 +214,7 @@ const mapStateToProps = createStructuredSelector({
     searchOptions: selectors.getEnvironmentSearchOptions,
     searchModifiers: selectors.getEnvironmentSearchModifiers,
     searchSuggestions: selectors.getEnvironmentSearchSuggestions,
+    nodeUpdatesEpoch: selectors.getNodeUpdatesEpoch,
     isViewFiltered,
     selectedNodeId: selectors.getSelectedNodeId,
     deployment: selectors.getDeployment,
