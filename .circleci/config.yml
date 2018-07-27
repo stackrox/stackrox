@@ -121,7 +121,9 @@ jobs:
       - run:
           name: Deploy to remote cluster
           command: |
+            kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user circleci-gke@ultra-current-825.iam.gserviceaccount.com
             ./deploy/k8s/deploy.sh
+            kubectl delete clusterrolebinding temporary-admin
 
       - run:
           name: Setup port-forwarding for tests
