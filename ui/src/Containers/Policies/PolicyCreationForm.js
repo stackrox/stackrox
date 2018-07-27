@@ -10,7 +10,8 @@ import pull from 'lodash/pull';
 import 'react-select/dist/react-select.css';
 import FormField from 'Components/FormField';
 import CustomSelect from 'Components/Select';
-import { getPolicyFormDataKeys, removeEmptyFields } from 'Containers/Policies/policyFormUtils';
+import removeEmptyFields from 'utils/removeEmptyFields';
+import { getPolicyFormDataKeys } from 'Containers/Policies/policyFormUtils';
 import policyFormFields from 'Containers/Policies/policyCreationFormDescriptor';
 
 import ReduxSelectField from 'Components/forms/ReduxSelectField';

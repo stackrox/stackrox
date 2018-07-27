@@ -69,7 +69,7 @@ const getDeployments = createSelector([getDeploymentsById], deployments =>
     Object.values(deployments)
 );
 const getFilteredIds = state => state.filteredIds;
-const getDeployment = (state, id) => getDeploymentsById(state)[id];
+const getSelectedDeployment = (state, id) => getDeploymentsById(state)[id];
 const getFilteredDeployments = createSelector(
     [getDeploymentsById, getFilteredIds],
     (deployments, ids) => ids.map(id => deployments[id])
@@ -78,7 +78,7 @@ const getFilteredDeployments = createSelector(
 export const selectors = {
     getDeploymentsById,
     getDeployments,
-    getDeployment,
+    getSelectedDeployment,
     getFilteredDeployments,
     ...getSearchSelectors('deployments')
 };

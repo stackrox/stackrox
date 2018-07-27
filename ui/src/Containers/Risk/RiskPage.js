@@ -136,7 +136,7 @@ const isViewFiltered = createSelector(
 
 const getSelectedDeployment = (state, props) => {
     const { deploymentId } = props.match.params;
-    return deploymentId ? selectors.getDeployment(state, deploymentId) : null;
+    return deploymentId ? selectors.getSelectedDeployment(state, deploymentId) : null;
 };
 
 const mapStateToProps = createStructuredSelector({

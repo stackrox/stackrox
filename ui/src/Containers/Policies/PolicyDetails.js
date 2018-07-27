@@ -5,7 +5,7 @@ import { selectors } from 'reducers';
 import { createStructuredSelector } from 'reselect';
 import fieldsMap from 'Containers/Policies/policyViewDescriptors';
 import policyFormFields from 'Containers/Policies/policyCreationFormDescriptor';
-import { removeEmptyFields } from 'Containers/Policies/policyFormUtils';
+import removeEmptyFields from 'utils/removeEmptyFields';
 
 class PolicyDetails extends Component {
     static propTypes = {

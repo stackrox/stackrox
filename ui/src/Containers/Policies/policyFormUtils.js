@@ -1,6 +1,5 @@
-import flatten from 'flat';
-import omitBy from 'lodash/omitBy';
 import policyFormFields from 'Containers/Policies/policyCreationFormDescriptor';
+import removeEmptyFields from 'utils/removeEmptyFields';
 
 export function preFormatScopeField(obj) {
     const newObj = Object.assign({}, obj);
@@ -83,21 +82,6 @@ export function postFormatNotifiersField(policy) {
     if (policy.notifiers && policy.notifiers.length !== 0)
         serverPolicy.notifiers = policy.notifiers.map(o => (o.value ? o.value : o));
     return serverPolicy;
-}
-
-export function removeEmptyFields(obj) {
-    const flattenedObj = flatten(obj);
-    const omittedObj = omitBy(
-        flattenedObj,
-        value =>
-            value === null ||
-            value === undefined ||
-            value === '' ||
-            value === [] ||
-            (Array.isArray(value) && !value.length)
-    );
-    const newObj = flatten.unflatten(omittedObj);
-    return newObj;
 }
 
 export function preFormatPolicyFields(policy) {

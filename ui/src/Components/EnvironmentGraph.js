@@ -10,11 +10,12 @@ let force = d3
     .force('charge', d3.forceManyBody())
     .force('center', d3.forceCenter(width / 2, height / 2));
 
-const enterNode = selection => {
+const enterNode = callback => selection => {
     selection.classed('node', true);
 
     selection
         .append('circle')
+        .on('click', callback)
         .attr('fill', '#3F4884')
         .attr('r', 5);
 };
@@ -55,7 +56,12 @@ class EnvironmentGraph extends Component {
                 source: PropTypes.string.isRequired,
                 target: PropTypes.string.isRequired
             })
-        ).isRequired
+        ).isRequired,
+        onNodeClick: PropTypes.func
+    };
+
+    static defaultProps = {
+        onNodeClick: null
     };
 
     componentDidMount() {
@@ -106,7 +112,7 @@ class EnvironmentGraph extends Component {
         d3Nodes
             .enter()
             .append('g')
-            .call(enterNode);
+            .call(enterNode(this.props.onNodeClick));
         // logic for remove nodes
         d3Nodes.exit().remove();
         // logic for updating nodes

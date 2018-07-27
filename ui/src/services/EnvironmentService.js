@@ -2,6 +2,7 @@ import axios from 'axios';
 import queryString from 'query-string';
 
 const baseUrl = '/v1/networkgraph';
+const networkPoliciesUrl = '/v1/networkpolicies';
 
 /**
  * Fetches nodes and links for the environment graph.
@@ -19,13 +20,16 @@ export function fetchEnvironmentGraph(filters) {
 }
 
 /**
- * Fetches node details for a given ID.
+ * Fetches policies details for given array of ids.
  *
- * @param {!string} id
+ * @param {!array} policyIds
  * @returns {Promise<Object, Error>}
  */
-export function fetchNode(id) {
-    return axios.get(`${baseUrl}/${id}`).then(response => ({
-        response: response.data
-    }));
+export function fetchNetworkPolicies(policyIds) {
+    const networkPoliciesPromises = policyIds.map(policyId =>
+        axios.get(`${networkPoliciesUrl}/${policyId}`)
+    );
+    return axios
+        .all([...networkPoliciesPromises])
+        .then(response => ({ response: response.map(networkPolicy => networkPolicy.data) }));
 }
