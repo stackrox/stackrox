@@ -52,10 +52,12 @@ function* watchLocation() {
         const action = yield take(locationActionTypes.LOCATION_CHANGE);
         const { payload: location } = action;
 
-        if (location && location.pathname && location.pathname.startsWith(environmentPath)) {
-            // start only if it's not already in progress
-            if (!pollTask) {
+        if (location && location.pathname) {
+            if (location.pathname.startsWith(environmentPath) && !pollTask) {
+                // start only if it's not already in progress
                 pollTask = yield fork(pollNodeUpdates);
+            } else {
+                yield put(actions.setSelectedNodeId(null));
             }
         } else if (pollTask) {
             yield cancel(pollTask);

@@ -53,7 +53,7 @@ const mapping = {
     },
     DEPLOYMENTS: {
         filterOn: ['VIOLATIONS'],
-        viewOn: ['RISK'],
+        viewOn: ['ENVIRONMENT', 'RISK'],
         name: 'Deployment Name'
     },
     POLICIES: {
