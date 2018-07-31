@@ -33,6 +33,30 @@
           "namespace": "kube-system"
         }
       }
+    },
+    {
+      "name": "Don't alert on ucp-agent",
+      "deployment": {
+        "name": "ucp-agent"
+      }
+    },
+    {
+      "name": "Don't alert on ucp-agent-win",
+      "deployment": {
+        "name": "ucp-agent-win"
+      }
+    },
+    {
+      "name": "Don't alert on ucp-agent-s390x",
+      "deployment": {
+        "name": "ucp-agent-s390x"
+      }
+    },
+    {
+      "name": "Don't alert on benchmark",
+      "deployment": {
+        "name": "benchmark"
+      }
     }
   ]
 }
