@@ -1,48 +1,44 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import * as d3 from 'd3';
+import {
+    forceSimulation as d3ForceSimulation,
+    forceManyBody as d3ForceManyBody,
+    forceCenter as d3ForceCenter,
+    forceLink as d3ForceLink,
+    select as d3Select,
+    timeout as d3Timeout,
+    event as d3Event,
+    zoom as d3Zoom
+} from 'd3';
+import { forceCluster, forceCollision } from 'utils/environmentGraphUtils/environmentGraphUtils';
+import {
+    enterNamespaceContainer,
+    enterNode,
+    updateNode,
+    enterLink,
+    updateLink,
+    updateGraph
+} from 'utils/environmentGraphUtils/selectionFunctions';
+import {
+    MAX_RADIUS,
+    CLUSTER_INNER_PADDING,
+    NAMESPACE_LABEL_OFFSET
+} from 'utils/environmentGraphUtils/environmentGraphConstants';
 
 let width = 0;
 let height = 0;
-let force = d3
-    .forceSimulation()
-    .force('link', d3.forceLink().id(d => d.id))
-    .force('charge', d3.forceManyBody())
-    .force('center', d3.forceCenter(width / 2, height / 2));
 
-const enterNode = callback => selection => {
-    selection.classed('node', true);
+let namespaces;
 
-    selection
-        .append('circle')
-        .on('click', callback)
-        .attr('fill', '#3F4884')
-        .attr('r', 5);
-};
+let nodes = [];
+let edges = [];
 
-const updateNode = selection => {
-    selection.attr('transform', d => `translate(${d.x},${d.y})`);
-};
-
-const enterLink = selection => {
-    selection
-        .classed('link', true)
-        .attr('stroke-width', '0.5px')
-        .attr('stroke', '#3F4884');
-};
-
-const updateLink = selection => {
-    selection
-        .attr('x1', d => d.source.x)
-        .attr('y1', d => d.source.y)
-        .attr('x2', d => d.target.x)
-        .attr('y2', d => d.target.y);
-};
-
-const updateGraph = selection => {
-    selection.selectAll('.node').call(updateNode);
-    selection.selectAll('.link').call(updateLink);
-};
+let force = d3ForceSimulation()
+    .force('charge', d3ForceManyBody().strength(-100))
+    // keep entire simulation balanced around screen center
+    .force('center', d3ForceCenter(width / 2, height / 2))
+    // cluster by section
+    .force('cluster', forceCluster(namespaces).strength(0.8));
 
 class EnvironmentGraph extends Component {
     static propTypes = {
@@ -57,7 +53,8 @@ class EnvironmentGraph extends Component {
                 target: PropTypes.string.isRequired
             })
         ).isRequired,
-        onNodeClick: PropTypes.func
+        onNodeClick: PropTypes.func,
+        updateKey: PropTypes.number.isRequired
     };
 
     static defaultProps = {
@@ -65,68 +62,147 @@ class EnvironmentGraph extends Component {
     };
 
     componentDidMount() {
-        this.d3Graph = d3.select(this.graph);
-        force.on('tick', () => {
-            // after force calculation starts, call updateGraph
-            // which uses d3 to manipulate the attributes,
-            // and React doesn't have to go through lifecycle on each tick
-            this.d3Graph.call(updateGraph);
-        });
+        this.d3Graph = d3Select(this.graph);
     }
 
     shouldComponentUpdate(nextProps) {
-        this.setUpForceSimulation();
+        if (
+            (nextProps.updateKey === 0 && nodes.length === 0) ||
+            nextProps.updateKey !== this.props.updateKey
+        ) {
+            nodes = this.getNodes(nextProps.nodes);
+            edges = this.getEdges(nextProps.edges);
 
-        const nodes = nextProps.nodes.map(n => ({ ...n }));
-        const edges = nextProps.edges.map(e => ({ ...e }));
+            this.setUpForceSimulation();
 
-        this.setUpNodeElements(nodes);
+            this.setUpNamespaceGroups();
 
-        this.setUpEdgeElements(edges);
+            this.setUpNodeElements();
 
-        this.updateForceSimulationData(nodes, edges);
+            this.setUpEdgeElements();
+
+            this.setUpNamespaceContainers();
+        }
 
         return false;
     }
 
+    getNodes = propNodes => {
+        const namespacesMapping = {};
+
+        const newNodes = propNodes.map(node => {
+            const d = {
+                ...node,
+                radius: MAX_RADIUS,
+                x: width / 2 + Math.random() * 500,
+                y: height / 2 + Math.random() * 500
+            };
+            if (
+                !namespacesMapping[node.namespace] ||
+                MAX_RADIUS > namespacesMapping[node.namespace].radius
+            )
+                namespacesMapping[node.namespace] = d;
+            return d;
+        });
+
+        namespaces = Object.values(namespacesMapping);
+
+        return newNodes;
+    };
+
+    getEdges = propEdges => {
+        const newEdges = propEdges.map(edge => ({ ...edge }));
+        return newEdges;
+    };
+
     setUpForceSimulation = () => {
-        const svg = d3.select('svg.environment-graph');
+        const svg = d3Select('svg.environment-graph');
 
         width = +svg.node().clientWidth;
         height = +svg.node().clientHeight;
 
-        force = d3
-            .forceSimulation()
-            .force('link', d3.forceLink().id(d => d.id))
-            .force('charge', d3.forceManyBody())
-            .force('center', d3.forceCenter(width / 2, height / 2));
-
         // add pan+zoom functionality
-        this.zoomHandler(svg, d3.select(this.graph));
+        this.zoomHandler(svg, d3Select(this.graph));
+
+        force = d3ForceSimulation(nodes)
+            .force('link', d3ForceLink(edges).id(d => d.id))
+            .force('charge', d3ForceManyBody().strength(-80))
+            .force('center', d3ForceCenter(width / 2, height / 2))
+            .force('collide', forceCollision(nodes))
+            .on('tick', () => {
+                // after force calculation starts, call updateGraph
+                // which uses d3 to manipulate the attributes,
+                // and React doesn't have to go through lifecycle on each tick
+                this.d3Graph.call(updateGraph);
+                this.updateNamespaceContainers();
+            })
+            .stop();
+
+        // restart simulation
+        let i = 0;
+        const x = Math.ceil(Math.log(force.alphaMin()) / Math.log(1 - force.alphaDecay()));
+        while (i < x) {
+            force.tick();
+            i += 1;
+        }
+        force.alpha(0.3).restart();
     };
 
-    setUpNodeElements = nodes => {
-        this.d3Graph = d3.select(this.graph);
-        const d3Nodes = this.d3Graph.selectAll('.node').data(nodes, node => node.id);
-        // logic for creating nodes
-        d3Nodes
+    setUpNamespaceGroups = () => {
+        const d3NamespaceGroups = this.d3Graph
+            .selectAll('.namespace')
+            .data(namespaces, n => n.namespace);
+        // logic for creating namespace groups
+        d3NamespaceGroups
             .enter()
-            .append('g')
-            .call(enterNode(this.props.onNodeClick));
-        // logic for remove nodes
-        d3Nodes.exit().remove();
-        // logic for updating nodes
-        d3Nodes.call(updateNode);
+            .insert('g')
+            .call(selection => {
+                selection.attr('class', d => `namespace namespace-${d.namespace}`);
+            });
+        // logic for removing namespace groups
+        d3NamespaceGroups.exit().remove();
     };
 
-    setUpEdgeElements = edges => {
+    setUpNamespaceContainers = () => {
+        const d3NamespaceContainer = this.d3Graph
+            .selectAll('.container')
+            .data(namespaces, n => n.namespace);
+        // logic for creating namespace groups
+        d3NamespaceContainer
+            .enter()
+            .insert('g', '.namespace')
+            .call(enterNamespaceContainer);
+        // logic for removing namespace groups
+        d3NamespaceContainer.exit().remove();
+    };
+
+    setUpNodeElements = () => {
+        this.d3Graph = d3Select(this.graph);
+        namespaces.forEach(n => {
+            const namespaceGroup = this.d3Graph.selectAll(`.namespace-${n.namespace}`);
+            const d3Nodes = namespaceGroup
+                .selectAll('.node')
+                .data(nodes.filter(d => d.namespace === n.namespace), node => node.id);
+            // logic for creating nodes
+            d3Nodes
+                .enter()
+                .append('g')
+                .call(enterNode(this.props.onNodeClick));
+            // logic for remove nodes
+            d3Nodes.exit().remove();
+            // logic for updating nodes
+            d3Nodes.call(updateNode);
+        });
+    };
+
+    setUpEdgeElements = () => {
         const d3Links = this.d3Graph
             .selectAll('.link')
             .data(edges, link => `${link.source},${link.target}`);
         // logic for creating links
         d3Links
             .enter()
-            .insert('line', '.node')
+            .insert('line', '.namespace')
             .call(enterLink);
         // logic for removing links
         d3Links.exit().remove();
@@ -134,21 +210,60 @@ class EnvironmentGraph extends Component {
         d3Links.call(updateLink);
     };
 
-    updateForceSimulationData = (nodes, edges) => {
-        // update force nodes and links
-        force.nodes(nodes);
-        force.force('link').links(edges);
+    updateNamespaceContainers = () => {
+        d3Timeout(() => {
+            const d3NamespaceGroups = this.d3Graph.selectAll('.container');
+            d3NamespaceGroups.call(selection => {
+                const boundingBoxMapping = {};
 
-        // restart simulation
-        force.alpha(1).restart();
+                this.d3Graph.selectAll('.namespace').each((d, i, items) => {
+                    boundingBoxMapping[d.namespace] = d3Select(items[i])
+                        .node()
+                        .getBBox();
+                });
+
+                selection
+                    .selectAll('rect')
+                    .attr('x', d => boundingBoxMapping[d.namespace].x - CLUSTER_INNER_PADDING)
+                    .attr('y', d => boundingBoxMapping[d.namespace].y - CLUSTER_INNER_PADDING)
+                    .attr(
+                        'height',
+                        d => boundingBoxMapping[d.namespace].height + CLUSTER_INNER_PADDING * 2
+                    )
+                    .attr(
+                        'width',
+                        d => boundingBoxMapping[d.namespace].width + CLUSTER_INNER_PADDING * 2
+                    );
+
+                selection
+                    .selectAll('text')
+                    .attr(
+                        'x',
+                        d =>
+                            boundingBoxMapping[d.namespace].x -
+                            CLUSTER_INNER_PADDING +
+                            (boundingBoxMapping[d.namespace].height + CLUSTER_INNER_PADDING * 2) / 2
+                    )
+                    .attr(
+                        'y',
+                        d =>
+                            boundingBoxMapping[d.namespace].y -
+                            CLUSTER_INNER_PADDING +
+                            boundingBoxMapping[d.namespace].height +
+                            CLUSTER_INNER_PADDING * 2 +
+                            NAMESPACE_LABEL_OFFSET
+                    )
+                    .text(d => d.namespace);
+            });
+        });
     };
 
     zoomHandler = (svg, g) => {
         // Zoom functions
         function zoomed() {
-            g.attr('transform', d3.event.transform);
+            g.attr('transform', d3Event.transform);
         }
-        const zoom = d3.zoom().on('zoom', zoomed);
+        const zoom = d3Zoom().on('zoom', zoomed);
         zoom(svg);
     };
 

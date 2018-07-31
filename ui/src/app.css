@@ -417,4 +417,14 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     stroke: #3f4884;
 }
 
+/* Environment Graph CSS Classes */
+
+.node circle {
+    fill: hsl(232, 35%, 38%);
+}
+
+.node circle:hover {
+    fill: hsl(232, 88%, 68%);
+}
+
 @tailwind utilities;

@@ -65,6 +65,7 @@ class EnvironmentPage extends Component {
     };
 
     state = {
+        updateKey: 0, // this state prevents the environment graph from updating on every rerender
         selectedCluster: null
     };
 
@@ -88,6 +89,12 @@ class EnvironmentPage extends Component {
         this.props.fetchNetworkPolicies([...node.policyIds]);
     };
 
+    onUpdateGraph = () => {
+        const newUpdateKey = this.state.updateKey + 1;
+        this.setState({ updateKey: newUpdateKey });
+        this.props.fetchEnvironmentGraph();
+    };
+
     getNodeUpdates = () => {
         const { environmentGraph, nodeUpdatesEpoch } = this.props;
         return nodeUpdatesEpoch - environmentGraph.epoch;
@@ -99,6 +106,7 @@ class EnvironmentPage extends Component {
 
     renderGraph = () => (
         <EnvironmentGraph
+            updateKey={this.state.updateKey}
             nodes={this.props.environmentGraph.nodes}
             edges={this.props.environmentGraph.edges}
             onNodeClick={this.onNodeClick}
@@ -187,7 +195,7 @@ class EnvironmentPage extends Component {
                         {nodeUpdatesCount > 0 && (
                             <button
                                 className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-300 hover:bg-primary-200 rounded-sm text-sm text-white"
-                                onClick={this.props.fetchEnvironmentGraph}
+                                onClick={this.onUpdateGraph}
                             >
                                 <Icon.Circle className="h-2 w-2 border-primary-300" />
                                 <span className="pl-1">{`${nodeUpdatesCount} Node ${
