@@ -86,6 +86,7 @@ oc create -f "${DIR}/rbac.yaml"
 oc adm policy add-scc-to-user central "system:serviceaccount:${OC_PROJECT}:${OC_SA}"
 
 oc create secret -n "{{.K8sConfig.Namespace}}" generic central-tls --from-file="$DIR/ca.pem" --from-file="$DIR/ca-key.pem"
+oc create secret -n "{{.K8sConfig.Namespace}}" generic central-jwt --from-file="$DIR/jwt-key.der"
 oc create -f "$DIR/deploy.yaml"
 `
 
