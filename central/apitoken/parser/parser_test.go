@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -11,7 +12,6 @@ import (
 
 	"bitbucket.org/stack-rox/apollo/central/apitoken/signer"
 	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/tokenbased"
 	pkgJWT "bitbucket.org/stack-rox/apollo/pkg/jwt"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/square/go-jose.v2"
@@ -30,6 +30,17 @@ func (mockRoleStore) GetRole(name string) (role permissions.Role, exists bool) {
 	return
 }
 
+type mockTokenRevocationChecker struct {
+	ReturnError bool
+}
+
+func (m *mockTokenRevocationChecker) CheckTokenRevocation(id string) error {
+	if m.ReturnError {
+		return errors.New("error")
+	}
+	return nil
+}
+
 func headersFrom(token string) map[string][]string {
 	return map[string][]string{
 		"authorization": {fmt.Sprintf("Bearer %s", token)},
@@ -38,8 +49,9 @@ func headersFrom(token string) map[string][]string {
 
 type APITokenTestSuite struct {
 	suite.Suite
-	signer signer.Signer
-	parser tokenbased.IdentityParser
+	signer                     signer.Signer
+	parser                     Parser
+	mockTokenRevocationChecker mockTokenRevocationChecker
 }
 
 // create a new signer with a fresh random public key, fataling
@@ -54,24 +66,32 @@ func (suite *APITokenTestSuite) createSigner() signer.Signer {
 
 func (suite *APITokenTestSuite) SetupTest() {
 	suite.signer = suite.createSigner()
-	suite.parser = New(suite.signer, mockRoleStore{})
+	suite.mockTokenRevocationChecker = mockTokenRevocationChecker{}
+	suite.parser = New(suite.signer, mockRoleStore{}, &suite.mockTokenRevocationChecker)
 }
 
 // Happy path
 func (suite *APITokenTestSuite) TestWorksWithExistingRole() {
-	token, err := suite.signer.SignedJWT(fakeRole)
+	before := time.Now()
+	token, id, issuedAt, expiration, err := suite.signer.SignedJWT(fakeRole)
 	suite.Require().NoError(err)
-	identity, err := suite.parser.Parse(headersFrom(token), nil)
+	after := time.Now()
+
+	suite.True(before.Before(issuedAt))
+	suite.True(after.After(issuedAt))
+	identity, err := suite.parser.ParseToken(token)
 	suite.Require().NoError(err)
+	suite.Equal(id, identity.ID())
 	suite.Equal(fakeRole, identity.Role().Name())
 	suite.True(identity.Expiration().After(time.Now()))
 	suite.True(identity.Expiration().Before(time.Now().Add(366 * 24 * time.Hour)))
+	suite.Equal(expiration.Unix(), identity.Expiration().Unix())
 }
 
 func (suite *APITokenTestSuite) TestErrorsOutWithIncorrectSignature() {
 	// We create a "malicious" token which is the same as the previous token, but signed with a different,
 	// random private key, and make sure our parser rejects it.
-	legitToken, err := suite.signer.SignedJWT(fakeRole)
+	legitToken, _, _, _, err := suite.signer.SignedJWT(fakeRole)
 	suite.Require().NoError(err)
 
 	t, err := jwt.ParseSigned(legitToken)
@@ -104,19 +124,38 @@ func (suite *APITokenTestSuite) TestErrorsOutWithIncorrectSignature() {
 }
 
 func (suite *APITokenTestSuite) TestReturnsErrorIfRoleNotFound() {
-	token, err := suite.signer.SignedJWT("NONEXISTENT")
+	token, _, _, _, err := suite.signer.SignedJWT("NONEXISTENT")
 	suite.Require().NoError(err)
 	_, err = suite.parser.Parse(headersFrom(token), nil)
 	suite.Error(err, "Expected error for non-existent role")
 }
 
 func (suite *APITokenTestSuite) TestReturnsErrorIfHeadersDontMatchFormatting() {
-	token, err := suite.signer.SignedJWT(fakeRole)
+	token, _, _, _, err := suite.signer.SignedJWT(fakeRole)
 	suite.Require().NoError(err)
 	_, err = suite.parser.Parse(map[string][]string{
 		"authorization": {fmt.Sprintf("BEARE %s", token)},
 	}, nil)
 	suite.Error(err, "Expected error for badly formatted header")
+}
+
+func (suite *APITokenTestSuite) TestRevocationChecks() {
+	token, _, _, _, err := suite.signer.SignedJWT(fakeRole)
+	suite.Require().NoError(err)
+
+	_, err = suite.parser.Parse(headersFrom(token), nil)
+	suite.NoError(err)
+
+	_, err = suite.parser.ParseToken(token)
+	suite.NoError(err)
+
+	suite.mockTokenRevocationChecker.ReturnError = true
+
+	_, err = suite.parser.Parse(headersFrom(token), nil)
+	suite.Error(err)
+
+	_, err = suite.parser.ParseToken(token)
+	suite.Error(err)
 }
 
 func TestAPITokenTestSuite(t *testing.T) {

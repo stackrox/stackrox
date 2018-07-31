@@ -2,6 +2,7 @@ package signer
 
 import (
 	"crypto/x509"
+	"time"
 
 	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"gopkg.in/square/go-jose.v2"
@@ -12,7 +13,8 @@ import (
 // to go-jose's signer.
 type Signer interface {
 	// SignedJWT returns a signed JWT with the subject field set to the given value.
-	SignedJWT(subject string) (string, error)
+	// It also returns metadata associated with the given token.
+	SignedJWT(subject string) (token, id string, issuedAt, expiration time.Time, err error)
 	// Key returns the public (NOT the private) key.
 	// The Signer is strict about the id. It returns nil, false
 	// unless the id passed in matches the signer's key's id.

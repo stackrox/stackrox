@@ -16,7 +16,8 @@ import (
 // A Validator checks JSON Web Tokens (JWTs) to ensure they are intended for
 // this service and are cryptographically trusted.
 type Validator interface {
-	Validate(hdrs map[string][]string) (token string, claims *jwt.Claims, err error)
+	ValidateFromHeaders(hdrs map[string][]string) (token string, claims *jwt.Claims, err error)
+	Validate(rawToken string) (claims *jwt.Claims, err error)
 }
 
 type rs256Validator struct {
@@ -50,13 +51,13 @@ var (
 )
 
 // tokenFromHeader looks for the token in the Authorization header.
-func tokenFromHeader(hdrs map[string][]string) (string, *jwt.JSONWebToken, error) {
+func (v rs256Validator) tokenFromHeader(hdrs map[string][]string) (string, error) {
 	raw := fromHeader(hdrs["authorization"]) // gRPC metadata keys are lowercased.
 	if raw == nil {
-		return "", nil, ErrNoToken
+		return "", ErrNoToken
 	}
-	t, err := jwt.ParseSigned(string(raw))
-	return string(raw), t, err
+	return string(raw), nil
+
 }
 
 func fromHeader(hdrs []string) []byte {
@@ -71,25 +72,35 @@ func fromHeader(hdrs []string) []byte {
 }
 
 // Validate validates the token or returns an error.
-func (v rs256Validator) Validate(hdrs map[string][]string) (string, *jwt.Claims, error) {
-	raw, token, err := tokenFromHeader(hdrs)
+func (v rs256Validator) Validate(rawToken string) (*jwt.Claims, error) {
+	token, err := jwt.ParseSigned(rawToken)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
 	if len(token.Headers) < 1 {
-		return "", nil, ErrNoJWTHeaders
+		return nil, ErrNoJWTHeaders
 	}
 
-	var errors []error
+	var errs []error
 	for _, h := range token.Headers {
 		claims, err := v.validateWithHeader(token, h)
 		if err == nil {
-			return raw, claims, nil
+			return claims, nil
 		}
-		errors = append(errors, err)
+		errs = append(errs, err)
 	}
-	return "", nil, errorhelpers.NewErrorListWithErrors(fmt.Errorf("%s: ", ErrUnverifiableToken).Error(), errors).ToError()
+	return nil, errorhelpers.NewErrorListWithErrors(fmt.Errorf("%s: ", ErrUnverifiableToken).Error(), errs).ToError()
+}
+
+// ValidateFromHeaders parses the passed headers for a token, and validates it or returns an error.
+func (v rs256Validator) ValidateFromHeaders(hdrs map[string][]string) (string, *jwt.Claims, error) {
+	raw, err := v.tokenFromHeader(hdrs)
+	if err != nil {
+		return "", nil, err
+	}
+	claims, err := v.Validate(raw)
+	return raw, claims, err
 }
 
 func (v rs256Validator) validateWithHeader(token *jwt.JSONWebToken, header jose.Header) (*jwt.Claims, error) {

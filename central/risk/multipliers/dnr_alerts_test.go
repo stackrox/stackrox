@@ -1,12 +1,12 @@
 package multipliers
 
 import (
+	"errors"
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/central/dnrintegration"
 	"bitbucket.org/stack-rox/apollo/central/risk/getters"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 

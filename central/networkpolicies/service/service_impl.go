@@ -29,6 +29,7 @@ var (
 			"/v1.NetworkPolicyService/GetNetworkPolicy",
 			"/v1.NetworkPolicyService/ListNetworkPolicies",
 			"/v1.NetworkPolicyService/GetNetworkGraph",
+			"/v1.NetworkPolicyService/GetNetworkGraphEpoch",
 		},
 	})
 )

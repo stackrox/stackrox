@@ -3,8 +3,10 @@ package service
 import (
 	"sync"
 
+	"bitbucket.org/stack-rox/apollo/central/apitoken/cachedstore"
+	"bitbucket.org/stack-rox/apollo/central/apitoken/parser"
 	"bitbucket.org/stack-rox/apollo/central/apitoken/signer"
-	"bitbucket.org/stack-rox/apollo/central/role/store"
+	rolestore "bitbucket.org/stack-rox/apollo/central/role/store"
 )
 
 var (
@@ -13,7 +15,7 @@ var (
 )
 
 func initialize() {
-	svc = New(signer.Singleton(), store.Singleton())
+	svc = New(signer.Singleton(), parser.Singleton(), rolestore.Singleton(), cachedstore.Singleton())
 }
 
 // Singleton returns the API token singleton.

@@ -32,7 +32,7 @@ func (np ProtoNetworkPolicyWrap) ConvertNetworkPolicy() *v1.NetworkPolicy {
 			Labels:      np.GetLabels(),
 			Annotations: np.GetAnnotations(),
 			CreationTimestamp: metav1.Time{
-				Time: ConvertTimestampToTime(np.GetCreated()),
+				Time: ConvertTimestampToTimeOrNow(np.GetCreated()),
 			},
 		},
 		Spec: v1.NetworkPolicySpec{

@@ -175,7 +175,7 @@ func (a auth0) RefreshURL() string {
 func (a auth0) Parse(headers map[string][]string, roleMapper tokenbased.RoleMapper) (identity tokenbased.Identity, err error) {
 	jwks := jwt.NewJWKSGetter(a.jwksURL())
 	validator := jwt.NewRS256Validator(jwks, a.issuer(), a.config.audience())
-	accessToken, claims, err := validator.Validate(headers)
+	accessToken, claims, err := validator.ValidateFromHeaders(headers)
 	if err != nil {
 		return nil, fmt.Errorf("token validation: %s", err)
 	}

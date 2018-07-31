@@ -15,17 +15,22 @@ type signerImpl struct {
 	builder jwt.Builder
 }
 
-func (s *signerImpl) SignedJWT(subject string) (string, error) {
-	now := time.Now()
+func (s *signerImpl) SignedJWT(subject string) (token, id string, issuedAt, expiration time.Time, err error) {
+	id = uuid.NewV4().String()
+	issuedAt = time.Now()
+	expiration = issuedAt.Add(apitoken.DefaultExpiry)
+
 	claims := jwt.Claims{
 		Audience: []string{apitoken.Audience},
 		Subject:  subject,
 		Issuer:   apitoken.Issuer,
-		Expiry:   jwt.NewNumericDate(now.Add(apitoken.DefaultExpiry)),
-		IssuedAt: jwt.NewNumericDate(now),
-		ID:       uuid.NewV4().String(),
+		Expiry:   jwt.NewNumericDate(expiration),
+		IssuedAt: jwt.NewNumericDate(issuedAt),
+		ID:       id,
 	}
-	return s.builder.Claims(claims).CompactSerialize()
+
+	token, err = s.builder.Claims(claims).CompactSerialize()
+	return
 }
 
 func (s *signerImpl) Key(id string) (interface{}, bool) {

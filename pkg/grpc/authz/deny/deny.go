@@ -24,5 +24,5 @@ type everyone struct{}
 
 // Authorized denies all access, even if the client has been authenticated.
 func (everyone) Authorized(context.Context, string) error {
-	return nil
+	return authz.ErrNoAuthzConfigured{}
 }

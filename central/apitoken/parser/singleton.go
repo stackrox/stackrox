@@ -3,22 +3,22 @@ package parser
 import (
 	"sync"
 
+	"bitbucket.org/stack-rox/apollo/central/apitoken/cachedstore"
 	"bitbucket.org/stack-rox/apollo/central/apitoken/signer"
 	"bitbucket.org/stack-rox/apollo/central/role/store"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/tokenbased"
 )
 
 var (
-	parser tokenbased.IdentityParser
+	parser Parser
 	once   sync.Once
 )
 
 func initialize() {
-	parser = New(signer.Singleton(), store.Singleton())
+	parser = New(signer.Singleton(), store.Singleton(), cachedstore.Singleton())
 }
 
 // Singleton returns the instance of the parser to use.
-func Singleton() tokenbased.IdentityParser {
+func Singleton() Parser {
 	once.Do(initialize)
 	return parser
 }

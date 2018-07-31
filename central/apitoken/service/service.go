@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 
+	"bitbucket.org/stack-rox/apollo/central/apitoken/cachedstore"
+	"bitbucket.org/stack-rox/apollo/central/apitoken/parser"
 	"bitbucket.org/stack-rox/apollo/central/apitoken/signer"
-	"bitbucket.org/stack-rox/apollo/central/role/store"
+	rolestore "bitbucket.org/stack-rox/apollo/central/role/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
@@ -20,6 +22,6 @@ type Service interface {
 }
 
 // New returns a ready-to-use instance of Service.
-func New(signer signer.Signer, roleStore store.Store) Service {
-	return &serviceImpl{signer: signer, roleStore: roleStore}
+func New(signer signer.Signer, parser parser.Parser, roleStore rolestore.Store, tokenStore cachedstore.CachedStore) Service {
+	return &serviceImpl{signer: signer, parser: parser, roleStore: roleStore, tokenStore: tokenStore}
 }
