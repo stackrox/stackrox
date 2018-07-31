@@ -352,10 +352,16 @@ func (w *wrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
 func (w *wrap) populatePorts(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
 		for _, p := range c.Ports {
+			exposedPort := p.ContainerPort
+			// If the port defines a host port, then it is exposed via that port instead of the container port
+			if p.HostPort != 0 {
+				exposedPort = p.HostPort
+			}
+
 			w.Deployment.Containers[i].Ports = append(w.Deployment.Containers[i].Ports, &pkgV1.PortConfig{
 				Name:          p.Name,
 				ContainerPort: p.ContainerPort,
-				ExposedPort:   p.HostPort,
+				ExposedPort:   exposedPort,
 				Protocol:      string(p.Protocol),
 				Exposure:      pkgV1.PortConfig_INTERNAL,
 			})

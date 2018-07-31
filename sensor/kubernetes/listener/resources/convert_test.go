@@ -257,12 +257,14 @@ func TestConvert(t *testing.T) {
 							{
 								Name:          "api",
 								ContainerPort: 9092,
+								ExposedPort:   9092,
 								Protocol:      "TCP",
 								Exposure:      pkgV1.PortConfig_INTERNAL,
 							},
 							{
 								Name:          "status",
 								ContainerPort: 443,
+								ExposedPort:   443,
 								Protocol:      "UCP",
 								Exposure:      pkgV1.PortConfig_INTERNAL,
 							},
@@ -402,15 +404,6 @@ func TestConvertQuantityToMb(t *testing.T) {
 		})
 	}
 }
-
-//
-//func TestConvertMemoryBytesToMb(t *testing.T) {
-//	verifyFloat(t, "1.00", convertMemoryBytesToMb(megabyte))
-//	verifyFloat(t, "0.00", convertMemoryBytesToMb(0))
-//	verifyFloat(t, "1024.00", convertMemoryBytesToMb(1024*1024*1024))
-//	verifyFloat(t, "1.10", convertMemoryBytesToMb(megabyte+megabyte/10))
-//	verifyFloat(t, "512000.00", convertMemoryBytesToMb(500*1024*1024*1024)) // This is the kubernetes example
-//}
 
 func TestGetVolumeSourceMap(t *testing.T) {
 	t.Parallel()
