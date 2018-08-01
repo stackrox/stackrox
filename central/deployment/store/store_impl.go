@@ -31,7 +31,10 @@ func (b *storeImpl) ListDeployment(id string) (deployment *v1.ListDeployment, ex
 		}
 		exists = true
 		deployment.Priority = b.ranker.Get(deployment.GetId())
-		err = proto.Unmarshal(val, deployment)
+		err := proto.Unmarshal(val, deployment)
+		if err != nil {
+			return err
+		}
 		return nil
 	})
 	return
@@ -147,31 +150,7 @@ func (b *storeImpl) CountDeployments() (count int, err error) {
 	return
 }
 
-// AddDeployment adds a deployment to bolt
-func (b *storeImpl) AddDeployment(deployment *v1.Deployment) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Deployment")
-	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(deploymentBucket))
-		_, exists, err := b.getDeployment(deployment.Id, bucket)
-		if err != nil {
-			return err
-		}
-		if exists {
-			return fmt.Errorf("deployment %s cannot be added because it already exists", deployment.GetId())
-		}
-		b.ranker.Add(deployment.GetId(), deployment.GetRisk().GetScore())
-		bytes, err := proto.Marshal(deployment)
-		if err != nil {
-			return err
-		}
-		if err := bucket.Put([]byte(deployment.Id), bytes); err != nil {
-			return err
-		}
-		return b.upsertListDeployment(tx.Bucket([]byte(deploymentListBucket)), deployment)
-	})
-}
-
-func (b *storeImpl) updateDeployment(deployment *v1.Deployment, bucket *bolt.Bucket) error {
+func (b *storeImpl) upsertDeployment(deployment *v1.Deployment, bucket *bolt.Bucket) error {
 	bytes, err := proto.Marshal(deployment)
 	if err != nil {
 		return err
@@ -179,24 +158,43 @@ func (b *storeImpl) updateDeployment(deployment *v1.Deployment, bucket *bolt.Buc
 	return bucket.Put([]byte(deployment.Id), bytes)
 }
 
+// This needs to be called within an Update transaction, and is the common code between
+// upsert and update.
+func (b *storeImpl) putDeployment(deployment *v1.Deployment, tx *bolt.Tx, errorIfNotExists bool) error {
+	bucket := tx.Bucket([]byte(deploymentBucket))
+	existingDeployment, exists, err := b.getDeployment(deployment.GetId(), bucket)
+	if err != nil {
+		return err
+	}
+	if errorIfNotExists && !exists {
+		return dberrors.ErrNotFound{Type: "Deployment", ID: deployment.GetId()}
+	}
+
+	// Apply the tombstone to the update. This update should have more up to date info so worth saving
+	if exists && existingDeployment.GetTombstone() != nil {
+		deployment.Tombstone = existingDeployment.GetTombstone()
+	}
+
+	b.ranker.Add(deployment.GetId(), deployment.GetRisk().GetScore())
+	if err := b.upsertDeployment(deployment, bucket); err != nil {
+		return err
+	}
+	return b.upsertListDeployment(tx.Bucket([]byte(deploymentListBucket)), deployment)
+}
+
+// UpsertDeployment adds a deployment to bolt, or updates it if it exists already.
+func (b *storeImpl) UpsertDeployment(deployment *v1.Deployment) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Deployment")
+	return b.Update(func(tx *bolt.Tx) error {
+		return b.putDeployment(deployment, tx, false)
+	})
+}
+
 // UpdateDeployment updates a deployment to bolt
 func (b *storeImpl) UpdateDeployment(deployment *v1.Deployment) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Deployment")
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(deploymentBucket))
-		existingDeployment, exists, err := b.getDeployment(deployment.GetId(), bucket)
-		if err != nil {
-			return err
-		}
-		// Apply the tombstone to the update. This update should have more up to date info so worth saving
-		if exists && existingDeployment.GetTombstone() != nil {
-			deployment.Tombstone = existingDeployment.GetTombstone()
-		}
-		b.ranker.Add(deployment.GetId(), deployment.GetRisk().GetScore())
-		if err := b.updateDeployment(deployment, tx.Bucket([]byte(deploymentBucket))); err != nil {
-			return err
-		}
-		return b.upsertListDeployment(tx.Bucket([]byte(deploymentListBucket)), deployment)
+		return b.putDeployment(deployment, tx, true)
 	})
 }
 
@@ -205,11 +203,11 @@ func (b *storeImpl) RemoveDeployment(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Deployment")
 
 	var deployment *v1.Deployment
-	var exists bool
-	var err error
-	b.Update(func(tx *bolt.Tx) error {
+	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
 
+		var exists bool
+		var err error
 		deployment, exists, err = b.getDeployment(id, bucket)
 		if err != nil {
 			return err
@@ -224,10 +222,13 @@ func (b *storeImpl) RemoveDeployment(id string) error {
 		return b.removeListDeployment(tx, id)
 	})
 
+	if err != nil {
+		return err
+	}
 	if deployment != nil {
 		b.addDeploymentToGraveyard(deployment)
 	}
-	return err
+	return nil
 }
 
 // GetTombstonedDeployments returns all of the deployments that have been tombstoned.

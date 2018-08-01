@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/ranking"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/bolthelper"
+	"bitbucket.org/stack-rox/apollo/pkg/dberrors"
 	"github.com/boltdb/bolt"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/suite"
@@ -61,7 +62,12 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 
 	// Test Add
 	for _, d := range deployments {
-		suite.NoError(suite.store.AddDeployment(d))
+		err := suite.store.UpdateDeployment(d)
+		suite.Require().Error(err)
+		suite.Equal(dberrors.ErrNotFound{Type: "Deployment", ID: d.GetId()}, err)
+		suite.NoError(suite.store.UpsertDeployment(d))
+		// Update should be idempotent
+		suite.NoError(suite.store.UpdateDeployment(d))
 	}
 
 	for _, d := range deployments {
@@ -113,10 +119,6 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 
 	for _, d := range deployments {
 		_, exists, err := suite.store.GetDeployment(d.GetId())
-		suite.NoError(err)
-		suite.False(exists)
-
-		_, exists, err = suite.store.ListDeployment(d.GetId())
 		suite.NoError(err)
 		suite.False(exists)
 	}

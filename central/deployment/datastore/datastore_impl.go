@@ -51,20 +51,20 @@ func (ds *datastoreImpl) CountDeployments() (int, error) {
 	return ds.storage.CountDeployments()
 }
 
-// AddDeployment inserts an alert into storage and into the indexer
-func (ds *datastoreImpl) AddDeployment(alert *v1.Deployment) error {
-	if err := ds.storage.AddDeployment(alert); err != nil {
+// UpsertDeployment inserts a deployment into storage and into the indexer
+func (ds *datastoreImpl) UpsertDeployment(deployment *v1.Deployment) error {
+	if err := ds.storage.UpsertDeployment(deployment); err != nil {
 		return err
 	}
-	return ds.indexer.AddDeployment(alert)
+	return ds.indexer.AddDeployment(deployment)
 }
 
-// UpdateDeployment updates an alert in storage and in the indexer
-func (ds *datastoreImpl) UpdateDeployment(alert *v1.Deployment) error {
-	if err := ds.storage.UpdateDeployment(alert); err != nil {
+// UpdateDeployment updates a deployment in storage and in the indexer
+func (ds *datastoreImpl) UpdateDeployment(deployment *v1.Deployment) error {
+	if err := ds.storage.UpdateDeployment(deployment); err != nil {
 		return err
 	}
-	return ds.indexer.AddDeployment(alert)
+	return ds.indexer.AddDeployment(deployment)
 }
 
 // RemoveDeployment removes an alert from the storage and the indexer

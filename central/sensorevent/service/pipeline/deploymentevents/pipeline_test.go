@@ -56,7 +56,7 @@ func (suite *PipelineTestSuite) TestPersistDeploymentCreate() {
 	events[0].Action = v1.ResourceAction_CREATE_RESOURCE
 
 	// Expect that our enforcement generator is called with expected data.
-	suite.deployments.On("UpdateDeployment", events[0].GetDeployment()).Return(nil)
+	suite.deployments.On("UpsertDeployment", events[0].GetDeployment()).Return(nil)
 
 	// Call function.
 	tested := &persistDeploymentImpl{
@@ -74,7 +74,7 @@ func (suite *PipelineTestSuite) TestPersistDeploymentUpdate() {
 	events[0].Action = v1.ResourceAction_UPDATE_RESOURCE
 
 	// Expect that our enforcement generator is called with expected data.
-	suite.deployments.On("UpdateDeployment", events[0].GetDeployment()).Return(nil)
+	suite.deployments.On("UpsertDeployment", events[0].GetDeployment()).Return(nil)
 
 	// Call function.
 	tested := &persistDeploymentImpl{

@@ -184,13 +184,8 @@ func waitForTermination(t *testing.T, deploymentName string) {
 				logger.Error(err)
 				continue
 			}
-			deployments, err := retrieveDeployments(service, listDeployments.GetDeployments())
-			if err != nil {
-				logger.Errorf("Error retrieving deployments: %s", err)
-				continue
-			}
 
-			if err == nil && len(deployments) == 0 {
+			if len(listDeployments.GetDeployments()) == 0 {
 				return
 			}
 		case <-timer.C:

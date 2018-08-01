@@ -18,10 +18,17 @@ func (d *detectorImpl) EnrichAndReprocess() {
 	polices := d.getCurrentPolicies()
 
 	for _, deploy := range deployments {
-		if enriched, err := d.enricher.Enrich(deploy); err != nil {
+		enriched, err := d.enricher.Enrich(deploy)
+		if err != nil {
 			logger.Error(err)
-		} else if enriched {
+			continue
+		}
+		if enriched {
 			d.queueTasks(deploy, polices)
+		} else {
+			// Even if the deployment is not enriched, we reprocess the risk explicitly because
+			// some of the risk factors are external to the enrichment process. (Ex: D&R alerts.)
+			go d.reprocessDeploymentRiskAndLogError(deploy)
 		}
 	}
 }

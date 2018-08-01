@@ -24,7 +24,7 @@ type Store interface {
 	GetDeployment(id string) (*v1.Deployment, bool, error)
 	GetDeployments() ([]*v1.Deployment, error)
 	CountDeployments() (int, error)
-	AddDeployment(deployment *v1.Deployment) error
+	UpsertDeployment(deployment *v1.Deployment) error
 	UpdateDeployment(deployment *v1.Deployment) error
 	RemoveDeployment(id string) error
 	GetTombstonedDeployments() ([]*v1.Deployment, error)

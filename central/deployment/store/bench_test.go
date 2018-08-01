@@ -27,7 +27,7 @@ func BenchmarkAddDeployment(b *testing.B) {
 	store := getDeploymentStore(b)
 	deployment := fixtures.GetAlert().GetDeployment()
 	for i := 0; i < b.N; i++ {
-		store.AddDeployment(deployment)
+		store.UpsertDeployment(deployment)
 	}
 }
 
@@ -42,7 +42,7 @@ func BenchmarkUpdateDeployment(b *testing.B) {
 func BenchmarkGetDeployment(b *testing.B) {
 	store := getDeploymentStore(b)
 	deployment := fixtures.GetAlert().GetDeployment()
-	store.AddDeployment(deployment)
+	store.UpsertDeployment(deployment)
 	for i := 0; i < b.N; i++ {
 		store.GetDeployment(deployment.GetId())
 	}
@@ -51,7 +51,7 @@ func BenchmarkGetDeployment(b *testing.B) {
 func BenchmarkListDeployment(b *testing.B) {
 	store := getDeploymentStore(b)
 	deployment := fixtures.GetAlert().GetDeployment()
-	store.AddDeployment(deployment)
+	store.UpsertDeployment(deployment)
 	for i := 0; i < b.N; i++ {
 		store.ListDeployment(deployment.GetId())
 	}

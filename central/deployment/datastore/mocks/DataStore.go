@@ -9,20 +9,6 @@ type DataStore struct {
 	mock.Mock
 }
 
-// AddDeployment provides a mock function with given fields: alert
-func (_m *DataStore) AddDeployment(alert *v1.Deployment) error {
-	ret := _m.Called(alert)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*v1.Deployment) error); ok {
-		r0 = rf(alert)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // CountDeployments provides a mock function with given fields:
 func (_m *DataStore) CountDeployments() (int, error) {
 	ret := _m.Called()
@@ -233,13 +219,27 @@ func (_m *DataStore) SearchRawDeployments(request *v1.ParsedSearchRequest) ([]*v
 	return r0, r1
 }
 
-// UpdateDeployment provides a mock function with given fields: alert
-func (_m *DataStore) UpdateDeployment(alert *v1.Deployment) error {
-	ret := _m.Called(alert)
+// UpdateDeployment provides a mock function with given fields: deployment
+func (_m *DataStore) UpdateDeployment(deployment *v1.Deployment) error {
+	ret := _m.Called(deployment)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*v1.Deployment) error); ok {
-		r0 = rf(alert)
+		r0 = rf(deployment)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertDeployment provides a mock function with given fields: deployment
+func (_m *DataStore) UpsertDeployment(deployment *v1.Deployment) error {
+	ret := _m.Called(deployment)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*v1.Deployment) error); ok {
+		r0 = rf(deployment)
 	} else {
 		r0 = ret.Error(0)
 	}

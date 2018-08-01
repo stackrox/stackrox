@@ -40,6 +40,12 @@ func (d *detectorImpl) evaluatePolicies(deployment *v1.Deployment, action v1.Res
 	return enforcementActions
 }
 
+func (d *detectorImpl) reprocessDeploymentRiskAndLogError(deployment *v1.Deployment) {
+	if err := d.enricher.ReprocessDeploymentRisk(deployment); err != nil {
+		logger.Errorf("Error reprocessing risk for deployment %s: %s", deployment.GetName(), err)
+	}
+}
+
 func (d *detectorImpl) processTask(task Task) (alert *v1.Alert, enforcement v1.EnforcementAction) {
 	existingAlerts := d.getExistingAlerts(task.deployment.GetId(), task.policy.GetId())
 
@@ -48,6 +54,12 @@ func (d *detectorImpl) processTask(task Task) (alert *v1.Alert, enforcement v1.E
 		d.markExistingAlertsAsStale(existingAlerts)
 		return
 	}
+
+	// This is the best place to assess risk (which is relatively cheap at the moment), because enrichment must have occurred at this point
+	// Any new violations (which will soon be integrated into the risk score) will also trigger the reprocessing
+	defer func() {
+		go d.reprocessDeploymentRiskAndLogError(task.deployment)
+	}()
 
 	// The third argument is if the task matched a whitelist
 	var excluded *v1.DryRunResponse_Excluded
@@ -87,11 +99,6 @@ func (d *detectorImpl) processTask(task Task) (alert *v1.Alert, enforcement v1.E
 		}
 	} else {
 		d.markExistingAlertsAsStale(existingAlerts)
-	}
-	// This is the best place to assess risk (which is relatively cheap at the moment), because enrichment must have occurred at this point
-	// Any new violations (which will soon be integrated into the risk score) will also trigger the reprocessing
-	if err := d.enricher.ReprocessDeploymentRisk(task.deployment); err != nil {
-		logger.Errorf("Error enriching deployment %s: %s", task.deployment.GetName(), err)
 	}
 
 	return

@@ -20,8 +20,12 @@ type DataStore interface {
 	GetDeployment(id string) (*v1.Deployment, bool, error)
 	GetDeployments() ([]*v1.Deployment, error)
 	CountDeployments() (int, error)
-	AddDeployment(alert *v1.Deployment) error
-	UpdateDeployment(alert *v1.Deployment) error
+	// UpsertDeployment adds or updates a deployment. It should only be called the caller
+	// is okay with inserting the passed deployment if it doesn't already exist in the store.
+	// If you only want to update a deployment if it exists, call UpdateDeployment below.
+	UpsertDeployment(deployment *v1.Deployment) error
+	// UpdateDeployment updates a deployment, erroring out if it doesn't exist.
+	UpdateDeployment(deployment *v1.Deployment) error
 	RemoveDeployment(id string) error
 }
 
