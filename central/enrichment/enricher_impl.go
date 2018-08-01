@@ -8,6 +8,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/central/risk"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/images/enricher"
+	"github.com/gogo/protobuf/proto"
 )
 
 // enricherImpl enriches images with data from registries and scanners.
@@ -72,7 +73,7 @@ func (e *enricherImpl) ReprocessRisk() {
 	}
 
 	for _, deployment := range deployments {
-		if err := e.ReprocessDeploymentRisk(deployment); err != nil {
+		if err := e.addRiskToDeployment(deployment); err != nil {
 			logger.Errorf("Error reprocessing deployment risk: %s", err)
 			return
 		}
@@ -81,7 +82,12 @@ func (e *enricherImpl) ReprocessRisk() {
 
 // ReprocessDeploymentRisk will reprocess the passed deployments risk and save the results
 func (e *enricherImpl) ReprocessDeploymentRisk(deployment *v1.Deployment) error {
-	deployment.Risk = e.scorer.Score(deployment)
+	deployment = proto.Clone(deployment).(*v1.Deployment)
+	return e.addRiskToDeployment(deployment)
+}
 
+// addRiskToDeployment will add the risk
+func (e *enricherImpl) addRiskToDeployment(deployment *v1.Deployment) error {
+	deployment.Risk = e.scorer.Score(deployment)
 	return e.deploymentStorage.UpdateDeployment(deployment)
 }
