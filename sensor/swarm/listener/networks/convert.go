@@ -31,6 +31,11 @@ func (n networkWrap) asNetworkPolicy() *v1.NetworkPolicy {
 						{
 							PodSelector: &v1.LabelSelector{},
 						},
+						{
+							IpBlock: &v1.IPBlock{
+								Cidr: "0.0.0.0/32",
+							},
+						},
 					},
 				},
 			},

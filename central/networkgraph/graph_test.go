@@ -348,13 +348,12 @@ func TestMatchPolicyPeer(t *testing.T) {
 	}
 }
 
-func TestDoesNetworkPolicySelectorApplyToDeployment(t *testing.T) {
+func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 	cases := []struct {
-		name      string
-		d         *v1.Deployment
-		np        *v1.NetworkPolicy
-		hasPolicy func([]v1.NetworkPolicyType) bool
-		expected  bool
+		name     string
+		d        *v1.Deployment
+		np       *v1.NetworkPolicy
+		expected bool
 	}{
 		{
 			name: "namespace doesn't match source",
@@ -410,8 +409,80 @@ func TestDoesNetworkPolicySelectorApplyToDeployment(t *testing.T) {
 					},
 				},
 			},
-			hasPolicy: hasIngress,
-			expected:  true,
+			expected: true,
+		},
+		{
+			name: "all matches - doesn't have ingress",
+			d: &v1.Deployment{
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key1",
+						Value: "value1",
+					},
+				},
+				Namespace: "default",
+			},
+			np: &v1.NetworkPolicy{
+				Namespace: "default",
+				Spec: &v1.NetworkPolicySpec{
+					PodSelector: &v1.LabelSelector{
+						MatchLabels: map[string]string{
+							"key1": "value1",
+						},
+					},
+					PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
+				},
+			},
+			expected: false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, ingressNetworkPolicySelectorAppliesToDeployment(c.d, c.np))
+		})
+	}
+}
+
+func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
+	cases := []struct {
+		name           string
+		d              *v1.Deployment
+		np             *v1.NetworkPolicy
+		expected       bool
+		internetAccess bool
+	}{
+		{
+			name: "namespace doesn't match source",
+			d: &v1.Deployment{
+				Namespace: "default",
+			},
+			np: &v1.NetworkPolicy{
+				Namespace: "stackrox",
+			},
+			expected: false,
+		},
+		{
+			name: "pod selector doesn't match",
+			d: &v1.Deployment{
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key1",
+						Value: "value1",
+					},
+				},
+				Namespace: "default",
+			},
+			np: &v1.NetworkPolicy{
+				Namespace: "default",
+				Spec: &v1.NetworkPolicySpec{
+					PodSelector: &v1.LabelSelector{
+						MatchLabels: map[string]string{
+							"key1": "value2",
+						},
+					},
+				},
+			},
+			expected: false,
 		},
 		{
 			name: "all matches - doesn't have egress",
@@ -434,8 +505,7 @@ func TestDoesNetworkPolicySelectorApplyToDeployment(t *testing.T) {
 					},
 				},
 			},
-			hasPolicy: hasEgress,
-			expected:  false,
+			expected: false,
 		},
 		{
 			name: "all matches - has egress",
@@ -459,13 +529,50 @@ func TestDoesNetworkPolicySelectorApplyToDeployment(t *testing.T) {
 					PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
 				},
 			},
-			hasPolicy: hasEgress,
-			expected:  true,
+			expected: true,
+		},
+		{
+			name: "all matches - has egress and ip block",
+			d: &v1.Deployment{
+				Labels: []*v1.Deployment_KeyValue{
+					{
+						Key:   "key1",
+						Value: "value1",
+					},
+				},
+				Namespace: "default",
+			},
+			np: &v1.NetworkPolicy{
+				Namespace: "default",
+				Spec: &v1.NetworkPolicySpec{
+					PodSelector: &v1.LabelSelector{
+						MatchLabels: map[string]string{
+							"key1": "value1",
+						},
+					},
+					Egress: []*v1.NetworkPolicyEgressRule{
+						{
+							To: []*v1.NetworkPolicyPeer{
+								{
+									IpBlock: &v1.IPBlock{
+										Cidr: "127.0.0.1/32",
+									},
+								},
+							},
+						},
+					},
+					PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
+				},
+			},
+			expected:       true,
+			internetAccess: true,
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, networkPolicySelectorAppliesToDeployment(c.d, c.np, c.hasPolicy))
+			matches, internetAccess := egressNetworkPolicySelectorAppliesToDeployment(c.d, c.np)
+			assert.Equal(t, c.expected, matches)
+			assert.Equal(t, c.internetAccess, internetAccess)
 		})
 	}
 }
@@ -515,14 +622,15 @@ func edgeCombiner(edges ...[]*v1.NetworkEdge) []*v1.NetworkEdge {
 	return finalEdges
 }
 
-func createNode(node string, namespace string, policies ...string) *v1.NetworkNode {
+func createNode(node string, namespace string, internetAccess bool, policies ...string) *v1.NetworkNode {
 	if policies == nil {
 		policies = []string{}
 	}
 	return &v1.NetworkNode{
-		Id:        node,
-		Namespace: namespace,
-		PolicyIds: policies,
+		Id:             node,
+		Namespace:      namespace,
+		PolicyIds:      policies,
+		InternetAccess: internetAccess,
 	}
 }
 
@@ -564,8 +672,8 @@ func TestEvaluateClusters(t *testing.T) {
 			},
 			edges: fullyConnectedEdges("d1", "d2"),
 			nodes: []*v1.NetworkNode{
-				createNode("d1", ""),
-				createNode("d2", ""),
+				createNode("d1", "", true),
+				createNode("d2", "", true),
 			},
 		},
 		{
@@ -593,9 +701,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("web-deny-all"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", "web-deny-all"),
-				createNode("d2", "default"),
-				createNode("d3", "default"),
+				createNode("d1", "default", true, "web-deny-all"),
+				createNode("d2", "default", true),
+				createNode("d3", "default", true),
 			},
 		},
 		{
@@ -626,9 +734,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("limit-traffic"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", "limit-traffic"),
-				createNode("d2", "default"),
-				createNode("d3", "default"),
+				createNode("d1", "default", true, "limit-traffic"),
+				createNode("d2", "default", true),
+				createNode("d3", "default", true),
 			},
 		},
 		{
@@ -656,9 +764,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("web-allow-all"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", "web-allow-all", "web-deny-all"),
-				createNode("d2", "default"),
-				createNode("d3", "default"),
+				createNode("d1", "default", true, "web-allow-all", "web-deny-all"),
+				createNode("d2", "default", true),
+				createNode("d3", "default", true),
 			},
 		},
 		{
@@ -686,9 +794,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("default-deny-all"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", "default-deny-all"),
-				createNode("d2", "default", "default-deny-all"),
-				createNode("d3", "stackrox"),
+				createNode("d1", "default", true, "default-deny-all"),
+				createNode("d2", "default", true, "default-deny-all"),
+				createNode("d3", "stackrox", true),
 			},
 		},
 		{
@@ -716,9 +824,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("deny-from-other-namespaces"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", "deny-from-other-namespaces"),
-				createNode("d2", "default", "deny-from-other-namespaces"),
-				createNode("d3", "stackrox"),
+				createNode("d1", "default", true, "deny-from-other-namespaces"),
+				createNode("d2", "default", true, "deny-from-other-namespaces"),
+				createNode("d3", "stackrox", true),
 			},
 		},
 		{
@@ -748,9 +856,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("web-allow-all-namespaces"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", "deny-from-other-namespaces", "web-allow-all-namespaces"),
-				createNode("d2", "default", "deny-from-other-namespaces"),
-				createNode("d3", "stackrox"),
+				createNode("d1", "default", true, "deny-from-other-namespaces", "web-allow-all-namespaces"),
+				createNode("d2", "default", true, "deny-from-other-namespaces"),
+				createNode("d3", "stackrox", true),
 			},
 		},
 		{
@@ -779,9 +887,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("web-allow-stackrox"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", "web-allow-stackrox"),
-				createNode("d2", "other"),
-				createNode("d3", "stackrox"),
+				createNode("d1", "default", true, "web-allow-stackrox"),
+				createNode("d2", "other", true),
+				createNode("d3", "stackrox", true),
 			},
 		},
 		{
@@ -816,10 +924,10 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("allow-traffic-from-apps-using-multiple-selectors"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", "web-deny-all"),
-				createNode("d2", "default"),
-				createNode("d3", "default"),
-				createNode("d4", "default"),
+				createNode("d1", "default", true, "web-deny-all"),
+				createNode("d2", "default", true),
+				createNode("d3", "default", true),
+				createNode("d4", "default", true),
 			},
 		},
 		{
@@ -842,8 +950,8 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("web-deny-egress"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", "web-deny-egress"),
-				createNode("d2", "default"),
+				createNode("d1", "default", false, "web-deny-egress"),
+				createNode("d2", "default", true),
 			},
 		},
 		{
@@ -870,13 +978,13 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("default-deny-all-egress"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", "default-deny-all-egress"),
-				createNode("d2", "default", "default-deny-all-egress"),
-				createNode("d3", "stackrox"),
+				createNode("d1", "default", false, "default-deny-all-egress"),
+				createNode("d2", "default", false, "default-deny-all-egress"),
+				createNode("d3", "stackrox", true),
 			},
 		},
 		{
-			name: "deny external egress from cluster",
+			name: "deny internetAccess egress from cluster",
 			deployments: []*v1.Deployment{
 				{
 					Id:        "d1",
@@ -899,9 +1007,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("web-deny-external-egress"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", "web-deny-external-egress"),
-				createNode("d2", "default"),
-				createNode("d3", "stackrox"),
+				createNode("d1", "default", false, "web-deny-external-egress"),
+				createNode("d2", "default", true),
+				createNode("d3", "stackrox", true),
 			},
 		},
 	}

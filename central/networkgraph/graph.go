@@ -97,14 +97,38 @@ func (g *graphEvaluatorImpl) evaluate() (nodes []*v1.NetworkNode, edges []*v1.Ne
 	return
 }
 
-func networkPolicySelectorAppliesToDeployment(d *v1.Deployment, np *v1.NetworkPolicy, hasPolicy func([]v1.NetworkPolicyType) bool) bool {
+func egressNetworkPolicySelectorAppliesToDeployment(d *v1.Deployment, np *v1.NetworkPolicy) (applies bool, internetAccess bool) {
+	spec := np.GetSpec()
+	// Check if the src matches the pod selector and deployment then the egress rules actually apply to that deployment
+	if !doesPodLabelsMatchLabel(d, spec.GetPodSelector()) || d.GetNamespace() != np.GetNamespace() {
+		return
+	}
+	// If no egress rules are defined, then it doesn't apply
+	if applies = hasEgress(spec.GetPolicyTypes()); !applies {
+		return
+	}
+
+	// If there is a rule with an IPBlock that is not nil, then we can assume that they have some sort of internet access
+	// This isn't exactly full proof, but probably a pretty decent indicator
+	for _, rule := range spec.GetEgress() {
+		for _, to := range rule.GetTo() {
+			if to.IpBlock != nil {
+				internetAccess = true
+				return
+			}
+		}
+	}
+	return
+}
+
+func ingressNetworkPolicySelectorAppliesToDeployment(d *v1.Deployment, np *v1.NetworkPolicy) bool {
 	spec := np.GetSpec()
 	// Check if the src matches the pod selector and deployment then the egress rules actually apply to that deployment
 	if !doesPodLabelsMatchLabel(d, spec.GetPodSelector()) || d.GetNamespace() != np.GetNamespace() {
 		return false
 	}
 	// If no egress rules are defined, then it doesn't apply
-	return hasPolicy(spec.GetPolicyTypes())
+	return hasIngress(spec.GetPolicyTypes())
 }
 
 func (g *graphEvaluatorImpl) matchPolicyPeers(d *v1.Deployment, namespace string, peers []*v1.NetworkPolicyPeer) bool {
@@ -151,32 +175,41 @@ func (g *graphEvaluatorImpl) evaluateCluster(deployments []*v1.Deployment, netwo
 		matchedDeploymentsToIngressPolicies[d.GetId()] = mapset.NewSet()
 		matchedDeploymentsToEgressPolicies[d.GetId()] = mapset.NewSet()
 
+		var internetAccess bool
 		for _, n := range networkPolicies {
 			if n.GetSpec() == nil {
 				continue
 			}
-			if networkPolicySelectorAppliesToDeployment(d, n, hasIngress) {
+			if ingressNetworkPolicySelectorAppliesToDeployment(d, n) {
 				selectedDeploymentsToIngressPolicies[d.GetId()].Add(n.GetId())
 			}
 			if g.doesIngressNetworkPolicyRuleMatchDeployment(d, n) {
 				matchedDeploymentsToIngressPolicies[d.GetId()].Add(n.GetId())
 			}
-			if networkPolicySelectorAppliesToDeployment(d, n, hasEgress) {
+			if applies, internetConnection := egressNetworkPolicySelectorAppliesToDeployment(d, n); applies {
 				selectedDeploymentsToEgressPolicies[d.GetId()].Add(n.GetId())
+				if internetConnection {
+					internetAccess = true
+				}
 			}
 			if g.doesEgressNetworkPolicyRuleMatchDeployment(d, n) {
 				matchedDeploymentsToEgressPolicies[d.GetId()].Add(n.GetId())
 			}
+		}
+		// If there are no egress policies, then it defaults to true
+		if selectedDeploymentsToEgressPolicies[d.GetId()].Cardinality() == 0 {
+			internetAccess = true
 		}
 
 		nodePoliciesSet := set.StringSliceFromSet(selectedDeploymentsToIngressPolicies[d.GetId()].Union(selectedDeploymentsToEgressPolicies[d.GetId()]))
 		sort.Strings(nodePoliciesSet)
 
 		nodes = append(nodes, &v1.NetworkNode{
-			Id:        d.GetId(),
-			Cluster:   d.GetClusterName(),
-			Namespace: d.GetNamespace(),
-			PolicyIds: nodePoliciesSet,
+			Id:             d.GetId(),
+			Cluster:        d.GetClusterName(),
+			Namespace:      d.GetNamespace(),
+			InternetAccess: internetAccess,
+			PolicyIds:      nodePoliciesSet,
 		})
 	}
 
