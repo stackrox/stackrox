@@ -2,10 +2,10 @@ defaults: &defaults
   docker:
     # This image is the standard circleci/golang:1.10.3 image, plus bazel
     # and other necessary build tools like goimports, dep, yarn, gcloud, kubectl, envsubst and gradle.
-    - image: stackrox/apollo-ci:0.1.11
+    - image: quay.io/stackrox/apollo-ci:0.1.11-1-g72a2bc6302
       auth:
-        username: $DOCKERHUB_USERNAME
-        password: $DOCKERHUB_PASSWORD
+        username: $QUAY_USERNAME
+        password: $QUAY_PASSWORD
   working_directory: /go/src/bitbucket.org/stack-rox/apollo
 
 restoreUI: &restoreUI
@@ -50,9 +50,20 @@ jobs:
       - run:
           name: Push new Docker image
           command: |
-            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-            docker push stackrox/prevent:$(git describe --tags --abbrev=10 --dirty)
-            docker push stackrox/prevent-health:$(git describe --tags --abbrev=10 --dirty)
+            docker login -u $QUAY_USERNAME -p $QUAY_PASSWORD quay.io
+            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD docker.io
+
+            export TAG=$(git describe --tags --abbrev=10 --dirty)
+
+            docker push docker.io/stackrox/prevent:$TAG | cat
+
+            docker tag docker.io/stackrox/prevent:$TAG quay.io/stackrox/prevent:$TAG
+            docker push quay.io/stackrox/prevent:$TAG | cat
+
+            docker push docker.io/stackrox/prevent-health:$TAG | cat
+
+            docker tag docker.io/stackrox/prevent-health:$TAG  quay.io/stackrox/prevent-health:$TAG
+            docker push quay.io/stackrox/prevent-health:$TAG | cat
 
       - run:
           name: Run style checks and unit tests
@@ -95,10 +106,11 @@ jobs:
       - run:
           name: Setup deployment env
           command: |
-            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
-            echo 'export REGISTRY_USERNAME="$DOCKERHUB_USERNAME"' >> $BASH_ENV
-            echo 'export REGISTRY_PASSWORD="$DOCKERHUB_PASSWORD"' >> $BASH_ENV
+            docker login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
+            echo 'export REGISTRY_USERNAME="$QUAY_USERNAME"' >> $BASH_ENV
+            echo 'export REGISTRY_PASSWORD="$QUAY_PASSWORD"' >> $BASH_ENV
             echo 'export PREVENT_IMAGE_TAG="$(git describe --tags --abbrev=10 --dirty)"' >> $BASH_ENV
+            echo 'export PREVENT_IMAGE="quay.io/stackrox/prevent:$(git describe --tags --abbrev=10 --dirty)"' >> $BASH_ENV
             echo $GKE_SERVICE_ACCOUNT > /tmp/gcp.json
             echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json' >> $BASH_ENV
             gcloud auth activate-service-account --key-file /tmp/gcp.json
@@ -193,16 +205,18 @@ jobs:
       - run:
           name: Push image into stackrox.io
           command: |
-            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+            docker login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
             docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD" stackrox.io
 
-            docker pull stackrox/prevent:$(git describe --tags --abbrev=10 --dirty)
-            docker tag stackrox/prevent:$(git describe --tags --abbrev=10 --dirty) stackrox.io/prevent:$(git describe --tags --abbrev=10 --dirty)
-            docker push stackrox.io/prevent:$(git describe --tags --abbrev=10 --dirty)
+            export TAG=$(git describe --tags --abbrev=10 --dirty)
 
-            docker pull stackrox/prevent-health:$(git describe --tags --abbrev=10 --dirty)
-            docker tag stackrox/prevent-health:$(git describe --tags --abbrev=10 --dirty) stackrox.io/prevent-health:$(git describe --tags --abbrev=10 --dirty)
-            docker push stackrox.io/prevent-health:$(git describe --tags --abbrev=10 --dirty)
+            docker pull quay.io/stackrox/prevent:$TAG
+            docker tag quay.io/stackrox/prevent:$TAG stackrox.io/prevent:$TAG
+            docker push stackrox.io/prevent:$TAG | cat
+
+            docker pull quay.io/stackrox/prevent-health:$TAG
+            docker tag quay.io/stackrox/prevent-health:$TAG stackrox.io/prevent-health:$TAG
+            docker push stackrox.io/prevent-health:$TAG | cat
 
 
 workflows:
