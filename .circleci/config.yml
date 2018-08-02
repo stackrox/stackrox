@@ -1,8 +1,9 @@
 defaults: &defaults
   docker:
-    # This image is the standard circleci/golang:1.10.3 image, plus bazel
-    # and other necessary build tools like goimports, dep, yarn, gcloud, kubectl, envsubst and gradle.
-    - image: quay.io/stackrox/apollo-ci:0.1.11-1-g72a2bc6302
+    # This image is the standard circleci/golang:1.10.3 image, plus bazel and
+    # other necessary build tools like goimports, dep, yarn, gcloud, kubectl,
+    # oc, envsubst and gradle.
+    - image: quay.io/stackrox/apollo-ci:0.1.11-2-gc033acbe96
       auth:
         username: $QUAY_USERNAME
         password: $QUAY_PASSWORD
@@ -21,6 +22,7 @@ restoreDep: &restoreDep
 
 version: 2
 jobs:
+
   build:
     <<: *defaults
     resource_class: large
@@ -195,6 +197,202 @@ jobs:
           path: ui/cypress/screenshots
           destination: ui-e2e-screenshots
 
+  provision-openshift:
+    <<: *defaults
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - attach_workspace:
+          at: /go/src/bitbucket.org/stack-rox/apollo
+
+      - run:
+          name: Login to Docker Hub
+          command: docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+
+      - run:
+          name: Generate ephemeral SSH key
+          command: |
+            mkdir openshift
+            ssh-keygen -t rsa -f openshift/id_rsa -C packer -N ''
+            cat openshift/id_rsa.pub
+
+      - run:
+          name: Pack openshift volume
+          command: |
+            docker create -v /data --name openshift alpine:3.8 /bin/true
+            docker cp openshift/id_rsa     openshift:/data
+            docker cp openshift/id_rsa.pub openshift:/data
+
+      - run:
+          name: Create cloud resources
+          command: |
+            docker run --rm -t \
+              --volumes-from openshift \
+              -e GOOGLE_CREDENTIALS="$OPENSHIFT_TERRAFORM_CREDENTIALS" \
+              stackrox/openshift-automation:terraform-0.0.0-4-g42329ca create "${CIRCLE_SHA1:0:7}"
+
+      - run:
+          name: Create Openshift cluster
+          command: docker run --rm -t --volumes-from openshift stackrox/openshift-automation:ansible-0.0.0-4-g42329ca
+
+      - run:
+          name: Unpack openshift volume
+          command: |
+            docker cp openshift:/data/terraform.tfstate openshift
+            docker cp openshift:/data/master            openshift
+            docker cp openshift:/data/config            openshift
+            ls -hl openshift
+          when: always
+
+      - store_artifacts:
+          path: openshift
+          destination: openshift
+
+      - persist_to_workspace:
+          root: /go/src/bitbucket.org/stack-rox/apollo
+          paths:
+          - openshift
+
+      - run:
+          name: Destroy Openshift cluster
+          command: |
+            docker run --rm -t \
+              --volumes-from openshift \
+              -e GOOGLE_CREDENTIALS="$OPENSHIFT_TERRAFORM_CREDENTIALS" \
+              stackrox/openshift-automation:terraform-0.0.0-4-g42329ca destroy "${CIRCLE_SHA1:0:7}"
+          when: on_fail
+
+  deploy-openshift:
+    <<: *defaults
+    environment:
+      - LOCAL_PORT: 8000
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - run:
+          name: Login to Docker Hub
+          command: docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+
+      - attach_workspace:
+          at: /go/src/bitbucket.org/stack-rox/apollo
+
+      - run:
+          name: Configure Deployment Environment
+          command: |
+            echo "export CLAIRIFY_IMAGE_TAG=0.4"                                       >> "$BASH_ENV"
+            echo "export OPENSHIFT_HOST=$(cat openshift/master)"                       >> "$BASH_ENV"
+            echo "export PREVENT_IMAGE_REGISTRY=docker.io"                             >> "$BASH_ENV"
+            echo "export PREVENT_IMAGE_TAG=$(git describe --tags --abbrev=10 --dirty)" >> "$BASH_ENV"
+            echo "export REGISTRY_PASSWORD=$DOCKERHUB_PASSWORD"                        >> "$BASH_ENV"
+            echo "export REGISTRY_USERNAME=$DOCKERHUB_USERNAME"                        >> "$BASH_ENV"
+
+      - run:
+          name: Configure Kubectl
+          command: |
+            cp openshift/config ~/.kube/
+            context="$(kubectl config get-contexts -o name | grep -v master)"
+            kubectl config use-context "$context"
+            kubectl get nodes
+
+      - run:
+          name: Configure SSH
+          command: |
+            mkdir -p ~/.ssh
+            install -m 0400 openshift/id_rsa openshift/id_rsa.pub ~/.ssh
+            ssh -o StrictHostKeyChecking=no "stackrox@$OPENSHIFT_HOST" uname -a
+
+      - run:
+          name: Generate Installation Bundle
+          command: |
+            docker run -i "stackrox/prevent:$PREVENT_IMAGE_TAG" deploy openshift > /tmp/openshift.zip
+            unzip /tmp/openshift.zip -d openshift
+
+      - run:
+          name: Run Image Setup
+          command: |
+            scp -o StrictHostKeyChecking=no openshift/image-setup.sh "stackrox@$OPENSHIFT_HOST:~/image-setup.sh"
+            ssh -o StrictHostKeyChecking=no "stackrox@$OPENSHIFT_HOST" "yes | CLAIRIFY_IMAGE_TAG=$CLAIRIFY_IMAGE_TAG PREVENT_IMAGE_REGISTRY=$PREVENT_IMAGE_REGISTRY PREVENT_IMAGE_TAG=$PREVENT_IMAGE_TAG REGISTRY_PASSWORD=$REGISTRY_PASSWORD REGISTRY_USERNAME=$REGISTRY_USERNAME ~/image-setup.sh"
+            oc -n stackrox get imagestreams
+
+      - run:
+          name: Deploy to remote cluster
+          command: |
+            ./deploy/openshift/deploy.sh
+            oc -n stackrox get all
+
+      - run:
+          name: Setup port-forwarding for tests
+          command: ./scripts/k8s/local-port-forward.sh
+          background: true
+
+      - run:
+          name: Wait for the API server to be up
+          command: |
+            export PING_URL=https://127.0.0.1:${LOCAL_PORT}/v1/ping
+            curl -k --connect-timeout 5 --max-time 10 --retry 10 --retry-connrefused --retry-delay 1 --retry-max-time 30 ${PING_URL}
+
+      - run:
+          name: Wait for the Sensor to be running
+          command: |
+            ./scripts/ci/sensor-wait.sh
+
+#      # TODO: make -C tests hangs when run
+#      - run:
+#          name: API tests
+#          command: |
+#            export API_ENDPOINT=localhost:${LOCAL_PORT}
+#            make -C tests
+
+      - *restoreUI
+
+      - run:
+          name: UI e2e tests
+          command: |
+            export UI_BASE_URL=https://localhost:${LOCAL_PORT}
+            make -C ui test-e2e-ci
+
+      - run:
+          name: Collect k8s logs
+          command: |
+            ./scripts/ci/collect-service-logs.sh central
+            ./scripts/ci/collect-service-logs.sh sensor
+          when: always
+
+      - store_artifacts:
+          path: /tmp/k8s-service-logs
+          destination: k8s-service-logs
+
+      - store_test_results:
+          path: ui/cypress/reports
+
+      - store_artifacts:
+          path: ui/cypress/videos
+          destination: ui-e2e-videos
+
+      - store_artifacts:
+          path: ui/cypress/screenshots
+          destination: ui-e2e-screenshots
+
+      - run:
+          name: Pack openshift volume
+          command: |
+            docker create -v /data --name openshift alpine:3.8 /bin/true
+            docker cp openshift/id_rsa            openshift:/data
+            docker cp openshift/id_rsa.pub        openshift:/data
+            docker cp openshift/terraform.tfstate openshift:/data
+          when: always
+
+      - run:
+          name: Destroy Openshift cluster
+          command: |
+            docker run --rm -t \
+              --volumes-from openshift \
+              -e GOOGLE_CREDENTIALS="$OPENSHIFT_TERRAFORM_CREDENTIALS" \
+              stackrox/openshift-automation:terraform-0.0.0-4-g42329ca destroy "${CIRCLE_SHA1:0:7}"
+          when: always
+
   push-release:
     <<: *defaults
     resource_class: small
@@ -233,6 +431,18 @@ workflows:
           filters:
             tags:
               only: /.*/
+      # Provision and test OpenShift only on master
+      - provision-openshift:
+          filters:
+            branches:
+              only: master
+      - deploy-openshift:
+          requires:
+            - build
+            - provision-openshift
+          filters:
+            branches:
+              only: master
       # Push release only on tags.
       - push-release:
           requires:

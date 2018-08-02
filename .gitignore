@@ -44,3 +44,6 @@ BUILD.bazel
 
 # Integration configs used in development
 /*.json
+
+# Openshift automation workspace artifacts
+openshift/

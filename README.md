@@ -206,7 +206,7 @@ bash image-setup.sh
 ```
 
 ```
-docker run -i --rm stackrox.io/prevent:<tag> interactive 1>k8s.zip
+docker run -i --rm stackrox.io/prevent:<tag> interactive 1>openshift.zip
 ```
 
 This will run you through an installer as follows and generates a openshift.zip file.
