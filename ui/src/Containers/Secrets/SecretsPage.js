@@ -80,6 +80,7 @@ class SecretPage extends Component {
                 <div className="flex flex-1 flex-col">
                     <PageHeader header="Secrets" subHeader={subHeader}>
                         <SearchInput
+                            className="flex flex-1"
                             id="secrets"
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}

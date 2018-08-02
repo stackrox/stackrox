@@ -1,13 +1,13 @@
 import { all, take, takeLatest, call, fork, put, select, cancel } from 'redux-saga/effects';
 import { delay } from 'redux-saga';
-
-import { selectors } from 'reducers';
-
-import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
-import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { environmentPath } from 'routePaths';
 import * as service from 'services/EnvironmentService';
+import { fetchClusters } from 'services/ClustersService';
 import { actions, types } from 'reducers/environment';
+import { actions as clusterActions, types as clusterTypes } from 'reducers/clusters';
+import { selectors } from 'reducers';
+import { takeEveryLocation } from 'utils/sagaEffects';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { types as deploymentTypes } from 'reducers/deployments';
 import { types as locationActionTypes } from 'reducers/routes';
 import { getDeployment } from './deploymentSagas';
@@ -66,12 +66,28 @@ function* watchLocation() {
     }
 }
 
+function* getClusters() {
+    try {
+        const result = yield call(fetchClusters);
+        yield put(clusterActions.fetchClusters.success(result.response));
+    } catch (error) {
+        yield put(clusterActions.fetchClusters.failure(error));
+    }
+}
+
 function* filterEnvironmentPageBySearch() {
+    const clusterId = yield select(selectors.getSelectedEnvironmentClusterId);
     const searchOptions = yield select(selectors.getEnvironmentSearchOptions);
     const filters = {
-        query: searchOptionsToQuery(searchOptions)
+        query: searchOptionsToQuery(searchOptions),
+        cluster_id: clusterId
     };
     yield fork(getNetworkGraph, filters);
+}
+
+function* loadEnvironmentPage() {
+    yield fork(getClusters);
+    yield fork(filterEnvironmentPageBySearch);
 }
 
 function* watchEnvironmentSearchOptions() {
@@ -90,13 +106,23 @@ function* watchNetworkPoliciesRequest() {
     yield takeLatest(types.FETCH_NETWORK_POLICIES.REQUEST, getNetworkPolicies);
 }
 
+function* watchSelectEnvironmentCluster() {
+    yield takeLatest(types.SELECT_ENVIRONMENT_CLUSTER_ID, filterEnvironmentPageBySearch);
+}
+
+function* watchFetchClustersSuccess() {
+    yield takeLatest(clusterTypes.FETCH_CLUSTERS.SUCCESS, filterEnvironmentPageBySearch);
+}
+
 export default function* environment() {
     yield all([
-        takeEveryNewlyMatchedLocation(environmentPath, filterEnvironmentPageBySearch),
+        takeEveryLocation(environmentPath, loadEnvironmentPage),
         fork(watchEnvironmentSearchOptions),
         fork(watchFetchEnvironmentGraphRequest),
         fork(watchNetworkPoliciesRequest),
         fork(watchFetchDeploymentRequest),
+        fork(watchSelectEnvironmentCluster),
+        fork(watchFetchClustersSuccess),
         fork(watchLocation)
     ]);
 }

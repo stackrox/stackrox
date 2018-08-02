@@ -12,14 +12,14 @@ const PageHeader = props => (
             <div className="text-base-600 uppercase text-lg tracking-wide">{props.header}</div>
             {renderSubHeader(props.subHeader)}
         </div>
-        <div className="w-full">{props.children}</div>
+        <div className="flex flex-row w-full">{props.children}</div>
     </div>
 );
 
 PageHeader.propTypes = {
     header: PropTypes.string.isRequired,
     subHeader: PropTypes.string,
-    children: PropTypes.element
+    children: PropTypes.oneOfType([PropTypes.element, PropTypes.arrayOf(PropTypes.element)])
 };
 
 PageHeader.defaultProps = {

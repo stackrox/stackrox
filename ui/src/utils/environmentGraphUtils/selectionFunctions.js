@@ -31,8 +31,9 @@ export const updateNode = selection => {
 export const enterLink = selection => {
     selection
         .classed('link', true)
-        .attr('stroke-width', '1px')
-        .attr('stroke', '#3F4884');
+        .attr('stroke-width', '0.5px')
+        .attr('stroke', '#3F4884')
+        .attr('opacity', '0.2');
 };
 
 export const updateLink = selection => {

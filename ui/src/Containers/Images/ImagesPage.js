@@ -99,6 +99,7 @@ class ImagesPage extends Component {
                 <div className="flex flex-1 flex-col">
                     <PageHeader header="Images" subHeader={subHeader}>
                         <SearchInput
+                            className="flex flex-1"
                             id="images"
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}

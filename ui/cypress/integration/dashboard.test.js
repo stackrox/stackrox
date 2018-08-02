@@ -253,7 +253,7 @@ describe('Dashboard page', () => {
             clusters.forEach(clust => {
                 cy.route('GET', '/v1/benchmarks/scans**').as('scans');
                 cy.visit(`/main/compliance/${clust.id}`);
-                cy.get('button:contains("Scan now")').click();
+                cy.get('button:contains("Scan now")').click({ force: true });
                 cy.wait('@scans');
                 cy.visit(dashboardUrl);
                 cy

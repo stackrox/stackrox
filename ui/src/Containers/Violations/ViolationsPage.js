@@ -126,6 +126,7 @@ class ViolationsPage extends Component {
                 <div className="flex flex-1 flex-col">
                     <PageHeader header="Violations" subHeader={subHeader}>
                         <SearchInput
+                            className="flex flex-1"
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}
                             searchSuggestions={this.props.searchSuggestions}

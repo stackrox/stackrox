@@ -13,7 +13,7 @@ export const forceCluster = namespaces => {
         /* eslint-disable */
         alpha *= strength * alpha;
         nodes.forEach(d => {
-            const c = namespaces[d.namespace];
+            const c = namespaces.find(n => n.namespace === d.namespace);
             if (c === d) return;
 
             let x = d.x - c.x;
@@ -60,7 +60,7 @@ export const forceCollision = nodes => alpha => {
                 const radius =
                     d.r +
                     quad.data.r +
-                    (d.cluster === quad.data.cluster ? PADDING : CLUSTER_PADDING);
+                    (d.namespace === quad.data.namespace ? PADDING : CLUSTER_PADDING);
                 if (l < radius) {
                     l = (l - radius) / l * alpha;
                     /* eslint-disable */

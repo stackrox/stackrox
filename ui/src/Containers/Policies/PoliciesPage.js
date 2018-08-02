@@ -353,7 +353,8 @@ class PoliciesPage extends Component {
                 <div>
                     <PageHeader header="Policies" subHeader={subHeader}>
                         <SearchInput
-                            id="risk"
+                            className="flex flex-1"
+                            id="policies"
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}
                             searchSuggestions={this.props.searchSuggestions}

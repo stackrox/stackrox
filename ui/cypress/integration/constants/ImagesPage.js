@@ -5,6 +5,6 @@ export const selectors = {
     componentsColumn: 'tbody > tr > :nth-child(3)',
     cvesColumn: 'tbody > tr > :nth-child(4)',
     firstTableRow: 'tbody > tr:first',
-    panelHeader: '.flex-row > .flex-1',
+    panelHeader: 'div[data-test-id="panel-header"]',
     viewDeploymentsButton: 'button:contains("View Deployments")'
 };

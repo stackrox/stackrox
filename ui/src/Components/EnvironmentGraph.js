@@ -33,12 +33,14 @@ let namespaces;
 let nodes = [];
 let edges = [];
 
-let force = d3ForceSimulation()
-    .force('charge', d3ForceManyBody().strength(-100))
+let force = d3ForceSimulation(nodes)
+    .force('charge', d3ForceManyBody().strength(-50))
     // keep entire simulation balanced around screen center
     .force('center', d3ForceCenter(width / 2, height / 2))
     // cluster by section
-    .force('cluster', forceCluster(namespaces).strength(0.8));
+    .force('cluster', forceCluster(namespaces).strength(0.9))
+    .force('link', d3ForceLink(edges).id(d => d.id))
+    .force('collide', forceCollision(nodes));
 
 class EnvironmentGraph extends Component {
     static propTypes = {
@@ -70,6 +72,8 @@ class EnvironmentGraph extends Component {
             (nextProps.updateKey === 0 && nodes.length === 0) ||
             nextProps.updateKey !== this.props.updateKey
         ) {
+            this.d3Graph.selectAll('*').remove();
+
             nodes = this.getNodes(nextProps.nodes);
             edges = this.getEdges(nextProps.edges);
 
@@ -77,11 +81,11 @@ class EnvironmentGraph extends Component {
 
             this.setUpNamespaceGroups();
 
-            this.setUpNodeElements();
+            this.setUpNamespaceContainers();
 
             this.setUpEdgeElements();
 
-            this.setUpNamespaceContainers();
+            this.setUpNodeElements();
         }
 
         return false;
@@ -90,13 +94,30 @@ class EnvironmentGraph extends Component {
     getNodes = propNodes => {
         const namespacesMapping = {};
 
+        const nodeIdToNodeMapping = {};
+        nodes.forEach(d => {
+            nodeIdToNodeMapping[d.id] = d;
+        });
+
         const newNodes = propNodes.map(node => {
             const d = {
                 ...node,
                 radius: MAX_RADIUS,
                 x: width / 2 + Math.random() * 500,
-                y: height / 2 + Math.random() * 500
+                y: height / 2 + Math.random() * 500,
+                external: Math.random() >= 0.5
             };
+
+            if (nodeIdToNodeMapping[d.id]) {
+                // if the node already exists, maintain current position
+                d.x = nodeIdToNodeMapping[d.id].x;
+                d.y = nodeIdToNodeMapping[d.id].y;
+            } else {
+                // else assign it a random position near the center
+                d.x = width / 2 + Math.random() * 500;
+                d.y = height / 2 + Math.random() * 500;
+            }
+
             if (
                 !namespacesMapping[node.namespace] ||
                 MAX_RADIUS > namespacesMapping[node.namespace].radius
@@ -124,10 +145,16 @@ class EnvironmentGraph extends Component {
         // add pan+zoom functionality
         this.zoomHandler(svg, d3Select(this.graph));
 
-        force = d3ForceSimulation(nodes)
-            .force('link', d3ForceLink(edges).id(d => d.id))
-            .force('charge', d3ForceManyBody().strength(-80))
+        force = force
+            .nodes(nodes)
+            .force(
+                'link',
+                d3ForceLink(edges)
+                    .id(d => d.id)
+                    .strength(0)
+            )
             .force('center', d3ForceCenter(width / 2, height / 2))
+            .force('cluster', forceCluster(namespaces).strength(0.9))
             .force('collide', forceCollision(nodes))
             .on('tick', () => {
                 // after force calculation starts, call updateGraph
@@ -136,16 +163,18 @@ class EnvironmentGraph extends Component {
                 this.d3Graph.call(updateGraph);
                 this.updateNamespaceContainers();
             })
+            .alpha(1)
             .stop();
 
         // restart simulation
         let i = 0;
-        const x = Math.ceil(Math.log(force.alphaMin()) / Math.log(1 - force.alphaDecay()));
+        const x = nodes.length * nodes.length;
         while (i < x) {
             force.tick();
             i += 1;
         }
-        force.alpha(0.3).restart();
+
+        force.restart();
     };
 
     setUpNamespaceGroups = () => {
@@ -182,7 +211,7 @@ class EnvironmentGraph extends Component {
             const namespaceGroup = this.d3Graph.selectAll(`.namespace-${n.namespace}`);
             const d3Nodes = namespaceGroup
                 .selectAll('.node')
-                .data(nodes.filter(d => d.namespace === n.namespace), node => node.id);
+                .data(nodes.filter(d => d.namespace === n.namespace));
             // logic for creating nodes
             d3Nodes
                 .enter()

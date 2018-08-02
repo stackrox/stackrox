@@ -1,6 +1,7 @@
 import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
 
+import { types as clusterTypes } from 'reducers/clusters';
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
 import { types as deploymentTypes } from 'reducers/deployments';
 import {
@@ -17,17 +18,31 @@ export const types = {
     FETCH_NETWORK_POLICIES: createFetchingActionTypes('environment/FETCH_NETWORK_POLICIES'),
     FETCH_NODE_UPDATES: createFetchingActionTypes('environment/FETCH_NODE_UPDATES'),
     SET_SELECTED_NODE_ID: { type: 'environment/SET_SELECTED_NODE_ID' },
+    SELECT_ENVIRONMENT_CLUSTER_ID: 'environment/SELECT_ENVIRONMENT_CLUSTER_ID',
     ...searchTypes('environment')
 };
 
 // Actions
+
+// Environment search should not show the 'Cluster' category
+const getEnvironmentSearchActions = getSearchActions('environment');
+const environmentSearchActions = Object.assign({}, getEnvironmentSearchActions);
+const filterSearchOptions = options => options.filter(obj => obj.value !== 'Cluster:');
+environmentSearchActions.setEnvironmentSearchModifiers = options =>
+    getEnvironmentSearchActions.setEnvironmentSearchModifiers(filterSearchOptions(options));
+environmentSearchActions.setEnvironmentSearchSuggestions = options =>
+    getEnvironmentSearchActions.setEnvironmentSearchSuggestions(filterSearchOptions(options));
 
 export const actions = {
     fetchEnvironmentGraph: createFetchingActions(types.FETCH_ENVIRONMENT_GRAPH),
     fetchNetworkPolicies: createFetchingActions(types.FETCH_NETWORK_POLICIES),
     fetchNodeUpdates: createFetchingActions(types.FETCH_NODE_UPDATES),
     setSelectedNodeId: id => ({ type: types.SET_SELECTED_NODE_ID, id }),
-    ...getSearchActions('environment')
+    selectEnvironmentClusterId: clusterId => ({
+        type: types.SELECT_ENVIRONMENT_CLUSTER_ID,
+        clusterId
+    }),
+    ...environmentSearchActions
 };
 
 // Reducers
@@ -73,12 +88,28 @@ const nodeUpdatesEpoch = (state = null, action) => {
     return state;
 };
 
+const selectedEnvironmentClusterId = (state = null, action) => {
+    if (!state && action.type === clusterTypes.FETCH_CLUSTERS.SUCCESS) {
+        const { clusters } = action.response.result;
+        if (clusters && clusters.length) {
+            const clusterId = clusters[0];
+            return isEqual(clusterId, state) ? state : clusterId;
+        }
+    }
+    if (action.type === types.SELECT_ENVIRONMENT_CLUSTER_ID) {
+        const { clusterId } = action;
+        return isEqual(clusterId, state) ? state : clusterId;
+    }
+    return state;
+};
+
 const reducer = combineReducers({
     environmentGraph,
     deployment,
     networkPolicies,
     selectedNodeId,
     nodeUpdatesEpoch,
+    selectedEnvironmentClusterId,
     ...searchReducers('environment')
 });
 
@@ -89,6 +120,7 @@ const getDeployment = state => state.deployment;
 const getNetworkPolicies = state => state.networkPolicies;
 const getSelectedNodeId = state => state.selectedNodeId;
 const getNodeUpdatesEpoch = state => state.nodeUpdatesEpoch;
+const getSelectedEnvironmentClusterId = state => state.selectedEnvironmentClusterId;
 
 export const selectors = {
     getEnvironmentGraph,
@@ -96,6 +128,7 @@ export const selectors = {
     getNetworkPolicies,
     getSelectedNodeId,
     getNodeUpdatesEpoch,
+    getSelectedEnvironmentClusterId,
     ...getSearchSelectors('environment')
 };
 

@@ -47,6 +47,7 @@ class SearchModal extends Component {
                 <div className="flex flex-row w-full bg-white">
                     <PageHeader header="Search All:">
                         <SearchInput
+                            className="flex flex-1"
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}
                             searchSuggestions={this.props.searchSuggestions}

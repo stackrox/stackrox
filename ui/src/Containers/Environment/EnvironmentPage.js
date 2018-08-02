@@ -2,13 +2,12 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
-import Select from 'react-select';
-
 import { selectors } from 'reducers';
 import { actions as environmentActions } from 'reducers/environment';
 import { actions as deploymentActions, types as deploymentTypes } from 'reducers/deployments';
 import { actions as clusterActions } from 'reducers/clusters';
 
+import Select from 'react-select';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import EnvironmentGraph from 'Components/EnvironmentGraph';
@@ -37,6 +36,7 @@ class EnvironmentPage extends Component {
         fetchClusters: PropTypes.func.isRequired,
         deployment: PropTypes.shape({}),
         networkPolicies: PropTypes.arrayOf(PropTypes.object),
+        selectClusterId: PropTypes.func.isRequired,
         environmentGraph: PropTypes.shape({
             nodes: PropTypes.arrayOf(
                 PropTypes.shape({
@@ -52,6 +52,7 @@ class EnvironmentPage extends Component {
             epoch: PropTypes.number
         }).isRequired,
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
+        selectedClusterId: PropTypes.string,
         isFetchingNode: PropTypes.bool,
         nodeUpdatesEpoch: PropTypes.number
     };
@@ -61,12 +62,12 @@ class EnvironmentPage extends Component {
         selectedNodeId: null,
         networkPolicies: [],
         deployment: {},
-        nodeUpdatesEpoch: null
+        nodeUpdatesEpoch: null,
+        selectedClusterId: ''
     };
 
     state = {
-        updateKey: 0, // this state prevents the environment graph from updating on every rerender
-        selectedCluster: null
+        updateKey: 0 // this state prevents the environment graph from updating on every rerender
     };
 
     componentDidMount() {
@@ -74,13 +75,10 @@ class EnvironmentPage extends Component {
     }
 
     onSearch = searchOptions => {
+        this.setState({ updateKey: this.state.updateKey + 1 });
         if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
             this.closeSidePanel();
         }
-    };
-
-    onClusterSelect = selectedCluster => {
-        this.setState({ selectedCluster });
     };
 
     onNodeClick = node => {
@@ -90,8 +88,7 @@ class EnvironmentPage extends Component {
     };
 
     onUpdateGraph = () => {
-        const newUpdateKey = this.state.updateKey + 1;
-        this.setState({ updateKey: newUpdateKey });
+        this.setState({ updateKey: this.state.updateKey + 1 });
         this.props.fetchEnvironmentGraph();
     };
 
@@ -102,6 +99,13 @@ class EnvironmentPage extends Component {
 
     closeSidePanel = () => {
         this.props.setSelectedNodeId(null);
+    };
+
+    changeCluster = option => {
+        if (option) {
+            this.setState({ updateKey: this.state.updateKey + 1 });
+            this.props.selectClusterId(option.value);
+        }
     };
 
     renderGraph = () => (
@@ -145,28 +149,19 @@ class EnvironmentPage extends Component {
 
     renderClustersSelect = () => {
         if (!this.props.clusters.length) return null;
-        const { clusters } = this.props;
-        const defaultValue = {
-            label: clusters[0].name,
-            value: clusters[0].id
-        };
+        const options = this.props.clusters.map(cluster => ({
+            value: cluster.id,
+            label: cluster.name
+        }));
         const clustersProps = {
-            name: 'select-cluster',
-            className: 'capitalize',
-            options: clusters.map(cluster => ({
-                label: cluster.name,
-                value: cluster.id
-            })),
-            placeholder: 'Select Cluster',
-            onChange: this.onClusterSelect,
-            value: this.state.selectedCluster ? this.state.selectedCluster : defaultValue,
-            ignoreCase: false
+            className: 'min-w-64 ml-5',
+            options,
+            value: this.props.selectedClusterId,
+            placeholder: 'Select a cluster',
+            onChange: this.changeCluster,
+            autoFocus: true
         };
-        return (
-            <div className="w-1/3 py-3 pr-4 border-b border-primary-300">
-                <Select {...clustersProps} autoFocus />
-            </div>
-        );
+        return <Select {...clustersProps} />;
     };
 
     render() {
@@ -179,6 +174,7 @@ class EnvironmentPage extends Component {
                         <PageHeader header="Environment" subHeader={subHeader} className="w-2/3">
                             <SearchInput
                                 id="environment"
+                                className="flex flex-1"
                                 searchOptions={this.props.searchOptions}
                                 searchModifiers={this.props.searchModifiers}
                                 searchSuggestions={this.props.searchSuggestions}
@@ -187,14 +183,14 @@ class EnvironmentPage extends Component {
                                 setSearchSuggestions={this.props.setSearchSuggestions}
                                 onSearch={this.onSearch}
                             />
+                            {this.renderClustersSelect()}
                         </PageHeader>
-                        {this.renderClustersSelect()}
                     </div>
                     <section className="environment-grid-bg flex flex-1 relative">
                         {this.renderGraph()}
                         {nodeUpdatesCount > 0 && (
                             <button
-                                className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-300 hover:bg-primary-200 rounded-sm text-sm text-white"
+                                className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-500 hover:bg-primary-400 rounded-sm text-sm text-white"
                                 onClick={this.onUpdateGraph}
                             >
                                 <Icon.Circle className="h-2 w-2 border-primary-300" />
@@ -217,8 +213,9 @@ const isViewFiltered = createSelector(
 );
 
 const mapStateToProps = createStructuredSelector({
-    environmentGraph: selectors.getEnvironmentGraph,
     clusters: selectors.getClusters,
+    selectedClusterId: selectors.getSelectedEnvironmentClusterId,
+    environmentGraph: selectors.getEnvironmentGraph,
     searchOptions: selectors.getEnvironmentSearchOptions,
     searchModifiers: selectors.getEnvironmentSearchModifiers,
     searchSuggestions: selectors.getEnvironmentSearchSuggestions,
@@ -238,7 +235,8 @@ const mapDispatchToProps = {
     setSelectedNodeId: environmentActions.setSelectedNodeId,
     setSearchOptions: environmentActions.setEnvironmentSearchOptions,
     setSearchModifiers: environmentActions.setEnvironmentSearchModifiers,
-    setSearchSuggestions: environmentActions.setEnvironmentSearchSuggestions
+    setSearchSuggestions: environmentActions.setEnvironmentSearchSuggestions,
+    selectClusterId: environmentActions.selectEnvironmentClusterId
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(EnvironmentPage);

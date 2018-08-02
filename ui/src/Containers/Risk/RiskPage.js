@@ -107,6 +107,7 @@ class RiskPage extends Component {
                 <div className="flex flex-1 flex-col">
                     <PageHeader header="Risk" subHeader={subHeader}>
                         <SearchInput
+                            className="flex flex-1"
                             id="risk"
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}
