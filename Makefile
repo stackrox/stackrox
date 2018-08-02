@@ -129,7 +129,7 @@ clean-generated-srcs:
 
 deps: $(GENERATED_SRCS) Gopkg.toml Gopkg.lock
 	@echo "+ $@"
-# `dep check` exits with a nonzero code if there is a toml->lock mismatch.
+	@# `dep check` exits with a nonzero code if there is a toml->lock mismatch.
 	dep check -skip-vendor
 	dep ensure
 	@touch deps
