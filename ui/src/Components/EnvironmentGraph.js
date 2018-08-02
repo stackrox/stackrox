@@ -104,8 +104,7 @@ class EnvironmentGraph extends Component {
                 ...node,
                 radius: MAX_RADIUS,
                 x: width / 2 + Math.random() * 500,
-                y: height / 2 + Math.random() * 500,
-                external: Math.random() >= 0.5
+                y: height / 2 + Math.random() * 500
             };
 
             if (nodeIdToNodeMapping[d.id]) {
@@ -118,11 +117,8 @@ class EnvironmentGraph extends Component {
                 d.y = height / 2 + Math.random() * 500;
             }
 
-            if (
-                !namespacesMapping[node.namespace] ||
-                MAX_RADIUS > namespacesMapping[node.namespace].radius
-            )
-                namespacesMapping[node.namespace] = d;
+            if (!namespacesMapping[d.namespace] || d.internetAccess)
+                namespacesMapping[d.namespace] = d;
             return d;
         });
 

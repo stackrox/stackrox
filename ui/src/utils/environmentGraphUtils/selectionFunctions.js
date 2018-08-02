@@ -5,8 +5,8 @@ export const enterNamespaceContainer = selection => {
         .attr('fill', 'rgba(255, 255, 255, 0.8)')
         .attr('rx', 5)
         .attr('ry', 5)
-        .attr('stroke', '#9DA3C1')
-        .attr('stroke-width', 1);
+        .attr('stroke', d => (d.internetAccess ? 'hsl(316, 93%, 89%)' : '#9DA3C1'))
+        .attr('stroke-width', d => (d.internetAccess ? '3px' : '1px'));
 
     selection
         .append('text')
@@ -17,7 +17,13 @@ export const enterNamespaceContainer = selection => {
 };
 
 export const enterNode = callback => selection => {
-    selection.classed('node cursor-pointer', true);
+    selection.classed('cursor-pointer node', true);
+    selection
+        .filter(d => d.internetAccess)
+        .classed('internetAccess', d => d.internetAccess)
+        .append('circle')
+        .attr('r', 8);
+
     selection
         .append('circle')
         .on('click', callback)
@@ -31,7 +37,7 @@ export const updateNode = selection => {
 export const enterLink = selection => {
     selection
         .classed('link', true)
-        .attr('stroke-width', '0.5px')
+        .attr('stroke-width', '0.4px')
         .attr('stroke', '#3F4884')
         .attr('opacity', '0.2');
 };

@@ -427,4 +427,8 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     fill: hsl(232, 88%, 68%);
 }
 
+.node.internetAccess circle:first-child {
+    fill: hsl(316, 93%, 89%);
+}
+
 @tailwind utilities;
