@@ -112,7 +112,7 @@ $(STRINGER_BIN):
 	@go get golang.org/x/tools/cmd/stringer
 
 .PHONY: go-generated-srcs
-go-generated-srcs: $(MOCKERY_BIN)
+go-generated-srcs: $(MOCKERY_BIN) $(STRINGER_BIN)
 	@echo "+ $@"
 	go generate ./...
 
