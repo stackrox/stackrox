@@ -76,14 +76,11 @@ func (o *openshift) Render(c Config) ([]*v1.File, error) {
 var (
 	openshiftCmd = commandPrefix + `
 OC_PROJECT="{{.K8sConfig.Namespace}}"
-OC_NAMESPACE="{{.K8sConfig.Namespace}}"
-OC_SA="${OC_SA:-central}"
 
 oc get project "${OC_PROJECT}" || oc new-project "${OC_PROJECT}"
 
 echo "Adding cluster roles to the service account..."
 oc create -f "${DIR}/rbac.yaml"
-oc adm policy add-scc-to-user central "system:serviceaccount:${OC_PROJECT}:${OC_SA}"
 
 oc create secret -n "{{.K8sConfig.Namespace}}" generic central-tls --from-file="$DIR/ca.pem" --from-file="$DIR/ca-key.pem"
 oc create secret -n "{{.K8sConfig.Namespace}}" generic central-jwt --from-file="$DIR/jwt-key.der"
@@ -110,6 +107,8 @@ seLinuxContext:
   type: RunAsAny
 seccompProfiles:
 - '*'
+users:
+- system:serviceaccount:{{.K8sConfig.Namespace}}:central
 volumes:
 - '*'
 {{if .HostPath -}}
@@ -117,7 +116,7 @@ allowHostDirVolumePlugin: true
 {{- end}}
 `
 
-	openshiftClairifyYAML = k8sClairifyYAML + k8sSeparator + openshiftClairifyRBAC
+	openshiftClairifyYAML = openshiftClairifyRBAC + k8sSeparator + k8sClairifyYAML
 
 	openshiftClairifyRBAC = `
 apiVersion: v1
@@ -139,16 +138,13 @@ seLinuxContext:
   type: RunAsAny
 seccompProfiles:
 - '*'
+users:
+- system:serviceaccount:{{.K8sConfig.Namespace}}:clairify
 volumes:
 - '*'
 `
 
 	openshiftClairifyCmd = commandPrefix + `
-OC_PROJECT={{.K8sConfig.Namespace}}
-OC_NAMESPACE={{.K8sConfig.Namespace}}
-OC_SA="${OC_SA:-clairify}"
-
 oc create -f "$DIR/clairify.yaml"
-oc adm policy add-scc-to-user clairify "system:serviceaccount:$OC_PROJECT:$OC_SA"
 `
 )
