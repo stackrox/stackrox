@@ -234,7 +234,7 @@ func (s *serviceImpl) validateClustersAndCategories(request *v1.ImageIntegration
 
 func (s *serviceImpl) clusterExists(name string, clusters []*v1.Cluster) bool {
 	for _, c := range clusters {
-		if name == c.Id {
+		if name == c.GetName() {
 			return true
 		}
 	}
