@@ -3,7 +3,7 @@ defaults: &defaults
     # This image is the standard circleci/golang:1.10.3 image, plus bazel and
     # other necessary build tools like goimports, dep, yarn, gcloud, kubectl,
     # oc, envsubst and gradle.
-    - image: quay.io/stackrox/apollo-ci:0.1.11-2-gc033acbe96
+    - image: quay.io/stackrox/apollo-ci:0.1.11-3-g0e8e67bf53
       auth:
         username: $QUAY_USERNAME
         password: $QUAY_PASSWORD
