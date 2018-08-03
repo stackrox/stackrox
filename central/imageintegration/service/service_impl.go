@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 
+	clusterDatastore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/central/imageintegration/datastore"
 	"bitbucket.org/stack-rox/apollo/central/role/resources"
@@ -47,8 +48,9 @@ type serviceImpl struct {
 	scannerFactory  scanners.Factory
 	toNotify        integration.ToNotify
 
-	datastore datastore.DataStore
-	detector  detection.Detector
+	datastore        datastore.DataStore
+	clusterDatastore clusterDatastore.DataStore
+	detector         detection.Detector
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -113,6 +115,11 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetI
 
 // PutImageIntegration updates an image integration in the system
 func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*empty.Empty, error) {
+	err := s.validateClustersAndCategories(request)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := s.datastore.UpdateImageIntegration(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -128,6 +135,12 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *v1.Imag
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new image integration")
 	}
+
+	err := s.validateClustersAndCategories(request)
+	if err != nil {
+		return nil, err
+	}
+
 	id, err := s.datastore.AddImageIntegration(request)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -157,11 +170,10 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 
 // TestImageIntegration tests to see if the config is setup properly
 func (s *serviceImpl) TestImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*empty.Empty, error) {
-	if len(request.GetCategories()) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "integrations require a category")
+	err := s.validateClustersAndCategories(request)
+	if err != nil {
+		return nil, err
 	}
-
-	var err error
 	for _, category := range request.GetCategories() {
 		if category == v1.ImageIntegrationCategory_REGISTRY {
 			err = s.testRegistryIntegration(request)
@@ -179,7 +191,6 @@ func (s *serviceImpl) TestImageIntegration(ctx context.Context, request *v1.Imag
 	return &empty.Empty{}, nil
 }
 
-// TestImageIntegration tests to see if the config is setup properly
 func (s *serviceImpl) testRegistryIntegration(integration *v1.ImageIntegration) error {
 	registry, err := s.registryFactory.CreateRegistry(integration)
 	if err != nil {
@@ -191,7 +202,6 @@ func (s *serviceImpl) testRegistryIntegration(integration *v1.ImageIntegration) 
 	return nil
 }
 
-// TestImageIntegration tests to see if the config is setup properly
 func (s *serviceImpl) testScannerIntegration(integration *v1.ImageIntegration) error {
 	scanner, err := s.scannerFactory.CreateScanner(integration)
 	if err != nil {
@@ -201,4 +211,32 @@ func (s *serviceImpl) testScannerIntegration(integration *v1.ImageIntegration) e
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 	return nil
+}
+
+func (s *serviceImpl) validateClustersAndCategories(request *v1.ImageIntegration) error {
+	if len(request.GetCategories()) == 0 {
+		return status.Error(codes.InvalidArgument, "integrations require a category")
+	}
+
+	clustersRequested := request.GetClusters()
+	existingClusters, err := s.clusterDatastore.GetClusters()
+	if err != nil {
+		return status.Error(codes.Internal, err.Error())
+	}
+	for _, req := range clustersRequested {
+		if !s.clusterExists(req, existingClusters) {
+			return status.Error(codes.InvalidArgument, fmt.Sprintf("Cluster %s does not exist", req))
+		}
+	}
+
+	return nil
+}
+
+func (s *serviceImpl) clusterExists(name string, clusters []*v1.Cluster) bool {
+	for _, c := range clusters {
+		if name == c.Id {
+			return true
+		}
+	}
+	return false
 }

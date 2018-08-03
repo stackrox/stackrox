@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	clusterDatastore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/central/imageintegration/datastore"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -39,12 +40,14 @@ func New(registryFactory registries.Factory,
 	scannerFactory scanners.Factory,
 	toNotify integration.ToNotify,
 	datastore datastore.DataStore,
+	clusterDatastore clusterDatastore.DataStore,
 	detection detection.Detector) Service {
 	return &serviceImpl{
-		registryFactory: registryFactory,
-		scannerFactory:  scannerFactory,
-		toNotify:        toNotify,
-		datastore:       datastore,
-		detector:        detection,
+		registryFactory:  registryFactory,
+		scannerFactory:   scannerFactory,
+		toNotify:         toNotify,
+		datastore:        datastore,
+		clusterDatastore: clusterDatastore,
+		detector:         detection,
 	}
 }

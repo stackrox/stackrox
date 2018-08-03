@@ -32,6 +32,28 @@ var (
 		},
 		Categories: []v1.ImageIntegrationCategory{v1.ImageIntegrationCategory_REGISTRY},
 	}
+	integrationWithInvalidCluster = &v1.ImageIntegration{
+		Name: "public dockerhub",
+		Type: "docker",
+		IntegrationConfig: &v1.ImageIntegration_Docker{
+			Docker: &v1.DockerConfig{
+				Endpoint: "registry-1.docker.io",
+			},
+		},
+		Clusters:   []string{"foo"},
+		Categories: []v1.ImageIntegrationCategory{v1.ImageIntegrationCategory_REGISTRY},
+	}
+	integrationWithNoCategories = &v1.ImageIntegration{
+		Name: "public dockerhub",
+		Type: "docker",
+		IntegrationConfig: &v1.ImageIntegration_Docker{
+			Docker: &v1.DockerConfig{
+				Endpoint: "registry-1.docker.io",
+			},
+		},
+		Clusters:   []string{"remote"},
+		Categories: []v1.ImageIntegrationCategory{},
+	}
 )
 
 func getAlert(service v1.AlertServiceClient, id string) (*v1.Alert, error) {
@@ -58,6 +80,14 @@ func TestImageIntegration(t *testing.T) {
 		{
 			name: "create",
 			test: verifyCreateImageIntegration,
+		},
+		{
+			name: "createWithInvalidCluster",
+			test: verifyInvalidClusterCreateImageIntegration,
+		},
+		{
+			name: "createWithEmptyCategories",
+			test: verifyEmptyCategoriesCreateImageIntegration,
 		},
 		{
 			name: "read",
@@ -269,4 +299,20 @@ func verifyDeleteImageIntegration(t *testing.T, conn *grpc.ClientConn) {
 	s, ok := status.FromError(err)
 	assert.True(t, ok)
 	assert.Equal(t, codes.NotFound, s.Code())
+}
+
+func verifyInvalidClusterCreateImageIntegration(t *testing.T, conn *grpc.ClientConn) {
+	service := v1.NewImageIntegrationServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	_, err := service.PostImageIntegration(ctx, integrationWithInvalidCluster)
+	cancel()
+	require.Error(t, err)
+}
+
+func verifyEmptyCategoriesCreateImageIntegration(t *testing.T, conn *grpc.ClientConn) {
+	service := v1.NewImageIntegrationServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	_, err := service.PostImageIntegration(ctx, integrationWithNoCategories)
+	cancel()
+	require.Error(t, err)
 }

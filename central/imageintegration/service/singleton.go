@@ -3,6 +3,7 @@ package service
 import (
 	"sync"
 
+	clusterDatastore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	"bitbucket.org/stack-rox/apollo/central/detection"
 	"bitbucket.org/stack-rox/apollo/central/imageintegration"
 	"bitbucket.org/stack-rox/apollo/central/imageintegration/datastore"
@@ -19,6 +20,7 @@ func initialize() {
 		imageintegration.Set().ScannerFactory(),
 		imageintegration.ToNotify(),
 		datastore.Singleton(),
+		clusterDatastore.Singleton(),
 		detection.GetDetector())
 }
 
