@@ -52,16 +52,18 @@ function* watchLocation() {
         const action = yield take(locationActionTypes.LOCATION_CHANGE);
         const { payload: location } = action;
 
-        if (location && location.pathname) {
-            if (location.pathname.startsWith(environmentPath) && !pollTask) {
-                // start only if it's not already in progress
-                pollTask = yield fork(pollNodeUpdates);
-            } else {
-                yield put(actions.setSelectedNodeId(null));
-            }
+        if (
+            location &&
+            location.pathname &&
+            location.pathname.startsWith(environmentPath) &&
+            !pollTask
+        ) {
+            // start only if it's not already in progress
+            pollTask = yield fork(pollNodeUpdates);
         } else if (pollTask) {
             yield cancel(pollTask);
             pollTask = null;
+            yield put(actions.setSelectedNodeId(null));
         }
     }
 }

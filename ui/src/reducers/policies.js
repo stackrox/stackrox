@@ -54,7 +54,7 @@ const policyCategories = (state = [], action) => {
 
 const byId = (state = {}, action) => {
     if (action.response && action.response.entities && action.response.entities.policy) {
-        return mergeEntitiesById(state, action.response.entities.policy);
+        return mergeEntitiesById(state, action.response.entities.policy, true);
     }
     return state;
 };

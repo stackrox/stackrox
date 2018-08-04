@@ -11,15 +11,16 @@ import mergeWith from 'lodash/mergeWith';
  * @returns {Object.<string, Object>} map of "id -> entity" with updated entities deeply merged in
  */
 
-export default function mergeEntitiesById(existingEntitiesById, newEntitiesById) {
+export default function mergeEntitiesById(existingEntitiesById, newEntitiesById, shouldUpdate) {
     const updateValue = (existingValue, newValue) => newValue;
 
     return Object.keys(newEntitiesById).reduce((result, id) => {
         if (!existingEntitiesById[id]) return { ...result, [id]: newEntitiesById[id] };
         if (isEqual(existingEntitiesById[id], newEntitiesById[id])) return result;
+        const updateFn = shouldUpdate ? updateValue : null;
         return {
             ...result,
-            [id]: mergeWith({}, existingEntitiesById[id], newEntitiesById[id], updateValue)
+            [id]: mergeWith({}, existingEntitiesById[id], newEntitiesById[id], updateFn)
         };
     }, existingEntitiesById);
 }
