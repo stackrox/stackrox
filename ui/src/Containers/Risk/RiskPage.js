@@ -84,8 +84,10 @@ class RiskPage extends Component {
                     </div>
                 </TabContent>
                 <TabContent>
-                    <div className="flex flex-1 flex-col">
-                        <DeploymentDetails deployment={selectedDeployment} />
+                    <div className="flex flex-1 flex-col relative">
+                        <div className="absolute w-full">
+                            <DeploymentDetails deployment={selectedDeployment} />
+                        </div>
                     </div>
                 </TabContent>
             </Tabs>

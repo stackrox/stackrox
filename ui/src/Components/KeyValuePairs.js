@@ -41,7 +41,7 @@ class KeyValuePairs extends Component {
                     this.getNestedValue(nestedData[key])
                 ) : (
                     <span title={nestedData[key]} className="italic text-accent-400">
-                        {nestedData[key]}
+                        {nestedData[key].toString()}
                     </span>
                 )}
             </div>
@@ -71,7 +71,7 @@ class KeyValuePairs extends Component {
                                 {this.getNestedValue(value)}
                             </div>
                         ) : (
-                            value
+                            value.toString()
                         )}
                     </div>
                 </div>
