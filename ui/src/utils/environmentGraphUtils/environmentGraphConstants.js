@@ -3,3 +3,6 @@ export const PADDING = 1; // separation between same-color nodes
 export const CLUSTER_PADDING = 100;
 export const CLUSTER_INNER_PADDING = 25;
 export const NAMESPACE_LABEL_OFFSET = 10;
+export const SCALE_DURATION = 250;
+export const SCALE_FACTOR = 1.5;
+export const SCALE_EXTENT = [0.5, 2];

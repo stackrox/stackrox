@@ -380,8 +380,12 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     @apply .flex .py-2 .px-2 .rounded-sm .font-400 .uppercase .text-center .text-sm .items-center .ml-2 .min-w-24 .justify-center .bg-white .border
 }
 
+.btn-icon {
+    @apply .flex .py-2 .px-2 .rounded-sm .font-400 .uppercase .text-center .text-sm .items-center .ml-2 .justify-center .bg-white .border
+}
+
 .btn-success {
-    @apply .btn .text-success-500 .border-success-400
+    @apply .text-success-500 .border-success-400
 }
 
 .btn-success:hover {
@@ -389,7 +393,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-danger {
-    @apply .btn .text-danger-500 .border-danger-400
+    @apply .text-danger-500 .border-danger-400
 }
 
 .btn-danger:hover {
@@ -397,7 +401,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-primary {
-    @apply .btn .text-primary-500 .border-primary-400
+    @apply .text-primary-500 .border-primary-400
 }
 
 .btn-primary:hover {
@@ -405,7 +409,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-base {
-    @apply .btn .text-base-500 .border-base-400
+    @apply .text-base-500 .border-base-400
 }
 
 .btn-base:hover {

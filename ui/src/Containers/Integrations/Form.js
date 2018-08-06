@@ -139,14 +139,14 @@ class Form extends Component {
                 <PanelButton
                     icon={<Icon.Save className="h-4 w-4" />}
                     text={this.isEditMode() ? 'Save' : 'Create'}
-                    className="btn-success"
+                    className="btn btn-success"
                     onClick={this.onSubmit}
                 />
                 {this.props.source !== 'authProviders' && (
                     <PanelButton
                         icon={<Icon.Check className="h-4 w-4" />}
                         text="Test"
-                        className="btn-primary"
+                        className="btn btn-primary"
                         onClick={this.onTest}
                     />
                 )}

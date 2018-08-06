@@ -12,10 +12,10 @@ const Dialog = props => (
     >
         <div className="py-4">{props.text}</div>
         <div className="flex flex-row justify-end">
-            <button className="btn-base" onClick={props.onCancel}>
+            <button className="btn btn-base" onClick={props.onCancel}>
                 Cancel
             </button>
-            <button className="btn-success" onClick={props.onConfirm}>
+            <button className="btn btn-success" onClick={props.onConfirm}>
                 Confirm
             </button>
         </div>

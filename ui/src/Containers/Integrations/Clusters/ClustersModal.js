@@ -79,14 +79,14 @@ class ClustersModal extends Component {
                 <PanelButton
                     icon={<Icon.Trash2 className="h-4 w-4" />}
                     text="Delete"
-                    className="btn-danger"
+                    className="btn btn-danger"
                     onClick={this.showConfirmationDialog}
                     disabled={this.state.checkedClusterIds.length === 0}
                 />
                 <PanelButton
                     icon={<Icon.Plus className="h-4 w-4" />}
                     text="Add"
-                    className="btn-success"
+                    className="btn btn-success"
                     onClick={this.onAddCluster}
                     disabled={
                         this.state.checkedClusterIds.length !== 0 || this.props.isWizardActive

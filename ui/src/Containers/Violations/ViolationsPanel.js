@@ -91,7 +91,7 @@ class ViolationsPanel extends Component {
                     )
                 }
                 text="Whitelist"
-                className="btn-success"
+                className="btn btn-success"
                 onClick={this.whitelistDeploymentHandler}
                 disabled={this.state.whitelisting}
                 tooltip="Whitelist deployment for this policy. View whitelists in the policy editing page"

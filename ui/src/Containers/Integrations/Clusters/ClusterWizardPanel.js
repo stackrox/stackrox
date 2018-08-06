@@ -54,7 +54,7 @@ class ClusterWizardPanel extends Component {
                     <PanelButton
                         icon={<Icon.ArrowRight className="h-4 w-4" />}
                         text="Next"
-                        className="btn-primary"
+                        className="btn btn-primary"
                         onClick={this.props.onNext}
                     />
                 );
@@ -63,7 +63,7 @@ class ClusterWizardPanel extends Component {
                     <PanelButton
                         icon={<Icon.Check className="h-4 w-4" />}
                         text="Finish"
-                        className="btn-success"
+                        className="btn btn-success"
                         onClick={this.props.onFinish}
                     />
                 );

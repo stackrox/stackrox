@@ -233,14 +233,14 @@ class PoliciesPage extends Component {
                 <PanelButton
                     icon={<Icon.Trash2 className="h-4 w-4" />}
                     text="Delete"
-                    className="btn-danger"
+                    className="btn btn-danger"
                     onClick={this.showConfirmationDialog}
                     disabled={buttonsDisabled}
                 />
                 <PanelButton
                     icon={<Icon.FileText className="h-4 w-4" />}
                     text="Reassess Policies"
-                    className="btn-success"
+                    className="btn btn-success"
                     onClick={this.props.reassessPolicies}
                     tooltip="Manually enrich external data"
                     disabled={buttonsDisabled}
@@ -248,7 +248,7 @@ class PoliciesPage extends Component {
                 <PanelButton
                     icon={<Icon.Plus className="h-4 w-4" />}
                     text="Add"
-                    className="btn-success"
+                    className="btn btn-success"
                     onClick={this.addPolicy}
                     disabled={buttonsDisabled}
                 />
@@ -278,7 +278,7 @@ class PoliciesPage extends Component {
                     <PanelButton
                         icon={<Icon.ArrowRight className="h-4 w-4" />}
                         text="Next"
-                        className="btn-primary"
+                        className="btn btn-primary"
                         onClick={this.getPolicyDryRun}
                     />
                 );
@@ -288,13 +288,13 @@ class PoliciesPage extends Component {
                         <PanelButton
                             icon={<Icon.ArrowLeft className="h-4 w-4" />}
                             text="Previous"
-                            className="btn-primary"
+                            className="btn btn-primary"
                             onClick={this.onBackToEditFields}
                         />
                         <PanelButton
                             icon={<Icon.Save className="h-4 w-4" />}
                             text="Save"
-                            className="btn-success"
+                            className="btn btn-success"
                             onClick={this.onSubmit}
                         />
                     </React.Fragment>
@@ -304,7 +304,7 @@ class PoliciesPage extends Component {
                     <PanelButton
                         icon={<Icon.Edit className="h-4 w-4" />}
                         text="Edit"
-                        className="btn-success"
+                        className="btn btn-success"
                         onClick={this.onPolicyEdit}
                     />
                 );
