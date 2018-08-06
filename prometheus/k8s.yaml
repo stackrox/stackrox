@@ -17,7 +17,7 @@ spec:
         app: prevent-health
     spec:
       containers:
-      - image: quay.io/stackrox/prevent-health:1.0
+      - image: stackrox/prevent-health:1.0
         name: prevent-health
         imagePullPolicy: Always
         env:

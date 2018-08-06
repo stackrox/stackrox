@@ -1,7 +1,7 @@
 version: "3.2"
 services:
   health:
-    image: quay.io/stackrox/prevent-health:latest
+    image: stackrox/prevent-health:latest
     networks:
       prevent_net:
     ports:

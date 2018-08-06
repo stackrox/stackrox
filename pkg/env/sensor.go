@@ -64,7 +64,7 @@ func (img image) EnvVar() string {
 func (img image) Setting() string {
 	name := os.Getenv(img.EnvVar())
 	if len(name) == 0 {
-		return "quay.io/stackrox/prevent:latest"
+		return "stackrox/prevent:latest"
 	}
 	return name
 }

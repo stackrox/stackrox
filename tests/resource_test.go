@@ -180,7 +180,7 @@ func TestImages(t *testing.T) {
 		imageMap[image.GetName().GetRegistry()] = append(imageMap[image.GetName().GetRegistry()], image)
 	}
 
-	const dockerRegistry = `quay.io`
+	const dockerRegistry = `docker.io`
 
 	require.NotEmpty(t, imageMap[dockerRegistry])
 
@@ -196,5 +196,5 @@ func TestImages(t *testing.T) {
 		}
 	}
 
-	assert.Truef(t, foundPreventImage, "Should have found the Prevent image")
+	assert.True(t, foundPreventImage)
 }
