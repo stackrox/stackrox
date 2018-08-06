@@ -54,7 +54,8 @@ class EnvironmentPage extends Component {
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
         selectedClusterId: PropTypes.string,
         isFetchingNode: PropTypes.bool,
-        nodeUpdatesEpoch: PropTypes.number
+        nodeUpdatesEpoch: PropTypes.number,
+        environmentGraphUpdateKey: PropTypes.number.isRequired
     };
 
     static defaultProps = {
@@ -66,16 +67,11 @@ class EnvironmentPage extends Component {
         selectedClusterId: ''
     };
 
-    state = {
-        updateKey: 0 // this state prevents the environment graph from updating on every rerender
-    };
-
     componentDidMount() {
         this.props.fetchClusters();
     }
 
     onSearch = searchOptions => {
-        this.setState({ updateKey: this.state.updateKey + 1 });
         if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
             this.closeSidePanel();
         }
@@ -88,7 +84,6 @@ class EnvironmentPage extends Component {
     };
 
     onUpdateGraph = () => {
-        this.setState({ updateKey: this.state.updateKey + 1 });
         this.props.fetchEnvironmentGraph();
     };
 
@@ -102,15 +97,12 @@ class EnvironmentPage extends Component {
     };
 
     changeCluster = option => {
-        if (option) {
-            this.setState({ updateKey: this.state.updateKey + 1 });
-            this.props.selectClusterId(option.value);
-        }
+        if (option) this.props.selectClusterId(option.value);
     };
 
     renderGraph = () => (
         <EnvironmentGraph
-            updateKey={this.state.updateKey}
+            updateKey={this.props.environmentGraphUpdateKey}
             nodes={this.props.environmentGraph.nodes}
             edges={this.props.environmentGraph.edges}
             onNodeClick={this.onNodeClick}
@@ -224,6 +216,7 @@ const mapStateToProps = createStructuredSelector({
     selectedNodeId: selectors.getSelectedNodeId,
     deployment: selectors.getDeployment,
     networkPolicies: selectors.getNetworkPolicies,
+    environmentGraphUpdateKey: selectors.getEnvironmentGraphUpdateKey,
     isFetchingNode: state => selectors.getLoadingStatus(state, deploymentTypes.FETCH_DEPLOYMENT)
 });
 

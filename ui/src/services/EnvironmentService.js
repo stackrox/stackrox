@@ -10,11 +10,11 @@ const networkPoliciesUrl = '/v1/networkpolicies';
  *
  * @returns {Promise<Object, Error>}
  */
-export function fetchEnvironmentGraph(filters) {
+export function fetchEnvironmentGraph(filters, clusterId) {
     const params = queryString.stringify({
         ...filters
     });
-    return axios.get(`${baseUrl}?${params}`).then(response => ({
+    return axios.get(`${baseUrl}/cluster/${clusterId}?${params}`).then(response => ({
         response: response.data
     }));
 }

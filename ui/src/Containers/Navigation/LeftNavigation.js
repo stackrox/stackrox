@@ -18,6 +18,11 @@ const navLinks = [
         renderIcon: () => <Icon.BarChart2 className="h-4 w-4 mb-1" />
     },
     {
+        text: 'Environment',
+        to: '/main/environment',
+        renderIcon: () => <Icon.Share2 className="h-4 w-4 mb-1" />
+    },
+    {
         text: 'Violations',
         to: '/main/violations',
         renderIcon: () => <Icon.AlertTriangle className="h-4 w-4 mb-1" />

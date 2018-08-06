@@ -12,9 +12,9 @@ import { types as deploymentTypes } from 'reducers/deployments';
 import { types as locationActionTypes } from 'reducers/routes';
 import { getDeployment } from './deploymentSagas';
 
-function* getNetworkGraph(filters) {
+function* getNetworkGraph(filters, clusterId) {
     try {
-        const result = yield call(service.fetchEnvironmentGraph, filters);
+        const result = yield call(service.fetchEnvironmentGraph, filters, clusterId);
         yield put(actions.fetchEnvironmentGraph.success(result.response));
     } catch (error) {
         yield put(actions.fetchEnvironmentGraph.failure(error));
@@ -81,10 +81,9 @@ function* filterEnvironmentPageBySearch() {
     const clusterId = yield select(selectors.getSelectedEnvironmentClusterId);
     const searchOptions = yield select(selectors.getEnvironmentSearchOptions);
     const filters = {
-        query: searchOptionsToQuery(searchOptions),
-        cluster_id: clusterId
+        query: searchOptionsToQuery(searchOptions)
     };
-    yield fork(getNetworkGraph, filters);
+    yield fork(getNetworkGraph, filters, clusterId);
 }
 
 function* loadEnvironmentPage() {

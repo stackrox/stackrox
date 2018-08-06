@@ -68,12 +68,7 @@ class EnvironmentGraph extends Component {
     }
 
     shouldComponentUpdate(nextProps) {
-        if (
-            (nextProps.updateKey === 0 && nodes.length === 0) ||
-            nextProps.updateKey !== this.props.updateKey
-        ) {
-            this.d3Graph.selectAll('*').remove();
-
+        if (nextProps.updateKey !== this.props.updateKey) {
             nodes = this.getNodes(nextProps.nodes);
             edges = this.getEdges(nextProps.edges);
 

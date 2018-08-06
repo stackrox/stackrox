@@ -43,7 +43,7 @@ func New(detector detection.Detector,
 	clusters clusterDataStore.DataStore,
 	networkPolicies networkPolicyStore.Store,
 	namespaces namespaceDataStore.Store,
-	graphEvaluator networkgraph.GraphEvaluator) Service {
+	graphEvaluator networkgraph.Evaluator) Service {
 	return &serviceImpl{
 		detector: detector,
 		scorer:   scorer,

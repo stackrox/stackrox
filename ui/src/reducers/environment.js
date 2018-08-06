@@ -19,6 +19,7 @@ export const types = {
     FETCH_NODE_UPDATES: createFetchingActionTypes('environment/FETCH_NODE_UPDATES'),
     SET_SELECTED_NODE_ID: { type: 'environment/SET_SELECTED_NODE_ID' },
     SELECT_ENVIRONMENT_CLUSTER_ID: 'environment/SELECT_ENVIRONMENT_CLUSTER_ID',
+    INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY: 'environment/INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY',
     ...searchTypes('environment')
 };
 
@@ -41,6 +42,9 @@ export const actions = {
     selectEnvironmentClusterId: clusterId => ({
         type: types.SELECT_ENVIRONMENT_CLUSTER_ID,
         clusterId
+    }),
+    incrementEnvironmentGraphUpdateKey: () => ({
+        type: types.INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY
     }),
     ...environmentSearchActions
 };
@@ -103,6 +107,25 @@ const selectedEnvironmentClusterId = (state = null, action) => {
     return state;
 };
 
+const environmentGraphUpdateKey = (state = { shouldUpdate: true, key: 0 }, action) => {
+    if (action.type === types.SET_SEARCH_OPTIONS) {
+        const { length } = action.options;
+        if (!length) return { shouldUpdate: true, key: state.key + 1 };
+        if (length && !action.options[length - 1].type)
+            return { shouldUpdate: true, key: state.key + 1 };
+    }
+    if (action.type === types.SELECT_ENVIRONMENT_CLUSTER_ID) {
+        return { shouldUpdate: true, key: state.key + 1 };
+    }
+    if (action.type === types.INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY) {
+        return { shouldUpdate: true, key: state.key + 1 };
+    }
+    if (action.type === types.FETCH_ENVIRONMENT_GRAPH.SUCCESS) {
+        if (state.shouldUpdate) return { shouldUpdate: false, key: state.key + 1 };
+    }
+    return state;
+};
+
 const reducer = combineReducers({
     environmentGraph,
     deployment,
@@ -110,6 +133,7 @@ const reducer = combineReducers({
     selectedNodeId,
     nodeUpdatesEpoch,
     selectedEnvironmentClusterId,
+    environmentGraphUpdateKey,
     ...searchReducers('environment')
 });
 
@@ -121,6 +145,7 @@ const getNetworkPolicies = state => state.networkPolicies;
 const getSelectedNodeId = state => state.selectedNodeId;
 const getNodeUpdatesEpoch = state => state.nodeUpdatesEpoch;
 const getSelectedEnvironmentClusterId = state => state.selectedEnvironmentClusterId;
+const getEnvironmentGraphUpdateKey = state => state.environmentGraphUpdateKey.key;
 
 export const selectors = {
     getEnvironmentGraph,
@@ -129,6 +154,7 @@ export const selectors = {
     getSelectedNodeId,
     getNodeUpdatesEpoch,
     getSelectedEnvironmentClusterId,
+    getEnvironmentGraphUpdateKey,
     ...getSearchSelectors('environment')
 };
 

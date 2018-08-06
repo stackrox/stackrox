@@ -6,7 +6,6 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
-import "api/v1/search_service.proto";
 
 package v1;
 
@@ -99,6 +98,11 @@ message NetworkNode {
     repeated string policy_ids      = 5;
 }
 
+message GetNetworkGraphRequest {
+    string cluster_id = 1;
+    string query      = 2;
+}
+
 message GetNetworkGraphResponse {
     uint32               epoch = 1;
     repeated NetworkNode nodes = 2;
@@ -123,9 +127,9 @@ service NetworkPolicyService {
         };
     }
 
-    rpc GetNetworkGraph (RawQuery) returns (GetNetworkGraphResponse) {
+    rpc GetNetworkGraph (GetNetworkGraphRequest) returns (GetNetworkGraphResponse) {
         option (google.api.http) = {
-            get: "/v1/networkgraph"
+            get: "/v1/networkgraph/cluster/{cluster_id}"
         };
     }
 

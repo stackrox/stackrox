@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	"bitbucket.org/stack-rox/apollo/central/networkgraph"
 	"bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
 	"bitbucket.org/stack-rox/apollo/central/role/resources"
@@ -15,6 +16,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
+	"bitbucket.org/stack-rox/apollo/pkg/search"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
@@ -37,7 +39,8 @@ var (
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
 	store          store.Store
-	graphEvaluator networkgraph.GraphEvaluator
+	clusterStore   datastore.DataStore
+	graphEvaluator networkgraph.Evaluator
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -89,8 +92,28 @@ func (s *serviceImpl) ListNetworkPolicies(context.Context, *empty.Empty) (*v1.Ne
 	}, nil
 }
 
-func (s *serviceImpl) GetNetworkGraph(ctx context.Context, query *v1.RawQuery) (*v1.GetNetworkGraphResponse, error) {
-	return s.graphEvaluator.GetGraph()
+func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetworkGraphRequest) (*v1.GetNetworkGraphResponse, error) {
+	if request.GetClusterId() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "Cluster ID must be specified")
+	}
+
+	cluster, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if !exists {
+		return nil, status.Errorf(codes.InvalidArgument, "Cluster with ID '%s' does not exist", request.GetClusterId())
+	}
+
+	parsedSearch := new(v1.ParsedSearchRequest)
+	if request.GetQuery() != "" {
+		parsedSearch, err = (&search.QueryParser{}).ParseRawQuery(request.GetQuery())
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	return s.graphEvaluator.GetGraph(cluster, parsedSearch)
 }
 
 func (s *serviceImpl) GetNetworkGraphEpoch(context.Context, *empty.Empty) (*v1.GetNetworkGraphEpochResponse, error) {

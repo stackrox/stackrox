@@ -19,7 +19,7 @@ var (
 //////////////////////////////////////////////////////////////////////////////////////
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(clusters clusterDataStore.DataStore, networkPolicies networkPoliciesStore.Store, graphEvaluator networkgraph.GraphEvaluator) pipeline.Pipeline {
+func NewPipeline(clusters clusterDataStore.DataStore, networkPolicies networkPoliciesStore.Store, graphEvaluator networkgraph.Evaluator) pipeline.Pipeline {
 	return &pipelineImpl{
 		clusters:        clusters,
 		networkPolicies: networkPolicies,
@@ -30,7 +30,7 @@ func NewPipeline(clusters clusterDataStore.DataStore, networkPolicies networkPol
 type pipelineImpl struct {
 	clusters        clusterDataStore.DataStore
 	networkPolicies networkPoliciesStore.Store
-	graphEvaluator  networkgraph.GraphEvaluator
+	graphEvaluator  networkgraph.Evaluator
 }
 
 // Run runs the pipeline template on the input and returns the output.

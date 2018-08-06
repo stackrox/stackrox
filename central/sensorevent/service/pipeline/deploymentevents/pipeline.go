@@ -22,7 +22,7 @@ var (
 // NewPipeline returns a new instance of Pipeline.
 func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentDataStore.DataStore,
 	images imageDataStore.DataStore, detector detection.Detector,
-	graphEvaluator networkgraph.GraphEvaluator) pipeline.Pipeline {
+	graphEvaluator networkgraph.Evaluator) pipeline.Pipeline {
 	return &pipelineImpl{
 		validateInput:     newValidateInput(),
 		clusterEnrichment: newClusterEnrichment(clusters),
@@ -42,7 +42,7 @@ type pipelineImpl struct {
 	persistDeployment *persistDeploymentImpl
 	createResponse    *createResponseImpl
 
-	graphEvaluator networkgraph.GraphEvaluator
+	graphEvaluator networkgraph.Evaluator
 }
 
 // Run runs the pipeline template on the input and returns the output.

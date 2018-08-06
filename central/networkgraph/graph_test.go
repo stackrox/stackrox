@@ -48,7 +48,7 @@ func (n *namespaceGetter) GetNamespaces() ([]*v1.Namespace, error) {
 }
 
 func newMockGraphEvaluator() *graphEvaluatorImpl {
-	return newGraphEvaluator(nil, nil, &namespaceGetter{}, nil)
+	return newGraphEvaluator(nil, &namespaceGetter{}, nil)
 }
 
 func TestDoesNamespaceMatchLabel(t *testing.T) {

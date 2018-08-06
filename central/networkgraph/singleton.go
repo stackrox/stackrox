@@ -3,7 +3,6 @@ package networkgraph
 import (
 	"sync"
 
-	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	"bitbucket.org/stack-rox/apollo/central/globaldb"
 	namespaceDataStore "bitbucket.org/stack-rox/apollo/central/namespace/store"
@@ -19,12 +18,12 @@ var (
 )
 
 func initialize() {
-	ge = newGraphEvaluator(clusterDataStore.Singleton(), deploymentDataStore.Singleton(),
+	ge = newGraphEvaluator(deploymentDataStore.Singleton(),
 		namespaceDataStore.New(globaldb.GetGlobalDB()), networkPolicyStore.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.
-func Singleton() GraphEvaluator {
+func Singleton() Evaluator {
 	once.Do(initialize)
 	return ge
 }

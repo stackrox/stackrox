@@ -4,7 +4,6 @@ import (
 	"sort"
 	"sync/atomic"
 
-	clusterDatastore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	deploymentsDatastore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	networkPolicyStore "bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -15,9 +14,9 @@ import (
 
 var logger = logging.LoggerForModule()
 
-// GraphEvaluator implements the interface for the network graph generator
-type GraphEvaluator interface {
-	GetGraph() (*v1.GetNetworkGraphResponse, error)
+// Evaluator implements the interface for the network graph generator
+type Evaluator interface {
+	GetGraph(cluster *v1.Cluster, query *v1.ParsedSearchRequest) (*v1.GetNetworkGraphResponse, error)
 	IncrementEpoch()
 	Epoch() uint32
 }
@@ -26,7 +25,6 @@ type GraphEvaluator interface {
 type graphEvaluatorImpl struct {
 	epoch uint32
 
-	clustersStore      clusterDatastore.DataStore
 	deploymentsStore   deploymentsDatastore.DataStore
 	namespaceStore     ns
 	networkPolicyStore networkPolicyStore.Store
@@ -37,10 +35,9 @@ type ns interface {
 }
 
 // newGraphEvaluator takes in namespaces
-func newGraphEvaluator(clustersStore clusterDatastore.DataStore, deploymentsStore deploymentsDatastore.DataStore,
+func newGraphEvaluator(deploymentsStore deploymentsDatastore.DataStore,
 	namespaceStore ns, networkPolicyStore networkPolicyStore.Store) *graphEvaluatorImpl {
 	return &graphEvaluatorImpl{
-		clustersStore:      clustersStore,
 		deploymentsStore:   deploymentsStore,
 		namespaceStore:     namespaceStore,
 		networkPolicyStore: networkPolicyStore,
@@ -55,9 +52,9 @@ func (g *graphEvaluatorImpl) Epoch() uint32 {
 	return atomic.LoadUint32(&g.epoch)
 }
 
-func (g *graphEvaluatorImpl) GetGraph() (*v1.GetNetworkGraphResponse, error) {
+func (g *graphEvaluatorImpl) GetGraph(cluster *v1.Cluster, query *v1.ParsedSearchRequest) (*v1.GetNetworkGraphResponse, error) {
 	epoch := g.Epoch()
-	nodes, edges, err := g.evaluate()
+	nodes, edges, err := g.evaluate(cluster, query)
 	if err != nil {
 		return nil, err
 	}
@@ -68,32 +65,31 @@ func (g *graphEvaluatorImpl) GetGraph() (*v1.GetNetworkGraphResponse, error) {
 	}, nil
 }
 
-func (g *graphEvaluatorImpl) evaluate() (nodes []*v1.NetworkNode, edges []*v1.NetworkEdge, err error) {
-	clusters, err := g.clustersStore.GetClusters()
-	if err != nil {
-		return
-	}
+func (g *graphEvaluatorImpl) evaluate(cluster *v1.Cluster, query *v1.ParsedSearchRequest) (nodes []*v1.NetworkNode, edges []*v1.NetworkEdge, err error) {
 	networkPolicies, err := g.networkPolicyStore.GetNetworkPolicies()
 	if err != nil {
 		return
 	}
-	for _, c := range clusters {
-		var deployments []*v1.Deployment
-		deployments, err = g.deploymentsStore.SearchRawDeployments(&v1.ParsedSearchRequest{
-			Scopes: []*v1.Scope{
-				{
-					Cluster: c.GetName(),
-				},
-			},
-		})
-		if err != nil {
-			return
-		}
 
-		clusterNodes, clusterEdges := g.evaluateCluster(deployments, networkPolicies)
-		nodes = append(nodes, clusterNodes...)
-		edges = append(edges, clusterEdges...)
+	// If the query has no scopes, scope it down to the current cluster.
+	if len(query.GetScopes()) == 0 {
+		query.Scopes = []*v1.Scope{{Cluster: cluster.GetName()}}
+	} else {
+		// If it does have scopes, add the cluster restriction to each scope.
+		// This _will_ override the cluster field on the scope, if set.
+		// We can't just append a new scope with just cluster because that would then
+		// match all deployments in the cluster.
+		for _, s := range query.GetScopes() {
+			s.Cluster = cluster.GetName()
+		}
 	}
+
+	deployments, err := g.deploymentsStore.SearchRawDeployments(query)
+	if err != nil {
+		return
+	}
+
+	nodes, edges = g.evaluateCluster(deployments, networkPolicies)
 	return
 }
 

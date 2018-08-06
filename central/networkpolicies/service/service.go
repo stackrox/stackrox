@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	"bitbucket.org/stack-rox/apollo/central/networkgraph"
 	"bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -26,9 +27,10 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore store.Store, graphEvaluator networkgraph.GraphEvaluator) Service {
+func New(datastore store.Store, graphEvaluator networkgraph.Evaluator, clusterStore datastore.DataStore) Service {
 	return &serviceImpl{
 		store:          datastore,
+		clusterStore:   clusterStore,
 		graphEvaluator: graphEvaluator,
 	}
 }
