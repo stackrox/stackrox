@@ -202,6 +202,7 @@ func (g *graphEvaluatorImpl) evaluateCluster(deployments []*v1.Deployment, netwo
 
 		nodes = append(nodes, &v1.NetworkNode{
 			Id:             d.GetId(),
+			DeploymentName: d.GetName(),
 			Cluster:        d.GetClusterName(),
 			Namespace:      d.GetNamespace(),
 			InternetAccess: internetAccess,

@@ -96,6 +96,7 @@ message NetworkNode {
     string          namespace       = 3;
     bool            internet_access = 4;
     repeated string policy_ids      = 5;
+    string          deployment_name = 6;
 }
 
 message GetNetworkGraphRequest {
