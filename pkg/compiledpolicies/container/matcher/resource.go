@@ -1,0 +1,30 @@
+package matcher
+
+import (
+	"fmt"
+
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/utils"
+)
+
+func init() {
+	compilers = append(compilers, newResourceMatcher)
+}
+
+func newResourceMatcher(policy *v1.Policy) (Matcher, error) {
+	resourcePolicy := policy.GetFields().GetContainerResourcePolicy()
+	if resourcePolicy == nil {
+		return nil, nil
+	}
+
+	matcher := &resourceMatcherImpl{resourcePolicy: resourcePolicy}
+	return matcher.match, nil
+}
+
+type resourceMatcherImpl struct {
+	resourcePolicy *v1.ResourcePolicy
+}
+
+func (p *resourceMatcherImpl) match(container *v1.Container) []*v1.Alert_Violation {
+	return utils.MatchResources(p.resourcePolicy, container.GetResources(), fmt.Sprintf("container %s", container.GetImage().GetName().GetRemote()))
+}

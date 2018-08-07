@@ -1,16 +1,16 @@
 package detection
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
+	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies"
 )
 
 // UpdatePolicy updates the current policy in a threadsafe manner.
-func (d *detectorImpl) UpdatePolicy(policy *matcher.Policy) {
+func (d *detectorImpl) UpdatePolicy(policy compiledpolicies.DeploymentMatcher) {
 	d.policyMutex.Lock()
 	defer d.policyMutex.Unlock()
 
 	d.addPolicy(policy)
-	d.notificationProcessor.UpdatePolicy(policy.Policy)
+	d.notificationProcessor.UpdatePolicy(policy.GetProto())
 }
 
 // RemovePolicy removes the policy specified by id in a threadsafe manner.
@@ -20,10 +20,10 @@ func (d *detectorImpl) RemovePolicy(id string) {
 
 	p, ok := d.policies[id]
 	if ok {
-		p.Disabled = true
+		p.GetProto().Disabled = true
 		go d.reprocessPolicy(p)
 		delete(d.policies, id)
-		d.notificationProcessor.RemovePolicy(p.Policy)
+		d.notificationProcessor.RemovePolicy(p.GetProto())
 	}
 }
 
@@ -33,17 +33,17 @@ func (d *detectorImpl) RemoveNotifier(id string) {
 	defer d.policyMutex.Unlock()
 
 	for _, p := range d.policies {
-		filtered := p.GetNotifiers()[:0]
+		filtered := p.GetProto().GetNotifiers()[:0]
 
-		for _, n := range p.GetNotifiers() {
+		for _, n := range p.GetProto().GetNotifiers() {
 			if n != id {
 				filtered = append(filtered, n)
 			}
 		}
 
-		if len(p.GetNotifiers()) != len(filtered) {
-			p.Notifiers = filtered
-			if err := d.policyStorage.UpdatePolicy(p.Policy); err != nil {
+		if len(p.GetProto().GetNotifiers()) != len(filtered) {
+			p.GetProto().Notifiers = filtered
+			if err := d.policyStorage.UpdatePolicy(p.GetProto()); err != nil {
 				logger.Errorf("unable to update policy: %s", err)
 			}
 		}
@@ -51,7 +51,7 @@ func (d *detectorImpl) RemoveNotifier(id string) {
 }
 
 func (d *detectorImpl) initializePolicies() error {
-	d.policies = make(map[string]*matcher.Policy)
+	d.policies = make(map[string]compiledpolicies.DeploymentMatcher)
 
 	policies, err := d.policyStorage.GetPolicies()
 	if err != nil {
@@ -59,7 +59,7 @@ func (d *detectorImpl) initializePolicies() error {
 	}
 
 	for _, policy := range policies {
-		matcherPolicy, err := matcher.New(policy)
+		matcherPolicy, err := compiledpolicies.New(policy)
 		if err != nil {
 			logger.Errorf("policy %s: %s", policy.GetId(), err)
 			continue
@@ -69,13 +69,13 @@ func (d *detectorImpl) initializePolicies() error {
 	return nil
 }
 
-func (d *detectorImpl) addPolicy(policy *matcher.Policy) {
-	d.policies[policy.GetId()] = policy
+func (d *detectorImpl) addPolicy(policy compiledpolicies.DeploymentMatcher) {
+	d.policies[policy.GetProto().GetId()] = policy
 	go d.reprocessPolicy(policy)
 	return
 }
 
-func (d *detectorImpl) getCurrentPolicies() (policies []*matcher.Policy) {
+func (d *detectorImpl) getCurrentPolicies() (policies []compiledpolicies.DeploymentMatcher) {
 	d.policyMutex.RLock()
 	defer d.policyMutex.RUnlock()
 

@@ -1,0 +1,37 @@
+package matcher
+
+import (
+	"fmt"
+
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+)
+
+func init() {
+	compilers = append(compilers, newReadOnlyMatcher)
+}
+
+func newReadOnlyMatcher(policy *v1.Policy) (Matcher, error) {
+	volumePolicy := policy.GetFields().GetVolumePolicy()
+	if volumePolicy.GetSetReadOnly() == nil {
+		return nil, nil
+	}
+
+	readOnly := volumePolicy.GetReadOnly()
+	matcher := &readOnlyMatcherImpl{&readOnly}
+	return matcher.match, nil
+}
+
+type readOnlyMatcherImpl struct {
+	readOnly *bool
+}
+
+func (p *readOnlyMatcherImpl) match(volume *v1.Volume) []*v1.Alert_Violation {
+	var violations []*v1.Alert_Violation
+	if *p.readOnly != volume.GetReadOnly() {
+		v := &v1.Alert_Violation{
+			Message: fmt.Sprintf("Readony matched configs policy: %t", *p.readOnly),
+		}
+		violations = append(violations, v)
+	}
+	return violations
+}

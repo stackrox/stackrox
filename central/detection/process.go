@@ -47,7 +47,7 @@ func (d *detectorImpl) reprocessDeploymentRiskAndLogError(deployment *v1.Deploym
 }
 
 func (d *detectorImpl) processTask(task Task) (alert *v1.Alert, enforcement v1.EnforcementAction) {
-	existingAlerts := d.getExistingAlerts(task.deployment.GetId(), task.policy.GetId())
+	existingAlerts := d.getExistingAlerts(task.deployment.GetId(), task.policy.GetProto().GetId())
 
 	// No further processing is needed when a deployment is removed.
 	if task.action == v1.ResourceAction_REMOVE_RESOURCE {
@@ -87,7 +87,7 @@ func (d *detectorImpl) processTask(task Task) (alert *v1.Alert, enforcement v1.E
 				d.notificationProcessor.ProcessAlert(alert)
 			}
 		case len(existingAlerts) > 1:
-			logger.Errorf("Found more than 1 existing alert for deployment '%s' and policy '%s'", task.deployment.Id, task.policy.Id)
+			logger.Errorf("Found more than 1 existing alert for deployment '%s' and policy '%s'", task.deployment.Id, task.policy.GetProto().GetId())
 			d.markExistingAlertsAsStale(existingAlerts[1:])
 			fallthrough
 		case len(existingAlerts) == 1:

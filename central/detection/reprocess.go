@@ -3,8 +3,8 @@ package detection
 import (
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies"
 	"bitbucket.org/stack-rox/apollo/pkg/search"
 )
 
@@ -51,7 +51,7 @@ func (d *detectorImpl) periodicallyEnrich() {
 	}
 }
 
-func (d *detectorImpl) reprocessPolicy(policy *matcher.Policy) {
+func (d *detectorImpl) reprocessPolicy(policy compiledpolicies.DeploymentMatcher) {
 	deployments, err := d.deploymentStorage.GetDeployments()
 	if err != nil {
 		logger.Error(err)
@@ -73,7 +73,7 @@ func (d *detectorImpl) reprocessPolicy(policy *matcher.Policy) {
 	alerts, err := d.alertStorage.SearchRawAlerts(
 		search.NewQueryBuilder().
 			AddBools(search.Stale, false).
-			AddStrings(search.PolicyID, policy.GetId()).
+			AddStrings(search.PolicyID, policy.GetProto().GetId()).
 			ToParsedSearchRequest())
 	if err != nil {
 		logger.Error(err)
@@ -91,7 +91,7 @@ func (d *detectorImpl) reprocessPolicy(policy *matcher.Policy) {
 	}
 }
 
-func (d *detectorImpl) queueTasks(deployment *v1.Deployment, policies []*matcher.Policy) {
+func (d *detectorImpl) queueTasks(deployment *v1.Deployment, policies []compiledpolicies.DeploymentMatcher) {
 	for _, p := range policies {
 		d.taskC <- Task{
 			deployment: deployment,

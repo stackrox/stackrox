@@ -3,12 +3,12 @@ package detection
 import (
 	alertDataStore "bitbucket.org/stack-rox/apollo/central/alert/datastore"
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
 	"bitbucket.org/stack-rox/apollo/central/enrichment"
 	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
 	notifierProcessor "bitbucket.org/stack-rox/apollo/central/notifier/processor"
 	policyDataStore "bitbucket.org/stack-rox/apollo/central/policy/datastore"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 )
 
@@ -26,7 +26,7 @@ type Detector interface {
 
 	ProcessDeploymentEvent(deployment *v1.Deployment, action v1.ResourceAction) (alertID string, enforcement v1.EnforcementAction)
 
-	UpdatePolicy(policy *matcher.Policy)
+	UpdatePolicy(policy compiledpolicies.DeploymentMatcher)
 	RemovePolicy(id string)
 
 	RemoveNotifier(id string)

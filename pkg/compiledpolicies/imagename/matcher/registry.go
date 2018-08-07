@@ -1,0 +1,42 @@
+package matcher
+
+import (
+	"fmt"
+	"regexp"
+
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/utils"
+)
+
+func init() {
+	compilers = append(compilers, newRegistryMatcher)
+}
+
+func newRegistryMatcher(policy *v1.Policy) (Matcher, error) {
+	registryPolicy := policy.GetFields().GetImageName().GetRegistry()
+	if registryPolicy == "" {
+		return nil, nil
+	}
+
+	registryRegex, err := utils.CompileStringRegex(registryPolicy)
+	if err != nil {
+		return nil, err
+	}
+	matcher := &registryMatcherImpl{registryRegex}
+	return matcher.match, nil
+}
+
+type registryMatcherImpl struct {
+	registryRegex *regexp.Regexp
+}
+
+func (p *registryMatcherImpl) match(name *v1.ImageName) []*v1.Alert_Violation {
+	var violations []*v1.Alert_Violation
+	if name.GetRegistry() != "" && p.registryRegex.MatchString(name.GetRegistry()) {
+		v := &v1.Alert_Violation{
+			Message: fmt.Sprintf("Image registry matched: %s", p.registryRegex),
+		}
+		violations = append(violations, v)
+	}
+	return violations
+}

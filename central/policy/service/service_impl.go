@@ -7,13 +7,13 @@ import (
 	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
 	"bitbucket.org/stack-rox/apollo/central/detection"
-	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
 	notifierStore "bitbucket.org/stack-rox/apollo/central/notifier/store"
 	"bitbucket.org/stack-rox/apollo/central/policy/datastore"
 	"bitbucket.org/stack-rox/apollo/central/role/resources"
 	"bitbucket.org/stack-rox/apollo/central/service"
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
+	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/perrpc"
 	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/user"
@@ -143,7 +143,7 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.Policy) (*v1.P
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	policy, err := matcher.New(request)
+	policy, err := compiledpolicies.New(request)
 	if err != nil {
 		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
 	}
@@ -153,7 +153,7 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.Policy) (*v1.P
 		return nil, err
 	}
 	request.Id = id
-	policy.Id = id
+	policy.GetProto().Id = id
 	s.detector.UpdatePolicy(policy)
 	return request, nil
 }
@@ -164,7 +164,7 @@ func (s *serviceImpl) PutPolicy(ctx context.Context, request *v1.Policy) (*empty
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	policy, err := matcher.New(request)
+	policy, err := compiledpolicies.New(request)
 	if err != nil {
 		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
 	}
@@ -216,7 +216,7 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *v1.Policy) (*v1
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	policy, err := matcher.New(request)
+	policy, err := compiledpolicies.New(request)
 	if err != nil {
 		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
 	}

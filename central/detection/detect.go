@@ -15,13 +15,11 @@ func (d *detectorImpl) Detect(task Task) (alert *v1.Alert, enforcement v1.Enforc
 	if alert, excluded = d.generateAlert(task); alert != nil {
 		enforcement = alert.GetEnforcement().GetAction()
 	}
-
 	return
 }
 
 func (d *detectorImpl) generateAlert(task Task) (alert *v1.Alert, excluded *v1.DryRunResponse_Excluded) {
-	var violations []*v1.Alert_Violation
-	violations, excluded = task.policy.Match(task.deployment)
+	violations := task.policy.Match(task.deployment)
 	if len(violations) == 0 {
 		return
 	}
@@ -29,7 +27,7 @@ func (d *detectorImpl) generateAlert(task Task) (alert *v1.Alert, excluded *v1.D
 	alert = &v1.Alert{
 		Id:         uuid.NewV4().String(),
 		Deployment: task.deployment,
-		Policy:     task.policy.Policy,
+		Policy:     task.policy.GetProto(),
 		Violations: violations,
 		Time:       ptypes.TimestampNow(),
 	}
@@ -40,6 +38,5 @@ func (d *detectorImpl) generateAlert(task Task) (alert *v1.Alert, excluded *v1.D
 			Message: msg,
 		}
 	}
-
 	return
 }

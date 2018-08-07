@@ -5,11 +5,11 @@ import (
 
 	alertDataStore "bitbucket.org/stack-rox/apollo/central/alert/datastore"
 	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	"bitbucket.org/stack-rox/apollo/central/detection/matcher"
 	"bitbucket.org/stack-rox/apollo/central/enrichment"
 	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
 	notifierProcessor "bitbucket.org/stack-rox/apollo/central/notifier/processor"
 	policyDataStore "bitbucket.org/stack-rox/apollo/central/policy/datastore"
+	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies"
 )
 
 // Detector processes deployments and reports alerts if policies are violated.
@@ -25,7 +25,7 @@ type detectorImpl struct {
 	stoppedC              chan struct{}
 
 	policyMutex sync.RWMutex
-	policies    map[string]*matcher.Policy
+	policies    map[string]compiledpolicies.DeploymentMatcher
 }
 
 // Stop closes the Task reprocessing channel, and waits for remaining tasks to finish before returning.

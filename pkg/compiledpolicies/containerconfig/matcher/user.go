@@ -1,0 +1,43 @@
+package matcher
+
+import (
+	"fmt"
+	"regexp"
+
+	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/utils"
+)
+
+func init() {
+	compilers = append(compilers, newUserMatcher)
+}
+
+func newUserMatcher(policy *v1.Policy) (Matcher, error) {
+	user := policy.GetFields().GetUser()
+
+	if user == "" {
+		return nil, nil
+	}
+
+	userRegex, err := utils.CompileStringRegex(user)
+	if err != nil {
+		return nil, err
+	}
+	matcher := &userMatcherImpl{userRegex}
+	return matcher.match, nil
+}
+
+type userMatcherImpl struct {
+	userRegex *regexp.Regexp
+}
+
+func (p *userMatcherImpl) match(config *v1.ContainerConfig) []*v1.Alert_Violation {
+	var violations []*v1.Alert_Violation
+	if p.userRegex.MatchString(config.GetUser()) {
+		v := &v1.Alert_Violation{
+			Message: fmt.Sprintf("User matched configs policy: %s", p.userRegex),
+		}
+		violations = append(violations, v)
+	}
+	return violations
+}
