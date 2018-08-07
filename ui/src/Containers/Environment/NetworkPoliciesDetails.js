@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import CollapsibleCard from 'Components/CollapsibleCard';
+import NoResultsMessage from 'Components/NoResultsMessage';
 import download from 'utils/download';
 import * as Icon from 'react-feather';
 
@@ -16,6 +17,8 @@ class NetworkPoliciesDetails extends Component {
 
     renderOverview() {
         const { networkPolicies } = this.props;
+        if (!networkPolicies.length)
+            return <NoResultsMessage message="No network policies have been applied" />;
         return (
             <div>
                 {networkPolicies.map(networkPolicy => {
@@ -46,7 +49,7 @@ class NetworkPoliciesDetails extends Component {
         );
     }
     render() {
-        return <div className="w-full">{this.renderOverview()}</div>;
+        return <div className="w-full h-full">{this.renderOverview()}</div>;
     }
 }
 

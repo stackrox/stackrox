@@ -18,6 +18,7 @@ import Loader from 'Components/Loader';
 import TabContent from 'Components/TabContent';
 import DeploymentDetails from '../Risk/DeploymentDetails';
 import NetworkPoliciesDetails from './NetworkPoliciesDetails';
+import EnvironmentGraphLegend from './EnvironmentGraphLegend';
 
 class EnvironmentPage extends Component {
     static propTypes = {
@@ -118,12 +119,12 @@ class EnvironmentPage extends Component {
         ) : (
             <Tabs headers={envGraphPanelTabs}>
                 <TabContent>
-                    <div className="flex flex-1 flex-col">
+                    <div className="flex flex-1 flex-col h-full">
                         {deployment.id && <DeploymentDetails deployment={deployment} />}
                     </div>
                 </TabContent>
                 <TabContent>
-                    <div className="flex flex-1 flex-col">
+                    <div className="flex flex-1 flex-col h-full">
                         <NetworkPoliciesDetails networkPolicies={networkPolicies} />
                     </div>
                 </TabContent>
@@ -179,6 +180,7 @@ class EnvironmentPage extends Component {
                         </PageHeader>
                     </div>
                     <section className="environment-grid-bg flex flex-1 relative">
+                        <EnvironmentGraphLegend />
                         {this.renderGraph()}
                         {nodeUpdatesCount > 0 && (
                             <button
@@ -186,7 +188,7 @@ class EnvironmentPage extends Component {
                                 onClick={this.onUpdateGraph}
                             >
                                 <Icon.Circle className="h-2 w-2 border-primary-300" />
-                                <span className="pl-1">{`${nodeUpdatesCount} Node ${
+                                <span className="pl-1">{`${nodeUpdatesCount} ${
                                     nodeUpdatesCount === 1 ? 'update' : 'updates'
                                 } available`}</span>
                             </button>
