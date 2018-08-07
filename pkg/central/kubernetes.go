@@ -107,6 +107,7 @@ metadata:
     email: support@stackrox.com
 spec:
   replicas: 1
+  minReadySeconds: 15
   selector:
     matchLabels:
       app: central
@@ -278,6 +279,7 @@ metadata:
     email: support@stackrox.com
 spec:
   replicas: 1
+  minReadySeconds: 15
   selector:
     matchLabels:
       app: clairify
