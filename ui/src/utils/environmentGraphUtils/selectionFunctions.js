@@ -28,6 +28,14 @@ export const enterNode = callback => selection => {
         .append('circle')
         .on('click', callback)
         .attr('r', 5);
+
+    selection
+        .append('text')
+        .attr('fill', '#3F4884')
+        .style('font-size', '12px')
+        .attr('dy', '2em')
+        .attr('text-anchor', 'middle')
+        .text(d => d.deploymentName);
 };
 
 export const updateNode = selection => {
