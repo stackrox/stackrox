@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	deploymentMatcher "bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/deployment/matcher"
 	deploymentPredicate "bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/deployment/predicate"
+	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/utils"
 )
 
 // matcherAdapter is an adapter to the old interfaces.
@@ -46,7 +47,7 @@ func (p *matcherAdapter) GetProto() *v1.Policy {
 // This is why we need adapters, basically to back trace which whitelist causes us to skip the deployement.
 func (p *matcherAdapter) Excluded(deployment *v1.Deployment) (excluded *v1.DryRunResponse_Excluded) {
 	for _, whitelist := range p.whitelists {
-		if deploymentPredicate.MatchesWhitelist(whitelist.GetDeployment(), deployment) {
+		if !utils.WhitelistIsExpired(whitelist) && deploymentPredicate.MatchesWhitelist(whitelist.GetDeployment(), deployment) {
 			return &v1.DryRunResponse_Excluded{
 				Deployment: deployment.GetName(),
 				Whitelist:  whitelist,

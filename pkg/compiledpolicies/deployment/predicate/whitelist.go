@@ -2,6 +2,7 @@ package predicate
 
 import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/utils"
 	"bitbucket.org/stack-rox/apollo/pkg/scopecomp"
 )
 
@@ -12,7 +13,8 @@ func init() {
 func newWhitelistPredicate(policy *v1.Policy) (Predicate, error) {
 	var predicate Predicate
 	for _, whitelist := range policy.GetWhitelists() {
-		if whitelist.GetDeployment() != nil {
+		// Only compile deployment whitelists which have not expired.
+		if whitelist.GetDeployment() != nil && !utils.WhitelistIsExpired(whitelist) {
 			wrap := &whitelistWrapper{whitelist.GetDeployment()}
 			predicate = predicate.And(wrap.shouldProcess)
 		}

@@ -2,6 +2,7 @@ package predicate
 
 import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/utils"
 	imageTypes "bitbucket.org/stack-rox/apollo/pkg/images/types"
 )
 
@@ -13,7 +14,8 @@ func init() {
 func NewWhitelistPredicate(policy *v1.Policy) (Predicate, error) {
 	var predicate Predicate
 	for _, whitelist := range policy.GetWhitelists() {
-		if whitelist.GetContainer() != nil {
+		// Only compile container whitelists which have not expired.
+		if whitelist.GetContainer() != nil && !utils.WhitelistIsExpired(whitelist) {
 			wrap := &whitelistWrapper{whitelist: whitelist.GetContainer()}
 			predicate = predicate.And(wrap.shouldProcess)
 		}
