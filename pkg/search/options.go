@@ -3,6 +3,7 @@ package search
 // The following strings are the internal representation to their option value
 const (
 	Cluster    = "Cluster"
+	ClusterID  = "Cluster Id"
 	Namespace  = "Namespace"
 	LabelKey   = "Label Key"
 	LabelValue = "Label Value"

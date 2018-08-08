@@ -8,6 +8,7 @@ import (
 // OptionsMap is exposed for e2e test
 var OptionsMap = map[string]*v1.SearchField{
 	search.Cluster:    search.NewStringField("deployment.cluster_name"),
+	search.ClusterID:  search.NewField("deployment.cluster_id", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
 	search.Namespace:  search.NewStringField("deployment.namespace"),
 	search.LabelKey:   search.NewStringField("deployment.labels.key"),
 	search.LabelValue: search.NewStringField("deployment.labels.value"),
