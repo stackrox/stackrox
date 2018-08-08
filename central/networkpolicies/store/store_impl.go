@@ -42,7 +42,7 @@ func (b *storeImpl) GetNetworkPolicy(id string) (np *v1.NetworkPolicy, exists bo
 }
 
 // GetNetworkPolicies retrieves network policies matching the request from bolt
-func (b *storeImpl) GetNetworkPolicies() ([]*v1.NetworkPolicy, error) {
+func (b *storeImpl) GetNetworkPolicies(request *v1.GetNetworkPoliciesRequest) ([]*v1.NetworkPolicy, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "NetworkPolicy")
 	var policies []*v1.NetworkPolicy
 	err := b.View(func(tx *bolt.Tx) error {
@@ -51,6 +51,9 @@ func (b *storeImpl) GetNetworkPolicies() ([]*v1.NetworkPolicy, error) {
 			var np v1.NetworkPolicy
 			if err := proto.Unmarshal(v, &np); err != nil {
 				return err
+			}
+			if request.GetClusterId() != "" && np.GetClusterId() != request.GetClusterId() {
+				return nil
 			}
 			policies = append(policies, &np)
 			return nil

@@ -81,6 +81,10 @@ message NetworkPolicy {
     google.protobuf.Timestamp created       = 11;
 }
 
+message GetNetworkPoliciesRequest {
+    string cluster_id = 1;
+}
+
 message NetworkPoliciesResponse {
     repeated NetworkPolicy network_policies = 1;
 }
@@ -122,7 +126,7 @@ service NetworkPolicyService {
         };
     }
 
-    rpc ListNetworkPolicies (google.protobuf.Empty) returns (NetworkPoliciesResponse) {
+    rpc GetNetworkPolicies (GetNetworkPoliciesRequest) returns (NetworkPoliciesResponse) {
         option (google.api.http) = {
             get: "/v1/networkpolicies"
         };

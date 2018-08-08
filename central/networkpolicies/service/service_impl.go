@@ -29,7 +29,7 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.NetworkPolicy)): {
 			"/v1.NetworkPolicyService/GetNetworkPolicy",
-			"/v1.NetworkPolicyService/ListNetworkPolicies",
+			"/v1.NetworkPolicyService/GetNetworkPolicies",
 			"/v1.NetworkPolicyService/GetNetworkGraph",
 			"/v1.NetworkPolicyService/GetNetworkGraphEpoch",
 		},
@@ -82,8 +82,17 @@ func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.Resource
 	return networkPolicy, nil
 }
 
-func (s *serviceImpl) ListNetworkPolicies(context.Context, *empty.Empty) (*v1.NetworkPoliciesResponse, error) {
-	networkPolicies, err := s.store.GetNetworkPolicies()
+func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNetworkPoliciesRequest) (*v1.NetworkPoliciesResponse, error) {
+	if request.GetClusterId() != "" {
+		_, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		if !exists {
+			return nil, status.Errorf(codes.InvalidArgument, "cluster with id '%s' doesn't exist", request.GetClusterId())
+		}
+	}
+	networkPolicies, err := s.store.GetNetworkPolicies(request)
 	if err != nil {
 		return nil, err
 	}

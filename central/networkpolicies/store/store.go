@@ -16,7 +16,7 @@ var (
 // Store provides storage functionality for alerts.
 type Store interface {
 	GetNetworkPolicy(id string) (*v1.NetworkPolicy, bool, error)
-	GetNetworkPolicies() ([]*v1.NetworkPolicy, error)
+	GetNetworkPolicies(request *v1.GetNetworkPoliciesRequest) ([]*v1.NetworkPolicy, error)
 	CountNetworkPolicies() (int, error)
 	AddNetworkPolicy(np *v1.NetworkPolicy) error
 	UpdateNetworkPolicy(np *v1.NetworkPolicy) error

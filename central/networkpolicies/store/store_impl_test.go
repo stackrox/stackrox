@@ -2,6 +2,7 @@ package store
 
 import (
 	"os"
+	"sort"
 	"testing"
 
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
@@ -10,7 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestDeploymentStore(t *testing.T) {
+func TestNetworkPolicyStore(t *testing.T) {
 	suite.Run(t, new(NetworkPolicyStoreTestSuite))
 }
 
@@ -40,11 +41,11 @@ func (suite *NetworkPolicyStoreTestSuite) TeardownSuite() {
 func (suite *NetworkPolicyStoreTestSuite) TestNetworkPolicies() {
 	networkPolicies := []*v1.NetworkPolicy{
 		{
-			Id:        "fooID",
+			Id:        "1fooID",
 			ClusterId: "1",
 		},
 		{
-			Id:        "barID",
+			Id:        "2barID",
 			ClusterId: "2",
 		},
 	}
@@ -60,6 +61,28 @@ func (suite *NetworkPolicyStoreTestSuite) TestNetworkPolicies() {
 		suite.True(exists)
 		suite.Equal(got, d)
 	}
+
+	policies, err := suite.store.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{})
+	suite.Require().NoError(err)
+	suite.Len(policies, 2)
+	sort.Slice(policies, func(i, j int) bool {
+		return policies[i].GetId() < policies[j].GetId()
+	})
+	suite.Equal(policies, networkPolicies)
+
+	policies, err = suite.store.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "1"})
+	suite.Require().NoError(err)
+	suite.Len(policies, 1)
+	suite.Equal(policies[0], networkPolicies[0])
+
+	policies, err = suite.store.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "2"})
+	suite.Require().NoError(err)
+	suite.Len(policies, 1)
+	suite.Equal(policies[0], networkPolicies[1])
+
+	policies, err = suite.store.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "INVALID"})
+	suite.Require().NoError(err)
+	suite.Len(policies, 0)
 
 	// Test Update
 	for _, d := range networkPolicies {

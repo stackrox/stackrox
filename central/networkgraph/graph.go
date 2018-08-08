@@ -1,6 +1,7 @@
 package networkgraph
 
 import (
+	"fmt"
 	"sort"
 	"sync/atomic"
 
@@ -10,6 +11,7 @@ import (
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/set"
 	"github.com/deckarep/golang-set"
+	"github.com/gogo/protobuf/proto"
 )
 
 var logger = logging.LoggerForModule()
@@ -66,7 +68,11 @@ func (g *graphEvaluatorImpl) GetGraph(cluster *v1.Cluster, query *v1.ParsedSearc
 }
 
 func (g *graphEvaluatorImpl) evaluate(cluster *v1.Cluster, query *v1.ParsedSearchRequest) (nodes []*v1.NetworkNode, edges []*v1.NetworkEdge, err error) {
-	networkPolicies, err := g.networkPolicyStore.GetNetworkPolicies()
+	if cluster.GetId() == "" || cluster.GetName() == "" {
+		return nil, nil, fmt.Errorf("cluster name and id must be present, but they aren't: %s", proto.MarshalTextString(cluster))
+	}
+
+	networkPolicies, err := g.networkPolicyStore.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: cluster.GetId()})
 	if err != nil {
 		return
 	}
