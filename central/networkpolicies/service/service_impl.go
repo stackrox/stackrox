@@ -66,6 +66,7 @@ func populateYAML(np *v1.NetworkPolicy) {
 	err := encoder.Encode(k8sNetworkPolicy, stringBuilder)
 	if err != nil {
 		np.Yaml = fmt.Sprintf("Could not render Network Policy YAML: %s", err)
+		return
 	}
 	np.Yaml = stringBuilder.String()
 }
