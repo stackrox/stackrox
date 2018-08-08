@@ -269,8 +269,32 @@ roleRef:
 `
 
 	k8sCmd = commandPrefix + kubernetesPkg.GetCreateSecretTemplate("{{.Namespace}}", "{{.Registry}}", "{{.ImagePullSecret}}") + `
-kubectl create -f "$DIR/rbac.yaml"
+function print_rbac_instructions {
+	echo
+	echo "Error: Kubernetes RBAC configuration failed."
+	echo "Specific errors are listed above."
+	echo
+	echo "You may need to elevate your privileges first:"
+	echo "    kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user you@example.com"
+	echo
+	echo "(Be sure to use the full username your cluster knows for you.)"
+	echo
+	echo "Then, rerun this script."
+	echo
+	echo "Finally, revoke your temporary privileges:"
+	echo "    kubectl delete clusterrolebinding temporary-admin"
+	echo
+	echo "Contact your cluster administrator if you cannot obtain sufficient permission."
+	exit 1
+}
+
+echo "Creating RBAC roles..."
+kubectl apply -f "$DIR/rbac.yaml" || print_rbac_instructions
+
+echo "Creating secrets..."
 kubectl create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/central-ca.pem"
+
+echo "Creating deployment..."
 kubectl create -f "$DIR/deploy.yaml"
 `
 
