@@ -17,6 +17,8 @@ import {
     updateNode,
     enterLink,
     updateLink,
+    enterNamespaceLink,
+    updateNamespaceLink,
     updateGraph
 } from 'utils/environmentGraphUtils/selectionFunctions';
 import {
@@ -28,6 +30,7 @@ import {
     SCALE_EXTENT
 } from 'utils/environmentGraphUtils/environmentGraphConstants';
 import * as Icon from 'react-feather';
+import uniqBy from 'lodash/uniqBy';
 
 let width = 0;
 let height = 0;
@@ -36,6 +39,7 @@ let namespaces;
 
 let nodes = [];
 let edges = [];
+let namespaceEdges = [];
 
 let force = d3ForceSimulation(nodes)
     .force('charge', d3ForceManyBody().strength(-50))
@@ -75,8 +79,9 @@ class EnvironmentGraph extends Component {
 
     shouldComponentUpdate(nextProps) {
         if (nextProps.updateKey !== this.props.updateKey) {
-            nodes = this.getNodes(nextProps.nodes);
-            edges = this.getEdges(nextProps.edges);
+            nodes = this.setUpNodes(nextProps.nodes);
+            edges = this.setUpEdges(nextProps.nodes, nextProps.edges);
+            namespaceEdges = this.setUpNamespaceEdges(nextProps.nodes, nextProps.edges);
 
             this.setUpForceSimulation();
 
@@ -86,16 +91,18 @@ class EnvironmentGraph extends Component {
 
             this.setUpEdgeElements();
 
+            this.setUpNamespaceEdgeElements();
+
             this.setUpNodeElements();
         }
 
         return false;
     }
 
-    getNodes = propNodes => {
+    setUpNodes = propNodes => {
         const namespacesMapping = {};
-
         const nodeIdToNodeMapping = {};
+
         nodes.forEach(d => {
             nodeIdToNodeMapping[d.id] = d;
         });
@@ -128,9 +135,48 @@ class EnvironmentGraph extends Component {
         return newNodes;
     };
 
-    getEdges = propEdges => {
-        const newEdges = propEdges.map(edge => ({ ...edge }));
+    setUpEdges = (propNodes, propEdges) => {
+        const nodeIdToNodeMapping = {};
+
+        propNodes.forEach(d => {
+            nodeIdToNodeMapping[d.id] = d;
+        });
+
+        const newEdges = propEdges
+            .filter(edge => {
+                const sourceNamespace = nodeIdToNodeMapping[edge.source].namespace;
+                const targetNamespace = nodeIdToNodeMapping[edge.target].namespace;
+                return sourceNamespace === targetNamespace;
+            })
+            .map(edge => ({ ...edge }));
+
         return newEdges;
+    };
+
+    setUpNamespaceEdges = (propNodes, propEdges) => {
+        const nodeIdToNodeMapping = {};
+
+        propNodes.forEach(d => {
+            nodeIdToNodeMapping[d.id] = d;
+        });
+
+        let newNamespaceEdges = propEdges
+            .filter(edge => {
+                const sourceNamespace = nodeIdToNodeMapping[edge.source].namespace;
+                const targetNamespace = nodeIdToNodeMapping[edge.target].namespace;
+                return sourceNamespace !== targetNamespace;
+            })
+            .map(edge => ({
+                source: nodeIdToNodeMapping[edge.source].namespace,
+                target: nodeIdToNodeMapping[edge.target].namespace,
+                id: `${nodeIdToNodeMapping[edge.source].namespace}-${
+                    nodeIdToNodeMapping[edge.target].namespace
+                }`
+            }));
+
+        newNamespaceEdges = uniqBy(newNamespaceEdges, 'id');
+
+        return newNamespaceEdges;
     };
 
     setUpForceSimulation = () => {
@@ -157,7 +203,9 @@ class EnvironmentGraph extends Component {
                 // after force calculation starts, call updateGraph
                 // which uses d3 to manipulate the attributes,
                 // and React doesn't have to go through lifecycle on each tick
-                this.d3Graph.call(updateGraph);
+                this.d3Graph.call(selection => {
+                    updateGraph(selection, this.d3Graph);
+                });
                 this.updateNamespaceContainers();
             })
             .alpha(1)
@@ -213,7 +261,7 @@ class EnvironmentGraph extends Component {
             d3Nodes
                 .enter()
                 .append('g')
-                .call(enterNode(this.props.onNodeClick));
+                .call(enterNode(this.props.onNodeClick, this.d3Graph));
             // logic for remove nodes
             d3Nodes.exit().remove();
             // logic for updating nodes
@@ -223,7 +271,7 @@ class EnvironmentGraph extends Component {
 
     setUpEdgeElements = () => {
         const d3Links = this.d3Graph
-            .selectAll('.link')
+            .selectAll('.link.service')
             .data(edges, link => `${link.source},${link.target}`);
         // logic for creating links
         d3Links
@@ -234,6 +282,23 @@ class EnvironmentGraph extends Component {
         d3Links.exit().remove();
         // logic for updating links
         d3Links.call(updateLink);
+    };
+
+    setUpNamespaceEdgeElements = () => {
+        const d3NamespaceLinks = this.d3Graph
+            .selectAll('.link.namespace')
+            .data(namespaceEdges, link => link.id);
+        // logic for creating links
+        d3NamespaceLinks
+            .enter()
+            .insert('line', '.container')
+            .call(enterNamespaceLink);
+        // logic for removing links
+        d3NamespaceLinks.exit().remove();
+        // logic for updating links
+        d3NamespaceLinks.call(selection => {
+            updateNamespaceLink(selection, this.d3Graph);
+        });
     };
 
     updateNamespaceContainers = () => {
