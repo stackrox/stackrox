@@ -36,14 +36,16 @@ class Table extends Component {
                 onClick: PropTypes.func,
                 disabled: PropTypes.bool
             })
-        )
+        ),
+        messageIfEmpty: PropTypes.string
     };
 
     static defaultProps = {
         onRowClick: null,
         onRowChecked: null,
         checkboxes: false,
-        actions: []
+        actions: [],
+        messageIfEmpty: ''
     };
 
     constructor(props) {
@@ -239,13 +241,28 @@ class Table extends Component {
         });
     }
 
-    render() {
+    renderContent() {
         return (
             <table className="w-full border-collapse transition">
                 <thead>{this.renderHeaders()}</thead>
                 <tbody>{this.renderBody()}</tbody>
             </table>
         );
+    }
+
+    renderEmpty() {
+        return (
+            <div className="p3 w-full my-auto text-center capitalize">
+                {this.props.messageIfEmpty}
+            </div>
+        );
+    }
+
+    render() {
+        if (this.props.rows.length === 0 && this.props.messageIfEmpty !== '') {
+            return this.renderEmpty();
+        }
+        return this.renderContent();
     }
 }
 

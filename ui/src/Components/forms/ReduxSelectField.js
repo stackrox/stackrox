@@ -8,7 +8,7 @@ const ReduxSelect = props => (
         key={props.input.name}
         onChange={props.input.onChange}
         options={props.options}
-        placeholder="Select one..."
+        placeholder={props.placeholder}
         simpleValue
         value={props.input.value}
         className="text-base-600 font-400 w-full"
@@ -21,22 +21,29 @@ ReduxSelect.propTypes = {
         name: PropTypes.string,
         onChange: PropTypes.func
     }).isRequired,
-    options: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    options: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    placeholder: PropTypes.string.isRequired
 };
 
-const ReduxSelectField = ({ name, options }) => (
+const ReduxSelectField = ({ name, options, placeholder }) => (
     <Field
         key={name}
         name={name}
         options={options}
         component={ReduxSelect}
+        placeholder={placeholder}
         className="border bg-white border-base-300 text-base-600 p-3 pr-8 rounded-r-sm cursor-pointer z-1 focus:border-base-300 w-full font-400"
     />
 );
 
 ReduxSelectField.propTypes = {
     name: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]).isRequired,
-    options: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    options: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    placeholder: PropTypes.string
+};
+
+ReduxSelectField.defaultProps = {
+    placeholder: 'Select one...'
 };
 
 export default ReduxSelectField;

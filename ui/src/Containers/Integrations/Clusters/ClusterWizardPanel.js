@@ -68,7 +68,7 @@ class ClusterWizardPanel extends Component {
                     />
                 );
             default:
-                throw new Error(`Uknown cluster wizard page "${this.props.currentPage}`);
+                throw new Error(`Unknown cluster wizard page ${this.props.currentPage}`);
         }
     }
 
@@ -90,7 +90,7 @@ class ClusterWizardPanel extends Component {
                     />
                 );
             default:
-                throw new Error(`Uknown cluster wizard page "${this.props.currentPage}`);
+                throw new Error(`Unknown cluster wizard page ${this.props.currentPage}`);
         }
     }
 

@@ -25,6 +25,7 @@
     "rc-tooltip": "^3.7.2",
     "react": "^16.2.0",
     "react-collapsible": "^2.0.4",
+    "react-copy-to-clipboard": "^5.0.1",
     "react-dom": "^16.2.0",
     "react-feather": "^1.0.8",
     "react-form": "^2.15.2",

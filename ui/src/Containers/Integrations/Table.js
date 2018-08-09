@@ -96,12 +96,6 @@ class Table extends Component {
         return this.props.integrations;
     };
 
-    renderEmpty = () => (
-        <div className="p3 w-full my-auto text-center capitalize">
-            {`No ${this.props.type} integrations`}
-        </div>
-    );
-
     renderTableContent = () => (
         <ComponentTable
             columns={tableColumnDescriptor[this.props.source][this.props.type]}
@@ -110,6 +104,7 @@ class Table extends Component {
             checkboxes
             onRowClick={this.props.onRowClick}
             ref={this.props.setTable}
+            messageIfEmpty={`No ${this.props.type} integrations`}
         />
     );
 
@@ -117,9 +112,7 @@ class Table extends Component {
         return (
             <div className="flex flex-1">
                 <Panel header={`${this.props.type} Integration`} buttons={this.getPanelButtons()}>
-                    {this.props.integrations.length !== 0
-                        ? this.renderTableContent()
-                        : this.renderEmpty()}
+                    {this.renderTableContent()}
                 </Panel>
             </div>
         );

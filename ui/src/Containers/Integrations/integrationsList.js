@@ -19,6 +19,12 @@ const integrationsList = {
             type: 'auth0',
             source: 'authProviders',
             image: auth0
+        },
+        {
+            label: 'API Token',
+            type: 'apitoken',
+            source: 'authProviders',
+            image: logo
         }
     ],
     dnrIntegrations: [

@@ -3,6 +3,7 @@ import { reducer as formReducer } from 'redux-form';
 
 import bindSelectors from 'utils/bindSelectors';
 import alerts, { selectors as alertSelectors } from './alerts';
+import apiTokens, { selectors as apiTokenSelectors } from './apitokens';
 import auth, { selectors as authSelectors } from './auth';
 import benchmarks, { selectors as benchmarkSelectors } from './benchmarks';
 import clusters, { selectors as clusterSelectors } from './clusters';
@@ -24,6 +25,7 @@ import environment, { selectors as environmentSelectors } from './environment';
 
 const appReducer = combineReducers({
     alerts,
+    apiTokens,
     auth,
     benchmarks,
     clusters,
@@ -54,6 +56,7 @@ export default rootReducer;
 const getRoute = state => state.route;
 const getApp = state => state.app;
 const getAlerts = state => getApp(state).alerts;
+const getAPITokens = state => getApp(state).apiTokens;
 const getAuth = state => getApp(state).auth;
 const getBenchmarks = state => getApp(state).benchmarks;
 const getClusters = state => getApp(state).clusters;
@@ -72,6 +75,7 @@ const getEnvironment = state => getApp(state).environment;
 
 const boundSelectors = {
     ...bindSelectors(getAlerts, alertSelectors),
+    ...bindSelectors(getAPITokens, apiTokenSelectors),
     ...bindSelectors(getAuth, authSelectors),
     ...bindSelectors(getBenchmarks, benchmarkSelectors),
     ...bindSelectors(getClusters, clusterSelectors),

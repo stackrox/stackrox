@@ -9,38 +9,14 @@ import integrationsList from 'Containers/Integrations/integrationsList';
 import IntegrationModal from 'Containers/Integrations/IntegrationModal';
 import IntegrationTile from 'Containers/Integrations/IntegrationTile';
 import { actions as authActions } from 'reducers/auth';
+import { actions as apiTokenActions } from 'reducers/apitokens';
 import { actions as integrationActions } from 'reducers/integrations';
 import { actions as clusterActions } from 'reducers/clusters';
 import { selectors } from 'reducers';
-
-const reducer = (action, prevState, nextState) => {
-    switch (action) {
-        case 'OPEN_INTEGRATION_MODAL':
-            return {
-                integrationModal: {
-                    open: true,
-                    integrations: nextState.integrations,
-                    source: nextState.source,
-                    type: nextState.type
-                }
-            };
-        case 'CLOSE_INTEGRATION_MODAL':
-            return {
-                integrationModal: {
-                    open: false,
-                    integrations: [],
-                    source: '',
-                    type: ''
-                }
-            };
-        default:
-            return prevState;
-    }
-};
+import APITokensModal from './APITokens/APITokensModal';
 
 class IntegrationsPage extends Component {
     static propTypes = {
-        /* eslint-disable */
         authProviders: PropTypes.arrayOf(
             PropTypes.shape({
                 config: PropTypes.shape({
@@ -51,12 +27,18 @@ class IntegrationsPage extends Component {
                 name: PropTypes.string.isRequired
             })
         ).isRequired,
+        apiTokens: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string.isRequired,
+                role: PropTypes.string.isRequired
+            })
+        ).isRequired,
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
         dnrIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
         notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
         imageIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
-        /* eslint-enable */
         fetchAuthProviders: PropTypes.func.isRequired,
+        fetchAPITokens: PropTypes.func.isRequired,
         fetchDNRIntegrations: PropTypes.func.isRequired,
         fetchNotifiers: PropTypes.func.isRequired,
         fetchImageIntegrations: PropTypes.func.isRequired,
@@ -64,18 +46,18 @@ class IntegrationsPage extends Component {
     };
 
     state = {
-        selectedClusterType: null,
-        integrationModal: {
-            open: false,
-            integrations: [],
-            source: '',
-            type: ''
-        }
+        modalOpen: false,
+        selectedSource: '',
+        selectedType: ''
     };
 
-    getEntities = source => {
+    getEntities = (source, type) => {
         switch (source) {
             case 'authProviders':
+                if (type === 'apitoken') {
+                    this.props.fetchAPITokens();
+                    break;
+                }
                 this.props.fetchAuthProviders();
                 break;
             case 'dnrIntegrations':
@@ -102,63 +84,87 @@ class IntegrationsPage extends Component {
     };
 
     openIntegrationModal = integrationCategory => {
-        if (integrationCategory.source === 'clusters') {
-            this.setState({ selectedClusterType: integrationCategory.type });
-        } else {
-            const { source, type } = integrationCategory;
-            const integrations =
-                source !== 'clusters'
-                    ? this.props[source].filter(i => i.type === type.toLowerCase())
-                    : this.props.clusters.filter(cluster => cluster.type === type);
-            this.update('OPEN_INTEGRATION_MODAL', { integrations, source, type });
-        }
+        this.setState({
+            modalOpen: true,
+            selectedSource: integrationCategory.source,
+            selectedType: integrationCategory.type
+        });
     };
 
     closeIntegrationModal = isSuccessful => {
         if (isSuccessful === true) {
-            const { integrationModal: { source, type } } = this.state;
-            toast(`Successfully integrated ${type}`);
-            this.getEntities(source);
+            toast(`Successfully integrated ${this.state.selectedType}`);
         }
-        this.update('CLOSE_INTEGRATION_MODAL');
+        this.fetchEntitiesAndCloseModal();
     };
 
-    closeClustersModal = () => this.setState({ selectedClusterType: null });
+    fetchEntitiesAndCloseModal = () => {
+        this.getEntities(this.state.selectedSource, this.state.selectedType);
+        this.setState({
+            modalOpen: false,
+            selectedSource: '',
+            selectedType: ''
+        });
+    };
 
     findIntegrations = (source, type) => {
-        if (source === 'dnrIntegrations') {
-            return this.props[source];
-        }
-        if (source === 'clusters') {
-            return this.getClustersForOrchestrator(type);
-        }
-        return this.props[source].filter(i => i.type === type.toLowerCase());
-    };
+        const typeLowerMatches = integration => integration.type === type.toLowerCase();
 
-    update = (action, nextState) => {
-        this.setState(prevState => reducer(action, prevState, nextState));
+        switch (source) {
+            case 'clusters':
+                return this.getClustersForOrchestrator(type);
+            case 'dnrIntegrations':
+                return this.props.dnrIntegrations;
+            case 'authProviders':
+                if (type === 'apitoken') {
+                    return this.props.apiTokens;
+                }
+                return this.props.authProviders.filter(typeLowerMatches);
+            case 'notifiers':
+                return this.props.notifiers.filter(typeLowerMatches);
+            case 'imageIntegrations':
+                return this.props.imageIntegrations.filter(typeLowerMatches);
+            default:
+                throw new Error(`Unknown source ${source}`);
+        }
     };
 
     renderClustersModal() {
-        const { selectedClusterType } = this.state;
-        if (!selectedClusterType) return null;
         return (
             <ClustersModal
-                clusterType={selectedClusterType}
-                onRequestClose={this.closeClustersModal}
+                clusterType={this.state.selectedType}
+                onRequestClose={this.fetchEntitiesAndCloseModal}
+            />
+        );
+    }
+
+    renderAPITokensModal() {
+        return (
+            <APITokensModal
+                tokens={this.props.apiTokens}
+                onRequestClose={this.fetchEntitiesAndCloseModal}
             />
         );
     }
 
     renderIntegrationModal() {
-        const { integrationModal: { source, type, open } } = this.state;
-        if (!open) return null;
-        const integrations = this.findIntegrations(source, type);
+        const { modalOpen, selectedSource, selectedType } = this.state;
+        if (!modalOpen) return null;
+
+        if (selectedSource === 'clusters') {
+            return this.renderClustersModal();
+        }
+
+        if (selectedSource === 'authProviders' && selectedType === 'apitoken') {
+            return this.renderAPITokensModal();
+        }
+
+        const integrations = this.findIntegrations(selectedSource, selectedType);
         return (
             <IntegrationModal
                 integrations={integrations}
-                source={source}
-                type={type}
+                source={selectedSource}
+                type={selectedType}
                 onRequestClose={this.closeIntegrationModal}
                 onIntegrationsUpdate={this.getEntities}
                 clusters={this.props.clusters}
@@ -229,7 +235,6 @@ class IntegrationsPage extends Component {
                     </div>
                 </div>
                 {this.renderIntegrationModal()}
-                {this.renderClustersModal()}
             </section>
         );
     }
@@ -237,6 +242,7 @@ class IntegrationsPage extends Component {
 
 const mapStateToProps = createStructuredSelector({
     authProviders: selectors.getAuthProviders,
+    apiTokens: selectors.getAPITokens,
     clusters: selectors.getClusters,
     dnrIntegrations: selectors.getDNRIntegrations,
     notifiers: selectors.getNotifiers,
@@ -245,6 +251,7 @@ const mapStateToProps = createStructuredSelector({
 
 const mapDispatchToProps = dispatch => ({
     fetchAuthProviders: () => dispatch(authActions.fetchAuthProviders.request()),
+    fetchAPITokens: () => dispatch(apiTokenActions.fetchAPITokens.request()),
     fetchDNRIntegrations: () => dispatch(integrationActions.fetchDNRIntegrations.request()),
     fetchNotifiers: () => dispatch(integrationActions.fetchNotifiers.request()),
     fetchImageIntegrations: () => dispatch(integrationActions.fetchImageIntegrations.request()),

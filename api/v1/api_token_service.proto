@@ -27,8 +27,8 @@ message TokenMetadata {
 }
 
 message GenerateTokenResponse {
-    string token           = 2;
-    TokenMetadata metadata = 3;
+    string token           = 1;
+    TokenMetadata metadata = 2;
 }
 
 message GetAPITokensRequest {
