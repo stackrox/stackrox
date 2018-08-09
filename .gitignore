@@ -24,6 +24,8 @@ report.xml
 test.log
 protoc-*
 image/VERSION
+coverage.out
+coverage.html
 
 # Bazel
 bazel-*

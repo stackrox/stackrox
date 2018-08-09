@@ -186,6 +186,12 @@ test: gazelle
 # neither do UI tests
 	make -C ui test
 
+.PHONY: coverage
+coverage:
+	@echo "+ $@"
+	@go test -cover -coverprofile coverage.out $(shell go list -e ./... | grep -v /tests)
+	@go tool cover -html=coverage.out -o coverage.html
+
 ###########
 ## Image ##
 ###########
