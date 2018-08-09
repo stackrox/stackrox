@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/docker/docker/client"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

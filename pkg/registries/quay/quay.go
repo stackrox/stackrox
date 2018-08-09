@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/registries/docker"
-	"bitbucket.org/stack-rox/apollo/pkg/registries/types"
-	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/registries/docker"
+	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 const (

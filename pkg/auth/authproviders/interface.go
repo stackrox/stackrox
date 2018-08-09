@@ -1,6 +1,6 @@
 package authproviders
 
-import "bitbucket.org/stack-rox/apollo/pkg/auth/tokenbased"
+import "github.com/stackrox/rox/pkg/auth/tokenbased"
 
 // An AuthProvider is an authenticator which is based on an external service, like auth0.
 // In addition to being a tokenbased IdentityParser, it also needs to return a login URL and a refresh URL.

@@ -3,9 +3,9 @@ package metrics
 import (
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
-	"bitbucket.org/stack-rox/apollo/pkg/metrics"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/central/globaldb/ops"
+	"github.com/stackrox/rox/pkg/metrics"
 )
 
 const (

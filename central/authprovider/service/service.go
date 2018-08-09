@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 
-	"bitbucket.org/stack-rox/apollo/central/authprovider/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/stackrox/rox/central/authprovider/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

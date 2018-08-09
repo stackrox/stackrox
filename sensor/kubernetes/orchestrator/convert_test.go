@@ -3,7 +3,7 @@ package orchestrator
 import (
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
+	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"

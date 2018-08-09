@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/docker"
-	"bitbucket.org/stack-rox/apollo/pkg/enforcers"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	swarmTypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	dockerClient "github.com/docker/docker/client"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/enforcers"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

@@ -5,7 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/pkg/mtls"
+	"github.com/stackrox/rox/pkg/mtls"
 )
 
 // A TLSConfigurer instantiates the appropriate TLS config for your environment.

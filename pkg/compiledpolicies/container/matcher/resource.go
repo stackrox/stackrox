@@ -3,8 +3,8 @@ package matcher
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/utils"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
 
 func init() {

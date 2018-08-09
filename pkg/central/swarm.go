@@ -3,8 +3,8 @@ package central
 import (
 	"text/template"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/zip"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/zip"
 )
 
 func init() {

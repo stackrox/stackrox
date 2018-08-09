@@ -1,7 +1,7 @@
 // Package resources lists all resource types used by Central.
 package resources
 
-import "bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
+import "github.com/stackrox/rox/pkg/auth/permissions"
 
 // All resource types that we want to define (for the purposes of enforcing
 // API permissions) must be defined here.

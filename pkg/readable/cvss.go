@@ -3,7 +3,7 @@ package readable
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // NumericalPolicy formats type *v1.NumericalPolicy into e.g. MAX(field) > 3

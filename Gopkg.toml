@@ -1,7 +1,7 @@
 # Refer to https://github.com/golang/dep/blob/master/docs/Gopkg.toml.md
 # for detailed Gopkg.toml documentation.
 
-ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
+ignored = ["github.com/stackrox/rox","github.com/docker/docker/daemon"]
 
 [prune]
   go-tests = true

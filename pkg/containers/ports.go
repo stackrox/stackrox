@@ -1,6 +1,6 @@
 package containers
 
-import "bitbucket.org/stack-rox/apollo/generated/api/v1"
+import "github.com/stackrox/rox/generated/api/v1"
 
 // IncreasedExposureLevel returns whether the new level carries increased exposure.
 func IncreasedExposureLevel(old, new v1.PortConfig_Exposure) bool {

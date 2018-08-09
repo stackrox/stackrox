@@ -1,14 +1,14 @@
 package registries
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	artifactoryFactory "bitbucket.org/stack-rox/apollo/pkg/registries/artifactory"
-	dockerFactory "bitbucket.org/stack-rox/apollo/pkg/registries/docker"
-	dtrFactory "bitbucket.org/stack-rox/apollo/pkg/registries/dtr"
-	googleFactory "bitbucket.org/stack-rox/apollo/pkg/registries/google"
-	quayFactory "bitbucket.org/stack-rox/apollo/pkg/registries/quay"
-	tenableFactory "bitbucket.org/stack-rox/apollo/pkg/registries/tenable"
-	"bitbucket.org/stack-rox/apollo/pkg/registries/types"
+	"github.com/stackrox/rox/generated/api/v1"
+	artifactoryFactory "github.com/stackrox/rox/pkg/registries/artifactory"
+	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
+	dtrFactory "github.com/stackrox/rox/pkg/registries/dtr"
+	googleFactory "github.com/stackrox/rox/pkg/registries/google"
+	quayFactory "github.com/stackrox/rox/pkg/registries/quay"
+	tenableFactory "github.com/stackrox/rox/pkg/registries/tenable"
+	"github.com/stackrox/rox/pkg/registries/types"
 )
 
 // Creator is the func stub that defines how to instantiate an image registry.

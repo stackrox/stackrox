@@ -1,7 +1,7 @@
 package checks
 
 import (
-	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
+	"github.com/stackrox/rox/pkg/checks/utils"
 )
 
 // Registry is a map of check name to check object

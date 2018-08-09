@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/clair/mock"
 	clairV1 "github.com/coreos/clair/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/clair/mock"
 	"github.com/stretchr/testify/suite"
 )
 

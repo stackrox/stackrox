@@ -3,7 +3,7 @@ package scopecomp
 import (
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // WithinScope evaluates if the deployment is within the scope

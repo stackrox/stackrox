@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"regexp"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/utils"
-	registryTypes "bitbucket.org/stack-rox/apollo/pkg/registries/types"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
+	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 )
 
 func init() {

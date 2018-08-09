@@ -1,15 +1,15 @@
 package scanners
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
-	clairScanner "bitbucket.org/stack-rox/apollo/pkg/scanners/clair"
-	clairifyScanner "bitbucket.org/stack-rox/apollo/pkg/scanners/clairify"
-	dtrScanner "bitbucket.org/stack-rox/apollo/pkg/scanners/dtr"
-	googleScanner "bitbucket.org/stack-rox/apollo/pkg/scanners/google"
-	quayScanner "bitbucket.org/stack-rox/apollo/pkg/scanners/quay"
-	tenableScanner "bitbucket.org/stack-rox/apollo/pkg/scanners/tenable"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners/types"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/registries"
+	clairScanner "github.com/stackrox/rox/pkg/scanners/clair"
+	clairifyScanner "github.com/stackrox/rox/pkg/scanners/clairify"
+	dtrScanner "github.com/stackrox/rox/pkg/scanners/dtr"
+	googleScanner "github.com/stackrox/rox/pkg/scanners/google"
+	quayScanner "github.com/stackrox/rox/pkg/scanners/quay"
+	tenableScanner "github.com/stackrox/rox/pkg/scanners/tenable"
+	"github.com/stackrox/rox/pkg/scanners/types"
 )
 
 // Creator is the func stub that defines how to instantiate an image scanner.

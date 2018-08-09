@@ -6,14 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/checks"
-	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
-	"bitbucket.org/stack-rox/apollo/pkg/docker"
-	"bitbucket.org/stack-rox/apollo/pkg/env"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/checks"
+	"github.com/stackrox/rox/pkg/checks/utils"
+	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/uuid"
 	"golang.org/x/net/context"
 )
 

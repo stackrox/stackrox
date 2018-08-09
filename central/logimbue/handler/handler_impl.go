@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"bitbucket.org/stack-rox/apollo/central/logimbue/store"
+	"github.com/stackrox/rox/central/logimbue/store"
 )
 
 type handlerImpl struct {

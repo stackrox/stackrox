@@ -1,8 +1,8 @@
 package deploymentevents
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 func newClusterEnrichment(clusters datastore.DataStore) *clusterEnrichmentImpl {

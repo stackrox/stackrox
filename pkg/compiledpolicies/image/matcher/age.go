@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 func init() {

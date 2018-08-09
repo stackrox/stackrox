@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/image/index"
-	"bitbucket.org/stack-rox/apollo/central/image/search"
-	"bitbucket.org/stack-rox/apollo/central/image/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
+	"github.com/stackrox/rox/central/image/index"
+	"github.com/stackrox/rox/central/image/search"
+	"github.com/stackrox/rox/central/image/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 type datastoreImpl struct {

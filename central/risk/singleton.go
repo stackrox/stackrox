@@ -3,8 +3,8 @@ package risk
 import (
 	"sync"
 
-	alertDataStore "bitbucket.org/stack-rox/apollo/central/alert/datastore"
-	"bitbucket.org/stack-rox/apollo/central/dnrintegration/datastore"
+	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/dnrintegration/datastore"
 )
 
 var (

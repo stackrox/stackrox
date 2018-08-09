@@ -4,12 +4,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	alertMapping "bitbucket.org/stack-rox/apollo/central/alert/index/mappings"
-	deploymentMapping "bitbucket.org/stack-rox/apollo/central/deployment/index/mappings"
-	imageMapping "bitbucket.org/stack-rox/apollo/central/image/index/mappings"
-	policyMapping "bitbucket.org/stack-rox/apollo/central/policy/index/mappings"
-	secretMapping "bitbucket.org/stack-rox/apollo/central/secret/index/mapping"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/analysis/analyzer/custom"
 	"github.com/blevesearch/bleve/analysis/token/lowercase"
@@ -17,6 +11,12 @@ import (
 	"github.com/blevesearch/bleve/index/store/moss"
 	"github.com/blevesearch/bleve/index/upsidedown"
 	"github.com/blevesearch/bleve/mapping"
+	alertMapping "github.com/stackrox/rox/central/alert/index/mappings"
+	deploymentMapping "github.com/stackrox/rox/central/deployment/index/mappings"
+	imageMapping "github.com/stackrox/rox/central/image/index/mappings"
+	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
+	secretMapping "github.com/stackrox/rox/central/secret/index/mapping"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // TempInitializeIndices initializes the index under the tmp system folder in the specified path.

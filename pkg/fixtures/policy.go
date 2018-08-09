@@ -1,6 +1,6 @@
 package fixtures
 
-import "bitbucket.org/stack-rox/apollo/generated/api/v1"
+import "github.com/stackrox/rox/generated/api/v1"
 
 // GetPolicy returns a Mock Policy
 func GetPolicy() *v1.Policy {

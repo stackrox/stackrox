@@ -3,7 +3,7 @@ package authproviders
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // Creator is the func stub that defines how to instantiate an auth provider integration.

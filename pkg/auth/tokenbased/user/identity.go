@@ -1,8 +1,8 @@
 package user
 
 import (
-	"bitbucket.org/stack-rox/apollo/pkg/auth/authproviders"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/tokenbased"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/tokenbased"
 )
 
 // Identity is a token-based identity that represents a user

@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners/types"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	timestamp "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 )
 

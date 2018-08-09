@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/pkg/enforcers"
-	pkgKubernetes "bitbucket.org/stack-rox/apollo/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/enforcers"
+	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

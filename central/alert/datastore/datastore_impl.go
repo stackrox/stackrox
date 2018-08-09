@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"sort"
 
-	"bitbucket.org/stack-rox/apollo/central/alert/index"
-	"bitbucket.org/stack-rox/apollo/central/alert/search"
-	"bitbucket.org/stack-rox/apollo/central/alert/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	searchCommon "bitbucket.org/stack-rox/apollo/pkg/search"
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/central/alert/index"
+	"github.com/stackrox/rox/central/alert/search"
+	"github.com/stackrox/rox/central/alert/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	searchCommon "github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {

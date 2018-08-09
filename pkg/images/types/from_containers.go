@@ -1,6 +1,6 @@
 package types
 
-import "bitbucket.org/stack-rox/apollo/generated/api/v1"
+import "github.com/stackrox/rox/generated/api/v1"
 
 // FromContainers provides helper functions for getting a slice of images from containers.
 type FromContainers []*v1.Container

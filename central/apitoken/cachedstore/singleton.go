@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/apitoken/store"
-	"bitbucket.org/stack-rox/apollo/central/globaldb"
+	"github.com/stackrox/rox/central/apitoken/store"
+	"github.com/stackrox/rox/central/globaldb"
 )
 
 var (

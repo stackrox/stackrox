@@ -4,12 +4,12 @@ import (
 	"errors"
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	imageTypes "bitbucket.org/stack-rox/apollo/pkg/images/types"
-	"bitbucket.org/stack-rox/apollo/pkg/registries/types"
-	"bitbucket.org/stack-rox/apollo/pkg/transports"
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	"github.com/heroku/docker-registry-client/registry"
+	"github.com/stackrox/rox/generated/api/v1"
+	imageTypes "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/transports"
 )
 
 var (

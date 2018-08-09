@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/central"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/central"
 )
 
 func orchestratorCommand(shortName, longName string, clusterType v1.ClusterType) *cobra.Command {

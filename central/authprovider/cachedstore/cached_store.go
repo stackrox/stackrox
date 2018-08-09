@@ -1,9 +1,9 @@
 package cachedstore
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/authprovider/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/authproviders"
+	"github.com/stackrox/rox/central/authprovider/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 )
 
 // CachedStore is an intermediary to storage that keeps an in-memory cache of auth providers.

@@ -13,12 +13,12 @@ import (
 	"sync"
 	"time"
 
-	siStore "bitbucket.org/stack-rox/apollo/central/serviceidentities/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/cloudflare/cfssl/config"
 	cfcsr "github.com/cloudflare/cfssl/csr"
 	cfsigner "github.com/cloudflare/cfssl/signer"
 	"github.com/cloudflare/cfssl/signer/local"
+	siStore "github.com/stackrox/rox/central/serviceidentities/store"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 const (

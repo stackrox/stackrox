@@ -1,9 +1,9 @@
 package detection
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/search"
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 type alertWithEnforcement struct {

@@ -1,9 +1,9 @@
 package store
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/role"
-	"bitbucket.org/stack-rox/apollo/central/role/resources"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
+	"github.com/stackrox/rox/central/role"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
 // Store is the store for roles.

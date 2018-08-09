@@ -1,10 +1,10 @@
 package datastore
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/alert/index"
-	"bitbucket.org/stack-rox/apollo/central/alert/search"
-	"bitbucket.org/stack-rox/apollo/central/alert/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/central/alert/index"
+	"github.com/stackrox/rox/central/alert/search"
+	"github.com/stackrox/rox/central/alert/store"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // DataStore is an intermediary to AlertStorage.

@@ -3,15 +3,15 @@ package options
 import (
 	"sort"
 
-	alertMappings "bitbucket.org/stack-rox/apollo/central/alert/index/mappings"
-	deploymentMappings "bitbucket.org/stack-rox/apollo/central/deployment/index/mappings"
-	imageMappings "bitbucket.org/stack-rox/apollo/central/image/index/mappings"
-	policyMappings "bitbucket.org/stack-rox/apollo/central/policy/index/mappings"
-	secretSearchOptions "bitbucket.org/stack-rox/apollo/central/secret/search/options"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	searchCommon "bitbucket.org/stack-rox/apollo/pkg/search"
-	"bitbucket.org/stack-rox/apollo/pkg/set"
 	"github.com/deckarep/golang-set"
+	alertMappings "github.com/stackrox/rox/central/alert/index/mappings"
+	deploymentMappings "github.com/stackrox/rox/central/deployment/index/mappings"
+	imageMappings "github.com/stackrox/rox/central/image/index/mappings"
+	policyMappings "github.com/stackrox/rox/central/policy/index/mappings"
+	secretSearchOptions "github.com/stackrox/rox/central/secret/search/options"
+	"github.com/stackrox/rox/generated/api/v1"
+	searchCommon "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // GlobalOptions is exposed for e2e test

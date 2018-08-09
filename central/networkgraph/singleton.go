@@ -3,11 +3,11 @@ package networkgraph
 import (
 	"sync"
 
-	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	"bitbucket.org/stack-rox/apollo/central/globaldb"
-	namespaceDataStore "bitbucket.org/stack-rox/apollo/central/namespace/store"
-	"bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
-	networkPolicyStore "bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/globaldb"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/store"
+	"github.com/stackrox/rox/central/networkpolicies/store"
+	networkPolicyStore "github.com/stackrox/rox/central/networkpolicies/store"
 )
 
 var (

@@ -3,11 +3,11 @@ package networkpolicy
 import (
 	"time"
 
-	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/listeners"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
-	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/listener/watchlister"
+	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/listeners"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/watchlister"
 	"k8s.io/api/networking/v1"
 	"k8s.io/client-go/rest"
 )

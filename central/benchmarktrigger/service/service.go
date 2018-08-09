@@ -3,12 +3,12 @@ package service
 import (
 	"context"
 
-	bDataStore "bitbucket.org/stack-rox/apollo/central/benchmark/datastore"
-	btDataStore "bitbucket.org/stack-rox/apollo/central/benchmarktrigger/datastore"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	bDataStore "github.com/stackrox/rox/central/benchmark/datastore"
+	btDataStore "github.com/stackrox/rox/central/benchmarktrigger/datastore"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 )
 

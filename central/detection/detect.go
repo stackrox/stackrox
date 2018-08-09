@@ -1,9 +1,9 @@
 package detection
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // Detect takes a Task and returns whether an alert and an enforcement action would be taken

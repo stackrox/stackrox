@@ -1,10 +1,10 @@
 package store
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/bolthelper"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/boltdb/bolt"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 const networkPolicyBucket = "networkpolicies"

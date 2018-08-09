@@ -1,8 +1,8 @@
 package fixtures
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // GetImage returns a Mock Image

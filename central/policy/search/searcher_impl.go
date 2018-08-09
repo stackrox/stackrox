@@ -1,11 +1,11 @@
 package search
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/policy/index"
-	"bitbucket.org/stack-rox/apollo/central/policy/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/defaults"
-	"bitbucket.org/stack-rox/apollo/pkg/search"
+	"github.com/stackrox/rox/central/policy/index"
+	"github.com/stackrox/rox/central/policy/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/defaults"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.

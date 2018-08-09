@@ -3,13 +3,13 @@ package index
 import (
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/deployment/index/mappings"
-	"bitbucket.org/stack-rox/apollo/central/metrics"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/search"
-	"bitbucket.org/stack-rox/apollo/pkg/search/blevesearch"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
+	"github.com/stackrox/rox/central/deployment/index/mappings"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 // AlertIndex provides storage functionality for alerts.

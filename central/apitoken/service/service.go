@@ -3,12 +3,12 @@ package service
 import (
 	"context"
 
-	"bitbucket.org/stack-rox/apollo/central/apitoken/cachedstore"
-	"bitbucket.org/stack-rox/apollo/central/apitoken/parser"
-	"bitbucket.org/stack-rox/apollo/central/apitoken/signer"
-	rolestore "bitbucket.org/stack-rox/apollo/central/role/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/apitoken/cachedstore"
+	"github.com/stackrox/rox/central/apitoken/parser"
+	"github.com/stackrox/rox/central/apitoken/signer"
+	rolestore "github.com/stackrox/rox/central/role/store"
+	"github.com/stackrox/rox/generated/api/v1"
 	"google.golang.org/grpc"
 )
 

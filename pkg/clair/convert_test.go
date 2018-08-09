@@ -3,7 +3,7 @@ package clair
 import (
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/pkg/clair/mock"
+	"github.com/stackrox/rox/pkg/clair/mock"
 	"github.com/stretchr/testify/assert"
 )
 

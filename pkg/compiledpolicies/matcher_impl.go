@@ -1,10 +1,10 @@
 package compiledpolicies
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	deploymentMatcher "bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/deployment/matcher"
-	deploymentPredicate "bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/deployment/predicate"
-	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/utils"
+	"github.com/stackrox/rox/generated/api/v1"
+	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
+	deploymentPredicate "github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
+	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
 
 // matcherAdapter is an adapter to the old interfaces.

@@ -3,8 +3,8 @@ package registries
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/registries/types"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/registries/types"
 )
 
 type setImpl struct {

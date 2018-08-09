@@ -3,11 +3,11 @@ package sensor
 import (
 	"io"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/enforcers"
-	"bitbucket.org/stack-rox/apollo/pkg/images/enricher"
-	"bitbucket.org/stack-rox/apollo/pkg/images/integration"
-	"bitbucket.org/stack-rox/apollo/pkg/listeners"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/enforcers"
+	"github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/images/integration"
+	"github.com/stackrox/rox/pkg/listeners"
 	"google.golang.org/grpc"
 )
 

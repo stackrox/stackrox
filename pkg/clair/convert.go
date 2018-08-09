@@ -3,9 +3,9 @@ package clair
 import (
 	"encoding/json"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/scans"
 	clairV1 "github.com/coreos/clair/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/scans"
 )
 
 type nvd struct {

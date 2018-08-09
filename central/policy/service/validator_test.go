@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	clusterMocks "bitbucket.org/stack-rox/apollo/central/cluster/datastore/mocks"
-	notifierMocks "bitbucket.org/stack-rox/apollo/central/notifier/store/mocks"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	notifierMocks "github.com/stackrox/rox/central/notifier/store/mocks"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

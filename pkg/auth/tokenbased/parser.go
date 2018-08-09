@@ -1,6 +1,6 @@
 package tokenbased
 
-import "bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
+import "github.com/stackrox/rox/pkg/auth/permissions"
 
 // A RoleMapper returns the role corresponding to an identifier
 // obtained from a token.

@@ -1,8 +1,8 @@
 package deploymentevents
 
 import (
-	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 func newUpdateImages(images imageDataStore.DataStore) *updateImagesImpl {

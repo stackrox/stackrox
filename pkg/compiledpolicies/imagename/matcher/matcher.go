@@ -1,7 +1,7 @@
 package matcher
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // Matcher is a function that provides alert violations.

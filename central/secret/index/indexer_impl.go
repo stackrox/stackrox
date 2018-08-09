@@ -1,9 +1,9 @@
 package index
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/secret/index/mapping"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/blevesearch/bleve"
+	"github.com/stackrox/rox/central/secret/index/mapping"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 type sarWrapper struct {

@@ -1,14 +1,14 @@
 package enrichment
 
 import (
-	deploymentDS "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	imageDS "bitbucket.org/stack-rox/apollo/central/image/datastore"
-	imageIntegrationDS "bitbucket.org/stack-rox/apollo/central/imageintegration/datastore"
-	multiplierDS "bitbucket.org/stack-rox/apollo/central/multiplier/store"
-	"bitbucket.org/stack-rox/apollo/central/risk"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images/enricher"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
+	imageIntegrationDS "github.com/stackrox/rox/central/imageintegration/datastore"
+	multiplierDS "github.com/stackrox/rox/central/multiplier/store"
+	"github.com/stackrox/rox/central/risk"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

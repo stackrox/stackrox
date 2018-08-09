@@ -1,10 +1,10 @@
 package search
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/deployment/index"
-	"bitbucket.org/stack-rox/apollo/central/deployment/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"github.com/stackrox/rox/central/deployment/index"
+	"github.com/stackrox/rox/central/deployment/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

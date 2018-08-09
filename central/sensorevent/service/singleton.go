@@ -3,15 +3,15 @@ package service
 import (
 	"sync"
 
-	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	"bitbucket.org/stack-rox/apollo/central/detection"
-	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
-	namespaceStore "bitbucket.org/stack-rox/apollo/central/namespace/store"
-	"bitbucket.org/stack-rox/apollo/central/networkgraph"
-	networkPolicyStore "bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
-	"bitbucket.org/stack-rox/apollo/central/risk"
-	sensorEventDataStore "bitbucket.org/stack-rox/apollo/central/sensorevent/store"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/detection"
+	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	namespaceStore "github.com/stackrox/rox/central/namespace/store"
+	"github.com/stackrox/rox/central/networkgraph"
+	networkPolicyStore "github.com/stackrox/rox/central/networkpolicies/store"
+	"github.com/stackrox/rox/central/risk"
+	sensorEventDataStore "github.com/stackrox/rox/central/sensorevent/store"
 )
 
 var (

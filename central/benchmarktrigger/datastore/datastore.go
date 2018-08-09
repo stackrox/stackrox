@@ -1,9 +1,9 @@
 package datastore
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/benchmarktrigger/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"github.com/stackrox/rox/central/benchmarktrigger/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

@@ -1,8 +1,8 @@
 package matcher
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	volumeMatcher "bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/volume/matcher"
+	"github.com/stackrox/rox/generated/api/v1"
+	volumeMatcher "github.com/stackrox/rox/pkg/compiledpolicies/volume/matcher"
 )
 
 func init() {

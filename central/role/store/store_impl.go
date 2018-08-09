@@ -1,6 +1,6 @@
 package store
 
-import "bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
+import "github.com/stackrox/rox/pkg/auth/permissions"
 
 // storeImpl implements store.
 // Currently, it is just a simple in-mem map, since the roles are pre-defined in the code.

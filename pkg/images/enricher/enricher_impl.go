@@ -4,13 +4,13 @@ import (
 	"context"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/metrics"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images/integration"
-	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
-	registryTypes "bitbucket.org/stack-rox/apollo/pkg/registries/types"
-	scannerTypes "bitbucket.org/stack-rox/apollo/pkg/scanners/types"
 	"github.com/karlseguin/ccache"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/images/integration"
+	"github.com/stackrox/rox/pkg/protoconv"
+	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"golang.org/x/time/rate"
 )
 

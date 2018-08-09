@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/authproviders"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/tokenbased"
-	"bitbucket.org/stack-rox/apollo/pkg/jwt"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/tokenbased"
+	"github.com/stackrox/rox/pkg/jwt"
 )
 
 const (

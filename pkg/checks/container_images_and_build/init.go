@@ -1,6 +1,6 @@
 package containerimagesandbuild
 
-import "bitbucket.org/stack-rox/apollo/pkg/checks"
+import "github.com/stackrox/rox/pkg/checks"
 
 func init() {
 	checks.AddToRegistry( // Part 4

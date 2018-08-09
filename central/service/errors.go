@@ -1,7 +1,7 @@
 package service
 
 import (
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/grpc/routes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

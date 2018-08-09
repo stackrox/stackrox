@@ -1,13 +1,13 @@
 package services
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/docker"
-	"bitbucket.org/stack-rox/apollo/pkg/listeners"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/swarm"
 	dockerClient "github.com/docker/docker/client"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/listeners"
 )
 
 // Handler creates a new handler for sending resources

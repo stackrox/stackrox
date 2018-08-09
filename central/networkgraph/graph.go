@@ -5,14 +5,14 @@ import (
 	"sort"
 	"sync/atomic"
 
-	deploymentsDatastore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	networkPolicyStore "bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/search"
-	"bitbucket.org/stack-rox/apollo/pkg/set"
 	"github.com/deckarep/golang-set"
 	"github.com/gogo/protobuf/proto"
+	deploymentsDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	networkPolicyStore "github.com/stackrox/rox/central/networkpolicies/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var logger = logging.LoggerForModule()

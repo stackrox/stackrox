@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/deny"
 	"github.com/NYTimes/gziphandler"
+	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 )
 
 func defaultInterceptor(h http.Handler) http.Handler {

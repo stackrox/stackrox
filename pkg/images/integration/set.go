@@ -1,9 +1,9 @@
 package integration
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/registries"
+	"github.com/stackrox/rox/pkg/scanners"
 )
 
 // Set provides an interface for reading the active set of image integrations.

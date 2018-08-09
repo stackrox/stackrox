@@ -3,11 +3,11 @@ package parser
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/central/apitoken"
-	"bitbucket.org/stack-rox/apollo/central/apitoken/signer"
-	"bitbucket.org/stack-rox/apollo/central/role/store"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/tokenbased"
-	pkgJWT "bitbucket.org/stack-rox/apollo/pkg/jwt"
+	"github.com/stackrox/rox/central/apitoken"
+	"github.com/stackrox/rox/central/apitoken/signer"
+	"github.com/stackrox/rox/central/role/store"
+	"github.com/stackrox/rox/pkg/auth/tokenbased"
+	pkgJWT "github.com/stackrox/rox/pkg/jwt"
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 

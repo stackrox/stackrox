@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/globaldb"
-	"bitbucket.org/stack-rox/apollo/central/logimbue/store"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/logimbue/store"
 )
 
 var (

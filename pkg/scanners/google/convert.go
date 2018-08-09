@@ -1,7 +1,7 @@
 package google
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1alpha1"
 )
 

@@ -8,5 +8,5 @@ gazelle(
         "BUILD.bazel",
     ],
     external = "vendored",
-    prefix = "bitbucket.org/stack-rox/apollo",
+    prefix = "github.com/stackrox/rox",
 )

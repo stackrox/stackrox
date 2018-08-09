@@ -5,7 +5,7 @@ package tokenbased
 import (
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
 // Identity represents a token-based identity.

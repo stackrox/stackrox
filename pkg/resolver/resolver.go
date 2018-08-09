@@ -1,6 +1,6 @@
 package resolver
 
-import "bitbucket.org/stack-rox/apollo/pkg/urlfmt"
+import "github.com/stackrox/rox/pkg/urlfmt"
 
 // Registry resolves a registry into its fully qualified form
 func Registry(url string) string {

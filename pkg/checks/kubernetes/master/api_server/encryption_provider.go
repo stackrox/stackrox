@@ -1,9 +1,9 @@
 package apiserver
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/checks"
-	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/checks"
+	"github.com/stackrox/rox/pkg/checks/utils"
 	"gopkg.in/yaml.v2"
 	"k8s.io/apiserver/pkg/server/options/encryptionconfig"
 )

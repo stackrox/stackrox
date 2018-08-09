@@ -3,13 +3,13 @@ package enrichment
 import (
 	"sync"
 
-	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
-	"bitbucket.org/stack-rox/apollo/central/imageintegration"
-	imageintegrationDataStore "bitbucket.org/stack-rox/apollo/central/imageintegration/datastore"
-	multiplierStore "bitbucket.org/stack-rox/apollo/central/multiplier/store"
-	"bitbucket.org/stack-rox/apollo/central/risk"
-	"bitbucket.org/stack-rox/apollo/pkg/images/enricher"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/imageintegration"
+	imageintegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
+	multiplierStore "github.com/stackrox/rox/central/multiplier/store"
+	"github.com/stackrox/rox/central/risk"
+	"github.com/stackrox/rox/pkg/images/enricher"
 )
 
 var (

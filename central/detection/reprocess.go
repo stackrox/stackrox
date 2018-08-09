@@ -3,9 +3,9 @@ package detection
 import (
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies"
-	"bitbucket.org/stack-rox/apollo/pkg/search"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/compiledpolicies"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // EnrichAndReprocess enriches all deployments. If new data is available, it re-assesses all policies for that deployment.

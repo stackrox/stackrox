@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"time"
 
-	alertDataStore "bitbucket.org/stack-rox/apollo/central/alert/datastore"
-	"bitbucket.org/stack-rox/apollo/central/cluster/store"
-	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	dnrStore "bitbucket.org/stack-rox/apollo/central/dnrintegration/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
-	"bitbucket.org/stack-rox/apollo/pkg/search"
+	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/cluster/store"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	dnrStore "github.com/stackrox/rox/central/dnrintegration/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {

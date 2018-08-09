@@ -5,11 +5,11 @@ import (
 	"strings"
 	"testing"
 
-	alertMocks "bitbucket.org/stack-rox/apollo/central/alert/datastore/mocks"
-	clusterMocks "bitbucket.org/stack-rox/apollo/central/cluster/store/mocks"
-	deploymentMocks "bitbucket.org/stack-rox/apollo/central/deployment/datastore/mocks"
-	dnrintegrationMocks "bitbucket.org/stack-rox/apollo/central/dnrintegration/datastore/mocks"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
+	clusterMocks "github.com/stackrox/rox/central/cluster/store/mocks"
+	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	dnrintegrationMocks "github.com/stackrox/rox/central/dnrintegration/datastore/mocks"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )

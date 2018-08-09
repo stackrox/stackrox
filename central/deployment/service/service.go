@@ -3,13 +3,13 @@ package service
 import (
 	"context"
 
-	"bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	"bitbucket.org/stack-rox/apollo/central/enrichment"
-	multiplierStore "bitbucket.org/stack-rox/apollo/central/multiplier/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/enrichment"
+	multiplierStore "github.com/stackrox/rox/central/multiplier/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 )
 

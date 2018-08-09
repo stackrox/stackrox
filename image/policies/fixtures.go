@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"bitbucket.org/stack-rox/apollo/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils"
 )
 
 // Directory returns the directory path at which these fixtures can be found in tests.

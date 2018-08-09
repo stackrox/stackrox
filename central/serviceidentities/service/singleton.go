@@ -3,8 +3,8 @@ package service
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/globaldb"
-	"bitbucket.org/stack-rox/apollo/central/serviceidentities/store"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/serviceidentities/store"
 )
 
 var (

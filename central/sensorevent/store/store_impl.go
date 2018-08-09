@@ -6,12 +6,12 @@ import (
 	"strconv"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
-	"bitbucket.org/stack-rox/apollo/central/metrics"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/dberrors"
 	"github.com/boltdb/bolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/central/globaldb/ops"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/dberrors"
 )
 
 type storeImpl struct {

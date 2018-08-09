@@ -1,10 +1,10 @@
 package transform
 
 import (
-	"bitbucket.org/stack-rox/apollo/pkg/search"
-	"bitbucket.org/stack-rox/apollo/pkg/search/blevesearch"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 // QueryWrapper wraps a query and provides functions for conversion.

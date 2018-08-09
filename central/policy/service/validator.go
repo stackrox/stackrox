@@ -6,11 +6,11 @@ import (
 	"regexp"
 	"strings"
 
-	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	notifierStore "bitbucket.org/stack-rox/apollo/central/notifier/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
 	"github.com/deckarep/golang-set"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	notifierStore "github.com/stackrox/rox/central/notifier/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 func newPolicyValidator(notifierStorage notifierStore.Store, clusterStorage clusterDataStore.DataStore) *policyValidator {

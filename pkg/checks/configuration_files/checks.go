@@ -3,7 +3,7 @@ package configurationfiles
 import (
 	"os"
 
-	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
+	"github.com/stackrox/rox/pkg/checks/utils"
 )
 
 // NewDockerServiceOwnershipCheck implements CIS-3.1

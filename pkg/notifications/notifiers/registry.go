@@ -3,7 +3,7 @@ package notifiers
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // Creator is a function stub for a function that creates a Notifier

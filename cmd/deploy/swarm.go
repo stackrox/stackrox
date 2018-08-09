@@ -1,9 +1,9 @@
 package main
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/central"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/central"
 )
 
 func dockerBasedOrchestrator(shortName, longName string, cluster v1.ClusterType) *cobra.Command {

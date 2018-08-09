@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // MatchRequiredKeyValue returns violations for the key values passed based on the input regex's.

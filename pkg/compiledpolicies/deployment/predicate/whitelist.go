@@ -1,9 +1,9 @@
 package predicate
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/utils"
-	"bitbucket.org/stack-rox/apollo/pkg/scopecomp"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
+	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
 func init() {

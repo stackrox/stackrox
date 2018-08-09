@@ -3,9 +3,9 @@ package service
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	"bitbucket.org/stack-rox/apollo/central/enrichment"
-	multiplierStore "bitbucket.org/stack-rox/apollo/central/multiplier/store"
+	"github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/enrichment"
+	multiplierStore "github.com/stackrox/rox/central/multiplier/store"
 )
 
 var (

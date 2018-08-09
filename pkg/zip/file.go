@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // NewFile returns a File object with the given parameters

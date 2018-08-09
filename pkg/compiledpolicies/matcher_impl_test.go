@@ -3,8 +3,8 @@ package compiledpolicies
 import (
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	containerPredicate "bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/container/predicate"
+	"github.com/stackrox/rox/generated/api/v1"
+	containerPredicate "github.com/stackrox/rox/pkg/compiledpolicies/container/predicate"
 	"github.com/stretchr/testify/assert"
 )
 

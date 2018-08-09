@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/apitoken/signer"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
-	pkgJWT "bitbucket.org/stack-rox/apollo/pkg/jwt"
+	"github.com/stackrox/rox/central/apitoken/signer"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	pkgJWT "github.com/stackrox/rox/pkg/jwt"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"

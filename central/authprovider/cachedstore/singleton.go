@@ -3,9 +3,9 @@ package cachedstore
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/authprovider/store"
-	"bitbucket.org/stack-rox/apollo/central/globaldb"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"github.com/stackrox/rox/central/authprovider/store"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

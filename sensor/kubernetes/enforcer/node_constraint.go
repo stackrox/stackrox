@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/enforcers"
-	pkgKubernetes "bitbucket.org/stack-rox/apollo/pkg/kubernetes"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/enforcers"
+	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"

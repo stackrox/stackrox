@@ -3,14 +3,14 @@ package clairify
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	clairConv "bitbucket.org/stack-rox/apollo/pkg/clair"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
-	scannerTypes "bitbucket.org/stack-rox/apollo/pkg/scanners/types"
-	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
 	"bitbucket.org/stack-rox/clairify/client"
 	"bitbucket.org/stack-rox/clairify/types"
 	clairV1 "github.com/coreos/clair/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
+	clairConv "github.com/stackrox/rox/pkg/clair"
+	"github.com/stackrox/rox/pkg/registries"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.

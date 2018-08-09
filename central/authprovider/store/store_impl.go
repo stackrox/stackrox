@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
-	"bitbucket.org/stack-rox/apollo/central/metrics"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/dberrors"
-	"bitbucket.org/stack-rox/apollo/pkg/secondarykey"
-	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/boltdb/bolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/stackrox/rox/central/globaldb/ops"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/dberrors"
+	"github.com/stackrox/rox/pkg/secondarykey"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 type storeImpl struct {

@@ -3,7 +3,7 @@ package queue
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // Push attempts to add an item to the queue, and returns an error if it is unable.

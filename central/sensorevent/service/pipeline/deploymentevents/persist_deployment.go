@@ -1,8 +1,8 @@
 package deploymentevents
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 func newPersistDeployment(deployments datastore.DataStore) *persistDeploymentImpl {

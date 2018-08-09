@@ -9,14 +9,14 @@ import (
 	"syscall"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/benchmarks/runner"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	_ "bitbucket.org/stack-rox/apollo/pkg/checks"
-	_ "bitbucket.org/stack-rox/apollo/pkg/checks/all"
-	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
-	"bitbucket.org/stack-rox/apollo/pkg/env"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/stackrox/rox/benchmarks/runner"
+	"github.com/stackrox/rox/generated/api/v1"
+	_ "github.com/stackrox/rox/pkg/checks"
+	_ "github.com/stackrox/rox/pkg/checks/all"
+	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"golang.org/x/net/context"
 )
 

@@ -1,14 +1,14 @@
 package transform
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/secret/index/mapping"
-	"bitbucket.org/stack-rox/apollo/central/secret/search/options"
-	"bitbucket.org/stack-rox/apollo/central/secret/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/search"
-	"bitbucket.org/stack-rox/apollo/pkg/search/blevesearch"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
+	"github.com/stackrox/rox/central/secret/index/mapping"
+	"github.com/stackrox/rox/central/secret/search/options"
+	"github.com/stackrox/rox/central/secret/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 // ParsedSearchRequestWrapper wraps a ParsedSearchRequest and provides functions for conversion.

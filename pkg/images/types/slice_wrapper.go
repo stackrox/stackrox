@@ -3,7 +3,7 @@ package types
 import (
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // SliceWrapper provides helper functions for a slice of images.

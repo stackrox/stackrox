@@ -1,7 +1,7 @@
 package types
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // Config is the config of the registry, which can be utilized by 3rd party scanners

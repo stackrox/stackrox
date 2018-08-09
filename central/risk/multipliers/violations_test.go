@@ -3,8 +3,8 @@ package multipliers
 import (
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/central/risk/getters"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/central/risk/getters"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 )
 

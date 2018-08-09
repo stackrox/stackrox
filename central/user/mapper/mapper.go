@@ -2,10 +2,10 @@
 package usermapper
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/role"
-	"bitbucket.org/stack-rox/apollo/central/role/store"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/tokenbased"
+	"github.com/stackrox/rox/central/role"
+	"github.com/stackrox/rox/central/role/store"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/tokenbased"
 )
 
 // Currently, we don't really have a notion of identities for human users.

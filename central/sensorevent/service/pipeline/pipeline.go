@@ -1,6 +1,6 @@
 package pipeline
 
-import "bitbucket.org/stack-rox/apollo/generated/api/v1"
+import "github.com/stackrox/rox/generated/api/v1"
 
 // Pipeline represents the processing applied to a SensorEvent to produce a response.
 type Pipeline interface {

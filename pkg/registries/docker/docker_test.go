@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	ptypes "github.com/gogo/protobuf/types"
 	timestamp "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

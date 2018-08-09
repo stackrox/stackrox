@@ -1,14 +1,14 @@
 package networks
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/docker"
-	"bitbucket.org/stack-rox/apollo/pkg/listeners"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	dockerClient "github.com/docker/docker/client"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/listeners"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var logger = logging.LoggerForModule()

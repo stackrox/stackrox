@@ -3,8 +3,8 @@ package search
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/globalindex"
-	"bitbucket.org/stack-rox/apollo/central/secret/store"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/secret/store"
 )
 
 var (

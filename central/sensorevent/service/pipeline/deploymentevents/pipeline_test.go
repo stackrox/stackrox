@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	clusterMocks "bitbucket.org/stack-rox/apollo/central/cluster/datastore/mocks"
-	deploymentMocks "bitbucket.org/stack-rox/apollo/central/deployment/datastore/mocks"
-	imageMocks "bitbucket.org/stack-rox/apollo/central/image/datastore/mocks"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )

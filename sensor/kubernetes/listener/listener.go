@@ -3,14 +3,14 @@ package listener
 import (
 	"time"
 
-	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/env"
-	"bitbucket.org/stack-rox/apollo/pkg/listeners"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/listener/namespace"
-	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/listener/networkpolicy"
-	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/listener/resources"
 	openshift "github.com/openshift/client-go/apps/clientset/versioned"
+	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/listeners"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/namespace"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/networkpolicy"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )

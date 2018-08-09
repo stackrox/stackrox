@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 var datatypeToQueryFunc = map[v1.SearchDataType]func(string, []string) (query.Query, error){

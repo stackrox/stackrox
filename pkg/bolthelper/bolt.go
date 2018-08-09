@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"bitbucket.org/stack-rox/apollo/pkg/secondarykey"
 	"github.com/boltdb/bolt"
+	"github.com/stackrox/rox/pkg/secondarykey"
 )
 
 const txMaxSize = 65536

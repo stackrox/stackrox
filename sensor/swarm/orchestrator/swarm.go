@@ -7,16 +7,16 @@ import (
 	"strings"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
-	"bitbucket.org/stack-rox/apollo/pkg/docker"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
 	"github.com/docker/docker/api/types"
 	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
+	"github.com/stackrox/rox/pkg/benchmarks"
+	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/orchestrators"
 )
 
 var (

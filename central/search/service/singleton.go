@@ -3,10 +3,10 @@ package service
 import (
 	"sync"
 
-	alertDataStore "bitbucket.org/stack-rox/apollo/central/alert/datastore"
-	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
-	policyDataStore "bitbucket.org/stack-rox/apollo/central/policy/datastore"
+	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 )
 
 var (

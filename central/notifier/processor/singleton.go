@@ -3,7 +3,7 @@ package processor
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/notifier/store"
+	"github.com/stackrox/rox/central/notifier/store"
 )
 
 var (

@@ -1,9 +1,9 @@
 package sensor
 
 import (
-	"bitbucket.org/stack-rox/apollo/pkg/enforcers"
-	"bitbucket.org/stack-rox/apollo/pkg/listeners"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"github.com/stackrox/rox/pkg/enforcers"
+	"github.com/stackrox/rox/pkg/listeners"
+	"github.com/stackrox/rox/pkg/logging"
 	grpcLib "google.golang.org/grpc"
 )
 

@@ -3,9 +3,9 @@ package idcheck
 import (
 	"context"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/authz"
 )
 
 // A serviceType Authorizer checks that the client has the desired service type.

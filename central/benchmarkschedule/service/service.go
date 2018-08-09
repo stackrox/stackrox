@@ -3,12 +3,12 @@ package service
 import (
 	"context"
 
-	benchmarkDataStore "bitbucket.org/stack-rox/apollo/central/benchmark/datastore"
-	"bitbucket.org/stack-rox/apollo/central/benchmarkschedule/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	benchmarkDataStore "github.com/stackrox/rox/central/benchmark/datastore"
+	"github.com/stackrox/rox/central/benchmarkschedule/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 )
 

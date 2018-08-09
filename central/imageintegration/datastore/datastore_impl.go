@@ -1,9 +1,9 @@
 package datastore
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/imageintegration/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/set"
+	"github.com/stackrox/rox/central/imageintegration/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type datastoreImpl struct {

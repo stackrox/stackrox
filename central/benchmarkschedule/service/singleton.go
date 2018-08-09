@@ -3,8 +3,8 @@ package service
 import (
 	"sync"
 
-	benchmarkDataStore "bitbucket.org/stack-rox/apollo/central/benchmark/datastore"
-	"bitbucket.org/stack-rox/apollo/central/benchmarkschedule/store"
+	benchmarkDataStore "github.com/stackrox/rox/central/benchmark/datastore"
+	"github.com/stackrox/rox/central/benchmarkschedule/store"
 )
 
 var (

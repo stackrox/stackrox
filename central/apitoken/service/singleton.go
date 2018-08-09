@@ -3,10 +3,10 @@ package service
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/apitoken/cachedstore"
-	"bitbucket.org/stack-rox/apollo/central/apitoken/parser"
-	"bitbucket.org/stack-rox/apollo/central/apitoken/signer"
-	rolestore "bitbucket.org/stack-rox/apollo/central/role/store"
+	"github.com/stackrox/rox/central/apitoken/cachedstore"
+	"github.com/stackrox/rox/central/apitoken/parser"
+	"github.com/stackrox/rox/central/apitoken/signer"
+	rolestore "github.com/stackrox/rox/central/role/store"
 )
 
 var (

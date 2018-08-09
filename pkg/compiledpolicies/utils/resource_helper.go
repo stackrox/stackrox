@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // MatchResources returns violations based on the input resource policy and actual resource configuration.

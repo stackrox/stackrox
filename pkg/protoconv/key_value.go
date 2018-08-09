@@ -3,7 +3,7 @@ package protoconv
 import (
 	"sort"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // ConvertDeploymentKeyValueMap converts from a map[string]string to the proto deployment label

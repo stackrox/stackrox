@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 const (

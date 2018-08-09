@@ -4,10 +4,10 @@ import (
 	"os"
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/pkg/checks"
-	"bitbucket.org/stack-rox/apollo/pkg/checks/host_configuration"
-	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
-	"bitbucket.org/stack-rox/apollo/pkg/env"
+	"github.com/stackrox/rox/pkg/checks"
+	"github.com/stackrox/rox/pkg/checks/host_configuration"
+	"github.com/stackrox/rox/pkg/checks/utils"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/assert"
 )
 

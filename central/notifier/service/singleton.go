@@ -3,9 +3,9 @@ package service
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/detection"
-	"bitbucket.org/stack-rox/apollo/central/notifier/processor"
-	"bitbucket.org/stack-rox/apollo/central/notifier/store"
+	"github.com/stackrox/rox/central/detection"
+	"github.com/stackrox/rox/central/notifier/processor"
+	"github.com/stackrox/rox/central/notifier/store"
 )
 
 var (

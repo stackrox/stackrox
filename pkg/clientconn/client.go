@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/pkg/mtls"
-	"bitbucket.org/stack-rox/apollo/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"

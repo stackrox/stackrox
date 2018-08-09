@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	sensorEventMocks "bitbucket.org/stack-rox/apollo/central/sensorevent/store/mocks"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	sensorEventMocks "github.com/stackrox/rox/central/sensorevent/store/mocks"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )

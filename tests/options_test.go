@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/search/options"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/clientconn"
+	"github.com/stackrox/rox/central/search/options"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

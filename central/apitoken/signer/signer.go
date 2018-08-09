@@ -4,7 +4,7 @@ import (
 	"crypto/x509"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/pkg/uuid"
+	"github.com/stackrox/rox/pkg/uuid"
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"
 )

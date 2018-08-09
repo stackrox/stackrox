@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/docker/distribution/reference"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // GenerateImageFromString generates an image type from a common string format

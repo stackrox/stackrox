@@ -265,7 +265,7 @@ git tag -ln "${RELEASE_VERSION}"
 git push origin "${RELEASE_VERSION}"
 ```
 
-When you push the tag to Bitbucket, CircleCI will start a build and will push
+When you push the tag to GitHub, CircleCI will start a build and will push
 the image as `stackrox/prevent:[your-release-tag]`,
 for example `stackrox/prevent:1.0` and `stackrox.io/prevent:1.0`.
 

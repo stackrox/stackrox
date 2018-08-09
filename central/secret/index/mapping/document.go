@@ -1,9 +1,9 @@
 package mapping
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/secret/search/options"
-	"bitbucket.org/stack-rox/apollo/pkg/search/blevesearch"
 	"github.com/blevesearch/bleve/mapping"
+	"github.com/stackrox/rox/central/secret/search/options"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 // IndexedType is the object type we wrap indexed secrets and relationships with.

@@ -1,8 +1,8 @@
 package networks
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/docker/docker/api/types"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 type networkWrap types.NetworkResource

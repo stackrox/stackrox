@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/notifier/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
+	"github.com/stackrox/rox/central/notifier/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/notifications/notifiers"
 )
 
 // Processor takes in alerts and sends the notifications tied to that alert

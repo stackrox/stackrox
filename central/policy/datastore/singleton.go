@@ -3,11 +3,11 @@ package datastore
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/globaldb"
-	"bitbucket.org/stack-rox/apollo/central/globalindex"
-	"bitbucket.org/stack-rox/apollo/central/policy/index"
-	"bitbucket.org/stack-rox/apollo/central/policy/search"
-	"bitbucket.org/stack-rox/apollo/central/policy/store"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/policy/index"
+	"github.com/stackrox/rox/central/policy/search"
+	"github.com/stackrox/rox/central/policy/store"
 )
 
 var (

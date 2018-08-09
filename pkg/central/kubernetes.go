@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"text/template"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	kubernetesPkg "bitbucket.org/stack-rox/apollo/pkg/kubernetes"
-	"bitbucket.org/stack-rox/apollo/pkg/zip"
+	"github.com/stackrox/rox/generated/api/v1"
+	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/zip"
 )
 
 func init() {

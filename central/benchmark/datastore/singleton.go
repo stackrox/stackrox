@@ -3,8 +3,8 @@ package datastore
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/benchmark/store"
-	"bitbucket.org/stack-rox/apollo/central/globaldb"
+	"github.com/stackrox/rox/central/benchmark/store"
+	"github.com/stackrox/rox/central/globaldb"
 )
 
 var (

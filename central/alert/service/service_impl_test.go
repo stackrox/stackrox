@@ -3,8 +3,8 @@ package service
 import (
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	timestamp "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 )
 

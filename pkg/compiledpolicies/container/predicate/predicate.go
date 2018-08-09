@@ -1,7 +1,7 @@
 package predicate
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // Predicate is a function that indicates whether (true) or not (false) a container should be processed.

@@ -1,6 +1,6 @@
 package fixtures
 
-import "bitbucket.org/stack-rox/apollo/generated/api/v1"
+import "github.com/stackrox/rox/generated/api/v1"
 
 // GetDeployment returns a Mock Deployment
 func GetDeployment() *v1.Deployment {

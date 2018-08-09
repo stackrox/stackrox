@@ -1,7 +1,7 @@
 package search
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // OptionMode boils down search field options into a single field

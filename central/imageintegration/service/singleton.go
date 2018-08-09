@@ -3,10 +3,10 @@ package service
 import (
 	"sync"
 
-	clusterDatastore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	"bitbucket.org/stack-rox/apollo/central/detection"
-	"bitbucket.org/stack-rox/apollo/central/imageintegration"
-	"bitbucket.org/stack-rox/apollo/central/imageintegration/datastore"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/detection"
+	"github.com/stackrox/rox/central/imageintegration"
+	"github.com/stackrox/rox/central/imageintegration/datastore"
 )
 
 var (

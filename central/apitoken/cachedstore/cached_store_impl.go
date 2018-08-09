@@ -3,9 +3,9 @@ package cachedstore
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/central/apitoken/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/deckarep/golang-set"
+	"github.com/stackrox/rox/central/apitoken/store"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 type cachedStoreImpl struct {

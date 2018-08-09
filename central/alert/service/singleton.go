@@ -3,7 +3,7 @@ package service
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/alert/datastore"
+	"github.com/stackrox/rox/central/alert/datastore"
 )
 
 var (

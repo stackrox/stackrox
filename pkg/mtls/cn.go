@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // Identity identifies a particular certificate.

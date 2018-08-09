@@ -1,8 +1,8 @@
 package matcher
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/container/predicate"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/compiledpolicies/container/predicate"
 )
 
 // Compiler is a function that turns a policy into a matcher.

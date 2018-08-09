@@ -3,8 +3,8 @@ package utils
 import (
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 // WhitelistIsExpired returns true when the input whitelist is expired.

@@ -1,15 +1,15 @@
 package deploymentevents
 
 import (
-	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	"bitbucket.org/stack-rox/apollo/central/detection"
-	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
-	"bitbucket.org/stack-rox/apollo/central/networkgraph"
-	secretDataGraph "bitbucket.org/stack-rox/apollo/central/secret/datagraph"
-	"bitbucket.org/stack-rox/apollo/central/sensorevent/service/pipeline"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/detection"
+	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/networkgraph"
+	secretDataGraph "github.com/stackrox/rox/central/secret/datagraph"
+	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

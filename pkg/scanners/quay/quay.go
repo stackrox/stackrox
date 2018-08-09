@@ -7,12 +7,12 @@ import (
 	"net/url"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	imageTypes "bitbucket.org/stack-rox/apollo/pkg/images/types"
-	quayRegistry "bitbucket.org/stack-rox/apollo/pkg/registries/quay"
-	registryTypes "bitbucket.org/stack-rox/apollo/pkg/registries/types"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners/types"
-	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
+	"github.com/stackrox/rox/generated/api/v1"
+	imageTypes "github.com/stackrox/rox/pkg/images/types"
+	quayRegistry "github.com/stackrox/rox/pkg/registries/quay"
+	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 const (

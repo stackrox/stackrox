@@ -1,8 +1,8 @@
 package store
 
 import (
-	"bitbucket.org/stack-rox/apollo/pkg/bolthelper"
 	"github.com/boltdb/bolt"
+	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
 const logsBucket = "logs"

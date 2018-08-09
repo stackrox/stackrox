@@ -1,7 +1,7 @@
 package detection
 
 import (
-	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies"
+	"github.com/stackrox/rox/pkg/compiledpolicies"
 )
 
 // UpdatePolicy updates the current policy in a threadsafe manner.

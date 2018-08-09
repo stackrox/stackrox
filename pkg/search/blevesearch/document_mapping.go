@@ -3,8 +3,8 @@ package blevesearch
 import (
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/blevesearch/bleve/mapping"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // AddDefaultTypeField does something

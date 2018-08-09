@@ -1,8 +1,8 @@
 package quay
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/clair"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/clair"
 )
 
 func convertScanToImageScan(image *v1.Image, s *scanResult) *v1.ImageScan {

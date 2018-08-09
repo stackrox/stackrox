@@ -5,7 +5,7 @@ package swarm
 import (
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/central/orchestrators/types"
+	"github.com/stackrox/rox/central/orchestrators/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

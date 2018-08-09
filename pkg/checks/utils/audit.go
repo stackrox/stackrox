@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 const auditFile = "/etc/audit/audit.rules"

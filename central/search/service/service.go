@@ -1,14 +1,14 @@
 package service
 
 import (
-	alertDataStore "bitbucket.org/stack-rox/apollo/central/alert/datastore"
-	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
-	policyDataStore "bitbucket.org/stack-rox/apollo/central/policy/datastore"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/search"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )

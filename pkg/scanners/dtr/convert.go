@@ -1,9 +1,9 @@
 package dtr
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/scans"
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/scans"
 )
 
 func convertVulns(dockerVulnDetails []*vulnerabilityDetails) []*v1.Vulnerability {

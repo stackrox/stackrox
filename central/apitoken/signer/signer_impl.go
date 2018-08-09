@@ -4,8 +4,8 @@ import (
 	"crypto/rsa"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/apitoken"
-	"bitbucket.org/stack-rox/apollo/pkg/uuid"
+	"github.com/stackrox/rox/central/apitoken"
+	"github.com/stackrox/rox/pkg/uuid"
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 

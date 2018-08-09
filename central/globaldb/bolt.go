@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/boltdb/bolt"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

@@ -1,9 +1,9 @@
 package enforcer
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/enforcers"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/enforcers"
+	"github.com/stackrox/rox/pkg/logging"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )

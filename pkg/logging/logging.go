@@ -36,7 +36,7 @@ const (
 	TraceLevel int32 = 10
 
 	// Our project prefix. For all subpackages of this, we strip this prefix.
-	projectPrefix = "bitbucket.org/stack-rox/apollo"
+	projectPrefix = "github.com/stackrox/rox"
 )
 
 var (

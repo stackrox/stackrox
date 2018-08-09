@@ -3,11 +3,11 @@ package datastore
 import (
 	"testing"
 
-	indexMock "bitbucket.org/stack-rox/apollo/central/image/index/mocks"
-	searchMock "bitbucket.org/stack-rox/apollo/central/image/search/mocks"
-	storeMock "bitbucket.org/stack-rox/apollo/central/image/store/mocks"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	gTypes "github.com/gogo/protobuf/types"
+	indexMock "github.com/stackrox/rox/central/image/index/mocks"
+	searchMock "github.com/stackrox/rox/central/image/search/mocks"
+	storeMock "github.com/stackrox/rox/central/image/store/mocks"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/suite"
 )
 

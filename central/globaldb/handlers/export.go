@@ -3,11 +3,11 @@ package handlers
 import (
 	"os"
 
-	imageIntegrationStore "bitbucket.org/stack-rox/apollo/central/imageintegration/store"
-	notifierStore "bitbucket.org/stack-rox/apollo/central/notifier/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/bolthelper"
 	"github.com/boltdb/bolt"
+	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/store"
+	notifierStore "github.com/stackrox/rox/central/notifier/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
 // Export returns a compacted backup of the database.

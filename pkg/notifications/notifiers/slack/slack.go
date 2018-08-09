@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"text/template"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
-	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifications/notifiers"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 var (

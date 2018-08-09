@@ -3,12 +3,12 @@ package singletons
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/apitoken/parser"
-	authProviderStore "bitbucket.org/stack-rox/apollo/central/authprovider/cachedstore"
-	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	"bitbucket.org/stack-rox/apollo/central/user/mapper"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn/tokenbased"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/clusters"
+	"github.com/stackrox/rox/central/apitoken/parser"
+	authProviderStore "github.com/stackrox/rox/central/authprovider/cachedstore"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/user/mapper"
+	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
+	"github.com/stackrox/rox/pkg/grpc/clusters"
 	"google.golang.org/grpc"
 )
 

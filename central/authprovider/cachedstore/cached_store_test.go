@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	// This import is required to register auth providers.
-	_ "bitbucket.org/stack-rox/apollo/pkg/auth/authproviders/all"
+	_ "github.com/stackrox/rox/pkg/auth/authproviders/all"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/uuid"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 )
 

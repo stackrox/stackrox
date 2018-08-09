@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/pkg/auth/tokenbased"
-	"bitbucket.org/stack-rox/apollo/pkg/mtls"
+	"github.com/stackrox/rox/pkg/auth/tokenbased"
+	"github.com/stackrox/rox/pkg/mtls"
 )
 
 var (

@@ -3,8 +3,8 @@ package datagraph
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/secret/index"
-	"bitbucket.org/stack-rox/apollo/central/secret/store"
+	"github.com/stackrox/rox/central/secret/index"
+	"github.com/stackrox/rox/central/secret/store"
 )
 
 var (

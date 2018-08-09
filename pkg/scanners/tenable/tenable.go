@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	imageTypes "bitbucket.org/stack-rox/apollo/pkg/images/types"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners/types"
-	"bitbucket.org/stack-rox/apollo/pkg/transports"
 	dockerRegistry "github.com/heroku/docker-registry-client/registry"
+	"github.com/stackrox/rox/generated/api/v1"
+	imageTypes "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/transports"
 )
 
 const (

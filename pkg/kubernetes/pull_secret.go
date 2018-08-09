@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"html/template"
 
-	"bitbucket.org/stack-rox/apollo/pkg/images/utils"
-	"bitbucket.org/stack-rox/apollo/pkg/urlfmt"
+	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 const (

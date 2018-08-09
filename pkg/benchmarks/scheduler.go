@@ -7,14 +7,14 @@ import (
 	"strings"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/env"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
-	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
-	"bitbucket.org/stack-rox/apollo/pkg/uuid"
 	"github.com/deckarep/golang-set"
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/orchestrators"
+	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 )
 

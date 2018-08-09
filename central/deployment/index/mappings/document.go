@@ -1,8 +1,8 @@
 package mappings
 
 import (
-	"bitbucket.org/stack-rox/apollo/pkg/search/blevesearch"
 	"github.com/blevesearch/bleve/mapping"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 // DocumentMap provides the document mapping for the indexer to use.

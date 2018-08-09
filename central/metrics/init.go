@@ -1,8 +1,8 @@
 package metrics
 
 import (
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

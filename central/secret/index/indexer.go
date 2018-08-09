@@ -1,8 +1,8 @@
 package index
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/blevesearch/bleve"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // Indexer indexes secret information.

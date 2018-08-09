@@ -1,8 +1,8 @@
 package queue
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/sensorevent/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/central/sensorevent/store"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // ChanneledEventQueue provides a dual channel interface to a queue of elements that need to be processed.

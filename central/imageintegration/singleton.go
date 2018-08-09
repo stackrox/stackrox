@@ -3,7 +3,7 @@ package imageintegration
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/pkg/images/integration"
+	"github.com/stackrox/rox/pkg/images/integration"
 )
 
 var (

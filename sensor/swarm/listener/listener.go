@@ -4,15 +4,15 @@ import (
 	"context"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/pkg/docker"
-	"bitbucket.org/stack-rox/apollo/pkg/listeners"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/sensor/swarm/listener/networks"
-	"bitbucket.org/stack-rox/apollo/sensor/swarm/listener/services"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	dockerClient "github.com/docker/docker/client"
+	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/listeners"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/swarm/listener/networks"
+	"github.com/stackrox/rox/sensor/swarm/listener/services"
 )
 
 var (

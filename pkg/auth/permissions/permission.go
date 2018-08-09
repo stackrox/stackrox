@@ -1,6 +1,6 @@
 package permissions
 
-import "bitbucket.org/stack-rox/apollo/pkg/logging"
+import "github.com/stackrox/rox/pkg/logging"
 
 var (
 	logger = logging.LoggerForModule()

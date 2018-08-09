@@ -3,10 +3,10 @@ package integration
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/registries"
+	"github.com/stackrox/rox/pkg/scanners"
 )
 
 type setImpl struct {

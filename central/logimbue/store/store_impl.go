@@ -5,10 +5,10 @@ import (
 	"encoding/binary"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/central/globaldb/ops"
-	"bitbucket.org/stack-rox/apollo/central/metrics"
-	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
 	"github.com/boltdb/bolt"
+	"github.com/stackrox/rox/central/globaldb/ops"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 type storeImpl struct {

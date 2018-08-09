@@ -1,11 +1,11 @@
 package service
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/serviceidentities/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/serviceidentities/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )

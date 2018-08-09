@@ -1,9 +1,9 @@
 package predicate
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/utils"
-	imageTypes "bitbucket.org/stack-rox/apollo/pkg/images/types"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
+	imageTypes "github.com/stackrox/rox/pkg/images/types"
 )
 
 func init() {

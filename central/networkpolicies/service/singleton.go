@@ -3,9 +3,9 @@ package service
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	"bitbucket.org/stack-rox/apollo/central/networkgraph"
-	"bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
+	"github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/networkgraph"
+	"github.com/stackrox/rox/central/networkpolicies/store"
 )
 
 var (

@@ -1,10 +1,10 @@
 package transform
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/secret/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/search"
 	"github.com/blevesearch/bleve"
+	"github.com/stackrox/rox/central/secret/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // RawQueryWrapper wraps a RawQuery and provides functions for conversion.

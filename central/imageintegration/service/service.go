@@ -3,16 +3,16 @@ package service
 import (
 	"context"
 
-	clusterDatastore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	"bitbucket.org/stack-rox/apollo/central/detection"
-	"bitbucket.org/stack-rox/apollo/central/imageintegration/datastore"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images/integration"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
-	"bitbucket.org/stack-rox/apollo/pkg/scanners"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/detection"
+	"github.com/stackrox/rox/central/imageintegration/datastore"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/images/integration"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/registries"
+	"github.com/stackrox/rox/pkg/scanners"
 	"google.golang.org/grpc"
 )
 

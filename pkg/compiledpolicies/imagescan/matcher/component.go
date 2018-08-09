@@ -1,8 +1,8 @@
 package matcher
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	componentMatcher "bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/imagescancomponent/matcher"
+	"github.com/stackrox/rox/generated/api/v1"
+	componentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/imagescancomponent/matcher"
 )
 
 func init() {

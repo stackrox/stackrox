@@ -1,6 +1,6 @@
 package getters
 
-import "bitbucket.org/stack-rox/apollo/central/dnrintegration"
+import "github.com/stackrox/rox/central/dnrintegration"
 
 // DNRIntegrationGetter provides the required access to DNR integrations for risk scoring.
 type DNRIntegrationGetter interface {

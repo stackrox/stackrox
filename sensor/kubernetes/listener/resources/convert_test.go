@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/kubernetes"
-	"bitbucket.org/stack-rox/apollo/sensor/kubernetes/volumes"
 	timestamp "github.com/gogo/protobuf/types"
+	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/sensor/kubernetes/volumes"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"

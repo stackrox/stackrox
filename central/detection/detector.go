@@ -1,15 +1,15 @@
 package detection
 
 import (
-	alertDataStore "bitbucket.org/stack-rox/apollo/central/alert/datastore"
-	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	"bitbucket.org/stack-rox/apollo/central/enrichment"
-	imageDataStore "bitbucket.org/stack-rox/apollo/central/image/datastore"
-	notifierProcessor "bitbucket.org/stack-rox/apollo/central/notifier/processor"
-	policyDataStore "bitbucket.org/stack-rox/apollo/central/policy/datastore"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/compiledpolicies"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/enrichment"
+	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/compiledpolicies"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

@@ -3,9 +3,9 @@ package perrpc
 import (
 	"context"
 
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/deny"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/deny"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

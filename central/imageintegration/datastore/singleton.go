@@ -3,10 +3,10 @@ package datastore
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/globaldb"
-	"bitbucket.org/stack-rox/apollo/central/imageintegration"
-	"bitbucket.org/stack-rox/apollo/central/imageintegration/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/imageintegration"
+	"github.com/stackrox/rox/central/imageintegration/store"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 var (

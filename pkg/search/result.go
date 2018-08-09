@@ -1,7 +1,7 @@
 package search
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // GetProtoMatchesMap offloads the values of the input map into SeachResult_Matches types.

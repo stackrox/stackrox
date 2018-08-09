@@ -1,8 +1,8 @@
 package kubelet
 
 import (
-	"bitbucket.org/stack-rox/apollo/pkg/checks"
-	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
+	"github.com/stackrox/rox/pkg/checks"
+	"github.com/stackrox/rox/pkg/checks/utils"
 )
 
 // NewKubeletConfPermission implements CIS Kubernetes v1.2.0 2.2.1

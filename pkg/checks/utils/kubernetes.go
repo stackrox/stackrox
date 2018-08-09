@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

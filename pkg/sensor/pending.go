@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/pkg/listeners"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/karlseguin/ccache"
+	"github.com/stackrox/rox/pkg/listeners"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var logger = logging.LoggerForModule()

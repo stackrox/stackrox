@@ -1,8 +1,8 @@
 package apiserver
 
 import (
-	"bitbucket.org/stack-rox/apollo/pkg/checks"
-	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
+	"github.com/stackrox/rox/pkg/checks"
+	"github.com/stackrox/rox/pkg/checks/utils"
 )
 
 func newKubernetesAPIServerCheck(check *utils.CommandCheck) utils.Check {

@@ -3,12 +3,12 @@ package index
 import (
 	"testing"
 
-	deploymentIndex "bitbucket.org/stack-rox/apollo/central/deployment/index"
-	"bitbucket.org/stack-rox/apollo/central/globalindex"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
-	"bitbucket.org/stack-rox/apollo/pkg/search"
 	"github.com/blevesearch/bleve"
+	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 

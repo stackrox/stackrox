@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/central/globalindex"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
-	"bitbucket.org/stack-rox/apollo/pkg/search"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 func getDeploymentIndex(b *testing.B) Indexer {

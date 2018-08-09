@@ -1,7 +1,7 @@
 package deploymentevents
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 func newCreateResponse(toEnforcement func(deployment *v1.Deployment, action v1.ResourceAction) (alertID string, enforcement v1.EnforcementAction)) *createResponseImpl {

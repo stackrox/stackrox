@@ -3,9 +3,9 @@ package globaldb
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/pkg/bolthelper"
-	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"github.com/boltdb/bolt"
+	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/env"
 )
 
 var (

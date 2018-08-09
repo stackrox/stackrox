@@ -4,10 +4,10 @@ import (
 	"os"
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/central/imageintegration/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/bolthelper"
 	"github.com/boltdb/bolt"
+	"github.com/stackrox/rox/central/imageintegration/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

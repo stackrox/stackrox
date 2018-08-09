@@ -3,12 +3,12 @@ package datastore
 import (
 	"time"
 
-	alertDataStore "bitbucket.org/stack-rox/apollo/central/alert/datastore"
-	"bitbucket.org/stack-rox/apollo/central/cluster/store"
-	deploymentDataStore "bitbucket.org/stack-rox/apollo/central/deployment/datastore"
-	dnrDataStore "bitbucket.org/stack-rox/apollo/central/dnrintegration/datastore"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/cluster/store"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	dnrDataStore "github.com/stackrox/rox/central/dnrintegration/datastore"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

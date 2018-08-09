@@ -9,14 +9,14 @@ import (
 	"fmt"
 	"os"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/central"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/version"
-	zipPkg "bitbucket.org/stack-rox/apollo/pkg/zip"
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/central"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/version"
+	zipPkg "github.com/stackrox/rox/pkg/zip"
 )
 
 var (

@@ -6,12 +6,12 @@ import (
 	"sort"
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
-	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
-	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers/cscc/client"
-	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers/cscc/findings"
-	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifications/notifiers"
+	"github.com/stackrox/rox/pkg/notifications/notifiers/cscc/client"
+	"github.com/stackrox/rox/pkg/notifications/notifiers/cscc/findings"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 var (

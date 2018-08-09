@@ -3,14 +3,14 @@ package service
 import (
 	"context"
 
-	benchmarkscanStore "bitbucket.org/stack-rox/apollo/central/benchmarkscan/store"
-	benchmarkscheduleStore "bitbucket.org/stack-rox/apollo/central/benchmarkschedule/store"
-	notifierProcessor "bitbucket.org/stack-rox/apollo/central/notifier/processor"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/hashicorp/golang-lru"
+	benchmarkscanStore "github.com/stackrox/rox/central/benchmarkscan/store"
+	benchmarkscheduleStore "github.com/stackrox/rox/central/benchmarkschedule/store"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 )
 

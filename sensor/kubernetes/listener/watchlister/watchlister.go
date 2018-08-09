@@ -3,7 +3,7 @@ package watchlister
 import (
 	"time"
 
-	pkgV1 "bitbucket.org/stack-rox/apollo/generated/api/v1"
+	pkgV1 "github.com/stackrox/rox/generated/api/v1"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"

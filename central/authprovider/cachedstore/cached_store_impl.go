@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/authprovider/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/authproviders"
+	"github.com/stackrox/rox/central/authprovider/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 )
 
 type cachedStoreImpl struct {

@@ -3,7 +3,7 @@ package deny
 import (
 	"context"
 
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz"
 )
 
 // AuthFunc denies all access. It is meant to be used as a default gRPC AuthFunc

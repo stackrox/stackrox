@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	indexMocks "bitbucket.org/stack-rox/apollo/central/secret/index/mocks"
-	storeMocks "bitbucket.org/stack-rox/apollo/central/secret/store/mocks"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	indexMocks "github.com/stackrox/rox/central/secret/index/mocks"
+	storeMocks "github.com/stackrox/rox/central/secret/store/mocks"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )

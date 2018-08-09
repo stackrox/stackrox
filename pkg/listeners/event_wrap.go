@@ -3,7 +3,7 @@ package listeners
 import (
 	"reflect"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // EventWrap contains a Deployment and the original deployment event.

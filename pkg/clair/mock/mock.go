@@ -1,8 +1,8 @@
 package mock
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	clairV1 "github.com/coreos/clair/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // GetTestVulns returns test clair vulns and also the expected converted proto vulns

@@ -3,10 +3,10 @@ package datastore
 import (
 	"sort"
 
-	"bitbucket.org/stack-rox/apollo/central/benchmarktrigger/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
-	"bitbucket.org/stack-rox/apollo/pkg/set"
+	"github.com/stackrox/rox/central/benchmarktrigger/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type datastoreImpl struct {

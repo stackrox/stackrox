@@ -3,9 +3,9 @@ package datastore
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/central/dnrintegration"
-	"bitbucket.org/stack-rox/apollo/central/dnrintegration/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/central/dnrintegration"
+	"github.com/stackrox/rox/central/dnrintegration/store"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 type datastoreImpl struct {

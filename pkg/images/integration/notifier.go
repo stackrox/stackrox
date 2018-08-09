@@ -1,7 +1,7 @@
 package integration
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // ToNotify is the client view of a notifier, allowing it to execute notifications but not to modify

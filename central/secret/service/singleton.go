@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/globalindex"
-	"bitbucket.org/stack-rox/apollo/central/secret/index"
-	"bitbucket.org/stack-rox/apollo/central/secret/search"
-	"bitbucket.org/stack-rox/apollo/central/secret/search/transform"
-	"bitbucket.org/stack-rox/apollo/central/secret/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/secret/index"
+	"github.com/stackrox/rox/central/secret/search"
+	"github.com/stackrox/rox/central/secret/search/transform"
+	"github.com/stackrox/rox/central/secret/store"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 var (

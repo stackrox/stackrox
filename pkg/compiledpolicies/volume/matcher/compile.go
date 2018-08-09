@@ -1,7 +1,7 @@
 package matcher
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // compiler is a functino that turns a policy into a matcher.

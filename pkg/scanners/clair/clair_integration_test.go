@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	// This is needed to register Docker registries.
-	_ "bitbucket.org/stack-rox/apollo/pkg/registries/docker"
+	_ "github.com/stackrox/rox/pkg/registries/docker"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/registries"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stretchr/testify/suite"
 )
 

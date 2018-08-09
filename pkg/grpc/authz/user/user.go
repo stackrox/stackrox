@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/pkg/auth/permissions"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/authz"
 )
 
 type permissionChecker struct {

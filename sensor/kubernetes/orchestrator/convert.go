@@ -4,8 +4,8 @@ import (
 	"regexp"
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/pkg/env"
-	"bitbucket.org/stack-rox/apollo/pkg/orchestrators"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/orchestrators"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

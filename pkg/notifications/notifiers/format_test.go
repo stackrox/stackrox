@@ -5,7 +5,7 @@ import (
 	"testing"
 	"text/template"
 
-	"bitbucket.org/stack-rox/apollo/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 )
 

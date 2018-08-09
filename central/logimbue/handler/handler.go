@@ -3,8 +3,8 @@ package handler
 import (
 	"net/http"
 
-	"bitbucket.org/stack-rox/apollo/central/logimbue/store"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"github.com/stackrox/rox/central/logimbue/store"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

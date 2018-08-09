@@ -3,7 +3,7 @@ package queue
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // Pull attempts to get the next item from the queue.

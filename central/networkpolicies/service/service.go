@@ -3,12 +3,12 @@ package service
 import (
 	"context"
 
-	"bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	"bitbucket.org/stack-rox/apollo/central/networkgraph"
-	"bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/networkgraph"
+	"github.com/stackrox/rox/central/networkpolicies/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 )
 

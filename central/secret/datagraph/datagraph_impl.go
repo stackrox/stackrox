@@ -3,9 +3,9 @@ package datagraph
 import (
 	"sort"
 
-	"bitbucket.org/stack-rox/apollo/central/secret/index"
-	"bitbucket.org/stack-rox/apollo/central/secret/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/central/secret/index"
+	"github.com/stackrox/rox/central/secret/store"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // serviceImpl provides APIs for alerts.

@@ -1,7 +1,7 @@
 package predicate
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // Compiler is a function that takes in a policy and returns a prefdicte that returns TRUE if the policy should

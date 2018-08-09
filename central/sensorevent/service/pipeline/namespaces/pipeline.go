@@ -3,12 +3,12 @@ package namespaces
 import (
 	"fmt"
 
-	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	namespaceDataStore "bitbucket.org/stack-rox/apollo/central/namespace/store"
-	"bitbucket.org/stack-rox/apollo/central/networkgraph"
-	"bitbucket.org/stack-rox/apollo/central/sensorevent/service/pipeline"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/store"
+	"github.com/stackrox/rox/central/networkgraph"
+	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

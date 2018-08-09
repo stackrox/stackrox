@@ -1,8 +1,8 @@
 package securityprimitives
 
 import (
-	"bitbucket.org/stack-rox/apollo/pkg/checks"
-	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
+	"github.com/stackrox/rox/pkg/checks"
+	"github.com/stackrox/rox/pkg/checks/utils"
 )
 
 // TODO(cgorman) is there anything more we can for these checks other than print the description

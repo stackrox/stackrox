@@ -1,10 +1,10 @@
 package datastore
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/dnrintegration"
-	"bitbucket.org/stack-rox/apollo/central/dnrintegration/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"github.com/stackrox/rox/central/dnrintegration"
+	"github.com/stackrox/rox/central/dnrintegration/store"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

@@ -5,12 +5,12 @@ import (
 	"log"
 	"os"
 
-	"bitbucket.org/stack-rox/apollo/pkg/benchmarks"
-	"bitbucket.org/stack-rox/apollo/pkg/docker"
-	"bitbucket.org/stack-rox/apollo/pkg/env"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
+	"github.com/stackrox/rox/pkg/benchmarks"
+	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/env"
 )
 
 func main() {

@@ -3,12 +3,12 @@ package networkpolicies
 import (
 	"fmt"
 
-	clusterDataStore "bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	"bitbucket.org/stack-rox/apollo/central/networkgraph"
-	networkPoliciesStore "bitbucket.org/stack-rox/apollo/central/networkpolicies/store"
-	"bitbucket.org/stack-rox/apollo/central/sensorevent/service/pipeline"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/networkgraph"
+	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
+	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

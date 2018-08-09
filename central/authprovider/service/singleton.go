@@ -3,7 +3,7 @@ package service
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/authprovider/cachedstore"
+	"github.com/stackrox/rox/central/authprovider/cachedstore"
 )
 
 var (

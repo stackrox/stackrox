@@ -3,9 +3,9 @@ package or
 import (
 	"context"
 
-	"bitbucket.org/stack-rox/apollo/pkg/errorhelpers"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 )
 
 type or struct {

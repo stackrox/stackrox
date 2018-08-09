@@ -1,6 +1,6 @@
 package enforcers
 
-import "bitbucket.org/stack-rox/apollo/generated/api/v1"
+import "github.com/stackrox/rox/generated/api/v1"
 
 // Label key used for unsatisfiable node constraint enforcement.
 const (

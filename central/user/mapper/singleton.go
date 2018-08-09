@@ -3,8 +3,8 @@ package usermapper
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/role/store"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/tokenbased"
+	"github.com/stackrox/rox/central/role/store"
+	"github.com/stackrox/rox/pkg/auth/tokenbased"
 )
 
 var (

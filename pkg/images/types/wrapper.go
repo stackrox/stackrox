@@ -3,7 +3,7 @@ package types
 import (
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // Wrapper provides helper functions for an image.

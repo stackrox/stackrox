@@ -1,10 +1,10 @@
 package search
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/secret/search/transform"
-	"bitbucket.org/stack-rox/apollo/central/secret/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"github.com/blevesearch/bleve"
+	"github.com/stackrox/rox/central/secret/search/transform"
+	"github.com/stackrox/rox/central/secret/store"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.

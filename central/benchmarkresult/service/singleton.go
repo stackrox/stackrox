@@ -3,9 +3,9 @@ package service
 import (
 	"sync"
 
-	benchmarkscanStore "bitbucket.org/stack-rox/apollo/central/benchmarkscan/store"
-	benchmarkscheduleStore "bitbucket.org/stack-rox/apollo/central/benchmarkschedule/store"
-	notifierProcessor "bitbucket.org/stack-rox/apollo/central/notifier/processor"
+	benchmarkscanStore "github.com/stackrox/rox/central/benchmarkscan/store"
+	benchmarkscheduleStore "github.com/stackrox/rox/central/benchmarkschedule/store"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 )
 
 var (

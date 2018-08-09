@@ -1,10 +1,10 @@
 package datastore
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/policy/index"
-	"bitbucket.org/stack-rox/apollo/central/policy/search"
-	"bitbucket.org/stack-rox/apollo/central/policy/store"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/central/policy/index"
+	"github.com/stackrox/rox/central/policy/search"
+	"github.com/stackrox/rox/central/policy/store"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // DataStore is an intermediary to PolicyStorage.

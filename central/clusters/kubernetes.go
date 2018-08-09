@@ -3,10 +3,10 @@ package clusters
 import (
 	"text/template"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/env"
-	kubernetesPkg "bitbucket.org/stack-rox/apollo/pkg/kubernetes"
-	"bitbucket.org/stack-rox/apollo/pkg/zip"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
+	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/zip"
 )
 
 func init() {

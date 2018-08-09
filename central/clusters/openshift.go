@@ -3,10 +3,10 @@ package clusters
 import (
 	"text/template"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/env"
-	openshiftPkg "bitbucket.org/stack-rox/apollo/pkg/openshift"
-	"bitbucket.org/stack-rox/apollo/pkg/zip"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
+	openshiftPkg "github.com/stackrox/rox/pkg/openshift"
+	"github.com/stackrox/rox/pkg/zip"
 )
 
 func init() {

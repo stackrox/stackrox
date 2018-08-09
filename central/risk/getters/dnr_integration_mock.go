@@ -1,6 +1,6 @@
 package getters
 
-import "bitbucket.org/stack-rox/apollo/central/dnrintegration"
+import "github.com/stackrox/rox/central/dnrintegration"
 
 // MockDNRIntegration is a mock integration with D&R.
 type MockDNRIntegration struct {

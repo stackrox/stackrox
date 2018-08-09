@@ -1,9 +1,9 @@
 package hostconfiguration
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/checks/utils"
-	"bitbucket.org/stack-rox/apollo/pkg/docker"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/checks/utils"
+	"github.com/stackrox/rox/pkg/docker"
 )
 
 type dockerUpdated struct{}

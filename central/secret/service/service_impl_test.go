@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	searchMocks "bitbucket.org/stack-rox/apollo/central/secret/search/mocks"
-	storeMocks "bitbucket.org/stack-rox/apollo/central/secret/store/mocks"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	searchMocks "github.com/stackrox/rox/central/secret/search/mocks"
+	storeMocks "github.com/stackrox/rox/central/secret/store/mocks"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/suite"
 )
 

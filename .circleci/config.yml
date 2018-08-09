@@ -7,7 +7,7 @@ defaults: &defaults
       auth:
         username: $DOCKERHUB_USERNAME
         password: $DOCKERHUB_PASSWORD
-  working_directory: /go/src/bitbucket.org/stack-rox/apollo
+  working_directory: /go/src/github.com/stackrox/rox
 
 restoreUI: &restoreUI
   restore_cache:
@@ -27,6 +27,7 @@ jobs:
     <<: *defaults
     resource_class: large
     steps:
+      - add_ssh_keys
       - checkout
       - setup_remote_docker
 
@@ -75,7 +76,7 @@ jobs:
             - /go/pkg/dep
 
       - persist_to_workspace:
-          root: /go/src/bitbucket.org/stack-rox/apollo
+          root: /go/src/github.com/stackrox/rox
           paths:
           - deps
           - generated
@@ -95,7 +96,7 @@ jobs:
       - setup_remote_docker
 
       - attach_workspace:
-          at: /go/src/bitbucket.org/stack-rox/apollo
+          at: /go/src/github.com/stackrox/rox
 
       - run:
           name: Setup deployment env
@@ -195,7 +196,7 @@ jobs:
       - setup_remote_docker
 
       - attach_workspace:
-          at: /go/src/bitbucket.org/stack-rox/apollo
+          at: /go/src/github.com/stackrox/rox
 
       - run:
           name: Login to Docker Hub
@@ -241,7 +242,7 @@ jobs:
           destination: openshift
 
       - persist_to_workspace:
-          root: /go/src/bitbucket.org/stack-rox/apollo
+          root: /go/src/github.com/stackrox/rox
           paths:
           - openshift
 
@@ -267,7 +268,7 @@ jobs:
           command: docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
 
       - attach_workspace:
-          at: /go/src/bitbucket.org/stack-rox/apollo
+          at: /go/src/github.com/stackrox/rox
 
       - run:
           name: Configure Deployment Environment

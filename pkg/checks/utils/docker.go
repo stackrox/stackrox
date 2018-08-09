@@ -7,9 +7,9 @@ import (
 	"strings"
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/pkg/docker"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/stackrox/rox/pkg/docker"
 )
 
 // DockerConfig is the exported type for benchmarks to reference

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	ptypes "github.com/gogo/protobuf/types"
 	timestamp "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (

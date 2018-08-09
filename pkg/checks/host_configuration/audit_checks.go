@@ -1,6 +1,6 @@
 package hostconfiguration
 
-import "bitbucket.org/stack-rox/apollo/pkg/checks/utils"
+import "github.com/stackrox/rox/pkg/checks/utils"
 
 // NewDockerDaemonAudit implements CIS-1.5
 func NewDockerDaemonAudit() utils.Check {

@@ -3,8 +3,8 @@ package service
 import (
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/cluster/datastore"
-	"bitbucket.org/stack-rox/apollo/central/enrichment"
+	"github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/enrichment"
 )
 
 var (

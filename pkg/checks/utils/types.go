@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // Definition wraps the CheckDefinition Proto and the Dependencies thare functions and cannot be serialized

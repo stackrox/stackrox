@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strings"
 
-	"bitbucket.org/stack-rox/apollo/pkg/auth/authproviders"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/tokenbased"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/tokenbased/user"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
-	"bitbucket.org/stack-rox/apollo/pkg/logging"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/tokenbased"
+	"github.com/stackrox/rox/pkg/auth/tokenbased/user"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )

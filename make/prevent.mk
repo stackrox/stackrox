@@ -3,7 +3,7 @@ IMAGE ?= $(ROX_PROJECT)
 PROJECT_SUBDIR ?= $(ROX_PROJECT)
 BINARY ?= $(ROX_PROJECT)
 BASE_PATH ?= $(CURDIR)/..
-GO_BASE_PATH ?= /go/src/bitbucket.org/stack-rox/apollo
+GO_BASE_PATH ?= /go/src/github.com/stackrox/rox
 
 .DEFAULT_GOAL = all
 
@@ -23,7 +23,7 @@ dev:
 docs: generated-srcs
 	@echo "+ $@"
 	@echo
-	@echo 'Access your docs at http://localhost:6061/pkg/bitbucket.org/stack-rox/apollo/$(ROX_PROJECT)/'
+	@echo 'Access your docs at http://localhost:6061/pkg/github.com/stackrox/rox/$(ROX_PROJECT)/'
 	@echo 'Hit CTRL-C to quit.'
 	@godoc -http=:6061
 
@@ -75,7 +75,7 @@ report:
 	@echo "Test pass/fail summary:"
 	@grep failures report.xml
 	@echo
-	@echo "`grep 'FAIL	bitbucket.org/stack-rox/apollo' test.log | wc -l` package(s) detected with compilation or test failures."
-	@-grep 'FAIL	bitbucket.org/stack-rox/apollo' test.log || true
+	@echo "`grep 'FAIL	github.com/stackrox/rox' test.log | wc -l` package(s) detected with compilation or test failures."
+	@-grep 'FAIL	github.com/stackrox/rox' test.log || true
 	@echo
-	@testerror="$$(grep -e 'can.t load package' -e '^# bitbucket.org/stack-rox/apollo/' -e 'FAIL	bitbucket.org/stack-rox/apollo' test.log | wc -l)" && test $$testerror -eq 0
+	@testerror="$$(grep -e 'can.t load package' -e '^# github.com/stackrox/rox/' -e 'FAIL	github.com/stackrox/rox' test.log | wc -l)" && test $$testerror -eq 0

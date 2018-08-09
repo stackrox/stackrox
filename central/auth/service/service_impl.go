@@ -1,14 +1,14 @@
 package service
 
 import (
-	"bitbucket.org/stack-rox/apollo/central/service"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/auth/tokenbased/user"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authn"
-	"bitbucket.org/stack-rox/apollo/pkg/grpc/authz/allow"
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/service"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth/tokenbased/user"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

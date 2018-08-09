@@ -1,9 +1,9 @@
 package compiledpolicies
 
 import (
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	deploymentMatcher "bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/deployment/matcher"
-	deploymentPredicate "bitbucket.org/stack-rox/apollo/pkg/compiledpolicies/deployment/predicate"
+	"github.com/stackrox/rox/generated/api/v1"
+	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
+	deploymentPredicate "github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 )
 
 // DeploymentMatcher is a bridge between current matching logic and the old matching interface.

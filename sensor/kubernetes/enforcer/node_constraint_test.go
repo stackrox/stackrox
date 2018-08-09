@@ -3,8 +3,8 @@ package enforcer
 import (
 	"testing"
 
-	"bitbucket.org/stack-rox/apollo/pkg/enforcers"
-	pkgKubernetes "bitbucket.org/stack-rox/apollo/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/enforcers"
+	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stretchr/testify/assert"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"

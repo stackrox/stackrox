@@ -4,15 +4,15 @@ import (
 	"reflect"
 	"time"
 
-	deploymentIndex "bitbucket.org/stack-rox/apollo/central/deployment/index"
-	"bitbucket.org/stack-rox/apollo/central/image/index/mappings"
-	"bitbucket.org/stack-rox/apollo/central/metrics"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
-	"bitbucket.org/stack-rox/apollo/pkg/images/types"
-	"bitbucket.org/stack-rox/apollo/pkg/search"
-	"bitbucket.org/stack-rox/apollo/pkg/search/blevesearch"
 	"github.com/blevesearch/bleve"
 	"github.com/deckarep/golang-set"
+	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
+	"github.com/stackrox/rox/central/image/index/mappings"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 // maxDeploymentsReturned is for the specific scoped request to deployments which is then joined with images

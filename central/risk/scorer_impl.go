@@ -4,8 +4,8 @@ import (
 	"sort"
 	"sync"
 
-	"bitbucket.org/stack-rox/apollo/central/risk/multipliers"
-	"bitbucket.org/stack-rox/apollo/generated/api/v1"
+	"github.com/stackrox/rox/central/risk/multipliers"
+	"github.com/stackrox/rox/generated/api/v1"
 )
 
 // Scorer is the object that encompasses the multipliers for evaluating risk
