@@ -141,11 +141,6 @@ ignored = ["bitbucket.org/stack-rox/apollo","github.com/docker/docker/daemon"]
   version = "v1.1"
 
 [[constraint]]
-  name = "bitbucket.org/stack-rox/cscc"
-  source = "git@bitbucket.org:stack-rox/cscc.git"
-  version = "=0.2.0"
-
-[[constraint]]
   name = "github.com/openshift/api"
   version = "v3.9.0"
 

@@ -9,9 +9,9 @@ import (
 	"bitbucket.org/stack-rox/apollo/generated/api/v1"
 	"bitbucket.org/stack-rox/apollo/pkg/logging"
 	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers"
+	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers/cscc/client"
+	"bitbucket.org/stack-rox/apollo/pkg/notifications/notifiers/cscc/findings"
 	"bitbucket.org/stack-rox/apollo/pkg/protoconv"
-	"bitbucket.org/stack-rox/cscc/client"
-	"bitbucket.org/stack-rox/cscc/findings"
 )
 
 var (
