@@ -26,7 +26,7 @@ class NetworkPoliciesDetails extends Component {
                     return (
                         <div className="px-3 py-4" key={id}>
                             <CollapsibleCard title={name}>
-                                <pre className="h-full p-3 capitalize leading-loose">{yaml}</pre>
+                                <pre className="h-full p-3 leading-loose">{yaml}</pre>
                                 <div className="flex justify-center p-3 border-t border-base-500">
                                     <button
                                         className="download uppercase text-primary-600 p-2 text-center text-sm border border-solid bg-primary-200 border-primary-300 hover:bg-primary-100"

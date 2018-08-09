@@ -83,7 +83,9 @@ function* filterEnvironmentPageBySearch() {
     const filters = {
         query: searchOptionsToQuery(searchOptions)
     };
-    yield fork(getNetworkGraph, filters, clusterId);
+    if (clusterId) {
+        yield fork(getNetworkGraph, filters, clusterId);
+    }
 }
 
 function* loadEnvironmentPage() {

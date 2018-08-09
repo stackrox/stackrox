@@ -99,6 +99,7 @@ class EnvironmentPage extends Component {
 
     changeCluster = option => {
         if (option) this.props.selectClusterId(option.value);
+        this.closeSidePanel();
     };
 
     renderGraph = () => (

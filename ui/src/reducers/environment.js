@@ -1,5 +1,6 @@
 import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
+import { LOCATION_CHANGE } from 'react-router-redux';
 
 import { types as clusterTypes } from 'reducers/clusters';
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
@@ -108,19 +109,23 @@ const selectedEnvironmentClusterId = (state = null, action) => {
 };
 
 const environmentGraphUpdateKey = (state = { shouldUpdate: true, key: 0 }, action) => {
-    if (action.type === types.SET_SEARCH_OPTIONS) {
-        const { length } = action.options;
-        if (!length) return { shouldUpdate: true, key: state.key };
+    const { type, payload, options } = action;
+    if (type === LOCATION_CHANGE && payload.pathname.startsWith('/main/environment')) {
+        return { shouldUpdate: true, key: state.key + 1 };
+    }
+    if (type === types.SET_SEARCH_OPTIONS) {
+        const { length } = options;
+        if (!length) return { shouldUpdate: true, key: state.key + 1 };
         if (length && !action.options[length - 1].type)
             return { shouldUpdate: true, key: state.key };
     }
-    if (action.type === types.SELECT_ENVIRONMENT_CLUSTER_ID) {
-        return { shouldUpdate: true, key: state.key };
+    if (type === types.SELECT_ENVIRONMENT_CLUSTER_ID) {
+        return { shouldUpdate: true, key: state.key + 1 };
     }
-    if (action.type === types.INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY) {
-        return { shouldUpdate: true, key: state.key };
+    if (type === types.INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY) {
+        return { shouldUpdate: true, key: state.key + 1 };
     }
-    if (action.type === types.FETCH_ENVIRONMENT_GRAPH.SUCCESS) {
+    if (type === types.FETCH_ENVIRONMENT_GRAPH.SUCCESS) {
         if (state.shouldUpdate) return { shouldUpdate: false, key: state.key + 1 };
     }
     return state;
