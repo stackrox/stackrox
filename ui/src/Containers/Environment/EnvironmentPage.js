@@ -56,7 +56,8 @@ class EnvironmentPage extends Component {
         selectedClusterId: PropTypes.string,
         isFetchingNode: PropTypes.bool,
         nodeUpdatesEpoch: PropTypes.number,
-        environmentGraphUpdateKey: PropTypes.number.isRequired
+        environmentGraphUpdateKey: PropTypes.number.isRequired,
+        incrementEnvironmentGraphUpdateKey: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -85,6 +86,7 @@ class EnvironmentPage extends Component {
     };
 
     onUpdateGraph = () => {
+        this.props.incrementEnvironmentGraphUpdateKey();
         this.props.fetchEnvironmentGraph();
     };
 
@@ -232,7 +234,8 @@ const mapDispatchToProps = {
     setSearchOptions: environmentActions.setEnvironmentSearchOptions,
     setSearchModifiers: environmentActions.setEnvironmentSearchModifiers,
     setSearchSuggestions: environmentActions.setEnvironmentSearchSuggestions,
-    selectClusterId: environmentActions.selectEnvironmentClusterId
+    selectClusterId: environmentActions.selectEnvironmentClusterId,
+    incrementEnvironmentGraphUpdateKey: environmentActions.incrementEnvironmentGraphUpdateKey
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(EnvironmentPage);

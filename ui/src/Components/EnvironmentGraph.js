@@ -292,7 +292,7 @@ class EnvironmentGraph extends Component {
         d3NamespaceLinks
             .enter()
             .insert('line', '.container')
-            .call(enterNamespaceLink);
+            .call(enterNamespaceLink(this.d3Graph));
         // logic for removing links
         d3NamespaceLinks.exit().remove();
         // logic for updating links

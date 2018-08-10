@@ -78,12 +78,21 @@ export const updateLink = selection => {
         .attr('y2', d => d.target.y);
 };
 
-export const enterNamespaceLink = selection => {
+export const enterNamespaceLink = d3Graph => selection => {
     selection
         .classed('link namespace', true)
-        .attr('stroke-width', '2px')
+        .attr('stroke-width', '5px')
         .attr('stroke', '#3F4884')
-        .attr('opacity', '0.5');
+        .attr('opacity', '0.5')
+        .on('mouseover', edge => {
+            d3Graph
+                .selectAll('.link.namespace')
+                .filter(({ source, target }) => source !== edge.source || target !== edge.target)
+                .attr('opacity', '0.1');
+        })
+        .on('mouseout', () => {
+            d3Graph.selectAll('.link.namespace').attr('opacity', '0.5');
+        });
 };
 
 export const updateNamespaceLink = (selection, d3Graph) => {
