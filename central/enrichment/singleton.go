@@ -10,6 +10,7 @@ import (
 	multiplierStore "github.com/stackrox/rox/central/multiplier/store"
 	"github.com/stackrox/rox/central/risk"
 	"github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/metrics"
 )
 
 var (
@@ -24,7 +25,7 @@ func initialize() {
 		imageDataStore.Singleton(),
 		imageintegrationDataStore.Singleton(),
 		multiplierStore.Singleton(),
-		enricher.New(imageintegration.Set()),
+		enricher.New(imageintegration.Set(), metrics.CentralSubsystem),
 		risk.GetScorer()); err != nil {
 		panic(err)
 	}

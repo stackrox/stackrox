@@ -17,7 +17,6 @@ import (
 	cfcsr "github.com/cloudflare/cfssl/csr"
 	cfsigner "github.com/cloudflare/cfssl/signer"
 	"github.com/cloudflare/cfssl/signer/local"
-	siStore "github.com/stackrox/rox/central/serviceidentities/store"
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
@@ -118,8 +117,13 @@ func signingPolicy() *config.Signing {
 	}
 }
 
+// serviceIdentityStorage represents any object that stores a service identity.
+type serviceIdentityStorage interface {
+	AddServiceIdentity(identity *v1.ServiceIdentity) error
+}
+
 // IssueNewCert generates a new key and certificate chain for a sensor.
-func IssueNewCert(cn CommonName, storage siStore.Store) (certPEM, keyPEM []byte, identity *v1.ServiceIdentity, err error) {
+func IssueNewCert(cn CommonName, storage serviceIdentityStorage) (certPEM, keyPEM []byte, identity *v1.ServiceIdentity, err error) {
 	returnErr := func(err error, prefix string) ([]byte, []byte, *v1.ServiceIdentity, error) {
 		return nil, nil, nil, fmt.Errorf("%s: %s", prefix, err)
 	}

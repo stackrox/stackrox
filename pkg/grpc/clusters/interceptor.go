@@ -6,7 +6,6 @@ import (
 	"context"
 	"time"
 
-	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
@@ -19,14 +18,21 @@ var (
 	logger = logging.LoggerForModule()
 )
 
+// This interface encapsulates the access the ClusterWatcher needs to
+// a cluster store.
+type clusterStore interface {
+	GetCluster(id string) (*v1.Cluster, bool, error)
+	UpdateClusterContactTime(id string, t time.Time) error
+}
+
 // A ClusterWatcher provides gRPC interceptors that record cluster checkin
 // times based on authentication metadata.
 type ClusterWatcher struct {
-	clusters clusterDataStore.DataStore
+	clusters clusterStore
 }
 
 // NewClusterWatcher creates a new ClusterWatcher.
-func NewClusterWatcher(clusters clusterDataStore.DataStore) *ClusterWatcher {
+func NewClusterWatcher(clusters clusterStore) *ClusterWatcher {
 	return &ClusterWatcher{
 		clusters: clusters,
 	}

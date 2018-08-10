@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/listeners"
+	"github.com/stackrox/rox/pkg/metrics"
 	"google.golang.org/grpc"
 )
 
@@ -20,7 +21,7 @@ func newProcessLoops(centralConn *grpc.ClientConn, clusterID string) *processLoo
 	poller := integration.NewPoller(integrationSet, centralConn, clusterID)
 
 	// This uses those integrations to enrich images.
-	imageEnricher := enricher.New(integrationSet)
+	imageEnricher := enricher.New(integrationSet, metrics.SensorSubsystem)
 
 	return &processLoopsImpl{
 		imageEnricher: imageEnricher,

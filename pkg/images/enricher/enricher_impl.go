@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/karlseguin/ccache"
-	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -29,6 +28,8 @@ type enricherImpl struct {
 
 	scanLimiter *rate.Limiter
 	scanCache   *ccache.Cache
+
+	metrics metrics
 }
 
 // EnrichImage enriches an image with the integration set present.
@@ -58,7 +59,7 @@ func (e *enricherImpl) enrichImageWithRegistry(image *v1.Image, registry registr
 	var metadata *v1.ImageMetadata
 	metadataItem := e.metadataCache.Get(image.GetName().GetFullName())
 	if metadataItem == nil {
-		metrics.IncrementMetadataCacheMiss()
+		e.metrics.IncrementMetadataCacheMiss()
 		e.metadataLimiter.Wait(context.Background())
 
 		var err error
@@ -69,7 +70,7 @@ func (e *enricherImpl) enrichImageWithRegistry(image *v1.Image, registry registr
 		}
 		e.metadataCache.Set(image.GetName().GetFullName(), metadata, imageDataExpiration)
 	} else {
-		metrics.IncrementMetadataCacheHit()
+		e.metrics.IncrementMetadataCacheHit()
 		metadata = metadataItem.Value().(*v1.ImageMetadata)
 	}
 
@@ -100,7 +101,7 @@ func (e *enricherImpl) enrichImageWithScanner(image *v1.Image, scanner scannerTy
 	var scan *v1.ImageScan
 	scanItem := e.scanCache.Get(image.GetName().GetSha())
 	if scanItem == nil {
-		metrics.IncrementScanCacheMiss()
+		e.metrics.IncrementScanCacheMiss()
 		e.scanLimiter.Wait(context.Background())
 
 		var err error
@@ -111,7 +112,7 @@ func (e *enricherImpl) enrichImageWithScanner(image *v1.Image, scanner scannerTy
 		}
 		e.scanCache.Set(image.GetName().GetSha(), scan, imageDataExpiration)
 	} else {
-		metrics.IncrementScanCacheHit()
+		e.metrics.IncrementScanCacheHit()
 		scan = scanItem.Value().(*v1.ImageScan)
 	}
 

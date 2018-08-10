@@ -2,6 +2,7 @@
 # for detailed Gopkg.toml documentation.
 
 ignored = ["github.com/stackrox/rox","github.com/docker/docker/daemon"]
+required = ["golang.org/x/tools/go/ast/astutil"]
 
 [prune]
   go-tests = true

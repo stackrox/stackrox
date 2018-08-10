@@ -10,7 +10,7 @@ all: deps style test image
 ## Style ##
 ###########
 .PHONY: style
-style: fmt imports lint vet blanks ui-lint qa-tests-style
+style: fmt imports lint vet blanks crosspkgimports ui-lint qa-tests-style
 
 .PHONY: qa-tests-style
 qa-tests-style:
@@ -47,6 +47,11 @@ ifdef CI
 		@test -z "$(IMPORTS)"
 endif
 	@find . -name vendor -prune -name generated -prune -o -name '*.go' -print | xargs goimports -w
+
+.PHONY: crosspkgimports
+crosspkgimports:
+	@echo "+ $@"
+	@go run $(BASE_DIR)/tools/crosspkgimports/verify.go $(shell go list -e ./... | grep -v generated | grep -v vendor)
 
 .PHONY: lint
 lint:
