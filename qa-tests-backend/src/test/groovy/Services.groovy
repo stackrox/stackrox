@@ -86,33 +86,17 @@ class Services {
     static waitForViolation(String deploymentName, String policyName, int timeoutSeconds) {
         int intervalSeconds = 1
         for (int i = 0; i < timeoutSeconds / intervalSeconds; i++) {
-            try {
-                def violations = getViolations(ListAlertsRequest.newBuilder()
-                        .setQuery("Deployment:${deploymentName}+Policy:${policyName}").build())
-                if (violations.size() == 1) {
-                    return true
-                }
-            } catch (Exception e) {
-                println e
-            } finally {
-                sleep(intervalSeconds * 1000)
+            def violations = getViolations(ListAlertsRequest.newBuilder()
+                    .setQuery("Deployment:${deploymentName}+Policy:${policyName}").build())
+            if (violations.size() > 0) {
+                println "violation size is: " + violations.size()
+                println policyName + " triggered, the waiting time is " + i
+                return true
             }
+            sleep(intervalSeconds * 1000)
         }
-        return false
-    }
 
-    static boolean waitForDeployment(String name, int timeoutSeconds = 20) {
-        int intervalSeconds = 1
-        for (int i = 0; i < timeoutSeconds / intervalSeconds; i++) {
-            try {
-                def deployments = getDeployments(RawQuery.newBuilder().setQuery("Deployment:${name}").build())
-                if (deployments.size() == 1) {
-                    return true
-                }
-            } finally {
-                sleep(intervalSeconds * 1000)
-            }
-        }
+        println "Fail to trigger " + policyName
         return false
     }
 

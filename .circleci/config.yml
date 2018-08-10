@@ -148,6 +148,18 @@ jobs:
             ./scripts/ci/sensor-wait.sh
 
       - run:
+          name: QA Automation Platform
+          command: |
+            if [[ $CIRCLE_BRANCH = master ]]; then
+              export CLUSTER=K8S
+              export HOSTNAME=localhost
+              export PORT=${LOCAL_PORT}
+              make -C qa-tests-backend test
+            else
+              echo "Skipping functional tests."
+            fi
+
+      - run:
           name: API tests
           command: |
             export API_ENDPOINT=localhost:${LOCAL_PORT}
@@ -160,6 +172,10 @@ jobs:
           command: |
             export UI_BASE_URL=https://localhost:${LOCAL_PORT}
             make -C ui test-e2e-ci
+
+      - store_artifacts:
+          path: ./qa-tests-backend/build/spock-reports
+          destination: qa-test-report
 
       - run:
           name: Collect k8s logs

@@ -6,6 +6,7 @@ import io.kubernetes.client.Configuration
 import io.kubernetes.client.apis.CoreV1Api
 import io.kubernetes.client.apis.ExtensionsV1beta1Api
 import io.kubernetes.client.custom.IntOrString
+import io.kubernetes.client.models.ExtensionsV1beta1DeploymentList
 import io.kubernetes.client.models.V1Capabilities
 import io.kubernetes.client.models.V1LabelSelector
 import io.kubernetes.client.models.V1LocalObjectReference
@@ -28,13 +29,22 @@ import objects.Deployment
 import java.util.stream.Collectors
 
 class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
-    private String namespace
+    private final String namespace
+    private final int sleepDuration = 5000
+    private final int maxWaitTime = 30000
 
-    private CoreV1Api api
-    private ExtensionsV1beta1Api beta1
+    final private CoreV1Api api
+    final private ExtensionsV1beta1Api beta1
 
     Kubernetes(String ns) {
         this.namespace = ns
+        ApiClient client = Config.defaultClient()
+        Configuration.setDefaultApiClient(client)
+
+        this.api = new CoreV1Api()
+        this.beta1 = new ExtensionsV1beta1Api()
+
+        ensureNamespaceExists()
     }
 
     Kubernetes() {
@@ -54,14 +64,8 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         }
     }
 
+    @Override
     def setup() {
-        ApiClient client = Config.defaultClient()
-        Configuration.setDefaultApiClient(client)
-
-        this.api = new CoreV1Api()
-        this.beta1 = new ExtensionsV1beta1Api()
-
-        ensureNamespaceExists()
     }
 
     @Override
@@ -69,6 +73,31 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     }
 
     def portToContainerPort = {  p -> new V1ContainerPort().containerPort(p) }
+
+    def waitForDeploymentCreation(String deploymentName, String namespace) {
+        int waitTime = 0
+
+        while (waitTime < maxWaitTime) {
+            ExtensionsV1beta1DeploymentList dList
+            dList = beta1.listNamespacedDeployment(namespace, null, null, null, null, null, null, null, null, null)
+
+            for (ExtensionsV1beta1Deployment v1beta1Deployment : dList.getItems()) {
+                if (v1beta1Deployment.getMetadata().getName() == deploymentName) {
+                    println "Waiting for " + deploymentName
+                    sleep(sleepDuration)
+                    if (v1beta1Deployment.getStatus().getReplicas() == 1) {
+                        println deploymentName + ": deployment created."
+
+                        //continue to sleep 5s to make the test more stable
+                        sleep(sleepDuration)
+                        return
+                    }
+                }
+                waitTime += sleepDuration
+            }
+        }
+        println "Timed out waiting for " + deploymentName
+    }
 
     String createDeployment(Deployment deployment) {
         List<V1ContainerPort> containerPorts = deployment.getPorts().stream()
@@ -102,7 +131,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         )
 
         beta1.createNamespacedDeployment(this.namespace, k8sDeployment, null)
-        println deployment.getName() + ": deployment created."
+        waitForDeploymentCreation(deployment.getName(), this.namespace)
     }
 
     def deleteDeployment(String name, String namespace = this.namespace) {
@@ -116,6 +145,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 false,
                 null
         )
+        sleep(sleepDuration)
         println name + ": deployment removed."
     }
 
@@ -214,8 +244,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 )
 
         this.beta1.createNamespacedDeployment("stackrox", clairifyDeployment, null)
-
-        println "deployment created."
+        waitForDeploymentCreation("clairify", "stackrox")
     }
 
     String getClairifyEndpoint() {

@@ -13,7 +13,7 @@ import testrailintegration.TestRailconfig
 @Slf4j
 class BaseSpecification extends Specification {
     @Rule
-    Timeout globalTimeout = new Timeout(200000)
+    Timeout globalTimeout = new Timeout(2000000)
     @Rule
     TestName name = new TestName()
     @Shared

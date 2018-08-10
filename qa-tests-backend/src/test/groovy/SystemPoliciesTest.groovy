@@ -1,5 +1,4 @@
 import static Services.getPolicies
-import static Services.waitForDeployment
 import static Services.waitForViolation
 import spock.lang.Unroll
 import objects.Deployment
@@ -19,11 +18,9 @@ class SystemPoliciesTest extends BaseSpecification {
                 .filter { f -> f.getName() == policyname }
                 .collect(Collectors.toList()).size() == 1
 
-        assert waitForDeployment(deployment.getName())
-
         then:
         "Verify Violation #policyname is triggered"
-        assert waitForViolation(deploymentName,  policyname, 10)
+        assert waitForViolation(deploymentName,  policyname, 1800)
 
         cleanup:
         "Remove Deployment #deploymentName"
@@ -47,7 +44,7 @@ class SystemPoliciesTest extends BaseSpecification {
 
         "Heartbleed: CVE-2014-0160" | new Deployment()
                 .setName ("qaheartbleed")
-                .setImage ("apollo-dtr.rox.systems/legacy-apps/ssl-terminator")
+                .setImage ("apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
                 .addLabel ( "app", "test" ) | "C947" | "qaheartbleed"
 
         "Wget in Image" | new Deployment()
@@ -89,11 +86,6 @@ class SystemPoliciesTest extends BaseSpecification {
                 .setName ("qanginx")
                 .setImage ("nginx:1.10")
                 .addLabel ( "app", "test" ) | "C823" | "qanginx"
-
-        "Any Vulnerabilities" | new Deployment()
-                .setName ("qaanyvul" )
-                .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app")
-                .addLabel ( "app", "test" ) | "C814" | "qaanyvul"
     }
 }
 
