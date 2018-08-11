@@ -443,14 +443,14 @@ workflows:
       - provision-openshift:
           filters:
             branches:
-              only: cg/make-tag
+              only: master
       - deploy-openshift:
           requires:
             - build
             - provision-openshift
           filters:
             branches:
-              only: cg/make-tag
+              only: master
       # Push release only on tags.
       - push-release:
           requires:
