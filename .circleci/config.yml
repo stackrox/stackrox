@@ -55,7 +55,7 @@ jobs:
           command: |
             docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD docker.io
 
-            export TAG=$(git describe --tags --abbrev=10 --dirty)
+            export TAG=$(make tag)
 
             docker push stackrox/prevent:$TAG | cat
             docker push stackrox/prevent-health:$TAG | cat
@@ -104,7 +104,7 @@ jobs:
             docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
             echo 'export REGISTRY_USERNAME="$DOCKERHUB_USERNAME"' >> $BASH_ENV
             echo 'export REGISTRY_PASSWORD="$DOCKERHUB_PASSWORD"' >> $BASH_ENV
-            echo 'export PREVENT_IMAGE_TAG="$(git describe --tags --abbrev=10 --dirty)"' >> $BASH_ENV
+            echo 'export PREVENT_IMAGE_TAG="$(make tag)"' >> $BASH_ENV
             echo $GKE_SERVICE_ACCOUNT > /tmp/gcp.json
             echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json' >> $BASH_ENV
             gcloud auth activate-service-account --key-file /tmp/gcp.json
@@ -289,12 +289,12 @@ jobs:
       - run:
           name: Configure Deployment Environment
           command: |
-            echo "export CLAIRIFY_IMAGE_TAG=0.4"                                       >> "$BASH_ENV"
-            echo "export OPENSHIFT_HOST=$(cat openshift/master)"                       >> "$BASH_ENV"
-            echo "export PREVENT_IMAGE_REGISTRY=docker.io"                             >> "$BASH_ENV"
-            echo "export PREVENT_IMAGE_TAG=$(git describe --tags --abbrev=10 --dirty)" >> "$BASH_ENV"
-            echo "export REGISTRY_PASSWORD=$DOCKERHUB_PASSWORD"                        >> "$BASH_ENV"
-            echo "export REGISTRY_USERNAME=$DOCKERHUB_USERNAME"                        >> "$BASH_ENV"
+            echo "export CLAIRIFY_IMAGE_TAG=0.4"                 >> "$BASH_ENV"
+            echo "export OPENSHIFT_HOST=$(cat openshift/master)" >> "$BASH_ENV"
+            echo "export PREVENT_IMAGE_REGISTRY=docker.io"       >> "$BASH_ENV"
+            echo "export PREVENT_IMAGE_TAG=$(make tag)"          >> "$BASH_ENV"
+            echo "export REGISTRY_PASSWORD=$DOCKERHUB_PASSWORD"  >> "$BASH_ENV"
+            echo "export REGISTRY_USERNAME=$DOCKERHUB_USERNAME"  >> "$BASH_ENV"
 
       - run:
           name: Configure Kubectl
@@ -414,7 +414,7 @@ jobs:
             docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
             docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD" stackrox.io
 
-            export TAG=$(git describe --tags --abbrev=10 --dirty)
+            export TAG=$(make tag)
 
             docker pull docker.io/stackrox/prevent:$TAG
             docker tag docker.io/stackrox/prevent:$TAG stackrox.io/prevent:$TAG
@@ -443,14 +443,14 @@ workflows:
       - provision-openshift:
           filters:
             branches:
-              only: master
+              only: cg/make-tag
       - deploy-openshift:
           requires:
             - build
             - provision-openshift
           filters:
             branches:
-              only: master
+              only: cg/make-tag
       # Push release only on tags.
       - push-release:
           requires:

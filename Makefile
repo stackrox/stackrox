@@ -242,3 +242,7 @@ clean-image:
 	@echo "+ $@"
 	git clean -xf image/bin
 	git clean -xdf image/ui
+
+.PHONY: tag
+tag:
+	@echo $(TAG)
