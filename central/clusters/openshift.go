@@ -196,6 +196,33 @@ roleRef:
   name: {{.Namespace}}:launch-benchmarks
   apiGroup: rbac.authorization.k8s.io
 ---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{.Namespace}}:network-policies
+rules:
+  - resources:
+    - networkpolicies
+    apiGroups:
+    - '*'
+    verbs:
+    - get
+    - watch
+    - list
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{.Namespace}}:network-policies-binding
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{.Namespace}}
+roleRef:
+  kind: ClusterRole
+  name: {{.Namespace}}:network-policies
+  apiGroup: rbac.authorization.k8s.io
+---
 kind: SecurityContextConstraints
 apiVersion: v1
 metadata:
