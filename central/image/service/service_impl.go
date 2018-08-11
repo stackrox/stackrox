@@ -51,11 +51,9 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) GetImage(ctx context.Context, request *v1.ResourceByID) (*v1.Image, error) {
 	image, exists, err := s.datastore.GetImage(request.GetId())
 	if err != nil {
-		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if !exists {
-		log.Error(err)
 		return nil, status.Errorf(codes.NotFound, "image with sha '%s' does not exist", request.GetId())
 	}
 

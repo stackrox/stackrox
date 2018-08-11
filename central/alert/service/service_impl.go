@@ -91,7 +91,6 @@ func (s *serviceImpl) GetAlertsGroup(ctx context.Context, request *v1.ListAlerts
 func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlertsCountsRequest) (*v1.GetAlertsCountsResponse, error) {
 	alerts, err := s.datastore.ListAlerts(request.GetRequest())
 	if err != nil {
-		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
