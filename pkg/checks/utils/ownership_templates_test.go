@@ -29,7 +29,7 @@ func setOwnership(file, u, g string) error {
 	if err != nil {
 		return err
 	}
-	err = os.Chown(file, getInt(group.Gid), getInt(us.Uid))
+	err = os.Chown(file, getInt(us.Uid), getInt(group.Gid))
 	return err
 }
 
