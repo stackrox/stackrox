@@ -11,6 +11,7 @@ import PropTypes from 'prop-types';
 import capitalize from 'lodash/capitalize';
 import lowerCase from 'lodash/lowerCase';
 import globalSearchEmptyState from 'images/globalSearchEmptyState.svg';
+import { addSearchModifier, addSearchKeyword } from 'utils/searchUtils';
 
 const tabs = [
     {
@@ -99,18 +100,10 @@ class SearchResults extends Component {
     };
 
     onLinkHandler = (searchCategory, category, toURL, name) => () => {
-        const searchOptions = this.props.globalSearchOptions.slice();
+        let searchOptions = this.props.globalSearchOptions.slice();
         if (name) {
-            searchOptions.push({
-                label: `${mapping[searchCategory].name}:`,
-                value: `${mapping[searchCategory].name}:`,
-                type: 'categoryOption'
-            });
-            searchOptions.push({
-                label: name,
-                value: name,
-                className: 'Select-create-option-placeholder'
-            });
+            searchOptions = addSearchModifier(searchOptions, `${mapping[searchCategory].name}:`);
+            searchOptions = addSearchKeyword(searchOptions, name);
         }
         this.props.passthroughGlobalSearchOptions(searchOptions, category);
         this.props.onClose(toURL);

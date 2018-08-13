@@ -34,9 +34,11 @@ export function* passthroughGlobalSearchOptions({ searchOptions, category }) {
             yield put(imagesActions.setImagesSearchOptions(searchOptions));
             break;
         case 'ALERTS':
+        case 'VIOLATIONS':
             yield put(alertsActions.setAlertsSearchOptions(searchOptions));
             break;
         case 'DEPLOYMENTS':
+        case 'RISK':
             yield put(deploymentsActions.setDeploymentsSearchOptions(searchOptions));
             break;
         case 'SECRETS':
