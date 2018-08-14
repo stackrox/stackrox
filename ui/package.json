@@ -63,9 +63,7 @@
     "cypress-open": "cypress open",
     "test-e2e-local": "cypress run",
     "test-e2e-ci": "cypress run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.json",
-    "eject": "react-scripts eject",
-    "storybook": "NODE_PATH=src start-storybook -p 9009 -s public",
-    "build-storybook": "build-storybook -s public"
+    "eject": "react-scripts eject"
   },
   "proxy": {
     "/v1": {
