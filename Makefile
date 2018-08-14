@@ -92,6 +92,7 @@ API_SERVICES += network_policy_service
 API_SERVICES += notifier_service
 API_SERVICES += ping_service
 API_SERVICES += policy_service
+API_SERVICES += role_service
 API_SERVICES += search_service
 API_SERVICES += secret_service
 API_SERVICES += sensor_event_service

@@ -12,6 +12,14 @@ type storeImpl struct {
 	roles map[string]permissions.Role
 }
 
+func (s *storeImpl) GetRoles() []permissions.Role {
+	roles := make([]permissions.Role, 0, len(s.roles))
+	for _, role := range s.roles {
+		roles = append(roles, role)
+	}
+	return roles
+}
+
 func (s *storeImpl) GetRole(name string) (role permissions.Role, exists bool) {
 	role, exists = s.roles[name]
 	return

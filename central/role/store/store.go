@@ -12,6 +12,7 @@ import (
 // of custom roles, or for the updating of existing roles.
 type Store interface {
 	GetRole(name string) (role permissions.Role, exists bool)
+	GetRoles() []permissions.Role
 }
 
 // defaultRolesMap returns the pre-defined roles that we allow.

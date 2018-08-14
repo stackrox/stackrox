@@ -23,6 +23,7 @@ const (
 	Notifier          permissions.Resource = "Notifier"
 	NetworkPolicy     permissions.Resource = "NetworkPolicy"
 	Policy            permissions.Resource = "Policy"
+	Role              permissions.Resource = "Role"
 	Secret            permissions.Resource = "Secret"
 	ServiceIdentity   permissions.Resource = "ServiceIdentity"
 )

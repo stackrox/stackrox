@@ -30,6 +30,10 @@ func (mockRoleStore) GetRole(name string) (role permissions.Role, exists bool) {
 	return
 }
 
+func (mockRoleStore) GetRoles() []permissions.Role {
+	panic("Not implemented")
+}
+
 type mockTokenRevocationChecker struct {
 	ReturnError bool
 }
