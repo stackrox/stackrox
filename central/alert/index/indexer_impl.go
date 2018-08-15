@@ -5,6 +5,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
+	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/alert/index/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -46,6 +47,7 @@ func (b *indexerImpl) DeleteAlert(id string) error {
 // SearchAlerts takes a SearchRequest and finds any matches
 func (b *indexerImpl) SearchAlerts(request *v1.ParsedSearchRequest) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Alert")
+	request = proto.Clone(request).(*v1.ParsedSearchRequest)
 	if request.Fields == nil {
 		request.Fields = make(map[string]*v1.ParsedSearchRequest_Values)
 	}
