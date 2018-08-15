@@ -139,7 +139,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.serviceAccountName
-        imagePullPolicy: Always
         name: sensor
         command:
         - kubernetes-sensor

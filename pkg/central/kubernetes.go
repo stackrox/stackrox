@@ -137,7 +137,6 @@ spec:
           limits:
             memory: "8Gi"
             cpu: "2000m"
-        imagePullPolicy: Always
         command:
         - central
         ports:
