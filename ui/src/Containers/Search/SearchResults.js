@@ -5,7 +5,7 @@ import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import Table from 'Components/Table';
 
-import UnderlineTabs from 'Components/UnderlineTabs';
+import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import PropTypes from 'prop-types';
 import capitalize from 'lodash/capitalize';
@@ -13,7 +13,7 @@ import lowerCase from 'lodash/lowerCase';
 import globalSearchEmptyState from 'images/globalSearchEmptyState.svg';
 import { addSearchModifier, addSearchKeyword } from 'utils/searchUtils';
 
-const tabs = [
+const defaultTabs = [
     {
         text: 'All',
         category: '',
@@ -88,6 +88,7 @@ class SearchResults extends Component {
         globalSearchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
         setGlobalSearchCategory: PropTypes.func.isRequired,
         passthroughGlobalSearchOptions: PropTypes.func.isRequired,
+        tabs: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
         defaultTab: PropTypes.shape({})
     };
 
@@ -109,29 +110,33 @@ class SearchResults extends Component {
         this.props.onClose(toURL);
     };
 
-    renderTabs = () => (
-        <section className="flex flex-auto h-full">
-            <div className="flex flex-1">
-                <UnderlineTabs
-                    className="bg-white"
-                    headers={tabs}
-                    onTabClick={this.onTabClick}
-                    default={this.props.defaultTab}
-                >
-                    {tabs.map(tab => (
-                        <TabContent key={tab.text}>
-                            <div
-                                key={tab.text}
-                                className="flex flex-1 w-full p-3 overflow-y-scroll rounded-sm"
-                            >
-                                {this.renderTable(tab.text)}
-                            </div>
-                        </TabContent>
-                    ))}
-                </UnderlineTabs>
-            </div>
-        </section>
-    );
+    renderTabs = () => {
+        const { tabs } = this.props;
+        return (
+            <section className="flex flex-auto h-full">
+                <div className="flex flex-1">
+                    <Tabs
+                        className="bg-white mb-8"
+                        headers={tabs}
+                        onTabClick={this.onTabClick}
+                        default={this.props.defaultTab}
+                        tabClass="tab flex-1 items-center justify-center font-600"
+                        tabActiveClass="tab flex-1 items-center justify-center border-b-2 border-primary-400 font-700 text-primary-500"
+                        tabDisabledClass="tab flex-1 items-center justify-center font-600 disabled"
+                        tabContentBgColor="bg-white"
+                    >
+                        {tabs.map(tab => (
+                            <TabContent key={tab.text}>
+                                <div key={tab.text} className="flex flex-1 w-full p-3 rounded-sm">
+                                    {this.renderTable(tab.text)}
+                                </div>
+                            </TabContent>
+                        ))}
+                    </Tabs>
+                </div>
+            </section>
+        );
+    };
 
     renderTable = () => {
         if (!this.props.globalSearchResults.length) {
@@ -243,14 +248,31 @@ class SearchResults extends Component {
     }
 }
 
+const getTabs = createSelector([selectors.getGlobalSearchCounts], globalSearchCounts => {
+    if (globalSearchCounts.length === 0) return defaultTabs;
+
+    const newTabs = [];
+    defaultTabs.forEach(tab => {
+        const newTab = Object.assign({}, tab);
+        const currentTab = globalSearchCounts.find(obj => obj.category === tab.category);
+        if (currentTab) {
+            newTab.text += ` (${currentTab.count})`;
+            if (currentTab.count === '0') newTab.disabled = true;
+        }
+        newTabs.push(newTab);
+    });
+    return newTabs;
+});
+
 const getDefaultTab = createSelector([selectors.getGlobalSearchCategory], globalSearchCategory => {
-    const tab = tabs.find(obj => obj.category === globalSearchCategory);
+    const tab = defaultTabs.find(obj => obj.category === globalSearchCategory);
     return tab;
 });
 
 const mapStateToProps = createStructuredSelector({
     globalSearchResults: selectors.getGlobalSearchResults,
     globalSearchOptions: selectors.getGlobalSearchOptions,
+    tabs: getTabs,
     defaultTab: getDefaultTab
 });
 

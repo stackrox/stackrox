@@ -13,7 +13,7 @@ describe('Global Search Modal', () => {
         cy.get(selectors.searchBtn).click();
     });
 
-    it('Should have 5 tabs with the "All" tab selected by default', () => {
+    it('Should have 6 tabs with the "All" tab selected by default', () => {
         cy.get(selectors.searchInput).type('Cluster:{enter}', { force: true });
         cy.get(selectors.searchInput).type('remote{enter}', { force: true });
         cy
@@ -40,6 +40,12 @@ describe('Global Search Modal', () => {
             .get(selectors.categoryTabs)
             .eq(4)
             .should('have.text', 'Images')
+            .should('not.have.class', 'border-b-2 border-primary-400');
+
+        cy
+            .get(selectors.categoryTabs)
+            .eq(5)
+            .should('have.text', 'Secrets')
             .should('not.have.class', 'border-b-2 border-primary-400');
     });
 

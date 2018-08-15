@@ -20,7 +20,7 @@ export function* getGlobalSearchResults() {
         };
         if (category !== '') filters.categories = category;
         const result = yield call(fetchGlobalSearchResults, filters);
-        yield put(actions.fetchGlobalSearchResults.success(result.response));
+        yield put(actions.fetchGlobalSearchResults.success(result.response, { category }));
     } catch (error) {
         yield put(actions.fetchGlobalSearchResults.failure(error));
         if (error.response && error.response.status >= 500 && error.response.data.error)

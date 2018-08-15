@@ -61,6 +61,17 @@ const globalSearchResults = (state = [], action) => {
     return state;
 };
 
+const globalSearchCounts = (state = [], action) => {
+    if (action.type === types.FETCH_GLOBAL_SEARCH_RESULTS.SUCCESS && !action.params.category) {
+        const counts = action.response.counts || [];
+        return isEqual(counts, state) ? state : counts;
+    } else if (action.type === types.FETCH_GLOBAL_SEARCH_RESULTS.FAILURE) {
+        const counts = [];
+        return isEqual(counts, state) ? state : counts;
+    }
+    return state;
+};
+
 const globalSearchCategory = (state = '', action) => {
     if (action.type === types.SET_GLOBAL_SEARCH_CATEGORY) {
         const { category } = action;
@@ -71,6 +82,7 @@ const globalSearchCategory = (state = '', action) => {
 
 const reducer = combineReducers({
     globalSearchResults,
+    globalSearchCounts,
     globalSearchView,
     globalSearchCategory,
     ...searchReducers('global')
@@ -79,11 +91,13 @@ const reducer = combineReducers({
 // Selectors
 
 const getGlobalSearchResults = state => state.globalSearchResults;
+const getGlobalSearchCounts = state => state.globalSearchCounts;
 const getGlobalSearchView = state => state.globalSearchView;
 const getGlobalSearchCategory = state => state.globalSearchCategory;
 
 export const selectors = {
     getGlobalSearchResults,
+    getGlobalSearchCounts,
     getGlobalSearchView,
     getGlobalSearchCategory,
     ...getSearchSelectors('global')
