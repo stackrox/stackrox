@@ -93,11 +93,17 @@ const nodeUpdatesEpoch = (state = null, action) => {
     return state;
 };
 
+export const networkGraphClusters = {
+    KUBERNETES_CLUSTER: true,
+    OPENSHIFT_CLUSTER: true
+};
+
 const selectedEnvironmentClusterId = (state = null, action) => {
     if (!state && action.type === clusterTypes.FETCH_CLUSTERS.SUCCESS) {
-        const { clusters } = action.response.result;
-        if (clusters && clusters.length) {
-            const clusterId = clusters[0];
+        const { cluster } = action.response.entities;
+        const filteredClusters = Object.values(cluster).filter(c => networkGraphClusters[c.type]);
+        if (filteredClusters && filteredClusters.length) {
+            const clusterId = filteredClusters[0].id;
             return isEqual(clusterId, state) ? state : clusterId;
         }
     }

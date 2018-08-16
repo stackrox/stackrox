@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
-import { actions as environmentActions } from 'reducers/environment';
+import { actions as environmentActions, networkGraphClusters } from 'reducers/environment';
 import { actions as deploymentActions, types as deploymentTypes } from 'reducers/deployments';
 import { actions as clusterActions } from 'reducers/clusters';
 
@@ -145,10 +145,13 @@ class EnvironmentPage extends Component {
 
     renderClustersSelect = () => {
         if (!this.props.clusters.length) return null;
-        const options = this.props.clusters.map(cluster => ({
-            value: cluster.id,
-            label: cluster.name
-        }));
+        // network policies are only applicable on k8s-based clusters
+        const options = this.props.clusters
+            .filter(cluster => networkGraphClusters[cluster.type])
+            .map(cluster => ({
+                value: cluster.id,
+                label: cluster.name
+            }));
         const clustersProps = {
             className: 'min-w-64 ml-5',
             options,
