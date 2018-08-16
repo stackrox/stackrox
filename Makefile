@@ -97,6 +97,7 @@ API_SERVICES += search_service
 API_SERVICES += secret_service
 API_SERVICES += sensor_event_service
 API_SERVICES += service_identity_service
+API_SERVICES += signal_service
 API_SERVICES += summary_service
 
 # These .proto files do not contain gRPC methods and thus don't need gateway files.

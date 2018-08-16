@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+package v1;
+
+// A single message in the event stream between Collector and Sensor.
+message SignalStreamMessage {
+    oneof msg {
+        // The first message in every stream that registers Collector with Sensor.
+        CollectorRegisterRequest collector_register_request = 1;
+
+        // A signal event observed by Collector.
+        Signal signal = 2;
+    }
+}
+
+// A request message sent by collector to register with Sensor.
+message CollectorRegisterRequest {
+    // The hostname on which collector is running.
+    string hostname = 1;
+
+    // A unique identifier for an instance of collector.
+    string instance_id = 2;
+}
+
+message Signal {
+    oneof signal {
+        ProcessSignal process_signal = 1;
+    }
+    google.protobuf.Timestamp time = 10;
+    string container_id            = 11;
+}
+
+message ProcessSignal {
+    // Process name
+    string name = 1;
+
+    // Process command line arguments 
+    repeated string command_line = 2;
+
+    // Host process ID
+    uint32 pid = 3;
+
+    // Host parent process ID
+    uint32 parent_pid = 4;
+
+    // Process executable file path
+    string exec_file_path = 5;
+
+    // Process user and group identifiers (e.g., man 7 credentials)
+    Credentials credentials = 6; 
+
+    message Credentials {
+        uint32 uid  = 1; // real user ID
+        uint32 gid  = 2; // real group ID
+        uint32 euid = 3; // effective user ID
+        uint32 egid = 4; // effective group ID
+        uint32 suid = 5; // saved set-user ID
+        uint32 sgid = 6; // saved set-group ID
+    }
+}
+
+// A Sensor service that allows Collector to push Signal messages
+service SignalService { 
+    rpc PushSignals (stream SignalStreamMessage) returns (google.protobuf.Empty);
+}
