@@ -114,7 +114,7 @@ describe('Cluster Creation Flow', () => {
             .should('have.text', 'Central API Endpoint:central.stackrox:443');
     });
 
-    it.only('Should be able to fill out the Swarm form, download config files and see cluster checked-in', () => {
+    it('Should be able to fill out the Swarm form, download config files and see cluster checked-in', () => {
         cy.get(selectors.dockerSwarmTile).click();
 
         cy.get(selectors.buttons.add).click();
