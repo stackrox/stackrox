@@ -23,14 +23,14 @@ import (
 )
 
 var (
-	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.BenchmarkTrigger)): {
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		or.SensorOrAuthorizer(user.With(permissions.View(resources.BenchmarkTrigger))): {
 			"/v1.BenchmarkTriggerService/GetTriggers",
 		},
 		user.With(permissions.Modify(resources.BenchmarkTrigger)): {
 			"/v1.BenchmarkTriggerService/Trigger",
 		},
-	}))
+	})
 )
 
 // BenchmarkTriggerService is the struct that manages the benchmark API

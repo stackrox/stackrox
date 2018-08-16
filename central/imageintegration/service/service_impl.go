@@ -28,8 +28,8 @@ import (
 )
 
 var (
-	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.ImageIntegration)): {
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		or.SensorOrAuthorizer(user.With(permissions.View(resources.ImageIntegration))): {
 			"/v1.ImageIntegrationService/GetImageIntegration",
 			"/v1.ImageIntegrationService/GetImageIntegrations",
 		},
@@ -39,7 +39,7 @@ var (
 			"/v1.ImageIntegrationService/TestImageIntegration",
 			"/v1.ImageIntegrationService/DeleteImageIntegration",
 		},
-	}))
+	})
 )
 
 // ImageIntegrationService is the struct that manages the ImageIntegration API

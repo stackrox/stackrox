@@ -25,8 +25,8 @@ import (
 )
 
 var (
-	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.BenchmarkSchedule)): {
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		or.SensorOrAuthorizer(user.With(permissions.View(resources.BenchmarkSchedule))): {
 			"/v1.BenchmarkScheduleService/GetBenchmarkSchedule",
 			"/v1.BenchmarkScheduleService/GetBenchmarkSchedules",
 		},
@@ -35,7 +35,7 @@ var (
 			"/v1.BenchmarkScheduleService/PutBenchmarkSchedule",
 			"/v1.BenchmarkScheduleService/DeleteBenchmarkSchedule",
 		},
-	}))
+	})
 )
 
 // BenchmarkScheduleService is the struct that manages the benchmark API

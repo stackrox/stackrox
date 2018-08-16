@@ -21,8 +21,8 @@ import (
 )
 
 var (
-	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Benchmark)): {
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		or.SensorOrAuthorizer(user.With(permissions.View(resources.Benchmark))): {
 			"/v1.BenchmarkService/GetChecks",
 			"/v1.BenchmarkService/GetBenchmark",
 			"/v1.BenchmarkService/GetBenchmarks",
@@ -32,7 +32,7 @@ var (
 			"/v1.BenchmarkService/PutBenchmark",
 			"/v1.BenchmarkService/DeleteBenchmark",
 		},
-	}))
+	})
 )
 
 // ClusterService is the struct that manages the cluster API
