@@ -16,7 +16,7 @@ required = ["golang.org/x/tools/go/ast/astutil"]
 
 [[override]]
   name = "github.com/heroku/docker-registry-client"
-  source = "git@bitbucket.org:stack-rox/docker-registry-client.git"
+  source = "github.com/stackrox/docker-registry-client.git"
   branch = "master"
 
 [[constraint]]
@@ -162,5 +162,5 @@ required = ["golang.org/x/tools/go/ast/astutil"]
   branch = "master"
 
 [[constraint]]
-  name = "bitbucket.org/stack-rox/clairify"
+  name = "github.com/stackrox/clairify"
   branch = "master"

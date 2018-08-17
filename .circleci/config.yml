@@ -27,7 +27,6 @@ jobs:
     <<: *defaults
     resource_class: large
     steps:
-      - add_ssh_keys
       - checkout
       - setup_remote_docker
 

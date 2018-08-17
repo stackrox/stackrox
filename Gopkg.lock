@@ -2,17 +2,6 @@
 
 
 [[projects]]
-  branch = "master"
-  digest = "1:851288c12a0db79f85c7429e2cb56daa4a8a8537f89531fdf77e489a4936b8cd"
-  name = "bitbucket.org/stack-rox/clairify"
-  packages = [
-    "client",
-    "types",
-  ]
-  pruneopts = "NUT"
-  revision = "2f01882815af1e01bc2808d80747aca9ec0f759f"
-
-[[projects]]
   digest = "1:180876db3ec295bb9f0babec5ca926fe9f2036b747b7c5bfcd13b333023e7cfd"
   name = "cloud.google.com/go"
   packages = ["compute/metadata"]
@@ -559,12 +548,12 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7288ac75108f7d2b1e7cdd329b85c2d62abf99dd3eb48146fbf2e330bc5192cd"
+  digest = "1:7c8e177df36552a648af4334b117a3d83a07fe9f6fb178ba29ab6500d24d3e18"
   name = "github.com/heroku/docker-registry-client"
   packages = ["registry"]
   pruneopts = "NUT"
-  revision = "2569502409eb68392fe8059dfea198c50f6c93f7"
-  source = "git@bitbucket.org:stack-rox/docker-registry-client.git"
+  revision = "30d35c12287750cdaed9925ef1bbd3d20214ecc1"
+  source = "github.com/stackrox/docker-registry-client.git"
 
 [[projects]]
   digest = "1:406338ad39ab2e37b7f4452906442a3dbf0eb3379dd1f06aafb5c07e769a5fbb"
@@ -768,6 +757,17 @@
   pruneopts = "NUT"
   revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
   version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:4870e44664f4282c4cb6e60df4ee66c50d98b57e88635b499c5ecb490b225bc9"
+  name = "github.com/stackrox/clairify"
+  packages = [
+    "client",
+    "types",
+  ]
+  pruneopts = "NUT"
+  revision = "b37d808292b149cd482840033e50ae2bce67577f"
 
 [[projects]]
   branch = "master"
@@ -1192,8 +1192,6 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "bitbucket.org/stack-rox/clairify/client",
-    "bitbucket.org/stack-rox/clairify/types",
     "github.com/NYTimes/gziphandler",
     "github.com/andygrunwald/go-jira",
     "github.com/blevesearch/bleve",
@@ -1255,6 +1253,8 @@
     "github.com/satori/go.uuid",
     "github.com/spf13/cobra",
     "github.com/spf13/pflag",
+    "github.com/stackrox/clairify/client",
+    "github.com/stackrox/clairify/types",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",

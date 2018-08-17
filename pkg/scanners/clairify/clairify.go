@@ -3,9 +3,9 @@ package clairify
 import (
 	"fmt"
 
-	"bitbucket.org/stack-rox/clairify/client"
-	"bitbucket.org/stack-rox/clairify/types"
 	clairV1 "github.com/coreos/clair/api/v1"
+	"github.com/stackrox/clairify/client"
+	"github.com/stackrox/clairify/types"
 	"github.com/stackrox/rox/generated/api/v1"
 	clairConv "github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/registries"
