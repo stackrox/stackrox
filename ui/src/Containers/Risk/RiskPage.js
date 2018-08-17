@@ -8,9 +8,9 @@ import { selectors } from 'reducers';
 import { actions as deploymentsActions, types } from 'reducers/deployments';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
+import ReactRowSelectTable from 'Components/ReactRowSelectTable';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
-import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';
 import Loader from 'Components/Loader';
@@ -58,15 +58,39 @@ class RiskPage extends Component {
 
     renderTable() {
         const columns = [
-            { key: 'name', label: 'Name' },
-            { key: 'cluster', label: 'Cluster' },
-            { key: 'namespace', label: 'Namespace' },
-            { key: 'priority', label: 'Priority', sortMethod: sortNumber('priority') }
+            {
+                Header: 'Name',
+                accessor: 'name'
+            },
+            {
+                Header: 'Cluster',
+                accessor: 'cluster'
+            },
+            {
+                Header: 'Namespace',
+                accessor: 'namespace'
+            },
+            {
+                Header: 'Priority',
+                accessor: 'priority',
+                sortMethod: sortNumber('priority')
+            }
         ];
-        const rows = this.props.deployments;
+
+        const { deployments, selectedDeployment } = this.props;
+        const rows = deployments;
+        const id = selectedDeployment && selectedDeployment.id;
         if (!rows.length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
-        return <Table columns={columns} rows={rows} onRowClick={this.updateSelectedDeployment} />;
+        return (
+            <ReactRowSelectTable
+                rows={rows}
+                columns={columns}
+                onRowClick={this.updateSelectedDeployment}
+                selectedRowId={id}
+                noDataText="No results found. Please refine your search."
+            />
+        );
     }
 
     renderSidePanel = () => {
@@ -121,7 +145,7 @@ class RiskPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow bg-base-100">
+                        <div className="w-full pl-3 pt-3 pr-3 overflow-hidden bg-white rounded-sm shadow bg-base-100">
                             {this.renderTable()}
                         </div>
                         {this.renderSidePanel()}

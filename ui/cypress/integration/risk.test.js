@@ -11,8 +11,14 @@ describe('Risk page', () => {
         cy.get(RiskPageSelectors.risk).should('have.class', 'bg-primary-600');
     });
 
+    it('should sort priority in the table', () => {
+        cy.get(RiskPageSelectors.table.columns.priority).click({ force: true }); // ascending
+        cy.get(RiskPageSelectors.table.columns.priority).click({ force: true }); // descending
+        cy.get(RiskPageSelectors.table.row.firstRow).should('contain', '3');
+    });
+
     it('should open the panel to view risk indicators', () => {
-        cy.get(RiskPageSelectors.table.row.prevent_sensor).click();
+        cy.get(RiskPageSelectors.table.row.prevent_sensor).click({ force: true });
         cy
             .get(RiskPageSelectors.panelTabs.riskIndicators)
             .first()
@@ -21,18 +27,18 @@ describe('Risk page', () => {
     });
 
     it('should open the panel to view deployment details', () => {
-        cy.get(RiskPageSelectors.table.row.prevent_sensor).click();
+        cy.get(RiskPageSelectors.table.row.prevent_sensor).click({ force: true });
         cy.get(RiskPageSelectors.panelTabs.deploymentDetails);
         cy.get(RiskPageSelectors.cancelButton).click();
     });
 
     it('should navigate from Risk Page to Images Page', () => {
-        cy.get(RiskPageSelectors.table.row.prevent_sensor).click();
-        cy.get(RiskPageSelectors.panelTabs.deploymentDetails).click();
+        cy.get(RiskPageSelectors.table.row.prevent_sensor).click({ force: true });
+        cy.get(RiskPageSelectors.panelTabs.deploymentDetails).click({ force: true });
         cy
             .get(RiskPageSelectors.imageLink)
             .first()
-            .click();
+            .click({ force: true });
         cy.url().should('contain', '/main/images');
     });
 

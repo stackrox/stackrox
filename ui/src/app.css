@@ -435,4 +435,40 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     fill: hsl(316, 93%, 89%);
 }
 
+/* React Table overrides */
+.ReactTable .rt-thead.-header {
+    @apply .shadow-none
+}
+
+.ReactTable .-pagination  {
+    @apply .shadow-none .border-t .shadow-underline .pt-2 .pb-2 .pl-0 .pr-0
+
+}
+
+.ReactTable .rt-thead .rt-th.-sort-desc .rt-resizable-header-content:after {
+    content: ' ↓';
+    position: absolute;
+}
+
+.ReactTable .rt-thead .rt-th.-sort-asc .rt-resizable-header-content:after {
+    content: ' ↑';
+    position: absolute;
+}
+
+.ReactTable.-highlight .rt-tbody .rt-tr:not(.-padRow):hover {
+    @apply .bg-base-100
+}
+
+.ReactTable .rt-tbody .rt-tr-group {
+    @apply .border-base-300
+}
+
+.ReactTable .-previous .-btn, .ReactTable .-next .-btn {
+    @apply .bg-primary-100 .rounded-none .text-primary-600
+}
+
+.ReactTable .-previous .-btn:hover, .ReactTable .-next .-btn:hover {
+    @apply .bg-primary-300 .text-white .rounded-none
+}
+
 @tailwind utilities;
