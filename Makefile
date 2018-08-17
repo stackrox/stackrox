@@ -87,7 +87,6 @@ API_SERVICES += dnr_integration_service
 API_SERVICES += enrichment_service
 API_SERVICES += image_integration_service
 API_SERVICES += image_service
-API_SERVICES += indicator_service
 API_SERVICES += metadata_service
 API_SERVICES += network_policy_service
 API_SERVICES += notifier_service
@@ -98,11 +97,12 @@ API_SERVICES += search_service
 API_SERVICES += secret_service
 API_SERVICES += sensor_event_service
 API_SERVICES += service_identity_service
-API_SERVICES += signal_service
 API_SERVICES += summary_service
 
 # These .proto files do not contain gRPC methods and thus don't need gateway files.
 PB_COMMON_FILES  = common
+PB_COMMON_FILES += signal_service
+PB_COMMON_FILES += indicator_service
 
 GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_GW_SRCS)
 
