@@ -78,6 +78,7 @@ describe('Policies page', () => {
     it('should allow updating policy name', () => {
         const updatePolicyName = typeStr => {
             editPolicy();
+            cy.get(selectors.tableContainer).should('have.class', 'pointer-events-none');
             cy.get(selectors.form.nameInput).type(typeStr);
             savePolicy();
         };

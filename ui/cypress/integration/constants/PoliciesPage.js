@@ -49,6 +49,7 @@ export const selectors = {
     sidePanel: '[data-test-id="panel"]',
     sidePanelHeader: '[data-test-id="panel-header"]',
     tableFirstRow: 'table tr.cursor-pointer:first',
+    tableContainer: '[data-test-id="policies-table-container"]',
     enableDisableButton: 'td > button',
     enabledPolicyButtonColorClass: 'text-success-500'
 };

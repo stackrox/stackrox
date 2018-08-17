@@ -256,16 +256,26 @@ class PoliciesPage extends Component {
         );
         return (
             <Panel header={`${this.props.policies.length} Policies`} buttons={panelButtons}>
-                <Table
-                    columns={columns}
-                    rows={this.props.policies}
-                    onRowClick={this.setSelectedPolicy}
-                    actions={actions}
-                    checkboxes
-                    ref={table => {
-                        this.policyTable = table;
-                    }}
-                />
+                <div
+                    data-test-id="policies-table-container"
+                    className={`w-full
+                        ${
+                            this.props.wizardState.current !== ''
+                                ? 'pointer-events-none opacity-25'
+                                : ''
+                        }`}
+                >
+                    <Table
+                        columns={columns}
+                        rows={this.props.policies}
+                        onRowClick={this.setSelectedPolicy}
+                        actions={actions}
+                        checkboxes
+                        ref={table => {
+                            this.policyTable = table;
+                        }}
+                    />
+                </div>
             </Panel>
         );
     };
