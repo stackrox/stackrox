@@ -48,7 +48,7 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 			Version:   "100",
 			Type:      "Replicated",
 			UpdatedAt: ptypes.TimestampNow(),
-			Priority:  1,
+			Risk:      &v1.Risk{Score: 10},
 		},
 		{
 			Id:        "barID",
@@ -56,7 +56,7 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 			Version:   "400",
 			Type:      "Global",
 			UpdatedAt: ptypes.TimestampNow(),
-			Priority:  1,
+			Risk:      &v1.Risk{Score: 9},
 		},
 	}
 
@@ -70,6 +70,12 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 		suite.NoError(suite.store.UpdateDeployment(d))
 	}
 
+	// We want to make sure the priorities are set by the ranker.
+	// We explicitly add them here for the comparisons later.
+	for i, d := range deployments {
+		d.Priority = int64(i + 1)
+	}
+
 	for _, d := range deployments {
 		// Test retrieval of full objects
 		got, exists, err := suite.store.GetDeployment(d.GetId())
@@ -81,7 +87,12 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 		gotList, exists, err := suite.store.ListDeployment(d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
-		suite.Equal(d.GetName(), gotList.GetName())
+		suite.Equal(&v1.ListDeployment{
+			Id:        d.GetId(),
+			Name:      d.GetName(),
+			UpdatedAt: d.GetUpdatedAt(),
+			Priority:  d.GetPriority(),
+		}, gotList)
 	}
 
 	// Test Update

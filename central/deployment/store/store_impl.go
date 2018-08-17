@@ -24,17 +24,17 @@ func (b *storeImpl) ListDeployment(id string) (deployment *v1.ListDeployment, ex
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ListDeployment")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentListBucket))
-		deployment = new(v1.ListDeployment)
 		val := bucket.Get([]byte(id))
 		if val == nil {
 			return nil
 		}
 		exists = true
-		deployment.Priority = b.ranker.Get(deployment.GetId())
+		deployment = new(v1.ListDeployment)
 		err := proto.Unmarshal(val, deployment)
 		if err != nil {
 			return err
 		}
+		deployment.Priority = b.ranker.Get(deployment.GetId())
 		return nil
 	})
 	return
