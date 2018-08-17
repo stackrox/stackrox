@@ -238,17 +238,28 @@ jobs:
             docker run --rm -t \
               --volumes-from openshift \
               -e GOOGLE_CREDENTIALS="$OPENSHIFT_TERRAFORM_CREDENTIALS" \
-              stackrox/openshift-automation:terraform-0.0.0-4-g42329ca create "${CIRCLE_SHA1:0:7}"
-
-      - run:
-          name: Create Openshift cluster
-          command: docker run --rm -t --volumes-from openshift stackrox/openshift-automation:ansible-0.0.0-4-g42329ca
+              stackrox/openshift-automation:terraform-0.2.0 create "${CIRCLE_SHA1:0:7}"
 
       - run:
           name: Unpack openshift volume
           command: |
             docker cp openshift:/data/terraform.tfstate openshift
             docker cp openshift:/data/master            openshift
+
+      - store_artifacts:
+          path: openshift
+          destination: openshift
+
+      - run:
+          name: Create Openshift cluster
+          command: |
+            docker run --rm -t \
+            --volumes-from openshift \
+            stackrox/openshift-automation:ansible-0.2.0
+
+      - run:
+          name: Unpack openshift volume
+          command: |
             docker cp openshift:/data/config            openshift
             ls -hl openshift
           when: always
@@ -268,7 +279,7 @@ jobs:
             docker run --rm -t \
               --volumes-from openshift \
               -e GOOGLE_CREDENTIALS="$OPENSHIFT_TERRAFORM_CREDENTIALS" \
-              stackrox/openshift-automation:terraform-0.0.0-4-g42329ca destroy "${CIRCLE_SHA1:0:7}"
+              stackrox/openshift-automation:terraform-0.2.0 destroy "${CIRCLE_SHA1:0:7}"
           when: on_fail
 
   deploy-openshift:
@@ -289,12 +300,13 @@ jobs:
       - run:
           name: Configure Deployment Environment
           command: |
-            echo "export CLAIRIFY_IMAGE_TAG=0.4"                 >> "$BASH_ENV"
-            echo "export OPENSHIFT_HOST=$(cat openshift/master)" >> "$BASH_ENV"
-            echo "export PREVENT_IMAGE_REGISTRY=docker.io"       >> "$BASH_ENV"
-            echo "export PREVENT_IMAGE_TAG=$(make tag)"          >> "$BASH_ENV"
-            echo "export REGISTRY_PASSWORD=$DOCKERHUB_PASSWORD"  >> "$BASH_ENV"
-            echo "export REGISTRY_USERNAME=$DOCKERHUB_USERNAME"  >> "$BASH_ENV"
+            echo "export CLAIRIFY_IMAGE_TAG=0.4"                            >> "$BASH_ENV"
+            echo "export OPENSHIFT_HOST=$(cat openshift/master)"            >> "$BASH_ENV"
+            echo "export PREVENT_IMAGE_REGISTRY=docker.io"                  >> "$BASH_ENV"
+            echo "export PREVENT_IMAGE_TAG=$(make tag)"                     >> "$BASH_ENV"
+            echo "export PRIVATE_REGISTRY=docker-registry.default.svc:5000" >> "$BASH_ENV"
+            echo "export REGISTRY_PASSWORD=$DOCKERHUB_PASSWORD"             >> "$BASH_ENV"
+            echo "export REGISTRY_USERNAME=$DOCKERHUB_USERNAME"             >> "$BASH_ENV"
 
       - run:
           name: Configure Kubectl
@@ -321,7 +333,7 @@ jobs:
           name: Run Image Setup
           command: |
             scp -o StrictHostKeyChecking=no openshift/image-setup.sh "stackrox@$OPENSHIFT_HOST:~/image-setup.sh"
-            ssh -o StrictHostKeyChecking=no "stackrox@$OPENSHIFT_HOST" "yes | CLAIRIFY_IMAGE_TAG=$CLAIRIFY_IMAGE_TAG PREVENT_IMAGE_REGISTRY=$PREVENT_IMAGE_REGISTRY PREVENT_IMAGE_TAG=$PREVENT_IMAGE_TAG REGISTRY_PASSWORD=$REGISTRY_PASSWORD REGISTRY_USERNAME=$REGISTRY_USERNAME ~/image-setup.sh"
+            ssh -o StrictHostKeyChecking=no "stackrox@$OPENSHIFT_HOST" "yes | CLAIRIFY_IMAGE_TAG=$CLAIRIFY_IMAGE_TAG PREVENT_IMAGE_REGISTRY=$PREVENT_IMAGE_REGISTRY PREVENT_IMAGE_TAG=$PREVENT_IMAGE_TAG PRIVATE_REGISTRY=$PRIVATE_REGISTRY REGISTRY_PASSWORD=$REGISTRY_PASSWORD REGISTRY_USERNAME=$REGISTRY_USERNAME ~/image-setup.sh"
             oc -n stackrox get imagestreams
 
       - run:
@@ -398,7 +410,7 @@ jobs:
             docker run --rm -t \
               --volumes-from openshift \
               -e GOOGLE_CREDENTIALS="$OPENSHIFT_TERRAFORM_CREDENTIALS" \
-              stackrox/openshift-automation:terraform-0.0.0-4-g42329ca destroy "${CIRCLE_SHA1:0:7}"
+              stackrox/openshift-automation:terraform-0.2.0 destroy "${CIRCLE_SHA1:0:7}"
           when: always
 
   push-release:
@@ -440,17 +452,17 @@ workflows:
             tags:
               only: /.*/
       # Provision and test OpenShift only on master
-      - provision-openshift:
-          filters:
-            branches:
-              only: master
+      - provision-openshift
+#          filters:
+#            branches:
+#              only: master
       - deploy-openshift:
           requires:
             - build
             - provision-openshift
-          filters:
-            branches:
-              only: master
+#          filters:
+#            branches:
+#              only: master
       # Push release only on tags.
       - push-release:
           requires:

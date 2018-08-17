@@ -68,7 +68,10 @@ set -x
 oc new-project "$OC_PROJECT" || true
 oc project "$OC_PROJECT"
 
-PRIVATE_REGISTRY=$(oc get route -n default | grep docker-registry | tr -s ' ' | cut -d' ' -f2)
+if [ -z "$PRIVATE_REGISTRY" ]; then
+  PRIVATE_REGISTRY=$(oc get route -n default | grep docker-registry | tr -s ' ' | cut -d' ' -f2)
+fi
+
 echo "Private registry: $PRIVATE_REGISTRY"
 
 oc get sa pusher > /dev/null || oc create sa pusher
