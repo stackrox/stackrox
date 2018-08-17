@@ -452,17 +452,17 @@ workflows:
             tags:
               only: /.*/
       # Provision and test OpenShift only on master
-      - provision-openshift
-#          filters:
-#            branches:
-#              only: master
+      - provision-openshift:
+          filters:
+            branches:
+              only: master
       - deploy-openshift:
           requires:
             - build
             - provision-openshift
-#          filters:
-#            branches:
-#              only: master
+          filters:
+            branches:
+              only: master
       # Push release only on tags.
       - push-release:
           requires:
