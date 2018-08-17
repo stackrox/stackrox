@@ -29,6 +29,7 @@ describe('Integrations page', () => {
 
     it('should add an integration with DockerHub', () => {
         cy.get(selectors.dockerRegistryTile).click();
+        cy.get(selectors.buttons.delete).should('be.disabled');
         cy.get(selectors.buttons.add).click();
 
         const name = `Docker Registry ${Math.random()

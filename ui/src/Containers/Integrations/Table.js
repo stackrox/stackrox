@@ -48,7 +48,7 @@ class Table extends Component {
                 text="Delete"
                 className="btn btn-danger"
                 onClick={this.props.onDelete}
-                disabled={!this.props.buttonsEnabled}
+                disabled={this.props.integrations.length === 0 || !this.props.buttonsEnabled}
             />
             <PanelButton
                 icon={<Icon.Plus className="h-4 w-4" />}
