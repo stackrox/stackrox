@@ -28,11 +28,14 @@ message CollectorRegisterRequest {
 }
 
 message Signal {
+    // A unique UUID for identifying the message
+    string id = 1;
+
     oneof signal {
-        ProcessSignal process_signal = 1;
+        ProcessSignal process_signal = 2;
     }
-    google.protobuf.Timestamp time = 10;
-    string container_id            = 11;
+    google.protobuf.Timestamp time = 11;
+    string container_id            = 12;
 }
 
 message ProcessSignal {

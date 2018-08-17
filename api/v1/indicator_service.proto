@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "api/v1/signal_service.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+package v1;
+
+message Indicator {
+    // A unique uuid for the Indicator message
+    string id = 1;
+
+    // The deployment ID associated with the signal
+    string deployment_id = 2;
+
+    // A signal message passed from Collector to Sensor
+    Signal signal = 3;
+
+    // The emit timestamp of the message. Used for measuring latency
+    google.protobuf.Timestamp emit_timestamp = 4;
+}

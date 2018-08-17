@@ -87,6 +87,7 @@ API_SERVICES += dnr_integration_service
 API_SERVICES += enrichment_service
 API_SERVICES += image_integration_service
 API_SERVICES += image_service
+API_SERVICES += indicator_service
 API_SERVICES += metadata_service
 API_SERVICES += network_policy_service
 API_SERVICES += notifier_service
