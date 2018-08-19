@@ -316,6 +316,7 @@ class PoliciesPage extends Component {
                         text="Edit"
                         className="btn btn-success"
                         onClick={this.onPolicyEdit}
+                        disabled={this.props.isFetchingPolicy}
                     />
                 );
         }
