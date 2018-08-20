@@ -79,6 +79,8 @@ class EnvironmentGraph extends Component {
 
     shouldComponentUpdate(nextProps) {
         if (nextProps.updateKey !== this.props.updateKey) {
+            this.d3Graph.selectAll('*').remove();
+
             nodes = this.setUpNodes(nextProps.nodes);
             edges = this.setUpEdges(nextProps.nodes, nextProps.edges);
             namespaceEdges = this.setUpNamespaceEdges(nextProps.nodes, nextProps.edges);
@@ -189,7 +191,7 @@ class EnvironmentGraph extends Component {
         this.zoomHandler(svg, d3Select(this.graph));
 
         force = force
-            .nodes(nodes)
+            .nodes(nodes, d => d.id)
             .force(
                 'link',
                 d3ForceLink(edges)
