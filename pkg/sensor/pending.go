@@ -13,7 +13,8 @@ var logger = logging.LoggerForModule()
 
 func newPendingEvents() *pendingEvents {
 	return &pendingEvents{
-		pending: ccache.New(ccache.Configure().MaxSize(1000).ItemsToPrune(100)),
+		pending:               ccache.New(ccache.Configure().MaxSize(1000).ItemsToPrune(100)),
+		containerToDeployment: ccache.New(ccache.Configure().MaxSize(5000).ItemsToPrune(500)),
 	}
 }
 
@@ -23,6 +24,9 @@ type pendingEvents struct {
 	mutex sync.Mutex
 
 	pending *ccache.Cache
+
+	// "Reverse" cache for quick lookup of deployment ID by container ID
+	containerToDeployment *ccache.Cache
 }
 
 func (p *pendingEvents) add(ew *listeners.EventWrap) (isAlreadyPending bool) {
@@ -30,7 +34,14 @@ func (p *pendingEvents) add(ew *listeners.EventWrap) (isAlreadyPending bool) {
 	defer p.mutex.Unlock()
 
 	isAlreadyPending = p.checkAlreadyPresent(ew)
+
+	if !isAlreadyPending {
+		for _, container := range ew.GetDeployment().GetContainers() {
+			p.containerToDeployment.Set(container.GetId(), ew.GetDeployment().GetId(), time.Hour*1)
+		}
+	}
 	p.pending.Set(ew.GetId(), ew, time.Hour*1)
+
 	return
 }
 
@@ -38,6 +49,9 @@ func (p *pendingEvents) remove(ew *listeners.EventWrap) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
+	for _, container := range ew.GetDeployment().GetContainers() {
+		p.containerToDeployment.Delete(container.GetId())
+	}
 	p.pending.Delete(ew.GetId())
 	return
 }
@@ -51,6 +65,17 @@ func (p *pendingEvents) fetch(deploymentID string) (ew *listeners.EventWrap, exi
 		return nil, false
 	}
 	return presentItem.Value().(*listeners.EventWrap), true
+}
+
+func (p *pendingEvents) fetchDeploymentIDFromContainerID(containerID string) (deploymentID string, exists bool) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	presentItem := p.containerToDeployment.Get(containerID)
+	if presentItem == nil {
+		return "", false
+	}
+	return presentItem.Value().(string), true
 }
 
 func (p *pendingEvents) checkAlreadyPresent(event *listeners.EventWrap) bool {

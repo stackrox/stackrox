@@ -67,7 +67,7 @@ message ProcessSignal {
     }
 }
 
-// A Sensor service that allows Collector to push Signal messages
+// A Sensor (client-side streaming) service that allows Collector to push Signal messages
 service SignalService { 
     rpc PushSignals (stream SignalStreamMessage) returns (google.protobuf.Empty);
 }

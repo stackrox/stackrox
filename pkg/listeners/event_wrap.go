@@ -36,6 +36,8 @@ func (ew *EventWrap) Equals(newEW *EventWrap) bool {
 		return reflect.DeepEqual(ew.GetNetworkPolicy(), newEW.GetNetworkPolicy())
 	case *v1.SensorEvent_Namespace:
 		return reflect.DeepEqual(ew.GetNamespace(), newEW.GetNamespace())
+	case *v1.SensorEvent_Indicator:
+		return reflect.DeepEqual(ew.GetIndicator(), newEW.GetIndicator())
 	case nil:
 		logger.Errorf("Resource field is empty")
 	default:

@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/sensor"
+	signalService "github.com/stackrox/rox/pkg/sensor/service"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
@@ -173,6 +174,7 @@ func customRoutes() []routes.CustomRoute {
 // Registers our connection for benchmarking.
 func registerAPIServices(conn *grpcLib.ClientConn) {
 	server.Register(benchmarks.NewBenchmarkResultsService(benchmarks.NewLRURelayer(conn)))
+	server.Register(signalService.New())
 	logger.Info("API services registered")
 }
 
