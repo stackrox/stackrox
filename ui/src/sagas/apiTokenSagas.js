@@ -3,6 +3,7 @@ import { all, take, takeLatest, call, fork, put, select } from 'redux-saga/effec
 import { integrationsPath } from 'routePaths';
 import * as service from 'services/APITokensService';
 import { actions, types, apiTokenFormId } from 'reducers/apitokens';
+import { actions as roleActions } from 'reducers/roles';
 import { actions as notificationActions } from 'reducers/notifications';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 import { getFormValues } from 'redux-form';
@@ -59,7 +60,7 @@ function* watchFetchRequest() {
     }
 }
 
-function* watchAPITokenGenerationModal() {
+function* watchGenerateRequest() {
     yield takeLatest(types.GENERATE_API_TOKEN.REQUEST, generateAPIToken);
 }
 
@@ -67,11 +68,20 @@ function* watchRevokeRequest() {
     yield takeLatest(types.REVOKE_API_TOKENS, revokeAPITokens);
 }
 
+function* requestFetchRoles() {
+    yield put(roleActions.fetchRoles.request());
+}
+
+function* watchModalOpen() {
+    yield takeLatest(types.START_TOKEN_GENERATION_WIZARD, requestFetchRoles);
+}
+
 export default function* integrations() {
     yield all([
         fork(watchLocation),
         fork(watchFetchRequest),
-        fork(watchAPITokenGenerationModal),
-        fork(watchRevokeRequest)
+        fork(watchGenerateRequest),
+        fork(watchRevokeRequest),
+        fork(watchModalOpen)
     ]);
 }

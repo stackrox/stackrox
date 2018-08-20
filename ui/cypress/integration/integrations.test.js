@@ -62,6 +62,51 @@ describe('Integrations page', () => {
     });
 });
 
+describe('API Token Creation Flow', () => {
+    const randomTokenName = `Token${Math.random()
+        .toString(36)
+        .substring(7)}`;
+
+    beforeEach(() => {
+        cy.visit('/');
+        cy.get(selectors.configure).click();
+        cy.get(selectors.navLink).click();
+    });
+
+    it('should pop up API Token Modal', () => {
+        cy.get('div.ReactModalPortal').should('not.exist');
+
+        cy.get(selectors.apiTokenTile).click();
+        cy.get('div.ReactModalPortal');
+    });
+
+    it('should be able to generate an API token', () => {
+        cy.get(selectors.apiTokenTile).click();
+        cy.get(selectors.buttons.generate).click();
+        cy.get(selectors.apiTokenForm.nameInput).type(randomTokenName);
+        cy.get(`${selectors.apiTokenForm.roleSelect} .Select-arrow`).click();
+        cy.get(`${selectors.apiTokenForm.roleSelect} div[role="option"]:contains("Admin")`).click();
+        cy.get(selectors.buttons.generate).click();
+        cy.get(selectors.apiTokenBox);
+        cy.get(selectors.apiTokenDetailsDiv).contains(`Name:${randomTokenName}`);
+        cy.get(selectors.apiTokenDetailsDiv).contains('Role:Admin');
+    });
+
+    it('should show the generated API token in the table, and be clickable', () => {
+        cy.get(selectors.apiTokenTile).click();
+        cy.get(`tr:contains("${randomTokenName}")`).click();
+        cy.get(selectors.apiTokenDetailsDiv).contains(`Name:${randomTokenName}`);
+        cy.get(selectors.apiTokenDetailsDiv).contains('Role:Admin');
+    });
+
+    it('should be able to revoke the API token', () => {
+        cy.get(selectors.apiTokenTile).click();
+        cy.get(`tr:contains("${randomTokenName}") input`).check();
+        cy.get(selectors.buttons.revoke).click();
+        cy.get(`tr:contains("${randomTokenName}")`).should('not.exist');
+    });
+});
+
 describe('Cluster Creation Flow', () => {
     beforeEach(() => {
         cy.server();

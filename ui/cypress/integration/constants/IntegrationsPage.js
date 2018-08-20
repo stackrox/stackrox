@@ -9,10 +9,11 @@ export const selectors = {
     clairTile: 'button:contains("CoreOS Clair")',
     clairifyTile: 'button:contains("Clairify")',
     slackTile: 'button:contains("Slack")',
+    apiTokenTile: 'button:contains("API Token")',
     clusters: {
         swarmCluster1: 'tr:contains("Swarm Cluster 1")'
     },
-    integrationError: 'div[data-test-id="integration-error"',
+    integrationError: 'div[data-test-id="integration-error"]',
     buttons: {
         add: 'button:contains("Add")',
         next: 'button:contains("Next")',
@@ -20,8 +21,16 @@ export const selectors = {
         delete: 'button:contains("Delete")',
         test: 'button:contains("Test")',
         create: 'button:contains("Create")',
-        confirm: 'button:contains("Confirm")'
+        confirm: 'button:contains("Confirm")',
+        generate: 'button:contains("Generate"):not([disabled])',
+        revoke: 'button:contains("Revoke")'
     },
+    apiTokenForm: {
+        nameInput: 'form[data-test-id="api-token-form"] input[name="name"]',
+        roleSelect: 'form[data-test-id="api-token-form"] div.Select'
+    },
+    apiTokenBox: 'span:contains("eyJ")', // all API tokens start with eyJ
+    apiTokenDetailsDiv: 'div[data-test-id="api-token-details"]',
     clusterForm: {
         nameInput: 'form[data-test-id="cluster-form"] input[name="name"]',
         imageInput: 'form[data-test-id="cluster-form"] input[name="preventImage"]',

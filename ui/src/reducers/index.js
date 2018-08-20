@@ -13,6 +13,7 @@ import integrations, { selectors as integrationSelectors } from './integrations'
 import notifications, { selectors as notificationSelectors } from './notifications';
 import globalSearch, { selectors as globalSearchSelectors } from './globalSearch';
 import policies, { selectors as policySelectors } from './policies';
+import roles, { selectors as roleSelectors } from './roles';
 import summaries, { selectors as summarySelectors } from './summaries';
 import secrets, { selectors as secretSelectors } from './secrets';
 import metadata, { selectors as metadataSelectors } from './metadata';
@@ -35,6 +36,7 @@ const appReducer = combineReducers({
     notifications,
     globalSearch,
     policies,
+    roles,
     summaries,
     secrets,
     dashboard,
@@ -66,6 +68,7 @@ const getIntegrations = state => getApp(state).integrations;
 const getNotifications = state => getApp(state).notifications;
 const getGlobalSearches = state => getApp(state).globalSearch;
 const getPolicies = state => getApp(state).policies;
+const getRoles = state => getApp(state).roles;
 const getSummaries = state => getApp(state).summaries;
 const getSecrets = state => getApp(state).secrets;
 const getDashboard = state => getApp(state).dashboard;
@@ -85,6 +88,7 @@ const boundSelectors = {
     ...bindSelectors(getNotifications, notificationSelectors),
     ...bindSelectors(getGlobalSearches, globalSearchSelectors),
     ...bindSelectors(getPolicies, policySelectors),
+    ...bindSelectors(getRoles, roleSelectors),
     ...bindSelectors(getRoute, routeSelectors),
     ...bindSelectors(getSummaries, summarySelectors),
     ...bindSelectors(getSecrets, secretSelectors),

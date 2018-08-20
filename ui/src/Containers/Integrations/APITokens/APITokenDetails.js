@@ -38,7 +38,7 @@ Token.defaultProps = {
 };
 
 const APITokenDetails = ({ token, metadata }) => (
-    <div className="p-4 w-full">
+    <div className="p-4 w-full" data-test-id="api-token-details">
         <Token token={token} />
         <LabeledValue label="Name" value={metadata.name} />
         <LabeledValue label="Role" value={metadata.role} />

@@ -1,19 +1,17 @@
 import React from 'react';
 import { reduxForm } from 'redux-form';
+import { connect } from 'react-redux';
+import PropTypes from 'prop-types';
+import { createStructuredSelector } from 'reselect';
+
+import { selectors } from 'reducers';
 
 import { apiTokenFormId } from 'reducers/apitokens';
 import FormField from 'Components/FormField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
 
-// TODO(viswa): Hard coding these in both the UI and the backend is temporary.
-// Fix the backend to return these roles in an API.
-const roleOptions = [
-    { label: 'Sensor Creator', value: 'Sensor Creator' },
-    { label: 'Admin', value: 'Admin' }
-];
-
-const Fields = () => (
+const Fields = ({ roleOptions }) => (
     <React.Fragment>
         <FormField label="Token Name" required>
             <ReduxTextField name="name" />
@@ -28,12 +26,37 @@ const Fields = () => (
     </React.Fragment>
 );
 
-const APITokenForm = () => (
-    <form className="p-4 w-full mb-8" data-test-id="api-token-form">
-        <Fields />
-    </form>
-);
+Fields.propTypes = {
+    roleOptions: PropTypes.arrayOf(
+        PropTypes.shape({
+            label: PropTypes.string.isRequired,
+            value: PropTypes.string.isRequired
+        })
+    ).isRequired
+};
 
-const ConnectedForm = reduxForm({ form: apiTokenFormId })(APITokenForm);
+const APITokenForm = ({ roles }) => {
+    const roleOptions = roles.map(({ name }) => ({ label: name, value: name }));
+
+    return (
+        <form className="p-4 w-full mb-8" data-test-id="api-token-form">
+            <Fields roleOptions={roleOptions} />
+        </form>
+    );
+};
+
+APITokenForm.propTypes = {
+    roles: PropTypes.arrayOf(
+        PropTypes.shape({
+            name: PropTypes.string.isRequired
+        })
+    ).isRequired
+};
+
+const mapStateToProps = createStructuredSelector({
+    roles: selectors.getRoles
+});
+
+const ConnectedForm = connect(mapStateToProps)(reduxForm({ form: apiTokenFormId })(APITokenForm));
 
 export default ConnectedForm;

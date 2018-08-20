@@ -10,6 +10,7 @@ import images from './imageSagas';
 import policies from './policiesSagas';
 import integrations from './integrationSagas';
 import globalSearch from './globalSearchSagas';
+import roles from './roleSagas';
 import searches from './searchSagas';
 import summaries from './summarySagas';
 import secrets from './secretSagas';
@@ -28,6 +29,7 @@ export default function* root() {
         fork(policies),
         fork(integrations),
         fork(globalSearch),
+        fork(roles),
         fork(searches),
         fork(summaries),
         fork(secrets),
