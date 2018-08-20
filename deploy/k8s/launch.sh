@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
 
 function launch_central {
-    ROX_CENTRAL_DASHBOARD_PORT="$1"
-    LOCAL_API_ENDPOINT="$2"
-    K8S_DIR="$3"
-    PREVENT_IMAGE="$4"
-    NAMESPACE="$5"
+    K8S_DIR="$1"
+    PREVENT_IMAGE="$2"
 
     set -u
 
     echo "Generating central config..."
-    docker run "$PREVENT_IMAGE" deploy k8s -n "$NAMESPACE" -i "$PREVENT_IMAGE" > $K8S_DIR/central.zip
+    docker run "$PREVENT_IMAGE" deploy k8s -n stackrox -i "$PREVENT_IMAGE" > $K8S_DIR/central.zip
     UNZIP_DIR="$K8S_DIR/central-deploy/"
     rm -rf "$UNZIP_DIR"
     unzip "$K8S_DIR/central.zip" -d "$UNZIP_DIR"
@@ -21,28 +18,23 @@ function launch_central {
     echo
 
     $UNZIP_DIR/port-forward.sh 8000
-
-    echo "Set local API endpoint to: $LOCAL_API_ENDPOINT"
-
-    wait_for_central "$LOCAL_API_ENDPOINT"
+    wait_for_central "localhost:8000"
     echo "Successfully deployed Central!"
-    echo "Access the UI at: https://$LOCAL_API_ENDPOINT"
+    echo "Access the UI at: https://localhost:8000"
 }
 
 function launch_sensor {
-    LOCAL_API_ENDPOINT="$1"
+    K8S_DIR="$1"
     CLUSTER="$2"
     PREVENT_IMAGE="$3"
     CLUSTER_API_ENDPOINT="$4"
-    K8S_DIR="$5"
-    NAMESPACE="$6"
-    BENCHMARK_SERVICE_ACCOUNT="${7-benchmark}"
+    RUNTIME_SUPPORT="$5"
 
-    COMMON_PARAMS="{ \"params\" : { \"namespace\": \"$NAMESPACE\" }, \"imagePullSecret\": \"stackrox\" }"
+    COMMON_PARAMS="{ \"params\" : { \"namespace\": \"stackrox\" }, \"imagePullSecret\": \"stackrox\" }"
 
     EXTRA_CONFIG="\"kubernetes\": $COMMON_PARAMS }"
 
-    get_cluster_zip "$LOCAL_API_ENDPOINT" "$CLUSTER" KUBERNETES_CLUSTER "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "$EXTRA_CONFIG"
+    get_cluster_zip localhost:8000 "$CLUSTER" KUBERNETES_CLUSTER "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "$RUNTIME_SUPPORT" "$EXTRA_CONFIG"
 
     echo "Deploying Sensor..."
     UNZIP_DIR="$K8S_DIR/sensor-deploy/"

@@ -2,11 +2,15 @@ package clusters
 
 import (
 	"bytes"
+	"fmt"
 	"text/template"
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -40,7 +44,7 @@ type Deployer interface {
 
 var deployers = make(map[v1.ClusterType]Deployer)
 
-func executeTemplate(temp *template.Template, fields map[string]string) (string, error) {
+func executeTemplate(temp *template.Template, fields map[string]interface{}) (string, error) {
 	var b []byte
 	buf := bytes.NewBuffer(b)
 	err := temp.Execute(buf, fields)
@@ -51,8 +55,23 @@ func executeTemplate(temp *template.Template, fields map[string]string) (string,
 	return buf.String(), nil
 }
 
-func fieldsFromWrap(c Wrap) map[string]string {
-	fields := map[string]string{
+func generateCollectorImage(preventImage string) string {
+	img := types.Wrapper{Image: utils.GenerateImageFromString(preventImage)}
+	registry := img.GetName().GetRegistry()
+	if registry == "stackrox.io" {
+		registry = "collector.stackrox.io"
+	}
+	remote := img.Namespace() + "/collector"
+	// This handles the case where there is no namespace. e.g. stackrox.io/collector:latest
+	if img.Repo() == "" {
+		remote = "collector"
+	}
+	tag := version.GetCollectorVersion()
+	return fmt.Sprintf("%s/%s:%s", registry, remote, tag)
+}
+
+func fieldsFromWrap(c Wrap) map[string]interface{} {
+	fields := map[string]interface{}{
 		"ImageEnv":              env.Image.EnvVar(),
 		"Image":                 c.PreventImage,
 		"PublicEndpointEnv":     env.CentralEndpoint.EnvVar(),
@@ -61,6 +80,8 @@ func fieldsFromWrap(c Wrap) map[string]string {
 		"ClusterID":             c.Id,
 		"AdvertisedEndpointEnv": env.AdvertisedEndpoint.EnvVar(),
 		"AdvertisedEndpoint":    env.AdvertisedEndpoint.Setting(),
+		"RuntimeSupport":        c.RuntimeSupport,
+		"CollectorImage":        generateCollectorImage(c.PreventImage),
 	}
 	return fields
 }

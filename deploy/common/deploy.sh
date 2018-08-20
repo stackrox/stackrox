@@ -59,13 +59,14 @@ function get_cluster_zip {
     CLUSTER_IMAGE="$4"
     CLUSTER_API_ENDPOINT="$5"
     OUTPUT_DIR="$6"
-    EXTRA_JSON="$7"
+    RUNTIME_SUPPORT="$7"
+    EXTRA_JSON="$8"
 
     echo "Creating a new cluster"
     if [ "$EXTRA_JSON" != "" ]; then
         EXTRA_JSON=", $EXTRA_JSON"
     fi
-    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"prevent_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\" $EXTRA_JSON}"
+    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"prevent_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\", \"runtime_support\": $RUNTIME_SUPPORT $EXTRA_JSON}"
 
     TMP=$(mktemp)
     STATUS=$(curl -X POST \

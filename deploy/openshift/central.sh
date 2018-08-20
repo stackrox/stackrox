@@ -8,4 +8,4 @@ source $COMMON_DIR/deploy.sh
 source $K8S_DIR/launch.sh
 source $K8S_DIR/env.sh
 
-launch_central "$ROX_CENTRAL_DASHBOARD_PORT" "$LOCAL_API_ENDPOINT" "$K8S_DIR" "$PREVENT_IMAGE" "$NAMESPACE"
+launch_central "$LOCAL_API_ENDPOINT" "$K8S_DIR" "$PREVENT_IMAGE" "$NAMESPACE"

@@ -113,7 +113,7 @@ spec:
       app: central
   template:
     metadata:
-      namespace: stackrox
+      namespace: {{.K8sConfig.Namespace}}
       labels:
         app: central
     spec:
@@ -197,7 +197,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-ext-to-central
-  namespace: stackrox
+  namespace: {{.K8sConfig.Namespace}}
 spec:
   ingress:
   - ports:

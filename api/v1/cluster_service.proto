@@ -42,6 +42,7 @@ message Cluster {
     string                    prevent_image        = 4;
     string                    central_api_endpoint = 5;
     google.protobuf.Timestamp last_contact         = 6;
+    bool                      runtime_support      = 7;
 
     oneof orchestrator_params {
         KubernetesParams kubernetes = 9;

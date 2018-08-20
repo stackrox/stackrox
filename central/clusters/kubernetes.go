@@ -29,7 +29,7 @@ func newKubernetes() Deployer {
 	}
 }
 
-func addCommonKubernetesParams(params *v1.CommonKubernetesParams, fields map[string]string) {
+func addCommonKubernetesParams(params *v1.CommonKubernetesParams, fields map[string]interface{}) {
 	fields["Namespace"] = params.GetNamespace()
 }
 
@@ -183,6 +183,77 @@ spec:
   selector:
     app: sensor
   type: ClusterIP
+{{if .RuntimeSupport -}}
+---
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  labels:
+    service: collector
+  name: collector
+  namespace: {{.Namespace}}
+spec:
+  selector:
+    matchLabels:
+      service: collector
+  template:
+    metadata:
+      labels:
+        service: collector
+      namespace: {{.Namespace}}
+    spec:
+      containers:
+      - env:
+        - name: COLLECTOR_CONFIG
+          value: '{"syscalls":["execve"],"process_syscalls":["execve"],"output":"stdout","processSignalFormat":"process_summary_text"}'
+        image: {{.CollectorImage}}
+        name: collector
+        resources:
+          limits:
+            cpu: 750m
+            memory: 1Gi
+          requests:
+            cpu: 250m
+            memory: 320Mi
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+          privileged: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /host/var/run/docker.sock
+          name: var-run-docker-sock
+        - mountPath: /module
+          name: tmpfs-module
+        - mountPath: /host/dev
+          name: dev-ro
+          readOnly: true
+        - mountPath: /host/proc
+          name: proc-ro
+          readOnly: true
+        - mountPath: /host/sys/module
+          name: sys-module-ro
+          readOnly: true
+      imagePullSecrets:
+      - name: {{.ImagePullSecret}}
+      volumes:
+      - hostPath:
+          path: /var/run/docker.sock
+        name: var-run-docker-sock
+      - emptyDir:
+          medium: Memory
+        name: tmpfs-module
+      - hostPath:
+          path: /dev
+        name: dev-ro
+      - hostPath:
+          path: /proc
+        name: proc-ro
+      - hostPath:
+          path: /sys/module
+        name: sys-module-ro
+{{- end}}
 `
 
 	k8sRBAC = `

@@ -6,7 +6,11 @@ import (
 	"sync"
 )
 
-const versionFile = "VERSION"
+const (
+	collectorTag = "latest"
+
+	versionFile = "VERSION"
+)
 
 var (
 	version string
@@ -25,4 +29,9 @@ func GetVersion() (string, error) {
 		version = strings.TrimSpace(string(versionBytes))
 	})
 	return version, err
+}
+
+// GetCollectorVersion returns the currenty collector tag
+func GetCollectorVersion() string {
+	return collectorTag
 }
