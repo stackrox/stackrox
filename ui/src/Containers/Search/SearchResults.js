@@ -53,8 +53,8 @@ const mapping = {
         name: 'Image Name'
     },
     DEPLOYMENTS: {
-        filterOn: ['VIOLATIONS'],
-        viewOn: ['ENVIRONMENT', 'RISK'],
+        filterOn: ['VIOLATIONS', 'ENVIRONMENT'],
+        viewOn: ['RISK'],
         name: 'Deployment Name'
     },
     POLICIES: {
@@ -76,10 +76,9 @@ const mapping = {
 
 const filterOnMapping = {
     RISK: 'DEPLOYMENTS',
-    VIOLATIONS: 'ALERTS'
+    VIOLATIONS: 'ALERTS',
+    ENVIRONMENT: 'ENVIRONMENT'
 };
-
-const viewOnFilters = ['ENVIRONMENT'];
 
 class SearchResults extends Component {
     static propTypes = {
@@ -166,7 +165,7 @@ class SearchResults extends Component {
                 {
                     keys: ['category', 'id', 'name', 'score'],
                     label: 'View On:',
-                    keyValueFunc: (category, id, name) => (
+                    keyValueFunc: (category, id) => (
                         <ul className="p-0 list-reset flex flex-row">
                             {!mapping[category] || !mapping[category].viewOn ? (
                                 <li className="text-base-400">N/A</li>
@@ -177,10 +176,7 @@ class SearchResults extends Component {
                                             onClick={this.onLinkHandler(
                                                 category,
                                                 item,
-                                                `/main/${lowerCase(item)}${
-                                                    viewOnFilters.includes(item) ? '' : `/${id}`
-                                                }`,
-                                                viewOnFilters.includes(item) ? name : null
+                                                `/main/${lowerCase(item)}/${id}`
                                             )}
                                             className="inline-block py-1 px-2 no-underline text-center uppercase bg-primary-100 border-2 border-base-200 mr-1 rounded-sm text-sm text-base-600"
                                         >

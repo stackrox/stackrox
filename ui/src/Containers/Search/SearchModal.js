@@ -54,6 +54,7 @@ class SearchModal extends Component {
                             setSearchOptions={this.props.setSearchOptions}
                             setSearchModifiers={this.props.setSearchModifiers}
                             setSearchSuggestions={this.props.setSearchSuggestions}
+                            isGlobal
                         />
                     </PageHeader>
                     <button

@@ -15,7 +15,8 @@ class SearchInput extends Component {
         searchSuggestions: PropTypes.arrayOf(PropTypes.object),
         setSearchOptions: PropTypes.func.isRequired,
         setSearchSuggestions: PropTypes.func.isRequired,
-        onSearch: PropTypes.func
+        onSearch: PropTypes.func,
+        isGlobal: PropTypes.bool
     };
 
     static defaultProps = {
@@ -25,8 +26,13 @@ class SearchInput extends Component {
         searchOptions: [],
         searchModifiers: [],
         searchSuggestions: [],
-        onSearch: null
+        onSearch: null,
+        isGlobal: false
     };
+
+    componentWillUnmount() {
+        if (!this.props.isGlobal) this.props.setSearchOptions([]);
+    }
 
     onInputChange = value => value;
 
