@@ -88,6 +88,45 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:eea6bfde406859dd5868629626983708b432c67183fba3dfbda162287bd436cc"
+  name = "github.com/aws/aws-sdk-go"
+  packages = [
+    "aws",
+    "aws/awserr",
+    "aws/awsutil",
+    "aws/client",
+    "aws/client/metadata",
+    "aws/corehandlers",
+    "aws/credentials",
+    "aws/credentials/ec2rolecreds",
+    "aws/credentials/endpointcreds",
+    "aws/credentials/stscreds",
+    "aws/csm",
+    "aws/defaults",
+    "aws/ec2metadata",
+    "aws/endpoints",
+    "aws/request",
+    "aws/session",
+    "aws/signer/v4",
+    "internal/sdkio",
+    "internal/sdkrand",
+    "internal/sdkuri",
+    "internal/shareddefaults",
+    "private/protocol",
+    "private/protocol/json/jsonutil",
+    "private/protocol/jsonrpc",
+    "private/protocol/query",
+    "private/protocol/query/queryutil",
+    "private/protocol/rest",
+    "private/protocol/xml/xmlutil",
+    "service/ecr",
+    "service/sts",
+  ]
+  pruneopts = "NUT"
+  revision = "ca229c7730be9278527fbb287f5a26c91e328d86"
+  version = "v1.15.15"
+
+[[projects]]
   branch = "master"
   digest = "1:cb0535f5823b47df7dcb9768ebb6c000b79ad115472910c70efe93c9ed9b2315"
   name = "github.com/beorn7/perks"
@@ -395,6 +434,14 @@
   revision = "62a9a9eb44fd8932157b1a8ace2149eff5971af6"
 
 [[projects]]
+  digest = "1:f59266de09e138237bf9df9deb57b9ebbdb1e33b8399bb739c3745e7d3d2787b"
+  name = "github.com/go-ini/ini"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "358ee7663966325963d4e8b2e1fbd570c5195153"
+  version = "v1.38.1"
+
+[[projects]]
   digest = "1:430d80ff23c8ec97400c36bc8e28644c76b863477507fe0becb8f98166cd12b8"
   name = "github.com/gogo/protobuf"
   packages = [
@@ -548,11 +595,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7c8e177df36552a648af4334b117a3d83a07fe9f6fb178ba29ab6500d24d3e18"
+  digest = "1:ac7de0140e117273e1e3a7338579a28febec7135a0fc405b3511b41e59cdef56"
   name = "github.com/heroku/docker-registry-client"
   packages = ["registry"]
   pruneopts = "NUT"
-  revision = "30d35c12287750cdaed9925ef1bbd3d20214ecc1"
+  revision = "a98a2e5c9cabe69c035c368d938ba443438f968a"
   source = "github.com/stackrox/docker-registry-client.git"
 
 [[projects]]
@@ -562,6 +609,13 @@
   pruneopts = "NUT"
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
+
+[[projects]]
+  digest = "1:ac6d01547ec4f7f673311b4663909269bfb8249952de3279799289467837c3cc"
+  name = "github.com/jmespath/go-jmespath"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "0b12d6b5"
 
 [[projects]]
   digest = "1:63d8b364f0768ffda64b8e6e15c10535f3431e3c69d051dbb37f467ada02df98"
@@ -1194,6 +1248,10 @@
   input-imports = [
     "github.com/NYTimes/gziphandler",
     "github.com/andygrunwald/go-jira",
+    "github.com/aws/aws-sdk-go/aws",
+    "github.com/aws/aws-sdk-go/aws/credentials",
+    "github.com/aws/aws-sdk-go/aws/session",
+    "github.com/aws/aws-sdk-go/service/ecr",
     "github.com/blevesearch/bleve",
     "github.com/blevesearch/bleve/analysis",
     "github.com/blevesearch/bleve/analysis/analyzer/custom",

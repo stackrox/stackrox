@@ -1,0 +1,151 @@
+package ecr
+
+import (
+	"encoding/base64"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	awsECR "github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/registries/docker"
+	"github.com/stackrox/rox/pkg/registries/types"
+)
+
+var logger = logging.LoggerForModule()
+
+type ecr struct {
+	*docker.Registry
+
+	config      *v1.ECRConfig
+	integration *v1.ImageIntegration
+
+	endpoint   string
+	service    *awsECR.ECR
+	expiryTime time.Time
+}
+
+func validate(ecr *v1.ECRConfig) error {
+	errorList := errorhelpers.NewErrorList("ECR Validation")
+	if ecr.GetRegistryId() == "" {
+		errorList.AddString("Registry ID must be specified")
+	}
+	if ecr.GetAccessKeyId() == "" {
+		errorList.AddString("Access Key ID must be specified")
+	}
+	if ecr.GetSecretAccessKey() == "" {
+		errorList.AddString("Secret Access Key must be specified")
+	}
+	if ecr.GetRegion() == "" {
+		errorList.AddString("Region must be specified")
+	}
+	return errorList.ToError()
+}
+
+func (e *ecr) refreshDockerClient() error {
+	if e.expiryTime.After(time.Now()) {
+		return nil
+	}
+	authToken, err := e.service.GetAuthorizationToken(&awsECR.GetAuthorizationTokenInput{
+		RegistryIds: []*string{
+			aws.String(e.config.GetRegistryId()),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(authToken.AuthorizationData) == 0 {
+		return fmt.Errorf("received empty authorization data in token: %s", authToken)
+	}
+
+	authData := authToken.AuthorizationData[0]
+
+	decoded, err := base64.StdEncoding.DecodeString(*authData.AuthorizationToken)
+	if err != nil {
+		return err
+	}
+	basicAuth := string(decoded)
+	colon := strings.Index(basicAuth, ":")
+	if colon == -1 {
+		return fmt.Errorf("Malformed basic auth response from AWS '%s'", basicAuth)
+	}
+
+	conf := docker.Config{
+		Endpoint: e.endpoint,
+		Username: basicAuth[:colon],
+		Password: basicAuth[colon+1:],
+	}
+
+	client, err := docker.NewDockerRegistry(conf, e.integration)
+	if err != nil {
+		return err
+	}
+
+	e.Registry = client
+	e.expiryTime = *authData.ExpiresAt
+	return nil
+}
+
+// Metadata returns the metadata via this registries implementation
+func (e *ecr) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
+	if err := e.refreshDockerClient(); err != nil {
+		return nil, err
+	}
+	return e.Registry.Metadata(image)
+}
+
+// Test tests the current registry and makes sure that it is working properly
+func (e *ecr) Test() error {
+	if err := e.refreshDockerClient(); err != nil {
+		return err
+	}
+	return e.Registry.Test()
+}
+
+// Creator provides the type and registries.Creator to add to the registries Registry.
+func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageRegistry, error)) {
+	return "ecr", func(integration *v1.ImageIntegration) (types.ImageRegistry, error) {
+		reg, err := newRegistry(integration)
+		return reg, err
+	}
+}
+
+func newRegistry(integration *v1.ImageIntegration) (*ecr, error) {
+	ecrConfig, ok := integration.IntegrationConfig.(*v1.ImageIntegration_Ecr)
+	if !ok {
+		return nil, fmt.Errorf("ECR configuration required")
+	}
+	conf := ecrConfig.Ecr
+	if err := validate(conf); err != nil {
+		return nil, err
+	}
+
+	endpoint := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", conf.GetRegistryId(), conf.GetRegion())
+
+	creds := credentials.NewStaticCredentials(conf.GetAccessKeyId(), conf.GetSecretAccessKey(), "")
+	sess, err := session.NewSession(&aws.Config{
+		Region:      aws.String(conf.GetRegion()),
+		Credentials: creds,
+	})
+	if err != nil {
+		return nil, err
+	}
+	service := awsECR.New(sess)
+	reg := &ecr{
+		config:      conf,
+		integration: integration,
+
+		endpoint: endpoint,
+		service:  service,
+	}
+	if err := reg.refreshDockerClient(); err != nil {
+		return nil, err
+	}
+	return reg, nil
+}

@@ -164,3 +164,7 @@ required = ["golang.org/x/tools/go/ast/astutil"]
 [[constraint]]
   name = "github.com/stackrox/clairify"
   branch = "master"
+
+[[constraint]]
+  name = "github.com/aws/aws-sdk-go"
+  version = "v1.15.15"

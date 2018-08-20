@@ -28,6 +28,8 @@ var scrubber = newSecretKeys([]string{
 	"password",
 	"secretKey",
 	"serviceAccount",
+	"AccessKeyId",
+	"SecretAccessKey",
 })
 
 // ScrubSecretsFromMap removes secret keys from a map[string]string and returns a new copy without secrets.

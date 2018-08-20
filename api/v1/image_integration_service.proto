@@ -37,6 +37,13 @@ message QuayConfig {
     string oauthToken = 2;
 }
 
+message ECRConfig {
+    string registry_id       = 1;
+    string access_key_id     = 2;
+    string secret_access_key = 3;
+    string region            = 4;
+}
+
 message ImageIntegration {
     string id                                    = 1;
     string name                                  = 2;
@@ -50,6 +57,7 @@ message ImageIntegration {
         ClairifyConfig clairify = 8;
         DockerConfig   docker   = 9;
         QuayConfig     quay     = 10;
+        ECRConfig      ecr      = 11;
     }
 }
 

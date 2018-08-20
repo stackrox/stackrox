@@ -5,6 +5,7 @@ import (
 	artifactoryFactory "github.com/stackrox/rox/pkg/registries/artifactory"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	dtrFactory "github.com/stackrox/rox/pkg/registries/dtr"
+	ecrFactory "github.com/stackrox/rox/pkg/registries/ecr"
 	googleFactory "github.com/stackrox/rox/pkg/registries/google"
 	quayFactory "github.com/stackrox/rox/pkg/registries/quay"
 	tenableFactory "github.com/stackrox/rox/pkg/registries/tenable"
@@ -35,6 +36,9 @@ func NewFactory() Factory {
 
 	dtrFactoryType, dtrFactoryCreator := dtrFactory.Creator()
 	reg.creators[dtrFactoryType] = dtrFactoryCreator
+
+	ecrFactoryType, ecrFactoryCreator := ecrFactory.Creator()
+	reg.creators[ecrFactoryType] = ecrFactoryCreator
 
 	googleFactoryType, googleFactoryCreator := googleFactory.Creator()
 	reg.creators[googleFactoryType] = googleFactoryCreator

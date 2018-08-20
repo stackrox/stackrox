@@ -420,6 +420,45 @@ const formDescriptors = {
                 type: 'text',
                 placeholder: ''
             }
+        ],
+        ecr: [
+            {
+                label: 'Integration Name',
+                key: 'name',
+                type: 'text',
+                placeholder: 'AWS ECR'
+            },
+            {
+                label: 'Types',
+                key: 'categories',
+                type: 'multiselect',
+                options: [{ value: 'REGISTRY', label: 'Registry' }],
+                placeholder: ''
+            },
+            {
+                label: 'Registry ID',
+                key: 'ecr.registryId',
+                type: 'text',
+                placeholder: '0123456789'
+            },
+            {
+                label: 'Region',
+                key: 'ecr.region',
+                type: 'text',
+                placeholder: 'us-west-2'
+            },
+            {
+                label: 'Access Key ID',
+                key: 'ecr.accessKeyId',
+                type: 'password',
+                placeholder: ''
+            },
+            {
+                label: 'Secret Access Key',
+                key: 'ecr.secretAccessKey',
+                type: 'password',
+                placeholder: ''
+            }
         ]
     }
 };

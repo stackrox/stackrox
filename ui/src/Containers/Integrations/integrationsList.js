@@ -1,5 +1,6 @@
 import artifactory from 'images/artifactory.svg';
 import auth0 from 'images/auth0.svg';
+import aws from 'images/aws.svg';
 import clair from 'images/clair.svg';
 import docker from 'images/docker.svg';
 import email from 'images/email.svg';
@@ -98,6 +99,14 @@ const integrationsList = {
             categories: 'Registry + Scanner',
             source: 'imageIntegrations',
             image: google,
+            disabled: false
+        },
+        {
+            label: 'AWS ECR',
+            type: 'ecr',
+            categories: 'Registry',
+            source: 'imageIntegrations',
+            image: aws,
             disabled: false
         }
     ],
