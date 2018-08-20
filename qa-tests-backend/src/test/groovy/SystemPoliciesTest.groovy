@@ -88,4 +88,3 @@ class SystemPoliciesTest extends BaseSpecification {
                 .addLabel ( "app", "test" ) | "C823" | "qanginx"
     }
 }
-
