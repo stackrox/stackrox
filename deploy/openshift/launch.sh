@@ -29,12 +29,12 @@ function launch_central {
 }
 
 function launch_sensor {
-    K8S_DIR="$6"
     LOCAL_API_ENDPOINT="$1"
-    CLUSTER="$2"
-    PREVENT_IMAGE_TAG="$3"
-    CLUSTER_API_ENDPOINT="$4"
-    RUNTIME_SUPPORT="$5"
+    OPENSHIFT_DIR="$2"
+    PREVENT_IMAGE_REPO="$3"
+    PREVENT_IMAGE_TAG="$4"
+    CLUSTER="$5"
+    CLUSTER_API_ENDPOINT="$6"
 
     COMMON_PARAMS="{ \"params\" : { \"namespace\": \"stackrox\" } }"
 
@@ -43,9 +43,9 @@ function launch_sensor {
     get_cluster_zip "$LOCAL_API_ENDPOINT" "$CLUSTER" OPENSHIFT_CLUSTER "docker-registry.default.svc:5000/stackrox/prevent:$PREVENT_IMAGE_TAG" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "$RUNTIME_SUPPORT" "$EXTRA_CONFIG"
 
     echo "Deploying Sensor..."
-    UNZIP_DIR="$K8S_DIR/sensor-deploy/"
+    UNZIP_DIR="$OPENSHIFT_DIR/sensor-deploy/"
     rm -rf "$UNZIP_DIR"
-    unzip "$K8S_DIR/sensor-deploy.zip" -d "$UNZIP_DIR"
+    unzip "$OPENSHIFT_DIR/sensor-deploy.zip" -d "$UNZIP_DIR"
     $UNZIP_DIR/deploy.sh
     echo
 }
