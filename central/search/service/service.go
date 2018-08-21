@@ -8,7 +8,6 @@ import (
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/search"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -35,7 +34,6 @@ func New(alerts alertDataStore.DataStore, deployments deploymentDataStore.DataSt
 		deployments: deployments,
 		images:      images,
 		policies:    policies,
-		parser:      &search.QueryParser{},
 	}
 	s.initializeAuthorizer()
 	return s

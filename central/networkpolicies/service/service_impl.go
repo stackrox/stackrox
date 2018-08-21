@@ -117,7 +117,7 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 
 	parsedSearch := new(v1.ParsedSearchRequest)
 	if request.GetQuery() != "" {
-		parsedSearch, err = (&search.QueryParser{}).ParseRawQuery(request.GetQuery())
+		parsedSearch, err = search.ParseRawQuery(request.GetQuery())
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}

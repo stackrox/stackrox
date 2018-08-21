@@ -42,8 +42,7 @@ func (r RawQueryWrapper) ToResults(index bleve.Index) ([]search.Result, error) {
 // ToParsedSearchRequest converts a raw query to a parsed search request.
 func (r RawQueryWrapper) ToParsedSearchRequest() (*v1.ParsedSearchRequest, error) {
 	if r.GetQuery() != "" {
-		parser := &search.QueryParser{}
-		return parser.ParseRawQuery(r.GetQuery())
+		return search.ParseRawQuery(r.GetQuery())
 	}
 	return nil, nil
 }

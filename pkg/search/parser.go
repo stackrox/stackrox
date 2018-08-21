@@ -8,12 +8,8 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
-// QueryParser parses queries
-// besides the standard scopes, and string queries.
-type QueryParser struct{}
-
 // ParseRawQuery takes the text based query and converts to the ParsedSearchRequest proto
-func (q *QueryParser) ParseRawQuery(query string) (*v1.ParsedSearchRequest, error) {
+func ParseRawQuery(query string) (*v1.ParsedSearchRequest, error) {
 	if query == "" {
 		return nil, errors.New("Query cannot be empty")
 	}
@@ -47,7 +43,7 @@ func (q *QueryParser) ParseRawQuery(query string) (*v1.ParsedSearchRequest, erro
 			continue
 		}
 
-		if err := q.addGeneralField(parsedRequest, key, valuesSlice); err != nil {
+		if err := addGeneralField(parsedRequest, key, valuesSlice); err != nil {
 			return nil, err
 		}
 	}
@@ -211,7 +207,7 @@ func addScopeField(scopeFields map[string][]string, key string, values []string)
 	return false
 }
 
-func (q *QueryParser) addGeneralField(request *v1.ParsedSearchRequest, key string, values []string) error {
+func addGeneralField(request *v1.ParsedSearchRequest, key string, values []string) error {
 	// transform the key into its mapped form
 	if _, ok := request.Fields[key]; !ok {
 		request.Fields[key] = &v1.ParsedSearchRequest_Values{}

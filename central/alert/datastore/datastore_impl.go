@@ -35,8 +35,7 @@ func (ds *datastoreImpl) ListAlerts(request *v1.ListAlertsRequest) ([]*v1.ListAl
 			return nil, err
 		}
 	} else {
-		parser := &searchCommon.QueryParser{}
-		parsedQuery, err := parser.ParseRawQuery(request.GetQuery())
+		parsedQuery, err := searchCommon.ParseRawQuery(request.GetQuery())
 		if err != nil {
 			return nil, err
 		}

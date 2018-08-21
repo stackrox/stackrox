@@ -23,8 +23,7 @@ func TestParseRawQuery(t *testing.T) {
 	}
 
 	// Create a parser that can handle deployemnt name and policy category.
-	parser := &QueryParser{}
-	actualRequest, err := parser.ParseRawQuery(query)
+	actualRequest, err := ParseRawQuery(query)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRequest, actualRequest)
 
@@ -41,7 +40,7 @@ func TestParseRawQuery(t *testing.T) {
 			},
 		},
 	}
-	actualRequest, err = parser.ParseRawQuery(query)
+	actualRequest, err = ParseRawQuery(query)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRequest, actualRequest)
 
@@ -64,7 +63,7 @@ func TestParseRawQuery(t *testing.T) {
 			},
 		},
 	}
-	actualRequest, err = parser.ParseRawQuery(query)
+	actualRequest, err = ParseRawQuery(query)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRequest, actualRequest)
 
@@ -139,7 +138,7 @@ func TestParseRawQuery(t *testing.T) {
 			},
 		},
 	}
-	actualRequest, err = parser.ParseRawQuery(query)
+	actualRequest, err = ParseRawQuery(query)
 	assert.NoError(t, err)
 
 	// Elements match because the ordering of the scopes does not matter and is an implementation detail
@@ -159,7 +158,7 @@ func TestParseRawQuery(t *testing.T) {
 		Scopes: []*v1.Scope{},
 	}
 
-	actualRequest, err = parser.ParseRawQuery(query)
+	actualRequest, err = ParseRawQuery(query)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRequest, actualRequest)
 
@@ -177,7 +176,7 @@ func TestParseRawQuery(t *testing.T) {
 		Scopes:      []*v1.Scope{},
 		StringQuery: "rawquery",
 	}
-	actualRequest, err = parser.ParseRawQuery(query)
+	actualRequest, err = ParseRawQuery(query)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedRequest, actualRequest)
 }

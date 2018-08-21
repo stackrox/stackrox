@@ -87,8 +87,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 	} else {
-		parser := &search.QueryParser{}
-		parsedQuery, err := parser.ParseRawQuery(request.GetQuery())
+		parsedQuery, err := search.ParseRawQuery(request.GetQuery())
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}

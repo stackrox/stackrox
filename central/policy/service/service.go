@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/search"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -48,7 +47,6 @@ func New(policies datastore.DataStore, clusters clusterDataStore.DataStore, depl
 		notifiers:   notifiers,
 
 		detector: detector,
-		parser:   &search.QueryParser{},
 
 		validator: newPolicyValidator(notifiers, clusters),
 	}

@@ -67,8 +67,7 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 	if request.GetQuery() == "" {
 		images, err = s.datastore.ListImages()
 	} else {
-		parser := &search.QueryParser{}
-		parsedQuery, err := parser.ParseRawQuery(request.GetQuery())
+		parsedQuery, err := search.ParseRawQuery(request.GetQuery())
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}

@@ -19,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	searchCommon "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -59,8 +59,6 @@ type serviceImpl struct {
 	images      imageDataStore.DataStore
 	policies    policyDataStore.DataStore
 
-	parser *searchCommon.QueryParser
-
 	authorizer authz.Authorizer
 }
 
@@ -95,7 +93,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // Search implements the ability to search through indexes for data
 func (s *serviceImpl) Search(ctx context.Context, request *v1.RawSearchRequest) (*v1.SearchResponse, error) {
-	parsedRequest, err := s.parser.ParseRawQuery(request.GetQuery())
+	parsedRequest, err := search.ParseRawQuery(request.GetQuery())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
