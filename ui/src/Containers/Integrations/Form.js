@@ -86,10 +86,10 @@ class Form extends Component {
                 placeholder: 'Choose clusters...'
             },
             {
-                label: 'Director Endpoint',
-                key: 'directorEndpoint',
+                label: 'Portal URL',
+                key: 'portalUrl',
                 type: 'text',
-                placeholder: 'https://director.stackrox'
+                placeholder: ''
             },
             {
                 label: 'Auth Token',

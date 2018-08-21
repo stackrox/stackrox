@@ -32,6 +32,7 @@ func TestDNRAlerts(t *testing.T) {
 		expectedServiceName string
 		mockAlerts          []dnrintegration.PolicyAlert
 		mockError           error
+		mockBaseURL         string
 
 		deployment     *v1.Deployment
 		expectedResult *v1.Risk_Result
@@ -70,14 +71,17 @@ func TestDNRAlerts(t *testing.T) {
 			expectedNamespace:   fakeNamespace,
 			expectedServiceName: fakeServiceName,
 			mockAlerts: []dnrintegration.PolicyAlert{
-				{PolicyName: "FakePolicy0", SeverityWord: "CRITICAL", SeverityScore: 100},
+				{ID: "FAKEALERT", PolicyName: "FakePolicy0", SeverityWord: "CRITICAL", SeverityScore: 100},
 				{PolicyName: "FakePolicy1", SeverityWord: "MEDIUM", SeverityScore: 50},
 			},
-			deployment: fakeDeployment,
+			mockBaseURL: "https://portal.stackrox",
+			deployment:  fakeDeployment,
 			expectedResult: &v1.Risk_Result{
-				Name:    "Runtime Alerts",
-				Factors: []string{"FakePolicy0 (Severity: CRITICAL)", "FakePolicy1 (Severity: MEDIUM)"},
-				Score:   1.5,
+				Name: "Runtime Alerts",
+				Factors: []*v1.Risk_Result_Factor{
+					{Message: "FakePolicy0 (Severity: CRITICAL)", Url: "https://portal.stackrox/main/incidents/alerts/alert/FAKEALERT"},
+					{Message: "FakePolicy1 (Severity: MEDIUM)"}},
+				Score: 1.5,
 			},
 		},
 		{
@@ -113,13 +117,13 @@ func TestDNRAlerts(t *testing.T) {
 			deployment: fakeDeployment,
 			expectedResult: &v1.Risk_Result{
 				Name: "Runtime Alerts",
-				Factors: []string{
-					"FakePolicy0 (Severity: CRITICAL) (10+ x)",
-					"FakePolicy3 (Severity: SUPER CRITICAL)",
-					"FakePolicy1 (Severity: MEDIUM)",
-					"FakePolicy2 (Severity: LOW)",
-					"FakePolicy5 (Severity: LOW) (2x)",
-					"2 Other Alerts",
+				Factors: []*v1.Risk_Result_Factor{
+					{Message: "FakePolicy0 (Severity: CRITICAL) (10+ x)"},
+					{Message: "FakePolicy3 (Severity: SUPER CRITICAL)"},
+					{Message: "FakePolicy1 (Severity: MEDIUM)"},
+					{Message: "FakePolicy2 (Severity: LOW)"},
+					{Message: "FakePolicy5 (Severity: LOW) (2x)"},
+					{Message: "2 Other Alerts"},
 				},
 				Score: 2.0,
 			},
@@ -135,6 +139,7 @@ func TestDNRAlerts(t *testing.T) {
 					ExpectedServiceName: c.expectedServiceName,
 					MockAlerts:          c.mockAlerts,
 					MockError:           c.mockError,
+					MockBaseURL:         c.mockBaseURL,
 				},
 				Exists: c.integrationExists,
 			})

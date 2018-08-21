@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strings"
 
 	"github.com/stackrox/rox/central/dnrintegration"
 	"github.com/stackrox/rox/central/risk/getters"
@@ -35,12 +36,12 @@ func (d *dnrAlertMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
 	if !exists {
 		return nil
 	}
-	alerts, err := integration.Alerts(deployment.GetClusterId(), deployment.GetNamespace(), deployment.GetName())
+	alertsWithMetadata, err := integration.Alerts(deployment.GetClusterId(), deployment.GetNamespace(), deployment.GetName())
 	if err != nil {
 		logger.Errorf("Couldn't get D&R alerts for deployment %#v: %s", deployment, err)
 	}
 
-	factors, severity := d.computeSeverityAndFactors(alerts)
+	factors, severity := d.computeSeverityAndFactors(alertsWithMetadata.Alerts, alertsWithMetadata.BaseURL)
 	if severity == 0 {
 		return nil
 	}
@@ -51,13 +52,22 @@ func (d *dnrAlertMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
 	}
 }
 
+// Populates the URL for the given alert, returning an empty string if either of the parameters are empty.
+func getURLForAlert(baseURL string, alertID string) string {
+	if baseURL == "" || alertID == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("%s/main/incidents/alerts/alert/%s", strings.TrimSuffix(baseURL, "/"), alertID)
+}
+
 // Compute severity based on the score returned by D&R.
 // For reference, the mapping used over there is:
 // Low:      25,
 // Medium:   50,
 // High:     75,
 // Critical: 100,
-func (d *dnrAlertMultiplier) computeSeverityAndFactors(alerts []dnrintegration.PolicyAlert) (factors []string, severity float32) {
+func (d *dnrAlertMultiplier) computeSeverityAndFactors(alerts []dnrintegration.PolicyAlert, baseURL string) (factors []*v1.Risk_Result_Factor, severity float32) {
 	// alertWithCount represents an alert with the number of violations of it we observed.
 	type alertWithCount struct {
 		dnrintegration.PolicyAlert
@@ -126,7 +136,10 @@ func (d *dnrAlertMultiplier) computeSeverityAndFactors(alerts []dnrintegration.P
 				countString = fmt.Sprintf(" (%d+ x)", maxCount)
 			}
 		}
-		factors = append(factors, fmt.Sprintf("%s (Severity: %s)%s", alert.PolicyName, alert.SeverityWord, countString))
+		factors = append(factors, &v1.Risk_Result_Factor{
+			Message: fmt.Sprintf("%s (Severity: %s)%s", alert.PolicyName, alert.SeverityWord, countString),
+			Url:     getURLForAlert(baseURL, alert.ID),
+		})
 	}
 
 	if severity == 0 {
@@ -140,7 +153,7 @@ func (d *dnrAlertMultiplier) computeSeverityAndFactors(alerts []dnrintegration.P
 	// If we have more than `maxLines` lines, summarize the rest of the alerts in one more line.
 	if len(alertsWithCounts) > maxLines {
 		remainingAlerts := len(alertsWithCounts) - maxLines
-		factors = append(factors, fmt.Sprintf("%d Other Alerts", remainingAlerts))
+		factors = append(factors, &v1.Risk_Result_Factor{Message: fmt.Sprintf("%d Other Alerts", remainingAlerts)})
 	}
 	return
 }

@@ -31,8 +31,8 @@ func TestViolationsScore(t *testing.T) {
 			},
 			expected: &v1.Risk_Result{
 				Name: PolicyViolationsHeading,
-				Factors: []string{
-					"Policy 1 (severity: Critical)",
+				Factors: []*v1.Risk_Result_Factor{
+					{Message: "Policy 1 (severity: Critical)"},
 				},
 				Score: 1.2,
 			},
@@ -49,8 +49,8 @@ func TestViolationsScore(t *testing.T) {
 			},
 			expected: &v1.Risk_Result{
 				Name: PolicyViolationsHeading,
-				Factors: []string{
-					"Policy 1 (severity: Critical)",
+				Factors: []*v1.Risk_Result_Factor{
+					{Message: "Policy 1 (severity: Critical)"},
 				},
 				Score: 1.2,
 			},
@@ -79,10 +79,10 @@ func TestViolationsScore(t *testing.T) {
 			},
 			expected: &v1.Risk_Result{
 				Name: PolicyViolationsHeading,
-				Factors: []string{
-					"Policy 1 (severity: High)",
-					"Policy 2 (severity: Medium)",
-					"Policy 3 (severity: Low)",
+				Factors: []*v1.Risk_Result_Factor{
+					{Message: "Policy 1 (severity: High)"},
+					{Message: "Policy 2 (severity: Medium)"},
+					{Message: "Policy 3 (severity: Low)"},
 				},
 				Score: 1.3,
 			},
@@ -111,10 +111,10 @@ func TestViolationsScore(t *testing.T) {
 			},
 			expected: &v1.Risk_Result{
 				Name: PolicyViolationsHeading,
-				Factors: []string{
-					"Policy 1 (severity: Critical)",
-					"Policy 2 (severity: High)",
-					"Policy 3 (severity: Low)",
+				Factors: []*v1.Risk_Result_Factor{
+					{Message: "Policy 1 (severity: Critical)"},
+					{Message: "Policy 2 (severity: High)"},
+					{Message: "Policy 3 (severity: Low)"},
 				},
 				Score: 1.4,
 			},
@@ -164,10 +164,10 @@ func TestViolationsScore(t *testing.T) {
 			},
 			expected: &v1.Risk_Result{
 				Name: PolicyViolationsHeading,
-				Factors: []string{
-					"Policy 3 (severity: Critical)",
-					"Policy 2 (severity: High)",
-					"Policy 1 (severity: Low)",
+				Factors: []*v1.Risk_Result_Factor{
+					{Message: "Policy 3 (severity: Critical)"},
+					{Message: "Policy 2 (severity: High)"},
+					{Message: "Policy 1 (severity: Low)"},
 				},
 				Score: 1.4,
 			},

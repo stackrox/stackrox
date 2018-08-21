@@ -17,20 +17,20 @@ var (
 // DNRIntegration exposes all functionality that we expect to get through the integration with Detect & Respond.
 type DNRIntegration interface {
 	// Alerts returns D&R alerts for a deployment, given the cluster id, namespace and service name.
-	Alerts(clusterID, namespace, serviceName string) ([]PolicyAlert, error)
+	Alerts(clusterID, namespace, serviceName string) (AlertsWithMetadata, error)
 }
 
 // New returns a ready-to-use DNRIntegration object from the proto.
 func New(integration *v1.DNRIntegration, deploymentDataStore datastore.DataStore) (DNRIntegration, error) {
-	directorURL, err := validateAndParseDirectorEndpoint(integration.GetDirectorEndpoint())
+	portalURL, err := validateAndParsePortalURL(integration.GetPortalUrl())
 	if err != nil {
-		return nil, fmt.Errorf("director URL failed validation/parsing: %s", err)
+		return nil, fmt.Errorf("portal URL failed validation/parsing: %s", err)
 	}
 
 	d := &dnrIntegrationImpl{
-		directorURL: directorURL,
-		authToken:   integration.GetAuthToken(),
-		client:      client,
+		portalURL: portalURL,
+		authToken: integration.GetAuthToken(),
+		client:    client,
 
 		deploymentStore: deploymentDataStore,
 	}

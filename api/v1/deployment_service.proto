@@ -21,8 +21,13 @@ enum EnforcementAction {
 message Risk {
     float           score   = 1;
     message Result {
+        message Factor {
+            string message = 1;
+            string url     = 2;
+        }
+
         string name             = 1;
-        repeated string factors = 2;
+        repeated Factor factors = 2;
         float score             = 3;
     }
     repeated Result results = 2;

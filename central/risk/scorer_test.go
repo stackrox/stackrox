@@ -41,41 +41,41 @@ func TestScore(t *testing.T) {
 	expectedRiskResults := []*v1.Risk_Result{
 		{
 			Name: multipliers.DnrAlertsHeading,
-			Factors: []string{
-				"FakePolicy0 (Severity: CRITICAL)",
-				"FakePolicy1 (Severity: MEDIUM)",
+			Factors: []*v1.Risk_Result_Factor{
+				{Message: "FakePolicy0 (Severity: CRITICAL)"},
+				{Message: "FakePolicy1 (Severity: MEDIUM)"},
 			},
 			Score: 1.5,
 		},
 		{
 			Name:    multipliers.PolicyViolationsHeading,
-			Factors: []string{"Test (severity: Critical)"},
+			Factors: []*v1.Risk_Result_Factor{{Message: "Test (severity: Critical)"}},
 			Score:   1.2,
 		},
 		{
 			Name: multipliers.VulnsHeading,
-			Factors: []string{
-				"Image contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0",
+			Factors: []*v1.Risk_Result_Factor{
+				{Message: "Image contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0"},
 			},
 			Score: 1.05,
 		},
 		{
 			Name: multipliers.ServiceConfigHeading,
-			Factors: []string{
-				"Volumes rw volume were mounted RW",
-				"Secrets secret are used inside the deployment",
-				"Capabilities ALL were added",
-				"No capabilities were dropped",
-				"A container in the deployment is privileged",
+			Factors: []*v1.Risk_Result_Factor{
+				{Message: "Volumes rw volume were mounted RW"},
+				{Message: "Secrets secret are used inside the deployment"},
+				{Message: "Capabilities ALL were added"},
+				{Message: "No capabilities were dropped"},
+				{Message: "A container in the deployment is privileged"},
 			},
 			Score: 2.0,
 		},
 		{
 			Name: multipliers.ReachabilityHeading,
-			Factors: []string{
-				"Container library/nginx exposes port 8082 to external clients",
-				"Container library/nginx exposes port 8083 in the cluster",
-				"Container library/nginx exposes port 8084 on node interfaces",
+			Factors: []*v1.Risk_Result_Factor{
+				{Message: "Container library/nginx exposes port 8082 to external clients"},
+				{Message: "Container library/nginx exposes port 8083 in the cluster"},
+				{Message: "Container library/nginx exposes port 8084 on node interfaces"},
 			},
 			Score: 1.6,
 		},
@@ -101,22 +101,22 @@ func TestScore(t *testing.T) {
 	expectedRiskResults = append(expectedRiskResults, []*v1.Risk_Result{
 		{
 			Name: "Cluster multiplier 3",
-			Factors: []string{
-				"Deployment matched scope 'cluster:cluster'",
+			Factors: []*v1.Risk_Result_Factor{
+				{Message: "Deployment matched scope 'cluster:cluster'"},
 			},
 			Score: 3.0,
 		},
 		{
 			Name: "Cluster multiplier 2",
-			Factors: []string{
-				"Deployment matched scope 'cluster:cluster'",
+			Factors: []*v1.Risk_Result_Factor{
+				{Message: "Deployment matched scope 'cluster:cluster'"},
 			},
 			Score: 2.0,
 		},
 		{
 			Name: "Cluster multiplier 1",
-			Factors: []string{
-				"Deployment matched scope 'cluster:cluster'",
+			Factors: []*v1.Risk_Result_Factor{
+				{Message: "Deployment matched scope 'cluster:cluster'"},
 			},
 			Score: 1.0,
 		},

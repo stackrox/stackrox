@@ -32,27 +32,27 @@ func (s *serviceConfigMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Resu
 	var overallScore float32
 	if volumeFactor := s.scoreVolumes(deployment); volumeFactor != "" {
 		overallScore++
-		riskResult.Factors = append(riskResult.Factors, volumeFactor)
+		riskResult.Factors = append(riskResult.Factors, &v1.Risk_Result_Factor{Message: volumeFactor})
 	}
 	if secretFactor := s.scoreSecrets(deployment); secretFactor != "" {
 		overallScore++
-		riskResult.Factors = append(riskResult.Factors, secretFactor)
+		riskResult.Factors = append(riskResult.Factors, &v1.Risk_Result_Factor{Message: secretFactor})
 	}
 	capAddFactor, capDropFactor := s.scoreCapabilities(deployment)
 	if capAddFactor != "" {
 		overallScore++
-		riskResult.Factors = append(riskResult.Factors, capAddFactor)
+		riskResult.Factors = append(riskResult.Factors, &v1.Risk_Result_Factor{Message: capAddFactor})
 	}
 	if capDropFactor != "" {
 		overallScore++
-		riskResult.Factors = append(riskResult.Factors, capDropFactor)
+		riskResult.Factors = append(riskResult.Factors, &v1.Risk_Result_Factor{Message: capDropFactor})
 	}
 	if factor := s.scorePrivilege(deployment); factor != "" {
 		overallScore *= 2
 		if overallScore < 2 {
 			overallScore = 2
 		}
-		riskResult.Factors = append(riskResult.Factors, factor)
+		riskResult.Factors = append(riskResult.Factors, &v1.Risk_Result_Factor{Message: factor})
 	}
 	// riskResult.Score is the normalized [1.0,2.0] score
 	riskResult.Score = (overallScore / configSaturation) + 1

@@ -32,8 +32,9 @@ func (s *reachabilityMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Resul
 		for _, p := range c.GetPorts() {
 			score += exposureValue(p.GetExposure())
 
-			riskResult.Factors = append(riskResult.Factors, fmt.Sprintf("Container %s exposes port %d %s",
-				c.GetImage().GetName().GetRemote(), p.GetExposedPort(), exposureString(p.GetExposure())))
+			riskResult.Factors = append(riskResult.Factors,
+				&v1.Risk_Result_Factor{Message: fmt.Sprintf("Container %s exposes port %d %s",
+					c.GetImage().GetName().GetRemote(), p.GetExposedPort(), exposureString(p.GetExposure()))})
 		}
 	}
 	if score == 0 {

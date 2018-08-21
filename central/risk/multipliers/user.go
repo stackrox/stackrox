@@ -28,8 +28,8 @@ func (u *userDefinedMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result
 	return &v1.Risk_Result{
 		Name:  u.GetName(),
 		Score: u.GetValue(),
-		Factors: []string{
-			fmt.Sprintf("Deployment matched scope '%s'", formatScope(u.GetScope())),
+		Factors: []*v1.Risk_Result_Factor{
+			{Message: fmt.Sprintf("Deployment matched scope '%s'", formatScope(u.GetScope()))},
 		},
 	}
 }

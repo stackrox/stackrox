@@ -36,10 +36,7 @@ const tableColumnDescriptor = Object.freeze({
         ]
     },
     dnrIntegrations: {
-        'D&R': [
-            { key: 'clusterNames', label: 'Clusters' },
-            { key: 'directorEndpoint', label: 'Director Endpoint' }
-        ]
+        'D&R': [{ key: 'clusterNames', label: 'Clusters' }, { key: 'portalUrl', label: 'URL' }]
     },
     imageIntegrations: {
         docker: [

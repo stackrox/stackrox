@@ -124,7 +124,7 @@ go-generated-srcs: $(MOCKERY_BIN) $(STRINGER_BIN)
 	@echo "+ $@"
 	go generate ./...
 
-.PHONY: generated-srcs
+.PHONY: proto-generated-srcs
 proto-generated-srcs: $(GENERATED_SRCS)
 
 .PHONY: generated-srcs

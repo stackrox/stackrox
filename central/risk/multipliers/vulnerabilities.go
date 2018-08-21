@@ -51,8 +51,8 @@ func (c *vulnerabilitiesMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Re
 	score := (cvssSum / saturationCeiling) + 1
 	return &v1.Risk_Result{
 		Name: VulnsHeading,
-		Factors: []string{
-			fmt.Sprintf("Image contains %d CVEs with CVSS scores ranging between %0.1f and %0.1f", numCVEs, cvssMin, cvssMax),
+		Factors: []*v1.Risk_Result_Factor{
+			{Message: fmt.Sprintf("Image contains %d CVEs with CVSS scores ranging between %0.1f and %0.1f", numCVEs, cvssMin, cvssMax)},
 		},
 		Score: score,
 	}

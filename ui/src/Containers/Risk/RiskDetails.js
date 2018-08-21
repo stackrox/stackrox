@@ -4,6 +4,34 @@ import CollapsibleCard from 'Components/CollapsibleCard';
 import * as Icon from 'react-feather';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
+const Factor = ({ message, url }) => {
+    const renderedMessage = url ? (
+        <a href={url} target="_blank">
+            {message}
+        </a>
+    ) : (
+        message
+    );
+
+    return (
+        <div className="flex h-full p-3 font-500">
+            <div>
+                <Icon.Circle className="h-2 w-2 mr-3" />
+            </div>
+            <div className="pl-1">{renderedMessage}</div>
+        </div>
+    );
+};
+
+Factor.propTypes = {
+    message: PropTypes.string.isRequired,
+    url: PropTypes.string
+};
+
+Factor.defaultProps = {
+    url: ''
+};
+
 const RiskDetails = ({ risk }) => {
     if (!risk) return <NoResultsMessage message="No Risk Details Available" />;
 
@@ -15,12 +43,7 @@ const RiskDetails = ({ risk }) => {
             >
                 <CollapsibleCard title={result.name}>
                     {result.factors.map(factor => (
-                        <div className="flex h-full p-3 font-500" key={factor}>
-                            <div>
-                                <Icon.Circle className="h-2 w-2 mr-3" />
-                            </div>
-                            <div className="pl-1">{factor}</div>
-                        </div>
+                        <Factor key={factor.message} message={factor.message} url={factor.url} />
                     ))}
                 </CollapsibleCard>
             </div>
@@ -31,7 +54,11 @@ const RiskDetails = ({ risk }) => {
 RiskDetails.propTypes = {
     risk: PropTypes.shape({
         results: PropTypes.array.isRequired
-    }).isRequired
+    })
+};
+
+RiskDetails.defaultProps = {
+    risk: null
 };
 
 export default RiskDetails;

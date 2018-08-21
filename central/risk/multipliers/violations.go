@@ -92,7 +92,7 @@ func severityString(s v1.Severity) string {
 	return strings.ToUpper(trim[:1]) + strings.ToLower(trim[1:])
 }
 
-func policyFactors(pfs []policyFactor) (factors []string) {
+func policyFactors(pfs []policyFactor) (factors []*v1.Risk_Result_Factor) {
 	sort.Slice(pfs, func(i, j int) bool {
 		if pfs[i].severity == pfs[j].severity {
 			// Break ties using the name.
@@ -101,8 +101,11 @@ func policyFactors(pfs []policyFactor) (factors []string) {
 		// Otherwise use the impact score.
 		return severityImpact(pfs[i].severity) > severityImpact(pfs[j].severity)
 	})
+
+	factors = make([]*v1.Risk_Result_Factor, 0, len(pfs))
 	for _, pf := range pfs {
-		factors = append(factors, fmt.Sprintf("%s (severity: %s)", pf.name, severityString(pf.severity)))
+		factors = append(factors,
+			&v1.Risk_Result_Factor{Message: fmt.Sprintf("%s (severity: %s)", pf.name, severityString(pf.severity))})
 	}
 	return
 }

@@ -37,9 +37,9 @@ type dnrServiceMetadata struct {
 type serviceMapping map[preventDeploymentMetadata]dnrServiceMetadata
 
 type dnrIntegrationImpl struct {
-	directorURL *url.URL
-	authToken   string
-	client      *http.Client
+	portalURL *url.URL
+	authToken string
+	client    *http.Client
 
 	// true if the version of D&R doesn't support multi-cluster.
 	// (Necessary because the API change between versions.)

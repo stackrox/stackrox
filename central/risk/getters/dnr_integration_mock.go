@@ -8,11 +8,12 @@ type MockDNRIntegration struct {
 	ExpectedNamespace   string
 	ExpectedServiceName string
 	MockAlerts          []dnrintegration.PolicyAlert
+	MockBaseURL         string
 	MockError           error
 }
 
 // Alerts returns the values set in the mock.
-func (m MockDNRIntegration) Alerts(clusterID, namespace, serviceName string) ([]dnrintegration.PolicyAlert, error) {
+func (m MockDNRIntegration) Alerts(clusterID, namespace, serviceName string) (dnrintegration.AlertsWithMetadata, error) {
 	if m.ExpectedClusterID != "" && m.ExpectedClusterID != clusterID {
 		panic("Alerts called with wrong cluster id")
 	}
@@ -22,7 +23,7 @@ func (m MockDNRIntegration) Alerts(clusterID, namespace, serviceName string) ([]
 	if m.ExpectedServiceName != "" && m.ExpectedServiceName != serviceName {
 		panic("Alerts called with wrong service name")
 	}
-	return m.MockAlerts, m.MockError
+	return dnrintegration.AlertsWithMetadata{Alerts: m.MockAlerts, BaseURL: m.MockBaseURL}, m.MockError
 }
 
 // MockDNRIntegrationGetter is a mock implementation of DNRIntegrationGetter.

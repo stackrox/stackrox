@@ -20,16 +20,25 @@ type AlertList struct {
 
 // A PolicyAlert is a violation of a Policy Definition.
 type PolicyAlert struct {
+	ID string `json:"id"`
+
 	PolicyName string `json:"policy_name"`
 
 	SeverityWord  string  `json:"severity_word"`
 	SeverityScore float64 `json:"severity_score"`
 }
 
-func (d *dnrIntegrationImpl) Alerts(clusterID, namespace, serviceName string) ([]PolicyAlert, error) {
+// AlertsWithMetadata is our wrapper around the alerts list which also includes the base URL for each alert,
+// to allow clients to construct the D&R url for an alert.
+type AlertsWithMetadata struct {
+	Alerts  []PolicyAlert
+	BaseURL string
+}
+
+func (d *dnrIntegrationImpl) Alerts(clusterID, namespace, serviceName string) (AlertsWithMetadata, error) {
 	params, found := d.getDNRServiceParams(clusterID, namespace, serviceName)
 	if !found {
-		return nil, fmt.Errorf("couldn't find D&R service corresponding to cluster %s, namespace %s, deployment %s",
+		return AlertsWithMetadata{}, fmt.Errorf("couldn't find D&R service corresponding to cluster %s, namespace %s, deployment %s",
 			clusterID, namespace, serviceName)
 	}
 
@@ -38,12 +47,12 @@ func (d *dnrIntegrationImpl) Alerts(clusterID, namespace, serviceName string) ([
 
 	bytes, err := d.makeAuthenticatedRequest("GET", alertsEndpoint, params)
 	if err != nil {
-		return nil, fmt.Errorf("making alerts request: %s", err)
+		return AlertsWithMetadata{}, fmt.Errorf("making alerts request: %s", err)
 	}
 	var alertList AlertList
 	err = json.Unmarshal(bytes, &alertList)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshaling alerts struct: %s", err)
+		return AlertsWithMetadata{}, fmt.Errorf("unmarshaling alerts struct: %s", err)
 	}
-	return alertList.Results, nil
+	return AlertsWithMetadata{Alerts: alertList.Results, BaseURL: d.portalURL.String()}, nil
 }

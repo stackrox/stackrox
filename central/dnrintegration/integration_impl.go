@@ -9,27 +9,27 @@ import (
 	"strings"
 )
 
-// validateAndParseDirectorEndpoint parses the director endpoint into
+// validateAndParsePortalURL parses the director endpoint into
 // a URL object, making sure it's non-empty.
-func validateAndParseDirectorEndpoint(directorEndpoint string) (*url.URL, error) {
-	directorURL, err := url.Parse(directorEndpoint)
+func validateAndParsePortalURL(portalEndpoint string) (*url.URL, error) {
+	portalURL, err := url.Parse(portalEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("provided director endpoint '%s' not valid: %s",
-			directorEndpoint, err)
+		return nil, fmt.Errorf("provided portal URL '%s' not valid: %s",
+			portalEndpoint, err)
 	}
 
 	// If they've provided a scheme other than https, don't allow it silently.
-	if directorURL.Scheme != "" && directorURL.Scheme != "https" {
-		return nil, fmt.Errorf("invalid URL scheme for D&R director: %s", directorURL.Scheme)
+	if portalURL.Scheme != "" && portalURL.Scheme != "https" {
+		return nil, fmt.Errorf("invalid URL scheme for D&R portal : %s", portalURL.Scheme)
 	}
 	// Be kind if they haven't provided anything.
-	directorURL.Scheme = "https"
+	portalURL.Scheme = "https"
 
-	if directorURL.Host == "" {
-		return nil, fmt.Errorf("invalid directorEndpoint '%s': empty host", directorEndpoint)
+	if portalURL.Host == "" {
+		return nil, fmt.Errorf("invalid portal url '%s': empty host", portalEndpoint)
 	}
 
-	return directorURL, nil
+	return portalURL, nil
 }
 
 func (d *dnrIntegrationImpl) makeAuthenticatedRequest(method, path string, params url.Values) ([]byte, error) {
@@ -37,7 +37,7 @@ func (d *dnrIntegrationImpl) makeAuthenticatedRequest(method, path string, param
 	if err != nil {
 		return nil, fmt.Errorf("path URL parsing: %s", err)
 	}
-	reqURL := d.directorURL.ResolveReference(pathURL)
+	reqURL := d.portalURL.ResolveReference(pathURL)
 	reqURL.RawQuery = params.Encode()
 
 	req, err := http.NewRequest(method, reqURL.String(), nil)
