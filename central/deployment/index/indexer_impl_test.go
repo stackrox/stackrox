@@ -86,7 +86,6 @@ func (suite *DeploymentIndexTestSuite) TestScopeToDeploymentsQuery() {
 }
 
 func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
-
 	results, err := suite.indexer.SearchDeployments(&v1.ParsedSearchRequest{
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
 			search.DeploymentName: {
@@ -97,4 +96,23 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	suite.NoError(err)
 	suite.Len(results, 1)
 
+	results, err = suite.indexer.SearchDeployments(&v1.ParsedSearchRequest{
+		Fields: map[string]*v1.ParsedSearchRequest_Values{
+			search.DeploymentName: {
+				Values: []string{"!nginx"},
+			},
+		},
+	})
+	suite.NoError(err)
+	suite.Len(results, 0)
+
+	results, err = suite.indexer.SearchDeployments(&v1.ParsedSearchRequest{
+		Fields: map[string]*v1.ParsedSearchRequest_Values{
+			search.DeploymentName: {
+				Values: []string{"!nomatch"},
+			},
+		},
+	})
+	suite.NoError(err)
+	suite.Len(results, 1)
 }

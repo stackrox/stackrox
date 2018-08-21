@@ -3,7 +3,6 @@ package transform
 import (
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
-	"github.com/stackrox/rox/central/secret/index/mapping"
 	"github.com/stackrox/rox/central/secret/search/options"
 	"github.com/stackrox/rox/central/secret/store"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -38,13 +37,13 @@ func (r ParsedSearchRequestWrapper) ToResults(index bleve.Index) ([]search.Resul
 func (r ParsedSearchRequestWrapper) toQuery() (query.Query, error) {
 	// If the request is nil, just return all secrets.
 	if r.ParsedSearchRequest == nil {
-		sq := bleve.NewMatchQuery(mapping.IndexedType)
+		sq := bleve.NewMatchQuery(v1.SearchCategory_SECRETS.String())
 		sq.SetField("type")
 		return sq, nil
 	}
 
 	// We search the indices for matches in both secret and relationship fields.
-	sq, err := blevesearch.BuildQuery(mapping.IndexedType, r.ParsedSearchRequest, scopeToQuery, options.Map)
+	sq, err := blevesearch.BuildQuery(v1.SearchCategory_SECRETS, r.ParsedSearchRequest, scopeToQuery, options.Map)
 	if err != nil {
 		return nil, err
 	}

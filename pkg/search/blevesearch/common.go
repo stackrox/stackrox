@@ -2,7 +2,6 @@ package blevesearch
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
@@ -14,13 +13,6 @@ import (
 const maxSearchResponses = 2000
 
 var logger = logging.LoggerForModule()
-
-// NewPrefixQuery generates new query that matches prefixes
-func NewPrefixQuery(field, prefix string) query.Query {
-	prefixQuery := bleve.NewPrefixQuery(strings.ToLower(prefix))
-	prefixQuery.SetField(field)
-	return prefixQuery
-}
 
 // GetScopesQuery generates a disjunct query based on the scope values
 func GetScopesQuery(scopes []*v1.Scope, scopeToQuery func(scope *v1.Scope) query.Query) query.Query {
@@ -36,7 +28,7 @@ func GetScopesQuery(scopes []*v1.Scope, scopeToQuery func(scope *v1.Scope) query
 }
 
 // FieldsToQuery converts a request and the options for the data type to Bleve types
-func FieldsToQuery(request *v1.ParsedSearchRequest, optionsMap map[string]*v1.SearchField) (*query.ConjunctionQuery, error) {
+func FieldsToQuery(category v1.SearchCategory, request *v1.ParsedSearchRequest, optionsMap map[string]*v1.SearchField) (*query.ConjunctionQuery, error) {
 	conjunctionQuery := bleve.NewConjunctionQuery()
 	for fieldName, field := range request.GetFields() {
 		searchField, ok := optionsMap[fieldName]
@@ -47,7 +39,7 @@ func FieldsToQuery(request *v1.ParsedSearchRequest, optionsMap map[string]*v1.Se
 		if !ok {
 			return nil, fmt.Errorf("Query for type %s is not implemented", searchField.GetType())
 		}
-		conjunct, err := queryFunc(searchField.GetFieldPath(), field.GetValues())
+		conjunct, err := queryFunc(category, searchField.GetFieldPath(), field.GetValues())
 		if err != nil {
 			return nil, err
 		}
@@ -57,8 +49,8 @@ func FieldsToQuery(request *v1.ParsedSearchRequest, optionsMap map[string]*v1.Se
 }
 
 // RunSearchRequest builds a query and runs it against the index.
-func RunSearchRequest(objType string, request *v1.ParsedSearchRequest, index bleve.Index, scopeToQuery func(scope *v1.Scope) query.Query, optionsMap map[string]*v1.SearchField) ([]searchPkg.Result, error) {
-	que, err := BuildQuery(objType, request, scopeToQuery, optionsMap)
+func RunSearchRequest(category v1.SearchCategory, request *v1.ParsedSearchRequest, index bleve.Index, scopeToQuery func(scope *v1.Scope) query.Query, optionsMap map[string]*v1.SearchField) ([]searchPkg.Result, error) {
+	que, err := BuildQuery(category, request, scopeToQuery, optionsMap)
 	if err != nil {
 		return nil, err
 	}
@@ -78,23 +70,25 @@ func RunQuery(query query.Query, index bleve.Index) ([]searchPkg.Result, error) 
 }
 
 // BuildQuery builds a query for the input.
-func BuildQuery(objType string, request *v1.ParsedSearchRequest, scopeToQuery func(scope *v1.Scope) query.Query, optionsMap map[string]*v1.SearchField) (query.Query, error) {
-	queries, err := buildQuery(request, scopeToQuery, optionsMap)
+func BuildQuery(category v1.SearchCategory, request *v1.ParsedSearchRequest, scopeToQuery func(scope *v1.Scope) query.Query, optionsMap map[string]*v1.SearchField) (query.Query, error) {
+	queries, err := buildQuery(category, request, scopeToQuery, optionsMap)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(queries) > 0 {
-		return bleve.NewConjunctionQuery(typeQuery(objType), bleve.NewConjunctionQuery(queries...)), nil
+		conjunctionQuery := bleve.NewConjunctionQuery(typeQuery(category))
+		conjunctionQuery.AddQuery(queries...)
+		return conjunctionQuery, nil
 	}
-	return typeQuery(objType), nil
+	return typeQuery(category), nil
 }
 
-func buildQuery(request *v1.ParsedSearchRequest, scopeToQuery func(scope *v1.Scope) query.Query, optionsMap map[string]*v1.SearchField) ([]query.Query, error) {
+func buildQuery(category v1.SearchCategory, request *v1.ParsedSearchRequest, scopeToQuery func(scope *v1.Scope) query.Query, optionsMap map[string]*v1.SearchField) ([]query.Query, error) {
 	var queries []query.Query
 	queries = append(queries, GetScopesQuery(request.GetScopes(), scopeToQuery))
 	if request.GetFields() != nil && len(request.GetFields()) != 0 {
-		q, err := FieldsToQuery(request, optionsMap)
+		q, err := FieldsToQuery(category, request, optionsMap)
 		if err != nil {
 			return nil, err
 		}
@@ -106,8 +100,8 @@ func buildQuery(request *v1.ParsedSearchRequest, scopeToQuery func(scope *v1.Sco
 	return queries, nil
 }
 
-func typeQuery(objType string) query.Query {
-	q := bleve.NewMatchQuery(objType)
+func typeQuery(category v1.SearchCategory) query.Query {
+	q := bleve.NewMatchQuery(category.String())
 	q.SetField("type")
 	return q
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
-var datatypeToQueryFunc = map[v1.SearchDataType]func(string, []string) (query.Query, error){
+var datatypeToQueryFunc = map[v1.SearchDataType]func(v1.SearchCategory, string, []string) (query.Query, error){
 	v1.SearchDataType_SEARCH_STRING:      newStringQuery,
 	v1.SearchDataType_SEARCH_BOOL:        newBoolQuery,
 	v1.SearchDataType_SEARCH_NUMERIC:     newNumericQuery,
@@ -18,15 +18,41 @@ var datatypeToQueryFunc = map[v1.SearchDataType]func(string, []string) (query.Qu
 	v1.SearchDataType_SEARCH_ENFORCEMENT: newEnforcementQuery,
 }
 
-func newStringQuery(field string, values []string) (query.Query, error) {
+// returns the string to search, if it was negated, or an error
+func getQueryToSearch(category v1.SearchCategory, field, value string) (query.Query, error) {
+	if len(value) == 0 {
+		return nil, fmt.Errorf("Value in search query cannot be empty")
+	}
+	switch {
+	case strings.HasPrefix(value, "!") && len(value) > 1:
+		boolQuery := bleve.NewBooleanQuery()
+		boolQuery.AddMustNot(NewMatchPhrasePrefixQuery(field, value[1:]))
+		// This is where things are interesting. BooleanQuery basically generates a true or false that can be used
+		// however we must pipe in the search category because the boolean query returns a true/false designation
+		boolQuery.AddMust(typeQuery(category))
+		return boolQuery, nil
+	case strings.HasPrefix(value, "/") && len(value) > 1:
+		q := bleve.NewRegexpQuery(value[1:])
+		q.SetField(field)
+		return q, nil
+	default:
+		return NewMatchPhrasePrefixQuery(field, value), nil
+	}
+}
+
+func newStringQuery(category v1.SearchCategory, field string, values []string) (query.Query, error) {
 	d := bleve.NewDisjunctionQuery()
-	for _, val := range values {
-		d.AddQuery(NewMatchPhrasePrefixQuery(field, val))
+	for _, value := range values {
+		q, err := getQueryToSearch(category, field, value)
+		if err != nil {
+			return nil, err
+		}
+		d.AddQuery(q)
 	}
 	return d, nil
 }
 
-func newBoolQuery(field string, values []string) (query.Query, error) {
+func newBoolQuery(_ v1.SearchCategory, field string, values []string) (query.Query, error) {
 	d := bleve.NewDisjunctionQuery()
 	for _, val := range values {
 		b, err := strconv.ParseBool(val)
@@ -73,7 +99,7 @@ func parseNumericValue(num string) (min *float64, max *float64, inclusive *bool,
 	return
 }
 
-func newNumericQuery(field string, values []string) (query.Query, error) {
+func newNumericQuery(_ v1.SearchCategory, field string, values []string) (query.Query, error) {
 	d := bleve.NewDisjunctionQuery()
 	for _, val := range values {
 		min, max, inclusive, err := parseNumericValue(val)
@@ -111,7 +137,7 @@ func newExactNumericMatch(field string, f float64) query.Query {
 	return q
 }
 
-func newSeverityQuery(field string, values []string) (query.Query, error) {
+func newSeverityQuery(_ v1.SearchCategory, field string, values []string) (query.Query, error) {
 	d := bleve.NewDisjunctionQuery()
 	for _, v := range values {
 		sev, err := stringToSeverity(v)
@@ -137,7 +163,7 @@ func stringToEnforcement(s string) (v1.EnforcementAction, error) {
 	return v1.EnforcementAction_UNSET_ENFORCEMENT, fmt.Errorf("Could not parse enforcement '%s'. Valid options are node, and scale", s)
 }
 
-func newEnforcementQuery(field string, values []string) (query.Query, error) {
+func newEnforcementQuery(_ v1.SearchCategory, field string, values []string) (query.Query, error) {
 	d := bleve.NewDisjunctionQuery()
 	for _, v := range values {
 		en, err := stringToEnforcement(v)

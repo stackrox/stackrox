@@ -2,7 +2,6 @@ package index
 
 import (
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/secret/index/mapping"
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
@@ -22,7 +21,7 @@ func (i *indexerImpl) SecretAndRelationship(sar *v1.SecretAndRelationship) error
 	wrapped := &sarWrapper{
 		SecretAndRelationship: sar,
 		// Type used here must match type used in globalindex/bleveindex.
-		Type: mapping.IndexedType,
+		Type: v1.SearchCategory_SECRETS.String(),
 	}
 	return i.index.Index(sar.GetSecret().GetId(), wrapped)
 }

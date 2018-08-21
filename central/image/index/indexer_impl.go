@@ -77,7 +77,7 @@ func (b *indexerImpl) SearchImages(request *v1.ParsedSearchRequest) (results []s
 	}
 
 	// Create and run query for fields, and input string query, if it exists.
-	imageQuery, err := blevesearch.FieldsToQuery(request, mappings.OptionsMap)
+	imageQuery, err := blevesearch.FieldsToQuery(v1.SearchCategory_IMAGES, request, mappings.OptionsMap)
 	if err != nil {
 		return nil, err
 	}

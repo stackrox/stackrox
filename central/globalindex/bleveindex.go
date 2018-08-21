@@ -58,7 +58,7 @@ func getIndexMapping() *mapping.IndexMappingImpl {
 	indexMapping.AddDocumentMapping(v1.SearchCategory_DEPLOYMENTS.String(), deploymentMapping.DocumentMap)
 
 	// Support indexing secrets and relationships.
-	indexMapping.AddDocumentMapping(secretMapping.IndexedType, secretMapping.DocumentMap)
+	indexMapping.AddDocumentMapping(v1.SearchCategory_SECRETS.String(), secretMapping.DocumentMap)
 
 	disabledSection := bleve.NewDocumentDisabledMapping()
 	indexMapping.AddDocumentMapping("_all", disabledSection)

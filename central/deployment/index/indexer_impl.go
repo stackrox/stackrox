@@ -48,7 +48,7 @@ func (b *indexerImpl) DeleteDeployment(id string) error {
 // SearchDeployments takes a SearchRequest and finds any matches
 func (b *indexerImpl) SearchDeployments(request *v1.ParsedSearchRequest) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Deployment")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_DEPLOYMENTS.String(), request, b.index, ScopeToDeploymentQuery, mappings.OptionsMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_DEPLOYMENTS, request, b.index, ScopeToDeploymentQuery, mappings.OptionsMap)
 }
 
 // ScopeToDeploymentQuery returns a deployment query for the given scope.

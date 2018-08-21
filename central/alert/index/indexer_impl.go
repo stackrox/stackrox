@@ -56,7 +56,7 @@ func (b *indexerImpl) SearchAlerts(request *v1.ParsedSearchRequest) ([]search.Re
 			Values: []string{"false"},
 		}
 	}
-	return blevesearch.RunSearchRequest(v1.SearchCategory_ALERTS.String(), request, b.index, ScopeToAlertQuery, mappings.OptionsMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_ALERTS, request, b.index, ScopeToAlertQuery, mappings.OptionsMap)
 }
 
 // ScopeToAlertQuery returns an alert query for the given scope.
