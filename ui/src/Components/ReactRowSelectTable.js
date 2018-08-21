@@ -37,6 +37,10 @@ class ReactRowSelectTable extends Component {
                 : ''
     });
 
+    // state.canNext is true except for the very last page. This applies h-full to everything
+    // except the last page (since applying it to the last page caused rows to stretch to fill the page).
+    getTableProps = state => (!state.canNext ? { className: 'h-full' } : {});
+
     render() {
         const { rows, columns, ...rest } = this.props;
         columns.forEach(column =>
@@ -49,10 +53,12 @@ class ReactRowSelectTable extends Component {
             <ReactTable
                 data={rows}
                 columns={columns}
+                getTableProps={this.getTableProps}
                 getTrProps={this.getTrProps}
-                className={`border-0 -highlight ${rows.length > pageSize && 'h-full'}`}
+                className="border-0 -highlight"
                 showPagination={rows.length > pageSize}
-                defaultPageSize={rows.length > pageSize ? pageSize : rows.length}
+                defaultPageSize={pageSize}
+                minRows={0}
                 resizable
                 sortable
                 defaultSortDesc={false}

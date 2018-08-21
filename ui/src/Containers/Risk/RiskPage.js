@@ -145,7 +145,7 @@ class RiskPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full pl-3 pt-3 pr-3 overflow-hidden bg-white rounded-sm shadow bg-base-100">
+                        <div className="w-full pl-3 pt-3 pr-3 bg-white rounded-sm shadow bg-base-100">
                             {this.renderTable()}
                         </div>
                         {this.renderSidePanel()}
