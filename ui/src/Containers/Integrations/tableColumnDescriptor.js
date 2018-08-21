@@ -37,7 +37,7 @@ const tableColumnDescriptor = Object.freeze({
     },
     dnrIntegrations: {
         'D&R': [
-            { key: 'clusterName', label: 'Cluster' },
+            { key: 'clusterNames', label: 'Clusters' },
             { key: 'directorEndpoint', label: 'Director Endpoint' }
         ]
     },

@@ -10,20 +10,20 @@ type DataStore struct {
 	mock.Mock
 }
 
-// AddDNRIntegration provides a mock function with given fields: integration
-func (_m *DataStore) AddDNRIntegration(integration *v1.DNRIntegration) (string, error) {
-	ret := _m.Called(integration)
+// AddDNRIntegration provides a mock function with given fields: proto, integration
+func (_m *DataStore) AddDNRIntegration(proto *v1.DNRIntegration, integration dnrintegration.DNRIntegration) (string, error) {
+	ret := _m.Called(proto, integration)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(*v1.DNRIntegration) string); ok {
-		r0 = rf(integration)
+	if rf, ok := ret.Get(0).(func(*v1.DNRIntegration, dnrintegration.DNRIntegration) string); ok {
+		r0 = rf(proto, integration)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*v1.DNRIntegration) error); ok {
-		r1 = rf(integration)
+	if rf, ok := ret.Get(1).(func(*v1.DNRIntegration, dnrintegration.DNRIntegration) error); ok {
+		r1 = rf(proto, integration)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -32,7 +32,7 @@ func (_m *DataStore) AddDNRIntegration(integration *v1.DNRIntegration) (string, 
 }
 
 // ForCluster provides a mock function with given fields: clusterID
-func (_m *DataStore) ForCluster(clusterID string) (dnrintegration.DNRIntegration, bool, error) {
+func (_m *DataStore) ForCluster(clusterID string) (dnrintegration.DNRIntegration, bool) {
 	ret := _m.Called(clusterID)
 
 	var r0 dnrintegration.DNRIntegration
@@ -51,14 +51,7 @@ func (_m *DataStore) ForCluster(clusterID string) (dnrintegration.DNRIntegration
 		r1 = ret.Get(1).(bool)
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(string) error); ok {
-		r2 = rf(clusterID)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
+	return r0, r1
 }
 
 // GetDNRIntegration provides a mock function with given fields: id
@@ -128,13 +121,13 @@ func (_m *DataStore) RemoveDNRIntegration(id string) error {
 	return r0
 }
 
-// UpdateDNRIntegration provides a mock function with given fields: integration
-func (_m *DataStore) UpdateDNRIntegration(integration *v1.DNRIntegration) error {
-	ret := _m.Called(integration)
+// UpdateDNRIntegration provides a mock function with given fields: proto, integration
+func (_m *DataStore) UpdateDNRIntegration(proto *v1.DNRIntegration, integration dnrintegration.DNRIntegration) error {
+	ret := _m.Called(proto, integration)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*v1.DNRIntegration) error); ok {
-		r0 = rf(integration)
+	if rf, ok := ret.Get(0).(func(*v1.DNRIntegration, dnrintegration.DNRIntegration) error); ok {
+		r0 = rf(proto, integration)
 	} else {
 		r0 = ret.Error(0)
 	}

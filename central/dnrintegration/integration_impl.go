@@ -1,27 +1,12 @@
 package dnrintegration
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
-)
-
-var (
-	// Reuse a long-lived client so we don't end up creating too many connections.
-	// Note that clients _are_ thread-safe.
-	client = &http.Client{
-		Timeout: 5 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
 )
 
 // validateAndParseDirectorEndpoint parses the director endpoint into
@@ -45,20 +30,6 @@ func validateAndParseDirectorEndpoint(directorEndpoint string) (*url.URL, error)
 	}
 
 	return directorURL, nil
-}
-
-type dnrIntegrationImpl struct {
-	directorURL *url.URL
-	authToken   string
-	client      *http.Client
-}
-
-func (d *dnrIntegrationImpl) Test() error {
-	_, err := d.version()
-	if err != nil {
-		return fmt.Errorf("test ping to D&R failed: %s", err)
-	}
-	return nil
 }
 
 func (d *dnrIntegrationImpl) makeAuthenticatedRequest(method, path string, params url.Values) ([]byte, error) {

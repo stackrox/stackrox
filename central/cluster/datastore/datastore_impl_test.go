@@ -45,8 +45,8 @@ func (suite *ClusterDataStoreTestSuite) TestDNRIntegrationsAreRemoved() {
 		ClusterId: fakeClusterID,
 	}).Return([]*v1.DNRIntegration{
 		{
-			Id:        "DNRID",
-			ClusterId: fakeClusterID,
+			Id:         "DNRID",
+			ClusterIds: []string{fakeClusterID},
 		},
 	}, nil)
 	suite.dnrInts.On("RemoveDNRIntegration", "DNRID").Return(nil)

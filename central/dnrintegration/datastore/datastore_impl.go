@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/stackrox/rox/central/dnrintegration"
 	"github.com/stackrox/rox/central/dnrintegration/store"
@@ -10,56 +11,69 @@ import (
 
 type datastoreImpl struct {
 	store store.Store
+
+	clusterToIntegrations map[string]dnrintegration.DNRIntegration
+	lock                  sync.RWMutex
 }
 
-func (d *datastoreImpl) ForCluster(clusterID string) (integration dnrintegration.DNRIntegration, exists bool, err error) {
-	integrations, err := d.store.GetDNRIntegrations(&v1.GetDNRIntegrationsRequest{ClusterId: clusterID})
-	if err != nil {
-		err = fmt.Errorf("failed to retrieve integrations for cluster %s: %s", clusterID, err)
-		return
-	}
-
-	if len(integrations) == 0 {
-		return
-	}
-
-	exists = true
-
-	// This should never happen, but it's counter-productive to return an error here.
-	// Simply log the error for now.
-	if len(integrations) > 1 {
-		logger.Errorf("Found multiple integrations for cluster %s", clusterID)
-	}
-
-	integration, err = dnrintegration.New(integrations[0])
-	if err != nil {
-		err = fmt.Errorf("bad DNR integration for cluster %s: %s", clusterID, err)
-		return
-	}
+func (d *datastoreImpl) ForCluster(clusterID string) (integration dnrintegration.DNRIntegration, exists bool) {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	integration, exists = d.clusterToIntegrations[clusterID]
 	return
 }
 
-// GetDNRIntegration is a pass-through to the underlying store's function.
 func (d *datastoreImpl) GetDNRIntegration(id string) (*v1.DNRIntegration, bool, error) {
 	return d.store.GetDNRIntegration(id)
 }
 
-// GetDNRIntegrations is a pass-through to the underlying store's function.
 func (d *datastoreImpl) GetDNRIntegrations(request *v1.GetDNRIntegrationsRequest) ([]*v1.DNRIntegration, error) {
 	return d.store.GetDNRIntegrations(request)
 }
 
-// AddDNRIntegration is a pass-through to the underlying store's function.
-func (d *datastoreImpl) AddDNRIntegration(integration *v1.DNRIntegration) (string, error) {
-	return d.store.AddDNRIntegration(integration)
+func (d *datastoreImpl) updateMap(clusterIDs []string, integration dnrintegration.DNRIntegration) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	for _, clusterID := range clusterIDs {
+		d.clusterToIntegrations[clusterID] = integration
+	}
 }
 
-// UpdateDNRIntegration is a pass-through to the underlying store's function.
-func (d *datastoreImpl) UpdateDNRIntegration(integration *v1.DNRIntegration) error {
-	return d.store.UpdateDNRIntegration(integration)
+func (d *datastoreImpl) AddDNRIntegration(proto *v1.DNRIntegration, integration dnrintegration.DNRIntegration) (string, error) {
+	id, err := d.store.AddDNRIntegration(proto)
+	if err != nil {
+		return "", err
+	}
+
+	d.updateMap(proto.GetClusterIds(), integration)
+	return id, nil
 }
 
-// RemoveDNRIntegration is a pass-through to the underlying store's function.
+func (d *datastoreImpl) UpdateDNRIntegration(proto *v1.DNRIntegration, integration dnrintegration.DNRIntegration) error {
+	err := d.store.UpdateDNRIntegration(proto)
+	if err != nil {
+		return err
+	}
+	d.updateMap(proto.GetClusterIds(), integration)
+	return nil
+}
+
 func (d *datastoreImpl) RemoveDNRIntegration(id string) error {
-	return d.store.RemoveDNRIntegration(id)
+	integration, exists, err := d.store.GetDNRIntegration(id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("D&R integration '%s' not found", id)
+	}
+	err = d.store.RemoveDNRIntegration(id)
+	if err != nil {
+		return err
+	}
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	for _, clusterID := range integration.GetClusterIds() {
+		delete(d.clusterToIntegrations, clusterID)
+	}
+	return nil
 }

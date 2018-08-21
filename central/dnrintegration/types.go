@@ -1,56 +1,58 @@
 package dnrintegration
 
 import (
-	"errors"
-	"fmt"
-	"strings"
+	"crypto/tls"
+	"net/http"
+	"net/url"
+	"sync"
+	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/central/deployment/datastore"
+	"golang.org/x/time/rate"
 )
 
 var (
-	logger = logging.LoggerForModule()
+	// Reuse a long-lived client so we don't end up creating too many connections.
+	// Note that clients _are_ thread-safe.
+	client = &http.Client{
+		Timeout: 5 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
 )
 
-// DNRIntegration exposes all functionality that we expect to get through the integration with Detect & Respond.
-type DNRIntegration interface {
-	// Test tests the integration with D&R
-	Test() error
-
-	// Alerts returns D&R alerts for the given namespace and serviceName
-	Alerts(namespace, serviceName string) ([]PolicyAlert, error)
+type preventDeploymentMetadata struct {
+	name      string
+	namespace string
 }
 
-// Validate validates a proto DNR integration object
-func Validate(integration *v1.DNRIntegration) error {
-	_, err := validateAndParseDirectorEndpoint(integration.GetDirectorEndpoint())
-	if err != nil {
-		return fmt.Errorf("directorURL invalid: %s", err)
-	}
-
-	// Some (non-comprehensive) validation of the auth token.
-	// Not doing more comprehensive validation with the JWT library because
-	// it seems excessive, and unnecessarily tight coupling.
-	if len(integration.GetAuthToken()) < 800 {
-		return fmt.Errorf("auth token too short: %d characters", len(integration.GetAuthToken()))
-	}
-	if !strings.HasPrefix(integration.GetAuthToken(), "ey") {
-		return errors.New("auth token doesn't seem like a valid JWT (doesn't start with ey)")
-	}
-	return nil
+type dnrServiceMetadata struct {
+	serviceID string
+	clusterID string
 }
 
-// New returns a ready-to-use DNRIntegration object from the proto.
-func New(integration *v1.DNRIntegration) (DNRIntegration, error) {
-	directorURL, err := validateAndParseDirectorEndpoint(integration.GetDirectorEndpoint())
-	if err != nil {
-		return nil, fmt.Errorf("director URL failed validation/parsing: %s", err)
-	}
+type serviceMapping map[preventDeploymentMetadata]dnrServiceMetadata
 
-	return &dnrIntegrationImpl{
-		directorURL: directorURL,
-		authToken:   integration.GetAuthToken(),
-		client:      client,
-	}, nil
+type dnrIntegrationImpl struct {
+	directorURL *url.URL
+	authToken   string
+	client      *http.Client
+
+	// true if the version of D&R doesn't support multi-cluster.
+	// (Necessary because the API change between versions.)
+	isPreMultiCluster           bool
+	serviceMappingSingleCluster serviceMapping
+
+	// mapping from prevent cluster id -> D&R cluster id.
+	clusterIDMapping map[string]string
+
+	// service mappings for each prevent cluster
+	serviceMappings            map[string]serviceMapping
+	serviceMappingsLock        sync.RWMutex
+	serviceMappingsRateLimiter *rate.Limiter
+
+	deploymentStore datastore.DataStore
 }

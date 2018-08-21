@@ -6,6 +6,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/dnrintegration"
 	"github.com/stackrox/rox/central/dnrintegration/datastore"
 	"github.com/stackrox/rox/central/enrichment"
@@ -40,9 +41,10 @@ var (
 
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
-	datastore datastore.DataStore
-	clusters  clusterDataStore.DataStore
-	enricher  enrichment.Enricher
+	datastore   datastore.DataStore
+	clusters    clusterDataStore.DataStore
+	deployments deploymentDataStore.DataStore
+	enricher    enrichment.Enricher
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -87,16 +89,21 @@ func (s *serviceImpl) PostDNRIntegration(ctx context.Context, req *v1.DNRIntegra
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("got non-empty id %s in POST", req.GetId()))
 
 	}
-	err := s.ensureClusterIDExistsAndIsUnique(req.GetClusterId())
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+	if len(req.GetClusterIds()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "received empty list of cluster ids")
 	}
-	err = dnrintegration.Validate(req)
+
+	err := s.ensureClusterIDsExistAndAreUnique(req.GetClusterIds())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	id, err := s.datastore.AddDNRIntegration(req)
+	integration, err := dnrintegration.New(req, s.deployments)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	id, err := s.datastore.AddDNRIntegration(req, integration)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -114,17 +121,21 @@ func (s *serviceImpl) PutDNRIntegration(ctx context.Context, req *v1.DNRIntegrat
 		return nil, err
 	}
 
-	err = s.ensureClusterIDExistsAndHasOnlyPermittedIntegration(req.GetClusterId(), req.GetId())
+	if len(req.GetClusterIds()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "received empty list of cluster ids")
+	}
+
+	err = s.ensureClusterIDsExistAndHaveOnlyPermittedIntegration(req.GetClusterIds(), req.GetId())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	err = dnrintegration.Validate(req)
+	integration, err := dnrintegration.New(req, s.deployments)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	err = s.datastore.UpdateDNRIntegration(req)
+	err = s.datastore.UpdateDNRIntegration(req, integration)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -146,15 +157,7 @@ func (s *serviceImpl) DeleteDNRIntegration(ctx context.Context, req *v1.Resource
 
 // TestDNRIntegration tests the DNR integration.
 func (s *serviceImpl) TestDNRIntegration(ctx context.Context, req *v1.DNRIntegration) (*empty.Empty, error) {
-	err := dnrintegration.Validate(req)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-	integration, err := dnrintegration.New(req)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-	err = integration.Test()
+	_, err := dnrintegration.New(req, s.deployments)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -173,12 +176,18 @@ func (s *serviceImpl) getDNRIntegrationByID(id string) (*v1.DNRIntegration, erro
 	return integration, nil
 }
 
-func (s *serviceImpl) ensureClusterIDExistsAndHasOnlyPermittedIntegration(clusterID, permittedDNRIntegrationID string) error {
-	return s.validateClusterID(clusterID, permittedDNRIntegrationID)
+func (s *serviceImpl) ensureClusterIDsExistAndHaveOnlyPermittedIntegration(clusterIDs []string, permittedDNRIntegrationID string) error {
+	for _, clusterID := range clusterIDs {
+		err := s.validateClusterID(clusterID, permittedDNRIntegrationID)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func (s *serviceImpl) ensureClusterIDExistsAndIsUnique(clusterID string) error {
-	return s.validateClusterID(clusterID, "")
+func (s *serviceImpl) ensureClusterIDsExistAndAreUnique(clusterIDs []string) error {
+	return s.ensureClusterIDsExistAndHaveOnlyPermittedIntegration(clusterIDs, "")
 }
 
 // Make sure that the cluster ID exists, and that, if it has a D&R integration, it is only the permitted one.

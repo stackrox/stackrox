@@ -3,7 +3,6 @@ package dnrintegration
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 )
 
 const alertsEndpoint = "v0.1/api/alerts/"
@@ -27,17 +26,16 @@ type PolicyAlert struct {
 	SeverityScore float64 `json:"severity_score"`
 }
 
-func (d *dnrIntegrationImpl) Alerts(namespace, serviceName string) ([]PolicyAlert, error) {
-	params := url.Values{}
+func (d *dnrIntegrationImpl) Alerts(clusterID, namespace, serviceName string) ([]PolicyAlert, error) {
+	params, found := d.getDNRServiceParams(clusterID, namespace, serviceName)
+	if !found {
+		return nil, fmt.Errorf("couldn't find D&R service corresponding to cluster %s, namespace %s, deployment %s",
+			clusterID, namespace, serviceName)
+	}
+
 	// This makes sure we don't show Acknowledged or Resolved alerts.
 	params.Add("workflowState", "New")
-	// In D&R alerts, the "default" namespace translates to unset.
-	if namespace != "" && namespace != "default" {
-		params.Set("namespace", namespace)
-	}
-	if serviceName != "" {
-		params.Set("serviceName", serviceName)
-	}
+
 	bytes, err := d.makeAuthenticatedRequest("GET", alertsEndpoint, params)
 	if err != nil {
 		return nil, fmt.Errorf("making alerts request: %s", err)

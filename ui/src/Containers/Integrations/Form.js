@@ -79,11 +79,11 @@ class Form extends Component {
         const options = this.props.clusters.map(({ id, name }) => ({ value: id, label: name }));
         return [
             {
-                label: 'Cluster',
-                key: 'clusterId',
-                type: 'select',
+                label: 'Clusters',
+                key: 'clusterIds',
+                type: 'multiselect',
                 options,
-                placeholder: 'Choose cluster...'
+                placeholder: 'Choose clusters...'
             },
             {
                 label: 'Director Endpoint',

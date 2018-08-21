@@ -7,7 +7,7 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	dnrStore "github.com/stackrox/rox/central/dnrintegration/store"
+	dnrStore "github.com/stackrox/rox/central/dnrintegration/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/search"
@@ -18,7 +18,7 @@ type datastoreImpl struct {
 
 	ads alertDataStore.DataStore
 	dds deploymentDataStore.DataStore
-	dnr dnrStore.Store
+	dnr dnrStore.DataStore
 }
 
 // GetCluster is a pass through function to the underlying storage.

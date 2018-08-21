@@ -11,8 +11,15 @@ import (
 )
 
 func TestDNRAlerts(t *testing.T) {
+	const fakeClusterID = "FAKECLUSTERID"
 	const fakeNamespace = "FAKENAMESPACE"
 	const fakeServiceName = "FAKESERVICENAME"
+
+	fakeDeployment := &v1.Deployment{
+		ClusterId: fakeClusterID,
+		Name:      fakeServiceName,
+		Namespace: fakeNamespace,
+	}
 
 	cases := []struct {
 		name string
@@ -20,6 +27,7 @@ func TestDNRAlerts(t *testing.T) {
 		integrationExists       bool
 		integrationRetrievalErr error
 
+		expectedClusterID   string
 		expectedNamespace   string
 		expectedServiceName string
 		mockAlerts          []dnrintegration.PolicyAlert
@@ -48,28 +56,24 @@ func TestDNRAlerts(t *testing.T) {
 		{
 			name:                "No alerts",
 			integrationExists:   true,
+			expectedClusterID:   fakeClusterID,
 			expectedNamespace:   fakeNamespace,
 			expectedServiceName: fakeServiceName,
 			mockAlerts:          make([]dnrintegration.PolicyAlert, 0),
-			deployment: &v1.Deployment{
-				Name:      fakeServiceName,
-				Namespace: fakeNamespace,
-			},
-			expectedResult: nil,
+			deployment:          fakeDeployment,
+			expectedResult:      nil,
 		},
 		{
 			name:                "Couple of alerts",
 			integrationExists:   true,
+			expectedClusterID:   fakeClusterID,
 			expectedNamespace:   fakeNamespace,
 			expectedServiceName: fakeServiceName,
 			mockAlerts: []dnrintegration.PolicyAlert{
 				{PolicyName: "FakePolicy0", SeverityWord: "CRITICAL", SeverityScore: 100},
 				{PolicyName: "FakePolicy1", SeverityWord: "MEDIUM", SeverityScore: 50},
 			},
-			deployment: &v1.Deployment{
-				Name:      fakeServiceName,
-				Namespace: fakeNamespace,
-			},
+			deployment: fakeDeployment,
 			expectedResult: &v1.Risk_Result{
 				Name:    "Runtime Alerts",
 				Factors: []string{"FakePolicy0 (Severity: CRITICAL)", "FakePolicy1 (Severity: MEDIUM)"},
@@ -79,6 +83,7 @@ func TestDNRAlerts(t *testing.T) {
 		{
 			name:                "Tons of alerts",
 			integrationExists:   true,
+			expectedClusterID:   fakeClusterID,
 			expectedNamespace:   fakeNamespace,
 			expectedServiceName: fakeServiceName,
 			mockAlerts: []dnrintegration.PolicyAlert{
@@ -105,10 +110,7 @@ func TestDNRAlerts(t *testing.T) {
 				{PolicyName: "FakePolicy0", SeverityWord: "CRITICAL", SeverityScore: 100},
 				{PolicyName: "FakePolicy0", SeverityWord: "CRITICAL", SeverityScore: 100},
 			},
-			deployment: &v1.Deployment{
-				Name:      fakeServiceName,
-				Namespace: fakeNamespace,
-			},
+			deployment: fakeDeployment,
 			expectedResult: &v1.Risk_Result{
 				Name: "Runtime Alerts",
 				Factors: []string{
@@ -128,6 +130,7 @@ func TestDNRAlerts(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			mult := NewDNRAlert(&getters.MockDNRIntegrationGetter{
 				MockDNRIntegration: &getters.MockDNRIntegration{
+					ExpectedClusterID:   c.expectedClusterID,
 					ExpectedNamespace:   c.expectedNamespace,
 					ExpectedServiceName: c.expectedServiceName,
 					MockAlerts:          c.mockAlerts,

@@ -83,13 +83,14 @@ class Table extends Component {
     getRows = () => {
         if (this.props.source === 'dnrIntegrations') {
             return this.props.integrations.map(dnrIntegration => {
-                const cluster = this.props.clusters.find(
-                    ({ id }) => id === dnrIntegration.clusterId
-                );
-                const clusterName = cluster ? cluster.name : '';
+                const clusterNames = [];
+                dnrIntegration.clusterIds.forEach(clusterId => {
+                    const cluster = this.props.clusters.find(({ id }) => id === clusterId);
+                    if (cluster && cluster.name) clusterNames.push(cluster.name);
+                });
                 return Object.assign({}, dnrIntegration, {
-                    clusterName,
-                    name: `D&R Integration for cluster ${clusterName}`
+                    clusterNames: clusterNames.join(', '),
+                    name: `D&R Integration`
                 });
             });
         }

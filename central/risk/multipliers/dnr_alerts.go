@@ -31,15 +31,11 @@ func NewDNRAlert(integrationGetter getters.DNRIntegrationGetter) Multiplier {
 
 // Score takes a deployment and evaluates its risk based on the service configuration
 func (d *dnrAlertMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
-	integration, exists, err := d.integrationGetter.ForCluster(deployment.GetClusterId())
-	if err != nil {
-		logger.Errorf("Error retrieving D&R integration for cluster %s: %s", deployment.GetClusterId(), err)
-		return nil
-	}
+	integration, exists := d.integrationGetter.ForCluster(deployment.GetClusterId())
 	if !exists {
 		return nil
 	}
-	alerts, err := integration.Alerts(deployment.GetNamespace(), deployment.GetName())
+	alerts, err := integration.Alerts(deployment.GetClusterId(), deployment.GetNamespace(), deployment.GetName())
 	if err != nil {
 		logger.Errorf("Couldn't get D&R alerts for deployment %#v: %s", deployment, err)
 	}

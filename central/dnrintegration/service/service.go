@@ -6,6 +6,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/dnrintegration/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -33,10 +34,11 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.DataStore, clusters clusterDataStore.DataStore, enricher enrichment.Enricher) Service {
+func New(datastore datastore.DataStore, clusters clusterDataStore.DataStore, deployments deploymentDataStore.DataStore, enricher enrichment.Enricher) Service {
 	return &serviceImpl{
-		datastore: datastore,
-		clusters:  clusters,
-		enricher:  enricher,
+		datastore:   datastore,
+		deployments: deployments,
+		clusters:    clusters,
+		enricher:    enricher,
 	}
 }

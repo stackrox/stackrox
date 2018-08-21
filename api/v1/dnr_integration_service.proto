@@ -10,10 +10,10 @@ import "api/v1/common.proto";
 package v1;
 
 message DNRIntegration {
-    string id                = 1;
-    string cluster_id        = 2;
-    string director_endpoint = 3;
-    string auth_token        = 4;
+    string id                   = 1;
+    repeated string cluster_ids = 2;
+    string director_endpoint    = 3;
+    string auth_token           = 4;
 }
 
 message GetDNRIntegrationsRequest {

@@ -53,8 +53,17 @@ func (b *storeImpl) GetDNRIntegrations(req *v1.GetDNRIntegrationsRequest) (integ
 				return fmt.Errorf("proto unmarshalling: %s", err)
 			}
 			// If a cluster id is provided, then only return integrations that match it.
-			if req.GetClusterId() != "" && integration.GetClusterId() != req.GetClusterId() {
-				return nil
+			if req.GetClusterId() != "" {
+				found := false
+				for _, clusterID := range integration.GetClusterIds() {
+					if clusterID == req.GetClusterId() {
+						found = true
+						break
+					}
+				}
+				if !found {
+					return nil
+				}
 			}
 			integrations = append(integrations, &integration)
 			return nil
