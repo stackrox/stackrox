@@ -5,17 +5,16 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/detection"
+	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
+	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
+	runTimeDetectiomn "github.com/stackrox/rox/central/detection/runtime"
+	"github.com/stackrox/rox/central/enrichanddetect"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/logging"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Service provides the interface to the microservice that serves alert data.
@@ -31,22 +30,35 @@ type Service interface {
 	PutPolicy(ctx context.Context, request *v1.Policy) (*empty.Empty, error)
 	PatchPolicy(ctx context.Context, request *v1.PatchPolicyRequest) (*empty.Empty, error)
 	DeletePolicy(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error)
+
 	ReassessPolicies(context.Context, *empty.Empty) (*empty.Empty, error)
 	DryRunPolicy(ctx context.Context, request *v1.Policy) (*v1.DryRunResponse, error)
+
 	GetPolicyCategories(context.Context, *empty.Empty) (*v1.PolicyCategoriesResponse, error)
 	RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) (*empty.Empty, error)
 	DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) (*empty.Empty, error)
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(policies datastore.DataStore, clusters clusterDataStore.DataStore, deployments deploymentDataStore.DataStore, notifiers notifierStore.Store, detector detection.Detector) Service {
+func New(policies datastore.DataStore,
+	clusters clusterDataStore.DataStore,
+	deployments deploymentDataStore.DataStore,
+	notifiers notifierStore.Store,
+	buildTimePolicies buildTimeDetection.PolicySet,
+	deployTimeDetector deployTimeDetection.Detector,
+	runTimePolicies runTimeDetectiomn.PolicySet,
+	processor notifierProcessor.Processor,
+	enricherAndDetector enrichanddetect.EnricherAndDetector) Service {
 	return &serviceImpl{
 		policies:    policies,
 		clusters:    clusters,
 		deployments: deployments,
-		notifiers:   notifiers,
 
-		detector: detector,
+		buildTimePolicies:   buildTimePolicies,
+		deployTimeDetector:  deployTimeDetector,
+		runTimePolicies:     runTimePolicies,
+		processor:           processor,
+		enricherAndDetector: enricherAndDetector,
 
 		validator: newPolicyValidator(notifiers, clusters),
 	}

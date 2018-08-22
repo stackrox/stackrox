@@ -33,21 +33,43 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.detector = &mockDetector{}
 }
 
-func (suite *PipelineTestSuite) TestCreateResponse() {
+func (suite *PipelineTestSuite) TestCreateResponseForUpdate() {
 	events := fakeDeploymentEvents()
 
 	// Expect that our enforcement generator is called with expected data.
-	suite.detector.On("ProcessDeploymentEvent", events[0].GetDeployment(), events[0].GetAction()).Return("a1", v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT)
+	suite.detector.On("DeploymentUpdated", events[0].GetDeployment()).
+		Return("a1", v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, nil)
 
 	// Call function.
 	tested := &createResponseImpl{
-		toEnforcement: suite.detector.ProcessDeploymentEvent,
+		onUpdate: suite.detector.DeploymentUpdated,
+		onRemove: suite.detector.DeploymentRemoved,
 	}
-	response := tested.do(events[0].Action, events[0].GetDeployment())
+	response := tested.do(events[0].GetDeployment(), events[0].GetAction())
 
 	// Pull one more time to get nil
 	suite.Equal(events[0].GetDeployment().GetId(), response.GetDeployment().GetDeploymentId())
 	suite.Equal("a1", response.GetDeployment().GetAlertId())
+	suite.detector.AssertExpectations(suite.T())
+}
+
+func (suite *PipelineTestSuite) TestCreateResponseForRemove() {
+	events := fakeDeploymentEvents()
+
+	// Expect that our enforcement generator is called with expected data.
+	suite.detector.On("DeploymentRemoved", events[0].GetDeployment()).Return(nil)
+
+	// Call function.
+	tested := &createResponseImpl{
+		onUpdate: suite.detector.DeploymentUpdated,
+		onRemove: suite.detector.DeploymentRemoved,
+	}
+	response := tested.do(events[0].GetDeployment(), v1.ResourceAction_REMOVE_RESOURCE)
+
+	// Pull one more time to get nil
+	suite.Equal(events[0].GetDeployment().GetId(), response.GetDeployment().GetDeploymentId())
+	suite.Empty(response.GetDeployment().GetAlertId())
+	suite.Equal(v1.EnforcementAction_UNSET_ENFORCEMENT, response.GetDeployment().GetEnforcement())
 	suite.detector.AssertExpectations(suite.T())
 }
 
@@ -250,7 +272,12 @@ type mockDetector struct {
 	mock.Mock
 }
 
-func (d *mockDetector) ProcessDeploymentEvent(deployment *v1.Deployment, action v1.ResourceAction) (alertID string, enforcement v1.EnforcementAction) {
-	args := d.Called(deployment, action)
-	return args.Get(0).(string), args.Get(1).(v1.EnforcementAction)
+func (d *mockDetector) DeploymentUpdated(deployment *v1.Deployment) (alertID string, enforcement v1.EnforcementAction, err error) {
+	args := d.Called(deployment)
+	return args.Get(0).(string), args.Get(1).(v1.EnforcementAction), args.Error(2)
+}
+
+func (d *mockDetector) DeploymentRemoved(deployment *v1.Deployment) error {
+	args := d.Called(deployment)
+	return args.Error(0)
 }

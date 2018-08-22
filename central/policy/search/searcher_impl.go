@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/central/policy/index"
 	"github.com/stackrox/rox/central/policy/store"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -20,26 +19,6 @@ func (ds *searcherImpl) buildIndex() error {
 		return err
 	}
 	return ds.indexer.AddPolicies(policies)
-}
-
-func (ds *searcherImpl) loadDefaults() error {
-	if policies, err := ds.storage.GetPolicies(); err == nil && len(policies) > 0 {
-		return nil
-	}
-
-	policies, err := defaults.Policies()
-	if err != nil {
-		return err
-	}
-
-	for _, p := range policies {
-		if _, err := ds.storage.AddPolicy(p); err != nil {
-			return err
-		}
-	}
-
-	log.Infof("Loaded %d default Policies", len(policies))
-	return nil
 }
 
 // SearchRawPolicies retrieves Policies from the indexer and storage

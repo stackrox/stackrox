@@ -5,20 +5,10 @@ option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
 import "api/v1/alert_service.proto";
+import "api/v1/deployment_service.proto";
 import "api/v1/image_service.proto";
-import "api/v1/search_service.proto";
 
 package v1;
-
-message DetectionRequest {
-    // We can attach a query to filter which policies are matched against.
-    RawQuery policies_filter = 1;
-
-    // We can only detect on images for now.
-    oneof resource {
-        Image image = 2;
-    }
-}
 
 message DetectionResponse {
     repeated Alert alerts = 1;
@@ -26,9 +16,16 @@ message DetectionResponse {
 
 service DetectionService {
 
-    rpc Detect(DetectionRequest) returns (DetectionResponse) {
+    rpc DetectBuildTime(Image) returns (DetectionResponse) {
         option (google.api.http) = {
-            post: "/v1/detect"
+            post: "/v1/detect/build"
+            body: "*"
+        };
+    }
+
+    rpc DetectRunTime(Container) returns (DetectionResponse) {
+        option (google.api.http) = {
+            post: "/v1/detect/run"
             body: "*"
         };
     }

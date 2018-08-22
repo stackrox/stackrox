@@ -5,7 +5,7 @@ import (
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/detection"
+	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/store"
 	"github.com/stackrox/rox/central/networkgraph"
@@ -21,7 +21,7 @@ var (
 )
 
 func initialize() {
-	as = New(detection.GetDetector(), risk.GetScorer(), sensorEventDataStore.Singleton(), imageDataStore.Singleton(),
+	as = New(deployTimeDetection.SingletonDetector(), risk.GetScorer(), sensorEventDataStore.Singleton(), imageDataStore.Singleton(),
 		deploymentDataStore.Singleton(), clusterDataStore.Singleton(), networkPolicyStore.Singleton(),
 		namespaceStore.Singleton(), networkgraph.Singleton())
 }

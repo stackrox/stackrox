@@ -13,6 +13,31 @@ import "api/v1/search_service.proto";
 
 package v1;
 
+// Top level policy object.
+///////////////////////////
+
+message Policy {
+    string id                                   = 1;
+    string name                                 = 2;
+    string description                          = 3;
+    string rationale                            = 4;
+    string remediation                          = 5;
+    bool disabled                               = 6;
+    repeated string categories                  = 7;
+    PolicyFields fields                         = 8;
+
+    LifecycleStage lifecycle_stage              = 9;
+    repeated Whitelist whitelists               = 10;
+    repeated Scope scope                        = 11;
+
+    Severity severity                           = 12;
+    EnforcementAction enforcement               = 13;
+    repeated string notifiers                   = 14;
+}
+
+// Policy components.
+/////////////////////
+
 message Whitelist {
     string                    name       = 1;
     message Container {
@@ -44,6 +69,12 @@ enum MathOP {
     MIN = 0;
     MAX = 1;
     AVG = 2;
+}
+
+enum LifecycleStage {
+    DEPLOY_TIME = 0;
+    BUILD_TIME  = 1;
+    RUN_TIME    = 2;
 }
 
 message NumericalPolicy {
@@ -141,24 +172,8 @@ message PolicyFields {
     ResourcePolicy total_resource_policy     = 22;
 }
 
-message Policy {
-    string id                                   = 1;
-    string name                                 = 2;
-    Severity severity                           = 3;
-    string description                          = 4;
-    string rationale                            = 5;
-    string remediation                          = 6;
-    bool disabled                               = 7;
-    repeated string categories                  = 8;
-    repeated Scope scope                        = 9;
-    EnforcementAction enforcement               = 10;
-
-    repeated string notifiers                   = 11;
-
-    PolicyFields fields                         = 12;
-
-    repeated Whitelist whitelists               = 13;
-}
+// API supporting messages.
+///////////////////////////
 
 message DryRunResponse {
     message Alert {

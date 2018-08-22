@@ -25,8 +25,8 @@ import (
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
-	"github.com/stackrox/rox/central/detection"
 	dnrIntegrationService "github.com/stackrox/rox/central/dnrintegration/service"
+	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/globaldb"
 	globaldbHandlers "github.com/stackrox/rox/central/globaldb/handlers"
 	imageService "github.com/stackrox/rox/central/image/service"
@@ -123,6 +123,7 @@ func (c *central) startGRPCServer() {
 		summaryService.Singleton(),
 	)
 
+	enrichanddetect.GetLoop().Start()
 	c.server.Start()
 }
 
@@ -255,7 +256,7 @@ func (c *central) processForever() {
 		select {
 		case sig := <-c.signalsC:
 			log.Infof("Caught %s signal", sig)
-			detection.GetDetector().Stop()
+			enrichanddetect.GetLoop().Stop()
 			globaldb.Close()
 			log.Infof("Central terminated")
 			return

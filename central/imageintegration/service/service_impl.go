@@ -6,7 +6,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/detection"
+	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/service"
@@ -48,9 +48,9 @@ type serviceImpl struct {
 	scannerFactory  scanners.Factory
 	toNotify        integration.ToNotify
 
-	datastore        datastore.DataStore
-	clusterDatastore clusterDatastore.DataStore
-	detector         detection.Detector
+	datastore           datastore.DataStore
+	clusterDatastore    clusterDatastore.DataStore
+	enrichAndDetectLoop enrichanddetect.Loop
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -126,7 +126,7 @@ func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *v1.Image
 	if err := s.toNotify.NotifyUpdated(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	go s.detector.EnrichAndReprocess()
+	go s.enrichAndDetectLoop.ShortCircuit()
 	return &empty.Empty{}, nil
 }
 
@@ -150,7 +150,7 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *v1.Imag
 	if err := s.toNotify.NotifyUpdated(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	go s.detector.EnrichAndReprocess()
+	go s.enrichAndDetectLoop.ShortCircuit()
 	return request, nil
 }
 

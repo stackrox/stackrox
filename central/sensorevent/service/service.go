@@ -4,7 +4,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/detection"
+	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/store"
 	"github.com/stackrox/rox/central/networkgraph"
@@ -35,7 +35,7 @@ type Service interface {
 }
 
 // New returns a new instance of service.
-func New(detector detection.Detector,
+func New(detector deployTimeDetection.Detector,
 	scorer risk.Scorer,
 	deploymentEvents deploymentEventStore.Store,
 	images imageDataStore.DataStore,

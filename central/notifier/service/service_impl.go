@@ -7,6 +7,9 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
+	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
+	runTimeDetectiomn "github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -44,7 +47,10 @@ var (
 type serviceImpl struct {
 	storage   store.Store
 	processor processor.Processor
-	detector  policyDetector
+
+	buildTimePolicies  buildTimeDetection.PolicySet
+	deployTimePolicies deployTimeDetection.PolicySet
+	runTimePolicies    runTimeDetectiomn.PolicySet
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -190,8 +196,11 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 	if err := s.storage.RemoveNotifier(request.GetId()); err != nil {
 		return nil, service.ReturnErrorCode(err)
 	}
+
 	s.processor.RemoveNotifier(request.GetId())
-	s.detector.RemoveNotifier(request.GetId())
+	s.buildTimePolicies.RemoveNotifier(request.GetId())
+	s.deployTimePolicies.RemoveNotifier(request.GetId())
+	s.runTimePolicies.RemoveNotifier(request.GetId())
 	return &empty.Empty{}, nil
 }
 

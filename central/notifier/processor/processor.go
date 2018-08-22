@@ -17,12 +17,15 @@ var (
 )
 
 // Processor is the interface for processing benchmarks, notifiers, and policies.
+//go:generate mockery -name=Processor
 type Processor interface {
 	Start()
 	ProcessAlert(alert *v1.Alert)
 	ProcessBenchmark(schedule *v1.BenchmarkSchedule)
-	RemoveNotifier(id string)
+
 	UpdateNotifier(notifier notifiers.Notifier)
+	RemoveNotifier(id string)
+
 	GetIntegratedPolicies(notifierID string) (output []*v1.Policy)
 	UpdatePolicy(policy *v1.Policy)
 	RemovePolicy(policy *v1.Policy)

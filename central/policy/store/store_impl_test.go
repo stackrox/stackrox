@@ -30,7 +30,7 @@ func (suite *PolicyStoreTestSuite) SetupSuite() {
 	}
 
 	suite.db = db
-	suite.store = New(db)
+	suite.store = newWithoutDefaults(db)
 }
 
 func (suite *PolicyStoreTestSuite) TeardownSuite() {

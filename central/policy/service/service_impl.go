@@ -8,14 +8,18 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/detection"
-	notifierStore "github.com/stackrox/rox/central/notifier/store"
+	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
+	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
+	runTimeDetectiomn "github.com/stackrox/rox/central/detection/runtime"
+	"github.com/stackrox/rox/central/enrichanddetect"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/service"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/compiledpolicies"
+	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -55,9 +59,12 @@ type serviceImpl struct {
 	policies    datastore.DataStore
 	clusters    clusterDataStore.DataStore
 	deployments deploymentDataStore.DataStore
-	notifiers   notifierStore.Store
 
-	detector detection.Detector
+	buildTimePolicies   buildTimeDetection.PolicySet
+	deployTimeDetector  deployTimeDetection.Detector
+	runTimePolicies     runTimeDetectiomn.PolicySet
+	processor           notifierProcessor.Processor
+	enricherAndDetector enrichanddetect.EnricherAndDetector
 
 	validator *policyValidator
 }
@@ -142,7 +149,8 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.Policy) (*v1.P
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	policy, err := compiledpolicies.New(request)
+	// Check that the policy compiles
+	_, err := deploymentMatcher.Compile(request)
 	if err != nil {
 		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
 	}
@@ -152,8 +160,9 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.Policy) (*v1.P
 		return nil, err
 	}
 	request.Id = id
-	policy.GetProto().Id = id
-	s.detector.UpdatePolicy(policy)
+	if err := s.updateDetectionWithUpdatedPolicy(request); err != nil {
+		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
+	}
 	return request, nil
 }
 
@@ -163,12 +172,9 @@ func (s *serviceImpl) PutPolicy(ctx context.Context, request *v1.Policy) (*empty
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	policy, err := compiledpolicies.New(request)
-	if err != nil {
+	if err := s.updateDetectionWithUpdatedPolicy(request); err != nil {
 		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
 	}
-
-	s.detector.UpdatePolicy(policy)
 	if err := s.policies.UpdatePolicy(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -195,17 +201,30 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "A policy id must be specified to delete a Policy")
 	}
+
+	policy, exists, err := s.policies.GetPolicy(request.GetId())
+	if err != nil {
+		return nil, service.ReturnErrorCode(err)
+	} else if !exists {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("Policy with id '%s' not found", request.GetId()))
+	}
+
+	if err := s.updateDetectionWithRemovedPolicy(policy); err != nil {
+		return nil, service.ReturnErrorCode(err)
+	}
 	if err := s.policies.RemovePolicy(request.GetId()); err != nil {
 		return nil, service.ReturnErrorCode(err)
 	}
-	s.detector.RemovePolicy(request.GetId())
 	return &empty.Empty{}, nil
 }
 
 // ReassessPolicies manually triggers enrichment of all deployments, and re-assesses policies if there's updated data.
 func (s *serviceImpl) ReassessPolicies(context.Context, *empty.Empty) (*empty.Empty, error) {
-	go s.detector.EnrichAndReprocess()
-
+	deployments, err := s.deployments.GetDeployments()
+	if err != nil {
+		return &empty.Empty{}, err
+	}
+	go s.reprocessDeployments(deployments)
 	return &empty.Empty{}, nil
 }
 
@@ -215,9 +234,9 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *v1.Policy) (*v1
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	policy, err := compiledpolicies.New(request)
+	matcher, err := deploymentMatcher.Compile(request)
 	if err != nil {
-		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
+		return nil, fmt.Errorf("policy does not compile: %+v", err)
 	}
 
 	var resp v1.DryRunResponse
@@ -226,15 +245,14 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *v1.Policy) (*v1
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	for _, deployment := range deployments {
-		alert, _, excluded := s.detector.Detect(detection.NewTask(deployment, v1.ResourceAction_DRYRUN_RESOURCE, policy))
-		if alert != nil {
-			violations := make([]string, 0, len(alert.GetViolations()))
-			for _, v := range alert.GetViolations() {
-				violations = append(violations, v.GetMessage())
+		violations := matcher(deployment)
+		if len(violations) > 0 {
+			// Collect the violation messages as strings for the output.
+			convertedViolations := make([]string, 0, len(violations))
+			for _, violation := range violations {
+				convertedViolations = append(convertedViolations, violation.GetMessage())
 			}
-			resp.Alerts = append(resp.GetAlerts(), &v1.DryRunResponse_Alert{Deployment: deployment.GetName(), Violations: violations})
-		} else if excluded != nil {
-			resp.Excluded = append(resp.GetExcluded(), excluded)
+			resp.Alerts = append(resp.Alerts, &v1.DryRunResponse_Alert{Deployment: deployment.GetName(), Violations: convertedViolations})
 		}
 	}
 	return &resp, nil
@@ -302,4 +320,31 @@ func (s *serviceImpl) getPolicyCategorySet() (map[string]struct{}, error) {
 	}
 
 	return categorySet, nil
+}
+
+func (s *serviceImpl) reprocessDeployments(deployments []*v1.Deployment) {
+	for _, deployment := range deployments {
+		s.enricherAndDetector.EnrichAndDetect(deployment)
+	}
+}
+
+func (s *serviceImpl) updateDetectionWithUpdatedPolicy(policy *v1.Policy) error {
+	s.processor.UpdatePolicy(policy)
+	switch policy.GetLifecycleStage() {
+	case v1.LifecycleStage_BUILD_TIME:
+		return s.buildTimePolicies.UpsertPolicy(policy)
+	case v1.LifecycleStage_RUN_TIME:
+		return s.runTimePolicies.UpsertPolicy(policy)
+	default:
+		return s.deployTimeDetector.UpsertPolicy(policy)
+	}
+}
+
+func (s *serviceImpl) updateDetectionWithRemovedPolicy(policy *v1.Policy) error {
+	s.processor.RemovePolicy(policy)
+	errorList := errorhelpers.NewErrorList("error removing policy from detection: ")
+	errorList.AddError(s.buildTimePolicies.RemovePolicy(policy.GetId()))
+	errorList.AddError(s.runTimePolicies.RemovePolicy(policy.GetId()))
+	errorList.AddError(s.deployTimeDetector.RemovePolicy(policy.GetId()))
+	return errorList.ToError()
 }

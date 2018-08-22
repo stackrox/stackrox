@@ -6,7 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/detection"
+	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/store"
 	networkPolicyStore "github.com/stackrox/rox/central/networkpolicies/store"
@@ -27,7 +27,7 @@ var logger = logging.LoggerForModule()
 
 // Service is the struct that manages the SensorEvent API
 type serviceImpl struct {
-	detector detection.Detector
+	detector deployTimeDetection.Detector
 	scorer   risk.Scorer
 
 	deploymentEvents sensorEventStore.Store

@@ -23,9 +23,6 @@ func New(storage store.Store, indexer index.Indexer) (Searcher, error) {
 		storage: storage,
 		indexer: indexer,
 	}
-	if err := ds.loadDefaults(); err != nil {
-		return nil, err
-	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err
 	}

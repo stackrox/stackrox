@@ -16,14 +16,15 @@ var (
 )
 
 // Enricher enriches images with data from registries and scanners.
+//go:generate mockery -name=Enricher
 type Enricher interface {
 	Enrich(deployment *v1.Deployment) (bool, error)
 
 	UpdateMultiplier(multiplier *v1.Multiplier)
 	RemoveMultiplier(id string)
 
-	ReprocessRisk()
-	ReprocessDeploymentRisk(deployment *v1.Deployment) error
+	ReprocessRiskAsync()
+	ReprocessDeploymentRiskAsync(deployment *v1.Deployment)
 }
 
 // New creates and returns a new Enricher.

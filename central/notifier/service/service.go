@@ -5,6 +5,9 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
+	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
+	runTimeDetectiomn "github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -36,10 +39,16 @@ type policyDetector interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(storage store.Store, processor processor.Processor, detector policyDetector) Service {
+func New(storage store.Store,
+	processor processor.Processor,
+	buildTimePolicies buildTimeDetection.PolicySet,
+	deployTimePolicies deployTimeDetection.PolicySet,
+	runTimePolicies runTimeDetectiomn.PolicySet) Service {
 	return &serviceImpl{
-		storage:   storage,
-		processor: processor,
-		detector:  detector,
+		storage:            storage,
+		processor:          processor,
+		buildTimePolicies:  buildTimePolicies,
+		deployTimePolicies: deployTimePolicies,
+		runTimePolicies:    runTimePolicies,
 	}
 }

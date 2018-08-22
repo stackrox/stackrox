@@ -108,7 +108,7 @@ func (s *serviceImpl) PostDNRIntegration(ctx context.Context, req *v1.DNRIntegra
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	req.Id = id
-	go s.enricher.ReprocessRisk()
+	s.enricher.ReprocessRiskAsync()
 
 	return req, nil
 }
@@ -139,7 +139,7 @@ func (s *serviceImpl) PutDNRIntegration(ctx context.Context, req *v1.DNRIntegrat
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	go s.enricher.ReprocessRisk()
+	s.enricher.ReprocessRiskAsync()
 
 	return req, nil
 }
@@ -150,7 +150,7 @@ func (s *serviceImpl) DeleteDNRIntegration(ctx context.Context, req *v1.Resource
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	go s.enricher.ReprocessRisk()
+	s.enricher.ReprocessRiskAsync()
 
 	return &empty.Empty{}, nil
 }

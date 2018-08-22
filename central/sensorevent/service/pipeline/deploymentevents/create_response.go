@@ -4,18 +4,28 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
-func newCreateResponse(toEnforcement func(deployment *v1.Deployment, action v1.ResourceAction) (alertID string, enforcement v1.EnforcementAction)) *createResponseImpl {
+func newCreateResponse(onUpdate func(deployment *v1.Deployment) (string, v1.EnforcementAction, error),
+	onRemove func(deployment *v1.Deployment) error) *createResponseImpl {
 	return &createResponseImpl{
-		toEnforcement: toEnforcement,
+		onUpdate: onUpdate,
+		onRemove: onRemove,
 	}
 }
 
 type createResponseImpl struct {
-	toEnforcement func(deployment *v1.Deployment, action v1.ResourceAction) (alertID string, enforcement v1.EnforcementAction)
+	onUpdate func(deployment *v1.Deployment) (string, v1.EnforcementAction, error)
+	onRemove func(deployment *v1.Deployment) error
 }
 
-func (s *createResponseImpl) do(action v1.ResourceAction, deployment *v1.Deployment) *v1.SensorEventResponse {
-	alertID, enforcement := s.toEnforcement(deployment, action)
+func (s *createResponseImpl) do(deployment *v1.Deployment, action v1.ResourceAction) *v1.SensorEventResponse {
+	var alertID string
+	var enforcement v1.EnforcementAction
+	if action == v1.ResourceAction_REMOVE_RESOURCE {
+		_ = s.onRemove(deployment)
+	} else {
+		alertID, enforcement, _ = s.onUpdate(deployment)
+	}
+
 	if enforcement != v1.EnforcementAction_UNSET_ENFORCEMENT {
 		log.Warnf("Taking enforcement action %s against deployment %s", enforcement, deployment.GetName())
 	}

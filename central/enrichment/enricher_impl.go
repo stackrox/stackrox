@@ -55,35 +55,41 @@ func (e *enricherImpl) Enrich(deployment *v1.Deployment) (bool, error) {
 // UpdateMultiplier upserts a multiplier into the scorer
 func (e *enricherImpl) UpdateMultiplier(multiplier *v1.Multiplier) {
 	e.scorer.UpdateUserDefinedMultiplier(multiplier)
-	go e.ReprocessRisk()
+	e.ReprocessRiskAsync()
 }
 
 // RemoveMultiplier removes a multiplier from the scorer
 func (e *enricherImpl) RemoveMultiplier(id string) {
 	e.scorer.RemoveUserDefinedMultiplier(id)
-	go e.ReprocessRisk()
+	e.ReprocessRiskAsync()
 }
 
 // ReprocessRisk iterates over all of the deployments and reprocesses the risk for them
-func (e *enricherImpl) ReprocessRisk() {
-	deployments, err := e.deploymentStorage.GetDeployments()
-	if err != nil {
-		logger.Errorf("Error reprocessing risk: %s", err)
-		return
-	}
-
-	for _, deployment := range deployments {
-		if err := e.addRiskToDeployment(deployment); err != nil {
-			logger.Errorf("Error reprocessing deployment risk: %s", err)
+func (e *enricherImpl) ReprocessRiskAsync() {
+	go func() {
+		deployments, err := e.deploymentStorage.GetDeployments()
+		if err != nil {
+			logger.Errorf("Error reprocessing risk: %s", err)
 			return
 		}
-	}
+
+		for _, deployment := range deployments {
+			if err := e.addRiskToDeployment(deployment); err != nil {
+				logger.Errorf("Error reprocessing deployment risk: %s", err)
+				return
+			}
+		}
+	}()
 }
 
 // ReprocessDeploymentRisk will reprocess the passed deployments risk and save the results
-func (e *enricherImpl) ReprocessDeploymentRisk(deployment *v1.Deployment) error {
-	deployment = proto.Clone(deployment).(*v1.Deployment)
-	return e.addRiskToDeployment(deployment)
+func (e *enricherImpl) ReprocessDeploymentRiskAsync(deployment *v1.Deployment) {
+	go func() {
+		deployment = proto.Clone(deployment).(*v1.Deployment)
+		if err := e.addRiskToDeployment(deployment); err != nil {
+			logger.Errorf("Error reprocessing risk for deployment %s: %s", deployment.GetName(), err)
+		}
+	}()
 }
 
 // addRiskToDeployment will add the risk
