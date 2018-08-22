@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/search/query"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/alert/index/mappings"
 	"github.com/stackrox/rox/central/metrics"
@@ -56,26 +55,6 @@ func (b *indexerImpl) SearchAlerts(request *v1.ParsedSearchRequest) ([]search.Re
 			Values: []string{"false"},
 		}
 	}
-	return blevesearch.RunSearchRequest(v1.SearchCategory_ALERTS, request, b.index, ScopeToAlertQuery, mappings.OptionsMap)
-}
 
-// ScopeToAlertQuery returns an alert query for the given scope.
-func ScopeToAlertQuery(scope *v1.Scope) query.Query {
-	conjunctionQuery := bleve.NewConjunctionQuery()
-	if scope.GetCluster() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("alert.deployment.cluster_name", scope.GetCluster()))
-	}
-	if scope.GetNamespace() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("alert.deployment.namespace", scope.GetNamespace()))
-	}
-	if scope.GetLabel().GetKey() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("alert.deployment.labels.key", scope.GetLabel().GetKey()))
-	}
-	if scope.GetLabel().GetValue() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("alert.deployment.labels.value", scope.GetLabel().GetValue()))
-	}
-	if len(conjunctionQuery.Conjuncts) == 0 {
-		return bleve.NewMatchNoneQuery()
-	}
-	return conjunctionQuery
+	return blevesearch.RunSearchRequest(v1.SearchCategory_ALERTS, request, b.index, mappings.OptionsMap)
 }

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/search/query"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/policy/index/mappings"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -47,37 +46,5 @@ func (b *indexerImpl) DeletePolicy(id string) error {
 // SearchPolicies takes a SearchRequest and finds any matches
 func (b *indexerImpl) SearchPolicies(request *v1.ParsedSearchRequest) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Policy")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_POLICIES, request, b.index, ScopeToPolicyQuery, mappings.OptionsMap)
-}
-
-// ScopeToPolicyQuery returns a policy query for the given scope.
-func ScopeToPolicyQuery(scope *v1.Scope) query.Query {
-	conjunctionQuery := bleve.NewConjunctionQuery()
-	if scope.GetCluster() != "" {
-		disjunction := bleve.NewDisjunctionQuery()
-		disjunction.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("policy.scope.cluster", scope.GetCluster()))
-		// Match everything then negate it
-		regexQuery := bleve.NewRegexpQuery(".*")
-		regexQuery.FieldVal = "policy.scope.cluster"
-
-		q := bleve.NewBooleanQuery()
-		q.AddMustNot(regexQuery)
-		disjunction.AddQuery(q)
-
-		// This equates to either matching the cluster or having no clusters
-		conjunctionQuery.AddQuery(disjunction)
-	}
-	if scope.GetNamespace() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("policy.scope.namespace", scope.GetNamespace()))
-	}
-	if scope.GetLabel().GetKey() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("policy.scope.label.key", scope.GetLabel().GetKey()))
-	}
-	if scope.GetLabel().GetValue() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("policy.scope.label.value", scope.GetLabel().GetValue()))
-	}
-	if len(conjunctionQuery.Conjuncts) == 0 {
-		return bleve.NewMatchNoneQuery()
-	}
-	return conjunctionQuery
+	return blevesearch.RunSearchRequest(v1.SearchCategory_POLICIES, request, b.index, mappings.OptionsMap)
 }

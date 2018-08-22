@@ -34,7 +34,7 @@ func (suite *ImageIndexTestSuite) SetupSuite() {
 
 	suite.indexer = New(tmpIndex)
 
-	suite.NoError(suite.deploymentIndexer.AddDeployment(fixtures.GetAlert().GetDeployment()))
+	suite.NoError(suite.deploymentIndexer.AddDeployment(fixtures.GetDeployment()))
 
 	for _, c := range fixtures.GetAlert().GetDeployment().GetContainers() {
 		suite.indexer.AddImage(c.GetImage())
@@ -46,34 +46,25 @@ func (suite *ImageIndexTestSuite) TeardownSuite() {
 }
 
 func (suite *ImageIndexTestSuite) TestSearchImages() {
-	// Test no fields give us all of the images.
-	request := &v1.ParsedSearchRequest{}
+	// Test just cluster -> should give all images
+	request := &v1.ParsedSearchRequest{
+		Fields: map[string]*v1.ParsedSearchRequest_Values{
+			search.Cluster: {
+				Values: []string{"prod cluster"},
+			},
+		},
+	}
 
 	results, err := suite.indexer.SearchImages(request)
 	suite.NoError(err)
 	suite.Len(results, 2)
 
-	// Test just cluster -> should give all images
-	request = &v1.ParsedSearchRequest{
-		Scopes: []*v1.Scope{
-			{
-				Cluster: "prod cluster",
-			},
-		},
-	}
-
-	results, err = suite.indexer.SearchImages(request)
-	suite.NoError(err)
-	suite.Len(results, 2)
-
 	// Test both scopes and fields defined
 	request = &v1.ParsedSearchRequest{
-		Scopes: []*v1.Scope{
-			{
-				Cluster: "prod cluster",
-			},
-		},
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
+			search.Cluster: {
+				Values: []string{"prod cluster"},
+			},
 			search.ImageRegistry: {
 				Values: []string{"stackrox.io"},
 			},

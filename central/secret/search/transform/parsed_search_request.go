@@ -43,23 +43,9 @@ func (r ParsedSearchRequestWrapper) toQuery() (query.Query, error) {
 	}
 
 	// We search the indices for matches in both secret and relationship fields.
-	sq, err := blevesearch.BuildQuery(v1.SearchCategory_SECRETS, r.ParsedSearchRequest, scopeToQuery, options.Map)
+	sq, err := blevesearch.BuildQuery(v1.SearchCategory_SECRETS, r.ParsedSearchRequest, options.Map)
 	if err != nil {
 		return nil, err
 	}
 	return sq, nil
-}
-
-func scopeToQuery(scope *v1.Scope) query.Query {
-	conjunctionQuery := bleve.NewConjunctionQuery()
-	if scope.GetCluster() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("secret_and_relationship.relationship.cluster_relationship.name", scope.GetCluster()))
-	}
-	if scope.GetNamespace() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("secret_and_relationship.relationship.namespace_relationship.namespace", scope.GetNamespace()))
-	}
-	if len(conjunctionQuery.Conjuncts) == 0 {
-		return bleve.NewMatchAllQuery()
-	}
-	return conjunctionQuery
 }

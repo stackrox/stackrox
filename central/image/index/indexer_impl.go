@@ -1,12 +1,11 @@
 package index
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/blevesearch/bleve"
 	"github.com/deckarep/golang-set"
-	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
+	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/image/index/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -64,10 +63,10 @@ func (b *indexerImpl) SearchImages(request *v1.ParsedSearchRequest) (results []s
 	// If we have scopes set, or the request has nothing set, get the list of image SHAs from the deployments.
 	// If no scopes are set, this returns ALL image SHAs present in deployments.
 	var imageSHAs mapset.Set
-	if len(request.GetScopes()) > 0 || (len(request.GetFields()) == 0 && request.GetStringQuery() == "") {
-		if imageSHAs, err = b.getImageSHAsFromScopes(request.GetScopes()); err != nil {
-			return
-		}
+
+	request, imageSHAs, filteredByDeployments, err := b.getImageSHAsFromDeploymentQuery(request)
+	if err != nil {
+		return nil, err
 	}
 
 	// If there is not query or query files, then we don't need to filter our image set.
@@ -77,20 +76,20 @@ func (b *indexerImpl) SearchImages(request *v1.ParsedSearchRequest) (results []s
 	}
 
 	// Create and run query for fields, and input string query, if it exists.
-	imageQuery, err := blevesearch.FieldsToQuery(v1.SearchCategory_IMAGES, request, mappings.OptionsMap)
+	imageQueries, err := blevesearch.FieldsToQuery(v1.SearchCategory_IMAGES, request, mappings.OptionsMap)
 	if err != nil {
 		return nil, err
 	}
 	if request.GetStringQuery() != "" {
-		imageQuery.AddQuery(bleve.NewQueryStringQuery(request.GetStringQuery()))
+		imageQueries = append(imageQueries, bleve.NewQueryStringQuery(request.GetStringQuery()))
 	}
-	results, err = blevesearch.RunQuery(imageQuery, b.index)
+	results, err = blevesearch.RunQuery(bleve.NewConjunctionQuery(imageQueries...), b.index)
 	if err != nil {
 		return nil, err
 	}
 
 	// Filter results by which fields exist in the results retrieved from the deployments.
-	if imageSHAs != nil {
+	if filteredByDeployments {
 		filteredResults := results[:0]
 		for _, result := range results {
 			if imageSHAs.Contains(result.ID) {
@@ -102,18 +101,48 @@ func (b *indexerImpl) SearchImages(request *v1.ParsedSearchRequest) (results []s
 	return
 }
 
-func (b *indexerImpl) getImageSHAsFromScopes(scopes []*v1.Scope) (mapset.Set, error) {
-	scopesQuery := blevesearch.GetScopesQuery(scopes, deploymentIndex.ScopeToDeploymentQuery)
-	searchRequest := bleve.NewSearchRequest(scopesQuery)
+func (b *indexerImpl) getImageSHAsFromDeploymentQuery(request *v1.ParsedSearchRequest) (*v1.ParsedSearchRequest, mapset.Set, bool, error) {
+	newRequest := proto.Clone(request).(*v1.ParsedSearchRequest)
+
+	req := &v1.ParsedSearchRequest{
+		Fields: map[string]*v1.ParsedSearchRequest_Values{},
+	}
+
+	if values, ok := request.Fields[search.Cluster]; ok {
+		req.Fields[search.Cluster] = values
+		delete(newRequest.Fields, search.Cluster)
+	}
+	if values, ok := request.Fields[search.Namespace]; ok {
+		req.Fields[search.Namespace] = values
+		delete(newRequest.Fields, search.Namespace)
+	}
+	if values, ok := request.Fields[search.LabelKey]; ok {
+		req.Fields[search.LabelKey] = values
+		delete(newRequest.Fields, search.LabelKey)
+	}
+	if values, ok := request.Fields[search.LabelValue]; ok {
+		req.Fields[search.LabelValue] = values
+		delete(newRequest.Fields, search.LabelValue)
+	}
+
+	if len(req.Fields) == 0 {
+		return newRequest, nil, false, nil
+	}
+
+	query, err := blevesearch.BuildQuery(v1.SearchCategory_DEPLOYMENTS, req, mappings.OptionsMap)
+	if err != nil {
+		return newRequest, nil, false, err
+	}
+
+	searchRequest := bleve.NewSearchRequest(query)
 	searchRequest.Fields = []string{"deployment.containers.image.name.sha"}
 	searchRequest.Size = maxDeploymentsReturned
 
 	searchResult, err := b.index.Search(searchRequest)
 	if err != nil {
-		return nil, err
+		return newRequest, nil, false, err
 	}
-
-	return deploymentResultsToShaSet(searchResult)
+	return newRequest, deploymentResultsToShaSet(searchResult), true, nil
 }
 
 func shasToResults(shas mapset.Set) ([]search.Result, error) {
@@ -128,30 +157,23 @@ func shasToResults(shas mapset.Set) ([]search.Result, error) {
 	return searchResults, nil
 }
 
-func deploymentResultsToShaSet(searchResult *bleve.SearchResult) (mapset.Set, error) {
+func deploymentResultsToShaSet(searchResult *bleve.SearchResult) mapset.Set {
 	shaSetFromDeployment := mapset.NewSet()
 	for _, hit := range searchResult.Hits {
 		shaObj := hit.Fields["deployment.containers.image.name.sha"]
 		if shaObj == nil {
 			continue
 		}
-		t := reflect.TypeOf(shaObj)
-		kind := t.Kind()
-		switch kind {
-		case reflect.Slice:
-			strSlice, ok := shaObj.([]interface{})
-			if !ok {
-				log.Errorf("Unexpected Slice type %s for image sha", t)
-				continue
-			}
-			for _, s := range strSlice {
+		switch typedObj := shaObj.(type) {
+		case []interface{}:
+			for _, s := range typedObj {
 				shaSetFromDeployment.Add(s.(string))
 			}
-		case reflect.String:
-			shaSetFromDeployment.Add(shaObj.(string))
+		case string:
+			shaSetFromDeployment.Add(typedObj)
 		default:
-			log.Errorf("Unexpected type %s for image sha", t)
+			log.Errorf("Unexpected type %T for image sha", shaObj)
 		}
 	}
-	return shaSetFromDeployment, nil
+	return shaSetFromDeployment
 }

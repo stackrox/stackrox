@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/search/query"
 	"github.com/stackrox/rox/central/deployment/index/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -48,26 +47,5 @@ func (b *indexerImpl) DeleteDeployment(id string) error {
 // SearchDeployments takes a SearchRequest and finds any matches
 func (b *indexerImpl) SearchDeployments(request *v1.ParsedSearchRequest) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Deployment")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_DEPLOYMENTS, request, b.index, ScopeToDeploymentQuery, mappings.OptionsMap)
-}
-
-// ScopeToDeploymentQuery returns a deployment query for the given scope.
-func ScopeToDeploymentQuery(scope *v1.Scope) query.Query {
-	conjunctionQuery := bleve.NewConjunctionQuery()
-	if scope.GetCluster() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("deployment.cluster_name", scope.GetCluster()))
-	}
-	if scope.GetNamespace() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("deployment.namespace", scope.GetNamespace()))
-	}
-	if scope.GetLabel().GetKey() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("deployment.labels.key", scope.GetLabel().GetKey()))
-	}
-	if scope.GetLabel().GetValue() != "" {
-		conjunctionQuery.AddQuery(blevesearch.NewMatchPhrasePrefixQuery("deployment.labels.value", scope.GetLabel().GetValue()))
-	}
-	if len(conjunctionQuery.Conjuncts) == 0 {
-		return bleve.NewMatchNoneQuery()
-	}
-	return conjunctionQuery
+	return blevesearch.RunSearchRequest(v1.SearchCategory_DEPLOYMENTS, request, b.index, mappings.OptionsMap)
 }

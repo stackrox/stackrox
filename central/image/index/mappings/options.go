@@ -7,6 +7,12 @@ import (
 
 // OptionsMap is exposed for e2e test
 var OptionsMap = map[string]*v1.SearchField{
+	// Add the scope so that we can use this options map to search for deployment cluster data
+	search.Cluster:    search.NewStringField("deployment.cluster_name"),
+	search.Namespace:  search.NewStringField("deployment.namespace"),
+	search.LabelKey:   search.NewStringField("deployment.labels.key"),
+	search.LabelValue: search.NewStringField("deployment.labels.value"),
+
 	search.CVE:                          search.NewStringField("image.scan.components.vulns.cve"),
 	search.CVSS:                         search.NewNumericField("image.scan.components.vulns.cvss"),
 	search.Component:                    search.NewStringField("image.scan.components.name"),

@@ -47,7 +47,6 @@ message SearchField {
 
 message ParsedSearchRequest {
     repeated SearchCategory   categories   = 1;
-    repeated Scope            scopes       = 2;
     message Values {
         repeated string values  = 1;
     }
