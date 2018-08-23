@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import Table from 'Components/Table';
+import NoResultsMessage from 'Components/NoResultsMessage';
+import ReactRowSelectTable from 'Components/ReactRowSelectTable';
 import Panel from 'Components/Panel';
 
 class BenchmarksSidePanel extends Component {
@@ -17,9 +18,20 @@ class BenchmarksSidePanel extends Component {
     };
 
     renderTable = () => {
-        const columns = [{ key: 'host', label: 'Host' }, { key: 'result', label: 'Result' }];
+        const columns = [
+            { accessor: 'host', Header: 'Host' },
+            { accessor: 'result', Header: 'Result' }
+        ];
         const rows = this.props.hostResults;
-        return <Table columns={columns} rows={rows} onRowClick={this.props.onRowClick} />;
+        if (!rows.length) return <NoResultsMessage message="No Host Results" />;
+        return (
+            <ReactRowSelectTable
+                columns={columns}
+                rows={rows}
+                onRowClick={this.props.onRowClick}
+                minRows="20"
+            />
+        );
     };
 
     render() {

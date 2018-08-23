@@ -8,9 +8,10 @@ import { actions as benchmarkActions, types } from 'reducers/benchmarks';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { ClipLoader } from 'react-spinners';
-import { sortNumberByKey } from 'sorters/sorters';
+import { sortNumber } from 'sorters/sorters';
 
-import Table from 'Components/Table';
+import NoResultsMessage from 'Components/NoResultsMessage';
+import ReactRowSelectTable from 'Components/ReactRowSelectTable';
 import Select from 'Components/Select';
 import BenchmarksSidePanel from 'Containers/Compliance/BenchmarksSidePanel';
 import HostResultModal from 'Containers/Compliance/HostResultModal';
@@ -223,42 +224,51 @@ class BenchmarksPage extends Component {
     };
 
     renderTable = () => {
-        const table = {
-            columns: [
-                { key: 'definition.name', label: 'Name' },
-                { key: 'definition.description', label: 'Description' },
-                {
-                    key: 'aggregatedResults.PASS',
-                    label: 'Pass',
-                    default: 0,
-                    align: 'right',
-                    sortMethod: sortNumberByKey('aggregatedResults.PASS')
-                },
-                {
-                    key: 'aggregatedResults.INFO',
-                    label: 'Info',
-                    default: 0,
-                    align: 'right',
-                    sortMethod: sortNumberByKey('aggregatedResults.INFO')
-                },
-                {
-                    key: 'aggregatedResults.WARN',
-                    label: 'Warn',
-                    default: 0,
-                    align: 'right',
-                    sortMethod: sortNumberByKey('aggregatedResults.WARN')
-                },
-                {
-                    key: 'aggregatedResults.NOTE',
-                    label: 'Note',
-                    default: 0,
-                    align: 'right',
-                    sortMethod: sortNumberByKey('aggregatedResults.NOTE')
-                }
-            ],
-            rows: this.props.benchmarkScanResults
-        };
-        return <Table columns={table.columns} rows={table.rows} onRowClick={this.onRowClick} />;
+        const columns = [
+            { accessor: 'definition.name', Header: 'Name' },
+            { accessor: 'definition.description', Header: 'Description' },
+            {
+                accessor: 'aggregatedResults.PASS',
+                Header: 'Pass',
+                Cell: ({ original }) => original.aggregatedResults.PASS || 0,
+                sortMethod: sortNumber
+            },
+            {
+                accessor: 'aggregatedResults.INFO',
+                Header: 'Info',
+                Cell: ({ original }) => original.aggregatedResults.INFO || 0,
+                sortMethod: sortNumber
+            },
+            {
+                accessor: 'aggregatedResults.WARN',
+                Header: 'Warn',
+                Cell: ({ original }) => original.aggregatedResults.WARN || 0,
+                sortMethod: sortNumber
+            },
+            {
+                accessor: 'aggregatedResults.NOTE',
+                Header: 'Note',
+                Cell: ({ original }) => original.aggregatedResults.NOTE || 0,
+                sortMethod: sortNumber
+            }
+        ];
+
+        const { benchmarkScanResults, selectedBenchmarkScanResult } = this.props;
+        const rows = benchmarkScanResults;
+        const name =
+            selectedBenchmarkScanResult.definition && selectedBenchmarkScanResult.definition.name;
+        if (!rows.length)
+            return <NoResultsMessage message="No results found. Please refine your search." />;
+        return (
+            <ReactRowSelectTable
+                rows={rows}
+                columns={columns}
+                idAttribute="definition.name"
+                selectedRowId={name}
+                onRowClick={this.onRowClick}
+                noDataText="No results found. Please refine your search."
+            />
+        );
     };
 
     renderModal() {
@@ -307,7 +317,7 @@ class BenchmarksPage extends Component {
                     {this.renderScanButton()}
                 </div>
                 <div className="flex flex-1 border-t border-primary-300 bg-base-100">
-                    <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow">
+                    <div className="w-full pl-3 pt-3 pr-3 overflow-y-scroll bg-white rounded-sm shadow">
                         {this.renderTable()}
                     </div>
                     {this.renderBenchmarksSidePanel()}

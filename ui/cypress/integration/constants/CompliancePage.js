@@ -6,9 +6,9 @@ export const selectors = {
     secondNavLink: '.navigation-panel li:nth-child(3) a',
     benchmarkTabs: 'button.tab',
     scanNowButton: 'button.rounded-sm.bg-success-500',
-    checkRows: 'div.overflow-y-scroll table tbody tr',
-    passColumns: 'div.overflow-y-scroll table tbody tr td:nth-child(3)',
-    hostColumns: '.border-t > .flex-col tbody tr',
+    checkRows: 'div.rt-tbody div.rt-tr-group',
+    passColumns: 'div.rt-tbody div.rt-tr-group:first-child .rt-tr .rt-td:nth-child(3)',
+    hostColumns: '[data-test-id="panel"] div.rt-tbody div.rt-tr-group:not(.invisible)',
     select: {
         day: 'select:first',
         time: 'select:last'
