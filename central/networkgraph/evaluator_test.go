@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/protoconv"
+	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stretchr/testify/assert"
 	k8sV1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -19,7 +19,7 @@ func init() {
 		if err := yaml.NewYAMLToJSONDecoder(bytes.NewReader([]byte(policyYAML))).Decode(&k8sNp); err != nil {
 			panic(err)
 		}
-		np := protoconv.KubernetesNetworkPolicyWrap{NetworkPolicy: &k8sNp}.ConvertNetworkPolicy()
+		np := networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: &k8sNp}.ToRoxNetworkPolicy()
 		np.Id = k8sNp.GetName()
 		networkPolicyFixtures[np.GetName()] = np
 	}
@@ -47,7 +47,7 @@ func (n *namespaceGetter) GetNamespaces() ([]*v1.Namespace, error) {
 	}, nil
 }
 
-func newMockGraphEvaluator() *graphEvaluatorImpl {
+func newMockGraphEvaluator() *evaluatorImpl {
 	return newGraphEvaluator(nil, &namespaceGetter{}, nil)
 }
 

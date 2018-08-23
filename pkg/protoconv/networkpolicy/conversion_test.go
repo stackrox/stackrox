@@ -1,4 +1,4 @@
-package protoconv
+package networkpolicy
 
 import (
 	"testing"
@@ -18,8 +18,8 @@ func TestNetworkPolicyConversion(t *testing.T) {
 			Kind: "NetworkPolicy",
 		},
 	}
-	protoNetworkPolicy := KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ConvertNetworkPolicy()
-	k8sPolicy := ProtoNetworkPolicyWrap{NetworkPolicy: protoNetworkPolicy}.ConvertNetworkPolicy()
+	protoNetworkPolicy := KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()
+	k8sPolicy := RoxNetworkPolicyWrap{NetworkPolicy: protoNetworkPolicy}.ToKubernetesNetworkPolicy()
 	assert.Equal(t, np, k8sPolicy)
 
 	// This is the network policy from the k8s example
@@ -103,7 +103,14 @@ func TestNetworkPolicyConversion(t *testing.T) {
 		},
 	}
 
-	protoNetworkPolicy = KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ConvertNetworkPolicy()
-	k8sPolicy = ProtoNetworkPolicyWrap{NetworkPolicy: protoNetworkPolicy}.ConvertNetworkPolicy()
+	yamlPolicy, err := KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToYaml()
+	assert.NoError(t, err, "yaml generation should succeed")
+
+	protoNetworkPolicy, err = YamlWrap{yaml: yamlPolicy}.ToRoxNetworkPolicy()
+	assert.NoError(t, err, "rox policy generation should succeed")
+
+	k8sPolicy, err = YamlWrap{yaml: yamlPolicy}.ToKubernetesNetworkPolicy()
+	assert.NoError(t, err, "k8s policy generation should succeed")
+
 	assert.Equal(t, np, k8sPolicy)
 }

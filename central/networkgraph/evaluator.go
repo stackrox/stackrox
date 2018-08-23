@@ -24,8 +24,8 @@ type Evaluator interface {
 	Epoch() uint32
 }
 
-// graphEvaluatorImpl handles all of the graph calculations
-type graphEvaluatorImpl struct {
+// evaluatorImpl handles all of the graph calculations
+type evaluatorImpl struct {
 	epoch uint32
 
 	deploymentsStore   deploymentsDatastore.DataStore
@@ -39,36 +39,35 @@ type ns interface {
 
 // newGraphEvaluator takes in namespaces
 func newGraphEvaluator(deploymentsStore deploymentsDatastore.DataStore,
-	namespaceStore ns, networkPolicyStore networkPolicyStore.Store) *graphEvaluatorImpl {
-	return &graphEvaluatorImpl{
+	namespaceStore ns, networkPolicyStore networkPolicyStore.Store) *evaluatorImpl {
+	return &evaluatorImpl{
 		deploymentsStore:   deploymentsStore,
 		namespaceStore:     namespaceStore,
 		networkPolicyStore: networkPolicyStore,
 	}
 }
 
-func (g *graphEvaluatorImpl) IncrementEpoch() {
+func (g *evaluatorImpl) IncrementEpoch() {
 	atomic.AddUint32(&g.epoch, 1)
 }
 
-func (g *graphEvaluatorImpl) Epoch() uint32 {
+func (g *evaluatorImpl) Epoch() uint32 {
 	return atomic.LoadUint32(&g.epoch)
 }
 
-func (g *graphEvaluatorImpl) GetGraph(cluster *v1.Cluster, query *v1.ParsedSearchRequest) (*v1.GetNetworkGraphResponse, error) {
-	epoch := g.Epoch()
+func (g *evaluatorImpl) GetGraph(cluster *v1.Cluster, query *v1.ParsedSearchRequest) (*v1.GetNetworkGraphResponse, error) {
 	nodes, edges, err := g.evaluate(cluster, query)
 	if err != nil {
 		return nil, err
 	}
 	return &v1.GetNetworkGraphResponse{
-		Epoch: epoch,
+		Epoch: g.Epoch(),
 		Nodes: nodes,
 		Edges: edges,
 	}, nil
 }
 
-func (g *graphEvaluatorImpl) evaluate(cluster *v1.Cluster, query *v1.ParsedSearchRequest) (nodes []*v1.NetworkNode, edges []*v1.NetworkEdge, err error) {
+func (g *evaluatorImpl) evaluate(cluster *v1.Cluster, query *v1.ParsedSearchRequest) (nodes []*v1.NetworkNode, edges []*v1.NetworkEdge, err error) {
 	if cluster.GetId() == "" {
 		return nil, nil, fmt.Errorf("cluster id must be present, but it isn't: %s", proto.MarshalTextString(cluster))
 	}
@@ -131,7 +130,7 @@ func ingressNetworkPolicySelectorAppliesToDeployment(d *v1.Deployment, np *v1.Ne
 	return hasIngress(spec.GetPolicyTypes())
 }
 
-func (g *graphEvaluatorImpl) matchPolicyPeers(d *v1.Deployment, namespace string, peers []*v1.NetworkPolicyPeer) bool {
+func (g *evaluatorImpl) matchPolicyPeers(d *v1.Deployment, namespace string, peers []*v1.NetworkPolicyPeer) bool {
 	if len(peers) == 0 {
 		return true
 	}
@@ -143,7 +142,7 @@ func (g *graphEvaluatorImpl) matchPolicyPeers(d *v1.Deployment, namespace string
 	return false
 }
 
-func (g *graphEvaluatorImpl) doesEgressNetworkPolicyRuleMatchDeployment(src *v1.Deployment, np *v1.NetworkPolicy) bool {
+func (g *evaluatorImpl) doesEgressNetworkPolicyRuleMatchDeployment(src *v1.Deployment, np *v1.NetworkPolicy) bool {
 	for _, egressRule := range np.GetSpec().GetEgress() {
 		if g.matchPolicyPeers(src, np.GetNamespace(), egressRule.GetTo()) {
 			return true
@@ -152,7 +151,7 @@ func (g *graphEvaluatorImpl) doesEgressNetworkPolicyRuleMatchDeployment(src *v1.
 	return false
 }
 
-func (g *graphEvaluatorImpl) doesIngressNetworkPolicyRuleMatchDeployment(src *v1.Deployment, np *v1.NetworkPolicy) bool {
+func (g *evaluatorImpl) doesIngressNetworkPolicyRuleMatchDeployment(src *v1.Deployment, np *v1.NetworkPolicy) bool {
 	for _, ingressRule := range np.GetSpec().GetIngress() {
 		if g.matchPolicyPeers(src, np.GetNamespace(), ingressRule.GetFrom()) {
 			return true
@@ -161,7 +160,7 @@ func (g *graphEvaluatorImpl) doesIngressNetworkPolicyRuleMatchDeployment(src *v1
 	return false
 }
 
-func (g *graphEvaluatorImpl) evaluateCluster(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) ([]*v1.NetworkNode, []*v1.NetworkEdge) {
+func (g *evaluatorImpl) evaluateCluster(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) ([]*v1.NetworkNode, []*v1.NetworkEdge) {
 	selectedDeploymentsToIngressPolicies := make(map[string]mapset.Set)
 	selectedDeploymentsToEgressPolicies := make(map[string]mapset.Set)
 
@@ -251,7 +250,7 @@ func (g *graphEvaluatorImpl) evaluateCluster(deployments []*v1.Deployment, netwo
 	return nodes, edges
 }
 
-func (g *graphEvaluatorImpl) getNamespace(deployment *v1.Deployment) *v1.Namespace {
+func (g *evaluatorImpl) getNamespace(deployment *v1.Deployment) *v1.Namespace {
 	namespaces, err := g.namespaceStore.GetNamespaces()
 	if err != nil {
 		return &v1.Namespace{
@@ -268,7 +267,7 @@ func (g *graphEvaluatorImpl) getNamespace(deployment *v1.Deployment) *v1.Namespa
 	}
 }
 
-func (g *graphEvaluatorImpl) matchPolicyPeer(deployment *v1.Deployment, policyNamespace string, peer *v1.NetworkPolicyPeer) bool {
+func (g *evaluatorImpl) matchPolicyPeer(deployment *v1.Deployment, policyNamespace string, peer *v1.NetworkPolicyPeer) bool {
 	if peer.IpBlock != nil {
 		logger.Infof("IP Block network policy is currently not handled")
 		return false

@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/protoconv"
+	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -59,7 +59,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func populateYAML(np *v1.NetworkPolicy) {
-	k8sNetworkPolicy := protoconv.ProtoNetworkPolicyWrap{NetworkPolicy: np}.ConvertNetworkPolicy()
+	k8sNetworkPolicy := networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: np}.ToKubernetesNetworkPolicy()
 	encoder := json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil)
 
 	stringBuilder := &strings.Builder{}

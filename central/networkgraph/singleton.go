@@ -14,7 +14,7 @@ var (
 	once sync.Once
 
 	storage store.Store
-	ge      *graphEvaluatorImpl
+	ge      *evaluatorImpl
 )
 
 func initialize() {

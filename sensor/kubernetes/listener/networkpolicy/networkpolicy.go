@@ -6,7 +6,7 @@ import (
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoconv"
+	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/watchlister"
 	"k8s.io/api/networking/v1"
 	"k8s.io/client-go/rest"
@@ -42,7 +42,7 @@ func (npwl *WatchLister) resourceChanged(networkPolicyObj interface{}, action pk
 			Id:     string(networkPolicy.UID),
 			Action: action,
 			Resource: &pkgV1.SensorEvent_NetworkPolicy{
-				NetworkPolicy: protoconv.KubernetesNetworkPolicyWrap{NetworkPolicy: networkPolicy}.ConvertNetworkPolicy(),
+				NetworkPolicy: networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: networkPolicy}.ToRoxNetworkPolicy(),
 			},
 		},
 	}
