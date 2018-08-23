@@ -1,0 +1,59 @@
+{
+    "epoch": 0,
+    "nodes": [
+        {
+            "id": "1",
+            "cluster": "Swarm Cluster 1",
+            "namespace": "namespace-1",
+            "internetAccess": false,
+            "policyIds": [],
+            "deploymentName": "node-1"
+        },
+        {
+            "id": "2",
+            "cluster": "Swarm Cluster 1",
+            "namespace": "namespace-1",
+            "internetAccess": true,
+            "policyIds": [],
+            "deploymentName": "node-2"
+        },
+        {
+           "id": "3",
+            "cluster": "Swarm Cluster 1",
+            "namespace": "namespace-2",
+            "internetAccess": false,
+            "policyIds": [],
+            "deploymentName": "node-3"
+        },
+        {
+           "id": "4",
+            "cluster": "Swarm Cluster 1",
+            "namespace": "namespace-3",
+            "internetAccess": true,
+            "policyIds": [],
+            "deploymentName": "node-4"
+        }
+    ],
+    "edges": [
+        {
+            "source": "1",
+            "target": "2"
+        },
+        {
+            "source": "2",
+            "target": "1"
+        },
+        {
+            "source": "1",
+            "target": "3"
+        },
+        {
+            "source": "3",
+            "target": "1"
+        },
+        {
+            "source": "3",
+            "target": "4"
+        }
+    ]
+}

@@ -10,7 +10,11 @@ import {
     event as d3Event,
     zoom as d3Zoom
 } from 'd3';
-import { forceCluster, forceCollision } from 'utils/environmentGraphUtils/environmentGraphUtils';
+import {
+    forceCluster,
+    forceCollision,
+    getBidirectionalEdges
+} from 'utils/environmentGraphUtils/environmentGraphUtils';
 import {
     enterNamespaceContainer,
     enterNode,
@@ -93,8 +97,6 @@ class EnvironmentGraph extends Component {
 
             this.setUpEdgeElements();
 
-            this.setUpNamespaceEdgeElements();
-
             this.setUpNodeElements();
         }
 
@@ -152,7 +154,7 @@ class EnvironmentGraph extends Component {
             })
             .map(edge => ({ ...edge }));
 
-        return newEdges;
+        return getBidirectionalEdges(newEdges);
     };
 
     setUpNamespaceEdges = (propNodes, propEdges) => {
@@ -178,7 +180,7 @@ class EnvironmentGraph extends Component {
 
         newNamespaceEdges = uniqBy(newNamespaceEdges, 'id');
 
-        return newNamespaceEdges;
+        return getBidirectionalEdges(newNamespaceEdges);
     };
 
     setUpForceSimulation = () => {
@@ -247,7 +249,7 @@ class EnvironmentGraph extends Component {
         d3NamespaceContainer
             .enter()
             .insert('g', '.namespace')
-            .call(enterNamespaceContainer);
+            .call(enterNamespaceContainer(this.d3Graph));
         // logic for removing namespace groups
         d3NamespaceContainer.exit().remove();
     };
@@ -272,13 +274,40 @@ class EnvironmentGraph extends Component {
     };
 
     setUpEdgeElements = () => {
+        // creates the arrow head for edges
+        const svg = d3Select('svg.environment-graph');
+
+        // creates svg:defs for the arrow heads
+        svg
+            .append('svg:defs')
+            .selectAll('marker')
+            .data(['start', 'end']) // Different link/path types can be defined here
+            .enter()
+            .append('svg:marker') // This section adds in the arrows
+            .attr('id', String)
+            .attr('viewBox', '0 -5 10 10')
+            .attr('refX', d => (d === 'start' ? 0 : 15))
+            .attr('refY', -1.5)
+            .attr('markerWidth', 6)
+            .attr('markerHeight', 6)
+            .attr('orient', 'auto')
+            .attr('fill', '#3f4983')
+            .append('svg:path')
+            .attr('d', d => (d === 'start' ? 'M10,-5L0,0L10,5' : 'M0,-5L10,0L0,5'));
+
+        this.setUpServiceEdgeElements();
+
+        this.setUpNamespaceEdgeElements();
+    };
+
+    setUpServiceEdgeElements = () => {
         const d3Links = this.d3Graph
             .selectAll('.link.service')
             .data(edges, link => `${link.source},${link.target}`);
         // logic for creating links
         d3Links
             .enter()
-            .insert('line', '.namespace')
+            .insert('path')
             .call(enterLink);
         // logic for removing links
         d3Links.exit().remove();
@@ -293,8 +322,8 @@ class EnvironmentGraph extends Component {
         // logic for creating links
         d3NamespaceLinks
             .enter()
-            .insert('line', '.container')
-            .call(enterNamespaceLink(this.d3Graph));
+            .insert('path')
+            .call(enterNamespaceLink);
         // logic for removing links
         d3NamespaceLinks.exit().remove();
         // logic for updating links

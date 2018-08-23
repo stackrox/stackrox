@@ -75,3 +75,27 @@ export const forceCollision = nodes => alpha => {
         });
     });
 };
+
+/**
+ * Iterates through a list of edges that contain a source and target,
+ * and returns a new list of edges where an edge has a property "bidirectional" set to true if
+ * there is an edge that has the same source and targets, but is flipped the other way around
+ *
+ * @param {!Object[]} edges list of edges that contain a "source" and "target"
+ * @returns {!Object[]}
+ */
+export const getBidirectionalEdges = edges => {
+    const sourceTargetToEdgeMapping = {};
+
+    edges.forEach(edge => {
+        if (!sourceTargetToEdgeMapping[`${edge.source}-${edge.target}`]) {
+            if (!sourceTargetToEdgeMapping[`${edge.target}-${edge.source}`]) {
+                sourceTargetToEdgeMapping[`${edge.source}-${edge.target}`] = edge;
+            } else {
+                sourceTargetToEdgeMapping[`${edge.target}-${edge.source}`].bidirectional = true;
+            }
+        }
+    });
+
+    return Object.values(sourceTargetToEdgeMapping);
+};

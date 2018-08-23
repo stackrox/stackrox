@@ -42,3 +42,8 @@ export const auth = {
 export const dashboard = {
     timeseries: '/v1/alerts/summary/timeseries?*'
 };
+
+export const environment = {
+    networkGraph: '/v1/networkgraph/cluster/*',
+    epoch: '/v1/networkgraph/epoch'
+};

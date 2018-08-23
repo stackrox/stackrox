@@ -21,7 +21,7 @@ const EnvironmentGraphLegend = () => {
         }
     ];
     return (
-        <div className="env-graph-legend absolute pin-t pin-l mt-2 ml-2 bg-white text-primary-500 border-primary-500 border rounded-sm">
+        <div className="env-graph-legend absolute pin-t pin-l mt-2 ml-2 bg-white text-primary-500 border-primary-500 border rounded-sm z-10">
             {items.map((item, index) => (
                 <div className="p-2 flex flex-row items-center" key={index}>
                     {item.icon}
