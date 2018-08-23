@@ -3,7 +3,8 @@ import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
-import Table from 'Components/Table';
+import NoResultsMessage from 'Components/NoResultsMessage';
+import ReactRowSelectTable from 'Components/ReactRowSelectTable';
 
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
@@ -126,7 +127,10 @@ class SearchResults extends Component {
                     >
                         {tabs.map(tab => (
                             <TabContent key={tab.text}>
-                                <div key={tab.text} className="flex flex-1 w-full p-3 rounded-sm">
+                                <div
+                                    key={tab.text}
+                                    className="flex flex-1 w-full h-full pl-3 pr-3 pt-3 rounded-sm"
+                                >
                                     {this.renderTable(tab.text)}
                                 </div>
                             </TabContent>
@@ -138,87 +142,83 @@ class SearchResults extends Component {
     };
 
     renderTable = () => {
-        if (!this.props.globalSearchResults.length) {
-            return (
-                <div className="flex flex-1 items-center justify-center bg-white">
-                    No Search Results
-                </div>
-            );
-        }
-        const table = {
-            columns: [
-                {
-                    keys: ['name', 'location'],
-                    label: 'Name',
-                    keyValueFunc: (name, location) => (
-                        <div className="flex flex-col">
-                            <div>{name}</div>
-                            {location ? (
-                                <div className="text-primary-300 italic text-sm pt-2">
-                                    in {location}
-                                </div>
-                            ) : null}
-                        </div>
-                    )
-                },
-                { key: 'category', keyValueFunc: value => capitalize(value), label: 'Type' },
-                {
-                    keys: ['category', 'id', 'name', 'score'],
-                    label: 'View On:',
-                    keyValueFunc: (category, id) => (
-                        <ul className="p-0 list-reset flex flex-row">
-                            {!mapping[category] || !mapping[category].viewOn ? (
-                                <li className="text-base-400">N/A</li>
-                            ) : (
-                                mapping[category].viewOn.map((item, index) => (
-                                    <li key={index}>
-                                        <button
-                                            onClick={this.onLinkHandler(
-                                                category,
-                                                item,
-                                                `/main/${lowerCase(item)}/${id}`
-                                            )}
-                                            className="inline-block py-1 px-2 no-underline text-center uppercase bg-primary-100 border-2 border-base-200 mr-1 rounded-sm text-sm text-base-600"
-                                        >
-                                            {item}
-                                        </button>
-                                    </li>
-                                ))
-                            )}
-                        </ul>
-                    )
-                },
-                {
-                    keys: ['category', 'id', 'name'],
-                    label: 'Filter On:',
-                    keyValueFunc: (category, id, name) => (
-                        <ul className="p-0 list-reset flex flex-row">
-                            {!mapping[category] || !mapping[category].filterOn ? (
-                                <li className="text-base-400">N/A</li>
-                            ) : (
-                                mapping[category].filterOn.map((item, index) => (
-                                    <li key={index}>
-                                        <button
-                                            onClick={this.onLinkHandler(
-                                                category,
-                                                filterOnMapping[item],
-                                                `/main/${lowerCase(item)}`,
-                                                name
-                                            )}
-                                            className="inline-block py-1 px-2 no-underline text-center uppercase bg-primary-100 border-2 border-base-200 mr-1 rounded-sm text-sm text-base-600"
-                                        >
-                                            {item}
-                                        </button>
-                                    </li>
-                                ))
-                            )}
-                        </ul>
-                    )
-                }
-            ],
-            rows: this.props.globalSearchResults
-        };
-        return <Table columns={table.columns} rows={table.rows} />;
+        const columns = [
+            {
+                accessor: 'name',
+                Header: 'Name',
+                Cell: ({ original }) => (
+                    <div className="flex flex-col">
+                        <div>{original.name}</div>
+                        {original.location ? (
+                            <div className="text-primary-300 italic text-sm pt-2">
+                                in {original.location}
+                            </div>
+                        ) : null}
+                    </div>
+                )
+            },
+            {
+                accessor: 'category',
+                Header: 'Type',
+                Cell: ({ original }) => capitalize(original.category)
+            },
+            {
+                Header: 'View On:',
+                Cell: ({ original }) => (
+                    <ul className="p-0 list-reset flex flex-row">
+                        {!mapping[original.category] || !mapping[original.category].viewOn ? (
+                            <li className="text-base-400">N/A</li>
+                        ) : (
+                            mapping[original.category].viewOn.map((item, index) => (
+                                <li key={index}>
+                                    <button
+                                        onClick={this.onLinkHandler(
+                                            original.category,
+                                            item,
+                                            `/main/${lowerCase(item)}/${original.id}`
+                                        )}
+                                        className="inline-block py-1 px-2 no-underline text-center uppercase bg-primary-100 border-2 border-base-200 mr-1 rounded-sm text-sm text-base-600"
+                                    >
+                                        {item}
+                                    </button>
+                                </li>
+                            ))
+                        )}
+                    </ul>
+                ),
+                sortable: false
+            },
+            {
+                Header: 'Filter On:',
+                Cell: ({ original }) => (
+                    <ul className="p-0 list-reset flex flex-row">
+                        {!mapping[original.category] || !mapping[original.category].filterOn ? (
+                            <li className="text-base-400">N/A</li>
+                        ) : (
+                            mapping[original.category].filterOn.map((item, index) => (
+                                <li key={index}>
+                                    <button
+                                        onClick={this.onLinkHandler(
+                                            original.category,
+                                            filterOnMapping[item],
+                                            `/main/${lowerCase(item)}`,
+                                            original.name
+                                        )}
+                                        className="inline-block py-1 px-2 no-underline text-center uppercase bg-primary-100 border-2 border-base-200 mr-1 rounded-sm text-sm text-base-600"
+                                    >
+                                        {item}
+                                    </button>
+                                </li>
+                            ))
+                        )}
+                    </ul>
+                ),
+                sortable: false
+            }
+        ];
+        const rows = this.props.globalSearchResults;
+        if (!rows.length) return <NoResultsMessage message="No Search Results." />;
+        return <ReactRowSelectTable rows={rows} columns={columns} noDataText="No Search Results" />;
     };
 
     render() {

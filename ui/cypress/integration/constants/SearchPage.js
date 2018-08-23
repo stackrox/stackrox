@@ -5,10 +5,14 @@ const selectors = {
     searchInput: '.search-modal div.Select-input > input',
     pageSearchInput: 'div.Select-input > input',
     searchResultsHeader: '.bg-white.flex-1 > .text-xl',
-    viewOnViolationsChip: ':nth-child(1) > :nth-child(3) > .p-0 > li > .inline-block',
-    viewOnRiskChip: ':nth-child(2) > :nth-child(3) > .p-0 > li:last-child > .inline-block',
-    viewOnPoliciesChip: ':nth-child(3) > :nth-child(3) > .p-0 > li > .inline-block',
-    viewOnImagesChip: ':nth-child(4) > :nth-child(3) > .p-0 > li > .inline-block'
+    viewOnViolationsChip:
+        'div.rt-tbody > .rt-tr-group:first-child .rt-tr .rt-td:nth-child(3) ul > li:first-child > button',
+    viewOnRiskChip:
+        'div.rt-tbody > .rt-tr-group:nth-child(2) .rt-tr .rt-td:nth-child(3) ul > li:first-child > button',
+    viewOnPoliciesChip:
+        'div.rt-tbody > .rt-tr-group:nth-child(3) .rt-tr .rt-td:nth-child(3) ul > li:first-child > button ',
+    viewOnImagesChip:
+        'div.rt-tbody > .rt-tr-group:nth-child(4) .rt-tr .rt-td:nth-child(3) ul > li:first-child > button'
 };
 
 export default selectors;
