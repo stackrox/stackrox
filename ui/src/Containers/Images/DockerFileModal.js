@@ -5,7 +5,7 @@ import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 
 import Modal from 'Components/Modal';
-import Table from 'Components/Table';
+import ReactRowSelectTable from 'Components/ReactRowSelectTable';
 
 class DockerFileModal extends Component {
     static propTypes = {
@@ -23,26 +23,25 @@ class DockerFileModal extends Component {
     renderTable = () => {
         const columns = [
             {
-                key: 'instruction',
-                label: 'Instruction'
+                accessor: 'instruction',
+                Header: 'Instruction'
             },
             {
-                key: 'value',
-                label: 'Value'
+                accessor: 'value',
+                Header: 'Value'
             },
             {
-                key: 'created',
-                label: 'Created',
-                align: 'right',
+                accessor: 'created',
+                Header: 'Created',
                 className: 'w-1/5',
-                keyValueFunc: timestamp => dateFns.format(timestamp, dateTimeFormat)
+                Cell: ({ original }) => dateFns.format(original.created, dateTimeFormat)
             }
         ];
         const rows = this.props.data;
         return (
             <div className="flex flex-1 p-3 overflow-y-scroll">
                 <div className="flex flex-col w-full">
-                    <Table columns={columns} rows={rows} />
+                    <ReactRowSelectTable columns={columns} rows={rows} />
                 </div>
             </div>
         );

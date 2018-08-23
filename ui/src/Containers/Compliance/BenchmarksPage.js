@@ -8,7 +8,7 @@ import { actions as benchmarkActions, types } from 'reducers/benchmarks';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { ClipLoader } from 'react-spinners';
-import { sortNumber } from 'sorters/sorters';
+import { sortNumberByKey } from 'sorters/sorters';
 
 import Table from 'Components/Table';
 import Select from 'Components/Select';
@@ -232,28 +232,28 @@ class BenchmarksPage extends Component {
                     label: 'Pass',
                     default: 0,
                     align: 'right',
-                    sortMethod: sortNumber('aggregatedResults.PASS')
+                    sortMethod: sortNumberByKey('aggregatedResults.PASS')
                 },
                 {
                     key: 'aggregatedResults.INFO',
                     label: 'Info',
                     default: 0,
                     align: 'right',
-                    sortMethod: sortNumber('aggregatedResults.INFO')
+                    sortMethod: sortNumberByKey('aggregatedResults.INFO')
                 },
                 {
                     key: 'aggregatedResults.WARN',
                     label: 'Warn',
                     default: 0,
                     align: 'right',
-                    sortMethod: sortNumber('aggregatedResults.WARN')
+                    sortMethod: sortNumberByKey('aggregatedResults.WARN')
                 },
                 {
                     key: 'aggregatedResults.NOTE',
                     label: 'Note',
                     default: 0,
                     align: 'right',
-                    sortMethod: sortNumber('aggregatedResults.NOTE')
+                    sortMethod: sortNumberByKey('aggregatedResults.NOTE')
                 }
             ],
             rows: this.props.benchmarkScanResults

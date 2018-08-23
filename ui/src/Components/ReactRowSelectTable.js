@@ -25,6 +25,24 @@ class ReactRowSelectTable extends Component {
         onRowClick: null
     };
 
+    getPageSize = () => (this.props.rows.length > pageSize ? pageSize : this.props.rows.length);
+
+    getTbodyProps = state => {
+        const table = [...document.body.getElementsByClassName('rt-table')];
+        const tableBody = table[0] && table[0].lastChild;
+        const isTableOverflow = state.pageRows && state.pageRows.length < state.minRows;
+        if (tableBody && isTableOverflow) {
+            tableBody.scrollTop = 0;
+        }
+        return {
+            className: isTableOverflow ? 'overflow-hidden' : ''
+        };
+    };
+
+    getTrGroupProps = (state, rowInfo) => ({
+        className: rowInfo && rowInfo.original ? '' : 'invisible'
+    });
+
     getTrProps = (state, rowInfo) => ({
         onClick: () => {
             if (this.props.onRowClick) this.props.onRowClick(rowInfo.original);
@@ -36,10 +54,6 @@ class ReactRowSelectTable extends Component {
                 ? 'bg-base-100'
                 : ''
     });
-
-    // state.canNext is true except for the very last page. This applies h-full to everything
-    // except the last page (since applying it to the last page caused rows to stretch to fill the page).
-    getTableProps = state => (!state.canNext ? { className: 'h-full' } : {});
 
     render() {
         const { rows, columns, ...rest } = this.props;
@@ -53,16 +67,17 @@ class ReactRowSelectTable extends Component {
             <ReactTable
                 data={rows}
                 columns={columns}
-                getTableProps={this.getTableProps}
+                getTbodyProps={this.getTbodyProps}
+                getTrGroupProps={this.getTrGroupProps}
                 getTrProps={this.getTrProps}
-                className="border-0 -highlight"
+                className={`border-0 -highlight ${rows.length > pageSize && 'h-full'}`}
                 showPagination={rows.length > pageSize}
-                defaultPageSize={pageSize}
-                minRows={0}
+                defaultPageSize={this.getPageSize()}
                 resizable
                 sortable
                 defaultSortDesc={false}
                 showPageJump={false}
+                minRows={this.getPageSize()}
                 {...rest}
             />
         );

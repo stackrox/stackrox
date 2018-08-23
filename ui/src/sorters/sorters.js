@@ -42,25 +42,37 @@ const sortTime = key => (a, b) => {
 };
 
 /**
+ * Sort Numbers
+ * @returns {number}
+ */
+const sortNumber = (a, b) => {
+    if (a === b) return 0;
+    if (a === undefined) return -1;
+    if (b === undefined) return 1;
+    return a - b;
+};
+
+/**
+ * Placeholder function till migration of benchmarks table to react table
  * Sort Numbers by property name
  * @param key
  * @returns {number}
  */
-const sortNumber = key => (a, b) => {
+const sortNumberByKey = key => (a, b) => {
     const { aValue, bValue } = flattenObjectProperties(a, b, key);
-    if (aValue === bValue) return 0;
-    if (aValue === undefined) return -1;
-    if (bValue === undefined) return 1;
-    return aValue - bValue;
+    return sortNumber(aValue, bValue);
 };
 
-const sortDate = key => (a, b) => {
-    const { aValue, bValue } = flattenObjectProperties(a, b, key);
-    const aDate = aValue && new Date(aValue);
-    const bDate = bValue && new Date(bValue);
+/**
+ * Sort Dates
+ * @returns {date}
+ */
+const sortDate = (a, b) => {
+    const aDate = a && new Date(a);
+    const bDate = b && new Date(b);
     if (aDate === bDate) return 0;
     if (aDate === undefined) return -1;
-    if (bValue === undefined) return 1;
+    if (bDate === undefined) return 1;
     return aDate - bDate;
 };
-export { sortSeverity, sortTime, sortNumber, sortDate };
+export { sortSeverity, sortTime, sortNumber, sortNumberByKey, sortDate };

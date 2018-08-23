@@ -12,7 +12,7 @@ import { actions as imagesActions, types } from 'reducers/images';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
-import Table from 'Components/Table';
+import ReactRowSelectTable from 'Components/ReactRowSelectTable';
 import { sortNumber, sortDate } from 'sorters/sorters';
 import ImageDetails from 'Containers/Images/ImageDetails';
 
@@ -53,37 +53,51 @@ class ImagesPage extends Component {
 
     renderTable() {
         const columns = [
-            { key: 'name', label: 'Image' },
             {
-                key: 'created',
-                label: 'Created at',
-                keyValueFunc: timestamp =>
-                    timestamp ? dateFns.format(timestamp, dateTimeFormat) : '-',
-                sortMethod: sortDate('created')
+                accessor: 'name',
+                Header: 'Image'
             },
             {
-                key: 'components',
-                label: 'Components',
-                default: '-',
-                sortMethod: sortNumber('components')
+                accessor: 'created',
+                Header: 'Created at',
+                Cell: ({ original }) =>
+                    original.created ? dateFns.format(original.created, dateTimeFormat) : '-',
+                sortMethod: sortDate
             },
             {
-                key: 'cves',
-                label: 'CVEs',
-                default: '-',
-                sortMethod: sortNumber('cves')
+                accessor: 'components',
+                Header: 'Components',
+                Cell: ({ original }) => original.components || '-',
+                sortMethod: sortNumber
             },
             {
-                key: 'fixableCves',
-                label: 'Fixable',
-                default: '-',
-                sortMethod: sortNumber('fixableCves')
+                accessor: 'cves',
+                Header: 'CVEs',
+                Cell: ({ original }) => original.cves || '-',
+                sortMethod: sortNumber
+            },
+            {
+                accessor: 'fixableCves',
+                Header: 'Fixable',
+                Cell: ({ original }) => original.fixableCves || '-',
+                sortMethod: sortNumber
             }
         ];
-        const rows = this.props.images;
+        const { images, selectedImage } = this.props;
+        const rows = images;
+        const sha = selectedImage && selectedImage.sha;
         if (!rows.length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
-        return <Table columns={columns} rows={rows} onRowClick={this.updateSelectedImage} />;
+        return (
+            <ReactRowSelectTable
+                rows={rows}
+                columns={columns}
+                onRowClick={this.updateSelectedImage}
+                idAttribute="sha"
+                selectedRowId={sha}
+                noDataText="No results found. Please refine your search."
+            />
+        );
     }
 
     renderSidePanel = () => {
@@ -111,7 +125,7 @@ class ImagesPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow bg-base-100">
+                        <div className="w-full pl-3 pt-3 pr-3 overflow-scroll bg-white rounded-sm bg-base-100">
                             {this.renderTable()}
                         </div>
                         {this.renderSidePanel()}
