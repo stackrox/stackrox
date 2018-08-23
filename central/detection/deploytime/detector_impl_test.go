@@ -51,6 +51,7 @@ func (suite *DetectorTestSuite) TestDeploymentUpdatedFitsPolicy() {
 	suite.alertManagerMock.On("AlertAndNotify", ([]*v1.Alert)(nil), ([]*v1.Alert)(nil)).Return(nil)
 
 	// DeploymentUpdate side effects. We won't have any alerts yet, but will generate one.
+	suite.enricherMock.On("Enrich", deployments[0]).Return(true, nil)
 	suite.enricherMock.On("ReprocessDeploymentRiskAsync", deployments[0]).Return(nil)
 	suite.alertManagerMock.On("GetAlertsByDeployment", deployments[0].GetId()).Return(([]*v1.Alert)(nil), nil)
 	suite.alertManagerMock.On("AlertAndNotify", ([]*v1.Alert)(nil), mock.MatchedBy(func(in interface{}) bool {

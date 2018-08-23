@@ -23,6 +23,11 @@ type detectorImpl struct {
 // DeploymentUpdated processes a new or updated deployment, generating and updating alerts in the store and returning
 // enforcement action.
 func (d *detectorImpl) DeploymentUpdated(deployment *v1.Deployment) (string, v1.EnforcementAction, error) {
+	// Attempt to enrich the image before detection.
+	if _, err := d.enricher.Enrich(deployment); err != nil {
+		logger.Errorf("Error enriching deployment %s: %s", deployment.GetName(), err)
+	}
+
 	// Asynchronously update risk after processing.
 	defer d.enricher.ReprocessDeploymentRiskAsync(deployment)
 
