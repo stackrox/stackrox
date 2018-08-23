@@ -9,16 +9,26 @@ defaults: &defaults
         password: $DOCKERHUB_PASSWORD
   working_directory: /go/src/github.com/stackrox/rox
 
-restoreUI: &restoreUI
-  restore_cache:
-    keys:
-      - v1-prevent-ui-deps-{{ checksum "ui/yarn.lock" }}
-      - v1-prevent-ui-deps
-
+depCacheKey: &depCacheKey 'v1-prevent-go-pkg-dep-{{ checksum "Gopkg.lock" }}'
 restoreDep: &restoreDep
   restore_cache:
     keys:
-      - v1-prevent-go-pkg-dep-{{ checksum "Gopkg.lock" }}
+      - *depCacheKey
+      - v1-prevent-go-pkg-dep
+
+gradleCacheKey: &gradleCacheKey 'v1-gradle-{{ checksum "qa-tests-backend/build.gradle" }}'
+restoreGradle: &restoreGradle
+  restore_cache:
+    keys:
+      - *gradleCacheKey
+      - v1-gradle
+
+uiCacheKey: &uiCacheKey 'v1-prevent-ui-deps-{{ checksum "ui/yarn.lock" }}'
+restoreUI: &restoreUI
+  restore_cache:
+    keys:
+      - *uiCacheKey
+      - v1-prevent-ui-deps
 
 version: 2
 jobs:
@@ -35,6 +45,7 @@ jobs:
           command: docker pull alpine:3.8
 
       - *restoreDep
+      - *restoreGradle
       - *restoreUI
 
       - run:
@@ -64,15 +75,20 @@ jobs:
           command: make style test
 
       - save-cache:
-          key: v1-prevent-ui-deps-{{ checksum "ui/yarn.lock" }}
+          key: *depCacheKey
+          paths:
+            - /go/pkg/dep
+
+      - save-cache:
+          key: *gradleCacheKey
+          paths:
+          - ~/.gradle/caches/
+
+      - save-cache:
+          key: *uiCacheKey
           paths:
             - ui/node_modules
             - ~/.cache/Cypress # Cypress binary will be put there, see https://docs.cypress.io/guides/guides/continuous-integration.html#Example-circle-yml-v2-config-file-with-yarn
-
-      - save-cache:
-          key: v1-prevent-go-pkg-dep-{{ checksum "Gopkg.lock" }}
-          paths:
-            - /go/pkg/dep
 
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
@@ -146,6 +162,7 @@ jobs:
           command: |
             ./scripts/ci/sensor-wait.sh
 
+      - *restoreGradle
       - run:
           name: QA Automation Platform
           command: |
