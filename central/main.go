@@ -127,31 +127,19 @@ func (c *central) startGRPCServer() {
 	c.server.Start()
 }
 
+// allResourcesViewPermissions returns a slice containing view permissions for all resource types.
+func allResourcesViewPermissions() []permissions.Permission {
+	resourceLst := resources.ListAll()
+	result := make([]permissions.Permission, len(resourceLst))
+	for i, resource := range resourceLst {
+		result[i] = permissions.View(resource)
+	}
+	return result
+}
+
 // To export the DB, you need to be able to view _everything_.
-// As new resource types are added, please ensure that you add
-// them to this method.
-// TODO(viswa): Figure out a way to make this easier or enforceable.
 func dbExportOrBackupAuthorizer() authz.Authorizer {
-	return authzUser.With(
-		permissions.View(resources.APIToken),
-		permissions.View(resources.Alert),
-		permissions.View(resources.AuthProvider),
-		permissions.View(resources.Benchmark),
-		permissions.View(resources.BenchmarkScan),
-		permissions.View(resources.BenchmarkSchedule),
-		permissions.View(resources.BenchmarkTrigger),
-		permissions.View(resources.Cluster),
-		permissions.View(resources.DebugMetrics),
-		permissions.View(resources.Deployment),
-		permissions.View(resources.DNRIntegration),
-		permissions.View(resources.Image),
-		permissions.View(resources.ImageIntegration),
-		permissions.View(resources.ImbuedLogs),
-		permissions.View(resources.Notifier),
-		permissions.View(resources.Policy),
-		permissions.View(resources.Secret),
-		permissions.View(resources.ServiceIdentity),
-	)
+	return authzUser.With(allResourcesViewPermissions()...)
 }
 
 func (c *central) customRoutes() (customRoutes []routes.CustomRoute) {
