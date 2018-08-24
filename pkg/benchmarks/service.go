@@ -28,8 +28,8 @@ func (s *BenchmarkResultsService) RegisterServiceServer(grpcServer *grpc.Server)
 	v1.RegisterBenchmarkResultsServiceServer(grpcServer, s)
 }
 
-// RegisterServiceHandlerFromEndpoint implements the APIService interface, but the agent does not accept calls over the gRPC gateway
-func (s *BenchmarkResultsService) RegisterServiceHandlerFromEndpoint(context.Context, *runtime.ServeMux, string, []grpc.DialOption) error {
+// RegisterServiceHandler implements the APIService interface, but the agent does not accept calls over the gRPC gateway
+func (s *BenchmarkResultsService) RegisterServiceHandler(context.Context, *runtime.ServeMux, *grpc.ClientConn) error {
 	return nil
 }
 

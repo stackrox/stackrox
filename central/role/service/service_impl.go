@@ -32,8 +32,8 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	v1.RegisterRoleServiceServer(grpcServer, s)
 }
 
-func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-	return v1.RegisterRoleServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return v1.RegisterRoleServiceHandler(ctx, mux, conn)
 }
 
 func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {

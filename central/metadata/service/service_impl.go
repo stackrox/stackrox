@@ -21,9 +21,9 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	v1.RegisterMetadataServiceServer(grpcServer, s)
 }
 
-// RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
-func (s *serviceImpl) RegisterServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-	return v1.RegisterMetadataServiceHandlerFromEndpoint(ctx, mux, endpoint, opts)
+// RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
+func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return v1.RegisterMetadataServiceHandler(ctx, mux, conn)
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.

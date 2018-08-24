@@ -20,12 +20,11 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 const (
-	grpcAddr = ":443"
-	endpoint = "localhost" + grpcAddr
+	publicAPIEndpoint     = ":443"
+	insecureLocalEndpoint = "localhost:444"
 )
 
 func init() {
@@ -39,7 +38,7 @@ var (
 // APIService is the service interface
 type APIService interface {
 	RegisterServiceServer(server *grpc.Server)
-	RegisterServiceHandlerFromEndpoint(context.Context, *runtime.ServeMux, string, []grpc.DialOption) error
+	RegisterServiceHandler(context.Context, *runtime.ServeMux, *grpc.ClientConn) error
 }
 
 // API listens for new connections on port 443, and redirects them to the gRPC-Gateway
@@ -108,15 +107,28 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	return s
 }
 
-func (a *apiImpl) muxer(tlsConf *tls.Config) http.Handler {
-	ctx := context.Background()
-	dialCreds := credentials.NewTLS(&tls.Config{
-		ServerName:         endpoint,
-		RootCAs:            tlsConf.RootCAs,
-		InsecureSkipVerify: true,
-	})
-	dialOpts := []grpc.DialOption{grpc.WithTransportCredentials(dialCreds)}
+func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) error {
+	lis, err := net.Listen("tcp", insecureLocalEndpoint)
+	if err != nil {
+		return err
+	}
 
+	log.Infof("Launching backend GRPC listener on %v", insecureLocalEndpoint)
+	// Launch the GRPC listener
+	go func() {
+		if err := server.Serve(lis); err != nil {
+			log.Fatal(err)
+		}
+		log.Fatal("The local API server should never terminate")
+	}()
+	return nil
+}
+
+func (a *apiImpl) connectToLocalEndpoint() (*grpc.ClientConn, error) {
+	return grpc.Dial(insecureLocalEndpoint, grpc.WithInsecure())
+}
+
+func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	mux := http.NewServeMux()
 	for _, route := range a.config.CustomRoutes {
 		mux.Handle(route.Route, route.Handler())
@@ -124,8 +136,8 @@ func (a *apiImpl) muxer(tlsConf *tls.Config) http.Handler {
 
 	gwMux := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{EmitDefaults: true}))
 	for _, service := range a.apiServices {
-		if err := service.RegisterServiceHandlerFromEndpoint(ctx, gwMux, endpoint, dialOpts); err != nil {
-			panic(err)
+		if err := service.RegisterServiceHandler(context.Background(), gwMux, localConn); err != nil {
+			log.Panicf("failed to register API service: %v", err)
 		}
 	}
 	mux.Handle("/v1/", gziphandler.GzipHandler(gwMux))
@@ -137,9 +149,9 @@ func (a *apiImpl) run() {
 	if err != nil {
 		panic(err)
 	}
+	tlsConf.NextProtos = []string{"h2"}
 
 	grpcServer := grpc.NewServer(
-		grpc.Creds(credentials.NewTLS(tlsConf)),
 		grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(a.streamInterceptors()...),
 		),
@@ -152,19 +164,28 @@ func (a *apiImpl) run() {
 		service.RegisterServiceServer(grpcServer)
 	}
 
-	tlsConf.NextProtos = []string{"h2"}
+	if err := a.listenOnLocalEndpoint(grpcServer); err != nil {
+		log.Panicf("Could not listen on local endpoint: %v", err)
+	}
+	localConn, err := a.connectToLocalEndpoint()
+	if err != nil {
+		log.Panicf("Could not connect to local endpoint: %v", err)
+	}
+
+	listener, err := tls.Listen("tcp", publicAPIEndpoint, tlsConf)
+	if err != nil {
+		log.Panicf("Could not listen on public API endpoint: %v", err)
+	}
+
 	srv := &http.Server{
-		Addr:      endpoint,
-		Handler:   wireOrJSONMuxer(grpcServer, a.muxer(tlsConf)),
+		Addr:      listener.Addr().String(),
+		Handler:   wireOrJSONMuxer(grpcServer, a.muxer(localConn)),
 		ErrorLog:  golog.New(httpErrorLogger{}, "", golog.LstdFlags),
 		TLSConfig: tlsConf,
 	}
-	conn, err := net.Listen("tcp", grpcAddr)
-	if err != nil {
-		panic(err)
-	}
-	log.Infof("gRPC server started on %s", grpcAddr)
-	err = srv.Serve(tls.NewListener(conn, srv.TLSConfig))
+
+	log.Infof("gRPC server started on %s", srv.Addr)
+	err = srv.Serve(listener)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
