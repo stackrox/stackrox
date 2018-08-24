@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
@@ -49,7 +50,7 @@ func newPoller(centralConn *grpc.ClientConn, clusterID string, onUpdate func([]*
 		onUpdate:    onUpdate,
 
 		updateTicker: time.NewTicker(updateInterval),
-		stop:         make(chan struct{}),
-		stopped:      make(chan struct{}),
+		stop:         concurrency.NewSignal(),
+		stopped:      concurrency.NewSignal(),
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"google.golang.org/grpc"
 )
 
@@ -15,21 +16,21 @@ type pollerImpl struct {
 	onUpdate  func([]*v1.ImageIntegration) error
 
 	updateTicker *time.Ticker
-	stop         chan struct{}
-	stopped      chan struct{}
+	stop         concurrency.Signal
+	stopped      concurrency.Signal
 }
 
 // Start starts polling.
 func (c *pollerImpl) Start() {
-	// push to the stopped channel when stopped.
-	defer func() { c.stopped <- struct{}{} }()
+	// signal as stopped when stopped.
+	defer c.stopped.Signal()
 
 	// Run until stopped.
 	for {
 		select {
 		case <-c.updateTicker.C:
 			c.doUpdate()
-		case <-c.stop:
+		case <-c.stop.Done():
 			return
 		}
 	}
@@ -38,10 +39,10 @@ func (c *pollerImpl) Start() {
 // Stop stops polling.
 func (c *pollerImpl) Stop() {
 	// Send stop signal.
-	c.stop <- struct{}{}
+	c.stop.Signal()
 
 	// Wait until stopped.
-	<-c.stopped
+	c.stopped.Wait()
 }
 
 // doUpdate is run every cycle, creating a connection to the image integration service, making a request

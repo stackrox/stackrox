@@ -2,6 +2,7 @@ package enforcers
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -14,16 +15,16 @@ func CreateEnforcer(enforcementMap map[v1.EnforcementAction]EnforceFunc) Enforce
 	return &enforcer{
 		enforcementMap: enforcementMap,
 		actionsC:       make(chan *DeploymentEnforcement, 10),
-		stopC:          make(chan struct{}),
-		stoppedC:       make(chan struct{}),
+		stopC:          concurrency.NewSignal(),
+		stoppedC:       concurrency.NewSignal(),
 	}
 }
 
 type enforcer struct {
 	enforcementMap map[v1.EnforcementAction]EnforceFunc
 	actionsC       chan *DeploymentEnforcement
-	stopC          chan struct{}
-	stoppedC       chan struct{}
+	stopC          concurrency.Signal
+	stoppedC       concurrency.Signal
 }
 
 func (e *enforcer) Actions() chan<- *DeploymentEnforcement {
@@ -45,14 +46,14 @@ func (e *enforcer) Start() {
 			} else {
 				logger.Infof("Successfully taken %s on deployment %s", action.Enforcement, action.Deployment.GetName())
 			}
-		case <-e.stopC:
+		case <-e.stopC.Done():
 			logger.Info("Shutting down Enforcer")
-			e.stoppedC <- struct{}{}
+			e.stoppedC.Signal()
 		}
 	}
 }
 
 func (e *enforcer) Stop() {
-	e.stopC <- struct{}{}
-	<-e.stoppedC
+	e.stopC.Signal()
+	e.stoppedC.Wait()
 }

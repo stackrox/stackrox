@@ -3,6 +3,7 @@ package queue
 import (
 	"github.com/stackrox/rox/central/sensorevent/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 )
 
 // ChanneledEventQueue provides a dual channel interface to a queue of elements that need to be processed.
@@ -21,8 +22,8 @@ func NewChanneledEventQueue(eventStorage store.Store) ChanneledEventQueue {
 	return &channeledPersistedEventQueue{
 		queue: NewPersistedEventQueue(eventStorage),
 
-		stopLoop:    make(chan struct{}),
-		loopStopped: make(chan struct{}),
+		pushLoopStopped: concurrency.NewSignal(),
+		pullLoopStopped: concurrency.NewSignal(),
 	}
 }
 
@@ -34,9 +35,10 @@ type channeledPersistedEventQueue struct {
 	inputChannel  chan *v1.SensorEvent
 	outputChannel chan *v1.SensorEvent
 
-	pendingChannel chan struct{}
-	stopLoop       chan struct{}
-	loopStopped    chan struct{}
+	pendingChannel  chan struct{}
+	stopLoop        concurrency.Signal
+	pushLoopStopped concurrency.Signal
+	pullLoopStopped concurrency.Signal
 }
 
 // InChannel returns the write-only channel that adds items to the queue.
@@ -67,16 +69,16 @@ func (s *channeledPersistedEventQueue) Open(clusterID string) error {
 // Close stops the reading and writing from in and out channels.
 func (s *channeledPersistedEventQueue) Close() {
 	close(s.inputChannel)
-	<-s.loopStopped
+	s.pushLoopStopped.Wait()
 	close(s.pendingChannel)
-	<-s.loopStopped
+	s.pullLoopStopped.Wait()
 	close(s.outputChannel)
 }
 
 // pushLoop loops over the input and adds it to the DB or outgoing channel if the DB can be skipped.
 func (s *channeledPersistedEventQueue) pushLoop() {
 	// notification that the loop has been exited.
-	defer func() { s.loopStopped <- struct{}{} }()
+	defer s.pushLoopStopped.Signal()
 
 	for {
 		// Looping stops when we close the input channel.
@@ -97,7 +99,7 @@ func (s *channeledPersistedEventQueue) pushLoop() {
 // pullLoop grabs the next available output and pushes it to the channel when able.
 func (s *channeledPersistedEventQueue) pullLoop() {
 	// notification that the loop has been exited.
-	defer func() { s.loopStopped <- struct{}{} }()
+	defer s.pullLoopStopped.Signal()
 
 	for {
 		// Looping stops when the pending channel closes.
@@ -106,21 +108,19 @@ func (s *channeledPersistedEventQueue) pullLoop() {
 			return
 		}
 
-		if s.queue.Count() == 0 {
-			continue
-		}
+		// Remove all items from the queue, until the queue is empty.
+		for {
+			next, err := s.queue.Pull()
+			if err != nil {
+				log.Errorf("unable to pull from queue: %s", err)
+				continue
+			}
+			if next == nil {
+				break
+			}
 
-		next, err := s.queue.Pull()
-		if err != nil {
-			log.Errorf("unable to pull from queue: %s", err)
-			continue
+			s.outputChannel <- next
 		}
-		if next == nil {
-			continue
-		}
-
-		s.outputChannel <- next
-		s.thereMightBeMoreQueued()
 	}
 }
 

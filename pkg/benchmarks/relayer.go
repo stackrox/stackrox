@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/golang-lru"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 )
@@ -34,8 +35,8 @@ type LRURelayer struct {
 	centralEndpoint string
 	conn            *grpc.ClientConn
 
-	tick  *time.Ticker
-	stopC chan struct{}
+	tick    *time.Ticker
+	stopSig concurrency.Signal
 
 	logger *logging.Logger
 }
@@ -48,11 +49,11 @@ func NewLRURelayer(conn *grpc.ClientConn) *LRURelayer {
 		panic(err)
 	}
 	return &LRURelayer{
-		conn:   conn,
-		cache:  cache,
-		tick:   time.NewTicker(interval),
-		stopC:  make(chan struct{}),
-		logger: logging.NewOrGet("relayer"),
+		conn:    conn,
+		cache:   cache,
+		tick:    time.NewTicker(interval),
+		stopSig: concurrency.NewSignal(),
+		logger:  logging.NewOrGet("relayer"),
 	}
 }
 
@@ -62,7 +63,7 @@ func (r *LRURelayer) Start() {
 		select {
 		case <-r.tick.C:
 			r.run()
-		case <-r.stopC:
+		case <-r.stopSig.Done():
 			r.tick.Stop()
 			return
 		}
@@ -71,7 +72,7 @@ func (r *LRURelayer) Start() {
 
 // Stop stops any ongoing processing inside the LRURelayer.
 func (r *LRURelayer) Stop() {
-	r.stopC <- struct{}{}
+	r.stopSig.Signal()
 }
 
 func payloadKey(payload *v1.BenchmarkResult) string {

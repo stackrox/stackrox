@@ -4,6 +4,7 @@ import (
 	"time"
 
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,7 +17,7 @@ type WatchLister struct {
 	client     rest.Interface
 	Store      cache.Store
 	Controller cache.Controller
-	stopC      chan struct{}
+	stopSig    concurrency.Signal
 
 	resyncPeriod time.Duration
 }
@@ -25,7 +26,7 @@ type WatchLister struct {
 func NewWatchLister(client rest.Interface, resyncPeriod time.Duration) WatchLister {
 	return WatchLister{
 		client:       client,
-		stopC:        make(chan struct{}),
+		stopSig:      concurrency.NewSignal(),
 		resyncPeriod: resyncPeriod,
 	}
 }
@@ -55,10 +56,10 @@ func (wl *WatchLister) SetupWatch(object string, objectType runtime.Object, chan
 
 // StartWatch starts watching
 func (wl *WatchLister) StartWatch() {
-	wl.Controller.Run(wl.stopC)
+	wl.Controller.Run(wl.stopSig.Done())
 }
 
 // Stop stops the watch
 func (wl *WatchLister) Stop() {
-	wl.stopC <- struct{}{}
+	wl.stopSig.Signal()
 }

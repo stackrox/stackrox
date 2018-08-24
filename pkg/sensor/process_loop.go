@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/integration"
@@ -37,16 +38,16 @@ type processLoopsImpl struct {
 	imageEnricher enricher.ImageEnricher
 	poller        integration.Poller
 
-	stopLoop    chan struct{}
-	loopStopped chan struct{}
+	stopLoop    concurrency.Signal
+	loopStopped concurrency.Signal
 }
 
 // Starts the processing loops.
 func (p *processLoopsImpl) startLoops(input <-chan *listeners.EventWrap, stream v1.SensorEventService_RecordEventClient, output chan<- *enforcers.DeploymentEnforcement) {
 	go p.poller.Start()
 
-	p.stopLoop = make(chan struct{})
-	p.loopStopped = make(chan struct{})
+	p.stopLoop = concurrency.NewSignal()
+	p.loopStopped = concurrency.NewSignal()
 	go p.sendMessages(input, stream)
 	go p.receiveMessages(stream, output)
 }
@@ -55,10 +56,8 @@ func (p *processLoopsImpl) startLoops(input <-chan *listeners.EventWrap, stream 
 func (p *processLoopsImpl) stopLoops() {
 	p.poller.Stop()
 
-	p.stopLoop <- struct{}{}
-	<-p.loopStopped
-	close(p.stopLoop)
-	close(p.loopStopped)
+	p.stopLoop.Signal()
+	p.loopStopped.Wait()
 }
 
 // The processing loops which feed the input channel data to central,
@@ -94,15 +93,15 @@ func (p *processLoopsImpl) sendMessages(eventInput <-chan *listeners.EventWrap, 
 			}
 
 		// If we receive the stop signal, then break out of the loop.
-		case _ = <-p.stopLoop:
-			break
+		case <-p.stopLoop.Done():
+			return
 		}
 	}
 }
 
 // Take in data processed by central, run post processing, then send it to the output channel.
 func (p *processLoopsImpl) receiveMessages(stream v1.SensorEventService_RecordEventClient, output chan<- *enforcers.DeploymentEnforcement) {
-	defer func() { p.loopStopped <- struct{}{} }()
+	defer p.loopStopped.Signal()
 
 	for {
 		// Take in the responses from central and generate enforcements for the outbound channel.

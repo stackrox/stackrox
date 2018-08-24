@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	dockerClient "github.com/docker/docker/client"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
@@ -28,9 +29,9 @@ type ResourceHandler interface {
 // listener provides functionality for listening to deployment events.
 type listener struct {
 	*dockerClient.Client
-	eventsC  chan *listeners.EventWrap
-	stopC    chan struct{}
-	stoppedC chan struct{}
+	eventsC    chan *listeners.EventWrap
+	stopSig    concurrency.Signal
+	stoppedSig concurrency.Signal
 
 	resourceHandlers map[string]ResourceHandler
 }
@@ -46,10 +47,10 @@ func New() (listeners.Listener, error) {
 	dockerClient.NegotiateAPIVersion(ctx)
 	eventsC := make(chan *listeners.EventWrap, 10)
 	return &listener{
-		Client:   dockerClient,
-		eventsC:  eventsC,
-		stopC:    make(chan struct{}),
-		stoppedC: make(chan struct{}),
+		Client:     dockerClient,
+		eventsC:    eventsC,
+		stopSig:    concurrency.NewSignal(),
+		stoppedSig: concurrency.NewSignal(),
 		resourceHandlers: map[string]ResourceHandler{
 			"service": services.NewServiceHandler(dockerClient, eventsC),
 			"network": networks.NewHandler(dockerClient, eventsC),
@@ -67,6 +68,7 @@ func (dl *listener) Start() {
 	}
 
 	log.Info("Swarm Listener Started")
+	defer dl.stoppedSig.Signal()
 	for {
 		select {
 		case event := <-events:
@@ -81,10 +83,9 @@ func (dl *listener) Start() {
 			// Provide a small amount of time for the potential issue to correct itself
 			time.Sleep(1 * time.Second)
 			events, errors, cancel = dl.eventHandler()
-		case <-dl.stopC:
+		case <-dl.stopSig.Done():
 			log.Infof("Shutting down Swarm Listener")
 			cancel()
-			dl.stoppedC <- struct{}{}
 			return
 		}
 	}
@@ -108,6 +109,6 @@ func (dl *listener) Events() <-chan *listeners.EventWrap {
 }
 
 func (dl *listener) Stop() {
-	dl.stopC <- struct{}{}
-	<-dl.stoppedC
+	dl.stopSig.Signal()
+	dl.stoppedSig.Wait()
 }

@@ -3,6 +3,7 @@ package resources
 import (
 	"time"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
@@ -19,7 +20,7 @@ type PodWatchLister struct {
 	client       rest.Interface
 	store        cache.Store
 	controller   cache.Controller
-	stopC        chan struct{}
+	stopSig      concurrency.Signal
 	resyncPeriod time.Duration
 }
 
@@ -27,7 +28,7 @@ type PodWatchLister struct {
 func NewPodWatchLister(client rest.Interface, resyncPeriod time.Duration) *PodWatchLister {
 	return &PodWatchLister{
 		client:       client,
-		stopC:        make(chan struct{}),
+		stopSig:      concurrency.NewSignal(),
 		resyncPeriod: resyncPeriod,
 	}
 }
@@ -43,7 +44,7 @@ func (wl *PodWatchLister) Watch() {
 		cache.ResourceEventHandlerFuncs{},
 	)
 
-	wl.controller.Run(wl.stopC)
+	wl.controller.Run(wl.stopSig.Done())
 }
 
 // List lists all of the pods
@@ -78,5 +79,5 @@ func (wl *PodWatchLister) BlockUntilSynced() {
 
 // Stop stops the watch
 func (wl *PodWatchLister) Stop() {
-	wl.stopC <- struct{}{}
+	wl.stopSig.Signal()
 }

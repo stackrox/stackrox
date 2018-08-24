@@ -10,6 +10,7 @@ import (
 	"github.com/deckarep/golang-set"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/orchestrators"
@@ -56,8 +57,7 @@ type SchedulerClient struct {
 
 	conn *grpc.ClientConn
 
-	started bool
-	done    chan struct{}
+	done concurrency.Signal
 
 	schedules map[string]*scheduleMetadata
 	triggers  map[string]*v1.BenchmarkTrigger
@@ -71,7 +71,7 @@ func NewSchedulerClient(orchestrator orchestrators.Orchestrator, advertisedEndpo
 	return &SchedulerClient{
 		updateTicker:       time.NewTicker(updateInterval),
 		orchestrator:       orchestrator,
-		done:               make(chan struct{}),
+		done:               concurrency.NewSignal(),
 		clusterID:          clusterID,
 		advertisedEndpoint: advertisedEndpoint,
 		image:              image,
@@ -369,8 +369,7 @@ func (s *SchedulerClient) Start() {
 			if err := s.launchBenchmark(scan); err != nil {
 				log.Errorf("Error launching benchmark %v with scan id '%v': %+v", scan.GetBenchmarkId(), scan.GetScanId(), err)
 			}
-		case <-s.done:
-			s.started = false
+		case <-s.done.Done():
 			return
 		}
 	}
@@ -378,7 +377,7 @@ func (s *SchedulerClient) Start() {
 
 // Stop stops the scheduler client from triggering any more jobs.
 func (s *SchedulerClient) Stop() {
-	s.done <- struct{}{}
+	s.done.Signal()
 
 	// TODO(cg): Also stop any launched benchmark.
 }
