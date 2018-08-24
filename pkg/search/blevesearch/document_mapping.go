@@ -1,6 +1,7 @@
 package blevesearch
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/blevesearch/bleve/mapping"
@@ -53,10 +54,10 @@ func searchFieldToMapping(sf *v1.SearchField) *mapping.FieldMapping {
 		return setFieldMappingDefaults(mapping.NewTextFieldMapping(), sf.GetStore())
 	case v1.SearchDataType_SEARCH_BOOL:
 		return setFieldMappingDefaults(mapping.NewBooleanFieldMapping(), sf.GetStore())
-	case v1.SearchDataType_SEARCH_NUMERIC, v1.SearchDataType_SEARCH_ENFORCEMENT, v1.SearchDataType_SEARCH_SEVERITY:
+	case v1.SearchDataType_SEARCH_NUMERIC, v1.SearchDataType_SEARCH_ENFORCEMENT, v1.SearchDataType_SEARCH_SEVERITY, v1.SearchDataType_SEARCH_DATETIME:
 		return setFieldMappingDefaults(mapping.NewNumericFieldMapping(), sf.GetStore())
 	default:
-		return setFieldMappingDefaults(mapping.NewTextFieldMapping(), sf.GetStore())
+		panic(fmt.Errorf("Search Field '%s' is not handled in the mapping", sf.Type))
 	}
 }
 

@@ -14,6 +14,11 @@ const (
 	OptionHidden
 )
 
+// NewTimeField creates a new mapped field for timestamp values
+func NewTimeField(name string) *v1.SearchField {
+	return NewField(name, v1.SearchDataType_SEARCH_DATETIME, 0)
+}
+
 // NewStringField creates a new mapped field for string values.
 func NewStringField(name string) *v1.SearchField {
 	return NewField(name, v1.SearchDataType_SEARCH_STRING, 0)

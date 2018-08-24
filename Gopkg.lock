@@ -870,6 +870,14 @@
   version = "1.0.2"
 
 [[projects]]
+  branch = "master"
+  digest = "1:2afac35f4fbf7dca488bca1592e7b249893d61a0e9468d1a8020ba2cc7c47c0d"
+  name = "github.com/tkuchiki/go-timezone"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "8ecb018cca334830e326eb2e501200c182a49a7d"
+
+[[projects]]
   digest = "1:d9545ad94bf2d1e4733d1ba8cc816419376a2c71b529cc7ebd0bf4f83cd707ec"
   name = "github.com/trivago/tgo"
   packages = [
@@ -1333,6 +1341,7 @@
     "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",
     "github.com/stretchr/testify/suite",
+    "github.com/tkuchiki/go-timezone",
     "golang.org/x/net/context",
     "golang.org/x/oauth2/google",
     "golang.org/x/time/rate",

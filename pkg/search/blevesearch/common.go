@@ -1,8 +1,6 @@
 package blevesearch
 
 import (
-	"fmt"
-
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -22,11 +20,7 @@ func FieldsToQuery(category v1.SearchCategory, request *v1.ParsedSearchRequest, 
 		if !ok {
 			continue
 		}
-		queryFunc, ok := datatypeToQueryFunc[searchField.GetType()]
-		if !ok {
-			return nil, fmt.Errorf("Query for type %s is not implemented", searchField.GetType())
-		}
-		q, err := queryFunc(category, searchField.GetFieldPath(), field.GetValues())
+		q, err := evaluateQuery(category, searchField, field.GetValues())
 		if err != nil {
 			return nil, err
 		}

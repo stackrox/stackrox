@@ -18,9 +18,11 @@ var OptionsMap = map[string]*v1.SearchField{
 	search.Component:                    search.NewStringField("image.scan.components.name"),
 	search.DockerfileInstructionKeyword: search.NewStringField("image.metadata.layers.instruction"),
 	search.DockerfileInstructionValue:   search.NewStringField("image.metadata.layers.value"),
+	search.ImageCreatedTime:             search.NewTimeField("image.metadata.created.seconds"),
 	search.ImageName:                    search.NewStringField("image.name.full_name"),
 	search.ImageSHA:                     search.NewField("image.name.sha", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
 	search.ImageRegistry:                search.NewStringField("image.name.registry"),
 	search.ImageRemote:                  search.NewStringField("image.name.remote"),
+	search.ImageScanTime:                search.NewTimeField("image.scan.scan_time.seconds"),
 	search.ImageTag:                     search.NewStringField("image.name.tag"),
 }

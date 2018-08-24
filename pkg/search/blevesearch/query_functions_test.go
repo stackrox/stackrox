@@ -7,9 +7,10 @@ import (
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestGetStringToSearch(t *testing.T) {
+func TestNewStringQuery(t *testing.T) {
 	cases := []struct {
 		query          string
 		expectedString string
@@ -38,8 +39,8 @@ func TestGetStringToSearch(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.query, func(t *testing.T) {
-			q, err := getQueryToSearch(v1.SearchCategory_DEPLOYMENTS, "field", c.query)
-			assert.Equal(t, c.hasError, err != nil)
+			q, err := newStringQuery(v1.SearchCategory_DEPLOYMENTS, "field", c.query)
+			require.Equal(t, c.hasError, err != nil)
 			if q != nil {
 				switch q.(type) {
 				case *MatchPhrasePrefixQuery:
@@ -53,6 +54,5 @@ func TestGetStringToSearch(t *testing.T) {
 				}
 			}
 		})
-
 	}
 }

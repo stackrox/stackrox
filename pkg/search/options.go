@@ -20,10 +20,12 @@ const (
 	Component                    = "Component"
 	DockerfileInstructionKeyword = "Dockerfile Instruction Keyword"
 	DockerfileInstructionValue   = "Dockerfile Instruction Value"
+	ImageCreatedTime             = "Image Created Time"
 	ImageName                    = "Image"
 	ImageSHA                     = "Image Sha"
 	ImageRegistry                = "Image Registry"
 	ImageRemote                  = "Image Remote"
+	ImageScanTime                = "Image Scan Time"
 	ImageTag                     = "Image Tag"
 
 	CPUCoresLimit     = "CPU Cores Limit"
