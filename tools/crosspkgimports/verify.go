@@ -58,7 +58,8 @@ func getRoot(packageName string) (root string, valid bool) {
 			return "", false
 		}
 	}
-	logAndExit("Package %s not found in list", packageName)
+	logAndExit("Package %s not found in list. If you added a new build root, "+
+		"you might need to add it to the validRoots list in tools/crosspkgimports/verify.go.", packageName)
 	return "", false
 }
 
