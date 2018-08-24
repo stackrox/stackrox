@@ -131,7 +131,7 @@ func start() {
 	// If everything is brought up correctly, start the sensor.
 	if listenerInstance != nil && enforcerInstance != nil {
 		sensorInstance = sensor.NewSensor(conn, clusterID)
-		sensorInstance.Start(listenerInstance.Events(), enforcerInstance.Actions())
+		sensorInstance.Start(listenerInstance.Events(), signalService.Singleton().Indicators(), enforcerInstance.Actions())
 	}
 
 	logger.Info("Kubernetes Sensor Started")
@@ -172,8 +172,10 @@ func customRoutes() []routes.CustomRoute {
 
 // Registers our connection for benchmarking.
 func registerAPIServices(conn *grpcLib.ClientConn) {
-	server.Register(benchmarks.NewBenchmarkResultsService(benchmarks.NewLRURelayer(conn)))
-	server.Register(signalService.New())
+	server.Register(
+		benchmarks.NewBenchmarkResultsService(benchmarks.NewLRURelayer(conn)),
+		signalService.Singleton(),
+	)
 	logger.Info("API services registered")
 }
 

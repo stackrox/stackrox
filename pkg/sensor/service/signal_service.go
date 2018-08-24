@@ -2,13 +2,18 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/sensor/metrics"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 )
 
@@ -25,14 +30,6 @@ type Service interface {
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 	PushSignals(stream v1.SignalService_PushSignalsServer) error
 	Indicators() <-chan *listeners.EventWrap
-}
-
-// New creates a new streaming service with the collector
-func New() Service {
-	return &serviceImpl{
-		queue:      make(chan *v1.Signal, maxBufferSize),
-		indicators: make(chan *listeners.EventWrap),
-	}
 }
 
 type serviceImpl struct {
@@ -70,6 +67,8 @@ func (s *serviceImpl) Indicators() <-chan *listeners.EventWrap {
 }
 
 func (s *serviceImpl) receiveMessages(stream v1.SignalService_PushSignalsServer) error {
+	clientClusterID := env.ClusterID.Setting()
+
 	for {
 		signal, err := stream.Recv()
 		if err != nil {
@@ -87,18 +86,34 @@ func (s *serviceImpl) receiveMessages(stream v1.SignalService_PushSignalsServer)
 			continue
 		}
 
-		//indicator := &v1.Indicator{
-		//	Id: uuid.NewV4().String(),
-		//	Signal: signal.GetSignal(),
-		//}
-		//
-		//wrappedEvent := &listeners.EventWrap{
-		//	SensorEvent: &v1.SensorEvent{
-		//		Id: indicator.GetId(),
-		//	},
-		//}
+		// TODO: For testing! Remove once end-to-end data pipeline is complete
+		log.Infof("Obtained signal: %+v", signal)
 
-		//s.indicators <- wrappedEvent
+		indicator := &v1.Indicator{
+			Id:     uuid.NewV4().String(),
+			Signal: signal.GetSignal(),
+		}
+
+		// Log lag metrics from collector
+		lag := time.Now().Sub(protoconv.ConvertTimestampToTimeOrNow(indicator.GetSignal().GetTime()))
+		metrics.RegisterSignalToIndicatorCreateLag(clientClusterID, float64(lag.Nanoseconds()))
+
+		wrappedEvent := &listeners.EventWrap{
+			SensorEvent: &v1.SensorEvent{
+				Id:        indicator.GetId(),
+				ClusterId: clientClusterID,
+				Resource: &v1.SensorEvent_Indicator{
+					Indicator: indicator,
+				},
+			},
+		}
+
+		select {
+		case s.indicators <- wrappedEvent:
+		default:
+			// TODO: We may want to consider popping stuff from the channel here so that we only retain the most recent events
+			metrics.RegisterSensorIndicatorChannelFullCounter(clientClusterID)
+		}
 
 	}
 }

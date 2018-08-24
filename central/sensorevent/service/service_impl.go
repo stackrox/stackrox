@@ -115,7 +115,8 @@ func (s *serviceImpl) sendMessages(stream v1.SensorEventService_RecordEventServe
 		case *v1.SensorEvent_Namespace:
 			eventPipeline = s.namespacePipeline
 		case *v1.SensorEvent_Indicator:
-			continue // TODO: Fill this out
+			// TODO: Implement actual handling
+			log.Infof("Obtained an Indicator event: %+v", x)
 		case nil:
 			logger.Errorf("Resource field is empty")
 			return

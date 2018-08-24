@@ -2,7 +2,9 @@ package sensor
 
 import (
 	"io"
+	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
@@ -10,6 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/protoconv"
+	sensorMetrics "github.com/stackrox/rox/pkg/sensor/metrics"
 	"google.golang.org/grpc"
 )
 
@@ -43,12 +47,17 @@ type processLoopsImpl struct {
 }
 
 // Starts the processing loops.
-func (p *processLoopsImpl) startLoops(input <-chan *listeners.EventWrap, stream v1.SensorEventService_RecordEventClient, output chan<- *enforcers.DeploymentEnforcement) {
+func (p *processLoopsImpl) startLoops(orchestratorInput <-chan *listeners.EventWrap,
+	collectorInput <-chan *listeners.EventWrap,
+	stream v1.SensorEventService_RecordEventClient,
+	output chan<- *enforcers.DeploymentEnforcement) {
+
 	go p.poller.Start()
 
 	p.stopLoop = concurrency.NewSignal()
 	p.loopStopped = concurrency.NewSignal()
-	go p.sendMessages(input, stream)
+
+	go p.sendMessages(orchestratorInput, collectorInput, stream)
 	go p.receiveMessages(stream, output)
 }
 
@@ -65,14 +74,17 @@ func (p *processLoopsImpl) stopLoops() {
 //////////////////////////////////////////////////////////////////
 
 // Take in data from the input channel, pre-process it, then send it to central.
-func (p *processLoopsImpl) sendMessages(eventInput <-chan *listeners.EventWrap, stream v1.SensorEventService_RecordEventClient) {
+func (p *processLoopsImpl) sendMessages(orchestratorInput <-chan *listeners.EventWrap,
+	collectorInput <-chan *listeners.EventWrap,
+	stream v1.SensorEventService_RecordEventClient) {
+
 	// When the input channel closes and looping stops and returns, we need to close the stream with central.
 	defer stream.CloseSend()
 
 	for {
 		select {
 		// Take in events from the inbound channel, pre-process, then send to central.
-		case eventWrap, ok := <-eventInput:
+		case eventWrap, ok := <-orchestratorInput:
 			// The loop stops when the input channel is closed.
 			if !ok {
 				return
@@ -89,9 +101,23 @@ func (p *processLoopsImpl) sendMessages(eventInput <-chan *listeners.EventWrap, 
 
 			log.Infof("Event already being processed %s", eventWrap.GetId())
 			if err := stream.Send(eventWrap.SensorEvent); err != nil {
-				log.Errorf("unable to send event: %s", err)
+				log.Errorf("unable to send orchestrator event: %s", err)
 			}
-
+		case eventWrap, ok := <-collectorInput:
+			if !ok {
+				return
+			}
+			indicator, ok := eventWrap.GetResource().(*v1.SensorEvent_Indicator)
+			if !ok {
+				log.Errorf("Non indicator SensorEvent found on collector Input channel: %v", eventWrap)
+				continue
+			}
+			indicator.Indicator.EmitTimestamp = types.TimestampNow()
+			lag := time.Now().Sub(protoconv.ConvertTimestampToTimeOrNow(indicator.Indicator.GetSignal().GetTime()))
+			sensorMetrics.RegisterSignalToIndicatorEmitLag(eventWrap.GetClusterId(), float64(lag))
+			if err := stream.Send(eventWrap.SensorEvent); err != nil {
+				log.Errorf("unable to send indicator event: %s", err)
+			}
 		// If we receive the stop signal, then break out of the loop.
 		case <-p.stopLoop.Done():
 			return
