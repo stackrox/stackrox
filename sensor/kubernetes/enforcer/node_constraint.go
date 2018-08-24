@@ -15,7 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (e *enforcer) unsatisfiableNodeConstraint(enforcement *enforcers.DeploymentEnforcement) (err error) {
+func (e *enforcerImpl) unsatisfiableNodeConstraint(enforcement *enforcers.DeploymentEnforcement) (err error) {
 	const maxRetries = 5
 	obj := enforcement.OriginalSpec
 
@@ -58,7 +58,7 @@ func applyNodeConstraintToObj(obj interface{}, alertID string) (err error) {
 	return
 }
 
-func (e *enforcer) updateResourceWithConstraint(deployment *v1.Deployment, obj interface{}) (err error) {
+func (e *enforcerImpl) updateResourceWithConstraint(deployment *v1.Deployment, obj interface{}) (err error) {
 	var ok bool
 
 	switch deployment.GetType() {
@@ -99,7 +99,7 @@ func (e *enforcer) updateResourceWithConstraint(deployment *v1.Deployment, obj i
 	return
 }
 
-func (e *enforcer) getLatestResource(deployment *v1.Deployment) (obj interface{}, err error) {
+func (e *enforcerImpl) getLatestResource(deployment *v1.Deployment) (obj interface{}, err error) {
 	switch deployment.GetType() {
 	case pkgKubernetes.Deployment:
 		obj, err = e.client.ExtensionsV1beta1().Deployments(deployment.GetNamespace()).Get(deployment.GetName(), metav1.GetOptions{})

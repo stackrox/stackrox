@@ -11,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (e *enforcer) scaleToZero(enforcement *enforcers.DeploymentEnforcement) (err error) {
+func (e *enforcerImpl) scaleToZero(enforcement *enforcers.DeploymentEnforcement) (err error) {
 	d := enforcement.Deployment
 	scaleRequest := &v1beta1.Scale{
 		Spec: pkgKubernetes.ScaleToZeroSpec,
@@ -52,7 +52,7 @@ func (e *enforcer) scaleToZero(enforcement *enforcers.DeploymentEnforcement) (er
 	return
 }
 
-func (e *enforcer) scaleStatefulSetToZero(ss *appsv1beta1.StatefulSet) (err error) {
+func (e *enforcerImpl) scaleStatefulSetToZero(ss *appsv1beta1.StatefulSet) (err error) {
 	ss.Spec.Replicas = &[]int32{0}[0]
 	_, err = e.client.AppsV1beta1().StatefulSets(ss.GetNamespace()).Update(ss)
 	return

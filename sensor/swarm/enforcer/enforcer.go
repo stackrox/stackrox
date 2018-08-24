@@ -19,12 +19,8 @@ var (
 	logger = logging.LoggerForModule()
 )
 
-type enforcer struct {
+type enforcerImpl struct {
 	*dockerClient.Client
-	enforcementMap map[v1.EnforcementAction]enforcers.EnforceFunc
-	actionsC       chan *enforcers.DeploymentEnforcement
-	stopC          chan struct{}
-	stoppedC       chan struct{}
 }
 
 // New returns a new Swarm Enforcer.
@@ -37,49 +33,18 @@ func New() (enforcers.Enforcer, error) {
 	defer cancel()
 	dockerClient.NegotiateAPIVersion(ctx)
 
-	e := &enforcer{
-		Client:         dockerClient,
-		enforcementMap: make(map[v1.EnforcementAction]enforcers.EnforceFunc),
-		actionsC:       make(chan *enforcers.DeploymentEnforcement, 10),
-		stopC:          make(chan struct{}),
-		stoppedC:       make(chan struct{}),
+	e := &enforcerImpl{
+		Client: dockerClient,
 	}
-	e.enforcementMap[v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT] = e.scaleToZero
-	e.enforcementMap[v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT] = e.unsatisfiableNodeConstraint
-
-	return e, nil
-}
-
-func (e *enforcer) Actions() chan<- *enforcers.DeploymentEnforcement {
-	return e.actionsC
-}
-
-func (e *enforcer) Start() {
-	for {
-		select {
-		case action := <-e.actionsC:
-			if f, ok := e.enforcementMap[action.Enforcement]; !ok {
-				logger.Errorf("unknown enforcement action: %s", action.Enforcement)
-			} else {
-				if err := f(action); err != nil {
-					logger.Errorf("failed to take enforcement action %s on deployment %s: %s", action.Enforcement, action.Deployment.GetName(), err)
-				} else {
-					logger.Infof("Successfully taken %s on deployment %s", action.Enforcement, action.Deployment.GetName())
-				}
-			}
-		case <-e.stopC:
-			logger.Info("Shutting down swarm Enforcer")
-			e.stoppedC <- struct{}{}
-		}
+	enforcementMap := map[v1.EnforcementAction]enforcers.EnforceFunc{
+		v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT:                 e.scaleToZero,
+		v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: e.unsatisfiableNodeConstraint,
 	}
+
+	return enforcers.CreateEnforcer(enforcementMap), nil
 }
 
-func (e *enforcer) Stop() {
-	e.stopC <- struct{}{}
-	<-e.stoppedC
-}
-
-func (e *enforcer) scaleToZero(enforcement *enforcers.DeploymentEnforcement) (err error) {
+func (e *enforcerImpl) scaleToZero(enforcement *enforcers.DeploymentEnforcement) (err error) {
 	if len(enforcement.Deployment.GetContainers()) == 0 {
 		return errors.New("deployment does not have any containers")
 	}
@@ -100,7 +65,7 @@ func (e *enforcer) scaleToZero(enforcement *enforcers.DeploymentEnforcement) (er
 	return
 }
 
-func (e *enforcer) unsatisfiableNodeConstraint(enforcement *enforcers.DeploymentEnforcement) (err error) {
+func (e *enforcerImpl) unsatisfiableNodeConstraint(enforcement *enforcers.DeploymentEnforcement) (err error) {
 	service, ok := enforcement.OriginalSpec.(swarm.Service)
 	if !ok {
 		return fmt.Errorf("%+v is not of type swarm service", enforcement.OriginalSpec)
