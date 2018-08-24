@@ -4,16 +4,17 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 
-import { sortTime, sortSeverity } from 'sorters/sorters';
+import { sortDate, sortSeverity } from 'sorters/sorters';
 import { actions as alertActions } from 'reducers/alerts';
 import { selectors } from 'reducers';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
+import ReactTooltip from 'react-tooltip';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
+import ReactRowSelectTable from 'Components/ReactRowSelectTable';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
-import Table from 'Components/Table';
 import ViolationsPanel from './ViolationsPanel';
 
 const severityLabels = {
@@ -37,7 +38,7 @@ const getSeverityClassName = severityValue => {
 
 class ViolationsPage extends Component {
     static propTypes = {
-        violatedPolicies: PropTypes.arrayOf(
+        violations: PropTypes.arrayOf(
             PropTypes.shape({
                 id: PropTypes.string.isRequired
             })
@@ -60,52 +61,97 @@ class ViolationsPage extends Component {
         }
     };
 
-    onViolationClick = alert => {
-        this.updateAlertUrl(alert.id);
-    };
-
     onPanelClose = () => {
-        this.updateAlertUrl();
+        this.updateSelectedAlert();
     };
 
-    updateAlertUrl(id) {
-        const urlSuffix = id ? `/${id}` : '';
+    updateSelectedAlert = alert => {
+        const urlSuffix = alert && alert.id ? `/${alert.id}` : '';
         this.props.history.push({
             pathname: `/main/violations${urlSuffix}`,
             search: this.props.location.search
         });
-    }
+    };
 
     renderTable() {
         const columns = [
-            { key: 'deployment.name', label: 'Deployment' },
-            { key: 'deployment.clusterName', label: 'Cluster' },
-            { key: 'policy.name', label: 'Policy' },
-            { key: 'policy.description', label: 'Description' },
             {
-                key: 'policy.categories',
-                label: 'Categories',
-                keyValueFunc: obj => (obj.length > 1 ? 'Multiple' : obj[0]),
-                tooltip: categories => categories.join(' | ')
+                Header: 'Deployment',
+                accessor: 'deployment.name',
+                widthClassName: 'w-1/8',
+                wrap: true
             },
             {
-                key: 'policy.severity',
-                keyValueFunc: severity => severityLabels[severity],
-                label: 'Severity',
-                classFunc: getSeverityClassName,
+                Header: 'Cluster',
+                accessor: 'deployment.clusterName',
+                widthClassName: 'w-1/8',
+                wrap: true
+            },
+            {
+                Header: 'Policy',
+                accessor: 'policy.name',
+                widthClassName: 'w-1/8',
+                wrap: true
+            },
+            {
+                Header: 'Description',
+                accessor: 'policy.description',
+                widthClassName: 'w-1/4',
+                wrap: true
+            },
+            {
+                Header: 'Categories',
+                accessor: 'policy.categories',
+                widthClassName: 'w-1/8',
+                wrap: true,
+                Cell: ci =>
+                    ci.value.length > 1 ? (
+                        <div data-tip data-for="button-violation-categories">
+                            Multiple
+                            <ReactTooltip
+                                id="button-violation-categories"
+                                type="dark"
+                                effect="solid"
+                            >
+                                {ci.value.join(' | ')}
+                            </ReactTooltip>
+                        </div>
+                    ) : (
+                        ci.value[0]
+                    )
+            },
+            {
+                Header: 'Severity',
+                accessor: 'policy.severity',
+                widthClassName: 'w-1/8',
+                Cell: ci => {
+                    const severity = severityLabels[ci.value];
+                    return <span className={getSeverityClassName(severity)}>{severity}</span>;
+                },
                 sortMethod: sortSeverity('policy.severity')
             },
             {
-                key: 'time',
-                keyValueFunc: time => `${dateFns.format(time, dateTimeFormat)}`,
-                label: 'Time',
-                sortMethod: sortTime
+                Header: 'Time',
+                accessor: 'time',
+                widthClassName: 'w-1/8',
+                wrap: true,
+                Cell: ci => dateFns.format(ci.value, dateTimeFormat),
+                sortMethod: sortDate
             }
         ];
-        const rows = this.props.violatedPolicies;
+        const rows = this.props.violations;
+        const id = this.props.match.params.alertId;
         if (!rows.length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
-        return <Table columns={columns} rows={rows} onRowClick={this.onViolationClick} />;
+        return (
+            <ReactRowSelectTable
+                rows={rows}
+                columns={columns}
+                onRowClick={this.updateSelectedAlert}
+                selectedRowId={id}
+                noDataText="No results found. Please refine your search."
+            />
+        );
     }
 
     renderSidePanel = () => {
@@ -154,7 +200,7 @@ const isViewFiltered = createSelector(
 );
 
 const mapStateToProps = createStructuredSelector({
-    violatedPolicies: selectors.getFilteredAlerts,
+    violations: selectors.getFilteredAlerts,
     searchOptions: selectors.getAlertsSearchOptions,
     searchModifiers: selectors.getAlertsSearchModifiers,
     searchSuggestions: selectors.getAlertsSearchSuggestions,

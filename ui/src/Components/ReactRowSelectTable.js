@@ -60,12 +60,23 @@ class ReactRowSelectTable extends Component {
         };
     };
 
+    getColumnClassName = column => {
+        let className = column.className || columnClassName;
+        className = column.widthClassName ? `${className} ${column.widthClassName}` : className;
+        return column.wrap ? `whitespace-normal overflow-visible ${className}` : className;
+    };
+
+    getHeaderClassName = column => {
+        const className = column.headerClassName || columnHeaderClassName;
+        return column.widthClassName ? `${className} ${column.widthClassName}` : className;
+    };
+
     render() {
         const { rows, columns, ...rest } = this.props;
         columns.forEach(column =>
             Object.assign(column, {
-                className: column.className || columnClassName,
-                headerClassName: column.headerClassName || columnHeaderClassName
+                className: this.getColumnClassName(column),
+                headerClassName: this.getHeaderClassName(column)
             })
         );
         return (
@@ -78,7 +89,7 @@ class ReactRowSelectTable extends Component {
                 defaultPageSize={this.getPageSize()}
                 className={`border-0 -highlight w-full ${rows.length > pageSize && 'h-full'}`}
                 showPagination={rows.length > pageSize}
-                resizable
+                resizable={false}
                 sortable
                 defaultSortDesc={false}
                 showPageJump={false}

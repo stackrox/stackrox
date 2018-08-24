@@ -294,7 +294,7 @@ module.exports = {
   */
 
   fonts: {
-    condensed:[
+    condensed: [
       "Open Sans Condensed",
       "sans-serif"
     ],
@@ -574,6 +574,7 @@ module.exports = {
     "3/5": "60%",
     "4/5": "80%",
     "1/6": "16.66667%",
+    "1/8": "12.5%",
     "5/6": "83.33333%",
     full: "100%",
     screen: "100vw"

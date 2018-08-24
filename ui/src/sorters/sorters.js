@@ -31,17 +31,6 @@ const sortSeverity = key => (a, b) => {
 };
 
 /**
- * Sort Time
- * @param a
- * @param b
- * @returns {number}
- */
-const sortTime = key => (a, b) => {
-    const { aValue, bValue } = flattenObjectProperties(a, b, key);
-    return new Date(bValue) - new Date(aValue);
-};
-
-/**
  * Sort Numbers
  * @returns {number}
  */
@@ -75,4 +64,4 @@ const sortDate = (a, b) => {
     if (bDate === undefined) return 1;
     return aDate - bDate;
 };
-export { sortSeverity, sortTime, sortNumber, sortNumberByKey, sortDate };
+export { sortSeverity, sortNumber, sortNumberByKey, sortDate };
