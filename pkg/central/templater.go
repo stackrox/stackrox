@@ -21,8 +21,9 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 // ExternalPersistence holds the data for a volume that is already created (e.g. docker volume, PV, etc)
 type ExternalPersistence struct {
-	Name      string
-	MountPath string
+	Name         string
+	MountPath    string
+	StorageClass string
 }
 
 // HostPathPersistence describes the parameters for a bind mount

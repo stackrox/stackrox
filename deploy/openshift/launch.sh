@@ -9,7 +9,7 @@ function launch_central {
     set -u
 
     echo "Generating central config..."
-    docker run "$PREVENT_IMAGE" deploy openshift -n stackrox -i "$PREVENT_IMAGE_REPO/stackrox/prevent:$PREVENT_IMAGE_TAG" > $OPENSHIFT_DIR/central.zip
+    docker run "$PREVENT_IMAGE" deploy openshift -n stackrox -i "$PREVENT_IMAGE_REPO/stackrox/prevent:$PREVENT_IMAGE_TAG" none > $OPENSHIFT_DIR/central.zip
     UNZIP_DIR="$OPENSHIFT_DIR/central-deploy/"
     rm -rf "$UNZIP_DIR"
     unzip "$OPENSHIFT_DIR/central.zip" -d "$UNZIP_DIR"

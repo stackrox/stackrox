@@ -7,7 +7,7 @@ function launch_central {
     set -u
 
     echo "Generating central config..."
-    docker run "$PREVENT_IMAGE" deploy k8s -n stackrox -i "$PREVENT_IMAGE" > $K8S_DIR/central.zip
+    docker run "$PREVENT_IMAGE" deploy k8s -n stackrox -i "$PREVENT_IMAGE" none > $K8S_DIR/central.zip
     UNZIP_DIR="$K8S_DIR/central-deploy/"
     rm -rf "$UNZIP_DIR"
     unzip "$K8S_DIR/central.zip" -d "$UNZIP_DIR"

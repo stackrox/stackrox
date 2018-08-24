@@ -186,6 +186,9 @@ metadata:
   name: {{.External.Name}}
   namespace: {{.K8sConfig.Namespace}}
 spec:
+  {{if .External.StorageClass -}}
+  storageClassName: {{.External.StorageClass}}
+  {{- end}}
   accessModes:
     - ReadWriteOnce
   resources:

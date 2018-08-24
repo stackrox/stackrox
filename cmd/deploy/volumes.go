@@ -14,17 +14,17 @@ func volumeCommand(name string) *cobra.Command {
 		Short: fmt.Sprintf("%s adds an external volume to the deployment definition", name),
 		Long: fmt.Sprintf(`%s adds an external volume to the deployment definition.
 Output is a zip file printed to stdout.`, name),
-		Example:       "Enter volume (optional)",
+		Example:       "Enter volume",
 		SilenceErrors: true,
 		Annotations: map[string]string{
-			"category": "Enter volume (optional)",
+			"category": "Enter volume",
 		},
 	}
 }
 
-func externalVolume(cluster v1.ClusterType) *cobra.Command {
+func externalVolume() *cobra.Command {
 	external := new(central.ExternalPersistence)
-	c := volumeCommand("external")
+	c := volumeCommand("pvc")
 	c.RunE = func(c *cobra.Command, args []string) error {
 		cfg.External = external
 		if err := validateConfig(cfg); err != nil {
@@ -34,6 +34,18 @@ func externalVolume(cluster v1.ClusterType) *cobra.Command {
 	}
 	c.Flags().StringVarP(&external.Name, "name", "", "prevent-db", "external volume name")
 	c.Flags().StringVarP(&external.MountPath, "mount-path", "", "/var/lib/prevent", "mount path inside the container")
+	c.Flags().StringVarP(&external.StorageClass, "storage-class", "", "", "storage class name (optional)")
+	return c
+}
+
+func noVolume() *cobra.Command {
+	c := volumeCommand("none")
+	c.RunE = func(c *cobra.Command, args []string) error {
+		if err := validateConfig(cfg); err != nil {
+			return err
+		}
+		return outputZip(cfg)
+	}
 	return c
 }
 

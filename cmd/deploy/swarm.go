@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/central"
@@ -15,13 +17,11 @@ func dockerBasedOrchestrator(shortName, longName string, cluster v1.ClusterType)
 		cfg.ClusterType = cluster
 	}
 	c.RunE = func(*cobra.Command, []string) error {
-		if err := validateConfig(cfg); err != nil {
-			return err
-		}
-		return outputZip(cfg)
+		return fmt.Errorf("storage type must be specified")
 	}
-	c.AddCommand(externalVolume(cluster))
+	c.AddCommand(externalVolume())
 	c.AddCommand(hostPathVolume(cluster))
+	c.AddCommand(noVolume())
 
 	// Adds swarm specific flags
 	c.PersistentFlags().StringVarP(&swarmConfig.ClairifyImage, "clairify-image", "", "stackrox.io/"+clairifyImage, "Clairify image to use")

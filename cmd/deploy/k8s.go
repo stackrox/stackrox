@@ -29,14 +29,12 @@ func k8sBasedOrchestrator(k8sConfig *central.K8sConfig, shortName, longName stri
 		cfg.ClusterType = cluster
 	}
 	c.RunE = func(*cobra.Command, []string) error {
-		if err := validateConfig(cfg); err != nil {
-			return err
-		}
-		return outputZip(cfg)
+		return fmt.Errorf("storage type must be specified")
 	}
 
-	c.AddCommand(externalVolume(cluster))
+	c.AddCommand(externalVolume())
 	c.AddCommand(hostPathVolume(cluster))
+	c.AddCommand(noVolume())
 
 	// Adds k8s specific flags
 	c.PersistentFlags().StringVarP(&k8sConfig.Namespace, "namespace", "n", "stackrox", "namespace")
