@@ -1,17 +1,30 @@
 package services
 
 import (
+	"context"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/client"
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 )
+
+type mockDockerClient struct {
+	tasks []swarm.Task
+}
+
+func (c mockDockerClient) TaskList(ctx context.Context, options types.TaskListOptions) ([]swarm.Task, error) {
+	return c.tasks, nil
+}
+
+func (c mockDockerClient) ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error) {
+	panic("not implemented")
+}
 
 func TestAsDeployment(t *testing.T) {
 	t.Parallel()
@@ -20,6 +33,7 @@ func TestAsDeployment(t *testing.T) {
 
 	cases := []struct {
 		service  swarm.Service
+		tasks    []swarm.Task
 		expected *v1.Deployment
 	}{
 		{
@@ -103,6 +117,16 @@ func TestAsDeployment(t *testing.T) {
 					CompletedAt: &time100,
 				},
 			},
+			tasks: []swarm.Task{
+				{
+					NodeID: "mynode",
+					Status: swarm.TaskStatus{
+						ContainerStatus: swarm.ContainerStatus{
+							ContainerID: "35669191c32a9cfb532e5d79b09f2b0926c0faf27e7543f1fbe433bd94ae78d7",
+						},
+					},
+				},
+			},
 			expected: &v1.Deployment{
 				Id:        "fooID",
 				Name:      "foo",
@@ -186,6 +210,15 @@ func TestAsDeployment(t *testing.T) {
 							CpuCoresLimit:   2,
 							MemoryMbRequest: 1.00,
 							MemoryMbLimit:   2.00,
+						},
+						Instances: []*v1.ContainerInstance{
+							{
+								InstanceId: &v1.ContainerInstanceID{
+									ContainerRuntime: v1.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+									Id:               "35669191c32a9cfb532e5d79b09f2b0926c0faf27e7543f1fbe433bd94ae78d7",
+									Node:             "mynode",
+								},
+							},
 						},
 					},
 				},
@@ -273,6 +306,16 @@ func TestAsDeployment(t *testing.T) {
 					CompletedAt: &time100,
 				},
 			},
+			tasks: []swarm.Task{
+				{
+					NodeID: "mynode2",
+					Status: swarm.TaskStatus{
+						ContainerStatus: swarm.ContainerStatus{
+							ContainerID: "35669191c32a9cfb532e5d79b09f2b0926c0faf27e7543f1fbe433bd94ae78d8",
+						},
+					},
+				},
+			},
 			expected: &v1.Deployment{
 				Id:        "fooID",
 				Name:      "foo",
@@ -357,17 +400,25 @@ func TestAsDeployment(t *testing.T) {
 							MemoryMbRequest: 1.00,
 							MemoryMbLimit:   2.00,
 						},
+						Instances: []*v1.ContainerInstance{
+							{
+								InstanceId: &v1.ContainerInstanceID{
+									ContainerRuntime: v1.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+									Id:               "35669191c32a9cfb532e5d79b09f2b0926c0faf27e7543f1fbe433bd94ae78d8",
+									Node:             "mynode2",
+								},
+							},
+						},
 					},
 				},
 			},
 		},
 	}
 
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		t.Fatal(err)
-	}
 	for _, c := range cases {
+		cli := mockDockerClient{
+			tasks: c.tasks,
+		}
 		got := serviceWrap(c.service).asDeployment(cli, false)
 
 		assert.Equal(t, c.expected, got)

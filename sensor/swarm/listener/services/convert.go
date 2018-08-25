@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -30,6 +31,13 @@ var log = logging.LoggerForModule()
 
 type serviceWrap swarm.Service
 
+// dockerClientLite is a stripped-down version of the full docker Client interface, containing only the methods we
+// need.
+type dockerClientLite interface {
+	TaskList(ctx context.Context, options types.TaskListOptions) ([]swarm.Task, error)
+	ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error)
+}
+
 func (s serviceWrap) getNetworkName(client *client.Client, id string) (string, error) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
@@ -40,7 +48,7 @@ func (s serviceWrap) getNetworkName(client *client.Client, id string) (string, e
 	return network.Name, nil
 }
 
-func (s serviceWrap) asDeployment(client *client.Client, retryGetImageSha bool) *v1.Deployment {
+func (s serviceWrap) asDeployment(client dockerClientLite, retryGetImageSha bool) *v1.Deployment {
 	var updatedTime *timestamp.Timestamp
 	up := s.UpdateStatus
 	var err error
@@ -58,11 +66,16 @@ func (s serviceWrap) asDeployment(client *client.Client, retryGetImageSha bool) 
 
 	image := imageUtils.GenerateImageFromString(s.Spec.TaskTemplate.ContainerSpec.Image)
 
+	var tasks []swarm.Task
+
 	if retryGetImageSha {
 		retries := 0
 		for image.GetName().GetSha() == "" && retries <= 15 {
 			time.Sleep(time.Second)
-			image.Name.Sha = s.getSHAFromTask(client)
+			tasks = s.getTasks(client)
+			if tasks != nil {
+				image.Name.Sha = s.getSHAFromTask(client, tasks)
+			}
 			retries++
 		}
 		if image.GetName().GetSha() == "" {
@@ -71,6 +84,10 @@ func (s serviceWrap) asDeployment(client *client.Client, retryGetImageSha bool) 
 	}
 
 	m := modeWrap(s.Spec.Mode)
+
+	if tasks == nil {
+		tasks = s.getTasks(client)
+	}
 
 	return &v1.Deployment{
 		Id:        s.ID,
@@ -91,9 +108,25 @@ func (s serviceWrap) asDeployment(client *client.Client, retryGetImageSha bool) 
 				Secrets:         s.getSecrets(),
 				Resources:       s.getResources(),
 				Id:              "c_" + s.ID,
+				Instances:       s.getContainerInstances(tasks),
 			},
 		},
 	}
+}
+
+func (s serviceWrap) getContainerInstances(tasks []swarm.Task) []*v1.ContainerInstance {
+	result := make([]*v1.ContainerInstance, len(tasks))
+	for i, task := range tasks {
+		instance := &v1.ContainerInstance{
+			InstanceId: &v1.ContainerInstanceID{
+				ContainerRuntime: v1.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+				Id:               task.Status.ContainerStatus.ContainerID,
+				Node:             task.NodeID,
+			},
+		}
+		result[i] = instance
+	}
+	return result
 }
 
 func convertNanoCPUsToCores(nanos int64) float32 {
@@ -220,7 +253,7 @@ func (s serviceWrap) getSecrets() []*v1.EmbeddedSecret {
 	return secrets
 }
 
-func (s serviceWrap) getSHAFromTask(client *client.Client) string {
+func (s serviceWrap) getTasks(client dockerClientLite) []swarm.Task {
 	opts := filters.NewArgs()
 	opts.Add("service", s.ID)
 	opts.Add("desired-state", "running")
@@ -228,9 +261,12 @@ func (s serviceWrap) getSHAFromTask(client *client.Client) string {
 	defer cancel()
 	tasks, err := client.TaskList(ctx, types.TaskListOptions{Filters: opts})
 	if err != nil {
-		log.Errorf("Couldn't enumerate service %s tasks to get image SHA: %s", s.ID, err)
-		return ""
+		log.Errorf("Could not get tasks for service %q: %v", s.Spec.Name, err)
 	}
+	return tasks
+}
+
+func (s serviceWrap) getSHAFromTask(client dockerClientLite, tasks []swarm.Task) string {
 	for _, t := range tasks {
 		id := t.Status.ContainerStatus.ContainerID
 		if id == "" {

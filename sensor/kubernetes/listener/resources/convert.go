@@ -118,7 +118,7 @@ func (w *wrap) populateFields(objValue reflect.Value, action pkgV1.ResourceActio
 	w.populateContainers(podTemplate.Spec)
 
 	if action == pkgV1.ResourceAction_PREEXISTING_RESOURCE || action == pkgV1.ResourceAction_UPDATE_RESOURCE {
-		w.populateImageShas(spec, lister)
+		w.populatePodData(spec, lister)
 	}
 }
 
@@ -167,9 +167,22 @@ func (w *wrap) populateReplicas(spec reflect.Value) {
 	}
 }
 
-func (w *wrap) populateImageShas(spec reflect.Value, lister podLister) {
+func (w *wrap) populatePodData(spec reflect.Value, lister podLister) {
 	labelSelector := w.getLabelSelector(spec)
 	pods := lister.List(labelSelector)
+	w.populateImageShas(pods)
+	w.populateContainerInstances(pods)
+}
+
+func (w *wrap) populateContainerInstances(pods []v1.Pod) {
+	for _, p := range pods {
+		for i, instance := range containerInstances(p) {
+			w.Containers[i].Instances = append(w.Containers[i].Instances, instance)
+		}
+	}
+}
+
+func (w *wrap) populateImageShas(pods []v1.Pod) {
 	imageMap := make(map[pkgV1.ImageName]string)
 
 	for _, p := range pods {

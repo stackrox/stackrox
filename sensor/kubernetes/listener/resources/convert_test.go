@@ -191,13 +191,22 @@ func TestConvert(t *testing.T) {
 			podLister: &mockPodLister{
 				pods: []v1.Pod{
 					{
+						ObjectMeta: metav1.ObjectMeta{
+							UID:       types.UID("ebf487f0-a7c3-11e8-8600-42010a8a0066"),
+							Name:      "mypod",
+							Namespace: "myns",
+						},
 						Status: v1.PodStatus{
 							ContainerStatuses: []v1.ContainerStatus{
 								{
-									Image:   "docker.io/stackrox/policy-engine:1.3",
-									ImageID: "docker-pullable://docker.io/stackrox/policy-engine@sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
+									Image:       "docker.io/stackrox/policy-engine:1.3",
+									ImageID:     "docker-pullable://docker.io/stackrox/policy-engine@sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
+									ContainerID: "docker://35669191c32a9cfb532e5d79b09f2b0926c0faf27e7543f1fbe433bd94ae78d7",
 								},
 							},
+						},
+						Spec: v1.PodSpec{
+							NodeName: "mynode",
 						},
 					},
 				},
@@ -289,6 +298,16 @@ func TestConvert(t *testing.T) {
 							CpuCoresLimit:   0.2,
 							MemoryMbRequest: 1024.00,
 							MemoryMbLimit:   2048.00,
+						},
+						Instances: []*pkgV1.ContainerInstance{
+							{
+								InstanceId: &pkgV1.ContainerInstanceID{
+									ContainerRuntime: pkgV1.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+									Id:               "35669191c32a9cfb532e5d79b09f2b0926c0faf27e7543f1fbe433bd94ae78d7",
+									Node:             "mynode",
+								},
+								ContainingPodId: "mypod.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
+							},
 						},
 					},
 					{

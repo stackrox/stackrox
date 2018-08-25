@@ -66,6 +66,29 @@ message Deployment {
     string service_account                     = 18;
 }
 
+enum ContainerRuntime {
+    UNKNOWN_CONTAINER_RUNTIME = 0;
+    DOCKER_CONTAINER_RUNTIME  = 1;
+}
+
+// ContainerInstanceID allows to uniquely identify a container within a cluster.
+message ContainerInstanceID {
+    // The runtime running this container.
+    ContainerRuntime container_runtime = 1;
+    // The ID of the container, specific to the given runtime.
+    string id                          = 2;
+    // The node on which this container runs.
+    string node                        = 3;
+}
+
+message ContainerInstance {
+    // The instance ID of this container.
+    ContainerInstanceID instance_id    = 1;
+
+    // The pod containing this container instance (kubernetes only).
+    string containing_pod_id           = 2;
+}
+
 message Container {
     string id                           = 1;
     ContainerConfig config              = 2;
@@ -75,6 +98,8 @@ message Container {
     repeated PortConfig ports           = 6;
     repeated EmbeddedSecret secrets     = 7;
     Resources resources                 = 8;
+
+    repeated ContainerInstance instances = 9;
 }
 
 message ContainerConfig {
