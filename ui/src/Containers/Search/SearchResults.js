@@ -127,11 +127,8 @@ class SearchResults extends Component {
                     >
                         {tabs.map(tab => (
                             <TabContent key={tab.text}>
-                                <div
-                                    key={tab.text}
-                                    className="flex flex-1 w-full h-full pl-3 pr-3 pt-3 rounded-sm"
-                                >
-                                    {this.renderTable(tab.text)}
+                                <div className="flex flex-1 w-full h-full pl-3 pr-3 pt-3 rounded-sm">
+                                    {this.renderTable()}
                                 </div>
                             </TabContent>
                         ))}

@@ -25,7 +25,6 @@ class ReactRowSelectTable extends Component {
         idAttribute: 'id',
         onRowClick: null
     };
-    getPageSize = () => (this.props.rows.length > pageSize ? pageSize : this.props.rows.length);
 
     getTbodyProps = state => {
         const table = [...document.body.getElementsByClassName('rt-table')];
@@ -86,14 +85,14 @@ class ReactRowSelectTable extends Component {
                 getTbodyProps={this.getTbodyProps}
                 getTrGroupProps={this.getTrGroupProps}
                 getTrProps={this.getTrProps}
-                defaultPageSize={this.getPageSize()}
+                defaultPageSize={pageSize}
                 className={`border-0 -highlight w-full ${rows.length > pageSize && 'h-full'}`}
                 showPagination={rows.length > pageSize}
                 resizable={false}
                 sortable
                 defaultSortDesc={false}
                 showPageJump={false}
-                minRows={this.getPageSize()}
+                minRows={Math.min(this.props.rows.length, pageSize)}
                 {...rest}
             />
         );
