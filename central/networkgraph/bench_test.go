@@ -33,7 +33,7 @@ func benchmarkEvaluateCluster(b *testing.B, numDeployments, numNetworkPolicies i
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		m.evaluateCluster(deployments, networkPolicies)
+		m.evaluate(deployments, networkPolicies)
 	}
 }
 

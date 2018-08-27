@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/central/cluster/datastore"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/networkgraph"
 	"github.com/stackrox/rox/central/networkpolicies/store"
+	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/service"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -38,9 +41,11 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	store          store.Store
-	clusterStore   datastore.DataStore
-	graphEvaluator networkgraph.Evaluator
+	store           store.Store
+	clusterStore    clusterDataStore.DataStore
+	deployments     deploymentDataStore.DataStore
+	networkPolicies networkPoliciesStore.Store
+	graphEvaluator  networkgraph.Evaluator
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -115,19 +120,53 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 		return nil, status.Errorf(codes.InvalidArgument, "Cluster with ID '%s' does not exist", request.GetClusterId())
 	}
 
-	parsedSearch := new(v1.ParsedSearchRequest)
-	if request.GetQuery() != "" {
-		parsedSearch, err = search.ParseRawQuery(request.GetQuery())
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
+	networkPolicies, err := s.getNetworkPolicies(cluster)
+	if err != nil {
+		return nil, err
 	}
 
-	return s.graphEvaluator.GetGraph(cluster, parsedSearch)
+	deployments, err := s.getDeployments(cluster, request.GetQuery())
+	if err != nil {
+		return nil, err
+	}
+
+	return s.graphEvaluator.GetGraph(deployments, networkPolicies), nil
 }
 
 func (s *serviceImpl) GetNetworkGraphEpoch(context.Context, *empty.Empty) (*v1.GetNetworkGraphEpochResponse, error) {
 	return &v1.GetNetworkGraphEpochResponse{
 		Epoch: s.graphEvaluator.Epoch(),
 	}, nil
+}
+
+func (s *serviceImpl) getNetworkPolicies(cluster *v1.Cluster) (networkPolicies []*v1.NetworkPolicy, err error) {
+	if cluster.GetId() == "" {
+		return nil, fmt.Errorf("cluster id must be present, but it isn't: %s", proto.MarshalTextString(cluster))
+	}
+
+	networkPolicies, err = s.networkPolicies.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: cluster.GetId()})
+	return
+}
+
+func (s *serviceImpl) getDeployments(cluster *v1.Cluster, query string) (deployments []*v1.Deployment, err error) {
+	parsedSearch := new(v1.ParsedSearchRequest)
+	if query != "" {
+		parsedSearch, err = search.ParseRawQuery(query)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	fields := parsedSearch.GetFields()
+	if fields == nil {
+		fields = make(map[string]*v1.ParsedSearchRequest_Values, 0)
+	}
+	fields[search.ClusterID] = &v1.ParsedSearchRequest_Values{Values: []string{cluster.GetId()}}
+	if parsedSearch == nil {
+		parsedSearch = &v1.ParsedSearchRequest{}
+	}
+	parsedSearch.Fields = fields
+
+	deployments, err = s.deployments.SearchRawDeployments(parsedSearch)
+	return
 }

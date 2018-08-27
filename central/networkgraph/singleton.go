@@ -3,11 +3,9 @@ package networkgraph
 import (
 	"sync"
 
-	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/store"
 	"github.com/stackrox/rox/central/networkpolicies/store"
-	networkPolicyStore "github.com/stackrox/rox/central/networkpolicies/store"
 )
 
 var (
@@ -18,8 +16,7 @@ var (
 )
 
 func initialize() {
-	ge = newGraphEvaluator(deploymentDataStore.Singleton(),
-		namespaceDataStore.New(globaldb.GetGlobalDB()), networkPolicyStore.Singleton())
+	ge = newGraphEvaluator(namespaceDataStore.New(globaldb.GetGlobalDB()))
 }
 
 // Singleton provides the interface for non-service external interaction.

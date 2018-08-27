@@ -1376,7 +1376,6 @@
     "k8s.io/apimachinery/pkg/util/validation",
     "k8s.io/apimachinery/pkg/util/yaml",
     "k8s.io/apiserver/pkg/server/options/encryptionconfig",
-    "k8s.io/client-go/discovery",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/typed/extensions/v1beta1",
     "k8s.io/client-go/rest",

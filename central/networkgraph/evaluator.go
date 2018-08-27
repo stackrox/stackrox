@@ -1,17 +1,12 @@
 package networkgraph
 
 import (
-	"fmt"
 	"sort"
 	"sync/atomic"
 
 	"github.com/deckarep/golang-set"
-	"github.com/gogo/protobuf/proto"
-	deploymentsDatastore "github.com/stackrox/rox/central/deployment/datastore"
-	networkPolicyStore "github.com/stackrox/rox/central/networkpolicies/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -19,148 +14,50 @@ var logger = logging.LoggerForModule()
 
 // Evaluator implements the interface for the network graph generator
 type Evaluator interface {
-	GetGraph(cluster *v1.Cluster, query *v1.ParsedSearchRequest) (*v1.GetNetworkGraphResponse, error)
+	GetGraph(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) *v1.GetNetworkGraphResponse
 	IncrementEpoch()
 	Epoch() uint32
+}
+
+type namespaceProvider interface {
+	GetNamespaces() ([]*v1.Namespace, error)
 }
 
 // evaluatorImpl handles all of the graph calculations
 type evaluatorImpl struct {
 	epoch uint32
 
-	deploymentsStore   deploymentsDatastore.DataStore
-	namespaceStore     ns
-	networkPolicyStore networkPolicyStore.Store
-}
-
-type ns interface {
-	GetNamespaces() ([]*v1.Namespace, error)
+	namespaceStore namespaceProvider
 }
 
 // newGraphEvaluator takes in namespaces
-func newGraphEvaluator(deploymentsStore deploymentsDatastore.DataStore,
-	namespaceStore ns, networkPolicyStore networkPolicyStore.Store) *evaluatorImpl {
+func newGraphEvaluator(namespaceStore namespaceProvider) *evaluatorImpl {
 	return &evaluatorImpl{
-		deploymentsStore:   deploymentsStore,
-		namespaceStore:     namespaceStore,
-		networkPolicyStore: networkPolicyStore,
+		namespaceStore: namespaceStore,
 	}
 }
 
+// IncrementEpoch increments epoch, effictively indicating that a graph that is generated may change.
 func (g *evaluatorImpl) IncrementEpoch() {
 	atomic.AddUint32(&g.epoch, 1)
 }
 
+// Epoch returns the current value for epoch, which tracks modifications to deployments.
 func (g *evaluatorImpl) Epoch() uint32 {
 	return atomic.LoadUint32(&g.epoch)
 }
 
-func (g *evaluatorImpl) GetGraph(cluster *v1.Cluster, query *v1.ParsedSearchRequest) (*v1.GetNetworkGraphResponse, error) {
-	nodes, edges, err := g.evaluate(cluster, query)
-	if err != nil {
-		return nil, err
-	}
+// GetGraph generates a network graph for the input deployments based on the input policies.
+func (g *evaluatorImpl) GetGraph(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) *v1.GetNetworkGraphResponse {
+	nodes, edges := g.evaluate(deployments, networkPolicies)
 	return &v1.GetNetworkGraphResponse{
 		Epoch: g.Epoch(),
 		Nodes: nodes,
 		Edges: edges,
-	}, nil
+	}
 }
 
-func (g *evaluatorImpl) evaluate(cluster *v1.Cluster, query *v1.ParsedSearchRequest) (nodes []*v1.NetworkNode, edges []*v1.NetworkEdge, err error) {
-	if cluster.GetId() == "" {
-		return nil, nil, fmt.Errorf("cluster id must be present, but it isn't: %s", proto.MarshalTextString(cluster))
-	}
-
-	networkPolicies, err := g.networkPolicyStore.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: cluster.GetId()})
-	if err != nil {
-		return
-	}
-
-	fields := query.GetFields()
-	if fields == nil {
-		fields = make(map[string]*v1.ParsedSearchRequest_Values, 0)
-	}
-	fields[search.ClusterID] = &v1.ParsedSearchRequest_Values{Values: []string{cluster.GetId()}}
-	if query == nil {
-		query = &v1.ParsedSearchRequest{}
-	}
-	query.Fields = fields
-
-	deployments, err := g.deploymentsStore.SearchRawDeployments(query)
-	if err != nil {
-		return
-	}
-
-	nodes, edges = g.evaluateCluster(deployments, networkPolicies)
-	return
-}
-
-func egressNetworkPolicySelectorAppliesToDeployment(d *v1.Deployment, np *v1.NetworkPolicy) (applies bool, internetAccess bool) {
-	spec := np.GetSpec()
-	// Check if the src matches the pod selector and deployment then the egress rules actually apply to that deployment
-	if !doesPodLabelsMatchLabel(d, spec.GetPodSelector()) || d.GetNamespace() != np.GetNamespace() {
-		return
-	}
-	// If no egress rules are defined, then it doesn't apply
-	if applies = hasEgress(spec.GetPolicyTypes()); !applies {
-		return
-	}
-
-	// If there is a rule with an IPBlock that is not nil, then we can assume that they have some sort of internet access
-	// This isn't exactly full proof, but probably a pretty decent indicator
-	for _, rule := range spec.GetEgress() {
-		for _, to := range rule.GetTo() {
-			if to.IpBlock != nil {
-				internetAccess = true
-				return
-			}
-		}
-	}
-	return
-}
-
-func ingressNetworkPolicySelectorAppliesToDeployment(d *v1.Deployment, np *v1.NetworkPolicy) bool {
-	spec := np.GetSpec()
-	// Check if the src matches the pod selector and deployment then the egress rules actually apply to that deployment
-	if !doesPodLabelsMatchLabel(d, spec.GetPodSelector()) || d.GetNamespace() != np.GetNamespace() {
-		return false
-	}
-	// If no egress rules are defined, then it doesn't apply
-	return hasIngress(spec.GetPolicyTypes())
-}
-
-func (g *evaluatorImpl) matchPolicyPeers(d *v1.Deployment, namespace string, peers []*v1.NetworkPolicyPeer) bool {
-	if len(peers) == 0 {
-		return true
-	}
-	for _, p := range peers {
-		if g.matchPolicyPeer(d, namespace, p) {
-			return true
-		}
-	}
-	return false
-}
-
-func (g *evaluatorImpl) doesEgressNetworkPolicyRuleMatchDeployment(src *v1.Deployment, np *v1.NetworkPolicy) bool {
-	for _, egressRule := range np.GetSpec().GetEgress() {
-		if g.matchPolicyPeers(src, np.GetNamespace(), egressRule.GetTo()) {
-			return true
-		}
-	}
-	return false
-}
-
-func (g *evaluatorImpl) doesIngressNetworkPolicyRuleMatchDeployment(src *v1.Deployment, np *v1.NetworkPolicy) bool {
-	for _, ingressRule := range np.GetSpec().GetIngress() {
-		if g.matchPolicyPeers(src, np.GetNamespace(), ingressRule.GetFrom()) {
-			return true
-		}
-	}
-	return false
-}
-
-func (g *evaluatorImpl) evaluateCluster(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) ([]*v1.NetworkNode, []*v1.NetworkEdge) {
+func (g *evaluatorImpl) evaluate(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) ([]*v1.NetworkNode, []*v1.NetworkEdge) {
 	selectedDeploymentsToIngressPolicies := make(map[string]mapset.Set)
 	selectedDeploymentsToEgressPolicies := make(map[string]mapset.Set)
 
@@ -240,31 +137,74 @@ func (g *evaluatorImpl) evaluateCluster(deployments []*v1.Deployment, networkPol
 				continue
 			}
 
-			var policyIDs []string
-			policyIDs = append(policyIDs, set.StringSliceFromSet(selectedIngressPoliciesSet.Intersect(matchedIngressPoliciesSet))...)
-			policyIDs = append(policyIDs, set.StringSliceFromSet(selectedEgressPoliciesSet.Intersect(matchedEgressPoliciesSet))...)
-
 			edges = append(edges, &v1.NetworkEdge{Source: src.GetId(), Target: dst.GetId()})
 		}
 	}
 	return nodes, edges
 }
 
-func (g *evaluatorImpl) getNamespace(deployment *v1.Deployment) *v1.Namespace {
-	namespaces, err := g.namespaceStore.GetNamespaces()
-	if err != nil {
-		return &v1.Namespace{
-			Name: deployment.GetNamespace(),
+func egressNetworkPolicySelectorAppliesToDeployment(d *v1.Deployment, np *v1.NetworkPolicy) (applies bool, internetAccess bool) {
+	spec := np.GetSpec()
+	// Check if the src matches the pod selector and deployment then the egress rules actually apply to that deployment
+	if !doesPodLabelsMatchLabel(d, spec.GetPodSelector()) || d.GetNamespace() != np.GetNamespace() {
+		return
+	}
+	// If no egress rules are defined, then it doesn't apply
+	if applies = hasEgress(spec.GetPolicyTypes()); !applies {
+		return
+	}
+
+	// If there is a rule with an IPBlock that is not nil, then we can assume that they have some sort of internet access
+	// This isn't exactly full proof, but probably a pretty decent indicator
+	for _, rule := range spec.GetEgress() {
+		for _, to := range rule.GetTo() {
+			if to.IpBlock != nil {
+				internetAccess = true
+				return
+			}
 		}
 	}
-	for _, n := range namespaces {
-		if n.GetName() == deployment.GetNamespace() && n.GetClusterId() == deployment.GetClusterId() {
-			return n
+	return
+}
+
+func ingressNetworkPolicySelectorAppliesToDeployment(d *v1.Deployment, np *v1.NetworkPolicy) bool {
+	spec := np.GetSpec()
+	// Check if the src matches the pod selector and deployment then the egress rules actually apply to that deployment
+	if !doesPodLabelsMatchLabel(d, spec.GetPodSelector()) || d.GetNamespace() != np.GetNamespace() {
+		return false
+	}
+	// If no egress rules are defined, then it doesn't apply
+	return hasIngress(spec.GetPolicyTypes())
+}
+
+func (g *evaluatorImpl) doesEgressNetworkPolicyRuleMatchDeployment(src *v1.Deployment, np *v1.NetworkPolicy) bool {
+	for _, egressRule := range np.GetSpec().GetEgress() {
+		if g.matchPolicyPeers(src, np.GetNamespace(), egressRule.GetTo()) {
+			return true
 		}
 	}
-	return &v1.Namespace{
-		Name: deployment.GetNamespace(),
+	return false
+}
+
+func (g *evaluatorImpl) doesIngressNetworkPolicyRuleMatchDeployment(src *v1.Deployment, np *v1.NetworkPolicy) bool {
+	for _, ingressRule := range np.GetSpec().GetIngress() {
+		if g.matchPolicyPeers(src, np.GetNamespace(), ingressRule.GetFrom()) {
+			return true
+		}
 	}
+	return false
+}
+
+func (g *evaluatorImpl) matchPolicyPeers(d *v1.Deployment, namespace string, peers []*v1.NetworkPolicyPeer) bool {
+	if len(peers) == 0 {
+		return true
+	}
+	for _, p := range peers {
+		if g.matchPolicyPeer(d, namespace, p) {
+			return true
+		}
+	}
+	return false
 }
 
 func (g *evaluatorImpl) matchPolicyPeer(deployment *v1.Deployment, policyNamespace string, peer *v1.NetworkPolicyPeer) bool {
@@ -288,6 +228,23 @@ func (g *evaluatorImpl) matchPolicyPeer(deployment *v1.Deployment, policyNamespa
 		return doesPodLabelsMatchLabel(deployment, peer.GetPodSelector())
 	}
 	return true
+}
+
+func (g *evaluatorImpl) getNamespace(deployment *v1.Deployment) *v1.Namespace {
+	namespaces, err := g.namespaceStore.GetNamespaces()
+	if err != nil {
+		return &v1.Namespace{
+			Name: deployment.GetNamespace(),
+		}
+	}
+	for _, n := range namespaces {
+		if n.GetName() == deployment.GetNamespace() && n.GetClusterId() == deployment.GetClusterId() {
+			return n
+		}
+	}
+	return &v1.Namespace{
+		Name: deployment.GetNamespace(),
+	}
 }
 
 func doesNamespaceMatchLabel(namespace *v1.Namespace, selector *v1.LabelSelector) bool {
@@ -319,15 +276,6 @@ func doesPodLabelsMatchLabel(deployment *v1.Deployment, podSelector *v1.LabelSel
 	return true
 }
 
-func hasPolicyType(types []v1.NetworkPolicyType, t v1.NetworkPolicyType) bool {
-	for _, pType := range types {
-		if pType == t {
-			return true
-		}
-	}
-	return false
-}
-
 func hasEgress(types []v1.NetworkPolicyType) bool {
 	return hasPolicyType(types, v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE)
 }
@@ -337,4 +285,13 @@ func hasIngress(types []v1.NetworkPolicyType) bool {
 		return true
 	}
 	return hasPolicyType(types, v1.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE)
+}
+
+func hasPolicyType(types []v1.NetworkPolicyType, t v1.NetworkPolicyType) bool {
+	for _, pType := range types {
+		if pType == t {
+			return true
+		}
+	}
+	return false
 }

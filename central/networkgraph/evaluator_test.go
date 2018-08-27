@@ -48,7 +48,7 @@ func (n *namespaceGetter) GetNamespaces() ([]*v1.Namespace, error) {
 }
 
 func newMockGraphEvaluator() *evaluatorImpl {
-	return newGraphEvaluator(nil, &namespaceGetter{}, nil)
+	return newGraphEvaluator(&namespaceGetter{})
 }
 
 func TestDoesNamespaceMatchLabel(t *testing.T) {
@@ -1015,7 +1015,7 @@ func TestEvaluateClusters(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			nodes, edges := g.evaluateCluster(c.deployments, c.nps)
+			nodes, edges := g.evaluate(c.deployments, c.nps)
 			assert.ElementsMatch(t, c.nodes, nodes)
 			assert.ElementsMatch(t, c.edges, edges)
 		})
