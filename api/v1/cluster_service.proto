@@ -4,7 +4,6 @@ option go_package = "v1";
 option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
 
@@ -72,7 +71,7 @@ message ClusterStatus {
 
 service ClustersService {
 
-    rpc GetClusters (google.protobuf.Empty) returns (ClustersList) {
+    rpc GetClusters (Empty) returns (ClustersList) {
         option (google.api.http) = {
             get: "/v1/clusters"
         };
@@ -98,10 +97,9 @@ service ClustersService {
         };
     }
 
-    rpc DeleteCluster (ResourceByID) returns (google.protobuf.Empty) {
+    rpc DeleteCluster (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/clusters/{id}"
         };
     }
 }
-

@@ -4,7 +4,6 @@ option go_package = "v1";
 option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
 import "api/v1/cluster_service.proto";
 import "api/v1/common.proto";
 
@@ -45,7 +44,7 @@ message DeleteBenchmarkRequest {
 
 service BenchmarkService {
 
-    rpc GetChecks (google.protobuf.Empty) returns (GetChecksResponse) {
+    rpc GetChecks (Empty) returns (GetChecksResponse) {
         option (google.api.http) = {
             get: "/v1/benchmarks/checks"
         };
@@ -70,14 +69,14 @@ service BenchmarkService {
         };
     }
 
-    rpc PutBenchmark (Benchmark) returns (google.protobuf.Empty) {
+    rpc PutBenchmark (Benchmark) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/benchmarks/configs/{id}"
             body: "*"
         };
     }
 
-    rpc DeleteBenchmark (ResourceByID) returns (google.protobuf.Empty) {
+    rpc DeleteBenchmark (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/benchmarks/configs/{id}"
         };

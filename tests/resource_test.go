@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -26,7 +25,7 @@ func TestClusters(t *testing.T) {
 	service := v1.NewClustersServiceClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	clusters, err := service.GetClusters(ctx, &empty.Empty{})
+	clusters, err := service.GetClusters(ctx, &v1.Empty{})
 	cancel()
 	require.NoError(t, err)
 	require.Len(t, clusters.GetClusters(), 1)

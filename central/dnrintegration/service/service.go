@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/dnrintegration/datastore"
@@ -27,8 +26,8 @@ type Service interface {
 	GetDNRIntegrations(ctx context.Context, req *v1.GetDNRIntegrationsRequest) (*v1.GetDNRIntegrationsResponse, error)
 	PostDNRIntegration(ctx context.Context, req *v1.DNRIntegration) (*v1.DNRIntegration, error)
 	PutDNRIntegration(ctx context.Context, req *v1.DNRIntegration) (*v1.DNRIntegration, error)
-	DeleteDNRIntegration(ctx context.Context, req *v1.ResourceByID) (*empty.Empty, error)
-	TestDNRIntegration(ctx context.Context, req *v1.DNRIntegration) (*empty.Empty, error)
+	DeleteDNRIntegration(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error)
+	TestDNRIntegration(ctx context.Context, req *v1.DNRIntegration) (*v1.Empty, error)
 }
 
 // New returns a new Service instance using the given DataStore.

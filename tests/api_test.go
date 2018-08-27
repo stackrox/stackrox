@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stretchr/testify/assert"
@@ -20,6 +19,6 @@ func TestPing(t *testing.T) {
 	require.NoError(t, err)
 
 	service := v1.NewPingServiceClient(conn)
-	_, err = service.Ping(ctx, &empty.Empty{})
+	_, err = service.Ping(ctx, &v1.Empty{})
 	assert.NoError(t, err)
 }

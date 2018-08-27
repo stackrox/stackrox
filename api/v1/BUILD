@@ -5,7 +5,6 @@ proto_library(
     deps = [
         "@googleapi//:annotations_proto",
         "@com_google_protobuf//:descriptor_proto",
-        "@com_google_protobuf//:empty_proto",
         "@com_google_protobuf//:timestamp_proto",
     ]
 )

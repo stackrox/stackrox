@@ -4,10 +4,11 @@ option go_package = "v1";
 option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/benchmark_service.proto";
 import "api/v1/benchmark_results_service.proto";
+
+import "api/v1/common.proto";
 
 package v1;
 
@@ -80,7 +81,7 @@ message GetBenchmarkScansSummaryResponse {
 
 service BenchmarkScanService {
 
-    rpc PostBenchmarkScan (BenchmarkScanMetadata) returns (google.protobuf.Empty) {
+    rpc PostBenchmarkScan (BenchmarkScanMetadata) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/benchmarks/scans"
             body: "*"
@@ -105,7 +106,7 @@ service BenchmarkScanService {
         };
     }
 
-    rpc GetBenchmarkScansSummary (google.protobuf.Empty) returns (GetBenchmarkScansSummaryResponse) {
+    rpc GetBenchmarkScansSummary (Empty) returns (GetBenchmarkScansSummaryResponse) {
         option (google.api.http) = {
             get: "/v1/benchmarks/summary/scans"
         };

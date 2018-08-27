@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/golang-lru"
 	benchmarkscanStore "github.com/stackrox/rox/central/benchmarkscan/store"
 	benchmarkscheduleStore "github.com/stackrox/rox/central/benchmarkschedule/store"
@@ -25,7 +24,7 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkResult) (*empty.Empty, error)
+	PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkResult) (*v1.Empty, error)
 }
 
 // New returns a new instance of Service using the input storage and processing mechanisms.

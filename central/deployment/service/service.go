@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	multiplierStore "github.com/stackrox/rox/central/multiplier/store"
@@ -24,12 +23,12 @@ type Service interface {
 
 	GetDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.Deployment, error)
 	ListDeployments(ctx context.Context, request *v1.RawQuery) (*v1.ListDeploymentsResponse, error)
-	GetLabels(context.Context, *empty.Empty) (*v1.DeploymentLabelsResponse, error)
+	GetLabels(context.Context, *v1.Empty) (*v1.DeploymentLabelsResponse, error)
 
-	GetMultipliers(ctx context.Context, request *empty.Empty) (*v1.GetMultipliersResponse, error)
+	GetMultipliers(ctx context.Context, request *v1.Empty) (*v1.GetMultipliersResponse, error)
 	AddMultiplier(ctx context.Context, request *v1.Multiplier) (*v1.Multiplier, error)
-	UpdateMultiplier(ctx context.Context, request *v1.Multiplier) (*empty.Empty, error)
-	RemoveMultiplier(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error)
+	UpdateMultiplier(ctx context.Context, request *v1.Multiplier) (*v1.Empty, error)
+	RemoveMultiplier(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error)
 }
 
 // New returns a new Service instance using the given DataStore.

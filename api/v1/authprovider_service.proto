@@ -4,7 +4,6 @@ option go_package = "v1";
 option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
 import "api/v1/common.proto";
 
 package v1;
@@ -51,14 +50,14 @@ service AuthProviderService {
         };
     }
 
-    rpc PutAuthProvider (AuthProvider) returns (google.protobuf.Empty) {
+    rpc PutAuthProvider (AuthProvider) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/authProviders/{id}"
             body: "*"
         };
     }
 
-    rpc DeleteAuthProvider (ResourceByID) returns (google.protobuf.Empty) {
+    rpc DeleteAuthProvider (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/authProviders/{id}"
         };

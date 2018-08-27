@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/apitoken/cachedstore"
 	"github.com/stackrox/rox/central/apitoken/parser"
@@ -67,15 +66,15 @@ func (s *serviceImpl) GetAPITokens(ctx context.Context, req *v1.GetAPITokensRequ
 	}, nil
 }
 
-func (s *serviceImpl) RevokeToken(ctx context.Context, req *v1.ResourceByID) (*empty.Empty, error) {
+func (s *serviceImpl) RevokeToken(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
 	exists, err := s.tokenStore.RevokeToken(req.GetId())
 	if err != nil {
-		return &empty.Empty{}, status.Errorf(codes.Internal, "couldn't revoke token: %s", err)
+		return &v1.Empty{}, status.Errorf(codes.Internal, "couldn't revoke token: %s", err)
 	}
 	if !exists {
-		return &empty.Empty{}, status.Errorf(codes.Internal, "token with id '%s' does not exist", req.GetId())
+		return &v1.Empty{}, status.Errorf(codes.Internal, "token with id '%s' does not exist", req.GetId())
 	}
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRequest) (*v1.GenerateTokenResponse, error) {

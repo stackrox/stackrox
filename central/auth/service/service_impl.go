@@ -2,7 +2,6 @@ package service
 
 import (
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/service"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -34,7 +33,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetAuthStatus retrieves the auth status based on the credentials given to the server.
-func (s *serviceImpl) GetAuthStatus(ctx context.Context, request *empty.Empty) (*v1.AuthStatus, error) {
+func (s *serviceImpl) GetAuthStatus(ctx context.Context, request *v1.Empty) (*v1.AuthStatus, error) {
 	authStatus, err := tokenAuthStatus(ctx)
 	if err == nil {
 		return authStatus, nil

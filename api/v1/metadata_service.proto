@@ -3,7 +3,7 @@ syntax = "proto3";
 option go_package = "v1";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
+import "api/v1/common.proto";
 
 package v1;
 
@@ -13,7 +13,7 @@ message Metadata {
 
 service MetadataService {
 
-    rpc GetMetadata(google.protobuf.Empty) returns (Metadata) {
+    rpc GetMetadata(Empty) returns (Metadata) {
         option (google.api.http) = {
             get: "/v1/metadata"
         };

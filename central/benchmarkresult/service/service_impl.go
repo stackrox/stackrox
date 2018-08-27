@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/hashicorp/golang-lru"
 	benchmarkscanStore "github.com/stackrox/rox/central/benchmarkscan/store"
@@ -39,25 +38,25 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // PostBenchmarkResult inserts a new benchmark result into the system
-func (s *serviceImpl) PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkResult) (*empty.Empty, error) {
+func (s *serviceImpl) PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkResult) (*v1.Empty, error) {
 	if err := s.resultStore.AddBenchmarkResult(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if request.GetReason() == v1.BenchmarkReason_SCHEDULED {
 		if _, ok := s.cache.Get(request.GetScanId()); ok {
 			// This means that the scan id has already been processed and an alert about benchmarks coming in was already sent
-			return &empty.Empty{}, nil
+			return &v1.Empty{}, nil
 		}
 		s.cache.Add(request.GetScanId(), struct{}{})
 		schedule, exists, err := s.scheduleStore.GetBenchmarkSchedule(request.GetId())
 		if err != nil {
 			log.Errorf("Error retrieving benchmark schedule %v: %+v", request.GetId(), err)
-			return &empty.Empty{}, nil
+			return &v1.Empty{}, nil
 		} else if !exists {
 			log.Errorf("Benchmark schedule %v does not exist", request.GetId())
-			return &empty.Empty{}, nil
+			return &v1.Empty{}, nil
 		}
 		s.notificationsProcessor.ProcessBenchmark(schedule)
 	}
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }

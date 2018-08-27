@@ -4,7 +4,6 @@ option go_package = "v1";
 option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
 import "api/v1/common.proto";
 
 package v1;
@@ -91,21 +90,21 @@ service ImageIntegrationService {
         };
     }
 
-    rpc PutImageIntegration (ImageIntegration) returns (google.protobuf.Empty) {
+    rpc PutImageIntegration (ImageIntegration) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/imageintegrations/{id}"
             body: "*"
         };
     }
 
-    rpc TestImageIntegration (ImageIntegration) returns (google.protobuf.Empty) {
+    rpc TestImageIntegration (ImageIntegration) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/imageintegrations/test"
             body: "*"
         };
     }
 
-    rpc DeleteImageIntegration (ResourceByID) returns (google.protobuf.Empty) {
+    rpc DeleteImageIntegration (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/imageintegrations/{id}"
         };

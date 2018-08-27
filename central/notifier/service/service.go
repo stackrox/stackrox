@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
 	runTimeDetectiomn "github.com/stackrox/rox/central/detection/runtime"
@@ -26,10 +25,10 @@ type Service interface {
 
 	GetNotifier(ctx context.Context, request *v1.ResourceByID) (*v1.Notifier, error)
 	GetNotifiers(ctx context.Context, request *v1.GetNotifiersRequest) (*v1.GetNotifiersResponse, error)
-	PutNotifier(ctx context.Context, request *v1.Notifier) (*empty.Empty, error)
+	PutNotifier(ctx context.Context, request *v1.Notifier) (*v1.Empty, error)
 	PostNotifier(ctx context.Context, request *v1.Notifier) (*v1.Notifier, error)
-	TestNotifier(ctx context.Context, request *v1.Notifier) (*empty.Empty, error)
-	DeleteNotifier(ctx context.Context, request *v1.DeleteNotifierRequest) (*empty.Empty, error)
+	TestNotifier(ctx context.Context, request *v1.Notifier) (*v1.Empty, error)
+	DeleteNotifier(ctx context.Context, request *v1.DeleteNotifierRequest) (*v1.Empty, error)
 }
 
 type policyDetector interface {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	benchmarkDataStore "github.com/stackrox/rox/central/benchmark/datastore"
 	"github.com/stackrox/rox/central/benchmarkscan/store"
@@ -61,8 +60,8 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // PostBenchmarkScan inserts a scan into the database
-func (s *serviceImpl) PostBenchmarkScan(ctx context.Context, scan *v1.BenchmarkScanMetadata) (*empty.Empty, error) {
-	return &empty.Empty{}, s.benchmarkScanStorage.AddScan(scan)
+func (s *serviceImpl) PostBenchmarkScan(ctx context.Context, scan *v1.BenchmarkScanMetadata) (*v1.Empty, error) {
+	return &v1.Empty{}, s.benchmarkScanStorage.AddScan(scan)
 }
 
 // ListBenchmarkScans lists all of the scans that match the request parameters
@@ -184,7 +183,7 @@ func (s *serviceImpl) getBenchmarkScansSummaryResponse(clusters []*v1.Cluster, b
 }
 
 // GetBenchmarkScansSummary returns a summarized version of the clusters and their benchmarks
-func (s *serviceImpl) GetBenchmarkScansSummary(context.Context, *empty.Empty) (*v1.GetBenchmarkScansSummaryResponse, error) {
+func (s *serviceImpl) GetBenchmarkScansSummary(context.Context, *v1.Empty) (*v1.GetBenchmarkScansSummaryResponse, error) {
 	clusters, err := s.clusterStorage.GetClusters()
 	if err != nil {
 		return nil, err

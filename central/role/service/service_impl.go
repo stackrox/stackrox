@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/store"
@@ -40,7 +39,7 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
 }
 
-func (s *serviceImpl) GetRoles(context.Context, *empty.Empty) (*v1.GetRolesResponse, error) {
+func (s *serviceImpl) GetRoles(context.Context, *v1.Empty) (*v1.GetRolesResponse, error) {
 	resp := new(v1.GetRolesResponse)
 	for _, role := range s.roleStore.GetRoles() {
 		resp.Roles = append(resp.GetRoles(), &v1.Role{Name: role.Name()})

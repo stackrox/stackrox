@@ -4,9 +4,10 @@ option go_package = "v1";
 option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/benchmark_service.proto";
+
+import "api/v1/common.proto";
 
 package v1;
 
@@ -46,7 +47,7 @@ message BenchmarkResult {
 
 service BenchmarkResultsService {
 
-    rpc PostBenchmarkResult(BenchmarkResult) returns (google.protobuf.Empty) {
+    rpc PostBenchmarkResult(BenchmarkResult) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/benchmarks/results"
             body: "*"

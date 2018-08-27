@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -18,7 +17,7 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	GetMetadata(context.Context, *empty.Empty) (*v1.Metadata, error)
+	GetMetadata(context.Context, *v1.Empty) (*v1.Metadata, error)
 }
 
 // New returns a new instance of service.

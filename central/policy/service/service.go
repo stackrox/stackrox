@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/golang/protobuf/ptypes/empty"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
@@ -25,16 +24,16 @@ type Service interface {
 	GetPolicy(ctx context.Context, request *v1.ResourceByID) (*v1.Policy, error)
 	ListPolicies(ctx context.Context, request *v1.RawQuery) (*v1.ListPoliciesResponse, error)
 	PostPolicy(ctx context.Context, request *v1.Policy) (*v1.Policy, error)
-	PutPolicy(ctx context.Context, request *v1.Policy) (*empty.Empty, error)
-	PatchPolicy(ctx context.Context, request *v1.PatchPolicyRequest) (*empty.Empty, error)
-	DeletePolicy(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error)
+	PutPolicy(ctx context.Context, request *v1.Policy) (*v1.Empty, error)
+	PatchPolicy(ctx context.Context, request *v1.PatchPolicyRequest) (*v1.Empty, error)
+	DeletePolicy(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error)
 
-	ReassessPolicies(context.Context, *empty.Empty) (*empty.Empty, error)
+	ReassessPolicies(context.Context, *v1.Empty) (*v1.Empty, error)
 	DryRunPolicy(ctx context.Context, request *v1.Policy) (*v1.DryRunResponse, error)
 
-	GetPolicyCategories(context.Context, *empty.Empty) (*v1.PolicyCategoriesResponse, error)
-	RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) (*empty.Empty, error)
-	DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) (*empty.Empty, error)
+	GetPolicyCategories(context.Context, *v1.Empty) (*v1.PolicyCategoriesResponse, error)
+	RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) (*v1.Empty, error)
+	DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) (*v1.Empty, error)
 }
 
 // New returns a new Service instance using the given DataStore.

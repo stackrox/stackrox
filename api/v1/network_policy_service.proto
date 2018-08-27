@@ -3,7 +3,6 @@ syntax = "proto3";
 option go_package = "v1";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
 
@@ -138,7 +137,7 @@ service NetworkPolicyService {
         };
     }
 
-    rpc GetNetworkGraphEpoch (google.protobuf.Empty) returns (GetNetworkGraphEpochResponse) {
+    rpc GetNetworkGraphEpoch (Empty) returns (GetNetworkGraphEpochResponse) {
         option (google.api.http) = {
             get: "/v1/networkgraph/epoch"
         };

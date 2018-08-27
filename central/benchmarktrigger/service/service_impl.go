@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	ptypes "github.com/gogo/protobuf/types"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	bDataStore "github.com/stackrox/rox/central/benchmark/datastore"
 	btDataStore "github.com/stackrox/rox/central/benchmarktrigger/datastore"
@@ -55,7 +54,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // Trigger triggers a benchmark launch asynchronously.
-func (s *serviceImpl) Trigger(ctx context.Context, request *v1.BenchmarkTrigger) (*empty.Empty, error) {
+func (s *serviceImpl) Trigger(ctx context.Context, request *v1.BenchmarkTrigger) (*v1.Empty, error) {
 	_, exists, err := s.storage.GetBenchmark(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -67,7 +66,7 @@ func (s *serviceImpl) Trigger(ctx context.Context, request *v1.BenchmarkTrigger)
 	if err := s.triggerStorage.AddBenchmarkTrigger(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 // GetTriggers triggers returns all of the manual benchmark triggers.

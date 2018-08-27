@@ -28,3 +28,5 @@ message Scope {
     }
     Label label         = 3;
 }
+
+message Empty {}

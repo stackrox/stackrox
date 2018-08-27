@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	bDataStore "github.com/stackrox/rox/central/benchmark/datastore"
 	btDataStore "github.com/stackrox/rox/central/benchmarktrigger/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -21,7 +20,7 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	Trigger(ctx context.Context, request *v1.BenchmarkTrigger) (*empty.Empty, error)
+	Trigger(ctx context.Context, request *v1.BenchmarkTrigger) (*v1.Empty, error)
 	GetTriggers(ctx context.Context, request *v1.GetBenchmarkTriggersRequest) (*v1.GetBenchmarkTriggersResponse, error)
 }
 

@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"github.com/deckarep/golang-set"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
@@ -105,7 +104,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 }
 
 // GetLabels returns label keys and values for current deployments.
-func (s *serviceImpl) GetLabels(context.Context, *empty.Empty) (*v1.DeploymentLabelsResponse, error) {
+func (s *serviceImpl) GetLabels(context.Context, *v1.Empty) (*v1.DeploymentLabelsResponse, error) {
 	deployments, err := s.datastore.GetDeployments()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -151,7 +150,7 @@ func labelsMapFromDeployments(deployments []*v1.Deployment) (keyValuesMap map[st
 }
 
 // GetMultipliers returns all multipliers
-func (s *serviceImpl) GetMultipliers(ctx context.Context, request *empty.Empty) (*v1.GetMultipliersResponse, error) {
+func (s *serviceImpl) GetMultipliers(ctx context.Context, request *v1.Empty) (*v1.GetMultipliersResponse, error) {
 	multipliers, err := s.multipliers.GetMultipliers()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -187,16 +186,16 @@ func (s *serviceImpl) AddMultiplier(ctx context.Context, request *v1.Multiplier)
 }
 
 // UpdateMultiplier updates the specified multiplier
-func (s *serviceImpl) UpdateMultiplier(ctx context.Context, request *v1.Multiplier) (*empty.Empty, error) {
+func (s *serviceImpl) UpdateMultiplier(ctx context.Context, request *v1.Multiplier) (*v1.Empty, error) {
 	if err := s.multipliers.UpdateMultiplier(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	s.enricher.UpdateMultiplier(request)
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 // RemoveMultiplier removes the specified multiplier
-func (s *serviceImpl) RemoveMultiplier(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
+func (s *serviceImpl) RemoveMultiplier(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "ID must be specified when removing a multiplier")
 	}
@@ -207,5 +206,5 @@ func (s *serviceImpl) RemoveMultiplier(ctx context.Context, request *v1.Resource
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	s.enricher.RemoveMultiplier(request.GetId())
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }

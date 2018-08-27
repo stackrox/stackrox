@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -133,7 +132,7 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 	return s.graphEvaluator.GetGraph(deployments, networkPolicies), nil
 }
 
-func (s *serviceImpl) GetNetworkGraphEpoch(context.Context, *empty.Empty) (*v1.GetNetworkGraphEpochResponse, error) {
+func (s *serviceImpl) GetNetworkGraphEpoch(context.Context, *v1.Empty) (*v1.GetNetworkGraphEpochResponse, error) {
 	return &v1.GetNetworkGraphEpochResponse{
 		Epoch: s.graphEvaluator.Epoch(),
 	}, nil

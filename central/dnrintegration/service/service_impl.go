@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -145,23 +144,23 @@ func (s *serviceImpl) PutDNRIntegration(ctx context.Context, req *v1.DNRIntegrat
 }
 
 // DeleteDNRIntegration removes a DNR integration by ID.
-func (s *serviceImpl) DeleteDNRIntegration(ctx context.Context, req *v1.ResourceByID) (*empty.Empty, error) {
+func (s *serviceImpl) DeleteDNRIntegration(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
 	err := s.datastore.RemoveDNRIntegration(req.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	s.enricher.ReprocessRiskAsync()
 
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 // TestDNRIntegration tests the DNR integration.
-func (s *serviceImpl) TestDNRIntegration(ctx context.Context, req *v1.DNRIntegration) (*empty.Empty, error) {
+func (s *serviceImpl) TestDNRIntegration(ctx context.Context, req *v1.DNRIntegration) (*v1.Empty, error) {
 	_, err := dnrintegration.New(req, s.deployments)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) getDNRIntegrationByID(id string) (*v1.DNRIntegration, error) {

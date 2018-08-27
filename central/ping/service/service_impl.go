@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/service"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -30,7 +29,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // Ping implements v1.PingServiceServer, and it always returns a v1.PongMessage object.
-func (s *serviceImpl) Ping(context.Context, *empty.Empty) (*v1.PongMessage, error) {
+func (s *serviceImpl) Ping(context.Context, *v1.Empty) (*v1.PongMessage, error) {
 	result := &v1.PongMessage{
 		Status: "ok",
 	}

@@ -7,7 +7,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/benchmarks"
@@ -194,6 +193,6 @@ func waitUntilCentralIsReady(conn *grpcLib.ClientConn) {
 func pingWithTimeout(svc v1.PingServiceClient) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	_, err = svc.Ping(ctx, &empty.Empty{})
+	_, err = svc.Ping(ctx, &v1.Empty{})
 	return
 }

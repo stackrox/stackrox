@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -76,7 +75,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetSummaryCounts returns the global counts of alerts, clusters, deployments, and images.
-func (s *serviceImpl) GetSummaryCounts(context.Context, *empty.Empty) (*v1.SummaryCountsResponse, error) {
+func (s *serviceImpl) GetSummaryCounts(context.Context, *v1.Empty) (*v1.SummaryCountsResponse, error) {
 	alerts, err := s.alerts.CountAlerts()
 	if err != nil {
 		log.Error(err)

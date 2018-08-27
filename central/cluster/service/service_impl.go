@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/docker/distribution/reference"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusters"
@@ -176,7 +175,7 @@ func (s *serviceImpl) getCluster(id string) (*v1.ClusterResponse, error) {
 }
 
 // GetClusters returns the currently defined clusters.
-func (s *serviceImpl) GetClusters(ctx context.Context, _ *empty.Empty) (*v1.ClustersList, error) {
+func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.ClustersList, error) {
 	clusters, err := s.datastore.GetClusters()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -187,7 +186,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, _ *empty.Empty) (*v1.Clus
 }
 
 // DeleteCluster removes a cluster
-func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
+func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Request must have a id")
 	}
@@ -196,5 +195,5 @@ func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByI
 	}
 	s.enricher.ReprocessRiskAsync()
 
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }

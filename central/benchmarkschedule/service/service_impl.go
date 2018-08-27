@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	ptypes "github.com/gogo/protobuf/types"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	benchmarkDataStore "github.com/stackrox/rox/central/benchmark/datastore"
 	"github.com/stackrox/rox/central/benchmarkschedule/store"
@@ -113,7 +112,7 @@ func (s *serviceImpl) PostBenchmarkSchedule(ctx context.Context, request *v1.Ben
 }
 
 // PutBenchmarkSchedule updates a current schedule
-func (s *serviceImpl) PutBenchmarkSchedule(ctx context.Context, request *v1.BenchmarkSchedule) (*empty.Empty, error) {
+func (s *serviceImpl) PutBenchmarkSchedule(ctx context.Context, request *v1.BenchmarkSchedule) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "id must be defined")
 	}
@@ -124,7 +123,7 @@ func (s *serviceImpl) PutBenchmarkSchedule(ctx context.Context, request *v1.Benc
 	if err := s.storage.UpdateBenchmarkSchedule(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 // GetBenchmarkSchedules returns the current benchmark schedules
@@ -139,9 +138,9 @@ func (s *serviceImpl) GetBenchmarkSchedules(ctx context.Context, request *v1.Get
 }
 
 // DeleteBenchmarkSchedule removes a benchmark schedule
-func (s *serviceImpl) DeleteBenchmarkSchedule(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
+func (s *serviceImpl) DeleteBenchmarkSchedule(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if err := s.storage.RemoveBenchmarkSchedule(request.GetId()); err != nil {
 		return nil, service.ReturnErrorCode(err)
 	}
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }

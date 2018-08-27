@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/service"
@@ -52,7 +51,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetServiceIdentities returns the currently defined service identities.
-func (s *serviceImpl) GetServiceIdentities(ctx context.Context, _ *empty.Empty) (*v1.ServiceIdentityResponse, error) {
+func (s *serviceImpl) GetServiceIdentities(ctx context.Context, _ *v1.Empty) (*v1.ServiceIdentityResponse, error) {
 	serviceIdentities, err := s.storage.GetServiceIdentities()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -87,7 +86,7 @@ func (s *serviceImpl) CreateServiceIdentity(ctx context.Context, request *v1.Cre
 }
 
 // GetAuthorities returns the authorities currently in use.
-func (s *serviceImpl) GetAuthorities(ctx context.Context, request *empty.Empty) (*v1.Authorities, error) {
+func (s *serviceImpl) GetAuthorities(ctx context.Context, request *v1.Empty) (*v1.Authorities, error) {
 	ca, err := mtls.CACertPEM()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())

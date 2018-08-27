@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
@@ -27,10 +26,10 @@ type Service interface {
 
 	GetImageIntegration(ctx context.Context, request *v1.ResourceByID) (*v1.ImageIntegration, error)
 	GetImageIntegrations(ctx context.Context, request *v1.GetImageIntegrationsRequest) (*v1.GetImageIntegrationsResponse, error)
-	PutImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*empty.Empty, error)
+	PutImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*v1.Empty, error)
 	PostImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*v1.ImageIntegration, error)
-	TestImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*empty.Empty, error)
-	DeleteImageIntegration(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error)
+	TestImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*v1.Empty, error)
+	DeleteImageIntegration(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error)
 }
 
 // New returns a new Service instance using the given DataStore.

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	benchmarkDataStore "github.com/stackrox/rox/central/benchmark/datastore"
 	"github.com/stackrox/rox/central/benchmarkschedule/store"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -23,9 +22,9 @@ type Service interface {
 	GetBenchmarkSchedule(ctx context.Context, request *v1.ResourceByID) (*v1.BenchmarkSchedule, error)
 	PostBenchmarkSchedule(ctx context.Context, request *v1.BenchmarkSchedule) (*v1.BenchmarkSchedule, error)
 
-	PutBenchmarkSchedule(ctx context.Context, request *v1.BenchmarkSchedule) (*empty.Empty, error)
+	PutBenchmarkSchedule(ctx context.Context, request *v1.BenchmarkSchedule) (*v1.Empty, error)
 	GetBenchmarkSchedules(ctx context.Context, request *v1.GetBenchmarkSchedulesRequest) (*v1.GetBenchmarkSchedulesResponse, error)
-	DeleteBenchmarkSchedule(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error)
+	DeleteBenchmarkSchedule(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error)
 }
 
 // New returns a new Service instance using the given DataStore.

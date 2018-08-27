@@ -4,7 +4,6 @@ option go_package = "v1";
 option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
 import "api/v1/image_service.proto";
@@ -241,27 +240,27 @@ service PolicyService {
         };
     }
 
-    rpc PutPolicy (Policy) returns (google.protobuf.Empty) {
+    rpc PutPolicy (Policy) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/policies/{id}"
             body: "*"
         };
     }
 
-    rpc PatchPolicy (PatchPolicyRequest) returns (google.protobuf.Empty) {
+    rpc PatchPolicy (PatchPolicyRequest) returns (Empty) {
         option (google.api.http) = {
             patch: "/v1/policies/{id}"
             body: "*"
         };
     }
 
-    rpc DeletePolicy (ResourceByID) returns (google.protobuf.Empty) {
+    rpc DeletePolicy (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/policies/{id}"
         };
     }
 
-    rpc ReassessPolicies (google.protobuf.Empty) returns (google.protobuf.Empty) {
+    rpc ReassessPolicies (Empty) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/policies/reassess"
         };
@@ -274,20 +273,20 @@ service PolicyService {
         };
     }
 
-    rpc GetPolicyCategories (google.protobuf.Empty) returns (PolicyCategoriesResponse) {
+    rpc GetPolicyCategories (Empty) returns (PolicyCategoriesResponse) {
         option (google.api.http) = {
             get: "/v1/policyCategories"
         };
     }
 
-    rpc RenamePolicyCategory (RenamePolicyCategoryRequest) returns (google.protobuf.Empty) {
+    rpc RenamePolicyCategory (RenamePolicyCategoryRequest) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/policyCategories/{old_category}"
             body: "*"
         };
     }
 
-    rpc DeletePolicyCategory (DeletePolicyCategoryRequest) returns (google.protobuf.Empty) {
+    rpc DeletePolicyCategory (DeletePolicyCategoryRequest) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/policyCategories/{category}"
         };

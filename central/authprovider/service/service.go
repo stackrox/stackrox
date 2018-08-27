@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stackrox/rox/central/authprovider/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -23,8 +22,8 @@ type Service interface {
 	GetAuthProvider(ctx context.Context, request *v1.ResourceByID) (*v1.AuthProvider, error)
 	GetAuthProviders(ctx context.Context, request *v1.GetAuthProvidersRequest) (*v1.GetAuthProvidersResponse, error)
 	PostAuthProvider(ctx context.Context, request *v1.AuthProvider) (*v1.AuthProvider, error)
-	PutAuthProvider(ctx context.Context, request *v1.AuthProvider) (*empty.Empty, error)
-	DeleteAuthProvider(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error)
+	PutAuthProvider(ctx context.Context, request *v1.AuthProvider) (*v1.Empty, error)
+	DeleteAuthProvider(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error)
 }
 
 // New returns a new Service instance using the given DataStore.

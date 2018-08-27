@@ -4,7 +4,6 @@ option go_package = "v1";
 option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
 import "api/v1/common.proto";
 
 package v1;
@@ -52,13 +51,13 @@ service DNRIntegrationService {
         };
     }
 
-    rpc DeleteDNRIntegration (ResourceByID) returns (google.protobuf.Empty) {
+    rpc DeleteDNRIntegration (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/dnrintegrations/{id}"
         };
     }
 
-    rpc TestDNRIntegration (DNRIntegration) returns (google.protobuf.Empty) {
+    rpc TestDNRIntegration (DNRIntegration) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/dnrintegrations/test"
             body: "*"

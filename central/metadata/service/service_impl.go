@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/service"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -32,7 +31,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetMetadata returns the metadata for Prevent.
-func (s *serviceImpl) GetMetadata(context.Context, *empty.Empty) (*v1.Metadata, error) {
+func (s *serviceImpl) GetMetadata(context.Context, *v1.Empty) (*v1.Metadata, error) {
 	v, err := version.GetVersion()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())

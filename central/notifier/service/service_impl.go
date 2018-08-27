@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
@@ -113,7 +112,7 @@ func validateNotifier(notifier *v1.Notifier) error {
 }
 
 // PutNotifier updates a notifier in the system
-func (s *serviceImpl) PutNotifier(ctx context.Context, request *v1.Notifier) (*empty.Empty, error) {
+func (s *serviceImpl) PutNotifier(ctx context.Context, request *v1.Notifier) (*v1.Empty, error) {
 	if err := validateNotifier(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -129,7 +128,7 @@ func (s *serviceImpl) PutNotifier(ctx context.Context, request *v1.Notifier) (*e
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	s.processor.UpdateNotifier(notifier)
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 // PostNotifier inserts a new registry into the system if it doesn't already exist
@@ -154,7 +153,7 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *v1.Notifier) (*
 }
 
 // TestNotifier tests to see if the config is setup properly
-func (s *serviceImpl) TestNotifier(ctx context.Context, request *v1.Notifier) (*empty.Empty, error) {
+func (s *serviceImpl) TestNotifier(ctx context.Context, request *v1.Notifier) (*v1.Empty, error) {
 	if err := validateNotifier(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -165,11 +164,11 @@ func (s *serviceImpl) TestNotifier(ctx context.Context, request *v1.Notifier) (*
 	if err := notifier.Test(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 // DeleteNotifier deletes a notifier from the system
-func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNotifierRequest) (*empty.Empty, error) {
+func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNotifierRequest) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Notifier id must be provided")
 	}
@@ -201,7 +200,7 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 	s.buildTimePolicies.RemoveNotifier(request.GetId())
 	s.deployTimePolicies.RemoveNotifier(request.GetId())
 	s.runTimePolicies.RemoveNotifier(request.GetId())
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) populatePolicies(notifier *v1.Notifier) {

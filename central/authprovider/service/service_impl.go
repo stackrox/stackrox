@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/authprovider/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -104,7 +103,7 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.AuthProv
 }
 
 // PutAuthProvider updates an auth provider in the system
-func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *v1.AuthProvider) (*empty.Empty, error) {
+func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *v1.AuthProvider) (*v1.Empty, error) {
 	if request == nil {
 		return nil, status.Error(codes.InvalidArgument, "request cannot be nil")
 	}
@@ -120,16 +119,16 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *v1.AuthProvi
 	if err := s.storage.UpdateAuthProvider(request); err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 // DeleteAuthProvider deletes an auth provider from the system
-func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
+func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Auth Provider id is required")
 	}
 	if err := s.storage.RemoveAuthProvider(request.GetId()); err != nil {
 		return nil, service.ReturnErrorCode(err)
 	}
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }

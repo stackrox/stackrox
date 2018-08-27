@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -23,7 +22,7 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	GetSummaryCounts(context.Context, *empty.Empty) (*v1.SummaryCountsResponse, error)
+	GetSummaryCounts(context.Context, *v1.Empty) (*v1.SummaryCountsResponse, error)
 }
 
 // New returns a new Service instance using the given DataStore.

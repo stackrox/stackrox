@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	benchmarkDataStore "github.com/stackrox/rox/central/benchmark/datastore"
 	"github.com/stackrox/rox/central/benchmarkscan/store"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -22,10 +21,10 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	PostBenchmarkScan(ctx context.Context, scan *v1.BenchmarkScanMetadata) (*empty.Empty, error)
+	PostBenchmarkScan(ctx context.Context, scan *v1.BenchmarkScanMetadata) (*v1.Empty, error)
 	ListBenchmarkScans(ctx context.Context, request *v1.ListBenchmarkScansRequest) (*v1.ListBenchmarkScansResponse, error)
 	GetBenchmarkScan(ctx context.Context, request *v1.GetBenchmarkScanRequest) (*v1.BenchmarkScan, error)
-	GetBenchmarkScansSummary(context.Context, *empty.Empty) (*v1.GetBenchmarkScansSummaryResponse, error)
+	GetBenchmarkScansSummary(context.Context, *v1.Empty) (*v1.GetBenchmarkScansSummaryResponse, error)
 	GetHostResults(ctx context.Context, request *v1.GetHostResultsRequest) (*v1.HostResults, error)
 }
 

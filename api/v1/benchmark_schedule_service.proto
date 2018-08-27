@@ -4,7 +4,6 @@ option go_package = "v1";
 option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
 
@@ -52,14 +51,14 @@ service BenchmarkScheduleService {
         };
     }
 
-    rpc PutBenchmarkSchedule (BenchmarkSchedule) returns (google.protobuf.Empty) {
+    rpc PutBenchmarkSchedule (BenchmarkSchedule) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/benchmarks/schedules/{id}"
             body: "*"
         };
     }
 
-    rpc DeleteBenchmarkSchedule (ResourceByID) returns (google.protobuf.Empty) {
+    rpc DeleteBenchmarkSchedule (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/benchmarks/schedules/{id}"
         };

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	serviceIdentitiesService "github.com/stackrox/rox/central/serviceidentities/service"
@@ -113,7 +112,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	authority, err := z.identityService.GetAuthorities(ctx, &empty.Empty{})
+	authority, err := z.identityService.GetAuthorities(ctx, &v1.Empty{})
 	if err != nil {
 		writeGRPCStyleError(w, codes.Internal, err)
 		return

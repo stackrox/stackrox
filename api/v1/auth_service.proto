@@ -4,9 +4,10 @@ option go_package = "v1";
 option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/service_identity_service.proto";
+
+import "api/v1/common.proto";
 
 package v1;
 
@@ -20,7 +21,7 @@ message AuthStatus {
 }
 
 service AuthService {
-    rpc GetAuthStatus(google.protobuf.Empty) returns (AuthStatus) {
+    rpc GetAuthStatus(Empty) returns (AuthStatus) {
         option (google.api.http) = {
             get: "/v1/auth/status"
         };

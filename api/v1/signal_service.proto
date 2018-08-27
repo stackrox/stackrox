@@ -3,7 +3,7 @@ syntax = "proto3";
 option go_package = "v1";
 
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/empty.proto";
+import "api/v1/common.proto";
 
 package v1;
 
@@ -69,5 +69,5 @@ message ProcessSignal {
 
 // A Sensor (client-side streaming) service that allows Collector to push Signal messages
 service SignalService { 
-    rpc PushSignals (stream SignalStreamMessage) returns (google.protobuf.Empty);
+    rpc PushSignals (stream SignalStreamMessage) returns (Empty);
 }

@@ -1,7 +1,6 @@
 package benchmarks
 
 import (
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -40,10 +39,10 @@ func (s *BenchmarkResultsService) AuthFuncOverride(ctx context.Context, fullMeth
 }
 
 // PostBenchmarkResult inserts a new benchmark result into the system
-func (s *BenchmarkResultsService) PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkResult) (*empty.Empty, error) {
+func (s *BenchmarkResultsService) PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkResult) (*v1.Empty, error) {
 	if request == nil {
-		return &empty.Empty{}, status.Errorf(codes.InvalidArgument, "Request object must be non-nil")
+		return &v1.Empty{}, status.Errorf(codes.InvalidArgument, "Request object must be non-nil")
 	}
 	s.relayer.Accept(request)
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }

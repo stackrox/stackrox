@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/search"
@@ -200,7 +199,7 @@ func addPolicyClusterScope(t *testing.T, policyName string) {
 
 	clusterService := v1.NewClustersServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	clusters, err := clusterService.GetClusters(ctx, &empty.Empty{})
+	clusters, err := clusterService.GetClusters(ctx, &v1.Empty{})
 	cancel()
 	require.NoError(t, err)
 	require.Len(t, clusters.GetClusters(), 1)

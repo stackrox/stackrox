@@ -4,7 +4,7 @@ option go_package = "v1";
 option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
+import "api/v1/common.proto";
 
 package v1;
 
@@ -16,7 +16,7 @@ message SummaryCountsResponse {
 }
 
 service SummaryService {
-    rpc GetSummaryCounts (google.protobuf.Empty) returns (SummaryCountsResponse) {
+    rpc GetSummaryCounts (Empty) returns (SummaryCountsResponse) {
         option (google.api.http) = {
             get: "/v1/summary/counts"
         };

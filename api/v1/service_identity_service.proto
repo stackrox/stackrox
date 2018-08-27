@@ -4,7 +4,7 @@ option go_package = "v1";
 option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
+import "api/v1/common.proto";
 
 package v1;
 
@@ -46,7 +46,7 @@ message Authorities {
 
 service ServiceIdentityService {
 
-    rpc GetServiceIdentities (google.protobuf.Empty) returns (ServiceIdentityResponse) {
+    rpc GetServiceIdentities (Empty) returns (ServiceIdentityResponse) {
         option (google.api.http) = {
             get: "/v1/serviceIdentities"
         };
@@ -62,7 +62,7 @@ service ServiceIdentityService {
     }
 
     // GetAuthorities returns the authorities currently in use.
-    rpc GetAuthorities (google.protobuf.Empty) returns (Authorities) {
+    rpc GetAuthorities (Empty) returns (Authorities) {
         option (google.api.http) = {
             get: "/v1/authorities"
         };

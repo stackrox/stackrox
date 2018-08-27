@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/enrichanddetect"
@@ -114,7 +113,7 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetI
 }
 
 // PutImageIntegration updates an image integration in the system
-func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*empty.Empty, error) {
+func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*v1.Empty, error) {
 	err := s.validateClustersAndCategories(request)
 	if err != nil {
 		return nil, err
@@ -127,7 +126,7 @@ func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *v1.Image
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	go s.enrichAndDetectLoop.ShortCircuit()
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 // PostImageIntegration inserts a new image integration into the system if it doesn't already exist
@@ -155,7 +154,7 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *v1.Imag
 }
 
 // DeleteImageIntegration deletes an integration from the system
-func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
+func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Image integration id must be provided")
 	}
@@ -165,11 +164,11 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 	if err := s.toNotify.NotifyRemoved(request.GetId()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 // TestImageIntegration tests to see if the config is setup properly
-func (s *serviceImpl) TestImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*empty.Empty, error) {
+func (s *serviceImpl) TestImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*v1.Empty, error) {
 	err := s.validateClustersAndCategories(request)
 	if err != nil {
 		return nil, err
@@ -188,7 +187,7 @@ func (s *serviceImpl) TestImageIntegration(ctx context.Context, request *v1.Imag
 			}
 		}
 	}
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) testRegistryIntegration(integration *v1.ImageIntegration) error {

@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/benchmark/datastore"
 	"github.com/stackrox/rox/central/role/resources"
@@ -68,7 +67,7 @@ func (s *serviceImpl) GetBenchmark(ctx context.Context, request *v1.ResourceByID
 }
 
 // GetChecks returns all the available checks that can be included in a benchmark
-func (s *serviceImpl) GetChecks(ctx context.Context, _ *empty.Empty) (*v1.GetChecksResponse, error) {
+func (s *serviceImpl) GetChecks(ctx context.Context, _ *v1.Empty) (*v1.GetChecksResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
@@ -96,20 +95,20 @@ func (s *serviceImpl) PostBenchmark(ctx context.Context, request *v1.Benchmark) 
 }
 
 // PutBenchmark updates a benchmark
-func (s *serviceImpl) PutBenchmark(ctx context.Context, request *v1.Benchmark) (*empty.Empty, error) {
+func (s *serviceImpl) PutBenchmark(ctx context.Context, request *v1.Benchmark) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be specified when updating a benchmark")
 	}
 	if err := s.datastore.UpdateBenchmark(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 // DeleteBenchmark removes a benchmark
-func (s *serviceImpl) DeleteBenchmark(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
+func (s *serviceImpl) DeleteBenchmark(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if err := s.datastore.RemoveBenchmark(request.GetId()); err != nil {
 		return nil, service.ReturnErrorCode(err)
 	}
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }

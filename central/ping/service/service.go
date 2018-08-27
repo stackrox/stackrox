@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -18,7 +17,7 @@ type Service interface {
 	grpc.APIService
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
-	Ping(context.Context, *empty.Empty) (*v1.PongMessage, error)
+	Ping(context.Context, *v1.Empty) (*v1.PongMessage, error)
 }
 
 // New returns a new Service instance using the given DataStore.

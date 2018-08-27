@@ -4,7 +4,6 @@ option go_package = "v1";
 option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
-import "google/protobuf/empty.proto";
 import "api/v1/common.proto";
 
 package v1;
@@ -79,7 +78,7 @@ service NotifierService {
         };
     }
 
-    rpc PutNotifier (Notifier) returns (google.protobuf.Empty) {
+    rpc PutNotifier (Notifier) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/notifiers/{id}"
             body: "*"
@@ -93,14 +92,14 @@ service NotifierService {
         };
     }
 
-    rpc TestNotifier (Notifier) returns (google.protobuf.Empty) {
+    rpc TestNotifier (Notifier) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/notifiers/test"
             body: "*"
         };
     }
 
-    rpc DeleteNotifier (DeleteNotifierRequest) returns (google.protobuf.Empty) {
+    rpc DeleteNotifier (DeleteNotifierRequest) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/notifiers/{id}"
         };

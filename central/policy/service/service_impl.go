@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -167,7 +166,7 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.Policy) (*v1.P
 }
 
 // PutPolicy updates a current policy in the system.
-func (s *serviceImpl) PutPolicy(ctx context.Context, request *v1.Policy) (*empty.Empty, error) {
+func (s *serviceImpl) PutPolicy(ctx context.Context, request *v1.Policy) (*v1.Empty, error) {
 	if err := s.validator.validate(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -178,11 +177,11 @@ func (s *serviceImpl) PutPolicy(ctx context.Context, request *v1.Policy) (*empty
 	if err := s.policies.UpdatePolicy(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 // PatchPolicy patches a current policy in the system.
-func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRequest) (*empty.Empty, error) {
+func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRequest) (*v1.Empty, error) {
 	policy, exists, err := s.policies.GetPolicy(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -197,7 +196,7 @@ func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRe
 }
 
 // DeletePolicy deletes an policy from the system.
-func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID) (*empty.Empty, error) {
+func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "A policy id must be specified to delete a Policy")
 	}
@@ -215,17 +214,17 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 	if err := s.policies.RemovePolicy(request.GetId()); err != nil {
 		return nil, service.ReturnErrorCode(err)
 	}
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 // ReassessPolicies manually triggers enrichment of all deployments, and re-assesses policies if there's updated data.
-func (s *serviceImpl) ReassessPolicies(context.Context, *empty.Empty) (*empty.Empty, error) {
+func (s *serviceImpl) ReassessPolicies(context.Context, *v1.Empty) (*v1.Empty, error) {
 	deployments, err := s.deployments.GetDeployments()
 	if err != nil {
-		return &empty.Empty{}, err
+		return &v1.Empty{}, err
 	}
 	go s.reprocessDeployments(deployments)
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 // DryRunPolicy runs a dry run of the policy and determines what deployments would
@@ -259,7 +258,7 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *v1.Policy) (*v1
 }
 
 // GetPolicyCategories returns the categories of all policies.
-func (s *serviceImpl) GetPolicyCategories(context.Context, *empty.Empty) (*v1.PolicyCategoriesResponse, error) {
+func (s *serviceImpl) GetPolicyCategories(context.Context, *v1.Empty) (*v1.PolicyCategoriesResponse, error) {
 	categorySet, err := s.getPolicyCategorySet()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -276,20 +275,20 @@ func (s *serviceImpl) GetPolicyCategories(context.Context, *empty.Empty) (*v1.Po
 }
 
 // RenamePolicyCategory changes all usage of the category in policies to the requsted name.
-func (s *serviceImpl) RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) (*empty.Empty, error) {
+func (s *serviceImpl) RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) (*v1.Empty, error) {
 	if request.GetOldCategory() == request.GetNewCategory() {
-		return &empty.Empty{}, nil
+		return &v1.Empty{}, nil
 	}
 
 	if err := s.policies.RenamePolicyCategory(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 // DeletePolicyCategory removes all usage of the category in policies. Policies may end up with no configured category.
-func (s *serviceImpl) DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) (*empty.Empty, error) {
+func (s *serviceImpl) DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) (*v1.Empty, error) {
 	categorySet, err := s.getPolicyCategorySet()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -303,7 +302,7 @@ func (s *serviceImpl) DeletePolicyCategory(ctx context.Context, request *v1.Dele
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &empty.Empty{}, nil
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) getPolicyCategorySet() (map[string]struct{}, error) {
