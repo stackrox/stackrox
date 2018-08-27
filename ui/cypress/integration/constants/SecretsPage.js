@@ -8,7 +8,7 @@ export const selectors = {
     cancelButton: 'button[data-test-id="cancel"]',
     deploymentLink: 'div:contains("Deployment Name") + a',
     table: {
-        rows: 'table tr.cursor-pointer'
+        rows: 'div.rt-tbody div.rt-tr-group'
     },
     searchInput: '.Select-input > input'
 };

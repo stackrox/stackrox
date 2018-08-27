@@ -7,7 +7,7 @@ import { createSelector, createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions as secretsActions } from 'reducers/secrets';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import Table from 'Components/Table';
+import ReactRowSelectTable from 'Components/ReactRowSelectTable';
 import Panel from 'Components/Panel';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
@@ -50,14 +50,24 @@ class SecretPage extends Component {
 
     renderTable() {
         const columns = [
-            { key: 'name', label: 'Name' },
-            { key: 'clusterRelationship.name', label: 'Cluster' },
-            { key: 'namespaceRelationship.namespace', label: 'Namespace' }
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'clusterRelationship.name', Header: 'Cluster' },
+            { accessor: 'namespaceRelationship.namespace', Header: 'Namespace' }
         ];
-        const rows = this.props.secrets;
+        const { secrets, selectedSecret } = this.props;
+        const rows = secrets;
+        const id = selectedSecret && selectedSecret.id;
         if (!rows.length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
-        return <Table columns={columns} rows={rows} onRowClick={this.updateSelectedSecret} />;
+        return (
+            <ReactRowSelectTable
+                rows={rows}
+                columns={columns}
+                onRowClick={this.updateSelectedSecret}
+                selectedRowId={id}
+                noDataText="No results found. Please refine your search."
+            />
+        );
     }
 
     renderSidePanel = () => {
@@ -92,7 +102,7 @@ class SecretPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow bg-base-100">
+                        <div className="w-full pl-3 pt-3 pr-3 overflow-y-scroll bg-white rounded-sm shadow bg-base-100">
                             {this.renderTable()}
                         </div>
                         {this.renderSidePanel()}
