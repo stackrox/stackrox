@@ -232,7 +232,7 @@ const formDescriptors = {
                 placeholder: ''
             },
             {
-                label: 'Insecure',
+                label: 'Disable TLS Certificate Validation (Insecure)',
                 key: 'docker.insecure',
                 type: 'checkbox',
                 placeholder: ''
@@ -274,7 +274,7 @@ const formDescriptors = {
                 placeholder: ''
             },
             {
-                label: 'Insecure',
+                label: 'Disable TLS Certificate Validation (Insecure)',
                 key: 'dtr.insecure',
                 type: 'checkbox',
                 placeholder: ''
