@@ -4,14 +4,10 @@ import (
 	"github.com/stackrox/rox/central/alert/index"
 	"github.com/stackrox/rox/central/alert/store"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Searcher provides search functionality on existing alerts
+//go:generate mockery -name=Searcher
 type Searcher interface {
 	SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)
 	SearchRawAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, error)

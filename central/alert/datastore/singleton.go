@@ -11,30 +11,24 @@ import (
 )
 
 var (
-	once sync.Once
-
-	indexer  index.Indexer
-	storage  store.Store
-	searcher search.Searcher
-
-	ad DataStore
+	once         sync.Once
+	soleInstance DataStore
 )
 
 func initialize() {
-	storage = store.New(globaldb.GetGlobalDB())
-	indexer = index.New(globalindex.GetGlobalIndex())
+	storage := store.New(globaldb.GetGlobalDB())
+	indexer := index.New(globalindex.GetGlobalIndex())
 
-	var err error
-	searcher, err = search.New(storage, indexer)
+	searcher, err := search.New(storage, indexer)
 	if err != nil {
 		panic("unable to load search index for alerts")
 	}
 
-	ad = New(storage, indexer, searcher)
+	soleInstance = New(storage, indexer, searcher)
 }
 
-// Singleton provides the interface for non-service external interaction.
+// Singleton returns the sole instance of the DataStore service.
 func Singleton() DataStore {
 	once.Do(initialize)
-	return ad
+	return soleInstance
 }

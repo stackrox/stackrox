@@ -7,14 +7,13 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
-// DataStore is an intermediary to AlertStorage.
+// DataStore is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert objects.
 //go:generate mockery -name=DataStore
 type DataStore interface {
 	SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)
 	SearchRawAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, error)
 	SearchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.ListAlert, error)
 
-	ListAlert(id string) (*v1.ListAlert, bool, error)
 	ListAlerts(request *v1.ListAlertsRequest) ([]*v1.ListAlert, error)
 
 	GetAlert(id string) (*v1.Alert, bool, error)
@@ -24,7 +23,7 @@ type DataStore interface {
 	MarkAlertStale(id string) error
 }
 
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
+// New returns a new soleInstance of DataStore using the input store, indexer, and searcher.
 func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
 	return &datastoreImpl{
 		storage:  storage,

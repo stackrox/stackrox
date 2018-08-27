@@ -12,6 +12,8 @@ import (
 	searchCommon "github.com/stackrox/rox/pkg/search"
 )
 
+// datastoreImpl is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert
+// objects.
 type datastoreImpl struct {
 	storage  store.Store
 	indexer  index.Indexer
@@ -22,27 +24,15 @@ func (ds *datastoreImpl) SearchListAlerts(request *v1.ParsedSearchRequest) ([]*v
 	return ds.searcher.SearchListAlerts(request)
 }
 
-func (ds *datastoreImpl) ListAlert(id string) (*v1.ListAlert, bool, error) {
-	return ds.storage.ListAlert(id)
-}
-
 func (ds *datastoreImpl) ListAlerts(request *v1.ListAlertsRequest) ([]*v1.ListAlert, error) {
-	var alerts []*v1.ListAlert
-	var err error
-	if request.GetQuery() == "" {
-		alerts, err = ds.SearchListAlerts(&v1.ParsedSearchRequest{})
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		parsedQuery, err := searchCommon.ParseRawQuery(request.GetQuery())
-		if err != nil {
-			return nil, err
-		}
-		alerts, err = ds.SearchListAlerts(parsedQuery)
-		if err != nil {
-			return nil, err
-		}
+	query, err := parsedSearchRequestFrom(request)
+	if err != nil {
+		return nil, err
+	}
+
+	alerts, err := ds.SearchListAlerts(query)
+	if err != nil {
+		return nil, err
 	}
 
 	// Sort by descending timestamp.
@@ -53,6 +43,15 @@ func (ds *datastoreImpl) ListAlerts(request *v1.ListAlertsRequest) ([]*v1.ListAl
 		return alerts[i].GetTime().GetNanos() > alerts[j].GetTime().GetNanos()
 	})
 	return alerts, nil
+}
+
+func parsedSearchRequestFrom(request *v1.ListAlertsRequest) (query *v1.ParsedSearchRequest, err error) {
+	if request.GetQuery() == "" {
+		query = &v1.ParsedSearchRequest{}
+	} else {
+		query, err = searchCommon.ParseRawQuery(request.GetQuery())
+	}
+	return
 }
 
 // SearchAlerts returns search results for the given request.

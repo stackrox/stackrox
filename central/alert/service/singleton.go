@@ -7,17 +7,16 @@ import (
 )
 
 var (
-	once sync.Once
-
-	as Service
+	once         sync.Once
+	soleInstance Service
 )
 
 func initialize() {
-	as = New(datastore.Singleton())
+	soleInstance = New(datastore.Singleton())
 }
 
-// Singleton provides the instance of the Service interface to register.
+// Singleton returns the sole instance of the gRPC Server Service for handling CRUD use cases for Alert objects.
 func Singleton() Service {
 	once.Do(initialize)
-	return as
+	return soleInstance
 }

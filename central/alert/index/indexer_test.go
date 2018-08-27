@@ -13,18 +13,18 @@ import (
 )
 
 func TestAlertIndex(t *testing.T) {
-	suite.Run(t, new(AlertIndexTestSuite))
+	t.Parallel()
+	suite.Run(t, new(alertIndexTestSuite))
 }
 
-type AlertIndexTestSuite struct {
+type alertIndexTestSuite struct {
 	suite.Suite
 
 	bleveIndex bleve.Index
-
-	indexer Indexer
+	indexer    Indexer
 }
 
-func (suite *AlertIndexTestSuite) SetupSuite() {
+func (suite *alertIndexTestSuite) SetupSuite() {
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	suite.Require().NoError(err)
 
@@ -34,11 +34,11 @@ func (suite *AlertIndexTestSuite) SetupSuite() {
 	suite.NoError(suite.indexer.AddAlert(fixtures.GetAlert()))
 }
 
-func (suite *AlertIndexTestSuite) TeardownSuite() {
+func (suite *alertIndexTestSuite) TeardownSuite() {
 	suite.bleveIndex.Close()
 }
 
-func (suite *AlertIndexTestSuite) TestDefaultStaleness() {
+func (suite *alertIndexTestSuite) TestDefaultStaleness() {
 
 	var cases = []struct {
 		name               string

@@ -29,11 +29,23 @@ var (
 			"/v1.AlertService/GetAlertTimeseries",
 		},
 	})
+
+	// groupByFunctions provides a map of functions that group slices of ListAlet objects by category or by cluser.
+	groupByFunctions = map[v1.GetAlertsCountsRequest_RequestGroup]func(*v1.ListAlert) []string{
+		v1.GetAlertsCountsRequest_UNSET: func(*v1.ListAlert) []string { return []string{""} },
+		v1.GetAlertsCountsRequest_CATEGORY: func(a *v1.ListAlert) (output []string) {
+			for _, c := range a.GetPolicy().GetCategories() {
+				output = append(output, c)
+			}
+			return
+		},
+		v1.GetAlertsCountsRequest_CLUSTER: func(a *v1.ListAlert) []string { return []string{a.GetDeployment().GetClusterName()} },
+	}
 )
 
-// serviceImpl provides APIs for alerts.
+// serviceImpl is a thin facade over a domain layer that handles CRUD use cases on Alert objects from API clients.
 type serviceImpl struct {
-	datastore datastore.DataStore
+	dataStore datastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -53,7 +65,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetAlert returns the alert with given id.
 func (s *serviceImpl) GetAlert(ctx context.Context, request *v1.ResourceByID) (*v1.Alert, error) {
-	alert, exists, err := s.datastore.GetAlert(request.GetId())
+	alert, exists, err := s.dataStore.GetAlert(request.GetId())
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -67,42 +79,53 @@ func (s *serviceImpl) GetAlert(ctx context.Context, request *v1.ResourceByID) (*
 
 // ListAlerts returns ListAlerts according to the request.
 func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequest) (*v1.ListAlertsResponse, error) {
-	alerts, err := s.datastore.ListAlerts(request)
+	alerts, err := s.dataStore.ListAlerts(request)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &v1.ListAlertsResponse{Alerts: alerts}, nil
 }
 
 // GetAlertsGroup returns alerts according to the request, grouped by category and policy.
 func (s *serviceImpl) GetAlertsGroup(ctx context.Context, request *v1.ListAlertsRequest) (*v1.GetAlertsGroupResponse, error) {
-	alerts, err := s.datastore.ListAlerts(request)
+	alerts, err := s.dataStore.ListAlerts(request)
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	response := s.groupAlerts(alerts)
+	response := alertsGroupResponseFrom(alerts)
 	return response, nil
 }
 
 // GetAlertsCounts returns alert counts by severity according to the request.
 // Counts can be grouped by policy category or cluster.
 func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlertsCountsRequest) (*v1.GetAlertsCountsResponse, error) {
-	alerts, err := s.datastore.ListAlerts(request.GetRequest())
+	alerts, err := s.dataStore.ListAlerts(request.GetRequest())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	if groupByFunc, ok := groupByFuncs[request.GetGroupBy()]; ok {
-		response := s.countAlerts(alerts, groupByFunc)
+	if response, ok := alertsCountsResponseFrom(alerts, request.GetGroupBy()); ok {
 		return response, nil
 	}
 
 	return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("unknown group by: %v", request.GetGroupBy()))
 }
 
-func (s *serviceImpl) groupAlerts(alerts []*v1.ListAlert) (output *v1.GetAlertsGroupResponse) {
+// GetAlertTimeseries returns the timeseries format of the events based on the request parameters
+func (s *serviceImpl) GetAlertTimeseries(ctx context.Context, req *v1.ListAlertsRequest) (*v1.GetAlertTimeseriesResponse, error) {
+	alerts, err := s.dataStore.ListAlerts(req)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	response := alertTimeseriesResponseFrom(alerts)
+	return response, nil
+}
+
+// alertsGroupResponseFrom returns a slice of v1.ListAlert objects translated into a v1.GetAlertsGroupResponse object.
+func alertsGroupResponseFrom(alerts []*v1.ListAlert) (output *v1.GetAlertsGroupResponse) {
 	policiesMap := make(map[string]*v1.ListAlertPolicy)
 	alertCountsByPolicy := make(map[string]int)
 
@@ -130,8 +153,40 @@ func (s *serviceImpl) groupAlerts(alerts []*v1.ListAlert) (output *v1.GetAlertsG
 	return
 }
 
-func (s *serviceImpl) countAlerts(alerts []*v1.ListAlert, groupByFunc func(*v1.ListAlert) []string) (output *v1.GetAlertsCountsResponse) {
-	groups := s.getMapOfAlertCounts(alerts, groupByFunc)
+// alertsCountsResponseFrom returns a slice of v1.ListAlert objects translated into a v1.GetAlertsCountsResponse
+// object. True is returned if the translation was successful; otherwise false when the requested group is unknown.
+func alertsCountsResponseFrom(alerts []*v1.ListAlert, groupBy v1.GetAlertsCountsRequest_RequestGroup) (*v1.GetAlertsCountsResponse, bool) {
+	if groupByFunc, ok := groupByFunctions[groupBy]; ok {
+		response := countAlerts(alerts, groupByFunc)
+		return response, true
+	}
+
+	return nil, false
+}
+
+// alertTimeseriesResponseFrom returns a slice of v1.ListAlert objects translated into a v1.GetAlertTimeseriesResponse
+// object.
+func alertTimeseriesResponseFrom(alerts []*v1.ListAlert) *v1.GetAlertTimeseriesResponse {
+	response := new(v1.GetAlertTimeseriesResponse)
+	for cluster, severityMap := range getGroupToAlertEvents(alerts) {
+		alertCluster := &v1.GetAlertTimeseriesResponse_ClusterAlerts{Cluster: cluster}
+		for severity, alertEvents := range severityMap {
+			// Sort the alert events so they are chronological
+			sort.SliceStable(alertEvents, func(i, j int) bool { return alertEvents[i].GetTime() < alertEvents[j].GetTime() })
+			alertCluster.Severities = append(alertCluster.Severities, &v1.GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents{
+				Severity: severity,
+				Events:   alertEvents,
+			})
+		}
+		sort.Slice(alertCluster.Severities, func(i, j int) bool { return alertCluster.Severities[i].Severity < alertCluster.Severities[j].Severity })
+		response.Clusters = append(response.Clusters, alertCluster)
+	}
+	sort.SliceStable(response.Clusters, func(i, j int) bool { return response.Clusters[i].Cluster < response.Clusters[j].Cluster })
+	return response
+}
+
+func countAlerts(alerts []*v1.ListAlert, groupByFunc func(*v1.ListAlert) []string) (output *v1.GetAlertsCountsResponse) {
+	groups := getMapOfAlertCounts(alerts, groupByFunc)
 
 	output = new(v1.GetAlertsCountsResponse)
 	output.Groups = make([]*v1.GetAlertsCountsResponse_AlertGroup, 0, len(groups))
@@ -163,7 +218,7 @@ func (s *serviceImpl) countAlerts(alerts []*v1.ListAlert, groupByFunc func(*v1.L
 	return
 }
 
-func (s *serviceImpl) getMapOfAlertCounts(alerts []*v1.ListAlert, groupByFunc func(alert *v1.ListAlert) []string) (groups map[string]map[v1.Severity]int) {
+func getMapOfAlertCounts(alerts []*v1.ListAlert, groupByFunc func(alert *v1.ListAlert) []string) (groups map[string]map[v1.Severity]int) {
 	groups = make(map[string]map[v1.Severity]int)
 
 	for _, a := range alerts {
@@ -177,31 +232,6 @@ func (s *serviceImpl) getMapOfAlertCounts(alerts []*v1.ListAlert, groupByFunc fu
 	}
 
 	return
-}
-
-// GetAlertTimeseries returns the timeseries format of the events based on the request parameters
-func (s *serviceImpl) GetAlertTimeseries(ctx context.Context, req *v1.ListAlertsRequest) (*v1.GetAlertTimeseriesResponse, error) {
-	alerts, err := s.datastore.ListAlerts(req)
-	if err != nil {
-		return nil, err
-	}
-
-	response := new(v1.GetAlertTimeseriesResponse)
-	for cluster, severityMap := range getGroupToAlertEvents(alerts) {
-		alertCluster := &v1.GetAlertTimeseriesResponse_ClusterAlerts{Cluster: cluster}
-		for severity, alertEvents := range severityMap {
-			// Sort the alert events so they are chronological
-			sort.SliceStable(alertEvents, func(i, j int) bool { return alertEvents[i].GetTime() < alertEvents[j].GetTime() })
-			alertCluster.Severities = append(alertCluster.Severities, &v1.GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents{
-				Severity: severity,
-				Events:   alertEvents,
-			})
-		}
-		sort.Slice(alertCluster.Severities, func(i, j int) bool { return alertCluster.Severities[i].Severity < alertCluster.Severities[j].Severity })
-		response.Clusters = append(response.Clusters, alertCluster)
-	}
-	sort.SliceStable(response.Clusters, func(i, j int) bool { return response.Clusters[i].Cluster < response.Clusters[j].Cluster })
-	return response, nil
 }
 
 func getGroupToAlertEvents(alerts []*v1.ListAlert) (clusters map[string]map[v1.Severity][]*v1.AlertEvent) {
@@ -227,16 +257,3 @@ func getGroupToAlertEvents(alerts []*v1.ListAlert) (clusters map[string]map[v1.S
 	}
 	return
 }
-
-var (
-	groupByFuncs = map[v1.GetAlertsCountsRequest_RequestGroup]func(*v1.ListAlert) []string{
-		v1.GetAlertsCountsRequest_UNSET: func(*v1.ListAlert) []string { return []string{""} },
-		v1.GetAlertsCountsRequest_CATEGORY: func(a *v1.ListAlert) (output []string) {
-			for _, c := range a.GetPolicy().GetCategories() {
-				output = append(output, c)
-			}
-			return
-		},
-		v1.GetAlertsCountsRequest_CLUSTER: func(a *v1.ListAlert) []string { return []string{a.GetDeployment().GetClusterName()} },
-	}
-)

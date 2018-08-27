@@ -13,7 +13,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Service provides the interface to the microservice that serves alert data.
+// Service is a thin facade over a domain layer that handles CRUD use cases on Alert objects from API clients.
 type Service interface {
 	grpc.APIService
 
@@ -26,9 +26,9 @@ type Service interface {
 	GetAlertTimeseries(ctx context.Context, req *v1.ListAlertsRequest) (*v1.GetAlertTimeseriesResponse, error)
 }
 
-// New returns a new Service instance using the given DataStore.
+// New returns a new Service soleInstance using the given DataStore.
 func New(datastore datastore.DataStore) Service {
 	return &serviceImpl{
-		datastore: datastore,
+		dataStore: datastore,
 	}
 }
