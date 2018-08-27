@@ -15,7 +15,6 @@ enum SearchCategory {
     POLICIES     = 3;
     DEPLOYMENTS  = 4;
     SECRETS      = 5;
-    // TODO support Benchmarks
 }
 
 enum SearchDataType {
@@ -39,10 +38,11 @@ message RawSearchRequest {
 }
 
 message SearchField {
-    string field_path   = 1;
-    SearchDataType type = 2;
-    bool store          = 3;
-    bool hidden         = 4;
+    string field_path       = 1;
+    SearchDataType type     = 2;
+    bool store              = 3;
+    bool hidden             = 4;
+    SearchCategory category = 5;
 }
 
 message ParsedSearchRequest {

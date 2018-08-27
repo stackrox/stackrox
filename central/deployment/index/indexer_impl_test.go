@@ -5,6 +5,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
@@ -30,9 +31,11 @@ func (suite *DeploymentIndexTestSuite) SetupSuite() {
 	suite.bleveIndex = tmpIndex
 	suite.indexer = New(tmpIndex)
 
-	alert := fixtures.GetAlert()
-	deployment := alert.GetDeployment()
+	deployment := fixtures.GetDeployment()
 	suite.NoError(suite.indexer.AddDeployment(deployment))
+
+	imageIndexer := index.New(tmpIndex)
+	imageIndexer.AddImage(fixtures.GetImage())
 }
 
 func (suite *DeploymentIndexTestSuite) TeardownSuite() {
@@ -64,6 +67,19 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 		Fields: map[string]*v1.ParsedSearchRequest_Values{
 			search.DeploymentName: {
 				Values: []string{"!nomatch"},
+			},
+		},
+	})
+	suite.NoError(err)
+	suite.Len(results, 1)
+
+	results, err = suite.indexer.SearchDeployments(&v1.ParsedSearchRequest{
+		Fields: map[string]*v1.ParsedSearchRequest_Values{
+			search.DeploymentName: {
+				Values: []string{"!nomatch"},
+			},
+			search.ImageRegistry: {
+				Values: []string{"stackrox"},
 			},
 		},
 	})

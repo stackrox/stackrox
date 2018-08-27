@@ -26,7 +26,7 @@ func (r ParsedSearchRequestWrapper) ToSearchResults(storage store.Store, index b
 
 // ToResults converts the given parsed request to the results of searching the bleve index.
 func (r ParsedSearchRequestWrapper) ToResults(index bleve.Index) ([]search.Result, error) {
-	quer, err := r.toQuery()
+	quer, err := r.toQuery(index)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (r ParsedSearchRequestWrapper) ToResults(index bleve.Index) ([]search.Resul
 }
 
 // ToQuery converts the given parsed request to a bleve query.
-func (r ParsedSearchRequestWrapper) toQuery() (query.Query, error) {
+func (r ParsedSearchRequestWrapper) toQuery(index bleve.Index) (query.Query, error) {
 	// If the request is nil, just return all secrets.
 	if r.ParsedSearchRequest == nil {
 		sq := bleve.NewMatchQuery(v1.SearchCategory_SECRETS.String())
@@ -43,7 +43,7 @@ func (r ParsedSearchRequestWrapper) toQuery() (query.Query, error) {
 	}
 
 	// We search the indices for matches in both secret and relationship fields.
-	sq, err := blevesearch.BuildQuery(v1.SearchCategory_SECRETS, r.ParsedSearchRequest, options.Map)
+	sq, err := blevesearch.BuildQuery(index, v1.SearchCategory_SECRETS, r.ParsedSearchRequest, options.Map)
 	if err != nil {
 		return nil, err
 	}

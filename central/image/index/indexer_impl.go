@@ -76,7 +76,7 @@ func (b *indexerImpl) SearchImages(request *v1.ParsedSearchRequest) (results []s
 	}
 
 	// Create and run query for fields, and input string query, if it exists.
-	imageQueries, err := blevesearch.FieldsToQuery(v1.SearchCategory_IMAGES, request, mappings.OptionsMap)
+	imageQueries, err := blevesearch.FieldsToQuery(b.index, v1.SearchCategory_IMAGES, request, mappings.OptionsMap)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (b *indexerImpl) getImageSHAsFromDeploymentQuery(request *v1.ParsedSearchRe
 		return newRequest, nil, false, nil
 	}
 
-	query, err := blevesearch.BuildQuery(v1.SearchCategory_DEPLOYMENTS, req, mappings.OptionsMap)
+	query, err := blevesearch.BuildQuery(b.index, v1.SearchCategory_DEPLOYMENTS, req, mappings.OptionsMap)
 	if err != nil {
 		return newRequest, nil, false, err
 	}

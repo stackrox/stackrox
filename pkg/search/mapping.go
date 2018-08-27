@@ -15,38 +15,39 @@ const (
 )
 
 // NewTimeField creates a new mapped field for timestamp values
-func NewTimeField(name string) *v1.SearchField {
-	return NewField(name, v1.SearchDataType_SEARCH_DATETIME, 0)
+func NewTimeField(category v1.SearchCategory, name string) *v1.SearchField {
+	return NewField(category, name, v1.SearchDataType_SEARCH_DATETIME, 0)
 }
 
 // NewStringField creates a new mapped field for string values.
-func NewStringField(name string) *v1.SearchField {
-	return NewField(name, v1.SearchDataType_SEARCH_STRING, 0)
+func NewStringField(category v1.SearchCategory, name string) *v1.SearchField {
+	return NewField(category, name, v1.SearchDataType_SEARCH_STRING, 0)
 }
 
 // NewBoolField creates a new mapped field for boolean values.
-func NewBoolField(name string) *v1.SearchField {
-	return NewField(name, v1.SearchDataType_SEARCH_BOOL, 0)
+func NewBoolField(category v1.SearchCategory, name string) *v1.SearchField {
+	return NewField(category, name, v1.SearchDataType_SEARCH_BOOL, 0)
 }
 
 // NewNumericField creates a new mapped field for numeric values.
-func NewNumericField(name string) *v1.SearchField {
-	return NewField(name, v1.SearchDataType_SEARCH_NUMERIC, 0)
+func NewNumericField(category v1.SearchCategory, name string) *v1.SearchField {
+	return NewField(category, name, v1.SearchDataType_SEARCH_NUMERIC, 0)
 }
 
 // NewSeverityField creates a new mapped field for severity values.
-func NewSeverityField(name string) *v1.SearchField {
-	return NewField(name, v1.SearchDataType_SEARCH_SEVERITY, 0)
+func NewSeverityField(category v1.SearchCategory, name string) *v1.SearchField {
+	return NewField(category, name, v1.SearchDataType_SEARCH_SEVERITY, 0)
 }
 
 // NewEnforcementField creates a new mapped field for enforcement values.
-func NewEnforcementField(name string) *v1.SearchField {
-	return NewField(name, v1.SearchDataType_SEARCH_ENFORCEMENT, 0)
+func NewEnforcementField(category v1.SearchCategory, name string) *v1.SearchField {
+	return NewField(category, name, v1.SearchDataType_SEARCH_ENFORCEMENT, 0)
 }
 
 // NewField creates a new mapped field for any data type.
-func NewField(path string, t v1.SearchDataType, mode OptionMode) *v1.SearchField {
+func NewField(category v1.SearchCategory, path string, t v1.SearchDataType, mode OptionMode) *v1.SearchField {
 	return &v1.SearchField{
+		Category:  category,
 		Type:      t,
 		FieldPath: path,
 		Store:     mode&OptionStore != 0,
