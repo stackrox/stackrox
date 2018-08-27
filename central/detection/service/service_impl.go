@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	buildtimeDetection "github.com/stackrox/rox/central/detection/buildtime"
@@ -13,22 +14,23 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"google.golang.org/grpc"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Policy)): {
-			"/v1.PolicyService/GetPolicy",
-			"/v1.PolicyService/ListPolicies",
-			"/v1.PolicyService/ReassessPolicies",
-			"/v1.PolicyService/GetPolicyCategories",
+		user.With(permissions.View(resources.Detection)): {
+			"/v1.DetectionService/DetectBuildTime",
+			"/v1.DetectionService/DetectRunTime",
 		},
 	})
 )
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
+	imageEnricher     enricher.ImageEnricher
 	buildTimeDetector buildtimeDetection.Detector
 	runTimeDetector   runtimeDetection.Detector
 }
@@ -50,6 +52,13 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // DetectBuildTime runs detection on a built image.
 func (s *serviceImpl) DetectBuildTime(ctx context.Context, image *v1.Image) (*v1.DetectionResponse, error) {
+	if image.Name == nil {
+		return nil, fmt.Errorf("image name contents missing")
+	}
+	utils.FillFullName(image.Name)
+
+	_ = s.imageEnricher.EnrichImage(image)
+
 	alerts, err := s.buildTimeDetector.Detect(image)
 	if err != nil {
 		return nil, err

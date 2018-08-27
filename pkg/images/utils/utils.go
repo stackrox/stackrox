@@ -38,8 +38,13 @@ func GenerateImageFromString(imageStr string) *v1.Image {
 	image.Name.Registry = reference.Domain(named)
 	image.Name.Remote = reference.Path(named)
 	image.Name.Tag = tag
-	image.Name.FullName = fmt.Sprintf("%s/%s:%s", image.Name.Registry, image.Name.Remote, image.Name.Tag)
+	FillFullName(image.Name)
 	return &image
+}
+
+// FillFullName uses the fields of the image name to fill in the FullName field.
+func FillFullName(imageName *v1.ImageName) {
+	imageName.FullName = fmt.Sprintf("%s/%s:%s", imageName.Registry, imageName.Remote, imageName.Tag)
 }
 
 // ExtractImageSha returns the image sha if it exists within the string.

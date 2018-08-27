@@ -23,6 +23,7 @@ var (
 		"central",
 		"cmd/base64",
 		"cmd/deploy",
+		"cmd/roxdetect",
 		"pkg",
 		"sensor/kubernetes",
 		"sensor/swarm",

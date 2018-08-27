@@ -19,6 +19,9 @@ type Store interface {
 func defaultRolesMap() map[string]permissions.Role {
 	return map[string]permissions.Role{
 		role.Admin: permissions.NewAllAccessRole(role.Admin),
+		role.ContinuousIntegration: permissions.NewRoleWithPermissions(role.ContinuousIntegration,
+			permissions.View(resources.Detection),
+		),
 		role.SensorCreator: permissions.NewRoleWithPermissions(role.SensorCreator,
 			permissions.View(resources.Cluster),
 			permissions.Modify(resources.Cluster),

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -13,8 +14,8 @@ func PolicyDeploymentAndViolationsToAlert(policy *v1.Policy, deployment *v1.Depl
 	}
 	alert := &v1.Alert{
 		Id:         uuid.NewV4().String(),
-		Deployment: deployment,
-		Policy:     policy,
+		Deployment: proto.Clone(deployment).(*v1.Deployment),
+		Policy:     proto.Clone(policy).(*v1.Policy),
 		Violations: violations,
 		Time:       ptypes.TimestampNow(),
 	}
@@ -34,7 +35,7 @@ func PolicyAndViolationsToAlert(policy *v1.Policy, violations []*v1.Alert_Violat
 	}
 	alert := &v1.Alert{
 		Id:         uuid.NewV4().String(),
-		Policy:     policy,
+		Policy:     proto.Clone(policy).(*v1.Policy),
 		Violations: violations,
 		Time:       ptypes.TimestampNow(),
 	}

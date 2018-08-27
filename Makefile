@@ -208,6 +208,7 @@ image: gazelle clean-image
 	bazel build $(BAZEL_FLAGS) \
 		//central \
 		//cmd/base64 \
+		//cmd/roxdetect \
 		//cmd/deploy \
 		//benchmarks \
 		//benchmark-bootstrap \

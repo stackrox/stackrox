@@ -20,6 +20,7 @@ var (
 	Cluster           = newResource("Cluster")
 	DebugMetrics      = newResource("DebugMetrics")
 	Deployment        = newResource("Deployment")
+	Detection         = newResource("Detection")
 	DNRIntegration    = newResource("DNRIntegration")
 	Image             = newResource("Image")
 	ImageIntegration  = newResource("ImageIntegration")
