@@ -25,8 +25,8 @@
   name = "github.com/Microsoft/go-winio"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "78a084671df137c2acfcacaa730d7e7dc285ac39"
-  version = "v0.4.10"
+  revision = "97e4973ce50b2ff5f09635a57e2b88a037aae829"
+  version = "v0.4.11"
 
 [[projects]]
   digest = "1:76939b72b6b2012e9aca613f33d947099178c9f0d3be5522485701031ebf3e49"
@@ -80,7 +80,7 @@
   version = "v1.5.0"
 
 [[projects]]
-  digest = "1:086c7d0aedfb222f9faeb941508e7b3b6e1ef1c7504770cde1fc065df4404da7"
+  digest = "1:3f13646bcc0eae07b93ea6e34d3e9a84513f4e8dfa075b500d217b8f660c60f4"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -115,8 +115,8 @@
     "service/sts",
   ]
   pruneopts = "NUT"
-  revision = "66974140c322f22c1daaf95a18930ea6a9e4d21e"
-  version = "v1.15.16"
+  revision = "4324bc9d8865bdb3e6aa86ec7772ca1272d2750e"
+  version = "v1.15.21"
 
 [[projects]]
   branch = "master"
@@ -278,7 +278,7 @@
     "utf8",
   ]
   pruneopts = "NUT"
-  revision = "dc6110ee42850a6553b6469bf0dc03383900353d"
+  revision = "0ceea4a37442f76199b9259840baf48d17af3c1a"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -427,12 +427,12 @@
   revision = "9f0cb55181dd3a0a4c168d3dbc72d4aca4853126"
 
 [[projects]]
-  digest = "1:f59266de09e138237bf9df9deb57b9ebbdb1e33b8399bb739c3745e7d3d2787b"
+  digest = "1:74d9b0a7b4107b41e0ade759fac64502876f82d29fb23d77b3dd24b194ee3dd5"
   name = "github.com/go-ini/ini"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "358ee7663966325963d4e8b2e1fbd570c5195153"
-  version = "v1.38.1"
+  revision = "5cf292cae48347c2490ac1a58fe36735fb78df7e"
+  version = "v1.38.2"
 
 [[projects]]
   digest = "1:fd13acfe94ed604682ce01528a1ae0399391e64054143a8a0a98399c78696679"
@@ -553,7 +553,7 @@
     "util/metautils",
   ]
   pruneopts = "NUT"
-  revision = "e9c5d9645c437ab1b204cff969a2c0fb16cd4276"
+  revision = "15ea7401d63d2d8c2f17472d22359564615a9f7a"
 
 [[projects]]
   digest = "1:5872c7f130f62fc34bfda20babad36be6309c00b5c9207717f7cd2a51536fff4"
@@ -920,7 +920,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8501acfe2f964fa45d1138a78931a0a6ac3839abb75cb534f8258dc7ab7ee4a5"
+  digest = "1:447c1e8b5d33de27fe86ebc38a8eadc1f1e80159fbf8aba1630e6be1e9808470"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -935,11 +935,11 @@
     "trace",
   ]
   pruneopts = "NUT"
-  revision = "aaf60122140d3fcf75376d319f0554393160eb50"
+  revision = "8a410e7b638dca158bf9e766925842f6651ff828"
 
 [[projects]]
   branch = "master"
-  digest = "1:699ff2d234da3084d535310e21fbf04338e77e769afdf9f7552532ae47b923c3"
+  digest = "1:bc2b221d465bb28ce46e8d472ecdc424b9a9b541bd61d8c311c5f29c8dd75b1b"
   name = "golang.org/x/oauth2"
   packages = [
     ".",
@@ -949,11 +949,11 @@
     "jwt",
   ]
   pruneopts = "NUT"
-  revision = "f720f1faee02c1fb456408c22886169405f239aa"
+  revision = "d2e6202438beef2727060aa7cabdd924d92ebfd9"
 
 [[projects]]
   branch = "master"
-  digest = "1:5de4c74884ccad5d3066960cd5695791424a8b05d97a1bc0608f9b70e408c354"
+  digest = "1:0245711b8773b0fddfbee8340fbce99e0f8e1dc2a0af1e3cce755c13cfc0354c"
   name = "golang.org/x/sys"
   packages = [
     "unix",
@@ -962,7 +962,7 @@
     "windows/svc/eventlog",
   ]
   pruneopts = "NUT"
-  revision = "1a700e749ce29638d0bbcb531cce1094ea096bd3"
+  revision = "4910a1d54f876d7b22162a85f4d066d3ee649450"
 
 [[projects]]
   digest = "1:e7071ed636b5422cc51c0e3a6cebc229d6c9fffc528814b519a980641422d619"
@@ -1001,7 +1001,7 @@
   name = "golang.org/x/tools"
   packages = ["go/ast/astutil"]
   pruneopts = "NUT"
-  revision = "c1406c36efe20fb423f43a73518f0454febeed1f"
+  revision = "f6ba5742950514ddd66494151ed5498ed77969ca"
 
 [[projects]]
   digest = "1:b5aeceb800276be69165a745328380c8a4b6f2edc7a6bac112e22c8596ed8a49"
@@ -1312,6 +1312,7 @@
     "github.com/gogo/protobuf/types",
     "github.com/golang/protobuf/jsonpb",
     "github.com/golang/protobuf/proto",
+    "github.com/golang/protobuf/protoc-gen-go/descriptor",
     "github.com/golang/protobuf/ptypes",
     "github.com/golang/protobuf/ptypes/timestamp",
     "github.com/grpc-ecosystem/go-grpc-middleware",
