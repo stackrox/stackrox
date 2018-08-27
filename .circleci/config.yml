@@ -342,7 +342,7 @@ jobs:
       - run:
           name: Generate Installation Bundle
           command: |
-            docker run -i "stackrox/prevent:$PREVENT_IMAGE_TAG" deploy openshift > /tmp/openshift.zip
+            docker run -i "stackrox/prevent:$PREVENT_IMAGE_TAG" deploy openshift none > /tmp/openshift.zip
             unzip /tmp/openshift.zip -d openshift
 
       - run:
