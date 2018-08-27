@@ -1,11 +1,13 @@
 import static Services.getSearch
-
 import objects.Deployment
 import spock.lang.Unroll
 import stackrox.generated.SearchServiceOuterClass
+import org.junit.experimental.categories.Category
+import groups.BAT
 
 class GlobalSearch extends BaseSpecification {
     @Unroll
+    @Category(BAT)
     def "Verify Global search : C961"(Deployment deployment, String deploymentname, String value,
                                       SearchServiceOuterClass.SearchCategory category) {
         when:

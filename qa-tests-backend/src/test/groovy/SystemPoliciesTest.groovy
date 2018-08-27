@@ -1,11 +1,14 @@
 import static Services.getPolicies
 import static Services.waitForViolation
+import groups.BAT
+import org.junit.experimental.categories.Category
 import spock.lang.Unroll
 import objects.Deployment
 import java.util.stream.Collectors
 
 class SystemPoliciesTest extends BaseSpecification {
     @Unroll
+    @Category(BAT)
     def "Verify policy #policyname is triggered" (String policyname, Deployment deployment,
                                                   String testId, String deploymentName) {
         when:
@@ -87,4 +90,5 @@ class SystemPoliciesTest extends BaseSpecification {
                 .setImage ("nginx:1.10")
                 .addLabel ( "app", "test" ) | "C823" | "qanginx"
     }
+
 }

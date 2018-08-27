@@ -81,11 +81,26 @@ dependencies {
 
     compile 'com.google.api.grpc:googleapis-common-protos:0.0.3'
 
-    // Use the awesome Spock testing and specification framework
     testCompile group: 'org.spockframework', name: 'spock-core', version: '1.1-groovy-2.0'
     testCompile group: 'com.google.code.gson', name: 'gson', version: '2.7'
     testCompile group: 'com.codepine.api', name: 'testrail-api-java-client', version: '2.0.0'
     compile group: 'commons-cli', name: 'commons-cli', version: '1.2'
+}
+
+
+
+tasks.withType(Test) {
+    def testGroups = new TestGroups(System.getProperty("groups"))
+
+    useJUnit {
+        includeCategories testGroups.includedGroups()
+        excludeCategories testGroups.excludedGroups()
+    }
+
+    testLogging {
+        showStandardStreams true
+        exceptionFormat "full"
+    }
 }
 
 test {
@@ -102,4 +117,7 @@ test {
     environment "USERNAME" , System.getenv("USERNAME")
     environment "PASSWORD" , System.getenv("PASSWORD")
 }
+
+
+
 

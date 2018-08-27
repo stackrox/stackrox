@@ -1,8 +1,9 @@
-import org.junit.Test
+import groups.Integration
+import org.junit.experimental.categories.Category
+import groups.BAT
 
 class IntegrationsTest extends BaseSpecification {
-
-    @Test
+    @Category(BAT)
     def "Verify Clairify Integration"() {
         when:
         "Create Clairify deployment"

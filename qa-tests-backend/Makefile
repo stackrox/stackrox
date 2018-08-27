@@ -18,3 +18,11 @@ style-fix:
 test:
 	@echo "+ $@"
 	gradle test
+
+bat-test:
+	@echo "+ $@"
+	gradle test -Dgroups=bat
+
+integration-test:
+	@echo "+ $@"
+	gradle test -Dgroups=it

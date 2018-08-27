@@ -170,7 +170,7 @@ jobs:
               export CLUSTER=K8S
               export HOSTNAME=localhost
               export PORT=${LOCAL_PORT}
-              make -C qa-tests-backend test
+              make -C qa-tests-backend bat-test
             else
               echo "Skipping functional tests."
             fi
