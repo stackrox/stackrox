@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/central/sensorevent/service/queue"
 	sensorEventStore "github.com/stackrox/rox/central/sensorevent/store"
-	"github.com/stackrox/rox/central/service"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -55,7 +54,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(idcheck.SensorsOnly().Authorized(ctx, fullMethodName))
+	return ctx, idcheck.SensorsOnly().Authorized(ctx, fullMethodName)
 }
 
 // RecordEvent takes in a stream of deployment events and outputs a stream of alerts and enforcement actions.

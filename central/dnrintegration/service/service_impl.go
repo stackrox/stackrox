@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/dnrintegration/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/service"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -58,7 +57,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 // GetDNRIntegration retrieves a DNR integration by ID.

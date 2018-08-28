@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/service"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -64,7 +63,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 func scrubImageIntegration(i *v1.ImageIntegration) {
@@ -159,7 +158,7 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 		return nil, status.Error(codes.InvalidArgument, "Image integration id must be provided")
 	}
 	if err := s.datastore.RemoveImageIntegration(request.GetId()); err != nil {
-		return nil, service.ReturnErrorCode(err)
+		return nil, err
 	}
 	if err := s.toNotify.NotifyRemoved(request.GetId()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // An ErrNotFound indicates that the desired object could not be located.
@@ -25,7 +26,8 @@ func (e ErrNotFound) Error() string {
 	return sb.String()
 }
 
-// Status implements the StatusError interface.
-func (e ErrNotFound) Status() codes.Code {
-	return codes.NotFound
+// GRPCStatus returns the error as a `status.Status` object. It is required to ensure interoperability with
+// `status.FromError()`.
+func (e ErrNotFound) GRPCStatus() *status.Status {
+	return status.New(codes.NotFound, e.Error())
 }

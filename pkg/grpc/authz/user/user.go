@@ -16,7 +16,7 @@ type permissionChecker struct {
 func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 	conf, err := authn.FromAuthConfigurationContext(ctx)
 	if err != nil {
-		return authz.ErrAuthnConfigMissing{}
+		return authz.ErrAuthnConfigMissing
 	}
 	// If no authentication provider is configured, default to allow access.
 	// This may change in the future, for instance if an administrator login
@@ -27,17 +27,15 @@ func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 
 	identity, err := authn.FromTokenBasedIdentityContext(ctx)
 	if err != nil {
-		return authz.ErrNoCredentials{}
+		return authz.ErrNoCredentials
 	}
 	if identity.ID() == "" || identity.Role() == nil {
-		return authz.ErrNoCredentials{}
+		return authz.ErrNoCredentials
 	}
 	for _, permission := range p.requiredPermissions {
 		if !identity.Role().Has(permission) {
-			return authz.ErrNotAuthorized{
-				Explanation: fmt.Sprintf("not authorized to %s %s",
-					permission.Access, permission.Resource),
-			}
+			return authz.ErrNotAuthorized(fmt.Sprintf("not authorized to %s %s",
+				permission.Access, permission.Resource))
 		}
 	}
 	return nil

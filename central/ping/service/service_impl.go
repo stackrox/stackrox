@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/central/service"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"google.golang.org/grpc"
@@ -25,7 +24,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(allow.Anonymous().Authorized(ctx, fullMethodName))
+	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
 }
 
 // Ping implements v1.PingServiceServer, and it always returns a v1.PongMessage object.

@@ -7,12 +7,9 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
-	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 const maxBufferSize = 10000
@@ -55,7 +52,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, returnErrorCode(idcheck.SensorsOnly().Authorized(ctx, fullMethodName))
+	return ctx, idcheck.SensorsOnly().Authorized(ctx, fullMethodName)
 }
 
 // PushSignals handles the bidirectional gRPC stream with the collector
@@ -104,16 +101,4 @@ func (s *serviceImpl) receiveMessages(stream v1.SignalService_PushSignalsServer)
 		//s.indicators <- wrappedEvent
 
 	}
-}
-
-func returnErrorCode(err error) error {
-	if err == nil {
-		return nil
-	}
-
-	if e, ok := err.(routes.StatusError); ok {
-		return status.Error(e.Status(), e.Error())
-	}
-
-	return status.Error(codes.Internal, err.Error())
 }

@@ -8,7 +8,6 @@ import (
 	benchmarkDataStore "github.com/stackrox/rox/central/benchmark/datastore"
 	"github.com/stackrox/rox/central/benchmarkschedule/store"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/service"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/benchmarks"
@@ -55,7 +54,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 // GetBenchmarkSchedule returns the current benchmark schedules
@@ -140,7 +139,7 @@ func (s *serviceImpl) GetBenchmarkSchedules(ctx context.Context, request *v1.Get
 // DeleteBenchmarkSchedule removes a benchmark schedule
 func (s *serviceImpl) DeleteBenchmarkSchedule(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if err := s.storage.RemoveBenchmarkSchedule(request.GetId()); err != nil {
-		return nil, service.ReturnErrorCode(err)
+		return nil, err
 	}
 	return &v1.Empty{}, nil
 }

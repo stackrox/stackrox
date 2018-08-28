@@ -14,7 +14,6 @@ import (
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/service"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
@@ -80,7 +79,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 // GetPolicy returns a policy by name.
@@ -203,16 +202,16 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 
 	policy, exists, err := s.policies.GetPolicy(request.GetId())
 	if err != nil {
-		return nil, service.ReturnErrorCode(err)
+		return nil, err
 	} else if !exists {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("Policy with id '%s' not found", request.GetId()))
 	}
 
 	if err := s.updateDetectionWithRemovedPolicy(policy); err != nil {
-		return nil, service.ReturnErrorCode(err)
+		return nil, err
 	}
 	if err := s.policies.RemovePolicy(request.GetId()); err != nil {
-		return nil, service.ReturnErrorCode(err)
+		return nil, err
 	}
 	return &v1.Empty{}, nil
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/service"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -58,7 +57,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 func normalizeCluster(cluster *v1.Cluster) {
@@ -191,7 +190,7 @@ func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByI
 		return nil, status.Error(codes.InvalidArgument, "Request must have a id")
 	}
 	if err := s.datastore.RemoveCluster(request.GetId()); err != nil {
-		return nil, service.ReturnErrorCode(err)
+		return nil, err
 	}
 	s.enricher.ReprocessRiskAsync()
 

@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/search/options"
 	secretService "github.com/stackrox/rox/central/secret/service"
-	"github.com/stackrox/rox/central/service"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -88,7 +87,7 @@ func (s *serviceImpl) initializeAuthorizer() {
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(s.authorizer.Authorized(ctx, fullMethodName))
+	return ctx, s.authorizer.Authorized(ctx, fullMethodName)
 }
 
 // Search implements the ability to search through indexes for data

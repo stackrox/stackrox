@@ -6,7 +6,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/benchmark/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/service"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -51,7 +50,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, service.ReturnErrorCode(authorizer.Authorized(ctx, fullMethodName))
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 // GetBenchmark returns the benchmark by the passed name
@@ -108,7 +107,7 @@ func (s *serviceImpl) PutBenchmark(ctx context.Context, request *v1.Benchmark) (
 // DeleteBenchmark removes a benchmark
 func (s *serviceImpl) DeleteBenchmark(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if err := s.datastore.RemoveBenchmark(request.GetId()); err != nil {
-		return nil, service.ReturnErrorCode(err)
+		return nil, err
 	}
 	return &v1.Empty{}, nil
 }
