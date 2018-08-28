@@ -75,36 +75,6 @@ func (_m *DataStore) GetAlert(id string) (*v1.Alert, bool, error) {
 	return r0, r1, r2
 }
 
-// ListAlert provides a mock function with given fields: id
-func (_m *DataStore) ListAlert(id string) (*v1.ListAlert, bool, error) {
-	ret := _m.Called(id)
-
-	var r0 *v1.ListAlert
-	if rf, ok := ret.Get(0).(func(string) *v1.ListAlert); ok {
-		r0 = rf(id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*v1.ListAlert)
-		}
-	}
-
-	var r1 bool
-	if rf, ok := ret.Get(1).(func(string) bool); ok {
-		r1 = rf(id)
-	} else {
-		r1 = ret.Get(1).(bool)
-	}
-
-	var r2 error
-	if rf, ok := ret.Get(2).(func(string) error); ok {
-		r2 = rf(id)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
 // ListAlerts provides a mock function with given fields: request
 func (_m *DataStore) ListAlerts(request *v1.ListAlertsRequest) ([]*v1.ListAlert, error) {
 	ret := _m.Called(request)

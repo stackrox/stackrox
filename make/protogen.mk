@@ -2,18 +2,22 @@ BASE_PATH ?= $(CURDIR)
 
 # GENERATED_API_XXX and PROTO_API_XXX variables contain standard paths used to
 # generate gRPC proto messages, services, and gateways for the API.
+PROTO_BASE_PATH = $(CURDIR)/proto
+ALL_PROTOS = $(shell find $(PROTO_BASE_PATH) -name '*.proto')
+SERVICE_PROTOS = $(filter %_service.proto,$(ALL_PROTOS))
+
+ALL_PROTOS_REL = $(ALL_PROTOS:$(PROTO_BASE_PATH)/%=%)
+SERVICE_PROTOS_REL = $(SERVICE_PROTOS:$(PROTO_BASE_PATH)/%=%)
+
+API_SERVICE_PROTOS = $(filter api/v1/%, $(SERVICE_PROTOS_REL))
+
 GENERATED_BASE_PATH = $(BASE_PATH)/generated
-GENERATED_API_PATH = $(GENERATED_BASE_PATH)/api/v1
 GENERATED_DOC_PATH = docs
 MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/api/v1/swagger.json
 GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/api/v1/reference
-GENERATED_PB_SRCS = $(API_SERVICES:%=$(GENERATED_API_PATH)/%.pb.go) $(PB_COMMON_FILES:%=$(GENERATED_API_PATH)/%.pb.go)
-GENERATED_API_GW_SRCS = $(API_SERVICES:%=$(GENERATED_API_PATH)/%.pb.gw.go)
-GENERATED_API_VALIDATOR_SRCS = $(API_SERVICES:%=$(GENERATED_API_PATH)/%.validator.pb.go)
-GENERATED_API_SWAGGER_SPECS = $(API_SERVICES:%=$(GENERATED_DOC_PATH)/%.swagger.json)
-
-PROTO_API_PATH = $(BASE_PATH)/api/v1
-PROTO_API_PROTOS = $(API_SERVICES:%=$(PROTO_API_PATH)/%.proto) $(PB_COMMON_FILES:%=$(PROTO_API_PATH)/%.proto)
+GENERATED_PB_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
+GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.gw.go)
+GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_DOC_PATH)/%.swagger.json)
 
 ##############
 ## Protobuf ##
@@ -51,6 +55,18 @@ $(PROTOC_GEN_GO_BIN): $(GOPATH)/src/github.com/gogo/protobuf/types
 
 GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types
 
+# The --go_out=M... argument specifies the go package to use for an imported proto file. Here, we instruct protoc-gen-go
+# to import the go source for proto file $(BASE_PATH)/<path>/*.proto to
+# "github.com/stackrox/rox/generated/<path>".
+M_ARGS = $(foreach proto,$(ALL_PROTOS_REL),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
+
+# Hack: there's no straightforward way to escape a comma in a $(subst ...) command, so we have to resort to this little
+# trick.
+null :=
+space := $(null) $(null)
+comma := ,
+
+M_ARGS_STR := $(subst $(space),$(comma),$(strip $(M_ARGS)))
 
 $(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go:
 	@echo "+ $@"
@@ -82,8 +98,8 @@ proto-fmt:
 		-I$(GOPATH)/src/github.com/gogo/protobuf/protobuf \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
 		--lint_out=. \
-		--proto_path=$(BASE_PATH) \
-		$(PROTO_API_PROTOS)
+		--proto_path=$(PROTO_BASE_PATH) \
+		$(ALL_PROTOS)
 
 PROTO_DEPS=$(PROTOC_GEN_GO) $(PROTOC) $(PROTOC_INCLUDES)
 
@@ -125,17 +141,11 @@ printprotos:
 
 PROTOC_GEN_GRPC_GATEWAY := $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway
 
-PROTOC_GEN_GOVALIDATORS := $(GOPATH)/src/github.com/mwitkow/go-proto-validators
-
 $(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway:
 	@echo "+ $@"
 	@$(BASE_PATH)/scripts/go-get-version.sh google.golang.org/genproto/googleapis 7bb2a897381c9c5ab2aeb8614f758d7766af68ff --skip-install
 	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/... c2b051dd2f71ce445909aab7b28479fd84d00086
 	@$(BASE_PATH)/scripts/go-get-version.sh github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/... c2b051dd2f71ce445909aab7b28479fd84d00086
-
-$(GOPATH)/src/github.com/mwitkow/go-proto-validators:
-	@echo "+ $@"
-	@go get -u github.com/mwitkow/go-proto-validators/protoc-gen-govalidators
 
 $(GENERATED_DOC_PATH):
 	@echo "+ $@"
@@ -144,52 +154,43 @@ $(GENERATED_DOC_PATH):
 # Generate all of the proto messages and gRPC services with one invocation of
 # protoc when any of the .pb.go sources don't exist or when any of the .proto
 # files change.
-$(GENERATED_API_PATH)/%.pb.go: $(PROTO_DEPS) $(PROTOC_GEN_GO) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GOVALIDATORS) $(PROTO_API_PROTOS) $(PROTOC_GEN_GO_BIN)
+$(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GO) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GO_BIN) $(ALL_PROTOS)
 	@echo "+ $@"
-	@mkdir -p $(GENERATED_API_PATH)
+	@mkdir -p $(dir $@)
 	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--proto_path=$(BASE_PATH) \
-		--gofast_out=$(GOGO_M_STR),plugins=grpc:$(GENERATED_BASE_PATH) \
-		$(PROTO_API_PROTOS)
+		--proto_path=$(PROTO_BASE_PATH) \
+		--gofast_out=$(GOGO_M_STR),$(M_ARGS_STR),plugins=grpc:$(GENERATED_BASE_PATH) \
+		$(dir $<)/*.proto
 
 # Generate all of the reverse-proxies (gRPC-Gateways) with one invocation of
 # protoc when any of the .pb.gw.go sources don't exist or when any of the
 # .proto files change.
-$(GENERATED_API_PATH)/%.pb.gw.go: $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GOVALIDATORS) $(PROTO_API_PROTOS)
+$(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(GENERATED_BASE_PATH)/%_service.pb.go $(ALL_PROTOS)
 	@echo "+ $@"
-	@mkdir -p $(GENERATED_API_PATH)
+	@mkdir -p $(dir $@)
 	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--proto_path=$(BASE_PATH) \
+		--proto_path=$(PROTO_BASE_PATH) \
 		--grpc-gateway_out=logtostderr=true:$(GENERATED_BASE_PATH) \
-		$(PROTO_API_PROTOS)
-
-# Generate all of the validator sources with one invocation of protoc
-# when any of the .validator.pb.go sources don't exist or when any of the
-# .proto files change.
-$(GENERATED_API_VALIDATOR_SRCS) : $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GOVALIDATORS) $(GENERATED_DOC_PATH) $(PROTO_API_PROTOS)
-	@echo "+ $@"
-	@$(PROTOC) \
-		-I$(PROTOC_INCLUDES) \
-		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--proto_path=$(BASE_PATH) \
-		--govalidators_out=$(GENERATED_BASE_PATH) \
-		$(PROTO_API_PROTOS)
+		$(dir $<)/*.proto
+	@for f in $(patsubst $(dir $<)/%.proto, $(dir $@)/%.pb.gw.go, $(wildcard $(dir $<)/*.proto)); do \
+    	test -f $$f || echo package $(subst -,_,$(notdir $(patsubst %/, %, $(dir $<)))) >$$f; \
+    done
 
 # Generate all of the swagger specifications with one invocation of protoc
 # when any of the .swagger.json sources don't exist or when any of the
 # .proto files change.
-$(GENERATED_DOC_PATH)/%.swagger.json: $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GOVALIDATORS) $(GENERATED_DOC_PATH) $(PROTO_API_PROTOS)
+$(GENERATED_DOC_PATH)/%.swagger.json: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(GENERATED_DOC_PATH) $(ALL_PROTOS)
 	@echo "+ $@"
 	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-		--proto_path=$(BASE_PATH) \
+		--proto_path=$(PROTO_BASE_PATH) \
 		--swagger_out=logtostderr=true:$(GENERATED_DOC_PATH) \
-		$(PROTO_API_PROTOS)
+		$(dir $<)/*.proto
 
 # Generate the docs from the merged swagger specs.
 $(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS)
@@ -202,7 +203,7 @@ $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(PROTOC_GEN_GRPC_GATEWAY)
 	docker run --user $(shell id -u) --rm -v $(CURDIR)/docs:/tmp/docs swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
 
 .PHONY: clean-protos
-clean-protos:
+clean-protos: clean-generated
 	@rm -rf $(GOPATH)/src/github.com/grpc-ecosystem
 	@rm -rf $(GOPATH)/src/github.com/golang/protobuf
 	@rm -rf $(GOPATH)/src/golang.google.org/genproto/googleapis
@@ -210,8 +211,8 @@ clean-protos:
 	@rm -f $(GOPATH)/bin/protoc-gen-go
 	@rm -rf $(PROTOC_TMP)
 	@rm -f $(PROTOC_FILE)
-	@test -n "$(GENERATED_API_PATH)" && rm -rf "$(GENERATED_API_PATH)" || true
 
 .PHONY: clean-generated
 clean-generated:
-	@rm -rf "$(GENERATED_API_PATH)"
+	@find $(GENERATED_BASE_PATH) \( -name '*.pb.go' -o -name '*.pb.*.go' \) -exec rm {} \;
+	@find $(GENERATED_BASE_PATH) -type d -empty -delete
