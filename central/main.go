@@ -25,6 +25,7 @@ import (
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
+	detectionService "github.com/stackrox/rox/central/detection/service"
 	dnrIntegrationService "github.com/stackrox/rox/central/dnrintegration/service"
 	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/globaldb"
@@ -108,6 +109,7 @@ func (c *central) startGRPCServer() {
 		clusterService.Singleton(),
 		deploymentService.Singleton(),
 		dnrIntegrationService.Singleton(),
+		detectionService.Singleton(),
 		imageService.Singleton(),
 		iiService.Singleton(),
 		metadataService.New(),

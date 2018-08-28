@@ -16,16 +16,19 @@ import (
 var (
 	once sync.Once
 
+	ie enricher.ImageEnricher
 	en Enricher
 )
 
 func initialize() {
+	ie = enricher.New(imageintegration.Set(), metrics.CentralSubsystem)
+
 	var err error
 	if en, err = New(deploymentDataStore.Singleton(),
 		imageDataStore.Singleton(),
 		imageintegrationDataStore.Singleton(),
 		multiplierStore.Singleton(),
-		enricher.New(imageintegration.Set(), metrics.CentralSubsystem),
+		ie,
 		risk.GetScorer()); err != nil {
 		panic(err)
 	}
@@ -35,4 +38,10 @@ func initialize() {
 func Singleton() Enricher {
 	once.Do(initialize)
 	return en
+}
+
+// ImageEnricherSingleton provides the singleton ImageEnricher to use.
+func ImageEnricherSingleton() enricher.ImageEnricher {
+	once.Do(initialize)
+	return ie
 }
