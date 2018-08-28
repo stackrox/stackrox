@@ -42,6 +42,13 @@ func newWithoutDefaults(db *bolt.DB) Store {
 }
 
 func addDefaults(store Store) {
+	if policies, err := store.GetPolicies(); err != nil {
+		panic(err)
+	} else if len(policies) > 0 {
+		// This means the policies have already been inserted
+		return
+	}
+
 	// Preload the default policies.
 	policies, err := defaults.Policies()
 	if err != nil {
