@@ -45,7 +45,6 @@ jobs:
           command: docker pull alpine:3.8
 
       - *restoreDep
-      - *restoreGradle
       - *restoreUI
 
       - run:
@@ -70,19 +69,10 @@ jobs:
             docker push stackrox/prevent:$TAG | cat
             docker push stackrox/prevent-health:$TAG | cat
 
-      - run:
-          name: Run style checks and unit tests
-          command: make style test
-
       - save-cache:
           key: *depCacheKey
           paths:
             - /go/pkg/dep
-
-      - save-cache:
-          key: *gradleCacheKey
-          paths:
-          - ~/.gradle/caches/
 
       - save-cache:
           key: *uiCacheKey
@@ -97,6 +87,35 @@ jobs:
           - generated
           - ui/deps
           - vendor
+
+  unit-tests:
+    <<: *defaults
+    resource_class: large
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - *restoreGradle
+
+      - run:
+          name: Setup Bazel cache access
+          command: echo "$GKE_SERVICE_ACCOUNT" > /tmp/gcp.json
+
+      - run:
+          name: Substitute env variables into bazel.rc
+          command: cat tools/ci-bazel.rc | envsubst > tools/bazel.rc
+
+      - run:
+          name: Run style checks and unit tests
+          command: make style test
+
+      - save-cache:
+          key: *gradleCacheKey
+          paths:
+          - ~/.gradle/caches/
 
       - store_artifacts:
           path: qa-tests-backend/build/reports/codenarc
@@ -458,6 +477,12 @@ workflows:
   build_all:
     jobs:
       - build:
+          filters:
+            tags:
+              only: /.*/
+      - unit-tests:
+          requires:
+            - build
           filters:
             tags:
               only: /.*/
