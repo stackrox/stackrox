@@ -46,11 +46,7 @@ message Deployment {
     string type                                = 4;
     string namespace                           = 5;
     int64 replicas                             = 6;
-    message KeyValue {
-        string key   = 1;
-        string value = 2;
-    }
-    repeated KeyValue labels                   = 7;
+    map<string, string> labels                 = 7;
     google.protobuf.Timestamp updated_at       = 8;
     string cluster_id                          = 9;
     string cluster_name                        = 10;
@@ -58,7 +54,7 @@ message Deployment {
     repeated Container containers              = 11;
     Risk risk                                  = 12;
     google.protobuf.Timestamp tombstone        = 13;
-    repeated KeyValue annotations              = 14;
+    map<string, string> annotations            = 14;
     int64 priority                             = 15;
     bool inactive                              = 16;
     repeated string image_pull_secrets         = 17;

@@ -134,15 +134,9 @@ func TestAsDeployment(t *testing.T) {
 				Namespace: defaultNamespace,
 				Type:      "Replicated",
 				Replicas:  10,
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "key",
-						Value: "value",
-					},
-					{
-						Key:   "question",
-						Value: "answer",
-					},
+				Labels: map[string]string{
+					"key":      "value",
+					"question": "answer",
 				},
 				UpdatedAt: &timestamp.Timestamp{Seconds: 100},
 				Containers: []*v1.Container{
@@ -323,15 +317,9 @@ func TestAsDeployment(t *testing.T) {
 				Namespace: defaultNamespace,
 				Type:      "Replicated",
 				Replicas:  10,
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "key",
-						Value: "value",
-					},
-					{
-						Key:   "question",
-						Value: "answer",
-					},
+				Labels: map[string]string{
+					"key":      "value",
+					"question": "answer",
 				},
 				UpdatedAt: &timestamp.Timestamp{Seconds: 100},
 				Containers: []*v1.Container{

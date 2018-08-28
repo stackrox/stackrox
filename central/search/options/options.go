@@ -18,8 +18,7 @@ import (
 var GlobalOptions = []string{
 	searchCommon.Cluster,
 	searchCommon.Namespace,
-	searchCommon.LabelKey,
-	searchCommon.LabelValue,
+	searchCommon.Label,
 }
 
 // CategoryOptionsMap is a map of all option sets by category, with a category for each indexed data type.

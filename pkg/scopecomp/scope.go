@@ -20,12 +20,7 @@ func WithinScope(scope *v1.Scope, deployment *v1.Deployment) bool {
 		return true
 	}
 
-	labelMap := make(map[string]string, len(deployment.GetLabels()))
-	for _, label := range deployment.GetLabels() {
-		labelMap[strings.ToLower(label.GetKey())] = strings.ToLower(label.GetValue())
-	}
-
-	if value, ok := labelMap[strings.ToLower(scope.GetLabel().GetKey())]; !ok || strings.ToLower(value) != scope.GetLabel().GetValue() {
+	if value, ok := deployment.GetLabels()[strings.ToLower(scope.GetLabel().GetKey())]; !ok || strings.ToLower(value) != scope.GetLabel().GetValue() {
 		return false
 	}
 

@@ -23,7 +23,7 @@ const (
 )
 
 var alertQuery = func() string {
-	return search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.LabelKey, "hello").AddStrings(search.LabelValue, "world").AddBools(search.Stale, false).Query()
+	return search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.Label, "hello=world").AddBools(search.Stale, false).Query()
 }()
 
 var (

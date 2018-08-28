@@ -40,5 +40,5 @@ type requiredLabelMatcherMatcherImpl struct {
 }
 
 func (p *requiredLabelMatcherMatcherImpl) match(deployment *v1.Deployment) []*v1.Alert_Violation {
-	return utils.MatchRequiredKeyValue(deployment.GetLabels(), p.key, p.value, "label")
+	return utils.MatchRequiredMap(deployment.GetLabels(), p.key, p.value, "label")
 }

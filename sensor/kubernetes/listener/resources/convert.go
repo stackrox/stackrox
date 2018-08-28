@@ -10,7 +10,6 @@ import (
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/sensor/kubernetes/volumes"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -82,8 +81,8 @@ func newWrap(meta metav1.ObjectMeta, action pkgV1.ResourceAction, resourceType s
 			Type:        resourceType,
 			Version:     meta.ResourceVersion,
 			Namespace:   meta.Namespace,
-			Labels:      protoconv.ConvertDeploymentKeyValueMap(meta.Labels),
-			Annotations: protoconv.ConvertDeploymentKeyValueMap(meta.Annotations),
+			Labels:      meta.Labels,
+			Annotations: meta.Annotations,
 			UpdatedAt:   updatedTime,
 		},
 	}

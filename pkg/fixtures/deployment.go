@@ -10,15 +10,9 @@ func GetDeployment() *v1.Deployment {
 		ClusterId:   "prod cluster",
 		ClusterName: "prod cluster",
 		Namespace:   "stackrox",
-		Labels: []*v1.Deployment_KeyValue{
-			{
-				Key:   "com.docker.stack.namespace",
-				Value: "prevent",
-			},
-			{
-				Key:   "com.docker.swarm.service.name",
-				Value: "prevent_sensor",
-			},
+		Labels: map[string]string{
+			"com.docker.stack.namespace":    "prevent",
+			"com.docker.swarm.service.name": "prevent_sensor",
 		},
 		Containers: []*v1.Container{
 			{

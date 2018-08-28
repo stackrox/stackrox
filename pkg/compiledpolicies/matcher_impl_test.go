@@ -442,15 +442,9 @@ func TestScopeDisabled(t *testing.T) {
 	deployment := &v1.Deployment{
 		ClusterId: "clusterA",
 		Namespace: "namespace",
-		Labels: []*v1.Deployment_KeyValue{
-			{
-				Key:   "key",
-				Value: "value",
-			},
-			{
-				Key:   "foo",
-				Value: "bar",
-			},
+		Labels: map[string]string{
+			"key": "value",
+			"foo": "bar",
 		},
 		Containers: []*v1.Container{
 			{
@@ -484,15 +478,9 @@ func TestScopeWrongCluster(t *testing.T) {
 	deployment := &v1.Deployment{
 		ClusterId: "clusterA",
 		Namespace: "namespace",
-		Labels: []*v1.Deployment_KeyValue{
-			{
-				Key:   "key",
-				Value: "value",
-			},
-			{
-				Key:   "foo",
-				Value: "bar",
-			},
+		Labels: map[string]string{
+			"key": "value",
+			"foo": "bar",
 		},
 		Containers: []*v1.Container{
 			{
@@ -527,15 +515,9 @@ func TestScopeWrongNamespace(t *testing.T) {
 	deployment := &v1.Deployment{
 		ClusterId: "clusterA",
 		Namespace: "namespace",
-		Labels: []*v1.Deployment_KeyValue{
-			{
-				Key:   "key",
-				Value: "value",
-			},
-			{
-				Key:   "foo",
-				Value: "bar",
-			},
+		Labels: map[string]string{
+			"key": "value",
+			"foo": "bar",
 		},
 		Containers: []*v1.Container{
 			{
@@ -574,15 +556,9 @@ func TestScopeWrongLabel(t *testing.T) {
 	deployment := &v1.Deployment{
 		ClusterId: "clusterA",
 		Namespace: "namespace",
-		Labels: []*v1.Deployment_KeyValue{
-			{
-				Key:   "key",
-				Value: "value",
-			},
-			{
-				Key:   "foo",
-				Value: "bar",
-			},
+		Labels: map[string]string{
+			"key": "value",
+			"foo": "bar",
 		},
 		Containers: []*v1.Container{
 			{
@@ -617,15 +593,9 @@ func TestScopeMatchesOnlyNamespace(t *testing.T) {
 	deployment := &v1.Deployment{
 		ClusterId: "clusterA",
 		Namespace: "namespace",
-		Labels: []*v1.Deployment_KeyValue{
-			{
-				Key:   "key",
-				Value: "value",
-			},
-			{
-				Key:   "foo",
-				Value: "bar",
-			},
+		Labels: map[string]string{
+			"key": "value",
+			"foo": "bar",
 		},
 		Containers: []*v1.Container{
 			{
@@ -665,15 +635,9 @@ func TestScopeMatchesAll(t *testing.T) {
 	deployment := &v1.Deployment{
 		ClusterId: "clusterA",
 		Namespace: "namespace",
-		Labels: []*v1.Deployment_KeyValue{
-			{
-				Key:   "key",
-				Value: "value",
-			},
-			{
-				Key:   "foo",
-				Value: "bar",
-			},
+		Labels: map[string]string{
+			"key": "value",
+			"foo": "bar",
 		},
 		Containers: []*v1.Container{
 			{
@@ -712,15 +676,9 @@ func TestScopeMatchesOneScope(t *testing.T) {
 	deployment := &v1.Deployment{
 		ClusterId: "clusterA",
 		Namespace: "namespace",
-		Labels: []*v1.Deployment_KeyValue{
-			{
-				Key:   "key",
-				Value: "value",
-			},
-			{
-				Key:   "foo",
-				Value: "bar",
-			},
+		Labels: map[string]string{
+			"key": "value",
+			"foo": "bar",
 		},
 		Containers: []*v1.Container{
 			{
@@ -764,15 +722,9 @@ func TestWhitelistMatchesScope(t *testing.T) {
 	deployment := &v1.Deployment{
 		ClusterId: "clusterA",
 		Namespace: "namespace",
-		Labels: []*v1.Deployment_KeyValue{
-			{
-				Key:   "key",
-				Value: "value",
-			},
-			{
-				Key:   "foo",
-				Value: "bar",
-			},
+		Labels: map[string]string{
+			"key": "value",
+			"foo": "bar",
 		},
 		Containers: []*v1.Container{
 			{

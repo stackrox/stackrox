@@ -264,12 +264,8 @@ func doesPodLabelsMatchLabel(deployment *v1.Deployment, podSelector *v1.LabelSel
 	if len(podSelector.GetMatchLabels()) == 0 {
 		return true
 	}
-	deploymentLabelMap := make(map[string]string)
-	for _, keyValue := range deployment.GetLabels() {
-		deploymentLabelMap[keyValue.GetKey()] = keyValue.GetValue()
-	}
 	for k, v := range podSelector.GetMatchLabels() {
-		if deploymentLabelMap[k] != v {
+		if deployment.GetLabels()[k] != v {
 			return false
 		}
 	}

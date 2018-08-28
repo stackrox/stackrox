@@ -129,11 +129,8 @@ func TestDoesPodLabelsMatchLabel(t *testing.T) {
 		{
 			name: "matching values in selector",
 			deployment: &v1.Deployment{
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "hello",
-						Value: "hi",
-					},
+				Labels: map[string]string{
+					"hello": "hi",
 				},
 			},
 			selector: &v1.LabelSelector{
@@ -146,11 +143,8 @@ func TestDoesPodLabelsMatchLabel(t *testing.T) {
 		{
 			name: "non matching values in selector",
 			deployment: &v1.Deployment{
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "hello",
-						Value: "hi1",
-					},
+				Labels: map[string]string{
+					"hello": "hi1",
 				},
 			},
 			selector: &v1.LabelSelector{
@@ -258,11 +252,9 @@ func TestMatchPolicyPeer(t *testing.T) {
 		{
 			name: "non match pod selector",
 			deployment: &v1.Deployment{
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "key",
-						Value: "value1",
-					},
+
+				Labels: map[string]string{
+					"key": "value1",
 				},
 			},
 			peer: &v1.NetworkPolicyPeer{
@@ -277,11 +269,8 @@ func TestMatchPolicyPeer(t *testing.T) {
 		{
 			name: "match pod selector",
 			deployment: &v1.Deployment{
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "key",
-						Value: "value",
-					},
+				Labels: map[string]string{
+					"key": "value",
 				},
 			},
 			peer: &v1.NetworkPolicyPeer{
@@ -368,11 +357,8 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		{
 			name: "pod selector doesn't match",
 			d: &v1.Deployment{
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "key1",
-						Value: "value1",
-					},
+				Labels: map[string]string{
+					"key1": "value1",
 				},
 				Namespace: "default",
 			},
@@ -391,11 +377,8 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		{
 			name: "all matches - has ingress",
 			d: &v1.Deployment{
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "key1",
-						Value: "value1",
-					},
+				Labels: map[string]string{
+					"key1": "value1",
 				},
 				Namespace: "default",
 			},
@@ -414,11 +397,8 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		{
 			name: "all matches - doesn't have ingress",
 			d: &v1.Deployment{
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "key1",
-						Value: "value1",
-					},
+				Labels: map[string]string{
+					"key1": "value1",
 				},
 				Namespace: "default",
 			},
@@ -464,11 +444,8 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		{
 			name: "pod selector doesn't match",
 			d: &v1.Deployment{
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "key1",
-						Value: "value1",
-					},
+				Labels: map[string]string{
+					"key1": "value1",
 				},
 				Namespace: "default",
 			},
@@ -487,11 +464,8 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		{
 			name: "all matches - doesn't have egress",
 			d: &v1.Deployment{
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "key1",
-						Value: "value1",
-					},
+				Labels: map[string]string{
+					"key1": "value1",
 				},
 				Namespace: "default",
 			},
@@ -510,11 +484,8 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		{
 			name: "all matches - has egress",
 			d: &v1.Deployment{
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "key1",
-						Value: "value1",
-					},
+				Labels: map[string]string{
+					"key1": "value1",
 				},
 				Namespace: "default",
 			},
@@ -534,11 +505,8 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		{
 			name: "all matches - has egress and ip block",
 			d: &v1.Deployment{
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "key1",
-						Value: "value1",
-					},
+				Labels: map[string]string{
+					"key1": "value1",
 				},
 				Namespace: "default",
 			},
@@ -634,18 +602,15 @@ func createNode(node string, namespace string, internetAccess bool, policies ...
 	}
 }
 
-func deploymentLabels(values ...string) []*v1.Deployment_KeyValue {
+func deploymentLabels(values ...string) map[string]string {
 	if len(values)%2 != 0 {
 		panic("values for deployments labels must be even")
 	}
-	var keyValues []*v1.Deployment_KeyValue
+	m := make(map[string]string)
 	for i := 0; i < len(values)/2+1; i += 2 {
-		keyValues = append(keyValues, &v1.Deployment_KeyValue{
-			Key:   values[i],
-			Value: values[i+1],
-		})
+		m[values[i]] = values[i+1]
 	}
-	return keyValues
+	return m
 }
 
 func TestEvaluateClusters(t *testing.T) {

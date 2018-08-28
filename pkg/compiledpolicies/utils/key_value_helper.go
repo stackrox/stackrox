@@ -8,19 +8,19 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
-// MatchRequiredKeyValue returns violations for the key values passed based on the input regex's.
-func MatchRequiredKeyValue(deploymentKeyValues []*v1.Deployment_KeyValue, key, value *regexp.Regexp, name string) []*v1.Alert_Violation {
-	for _, keyValue := range deploymentKeyValues {
+// MatchRequiredMap returns violations for the key values passed based on the input regex's.
+func MatchRequiredMap(m map[string]string, key, value *regexp.Regexp, name string) []*v1.Alert_Violation {
+	for k, v := range m {
 		if key != nil && value != nil {
-			if key.MatchString(keyValue.GetKey()) && value.MatchString(keyValue.GetValue()) {
+			if key.MatchString(k) && value.MatchString(v) {
 				return nil
 			}
 		} else if key != nil {
-			if key.MatchString(keyValue.GetKey()) {
+			if key.MatchString(k) {
 				return nil
 			}
 		} else if value != nil {
-			if value.MatchString(keyValue.GetValue()) {
+			if value.MatchString(v) {
 				return nil
 			}
 		}

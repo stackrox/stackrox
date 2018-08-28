@@ -123,14 +123,14 @@ func labelsMapFromDeployments(deployments []*v1.Deployment) (keyValuesMap map[st
 	globalValueSet := mapset.NewSet()
 
 	for _, d := range deployments {
-		for _, label := range d.GetLabels() {
-			valSet := tempSet[label.GetKey()]
+		for k, v := range d.GetLabels() {
+			valSet := tempSet[k]
 			if valSet == nil {
 				valSet = mapset.NewSet()
-				tempSet[label.GetKey()] = valSet
+				tempSet[k] = valSet
 			}
-			valSet.Add(label.GetValue())
-			globalValueSet.Add(label.GetValue())
+			valSet.Add(v)
+			globalValueSet.Add(v)
 		}
 	}
 

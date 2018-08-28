@@ -15,7 +15,7 @@ func AddDefaultTypeField(docMap *mapping.DocumentMapping) {
 
 // FieldsToDocumentMapping does something
 func FieldsToDocumentMapping(fieldsMap map[string]*v1.SearchField) *mapping.DocumentMapping {
-	rootDocumentMapping := newDocumentMapping()
+	rootDocumentMapping := newDocumentMapping(false)
 	for _, field := range fieldsMap {
 		path := strings.Split(field.FieldPath, ".")
 		addToDocumentMapping(path, field, rootDocumentMapping)
@@ -29,22 +29,28 @@ func addToDocumentMapping(path []string, searchField *v1.SearchField, docMap *ma
 		panic("path is empty, check that FieldPath is set in the search field")
 	}
 	if len(path) == 1 {
-		docMap.AddFieldMappingsAt(path[0], searchFieldToMapping(searchField))
+		switch searchField.GetType() {
+		case v1.SearchDataType_SEARCH_MAP:
+			childDocMapping := newDocumentMapping(true)
+			docMap.AddSubDocumentMapping(path[0], childDocMapping)
+		default:
+			docMap.AddFieldMappingsAt(path[0], searchFieldToMapping(searchField))
+		}
 		return
 	}
 
 	// Otherwise, we need to add to a sub-document mapping, creating one if necessary.
 	childDocMapping, ok := docMap.Properties[path[0]]
 	if !ok {
-		childDocMapping = newDocumentMapping()
+		childDocMapping = newDocumentMapping(false)
 		docMap.AddSubDocumentMapping(path[0], childDocMapping)
 	}
 	addToDocumentMapping(path[1:], searchField, childDocMapping)
 }
 
-func newDocumentMapping() *mapping.DocumentMapping {
+func newDocumentMapping(dynamic bool) *mapping.DocumentMapping {
 	docMap := mapping.NewDocumentMapping()
-	docMap.Dynamic = false
+	docMap.Dynamic = dynamic
 	return docMap
 }
 

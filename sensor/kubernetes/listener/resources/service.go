@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/watchlister"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -119,15 +118,14 @@ func (swl *ServiceWatchLister) updatePortExposure(serviceObj interface{}, d *pkg
 
 type serviceWrap v1.Service
 
-func (s serviceWrap) matchSelector(labels []*pkgV1.Deployment_KeyValue) bool {
+func (s serviceWrap) matchSelector(labels map[string]string) bool {
 	// Ignoring services without selectors.
 	if len(s.Spec.Selector) == 0 {
 		return false
 	}
 
-	labelMap := protoconv.ConvertDeploymentKeyValues(labels)
 	for k, v := range s.Spec.Selector {
-		if labelMap[k] != v {
+		if labels[k] != v {
 			return false
 		}
 	}

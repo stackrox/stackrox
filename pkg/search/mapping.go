@@ -24,6 +24,11 @@ func NewStringField(category v1.SearchCategory, name string) *v1.SearchField {
 	return NewField(category, name, v1.SearchDataType_SEARCH_STRING, 0)
 }
 
+// NewMapField creates a new mapped field for a map
+func NewMapField(category v1.SearchCategory, name string) *v1.SearchField {
+	return NewField(category, name, v1.SearchDataType_SEARCH_MAP, 0)
+}
+
 // NewBoolField creates a new mapped field for boolean values.
 func NewBoolField(category v1.SearchCategory, name string) *v1.SearchField {
 	return NewField(category, name, v1.SearchDataType_SEARCH_BOOL, 0)

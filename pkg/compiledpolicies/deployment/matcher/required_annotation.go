@@ -40,5 +40,5 @@ type requiredAnnotationMatcherImpl struct {
 }
 
 func (p *requiredAnnotationMatcherImpl) match(deployment *v1.Deployment) []*v1.Alert_Violation {
-	return utils.MatchRequiredKeyValue(deployment.GetAnnotations(), p.key, p.value, "label")
+	return utils.MatchRequiredMap(deployment.GetAnnotations(), p.key, p.value, "label")
 }

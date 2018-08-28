@@ -69,15 +69,9 @@ func TestWithinScope(t *testing.T) {
 				},
 			},
 			deployment: &v1.Deployment{
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "key",
-						Value: "value",
-					},
-					{
-						Key:   "key2",
-						Value: "value2",
-					},
+				Labels: map[string]string{
+					"key":  "value",
+					"key2": "value2",
 				},
 			},
 			result: true,
@@ -91,15 +85,9 @@ func TestWithinScope(t *testing.T) {
 				},
 			},
 			deployment: &v1.Deployment{
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "key",
-						Value: "value1",
-					},
-					{
-						Key:   "key2",
-						Value: "value2",
-					},
+				Labels: map[string]string{
+					"key":  "value1",
+					"key2": "value2",
 				},
 			},
 			result: false,
@@ -113,15 +101,9 @@ func TestWithinScope(t *testing.T) {
 				},
 			},
 			deployment: &v1.Deployment{
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "key1",
-						Value: "value",
-					},
-					{
-						Key:   "key2",
-						Value: "value2",
-					},
+				Labels: map[string]string{
+					"key":  "value1",
+					"key2": "value2",
 				},
 			},
 			result: false,
@@ -139,15 +121,9 @@ func TestWithinScope(t *testing.T) {
 			deployment: &v1.Deployment{
 				ClusterId: "cluster",
 				Namespace: "namespace",
-				Labels: []*v1.Deployment_KeyValue{
-					{
-						Key:   "key",
-						Value: "value",
-					},
-					{
-						Key:   "key2",
-						Value: "value2",
-					},
+				Labels: map[string]string{
+					"key":  "value",
+					"key2": "value2",
 				},
 			},
 			result: true,

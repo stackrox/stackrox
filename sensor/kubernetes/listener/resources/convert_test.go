@@ -220,25 +220,13 @@ func TestConvert(t *testing.T) {
 				Replicas:         15,
 				ServiceAccount:   "sensor",
 				ImagePullSecrets: []string{"pull-secret1", "pull-secret2"},
-				Labels: []*pkgV1.Deployment_KeyValue{
-					{
-						Key:   "key",
-						Value: "value",
-					},
-					{
-						Key:   "question",
-						Value: "answer",
-					},
+				Labels: map[string]string{
+					"key":      "value",
+					"question": "answer",
 				},
-				Annotations: []*pkgV1.Deployment_KeyValue{
-					{
-						Key:   "annotationkey1",
-						Value: "annotationvalue1",
-					},
-					{
-						Key:   "annotationkey2",
-						Value: "annotationvalue2",
-					},
+				Annotations: map[string]string{
+					"annotationkey1": "annotationvalue1",
+					"annotationkey2": "annotationvalue2",
 				},
 				UpdatedAt: &timestamp.Timestamp{Seconds: 1000},
 				Containers: []*pkgV1.Container{

@@ -64,15 +64,15 @@ func SeverityString(s v1.Severity) string {
 func GetLabelValue(alert *v1.Alert, labelKey, def string) string {
 	deployment := alert.GetDeployment()
 	// Annotations will most likely be used for k8s
-	for _, annotation := range deployment.GetAnnotations() {
-		if annotation.GetKey() == labelKey {
-			return annotation.GetValue()
+	for key, value := range deployment.GetAnnotations() {
+		if key == labelKey {
+			return value
 		}
 	}
 	// Labels will most likely be used for docker
-	for _, label := range deployment.GetLabels() {
-		if label.GetKey() == labelKey {
-			return label.GetValue()
+	for key, value := range deployment.GetLabels() {
+		if key == labelKey {
+			return value
 		}
 	}
 	return def

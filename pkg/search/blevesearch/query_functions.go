@@ -24,6 +24,7 @@ var datatypeToQueryFunc = map[v1.SearchDataType]func(v1.SearchCategory, string, 
 
 	v1.SearchDataType_SEARCH_SEVERITY:    newSeverityQuery,
 	v1.SearchDataType_SEARCH_ENFORCEMENT: newEnforcementQuery,
+	v1.SearchDataType_SEARCH_MAP:         newMapQuery,
 }
 
 func getWildcardQuery(field string) *query.WildcardQuery {
@@ -78,6 +79,22 @@ func newStringQuery(category v1.SearchCategory, field string, value string) (que
 	}
 }
 
+func parseLabel(label string) (string, string, error) {
+	spl := strings.SplitN(label, "=", 2)
+	if len(spl) < 2 {
+		return "", "", fmt.Errorf("Malformed label '%s'. Must be in the form key=value", label)
+	}
+	return spl[0], spl[1], nil
+}
+
+func newMapQuery(category v1.SearchCategory, field string, value string) (query.Query, error) {
+	mapKey, mapValue, err := parseLabel(value)
+	if err != nil {
+		return nil, err
+	}
+	return newStringQuery(category, field+"."+mapKey, mapValue)
+}
+
 func newBoolQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
 	b, err := strconv.ParseBool(value)
 	if err != nil {
@@ -105,19 +122,12 @@ func stringToSeverity(s string) (v1.Severity, error) {
 	return v1.Severity_UNSET_SEVERITY, fmt.Errorf("Could not parse severity '%s'. Valid options are low, medium, high, critical", s)
 }
 
-func newExactNumericMatch(field string, f float64) query.Query {
-	t := true
-	q := bleve.NewNumericRangeInclusiveQuery(&f, &f, &t, &t)
-	q.FieldVal = field
-	return q
-}
-
 func newSeverityQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
 	sev, err := stringToSeverity(value)
 	if err != nil {
 		return nil, err
 	}
-	return newExactNumericMatch(field, float64(sev)), nil
+	return createNumericQuery(field, "=", floatPtr(float64(sev))), nil
 }
 
 func stringToEnforcement(s string) (v1.EnforcementAction, error) {
@@ -139,5 +149,5 @@ func newEnforcementQuery(_ v1.SearchCategory, field string, value string) (query
 	if err != nil {
 		return nil, err
 	}
-	return newExactNumericMatch(field, float64(en)), nil
+	return createNumericQuery(field, "=", floatPtr(float64(en))), nil
 }

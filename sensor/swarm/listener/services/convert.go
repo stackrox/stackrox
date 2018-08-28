@@ -17,7 +17,6 @@ import (
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 const (
@@ -96,7 +95,7 @@ func (s serviceWrap) asDeployment(client dockerClientLite, retryGetImageSha bool
 		Version:   fmt.Sprintf("%d", s.Version.Index),
 		Type:      m.asType(),
 		Replicas:  m.asReplica(),
-		Labels:    protoconv.ConvertDeploymentKeyValueMap(s.Spec.Labels),
+		Labels:    s.Spec.Labels,
 		UpdatedAt: updatedTime,
 		Containers: []*v1.Container{
 			{

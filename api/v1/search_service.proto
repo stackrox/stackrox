@@ -26,6 +26,7 @@ enum SearchDataType {
     // Enums must be accounted for because they will all be handled on an individual basis
     SEARCH_ENFORCEMENT = 4;
     SEARCH_SEVERITY    = 5;
+    SEARCH_MAP         = 6;
 }
 
 message RawQuery {

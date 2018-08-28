@@ -68,6 +68,26 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			search.DeploymentName: {
 				Values: []string{"!nomatch"},
 			},
+			search.Label: {
+				Values: []string{
+					"com.docker.stack.namespace=prevent",
+				},
+			},
+		},
+	})
+	suite.NoError(err)
+	suite.Len(results, 1)
+
+	results, err = suite.indexer.SearchDeployments(&v1.ParsedSearchRequest{
+		Fields: map[string]*v1.ParsedSearchRequest_Values{
+			search.DeploymentName: {
+				Values: []string{"!nomatch"},
+			},
+			search.Label: {
+				Values: []string{
+					"com.docker.stack.namespace=/.*",
+				},
+			},
 		},
 	})
 	suite.NoError(err)

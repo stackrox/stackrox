@@ -8,11 +8,10 @@ import (
 
 // OptionsMap is exposed for e2e test
 var OptionsMap = mergeMaps(map[string]*v1.SearchField{
-	search.Cluster:    search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.cluster_name"),
-	search.ClusterID:  search.NewField(v1.SearchCategory_DEPLOYMENTS, "deployment.cluster_id", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
-	search.Namespace:  search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.namespace"),
-	search.LabelKey:   search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.labels.key"),
-	search.LabelValue: search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.labels.value"),
+	search.Cluster:   search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.cluster_name"),
+	search.ClusterID: search.NewField(v1.SearchCategory_DEPLOYMENTS, "deployment.cluster_id", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
+	search.Namespace: search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.namespace"),
+	search.Label:     search.NewMapField(v1.SearchCategory_DEPLOYMENTS, "deployment.labels"),
 
 	search.CPUCoresLimit:     search.NewNumericField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.resources.cpu_cores_limit"),
 	search.CPUCoresRequest:   search.NewNumericField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.resources.cpu_cores_request"),

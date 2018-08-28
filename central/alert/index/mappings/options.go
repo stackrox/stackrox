@@ -19,8 +19,7 @@ var OptionsMap = map[string]*v1.SearchField{
 	search.DeploymentID:   search.NewStringField(v1.SearchCategory_ALERTS, "alert.deployment.id"),
 	search.Cluster:        search.NewStringField(v1.SearchCategory_ALERTS, "alert.deployment.cluster_name"),
 	search.Namespace:      search.NewStringField(v1.SearchCategory_ALERTS, "alert.deployment.namespace"),
-	search.LabelKey:       search.NewStringField(v1.SearchCategory_ALERTS, "alert.deployment.labels.key"),
-	search.LabelValue:     search.NewStringField(v1.SearchCategory_ALERTS, "alert.deployment.labels.value"),
+	search.Label:          search.NewMapField(v1.SearchCategory_ALERTS, "alert.deployment.labels"),
 	search.DeploymentName: search.NewStringField(v1.SearchCategory_ALERTS, "alert.deployment.name"),
 	search.Privileged:     search.NewBoolField(v1.SearchCategory_ALERTS, "alert.deployment.containers.security_context.privileged"),
 

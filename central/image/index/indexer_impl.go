@@ -116,13 +116,9 @@ func (b *indexerImpl) getImageSHAsFromDeploymentQuery(request *v1.ParsedSearchRe
 		req.Fields[search.Namespace] = values
 		delete(newRequest.Fields, search.Namespace)
 	}
-	if values, ok := request.Fields[search.LabelKey]; ok {
-		req.Fields[search.LabelKey] = values
-		delete(newRequest.Fields, search.LabelKey)
-	}
-	if values, ok := request.Fields[search.LabelValue]; ok {
-		req.Fields[search.LabelValue] = values
-		delete(newRequest.Fields, search.LabelValue)
+	if values, ok := request.Fields[search.Label]; ok {
+		req.Fields[search.Label] = values
+		delete(newRequest.Fields, search.Label)
 	}
 
 	if len(req.Fields) == 0 {

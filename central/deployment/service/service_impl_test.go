@@ -20,11 +20,8 @@ func TestLabelsMap(t *testing.T) {
 			name: "one deployment",
 			deployments: []*v1.Deployment{
 				{
-					Labels: []*v1.Deployment_KeyValue{
-						{
-							Key:   "key",
-							Value: "value",
-						},
+					Labels: map[string]string{
+						"key": "value",
 					},
 				},
 			},
@@ -41,47 +38,23 @@ func TestLabelsMap(t *testing.T) {
 			name: "multiple deployments",
 			deployments: []*v1.Deployment{
 				{
-					Labels: []*v1.Deployment_KeyValue{
-						{
-							Key:   "key",
-							Value: "value",
-						},
-						{
-							Key:   "hello",
-							Value: "world",
-						},
-						{
-							Key:   "foo",
-							Value: "bar",
-						},
+					Labels: map[string]string{
+						"key":   "value",
+						"hello": "world",
+						"foo":   "bar",
 					},
 				},
 				{
-					Labels: []*v1.Deployment_KeyValue{
-						{
-							Key:   "key",
-							Value: "hole",
-						},
-						{
-							Key:   "app",
-							Value: "data",
-						},
-						{
-							Key:   "foo",
-							Value: "bar",
-						},
+					Labels: map[string]string{
+						"key": "hole",
+						"app": "data",
+						"foo": "bar",
 					},
 				},
 				{
-					Labels: []*v1.Deployment_KeyValue{
-						{
-							Key:   "hello",
-							Value: "bob",
-						},
-						{
-							Key:   "foo",
-							Value: "boo",
-						},
+					Labels: map[string]string{
+						"hello": "bob",
+						"foo":   "boo",
 					},
 				},
 			},
@@ -110,7 +83,7 @@ func TestLabelsMap(t *testing.T) {
 			actualMap, actualValues := labelsMapFromDeployments(c.deployments)
 
 			assert.Equal(t, c.expectedMap, actualMap)
-			assert.Equal(t, c.expectedValues, actualValues)
+			assert.ElementsMatch(t, c.expectedValues, actualValues)
 		})
 	}
 }
