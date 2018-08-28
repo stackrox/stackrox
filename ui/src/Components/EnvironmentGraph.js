@@ -377,6 +377,7 @@ class EnvironmentGraph extends Component {
                     )
                     .text(d => d.namespace);
             });
+            this.setUpNamespaceEdgeElements();
         });
     };
 
