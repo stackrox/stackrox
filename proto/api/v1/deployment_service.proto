@@ -11,12 +11,6 @@ import "api/v1/search_service.proto";
 
 package v1;
 
-enum EnforcementAction {
-    UNSET_ENFORCEMENT                           = 0;
-    SCALE_TO_ZERO_ENFORCEMENT                   = 1;
-    UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT   = 2;
-}
-
 message Risk {
     float           score   = 1;
     message Result {

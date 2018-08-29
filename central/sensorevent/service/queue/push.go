@@ -67,15 +67,8 @@ func (p *persistedEventQueue) pushExistingLockFree(event *v1.SensorEvent, seqID 
 // cannot be handled (error condition).
 func (p *persistedEventQueue) dedupeEvents(firstEvent *v1.SensorEvent, secondEvent *v1.SensorEvent) (*v1.SensorEvent, bool, error) {
 	// Sequences that require the old action on new data.
-	if firstEvent.GetAction() == v1.ResourceAction_CREATE_RESOURCE && secondEvent.GetAction() == v1.ResourceAction_PREEXISTING_RESOURCE {
-		secondEvent.Action = v1.ResourceAction_CREATE_RESOURCE
-		return secondEvent, false, nil
-	}
 	if firstEvent.GetAction() == v1.ResourceAction_CREATE_RESOURCE && secondEvent.GetAction() == v1.ResourceAction_UPDATE_RESOURCE {
 		secondEvent.Action = v1.ResourceAction_CREATE_RESOURCE
-		return secondEvent, false, nil
-	}
-	if firstEvent.GetAction() == v1.ResourceAction_PREEXISTING_RESOURCE && secondEvent.GetAction() == v1.ResourceAction_UPDATE_RESOURCE {
 		return secondEvent, false, nil
 	}
 

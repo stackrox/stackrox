@@ -88,7 +88,7 @@ func (s *Handler) getNewExistingDeployments() ([]*listeners.EventWrap, error) {
 	deployments := make([]*listeners.EventWrap, len(swarmServices))
 	for i, service := range swarmServices {
 		d := serviceWrap(service).asDeployment(s.client, true)
-		deployments[i] = deploymentEventWrap(v1.ResourceAction_PREEXISTING_RESOURCE, d, service)
+		deployments[i] = deploymentEventWrap(v1.ResourceAction_UPDATE_RESOURCE, d, service)
 	}
 	return deployments, nil
 }

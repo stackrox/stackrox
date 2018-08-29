@@ -37,6 +37,13 @@ message Policy {
 // Policy components.
 /////////////////////
 
+enum EnforcementAction {
+    UNSET_ENFORCEMENT                           = 0;
+    SCALE_TO_ZERO_ENFORCEMENT                   = 1;
+    UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT   = 2;
+    KILL_POD_ENFORCEMENT                        = 3;
+}
+
 message Whitelist {
     string                    name       = 1;
     message Container {

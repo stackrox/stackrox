@@ -82,7 +82,7 @@ func (wl *reflectionWatchLister) Stop() {
 }
 
 func (wl *reflectionWatchLister) resourceChanged(obj interface{}, action pkgV1.ResourceAction) {
-	if wl.initialObjectsConsumed && action == pkgV1.ResourceAction_PREEXISTING_RESOURCE {
+	if wl.initialObjectsConsumed && action == pkgV1.ResourceAction_UPDATE_RESOURCE {
 		action = pkgV1.ResourceAction_CREATE_RESOURCE
 	}
 

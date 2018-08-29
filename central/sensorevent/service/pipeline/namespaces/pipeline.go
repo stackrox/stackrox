@@ -104,7 +104,7 @@ func (s *pipelineImpl) enrichCluster(ns *v1.Namespace) error {
 
 func (s *pipelineImpl) persistNamespace(action v1.ResourceAction, ns *v1.Namespace) error {
 	switch action {
-	case v1.ResourceAction_PREEXISTING_RESOURCE, v1.ResourceAction_CREATE_RESOURCE:
+	case v1.ResourceAction_CREATE_RESOURCE:
 		return s.namespaces.AddNamespace(ns)
 	case v1.ResourceAction_UPDATE_RESOURCE:
 		return s.namespaces.UpdateNamespace(ns)

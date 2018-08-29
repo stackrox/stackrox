@@ -79,33 +79,6 @@ func (suite *PersistedEventQueueTestSuite) TestBuildUpAndEmpty() {
 	suite.Equal((*v1.SensorEvent)(nil), event)
 }
 
-func (suite *PersistedEventQueueTestSuite) TestHandlesDuplicatesCreatePreexisting() {
-	first := &v1.SensorEvent{
-		Id:     "id1",
-		Action: v1.ResourceAction_CREATE_RESOURCE,
-	}
-	second := &v1.SensorEvent{
-		Id:     "id1",
-		Action: v1.ResourceAction_PREEXISTING_RESOURCE,
-	}
-
-	// Expect event one to get added, and then updated with the new action change.
-	suite.eStorage.On("AddSensorEvent", first).Return(uint64(0), nil)
-	suite.eStorage.On("GetSensorEvent", uint64(0)).Return(first, true, nil)
-	suite.eStorage.On("UpdateSensorEvent", uint64(0),
-		mock.MatchedBy(func(event *v1.SensorEvent) bool {
-			return event.GetId() == "id1" && event.GetAction() == v1.ResourceAction_CREATE_RESOURCE
-		})).Return(nil)
-
-	// Push the two events
-	suite.tested.Push(first)
-	suite.tested.Push(second)
-
-	// Test that only a single event exists in the queue
-	suite.Equal(1, suite.tested.Count())
-	suite.eStorage.AssertExpectations(suite.T())
-}
-
 func (suite *PersistedEventQueueTestSuite) TestHandlesDuplicatesCreateUpdate() {
 	first := &v1.SensorEvent{
 		Id:     "id1",
@@ -205,56 +178,6 @@ func (suite *PersistedEventQueueTestSuite) TestHandlesDuplicatesUpdateRemove() {
 	// Push the two events
 	suite.tested.Push(first)
 	suite.tested.Push(second)
-
-	// Test that only a single event exists in the queue
-	suite.Equal(1, suite.tested.Count())
-	suite.eStorage.AssertExpectations(suite.T())
-}
-
-func (suite *PersistedEventQueueTestSuite) TestReturnsErrorForUnhandledAction() {
-	first := &v1.SensorEvent{
-		Id:     "id1",
-		Action: v1.ResourceAction_DRYRUN_RESOURCE,
-	}
-	second := &v1.SensorEvent{
-		Id:     "id1",
-		Action: v1.ResourceAction_CREATE_RESOURCE,
-	}
-
-	// Expect event one to get added, and then updated with the new action change.
-	suite.eStorage.On("AddSensorEvent", second).Return(uint64(0), nil)
-
-	// Push the two events
-	err := suite.tested.Push(first)
-	suite.Error(err, "expected an error since the action is not supported.")
-	err = suite.tested.Push(second)
-	suite.NoErrorf(err, "second action should not be affected by the first.")
-
-	// Test that only a single event exists in the queue
-	suite.Equal(1, suite.tested.Count())
-	suite.eStorage.AssertExpectations(suite.T())
-}
-
-func (suite *PersistedEventQueueTestSuite) TestReturnsErrorForUnhandledDuplication() {
-	first := &v1.SensorEvent{
-		Id: "id1",
-
-		Action: v1.ResourceAction_REMOVE_RESOURCE,
-	}
-	second := &v1.SensorEvent{
-		Id:     "id1",
-		Action: v1.ResourceAction_PREEXISTING_RESOURCE,
-	}
-
-	// Expect event one to get added, and then updated with the new action change.
-	suite.eStorage.On("AddSensorEvent", first).Return(uint64(0), nil)
-	suite.eStorage.On("GetSensorEvent", uint64(0)).Return(first, true, nil)
-
-	// Push the two events
-	err := suite.tested.Push(first)
-	suite.NoError(err, "expected not error here since remove resource is handled.")
-	err = suite.tested.Push(second)
-	suite.Errorf(err, "expect this push to fail since the duplication is unhandled.")
 
 	// Test that only a single event exists in the queue
 	suite.Equal(1, suite.tested.Count())

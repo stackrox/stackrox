@@ -17,7 +17,7 @@ type persistDeploymentImpl struct {
 
 func (s *persistDeploymentImpl) do(action v1.ResourceAction, deployment *v1.Deployment) error {
 	switch action {
-	case v1.ResourceAction_PREEXISTING_RESOURCE, v1.ResourceAction_CREATE_RESOURCE:
+	case v1.ResourceAction_CREATE_RESOURCE:
 		if err := s.deployments.UpsertDeployment(deployment); err != nil {
 			log.Errorf("unable to add deployment %s: %s", deployment.GetId(), err)
 			return err

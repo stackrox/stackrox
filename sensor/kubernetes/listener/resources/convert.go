@@ -116,7 +116,7 @@ func (w *wrap) populateFields(objValue reflect.Value, action pkgV1.ResourceActio
 
 	w.populateContainers(podTemplate.Spec)
 
-	if action == pkgV1.ResourceAction_PREEXISTING_RESOURCE || action == pkgV1.ResourceAction_UPDATE_RESOURCE {
+	if action == pkgV1.ResourceAction_UPDATE_RESOURCE {
 		w.populatePodData(spec, lister)
 	}
 }

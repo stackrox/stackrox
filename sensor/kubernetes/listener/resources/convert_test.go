@@ -185,7 +185,7 @@ func TestConvert(t *testing.T) {
 					},
 				},
 			},
-			action:         pkgV1.ResourceAction_PREEXISTING_RESOURCE,
+			action:         pkgV1.ResourceAction_UPDATE_RESOURCE,
 			metaFieldIndex: []int{1},
 			resourceType:   kubernetes.Deployment,
 			podLister: &mockPodLister{

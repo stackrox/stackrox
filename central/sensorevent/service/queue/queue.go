@@ -15,12 +15,9 @@ var (
 	// as unrecognized actions will also be ignored (since we can't deduplicate them).
 	handledActions = map[v1.ResourceAction]bool{
 		v1.ResourceAction_UNSET_ACTION_RESOURCE: false,
-		v1.ResourceAction_PREEXISTING_RESOURCE:  true,
 		v1.ResourceAction_CREATE_RESOURCE:       true,
 		v1.ResourceAction_REMOVE_RESOURCE:       true,
 		v1.ResourceAction_UPDATE_RESOURCE:       true,
-		v1.ResourceAction_REFRESH_RESOURCE:      false,
-		v1.ResourceAction_DRYRUN_RESOURCE:       false,
 	}
 )
 

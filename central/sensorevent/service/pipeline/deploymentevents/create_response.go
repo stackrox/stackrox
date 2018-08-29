@@ -22,8 +22,11 @@ func (s *createResponseImpl) do(deployment *v1.Deployment, action v1.ResourceAct
 	var enforcement v1.EnforcementAction
 	if action == v1.ResourceAction_REMOVE_RESOURCE {
 		_ = s.onRemove(deployment)
-	} else {
+	} else if action == v1.ResourceAction_CREATE_RESOURCE {
+		// We only want enforcement if the deployment was just created.
 		alertID, enforcement, _ = s.onUpdate(deployment)
+	} else {
+		alertID, _, _ = s.onUpdate(deployment)
 	}
 
 	if enforcement != v1.EnforcementAction_UNSET_ENFORCEMENT {

@@ -50,7 +50,7 @@ func (swl *ServiceWatchLister) updateDeployments(serviceObj interface{}, action 
 
 func (swl *ServiceWatchLister) updateDeployment(serviceObj interface{}, action pkgV1.ResourceAction, deployObj interface{}, deployEvent *pkgV1.Deployment) {
 	switch action {
-	case pkgV1.ResourceAction_CREATE_RESOURCE, pkgV1.ResourceAction_PREEXISTING_RESOURCE:
+	case pkgV1.ResourceAction_CREATE_RESOURCE:
 		swl.updateDeploymentUponServiceCreation(serviceObj, deployObj, deployEvent)
 	case pkgV1.ResourceAction_UPDATE_RESOURCE:
 		swl.updateDeploymentUponServiceModification(serviceObj, deployObj, deployEvent)

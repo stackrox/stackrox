@@ -103,7 +103,7 @@ func (s *Handler) getExistingNetworks() ([]*listeners.EventWrap, error) {
 	var events []*listeners.EventWrap
 	for _, network := range swarmNetworks {
 		n := networkWrap(network).asNetworkPolicy()
-		events = append(events, networkPolicyEventWrap(v1.ResourceAction_PREEXISTING_RESOURCE, n, network))
+		events = append(events, networkPolicyEventWrap(v1.ResourceAction_UPDATE_RESOURCE, n, network))
 	}
 
 	// Add a network policy for default namespace so all randomly run services will at least be grouped nicely
@@ -112,7 +112,7 @@ func (s *Handler) getExistingNetworks() ([]*listeners.EventWrap, error) {
 		Name: "default",
 	}
 	events = append(events,
-		networkPolicyEventWrap(v1.ResourceAction_PREEXISTING_RESOURCE, networkWrap(defaultNetwork).asNetworkPolicy(), defaultNetwork),
+		networkPolicyEventWrap(v1.ResourceAction_UPDATE_RESOURCE, networkWrap(defaultNetwork).asNetworkPolicy(), defaultNetwork),
 	)
 
 	return events, nil

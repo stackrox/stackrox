@@ -104,7 +104,7 @@ func (s *pipelineImpl) enrichCluster(np *v1.NetworkPolicy) error {
 
 func (s *pipelineImpl) persistNetworkPolicy(action v1.ResourceAction, np *v1.NetworkPolicy) error {
 	switch action {
-	case v1.ResourceAction_PREEXISTING_RESOURCE, v1.ResourceAction_CREATE_RESOURCE:
+	case v1.ResourceAction_CREATE_RESOURCE:
 		return s.networkPolicies.AddNetworkPolicy(np)
 	case v1.ResourceAction_UPDATE_RESOURCE:
 		return s.networkPolicies.UpdateNetworkPolicy(np)
