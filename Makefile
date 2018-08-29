@@ -131,7 +131,7 @@ gazelle: deps $(GENERATED_SRCS) cleanup
 
 .PHONY: build
 build: gazelle
-	bazel build $(BAZEL_FLAGS) -- //... -vendor/... -qa-tests-backend/...
+	bazel build $(BAZEL_FLAGS) -- //... -proto/... -qa-tests-backend/... -vendor/...
 
 .PHONY: gendocs
 gendocs: $(GENERATED_API_DOCS)
@@ -156,7 +156,7 @@ test: gazelle
 	    --action_env=DOCKER_CERT_PATH=$(DOCKER_CERT_PATH) \
 	    --action_env=DOCKER_TLS_VERIFY=$(DOCKER_TLS_VERIFY) \
 	    -- \
-	    //... -vendor/... -benchmarks/... -tests/... -qa-tests-backend/...
+	    //... -benchmarks/... -proto/... -qa-tests-backend/... -tests/... -vendor/...
 # benchmark tests don't work in Bazel yet.
 	make -C benchmarks test report
 # neither do UI tests
