@@ -35,7 +35,7 @@ export const selectors = {
             nextButton: '.dashboard-benchmarks .carousel-next-arrow',
             list: '.dashboard-benchmarks .slick-slide',
             currentSlide: '.dashboard-benchmarks .slick-current',
-            slickSlideHeader: '.dashboard-benchmarks .slick-slide h2'
+            track: '.slick-track'
         }
     },
     timeseries: 'svg.recharts-surface',

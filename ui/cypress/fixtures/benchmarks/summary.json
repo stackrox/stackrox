@@ -50,7 +50,7 @@
     },
     {
       "clusterId": "422642b9-1e4e-47a5-a739-e4fb39230821",
-      "clusterName": "remote-1",
+      "clusterName": "no-benchmarks-cluster",
       "benchmarks": []
     }
   ]

@@ -1,9 +1,6 @@
 import { url as dashboardUrl, selectors } from './constants/DashboardPage';
 
-import {
-    url as complianceUrl,
-    selectors as compliancePageSelectors
-} from './constants/CompliancePage';
+import { url as complianceUrl } from './constants/CompliancePage';
 import { url as violationsUrl } from './constants/ViolationsPage';
 import * as api from './constants/apiEndpoints';
 
@@ -13,16 +10,27 @@ describe('Dashboard page', () => {
         cy.get(selectors.navLink).should('have.class', 'bg-primary-600');
     });
 
-    it('should display benchmarks data', () => {
+    it('should display benchmarks data for multiple clusters', () => {
         cy.server();
-
-        cy.fixture('benchmarks/summary.json').as('benchmarksSummary');
         cy
-            .route('GET', api.benchmarks.summary, '@benchmarksSummary')
-            .as('benchmarksSummaryByCluster');
+            .route('GET', api.benchmarks.summary, 'fixture:benchmarks/summary.json')
+            .as('benchmarksSummary');
 
         cy.visit(dashboardUrl);
-        cy.wait('@benchmarksSummaryByCluster');
+        cy.wait('@benchmarksSummary');
+
+        cy.get(selectors.sectionHeaders.benchmarks).should('contain', 'remote');
+        cy.get(selectors.slick.dashboardBenchmarks.nextButton).click();
+        cy.get(selectors.sectionHeaders.benchmarks).should('contain', 'no-benchmarks-cluster');
+        cy.get(selectors.slick.dashboardBenchmarks.currentSlide).contains('No Benchmark Results');
+
+        // return back to the first cluster and test it extensively
+        // but first need to make sure sliding animation is over, otherwise "previous" button doesn't work in Slick component
+        cy
+            .get(selectors.slick.dashboardBenchmarks.track)
+            .should('have.css', 'transition-duration', '0s');
+        cy.get(selectors.slick.dashboardBenchmarks.prevButton).click();
+        cy.get(selectors.sectionHeaders.benchmarks).should('contain', 'remote');
 
         cy
             .get(selectors.sectionHeaders.benchmarks)
@@ -56,10 +64,6 @@ describe('Dashboard page', () => {
                 `${complianceUrl}/422642b9-1e4e-47a5-a739-e4fb39230822`
             );
         });
-
-        cy.visit(dashboardUrl);
-        cy.get(selectors.slick.dashboardBenchmarks.nextButton).click();
-        cy.get(selectors.slick.dashboardBenchmarks.currentSlide).contains('No Benchmark Results');
     });
 
     it('should display environment risk tiles', () => {
@@ -239,27 +243,5 @@ describe('Dashboard page', () => {
             .get(selectors.sectionHeaders.violationsByClusters)
             .next()
             .should('have.text', 'No Clusters Available. Please refine search');
-    });
-    it('validate scans for multi clusters', () => {
-        cy.server();
-        cy.route('GET', '/v1/clusters').as('clusters');
-        cy.visit(dashboardUrl);
-        cy
-            .get(compliancePageSelectors.leftNavigation)
-            .contains('Compliance')
-            .click();
-        cy.wait('@clusters').then(cluster => {
-            const { clusters } = cluster.response.body;
-            clusters.forEach(clust => {
-                cy.route('GET', '/v1/benchmarks/scans**').as('scans');
-                cy.visit(`/main/compliance/${clust.id}`);
-                cy.get('button:contains("Scan now")').click({ force: true });
-                cy.wait('@scans');
-                cy.visit(dashboardUrl);
-                cy
-                    .get(selectors.slick.dashboardBenchmarks.slickSlideHeader)
-                    .should('contain', clust.name);
-            });
-        });
     });
 });
