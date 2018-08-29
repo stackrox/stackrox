@@ -2,6 +2,7 @@ package search
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -49,22 +50,35 @@ func (qb *QueryBuilder) Query() string {
 	for k, values := range qb.query {
 		pairs = append(pairs, fmt.Sprintf("%s:%s", k, strings.Join(values, ",")))
 	}
+	sort.Strings(pairs)
 	if qb.raw != "" {
 		return fmt.Sprintf("Has:%s+", qb.raw) + strings.Join(pairs, "+")
 	}
 	return strings.Join(pairs, "+")
 }
 
-// ToParsedSearchRequest generates a search request from the query
-func (qb *QueryBuilder) ToParsedSearchRequest() *v1.ParsedSearchRequest {
-	parsedSearchRequest := &v1.ParsedSearchRequest{
-		StringQuery: qb.raw,
-		Fields:      make(map[string]*v1.ParsedSearchRequest_Values),
+// ProtoQuery generates a proto query from the query
+func (qb *QueryBuilder) ProtoQuery() *v1.Query {
+	queries := make([]*v1.Query, 0, len(qb.query))
+
+	// Sort the queries by field value, to ensure consistency of output.
+	fields := make([]string, 0, len(qb.query))
+	for field := range qb.query {
+		fields = append(fields, field)
 	}
-	for f, values := range qb.query {
-		parsedSearchRequest.Fields[f] = &v1.ParsedSearchRequest_Values{
-			Values: values,
-		}
+	sort.Strings(fields)
+
+	for _, field := range fields {
+		queries = append(queries, queryFromFieldValues(field, qb.query[field]))
 	}
-	return parsedSearchRequest
+
+	if qb.raw != "" {
+		queries = append(queries, stringQuery(qb.raw))
+	}
+	return ConjunctionQuery(queries...)
+}
+
+// EmptyQuery is a shortcut function to receive an empty query, to avoid requiring having to create an empty query builder.
+func EmptyQuery() *v1.Query {
+	return &v1.Query{}
 }

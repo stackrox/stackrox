@@ -17,7 +17,7 @@ type Indexer interface {
 	AddAlert(alert *v1.Alert) error
 	AddAlerts(alerts []*v1.Alert) error
 	DeleteAlert(id string) error
-	SearchAlerts(request *v1.ParsedSearchRequest) ([]search.Result, error)
+	SearchAlerts(q *v1.Query) ([]search.Result, error)
 }
 
 // New returns a new instance of Indexer using the bleve Index provided.

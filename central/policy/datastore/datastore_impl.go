@@ -14,13 +14,13 @@ type datastoreImpl struct {
 }
 
 // SearchPolicies
-func (ds *datastoreImpl) SearchPolicies(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
-	return ds.searcher.SearchPolicies(request)
+func (ds *datastoreImpl) SearchPolicies(q *v1.Query) ([]*v1.SearchResult, error) {
+	return ds.searcher.SearchPolicies(q)
 }
 
 // SearchRawPolicies
-func (ds *datastoreImpl) SearchRawPolicies(request *v1.ParsedSearchRequest) ([]*v1.Policy, error) {
-	return ds.searcher.SearchRawPolicies(request)
+func (ds *datastoreImpl) SearchRawPolicies(q *v1.Query) ([]*v1.Policy, error) {
+	return ds.searcher.SearchRawPolicies(q)
 }
 
 func (ds *datastoreImpl) GetPolicy(id string) (*v1.Policy, bool, error) {

@@ -54,10 +54,10 @@ func Singleton() Service {
 	return as
 }
 
-// ParsedSearchRequestHandler provides a function to take a search request and return search results.
-func ParsedSearchRequestHandler() func(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
+// QueryHandler provides a function to take a search request and return search results.
+func QueryHandler() func(q *v1.Query) ([]*v1.SearchResult, error) {
 	once.Do(initialize)
-	return func(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
-		return transform.ParsedSearchRequestWrapper{ParsedSearchRequest: request}.ToSearchResults(store.Singleton(), globalindex.GetGlobalIndex())
+	return func(q *v1.Query) ([]*v1.SearchResult, error) {
+		return transform.ProtoQueryWrapper{Query: q}.ToSearchResults(store.Singleton(), globalindex.GetGlobalIndex())
 	}
 }

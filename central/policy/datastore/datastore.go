@@ -9,8 +9,8 @@ import (
 
 // DataStore is an intermediary to PolicyStorage.
 type DataStore interface {
-	SearchPolicies(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)
-	SearchRawPolicies(request *v1.ParsedSearchRequest) ([]*v1.Policy, error)
+	SearchPolicies(q *v1.Query) ([]*v1.SearchResult, error)
+	SearchRawPolicies(q *v1.Query) ([]*v1.Policy, error)
 
 	GetPolicy(id string) (*v1.Policy, bool, error)
 	GetPolicies() ([]*v1.Policy, error)

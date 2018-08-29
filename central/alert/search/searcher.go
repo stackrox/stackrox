@@ -9,9 +9,9 @@ import (
 // Searcher provides search functionality on existing alerts
 //go:generate mockery -name=Searcher
 type Searcher interface {
-	SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)
-	SearchRawAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, error)
-	SearchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.ListAlert, error)
+	SearchAlerts(q *v1.Query) ([]*v1.SearchResult, error)
+	SearchRawAlerts(q *v1.Query) ([]*v1.Alert, error)
+	SearchListAlerts(q *v1.Query) ([]*v1.ListAlert, error)
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.

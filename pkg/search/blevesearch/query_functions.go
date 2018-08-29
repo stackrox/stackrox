@@ -33,34 +33,21 @@ func getWildcardQuery(field string) *query.WildcardQuery {
 	return wq
 }
 
-func evaluateQuery(category v1.SearchCategory, searchField *v1.SearchField, values []string) (query.Query, error) {
-	queryFunc, ok := datatypeToQueryFunc[searchField.GetType()]
-	if !ok {
-		return nil, fmt.Errorf("Query for type %s is not implemented", searchField.GetType())
+func matchFieldQuery(category v1.SearchCategory, searchField *v1.SearchField, value string) (query.Query, error) {
+	// Special case: null
+	if value == nullString {
+		bq := bleve.NewBooleanQuery()
+		bq.AddMustNot(getWildcardQuery(searchField.GetFieldPath()))
+		bq.AddMust(typeQuery(category))
+		return bq, nil
 	}
 
-	d := bleve.NewDisjunctionQuery()
-	for _, val := range values {
-		// Special case: null
-		if val == nullString {
-			bq := bleve.NewBooleanQuery()
-			bq.AddMustNot(getWildcardQuery(searchField.GetFieldPath()))
-			bq.AddMust(typeQuery(category))
-			d.AddQuery(bq)
-			continue
-		}
-		q, err := queryFunc(category, searchField.GetFieldPath(), val)
-		if err != nil {
-			return nil, err
-		}
-		d.AddQuery(q)
-	}
-	return d, nil
+	return datatypeToQueryFunc[searchField.GetType()](category, searchField.GetFieldPath(), value)
 }
 
 func newStringQuery(category v1.SearchCategory, field string, value string) (query.Query, error) {
 	if len(value) == 0 {
-		return nil, fmt.Errorf("Value in search query cannot be empty")
+		return nil, fmt.Errorf("value in search query cannot be empty")
 	}
 	switch {
 	case strings.HasPrefix(value, negationPrefix) && len(value) > 1:
@@ -150,4 +137,10 @@ func newEnforcementQuery(_ v1.SearchCategory, field string, value string) (query
 		return nil, err
 	}
 	return createNumericQuery(field, "=", floatPtr(float64(en))), nil
+}
+
+func typeQuery(category v1.SearchCategory) query.Query {
+	q := bleve.NewMatchQuery(category.String())
+	q.SetField("type")
+	return q
 }

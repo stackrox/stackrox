@@ -11,13 +11,13 @@ type Searcher struct {
 	mock.Mock
 }
 
-// SearchAlerts provides a mock function with given fields: request
-func (_m *Searcher) SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
-	ret := _m.Called(request)
+// SearchAlerts provides a mock function with given fields: q
+func (_m *Searcher) SearchAlerts(q *v1.Query) ([]*v1.SearchResult, error) {
+	ret := _m.Called(q)
 
 	var r0 []*v1.SearchResult
-	if rf, ok := ret.Get(0).(func(*v1.ParsedSearchRequest) []*v1.SearchResult); ok {
-		r0 = rf(request)
+	if rf, ok := ret.Get(0).(func(*v1.Query) []*v1.SearchResult); ok {
+		r0 = rf(q)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*v1.SearchResult)
@@ -25,8 +25,8 @@ func (_m *Searcher) SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.SearchR
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*v1.ParsedSearchRequest) error); ok {
-		r1 = rf(request)
+	if rf, ok := ret.Get(1).(func(*v1.Query) error); ok {
+		r1 = rf(q)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -34,13 +34,13 @@ func (_m *Searcher) SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.SearchR
 	return r0, r1
 }
 
-// SearchListAlerts provides a mock function with given fields: request
-func (_m *Searcher) SearchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.ListAlert, error) {
-	ret := _m.Called(request)
+// SearchListAlerts provides a mock function with given fields: q
+func (_m *Searcher) SearchListAlerts(q *v1.Query) ([]*v1.ListAlert, error) {
+	ret := _m.Called(q)
 
 	var r0 []*v1.ListAlert
-	if rf, ok := ret.Get(0).(func(*v1.ParsedSearchRequest) []*v1.ListAlert); ok {
-		r0 = rf(request)
+	if rf, ok := ret.Get(0).(func(*v1.Query) []*v1.ListAlert); ok {
+		r0 = rf(q)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*v1.ListAlert)
@@ -48,8 +48,8 @@ func (_m *Searcher) SearchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.Lis
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*v1.ParsedSearchRequest) error); ok {
-		r1 = rf(request)
+	if rf, ok := ret.Get(1).(func(*v1.Query) error); ok {
+		r1 = rf(q)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -57,13 +57,13 @@ func (_m *Searcher) SearchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.Lis
 	return r0, r1
 }
 
-// SearchRawAlerts provides a mock function with given fields: request
-func (_m *Searcher) SearchRawAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, error) {
-	ret := _m.Called(request)
+// SearchRawAlerts provides a mock function with given fields: q
+func (_m *Searcher) SearchRawAlerts(q *v1.Query) ([]*v1.Alert, error) {
+	ret := _m.Called(q)
 
 	var r0 []*v1.Alert
-	if rf, ok := ret.Get(0).(func(*v1.ParsedSearchRequest) []*v1.Alert); ok {
-		r0 = rf(request)
+	if rf, ok := ret.Get(0).(func(*v1.Query) []*v1.Alert); ok {
+		r0 = rf(q)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*v1.Alert)
@@ -71,8 +71,8 @@ func (_m *Searcher) SearchRawAlerts(request *v1.ParsedSearchRequest) ([]*v1.Aler
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*v1.ParsedSearchRequest) error); ok {
-		r1 = rf(request)
+	if rf, ok := ret.Get(1).(func(*v1.Query) error); ok {
+		r1 = rf(q)
 	} else {
 		r1 = ret.Error(1)
 	}

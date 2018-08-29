@@ -1,7 +1,7 @@
 package getters
 
 import (
-	"fmt"
+	"strconv"
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
@@ -15,23 +15,24 @@ type MockAlertsGetter struct {
 // ListAlerts supports a limited set of request parameters.
 // It only needs to be as specific as the production code.
 func (m MockAlertsGetter) ListAlerts(req *v1.ListAlertsRequest) (alerts []*v1.ListAlert, err error) {
-	parsedRequest, err := search.ParseRawQuery(req.GetQuery())
+	q, err := search.ParseRawQuery(req.GetQuery())
 	if err != nil {
 		return nil, err
 	}
 
-	for _, a := range m.Alerts {
-		match := true
-		staleValues := parsedRequest.Fields[search.Stale].GetValues()
-		if len(staleValues) != 0 {
-			match = false
-			for _, v := range staleValues {
-				if fmt.Sprintf("%t", a.Stale) == v {
-					match = true
-				}
+	var staleValue bool
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if ok && mfQ.MatchFieldQuery.GetField() == search.Stale {
+			staleValue, err = strconv.ParseBool(mfQ.MatchFieldQuery.GetValue())
+			if err != nil {
+				panic(err)
 			}
 		}
-		if match {
+	})
+
+	for _, a := range m.Alerts {
+		if a.GetStale() == staleValue {
 			alerts = append(alerts, a)
 		}
 	}

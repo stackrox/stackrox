@@ -46,13 +46,40 @@ message SearchField {
     SearchCategory category = 5;
 }
 
-message ParsedSearchRequest {
-    repeated SearchCategory   categories   = 1;
-    message Values {
-        repeated string values  = 1;
+message Query {
+    oneof query {
+        ConjunctionQuery conjunction = 1;
+        DisjunctionQuery disjunction = 2;
+        BaseQuery        base_query  = 3;
     }
-    map<string, Values>       fields       = 3;
-    string                    string_query = 4;
+}
+
+// StringQuery represents a query that matches documents that contain the
+// query text in _any_ of their fields.
+message StringQuery {
+    string query = 1;
+}
+
+// MatchFieldQuery represents a query that matches documents containing the
+// query text in the provided field.
+message MatchFieldQuery {
+    string field = 1;
+    string value = 2;
+}
+
+message BaseQuery {
+    oneof query {
+        StringQuery string_query = 1;
+        MatchFieldQuery match_field_query = 2;
+    }
+}
+
+message ConjunctionQuery {
+    repeated Query queries = 1;
+}
+
+message DisjunctionQuery {
+    repeated Query queries = 1;
 }
 
 message SearchResult {

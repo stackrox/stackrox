@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -40,11 +39,12 @@ func (d *dnrIntegrationImpl) initialize(requiredPreventClusterIDs []string) erro
 	// To get the D&R cluster id corresponding to a Prevent cluster, we look for stackrox/collector deployments
 	// in that cluster, and inspect its environment for the ROX_CLUSTER_ID value.
 	for _, preventClusterID := range requiredPreventClusterIDs {
-		deployments, err := d.deploymentStore.SearchRawDeployments(&v1.ParsedSearchRequest{Fields: map[string]*v1.ParsedSearchRequest_Values{
-			search.ClusterID:      {Values: []string{preventClusterID}},
-			search.DeploymentName: {Values: []string{"collector"}},
-			search.Namespace:      {Values: []string{"stackrox"}},
-		}})
+		q := search.NewQueryBuilder().
+			AddStrings(search.ClusterID, preventClusterID).
+			AddStrings(search.DeploymentName, "collector").
+			AddStrings(search.Namespace, "stackrox").
+			ProtoQuery()
+		deployments, err := d.deploymentStore.SearchRawDeployments(q)
 		if err != nil {
 			return fmt.Errorf("couldn't search for collector deployments in cluster '%s': %s", preventClusterID, err)
 		}

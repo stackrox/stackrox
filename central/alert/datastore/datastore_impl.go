@@ -20,17 +20,22 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (ds *datastoreImpl) SearchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.ListAlert, error) {
-	return ds.searcher.SearchListAlerts(request)
+func (ds *datastoreImpl) SearchListAlerts(q *v1.Query) ([]*v1.ListAlert, error) {
+	return ds.searcher.SearchListAlerts(q)
 }
 
 func (ds *datastoreImpl) ListAlerts(request *v1.ListAlertsRequest) ([]*v1.ListAlert, error) {
-	query, err := parsedSearchRequestFrom(request)
-	if err != nil {
-		return nil, err
+	var q *v1.Query
+	if request.GetQuery() == "" {
+		q = searchCommon.EmptyQuery()
+	} else {
+		var err error
+		q, err = searchCommon.ParseRawQuery(request.GetQuery())
+		if err != nil {
+			return nil, err
+		}
 	}
-
-	alerts, err := ds.SearchListAlerts(query)
+	alerts, err := ds.SearchListAlerts(q)
 	if err != nil {
 		return nil, err
 	}
@@ -45,23 +50,14 @@ func (ds *datastoreImpl) ListAlerts(request *v1.ListAlertsRequest) ([]*v1.ListAl
 	return alerts, nil
 }
 
-func parsedSearchRequestFrom(request *v1.ListAlertsRequest) (query *v1.ParsedSearchRequest, err error) {
-	if request.GetQuery() == "" {
-		query = &v1.ParsedSearchRequest{}
-	} else {
-		query, err = searchCommon.ParseRawQuery(request.GetQuery())
-	}
-	return
-}
-
 // SearchAlerts returns search results for the given request.
-func (ds *datastoreImpl) SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
-	return ds.searcher.SearchAlerts(request)
+func (ds *datastoreImpl) SearchAlerts(q *v1.Query) ([]*v1.SearchResult, error) {
+	return ds.searcher.SearchAlerts(q)
 }
 
 // SearchRawAlerts returns search results for the given request in the form of a slice of alerts.
-func (ds *datastoreImpl) SearchRawAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, error) {
-	return ds.searcher.SearchRawAlerts(request)
+func (ds *datastoreImpl) SearchRawAlerts(q *v1.Query) ([]*v1.Alert, error) {
+	return ds.searcher.SearchRawAlerts(q)
 }
 
 // GetAlert returns an alert by id.
@@ -71,10 +67,7 @@ func (ds *datastoreImpl) GetAlert(id string) (*v1.Alert, bool, error) {
 
 // CountAlerts returns the number of alerts that are active
 func (ds *datastoreImpl) CountAlerts() (int, error) {
-	alerts, err := ds.searcher.SearchListAlerts(
-		searchCommon.NewQueryBuilder().
-			AddBools(searchCommon.Stale, false).
-			ToParsedSearchRequest())
+	alerts, err := ds.searcher.SearchListAlerts(searchCommon.NewQueryBuilder().AddBools(searchCommon.Stale, false).ProtoQuery())
 	return len(alerts), err
 }
 
@@ -100,7 +93,7 @@ func (ds *datastoreImpl) MarkAlertStale(id string) error {
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("Alert with id '%s' does not exist", id)
+		return fmt.Errorf("alert with id '%s' does not exist", id)
 	}
 	alert.Stale = true
 	alert.MarkedStale = types.TimestampNow()

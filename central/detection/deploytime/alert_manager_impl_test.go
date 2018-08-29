@@ -32,14 +32,37 @@ func (suite *AlertManagerTestSuite) SetupTest() {
 	suite.alertManager = NewAlertManager(suite.notifierMock, suite.alertsMock)
 }
 
+// Returns a function that can be used to match *v1.Query,
+// which ensure that the query specifies all the fields.
+func queryHasFields(fields ...string) func(interface{}) bool {
+	return func(in interface{}) bool {
+		q := in.(*v1.Query)
+
+		fieldsFound := make([]bool, len(fields))
+		search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+			mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+			if !ok {
+				return
+			}
+			for i, field := range fields {
+				if mfQ.MatchFieldQuery.GetField() == field {
+					fieldsFound[i] = true
+				}
+			}
+		})
+
+		for _, found := range fieldsFound {
+			if !found {
+				return false
+			}
+		}
+		return true
+	}
+}
+
 func (suite *AlertManagerTestSuite) TestGetAlertsByPolicy() {
 	// PolicyUpsert side effects. We won't have any deployments or alerts yet.
-	suite.alertsMock.On("SearchRawAlerts", mock.MatchedBy(func(in interface{}) bool {
-		psr := in.(*v1.ParsedSearchRequest)
-		_, hasStale := psr.Fields[search.Stale]
-		_, hasPid := psr.Fields[search.PolicyID]
-		return hasStale && hasPid
-	})).Return(([]*v1.Alert)(nil), nil)
+	suite.alertsMock.On("SearchRawAlerts", mock.MatchedBy(queryHasFields(search.Stale, search.PolicyID))).Return(([]*v1.Alert)(nil), nil)
 
 	_, err := suite.alertManager.GetAlertsByPolicy("pid")
 	suite.NoError(err, "update should succeed")
@@ -50,12 +73,7 @@ func (suite *AlertManagerTestSuite) TestGetAlertsByPolicy() {
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
 	// PolicyUpsert side effects. We won't have any deployments or alerts yet.
-	suite.alertsMock.On("SearchRawAlerts", mock.MatchedBy(func(in interface{}) bool {
-		psr := in.(*v1.ParsedSearchRequest)
-		_, hasStale := psr.Fields[search.Stale]
-		_, hasPid := psr.Fields[search.DeploymentID]
-		return hasStale && hasPid
-	})).Return(([]*v1.Alert)(nil), nil)
+	suite.alertsMock.On("SearchRawAlerts", mock.MatchedBy(queryHasFields(search.Stale, search.DeploymentID))).Return(([]*v1.Alert)(nil), nil)
 
 	_, err := suite.alertManager.GetAlertsByDeployment("did")
 	suite.NoError(err, "update should succeed")

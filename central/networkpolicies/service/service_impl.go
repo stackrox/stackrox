@@ -147,24 +147,17 @@ func (s *serviceImpl) getNetworkPolicies(cluster *v1.Cluster) (networkPolicies [
 }
 
 func (s *serviceImpl) getDeployments(cluster *v1.Cluster, query string) (deployments []*v1.Deployment, err error) {
-	parsedSearch := new(v1.ParsedSearchRequest)
+	var q *v1.Query
 	if query != "" {
-		parsedSearch, err = search.ParseRawQuery(query)
+		q, err = search.ParseRawQuery(query)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
+	} else {
+		q = search.EmptyQuery()
 	}
 
-	fields := parsedSearch.GetFields()
-	if fields == nil {
-		fields = make(map[string]*v1.ParsedSearchRequest_Values, 0)
-	}
-	fields[search.ClusterID] = &v1.ParsedSearchRequest_Values{Values: []string{cluster.GetId()}}
-	if parsedSearch == nil {
-		parsedSearch = &v1.ParsedSearchRequest{}
-	}
-	parsedSearch.Fields = fields
-
-	deployments, err = s.deployments.SearchRawDeployments(parsedSearch)
+	q = search.ConjunctionQuery(q, search.NewQueryBuilder().AddStrings(search.ClusterID, cluster.GetId()).ProtoQuery())
+	deployments, err = s.deployments.SearchRawDeployments(q)
 	return
 }

@@ -22,14 +22,14 @@ func (ds *searcherImpl) buildIndex() error {
 }
 
 // SearchRawPolicies retrieves Policies from the indexer and storage
-func (ds *searcherImpl) SearchRawPolicies(request *v1.ParsedSearchRequest) ([]*v1.Policy, error) {
-	policies, _, err := ds.searchPolicies(request)
+func (ds *searcherImpl) SearchRawPolicies(q *v1.Query) ([]*v1.Policy, error) {
+	policies, _, err := ds.searchPolicies(q)
 	return policies, err
 }
 
 // SearchPolicies retrieves SearchResults from the indexer and storage
-func (ds *searcherImpl) SearchPolicies(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
-	policies, results, err := ds.searchPolicies(request)
+func (ds *searcherImpl) SearchPolicies(q *v1.Query) ([]*v1.SearchResult, error) {
+	policies, results, err := ds.searchPolicies(q)
 	if err != nil {
 		return nil, err
 	}
@@ -40,8 +40,8 @@ func (ds *searcherImpl) SearchPolicies(request *v1.ParsedSearchRequest) ([]*v1.S
 	return protoResults, nil
 }
 
-func (ds *searcherImpl) searchPolicies(request *v1.ParsedSearchRequest) ([]*v1.Policy, []search.Result, error) {
-	results, err := ds.indexer.SearchPolicies(request)
+func (ds *searcherImpl) searchPolicies(q *v1.Query) ([]*v1.Policy, []search.Result, error) {
+	results, err := ds.indexer.SearchPolicies(q)
 	if err != nil {
 		return nil, nil, err
 	}

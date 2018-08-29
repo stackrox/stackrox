@@ -25,8 +25,8 @@ func (ds *searcherImpl) buildIndex() error {
 }
 
 // SearchRawDeployments retrieves deployments from the indexer and storage
-func (ds *searcherImpl) SearchRawDeployments(request *v1.ParsedSearchRequest) ([]*v1.Deployment, error) {
-	deployments, err := ds.searchDeployments(request)
+func (ds *searcherImpl) SearchRawDeployments(q *v1.Query) ([]*v1.Deployment, error) {
+	deployments, err := ds.searchDeployments(q)
 	if err != nil {
 		return nil, err
 	}
@@ -34,16 +34,16 @@ func (ds *searcherImpl) SearchRawDeployments(request *v1.ParsedSearchRequest) ([
 }
 
 // SearchRawDeployments retrieves deployments from the indexer and storage
-func (ds *searcherImpl) SearchListDeployments(request *v1.ParsedSearchRequest) ([]*v1.ListDeployment, error) {
-	deployments, _, err := ds.searchListDeployments(request)
+func (ds *searcherImpl) SearchListDeployments(q *v1.Query) ([]*v1.ListDeployment, error) {
+	deployments, _, err := ds.searchListDeployments(q)
 	if err != nil {
 		return nil, err
 	}
 	return deployments, err
 }
 
-func (ds *searcherImpl) searchListDeployments(request *v1.ParsedSearchRequest) ([]*v1.ListDeployment, []search.Result, error) {
-	results, err := ds.indexer.SearchDeployments(request)
+func (ds *searcherImpl) searchListDeployments(q *v1.Query) ([]*v1.ListDeployment, []search.Result, error) {
+	results, err := ds.indexer.SearchDeployments(q)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -65,8 +65,8 @@ func (ds *searcherImpl) searchListDeployments(request *v1.ParsedSearchRequest) (
 }
 
 // SearchDeployments retrieves SearchResults from the indexer and storage
-func (ds *searcherImpl) SearchDeployments(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
-	deployments, results, err := ds.searchListDeployments(request)
+func (ds *searcherImpl) SearchDeployments(q *v1.Query) ([]*v1.SearchResult, error) {
+	deployments, results, err := ds.searchListDeployments(q)
 	if err != nil {
 		return nil, err
 	}
@@ -77,8 +77,8 @@ func (ds *searcherImpl) SearchDeployments(request *v1.ParsedSearchRequest) ([]*v
 	return protoResults, nil
 }
 
-func (ds *searcherImpl) searchDeployments(request *v1.ParsedSearchRequest) ([]*v1.Deployment, error) {
-	results, err := ds.indexer.SearchDeployments(request)
+func (ds *searcherImpl) searchDeployments(q *v1.Query) ([]*v1.Deployment, error) {
+	results, err := ds.indexer.SearchDeployments(q)
 	if err != nil {
 		return nil, err
 	}

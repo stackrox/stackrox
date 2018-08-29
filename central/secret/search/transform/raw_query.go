@@ -32,15 +32,15 @@ func (r RawQueryWrapper) ToRelationships(storage store.Store, index bleve.Index)
 
 // ToResults returns the results that match the raw query.
 func (r RawQueryWrapper) ToResults(index bleve.Index) ([]search.Result, error) {
-	psr, err := r.ToParsedSearchRequest()
+	psr, err := r.ToProtoQuery()
 	if err != nil {
 		return nil, err
 	}
-	return ParsedSearchRequestWrapper{ParsedSearchRequest: psr}.ToResults(index)
+	return ProtoQueryWrapper{Query: psr}.ToResults(index)
 }
 
-// ToParsedSearchRequest converts a raw query to a parsed search request.
-func (r RawQueryWrapper) ToParsedSearchRequest() (*v1.ParsedSearchRequest, error) {
+// ToProtoQuery converts a raw query to a proto query.
+func (r RawQueryWrapper) ToProtoQuery() (*v1.Query, error) {
 	if r.GetQuery() != "" {
 		return search.ParseRawQuery(r.GetQuery())
 	}

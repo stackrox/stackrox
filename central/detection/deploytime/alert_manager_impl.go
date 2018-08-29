@@ -20,7 +20,7 @@ func (d *alertManagerImpl) GetAlertsByPolicy(policyID string) ([]*v1.Alert, erro
 		AddBools(search.Stale, false).
 		AddStrings(search.PolicyID, policyID)
 
-	return d.alerts.SearchRawAlerts(qb.ToParsedSearchRequest())
+	return d.alerts.SearchRawAlerts(qb.ProtoQuery())
 }
 
 // GetAlertsByDeployment get all of the alerts that match the deployment
@@ -29,7 +29,7 @@ func (d *alertManagerImpl) GetAlertsByDeployment(deploymentID string) ([]*v1.Ale
 		AddBools(search.Stale, false).
 		AddStrings(search.DeploymentID, deploymentID)
 
-	return d.alerts.SearchRawAlerts(qb.ToParsedSearchRequest())
+	return d.alerts.SearchRawAlerts(qb.ProtoQuery())
 }
 
 // AlertAndNotify inserts and notifies of any new alerts (alerts in current but not in previous) deduplicated and

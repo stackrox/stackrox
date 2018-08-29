@@ -12,6 +12,11 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	fakeID   = "FAKEID"
+	fakeName = "FAKENAME"
+)
+
 func TestDeploymentIndex(t *testing.T) {
 	suite.Run(t, new(DeploymentIndexTestSuite))
 }
@@ -33,6 +38,7 @@ func (suite *DeploymentIndexTestSuite) SetupSuite() {
 
 	deployment := fixtures.GetDeployment()
 	suite.NoError(suite.indexer.AddDeployment(deployment))
+	suite.NoError(suite.indexer.AddDeployment(&v1.Deployment{Id: fakeID, Name: fakeName}))
 
 	imageIndexer := index.New(tmpIndex)
 	imageIndexer.AddImage(fixtures.GetImage())
@@ -43,66 +49,56 @@ func (suite *DeploymentIndexTestSuite) TeardownSuite() {
 }
 
 func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
-	results, err := suite.indexer.SearchDeployments(&v1.ParsedSearchRequest{
-		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			search.DeploymentName: {
-				Values: []string{"nginx"},
-			},
+	cases := []struct {
+		fieldValues map[string]string
+		expectedIDs []string
+	}{
+		{
+			fieldValues: map[string]string{search.DeploymentName: "nginx"},
+			expectedIDs: []string{fixtures.GetDeployment().GetId()},
 		},
-	})
-	suite.NoError(err)
-	suite.Len(results, 1)
+		{
+			fieldValues: map[string]string{search.DeploymentName: "!nginx"},
+			expectedIDs: []string{fakeID},
+		},
+		{
+			fieldValues: map[string]string{search.Label: "com.docker.stack.namespace=prevent"},
+			expectedIDs: []string{fixtures.GetDeployment().GetId()},
+		},
+		{
+			fieldValues: map[string]string{search.DeploymentName: "!nginx", search.Label: "com.docker.stack.namespace=prevent"},
+			expectedIDs: []string{},
+		},
+		{
+			fieldValues: map[string]string{search.DeploymentName: "!nomatch", search.Label: "com.docker.stack.namespace=/.*"},
+			expectedIDs: []string{fixtures.GetDeployment().GetId()},
+		},
+		{
+			fieldValues: map[string]string{search.DeploymentName: "!nomatch"},
+			expectedIDs: []string{fixtures.GetDeployment().GetId(), fakeID},
+		},
+		{
+			fieldValues: map[string]string{search.DeploymentName: "!nomatch", search.ImageRegistry: "stackrox"},
+			expectedIDs: []string{fixtures.GetDeployment().GetId()},
+		},
+		{
+			fieldValues: map[string]string{search.DeploymentName: "!nomatch", search.ImageRegistry: "nonexistent"},
+			expectedIDs: []string{},
+		},
+	}
 
-	results, err = suite.indexer.SearchDeployments(&v1.ParsedSearchRequest{
-		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			search.DeploymentName: {
-				Values: []string{"!nginx"},
-			},
-		},
-	})
-	suite.NoError(err)
-	suite.Len(results, 0)
+	for _, c := range cases {
+		qb := search.NewQueryBuilder()
+		for field, value := range c.fieldValues {
+			qb.AddStrings(field, value)
+		}
+		results, err := suite.indexer.SearchDeployments(qb.ProtoQuery())
+		suite.NoError(err)
 
-	results, err = suite.indexer.SearchDeployments(&v1.ParsedSearchRequest{
-		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			search.DeploymentName: {
-				Values: []string{"!nomatch"},
-			},
-			search.Label: {
-				Values: []string{
-					"com.docker.stack.namespace=prevent",
-				},
-			},
-		},
-	})
-	suite.NoError(err)
-	suite.Len(results, 1)
-
-	results, err = suite.indexer.SearchDeployments(&v1.ParsedSearchRequest{
-		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			search.DeploymentName: {
-				Values: []string{"!nomatch"},
-			},
-			search.Label: {
-				Values: []string{
-					"com.docker.stack.namespace=/.*",
-				},
-			},
-		},
-	})
-	suite.NoError(err)
-	suite.Len(results, 1)
-
-	results, err = suite.indexer.SearchDeployments(&v1.ParsedSearchRequest{
-		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			search.DeploymentName: {
-				Values: []string{"!nomatch"},
-			},
-			search.ImageRegistry: {
-				Values: []string{"stackrox"},
-			},
-		},
-	})
-	suite.NoError(err)
-	suite.Len(results, 1)
+		resultIDs := make([]string, 0, len(results))
+		for _, r := range results {
+			resultIDs = append(resultIDs, r.ID)
+		}
+		suite.ElementsMatch(resultIDs, c.expectedIDs, "Failed test case %#v", c)
+	}
 }

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/alert/index/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -44,17 +43,24 @@ func (b *indexerImpl) DeleteAlert(id string) error {
 }
 
 // SearchAlerts takes a SearchRequest and finds any matches
-func (b *indexerImpl) SearchAlerts(request *v1.ParsedSearchRequest) ([]search.Result, error) {
+func (b *indexerImpl) SearchAlerts(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Alert")
-	request = proto.Clone(request).(*v1.ParsedSearchRequest)
-	if request.Fields == nil {
-		request.Fields = make(map[string]*v1.ParsedSearchRequest_Values)
-	}
-	if values, ok := request.Fields[search.Stale]; !ok || len(values.Values) == 0 {
-		request.Fields[search.Stale] = &v1.ParsedSearchRequest_Values{
-			Values: []string{"false"},
+
+	var querySpecifiesStaleField bool
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
 		}
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.Stale {
+			querySpecifiesStaleField = true
+		}
+	})
+
+	// By default, set stale to false.
+	if !querySpecifiesStaleField {
+		q = search.ConjunctionQuery(q, search.NewQueryBuilder().AddBools(search.Stale, false).ProtoQuery())
 	}
 
-	return blevesearch.RunSearchRequest(v1.SearchCategory_ALERTS, request, b.index, mappings.OptionsMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_ALERTS, q, b.index, mappings.OptionsMap)
 }

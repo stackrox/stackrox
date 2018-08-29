@@ -22,3 +22,10 @@ func GetAlert() *v1.Alert {
 		Deployment: GetDeployment(),
 	}
 }
+
+// GetAlertWithID returns a mock alert with the specified id.
+func GetAlertWithID(id string) *v1.Alert {
+	alert := GetAlert()
+	alert.Id = id
+	return alert
+}

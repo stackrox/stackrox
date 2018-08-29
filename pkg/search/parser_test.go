@@ -1,6 +1,7 @@
 package search
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
@@ -8,36 +9,83 @@ import (
 )
 
 func TestParseRawQuery(t *testing.T) {
-	query := NewQueryBuilder().AddStrings(DeploymentName, "field1", "field12").AddStrings(Category, "field2").Query()
-	expectedRequest := &v1.ParsedSearchRequest{
-		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			DeploymentName: {
-				Values: []string{"field1", "field12"},
+	query := fmt.Sprintf("%s:field1,field12+%s:field2", DeploymentName, Category)
+	expectedQuery := &v1.Query{
+		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+			Queries: []*v1.Query{
+				{Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
+					Queries: []*v1.Query{
+						{Query: &v1.Query_BaseQuery{
+							BaseQuery: &v1.BaseQuery{
+								Query: &v1.BaseQuery_MatchFieldQuery{
+									MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName, Value: "field1"},
+								},
+							},
+						}},
+						{Query: &v1.Query_BaseQuery{
+							BaseQuery: &v1.BaseQuery{
+								Query: &v1.BaseQuery_MatchFieldQuery{
+									MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName, Value: "field12"},
+								},
+							},
+						}},
+					},
+				}}},
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: Category, Value: "field2"},
+						},
+					},
+				}},
 			},
-			Category: {
-				Values: []string{"field2"},
-			},
-		},
+		}},
 	}
-
-	actualRequest, err := ParseRawQuery(query)
+	actualQuery, err := ParseRawQuery(query)
 	assert.NoError(t, err)
-	assert.Equal(t, expectedRequest, actualRequest)
+	assert.Equal(t, expectedQuery, actualQuery)
 
-	// fields with raw query
-	query = NewQueryBuilder().AddStrings(DeploymentName, "field1").AddStrings(Category, "field2").AddStringQuery("rawquery").Query()
-	expectedRequest = &v1.ParsedSearchRequest{
-		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			DeploymentName: {
-				Values: []string{"field1"},
+	query = fmt.Sprintf("%s:field1,field12 + Has:rawstuff+ %s:field2", DeploymentName, Category)
+
+	expectedQuery = &v1.Query{
+		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+			Queries: []*v1.Query{
+				{Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
+					Queries: []*v1.Query{
+						{Query: &v1.Query_BaseQuery{
+							BaseQuery: &v1.BaseQuery{
+								Query: &v1.BaseQuery_MatchFieldQuery{
+									MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName, Value: "field1"},
+								},
+							},
+						}},
+						{Query: &v1.Query_BaseQuery{
+							BaseQuery: &v1.BaseQuery{
+								Query: &v1.BaseQuery_MatchFieldQuery{
+									MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName, Value: "field12"},
+								},
+							},
+						}},
+					},
+				}}},
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_StringQuery{
+							StringQuery: &v1.StringQuery{Query: "rawstuff"},
+						},
+					},
+				}},
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: Category, Value: "field2"},
+						},
+					},
+				}},
 			},
-			Category: {
-				Values: []string{"field2"},
-			},
-		},
-		StringQuery: "rawquery",
+		}},
 	}
-	actualRequest, err = ParseRawQuery(query)
+	actualQuery, err = ParseRawQuery(query)
 	assert.NoError(t, err)
-	assert.Equal(t, expectedRequest, actualRequest)
+	assert.Equal(t, expectedQuery, actualQuery)
 }

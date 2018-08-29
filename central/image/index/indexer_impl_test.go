@@ -6,10 +6,13 @@ import (
 	"github.com/blevesearch/bleve"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+)
+
+const (
+	fakeClusterName = "FAKE CLUSTER NAME"
 )
 
 func TestImageIndex(t *testing.T) {
@@ -36,8 +39,20 @@ func (suite *ImageIndexTestSuite) SetupSuite() {
 
 	suite.NoError(suite.deploymentIndexer.AddDeployment(fixtures.GetDeployment()))
 
-	for _, c := range fixtures.GetAlert().GetDeployment().GetContainers() {
-		suite.indexer.AddImage(c.GetImage())
+	// The following is tightly coupled to the fixtures.GetDeployment() object having
+	// two containers, the first with docker.io as the registry and the second with stackrox.io.
+	// If you change the fixtures, the tests below will break!
+	secondDeployment := fixtures.GetDeployment()
+	secondDeployment.Id = "FAKESECONDID"
+	secondDeployment.ClusterName = fakeClusterName
+	secondDeployment.Containers = fixtures.GetDeployment().GetContainers()[:1]
+	secondDeployment.Containers[0].Image.Name.Sha = "FAKENEWSHA"
+
+	suite.NoError(suite.deploymentIndexer.AddDeployment(secondDeployment))
+	suite.NoError(suite.indexer.AddImage(secondDeployment.GetContainers()[0].GetImage()))
+
+	for _, c := range fixtures.GetDeployment().GetContainers() {
+		suite.NoError(suite.indexer.AddImage(c.GetImage()))
 	}
 }
 
@@ -46,45 +61,26 @@ func (suite *ImageIndexTestSuite) TeardownSuite() {
 }
 
 func (suite *ImageIndexTestSuite) TestSearchImages() {
-	// Test just cluster -> should give all images
-	request := &v1.ParsedSearchRequest{
-		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			search.Cluster: {
-				Values: []string{"prod cluster"},
-			},
-		},
-	}
+	// No filter on either => should return everything.
+	results, err := suite.indexer.SearchImages(search.EmptyQuery())
+	suite.NoError(err)
+	suite.Len(results, 3)
 
-	results, err := suite.indexer.SearchImages(request)
+	// Filter on a deployment property.
+	q := search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster").ProtoQuery()
+	results, err = suite.indexer.SearchImages(q)
 	suite.NoError(err)
 	suite.Len(results, 2)
 
-	// Test both scopes and fields defined
-	request = &v1.ParsedSearchRequest{
-		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			search.Cluster: {
-				Values: []string{"prod cluster"},
-			},
-			search.ImageRegistry: {
-				Values: []string{"stackrox.io"},
-			},
-		},
-	}
-
-	results, err = suite.indexer.SearchImages(request)
+	// Filter on both deployment and image properties => should return intersection.
+	q = search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster").AddStrings(search.ImageRegistry, "docker.io").ProtoQuery()
+	results, err = suite.indexer.SearchImages(q)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
-	// Test only fields defined
-	request = &v1.ParsedSearchRequest{
-		Fields: map[string]*v1.ParsedSearchRequest_Values{
-			search.ImageRegistry: {
-				Values: []string{"stackrox.io"},
-			},
-		},
-	}
-
-	results, err = suite.indexer.SearchImages(request)
+	// Filter on only image properties => should work as expected.
+	q = search.NewQueryBuilder().AddStrings(search.ImageRegistry, "docker.io").ProtoQuery()
+	results, err = suite.indexer.SearchImages(q)
 	suite.NoError(err)
-	suite.Len(results, 1)
+	suite.Len(results, 2)
 }

@@ -17,8 +17,8 @@ func (ds *datastoreImpl) ListDeployment(id string) (*v1.ListDeployment, bool, er
 	return ds.storage.ListDeployment(id)
 }
 
-func (ds *datastoreImpl) SearchListDeployments(request *v1.ParsedSearchRequest) ([]*v1.ListDeployment, error) {
-	return ds.searcher.SearchListDeployments(request)
+func (ds *datastoreImpl) SearchListDeployments(q *v1.Query) ([]*v1.ListDeployment, error) {
+	return ds.searcher.SearchListDeployments(q)
 }
 
 // ListDeployments returns all deployments in their minimal form
@@ -27,13 +27,13 @@ func (ds *datastoreImpl) ListDeployments() ([]*v1.ListDeployment, error) {
 }
 
 // SearchDeployments
-func (ds *datastoreImpl) SearchDeployments(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
-	return ds.searcher.SearchDeployments(request)
+func (ds *datastoreImpl) SearchDeployments(q *v1.Query) ([]*v1.SearchResult, error) {
+	return ds.searcher.SearchDeployments(q)
 }
 
 // SearchRawDeployments
-func (ds *datastoreImpl) SearchRawDeployments(request *v1.ParsedSearchRequest) ([]*v1.Deployment, error) {
-	return ds.searcher.SearchRawDeployments(request)
+func (ds *datastoreImpl) SearchRawDeployments(q *v1.Query) ([]*v1.Deployment, error) {
+	return ds.searcher.SearchRawDeployments(q)
 }
 
 // GetDeployment

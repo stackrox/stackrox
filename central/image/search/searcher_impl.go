@@ -23,8 +23,8 @@ func (ds *searcherImpl) buildIndex() error {
 }
 
 // SearchImages retrieves SearchResults from the indexer and storage
-func (ds *searcherImpl) SearchImages(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
-	images, results, err := ds.searchImages(request)
+func (ds *searcherImpl) SearchImages(q *v1.Query) ([]*v1.SearchResult, error) {
+	images, results, err := ds.searchImages(q)
 	if err != nil {
 		return nil, err
 	}
@@ -35,14 +35,14 @@ func (ds *searcherImpl) SearchImages(request *v1.ParsedSearchRequest) ([]*v1.Sea
 	return protoResults, nil
 }
 
-func (ds *searcherImpl) SearchListImages(request *v1.ParsedSearchRequest) ([]*v1.ListImage, error) {
-	images, _, err := ds.searchImages(request)
+func (ds *searcherImpl) SearchListImages(q *v1.Query) ([]*v1.ListImage, error) {
+	images, _, err := ds.searchImages(q)
 	return images, err
 }
 
 // SearchRawImages retrieves SearchResults from the indexer and storage
-func (ds *searcherImpl) SearchRawImages(request *v1.ParsedSearchRequest) ([]*v1.Image, error) {
-	results, err := ds.indexer.SearchImages(request)
+func (ds *searcherImpl) SearchRawImages(q *v1.Query) ([]*v1.Image, error) {
+	results, err := ds.indexer.SearchImages(q)
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +61,8 @@ func (ds *searcherImpl) SearchRawImages(request *v1.ParsedSearchRequest) ([]*v1.
 	return images, nil
 }
 
-func (ds *searcherImpl) searchImages(request *v1.ParsedSearchRequest) ([]*v1.ListImage, []search.Result, error) {
-	results, err := ds.indexer.SearchImages(request)
+func (ds *searcherImpl) searchImages(q *v1.Query) ([]*v1.ListImage, []search.Result, error) {
+	results, err := ds.indexer.SearchImages(q)
 	if err != nil {
 		return nil, nil, err
 	}

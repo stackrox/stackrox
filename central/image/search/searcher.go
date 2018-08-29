@@ -14,9 +14,9 @@ var (
 // Searcher provides search functionality on existing alerts
 //go:generate mockery -name=Searcher
 type Searcher interface {
-	SearchImages(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)
-	SearchRawImages(request *v1.ParsedSearchRequest) ([]*v1.Image, error)
-	SearchListImages(request *v1.ParsedSearchRequest) ([]*v1.ListImage, error)
+	SearchImages(q *v1.Query) ([]*v1.SearchResult, error)
+	SearchRawImages(q *v1.Query) ([]*v1.Image, error)
+	SearchListImages(q *v1.Query) ([]*v1.ListImage, error)
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.

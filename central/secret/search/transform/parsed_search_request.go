@@ -10,13 +10,13 @@ import (
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
-// ParsedSearchRequestWrapper wraps a ParsedSearchRequest and provides functions for conversion.
-type ParsedSearchRequestWrapper struct {
-	*v1.ParsedSearchRequest
+// ProtoQueryWrapper wraps a *v1.Query and provides functions for conversion.
+type ProtoQueryWrapper struct {
+	*v1.Query
 }
 
 // ToSearchResults converts the given parsed request to search results.
-func (r ParsedSearchRequestWrapper) ToSearchResults(storage store.Store, index bleve.Index) ([]*v1.SearchResult, error) {
+func (r ProtoQueryWrapper) ToSearchResults(storage store.Store, index bleve.Index) ([]*v1.SearchResult, error) {
 	res, err := r.ToResults(index)
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func (r ParsedSearchRequestWrapper) ToSearchResults(storage store.Store, index b
 }
 
 // ToResults converts the given parsed request to the results of searching the bleve index.
-func (r ParsedSearchRequestWrapper) ToResults(index bleve.Index) ([]search.Result, error) {
+func (r ProtoQueryWrapper) ToResults(index bleve.Index) ([]search.Result, error) {
 	quer, err := r.toQuery(index)
 	if err != nil {
 		return nil, err
@@ -34,16 +34,8 @@ func (r ParsedSearchRequestWrapper) ToResults(index bleve.Index) ([]search.Resul
 }
 
 // ToQuery converts the given parsed request to a bleve query.
-func (r ParsedSearchRequestWrapper) toQuery(index bleve.Index) (query.Query, error) {
-	// If the request is nil, just return all secrets.
-	if r.ParsedSearchRequest == nil {
-		sq := bleve.NewMatchQuery(v1.SearchCategory_SECRETS.String())
-		sq.SetField("type")
-		return sq, nil
-	}
-
-	// We search the indices for matches in both secret and relationship fields.
-	sq, err := blevesearch.BuildQuery(index, v1.SearchCategory_SECRETS, r.ParsedSearchRequest, options.Map)
+func (r ProtoQueryWrapper) toQuery(index bleve.Index) (query.Query, error) {
+	sq, err := blevesearch.BuildQuery(index, v1.SearchCategory_SECRETS, r.Query, options.Map)
 	if err != nil {
 		return nil, err
 	}

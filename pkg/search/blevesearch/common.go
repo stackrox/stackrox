@@ -38,19 +38,20 @@ var categoryRelationships = map[relationship]*v1.SearchField{
 	},
 }
 
-func runSubQuery(index bleve.Index, category v1.SearchCategory, searchField *v1.SearchField, searchValues []string) (query.Query, error) {
+// TODO(viswa): Rename this function
+func runSubQuery(index bleve.Index, category v1.SearchCategory, searchField *v1.SearchField, searchValue string) (query.Query, error) {
 	// Base case is that the category you are looking for is the search field category so just get a "normal search query"
 	if category == searchField.GetCategory() {
-		return evaluateQuery(category, searchField, searchValues)
+		return matchFieldQuery(category, searchField, searchValue)
 	}
 	// Get the map of result -> next link
 	nextHopCategory, ok := links[newRelationship(category, searchField.GetCategory())]
 	if !ok {
-		return nil, fmt.Errorf("No link specification for category '%s'", category)
+		return nil, fmt.Errorf("no link specification for category '%s'", category)
 	}
 
 	// Go get the query that needs to be run
-	subQuery, err := runSubQuery(index, nextHopCategory, searchField, searchValues)
+	subQuery, err := runSubQuery(index, nextHopCategory, searchField, searchValue)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +64,7 @@ func runSubQuery(index bleve.Index, category v1.SearchCategory, searchField *v1.
 	// Gets the relationship. e.g. image.name.sha or deployment.containers.id
 	relationshipField, ok := categoryRelationships[newRelationship(category, nextHopCategory)]
 	if !ok {
-		return nil, fmt.Errorf("No relationship field specified for '%s' to '%s'", category, nextHopCategory)
+		return nil, fmt.Errorf("no relationship field specified for '%s' to '%s'", category, nextHopCategory)
 	}
 
 	parentCategory := nextHopCategory
@@ -77,44 +78,23 @@ func runSubQuery(index bleve.Index, category v1.SearchCategory, searchField *v1.
 	for _, r := range results {
 		values = append(values, r.ID)
 	}
-	// this conjunction query effectively does a join between the refs on the top-level object and the object itself
-	conjunctionQuery := bleve.NewConjunctionQuery(typeQuery(parentCategory))
-	q, err := evaluateQuery(parentCategory, relationshipField, values)
-	if err != nil {
-		return nil, err
-	}
-	conjunctionQuery.AddQuery(q)
-	return conjunctionQuery, nil
-}
 
-// FieldsToQuery converts a request and the options for the data type to Bleve types
-func FieldsToQuery(index bleve.Index, category v1.SearchCategory, request *v1.ParsedSearchRequest, optionsMap map[string]*v1.SearchField) ([]query.Query, error) {
-	var queries []query.Query
-	for fieldName, field := range request.GetFields() {
-		searchField, ok := optionsMap[fieldName]
-		if !ok {
-			continue
-		}
-		if searchField.GetCategory() != category {
-			q, err := runSubQuery(index, category, searchField, field.GetValues())
-			if err != nil {
-				return nil, err
-			}
-			queries = append(queries, q)
-			continue
-		}
-		q, err := evaluateQuery(category, searchField, field.GetValues())
+	disjunctionQuery := bleve.NewDisjunctionQuery()
+	for _, r := range results {
+		q, err := matchFieldQuery(parentCategory, relationshipField, r.ID)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("computing query for ID '%s': %s", r.ID, err)
 		}
-		queries = append(queries, q)
+		disjunctionQuery.AddQuery(q)
 	}
-	return queries, nil
+
+	// this conjunction query effectively does a join between the refs on the top-level object and the object itself
+	return bleve.NewConjunctionQuery(typeQuery(parentCategory), disjunctionQuery), nil
 }
 
 // RunSearchRequest builds a query and runs it against the index.
-func RunSearchRequest(category v1.SearchCategory, request *v1.ParsedSearchRequest, index bleve.Index, optionsMap map[string]*v1.SearchField) ([]searchPkg.Result, error) {
-	que, err := BuildQuery(index, category, request, optionsMap)
+func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap map[string]*v1.SearchField) ([]searchPkg.Result, error) {
+	que, err := BuildQuery(index, category, q, optionsMap)
 	if err != nil {
 		return nil, err
 	}
@@ -133,33 +113,26 @@ func RunQuery(query query.Query, index bleve.Index) ([]searchPkg.Result, error) 
 	return collapseResults(searchResult), nil
 }
 
-// BuildQuery builds a query for the input.
-func BuildQuery(index bleve.Index, category v1.SearchCategory, request *v1.ParsedSearchRequest, optionsMap map[string]*v1.SearchField) (query.Query, error) {
-	queries, err := buildQuery(index, category, request, optionsMap)
+// BuildQuery builds a bleve query for the input query
+// It is okay for the input query to be nil or empty; in this case, a query matching all documents of the given category will be returned.
+func BuildQuery(index bleve.Index, category v1.SearchCategory, q *v1.Query, optionsMap map[string]*v1.SearchField) (query.Query, error) {
+	if q.GetQuery() == nil {
+		return typeQuery(category), nil
+	}
+
+	bleveQuery, err := protoToBleveQuery(q, category, index, optionsMap)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("converting to bleve query: %s", err)
 	}
 
-	conjunction := bleve.NewConjunctionQuery()
-	conjunction.AddQuery(queries...)
-	return conjunction, nil
-}
-
-func buildQuery(index bleve.Index, category v1.SearchCategory, request *v1.ParsedSearchRequest, optionsMap map[string]*v1.SearchField) ([]query.Query, error) {
-	queries, err := FieldsToQuery(index, category, request, optionsMap)
-	if err != nil {
-		return nil, err
+	// If a non-empty query was passed, but we couldn't find a query, that means that the query is invalid
+	// for this category somehow. In this case, we return a query that matches nothing.
+	// This behaviour is helpful, for example, in Global Search, where a query that is invalid for a
+	// certain category will just return no elements of that category.
+	if bleveQuery == nil {
+		bleveQuery = bleve.NewMatchNoneQuery()
 	}
-	if request.GetStringQuery() != "" {
-		queries = append(queries, NewMatchPhrasePrefixQuery("", request.GetStringQuery()))
-	}
-	return queries, nil
-}
-
-func typeQuery(category v1.SearchCategory) query.Query {
-	q := bleve.NewMatchQuery(category.String())
-	q.SetField("type")
-	return q
+	return bleveQuery, nil
 }
 
 func collapseResults(searchResult *bleve.SearchResult) (results []searchPkg.Result) {

@@ -2,48 +2,48 @@ package search
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
-// ParseRawQuery takes the text based query and converts to the ParsedSearchRequest proto
-func ParseRawQuery(query string) (*v1.ParsedSearchRequest, error) {
+// ParseRawQuery takes the text based query and converts to the query proto.
+// It expects the received query to be non-empty.
+func ParseRawQuery(query string) (*v1.Query, error) {
 	if query == "" {
-		return nil, errors.New("Query cannot be empty")
+		return nil, errors.New("query cannot be empty")
 	}
 
 	pairs := strings.Split(query, "+")
-	parsedRequest := &v1.ParsedSearchRequest{
-		Fields: make(map[string]*v1.ParsedSearchRequest_Values),
-	}
 
+	queries := make([]*v1.Query, 0, len(pairs))
 	for _, pair := range pairs {
-		key, values, valid := parsePair(pair)
+		key, commaSeparatedValues, valid := parsePair(pair)
 		if !valid {
 			continue
 		}
-
-		if added, err := addStringQuery(parsedRequest, key, values); err != nil {
-			return nil, err
-		} else if added {
-			continue
-		}
-
-		valuesSlice := strings.Split(values, ",")
-
-		if err := addGeneralField(parsedRequest, key, valuesSlice); err != nil {
-			return nil, err
-		}
+		queries = append(queries, queryFromKeyValue(key, commaSeparatedValues))
 	}
 
-	if len(parsedRequest.GetFields()) == 0 && parsedRequest.GetStringQuery() == "" {
-		return nil, errors.New("After parsing, query is empty")
+	if len(queries) == 0 {
+		return nil, errors.New("after parsing, query is empty")
 	}
-	return parsedRequest, nil
+
+	return ConjunctionQuery(queries...), nil
 }
 
+func queryFromKeyValue(key, commaSeparatedValues string) *v1.Query {
+	// Check if it's a raw string query.
+	if strings.EqualFold(key, "has") {
+		return stringQuery(commaSeparatedValues)
+	}
+
+	valueSlice := strings.Split(commaSeparatedValues, ",")
+
+	return queryFromFieldValues(key, valueSlice)
+}
+
+// Extracts "key", "value1,value2" from a string in the format key:value1,value2
 func parsePair(pair string) (key string, values string, valid bool) {
 	pair = strings.TrimSpace(pair)
 	if len(pair) == 0 {
@@ -58,26 +58,60 @@ func parsePair(pair string) (key string, values string, valid bool) {
 	return spl[0], spl[1], true
 }
 
-func addStringQuery(request *v1.ParsedSearchRequest, key, value string) (added bool, err error) {
-	// Check if its a raw query
-	if strings.EqualFold(key, "has") {
-		if request.GetStringQuery() != "" {
-			err = fmt.Errorf("There can only be 1 raw string query")
-			return
-		}
-		added = true
-		request.StringQuery = value
+func queryFromFieldValues(field string, values []string) *v1.Query {
+	queries := make([]*v1.Query, 0, len(values))
+	for _, value := range values {
+		queries = append(queries, matchFieldQuery(field, value))
 	}
-	return
+
+	return DisjunctionQuery(queries...)
 }
 
-func addGeneralField(request *v1.ParsedSearchRequest, key string, values []string) error {
-	// transform the key into its mapped form
-	if _, ok := request.Fields[key]; !ok {
-		request.Fields[key] = &v1.ParsedSearchRequest_Values{}
+// DisjunctionQuery returns a disjunction query of the provided queries.
+func DisjunctionQuery(queries ...*v1.Query) *v1.Query {
+	return disjunctOrConjunctQueries(false, queries...)
+}
+
+// ConjunctionQuery returns a conjunction query of the provided queries.
+func ConjunctionQuery(queries ...*v1.Query) *v1.Query {
+	return disjunctOrConjunctQueries(true, queries...)
+}
+
+// Helper function that DisjunctionQuery and ConjunctionQuery proxy to.
+// Do NOT call this directly.
+func disjunctOrConjunctQueries(isConjunct bool, queries ...*v1.Query) *v1.Query {
+	if len(queries) == 0 {
+		return &v1.Query{}
 	}
 
-	// Append the fields < key: [value value] >
-	request.Fields[key].Values = append(request.Fields[key].Values, values...)
-	return nil
+	if len(queries) == 1 {
+		return queries[0]
+	}
+	if isConjunct {
+		return &v1.Query{
+			Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{Queries: queries}},
+		}
+	}
+
+	return &v1.Query{
+		Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{Queries: queries}},
+	}
+}
+
+func queryFromBaseQuery(baseQuery *v1.BaseQuery) *v1.Query {
+	return &v1.Query{
+		Query: &v1.Query_BaseQuery{BaseQuery: baseQuery},
+	}
+}
+
+func stringQuery(value string) *v1.Query {
+	return queryFromBaseQuery(&v1.BaseQuery{
+		Query: &v1.BaseQuery_StringQuery{StringQuery: &v1.StringQuery{Query: value}},
+	})
+}
+
+func matchFieldQuery(field, value string) *v1.Query {
+	return queryFromBaseQuery(&v1.BaseQuery{
+		Query: &v1.BaseQuery_MatchFieldQuery{MatchFieldQuery: &v1.MatchFieldQuery{Field: field, Value: value}},
+	})
 }

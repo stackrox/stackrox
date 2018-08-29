@@ -19,23 +19,23 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (ds *datastoreImpl) SearchImages(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
+func (ds *datastoreImpl) SearchImages(q *v1.Query) ([]*v1.SearchResult, error) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
-	return ds.searcher.SearchImages(request)
+	return ds.searcher.SearchImages(q)
 }
 
 // SearchRawImages delegates to the underlying searcher.
-func (ds *datastoreImpl) SearchRawImages(request *v1.ParsedSearchRequest) ([]*v1.Image, error) {
+func (ds *datastoreImpl) SearchRawImages(q *v1.Query) ([]*v1.Image, error) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
-	return ds.searcher.SearchRawImages(request)
+	return ds.searcher.SearchRawImages(q)
 }
 
-func (ds *datastoreImpl) SearchListImages(request *v1.ParsedSearchRequest) ([]*v1.ListImage, error) {
-	return ds.searcher.SearchListImages(request)
+func (ds *datastoreImpl) SearchListImages(q *v1.Query) ([]*v1.ListImage, error) {
+	return ds.searcher.SearchListImages(q)
 }
 
 func (ds *datastoreImpl) ListImage(sha string) (*v1.ListImage, bool, error) {

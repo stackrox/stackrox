@@ -53,13 +53,13 @@ func (_m *Indexer) DeleteAlert(id string) error {
 	return r0
 }
 
-// SearchAlerts provides a mock function with given fields: request
-func (_m *Indexer) SearchAlerts(request *v1.ParsedSearchRequest) ([]search.Result, error) {
-	ret := _m.Called(request)
+// SearchAlerts provides a mock function with given fields: q
+func (_m *Indexer) SearchAlerts(q *v1.Query) ([]search.Result, error) {
+	ret := _m.Called(q)
 
 	var r0 []search.Result
-	if rf, ok := ret.Get(0).(func(*v1.ParsedSearchRequest) []search.Result); ok {
-		r0 = rf(request)
+	if rf, ok := ret.Get(0).(func(*v1.Query) []search.Result); ok {
+		r0 = rf(q)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]search.Result)
@@ -67,8 +67,8 @@ func (_m *Indexer) SearchAlerts(request *v1.ParsedSearchRequest) ([]search.Resul
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*v1.ParsedSearchRequest) error); ok {
-		r1 = rf(request)
+	if rf, ok := ret.Get(1).(func(*v1.Query) error); ok {
+		r1 = rf(q)
 	} else {
 		r1 = ret.Error(1)
 	}

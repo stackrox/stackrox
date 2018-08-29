@@ -13,8 +13,8 @@ var (
 
 // Searcher provides search functionality on existing alerts
 type Searcher interface {
-	SearchPolicies(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)
-	SearchRawPolicies(request *v1.ParsedSearchRequest) ([]*v1.Policy, error)
+	SearchPolicies(q *v1.Query) ([]*v1.SearchResult, error)
+	SearchRawPolicies(q *v1.Query) ([]*v1.Policy, error)
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.

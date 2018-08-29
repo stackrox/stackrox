@@ -44,7 +44,7 @@ func (b *indexerImpl) DeletePolicy(id string) error {
 }
 
 // SearchPolicies takes a SearchRequest and finds any matches
-func (b *indexerImpl) SearchPolicies(request *v1.ParsedSearchRequest) ([]search.Result, error) {
+func (b *indexerImpl) SearchPolicies(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Policy")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_POLICIES, request, b.index, mappings.OptionsMap)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_POLICIES, q, b.index, mappings.OptionsMap)
 }

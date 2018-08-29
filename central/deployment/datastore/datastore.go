@@ -10,9 +10,9 @@ import (
 // DataStore is an intermediary to AlertStorage.
 //go:generate mockery -name=DataStore
 type DataStore interface {
-	SearchDeployments(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)
-	SearchRawDeployments(request *v1.ParsedSearchRequest) ([]*v1.Deployment, error)
-	SearchListDeployments(request *v1.ParsedSearchRequest) ([]*v1.ListDeployment, error)
+	SearchDeployments(q *v1.Query) ([]*v1.SearchResult, error)
+	SearchRawDeployments(q *v1.Query) ([]*v1.Deployment, error)
+	SearchListDeployments(q *v1.Query) ([]*v1.ListDeployment, error)
 
 	ListDeployment(id string) (*v1.ListDeployment, bool, error)
 	ListDeployments() ([]*v1.ListDeployment, error)

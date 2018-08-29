@@ -10,9 +10,9 @@ import (
 // DataStore is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert objects.
 //go:generate mockery -name=DataStore
 type DataStore interface {
-	SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)
-	SearchRawAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, error)
-	SearchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.ListAlert, error)
+	SearchAlerts(q *v1.Query) ([]*v1.SearchResult, error)
+	SearchRawAlerts(q *v1.Query) ([]*v1.Alert, error)
+	SearchListAlerts(q *v1.Query) ([]*v1.ListAlert, error)
 
 	ListAlerts(request *v1.ListAlertsRequest) ([]*v1.ListAlert, error)
 

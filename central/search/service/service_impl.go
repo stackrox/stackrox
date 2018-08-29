@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type searchFunc func(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error)
+type searchFunc func(q *v1.Query) ([]*v1.SearchResult, error)
 
 func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]searchFunc {
 	return map[v1.SearchCategory]searchFunc{
@@ -32,7 +32,7 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]searchFunc {
 		v1.SearchCategory_DEPLOYMENTS: s.deployments.SearchDeployments,
 		v1.SearchCategory_IMAGES:      s.images.SearchImages,
 		v1.SearchCategory_POLICIES:    s.policies.SearchPolicies,
-		v1.SearchCategory_SECRETS:     secretService.ParsedSearchRequestHandler(),
+		v1.SearchCategory_SECRETS:     secretService.QueryHandler(),
 	}
 }
 

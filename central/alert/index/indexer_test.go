@@ -5,7 +5,6 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +30,6 @@ func (suite *alertIndexTestSuite) SetupSuite() {
 	suite.bleveIndex = tmpIndex
 	suite.indexer = New(tmpIndex)
 
-	suite.NoError(suite.indexer.AddAlert(fixtures.GetAlert()))
 }
 
 func (suite *alertIndexTestSuite) TeardownSuite() {
@@ -39,40 +37,50 @@ func (suite *alertIndexTestSuite) TeardownSuite() {
 }
 
 func (suite *alertIndexTestSuite) TestDefaultStaleness() {
+	const nonStaleID = "NONSTALE"
+	const staleID = "STALE"
+
+	suite.NoError(suite.indexer.AddAlert(fixtures.GetAlertWithID(nonStaleID)))
+	staleAlert := fixtures.GetAlertWithID(staleID)
+	staleAlert.Stale = true
+	suite.NoError(suite.indexer.AddAlert(staleAlert))
 
 	var cases = []struct {
-		name               string
-		values             []string
-		expectedViolations int
+		name             string
+		staleValue       string
+		expectedAlertIDs []string
 	}{
 		{
-			name:               "no stale field",
-			values:             []string{},
-			expectedViolations: 1,
+			name:             "no stale field",
+			expectedAlertIDs: []string{nonStaleID},
 		},
 		{
-			name:               "stale = false",
-			values:             []string{"false"},
-			expectedViolations: 1,
+			name:             "stale = false",
+			staleValue:       "false",
+			expectedAlertIDs: []string{nonStaleID},
 		},
 		{
-			name:               "stale = true",
-			values:             []string{"true"},
-			expectedViolations: 0,
+			name:             "stale = true",
+			staleValue:       "true",
+			expectedAlertIDs: []string{staleID},
 		},
 	}
 
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
-			alerts, err := suite.indexer.SearchAlerts(&v1.ParsedSearchRequest{
-				Fields: map[string]*v1.ParsedSearchRequest_Values{
-					search.Stale: {
-						Values: c.values,
-					},
-				},
-			})
+			qb := search.NewQueryBuilder()
+			if c.staleValue != "" {
+				qb.AddStrings(search.Stale, c.staleValue)
+			}
+			alerts, err := suite.indexer.SearchAlerts(qb.ProtoQuery())
 			assert.NoError(t, err)
-			assert.Len(t, alerts, c.expectedViolations)
+
+			alertIDs := make([]string, 0, len(alerts))
+			for _, alert := range alerts {
+				alertIDs = append(alertIDs, alert.ID)
+			}
+
+			assert.ElementsMatch(t, alertIDs, c.expectedAlertIDs)
 		})
 	}
 }

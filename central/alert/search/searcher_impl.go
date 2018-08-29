@@ -25,8 +25,8 @@ func (ds *searcherImpl) buildIndex() error {
 }
 
 // SearchAlerts retrieves SearchResults from the indexer and storage
-func (ds *searcherImpl) SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.SearchResult, error) {
-	alerts, results, err := ds.searchListAlerts(request)
+func (ds *searcherImpl) SearchAlerts(q *v1.Query) ([]*v1.SearchResult, error) {
+	alerts, results, err := ds.searchListAlerts(q)
 	if err != nil {
 		return nil, err
 	}
@@ -38,19 +38,19 @@ func (ds *searcherImpl) SearchAlerts(request *v1.ParsedSearchRequest) ([]*v1.Sea
 }
 
 // SearchRawAlerts retrieves Alerts from the indexer and storage
-func (ds *searcherImpl) SearchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.ListAlert, error) {
-	alerts, _, err := ds.searchListAlerts(request)
+func (ds *searcherImpl) SearchListAlerts(q *v1.Query) ([]*v1.ListAlert, error) {
+	alerts, _, err := ds.searchListAlerts(q)
 	return alerts, err
 }
 
 // SearchRawAlerts retrieves Alerts from the indexer and storage
-func (ds *searcherImpl) SearchRawAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, error) {
-	alerts, err := ds.searchAlerts(request)
+func (ds *searcherImpl) SearchRawAlerts(q *v1.Query) ([]*v1.Alert, error) {
+	alerts, err := ds.searchAlerts(q)
 	return alerts, err
 }
 
-func (ds *searcherImpl) searchListAlerts(request *v1.ParsedSearchRequest) ([]*v1.ListAlert, []search.Result, error) {
-	results, err := ds.indexer.SearchAlerts(request)
+func (ds *searcherImpl) searchListAlerts(q *v1.Query) ([]*v1.ListAlert, []search.Result, error) {
+	results, err := ds.indexer.SearchAlerts(q)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -71,8 +71,8 @@ func (ds *searcherImpl) searchListAlerts(request *v1.ParsedSearchRequest) ([]*v1
 	return alerts, newResults, nil
 }
 
-func (ds *searcherImpl) searchAlerts(request *v1.ParsedSearchRequest) ([]*v1.Alert, error) {
-	results, err := ds.indexer.SearchAlerts(request)
+func (ds *searcherImpl) searchAlerts(q *v1.Query) ([]*v1.Alert, error) {
+	results, err := ds.indexer.SearchAlerts(q)
 	if err != nil {
 		return nil, err
 	}
