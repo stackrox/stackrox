@@ -5,4 +5,5 @@ type Result struct {
 	ID      string
 	Matches map[string][]string
 	Score   float64
+	Fields  map[string]interface{}
 }

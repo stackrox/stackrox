@@ -19,7 +19,7 @@ type relationship struct {
 	dst v1.SearchCategory
 }
 
-func newRelationship(src, dst v1.SearchCategory) relationship {
+func newRelationship(src v1.SearchCategory, dst v1.SearchCategory) relationship {
 	return relationship{
 		src: src,
 		dst: dst,
@@ -29,13 +29,47 @@ func newRelationship(src, dst v1.SearchCategory) relationship {
 // This is a map of category A -> category C and the next hop
 var links = map[relationship]v1.SearchCategory{
 	newRelationship(v1.SearchCategory_DEPLOYMENTS, v1.SearchCategory_IMAGES): v1.SearchCategory_IMAGES,
+	newRelationship(v1.SearchCategory_IMAGES, v1.SearchCategory_DEPLOYMENTS): v1.SearchCategory_DEPLOYMENTS,
 }
 
-var categoryRelationships = map[relationship]*v1.SearchField{
+type join struct {
+	srcField string
+	dstField string
+}
+
+var categoryRelationships = map[relationship]join{
 	newRelationship(v1.SearchCategory_DEPLOYMENTS, v1.SearchCategory_IMAGES): {
-		FieldPath: "deployment.containers.image.name.sha",
-		Type:      v1.SearchDataType_SEARCH_STRING,
+		srcField: "deployment.containers.image.name.sha",
+		dstField: "image.name.sha",
 	},
+	newRelationship(v1.SearchCategory_IMAGES, v1.SearchCategory_DEPLOYMENTS): {
+		srcField: "image.name.sha",
+		dstField: "deployment.containers.image.name.sha",
+	},
+}
+
+func getValuesFromFields(field string, m map[string]interface{}) []string {
+	val, ok := m[field]
+	if !ok {
+		return nil
+	}
+	switch obj := val.(type) {
+	case string:
+		return []string{obj}
+	case []string:
+		return obj
+	case []interface{}:
+		values := make([]string, 0, len(obj))
+		for _, v := range obj {
+			if s, ok := v.(string); ok {
+				values = append(values, s)
+			}
+		}
+		return values
+	default:
+		logger.Errorf("Unknown type field from index: %T", obj)
+	}
+	return nil
 }
 
 // TODO(viswa): Rename this function
@@ -56,15 +90,15 @@ func runSubQuery(index bleve.Index, category v1.SearchCategory, searchField *v1.
 		return nil, err
 	}
 
-	results, err := RunQuery(subQuery, index)
-	if err != nil {
-		return nil, err
-	}
-
 	// Gets the relationship. e.g. image.name.sha or deployment.containers.id
 	relationshipField, ok := categoryRelationships[newRelationship(category, nextHopCategory)]
 	if !ok {
 		return nil, fmt.Errorf("no relationship field specified for '%s' to '%s'", category, nextHopCategory)
+	}
+
+	results, err := RunQuery(subQuery, index, relationshipField.dstField)
+	if err != nil {
+		return nil, err
 	}
 
 	parentCategory := nextHopCategory
@@ -73,17 +107,20 @@ func runSubQuery(index bleve.Index, category v1.SearchCategory, searchField *v1.
 		parentCategory = category
 	}
 
-	// values is populated with the id of the results, which is used to correlate between parents and their children
-	values := make([]string, 0, len(results))
+	// values is populated with the specified field of the results, which is used to correlate between parents and their children
+	var values []string
 	for _, r := range results {
-		values = append(values, r.ID)
+		values = append(values, getValuesFromFields(relationshipField.dstField, r.Fields)...)
 	}
 
 	disjunctionQuery := bleve.NewDisjunctionQuery()
-	for _, r := range results {
-		q, err := matchFieldQuery(parentCategory, relationshipField, r.ID)
+	for _, v := range values {
+		q, err := matchFieldQuery(parentCategory, &v1.SearchField{
+			FieldPath: relationshipField.srcField,
+			Type:      v1.SearchDataType_SEARCH_STRING,
+		}, v)
 		if err != nil {
-			return nil, fmt.Errorf("computing query for ID '%s': %s", r.ID, err)
+			return nil, fmt.Errorf("computing query for field '%s': %s", v, err)
 		}
 		disjunctionQuery.AddQuery(q)
 	}
@@ -102,10 +139,11 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 }
 
 // RunQuery runs the actual query and then collapses the results into a simpler format
-func RunQuery(query query.Query, index bleve.Index) ([]searchPkg.Result, error) {
+func RunQuery(query query.Query, index bleve.Index, fields ...string) ([]searchPkg.Result, error) {
 	searchRequest := bleve.NewSearchRequest(query)
 	// Initial size is 10 which seems small
 	searchRequest.Size = maxSearchResponses
+	searchRequest.Fields = fields
 	searchResult, err := index.Search(searchRequest)
 	if err != nil {
 		return nil, err
@@ -142,6 +180,7 @@ func collapseResults(searchResult *bleve.SearchResult) (results []searchPkg.Resu
 			ID:      hit.ID,
 			Matches: hit.Fragments,
 			Score:   hit.Score,
+			Fields:  hit.Fields,
 		})
 	}
 	return
