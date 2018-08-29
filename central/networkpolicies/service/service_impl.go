@@ -10,7 +10,6 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/networkgraph"
-	"github.com/stackrox/rox/central/networkpolicies/store"
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -39,7 +38,6 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	store           store.Store
 	clusterStore    clusterDataStore.DataStore
 	deployments     deploymentDataStore.DataStore
 	networkPolicies networkPoliciesStore.Store
@@ -75,7 +73,7 @@ func populateYAML(np *v1.NetworkPolicy) {
 }
 
 func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.ResourceByID) (*v1.NetworkPolicy, error) {
-	networkPolicy, exists, err := s.store.GetNetworkPolicy(request.GetId())
+	networkPolicy, exists, err := s.networkPolicies.GetNetworkPolicy(request.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +94,7 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 			return nil, status.Errorf(codes.InvalidArgument, "cluster with id '%s' doesn't exist", request.GetClusterId())
 		}
 	}
-	networkPolicies, err := s.store.GetNetworkPolicies(request)
+	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(request)
 	if err != nil {
 		return nil, err
 	}
