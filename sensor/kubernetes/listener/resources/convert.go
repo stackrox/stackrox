@@ -182,19 +182,41 @@ func (w *wrap) populateContainerInstances(pods []v1.Pod) {
 }
 
 func (w *wrap) populateImageShas(pods []v1.Pod) {
-	imageMap := make(map[pkgV1.ImageName]string)
+	// This is a map from image full name (eg: stackrox/prevent:latest) to the actual sha of the running image.
+	// Note that, if the tag is mutable, there could be multiple shas for a single full name.
+	// We just pick an arbitrary one right now, by looking at the running pods and adding the actual sha for this map.
+	// This sucks, but it works for now.
+	imageNameToSha := make(map[string]string)
 
 	for _, p := range pods {
 		for _, c := range p.Status.ContainerStatuses {
 			img := imageUtils.GenerateImageFromString(c.Image)
+			// If the image string already specifies a sha, we don't need to
+			// extract it again from the pod.
+			if img.GetName().GetSha() != "" {
+				continue
+			}
+
+			fullName := img.GetName().GetFullName()
+			if fullName == "" {
+				logger.Errorf("Couldn't parse either a full name or a sha from image %s of pod %s/%s/%s ",
+					c.Image, p.ClusterName, p.Namespace, p.Name)
+				continue
+			}
+
 			if sha := imageUtils.ExtractImageSha(c.ImageID); sha != "" {
-				imageMap[*img.GetName()] = imageTypes.NewDigest(sha).Digest()
+				imageNameToSha[fullName] = imageTypes.NewDigest(sha).Digest()
 			}
 		}
 	}
 
 	for _, c := range w.Deployment.Containers {
-		if sha, ok := imageMap[*c.Image.GetName()]; ok {
+		name := c.GetImage().GetName()
+		// No need to repopulate the sha if it exists already.
+		if name.GetSha() != "" {
+			continue
+		}
+		if sha, ok := imageNameToSha[name.GetFullName()]; ok {
 			c.Image.Name.Sha = sha
 		}
 	}

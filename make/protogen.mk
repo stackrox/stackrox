@@ -47,11 +47,11 @@ PROTOC_GEN_GO_BIN := $(GOPATH)/bin/protoc-gen-gofast
 
 $(GOPATH)/src/github.com/gogo/protobuf/types:
 	@echo "+ $@"
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/gogo/protobuf/types v1.0.0
+	@$(BASE_PATH)/scripts/go-get-version.sh github.com/gogo/protobuf/types v1.1.1
 
 $(PROTOC_GEN_GO_BIN): $(GOPATH)/src/github.com/gogo/protobuf/types
 	@echo "+ $@"
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/gogo/protobuf/protoc-gen-gofast v1.0.0
+	@$(BASE_PATH)/scripts/go-get-version.sh github.com/gogo/protobuf/protoc-gen-gofast v1.1.1
 
 GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types
 
