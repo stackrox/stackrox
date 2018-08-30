@@ -12,7 +12,7 @@ function launch_central {
     OLD_DOCKER_TLS_VERIFY="$DOCKER_TLS_VERIFY"
     unset DOCKER_HOST DOCKER_CERT_PATH DOCKER_TLS_VERIFY
 
-    docker run "$PREVENT_IMAGE" deploy swarm -i "$PREVENT_IMAGE" -p 8080 none > "$SWARM_DIR/central.zip"
+    docker run --rm "$PREVENT_IMAGE" deploy swarm -i "$PREVENT_IMAGE" -p 8080 none > "$SWARM_DIR/central.zip"
 
     export DOCKER_HOST="$OLD_DOCKER_HOST"
     export DOCKER_CERT_PATH="$OLD_DOCKER_CERT_PATH"
