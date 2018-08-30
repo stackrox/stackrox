@@ -416,7 +416,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     @apply .bg-base-400 .text-white
 }
 
-/* Environment Graph CSS Classes */
+/* Network Graph CSS Classes */
 
 .btn-graph-refresh circle {
     fill: #3F4884;

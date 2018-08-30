@@ -170,7 +170,7 @@ class EnvironmentPage extends Component {
             <section className="flex flex-1 h-full w-full">
                 <div className="flex flex-1 flex-col w-full">
                     <div className="flex flex-row">
-                        <PageHeader header="Environment" subHeader={subHeader} className="w-2/3">
+                        <PageHeader header="Network Graph" subHeader={subHeader} className="w-2/3">
                             <SearchInput
                                 id="environment"
                                 className="flex flex-1"

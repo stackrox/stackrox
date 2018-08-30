@@ -1,10 +1,7 @@
-import {
-    url as environmentUrl,
-    selectors as environmentPageSelectors
-} from './constants/EnvironmentPage';
+import { url as networkUrl, selectors as networkPageSelectors } from './constants/EnvironmentPage';
 import * as api from './constants/apiEndpoints';
 
-describe('Environment page', () => {
+describe('Network page', () => {
     beforeEach(() => {
         cy.server();
         cy.fixture('environment/networkGraph.json').as('networkGraphJson');
@@ -12,35 +9,40 @@ describe('Environment page', () => {
         cy.fixture('environment/epoch.json').as('epochJson');
         cy.route('GET', api.environment.epoch, '@epochJson').as('epoch');
 
-        cy.visit(environmentUrl);
+        cy.visit(networkUrl);
         cy.wait('@networkGraph');
         cy.wait('@epoch');
     });
 
+    it('should have selected item in nav bar', () => {
+        cy.get(networkPageSelectors.network).click();
+        cy.get(networkPageSelectors.network).should('have.class', 'bg-primary-600');
+    });
+
     it('should display a Legend', () => {
-        cy.get(environmentPageSelectors.legend.deployment).contains('Deployment');
-        cy.get(environmentPageSelectors.legend.namespace).contains('Namespace');
-        cy.get(environmentPageSelectors.legend.ingressEgress).contains('Ingress/Egress');
-        cy.get(environmentPageSelectors.legend.internetEgress).contains('Internet Egress');
+        cy.get(networkPageSelectors.legend.deployment).contains('Deployment');
+        cy.get(networkPageSelectors.legend.namespace).contains('Namespace');
+        cy.get(networkPageSelectors.legend.ingressEgress).contains('Ingress/Egress');
+        cy.get(networkPageSelectors.legend.internetEgress).contains('Internet Egress');
     });
 
     it('should have 3 namespaces in total', () => {
-        cy.get(environmentPageSelectors.namespaces.all).should('have.length', 3);
+        cy.get(networkPageSelectors.namespaces.all).should('have.length', 3);
     });
 
     it('should have 4 services in total', () => {
-        cy.get(environmentPageSelectors.services.all).should('have.length', 4);
+        cy.get(networkPageSelectors.services.all).should('have.length', 4);
     });
 
     it('should have 1 service link', () => {
-        cy.get(environmentPageSelectors.links.services).should('have.length', 1);
+        cy.get(networkPageSelectors.links.services).should('have.length', 1);
     });
 
     it('should have 2 namespace links', () => {
-        cy.get(environmentPageSelectors.links.namespaces).should('have.length', 2);
+        cy.get(networkPageSelectors.links.namespaces).should('have.length', 2);
     });
 
     it('should have 2 bidirectional links', () => {
-        cy.get(environmentPageSelectors.links.bidirectional).should('have.length', 2);
+        cy.get(networkPageSelectors.links.bidirectional).should('have.length', 2);
     });
 });

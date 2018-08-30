@@ -45,7 +45,7 @@ export function* passthroughGlobalSearchOptions({ searchOptions, category }) {
         case 'SECRETS':
             yield put(secretsActions.setSecretsSearchOptions(searchOptions));
             break;
-        case 'ENVIRONMENT':
+        case 'NETWORK':
             yield put(environmentActions.setEnvironmentSearchOptions(searchOptions));
             break;
         case 'POLICIES':

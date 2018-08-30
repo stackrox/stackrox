@@ -116,7 +116,7 @@ const selectedEnvironmentClusterId = (state = null, action) => {
 
 const environmentGraphUpdateKey = (state = { shouldUpdate: true, key: 0 }, action) => {
     const { type, payload, options } = action;
-    if (type === LOCATION_CHANGE && payload.pathname.startsWith('/main/environment')) {
+    if (type === LOCATION_CHANGE && payload.pathname.startsWith('/main/network')) {
         return { shouldUpdate: true, key: state.key + 1 };
     }
     if (type === types.SET_SEARCH_OPTIONS) {

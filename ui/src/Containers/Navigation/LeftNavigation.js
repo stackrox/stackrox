@@ -18,8 +18,8 @@ const navLinks = [
         renderIcon: () => <Icon.BarChart2 className="h-4 w-4 mb-1" />
     },
     {
-        text: 'Environment',
-        to: '/main/environment',
+        text: 'Network',
+        to: '/main/network',
         renderIcon: () => <Icon.Share2 className="h-4 w-4 mb-1" />
     },
     {

@@ -1,6 +1,7 @@
-export const url = '/main/environment';
+export const url = '/main/network';
 
 export const selectors = {
+    network: 'nav.left-navigation li:contains("Network") a',
     legend: {
         deployment: '.env-graph-legend > :nth-child(1)',
         namespace: '.env-graph-legend > :nth-child(2)',

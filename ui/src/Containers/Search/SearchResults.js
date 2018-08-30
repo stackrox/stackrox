@@ -54,7 +54,7 @@ const mapping = {
         name: 'Image Name'
     },
     DEPLOYMENTS: {
-        filterOn: ['VIOLATIONS', 'ENVIRONMENT'],
+        filterOn: ['VIOLATIONS', 'NETWORK'],
         viewOn: ['RISK'],
         name: 'Deployment Name'
     },
@@ -78,7 +78,7 @@ const mapping = {
 const filterOnMapping = {
     RISK: 'DEPLOYMENTS',
     VIOLATIONS: 'ALERTS',
-    ENVIRONMENT: 'ENVIRONMENT'
+    NETWORK: 'NETWORK'
 };
 
 class SearchResults extends Component {
