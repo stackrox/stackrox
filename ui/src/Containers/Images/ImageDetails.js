@@ -6,8 +6,8 @@ import { connect } from 'react-redux';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import ReactTooltip from 'react-tooltip';
-import ReactTable from 'react-table';
 import 'react-table/react-table.css';
+import ReactRowSelectTable from 'Components/ReactRowSelectTable';
 
 import { actions as deploymentsActions } from 'reducers/deployments';
 import { addSearchModifier, addSearchKeyword } from 'utils/searchUtils';
@@ -149,39 +149,39 @@ class ImageDetails extends Component {
                         <a
                             href={ci.original.link}
                             target="_blank"
-                            className="text-primary-600 font-600"
+                            className="text-primary-600 font-600 pointer-events-auto"
                         >
                             {ci.value}
                         </a>
                         - {ci.original.summary}
                     </div>
                 ),
-                headerClassName: 'font-600'
+                headerClassName: 'font-600 border-b border-base-300',
+                className: 'pointer-events-none'
             },
             {
                 Header: 'CVSS',
                 accessor: 'cvss',
                 width: 50,
-                headerClassName: 'font-600',
-                className: 'text-right'
+                headerClassName: 'font-600 border-b border-base-300',
+                className: 'text-right self-center pointer-events-none'
             },
             {
                 Header: 'Fixed',
                 accessor: 'fixedBy',
                 width: 130,
-                headerClassName: 'font-600',
-                className: 'text-right'
+                headerClassName: 'font-600 border-b border-base-300',
+                className: 'text-right self-center pointer-events-none'
             }
         ];
         return (
             row.original.vulns.length !== 0 && (
-                <ReactTable
-                    data={row.original.vulns}
+                <ReactRowSelectTable
+                    rows={row.original.vulns}
                     columns={subColumns}
-                    pageSize={row.original.vulns.length}
-                    showPagination={false}
                     className="bg-base-100"
-                    resizable={false}
+                    showPagination={false}
+                    pageSize={row.original.vulns.length}
                 />
             )
         );
@@ -207,8 +207,8 @@ class ImageDetails extends Component {
         const columns = [
             {
                 expander: true,
-                width: 30,
-                className: 'pointer-events-none',
+                widthClassName: 'w-1/8',
+                className: 'pointer-events-none self-center',
                 Expander: ({ isExpanded, ...rest }) => {
                     if (rest.original.vulns.length === 0) return '';
                     const className = 'rt-expander w-1 pt-2 pointer-events-auto';
@@ -218,29 +218,27 @@ class ImageDetails extends Component {
             {
                 Header: 'Name',
                 accessor: 'name',
-                headerClassName: 'font-600 text-left',
+                headerClassName: 'pl-3 font-600 text-left border-b border-base-300 border-r-0',
                 Cell: ci => <div>{ci.value}</div>
             },
             {
                 Header: 'Version',
                 accessor: 'version',
-                className: 'text-right',
-                headerClassName: 'font-600 text-right'
+                className: 'text-right pr-4 self-center',
+                headerClassName: 'font-600 text-right border-b border-base-300 border-r-0 pr-4'
             },
             {
                 Header: 'CVEs',
                 accessor: 'vulns.length',
-                width: 50,
-                className: 'text-right',
-                headerClassName: 'font-600 text-right'
+                widthClassName: 'w-1/8',
+                className: 'text-right pr-4 self-center',
+                headerClassName: 'font-600 text-right border-b border-base-300 border-r-0 pr-4'
             }
         ];
         return (
-            <ReactTable
-                data={scan.components}
+            <ReactRowSelectTable
+                rows={scan.components}
                 columns={columns}
-                pageSize={scan.components.length}
-                showPagination={false}
                 SubComponent={this.renderVulnsTable}
             />
         );

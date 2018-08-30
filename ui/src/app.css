@@ -440,6 +440,10 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     @apply .shadow-none
 }
 
+.ReactTable .rt-thead .rt-th.-sort-desc, .ReactTable .rt-thead .rt-th.-sort-asc {
+    @apply .shadow-none;
+}
+
 .ReactTable .rt-thead .rt-th.-sort-desc div:after {
     content: ' ↓';
     position: absolute;
