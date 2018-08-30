@@ -6,6 +6,7 @@ import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
 
+
 package v1;
 
 message Namespace {
@@ -117,6 +118,13 @@ message GetNetworkGraphEpochResponse {
     uint32 epoch = 1;
 }
 
+
+message SendNetworkPolicyYamlRequest {
+    string  notifier_id = 1;
+    string  yaml        = 2;
+}
+
+
 service NetworkPolicyService {
 
     rpc GetNetworkPolicy (ResourceByID) returns (NetworkPolicy) {
@@ -140,6 +148,13 @@ service NetworkPolicyService {
     rpc GetNetworkGraphEpoch (Empty) returns (GetNetworkGraphEpochResponse) {
         option (google.api.http) = {
             get: "/v1/networkgraph/epoch"
+        };
+    }
+
+    rpc SendNetworkPolicyYaml (SendNetworkPolicyYamlRequest) returns (Empty ) {
+        option (google.api.http) = {
+            post: "/v1/networkpolicies/simulation/notify"
+            body: "*"
         };
     }
 
