@@ -1,3 +1,5 @@
+[![CircleCI][circleci-badge]][circleci-link]
+
 # StackRox Prevent
 
 Prevent is a new StackRox initiative to provide security in the
@@ -290,3 +292,6 @@ Copy the "Latest Stable Version" page, update it, and replace the link on
 
 Also, update the [current releases page](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/591593496/Current+product+releases)
 so that the team knows which versions to deploy to customers.
+
+[circleci-badge]: https://circleci.com/gh/stackrox/rox.svg?&style=shield&circle-token=140f88ea9dfd594ff68b71eaf1d4407c4331833d
+[circleci-link]:  https://circleci.com/gh/stackrox/workflows/rox/tree/master
