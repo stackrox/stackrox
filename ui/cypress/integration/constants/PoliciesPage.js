@@ -6,12 +6,12 @@ export const selectors = {
     addPolicyButton: 'button:contains("Add")',
     editPolicyButton: 'button:contains("Edit")',
     savePolicyButton: 'button:contains("Save")',
-    nextButton: 'button:contains("Next")',
+    nextButton: '.btn:contains("Next")',
     prevButton: 'button:contains("Previous")',
     cancelButton: 'button[data-test-id="cancel"]',
     policies: {
-        latest: 'tbody > tr:contains("latest")',
-        addCapabilities: 'tbody > tr:contains("CAP_SYS_ADMIN capability added")'
+        latest: 'div.rt-tr:contains("latest")',
+        addCapabilities: '.rt-tr:contains("CAP_SYS_ADMIN capability added")'
     },
     form: {
         nameInput: 'form input:first',
@@ -48,9 +48,9 @@ export const selectors = {
     searchInput: '.Select-input > input',
     sidePanel: '[data-test-id="panel"]',
     sidePanelHeader: '[data-test-id="panel-header"]',
-    tableFirstRow: 'table tr.cursor-pointer:first',
+    tableFirstRow: 'div.rt-tbody > div.rt-tr-group:first > .rt-tr.-odd',
     tableContainer: '[data-test-id="policies-table-container"]',
-    enableDisableButton: 'td > button',
+    enableDisableButton: '.rt-td > button',
     enabledPolicyButtonColorClass: 'text-success-500'
 };
 

@@ -87,7 +87,7 @@ describe('Policies page', () => {
 
         cy.get(selectors.tableFirstRow).click();
         updatePolicyName(secretSuffix);
-        cy.get(`table tr td:contains("${secretSuffix}")`);
+        cy.get(`.rt-tr:contains("${secretSuffix}")`);
         updatePolicyName(deleteSuffix); // revert back
     });
 

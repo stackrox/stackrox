@@ -128,7 +128,7 @@ class ViolationsPage extends Component {
                     const severity = severityLabels[ci.value];
                     return <span className={getSeverityClassName(severity)}>{severity}</span>;
                 },
-                sortMethod: sortSeverity('policy.severity')
+                sortMethod: sortSeverity
             },
             {
                 Header: 'Time',

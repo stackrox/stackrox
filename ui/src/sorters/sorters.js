@@ -13,8 +13,7 @@ const flattenObjectProperties = (a, b, key) => {
  * @returns {number}
  */
 
-const sortSeverity = key => (a, b) => {
-    const { aValue, bValue } = flattenObjectProperties(a, b, key);
+const sortSeverity = (a, b) => {
     const map = {
         Low: 'LOW_SEVERITY',
         Medium: 'MEDIUM_SEVERITY',
@@ -22,8 +21,8 @@ const sortSeverity = key => (a, b) => {
         Critical: 'CRITICAL_SEVERITY'
     };
     const priorityArray = ['LOW_SEVERITY', 'MEDIUM_SEVERITY', 'HIGH_SEVERITY', 'CRITICAL_SEVERITY'];
-    const firstSeverity = map[aValue] || aValue;
-    const secondSeverity = map[bValue] || bValue;
+    const firstSeverity = map[a] || a;
+    const secondSeverity = map[b] || b;
 
     const firstPrio = priorityArray.indexOf(firstSeverity);
     const secPrio = priorityArray.indexOf(secondSeverity);

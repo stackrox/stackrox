@@ -11,7 +11,7 @@ import { formValueSelector } from 'redux-form';
 import * as Icon from 'react-feather';
 import Dialog from 'Components/Dialog';
 import Loader from 'Components/Loader';
-import Table from 'Components/Table';
+import CheckboxTable from 'Components/CheckboxTable';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import { formatPolicyFields, getPolicyFormDataKeys } from 'Containers/Policies/policyFormUtils';
@@ -22,6 +22,21 @@ import SearchInput from 'Components/SearchInput';
 import { severityLabels } from 'messages/common';
 import { sortSeverity } from 'sorters/sorters';
 import PolicyCreationWizard from 'Containers/Policies/PolicyCreationWizard';
+
+const getSeverityClassName = severity => {
+    switch (severity) {
+        case 'Low':
+            return 'text-low-500';
+        case 'Medium':
+            return 'text-medium-500';
+        case 'High':
+            return 'text-high-severity';
+        case 'Critical':
+            return 'text-critical-severity';
+        default:
+            return '';
+    }
+};
 
 class PoliciesPage extends Component {
     static propTypes = {
@@ -146,14 +161,14 @@ class PoliciesPage extends Component {
 
     deletePolicies = () => {
         const policyIds = [];
-        this.policyTable.getSelectedRows().forEach(rowId => {
+        this.checkboxTable.state.selection.forEach(rowId => {
             // close the view panel if that policy is being deleted
             if (rowId === this.props.match.params.policyId) {
                 this.setSelectedPolicy();
             }
             policyIds.push(rowId);
         });
-        this.policyTable.clearSelectedRows();
+        this.checkboxTable.clearSelectedRows();
         this.hideConfirmationDialog();
         this.props.deletePolicies(policyIds);
     };
@@ -163,8 +178,9 @@ class PoliciesPage extends Component {
         this.props.setWizardState({ current: 'EDIT', policy: null, isNew: true });
     };
 
-    toggleEnabledDisabledPolicy = policy => {
-        this.props.updatePolicyDisabledState({ policyId: policy.id, disabled: !policy.disabled });
+    toggleEnabledDisabledPolicy = ({ id, disabled }) => e => {
+        e.stopPropagation();
+        this.props.updatePolicyDisabledState({ policyId: id, disabled: !disabled });
     };
 
     showConfirmationDialog = () => {
@@ -175,58 +191,79 @@ class PoliciesPage extends Component {
         this.setState({ showConfirmationDialog: false });
     };
 
-    renderTablePanel = () => {
+    renderSelectTable = () => {
         const columns = [
             {
-                key: 'name',
-                keys: ['name', 'disabled'],
-                keyValueFunc: (name, disabled) => (
+                Header: 'Name',
+                accessor: 'name',
+                Cell: ({ original }) => (
                     <div className="flex items-center relative">
                         <div
-                            className={`h-2 w-2 rounded-lg absolute -ml-4 ${
-                                !disabled ? 'bg-success-500' : 'bg-base-300'
+                            className={`h-2 w-2 rounded-lg absolute ${
+                                !original.disabled ? 'bg-success-500' : 'bg-base-300'
                             }`}
                         />
-                        <div>{name}</div>
+                        <div className="pl-4">{original.name}</div>
                     </div>
                 ),
-                label: 'Name'
+                widthClassName: 'w-1/5',
+                wrap: true
             },
-            { key: 'description', label: 'Description' },
             {
-                key: 'severity',
-                label: 'Severity',
-                keyValueFunc: severity => severityLabels[severity],
-                classFunc: severity => {
-                    switch (severity) {
-                        case 'Low':
-                            return 'text-low-500';
-                        case 'Medium':
-                            return 'text-medium-500';
-                        case 'High':
-                            return 'text-high-severity';
-                        case 'Critical':
-                            return 'text-critical-severity';
-                        default:
-                            return '';
-                    }
+                Header: 'Description',
+                accessor: 'description',
+                widthClassName: 'w-1/3',
+                wrap: true
+            },
+            {
+                Header: 'Severity',
+                accessor: 'severity',
+                Cell: ci => {
+                    const severity = severityLabels[ci.value];
+                    return <span className={getSeverityClassName(severity)}>{severity}</span>;
                 },
-                sortMethod: sortSeverity('severity')
-            }
-        ];
-        const actions = [
+                width: 100,
+                sortMethod: sortSeverity
+            },
             {
-                renderIcon: row =>
-                    row.disabled ? (
-                        <Icon.Power className="h-5 w-4 text-base-600" />
-                    ) : (
-                        <Icon.Power className="h-5 w-4 text-success-500" />
-                    ),
-                className: 'flex rounded-sm uppercase text-center text-sm items-center',
-                onClick: this.toggleEnabledDisabledPolicy
+                Header: 'Actions',
+                accessor: '',
+                Cell: ({ original }) => (
+                    <button
+                        className="flex rounded-sm uppercase text-center text-sm items-center"
+                        onClick={this.toggleEnabledDisabledPolicy(original)}
+                    >
+                        {original.disabled && <Icon.Power className="h-5 w-4 text-base-600" />}
+                        {!original.disabled && <Icon.Power className="h-5 w-4 text-success-500" />}
+                    </button>
+                ),
+                width: 75
             }
         ];
+        const id = this.props.selectedPolicy && this.props.selectedPolicy.id;
+        return (
+            <div
+                data-test-id="policies-table-container"
+                className={`w-full pl-3 pt-3 pr-3
+                    ${
+                        this.props.wizardState.current !== ''
+                            ? 'pointer-events-none opacity-25'
+                            : ''
+                    }`}
+            >
+                <CheckboxTable
+                    ref={r => (this.checkboxTable = r)} // eslint-disable-line
+                    rows={this.props.policies}
+                    columns={columns}
+                    onRowClick={this.setSelectedPolicy}
+                    selectedRowId={id}
+                    noDataText="No results found. Please refine your search."
+                />
+            </div>
+        );
+    };
 
+    renderTablePanel = () => {
         const buttonsDisabled = this.props.wizardState.current !== '';
         const panelButtons = (
             <React.Fragment>
@@ -256,26 +293,7 @@ class PoliciesPage extends Component {
         );
         return (
             <Panel header={`${this.props.policies.length} Policies`} buttons={panelButtons}>
-                <div
-                    data-test-id="policies-table-container"
-                    className={`w-full
-                        ${
-                            this.props.wizardState.current !== ''
-                                ? 'pointer-events-none opacity-25'
-                                : ''
-                        }`}
-                >
-                    <Table
-                        columns={columns}
-                        rows={this.props.policies}
-                        onRowClick={this.setSelectedPolicy}
-                        actions={actions}
-                        checkboxes
-                        ref={table => {
-                            this.policyTable = table;
-                        }}
-                    />
-                </div>
+                {this.renderSelectTable()}
             </Panel>
         );
     };
@@ -337,14 +355,20 @@ class PoliciesPage extends Component {
         const header = editingPolicy ? editingPolicy.name : '';
         const buttons = this.renderSidePanelButtons();
         return (
-            <Panel header={header} buttons={buttons} onClose={this.setSelectedPolicy} width="w-2/3">
+            <Panel
+                header={header}
+                buttons={buttons}
+                onClose={this.setSelectedPolicy}
+                className="w-2/3"
+            >
                 {this.renderSidePanelView(selectedPolicy)}
             </Panel>
         );
     };
 
     renderConfirmationDialog = () => {
-        const numSelectedRows = this.policyTable ? this.policyTable.getSelectedRows().length : 0;
+        if (!this.checkboxTable) return null;
+        const numSelectedRows = this.checkboxTable.state.selection.length;
         return (
             <Dialog
                 isOpen={this.state.showConfirmationDialog}

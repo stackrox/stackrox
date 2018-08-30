@@ -80,6 +80,7 @@ class ReactRowSelectTable extends Component {
         );
         return (
             <ReactTable
+                ref={r => (this.reactTable = r)} // eslint-disable-line
                 data={rows}
                 columns={columns}
                 getTbodyProps={this.getTbodyProps}
