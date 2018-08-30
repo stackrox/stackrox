@@ -113,7 +113,7 @@ func (k *kubernetesListener) setupClient() {
 
 	oc, err := openshift.NewForConfig(config)
 	if err != nil {
-		logger.Warn("Could not generate openshift client: %s", err)
+		logger.Warnf("Could not generate openshift client: %s", err)
 	}
 
 	k.clients = &clientSet{

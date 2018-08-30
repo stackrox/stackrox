@@ -270,6 +270,6 @@ func (b *storeImpl) addDeploymentToGraveyard(deployment *v1.Deployment) {
 
 	// If there is an error stuffing a deployment in the graveyard, then just abandon it in the street.
 	if err != nil {
-		log.Errorf("unable to tombstone deployment", err)
+		log.Errorf("unable to tombstone deployment: %s", err)
 	}
 }

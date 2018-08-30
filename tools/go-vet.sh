@@ -25,7 +25,7 @@ while read -r line; do
         fi
     fi
     echo >&2 "${line_to_echo}"
-done < <(go vet "$@" 2>&1; echo "exit status $?")
+done < <(go vet -all -printfuncs Print,Printf,Println,Debug,Debugf,Info,Infof,Warn,Warnf,Error,Errorf "$@" 2>&1; echo "exit status $?")
 
 echo "Found ${total} errors, ignored ${ignored}"
 if (( total == ignored )); then

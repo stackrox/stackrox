@@ -26,11 +26,11 @@ func initialize() {
 	toNotifyOfIntegrations := imageintegration.ToNotify()
 	integrations, err := ad.GetImageIntegrations(&v1.GetImageIntegrationsRequest{})
 	if err != nil {
-		log.Errorf("unable to use previous integrations", err)
+		log.Errorf("unable to use previous integrations: %s", err)
 	}
 	for _, ii := range integrations {
 		if err := toNotifyOfIntegrations.NotifyUpdated(ii); err != nil {
-			log.Errorf("unable to use previous integration", err)
+			log.Errorf("unable to use previous integration: %s", err)
 		}
 	}
 }

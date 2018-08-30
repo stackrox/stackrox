@@ -127,7 +127,7 @@ func (s *serviceImpl) sendMessages(stream v1.SensorEventService_RecordEventServe
 
 		sensorResponse, err := eventPipeline.Run(event)
 		if err != nil {
-			log.Error("error processing response: %s", err)
+			log.Errorf("error processing response: %s", err)
 			continue
 		}
 

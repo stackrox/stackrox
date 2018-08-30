@@ -235,7 +235,7 @@ func (w *wrap) getLabelSelector(spec reflect.Value) map[string]string {
 		return ls.MatchLabels
 	}
 
-	logger.Warn("unable to get label selector for %+v", spec.Type())
+	logger.Warnf("unable to get label selector for %+v", spec.Type())
 	return make(map[string]string)
 }
 

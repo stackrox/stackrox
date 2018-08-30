@@ -59,6 +59,6 @@ func (c *pollerImpl) doUpdate() {
 	}
 
 	if err = c.onUpdate(resp.GetIntegrations()); err != nil {
-		log.Errorf("error on poll: ", err)
+		log.Errorf("error on poll: %s", err)
 	}
 }
