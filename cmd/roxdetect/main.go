@@ -16,7 +16,7 @@ const tokenEnv = "STACKROX_TOKEN"
 
 var (
 	passFail = flag.Bool("pass-fail", true, "exit 1 on any critical policy failures")
-	central  = flag.String("central", "https://localhost:8080", "endpoint where central is available")
+	central  = flag.String("central", "localhost:8080", "endpoint where central is available")
 	registry = flag.String("registry", "", "registry where the image is uploaded")
 	remote   = flag.String("remote", "", "the remote name of the image")
 	tag      = flag.String("tag", "latest", "the tag for the image")
