@@ -8,6 +8,7 @@ import (
 )
 
 // DataStore is an intermediary to PolicyStorage.
+//go:generate mockery -name=DataStore
 type DataStore interface {
 	SearchPolicies(q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawPolicies(q *v1.Query) ([]*v1.Policy, error)

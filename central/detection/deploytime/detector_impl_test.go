@@ -7,6 +7,7 @@ import (
 	deploymentDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/detection/deploytime/mocks"
 	enrichmentMocks "github.com/stackrox/rox/central/enrichment/mocks"
+	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -32,7 +33,7 @@ func (suite *DetectorTestSuite) SetupTest() {
 	suite.deploymentsMock = &deploymentDataStoreMocks.DataStore{}
 
 	suite.detector = NewDetector(
-		NewPolicySet(),
+		NewPolicySet(&policyMocks.DataStore{}),
 		suite.alertManagerMock,
 		suite.enricherMock,
 		suite.deploymentsMock)

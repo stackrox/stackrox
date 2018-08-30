@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/gogo/protobuf/proto"
+	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
 )
@@ -14,6 +15,7 @@ type setImpl struct {
 
 	policyIDToPolicy map[string]*v1.Policy
 	policyToMatcher  map[*v1.Policy]deploymentMatcher.Matcher
+	policyStore      policyDatastore.DataStore
 }
 
 // ForOne runs the given function on the policy matching the id if it exists.
@@ -74,13 +76,20 @@ func (p *setImpl) RemoveNotifier(notifierID string) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	for _, p := range p.policyIDToPolicy {
-		filtered := p.GetNotifiers()[:0]
-		for _, n := range p.GetNotifiers() {
+	for _, policy := range p.policyIDToPolicy {
+		filtered := policy.GetNotifiers()[:0]
+		for _, n := range policy.GetNotifiers() {
 			if n != notifierID {
 				filtered = append(filtered, n)
 			}
 		}
+		policy.Notifiers = filtered
+
+		err := p.policyStore.UpdatePolicy(policy)
+		if err != nil {
+			return err
+		}
 	}
+
 	return nil
 }

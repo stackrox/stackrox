@@ -1,6 +1,7 @@
 package deploytime
 
 import (
+	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
 )
@@ -17,9 +18,10 @@ type PolicySet interface {
 }
 
 // NewPolicySet returns a new instance of a PolicySet.
-func NewPolicySet() PolicySet {
+func NewPolicySet(store policyDatastore.DataStore) PolicySet {
 	return &setImpl{
 		policyIDToPolicy: make(map[string]*v1.Policy),
 		policyToMatcher:  make(map[*v1.Policy]deploymentMatcher.Matcher),
+		policyStore:      store,
 	}
 }

@@ -20,7 +20,7 @@ var (
 )
 
 func initialize() {
-	policySet = NewPolicySet()
+	policySet = NewPolicySet(policyDataStore.Singleton())
 	policies, err := policyDataStore.Singleton().GetPolicies()
 	if err != nil {
 		panic(err)

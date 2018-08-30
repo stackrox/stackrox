@@ -5,7 +5,7 @@ import (
 
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
-	runTimeDetectiomn "github.com/stackrox/rox/central/detection/runtime"
+	runTimeDetection "github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -31,16 +31,12 @@ type Service interface {
 	DeleteNotifier(ctx context.Context, request *v1.DeleteNotifierRequest) (*v1.Empty, error)
 }
 
-type policyDetector interface {
-	RemoveNotifier(id string)
-}
-
 // New returns a new Service instance using the given DataStore.
 func New(storage store.Store,
 	processor processor.Processor,
 	buildTimePolicies buildTimeDetection.PolicySet,
 	deployTimePolicies deployTimeDetection.PolicySet,
-	runTimePolicies runTimeDetectiomn.PolicySet) Service {
+	runTimePolicies runTimeDetection.PolicySet) Service {
 	return &serviceImpl{
 		storage:            storage,
 		processor:          processor,

@@ -2,9 +2,7 @@ package service
 
 import (
 	"fmt"
-	"sort"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
@@ -79,7 +77,6 @@ func (s *serviceImpl) GetNotifier(ctx context.Context, request *v1.ResourceByID)
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("Notifier %v not found", request.GetId()))
 	}
 	secrets.ScrubSecretsFromStruct(notifier)
-	s.populatePolicies(notifier)
 	return notifier, nil
 }
 
@@ -91,7 +88,6 @@ func (s *serviceImpl) GetNotifiers(ctx context.Context, request *v1.GetNotifiers
 	}
 	for _, n := range notifiers {
 		secrets.ScrubSecretsFromStruct(n)
-		s.populatePolicies(n)
 	}
 	return &v1.GetNotifiersResponse{Notifiers: notifiers}, nil
 }
@@ -171,24 +167,17 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Notifier id must be provided")
 	}
+
 	n, err := s.GetNotifier(ctx, &v1.ResourceByID{Id: request.GetId()})
 	if err != nil {
 		return nil, err
 	}
 
-	if !request.GetForce() && len(n.Policies) != 0 {
-		m := jsonpb.Marshaler{}
-		policiesOnly := &v1.Notifier{
-			Policies: n.GetPolicies(),
-		}
-		jsonString, err := m.MarshalToString(policiesOnly)
+	err = s.deleteNotifiersFromPolicies(n.GetId())
 
-		if err != nil {
-			log.Error(err)
-			return nil, status.Error(codes.FailedPrecondition, "Notifier is in use by policies")
-		}
-
-		return nil, status.Errorf(codes.FailedPrecondition, "Notifier is in use by policies: %s", jsonString)
+	if err != nil {
+		log.Error(err)
+		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Notifier is still in use by policies. Error: %s", err))
 	}
 
 	if err := s.storage.RemoveNotifier(request.GetId()); err != nil {
@@ -202,14 +191,22 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) populatePolicies(notifier *v1.Notifier) {
-	policies := s.processor.GetIntegratedPolicies(notifier.GetId())
+func (s *serviceImpl) deleteNotifiersFromPolicies(notifierID string) error {
 
-	for _, p := range policies {
-		notifier.Policies = append(notifier.Policies, &v1.Notifier_Policy{Id: p.GetId(), Name: p.GetName()})
+	err := s.buildTimePolicies.RemoveNotifier(notifierID)
+	if err != nil {
+		return err
 	}
 
-	sort.Slice(notifier.Policies, func(i, j int) bool {
-		return notifier.Policies[i].Name < notifier.Policies[j].Name
-	})
+	err = s.deployTimePolicies.RemoveNotifier(notifierID)
+	if err != nil {
+		return err
+	}
+
+	err = s.runTimePolicies.RemoveNotifier(notifierID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

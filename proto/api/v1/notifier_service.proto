@@ -35,12 +35,6 @@ message Notifier {
     string type                = 3;
     string ui_endpoint         = 4;
     bool enabled               = 5;
-    message Policy {
-        string id = 1;
-        string name = 2;
-    }
-
-    repeated Policy policies   = 7;
     string label_key           = 8;
     string label_default       = 9;
     oneof config {
