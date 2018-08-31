@@ -123,7 +123,7 @@ type serviceIdentityStorage interface {
 }
 
 // IssueNewCert generates a new key and certificate chain for a sensor.
-func IssueNewCert(cn CommonName, storage serviceIdentityStorage) (certPEM, keyPEM []byte, identity *v1.ServiceIdentity, err error) {
+func IssueNewCert(cn CommonName, storage serviceIdentityStorage, names ...string) (certPEM, keyPEM []byte, identity *v1.ServiceIdentity, err error) {
 	returnErr := func(err error, prefix string) ([]byte, []byte, *v1.ServiceIdentity, error) {
 		return nil, nil, nil, fmt.Errorf("%s: %s", prefix, err)
 	}
@@ -144,7 +144,9 @@ func IssueNewCert(cn CommonName, storage serviceIdentityStorage) (certPEM, keyPE
 	if err != nil {
 		return returnErr(err, "request parsing")
 	}
+
 	req := cfsigner.SignRequest{
+		Hosts:   names,
 		Request: string(csrBytes),
 		Subject: &cfsigner.Subject{
 			CN:           cn.String(),

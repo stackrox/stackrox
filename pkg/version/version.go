@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	collectorTag = "latest"
+	collectorTag = "1.6.0-13-gfea6145a" // check https://hub.docker.com/r/stackrox/collector/tags/
 
 	versionFile = "VERSION"
 )

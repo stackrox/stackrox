@@ -9,3 +9,8 @@ import (
 func SensorsOnly() authz.Authorizer {
 	return serviceType{Type: v1.ServiceType_SENSOR_SERVICE}
 }
+
+// CollectorOnly returns a serviceType authorizer that checks for the Collector type.
+func CollectorOnly() authz.Authorizer {
+	return serviceType{Type: v1.ServiceType_COLLECTOR_SERVICE}
+}

@@ -46,10 +46,7 @@ func (d *alertManagerImpl) AlertAndNotify(previousAlerts, currentAlerts []*v1.Al
 	if err := d.updateBatch(updatedAlerts); err != nil {
 		return err
 	}
-	if err := d.markAlertsStale(staleAlerts); err != nil {
-		return err
-	}
-	return nil
+	return d.markAlertsStale(staleAlerts)
 }
 
 // UpdateBatch updates all of the alerts in the datastore.

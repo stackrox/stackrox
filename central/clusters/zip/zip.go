@@ -88,7 +88,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Add MTLS files
+	// Add MTLS files for sensor
 	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	idReq := &v1.CreateServiceIdentityRequest{
@@ -107,6 +107,28 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("sensor-key.pem", id.GetPrivateKey(), false)); err != nil {
 		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "sensor-key.pem", err))
+		return
+	}
+
+	// Add MTLS files for collector
+	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	idReq = &v1.CreateServiceIdentityRequest{
+		Id:   resp.GetCluster().GetId(),
+		Type: v1.ServiceType_COLLECTOR_SERVICE,
+	}
+	id, err = z.identityService.CreateServiceIdentity(ctx, idReq)
+	if err != nil {
+		writeGRPCStyleError(w, codes.Internal, err)
+		return
+	}
+
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("collector-cert.pem", id.GetCertificate(), false)); err != nil {
+		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "collector-cert.pem", err))
+		return
+	}
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("collector-key.pem", id.GetPrivateKey(), false)); err != nil {
+		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "collector-key.pem", err))
 		return
 	}
 

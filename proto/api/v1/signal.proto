@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 option go_package = "v1";
+option cc_enable_arenas = true;
 
 import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
@@ -27,23 +28,27 @@ message CollectorRegisterRequest {
     string instance_id = 2;
 }
 
+// Signal message tracks process and network activity.
+// Specifically, process launches and network connects/accepts.
 message Signal {
     // A unique UUID for identifying the message
-    string id = 1;
+    string id                             = 1;
 
     oneof signal {
-        ProcessSignal process_signal = 2;
+        ProcessSignal process_signal       = 2;
+        NetworkSignal network_signal       = 3;
     }
-    google.protobuf.Timestamp time = 11;
-    string container_id            = 12;
+    google.protobuf.Timestamp time         = 11;
+    string                    container_id = 12;
 }
 
+// ProcessSignal tracks process launches.
 message ProcessSignal {
     // Process name
     string name = 1;
 
-    // Process command line arguments 
-    repeated string command_line = 2;
+    // Process command line arguments
+    string command_line = 2;
 
     // Host process ID
     uint32 pid = 3;
@@ -55,7 +60,7 @@ message ProcessSignal {
     string exec_file_path = 5;
 
     // Process user and group identifiers (e.g., man 7 credentials)
-    Credentials credentials = 6; 
+    Credentials credentials = 6;
 
     message Credentials {
         uint32 uid  = 1; // real user ID
@@ -67,7 +72,59 @@ message ProcessSignal {
     }
 }
 
-// A Sensor (client-side streaming) service that allows Collector to push Signal messages
-service SignalService { 
+// NetworkSignal tracks connection information
+// about client and server.
+message NetworkSignal {
+    SocketFamily socket_family    = 1;
+
+    NetworkAddress client_address = 2;
+    NetworkAddress server_address = 3;
+
+    L4Protocol protocol           = 4;
+
+    Role role                     = 5;
+
+    enum Role {
+        ROLE_UNKNOWN = 0;
+        ROLE_SERVER  = 1;
+        ROLE_CLIENT  = 2;
+    }
+}
+
+// Note: We currently don't report local unix sockets.
+message NetworkAddress {
+    oneof network_address {
+        IPV4NetworkAddress ipv4_address   = 1;
+        IPV6NetworkAddress ipv6_address   = 2;
+    }
+}
+
+message IPV4NetworkAddress {
+    fixed32 address = 1;
+    uint32 port    = 2;
+}
+
+message IPV6NetworkAddress {
+    fixed64 address_high = 1;
+    fixed64 address_low  = 2;
+    uint32 port          = 3;
+}
+
+enum SocketFamily {
+    SOCKET_FAMILY_UNKNOWN = 0;
+    SOCKET_FAMILY_IPV4    = 1;
+    SOCKET_FAMILY_IPV6    = 2;
+}
+
+enum L4Protocol {
+    L4_PROTOCOL_UNKNOWN = 0;
+    L4_PROTOCOL_TCP     = 1;
+    L4_PROTOCOL_UDP     = 2;
+    L4_PROTOCOL_ICMP    = 3;
+    L4_PROTOCOL_RAW     = 4;
+}
+
+// A Sensor service that allows Collector to push Signal messages
+service SignalService {
     rpc PushSignals (stream SignalStreamMessage) returns (Empty);
 }

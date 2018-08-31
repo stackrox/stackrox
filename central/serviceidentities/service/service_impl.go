@@ -73,7 +73,11 @@ func (s *serviceImpl) CreateServiceIdentity(ctx context.Context, request *v1.Cre
 	if request.GetType() == v1.ServiceType_UNKNOWN_SERVICE {
 		return nil, status.Error(codes.InvalidArgument, "Service type must be nonempty")
 	}
-	cert, key, id, err := mtls.IssueNewCert(mtls.CommonName{ServiceType: request.GetType(), Identifier: request.GetId()}, s.storage)
+	var names []string
+	if request.GetType() == v1.ServiceType_SENSOR_SERVICE {
+		names = append(names, "sensor.stackrox")
+	}
+	cert, key, id, err := mtls.IssueNewCert(mtls.CommonName{ServiceType: request.GetType(), Identifier: request.GetId()}, s.storage, names...)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

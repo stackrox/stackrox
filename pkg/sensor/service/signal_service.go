@@ -7,8 +7,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -44,20 +42,19 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 
 // RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return v1.RegisterSensorEventServiceHandler(ctx, mux, conn)
+	// There is no grpc gateway handler for signal service
+	return nil
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, idcheck.SensorsOnly().Authorized(ctx, fullMethodName)
+	return ctx, nil
+	//return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
 }
 
 // PushSignals handles the bidirectional gRPC stream with the collector
 func (s *serviceImpl) PushSignals(stream v1.SignalService_PushSignalsServer) error {
-	_, err := authn.FromTLSContext(stream.Context())
-	if err != nil {
-		return err
-	}
+	log.Info("PushSignals called")
 	s.receiveMessages(stream)
 	return nil
 }
@@ -68,12 +65,12 @@ func (s *serviceImpl) Indicators() <-chan *listeners.EventWrap {
 
 func (s *serviceImpl) receiveMessages(stream v1.SignalService_PushSignalsServer) error {
 	clientClusterID := env.ClusterID.Setting()
-
+	log.Info("starting receiveMessages")
 	for {
 		signal, err := stream.Recv()
 		if err != nil {
 			log.Error("error dequeueing signal event: ", err)
-			continue
+			return err
 		}
 
 		if stream.Context().Err() != nil {
@@ -83,9 +80,9 @@ func (s *serviceImpl) receiveMessages(stream v1.SignalService_PushSignalsServer)
 
 		// Ignore the collector register request
 		if signal.GetSignal() == nil {
+			log.Error("Empty signal")
 			continue
 		}
-
 		// TODO: For testing! Remove once end-to-end data pipeline is complete
 		log.Infof("Obtained signal: %+v", signal)
 
@@ -102,6 +99,7 @@ func (s *serviceImpl) receiveMessages(stream v1.SignalService_PushSignalsServer)
 			SensorEvent: &v1.SensorEvent{
 				Id:        indicator.GetId(),
 				ClusterId: clientClusterID,
+				Action:    v1.ResourceAction_CREATE_RESOURCE,
 				Resource: &v1.SensorEvent_Indicator{
 					Indicator: indicator,
 				},

@@ -55,7 +55,7 @@ func executeTemplate(temp *template.Template, fields map[string]interface{}) (st
 	return buf.String(), nil
 }
 
-func generateCollectorImage(preventImage string) string {
+func generateCollectorImage(preventImage, tag string) string {
 	img := types.Wrapper{Image: utils.GenerateImageFromString(preventImage)}
 	registry := img.GetName().GetRegistry()
 	if registry == "stackrox.io" {
@@ -66,7 +66,6 @@ func generateCollectorImage(preventImage string) string {
 	if img.Repo() == "" {
 		remote = "collector"
 	}
-	tag := version.GetCollectorVersion()
 	return fmt.Sprintf("%s/%s:%s", registry, remote, tag)
 }
 
@@ -81,7 +80,7 @@ func fieldsFromWrap(c Wrap) map[string]interface{} {
 		"AdvertisedEndpointEnv": env.AdvertisedEndpoint.EnvVar(),
 		"AdvertisedEndpoint":    env.AdvertisedEndpoint.Setting(),
 		"RuntimeSupport":        c.RuntimeSupport,
-		"CollectorImage":        generateCollectorImage(c.PreventImage),
+		"CollectorImage":        generateCollectorImage(c.PreventImage, version.GetCollectorVersion()),
 	}
 	return fields
 }

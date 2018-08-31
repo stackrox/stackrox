@@ -205,7 +205,9 @@ spec:
       containers:
       - env:
         - name: COLLECTOR_CONFIG
-          value: '{"syscalls":["execve"],"process_syscalls":["execve"],"output":"stdout","processSignalFormat":"process_summary_text"}'
+          value: '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"},"generic_syscalls":["execve","connect","accept"],"syscalls":["accept","connect","execve"],"process_syscalls":["execve"],"output":"stdout","processSignalFormat":"process_summary_text","signalOutput":"grpc","signalFormat":"signal_summary"}'
+        - name: GRPC_SERVER
+          value: sensor.stackrox:443
         image: {{.CollectorImage}}
         name: collector
         resources:
@@ -235,6 +237,9 @@ spec:
         - mountPath: /host/sys/module
           name: sys-module-ro
           readOnly: true
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
       imagePullSecrets:
       - name: {{.ImagePullSecret}}
       volumes:
@@ -253,6 +258,16 @@ spec:
       - hostPath:
           path: /sys/module
         name: sys-module-ro
+      - name: certs
+        secret:
+          secretName: collector-tls
+          items:
+          - key: collector-cert.pem
+            path: cert.pem
+          - key: collector-key.pem
+            path: key.pem
+          - key: central-ca.pem
+            path: ca.pem
 {{- end}}
 `
 
@@ -361,8 +376,11 @@ function print_rbac_instructions {
 echo "Creating RBAC roles..."
 kubectl apply -f "$DIR/rbac.yaml" || print_rbac_instructions
 
-echo "Creating secrets..."
+echo "Creating secrets for sensor..."
 kubectl create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/central-ca.pem"
+
+echo "Creating secrets for collector..."
+kubectl create secret -n "{{.Namespace}}" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/central-ca.pem"
 
 echo "Creating deployment..."
 kubectl create -f "$DIR/deploy.yaml"

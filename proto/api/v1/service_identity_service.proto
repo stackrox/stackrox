@@ -13,6 +13,7 @@ enum ServiceType {
     SENSOR_SERVICE  = 1;
     CENTRAL_SERVICE = 2;
     REMOTE_SERVICE  = 3;
+    COLLECTOR_SERVICE = 4;
 }
 
 message ServiceIdentity {
