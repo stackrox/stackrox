@@ -36,8 +36,10 @@ func (npwl *WatchLister) resourceChanged(secretObj interface{}, action pkgV1.Res
 		return
 	}
 
-	// Filter out service account tokens because we have a service account field
-	if secret.Type == v1.SecretTypeServiceAccountToken || secret.Type == v1.SecretTypeDockerConfigJson {
+	// Filter out service account tokens because we have a service account field.
+	// Also filter out DockerConfigJson/DockerCfgs because we don't really care about them.
+	switch secret.Type {
+	case v1.SecretTypeDockerConfigJson, v1.SecretTypeDockercfg, v1.SecretTypeServiceAccountToken:
 		return
 	}
 

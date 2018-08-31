@@ -115,6 +115,7 @@ rules:
     - replicationcontrollers
     - services
     - statefulsets
+    - secrets
     apiGroups:
     - '*'
     verbs:
