@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "v1";
 
-import "api/v1/signal_service.proto";
+import "api/v1/signal.proto";
 import "google/protobuf/timestamp.proto";
 
 package v1;

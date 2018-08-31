@@ -5,11 +5,10 @@ option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
 import "api/v1/deployment_service.proto";
-import "api/v1/indicator_service.proto";
+import "api/v1/indicator.proto";
 import "api/v1/network_policy_service.proto";
 import "api/v1/policy_service.proto";
 import "api/v1/secret_service.proto";
-
 
 package v1;
 
