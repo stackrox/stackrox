@@ -1,3 +1,4 @@
+
 import static Services.getPolicies
 import static Services.waitForViolation
 import groups.BAT
@@ -23,7 +24,7 @@ class SystemPoliciesTest extends BaseSpecification {
 
         then:
         "Verify Violation #policyname is triggered"
-        assert waitForViolation(deploymentName,  policyname, 1800)
+        assert waitForViolation(deploymentName,  policyname, 30)
 
         cleanup:
         "Remove Deployment #deploymentName"
@@ -45,10 +46,12 @@ class SystemPoliciesTest extends BaseSpecification {
                 .setImage ( "apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
                 .addLabel ( "app", "test" ) | "C938" | "qacve"
 
+        /* Bug: ROX-279
         "Heartbleed: CVE-2014-0160" | new Deployment()
                 .setName ("qaheartbleed")
                 .setImage ("apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
                 .addLabel ( "app", "test" ) | "C947" | "qaheartbleed"
+        */
 
         "Wget in Image" | new Deployment()
                 .setName ("qawget")
@@ -75,10 +78,12 @@ class SystemPoliciesTest extends BaseSpecification {
                 .setImage ( "apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
                 .addLabel ( "app", "test" ) | "C933" | "qacvss"
 
+        /* Bug: ROX-279
         "Shellshock: CVE-2014-6271" | new Deployment()
                 .setName ("qashellshock" )
                 .setImage ("apollo-dtr.rox.systems/legacy-apps/ssl-terminator")
                 .addLabel ( "app", "test" ) | "C948" | "qashellshock"
+        */
 
         "Curl in Image" | new Deployment()
                 .setName ("qacurl")

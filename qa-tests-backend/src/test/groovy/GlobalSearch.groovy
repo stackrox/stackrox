@@ -33,12 +33,14 @@ class GlobalSearch extends BaseSpecification {
                 .addLabel ( "app", "test" ) |
                 "qadeployment" | "Deployment:qadeployment" | SearchServiceOuterClass.SearchCategory.DEPLOYMENTS
 
+        /* Bug: ROX-279
         new Deployment()
                 .setName ("qaimage")
                 .setImage ("nginx")
                 .addPort (22)
                 .addLabel ( "app", "test" ) |
                 "qaimage" | "Image:docker.io/library/nginx:latest" | SearchServiceOuterClass.SearchCategory.IMAGES
+        */
 
         new Deployment()
                 .setName ("qapolicy")

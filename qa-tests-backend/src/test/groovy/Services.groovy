@@ -102,18 +102,19 @@ class Services {
 
     static waitForViolation(String deploymentName, String policyName, int timeoutSeconds) {
         int intervalSeconds = 1
-        for (int i = 0; i < timeoutSeconds / intervalSeconds; i++) {
+        int waitTime
+        for (waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
             def violations = getViolations(ListAlertsRequest.newBuilder()
                     .setQuery("Deployment:${deploymentName}+Policy:${policyName}").build())
             if (violations.size() > 0) {
                 println "violation size is: " + violations.size()
-                println policyName + " triggered, the waiting time is " + i
+                println policyName + " triggered after waiting " + waitTime * intervalSeconds + " seconds"
                 return true
             }
             sleep(intervalSeconds * 1000)
         }
 
-        println "Fail to trigger " + policyName
+        println "Failed to trigger " + policyName + " after waiting " + waitTime * intervalSeconds + " seconds"
         return false
     }
 

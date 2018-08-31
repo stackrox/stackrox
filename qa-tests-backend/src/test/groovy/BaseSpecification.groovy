@@ -9,11 +9,12 @@ import org.junit.rules.Timeout
 import spock.lang.Shared
 import spock.lang.Specification
 import testrailintegration.TestRailconfig
+import java.util.concurrent.TimeUnit
 
 @Slf4j
 class BaseSpecification extends Specification {
     @Rule
-    Timeout globalTimeout = new Timeout(2000000)
+    Timeout globalTimeout = new Timeout(500000, TimeUnit.MILLISECONDS)
     @Rule
     TestName name = new TestName()
     @Shared

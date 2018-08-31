@@ -105,7 +105,6 @@ tasks.withType(Test) {
 
 test {
     testLogging.showStandardStreams = true
-    useJUnit()
     systemProperty "cluster", System.getProperty("CLUSTER")
     systemProperty "testrail", System.getProperty("TESTRAIL")
     systemProperty "username", System.getProperty("USERNAME")
