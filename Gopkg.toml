@@ -173,3 +173,7 @@ required = ["golang.org/x/tools/go/ast/astutil"]
 [[constraint]]
   name = "github.com/tkuchiki/go-timezone"
   branch = "master"
+
+[[constraint]]
+  name = "github.com/golang/mock"
+  version = "v1.1.1"

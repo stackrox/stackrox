@@ -41,12 +41,12 @@ imports:
 ifdef CI
 		@echo "The environment indicates we are in CI; checking goimports."
 		@echo 'If this fails, run `make style`.'
-		@$(eval IMPORTS=`find . -name vendor -prune -o -name generated -prune -o -name '*.go' -print | xargs goimports -l`)
+		@$(eval IMPORTS=`find . -name vendor -prune -o -name generated -prune -o -name mocks -prune -o -name '*.go' -print | xargs goimports -l`)
 		@echo "goimports problems in the following files, if any:"
 		@echo $(IMPORTS)
 		@test -z "$(IMPORTS)"
 endif
-	@find . -name vendor -prune -name generated -prune -o -name '*.go' -print | xargs goimports -w
+	@find . -name vendor -prune -name generated -prune -o -name mocks -prune -o -name '*.go' -print | xargs goimports -w
 
 .PHONY: crosspkgimports
 crosspkgimports:
@@ -76,19 +76,31 @@ GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_GW_SRCS)
 
 include make/protogen.mk
 
+# These targets are not really phony, but they are never run in CI, only in the rare instance
+# when someone wants to create/update a mock. The extra ten seconds it takes then isn't a big deal.
+# Making it a phony target and always using the latest version (an effect of "go get -u")
+# should be fine for the case of generated mocks, and is helpful in ensuring that we don't ping-pong
+# due to different people having different versions of these binaries.
 MOCKERY_BIN := $(GOPATH)/bin/mockery
-STRINGER_BIN := $(GOPATH)/bin/stringer
-
+.PHONY: $(MOCKERY_BIN)
 $(MOCKERY_BIN):
 	@echo "+ $@"
-	@go get github.com/vektra/mockery/.../
+	@go get -u github.com/vektra/mockery/.../
 
+STRINGER_BIN := $(GOPATH)/bin/stringer
+.PHONY: $(STRINGER_BIN)
 $(STRINGER_BIN):
 	@echo "+ $@"
-	@go get golang.org/x/tools/cmd/stringer
+	@go get -u golang.org/x/tools/cmd/stringer
+
+MOCKGEN_BIN := $(GOPATH)/bin/mockgen
+.PHONY: $(MOCKGEN_BIN)
+$(MOCKGEN_BIN):
+	@echo "+ $@"
+	@go get -u github.com/golang/mock/mockgen
 
 .PHONY: go-generated-srcs
-go-generated-srcs: $(MOCKERY_BIN) $(STRINGER_BIN)
+go-generated-srcs: $(MOCKERY_BIN) $(MOCKGEN_BIN) $(STRINGER_BIN)
 	@echo "+ $@"
 	go generate ./...
 
