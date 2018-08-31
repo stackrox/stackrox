@@ -7,7 +7,7 @@ import { createSelector, createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions as secretsActions } from 'reducers/secrets';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import ReactRowSelectTable from 'Components/ReactRowSelectTable';
+import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
@@ -60,7 +60,7 @@ class SecretPage extends Component {
         if (!rows.length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
         return (
-            <ReactRowSelectTable
+            <Table
                 rows={rows}
                 columns={columns}
                 onRowClick={this.updateSelectedSecret}

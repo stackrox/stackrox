@@ -5,7 +5,7 @@ import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 
 import Modal from 'Components/Modal';
-import ReactRowSelectTable from 'Components/ReactRowSelectTable';
+import Table from 'Components/Table';
 
 class DockerFileModal extends Component {
     static propTypes = {
@@ -41,7 +41,7 @@ class DockerFileModal extends Component {
         return (
             <div className="flex flex-1 p-3 overflow-y-scroll">
                 <div className="flex flex-col w-full">
-                    <ReactRowSelectTable columns={columns} rows={rows} />
+                    <Table columns={columns} rows={rows} />
                 </div>
             </div>
         );

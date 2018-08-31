@@ -39,14 +39,12 @@ class PoliciesPreview extends Component {
         const title = 'Violations Preview';
         const columns = [
             {
-                key: 'deployment',
-                keyValueFunc: deployment => deployment,
-                label: 'Deployment'
+                accessor: 'deployment',
+                Header: 'Deployment'
             },
             {
-                key: 'violations',
-                label: 'Violations',
-                keyValueFunc: violations => violations
+                accessor: 'violations',
+                Header: 'Violations'
             }
         ];
         const rows = this.props.dryrun.alerts;

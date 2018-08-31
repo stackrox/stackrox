@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import ReactTablePropTypes from 'react-table/lib/propTypes';
-import ReactRowSelectTable from 'Components/ReactRowSelectTable';
+import Table from 'Components/Table';
 
 class CheckboxTable extends Component {
     static propTypes = {
@@ -114,13 +114,7 @@ class CheckboxTable extends Component {
     render() {
         const { ...rest } = this.props;
         const columns = this.addCheckboxColumns();
-        return (
-            <ReactRowSelectTable
-                {...rest}
-                ref={r => (this.table = r)} // eslint-disable-line 
-                columns={columns}
-            />
-        );
+        return <Table {...rest} ref={r => (this.table = r)} columns={columns} />; // eslint-disable-line
     }
 }
 

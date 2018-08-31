@@ -55,10 +55,10 @@ describe('Integrations page', () => {
         cy.get(selectors.buttons.create).click();
 
         // delete the integration after to clean up
-        cy.get(`table tr:contains("${name}") td input[type="checkbox"]`).check();
-        cy.get(selectors.buttons.delete).click();
+        cy.get(`.rt-tr:contains("${name}") .rt-td input[type="checkbox"]`).check();
+        cy.get(selectors.buttons.delete).click({ force: true });
         cy.get(selectors.buttons.confirm).click();
-        cy.get(`table tr:contains("${name}")`).should('not.exist');
+        cy.get(`.rt-tr:contains("${name}")`).should('not.exist');
     });
 });
 
@@ -94,16 +94,16 @@ describe('API Token Creation Flow', () => {
 
     it('should show the generated API token in the table, and be clickable', () => {
         cy.get(selectors.apiTokenTile).click();
-        cy.get(`tr:contains("${randomTokenName}")`).click();
+        cy.get(`.rt-tr:contains("${randomTokenName}")`).click();
         cy.get(selectors.apiTokenDetailsDiv).contains(`Name:${randomTokenName}`);
         cy.get(selectors.apiTokenDetailsDiv).contains('Role:Admin');
     });
 
     it('should be able to revoke the API token', () => {
         cy.get(selectors.apiTokenTile).click();
-        cy.get(`tr:contains("${randomTokenName}") input`).check();
-        cy.get(selectors.buttons.revoke).click();
-        cy.get(`tr:contains("${randomTokenName}")`).should('not.exist');
+        cy.get(`.rt-tr:contains("${randomTokenName}") input`).check();
+        cy.get(selectors.buttons.revoke).click({ force: true });
+        cy.get(`.rt-td:contains("${randomTokenName}")`).should('not.exist');
     });
 });
 
@@ -124,7 +124,7 @@ describe('Cluster Creation Flow', () => {
         cy.get(selectors.dockerSwarmTile).click();
         cy.get(selectors.dialog).should('not.exist');
         cy.get(selectors.checkboxes).check();
-        cy.get(selectors.buttons.delete).click();
+        cy.get(selectors.buttons.delete).click({ force: true });
         cy.get(selectors.dialog);
     });
 
@@ -201,11 +201,10 @@ describe('Cluster Creation Flow', () => {
                 );
 
                 // clean up after the test by deleting the cluster
-                cy.get(`table tr:contains("${clusterName}") td input[type="checkbox"]`).check();
-                cy.get(selectors.buttons.add).should('be.disabled');
-                cy.get(selectors.buttons.delete).click();
+                cy.get(`.rt-tr:contains("${clusterName}") .rt-td input[type="checkbox"]`).check();
+                cy.get(selectors.buttons.delete).click({ force: true });
                 cy.get(selectors.buttons.confirm).click();
-                cy.get(`table tr:contains("${clusterName}")`).should('not.exist');
+                cy.get(`.rt-tr:contains("${clusterName}")`).should('not.exist');
             });
     });
 });

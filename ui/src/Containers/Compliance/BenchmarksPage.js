@@ -11,7 +11,7 @@ import { ClipLoader } from 'react-spinners';
 import { sortNumber } from 'sorters/sorters';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
-import ReactRowSelectTable from 'Components/ReactRowSelectTable';
+import Table from 'Components/Table';
 import Select from 'Components/Select';
 import BenchmarksSidePanel from 'Containers/Compliance/BenchmarksSidePanel';
 import HostResultModal from 'Containers/Compliance/HostResultModal';
@@ -260,7 +260,7 @@ class BenchmarksPage extends Component {
         if (!rows.length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
         return (
-            <ReactRowSelectTable
+            <Table
                 rows={rows}
                 columns={columns}
                 idAttribute="definition.name"

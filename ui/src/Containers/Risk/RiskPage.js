@@ -8,7 +8,7 @@ import { selectors } from 'reducers';
 import { actions as deploymentsActions, types } from 'reducers/deployments';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
-import ReactRowSelectTable from 'Components/ReactRowSelectTable';
+import Table from 'Components/Table';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import Panel from 'Components/Panel';
@@ -83,7 +83,7 @@ class RiskPage extends Component {
         if (!rows.length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
         return (
-            <ReactRowSelectTable
+            <Table
                 rows={rows}
                 columns={columns}
                 onRowClick={this.updateSelectedDeployment}

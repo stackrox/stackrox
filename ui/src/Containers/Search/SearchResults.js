@@ -4,7 +4,7 @@ import { createSelector, createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import ReactRowSelectTable from 'Components/ReactRowSelectTable';
+import Table from 'Components/Table';
 
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
@@ -215,7 +215,7 @@ class SearchResults extends Component {
         ];
         const rows = this.props.globalSearchResults;
         if (!rows.length) return <NoResultsMessage message="No Search Results." />;
-        return <ReactRowSelectTable rows={rows} columns={columns} noDataText="No Search Results" />;
+        return <Table rows={rows} columns={columns} noDataText="No Search Results" />;
     };
 
     render() {

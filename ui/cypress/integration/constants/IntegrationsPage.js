@@ -11,7 +11,7 @@ export const selectors = {
     slackTile: 'button:contains("Slack")',
     apiTokenTile: 'button:contains("API Token")',
     clusters: {
-        swarmCluster1: 'tr:contains("Swarm Cluster 1")'
+        swarmCluster1: 'div.rt-td:contains("Swarm Cluster 1")'
     },
     integrationError: 'div[data-test-id="integration-error"]',
     buttons: {

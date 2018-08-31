@@ -12,7 +12,7 @@ import { actions as imagesActions, types } from 'reducers/images';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
-import ReactRowSelectTable from 'Components/ReactRowSelectTable';
+import Table from 'Components/Table';
 import { sortNumber, sortDate } from 'sorters/sorters';
 import ImageDetails from 'Containers/Images/ImageDetails';
 
@@ -89,7 +89,7 @@ class ImagesPage extends Component {
         if (!rows.length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
         return (
-            <ReactRowSelectTable
+            <Table
                 rows={rows}
                 columns={columns}
                 onRowClick={this.updateSelectedImage}

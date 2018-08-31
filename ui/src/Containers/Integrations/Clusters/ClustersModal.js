@@ -11,8 +11,9 @@ import { selectors } from 'reducers';
 
 import Dialog from 'Components/Dialog';
 import Modal from 'Components/Modal';
-import Table from 'Components/Table';
+import CheckboxTable from 'Components/CheckboxTable';
 import Panel from 'Components/Panel';
+import NoResultsMessage from 'Components/NoResultsMessage';
 import PanelButton from 'Components/PanelButton';
 import { clusterTypeLabels } from 'messages/common';
 import { deleteCluster } from 'services/ClustersService';
@@ -39,15 +40,12 @@ class ClustersModal extends Component {
     };
 
     state = {
-        checkedClusterIds: [],
         showConfirmationDialog: false
     };
 
     componentWillUnmount() {
         this.props.selectCluster(null);
     }
-
-    onRowChecked = selectedRows => this.setState({ checkedClusterIds: selectedRows });
 
     onClusterRowClick = cluster => this.props.selectCluster(cluster.id);
 
@@ -56,12 +54,18 @@ class ClustersModal extends Component {
     onClusterDetailsClose = () => this.props.selectCluster(null);
 
     deleteClusters = () => {
-        const promises = this.state.checkedClusterIds.map(deleteCluster);
-        Promise.all(promises).then(() => {
-            this.clusterTableRef.clearSelectedRows();
-            this.hideConfirmationDialog();
-            this.props.fetchClusters();
-        });
+        const checkedClusterIds =
+            this.clusterTableRef &&
+            this.clusterTableRef.state &&
+            this.clusterTableRef.state.selection;
+        if (checkedClusterIds) {
+            const promises = checkedClusterIds.map(deleteCluster);
+            Promise.all(promises).then(() => {
+                this.clusterTableRef.clearSelectedRows();
+                this.hideConfirmationDialog();
+                this.props.fetchClusters();
+            });
+        }
     };
 
     showConfirmationDialog = () => {
@@ -70,6 +74,40 @@ class ClustersModal extends Component {
 
     hideConfirmationDialog = () => {
         this.setState({ showConfirmationDialog: false });
+    };
+
+    showModalView = () => {
+        const columns = [
+            { accessor: 'name', Header: 'Name', wrap: true },
+            { accessor: 'preventImage', Header: 'StackRox Image', wrap: true },
+            {
+                accessor: 'lastContact',
+                Header: 'Last Check-In',
+                Cell: ({ original }) => {
+                    if (original.lastContact)
+                        return dateFns.format(original.lastContact, dateTimeFormat);
+                    return 'N/A';
+                }
+            }
+        ];
+        const { selectedCluster } = this.props;
+        const selectedClusterId = selectedCluster && selectedCluster.id;
+        if (!this.props.clusters || !this.props.clusters.length)
+            return <NoResultsMessage message="No clusters to show." />;
+
+        return (
+            <CheckboxTable
+                ref={table => {
+                    this.clusterTableRef = table;
+                }}
+                rows={this.props.clusters}
+                columns={columns}
+                onRowClick={this.onClusterRowClick}
+                selectedRowId={selectedClusterId}
+                noDataText="No clusters to show."
+                minRows={20}
+            />
+        );
     };
 
     renderTable = () => {
@@ -81,46 +119,23 @@ class ClustersModal extends Component {
                     text="Delete"
                     className="btn btn-danger"
                     onClick={this.showConfirmationDialog}
-                    disabled={this.state.checkedClusterIds.length === 0}
+                    disabled={
+                        this.props.clusters.length === 0 || this.props.selectedCluster !== null
+                    }
                 />
                 <PanelButton
                     icon={<Icon.Plus className="h-4 w-4" />}
                     text="Add"
                     className="btn btn-success"
                     onClick={this.onAddCluster}
-                    disabled={
-                        this.state.checkedClusterIds.length !== 0 || this.props.isWizardActive
-                    }
+                    disabled={this.props.selectedCluster !== null || this.props.isWizardActive}
                 />
             </React.Fragment>
         );
-
-        const columns = [
-            { key: 'name', label: 'Name', className: 'word-break' },
-            { key: 'preventImage', label: 'StackRox Image', className: 'word-break' },
-            {
-                key: 'lastContact',
-                label: 'Last Check-In',
-                keyValueFunc: date => {
-                    if (date) return dateFns.format(date, dateTimeFormat);
-                    return 'N/A';
-                }
-            }
-        ];
-
         return (
             <div className="flex flex-1">
                 <Panel header={header} buttons={buttons}>
-                    <Table
-                        columns={columns}
-                        rows={this.props.clusters}
-                        checkboxes
-                        onRowClick={this.onClusterRowClick}
-                        onRowChecked={this.onRowChecked}
-                        ref={table => {
-                            this.clusterTableRef = table;
-                        }}
-                    />
+                    {this.showModalView()}
                 </Panel>
             </div>
         );
@@ -148,7 +163,11 @@ class ClustersModal extends Component {
 
     render() {
         const { clusterType, onRequestClose } = this.props;
-        const numCheckedClusters = this.state.checkedClusterIds.length;
+        const checkedClusterIds =
+            this.clusterTableRef &&
+            this.clusterTableRef.state &&
+            this.clusterTableRef.state.selection;
+        const numCheckedClusters = checkedClusterIds && checkedClusterIds.length;
         return (
             <Modal isOpen onRequestClose={onRequestClose} className="w-full lg:w-5/6 h-full">
                 <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">

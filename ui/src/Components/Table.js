@@ -1,268 +1,102 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import isEqual from 'lodash/isEqual';
-
-import TableCell from 'Components/TableCell';
-import find from 'lodash/find';
+import ReactTable from 'react-table';
+import ReactTablePropTypes from 'react-table/lib/propTypes';
 import flattenObject from 'utils/flattenObject';
+
+const columnHeaderClassName =
+    'p-3 text-primary-500 border-b border-base-300 hover:text-primary-600 cursor-pointer truncate select-none relative text-left border-r-0 shadow-none';
+const columnClassName = 'p-3 text-left border-r-0 cursor-pointer self-center';
+const pageSize = 20;
 
 class Table extends Component {
     static propTypes = {
-        columns: PropTypes.arrayOf(
-            PropTypes.shape({
-                key: PropTypes.string,
-                label: PropTypes.string,
-                keyValueFunc: PropTypes.func,
-                align: PropTypes.string,
-                classFunc: PropTypes.func,
-                className: PropTypes.string,
-                default: PropTypes.any,
-                sortMethod: PropTypes.func
-            })
-        ).isRequired,
-        rows: PropTypes.arrayOf(
-            PropTypes.shape({
-                id: PropTypes.string
-            })
-        ).isRequired,
+        columns: ReactTablePropTypes.columns.isRequired,
+        rows: PropTypes.arrayOf(PropTypes.object).isRequired,
         onRowClick: PropTypes.func,
-        onRowChecked: PropTypes.func,
-        checkboxes: PropTypes.bool,
-        actions: PropTypes.arrayOf(
-            PropTypes.shape({
-                text: PropTypes.string,
-                renderIcon: PropTypes.func,
-                className: PropTypes.string,
-                onClick: PropTypes.func,
-                disabled: PropTypes.bool
-            })
-        ),
-        messageIfEmpty: PropTypes.string
+        selectedRowId: PropTypes.string,
+        idAttribute: PropTypes.string,
+        noDataText: ReactTablePropTypes.noDataText
     };
 
     static defaultProps = {
-        onRowClick: null,
-        onRowChecked: null,
-        checkboxes: false,
-        actions: [],
-        messageIfEmpty: ''
+        noDataText: 'No records.',
+        selectedRowId: null,
+        idAttribute: 'id',
+        onRowClick: null
     };
 
-    constructor(props) {
-        super(props);
+    getTbodyProps = state => {
+        const table = [...document.body.getElementsByClassName('rt-table')];
+        const tableBody = table[0] && table[0].lastChild;
+        const isTableOverflow = state.pageRows && state.pageRows.length < state.minRows;
 
-        this.state = {
-            sortBy: null,
-            sortDir: {},
-            checked: new Set(),
-            selected: null,
-            sortedRows: new Set()
+        if (tableBody && isTableOverflow) {
+            tableBody.scrollTop = 0;
+        }
+
+        return {
+            className: isTableOverflow ? 'overflow-hidden' : ''
         };
-    }
-
-    componentWillMount() {
-        this.setState({ sortedRows: this.props.rows });
-    }
-
-    componentWillReceiveProps = props => {
-        if (props.rows !== this.props.rows) {
-            this.setState({ sortedRows: props.rows });
-        }
     };
 
-    getSelectedRows = () => Array.from(this.state.checked);
+    getTrGroupProps = (state, rowInfo) => ({
+        className: rowInfo && rowInfo.original ? '' : 'invisible'
+    });
 
-    getDirection = direction => {
-        if (!direction) return '';
-        return direction === 'DESC' ? ' ↓' : ' ↑';
-    };
-
-    getValue = (obj, key) => {
-        let val = Object.assign({}, flattenObject(obj))[key];
-        if (val) {
-            val = typeof val === 'string' ? val : val[0];
-        }
-        return val;
-    };
-
-    clearSelectedRows = () => {
-        const { checked } = this.state;
-        checked.clear();
-        this.setState({ checked });
-    };
-
-    rowCheckedHandler = row => event => {
-        event.stopPropagation();
-        const { checked } = this.state;
-        if (!checked.has(row.id)) checked.add(row.id);
-        else checked.delete(row.id);
-        this.setState({ checked });
-        if (this.props.onRowChecked) this.props.onRowChecked(Array.from(this.state.checked));
-    };
-
-    rowClickHandler = row => () => {
-        if (this.props.onRowClick) {
-            this.props.onRowClick(row);
-            this.setState({
-                selected: row
-            });
-        }
-    };
-
-    actionClickHandler = (action, row) => event => {
-        event.stopPropagation();
-        action.onClick(row);
-    };
-
-    sortRows = key => () => {
-        const sortBy = key;
-        let sortDir = this.state.sortDir[sortBy];
-
-        if (sortBy === this.state.sortBy) {
-            sortDir = this.state.sortDir[sortBy] === 'ASC' ? 'DESC' : 'ASC';
-        } else {
-            sortDir = 'DESC';
-        }
-
-        const column = find(this.props.columns, o => o.key === sortBy);
-        const sortFn = (a, b) => {
-            let sortVal = 0;
-            if (column && column.sortMethod) {
-                sortVal = column.sortMethod(a, b);
-            } else {
-                const aValue = this.getValue(a, sortBy);
-                const bValue = this.getValue(b, sortBy);
-                if (aValue === bValue) sortVal = 0;
-                if (aValue === undefined) sortVal = -1;
-                if (bValue === undefined) sortVal = 1;
-                if (aValue !== undefined && bValue !== undefined)
-                    sortVal = aValue.localeCompare(bValue);
-            }
-            if (sortDir === 'DESC') {
-                sortVal *= -1;
-            }
-            return sortVal;
+    getTrProps = (state, rowInfo) => {
+        const flattenedRowInfo = rowInfo && rowInfo.original && flattenObject(rowInfo.original);
+        return {
+            onClick: () => {
+                if (this.props.onRowClick) this.props.onRowClick(rowInfo.original);
+            },
+            className:
+                rowInfo &&
+                rowInfo.original &&
+                flattenedRowInfo[this.props.idAttribute] === this.props.selectedRowId
+                    ? 'bg-base-100'
+                    : ''
         };
-        const sortedRows = [...this.state.sortedRows].sort(sortFn);
-        this.setState({ sortBy, sortDir: { [key]: sortDir }, sortedRows });
     };
 
-    renderActionButtons = row =>
-        this.props.actions.map((button, i) => (
-            <button
-                key={i}
-                className={button.className}
-                onClick={this.actionClickHandler(button, row)}
-                disabled={button.disabled}
-            >
-                {button.renderIcon && (
-                    <span className="flex items-center">{button.renderIcon(row)}</span>
-                )}
-                {button.text && (
-                    <span className={`${button.renderIcon && 'ml-3'}`}>{button.text}</span>
-                )}
-            </button>
-        ));
+    getColumnClassName = column => {
+        let className = column.className || columnClassName;
+        className = column.widthClassName ? `${className} ${column.widthClassName}` : className;
+        return column.wrap ? `whitespace-normal overflow-visible ${className}` : className;
+    };
 
-    renderHeaders() {
-        const tableHeaders = this.props.columns.map(column => {
-            const className = `p-3 text-primary-500 border-b border-base-300 hover:text-primary-600 cursor-pointer truncate select-none relative ${
-                column.align === 'right' ? 'text-right' : 'text-left'
-            } ${column.className}`;
-            const key = column.label;
-            return (
-                <th className={className} key={key} onClick={this.sortRows(column.key)}>
-                    {column.label}
-                    <span className="absolute">
-                        {this.getDirection(this.state.sortDir[column.key])}
-                    </span>
-                </th>
-            );
-        });
-        if (this.props.checkboxes) {
-            tableHeaders.unshift(
-                <th
-                    className="p-3 text-primary-500 border-b border-base-300 hover:text-primary-600"
-                    key="checkboxTableHeader"
-                />
-            );
-        }
-        if (this.props.actions && this.props.actions.length) {
-            tableHeaders.push(
-                <th
-                    className="p-3 text-primary-500 border-b border-base-300 hover:text-primary-600"
-                    key="actionsTableHeader"
-                >
-                    Actions
-                </th>
-            );
-        }
-        return <tr>{tableHeaders}</tr>;
-    }
-
-    renderBody() {
-        const { columns } = this.props;
-        const rowClickable = !!this.props.onRowClick;
-        return [...this.state.sortedRows].map((row, i) => {
-            const tableCells = columns.map(column => {
-                const key = column.key || column.keys.join('-');
-                return <TableCell column={column} row={row} key={`${key}`} />;
-            });
-            if (this.props.checkboxes) {
-                tableCells.unshift(
-                    <td className="p-3 text-center" key="checkboxTableCell">
-                        <input
-                            type="checkbox"
-                            className="h-4 w-4 cursor-pointer"
-                            onClick={this.rowCheckedHandler(row)}
-                            checked={this.state.checked.has(row.id)}
-                        />
-                    </td>
-                );
-            }
-            if (this.props.actions && this.props.actions.length) {
-                tableCells.push(
-                    <td className="flex justify-center p-3 text-center" key="actionsTableCell">
-                        {this.renderActionButtons(row)}
-                    </td>
-                );
-            }
-            return (
-                <tr
-                    className={`${rowClickable ? 'cursor-pointer' : ''} ${
-                        isEqual(this.state.selected, row) ? 'bg-base-200' : ''
-                    } border-b border-base-300 hover:bg-base-100`}
-                    key={i}
-                    onClick={rowClickable ? this.rowClickHandler(row) : null}
-                >
-                    {tableCells}
-                </tr>
-            );
-        });
-    }
-
-    renderContent() {
-        return (
-            <table className="w-full border-collapse transition">
-                <thead>{this.renderHeaders()}</thead>
-                <tbody>{this.renderBody()}</tbody>
-            </table>
-        );
-    }
-
-    renderEmpty() {
-        return (
-            <div className="p3 w-full my-auto text-center capitalize">
-                {this.props.messageIfEmpty}
-            </div>
-        );
-    }
+    getHeaderClassName = column => {
+        const className = column.headerClassName || columnHeaderClassName;
+        return column.widthClassName ? `${className} ${column.widthClassName}` : className;
+    };
 
     render() {
-        if (this.props.rows.length === 0 && this.props.messageIfEmpty !== '') {
-            return this.renderEmpty();
-        }
-        return this.renderContent();
+        const { rows, columns, ...rest } = this.props;
+        columns.forEach(column =>
+            Object.assign(column, {
+                className: this.getColumnClassName(column),
+                headerClassName: this.getHeaderClassName(column)
+            })
+        );
+        return (
+            <ReactTable
+                ref={r => (this.reactTable = r)} // eslint-disable-line
+                data={rows}
+                columns={columns}
+                getTbodyProps={this.getTbodyProps}
+                getTrGroupProps={this.getTrGroupProps}
+                getTrProps={this.getTrProps}
+                defaultPageSize={pageSize}
+                className={`border-0 -highlight w-full ${rows.length > pageSize && 'h-full'}`}
+                showPagination={rows.length > pageSize}
+                resizable={false}
+                sortable
+                defaultSortDesc={false}
+                showPageJump={false}
+                minRows={Math.min(this.props.rows.length, pageSize)}
+                {...rest}
+            />
+        );
     }
 }
 

@@ -7,7 +7,7 @@ import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import ReactTooltip from 'react-tooltip';
 import 'react-table/react-table.css';
-import ReactRowSelectTable from 'Components/ReactRowSelectTable';
+import Table from 'Components/Table';
 
 import { actions as deploymentsActions } from 'reducers/deployments';
 import { addSearchModifier, addSearchKeyword } from 'utils/searchUtils';
@@ -176,7 +176,7 @@ class ImageDetails extends Component {
         ];
         return (
             row.original.vulns.length !== 0 && (
-                <ReactRowSelectTable
+                <Table
                     rows={row.original.vulns}
                     columns={subColumns}
                     className="bg-base-100"
@@ -236,11 +236,7 @@ class ImageDetails extends Component {
             }
         ];
         return (
-            <ReactRowSelectTable
-                rows={scan.components}
-                columns={columns}
-                SubComponent={this.renderVulnsTable}
-            />
+            <Table rows={scan.components} columns={columns} SubComponent={this.renderVulnsTable} />
         );
     };
 

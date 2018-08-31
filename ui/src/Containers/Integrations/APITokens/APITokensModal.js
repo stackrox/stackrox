@@ -7,10 +7,11 @@ import { createStructuredSelector } from 'reselect';
 import { actions } from 'reducers/apitokens';
 import { selectors } from 'reducers';
 
-import ComponentTable from 'Components/Table';
+import CheckboxTable from 'Components/CheckboxTable';
 import Modal from 'Components/Modal';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 import APITokenForm from './APITokenForm';
 import APITokenDetails from './APITokenDetails';
@@ -43,12 +44,11 @@ class APITokensModal extends Component {
     };
 
     static tableColumnDescriptors = [
-        { key: 'name', label: 'Name' },
-        { key: 'role', label: 'Role' }
+        { accessor: 'name', Header: 'Name' },
+        { accessor: 'role', Header: 'Role' }
     ];
 
     state = {
-        checkedTokenIds: [],
         selectedTokenId: null
     };
 
@@ -56,15 +56,18 @@ class APITokensModal extends Component {
         this.setState({ selectedTokenId: row.id });
     };
 
-    onRowChecked = selectedRows => this.setState({ checkedTokenIds: selectedRows });
-
     onSubmit = () => {
         this.props.generateAPIToken();
     };
 
     revokeTokens = () => {
-        if (this.state.checkedTokenIds.length === 0) return;
-        this.props.revokeAPITokens(this.state.checkedTokenIds);
+        const checkedTokenIds =
+            this.apiTokenModalTable &&
+            this.apiTokenModalTable.state &&
+            this.apiTokenModalTable.state.selection;
+        if (checkedTokenIds && checkedTokenIds.length === 0) return;
+        this.apiTokenModalTable.clearSelectedRows();
+        this.props.revokeAPITokens(checkedTokenIds);
     };
 
     unSelectRow = () => {
@@ -84,6 +87,24 @@ class APITokensModal extends Component {
         this.props.closeTokenGenerationWizard();
     };
 
+    showModalView = () => {
+        if (!this.props.tokens || !this.props.tokens.length)
+            return <NoResultsMessage message="No API Tokens Generated" />;
+        return (
+            <CheckboxTable
+                ref={table => {
+                    this.apiTokenModalTable = table;
+                }}
+                rows={this.props.tokens}
+                columns={APITokensModal.tableColumnDescriptors}
+                onRowClick={this.onRowClick}
+                selectedRowId={this.state.selectedTokenId}
+                noDataText="No API Tokens Generated"
+                minRows={20}
+            />
+        );
+    };
+
     showTokenGenerationDetails = () =>
         this.props.currentGeneratedToken && this.props.currentGeneratedTokenMetadata;
 
@@ -94,7 +115,7 @@ class APITokensModal extends Component {
                 text="Revoke"
                 className="btn btn-danger"
                 onClick={this.revokeTokens}
-                disabled={this.state.checkedTokenIds.length === 0}
+                disabled={this.state.selectedTokenId !== null}
             />
             <PanelButton
                 icon={<Icon.Plus className="h-4 w-4" />}
@@ -117,14 +138,7 @@ class APITokensModal extends Component {
 
     renderTable = () => (
         <Panel header="API Tokens" buttons={this.renderPanelButtons()}>
-            <ComponentTable
-                columns={APITokensModal.tableColumnDescriptors}
-                rows={this.props.tokens}
-                checkboxes
-                onRowClick={this.onRowClick}
-                onRowChecked={this.onRowChecked}
-                messageIfEmpty="No API Tokens Generated"
-            />
+            {this.showModalView()}
         </Panel>
     );
 

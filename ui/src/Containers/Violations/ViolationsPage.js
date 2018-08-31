@@ -12,7 +12,7 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import ReactTooltip from 'react-tooltip';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
-import ReactRowSelectTable from 'Components/ReactRowSelectTable';
+import Table from 'Components/Table';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import ViolationsPanel from './ViolationsPanel';
@@ -144,7 +144,7 @@ class ViolationsPage extends Component {
         if (!rows.length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
         return (
-            <ReactRowSelectTable
+            <Table
                 rows={rows}
                 columns={columns}
                 onRowClick={this.updateSelectedAlert}

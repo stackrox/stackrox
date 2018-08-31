@@ -2,67 +2,85 @@ import React from 'react';
 
 const tableColumnDescriptor = Object.freeze({
     authProviders: {
-        auth0: [{ key: 'name', label: 'Name' }, { key: 'config.domain', label: 'Auth0 Domain' }]
+        auth0: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'config.domain', Header: 'Auth0 Domain' }
+        ]
     },
     notifiers: {
         slack: [
-            { key: 'name', label: 'Name' },
-            { key: 'labelDefault', label: 'Default Webhook', className: 'word-break' },
-            { key: 'labelKey', label: 'Webhook Label Key' }
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'labelDefault', Header: 'Default Webhook', className: 'word-break' },
+            { accessor: 'labelKey', Header: 'Webhook Label Key' }
         ],
         jira: [
-            { key: 'name', label: 'Name' },
-            { key: 'labelDefault', label: 'Default Project' },
-            { key: 'labelKey', label: 'Project Label Key' },
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'labelDefault', Header: 'Default Project' },
+            { accessor: 'labelKey', Header: 'Project Label Key' },
             {
-                key: 'jira.url',
+                accessor: 'jira.url',
                 keyValueFunc: url => (
                     <a href={url} target="_blank">
                         {url}
                     </a>
                 ),
-                label: 'URL'
+                Header: 'URL'
             }
         ],
         email: [
-            { key: 'name', label: 'Name' },
-            { key: 'labelDefault', label: 'Default Recipient' },
-            { key: 'labelKey', label: 'Recipient Label Key' },
-            { key: 'email.server', label: 'Server' }
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'labelDefault', Header: 'Default Recipient' },
+            { accessor: 'labelKey', Header: 'Recipient Label Key' },
+            { accessor: 'email.server', Header: 'Server' }
         ],
         cscc: [
-            { key: 'name', label: 'Name' },
-            { key: 'cscc.gcpOrgId', label: 'Google Cloud Platform Org ID' }
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'cscc.gcpOrgId', Header: 'Google Cloud Platform Org ID' }
         ]
     },
     dnrIntegrations: {
-        'D&R': [{ key: 'clusterNames', label: 'Clusters' }, { key: 'portalUrl', label: 'URL' }]
+        'D&R': [
+            { accessor: 'clusterNames', Header: 'Clusters' },
+            { accessor: 'portalUrl', Header: 'URL' }
+        ]
     },
     imageIntegrations: {
         docker: [
-            { key: 'name', label: 'Name' },
-            { key: 'docker.endpoint', label: 'Endpoint' },
-            { key: 'docker.username', label: 'Username' }
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'docker.endpoint', Header: 'Endpoint' },
+            { accessor: 'docker.username', Header: 'Username' }
         ],
-        tenable: [{ key: 'name', label: 'Name' }],
+        tenable: [{ accessor: 'name', Header: 'Name' }],
         dtr: [
-            { key: 'name', label: 'Name' },
-            { key: 'dtr.endpoint', label: 'Endpoint' },
-            { key: 'dtr.username', label: 'Username' }
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'dtr.endpoint', Header: 'Endpoint' },
+            { accessor: 'dtr.username', Header: 'Username' }
         ],
         artifactory: [
-            { key: 'name', label: 'Name' },
-            { key: 'docker.endpoint', label: 'Endpoint' },
-            { key: 'docker.username', label: 'Username' }
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'docker.endpoint', Header: 'Endpoint' },
+            { accessor: 'docker.username', Header: 'Username' }
         ],
-        quay: [{ key: 'name', label: 'Name' }, { key: 'quay.endpoint', label: 'Endpoint' }],
-        clair: [{ key: 'name', label: 'Name' }, { key: 'config.endpoint', label: 'Endpoint' }],
-        clairify: [{ key: 'name', label: 'Name' }, { key: 'clairify.endpoint', label: 'Endpoint' }],
-        google: [{ key: 'name', label: 'Name' }, { key: 'config.endpoint', label: 'Endpoint' }],
+        quay: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'quay.endpoint', Header: 'Endpoint' }
+        ],
+        clair: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'config.endpoint', Header: 'Endpoint' }
+        ],
+        clairify: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'clairify.endpoint', Header: 'Endpoint' }
+        ],
+        google: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'config.endpoint', Header: 'Endpoint' }
+        ],
         ecr: [
-            { key: 'name', label: 'Name' },
-            { key: 'ecr.registryId', label: 'Registry ID' },
-            { key: 'ecr.region', label: 'Region' }
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'ecr.registryId', Header: 'Registry ID' },
+            { accessor: 'ecr.region', Header: 'Region' }
         ]
     }
 });

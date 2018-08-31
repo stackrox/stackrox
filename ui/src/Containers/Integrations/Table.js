@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-import ComponentTable from 'Components/Table';
+import CheckboxTable from 'Components/CheckboxTable';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import * as Icon from 'react-feather';
 
 import tableColumnDescriptor from 'Containers/Integrations/tableColumnDescriptor';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 class Table extends Component {
     static propTypes = {
@@ -34,11 +35,13 @@ class Table extends Component {
         onAdd: PropTypes.func.isRequired,
         onDelete: PropTypes.func.isRequired,
 
-        setTable: PropTypes.func.isRequired
+        setTable: PropTypes.func.isRequired,
+        selectedIntegrationId: PropTypes.string
     };
 
     static defaultProps = {
-        clusters: []
+        clusters: [],
+        selectedIntegrationId: null
     };
 
     getPanelButtons = () => (
@@ -60,24 +63,25 @@ class Table extends Component {
         </React.Fragment>
     );
 
-    getActions = () => {
-        const actions = [];
-        switch (this.props.source) {
-            case 'authProviders':
-                actions.push({
-                    renderIcon: row =>
-                        row.validated ? (
-                            <Icon.Power className="h-5 w-4 text-success-500" />
-                        ) : (
-                            <Icon.Power className="h-5 w-4 text-base-600" />
-                        ),
-                    className: 'flex rounded-sm uppercase text-center text-sm items-center',
-                    onClick: this.props.onActivate
-                });
-                break;
-            default:
+    getColumns = () => {
+        const columns = [...tableColumnDescriptor[this.props.source][this.props.type]];
+        if (this.props.source === 'authProviders') {
+            columns.push({
+                Header: 'Actions',
+                accessor: '',
+                Cell: ({ original }) => (
+                    <button
+                        className="flex rounded-sm uppercase text-center text-sm items-center self-center"
+                        onClick={this.props.onActivate(original)}
+                    >
+                        {original.validated && <Icon.Power className="h-5 w-4 text-success-500" />}
+                        {!original.validated && <Icon.Power className="h-5 w-4 text-base-600" />}
+                    </button>
+                ),
+                width: 75
+            });
         }
-        return actions;
+        return columns;
     };
 
     getRows = () => {
@@ -97,17 +101,23 @@ class Table extends Component {
         return this.props.integrations;
     };
 
-    renderTableContent = () => (
-        <ComponentTable
-            columns={tableColumnDescriptor[this.props.source][this.props.type]}
-            rows={this.getRows()}
-            actions={this.getActions()}
-            checkboxes
-            onRowClick={this.props.onRowClick}
-            ref={this.props.setTable}
-            messageIfEmpty={`No ${this.props.type} integrations`}
-        />
-    );
+    renderTableContent = () => {
+        const rows = this.getRows();
+
+        if (!rows.length)
+            return <NoResultsMessage message={`No ${this.props.type} integrations`} />;
+        return (
+            <CheckboxTable
+                ref={this.props.setTable}
+                rows={rows}
+                columns={this.getColumns()}
+                onRowClick={this.props.onRowClick}
+                selectedRowId={this.props.selectedIntegrationId}
+                noDataText={`No ${this.props.type} integrations`}
+                minRows={20}
+            />
+        );
+    };
 
     render() {
         return (

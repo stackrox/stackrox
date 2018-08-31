@@ -55,7 +55,8 @@ class IntegrationModal extends Component {
             formValues: {},
             errorMessage: '',
             successMessage: '',
-            showConfirmationDialog: false
+            showConfirmationDialog: false,
+            selectedIntegrationId: null
         };
     }
 
@@ -77,7 +78,8 @@ class IntegrationModal extends Component {
     onTableRowClick = integration => {
         this.setState({
             formIsOpen: true,
-            formValues: integration
+            formValues: integration,
+            selectedIntegrationId: integration.id
         });
     };
 
@@ -119,7 +121,8 @@ class IntegrationModal extends Component {
     closeIntegrationForm = () => {
         this.setState({
             formIsOpen: false,
-            formValues: {}
+            formValues: {},
+            selectedIntegrationId: null
         });
     };
 
@@ -130,7 +133,7 @@ class IntegrationModal extends Component {
         });
     };
 
-    activateAuthIntegration = integration => {
+    activateAuthIntegration = integration => () => {
         if (integration !== null && integration.loginUrl !== null && !integration.validated) {
             window.location = integration.loginUrl;
         }
@@ -138,7 +141,9 @@ class IntegrationModal extends Component {
 
     deleteTableSelectedIntegrations = () => {
         const promises = [];
-        this.integrationTable.getSelectedRows().forEach(id => {
+        if (!this.integrationTable) return;
+        const numSelectedRows = this.integrationTable.state.selection;
+        numSelectedRows.forEach(id => {
             const promise =
                 this.props.source === 'authProviders'
                     ? AuthService.deleteAuthProvider(id)
@@ -196,6 +201,7 @@ class IntegrationModal extends Component {
             onAdd={this.onTableAdd}
             onDelete={this.onTableDelete}
             setTable={this.setTableRef}
+            selectedIntegrationId={this.state.selectedIntegrationId}
         />
     );
 
@@ -222,7 +228,7 @@ class IntegrationModal extends Component {
 
     renderConfirmationDialog = () => {
         const numSelectedRows = this.integrationTable
-            ? this.integrationTable.getSelectedRows().length
+            ? this.integrationTable.state.selection.length
             : 0;
         return (
             <Dialog
