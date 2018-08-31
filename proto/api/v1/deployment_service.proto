@@ -118,9 +118,8 @@ message SecurityContext {
 }
 
 message EmbeddedSecret {
-    string id   = 1;
-    string name = 2;
-    string path = 3;
+    string name = 1;
+    string path = 2;
 }
 
 message Volume {

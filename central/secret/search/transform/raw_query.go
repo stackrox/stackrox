@@ -21,15 +21,6 @@ func (r RawQueryWrapper) ToSecrets(storage store.Store, index bleve.Index) ([]*v
 	return ResultsWrapper{Results: res}.ToSecrets(storage)
 }
 
-// ToRelationships returns the relationships that match the raw query.
-func (r RawQueryWrapper) ToRelationships(storage store.Store, index bleve.Index) ([]*v1.SecretRelationship, error) {
-	res, err := r.ToResults(index)
-	if err != nil {
-		return nil, err
-	}
-	return ResultsWrapper{Results: res}.ToRelationships(storage)
-}
-
 // ToResults returns the results that match the raw query.
 func (r RawQueryWrapper) ToResults(index bleve.Index) ([]search.Result, error) {
 	psr, err := r.ToProtoQuery()

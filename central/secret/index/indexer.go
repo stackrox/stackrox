@@ -8,7 +8,8 @@ import (
 // Indexer indexes secret information.
 //go:generate mockery -name=Indexer
 type Indexer interface {
-	SecretAndRelationship(sar *v1.SecretAndRelationship) error
+	UpsertSecret(sar *v1.Secret) error
+	RemoveSecret(id string) error
 }
 
 // New provides a new Indexer using the given bleve index underneath.

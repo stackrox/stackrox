@@ -172,8 +172,8 @@ const mapStateToProps = createStructuredSelector({
     searchOptions: selectors.getDeploymentsSearchOptions,
     searchModifiers: selectors.getDeploymentsSearchModifiers,
     searchSuggestions: selectors.getDeploymentsSearchSuggestions,
-    isViewFiltered,
-    isFetchingDeployment: state => selectors.getLoadingStatus(state, types.FETCH_DEPLOYMENT)
+    isFetchingDeployment: state => selectors.getLoadingStatus(state, types.FETCH_DEPLOYMENT),
+    isViewFiltered
 });
 
 const mapDispatchToProps = {

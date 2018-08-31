@@ -66,28 +66,3 @@ func (suite *SecretStoreTestSuite) TestSecrets() {
 	suite.True(exists)
 	suite.Equal(secret1, retrievedSecret)
 }
-
-func (suite *SecretStoreTestSuite) TestRelationships() {
-	relatinoship1 := &v1.SecretRelationship{
-		Id: "secret1",
-	}
-	relatinoship2 := &v1.SecretRelationship{
-		Id: "secret2",
-	}
-	relationships := []*v1.SecretRelationship{relatinoship1, relatinoship2}
-	for _, p := range relationships {
-		err := suite.store.UpsertRelationship(p)
-		suite.NoError(err)
-	}
-
-	// Get batch relationships
-	retrievedRelationships, err := suite.store.GetRelationshipBatch([]string{"secret1", "secret2"})
-	suite.Nil(err)
-	suite.ElementsMatch(relationships, retrievedRelationships)
-
-	// Get secret
-	retrievedRelationship, exists, err := suite.store.GetRelationship("secret1")
-	suite.Nil(err)
-	suite.True(exists)
-	suite.Equal(relatinoship1, retrievedRelationship)
-}

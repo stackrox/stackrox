@@ -4,14 +4,16 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/secret/search"
-	"github.com/stackrox/rox/central/secret/store"
+	secretSearch "github.com/stackrox/rox/central/secret/search"
+	secretStore "github.com/stackrox/rox/central/secret/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -28,8 +30,9 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	storage  store.Store
-	searcher search.Searcher
+	storage     secretStore.Store
+	searcher    secretSearch.Searcher
+	deployments deploymentDatastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -57,25 +60,38 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 		return nil, status.Errorf(codes.NotFound, "secret with id '%s' does not exist", request.GetId())
 	}
 
-	relationship, exists, err := s.storage.GetRelationship(request.GetId())
+	psr := search.NewQueryBuilder().
+		AddStrings(search.ClusterID, secret.GetClusterId()).
+		AddStrings(search.Namespace, secret.GetNamespace()).
+		AddStrings(search.SecretName, secret.GetName()).
+		ProtoQuery()
+
+	deploymentResults, err := s.deployments.SearchDeployments(psr)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
-	if !exists {
-		return nil, status.Errorf(codes.NotFound, "relationship with id '%s' does not exist", request.GetId())
+
+	var deployments []*v1.SecretDeploymentRelationship
+	for _, r := range deploymentResults {
+		deployments = append(deployments, &v1.SecretDeploymentRelationship{
+			Id:   r.Id,
+			Name: r.Name,
+		})
 	}
 
 	return &v1.SecretAndRelationship{
-		Secret:       secret,
-		Relationship: relationship,
+		Secret: secret,
+		Relationship: &v1.SecretRelationship{
+			DeploymentRelationships: deployments,
+		},
 	}, nil
 }
 
 // GetSecrets returns all secrets that match the query.
-func (s *serviceImpl) GetSecrets(ctx context.Context, rawQuery *v1.RawQuery) (*v1.SecretAndRelationshipList, error) {
-	sars, err := s.searcher.SearchRawSecrets(rawQuery)
+func (s *serviceImpl) GetSecrets(ctx context.Context, rawQuery *v1.RawQuery) (*v1.GetSecretsResponse, error) {
+	secrets, err := s.searcher.SearchRawSecrets(rawQuery)
 	if err != nil {
 		return nil, err
 	}
-	return &v1.SecretAndRelationshipList{SecretAndRelationships: sars}, nil
+	return &v1.GetSecretsResponse{Secrets: secrets}, nil
 }

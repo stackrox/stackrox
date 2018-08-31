@@ -366,7 +366,6 @@ func (w *wrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
 			}
 			if sourceVolume.Type() == "Secret" {
 				w.Deployment.Containers[i].Secrets = append(w.Deployment.Containers[i].Secrets, &pkgV1.EmbeddedSecret{
-					Id:   sourceVolume.Source(),
 					Name: sourceVolume.Source(),
 					Path: v.MountPath,
 				})

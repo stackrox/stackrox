@@ -4,7 +4,7 @@ import { dynamic } from 'redux-saga-test-plan/providers';
 
 import { selectors } from 'reducers';
 import { actions, types } from 'reducers/secrets';
-import fetchSecrets from 'services/SecretsService';
+import { fetchSecrets } from 'services/SecretsService';
 import saga from './secretSagas';
 import createLocationChange from './sagaTestUtils';
 

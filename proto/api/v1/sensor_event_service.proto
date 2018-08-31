@@ -5,9 +5,10 @@ option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
 import "api/v1/deployment_service.proto";
+import "api/v1/indicator_service.proto";
 import "api/v1/network_policy_service.proto";
 import "api/v1/policy_service.proto";
-import "api/v1/indicator_service.proto";
+import "api/v1/secret_service.proto";
 
 
 package v1;
@@ -30,6 +31,7 @@ message SensorEvent {
         Deployment    deployment     = 5;
         Namespace     namespace      = 6;
         Indicator     indicator      = 7;
+        Secret        secret         = 8;
     }
 }
 
@@ -51,12 +53,17 @@ message IndicatorEventResponse {
     string id = 1;
 }
 
+message SecretEventResponse {
+    string id = 1;
+}
+
 message SensorEventResponse {
     oneof resource {
         DeploymentEventResponse    deployment     = 1;
         NetworkPolicyEventResponse network_policy = 2;
         NamespaceEventResponse     namespace      = 3;
         IndicatorEventResponse     indicator      = 4;
+        SecretEventResponse        secret         = 5;
     }
 }
 

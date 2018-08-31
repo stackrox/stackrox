@@ -16,6 +16,7 @@ import {
 
 export const types = {
     FETCH_SECRETS: createFetchingActionTypes('secrets/FETCH_SECRETS'),
+    FETCH_SECRET: createFetchingActionTypes('secrets/FETCH_SECRET'),
     ...searchTypes('secrets')
 };
 
@@ -23,6 +24,7 @@ export const types = {
 
 export const actions = {
     fetchSecrets: createFetchingActions(types.FETCH_SECRETS),
+    fetchSecret: createFetchingActions(types.FETCH_SECRET),
     ...getSearchActions('secrets')
 };
 

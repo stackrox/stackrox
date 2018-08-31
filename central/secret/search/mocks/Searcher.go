@@ -10,22 +10,22 @@ type Searcher struct {
 	mock.Mock
 }
 
-// SearchRawSecrets provides a mock function with given fields: rawQuery
-func (_m *Searcher) SearchRawSecrets(rawQuery *v1.RawQuery) ([]*v1.SecretAndRelationship, error) {
-	ret := _m.Called(rawQuery)
+// SearchRawSecrets provides a mock function with given fields: _a0
+func (_m *Searcher) SearchRawSecrets(_a0 *v1.RawQuery) ([]*v1.Secret, error) {
+	ret := _m.Called(_a0)
 
-	var r0 []*v1.SecretAndRelationship
-	if rf, ok := ret.Get(0).(func(*v1.RawQuery) []*v1.SecretAndRelationship); ok {
-		r0 = rf(rawQuery)
+	var r0 []*v1.Secret
+	if rf, ok := ret.Get(0).(func(*v1.RawQuery) []*v1.Secret); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*v1.SecretAndRelationship)
+			r0 = ret.Get(0).([]*v1.Secret)
 		}
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(*v1.RawQuery) error); ok {
-		r1 = rf(rawQuery)
+		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -33,13 +33,13 @@ func (_m *Searcher) SearchRawSecrets(rawQuery *v1.RawQuery) ([]*v1.SecretAndRela
 	return r0, r1
 }
 
-// SearchSecrets provides a mock function with given fields: rawQuery
-func (_m *Searcher) SearchSecrets(rawQuery *v1.RawQuery) ([]*v1.SearchResult, error) {
-	ret := _m.Called(rawQuery)
+// SearchSecrets provides a mock function with given fields: _a0
+func (_m *Searcher) SearchSecrets(_a0 *v1.RawQuery) ([]*v1.SearchResult, error) {
+	ret := _m.Called(_a0)
 
 	var r0 []*v1.SearchResult
 	if rf, ok := ret.Get(0).(func(*v1.RawQuery) []*v1.SearchResult); ok {
-		r0 = rf(rawQuery)
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*v1.SearchResult)
@@ -48,7 +48,7 @@ func (_m *Searcher) SearchSecrets(rawQuery *v1.RawQuery) ([]*v1.SearchResult, er
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(*v1.RawQuery) error); ok {
-		r1 = rf(rawQuery)
+		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
 	}

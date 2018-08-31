@@ -268,7 +268,6 @@ func TestConvert(t *testing.T) {
 						},
 						Secrets: []*pkgV1.EmbeddedSecret{
 							{
-								Id:   "private_key",
 								Name: "private_key",
 								Path: "/var/secrets",
 							},

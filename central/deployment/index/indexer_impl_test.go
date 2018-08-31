@@ -5,7 +5,8 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/image/index"
+	imageIndex "github.com/stackrox/rox/central/image/index"
+	secretIndex "github.com/stackrox/rox/central/secret/index"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
@@ -40,8 +41,13 @@ func (suite *DeploymentIndexTestSuite) SetupSuite() {
 	suite.NoError(suite.indexer.AddDeployment(deployment))
 	suite.NoError(suite.indexer.AddDeployment(&v1.Deployment{Id: fakeID, Name: fakeName}))
 
-	imageIndexer := index.New(tmpIndex)
+	imageIndexer := imageIndex.New(tmpIndex)
 	imageIndexer.AddImage(fixtures.GetImage())
+
+	secretIndexer := secretIndex.New(tmpIndex)
+	secretIndexer.UpsertSecret(&v1.Secret{
+		Id: "ABC",
+	})
 }
 
 func (suite *DeploymentIndexTestSuite) TeardownSuite() {

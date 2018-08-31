@@ -40,6 +40,7 @@ const (
 	MemoryLimit       = "Memory Limit (MB)"
 	MemoryRequest     = "Memory Request (MB)"
 	Privileged        = "Privileged"
+	SecretID          = "Secret Id"
 	SecretName        = "Secret Name"
 	SecretPath        = "Secret Path"
 	ServiceAccount    = "Service Account"

@@ -6,7 +6,7 @@ export const selectors = {
         secretDetails: 'div:contains("Overview")'
     },
     cancelButton: 'button[data-test-id="cancel"]',
-    deploymentLink: 'div:contains("Deployment Name") + a',
+    deploymentLinks: 'div[data-test-id="deployments-card"] a',
     table: {
         rows: 'div.rt-tbody div.rt-tr-group'
     },

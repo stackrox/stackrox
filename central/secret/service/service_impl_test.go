@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"testing"
 
+	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	searchMocks "github.com/stackrox/rox/central/secret/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/secret/store/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -18,8 +20,9 @@ func TestSecretService(t *testing.T) {
 type SecretServiceTestSuite struct {
 	suite.Suite
 
-	mockStore    *storeMocks.Store
-	mockSearcher *searchMocks.Searcher
+	mockStore     *storeMocks.Store
+	mockSearcher  *searchMocks.Searcher
+	mockDatastore *deploymentMocks.DataStore
 
 	service Service
 }
@@ -27,19 +30,46 @@ type SecretServiceTestSuite struct {
 func (suite *SecretServiceTestSuite) SetupTest() {
 	suite.mockStore = &storeMocks.Store{}
 	suite.mockSearcher = &searchMocks.Searcher{}
+	suite.mockDatastore = &deploymentMocks.DataStore{}
 
-	suite.service = New(suite.mockStore, suite.mockSearcher)
+	suite.service = New(suite.mockStore, suite.mockSearcher, suite.mockDatastore)
 }
 
 // Test happy path for getting secrets and relationships
 func (suite *SecretServiceTestSuite) TestGetSecret() {
 	secretID := "id1"
 
-	expectedSecret := &v1.Secret{Id: secretID}
+	expectedSecret := &v1.Secret{
+		Id:        secretID,
+		Name:      "secretname",
+		ClusterId: "cluster",
+		Namespace: "namespace",
+	}
 	suite.mockStore.On("GetSecret", secretID).Return(expectedSecret, true, nil)
 
-	expectedRelationship := &v1.SecretRelationship{Id: secretID}
-	suite.mockStore.On("GetRelationship", secretID).Return(expectedRelationship, true, nil)
+	psr := search.NewQueryBuilder().
+		AddStrings(search.ClusterID, "cluster").
+		AddStrings(search.Namespace, "namespace").
+		AddStrings(search.SecretName, "secretname").
+		ProtoQuery()
+
+	results := []*v1.SearchResult{
+		{
+			Id:   "d1",
+			Name: "deployment1",
+		},
+	}
+
+	suite.mockDatastore.On("SearchDeployments", psr).Return(results, nil)
+
+	expectedRelationship := &v1.SecretRelationship{
+		DeploymentRelationships: []*v1.SecretDeploymentRelationship{
+			{
+				Id:   "d1",
+				Name: "deployment1",
+			},
+		},
+	}
 
 	actualSecretAndRelationship, err := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
 	suite.NoError(err)
@@ -78,16 +108,27 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreSecretFailure() {
 }
 
 // Test that when we fail to find a relationship, an error is returned.
-func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreRelationshipNotExists() {
+func (suite *SecretServiceTestSuite) TestGetSecretsWithNoRelationship() {
 	secretID := "id1"
 
-	expectedSecret := &v1.Secret{Id: "id1"}
+	expectedSecret := &v1.Secret{
+		Id:        secretID,
+		Name:      "secretname",
+		ClusterId: "cluster",
+		Namespace: "namespace",
+	}
 	suite.mockStore.On("GetSecret", secretID).Return(expectedSecret, true, nil)
 
-	suite.mockStore.On("GetRelationship", secretID).Return((*v1.SecretRelationship)(nil), false, nil)
+	psr := search.NewQueryBuilder().
+		AddStrings(search.ClusterID, "cluster").
+		AddStrings(search.Namespace, "namespace").
+		AddStrings(search.SecretName, "secretname").
+		ProtoQuery()
+
+	suite.mockDatastore.On("SearchDeployments", psr).Return([]*v1.SearchResult{}, nil)
 
 	_, err := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
-	suite.Error(err)
+	suite.NoError(err)
 
 	suite.mockStore.AssertExpectations(suite.T())
 	suite.mockSearcher.AssertExpectations(suite.T())
@@ -97,11 +138,22 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreRelationshipNotExist
 func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreRelationshipFailure() {
 	secretID := "id1"
 
-	expectedSecret := &v1.Secret{Id: secretID}
+	expectedSecret := &v1.Secret{
+		Id:        secretID,
+		Name:      "secretname",
+		ClusterId: "cluster",
+		Namespace: "namespace",
+	}
 	suite.mockStore.On("GetSecret", secretID).Return(expectedSecret, true, nil)
 
+	psr := search.NewQueryBuilder().
+		AddStrings(search.ClusterID, "cluster").
+		AddStrings(search.Namespace, "namespace").
+		AddStrings(search.SecretName, "secretname").
+		ProtoQuery()
+
 	expectedErr := fmt.Errorf("failure")
-	suite.mockStore.On("GetRelationship", secretID).Return((*v1.SecretRelationship)(nil), true, expectedErr)
+	suite.mockDatastore.On("SearchDeployments", psr).Return(([]*v1.SearchResult)(nil), expectedErr)
 
 	_, actualErr := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
 	suite.Error(actualErr)
@@ -114,17 +166,13 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreRelationshipFailure(
 func (suite *SecretServiceTestSuite) TestSearchSecret() {
 	query := &v1.RawQuery{Query: "derp"}
 
-	expectedReturns := []*v1.SecretAndRelationship{
-		{
-			Secret: &v1.Secret{Id: "id1"},
-		},
+	expectedReturns := []*v1.Secret{
+		{Id: "id1"},
 	}
 	suite.mockSearcher.On("SearchRawSecrets", query).Return(expectedReturns, nil)
 
-	actualReturns, err := suite.service.GetSecrets((context.Context)(nil), query)
+	_, err := suite.service.GetSecrets((context.Context)(nil), query)
 	suite.NoError(err)
-	suite.Equal(1, len(actualReturns.GetSecretAndRelationships()))
-	suite.Equal(expectedReturns, actualReturns.GetSecretAndRelationships())
 
 	suite.mockStore.AssertExpectations(suite.T())
 	suite.mockSearcher.AssertExpectations(suite.T())
@@ -135,7 +183,7 @@ func (suite *SecretServiceTestSuite) TestSearchSecretFailure() {
 	query := &v1.RawQuery{Query: "derp"}
 
 	expectedError := fmt.Errorf("failure")
-	suite.mockSearcher.On("SearchRawSecrets", query).Return(([]*v1.SecretAndRelationship)(nil), expectedError)
+	suite.mockSearcher.On("SearchRawSecrets", query).Return(([]*v1.Secret)(nil), expectedError)
 
 	_, actualErr := suite.service.GetSecrets((context.Context)(nil), query)
 	suite.Equal(expectedError, actualErr)

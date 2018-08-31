@@ -9,12 +9,26 @@ type Indexer struct {
 	mock.Mock
 }
 
-// SecretAndRelationship provides a mock function with given fields: sar
-func (_m *Indexer) SecretAndRelationship(sar *v1.SecretAndRelationship) error {
+// RemoveSecret provides a mock function with given fields: id
+func (_m *Indexer) RemoveSecret(id string) error {
+	ret := _m.Called(id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertSecret provides a mock function with given fields: sar
+func (_m *Indexer) UpsertSecret(sar *v1.Secret) error {
 	ret := _m.Called(sar)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*v1.SecretAndRelationship) error); ok {
+	if rf, ok := ret.Get(0).(func(*v1.Secret) error); ok {
 		r0 = rf(sar)
 	} else {
 		r0 = ret.Error(0)

@@ -9,9 +9,11 @@ import (
 	"github.com/stackrox/rox/central/networkgraph"
 	networkPolicyStore "github.com/stackrox/rox/central/networkpolicies/store"
 	"github.com/stackrox/rox/central/risk"
+	"github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline/deploymentevents"
 	namespacePipeline "github.com/stackrox/rox/central/sensorevent/service/pipeline/namespaces"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline/networkpolicies"
+	secretPipeline "github.com/stackrox/rox/central/sensorevent/service/pipeline/secrets"
 	deploymentEventStore "github.com/stackrox/rox/central/sensorevent/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -41,6 +43,7 @@ func New(detector deployTimeDetection.Detector,
 	clusters clusterDataStore.DataStore,
 	networkPolicies networkPolicyStore.Store,
 	namespaces namespaceDataStore.Store,
+	secrets datastore.DataStore,
 	graphEvaluator networkgraph.Evaluator) Service {
 	return &serviceImpl{
 		detector: detector,
@@ -52,9 +55,11 @@ func New(detector deployTimeDetection.Detector,
 		clusters:         clusters,
 		networkPolicies:  networkPolicies,
 		namespaces:       namespaces,
+		secrets:          secrets,
 
 		deploymentPipeline:    deploymentevents.NewPipeline(clusters, deployments, images, detector, graphEvaluator),
 		networkPolicyPipeline: networkpolicies.NewPipeline(clusters, networkPolicies, graphEvaluator),
 		namespacePipeline:     namespacePipeline.NewPipeline(clusters, namespaces, graphEvaluator),
+		secretPipeline:        secretPipeline.NewPipeline(clusters, secrets),
 	}
 }

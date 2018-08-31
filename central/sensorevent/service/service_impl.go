@@ -11,6 +11,7 @@ import (
 	namespaceStore "github.com/stackrox/rox/central/namespace/store"
 	networkPolicyStore "github.com/stackrox/rox/central/networkpolicies/store"
 	"github.com/stackrox/rox/central/risk"
+	"github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/central/sensorevent/service/queue"
 	sensorEventStore "github.com/stackrox/rox/central/sensorevent/store"
@@ -36,10 +37,12 @@ type serviceImpl struct {
 	clusters        clusterDataStore.DataStore
 	networkPolicies networkPolicyStore.Store
 	namespaces      namespaceStore.Store
+	secrets         datastore.DataStore
 
 	deploymentPipeline    pipeline.Pipeline
 	networkPolicyPipeline pipeline.Pipeline
 	namespacePipeline     pipeline.Pipeline
+	secretPipeline        pipeline.Pipeline
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -117,6 +120,9 @@ func (s *serviceImpl) sendMessages(stream v1.SensorEventService_RecordEventServe
 		case *v1.SensorEvent_Indicator:
 			// TODO: Implement actual handling
 			log.Infof("Obtained an Indicator event: %+v", x)
+			continue // TODO: Fill this out
+		case *v1.SensorEvent_Secret:
+			eventPipeline = s.secretPipeline
 		case nil:
 			logger.Errorf("Resource field is empty")
 			return

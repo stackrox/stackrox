@@ -51,8 +51,8 @@ class SecretPage extends Component {
     renderTable() {
         const columns = [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'clusterRelationship.name', Header: 'Cluster' },
-            { accessor: 'namespaceRelationship.namespace', Header: 'Namespace' }
+            { accessor: 'cluster', Header: 'Cluster' },
+            { accessor: 'namespace', Header: 'Namespace' }
         ];
         const { secrets, selectedSecret } = this.props;
         const rows = secrets;

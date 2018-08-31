@@ -145,7 +145,7 @@ func (p *processLoopsImpl) receiveMessages(stream v1.SensorEventService_RecordEv
 		switch x := eventResp.Resource.(type) {
 		case *v1.SensorEventResponse_Deployment:
 			p.processDeploymentResponse(eventResp, output)
-		case *v1.SensorEventResponse_NetworkPolicy, *v1.SensorEventResponse_Namespace, *v1.SensorEventResponse_Indicator:
+		case *v1.SensorEventResponse_NetworkPolicy, *v1.SensorEventResponse_Namespace, *v1.SensorEventResponse_Indicator, *v1.SensorEventResponse_Secret:
 			// Purposefully eating the responses for these types because there is nothing to do for them
 		default:
 			logger.Errorf("Event response with type '%s' is not handled", x)

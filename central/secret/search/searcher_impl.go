@@ -23,24 +23,6 @@ func (ds *searcherImpl) SearchSecrets(rawQuery *v1.RawQuery) ([]*v1.SearchResult
 }
 
 // SearchSecrets returns the secrets and relationships that match the query.
-func (ds *searcherImpl) SearchRawSecrets(rawQuery *v1.RawQuery) ([]*v1.SecretAndRelationship, error) {
-	secrets, err := transform.RawQueryWrapper{RawQuery: rawQuery}.ToSecrets(ds.storage, ds.index)
-	if err != nil {
-		return nil, err
-	}
-
-	relationships, err := transform.RawQueryWrapper{RawQuery: rawQuery}.ToRelationships(ds.storage, ds.index)
-	if err != nil {
-		return nil, err
-	}
-
-	var sars []*v1.SecretAndRelationship
-	for index, secret := range secrets {
-		sar := &v1.SecretAndRelationship{
-			Secret:       secret,
-			Relationship: relationships[index],
-		}
-		sars = append(sars, sar)
-	}
-	return sars, nil
+func (ds *searcherImpl) SearchRawSecrets(rawQuery *v1.RawQuery) ([]*v1.Secret, error) {
+	return transform.RawQueryWrapper{RawQuery: rawQuery}.ToSecrets(ds.storage, ds.index)
 }

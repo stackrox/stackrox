@@ -29,8 +29,8 @@ func (s *Handler) SendExistingResources() {
 	}
 }
 
-// NewServiceHandler instantiates a handler for docker services
-func NewServiceHandler(client *dockerClient.Client, eventsC chan *listeners.EventWrap) *Handler {
+// NewHandler instantiates a handler for docker services
+func NewHandler(client *dockerClient.Client, eventsC chan *listeners.EventWrap) *Handler {
 	return &Handler{
 		client:  client,
 		eventsC: eventsC,

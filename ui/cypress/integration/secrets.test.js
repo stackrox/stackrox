@@ -25,7 +25,7 @@ describe('Secrets page', () => {
             .first()
             .click();
         cy
-            .get(SecretsPageSelectors.deploymentLink)
+            .get(SecretsPageSelectors.deploymentLinks)
             .first()
             .click();
         cy.url().should('contain', '/main/risk');

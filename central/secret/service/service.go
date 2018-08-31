@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/secret/search"
 	"github.com/stackrox/rox/central/secret/store"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -15,14 +16,14 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	GetSecret(ctx context.Context, request *v1.ResourceByID) (*v1.SecretAndRelationship, error)
-	GetSecrets(ctx context.Context, request *v1.RawQuery) (*v1.SecretAndRelationshipList, error)
+	v1.SecretServiceServer
 }
 
 // New returns a new Service instance using the given DB and index.
-func New(storage store.Store, searcher search.Searcher) Service {
+func New(storage store.Store, searcher search.Searcher, deployments deploymentDataStore.DataStore) Service {
 	return &serviceImpl{
-		storage:  storage,
-		searcher: searcher,
+		storage:     storage,
+		searcher:    searcher,
+		deployments: deployments,
 	}
 }

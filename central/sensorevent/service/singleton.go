@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/networkgraph"
 	networkPolicyStore "github.com/stackrox/rox/central/networkpolicies/store"
 	"github.com/stackrox/rox/central/risk"
+	"github.com/stackrox/rox/central/secret/datastore"
 	sensorEventDataStore "github.com/stackrox/rox/central/sensorevent/store"
 )
 
@@ -23,7 +24,7 @@ var (
 func initialize() {
 	as = New(deployTimeDetection.SingletonDetector(), risk.GetScorer(), sensorEventDataStore.Singleton(), imageDataStore.Singleton(),
 		deploymentDataStore.Singleton(), clusterDataStore.Singleton(), networkPolicyStore.Singleton(),
-		namespaceStore.Singleton(), networkgraph.Singleton())
+		namespaceStore.Singleton(), datastore.Singleton(), networkgraph.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

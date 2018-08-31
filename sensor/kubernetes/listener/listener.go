@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener/namespace"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/networkpolicy"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/secret"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -38,6 +39,7 @@ type kubernetesListener struct {
 
 	networkPolicyWL *networkpolicy.WatchLister
 	namespaceWL     *namespace.WatchLister
+	secretWL        *secret.WatchLister
 }
 
 // New returns a new kubernetes listener.
@@ -54,6 +56,7 @@ func (k *kubernetesListener) initialize() {
 	k.createResourceWatchers()
 	k.createNetworkPolicyWatcher()
 	k.createNamespaceWatcher()
+	k.createSecretWatcher()
 }
 
 func (k *kubernetesListener) Start() {
@@ -66,6 +69,7 @@ func (k *kubernetesListener) Start() {
 
 	go k.serviceWL.StartWatch()
 	go k.networkPolicyWL.StartWatch()
+	go k.secretWL.StartWatch()
 }
 
 func (k *kubernetesListener) createResourceWatchers() {
@@ -97,7 +101,10 @@ func (k *kubernetesListener) createNetworkPolicyWatcher() {
 
 func (k *kubernetesListener) createNamespaceWatcher() {
 	k.namespaceWL = namespace.NewWatchLister(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, resyncPeriod)
+}
 
+func (k *kubernetesListener) createSecretWatcher() {
+	k.secretWL = secret.NewWatchLister(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, resyncPeriod)
 }
 
 func (k *kubernetesListener) setupClient() {

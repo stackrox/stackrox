@@ -20,15 +20,6 @@ func (r ResultsWrapper) ToSecrets(storage store.Store) ([]*v1.Secret, error) {
 	return storage.GetSecretsBatch(ids)
 }
 
-// ToRelationships returns the relationships from the db for the given search results.
-func (r ResultsWrapper) ToRelationships(storage store.Store) ([]*v1.SecretRelationship, error) {
-	ids := make([]string, len(r.Results), len(r.Results))
-	for index, result := range r.Results {
-		ids[index] = result.ID
-	}
-	return storage.GetRelationshipBatch(ids)
-}
-
 // ToSearchResults returns the searchResults from the db for the given search results.
 func (r ResultsWrapper) ToSearchResults(storage store.Store) ([]*v1.SearchResult, error) {
 	sars, err := r.ToSecrets(storage)

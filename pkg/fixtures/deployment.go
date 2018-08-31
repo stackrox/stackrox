@@ -68,6 +68,12 @@ func GetDeployment() *v1.Deployment {
 						ReadOnly:    true,
 					},
 				},
+				Secrets: []*v1.EmbeddedSecret{
+					{
+						Name: "secretname",
+						Path: "/var/lib/prevent",
+					},
+				},
 			},
 			{
 				Image: GetImage(),

@@ -244,7 +244,6 @@ func (s serviceWrap) getSecrets() []*v1.EmbeddedSecret {
 			path = `/run/secrets/` + secret.File.Name
 		}
 		secrets = append(secrets, &v1.EmbeddedSecret{
-			Id:   secret.SecretID,
 			Name: secret.SecretName,
 			Path: path,
 		})

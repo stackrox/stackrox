@@ -168,7 +168,6 @@ func TestAsDeployment(t *testing.T) {
 						},
 						Secrets: []*v1.EmbeddedSecret{
 							{
-								Id:   "id",
 								Name: "name",
 								Path: "/run/secrets/path",
 							},
@@ -351,7 +350,6 @@ func TestAsDeployment(t *testing.T) {
 						},
 						Secrets: []*v1.EmbeddedSecret{
 							{
-								Id:   "id",
 								Name: "name",
 								Path: "/run/secrets/path",
 							},

@@ -50,8 +50,8 @@ func runBenchmark(jsonOnly bool) {
 	fmt.Printf("%+v\n", benchmarkResult)
 	for i := 1; i < retries+1; i++ {
 		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
-		defer cancel()
 		_, err := cli.PostBenchmarkResult(ctx, benchmarkResult)
+		cancel()
 		if err == nil {
 			return
 		}

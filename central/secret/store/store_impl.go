@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb/ops"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/dberrors"
 )
 
 type storeImpl struct {
@@ -24,38 +25,6 @@ func (s *storeImpl) GetAllSecrets() (secrets []*v1.Secret, err error) {
 		return err
 	})
 	return secrets, err
-}
-
-// GetRelationship returns the relationship for the given id.
-func (s *storeImpl) GetRelationship(id string) (relationships *v1.SecretRelationship, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "SecretRelationships")
-
-	err = s.db.View(func(tx *bolt.Tx) error {
-		if exists = hasRelationship(tx, id); !exists {
-			return nil
-		}
-		relationships, err = readRelationship(tx, id)
-		return err
-	})
-	return
-}
-
-// GetRelationshipBatch returns the relationships for the given ids.
-func (s *storeImpl) GetRelationshipBatch(ids []string) ([]*v1.SecretRelationship, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "SecretRelationships")
-
-	var relationships []*v1.SecretRelationship
-	err := s.db.View(func(tx *bolt.Tx) error {
-		for _, id := range ids {
-			relationship, err := readRelationship(tx, id)
-			if err != nil {
-				return err
-			}
-			relationships = append(relationships, relationship)
-		}
-		return nil
-	})
-	return relationships, err
 }
 
 // GetSecret returns the secret for the given id.
@@ -90,15 +59,6 @@ func (s *storeImpl) GetSecretsBatch(ids []string) ([]*v1.Secret, error) {
 	return secrets, err
 }
 
-// UpsertRelationship updates or sets the relationship in bolt.
-func (s *storeImpl) UpsertRelationship(relationship *v1.SecretRelationship) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "SecretRelationship")
-
-	return s.db.Update(func(tx *bolt.Tx) error {
-		return writeRelationship(tx, relationship)
-	})
-}
-
 // UpsertSecret adds or updates the secret in the db.
 func (s *storeImpl) UpsertSecret(secret *v1.Secret) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "Secret")
@@ -108,15 +68,17 @@ func (s *storeImpl) UpsertSecret(secret *v1.Secret) error {
 	})
 }
 
-// hasRelationship returns whether a relatinoship exists for the given id.
-func hasRelationship(tx *bolt.Tx, id string) bool {
-	bucket := tx.Bucket([]byte(secretRelationshipsBucket))
-
-	bytes := bucket.Get([]byte(id))
-	if bytes == nil {
-		return false
-	}
-	return true
+// RemoveSecret removes a secret
+func (s *storeImpl) RemoveSecret(id string) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Secret")
+	return s.db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(secretBucket))
+		key := []byte(id)
+		if exists := bucket.Get(key) != nil; !exists {
+			return dberrors.ErrNotFound{Type: "Secret", ID: string(key)}
+		}
+		return bucket.Delete(key)
+	})
 }
 
 // HasSecret returns whether a secret exists for the given id.
@@ -145,21 +107,6 @@ func readAllSecrets(tx *bolt.Tx) (secrets []*v1.Secret, err error) {
 	return
 }
 
-// readRelationship reads a raltionship within a transaction.
-func readRelationship(tx *bolt.Tx, id string) (relationship *v1.SecretRelationship, err error) {
-	bucket := tx.Bucket([]byte(secretRelationshipsBucket))
-
-	bytes := bucket.Get([]byte(id))
-	if bytes == nil {
-		err = fmt.Errorf("secret relationships with id: %s does not exist", id)
-		return
-	}
-
-	relationship = new(v1.SecretRelationship)
-	err = proto.Unmarshal(bytes, relationship)
-	return
-}
-
 // readSecret reads a secret within a transaction.
 func readSecret(tx *bolt.Tx, id string) (secret *v1.Secret, err error) {
 	bucket := tx.Bucket([]byte(secretBucket))
@@ -172,18 +119,6 @@ func readSecret(tx *bolt.Tx, id string) (secret *v1.Secret, err error) {
 
 	secret = new(v1.Secret)
 	err = proto.Unmarshal(bytes, secret)
-	return
-}
-
-// writeRelationship writes a relationship within a transaction.
-func writeRelationship(tx *bolt.Tx, relationship *v1.SecretRelationship) (err error) {
-	bucket := tx.Bucket([]byte(secretRelationshipsBucket))
-
-	bytes, err := proto.Marshal(relationship)
-	if err != nil {
-		return
-	}
-	bucket.Put([]byte(relationship.GetId()), bytes)
 	return
 }
 

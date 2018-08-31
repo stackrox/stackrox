@@ -6,7 +6,6 @@ import (
 	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/networkgraph"
-	secretDataGraph "github.com/stackrox/rox/central/secret/datagraph"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
@@ -69,11 +68,6 @@ func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, deployment *v
 		return nil, err
 	}
 
-	// Update secret service.
-	if err := secretDataGraph.Singleton().ProcessDeploymentEvent(action, deployment); err != nil {
-		return nil, err
-	}
-
 	s.graphEvaluator.IncrementEpoch()
 
 	// Process the deployment (enrichment, alert generation, enforcement action generation.)
@@ -108,9 +102,6 @@ func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, deployment *
 	// TODO(rs): We should map out how images are updated in the pipeline so we don't do more writes than needed.
 	s.updateImages.do(deployment)
 
-	if err := secretDataGraph.Singleton().ProcessDeploymentEvent(action, deployment); err != nil {
-		return nil, err
-	}
 	s.graphEvaluator.IncrementEpoch()
 
 	return resp, nil

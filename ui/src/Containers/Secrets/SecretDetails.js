@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import CollapsibleCard from 'Components/CollapsibleCard';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import KeyValuePairs from 'Components/KeyValuePairs';
+import * as Icon from 'react-feather';
 
 const secretDetailsMap = {
     secretId: { label: 'Secret ID' },
@@ -11,12 +12,33 @@ const secretDetailsMap = {
     namespace: { label: 'Namespace' }
 };
 
+const getDeploymentRelationships = secret => {
+    if (secret.deploymentRelationships && secret.deploymentRelationships.length !== 0) {
+        return secret.deploymentRelationships.map(deployment => (
+            <div key={deployment.id} className="w-full h-full p-3 font-500">
+                <Icon.Circle className="h-2 w-2 mr-3" />
+                <Link
+                    className="font-500 text-primary-600 hover:text-primary-800"
+                    to={`/main/risk/${deployment.id}`}
+                >
+                    {deployment.name}
+                </Link>
+            </div>
+        ));
+    }
+    return (
+        <div className="flex h-full p-3 font-500">
+            <span className="py-1 font-500 italic">None</span>
+        </div>
+    );
+};
+
 const SecretDetails = ({ secret }) => {
     if (!secret) return <NoResultsMessage message="No Secret Details Available" />;
     const secretDetail = {
         secretId: secret.id,
-        cluster: secret.clusterRelationship.name,
-        namespace: secret.namespaceRelationship.namespace
+        cluster: secret.cluster,
+        namespace: secret.namespace
     };
 
     return (
@@ -32,22 +54,10 @@ const SecretDetails = ({ secret }) => {
                     </CollapsibleCard>
                 </div>
             </div>
-            <div className="px-3 py-4 w-full overflow-y-scroll">
+            <div data-test-id="deployments-card" className="px-3 py-4 w-full overflow-y-scroll">
                 <div className="bg-white shadow text-primary-600 tracking-wide">
                     <CollapsibleCard title="Deployments">
-                        <div className="flex h-full p-3 font-500">
-                            {secret.deploymentRelationships.map(deployment => (
-                                <div className="flex py-3" key={deployment.id}>
-                                    <div className="pr-1 font-600">Deployment Name:</div>
-                                    <Link
-                                        className="font-500 text-primary-600 hover:text-primary-800"
-                                        to={`/main/risk/${deployment.id}`}
-                                    >
-                                        {deployment.name}
-                                    </Link>
-                                </div>
-                            ))}
-                        </div>
+                        {getDeploymentRelationships(secret)}
                     </CollapsibleCard>
                 </div>
             </div>
@@ -59,12 +69,8 @@ SecretDetails.propTypes = {
     secret: PropTypes.shape({
         name: PropTypes.string.isRequired,
         id: PropTypes.string.isRequired,
-        clusterRelationship: PropTypes.shape({
-            name: PropTypes.string
-        }).isRequired,
-        namespaceRelationship: PropTypes.shape({
-            namespace: PropTypes.string
-        }).isRequired,
+        cluster: PropTypes.string.isRequired,
+        namespace: PropTypes.string.isRequired,
         deploymentRelationships: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string,
