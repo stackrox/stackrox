@@ -30,6 +30,68 @@ restoreUI: &restoreUI
       - *uiCacheKey
       - v1-prevent-ui-deps
 
+setupGCP: &setupGCP
+  run:
+    name: Setup deployment env
+    command: |
+      docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+      echo 'export REGISTRY_USERNAME="$DOCKERHUB_USERNAME"' >> $BASH_ENV
+      echo 'export REGISTRY_PASSWORD="$DOCKERHUB_PASSWORD"' >> $BASH_ENV
+      echo 'export PREVENT_IMAGE_TAG="$(make tag)"' >> $BASH_ENV
+      echo $GKE_SERVICE_ACCOUNT > /tmp/gcp.json
+      echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json' >> $BASH_ENV
+      gcloud auth activate-service-account --key-file /tmp/gcp.json
+      gcloud config set project stackrox-ci
+      gcloud config set compute/zone us-central1-f
+
+createGKE: &createGKE
+  run:
+    name: Create GKE cluster
+    command: |
+      gcloud container clusters create \
+        --machine-type n1-standard-2 \
+        --num-nodes 2 \
+        --create-subnetwork range=/19 \
+        --enable-ip-alias \
+        --enable-network-policy \
+        "prevent-ci-${CIRCLE_BUILD_NUM}"
+
+  # See https://stackoverflow.com/a/46316672 for why we have to use user/pass.
+  # This step requires the GCP IAM permission "Kubernetes Engine Admin".
+deployGKE: &deployGKE
+  run:
+    name: Deploy to remote cluster
+    command: |
+      kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user circleci-gke@ultra-current-825.iam.gserviceaccount.com
+      ./deploy/k8s/deploy.sh
+      kubectl delete clusterrolebinding temporary-admin
+
+portForwardK8s: &portForwardK8s
+  run:
+    name: Setup port-forwarding for tests
+    command: ./scripts/k8s/local-port-forward.sh
+    background: true
+
+waitForAPI: &waitForAPI
+  run:
+    name: Wait for the API server to be up
+    command: |
+      export PING_URL=https://127.0.0.1:${LOCAL_PORT}/v1/ping
+      curl -k --connect-timeout 5 --max-time 10 --retry 10 --retry-connrefused --retry-delay 1 --retry-max-time 30 ${PING_URL}
+
+waitForSensorK8s: &waitForSensorK8s
+  run:
+    name: Wait for the Sensor to be running K8s
+    command: |
+      ./scripts/ci/sensor-wait.sh
+
+teardownGKE: &teardownGKE
+  run:
+    name: Tear down GKE cluster
+    command: |
+      gcloud container clusters delete --async "prevent-ci-${CIRCLE_BUILD_NUM}"
+    when: always
+
 version: 2
 jobs:
 
@@ -123,7 +185,7 @@ jobs:
           path: qa-tests-backend/build/reports/codenarc
           destination: reports/codenarc
 
-  deploy-k8s:
+  k8s-tests:
     <<: *defaults
     environment:
       - LOCAL_PORT: 8000
@@ -134,67 +196,12 @@ jobs:
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
-      - run:
-          name: Setup deployment env
-          command: |
-            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
-            echo 'export REGISTRY_USERNAME="$DOCKERHUB_USERNAME"' >> $BASH_ENV
-            echo 'export REGISTRY_PASSWORD="$DOCKERHUB_PASSWORD"' >> $BASH_ENV
-            echo 'export PREVENT_IMAGE_TAG="$(make tag)"' >> $BASH_ENV
-            echo $GKE_SERVICE_ACCOUNT > /tmp/gcp.json
-            echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json' >> $BASH_ENV
-            gcloud auth activate-service-account --key-file /tmp/gcp.json
-            gcloud config set project stackrox-ci
-            gcloud config set compute/zone us-central1-f
-
-      - run:
-          name: Create GKE cluster
-          command: |
-            gcloud container clusters create \
-              --machine-type n1-standard-2 \
-              --num-nodes 2 \
-              --create-subnetwork range=/19 \
-              --enable-ip-alias \
-              --enable-network-policy \
-              "prevent-ci-${CIRCLE_BUILD_NUM}"
-
-      # See https://stackoverflow.com/a/46316672 for why we have to use user/pass.
-      # This step requires the GCP IAM permission "Kubernetes Engine Admin".
-      - run:
-          name: Deploy to remote cluster
-          command: |
-            kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user circleci-gke@ultra-current-825.iam.gserviceaccount.com
-            ./deploy/k8s/deploy.sh
-            kubectl delete clusterrolebinding temporary-admin
-
-      - run:
-          name: Setup port-forwarding for tests
-          command: ./scripts/k8s/local-port-forward.sh
-          background: true
-
-      - run:
-          name: Wait for the API server to be up
-          command: |
-            export PING_URL=https://127.0.0.1:${LOCAL_PORT}/v1/ping
-            curl -k --connect-timeout 5 --max-time 10 --retry 10 --retry-connrefused --retry-delay 1 --retry-max-time 30 ${PING_URL}
-
-      - run:
-          name: Wait for the Sensor to be running K8s
-          command: |
-            ./scripts/ci/sensor-wait.sh
-
-      - *restoreGradle
-      - run:
-          name: QA Automation Platform
-          command: |
-            if [[ $CIRCLE_BRANCH = master ]]; then
-              export CLUSTER=K8S
-              export HOSTNAME=localhost
-              export PORT=${LOCAL_PORT}
-              make -C qa-tests-backend bat-test
-            else
-              echo "Skipping functional tests."
-            fi
+      - *setupGCP
+      - *createGKE
+      - *deployGKE
+      - *portForwardK8s
+      - *waitForAPI
+      - *waitForSensorK8s
 
       - run:
           name: API tests
@@ -208,6 +215,57 @@ jobs:
           command: |
             export UI_BASE_URL=https://localhost:${LOCAL_PORT}
             make -C ui test-e2e-ci
+
+      - run:
+          name: Collect k8s logs
+          command: |
+            ./scripts/ci/collect-service-logs.sh central
+            ./scripts/ci/collect-service-logs.sh sensor
+          when: always
+
+      - store_artifacts:
+          path: /tmp/k8s-service-logs
+          destination: k8s-service-logs
+
+      - *teardownGKE
+
+      - store_test_results:
+          path: ui/cypress/reports
+
+      - store_artifacts:
+          path: ui/cypress/videos
+          destination: ui-e2e-videos
+
+      - store_artifacts:
+          path: ui/cypress/screenshots
+          destination: ui-e2e-screenshots
+
+  qa-build-acceptance-tests:
+    <<: *defaults
+    environment:
+      - LOCAL_PORT: 8000
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - *setupGCP
+      - *createGKE
+      - *deployGKE
+      - *portForwardK8s
+      - *waitForAPI
+      - *waitForSensorK8s
+
+      - *restoreGradle
+      - run:
+          name: QA Automation Platform
+          command: |
+            export CLUSTER=K8S
+            export HOSTNAME=localhost
+            export PORT=${LOCAL_PORT}
+            make -C qa-tests-backend bat-test
 
       - store_artifacts:
           path: ./qa-tests-backend/build/spock-reports
@@ -224,22 +282,7 @@ jobs:
           path: /tmp/k8s-service-logs
           destination: k8s-service-logs
 
-      - run:
-          name: Tear down GKE cluster
-          command: |
-            gcloud container clusters delete --async "prevent-ci-${CIRCLE_BUILD_NUM}"
-          when: always
-
-      - store_test_results:
-          path: ui/cypress/reports
-
-      - store_artifacts:
-          path: ui/cypress/videos
-          destination: ui-e2e-videos
-
-      - store_artifacts:
-          path: ui/cypress/screenshots
-          destination: ui-e2e-screenshots
+      - *teardownGKE
 
   provision-openshift:
     <<: *defaults
@@ -296,7 +339,7 @@ jobs:
       - run:
           name: Unpack openshift volume
           command: |
-            docker cp openshift:/data/config            openshift
+            docker cp openshift:/data/config openshift
             ls -hl openshift
           when: always
 
@@ -318,7 +361,7 @@ jobs:
               stackrox/openshift-automation:terraform-0.2.0 destroy "${CIRCLE_SHA1:0:7}"
           when: on_fail
 
-  deploy-openshift:
+  openshift-tests:
     <<: *defaults
     environment:
       - LOCAL_PORT: 8000
@@ -486,7 +529,13 @@ workflows:
           filters:
             tags:
               only: /.*/
-      - deploy-k8s:
+      - k8s-tests:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /.*/
+      - qa-build-acceptance-tests:
           requires:
             - build
           filters:
@@ -497,7 +546,7 @@ workflows:
           filters:
             branches:
               only: master
-      - deploy-openshift:
+      - openshift-tests:
           requires:
             - build
             - provision-openshift
