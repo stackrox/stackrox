@@ -317,7 +317,7 @@ jobs:
             docker run --rm -t \
               --volumes-from openshift \
               -e GOOGLE_CREDENTIALS="$OPENSHIFT_TERRAFORM_CREDENTIALS" \
-              stackrox/openshift-automation:terraform-0.2.0 create "${CIRCLE_SHA1:0:7}"
+              stackrox/openshift-automation:terraform-0.2.1 create "${CIRCLE_SHA1:0:7}"
 
       - run:
           name: Unpack openshift volume
@@ -334,7 +334,7 @@ jobs:
           command: |
             docker run --rm -t \
             --volumes-from openshift \
-            stackrox/openshift-automation:ansible-0.2.0
+            stackrox/openshift-automation:ansible-0.2.1
 
       - run:
           name: Unpack openshift volume
@@ -358,7 +358,7 @@ jobs:
             docker run --rm -t \
               --volumes-from openshift \
               -e GOOGLE_CREDENTIALS="$OPENSHIFT_TERRAFORM_CREDENTIALS" \
-              stackrox/openshift-automation:terraform-0.2.0 destroy "${CIRCLE_SHA1:0:7}"
+              stackrox/openshift-automation:terraform-0.2.1 destroy "${CIRCLE_SHA1:0:7}"
           when: on_fail
 
   openshift-tests:
@@ -488,7 +488,7 @@ jobs:
             docker run --rm -t \
               --volumes-from openshift \
               -e GOOGLE_CREDENTIALS="$OPENSHIFT_TERRAFORM_CREDENTIALS" \
-              stackrox/openshift-automation:terraform-0.2.0 destroy "${CIRCLE_SHA1:0:7}"
+              stackrox/openshift-automation:terraform-0.2.1 destroy "${CIRCLE_SHA1:0:7}"
           when: always
 
   push-release:
@@ -545,14 +545,18 @@ workflows:
       - provision-openshift:
           filters:
             branches:
-              only: master
+              only:
+              - master
+              - /.*openshift.*/
       - openshift-tests:
           requires:
             - build
             - provision-openshift
           filters:
             branches:
-              only: master
+              only:
+              - master
+              - /.*openshift.*/
       # Push release only on tags.
       - push-release:
           requires:
