@@ -73,6 +73,33 @@ func (p *processLoopsImpl) stopLoops() {
 // and returns the data output from central to the output channel.
 //////////////////////////////////////////////////////////////////
 
+func logSendingEvent(eventWrap *listeners.EventWrap) {
+	var name string
+	var resourceType string
+	switch x := eventWrap.Resource.(type) {
+	case *v1.SensorEvent_Deployment:
+		name = eventWrap.GetDeployment().GetName()
+		resourceType = "Deployment"
+	case *v1.SensorEvent_NetworkPolicy:
+		name = eventWrap.GetNetworkPolicy().GetName()
+		resourceType = "NetworkPolicy+"
+	case *v1.SensorEvent_Namespace:
+		name = eventWrap.GetNamespace().GetName()
+		resourceType = "Namespace"
+	case *v1.SensorEvent_Indicator:
+		name = eventWrap.GetIndicator().GetId()
+		resourceType = "Indicator"
+	case *v1.SensorEvent_Secret:
+		name = eventWrap.GetSecret().GetName()
+		resourceType = "Secret"
+	case nil:
+		logger.Errorf("Resource field is empty")
+	default:
+		logger.Errorf("No resource with type %T", x)
+	}
+	logger.Infof("Sending Sensor Event: Action: '%s'. Type '%s'. Name: '%s'", eventWrap.GetAction(), resourceType, name)
+}
+
 // Take in data from the input channel, pre-process it, then send it to central.
 func (p *processLoopsImpl) sendMessages(orchestratorInput <-chan *listeners.EventWrap,
 	collectorInput <-chan *listeners.EventWrap,
@@ -90,16 +117,22 @@ func (p *processLoopsImpl) sendMessages(orchestratorInput <-chan *listeners.Even
 				return
 			}
 
-			alreadyPresent := p.pendingCache.add(eventWrap)
-			if alreadyPresent && eventWrap.GetAction() != v1.ResourceAction_REMOVE_RESOURCE {
-				continue
-			} else if alreadyPresent && eventWrap.GetAction() == v1.ResourceAction_REMOVE_RESOURCE {
+			// exactMatchInCache implies that the data has changed in the orchestrator, but is not tracked by
+			// our objects so we can ignore
+			switch eventWrap.GetAction() {
+			case v1.ResourceAction_REMOVE_RESOURCE:
 				p.pendingCache.remove(eventWrap)
-			} else if !alreadyPresent && eventWrap.GetAction() != v1.ResourceAction_REMOVE_RESOURCE {
+			case v1.ResourceAction_CREATE_RESOURCE, v1.ResourceAction_UPDATE_RESOURCE:
+				if exactMatchInCache := p.pendingCache.add(eventWrap); exactMatchInCache {
+					continue
+				}
 				p.enrichImages(eventWrap.GetDeployment())
+			default:
+				logger.Errorf("Resource action not handled: %s", eventWrap.GetAction())
+				continue
 			}
 
-			log.Infof("Event already being processed %s", eventWrap.GetId())
+			logSendingEvent(eventWrap)
 			if err := stream.Send(eventWrap.SensorEvent); err != nil {
 				log.Errorf("unable to send orchestrator event: %s", err)
 			}
@@ -155,17 +188,18 @@ func (p *processLoopsImpl) receiveMessages(stream v1.SensorEventService_RecordEv
 
 func (p *processLoopsImpl) processDeploymentResponse(eventResp *v1.SensorEventResponse, output chan<- *enforcers.DeploymentEnforcement) {
 	deploymentResp := eventResp.GetDeployment()
-	if deploymentResp.GetEnforcement() == v1.EnforcementAction_UNSET_ENFORCEMENT {
-		log.Infof("deployment processed but no enforcement needed %s", deploymentResp.GetDeploymentId())
-		return
-	}
-
-	log.Infof("enforcement requested for deployment %s", deploymentResp.GetDeploymentId())
 	eventWrap, exists := p.pendingCache.fetch(deploymentResp.GetDeploymentId())
 	if !exists {
 		log.Errorf("cannot find deployment event for deployment %s", deploymentResp.GetDeploymentId())
 		return
 	}
+
+	if deploymentResp.GetEnforcement() == v1.EnforcementAction_UNSET_ENFORCEMENT {
+		log.Infof("deployment processed but no enforcement needed on %s", eventWrap.GetDeployment().GetName())
+		return
+	}
+
+	log.Infof("enforcement requested for deployment %s", deploymentResp.GetDeploymentId())
 
 	log.Infof("performing enforcement %s on deployment %s", eventWrap.GetAction(), eventWrap.GetDeployment().GetName())
 	output <- &enforcers.DeploymentEnforcement{

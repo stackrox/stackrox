@@ -29,20 +29,20 @@ type pendingEvents struct {
 	containerToDeployment *ccache.Cache
 }
 
-func (p *pendingEvents) add(ew *listeners.EventWrap) (isAlreadyPending bool) {
+func (p *pendingEvents) add(ew *listeners.EventWrap) bool {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	isAlreadyPending = p.checkAlreadyPresent(ew)
+	if isAlreadyPending := p.checkAlreadyPresent(ew); isAlreadyPending {
+		return true
+	}
 
-	if !isAlreadyPending {
-		for _, container := range ew.GetDeployment().GetContainers() {
-			p.containerToDeployment.Set(container.GetId(), ew.GetDeployment().GetId(), time.Hour*1)
-		}
+	for _, container := range ew.GetDeployment().GetContainers() {
+		p.containerToDeployment.Set(container.GetId(), ew.GetDeployment().GetId(), time.Hour*1)
 	}
 	p.pending.Set(ew.GetId(), ew, time.Hour*1)
 
-	return
+	return false
 }
 
 func (p *pendingEvents) remove(ew *listeners.EventWrap) {

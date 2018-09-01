@@ -82,8 +82,10 @@ func (wl *reflectionWatchLister) Stop() {
 }
 
 func (wl *reflectionWatchLister) resourceChanged(obj interface{}, action pkgV1.ResourceAction) {
-	if wl.initialObjectsConsumed && action == pkgV1.ResourceAction_UPDATE_RESOURCE {
-		action = pkgV1.ResourceAction_CREATE_RESOURCE
+	// If the action is create, then it came from watchlister AddFunc.
+	// If we are listing the initial objects, then we treat them as updates so enforcement isn't done
+	if !wl.initialObjectsConsumed && action == pkgV1.ResourceAction_CREATE_RESOURCE {
+		action = pkgV1.ResourceAction_UPDATE_RESOURCE
 	}
 
 	if d := newDeploymentEventFromResource(obj, action, wl.metaFieldIndex, wl.ResourceType(), wl.podLister); d != nil {

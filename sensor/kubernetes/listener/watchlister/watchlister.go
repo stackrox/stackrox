@@ -41,8 +41,7 @@ func (wl *WatchLister) SetupWatch(object string, objectType runtime.Object, chan
 		wl.resyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				// Once the initial objects are listed, the resource action changes to CREATE.
-				changedFunc(obj, pkgV1.ResourceAction_UPDATE_RESOURCE)
+				changedFunc(obj, pkgV1.ResourceAction_CREATE_RESOURCE)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				changedFunc(newObj, pkgV1.ResourceAction_UPDATE_RESOURCE)
