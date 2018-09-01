@@ -41,7 +41,7 @@ const (
 	MemoryRequest     = "Memory Request (MB)"
 	Privileged        = "Privileged"
 	SecretID          = "Secret Id"
-	SecretName        = "Secret Name"
+	SecretName        = "Secret"
 	SecretPath        = "Secret Path"
 	ServiceAccount    = "Service Account"
 	VolumeName        = "Volume Name"

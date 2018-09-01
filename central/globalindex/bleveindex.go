@@ -15,8 +15,20 @@ import (
 	deploymentMapping "github.com/stackrox/rox/central/deployment/index/mappings"
 	imageMapping "github.com/stackrox/rox/central/image/index/mappings"
 	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
-	secretMapping "github.com/stackrox/rox/central/secret/index/mapping"
+	secretOptions "github.com/stackrox/rox/central/secret/search/options"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
+)
+
+var (
+	// CategoryToOptionsMap is a mapping from search categories to the options map for that category.
+	CategoryToOptionsMap = map[v1.SearchCategory]map[string]*v1.SearchField{
+		v1.SearchCategory_ALERTS:      alertMapping.OptionsMap,
+		v1.SearchCategory_DEPLOYMENTS: deploymentMapping.OptionsMap,
+		v1.SearchCategory_IMAGES:      imageMapping.OptionsMap,
+		v1.SearchCategory_POLICIES:    policyMapping.OptionsMap,
+		v1.SearchCategory_SECRETS:     secretOptions.Map,
+	}
 )
 
 // TempInitializeIndices initializes the index under the tmp system folder in the specified path.
@@ -43,7 +55,7 @@ func InitializeIndices(mossPath string) (bleve.Index, error) {
 	return globalIndex, nil
 }
 
-func getIndexMapping() *mapping.IndexMappingImpl {
+func getIndexMapping() mapping.IndexMapping {
 	indexMapping := bleve.NewIndexMapping()
 	indexMapping.AddCustomAnalyzer("single_term", singleTermAnalyzer())
 	indexMapping.DefaultAnalyzer = "single_term" // Default to our analyzer
@@ -52,13 +64,9 @@ func getIndexMapping() *mapping.IndexMappingImpl {
 	indexMapping.StoreDynamic = false
 	indexMapping.TypeField = "Type"
 
-	indexMapping.AddDocumentMapping(v1.SearchCategory_ALERTS.String(), alertMapping.DocumentMap)
-	indexMapping.AddDocumentMapping(v1.SearchCategory_IMAGES.String(), imageMapping.DocumentMap)
-	indexMapping.AddDocumentMapping(v1.SearchCategory_POLICIES.String(), policyMapping.DocumentMap)
-	indexMapping.AddDocumentMapping(v1.SearchCategory_DEPLOYMENTS.String(), deploymentMapping.DocumentMap)
-
-	// Support indexing secrets and relationships.
-	indexMapping.AddDocumentMapping(v1.SearchCategory_SECRETS.String(), secretMapping.DocumentMap)
+	for category, optMap := range CategoryToOptionsMap {
+		indexMapping.AddDocumentMapping(category.String(), blevesearch.DocumentMappingFromOptionsMap(optMap))
+	}
 
 	disabledSection := bleve.NewDocumentDisabledMapping()
 	indexMapping.AddDocumentMapping("_all", disabledSection)

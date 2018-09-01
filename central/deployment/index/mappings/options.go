@@ -27,7 +27,6 @@ var OptionsMap = mergeMaps(map[string]*v1.SearchField{
 	search.MemoryRequest:    search.NewNumericField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.resources.memory_mb_request"),
 	search.Privileged:       search.NewBoolField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.security_context.privileged"),
 
-	search.SecretID:          search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.secrets.id"),
 	search.SecretName:        search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.secrets.name"),
 	search.SecretPath:        search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.secrets.path"),
 	search.ServiceAccount:    search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.service_account"),

@@ -8,18 +8,18 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
-// AddDefaultTypeField does something
-func AddDefaultTypeField(docMap *mapping.DocumentMapping) {
-	docMap.AddFieldMappingsAt("type", mapping.NewTextFieldMapping())
-}
-
-// FieldsToDocumentMapping does something
-func FieldsToDocumentMapping(fieldsMap map[string]*v1.SearchField) *mapping.DocumentMapping {
+// DocumentMappingFromOptionsMap creates a ready-to-use document mapping from the given optionsMap
+func DocumentMappingFromOptionsMap(optionsMap map[string]*v1.SearchField) *mapping.DocumentMapping {
 	rootDocumentMapping := newDocumentMapping(false)
-	for _, field := range fieldsMap {
+	for _, field := range optionsMap {
 		path := strings.Split(field.FieldPath, ".")
 		addToDocumentMapping(path, field, rootDocumentMapping)
 	}
+	// This allows us to index the type field, which is present on the wrap struct we create for every
+	// searchable type. It is necessary to index this field since we store all documents in the same
+	// index, so we can add a query matching the "type" field to the document type if we want to restrict
+	// results to documents of that type.
+	rootDocumentMapping.AddFieldMappingsAt("type", mapping.NewTextFieldMapping())
 	return rootDocumentMapping
 }
 
