@@ -28,6 +28,7 @@ main() {
 
     kubectl describe "deploy/${service_name}" -n stackrox > "${log_dir}/describe.log"
     kubectl     logs "deploy/${service_name}" -n stackrox > "${log_dir}/logs.log"
+    kubectl  logs -p "deploy/${service_name}" -n stackrox > "${log_dir}/logs_previous.log" 2>/dev/null || true
 }
 
 main "$@"
