@@ -119,7 +119,7 @@ const fieldsMap = {
         label: 'Whitelisted Deployments',
         formatValue: d =>
             d
-                .filter(obj => obj.deployment.name !== undefined)
+                .filter(obj => obj.deployment.name !== undefined && obj.deployment.name !== '')
                 .map(obj => obj.deployment.name)
                 .join(', ')
     },
