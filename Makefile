@@ -36,7 +36,7 @@ endif
 	@find . -name vendor -prune -o -name generated -prune -o -name '*.go' -print | xargs gofmt -s -l -w
 
 .PHONY: imports
-imports:
+imports: deps proto-generated-srcs
 	@echo "+ $@"
 ifdef CI
 		@echo "The environment indicates we are in CI; checking goimports."

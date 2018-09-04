@@ -9,6 +9,13 @@ defaults: &defaults
         password: $DOCKERHUB_PASSWORD
   working_directory: /go/src/github.com/stackrox/rox
 
+setupBazel: &setupBazel
+  run:
+    name: Setup Bazel cache access and bazel.rc
+    command: |
+      echo "$GKE_SERVICE_ACCOUNT" > /tmp/gcp.json
+      cat tools/ci-bazel.rc | envsubst > tools/bazel.rc
+
 depCacheKey: &depCacheKey 'v1-prevent-go-pkg-dep-{{ checksum "Gopkg.lock" }}'
 restoreDep: &restoreDep
   restore_cache:
@@ -16,12 +23,12 @@ restoreDep: &restoreDep
       - *depCacheKey
       - v1-prevent-go-pkg-dep
 
-gradleCacheKey: &gradleCacheKey 'v1-gradle-{{ checksum "qa-tests-backend/build.gradle" }}'
+gradleCacheKey: &gradleCacheKey 'v2-gradle-{{ checksum "qa-tests-backend/build.gradle" }}'
 restoreGradle: &restoreGradle
   restore_cache:
     keys:
       - *gradleCacheKey
-      - v1-gradle
+      - v2-gradle
 
 uiCacheKey: &uiCacheKey 'v1-prevent-ui-deps-{{ checksum "ui/yarn.lock" }}'
 restoreUI: &restoreUI
@@ -109,13 +116,7 @@ jobs:
       - *restoreDep
       - *restoreUI
 
-      - run:
-          name: Setup Bazel cache access
-          command: echo "$GKE_SERVICE_ACCOUNT" > /tmp/gcp.json
-
-      - run:
-          name: Substitute env variables into bazel.rc
-          command: cat tools/ci-bazel.rc | envsubst > tools/bazel.rc
+      - *setupBazel
 
       - run:
           name: Build image
@@ -157,29 +158,15 @@ jobs:
       - checkout
       - setup_remote_docker
 
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
       - *restoreDep
       - *restoreGradle
       - *restoreUI
 
-      - run:
-          name: Setup Bazel cache access
-          command: echo "$GKE_SERVICE_ACCOUNT" > /tmp/gcp.json
-
-      - run:
-          name: Substitute env variables into bazel.rc
-          command: cat tools/ci-bazel.rc | envsubst > tools/bazel.rc
+      - *setupBazel
 
       - run:
           name: Run style checks and unit tests
           command: make style test
-
-      - save-cache:
-          key: *gradleCacheKey
-          paths:
-          - ~/.gradle/caches/
 
       - store_artifacts:
           path: qa-tests-backend/build/reports/codenarc
@@ -266,6 +253,11 @@ jobs:
             export HOSTNAME=localhost
             export PORT=${LOCAL_PORT}
             make -C qa-tests-backend bat-test
+
+      - save-cache:
+          key: *gradleCacheKey
+          paths:
+          - ~/.gradle/caches/
 
       - store_artifacts:
           path: ./qa-tests-backend/build/spock-reports
@@ -524,8 +516,6 @@ workflows:
             tags:
               only: /.*/
       - unit-tests:
-          requires:
-            - build
           filters:
             tags:
               only: /.*/
