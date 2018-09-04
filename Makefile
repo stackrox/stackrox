@@ -131,6 +131,7 @@ clean-deps:
 ## Build ##
 ###########
 PURE := --features=pure
+RACE := --features=race
 LINUX_AMD64 := --cpu=k8
 BAZEL_FLAGS := $(PURE) $(LINUX_AMD64)
 cleanup:
@@ -160,7 +161,7 @@ test: gazelle
 	-rm vendor/github.com/coreos/pkg/BUILD
 	-rm vendor/github.com/cloudflare/cfssl/script/BUILD
 	-rm vendor/github.com/grpc-ecosystem/grpc-gateway/BUILD
-	bazel test \
+	bazel test $(RACE) \
 	    --test_output=errors \
 	    --action_env=CIRCLECI=$(CIRCLECI) \
 	    --action_env=DOCKER_HOST=$(DOCKER_HOST) \
