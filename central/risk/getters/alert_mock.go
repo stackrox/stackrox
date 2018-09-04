@@ -23,7 +23,7 @@ func (m MockAlertsGetter) ListAlerts(req *v1.ListAlertsRequest) (alerts []*v1.Li
 	var staleValue bool
 	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
 		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-		if ok && mfQ.MatchFieldQuery.GetField() == search.Stale {
+		if ok && mfQ.MatchFieldQuery.GetField() == search.Stale.String() {
 			staleValue, err = strconv.ParseBool(mfQ.MatchFieldQuery.GetValue())
 			if err != nil {
 				panic(err)

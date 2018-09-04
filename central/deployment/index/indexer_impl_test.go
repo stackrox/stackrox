@@ -56,39 +56,39 @@ func (suite *DeploymentIndexTestSuite) TeardownSuite() {
 
 func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	cases := []struct {
-		fieldValues map[string]string
+		fieldValues map[search.FieldLabel]string
 		expectedIDs []string
 	}{
 		{
-			fieldValues: map[string]string{search.DeploymentName: "nginx"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "nginx"},
 			expectedIDs: []string{fixtures.GetDeployment().GetId()},
 		},
 		{
-			fieldValues: map[string]string{search.DeploymentName: "!nginx"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nginx"},
 			expectedIDs: []string{fakeID},
 		},
 		{
-			fieldValues: map[string]string{search.Label: "com.docker.stack.namespace=prevent"},
+			fieldValues: map[search.FieldLabel]string{search.Label: "com.docker.stack.namespace=prevent"},
 			expectedIDs: []string{fixtures.GetDeployment().GetId()},
 		},
 		{
-			fieldValues: map[string]string{search.DeploymentName: "!nginx", search.Label: "com.docker.stack.namespace=prevent"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nginx", search.Label: "com.docker.stack.namespace=prevent"},
 			expectedIDs: []string{},
 		},
 		{
-			fieldValues: map[string]string{search.DeploymentName: "!nomatch", search.Label: "com.docker.stack.namespace=/.*"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch", search.Label: "com.docker.stack.namespace=/.*"},
 			expectedIDs: []string{fixtures.GetDeployment().GetId()},
 		},
 		{
-			fieldValues: map[string]string{search.DeploymentName: "!nomatch"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch"},
 			expectedIDs: []string{fixtures.GetDeployment().GetId(), fakeID},
 		},
 		{
-			fieldValues: map[string]string{search.DeploymentName: "!nomatch", search.ImageRegistry: "stackrox"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch", search.ImageRegistry: "stackrox"},
 			expectedIDs: []string{fixtures.GetDeployment().GetId()},
 		},
 		{
-			fieldValues: map[string]string{search.DeploymentName: "!nomatch", search.ImageRegistry: "nonexistent"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch", search.ImageRegistry: "nonexistent"},
 			expectedIDs: []string{},
 		},
 	}

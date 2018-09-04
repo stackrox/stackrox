@@ -6,10 +6,11 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // protoToBleveQuery converts our proto query format to the Bleve Query.
-func protoToBleveQuery(q *v1.Query, category v1.SearchCategory, index bleve.Index, optionsMap map[string]*v1.SearchField) (bleveQuery query.Query, err error) {
+func protoToBleveQuery(q *v1.Query, category v1.SearchCategory, index bleve.Index, optionsMap map[search.FieldLabel]*v1.SearchField) (bleveQuery query.Query, err error) {
 	if q.GetQuery() == nil {
 		return
 	}
@@ -25,7 +26,7 @@ func protoToBleveQuery(q *v1.Query, category v1.SearchCategory, index bleve.Inde
 	}
 }
 
-func baseQueryToBleve(bq *v1.BaseQuery, category v1.SearchCategory, index bleve.Index, optionsMap map[string]*v1.SearchField) (bleveQuery query.Query, err error) {
+func baseQueryToBleve(bq *v1.BaseQuery, category v1.SearchCategory, index bleve.Index, optionsMap map[search.FieldLabel]*v1.SearchField) (bleveQuery query.Query, err error) {
 	if bq.GetQuery() == nil {
 		return
 	}
@@ -43,11 +44,11 @@ func baseQueryToBleve(bq *v1.BaseQuery, category v1.SearchCategory, index bleve.
 	}
 }
 
-func matchFieldQueryToBleve(mq *v1.MatchFieldQuery, category v1.SearchCategory, index bleve.Index, optionsMap map[string]*v1.SearchField) (bleveQuery query.Query, err error) {
+func matchFieldQueryToBleve(mq *v1.MatchFieldQuery, category v1.SearchCategory, index bleve.Index, optionsMap map[search.FieldLabel]*v1.SearchField) (bleveQuery query.Query, err error) {
 	if mq.GetField() == "" || mq.GetValue() == "" {
 		return
 	}
-	searchField, found := optionsMap[mq.GetField()]
+	searchField, found := optionsMap[search.FieldLabel(mq.GetField())]
 	if !found {
 		return
 	}
@@ -55,7 +56,7 @@ func matchFieldQueryToBleve(mq *v1.MatchFieldQuery, category v1.SearchCategory, 
 	return
 }
 
-func conjunctionQueryToBleve(cq *v1.ConjunctionQuery, category v1.SearchCategory, index bleve.Index, optionsMap map[string]*v1.SearchField) (query.Query, error) {
+func conjunctionQueryToBleve(cq *v1.ConjunctionQuery, category v1.SearchCategory, index bleve.Index, optionsMap map[search.FieldLabel]*v1.SearchField) (query.Query, error) {
 	if len(cq.GetQueries()) == 0 {
 		return nil, nil
 	}
@@ -69,7 +70,7 @@ func conjunctionQueryToBleve(cq *v1.ConjunctionQuery, category v1.SearchCategory
 	return bleve.NewConjunctionQuery(bleveSubQueries...), nil
 }
 
-func disjunctionQueryToBleve(dq *v1.DisjunctionQuery, category v1.SearchCategory, index bleve.Index, optionsMap map[string]*v1.SearchField) (query.Query, error) {
+func disjunctionQueryToBleve(dq *v1.DisjunctionQuery, category v1.SearchCategory, index bleve.Index, optionsMap map[search.FieldLabel]*v1.SearchField) (query.Query, error) {
 	if len(dq.GetQueries()) == 0 {
 		return nil, nil
 	}
@@ -84,7 +85,7 @@ func disjunctionQueryToBleve(dq *v1.DisjunctionQuery, category v1.SearchCategory
 	return bleve.NewDisjunctionQuery(bleveSubQueries...), nil
 }
 
-func getBleveSubQueries(qs []*v1.Query, category v1.SearchCategory, index bleve.Index, optionsMap map[string]*v1.SearchField) ([]query.Query, error) {
+func getBleveSubQueries(qs []*v1.Query, category v1.SearchCategory, index bleve.Index, optionsMap map[search.FieldLabel]*v1.SearchField) ([]query.Query, error) {
 	bleveSubQueries := make([]query.Query, 0, len(qs))
 	for _, q := range qs {
 		bleveSubQuery, err := protoToBleveQuery(q, category, index, optionsMap)

@@ -7,7 +7,7 @@ import (
 )
 
 // OptionsMap is exposed for e2e test
-var OptionsMap = mergeMaps(map[string]*v1.SearchField{
+var OptionsMap = mergeMaps(map[search.FieldLabel]*v1.SearchField{
 	search.Cluster:   search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.cluster_name"),
 	search.ClusterID: search.NewField(v1.SearchCategory_DEPLOYMENTS, "deployment.cluster_id", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
 	search.Namespace: search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.namespace"),
@@ -39,8 +39,8 @@ var OptionsMap = mergeMaps(map[string]*v1.SearchField{
 	"ImageRelationship": search.NewField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.image.name.sha", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
 }, mappings.OptionsMap)
 
-func mergeMaps(m1 map[string]*v1.SearchField, otherMaps ...map[string]*v1.SearchField) map[string]*v1.SearchField {
-	finalMap := make(map[string]*v1.SearchField)
+func mergeMaps(m1 map[search.FieldLabel]*v1.SearchField, otherMaps ...map[search.FieldLabel]*v1.SearchField) map[search.FieldLabel]*v1.SearchField {
+	finalMap := make(map[search.FieldLabel]*v1.SearchField)
 	for k, v := range m1 {
 		finalMap[k] = v
 	}

@@ -18,14 +18,14 @@ func TestParseRawQuery(t *testing.T) {
 						{Query: &v1.Query_BaseQuery{
 							BaseQuery: &v1.BaseQuery{
 								Query: &v1.BaseQuery_MatchFieldQuery{
-									MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName, Value: "field1"},
+									MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "field1"},
 								},
 							},
 						}},
 						{Query: &v1.Query_BaseQuery{
 							BaseQuery: &v1.BaseQuery{
 								Query: &v1.BaseQuery_MatchFieldQuery{
-									MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName, Value: "field12"},
+									MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "field12"},
 								},
 							},
 						}},
@@ -34,7 +34,7 @@ func TestParseRawQuery(t *testing.T) {
 				{Query: &v1.Query_BaseQuery{
 					BaseQuery: &v1.BaseQuery{
 						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: Category, Value: "field2"},
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: Category.String(), Value: "field2"},
 						},
 					},
 				}},
@@ -55,14 +55,14 @@ func TestParseRawQuery(t *testing.T) {
 						{Query: &v1.Query_BaseQuery{
 							BaseQuery: &v1.BaseQuery{
 								Query: &v1.BaseQuery_MatchFieldQuery{
-									MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName, Value: "field1"},
+									MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "field1"},
 								},
 							},
 						}},
 						{Query: &v1.Query_BaseQuery{
 							BaseQuery: &v1.BaseQuery{
 								Query: &v1.BaseQuery_MatchFieldQuery{
-									MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName, Value: "field12"},
+									MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "field12"},
 								},
 							},
 						}},
@@ -78,7 +78,7 @@ func TestParseRawQuery(t *testing.T) {
 				{Query: &v1.Query_BaseQuery{
 					BaseQuery: &v1.BaseQuery{
 						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: Category, Value: "field2"},
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: Category.String(), Value: "field2"},
 						},
 					},
 				}},

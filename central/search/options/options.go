@@ -12,20 +12,20 @@ import (
 
 // GlobalOptions is exposed for e2e test
 var GlobalOptions = []string{
-	searchCommon.Cluster,
-	searchCommon.Namespace,
-	searchCommon.Label,
+	searchCommon.Cluster.String(),
+	searchCommon.Namespace.String(),
+	searchCommon.Label.String(),
 }
 
 // CategoryToOptionsSet is a map of all option sets by category, with a category for each indexed data type.
 var CategoryToOptionsSet map[v1.SearchCategory]mapset.Set
 
-func generateSetFromOptionsMap(maps ...map[string]*v1.SearchField) mapset.Set {
+func generateSetFromOptionsMap(maps ...map[searchCommon.FieldLabel]*v1.SearchField) mapset.Set {
 	s := mapset.NewSet()
 	for _, m := range maps {
 		for k, v := range m {
 			if !v.GetHidden() {
-				s.Add(k)
+				s.Add(k.String())
 			}
 		}
 	}

@@ -34,7 +34,7 @@ func (suite *AlertManagerTestSuite) SetupTest() {
 
 // Returns a function that can be used to match *v1.Query,
 // which ensure that the query specifies all the fields.
-func queryHasFields(fields ...string) func(interface{}) bool {
+func queryHasFields(fields ...search.FieldLabel) func(interface{}) bool {
 	return func(in interface{}) bool {
 		q := in.(*v1.Query)
 
@@ -45,7 +45,7 @@ func queryHasFields(fields ...string) func(interface{}) bool {
 				return
 			}
 			for i, field := range fields {
-				if mfQ.MatchFieldQuery.GetField() == field {
+				if mfQ.MatchFieldQuery.GetField() == field.String() {
 					fieldsFound[i] = true
 				}
 			}

@@ -17,12 +17,13 @@ import (
 	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
 	secretOptions "github.com/stackrox/rox/central/secret/search/options"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 var (
 	// CategoryToOptionsMap is a mapping from search categories to the options map for that category.
-	CategoryToOptionsMap = map[v1.SearchCategory]map[string]*v1.SearchField{
+	CategoryToOptionsMap = map[v1.SearchCategory]map[search.FieldLabel]*v1.SearchField{
 		v1.SearchCategory_ALERTS:      alertMapping.OptionsMap,
 		v1.SearchCategory_DEPLOYMENTS: deploymentMapping.OptionsMap,
 		v1.SearchCategory_IMAGES:      imageMapping.OptionsMap,

@@ -11,25 +11,25 @@ import (
 
 // QueryBuilder builds a search query
 type QueryBuilder struct {
-	query map[string][]string
+	query map[FieldLabel][]string
 	raw   string
 }
 
 // NewQueryBuilder instantiates a query builder with no values
 func NewQueryBuilder() *QueryBuilder {
 	return &QueryBuilder{
-		query: make(map[string][]string),
+		query: make(map[FieldLabel][]string),
 	}
 }
 
 // AddStrings adds a key value pair to the query
-func (qb *QueryBuilder) AddStrings(k string, v ...string) *QueryBuilder {
+func (qb *QueryBuilder) AddStrings(k FieldLabel, v ...string) *QueryBuilder {
 	qb.query[k] = append(qb.query[k], v...)
 	return qb
 }
 
 // AddBools adds a string key and a bool value pair
-func (qb *QueryBuilder) AddBools(k string, v ...bool) *QueryBuilder {
+func (qb *QueryBuilder) AddBools(k FieldLabel, v ...bool) *QueryBuilder {
 	bools := make([]string, 0, len(v))
 	for _, b := range v {
 		bools = append(bools, strconv.FormatBool(b))
@@ -62,14 +62,16 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	queries := make([]*v1.Query, 0, len(qb.query))
 
 	// Sort the queries by field value, to ensure consistency of output.
-	fields := make([]string, 0, len(qb.query))
+	fields := make([]FieldLabel, 0, len(qb.query))
 	for field := range qb.query {
 		fields = append(fields, field)
 	}
-	sort.Strings(fields)
+	sort.Slice(fields, func(i, j int) bool {
+		return fields[i] < fields[j]
+	})
 
 	for _, field := range fields {
-		queries = append(queries, queryFromFieldValues(field, qb.query[field]))
+		queries = append(queries, queryFromFieldValues(field.String(), qb.query[field]))
 	}
 
 	if qb.raw != "" {

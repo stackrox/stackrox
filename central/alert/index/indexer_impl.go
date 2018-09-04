@@ -52,7 +52,7 @@ func (b *indexerImpl) SearchAlerts(q *v1.Query) ([]search.Result, error) {
 		if !ok {
 			return
 		}
-		if matchFieldQuery.MatchFieldQuery.GetField() == search.Stale {
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.Stale.String() {
 			querySpecifiesStaleField = true
 		}
 	})

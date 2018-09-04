@@ -130,7 +130,7 @@ func runSubQuery(index bleve.Index, category v1.SearchCategory, searchField *v1.
 }
 
 // RunSearchRequest builds a query and runs it against the index.
-func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap map[string]*v1.SearchField) ([]searchPkg.Result, error) {
+func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap map[searchPkg.FieldLabel]*v1.SearchField) ([]searchPkg.Result, error) {
 	que, err := BuildQuery(index, category, q, optionsMap)
 	if err != nil {
 		return nil, err
@@ -153,7 +153,7 @@ func RunQuery(query query.Query, index bleve.Index, fields ...string) ([]searchP
 
 // BuildQuery builds a bleve query for the input query
 // It is okay for the input query to be nil or empty; in this case, a query matching all documents of the given category will be returned.
-func BuildQuery(index bleve.Index, category v1.SearchCategory, q *v1.Query, optionsMap map[string]*v1.SearchField) (query.Query, error) {
+func BuildQuery(index bleve.Index, category v1.SearchCategory, q *v1.Query, optionsMap map[searchPkg.FieldLabel]*v1.SearchField) (query.Query, error) {
 	if q.GetQuery() == nil {
 		return typeQuery(category), nil
 	}

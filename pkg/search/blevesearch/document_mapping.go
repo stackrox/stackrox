@@ -6,10 +6,11 @@ import (
 
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // DocumentMappingFromOptionsMap creates a ready-to-use document mapping from the given optionsMap
-func DocumentMappingFromOptionsMap(optionsMap map[string]*v1.SearchField) *mapping.DocumentMapping {
+func DocumentMappingFromOptionsMap(optionsMap map[search.FieldLabel]*v1.SearchField) *mapping.DocumentMapping {
 	rootDocumentMapping := newDocumentMapping(false)
 	for _, field := range optionsMap {
 		path := strings.Split(field.FieldPath, ".")

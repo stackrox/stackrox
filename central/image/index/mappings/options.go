@@ -6,7 +6,7 @@ import (
 )
 
 // OptionsMap is exposed for e2e test
-var OptionsMap = map[string]*v1.SearchField{
+var OptionsMap = map[search.FieldLabel]*v1.SearchField{
 	// Add the scope so that we can use this options map to search for deployment cluster data
 	search.Cluster:   search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.cluster_name"),
 	search.Namespace: search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.namespace"),

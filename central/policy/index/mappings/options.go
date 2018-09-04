@@ -6,7 +6,7 @@ import (
 )
 
 // OptionsMap is exposed for e2e test
-var OptionsMap = map[string]*v1.SearchField{
+var OptionsMap = map[search.FieldLabel]*v1.SearchField{
 	search.PolicyID:    search.NewField(v1.SearchCategory_POLICIES, "policy.id", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
 	search.Enforcement: search.NewEnforcementField(v1.SearchCategory_POLICIES, "policy.enforcement"),
 	search.PolicyName:  search.NewStringField(v1.SearchCategory_POLICIES, "policy.name"),
