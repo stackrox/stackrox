@@ -26,6 +26,7 @@ func newLoopWithDuration(enricherAndDetector EnricherAndDetector, deployments da
 	return &loopImpl{
 		tickerDuration:      tickerDuration,
 		stopChan:            concurrency.NewSignal(),
+		stopped:             concurrency.NewSignal(),
 		shortChan:           make(chan struct{}),
 		enricherAndDetector: enricherAndDetector,
 		deployments:         deployments,

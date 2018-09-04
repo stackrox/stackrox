@@ -23,7 +23,7 @@ func NewSignal() Signal {
 }
 
 // WaitC returns a WaitableChan for this signal.
-func (s Signal) WaitC() WaitableChan {
+func (s *Signal) WaitC() WaitableChan {
 	chPtr := atomic.LoadPointer(&s.ch)
 	if chPtr == nil {
 		return closedCh
@@ -34,12 +34,12 @@ func (s Signal) WaitC() WaitableChan {
 }
 
 // Done returns a channel that is closed when this signal was triggered.
-func (s Signal) Done() <-chan struct{} {
+func (s *Signal) Done() <-chan struct{} {
 	return s.WaitC()
 }
 
 // IsDone checks if the signal was triggered. It is a slightly more efficient alternative to calling `IsDone(s)`.
-func (s Signal) IsDone() bool {
+func (s *Signal) IsDone() bool {
 	chPtr := atomic.LoadPointer(&s.ch)
 	if chPtr == nil {
 		return true
@@ -50,7 +50,7 @@ func (s Signal) IsDone() bool {
 
 // Wait waits for the signal to be triggered. It is a slightly more efficient and convenient alternative to calling
 // `Wait(s)`.
-func (s Signal) Wait() {
+func (s *Signal) Wait() {
 	chPtr := atomic.LoadPointer(&s.ch)
 	if chPtr == nil {
 		return

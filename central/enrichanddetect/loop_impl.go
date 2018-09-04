@@ -15,6 +15,7 @@ type loopImpl struct {
 	ticker         *time.Ticker
 	shortChan      chan struct{}
 	stopChan       concurrency.Signal
+	stopped        concurrency.Signal
 
 	enricherAndDetector EnricherAndDetector
 	deployments         datastore.DataStore
@@ -29,6 +30,7 @@ func (l *loopImpl) Start() {
 // Stop stops the enrich and detect loop.
 func (l *loopImpl) Stop() {
 	l.stopChan.Signal()
+	l.stopped.Wait()
 }
 
 func (l *loopImpl) ShortCircuit() {
@@ -36,6 +38,7 @@ func (l *loopImpl) ShortCircuit() {
 }
 
 func (l *loopImpl) loop() {
+	defer l.stopped.Signal()
 	defer l.ticker.Stop()
 
 	for {
