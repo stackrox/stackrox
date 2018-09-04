@@ -19,8 +19,8 @@ type PolicySet interface {
 // NewPolicySet returns a new instance of a PolicySet.
 func NewPolicySet(store policyDatastore.DataStore) PolicySet {
 	return &setImpl{
-		policyIDToPolicy: make(map[string]*v1.Policy),
-		policyToMatcher:  make(map[*v1.Policy]containerMatcher.Matcher),
-		policyStore:      store,
+		policyIDToPolicy:  make(map[string]*v1.Policy),
+		policyIDToMatcher: make(map[string]containerMatcher.Matcher),
+		policyStore:       store,
 	}
 }

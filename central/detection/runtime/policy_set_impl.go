@@ -13,9 +13,9 @@ import (
 type setImpl struct {
 	lock sync.RWMutex
 
-	policyIDToPolicy map[string]*v1.Policy
-	policyToMatcher  map[*v1.Policy]containerMatcher.Matcher
-	policyStore      policyDatastore.DataStore
+	policyIDToPolicy  map[string]*v1.Policy
+	policyIDToMatcher map[string]containerMatcher.Matcher
+	policyStore       policyDatastore.DataStore
 }
 
 // ForOne runs the given function on the policy matching the id if it exists.
@@ -24,7 +24,7 @@ func (p *setImpl) ForOne(pID string, fe func(*v1.Policy, containerMatcher.Matche
 	defer p.lock.RUnlock()
 
 	if policy, exists := p.policyIDToPolicy[pID]; exists {
-		return fe(policy, p.policyToMatcher[policy])
+		return fe(policy, p.policyIDToMatcher[pID])
 	}
 	return fmt.Errorf("policy with ID not found in set: %s", pID)
 }
@@ -34,8 +34,8 @@ func (p *setImpl) ForEach(fe func(*v1.Policy, containerMatcher.Matcher) error) e
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	for policy, matcher := range p.policyToMatcher {
-		if err := fe(policy, matcher); err != nil {
+	for id, matcher := range p.policyIDToMatcher {
+		if err := fe(p.policyIDToPolicy[id], matcher); err != nil {
 			return err
 		}
 	}
@@ -55,7 +55,7 @@ func (p *setImpl) UpsertPolicy(policy *v1.Policy) error {
 	}
 
 	p.policyIDToPolicy[cloned.GetId()] = cloned
-	p.policyToMatcher[cloned] = matcher
+	p.policyIDToMatcher[cloned.GetId()] = matcher
 	return nil
 }
 
@@ -64,9 +64,9 @@ func (p *setImpl) RemovePolicy(policyID string) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	if policy, exists := p.policyIDToPolicy[policyID]; exists {
+	if _, exists := p.policyIDToPolicy[policyID]; exists {
 		delete(p.policyIDToPolicy, policyID)
-		delete(p.policyToMatcher, policy)
+		delete(p.policyIDToMatcher, policyID)
 	}
 	return nil
 }
@@ -90,5 +90,6 @@ func (p *setImpl) RemoveNotifier(notifierID string) error {
 			return err
 		}
 	}
+
 	return nil
 }

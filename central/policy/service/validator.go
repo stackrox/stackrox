@@ -10,6 +10,9 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	containerMatcher "github.com/stackrox/rox/pkg/compiledpolicies/container/matcher"
+	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
+	imageMatcher "github.com/stackrox/rox/pkg/compiledpolicies/image/matcher"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
@@ -34,6 +37,7 @@ func (s *policyValidator) validate(policy *v1.Policy) error {
 	errorList := errorhelpers.NewErrorList("policy invalid")
 	errorList.AddError(s.validateName(policy))
 	errorList.AddError(s.validateDescription(policy))
+	errorList.AddError(s.validateCompilableForLifecycle(policy))
 	errorList.AddError(s.validateSeverity(policy))
 	errorList.AddError(s.validateCategories(policy))
 	errorList.AddError(s.validateScopes(policy))
@@ -54,6 +58,15 @@ func (s *policyValidator) validateDescription(policy *v1.Policy) error {
 		return errors.New("description, when present, should be of sentence form, and not contain more than 200 characters")
 	}
 	return nil
+}
+
+func (s *policyValidator) validateCompilableForLifecycle(policy *v1.Policy) error {
+	if policy.GetLifecycleStage() == v1.LifecycleStage_BUILD_TIME {
+		return compileForBuildTime(policy)
+	} else if policy.GetLifecycleStage() == v1.LifecycleStage_RUN_TIME {
+		return compilesForRunTime(policy)
+	}
+	return compilesForDeployTime(policy)
 }
 
 func (s *policyValidator) validateSeverity(policy *v1.Policy) error {
@@ -177,6 +190,39 @@ func (s *policyValidator) validateScope(scope *v1.Scope) error {
 	}
 	if !exists {
 		return fmt.Errorf("cluster %s does not exist", scope.GetCluster())
+	}
+	return nil
+}
+
+func compileForBuildTime(policy *v1.Policy) error {
+	m, err := imageMatcher.Compile(policy)
+	if err != nil {
+		return err
+	}
+	if m == nil {
+		return fmt.Errorf("build time policy contains no image constraints")
+	}
+	return nil
+}
+
+func compilesForDeployTime(policy *v1.Policy) error {
+	m, err := deploymentMatcher.Compile(policy)
+	if err != nil {
+		return err
+	}
+	if m == nil {
+		return fmt.Errorf("deploy time policy contains no constraints")
+	}
+	return nil
+}
+
+func compilesForRunTime(policy *v1.Policy) error {
+	m, err := containerMatcher.Compile(policy)
+	if err != nil {
+		return err
+	}
+	if m == nil {
+		return fmt.Errorf("run time policy contains no container constraints")
 	}
 	return nil
 }

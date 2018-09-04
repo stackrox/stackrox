@@ -155,6 +155,73 @@ func (suite *PolicyValidatorTestSuite) TestValidateDescription() {
 	suite.Error(err, "no special characters")
 }
 
+func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
+	policy := &v1.Policy{
+		LifecycleStage: v1.LifecycleStage_BUILD_TIME,
+		Fields: &v1.PolicyFields{
+			TotalResourcePolicy: &v1.ResourcePolicy{
+				CpuResourceLimit: &v1.ResourcePolicy_NumericalPolicy{
+					Value: 1.0,
+				},
+			},
+		},
+	}
+	err := suite.validator.validateCompilableForLifecycle(policy)
+	suite.Error(err, "no image criteria")
+
+	policy = &v1.Policy{
+		LifecycleStage: v1.LifecycleStage_BUILD_TIME,
+		Fields: &v1.PolicyFields{
+			ImageName: &v1.ImageNamePolicy{
+				Tag: "latest",
+			},
+		},
+	}
+	err = suite.validator.validateCompilableForLifecycle(policy)
+	suite.NoError(err, "has image criteria")
+
+	policy = &v1.Policy{
+		LifecycleStage: v1.LifecycleStage_DEPLOY_TIME,
+	}
+	err = suite.validator.validateCompilableForLifecycle(policy)
+	suite.Error(err, "no criteria")
+
+	policy = &v1.Policy{
+		LifecycleStage: v1.LifecycleStage_DEPLOY_TIME,
+		Fields: &v1.PolicyFields{
+			ImageName: &v1.ImageNamePolicy{
+				Tag: "latest",
+			},
+		},
+	}
+	err = suite.validator.validateCompilableForLifecycle(policy)
+	suite.NoError(err, "has deployment criteria")
+
+	policy = &v1.Policy{
+		LifecycleStage: v1.LifecycleStage_RUN_TIME,
+		Fields: &v1.PolicyFields{
+			TotalResourcePolicy: &v1.ResourcePolicy{
+				CpuResourceLimit: &v1.ResourcePolicy_NumericalPolicy{
+					Value: 1.0,
+				},
+			},
+		},
+	}
+	err = suite.validator.validateCompilableForLifecycle(policy)
+	suite.Error(err, "no container criteria")
+
+	policy = &v1.Policy{
+		LifecycleStage: v1.LifecycleStage_RUN_TIME,
+		Fields: &v1.PolicyFields{
+			PortPolicy: &v1.PortPolicy{
+				Port: 22,
+			},
+		},
+	}
+	err = suite.validator.validateCompilableForLifecycle(policy)
+	suite.NoError(err, "has container criteria")
+}
+
 func (suite *PolicyValidatorTestSuite) TestValidateSeverity() {
 	policy := &v1.Policy{
 		Severity: v1.Severity_LOW_SEVERITY,
