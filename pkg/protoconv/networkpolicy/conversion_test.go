@@ -106,11 +106,16 @@ func TestNetworkPolicyConversion(t *testing.T) {
 	yamlPolicy, err := KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToYaml()
 	assert.NoError(t, err, "yaml generation should succeed")
 
-	protoNetworkPolicy, err = YamlWrap{yaml: yamlPolicy}.ToRoxNetworkPolicy()
-	assert.NoError(t, err, "rox policy generation should succeed")
-
-	k8sPolicy, err = YamlWrap{yaml: yamlPolicy}.ToKubernetesNetworkPolicy()
+	k8sPolicies, err := YamlWrap{Yaml: yamlPolicy}.ToKubernetesNetworkPolicies()
 	assert.NoError(t, err, "k8s policy generation should succeed")
+	assert.Equal(t, 1, len(k8sPolicies), "expected one policy from the yaml")
+	assert.Equal(t, np, k8sPolicies[0])
 
-	assert.Equal(t, np, k8sPolicy)
+	protoNetworkPolicies, err := YamlWrap{Yaml: yamlPolicy}.ToRoxNetworkPolicies()
+	assert.NoError(t, err, "k8s policy generation should succeed")
+	assert.Equal(t, 1, len(protoNetworkPolicies), "expected one policy from the yaml")
+
+	// Check that yaml->rox, and k8s->rox creates the same network policy
+	protoNetworkPolicyFromK8s := KubernetesNetworkPolicyWrap{np}.ToRoxNetworkPolicy()
+	assert.Equal(t, protoNetworkPolicyFromK8s, protoNetworkPolicies[0])
 }

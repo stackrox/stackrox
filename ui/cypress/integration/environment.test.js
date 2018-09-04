@@ -5,7 +5,7 @@ describe('Network page', () => {
     beforeEach(() => {
         cy.server();
         cy.fixture('environment/networkGraph.json').as('networkGraphJson');
-        cy.route('GET', api.environment.networkGraph, '@networkGraphJson').as('networkGraph');
+        cy.route('POST', api.environment.networkGraph, '@networkGraphJson').as('networkGraph');
         cy.fixture('environment/epoch.json').as('epochJson');
         cy.route('GET', api.environment.epoch, '@epochJson').as('epoch');
 

@@ -14,7 +14,7 @@ export function fetchEnvironmentGraph(filters, clusterId) {
     const params = queryString.stringify({
         ...filters
     });
-    return axios.get(`${baseUrl}/cluster/${clusterId}?${params}`).then(response => ({
+    return axios.post(`${baseUrl}/cluster/${clusterId}?${params}`).then(response => ({
         response: response.data
     }));
 }

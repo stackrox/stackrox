@@ -2,6 +2,7 @@ package networkpolicy
 
 import (
 	"bytes"
+	"io"
 
 	roxV1 "github.com/stackrox/rox/generated/api/v1"
 	k8sV1 "k8s.io/api/networking/v1"
@@ -9,19 +10,37 @@ import (
 )
 
 // YamlWrap wraps a string json formatted yaml and provides functions to decode it into stackrox or k8s network policies.
+// YAMLs may contain configs for many policies in a single string.
 type YamlWrap struct {
-	yaml string
+	Yaml string
 }
 
-// ToKubernetesNetworkPolicy outputs the k8s NetworkPolicy proto described by the input yaml.
-func (y YamlWrap) ToKubernetesNetworkPolicy() (*k8sV1.NetworkPolicy, error) {
-	var k8sNp k8sV1.NetworkPolicy
-	err := yaml.NewYAMLToJSONDecoder(bytes.NewReader([]byte(y.yaml))).Decode(&k8sNp)
-	return &k8sNp, err
+// ToKubernetesNetworkPolicies outputs the k8s NetworkPolicy protos described by the input yaml.
+func (y YamlWrap) ToKubernetesNetworkPolicies() (k8sPolicies []*k8sV1.NetworkPolicy, err error) {
+	decoder := yaml.NewYAMLToJSONDecoder(bytes.NewReader([]byte(y.Yaml)))
+	for err == nil {
+		k8sPolicy := new(k8sV1.NetworkPolicy)
+		err = decoder.Decode(k8sPolicy)
+		if err == nil {
+			k8sPolicies = append(k8sPolicies, k8sPolicy)
+		}
+	}
+	if err == io.EOF {
+		err = nil
+	}
+	return
 }
 
-// ToRoxNetworkPolicy outputs the stackrox NetworkPolicy proto described by the input yaml.
-func (y YamlWrap) ToRoxNetworkPolicy() (*roxV1.NetworkPolicy, error) {
-	networkPolicy, err := y.ToKubernetesNetworkPolicy()
-	return KubernetesNetworkPolicyWrap{networkPolicy}.ToRoxNetworkPolicy(), err
+// ToRoxNetworkPolicies outputs the stackrox NetworkPolicy protos described by the input yaml.
+func (y YamlWrap) ToRoxNetworkPolicies() (roxPolicies []*roxV1.NetworkPolicy, err error) {
+	var k8sPolicies []*k8sV1.NetworkPolicy
+	k8sPolicies, err = y.ToKubernetesNetworkPolicies()
+	if err != nil {
+		return
+	}
+	for _, k8SPolicy := range k8sPolicies {
+		roxPolicy := KubernetesNetworkPolicyWrap{k8SPolicy}.ToRoxNetworkPolicy()
+		roxPolicies = append(roxPolicies, roxPolicy)
+	}
+	return
 }

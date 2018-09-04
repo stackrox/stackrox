@@ -3,8 +3,8 @@ package service
 import (
 	"sync"
 
-	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/networkgraph"
 	"github.com/stackrox/rox/central/networkpolicies/store"
 )
@@ -16,7 +16,7 @@ var (
 )
 
 func initialize() {
-	as = New(store.Singleton(), deploymentDataStore.Singleton(), networkgraph.Singleton(), clusterDataStore.Singleton())
+	as = New(store.Singleton(), networkgraph.Singleton(), clusterDS.Singleton(), deploymentDS.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

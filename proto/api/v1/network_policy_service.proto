@@ -81,14 +81,6 @@ message NetworkPolicy {
     google.protobuf.Timestamp created       = 11;
 }
 
-message GetNetworkPoliciesRequest {
-    string cluster_id = 1;
-}
-
-message NetworkPoliciesResponse {
-    repeated NetworkPolicy network_policies = 1;
-}
-
 message NetworkEdge {
     string          source       = 1;
     string          target       = 2;
@@ -103,9 +95,21 @@ message NetworkNode {
     string          deployment_name = 6;
 }
 
-message GetNetworkGraphRequest {
+// API specific objects.
+////////////////////////
+
+message GetNetworkPoliciesRequest {
     string cluster_id = 1;
-    string query      = 2;
+}
+
+message NetworkPoliciesResponse {
+    repeated NetworkPolicy network_policies = 1;
+}
+
+message GetNetworkGraphRequest {
+    string cluster_id      = 1;
+    string query           = 2;
+    string simulation_yaml = 3;
 }
 
 message GetNetworkGraphResponse {
@@ -141,7 +145,8 @@ service NetworkPolicyService {
 
     rpc GetNetworkGraph (GetNetworkGraphRequest) returns (GetNetworkGraphResponse) {
         option (google.api.http) = {
-            get: "/v1/networkgraph/cluster/{cluster_id}"
+            post: "/v1/networkgraph/cluster/{cluster_id}"
+            body: "*"
         };
     }
 

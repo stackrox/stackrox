@@ -14,6 +14,7 @@ var (
 )
 
 // Store provides storage functionality for alerts.
+//go:generate mockery -name=Store
 type Store interface {
 	GetNetworkPolicy(id string) (*v1.NetworkPolicy, bool, error)
 	GetNetworkPolicies(request *v1.GetNetworkPoliciesRequest) ([]*v1.NetworkPolicy, error)

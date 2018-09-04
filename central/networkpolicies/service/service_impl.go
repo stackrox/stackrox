@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -41,10 +40,11 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	clusterStore    clusterDataStore.DataStore
+	clusters        clusterDataStore.DataStore
 	deployments     deploymentDataStore.DataStore
 	networkPolicies networkPoliciesStore.Store
-	graphEvaluator  networkgraph.Evaluator
+
+	graphEvaluator networkgraph.Evaluator
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -89,7 +89,7 @@ func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.Resource
 
 func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNetworkPoliciesRequest) (*v1.NetworkPoliciesResponse, error) {
 	if request.GetClusterId() != "" {
-		_, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
+		_, exists, err := s.clusters.GetCluster(request.GetClusterId())
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -111,7 +111,8 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 		return nil, status.Errorf(codes.InvalidArgument, "Cluster ID must be specified")
 	}
 
-	cluster, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
+	// Check that the cluster exists. If not there is nothing to we can process.
+	_, exists, err := s.clusters.GetCluster(request.GetClusterId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -119,16 +120,19 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 		return nil, status.Errorf(codes.InvalidArgument, "Cluster with ID '%s' does not exist", request.GetClusterId())
 	}
 
-	networkPolicies, err := s.getNetworkPolicies(cluster)
+	// Gather all of the network policies that apply to the cluster and add the addition we are testing if applicable.
+	networkPolicies, err := s.getNetworkPolicies(request.GetClusterId(), request.GetSimulationYaml())
 	if err != nil {
 		return nil, err
 	}
 
-	deployments, err := s.getDeployments(cluster, request.GetQuery())
+	// Get the deployments we want to check connectivity between.
+	deployments, err := s.getDeployments(request.GetClusterId(), request.GetQuery())
 	if err != nil {
 		return nil, err
 	}
 
+	// Generate the graph.
 	return s.graphEvaluator.GetGraph(deployments, networkPolicies), nil
 }
 
@@ -143,27 +147,99 @@ func (s *serviceImpl) SendNetworkPolicyYaml(ctx context.Context, request *v1.Sen
 	return &v1.Empty{}, status.Error(codes.Unimplemented, "Not implemented")
 }
 
-func (s *serviceImpl) getNetworkPolicies(cluster *v1.Cluster) (networkPolicies []*v1.NetworkPolicy, err error) {
-	if cluster.GetId() == "" {
-		return nil, fmt.Errorf("cluster id must be present, but it isn't: %s", proto.MarshalTextString(cluster))
-	}
+func (s *serviceImpl) getDeployments(clusterID, query string) (deployments []*v1.Deployment, err error) {
+	clusterQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
 
-	networkPolicies, err = s.networkPolicies.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: cluster.GetId()})
-	return
-}
-
-func (s *serviceImpl) getDeployments(cluster *v1.Cluster, query string) (deployments []*v1.Deployment, err error) {
 	var q *v1.Query
 	if query != "" {
 		q, err = search.ParseRawQuery(query)
 		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+			return
 		}
+		q = search.ConjunctionQuery(q, clusterQuery)
 	} else {
-		q = search.EmptyQuery()
+		q = clusterQuery
 	}
 
-	q = search.ConjunctionQuery(q, search.NewQueryBuilder().AddStrings(search.ClusterID, cluster.GetId()).ProtoQuery())
 	deployments, err = s.deployments.SearchRawDeployments(q)
 	return
+}
+
+func (s *serviceImpl) getNetworkPolicies(clusterID, simulationYaml string) ([]*v1.NetworkPolicy, error) {
+	// Confirm that any input yamls are valid. Do this check first since it is the cheapest.
+	additionalPolicies, err := compileValidateYaml(simulationYaml)
+	if err != nil {
+		return nil, err
+	}
+
+	// Gather all of the network policies that apply to the cluster and add the addition we are testing if applicable.
+	currentPolicies, err := s.networkPolicies.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: clusterID})
+	if err != nil {
+		return nil, err
+	}
+
+	return replaceOrAddPolicies(additionalPolicies, currentPolicies), nil
+}
+
+// replaceOrAddPolicies returns the input slice of policies modified to use newPolicies.
+// If oldPolicies contains a network policy with the same name and namespace as newPolicy, we consider newPolicy a
+// replacement.
+// If oldPolicies does not contain a network policy with a matching namespace and name, we consider it a new additional
+// policy.
+func replaceOrAddPolicies(newPolicies []*v1.NetworkPolicy, oldPolicies []*v1.NetworkPolicy) (outputPolicies []*v1.NetworkPolicy) {
+	if len(newPolicies) == 0 {
+		outputPolicies = oldPolicies
+		return
+	}
+
+	// Add old policies without matching new policies, and new policies that override old policies.
+	outputPolicies = make([]*v1.NetworkPolicy, 0, len(oldPolicies))
+	for _, oldPolicy := range oldPolicies {
+		match := getMatch(newPolicies, oldPolicy)
+		if match != nil {
+			outputPolicies = append(outputPolicies, match)
+		} else {
+			outputPolicies = append(outputPolicies, oldPolicy)
+		}
+	}
+
+	// Add new policies that have no matching old policies.
+	for _, newPolicy := range newPolicies {
+		match := getMatch(oldPolicies, newPolicy)
+		if match == nil {
+			outputPolicies = append(outputPolicies, newPolicy)
+		}
+	}
+	return
+}
+
+// getMatch finds a matching policy in matchFrom that matches matchTo
+func getMatch(matchFrom []*v1.NetworkPolicy, matchTo *v1.NetworkPolicy) *v1.NetworkPolicy {
+	for _, match := range matchFrom {
+		if matchTo.GetName() == match.GetName() && matchTo.GetNamespace() == match.GetNamespace() {
+			return match
+		}
+	}
+	return nil
+}
+
+// compileValidateYaml compiles the YAML into a v1.NetworkPolicy, and verifies that a valid namespace exists.
+func compileValidateYaml(simulationYaml string) ([]*v1.NetworkPolicy, error) {
+	if simulationYaml == "" {
+		return nil, nil
+	}
+
+	// Convert the YAMLs into rox network policy objects.
+	policies, err := networkPolicyConversion.YamlWrap{Yaml: simulationYaml}.ToRoxNetworkPolicies()
+	if err != nil {
+		return nil, err
+	}
+
+	// Check that all resulting policies have namespaces.
+	for _, policy := range policies {
+		if policy.GetNamespace() == "" {
+			return nil, fmt.Errorf("yamls tested against must apply to a namespace")
+		}
+	}
+	return policies, nil
 }

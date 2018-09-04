@@ -26,11 +26,11 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(store store.Store, deployments deploymentDataStore.DataStore, graphEvaluator networkgraph.Evaluator, clusterStore clusterDataStore.DataStore) Service {
+func New(datastore store.Store, graphEvaluator networkgraph.Evaluator, clusterStore clusterDataStore.DataStore, deploymentStore deploymentDataStore.DataStore) Service {
 	return &serviceImpl{
-		deployments:     deployments,
-		networkPolicies: store,
-		clusterStore:    clusterStore,
+		networkPolicies: datastore,
+		clusters:        clusterStore,
+		deployments:     deploymentStore,
 		graphEvaluator:  graphEvaluator,
 	}
 }
