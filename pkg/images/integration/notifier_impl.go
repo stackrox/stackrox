@@ -42,16 +42,16 @@ func (c *notifierImpl) NotifyRemoved(id string) error {
 	return errList.ToError()
 }
 
-// AddOnUpdate adds a receiver for updates.
-func (c *notifierImpl) AddOnUpdate(onUpdate func(*v1.ImageIntegration) error) {
+// addOnUpdate adds a receiver for updates.
+func (c *notifierImpl) addOnUpdate(onUpdate func(*v1.ImageIntegration) error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	c.onUpdates = append(c.onUpdates, onUpdate)
 }
 
-// AddOnRemove adds a receiver for removals.
-func (c *notifierImpl) AddOnRemove(onRemove func(string) error) {
+// addOnRemove adds a receiver for removals.
+func (c *notifierImpl) addOnRemove(onRemove func(string) error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 

@@ -31,15 +31,19 @@ func (e *setImpl) Clear() {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	e.integrations = nil
+	e.integrations = make(map[string]types.ImageScanner)
 }
 
 // UpdateImageIntegration updates the integration with the matching id to a new configuration.
 func (e *setImpl) UpdateImageIntegration(integration *v1.ImageIntegration) (err error) {
+	i, err := e.factory.CreateScanner(integration)
+	if err != nil {
+		return err
+	}
+
 	e.lock.Lock()
 	defer e.lock.Unlock()
-
-	e.integrations[integration.GetId()], err = e.factory.CreateScanner(integration)
+	e.integrations[integration.GetId()] = i
 	return
 }
 

@@ -11,21 +11,12 @@ type ToNotify interface {
 	NotifyRemoved(id string) error
 }
 
-// Notifier provides an interface for configuring and executing notifications of image integration changes.
-type Notifier interface {
-	NotifyUpdated(integration *v1.ImageIntegration) error
-	NotifyRemoved(id string) error
-
-	AddOnUpdate(func(*v1.ImageIntegration) error)
-	AddOnRemove(func(id string) error)
-}
-
 // NewToNotify returns a new  ToNotify instance that updates the set when a notification is received.
 func NewToNotify(is Set) ToNotify {
 	// Notifications of updates or removals will update the set accordingly.
 	notifier := &notifierImpl{}
-	notifier.AddOnUpdate(is.UpdateImageIntegration)
-	notifier.AddOnRemove(is.RemoveImageIntegration)
+	notifier.addOnUpdate(is.UpdateImageIntegration)
+	notifier.addOnRemove(is.RemoveImageIntegration)
 
 	return notifier
 }

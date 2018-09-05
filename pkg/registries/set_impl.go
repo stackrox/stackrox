@@ -57,16 +57,20 @@ func (e *setImpl) Clear() {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	e.integrations = nil
+	e.integrations = make(map[string]types.ImageRegistry)
 }
 
 // UpdateImageIntegration updates the integration with the matching id to a new configuration.
-func (e *setImpl) UpdateImageIntegration(integration *v1.ImageIntegration) (err error) {
+func (e *setImpl) UpdateImageIntegration(integration *v1.ImageIntegration) error {
+	i, err := e.factory.CreateRegistry(integration)
+	if err != nil {
+		return err
+	}
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	e.integrations[integration.GetId()], err = e.factory.CreateRegistry(integration)
-	return
+	e.integrations[integration.GetId()] = i
+	return nil
 }
 
 // RemoveImageIntegration removes the integration with a matching id if one exists.
