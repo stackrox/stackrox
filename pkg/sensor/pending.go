@@ -29,20 +29,33 @@ type pendingEvents struct {
 	containerToDeployment *ccache.Cache
 }
 
+// This function creates a shortened Docker ID, which we should get rid once collector supports full shas
+func toShortID(str string) string {
+	if len(str) <= 12 {
+		return str
+	}
+	return str[:12]
+}
+
 func (p *pendingEvents) add(ew *listeners.EventWrap) bool {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	if isAlreadyPending := p.checkAlreadyPresent(ew); isAlreadyPending {
-		return true
+	if exactMatchIsPending := p.checkAlreadyPresent(ew); exactMatchIsPending {
+		return false
 	}
 
 	for _, container := range ew.GetDeployment().GetContainers() {
-		p.containerToDeployment.Set(container.GetId(), ew.GetDeployment().GetId(), time.Hour*1)
+		for _, instance := range container.GetInstances() {
+			if instance.GetInstanceId().GetId() != "" {
+				shortContainerID := toShortID(instance.GetInstanceId().GetId())
+				p.containerToDeployment.Set(shortContainerID, ew.GetDeployment().GetId(), time.Hour*1)
+			}
+		}
 	}
 	p.pending.Set(ew.GetId(), ew, time.Hour*1)
 
-	return false
+	return true
 }
 
 func (p *pendingEvents) remove(ew *listeners.EventWrap) {

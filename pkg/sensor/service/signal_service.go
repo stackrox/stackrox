@@ -83,8 +83,6 @@ func (s *serviceImpl) receiveMessages(stream v1.SignalService_PushSignalsServer)
 			log.Error("Empty signal")
 			continue
 		}
-		// TODO: For testing! Remove once end-to-end data pipeline is complete
-		log.Infof("Obtained signal: %+v", signal)
 
 		indicator := &v1.Indicator{
 			Id:     uuid.NewV4().String(),

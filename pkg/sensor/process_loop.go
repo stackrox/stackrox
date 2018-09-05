@@ -4,6 +4,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -15,6 +16,11 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	sensorMetrics "github.com/stackrox/rox/pkg/sensor/metrics"
 	"google.golang.org/grpc"
+)
+
+const (
+	signalRetries       = 10
+	signalRetryInterval = 2 * time.Second
 )
 
 // newProcessLoops returns a new Sensor.
@@ -73,31 +79,47 @@ func (p *processLoopsImpl) stopLoops() {
 // and returns the data output from central to the output channel.
 //////////////////////////////////////////////////////////////////
 
-func logSendingEvent(eventWrap *listeners.EventWrap) {
+func logSendingEvent(sensorEvent *v1.SensorEvent) {
 	var name string
 	var resourceType string
-	switch x := eventWrap.Resource.(type) {
+	switch x := sensorEvent.GetResource().(type) {
 	case *v1.SensorEvent_Deployment:
-		name = eventWrap.GetDeployment().GetName()
+		name = sensorEvent.GetDeployment().GetName()
 		resourceType = "Deployment"
 	case *v1.SensorEvent_NetworkPolicy:
-		name = eventWrap.GetNetworkPolicy().GetName()
+		name = sensorEvent.GetNetworkPolicy().GetName()
 		resourceType = "NetworkPolicy+"
 	case *v1.SensorEvent_Namespace:
-		name = eventWrap.GetNamespace().GetName()
+		name = sensorEvent.GetNamespace().GetName()
 		resourceType = "Namespace"
 	case *v1.SensorEvent_Indicator:
-		name = eventWrap.GetIndicator().GetId()
+		name = sensorEvent.GetIndicator().GetId()
 		resourceType = "Indicator"
 	case *v1.SensorEvent_Secret:
-		name = eventWrap.GetSecret().GetName()
+		name = sensorEvent.GetSecret().GetName()
 		resourceType = "Secret"
 	case nil:
 		logger.Errorf("Resource field is empty")
 	default:
 		logger.Errorf("No resource with type %T", x)
 	}
-	logger.Infof("Sending Sensor Event: Action: '%s'. Type '%s'. Name: '%s'", eventWrap.GetAction(), resourceType, name)
+	logger.Infof("Sending Sensor Event: Action: '%s'. Type '%s'. Name: '%s'", sensorEvent.GetAction(), resourceType, name)
+}
+
+func (p *processLoopsImpl) reprocessSignalLater(stream v1.SensorEventService_RecordEventClient, sensorEvent *v1.SensorEvent) {
+	t := time.NewTicker(signalRetryInterval)
+	logger.Infof("Trying to reprocess '%s'", sensorEvent.GetId())
+	indicator := sensorEvent.GetIndicator()
+	for i := 0; i < signalRetries; i++ {
+		<-t.C
+		deploymentID, exists := p.pendingCache.fetchDeploymentIDFromContainerID(indicator.GetSignal().GetContainerId())
+		if exists {
+			indicator.DeploymentId = deploymentID
+			p.sendIndicatorEvent(stream, sensorEvent)
+			return
+		}
+	}
+	logger.Errorf("Dropping this on the floor: %+v", proto.MarshalTextString(indicator))
 }
 
 // Take in data from the input channel, pre-process it, then send it to central.
@@ -117,13 +139,12 @@ func (p *processLoopsImpl) sendMessages(orchestratorInput <-chan *listeners.Even
 				return
 			}
 
-			// exactMatchInCache implies that the data has changed in the orchestrator, but is not tracked by
-			// our objects so we can ignore
 			switch eventWrap.GetAction() {
 			case v1.ResourceAction_REMOVE_RESOURCE:
 				p.pendingCache.remove(eventWrap)
 			case v1.ResourceAction_CREATE_RESOURCE, v1.ResourceAction_UPDATE_RESOURCE:
-				if exactMatchInCache := p.pendingCache.add(eventWrap); exactMatchInCache {
+				// Not adding the event implies that it already exists in it's exact form in the cache
+				if eventAdded := p.pendingCache.add(eventWrap); !eventAdded {
 					continue
 				}
 				p.enrichImages(eventWrap.GetDeployment())
@@ -131,30 +152,44 @@ func (p *processLoopsImpl) sendMessages(orchestratorInput <-chan *listeners.Even
 				logger.Errorf("Resource action not handled: %s", eventWrap.GetAction())
 				continue
 			}
-
-			logSendingEvent(eventWrap)
-			if err := stream.Send(eventWrap.SensorEvent); err != nil {
-				log.Errorf("unable to send orchestrator event: %s", err)
-			}
+			p.sendSensorEventWithLog(stream, eventWrap.SensorEvent)
 		case eventWrap, ok := <-collectorInput:
 			if !ok {
 				return
 			}
-			indicator, ok := eventWrap.GetResource().(*v1.SensorEvent_Indicator)
+			indicatorWrap, ok := eventWrap.GetResource().(*v1.SensorEvent_Indicator)
 			if !ok {
 				log.Errorf("Non indicator SensorEvent found on collector Input channel: %v", eventWrap)
 				continue
 			}
-			indicator.Indicator.EmitTimestamp = types.TimestampNow()
-			lag := time.Now().Sub(protoconv.ConvertTimestampToTimeOrNow(indicator.Indicator.GetSignal().GetTime()))
-			sensorMetrics.RegisterSignalToIndicatorEmitLag(eventWrap.GetClusterId(), float64(lag))
-			if err := stream.Send(eventWrap.SensorEvent); err != nil {
-				log.Errorf("unable to send indicator event: %s", err)
+			indicator := indicatorWrap.Indicator
+
+			// populate deployment id
+			deploymentID, exists := p.pendingCache.fetchDeploymentIDFromContainerID(indicator.GetSignal().GetContainerId())
+			if !exists {
+				go p.reprocessSignalLater(stream, eventWrap.SensorEvent)
+				continue
 			}
+			indicator.DeploymentId = deploymentID
+			p.sendIndicatorEvent(stream, eventWrap.SensorEvent)
 		// If we receive the stop signal, then break out of the loop.
 		case <-p.stopLoop.Done():
 			return
 		}
+	}
+}
+
+func (p *processLoopsImpl) sendIndicatorEvent(stream v1.SensorEventService_RecordEventClient, sensorEvent *v1.SensorEvent) {
+	sensorEvent.Resource.(*v1.SensorEvent_Indicator).Indicator.EmitTimestamp = types.TimestampNow()
+	lag := time.Now().Sub(protoconv.ConvertTimestampToTimeOrNow(sensorEvent.GetIndicator().GetSignal().GetTime()))
+	sensorMetrics.RegisterSignalToIndicatorEmitLag(sensorEvent.GetClusterId(), float64(lag))
+	p.sendSensorEventWithLog(stream, sensorEvent)
+}
+
+func (p *processLoopsImpl) sendSensorEventWithLog(stream v1.SensorEventService_RecordEventClient, sensorEvent *v1.SensorEvent) {
+	logSendingEvent(sensorEvent)
+	if err := stream.Send(sensorEvent); err != nil {
+		log.Errorf("unable to send indicator event: %s", err)
 	}
 }
 
