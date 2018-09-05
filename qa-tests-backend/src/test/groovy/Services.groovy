@@ -6,10 +6,14 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import stackrox.generated.AlertServiceGrpc
 import stackrox.generated.AlertServiceOuterClass.ListAlert
 import stackrox.generated.DeploymentServiceGrpc
+import stackrox.generated.DetectionServiceGrpc
 import stackrox.generated.ImageIntegrationServiceGrpc
 import stackrox.generated.ImageIntegrationServiceOuterClass
 import stackrox.generated.ImageIntegrationServiceOuterClass.ImageIntegration
+import stackrox.generated.ImageServiceOuterClass
+import stackrox.generated.ImageServiceOuterClass.Image
 import stackrox.generated.PolicyServiceGrpc
+import stackrox.generated.PolicyServiceOuterClass.LifecycleStage
 import stackrox.generated.PolicyServiceOuterClass.ListPolicy
 import stackrox.generated.PolicyServiceOuterClass.Policy
 import stackrox.generated.SearchServiceGrpc
@@ -64,8 +68,18 @@ class Services {
         return SearchServiceGrpc.newBlockingStub(getChannel())
     }
 
+    static getDetectionClient() {
+        return DetectionServiceGrpc.newBlockingStub(getChannel())
+    }
+
     static List<ListPolicy> getPolicies(RawQuery query = RawQuery.newBuilder().build()) {
         return getPolicyClient().listPolicies(query).policiesList
+    }
+
+    static Policy getPolicyByName(String policyName) {
+        return getPolicy(
+                getPolicies().find { it.name == policyName }.id
+        )
     }
 
     static Policy getPolicy(String id) {
@@ -193,5 +207,32 @@ class Services {
                         .setId(clairifyId)
                         .build()
         )
+    }
+
+    static requestBuildImageScan(String registry, String remote, String tag) {
+        return getDetectionClient().detectBuildTime(
+                Image.newBuilder()
+                        .setName(ImageServiceOuterClass.ImageName.newBuilder()
+                            .setRegistry(registry)
+                            .setRemote(remote)
+                            .setTag(tag)
+                            .build()
+                        )
+                        .build()
+        )
+    }
+
+    static updatePolicyLifecycleStage(String policyName, LifecycleStage stage) {
+        Policy policyMeta = getPolicyByName(policyName)
+        def policyDef = Policy.newBuilder(policyMeta)
+                .setLifecycleStage(stage)
+                .build()
+        try {
+            getPolicyClient().putPolicy(policyDef)
+        } catch (Exception e) {
+            return ""
+        }
+        println "Updated lifecycleStage of '${policyName}' to ${stage}"
+        return policyMeta.lifecycleStage
     }
 }

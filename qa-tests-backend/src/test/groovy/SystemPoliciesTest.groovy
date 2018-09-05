@@ -1,4 +1,3 @@
-
 import static Services.getPolicies
 import static Services.waitForViolation
 import groups.BAT
