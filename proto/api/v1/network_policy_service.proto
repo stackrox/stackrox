@@ -147,7 +147,7 @@ service NetworkPolicyService {
     rpc GetNetworkGraph (GetNetworkGraphRequest) returns (GetNetworkGraphResponse) {
         option (google.api.http) = {
             post: "/v1/networkgraph/cluster/{cluster_id}"
-            body: "*"
+            body: "simulation_yaml"
         };
     }
 
