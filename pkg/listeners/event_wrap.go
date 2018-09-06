@@ -36,8 +36,9 @@ func (ew *EventWrap) Equals(newEW *EventWrap) bool {
 		return reflect.DeepEqual(ew.GetNetworkPolicy(), newEW.GetNetworkPolicy())
 	case *v1.SensorEvent_Namespace:
 		return reflect.DeepEqual(ew.GetNamespace(), newEW.GetNamespace())
-	case *v1.SensorEvent_Indicator:
-		return reflect.DeepEqual(ew.GetIndicator(), newEW.GetIndicator())
+	case *v1.SensorEvent_ProcessIndicator:
+		// Currently we cannot get exact duplicates so let's just save the check
+		return false
 	case *v1.SensorEvent_Secret:
 		return reflect.DeepEqual(ew.GetSecret(), newEW.GetSecret())
 	case nil:

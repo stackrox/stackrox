@@ -88,13 +88,13 @@ func logSendingEvent(sensorEvent *v1.SensorEvent) {
 		resourceType = "Deployment"
 	case *v1.SensorEvent_NetworkPolicy:
 		name = sensorEvent.GetNetworkPolicy().GetName()
-		resourceType = "NetworkPolicy+"
+		resourceType = "NetworkPolicy"
 	case *v1.SensorEvent_Namespace:
 		name = sensorEvent.GetNamespace().GetName()
 		resourceType = "Namespace"
-	case *v1.SensorEvent_Indicator:
-		name = sensorEvent.GetIndicator().GetId()
-		resourceType = "Indicator"
+	case *v1.SensorEvent_ProcessIndicator:
+		name = sensorEvent.GetProcessIndicator().GetSignal().GetProcessSignal().GetCommandLine()
+		resourceType = "ProcessIndicator"
 	case *v1.SensorEvent_Secret:
 		name = sensorEvent.GetSecret().GetName()
 		resourceType = "Secret"
@@ -108,8 +108,8 @@ func logSendingEvent(sensorEvent *v1.SensorEvent) {
 
 func (p *processLoopsImpl) reprocessSignalLater(stream v1.SensorEventService_RecordEventClient, sensorEvent *v1.SensorEvent) {
 	t := time.NewTicker(signalRetryInterval)
-	logger.Infof("Trying to reprocess '%s'", sensorEvent.GetId())
-	indicator := sensorEvent.GetIndicator()
+	logger.Infof("Trying to reprocess '%s'", sensorEvent.GetProcessIndicator().GetSignal().GetProcessSignal().GetCommandLine())
+	indicator := sensorEvent.GetProcessIndicator()
 	for i := 0; i < signalRetries; i++ {
 		<-t.C
 		deploymentID, exists := p.pendingCache.fetchDeploymentIDFromContainerID(indicator.GetSignal().GetContainerId())
@@ -157,12 +157,12 @@ func (p *processLoopsImpl) sendMessages(orchestratorInput <-chan *listeners.Even
 			if !ok {
 				return
 			}
-			indicatorWrap, ok := eventWrap.GetResource().(*v1.SensorEvent_Indicator)
+			indicatorWrap, ok := eventWrap.GetResource().(*v1.SensorEvent_ProcessIndicator)
 			if !ok {
 				log.Errorf("Non indicator SensorEvent found on collector Input channel: %v", eventWrap)
 				continue
 			}
-			indicator := indicatorWrap.Indicator
+			indicator := indicatorWrap.ProcessIndicator
 
 			// populate deployment id
 			deploymentID, exists := p.pendingCache.fetchDeploymentIDFromContainerID(indicator.GetSignal().GetContainerId())
@@ -180,8 +180,8 @@ func (p *processLoopsImpl) sendMessages(orchestratorInput <-chan *listeners.Even
 }
 
 func (p *processLoopsImpl) sendIndicatorEvent(stream v1.SensorEventService_RecordEventClient, sensorEvent *v1.SensorEvent) {
-	sensorEvent.Resource.(*v1.SensorEvent_Indicator).Indicator.EmitTimestamp = types.TimestampNow()
-	lag := time.Now().Sub(protoconv.ConvertTimestampToTimeOrNow(sensorEvent.GetIndicator().GetSignal().GetTime()))
+	sensorEvent.Resource.(*v1.SensorEvent_ProcessIndicator).ProcessIndicator.EmitTimestamp = types.TimestampNow()
+	lag := time.Now().Sub(protoconv.ConvertTimestampToTimeOrNow(sensorEvent.GetProcessIndicator().GetSignal().GetTime()))
 	sensorMetrics.RegisterSignalToIndicatorEmitLag(sensorEvent.GetClusterId(), float64(lag))
 	p.sendSensorEventWithLog(stream, sensorEvent)
 }

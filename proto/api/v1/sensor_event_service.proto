@@ -26,11 +26,13 @@ message SensorEvent {
     string         cluster_id                   = 3;
 
     oneof resource {
-        NetworkPolicy network_policy = 4;
-        Deployment    deployment     = 5;
-        Namespace     namespace      = 6;
-        Indicator     indicator      = 7;
-        Secret        secret         = 8;
+        NetworkPolicy    network_policy    = 4;
+        Deployment       deployment        = 5;
+        Namespace        namespace         = 6;
+        Secret           secret            = 7;
+
+        // Indicators
+        ProcessIndicator process_indicator = 8;
     }
 }
 

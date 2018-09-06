@@ -43,11 +43,12 @@ var (
 	// This variable is package-level to facilitate the unit test that asserts
 	// that it covers all the searchable categories.
 	searchCategoryToResource = map[v1.SearchCategory]permissions.Resource{
-		v1.SearchCategory_ALERTS:      resources.Alert,
-		v1.SearchCategory_DEPLOYMENTS: resources.Deployment,
-		v1.SearchCategory_IMAGES:      resources.Image,
-		v1.SearchCategory_POLICIES:    resources.Policy,
-		v1.SearchCategory_SECRETS:     resources.Secret,
+		v1.SearchCategory_ALERTS:             resources.Alert,
+		v1.SearchCategory_DEPLOYMENTS:        resources.Deployment,
+		v1.SearchCategory_IMAGES:             resources.Image,
+		v1.SearchCategory_POLICIES:           resources.Policy,
+		v1.SearchCategory_SECRETS:            resources.Secret,
+		v1.SearchCategory_PROCESS_INDICATORS: resources.Indicators,
 	}
 )
 

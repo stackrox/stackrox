@@ -89,7 +89,7 @@ func (b *storeImpl) UpdateNotifier(notifier *v1.Notifier) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(notifierBucket))
 		// If the update is changing the name, check if the name has already been taken
-		if secondarykey.GetCurrentUniqueKey(tx, notifierBucket, notifier.GetId()) != notifier.GetName() {
+		if val, _ := secondarykey.GetCurrentUniqueKey(tx, notifierBucket, notifier.GetId()); val != notifier.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, notifierBucket, notifier.GetId(), notifier.GetName()); err != nil {
 				return fmt.Errorf("Could not update notifier due to name validation: %s", err)
 			}

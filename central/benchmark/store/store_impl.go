@@ -96,7 +96,7 @@ func (b *storeImpl) UpdateBenchmark(benchmark *v1.Benchmark) error {
 			return fmt.Errorf("Cannot update benchmark %v because it cannot be edited", benchmark.GetId())
 		}
 		// If the update is changing the name, check if the name has already been taken
-		if secondarykey.GetCurrentUniqueKey(tx, benchmarkBucket, benchmark.GetId()) != benchmark.GetName() {
+		if val, _ := secondarykey.GetCurrentUniqueKey(tx, benchmarkBucket, benchmark.GetId()); val != benchmark.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, benchmarkBucket, benchmark.GetId(), benchmark.GetName()); err != nil {
 				return fmt.Errorf("Could not update benchmark due to name validation: %s", err)
 			}

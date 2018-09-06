@@ -7,13 +7,13 @@ import (
 )
 
 // GetCurrentUniqueKey returns the secondary key for the input primary key.
-func GetCurrentUniqueKey(tx *bolt.Tx, bucket string, id string) string {
+func GetCurrentUniqueKey(tx *bolt.Tx, bucket string, id string) (string, bool) {
 	b := tx.Bucket(getMapperBucket(bucket))
 	val := b.Get([]byte(id))
 	if val == nil {
-		return ""
+		return "", false
 	}
-	return string(val)
+	return string(val), true
 }
 
 // CheckUniqueKeyExistsAndInsert checks if the name exists within the context of a transaction which means
@@ -30,10 +30,19 @@ func CheckUniqueKeyExistsAndInsert(tx *bolt.Tx, bucket string, id, k string) err
 	return b.Put([]byte(id), []byte(k))
 }
 
+// InsertUniqueKey inserts the unique key
+func InsertUniqueKey(tx *bolt.Tx, bucket string, id, k string) error {
+	b := tx.Bucket(getUniqueBucket(bucket))
+	if err := b.Put([]byte(k), []byte{}); err != nil {
+		return err
+	}
+	b = tx.Bucket(getMapperBucket(bucket))
+	return b.Put([]byte(id), []byte(k))
+}
+
 // UpdateUniqueKey changes a current key to a new value.
 func UpdateUniqueKey(tx *bolt.Tx, bucket string, id, k string) error {
-	currentKey := GetCurrentUniqueKey(tx, bucket, id)
-	if currentKey != "" {
+	if _, exists := GetCurrentUniqueKey(tx, bucket, id); exists {
 		RemoveUniqueKey(tx, bucket, id)
 	}
 	return CheckUniqueKeyExistsAndInsert(tx, bucket, id, k)

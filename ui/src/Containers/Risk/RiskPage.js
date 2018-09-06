@@ -18,6 +18,7 @@ import TabContent from 'Components/TabContent';
 import { sortNumber } from 'sorters/sorters';
 import RiskDetails from './RiskDetails';
 import DeploymentDetails from './DeploymentDetails';
+import ProcessDetails from './ProcessDetails';
 
 class RiskPage extends Component {
     static propTypes = {
@@ -98,6 +99,14 @@ class RiskPage extends Component {
         if (!selectedDeployment) return null;
 
         const riskPanelTabs = [{ text: 'Risk Indicators' }, { text: 'Deployment Details' }];
+        if (
+            selectedDeployment &&
+            selectedDeployment.processes &&
+            selectedDeployment.processes.length !== 0
+        ) {
+            riskPanelTabs.push({ text: 'Process Discovery' });
+        }
+
         const content = this.props.isFetchingDeployment ? (
             <Loader />
         ) : (
@@ -111,6 +120,13 @@ class RiskPage extends Component {
                     <div className="flex flex-1 flex-col relative">
                         <div className="absolute w-full">
                             <DeploymentDetails deployment={selectedDeployment} />
+                        </div>
+                    </div>
+                </TabContent>
+                <TabContent>
+                    <div className="flex flex-1 flex-col relative">
+                        <div className="absolute w-full">
+                            <ProcessDetails deployment={selectedDeployment} />
                         </div>
                     </div>
                 </TabContent>

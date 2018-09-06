@@ -2,16 +2,13 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sensor/metrics"
-	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 )
 
@@ -32,7 +29,7 @@ type Service interface {
 
 type serviceImpl struct {
 	queue      chan *v1.Signal
-	indicators chan *listeners.EventWrap // EventWrap is just a wrapper around Indicator
+	indicators chan *listeners.EventWrap // EventWrap is just a wrapper around ProcessIndicator
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -64,12 +61,11 @@ func (s *serviceImpl) Indicators() <-chan *listeners.EventWrap {
 }
 
 func (s *serviceImpl) receiveMessages(stream v1.SignalService_PushSignalsServer) error {
-	clientClusterID := env.ClusterID.Setting()
 	log.Info("starting receiveMessages")
 	for {
-		signal, err := stream.Recv()
+		signalStreamMsg, err := stream.Recv()
 		if err != nil {
-			log.Error("error dequeueing signal event: ", err)
+			log.Error("error dequeueing signalStreamMsg event: ", err)
 			return err
 		}
 
@@ -79,37 +75,28 @@ func (s *serviceImpl) receiveMessages(stream v1.SignalService_PushSignalsServer)
 		}
 
 		// Ignore the collector register request
-		if signal.GetSignal() == nil {
-			log.Error("Empty signal")
+		if signalStreamMsg.GetSignal() == nil {
+			log.Error("Empty signalStreamMsg")
 			continue
 		}
+		signal := signalStreamMsg.GetSignal()
 
-		indicator := &v1.Indicator{
-			Id:     uuid.NewV4().String(),
-			Signal: signal.GetSignal(),
-		}
-
-		// Log lag metrics from collector
-		lag := time.Now().Sub(protoconv.ConvertTimestampToTimeOrNow(indicator.GetSignal().GetTime()))
-		metrics.RegisterSignalToIndicatorCreateLag(clientClusterID, float64(lag.Nanoseconds()))
-
-		wrappedEvent := &listeners.EventWrap{
-			SensorEvent: &v1.SensorEvent{
-				Id:        indicator.GetId(),
-				ClusterId: clientClusterID,
-				Action:    v1.ResourceAction_CREATE_RESOURCE,
-				Resource: &v1.SensorEvent_Indicator{
-					Indicator: indicator,
-				},
-			},
-		}
-
-		select {
-		case s.indicators <- wrappedEvent:
+		// todo(cgorman) we currently need to filter out network because they are not being processed
+		switch signal.GetSignal().(type) {
+		case *v1.Signal_ProcessSignal:
+			s.processProcessSignal(signal)
 		default:
-			// TODO: We may want to consider popping stuff from the channel here so that we only retain the most recent events
-			metrics.RegisterSensorIndicatorChannelFullCounter(clientClusterID)
+			// Currently eat unhandled signals
+			continue
 		}
+	}
+}
 
+func (s *serviceImpl) pushEventToChannel(eventWrap *listeners.EventWrap) {
+	select {
+	case s.indicators <- eventWrap:
+	default:
+		// TODO: We may want to consider popping stuff from the channel here so that we only retain the most recent events
+		metrics.RegisterSensorIndicatorChannelFullCounter(env.ClusterID.Setting())
 	}
 }

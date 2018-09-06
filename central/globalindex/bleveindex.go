@@ -15,6 +15,7 @@ import (
 	deploymentMapping "github.com/stackrox/rox/central/deployment/index/mappings"
 	imageMapping "github.com/stackrox/rox/central/image/index/mappings"
 	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
+	processIndicatorMapping "github.com/stackrox/rox/central/processindicator/index/mappings"
 	secretOptions "github.com/stackrox/rox/central/secret/search/options"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
@@ -24,11 +25,12 @@ import (
 var (
 	// CategoryToOptionsMap is a mapping from search categories to the options map for that category.
 	CategoryToOptionsMap = map[v1.SearchCategory]map[search.FieldLabel]*v1.SearchField{
-		v1.SearchCategory_ALERTS:      alertMapping.OptionsMap,
-		v1.SearchCategory_DEPLOYMENTS: deploymentMapping.OptionsMap,
-		v1.SearchCategory_IMAGES:      imageMapping.OptionsMap,
-		v1.SearchCategory_POLICIES:    policyMapping.OptionsMap,
-		v1.SearchCategory_SECRETS:     secretOptions.Map,
+		v1.SearchCategory_ALERTS:             alertMapping.OptionsMap,
+		v1.SearchCategory_DEPLOYMENTS:        deploymentMapping.OptionsMap,
+		v1.SearchCategory_IMAGES:             imageMapping.OptionsMap,
+		v1.SearchCategory_POLICIES:           policyMapping.OptionsMap,
+		v1.SearchCategory_SECRETS:            secretOptions.Map,
+		v1.SearchCategory_PROCESS_INDICATORS: processIndicatorMapping.OptionsMap,
 	}
 )
 

@@ -28,8 +28,9 @@ func newRelationship(src v1.SearchCategory, dst v1.SearchCategory) relationship 
 
 // This is a map of category A -> category C and the next hop
 var links = map[relationship]v1.SearchCategory{
-	newRelationship(v1.SearchCategory_DEPLOYMENTS, v1.SearchCategory_IMAGES): v1.SearchCategory_IMAGES,
-	newRelationship(v1.SearchCategory_IMAGES, v1.SearchCategory_DEPLOYMENTS): v1.SearchCategory_DEPLOYMENTS,
+	newRelationship(v1.SearchCategory_DEPLOYMENTS, v1.SearchCategory_IMAGES):             v1.SearchCategory_IMAGES,
+	newRelationship(v1.SearchCategory_IMAGES, v1.SearchCategory_DEPLOYMENTS):             v1.SearchCategory_DEPLOYMENTS,
+	newRelationship(v1.SearchCategory_DEPLOYMENTS, v1.SearchCategory_PROCESS_INDICATORS): v1.SearchCategory_PROCESS_INDICATORS,
 }
 
 type join struct {
@@ -45,6 +46,10 @@ var categoryRelationships = map[relationship]join{
 	newRelationship(v1.SearchCategory_IMAGES, v1.SearchCategory_DEPLOYMENTS): {
 		srcField: "image.name.sha",
 		dstField: "deployment.containers.image.name.sha",
+	},
+	newRelationship(v1.SearchCategory_DEPLOYMENTS, v1.SearchCategory_PROCESS_INDICATORS): {
+		srcField: "deployment.id",
+		dstField: "process_indicator.deployment_id",
 	},
 }
 

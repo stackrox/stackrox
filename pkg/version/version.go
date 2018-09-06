@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	collectorTag = "1.6.0-13-gfea6145a" // check https://hub.docker.com/r/stackrox/collector/tags/
+	collectorTag = "1.6.0-18-g34ae6465" // check https://hub.docker.com/r/stackrox/collector/tags/
 
 	versionFile = "VERSION"
 )
@@ -31,7 +31,7 @@ func GetVersion() (string, error) {
 	return version, err
 }
 
-// GetCollectorVersion returns the currenty collector tag
+// GetCollectorVersion returns the current collector tag
 func GetCollectorVersion() string {
 	return collectorTag
 }

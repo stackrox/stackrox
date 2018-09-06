@@ -15,6 +15,7 @@ enum SearchCategory {
     POLICIES     = 3;
     DEPLOYMENTS  = 4;
     SECRETS      = 5;
+    PROCESS_INDICATORS = 6;
 }
 
 enum SearchDataType {

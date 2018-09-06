@@ -6,6 +6,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
 	imageIndex "github.com/stackrox/rox/central/image/index"
+	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
 	secretIndex "github.com/stackrox/rox/central/secret/index"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -48,6 +49,9 @@ func (suite *DeploymentIndexTestSuite) SetupSuite() {
 	secretIndexer.UpsertSecret(&v1.Secret{
 		Id: "ABC",
 	})
+
+	processIndexer := processIndicatorIndex.New(tmpIndex)
+	processIndexer.AddProcessIndicator(fixtures.GetProcessIndicator())
 }
 
 func (suite *DeploymentIndexTestSuite) TeardownSuite() {
@@ -90,6 +94,14 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 		{
 			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch", search.ImageRegistry: "nonexistent"},
 			expectedIDs: []string{},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.ProcessName: fixtures.GetProcessIndicator().GetSignal().GetProcessSignal().GetName()},
+			expectedIDs: []string{fixtures.GetDeployment().GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.DeploymentID: fixtures.GetDeployment().GetId()},
+			expectedIDs: []string{fixtures.GetDeployment().GetId()},
 		},
 	}
 

@@ -8,6 +8,7 @@ import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
 import "api/v1/image_service.proto";
 import "api/v1/search_service.proto";
+import "api/v1/indicator.proto";
 
 package v1;
 
@@ -53,6 +54,7 @@ message Deployment {
     bool inactive                              = 16;
     repeated string image_pull_secrets         = 17;
     string service_account                     = 18;
+    repeated ProcessIndicator processes        = 19;
 }
 
 enum ContainerRuntime {

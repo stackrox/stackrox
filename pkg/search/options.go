@@ -57,6 +57,12 @@ const (
 
 	Violation FieldLabel = "Violation"
 	Stale     FieldLabel = "Stale"
+
+	// ProcessIndicator Search fields
+	IndicatorID        FieldLabel = "Indicator ID"
+	ProcessExecPath    FieldLabel = "Process Exec Path"
+	ProcessName        FieldLabel = "Process Name"
+	ProcessCommandLine FieldLabel = "Process Command Line"
 )
 
 func (f FieldLabel) String() string {

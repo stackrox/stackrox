@@ -123,7 +123,7 @@ func (b *storeImpl) UpdateAuthProvider(authProvider *v1.AuthProvider) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(authProviderBucket))
 		// If the update is changing the name, check if the name has already been taken
-		if secondarykey.GetCurrentUniqueKey(tx, authProviderBucket, authProvider.GetId()) != authProvider.GetName() {
+		if val, _ := secondarykey.GetCurrentUniqueKey(tx, authProviderBucket, authProvider.GetId()); val != authProvider.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, authProviderBucket, authProvider.GetId(), authProvider.GetName()); err != nil {
 				return fmt.Errorf("Could not update auth provider due to name validation: %s", err)
 			}

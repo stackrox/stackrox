@@ -96,7 +96,7 @@ func (b *storeImpl) UpdateCluster(cluster *v1.Cluster) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(clusterBucket))
 		// If the update is changing the name, check if the name has already been taken
-		if secondarykey.GetCurrentUniqueKey(tx, clusterBucket, cluster.GetId()) != cluster.GetName() {
+		if val, _ := secondarykey.GetCurrentUniqueKey(tx, clusterBucket, cluster.GetId()); val != cluster.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, clusterBucket, cluster.GetId(), cluster.GetName()); err != nil {
 				return fmt.Errorf("Could not update cluster due to name validation: %s", err)
 			}

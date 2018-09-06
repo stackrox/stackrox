@@ -22,6 +22,7 @@ func assertElementSatisfiesSearchDataType(t *testing.T, obj interface{}, searchD
 	}
 	kind := typ.Kind()
 	typ.Name()
+
 	switch searchDataType {
 	case v1.SearchDataType_SEARCH_BOOL:
 		assertKindsEqual(t, reflect.Bool, kind)
@@ -65,11 +66,20 @@ func assertElementAtJSONPathExistsAndIsOfType(t *testing.T, obj interface{}, pat
 		obj, typ.Kind(), path)
 
 	for i := 0; i < typ.NumField(); i++ {
-		jsonTag := typ.Field(i).Tag.Get("json")
+		field := typ.Field(i)
+		jsonTag := field.Tag.Get("json")
 		// All proto objects have the json tag set to "<tag>,omitempty"
-		jsonTag = strings.TrimSuffix(jsonTag, ",omitempty")
-		if jsonTag == path[0] {
+		id := strings.TrimSuffix(jsonTag, ",omitempty")
+		if id == "" {
+			id = field.Name
+		}
+
+		if id == path[0] {
 			zeroElem := reflect.Zero(typ).Field(i).Interface()
+			if zeroElem == nil {
+				return // This helps with interfaces until we can support them more fully
+			}
+
 			if len(path) > 1 {
 				assertElementAtJSONPathExistsAndIsOfType(t, zeroElem, path[1:], searchDataType)
 			} else {
@@ -92,11 +102,12 @@ func TestCategoryToOptionsMap(t *testing.T) {
 		// This represents the proto object that's being indexed.
 		protoObj interface{}
 	}{
-		v1.SearchCategory_ALERTS:      {"alert", v1.Alert{}},
-		v1.SearchCategory_DEPLOYMENTS: {"deployment", v1.Deployment{}},
-		v1.SearchCategory_IMAGES:      {"image", v1.Image{}},
-		v1.SearchCategory_POLICIES:    {"policy", v1.Policy{}},
-		v1.SearchCategory_SECRETS:     {"secret", v1.Secret{}},
+		v1.SearchCategory_ALERTS:             {"alert", v1.Alert{}},
+		v1.SearchCategory_DEPLOYMENTS:        {"deployment", v1.Deployment{}},
+		v1.SearchCategory_IMAGES:             {"image", v1.Image{}},
+		v1.SearchCategory_POLICIES:           {"policy", v1.Policy{}},
+		v1.SearchCategory_SECRETS:            {"secret", v1.Secret{}},
+		v1.SearchCategory_PROCESS_INDICATORS: {"process_indicator", v1.ProcessIndicator{}},
 	}
 
 	for category, optionsMap := range CategoryToOptionsMap {

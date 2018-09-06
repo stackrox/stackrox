@@ -25,6 +25,7 @@ var (
 	Image             = newResource("Image")
 	ImageIntegration  = newResource("ImageIntegration")
 	ImbuedLogs        = newResource("ImbuedLogs")
+	Indicators        = newResource("Indicator")
 	Notifier          = newResource("Notifier")
 	NetworkPolicy     = newResource("NetworkPolicy")
 	Policy            = newResource("Policy")

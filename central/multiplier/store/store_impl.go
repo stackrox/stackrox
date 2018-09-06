@@ -89,7 +89,7 @@ func (b *storeImpl) UpdateMultiplier(multiplier *v1.Multiplier) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(multiplierBucket))
 		// If the update is changing the name, check if the name has already been taken
-		if secondarykey.GetCurrentUniqueKey(tx, multiplierBucket, multiplier.GetId()) != multiplier.GetName() {
+		if val, _ := secondarykey.GetCurrentUniqueKey(tx, multiplierBucket, multiplier.GetId()); val != multiplier.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, multiplierBucket, multiplier.GetId(), multiplier.GetName()); err != nil {
 				return fmt.Errorf("Could not update multiplier due to name validation: %s", err)
 			}

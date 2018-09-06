@@ -1,7 +1,8 @@
 package mappings
 
 import (
-	"github.com/stackrox/rox/central/image/index/mappings"
+	imageMapping "github.com/stackrox/rox/central/image/index/mappings"
+	processIndicatorMapping "github.com/stackrox/rox/central/processindicator/index/mappings"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -37,17 +38,19 @@ var OptionsMap = mergeMaps(map[search.FieldLabel]*v1.SearchField{
 	search.VolumeType:        search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.volumes.type"),
 
 	"ImageRelationship": search.NewField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.image.name.sha", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
-}, mappings.OptionsMap)
+}, imageMapping.OptionsMap, processIndicatorMapping.OptionsMap)
 
 func mergeMaps(m1 map[search.FieldLabel]*v1.SearchField, otherMaps ...map[search.FieldLabel]*v1.SearchField) map[search.FieldLabel]*v1.SearchField {
 	finalMap := make(map[search.FieldLabel]*v1.SearchField)
-	for k, v := range m1 {
-		finalMap[k] = v
-	}
 	for _, m := range otherMaps {
 		for k, v := range m {
 			finalMap[k] = v
 		}
 	}
+	// This ordering is actually important because the fields defined in this file have precendence over ones in other OptionsMaps
+	for k, v := range m1 {
+		finalMap[k] = v
+	}
+
 	return finalMap
 }

@@ -39,10 +39,11 @@ type serviceImpl struct {
 	namespaces      namespaceStore.Store
 	secrets         datastore.DataStore
 
-	deploymentPipeline    pipeline.Pipeline
-	networkPolicyPipeline pipeline.Pipeline
-	namespacePipeline     pipeline.Pipeline
-	secretPipeline        pipeline.Pipeline
+	deploymentPipeline       pipeline.Pipeline
+	processIndicatorPipeline pipeline.Pipeline
+	networkPolicyPipeline    pipeline.Pipeline
+	namespacePipeline        pipeline.Pipeline
+	secretPipeline           pipeline.Pipeline
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -117,10 +118,8 @@ func (s *serviceImpl) sendMessages(stream v1.SensorEventService_RecordEventServe
 			eventPipeline = s.networkPolicyPipeline
 		case *v1.SensorEvent_Namespace:
 			eventPipeline = s.namespacePipeline
-		case *v1.SensorEvent_Indicator:
-			// TODO: Implement actual handling
-			log.Infof("Obtained an Indicator event: %+v", x)
-			continue // TODO: Fill this out
+		case *v1.SensorEvent_ProcessIndicator:
+			eventPipeline = s.processIndicatorPipeline
 		case *v1.SensorEvent_Secret:
 			eventPipeline = s.secretPipeline
 		case nil:
@@ -134,6 +133,9 @@ func (s *serviceImpl) sendMessages(stream v1.SensorEventService_RecordEventServe
 		sensorResponse, err := eventPipeline.Run(event)
 		if err != nil {
 			log.Errorf("error processing response: %s", err)
+			continue
+		}
+		if sensorResponse == nil {
 			continue
 		}
 

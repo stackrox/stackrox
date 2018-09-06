@@ -8,11 +8,13 @@ import (
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/store"
 	"github.com/stackrox/rox/central/networkgraph"
 	networkPolicyStore "github.com/stackrox/rox/central/networkpolicies/store"
+	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/risk"
 	"github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline/deploymentevents"
 	namespacePipeline "github.com/stackrox/rox/central/sensorevent/service/pipeline/namespaces"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline/networkpolicies"
+	processIndicatorPipeline "github.com/stackrox/rox/central/sensorevent/service/pipeline/processindicators"
 	secretPipeline "github.com/stackrox/rox/central/sensorevent/service/pipeline/secrets"
 	deploymentEventStore "github.com/stackrox/rox/central/sensorevent/store"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -41,6 +43,7 @@ func New(detector deployTimeDetection.Detector,
 	images imageDataStore.DataStore,
 	deployments deploymentDataStore.DataStore,
 	clusters clusterDataStore.DataStore,
+	indicators processIndicatorDataStore.DataStore,
 	networkPolicies networkPolicyStore.Store,
 	namespaces namespaceDataStore.Store,
 	secrets datastore.DataStore,
@@ -57,9 +60,10 @@ func New(detector deployTimeDetection.Detector,
 		namespaces:       namespaces,
 		secrets:          secrets,
 
-		deploymentPipeline:    deploymentevents.NewPipeline(clusters, deployments, images, detector, graphEvaluator),
-		networkPolicyPipeline: networkpolicies.NewPipeline(clusters, networkPolicies, graphEvaluator),
-		namespacePipeline:     namespacePipeline.NewPipeline(clusters, namespaces, graphEvaluator),
-		secretPipeline:        secretPipeline.NewPipeline(clusters, secrets),
+		deploymentPipeline:       deploymentevents.NewPipeline(clusters, deployments, images, detector, graphEvaluator),
+		processIndicatorPipeline: processIndicatorPipeline.NewPipeline(indicators),
+		networkPolicyPipeline:    networkpolicies.NewPipeline(clusters, networkPolicies, graphEvaluator),
+		namespacePipeline:        namespacePipeline.NewPipeline(clusters, namespaces, graphEvaluator),
+		secretPipeline:           secretPipeline.NewPipeline(clusters, secrets),
 	}
 }

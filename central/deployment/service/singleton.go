@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	multiplierStore "github.com/stackrox/rox/central/multiplier/store"
+	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 )
 
 var (
@@ -15,7 +16,7 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), multiplierStore.Singleton(), enrichment.Singleton())
+	as = New(datastore.Singleton(), processIndicatorDataStore.Singleton(), multiplierStore.Singleton(), enrichment.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

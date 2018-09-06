@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	multiplierStore "github.com/stackrox/rox/central/multiplier/store"
+	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -42,9 +43,10 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	datastore   datastore.DataStore
-	multipliers multiplierStore.Store
-	enricher    enrichment.Enricher
+	datastore         datastore.DataStore
+	processIndicators processIndicatorStore.DataStore
+	multipliers       multiplierStore.Store
+	enricher          enrichment.Enricher
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -71,6 +73,17 @@ func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByI
 	if !exists {
 		return nil, status.Errorf(codes.NotFound, "deployment with id '%s' does not exist", request.GetId())
 	}
+
+	// populate process data
+	indicators, err := s.processIndicators.SearchRawProcessIndicators(
+		search.NewQueryBuilder().
+			AddStrings(search.DeploymentID, deployment.GetId()).
+			ProtoQuery(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	deployment.Processes = indicators
 
 	return deployment, nil
 }
