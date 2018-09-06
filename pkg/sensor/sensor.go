@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sensor/cache"
 	"google.golang.org/grpc"
 )
 
@@ -41,7 +42,7 @@ func NewSensor(centralConn *grpc.ClientConn, clusterID string) Sensor {
 	return &sensor{
 		conn: centralConn,
 
-		pendingCache:  newPendingEvents(),
+		pendingCache:  cache.Singleton(),
 		imageEnricher: imageEnricher,
 		poller:        poller,
 
@@ -57,7 +58,7 @@ func NewSensor(centralConn *grpc.ClientConn, clusterID string) Sensor {
 type sensor struct {
 	conn *grpc.ClientConn
 
-	pendingCache  *pendingEvents
+	pendingCache  *cache.PendingEvents
 	imageEnricher enricher.ImageEnricher
 	poller        integration.Poller
 

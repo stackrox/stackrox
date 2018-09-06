@@ -1,4 +1,4 @@
-package sensor
+package cache
 
 import (
 	"sync"
@@ -11,16 +11,16 @@ import (
 
 var logger = logging.LoggerForModule()
 
-func newPendingEvents() *pendingEvents {
-	return &pendingEvents{
+func newPendingEvents() *PendingEvents {
+	return &PendingEvents{
 		pending:               ccache.New(ccache.Configure().MaxSize(1000).ItemsToPrune(100)),
 		containerToDeployment: ccache.New(ccache.Configure().MaxSize(5000).ItemsToPrune(500)),
 	}
 }
 
-// pendingEvents is a simple thread safe (key, value) structure to hold all of the
+// PendingEvents is a simple thread safe (key, value) structure to hold all of the
 // DeploymentsEventWraps while central is processing their deployments.
-type pendingEvents struct {
+type PendingEvents struct {
 	mutex sync.Mutex
 
 	pending *ccache.Cache
@@ -37,7 +37,8 @@ func toShortID(str string) string {
 	return str[:12]
 }
 
-func (p *pendingEvents) add(ew *listeners.EventWrap) bool {
+// AddDeployment adds a deployment to the cache
+func (p *PendingEvents) AddDeployment(ew *listeners.EventWrap) bool {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -58,7 +59,8 @@ func (p *pendingEvents) add(ew *listeners.EventWrap) bool {
 	return true
 }
 
-func (p *pendingEvents) remove(ew *listeners.EventWrap) {
+// RemoveDeployment from the cache
+func (p *PendingEvents) RemoveDeployment(ew *listeners.EventWrap) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -69,7 +71,8 @@ func (p *pendingEvents) remove(ew *listeners.EventWrap) {
 	return
 }
 
-func (p *pendingEvents) fetch(deploymentID string) (ew *listeners.EventWrap, exists bool) {
+// FetchDeployment from cache
+func (p *PendingEvents) FetchDeployment(deploymentID string) (ew *listeners.EventWrap, exists bool) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -80,7 +83,8 @@ func (p *pendingEvents) fetch(deploymentID string) (ew *listeners.EventWrap, exi
 	return presentItem.Value().(*listeners.EventWrap), true
 }
 
-func (p *pendingEvents) fetchDeploymentIDFromContainerID(containerID string) (deploymentID string, exists bool) {
+// FetchDeploymentByContainer gets the deployment id for the passed container
+func (p *PendingEvents) FetchDeploymentByContainer(containerID string) (deploymentID string, exists bool) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -91,7 +95,7 @@ func (p *pendingEvents) fetchDeploymentIDFromContainerID(containerID string) (de
 	return presentItem.Value().(string), true
 }
 
-func (p *pendingEvents) checkAlreadyPresent(event *listeners.EventWrap) bool {
+func (p *PendingEvents) checkAlreadyPresent(event *listeners.EventWrap) bool {
 	presentItem := p.pending.Get(event.GetId())
 	if presentItem == nil {
 		return false

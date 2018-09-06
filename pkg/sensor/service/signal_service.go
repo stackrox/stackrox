@@ -5,10 +5,10 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
+	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sensor/metrics"
+	"github.com/stackrox/rox/pkg/sensor"
 	"google.golang.org/grpc"
 )
 
@@ -20,16 +20,17 @@ var (
 
 // Service is the interface that manages the SignalEvent API from the server side
 type Service interface {
-	RegisterServiceServer(grpcServer *grpc.Server)
-	RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error
-	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
-	PushSignals(stream v1.SignalService_PushSignalsServer) error
+	pkgGRPC.APIService
+	v1.SignalServiceServer
+
 	Indicators() <-chan *listeners.EventWrap
 }
 
 type serviceImpl struct {
 	queue      chan *v1.Signal
 	indicators chan *listeners.EventWrap // EventWrap is just a wrapper around ProcessIndicator
+
+	processPipeline sensor.Pipeline
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -84,19 +85,11 @@ func (s *serviceImpl) receiveMessages(stream v1.SignalService_PushSignalsServer)
 		// todo(cgorman) we currently need to filter out network because they are not being processed
 		switch signal.GetSignal().(type) {
 		case *v1.Signal_ProcessSignal:
-			s.processProcessSignal(signal)
+			log.Infof("Signal: %+v", signal)
+			s.processPipeline.Process(signal)
 		default:
 			// Currently eat unhandled signals
 			continue
 		}
-	}
-}
-
-func (s *serviceImpl) pushEventToChannel(eventWrap *listeners.EventWrap) {
-	select {
-	case s.indicators <- eventWrap:
-	default:
-		// TODO: We may want to consider popping stuff from the channel here so that we only retain the most recent events
-		metrics.RegisterSensorIndicatorChannelFullCounter(env.ClusterID.Setting())
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/listeners"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sensor/metrics"
 	"google.golang.org/grpc/codes"
@@ -19,6 +20,8 @@ const (
 	signalRetries       = 10
 	signalRetryInterval = 2 * time.Second
 )
+
+var logger = logging.LoggerForModule()
 
 func logSendingEvent(sensorEvent *v1.SensorEvent) {
 	var name string
@@ -53,7 +56,7 @@ func (s *sensor) reprocessSignalLater(stream v1.SensorEventService_RecordEventCl
 	indicator := sensorEvent.GetProcessIndicator()
 	for i := 0; i < signalRetries; i++ {
 		<-t.C
-		deploymentID, exists := s.pendingCache.fetchDeploymentIDFromContainerID(indicator.GetSignal().GetContainerId())
+		deploymentID, exists := s.pendingCache.FetchDeploymentByContainer(indicator.GetSignal().GetContainerId())
 		if exists {
 			indicator.DeploymentId = deploymentID
 			s.sendIndicatorEvent(stream, sensorEvent)
@@ -98,10 +101,10 @@ func (s *sensor) sendMessages(
 func (s *sensor) sendDeploy(eventWrap *listeners.EventWrap, stream v1.SensorEventService_RecordEventClient) {
 	switch eventWrap.GetAction() {
 	case v1.ResourceAction_REMOVE_RESOURCE:
-		s.pendingCache.remove(eventWrap)
+		s.pendingCache.RemoveDeployment(eventWrap)
 	case v1.ResourceAction_CREATE_RESOURCE, v1.ResourceAction_UPDATE_RESOURCE:
 		// Not adding the event implies that it already exists in its exact form in the cache.
-		if eventAdded := s.pendingCache.add(eventWrap); !eventAdded {
+		if eventAdded := s.pendingCache.AddDeployment(eventWrap); !eventAdded {
 			return
 		}
 		s.enrichImages(eventWrap.GetDeployment())
@@ -121,7 +124,7 @@ func (s *sensor) sendSignal(eventWrap *listeners.EventWrap, stream v1.SensorEven
 	indicator := indicatorWrap.ProcessIndicator
 
 	// populate deployment id
-	deploymentID, exists := s.pendingCache.fetchDeploymentIDFromContainerID(indicator.GetSignal().GetContainerId())
+	deploymentID, exists := s.pendingCache.FetchDeploymentByContainer(indicator.GetSignal().GetContainerId())
 	if !exists {
 		go s.reprocessSignalLater(stream, eventWrap.SensorEvent)
 		return
@@ -196,7 +199,7 @@ func (s *sensor) receiveMessages(output chan<- *enforcers.DeploymentEnforcement,
 
 func (s *sensor) processDeploymentResponse(eventResp *v1.SensorEventResponse, output chan<- *enforcers.DeploymentEnforcement) {
 	deploymentResp := eventResp.GetDeployment()
-	eventWrap, exists := s.pendingCache.fetch(deploymentResp.GetDeploymentId())
+	eventWrap, exists := s.pendingCache.FetchDeployment(deploymentResp.GetDeploymentId())
 	if !exists {
 		log.Errorf("cannot find deployment event for deployment %s", deploymentResp.GetDeploymentId())
 		return
