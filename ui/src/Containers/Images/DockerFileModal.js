@@ -3,9 +3,8 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
-
-import Modal from 'Components/Modal';
 import Table from 'Components/Table';
+import Modal from 'Components/Modal';
 
 class DockerFileModal extends Component {
     static propTypes = {
@@ -24,16 +23,22 @@ class DockerFileModal extends Component {
         const columns = [
             {
                 accessor: 'instruction',
-                Header: 'Instruction'
+                Header: 'Instruction',
+                className: 'text-left pl-3'
             },
             {
                 accessor: 'value',
-                Header: 'Value'
+                Header: 'Value',
+                widthClassName: 'w-2/5 text-left',
+                className: 'w-2/5 text-left pl-3',
+                wrap: true
             },
             {
                 accessor: 'created',
                 Header: 'Created',
-                className: 'w-1/5',
+                align: 'right',
+                widthClassName: 'w-1/5 text-right pr-3',
+                className: 'w-1/5 text-right pr-3',
                 Cell: ({ original }) => dateFns.format(original.created, dateTimeFormat)
             }
         ];
