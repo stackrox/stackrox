@@ -113,6 +113,45 @@ func (s *slack) AlertNotify(alert *v1.Alert) error {
 	return postMessage(webhook, jsonPayload)
 }
 
+// YamlNotify takes in a yaml file and generates the Slack message
+func (s *slack) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
+	tagLine := fmt.Sprintf("*Network policy YAML to be applied on cluster '%s'*", clusterName)
+	funcMap := template.FuncMap{
+		"codeBlock": func(s string) string {
+			return fmt.Sprintf("```\n %s \n```", s)
+		},
+	}
+	body, err := notifiers.FormatNetworkPolicyYAML(yaml, clusterName, funcMap)
+	if err != nil {
+		return err
+	}
+	attachments := []attachment{
+		{
+			FallBack:       body,
+			Color:          colorMediumAlert,
+			Pretext:        tagLine,
+			Text:           body,
+			MarkDownFields: []string{"pretext", "text", "fields"},
+		},
+	}
+	notification := notification{
+		Attachments: attachments,
+	}
+	jsonPayload, err := json.Marshal(&notification)
+	if err != nil {
+		return fmt.Errorf("Could not marshal notification for yaml for cluster %s", clusterName)
+	}
+
+	webhookURL := s.GetLabelDefault()
+	webhook, err := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	if err != nil {
+		return err
+	}
+
+	return postMessage(webhook, jsonPayload)
+
+}
+
 // BenchmarkNotify takes in an benchmark schedule and generates the Slack message
 func (s *slack) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
 	body, err := notifiers.FormatBenchmark(schedule, notifiers.BenchmarkLink(s.UiEndpoint))

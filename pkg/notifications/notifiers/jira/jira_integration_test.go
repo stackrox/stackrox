@@ -47,9 +47,14 @@ func getJira(t *testing.T) *jira {
 	return j
 }
 
-func TestJiraNotify(t *testing.T) {
+func TestJiraAlertNotify(t *testing.T) {
 	j := getJira(t)
 	assert.NoError(t, j.AlertNotify(fixtures.GetAlert()))
+}
+
+func TestJiraNetworkPolicyYAMLNotify(t *testing.T) {
+	j := getJira(t)
+	assert.NoError(t, j.NetworkPolicyYAMLNotify(fixtures.GetYAML(), "test-cluster"))
 }
 
 func TestJiraTest(t *testing.T) {

@@ -148,6 +148,17 @@ func (e *email) AlertNotify(alert *v1.Alert) error {
 	return e.sendEmail(recipient, subject, body)
 }
 
+// YamlNotify takes in a yaml file and generates the email message
+func (e *email) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
+	subject := fmt.Sprintf("New network policy YAML for cluster '%s' needs to be applied", clusterName)
+
+	body, err := notifiers.FormatNetworkPolicyYAML(yaml, clusterName, template.FuncMap{})
+	if err != nil {
+		return err
+	}
+	return e.sendEmail(e.notifier.GetLabelDefault(), subject, body)
+}
+
 // BenchmarkNotify takes in an benchmark and generates the email
 func (e *email) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
 	subject := fmt.Sprintf("New Benchmark Results for %v", schedule.GetBenchmarkName())

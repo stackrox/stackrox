@@ -143,7 +143,7 @@ type benchmarkFormatStruct struct {
 }
 
 const benchmarkFormat = `
-New benchmark results for benchmark '{{.BenchmarkSchedule.Name }}' have been posted. Go to {{ .Link }} to view the results.
+New benchmark results for benchmark '{{.BenchmarkSchedule.BenchmarkName }}' have been posted. Go to {{ .Link }} to view the results.
 `
 
 // FormatBenchmark takes in a benchmark, and a link and generates the notification
@@ -158,6 +158,35 @@ func FormatBenchmark(schedule *v1.BenchmarkSchedule, scheduleLink string) (strin
 	f := strings.Replace(benchmarkFormat, "\t", "", -1)
 	f = strings.Replace(f, "\n", "", -1)
 	tmpl, err := template.New("").Funcs(funcMap).Parse(f)
+	if err != nil {
+		return "", err
+	}
+	var tpl bytes.Buffer
+	err = tmpl.Execute(&tpl, data)
+	if err != nil {
+		return "", err
+	}
+	return tpl.String(), nil
+}
+
+type networkPolicyFormatStruct struct {
+	YAML        string
+	ClusterName string
+}
+
+const networkPolicyYAMLNotificationFormat = `
+	Please review the following network policy YAML that needs to be applied to cluster '{{.ClusterName}}'.
+	{{codeBlock .YAML}}
+	`
+
+// FormatNetworkPolicyYAML takes in a cluster name and network policy yaml to generate the notification
+func FormatNetworkPolicyYAML(yaml string, clusterName string, funcMap template.FuncMap) (string, error) {
+	data := networkPolicyFormatStruct{
+		YAML:        yaml,
+		ClusterName: clusterName,
+	}
+
+	tmpl, err := template.New("").Funcs(funcMap).Parse(networkPolicyYAMLNotificationFormat)
 	if err != nil {
 		return "", err
 	}

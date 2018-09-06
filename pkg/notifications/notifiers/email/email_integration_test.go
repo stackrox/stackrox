@@ -33,13 +33,14 @@ func getEmail(t *testing.T) *email {
 
 	notifier := &v1.Notifier{
 		UiEndpoint: "http://google.com",
-		Config: map[string]string{
-			"server":    server,
-			"sender":    user,
-			"recipient": recipient,
-			"username":  user,
-			"password":  password,
-			"tls":       "true",
+		Config: &v1.Notifier_Email{
+			Email: &v1.Email{
+				Server:     server,
+				Sender:     user,
+				Username:   recipient,
+				Password:   password,
+				DisableTLS: true,
+			},
 		},
 	}
 
@@ -51,6 +52,12 @@ func getEmail(t *testing.T) *email {
 func TestEmailAlertNotify(t *testing.T) {
 	e := getEmail(t)
 	assert.NoError(t, e.AlertNotify(fixtures.GetAlert()))
+}
+
+func TestEmailNetworkPolicyYAMLNotify(t *testing.T) {
+	e := getEmail(t)
+
+	assert.NoError(t, e.NetworkPolicyYAMLNotify(fixtures.GetYAML(), "test-cluster"))
 }
 
 func TestEmailTest(t *testing.T) {

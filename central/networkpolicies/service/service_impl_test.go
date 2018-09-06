@@ -8,6 +8,7 @@ import (
 	dDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	ngMocks "github.com/stackrox/rox/central/networkgraph/mocks"
 	npStoreMocks "github.com/stackrox/rox/central/networkpolicies/store/mocks"
+	notifierStoreMocks "github.com/stackrox/rox/central/notifier/store/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stretchr/testify/mock"
@@ -75,8 +76,8 @@ type ServiceTestSuite struct {
 	deployments     *dDataStoreMocks.DataStore
 	networkPolicies *npStoreMocks.Store
 	evaluator       *ngMocks.Evaluator
-
-	tested Service
+	notifiers       *notifierStoreMocks.Store
+	tested          Service
 }
 
 func (suite *ServiceTestSuite) SetupTest() {
@@ -84,8 +85,9 @@ func (suite *ServiceTestSuite) SetupTest() {
 	suite.evaluator = &ngMocks.Evaluator{}
 	suite.clusters = &cDataStoreMocks.DataStore{}
 	suite.deployments = &dDataStoreMocks.DataStore{}
+	suite.notifiers = &notifierStoreMocks.Store{}
 
-	suite.tested = New(suite.networkPolicies, suite.evaluator, suite.clusters, suite.deployments)
+	suite.tested = New(suite.networkPolicies, suite.deployments, suite.evaluator, suite.clusters, suite.notifiers)
 }
 
 func (suite *ServiceTestSuite) TestFailsIfClusterIsNotSet() {

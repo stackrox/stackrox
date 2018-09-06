@@ -6,6 +6,8 @@ import "github.com/stackrox/rox/generated/api/v1"
 type Notifier interface {
 	// AlertNotify triggers the plugins to send a notification about an alert
 	AlertNotify(alert *v1.Alert) error
+	// YamlNotify triggers the plugins to send a notification about a network policy yaml
+	NetworkPolicyYAMLNotify(yaml string, clusterName string) error
 	// BenchmarkNotify triggers the plugins to send a notification about a benchmark
 	BenchmarkNotify(schedule *v1.BenchmarkSchedule) error
 	// ProtoNotifier gets the proto version of the notifier

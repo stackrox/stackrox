@@ -108,7 +108,13 @@ func alertEnforcement(alert *v1.Alert) []findings.Enforcement {
 	}
 }
 
-// AlertNotify takes in an alert and generates the notification
+func (c *cscc) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
+	// We will not bubble up the information that yaml notifications were sent out in
+	// cscc interface, so do nothing
+	return nil
+}
+
+//AlertNotify takes in an alert and generates the notification
 func (c *cscc) AlertNotify(alert *v1.Alert) error {
 	alertLink := notifiers.AlertLink(c.Notifier.UiEndpoint, alert.GetId())
 	summary := c.getAlertDescription(alert)

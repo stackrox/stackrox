@@ -30,7 +30,7 @@ type jira struct {
 
 	conf *v1.Jira
 
-	*v1.Notifier
+	notifier *v1.Notifier
 }
 
 func (j *jira) getAlertDescription(alert *v1.Alert) (string, error) {
@@ -51,12 +51,12 @@ func (j *jira) getAlertDescription(alert *v1.Alert) (string, error) {
 			return fmt.Sprintf("** %v\r\n", s)
 		},
 	}
-	alertLink := notifiers.AlertLink(j.Notifier.UiEndpoint, alert.GetId())
+	alertLink := notifiers.AlertLink(j.notifier.UiEndpoint, alert.GetId())
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
 func (j *jira) getBenchmarkDescription(schedule *v1.BenchmarkSchedule) (string, error) {
-	benchmarkLink := notifiers.BenchmarkLink(j.Notifier.UiEndpoint)
+	benchmarkLink := notifiers.BenchmarkLink(j.notifier.UiEndpoint)
 	return notifiers.FormatBenchmark(schedule, benchmarkLink)
 }
 
@@ -67,7 +67,7 @@ func (j *jira) AlertNotify(alert *v1.Alert) error {
 		return err
 	}
 
-	project := notifiers.GetLabelValue(alert, j.GetLabelKey(), j.GetLabelDefault())
+	project := notifiers.GetLabelValue(alert, j.notifier.GetLabelKey(), j.notifier.GetLabelDefault())
 	i := &jiraLib.Issue{
 		Fields: &jiraLib.IssueFields{
 			Summary: fmt.Sprintf("Deployment %v (%v) violates '%v' Policy", alert.Deployment.Name, alert.Deployment.Id, alert.Policy.Name),
@@ -80,6 +80,37 @@ func (j *jira) AlertNotify(alert *v1.Alert) error {
 			Description: description,
 			Priority: &jiraLib.Priority{
 				Name: severityToPriority(alert.GetPolicy().GetSeverity()),
+			},
+		},
+	}
+	return j.createIssue(i)
+}
+
+func (j *jira) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
+	funcMap := template.FuncMap{
+		"codeBlock": func(s string) string {
+			return fmt.Sprintf("{code:title=Network Policy YAML|theme=FadeToGrey|language=yaml}%s{code}", s)
+		},
+	}
+
+	description, err := notifiers.FormatNetworkPolicyYAML(yaml, clusterName, funcMap)
+	if err != nil {
+		return err
+	}
+
+	project := j.notifier.GetLabelDefault()
+	i := &jiraLib.Issue{
+		Fields: &jiraLib.IssueFields{
+			Summary: fmt.Sprintf("Network policy yaml to apply on cluster %s", clusterName),
+			Type: jiraLib.IssueType{
+				Name: j.conf.GetIssueType(),
+			},
+			Project: jiraLib.Project{
+				Key: project,
+			},
+			Description: description,
+			Priority: &jiraLib.Priority{
+				Name: severityToPriority(v1.Severity_MEDIUM_SEVERITY),
 			},
 		},
 	}
@@ -100,11 +131,11 @@ func (j *jira) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
 				Name: j.conf.GetIssueType(),
 			},
 			Project: jiraLib.Project{
-				Key: j.GetLabelDefault(),
+				Key: j.notifier.GetLabelDefault(),
 			},
 			Description: description,
 			Priority: &jiraLib.Priority{
-				Name: "P3-Low",
+				Name: severityToPriority(v1.Severity_LOW_SEVERITY),
 			},
 		},
 	}
@@ -161,12 +192,13 @@ func newJira(notifier *v1.Notifier) (*jira, error) {
 
 	return &jira{
 		client:   client,
-		Notifier: notifier,
+		conf:     notifier.GetConfig().(*v1.Notifier_Jira).Jira,
+		notifier: notifier,
 	}, nil
 }
 
 func (j *jira) ProtoNotifier() *v1.Notifier {
-	return j.Notifier
+	return j.notifier
 }
 
 func (j *jira) createIssue(i *jiraLib.Issue) error {
@@ -188,7 +220,7 @@ func (j *jira) Test() error {
 				Name: j.conf.GetIssueType(),
 			},
 			Project: jiraLib.Project{
-				Key: j.GetLabelDefault(),
+				Key: j.notifier.GetLabelDefault(),
 			},
 			Summary: "This is a test issue created to test integration with StackRox.",
 			Priority: &jiraLib.Priority{

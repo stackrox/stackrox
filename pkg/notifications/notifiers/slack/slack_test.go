@@ -32,6 +32,18 @@ func TestSlackAlertNotify(t *testing.T) {
 	assert.NoError(t, s.AlertNotify(fixtures.GetAlert()))
 }
 
+func TestSlackNetworkPolicyYAMLNotify(t *testing.T) {
+	webhook := skip(t)
+	s := slack{
+		Notifier: &v1.Notifier{
+			UiEndpoint:   "http://google.com",
+			LabelDefault: webhook,
+		},
+	}
+
+	assert.NoError(t, s.NetworkPolicyYAMLNotify(fixtures.GetYAML(), "test-cluster"))
+}
+
 func TestSlackTest(t *testing.T) {
 	webhook := skip(t)
 	s := slack{

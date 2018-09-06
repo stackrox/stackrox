@@ -10,12 +10,14 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/networkgraph"
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
+	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/notifications/notifiers"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
@@ -40,11 +42,11 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	clusters        clusterDataStore.DataStore
+	clusterStore    clusterDataStore.DataStore
 	deployments     deploymentDataStore.DataStore
 	networkPolicies networkPoliciesStore.Store
-
-	graphEvaluator networkgraph.Evaluator
+	notifierStore   notifierStore.Store
+	graphEvaluator  networkgraph.Evaluator
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -89,7 +91,7 @@ func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.Resource
 
 func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNetworkPoliciesRequest) (*v1.NetworkPoliciesResponse, error) {
 	if request.GetClusterId() != "" {
-		_, exists, err := s.clusters.GetCluster(request.GetClusterId())
+		_, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -112,7 +114,7 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 	}
 
 	// Check that the cluster exists. If not there is nothing to we can process.
-	_, exists, err := s.clusters.GetCluster(request.GetClusterId())
+	_, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -142,9 +144,37 @@ func (s *serviceImpl) GetNetworkGraphEpoch(context.Context, *v1.Empty) (*v1.GetN
 	}, nil
 }
 
-func (s *serviceImpl) SendNetworkPolicyYaml(ctx context.Context, request *v1.SendNetworkPolicyYamlRequest) (*v1.Empty, error) {
-	//TODO (@boo): Add implementation.
-	return &v1.Empty{}, status.Error(codes.Unimplemented, "Not implemented")
+func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.SendNetworkPolicyYamlRequest) (*v1.Empty, error) {
+	if request.GetClusterId() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "Cluster ID must be specified")
+	}
+
+	cluster, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
+	if !exists {
+		return nil, status.Errorf(codes.NotFound, err.Error())
+	}
+
+	notifierProto, exists, err := s.notifierStore.GetNotifier(request.GetNotifierId())
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if !exists {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("Notifier %s not found", request.GetNotifierId()))
+	}
+
+	notifier, err := notifiers.CreateNotifier(notifierProto)
+
+	if err != nil {
+		return &v1.Empty{}, fmt.Errorf("Error creating notifier with %s (%s) and type %s: %v", notifierProto.GetId(), notifierProto.GetName(), notifierProto.GetType(), err)
+	}
+
+	err = notifier.NetworkPolicyYAMLNotify(request.GetYaml(), cluster.GetName())
+	if err != nil {
+		return &v1.Empty{}, status.Errorf(codes.Internal, fmt.Sprintf("Error sending yaml notification to %s: %v", notifierProto.GetName(), err))
+	}
+
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) getDeployments(clusterID, query string) (deployments []*v1.Deployment, err error) {
