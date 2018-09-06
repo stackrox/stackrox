@@ -49,6 +49,7 @@ func (e *enforcer) Start() {
 		case <-e.stopC.Done():
 			logger.Info("Shutting down Enforcer")
 			e.stoppedC.Signal()
+			return
 		}
 	}
 }

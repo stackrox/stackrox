@@ -67,7 +67,7 @@ func newMetrics(subsystem pkgMetrics.Subsystem) metrics {
 		}),
 	}
 
-	prometheus.MustRegister(
+	pkgMetrics.EmplaceCollector(
 		m.metadataCacheHits,
 		m.metadataCacheMisses,
 		m.scanCacheHits,

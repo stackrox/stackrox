@@ -20,7 +20,7 @@ const (
 
 // Poller provides an interface for starting and stopping background polling for image integrations.
 type Poller interface {
-	Start()
+	Run()
 	Stop()
 }
 

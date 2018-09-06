@@ -20,8 +20,8 @@ type pollerImpl struct {
 	stopped      concurrency.Signal
 }
 
-// Start starts polling.
-func (c *pollerImpl) Start() {
+// Run polls and does not return until stopped.
+func (c *pollerImpl) Run() {
 	// signal as stopped when stopped.
 	defer c.stopped.Signal()
 

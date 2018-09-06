@@ -46,6 +46,10 @@ var (
 	sensorInstance sensor.Sensor
 )
 
+const (
+	retryInterval = 5 * time.Second
+)
+
 func main() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt)
@@ -130,17 +134,32 @@ func start() {
 
 	// If everything is brought up correctly, start the sensor.
 	if listenerInstance != nil && enforcerInstance != nil {
-		sensorInstance = sensor.NewSensor(conn, clusterID)
-		sensorInstance.Start(listenerInstance.Events(), signalService.Singleton().Indicators(), enforcerInstance.Actions())
+		go runSensor()
 	}
 
 	logger.Info("Kubernetes Sensor Started")
 }
 
+func runSensor() {
+	sensorInstance = sensor.NewSensor(conn, clusterID)
+	for {
+		logger.Info("Starting central connection.")
+		go sensorInstance.Start(listenerInstance.Events(), signalService.Singleton().Indicators(), enforcerInstance.Actions())
+
+		if err := sensorInstance.Wait(); err != nil {
+			logger.Errorf("Central connection encountered error: %v. Sleeping for %v", err, retryInterval)
+			time.Sleep(retryInterval)
+		} else {
+			logger.Info("Terminating central connection.")
+			return
+		}
+	}
+}
+
 // Stop stops the sensor and all necessary side processes.
 func stop() {
 	// Stop the sensor.
-	sensorInstance.Stop()
+	sensorInstance.Stop(nil)
 
 	// Stop all of our listeners.
 	if listenerInstance != nil {

@@ -10,6 +10,7 @@ import "api/v1/network_policy_service.proto";
 import "api/v1/policy_service.proto";
 import "api/v1/secret_service.proto";
 
+
 package v1;
 
 enum ResourceAction {

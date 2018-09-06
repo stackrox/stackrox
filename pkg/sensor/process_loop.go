@@ -7,77 +7,18 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
-	"github.com/stackrox/rox/pkg/images/enricher"
-	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/listeners"
-	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protoconv"
-	sensorMetrics "github.com/stackrox/rox/pkg/sensor/metrics"
-	"google.golang.org/grpc"
+	"github.com/stackrox/rox/pkg/sensor/metrics"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
 	signalRetries       = 10
 	signalRetryInterval = 2 * time.Second
 )
-
-// newProcessLoops returns a new Sensor.
-func newProcessLoops(centralConn *grpc.ClientConn, clusterID string) *processLoopsImpl {
-	// This will track the set of integrations for this cluster.
-	integrationSet := integration.NewSet()
-
-	// This polls central for the integrations specific to this cluster.
-	poller := integration.NewPoller(integrationSet, centralConn, clusterID)
-
-	// This uses those integrations to enrich images.
-	imageEnricher := enricher.New(integrationSet, metrics.SensorSubsystem)
-
-	return &processLoopsImpl{
-		imageEnricher: imageEnricher,
-		poller:        poller,
-		pendingCache:  newPendingEvents(),
-	}
-}
-
-// processLoopsImpl is the master processing logic underlying Sensor. It consumes sensor's inputs and returns
-// it's outputs.
-type processLoopsImpl struct {
-	pendingCache  *pendingEvents
-	imageEnricher enricher.ImageEnricher
-	poller        integration.Poller
-
-	stopLoop    concurrency.Signal
-	loopStopped concurrency.Signal
-}
-
-// Starts the processing loops.
-func (p *processLoopsImpl) startLoops(orchestratorInput <-chan *listeners.EventWrap,
-	collectorInput <-chan *listeners.EventWrap,
-	stream v1.SensorEventService_RecordEventClient,
-	output chan<- *enforcers.DeploymentEnforcement) {
-
-	go p.poller.Start()
-
-	p.stopLoop = concurrency.NewSignal()
-	p.loopStopped = concurrency.NewSignal()
-
-	go p.sendMessages(orchestratorInput, collectorInput, stream)
-	go p.receiveMessages(stream, output)
-}
-
-// Stops the processing loops.
-func (p *processLoopsImpl) stopLoops() {
-	p.poller.Stop()
-
-	p.stopLoop.Signal()
-	p.loopStopped.Wait()
-}
-
-// The processing loops which feed the input channel data to central,
-// and returns the data output from central to the output channel.
-//////////////////////////////////////////////////////////////////
 
 func logSendingEvent(sensorEvent *v1.SensorEvent) {
 	var name string
@@ -106,16 +47,16 @@ func logSendingEvent(sensorEvent *v1.SensorEvent) {
 	logger.Infof("Sending Sensor Event: Action: '%s'. Type '%s'. Name: '%s'", sensorEvent.GetAction(), resourceType, name)
 }
 
-func (p *processLoopsImpl) reprocessSignalLater(stream v1.SensorEventService_RecordEventClient, sensorEvent *v1.SensorEvent) {
+func (s *sensor) reprocessSignalLater(stream v1.SensorEventService_RecordEventClient, sensorEvent *v1.SensorEvent) {
 	t := time.NewTicker(signalRetryInterval)
 	logger.Infof("Trying to reprocess '%s'", sensorEvent.GetProcessIndicator().GetSignal().GetProcessSignal().GetCommandLine())
 	indicator := sensorEvent.GetProcessIndicator()
 	for i := 0; i < signalRetries; i++ {
 		<-t.C
-		deploymentID, exists := p.pendingCache.fetchDeploymentIDFromContainerID(indicator.GetSignal().GetContainerId())
+		deploymentID, exists := s.pendingCache.fetchDeploymentIDFromContainerID(indicator.GetSignal().GetContainerId())
 		if exists {
 			indicator.DeploymentId = deploymentID
-			p.sendIndicatorEvent(stream, sensorEvent)
+			s.sendIndicatorEvent(stream, sensorEvent)
 			return
 		}
 	}
@@ -123,8 +64,9 @@ func (p *processLoopsImpl) reprocessSignalLater(stream v1.SensorEventService_Rec
 }
 
 // Take in data from the input channel, pre-process it, then send it to central.
-func (p *processLoopsImpl) sendMessages(orchestratorInput <-chan *listeners.EventWrap,
-	collectorInput <-chan *listeners.EventWrap,
+func (s *sensor) sendMessages(
+	deployments <-chan *listeners.EventWrap,
+	signals <-chan *listeners.EventWrap,
 	stream v1.SensorEventService_RecordEventClient) {
 
 	// When the input channel closes and looping stops and returns, we need to close the stream with central.
@@ -133,60 +75,69 @@ func (p *processLoopsImpl) sendMessages(orchestratorInput <-chan *listeners.Even
 	for {
 		select {
 		// Take in events from the inbound channel, pre-process, then send to central.
-		case eventWrap, ok := <-orchestratorInput:
+		case deploy, ok := <-deployments:
 			// The loop stops when the input channel is closed.
 			if !ok {
 				return
 			}
+			s.sendDeploy(deploy, stream)
 
-			switch eventWrap.GetAction() {
-			case v1.ResourceAction_REMOVE_RESOURCE:
-				p.pendingCache.remove(eventWrap)
-			case v1.ResourceAction_CREATE_RESOURCE, v1.ResourceAction_UPDATE_RESOURCE:
-				// Not adding the event implies that it already exists in it's exact form in the cache
-				if eventAdded := p.pendingCache.add(eventWrap); !eventAdded {
-					continue
-				}
-				p.enrichImages(eventWrap.GetDeployment())
-			default:
-				logger.Errorf("Resource action not handled: %s", eventWrap.GetAction())
-				continue
-			}
-			p.sendSensorEventWithLog(stream, eventWrap.SensorEvent)
-		case eventWrap, ok := <-collectorInput:
+		case signal, ok := <-signals:
 			if !ok {
 				return
 			}
-			indicatorWrap, ok := eventWrap.GetResource().(*v1.SensorEvent_ProcessIndicator)
-			if !ok {
-				log.Errorf("Non indicator SensorEvent found on collector Input channel: %v", eventWrap)
-				continue
-			}
-			indicator := indicatorWrap.ProcessIndicator
+			s.sendSignal(signal, stream)
 
-			// populate deployment id
-			deploymentID, exists := p.pendingCache.fetchDeploymentIDFromContainerID(indicator.GetSignal().GetContainerId())
-			if !exists {
-				go p.reprocessSignalLater(stream, eventWrap.SensorEvent)
-				continue
-			}
-			indicator.DeploymentId = deploymentID
-			p.sendIndicatorEvent(stream, eventWrap.SensorEvent)
-		// If we receive the stop signal, then break out of the loop.
-		case <-p.stopLoop.Done():
+		// If we receive the stop signal, break out of the loop.
+		case <-s.stopped.Done():
 			return
 		}
 	}
 }
 
-func (p *processLoopsImpl) sendIndicatorEvent(stream v1.SensorEventService_RecordEventClient, sensorEvent *v1.SensorEvent) {
-	sensorEvent.Resource.(*v1.SensorEvent_ProcessIndicator).ProcessIndicator.EmitTimestamp = types.TimestampNow()
-	lag := time.Now().Sub(protoconv.ConvertTimestampToTimeOrNow(sensorEvent.GetProcessIndicator().GetSignal().GetTime()))
-	sensorMetrics.RegisterSignalToIndicatorEmitLag(sensorEvent.GetClusterId(), float64(lag))
-	p.sendSensorEventWithLog(stream, sensorEvent)
+func (s *sensor) sendDeploy(eventWrap *listeners.EventWrap, stream v1.SensorEventService_RecordEventClient) {
+	switch eventWrap.GetAction() {
+	case v1.ResourceAction_REMOVE_RESOURCE:
+		s.pendingCache.remove(eventWrap)
+	case v1.ResourceAction_CREATE_RESOURCE, v1.ResourceAction_UPDATE_RESOURCE:
+		// Not adding the event implies that it already exists in its exact form in the cache.
+		if eventAdded := s.pendingCache.add(eventWrap); !eventAdded {
+			return
+		}
+		s.enrichImages(eventWrap.GetDeployment())
+	default:
+		logger.Errorf("Resource action not handled: %s", eventWrap.GetAction())
+		return
+	}
+	s.sendSensorEventWithLog(stream, eventWrap.SensorEvent)
 }
 
-func (p *processLoopsImpl) sendSensorEventWithLog(stream v1.SensorEventService_RecordEventClient, sensorEvent *v1.SensorEvent) {
+func (s *sensor) sendSignal(eventWrap *listeners.EventWrap, stream v1.SensorEventService_RecordEventClient) {
+	indicatorWrap, ok := eventWrap.GetResource().(*v1.SensorEvent_ProcessIndicator)
+	if !ok {
+		log.Errorf("Non-indicator SensorEvent found on collector input channel: %v", eventWrap)
+		return
+	}
+	indicator := indicatorWrap.ProcessIndicator
+
+	// populate deployment id
+	deploymentID, exists := s.pendingCache.fetchDeploymentIDFromContainerID(indicator.GetSignal().GetContainerId())
+	if !exists {
+		go s.reprocessSignalLater(stream, eventWrap.SensorEvent)
+		return
+	}
+	indicator.DeploymentId = deploymentID
+	s.sendIndicatorEvent(stream, eventWrap.SensorEvent)
+}
+
+func (s *sensor) sendIndicatorEvent(stream v1.SensorEventService_RecordEventClient, sensorEvent *v1.SensorEvent) {
+	sensorEvent.Resource.(*v1.SensorEvent_ProcessIndicator).ProcessIndicator.EmitTimestamp = types.TimestampNow()
+	lag := time.Now().Sub(protoconv.ConvertTimestampToTimeOrNow(sensorEvent.GetProcessIndicator().GetSignal().GetTime()))
+	metrics.RegisterSignalToIndicatorEmitLag(sensorEvent.GetClusterId(), float64(lag))
+	s.sendSensorEventWithLog(stream, sensorEvent)
+}
+
+func (s *sensor) sendSensorEventWithLog(stream v1.SensorEventService_RecordEventClient, sensorEvent *v1.SensorEvent) {
 	logSendingEvent(sensorEvent)
 	if err := stream.Send(sensorEvent); err != nil {
 		log.Errorf("unable to send indicator event: %s", err)
@@ -194,36 +145,58 @@ func (p *processLoopsImpl) sendSensorEventWithLog(stream v1.SensorEventService_R
 }
 
 // Take in data processed by central, run post processing, then send it to the output channel.
-func (p *processLoopsImpl) receiveMessages(stream v1.SensorEventService_RecordEventClient, output chan<- *enforcers.DeploymentEnforcement) {
-	defer p.loopStopped.Signal()
+func (s *sensor) receiveMessages(output chan<- *enforcers.DeploymentEnforcement, stream v1.SensorEventService_RecordEventClient) {
+	var err error
+	defer func() { s.Stop(err) }()
 
 	for {
-		// Take in the responses from central and generate enforcements for the outbound channel.
-		eventResp, err := stream.Recv()
-		// The loop stops when the stream from central is closed or returns an error.
-		if err == io.EOF {
+		select {
+		case <-s.stopped.Done():
 			return
-		}
-		if err != nil {
-			log.Errorf("error reading event response from central: %s", err)
-			return
-		}
 
-		// Just to avoid panics, but we currently don't handle any responses not from deployments
-		switch x := eventResp.Resource.(type) {
-		case *v1.SensorEventResponse_Deployment:
-			p.processDeploymentResponse(eventResp, output)
-		case *v1.SensorEventResponse_NetworkPolicy, *v1.SensorEventResponse_Namespace, *v1.SensorEventResponse_Indicator, *v1.SensorEventResponse_Secret:
-			// Purposefully eating the responses for these types because there is nothing to do for them
 		default:
-			logger.Errorf("Event response with type '%s' is not handled", x)
+			// Take in the responses from central and generate enforcements for the outbound channel.
+			// Note: Recv blocks until it receives something new, unless the stream closes.
+			var eventResp *v1.SensorEventResponse
+			eventResp, err = stream.Recv()
+			// The loop exits when the stream from central is closed or returns an error.
+			if err == io.EOF {
+				// Central is not expected to hang up, so we should exit
+				// uncleanly to signal the caller to restart.
+				log.Info("central hung up (EOF)")
+				return
+			}
+			if s, ok := status.FromError(err); ok && s.Code() == codes.Canceled {
+				// The stream has been canceled via its context.
+				// Report this as a graceful, intentional termination,
+				// instead of an emergent error.
+				err = nil
+				return
+			}
+			if err != nil {
+				log.Errorf("error reading event response from central: %s", err)
+				return
+			}
+
+			// Just to avoid panics, but we currently don't handle any responses not from deployments
+			switch x := eventResp.Resource.(type) {
+			case *v1.SensorEventResponse_Deployment:
+				s.processDeploymentResponse(eventResp, output)
+			case *v1.SensorEventResponse_NetworkPolicy:
+			case *v1.SensorEventResponse_Namespace:
+			case *v1.SensorEventResponse_Indicator:
+			case *v1.SensorEventResponse_Secret:
+				// Drop the values for these types because there is nothing to do for them.
+			default:
+				logger.Errorf("Event response with type '%s' is not handled", x)
+			}
 		}
 	}
 }
 
-func (p *processLoopsImpl) processDeploymentResponse(eventResp *v1.SensorEventResponse, output chan<- *enforcers.DeploymentEnforcement) {
+func (s *sensor) processDeploymentResponse(eventResp *v1.SensorEventResponse, output chan<- *enforcers.DeploymentEnforcement) {
 	deploymentResp := eventResp.GetDeployment()
-	eventWrap, exists := p.pendingCache.fetch(deploymentResp.GetDeploymentId())
+	eventWrap, exists := s.pendingCache.fetch(deploymentResp.GetDeploymentId())
 	if !exists {
 		log.Errorf("cannot find deployment event for deployment %s", deploymentResp.GetDeploymentId())
 		return
@@ -245,11 +218,11 @@ func (p *processLoopsImpl) processDeploymentResponse(eventResp *v1.SensorEventRe
 	}
 }
 
-func (p *processLoopsImpl) enrichImages(deployment *v1.Deployment) {
+func (s *sensor) enrichImages(deployment *v1.Deployment) {
 	if deployment == nil || len(deployment.GetContainers()) == 0 {
 		return
 	}
 	for _, c := range deployment.GetContainers() {
-		p.imageEnricher.EnrichImage(c.Image)
+		s.imageEnricher.EnrichImage(c.Image)
 	}
 }
