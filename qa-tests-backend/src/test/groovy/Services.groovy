@@ -14,6 +14,8 @@ import stackrox.generated.ImageServiceOuterClass
 import stackrox.generated.ImageServiceOuterClass.Image
 import stackrox.generated.PolicyServiceGrpc
 import stackrox.generated.PolicyServiceOuterClass.LifecycleStage
+import stackrox.generated.PolicyServiceOuterClass.ImageNamePolicy
+import stackrox.generated.PolicyServiceOuterClass.PolicyFields
 import stackrox.generated.PolicyServiceOuterClass.ListPolicy
 import stackrox.generated.PolicyServiceOuterClass.Policy
 import stackrox.generated.SearchServiceGrpc
@@ -84,6 +86,36 @@ class Services {
 
     static Policy getPolicy(String id) {
         return getPolicyClient().getPolicy(getResourceByID(id))
+    }
+
+    static String addLatestTagPolicy() {
+        return getPolicyClient().postPolicy(
+            Policy.newBuilder()
+                .setName("qaTestLifeCycle")
+                .setDescription("qa test")
+                .setRationale("qa test")
+                .addCategories("Image Assurance")
+                .setDisabled(false)
+                .setSeverityValue(2)
+                .setFields(PolicyFields.newBuilder()
+                    .setImageName(
+                        ImageNamePolicy.newBuilder()
+                        .setTag("latest")
+                        .build()
+                    )
+                    .build()
+                )
+                .build()
+        )
+        .getId()
+    }
+
+    static deletePolicy(String policyID) {
+        getPolicyClient().deletePolicy(
+            ResourceByID.newBuilder()
+                .setId(policyID)
+                .build()
+        )
     }
 
     static List<ListAlert> getViolations(ListAlertsRequest request = ListAlertsRequest.newBuilder().build()) {

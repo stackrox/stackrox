@@ -85,9 +85,8 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 if (v1beta1Deployment.getMetadata().getName() == deploymentName) {
                     println "Waiting for " + deploymentName
                     sleep(sleepDuration)
-                    if (v1beta1Deployment.getStatus().getReplicas() == 1) {
+                    if (v1beta1Deployment.getStatus().getReplicas() > 0) {
                         println deploymentName + ": deployment created."
-
                         //continue to sleep 5s to make the test more stable
                         sleep(sleepDuration)
                         return
@@ -130,8 +129,12 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 )
         )
 
-        beta1.createNamespacedDeployment(this.namespace, k8sDeployment, null)
-        waitForDeploymentCreation(deployment.getName(), this.namespace)
+        try {
+            beta1.createNamespacedDeployment(this.namespace, k8sDeployment, null)
+            waitForDeploymentCreation(deployment.getName(), this.namespace)
+        } catch (Exception e) {
+            println("Creating deployment error: " + e.toString())
+        }
     }
 
     def deleteDeployment(String name, String namespace = this.namespace) {

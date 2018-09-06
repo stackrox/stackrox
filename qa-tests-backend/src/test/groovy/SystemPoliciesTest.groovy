@@ -1,5 +1,6 @@
 import static Services.getPolicies
 import static Services.waitForViolation
+import org.junit.Test
 import groups.BAT
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
@@ -7,6 +8,37 @@ import objects.Deployment
 import java.util.stream.Collectors
 
 class SystemPoliciesTest extends BaseSpecification {
+    @Test
+    @Category(BAT)
+    def "Verify policy life cycle"() {
+        String deployName = "qalifecycle"
+        Deployment deployment = new Deployment()
+                .setName(deployName)
+                .setImage("nginx:latest")
+                .addLabel ( "app", "test" )
+        String policyID
+
+        when:
+        "Create a custom policy - Using image latest template"
+        policyID = Services.addLatestTagPolicy()
+        sleep(5000)
+        println("Policy ID :" + policyID)
+        assert policyID != null
+
+        and:
+        "Create a deployment"
+        orchestrator.createDeployment(deployment)
+
+        then:
+        "Verify the custom policy is triggered"
+        assert waitForViolation(deployName, "qaTestLifeCycle", 1800)
+
+        cleanup:
+        "Remove the policy and deployment"
+        Services.deletePolicy(policyID)
+        orchestrator.deleteDeployment(deployName)
+    }
+
     @Unroll
     @Category(BAT)
     def "Verify policy #policyname is triggered" (String policyname, Deployment deployment,
