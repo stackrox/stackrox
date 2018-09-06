@@ -9,6 +9,7 @@ import (
 const (
 	Deployment            = `Deployment`
 	DaemonSet             = `DaemonSet`
+	Pod                   = `Pod`
 	ReplicationController = `ReplicationController`
 	ReplicaSet            = `ReplicaSet`
 	StatefulSet           = `StatefulSet`

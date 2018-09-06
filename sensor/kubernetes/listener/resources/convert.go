@@ -26,6 +26,11 @@ type wrap struct {
 	*pkgV1.Deployment
 }
 
+// This checks if a reflect value is a Zero value, which means the field did not exist
+func doesFieldExist(value reflect.Value) bool {
+	return !reflect.DeepEqual(value, reflect.Value{})
+}
+
 func newDeploymentEventFromResource(obj interface{}, action pkgV1.ResourceAction, metaFieldIndex []int, resourceType string, lister podLister) (event *pkgV1.Deployment) {
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	meta, ok := objValue.FieldByIndex(metaFieldIndex).Interface().(metav1.ObjectMeta)
@@ -90,7 +95,7 @@ func newWrap(meta metav1.ObjectMeta, action pkgV1.ResourceAction, resourceType s
 
 func (w *wrap) populateFields(objValue reflect.Value, action pkgV1.ResourceAction, lister podLister) {
 	spec := objValue.FieldByName("Spec")
-	if reflect.DeepEqual(spec, reflect.Value{}) {
+	if !doesFieldExist(spec) {
 		logger.Errorf("Obj %+v does not have a Spec field", objValue)
 		return
 	}
@@ -99,19 +104,38 @@ func (w *wrap) populateFields(objValue reflect.Value, action pkgV1.ResourceActio
 
 	var podTemplate v1.PodTemplateSpec
 	var ok bool
-	if w.GetType() == kubernetes.DeploymentConfig {
+
+	switch w.GetType() {
+	case kubernetes.DeploymentConfig:
 		var podTemplatePtr *v1.PodTemplateSpec
 		// DeploymentConfig has a pointer to the PodTemplateSpec
 		podTemplatePtr, ok = spec.FieldByName("Template").Interface().(*v1.PodTemplateSpec)
 		if ok {
 			podTemplate = *podTemplatePtr
+		} else {
+			logger.Errorf("Spec obj %+v does not have a Template field or is not a pointer pod spec", spec)
+			return
 		}
-	} else {
-		podTemplate, ok = spec.FieldByName("Template").Interface().(v1.PodTemplateSpec)
-	}
-	if !ok {
-		logger.Errorf("Spec obj %+v does not have a Template field", spec)
+	// Pods don't have the abstractions that higher level objects have so maintain it's lifecycle independently
+	case kubernetes.Pod:
+		// Standalone Pods do not have a PodTemplate, like the other deployment
+		// types do. So, we need to directly access the Pod's Spec field,
+		// instead of looking for it inside a PodTemplate.
+		pod, ok := objValue.Interface().(v1.Pod)
+		if !ok {
+			logger.Errorf("objValue %+v was not of type v1.Pod", objValue)
+			return
+		}
+		w.populateContainers(pod.Spec)
+		w.populateImageShas(pod)
+		w.populateContainerInstances(pod)
 		return
+	default:
+		podTemplate, ok = spec.FieldByName("Template").Interface().(v1.PodTemplateSpec)
+		if !ok {
+			logger.Errorf("Spec obj %+v does not have a Template field", spec)
+			return
+		}
 	}
 
 	w.populateContainers(podTemplate.Spec)
@@ -151,7 +175,7 @@ func (w *wrap) populateImagePullSecrets(podSpec v1.PodSpec) {
 
 func (w *wrap) populateReplicas(spec reflect.Value) {
 	replicaField := spec.FieldByName("Replicas")
-	if reflect.DeepEqual(replicaField, reflect.Value{}) {
+	if !doesFieldExist(replicaField) {
 		return
 	}
 
@@ -169,11 +193,11 @@ func (w *wrap) populateReplicas(spec reflect.Value) {
 func (w *wrap) populatePodData(spec reflect.Value, lister podLister) {
 	labelSelector := w.getLabelSelector(spec)
 	pods := lister.List(labelSelector)
-	w.populateImageShas(pods)
-	w.populateContainerInstances(pods)
+	w.populateImageShas(pods...)
+	w.populateContainerInstances(pods...)
 }
 
-func (w *wrap) populateContainerInstances(pods []v1.Pod) {
+func (w *wrap) populateContainerInstances(pods ...v1.Pod) {
 	for _, p := range pods {
 		for i, instance := range containerInstances(p) {
 			w.Containers[i].Instances = append(w.Containers[i].Instances, instance)
@@ -181,7 +205,7 @@ func (w *wrap) populateContainerInstances(pods []v1.Pod) {
 	}
 }
 
-func (w *wrap) populateImageShas(pods []v1.Pod) {
+func (w *wrap) populateImageShas(pods ...v1.Pod) {
 	// This is a map from image full name (eg: stackrox/prevent:latest) to the actual sha of the running image.
 	// Note that, if the tag is mutable, there could be multiple shas for a single full name.
 	// We just pick an arbitrary one right now, by looking at the running pods and adding the actual sha for this map.
@@ -224,6 +248,9 @@ func (w *wrap) populateImageShas(pods []v1.Pod) {
 
 func (w *wrap) getLabelSelector(spec reflect.Value) map[string]string {
 	s := spec.FieldByName("Selector")
+	if !doesFieldExist(s) {
+		return make(map[string]string)
+	}
 
 	// Selector is of map type for replication controller
 	if labels, ok := s.Interface().(map[string]string); ok {

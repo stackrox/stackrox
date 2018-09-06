@@ -81,6 +81,7 @@ func (k *kubernetesListener) createResourceWatchers() {
 		resources.NewReplicationControllerWatchLister(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, k.podWL, resyncPeriod),
 		resources.NewDeploymentWatcher(k.clients.k8s.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL, resyncPeriod),
 		resources.NewStatefulSetWatchLister(k.clients.k8s.AppsV1beta1().RESTClient(), k.eventsC, k.podWL, resyncPeriod),
+		resources.NewPodWatcher(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, k.podWL, resyncPeriod),
 	}
 
 	if env.OpenshiftAPI.Setting() == "true" {

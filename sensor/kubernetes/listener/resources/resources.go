@@ -144,6 +144,11 @@ func NewReplicationControllerWatchLister(client rest.Interface, eventsC chan<- *
 	return newReflectionWatcherFromClient(client, kubernetes.ReplicationController, &v1.ReplicationController{}, eventsC, lister, resyncPeriod)
 }
 
+// NewPodWatcher initializes pod watch
+func NewPodWatcher(client rest.Interface, eventsC chan<- *listeners.EventWrap, lister podLister, resyncPeriod time.Duration) ResourceWatchLister {
+	return newReflectionWatcherFromClient(client, kubernetes.Pod, &v1.Pod{}, eventsC, lister, resyncPeriod)
+}
+
 // NewDeploymentWatcher initializes deployment watch
 func NewDeploymentWatcher(client rest.Interface, eventsC chan<- *listeners.EventWrap, lister podLister, resyncPeriod time.Duration) ResourceWatchLister {
 	return newReflectionWatcherFromClient(client, kubernetes.Deployment, &v1beta1.Deployment{}, eventsC, lister, resyncPeriod)
