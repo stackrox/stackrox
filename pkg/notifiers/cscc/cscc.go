@@ -8,9 +8,9 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/notifications/notifiers"
-	"github.com/stackrox/rox/pkg/notifications/notifiers/cscc/client"
-	"github.com/stackrox/rox/pkg/notifications/notifiers/cscc/findings"
+	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/notifiers/cscc/client"
+	"github.com/stackrox/rox/pkg/notifiers/cscc/findings"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 

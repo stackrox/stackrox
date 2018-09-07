@@ -14,8 +14,8 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
-	"github.com/stackrox/rox/pkg/notifications/notifiers"
-	"github.com/stackrox/rox/pkg/notifications/notifiers/slack"
+	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/notifiers/slack"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

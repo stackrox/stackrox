@@ -3,7 +3,7 @@
 package mocks
 
 import mock "github.com/stretchr/testify/mock"
-import notifiers "github.com/stackrox/rox/pkg/notifications/notifiers"
+import "github.com/stackrox/rox/pkg/notifiers"
 
 import v1 "github.com/stackrox/rox/generated/api/v1"
 

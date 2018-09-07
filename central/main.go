@@ -10,7 +10,7 @@ import (
 
 	// These imports are required to register things from the respective packages.
 	_ "github.com/stackrox/rox/pkg/auth/authproviders/all"
-	_ "github.com/stackrox/rox/pkg/notifications/notifiers/all"
+	_ "github.com/stackrox/rox/pkg/notifiers/all"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	alertService "github.com/stackrox/rox/central/alert/service"

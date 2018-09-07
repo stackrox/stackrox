@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/stackrox/rox/pkg/notifications/notifiers/cscc/findings"
+	"github.com/stackrox/rox/pkg/notifiers/cscc/findings"
 	"golang.org/x/oauth2/google"
 )
 
