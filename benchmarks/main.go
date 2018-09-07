@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+	_ "github.com/stackrox/rox/benchmarks/checks"
+	_ "github.com/stackrox/rox/benchmarks/checks/all"
 	"github.com/stackrox/rox/benchmarks/runner"
 	"github.com/stackrox/rox/generated/api/v1"
-	_ "github.com/stackrox/rox/pkg/checks"
-	_ "github.com/stackrox/rox/pkg/checks/all"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"

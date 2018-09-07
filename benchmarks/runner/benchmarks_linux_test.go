@@ -1,5 +1,3 @@
-// +build linux integration
-
 package runner
 
 import (
@@ -8,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/benchmarks/checks/container_runtime"
+	"github.com/stackrox/rox/benchmarks/checks/utils"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/checks/container_runtime"
-	"github.com/stackrox/rox/pkg/checks/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

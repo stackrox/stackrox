@@ -4,9 +4,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/checks"
-	"github.com/stackrox/rox/pkg/checks/host_configuration"
-	"github.com/stackrox/rox/pkg/checks/utils"
+	"github.com/stackrox/rox/benchmarks/checks"
+	"github.com/stackrox/rox/benchmarks/checks/host_configuration"
+	"github.com/stackrox/rox/benchmarks/checks/utils"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/assert"
 )

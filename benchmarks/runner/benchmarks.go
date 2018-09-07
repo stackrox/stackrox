@@ -7,9 +7,9 @@ import (
 	"time"
 
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/benchmarks/checks"
+	"github.com/stackrox/rox/benchmarks/checks/utils"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/checks"
-	"github.com/stackrox/rox/pkg/checks/utils"
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"

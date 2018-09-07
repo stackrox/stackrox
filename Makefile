@@ -157,21 +157,18 @@ testdocs: $(MERGED_API_SWAGGER_SPEC)
 
 .PHONY: test
 test: gazelle
-# action_env args are for running with remote Docker in CircleCI.
 	-rm vendor/github.com/coreos/pkg/BUILD
 	-rm vendor/github.com/cloudflare/cfssl/script/BUILD
 	-rm vendor/github.com/grpc-ecosystem/grpc-gateway/BUILD
-	bazel test $(RACE) \
+	@# Be careful if you add action_env arguments; their values can invalidate cached
+	@# test results. See https://github.com/bazelbuild/bazel/issues/2574#issuecomment-320006871.
+	bazel test $(PURE) $(RACE) \
 	    --test_output=errors \
-	    --action_env=CIRCLECI=$(CIRCLECI) \
-	    --action_env=DOCKER_HOST=$(DOCKER_HOST) \
-	    --action_env=DOCKER_CERT_PATH=$(DOCKER_CERT_PATH) \
-	    --action_env=DOCKER_TLS_VERIFY=$(DOCKER_TLS_VERIFY) \
 	    -- \
 	    //... -benchmarks/... -proto/... -qa-tests-backend/... -tests/... -vendor/...
-# benchmark tests don't work in Bazel yet.
+	@# Benchmark tests don't work in Bazel yet.
 	make -C benchmarks test report
-# neither do UI tests
+	@# Neither do UI tests.
 	make -C ui test
 
 .PHONY: coverage
