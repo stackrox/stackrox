@@ -43,12 +43,11 @@ var (
 	// This variable is package-level to facilitate the unit test that asserts
 	// that it covers all the searchable categories.
 	searchCategoryToResource = map[v1.SearchCategory]permissions.Resource{
-		v1.SearchCategory_ALERTS:             resources.Alert,
-		v1.SearchCategory_DEPLOYMENTS:        resources.Deployment,
-		v1.SearchCategory_IMAGES:             resources.Image,
-		v1.SearchCategory_POLICIES:           resources.Policy,
-		v1.SearchCategory_SECRETS:            resources.Secret,
-		v1.SearchCategory_PROCESS_INDICATORS: resources.Indicators,
+		v1.SearchCategory_ALERTS:      resources.Alert,
+		v1.SearchCategory_DEPLOYMENTS: resources.Deployment,
+		v1.SearchCategory_IMAGES:      resources.Image,
+		v1.SearchCategory_POLICIES:    resources.Policy,
+		v1.SearchCategory_SECRETS:     resources.Secret,
 	}
 )
 
@@ -101,7 +100,7 @@ func (s *serviceImpl) Search(ctx context.Context, request *v1.RawSearchRequest) 
 	searchFuncMap := s.getSearchFuncs()
 	categories := request.GetCategories()
 	if len(categories) == 0 {
-		categories = getAllCategories()
+		categories = getAllSearchableCategories()
 	}
 	for _, category := range categories {
 		searchFunc, ok := searchFuncMap[category]
@@ -125,17 +124,22 @@ func (s *serviceImpl) Search(ctx context.Context, request *v1.RawSearchRequest) 
 func (s *serviceImpl) Options(ctx context.Context, request *v1.SearchOptionsRequest) (*v1.SearchOptionsResponse, error) {
 	categories := request.GetCategories()
 	if len(categories) == 0 {
-		categories = getAllCategories()
+		categories = getAllSearchableCategories()
 	}
 	return &v1.SearchOptionsResponse{
 		Options: options.GetOptions(categories),
 	}, nil
 }
 
-func getAllCategories() (categories []v1.SearchCategory) {
+func getAllSearchableCategories() (categories []v1.SearchCategory) {
 	categories = make([]v1.SearchCategory, 0, len(v1.SearchCategory_name)-1)
 	for i := 1; i < len(v1.SearchCategory_name); i++ {
-		categories = append(categories, v1.SearchCategory(i))
+		category := v1.SearchCategory(i)
+		// For now, process indicators are not covered in global search.
+		if category == v1.SearchCategory_PROCESS_INDICATORS {
+			continue
+		}
+		categories = append(categories, category)
 	}
 	return
 }
