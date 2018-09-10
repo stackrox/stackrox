@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
@@ -184,6 +185,7 @@ func customRoutes() []routes.CustomRoute {
 		{
 			Route:         "/metrics",
 			ServerHandler: promhttp.Handler(),
+			Authorizer:    allow.Anonymous(),
 			Compression:   false,
 		},
 	}
