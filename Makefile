@@ -155,8 +155,8 @@ gendocs: $(GENERATED_API_DOCS)
 testdocs: $(MERGED_API_SWAGGER_SPEC)
 	@echo "+ $@"
 
-.PHONY: test
-test: gazelle
+.PHONY: bazel-test
+bazel-test: gazelle
 	-rm vendor/github.com/coreos/pkg/BUILD
 	-rm vendor/github.com/cloudflare/cfssl/script/BUILD
 	-rm vendor/github.com/grpc-ecosystem/grpc-gateway/BUILD
@@ -166,10 +166,19 @@ test: gazelle
 	    --test_output=errors \
 	    -- \
 	    //... -benchmarks/... -proto/... -qa-tests-backend/... -tests/... -vendor/...
+
+.PHONY: benchmarks-test
+benchmarks-test:
 	@# Benchmark tests don't work in Bazel yet.
 	make -C benchmarks test report
-	@# Neither do UI tests.
+
+.PHONY: ui-test
+ui-test:
+	@# UI tests don't work in Bazel yet.
 	make -C ui test
+
+.PHONY: test
+test: bazel-test benchmarks-test ui-test
 
 .PHONY: coverage
 coverage:
