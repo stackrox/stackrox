@@ -173,7 +173,7 @@
   ]
   pruneopts = "NUT"
   revision = "bcf7caadc3377cc7078537495523a6d07d17a874"
-  source = "git@github.com:connorgorman/bleve.git"
+  source = "https://github.com/connorgorman/bleve.git"
 
 [[projects]]
   digest = "1:6516582cf3f767bba55bb8735951c778cc585be3681ab19415b8a831f24742af"
