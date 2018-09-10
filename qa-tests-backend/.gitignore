@@ -5,3 +5,4 @@ gradlew
 gradlew.bat
 src/main/java
 qa-tests-backend.iml
+/out/

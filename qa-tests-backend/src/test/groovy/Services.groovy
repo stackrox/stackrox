@@ -26,7 +26,6 @@ import stackrox.generated.DeploymentServiceOuterClass.ListDeployment
 import stackrox.generated.DeploymentServiceOuterClass.Deployment
 import stackrox.generated.Common.ResourceByID
 import stackrox.generated.SearchServiceOuterClass
-import stackrox.generated.SearchServiceOuterClass.SearchResult
 
 class Services {
 
@@ -134,16 +133,13 @@ class Services {
         return getDeploymentClient().getDeployment(getResourceByID(id))
     }
 
-    static List<SearchResult> getSearchResults(SearchServiceOuterClass.RawSearchRequest query) {
-        return getSearchServiceClient().search(query).resultsList
-    }
-
-    static int getSearch(String value, SearchServiceOuterClass.SearchCategory category) {
-        def result = getSearchResults(SearchServiceOuterClass.RawSearchRequest.newBuilder()
-                .addCategories(category)
-                .setQuery(value)
-                .build())
-        return result.size()
+    static SearchServiceOuterClass.SearchResponse getSearchResponse(
+            String query, List<SearchServiceOuterClass.SearchCategory> categories) {
+        def rawSearchRequest = SearchServiceOuterClass.RawSearchRequest.newBuilder()
+                .addAllCategories(categories)
+                .setQuery(query)
+                .build()
+        return getSearchServiceClient().search(rawSearchRequest)
     }
 
     static waitForViolation(String deploymentName, String policyName, int timeoutSeconds) {
