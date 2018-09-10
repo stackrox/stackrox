@@ -4,8 +4,7 @@ import (
 	"context"
 
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/secret/search"
-	"github.com/stackrox/rox/central/secret/store"
+	"github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -20,10 +19,9 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DB and index.
-func New(storage store.Store, searcher search.Searcher, deployments deploymentDataStore.DataStore) Service {
+func New(secrets datastore.DataStore, deployments deploymentDataStore.DataStore) Service {
 	return &serviceImpl{
-		storage:     storage,
-		searcher:    searcher,
+		storage:     secrets,
 		deployments: deployments,
 	}
 }

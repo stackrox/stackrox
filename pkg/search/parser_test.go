@@ -88,4 +88,17 @@ func TestParseRawQuery(t *testing.T) {
 	actualQuery, err = ParseRawQuery(query)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedQuery, actualQuery)
+
+	_, err = ParseRawQuery("")
+	assert.Error(t, err)
+	actualQuery, err = ParseRawQueryOrEmpty("")
+	assert.NoError(t, err)
+	assert.Equal(t, EmptyQuery(), actualQuery)
+
+	// An invalid query should always return an error.
+	query = "INVALIDQUERY"
+	_, err = ParseRawQuery(query)
+	assert.Error(t, err)
+	_, err = ParseRawQueryOrEmpty(query)
+	assert.Error(t, err)
 }

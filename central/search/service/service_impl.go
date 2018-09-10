@@ -12,7 +12,7 @@ import (
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/search/options"
-	secretService "github.com/stackrox/rox/central/secret/service"
+	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -32,7 +32,7 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]searchFunc {
 		v1.SearchCategory_DEPLOYMENTS: s.deployments.SearchDeployments,
 		v1.SearchCategory_IMAGES:      s.images.SearchImages,
 		v1.SearchCategory_POLICIES:    s.policies.SearchPolicies,
-		v1.SearchCategory_SECRETS:     secretService.QueryHandler(),
+		v1.SearchCategory_SECRETS:     s.secrets.SearchSecrets,
 	}
 }
 
@@ -57,6 +57,7 @@ type serviceImpl struct {
 	deployments deploymentDataStore.DataStore
 	images      imageDataStore.DataStore
 	policies    policyDataStore.DataStore
+	secrets     secretDataStore.DataStore
 
 	authorizer authz.Authorizer
 }

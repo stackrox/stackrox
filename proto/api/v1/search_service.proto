@@ -66,6 +66,7 @@ message StringQuery {
 message MatchFieldQuery {
     string field = 1;
     string value = 2;
+    bool highlight = 3;
 }
 
 message BaseQuery {

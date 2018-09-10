@@ -12,11 +12,11 @@ type Searcher struct {
 }
 
 // SearchRawSecrets provides a mock function with given fields: _a0
-func (_m *Searcher) SearchRawSecrets(_a0 *v1.RawQuery) ([]*v1.Secret, error) {
+func (_m *Searcher) SearchRawSecrets(_a0 *v1.Query) ([]*v1.Secret, error) {
 	ret := _m.Called(_a0)
 
 	var r0 []*v1.Secret
-	if rf, ok := ret.Get(0).(func(*v1.RawQuery) []*v1.Secret); ok {
+	if rf, ok := ret.Get(0).(func(*v1.Query) []*v1.Secret); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -25,7 +25,7 @@ func (_m *Searcher) SearchRawSecrets(_a0 *v1.RawQuery) ([]*v1.Secret, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*v1.RawQuery) error); ok {
+	if rf, ok := ret.Get(1).(func(*v1.Query) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -35,11 +35,11 @@ func (_m *Searcher) SearchRawSecrets(_a0 *v1.RawQuery) ([]*v1.Secret, error) {
 }
 
 // SearchSecrets provides a mock function with given fields: _a0
-func (_m *Searcher) SearchSecrets(_a0 *v1.RawQuery) ([]*v1.SearchResult, error) {
+func (_m *Searcher) SearchSecrets(_a0 *v1.Query) ([]*v1.SearchResult, error) {
 	ret := _m.Called(_a0)
 
 	var r0 []*v1.SearchResult
-	if rf, ok := ret.Get(0).(func(*v1.RawQuery) []*v1.SearchResult); ok {
+	if rf, ok := ret.Get(0).(func(*v1.Query) []*v1.SearchResult); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -48,7 +48,7 @@ func (_m *Searcher) SearchSecrets(_a0 *v1.RawQuery) ([]*v1.SearchResult, error) 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*v1.RawQuery) error); ok {
+	if rf, ok := ret.Get(1).(func(*v1.Query) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)

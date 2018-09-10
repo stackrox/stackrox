@@ -7,13 +7,25 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
+// ParseRawQueryOrEmpty is a convenience wrapper around ParseRawQuery which returns the empty
+// proto query instead of erroring out if an empty string is passed.
+func ParseRawQueryOrEmpty(query string) (*v1.Query, error) {
+	if query == "" {
+		return EmptyQuery(), nil
+	}
+	return parseRawQuery(query)
+}
+
 // ParseRawQuery takes the text based query and converts to the query proto.
 // It expects the received query to be non-empty.
 func ParseRawQuery(query string) (*v1.Query, error) {
 	if query == "" {
-		return nil, errors.New("query cannot be empty")
+		return nil, errors.New("empty query received")
 	}
+	return parseRawQuery(query)
+}
 
+func parseRawQuery(query string) (*v1.Query, error) {
 	pairs := strings.Split(query, "+")
 
 	queries := make([]*v1.Query, 0, len(pairs))
@@ -25,6 +37,7 @@ func ParseRawQuery(query string) (*v1.Query, error) {
 		queries = append(queries, queryFromKeyValue(key, commaSeparatedValues))
 	}
 
+	// We always want to return an error here, because it means that the query is ill-defined.
 	if len(queries) == 0 {
 		return nil, errors.New("after parsing, query is empty")
 	}
@@ -40,7 +53,7 @@ func queryFromKeyValue(key, commaSeparatedValues string) *v1.Query {
 
 	valueSlice := strings.Split(commaSeparatedValues, ",")
 
-	return queryFromFieldValues(key, valueSlice)
+	return queryFromFieldValues(key, valueSlice, false)
 }
 
 // Extracts "key", "value1,value2" from a string in the format key:value1,value2
@@ -58,10 +71,10 @@ func parsePair(pair string) (key string, values string, valid bool) {
 	return spl[0], spl[1], true
 }
 
-func queryFromFieldValues(field string, values []string) *v1.Query {
+func queryFromFieldValues(field string, values []string, highlight bool) *v1.Query {
 	queries := make([]*v1.Query, 0, len(values))
 	for _, value := range values {
-		queries = append(queries, matchFieldQuery(field, value))
+		queries = append(queries, matchFieldQuery(field, value, highlight))
 	}
 
 	return DisjunctionQuery(queries...)
@@ -110,8 +123,8 @@ func stringQuery(value string) *v1.Query {
 	})
 }
 
-func matchFieldQuery(field, value string) *v1.Query {
+func matchFieldQuery(field, value string, highlight bool) *v1.Query {
 	return queryFromBaseQuery(&v1.BaseQuery{
-		Query: &v1.BaseQuery_MatchFieldQuery{MatchFieldQuery: &v1.MatchFieldQuery{Field: field, Value: value}},
+		Query: &v1.BaseQuery_MatchFieldQuery{MatchFieldQuery: &v1.MatchFieldQuery{Field: field, Value: value, Highlight: highlight}},
 	})
 }

@@ -7,6 +7,7 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
+	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,8 +21,7 @@ func TestSearchCategoryToResourceMap(t *testing.T) {
 }
 
 func TestSearchFuncs(t *testing.T) {
-	t.Skip("TODO(viswa): This can go in once the secrets refactor in #160 is merged.")
-	s := New(&alertMocks.DataStore{}, &deploymentMocks.DataStore{}, &imageMocks.DataStore{}, &policyMocks.DataStore{})
+	s := New(&alertMocks.DataStore{}, &deploymentMocks.DataStore{}, &imageMocks.DataStore{}, &policyMocks.DataStore{}, &secretMocks.DataStore{})
 	searchFuncMap := s.(*serviceImpl).getSearchFuncs()
 	for _, searchCategory := range getAllSearchableCategories() {
 		_, ok := searchFuncMap[searchCategory]

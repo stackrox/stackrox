@@ -10,10 +10,10 @@ import (
 // DataStore is an intermediary to SecretStorage.
 //go:generate mockery -name=DataStore
 type DataStore interface {
-	SearchSecrets(request *v1.RawQuery) ([]*v1.SearchResult, error)
-	SearchRawSecrets(request *v1.RawQuery) ([]*v1.Secret, error)
+	SearchSecrets(q *v1.Query) ([]*v1.SearchResult, error)
+	SearchRawSecrets(q *v1.Query) ([]*v1.Secret, error)
 
-	GetSecrets(request *v1.RawQuery) ([]*v1.Secret, error)
+	GetSecret(id string) (*v1.Secret, bool, error)
 	UpsertSecret(request *v1.Secret) error
 	RemoveSecret(id string) error
 }

@@ -11,15 +11,29 @@ import (
 
 // QueryBuilder builds a search query
 type QueryBuilder struct {
-	query map[FieldLabel][]string
-	raw   string
+	query             map[FieldLabel][]string
+	raw               string
+	highlightedFields map[FieldLabel]struct{}
 }
 
 // NewQueryBuilder instantiates a query builder with no values
 func NewQueryBuilder() *QueryBuilder {
 	return &QueryBuilder{
-		query: make(map[FieldLabel][]string),
+		query:             make(map[FieldLabel][]string),
+		highlightedFields: make(map[FieldLabel]struct{}),
 	}
+}
+
+// MarkHighlighted marks the field as one that we want results to be highlighted for.
+func (qb *QueryBuilder) MarkHighlighted(k FieldLabel) *QueryBuilder {
+	qb.highlightedFields[k] = struct{}{}
+	return qb
+}
+
+// AddStringsHighlighted is a convenience wrapper to add a key value pair and mark
+// the field as highlighted.
+func (qb *QueryBuilder) AddStringsHighlighted(k FieldLabel, v ...string) *QueryBuilder {
+	return qb.AddStrings(k, v...).MarkHighlighted(k)
 }
 
 // AddStrings adds a key value pair to the query
@@ -71,7 +85,8 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	})
 
 	for _, field := range fields {
-		queries = append(queries, queryFromFieldValues(field.String(), qb.query[field]))
+		_, highlighted := qb.highlightedFields[field]
+		queries = append(queries, queryFromFieldValues(field.String(), qb.query[field], highlighted))
 	}
 
 	if qb.raw != "" {

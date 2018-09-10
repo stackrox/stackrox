@@ -23,5 +23,5 @@ var OptionsMap = map[search.FieldLabel]*v1.SearchField{
 	search.ImageRegistry:                search.NewStringField(v1.SearchCategory_IMAGES, "image.name.registry"),
 	search.ImageRemote:                  search.NewStringField(v1.SearchCategory_IMAGES, "image.name.remote"),
 	search.ImageScanTime:                search.NewTimeField(v1.SearchCategory_IMAGES, "image.scan.scan_time.seconds"),
-	search.ImageTag:                     search.NewStringField(v1.SearchCategory_IMAGES, "image.name.tag"),
+	search.ImageTag:                     search.NewField(v1.SearchCategory_IMAGES, "image.name.tag", v1.SearchDataType_SEARCH_STRING, search.OptionStore),
 }

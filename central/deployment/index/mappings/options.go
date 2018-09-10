@@ -15,7 +15,7 @@ var OptionsMap = mergeMaps(map[search.FieldLabel]*v1.SearchField{
 	search.Label:     search.NewMapField(v1.SearchCategory_DEPLOYMENTS, "deployment.labels"),
 
 	search.CPUCoresLimit:    search.NewNumericField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.resources.cpu_cores_limit"),
-	search.CPUCoresRequest:  search.NewNumericField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.resources.cpu_cores_request"),
+	search.CPUCoresRequest:  search.NewField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.resources.cpu_cores_request", v1.SearchDataType_SEARCH_NUMERIC, search.OptionStore),
 	search.DeploymentID:     search.NewField(v1.SearchCategory_DEPLOYMENTS, "deployment.id", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
 	search.DeploymentName:   search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.name"),
 	search.DeploymentType:   search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.type"),
@@ -31,7 +31,7 @@ var OptionsMap = mergeMaps(map[search.FieldLabel]*v1.SearchField{
 	search.SecretName:        search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.secrets.name"),
 	search.SecretPath:        search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.secrets.path"),
 	search.ServiceAccount:    search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.service_account"),
-	search.VolumeName:        search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.volumes.name"),
+	search.VolumeName:        search.NewField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.volumes.name", v1.SearchDataType_SEARCH_STRING, search.OptionStore),
 	search.VolumeSource:      search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.volumes.source"),
 	search.VolumeDestination: search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.volumes.destination"),
 	search.VolumeReadonly:    search.NewBoolField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.volumes.read_only"),

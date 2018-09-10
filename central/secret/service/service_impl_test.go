@@ -6,8 +6,7 @@ import (
 	"testing"
 
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	searchMocks "github.com/stackrox/rox/central/secret/search/mocks"
-	storeMocks "github.com/stackrox/rox/central/secret/store/mocks"
+	datastoreMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -20,19 +19,17 @@ func TestSecretService(t *testing.T) {
 type SecretServiceTestSuite struct {
 	suite.Suite
 
-	mockStore     *storeMocks.Store
-	mockSearcher  *searchMocks.Searcher
-	mockDatastore *deploymentMocks.DataStore
+	mockSecretStore     *datastoreMocks.DataStore
+	mockDeploymentStore *deploymentMocks.DataStore
 
 	service Service
 }
 
 func (suite *SecretServiceTestSuite) SetupTest() {
-	suite.mockStore = &storeMocks.Store{}
-	suite.mockSearcher = &searchMocks.Searcher{}
-	suite.mockDatastore = &deploymentMocks.DataStore{}
+	suite.mockSecretStore = &datastoreMocks.DataStore{}
+	suite.mockDeploymentStore = &deploymentMocks.DataStore{}
 
-	suite.service = New(suite.mockStore, suite.mockSearcher, suite.mockDatastore)
+	suite.service = New(suite.mockSecretStore, suite.mockDeploymentStore)
 }
 
 // Test happy path for getting secrets and relationships
@@ -45,7 +42,7 @@ func (suite *SecretServiceTestSuite) TestGetSecret() {
 		ClusterId: "cluster",
 		Namespace: "namespace",
 	}
-	suite.mockStore.On("GetSecret", secretID).Return(expectedSecret, true, nil)
+	suite.mockSecretStore.On("GetSecret", secretID).Return(expectedSecret, true, nil)
 
 	psr := search.NewQueryBuilder().
 		AddStrings(search.ClusterID, "cluster").
@@ -60,7 +57,7 @@ func (suite *SecretServiceTestSuite) TestGetSecret() {
 		},
 	}
 
-	suite.mockDatastore.On("SearchDeployments", psr).Return(results, nil)
+	suite.mockDeploymentStore.On("SearchDeployments", psr).Return(results, nil)
 
 	expectedRelationship := &v1.SecretRelationship{
 		DeploymentRelationships: []*v1.SecretDeploymentRelationship{
@@ -76,21 +73,19 @@ func (suite *SecretServiceTestSuite) TestGetSecret() {
 	suite.Equal(expectedSecret, actualSecretAndRelationship.GetSecret())
 	suite.Equal(expectedRelationship, actualSecretAndRelationship.GetRelationship())
 
-	suite.mockStore.AssertExpectations(suite.T())
-	suite.mockSearcher.AssertExpectations(suite.T())
+	suite.mockSecretStore.AssertExpectations(suite.T())
 }
 
 // Test that when we fail to find a secret, an error is returned.
 func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreSecretNotExists() {
 	secretID := "id1"
 
-	suite.mockStore.On("GetSecret", secretID).Return((*v1.Secret)(nil), false, nil)
+	suite.mockSecretStore.On("GetSecret", secretID).Return((*v1.Secret)(nil), false, nil)
 
 	_, err := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
 	suite.Error(err)
 
-	suite.mockStore.AssertExpectations(suite.T())
-	suite.mockSearcher.AssertExpectations(suite.T())
+	suite.mockSecretStore.AssertExpectations(suite.T())
 }
 
 // Test that when we fail to read the db for a secret, an error is returned.
@@ -98,13 +93,12 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreSecretFailure() {
 	secretID := "id1"
 
 	expectedErr := fmt.Errorf("failure")
-	suite.mockStore.On("GetSecret", secretID).Return((*v1.Secret)(nil), true, expectedErr)
+	suite.mockSecretStore.On("GetSecret", secretID).Return((*v1.Secret)(nil), true, expectedErr)
 
 	_, actualErr := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
 	suite.Error(actualErr)
 
-	suite.mockStore.AssertExpectations(suite.T())
-	suite.mockSearcher.AssertExpectations(suite.T())
+	suite.mockSecretStore.AssertExpectations(suite.T())
 }
 
 // Test that when we fail to find a relationship, an error is returned.
@@ -117,7 +111,7 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithNoRelationship() {
 		ClusterId: "cluster",
 		Namespace: "namespace",
 	}
-	suite.mockStore.On("GetSecret", secretID).Return(expectedSecret, true, nil)
+	suite.mockSecretStore.On("GetSecret", secretID).Return(expectedSecret, true, nil)
 
 	psr := search.NewQueryBuilder().
 		AddStrings(search.ClusterID, "cluster").
@@ -125,13 +119,12 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithNoRelationship() {
 		AddStrings(search.SecretName, "secretname").
 		ProtoQuery()
 
-	suite.mockDatastore.On("SearchDeployments", psr).Return([]*v1.SearchResult{}, nil)
+	suite.mockDeploymentStore.On("SearchDeployments", psr).Return([]*v1.SearchResult{}, nil)
 
 	_, err := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
 	suite.NoError(err)
 
-	suite.mockStore.AssertExpectations(suite.T())
-	suite.mockSearcher.AssertExpectations(suite.T())
+	suite.mockSecretStore.AssertExpectations(suite.T())
 }
 
 // Test that when we fail to read the db for a relationship, an error is returned.
@@ -144,7 +137,7 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreRelationshipFailure(
 		ClusterId: "cluster",
 		Namespace: "namespace",
 	}
-	suite.mockStore.On("GetSecret", secretID).Return(expectedSecret, true, nil)
+	suite.mockSecretStore.On("GetSecret", secretID).Return(expectedSecret, true, nil)
 
 	psr := search.NewQueryBuilder().
 		AddStrings(search.ClusterID, "cluster").
@@ -153,41 +146,36 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreRelationshipFailure(
 		ProtoQuery()
 
 	expectedErr := fmt.Errorf("failure")
-	suite.mockDatastore.On("SearchDeployments", psr).Return(([]*v1.SearchResult)(nil), expectedErr)
+	suite.mockDeploymentStore.On("SearchDeployments", psr).Return(([]*v1.SearchResult)(nil), expectedErr)
 
 	_, actualErr := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
 	suite.Error(actualErr)
 
-	suite.mockStore.AssertExpectations(suite.T())
-	suite.mockSearcher.AssertExpectations(suite.T())
+	suite.mockSecretStore.AssertExpectations(suite.T())
 }
 
 // Test happy path for searching secrets and relationships
 func (suite *SecretServiceTestSuite) TestSearchSecret() {
-	query := &v1.RawQuery{Query: "derp"}
+	query := &v1.Query{}
 
 	expectedReturns := []*v1.Secret{
 		{Id: "id1"},
 	}
-	suite.mockSearcher.On("SearchRawSecrets", query).Return(expectedReturns, nil)
+	suite.mockSecretStore.On("SearchRawSecrets", query).Return(expectedReturns, nil)
 
-	_, err := suite.service.GetSecrets((context.Context)(nil), query)
+	_, err := suite.service.GetSecrets((context.Context)(nil), &v1.RawQuery{})
 	suite.NoError(err)
 
-	suite.mockStore.AssertExpectations(suite.T())
-	suite.mockSearcher.AssertExpectations(suite.T())
+	suite.mockSecretStore.AssertExpectations(suite.T())
 }
 
 // Test that when searching fails, that error is returned.
 func (suite *SecretServiceTestSuite) TestSearchSecretFailure() {
-	query := &v1.RawQuery{Query: "derp"}
-
 	expectedError := fmt.Errorf("failure")
-	suite.mockSearcher.On("SearchRawSecrets", query).Return(([]*v1.Secret)(nil), expectedError)
+	suite.mockSecretStore.On("SearchRawSecrets", &v1.Query{}).Return(([]*v1.Secret)(nil), expectedError)
 
-	_, actualErr := suite.service.GetSecrets((context.Context)(nil), query)
+	_, actualErr := suite.service.GetSecrets((context.Context)(nil), &v1.RawQuery{})
 	suite.Equal(expectedError, actualErr)
 
-	suite.mockStore.AssertExpectations(suite.T())
-	suite.mockSearcher.AssertExpectations(suite.T())
+	suite.mockSecretStore.AssertExpectations(suite.T())
 }

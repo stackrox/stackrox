@@ -51,6 +51,7 @@ func GetDeployment() *v1.Deployment {
 					AddCapabilities:  []string{"SYS_ADMIN"},
 					DropCapabilities: []string{"SYS_MODULE"},
 				},
+				Resources: &v1.Resources{CpuCoresRequest: 0.9},
 				Config: &v1.ContainerConfig{
 					Env: []*v1.ContainerConfig_EnvironmentConfig{
 						{

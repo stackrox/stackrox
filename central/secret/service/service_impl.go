@@ -6,8 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	secretSearch "github.com/stackrox/rox/central/secret/search"
-	secretStore "github.com/stackrox/rox/central/secret/store"
+	"github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -30,8 +29,7 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	storage     secretStore.Store
-	searcher    secretSearch.Searcher
+	storage     datastore.DataStore
 	deployments deploymentDatastore.DataStore
 }
 
@@ -89,7 +87,11 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 
 // GetSecrets returns all secrets that match the query.
 func (s *serviceImpl) GetSecrets(ctx context.Context, rawQuery *v1.RawQuery) (*v1.GetSecretsResponse, error) {
-	secrets, err := s.searcher.SearchRawSecrets(rawQuery)
+	q, err := search.ParseRawQueryOrEmpty(rawQuery.GetQuery())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	secrets, err := s.storage.SearchRawSecrets(q)
 	if err != nil {
 		return nil, err
 	}

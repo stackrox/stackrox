@@ -13,16 +13,16 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (d *datastoreImpl) SearchSecrets(request *v1.RawQuery) ([]*v1.SearchResult, error) {
-	return d.searcher.SearchSecrets(request)
+func (d *datastoreImpl) GetSecret(id string) (*v1.Secret, bool, error) {
+	return d.storage.GetSecret(id)
 }
 
-func (d *datastoreImpl) SearchRawSecrets(request *v1.RawQuery) ([]*v1.Secret, error) {
-	return d.searcher.SearchRawSecrets(request)
+func (d *datastoreImpl) SearchSecrets(q *v1.Query) ([]*v1.SearchResult, error) {
+	return d.searcher.SearchSecrets(q)
 }
 
-func (d *datastoreImpl) GetSecrets(request *v1.RawQuery) ([]*v1.Secret, error) {
-	return d.searcher.SearchRawSecrets(request)
+func (d *datastoreImpl) SearchRawSecrets(q *v1.Query) ([]*v1.Secret, error) {
+	return d.searcher.SearchRawSecrets(q)
 }
 
 func (d *datastoreImpl) UpsertSecret(request *v1.Secret) error {

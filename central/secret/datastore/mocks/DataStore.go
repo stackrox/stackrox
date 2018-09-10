@@ -10,27 +10,34 @@ type DataStore struct {
 	mock.Mock
 }
 
-// GetSecrets provides a mock function with given fields: request
-func (_m *DataStore) GetSecrets(request *v1.RawQuery) ([]*v1.Secret, error) {
-	ret := _m.Called(request)
+// GetSecret provides a mock function with given fields: id
+func (_m *DataStore) GetSecret(id string) (*v1.Secret, bool, error) {
+	ret := _m.Called(id)
 
-	var r0 []*v1.Secret
-	if rf, ok := ret.Get(0).(func(*v1.RawQuery) []*v1.Secret); ok {
-		r0 = rf(request)
+	var r0 *v1.Secret
+	if rf, ok := ret.Get(0).(func(string) *v1.Secret); ok {
+		r0 = rf(id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*v1.Secret)
+			r0 = ret.Get(0).(*v1.Secret)
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(*v1.RawQuery) error); ok {
-		r1 = rf(request)
+	var r1 bool
+	if rf, ok := ret.Get(1).(func(string) bool); ok {
+		r1 = rf(id)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(bool)
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(string) error); ok {
+		r2 = rf(id)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // RemoveSecret provides a mock function with given fields: id
@@ -47,13 +54,13 @@ func (_m *DataStore) RemoveSecret(id string) error {
 	return r0
 }
 
-// SearchRawSecrets provides a mock function with given fields: request
-func (_m *DataStore) SearchRawSecrets(request *v1.RawQuery) ([]*v1.Secret, error) {
-	ret := _m.Called(request)
+// SearchRawSecrets provides a mock function with given fields: q
+func (_m *DataStore) SearchRawSecrets(q *v1.Query) ([]*v1.Secret, error) {
+	ret := _m.Called(q)
 
 	var r0 []*v1.Secret
-	if rf, ok := ret.Get(0).(func(*v1.RawQuery) []*v1.Secret); ok {
-		r0 = rf(request)
+	if rf, ok := ret.Get(0).(func(*v1.Query) []*v1.Secret); ok {
+		r0 = rf(q)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*v1.Secret)
@@ -61,8 +68,8 @@ func (_m *DataStore) SearchRawSecrets(request *v1.RawQuery) ([]*v1.Secret, error
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*v1.RawQuery) error); ok {
-		r1 = rf(request)
+	if rf, ok := ret.Get(1).(func(*v1.Query) error); ok {
+		r1 = rf(q)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -70,13 +77,13 @@ func (_m *DataStore) SearchRawSecrets(request *v1.RawQuery) ([]*v1.Secret, error
 	return r0, r1
 }
 
-// SearchSecrets provides a mock function with given fields: request
-func (_m *DataStore) SearchSecrets(request *v1.RawQuery) ([]*v1.SearchResult, error) {
-	ret := _m.Called(request)
+// SearchSecrets provides a mock function with given fields: q
+func (_m *DataStore) SearchSecrets(q *v1.Query) ([]*v1.SearchResult, error) {
+	ret := _m.Called(q)
 
 	var r0 []*v1.SearchResult
-	if rf, ok := ret.Get(0).(func(*v1.RawQuery) []*v1.SearchResult); ok {
-		r0 = rf(request)
+	if rf, ok := ret.Get(0).(func(*v1.Query) []*v1.SearchResult); ok {
+		r0 = rf(q)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*v1.SearchResult)
@@ -84,8 +91,8 @@ func (_m *DataStore) SearchSecrets(request *v1.RawQuery) ([]*v1.SearchResult, er
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*v1.RawQuery) error); ok {
-		r1 = rf(request)
+	if rf, ok := ret.Get(1).(func(*v1.Query) error); ok {
+		r1 = rf(q)
 	} else {
 		r1 = ret.Error(1)
 	}
