@@ -67,7 +67,7 @@ func convertIndicator(indicator *v1.ProcessIndicator, result search.Result) *v1.
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_PROCESS_INDICATORS,
 		Id:             indicator.GetId(),
-		Name:           indicator.GetSignal().GetSignal().(*v1.Signal_ProcessSignal).ProcessSignal.GetName(),
+		Name:           indicator.GetSignal().GetName(),
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,
 	}

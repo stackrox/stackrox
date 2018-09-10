@@ -52,7 +52,6 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // PushSignals handles the bidirectional gRPC stream with the collector
 func (s *serviceImpl) PushSignals(stream v1.SignalService_PushSignalsServer) error {
-	log.Info("PushSignals called")
 	s.receiveMessages(stream)
 	return nil
 }
@@ -70,11 +69,6 @@ func (s *serviceImpl) receiveMessages(stream v1.SignalService_PushSignalsServer)
 			return err
 		}
 
-		if stream.Context().Err() != nil {
-			log.Error(stream.Context().Err())
-			continue
-		}
-
 		// Ignore the collector register request
 		if signalStreamMsg.GetSignal() == nil {
 			log.Error("Empty signalStreamMsg")
@@ -85,8 +79,13 @@ func (s *serviceImpl) receiveMessages(stream v1.SignalService_PushSignalsServer)
 		// todo(cgorman) we currently need to filter out network because they are not being processed
 		switch signal.GetSignal().(type) {
 		case *v1.Signal_ProcessSignal:
-			log.Infof("Signal: %+v", signal)
-			s.processPipeline.Process(signal)
+			processSignal := signal.GetProcessSignal()
+			if processSignal == nil {
+				log.Error("Empty process signal")
+				continue
+			}
+			log.Infof("Process Signal: %+v", processSignal)
+			go s.processPipeline.Process(processSignal)
 		default:
 			// Currently eat unhandled signals
 			continue

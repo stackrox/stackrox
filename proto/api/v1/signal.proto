@@ -4,7 +4,7 @@ option go_package = "v1";
 option cc_enable_arenas = true;
 
 import "google/protobuf/timestamp.proto";
-import "api/v1/common.proto";
+import "api/v1/empty.proto";
 
 package v1;
 
@@ -15,52 +15,53 @@ message SignalStreamMessage {
         CollectorRegisterRequest collector_register_request = 1;
 
         // A signal event observed by Collector.
-        Signal signal = 2;
+        Signal signal                                       = 2;
     }
 }
 
 // A request message sent by collector to register with Sensor.
 message CollectorRegisterRequest {
     // The hostname on which collector is running.
-    string hostname = 1;
+    string hostname         = 1;
 
     // A unique identifier for an instance of collector.
-    string instance_id = 2;
+    string instance_id      = 2;
 }
 
 // Signal message tracks process and network activity.
 // Specifically, process launches and network connects/accepts.
 message Signal {
-    // A unique UUID for identifying the message
-    string id                             = 1;
-
     oneof signal {
-        ProcessSignal process_signal       = 2;
-        NetworkSignal network_signal       = 3;
+        ProcessSignal process_signal       = 1;
+        NetworkSignal network_signal       = 2;
     }
-    google.protobuf.Timestamp time         = 11;
-    string                    container_id = 12;
 }
 
 // ProcessSignal tracks process launches.
 message ProcessSignal {
+    // A unique UUID for identifying the message
+    // We have this here instead of at the top level
+    // because we want to have each message to be
+    // self contained.
+    string id                               = 1;
+
     // Process name
-    string name = 1;
+    string name                             = 2;
 
     // Process command line arguments
-    string command_line = 2;
+    string command_line                     = 3;
 
     // Host process ID
-    uint32 pid = 3;
+    uint32 pid                              = 4;
 
     // Host parent process ID
-    uint32 parent_pid = 4;
+    uint32 parent_pid                       = 5;
 
     // Process executable file path
-    string exec_file_path = 5;
+    string exec_file_path                   = 6;
 
     // Process user and group identifiers (e.g., man 7 credentials)
-    Credentials credentials = 6;
+    Credentials credentials                 = 7;
 
     message Credentials {
         uint32 uid  = 1; // real user ID
@@ -70,25 +71,34 @@ message ProcessSignal {
         uint32 suid = 5; // saved set-user ID
         uint32 sgid = 6; // saved set-group ID
     }
+
+    google.protobuf.Timestamp time         = 11;
+    string                    container_id = 12;
 }
 
 // NetworkSignal tracks connection information
 // about client and server.
 message NetworkSignal {
-    SocketFamily socket_family    = 1;
+    // A unique UUID for identifying the message
+    string id                               = 1;
 
-    NetworkAddress client_address = 2;
-    NetworkAddress server_address = 3;
+    SocketFamily socket_family              = 2;
 
-    L4Protocol protocol           = 4;
+    NetworkAddress client_address           = 3;
+    NetworkAddress server_address           = 4;
 
-    Role role                     = 5;
+    L4Protocol protocol                     = 5;
+
+    Role role                               = 6;
 
     enum Role {
         ROLE_UNKNOWN = 0;
         ROLE_SERVER  = 1;
         ROLE_CLIENT  = 2;
     }
+
+    google.protobuf.Timestamp time         = 11;
+    string                    container_id = 12;
 }
 
 // Note: We currently don't report local unix sockets.
@@ -100,8 +110,8 @@ message NetworkAddress {
 }
 
 message IPV4NetworkAddress {
-    fixed32 address = 1;
-    uint32 port    = 2;
+    fixed32 address     = 1;
+    uint32 port         = 2;
 }
 
 message IPV6NetworkAddress {

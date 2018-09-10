@@ -239,7 +239,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			expectedIDs: []string{},
 		},
 		{
-			fieldValues: map[search.FieldLabel]string{search.ProcessName: fixtures.GetProcessIndicator().GetSignal().GetProcessSignal().GetName()},
+			fieldValues: map[search.FieldLabel]string{search.ProcessName: fixtures.GetProcessIndicator().GetSignal().GetName()},
 			expectedIDs: []string{fixtures.GetDeployment().GetId()},
 		},
 		{

@@ -17,6 +17,6 @@ message ProcessIndicator {
     // The emit timestamp of the message. Used for measuring latency
     google.protobuf.Timestamp emit_timestamp = 3;
 
-    // A signal message passed from Collector to Sensor
-    Signal signal = 4;
+    // A process signal message passed from Collector to Sensor
+    ProcessSignal signal = 4;
 }

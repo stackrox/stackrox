@@ -52,9 +52,8 @@ func (b *storeImpl) GetProcessIndicators() ([]*v1.ProcessIndicator, error) {
 // get the value of the secondary key
 func getSecondaryKey(indicator *v1.ProcessIndicator) string {
 	signal := indicator.GetSignal()
-	processSignal := signal.GetProcessSignal()
-	return fmt.Sprintf("%s %s %s %s", signal.GetContainerId(), processSignal.GetExecFilePath(),
-		processSignal.GetName(), processSignal.GetCommandLine())
+	return fmt.Sprintf("%s %s %s %s", signal.GetContainerId(), signal.GetExecFilePath(),
+		signal.GetName(), signal.GetCommandLine())
 }
 
 func (b *storeImpl) AddProcessIndicator(indicator *v1.ProcessIndicator) (inserted bool, err error) {

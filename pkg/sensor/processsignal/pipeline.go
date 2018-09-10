@@ -34,7 +34,7 @@ func NewProcessPipeline(indicators chan *listeners.EventWrap, pendingCache *cach
 
 func (p *Pipeline) reprocessSignalLater(indicator *v1.ProcessIndicator) {
 	t := time.NewTicker(signalRetryInterval)
-	logger.Infof("Trying to reprocess '%s'", indicator.GetSignal().GetProcessSignal().GetCommandLine())
+	logger.Infof("Trying to reprocess '%s'", indicator.GetSignal().GetCommandLine())
 	for i := 0; i < signalRetries; i++ {
 		<-t.C
 		deploymentID, exists := p.pendingCache.FetchDeploymentByContainer(indicator.GetSignal().GetContainerId())
@@ -47,13 +47,14 @@ func (p *Pipeline) reprocessSignalLater(indicator *v1.ProcessIndicator) {
 	logger.Errorf("Dropping this on the floor: %+v", proto.MarshalTextString(indicator))
 }
 
-// Process defines processes a  to process a ProcessIndicator
-func (p *Pipeline) Process(signal *v1.Signal) {
+// Process defines processes to process a ProcessIndicator
+func (p *Pipeline) Process(signal *v1.ProcessSignal) {
 	indicator := &v1.ProcessIndicator{
 		Id:     uuid.NewV4().String(),
 		Signal: signal,
 	}
 
+	// indicator.GetSignal() is never nil at this point
 	deploymentID, exists := p.pendingCache.FetchDeploymentByContainer(indicator.GetSignal().GetContainerId())
 	if !exists {
 		go p.reprocessSignalLater(indicator)

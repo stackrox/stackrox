@@ -42,23 +42,17 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 		{
 			Id:           "id1",
 			DeploymentId: "d1",
-			Signal: &v1.Signal{
-				Signal: &v1.Signal_ProcessSignal{
-					ProcessSignal: &v1.ProcessSignal{
-						CommandLine: "cmdline",
-					},
-				},
+
+			Signal: &v1.ProcessSignal{
+				CommandLine: "cmdline",
 			},
 		},
 		{
 			Id:           "id2",
 			DeploymentId: "d2",
-			Signal: &v1.Signal{
-				Signal: &v1.Signal_ProcessSignal{
-					ProcessSignal: &v1.ProcessSignal{
-						CommandLine: "cmdline2",
-					},
-				},
+
+			Signal: &v1.ProcessSignal{
+				CommandLine: "cmdline2",
 			},
 		},
 	}

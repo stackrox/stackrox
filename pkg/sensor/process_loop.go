@@ -37,7 +37,7 @@ func logSendingEvent(sensorEvent *v1.SensorEvent) {
 		name = sensorEvent.GetNamespace().GetName()
 		resourceType = "Namespace"
 	case *v1.SensorEvent_ProcessIndicator:
-		name = sensorEvent.GetProcessIndicator().GetSignal().GetProcessSignal().GetCommandLine()
+		name = sensorEvent.GetProcessIndicator().GetSignal().GetCommandLine()
 		resourceType = "ProcessIndicator"
 	case *v1.SensorEvent_Secret:
 		name = sensorEvent.GetSecret().GetName()
@@ -52,7 +52,7 @@ func logSendingEvent(sensorEvent *v1.SensorEvent) {
 
 func (s *sensor) reprocessSignalLater(stream v1.SensorEventService_RecordEventClient, sensorEvent *v1.SensorEvent) {
 	t := time.NewTicker(signalRetryInterval)
-	logger.Infof("Trying to reprocess '%s'", sensorEvent.GetProcessIndicator().GetSignal().GetProcessSignal().GetCommandLine())
+	logger.Infof("Trying to reprocess '%s'", sensorEvent.GetProcessIndicator().GetSignal().GetCommandLine())
 	indicator := sensorEvent.GetProcessIndicator()
 	for i := 0; i < signalRetries; i++ {
 		<-t.C

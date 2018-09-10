@@ -40,7 +40,7 @@ func (suite *IndicatorIndexTestSuite) SetupSuite() {
 
 func (suite *IndicatorIndexTestSuite) TestProcessIndicatorSearch() {
 	mockIndicator := fixtures.GetProcessIndicator()
-	processSignal := mockIndicator.GetSignal().GetProcessSignal()
+	processSignal := mockIndicator.GetSignal()
 
 	cases := []struct {
 		name        string

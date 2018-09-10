@@ -5,7 +5,7 @@ option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
-import "api/v1/common.proto";
+import "api/v1/empty.proto";
 
 package v1;
 

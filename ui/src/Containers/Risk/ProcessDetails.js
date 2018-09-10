@@ -22,7 +22,7 @@ class ProcessDetails extends Component {
     };
 
     renderProcess = process => {
-        const { processSignal } = process.signal;
+        const processSignal = process.signal;
         let title = processSignal.name;
         if (process.signal.time) {
             title += `|${dateFns.format(process.signal.time, dateTimeFormat)}`;
@@ -32,10 +32,7 @@ class ProcessDetails extends Component {
                 <CollapsibleCard title={title}>
                     <div className="h-full p-3">
                         <KeyValuePairs data={process.signal} keyValueMap={signalMap} />
-                        <KeyValuePairs
-                            data={process.signal.processSignal}
-                            keyValueMap={processSignalsMap}
-                        />
+                        <KeyValuePairs data={process.signal} keyValueMap={processSignalsMap} />
                     </div>
                 </CollapsibleCard>
             </div>
