@@ -27,6 +27,15 @@ type kubernetesOrchestrator struct {
 	namespace string
 }
 
+// MustCreate returns a new Kubernetes orchestrator client, or panics.
+func MustCreate() orchestrators.Orchestrator {
+	o, err := New()
+	if err != nil {
+		panic(err)
+	}
+	return o
+}
+
 // New returns a new kubernetes orchestrator client.
 func New() (orchestrators.Orchestrator, error) {
 	c, err := setupClient()

@@ -37,7 +37,16 @@ type listener struct {
 	resourceHandlers map[string]ResourceHandler
 }
 
-// New returns a docker listener
+// MustCreate creates a Swarm listener or panics.
+func MustCreate() listeners.Listener {
+	l, err := New()
+	if err != nil {
+		panic(err)
+	}
+	return l
+}
+
+// New returns a Swarm listener.
 func New() (listeners.Listener, error) {
 	dockerClient, err := docker.NewClient()
 	if err != nil {

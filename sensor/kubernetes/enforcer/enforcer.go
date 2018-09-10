@@ -16,6 +16,15 @@ type enforcerImpl struct {
 	client *kubernetes.Clientset
 }
 
+// MustCreate creates a new enforcer or panics.
+func MustCreate() enforcers.Enforcer {
+	e, err := New()
+	if err != nil {
+		panic(err)
+	}
+	return e
+}
+
 // New returns a new Kubernetes Enforcer.
 func New() (enforcers.Enforcer, error) {
 	c, err := setupClient()

@@ -23,6 +23,15 @@ type enforcerImpl struct {
 	*dockerClient.Client
 }
 
+// MustCreate creates a new Swarm enforcer or panics.
+func MustCreate() enforcers.Enforcer {
+	e, err := New()
+	if err != nil {
+		panic(err)
+	}
+	return e
+}
+
 // New returns a new Swarm Enforcer.
 func New() (enforcers.Enforcer, error) {
 	dockerClient, err := docker.NewClient()

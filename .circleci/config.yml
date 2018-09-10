@@ -63,8 +63,8 @@ createGKE: &createGKE
         --enable-network-policy \
         "prevent-ci-${CIRCLE_BUILD_NUM}"
 
-  # See https://stackoverflow.com/a/46316672 for why we have to use user/pass.
-  # This step requires the GCP IAM permission "Kubernetes Engine Admin".
+# See https://stackoverflow.com/a/46316672 for why we have to use user/pass.
+# This step requires the GCP IAM permission "Kubernetes Engine Admin".
 deployGKE: &deployGKE
   run:
     name: Deploy to remote cluster

@@ -27,6 +27,15 @@ type swarmOrchestrator struct {
 	dockerClient *client.Client
 }
 
+// MustCreate creates a new Swarm orchestrator client or panics.
+func MustCreate() orchestrators.Orchestrator {
+	o, err := New()
+	if err != nil {
+		panic(err)
+	}
+	return o
+}
+
 // New creates a new Swarm orchestrator client.
 func New() (orchestrators.Orchestrator, error) {
 	client, err := docker.NewClient()
