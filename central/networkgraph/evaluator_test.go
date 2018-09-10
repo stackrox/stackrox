@@ -977,6 +977,44 @@ func TestEvaluateClusters(t *testing.T) {
 				createNode("d3", "stackrox", true),
 			},
 		},
+		{
+			name: "deny all ingress except for app = web",
+			deployments: []*v1.Deployment{
+				{
+					Id:        "d1",
+					Namespace: "qa",
+					Labels:    deploymentLabels("app", "web"),
+				},
+				{
+					Id:        "d2",
+					Namespace: "qa",
+					Labels:    deploymentLabels("app", "client"),
+				},
+				{
+					Id:        "d3",
+					Namespace: "stackrox",
+				},
+				{
+					Id:        "d4",
+					Namespace: "default",
+				},
+			},
+			edges: edgeCombiner(
+				ingressEdges("d1", "d2", "d3", "d4"),
+				ingressEdges("d3", "d1", "d2", "d4"),
+				ingressEdges("d4", "d1", "d2", "d3"),
+			),
+			nps: []*v1.NetworkPolicy{
+				getExamplePolicy("deny-all-ingress"),
+				getExamplePolicy("allow-ingress-to-web"),
+			},
+			nodes: []*v1.NetworkNode{
+				createNode("d1", "qa", true, "allow-ingress-to-web", "deny-all-ingress"),
+				createNode("d2", "qa", true, "deny-all-ingress"),
+				createNode("d3", "stackrox", true),
+				createNode("d4", "default", true),
+			},
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

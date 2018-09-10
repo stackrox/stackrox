@@ -259,6 +259,8 @@ func compileValidateYaml(simulationYaml string) ([]*v1.NetworkPolicy, error) {
 		return nil, nil
 	}
 
+	simulationYaml = strings.TrimPrefix(simulationYaml, "---\n")
+
 	// Convert the YAMLs into rox network policy objects.
 	policies, err := networkPolicyConversion.YamlWrap{Yaml: simulationYaml}.ToRoxNetworkPolicies()
 	if err != nil {

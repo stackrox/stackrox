@@ -175,4 +175,30 @@ spec:
   - Egress
   egress: []
 `,
+	`
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all-ingress
+  namespace: qa
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+`,
+	`
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-web
+  namespace: qa
+spec:
+  ingress:
+  - from:
+    - namespaceSelector: {}
+  podSelector:
+    matchLabels:
+      app: web
+
+`,
 }

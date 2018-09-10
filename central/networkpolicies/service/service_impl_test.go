@@ -45,7 +45,7 @@ spec:
   podSelector: {}
   ingress: []
 `
-const combinedYAMLs = `
+const combinedYAMLs = `---
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
