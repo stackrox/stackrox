@@ -2,12 +2,14 @@ package version
 
 import (
 	"io/ioutil"
+	"os"
 	"strings"
 	"sync"
 )
 
 const (
-	collectorTag = "1.6.0-22-g4daf3fb4" // check https://hub.docker.com/r/stackrox/collector/tags/
+	collectorTagEnvVar  = "ROX_COLLECTOR_TAG"
+	defaultCollectorTag = "1.6.0-22-g4daf3fb4" // check https://hub.docker.com/r/stackrox/collector/tags/
 
 	versionFile = "VERSION"
 )
@@ -33,5 +35,9 @@ func GetVersion() (string, error) {
 
 // GetCollectorVersion returns the current collector tag
 func GetCollectorVersion() string {
+	collectorTag := os.Getenv(collectorTagEnvVar)
+	if collectorTag == "" {
+		collectorTag = defaultCollectorTag
+	}
 	return collectorTag
 }
