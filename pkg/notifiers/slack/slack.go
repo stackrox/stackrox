@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"text/template"
+	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
@@ -25,6 +26,8 @@ const (
 	colorMediumAlert   = "#FF9365"
 	colorLowAlert      = "#FFC780"
 	colorDefault       = "warning"
+
+	timeout = 10 * time.Second
 )
 
 // slack notifier plugin
@@ -208,7 +211,9 @@ func postMessage(url string, jsonPayload []byte) (err error) {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: timeout,
+	}
 	resp, err := client.Do(req)
 	if err != nil || resp == nil {
 		log.Errorf("Error posting to slack: %v", err)

@@ -17,6 +17,8 @@ import (
 
 const (
 	cacheExpiry = 5 * time.Minute
+
+	httpTimeout = 5 * time.Second
 )
 
 func init() {
@@ -218,7 +220,7 @@ func (a auth0) getProfile(token string) (email string, err error) {
 		return profile.Name, nil
 	}
 	c := http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: httpTimeout,
 	}
 	h := http.Header{}
 	h.Add("Authorization", fmt.Sprintf("Bearer %s", token))

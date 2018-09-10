@@ -11,11 +11,15 @@ import (
 	"golang.org/x/time/rate"
 )
 
+const (
+	httpTimeout = 5 * time.Second
+)
+
 var (
 	// Reuse a long-lived client so we don't end up creating too many connections.
 	// Note that clients _are_ thread-safe.
 	client = &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: httpTimeout,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,

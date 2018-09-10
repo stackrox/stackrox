@@ -14,6 +14,8 @@ import (
 
 const (
 	oauthTokenString = "$oauthtoken"
+
+	timeout = 5 * time.Second
 )
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
@@ -84,7 +86,7 @@ func (q *Quay) Test() error {
 	}
 	discoveryURL := url + "/api/v1/discovery"
 	client := http.Client{
-		Timeout: 2 * time.Second,
+		Timeout: timeout,
 	}
 	resp, err := client.Get(discoveryURL)
 	if err != nil {

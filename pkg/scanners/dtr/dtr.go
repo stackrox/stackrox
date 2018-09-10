@@ -174,7 +174,7 @@ func errorFromStatusCode(status int) error {
 // Test initiates a test of the DTR which verifies that we have the proper scan permissions
 func (d *dtr) Test() error {
 	client := &http.Client{
-		Timeout: 3 * time.Second,
+		Timeout: requestTimeout,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: d.conf.Insecure,

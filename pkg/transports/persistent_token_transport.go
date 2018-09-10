@@ -5,6 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
+)
+
+const (
+	timeout = 10 * time.Second
 )
 
 // PersistentTokenTransport is a transport that can be used to retrieve a token once from a registry and then be reused
@@ -40,7 +45,9 @@ func (t *PersistentTokenTransport) refreshToken() error {
 		return err
 	}
 
-	var client http.Client
+	client := http.Client{
+		Timeout: timeout,
+	}
 	req.SetBasicAuth(t.Username, t.Password)
 	resp, err := client.Do(req)
 	if err != nil {

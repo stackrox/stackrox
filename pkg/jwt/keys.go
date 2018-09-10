@@ -9,6 +9,10 @@ import (
 	"gopkg.in/square/go-jose.v2"
 )
 
+const (
+	httpTimeout = 10 * time.Second
+)
+
 // KeyGetter is the interface that all providers of JSON Web Keys should implement.
 type KeyGetter interface {
 	// The key should be a type that go-jose understands. Valid types include:
@@ -45,7 +49,7 @@ func (j *JWKSGetter) Key(id string) (interface{}, bool) {
 
 func (j *JWKSGetter) fetch() {
 	cli := http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: httpTimeout,
 	}
 	resp, err := cli.Get(j.url)
 	if err != nil {
