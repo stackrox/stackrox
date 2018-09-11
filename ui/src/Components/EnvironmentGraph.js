@@ -6,9 +6,7 @@ import {
     forceCenter as d3ForceCenter,
     forceLink as d3ForceLink,
     select as d3Select,
-    timeout as d3Timeout,
-    event as d3Event,
-    zoom as d3Zoom
+    timeout as d3Timeout
 } from 'd3';
 import {
     forceCluster,
@@ -28,12 +26,8 @@ import {
 import {
     MAX_RADIUS,
     CLUSTER_INNER_PADDING,
-    NAMESPACE_LABEL_OFFSET,
-    SCALE_DURATION,
-    SCALE_FACTOR,
-    SCALE_EXTENT
+    NAMESPACE_LABEL_OFFSET
 } from 'utils/environmentGraphUtils/environmentGraphConstants';
-import * as Icon from 'react-feather';
 import uniqBy from 'lodash/uniqBy';
 
 let width = 0;
@@ -53,8 +47,6 @@ let force = d3ForceSimulation(nodes)
     .force('cluster', forceCluster(namespaces).strength(0.9))
     .force('link', d3ForceLink(edges).id(d => d.id))
     .force('collide', forceCollision(nodes));
-
-let zoom;
 
 class EnvironmentGraph extends Component {
     static propTypes = {
@@ -99,7 +91,6 @@ class EnvironmentGraph extends Component {
 
             this.setUpNodeElements();
         }
-
         return false;
     }
 
@@ -188,9 +179,6 @@ class EnvironmentGraph extends Component {
 
         width = +svg.node().clientWidth;
         height = +svg.node().clientHeight;
-
-        // add pan+zoom functionality
-        this.zoomHandler(svg, d3Select(this.graph));
 
         force = force
             .nodes(nodes, d => d.id)
@@ -381,29 +369,6 @@ class EnvironmentGraph extends Component {
         });
     };
 
-    zoomHandler = (svg, g) => {
-        // Zoom functions
-        function zoomed() {
-            g.attr('transform', d3Event.transform);
-        }
-
-        zoom = d3Zoom()
-            .scaleExtent(SCALE_EXTENT)
-            .on('zoom', zoomed);
-
-        svg.call(zoom);
-    };
-
-    zoomIn = () => {
-        const svg = d3Select('svg.environment-graph');
-        zoom.scaleBy(svg.transition().duration(SCALE_DURATION), SCALE_FACTOR);
-    };
-
-    zoomOut = () => {
-        const svg = d3Select('svg.environment-graph');
-        zoom.scaleBy(svg.transition().duration(SCALE_DURATION), 1 / SCALE_FACTOR);
-    };
-
     render() {
         return (
             <div className="h-full w-full relative">
@@ -414,14 +379,6 @@ class EnvironmentGraph extends Component {
                         }}
                     />
                 </svg>
-                <div className="absolute pin-r pin-b m-4">
-                    <button className="btn-icon btn-primary mb-2" onClick={this.zoomIn}>
-                        <Icon.Plus className="h-4 w-4" />
-                    </button>
-                    <button className="btn-icon btn-primary" onClick={this.zoomOut}>
-                        <Icon.Minus className="h-4 w-4" />
-                    </button>
-                </div>
             </div>
         );
     }

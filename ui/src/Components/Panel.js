@@ -1,31 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import * as Icon from 'react-feather';
-import Tooltip from 'rc-tooltip';
 import 'rc-tooltip/assets/bootstrap.css';
+import CloseButton from './CloseButton';
 
-const CloseButton = ({ onClose }) => (
-    <div className="flex items-end border-base-300 items-center hover:bg-primary-300 ml-2 border-l">
-        <span>
-            <Tooltip placement="top" overlay={<div>Cancel</div>}>
-                <button
-                    className="flex text-primary-600 p-4 text-center text-sm items-center hover:text-white"
-                    onClick={onClose}
-                    data-test-id="cancel"
-                >
-                    <Icon.X className="h-4 w-4" />
-                </button>
-            </Tooltip>
-        </span>
-    </div>
-);
-CloseButton.propTypes = {
-    onClose: PropTypes.func.isRequired
-};
-
-const Panel = ({ header, buttons, className, onClose, children }) => (
+const Panel = props => (
     <div
-        className={`flex flex-col bg-white border h-full border-t-0 border-base-300 ${className}`}
+        className={`flex flex-col bg-white border h-full border-t-0 border-base-300 ${
+            props.className
+        }`}
         data-test-id="panel"
     >
         <div className="shadow-underline font-bold bg-primary-100">
@@ -34,13 +16,19 @@ const Panel = ({ header, buttons, className, onClose, children }) => (
                     className="flex flex-1 text-base-600 uppercase items-center tracking-wide py-2 px-4"
                     data-test-id="panel-header"
                 >
-                    {header}
+                    {props.header}
                 </div>
-                <div className="flex items-center py-2 px-4">{buttons}</div>
-                {onClose && <CloseButton onClose={onClose} />}
+                <div className="flex items-center py-2 px-4">{props.buttons}</div>
+                {props.onClose && (
+                    <CloseButton
+                        onClose={props.onClose}
+                        className={props.closeButtonClassName}
+                        iconColor={props.closeButtonIconColor}
+                    />
+                )}
             </div>
         </div>
-        <div className="flex flex-1 overflow-auto transition">{children}</div>
+        <div className="flex flex-1 overflow-auto transition">{props.children}</div>
     </div>
 );
 
@@ -49,14 +37,18 @@ Panel.propTypes = {
     buttons: PropTypes.node,
     className: PropTypes.string,
     children: PropTypes.node.isRequired,
-    onClose: PropTypes.func
+    onClose: PropTypes.func,
+    closeButtonClassName: PropTypes.string,
+    closeButtonIconColor: PropTypes.string
 };
 
 Panel.defaultProps = {
     header: ' ',
     buttons: null,
     className: 'w-full',
-    onClose: null
+    onClose: null,
+    closeButtonClassName: '',
+    closeButtonIconColor: ''
 };
 
 export default Panel;

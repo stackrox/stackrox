@@ -11,14 +11,17 @@ import Select from 'react-select';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import EnvironmentGraph from 'Components/EnvironmentGraph';
+import NetworkGraphZoom from 'Components/NetworkGraphZoom';
 import * as Icon from 'react-feather';
 import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';
 import Loader from 'Components/Loader';
 import TabContent from 'Components/TabContent';
+import featureFlag from 'utils/featureFlag';
 import DeploymentDetails from '../Risk/DeploymentDetails';
 import NetworkPoliciesDetails from './NetworkPoliciesDetails';
 import EnvironmentGraphLegend from './EnvironmentGraphLegend';
+import NetworkPolicySimulator from './NetworkPolicySimulator';
 
 class EnvironmentPage extends Component {
     static propTypes = {
@@ -69,6 +72,10 @@ class EnvironmentPage extends Component {
         selectedClusterId: ''
     };
 
+    state = {
+        showNetworkPolicySimulator: false
+    };
+
     componentDidMount() {
         this.props.fetchClusters();
     }
@@ -90,6 +97,8 @@ class EnvironmentPage extends Component {
         this.props.fetchEnvironmentGraph();
     };
 
+    onYamlUpload = () => {}; // placeholder function for updating graph on yaml upload
+
     getNodeUpdates = () => {
         const { environmentGraph, nodeUpdatesEpoch } = this.props;
         return nodeUpdatesEpoch - environmentGraph.epoch;
@@ -104,18 +113,34 @@ class EnvironmentPage extends Component {
         this.closeSidePanel();
     };
 
-    renderGraph = () => (
-        <EnvironmentGraph
-            updateKey={this.props.environmentGraphUpdateKey}
-            nodes={this.props.environmentGraph.nodes}
-            edges={this.props.environmentGraph.edges}
-            onNodeClick={this.onNodeClick}
-        />
-    );
+    showNetworkPolicySimulator = () => this.setState({ showNetworkPolicySimulator: true });
+
+    hideNetworkPolicySimulator = () => this.setState({ showNetworkPolicySimulator: false });
+
+    renderGraph = () => {
+        const className = this.state.showNetworkPolicySimulator
+            ? 'border-4 border-success-500'
+            : '';
+        return (
+            <div className={` w-full h-full border-box ${className}`}>
+                {this.state.showNetworkPolicySimulator && (
+                    <div className="absolute pin-t pin-l bg-success-500 text-white uppercase p-2 z-10">
+                        Simulation Mode
+                    </div>
+                )}
+                <EnvironmentGraph
+                    updateKey={this.props.environmentGraphUpdateKey}
+                    nodes={this.props.environmentGraph.nodes}
+                    edges={this.props.environmentGraph.edges}
+                    onNodeClick={this.onNodeClick}
+                />
+            </div>
+        );
+    };
 
     renderSidePanel = () => {
         const { selectedNodeId, deployment, networkPolicies } = this.props;
-        if (!selectedNodeId) return null;
+        if (!selectedNodeId || this.state.showNetworkPolicySimulator) return null;
         const envGraphPanelTabs = [{ text: 'Deployment Details' }, { text: 'Network Policies' }];
         const content = this.props.isFetchingNode ? (
             <Loader />
@@ -135,11 +160,32 @@ class EnvironmentPage extends Component {
         );
 
         return (
-            <div className="w-2/5 h-full absolute pin-t pin-r">
+            <div className="w-2/5 h-full absolute pin-t pin-r z-20">
                 <Panel header={deployment.name} onClose={this.closeSidePanel}>
                     {content}
                 </Panel>
             </div>
+        );
+    };
+
+    renderPageHeader = () => {
+        const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
+        return (
+            <PageHeader header="Network Graph" subHeader={subHeader} className="w-2/3">
+                <SearchInput
+                    id="environment"
+                    className="flex flex-1"
+                    searchOptions={this.props.searchOptions}
+                    searchModifiers={this.props.searchModifiers}
+                    searchSuggestions={this.props.searchSuggestions}
+                    setSearchOptions={this.props.setSearchOptions}
+                    setSearchModifiers={this.props.setSearchModifiers}
+                    setSearchSuggestions={this.props.setSearchSuggestions}
+                    onSearch={this.onSearch}
+                />
+                {this.renderClustersSelect()}
+                {featureFlag.networkPolicySimulator && this.renderNetworkPolicySimulatorButton()}
+            </PageHeader>
         );
     };
 
@@ -163,43 +209,73 @@ class EnvironmentPage extends Component {
         return <Select {...clustersProps} />;
     };
 
-    render() {
-        const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
+    renderNetworkGraphZoom = () => {
+        const positionStyle = this.state.showNetworkPolicySimulator
+            ? { right: '40%' }
+            : { right: '0' };
+        return (
+            <div className="absolute pin-b z-10" style={positionStyle}>
+                <NetworkGraphZoom />
+            </div>
+        );
+    };
+
+    renderNetworkPolicySimulatorButton = () => {
+        const className = this.state.showNetworkPolicySimulator
+            ? 'bg-success-200 border-success-500 hover:border-success-600 hover:text-success-600 text-success-500'
+            : 'bg-base-100 hover:border-base-300 hover:text-base-500 border-base-200 text-base-400';
+        const style = { height: '36px' };
+        const iconColor = this.state.showNetworkPolicySimulator ? '#53c6a9' : '#d2d5ed';
+        return (
+            <button
+                className={`border-2 rounded-sm text-sm ml-2 pl-2 pr-2 ${className}`}
+                style={style}
+                onClick={this.showNetworkPolicySimulator}
+            >
+                <span className="pr-1">Simulate Network Policy</span>
+                <Icon.Circle className="h-2 w-2" fill={iconColor} stroke={iconColor} />
+            </button>
+        );
+    };
+
+    renderNodesUpdateButton = () => {
         const nodeUpdatesCount = this.getNodeUpdates();
+        if (nodeUpdatesCount !== 'NaN' || nodeUpdatesCount <= 0) return null;
+        return (
+            <button
+                className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-500 hover:bg-primary-400 rounded-sm text-sm text-white"
+                onClick={this.onUpdateGraph}
+            >
+                <Icon.Circle className="h-2 w-2 border-primary-300" />
+                <span className="pl-1">{`${nodeUpdatesCount} ${
+                    nodeUpdatesCount === 1 ? 'update' : 'updates'
+                } available`}</span>
+            </button>
+        );
+    };
+
+    renderNetworkPolicySimulator() {
+        if (!this.state.showNetworkPolicySimulator) return null;
+        return (
+            <NetworkPolicySimulator
+                onClose={this.hideNetworkPolicySimulator}
+                onYamlUpload={this.onYamlUpload}
+            />
+        );
+    }
+
+    render() {
         return (
             <section className="flex flex-1 h-full w-full">
                 <div className="flex flex-1 flex-col w-full">
-                    <div className="flex flex-row">
-                        <PageHeader header="Network Graph" subHeader={subHeader} className="w-2/3">
-                            <SearchInput
-                                id="environment"
-                                className="flex flex-1"
-                                searchOptions={this.props.searchOptions}
-                                searchModifiers={this.props.searchModifiers}
-                                searchSuggestions={this.props.searchSuggestions}
-                                setSearchOptions={this.props.setSearchOptions}
-                                setSearchModifiers={this.props.setSearchModifiers}
-                                setSearchSuggestions={this.props.setSearchSuggestions}
-                                onSearch={this.onSearch}
-                            />
-                            {this.renderClustersSelect()}
-                        </PageHeader>
-                    </div>
+                    <div className="flex flex-row">{this.renderPageHeader()}</div>
                     <section className="environment-grid-bg flex flex-1 relative">
                         <EnvironmentGraphLegend />
                         {this.renderGraph()}
-                        {nodeUpdatesCount > 0 && (
-                            <button
-                                className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-500 hover:bg-primary-400 rounded-sm text-sm text-white"
-                                onClick={this.onUpdateGraph}
-                            >
-                                <Icon.Circle className="h-2 w-2 border-primary-300" />
-                                <span className="pl-1">{`${nodeUpdatesCount} ${
-                                    nodeUpdatesCount === 1 ? 'update' : 'updates'
-                                } available`}</span>
-                            </button>
-                        )}
+                        {this.renderNodesUpdateButton()}
                         {this.renderSidePanel()}
+                        {this.renderNetworkPolicySimulator()}
+                        {this.renderNetworkGraphZoom()}
                     </section>
                 </div>
             </section>
