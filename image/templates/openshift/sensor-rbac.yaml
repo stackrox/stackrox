@@ -1,0 +1,166 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sensor
+  namespace: {{.Namespace}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: benchmark
+  namespace: {{.Namespace}}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: {{.Namespace}}:monitor-deployments
+rules:
+  - resources:
+    - daemonsets
+    - deployments
+    - deploymentconfigs
+    - pods
+    - replicasets
+    - replicationcontrollers
+    - services
+    - statefulsets
+    - secrets
+    apiGroups:
+    - '*'
+    verbs:
+    - get
+    - watch
+    - list
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: {{.Namespace}}:monitor-deployments-binding
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{.Namespace}}
+roleRef:
+  kind: ClusterRole
+  name: {{.Namespace}}:monitor-deployments
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: {{.Namespace}}:enforce-policies
+rules:
+  - resources:
+    - daemonsets
+    - deployments
+    - deploymentconfigs
+    - pods
+    - replicasets
+    - replicationcontrollers
+    - services
+    - statefulsets
+    apiGroups:
+    - '*'
+    verbs:
+    - update
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: {{.Namespace}}:enforce-policies-binding
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{.Namespace}}
+roleRef:
+  kind: ClusterRole
+  name: {{.Namespace}}:enforce-policies
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: {{.Namespace}}:launch-benchmarks
+  namespace: {{.Namespace}}
+rules:
+  - resources:
+    - daemonsets
+    apiGroups:
+    - extensions
+    verbs:
+    - create
+    - get
+    - delete
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: {{.Namespace}}:launch-benchmarks-binding
+  namespace: {{.Namespace}}
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{.Namespace}}
+roleRef:
+  kind: Role
+  name: {{.Namespace}}:launch-benchmarks
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{.Namespace}}:network-policies
+rules:
+  - resources:
+    - networkpolicies
+    apiGroups:
+    - '*'
+    verbs:
+    - get
+    - watch
+    - list
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{.Namespace}}:network-policies-binding
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{.Namespace}}
+roleRef:
+  kind: ClusterRole
+  name: {{.Namespace}}:network-policies
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: SecurityContextConstraints
+apiVersion: v1
+metadata:
+  annotations:
+    kubernetes.io/description: sensor is the security constraint for the sensor server
+  name: sensor
+priority: 100
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+- '*'
+---
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  annotations:
+    kubernetes.io/description: benchmark is the security constraint for the benchmark container
+  name: benchmark
+priority: 100
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+- '*'
+allowHostDirVolumePlugin: true
+allowHostPID: true
+volumes:
+- '*'

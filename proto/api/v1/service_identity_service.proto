@@ -10,11 +10,11 @@ import "api/v1/empty.proto";
 package v1;
 
 enum ServiceType {
-    UNKNOWN_SERVICE = 0;
-    SENSOR_SERVICE  = 1;
-    CENTRAL_SERVICE = 2;
-    REMOTE_SERVICE  = 3;
-    COLLECTOR_SERVICE = 4;
+    UNKNOWN_SERVICE    = 0;
+    SENSOR_SERVICE     = 1;
+    CENTRAL_SERVICE    = 2;
+    REMOTE_SERVICE     = 3;
+    COLLECTOR_SERVICE  = 4;
 }
 
 message ServiceIdentity {

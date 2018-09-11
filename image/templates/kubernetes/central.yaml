@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: central
+  namespace: {{.K8sConfig.Namespace}}
+spec:
+  ports:
+  - name: https
+    port: 443
+    targetPort: 443
+  selector:
+    app: central
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: central
+  namespace: {{.K8sConfig.Namespace}}
+  labels:
+    app: central
+  annotations:
+    owner: stackrox
+    email: support@stackrox.com
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: central
+  template:
+    metadata:
+      namespace: {{.K8sConfig.Namespace}}
+      labels:
+        app: central
+    spec:
+      {{if .HostPath -}}
+      nodeSelector:
+        {{.HostPath.NodeSelectorKey}}: {{.HostPath.NodeSelectorValue}}
+      {{- end}}
+      {{if eq .ClusterType.String "KUBERNETES_CLUSTER" }}
+      imagePullSecrets:
+      - name: {{.K8sConfig.ImagePullSecret}}
+      {{else}}
+      serviceAccount: central
+      {{- end}}
+      containers:
+      - name: central
+        image: {{.K8sConfig.PreventImage}}
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "8Gi"
+            cpu: "2000m"
+        command:
+        - central
+        ports:
+        - name: api
+          containerPort: 443
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+        volumeMounts:
+        - name: central-certs-volume
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+        - name: central-jwt-volume
+          mountPath: /run/secrets/stackrox.io/jwt/
+          readOnly: true
+        {{if .HostPath -}}
+        - name: {{.HostPath.Name}}
+          mountPath: {{.HostPath.MountPath}}
+        {{- end}}
+        {{if .External -}}
+        - name: {{.External.Name}}
+          mountPath: {{.External.MountPath}}
+        {{- end}}
+      volumes:
+      - name: central-certs-volume
+        secret:
+          secretName: central-tls
+      - name: central-jwt-volume
+        secret:
+          secretName: central-jwt
+      {{if .HostPath -}}
+      - name: {{.HostPath.Name}}
+        hostPath:
+          path: {{.HostPath.HostPath}}
+          type: Directory
+      {{- end}}
+      {{if .External -}}
+      - name: {{.External.Name}}
+        persistentVolumeClaim:
+          claimName: {{.External.Name}}
+      {{- end}}
+{{if .External -}}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{.External.Name}}
+  namespace: {{.K8sConfig.Namespace}}
+spec:
+  {{if .External.StorageClass -}}
+  storageClassName: {{.External.StorageClass}}
+  {{- end}}
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+{{- end}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ext-to-central
+  namespace: {{.K8sConfig.Namespace}}
+spec:
+  ingress:
+  - ports:
+    - port: 443
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: central
+  policyTypes:
+  - Ingress

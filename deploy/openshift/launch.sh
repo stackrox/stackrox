@@ -16,7 +16,7 @@ function launch_central {
     echo
 
     echo "Deploying Central..."
-    $UNZIP_DIR/deploy.sh
+    $UNZIP_DIR/central.sh
     echo
 
     $UNZIP_DIR/port-forward.sh 8000
@@ -46,6 +46,6 @@ function launch_sensor {
     UNZIP_DIR="$OPENSHIFT_DIR/sensor-deploy/"
     rm -rf "$UNZIP_DIR"
     unzip "$OPENSHIFT_DIR/sensor-deploy.zip" -d "$UNZIP_DIR"
-    $UNZIP_DIR/deploy.sh
+    $UNZIP_DIR/sensor.sh
     echo
 }

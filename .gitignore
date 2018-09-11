@@ -8,7 +8,6 @@
 registry-auth
 
 # Deployment
-sensor-*.yaml
 sensor-deploy.sh
 sensor-deploy.zip
 central.zip
@@ -51,4 +50,4 @@ BUILD.bazel
 /*.json
 
 # Openshift automation workspace artifacts
-openshift/
+/openshift/

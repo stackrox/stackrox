@@ -3,10 +3,14 @@ package central
 
 import (
 	"bytes"
+	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/templates"
+	"github.com/stackrox/rox/pkg/zip"
 )
 
 var (
@@ -86,4 +90,20 @@ func executeTemplate(temp *template.Template, c Config) (string, error) {
 		return "", err
 	}
 	return buf.String(), nil
+}
+
+func renderFilenames(filenames []string, c Config) ([]*v1.File, error) {
+	var files []*v1.File
+	for _, f := range filenames {
+		t, err := templates.ReadFileAndTemplate(f)
+		if err != nil {
+			return nil, err
+		}
+		d, err := executeTemplate(t, c)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, zip.NewFile(filepath.Base(f), d, strings.HasSuffix(f, ".sh")))
+	}
+	return files, nil
 }

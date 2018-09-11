@@ -3,6 +3,8 @@ package clusters
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/stackrox/rox/generated/api/v1"
@@ -10,7 +12,9 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -83,4 +87,20 @@ func fieldsFromWrap(c Wrap) map[string]interface{} {
 		"CollectorImage":        generateCollectorImage(c.PreventImage, version.GetCollectorVersion()),
 	}
 	return fields
+}
+
+func renderFilenames(filenames []string, c map[string]interface{}) ([]*v1.File, error) {
+	var files []*v1.File
+	for _, f := range filenames {
+		t, err := templates.ReadFileAndTemplate(f)
+		if err != nil {
+			return nil, err
+		}
+		d, err := executeTemplate(t, c)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, zip.NewFile(filepath.Base(f), d, strings.HasSuffix(f, ".sh")))
+	}
+	return files, nil
 }

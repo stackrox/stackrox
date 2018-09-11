@@ -30,7 +30,7 @@ function launch_central {
         rm "$UNZIP_DIR/tmp"
     fi
 
-    $UNZIP_DIR/deploy.sh
+    $UNZIP_DIR/central.sh
     echo
     wait_for_central "localhost:8080"
     echo "Successfully launched central"
@@ -62,7 +62,7 @@ function launch_sensor {
         rm "$UNZIP_DIR/tmp"
     fi
 
-    $UNZIP_DIR/deploy.sh
+    $UNZIP_DIR/sensor.sh
     echo
 
     echo "Successfully deployed!"

@@ -1,0 +1,59 @@
+version: "3.2"
+services:
+  central:
+    image: {{.SwarmConfig.PreventImage}}
+    entrypoint: ["central"]
+    networks:
+      net:
+    deploy:
+       labels: [owner=stackrox,email=support@stackrox.com]
+       resources:
+         reservations:
+           cpus: '1.0'
+           memory: 2G
+         limits:
+           cpus: '2.0'
+           memory: 8G
+       {{if .HostPath -}}
+       placement:
+         constraints: [{{.HostPath.NodeSelectorKey}} == {{.HostPath.NodeSelectorValue}}]
+       {{- end}}
+    ports:
+      - target: 443
+        published: {{.SwarmConfig.PublicPort}}
+        protocol: tcp
+        mode: {{.SwarmConfig.NetworkMode}}
+    secrets:
+      - source: central_private_key
+        target: stackrox.io/certs/ca-key.pem
+        mode: 400
+      - source: central_certificate
+        target: stackrox.io/certs/ca.pem
+        mode: 400
+      - source: central_jwt_key
+        target: stackrox.io/jwt/jwt-key.der
+        mode: 400
+    {{if .HostPath -}}
+    volumes:
+      - {{.HostPath.HostPath}}:{{.HostPath.MountPath}}
+    {{- end}}
+    {{if .External -}}
+    volumes:
+      - {{.External.Name}}:{{.External.MountPath}}
+    {{- end}}
+networks:
+  net:
+    driver: overlay
+    attachable: true
+secrets:
+  central_private_key:
+    file: ./ca-key.pem
+  central_certificate:
+    file: ./ca.pem
+  central_jwt_key:
+    file: ./jwt-key.der
+{{if .External -}}
+volumes:
+  {{.External.Name}}:
+    external: true
+{{- end}}

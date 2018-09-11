@@ -77,6 +77,11 @@ function get_cluster_zip {
         -w "%{http_code}\n" \
         https://$LOCAL_API_ENDPOINT/v1/clusters)
     >&2 echo "Status: $STATUS"
+    if [ "$STATUS" == "500" ]; then
+      cat $TMP
+      exit 1
+    fi
+
     ID="$(cat ${TMP} | jq -r .cluster.id)"
 
     echo "Getting zip file for cluster ${ID}"

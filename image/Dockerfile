@@ -15,6 +15,7 @@ ENV PATH="/prevent:$PATH"
 
 COPY ./benchmarks/ /data/benchmarks
 COPY ./policies/ /data/policies
+COPY ./templates/ /data/templates
 COPY ./bin/ /prevent/
 COPY ./ui/build  /ui/
 COPY ./VERSION /VERSION
