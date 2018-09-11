@@ -70,7 +70,7 @@ func (suite *SecretServiceTestSuite) TestGetSecret() {
 
 	actualSecretAndRelationship, err := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
 	suite.NoError(err)
-	suite.Equal(expectedSecret, actualSecretAndRelationship.GetSecret())
+	suite.Equal(expectedSecret, actualSecretAndRelationship)
 	suite.Equal(expectedRelationship, actualSecretAndRelationship.GetRelationship())
 
 	suite.mockSecretStore.AssertExpectations(suite.T())
@@ -158,12 +158,13 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreRelationshipFailure(
 func (suite *SecretServiceTestSuite) TestSearchSecret() {
 	query := &v1.Query{}
 
-	expectedReturns := []*v1.Secret{
+	expectedReturns := []*v1.ListSecret{
 		{Id: "id1"},
 	}
-	suite.mockSecretStore.On("SearchRawSecrets", query).Return(expectedReturns, nil)
 
-	_, err := suite.service.GetSecrets((context.Context)(nil), &v1.RawQuery{})
+	suite.mockSecretStore.On("SearchListSecrets", query).Return(expectedReturns, nil)
+
+	_, err := suite.service.ListSecrets((context.Context)(nil), &v1.RawQuery{})
 	suite.NoError(err)
 
 	suite.mockSecretStore.AssertExpectations(suite.T())
@@ -172,9 +173,10 @@ func (suite *SecretServiceTestSuite) TestSearchSecret() {
 // Test that when searching fails, that error is returned.
 func (suite *SecretServiceTestSuite) TestSearchSecretFailure() {
 	expectedError := fmt.Errorf("failure")
-	suite.mockSecretStore.On("SearchRawSecrets", &v1.Query{}).Return(([]*v1.Secret)(nil), expectedError)
 
-	_, actualErr := suite.service.GetSecrets((context.Context)(nil), &v1.RawQuery{})
+	suite.mockSecretStore.On("SearchListSecrets", &v1.Query{}).Return(([]*v1.ListSecret)(nil), expectedError)
+
+	_, actualErr := suite.service.ListSecrets((context.Context)(nil), &v1.RawQuery{})
 	suite.Equal(expectedError, actualErr)
 
 	suite.mockSecretStore.AssertExpectations(suite.T())

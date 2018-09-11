@@ -54,16 +54,16 @@ func (_m *DataStore) RemoveSecret(id string) error {
 	return r0
 }
 
-// SearchRawSecrets provides a mock function with given fields: q
-func (_m *DataStore) SearchRawSecrets(q *v1.Query) ([]*v1.Secret, error) {
+// SearchListSecrets provides a mock function with given fields: q
+func (_m *DataStore) SearchListSecrets(q *v1.Query) ([]*v1.ListSecret, error) {
 	ret := _m.Called(q)
 
-	var r0 []*v1.Secret
-	if rf, ok := ret.Get(0).(func(*v1.Query) []*v1.Secret); ok {
+	var r0 []*v1.ListSecret
+	if rf, ok := ret.Get(0).(func(*v1.Query) []*v1.ListSecret); ok {
 		r0 = rf(q)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*v1.Secret)
+			r0 = ret.Get(0).([]*v1.ListSecret)
 		}
 	}
 

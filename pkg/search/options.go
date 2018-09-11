@@ -63,6 +63,10 @@ const (
 	ProcessExecPath    FieldLabel = "Process Exec Path"
 	ProcessName        FieldLabel = "Process Name"
 	ProcessCommandLine FieldLabel = "Process Command Line"
+
+	// Secret search fields
+	SecretType       FieldLabel = "Secret Type"
+	SecretExpiration FieldLabel = "Cert Expiration"
 )
 
 func (f FieldLabel) String() string {

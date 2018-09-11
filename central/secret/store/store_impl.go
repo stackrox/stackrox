@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
+	"github.com/deckarep/golang-set"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/globaldb/ops"
 	"github.com/stackrox/rox/central/metrics"
@@ -14,6 +15,59 @@ import (
 
 type storeImpl struct {
 	db *bolt.DB
+}
+
+func getListSecret(tx *bolt.Tx, id string) (secret *v1.ListSecret, err error) {
+	bucket := tx.Bucket([]byte(secretListBucket))
+	bytes := bucket.Get([]byte(id))
+	if bytes == nil {
+		err = fmt.Errorf("secret with id: %s does not exist", id)
+		return
+	}
+
+	secret = new(v1.ListSecret)
+	err = proto.Unmarshal(bytes, secret)
+	return
+}
+
+// Note: This is called within a txn and does not require an Update or View
+func removeListSecret(tx *bolt.Tx, id string) error {
+	bucket := tx.Bucket([]byte(secretListBucket))
+	return bucket.Delete([]byte(id))
+}
+
+// Note: This is called within a txn and do not require an Update or View
+func upsertListSecret(tx *bolt.Tx, secret *v1.Secret) error {
+	bucket := tx.Bucket([]byte(secretListBucket))
+	listSecret := convertSecretToSecretList(secret)
+	bytes, err := proto.Marshal(listSecret)
+	if err != nil {
+		return err
+	}
+	return bucket.Put([]byte(secret.Id), bytes)
+}
+
+func convertSecretToSecretList(s *v1.Secret) *v1.ListSecret {
+	typeSet := mapset.NewSet()
+	var typeSlice []v1.SecretType
+	for _, f := range s.GetFiles() {
+		if !typeSet.Contains(f.GetType()) {
+			typeSlice = append(typeSlice, f.GetType())
+			typeSet.Add(f.GetType())
+		}
+	}
+	if len(typeSlice) == 0 {
+		typeSlice = append(typeSlice, v1.SecretType_UNDETERMINED)
+	}
+
+	return &v1.ListSecret{
+		Id:          s.GetId(),
+		Name:        s.GetName(),
+		ClusterName: s.GetClusterName(),
+		Namespace:   s.GetNamespace(),
+		Types:       typeSlice,
+		CreatedAt:   s.GetCreatedAt(),
+	}
 }
 
 // GetAllSecrets returns all secrets in the given db.
@@ -41,14 +95,13 @@ func (s *storeImpl) GetSecret(id string) (secret *v1.Secret, exists bool, err er
 	return
 }
 
-// GetSecretsBatch returns the secrets for the given ids.
-func (s *storeImpl) GetSecretsBatch(ids []string) ([]*v1.Secret, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Secrets")
-
-	var secrets []*v1.Secret
+// ListSecrets returns a list of secrets from the given ids.
+func (s *storeImpl) ListSecrets(ids []string) ([]*v1.ListSecret, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListSecret")
+	secrets := make([]*v1.ListSecret, 0, len(ids))
 	err := s.db.View(func(tx *bolt.Tx) error {
 		for _, id := range ids {
-			secret, err := readSecret(tx, id)
+			secret, err := getListSecret(tx, id)
 			if err != nil {
 				return err
 			}
@@ -64,7 +117,10 @@ func (s *storeImpl) UpsertSecret(secret *v1.Secret) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "Secret")
 
 	return s.db.Update(func(tx *bolt.Tx) error {
-		return writeSecret(tx, secret)
+		if err := writeSecret(tx, secret); err != nil {
+			return err
+		}
+		return upsertListSecret(tx, secret)
 	})
 }
 
@@ -77,7 +133,10 @@ func (s *storeImpl) RemoveSecret(id string) error {
 		if exists := bucket.Get(key) != nil; !exists {
 			return dberrors.ErrNotFound{Type: "Secret", ID: string(key)}
 		}
-		return bucket.Delete(key)
+		if err := bucket.Delete(key); err != nil {
+			return err
+		}
+		return removeListSecret(tx, id)
 	})
 }
 

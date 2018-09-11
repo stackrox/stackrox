@@ -13,7 +13,7 @@ import (
 const (
 	negationPrefix = "!"
 	nullString     = "-"
-	regexPrefix    = "/"
+	regexPrefix    = "r/"
 )
 
 var datatypeToQueryFunc = map[v1.SearchDataType]func(v1.SearchCategory, string, string) (query.Query, error){
@@ -25,6 +25,7 @@ var datatypeToQueryFunc = map[v1.SearchDataType]func(v1.SearchCategory, string, 
 	v1.SearchDataType_SEARCH_SEVERITY:    newSeverityQuery,
 	v1.SearchDataType_SEARCH_ENFORCEMENT: newEnforcementQuery,
 	v1.SearchDataType_SEARCH_MAP:         newMapQuery,
+	v1.SearchDataType_SEARCH_SECRET_TYPE: newSecretTypeQuery,
 }
 
 func getWildcardQuery(field string) *query.WildcardQuery {
@@ -52,13 +53,13 @@ func newStringQuery(category v1.SearchCategory, field string, value string) (que
 	switch {
 	case strings.HasPrefix(value, negationPrefix) && len(value) > 1:
 		boolQuery := bleve.NewBooleanQuery()
-		boolQuery.AddMustNot(NewMatchPhrasePrefixQuery(field, value[1:]))
+		boolQuery.AddMustNot(NewMatchPhrasePrefixQuery(field, value[len(negationPrefix):]))
 		// This is where things are interesting. BooleanQuery basically generates a true or false that can be used
 		// however we must pipe in the search category because the boolean query returns a true/false designation
 		boolQuery.AddMust(typeQuery(category))
 		return boolQuery, nil
 	case strings.HasPrefix(value, regexPrefix) && len(value) > 1:
-		q := bleve.NewRegexpQuery(value[1:])
+		q := bleve.NewRegexpQuery(value[len(regexPrefix):])
 		q.SetField(field)
 		return q, nil
 	default:
@@ -92,51 +93,16 @@ func newBoolQuery(_ v1.SearchCategory, field string, value string) (query.Query,
 	return q, nil
 }
 
-func stringToSeverity(s string) (v1.Severity, error) {
-	s = strings.ToLower(s)
-	if strings.HasPrefix(s, "l") {
-		return v1.Severity_LOW_SEVERITY, nil
-	}
-	if strings.HasPrefix(s, "m") {
-		return v1.Severity_MEDIUM_SEVERITY, nil
-	}
-	if strings.HasPrefix(s, "h") {
-		return v1.Severity_HIGH_SEVERITY, nil
-	}
-	if strings.HasPrefix(s, "c") {
-		return v1.Severity_CRITICAL_SEVERITY, nil
-	}
-	return v1.Severity_UNSET_SEVERITY, fmt.Errorf("Could not parse severity '%s'. Valid options are low, medium, high, critical", s)
-}
-
 func newSeverityQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
-	sev, err := stringToSeverity(value)
-	if err != nil {
-		return nil, err
-	}
-	return createNumericQuery(field, "=", floatPtr(float64(sev))), nil
-}
-
-func stringToEnforcement(s string) (v1.EnforcementAction, error) {
-	s = strings.ToLower(s)
-	if strings.Contains(s, "scale") {
-		return v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, nil
-	}
-	if strings.Contains(s, "node") {
-		return v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, nil
-	}
-	if strings.Contains(s, "none") {
-		return v1.EnforcementAction_UNSET_ENFORCEMENT, nil
-	}
-	return v1.EnforcementAction_UNSET_ENFORCEMENT, fmt.Errorf("Could not parse enforcement '%s'. Valid options are node, and scale", s)
+	return evaluateEnum(value, field, v1.Severity_name)
 }
 
 func newEnforcementQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
-	en, err := stringToEnforcement(value)
-	if err != nil {
-		return nil, err
-	}
-	return createNumericQuery(field, "=", floatPtr(float64(en))), nil
+	return evaluateEnum(value, field, v1.EnforcementAction_name)
+}
+
+func newSecretTypeQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
+	return evaluateEnum(value, field, v1.SecretType_name)
 }
 
 func typeQuery(category v1.SearchCategory) query.Query {

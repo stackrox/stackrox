@@ -14,36 +14,4 @@ export const image = new schema.Entity('image', {}, { idAttribute: 'sha' });
 
 export const cluster = new schema.Entity('cluster');
 
-const getSecretId = secretObj => {
-    if (secretObj.id) {
-        return secretObj.id;
-    }
-    return secretObj.secret.id;
-};
-
-const flattenSecretObj = secretObj => {
-    if (secretObj.secret) {
-        return {
-            id: secretObj.secret.id,
-            name: secretObj.secret.name,
-            cluster: secretObj.secret.clusterName,
-            namespace: secretObj.secret.namespace,
-            deploymentRelationships: secretObj.relationship.deploymentRelationships
-        };
-    }
-    return {
-        id: secretObj.id,
-        name: secretObj.name,
-        cluster: secretObj.clusterName,
-        namespace: secretObj.namespace
-    };
-};
-
-export const secret = new schema.Entity(
-    'secret',
-    {},
-    {
-        idAttribute: getSecretId,
-        processStrategy: flattenSecretObj
-    }
-);
+export const secret = new schema.Entity('secret');

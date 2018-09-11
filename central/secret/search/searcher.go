@@ -15,7 +15,7 @@ var (
 //go:generate mockery -name=Searcher
 type Searcher interface {
 	SearchSecrets(*v1.Query) ([]*v1.SearchResult, error)
-	SearchRawSecrets(*v1.Query) ([]*v1.Secret, error)
+	SearchListSecrets(query *v1.Query) ([]*v1.ListSecret, error)
 }
 
 // New returns a new instance of Searcher for the given storage and index.

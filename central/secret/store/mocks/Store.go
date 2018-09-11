@@ -64,22 +64,22 @@ func (_m *Store) GetSecret(id string) (*v1.Secret, bool, error) {
 	return r0, r1, r2
 }
 
-// GetSecretsBatch provides a mock function with given fields: ids
-func (_m *Store) GetSecretsBatch(ids []string) ([]*v1.Secret, error) {
-	ret := _m.Called(ids)
+// ListSecrets provides a mock function with given fields: id
+func (_m *Store) ListSecrets(id []string) ([]*v1.ListSecret, error) {
+	ret := _m.Called(id)
 
-	var r0 []*v1.Secret
-	if rf, ok := ret.Get(0).(func([]string) []*v1.Secret); ok {
-		r0 = rf(ids)
+	var r0 []*v1.ListSecret
+	if rf, ok := ret.Get(0).(func([]string) []*v1.ListSecret); ok {
+		r0 = rf(id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*v1.Secret)
+			r0 = ret.Get(0).([]*v1.ListSecret)
 		}
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func([]string) error); ok {
-		r1 = rf(ids)
+		r1 = rf(id)
 	} else {
 		r1 = ret.Error(1)
 	}

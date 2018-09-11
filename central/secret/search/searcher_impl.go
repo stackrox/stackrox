@@ -27,12 +27,12 @@ func (ds *searcherImpl) SearchSecrets(q *v1.Query) ([]*v1.SearchResult, error) {
 }
 
 // SearchSecrets returns the secrets and relationships that match the query.
-func (ds *searcherImpl) SearchRawSecrets(q *v1.Query) ([]*v1.Secret, error) {
+func (ds *searcherImpl) SearchListSecrets(q *v1.Query) ([]*v1.ListSecret, error) {
 	results, err := ds.getSearchResults(q)
 	if err != nil {
 		return nil, err
 	}
-	return ds.resultsToSecrets(results)
+	return ds.resultsToListSecrets(results)
 }
 
 func (ds *searcherImpl) getSearchResults(q *v1.Query) ([]search.Result, error) {
@@ -44,24 +44,24 @@ func (ds *searcherImpl) getSearchResults(q *v1.Query) ([]search.Result, error) {
 }
 
 // ToSecrets returns the secrets from the db for the given search results.
-func (ds *searcherImpl) resultsToSecrets(results []search.Result) ([]*v1.Secret, error) {
+func (ds *searcherImpl) resultsToListSecrets(results []search.Result) ([]*v1.ListSecret, error) {
 	ids := make([]string, len(results), len(results))
 	for index, result := range results {
 		ids[index] = result.ID
 	}
-	return ds.storage.GetSecretsBatch(ids)
+	return ds.storage.ListSecrets(ids)
 }
 
 // ToSearchResults returns the searchResults from the db for the given search results.
 func (ds *searcherImpl) resultsToSearchResults(results []search.Result) ([]*v1.SearchResult, error) {
-	sars, err := ds.resultsToSecrets(results)
+	sars, err := ds.resultsToListSecrets(results)
 	if err != nil {
 		return nil, err
 	}
 	return convertMany(sars, results), nil
 }
 
-func convertMany(secrets []*v1.Secret, results []search.Result) []*v1.SearchResult {
+func convertMany(secrets []*v1.ListSecret, results []search.Result) []*v1.SearchResult {
 	outputResults := make([]*v1.SearchResult, len(secrets), len(secrets))
 	for index, sar := range secrets {
 		outputResults[index] = convertOne(sar, &results[index])
@@ -69,7 +69,7 @@ func convertMany(secrets []*v1.Secret, results []search.Result) []*v1.SearchResu
 	return outputResults
 }
 
-func convertOne(secret *v1.Secret, result *search.Result) *v1.SearchResult {
+func convertOne(secret *v1.ListSecret, result *search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_SECRETS,
 		Id:             secret.GetId(),

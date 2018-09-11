@@ -32,7 +32,7 @@ func TestNewStringQuery(t *testing.T) {
 			expectedString: "!",
 		},
 		{
-			query:          "/lol",
+			query:          "r/lol",
 			expectedString: "lol",
 		},
 	}

@@ -201,11 +201,12 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:327ddd58c42ee44f5153f0be859d644cb2390049e887821a2d38d87e60377297"
+  digest = "1:270ec69074e00b5c1abaaa0aa689a4df5ecc2d874a0e08b189de1a9c53b850de"
   name = "github.com/cloudflare/cfssl"
   packages = [
     "auth",
     "certdb",
+    "certinfo",
     "config",
     "crypto/pkcs7",
     "csr",
@@ -1296,6 +1297,7 @@
     "github.com/blevesearch/bleve/search",
     "github.com/blevesearch/bleve/search/query",
     "github.com/boltdb/bolt",
+    "github.com/cloudflare/cfssl/certinfo",
     "github.com/cloudflare/cfssl/config",
     "github.com/cloudflare/cfssl/csr",
     "github.com/cloudflare/cfssl/initca",

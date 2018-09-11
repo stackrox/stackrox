@@ -74,7 +74,7 @@ func (suite *DeploymentIndexTestSuite) TestHighlighting() {
 		expectedIdsToMatches map[string]map[string][]string
 	}{
 		{
-			q: search.NewQueryBuilder().AddStringsHighlighted(search.ImageTag, "/2.2.*").ProtoQuery(),
+			q: search.NewQueryBuilder().AddStringsHighlighted(search.ImageTag, "r/2.2.*").ProtoQuery(),
 			expectedIdsToMatches: map[string]map[string][]string{
 				deployment22.GetId(): {
 					"image.name.tag": {img22.GetName().GetTag()},
@@ -85,7 +85,7 @@ func (suite *DeploymentIndexTestSuite) TestHighlighting() {
 			},
 		},
 		{
-			q: search.NewQueryBuilder().AddStringsHighlighted(search.ImageTag, "/2.2.*").AddStrings(search.DeploymentID, "22").ProtoQuery(),
+			q: search.NewQueryBuilder().AddStringsHighlighted(search.ImageTag, "r/2.2.*").AddStrings(search.DeploymentID, "22").ProtoQuery(),
 			expectedIdsToMatches: map[string]map[string][]string{
 				deployment22.GetId(): {
 					"image.name.tag": {img22.GetName().GetTag()},
@@ -223,7 +223,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			expectedIDs: []string{},
 		},
 		{
-			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch", search.Label: "com.docker.stack.namespace=/.*"},
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch", search.Label: "com.docker.stack.namespace=r/.*"},
 			expectedIDs: []string{fixtures.GetDeployment().GetId()},
 		},
 		{
@@ -267,23 +267,23 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			highlightedFields: []search.FieldLabel{search.ImageTag},
 		},
 		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "/latest"},
+			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "r/latest"},
 			highlightedFields: []search.FieldLabel{search.ImageTag},
 			expectedIDs:       []string{fixtures.GetDeployment().GetId()},
 			expectedMatches:   map[string][]string{"image.name.tag": {"latest"}},
 		},
 		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "/lat.*"},
+			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "r/lat.*"},
 			highlightedFields: []search.FieldLabel{search.ImageTag},
 			expectedIDs:       []string{fixtures.GetDeployment().GetId()},
 			expectedMatches:   map[string][]string{"image.name.tag": {"latest"}},
 		},
 		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "/lat"},
+			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "r/lat"},
 			highlightedFields: []search.FieldLabel{search.ImageTag},
 		},
 		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "/lata.*"},
+			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "r/lata.*"},
 			highlightedFields: []search.FieldLabel{search.ImageTag},
 		},
 		{

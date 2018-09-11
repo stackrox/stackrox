@@ -11,22 +11,22 @@ type Searcher struct {
 	mock.Mock
 }
 
-// SearchRawSecrets provides a mock function with given fields: _a0
-func (_m *Searcher) SearchRawSecrets(_a0 *v1.Query) ([]*v1.Secret, error) {
-	ret := _m.Called(_a0)
+// SearchListSecrets provides a mock function with given fields: query
+func (_m *Searcher) SearchListSecrets(query *v1.Query) ([]*v1.ListSecret, error) {
+	ret := _m.Called(query)
 
-	var r0 []*v1.Secret
-	if rf, ok := ret.Get(0).(func(*v1.Query) []*v1.Secret); ok {
-		r0 = rf(_a0)
+	var r0 []*v1.ListSecret
+	if rf, ok := ret.Get(0).(func(*v1.Query) []*v1.ListSecret); ok {
+		r0 = rf(query)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*v1.Secret)
+			r0 = ret.Get(0).([]*v1.ListSecret)
 		}
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(*v1.Query) error); ok {
-		r1 = rf(_a0)
+		r1 = rf(query)
 	} else {
 		r1 = ret.Error(1)
 	}

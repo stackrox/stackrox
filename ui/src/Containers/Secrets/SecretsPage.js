@@ -11,7 +11,9 @@ import Table from 'Components/Table';
 import Panel from 'Components/Panel';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
-import SecretDetails from './SecretDetails';
+import dateFns from 'date-fns';
+import dateTimeFormat from 'constants/dateTimeFormat';
+import SecretDetails, { secretTypeEnumMapping } from './SecretDetails';
 
 class SecretPage extends Component {
     static propTypes = {
@@ -51,7 +53,17 @@ class SecretPage extends Component {
     renderTable() {
         const columns = [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'cluster', Header: 'Cluster' },
+            {
+                id: 'createdAt',
+                accessor: d => dateFns.format(d.createdAt, dateTimeFormat),
+                Header: 'Created'
+            },
+            {
+                id: 'types',
+                accessor: d => d.types.map(v => secretTypeEnumMapping[v]).join(', '),
+                Header: 'Types'
+            },
+            { accessor: 'clusterName', Header: 'Cluster' },
             { accessor: 'namespace', Header: 'Namespace' }
         ];
         const { secrets, selectedSecret } = this.props;

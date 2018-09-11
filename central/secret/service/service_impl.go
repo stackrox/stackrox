@@ -22,7 +22,7 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Secret)): {
 			"/v1.SecretService/GetSecret",
-			"/v1.SecretService/GetSecrets",
+			"/v1.SecretService/ListSecrets",
 		},
 	})
 )
@@ -49,7 +49,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetSecret returns the secret for the id.
-func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (*v1.SecretAndRelationship, error) {
+func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (*v1.Secret, error) {
 	secret, exists, err := s.storage.GetSecret(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -76,24 +76,21 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 			Name: r.Name,
 		})
 	}
-
-	return &v1.SecretAndRelationship{
-		Secret: secret,
-		Relationship: &v1.SecretRelationship{
-			DeploymentRelationships: deployments,
-		},
-	}, nil
+	secret.Relationship = &v1.SecretRelationship{
+		DeploymentRelationships: deployments,
+	}
+	return secret, nil
 }
 
-// GetSecrets returns all secrets that match the query.
-func (s *serviceImpl) GetSecrets(ctx context.Context, rawQuery *v1.RawQuery) (*v1.GetSecretsResponse, error) {
+// ListSecrets returns all secrets that match the query.
+func (s *serviceImpl) ListSecrets(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListSecretsResponse, error) {
 	q, err := search.ParseRawQueryOrEmpty(rawQuery.GetQuery())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	secrets, err := s.storage.SearchRawSecrets(q)
+	secrets, err := s.storage.SearchListSecrets(q)
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetSecretsResponse{Secrets: secrets}, nil
+	return &v1.ListSecretsResponse{Secrets: secrets}, nil
 }

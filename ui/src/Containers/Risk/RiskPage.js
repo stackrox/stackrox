@@ -16,6 +16,8 @@ import Tabs from 'Components/Tabs';
 import Loader from 'Components/Loader';
 import TabContent from 'Components/TabContent';
 import { sortNumber } from 'sorters/sorters';
+import dateFns from 'date-fns';
+import dateTimeFormat from 'constants/dateTimeFormat';
 import RiskDetails from './RiskDetails';
 import DeploymentDetails from './DeploymentDetails';
 import ProcessDetails from './ProcessDetails';
@@ -62,6 +64,11 @@ class RiskPage extends Component {
             {
                 Header: 'Name',
                 accessor: 'name'
+            },
+            {
+                id: 'updated',
+                Header: 'Updated',
+                accessor: d => dateFns.format(d.updatedAt, dateTimeFormat)
             },
             {
                 Header: 'Cluster',

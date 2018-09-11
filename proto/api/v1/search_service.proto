@@ -28,6 +28,7 @@ enum SearchDataType {
     SEARCH_ENFORCEMENT = 4;
     SEARCH_SEVERITY    = 5;
     SEARCH_MAP         = 6;
+    SEARCH_SECRET_TYPE = 7;
 }
 
 message RawQuery {

@@ -5,7 +5,10 @@ import (
 
 	gogoTimestamp "github.com/gogo/protobuf/types"
 	golangTimestamp "github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/stackrox/rox/pkg/logging"
 )
+
+var logger = logging.LoggerForModule()
 
 // CompareProtoTimestamps compares two of the proto timestamps
 // This is necessary because the library has few equality checks
@@ -54,6 +57,16 @@ func ConvertTimeToTimestamp(goTime time.Time) *gogoTimestamp.Timestamp {
 	t, err := gogoTimestamp.TimestampProto(goTime)
 	if err != nil {
 		return gogoTimestamp.TimestampNow()
+	}
+	return t
+}
+
+// ConvertTimeToTimestampOrNil converts golang time to proto timestamp or if it fails returns nil.
+func ConvertTimeToTimestampOrNil(goTime time.Time) *gogoTimestamp.Timestamp {
+	t, err := gogoTimestamp.TimestampProto(goTime)
+	if err != nil {
+		logger.Error(err)
+		return nil
 	}
 	return t
 }

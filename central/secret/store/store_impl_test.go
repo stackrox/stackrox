@@ -38,13 +38,15 @@ func (suite *SecretStoreTestSuite) TeardownSuite() {
 }
 
 func (suite *SecretStoreTestSuite) TestSecrets() {
-	secret1 := &v1.Secret{
-		Id: "secret1",
+	var secrets = []*v1.Secret{
+		{
+			Id: "secret1",
+		},
+		{
+			Id: "secret2",
+		},
 	}
-	secret2 := &v1.Secret{
-		Id: "secret2",
-	}
-	secrets := []*v1.Secret{secret1, secret2}
+
 	for _, secret := range secrets {
 		err := suite.store.UpsertSecret(secret)
 		suite.NoError(err)
@@ -55,14 +57,15 @@ func (suite *SecretStoreTestSuite) TestSecrets() {
 	suite.Nil(err)
 	suite.ElementsMatch(secrets, retrievedSecrets)
 
-	// Get batch secrets
-	retrievedSecrets, err = suite.store.GetSecretsBatch([]string{"secret1", "secret2"})
-	suite.Nil(err)
-	suite.ElementsMatch(secrets, retrievedSecrets)
+	for _, s := range secrets {
+		secret, exists, err := suite.store.GetSecret(s.GetId())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.Equal(s, secret)
+	}
 
-	// Get secret
-	retrievedSecret, exists, err := suite.store.GetSecret("secret1")
+	// Get batch secrets
+	retrievedListSecrets, err := suite.store.ListSecrets([]string{"secret1", "secret2"})
 	suite.Nil(err)
-	suite.True(exists)
-	suite.Equal(secret1, retrievedSecret)
+	suite.Len(retrievedListSecrets, 2)
 }

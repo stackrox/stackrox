@@ -58,11 +58,11 @@ func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *v1.Se
 		suite.Len(results, 0)
 	}
 
-	secrets, err := suite.datastore.SearchRawSecrets(q)
+	secrets, err := suite.datastore.SearchListSecrets(q)
 	suite.Require().NoError(err)
 	if s != nil {
 		suite.Len(secrets, 1)
-		suite.Equal(s, secrets[0])
+		suite.Equal(s.GetId(), results[0].GetId())
 	} else {
 		suite.Len(secrets, 0)
 	}

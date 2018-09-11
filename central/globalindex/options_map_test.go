@@ -42,6 +42,9 @@ func assertElementSatisfiesSearchDataType(t *testing.T, obj interface{}, searchD
 	case v1.SearchDataType_SEARCH_SEVERITY:
 		assertKindsEqual(t, reflect.Int32, kind)
 		assert.Equal(t, "Severity", typ.Name())
+	case v1.SearchDataType_SEARCH_SECRET_TYPE:
+		assertKindsEqual(t, reflect.Int32, kind)
+		assert.Equal(t, "SecretType", typ.Name())
 	case v1.SearchDataType_SEARCH_MAP:
 		assertKindsEqual(t, reflect.Map, kind)
 	default:

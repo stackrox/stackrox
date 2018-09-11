@@ -21,8 +21,8 @@ func (d *datastoreImpl) SearchSecrets(q *v1.Query) ([]*v1.SearchResult, error) {
 	return d.searcher.SearchSecrets(q)
 }
 
-func (d *datastoreImpl) SearchRawSecrets(q *v1.Query) ([]*v1.Secret, error) {
-	return d.searcher.SearchRawSecrets(q)
+func (d *datastoreImpl) SearchListSecrets(request *v1.Query) ([]*v1.ListSecret, error) {
+	return d.searcher.SearchListSecrets(request)
 }
 
 func (d *datastoreImpl) UpsertSecret(request *v1.Secret) error {
