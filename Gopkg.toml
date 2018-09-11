@@ -103,7 +103,7 @@ required = ["golang.org/x/tools/go/ast/astutil"]
 
 [[constraint]]
   name = "gopkg.in/yaml.v2"
-  revision = "a3f3340b5840cee44f372bddb5880fcbc419b46a"
+  version = "v2.2.1"
 
 [[constraint]]
   name = "github.com/cloudflare/cfssl"

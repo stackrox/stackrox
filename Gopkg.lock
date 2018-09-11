@@ -1112,11 +1112,12 @@
   version = "v2.1.8"
 
 [[projects]]
-  digest = "1:6d313df39e01cf5a8a8b2ca2afedf140bd02cc5fcebf4d7f1364565f14ecbd49"
+  digest = "1:7c95b35057a0ff2e19f707173cc1a947fa43a6eb5c4d300d196ece0334046082"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "a3f3340b5840cee44f372bddb5880fcbc419b46a"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [[projects]]
   digest = "1:f541c95b242bf41dc42ba035d66e7d240c1e8c7ccd45480f81c6526237d0b940"
