@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/cmd/deploy/central"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/central"
 )
 
 func orchestratorCommand(shortName, longName string, clusterType v1.ClusterType) *cobra.Command {

@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
+	"github.com/stackrox/rox/cmd/deploy/central"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/central"
 )
 
 var (
