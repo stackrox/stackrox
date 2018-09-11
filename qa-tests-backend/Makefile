@@ -14,6 +14,11 @@ style-fix:
 	@echo "+ $@"
 	@scripts/fix_lint.py .
 
+.PHONY: proto-generated-srcs
+proto-generated-srcs:
+	@echo "+ $@"
+	gradle generateProto generateTestProto
+
 .PHONY: test
 test:
 	@echo "+ $@"
