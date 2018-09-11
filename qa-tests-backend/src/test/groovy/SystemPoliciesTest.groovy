@@ -16,11 +16,10 @@ class SystemPoliciesTest extends BaseSpecification {
                 .setName(deployName)
                 .setImage("nginx:latest")
                 .addLabel ( "app", "test" )
-        String policyID
 
         when:
         "Create a custom policy - Using image latest template"
-        policyID = Services.addLatestTagPolicy()
+        String policyID = Services.addLatestTagPolicy()
         sleep(5000)
         println("Policy ID :" + policyID)
         assert policyID != null

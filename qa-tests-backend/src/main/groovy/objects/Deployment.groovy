@@ -2,7 +2,11 @@ package objects
 
 class Deployment {
     String name
+    List<String> volNames = new ArrayList<String>()
+    List<String> volMounts = new ArrayList<String>()
     String image
+    String mountpath
+    List<String> secretNames = new ArrayList<String>()
     Map<String, String> labels = new HashMap<>()
     List<Integer> ports = new ArrayList<Integer>()
 
@@ -16,6 +20,11 @@ class Deployment {
         return this
     }
 
+    Deployment addMountPath(String m) {
+        this.mountpath = m
+        return this
+    }
+
     Deployment addLabel(String k, String v) {
         this.labels[k] = v
         return this
@@ -26,4 +35,18 @@ class Deployment {
         return this
     }
 
+    Deployment addSecretName(String s) {
+        this.secretNames.add(s)
+        return this
+    }
+
+    Deployment addVolName(String v) {
+        this.volNames.add(v)
+        return this
+    }
+
+    Deployment addVolMountName(String v) {
+        this.volMounts.add(v)
+        return this
+   }
 }

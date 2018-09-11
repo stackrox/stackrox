@@ -26,6 +26,7 @@ import stackrox.generated.DeploymentServiceOuterClass.ListDeployment
 import stackrox.generated.DeploymentServiceOuterClass.Deployment
 import stackrox.generated.Common.ResourceByID
 import stackrox.generated.SearchServiceOuterClass
+import v1.SecretServiceGrpc
 
 class Services {
 
@@ -53,6 +54,10 @@ class Services {
         return ImageIntegrationServiceGrpc.newBlockingStub(getChannel())
     }
 
+    static getDetectionClient() {
+        return DetectionServiceGrpc.newBlockingStub(getChannel())
+    }
+
     static getPolicyClient() {
         return PolicyServiceGrpc.newBlockingStub(getChannel())
     }
@@ -69,8 +74,8 @@ class Services {
         return SearchServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getDetectionClient() {
-        return DetectionServiceGrpc.newBlockingStub(getChannel())
+    static getSecretServiceClient() {
+        return SecretServiceGrpc.newBlockingStub(getChannel())
     }
 
     static List<ListPolicy> getPolicies(RawQuery query = RawQuery.newBuilder().build()) {
@@ -134,13 +139,27 @@ class Services {
     }
 
     static SearchServiceOuterClass.SearchResponse getSearchResponse(
-            String query, List<SearchServiceOuterClass.SearchCategory> categories) {
+       String query, List<SearchServiceOuterClass.SearchCategory> categories) {
         def rawSearchRequest = SearchServiceOuterClass.RawSearchRequest.newBuilder()
-                .addAllCategories(categories)
-                .setQuery(query)
-                .build()
+            .addAllCategories(categories)
+            .setQuery(query)
+            .build()
         return getSearchServiceClient().search(rawSearchRequest)
     }
+
+    static String getSecret(String id) {
+        int intervalSeconds = 1
+        int waitTime
+        for (waitTime = 0; waitTime < 50000 / intervalSeconds; waitTime++) {
+            def sec= getSecretServiceClient().getSecret(ResourceByID.newBuilder().setId(id).build())
+            if (sec != null) {
+                return sec.id
+            }
+            sleep(intervalSeconds * 1000)
+       }
+        println "Failed to add secret " + id + " after waiting " + waitTime * intervalSeconds + " seconds"
+        return null
+   }
 
     static waitForViolation(String deploymentName, String policyName, int timeoutSeconds) {
         int intervalSeconds = 1

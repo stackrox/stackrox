@@ -13,4 +13,6 @@ interface OrchestratorMain {
     def deleteService(String serviceName, String namespace)
     def createClairifyDeployment()
     String getClairifyEndpoint()
+    def createSecret(String name)
+    def deleteSecret(String name, String namespace)
 }

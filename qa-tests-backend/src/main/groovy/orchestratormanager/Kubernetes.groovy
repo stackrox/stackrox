@@ -17,12 +17,16 @@ import io.kubernetes.client.models.ExtensionsV1beta1DeploymentSpec
 import io.kubernetes.client.models.V1ContainerPort
 import io.kubernetes.client.models.V1PodTemplateSpec
 import io.kubernetes.client.models.V1PodSpec
+import io.kubernetes.client.models.V1SecretVolumeSource
+import io.kubernetes.client.models.V1Volume
 import io.kubernetes.client.models.V1Container
 import io.kubernetes.client.models.V1DeleteOptions
 import io.kubernetes.client.models.V1SecurityContext
 import io.kubernetes.client.models.V1Service
+import io.kubernetes.client.models.V1Secret
 import io.kubernetes.client.models.V1ServicePort
 import io.kubernetes.client.models.V1ServiceSpec
+import io.kubernetes.client.models.V1VolumeMount
 import io.kubernetes.client.util.Config
 import objects.Deployment
 
@@ -72,7 +76,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     def cleanup() {
     }
 
-    def portToContainerPort = {  p -> new V1ContainerPort().containerPort(p) }
+    def portToContainerPort = { p -> new V1ContainerPort().containerPort(p) }
 
     def waitForDeploymentCreation(String deploymentName, String namespace) {
         int waitTime = 0
@@ -103,31 +107,52 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 .map(portToContainerPort)
                 .collect(Collectors.<V1ContainerPort> toList())
 
+        List<V1VolumeMount>deploymount = new LinkedList<>()
+        for (int i = 0; i < deployment.getVolMounts().size(); ++i) {
+            V1VolumeMount volmount = new V1VolumeMount()
+             .name(deployment.getVolMounts().get(i))
+             .mountPath(deployment.getMountpath())
+             .readOnly(true)
+            deploymount.add(volmount)
+         }
+
+        List<V1Volume> deployVolumes = new LinkedList<>()
+        for (int i = 0; i < deployment.getVolNames().size(); ++i) {
+            V1Volume deployVol = new V1Volume()
+               .name(deployment.getVolNames().get(i))
+               .secret(new V1SecretVolumeSource()
+               .secretName(deployment.getSecretNames().get(i)))
+            deployVolumes.add(deployVol)
+           }
+
+        V1PodSpec v1PodSpec = new V1PodSpec()
+         .containers(
+          [
+              new V1Container()
+               .name(deployment.getName())
+               .image(deployment.getImage())
+               .ports(containerPorts)
+               .volumeMounts(deploymount),
+          ]
+         )
+        .volumes(deployVolumes)
+
         ExtensionsV1beta1Deployment k8sDeployment = new ExtensionsV1beta1Deployment()
-        .metadata(
-                new V1ObjectMeta()
-                        .name(deployment.getName())
-                        .namespace(this.namespace)
-                        .labels(deployment.getLabels()))
-        .spec(new ExtensionsV1beta1DeploymentSpec()
-                .replicas(1)
-                .template(new V1PodTemplateSpec()
-                    .spec(new V1PodSpec()
-                        .containers(
-                            [
-                                    new V1Container()
-                                            .name(deployment.getName())
-                                            .image(deployment.getImage())
-                                            .ports(containerPorts),
-                            ]
-                        )
-                    )
+                    .metadata(
+                    new V1ObjectMeta()
+                            .name(deployment.getName())
+                            .namespace(this.namespace)
+                            .labels(deployment.getLabels()))
+                    .spec(new ExtensionsV1beta1DeploymentSpec()
+                    .replicas(1)
+                    .template(new V1PodTemplateSpec()
+                    .spec(v1PodSpec)
                     .metadata(new V1ObjectMeta()
                         .name(deployment.getName())
                         .labels(deployment.getLabels())
-                    )
-                )
-        )
+            )
+            )
+            )
 
         try {
             beta1.createNamespacedDeployment(this.namespace, k8sDeployment, null)
@@ -139,61 +164,92 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
 
     def deleteDeployment(String name, String namespace = this.namespace) {
         this.beta1.deleteNamespacedDeployment(
-                name,
-                namespace, new V1DeleteOptions()
-                .gracePeriodSeconds(0)
-                .orphanDependents(false),
-                null,
-                0,
-                false,
-                null
-        )
+                    name,
+                    namespace, new V1DeleteOptions()
+                    .gracePeriodSeconds(0)
+                    .orphanDependents(false),
+                    null,
+                    0,
+                    false,
+                    null
+            )
         sleep(sleepDuration)
         println name + ": deployment removed."
-    }
+        }
+
+    def deleteSecret(String name, String namespace = this.namespace) {
+        this.api.deleteNamespacedSecret(
+                    name,
+                    namespace, new V1DeleteOptions()
+                    .gracePeriodSeconds(0)
+                    .orphanDependents(false),
+                    null,
+                    0,
+                    false,
+                    null
+            )
+        sleep(sleepDuration)
+        println name + ": Secret removed."
+        }
 
     def deleteService(String name, String namespace = this.namespace) {
         this.api.deleteNamespacedService(
-                name,
-                namespace, new V1DeleteOptions()
-                .gracePeriodSeconds(0)
-                .orphanDependents(false),
-                null,
-                0,
-                false,
-                null
-        )
-    }
+                    name,
+                    namespace, new V1DeleteOptions()
+                    .gracePeriodSeconds(0)
+                    .orphanDependents(false),
+                    null,
+                    0,
+                    false,
+                    null
+            )
+        }
+
+    String createSecret(String name) {
+        Map<String, byte[]> data = new HashMap<String, byte[]>()
+        data.put("username", "YWRtaW4=".getBytes())
+        data.put("password", "MWYyZDFlMmU2N2Rm".getBytes())
+
+        V1Secret createsecret = new V1Secret()
+                    .apiVersion("v1")
+                    .kind("Secret")
+                    .metadata(new V1ObjectMeta()
+                    .name(name))
+                    .type("Opaque")
+                    .data(data)
+        V1Secret createdSecret = this.api.createNamespacedSecret("qa", createsecret, "true")
+        return createdSecret.metadata.uid
+        }
 
     def createClairifyDeployment() {
-        //create clairify service
+            //create clairify service
         Map<String, String> selector = new HashMap<String, String>()
         selector.put("app", "clairify")
 
         V1Service clairifyService = new V1Service()
-                .apiVersion("v1")
-                .metadata(new V1ObjectMeta()
+                    .apiVersion("v1")
+                    .metadata(new V1ObjectMeta()
                     .name("clairify")
                     .namespace("stackrox"))
-                .spec(new V1ServiceSpec()
+                    .spec(new V1ServiceSpec()
                     .addPortsItem(new V1ServicePort()
-                        .name("clair-http")
-                        .port(6060)
-                        .targetPort(new IntOrString(6060)
-                        )
-                    )
+                    .name("clair-http")
+                    .port(6060)
+                    .targetPort(new IntOrString(6060)
+            )
+            )
                     .addPortsItem(new V1ServicePort()
-                        .name("clairify-http")
-                        .port(8080)
-                        .targetPort(new IntOrString(8080)
-                        )
-                    )
+                    .name("clairify-http")
+                    .port(8080)
+                    .targetPort(new IntOrString(8080)
+            )
+            )
                     .type("ClusterIP")
                     .selector(selector)
-                )
+            )
         this.api.createNamespacedService("stackrox", clairifyService, null)
 
-        //create clairify deployment
+            //create clairify deployment
         Map<String, String> labels = new HashMap<>()
         labels.put("app", "clairify")
         Map<String, String> annotations = new HashMap<>()
@@ -205,52 +261,52 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         commands.add("/clairify")
 
         V1Container clairContainer = new V1Container()
-                .name("clairify")
-                .image("stackrox/clairify:0.3.1")
-                .command(commands)
-                .imagePullPolicy("Always")
-                .addPortsItem(new V1ContainerPort()
+                    .name("clairify")
+                    .image("stackrox/clairify:0.3.1")
+                    .command(commands)
+                    .imagePullPolicy("Always")
+                    .addPortsItem(new V1ContainerPort()
                     .name("clair-http")
                     .containerPort(6060)
-                )
-                .addPortsItem(new V1ContainerPort()
+            )
+                    .addPortsItem(new V1ContainerPort()
                     .name("clairify-http")
                     .containerPort(8080)
-                )
-                .securityContext(new V1SecurityContext()
+            )
+                    .securityContext(new V1SecurityContext()
                     .capabilities(new V1Capabilities()
-                        .addDropItem("NET_RAW")
-                    )
-                )
+                    .addDropItem("NET_RAW")
+            )
+            )
 
         ExtensionsV1beta1Deployment clairifyDeployment = new ExtensionsV1beta1Deployment()
-                .metadata(new V1ObjectMeta()
+                    .metadata(new V1ObjectMeta()
                     .name("clairify")
                     .namespace("stackrox")
                     .labels(labels).annotations(annotations)
-                )
-                .spec(new ExtensionsV1beta1DeploymentSpec()
+            )
+                    .spec(new ExtensionsV1beta1DeploymentSpec()
                     .replicas(1)
                     .selector(new V1LabelSelector()
-                        .matchLabels(labels))
+                    .matchLabels(labels))
                     .template(new V1PodTemplateSpec()
-                        .metadata(new V1ObjectMeta()
-                            .namespace("stackrox")
-                            .labels(labels))
-                        .spec(new V1PodSpec()
-                            .addContainersItem(clairContainer)
-                            .addImagePullSecretsItem(new V1LocalObjectReference()
-                                .name("stackrox")
-                            )
-                        )
-                    )
-                )
+                    .metadata(new V1ObjectMeta()
+                    .namespace("stackrox")
+                    .labels(labels))
+                    .spec(new V1PodSpec()
+                    .addContainersItem(clairContainer)
+                    .addImagePullSecretsItem(new V1LocalObjectReference()
+                    .name("stackrox")
+            )
+            )
+            )
+            )
 
         this.beta1.createNamespacedDeployment("stackrox", clairifyDeployment, null)
         waitForDeploymentCreation("clairify", "stackrox")
-    }
+        }
 
     String getClairifyEndpoint() {
         return "clairify.stackrox:8080"
+        }
     }
-}

@@ -92,4 +92,12 @@ class DockerEE extends OrchestratorCommon implements OrchestratorMain {
     String getClairifyEndpoint() {
         return "clairify.prevent_net:8080"
     }
+
+    @Override
+    def createSecret(String name) {
+    }
+
+    @Override
+    def deleteSecret(String name, String namespace = "") {
+    }
 }
