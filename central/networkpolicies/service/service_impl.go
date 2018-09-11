@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/notifiers"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -273,5 +274,13 @@ func compileValidateYaml(simulationYaml string) ([]*v1.NetworkPolicy, error) {
 			return nil, fmt.Errorf("yamls tested against must apply to a namespace")
 		}
 	}
+
+	// Ensure that all resulting policies have IDs.
+	for _, policy := range policies {
+		if policy.GetId() == "" {
+			policy.Id = uuid.NewV4().String()
+		}
+	}
+
 	return policies, nil
 }
