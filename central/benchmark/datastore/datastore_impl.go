@@ -36,7 +36,7 @@ func (ds *datastoreImpl) loadDefaults() error {
 		}
 	}
 
-	log.Infof("Loaded %ds default Benchmarks", len(benchmarks))
+	log.Infof("Loaded %d default Benchmarks", len(benchmarks))
 	return nil
 }
 
