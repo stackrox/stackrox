@@ -91,15 +91,15 @@ func (s *Handler) HandleMessage(msg events.Message) {
 func (s *Handler) getExistingSecrets() ([]*listeners.EventWrap, error) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
-	swarmNetworks, err := s.client.SecretList(ctx, types.SecretListOptions{})
+	swarmSecrets, err := s.client.SecretList(ctx, types.SecretListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	var events []*listeners.EventWrap
-	for _, network := range swarmNetworks {
-		n := secretWrap(network).asSecret()
-		events = append(events, secretEventWrap(v1.ResourceAction_UPDATE_RESOURCE, n, network))
+	for _, secret := range swarmSecrets {
+		s := secretWrap(secret).asSecret()
+		events = append(events, secretEventWrap(v1.ResourceAction_UPDATE_RESOURCE, s, secret))
 	}
 	return events, nil
 }
