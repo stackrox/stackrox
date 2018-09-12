@@ -44,7 +44,7 @@ func (s *serviceImpl) RecordEvent(stream v1.SensorEventService_RecordEventServer
 	if err != nil {
 		return err
 	}
-	clientClusterID := identity.Name.Identifier
+	clientClusterID := identity.Subject.Identifier
 
 	if err := pendingEvents.Open(clientClusterID); err != nil {
 		return err

@@ -23,6 +23,7 @@ func (o *openshift) Render(c Config) ([]*v1.File, error) {
 		"openshift/clairify.yaml",
 		"openshift/image-setup.sh",
 		"openshift/port-forward.sh",
+		"openshift/route-setup.sh",
 		"openshift/central-rbac.yaml",
 	}
 

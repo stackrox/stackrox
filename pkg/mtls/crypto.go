@@ -39,8 +39,8 @@ const (
 )
 
 var (
-	// CentralCN is the Common Name used in certificates for Central.
-	CentralCN = CommonName{ServiceType: v1.ServiceType_CENTRAL_SERVICE, Identifier: "Central"}
+	// CentralSubject is the identity used in certificates for Central.
+	CentralSubject = Subject{ServiceType: v1.ServiceType_CENTRAL_SERVICE, Identifier: "Central"}
 
 	readCAOnce sync.Once
 	caCert     *x509.Certificate
@@ -123,7 +123,7 @@ type serviceIdentityStorage interface {
 }
 
 // IssueNewCert generates a new key and certificate chain for a sensor.
-func IssueNewCert(cn CommonName, storage serviceIdentityStorage, names ...string) (certPEM, keyPEM []byte, identity *v1.ServiceIdentity, err error) {
+func IssueNewCert(subj Subject, storage serviceIdentityStorage) (certPEM, keyPEM []byte, identity *v1.ServiceIdentity, err error) {
 	returnErr := func(err error, prefix string) ([]byte, []byte, *v1.ServiceIdentity, error) {
 		return nil, nil, nil, fmt.Errorf("%s: %s", prefix, err)
 	}
@@ -146,11 +146,11 @@ func IssueNewCert(cn CommonName, storage serviceIdentityStorage, names ...string
 	}
 
 	req := cfsigner.SignRequest{
-		Hosts:   names,
+		Hosts:   []string{subj.Hostname()},
 		Request: string(csrBytes),
 		Subject: &cfsigner.Subject{
-			CN:           cn.String(),
-			Names:        []cfcsr.Name{{OU: ou(cn.ServiceType)}},
+			CN:           subj.CN(),
+			Names:        []cfcsr.Name{subj.Name()},
 			SerialNumber: strconv.FormatInt(serial, 10),
 		},
 	}
@@ -162,7 +162,7 @@ func IssueNewCert(cn CommonName, storage serviceIdentityStorage, names ...string
 	certPEM = certBytes
 	keyPEM = keyBytes
 
-	id := generateIdentity(cn, serial)
+	id := generateIdentity(subj, serial)
 	if storage != nil {
 		err = storage.AddServiceIdentity(id)
 		if err != nil {
@@ -181,14 +181,10 @@ func randomSerial() (int64, error) {
 	return serial.Int64(), nil
 }
 
-func ou(t v1.ServiceType) string {
-	return t.String()
-}
-
-func generateIdentity(cn CommonName, serial int64) *v1.ServiceIdentity {
+func generateIdentity(subj Subject, serial int64) *v1.ServiceIdentity {
 	return &v1.ServiceIdentity{
-		Id:     cn.Identifier,
-		Type:   cn.ServiceType,
+		Id:     subj.Identifier,
+		Type:   subj.ServiceType,
 		Serial: serial,
 	}
 }

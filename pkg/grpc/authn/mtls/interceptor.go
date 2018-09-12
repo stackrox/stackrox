@@ -70,11 +70,11 @@ func authTLS(ctx context.Context) (newCtx context.Context, err error) {
 	}
 	chain := tls.State.VerifiedChains[0]
 	leaf := chain[0]
-	cn := mtls.CommonNameFromString(leaf.Subject.CommonName)
+	cn := mtls.SubjectFromCommonName(leaf.Subject.CommonName)
 	return authn.NewTLSContext(ctx, authn.TLSIdentity{
 		Identity: mtls.Identity{
-			Name:   cn,
-			Serial: leaf.SerialNumber,
+			Subject: cn,
+			Serial:  leaf.SerialNumber,
 		},
 		Expiration: leaf.NotAfter,
 	}), nil

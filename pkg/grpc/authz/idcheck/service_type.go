@@ -19,7 +19,7 @@ func (s serviceType) Authorized(ctx context.Context, _ string) error {
 	if err != nil {
 		return authz.ErrNoCredentials
 	}
-	if identity.Name.ServiceType != s.Type {
+	if identity.Subject.ServiceType != s.Type {
 		return authz.ErrNotAuthorized("service source type not allowed")
 	}
 	return nil

@@ -77,18 +77,18 @@ func (cw ClusterWatcher) recordCheckin(ctx context.Context) error {
 		return err
 	}
 
-	if id.Name.ServiceType != v1.ServiceType_SENSOR_SERVICE {
+	if id.Subject.ServiceType != v1.ServiceType_SENSOR_SERVICE {
 		return nil
 	}
 
-	if id.Name.Identifier == "" {
+	if id.Subject.Identifier == "" {
 		return status.Error(codes.Unauthenticated, "Cluster ID not provided")
 	}
 
-	_, exists, _ := cw.clusters.GetCluster(id.Name.Identifier)
+	_, exists, _ := cw.clusters.GetCluster(id.Subject.Identifier)
 	if !exists {
 		return status.Error(codes.Unauthenticated, "Cluster does not exist")
 	}
 
-	return cw.clusters.UpdateClusterContactTime(id.Name.Identifier, time.Now())
+	return cw.clusters.UpdateClusterContactTime(id.Subject.Identifier, time.Now())
 }

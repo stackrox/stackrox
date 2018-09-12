@@ -100,7 +100,7 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetI
 		log.Debugf("No authentication context provided")
 	case err != nil:
 		log.Warnf("Error getting client identity: %s", err)
-	case err == nil && identity.Name.ServiceType == v1.ServiceType_SENSOR_SERVICE:
+	case err == nil && identity.Subject.ServiceType == v1.ServiceType_SENSOR_SERVICE:
 		return &v1.GetImageIntegrationsResponse{Integrations: integrations}, nil
 	}
 
