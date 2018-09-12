@@ -160,7 +160,7 @@ service NetworkPolicyService {
     rpc SendNetworkPolicyYAML (SendNetworkPolicyYamlRequest) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/networkpolicies/simulation/notify"
-            body: "*"
+            body: "yaml"
         };
     }
 

@@ -36,7 +36,7 @@ var (
 			"/v1.NetworkPolicyService/GetNetworkGraphEpoch",
 		},
 		user.With(permissions.Modify(resources.Notifier)): {
-			"/v1.NetworkPolicyService/SendNetworkPolicyYaml",
+			"/v1.NetworkPolicyService/SendNetworkPolicyYAML",
 		},
 	})
 )
