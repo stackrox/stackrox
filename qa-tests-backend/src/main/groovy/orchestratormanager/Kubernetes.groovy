@@ -89,7 +89,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 if (v1beta1Deployment.getMetadata().getName() == deploymentName) {
                     println "Waiting for " + deploymentName
                     sleep(sleepDuration)
-                    if (v1beta1Deployment.getStatus().getReplicas() > 0) {
+                    if (v1beta1Deployment.getStatus().getReadyReplicas() > 0) {
                         println deploymentName + ": deployment created."
                         //continue to sleep 5s to make the test more stable
                         sleep(sleepDuration)

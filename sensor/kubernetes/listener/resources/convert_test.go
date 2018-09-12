@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -199,6 +198,9 @@ func TestConvert(t *testing.T) {
 						Status: v1.PodStatus{
 							ContainerStatuses: []v1.ContainerStatus{
 								{
+									Image: "docker.io/stackrox/kafka:1.3",
+								},
+								{
 									Image:       "docker.io/stackrox/policy-engine:1.3",
 									ImageID:     "docker-pullable://docker.io/stackrox/policy-engine@sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 									ContainerID: "docker://35669191c32a9cfb532e5d79b09f2b0926c0faf27e7543f1fbe433bd94ae78d7",
@@ -289,9 +291,8 @@ func TestConvert(t *testing.T) {
 						Instances: []*pkgV1.ContainerInstance{
 							{
 								InstanceId: &pkgV1.ContainerInstanceID{
-									ContainerRuntime: pkgV1.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
-									Id:               "35669191c32a9cfb532e5d79b09f2b0926c0faf27e7543f1fbe433bd94ae78d7",
-									Node:             "mynode",
+
+									Node: "mynode",
 								},
 								ContainingPodId: "mypod.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
 							},
@@ -336,6 +337,16 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						Resources: &pkgV1.Resources{},
+						Instances: []*pkgV1.ContainerInstance{
+							{
+								InstanceId: &pkgV1.ContainerInstanceID{
+									ContainerRuntime: pkgV1.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+									Id:               "35669191c32a9cfb532e5d79b09f2b0926c0faf27e7543f1fbe433bd94ae78d7",
+									Node:             "mynode",
+								},
+								ContainingPodId: "mypod.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
+							},
+						},
 					},
 				},
 			},
@@ -348,11 +359,6 @@ func TestConvert(t *testing.T) {
 			assert.Equal(t, c.expectedDeployment, actual)
 		})
 	}
-}
-
-func verifyFloat(t *testing.T, f string, float float32) {
-	floatStr := fmt.Sprintf("%0.2f", float)
-	assert.Equal(t, f, floatStr)
 }
 
 func TestConvertQuantityToCores(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
-	imageTypes "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/sensor/kubernetes/volumes"
@@ -206,42 +206,24 @@ func (w *wrap) populateContainerInstances(pods ...v1.Pod) {
 }
 
 func (w *wrap) populateImageShas(pods ...v1.Pod) {
-	// This is a map from image full name (eg: stackrox/prevent:latest) to the actual sha of the running image.
-	// Note that, if the tag is mutable, there could be multiple shas for a single full name.
-	// We just pick an arbitrary one right now, by looking at the running pods and adding the actual sha for this map.
-	// This sucks, but it works for now.
-	imageNameToSha := make(map[string]string)
-
+	// Iterate over all the pods and set the SHAs based on the index of the container status. All containers have a container status
+	// The downside to this is that if different pods have different versions then we will miss that fact that pods are running
+	// different versions and clobber it. I've added a log to illustrate the clobbering so we can see how often it happens
 	for _, p := range pods {
-		for _, c := range p.Status.ContainerStatuses {
-			img := imageUtils.GenerateImageFromString(c.Image)
-			// If the image string already specifies a sha, we don't need to
-			// extract it again from the pod.
-			if img.GetName().GetSha() != "" {
-				continue
+		for i, c := range p.Status.ContainerStatuses {
+			if i >= len(w.Deployment.Containers) {
+				// This should not happened, but could happen if w.Deployment.Containers and container status are out of sync
+				break
 			}
-
-			fullName := img.GetName().GetFullName()
-			if fullName == "" {
-				logger.Errorf("Couldn't parse either a full name or a sha from image %s of pod %s/%s/%s ",
-					c.Image, p.ClusterName, p.Namespace, p.Name)
-				continue
-			}
-
 			if sha := imageUtils.ExtractImageSha(c.ImageID); sha != "" {
-				imageNameToSha[fullName] = imageTypes.NewDigest(sha).Digest()
+				sha = types.NewDigest(sha).Digest()
+				// Logging to see that we are clobbering a value from an old sha
+				currentSHA := w.Deployment.GetContainers()[i].GetImage().GetName().GetSha()
+				if currentSHA != "" && currentSHA != sha {
+					logger.Warnf("Clobbering SHA '%s' found for image '%s' with SHA '%s'", currentSHA, c.Image, sha)
+				}
+				w.Deployment.Containers[i].Image.Name.Sha = types.NewDigest(sha).Digest()
 			}
-		}
-	}
-
-	for _, c := range w.Deployment.Containers {
-		name := c.GetImage().GetName()
-		// No need to repopulate the sha if it exists already.
-		if name.GetSha() != "" {
-			continue
-		}
-		if sha, ok := imageNameToSha[name.GetFullName()]; ok {
-			c.Image.Name.Sha = sha
 		}
 	}
 }
