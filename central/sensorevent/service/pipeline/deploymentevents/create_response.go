@@ -17,29 +17,39 @@ type createResponseImpl struct {
 	onRemove func(deployment *v1.Deployment) error
 }
 
-func (s *createResponseImpl) do(deployment *v1.Deployment, action v1.ResourceAction) *v1.SensorEventResponse {
+func (s *createResponseImpl) do(deployment *v1.Deployment, action v1.ResourceAction) *v1.SensorEnforcement {
 	var alertID string
 	var enforcement v1.EnforcementAction
+	var err error
 	if action == v1.ResourceAction_REMOVE_RESOURCE {
-		_ = s.onRemove(deployment)
+		err = s.onRemove(deployment)
 	} else if action == v1.ResourceAction_CREATE_RESOURCE {
 		// We only want enforcement if the deployment was just created.
-		alertID, enforcement, _ = s.onUpdate(deployment)
+		alertID, enforcement, err = s.onUpdate(deployment)
 	} else {
-		alertID, _, _ = s.onUpdate(deployment)
+		_, _, err = s.onUpdate(deployment)
+	}
+	if err != nil {
+		log.Errorf("updating from deployment failed: %s", err)
 	}
 
-	if enforcement != v1.EnforcementAction_UNSET_ENFORCEMENT {
-		log.Warnf("Taking enforcement action %s against deployment %s", enforcement, deployment.GetName())
+	if enforcement == v1.EnforcementAction_UNSET_ENFORCEMENT {
+		return nil
 	}
 
-	response := new(v1.DeploymentEventResponse)
+	log.Warnf("Taking enforcement action %s against deployment %s", enforcement, deployment.GetName())
+
+	// Only form and return the response if there is an enforcement action to be taken.
+	response := new(v1.DeploymentEnforcement)
 	response.DeploymentId = deployment.GetId()
+	response.DeploymentName = deployment.GetName()
+	response.DeploymentType = deployment.GetType()
+	response.Namespace = deployment.GetNamespace()
 	response.AlertId = alertID
-	response.Enforcement = enforcement
 
-	return &v1.SensorEventResponse{
-		Resource: &v1.SensorEventResponse_Deployment{
+	return &v1.SensorEnforcement{
+		Enforcement: enforcement,
+		Resource: &v1.SensorEnforcement_Deployment{
 			Deployment: response,
 		},
 	}

@@ -1,6 +1,7 @@
 package enforcers
 
 import (
+	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -10,11 +11,21 @@ var (
 	logger = logging.LoggerForModule()
 )
 
+// EnforceFunc represents an enforcement function.
+type EnforceFunc func(*v1.SensorEnforcement) error
+
+// Enforcer is an abstraction for taking enforcement actions on deployments.
+type Enforcer interface {
+	Actions() chan<- *v1.SensorEnforcement
+	Start()
+	Stop()
+}
+
 // CreateEnforcer creates a new enforcer that performs the given enforcement actions.
 func CreateEnforcer(enforcementMap map[v1.EnforcementAction]EnforceFunc) Enforcer {
 	return &enforcer{
 		enforcementMap: enforcementMap,
-		actionsC:       make(chan *DeploymentEnforcement, 10),
+		actionsC:       make(chan *v1.SensorEnforcement, 10),
 		stopC:          concurrency.NewSignal(),
 		stoppedC:       concurrency.NewSignal(),
 	}
@@ -22,12 +33,12 @@ func CreateEnforcer(enforcementMap map[v1.EnforcementAction]EnforceFunc) Enforce
 
 type enforcer struct {
 	enforcementMap map[v1.EnforcementAction]EnforceFunc
-	actionsC       chan *DeploymentEnforcement
+	actionsC       chan *v1.SensorEnforcement
 	stopC          concurrency.Signal
 	stoppedC       concurrency.Signal
 }
 
-func (e *enforcer) Actions() chan<- *DeploymentEnforcement {
+func (e *enforcer) Actions() chan<- *v1.SensorEnforcement {
 	return e.actionsC
 }
 
@@ -42,9 +53,9 @@ func (e *enforcer) Start() {
 			}
 
 			if err := f(action); err != nil {
-				logger.Errorf("failed to take enforcement action %s on deployment %s: %s", action.Enforcement, action.Deployment.GetName(), err)
+				logger.Errorf("failed to take enforcement action: %s err: %s", proto.MarshalTextString(action), err)
 			} else {
-				logger.Infof("Successfully taken %s on deployment %s", action.Enforcement, action.Deployment.GetName())
+				logger.Infof("Successfully taken action %s", proto.MarshalTextString(action))
 			}
 		case <-e.stopC.Done():
 			logger.Info("Shutting down Enforcer")

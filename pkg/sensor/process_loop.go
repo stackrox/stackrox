@@ -7,7 +7,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -148,7 +147,7 @@ func (s *sensor) sendSensorEventWithLog(stream v1.SensorEventService_RecordEvent
 }
 
 // Take in data processed by central, run post processing, then send it to the output channel.
-func (s *sensor) receiveMessages(output chan<- *enforcers.DeploymentEnforcement, stream v1.SensorEventService_RecordEventClient) {
+func (s *sensor) receiveMessages(output chan<- *v1.SensorEnforcement, stream v1.SensorEventService_RecordEventClient) {
 	var err error
 	defer func() { s.Stop(err) }()
 
@@ -160,7 +159,7 @@ func (s *sensor) receiveMessages(output chan<- *enforcers.DeploymentEnforcement,
 		default:
 			// Take in the responses from central and generate enforcements for the outbound channel.
 			// Note: Recv blocks until it receives something new, unless the stream closes.
-			var eventResp *v1.SensorEventResponse
+			var eventResp *v1.SensorEnforcement
 			eventResp, err = stream.Recv()
 			// The loop exits when the stream from central is closed or returns an error.
 			if err == io.EOF {
@@ -183,13 +182,10 @@ func (s *sensor) receiveMessages(output chan<- *enforcers.DeploymentEnforcement,
 
 			// Just to avoid panics, but we currently don't handle any responses not from deployments
 			switch x := eventResp.Resource.(type) {
-			case *v1.SensorEventResponse_Deployment:
-				s.processDeploymentResponse(eventResp, output)
-			case *v1.SensorEventResponse_NetworkPolicy:
-			case *v1.SensorEventResponse_Namespace:
-			case *v1.SensorEventResponse_Indicator:
-			case *v1.SensorEventResponse_Secret:
-				// Drop the values for these types because there is nothing to do for them.
+			case *v1.SensorEnforcement_Deployment:
+				s.processResponse(eventResp, output)
+			case *v1.SensorEnforcement_ContainerInstance:
+				s.processResponse(eventResp, output)
 			default:
 				logger.Errorf("Event response with type '%s' is not handled", x)
 			}
@@ -197,28 +193,21 @@ func (s *sensor) receiveMessages(output chan<- *enforcers.DeploymentEnforcement,
 	}
 }
 
-func (s *sensor) processDeploymentResponse(eventResp *v1.SensorEventResponse, output chan<- *enforcers.DeploymentEnforcement) {
-	deploymentResp := eventResp.GetDeployment()
-	eventWrap, exists := s.pendingCache.FetchDeployment(deploymentResp.GetDeploymentId())
-	if !exists {
-		log.Errorf("cannot find deployment event for deployment %s", deploymentResp.GetDeploymentId())
+func (s *sensor) processResponse(enforcement *v1.SensorEnforcement, output chan<- *v1.SensorEnforcement) {
+	if enforcement == nil {
 		return
 	}
 
-	if deploymentResp.GetEnforcement() == v1.EnforcementAction_UNSET_ENFORCEMENT {
-		log.Infof("deployment processed but no enforcement needed on %s", eventWrap.GetDeployment().GetName())
+	if enforcement.GetEnforcement() == v1.EnforcementAction_UNSET_ENFORCEMENT {
+		log.Errorf("recieved enforcement with unset action: %s", proto.MarshalTextString(enforcement))
+		if deployment := enforcement.GetDeployment(); deployment != nil {
+			log.Infof("deployment processed but no enforcement needed: deployment %s", deployment.GetDeploymentId())
+		} else if container := enforcement.GetContainerInstance(); container != nil {
+			log.Infof("deployment processed but no enforcement needed: container instance %s", container.GetContainerInstanceId())
+		}
 		return
 	}
-
-	log.Infof("enforcement requested for deployment %s", deploymentResp.GetDeploymentId())
-
-	log.Infof("performing enforcement %s on deployment %s", eventWrap.GetAction(), eventWrap.GetDeployment().GetName())
-	output <- &enforcers.DeploymentEnforcement{
-		Deployment:   eventWrap.GetDeployment(),
-		OriginalSpec: eventWrap.OriginalSpec,
-		Enforcement:  deploymentResp.GetEnforcement(),
-		AlertID:      deploymentResp.GetAlertId(),
-	}
+	output <- enforcement
 }
 
 func (s *sensor) enrichImages(deployment *v1.Deployment) {

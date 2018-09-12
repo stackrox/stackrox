@@ -31,7 +31,7 @@ type pipelineImpl struct {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEventResponse, error) {
+func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEnforcement, error) {
 	secret := event.GetSecret()
 	secret.ClusterId = event.GetClusterId()
 	switch event.GetAction() {
@@ -43,7 +43,7 @@ func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEventResponse, erro
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *v1.Secret) (*v1.SensorEventResponse, error) {
+func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *v1.Secret) (*v1.SensorEnforcement, error) {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
 		return nil, err
@@ -54,11 +54,11 @@ func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *v1.Sec
 		return nil, err
 	}
 
-	return s.createResponse(event), nil
+	return nil, nil
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, secret *v1.Secret) (*v1.SensorEventResponse, error) {
+func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, secret *v1.Secret) (*v1.SensorEnforcement, error) {
 	if err := s.validateInput(secret); err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, secret *v1.S
 		return nil, err
 	}
 
-	return s.createResponse(secret), nil
+	return nil, nil
 }
 
 func (s *pipelineImpl) validateInput(secret *v1.Secret) error {
@@ -105,15 +105,5 @@ func (s *pipelineImpl) persistSecret(action v1.ResourceAction, secret *v1.Secret
 		return s.secrets.RemoveSecret(secret.GetId())
 	default:
 		return fmt.Errorf("Event action '%s' for secret does not exist", action)
-	}
-}
-
-func (s *pipelineImpl) createResponse(secret *v1.Secret) *v1.SensorEventResponse {
-	return &v1.SensorEventResponse{
-		Resource: &v1.SensorEventResponse_Secret{
-			Secret: &v1.SecretEventResponse{
-				Id: secret.Id,
-			},
-		},
 	}
 }

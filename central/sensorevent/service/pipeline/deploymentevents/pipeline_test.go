@@ -66,10 +66,8 @@ func (suite *PipelineTestSuite) TestCreateResponseForRemove() {
 	}
 	response := tested.do(events[0].GetDeployment(), v1.ResourceAction_REMOVE_RESOURCE)
 
-	// Pull one more time to get nil
-	suite.Equal(events[0].GetDeployment().GetId(), response.GetDeployment().GetDeploymentId())
-	suite.Empty(response.GetDeployment().GetAlertId())
-	suite.Equal(v1.EnforcementAction_UNSET_ENFORCEMENT, response.GetDeployment().GetEnforcement())
+	// Should be no response for remove since no enforcement should be needed.
+	suite.Nil(response)
 	suite.detector.AssertExpectations(suite.T())
 }
 

@@ -23,7 +23,7 @@ type pipelineImpl struct {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEventResponse, error) {
+func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEnforcement, error) {
 	switch event.GetAction() {
 	case v1.ResourceAction_REMOVE_RESOURCE:
 		return nil, s.indicators.RemoveProcessIndicator(event.GetProcessIndicator().GetId())

@@ -37,40 +37,32 @@ message SensorEvent {
     }
 }
 
-message DeploymentEventResponse {
-    string alert_id               = 1;
-    EnforcementAction enforcement = 2;
-    string deployment_id          = 3;
-}
+message SensorEnforcement {
+    EnforcementAction enforcement = 1;
 
-message NetworkPolicyEventResponse {
-    string id = 1;
-}
-
-message NamespaceEventResponse {
-    string id = 1;
-}
-
-message IndicatorEventResponse {
-    string id = 1;
-}
-
-message SecretEventResponse {
-    string id = 1;
-}
-
-message SensorEventResponse {
     oneof resource {
-        DeploymentEventResponse    deployment     = 1;
-        NetworkPolicyEventResponse network_policy = 2;
-        NamespaceEventResponse     namespace      = 3;
-        IndicatorEventResponse     indicator      = 4;
-        SecretEventResponse        secret         = 5;
+        DeploymentEnforcement       deployment         = 2;
+        ContainerInstanceEnforcement container_instance = 3;
     }
 }
 
+message DeploymentEnforcement {
+    string deployment_id   = 1;
+    string deployment_name = 2;
+    string deployment_type = 3;
+    string namespace       = 4;
+    string alert_id        = 5;
+}
+
+message ContainerInstanceEnforcement {
+    string container_instance_id = 1;
+    string pod_id                = 2;
+    string namespace             = 3;
+}
+
 service SensorEventService {
-    rpc RecordEvent(stream SensorEvent) returns (stream SensorEventResponse) {
+
+    rpc RecordEvent(stream SensorEvent) returns (stream SensorEnforcement) {
         option (google.api.http) = {
             post: "/v1/sensor/events"
             body: "*"

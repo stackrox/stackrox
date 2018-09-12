@@ -45,7 +45,7 @@ type pipelineImpl struct {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEventResponse, error) {
+func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEnforcement, error) {
 	deployment := event.GetDeployment()
 	deployment.ClusterId = event.GetClusterId()
 	switch event.GetAction() {
@@ -57,7 +57,7 @@ func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEventResponse, erro
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, deployment *v1.Deployment) (*v1.SensorEventResponse, error) {
+func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, deployment *v1.Deployment) (*v1.SensorEnforcement, error) {
 	// Validate the the deployment we receive has necessary fields set.
 	if err := s.validateInput.do(deployment); err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, deployment *v
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, deployment *v1.Deployment) (*v1.SensorEventResponse, error) {
+func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, deployment *v1.Deployment) (*v1.SensorEnforcement, error) {
 	// Validate the the deployment we receive has necessary fields set.
 	if err := s.validateInput.do(deployment); err != nil {
 		return nil, err

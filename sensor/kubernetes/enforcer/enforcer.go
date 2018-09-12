@@ -39,6 +39,7 @@ func New() (enforcers.Enforcer, error) {
 	enforcementMap := map[v1.EnforcementAction]enforcers.EnforceFunc{
 		v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT:                 e.scaleToZero,
 		v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: e.unsatisfiableNodeConstraint,
+		v1.EnforcementAction_KILL_POD_ENFORCEMENT:                      e.kill,
 	}
 
 	return enforcers.CreateEnforcer(enforcementMap), nil

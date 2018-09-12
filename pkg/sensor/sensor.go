@@ -7,7 +7,6 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/listeners"
@@ -23,7 +22,7 @@ var (
 
 // Sensor interface allows you to start and stop the consumption/production loops.
 type Sensor interface {
-	Start(orchestratorInput <-chan *listeners.EventWrap, collectorInput <-chan *listeners.EventWrap, output chan<- *enforcers.DeploymentEnforcement)
+	Start(orchestratorInput <-chan *listeners.EventWrap, collectorInput <-chan *listeners.EventWrap, output chan<- *v1.SensorEnforcement)
 	Stop(error)
 	Wait() error
 }
@@ -73,7 +72,7 @@ type sensor struct {
 // It is an error to call Start repeatedly without first calling Wait(); Wait
 // itself will not return unless Stop() is called, or processing must be
 // aborted for another reason (stream interrupted, channel closed, etc.).
-func (s *sensor) Start(orchestratorInput <-chan *listeners.EventWrap, collectorInput <-chan *listeners.EventWrap, output chan<- *enforcers.DeploymentEnforcement) {
+func (s *sensor) Start(orchestratorInput <-chan *listeners.EventWrap, collectorInput <-chan *listeners.EventWrap, output chan<- *v1.SensorEnforcement) {
 	if !s.stopped.Reset() {
 		panic("Sensor has already been started without stopping first")
 	}

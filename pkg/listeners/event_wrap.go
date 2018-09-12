@@ -51,6 +51,6 @@ func (ew *EventWrap) Equals(newEW *EventWrap) bool {
 
 // EventWrapResponse wraps the response from the server with the original object
 type EventWrapResponse struct {
-	*v1.SensorEventResponse
+	*v1.SensorEnforcement
 	OriginalSpec interface{}
 }

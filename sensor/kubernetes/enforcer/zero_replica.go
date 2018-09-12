@@ -4,56 +4,57 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stackrox/rox/pkg/enforcers"
+	roxV1 "github.com/stackrox/rox/generated/api/v1"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
-	appsv1beta1 "k8s.io/api/apps/v1beta1"
-	"k8s.io/api/extensions/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/sensor/kubernetes/enforcer/daemonset"
+	"github.com/stackrox/rox/sensor/kubernetes/enforcer/deployment"
+	"github.com/stackrox/rox/sensor/kubernetes/enforcer/replicaset"
+	"github.com/stackrox/rox/sensor/kubernetes/enforcer/replicationcontroller"
+	"github.com/stackrox/rox/sensor/kubernetes/enforcer/statefulset"
 )
 
-func (e *enforcerImpl) scaleToZero(enforcement *enforcers.DeploymentEnforcement) (err error) {
-	d := enforcement.Deployment
-	scaleRequest := &v1beta1.Scale{
-		Spec: pkgKubernetes.ScaleToZeroSpec,
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      d.GetName(),
-			Namespace: d.GetNamespace(),
-		},
+func (e *enforcerImpl) scaleToZero(enforcement *roxV1.SensorEnforcement) (err error) {
+	deploymentInfo := enforcement.GetDeployment()
+	if deploymentInfo == nil {
+		return fmt.Errorf("unable to apply constraint to non-deployment")
 	}
 
-	switch d.GetType() {
+	// Set enforcement function based on deployment type.
+	var function func() error
+	switch deploymentInfo.GetDeploymentType() {
 	case pkgKubernetes.Deployment:
-		_, err = e.client.ExtensionsV1beta1().Deployments(d.GetNamespace()).UpdateScale(d.GetName(), scaleRequest)
-	case pkgKubernetes.DaemonSet:
-		return fmt.Errorf("scaling to 0 is not supported for %s", pkgKubernetes.DaemonSet)
-	case pkgKubernetes.ReplicaSet:
-		_, err = e.client.ExtensionsV1beta1().ReplicaSets(d.GetNamespace()).UpdateScale(d.GetName(), scaleRequest)
-	case pkgKubernetes.ReplicationController:
-		_, err = e.client.CoreV1().ReplicationControllers(d.GetNamespace()).UpdateScale(d.GetName(), scaleRequest)
-	case pkgKubernetes.StatefulSet:
-		var ss *appsv1beta1.StatefulSet
-		var ok bool
-		if ss, ok = enforcement.OriginalSpec.(*appsv1beta1.StatefulSet); !ok {
-			return fmt.Errorf("original object is not of statefulset type: %+v", enforcement.OriginalSpec)
+		function = func() error {
+			return deployment.EnforceZeroReplica(e.client, deploymentInfo)
 		}
-
-		const maxRetries = 5
-
-		for i := 0; i < maxRetries; i++ {
-			if err = e.scaleStatefulSetToZero(ss); err == nil {
-				return nil
-			}
-			time.Sleep(time.Second)
+	case pkgKubernetes.DaemonSet:
+		function = func() error {
+			return daemonset.EnforceZeroReplica(e.client, deploymentInfo)
+		}
+	case pkgKubernetes.ReplicaSet:
+		function = func() error {
+			return replicaset.EnforceZeroReplica(e.client, deploymentInfo)
+		}
+	case pkgKubernetes.ReplicationController:
+		function = func() error {
+			return replicationcontroller.EnforceZeroReplica(e.client, deploymentInfo)
+		}
+	case pkgKubernetes.StatefulSet:
+		function = func() error {
+			return statefulset.EnforceZeroReplica(e.client, deploymentInfo)
 		}
 	default:
-		return fmt.Errorf("unknown type %s", enforcement.Deployment.GetType())
+		return fmt.Errorf("unknown type: %s", deploymentInfo.GetDeploymentType())
 	}
 
-	return
-}
-
-func (e *enforcerImpl) scaleStatefulSetToZero(ss *appsv1beta1.StatefulSet) (err error) {
-	ss.Spec.Replicas = &[]int32{0}[0]
-	_, err = e.client.AppsV1beta1().StatefulSets(ss.GetNamespace()).Update(ss)
-	return
+	// Retry any retriable errors encountered when trying to run the enforcement function.
+	return retry.WithRetry(function,
+		retry.Tries(5),
+		retry.OnlyRetryableErrors(),
+		retry.BetweenAttempts(func() {
+			time.Sleep(time.Second)
+		}),
+		retry.OnFailedAttempts(func(e error) {
+			logger.Error(e)
+		}))
 }

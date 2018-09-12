@@ -136,9 +136,9 @@ func (s *serviceImpl) sendMessages(stream v1.SensorEventService_RecordEventServe
 			continue
 		}
 		if sensorResponse == nil {
+			log.Infof("no enforcement action taken for: %s", event.Id)
 			continue
 		}
-
 		if err := stream.Send(sensorResponse); err != nil {
 			log.Error("error sending deployment event response", err)
 		}

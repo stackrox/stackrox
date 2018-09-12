@@ -2,7 +2,6 @@ package enforcer
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -12,11 +11,11 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/enforcers"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
-var (
-	logger = logging.LoggerForModule()
+// Label key used for unsatisfiable node constraint enforcement.
+const (
+	UnsatisfiableNodeConstraintKey = `BlockedByStackRoxNext`
 )
 
 type enforcerImpl struct {
@@ -34,62 +33,101 @@ func MustCreate() enforcers.Enforcer {
 
 // New returns a new Swarm Enforcer.
 func New() (enforcers.Enforcer, error) {
-	dockerClient, err := docker.NewClient()
+	dc, err := docker.NewClient()
 	if err != nil {
 		return nil, err
 	}
+
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
-	dockerClient.NegotiateAPIVersion(ctx)
+	dc.NegotiateAPIVersion(ctx)
 
 	e := &enforcerImpl{
-		Client: dockerClient,
+		Client: dc,
 	}
 	enforcementMap := map[v1.EnforcementAction]enforcers.EnforceFunc{
 		v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT:                 e.scaleToZero,
 		v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: e.unsatisfiableNodeConstraint,
+		v1.EnforcementAction_KILL_POD_ENFORCEMENT:                      e.kill,
 	}
 
 	return enforcers.CreateEnforcer(enforcementMap), nil
 }
 
-func (e *enforcerImpl) scaleToZero(enforcement *enforcers.DeploymentEnforcement) (err error) {
-	if len(enforcement.Deployment.GetContainers()) == 0 {
-		return errors.New("deployment does not have any containers")
+func (e *enforcerImpl) scaleToZero(enforcement *v1.SensorEnforcement) (err error) {
+	deploymentInfo := enforcement.GetDeployment()
+	if deploymentInfo == nil {
+		return fmt.Errorf("unable to apply constraint to non-deployment")
 	}
 
-	service, ok := enforcement.OriginalSpec.(swarm.Service)
-	if !ok {
-		return fmt.Errorf("%+v is not of type swarm service", enforcement.OriginalSpec)
+	service, err := e.loadService(deploymentInfo)
+	if err != nil {
+		return err
 	}
+
 	if service.Spec.Mode.Replicated == nil {
-		return fmt.Errorf("service %s is not a replicated service; unable to scale to 0", enforcement.Deployment.GetName())
+		return fmt.Errorf("service %s is not a replicated service; unable to scale to 0", deploymentInfo.GetDeploymentName())
 	}
-
 	service.Spec.Mode.Replicated.Replicas = &[]uint64{0}[0]
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	_, err = e.ServiceUpdate(ctx, enforcement.Deployment.GetId(), service.Version, service.Spec, swarmTypes.ServiceUpdateOptions{})
+
+	_, err = e.ServiceUpdate(ctx, deploymentInfo.GetDeploymentId(), service.Version, service.Spec, swarmTypes.ServiceUpdateOptions{})
+	if err != nil {
+		return err
+	}
 	return
 }
 
-func (e *enforcerImpl) unsatisfiableNodeConstraint(enforcement *enforcers.DeploymentEnforcement) (err error) {
-	service, ok := enforcement.OriginalSpec.(swarm.Service)
-	if !ok {
-		return fmt.Errorf("%+v is not of type swarm service", enforcement.OriginalSpec)
+func (e *enforcerImpl) unsatisfiableNodeConstraint(enforcement *v1.SensorEnforcement) (err error) {
+	deploymentInfo := enforcement.GetDeployment()
+	if deploymentInfo == nil {
+		return fmt.Errorf("unable to apply constraint to non-deployment")
+	}
+
+	service, err := e.loadService(deploymentInfo)
+	if err != nil {
+		return err
 	}
 
 	task := &service.Spec.TaskTemplate
 	if task.Placement == nil {
 		task.Placement = &swarm.Placement{}
 	}
-
 	placement := task.Placement
-	placement.Constraints = append(placement.Constraints, fmt.Sprintf("%s==%s", enforcers.UnsatisfiableNodeConstraintKey, enforcement.AlertID))
+	placement.Constraints = append(placement.Constraints, fmt.Sprintf("%s==%s", UnsatisfiableNodeConstraintKey, deploymentInfo.GetAlertId()))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	_, err = e.ServiceUpdate(ctx, enforcement.Deployment.GetId(), service.Version, service.Spec, swarmTypes.ServiceUpdateOptions{})
+
+	_, err = e.ServiceUpdate(ctx, deploymentInfo.GetDeploymentId(), service.Version, service.Spec, swarmTypes.ServiceUpdateOptions{})
+	if err != nil {
+		return err
+	}
 	return
+}
+
+func (e *enforcerImpl) kill(enforcement *v1.SensorEnforcement) (err error) {
+	containerInfo := enforcement.GetContainerInstance()
+	if containerInfo == nil {
+		return fmt.Errorf("unable to apply constraint to non-deployment")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	err = e.ContainerKill(ctx, containerInfo.GetContainerInstanceId(), "SIGKILL")
+	if err != nil {
+		return err
+	}
+	return
+}
+
+func (e *enforcerImpl) loadService(deploymentInfo *v1.DeploymentEnforcement) (swarm.Service, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	service, _, err := e.ServiceInspectWithRaw(ctx, deploymentInfo.GetDeploymentId(), swarmTypes.ServiceInspectOptions{})
+	return service, err
 }

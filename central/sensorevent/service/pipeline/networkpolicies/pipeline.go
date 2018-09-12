@@ -34,7 +34,7 @@ type pipelineImpl struct {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEventResponse, error) {
+func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEnforcement, error) {
 	networkPolicy := event.GetNetworkPolicy()
 	networkPolicy.ClusterId = event.GetClusterId()
 	switch event.GetAction() {
@@ -46,7 +46,7 @@ func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEventResponse, erro
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *v1.NetworkPolicy) (*v1.SensorEventResponse, error) {
+func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *v1.NetworkPolicy) (*v1.SensorEnforcement, error) {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
 		return nil, err
@@ -58,11 +58,11 @@ func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *v1.Net
 	}
 	s.graphEvaluator.IncrementEpoch()
 
-	return s.createResponse(event), nil
+	return nil, nil
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, np *v1.NetworkPolicy) (*v1.SensorEventResponse, error) {
+func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, np *v1.NetworkPolicy) (*v1.SensorEnforcement, error) {
 	if err := s.validateInput(np); err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, np *v1.Netwo
 	}
 	s.graphEvaluator.IncrementEpoch()
 
-	return s.createResponse(np), nil
+	return nil, nil
 }
 
 func (s *pipelineImpl) validateInput(np *v1.NetworkPolicy) error {
@@ -112,15 +112,5 @@ func (s *pipelineImpl) persistNetworkPolicy(action v1.ResourceAction, np *v1.Net
 		return s.networkPolicies.RemoveNetworkPolicy(string(np.GetId()))
 	default:
 		return fmt.Errorf("Event action '%s' for network policy does not exist", action)
-	}
-}
-
-func (s *pipelineImpl) createResponse(np *v1.NetworkPolicy) *v1.SensorEventResponse {
-	return &v1.SensorEventResponse{
-		Resource: &v1.SensorEventResponse_NetworkPolicy{
-			NetworkPolicy: &v1.NetworkPolicyEventResponse{
-				Id: string(np.GetId()),
-			},
-		},
 	}
 }
