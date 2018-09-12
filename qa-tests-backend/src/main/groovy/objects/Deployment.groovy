@@ -12,6 +12,8 @@ class Deployment {
 
     Deployment setName(String n) {
         this.name = n
+        // This label will be the selector used to select this deployment.
+        this.addLabel("name", n)
         return this
     }
 

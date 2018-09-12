@@ -41,7 +41,7 @@ class SystemPoliciesTest extends BaseSpecification {
     @Unroll
     @Category(BAT)
     def "Verify policy #policyname is triggered" (String policyname, Deployment deployment,
-                                                  String testId, String deploymentName) {
+                                                  String testId) {
         when:
         "Create a Deployment"
         orchestrator.createDeployment(deployment)
@@ -54,72 +54,72 @@ class SystemPoliciesTest extends BaseSpecification {
 
         then:
         "Verify Violation #policyname is triggered"
-        assert waitForViolation(deploymentName,  policyname, 30)
+        assert waitForViolation(deployment.getName(),  policyname, 30)
 
         cleanup:
         "Remove Deployment #deploymentName"
-        orchestrator.deleteDeployment(deploymentName)
+        orchestrator.deleteDeployment(deployment.getName())
 
         where:
         "Data inputs are :"
 
-        policyname | deployment | testId | deploymentName
+        policyname | deployment | testId
 
         "Container Port 22" | new Deployment()
                 .setName ("qaport22")
                 .setImage ("nginx")
                 .addPort (22)
-                .addLabel ( "app", "qaport22" ) | "C311" | "qaport22"
+                .addLabel ( "app", "test" ) | "C311"
 
         "Apache Struts: CVE-2017-5638" | new Deployment()
                 .setName ( "qacve" )
                 .setImage ( "apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                .addLabel ( "app", "qacve" ) | "C938" | "qacve"
+                .addLabel ( "app", "test" ) | "C938"
 
         "Heartbleed: CVE-2014-0160" | new Deployment()
                 .setName ("qaheartbleed")
                 .setImage ("apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
-                .addLabel ( "app", "qaheartbleed" ) | "C947" | "qaheartbleed"
+                .addLabel ( "app", "test" ) | "C947"
 
         "Wget in Image" | new Deployment()
                 .setName ("qawget")
                 .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                .addLabel ( "app", "qawget" ) | "C939" | "qawget"
+                .addLabel ( "app", "test" ) | "C939"
 
         "90-Day Image Age" | new Deployment()
                 .setName ("qa90days" )
                 .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                .addLabel ("app", "qa90days" ) | "C810" | "qa90days"
+                .addLabel ("app", "test" ) | "C810"
 
         "Aptitude Package Manager (apt) in Image" | new Deployment()
                 .setName ("qaapt" )
                 .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                .addLabel ( "app", "qaapt" ) | "C931" | "qaapt"
+                .addLabel ( "app", "test" ) | "C931"
 
         "30-Day Scan Age" | new Deployment()
                 .setName ( "qa30days" )
                 .setImage ( "apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                .addLabel ( "app", "qa30days" ) | "C941" | "qa30days"
+                .addLabel ( "app", "test" ) | "C941"
 
         "Maximum CVSS >= 7" | new Deployment()
                 .setName ( "qacvss" )
                 .setImage ( "apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                .addLabel ( "app", "qacvss" ) | "C933" | "qacvss"
+                .addLabel ( "app", "test" ) | "C933"
 
         "Shellshock: CVE-2014-6271" | new Deployment()
                 .setName ("qashellshock" )
                 .setImage ("apollo-dtr.rox.systems/legacy-apps/ssl-terminator")
-                .addLabel ( "app", "qashellshock" ) | "C948" | "qashellshock"
+                .addLabel ( "app", "test" ) | "C948"
 
         "Curl in Image" | new Deployment()
                 .setName ("qacurl")
                 .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                .addLabel ( "app", "qacurl" ) | "C948" | "qacurl"
+                .addLabel ( "app", "test" ) | "C948"
 
         "DockerHub NGINX 1.10" | new Deployment()
                 .setName ("qanginx")
                 .setImage ("nginx:1.10")
-                .addLabel ( "app", "qanginx" ) | "C823" | "qanginx"
+                .addLabel ( "app", "test" ) | "C823"
     }
 
 }
