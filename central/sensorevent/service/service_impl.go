@@ -4,46 +4,21 @@ import (
 	"io"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
-	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	namespaceStore "github.com/stackrox/rox/central/namespace/store"
-	networkPolicyStore "github.com/stackrox/rox/central/networkpolicies/store"
-	"github.com/stackrox/rox/central/risk"
-	"github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/central/sensorevent/service/queue"
 	sensorEventStore "github.com/stackrox/rox/central/sensorevent/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
-	"github.com/stackrox/rox/pkg/logging"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
-var logger = logging.LoggerForModule()
-
 // Service is the struct that manages the SensorEvent API
 type serviceImpl struct {
-	detector deployTimeDetection.Detector
-	scorer   risk.Scorer
-
 	deploymentEvents sensorEventStore.Store
 
-	images          imageDataStore.DataStore
-	deployments     deploymentDataStore.DataStore
-	clusters        clusterDataStore.DataStore
-	networkPolicies networkPolicyStore.Store
-	namespaces      namespaceStore.Store
-	secrets         datastore.DataStore
-
-	deploymentPipeline       pipeline.Pipeline
-	processIndicatorPipeline pipeline.Pipeline
-	networkPolicyPipeline    pipeline.Pipeline
-	namespacePipeline        pipeline.Pipeline
-	secretPipeline           pipeline.Pipeline
+	pl pipeline.Pipeline
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -110,27 +85,7 @@ func (s *serviceImpl) sendMessages(stream v1.SensorEventService_RecordEventServe
 			return
 		}
 
-		var eventPipeline pipeline.Pipeline
-		switch x := event.Resource.(type) {
-		case *v1.SensorEvent_Deployment:
-			eventPipeline = s.deploymentPipeline
-		case *v1.SensorEvent_NetworkPolicy:
-			eventPipeline = s.networkPolicyPipeline
-		case *v1.SensorEvent_Namespace:
-			eventPipeline = s.namespacePipeline
-		case *v1.SensorEvent_ProcessIndicator:
-			eventPipeline = s.processIndicatorPipeline
-		case *v1.SensorEvent_Secret:
-			eventPipeline = s.secretPipeline
-		case nil:
-			logger.Errorf("Resource field is empty")
-			return
-		default:
-			logger.Errorf("No resource with type %T", x)
-			return
-		}
-
-		sensorResponse, err := eventPipeline.Run(event)
+		sensorResponse, err := s.pl.Run(event)
 		if err != nil {
 			log.Errorf("error processing response: %s", err)
 			continue

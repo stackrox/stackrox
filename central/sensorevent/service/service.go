@@ -1,21 +1,7 @@
 package service
 
 import (
-	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
-	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	namespaceDataStore "github.com/stackrox/rox/central/namespace/store"
-	"github.com/stackrox/rox/central/networkgraph"
-	networkPolicyStore "github.com/stackrox/rox/central/networkpolicies/store"
-	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/risk"
-	"github.com/stackrox/rox/central/secret/datastore"
-	"github.com/stackrox/rox/central/sensorevent/service/pipeline/deploymentevents"
-	namespacePipeline "github.com/stackrox/rox/central/sensorevent/service/pipeline/namespaces"
-	"github.com/stackrox/rox/central/sensorevent/service/pipeline/networkpolicies"
-	processIndicatorPipeline "github.com/stackrox/rox/central/sensorevent/service/pipeline/processindicators"
-	secretPipeline "github.com/stackrox/rox/central/sensorevent/service/pipeline/secrets"
+	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	deploymentEventStore "github.com/stackrox/rox/central/sensorevent/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -37,33 +23,10 @@ type Service interface {
 }
 
 // New returns a new instance of service.
-func New(detector deployTimeDetection.Detector,
-	scorer risk.Scorer,
-	deploymentEvents deploymentEventStore.Store,
-	images imageDataStore.DataStore,
-	deployments deploymentDataStore.DataStore,
-	clusters clusterDataStore.DataStore,
-	indicators processIndicatorDataStore.DataStore,
-	networkPolicies networkPolicyStore.Store,
-	namespaces namespaceDataStore.Store,
-	secrets datastore.DataStore,
-	graphEvaluator networkgraph.Evaluator) Service {
+func New(deploymentEvents deploymentEventStore.Store,
+	pl pipeline.Pipeline) Service {
 	return &serviceImpl{
-		detector: detector,
-		scorer:   scorer,
-
 		deploymentEvents: deploymentEvents,
-		images:           images,
-		deployments:      deployments,
-		clusters:         clusters,
-		networkPolicies:  networkPolicies,
-		namespaces:       namespaces,
-		secrets:          secrets,
-
-		deploymentPipeline:       deploymentevents.NewPipeline(clusters, deployments, images, detector, graphEvaluator),
-		processIndicatorPipeline: processIndicatorPipeline.NewPipeline(indicators),
-		networkPolicyPipeline:    networkpolicies.NewPipeline(clusters, networkPolicies, graphEvaluator),
-		namespacePipeline:        namespacePipeline.NewPipeline(clusters, namespaces, graphEvaluator),
-		secretPipeline:           secretPipeline.NewPipeline(clusters, secrets),
+		pl:               pl,
 	}
 }

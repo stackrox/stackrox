@@ -37,6 +37,7 @@ type pipelineImpl struct {
 func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEnforcement, error) {
 	networkPolicy := event.GetNetworkPolicy()
 	networkPolicy.ClusterId = event.GetClusterId()
+
 	switch event.GetAction() {
 	case v1.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(event.GetAction(), networkPolicy)

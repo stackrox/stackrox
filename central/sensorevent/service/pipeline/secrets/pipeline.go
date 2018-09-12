@@ -34,6 +34,7 @@ type pipelineImpl struct {
 func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEnforcement, error) {
 	secret := event.GetSecret()
 	secret.ClusterId = event.GetClusterId()
+
 	switch event.GetAction() {
 	case v1.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(event.GetAction(), secret)
