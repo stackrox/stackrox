@@ -40,8 +40,7 @@ const policyFormat = `
 	{{ subheader "Policy Fields:"}}
 	{{if .Policy.Fields.ImageName}}{{list "Image Name"}}
 		{{if .Policy.Fields.ImageName.Registry}}{{stringify "Registry:" .Policy.Fields.ImageName.Registry | nestedList}}{{end}}
-		{{if .Policy.Fields.ImageName.Namespace}}{{stringify "Namespace:" .Policy.Fields.ImageName.Namespace | nestedList}}{{end}}
-		{{if .Policy.Fields.ImageName.Repo}}{{stringify "Repo:" .Policy.Fields.ImageName.Repo | nestedList}}{{end}}
+		{{if .Policy.Fields.ImageName.Remote}}{{stringify "Remote:" .Policy.Fields.ImageName.Remote | nestedList}}{{end}}
 		{{if .Policy.Fields.ImageName.Tag}}{{stringify "Tag:" .Policy.Fields.ImageName.Tag | nestedList}}{{end}}
 	{{end}}
 	{{if .Policy.Fields.LineRule}}{{list "Dockerfile Line"}}

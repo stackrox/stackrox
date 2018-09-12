@@ -151,10 +151,7 @@ describe('Policies page', () => {
         savePolicy();
         cy
             .get(selectors.imageRegistry.value)
-            .should(
-                'have.text',
-                'Alert on any namespaces using any repos using latest tag from docker.io registry'
-            );
+            .should('have.text', 'Alert on any image using tag latest from registry docker.io');
         editPolicy();
         cy.get(selectors.imageRegistry.deleteButton).click();
         savePolicy();

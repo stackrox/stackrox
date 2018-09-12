@@ -6,7 +6,7 @@
   "fields": {
     "image_name": {
       "registry": "docker.io",
-      "repo": "nginx",
+      "remote": "nginx",
       "tag": "1.10"
     }
   },

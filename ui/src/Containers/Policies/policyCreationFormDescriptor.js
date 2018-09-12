@@ -210,17 +210,9 @@ const policyConfigurationDescriptor = [
         default: false
     },
     {
-        label: 'Image Namespace',
-        jsonpath: 'fields.imageName.namespace',
+        label: 'Image Remote',
+        jsonpath: 'fields.imageName.remote',
         type: 'text',
-        required: false,
-        default: false
-    },
-    {
-        label: 'Image Repository',
-        jsonpath: 'fields.imageName.repo',
-        type: 'text',
-        placeholder: 'nginx',
         required: false,
         default: false
     },

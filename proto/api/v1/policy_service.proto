@@ -93,9 +93,8 @@ message NumericalPolicy {
 // Image Name
 message ImageNamePolicy {
     string registry        = 1; // e.g. docker.io
-    string namespace       = 2; // e.g. stackrox
-    string repo            = 3; // e.g. container-summarizer
-    string tag             = 4; // e.g. latest
+    string remote          = 2; // e.g. stackrox/container-summarizer
+    string tag             = 3; // e.g. latest
 }
 
 message Component {

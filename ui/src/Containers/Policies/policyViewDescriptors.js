@@ -126,13 +126,10 @@ const fieldsMap = {
     imageName: {
         label: 'Image',
         formatValue: d => {
-            const namespace = d.namespace ? d.namespace : 'any';
-            const repo = d.repo ? d.repo : 'any';
-            const tag = d.tag ? d.tag : 'any';
-            const registry = d.registry ? d.registry : 'any';
-            return `Alert on ${namespace} namespace${d.namespace ? '' : 's'} using ${repo} repo${
-                d.repo ? '' : 's'
-            } using ${tag} tag from ${registry} registry`;
+            const remote = d.remote ? `images named ${d.remote}` : 'any image';
+            const tag = d.tag ? `tag ${d.tag}` : 'any tag';
+            const registry = d.registry ? `registry ${d.registry}` : 'any registry';
+            return `Alert on ${remote} using ${tag} from ${registry}`;
         }
     },
     imageAgeDays: {

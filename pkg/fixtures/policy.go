@@ -24,10 +24,9 @@ func GetPolicy() *v1.Policy {
 		},
 		Fields: &v1.PolicyFields{
 			ImageName: &v1.ImageNamePolicy{
-				Registry:  "docker.io",
-				Namespace: "stackrox",
-				Repo:      "nginx",
-				Tag:       "1.10",
+				Registry: "docker.io",
+				Remote:   "stackrox/nginx",
+				Tag:      "1.10",
 			},
 			SetImageAgeDays: &v1.PolicyFields_ImageAgeDays{
 				ImageAgeDays: 30,
