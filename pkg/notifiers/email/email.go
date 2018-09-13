@@ -112,19 +112,22 @@ func (m message) Bytes() []byte {
 func (e *email) plainTextAlert(alert *v1.Alert) (string, error) {
 	funcMap := template.FuncMap{
 		"header": func(s string) string {
-			return fmt.Sprintf("\r\n%v\r\n", s)
+			return fmt.Sprintf("\r\n%s\r\n", s)
 		},
 		"subheader": func(s string) string {
-			return fmt.Sprintf("\r\n\t%v\r\n", s)
+			return fmt.Sprintf("\r\n\t%s\r\n", s)
 		},
 		"line": func(s string) string {
-			return fmt.Sprintf("%v\r\n", s)
+			return fmt.Sprintf("%s\r\n", s)
 		},
 		"list": func(s string) string {
-			return fmt.Sprintf("\t - %v\r\n", s)
+			return fmt.Sprintf("\t - %s\r\n", s)
 		},
 		"nestedList": func(s string) string {
-			return fmt.Sprintf("\t\t - %v\r\n", s)
+			return fmt.Sprintf("\t\t - %s\r\n", s)
+		},
+		"codeBlock": func(s string) string {
+			return fmt.Sprintf("\n %s \n", s)
 		},
 	}
 	alertLink := notifiers.AlertLink(e.notifier.UiEndpoint, alert.GetId())
@@ -153,7 +156,11 @@ func (e *email) AlertNotify(alert *v1.Alert) error {
 func (e *email) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 	subject := fmt.Sprintf("New network policy YAML for cluster '%s' needs to be applied", clusterName)
 
-	body, err := notifiers.FormatNetworkPolicyYAML(yaml, clusterName, template.FuncMap{})
+	body, err := notifiers.FormatNetworkPolicyYAML(yaml, clusterName, template.FuncMap{
+		"codeBlock": func(s string) string {
+			return s
+		},
+	})
 	if err != nil {
 		return err
 	}
