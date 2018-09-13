@@ -9,6 +9,11 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
+const (
+	// RegexPrefix is the prefix for regex queries.
+	RegexPrefix = "r/"
+)
+
 // QueryBuilder builds a search query
 type QueryBuilder struct {
 	query             map[FieldLabel][]string
@@ -24,6 +29,17 @@ func NewQueryBuilder() *QueryBuilder {
 	}
 }
 
+// AddDaysHighlighted is a convenience wrapper around AddDays and MarkHighlighted.
+func (qb *QueryBuilder) AddDaysHighlighted(k FieldLabel, days int64) *QueryBuilder {
+	return qb.AddDays(k, days).MarkHighlighted(k)
+}
+
+// AddDays adds a query on the (timestamp) field k that matches the value in k
+// is at least 'days' days before time.Now.
+func (qb *QueryBuilder) AddDays(k FieldLabel, days int64) *QueryBuilder {
+	return qb.AddStrings(k, fmt.Sprintf("<=%dd", days))
+}
+
 // MarkHighlighted marks the field as one that we want results to be highlighted for.
 func (qb *QueryBuilder) MarkHighlighted(k FieldLabel) *QueryBuilder {
 	qb.highlightedFields[k] = struct{}{}
@@ -36,13 +52,26 @@ func (qb *QueryBuilder) AddStringsHighlighted(k FieldLabel, v ...string) *QueryB
 	return qb.AddStrings(k, v...).MarkHighlighted(k)
 }
 
-// AddStrings adds a key value pair to the query
+// AddStrings adds a key value pair to the query.
 func (qb *QueryBuilder) AddStrings(k FieldLabel, v ...string) *QueryBuilder {
 	qb.query[k] = append(qb.query[k], v...)
 	return qb
 }
 
-// AddBools adds a string key and a bool value pair
+// AddRegexesHighlighted is a convenience wrapper to add regexes and mark the field as highlighted.
+func (qb *QueryBuilder) AddRegexesHighlighted(k FieldLabel, regexes ...string) *QueryBuilder {
+	return qb.AddRegexes(k, regexes...).MarkHighlighted(k)
+}
+
+// AddRegexes adds regexes to match on the field.
+func (qb *QueryBuilder) AddRegexes(k FieldLabel, regexes ...string) *QueryBuilder {
+	for _, r := range regexes {
+		qb.query[k] = append(qb.query[k], fmt.Sprintf("%s%s", RegexPrefix, r))
+	}
+	return qb
+}
+
+// AddBools adds a string key and a bool value pair.
 func (qb *QueryBuilder) AddBools(k FieldLabel, v ...bool) *QueryBuilder {
 	bools := make([]string, 0, len(v))
 	for _, b := range v {
@@ -52,13 +81,13 @@ func (qb *QueryBuilder) AddBools(k FieldLabel, v ...bool) *QueryBuilder {
 	return qb
 }
 
-// AddStringQuery adds a raw string query
+// AddStringQuery adds a raw string query.
 func (qb *QueryBuilder) AddStringQuery(v string) *QueryBuilder {
 	qb.raw = v
 	return qb
 }
 
-// Query returns the string version of the query
+// Query returns the string version of the query.
 func (qb *QueryBuilder) Query() string {
 	pairs := make([]string, 0, len(qb.query))
 	for k, values := range qb.query {

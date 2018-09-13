@@ -114,8 +114,17 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot string) (errs []
 		return
 	}
 
+	allowedPackages := []string{validImportRoot, "generated"}
+	if validImportRoot != "pkg" {
+		allowedPackages = append(allowedPackages, "pkg")
+	}
+	// Allow central to import "image" (for fixtures)
+	if validImportRoot == "central" {
+		allowedPackages = append(allowedPackages, "image")
+	}
+
 	for _, imp := range imps {
-		ok, err := roxImportsFromAllowedPackagesOnly(imp, validImportRoot, "pkg", "generated")
+		ok, err := roxImportsFromAllowedPackagesOnly(imp, allowedPackages...)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("import verification for %s: %s", imp.Path.Value, err))
 			continue

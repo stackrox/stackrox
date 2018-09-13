@@ -1,0 +1,84 @@
+package builders
+
+import (
+	"fmt"
+	"regexp"
+
+	"github.com/stackrox/rox/central/searchbasedpolicies"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/search"
+)
+
+type dockerFileLineFieldQueryBuilder struct {
+}
+
+func (c *dockerFileLineFieldQueryBuilder) Name() string {
+	return fmt.Sprintf("query builder for docker file lines")
+}
+
+func (c *dockerFileLineFieldQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
+	lineRule := fields.GetLineRule()
+	if lineRule == nil {
+		return
+	}
+
+	instSearchField, err := getSearchField(search.DockerfileInstructionKeyword, optionsMap)
+	if err != nil {
+		err = fmt.Errorf("%s: %s", c.Name(), err)
+	}
+	valSearchField, err := getSearchField(search.DockerfileInstructionValue, optionsMap)
+	if err != nil {
+		err = fmt.Errorf("%s: %s", c.Name(), err)
+	}
+
+	if _, ok := types.DockerfileInstructionSet[lineRule.GetInstruction()]; !ok {
+		err = fmt.Errorf("%v is not a valid dockerfile instruction", lineRule.GetInstruction())
+		return
+	}
+
+	if lineRule.GetValue() == "" {
+		err = fmt.Errorf("no value defined for dockerfile instruction: %+v", lineRule)
+		return
+	}
+
+	_, err = regexp.Compile(lineRule.GetValue())
+	if err != nil {
+		err = fmt.Errorf("invalid line regex %+v: %s", lineRule, err)
+		return
+	}
+
+	q = search.NewQueryBuilder().
+		AddStringsHighlighted(search.DockerfileInstructionKeyword, lineRule.GetInstruction()).
+		AddRegexesHighlighted(search.DockerfileInstructionValue, lineRule.GetValue()).
+		ProtoQuery()
+
+	v = func(result search.Result) []*v1.Alert_Violation {
+		instMatches := result.Matches[instSearchField.GetFieldPath()]
+		valMatches := result.Matches[valSearchField.GetFieldPath()]
+		if len(instMatches) == 0 || len(valMatches) == 0 {
+			return nil
+		}
+		violations := make([]*v1.Alert_Violation, 0, len(instMatches))
+		for i, instMatch := range instMatches {
+			// This should not happen if search works as expected.
+			if i >= len(valMatches) {
+				logger.Errorf("Matching Dockerfile line rule: %+v, "+
+					"instMatches %+v and valMatches %+v not of equal length", lineRule, instMatches, valMatches)
+				break
+			}
+			violations = append(violations, &v1.Alert_Violation{
+				Message: fmt.Sprintf("Dockerfile Line '%s %s' matches the rule %s %s",
+					instMatch, valMatches[i], lineRule.GetInstruction(), lineRule.GetValue()),
+			})
+		}
+		return violations
+	}
+	return
+}
+
+// NewDockerFileLineQueryBuilder returns a query builder that constructs a
+// Dockerfile line query.
+func NewDockerFileLineQueryBuilder() searchbasedpolicies.PolicyQueryBuilder {
+	return &dockerFileLineFieldQueryBuilder{}
+}

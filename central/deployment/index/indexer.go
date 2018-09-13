@@ -16,7 +16,7 @@ type Indexer interface {
 	AddDeployment(deployment *v1.Deployment) error
 	AddDeployments(deployments []*v1.Deployment) error
 	DeleteDeployment(id string) error
-	SearchDeployments(q *v1.Query) ([]search.Result, error)
+	Search(q *v1.Query) ([]search.Result, error)
 }
 
 // New returns a new instance of Indexer using the bleve Index provided.

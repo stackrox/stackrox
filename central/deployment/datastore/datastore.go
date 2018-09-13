@@ -5,11 +5,13 @@ import (
 	"github.com/stackrox/rox/central/deployment/search"
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to AlertStorage.
 //go:generate mockery -name=DataStore
 type DataStore interface {
+	Search(q *v1.Query) ([]pkgSearch.Result, error)
 	SearchDeployments(q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawDeployments(q *v1.Query) ([]*v1.Deployment, error)
 	SearchListDeployments(q *v1.Query) ([]*v1.ListDeployment, error)

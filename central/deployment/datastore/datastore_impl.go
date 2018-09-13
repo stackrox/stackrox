@@ -5,12 +5,17 @@ import (
 	"github.com/stackrox/rox/central/deployment/search"
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {
 	storage  store.Store
 	indexer  index.Indexer
 	searcher search.Searcher
+}
+
+func (ds *datastoreImpl) Search(q *v1.Query) ([]pkgSearch.Result, error) {
+	return ds.searcher.Search(q)
 }
 
 func (ds *datastoreImpl) ListDeployment(id string) (*v1.ListDeployment, bool, error) {

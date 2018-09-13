@@ -64,6 +64,6 @@ func BenchmarkSearchDeployment(b *testing.B) {
 	indexer := getDeploymentIndex(b)
 	qb := search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster")
 	for i := 0; i < b.N; i++ {
-		indexer.SearchDeployments(qb.ProtoQuery())
+		indexer.Search(qb.ProtoQuery())
 	}
 }

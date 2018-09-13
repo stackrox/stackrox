@@ -14,9 +14,19 @@ const (
 	OptionHidden
 )
 
+// NewStoredTimeField creates a new mapped field for timestamp values we want to store.
+func NewStoredTimeField(category v1.SearchCategory, name string) *v1.SearchField {
+	return NewField(category, name, v1.SearchDataType_SEARCH_DATETIME, OptionStore)
+}
+
 // NewTimeField creates a new mapped field for timestamp values
 func NewTimeField(category v1.SearchCategory, name string) *v1.SearchField {
 	return NewField(category, name, v1.SearchDataType_SEARCH_DATETIME, 0)
+}
+
+// NewStoredStringField creates a new mapped field for string values we want to store.
+func NewStoredStringField(category v1.SearchCategory, name string) *v1.SearchField {
+	return NewField(category, name, v1.SearchDataType_SEARCH_STRING, OptionStore)
 }
 
 // NewStringField creates a new mapped field for string values.

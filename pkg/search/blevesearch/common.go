@@ -2,6 +2,7 @@ package blevesearch
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
@@ -54,13 +55,18 @@ var categoryRelationships = map[relationship]join{
 }
 
 func getValueFromField(val interface{}) string {
-	switch obj := val.(type) {
+	switch val := val.(type) {
 	case string:
-		return obj
+		return val
 	case float64:
-		return fmt.Sprintf("%.2f", obj)
+		i, f := math.Modf(val)
+		// If it's an int, return just the int portion.
+		if math.Abs(f) < 1e-3 {
+			return fmt.Sprintf("%d", int(i))
+		}
+		return fmt.Sprintf("%.2f", val)
 	default:
-		logger.Errorf("Unknown type field from index: %T", obj)
+		logger.Errorf("Unknown type field from index: %T", val)
 	}
 	return ""
 }
@@ -131,6 +137,9 @@ func resolveMatchFieldQuery(index bleve.Index, category v1.SearchCategory, searc
 	// Base case is that the category you are looking for is the search field category so just get a "normal search query"
 	if category == searchField.GetCategory() {
 		if highlightCtx != nil {
+			if !searchField.GetStore() {
+				return nil, fmt.Errorf("can't request highlights for search field %+v, because it is not stored", searchField)
+			}
 			highlightCtx.AddFieldToHighlight(searchField.GetFieldPath())
 		}
 		return matchFieldQuery(category, searchField, searchValue)
@@ -156,12 +165,12 @@ func resolveMatchFieldQuery(index bleve.Index, category v1.SearchCategory, searc
 	// Go get the query that needs to be run
 	subQuery, err := resolveMatchFieldQuery(index, nextHopCategory, searchField, searchValue, highlightCtx)
 	if err != nil {
-		return nil, fmt.Errorf("resolving query with next hop: '%s'", nextHopCategory)
+		return nil, fmt.Errorf("resolving query with next hop: '%s': %s", nextHopCategory, err)
 	}
 
 	results, err := runQuery(subQuery, index, highlightCtx, relationshipField.dstField)
 	if err != nil {
-		return nil, fmt.Errorf("running sub query to retrieve field %s", relationshipField.dstField)
+		return nil, fmt.Errorf("running sub query to retrieve field %s: %s", relationshipField.dstField, err)
 	}
 
 	// We now create a new disjunction query with the specified field of the results,
@@ -208,7 +217,7 @@ func resolveMatchFieldQuery(index bleve.Index, category v1.SearchCategory, searc
 			disjunctionQuery.AddQuery(q)
 
 			if targetField != "" {
-				highlightCtx.AddMappingToFieldTranslator(relationshipField.srcField, fieldValue, targetFieldValue)
+				highlightCtx.AddMappingToFieldTranslator(relationshipField.srcField, targetField, fieldValue, targetFieldValue)
 			}
 		}
 	}

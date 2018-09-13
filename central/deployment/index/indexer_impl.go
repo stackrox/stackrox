@@ -44,8 +44,8 @@ func (b *indexerImpl) DeleteDeployment(id string) error {
 	return b.index.Delete(id)
 }
 
-// SearchDeployments takes a SearchRequest and finds any matches
-func (b *indexerImpl) SearchDeployments(q *v1.Query) ([]search.Result, error) {
+// Search takes a Query and finds any matches
+func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Deployment")
 	return blevesearch.RunSearchRequest(v1.SearchCategory_DEPLOYMENTS, q, b.index, mappings.OptionsMap)
 }

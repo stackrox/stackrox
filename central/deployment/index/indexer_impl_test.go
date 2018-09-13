@@ -170,7 +170,7 @@ func (suite *DeploymentIndexTestSuite) TestHighlighting() {
 	}
 
 	for _, c := range cases {
-		results, err := suite.indexer.SearchDeployments(c.q)
+		results, err := suite.indexer.Search(c.q)
 		suite.Require().NoError(err)
 		suite.Len(results, len(c.expectedIdsToMatches), "Results: %#v expected matches: %#v", results, c.expectedIdsToMatches)
 
@@ -306,7 +306,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 		for _, field := range c.highlightedFields {
 			qb.MarkHighlighted(field)
 		}
-		results, err := suite.indexer.SearchDeployments(qb.ProtoQuery())
+		results, err := suite.indexer.Search(qb.ProtoQuery())
 		suite.NoError(err)
 
 		resultIDs := make([]string, 0, len(results))

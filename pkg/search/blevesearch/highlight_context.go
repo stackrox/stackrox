@@ -10,26 +10,25 @@ import (
 // along with optional "translators" for each field, which convert values in
 // one field to values in another. The translators come into play when we
 // make multi-level queries.
-// (A zero-valued highlightTranslator as a value means this field doesn't need any
-// translation.)
-type highlightContext map[string]highlightTranslator
+type highlightContext map[string]map[string]highlightTranslator
 type highlightTranslator struct {
-	targetField  string
 	valueMapping map[string][]string
 }
 
 // AddFieldToHighlight adds a field path to the highlight context. In the next search request,
 // we will ask Bleve to retrieve highlights for this field.
 func (h highlightContext) AddFieldToHighlight(fieldPath string) {
-	h[fieldPath] = highlightTranslator{}
+	h[fieldPath] = nil
 }
 
 // AddTranslatedFieldIfNotExists adds a field path to the highlight context which needs to be translated
 // to results in the target field using the valueMapping in the translator.
 func (h highlightContext) AddTranslatedFieldIfNotExists(fieldPath, targetFieldPath string) {
 	if _, ok := h[fieldPath]; !ok {
-		h[fieldPath] = highlightTranslator{
-			targetField:  targetFieldPath,
+		h[fieldPath] = make(map[string]highlightTranslator)
+	}
+	if _, ok := h[fieldPath][targetFieldPath]; !ok {
+		h[fieldPath][targetFieldPath] = highlightTranslator{
 			valueMapping: make(map[string][]string),
 		}
 	}
@@ -38,14 +37,19 @@ func (h highlightContext) AddTranslatedFieldIfNotExists(fieldPath, targetFieldPa
 // AddMappingToFieldTranslation adds a value mapping to the translator for the given field.
 // It is the caller's responsibility to make sure that AddTranslatedField was called for this fieldPath
 // first; this function WILL panic if that was not done.
-func (h highlightContext) AddMappingToFieldTranslator(fieldPath, sourceValue, targetValue string) {
-	h[fieldPath].valueMapping[sourceValue] = append(h[fieldPath].valueMapping[sourceValue], targetValue)
+func (h highlightContext) AddMappingToFieldTranslator(fieldPath, targetFieldPath, sourceValue, targetValue string) {
+	h[fieldPath][targetFieldPath].valueMapping[sourceValue] = append(h[fieldPath][targetFieldPath].valueMapping[sourceValue], targetValue)
 }
 
 // Merge merges the other highlightContext into this one.
 func (h highlightContext) Merge(other highlightContext) {
-	for fieldPath, translator := range other {
-		h[fieldPath] = translator
+	for fieldPath, translatorMap := range other {
+		if _, ok := h[fieldPath]; !ok {
+			h[fieldPath] = make(map[string]highlightTranslator)
+		}
+		for targetFieldPath, translator := range translatorMap {
+			h[fieldPath][targetFieldPath] = translator
+		}
 	}
 }
 
@@ -63,7 +67,7 @@ func (h highlightContext) ApplyToBleveReq(request *bleve.SearchRequest) {
 // any field values that need to be translated.
 func (h highlightContext) ResolveMatches(hit *search.DocumentMatch) (matchingFields map[string][]string) {
 	matchingFields = make(map[string][]string)
-	for fieldName, translator := range h {
+	for fieldName, translatorMap := range h {
 		matchedIndices, matched := hit.FieldIndices[fieldName]
 		if !matched {
 			continue
@@ -74,19 +78,22 @@ func (h highlightContext) ResolveMatches(hit *search.DocumentMatch) (matchingFie
 			continue
 		}
 
-		// A zero-valued translator means that we don't have to translate this field.
-		if translator.targetField == "" {
+		// No translators means that we don't have to translate this field.
+		if len(translatorMap) == 0 {
 			matchingFields[fieldName] = fieldValues
 			continue
 		}
 		// We complete the translation by mapping all values in the source field to their corresponding
 		// value in the target field.
 		// Example: mapping image ids to image tags.
-		for _, value := range fieldValues {
-			if targetValues, ok := translator.valueMapping[value]; ok {
-				matchingFields[translator.targetField] = append(matchingFields[translator.targetField], targetValues...)
+		for targetField, translator := range translatorMap {
+			for _, value := range fieldValues {
+				if targetValues, ok := translator.valueMapping[value]; ok {
+					matchingFields[targetField] = append(matchingFields[targetField], targetValues...)
+				}
 			}
 		}
+
 	}
 	return
 }
