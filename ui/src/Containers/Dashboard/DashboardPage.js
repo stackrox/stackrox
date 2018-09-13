@@ -388,7 +388,7 @@ class DashboardPage extends Component {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
         return (
             <section className="flex flex-1 h-full w-full">
-                <div className="flex flex-1 flex-col w-full">
+                <div className="flex flex-col w-full">
                     <div>
                         <PageHeader header="Dashboard" subHeader={subHeader}>
                             <SearchInput
