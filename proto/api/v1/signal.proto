@@ -33,7 +33,6 @@ message CollectorRegisterRequest {
 message Signal {
     oneof signal {
         ProcessSignal process_signal       = 1;
-        NetworkSignal network_signal       = 2;
     }
 }
 
@@ -76,63 +75,6 @@ message ProcessSignal {
     string                    container_id = 12;
 }
 
-// NetworkSignal tracks connection information
-// about client and server.
-message NetworkSignal {
-    // A unique UUID for identifying the message
-    string id                               = 1;
-
-    SocketFamily socket_family              = 2;
-
-    NetworkAddress client_address           = 3;
-    NetworkAddress server_address           = 4;
-
-    L4Protocol protocol                     = 5;
-
-    Role role                               = 6;
-
-    enum Role {
-        ROLE_UNKNOWN = 0;
-        ROLE_SERVER  = 1;
-        ROLE_CLIENT  = 2;
-    }
-
-    google.protobuf.Timestamp time         = 11;
-    string                    container_id = 12;
-}
-
-// Note: We currently don't report local unix sockets.
-message NetworkAddress {
-    oneof network_address {
-        IPV4NetworkAddress ipv4_address   = 1;
-        IPV6NetworkAddress ipv6_address   = 2;
-    }
-}
-
-message IPV4NetworkAddress {
-    fixed32 address     = 1;
-    uint32 port         = 2;
-}
-
-message IPV6NetworkAddress {
-    fixed64 address_high = 1;
-    fixed64 address_low  = 2;
-    uint32 port          = 3;
-}
-
-enum SocketFamily {
-    SOCKET_FAMILY_UNKNOWN = 0;
-    SOCKET_FAMILY_IPV4    = 1;
-    SOCKET_FAMILY_IPV6    = 2;
-}
-
-enum L4Protocol {
-    L4_PROTOCOL_UNKNOWN = 0;
-    L4_PROTOCOL_TCP     = 1;
-    L4_PROTOCOL_UDP     = 2;
-    L4_PROTOCOL_ICMP    = 3;
-    L4_PROTOCOL_RAW     = 4;
-}
 
 // A Sensor service that allows Collector to push Signal messages
 service SignalService {

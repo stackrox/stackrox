@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option cc_enable_arenas = true;
+
+import "google/protobuf/timestamp.proto";
+import "api/v1/empty.proto";
+
+package v1;
+
+message NetworkConnectionInfo {
+    NetworkConnectionStateUpdate update = 1;
+
+    //For active connections, the timestamp of the entire message serves as the latest timestamp
+    //that connection was deemed active
+    google.protobuf.Timestamp time         = 2;
+    string                    container_id = 3;
+}
+
+
+message NetworkConnectionStateUpdate {
+    // Network connections that were added from the last time state was sent.
+    repeated NetworkConnection added      = 1;
+    // Network connections that were removed from the last time state was sent.
+    repeated NetworkConnection removed    = 2;
+
+}   
+
+// NetworkConnection tracks connection information about client and server.
+message NetworkConnection {
+    enum Role {
+        ROLE_UNKNOWN = 0;
+        ROLE_SERVER  = 1;
+        ROLE_CLIENT  = 2;
+    }
+
+    SocketFamily socket_family    = 1;
+
+    NetworkAddress client_address = 2;
+    NetworkAddress server_address = 3;
+
+    L4Protocol protocol           = 4;
+
+    Role role                     = 5;
+
+    // If this connection was closed, this gives the timestamp when it was closed.
+    google.protobuf.Timestamp close_timestamp         = 11;
+}
+
+// Note: We currently don't report local unix sockets.
+message NetworkAddress {
+    oneof network_address {
+        IPV4NetworkAddress ipv4_address   = 1;
+        IPV6NetworkAddress ipv6_address   = 2;
+    }
+}
+
+message IPV4NetworkAddress {
+    fixed32 address = 1;
+    uint32 port    = 2;
+}
+
+message IPV6NetworkAddress {
+    fixed64 address_high = 1;
+    fixed64 address_low  = 2;
+    uint32 port          = 3;
+}
+
+enum SocketFamily {
+    SOCKET_FAMILY_UNKNOWN = 0;
+    SOCKET_FAMILY_IPV4    = 1;
+    SOCKET_FAMILY_IPV6    = 2;
+}
+
+enum L4Protocol {
+    L4_PROTOCOL_UNKNOWN = 0;
+    L4_PROTOCOL_TCP     = 1;
+    L4_PROTOCOL_UDP     = 2;
+    L4_PROTOCOL_ICMP    = 3;
+    L4_PROTOCOL_RAW     = 4;
+}
+
+
+// A Sensor service that allows Collector to send NetworkConnectionInfo messages
+service NetworkConnectionInfoService {
+    rpc Send (stream NetworkConnectionInfo) returns (Empty);
+}
