@@ -31,7 +31,7 @@ type versionMatcherImpl struct {
 }
 
 func (p *versionMatcherImpl) match(component *v1.ImageScanComponent) []*v1.Alert_Violation {
-	if !p.versionRegex.MatchString(component.GetVersion()) {
+	if p.versionRegex.MatchString(component.GetVersion()) {
 		return append(([]*v1.Alert_Violation)(nil), &v1.Alert_Violation{
 			Message: fmt.Sprintf("Component '%v:%v' matches %s", component.GetName(), component.GetVersion(), p.versionRegex),
 		})

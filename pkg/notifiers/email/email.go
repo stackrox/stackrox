@@ -82,10 +82,11 @@ func newEmail(notifier *v1.Notifier) (*email, error) {
 	host := conf.GetServer()
 	idx := strings.Index(server, ":")
 	if idx != -1 && idx != len(server)-1 {
-		port, err := strconv.Atoi(server[idx+1:])
-		if err != nil || port < 0 || port > 65535 {
+		parsedPort, err := strconv.Atoi(server[idx+1:])
+		if err != nil || parsedPort < 0 || parsedPort > 65535 {
 			return nil, fmt.Errorf("Port number cannot be '%v' and must be valid port between 0-65535", server[idx+1:])
 		}
+		port = parsedPort
 		host = server[:idx]
 	}
 	return &email{

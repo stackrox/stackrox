@@ -31,7 +31,7 @@ type nameMatcherImpl struct {
 }
 
 func (p *nameMatcherImpl) match(component *v1.ImageScanComponent) []*v1.Alert_Violation {
-	if !p.nameRegex.MatchString(component.GetName()) {
+	if p.nameRegex.MatchString(component.GetName()) {
 		return append(([]*v1.Alert_Violation)(nil), &v1.Alert_Violation{
 			Message: fmt.Sprintf("Component '%v:%v' matches %s", component.GetName(), component.GetVersion(), p.nameRegex),
 		})
