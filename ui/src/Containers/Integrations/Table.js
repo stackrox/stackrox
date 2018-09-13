@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { selectors } from 'reducers';
+import { createStructuredSelector } from 'reselect';
 
 import CheckboxTable from 'Components/CheckboxTable';
 import Panel from 'Components/Panel';
@@ -19,8 +22,8 @@ class Table extends Component {
             'notifiers',
             'authProviders'
         ]).isRequired,
-        type: PropTypes.string.isRequired,
 
+        type: PropTypes.string.isRequired,
         clusters: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string.isRequired,
@@ -130,4 +133,8 @@ class Table extends Component {
     }
 }
 
-export default Table;
+const mapStateToProps = createStructuredSelector({
+    clusters: selectors.getClusters
+});
+
+export default connect(mapStateToProps)(Table);

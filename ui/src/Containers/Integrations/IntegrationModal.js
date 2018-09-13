@@ -1,15 +1,16 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
+import { connect } from 'react-redux';
+import { actions } from 'reducers/integrations';
+import { createStructuredSelector } from 'reselect';
 import * as Icon from 'react-feather';
+import { selectors } from 'reducers';
 
 import Dialog from 'Components/Dialog';
 import Form from 'Containers/Integrations/Form';
 import Modal from 'Components/Modal';
 import Table from 'Containers/Integrations/Table';
-
-import * as AuthService from 'services/AuthService';
-import { deleteIntegration } from 'services/IntegrationsService';
 
 const SOURCE_LABELS = Object.freeze({
     authProviders: 'authentication provider',
@@ -33,82 +34,52 @@ class IntegrationModal extends Component {
         ]).isRequired,
         type: PropTypes.string.isRequired,
         onRequestClose: PropTypes.func.isRequired,
-        onIntegrationsUpdate: PropTypes.func.isRequired,
-
-        clusters: PropTypes.arrayOf(
-            PropTypes.shape({
-                name: PropTypes.string.isRequired,
-                id: PropTypes.string.isRequired
-            })
-        )
+        deleteIntegrations: PropTypes.func.isRequired,
+        isCreating: PropTypes.bool,
+        setCreateState: PropTypes.func.isRequired
     };
 
     static defaultProps = {
-        clusters: []
+        isCreating: false
     };
 
     constructor(props) {
         super(props);
 
         this.state = {
-            formIsOpen: false,
-            formValues: {},
-            errorMessage: '',
-            successMessage: '',
-            showConfirmationDialog: false,
-            selectedIntegrationId: null
+            selectedIntegration: null,
+            showConfirmationDialog: false
         };
     }
 
-    onRequestClose = isSuccessful => {
-        this.clearMessages();
-        this.props.onRequestClose(isSuccessful);
-    };
+    componentWillUnmount() {
+        this.props.setCreateState(false);
+    }
 
     onTableDelete = () => {
         this.showConfirmationDialog();
     };
 
     onTableAdd = () => {
-        this.setState({
-            formIsOpen: true
-        });
+        this.props.setCreateState(true);
     };
 
     onTableRowClick = integration => {
         this.setState({
-            formIsOpen: true,
-            formValues: integration,
-            selectedIntegrationId: integration.id
+            selectedIntegration: integration
         });
-    };
-
-    onFormCancel = () => {
-        this.closeIntegrationForm();
-    };
-
-    onFormRequest = () => {
-        this.clearMessages();
-    };
-
-    onFormError = errorMessage => {
-        this.setState({ errorMessage });
-    };
-
-    onFormSubmitSuccess = () => {
-        this.props.onIntegrationsUpdate(this.props.source);
-        this.closeIntegrationForm();
-    };
-
-    onFormTestSuccess = () => {
-        this.setState({
-            successMessage: 'Integration test was successful'
-        });
+        this.props.setCreateState(false);
     };
 
     setTableRef = table => {
         this.integrationTable = table;
     };
+
+    getSelectedIntegrationId = () =>
+        this.state.selectedIntegration ? this.state.selectedIntegration.id : '';
+
+    // determines whether the form panel is open based on selected integration and creation state
+    formIsOpen = () => this.props.isCreating || !!this.state.selectedIntegration;
 
     hideConfirmationDialog = () => {
         this.setState({ showConfirmationDialog: false });
@@ -120,17 +91,9 @@ class IntegrationModal extends Component {
 
     closeIntegrationForm = () => {
         this.setState({
-            formIsOpen: false,
-            formValues: {},
-            selectedIntegrationId: null
+            selectedIntegration: null
         });
-    };
-
-    clearMessages = () => {
-        this.setState({
-            errorMessage: '',
-            successMessage: ''
-        });
+        this.props.setCreateState(false);
     };
 
     activateAuthIntegration = integration => () => {
@@ -140,21 +103,12 @@ class IntegrationModal extends Component {
     };
 
     deleteTableSelectedIntegrations = () => {
-        const promises = [];
         if (!this.integrationTable) return;
-        const numSelectedRows = this.integrationTable.state.selection;
-        numSelectedRows.forEach(id => {
-            const promise =
-                this.props.source === 'authProviders'
-                    ? AuthService.deleteAuthProvider(id)
-                    : deleteIntegration(this.props.source, id);
-            promises.push(promise);
-        });
-        Promise.all(promises).then(() => {
-            this.integrationTable.clearSelectedRows();
-            this.hideConfirmationDialog();
-            this.props.onIntegrationsUpdate(this.props.source);
-        });
+        const { selection } = this.integrationTable.state;
+        const { source, type } = this.props;
+        this.props.deleteIntegrations(source, type, selection);
+        this.integrationTable.clearSelectedRows();
+        this.hideConfirmationDialog();
     };
 
     renderHeader = () => {
@@ -162,66 +116,36 @@ class IntegrationModal extends Component {
         return (
             <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
                 <span className="flex flex-1">{`Configure ${type} ${SOURCE_LABELS[source]}`}</span>
-                <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.onRequestClose} />
+                <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.props.onRequestClose} />
             </header>
         );
     };
 
-    renderErrorMessage = () => {
-        if (this.state.errorMessage !== '') {
-            return (
-                <div className="px-4 py-2 bg-high-500 text-white" data-test-id="integration-error">
-                    {this.state.errorMessage}
-                </div>
-            );
-        }
-        return null;
-    };
-
-    renderSuccessMessage = () => {
-        if (this.state.successMessage !== '') {
-            return (
-                <div className="px-4 py-2 bg-success-500 text-white">
-                    {this.state.successMessage}
-                </div>
-            );
-        }
-        return null;
-    };
-
     renderTable = () => (
         <Table
-            clusters={this.props.clusters}
             integrations={this.props.integrations}
             source={this.props.source}
             type={this.props.type}
-            buttonsEnabled={!this.state.formIsOpen}
+            buttonsEnabled={!this.formIsOpen()}
             onRowClick={this.onTableRowClick}
             onActivate={this.activateAuthIntegration}
             onAdd={this.onTableAdd}
             onDelete={this.onTableDelete}
             setTable={this.setTableRef}
-            selectedIntegrationId={this.state.selectedIntegrationId}
+            selectedIntegrationId={this.getSelectedIntegrationId()}
         />
     );
 
     renderForm = () => {
-        if (!this.state.formIsOpen) {
-            return null;
-        }
+        const { source, type } = this.props;
+        if (!this.formIsOpen()) return null;
         return (
             <Form
-                initialValues={this.state.formValues}
-                source={this.props.source}
-                type={this.props.type}
-                clusters={this.props.clusters}
-                onCancel={this.onFormCancel}
-                onSubmitRequest={this.onFormRequest}
-                onSubmitSuccess={this.onFormSubmitSuccess}
-                onSubmitError={this.onFormError}
-                onTestRequest={this.onFormRequest}
-                onTestSuccess={this.onFormTestSuccess}
-                onTestError={this.onFormError}
+                initialValues={this.state.selectedIntegration}
+                enableReinitialize
+                source={source}
+                type={type}
+                onClose={this.closeIntegrationForm}
             />
         );
     };
@@ -242,10 +166,12 @@ class IntegrationModal extends Component {
 
     render() {
         return (
-            <Modal isOpen onRequestClose={this.onRequestClose} className="w-full lg:w-5/6 h-full">
+            <Modal
+                isOpen
+                onRequestClose={this.props.onRequestClose}
+                className="w-full lg:w-5/6 h-full"
+            >
                 {this.renderHeader()}
-                {this.renderErrorMessage()}
-                {this.renderSuccessMessage()}
                 <div className="flex flex-1 w-full bg-white">
                     {this.renderTable()}
                     {this.renderForm()}
@@ -256,4 +182,14 @@ class IntegrationModal extends Component {
     }
 }
 
-export default withRouter(IntegrationModal);
+const mapStateToProps = createStructuredSelector({
+    isCreating: selectors.getCreationState
+});
+
+const mapDispatchToProps = dispatch => ({
+    deleteIntegrations: (source, sourceType, ids) =>
+        dispatch(actions.deleteIntegrations(source, sourceType, ids)),
+    setCreateState: state => dispatch(actions.setCreateState(state))
+});
+
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(IntegrationModal));

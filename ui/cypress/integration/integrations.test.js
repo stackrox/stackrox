@@ -48,7 +48,7 @@ describe('Integrations page', () => {
 
         // test that validation error happens when form is incomplete
         cy.get(selectors.buttons.test).click();
-        cy.get(selectors.integrationError);
+        cy.get('div').contains('error');
 
         cy.get(selectors.dockerRegistryForm.endpointInput).type('registry-1.docker.io');
 

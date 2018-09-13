@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { ToastContainer, toast } from 'react-toastify';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
@@ -91,13 +90,6 @@ class IntegrationsPage extends Component {
         });
     };
 
-    closeIntegrationModal = isSuccessful => {
-        if (isSuccessful === true) {
-            toast(`Successfully integrated ${this.state.selectedType}`);
-        }
-        this.fetchEntitiesAndCloseModal();
-    };
-
     fetchEntitiesAndCloseModal = () => {
         this.getEntities(this.state.selectedSource, this.state.selectedType);
         this.setState({
@@ -165,9 +157,7 @@ class IntegrationsPage extends Component {
                 integrations={integrations}
                 source={selectedSource}
                 type={selectedType}
-                onRequestClose={this.closeIntegrationModal}
-                onIntegrationsUpdate={this.getEntities}
-                clusters={this.props.clusters}
+                onRequestClose={this.fetchEntitiesAndCloseModal}
             />
         );
     }
@@ -194,11 +184,6 @@ class IntegrationsPage extends Component {
         const authProviders = this.renderIntegrationTiles('authProviders');
         return (
             <section className="flex">
-                <ToastContainer
-                    toastClassName="font-sans text-base-600 text-white font-600 bg-black"
-                    hideProgressBar
-                    autoClose={3000}
-                />
                 <div className="md:w-full border-r border-primary-300 pt-4 bg-base-100">
                     <h1 className="font-500 mx-3 border-b border-primary-300 pb-4 uppercase text-xl font-800 text-primary-600 tracking-wide">
                         Integrations

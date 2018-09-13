@@ -3,25 +3,25 @@ const formDescriptors = {
         auth0: [
             {
                 label: 'Integration Name',
-                key: 'name',
+                jsonpath: 'name',
                 type: 'text',
                 placeholder: 'Auth0'
             },
             {
                 label: 'Domain',
-                key: 'config.domain',
+                jsonpath: 'config.domain',
                 type: 'text',
                 placeholder: 'your-tenant.auth0.com'
             },
             {
                 label: 'Client ID',
-                key: 'config.client_id',
+                jsonpath: 'config.client_id',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Audience',
-                key: 'config.audience',
+                jsonpath: 'config.audience',
                 type: 'text',
                 placeholder: 'prevent.stackrox.io'
             }
@@ -31,91 +31,91 @@ const formDescriptors = {
         jira: [
             {
                 label: 'Integration Name',
-                key: 'name',
+                jsonpath: 'name',
                 type: 'text',
                 placeholder: 'Jira Integration'
             },
             {
                 label: 'Username',
-                key: 'jira.username',
+                jsonpath: 'jira.username',
                 type: 'text',
                 placeholder: 'user@example.com'
             },
             {
                 label: 'Password',
-                key: 'jira.password',
+                jsonpath: 'jira.password',
                 type: 'password',
                 placeholder: ''
             },
             {
                 label: 'Issue Type',
-                key: 'jira.issue_type',
+                jsonpath: 'jira.issue_type',
                 type: 'text',
                 placeholder: 'Task, Sub-task, Story, Bug, or Epic'
             },
             {
                 label: 'Jira URL',
-                key: 'jira.url',
+                jsonpath: 'jira.url',
                 type: 'text',
                 placeholder: 'https://stack-rox.atlassian.net'
             },
             {
                 label: 'Default Project',
-                key: 'labelDefault',
+                jsonpath: 'labelDefault',
                 type: 'text',
                 placeholder: 'PROJ'
             },
             {
                 label: 'Label/Annotation Key for Project',
-                key: 'labelKey',
+                jsonpath: 'labelKey',
                 type: 'text'
             }
         ],
         email: [
             {
                 label: 'Integration Name',
-                key: 'name',
+                jsonpath: 'name',
                 type: 'text',
                 placeholder: 'Email Integration'
             },
             {
                 label: 'Email Server',
-                key: 'email.server',
+                jsonpath: 'email.server',
                 type: 'text',
                 placeholder: 'smtp.example.com:465'
             },
             {
                 label: 'Username',
-                key: 'email.username',
+                jsonpath: 'email.username',
                 type: 'text',
                 placeholder: 'postmaster@example.com'
             },
             {
                 label: 'Password',
-                key: 'email.password',
+                jsonpath: 'email.password',
                 type: 'password'
             },
             {
                 label: 'Sender',
-                key: 'email.sender',
+                jsonpath: 'email.sender',
                 type: 'text',
                 placeholder: 'prevent-notifier@example.com'
             },
             {
                 label: 'Default Recipient',
-                key: 'labelDefault',
+                jsonpath: 'labelDefault',
                 type: 'text',
                 placeholder: 'prevent-alerts@example.com'
             },
             {
                 label: 'Label/Annotation Key for Recipient',
-                key: 'labelKey',
+                jsonpath: 'labelKey',
                 type: 'text',
                 placeholder: 'email'
             },
             {
                 label: 'Disable TLS',
-                key: 'email.tls',
+                jsonpath: 'email.tls',
                 type: 'select',
                 options: [{ label: 'On', value: 'true' }, { label: 'Off', value: 'false' }],
                 placeholder: 'Disable TLS?'
@@ -124,19 +124,19 @@ const formDescriptors = {
         slack: [
             {
                 label: 'Integration Name',
-                key: 'name',
+                jsonpath: 'name',
                 type: 'text',
                 placeholder: 'Slack Integration'
             },
             {
                 label: 'Default Slack Webhook',
-                key: 'labelDefault',
+                jsonpath: 'labelDefault',
                 type: 'text',
                 placeholder: 'https://hooks.slack.com/services/EXAMPLE'
             },
             {
                 label: 'Label/Annotation Key for Slack Webhook',
-                key: 'labelKey',
+                jsonpath: 'labelKey',
                 type: 'text',
                 placeholder: 'slack'
             }
@@ -144,25 +144,25 @@ const formDescriptors = {
         cscc: [
             {
                 label: 'Integration Name',
-                key: 'name',
+                jsonpath: 'name',
                 type: 'text',
                 placeholder: 'CSCC'
             },
             {
                 label: 'GCP Organization ID Number',
-                key: 'cscc.gcpOrgId',
+                jsonpath: 'cscc.gcpOrgId',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'GCP Project',
-                key: 'cscc.gcpProject',
+                jsonpath: 'cscc.gcpProject',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Service Account Key (JSON)',
-                key: 'cscc.serviceAccount',
+                jsonpath: 'cscc.serviceAccount',
                 type: 'text',
                 placeholder: ''
             }
@@ -172,13 +172,13 @@ const formDescriptors = {
         tenable: [
             {
                 label: 'Integration Name',
-                key: 'name',
+                jsonpath: 'name',
                 type: 'text',
                 placeholder: 'Tenable'
             },
             {
                 label: 'Source Inputs',
-                key: 'categories',
+                jsonpath: 'categories',
                 type: 'multiselect',
                 options: [
                     { value: 'REGISTRY', label: 'Registry' },
@@ -188,13 +188,13 @@ const formDescriptors = {
             },
             {
                 label: 'Access Key',
-                key: 'config.accessKey',
+                jsonpath: 'config.accessKey',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Secret Key',
-                key: 'config.secretKey',
+                jsonpath: 'config.secretKey',
                 type: 'text',
                 placeholder: ''
             }
@@ -202,38 +202,38 @@ const formDescriptors = {
         docker: [
             {
                 label: 'Integration Name',
-                key: 'name',
+                jsonpath: 'name',
                 type: 'text',
                 placeholder: 'Docker Registry'
             },
             {
                 label: 'Types',
-                key: 'categories',
+                jsonpath: 'categories',
                 type: 'multiselect',
                 options: [{ value: 'REGISTRY', label: 'Registry', clearableValue: false }],
                 placeholder: ''
             },
             {
                 label: 'Endpoint',
-                key: 'docker.endpoint',
+                jsonpath: 'docker.endpoint',
                 type: 'text',
                 placeholder: 'registry-1.docker.io'
             },
             {
                 label: 'Username',
-                key: 'docker.username',
+                jsonpath: 'docker.username',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Password',
-                key: 'docker.password',
+                jsonpath: 'docker.password',
                 type: 'password',
                 placeholder: ''
             },
             {
                 label: 'Disable TLS Certificate Validation (Insecure)',
-                key: 'docker.insecure',
+                jsonpath: 'docker.insecure',
                 type: 'checkbox',
                 placeholder: ''
             }
@@ -241,13 +241,13 @@ const formDescriptors = {
         dtr: [
             {
                 label: 'Integration Name',
-                key: 'name',
+                jsonpath: 'name',
                 type: 'text',
                 placeholder: 'Prod Docker Trusted Registry'
             },
             {
                 label: 'Types',
-                key: 'categories',
+                jsonpath: 'categories',
                 type: 'multiselect',
                 options: [
                     { value: 'REGISTRY', label: 'Registry' },
@@ -257,25 +257,25 @@ const formDescriptors = {
             },
             {
                 label: 'Endpoint',
-                key: 'dtr.endpoint',
+                jsonpath: 'dtr.endpoint',
                 type: 'text',
                 placeholder: 'dtr.example.com'
             },
             {
                 label: 'Username',
-                key: 'dtr.username',
+                jsonpath: 'dtr.username',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Password',
-                key: 'dtr.password',
+                jsonpath: 'dtr.password',
                 type: 'password',
                 placeholder: ''
             },
             {
                 label: 'Disable TLS Certificate Validation (Insecure)',
-                key: 'dtr.insecure',
+                jsonpath: 'dtr.insecure',
                 type: 'checkbox',
                 placeholder: ''
             }
@@ -283,32 +283,32 @@ const formDescriptors = {
         artifactory: [
             {
                 label: 'Integration Name',
-                key: 'name',
+                jsonpath: 'name',
                 type: 'text',
                 placeholder: 'Artifactory'
             },
             {
                 label: 'Types',
-                key: 'categories',
+                jsonpath: 'categories',
                 type: 'multiselect',
                 options: [{ value: 'REGISTRY', label: 'Registry', clearableValue: false }],
                 placeholder: ''
             },
             {
                 label: 'Endpoint',
-                key: 'docker.endpoint',
+                jsonpath: 'docker.endpoint',
                 type: 'text',
                 placeholder: 'artifactory.example.com'
             },
             {
                 label: 'Username',
-                key: 'docker.username',
+                jsonpath: 'docker.username',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Password',
-                key: 'docker.password',
+                jsonpath: 'docker.password',
                 type: 'password',
                 placeholder: ''
             }
@@ -316,13 +316,13 @@ const formDescriptors = {
         quay: [
             {
                 label: 'Integration Name',
-                key: 'name',
+                jsonpath: 'name',
                 type: 'text',
                 placeholder: 'Quay'
             },
             {
                 label: 'Types',
-                key: 'categories',
+                jsonpath: 'categories',
                 type: 'multiselect',
                 options: [
                     { value: 'REGISTRY', label: 'Registry' },
@@ -332,13 +332,13 @@ const formDescriptors = {
             },
             {
                 label: 'Endpoint',
-                key: 'quay.endpoint',
+                jsonpath: 'quay.endpoint',
                 type: 'text',
                 placeholder: 'quay.io'
             },
             {
                 label: 'OAuth Token',
-                key: 'quay.oauthToken',
+                jsonpath: 'quay.oauthToken',
                 type: 'text',
                 placeholder: ''
             }
@@ -346,20 +346,20 @@ const formDescriptors = {
         clair: [
             {
                 label: 'Integration Name',
-                key: 'name',
+                jsonpath: 'name',
                 type: 'text',
                 placeholder: 'Clair'
             },
             {
                 label: 'Types',
-                key: 'categories',
+                jsonpath: 'categories',
                 type: 'multiselect',
                 options: [{ value: 'SCANNER', label: 'Scanner', clearableValue: false }],
                 placeholder: ''
             },
             {
                 label: 'Endpoint',
-                key: 'config.endpoint',
+                jsonpath: 'config.endpoint',
                 type: 'text',
                 placeholder: 'https://clair.example.com'
             }
@@ -367,20 +367,20 @@ const formDescriptors = {
         clairify: [
             {
                 label: 'Integration Name',
-                key: 'name',
+                jsonpath: 'name',
                 type: 'text',
                 placeholder: 'Clairify'
             },
             {
                 label: 'Types',
-                key: 'categories',
+                jsonpath: 'categories',
                 type: 'multiselect',
                 options: [{ value: 'SCANNER', label: 'Scanner', clearableValue: false }],
                 placeholder: ''
             },
             {
                 label: 'Endpoint',
-                key: 'clairify.endpoint',
+                jsonpath: 'clairify.endpoint',
                 type: 'text',
                 placeholder: 'http://clairify.stackrox:8080'
             }
@@ -388,13 +388,13 @@ const formDescriptors = {
         google: [
             {
                 label: 'Integration Name',
-                key: 'name',
+                jsonpath: 'name',
                 type: 'text',
                 placeholder: 'Google Registry and Scanner'
             },
             {
                 label: 'Types',
-                key: 'categories',
+                jsonpath: 'categories',
                 type: 'multiselect',
                 options: [
                     { value: 'REGISTRY', label: 'Registry' },
@@ -404,19 +404,19 @@ const formDescriptors = {
             },
             {
                 label: 'Registry Endpoint',
-                key: 'config.endpoint',
+                jsonpath: 'config.endpoint',
                 type: 'text',
                 placeholder: 'gcr.io'
             },
             {
                 label: 'Project',
-                key: 'config.project',
+                jsonpath: 'config.project',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Service Account Key (JSON)',
-                key: 'config.serviceAccount',
+                jsonpath: 'config.serviceAccount',
                 type: 'text',
                 placeholder: ''
             }
@@ -424,43 +424,64 @@ const formDescriptors = {
         ecr: [
             {
                 label: 'Integration Name',
-                key: 'name',
+                jsonpath: 'name',
                 type: 'text',
                 placeholder: 'AWS ECR'
             },
             {
                 label: 'Types',
-                key: 'categories',
+                jsonpath: 'categories',
                 type: 'multiselect',
                 options: [{ value: 'REGISTRY', label: 'Registry' }],
                 placeholder: ''
             },
             {
                 label: 'Registry ID',
-                key: 'ecr.registryId',
+                jsonpath: 'ecr.registryId',
                 type: 'text',
                 placeholder: '0123456789'
             },
             {
                 label: 'Region',
-                key: 'ecr.region',
+                jsonpath: 'ecr.region',
                 type: 'text',
                 placeholder: 'us-west-2'
             },
             {
                 label: 'Access Key ID',
-                key: 'ecr.accessKeyId',
+                jsonpath: 'ecr.accessKeyId',
                 type: 'password',
                 placeholder: ''
             },
             {
                 label: 'Secret Access Key',
-                key: 'ecr.secretAccessKey',
+                jsonpath: 'ecr.secretAccessKey',
                 type: 'password',
                 placeholder: ''
             }
         ]
     }
+    // dnrIntegrations: [
+    //     {
+    //         label: 'Clusters',
+    //         key: 'clusterIds',
+    //         type: 'multiselect',
+    //         options: [],
+    //         placeholder: 'Choose clusters...'
+    //     },
+    //     {
+    //         label: 'Portal URL',
+    //         key: 'portalUrl',
+    //         type: 'text',
+    //         placeholder: ''
+    //     },
+    //     {
+    //         label: 'Auth Token',
+    //         key: 'authToken',
+    //         type: 'text',
+    //         placeholder: ''
+    //     }
+    // ]
 };
 
 export default formDescriptors;

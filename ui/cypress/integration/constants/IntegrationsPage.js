@@ -13,7 +13,6 @@ export const selectors = {
     clusters: {
         swarmCluster1: 'div.rt-td:contains("Swarm Cluster 1")'
     },
-    integrationError: 'div[data-test-id="integration-error"]',
     buttons: {
         add: 'button:contains("Add")',
         next: 'button:contains("Next")',
@@ -37,9 +36,9 @@ export const selectors = {
         endpointInput: 'form[data-test-id="cluster-form"] input[name="centralApiEndpoint"]'
     },
     dockerRegistryForm: {
-        nameInput: "form label[for='name'] input",
-        typesSelect: "form label[for='categories'] div.Select",
-        endpointInput: "form label[for='docker.endpoint'] input"
+        nameInput: "form input[name='name']",
+        typesSelect: 'form div.Select',
+        endpointInput: "form input[name='docker.endpoint']"
     },
     readOnlyView: '.overflow-auto > .p-4 > div',
     plugins: '.mb-6:first button',

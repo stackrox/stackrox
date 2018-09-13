@@ -10,7 +10,11 @@ export const types = {
     FETCH_NOTIFIERS: createFetchingActionTypes('notifiers/FETCH_NOTIFIERS'),
     FETCH_IMAGE_INTEGRATIONS: createFetchingActionTypes(
         'imageIntegrations/FETCH_IMAGE_INTEGRATIONS'
-    )
+    ),
+    TEST_INTEGRATION: 'integrations/TEST_INTEGRATION',
+    DELETE_INTEGRATIONS: 'integrations/DELETE_INTEGRATIONS',
+    SAVE_INTEGRATION: createFetchingActionTypes('integrations/SAVE_INTEGRATION'),
+    SET_CREATE_STATE: 'integrations/SET_CREATE_STATE'
 };
 
 // Actions
@@ -18,7 +22,23 @@ export const types = {
 export const actions = {
     fetchDNRIntegrations: createFetchingActions(types.FETCH_DNR_INTEGRATIONS),
     fetchNotifiers: createFetchingActions(types.FETCH_NOTIFIERS),
-    fetchImageIntegrations: createFetchingActions(types.FETCH_IMAGE_INTEGRATIONS)
+    fetchImageIntegrations: createFetchingActions(types.FETCH_IMAGE_INTEGRATIONS),
+    testIntegration: (source, integration) => ({
+        type: types.TEST_INTEGRATION,
+        source,
+        integration
+    }),
+    deleteIntegrations: (source, sourceType, ids) => ({
+        type: types.DELETE_INTEGRATIONS,
+        source,
+        sourceType,
+        ids
+    }),
+    saveIntegration: createFetchingActions(types.SAVE_INTEGRATION),
+    setCreateState: state => ({
+        type: types.SET_CREATE_STATE,
+        state
+    })
 };
 
 // Reducers
@@ -44,10 +64,16 @@ const imageIntegrations = (state = [], action) => {
     return state;
 };
 
+const isCreating = (state = false, action) => {
+    if (action.type === types.SET_CREATE_STATE) return action.state;
+    return state;
+};
+
 const reducer = combineReducers({
     dnrIntegrations,
     notifiers,
-    imageIntegrations
+    imageIntegrations,
+    isCreating
 });
 
 // Selectors
@@ -55,11 +81,13 @@ const reducer = combineReducers({
 const getDNRIntegrations = state => state.dnrIntegrations;
 const getNotifiers = state => state.notifiers;
 const getImageIntegrations = state => state.imageIntegrations;
+const getCreationState = state => state.isCreating;
 
 export const selectors = {
     getDNRIntegrations,
     getNotifiers,
-    getImageIntegrations
+    getImageIntegrations,
+    getCreationState
 };
 
 export default reducer;

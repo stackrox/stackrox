@@ -23,9 +23,17 @@ export function fetchIntegration(source) {
  * @returns {Promise<Object, Error>}
  */
 export function saveIntegration(source, data) {
-    return data.id !== undefined && data.id !== ''
-        ? axios.put(`${sourceMap[source]}/${data.id}`, data)
-        : axios.post(sourceMap[source], data);
+    if (!data.id) throw new Error('Integration entity must have an id to be saved');
+    return axios.put(`${sourceMap[source]}/${data.id}`, data);
+}
+
+/**
+ * Creates an integration by source.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function createIntegration(source, data) {
+    return axios.post(sourceMap[source], data);
 }
 
 /**
@@ -38,10 +46,19 @@ export function testIntegration(source, data) {
 }
 
 /**
- * Deletes a list of integrations by source.
+ * Deletes an integration by source.
  *
  * @returns {Promise<Object, Error>}
  */
 export function deleteIntegration(source, id) {
     return axios.delete(`${sourceMap[source]}/${id}`);
+}
+
+/**
+ * Deletes a list of integrations by source.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function deleteIntegrations(source, ids = []) {
+    return Promise.all(ids.map(id => deleteIntegration(source, id)));
 }

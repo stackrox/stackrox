@@ -28,7 +28,6 @@
     "react-copy-to-clipboard": "^5.0.1",
     "react-dom": "^16.2.0",
     "react-feather": "^1.0.8",
-    "react-form": "^2.15.2",
     "react-modal": "^3.1.7",
     "react-numeric-input": "^2.2.3",
     "react-onclickoutside": "^6.7.1",

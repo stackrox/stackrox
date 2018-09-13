@@ -56,6 +56,15 @@ export function deleteAuthProvider(authProviderId) {
 }
 
 /**
+ * Deletes auth providers by a list of IDs.
+ *
+ * @returns {Promise} promise which is fullfilled when the request is complete
+ */
+export function deleteAuthProviders(authProviderIds) {
+    return Promise.all(authProviderIds.map(id => deleteAuthProvider(id)));
+}
+
+/**
  * Calls the server to check auth status, rejects with error if auth status isn't valid.
  *
  * @returns {Promise<Object, Error>}
