@@ -5,6 +5,7 @@ import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
+import stackrox.generated.NotifierServiceOuterClass
 
 class NetworkSimulator extends BaseSpecification {
     @Category([NetworkPolicySimulation, BAT])
@@ -25,7 +26,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPodSelector()
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
         def policyId = orchestrator.applyNetworkPolicy(policy)
-        def baseline = Services.getNetworkPolicy()
+        def baseline = Services.getNetworkGraph()
 
         and:
         "generate simulation"
@@ -73,7 +74,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
         def policyId = orchestrator.applyNetworkPolicy(policy1)
-        def baseline = Services.getNetworkPolicy()
+        def baseline = Services.getNetworkGraph()
 
         and:
         "generate simulation"
@@ -164,6 +165,25 @@ class NetworkSimulator extends BaseSpecification {
         assert Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy)) == null
     }
 
+    @Category([NetworkPolicySimulation])
+    def "Verify malformed yaml returns error"() {
+        when:
+        "create NetworkPolicy object"
+        NetworkPolicy policy = new NetworkPolicy("missing-namespace")
+
+        then:
+        "attempt to simulate on the yaml"
+        assert Services.submitNetworkGraphSimulation(
+                orchestrator.generateYaml(policy)
+                        .replaceAll("\\s", "")) == null
+        assert Services.submitNetworkGraphSimulation(
+                orchestrator.generateYaml(policy) +
+                        "ksdmflka\nlsadkfmasl") == null
+        assert Services.submitNetworkGraphSimulation(
+                orchestrator.generateYaml(policy)
+                        .replace("apiVersion:", "apiVersion=")) == null
+    }
+
     @Unroll
     @Category([NetworkPolicySimulation])
     def "Verify NetworkPolicy Simulator results"() {
@@ -178,7 +198,7 @@ class NetworkSimulator extends BaseSpecification {
         for (Deployment extra : additionalDeployments) {
             orchestrator.createDeployment(extra)
         }
-        def baseline = Services.getNetworkPolicy()
+        def baseline = Services.getNetworkGraph()
         def appId = baseline.nodesList.find { it.deploymentName == "web" }.id
 
         then:
@@ -328,5 +348,112 @@ class NetworkSimulator extends BaseSpecification {
                          .setName("client2")
                          .setImage("nginx")
                          .addLabel("app", "client"),]
+    }
+
+    @Unroll
+    @Category([NetworkPolicySimulation])
+    def "Verify Network Simulator Notifications"() {
+        when:
+        "create notifier"
+        NotifierServiceOuterClass.Notifier notifier
+        switch (notifierType) {
+            case "SLACK":
+                notifier = Services.addSlackNotifier("Slack Test")
+                break
+
+            case "JIRA":
+                notifier = Services.addJiraNotifier("Jira Test")
+                break
+
+            case "EMAIL":
+                notifier = Services.addEmailNotifier("Email Test")
+                break
+        }
+        assert notifier != null
+
+        and:
+        "generate a network policy yaml"
+        NetworkPolicy policy = new NetworkPolicy("test-yaml")
+                .setNamespace("qa")
+                .addPodSelector(["app":"web"])
+                .addPolicyType(NetworkPolicyTypes.INGRESS)
+
+        then:
+        "send simulation notification"
+        Services.sendSimulationNotification(
+                notifier.id,
+                orchestrator.generateYaml(policy)
+        )
+
+        cleanup:
+        "delete notifier"
+        if (notifier != null) {
+            Services.deleteNotifier(notifier.id)
+        }
+
+        where:
+        "notifier types"
+
+        notifierType | _
+        "SLACK"      | _
+        "EMAIL"      | _
+        "JIRA"       | _
+    }
+
+    @Category([NetworkPolicySimulation])
+    def "Verify invalid clusterId passed to notification API"() {
+        when:
+        "create slack notifier"
+        NotifierServiceOuterClass.Notifier notifier = Services.addSlackNotifier("Slack Test")
+
+        and:
+        "create Netowrk Policy yaml"
+        NetworkPolicy policy = new NetworkPolicy("test-yaml")
+                .setNamespace("qa")
+                .addPodSelector(["app":"web"])
+                .addPolicyType(NetworkPolicyTypes.INGRESS)
+
+        then:
+        "notify against invalid clusterId"
+        assert Services.sendSimulationNotification(
+                notifier.id,
+                orchestrator.generateYaml(policy),
+                "11111111-bbbb-0000-aaaa-111111111111") == null
+        assert Services.sendSimulationNotification(
+                notifier.id,
+                orchestrator.generateYaml(policy),
+                null) == null
+        assert Services.sendSimulationNotification(
+                notifier.id,
+                orchestrator.generateYaml(policy),
+                "") == null
+
+        cleanup:
+        "remove notifier"
+        if (notifier != null) {
+            Services.deleteNotifier(notifier.id)
+        }
+    }
+
+    @Category([NetworkPolicySimulation])
+    def "Verify invalid notifierId passed to notification API"() {
+        when:
+        "create Netowrk Policy yaml"
+        NetworkPolicy policy = new NetworkPolicy("test-yaml")
+                .setNamespace("qa")
+                .addPodSelector(["app":"web"])
+                .addPolicyType(NetworkPolicyTypes.INGRESS)
+
+        then:
+        "notify against invalid clusterId"
+        assert Services.sendSimulationNotification(
+                "11111111-bbbb-0000-aaaa-111111111111",
+                orchestrator.generateYaml(policy)) == null
+        assert Services.sendSimulationNotification(
+                null,
+                orchestrator.generateYaml(policy)) == null
+        assert Services.sendSimulationNotification(
+                "",
+                orchestrator.generateYaml(policy)) == null
     }
 }

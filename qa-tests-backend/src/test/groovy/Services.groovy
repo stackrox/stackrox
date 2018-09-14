@@ -1,3 +1,4 @@
+import io.grpc.StatusRuntimeException
 import io.grpc.netty.GrpcSslContexts
 import io.grpc.netty.NegotiationType
 import io.grpc.netty.NettyChannelBuilder
@@ -14,6 +15,8 @@ import stackrox.generated.ImageIntegrationServiceOuterClass
 import stackrox.generated.ImageIntegrationServiceOuterClass.ImageIntegration
 import stackrox.generated.ImageServiceOuterClass
 import stackrox.generated.ImageServiceOuterClass.Image
+import stackrox.generated.NotifierServiceGrpc
+import stackrox.generated.NotifierServiceOuterClass
 import stackrox.generated.PolicyServiceGrpc
 import stackrox.generated.PolicyServiceOuterClass.LifecycleStage
 import stackrox.generated.PolicyServiceOuterClass.ImageNamePolicy
@@ -88,6 +91,10 @@ class Services {
 
     static getClusterServiceClient() {
         return ClustersServiceGrpc.newBlockingStub(getChannel())
+    }
+
+    static getNotifierClient() {
+        return NotifierServiceGrpc.newBlockingStub(getChannel())
     }
 
     static List<ListPolicy> getPolicies(RawQuery query = RawQuery.newBuilder().build()) {
@@ -322,7 +329,7 @@ class Services {
         }
     }
 
-    static getNetworkPolicy() {
+    static getNetworkGraph() {
         try {
             return getNetworkPolicyClient().getNetworkGraph(
                     NetworkPolicyServiceOuterClass.GetNetworkGraphRequest.newBuilder()
@@ -331,6 +338,104 @@ class Services {
             )
         } catch (Exception e) {
             println e.toString()
+        }
+    }
+
+    static addSlackNotifier(String name) {
+        try {
+            return getNotifierClient().postNotifier(
+                    NotifierServiceOuterClass.Notifier.newBuilder()
+                            .setType("slack")
+                            .setName(name)
+                            .setLabelKey("#slack-test")
+                            .setLabelDefault(
+                                "https://hooks.slack.com/services/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"
+                            )
+                            .setEnabled(true)
+                            .setUiEndpoint("https://" +
+                                    System.getenv("HOSTNAME") +
+                                    ":" + System.getenv("PORT"))
+                    .build()
+            )
+        } catch (Exception e) {
+            println e.toString()
+        }
+    }
+
+    static addJiraNotifier(String name) {
+        try {
+            return getNotifierClient().postNotifier(
+                    NotifierServiceOuterClass.Notifier.newBuilder()
+                            .setType("jira")
+                            .setName(name)
+                            .setLabelKey("AJIT")
+                            .setLabelDefault("AJIT")
+                            .setEnabled(true)
+                            .setUiEndpoint("https://" +
+                                    System.getenv("HOSTNAME") +
+                                    ":" + System.getenv("PORT"))
+                            .setJira(NotifierServiceOuterClass.Jira.newBuilder()
+                                    .setUsername("k+automation@stackrox.com")
+                                    .setPassword("D7wU97n9CFYuesHt")
+                                    .setUrl("https://stack-rox.atlassian.net")
+                                    .setIssueType("Task")
+                            )
+                            .build()
+            )
+        } catch (Exception e) {
+            println e.toString()
+        }
+    }
+
+    static addEmailNotifier(String name) {
+        try {
+            return getNotifierClient().postNotifier(
+                    NotifierServiceOuterClass.Notifier.newBuilder()
+                            .setType("email")
+                            .setName(name)
+                            .setLabelKey("mailgun")
+                            .setLabelDefault("to@example.com")
+                            .setEnabled(true)
+                            .setUiEndpoint("https://" +
+                                    System.getenv("HOSTNAME") +
+                                    ":" + System.getenv("PORT"))
+                            .setEmail(NotifierServiceOuterClass.Email.newBuilder()
+                                    .setServer("smtp.mailgun.org")
+                                    .setUsername("postmaster@sandboxa91803d176f944229a601fc109e20250.mailgun.org")
+                                    .setPassword("5da76fea807449ea105a77d4fa05420f-7bbbcb78-b8136e8b")
+                                    .setSender("from@example.com")
+                            )
+                            .build()
+            )
+        } catch (Exception e) {
+            println e.toString()
+        }
+    }
+
+    static deleteNotifier(String id) {
+        try {
+            getNotifierClient().deleteNotifier(
+                    NotifierServiceOuterClass.DeleteNotifierRequest.newBuilder()
+                            .setId(id)
+                            .setForce(true)
+                            .build()
+            )
+        } catch (Exception e) {
+            println e.toString()
+        }
+    }
+
+    static sendSimulationNotification(String notifierId, String yaml, String clusterId = getClusterId()) {
+        try {
+            NetworkPolicyServiceOuterClass.SendNetworkPolicyYamlRequest.Builder request =
+                    NetworkPolicyServiceOuterClass.SendNetworkPolicyYamlRequest.newBuilder()
+            notifierId == null ?: request.setNotifierId(notifierId)
+            clusterId == null ?: request.setClusterId(clusterId)
+            yaml == null ?: request.setYaml(yaml)
+            return getNetworkPolicyClient().sendNetworkPolicyYAML(request.build())
+        } catch (Exception e) {
+            println e.toString()
+            assert e instanceof StatusRuntimeException
         }
     }
 }
