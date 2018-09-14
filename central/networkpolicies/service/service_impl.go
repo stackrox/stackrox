@@ -146,8 +146,12 @@ func (s *serviceImpl) GetNetworkGraphEpoch(context.Context, *v1.Empty) (*v1.GetN
 }
 
 func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.SendNetworkPolicyYamlRequest) (*v1.Empty, error) {
+
 	if request.GetClusterId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Cluster ID must be specified")
+	}
+	if request.GetNotifierId() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "Notifier ID must be specified")
 	}
 
 	cluster, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
