@@ -1,6 +1,7 @@
 import { take, takeLatest, call, fork, put, all, select, race } from 'redux-saga/effects';
 import { delay } from 'redux-saga';
 import { getFormValues } from 'redux-form';
+import Raven from 'raven-js';
 
 import { integrationsPath, dashboardPath, compliancePath, policiesPath } from 'routePaths';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
@@ -38,8 +39,18 @@ function* saveCluster(cluster) {
             yield put(notificationActions.removeOldestNotification());
         }
         yield put(actions.saveCluster.failure(error));
+        Raven.captureException(error);
     }
     return null;
+}
+
+function* deleteClusters({ clusterIds }) {
+    try {
+        yield call(service.deleteClusters, clusterIds);
+        yield fork(getClusters);
+    } catch (error) {
+        Raven.captureException(error);
+    }
 }
 
 function* watchLocation() {
@@ -51,6 +62,10 @@ function* watchLocation() {
 
 function* watchFetchRequest() {
     yield takeLatest(types.FETCH_CLUSTERS.REQUEST, getClusters);
+}
+
+function* watchDeleteRequest() {
+    yield takeLatest(types.DELETE_CLUSTERS, deleteClusters);
 }
 
 function* pollCluster(clusterId) {
@@ -86,5 +101,10 @@ function* watchWizard() {
 }
 
 export default function* clusters() {
-    yield all([fork(watchLocation), fork(watchFetchRequest), fork(watchWizard)]);
+    yield all([
+        fork(watchLocation),
+        fork(watchFetchRequest),
+        fork(watchDeleteRequest),
+        fork(watchWizard)
+    ]);
 }

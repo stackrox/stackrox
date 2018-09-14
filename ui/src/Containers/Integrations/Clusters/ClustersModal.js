@@ -12,11 +12,11 @@ import { selectors } from 'reducers';
 import Dialog from 'Components/Dialog';
 import Modal from 'Components/Modal';
 import CheckboxTable from 'Components/CheckboxTable';
+import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import Panel from 'Components/Panel';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import PanelButton from 'Components/PanelButton';
 import { clusterTypeLabels } from 'messages/common';
-import { deleteCluster } from 'services/ClustersService';
 import ClusterWizardPanel from './ClusterWizardPanel';
 import ClusterDetails from './ClusterDetails';
 
@@ -32,7 +32,7 @@ class ClustersModal extends Component {
         isWizardActive: PropTypes.bool.isRequired,
         startWizard: PropTypes.func.isRequired,
         selectCluster: PropTypes.func.isRequired,
-        fetchClusters: PropTypes.func.isRequired
+        deleteClusters: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -40,7 +40,8 @@ class ClustersModal extends Component {
     };
 
     state = {
-        showConfirmationDialog: false
+        showConfirmationDialog: false,
+        selection: []
     };
 
     componentWillUnmount() {
@@ -53,19 +54,13 @@ class ClustersModal extends Component {
 
     onClusterDetailsClose = () => this.props.selectCluster(null);
 
+    clearSelection = () => this.setState({ selection: [] });
+
     deleteClusters = () => {
-        const checkedClusterIds =
-            this.clusterTableRef &&
-            this.clusterTableRef.state &&
-            this.clusterTableRef.state.selection;
-        if (checkedClusterIds) {
-            const promises = checkedClusterIds.map(deleteCluster);
-            Promise.all(promises).then(() => {
-                this.clusterTableRef.clearSelectedRows();
-                this.hideConfirmationDialog();
-                this.props.fetchClusters();
-            });
-        }
+        if (this.state.selection.length === 0) return;
+        this.props.deleteClusters(this.state.selection);
+        this.hideConfirmationDialog();
+        this.clearSelection();
     };
 
     showConfirmationDialog = () => {
@@ -75,6 +70,20 @@ class ClustersModal extends Component {
     hideConfirmationDialog = () => {
         this.setState({ showConfirmationDialog: false });
     };
+
+    toggleRow = id => {
+        const selection = toggleRow(id, this.state.selection);
+        this.updateSelection(selection);
+    };
+
+    toggleSelectAll = () => {
+        const rowsLength = this.props.clusters.length;
+        const tableRef = this.clusterTableRef.reactTable;
+        const selection = toggleSelectAll(rowsLength, this.state.selection, tableRef);
+        this.updateSelection(selection);
+    };
+
+    updateSelection = selection => this.setState({ selection });
 
     showModalView = () => {
         const columns = [
@@ -103,6 +112,9 @@ class ClustersModal extends Component {
                 rows={this.props.clusters}
                 columns={columns}
                 onRowClick={this.onClusterRowClick}
+                toggleRow={this.toggleRow}
+                toggleSelectAll={this.toggleSelectAll}
+                selection={this.state.selection}
                 selectedRowId={selectedClusterId}
                 noDataText="No clusters to show."
                 minRows={20}
@@ -163,11 +175,7 @@ class ClustersModal extends Component {
 
     render() {
         const { clusterType, onRequestClose } = this.props;
-        const checkedClusterIds =
-            this.clusterTableRef &&
-            this.clusterTableRef.state &&
-            this.clusterTableRef.state.selection;
-        const numCheckedClusters = checkedClusterIds && checkedClusterIds.length;
+        const numCheckedClusters = this.state.selection.length;
         return (
             <Modal isOpen onRequestClose={onRequestClose} className="w-full lg:w-5/6 h-full">
                 <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
@@ -206,8 +214,8 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = {
-    fetchClusters: actions.fetchClusters.request,
     selectCluster: actions.selectCluster,
+    deleteClusters: actions.deleteClusters,
     startWizard: actions.startWizard
 };
 

@@ -12,7 +12,7 @@ import * as Icon from 'react-feather';
 import tableColumnDescriptor from 'Containers/Integrations/tableColumnDescriptor';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
-class Table extends Component {
+class IntegrationTable extends Component {
     static propTypes = {
         integrations: PropTypes.arrayOf(PropTypes.object).isRequired,
 
@@ -39,7 +39,10 @@ class Table extends Component {
         onDelete: PropTypes.func.isRequired,
 
         setTable: PropTypes.func.isRequired,
-        selectedIntegrationId: PropTypes.string
+        selectedIntegrationId: PropTypes.string,
+        toggleRow: PropTypes.func.isRequired,
+        toggleSelectAll: PropTypes.func.isRequired,
+        selection: PropTypes.arrayOf(PropTypes.string).isRequired
     };
 
     static defaultProps = {
@@ -115,6 +118,9 @@ class Table extends Component {
                 rows={rows}
                 columns={this.getColumns()}
                 onRowClick={this.props.onRowClick}
+                toggleRow={this.props.toggleRow}
+                toggleSelectAll={this.props.toggleSelectAll}
+                selection={this.props.selection}
                 selectedRowId={this.props.selectedIntegrationId}
                 noDataText={`No ${this.props.type} integrations`}
                 minRows={20}
@@ -137,4 +143,4 @@ const mapStateToProps = createStructuredSelector({
     clusters: selectors.getClusters
 });
 
-export default connect(mapStateToProps)(Table);
+export default connect(mapStateToProps)(IntegrationTable);

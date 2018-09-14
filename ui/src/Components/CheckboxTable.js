@@ -8,79 +8,43 @@ class CheckboxTable extends Component {
         columns: ReactTablePropTypes.columns.isRequired,
         rows: PropTypes.arrayOf(PropTypes.object).isRequired,
         onRowClick: PropTypes.func,
-        selectedRowId: PropTypes.string
+        selectedRowId: PropTypes.string,
+        toggleRow: PropTypes.func.isRequired,
+        toggleSelectAll: PropTypes.func.isRequired,
+        selection: PropTypes.arrayOf(PropTypes.string)
     };
 
     static defaultProps = {
         selectedRowId: null,
-        onRowClick: null
+        onRowClick: null,
+        selection: []
     };
 
-    constructor(props) {
-        super(props);
-
-        this.state = { selection: [] };
-    }
+    setTableRef = table => {
+        this.reactTable = table;
+    };
 
     toggleRow = ({ id }) => e => {
         e.stopPropagation();
-        const selection = [...this.state.selection];
-        const keyIndex = selection.indexOf(id);
-        // check to see if the key exists
-        if (keyIndex >= 0) selection.splice(keyIndex, 1);
-        else selection.push(id);
-        // update the state
-        this.setState({ selection });
+        this.props.toggleRow(id);
     };
 
     toggleSelectAll = () => () => {
-        const selectedAll = this.allSelected();
-        let selection = [];
-        // we need to get at the internals of ReactTable, passed through by ref
-        const wrappedInstance = this.table.reactTable;
-        // the 'sortedData' property contains the currently accessible records based on the filter and sort
-        const { sortedData, page, pageSize } = wrappedInstance.getResolvedState();
-        const startIndex = page * pageSize;
-        const nextPageIndex = (page + 1) * pageSize;
-
-        if (!selectedAll) {
-            selection = [...this.state.selection];
-            let previouslySelected = 0;
-            // we just push all the IDs onto the selection array of the currently selected page
-            for (let i = startIndex; i < nextPageIndex; i += 1) {
-                if (!sortedData[i]) break;
-                const { id } = sortedData[i].checkbox;
-                const keyIndex = selection.indexOf(id);
-                // if already selected, don't add again, else add to the selection
-                if (keyIndex >= 0) previouslySelected += 1;
-                else selection.push(id);
-            }
-            // if all were previously selected on the current page, unselect all on page
-            if (
-                previouslySelected === pageSize ||
-                previouslySelected === sortedData.length % pageSize
-            ) {
-                for (let i = startIndex; i < nextPageIndex; i += 1) {
-                    if (!sortedData[i]) break;
-                    const { id } = sortedData[i].checkbox;
-                    const keyIndex = selection.indexOf(id);
-                    selection.splice(keyIndex, 1);
-                }
-            }
-        }
-        this.setState({ selection });
+        this.props.toggleSelectAll();
     };
 
-    clearSelectedRows = () => this.setState({ selection: [] });
+    someSelected = () => {
+        const { selection, rows } = this.props;
+        return selection.length !== 0 && selection.length < rows.length;
+    };
 
-    someSelected = () =>
-        this.state.selection.length !== 0 && this.state.selection.length < this.props.rows.length;
-
-    allSelected = () =>
-        this.state.selection.length !== 0 && this.state.selection.length === this.props.rows.length;
+    allSelected = () => {
+        const { selection, rows } = this.props;
+        return selection.length !== 0 && selection.length === rows.length;
+    };
 
     addCheckboxColumns = () => {
-        const { columns } = this.props;
+        const { columns, selection } = this.props;
         return [
             {
                 id: 'checkbox',
@@ -88,7 +52,7 @@ class CheckboxTable extends Component {
                 Cell: ({ original }) => (
                     <input
                         type="checkbox"
-                        checked={this.state.selection.includes(original.id)}
+                        checked={selection.includes(original.id)}
                         onClick={this.toggleRow(original)}
                     />
                 ),
@@ -114,7 +78,7 @@ class CheckboxTable extends Component {
     render() {
         const { ...rest } = this.props;
         const columns = this.addCheckboxColumns();
-        return <Table {...rest} ref={r => (this.table = r)} columns={columns} />; // eslint-disable-line
+        return <Table {...rest} columns={columns} setTableRef={this.setTableRef} />;
     }
 }
 

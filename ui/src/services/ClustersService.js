@@ -38,6 +38,15 @@ export function deleteCluster(id) {
 }
 
 /**
+ * Deletes clusters given a list of cluster IDs.
+ *
+ * @returns {Promise<undefined, Error>} resolved if operation was successful
+ */
+export function deleteClusters(ids = []) {
+    return Promise.all(ids.map(id => deleteCluster(id)));
+}
+
+/**
  * Creates or updates a cluster given the cluster fields.
  *
  * @returns {Promise<Object, Error>} fulfilled with a saved cluster data

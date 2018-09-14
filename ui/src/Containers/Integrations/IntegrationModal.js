@@ -10,7 +10,8 @@ import { selectors } from 'reducers';
 import Dialog from 'Components/Dialog';
 import Form from 'Containers/Integrations/Form';
 import Modal from 'Components/Modal';
-import Table from 'Containers/Integrations/Table';
+import IntegrationTable from 'Containers/Integrations/Table';
+import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 
 const SOURCE_LABELS = Object.freeze({
     authProviders: 'authentication provider',
@@ -48,7 +49,8 @@ class IntegrationModal extends Component {
 
         this.state = {
             selectedIntegration: null,
-            showConfirmationDialog: false
+            showConfirmationDialog: false,
+            selection: []
         };
     }
 
@@ -96,6 +98,8 @@ class IntegrationModal extends Component {
         this.props.setCreateState(false);
     };
 
+    clearSelection = () => this.setState({ selection: [] });
+
     activateAuthIntegration = integration => () => {
         if (integration !== null && integration.loginUrl !== null && !integration.validated) {
             window.location = integration.loginUrl;
@@ -103,13 +107,26 @@ class IntegrationModal extends Component {
     };
 
     deleteTableSelectedIntegrations = () => {
-        if (!this.integrationTable) return;
-        const { selection } = this.integrationTable.state;
+        const { selection } = this.state;
         const { source, type } = this.props;
         this.props.deleteIntegrations(source, type, selection);
-        this.integrationTable.clearSelectedRows();
+        this.clearSelection();
         this.hideConfirmationDialog();
     };
+
+    toggleRow = id => {
+        const selection = toggleRow(id, this.state.selection);
+        this.updateSelection(selection);
+    };
+
+    toggleSelectAll = () => {
+        const rowsLength = this.props.integrations.length;
+        const tableRef = this.integrationTable.reactTable;
+        const selection = toggleSelectAll(rowsLength, this.state.selection, tableRef);
+        this.updateSelection(selection);
+    };
+
+    updateSelection = selection => this.setState({ selection });
 
     renderHeader = () => {
         const { source, type } = this.props;
@@ -122,12 +139,15 @@ class IntegrationModal extends Component {
     };
 
     renderTable = () => (
-        <Table
+        <IntegrationTable
             integrations={this.props.integrations}
             source={this.props.source}
             type={this.props.type}
             buttonsEnabled={!this.formIsOpen()}
             onRowClick={this.onTableRowClick}
+            toggleRow={this.toggleRow}
+            toggleSelectAll={this.toggleSelectAll}
+            selection={this.state.selection}
             onActivate={this.activateAuthIntegration}
             onAdd={this.onTableAdd}
             onDelete={this.onTableDelete}
@@ -151,9 +171,7 @@ class IntegrationModal extends Component {
     };
 
     renderConfirmationDialog = () => {
-        const numSelectedRows = this.integrationTable
-            ? this.integrationTable.state.selection.length
-            : 0;
+        const numSelectedRows = this.state.selection.length;
         return (
             <Dialog
                 isOpen={this.state.showConfirmationDialog}

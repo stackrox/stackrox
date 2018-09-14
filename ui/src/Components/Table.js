@@ -16,14 +16,16 @@ class Table extends Component {
         onRowClick: PropTypes.func,
         selectedRowId: PropTypes.string,
         idAttribute: PropTypes.string,
-        noDataText: ReactTablePropTypes.noDataText
+        noDataText: ReactTablePropTypes.noDataText,
+        setTableRef: PropTypes.func
     };
 
     static defaultProps = {
         noDataText: 'No records.',
         selectedRowId: null,
         idAttribute: 'id',
-        onRowClick: null
+        onRowClick: null,
+        setTableRef: null
     };
 
     getTbodyProps = state => {
@@ -80,7 +82,7 @@ class Table extends Component {
         );
         return (
             <ReactTable
-                ref={r => (this.reactTable = r)} // eslint-disable-line
+                ref={this.props.setTableRef}
                 data={rows}
                 columns={columns}
                 getTbodyProps={this.getTbodyProps}

@@ -12,6 +12,7 @@ import * as Icon from 'react-feather';
 import Dialog from 'Components/Dialog';
 import Loader from 'Components/Loader';
 import CheckboxTable from 'Components/CheckboxTable';
+import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import { formatPolicyFields, getPolicyFormDataKeys } from 'Containers/Policies/policyFormUtils';
@@ -83,7 +84,8 @@ class PoliciesPage extends Component {
         super(props);
 
         this.state = {
-            showConfirmationDialog: false
+            showConfirmationDialog: false,
+            selection: []
         };
     }
 
@@ -159,16 +161,18 @@ class PoliciesPage extends Component {
         setTimeout(this.props.removeToast, 500);
     };
 
+    clearSelection = () => this.setState({ selection: [] });
+
     deletePolicies = () => {
         const policyIds = [];
-        this.checkboxTable.state.selection.forEach(rowId => {
+        this.state.selection.forEach(rowId => {
             // close the view panel if that policy is being deleted
             if (rowId === this.props.match.params.policyId) {
                 this.setSelectedPolicy();
             }
             policyIds.push(rowId);
         });
-        this.checkboxTable.clearSelectedRows();
+        this.clearSelection();
         this.hideConfirmationDialog();
         this.props.deletePolicies(policyIds);
     };
@@ -189,6 +193,20 @@ class PoliciesPage extends Component {
 
     hideConfirmationDialog = () => {
         this.setState({ showConfirmationDialog: false });
+    };
+
+    updateSelection = selection => this.setState({ selection });
+
+    toggleRow = id => {
+        const selection = toggleRow(id, this.state.selection);
+        this.updateSelection(selection);
+    };
+
+    toggleSelectAll = () => {
+        const rowsLength = this.props.policies.length;
+        const tableRef = this.checkboxTable.reactTable;
+        const selection = toggleSelectAll(rowsLength, this.state.selection, tableRef);
+        this.updateSelection(selection);
     };
 
     renderSelectTable = () => {
@@ -256,6 +274,9 @@ class PoliciesPage extends Component {
                     rows={this.props.policies}
                     columns={columns}
                     onRowClick={this.setSelectedPolicy}
+                    toggleRow={this.toggleRow}
+                    toggleSelectAll={this.toggleSelectAll}
+                    selection={this.state.selection}
                     selectedRowId={id}
                     noDataText="No results found. Please refine your search."
                 />
@@ -367,8 +388,7 @@ class PoliciesPage extends Component {
     };
 
     renderConfirmationDialog = () => {
-        if (!this.checkboxTable) return null;
-        const numSelectedRows = this.checkboxTable.state.selection.length;
+        const numSelectedRows = this.state.selection.length;
         return (
             <Dialog
                 isOpen={this.state.showConfirmationDialog}

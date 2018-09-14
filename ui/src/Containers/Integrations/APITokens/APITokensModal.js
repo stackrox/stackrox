@@ -8,6 +8,7 @@ import { actions } from 'reducers/apitokens';
 import { selectors } from 'reducers';
 
 import CheckboxTable from 'Components/CheckboxTable';
+import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import Modal from 'Components/Modal';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
@@ -49,7 +50,8 @@ class APITokensModal extends Component {
     ];
 
     state = {
-        selectedTokenId: null
+        selectedTokenId: null,
+        selection: []
     };
 
     onRowClick = row => {
@@ -61,13 +63,9 @@ class APITokensModal extends Component {
     };
 
     revokeTokens = () => {
-        const checkedTokenIds =
-            this.apiTokenModalTable &&
-            this.apiTokenModalTable.state &&
-            this.apiTokenModalTable.state.selection;
-        if (checkedTokenIds && checkedTokenIds.length === 0) return;
-        this.apiTokenModalTable.clearSelectedRows();
-        this.props.revokeAPITokens(checkedTokenIds);
+        if (this.state.selection.length === 0) return;
+        this.clearSelection();
+        this.props.revokeAPITokens(this.state.selection);
     };
 
     unSelectRow = () => {
@@ -87,6 +85,8 @@ class APITokensModal extends Component {
         this.props.closeTokenGenerationWizard();
     };
 
+    clearSelection = () => this.setState({ selection: [] });
+
     showModalView = () => {
         if (!this.props.tokens || !this.props.tokens.length)
             return <NoResultsMessage message="No API Tokens Generated" />;
@@ -98,6 +98,9 @@ class APITokensModal extends Component {
                 rows={this.props.tokens}
                 columns={APITokensModal.tableColumnDescriptors}
                 onRowClick={this.onRowClick}
+                toggleRow={this.toggleRow}
+                toggleSelectAll={this.toggleSelectAll}
+                selection={this.state.selection}
                 selectedRowId={this.state.selectedTokenId}
                 noDataText="No API Tokens Generated"
                 minRows={20}
@@ -105,8 +108,22 @@ class APITokensModal extends Component {
         );
     };
 
+    toggleRow = id => {
+        const selection = toggleRow(id, this.state.selection);
+        this.updateSelection(selection);
+    };
+
+    toggleSelectAll = () => {
+        const rowsLength = this.props.tokens.length;
+        const tableRef = this.apiTokenModalTable.reactTable;
+        const selection = toggleSelectAll(rowsLength, this.state.selection, tableRef);
+        this.updateSelection(selection);
+    };
+
     showTokenGenerationDetails = () =>
         this.props.currentGeneratedToken && this.props.currentGeneratedTokenMetadata;
+
+    updateSelection = selection => this.setState({ selection });
 
     renderPanelButtons = () => (
         <React.Fragment>

@@ -26,7 +26,8 @@ export const types = {
     PREV_WIZARD_PAGE: 'clusters/NEXT_WIZARD_PAGE',
     UPDATE_WIZARD_STATE: 'clusters/UPDATE_WIZARD_STATE',
     FINISH_WIZARD: 'clusters/FINISH_WIZARD',
-    SAVE_CLUSTER: createFetchingActionTypes('clusters/SAVE_CLUSTER')
+    SAVE_CLUSTER: createFetchingActionTypes('clusters/SAVE_CLUSTER'),
+    DELETE_CLUSTERS: 'clusters/DELETE_CLUSTERS'
 };
 
 // Actions
@@ -40,7 +41,8 @@ export const actions = {
     prevWizardPage: () => ({ type: types.PREV_WIZARD_PAGE }),
     updateWizardState: (page, clusterId) => ({ type: types.UPDATE_WIZARD_STATE, page, clusterId }),
     finishWizard: () => ({ type: types.FINISH_WIZARD }),
-    saveCluster: createFetchingActions(types.SAVE_CLUSTER)
+    saveCluster: createFetchingActions(types.SAVE_CLUSTER),
+    deleteClusters: clusterIds => ({ type: types.DELETE_CLUSTERS, clusterIds })
 };
 
 // Reducers
