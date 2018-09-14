@@ -10,7 +10,7 @@ export const selectors = {
     prevButton: 'button:contains("Previous")',
     cancelButton: 'button[data-test-id="cancel"]',
     policies: {
-        latest: 'div.rt-tr:contains("latest")',
+        scanImage: 'div.rt-tr:contains("90-Day")',
         addCapabilities: '.rt-tr:contains("CAP_SYS_ADMIN capability added")'
     },
     form: {

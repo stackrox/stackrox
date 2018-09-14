@@ -1,0 +1,14 @@
+{
+    "name": "Netcat Execution Detected",
+    "description": "Detects execution of netcat in a container",
+    "categories": ["Known malicious process"],
+    "severity": "MEDIUM_SEVERITY",
+    "lifecycle_stage": "RUN_TIME",
+    "fields": {
+      "process_policy": {
+        "name": "nc$"
+      }
+    },
+  "rationale": "netcat is a known malicious process",
+  "remediation": "Consider removing package managers during the build process that could be used to download such software. Check that exposed ports don't allow for remote code execution"
+}

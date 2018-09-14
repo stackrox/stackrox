@@ -135,7 +135,7 @@ describe('Policies page', () => {
     });
 
     it('should show a specific message when editing a policy with "enabled" value as "no"', () => {
-        cy.get(selectors.policies.latest).click();
+        cy.get(selectors.policies.scanImage).click();
         editPolicy();
         cy.get(`${selectors.form.enableField} .Select-arrow`).click();
         cy.get(`${selectors.form.enableField} div[role="option"]:contains("No")`).click();
@@ -144,14 +144,14 @@ describe('Policies page', () => {
     });
 
     it('should allow updating image fields in a policy', () => {
-        cy.get(selectors.policies.latest).click();
+        cy.get(selectors.policies.scanImage).click();
         editPolicy();
         cy.get(selectors.form.select).select('fields.imageName.registry');
         cy.get(selectors.imageRegistry.input).type('docker.io');
         savePolicy();
         cy
             .get(selectors.imageRegistry.value)
-            .should('have.text', 'Alert on any image using tag latest from registry docker.io');
+            .should('have.text', 'Alert on any image using any tag from registry docker.io');
         editPolicy();
         cy.get(selectors.imageRegistry.deleteButton).click();
         savePolicy();
@@ -165,7 +165,7 @@ describe('Policies page', () => {
     });
 
     it('should allow updating days since image scanned in a policy', () => {
-        cy.get(selectors.policies.latest).click();
+        cy.get(selectors.policies.scanImage).click();
         editPolicy();
         cy.get(selectors.form.select).select('fields.scanAgeDays');
         cy.get(selectors.scanAgeDays.input).type('50');

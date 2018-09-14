@@ -1,0 +1,14 @@
+{
+  "name": "New Group Added",
+  "description": "Detects when the 'addgroup' or 'groupadd' process is used to add a new group to the system",
+  "severity": "HIGH_SEVERITY",
+  "lifecycle_stage": "RUN_TIME",
+  "categories": ["User Access Modification"],
+  "fields": {
+    "process_policy": {
+      "name": "addgroup|groupadd"
+    }
+  },
+  "rationale": "Groups added in run time can be used to take ownership of files and processes",
+  "remediation": "Consider using a base image that doesn't have a shell such as SCRATCH or gcr.io/distroless. If not, modify your Dockerfile to use the exec form of CMD/ENTRYPOINT ([\"using braces\"]) instead of the shell form (no braces)"
+}

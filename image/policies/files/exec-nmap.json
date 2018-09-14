@@ -1,0 +1,14 @@
+{
+  "name": "nmap Execution",
+  "description": "Alerts when the nmap process launches in a container during run time",
+  "severity": "HIGH_SEVERITY",
+  "lifecycle_stage": "RUN_TIME",
+  "categories": ["Reconnaissance"],
+  "fields": {
+    "process_policy": {
+      "name": "nmap$"
+    }
+  },
+  "rationale": "Nmap can be used to probe a running container's network to enumerate open ports and perform other actions such as OS version detection and launching over-the-network scripted attacks",
+  "remediation": "Consider removing package managers during the build process that could be used to download such software. Check that exposed ports don't allow for remote code execution"
+}

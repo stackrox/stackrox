@@ -1,0 +1,14 @@
+{
+    "name": "Usage of Network Management Tool",
+    "description": "Detects network management program execution",
+    "categories": ["Network Configuration Change", "Reconnaissance"],
+    "severity": "HIGH_SEVERITY",
+    "lifecycle_stage": "RUN_TIME",
+    "fields": {
+      "process_policy": {
+        "name": "(\\b(?!a-z))ip$|ifrename$|ethtool$|ifconfig$|(\\b(?!a-z))arp$|ipmaddr$|iptunnel$|route$|nameif$|mii-tool$"
+      }
+    },
+  "rationale": "Network management tools can be used for a variety of task, including mapping out your network, overwriting iptables rules, or ssh tunneling to name a few",
+  "remediation": "Prior to deploying your container, ensure that the deployed images don't have any networking tools that aren't needed by removing them beforehand and then relaunching the container"
+}

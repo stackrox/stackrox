@@ -1,0 +1,14 @@
+{
+  "name": "dpkg Execution",
+  "description": "Detects process execution of dpkg",
+  "severity": "LOW_SEVERITY",
+  "lifecycle_stage": "RUN_TIME",
+  "categories": ["Package Management"],
+  "fields": {
+    "process_policy": {
+      "name": "dpkg$"
+    }
+  },
+  "rationale": "Package managers make it easier for attackers to use compromised containers, since they can easily add software.",
+  "remediation": "Consider using a base image that doesn't have any package management utilities. If not, consider removing the 'apt' or 'apt-get' utilities to make it more difficult to download dependencies."
+}

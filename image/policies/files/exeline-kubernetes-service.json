@@ -1,0 +1,14 @@
+{
+    "name": "Process Targeting Kubernetes Service Endpoint",
+    "description": "Detects misuse of the Kubernetes Service API endpoint",
+    "categories": ["Kubernetes Service Abuse"],
+    "severity": "HIGH_SEVERITY",
+    "lifecycle_stage": "RUN_TIME",
+    "fields": {
+        "process_policy": {
+            "args": "https://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|KUBERNETES_PORT_443_TCP_ADDR|KUBERNETES_SERVICE_HOST)(\\:443)?/apis?/(v1/)?(pods|serviceaccounts|secrets|rbac\\.authorization\\.k8s\\.io|extensions|batch|certificates\\.k8s\\.io)(/(v1(beta1)?)/(clusterrole.*|role.*|networkpolicies|cronjobs|certificate.*|podsecurity.*))?"
+        }
+    },
+    "rationale": "A pod communicating to a Kubernetes API from via command line is highly irregular",
+    "remediation": "Look for open ports that may allow remote execution. Remove network utilities like curl and wget that allow these connections. Consider a firewall deny ingress firewall rule to the node serving the API"
+}

@@ -80,7 +80,6 @@ func newCentral() *central {
 	central := &central{}
 
 	central.signalsC = make(chan os.Signal, 1)
-	signal.Notify(central.signalsC, os.Interrupt)
 	signal.Notify(central.signalsC, syscall.SIGINT, syscall.SIGTERM)
 
 	return central

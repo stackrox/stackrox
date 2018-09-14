@@ -1,0 +1,13 @@
+{
+    "name": "Yum Package Manager (yum) execution",
+    "description": "Detects process execution of yum",
+    "severity": "LOW_SEVERITY",
+    "categories": ["Package Management"],
+    "fields": {
+        "component": {
+            "name": "yum$"
+        }
+    },
+    "rationale": "Package managers make it easier for attackers to use compromised containers, since they can easily add software.",
+    "remediation": "Run `rpm -e $(rpm -qa rpm*) $(rpm -qa yum*)` in the image build for production containers."
+}

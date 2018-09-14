@@ -1,0 +1,14 @@
+{
+    "name": "make Execution",
+    "description": "Detects process execution of make",
+    "categories": ["Package Management"],
+    "severity": "LOW_SEVERITY",
+    "lifecycle_stage": "RUN_TIME",
+    "fields": {
+      "process_policy": {
+        "name": "make$"
+      }
+    },
+  "rationale": "Calling make during runtime could indicate someone trying to use your infrastructure to build software.",
+  "remediation": "Avoid packaging dev tools with the container that can be called in run time"
+}

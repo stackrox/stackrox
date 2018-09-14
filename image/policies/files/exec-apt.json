@@ -1,0 +1,14 @@
+{
+  "name": "apt Execution",
+  "description": "Detects process execution of apt",
+  "severity": "LOW_SEVERITY",
+  "lifecycle_stage": "RUN_TIME",
+  "categories": ["Package Management"],
+  "fields": {
+    "process_policy": {
+      "name": "apt$"
+    }
+  },
+  "rationale": "Package managers make it easier for attackers to use compromised containers, since they can easily add software.",
+  "remediation": "Run `apt-get remove -y --allow-remove-essential apt` in the image build for production containers."
+}

@@ -1,0 +1,14 @@
+{
+  "name": "Cryptocurrency mining process spawned",
+  "description": "Cryptocurrency mining process spawned",
+  "categories": ["Cryptocurrency Mining"],
+  "severity": "HIGH_SEVERITY",
+  "lifecycle_stage": "RUN_TIME",
+  "fields": {
+    "process_policy" : {
+      "name": "sgminer$|cgminer$|cpuminer$|minerd$|geth$|ethminer$|xmr-stak-cpu$|xmr-stak-amd$|xmr-stak-nvidia$|xmrminer$|cpuminer-multi$"
+    }
+  },
+  "rationale": "Cryptomining binaries are CPU intensive and can divert resources away from the containerized application",
+  "remediation": "Ensure that the base image used to create the Dockerfile doesn't have cryptomining software packaged with it. Check for open ports that may allow for remote code execution"
+}

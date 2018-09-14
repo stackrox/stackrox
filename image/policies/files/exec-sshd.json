@@ -1,0 +1,14 @@
+{
+    "name": "Running SSH Server",
+    "description": "Detects container running the SSH daemon",
+    "categories": ["Anomalous Process Execution"],
+    "severity": "HIGH_SEVERITY",
+    "lifecycle_stage": "RUN_TIME",
+    "fields": {
+      "process_policy" : {
+        "name": "sshd$"
+      }
+    },
+  "rationale": "ssh allows shell access to a container, which can be dangerous",
+  "remediation": "If ssh is absolutely required, ensure that it is not using default authentication. Otherwise, consider removing it from the container altogether"
+}

@@ -1,0 +1,14 @@
+{
+    "name": "crontab Execution",
+    "description": "Detects the usage of the crontab scheduled jobs editor",
+    "severity": "MEDIUM_SEVERITY",
+    "lifecycle_stage": "RUN_TIME",
+    "categories": ["Cron Modification"],
+    "fields": {
+        "process_policy": {
+            "name": "crontab$"
+        }
+    },
+    "rationale": "Crontab running in a container with access to a shell makes it easier to 'clandestinely' schedule processes to run in order to better evade detection",
+    "remediation": "In Kubernetes, consider replacing your crontab with an orchestrator-native CronJob as part of Kube workload"
+}

@@ -1,0 +1,14 @@
+{
+    "name": "systemd Execution",
+    "description": "Detected usage of the systemd service manager",
+    "categories": ["systemd Modification"],
+    "severity": "LOW_SEVERITY",
+    "lifecycle_stage": "RUN_TIME",
+    "fields": {
+        "process_policy": {
+            "name": "systemd$"
+        }
+    },
+    "rationale": "The systemd service manager is generally not used in containers, and its use could indicate suspicious activity",
+    "remediation": "Remove systemd from the image before deploying, or consider using a base image that doesn't bundle systemd"
+}

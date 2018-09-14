@@ -1,0 +1,15 @@
+{
+    "name": "systemctl Execution",
+    "description": "Detected usage of the systemctl service manager",
+    "categories": ["systemd Modification"],
+    "severity": "LOW_SEVERITY",
+    "lifecycle_stage": "RUN_TIME",
+    "fields": {
+      "process_policy": {
+        "name": "systemctl$"
+      }
+    },
+  "rationale": "The systemctl service manager is generally not used in containers, and its use could indicate suspicious activity",
+  "remediation": "Remove systemctl from the image before deploying, or consider using a base image that doesn't bundle systemctl"
+
+}
