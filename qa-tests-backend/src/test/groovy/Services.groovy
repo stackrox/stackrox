@@ -5,6 +5,8 @@ import io.netty.handler.ssl.SslContext
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import stackrox.generated.AlertServiceGrpc
 import stackrox.generated.AlertServiceOuterClass.ListAlert
+import stackrox.generated.ClusterService
+import stackrox.generated.ClustersServiceGrpc
 import stackrox.generated.DeploymentServiceGrpc
 import stackrox.generated.DetectionServiceGrpc
 import stackrox.generated.ImageIntegrationServiceGrpc
@@ -27,6 +29,8 @@ import stackrox.generated.DeploymentServiceOuterClass.Deployment
 import stackrox.generated.Common.ResourceByID
 import stackrox.generated.SearchServiceOuterClass
 import v1.SecretServiceGrpc
+import v1.NetworkPolicyServiceGrpc
+import v1.NetworkPolicyServiceOuterClass
 
 class Services {
 
@@ -76,6 +80,14 @@ class Services {
 
     static getSecretServiceClient() {
         return SecretServiceGrpc.newBlockingStub(getChannel())
+    }
+
+    static getNetworkPolicyClient() {
+        return NetworkPolicyServiceGrpc.newBlockingStub(getChannel())
+    }
+
+    static getClusterServiceClient() {
+        return ClustersServiceGrpc.newBlockingStub(getChannel())
     }
 
     static List<ListPolicy> getPolicies(RawQuery query = RawQuery.newBuilder().build()) {
@@ -281,5 +293,44 @@ class Services {
         }
         println "Updated lifecycleStage of '${policyName}' to ${stage}"
         return policyMeta.lifecycleStage
+    }
+
+    static getClusterId(String name = "remote") {
+        ClusterService.Cluster cluster = getClusterServiceClient().getClusters().clustersList.find { it.name == name }
+
+        if (cluster == null) {
+            def firstClusterName = getClusterServiceClient().getClusters().clustersList.get(0).name
+            println "Could not find id for cluster name ${name}"
+            println "Will return id for first cluster: ${firstClusterName}"
+        }
+
+        return getClusterServiceClient().getClusters().clustersList.get(0).id
+    }
+
+    static submitNetworkGraphSimulation(String yaml) {
+        println "Generating simulation using YAML:"
+        println yaml
+        try {
+            return getNetworkPolicyClient().getNetworkGraph(
+                    NetworkPolicyServiceOuterClass.GetNetworkGraphRequest.newBuilder()
+                            .setClusterId(getClusterId())
+                            .setSimulationYaml(yaml)
+                            .build()
+            )
+        } catch (Exception e) {
+            println e.toString()
+        }
+    }
+
+    static getNetworkPolicy() {
+        try {
+            return getNetworkPolicyClient().getNetworkGraph(
+                    NetworkPolicyServiceOuterClass.GetNetworkGraphRequest.newBuilder()
+                            .setClusterId(getClusterId())
+                            .build()
+            )
+        } catch (Exception e) {
+            println e.toString()
+        }
     }
 }

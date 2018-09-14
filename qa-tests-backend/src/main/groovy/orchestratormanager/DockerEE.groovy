@@ -11,8 +11,8 @@ import com.github.dockerjava.api.model.PortConfigProtocol
 import com.github.dockerjava.core.DefaultDockerClientConfig
 import com.github.dockerjava.core.DockerClientBuilder
 import com.github.dockerjava.core.DockerClientConfig
-
 import objects.Deployment
+import objects.NetworkPolicy
 
 import java.util.stream.Collectors
 
@@ -99,5 +99,17 @@ class DockerEE extends OrchestratorCommon implements OrchestratorMain {
 
     @Override
     def deleteSecret(String name, String namespace = "") {
+    }
+
+    @Override
+    String applyNetworkPolicy(NetworkPolicy policy) {
+    }
+
+    @Override
+    boolean deleteNetworkPolicy(NetworkPolicy policy) {
+    }
+
+    @Override
+    String generateYaml(Object orchestratorObject) {
     }
 }

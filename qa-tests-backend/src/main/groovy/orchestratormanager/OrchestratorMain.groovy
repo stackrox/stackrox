@@ -1,5 +1,7 @@
 package orchestratormanager
 
+import objects.NetworkPolicy
+
 interface OrchestratorMain {
     def setup()
     def cleanup()
@@ -15,4 +17,7 @@ interface OrchestratorMain {
     String getClairifyEndpoint()
     def createSecret(String name)
     def deleteSecret(String name, String namespace)
+    String applyNetworkPolicy(NetworkPolicy policy)
+    boolean deleteNetworkPolicy(NetworkPolicy policy)
+    String generateYaml(Object orchestratorObject)
 }

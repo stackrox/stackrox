@@ -31,3 +31,7 @@ bat-test:
 integration-test:
 	@echo "+ $@"
 	gradle test -Dgroups=it
+
+networkpolicy-simulator-test:
+	@echo "+ $@"
+	gradle test -Dgroups=networkpolicysimulation

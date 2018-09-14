@@ -1,5 +1,6 @@
 package orchestratormanager
 
+import common.YamlGenerator
 import io.kubernetes.client.ApiClient
 import io.kubernetes.client.ApiException
 import io.kubernetes.client.Configuration
@@ -27,8 +28,16 @@ import io.kubernetes.client.models.V1Secret
 import io.kubernetes.client.models.V1ServicePort
 import io.kubernetes.client.models.V1ServiceSpec
 import io.kubernetes.client.models.V1VolumeMount
+import io.kubernetes.client.models.V1Status
+import io.kubernetes.client.models.V1beta1NetworkPolicy
+import io.kubernetes.client.models.V1beta1NetworkPolicyEgressRule
+import io.kubernetes.client.models.V1beta1NetworkPolicyIngressRule
+import io.kubernetes.client.models.V1beta1NetworkPolicyPeer
+import io.kubernetes.client.models.V1beta1NetworkPolicySpec
 import io.kubernetes.client.util.Config
 import objects.Deployment
+import objects.NetworkPolicy
+import objects.NetworkPolicyTypes
 
 import java.util.stream.Collectors
 
@@ -308,5 +317,117 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
 
     String getClairifyEndpoint() {
         return "clairify.stackrox:8080"
-        }
     }
+
+    String applyNetworkPolicy(NetworkPolicy policy) {
+        V1beta1NetworkPolicy networkPolicy = createNetworkPolicyObject(policy)
+
+        println "${networkPolicy.metadata.name}: NetworkPolicy created:"
+        println YamlGenerator.toYaml(networkPolicy)
+        V1beta1NetworkPolicy createdPolicy = this.beta1.createNamespacedNetworkPolicy(
+                networkPolicy.metadata.namespace ?
+                        networkPolicy.metadata.namespace :
+                        this.namespace,
+                networkPolicy,
+                null
+        )
+        policy.uid = createdPolicy.metadata.uid
+        return createdPolicy.metadata.uid
+    }
+
+    boolean deleteNetworkPolicy(NetworkPolicy policy) {
+        V1Status status = this.beta1.deleteNamespacedNetworkPolicy(
+                policy.name,
+                policy.namespace ?
+                        policy.namespace :
+                        this.namespace,
+                new V1DeleteOptions()
+                        .gracePeriodSeconds(0)
+                        .orphanDependents(false),
+                null,
+                0,
+                false,
+                null
+        )
+        if (status.status == "Success") {
+            println "${policy.name}: NetworkPolicy removed."
+            return true
+        }
+
+        println "${policy.name}: Failed to remove NetworkPolicy."
+        return false
+    }
+
+    String generateYaml(Object orchestratorObject) {
+        if (orchestratorObject instanceof NetworkPolicy) {
+            return YamlGenerator.toYaml(createNetworkPolicyObject(orchestratorObject))
+        }
+
+        return ""
+    }
+
+    private V1beta1NetworkPolicy createNetworkPolicyObject(NetworkPolicy policy) {
+        V1beta1NetworkPolicy networkPolicy = new V1beta1NetworkPolicy()
+        networkPolicy.setApiVersion("extensions/v1beta1")
+        networkPolicy.setKind("NetworkPolicy")
+        networkPolicy.setMetadata(new V1ObjectMeta())
+        networkPolicy.setSpec(new V1beta1NetworkPolicySpec())
+        networkPolicy.getMetadata().setName(policy.name)
+
+        if (policy.namespace) {
+            networkPolicy.getMetadata().setNamespace(policy.namespace)
+        }
+
+        if (policy.metadataPodSelector != null) {
+            networkPolicy.getSpec().setPodSelector(new V1LabelSelector().matchLabels(policy.metadataPodSelector))
+        }
+
+        if (policy.types != null) {
+            for (NetworkPolicyTypes type : policy.types) {
+                networkPolicy.getSpec().addPolicyTypesItem(type.toString())
+            }
+        }
+
+        if (policy.ingressPodSelector != null) {
+            networkPolicy.getSpec().addIngressItem(
+                    new V1beta1NetworkPolicyIngressRule().addFromItem(
+                            new V1beta1NetworkPolicyPeer().podSelector(
+                                    new V1LabelSelector().matchLabels(policy.ingressPodSelector)
+                            )
+                    )
+            )
+        }
+
+        if (policy.egressPodSelector != null) {
+            networkPolicy.getSpec().addEgressItem(
+                    new V1beta1NetworkPolicyEgressRule().addToItem(
+                            new V1beta1NetworkPolicyPeer().podSelector(
+                                    new V1LabelSelector().matchLabels(policy.egressPodSelector)
+                            )
+                    )
+            )
+        }
+
+        if (policy.ingressNamespaceSelector != null) {
+            networkPolicy.getSpec().addIngressItem(
+                    new V1beta1NetworkPolicyIngressRule().addFromItem(
+                            new V1beta1NetworkPolicyPeer().namespaceSelector(
+                                    new V1LabelSelector().matchLabels(policy.ingressNamespaceSelector)
+                            )
+                    )
+            )
+        }
+
+        if (policy.egressNamespaceSelector != null) {
+            networkPolicy.getSpec().addEgressItem(
+                    new V1beta1NetworkPolicyEgressRule().addToItem(
+                            new V1beta1NetworkPolicyPeer().namespaceSelector(
+                                    new V1LabelSelector().matchLabels(policy.egressNamespaceSelector)
+                            )
+                    )
+            )
+        }
+
+        return networkPolicy
+    }
+}

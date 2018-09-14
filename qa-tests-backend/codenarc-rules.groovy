@@ -118,7 +118,7 @@ ruleset {
     EmptyMethodInAbstractClass 
     FinalClassWithProtectedMember 
     ImplementationAsType 
-    Instanceof 
+    // Instanceof
     LocaleSetDefault 
     NestedForLoop 
     PrivateFieldCouldBeFinal 
@@ -131,7 +131,7 @@ ruleset {
     
     // rulesets/dry.xml
     DuplicateListLiteral 
-    DuplicateMapLiteral 
+    // DuplicateMapLiteral
     // DuplicateNumberLiteral
     // DuplicateStringLiteral
     
@@ -344,9 +344,9 @@ ruleset {
     ClassSize
     // CrapMetric   // Requires the GMetrics jar and a Cobertura coverage file
     // CyclomaticComplexity   // Requires the GMetrics jar
-    MethodCount 
-    MethodSize 
-    NestedBlockDepth 
+    // MethodCount
+    // MethodSize
+    NestedBlockDepth
     ParameterCount 
     
     // rulesets/unnecessary.xml
