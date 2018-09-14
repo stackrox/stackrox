@@ -9,7 +9,7 @@ func GetProcessIndicator() *v1.ProcessIndicator {
 		DeploymentId: GetDeployment().GetId(),
 		Signal: &v1.ProcessSignal{
 			Name:         "apt-get",
-			CommandLine:  "install nmap",
+			Args:         "install nmap",
 			ExecFilePath: "bin",
 		},
 	}

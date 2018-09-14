@@ -22,17 +22,17 @@ message SignalStreamMessage {
 // A request message sent by collector to register with Sensor.
 message CollectorRegisterRequest {
     // The hostname on which collector is running.
-    string hostname         = 1;
+    string hostname    = 1;
 
     // A unique identifier for an instance of collector.
-    string instance_id      = 2;
+    string instance_id = 2;
 }
 
 // Signal message tracks process and network activity.
 // Specifically, process launches and network connects/accepts.
 message Signal {
     oneof signal {
-        ProcessSignal process_signal       = 1;
+        ProcessSignal process_signal = 1;
     }
 }
 
@@ -42,39 +42,32 @@ message ProcessSignal {
     // We have this here instead of at the top level
     // because we want to have each message to be
     // self contained.
-    string id                               = 1;
+    string id                      = 1;
+
+    // ID of container associated with this process
+    string container_id            = 2;
+
+    // Process creation time
+    google.protobuf.Timestamp time = 3;
 
     // Process name
-    string name                             = 2;
+    string name                    = 4;
 
-    // Process command line arguments
-    string command_line                     = 3;
-
-    // Host process ID
-    uint32 pid                              = 4;
-
-    // Host parent process ID
-    uint32 parent_pid                       = 5;
+    // Process arguments
+    string args                    = 5;
 
     // Process executable file path
-    string exec_file_path                   = 6;
+    string exec_file_path          = 6;
 
-    // Process user and group identifiers (e.g., man 7 credentials)
-    Credentials credentials                 = 7;
+    // Host process ID
+    uint32 pid                     = 7;
 
-    message Credentials {
-        uint32 uid  = 1; // real user ID
-        uint32 gid  = 2; // real group ID
-        uint32 euid = 3; // effective user ID
-        uint32 egid = 4; // effective group ID
-        uint32 suid = 5; // saved set-user ID
-        uint32 sgid = 6; // saved set-group ID
-    }
+    // Real user ID
+    uint32 uid                     = 8;
 
-    google.protobuf.Timestamp time         = 11;
-    string                    container_id = 12;
+    // Real group ID
+    uint32 gid                     = 9;
 }
-
 
 // A Sensor service that allows Collector to push Signal messages
 service SignalService {

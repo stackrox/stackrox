@@ -11,9 +11,11 @@ const signalMap = {
 };
 
 const processSignalsMap = {
-    name: { label: 'Name' },
-    commandLine: { label: 'Command Line' },
-    execFilePath: { label: 'Process path' }
+    execFilePath: { label: 'Binary Path' },
+    name: { label: 'Command Name' },
+    args: { label: 'Arguments' },
+    uid: { label: 'User ID' },
+    gid: { label: 'Group ID' }
 };
 
 class ProcessDetails extends Component {
@@ -23,13 +25,15 @@ class ProcessDetails extends Component {
 
     renderProcess = process => {
         const processSignal = process.signal;
-        let title = processSignal.name;
+        let title = processSignal.execFilePath;
+        const titleClassName =
+            'p-3 border-b border-base-300 text-primary-600 tracking-wide cursor-pointer flex justify-between';
         if (process.signal.time) {
-            title += `|${dateFns.format(process.signal.time, dateTimeFormat)}`;
+            title += ` | ${dateFns.format(process.signal.time, dateTimeFormat)}`;
         }
         return (
             <div className="px-3 py-4">
-                <CollapsibleCard title={title}>
+                <CollapsibleCard title={title} open={false} titleClassName={titleClassName}>
                     <div className="h-full p-3">
                         <KeyValuePairs data={process.signal} keyValueMap={signalMap} />
                         <KeyValuePairs data={process.signal} keyValueMap={processSignalsMap} />

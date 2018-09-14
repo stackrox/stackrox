@@ -59,10 +59,10 @@ const (
 	Stale     FieldLabel = "Stale"
 
 	// ProcessIndicator Search fields
-	IndicatorID        FieldLabel = "Indicator ID"
-	ProcessExecPath    FieldLabel = "Process Exec Path"
-	ProcessName        FieldLabel = "Process Name"
-	ProcessCommandLine FieldLabel = "Process Command Line"
+	IndicatorID      FieldLabel = "Indicator ID"
+	ProcessExecPath  FieldLabel = "Process Exec Path"
+	ProcessName      FieldLabel = "Process Name"
+	ProcessArguments FieldLabel = "Process Arguments"
 
 	// Secret search fields
 	SecretType       FieldLabel = "Secret Type"

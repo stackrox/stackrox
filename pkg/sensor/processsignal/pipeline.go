@@ -34,7 +34,7 @@ func NewProcessPipeline(indicators chan *listeners.EventWrap, pendingCache *cach
 
 func (p *Pipeline) reprocessSignalLater(indicator *v1.ProcessIndicator) {
 	t := time.NewTicker(signalRetryInterval)
-	logger.Infof("Trying to reprocess '%s'", indicator.GetSignal().GetCommandLine())
+	logger.Infof("Trying to reprocess '%s'", indicator.GetSignal().GetExecFilePath())
 	for i := 0; i < signalRetries; i++ {
 		<-t.C
 		deploymentID, exists := p.pendingCache.FetchDeploymentByContainer(indicator.GetSignal().GetContainerId())

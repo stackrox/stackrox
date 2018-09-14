@@ -44,7 +44,7 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 			DeploymentId: "d1",
 
 			Signal: &v1.ProcessSignal{
-				CommandLine: "cmdline",
+				Args: "args",
 			},
 		},
 		{
@@ -52,7 +52,7 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 			DeploymentId: "d2",
 
 			Signal: &v1.ProcessSignal{
-				CommandLine: "cmdline2",
+				Args: "args2",
 			},
 		},
 	}

@@ -9,7 +9,7 @@ import (
 
 const (
 	collectorTagEnvVar  = "ROX_COLLECTOR_TAG"
-	defaultCollectorTag = "1.6.0-22-g4daf3fb4" // check https://hub.docker.com/r/stackrox/collector/tags/
+	defaultCollectorTag = "1.6.0-26-gb40580a3" // check https://hub.docker.com/r/stackrox/collector/tags/
 
 	versionFile = "VERSION"
 )

@@ -69,7 +69,7 @@ func (suite *IndicatorIndexTestSuite) TestProcessIndicatorSearch() {
 		},
 		{
 			name:        "Matching command line 1st arg",
-			q:           search.NewQueryBuilder().AddStrings(search.ProcessCommandLine, processSignal.GetCommandLine()).ProtoQuery(),
+			q:           search.NewQueryBuilder().AddStrings(search.ProcessArguments, processSignal.GetArgs()).ProtoQuery(),
 			expectedIDs: []string{fakeID},
 		},
 	}
