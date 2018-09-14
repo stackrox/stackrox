@@ -64,6 +64,8 @@ function* watchLocation() {
             yield cancel(pollTask);
             pollTask = null;
             yield put(actions.setSelectedNodeId(null));
+            yield put(actions.setSimulatorMode(false));
+            yield put(actions.setNetworkGraphState(null));
         }
     }
 }
@@ -77,12 +79,13 @@ function* getClusters() {
     }
 }
 
-function* filterEnvironmentPageBySearch() {
+function* filterEnvironmentPageBySearch(request) {
     const clusterId = yield select(selectors.getSelectedEnvironmentClusterId);
     const searchOptions = yield select(selectors.getEnvironmentSearchOptions);
     const filters = {
         query: searchOptionsToQuery(searchOptions)
     };
+    if (request && request.params) filters.simulation_yaml = request.params;
     if (clusterId) {
         yield fork(getNetworkGraph, filters, clusterId);
     }

@@ -18,9 +18,11 @@ export const types = {
     FETCH_ENVIRONMENT_GRAPH: createFetchingActionTypes('environment/FETCH_ENVIRONMENT_GRAPH'),
     FETCH_NETWORK_POLICIES: createFetchingActionTypes('environment/FETCH_NETWORK_POLICIES'),
     FETCH_NODE_UPDATES: createFetchingActionTypes('environment/FETCH_NODE_UPDATES'),
-    SET_SELECTED_NODE_ID: { type: 'environment/SET_SELECTED_NODE_ID' },
+    SET_SELECTED_NODE_ID: 'environment/SET_SELECTED_NODE_ID',
     SELECT_ENVIRONMENT_CLUSTER_ID: 'environment/SELECT_ENVIRONMENT_CLUSTER_ID',
     INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY: 'environment/INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY',
+    SIMULATOR_MODE_ON: 'environment/SIMULATOR_MODE_ON',
+    SET_NETWORK_GRAPH_STATE: 'environment/NETWORK_GRAPH_STATE',
     ...searchTypes('environment')
 };
 
@@ -47,6 +49,8 @@ export const actions = {
     incrementEnvironmentGraphUpdateKey: () => ({
         type: types.INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY
     }),
+    setNetworkGraphState: () => ({ type: types.SET_NETWORK_GRAPH_STATE }),
+    setSimulatorMode: value => ({ type: types.SIMULATOR_MODE_ON, value }),
     ...environmentSearchActions
 };
 
@@ -137,6 +141,30 @@ const environmentGraphUpdateKey = (state = { shouldUpdate: true, key: 0 }, actio
     return state;
 };
 
+const networkGraphState = (state = 'INITIAL', action) => {
+    const { type } = action;
+    if (type === types.SET_NETWORK_GRAPH_STATE) {
+        return 'INITIAL';
+    }
+    if (type === types.FETCH_ENVIRONMENT_GRAPH.REQUEST) {
+        return 'REQUEST';
+    }
+    if (type === types.FETCH_ENVIRONMENT_GRAPH.FAILURE) {
+        return 'ERROR';
+    }
+    if (type === types.FETCH_ENVIRONMENT_GRAPH.SUCCESS) {
+        return 'SUCCESS';
+    }
+    return state;
+};
+
+const simulatorMode = (state = false, action) => {
+    if (action.type === types.SIMULATOR_MODE_ON) {
+        return action.value;
+    }
+    return state;
+};
+
 const reducer = combineReducers({
     environmentGraph,
     deployment,
@@ -145,6 +173,8 @@ const reducer = combineReducers({
     nodeUpdatesEpoch,
     selectedEnvironmentClusterId,
     environmentGraphUpdateKey,
+    networkGraphState,
+    simulatorMode,
     ...searchReducers('environment')
 });
 
@@ -157,6 +187,8 @@ const getSelectedNodeId = state => state.selectedNodeId;
 const getNodeUpdatesEpoch = state => state.nodeUpdatesEpoch;
 const getSelectedEnvironmentClusterId = state => state.selectedEnvironmentClusterId;
 const getEnvironmentGraphUpdateKey = state => state.environmentGraphUpdateKey.key;
+const getNetworkGraphState = state => state.networkGraphState;
+const getSimulatorMode = state => state.simulatorMode;
 
 export const selectors = {
     getEnvironmentGraph,
@@ -166,6 +198,8 @@ export const selectors = {
     getNodeUpdatesEpoch,
     getSelectedEnvironmentClusterId,
     getEnvironmentGraphUpdateKey,
+    getNetworkGraphState,
+    getSimulatorMode,
     ...getSearchSelectors('environment')
 };
 

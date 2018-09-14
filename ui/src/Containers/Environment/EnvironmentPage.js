@@ -60,7 +60,11 @@ class EnvironmentPage extends Component {
         isFetchingNode: PropTypes.bool,
         nodeUpdatesEpoch: PropTypes.number,
         environmentGraphUpdateKey: PropTypes.number.isRequired,
-        incrementEnvironmentGraphUpdateKey: PropTypes.func.isRequired
+        incrementEnvironmentGraphUpdateKey: PropTypes.func.isRequired,
+        networkGraphState: PropTypes.string.isRequired,
+        setSimulatorMode: PropTypes.func.isRequired,
+        simulatorMode: PropTypes.bool.isRequired,
+        setNetworkGraphState: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -70,10 +74,6 @@ class EnvironmentPage extends Component {
         deployment: {},
         nodeUpdatesEpoch: null,
         selectedClusterId: ''
-    };
-
-    state = {
-        showNetworkPolicySimulator: false
     };
 
     componentDidMount() {
@@ -97,7 +97,10 @@ class EnvironmentPage extends Component {
         this.props.fetchEnvironmentGraph();
     };
 
-    onYamlUpload = () => {}; // placeholder function for updating graph on yaml upload
+    onYamlUpload = yamlFileContent => {
+        this.props.incrementEnvironmentGraphUpdateKey();
+        this.props.fetchEnvironmentGraph(yamlFileContent);
+    };
 
     getNodeUpdates = () => {
         const { environmentGraph, nodeUpdatesEpoch } = this.props;
@@ -113,17 +116,17 @@ class EnvironmentPage extends Component {
         this.closeSidePanel();
     };
 
-    showNetworkPolicySimulator = () => this.setState({ showNetworkPolicySimulator: true });
-
-    hideNetworkPolicySimulator = () => this.setState({ showNetworkPolicySimulator: false });
+    toggleNetworkPolicySimulator = () => {
+        const { simulatorMode, setNetworkGraphState, setSimulatorMode } = this.props;
+        setSimulatorMode(!simulatorMode);
+        setNetworkGraphState();
+    };
 
     renderGraph = () => {
-        const className = this.state.showNetworkPolicySimulator
-            ? 'border-4 border-success-500'
-            : '';
+        const className = this.props.simulatorMode ? 'border-4 border-success-500' : '';
         return (
             <div className={` w-full h-full border-box ${className}`}>
-                {this.state.showNetworkPolicySimulator && (
+                {this.props.simulatorMode && (
                     <div className="absolute pin-t pin-l bg-success-500 text-white uppercase p-2 z-10">
                         Simulation Mode
                     </div>
@@ -140,7 +143,7 @@ class EnvironmentPage extends Component {
 
     renderSidePanel = () => {
         const { selectedNodeId, deployment, networkPolicies } = this.props;
-        if (!selectedNodeId || this.state.showNetworkPolicySimulator) return null;
+        if (!selectedNodeId || this.props.simulatorMode) return null;
         const envGraphPanelTabs = [{ text: 'Deployment Details' }, { text: 'Network Policies' }];
         const content = this.props.isFetchingNode ? (
             <Loader />
@@ -210,9 +213,7 @@ class EnvironmentPage extends Component {
     };
 
     renderNetworkGraphZoom = () => {
-        const positionStyle = this.state.showNetworkPolicySimulator
-            ? { right: '40%' }
-            : { right: '0' };
+        const positionStyle = this.props.simulatorMode ? { right: '40%' } : { right: '0' };
         return (
             <div className="absolute pin-b z-10" style={positionStyle}>
                 <NetworkGraphZoom />
@@ -221,16 +222,14 @@ class EnvironmentPage extends Component {
     };
 
     renderNetworkPolicySimulatorButton = () => {
-        const className = this.state.showNetworkPolicySimulator
+        const className = this.props.simulatorMode
             ? 'bg-success-200 border-success-500 hover:border-success-600 hover:text-success-600 text-success-500'
             : 'bg-base-100 hover:border-base-300 hover:text-base-500 border-base-200 text-base-400';
-        const style = { height: '36px' };
-        const iconColor = this.state.showNetworkPolicySimulator ? '#53c6a9' : '#d2d5ed';
+        const iconColor = this.props.simulatorMode ? '#53c6a9' : '#d2d5ed';
         return (
             <button
-                className={`border-2 rounded-sm text-sm ml-2 pl-2 pr-2 ${className}`}
-                style={style}
-                onClick={this.showNetworkPolicySimulator}
+                className={`border-2 rounded-sm text-sm ml-2 pl-2 pr-2 h-9 ${className}`}
+                onClick={this.toggleNetworkPolicySimulator}
             >
                 <span className="pr-1">Simulate Network Policy</span>
                 <Icon.Circle className="h-2 w-2" fill={iconColor} stroke={iconColor} />
@@ -255,11 +254,12 @@ class EnvironmentPage extends Component {
     };
 
     renderNetworkPolicySimulator() {
-        if (!this.state.showNetworkPolicySimulator) return null;
+        if (!this.props.simulatorMode) return null;
         return (
             <NetworkPolicySimulator
-                onClose={this.hideNetworkPolicySimulator}
+                onClose={this.toggleNetworkPolicySimulator}
                 onYamlUpload={this.onYamlUpload}
+                yamlUploadState={this.props.networkGraphState}
             />
         );
     }
@@ -301,7 +301,9 @@ const mapStateToProps = createStructuredSelector({
     deployment: selectors.getDeployment,
     networkPolicies: selectors.getNetworkPolicies,
     environmentGraphUpdateKey: selectors.getEnvironmentGraphUpdateKey,
-    isFetchingNode: state => selectors.getLoadingStatus(state, deploymentTypes.FETCH_DEPLOYMENT)
+    isFetchingNode: state => selectors.getLoadingStatus(state, deploymentTypes.FETCH_DEPLOYMENT),
+    networkGraphState: selectors.getNetworkGraphState,
+    simulatorMode: selectors.getSimulatorMode
 });
 
 const mapDispatchToProps = {
@@ -314,6 +316,8 @@ const mapDispatchToProps = {
     setSearchModifiers: environmentActions.setEnvironmentSearchModifiers,
     setSearchSuggestions: environmentActions.setEnvironmentSearchSuggestions,
     selectClusterId: environmentActions.selectEnvironmentClusterId,
+    setSimulatorMode: environmentActions.setSimulatorMode,
+    setNetworkGraphState: environmentActions.setNetworkGraphState,
     incrementEnvironmentGraphUpdateKey: environmentActions.incrementEnvironmentGraphUpdateKey
 };
 
