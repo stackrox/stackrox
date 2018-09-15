@@ -2,6 +2,7 @@ package email
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"net/smtp"
@@ -28,17 +29,39 @@ type email struct {
 	notifier *v1.Notifier
 }
 
-type plainAuthOverTLSConn struct {
-	smtp.Auth
+type plainAuthUnencrypted struct {
+	identity, username, password string
+	host                         string
 }
 
-func tlsPlainAuth(identity, username, password, host string) smtp.Auth {
-	return &plainAuthOverTLSConn{smtp.PlainAuth(identity, username, password, host)}
+func unencryptedPlainAuth(identity, username, password, host string) smtp.Auth {
+	return &plainAuthUnencrypted{
+		identity: identity,
+		username: username,
+		password: password,
+		host:     host,
+	}
 }
 
-func (a *plainAuthOverTLSConn) Start(server *smtp.ServerInfo) (string, []byte, error) {
-	server.TLS = true
-	return a.Auth.Start(server)
+func (a *plainAuthUnencrypted) Start(server *smtp.ServerInfo) (string, []byte, error) {
+	// This is modified from smtp.plainAuth.Start()
+	// to remove the check that passwords can only be sent unencrypted
+	// to localhost.
+	// As long as we claim to support unencrypted SMTP we need to
+	// override this check, since the user is explicitly telling us
+	// to do the bad idea.
+	resp := []byte(a.identity + "\x00" + a.username + "\x00" + a.password)
+	return "PLAIN", resp, nil
+}
+
+func (a *plainAuthUnencrypted) Next(fromServer []byte, more bool) ([]byte, error) {
+	// This is copied from smtp.plainAuth.Next().
+	// See Start() for reasons why we have copied this type.
+	if more {
+		// We've already sent everything.
+		return nil, errors.New("unexpected server challenge")
+	}
+	return nil, nil
 }
 
 type smtpServer struct {
@@ -192,66 +215,101 @@ func (e *email) sendEmail(recipient, subject, body string) error {
 		Body:    body,
 	}
 
-	var err error
-	var conn net.Conn
-
-	dialer := &net.Dialer{
-		Timeout: 5 * time.Second,
+	conn, auth, err := e.connection()
+	if err != nil {
+		log.Errorf("Connection failed: %v", err)
+		return err
 	}
 
-	var auth smtp.Auth
-	if !e.config.GetDisableTLS() {
-		tlsconfig := &tls.Config{
-			ServerName: e.smtpServer.host,
-		}
-		conn, err = tls.DialWithDialer(dialer, "tcp", e.smtpServer.endpoint(), tlsconfig)
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-		auth = tlsPlainAuth("", e.config.GetUsername(), e.config.GetPassword(), e.smtpServer.host)
-	} else {
-		conn, err = dialer.Dial("tcp", e.smtpServer.endpoint())
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-		auth = smtp.PlainAuth("", e.config.GetServer(), e.config.GetPassword(), e.smtpServer.host)
-	}
 	client, err := smtp.NewClient(conn, e.smtpServer.host)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("SMTP client creation failed: %v", err)
 		return err
 	}
 	defer client.Quit()
+
+	if e.config.GetUseSTARTTLS() {
+		if err = client.StartTLS(e.tlsConfig()); err != nil {
+			log.Errorf("SMTP STARTTLS failed: %v", err)
+			return err
+		}
+	}
+
 	if err = client.Auth(auth); err != nil {
-		log.Error(err)
+		log.Errorf("SMTP authentication failed: %v", err)
 		return err
 	}
 
 	if err = client.Mail(e.config.GetSender()); err != nil {
-		log.Error(err)
+		log.Errorf("SMTP MAIL command failed: %v", err)
 		return err
 	}
 	if err = client.Rcpt(recipient); err != nil {
-		log.Error(err)
+		log.Errorf("SMTP RCPT command failed: %v", err)
 		return err
 	}
 
 	w, err := client.Data()
 	if err != nil {
-		log.Error(err)
+		log.Errorf("SMTP DATA command failed: %v", err)
 		return err
 	}
 	defer w.Close()
 
 	_, err = w.Write(msg.Bytes())
 	if err != nil {
-		log.Error(err)
+		log.Errorf("SMTP message writing failed: %v", err)
 		return err
 	}
 
 	return nil
+}
+
+func (e *email) connection() (conn net.Conn, auth smtp.Auth, err error) {
+	dialer := &net.Dialer{
+		Timeout: 5 * time.Second,
+	}
+	if e.config.GetDisableTLS() {
+		if e.config.GetUseSTARTTLS() {
+			return e.startTLSConn(dialer)
+		}
+		return e.unencryptedConn(dialer)
+	}
+	return e.tlsConn(dialer)
+}
+
+func (e *email) tlsConn(dialer *net.Dialer) (conn net.Conn, auth smtp.Auth, err error) {
+	// With a connection that starts with TLS, we can simply use the standard
+	// library to authenticate.
+	auth = smtp.PlainAuth("", e.config.GetUsername(), e.config.GetPassword(), e.smtpServer.host)
+	conn, err = tls.DialWithDialer(dialer, "tcp", e.smtpServer.endpoint(), e.tlsConfig())
+	return
+}
+
+func (e *email) unencryptedConn(dialer *net.Dialer) (conn net.Conn, auth smtp.Auth, err error) {
+	// With a completely unencrypted connection, we must override the
+	// standard library's SMTP authenticator, since it blocks attempts
+	// to send credentials over any non-TLS connection that isn't localhost.
+	auth = unencryptedPlainAuth("", e.config.GetUsername(), e.config.GetPassword(), e.smtpServer.host)
+	conn, err = dialer.Dial("tcp", e.smtpServer.endpoint())
+	return
+}
+
+func (e *email) startTLSConn(dialer *net.Dialer) (conn net.Conn, auth smtp.Auth, err error) {
+	// With STARTTLS, we will first connect unencrypted and later
+	// "upgrade" the connection to use TLS by the time we authenticate.
+	// Hence, we can use the stdlib authenticator, which treats
+	// STARTTLS as TLS for purposes of deciding whether it's safe to
+	// transmit a password.
+	auth = smtp.PlainAuth("", e.config.GetUsername(), e.config.GetPassword(), e.smtpServer.host)
+	conn, err = dialer.Dial("tcp", e.smtpServer.endpoint())
+	return
+}
+
+func (e *email) tlsConfig() *tls.Config {
+	return &tls.Config{
+		ServerName: e.smtpServer.host,
+	}
 }
 
 func (e *email) ProtoNotifier() *v1.Notifier {

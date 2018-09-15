@@ -114,11 +114,16 @@ const formDescriptors = {
                 placeholder: 'email'
             },
             {
-                label: 'Disable TLS',
-                jsonpath: 'email.tls',
-                type: 'select',
-                options: [{ label: 'On', value: 'true' }, { label: 'Off', value: 'false' }],
-                placeholder: 'Disable TLS?'
+                label: 'Connect Without TLS (Unencrypted)',
+                jsonpath: 'email.disableTLS',
+                type: 'checkbox',
+                placeholder: ''
+            },
+            {
+                label: 'Enable STARTTLS',
+                jsonpath: 'email.useSTARTTLS',
+                type: 'checkbox',
+                placeholder: ''
             }
         ],
         slack: [
