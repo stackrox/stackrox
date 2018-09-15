@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
-func orchestratorCommand(shortName, longName string, clusterType v1.ClusterType) *cobra.Command {
+func orchestratorCommand(shortName, longName string) *cobra.Command {
 	c := &cobra.Command{
 		Use:   shortName,
 		Short: fmt.Sprintf("%s specifies that you are going to launch StackRox Prevent Central in %s.", shortName, longName),
@@ -18,18 +18,18 @@ Output is a zip file printed to stdout.`, shortName, longName),
 		Annotations: map[string]string{
 			"category": "Enter orchestrator",
 		},
+		RunE: func(*cobra.Command, []string) error {
+			return fmt.Errorf("storage type must be specified")
+		},
 	}
 	return c
 }
 
 func k8sBasedOrchestrator(k8sConfig *central.K8sConfig, shortName, longName string, cluster v1.ClusterType) *cobra.Command {
-	c := orchestratorCommand(shortName, longName, cluster)
+	c := orchestratorCommand(shortName, longName)
 	c.PersistentPreRun = func(*cobra.Command, []string) {
 		cfg.K8sConfig = k8sConfig
 		cfg.ClusterType = cluster
-	}
-	c.RunE = func(*cobra.Command, []string) error {
-		return fmt.Errorf("storage type must be specified")
 	}
 
 	c.AddCommand(externalVolume())

@@ -77,6 +77,7 @@ func fieldsFromWrap(c Wrap) map[string]interface{} {
 	fields := map[string]interface{}{
 		"ImageEnv":              env.Image.EnvVar(),
 		"Image":                 c.PreventImage,
+		"ImageTag":              utils.GenerateImageFromString(c.PreventImage).GetName().GetTag(),
 		"PublicEndpointEnv":     env.CentralEndpoint.EnvVar(),
 		"PublicEndpoint":        c.CentralApiEndpoint,
 		"ClusterIDEnv":          env.ClusterID.EnvVar(),

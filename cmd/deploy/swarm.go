@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/cmd/deploy/central"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -11,13 +9,10 @@ import (
 func dockerBasedOrchestrator(shortName, longName string, cluster v1.ClusterType) *cobra.Command {
 	swarmConfig := new(central.SwarmConfig)
 
-	c := orchestratorCommand(shortName, longName, cluster)
+	c := orchestratorCommand(shortName, longName)
 	c.PersistentPreRun = func(*cobra.Command, []string) {
 		cfg.SwarmConfig = swarmConfig
 		cfg.ClusterType = cluster
-	}
-	c.RunE = func(*cobra.Command, []string) error {
-		return fmt.Errorf("storage type must be specified")
 	}
 	c.AddCommand(externalVolume())
 	c.AddCommand(hostPathVolume(cluster))

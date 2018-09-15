@@ -14,23 +14,15 @@ if [ -z "$PREVENT_IMAGE_REGISTRY" ]; then
 fi
 
 if [ -z "$PREVENT_IMAGE_TAG" ]; then
-  echo -n "Enter StackRox Prevent image tag (default: {{.K8sConfig.PreventImageTag}}): "
+  echo -n "Enter StackRox Prevent image tag (default: {{.ImageTag}}): "
   read PREVENT_IMAGE_TAG
-  PREVENT_IMAGE_TAG="${PREVENT_IMAGE_TAG:-{{.K8sConfig.PreventImageTag}}}"
-fi
-
-if [ -z "$CLAIRIFY_IMAGE_TAG" ]; then
-  echo -n "Enter StackRox Clairify image tag (default: {{.K8sConfig.ClairifyImageTag}}): "
-  read CLAIRIFY_IMAGE_TAG
-  CLAIRIFY_IMAGE_TAG="${CLAIRIFY_IMAGE_TAG:-{{.K8sConfig.ClairifyImageTag}}}"
+  PREVENT_IMAGE_TAG="${PREVENT_IMAGE_TAG:-{{.ImageTag}}}"
 fi
 
 if [ "$PREVENT_IMAGE_REGISTRY" = "stackrox.io" ]; then
 	PREVENT_IMAGE_REPO="prevent"
-	CLAIRIFY_IMAGE_REPO="clairify"
 elif [ "$PREVENT_IMAGE_REGISTRY" = "docker.io" ]; then
 	PREVENT_IMAGE_REPO="stackrox/prevent"
-	CLAIRIFY_IMAGE_REPO="stackrox/clairify"
 fi
 
 if [ -z "$PREVENT_IMAGE_REPO" ]; then
@@ -39,18 +31,9 @@ if [ -z "$PREVENT_IMAGE_REPO" ]; then
   PREVENT_IMAGE_REPO="${PREVENT_IMAGE_REPO:-prevent}"
 fi
 
-if [ -z "$CLAIRIFY_IMAGE_REPO" ]; then
-	echo -n "Enter StackRox Clairify Repo: "
-	read CLAIRIFY_IMAGE_REPO
-  CLAIRIFY_IMAGE_REPO="${CLAIRIFY_IMAGE_REPO:-clairify}"
-fi
-
 PREVENT_IMAGE="${PREVENT_IMAGE_REGISTRY}/${PREVENT_IMAGE_REPO}:${PREVENT_IMAGE_TAG}"
-CLAIRIFY_IMAGE="${PREVENT_IMAGE_REGISTRY}/${CLAIRIFY_IMAGE_REPO}:${CLAIRIFY_IMAGE_TAG}"
 
-echo "Images to pull:"
-echo "  - ${PREVENT_IMAGE}"
-echo "  - ${CLAIRIFY_IMAGE}"
+echo "Image to pull: ${PREVENT_IMAGE}"
 echo -n "Does that look correct? Hit any key to continue, or ctrl-C to exit. "
 read -s -n 1
 echo
@@ -81,9 +64,8 @@ else
 fi
 
 "${DOCKER[@]}" pull "${PREVENT_IMAGE}"
-"${DOCKER[@]}" pull "${CLAIRIFY_IMAGE}"
 
-OC_PROJECT="${OC_PROJECT:-{{.K8sConfig.Namespace}}}"
+OC_PROJECT="${OC_PROJECT:-{{.Namespace}}}"
 oc new-project "$OC_PROJECT" || true
 oc project "$OC_PROJECT"
 
@@ -101,6 +83,3 @@ TOKEN="$(oc serviceaccounts get-token pusher)"
 echo "Pulling and pushing images to $PRIVATE_REGISTRY"
 "${DOCKER[@]}" tag "${PREVENT_IMAGE}" "$PRIVATE_REGISTRY/$OC_PROJECT/prevent:$PREVENT_IMAGE_TAG"
 "${DOCKER[@]}" push "$PRIVATE_REGISTRY/$OC_PROJECT/prevent:$PREVENT_IMAGE_TAG"
-
-"${DOCKER[@]}" tag "${CLAIRIFY_IMAGE}" "$PRIVATE_REGISTRY/$OC_PROJECT/clairify:$CLAIRIFY_IMAGE_TAG"
-"${DOCKER[@]}" push "$PRIVATE_REGISTRY/$OC_PROJECT/clairify:$CLAIRIFY_IMAGE_TAG"

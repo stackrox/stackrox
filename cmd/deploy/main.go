@@ -14,14 +14,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/cmd/deploy/central"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/version"
 	zipPkg "github.com/stackrox/rox/pkg/zip"
 )
 
 var (
-	logger = logging.LoggerForModule()
-
 	clairifyTag   = "0.4"
 	clairifyImage = "clairify:" + clairifyTag
 	preventTag    = getVersion()
@@ -36,7 +33,6 @@ func getVersion() string {
 	return v
 }
 
-// ServeHTTP serves a ZIP file for the cluster upon request.
 func outputZip(config central.Config) error {
 	buf := new(bytes.Buffer)
 	zipW := zip.NewWriter(buf)

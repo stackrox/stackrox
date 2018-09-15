@@ -17,12 +17,6 @@ var (
 	log = logging.LoggerForModule()
 )
 
-const (
-	commandPrefix = `#!/usr/bin/env bash
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
-`
-)
-
 // ExternalPersistence holds the data for a volume that is already created (e.g. docker volume, PV, etc)
 type ExternalPersistence struct {
 	Name         string
@@ -54,6 +48,11 @@ type K8sConfig struct {
 	ImagePullSecret string
 	Namespace       string
 	Registry        string
+
+	// These variables are not prompted for by Cobra, but are set based on
+	// provided inputs for use in templating.
+	PreventImageTag  string
+	ClairifyImageTag string
 }
 
 // SwarmConfig contains swarm fields
