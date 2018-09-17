@@ -259,6 +259,9 @@ jobs:
           paths:
           - ~/.gradle/caches/
 
+      - store_test_results:
+          path: qa-tests-backend/build/test-results/test
+
       - store_artifacts:
           path: ./qa-tests-backend/build/spock-reports
           destination: qa-test-report
