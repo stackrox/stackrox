@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -38,8 +39,13 @@ func Policies() (policies []*v1.Policy, err error) {
 		if err != nil {
 			return
 		}
-
-		policies = append(policies, p)
+		if p.GetLifecycleStage() == v1.LifecycleStage_RUN_TIME {
+			if features.RuntimePolicies.Enabled() {
+				policies = append(policies, p)
+			}
+		} else {
+			policies = append(policies, p)
+		}
 	}
 
 	return
