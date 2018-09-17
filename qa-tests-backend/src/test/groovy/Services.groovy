@@ -387,8 +387,14 @@ class Services {
         }
     }
 
-    static addEmailNotifier(String name) {
+    static addEmailNotifier(String name, Boolean disableTLS = false, startTLS = false, Integer port = null) {
         try {
+            NotifierServiceOuterClass.Notifier.Builder builder =
+                    NotifierServiceOuterClass.Notifier.newBuilder()
+                            .setEmail(NotifierServiceOuterClass.Email.newBuilder())
+            port == null ?
+                    builder.getEmailBuilder().setServer("smtp.mailgun.org") :
+                    builder.getEmailBuilder().setServer("smtp.mailgun.org:" + port)
             return getNotifierClient().postNotifier(
                     NotifierServiceOuterClass.Notifier.newBuilder()
                             .setType("email")
@@ -399,16 +405,26 @@ class Services {
                             .setUiEndpoint("https://" +
                                     System.getenv("HOSTNAME") +
                                     ":" + System.getenv("PORT"))
-                            .setEmail(NotifierServiceOuterClass.Email.newBuilder()
-                                    .setServer("smtp.mailgun.org")
+                            .setEmail(builder.getEmailBuilder()
                                     .setUsername("postmaster@sandboxa91803d176f944229a601fc109e20250.mailgun.org")
                                     .setPassword("5da76fea807449ea105a77d4fa05420f-7bbbcb78-b8136e8b")
                                     .setSender("from@example.com")
+                                    .setDisableTLS(disableTLS)
+                                    .setUseSTARTTLS(startTLS)
                             )
                             .build()
             )
         } catch (Exception e) {
             println e.toString()
+        }
+    }
+
+    static testNotifier(NotifierServiceOuterClass.Notifier notifier) {
+        try {
+            return getNotifierClient().testNotifier(notifier)
+        } catch (Exception e) {
+            println e.toString()
+            return e
         }
     }
 
