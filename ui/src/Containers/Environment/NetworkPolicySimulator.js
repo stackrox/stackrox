@@ -7,6 +7,8 @@ import ReactDropzone from 'react-dropzone';
 import Loader from 'Components/Loader';
 import { actions as notificationActions } from 'reducers/notifications';
 import { connect } from 'react-redux';
+import NetworkPolicySimulatorSuccessView from './NetworkPolicySimulatorSuccessView';
+import NetworkPolicySimulatorErrorView from './NetworkPolicySimulatorErrorView';
 
 class NetworkPolicySimulator extends Component {
     static propTypes = {
@@ -14,11 +16,25 @@ class NetworkPolicySimulator extends Component {
         onYamlUpload: PropTypes.func.isRequired,
         yamlUploadState: PropTypes.string.isRequired,
         addToast: PropTypes.func.isRequired,
-        removeToast: PropTypes.func.isRequired
+        removeToast: PropTypes.func.isRequired,
+        errorMessage: PropTypes.string.isRequired,
+        yamlFile: PropTypes.shape({
+            content: PropTypes.string,
+            name: PropTypes.string
+        })
+    };
+
+    static defaultProps = {
+        yamlFile: null
     };
 
     state = {
-        showGetStartedSection: true
+        showGetStartedSection: true,
+        showDragAndDrop: true
+    };
+
+    onClose = () => {
+        this.props.onClose();
     };
 
     onDrop = acceptedFiles => {
@@ -30,7 +46,7 @@ class NetworkPolicySimulator extends Component {
             const reader = new FileReader();
             reader.onload = () => {
                 const fileAsBinaryString = reader.result;
-                this.props.onYamlUpload(fileAsBinaryString);
+                this.props.onYamlUpload({ content: fileAsBinaryString, name: file.name });
             };
             reader.readAsBinaryString(file);
         });
@@ -42,8 +58,12 @@ class NetworkPolicySimulator extends Component {
     };
     hideGetStartedSection = () => this.setState({ showGetStartedSection: false });
 
+    toggleDragAndDrop = showDragAndDrop => {
+        this.setState({ showDragAndDrop });
+    };
+
     renderGettingStarted = () => (
-        <section className="bg-white shadow text-base-600 border border-base-200 m-3 flex flex-col">
+        <section className="bg-white shadow text-base-600 border border-base-200 m-3 flex flex-col flex-no-shrink">
             <div className="p-3 border-b border-base-300 text-primary-600 cursor-pointer flex justify-between space-between">
                 <h1 className="text-base text-base-600 font-600">Getting Started</h1>
                 <Icon.X className="h-4 w-4 text-base-500" onClick={this.hideGetStartedSection} />
@@ -60,33 +80,30 @@ class NetworkPolicySimulator extends Component {
     );
 
     renderLoadingSection = () => (
-        <section className="m-3 flex flex-1 border border-dashed border-base-300 ">
+        <section className="m-3 flex flex-1 border border-dashed border-base-300 bg-white">
             <div className="flex flex-col flex-1 font-500 uppercase">
                 <Loader message="Processing Network Policies" />
             </div>
         </section>
     );
 
-    renderDragAndDrop = () => {
-        const uploadMessage = 'Click to upload or drop network policy yaml inside';
-        return (
-            <section className="m-3 flex flex-1 border border-dashed border-base-300">
-                <ReactDropzone
-                    onDrop={this.onDrop}
-                    className="flex flex-1 flex-col self-center uppercase p-5 cursor-pointer"
+    renderDragAndDrop = message => (
+        <section className="bg-white m-3 flex flex-1 border border-dashed border-base-300 cursor-pointer">
+            <ReactDropzone
+                onDrop={this.onDrop}
+                className="flex flex-1 flex-col self-center uppercase p-5"
+            >
+                <div
+                    className="h-16 w-16 self-center rounded-full flex items-center justify-center"
+                    style={{ background: '#faecd2', color: '#b39357' }}
                 >
-                    <div
-                        className="h-16 w-16 self-center rounded-full flex items-center justify-center"
-                        style={{ background: '#faecd2', color: '#b39357' }}
-                    >
-                        <Icon.Upload className="h-10 w-10" strokeWidth="1.5px" />
-                    </div>
+                    <Icon.Upload className="h-10 w-10" strokeWidth="1.5px" />
+                </div>
 
-                    <div className="text-center pt-6">{uploadMessage}</div>
-                </ReactDropzone>
-            </section>
-        );
-    };
+                <div className="text-center pt-6">{message}</div>
+            </ReactDropzone>
+        </section>
+    );
 
     renderProcessingView = () => {
         const { yamlUploadState } = this.props;
@@ -97,10 +114,11 @@ class NetworkPolicySimulator extends Component {
     renderUploadView = () => {
         const { yamlUploadState } = this.props;
         if (yamlUploadState !== 'INITIAL') return null;
+        const uploadMessage = 'Click to upload or drop network policy yaml inside.';
         return (
             <div className="flex flex-col flex-1">
                 {this.state.showGetStartedSection && this.renderGettingStarted()}
-                {this.renderDragAndDrop()}
+                {this.renderDragAndDrop(uploadMessage)}
             </div>
         );
     };
@@ -108,28 +126,51 @@ class NetworkPolicySimulator extends Component {
     renderSuccessView = () => {
         const { yamlUploadState } = this.props;
         if (yamlUploadState !== 'SUCCESS') return null;
-        return <div>Success View</div>;
+
+        const uploadMessage = 'Simulate another set of policies';
+        return (
+            <div className="flex flex-col flex-1">
+                {this.state.showDragAndDrop && (
+                    <div className="h-1/5">{this.renderDragAndDrop(uploadMessage)}</div>
+                )}
+                <NetworkPolicySimulatorSuccessView
+                    yamlFile={this.props.yamlFile}
+                    onCollapse={this.toggleDragAndDrop}
+                />
+            </div>
+        );
     };
 
     renderErrorView = () => {
         const { yamlUploadState } = this.props;
         if (yamlUploadState !== 'ERROR') return null;
-        return <div>Error View</div>;
+        const uploadMessage = 'Simulate another set of policies';
+        return (
+            <div className="flex flex-col flex-1">
+                <div className="h-1/5">{this.renderDragAndDrop(uploadMessage)}</div>
+                <NetworkPolicySimulatorErrorView
+                    yamlFile={this.props.yamlFile}
+                    errorMessage={this.props.errorMessage}
+                />
+            </div>
+        );
     };
     renderSidePanel() {
+        const { yamlFile } = this.props;
+        const colorType = this.props.yamlUploadState === 'ERROR' ? 'danger' : 'success';
         const header = 'Network Policy Simulator';
         return (
             <Panel
                 className="border-r-0"
                 header={header}
-                onClose={this.props.onClose}
-                closeButtonClassName="bg-success-500 hover:bg-success-500"
+                onClose={this.onClose}
+                closeButtonClassName={`bg-${colorType}-500 hover:bg-${colorType}-500`}
                 closeButtonIconColor="text-white"
             >
-                {this.renderUploadView()}
-                {this.renderProcessingView()}
-                {this.renderErrorView()}
-                {this.renderSuccessView()}
+                {!yamlFile && this.renderUploadView()}
+                {yamlFile && this.renderProcessingView()}
+                {yamlFile && this.renderErrorView()}
+                {yamlFile && this.renderSuccessView()}
             </Panel>
         );
     }

@@ -66,6 +66,7 @@ function* watchLocation() {
             yield put(actions.setSelectedNodeId(null));
             yield put(actions.setSimulatorMode(false));
             yield put(actions.setNetworkGraphState(null));
+            yield put(actions.setYamlFile(null));
         }
     }
 }
@@ -79,13 +80,17 @@ function* getClusters() {
     }
 }
 
-function* filterEnvironmentPageBySearch(request) {
+function* filterEnvironmentPageBySearch() {
     const clusterId = yield select(selectors.getSelectedEnvironmentClusterId);
     const searchOptions = yield select(selectors.getEnvironmentSearchOptions);
+    const yamlFile = yield select(selectors.getYamlFile);
+    const simulatorMode = yield select(selectors.getSimulatorMode);
     const filters = {
         query: searchOptionsToQuery(searchOptions)
     };
-    if (request && request.params) filters.simulation_yaml = request.params;
+    if (simulatorMode && yamlFile) {
+        filters.simulationYaml = yamlFile.content;
+    }
     if (clusterId) {
         yield fork(getNetworkGraph, filters, clusterId);
     }
@@ -120,6 +125,10 @@ function* watchFetchClustersSuccess() {
     yield takeLatest(clusterTypes.FETCH_CLUSTERS.SUCCESS, filterEnvironmentPageBySearch);
 }
 
+function* watchSetYamlFile() {
+    yield takeLatest(types.SET_YAML_FILE, filterEnvironmentPageBySearch);
+}
+
 export default function* environment() {
     yield all([
         takeEveryLocation(environmentPath, loadEnvironmentPage),
@@ -129,6 +138,7 @@ export default function* environment() {
         fork(watchFetchDeploymentRequest),
         fork(watchSelectEnvironmentCluster),
         fork(watchFetchClustersSuccess),
+        fork(watchSetYamlFile),
         fork(watchLocation)
     ]);
 }

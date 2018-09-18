@@ -23,6 +23,7 @@ export const types = {
     INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY: 'environment/INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY',
     SIMULATOR_MODE_ON: 'environment/SIMULATOR_MODE_ON',
     SET_NETWORK_GRAPH_STATE: 'environment/NETWORK_GRAPH_STATE',
+    SET_YAML_FILE: 'environment/SET_YAML_FILE',
     ...searchTypes('environment')
 };
 
@@ -51,6 +52,7 @@ export const actions = {
     }),
     setNetworkGraphState: () => ({ type: types.SET_NETWORK_GRAPH_STATE }),
     setSimulatorMode: value => ({ type: types.SIMULATOR_MODE_ON, value }),
+    setYamlFile: file => ({ type: types.SET_YAML_FILE, file }),
     ...environmentSearchActions
 };
 
@@ -66,6 +68,13 @@ const environmentGraph = (state = { nodes: [], edges: [] }, action) => {
 const selectedNodeId = (state = null, action) => {
     if (action.type === types.SET_SELECTED_NODE_ID) {
         return action.id;
+    }
+    return state;
+};
+
+const selectedYamlFile = (state = null, action) => {
+    if (action.type === types.SET_YAML_FILE) {
+        return action.file;
     }
     return state;
 };
@@ -120,6 +129,7 @@ const selectedEnvironmentClusterId = (state = null, action) => {
 
 const environmentGraphUpdateKey = (state = { shouldUpdate: true, key: 0 }, action) => {
     const { type, payload, options } = action;
+
     if (type === LOCATION_CHANGE && payload.pathname.startsWith('/main/network')) {
         return { shouldUpdate: true, key: state.key + 1 };
     }
@@ -165,6 +175,14 @@ const simulatorMode = (state = false, action) => {
     return state;
 };
 
+const errorMessage = (state = '', action) => {
+    if (action.type === types.FETCH_ENVIRONMENT_GRAPH.FAILURE) {
+        const { message } = action.error.response.data;
+        return message;
+    }
+    return state;
+};
+
 const reducer = combineReducers({
     environmentGraph,
     deployment,
@@ -175,6 +193,8 @@ const reducer = combineReducers({
     environmentGraphUpdateKey,
     networkGraphState,
     simulatorMode,
+    selectedYamlFile,
+    errorMessage,
     ...searchReducers('environment')
 });
 
@@ -189,6 +209,8 @@ const getSelectedEnvironmentClusterId = state => state.selectedEnvironmentCluste
 const getEnvironmentGraphUpdateKey = state => state.environmentGraphUpdateKey.key;
 const getNetworkGraphState = state => state.networkGraphState;
 const getSimulatorMode = state => state.simulatorMode;
+const getNetworkGraphErrorMessage = state => state.errorMessage;
+const getYamlFile = state => state.selectedYamlFile;
 
 export const selectors = {
     getEnvironmentGraph,
@@ -200,6 +222,8 @@ export const selectors = {
     getEnvironmentGraphUpdateKey,
     getNetworkGraphState,
     getSimulatorMode,
+    getNetworkGraphErrorMessage,
+    getYamlFile,
     ...getSearchSelectors('environment')
 };
 

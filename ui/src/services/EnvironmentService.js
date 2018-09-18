@@ -11,10 +11,14 @@ const networkPoliciesUrl = '/v1/networkpolicies';
  * @returns {Promise<Object, Error>}
  */
 export function fetchEnvironmentGraph(filters, clusterId) {
-    const params = queryString.stringify({
-        ...filters
-    });
-    return axios.post(`${baseUrl}/cluster/${clusterId}?${params}`).then(response => ({
+    const { query, simulationYaml } = filters;
+    const params = queryString.stringify({ query });
+    const options = {
+        method: 'POST',
+        data: simulationYaml && `"${simulationYaml.split('\n').join('\\n')}"`,
+        url: `${baseUrl}/cluster/${clusterId}?${params}`
+    };
+    return axios(options).then(response => ({
         response: response.data
     }));
 }

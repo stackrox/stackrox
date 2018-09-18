@@ -64,7 +64,13 @@ class EnvironmentPage extends Component {
         networkGraphState: PropTypes.string.isRequired,
         setSimulatorMode: PropTypes.func.isRequired,
         simulatorMode: PropTypes.bool.isRequired,
-        setNetworkGraphState: PropTypes.func.isRequired
+        setNetworkGraphState: PropTypes.func.isRequired,
+        setYamlFile: PropTypes.func.isRequired,
+        errorMessage: PropTypes.string,
+        yamlFile: PropTypes.shape({
+            content: PropTypes.string,
+            name: PropTypes.string
+        })
     };
 
     static defaultProps = {
@@ -73,7 +79,9 @@ class EnvironmentPage extends Component {
         networkPolicies: [],
         deployment: {},
         nodeUpdatesEpoch: null,
-        selectedClusterId: ''
+        selectedClusterId: '',
+        errorMessage: '',
+        yamlFile: null
     };
 
     componentDidMount() {
@@ -93,13 +101,14 @@ class EnvironmentPage extends Component {
     };
 
     onUpdateGraph = () => {
-        this.props.incrementEnvironmentGraphUpdateKey();
-        this.props.fetchEnvironmentGraph();
+        const { incrementEnvironmentGraphUpdateKey, fetchEnvironmentGraph } = this.props;
+        incrementEnvironmentGraphUpdateKey();
+        fetchEnvironmentGraph();
     };
 
-    onYamlUpload = yamlFileContent => {
+    onYamlUpload = yamlFile => {
         this.props.incrementEnvironmentGraphUpdateKey();
-        this.props.fetchEnvironmentGraph(yamlFileContent);
+        this.props.setYamlFile(yamlFile);
     };
 
     getNodeUpdates = () => {
@@ -117,17 +126,27 @@ class EnvironmentPage extends Component {
     };
 
     toggleNetworkPolicySimulator = () => {
-        const { simulatorMode, setNetworkGraphState, setSimulatorMode } = this.props;
+        const {
+            simulatorMode,
+            setNetworkGraphState,
+            setSimulatorMode,
+            setYamlFile,
+            yamlFile
+        } = this.props;
         setSimulatorMode(!simulatorMode);
+        setYamlFile(yamlFile);
         setNetworkGraphState();
     };
 
     renderGraph = () => {
-        const className = this.props.simulatorMode ? 'border-4 border-success-500' : '';
+        const colorType = this.props.networkGraphState === 'ERROR' ? 'danger' : 'success';
+        const className = this.props.simulatorMode ? `border-4 border-${colorType}-500` : '';
         return (
             <div className={` w-full h-full border-box ${className}`}>
                 {this.props.simulatorMode && (
-                    <div className="absolute pin-t pin-l bg-success-500 text-white uppercase p-2 z-10">
+                    <div
+                        className={`absolute pin-t pin-l bg-${colorType}-500 text-white uppercase p-2 z-10`}
+                    >
                         Simulation Mode
                     </div>
                 )}
@@ -260,6 +279,8 @@ class EnvironmentPage extends Component {
                 onClose={this.toggleNetworkPolicySimulator}
                 onYamlUpload={this.onYamlUpload}
                 yamlUploadState={this.props.networkGraphState}
+                errorMessage={this.props.errorMessage}
+                yamlFile={this.props.yamlFile}
             />
         );
     }
@@ -288,6 +309,16 @@ const isViewFiltered = createSelector(
     searchOptions => searchOptions.length !== 0
 );
 
+const getNetworkGraphState = createSelector(
+    [selectors.getYamlFile, selectors.getNetworkGraphState],
+    (yamlFile, networkGraphState) => {
+        if (!yamlFile) {
+            return 'INITIAL';
+        }
+        return networkGraphState;
+    }
+);
+
 const mapStateToProps = createStructuredSelector({
     clusters: selectors.getClusters,
     selectedClusterId: selectors.getSelectedEnvironmentClusterId,
@@ -302,8 +333,10 @@ const mapStateToProps = createStructuredSelector({
     networkPolicies: selectors.getNetworkPolicies,
     environmentGraphUpdateKey: selectors.getEnvironmentGraphUpdateKey,
     isFetchingNode: state => selectors.getLoadingStatus(state, deploymentTypes.FETCH_DEPLOYMENT),
-    networkGraphState: selectors.getNetworkGraphState,
-    simulatorMode: selectors.getSimulatorMode
+    networkGraphState: getNetworkGraphState,
+    simulatorMode: selectors.getSimulatorMode,
+    errorMessage: selectors.getNetworkGraphErrorMessage,
+    yamlFile: selectors.getYamlFile
 });
 
 const mapDispatchToProps = {
@@ -318,6 +351,7 @@ const mapDispatchToProps = {
     selectClusterId: environmentActions.selectEnvironmentClusterId,
     setSimulatorMode: environmentActions.setSimulatorMode,
     setNetworkGraphState: environmentActions.setNetworkGraphState,
+    setYamlFile: environmentActions.setYamlFile,
     incrementEnvironmentGraphUpdateKey: environmentActions.incrementEnvironmentGraphUpdateKey
 };
 
