@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "v1";
 
-import "google/api/annotations.proto";
+import weak "google/api/annotations.proto";
 import "api/v1/empty.proto";
 
 package v1;

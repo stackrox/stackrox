@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option go_package = "sensor";
+option cc_enable_arenas = true;
+
+import "internalapi/sensor/collector.proto";
+import "api/v1/signal.proto";
+import "api/v1/empty.proto";
+
+package sensor;
+
+// A single message in the event stream between Collector and Sensor.
+message SignalStreamMessage {
+    oneof msg {
+        // The first message in every stream that registers Collector with Sensor.
+        CollectorRegisterRequest collector_register_request = 1;
+
+        // A signal event observed by Collector.
+        v1.Signal signal                                       = 2;
+    }
+}
+
+// A Sensor service that allows Collector to push Signal messages
+service SignalService {
+    rpc PushSignals (stream SignalStreamMessage) returns (v1.Empty);
+}

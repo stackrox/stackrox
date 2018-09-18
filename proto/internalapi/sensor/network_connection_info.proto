@@ -1,22 +1,19 @@
 syntax = "proto3";
 
-option go_package = "v1";
+option go_package = "sensor";
 option cc_enable_arenas = true;
 
 import "google/protobuf/timestamp.proto";
-import "api/v1/empty.proto";
 
-package v1;
+package sensor;
 
 message NetworkConnectionInfo {
     NetworkConnectionStateUpdate update = 1;
 
     //For active connections, the timestamp of the entire message serves as the latest timestamp
     //that connection was deemed active
-    google.protobuf.Timestamp time         = 2;
-    string                    container_id = 3;
+    google.protobuf.Timestamp time      = 2;
 }
-
 
 message NetworkConnectionStateUpdate {
     // Network connections that were added from the last time state was sent.
@@ -36,12 +33,14 @@ message NetworkConnection {
 
     SocketFamily socket_family    = 1;
 
-    NetworkAddress client_address = 2;
-    NetworkAddress server_address = 3;
+    NetworkAddress local_address = 2;
+    NetworkAddress remote_address = 3;
 
     L4Protocol protocol           = 4;
 
     Role role                     = 5;
+
+    string container_id           = 6;
 
     // If this connection was closed, this gives the timestamp when it was closed.
     google.protobuf.Timestamp close_timestamp         = 11;
@@ -78,10 +77,4 @@ enum L4Protocol {
     L4_PROTOCOL_UDP     = 2;
     L4_PROTOCOL_ICMP    = 3;
     L4_PROTOCOL_RAW     = 4;
-}
-
-
-// A Sensor service that allows Collector to send NetworkConnectionInfo messages
-service NetworkConnectionInfoService {
-    rpc Send (stream NetworkConnectionInfo) returns (Empty);
 }

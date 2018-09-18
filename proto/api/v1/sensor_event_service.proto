@@ -3,7 +3,7 @@ syntax = "proto3";
 option go_package = "v1";
 option java_package = "stackrox.generated";
 
-import "google/api/annotations.proto";
+import weak "google/api/annotations.proto";
 import "api/v1/deployment_service.proto";
 import "api/v1/indicator.proto";
 import "api/v1/network_policy_service.proto";

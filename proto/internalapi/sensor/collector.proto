@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "sensor";
+option cc_enable_arenas = true;
+
+package sensor;
+
+// A request message sent by collector to register with Sensor. Typically the first message in any streams.
+message CollectorRegisterRequest {
+    // The hostname on which collector is running.
+    string hostname    = 1;
+
+    // A unique identifier for an instance of collector.
+    string instance_id = 2;
+}

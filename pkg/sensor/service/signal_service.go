@@ -5,6 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/api/v1"
+	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
@@ -21,7 +22,7 @@ var (
 // Service is the interface that manages the SignalEvent API from the server side
 type Service interface {
 	pkgGRPC.APIService
-	v1.SignalServiceServer
+	sensorAPI.SignalServiceServer
 
 	Indicators() <-chan *listeners.EventWrap
 }
@@ -35,7 +36,7 @@ type serviceImpl struct {
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
-	v1.RegisterSignalServiceServer(grpcServer, s)
+	sensorAPI.RegisterSignalServiceServer(grpcServer, s)
 }
 
 // RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
@@ -51,7 +52,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // PushSignals handles the bidirectional gRPC stream with the collector
-func (s *serviceImpl) PushSignals(stream v1.SignalService_PushSignalsServer) error {
+func (s *serviceImpl) PushSignals(stream sensorAPI.SignalService_PushSignalsServer) error {
 	s.receiveMessages(stream)
 	return nil
 }
@@ -60,7 +61,7 @@ func (s *serviceImpl) Indicators() <-chan *listeners.EventWrap {
 	return s.indicators
 }
 
-func (s *serviceImpl) receiveMessages(stream v1.SignalService_PushSignalsServer) error {
+func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignalsServer) error {
 	log.Info("starting receiveMessages")
 	for {
 		signalStreamMsg, err := stream.Recv()

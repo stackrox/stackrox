@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "sensor";
+option cc_enable_arenas = true;
+
+import "internalapi/sensor/collector.proto";
+import "internalapi/sensor/network_connection_info.proto";
+import "api/v1/empty.proto";
+
+package sensor;
+
+message NetworkConnectionInfoMessage {
+    oneof msg {
+        CollectorRegisterRequest register = 1;
+        NetworkConnectionInfo info = 2;
+    }
+}
+
+// A Sensor service that allows Collector to send NetworkConnectionInfo messages
+service NetworkConnectionInfoService {
+    rpc PushNetworkConnectionInfo (stream NetworkConnectionInfoMessage) returns (v1.Empty);
+}
