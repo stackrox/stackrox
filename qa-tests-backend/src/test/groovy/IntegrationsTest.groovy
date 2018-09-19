@@ -32,9 +32,9 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT])
-    def "Verify Email Integrations"() {
-        when:
-        "Create email integration"
+    def "Verify Email Integration"() {
+        given:
+        "a configuration that is expected to work"
         NotifierServiceOuterClass.Notifier notifier = Services.addEmailNotifier(
                 "mailgun",
                 disableTLS,
@@ -42,9 +42,17 @@ class IntegrationsTest extends BaseSpecification {
                 port
         )
 
+        when:
+        "the integration is tested"
+        Object response = Services.testNotifier(notifier)
+
         then:
-        "test integration"
-        assert Services.testNotifier(notifier) instanceof EmptyOuterClass.Empty
+        "the API should return an empty message or an error, depending on the config"
+        if (shouldSucceed) {
+            assert response instanceof EmptyOuterClass.Empty
+        } else {
+            assert response instanceof io.grpc.StatusRuntimeException
+        }
 
         cleanup:
         "remove notifier"
@@ -55,21 +63,34 @@ class IntegrationsTest extends BaseSpecification {
         where:
         "data"
 
-        port | disableTLS | startTLS
+        port | disableTLS | startTLS | shouldSucceed
 
-        //  Port 465 tests
-        465  | false      | false
-        //465  | true       | false    ROX-366
-        //465  | true       | true     ROX-366
-
-        // null port (default 465)
-        null | false      | false
-        //null | true       | false    ROX-366
-        //null | true       | true     ROX-366
+        // Port 465 tests
+        // This port speaks TLS from the start.
+        // (Also test null, since 465 is the default.)
+        /////////////////
+        // Speaking TLS should work
+        465  | false      | false    | true
+        null | false      | false    | true
+        // Sending STARTTLS is not expected to work when already using TLS
+        465  | false      | true     | false
+        null | false      | true     | false
+        // Speaking non-TLS to a TLS port should fail and not time out, regardless of STARTTLS (see ROX-366)
+        465  | true       | false    | false
+        465  | true       | true     | false
+        null | true       | false    | false
+        null | true       | true     | false
 
         // Port 587 tests
-        587  | true       | false
-        587  | true       | true
+        // At MailGun, this port begins unencrypted and supports STARTTLS.
+        /////////////////
+        // Starting unencrypted and _not_ using STARTTLS should work
+        587  | true       | false    | true
+        // Starting unencrypted and using STARTTLS should work
+        587  | true       | true     | true
+        // Speaking TLS to a non-TLS port should fail whether you use STARTTLS or not.
+        587  | false      | false    | false
+        587  | false      | true     | false
 
         // Cannot add port 25 tests since GCP blocks outgoing
         // connections to port 25

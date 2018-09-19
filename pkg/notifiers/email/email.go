@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -19,6 +20,10 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+)
+
+const (
+	connectTimeout = 5 * time.Second
 )
 
 // email notifier plugin
@@ -221,7 +226,7 @@ func (e *email) sendEmail(recipient, subject, body string) error {
 		return err
 	}
 
-	client, err := smtp.NewClient(conn, e.smtpServer.host)
+	client, err := e.createClient(conn)
 	if err != nil {
 		log.Errorf("SMTP client creation failed: %v", err)
 		return err
@@ -265,9 +270,40 @@ func (e *email) sendEmail(recipient, subject, body string) error {
 	return nil
 }
 
+// createClient creates an SMTP client but bails out in cases where
+// smtp.NewClient would otherwise hang.
+// The known case (ROX-366) is when dialing a TLS server with a non-TLS dialer;
+// in this case the first dial will succeed, but then the net/textproto reader
+// will hang for a few minutes.
+func (e *email) createClient(conn net.Conn) (c *smtp.Client, err error) {
+	var timedOut concurrency.Flag
+	// If the timer expires before we return and thereby stop it,
+	// we'll close the connection and thereby cause the Client creation
+	// to abort immediately instead of waiting for minutes for an EOF.
+	//
+	// There's a possibility that we have _just_ succeeded returning from
+	// NewClient when this timer fires; in this case the subsequent use of
+	// the client will fail with an error about using a closed connection.
+	// This particular failure mode seems sufficiently unlikely.
+	// Importantly, a net.Conn can have multiple clients safely call methods
+	// on it at the same time, including Close().
+	t := time.AfterFunc(connectTimeout, func() {
+		timedOut.Toggle()
+		conn.Close()
+	})
+	defer func() {
+		t.Stop()
+		if timedOut.Get() {
+			err = errors.New("timeout: possibly speaking unencrypted to a server running TLS")
+		}
+	}()
+
+	return smtp.NewClient(conn, e.smtpServer.host)
+}
+
 func (e *email) connection() (conn net.Conn, auth smtp.Auth, err error) {
 	dialer := &net.Dialer{
-		Timeout: 5 * time.Second,
+		Timeout: connectTimeout,
 	}
 	if e.config.GetDisableTLS() {
 		if e.config.GetUseSTARTTLS() {

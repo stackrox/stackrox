@@ -392,28 +392,26 @@ class Services {
             NotifierServiceOuterClass.Notifier.Builder builder =
                     NotifierServiceOuterClass.Notifier.newBuilder()
                             .setEmail(NotifierServiceOuterClass.Email.newBuilder())
+            builder
+                    .setType("email")
+                    .setName(name)
+                    .setLabelKey("mailgun")
+                    .setLabelDefault("to@example.com")
+                    .setEnabled(true)
+                    .setUiEndpoint("https://" +
+                            System.getenv("HOSTNAME") +
+                            ":" + System.getenv("PORT"))
+                    .setEmail(builder.getEmailBuilder()
+                            .setUsername("postmaster@sandboxa91803d176f944229a601fc109e20250.mailgun.org")
+                            .setPassword("5da76fea807449ea105a77d4fa05420f-7bbbcb78-b8136e8b")
+                            .setSender("from@example.com")
+                            .setDisableTLS(disableTLS)
+                            .setUseSTARTTLS(startTLS)
+                    )
             port == null ?
                     builder.getEmailBuilder().setServer("smtp.mailgun.org") :
                     builder.getEmailBuilder().setServer("smtp.mailgun.org:" + port)
-            return getNotifierClient().postNotifier(
-                    NotifierServiceOuterClass.Notifier.newBuilder()
-                            .setType("email")
-                            .setName(name)
-                            .setLabelKey("mailgun")
-                            .setLabelDefault("to@example.com")
-                            .setEnabled(true)
-                            .setUiEndpoint("https://" +
-                                    System.getenv("HOSTNAME") +
-                                    ":" + System.getenv("PORT"))
-                            .setEmail(builder.getEmailBuilder()
-                                    .setUsername("postmaster@sandboxa91803d176f944229a601fc109e20250.mailgun.org")
-                                    .setPassword("5da76fea807449ea105a77d4fa05420f-7bbbcb78-b8136e8b")
-                                    .setSender("from@example.com")
-                                    .setDisableTLS(disableTLS)
-                                    .setUseSTARTTLS(startTLS)
-                            )
-                            .build()
-            )
+            return getNotifierClient().postNotifier(builder.build())
         } catch (Exception e) {
             println e.toString()
         }
