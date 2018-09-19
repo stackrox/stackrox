@@ -116,12 +116,23 @@ func (s serviceWrap) asDeployment(client dockerClientLite, retryGetImageSha bool
 func (s serviceWrap) getContainerInstances(tasks []swarm.Task) []*v1.ContainerInstance {
 	result := make([]*v1.ContainerInstance, len(tasks))
 	for i, task := range tasks {
+		var allIPs []string
+		for _, na := range task.NetworksAttachments {
+			for _, addr := range na.Addresses {
+				// IP addresses are represented along with a CIDR suffix in this struct.
+				if idx := strings.IndexRune(addr, '/'); idx != -1 {
+					addr = addr[:idx]
+				}
+				allIPs = append(allIPs, addr)
+			}
+		}
 		instance := &v1.ContainerInstance{
 			InstanceId: &v1.ContainerInstanceID{
 				ContainerRuntime: v1.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
 				Id:               task.Status.ContainerStatus.ContainerID,
 				Node:             task.NodeID,
 			},
+			ContainerIps: allIPs,
 		}
 		result[i] = instance
 	}

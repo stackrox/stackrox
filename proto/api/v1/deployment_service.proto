@@ -79,6 +79,9 @@ message ContainerInstance {
 
     // The pod containing this container instance (kubernetes only).
     string containing_pod_id           = 2;
+
+    // The IP addresses of this container.
+    repeated string container_ips      = 3;
 }
 
 message Container {

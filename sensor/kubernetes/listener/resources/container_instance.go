@@ -16,9 +16,14 @@ func containerInstances(pod corev1.Pod) []*v1.ContainerInstance {
 	result := make([]*v1.ContainerInstance, len(pod.Status.ContainerStatuses))
 	for i, c := range pod.Status.ContainerStatuses {
 		instID := containerInstanceID(c, pod.Spec.NodeName)
+		var ips []string
+		if pod.Status.PodIP != "" {
+			ips = []string{pod.Status.PodIP}
+		}
 		result[i] = &v1.ContainerInstance{
 			InstanceId:      instID,
 			ContainingPodId: podID,
+			ContainerIps:    ips,
 		}
 	}
 	return result
