@@ -1,7 +1,7 @@
 import { all, take, call, fork, put, takeLatest } from 'redux-saga/effects';
 import Raven from 'raven-js';
 
-import { integrationsPath, policiesPath } from 'routePaths';
+import { integrationsPath, policiesPath, environmentPath } from 'routePaths';
 import * as service from 'services/IntegrationsService';
 import * as AuthService from 'services/AuthService';
 import { actions as clusterActions, types as clusterTypes } from 'reducers/clusters';
@@ -47,7 +47,11 @@ function* watchLocation() {
     const effects = [getDNRIntegrations, getImageIntegrations, getNotifiers].map(fetchFunc =>
         takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc)
     );
-    yield all([...effects, takeEveryNewlyMatchedLocation(policiesPath, getNotifiers)]);
+    yield all([
+        ...effects,
+        takeEveryNewlyMatchedLocation(policiesPath, getNotifiers),
+        takeEveryNewlyMatchedLocation(environmentPath, getNotifiers)
+    ]);
 }
 
 function* watchFetchRequest() {

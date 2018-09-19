@@ -7,6 +7,8 @@ import ReactDropzone from 'react-dropzone';
 import Loader from 'Components/Loader';
 import { actions as notificationActions } from 'reducers/notifications';
 import { connect } from 'react-redux';
+
+import SendNotificationSection from 'Containers/Environment/SendNotificationSection';
 import NetworkPolicySimulatorSuccessView from './NetworkPolicySimulatorSuccessView';
 import NetworkPolicySimulatorErrorView from './NetworkPolicySimulatorErrorView';
 
@@ -137,6 +139,7 @@ class NetworkPolicySimulator extends Component {
                     yamlFile={this.props.yamlFile}
                     onCollapse={this.toggleDragAndDrop}
                 />
+                <SendNotificationSection />
             </div>
         );
     };

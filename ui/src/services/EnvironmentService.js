@@ -41,11 +41,29 @@ export function fetchNetworkPolicies(policyIds) {
 /**
  * Fetches Node updates.
  *
- *
  * @returns {Promise<Object, Error>}
  */
 export function fetchNodeUpdates() {
     return axios.get(`${baseUrl}/epoch`).then(response => ({
+        response: response.data
+    }));
+}
+
+/**
+ * Sends a notification of the simulated yaml
+ *
+ * @param {!String} clusterId
+ * @param {!String} notifierId
+ * @param {!String} simulationYaml
+ * @returns {Promise<Object, Error>}
+ */
+export function sendYAMLNotification(clusterId, notifierId, simulationYaml) {
+    const options = {
+        method: 'POST',
+        data: simulationYaml && `"${simulationYaml.split('\n').join('\\n')}"`,
+        url: `${networkPoliciesUrl}/simulation/notify?cluster_id=${clusterId}&notifier_id=${notifierId}`
+    };
+    return axios(options).then(response => ({
         response: response.data
     }));
 }

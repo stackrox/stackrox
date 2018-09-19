@@ -24,6 +24,7 @@ export const types = {
     SIMULATOR_MODE_ON: 'environment/SIMULATOR_MODE_ON',
     SET_NETWORK_GRAPH_STATE: 'environment/NETWORK_GRAPH_STATE',
     SET_YAML_FILE: 'environment/SET_YAML_FILE',
+    SEND_YAML_NOTIFICATION: 'environment/SEND_YAML_NOTIFICATION',
     ...searchTypes('environment')
 };
 
@@ -53,6 +54,10 @@ export const actions = {
     setNetworkGraphState: () => ({ type: types.SET_NETWORK_GRAPH_STATE }),
     setSimulatorMode: value => ({ type: types.SIMULATOR_MODE_ON, value }),
     setYamlFile: file => ({ type: types.SET_YAML_FILE, file }),
+    sendYAMLNotification: notifierId => ({
+        type: types.SEND_YAML_NOTIFICATION,
+        notifierId
+    }),
     ...environmentSearchActions
 };
 

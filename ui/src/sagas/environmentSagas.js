@@ -5,6 +5,7 @@ import * as service from 'services/EnvironmentService';
 import { fetchClusters } from 'services/ClustersService';
 import { actions, types } from 'reducers/environment';
 import { actions as clusterActions, types as clusterTypes } from 'reducers/clusters';
+import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
 import { takeEveryLocation } from 'utils/sagaEffects';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
@@ -43,6 +44,19 @@ export function* pollNodeUpdates() {
             yield put(actions.fetchNodeUpdates.failure(error));
         }
         yield call(delay, 5000); // poll every 5 sec
+    }
+}
+
+function* sendYAMLNotification({ notifierId }) {
+    try {
+        const clusterId = yield select(selectors.getSelectedEnvironmentClusterId);
+        const { content } = yield select(selectors.getYamlFile);
+        yield call(service.sendYAMLNotification, clusterId, notifierId, content);
+        yield put(notificationActions.addNotification('Successfully sent notification.'));
+        yield put(notificationActions.removeOldestNotification());
+    } catch (error) {
+        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(notificationActions.removeOldestNotification());
     }
 }
 
@@ -121,6 +135,10 @@ function* watchSelectEnvironmentCluster() {
     yield takeLatest(types.SELECT_ENVIRONMENT_CLUSTER_ID, filterEnvironmentPageBySearch);
 }
 
+function* watchSendYAMLNotification() {
+    yield takeLatest(types.SEND_YAML_NOTIFICATION, sendYAMLNotification);
+}
+
 function* watchFetchClustersSuccess() {
     yield takeLatest(clusterTypes.FETCH_CLUSTERS.SUCCESS, filterEnvironmentPageBySearch);
 }
@@ -139,6 +157,7 @@ export default function* environment() {
         fork(watchSelectEnvironmentCluster),
         fork(watchFetchClustersSuccess),
         fork(watchSetYamlFile),
+        fork(watchSendYAMLNotification),
         fork(watchLocation)
     ]);
 }

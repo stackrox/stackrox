@@ -367,6 +367,18 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     display: none;
 }
 
+/* to open react-select menu on top instead of below input */
+.select-up .Select-menu-outer {
+    position: absolute !important;
+    top: auto !important;
+    bottom: calc(100% - 1px) !important;
+    border-radius: 5px 5px 0px 0px !important;
+}
+
+.select-up .is-open .Select-control {
+    border-radius: 0px 0px 5px 5px !important;
+}
+
 .environment-grid-bg {
     background-color: rgba(157, 163, 193, 0.1);
     background-image: -webkit-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px), -webkit-linear-gradient(left, rgba(157, 163, 193, 0.3) 1px, transparent 1px), -webkit-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px), -webkit-linear-gradient(left, rgba(157, 163, 193, 0.2) 1px, transparent 1px);
