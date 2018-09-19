@@ -18,7 +18,7 @@ func newRequiredLabelMatcher(policy *v1.Policy) (Matcher, error) {
 		return nil, nil
 	}
 	if env.GetKey() == "" && env.GetValue() == "" {
-		return nil, fmt.Errorf("Both key and value cannot be empty (environment policy)")
+		return nil, fmt.Errorf("both key and value cannot be empty (environment policy)")
 	}
 
 	key, err := utils.CompileStringRegex(env.GetKey())

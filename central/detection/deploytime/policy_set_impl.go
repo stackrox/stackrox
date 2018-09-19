@@ -15,7 +15,10 @@ type setImpl struct {
 
 	policyIDToPolicy  map[string]*v1.Policy
 	policyIDToMatcher map[string]deploymentMatcher.Matcher
-	policyStore       policyDatastore.DataStore
+
+	runtimePolicyIDToMatcher map[string]deploymentMatcher.Matcher
+
+	policyStore policyDatastore.DataStore
 }
 
 // ForOne runs the given function on the policy matching the id if it exists.
@@ -30,13 +33,21 @@ func (p *setImpl) ForOne(pID string, fe func(*v1.Policy, deploymentMatcher.Match
 }
 
 // ForEach runs the given function on all present policies.
-func (p *setImpl) ForEach(fe func(*v1.Policy, deploymentMatcher.Matcher) error) error {
+func (p *setImpl) ForEach(fe func(*v1.Policy, deploymentMatcher.Matcher) error, runtime bool) error {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	for id, matcher := range p.policyIDToMatcher {
-		if err := fe(p.policyIDToPolicy[id], matcher); err != nil {
-			return err
+	if runtime {
+		for id, matcher := range p.runtimePolicyIDToMatcher {
+			if err := fe(p.policyIDToPolicy[id], matcher); err != nil {
+				return err
+			}
+		}
+	} else {
+		for id, matcher := range p.policyIDToMatcher {
+			if err := fe(p.policyIDToPolicy[id], matcher); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -55,7 +66,11 @@ func (p *setImpl) UpsertPolicy(policy *v1.Policy) error {
 	}
 
 	p.policyIDToPolicy[cloned.GetId()] = cloned
-	p.policyIDToMatcher[cloned.GetId()] = matcher
+	if cloned.GetLifecycleStage() == v1.LifecycleStage_RUN_TIME {
+		p.runtimePolicyIDToMatcher[cloned.GetId()] = matcher
+	} else {
+		p.policyIDToMatcher[cloned.GetId()] = matcher
+	}
 	return nil
 }
 
@@ -66,8 +81,13 @@ func (p *setImpl) RemovePolicy(policyID string) error {
 
 	if _, exists := p.policyIDToPolicy[policyID]; exists {
 		delete(p.policyIDToPolicy, policyID)
-		delete(p.policyIDToMatcher, policyID)
+		if _, exists := p.policyIDToMatcher[policyID]; exists {
+			delete(p.policyIDToMatcher, policyID)
+		} else if _, exists := p.runtimePolicyIDToMatcher[policyID]; exists {
+			delete(p.runtimePolicyIDToMatcher, policyID)
+		}
 	}
+
 	return nil
 }
 

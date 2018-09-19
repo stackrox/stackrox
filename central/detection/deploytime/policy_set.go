@@ -10,7 +10,7 @@ import (
 //go:generate mockery -name=PolicySet
 type PolicySet interface {
 	ForOne(string, func(*v1.Policy, deploymentMatcher.Matcher) error) error
-	ForEach(func(*v1.Policy, deploymentMatcher.Matcher) error) error
+	ForEach(fe func(*v1.Policy, deploymentMatcher.Matcher) error, runtime bool) error
 
 	UpsertPolicy(*v1.Policy) error
 	RemovePolicy(policyID string) error

@@ -18,7 +18,7 @@ func newRequiredAnnotationMatcher(policy *v1.Policy) (Matcher, error) {
 		return nil, nil
 	}
 	if env.GetKey() == "" && env.GetValue() == "" {
-		return nil, fmt.Errorf("Both key and value cannot be empty (environment policy)")
+		return nil, fmt.Errorf("both key and value cannot be empty (environment policy)")
 	}
 
 	key, err := utils.CompileStringRegex(env.GetKey())
@@ -40,5 +40,5 @@ type requiredAnnotationMatcherImpl struct {
 }
 
 func (p *requiredAnnotationMatcherImpl) match(deployment *v1.Deployment) []*v1.Alert_Violation {
-	return utils.MatchRequiredMap(deployment.GetAnnotations(), p.key, p.value, "label")
+	return utils.MatchRequiredMap(deployment.GetAnnotations(), p.key, p.value, "annotation")
 }

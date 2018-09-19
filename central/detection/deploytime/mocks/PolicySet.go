@@ -11,13 +11,13 @@ type PolicySet struct {
 	mock.Mock
 }
 
-// ForEach provides a mock function with given fields: _a0
-func (_m *PolicySet) ForEach(_a0 func(*v1.Policy, matcher.Matcher) error) error {
-	ret := _m.Called(_a0)
+// ForEach provides a mock function with given fields: fe, runtime
+func (_m *PolicySet) ForEach(fe func(*v1.Policy, matcher.Matcher) error, runtime bool) error {
+	ret := _m.Called(fe, runtime)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(func(*v1.Policy, matcher.Matcher) error) error); ok {
-		r0 = rf(_a0)
+	if rf, ok := ret.Get(0).(func(func(*v1.Policy, matcher.Matcher) error, bool) error); ok {
+		r0 = rf(fe, runtime)
 	} else {
 		r0 = ret.Error(0)
 	}

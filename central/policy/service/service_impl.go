@@ -226,7 +226,7 @@ func (s *serviceImpl) ReassessPolicies(context.Context, *v1.Empty) (*v1.Empty, e
 	return &v1.Empty{}, nil
 }
 
-// DryRunPolicy runs a dry run of the policy and determines what deployments would
+// DryRunPolicy runs a dry run of the policy and determines what deployments would violate it
 func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *v1.Policy) (*v1.DryRunResponse, error) {
 	if err := s.validator.validate(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())

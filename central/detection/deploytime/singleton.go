@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/enrichment"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
-	"github.com/stackrox/rox/generated/api/v1"
 )
 
 var (
@@ -26,10 +25,8 @@ func initialize() {
 		panic(err)
 	}
 	for _, policy := range policies {
-		if policy.GetLifecycleStage() == v1.LifecycleStage_DEPLOY_TIME {
-			if err := policySet.UpsertPolicy(policy); err != nil {
-				panic(err)
-			}
+		if err := policySet.UpsertPolicy(policy); err != nil {
+			panic(err)
 		}
 	}
 
@@ -38,7 +35,8 @@ func initialize() {
 	detector = NewDetector(policySet,
 		alertManager,
 		enrichment.Singleton(),
-		deploymentDataStore.Singleton())
+		deploymentDataStore.Singleton(),
+	)
 }
 
 // SingletonDetector returns the singleton instance of a Detector.
@@ -51,4 +49,10 @@ func SingletonDetector() Detector {
 func SingletonPolicySet() PolicySet {
 	once.Do(initialize)
 	return policySet
+}
+
+// SingletonAlertManager returns the singleton instance of an AlertManager
+func SingletonAlertManager() AlertManager {
+	once.Do(initialize)
+	return alertManager
 }

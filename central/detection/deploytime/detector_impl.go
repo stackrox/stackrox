@@ -4,6 +4,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/utils"
 	"github.com/stackrox/rox/central/enrichment"
+	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
 	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
 	"github.com/stackrox/rox/pkg/logging"
@@ -18,6 +19,8 @@ type detectorImpl struct {
 
 	alertManager AlertManager
 	deployments  deploymentDataStore.DataStore
+
+	pipeline pipeline.Pipeline
 }
 
 // DeploymentUpdated processes a new or updated deployment, generating and updating alerts in the store and returning
@@ -107,7 +110,7 @@ func (d *detectorImpl) getAlertsForDeployment(deployment *v1.Deployment) []*v1.A
 			newAlerts = append(newAlerts, utils.PolicyDeploymentAndViolationsToAlert(p, deployment, violations))
 		}
 		return nil
-	})
+	}, false)
 	return newAlerts
 }
 

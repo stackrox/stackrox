@@ -30,7 +30,7 @@ func (suite *PolicyTestSuite) TestAddsCompilable() {
 			hasMatch = true
 		}
 		return nil
-	})
+	}, false)
 	suite.True(hasMatch, "policy set should contain a matching policy")
 }
 
@@ -70,7 +70,7 @@ func (suite *PolicyTestSuite) TestThrowsErrorForNotCompilable() {
 			hasMatch = true
 		}
 		return nil
-	})
+	}, false)
 	suite.False(hasMatch, "policy set should not contain a matching policy")
 }
 

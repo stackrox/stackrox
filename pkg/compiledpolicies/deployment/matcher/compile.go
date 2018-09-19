@@ -11,7 +11,7 @@ type compiler func(*v1.Policy) (Matcher, error)
 // compilers are all of the different Matcher creation functions that are registered.
 var compilers []compiler
 
-// Compile creates a new deployment policy matcher.
+// Compile creates a new deployment policy matcher for build and deploy policies.
 func Compile(policy *v1.Policy) (Matcher, error) {
 	var matcher Matcher
 	for _, compiler := range compilers {
