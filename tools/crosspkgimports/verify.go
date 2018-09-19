@@ -28,6 +28,7 @@ var (
 		"sensor/kubernetes",
 		"sensor/swarm",
 		"tools",
+		"integration-tests",
 	}
 
 	ignoredRoots = []string{

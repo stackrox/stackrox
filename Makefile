@@ -201,6 +201,8 @@ image: gazelle clean-image
 		//benchmark-bootstrap \
 		//sensor/kubernetes \
 		//sensor/swarm \
+		//integration-tests/mock-grpc-server \
+
 
 	make -C ui build
 
@@ -213,10 +215,12 @@ image: gazelle clean-image
 	cp bazel-bin/benchmark-bootstrap/linux_amd64_pure_stripped/benchmark-bootstrap image/bin/benchmark-bootstrap
 	cp bazel-bin/sensor/swarm/linux_amd64_pure_stripped/swarm image/bin/swarm-sensor
 	cp bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-sensor
+	cp bazel-bin/integration-tests/mock-grpc-server/linux_amd64_pure_stripped/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	echo "$(TAG)" > image/VERSION
 	chmod +w image/bin/*
 	docker build -t stackrox/prevent:$(TAG) image/
 	docker build -t stackrox/prevent-health:$(TAG) prometheus/container
+	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
 	@echo "Built images with tag: $(TAG)"
 	@echo "You may wish to:       export PREVENT_IMAGE_TAG=$(TAG)"
 
@@ -233,6 +237,7 @@ clean-image:
 	@echo "+ $@"
 	git clean -xf image/bin
 	git clean -xdf image/ui
+	git clean -xf integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 
 .PHONY: tag
 tag:

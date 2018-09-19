@@ -131,6 +131,7 @@ jobs:
 
             docker push stackrox/prevent:$TAG | cat
             docker push stackrox/prevent-health:$TAG | cat
+            docker push stackrox/grpc-server:$TAG | cat
 
       - save-cache:
           key: *depCacheKey
