@@ -12,7 +12,11 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import ReactTooltip from 'react-tooltip';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
-import Table from 'Components/Table';
+import Table, {
+    wrapClassName,
+    defaultHeaderClassName,
+    defaultColumnClassName
+} from 'Components/Table';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import ViolationsPanel from './ViolationsPanel';
@@ -78,32 +82,32 @@ class ViolationsPage extends Component {
             {
                 Header: 'Deployment',
                 accessor: 'deployment.name',
-                widthClassName: 'w-1/8',
-                wrap: true
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`
             },
             {
                 Header: 'Cluster',
                 accessor: 'deployment.clusterName',
-                widthClassName: 'w-1/8',
-                wrap: true
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`
             },
             {
                 Header: 'Policy',
                 accessor: 'policy.name',
-                widthClassName: 'w-1/8',
-                wrap: true
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`
             },
             {
                 Header: 'Description',
                 accessor: 'policy.description',
-                widthClassName: 'w-1/4',
-                wrap: true
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`
             },
             {
                 Header: 'Categories',
                 accessor: 'policy.categories',
-                widthClassName: 'w-1/8',
-                wrap: true,
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ci =>
                     ci.value.length > 1 ? (
                         <div data-tip data-for="button-violation-categories">
@@ -123,7 +127,8 @@ class ViolationsPage extends Component {
             {
                 Header: 'Severity',
                 accessor: 'policy.severity',
-                widthClassName: 'w-1/8',
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ci => {
                     const severity = severityLabels[ci.value];
                     return <span className={getSeverityClassName(severity)}>{severity}</span>;
@@ -133,8 +138,8 @@ class ViolationsPage extends Component {
             {
                 Header: 'Time',
                 accessor: 'time',
-                widthClassName: 'w-1/8',
-                wrap: true,
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ci => dateFns.format(ci.value, dateTimeFormat),
                 sortMethod: sortDate
             }

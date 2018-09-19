@@ -7,7 +7,7 @@ import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import ReactTooltip from 'react-tooltip';
 import 'react-table/react-table.css';
-import Table from 'Components/Table';
+import Table, { defaultHeaderClassName } from 'Components/Table';
 
 import { actions as deploymentsActions } from 'reducers/deployments';
 import { addSearchModifier, addSearchKeyword } from 'utils/searchUtils';
@@ -207,8 +207,8 @@ class ImageDetails extends Component {
         const columns = [
             {
                 expander: true,
-                widthClassName: 'w-1/8',
-                className: 'pointer-events-none self-center',
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: 'w-1/8 pointer-events-none self-center',
                 Expander: ({ isExpanded, ...rest }) => {
                     if (rest.original.vulns.length === 0) return '';
                     const className = 'rt-expander w-1 pt-2 pointer-events-auto';
@@ -230,9 +230,9 @@ class ImageDetails extends Component {
             {
                 Header: 'CVEs',
                 accessor: 'vulns.length',
-                widthClassName: 'w-1/8',
-                className: 'text-right pr-4 self-center',
-                headerClassName: 'font-600 text-right border-b border-base-300 border-r-0 pr-4'
+                className: 'w-1/8 text-right pr-4 self-center',
+                headerClassName:
+                    'w-1/8 font-600 text-right border-b border-base-300 border-r-0 pr-4'
             }
         ];
         return (

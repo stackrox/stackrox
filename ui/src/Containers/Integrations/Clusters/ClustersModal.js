@@ -13,6 +13,7 @@ import Dialog from 'Components/Dialog';
 import Modal from 'Components/Modal';
 import CheckboxTable from 'Components/CheckboxTable';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
+import { defaultColumnClassName, wrapClassName } from 'Components/Table';
 import Panel from 'Components/Panel';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import PanelButton from 'Components/PanelButton';
@@ -87,8 +88,16 @@ class ClustersModal extends Component {
 
     showModalView = () => {
         const columns = [
-            { accessor: 'name', Header: 'Name', wrap: true },
-            { accessor: 'preventImage', Header: 'StackRox Image', wrap: true },
+            {
+                accessor: 'name',
+                Header: 'Name',
+                className: `${wrapClassName} ${defaultColumnClassName}`
+            },
+            {
+                accessor: 'preventImage',
+                Header: 'StackRox Image',
+                className: `${wrapClassName} ${defaultColumnClassName}`
+            },
             {
                 accessor: 'lastContact',
                 Header: 'Last Check-In',

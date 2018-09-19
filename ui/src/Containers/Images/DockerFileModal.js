@@ -3,7 +3,11 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
-import Table from 'Components/Table';
+import Table, {
+    wrapClassName,
+    defaultHeaderClassName,
+    defaultColumnClassName
+} from 'Components/Table';
 import Modal from 'Components/Modal';
 
 class DockerFileModal extends Component {
@@ -29,16 +33,15 @@ class DockerFileModal extends Component {
             {
                 accessor: 'value',
                 Header: 'Value',
-                widthClassName: 'w-2/5 text-left',
-                className: 'w-2/5 text-left pl-3',
-                wrap: true
+                headerClassName: `w-2/5 text-left ${wrapClassName} ${defaultHeaderClassName}`,
+                className: `w-2/5 text-left pl-3 ${wrapClassName} ${defaultColumnClassName}`
             },
             {
                 accessor: 'created',
                 Header: 'Created',
                 align: 'right',
-                widthClassName: 'w-1/5 text-right pr-3',
-                className: 'w-1/5 text-right pr-3',
+                widthClassName: `w-1/5 text-right pr-3 ${wrapClassName} ${defaultHeaderClassName}`,
+                className: `w-1/5 text-right pr-3 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => dateFns.format(original.created, dateTimeFormat)
             }
         ];

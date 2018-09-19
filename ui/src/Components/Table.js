@@ -4,10 +4,11 @@ import ReactTable from 'react-table';
 import ReactTablePropTypes from 'react-table/lib/propTypes';
 import flattenObject from 'utils/flattenObject';
 
-const columnHeaderClassName =
+export const defaultHeaderClassName =
     'p-3 text-primary-500 border-b border-base-300 hover:text-primary-600 cursor-pointer truncate select-none relative text-left border-r-0 shadow-none';
-const columnClassName = 'p-3 text-left border-r-0 cursor-pointer self-center';
+export const defaultColumnClassName = 'p-3 text-left border-r-0 cursor-pointer self-center';
 const pageSize = 20;
+export const wrapClassName = 'whitespace-normal overflow-visible';
 
 class Table extends Component {
     static propTypes = {
@@ -61,16 +62,9 @@ class Table extends Component {
         };
     };
 
-    getColumnClassName = column => {
-        let className = column.className || columnClassName;
-        className = column.widthClassName ? `${className} ${column.widthClassName}` : className;
-        return column.wrap ? `whitespace-normal overflow-visible ${className}` : className;
-    };
+    getColumnClassName = column => column.className || defaultColumnClassName;
 
-    getHeaderClassName = column => {
-        const className = column.headerClassName || columnHeaderClassName;
-        return column.widthClassName ? `${className} ${column.widthClassName}` : className;
-    };
+    getHeaderClassName = column => column.headerClassName || defaultHeaderClassName;
 
     render() {
         const { rows, columns, ...rest } = this.props;

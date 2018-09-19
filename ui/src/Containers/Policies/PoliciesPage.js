@@ -13,6 +13,7 @@ import Dialog from 'Components/Dialog';
 import Loader from 'Components/Loader';
 import CheckboxTable from 'Components/CheckboxTable';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
+import { defaultColumnClassName, defaultHeaderClassName, wrapClassName } from 'Components/Table';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import { formatPolicyFields, getPolicyFormDataKeys } from 'Containers/Policies/policyFormUtils';
@@ -224,14 +225,14 @@ class PoliciesPage extends Component {
                         <div className="pl-4">{original.name}</div>
                     </div>
                 ),
-                widthClassName: 'w-1/5',
-                wrap: true
+                className: `w-1/5 ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `w-1/5 ${defaultHeaderClassName}`
             },
             {
                 Header: 'Description',
                 accessor: 'description',
-                widthClassName: 'w-1/3',
-                wrap: true
+                className: `w-1/3 ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `w-1/3 ${defaultHeaderClassName}`
             },
             {
                 Header: 'Severity',
