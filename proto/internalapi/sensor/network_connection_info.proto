@@ -8,20 +8,13 @@ import "google/protobuf/timestamp.proto";
 package sensor;
 
 message NetworkConnectionInfo {
-    NetworkConnectionStateUpdate update = 1;
+    // Network connections that were added from the last time state was sent.
+    repeated NetworkConnection updated_connections = 1;
 
     //For active connections, the timestamp of the entire message serves as the latest timestamp
     //that connection was deemed active
     google.protobuf.Timestamp time      = 2;
 }
-
-message NetworkConnectionStateUpdate {
-    // Network connections that were added from the last time state was sent.
-    repeated NetworkConnection added      = 1;
-    // Network connections that were removed from the last time state was sent.
-    repeated NetworkConnection removed    = 2;
-
-}   
 
 // NetworkConnection tracks connection information about client and server.
 message NetworkConnection {
@@ -42,27 +35,14 @@ message NetworkConnection {
 
     string container_id           = 6;
 
-    // If this connection was closed, this gives the timestamp when it was closed.
+    // If this connection was closed, this gives the timestamp when it was closed. If this is unset, we treat it as an
+    // open connection.
     google.protobuf.Timestamp close_timestamp         = 11;
 }
 
-// Note: We currently don't report local unix sockets.
 message NetworkAddress {
-    oneof network_address {
-        IPV4NetworkAddress ipv4_address   = 1;
-        IPV6NetworkAddress ipv6_address   = 2;
-    }
-}
-
-message IPV4NetworkAddress {
-    fixed32 address = 1;
-    uint32 port    = 2;
-}
-
-message IPV6NetworkAddress {
-    fixed64 address_high = 1;
-    fixed64 address_low  = 2;
-    uint32 port          = 3;
+    bytes address_data = 1;  // semantics determined by socket_family of the given connection
+    uint32 port = 2;         // may be 0 if not applicable (e.g., icmp).
 }
 
 enum SocketFamily {
