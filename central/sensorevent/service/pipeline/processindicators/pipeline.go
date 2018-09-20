@@ -71,10 +71,10 @@ func (s *pipelineImpl) process(indicator *v1.ProcessIndicator) error {
 	}
 	deployment.Processes = indicators
 	log.Debugf("Processed indicators for deployment %s: %v", deployment.GetId(), deployment.Processes)
-	return s.reconcileAlerts(deployment)
+	return s.reconcileAlerts(deployment, indicators)
 }
 
-func (s *pipelineImpl) reconcileAlerts(deployment *v1.Deployment) error {
+func (s *pipelineImpl) reconcileAlerts(deployment *v1.Deployment, indicators []*v1.ProcessIndicator) error {
 	previousAlerts, err := s.alertManager.GetAlertsByDeployment(deployment.GetId())
 	if err != nil {
 		return err

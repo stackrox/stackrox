@@ -49,27 +49,28 @@ func (m *processMatcherImpl) match(deployment *v1.Deployment) (violations []*v1.
 		a := p.GetSignal().GetArgs()
 		if m.name != nil && m.args != nil {
 			if m.name.MatchString(n) && m.args.MatchString(a) {
-				violations = append(violations, generateProcessViolation(n, a))
+				violations = append(violations, generateProcessViolation(n, a, p))
 			}
 		} else if m.name != nil {
 			if m.name.MatchString(n) {
-				violations = append(violations, generateProcessViolation(n, a))
+				violations = append(violations, generateProcessViolation(n, a, p))
 			}
 		} else if m.args != nil {
 			if m.args.MatchString(n) {
-				violations = append(violations, generateProcessViolation(n, a))
+				violations = append(violations, generateProcessViolation(n, a, p))
 			}
 		}
 	}
 	return
 }
 
-func generateProcessViolation(name, args string) *v1.Alert_Violation {
+func generateProcessViolation(name, args string, indicator *v1.ProcessIndicator) *v1.Alert_Violation {
 	var argsMessage string
 	if args != "" {
 		argsMessage = fmt.Sprintf(" with arguments '%s'", args)
 	}
 	return &v1.Alert_Violation{
-		Message: fmt.Sprintf("Detected running process '%s'%s", name, argsMessage),
+		Message:   fmt.Sprintf("Detected running process '%s'%s", name, argsMessage),
+		Processes: []*v1.ProcessIndicator{indicator},
 	}
 }
