@@ -70,10 +70,17 @@ message MatchFieldQuery {
     bool highlight = 3;
 }
 
+// MatchLinkedFieldsQuery represents a query that matches documents which have matches for all the provided
+// field values, in corresponding locations.
+message MatchLinkedFieldsQuery {
+    repeated MatchFieldQuery query = 1;
+}
+
 message BaseQuery {
     oneof query {
         StringQuery string_query = 1;
         MatchFieldQuery match_field_query = 2;
+        MatchLinkedFieldsQuery match_linked_fields_query = 3;
     }
 }
 

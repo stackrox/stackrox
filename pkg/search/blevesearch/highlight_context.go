@@ -5,6 +5,10 @@ import (
 	"github.com/blevesearch/bleve/search"
 )
 
+const (
+	highlightCtxIDField = "HIGHLIGHTCTXIDFIELD"
+)
+
 // highlightContext maintains context on highlights as we run a Bleve Query.
 // It keeps track of the fields that we want highlighted in the search results,
 // along with optional "translators" for each field, which convert values in
@@ -21,9 +25,9 @@ func (h highlightContext) AddFieldToHighlight(fieldPath string) {
 	h[fieldPath] = nil
 }
 
-// AddTranslatedFieldIfNotExists adds a field path to the highlight context which needs to be translated
+// addTranslatedFieldIfNotExists adds a field path to the highlight context which needs to be translated
 // to results in the target field using the valueMapping in the translator.
-func (h highlightContext) AddTranslatedFieldIfNotExists(fieldPath, targetFieldPath string) {
+func (h highlightContext) addTranslatedFieldIfNotExists(fieldPath, targetFieldPath string) {
 	if _, ok := h[fieldPath]; !ok {
 		h[fieldPath] = make(map[string]highlightTranslator)
 	}
@@ -37,8 +41,8 @@ func (h highlightContext) AddTranslatedFieldIfNotExists(fieldPath, targetFieldPa
 // AddMappingToFieldTranslation adds a value mapping to the translator for the given field.
 // It is the caller's responsibility to make sure that AddTranslatedField was called for this fieldPath
 // first; this function WILL panic if that was not done.
-func (h highlightContext) AddMappingToFieldTranslator(fieldPath, targetFieldPath, sourceValue, targetValue string) {
-	h[fieldPath][targetFieldPath].valueMapping[sourceValue] = append(h[fieldPath][targetFieldPath].valueMapping[sourceValue], targetValue)
+func (h highlightContext) addMappingToFieldTranslator(fieldPath, targetFieldPath, sourceValue string, targetValues ...string) {
+	h[fieldPath][targetFieldPath].valueMapping[sourceValue] = append(h[fieldPath][targetFieldPath].valueMapping[sourceValue], targetValues...)
 }
 
 // Merge merges the other highlightContext into this one.
@@ -68,12 +72,15 @@ func (h highlightContext) ApplyToBleveReq(request *bleve.SearchRequest) {
 func (h highlightContext) ResolveMatches(hit *search.DocumentMatch) (matchingFields map[string][]string) {
 	matchingFields = make(map[string][]string)
 	for fieldName, translatorMap := range h {
-		matchedIndices, matched := hit.FieldIndices[fieldName]
-		if !matched {
-			continue
-		}
 
-		fieldValues := getMatchingValuesFromFields(fieldName, hit.Fields, matchedIndices)
+		var fieldValues []string
+		// If it's the ID field (special case, then we know the field value -- it's just the hit's ID!)
+		if fieldName == highlightCtxIDField {
+			fieldValues = []string{hit.ID}
+		} else {
+			validPositions := treeForField(hit.Locations, fieldName)
+			fieldValues, _ = getMatchingValuesFromFields(fieldName, hit, validPositions, false)
+		}
 		if len(fieldValues) == 0 {
 			continue
 		}
@@ -96,4 +103,21 @@ func (h highlightContext) ResolveMatches(hit *search.DocumentMatch) (matchingFie
 
 	}
 	return
+}
+
+func (h highlightContext) AddMappings(sourceFieldPath string, sourceFieldValues []string, matches map[string][]string) {
+	if h == nil {
+		return
+	}
+	if len(matches) == 0 {
+		return
+	}
+	for targetFieldPath := range matches {
+		h.addTranslatedFieldIfNotExists(sourceFieldPath, targetFieldPath)
+	}
+	for _, sourceFieldValue := range sourceFieldValues {
+		for targetFieldPath, targetFieldValues := range matches {
+			h.addMappingToFieldTranslator(sourceFieldPath, targetFieldPath, sourceFieldValue, targetFieldValues...)
+		}
+	}
 }

@@ -5,10 +5,12 @@ import (
 	"math"
 
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/search"
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch/validpositions"
 )
 
 const maxSearchResponses = 2000
@@ -71,34 +73,55 @@ func getValueFromField(val interface{}) string {
 	return ""
 }
 
-func getMatchingValuesFromFields(field string, m map[string]interface{}, matchIndices []uint32) []string {
-	val, ok := m[field]
-	if !ok {
-		return nil
-	}
-	if asSlice, ok := val.([]interface{}); ok {
-		values := make([]string, 0, len(matchIndices))
-		for _, index := range matchIndices {
-			if int(index) > len(asSlice) {
-				logger.Errorf("Match index out of range. Field %s, map: %#v, matchIndices: %#v", field, m, matchIndices)
-				continue
-			}
-			strVal := getValueFromField(asSlice[index])
-			if strVal != "" {
-				values = append(values, strVal)
-			}
-		}
-		return values
+func getMatchingValuesFromFields(field string, hit *search.DocumentMatch, validArrayPositions *validpositions.Tree, includeArrayPositions bool) ([]string, []search.ArrayPositions) {
+	if validArrayPositions.Empty() {
+		return nil, nil
 	}
 
-	if len(matchIndices) != 1 || matchIndices[0] != 0 {
-		return nil
+	val, ok := hit.Fields[field]
+	if !ok {
+		return nil, nil
+	}
+
+	arrayPositions, ok := hit.FieldArrayPositions[field]
+	if !ok {
+		return nil, nil
+	}
+
+	if asSlice, ok := val.([]interface{}); ok {
+		var values []string
+		var matchingArrayPositions []search.ArrayPositions
+		for i, v := range asSlice {
+			if i >= len(arrayPositions) {
+				break
+			}
+			if validArrayPositions.Contains(arrayPositions[i]) {
+				strVal := getValueFromField(v)
+				values = append(values, strVal)
+				if includeArrayPositions {
+					matchingArrayPositions = append(matchingArrayPositions, arrayPositions[i])
+				}
+			}
+		}
+		return values, matchingArrayPositions
+	}
+
+	// This is a singleton element.
+	// If it doesn't match, don't return it.
+	if len(arrayPositions) != 1 || !validArrayPositions.Contains(arrayPositions[0]) {
+		return nil, nil
 	}
 	strVal := getValueFromField(val)
 	if strVal == "" {
-		return nil
+		return nil, nil
 	}
-	return []string{strVal}
+	return []string{strVal}, arrayPositions
+}
+
+type searchFieldAndValue struct {
+	sf        *v1.SearchField
+	value     string
+	highlight bool
 }
 
 func getValuesFromFields(field string, m map[string]interface{}) []string {
@@ -132,27 +155,28 @@ func getValuesFromFields(field string, m map[string]interface{}) []string {
 // we first run a query for image tag = "latest" on images, and then extract the image ids from matching images.
 // The query returned by this function is then a query on deployments, which matches the deployment's image id field against
 // all the returned ids from the subquery we ran.
-func resolveMatchFieldQuery(index bleve.Index, category v1.SearchCategory, searchField *v1.SearchField,
-	searchValue string, highlightCtx highlightContext) (query.Query, error) {
-	// Base case is that the category you are looking for is the search field category so just get a "normal search query"
-	if category == searchField.GetCategory() {
-		if highlightCtx != nil {
-			if !searchField.GetStore() {
-				return nil, fmt.Errorf("can't request highlights for search field %+v, because it is not stored", searchField)
-			}
-			highlightCtx.AddFieldToHighlight(searchField.GetFieldPath())
-		}
-		return matchFieldQuery(category, searchField, searchValue)
+func resolveMatchFieldQuery(index bleve.Index, category v1.SearchCategory, searchFieldsAndValues []searchFieldAndValue, highlightCtx highlightContext) (query.Query, error) {
+	// This is a programming error
+	if len(searchFieldsAndValues) == 0 {
+		panic("Empty slice of searchFieldsAndValues passed to resolveMatchFieldQuery")
 	}
+
+	passedFieldsCategory := searchFieldsAndValues[0].sf.GetCategory()
+
+	// Base case is that the category you are looking for is the search field category so just get a "normal search query"
+	if category == passedFieldsCategory {
+		return matchAllFieldsQuery(index, category, searchFieldsAndValues, highlightCtx)
+	}
+
 	// Get the map of result -> next link
-	nextHopCategory, ok := links[newRelationship(category, searchField.GetCategory())]
+	nextHopCategory, ok := links[newRelationship(category, passedFieldsCategory)]
 	if !ok {
 		return nil, fmt.Errorf("no link specification for category '%s'", category)
 	}
 
 	parentCategory := nextHopCategory
 	// if the next hop was the final one, then the current category is the parent
-	if nextHopCategory == searchField.GetCategory() {
+	if nextHopCategory == passedFieldsCategory {
 		parentCategory = category
 	}
 
@@ -163,7 +187,7 @@ func resolveMatchFieldQuery(index bleve.Index, category v1.SearchCategory, searc
 	}
 
 	// Go get the query that needs to be run
-	subQuery, err := resolveMatchFieldQuery(index, nextHopCategory, searchField, searchValue, highlightCtx)
+	subQuery, err := resolveMatchFieldQuery(index, nextHopCategory, searchFieldsAndValues, highlightCtx)
 	if err != nil {
 		return nil, fmt.Errorf("resolving query with next hop: '%s': %s", nextHopCategory, err)
 	}
@@ -177,37 +201,13 @@ func resolveMatchFieldQuery(index bleve.Index, category v1.SearchCategory, searc
 	// which is used to correlate between parents and their children
 	disjunctionQuery := bleve.NewDisjunctionQuery()
 
-	// targetField is used for highlighting. If we've run a child query already, and we want to highlight
-	// results, then the result will have matches in its Matches field.
-	// We add information to the highlightContext that allows us to translate the results on the relationship field
-	// (which is what we will actually do the query on) to results on the field that the user actually queried for.
-	var targetField string
 	for _, r := range results {
-		var targetFieldValue string
-		if highlightCtx != nil && len(r.Matches) > 0 {
-			if len(r.Matches) > 1 {
-				panic(fmt.Sprintf("There should only be 0 or 1 fields in matches, but found more: %#v", r.Matches))
-			}
-			for f, v := range r.Matches {
-				if len(v) == 0 {
-					break
-				}
-				if targetField == "" {
-					targetField = f
-				}
-				if targetField != f {
-					panic(fmt.Sprintf("Got different target fields %s and %s, this should never happen", targetField, f))
-				}
-				targetFieldValue = v[0]
-			}
-			if targetField != "" {
-				highlightCtx.AddTranslatedFieldIfNotExists(relationshipField.srcField, targetField)
-			}
+		fieldValues := getValuesFromFields(relationshipField.dstField, r.Fields)
+		if len(fieldValues) == 0 {
+			continue
 		}
-
-		for _, fieldValue := range getValuesFromFields(relationshipField.dstField, r.Fields) {
-			var q query.Query
-			q, err = matchFieldQuery(parentCategory, &v1.SearchField{
+		for _, fieldValue := range fieldValues {
+			q, err := matchFieldQuery(parentCategory, &v1.SearchField{
 				FieldPath: relationshipField.srcField,
 				Type:      v1.SearchDataType_SEARCH_STRING,
 			}, fieldValue)
@@ -215,11 +215,8 @@ func resolveMatchFieldQuery(index bleve.Index, category v1.SearchCategory, searc
 				return nil, fmt.Errorf("computing query for field '%s': %s", fieldValue, err)
 			}
 			disjunctionQuery.AddQuery(q)
-
-			if targetField != "" {
-				highlightCtx.AddMappingToFieldTranslator(relationshipField.srcField, targetField, fieldValue, targetFieldValue)
-			}
 		}
+		highlightCtx.AddMappings(relationshipField.srcField, fieldValues, r.Matches)
 	}
 
 	// this conjunction query effectively does a join between the refs on the top-level object and the object itself
@@ -235,8 +232,7 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 	return runQuery(bleveQuery, index, highlightContext)
 }
 
-// runQuery runs the actual query and then collapses the results into a simpler format
-func runQuery(query query.Query, index bleve.Index, highlightCtx highlightContext, fields ...string) ([]searchPkg.Result, error) {
+func runBleveQuery(query query.Query, index bleve.Index, highlightCtx highlightContext, fields ...string) (*bleve.SearchResult, error) {
 	searchRequest := bleve.NewSearchRequest(query)
 	// Initial size is 10 which seems small
 	searchRequest.Size = maxSearchResponses
@@ -246,7 +242,12 @@ func runQuery(query query.Query, index bleve.Index, highlightCtx highlightContex
 	}
 	highlightCtx.ApplyToBleveReq(searchRequest)
 
-	searchResult, err := index.Search(searchRequest)
+	return index.Search(searchRequest)
+}
+
+// runQuery runs the actual query and then collapses the results into a simpler format
+func runQuery(query query.Query, index bleve.Index, highlightCtx highlightContext, fields ...string) ([]searchPkg.Result, error) {
+	searchResult, err := runBleveQuery(query, index, highlightCtx, fields...)
 	if err != nil {
 		return nil, err
 	}
@@ -280,12 +281,13 @@ func collapseResults(searchResult *bleve.SearchResult, highlightCtx highlightCon
 	results = make([]searchPkg.Result, 0, len(searchResult.Hits))
 	for _, hit := range searchResult.Hits {
 		matchingFields := highlightCtx.ResolveMatches(hit)
-		results = append(results, searchPkg.Result{
+		result := searchPkg.Result{
 			ID:      hit.ID,
 			Matches: matchingFields,
 			Score:   hit.Score,
 			Fields:  hit.Fields,
-		})
+		}
+		results = append(results, result)
 	}
 	return
 }

@@ -132,7 +132,7 @@ required = ["golang.org/x/tools/go/ast/astutil"]
 [[constraint]]
   name = "github.com/blevesearch/bleve"
   source = "https://github.com/connorgorman/bleve.git"
-  revision = "bcf7caadc3377cc7078537495523a6d07d17a874"
+  revision = "ec2b558603928f10cf9f2e1d3e221ada3df66c5c"
 
 [[constraint]]
   name = "github.com/prometheus/client_golang"

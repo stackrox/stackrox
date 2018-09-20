@@ -51,36 +51,60 @@ func (c *queryConverter) baseQueryToBleve(bq *v1.BaseQuery) (bleveQuery query.Qu
 		return
 	}
 
-	switch typedBQ := bq.GetQuery().(type) {
+	switch bq := bq.GetQuery().(type) {
 	case *v1.BaseQuery_StringQuery:
-		if typedBQ.StringQuery.GetQuery() != "" {
-			bleveQuery = NewMatchPhrasePrefixQuery("", typedBQ.StringQuery.GetQuery())
+		if bq.StringQuery.GetQuery() != "" {
+			bleveQuery = NewMatchPhrasePrefixQuery("", bq.StringQuery.GetQuery())
 		}
 		return
 	case *v1.BaseQuery_MatchFieldQuery:
-		return c.matchFieldQueryToBleve(typedBQ.MatchFieldQuery)
+		return c.matchLinkedFieldsQueryToBleve([]*v1.MatchFieldQuery{bq.MatchFieldQuery})
+	case *v1.BaseQuery_MatchLinkedFieldsQuery:
+		return c.matchLinkedFieldsQueryToBleve(bq.MatchLinkedFieldsQuery.GetQuery())
 	default:
-		panic(fmt.Sprintf("Unhandled base query type: %T", typedBQ))
+		panic(fmt.Sprintf("Unhandled base query type: %T", bq))
 	}
 }
 
-func (c *queryConverter) matchFieldQueryToBleve(mq *v1.MatchFieldQuery) (bleveQuery query.Query, err error) {
-	if mq.GetField() == "" || mq.GetValue() == "" {
-		return
+func (c *queryConverter) matchLinkedFieldsQueryToBleve(mfqs []*v1.MatchFieldQuery) (bleveQuery query.Query, err error) {
+	searchFieldsAndValues := make([]searchFieldAndValue, 0, len(mfqs))
+
+	var category v1.SearchCategory
+	var mustHighlight bool
+	for _, mfq := range mfqs {
+		if mfq.GetField() == "" || mfq.GetValue() == "" {
+			continue
+		}
+		searchField, found := c.optionsMap[search.FieldLabel(mfq.GetField())]
+		if !found {
+			continue
+		}
+		if category == v1.SearchCategory_SEARCH_UNSET {
+			category = searchField.GetCategory()
+		} else {
+			if searchField.GetCategory() != category {
+				return nil, fmt.Errorf("found multiple categories in query %+v ('%s' and '%s'), this is unsupported",
+					mfqs, category, searchField.GetCategory())
+			}
+		}
+
+		searchFieldsAndValues = append(searchFieldsAndValues, searchFieldAndValue{sf: searchField, value: mfq.GetValue(), highlight: mfq.GetHighlight()})
+		if mfq.GetHighlight() {
+			mustHighlight = true
+		}
 	}
-	searchField, found := c.optionsMap[search.FieldLabel(mq.GetField())]
-	if !found {
+	if len(searchFieldsAndValues) == 0 {
 		return
 	}
 	var highlightCtx highlightContext
-	if mq.GetHighlight() {
+	if mustHighlight {
 		highlightCtx = make(highlightContext)
 	}
-	bleveQuery, err = resolveMatchFieldQuery(c.index, c.category, searchField, mq.GetValue(), highlightCtx)
+	bleveQuery, err = resolveMatchFieldQuery(c.index, c.category, searchFieldsAndValues, highlightCtx)
 	if err != nil {
 		return nil, err
 	}
-	if mq.GetHighlight() {
+	if mustHighlight {
 		c.highlightCtx.Merge(highlightCtx)
 	}
 	return

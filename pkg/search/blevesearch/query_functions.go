@@ -8,7 +8,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/search"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 const (
@@ -58,8 +58,8 @@ func newStringQuery(category v1.SearchCategory, field string, value string) (que
 		// however we must pipe in the search category because the boolean query returns a true/false designation
 		boolQuery.AddMust(typeQuery(category))
 		return boolQuery, nil
-	case strings.HasPrefix(value, search.RegexPrefix) && len(value) > len(search.RegexPrefix):
-		q := bleve.NewRegexpQuery(value[len(search.RegexPrefix):])
+	case strings.HasPrefix(value, pkgSearch.RegexPrefix) && len(value) > len(pkgSearch.RegexPrefix):
+		q := bleve.NewRegexpQuery(value[len(pkgSearch.RegexPrefix):])
 		q.SetField(field)
 		return q, nil
 	default:
