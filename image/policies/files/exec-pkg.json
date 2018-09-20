@@ -6,7 +6,7 @@
     "lifecycle_stage": "RUN_TIME",
     "fields": {
         "process_policy": {
-            "name": "(\b(?!d))pkg(_?)*"
+            "name": "\\b([^d])pkg(_?)*"
         }
     },
     "rationale": "Package managers make it easier for attackers to use compromised containers, since they can easily add software.",

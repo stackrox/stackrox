@@ -2,6 +2,7 @@ package matcher
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 	"time"
 
@@ -44,7 +45,7 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 	suite.imageIndexer = imageIndex.New(suite.bleveIndex)
 
 	defaults.PoliciesPath = policies.Directory()
-	defaultPolicies, err := defaults.Policies()
+	defaultPolicies, err := defaults.Policies(true)
 	suite.Require().NoError(err)
 
 	suite.defaultPolicies = make(map[string]*v1.Policy, len(defaultPolicies))
@@ -205,4 +206,18 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		})
 	}
 
+}
+
+func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {
+	for _, p := range suite.defaultPolicies {
+		if p.LifecycleStage == v1.LifecycleStage_RUN_TIME && p.GetFields().GetProcessPolicy() != nil {
+			processPolicy := p.GetFields().GetProcessPolicy()
+			if processPolicy.GetName() != "" {
+				regexp.MustCompile(processPolicy.GetName())
+			}
+			if processPolicy.GetArgs() != "" {
+				regexp.MustCompile(processPolicy.GetArgs())
+			}
+		}
+	}
 }

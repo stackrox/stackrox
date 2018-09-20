@@ -50,7 +50,7 @@ func addDefaults(store Store) {
 	}
 
 	// Preload the default policies.
-	policies, err := defaults.Policies()
+	policies, err := defaults.Policies(false)
 	if err != nil {
 		panic(err)
 	}
