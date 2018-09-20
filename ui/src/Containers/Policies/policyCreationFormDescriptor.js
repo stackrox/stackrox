@@ -275,7 +275,7 @@ const policyConfigurationDescriptor = [
     },
     {
         label: 'Image is NOT Scanned',
-        jsonpath: 'fields.scanExists',
+        jsonpath: 'fields.noScanExists',
         type: 'select',
         options: [{ label: 'True', value: true }],
         required: false,

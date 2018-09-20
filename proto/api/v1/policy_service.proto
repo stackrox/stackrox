@@ -156,8 +156,10 @@ message PolicyFields {
     oneof set_scan_age_days {
         int64 scan_age_days             = 7;
     }
-    oneof set_scan_exists {
-        bool scan_exists                = 8;
+
+    // Whether to alert if no scan exists for an image.
+    oneof set_no_scan_exists {
+        bool no_scan_exists              = 8;
     }
 
     KeyValuePolicy env                   = 9;
