@@ -99,6 +99,9 @@ function* pollBenchmarkScanResults({ params: benchmark }) {
 
 function* filterDashboardPageBySearch() {
     const searchOptions = yield select(selectors.getDashboardSearchOptions);
+    if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
+        return;
+    }
     const filters = {
         query: searchOptionsToQuery(searchOptions)
     };

@@ -131,6 +131,9 @@ function* sendWhitelistDeployment({ params }) {
 
 function* filterViolationsPageBySearch() {
     const searchOptions = yield select(selectors.getAlertsSearchOptions);
+    if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
+        return;
+    }
     const filters = {
         query: searchOptionsToQuery(searchOptions)
     };
@@ -139,6 +142,9 @@ function* filterViolationsPageBySearch() {
 
 function* filterDashboardPageBySearch() {
     const searchOptions = yield select(selectors.getDashboardSearchOptions);
+    if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
+        return;
+    }
     const filters = {
         query: searchOptionsToQuery(searchOptions)
     };

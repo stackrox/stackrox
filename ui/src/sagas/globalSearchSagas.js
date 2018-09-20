@@ -15,6 +15,9 @@ import { toast } from 'react-toastify';
 export function* getGlobalSearchResults() {
     try {
         const searchOptions = yield select(selectors.getGlobalSearchOptions);
+        if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
+            return;
+        }
         const category = yield select(selectors.getGlobalSearchCategory);
         const filters = {
             query: searchOptionsToQuery(searchOptions)

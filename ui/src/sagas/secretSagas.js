@@ -26,6 +26,9 @@ export function* getSecret(id) {
 
 function* filterSecretsPageBySearch() {
     const options = yield select(selectors.getSecretsSearchOptions);
+    if (options.length && options[options.length - 1].type) {
+        return;
+    }
     yield fork(getSecrets, { options });
 }
 

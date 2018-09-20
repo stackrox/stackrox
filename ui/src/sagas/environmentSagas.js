@@ -99,6 +99,9 @@ function* filterEnvironmentPageBySearch() {
     const searchOptions = yield select(selectors.getEnvironmentSearchOptions);
     const yamlFile = yield select(selectors.getYamlFile);
     const simulatorMode = yield select(selectors.getSimulatorMode);
+    if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
+        return;
+    }
     const filters = {
         query: searchOptionsToQuery(searchOptions)
     };

@@ -40,6 +40,9 @@ export function* getPolicyCategories() {
 
 export function* filterPoliciesPageBySearch() {
     const searchOptions = yield select(selectors.getPoliciesSearchOptions);
+    if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
+        return;
+    }
     const filters = {
         query: searchOptionsToQuery(searchOptions)
     };

@@ -27,16 +27,25 @@ export function* getDeployment(id) {
 
 function* filterDashboardPageBySearch() {
     const options = yield select(selectors.getDashboardSearchOptions);
+    if (options.length && options[options.length - 1].type) {
+        return;
+    }
     yield fork(getDeployments, { options });
 }
 
 function* filterPoliciesPageBySearch() {
     const options = yield select(selectors.getPoliciesSearchOptions);
+    if (options.length && options[options.length - 1].type) {
+        return;
+    }
     yield fork(getDeployments, { options });
 }
 
 function* filterRiskPageBySearch() {
     const options = yield select(selectors.getDeploymentsSearchOptions);
+    if (options.length && options[options.length - 1].type) {
+        return;
+    }
     yield fork(getDeployments, { options });
 }
 
