@@ -21,6 +21,6 @@ users:
 - system:serviceaccount:{{.K8sConfig.Namespace}}:central
 volumes:
 - '*'
-  {{if .HostPath -}}
+{{if .HostPath -}}
 allowHostDirVolumePlugin: true
-  {{- end}}
+{{- end}}
