@@ -24,6 +24,7 @@ import SearchInput from 'Components/SearchInput';
 import { severityLabels } from 'messages/common';
 import { sortSeverity } from 'sorters/sorters';
 import PolicyCreationWizard from 'Containers/Policies/PolicyCreationWizard';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 const getSeverityClassName = severity => {
     switch (severity) {
@@ -286,6 +287,8 @@ class PoliciesPage extends Component {
     };
 
     renderTablePanel = () => {
+        if (!this.props.policies.length)
+            return <NoResultsMessage message="No results found. Please refine your search." />;
         const buttonsDisabled = this.props.wizardState.current !== '';
         const panelButtons = (
             <React.Fragment>
