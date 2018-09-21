@@ -96,6 +96,7 @@ const memoryResource = (label, policy, field) => ({
     default: false
 });
 
+// A descriptor for every option on the policy creation page.
 const policyDetailsFormDescriptor = [
     {
         label: 'Name',
@@ -116,6 +117,18 @@ const policyDetailsFormDescriptor = [
         ],
         placeholder: 'Select a severity level',
         required: true,
+        default: true
+    },
+    {
+        label: 'Lifecycle Stage',
+        jsonpath: 'lifecycleStage',
+        type: 'select',
+        options: [
+            { label: 'Build', value: 'BUILD_TIME' },
+            { label: 'Deploy', value: 'DEPLOY_TIME' }
+        ],
+        placeholder: 'Deploy',
+        required: false,
         default: true
     },
     {

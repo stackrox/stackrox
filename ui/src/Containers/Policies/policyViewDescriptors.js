@@ -32,6 +32,7 @@ const formatResources = resource => {
     return output.join(', ');
 };
 
+// JSON value name mapped to formatting for description page.
 const fieldsMap = {
     id: {
         label: 'Id',
@@ -40,6 +41,17 @@ const fieldsMap = {
     name: {
         label: 'Name',
         formatValue: d => d
+    },
+    lifecycleStage: {
+        label: 'Lifecycle Stage',
+        formatValue: d => {
+            switch (d) {
+                case 'BUILD_TIME':
+                    return 'Build';
+                default:
+                    return 'Deploy';
+            }
+        }
     },
     severity: {
         label: 'Severity',
