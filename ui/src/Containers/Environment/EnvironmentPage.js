@@ -258,7 +258,7 @@ class EnvironmentPage extends Component {
 
     renderNodesUpdateButton = () => {
         const nodeUpdatesCount = this.getNodeUpdates();
-        if (nodeUpdatesCount !== 'NaN' || nodeUpdatesCount <= 0) return null;
+        if (Number.isNaN(nodeUpdatesCount) || nodeUpdatesCount <= 0) return null;
         return (
             <button
                 className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-500 hover:bg-primary-400 rounded-sm text-sm text-white"
