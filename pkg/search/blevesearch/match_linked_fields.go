@@ -120,7 +120,7 @@ func matchAllFieldsQuery(index bleve.Index, category v1.SearchCategory, fieldsAn
 		}
 	}
 	conjunction := bleve.NewConjunctionQuery(mfQs...)
-	searchResult, err := runBleveQuery(conjunction, index, highlightCtx)
+	searchResult, err := runBleveQuery(conjunction, index, highlightCtx, true)
 	if err != nil {
 		return nil, fmt.Errorf("running sub query for category %s, fieldsAndValues: %+v: %s", category, fieldsAndValues, err)
 	}

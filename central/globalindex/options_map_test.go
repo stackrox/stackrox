@@ -27,14 +27,14 @@ func assertElementSatisfiesSearchDataType(t *testing.T, obj interface{}, searchD
 	case v1.SearchDataType_SEARCH_BOOL:
 		assertKindsEqual(t, reflect.Bool, kind)
 	case v1.SearchDataType_SEARCH_NUMERIC:
-		// All numeric fields we index happen to be float32s right now.
-		// Update this check to cover more types if that changes.
-		assertKindsEqual(t, reflect.Float32, kind)
+		if kind != reflect.Float32 && kind != reflect.Int32 {
+			t.Errorf("Expected kind to be int32 or float32, but was %s", kind)
+		}
 	case v1.SearchDataType_SEARCH_STRING:
 		assertKindsEqual(t, reflect.String, kind)
 	case v1.SearchDataType_SEARCH_DATETIME:
 		assertKindsEqual(t, reflect.Int64, kind)
-	// These two are enum types which marshal to int32s.
+	// The following are enum types which marshal to int32s.
 	// We also explicitly expect them to be the enum types.
 	case v1.SearchDataType_SEARCH_ENFORCEMENT:
 		assertKindsEqual(t, reflect.Int32, kind)

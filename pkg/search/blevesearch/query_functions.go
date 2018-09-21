@@ -13,7 +13,6 @@ import (
 
 const (
 	negationPrefix = "!"
-	nullString     = "-"
 )
 
 var datatypeToQueryFunc = map[v1.SearchDataType]func(v1.SearchCategory, string, string) (query.Query, error){
@@ -35,8 +34,12 @@ func getWildcardQuery(field string) *query.WildcardQuery {
 }
 
 func matchFieldQuery(category v1.SearchCategory, searchField *v1.SearchField, value string) (query.Query, error) {
+	// Special case: wildcard
+	if value == pkgSearch.WildcardString {
+		return getWildcardQuery(searchField.GetFieldPath()), nil
+	}
 	// Special case: null
-	if value == nullString {
+	if value == pkgSearch.NullString {
 		bq := bleve.NewBooleanQuery()
 		bq.AddMustNot(getWildcardQuery(searchField.GetFieldPath()))
 		bq.AddMust(typeQuery(category))

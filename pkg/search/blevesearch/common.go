@@ -3,6 +3,7 @@ package blevesearch
 import (
 	"fmt"
 	"math"
+	"strconv"
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search"
@@ -67,6 +68,8 @@ func getValueFromField(val interface{}) string {
 			return fmt.Sprintf("%d", int(i))
 		}
 		return fmt.Sprintf("%.2f", val)
+	case bool:
+		return strconv.FormatBool(val)
 	default:
 		logger.Errorf("Unknown type field from index: %T", val)
 	}
@@ -232,10 +235,11 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 	return runQuery(bleveQuery, index, highlightContext)
 }
 
-func runBleveQuery(query query.Query, index bleve.Index, highlightCtx highlightContext, fields ...string) (*bleve.SearchResult, error) {
+func runBleveQuery(query query.Query, index bleve.Index, highlightCtx highlightContext, includeLocations bool, fields ...string) (*bleve.SearchResult, error) {
 	searchRequest := bleve.NewSearchRequest(query)
 	// Initial size is 10 which seems small
 	searchRequest.Size = maxSearchResponses
+	searchRequest.IncludeLocations = includeLocations
 
 	if len(fields) > 0 {
 		searchRequest.Fields = fields
@@ -247,7 +251,7 @@ func runBleveQuery(query query.Query, index bleve.Index, highlightCtx highlightC
 
 // runQuery runs the actual query and then collapses the results into a simpler format
 func runQuery(query query.Query, index bleve.Index, highlightCtx highlightContext, fields ...string) ([]searchPkg.Result, error) {
-	searchResult, err := runBleveQuery(query, index, highlightCtx, fields...)
+	searchResult, err := runBleveQuery(query, index, highlightCtx, false, fields...)
 	if err != nil {
 		return nil, err
 	}

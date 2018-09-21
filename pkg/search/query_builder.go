@@ -12,7 +12,18 @@ import (
 const (
 	// RegexPrefix is the prefix for regex queries.
 	RegexPrefix = "r/"
+
+	// WildcardString represents the string we use for wildcard queries.
+	WildcardString = "*"
+
+	// NullString represents the string we use for querying for the absence of any value in a field.
+	NullString = "-"
 )
+
+// RegexQueryString returns the "regex" form of the query.
+func RegexQueryString(query string) string {
+	return fmt.Sprintf("%s%s", RegexPrefix, strings.ToLower(query))
+}
 
 type fieldValue struct {
 	l           FieldLabel
@@ -35,6 +46,15 @@ func NewQueryBuilder() *QueryBuilder {
 		fieldsToValues:    make(map[FieldLabel][]string),
 		highlightedFields: make(map[FieldLabel]struct{}),
 	}
+}
+
+// AddLinkedRegexesHighlighted adds linked regexes.
+func (qb *QueryBuilder) AddLinkedRegexesHighlighted(fields []FieldLabel, values []string) *QueryBuilder {
+	regexValues := make([]string, len(values))
+	for i, value := range values {
+		regexValues[i] = RegexQueryString(value)
+	}
+	return qb.AddLinkedFieldsHighlighted(fields, regexValues)
 }
 
 // AddLinkedFields adds a bunch of fields and values where the matches must be in corresponding places in both fields.
@@ -88,6 +108,11 @@ func (qb *QueryBuilder) AddStringsHighlighted(k FieldLabel, v ...string) *QueryB
 	return qb.AddStrings(k, v...).MarkHighlighted(k)
 }
 
+// AddNullField adds a very for documents that don't contain the specified field.
+func (qb *QueryBuilder) AddNullField(k FieldLabel) *QueryBuilder {
+	return qb.AddStrings(k, NullString)
+}
+
 // AddStrings adds a key value pair to the query.
 func (qb *QueryBuilder) AddStrings(k FieldLabel, v ...string) *QueryBuilder {
 	qb.fieldsToValues[k] = append(qb.fieldsToValues[k], v...)
@@ -102,9 +127,14 @@ func (qb *QueryBuilder) AddRegexesHighlighted(k FieldLabel, regexes ...string) *
 // AddRegexes adds regexes to match on the field.
 func (qb *QueryBuilder) AddRegexes(k FieldLabel, regexes ...string) *QueryBuilder {
 	for _, r := range regexes {
-		qb.fieldsToValues[k] = append(qb.fieldsToValues[k], fmt.Sprintf("%s%s", RegexPrefix, r))
+		qb.fieldsToValues[k] = append(qb.fieldsToValues[k], RegexQueryString(r))
 	}
 	return qb
+}
+
+// AddBoolsHighlighted is a convenience wrapper to AddBools and MarkHighlighted.
+func (qb *QueryBuilder) AddBoolsHighlighted(k FieldLabel, bools ...bool) *QueryBuilder {
+	return qb.AddBools(k, bools...).MarkHighlighted(k)
 }
 
 // AddBools adds a string key and a bool value pair.
@@ -113,6 +143,7 @@ func (qb *QueryBuilder) AddBools(k FieldLabel, v ...bool) *QueryBuilder {
 	for _, b := range v {
 		bools = append(bools, strconv.FormatBool(b))
 	}
+
 	qb.fieldsToValues[k] = append(qb.fieldsToValues[k], bools...)
 	return qb
 }

@@ -9,64 +9,90 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-type regexFieldQueryBuilder struct {
-	fieldLabel         search.FieldLabel
-	fieldHumanName     string
-	retrieveFieldValue func(*v1.PolicyFields) string
-	allowSubstrings    bool
+// A RegexField represents the information required to match a regex-based policy field.
+type RegexField struct {
+	FieldLabel         search.FieldLabel
+	FieldHumanName     string
+	AllowSubstrings    bool
+	RetrieveFieldValue func(*v1.PolicyFields) string
 }
 
-func (c *regexFieldQueryBuilder) Name() string {
-	return fmt.Sprintf("query builder for %s", c.fieldHumanName)
+// A RegexQueryBuilder builds a policy query builder from a set of linked regex fields.
+type RegexQueryBuilder struct {
+	RegexFields []RegexField
 }
 
-func (c *regexFieldQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
-	policyVal := c.retrieveFieldValue(fields)
-	if policyVal == "" {
+// Name implements the PolicyQueryBuilder interface.
+func (r RegexQueryBuilder) Name() string {
+	return fmt.Sprintf("query builder for %+v", r.RegexFields)
+}
+
+// Query implements the PolicyQueryBuilder interface.
+func (r RegexQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
+	type presentFieldInfo struct {
+		policyVal      string
+		searchField    *v1.SearchField
+		fieldHumanName string
+	}
+	var presentFieldValues []presentFieldInfo
+	var fieldLabels []search.FieldLabel
+	var fieldValues []string
+
+	for _, field := range r.RegexFields {
+		policyVal := field.RetrieveFieldValue(fields)
+		if policyVal == "" {
+			continue
+		}
+		var searchField *v1.SearchField
+		searchField, err = getSearchField(field.FieldLabel, optionsMap)
+		if err != nil {
+			err = fmt.Errorf("%s: %s", r.Name(), err)
+			return
+		}
+
+		actualQueriedVal := policyVal
+		// If it's a string field, then make a regex query.
+		if searchField.GetType() == v1.SearchDataType_SEARCH_STRING {
+			if field.AllowSubstrings {
+				actualQueriedVal = fmt.Sprintf(".*%s.*", policyVal)
+			}
+			// Make sure the regex compiles (Bleve will just fail silently.)
+			_, err = regexp.Compile(actualQueriedVal)
+			if err != nil {
+				err = fmt.Errorf("'%s' is an invalid regex: %s", actualQueriedVal, err)
+				return
+			}
+
+			actualQueriedVal = search.RegexQueryString(actualQueriedVal)
+		}
+
+		presentFieldValues = append(presentFieldValues, presentFieldInfo{
+			policyVal:      policyVal,
+			searchField:    searchField,
+			fieldHumanName: field.FieldHumanName,
+		})
+		fieldLabels = append(fieldLabels, field.FieldLabel)
+		fieldValues = append(fieldValues, actualQueriedVal)
+	}
+	if len(presentFieldValues) == 0 {
 		return
 	}
 
-	searchField, err := getSearchField(c.fieldLabel, optionsMap)
-	if err != nil {
-		err = fmt.Errorf("%s: %s", c.Name(), err)
+	if len(presentFieldValues) == 1 {
+		q = search.NewQueryBuilder().AddStringsHighlighted(fieldLabels[0], fieldValues[0]).ProtoQuery()
+	} else {
+		q = search.NewQueryBuilder().AddLinkedFieldsHighlighted(fieldLabels, fieldValues).ProtoQuery()
+	}
+
+	v = func(result search.Result) (violations []*v1.Alert_Violation) {
+		for _, presentFieldValue := range presentFieldValues {
+			for _, match := range result.Matches[presentFieldValue.searchField.GetFieldPath()] {
+				violations = append(violations, &v1.Alert_Violation{
+					Message: fmt.Sprintf("%s '%s' matched %s", presentFieldValue.fieldHumanName, match, presentFieldValue.policyVal),
+				})
+			}
+		}
 		return
 	}
-
-	actualPolicyVal := policyVal
-	if c.allowSubstrings {
-		actualPolicyVal = fmt.Sprintf(".*%s.*", policyVal)
-	}
-
-	// Make sure the regex compiles (Bleve will just fail silently.)
-	_, err = regexp.Compile(actualPolicyVal)
-	if err != nil {
-		err = fmt.Errorf("'%s' is an invalid regex: %s", actualPolicyVal, err)
-		return
-	}
-
-	q = search.NewQueryBuilder().AddRegexesHighlighted(c.fieldLabel, actualPolicyVal).ProtoQuery()
-	v = violationPrinterForField(searchField.GetFieldPath(), func(match string) string {
-		return fmt.Sprintf("%s '%s' matched %s", c.fieldHumanName, match, policyVal)
-	})
-
 	return
-}
-
-// NewRegexQueryBuilder returns a query builder that constructs a regex query for the given field.
-func NewRegexQueryBuilder(fieldLabel search.FieldLabel, fieldHumanName string, retrieveFieldValue func(*v1.PolicyFields) string) searchbasedpolicies.PolicyQueryBuilder {
-	return newRegexQueryBuilder(fieldLabel, fieldHumanName, retrieveFieldValue, false)
-}
-
-// NewRegexQueryBuilderWithSubstrings returns a query builder that constructs a regex query for the given field which also allows substrings.
-func NewRegexQueryBuilderWithSubstrings(fieldLabel search.FieldLabel, fieldHumanName string, retrieveFieldValue func(*v1.PolicyFields) string) searchbasedpolicies.PolicyQueryBuilder {
-	return newRegexQueryBuilder(fieldLabel, fieldHumanName, retrieveFieldValue, true)
-}
-
-func newRegexQueryBuilder(fieldLabel search.FieldLabel, fieldHumanName string, retrieveFieldValue func(*v1.PolicyFields) string, allowSubstrings bool) searchbasedpolicies.PolicyQueryBuilder {
-	return &regexFieldQueryBuilder{
-		fieldLabel:         fieldLabel,
-		fieldHumanName:     fieldHumanName,
-		retrieveFieldValue: retrieveFieldValue,
-		allowSubstrings:    allowSubstrings,
-	}
 }

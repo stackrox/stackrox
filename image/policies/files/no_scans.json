@@ -1,0 +1,12 @@
+{
+  "name": "Images with no scans",
+  "description": "Alert on deployments with images that have not been scanned",
+  "severity": "MEDIUM_SEVERITY",
+  "categories": ["Vuln Management"],
+  "fields": {
+    "noScanExists": true
+  },
+  "rationale": "Without a scan, there will be no vulnerability information for this image",
+  "remediation": "Configure the appropriate registry and scanner integrations so that StackRox can obtain scans for your images.",
+  "disabled": true
+}

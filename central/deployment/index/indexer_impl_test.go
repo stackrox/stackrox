@@ -174,7 +174,22 @@ func (suite *DeploymentIndexTestSuite) TestHighlighting() {
 func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	deployment := fixtures.GetDeployment()
 	suite.NoError(suite.indexer.AddDeployment(deployment))
-	suite.NoError(suite.imageIndexer.AddImage(fixtures.GetImage()))
+	for _, container := range deployment.GetContainers() {
+		if container.GetImage() != nil {
+			suite.NoError(suite.imageIndexer.AddImage(container.GetImage()))
+		}
+	}
+
+	containerPort22Dep := &v1.Deployment{
+		Id: "CONTAINERPORT22DEP",
+		Containers: []*v1.Container{
+			{Ports: []*v1.PortConfig{
+				{Protocol: "tcp", ContainerPort: 22},
+				{Protocol: "udp", ContainerPort: 4125},
+			}},
+		},
+	}
+	suite.NoError(suite.indexer.AddDeployment(containerPort22Dep))
 
 	img110 := &v1.Image{Name: &v1.ImageName{Sha: "SHA110", Tag: "1.10"}}
 	imgNginx := &v1.Image{Name: &v1.ImageName{Sha: "SHANGINX", Remote: "nginx"}}
@@ -219,7 +234,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 		},
 		{
 			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nginx"},
-			expectedIDs: []string{notNginx110Dep.GetId(), nginx110Dep.GetId()},
+			expectedIDs: []string{notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId()},
 		},
 		{
 			fieldValues: map[search.FieldLabel]string{search.Label: "com.docker.stack.namespace=prevent"},
@@ -235,7 +250,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 		},
 		{
 			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch"},
-			expectedIDs: []string{deployment.GetId(), notNginx110Dep.GetId(), nginx110Dep.GetId()},
+			expectedIDs: []string{deployment.GetId(), notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId()},
 		},
 		{
 			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch", search.ImageRegistry: "stackrox"},
@@ -248,6 +263,14 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 		{
 			fieldValues: map[search.FieldLabel]string{search.ProcessName: fixtures.GetProcessIndicator().GetSignal().GetName()},
 			expectedIDs: []string{deployment.GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.Port: "22"},
+			expectedIDs: []string{containerPort22Dep.GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.Port: "22", search.PortProtocol: "tcp"},
+			expectedIDs: []string{containerPort22Dep.GetId()},
 		},
 		{
 			fieldValues: map[search.FieldLabel]string{search.DeploymentID: deployment.GetId()},
@@ -304,6 +327,46 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			expectedIDs: []string{deployment.GetId()},
 		},
 		{
+			fieldValues: map[search.FieldLabel]string{search.DockerfileInstructionKeyword: "r/.*"},
+			expectedIDs: []string{deployment.GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.DockerfileInstructionKeyword: search.RegexQueryString("CMD")},
+			expectedIDs: []string{deployment.GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.DockerfileInstructionKeyword: "r/cmd"},
+			expectedIDs: []string{deployment.GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.DockerfileInstructionValue: "r/.*"},
+			expectedIDs: []string{deployment.GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.ImageTag: search.WildcardString},
+			expectedIDs: []string{nginx110Dep.GetId(), deployment.GetId(), notNginx110Dep.GetId()},
+		},
+		{
+			linkedFields:      []search.FieldLabel{search.Port, search.PortProtocol},
+			linkedFieldValues: []string{"22", "udp"},
+			expectedIDs:       []string{},
+		},
+		{
+			linkedFields:      []search.FieldLabel{search.Port, search.PortProtocol},
+			linkedFieldValues: []string{"22", "tcp"},
+			expectedIDs:       []string{containerPort22Dep.GetId()},
+		},
+		{
+			linkedFields:          []search.FieldLabel{search.Port, search.PortProtocol},
+			linkedFieldValues:     []string{"22", "tcp"},
+			highlightLinkedFields: true,
+			expectedIDs:           []string{containerPort22Dep.GetId()},
+			expectedMatches: map[string][]string{
+				"deployment.containers.ports.container_port": {"22"},
+				"deployment.containers.ports.protocol":       {"tcp"},
+			},
+		},
+		{
 			linkedFields:      []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
 			linkedFieldValues: []string{"ADD", "443/tcp"},
 			expectedIDs:       []string{},
@@ -327,6 +390,37 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			linkedFields:      []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
 			linkedFieldValues: []string{"CMD", "["},
 			expectedIDs:       []string{deployment.GetId()},
+		},
+		{
+			linkedFields:      []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
+			linkedFieldValues: []string{"cmd", "["},
+			expectedIDs:       []string{deployment.GetId()},
+		},
+		{
+			linkedFields:      []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
+			linkedFieldValues: []string{"r/cmd", "["},
+			expectedIDs:       []string{deployment.GetId()},
+		},
+		{
+			linkedFields:      []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
+			linkedFieldValues: []string{"r/.*", "r/.*"},
+			expectedIDs:       []string{deployment.GetId()},
+		},
+		{
+			linkedFields:          []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
+			linkedFieldValues:     []string{"r/.*", "r/.*"},
+			highlightLinkedFields: true,
+			expectedIDs:           []string{deployment.GetId()},
+			expectedMatches: func() map[string][]string {
+				m := make(map[string][]string)
+				for _, container := range deployment.GetContainers() {
+					for _, layer := range container.GetImage().GetMetadata().GetLayers() {
+						m["image.metadata.layers.instruction"] = append(m["image.metadata.layers.instruction"], layer.GetInstruction())
+						m["image.metadata.layers.value"] = append(m["image.metadata.layers.value"], layer.GetValue())
+					}
+				}
+				return m
+			}(),
 		},
 		{
 			linkedFields:          []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},

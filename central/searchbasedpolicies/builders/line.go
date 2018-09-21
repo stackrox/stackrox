@@ -27,18 +27,18 @@ func (c *dockerFileLineFieldQueryBuilder) Query(fields *v1.PolicyFields, options
 	if err != nil {
 		err = fmt.Errorf("%s: %s", c.Name(), err)
 	}
-	valSearchField, err := getSearchField(search.DockerfileInstructionValue, optionsMap)
-	if err != nil {
-		err = fmt.Errorf("%s: %s", c.Name(), err)
-	}
 
 	if _, ok := types.DockerfileInstructionSet[lineRule.GetInstruction()]; !ok {
 		err = fmt.Errorf("%v is not a valid dockerfile instruction", lineRule.GetInstruction())
 		return
 	}
 
+	// If no value, then just query for the instruction.
 	if lineRule.GetValue() == "" {
-		err = fmt.Errorf("no value defined for dockerfile instruction: %+v", lineRule)
+		q = search.NewQueryBuilder().AddStringsHighlighted(search.DockerfileInstructionKeyword, lineRule.GetInstruction()).ProtoQuery()
+		v = violationPrinterForField(instSearchField.GetFieldPath(), func(match string) string {
+			return fmt.Sprintf("Dockerfile instruction %s found", match)
+		})
 		return
 	}
 
@@ -48,10 +48,14 @@ func (c *dockerFileLineFieldQueryBuilder) Query(fields *v1.PolicyFields, options
 		return
 	}
 
-	q = search.NewQueryBuilder().
-		AddStringsHighlighted(search.DockerfileInstructionKeyword, lineRule.GetInstruction()).
-		AddRegexesHighlighted(search.DockerfileInstructionValue, lineRule.GetValue()).
-		ProtoQuery()
+	valSearchField, err := getSearchField(search.DockerfileInstructionValue, optionsMap)
+	if err != nil {
+		err = fmt.Errorf("%s: %s", c.Name(), err)
+	}
+
+	q = search.NewQueryBuilder().AddLinkedFieldsHighlighted(
+		[]search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
+		[]string{lineRule.GetInstruction(), search.RegexQueryString(lineRule.GetValue())}).ProtoQuery()
 
 	v = func(result search.Result) []*v1.Alert_Violation {
 		instMatches := result.Matches[instSearchField.GetFieldPath()]

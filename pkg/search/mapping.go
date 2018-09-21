@@ -39,9 +39,19 @@ func NewMapField(category v1.SearchCategory, name string) *v1.SearchField {
 	return NewField(category, name, v1.SearchDataType_SEARCH_MAP, 0)
 }
 
+// NewStoredBoolField creates a new mapped field for boolean values we want to store.
+func NewStoredBoolField(category v1.SearchCategory, name string) *v1.SearchField {
+	return NewField(category, name, v1.SearchDataType_SEARCH_BOOL, OptionStore)
+}
+
 // NewBoolField creates a new mapped field for boolean values.
 func NewBoolField(category v1.SearchCategory, name string) *v1.SearchField {
 	return NewField(category, name, v1.SearchDataType_SEARCH_BOOL, 0)
+}
+
+// NewStoredNumericField creates a new mapped field for numeric values we want to store.
+func NewStoredNumericField(category v1.SearchCategory, name string) *v1.SearchField {
+	return NewField(category, name, v1.SearchDataType_SEARCH_NUMERIC, OptionStore)
 }
 
 // NewNumericField creates a new mapped field for numeric values.

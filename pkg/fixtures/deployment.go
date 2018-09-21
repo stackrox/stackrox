@@ -1,6 +1,9 @@
 package fixtures
 
-import "github.com/stackrox/rox/generated/api/v1"
+import (
+	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/api/v1"
+)
 
 // GetDeployment returns a Mock Deployment
 func GetDeployment() *v1.Deployment {
@@ -32,6 +35,7 @@ func GetDeployment() *v1.Deployment {
 						},
 					},
 					Scan: &v1.ImageScan{
+						ScanTime: types.TimestampNow(),
 						Components: []*v1.ImageScanComponent{
 							{
 								Name: "name",
