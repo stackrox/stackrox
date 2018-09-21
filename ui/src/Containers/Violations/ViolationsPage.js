@@ -11,6 +11,8 @@ import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import ReactTooltip from 'react-tooltip';
 
+import { severityLabels, lifecycleStageLabels } from 'messages/common';
+
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Table, {
     wrapClassName,
@@ -20,13 +22,6 @@ import Table, {
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import ViolationsPanel from './ViolationsPanel';
-
-const severityLabels = {
-    CRITICAL_SEVERITY: 'Critical',
-    HIGH_SEVERITY: 'High',
-    MEDIUM_SEVERITY: 'Medium',
-    LOW_SEVERITY: 'Low'
-};
 
 const getSeverityClassName = severityValue => {
     const severityClassMapping = {
@@ -95,21 +90,40 @@ class ViolationsPage extends Component {
                 Header: 'Policy',
                 accessor: 'policy.name',
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`
+                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+                Cell: ({ original }) => (
+                    <div data-tip data-for={`violation-policy-name-${original.policy.name}`}>
+                        <span className="border-b border-dashed leading-normal">
+                            {original.policy.name}
+                        </span>
+                        <ReactTooltip
+                            id={`violation-policy-name-${original.policy.name}`}
+                            type="dark"
+                            effect="solid"
+                        >
+                            {original.policy.description}
+                        </ReactTooltip>
+                    </div>
+                )
             },
             {
-                Header: 'Description',
-                accessor: 'policy.description',
+                Header: 'Severity',
+                accessor: 'policy.severity',
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`
+                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+                Cell: ({ value }) => {
+                    const severity = severityLabels[value];
+                    return <span className={getSeverityClassName(severity)}>{severity}</span>;
+                },
+                sortMethod: sortSeverity
             },
             {
                 Header: 'Categories',
                 accessor: 'policy.categories',
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                 className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-                Cell: ci =>
-                    ci.value.length > 1 ? (
+                Cell: ({ value }) =>
+                    value.length > 1 ? (
                         <div data-tip data-for="button-violation-categories">
                             Multiple
                             <ReactTooltip
@@ -117,30 +131,26 @@ class ViolationsPage extends Component {
                                 type="dark"
                                 effect="solid"
                             >
-                                {ci.value.join(' | ')}
+                                {value.join(' | ')}
                             </ReactTooltip>
                         </div>
                     ) : (
-                        ci.value[0]
+                        value[0]
                     )
             },
             {
-                Header: 'Severity',
-                accessor: 'policy.severity',
+                Header: 'Lifecycle',
+                accessor: 'policy.lifecycleStage',
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                 className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-                Cell: ci => {
-                    const severity = severityLabels[ci.value];
-                    return <span className={getSeverityClassName(severity)}>{severity}</span>;
-                },
-                sortMethod: sortSeverity
+                Cell: ({ value }) => lifecycleStageLabels[value]
             },
             {
                 Header: 'Time',
                 accessor: 'time',
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                 className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-                Cell: ci => dateFns.format(ci.value, dateTimeFormat),
+                Cell: ({ value }) => dateFns.format(value, dateTimeFormat),
                 sortMethod: sortDate
             }
         ];
