@@ -44,7 +44,7 @@ func (s *signalServer) PushSignals(stream sensorAPI.SignalService_PushSignalsSer
 }
 
 func boltDB(path string) (db *bolt.DB, err error) {
-	db, err = bolt.Open(path, 0666, nil)
+	db, err = bolt.Open(path, 0777, nil)
 	return db, err
 }
 
