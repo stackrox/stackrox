@@ -22,5 +22,7 @@ message SignalStreamMessage {
 
 // A Sensor service that allows Collector to push Signal messages
 service SignalService {
-    rpc PushSignals (stream SignalStreamMessage) returns (v1.Empty);
+    // Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
+    // send anything via this stream.
+    rpc PushSignals (stream SignalStreamMessage) returns (stream v1.Empty);
 }
