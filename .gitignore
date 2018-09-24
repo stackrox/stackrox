@@ -51,3 +51,6 @@ BUILD.bazel
 
 # Openshift automation workspace artifacts
 /openshift/
+
+qa-tests-backend/bin/*
+qa-tests-backend/.project

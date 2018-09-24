@@ -116,6 +116,8 @@ export const networkGraphClusters = {
     OPENSHIFT_CLUSTER: true
 };
 
+if (process.env.NODE_ENV === 'development') networkGraphClusters.SWARM_CLUSTER = true;
+
 const selectedEnvironmentClusterId = (state = null, action) => {
     if (!state && action.type === clusterTypes.FETCH_CLUSTERS.SUCCESS) {
         const { cluster } = action.response.entities;

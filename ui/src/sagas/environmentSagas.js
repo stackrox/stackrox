@@ -1,6 +1,6 @@
 import { all, take, takeLatest, call, fork, put, select, cancel } from 'redux-saga/effects';
 import { delay } from 'redux-saga';
-import { environmentPath } from 'routePaths';
+import { environmentPath, networkPath } from 'routePaths';
 import * as service from 'services/EnvironmentService';
 import { fetchClusters } from 'services/ClustersService';
 import { actions, types } from 'reducers/environment';
@@ -153,6 +153,7 @@ function* watchSetYamlFile() {
 export default function* environment() {
     yield all([
         takeEveryLocation(environmentPath, loadEnvironmentPage),
+        takeEveryLocation(networkPath, loadEnvironmentPage),
         fork(watchEnvironmentSearchOptions),
         fork(watchFetchEnvironmentGraphRequest),
         fork(watchNetworkPoliciesRequest),

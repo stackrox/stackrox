@@ -9,6 +9,7 @@ import {
     mainPath,
     dashboardPath,
     environmentPath,
+    networkPath,
     violationsPath,
     compliancePath,
     integrationsPath,
@@ -24,6 +25,7 @@ import ProtectedRoute from 'Components/ProtectedRoute';
 import Notifications from 'Containers/Notifications';
 import DashboardPage from 'Containers/Dashboard/DashboardPage';
 import EnvironmentPage from 'Containers/Environment/EnvironmentPage';
+import NetworkPage from 'Containers/Network/NetworkPage';
 import IntegrationsPage from 'Containers/Integrations/IntegrationsPage';
 import ViolationsPage from 'Containers/Violations/ViolationsPage';
 import PoliciesPage from 'Containers/Policies/PoliciesPage';
@@ -59,6 +61,7 @@ class MainPage extends Component {
                 <Switch>
                     <ProtectedRoute path={dashboardPath} component={DashboardPage} />
                     <ProtectedRoute path={environmentPath} component={EnvironmentPage} />
+                    <ProtectedRoute path={networkPath} component={NetworkPage} />
                     <ProtectedRoute path={violationsPath} component={ViolationsPage} />
                     <ProtectedRoute path={compliancePath} component={CompliancePage} />
                     <ProtectedRoute path={integrationsPath} component={IntegrationsPage} />

@@ -52,7 +52,9 @@
     "reselect": "^3.0.1",
     "slick-carousel": "^1.8.1",
     "store": "^2.0.12",
-    "tailwindcss": "^0.3.0"
+    "tailwindcss": "^0.3.0",
+    "three": "^0.95.0",
+    "three-orbit-controls": "^82.1.0"
   },
   "scripts": {
     "start": "tailwind build ./src/app.css -c ./tailwind.js -o ./src/index.css && HTTPS=true NODE_PATH=src react-scripts start",
