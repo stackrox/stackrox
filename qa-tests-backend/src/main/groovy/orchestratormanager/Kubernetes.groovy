@@ -154,6 +154,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                             .labels(deployment.getLabels()))
                     .spec(new ExtensionsV1beta1DeploymentSpec()
                     .replicas(1)
+                    .minReadySeconds(10)
                     .template(new V1PodTemplateSpec()
                     .spec(v1PodSpec)
                     .metadata(new V1ObjectMeta()
