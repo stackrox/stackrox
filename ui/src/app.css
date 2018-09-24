@@ -113,6 +113,12 @@
 
 @tailwind preflight;
 
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+
 button:focus {
     outline: none;
 }
@@ -389,43 +395,43 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .btn {
-    @apply .flex .py-2 .px-2 .rounded-sm .font-400 .uppercase .text-center .text-sm .items-center .ml-2 .min-w-24 .justify-center .bg-white .border
+    @apply .flex .py-1 .px-1 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .ml-2 .min-w-24 .justify-center .bg-white .border-2
 }
 
 .btn-icon {
-    @apply .flex .py-2 .px-2 .rounded-sm .font-400 .uppercase .text-center .text-sm .items-center .ml-2 .justify-center .bg-white .border
+    @apply .flex .py-2 .px-2 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .ml-2 .justify-center .bg-white .border
 }
 
 .btn-success {
-    @apply .text-success-500 .border-success-400
+    @apply .text-success-600 .border-success-200
 }
 
 .btn-success:hover {
-    @apply .bg-success-400 .text-white
+    @apply .btn-success .bg-success-100
 }
 
 .btn-danger {
-    @apply .text-danger-500 .border-danger-400
+    @apply .text-danger-600 .border-danger-200
 }
 
 .btn-danger:hover {
-    @apply .bg-danger-400 .text-white
+    @apply .btn-danger .bg-danger-100
 }
 
 .btn-primary {
-    @apply .text-primary-500 .border-primary-400
+    @apply .text-primary-600 .border-primary-200
 }
 
 .btn-primary:hover {
-    @apply .bg-primary-400 .text-white
+    @apply .btn-primary .bg-primary-100
 }
 
 .btn-base {
-    @apply .text-base-500 .border-base-400
+    @apply .text-base-600 .border-base-200
 }
 
 .btn-base:hover {
-    @apply .bg-base-400 .text-white
+    @apply .btn-base .bg-base-100
 }
 
 /* Network Graph CSS Classes */

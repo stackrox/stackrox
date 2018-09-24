@@ -8,8 +8,8 @@ export const defaultHeaderClassName =
     'p-3 font-700 text-base-600 border-b border-base-300 hover:text-primary-600 cursor-pointer truncate select-none relative text-left border-r-0 shadow-none';
 export const defaultColumnClassName =
     'p-3 font-600 text-base-600 text-left border-r-0 cursor-pointer self-center';
-const pageSize = 20;
 export const wrapClassName = 'whitespace-normal overflow-visible';
+export const pageSize = 20;
 
 class Table extends Component {
     static propTypes = {
@@ -19,7 +19,8 @@ class Table extends Component {
         selectedRowId: PropTypes.string,
         idAttribute: PropTypes.string,
         noDataText: ReactTablePropTypes.noDataText,
-        setTableRef: PropTypes.func
+        setTableRef: PropTypes.func,
+        page: PropTypes.number.isRequired
     };
 
     static defaultProps = {
@@ -84,13 +85,15 @@ class Table extends Component {
                 getTrGroupProps={this.getTrGroupProps}
                 getTrProps={this.getTrProps}
                 defaultPageSize={pageSize}
-                className={`border-0 -highlight w-full ${rows.length > pageSize && 'h-full'}`}
-                showPagination={rows.length > pageSize}
+                className={`flex flex-1 overflow-auto border-0 -highlight w-full ${rows.length >
+                    pageSize && 'h-full'}`}
                 resizable={false}
                 sortable
                 defaultSortDesc={false}
                 showPageJump={false}
                 minRows={Math.min(this.props.rows.length, pageSize)}
+                page={this.props.page}
+                showPagination={false}
                 {...rest}
             />
         );

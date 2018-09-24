@@ -1,4 +1,5 @@
 const selectors = {
+    panelHeader: 'div[data-test-id="panel"]',
     searchBtn: 'button:contains("Search")',
     pageSearchSuggestions: 'div.Select-menu-outer',
     categoryTabs: '.tab',

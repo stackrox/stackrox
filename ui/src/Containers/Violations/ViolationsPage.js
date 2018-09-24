@@ -15,12 +15,15 @@ import { severityLabels, lifecycleStageLabels } from 'messages/common';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Table, {
+    pageSize,
     wrapClassName,
     defaultHeaderClassName,
     defaultColumnClassName
 } from 'Components/Table';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
+import Panel from 'Components/Panel';
+import TablePagination from 'Components/TablePagination';
 import ViolationsPanel from './ViolationsPanel';
 
 const getSeverityClassName = severityValue => {
@@ -54,6 +57,13 @@ class ViolationsPage extends Component {
         isViewFiltered: PropTypes.bool.isRequired
     };
 
+    constructor(props) {
+        super(props);
+        this.state = {
+            page: 0
+        };
+    }
+
     onSearch = searchOptions => {
         if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
             this.props.history.push('/main/violations');
@@ -64,6 +74,10 @@ class ViolationsPage extends Component {
         this.updateSelectedAlert();
     };
 
+    setTablePage = newPage => {
+        this.setState({ page: newPage });
+    };
+
     updateSelectedAlert = alert => {
         const urlSuffix = alert && alert.id ? `/${alert.id}` : '';
         this.props.history.push({
@@ -72,7 +86,24 @@ class ViolationsPage extends Component {
         });
     };
 
-    renderTable() {
+    renderPanel = () => {
+        const { length } = this.props.violations;
+        const totalPages = length === pageSize ? 1 : Math.floor(length / pageSize) + 1;
+        const paginationComponent = (
+            <TablePagination
+                page={this.state.page}
+                totalPages={totalPages}
+                setPage={this.setTablePage}
+            />
+        );
+        return (
+            <Panel header={`${length} Violations`} headerComponents={paginationComponent}>
+                <div className="w-full pl-3 pr-3">{this.renderTable()}</div>
+            </Panel>
+        );
+    };
+
+    renderTable = () => {
         const columns = [
             {
                 Header: 'Deployment',
@@ -165,9 +196,10 @@ class ViolationsPage extends Component {
                 onRowClick={this.updateSelectedAlert}
                 selectedRowId={id}
                 noDataText="No results found. Please refine your search."
+                page={this.state.page}
             />
         );
-    }
+    };
 
     renderSidePanel = () => {
         if (!this.props.match.params.alertId) return null;
@@ -198,8 +230,8 @@ class ViolationsPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full p-3 overflow-y-scroll bg-white rounded-sm shadow border-primary-300 bg-base-100">
-                            {this.renderTable()}
+                        <div className="w-full overflow-y-scroll bg-white rounded-sm shadow border-primary-300 bg-base-100">
+                            {this.renderPanel()}
                         </div>
                         {this.renderSidePanel()}
                     </div>

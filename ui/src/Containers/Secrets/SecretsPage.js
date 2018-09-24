@@ -4,13 +4,15 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 
-import { selectors } from 'reducers';
-import { actions as secretsActions } from 'reducers/secrets';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import Table from 'Components/Table';
+import Table, { pageSize } from 'Components/Table';
 import Panel from 'Components/Panel';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
+import TablePagination from 'Components/TablePagination';
+
+import { selectors } from 'reducers';
+import { actions as secretsActions } from 'reducers/secrets';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import SecretDetails, { secretTypeEnumMapping } from './SecretDetails';
@@ -36,10 +38,21 @@ class SecretPage extends Component {
         selectedSecret: null
     };
 
+    constructor(props) {
+        super(props);
+        this.state = {
+            page: 0
+        };
+    }
+
     onSearch = searchOptions => {
         if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
             this.props.history.push('/main/secrets');
         }
+    };
+
+    setTablePage = newPage => {
+        this.setState({ page: newPage });
     };
 
     updateSelectedSecret = secret => {
@@ -50,7 +63,24 @@ class SecretPage extends Component {
         });
     };
 
-    renderTable() {
+    renderPanel = () => {
+        const { length } = this.props.secrets;
+        const totalPages = length === pageSize ? 1 : Math.floor(length / pageSize) + 1;
+        const paginationComponent = (
+            <TablePagination
+                page={this.state.page}
+                totalPages={totalPages}
+                setPage={this.setTablePage}
+            />
+        );
+        return (
+            <Panel header={`${length} Secrets`} headerComponents={paginationComponent}>
+                <div className="w-full pl-3 pr-3">{this.renderTable()}</div>
+            </Panel>
+        );
+    };
+
+    renderTable = () => {
         const columns = [
             { accessor: 'name', Header: 'Name' },
             {
@@ -78,14 +108,14 @@ class SecretPage extends Component {
                 onRowClick={this.updateSelectedSecret}
                 selectedRowId={id}
                 noDataText="No results found. Please refine your search."
+                page={this.state.page}
             />
         );
-    }
+    };
 
     renderSidePanel = () => {
         const { selectedSecret } = this.props;
         if (!selectedSecret) return null;
-
         return (
             <div className="w-2/3">
                 <Panel header={selectedSecret.name} onClose={this.updateSelectedSecret}>
@@ -114,8 +144,8 @@ class SecretPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full pl-3 pt-3 pr-3 overflow-y-scroll bg-white rounded-sm shadow bg-base-100">
-                            {this.renderTable()}
+                        <div className="w-full overflow-y-scroll bg-white rounded-sm shadow bg-base-100">
+                            {this.renderPanel()}
                         </div>
                         {this.renderSidePanel()}
                     </div>

@@ -11,7 +11,8 @@ class CheckboxTable extends Component {
         selectedRowId: PropTypes.string,
         toggleRow: PropTypes.func.isRequired,
         toggleSelectAll: PropTypes.func.isRequired,
-        selection: PropTypes.arrayOf(PropTypes.string)
+        selection: PropTypes.arrayOf(PropTypes.string),
+        page: PropTypes.number.isRequired
     };
 
     static defaultProps = {

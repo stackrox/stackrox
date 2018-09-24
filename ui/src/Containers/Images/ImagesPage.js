@@ -12,9 +12,11 @@ import { actions as imagesActions, types } from 'reducers/images';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
-import Table from 'Components/Table';
+import Table, { pageSize } from 'Components/Table';
 import { sortNumber, sortDate } from 'sorters/sorters';
 import ImageDetails from 'Containers/Images/ImageDetails';
+import Panel from 'Components/Panel';
+import TablePagination from 'Components/TablePagination';
 
 class ImagesPage extends Component {
     static propTypes = {
@@ -37,18 +39,45 @@ class ImagesPage extends Component {
         selectedImage: null
     };
 
+    constructor(props) {
+        super(props);
+        this.state = {
+            page: 0
+        };
+    }
+
     onSearch = searchOptions => {
         if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
             this.props.history.push('/main/images');
         }
     };
 
+    setTablePage = newPage => {
+        this.setState({ page: newPage });
+    };
     updateSelectedImage = image => {
         const urlSuffix = image && image.sha ? `/${image.sha}` : '';
         this.props.history.push({
             pathname: `/main/images${urlSuffix}`,
             search: this.props.location.search
         });
+    };
+
+    renderPanel = () => {
+        const { length } = this.props.images;
+        const totalPages = length === pageSize ? 1 : Math.floor(length / pageSize) + 1;
+        const paginationComponent = (
+            <TablePagination
+                page={this.state.page}
+                totalPages={totalPages}
+                setPage={this.setTablePage}
+            />
+        );
+        return (
+            <Panel header={`${length} Images`} headerComponents={paginationComponent}>
+                <div className="w-full pl-3 pr-3">{this.renderTable()}</div>
+            </Panel>
+        );
     };
 
     renderTable() {
@@ -96,6 +125,7 @@ class ImagesPage extends Component {
                 idAttribute="sha"
                 selectedRowId={sha}
                 noDataText="No results found. Please refine your search."
+                page={this.state.page}
             />
         );
     }
@@ -125,8 +155,8 @@ class ImagesPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full pl-3 pt-3 pr-3 overflow-scroll bg-white rounded-sm bg-base-100">
-                            {this.renderTable()}
+                        <div className="w-full overflow-scroll bg-white rounded-sm bg-base-100">
+                            {this.renderPanel()}
                         </div>
                         {this.renderSidePanel()}
                     </div>

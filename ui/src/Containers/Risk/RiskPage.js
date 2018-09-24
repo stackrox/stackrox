@@ -8,13 +8,15 @@ import { selectors } from 'reducers';
 import { actions as deploymentsActions, types } from 'reducers/deployments';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
-import Table from 'Components/Table';
+import Table, { pageSize } from 'Components/Table';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';
 import Loader from 'Components/Loader';
 import TabContent from 'Components/TabContent';
+import TablePagination from 'Components/TablePagination';
+
 import { sortNumber } from 'sorters/sorters';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
@@ -45,10 +47,21 @@ class RiskPage extends Component {
         selectedDeployment: null
     };
 
+    constructor(props) {
+        super(props);
+        this.state = {
+            page: 0
+        };
+    }
+
     onSearch = searchOptions => {
         if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
             this.props.history.push('/main/risk');
         }
+    };
+
+    setTablePage = newPage => {
+        this.setState({ page: newPage });
     };
 
     updateSelectedDeployment = deployment => {
@@ -57,6 +70,23 @@ class RiskPage extends Component {
             pathname: `/main/risk${urlSuffix}`,
             search: this.props.location.search
         });
+    };
+
+    renderPanel = () => {
+        const { length } = this.props.deployments;
+        const totalPages = length === pageSize ? 1 : Math.floor(length / pageSize) + 1;
+        const paginationComponent = (
+            <TablePagination
+                page={this.state.page}
+                totalPages={totalPages}
+                setPage={this.setTablePage}
+            />
+        );
+        return (
+            <Panel header={`${length} Deployments`} headerComponents={paginationComponent}>
+                <div className="w-full pl-3 pr-3">{this.renderTable()}</div>
+            </Panel>
+        );
     };
 
     renderTable() {
@@ -97,6 +127,7 @@ class RiskPage extends Component {
                 onRowClick={this.updateSelectedDeployment}
                 selectedRowId={id}
                 noDataText="No results found. Please refine your search."
+                page={this.state.page}
             />
         );
     }
@@ -168,8 +199,8 @@ class RiskPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full pl-3 pt-3 pr-3 overflow-scroll bg-white rounded-sm shadow bg-base-100">
-                            {this.renderTable()}
+                        <div className="w-full overflow-scroll bg-white rounded-sm shadow bg-base-100">
+                            {this.renderPanel()}
                         </div>
                         {this.renderSidePanel()}
                     </div>

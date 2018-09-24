@@ -45,6 +45,9 @@ describe('Risk page', () => {
     it('should close the side panel on search filter', () => {
         cy.get(selectors.pageSearchInput).type('Cluster:{enter}', { force: true });
         cy.get(selectors.pageSearchInput).type('remote{enter}', { force: true });
-        cy.get('div[data-test-id="panel"]').should('not.be.visible');
+        cy
+            .get(selectors.panelHeader)
+            .eq(1)
+            .should('not.be.visible');
     });
 });

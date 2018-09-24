@@ -27,7 +27,10 @@ describe('Images page', () => {
 
     it('Should show image in panel header', () => {
         cy.get(imageSelectors.firstTableRow).click();
-        cy.get(imageSelectors.panelHeader).should('have.text', 'docker.io/library/nginx:latest');
+        cy
+            .get(imageSelectors.panelHeader)
+            .eq(1)
+            .should('have.text', 'docker.io/library/nginx:latest');
     });
 
     it('Should add the image id to the url when clicking a row', () => {
@@ -48,6 +51,9 @@ describe('Images page', () => {
     it('should close the side panel on search filter', () => {
         cy.get(selectors.pageSearchInput).type('Cluster:{enter}', { force: true });
         cy.get(selectors.pageSearchInput).type('remote{enter}', { force: true });
-        cy.get('div[data-test-id="panel"]').should('not.be.visible');
+        cy
+            .get(imageSelectors.panelHeader)
+            .eq(1)
+            .should('not.be.visible');
     });
 });

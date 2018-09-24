@@ -10,8 +10,8 @@ const Panel = props => (
         }`}
         data-test-id="panel"
     >
-        <div className="shadow-underline font-bold bg-primary-100">
-            <div className="flex flex-row w-full">
+        <div className="shadow-underline font-bold bg-white">
+            <div className="flex flex-row w-full py-1">
                 <div
                     className="flex flex-1 text-base-600 uppercase items-center tracking-wide py-2 px-4"
                     data-test-id="panel-header"
@@ -19,6 +19,9 @@ const Panel = props => (
                     {props.header}
                 </div>
                 <div className="flex items-center py-2 px-4">{props.buttons}</div>
+                {props.headerComponents && (
+                    <div className="flex items-center py-2 px-4">{props.headerComponents}</div>
+                )}
                 {props.onClose && (
                     <CloseButton
                         onClose={props.onClose}
@@ -39,7 +42,8 @@ Panel.propTypes = {
     children: PropTypes.node.isRequired,
     onClose: PropTypes.func,
     closeButtonClassName: PropTypes.string,
-    closeButtonIconColor: PropTypes.string
+    closeButtonIconColor: PropTypes.string,
+    headerComponents: PropTypes.element
 };
 
 Panel.defaultProps = {
@@ -48,7 +52,8 @@ Panel.defaultProps = {
     className: 'w-full',
     onClose: null,
     closeButtonClassName: '',
-    closeButtonIconColor: ''
+    closeButtonIconColor: '',
+    headerComponents: null
 };
 
 export default Panel;

@@ -13,13 +13,19 @@ import Dialog from 'Components/Dialog';
 import Loader from 'Components/Loader';
 import CheckboxTable from 'Components/CheckboxTable';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
-import { defaultColumnClassName, defaultHeaderClassName, wrapClassName } from 'Components/Table';
+import {
+    defaultColumnClassName,
+    defaultHeaderClassName,
+    wrapClassName,
+    pageSize
+} from 'Components/Table';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import { formatPolicyFields, getPolicyFormDataKeys } from 'Containers/Policies/policyFormUtils';
 import PolicyDetails from 'Containers/Policies/PolicyDetails';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
+import TablePagination from 'Components/TablePagination';
 
 import { severityLabels } from 'messages/common';
 import { sortSeverity } from 'sorters/sorters';
@@ -86,6 +92,7 @@ class PoliciesPage extends Component {
         super(props);
 
         this.state = {
+            page: 0,
             showConfirmationDialog: false,
             selection: []
         };
@@ -118,6 +125,10 @@ class PoliciesPage extends Component {
     };
 
     onBackToEditFields = () => this.props.setWizardState({ current: 'EDIT' });
+
+    setTablePage = newPage => {
+        this.setState({ page: newPage });
+    };
 
     getPolicyDryRun = () => {
         const dryRunOK = this.checkPreDryRun();
@@ -264,7 +275,7 @@ class PoliciesPage extends Component {
         return (
             <div
                 data-test-id="policies-table-container"
-                className={`w-full pl-3 pt-3 pr-3
+                className={`w-full pl-3 pr-3
                     ${
                         this.props.wizardState.current !== ''
                             ? 'pointer-events-none opacity-25'
@@ -281,15 +292,18 @@ class PoliciesPage extends Component {
                     selection={this.state.selection}
                     selectedRowId={id}
                     noDataText="No results found. Please refine your search."
+                    page={this.state.page}
                 />
             </div>
         );
     };
 
     renderTablePanel = () => {
-        if (!this.props.policies.length)
+        const { length } = this.props.policies;
+        if (!length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
         const buttonsDisabled = this.props.wizardState.current !== '';
+        const totalPages = length === pageSize ? 1 : Math.floor(length / pageSize) + 1;
         const panelButtons = (
             <React.Fragment>
                 <PanelButton
@@ -302,7 +316,7 @@ class PoliciesPage extends Component {
                 <PanelButton
                     icon={<Icon.FileText className="h-4 w-4" />}
                     text="Reassess Policies"
-                    className="btn btn-success"
+                    className="btn btn-base"
                     onClick={this.props.reassessPolicies}
                     tooltip="Manually enrich external data"
                     disabled={buttonsDisabled}
@@ -310,14 +324,25 @@ class PoliciesPage extends Component {
                 <PanelButton
                     icon={<Icon.Plus className="h-4 w-4" />}
                     text="Add"
-                    className="btn btn-success"
+                    className="btn btn-base"
                     onClick={this.addPolicy}
                     disabled={buttonsDisabled}
                 />
             </React.Fragment>
         );
+        const paginationComponent = (
+            <TablePagination
+                page={this.state.page}
+                totalPages={totalPages}
+                setPage={this.setTablePage}
+            />
+        );
         return (
-            <Panel header={`${this.props.policies.length} Policies`} buttons={panelButtons}>
+            <Panel
+                header={`${length} Policies`}
+                buttons={panelButtons}
+                headerComponents={paginationComponent}
+            >
                 {this.renderSelectTable()}
             </Panel>
         );
