@@ -25,6 +25,12 @@ CentralAPIFormField.propTypes = {
     placeholder: PropTypes.string.isRequired
 };
 
+const RuntimeSupportFormField = () => (
+    <FormField label="Runtime Support">
+        <ReduxCheckboxField name="runtimeSupport" />
+    </FormField>
+);
+
 const K8sFields = ({ metadata }) => (
     <React.Fragment>
         <CommonFields />
@@ -41,6 +47,7 @@ const K8sFields = ({ metadata }) => (
         <FormField label="Image Pull Secret Name" required>
             <ReduxTextField name="kubernetes.imagePullSecret" placeholder="stackrox" />
         </FormField>
+        <RuntimeSupportFormField />
     </React.Fragment>
 );
 
@@ -63,6 +70,7 @@ const OpenShiftFields = ({ metadata }) => (
         <FormField label="Namespace" required>
             <ReduxTextField name="openshift.params.namespace" placeholder="stackrox" />
         </FormField>
+        <RuntimeSupportFormField />
     </React.Fragment>
 );
 

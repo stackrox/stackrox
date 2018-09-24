@@ -39,6 +39,10 @@ const K8sDetails = ({ cluster }) => (
             label="Image Pull Secret Name"
             value={get(cluster, 'kubernetes.imagePullSecret', 'N/A')}
         />
+        <LabeledValue
+            label="Runtime Support"
+            value={get(cluster, 'kubernetes.runtimeSupport') ? 'Yes' : 'No'}
+        />
     </React.Fragment>
 );
 K8sDetails.propTypes = {
@@ -56,6 +60,10 @@ const OpenShiftDetails = ({ cluster }) => (
     <React.Fragment>
         <CommonDetails cluster={cluster} />
         <LabeledValue label="Namespace" value={get(cluster, 'openshift.params.namespace', 'N/A')} />
+        <LabeledValue
+            label="Runtime Support"
+            value={get(cluster, 'openshift.runtimeSupport') ? 'Yes' : 'No'}
+        />
     </React.Fragment>
 );
 OpenShiftDetails.propTypes = {

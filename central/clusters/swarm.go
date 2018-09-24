@@ -33,5 +33,6 @@ func (s *swarm) Render(c Wrap) ([]*v1.File, error) {
 		"swarm/sensor.yaml",
 		"swarm/delete-sensor.sh",
 	}
+
 	return renderFilenames(filenames, fields)
 }

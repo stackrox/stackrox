@@ -29,11 +29,11 @@ func (o *openshift) Render(c Wrap) ([]*v1.File, error) {
 
 	filenames := []string{
 		"kubernetes/sensor.yaml",
-
 		"openshift/delete-sensor.sh",
 		"openshift/sensor.sh",
 		"openshift/sensor-image-setup.sh",
 		"openshift/sensor-rbac.yaml",
 	}
+
 	return renderFilenames(filenames, fields)
 }
