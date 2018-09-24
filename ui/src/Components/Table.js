@@ -31,22 +31,8 @@ class Table extends Component {
         setTableRef: null
     };
 
-    getTbodyProps = state => {
-        const table = [...document.body.getElementsByClassName('rt-table')];
-        const tableBody = table[0] && table[0].lastChild;
-        const isTableOverflow = state.pageRows && state.pageRows.length < state.minRows;
-
-        if (tableBody && isTableOverflow) {
-            tableBody.scrollTop = 0;
-        }
-
-        return {
-            className: isTableOverflow ? 'overflow-hidden' : ''
-        };
-    };
-
     getTrGroupProps = (state, rowInfo) => ({
-        className: rowInfo && rowInfo.original ? '' : 'invisible'
+        className: rowInfo && rowInfo.original ? '' : 'hidden'
     });
 
     getTrProps = (state, rowInfo) => {
@@ -81,7 +67,6 @@ class Table extends Component {
                 ref={this.props.setTableRef}
                 data={rows}
                 columns={columns}
-                getTbodyProps={this.getTbodyProps}
                 getTrGroupProps={this.getTrGroupProps}
                 getTrProps={this.getTrProps}
                 defaultPageSize={pageSize}

@@ -8,7 +8,7 @@ export const selectors = {
     scanNowButton: 'button.rounded-sm.bg-success-500',
     checkRows: 'div.rt-tbody div.rt-tr-group',
     passColumns: 'div.rt-tbody div.rt-tr-group:first-child .rt-tr .rt-td:nth-child(3)',
-    hostColumns: '[data-test-id="panel"] div.rt-tbody div.rt-tr-group:not(.invisible)',
+    hostColumns: '[data-test-id="panel"] div.rt-tbody div.rt-tr-group:not(.hidden)',
     select: {
         day: 'select:first',
         time: 'select:last'

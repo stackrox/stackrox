@@ -477,7 +477,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .ReactTable .rt-tbody .rt-tr-group {
-    @apply .border-base-300
+    @apply .border-base-300 .flex-no-grow;
 }
 
 .ReactTable .-previous .-btn, .ReactTable .-next .-btn {
