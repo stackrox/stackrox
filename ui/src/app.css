@@ -394,6 +394,41 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     background-position: -2px -2px, -2px -2px, -2px -2px, -2px -2px;
 }
 
+/**
+  Outline for Simulation Mode
+ */
+.simulator-mode.success:before, .simulator-mode.error:before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.simulator-mode.error:before {
+    -webkit-box-shadow: inset 0px 0px 0px 4px #c65366;
+    -moz-box-shadow: inset 0px 0px 0px 4px #c65366;
+    box-shadow: inset 0px 0px 0px 4px #c65366;
+}
+
+.simulator-mode.success:before {
+    -webkit-box-shadow: inset 0px 0px 0px 4px #53c6a9;;
+    -moz-box-shadow: inset 0px 0px 0px 4px #53c6a9;
+    box-shadow: inset 0px 0px 0px 4px #53c6a9;
+
+}
+
+.network-policy-success-yaml {
+    height: calc(100% - 5rem);
+}
+
+.network-policy-error-yaml {
+    height: calc(100% - 7.25rem);
+}
+
 .btn {
     @apply .flex .py-1 .px-1 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .ml-2 .min-w-24 .justify-center .bg-white .border-2
 }

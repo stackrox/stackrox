@@ -1,5 +1,5 @@
 const featureFlag = {
-    networkPolicySimulator: false
+    networkPolicySimulator: true
 };
 
 export default featureFlag;

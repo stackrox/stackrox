@@ -17,7 +17,6 @@ import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';
 import Loader from 'Components/Loader';
 import TabContent from 'Components/TabContent';
-import featureFlag from 'utils/featureFlag';
 import DeploymentDetails from '../Risk/DeploymentDetails';
 import NetworkPoliciesDetails from './NetworkPoliciesDetails';
 import EnvironmentGraphLegend from './EnvironmentGraphLegend';
@@ -34,7 +33,6 @@ class EnvironmentPage extends Component {
         setSearchSuggestions: PropTypes.func.isRequired,
         setSelectedNodeId: PropTypes.func.isRequired,
         isViewFiltered: PropTypes.bool.isRequired,
-        fetchEnvironmentGraph: PropTypes.func.isRequired,
         fetchNetworkPolicies: PropTypes.func.isRequired,
         fetchDeployment: PropTypes.func.isRequired,
         fetchClusters: PropTypes.func.isRequired,
@@ -101,13 +99,11 @@ class EnvironmentPage extends Component {
     };
 
     onUpdateGraph = () => {
-        const { incrementEnvironmentGraphUpdateKey, fetchEnvironmentGraph } = this.props;
+        const { incrementEnvironmentGraphUpdateKey } = this.props;
         incrementEnvironmentGraphUpdateKey();
-        fetchEnvironmentGraph();
     };
 
     onYamlUpload = yamlFile => {
-        this.props.incrementEnvironmentGraphUpdateKey();
         this.props.setYamlFile(yamlFile);
     };
 
@@ -140,9 +136,10 @@ class EnvironmentPage extends Component {
 
     renderGraph = () => {
         const colorType = this.props.networkGraphState === 'ERROR' ? 'danger' : 'success';
-        const className = this.props.simulatorMode ? `border-4 border-${colorType}-500` : '';
+        const simulatorMode = this.props.simulatorMode ? 'simulator-mode' : '';
+        const networkGraphState = this.props.networkGraphState === 'ERROR' ? 'error' : 'success';
         return (
-            <div className={` w-full h-full border-box ${className}`}>
+            <div className={`${simulatorMode} ${networkGraphState} w-full h-full`}>
                 {this.props.simulatorMode && (
                     <div
                         className={`absolute pin-t pin-l bg-${colorType}-500 text-white uppercase p-2 z-10`}
@@ -182,7 +179,7 @@ class EnvironmentPage extends Component {
         );
 
         return (
-            <div className="w-2/5 h-full absolute pin-t pin-r z-20">
+            <div className="w-2/5 h-full absolute pin-r z-20">
                 <Panel header={deployment.name} onClose={this.closeSidePanel}>
                     {content}
                 </Panel>
@@ -206,7 +203,7 @@ class EnvironmentPage extends Component {
                     onSearch={this.onSearch}
                 />
                 {this.renderClustersSelect()}
-                {featureFlag.networkPolicySimulator && this.renderNetworkPolicySimulatorButton()}
+                {this.renderNetworkPolicySimulatorButton()}
             </PageHeader>
         );
     };
@@ -243,7 +240,7 @@ class EnvironmentPage extends Component {
     renderNetworkPolicySimulatorButton = () => {
         const className = this.props.simulatorMode
             ? 'bg-success-200 border-success-500 hover:border-success-600 hover:text-success-600 text-success-500'
-            : 'bg-base-100 hover:border-base-300 hover:text-base-500 border-base-200 text-base-400';
+            : 'bg-base-100 hover:border-base-300 hover:text-base-600 border-base-200 text-base-500';
         const iconColor = this.props.simulatorMode ? '#53c6a9' : '#d2d5ed';
         return (
             <button
@@ -340,7 +337,6 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = {
-    fetchEnvironmentGraph: environmentActions.fetchEnvironmentGraph.request,
     fetchNetworkPolicies: environmentActions.fetchNetworkPolicies.request,
     fetchDeployment: deploymentActions.fetchDeployment.request,
     fetchClusters: clusterActions.fetchClusters.request,

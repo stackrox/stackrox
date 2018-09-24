@@ -14,6 +14,7 @@ import { types as locationActionTypes } from 'reducers/routes';
 import { getDeployment } from './deploymentSagas';
 
 function* getNetworkGraph(filters, clusterId) {
+    yield put(actions.fetchEnvironmentGraph.request());
     try {
         const result = yield call(service.fetchEnvironmentGraph, filters, clusterId);
         yield put(actions.fetchEnvironmentGraph.success(result.response));
@@ -122,10 +123,6 @@ function* watchEnvironmentSearchOptions() {
     yield takeLatest(types.SET_SEARCH_OPTIONS, filterEnvironmentPageBySearch);
 }
 
-function* watchFetchEnvironmentGraphRequest() {
-    yield takeLatest(types.FETCH_ENVIRONMENT_GRAPH.REQUEST, filterEnvironmentPageBySearch);
-}
-
 function* watchFetchDeploymentRequest() {
     yield takeLatest(deploymentTypes.FETCH_DEPLOYMENT.REQUEST, getSelectedDeployment);
 }
@@ -155,7 +152,6 @@ export default function* environment() {
         takeEveryLocation(environmentPath, loadEnvironmentPage),
         takeEveryLocation(networkPath, loadEnvironmentPage),
         fork(watchEnvironmentSearchOptions),
-        fork(watchFetchEnvironmentGraphRequest),
         fork(watchNetworkPoliciesRequest),
         fork(watchFetchDeploymentRequest),
         fork(watchSelectEnvironmentCluster),

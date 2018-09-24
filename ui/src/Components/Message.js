@@ -13,12 +13,12 @@ function Message(props) {
 
     const icons = {
         warn: <Icon.AlertTriangle className="h-10 w-10" strokeWidth="1.5px" />,
-        error: <Icon.X className="h-10 w-10" strokeWidth="1.5px" />,
-        info: <Icon.Check className="h-10 w-10" strokeWidth="1.5px" />
+        error: <Icon.X className="h-4 w-4" strokeWidth="1.5px" />,
+        info: <Icon.Check className="h-4 w-4" strokeWidth="1.5px" />
     };
     return (
         <div className={`flex flex-row ${messageClasses[props.type]}`}>
-            <div className="h-16 w-16 self-center rounded-full flex items-center justify-center bg-white flex-no-shrink">
+            <div className="h-8 w-8 self-center rounded-full flex items-center justify-center bg-white flex-no-shrink">
                 {icons[props.type]}
             </div>
             <div className="flex pl-5 flex-1">{props.message}</div>

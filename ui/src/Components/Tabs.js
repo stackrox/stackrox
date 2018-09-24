@@ -85,7 +85,7 @@ class Tabs extends Component {
 
     render() {
         return (
-            <div className="w-full bg-white flex flex-col">
+            <div className="w-full h-full bg-white flex flex-col">
                 <div className={`flex shadow-underline font-bold ${this.props.className}`}>
                     {this.getHeaders()}
                 </div>

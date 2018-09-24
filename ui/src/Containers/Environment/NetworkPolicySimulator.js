@@ -96,10 +96,10 @@ class NetworkPolicySimulator extends Component {
                 className="flex flex-1 flex-col self-center uppercase p-5"
             >
                 <div
-                    className="h-16 w-16 self-center rounded-full flex items-center justify-center"
+                    className="h-12 w-12 self-center rounded-full flex items-center justify-center"
                     style={{ background: '#faecd2', color: '#b39357' }}
                 >
-                    <Icon.Upload className="h-10 w-10" strokeWidth="1.5px" />
+                    <Icon.Upload className="h-8 w-8" strokeWidth="1.5px" />
                 </div>
 
                 <div className="text-center pt-6">{message}</div>
@@ -131,7 +131,7 @@ class NetworkPolicySimulator extends Component {
 
         const uploadMessage = 'Simulate another set of policies';
         return (
-            <div className="flex flex-col flex-1">
+            <div className="flex flex-col w-full h-full space-between">
                 {this.state.showDragAndDrop && (
                     <div className="h-1/5">{this.renderDragAndDrop(uploadMessage)}</div>
                 )}
@@ -150,10 +150,13 @@ class NetworkPolicySimulator extends Component {
         const uploadMessage = 'Simulate another set of policies';
         return (
             <div className="flex flex-col flex-1">
-                <div className="h-1/5">{this.renderDragAndDrop(uploadMessage)}</div>
+                {this.state.showDragAndDrop && (
+                    <div className="h-1/5">{this.renderDragAndDrop(uploadMessage)}</div>
+                )}
                 <NetworkPolicySimulatorErrorView
                     yamlFile={this.props.yamlFile}
                     errorMessage={this.props.errorMessage}
+                    onCollapse={this.toggleDragAndDrop}
                 />
             </div>
         );
@@ -164,7 +167,7 @@ class NetworkPolicySimulator extends Component {
         const header = 'Network Policy Simulator';
         return (
             <Panel
-                className="border-r-0"
+                className="border-t-0 border-r-0 border-b-0"
                 header={header}
                 onClose={this.onClose}
                 closeButtonClassName={`bg-${colorType}-500 hover:bg-${colorType}-500`}
