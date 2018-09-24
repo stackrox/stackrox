@@ -41,7 +41,7 @@ message SensorEnforcement {
     EnforcementAction enforcement = 1;
 
     oneof resource {
-        DeploymentEnforcement       deployment         = 2;
+        DeploymentEnforcement        deployment         = 2;
         ContainerInstanceEnforcement container_instance = 3;
     }
 }

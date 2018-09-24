@@ -8,8 +8,7 @@ import (
 
 var (
 	once sync.Once
-
-	as Service
+	as   Service
 )
 
 // Singleton provides the instance of the Service interface to register.

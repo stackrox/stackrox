@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "stackrox.generated";
+
+import "google/api/annotations.proto";
+import "api/v1/empty.proto";
+import "api/v1/sensor_event_service.proto";
+
+
+package v1;
+
+message EnforcementRequest {
+    string cluster_id = 1;
+
+    SensorEnforcement enforcement = 2;
+}
+
+service EnforcementService {
+
+    rpc ApplyEnforcement(EnforcementRequest) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/enforce/{cluster_id}"
+            body: "*"
+        };
+    }
+
+}

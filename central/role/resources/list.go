@@ -22,6 +22,7 @@ var (
 	Deployment        = newResource("Deployment")
 	Detection         = newResource("Detection")
 	DNRIntegration    = newResource("DNRIntegration")
+	Enforcements      = newResource("Enforcements")
 	Image             = newResource("Image")
 	ImageIntegration  = newResource("ImageIntegration")
 	ImbuedLogs        = newResource("ImbuedLogs")

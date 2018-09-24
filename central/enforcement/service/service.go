@@ -1,24 +1,25 @@
 package service
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/sensorevent/service/streamer"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
-	"golang.org/x/net/context"
 )
 
-// Service is the GRPC service interface that provides the entry point for processing deployment events.
+// Service provides the interface to the microservice that applies enforcement.
 type Service interface {
 	grpc.APIService
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	RecordEvent(stream v1.SensorEventService_RecordEventServer) error
+	v1.EnforcementServiceServer
 }
 
-// New returns a new instance of service.
-func New(streamManager streamer.Manager) Service {
+// New returns a new Service instance using the given DB and index.
+func New(manager streamer.Manager) Service {
 	return &serviceImpl{
-		streamManager: streamManager,
+		manager: manager,
 	}
 }
