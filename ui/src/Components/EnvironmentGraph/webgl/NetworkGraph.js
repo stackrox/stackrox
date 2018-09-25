@@ -4,7 +4,12 @@ import PropTypes from 'prop-types';
 import * as THREE from 'three';
 import * as d3 from 'd3';
 import threeOrbitControls from 'three-orbit-controls';
-import { forceCluster, getLinksInSameNamespace } from 'utils/networkGraphUtils/networkGraphUtils';
+import {
+    forceCluster,
+    getLinksInSameNamespace,
+    intersectsNodes,
+    getTextTexture
+} from 'utils/networkGraphUtils/networkGraphUtils';
 import * as constants from 'utils/networkGraphUtils/networkGraphConstants';
 
 const OrbitControls = threeOrbitControls(THREE);
@@ -48,18 +53,25 @@ class NetworkGraph extends Component {
     }
 
     onGraphClick = ({ layerX: x, layerY: y }) => {
-        const intersects = this.getIntersectingObjects(x, y);
+        const intersectingObjects = this.getIntersectingObjects(x, y);
 
-        if (intersects.length) {
-            const node = nodes.find(n => n.geometry.uuid === intersects[0].object.geometry.uuid);
+        const intersectingNodes = intersectingObjects.filter(intersectsNodes);
+
+        if (intersectingNodes.length) {
+            const node = nodes.find(
+                n =>
+                    n.circle && n.circle.geometry.uuid === intersectingNodes[0].object.geometry.uuid
+            );
             this.props.onNodeClick(node);
         }
     };
 
     onMouseMove = ({ layerX: x, layerY: y }) => {
-        const intersects = this.getIntersectingObjects(x, y);
+        const intersectingObjects = this.getIntersectingObjects(x, y);
 
-        if (intersects.length) {
+        const isHoveringOverNode = intersectingObjects.filter(intersectsNodes).length;
+
+        if (isHoveringOverNode) {
             this.networkGraph.classList.add('cursor-pointer');
         } else {
             this.networkGraph.classList.remove('cursor-pointer');
@@ -159,19 +171,18 @@ class NetworkGraph extends Component {
 
     setUpNodes = propNodes => {
         const newNodes = [];
+
         propNodes.forEach(propNode => {
+            let modifiedNode;
             const node = { ...propNode };
-
-            node.geometry = new THREE.CircleBufferGeometry(5, 32);
             node.radius = 1;
-            node.material = new THREE.MeshBasicMaterial({
-                color: 0x5a6fd9
-            });
-            node.circle = new THREE.Mesh(node.geometry, node.material);
-            this.scene.add(node.circle);
 
-            newNodes.push(node);
+            modifiedNode = this.createNodeMesh(node);
+            modifiedNode = this.createNodeLabelMesh(modifiedNode);
+
+            newNodes.push(modifiedNode);
         });
+
         return newNodes;
     };
 
@@ -204,8 +215,9 @@ class NetworkGraph extends Component {
 
     updateNodesPosition = () => {
         nodes.forEach(node => {
-            const { x, y, circle } = node;
+            const { x, y, circle, label } = node;
             circle.position.set(x, y, 0);
+            label.position.set(x, y - constants.SERVICE_LABEL_OFFSET, 0);
         });
     };
 
@@ -216,6 +228,41 @@ class NetworkGraph extends Component {
             line.geometry.vertices[0] = new THREE.Vector3(source.x, source.y, 0);
             line.geometry.vertices[1] = new THREE.Vector3(target.x, target.y, 0);
         });
+    };
+
+    createNodeMesh = node => {
+        const newNode = { ...node };
+
+        const geometry = new THREE.CircleBufferGeometry(5, 32);
+        const material = new THREE.MeshBasicMaterial({
+            color: 0x5a6fd9
+        });
+        newNode.circle = new THREE.Mesh(geometry, material);
+        this.scene.add(newNode.circle);
+
+        return newNode;
+    };
+
+    createNodeLabelMesh = node => {
+        const newNode = { ...node };
+        const trimmedName =
+            newNode.deploymentName.length > 15
+                ? `${newNode.deploymentName.substring(0, 15)}...`
+                : newNode.deploymentName;
+
+        const canvasTexture = getTextTexture(trimmedName);
+        const texture = new THREE.Texture(canvasTexture);
+        texture.needsUpdate = true;
+        const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+        material.transparent = true;
+        const geometry = new THREE.PlaneBufferGeometry(
+            constants.NODE_LABEL_SIZE,
+            constants.NODE_LABEL_SIZE
+        );
+        newNode.label = new THREE.Mesh(geometry, material);
+        this.scene.add(newNode.label);
+
+        return newNode;
     };
 
     clear = () => {

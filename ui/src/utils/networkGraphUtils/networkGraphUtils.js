@@ -122,3 +122,32 @@ export const getLinksInSameNamespace = (nodes, links) => {
 
     return filteredLinks;
 };
+
+/**
+ *  A function to filter a list of intersections through ray casting to show only nodes
+ *
+ * @returns {Function}
+ */
+
+export const intersectsNodes = obj => obj.object.geometry.type === 'CircleBufferGeometry';
+
+/**
+ *  Function returns a canvas with some text drawn onto it
+ *
+ * @param {String} text text to draw on the canvas
+ * @returns {!Object[]}
+ */
+export const getTextTexture = text => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.font = '16pt Open Sans';
+    ctx.fillStyle = 'transparent';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'black';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+    return canvas;
+};

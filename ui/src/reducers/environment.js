@@ -115,6 +115,7 @@ export const networkGraphClusters = {
     KUBERNETES_CLUSTER: true,
     OPENSHIFT_CLUSTER: true
 };
+if (process.env.NODE_ENV === 'development') networkGraphClusters.SWARM_CLUSTER = true;
 
 if (process.env.NODE_ENV === 'development') networkGraphClusters.SWARM_CLUSTER = true;
 
