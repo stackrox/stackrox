@@ -17,6 +17,10 @@ const CommonDetails = ({ cluster }) => (
         <LabeledValue label="Cluster Type" value={clusterTypeLabels[cluster.type]} />
         <LabeledValue label="Prevent Image" value={cluster.preventImage} />
         <LabeledValue label="Central API Endpoint" value={cluster.centralApiEndpoint} />
+        <LabeledValue
+            label="Runtime Support"
+            value={cluster.runtimeSupport ? 'Enabled' : 'Disabled'}
+        />
     </React.Fragment>
 );
 CommonDetails.propTypes = {
@@ -24,7 +28,8 @@ CommonDetails.propTypes = {
         name: PropTypes.string.isRequired,
         type: PropTypes.string.isRequired,
         preventImage: PropTypes.string.isRequired,
-        centralApiEndpoint: PropTypes.string.isRequired
+        centralApiEndpoint: PropTypes.string.isRequired,
+        runtimeSupport: PropTypes.bool.isRequired
     }).isRequired
 };
 
@@ -38,10 +43,6 @@ const K8sDetails = ({ cluster }) => (
         <LabeledValue
             label="Image Pull Secret Name"
             value={get(cluster, 'kubernetes.imagePullSecret', 'N/A')}
-        />
-        <LabeledValue
-            label="Runtime Support"
-            value={get(cluster, 'kubernetes.runtimeSupport') ? 'Yes' : 'No'}
         />
     </React.Fragment>
 );
@@ -60,10 +61,6 @@ const OpenShiftDetails = ({ cluster }) => (
     <React.Fragment>
         <CommonDetails cluster={cluster} />
         <LabeledValue label="Namespace" value={get(cluster, 'openshift.params.namespace', 'N/A')} />
-        <LabeledValue
-            label="Runtime Support"
-            value={get(cluster, 'openshift.runtimeSupport') ? 'Yes' : 'No'}
-        />
     </React.Fragment>
 );
 OpenShiftDetails.propTypes = {

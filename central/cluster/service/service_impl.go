@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -102,6 +103,10 @@ func validateInput(cluster *v1.Cluster) error {
 		errorList.AddError(validateDNS1123Field("image pull secret", orchSpecific.Kubernetes.GetImagePullSecret()))
 	case *v1.Cluster_Openshift:
 		errorList.AddError(validateDNS1123Field("namespace", orchSpecific.Openshift.GetParams().GetNamespace()))
+	case *v1.Cluster_Swarm:
+		if cluster.GetRuntimeSupport() {
+			errorList.AddError(errors.New("runtime is not supported with Swarm"))
+		}
 	}
 
 	return errorList.ToError()
