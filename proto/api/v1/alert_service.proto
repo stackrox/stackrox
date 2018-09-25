@@ -10,6 +10,7 @@ import "api/v1/common.proto";
 import "api/v1/policy_service.proto";
 import "api/v1/deployment_service.proto";
 import "api/v1/indicator.proto";
+import "api/v1/empty.proto";
 
 package v1;
 
@@ -32,6 +33,9 @@ message Alert {
     bool stale                               = 7;
     google.protobuf.Timestamp marked_stale   = 8;
     google.protobuf.Timestamp first_occurred = 9;
+
+    ViolationState state                  = 10;
+    google.protobuf.Timestamp snooze_till = 11;
 }
 
 message ListAlertsRequest {
@@ -63,6 +67,21 @@ message ListAlert {
     ListAlertDeployment deployment          = 4;
     bool stale                              = 5;
     google.protobuf.Timestamp marked_stale  = 6;
+}
+
+enum ViolationState {
+    ACTIVE = 0;
+    SNOOZED = 1;
+    RESOLVED = 2;
+}
+
+message ResolveAlertRequest {
+    string id = 1;
+}
+
+message SnoozeAlertRequest {
+    string id = 1;
+    google.protobuf.Timestamp snooze_till = 2;
 }
 
 message ListAlertsResponse {
@@ -154,7 +173,20 @@ service AlertService {
             get: "/v1/alerts/summary/timeseries"
         };
     }
-    // No post/put API for alerts
+
+    rpc ResolveAlert (ResolveAlertRequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/alerts/{id}/resolve"
+            body: "*"
+        };
+    }
+
+    rpc SnoozeAlert (SnoozeAlertRequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/alerts/{id}/snooze"
+            body: "*"
+        };
+    }
 
     // No deletion of alerts
 

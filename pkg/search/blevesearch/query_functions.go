@@ -21,10 +21,11 @@ var datatypeToQueryFunc = map[v1.SearchDataType]func(v1.SearchCategory, string, 
 	v1.SearchDataType_SEARCH_NUMERIC:  newNumericQuery,
 	v1.SearchDataType_SEARCH_DATETIME: newTimeQuery,
 
-	v1.SearchDataType_SEARCH_SEVERITY:    newSeverityQuery,
-	v1.SearchDataType_SEARCH_ENFORCEMENT: newEnforcementQuery,
-	v1.SearchDataType_SEARCH_MAP:         newMapQuery,
-	v1.SearchDataType_SEARCH_SECRET_TYPE: newSecretTypeQuery,
+	v1.SearchDataType_SEARCH_SEVERITY:        newSeverityQuery,
+	v1.SearchDataType_SEARCH_ENFORCEMENT:     newEnforcementQuery,
+	v1.SearchDataType_SEARCH_MAP:             newMapQuery,
+	v1.SearchDataType_SEARCH_SECRET_TYPE:     newSecretTypeQuery,
+	v1.SearchDataType_SEARCH_VIOLATION_STATE: newViolationStateQuery,
 }
 
 func getWildcardQuery(field string) *query.WildcardQuery {
@@ -106,6 +107,10 @@ func newEnforcementQuery(_ v1.SearchCategory, field string, value string) (query
 
 func newSecretTypeQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
 	return evaluateEnum(value, field, v1.SecretType_name)
+}
+
+func newViolationStateQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
+	return evaluateEnum(value, field, v1.ViolationState_name)
 }
 
 func typeQuery(category v1.SearchCategory) query.Query {

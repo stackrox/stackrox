@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/alert/datastore"
+	dataStoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	indexMocks "github.com/stackrox/rox/central/alert/index/mocks"
 	searchMocks "github.com/stackrox/rox/central/alert/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/alert/store/mocks"
@@ -35,6 +37,7 @@ func TestAlertService(t *testing.T) {
 	suite.Run(t, new(getAlertsGroupsTests))
 	suite.Run(t, new(getAlertsCountsTests))
 	suite.Run(t, new(getAlertTimeseriesTests))
+	suite.Run(t, new(patchAlertTests))
 }
 
 type getAlertTests struct {
@@ -1008,4 +1011,55 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFa
 
 	s.Equal(status.Error(codes.Internal, "fake error"), err)
 	s.Equal((*v1.GetAlertTimeseriesResponse)(nil), result)
+}
+
+type patchAlertTests struct {
+	suite.Suite
+
+	storage *dataStoreMocks.DataStore
+	service Service
+
+	fakeResourceByIDRequest *v1.ResourceByID
+}
+
+func (s *patchAlertTests) SetupTest() {
+
+	s.storage = &dataStoreMocks.DataStore{}
+
+	s.service = New(s.storage)
+}
+
+func (s *patchAlertTests) TestSnoozeAlert() {
+	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.On("GetAlert", alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	snoozeTill, err := timestamp.TimestampProto(time.Now().Add(1 * time.Hour))
+	s.NoError(err)
+	fakeAlert.SnoozeTill = snoozeTill
+	s.storage.On("UpdateAlert", fakeAlert).Return(nil)
+	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
+	s.NoError(err)
+
+	s.Equal(fakeAlert.State, v1.ViolationState_SNOOZED)
+	s.Equal(fakeAlert.SnoozeTill, snoozeTill)
+}
+
+func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {
+	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.On("GetAlert", alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	snoozeTill, err := timestamp.TimestampProto(time.Now().Add(-1 * time.Hour))
+	s.NoError(err)
+	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
+
+	s.Equal(status.Error(codes.InvalidArgument, badSnoozeErrorMsg), err)
+}
+
+func (s *patchAlertTests) TestResolveAlert() {
+	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.On("GetAlert", alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	fakeAlert.State = v1.ViolationState_RESOLVED
+	s.storage.On("UpdateAlert", fakeAlert).Return(nil)
+	_, err := s.service.ResolveAlert(context.Background(), &v1.ResolveAlertRequest{Id: alerttest.FakeAlertID})
+	s.NoError(err)
+
+	s.Equal(fakeAlert.State, v1.ViolationState_RESOLVED)
 }

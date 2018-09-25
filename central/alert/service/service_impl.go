@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/alert/datastore"
@@ -13,9 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+const (
+	badSnoozeErrorMsg = "'snooze_till' timestamp must be at a future time"
 )
 
 var (
@@ -26,6 +32,10 @@ var (
 			"/v1.AlertService/GetAlertsGroup",
 			"/v1.AlertService/GetAlertsCounts",
 			"/v1.AlertService/GetAlertTimeseries",
+		},
+		user.With(permissions.Modify(resources.Alert)): {
+			"/v1.AlertService/ResolveAlert",
+			"/v1.AlertService/SnoozeAlert",
 		},
 	})
 
@@ -121,6 +131,50 @@ func (s *serviceImpl) GetAlertTimeseries(ctx context.Context, req *v1.ListAlerts
 
 	response := alertTimeseriesResponseFrom(alerts)
 	return response, nil
+}
+
+func (s *serviceImpl) ResolveAlert(_ context.Context, req *v1.ResolveAlertRequest) (*v1.Empty, error) {
+	alert, exists, err := s.dataStore.GetAlert(req.GetId())
+	if err != nil {
+		log.Error(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if !exists {
+		return nil, status.Errorf(codes.NotFound, "alert with id '%s' does not exist", req.GetId())
+	}
+	alert.SnoozeTill = nil
+	alert.State = v1.ViolationState_RESOLVED
+	err = s.dataStore.UpdateAlert(alert)
+	if err != nil {
+		log.Error(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) SnoozeAlert(_ context.Context, req *v1.SnoozeAlertRequest) (*v1.Empty, error) {
+	if req.GetSnoozeTill() == nil {
+		return nil, status.Error(codes.InvalidArgument, "'snooze_till' cannot be nil")
+	}
+	if protoconv.ConvertTimestampToTimeOrNow(req.GetSnoozeTill()).Before(time.Now()) {
+		return nil, status.Error(codes.InvalidArgument, badSnoozeErrorMsg)
+	}
+	alert, exists, err := s.dataStore.GetAlert(req.GetId())
+	if err != nil {
+		log.Error(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if !exists {
+		return nil, status.Errorf(codes.NotFound, "alert with id '%s' does not exist", req.GetId())
+	}
+	alert.SnoozeTill = req.GetSnoozeTill()
+	alert.State = v1.ViolationState_SNOOZED
+	err = s.dataStore.UpdateAlert(alert)
+	if err != nil {
+		log.Error(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &v1.Empty{}, nil
 }
 
 // alertsGroupResponseFrom returns a slice of v1.ListAlert objects translated into a v1.GetAlertsGroupResponse object.
