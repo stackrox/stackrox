@@ -2,6 +2,7 @@ package globalindex
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/blevesearch/bleve"
@@ -18,6 +19,7 @@ import (
 	processIndicatorMapping "github.com/stackrox/rox/central/processindicator/index/mappings"
 	secretOptions "github.com/stackrox/rox/central/secret/search/options"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -32,6 +34,8 @@ var (
 		v1.SearchCategory_SECRETS:            secretOptions.Map,
 		v1.SearchCategory_PROCESS_INDICATORS: processIndicatorMapping.OptionsMap,
 	}
+
+	logger = logging.LoggerForModule()
 )
 
 // TempInitializeIndices initializes the index under the tmp system folder in the specified path.
@@ -51,6 +55,11 @@ func InitializeIndices(mossPath string) (bleve.Index, error) {
 		"mossLowerLevelStoreName": "mossStore",
 	}
 
+	// Bleve requires that the directory we provide is already empty.
+	err := os.RemoveAll(mossPath)
+	if err != nil {
+		logger.Warnf("Could not clean up search index path %s: %v", mossPath, err)
+	}
 	globalIndex, err := bleve.NewUsing(mossPath, indexMapping, upsidedown.Name, moss.Name, kvconfig)
 	if err != nil {
 		return nil, err

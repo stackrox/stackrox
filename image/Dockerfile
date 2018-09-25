@@ -3,6 +3,12 @@ LABEL "com.vendor"="StackRox (support@stackrox.com)"
 
 RUN printf "http://apk.rox.systems/v3.8/main\\nhttp://apk.rox.systems/v3.8/community" > /etc/apk/repositories
 
+# The following paths are written to in Central.
+# Including these VOLUME instructions means that we can enable a
+# read-only root file system without preventing writes to these paths.
+VOLUME /var/lib/prevent
+VOLUME /tmp/search
+
 RUN apk update && \
     apk add --no-cache \
         ca-certificates=20171114-r3 \

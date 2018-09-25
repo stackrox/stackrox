@@ -62,6 +62,7 @@ spec:
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
+          readOnlyRootFilesystem: true
         volumeMounts:
         - name: central-certs-volume
           mountPath: /run/secrets/stackrox.io/certs/
@@ -72,8 +73,7 @@ spec:
         {{if .HostPath -}}
         - name: {{.HostPath.Name}}
           mountPath: {{.HostPath.MountPath}}
-        {{- end}}
-        {{if .External -}}
+        {{else if .External -}}
         - name: {{.External.Name}}
           mountPath: {{.External.MountPath}}
         {{- end}}
@@ -89,8 +89,7 @@ spec:
         hostPath:
           path: {{.HostPath.HostPath}}
           type: Directory
-      {{- end}}
-      {{if .External -}}
+      {{else if .External -}}
       - name: {{.External.Name}}
         persistentVolumeClaim:
           claimName: {{.External.Name}}

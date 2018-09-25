@@ -40,6 +40,7 @@ spec:
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
+          readOnlyRootFilesystem: true
         env:
         - name: {{.PublicEndpointEnv}}
           value: {{.PublicEndpoint}}
