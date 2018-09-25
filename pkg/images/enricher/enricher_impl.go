@@ -32,6 +32,13 @@ type enricherImpl struct {
 	metrics metrics
 }
 
+func addIfKeyNonEmpty(cache *ccache.Cache, key string, value interface{}, expiration time.Duration) {
+	if key == "" {
+		return
+	}
+	cache.Set(key, value, expiration)
+}
+
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(image *v1.Image) bool {
 	updatedMetadata := e.enrichWithMetadata(image)
@@ -68,7 +75,7 @@ func (e *enricherImpl) enrichImageWithRegistry(image *v1.Image, registry registr
 			logger.Error(err)
 			return false
 		}
-		e.metadataCache.Set(image.GetName().GetFullName(), metadata, imageDataExpiration)
+		addIfKeyNonEmpty(e.metadataCache, image.GetName().GetFullName(), metadata, imageDataExpiration)
 	} else {
 		e.metrics.IncrementMetadataCacheHit()
 		metadata = metadataItem.Value().(*v1.ImageMetadata)
@@ -110,7 +117,7 @@ func (e *enricherImpl) enrichImageWithScanner(image *v1.Image, scanner scannerTy
 			logger.Errorf("Error getting last scan for %s: %s", image.GetName().GetFullName(), err)
 			return false
 		}
-		e.scanCache.Set(image.GetName().GetSha(), scan, imageDataExpiration)
+		addIfKeyNonEmpty(e.scanCache, image.GetName().GetSha(), scan, imageDataExpiration)
 	} else {
 		e.metrics.IncrementScanCacheHit()
 		scan = scanItem.Value().(*v1.ImageScan)
