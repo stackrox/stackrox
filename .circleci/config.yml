@@ -58,6 +58,7 @@ createGKE: &createGKE
         --create-subnetwork range=/19 \
         --enable-ip-alias \
         --enable-network-policy \
+        --image-type UBUNTU \
         "prevent-ci-${CIRCLE_BUILD_NUM}"
 
 # See https://stackoverflow.com/a/46316672 for why we have to use user/pass.
@@ -229,6 +230,7 @@ jobs:
     <<: *defaults
     environment:
       - LOCAL_PORT: 8000
+      - RUNTIME_SUPPORT: true
     steps:
       - checkout
       - setup_remote_docker
