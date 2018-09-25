@@ -6,7 +6,7 @@ import (
 
 	cDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	dDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	ngMocks "github.com/stackrox/rox/central/networkgraph/mocks"
+	npGraphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	npStoreMocks "github.com/stackrox/rox/central/networkpolicies/store/mocks"
 	notifierStoreMocks "github.com/stackrox/rox/central/notifier/store/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -75,14 +75,14 @@ type ServiceTestSuite struct {
 	clusters        *cDataStoreMocks.DataStore
 	deployments     *dDataStoreMocks.DataStore
 	networkPolicies *npStoreMocks.Store
-	evaluator       *ngMocks.Evaluator
+	evaluator       *npGraphMocks.Evaluator
 	notifiers       *notifierStoreMocks.Store
 	tested          Service
 }
 
 func (suite *ServiceTestSuite) SetupTest() {
 	suite.networkPolicies = &npStoreMocks.Store{}
-	suite.evaluator = &ngMocks.Evaluator{}
+	suite.evaluator = &npGraphMocks.Evaluator{}
 	suite.clusters = &cDataStoreMocks.DataStore{}
 	suite.deployments = &dDataStoreMocks.DataStore{}
 	suite.notifiers = &notifierStoreMocks.Store{}

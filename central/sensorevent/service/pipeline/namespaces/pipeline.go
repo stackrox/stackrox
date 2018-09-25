@@ -5,7 +5,7 @@ import (
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/store"
-	"github.com/stackrox/rox/central/networkgraph"
+	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
@@ -19,7 +19,7 @@ var (
 //////////////////////////////////////////////////////////////////////////////////////
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(clusters clusterDataStore.DataStore, namespaces namespaceDataStore.Store, graphEvaluator networkgraph.Evaluator) pipeline.Pipeline {
+func NewPipeline(clusters clusterDataStore.DataStore, namespaces namespaceDataStore.Store, graphEvaluator graph.Evaluator) pipeline.Pipeline {
 	return &pipelineImpl{
 		clusters:       clusters,
 		namespaces:     namespaces,
@@ -30,7 +30,7 @@ func NewPipeline(clusters clusterDataStore.DataStore, namespaces namespaceDataSt
 type pipelineImpl struct {
 	clusters       clusterDataStore.DataStore
 	namespaces     namespaceDataStore.Store
-	graphEvaluator networkgraph.Evaluator
+	graphEvaluator graph.Evaluator
 }
 
 // Run runs the pipeline template on the input and returns the output.

@@ -8,7 +8,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/networkgraph"
+	"github.com/stackrox/rox/central/networkpolicies/graph"
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -47,7 +47,7 @@ type serviceImpl struct {
 	deployments     deploymentDataStore.DataStore
 	networkPolicies networkPoliciesStore.Store
 	notifierStore   notifierStore.Store
-	graphEvaluator  networkgraph.Evaluator
+	graphEvaluator  graph.Evaluator
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

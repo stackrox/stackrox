@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/networkgraph"
+	"github.com/stackrox/rox/central/networkpolicies/graph"
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -19,7 +19,7 @@ var (
 //////////////////////////////////////////////////////////////////////////////////////
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(clusters clusterDataStore.DataStore, networkPolicies networkPoliciesStore.Store, graphEvaluator networkgraph.Evaluator) pipeline.Pipeline {
+func NewPipeline(clusters clusterDataStore.DataStore, networkPolicies networkPoliciesStore.Store, graphEvaluator graph.Evaluator) pipeline.Pipeline {
 	return &pipelineImpl{
 		clusters:        clusters,
 		networkPolicies: networkPolicies,
@@ -30,7 +30,7 @@ func NewPipeline(clusters clusterDataStore.DataStore, networkPolicies networkPol
 type pipelineImpl struct {
 	clusters        clusterDataStore.DataStore
 	networkPolicies networkPoliciesStore.Store
-	graphEvaluator  networkgraph.Evaluator
+	graphEvaluator  graph.Evaluator
 }
 
 // Run runs the pipeline template on the input and returns the output.

@@ -5,7 +5,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	"github.com/stackrox/rox/central/networkgraph"
+	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
@@ -21,7 +21,7 @@ var (
 // NewPipeline returns a new instance of Pipeline.
 func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentDataStore.DataStore,
 	images imageDataStore.DataStore, detector deployTimeDetection.Detector,
-	graphEvaluator networkgraph.Evaluator) pipeline.Pipeline {
+	graphEvaluator graph.Evaluator) pipeline.Pipeline {
 	return &pipelineImpl{
 		validateInput:     newValidateInput(),
 		clusterEnrichment: newClusterEnrichment(clusters),
@@ -41,7 +41,7 @@ type pipelineImpl struct {
 	persistDeployment *persistDeploymentImpl
 	createResponse    *createResponseImpl
 
-	graphEvaluator networkgraph.Evaluator
+	graphEvaluator graph.Evaluator
 }
 
 // Run runs the pipeline template on the input and returns the output.

@@ -122,7 +122,6 @@ message GetNetworkGraphEpochResponse {
     uint32 epoch = 1;
 }
 
-
 message SendNetworkPolicyYamlRequest {
     string  notifier_id = 1;
     string  yaml        = 2;

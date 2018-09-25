@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/networkgraph"
+	"github.com/stackrox/rox/central/networkpolicies/graph"
 	networkPolicyStore "github.com/stackrox/rox/central/networkpolicies/store"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 )
@@ -16,7 +16,7 @@ var (
 )
 
 func initialize() {
-	pi = NewPipeline(clusterDataStore.Singleton(), networkPolicyStore.Singleton(), networkgraph.Singleton())
+	pi = NewPipeline(clusterDataStore.Singleton(), networkPolicyStore.Singleton(), graph.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

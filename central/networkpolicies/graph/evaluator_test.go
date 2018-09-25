@@ -1,4 +1,4 @@
-package networkgraph
+package graph
 
 import (
 	"bytes"

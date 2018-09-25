@@ -7,7 +7,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	"github.com/stackrox/rox/central/networkgraph"
+	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 )
 
@@ -22,7 +22,7 @@ func initialize() {
 		deploymentDataStore.Singleton(),
 		imageDataStore.Singleton(),
 		deployTimeDetection.SingletonDetector(),
-		networkgraph.Singleton())
+		graph.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "data";
+
+import "google/protobuf/timestamp.proto";
+
+package data;
+
+message NetworkFlow {
+    NetworkFlowProperties props    = 1;
+
+    google.protobuf.Timestamp time = 2;
+}
+
+message NetworkFlowProperties {
+    string source_deployment_id = 1;
+    string target_deployment_id = 2;
+    uint32 target_port          = 4;
+}
