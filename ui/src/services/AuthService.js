@@ -73,7 +73,7 @@ export function fetchAuthStatus() {
     return axios.get('/v1/auth/status');
 }
 
-const getAccessToken = () => store.get(accessTokenKey);
+const getAccessToken = () => store.get(accessTokenKey) || null;
 export const storeAccessToken = token => store.set(accessTokenKey, token);
 export const clearAccessToken = () => store.remove(accessTokenKey);
 export const isTokenPresent = () => !!getAccessToken();
@@ -85,20 +85,36 @@ export const getAndClearRequestedLocation = () => {
     return location;
 };
 
+const BEARER_TOKEN_PREFIX = `Bearer `;
+
+function setAuthHeader(config, token) {
+    const { headers: { Authorization, ...notAuthHeaders } } = config;
+    // make sure new config doesn't have unnecessary auth header
+    const newConfig = {
+        ...config,
+        headers: {
+            ...notAuthHeaders
+        }
+    };
+    if (token) newConfig.headers.Authorization = `${BEARER_TOKEN_PREFIX}${token}`;
+
+    return newConfig;
+}
+
+function parseAuthTokenFromHeaders(headers) {
+    if (
+        !headers ||
+        typeof headers.Authorization !== 'string' ||
+        !headers.Authorization.startsWith(BEARER_TOKEN_PREFIX)
+    ) {
+        return null;
+    }
+    return headers.Authorization.substring(BEARER_TOKEN_PREFIX.length);
+}
+
 function addRequestInterceptor() {
     axios.interceptors.request.use(
-        config => {
-            const token = getAccessToken();
-            if (!token) return config;
-            // if there is a token available, then add it to auth header
-            return {
-                ...config,
-                headers: {
-                    ...config.headers,
-                    Authorization: `Bearer ${token}`
-                }
-            };
-        },
+        config => setAuthHeader(config, getAccessToken()),
         error => Promise.reject(error)
     );
 }
@@ -107,10 +123,18 @@ function addResponseInterceptor(authHttpErrorHandler) {
     axios.interceptors.response.use(
         response => response,
         error => {
-            const { response: { status } } = error;
+            const { response: { status }, config } = error;
             if (status === 401 || status === 403) {
+                const requestToken = parseAuthTokenFromHeaders(config.headers);
+                const currentToken = getAccessToken();
+                if (currentToken !== requestToken) {
+                    // backend auth was enabled, but the request was made with old / empty token (e.g. multiple browser tabs open)
+                    // in this case retry the request with a new token instead of failing
+                    return axios.request(setAuthHeader(config, currentToken));
+                }
+                // we used the current / latest token and it failed
                 const authError = new AuthHttpError('Authentication Error', status, error);
-                if (authError.isInvalidAuth()) clearAccessToken(); // invalid auth means token isn't valid
+                if (authError.isInvalidAuth()) clearAccessToken(); // clear token since it's not valid
                 authHttpErrorHandler(authError);
             }
             return Promise.reject(error);
