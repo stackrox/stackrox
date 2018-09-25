@@ -1,6 +1,6 @@
 import static Services.getPolicies
 import static Services.waitForViolation
-import org.junit.Test
+
 import groups.BAT
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
@@ -8,118 +8,85 @@ import objects.Deployment
 import java.util.stream.Collectors
 
 class DefaultPoliciesTest extends BaseSpecification {
-    @Test
-    @Category(BAT)
-    def "Verify policy life cycle"() {
-        String deployName = "qalifecycle"
-        Deployment deployment = new Deployment()
-                .setName(deployName)
-                .setImage("nginx:latest")
-                .addLabel ( "app", "test" )
 
-        when:
-        "Create a custom policy - Using image latest template"
-        String policyID = Services.addLatestTagPolicy()
-        sleep(5000)
-        println("Policy ID :" + policyID)
-        assert policyID != null
+    // Deployment names
+    static final private String NGINX_LATEST = "qadefpolnginxlatest"
+    static final private String STRUTS = "qadefpolstruts"
+    static final private String SSL_TERMINATOR = "qadefpolsslterm"
+    static final private String NGINX_1_10 = "qadefpolnginx110"
 
-        and:
-        "Create a deployment"
-        orchestrator.createDeployment(deployment)
+    static final private List<Deployment> DEPLOYMENTS = [
+        new Deployment()
+            .setName (NGINX_LATEST)
+            .setImage ("nginx")
+            .addPort (22)
+            .addLabel ("app", "test"),
+        new Deployment()
+            .setName(STRUTS)
+            .setImage("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
+            .addLabel("app", "test"),
+        new Deployment()
+            .setName(SSL_TERMINATOR)
+            .setImage("apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
+            .addLabel("app", "test"),
+        new Deployment()
+            .setName(NGINX_1_10)
+            .setImage("nginx:1.10")
+            .addLabel("app", "test"),
+    ]
 
-        then:
-        "Verify the custom policy is triggered"
-        assert waitForViolation(deployName, "qaTestLifeCycle", 1800)
+    def setupSpec() {
+        for (Deployment deployment : DEPLOYMENTS) {
+            orchestrator.createDeployment(deployment)
+        }
+    }
 
-        cleanup:
-        "Remove the policy and deployment"
-        Services.deletePolicy(policyID)
-        orchestrator.deleteDeployment(deployName)
+    def cleanupSpec() {
+        for (Deployment deployment : DEPLOYMENTS) {
+            orchestrator.deleteDeployment(deployment.getName())
+        }
     }
 
     @Unroll
     @Category(BAT)
-    def "Verify policy #policyname is triggered" (String policyname, Deployment deployment,
+    def "Verify policy #policyName is triggered" (String policyName, String deploymentName,
                                                   String testId) {
         when:
-        "Create a Deployment"
-        orchestrator.createDeployment(deployment)
-
-        and:
-        "Validate if Violation and Deployment is present"
+        "Validate if policy is present"
         assert getPolicies().stream()
-                .filter { f -> f.getName() == policyname }
+                .filter { f -> f.getName() == policyName }
                 .collect(Collectors.toList()).size() == 1
 
         then:
-        "Verify Violation #policyname is triggered"
-        assert waitForViolation(deployment.getName(),  policyname, 30)
-
-        cleanup:
-        "Remove Deployment #deploymentName"
-        orchestrator.deleteDeployment(deployment.getName())
+        "Verify Violation for #policyName is triggered"
+        assert waitForViolation(deploymentName,  policyName, 30)
 
         where:
         "Data inputs are :"
 
-        policyname | deployment | testId
+        policyName                                    | deploymentName | testId
 
-        "Container Port 22" | new Deployment()
-                .setName ("qaport22")
-                .setImage ("nginx")
-                .addPort (22)
-                .addLabel ( "app", "test" ) | "C311"
+        "Container Port 22"                           | NGINX_LATEST   | "C311"
 
-        "Apache Struts: CVE-2017-5638" | new Deployment()
-                .setName ( "qacve" )
-                .setImage ( "apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                .addLabel ( "app", "test" ) | "C938"
+        "Apache Struts: CVE-2017-5638"                | STRUTS         | "C938"
 
-        "Heartbleed: CVE-2014-0160" | new Deployment()
-                .setName ("qaheartbleed")
-                .setImage ("apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
-                .addLabel ( "app", "test" ) | "C947"
+        "Heartbleed: CVE-2014-0160"                   | SSL_TERMINATOR | "C947"
 
-        "Wget in Image" | new Deployment()
-                .setName ("qawget")
-                .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                .addLabel ( "app", "test" ) | "C939"
+        "Wget in Image"                               | STRUTS         | "C939"
 
-        "90-Day Image Age" | new Deployment()
-                .setName ("qa90days" )
-                .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                .addLabel ("app", "test" ) | "C810"
+        "90-Day Image Age"                            | STRUTS         | "C810"
 
-        "Aptitude Package Manager (apt) in Image" | new Deployment()
-                .setName ("qaapt" )
-                .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                .addLabel ( "app", "test" ) | "C931"
+        "Aptitude Package Manager (apt) in Image"     | STRUTS         | "C931"
 
-        "30-Day Scan Age" | new Deployment()
-                .setName ( "qa30days" )
-                .setImage ( "apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                .addLabel ( "app", "test" ) | "C941"
+        "30-Day Scan Age"                             |  STRUTS        | "C941"
 
-        "Maximum CVSS >= 7" | new Deployment()
-                .setName ( "qacvss" )
-                .setImage ( "apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                .addLabel ( "app", "test" ) | "C933"
+        "Maximum CVSS >= 7"                           | STRUTS         | "C933"
 
-        "Shellshock: CVE-2014-6271" | new Deployment()
-                .setName ("qashellshock" )
-                .setImage ("apollo-dtr.rox.systems/legacy-apps/ssl-terminator")
-                .addLabel ( "app", "test" ) | "C948"
+        "Shellshock: CVE-2014-6271"                   | SSL_TERMINATOR | "C948"
 
-        "Curl in Image" | new Deployment()
-                .setName ("qacurl")
-                .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                .addLabel ( "app", "test" ) | "C948"
+        "Curl in Image"                               |  STRUTS        | "C948"
 
-        "DockerHub NGINX 1.10" | new Deployment()
-                .setName ("qanginx")
-                .setImage ("nginx:1.10")
-                .addLabel ( "app", "test" ) | "C823"
+        "DockerHub NGINX 1.10"                        |  NGINX_1_10    | "C823"
     }
 
 }

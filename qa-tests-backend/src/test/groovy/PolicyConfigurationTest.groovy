@@ -54,6 +54,27 @@ class PolicyConfigurationTest extends BaseSpecification {
             .setImage ("nginx:1.10")
             .addPort (22)
             .addLabel ( "app", "test" )
+
+        "Test Latest Tag" |
+        Policy.newBuilder()
+            .setName("testImageTagLatest")
+            .setDescription("qa test")
+            .setRationale("qa test")
+            .addCategories("Image Assurance")
+            .setDisabled(false)
+            .setSeverityValue(2)
+            .setFields(PolicyFields.newBuilder()
+            .setImageName(
+            ImageNamePolicy.newBuilder()
+                .setTag("latest")
+                .build())
+            .build())
+        .build() |
+        new Deployment()
+            .setName("testnginxlatest")
+            .setImage("nginx:latest")
+            .addPort(22)
+            .addLabel("app", "test")
     }
 
 }
