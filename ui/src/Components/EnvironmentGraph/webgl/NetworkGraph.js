@@ -21,6 +21,7 @@ class NetworkGraph extends Component {
                 id: PropTypes.string.isRequired
             })
         ).isRequired,
+        onNodeClick: PropTypes.func.isRequired,
         updateKey: PropTypes.number.isRequired
     };
 
@@ -46,8 +47,44 @@ class NetworkGraph extends Component {
         return false;
     }
 
+    onGraphClick = ({ layerX: x, layerY: y }) => {
+        const intersects = this.getIntersectingObjects(x, y);
+
+        if (intersects.length) {
+            const node = nodes.find(n => n.geometry.uuid === intersects[0].object.geometry.uuid);
+            this.props.onNodeClick(node);
+        }
+    };
+
+    onMouseMove = ({ layerX: x, layerY: y }) => {
+        const intersects = this.getIntersectingObjects(x, y);
+
+        if (intersects.length) {
+            this.networkGraph.classList.add('cursor-pointer');
+        } else {
+            this.networkGraph.classList.remove('cursor-pointer');
+        }
+    };
+
+    getIntersectingObjects = (x, y) => {
+        const { clientWidth, clientHeight } = this.renderer.domElement;
+        this.mouse.x = x / clientWidth * 2 - 1;
+        this.mouse.y = -(y / clientHeight) * 2 + 1;
+
+        // update the ray caster with the camera and mouse position
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+
+        // calculate objects in the scene that intersect the ray caster
+        const intersects = this.raycaster.intersectObjects(this.scene.children);
+
+        return intersects;
+    };
+
     setUpScene = () => {
         const { clientWidth, clientHeight } = this.networkGraph;
+
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
 
         // setup the scene
         this.scene = new THREE.Scene();
@@ -74,6 +111,10 @@ class NetworkGraph extends Component {
 
         // setup the canvas for the network graph
         this.networkGraph.appendChild(this.renderer.domElement);
+
+        // setup event listeners
+        this.renderer.domElement.addEventListener('click', this.onGraphClick, false);
+        this.renderer.domElement.addEventListener('mousemove', this.onMouseMove, false);
     };
 
     setUpForceSimulation = () => {
@@ -106,7 +147,7 @@ class NetworkGraph extends Component {
 
         // create static force layout by calculating ticks beforehand
         let i = 0;
-        const x = nodes.length * 2;
+        const x = nodes.length * 10;
         while (i < x) {
             simulation.tick();
             i += 1;
@@ -122,7 +163,7 @@ class NetworkGraph extends Component {
             const node = { ...propNode };
 
             node.geometry = new THREE.CircleBufferGeometry(5, 32);
-            node.radius = 5;
+            node.radius = 1;
             node.material = new THREE.MeshBasicMaterial({
                 color: 0x5a6fd9
             });
