@@ -75,25 +75,20 @@ func (s *pipelineImpl) process(indicator *v1.ProcessIndicator) error {
 }
 
 func (s *pipelineImpl) reconcileAlerts(deployment *v1.Deployment, indicators []*v1.ProcessIndicator) error {
-	previousAlerts, err := s.alertManager.GetAlertsByDeployment(deployment.GetId())
-	if err != nil {
-		return err
-	}
-
-	var newAlerts []*v1.Alert
-	s.policySet.ForEach(func(p *v1.Policy, matcher deploymentMatcher.Matcher) error {
-		if violations := matcher(deployment); len(violations) > 0 {
-			newAlerts = append(newAlerts, utils.PolicyDeploymentAndViolationsToAlert(p, deployment, violations))
-		}
-		return nil
-	}, true)
-
-	if len(previousAlerts) != len(newAlerts) {
-		err := s.alertManager.AlertAndNotify(previousAlerts, newAlerts)
+	return s.policySet.ForEach(func(p *v1.Policy, matcher deploymentMatcher.Matcher) error {
+		var oldAlerts []*v1.Alert
+		oldAlert, err := s.alertManager.GetAlertsByDeploymentAndPolicy(deployment.GetId(), p.GetId())
 		if err != nil {
 			return err
 		}
-		log.Infof("Added new alert!")
-	}
-	return nil
+		if oldAlert != nil {
+			oldAlerts = append(oldAlerts, oldAlert)
+		}
+
+		var newAlerts []*v1.Alert
+		if violations := matcher(deployment); len(violations) > 0 {
+			newAlerts = append(newAlerts, utils.PolicyDeploymentAndViolationsToAlert(p, deployment, violations))
+		}
+		return s.alertManager.AlertAndNotify(oldAlerts, newAlerts)
+	}, true)
 }

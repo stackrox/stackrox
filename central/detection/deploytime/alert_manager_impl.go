@@ -1,6 +1,8 @@
 package deploytime
 
 import (
+	"fmt"
+
 	ptypes "github.com/gogo/protobuf/types"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
@@ -30,6 +32,25 @@ func (d *alertManagerImpl) GetAlertsByDeployment(deploymentID string) ([]*v1.Ale
 		AddStrings(search.DeploymentID, deploymentID)
 
 	return d.alerts.SearchRawAlerts(qb.ProtoQuery())
+}
+
+func (d *alertManagerImpl) GetAlertsByDeploymentAndPolicy(deploymentID, policyID string) (*v1.Alert, error) {
+	q := search.NewQueryBuilder().
+		AddBools(search.Stale, false).
+		AddStrings(search.DeploymentID, deploymentID).
+		AddStrings(search.PolicyID, policyID).ProtoQuery()
+
+	alerts, err := d.alerts.SearchRawAlerts(q)
+	if err != nil {
+		return nil, err
+	}
+	if len(alerts) > 1 {
+		return nil, fmt.Errorf("found multiple active alerts for deployment %s and policy %s", deploymentID, policyID)
+	}
+	if len(alerts) == 1 {
+		return alerts[0], nil
+	}
+	return nil, nil
 }
 
 // AlertAndNotify inserts and notifies of any new alerts (alerts in current but not in previous) deduplicated and
