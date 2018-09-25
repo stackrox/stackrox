@@ -17,9 +17,10 @@ const tokenEnv = "STACKROX_TOKEN"
 var (
 	passFail = flag.Bool("pass-fail", true, "exit 1 on any critical policy failures")
 	central  = flag.String("central", "localhost:8080", "endpoint where central is available")
+	digest   = flag.String("digest", "", "the sha256 digest for the image")
 	registry = flag.String("registry", "", "registry where the image is uploaded")
 	remote   = flag.String("remote", "", "the remote name of the image")
-	tag      = flag.String("tag", "latest", "the tag for the image")
+	tag      = flag.String("tag", "", "the tag for the image")
 )
 
 func main() {
@@ -137,18 +138,25 @@ func getAlerts(token string) ([]*v1.Alert, error) {
 
 // Use inputs to generate an image name for request.
 func buildRequest() (*v1.Image, error) {
-	if registry == nil || *registry == "" {
-		return nil, fmt.Errorf("image registry must be set, or we don't know where to get metadata from")
-	} else if remote == nil || *remote == "" {
-		return nil, fmt.Errorf("image remote must be set, or we don't know which image in the registry to process")
-	} else if tag == nil || *tag == "" {
-		return nil, fmt.Errorf("image tag must be set, or we don't know which version of the image to process")
+	im := v1.ImageName{
+		Remote:   *remote,
+		Registry: *registry,
 	}
+
+	switch {
+	case *registry == "":
+		return nil, fmt.Errorf("image registry must be set, or we don't know where to get metadata from")
+	case *remote == "":
+		return nil, fmt.Errorf("image remote must be set, or we don't know which image in the registry to process")
+	case (*digest == "" && *tag == "") || (*digest != "" && *tag != ""):
+		return nil, fmt.Errorf("one of image digest or tag must be set, or we don't know which version of the image to process")
+	case *digest != "":
+		im.Sha = *digest
+	case *tag != "":
+		im.Tag = *tag
+	}
+
 	return &v1.Image{
-		Name: &v1.ImageName{
-			Remote:   *remote,
-			Registry: *registry,
-			Tag:      *tag,
-		},
+		Name: &im,
 	}, nil
 }
