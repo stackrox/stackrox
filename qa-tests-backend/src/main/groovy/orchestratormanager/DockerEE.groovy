@@ -112,4 +112,20 @@ class DockerEE extends OrchestratorCommon implements OrchestratorMain {
     @Override
     String generateYaml(Object orchestratorObject) {
     }
+
+    @Override
+    def wasContainerKilled(String containerName, String namespace = "") {
+    }
+
+    @Override
+    def getDeploymentReplicaCount(Deployment deployment) {
+    }
+
+    @Override
+    def getDeploymentUnavailableReplicaCount(Deployment deployment) {
+    }
+
+    @Override
+    def getDeploymentNodeSelectors(Deployment deployment) {
+    }
 }

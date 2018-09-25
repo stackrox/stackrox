@@ -2,6 +2,7 @@ package objects
 
 class Deployment {
     String name
+    String namespace
     List<String> volNames = new ArrayList<String>()
     List<String> volMounts = new ArrayList<String>()
     String image
@@ -9,11 +10,19 @@ class Deployment {
     List<String> secretNames = new ArrayList<String>()
     Map<String, String> labels = new HashMap<>()
     List<Integer> ports = new ArrayList<Integer>()
+    List<Pod> pods = new ArrayList<>()
+    String deploymentUid
+    Boolean skipReplicaWait = false
 
     Deployment setName(String n) {
         this.name = n
         // This label will be the selector used to select this deployment.
         this.addLabel("name", n)
+        return this
+    }
+
+    Deployment setNamespace(String n) {
+        this.namespace = n
         return this
     }
 
@@ -50,5 +59,22 @@ class Deployment {
     Deployment addVolMountName(String v) {
         this.volMounts.add(v)
         return this
-   }
+    }
+
+    Deployment setSkipReplicaWait(Boolean skip) {
+        this.skipReplicaWait = skip
+        return this
+    }
+
+    Deployment addPod(String podName, String podUid, List<String> containerIds) {
+        this.pods.add(
+                new Pod(
+                        name: podName,
+                        namespace: this.namespace,
+                        uid: podUid,
+                        containerIds: containerIds
+                )
+        )
+        return this
+    }
 }

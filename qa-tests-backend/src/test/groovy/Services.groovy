@@ -10,6 +10,8 @@ import stackrox.generated.ClusterService
 import stackrox.generated.ClustersServiceGrpc
 import stackrox.generated.DeploymentServiceGrpc
 import stackrox.generated.DetectionServiceGrpc
+import stackrox.generated.EnforcementServiceGrpc
+import stackrox.generated.EnforcementServiceOuterClass
 import stackrox.generated.ImageIntegrationServiceGrpc
 import stackrox.generated.ImageIntegrationServiceOuterClass
 import stackrox.generated.ImageIntegrationServiceOuterClass.ImageIntegration
@@ -18,6 +20,7 @@ import stackrox.generated.ImageServiceOuterClass.Image
 import stackrox.generated.NotifierServiceGrpc
 import stackrox.generated.NotifierServiceOuterClass
 import stackrox.generated.PolicyServiceGrpc
+import stackrox.generated.PolicyServiceOuterClass.EnforcementAction
 import stackrox.generated.PolicyServiceOuterClass.LifecycleStage
 import stackrox.generated.PolicyServiceOuterClass.ImageNamePolicy
 import stackrox.generated.PolicyServiceOuterClass.PolicyFields
@@ -31,6 +34,7 @@ import stackrox.generated.DeploymentServiceOuterClass.ListDeployment
 import stackrox.generated.DeploymentServiceOuterClass.Deployment
 import stackrox.generated.Common.ResourceByID
 import stackrox.generated.SearchServiceOuterClass
+import stackrox.generated.SensorEventServiceOuterClass
 import v1.SecretServiceGrpc
 import v1.NetworkPolicyServiceGrpc
 import v1.NetworkPolicyServiceOuterClass
@@ -95,6 +99,10 @@ class Services {
 
     static getNotifierClient() {
         return NotifierServiceGrpc.newBlockingStub(getChannel())
+    }
+
+    static getEnforcementClient() {
+        return EnforcementServiceGrpc.newBlockingStub(getChannel())
     }
 
     static List<ListPolicy> getPolicies(RawQuery query = RawQuery.newBuilder().build()) {
@@ -302,6 +310,20 @@ class Services {
         return policyMeta.lifecycleStage
     }
 
+    static updatePolicyEnforcement(String policyName, EnforcementAction enforcementAction) {
+        Policy policyMeta = getPolicyByName(policyName)
+        def policyDef = Policy.newBuilder(policyMeta)
+                .setEnforcement(enforcementAction)
+                .build()
+        try {
+            getPolicyClient().putPolicy(policyDef)
+        } catch (Exception e) {
+            return ""
+        }
+        println "Updated enforcement of '${policyName}' to ${enforcementAction}"
+        return policyMeta.enforcement
+    }
+
     static getClusterId(String name = "remote") {
         ClusterService.Cluster cluster = getClusterServiceClient().getClusters().clustersList.find { it.name == name }
 
@@ -451,5 +473,58 @@ class Services {
             println e.toString()
             assert e instanceof StatusRuntimeException
         }
+    }
+
+    static applyEnforcement(SensorEventServiceOuterClass.SensorEnforcement.Builder builder) {
+        try {
+            return getEnforcementClient().applyEnforcement(
+                    EnforcementServiceOuterClass.EnforcementRequest.newBuilder()
+                            .setClusterId(getClusterId())
+                            .setEnforcement(builder)
+                    .build()
+            )
+        } catch (Exception e) {
+            println e.toString()
+        }
+    }
+
+    static applyKillEnforcement(String podId, String namespace, String containerId) {
+        SensorEventServiceOuterClass.SensorEnforcement.Builder killEnforcemetBuilder =
+                SensorEventServiceOuterClass.SensorEnforcement.newBuilder()
+                        .setEnforcement(EnforcementAction.KILL_POD_ENFORCEMENT)
+                        .setContainerInstance(SensorEventServiceOuterClass.ContainerInstanceEnforcement.newBuilder()
+                                .setContainerInstanceId(containerId)
+                                .setPodId(podId)
+                                .setNamespace(namespace)
+                        )
+        return applyEnforcement(killEnforcemetBuilder)
+    }
+
+    static applyScaleDownEnforcement(objects.Deployment deployment) {
+        SensorEventServiceOuterClass.SensorEnforcement.Builder scaleDownEnforcementBuilder =
+                SensorEventServiceOuterClass.SensorEnforcement.newBuilder()
+                        .setEnforcement(EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
+                        .setDeployment(SensorEventServiceOuterClass.DeploymentEnforcement.newBuilder()
+                                .setDeploymentId(deployment.deploymentUid)
+                                .setDeploymentName(deployment.name)
+                                .setDeploymentType("Deployment")
+                                .setNamespace(deployment.namespace)
+                                .setAlertId("qa_automation")
+                        )
+        return applyEnforcement(scaleDownEnforcementBuilder)
+    }
+
+    static applyNodeConstraintEnforcement(objects.Deployment deployment) {
+        SensorEventServiceOuterClass.SensorEnforcement.Builder scaleDownEnforcementBuilder =
+                SensorEventServiceOuterClass.SensorEnforcement.newBuilder()
+                        .setEnforcement(EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT)
+                        .setDeployment(SensorEventServiceOuterClass.DeploymentEnforcement.newBuilder()
+                        .setDeploymentId(deployment.deploymentUid)
+                        .setDeploymentName(deployment.name)
+                        .setDeploymentType("Deployment")
+                        .setNamespace(deployment.namespace)
+                        .setAlertId("qa_automation")
+                )
+        return applyEnforcement(scaleDownEnforcementBuilder)
     }
 }

@@ -1,12 +1,13 @@
 package orchestratormanager
 
+import objects.Deployment
 import objects.NetworkPolicy
 
 interface OrchestratorMain {
     def setup()
     def cleanup()
 
-    def createDeployment(objects.Deployment deployment)
+    def createDeployment(Deployment deployment)
     /*TODO:
         def getDeploymenton(String deploymentName)
         def updateDeploymenton()
@@ -20,4 +21,8 @@ interface OrchestratorMain {
     String applyNetworkPolicy(NetworkPolicy policy)
     boolean deleteNetworkPolicy(NetworkPolicy policy)
     String generateYaml(Object orchestratorObject)
+    def wasContainerKilled(String containerName, String namespace)
+    def getDeploymentReplicaCount(Deployment deployment)
+    def getDeploymentUnavailableReplicaCount(Deployment deployment)
+    def getDeploymentNodeSelectors(Deployment deployment)
 }

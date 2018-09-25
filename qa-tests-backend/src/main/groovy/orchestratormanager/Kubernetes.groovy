@@ -1,5 +1,6 @@
 package orchestratormanager
 
+import com.google.gson.reflect.TypeToken
 import common.YamlGenerator
 import io.kubernetes.client.ApiClient
 import io.kubernetes.client.ApiException
@@ -16,6 +17,8 @@ import io.kubernetes.client.models.V1Namespace
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment
 import io.kubernetes.client.models.ExtensionsV1beta1DeploymentSpec
 import io.kubernetes.client.models.V1ContainerPort
+import io.kubernetes.client.models.V1Pod
+import io.kubernetes.client.models.V1PodList
 import io.kubernetes.client.models.V1PodTemplateSpec
 import io.kubernetes.client.models.V1PodSpec
 import io.kubernetes.client.models.V1SecretVolumeSource
@@ -35,10 +38,12 @@ import io.kubernetes.client.models.V1beta1NetworkPolicyIngressRule
 import io.kubernetes.client.models.V1beta1NetworkPolicyPeer
 import io.kubernetes.client.models.V1beta1NetworkPolicySpec
 import io.kubernetes.client.util.Config
+import io.kubernetes.client.util.Watch
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 
+import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
 
 class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
@@ -87,7 +92,9 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
 
     def portToContainerPort = { p -> new V1ContainerPort().containerPort(p) }
 
-    def waitForDeploymentCreation(String deploymentName, String namespace) {
+    def containerToContainerID = { container -> container.getContainerID() }
+
+    def waitForDeploymentCreation(String deploymentName, String namespace, Boolean skipReplicaWait = false) {
         int waitTime = 0
 
         while (waitTime < maxWaitTime) {
@@ -98,11 +105,16 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 if (v1beta1Deployment.getMetadata().getName() == deploymentName) {
                     println "Waiting for " + deploymentName
                     sleep(sleepDuration)
-                    if (v1beta1Deployment.getStatus().getReadyReplicas() > 0) {
+
+                    // Using the 'skipReplicaWait' bool to avoid timeout waiting for ready replicas if we know
+                    // the deployment will not have replicas available
+                    if (v1beta1Deployment.getStatus().getReadyReplicas() ==
+                            v1beta1Deployment.getSpec().getReplicas() ||
+                            skipReplicaWait) {
                         println deploymentName + ": deployment created."
                         //continue to sleep 5s to make the test more stable
                         sleep(sleepDuration)
-                        return
+                        return v1beta1Deployment.getMetadata().getUid()
                     }
                 }
                 waitTime += sleepDuration
@@ -112,6 +124,8 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     }
 
     String createDeployment(Deployment deployment) {
+        deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
+
         List<V1ContainerPort> containerPorts = deployment.getPorts().stream()
                 .map(portToContainerPort)
                 .collect(Collectors.<V1ContainerPort> toList())
@@ -150,7 +164,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                     .metadata(
                     new V1ObjectMeta()
                             .name(deployment.getName())
-                            .namespace(this.namespace)
+                            .namespace(deployment.getNamespace())
                             .labels(deployment.getLabels()))
                     .spec(new ExtensionsV1beta1DeploymentSpec()
                     .replicas(1)
@@ -165,8 +179,37 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
             )
 
         try {
-            beta1.createNamespacedDeployment(this.namespace, k8sDeployment, null)
-            waitForDeploymentCreation(deployment.getName(), this.namespace)
+            beta1.createNamespacedDeployment(deployment.getNamespace(), k8sDeployment, null)
+            deployment.deploymentUid = waitForDeploymentCreation(
+                    deployment.getName(),
+                    deployment.getNamespace(),
+                    deployment.skipReplicaWait
+            )
+
+            // Filtering pod query by using the "name=<name>" because it should always be present in the deployment
+            // object - IF this is ever missing, it may cause problems fetching pod details
+            V1PodList deployedPods = this.api.listNamespacedPod(
+                    deployment.namespace,
+                    null,
+                    null,
+                    null,
+                    null,
+                    "name=" + deployment.name,
+                    null,
+                    null,
+                    null,
+                    null
+            )
+            for (V1Pod pod : deployedPods.getItems()) {
+                deployment.addPod(
+                        pod.getMetadata().getName(),
+                        pod.getMetadata().getUid(),
+                        pod.getStatus().getContainerStatuses() == null ?
+                                [] :
+                                pod.getStatus().getContainerStatuses().stream().map(containerToContainerID)
+                                .collect(Collectors.toList())
+                )
+            }
         } catch (Exception e) {
             println("Creating deployment error: " + e.toString())
         }
@@ -366,6 +409,121 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
 
         return ""
     }
+
+    def wasContainerKilled(String containerName, String namespace = this.namespace) {
+        ApiClient client = Config.defaultClient()
+        client.getHttpClient().setReadTimeout(600, TimeUnit.SECONDS)
+        Configuration.setDefaultApiClient(client)
+
+        Watch<V1Pod> watch =
+                Watch.createWatch(
+                        client,
+                        this.api.listNamespacedPodCall(
+                                namespace,
+                                null,
+                                null,
+                                null,
+                                true,
+                                null,
+                                Integer.MAX_VALUE,
+                                null,
+                                180,
+                                true,
+                                null,
+                                null
+                        ),
+                        new TypeToken<Watch.Response<V1Pod>>() { }.getType()
+                )
+
+        try {
+            for (Watch.Response<V1Pod> item : watch) {
+                if (item.object.getMetadata().getName() == containerName &&
+                        item.object.getStatus().getContainerStatuses().get(0).getState().getTerminated() != null) {
+                    printf "%s : %s%n",
+                            item.object.getMetadata().getName(),
+                            item.object.getStatus().getContainerStatuses().get(0).getState().getTerminated()
+                    break
+                }
+            }
+        } catch (Exception e) {
+            println "did not find terminated pod before timeout"
+            return false
+        } finally {
+            watch.close()
+        }
+
+        return true
+    }
+
+    def getDeploymentReplicaCount(Deployment deployment) {
+        ExtensionsV1beta1DeploymentList deployments = this.beta1.listNamespacedDeployment(
+                deployment.namespace,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        )
+        for (ExtensionsV1beta1Deployment d : deployments.getItems()) {
+            if (d.getMetadata().getName() == deployment.name) {
+                println "${deployment.name}: Replicas=${d.getSpec().getReplicas()}"
+                return d.getSpec().getReplicas()
+            }
+        }
+        return null
+    }
+
+    def getDeploymentUnavailableReplicaCount(Deployment deployment) {
+        ExtensionsV1beta1DeploymentList deployments = this.beta1.listNamespacedDeployment(
+                deployment.namespace,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        )
+        for (ExtensionsV1beta1Deployment d : deployments.getItems()) {
+            if (d.getMetadata().getName() == deployment.name) {
+                println "${deployment.name}: Unavailable Replicas=${d.getStatus().getUnavailableReplicas()}"
+                return d.getStatus().getUnavailableReplicas()
+            }
+        }
+        return null
+    }
+
+    def getDeploymentNodeSelectors(Deployment deployment) {
+        ExtensionsV1beta1DeploymentList deployments = this.beta1.listNamespacedDeployment(
+                deployment.namespace,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        )
+        for (ExtensionsV1beta1Deployment d : deployments.getItems()) {
+            if (d.getMetadata().getName() == deployment.name) {
+                println "${deployment.name}: Host=${d.getSpec().getTemplate().getSpec().getNodeSelector()}"
+                return d.getSpec().getTemplate().getSpec().getNodeSelector()
+            }
+        }
+        return null
+    }
+
+    /*
+        Private K8S Support functions
+     */
 
     private V1beta1NetworkPolicy createNetworkPolicyObject(NetworkPolicy policy) {
         V1beta1NetworkPolicy networkPolicy = new V1beta1NetworkPolicy()
