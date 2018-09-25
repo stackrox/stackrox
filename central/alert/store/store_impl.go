@@ -68,11 +68,12 @@ func convertAlertsToListAlerts(a *v1.Alert) *v1.ListAlert {
 		Stale:       a.GetStale(),
 		MarkedStale: a.GetMarkedStale(),
 		Policy: &v1.ListAlertPolicy{
-			Id:          a.GetPolicy().GetId(),
-			Name:        a.GetPolicy().GetName(),
-			Severity:    a.GetPolicy().GetSeverity(),
-			Description: a.GetPolicy().GetDescription(),
-			Categories:  a.GetPolicy().GetCategories(),
+			Id:             a.GetPolicy().GetId(),
+			Name:           a.GetPolicy().GetName(),
+			Severity:       a.GetPolicy().GetSeverity(),
+			Description:    a.GetPolicy().GetDescription(),
+			Categories:     a.GetPolicy().GetCategories(),
+			LifecycleStage: a.GetPolicy().GetLifecycleStage(),
 		},
 		Deployment: &v1.ListAlertDeployment{
 			Id:          a.GetDeployment().GetId(),

@@ -3,8 +3,9 @@
     "description": "Detects process execution of yum",
     "severity": "LOW_SEVERITY",
     "categories": ["Package Management"],
+    "lifecycle_stage": "RUN_TIME",
     "fields": {
-        "component": {
+        "process_policy": {
             "name": "yum$"
         }
     },

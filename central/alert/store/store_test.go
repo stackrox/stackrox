@@ -49,7 +49,8 @@ func (s *alertStoreTestSuite) TestAlerts() {
 		{
 			Id: "id2",
 			Policy: &v1.Policy{
-				Severity: v1.Severity_HIGH_SEVERITY,
+				Severity:       v1.Severity_HIGH_SEVERITY,
+				LifecycleStage: v1.LifecycleStage_RUN_TIME,
 			},
 		},
 	}
@@ -72,6 +73,7 @@ func (s *alertStoreTestSuite) TestAlerts() {
 		s.NoError(err)
 		s.True(exists)
 		s.Equal(a.GetPolicy().GetSeverity(), list.GetPolicy().GetSeverity())
+		s.Equal(a.GetPolicy().GetLifecycleStage(), list.GetPolicy().GetLifecycleStage())
 	}
 
 	for _, a := range alerts {
@@ -89,6 +91,7 @@ func (s *alertStoreTestSuite) TestAlerts() {
 		s.NoError(err)
 		s.True(exists)
 		s.Equal(a.GetPolicy().GetSeverity(), list.GetPolicy().GetSeverity())
+		s.Equal(a.GetPolicy().GetLifecycleStage(), list.GetPolicy().GetLifecycleStage())
 	}
 
 }
