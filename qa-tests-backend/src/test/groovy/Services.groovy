@@ -451,6 +451,42 @@ class Services {
         }
     }
 
+    static String addGcrRegistryAndScanner() {
+        String serviceAccount = System.getenv("GKE_SERVICE_ACCOUNT")
+        String gcrId = ""
+
+        try {
+            gcrId = getIntegrationClient().postImageIntegration(
+                ImageIntegration.newBuilder()
+                    .setName("gcr")
+                    .setType("google")
+                    .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.REGISTRY)
+                    .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.SCANNER)
+                    .putConfig("endpoint", "gcr.io")
+                    .putConfig("project", "ultra-current-825")
+                    .putConfig("serviceAccount", serviceAccount)
+                    .build()
+            )
+            .getId()
+        } catch (Exception e) {
+            println e.toString()
+        }
+
+        return gcrId
+    }
+
+    static deleteGcrRegistryAndScanner(String gcrId) {
+        try {
+            getIntegrationClient().deleteImageIntegration(
+                    ResourceByID.newBuilder()
+                            .setId(gcrId)
+                            .build()
+            )
+        } catch (Exception e) {
+            println e.toString()
+        }
+    }
+
     static applyEnforcement(SensorEventServiceOuterClass.SensorEnforcement.Builder builder) {
         try {
             return getEnforcementClient().applyEnforcement(

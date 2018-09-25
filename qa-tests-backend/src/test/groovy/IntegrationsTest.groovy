@@ -1,4 +1,3 @@
-import groups.Integration
 import org.junit.experimental.categories.Category
 import groups.BAT
 import spock.lang.Unroll
@@ -18,16 +17,28 @@ class IntegrationsTest extends BaseSpecification {
         def clairifyId = Services.addClairifyScanner(orchestrator.getClairifyEndpoint())
 
         then:
-        "Verify the integration succeed"
+        "Verify the Clairify integration"
         assert clairifyId != null
 
         cleanup:
         "Remove the deployment and integration"
         orchestrator.deleteService("clairify", "stackrox")
         orchestrator.deleteDeployment("clairify", "stackrox")
-        if (clairifyId != null) {
-            Services.deleteClairifyScanner(clairifyId)
-        }
+        assert Services.deleteClairifyScanner(clairifyId)
+    }
+    @Category(BAT)
+    def "Verify GCR Integration"() {
+        when:
+        "Create GCR integration"
+        def gcrId = Services.addGcrRegistryAndScanner()
+        println "GCR ID is: " + gcrId
+        then:
+        "Verify the GCR integration"
+        assert gcrId != null
+
+        cleanup:
+        "Remove gcr integration"
+        assert Services.deleteGcrRegistryAndScanner(gcrId)
     }
 
     @Unroll
@@ -95,4 +106,5 @@ class IntegrationsTest extends BaseSpecification {
         // Cannot add port 25 tests since GCP blocks outgoing
         // connections to port 25
     }
+
 }

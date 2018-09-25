@@ -115,6 +115,7 @@ test {
     environment "TESTRAIL" , System.getenv("TESTRAIL")
     environment "USERNAME" , System.getenv("USERNAME")
     environment "PASSWORD" , System.getenv("PASSWORD")
+    environment "GKE_SERVICE_ACCOUNT", System.getenv("GKE_SERVICE_ACCOUNT")
 }
 
 
