@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/readable"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -224,6 +225,39 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		componentDeps[component] = dep
 	}
 
+	heartbleedDep := deploymentWithComponents([]*v1.ImageScanComponent{
+		{Name: "heartbleed", Version: "1.2", Vulns: []*v1.Vulnerability{
+			{Cve: "CVE-2014-0160", Link: "https://heartbleed"},
+		}},
+	})
+	suite.mustIndexDepAndImages(heartbleedDep)
+
+	shellshockDep := deploymentWithComponents([]*v1.ImageScanComponent{
+		{Name: "shellshock", Version: "1.2", Vulns: []*v1.Vulnerability{
+			{Cve: "CVE-2014-6271", Link: "https://shellshock"},
+			{Cve: "CVE-ARBITRARY", Link: "https://notshellshock"},
+		}},
+	})
+	suite.mustIndexDepAndImages(shellshockDep)
+
+	strutsDep := deploymentWithComponents([]*v1.ImageScanComponent{
+		{Name: "struts", Version: "1.2", Vulns: []*v1.Vulnerability{
+			{Cve: "CVE-2017-5638", Link: "https://struts"},
+		}},
+		{Name: "OTHER", Version: "1.3", Vulns: []*v1.Vulnerability{
+			{Cve: "CVE-1223-451", Link: "https://cvefake"},
+		}},
+	})
+	suite.mustIndexDepAndImages(strutsDep)
+
+	depWithNonSeriousVulns := deploymentWithComponents([]*v1.ImageScanComponent{
+		{Name: "NOSERIOUS", Version: "2.3", Vulns: []*v1.Vulnerability{
+			{Cve: "CVE-1234-5678", Link: "https://abcdefgh"},
+			{Cve: "CVE-5678-1234", Link: "https://lmnopqrst"},
+		}},
+	})
+	suite.mustIndexDepAndImages(depWithNonSeriousVulns)
+
 	dockerSockDep := &v1.Deployment{
 		Id: "DOCKERSOCDEP",
 		Containers: []*v1.Container{
@@ -263,9 +297,67 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	// that none of our queries will accidentally match it.
 	suite.mustIndexDepAndImages(&v1.Deployment{Id: "FAKEID", Name: "FAKENAME"})
 
+	depWithGoodEmailAnnotation := &v1.Deployment{
+		Id: "GOODEMAILDEPID",
+		Annotations: map[string]string{
+			"email": "vv@stackrox.com",
+		},
+	}
+	suite.mustIndexDepAndImages(depWithGoodEmailAnnotation)
+
+	depWithOwnerAnnotation := &v1.Deployment{
+		Id: "OWNERANNOTATIONDEP",
+		Annotations: map[string]string{
+			"owner": "IOWNTHIS",
+			"blah":  "Blah",
+		},
+	}
+	suite.mustIndexDepAndImages(depWithOwnerAnnotation)
+
+	depWitharbitraryAnnotations := &v1.Deployment{
+		Id: "ARBITRARYANNOTATIONDEPID",
+		Annotations: map[string]string{
+			"emailnot": "vv@stackrox.com",
+			"notemail": "vv@stackrox.com",
+			"ownernot": "vv",
+			"nowner":   "vv",
+		},
+	}
+	suite.mustIndexDepAndImages(depWitharbitraryAnnotations)
+
+	depWithBadEmailAnnotation := &v1.Deployment{
+		Id: "BADEMAILDEPID",
+		Annotations: map[string]string{
+			"email": "NOTANEMAIL",
+		},
+	}
+	suite.mustIndexDepAndImages(depWithBadEmailAnnotation)
+
+	sysAdminDep := &v1.Deployment{
+		Id: "SYSADMINDEPID",
+		Containers: []*v1.Container{
+			{
+				SecurityContext: &v1.SecurityContext{
+					AddCapabilities: []string{"CAP_SYS_ADMIN"},
+				},
+			},
+		},
+	}
+	suite.mustIndexDepAndImages(sysAdminDep)
+
+	// Find all the deployments indexed.
+	allDeployments, err := suite.deploymentIndexer.Search(search.EmptyQuery())
+	suite.NoError(err)
+
 	testCases := []struct {
 		policyName         string
 		expectedViolations map[string][]*v1.Alert_Violation
+
+		// If shouldNotMatch is specified (which is the case for policies that check for the absence of something), we verify that
+		// it matches everything except shouldNotMatch.
+		// If sampleViolationForMatched is provided, we verify that all the matches are the string provided in sampleViolationForMatched.
+		shouldNotMatch            map[string]struct{}
+		sampleViolationForMatched string
 	}{
 		{
 			policyName: "Latest tag",
@@ -458,8 +550,22 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			// This policy is special-cased in the test handling code.
 			policyName: "Images with no scans",
+			shouldNotMatch: map[string]struct{}{
+				fixtureDep.GetId(): {}, // This deployment has scans on its images.
+				// The rest of the deployments have no images!
+				"FAKEID":                            {},
+				containerPort22Dep.GetId():          {},
+				dockerSockDep.GetId():               {},
+				secretEnvDep.GetId():                {},
+				oldScannedDep.GetId():               {},
+				depWithOwnerAnnotation.GetId():      {},
+				depWithGoodEmailAnnotation.GetId():  {},
+				depWithBadEmailAnnotation.GetId():   {},
+				depWitharbitraryAnnotations.GetId(): {},
+				sysAdminDep.GetId():                 {},
+			},
+			sampleViolationForMatched: "Images without scans were found",
 		},
 		{
 			policyName: "Cryptomining Entrypoint",
@@ -467,6 +573,75 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				minerdDep.GetId(): {
 					{
 						Message: "Dockerfile Line 'ENTRYPOINT minerd' matches the rule ENTRYPOINT .*minerd.*",
+					},
+				},
+			},
+		},
+		{
+			policyName:                "Required Label: Email",
+			shouldNotMatch:            map[string]struct{}{fixtureDep.GetId(): {}},
+			sampleViolationForMatched: "Required label not found (key = 'email', value = '^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$')",
+		},
+		{
+			policyName:                "Required Annotation: Email",
+			shouldNotMatch:            map[string]struct{}{depWithGoodEmailAnnotation.GetId(): {}},
+			sampleViolationForMatched: "Required annotation not found (key = 'email', value = '^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$')",
+		},
+		{
+			policyName:                "Required Label: Owner",
+			shouldNotMatch:            map[string]struct{}{fixtureDep.GetId(): {}},
+			sampleViolationForMatched: "Required label not found (key = 'owner', value = '.+')",
+		},
+		{
+			policyName:                "Required Annotation: Owner",
+			shouldNotMatch:            map[string]struct{}{depWithOwnerAnnotation.GetId(): {}},
+			sampleViolationForMatched: "Required annotation not found (key = 'owner', value = '.+')",
+		},
+		{
+			policyName: "CAP_SYS_ADMIN capability added",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				sysAdminDep.GetId(): {
+					{
+						Message: "CAP_SYS_ADMIN was in the ADD CAPABILITIES list",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Shellshock: CVE-2014-6271",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				shellshockDep.GetId(): {
+					{
+						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-6271'",
+						Link:    "https://shellshock",
+					},
+				},
+				fixtureDep.GetId(): {
+					{
+						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-6271'",
+						Link:    "https://nvd.nist.gov/vuln/detail/CVE-2014-6271",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Apache Struts: CVE-2017-5638",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				strutsDep.GetId(): {
+					{
+						Message: "CVE CVE-2017-5638 matched regex 'CVE-2017-5638'",
+						Link:    "https://struts",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Heartbleed: CVE-2014-0160",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				heartbleedDep.GetId(): {
+					{
+						Message: "CVE CVE-2014-0160 matched regex 'CVE-2014-0160'",
+						Link:    "https://heartbleed",
 					},
 				},
 			},
@@ -509,11 +684,24 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			matches, err := m.Match(suite.deploymentIndexer)
 			require.NoError(t, err)
 
-			// This particular policy matches almost all our test deployments, so treat it specially.
-			if c.policyName == "Images with no scans" {
-				assert.True(t, len(matches) > 12, "Expected at least 12 matches but found %+v", matches)
-				_, fixtureDepMatched := matches[fixtureDep.GetId()]
-				assert.False(t, fixtureDepMatched, "Fixture dep has scans and shouldn't match this policy")
+			if len(c.shouldNotMatch) > 0 {
+				assert.Nil(t, c.expectedViolations, "Don't specify expected violations and shouldNotMatch")
+				for id := range c.shouldNotMatch {
+					_, exists := matches[id]
+					assert.False(t, exists, "Should not have matched %s", id)
+				}
+				for _, depResult := range allDeployments {
+					id := depResult.ID
+					_, shouldNotMatch := c.shouldNotMatch[id]
+					if shouldNotMatch {
+						continue
+					}
+					match, exists := matches[id]
+					require.True(t, exists, "Should have matched %s", id)
+					if c.sampleViolationForMatched != "" {
+						assert.Equal(t, c.sampleViolationForMatched, match[0].GetMessage())
+					}
+				}
 				return
 			}
 

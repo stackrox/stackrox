@@ -12,7 +12,7 @@ var Registry = []searchbasedpolicies.PolicyQueryBuilder{
 	imageAgeQueryBuilder,
 	builders.NewDockerFileLineQueryBuilder(),
 	// CVSS
-	// CVE
+	builders.CVEQueryBuilder{},
 	componentQueryBuilder,
 	scanAgeQueryBuilder,
 	builders.ScanExistsQueryBuilder{},
@@ -23,11 +23,11 @@ var Registry = []searchbasedpolicies.PolicyQueryBuilder{
 	userQueryBuilder,
 	volumeQueryBuilder,
 	portQueryBuilder,
-	// requiredlabel
-	// requiredannotation
+	requiredLabelQueryBuilder,
+	requiredAnnotationQueryBuilder,
 	builders.PrivilegedQueryBuilder{},
-	// drop_caps
-	// add_caps
+	builders.NewAddCapQueryBuilder(),
+	builders.NewDropCapQueryBuilder(),
 	// container_resource
 	// total_resource
 }

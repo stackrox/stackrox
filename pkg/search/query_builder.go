@@ -18,11 +18,24 @@ const (
 
 	// NullString represents the string we use for querying for the absence of any value in a field.
 	NullString = "-"
+
+	// NegationPrefix is the prefix to negate a query.
+	NegationPrefix = "!"
 )
 
 // RegexQueryString returns the "regex" form of the query.
 func RegexQueryString(query string) string {
 	return fmt.Sprintf("%s%s", RegexPrefix, strings.ToLower(query))
+}
+
+// NegateQueryString negates the given query.
+func NegateQueryString(query string) string {
+	return fmt.Sprintf("%s%s", NegationPrefix, query)
+}
+
+// NullQueryString returns a null query
+func NullQueryString() string {
+	return NullString
 }
 
 type fieldValue struct {
@@ -116,6 +129,12 @@ func (qb *QueryBuilder) AddNullField(k FieldLabel) *QueryBuilder {
 // AddStrings adds a key value pair to the query.
 func (qb *QueryBuilder) AddStrings(k FieldLabel, v ...string) *QueryBuilder {
 	qb.fieldsToValues[k] = append(qb.fieldsToValues[k], v...)
+	return qb
+}
+
+// AddMapQuery adds a query for a key and a value in a map field.
+func (qb *QueryBuilder) AddMapQuery(k FieldLabel, mapKey, mapValue string) *QueryBuilder {
+	qb.AddStrings(k, fmt.Sprintf("%s=%s", mapKey, mapValue))
 	return qb
 }
 

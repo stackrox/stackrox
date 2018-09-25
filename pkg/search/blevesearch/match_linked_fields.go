@@ -101,7 +101,7 @@ func matchAllFieldsQuery(index bleve.Index, category v1.SearchCategory, fieldsAn
 		if highlightCtx != nil {
 			highlightCtx.AddFieldToHighlight(fieldsAndValues[0].sf.GetFieldPath())
 		}
-		return matchFieldQuery(category, fieldsAndValues[0].sf, fieldsAndValues[0].value)
+		return matchFieldQuery(category, fieldsAndValues[0].sf.GetFieldPath(), fieldsAndValues[0].sf.GetType(), fieldsAndValues[0].value)
 	}
 
 	// If we have to match multiple fields, and check that the matches are in the corresponding positions,
@@ -110,7 +110,7 @@ func matchAllFieldsQuery(index bleve.Index, category v1.SearchCategory, fieldsAn
 	// See the comments on tree.Tree for details on how the array positions checks work.
 	mfQs := make([]query.Query, 0, len(fieldsAndValues))
 	for _, fieldAndValue := range fieldsAndValues {
-		mfQ, err := matchFieldQuery(category, fieldAndValue.sf, fieldAndValue.value)
+		mfQ, err := matchFieldQuery(category, fieldAndValue.sf.GetFieldPath(), fieldAndValue.sf.GetType(), fieldAndValue.value)
 		if err != nil {
 			return nil, fmt.Errorf("computing match field query for %+v: %s", fieldAndValue, err)
 		}

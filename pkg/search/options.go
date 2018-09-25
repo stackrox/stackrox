@@ -20,6 +20,7 @@ const (
 	Severity    FieldLabel = "Severity"
 
 	CVE                          FieldLabel = "CVE"
+	CVELink                      FieldLabel = "CVELink"
 	CVSS                         FieldLabel = "CVSS"
 	Component                    FieldLabel = "Component"
 	ComponentVersion             FieldLabel = "Component Version"
@@ -33,6 +34,7 @@ const (
 	ImageScanTime                FieldLabel = "Image Scan Time"
 	ImageTag                     FieldLabel = "Image Tag"
 
+	Annotation        FieldLabel = "Annotation"
 	Command           FieldLabel = "Command"
 	CommandArgs       FieldLabel = "Command Args"
 	CPUCoresLimit     FieldLabel = "CPU Cores Limit"

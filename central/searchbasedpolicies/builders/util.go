@@ -2,6 +2,7 @@ package builders
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -39,4 +40,18 @@ func violationPrinterForField(fieldPath string, matchToMessage func(match string
 		return violations
 
 	}
+}
+
+func printKeyValuePolicy(kvp *v1.KeyValuePolicy) string {
+	sb := strings.Builder{}
+	if kvp.GetKey() != "" {
+		sb.WriteString(fmt.Sprintf("key = '%s'", kvp.GetKey()))
+		if kvp.GetValue() != "" {
+			sb.WriteString(", ")
+		}
+	}
+	if kvp.GetValue() != "" {
+		sb.WriteString(fmt.Sprintf("value = '%s'", kvp.GetValue()))
+	}
+	return sb.String()
 }

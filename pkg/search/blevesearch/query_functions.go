@@ -11,21 +11,37 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
-const (
-	negationPrefix = "!"
-)
-
 var datatypeToQueryFunc = map[v1.SearchDataType]func(v1.SearchCategory, string, string) (query.Query, error){
-	v1.SearchDataType_SEARCH_STRING:   newStringQuery,
-	v1.SearchDataType_SEARCH_BOOL:     newBoolQuery,
-	v1.SearchDataType_SEARCH_NUMERIC:  newNumericQuery,
-	v1.SearchDataType_SEARCH_DATETIME: newTimeQuery,
-
+	v1.SearchDataType_SEARCH_STRING:          newStringQuery,
+	v1.SearchDataType_SEARCH_BOOL:            newBoolQuery,
+	v1.SearchDataType_SEARCH_NUMERIC:         newNumericQuery,
+	v1.SearchDataType_SEARCH_DATETIME:        newTimeQuery,
 	v1.SearchDataType_SEARCH_SEVERITY:        newSeverityQuery,
 	v1.SearchDataType_SEARCH_ENFORCEMENT:     newEnforcementQuery,
-	v1.SearchDataType_SEARCH_MAP:             newMapQuery,
 	v1.SearchDataType_SEARCH_SECRET_TYPE:     newSecretTypeQuery,
 	v1.SearchDataType_SEARCH_VIOLATION_STATE: newViolationStateQuery,
+	// Map type is handled specially.
+}
+
+func matchFieldQuery(category v1.SearchCategory, searchFieldPath string, searchFieldType v1.SearchDataType, value string) (query.Query, error) {
+	// Map queries are handled separately since they have a dynamic search field path.
+	if searchFieldType == v1.SearchDataType_SEARCH_MAP {
+		return newMapQuery(category, searchFieldPath, value)
+	}
+
+	// Special case: wildcard
+	if value == pkgSearch.WildcardString {
+		return getWildcardQuery(searchFieldPath), nil
+	}
+	// Special case: null
+	if value == pkgSearch.NullString {
+		bq := bleve.NewBooleanQuery()
+		bq.AddMustNot(getWildcardQuery(searchFieldPath))
+		bq.AddMust(typeQuery(category))
+		return bq, nil
+	}
+
+	return datatypeToQueryFunc[searchFieldType](category, searchFieldPath, value)
 }
 
 func getWildcardQuery(field string) *query.WildcardQuery {
@@ -34,30 +50,18 @@ func getWildcardQuery(field string) *query.WildcardQuery {
 	return wq
 }
 
-func matchFieldQuery(category v1.SearchCategory, searchField *v1.SearchField, value string) (query.Query, error) {
-	// Special case: wildcard
-	if value == pkgSearch.WildcardString {
-		return getWildcardQuery(searchField.GetFieldPath()), nil
-	}
-	// Special case: null
-	if value == pkgSearch.NullString {
-		bq := bleve.NewBooleanQuery()
-		bq.AddMustNot(getWildcardQuery(searchField.GetFieldPath()))
-		bq.AddMust(typeQuery(category))
-		return bq, nil
-	}
-
-	return datatypeToQueryFunc[searchField.GetType()](category, searchField.GetFieldPath(), value)
-}
-
 func newStringQuery(category v1.SearchCategory, field string, value string) (query.Query, error) {
 	if len(value) == 0 {
 		return nil, fmt.Errorf("value in search query cannot be empty")
 	}
 	switch {
-	case strings.HasPrefix(value, negationPrefix) && len(value) > 1:
+	case strings.HasPrefix(value, pkgSearch.NegationPrefix) && len(value) > 1:
 		boolQuery := bleve.NewBooleanQuery()
-		boolQuery.AddMustNot(NewMatchPhrasePrefixQuery(field, value[len(negationPrefix):]))
+		subQuery, err := newStringQuery(category, field, value[len(pkgSearch.NegationPrefix):])
+		if err != nil {
+			return nil, fmt.Errorf("error computing sub query under negation: %s %s: %s", field, value, err)
+		}
+		boolQuery.AddMustNot(subQuery)
 		// This is where things are interesting. BooleanQuery basically generates a true or false that can be used
 		// however we must pipe in the search category because the boolean query returns a true/false designation
 		boolQuery.AddMust(typeQuery(category))
@@ -84,7 +88,7 @@ func newMapQuery(category v1.SearchCategory, field string, value string) (query.
 	if err != nil {
 		return nil, err
 	}
-	return newStringQuery(category, field+"."+mapKey, mapValue)
+	return matchFieldQuery(category, field+"."+mapKey, v1.SearchDataType_SEARCH_STRING, mapValue)
 }
 
 func newBoolQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {

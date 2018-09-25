@@ -210,10 +210,7 @@ func resolveMatchFieldQuery(index bleve.Index, category v1.SearchCategory, searc
 			continue
 		}
 		for _, fieldValue := range fieldValues {
-			q, err := matchFieldQuery(parentCategory, &v1.SearchField{
-				FieldPath: relationshipField.srcField,
-				Type:      v1.SearchDataType_SEARCH_STRING,
-			}, fieldValue)
+			q, err := matchFieldQuery(parentCategory, relationshipField.srcField, v1.SearchDataType_SEARCH_STRING, fieldValue)
 			if err != nil {
 				return nil, fmt.Errorf("computing query for field '%s': %s", fieldValue, err)
 			}

@@ -1,26 +1,32 @@
 package fixtures
 
 import (
+	"fmt"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
-// GetImage returns a Mock Image
-func GetImage() *v1.Image {
+func getVulnsPerComponent(componentIndex int) []*v1.Vulnerability {
 	numVulnsPerComponent := 5
 	vulnsPerComponent := make([]*v1.Vulnerability, 0, numVulnsPerComponent)
 	for i := 0; i < numVulnsPerComponent; i++ {
+		cveName := fmt.Sprintf("CVE-2014-62%d%d", componentIndex, i)
 		vulnsPerComponent = append(vulnsPerComponent, &v1.Vulnerability{
-			Cve:     "CVE-2014-6271",
+			Cve:     cveName,
 			Cvss:    10,
 			Summary: "GNU Bash through 4.3 processes trailing strings after function definitions in the values of environment variables, which allows remote attackers to execute arbitrary code via a crafted environment, as demonstrated by vectors involving the ForceCommand feature in OpenSSH sshd, the mod_cgi and mod_cgid modules in the Apache HTTP Server, scripts executed by unspecified DHCP clients, and other situations in which setting the environment occurs across a privilege boundary from Bash execution, aka \"ShellShock.\"  NOTE: the original fix for this issue was incorrect; CVE-2014-7169 has been assigned to cover the vulnerability that is still present after the incorrect fix.",
-			Link:    "https://nvd.nist.gov/vuln/detail/CVE-2014-6271",
+			Link:    fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", cveName),
 			SetFixedBy: &v1.Vulnerability_FixedBy{
 				FixedBy: "abcdefg",
 			},
 		})
 	}
+	return vulnsPerComponent
+}
 
+// GetImage returns a Mock Image
+func GetImage() *v1.Image {
 	numComponentsPerImage := 50
 	componentsPerImage := make([]*v1.ImageScanComponent, 0, numComponentsPerImage)
 	for i := 0; i < numComponentsPerImage; i++ {
@@ -31,7 +37,7 @@ func GetImage() *v1.Image {
 				Name: "blah",
 				Type: "GPL",
 			},
-			Vulns: vulnsPerComponent,
+			Vulns: getVulnsPerComponent(i),
 		})
 	}
 	author := "author"

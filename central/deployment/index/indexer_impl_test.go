@@ -212,13 +212,20 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	suite.NoError(suite.indexer.AddDeployment(nginx110Dep))
 	suite.NoError(suite.imageIndexer.AddImage(imgNginx110))
 
+	badEmailDep := &v1.Deployment{
+		Id:     "BADEMAILID",
+		Labels: map[string]string{"email": "INVALIDEMAIL"},
+	}
+	suite.NoError(suite.indexer.AddDeployment(badEmailDep))
+
 	secretIndexer := secretIndex.New(suite.bleveIndex)
-	secretIndexer.UpsertSecret(&v1.Secret{
+	suite.NoError(secretIndexer.UpsertSecret(&v1.Secret{
 		Id: "ABC",
-	})
+	}))
 
 	processIndexer := processIndicatorIndex.New(suite.bleveIndex)
-	processIndexer.AddProcessIndicator(fixtures.GetProcessIndicator())
+	suite.NoError(processIndexer.AddProcessIndicator(fixtures.GetProcessIndicator()))
+
 	cases := []struct {
 		fieldValues           map[search.FieldLabel]string
 		linkedFields          []search.FieldLabel
@@ -230,15 +237,35 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	}{
 		{
 			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "nginx"},
-			expectedIDs: []string{fixtures.GetDeployment().GetId()},
+			expectedIDs: []string{deployment.GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "r/ngi.*"},
+			expectedIDs: []string{deployment.GetId()},
 		},
 		{
 			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nginx"},
-			expectedIDs: []string{notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId()},
+			expectedIDs: []string{notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId(), badEmailDep.GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!r/ngi.*"},
+			expectedIDs: []string{notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId(), badEmailDep.GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!!nginx"},
+			expectedIDs: []string{deployment.GetId()},
 		},
 		{
 			fieldValues: map[search.FieldLabel]string{search.Label: "com.docker.stack.namespace=prevent"},
-			expectedIDs: []string{fixtures.GetDeployment().GetId()},
+			expectedIDs: []string{deployment.GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.Label: "email=r/^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"},
+			expectedIDs: []string{deployment.GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.Label: "email=!r/^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"},
+			expectedIDs: []string{notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId(), badEmailDep.GetId()},
 		},
 		{
 			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nginx", search.Label: "com.docker.stack.namespace=prevent"},
@@ -249,8 +276,12 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			expectedIDs: []string{deployment.GetId()},
 		},
 		{
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch", search.Label: "com.docker.stack.namespace=*"},
+			expectedIDs: []string{deployment.GetId()},
+		},
+		{
 			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch"},
-			expectedIDs: []string{deployment.GetId(), notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId()},
+			expectedIDs: []string{deployment.GetId(), notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId(), badEmailDep.GetId()},
 		},
 		{
 			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch", search.ImageRegistry: "stackrox"},

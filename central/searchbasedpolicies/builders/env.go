@@ -2,7 +2,6 @@ package builders
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -18,20 +17,6 @@ func regexOrWildcard(valueInPolicy string) string {
 		return search.WildcardString
 	}
 	return search.RegexQueryString(valueInPolicy)
-}
-
-func printEnvPolicy(env *v1.KeyValuePolicy) string {
-	sb := strings.Builder{}
-	if env.GetKey() != "" {
-		sb.WriteString(fmt.Sprintf("key = '%s'", env.GetKey()))
-		if env.GetValue() != "" {
-			sb.WriteString(", ")
-		}
-	}
-	if env.GetValue() != "" {
-		sb.WriteString(fmt.Sprintf("value = '%s'", env.GetValue()))
-	}
-	return sb.String()
 }
 
 // Query implements the PolicyQueryBuilder interface.
@@ -71,7 +56,7 @@ func (e EnvQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.Fi
 			}
 			violations = append(violations, &v1.Alert_Violation{
 				Message: fmt.Sprintf("Container Environment (key='%s', value='%s') matched environment policy (%s)",
-					keyMatch, valueMatches[i], printEnvPolicy(fields.GetEnv())),
+					keyMatch, valueMatches[i], printKeyValuePolicy(fields.GetEnv())),
 			})
 		}
 		return violations
