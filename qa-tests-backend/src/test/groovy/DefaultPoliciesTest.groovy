@@ -7,7 +7,7 @@ import spock.lang.Unroll
 import objects.Deployment
 import java.util.stream.Collectors
 
-class SystemPoliciesTest extends BaseSpecification {
+class DefaultPoliciesTest extends BaseSpecification {
     @Test
     @Category(BAT)
     def "Verify policy life cycle"() {
