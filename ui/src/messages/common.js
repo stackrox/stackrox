@@ -13,7 +13,7 @@ const common = Object.freeze({
     lifecycleStageLabels: {
         BUILD_TIME: 'Build',
         DEPLOY_TIME: 'Deploy',
-        RUN_TIME: 'Run'
+        RUN_TIME: 'Runtime'
     }
 });
 

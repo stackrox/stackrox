@@ -1,3 +1,5 @@
+import { lifecycleStageLabels } from 'messages/common';
+
 const comparatorOp = {
     GREATER_THAN: '>',
     GREATER_THAN_OR_EQUALS: '>=',
@@ -44,14 +46,7 @@ const fieldsMap = {
     },
     lifecycleStage: {
         label: 'Lifecycle Stage',
-        formatValue: d => {
-            switch (d) {
-                case 'BUILD_TIME':
-                    return 'Build';
-                default:
-                    return 'Deploy';
-            }
-        }
+        formatValue: d => lifecycleStageLabels[d]
     },
     severity: {
         label: 'Severity',
