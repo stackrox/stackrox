@@ -51,27 +51,27 @@ const mapping = {
     IMAGES: {
         filterOn: ['RISK', 'VIOLATIONS'],
         viewOn: ['IMAGES'],
-        name: 'Image Name'
+        name: 'Image'
     },
     DEPLOYMENTS: {
         filterOn: ['VIOLATIONS', 'NETWORK'],
         viewOn: ['RISK'],
-        name: 'Deployment Name'
+        name: 'Deployment'
     },
     POLICIES: {
         filterOn: ['VIOLATIONS'],
         viewOn: ['POLICIES'],
-        name: 'Policy Name'
+        name: 'Policy'
     },
     ALERTS: {
         filterOn: [],
         viewOn: ['VIOLATIONS'],
-        name: 'Policy Name'
+        name: 'Policy'
     },
     SECRETS: {
         filterOn: ['RISK'],
         viewOn: ['SECRETS'],
-        name: 'Secret Name'
+        name: 'Secret'
     }
 };
 
