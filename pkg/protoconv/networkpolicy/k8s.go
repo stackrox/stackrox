@@ -43,7 +43,7 @@ func (np KubernetesNetworkPolicyWrap) ToRoxNetworkPolicy() *roxV1.NetworkPolicy 
 			PodSelector: np.convertSelector(&np.Spec.PodSelector),
 			Ingress:     np.convertIngressRules(np.Spec.Ingress),
 			Egress:      np.convertEgressRules(np.Spec.Egress),
-			PolicyTypes: np.convertPolicyTypes(np.Spec.PolicyTypes),
+			PolicyTypes: k8sPolicyTypesToRox(&np.Spec),
 		},
 	}
 }
@@ -137,7 +137,18 @@ func (np KubernetesNetworkPolicyWrap) convertEgressRules(k8sEgressRules []networ
 	return egressRules
 }
 
-func (np KubernetesNetworkPolicyWrap) convertPolicyType(t networkingV1.PolicyType) roxV1.NetworkPolicyType {
+func k8sPolicyTypesToRox(spec *networkingV1.NetworkPolicySpec) []roxV1.NetworkPolicyType {
+	if spec.PolicyTypes == nil {
+		return k8sSpectoPolicyTypes(spec)
+	}
+	types := make([]roxV1.NetworkPolicyType, 0, len(spec.PolicyTypes))
+	for _, t := range spec.PolicyTypes {
+		types = append(types, k8sPolicyTypeToRox(t))
+	}
+	return types
+}
+
+func k8sPolicyTypeToRox(t networkingV1.PolicyType) roxV1.NetworkPolicyType {
 	switch t {
 	case networkingV1.PolicyTypeIngress:
 		return roxV1.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE
@@ -149,13 +160,12 @@ func (np KubernetesNetworkPolicyWrap) convertPolicyType(t networkingV1.PolicyTyp
 	}
 }
 
-func (np KubernetesNetworkPolicyWrap) convertPolicyTypes(k8sTypes []networkingV1.PolicyType) []roxV1.NetworkPolicyType {
-	if k8sTypes == nil {
-		return nil
+// https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicyspec-v1beta1-extensions
+// If not already filled we can imply the type from the rules that are present.
+func k8sSpectoPolicyTypes(spec *networkingV1.NetworkPolicySpec) (output []roxV1.NetworkPolicyType) {
+	if spec.Egress != nil {
+		output = append(output, roxV1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE)
 	}
-	types := make([]roxV1.NetworkPolicyType, 0, len(k8sTypes))
-	for _, t := range k8sTypes {
-		types = append(types, np.convertPolicyType(t))
-	}
-	return types
+	output = append(output, roxV1.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE)
+	return
 }

@@ -17,7 +17,14 @@ func TestNetworkPolicyConversion(t *testing.T) {
 		TypeMeta: metav1.TypeMeta{
 			Kind: "NetworkPolicy",
 		},
+		Spec: v1.NetworkPolicySpec{
+			PolicyTypes: []v1.PolicyType{
+				v1.PolicyTypeIngress,
+				v1.PolicyTypeEgress,
+			},
+		},
 	}
+
 	protoNetworkPolicy := KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()
 	k8sPolicy := RoxNetworkPolicyWrap{NetworkPolicy: protoNetworkPolicy}.ToKubernetesNetworkPolicy()
 	assert.Equal(t, np, k8sPolicy)
