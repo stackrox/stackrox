@@ -11,12 +11,21 @@ import (
 
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
+	cflog "github.com/cloudflare/cfssl/log"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/cmd/deploy/central"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/version"
 	zipPkg "github.com/stackrox/rox/pkg/zip"
 )
+
+func init() {
+	// The cfssl library prints logs at Info level when it processes a
+	// Certificate Signing Request (CSR) or issues a new certificate.
+	// These logs do not help the user understand anything, so here
+	// we adjust the log level to exclude them.
+	cflog.Level = cflog.LevelWarning
+}
 
 var (
 	clairifyTag   = "0.4"
@@ -34,6 +43,8 @@ func getVersion() string {
 }
 
 func outputZip(config central.Config) error {
+	fmt.Fprint(os.Stderr, "Generating deployment bundle... ")
+
 	buf := new(bytes.Buffer)
 	zipW := zip.NewWriter(buf)
 
@@ -87,7 +98,12 @@ func outputZip(config central.Config) error {
 	if err != nil {
 		return fmt.Errorf("couldn't write zip file: %s", err)
 	}
-	return err
+
+	fmt.Fprintln(os.Stderr, "Done!")
+	fmt.Fprintln(os.Stderr)
+	cfg.WriteInstructions(os.Stderr)
+
+	return nil
 }
 
 func root() *cobra.Command {

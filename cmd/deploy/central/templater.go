@@ -3,6 +3,8 @@ package central
 
 import (
 	"bytes"
+	"fmt"
+	"io"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -77,6 +79,7 @@ type Config struct {
 
 type deployer interface {
 	Render(Config) ([]*v1.File, error)
+	Instructions() string
 }
 
 // Deployers contains all implementations for central deployment generators.
@@ -106,5 +109,16 @@ func renderFilenames(filenames []string, c Config) ([]*v1.File, error) {
 		}
 		files = append(files, zip.NewFile(filepath.Base(f), d, strings.HasSuffix(f, ".sh")))
 	}
+	files = append(files, zip.NewFile("README", standardizeWhitespace(Deployers[c.ClusterType].Instructions()), false))
 	return files, nil
+}
+
+// WriteInstructions writes the instructions for the configured cluster
+// to the provided writer.
+func (c Config) WriteInstructions(w io.Writer) {
+	fmt.Fprint(w, standardizeWhitespace(Deployers[c.ClusterType].Instructions()))
+}
+
+func standardizeWhitespace(instructions string) string {
+	return strings.TrimSpace(instructions) + "\n"
 }

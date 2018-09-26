@@ -26,3 +26,10 @@ func (s *swarm) Render(c Config) ([]*v1.File, error) {
 
 	return renderFilenames(filenames, c)
 }
+
+func (s *swarm) Instructions() string {
+	return `To deploy:
+  1. Unzip the deployment bundle.
+  2. Run central.sh.
+  3. If you want to run the StackRox Clairify scanner, run clairify.sh.`
+}

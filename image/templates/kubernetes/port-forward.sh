@@ -2,8 +2,8 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 if [[ -z "$1" ]]; then
-	echo "usage: bash port-forward.sh 8000"
-	echo "The above would forward localhost:8000 to central:443."
+	echo "usage: bash port-forward.sh 8443"
+	echo "The above would forward localhost:8443 to central:443."
 	exit 1
 fi
 

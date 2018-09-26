@@ -1302,6 +1302,7 @@
     "github.com/cloudflare/cfssl/config",
     "github.com/cloudflare/cfssl/csr",
     "github.com/cloudflare/cfssl/initca",
+    "github.com/cloudflare/cfssl/log",
     "github.com/cloudflare/cfssl/signer",
     "github.com/cloudflare/cfssl/signer/local",
     "github.com/coreos/clair/api/v1",

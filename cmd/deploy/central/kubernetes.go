@@ -31,14 +31,24 @@ func (k *kubernetes) Render(c Config) ([]*v1.File, error) {
 		"kubernetes/clairify.sh",
 		"kubernetes/clairify.yaml",
 		"kubernetes/lb.yaml",
+		"kubernetes/np.yaml",
 		"kubernetes/port-forward.sh",
 	}
 
 	return renderFilenames(filenames, c)
 }
+func (k *kubernetes) Instructions() string {
+	return `To deploy:
+  1. Unzip the deployment bundle.
+  2. Run central.sh.
+  3. If you want to run the StackRox Clairify scanner, run clairify.sh.
+  4. Expose Central:
+       a. Using a LoadBalancer: kubectl create -f lb.yaml
+       b. Using a NodePort:     kubectl create -f np.yaml
+       c. Using a port forward: ./port-forward.sh 8443`
+}
 
 func injectImageTags(c *Config) {
 	c.K8sConfig.ClairifyImageTag = utils.GenerateImageFromString(c.K8sConfig.ClairifyImage).GetName().GetTag()
 	c.K8sConfig.PreventImageTag = utils.GenerateImageFromString(c.K8sConfig.PreventImage).GetName().GetTag()
-
 }
