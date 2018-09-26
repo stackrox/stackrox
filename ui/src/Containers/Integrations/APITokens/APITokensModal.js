@@ -125,26 +125,34 @@ class APITokensModal extends Component {
 
     updateSelection = selection => this.setState({ selection });
 
-    renderPanelButtons = () => (
-        <React.Fragment>
-            <PanelButton
-                icon={<Icon.Slash className="h-4 w-4" />}
-                text="Revoke"
-                className="btn btn-danger"
-                onClick={this.revokeTokens}
-                disabled={this.state.selectedTokenId !== null}
-            />
-            <PanelButton
-                icon={<Icon.Plus className="h-4 w-4" />}
-                text="Generate"
-                className="btn btn-success"
-                onClick={this.openForm}
-                disabled={
-                    this.props.tokenGenerationWizardOpen || this.state.selectedTokenId !== null
-                }
-            />
-        </React.Fragment>
-    );
+    renderPanelButtons = () => {
+        const selectionCount = this.state.selection.length;
+        return (
+            <React.Fragment>
+                {selectionCount !== 0 && (
+                    <PanelButton
+                        icon={<Icon.Slash className="h-4 w-4 ml-1" />}
+                        text={`Revoke (${selectionCount})`}
+                        className="btn btn-danger"
+                        onClick={this.revokeTokens}
+                        disabled={this.state.selectedTokenId !== null}
+                    />
+                )}
+                {selectionCount === 0 && (
+                    <PanelButton
+                        icon={<Icon.Plus className="h-4 w-4 ml-1" />}
+                        text="Generate Token"
+                        className="btn btn-base"
+                        onClick={this.openForm}
+                        disabled={
+                            this.props.tokenGenerationWizardOpen ||
+                            this.state.selectedTokenId !== null
+                        }
+                    />
+                )}
+            </React.Fragment>
+        );
+    };
 
     renderHeader = () => (
         <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
@@ -153,11 +161,19 @@ class APITokensModal extends Component {
         </header>
     );
 
-    renderTable = () => (
-        <Panel header="API Tokens" buttons={this.renderPanelButtons()}>
-            {this.showModalView()}
-        </Panel>
-    );
+    renderTable = () => {
+        const selectionCount = this.state.selection.length;
+        const tokenCount = this.props.tokens.length;
+        const headerText =
+            selectionCount !== 0
+                ? `${selectionCount} API Token${selectionCount === 1 ? '' : 's'} Selected`
+                : `${tokenCount} API Token${tokenCount === 1 ? '' : 's'}`;
+        return (
+            <Panel header={headerText} buttons={this.renderPanelButtons()}>
+                {this.showModalView()}
+            </Panel>
+        );
+    };
 
     renderForm = () => {
         if (!this.props.tokenGenerationWizardOpen) {

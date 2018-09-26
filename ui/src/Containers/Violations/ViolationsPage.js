@@ -96,8 +96,11 @@ class ViolationsPage extends Component {
                 setPage={this.setTablePage}
             />
         );
+        const headerText = `${length} Violation${length === 1 ? '' : 's'} ${
+            this.props.isViewFiltered ? 'Matched' : ''
+        }`;
         return (
-            <Panel header={`${length} Violations`} headerComponents={paginationComponent}>
+            <Panel header={headerText} headerComponents={paginationComponent}>
                 <div className="w-full pl-3 pr-3">{this.renderTable()}</div>
             </Panel>
         );

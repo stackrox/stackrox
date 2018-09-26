@@ -29,8 +29,8 @@ describe('Integrations page', () => {
 
     it('should add an integration with DockerHub', () => {
         cy.get(selectors.dockerRegistryTile).click();
-        cy.get(selectors.buttons.delete).should('be.disabled');
-        cy.get(selectors.buttons.add).click();
+        cy.get(selectors.buttons.delete).should('not.exist');
+        cy.get(selectors.buttons.new).click();
 
         const name = `Docker Registry ${Math.random()
             .toString(36)
@@ -163,7 +163,7 @@ describe('Cluster Creation Flow', () => {
     it('Should be able to fill out the Swarm form, download config files and see cluster checked-in', () => {
         cy.get(selectors.dockerSwarmTile).click();
 
-        cy.get(selectors.buttons.add).click();
+        cy.get(selectors.buttons.new).click();
 
         const clusterName = 'Swarm Cluster TestInstance';
         cy.get(selectors.clusterForm.nameInput).type(clusterName);

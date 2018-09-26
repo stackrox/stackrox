@@ -7,7 +7,7 @@ const PanelButton = ({ icon, text, onClick, className, disabled, tooltip }) => {
     const button = (
         <button className={className} onClick={onClick} disabled={disabled}>
             {icon && <span className="flex items-center">{icon}</span>}
-            {text && <span className="ml-3">{text}</span>}
+            {text && <span className="mx-2">{text}</span>}
         </button>
     );
     if (!tooltip) return button;

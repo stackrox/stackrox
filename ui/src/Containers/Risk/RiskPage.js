@@ -82,8 +82,12 @@ class RiskPage extends Component {
                 setPage={this.setTablePage}
             />
         );
+        const isFiltering = this.props.searchOptions.length;
+        const headerText = `${length} Deployment${length === 1 ? '' : 's'} ${
+            isFiltering ? 'Matched' : ''
+        }`;
         return (
-            <Panel header={`${length} Deployments`} headerComponents={paginationComponent}>
+            <Panel header={headerText} headerComponents={paginationComponent}>
                 <div className="w-full pl-3 pr-3">{this.renderTable()}</div>
             </Panel>
         );
@@ -199,7 +203,7 @@ class RiskPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full overflow-scroll bg-white rounded-sm shadow bg-base-100">
+                        <div className="w-full bg-white rounded-sm shadow bg-base-100">
                             {this.renderPanel()}
                         </div>
                         {this.renderSidePanel()}

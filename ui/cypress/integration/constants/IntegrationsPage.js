@@ -14,7 +14,7 @@ export const selectors = {
         swarmCluster1: 'div.rt-td:contains("Swarm Cluster 1")'
     },
     buttons: {
-        add: 'button:contains("Add")',
+        new: 'button:contains("New")',
         next: 'button:contains("Next")',
         download: 'button:contains("Download")',
         delete: 'button:contains("Delete")',

@@ -73,8 +73,11 @@ class SecretPage extends Component {
                 setPage={this.setTablePage}
             />
         );
+        const headerText = `${length} Secret${length === 1 ? '' : 's'} ${
+            this.props.isViewFiltered ? 'Matched' : ''
+        }`;
         return (
-            <Panel header={`${length} Secrets`} headerComponents={paginationComponent}>
+            <Panel header={headerText} headerComponents={paginationComponent}>
                 <div className="w-full pl-3 pr-3">{this.renderTable()}</div>
             </Panel>
         );

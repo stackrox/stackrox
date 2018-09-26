@@ -132,30 +132,41 @@ class ClustersModal extends Component {
     };
 
     renderTable = () => {
-        const header = `${clusterTypeLabels[this.props.clusterType]} Integrations`;
+        const { clusterType, selectedCluster, clusters, isWizardActive } = this.props;
+        const cluster = clusterTypeLabels[clusterType];
+        const selectionCount = this.state.selection.length;
+        const clusterCount = clusters.length;
+        const headerText =
+            selectionCount !== 0
+                ? `${selectionCount} ${cluster} Integration${
+                      selectionCount === 1 ? `` : `s`
+                  } Selected`
+                : `${clusterCount} ${cluster} Integration${clusterCount === 1 ? `` : `s`}`;
         const buttons = (
             <React.Fragment>
-                <PanelButton
-                    icon={<Icon.Trash2 className="h-4 w-4" />}
-                    text="Delete"
-                    className="btn btn-danger"
-                    onClick={this.showConfirmationDialog}
-                    disabled={
-                        this.props.clusters.length === 0 || this.props.selectedCluster !== null
-                    }
-                />
-                <PanelButton
-                    icon={<Icon.Plus className="h-4 w-4" />}
-                    text="Add"
-                    className="btn btn-success"
-                    onClick={this.onAddCluster}
-                    disabled={this.props.selectedCluster !== null || this.props.isWizardActive}
-                />
+                {selectionCount !== 0 && (
+                    <PanelButton
+                        icon={<Icon.Trash2 className="h-4 w-4 ml-1" />}
+                        text={`Delete (${selectionCount})`}
+                        className="btn btn-danger"
+                        onClick={this.showConfirmationDialog}
+                        disabled={clusterCount === 0 || selectedCluster !== null}
+                    />
+                )}
+                {selectionCount === 0 && (
+                    <PanelButton
+                        icon={<Icon.Plus className="h-4 w-4 ml-1" />}
+                        text="New Cluster"
+                        className="btn btn-base"
+                        onClick={this.onAddCluster}
+                        disabled={selectedCluster !== null || isWizardActive}
+                    />
+                )}
             </React.Fragment>
         );
         return (
             <div className="flex flex-1">
-                <Panel header={header} buttons={buttons}>
+                <Panel header={headerText} buttons={buttons}>
                     {this.showModalView()}
                 </Panel>
             </div>
@@ -163,21 +174,22 @@ class ClustersModal extends Component {
     };
 
     renderSidePanel() {
-        if (this.props.isWizardActive) {
+        const { isWizardActive, clusterType, selectedCluster } = this.props;
+        if (isWizardActive) {
             return (
                 <div className="flex w-1/2">
-                    <ClusterWizardPanel clusterType={this.props.clusterType} />
+                    <ClusterWizardPanel clusterType={clusterType} />
                 </div>
             );
         }
-        if (!this.props.selectedCluster) return null;
+        if (!selectedCluster) return null;
         return (
             <Panel
                 className="w-1/2"
-                header={this.props.selectedCluster.name}
+                header={selectedCluster.name}
                 onClose={this.onClusterDetailsClose}
             >
-                <ClusterDetails cluster={this.props.selectedCluster} />
+                <ClusterDetails cluster={selectedCluster} />
             </Panel>
         );
     }

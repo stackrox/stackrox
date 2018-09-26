@@ -50,24 +50,32 @@ class IntegrationTable extends Component {
         selectedIntegrationId: null
     };
 
-    getPanelButtons = () => (
-        <React.Fragment>
-            <PanelButton
-                icon={<Icon.Trash2 className="h-4 w-4" />}
-                text="Delete"
-                className="btn btn-danger"
-                onClick={this.props.onDelete}
-                disabled={this.props.integrations.length === 0 || !this.props.buttonsEnabled}
-            />
-            <PanelButton
-                icon={<Icon.Plus className="h-4 w-4" />}
-                text="Add"
-                className="btn btn-success"
-                onClick={this.props.onAdd}
-                disabled={!this.props.buttonsEnabled}
-            />
-        </React.Fragment>
-    );
+    getPanelButtons = () => {
+        const selectionCount = this.props.selection.length;
+        const integrationsCount = this.props.integrations.length;
+        return (
+            <React.Fragment>
+                {selectionCount !== 0 && (
+                    <PanelButton
+                        icon={<Icon.Trash2 className="h-4 w-4 ml-1" />}
+                        text={`Delete (${selectionCount})`}
+                        className="btn btn-danger"
+                        onClick={this.props.onDelete}
+                        disabled={integrationsCount === 0 || !this.props.buttonsEnabled}
+                    />
+                )}
+                {selectionCount === 0 && (
+                    <PanelButton
+                        icon={<Icon.Plus className="h-4 w-4 ml-1" />}
+                        text="New Integration"
+                        className="btn btn-base"
+                        onClick={this.props.onAdd}
+                        disabled={!this.props.buttonsEnabled}
+                    />
+                )}
+            </React.Fragment>
+        );
+    };
 
     getColumns = () => {
         const columns = [...tableColumnDescriptor[this.props.source][this.props.type]];
@@ -129,9 +137,16 @@ class IntegrationTable extends Component {
     };
 
     render() {
+        const { type, selection, integrations } = this.props;
+        const selectionCount = selection.length;
+        const integrationsCount = integrations.length;
+        const headerText =
+            selectionCount !== 0
+                ? `${selectionCount} ${type} Integration${selectionCount === 1 ? '' : 's'} selected`
+                : `${integrationsCount} ${type} Integration${integrationsCount === 1 ? '' : 's'}`;
         return (
             <div className="flex flex-1">
-                <Panel header={`${this.props.type} Integration`} buttons={this.getPanelButtons()}>
+                <Panel header={headerText} buttons={this.getPanelButtons()}>
                     {this.renderTableContent()}
                 </Panel>
             </div>

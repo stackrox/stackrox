@@ -104,6 +104,7 @@ class PoliciesPage extends Component {
 
     onSearch = searchOptions => {
         if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
+            this.clearSelection();
             this.props.history.push('/main/policies');
         }
     };
@@ -153,6 +154,16 @@ class PoliciesPage extends Component {
             pathname: `/main/policies${urlSuffix}`
         });
         this.props.setWizardState({ current: '', isNew: false });
+    };
+
+    getTableHeaderText = () => {
+        const selectionCount = this.state.selection.length;
+        const rowCount = this.props.policies.length;
+        return selectionCount !== 0
+            ? `${selectionCount} ${selectionCount === 1 ? 'Policy' : 'Policies'} Selected`
+            : `${rowCount} ${rowCount === 1 ? 'Policy' : 'Policies'} ${
+                  this.props.isViewFiltered ? 'Matched' : ''
+              }`;
     };
 
     checkPreDryRun = () => {
@@ -303,33 +314,40 @@ class PoliciesPage extends Component {
         if (!length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
         const buttonsDisabled = this.props.wizardState.current !== '';
-        const totalPages = length === pageSize ? 1 : Math.floor(length / pageSize) + 1;
+        const selectionCount = this.state.selection.length;
         const panelButtons = (
             <React.Fragment>
-                <PanelButton
-                    icon={<Icon.Trash2 className="h-4 w-4" />}
-                    text="Delete"
-                    className="btn btn-danger"
-                    onClick={this.showConfirmationDialog}
-                    disabled={buttonsDisabled}
-                />
-                <PanelButton
-                    icon={<Icon.FileText className="h-4 w-4" />}
-                    text="Reassess Policies"
-                    className="btn btn-base"
-                    onClick={this.props.reassessPolicies}
-                    tooltip="Manually enrich external data"
-                    disabled={buttonsDisabled}
-                />
-                <PanelButton
-                    icon={<Icon.Plus className="h-4 w-4" />}
-                    text="Add"
-                    className="btn btn-base"
-                    onClick={this.addPolicy}
-                    disabled={buttonsDisabled}
-                />
+                {selectionCount !== 0 && (
+                    <PanelButton
+                        icon={<Icon.Trash2 className="h-4 w- ml-1" />}
+                        text={`Delete (${selectionCount})`}
+                        className="btn btn-danger"
+                        onClick={this.showConfirmationDialog}
+                        disabled={buttonsDisabled}
+                    />
+                )}
+                {selectionCount === 0 && (
+                    <PanelButton
+                        icon={<Icon.RefreshCw className="h-4 w-4 ml-1" />}
+                        text="Reassess All"
+                        className="btn btn-base"
+                        onClick={this.props.reassessPolicies}
+                        tooltip="Manually enrich external data"
+                        disabled={buttonsDisabled}
+                    />
+                )}
+                {selectionCount === 0 && (
+                    <PanelButton
+                        icon={<Icon.Plus className="h-4 w-4 ml-1" />}
+                        text="New Policy"
+                        className="btn btn-base"
+                        onClick={this.addPolicy}
+                        disabled={buttonsDisabled}
+                    />
+                )}
             </React.Fragment>
         );
+        const totalPages = length === pageSize ? 1 : Math.floor(length / pageSize) + 1;
         const paginationComponent = (
             <TablePagination
                 page={this.state.page}
@@ -339,7 +357,7 @@ class PoliciesPage extends Component {
         );
         return (
             <Panel
-                header={`${length} Policies`}
+                header={this.getTableHeaderText()}
                 buttons={panelButtons}
                 headerComponents={paginationComponent}
             >

@@ -11,7 +11,7 @@ describe('Policies page', () => {
     });
 
     const addPolicy = () => {
-        cy.get(selectors.addPolicyButton).click();
+        cy.get(selectors.newPolicyButton).click();
     };
 
     const editPolicy = () => {

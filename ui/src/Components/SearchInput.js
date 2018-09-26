@@ -21,7 +21,7 @@ class SearchInput extends Component {
 
     static defaultProps = {
         id: '',
-        placeholder: 'Page filters',
+        placeholder: 'Add one or more resource filters',
         className: '',
         searchOptions: [],
         searchModifiers: [],

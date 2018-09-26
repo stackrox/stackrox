@@ -73,8 +73,11 @@ class ImagesPage extends Component {
                 setPage={this.setTablePage}
             />
         );
+        const headerText = `${length} Image${length === 1 ? '' : 's'} ${
+            this.props.isViewFiltered ? 'Matched' : ''
+        }`;
         return (
-            <Panel header={`${length} Images`} headerComponents={paginationComponent}>
+            <Panel header={headerText} headerComponents={paginationComponent}>
                 <div className="w-full pl-3 pr-3">{this.renderTable()}</div>
             </Panel>
         );
@@ -155,7 +158,7 @@ class ImagesPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full overflow-scroll bg-white rounded-sm bg-base-100">
+                        <div className="w-full bg-white rounded-sm bg-base-100">
                             {this.renderPanel()}
                         </div>
                         {this.renderSidePanel()}
