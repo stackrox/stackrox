@@ -6,7 +6,7 @@ import org.junit.experimental.categories.Category
 import stackrox.generated.PolicyServiceOuterClass
 
 class Enforcement extends BaseSpecification {
-    @Category([BAT, PolicyEnforcement])
+    @Category([PolicyEnforcement])
     def "Test Kill Enforcement"() {
         // This test only tests enforcement by directly telling Central to kill
         // a specific pod/container.
