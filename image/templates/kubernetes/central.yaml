@@ -37,13 +37,13 @@ spec:
       {{if .HostPath -}}
       nodeSelector:
         {{.HostPath.NodeSelectorKey}}: {{.HostPath.NodeSelectorValue}}
-      {{- end}}
-      {{if eq .ClusterType.String "KUBERNETES_CLUSTER" }}
+      {{end -}}
+      {{if eq .ClusterType.String "KUBERNETES_CLUSTER" -}}
       imagePullSecrets:
       - name: {{.K8sConfig.ImagePullSecret}}
-      {{else}}
+      {{else -}}
       serviceAccount: central
-      {{- end}}
+      {{end -}}
       containers:
       - name: central
         image: {{.K8sConfig.PreventImage}}
@@ -63,6 +63,13 @@ spec:
           capabilities:
             drop: ["NET_RAW"]
           readOnlyRootFilesystem: true
+        {{ if .Features -}}
+        env:
+        {{ range .Features -}}
+        - name: "{{ .EnvVar }}"
+          value: "true"
+        {{ end -}}
+        {{ end -}}
         volumeMounts:
         - name: central-certs-volume
           mountPath: /run/secrets/stackrox.io/certs/

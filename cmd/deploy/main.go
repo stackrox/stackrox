@@ -95,6 +95,8 @@ func root() *cobra.Command {
 		Use:          "root",
 		SilenceUsage: true,
 	}
+	c.PersistentFlags().Var(&featureValue{&cfg.Features}, "flags", "Feature flags to enable")
+	c.PersistentFlags().MarkHidden("flags")
 	c.AddCommand(interactive())
 	c.AddCommand(cmd())
 	return c

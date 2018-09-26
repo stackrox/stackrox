@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/zip"
@@ -71,6 +72,7 @@ type Config struct {
 
 	External *ExternalPersistence
 	HostPath *HostPathPersistence
+	Features []features.FeatureFlag
 }
 
 type deployer interface {
