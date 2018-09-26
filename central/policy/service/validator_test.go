@@ -196,30 +196,6 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 	}
 	err = suite.validator.validateCompilableForLifecycle(policy)
 	suite.NoError(err, "has deployment criteria")
-
-	policy = &v1.Policy{
-		LifecycleStage: v1.LifecycleStage_RUN_TIME,
-		Fields: &v1.PolicyFields{
-			TotalResourcePolicy: &v1.ResourcePolicy{
-				CpuResourceLimit: &v1.ResourcePolicy_NumericalPolicy{
-					Value: 1.0,
-				},
-			},
-		},
-	}
-	err = suite.validator.validateCompilableForLifecycle(policy)
-	suite.Error(err, "no container criteria")
-
-	policy = &v1.Policy{
-		LifecycleStage: v1.LifecycleStage_RUN_TIME,
-		Fields: &v1.PolicyFields{
-			PortPolicy: &v1.PortPolicy{
-				Port: 22,
-			},
-		},
-	}
-	err = suite.validator.validateCompilableForLifecycle(policy)
-	suite.NoError(err, "has container criteria")
 }
 
 func (suite *PolicyValidatorTestSuite) TestValidateSeverity() {

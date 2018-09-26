@@ -10,7 +10,6 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/generated/api/v1"
-	containerMatcher "github.com/stackrox/rox/pkg/compiledpolicies/container/matcher"
 	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
 	imageMatcher "github.com/stackrox/rox/pkg/compiledpolicies/image/matcher"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -217,7 +216,7 @@ func compilesForDeployTime(policy *v1.Policy) error {
 }
 
 func compilesForRunTime(policy *v1.Policy) error {
-	m, err := containerMatcher.Compile(policy)
+	m, err := deploymentMatcher.Compile(policy)
 	if err != nil {
 		return err
 	}
