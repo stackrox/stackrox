@@ -141,6 +141,8 @@ func buildRequest() (*v1.Image, error) {
 	im := v1.ImageName{
 		Remote:   *remote,
 		Registry: *registry,
+		Sha:      *digest,
+		Tag:      *tag,
 	}
 
 	switch {
@@ -148,12 +150,8 @@ func buildRequest() (*v1.Image, error) {
 		return nil, fmt.Errorf("image registry must be set, or we don't know where to get metadata from")
 	case *remote == "":
 		return nil, fmt.Errorf("image remote must be set, or we don't know which image in the registry to process")
-	case (*digest == "" && *tag == "") || (*digest != "" && *tag != ""):
-		return nil, fmt.Errorf("one of image digest or tag must be set, or we don't know which version of the image to process")
-	case *digest != "":
-		im.Sha = *digest
-	case *tag != "":
-		im.Tag = *tag
+	case *digest == "" && *tag == "":
+		return nil, fmt.Errorf("an image tag, digest, or both must be set, otherwise we don't know which version of the image to process")
 	}
 
 	return &v1.Image{
