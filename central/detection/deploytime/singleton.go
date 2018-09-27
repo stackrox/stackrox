@@ -3,23 +3,22 @@ package deploytime
 import (
 	"sync"
 
-	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/detection/deployment"
+	"github.com/stackrox/rox/central/detection/utils"
 	"github.com/stackrox/rox/central/enrichment"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 )
 
 var (
 	once sync.Once
 
-	policySet    PolicySet
-	alertManager AlertManager
-	detector     Detector
+	policySet deployment.PolicySet
+	detector  Detector
 )
 
 func initialize() {
-	policySet = NewPolicySet(policyDataStore.Singleton())
+	policySet = deployment.NewPolicySet(policyDataStore.Singleton())
 	policies, err := policyDataStore.Singleton().GetPolicies()
 	if err != nil {
 		panic(err)
@@ -30,10 +29,8 @@ func initialize() {
 		}
 	}
 
-	alertManager = NewAlertManager(notifierProcessor.Singleton(), alertDataStore.Singleton())
-
 	detector = NewDetector(policySet,
-		alertManager,
+		utils.SingletonAlertManager(),
 		enrichment.Singleton(),
 		deploymentDataStore.Singleton(),
 	)
@@ -46,13 +43,7 @@ func SingletonDetector() Detector {
 }
 
 // SingletonPolicySet returns the singleton instance of a PolicySet.
-func SingletonPolicySet() PolicySet {
+func SingletonPolicySet() deployment.PolicySet {
 	once.Do(initialize)
 	return policySet
-}
-
-// SingletonAlertManager returns the singleton instance of an AlertManager
-func SingletonAlertManager() AlertManager {
-	once.Do(initialize)
-	return alertManager
 }

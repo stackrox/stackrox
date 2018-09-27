@@ -1,6 +1,7 @@
 package buildtime
 
 import (
+	"github.com/stackrox/rox/central/detection/image"
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
@@ -10,7 +11,7 @@ type Detector interface {
 }
 
 // NewDetector returns a new instance of a Detector.
-func NewDetector(policySet PolicySet) Detector {
+func NewDetector(policySet image.PolicySet) Detector {
 	return &detectorImpl{
 		policySet: policySet,
 	}

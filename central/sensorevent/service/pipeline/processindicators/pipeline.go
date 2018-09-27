@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
+	"github.com/stackrox/rox/central/detection/deployment"
 	"github.com/stackrox/rox/central/detection/utils"
 	"github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
@@ -19,8 +19,8 @@ var (
 )
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(indicators datastore.DataStore, policySet deployTimeDetection.PolicySet,
-	alertManager deployTimeDetection.AlertManager, deploymentStore deploymentDataStore.DataStore) pipeline.Pipeline {
+func NewPipeline(indicators datastore.DataStore, policySet deployment.PolicySet,
+	alertManager utils.AlertManager, deploymentStore deploymentDataStore.DataStore) pipeline.Pipeline {
 	return &pipelineImpl{
 		indicators:          indicators,
 		policySet:           policySet,
@@ -31,8 +31,8 @@ func NewPipeline(indicators datastore.DataStore, policySet deployTimeDetection.P
 
 type pipelineImpl struct {
 	indicators          datastore.DataStore
-	policySet           deployTimeDetection.PolicySet
-	alertManager        deployTimeDetection.AlertManager
+	policySet           deployment.PolicySet
+	alertManager        utils.AlertManager
 	deploymentDataStore deploymentDataStore.DataStore
 }
 
@@ -90,5 +90,5 @@ func (s *pipelineImpl) reconcileAlerts(deployment *v1.Deployment, indicators []*
 			newAlerts = append(newAlerts, utils.PolicyDeploymentAndViolationsToAlert(p, deployment, violations))
 		}
 		return s.alertManager.AlertAndNotify(oldAlerts, newAlerts)
-	}, true)
+	})
 }

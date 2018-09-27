@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
-	runTimeDetection "github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/enrichment"
 )
 
@@ -16,8 +15,7 @@ var (
 
 func initialize() {
 	as = New(enrichment.ImageEnricherSingleton(),
-		buildTimeDetection.SingletonDetector(),
-		runTimeDetection.SingletonDetector())
+		buildTimeDetection.SingletonDetector())
 }
 
 // Singleton provides the instance of the Service interface to register.

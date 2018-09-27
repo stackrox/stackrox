@@ -7,9 +7,9 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
+	deploymentDetection "github.com/stackrox/rox/central/detection/deployment"
 	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
-	runTimeDetectiomn "github.com/stackrox/rox/central/detection/runtime"
+	imageDetection "github.com/stackrox/rox/central/detection/image"
 	"github.com/stackrox/rox/central/enrichanddetect"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
@@ -58,9 +58,9 @@ type serviceImpl struct {
 	clusters    clusterDataStore.DataStore
 	deployments deploymentDataStore.DataStore
 
-	buildTimePolicies   buildTimeDetection.PolicySet
+	buildTimePolicies   imageDetection.PolicySet
 	deployTimeDetector  deployTimeDetection.Detector
-	runTimePolicies     runTimeDetectiomn.PolicySet
+	runTimePolicies     deploymentDetection.PolicySet
 	processor           notifierProcessor.Processor
 	enricherAndDetector enrichanddetect.EnricherAndDetector
 

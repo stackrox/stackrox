@@ -1,4 +1,4 @@
-package runtime
+package deployment
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
-	containerMatcher "github.com/stackrox/rox/pkg/compiledpolicies/container/matcher"
+	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -19,13 +19,13 @@ type PolicyTestSuite struct {
 }
 
 func (suite *PolicyTestSuite) TestAddsCompilable() {
-	policySet = NewPolicySet(&mocks.DataStore{})
+	policySet := NewPolicySet(&mocks.DataStore{})
 
 	err := policySet.UpsertPolicy(goodPolicy())
 	suite.NoError(err, "insertion should succeed")
 
 	hasMatch := false
-	policySet.ForEach(func(p *v1.Policy, m containerMatcher.Matcher) error {
+	policySet.ForEach(func(p *v1.Policy, m deploymentMatcher.Matcher) error {
 		if p.GetId() == "1" {
 			hasMatch = true
 		}
@@ -35,12 +35,12 @@ func (suite *PolicyTestSuite) TestAddsCompilable() {
 }
 
 func (suite *PolicyTestSuite) TestForOneSucceeds() {
-	policySet = NewPolicySet(&mocks.DataStore{})
+	policySet := NewPolicySet(&mocks.DataStore{})
 
 	err := policySet.UpsertPolicy(goodPolicy())
 	suite.NoError(err, "insertion should succeed")
 
-	err = policySet.ForOne("1", func(p *v1.Policy, m containerMatcher.Matcher) error {
+	err = policySet.ForOne("1", func(p *v1.Policy, m deploymentMatcher.Matcher) error {
 		if p.GetId() != "1" {
 			return fmt.Errorf("wrong id served")
 		}
@@ -50,22 +50,22 @@ func (suite *PolicyTestSuite) TestForOneSucceeds() {
 }
 
 func (suite *PolicyTestSuite) TestForOneFails() {
-	policySet = NewPolicySet(&mocks.DataStore{})
+	policySet := NewPolicySet(&mocks.DataStore{})
 
-	err := policySet.ForOne("1", func(p *v1.Policy, m containerMatcher.Matcher) error {
+	err := policySet.ForOne("1", func(p *v1.Policy, m deploymentMatcher.Matcher) error {
 		return nil
 	})
 	suite.Error(err, "for one should fail since no policies exist")
 }
 
 func (suite *PolicyTestSuite) TestThrowsErrorForNotCompilable() {
-	policySet = NewPolicySet(&mocks.DataStore{})
+	policySet := NewPolicySet(&mocks.DataStore{})
 
 	err := policySet.UpsertPolicy(badPolicy())
 	suite.Error(err, "insertion should not succeed since the regex in the policy is bad")
 
 	hasMatch := false
-	policySet.ForEach(func(p *v1.Policy, m containerMatcher.Matcher) error {
+	policySet.ForEach(func(p *v1.Policy, m deploymentMatcher.Matcher) error {
 		if p.GetId() == "1" {
 			hasMatch = true
 		}

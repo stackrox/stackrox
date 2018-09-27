@@ -3,6 +3,7 @@ package runtime
 import (
 	"sync"
 
+	"github.com/stackrox/rox/central/detection/deployment"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 )
@@ -10,12 +11,12 @@ import (
 var (
 	once sync.Once
 
-	policySet PolicySet
+	policySet deployment.PolicySet
 	detector  Detector
 )
 
 func initialize() {
-	policySet = NewPolicySet(policyDataStore.Singleton())
+	policySet = deployment.NewPolicySet(policyDataStore.Singleton())
 	policies, err := policyDataStore.Singleton().GetPolicies()
 	if err != nil {
 		panic(err)
@@ -38,7 +39,7 @@ func SingletonDetector() Detector {
 }
 
 // SingletonPolicySet returns the singleton instance of a PolicySet.
-func SingletonPolicySet() PolicySet {
+func SingletonPolicySet() deployment.PolicySet {
 	once.Do(initialize)
 	return policySet
 }

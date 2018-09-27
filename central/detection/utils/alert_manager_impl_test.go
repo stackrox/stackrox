@@ -1,4 +1,4 @@
-package deploytime
+package utils
 
 import (
 	"testing"
@@ -161,6 +161,90 @@ func getAlerts() []*v1.Alert {
 			Policy:     getPolicies()[2],
 			Deployment: getDeployments()[2],
 			Time:       &ptypes.Timestamp{Seconds: 300},
+		},
+	}
+}
+
+// Policies are set up so that policy one is violated by deployment 1, 2 is violated by 2, etc.
+func getDeployments() []*v1.Deployment {
+	return []*v1.Deployment{
+		{
+			Name: "deployment1",
+			Containers: []*v1.Container{
+				{
+					Image: &v1.Image{
+						Name: &v1.ImageName{
+							Tag:    "latest1",
+							Remote: "stackrox/health",
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: "deployment2",
+			Containers: []*v1.Container{
+				{
+					Image: &v1.Image{
+						Name: &v1.ImageName{
+							Tag:    "latest2",
+							Remote: "stackrox/health",
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: "deployment3",
+			Containers: []*v1.Container{
+				{
+					Image: &v1.Image{
+						Name: &v1.ImageName{
+							Tag:    "latest3",
+							Remote: "stackrox/health",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// Policies are set up so that policy one is violated by deployment 1, 2 is violated by 2, etc.
+func getPolicies() []*v1.Policy {
+	return []*v1.Policy{
+		{
+			Id:         "policy1",
+			Name:       "latest1",
+			Severity:   v1.Severity_LOW_SEVERITY,
+			Categories: []string{"Image Assurance", "Privileges Capabilities"},
+			Fields: &v1.PolicyFields{
+				ImageName: &v1.ImageNamePolicy{
+					Tag: "latest1",
+				},
+			},
+		},
+		{
+			Id:         "policy2",
+			Name:       "latest2",
+			Severity:   v1.Severity_LOW_SEVERITY,
+			Categories: []string{"Image Assurance", "Privileges Capabilities"},
+			Fields: &v1.PolicyFields{
+				ImageName: &v1.ImageNamePolicy{
+					Tag: "latest2",
+				},
+			},
+		},
+		{
+			Id:         "policy3",
+			Name:       "latest3",
+			Severity:   v1.Severity_LOW_SEVERITY,
+			Categories: []string{"Image Assurance", "Privileges Capabilities"},
+			Fields: &v1.PolicyFields{
+				ImageName: &v1.ImageNamePolicy{
+					Tag: "latest3",
+				},
+			},
 		},
 	}
 }

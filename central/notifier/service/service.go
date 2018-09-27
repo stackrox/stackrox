@@ -3,9 +3,8 @@ package service
 import (
 	"context"
 
-	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
-	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
-	runTimeDetection "github.com/stackrox/rox/central/detection/runtime"
+	deploymentDetection "github.com/stackrox/rox/central/detection/deployment"
+	imageDetection "github.com/stackrox/rox/central/detection/image"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -34,9 +33,9 @@ type Service interface {
 // New returns a new Service instance using the given DataStore.
 func New(storage store.Store,
 	processor processor.Processor,
-	buildTimePolicies buildTimeDetection.PolicySet,
-	deployTimePolicies deployTimeDetection.PolicySet,
-	runTimePolicies runTimeDetection.PolicySet) Service {
+	buildTimePolicies imageDetection.PolicySet,
+	deployTimePolicies deploymentDetection.PolicySet,
+	runTimePolicies deploymentDetection.PolicySet) Service {
 	return &serviceImpl{
 		storage:            storage,
 		processor:          processor,

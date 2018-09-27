@@ -4,7 +4,8 @@ import (
 	"sync"
 
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/detection/deploytime"
+	"github.com/stackrox/rox/central/detection/runtime"
+	"github.com/stackrox/rox/central/detection/utils"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 )
@@ -18,8 +19,8 @@ var (
 func initialize() {
 	pi = NewPipeline(
 		processIndicatorDataStore.Singleton(),
-		deploytime.SingletonPolicySet(),
-		deploytime.SingletonAlertManager(),
+		runtime.SingletonPolicySet(),
+		utils.SingletonAlertManager(),
 		deploymentDataStore.Singleton())
 }
 

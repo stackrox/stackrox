@@ -2,6 +2,8 @@ package deploytime
 
 import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/detection/deployment"
+	"github.com/stackrox/rox/central/detection/utils"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/generated/api/v1"
 )
@@ -16,8 +18,8 @@ type Detector interface {
 }
 
 // NewDetector returns a new instance of a Detector.
-func NewDetector(policySet PolicySet,
-	alertManager AlertManager,
+func NewDetector(policySet deployment.PolicySet,
+	alertManager utils.AlertManager,
 	enricher enrichment.Enricher,
 	deployments deploymentDataStore.DataStore) Detector {
 	return &detectorImpl{

@@ -2,6 +2,7 @@ package deploytime
 
 import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/detection/deployment"
 	"github.com/stackrox/rox/central/detection/utils"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
@@ -13,11 +14,11 @@ import (
 var logger = logging.LoggerForModule()
 
 type detectorImpl struct {
-	policySet PolicySet
+	policySet deployment.PolicySet
 
 	enricher enrichment.Enricher
 
-	alertManager AlertManager
+	alertManager utils.AlertManager
 	deployments  deploymentDataStore.DataStore
 
 	pipeline pipeline.Pipeline
@@ -110,7 +111,7 @@ func (d *detectorImpl) getAlertsForDeployment(deployment *v1.Deployment) []*v1.A
 			newAlerts = append(newAlerts, utils.PolicyDeploymentAndViolationsToAlert(p, deployment, violations))
 		}
 		return nil
-	}, false)
+	})
 	return newAlerts
 }
 

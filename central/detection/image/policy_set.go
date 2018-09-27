@@ -1,4 +1,4 @@
-package buildtime
+package image
 
 import (
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"

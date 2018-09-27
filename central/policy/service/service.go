@@ -3,9 +3,9 @@ package service
 import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
+	deploymentDetection "github.com/stackrox/rox/central/detection/deployment"
 	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
-	runTimeDetectiomn "github.com/stackrox/rox/central/detection/runtime"
+	imageDetection "github.com/stackrox/rox/central/detection/image"
 	"github.com/stackrox/rox/central/enrichanddetect"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
@@ -41,9 +41,9 @@ func New(policies datastore.DataStore,
 	clusters clusterDataStore.DataStore,
 	deployments deploymentDataStore.DataStore,
 	notifiers notifierStore.Store,
-	buildTimePolicies buildTimeDetection.PolicySet,
+	buildTimePolicies imageDetection.PolicySet,
 	deployTimeDetector deployTimeDetection.Detector,
-	runTimePolicies runTimeDetectiomn.PolicySet,
+	runTimePolicies deploymentDetection.PolicySet,
 	processor notifierProcessor.Processor,
 	enricherAndDetector enrichanddetect.EnricherAndDetector) Service {
 	return &serviceImpl{

@@ -4,9 +4,8 @@ import (
 	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
-	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
-	runTimeDetectiomn "github.com/stackrox/rox/central/detection/runtime"
+	deploymentDetection "github.com/stackrox/rox/central/detection/deployment"
+	imageDetection "github.com/stackrox/rox/central/detection/image"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -44,9 +43,9 @@ type serviceImpl struct {
 	storage   store.Store
 	processor processor.Processor
 
-	buildTimePolicies  buildTimeDetection.PolicySet
-	deployTimePolicies deployTimeDetection.PolicySet
-	runTimePolicies    runTimeDetectiomn.PolicySet
+	buildTimePolicies  imageDetection.PolicySet
+	deployTimePolicies deploymentDetection.PolicySet
+	runTimePolicies    deploymentDetection.PolicySet
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

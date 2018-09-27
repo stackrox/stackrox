@@ -1,4 +1,4 @@
-package deploytime
+package utils
 
 import (
 	"fmt"

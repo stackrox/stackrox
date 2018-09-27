@@ -1,4 +1,4 @@
-package buildtime
+package image
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ type PolicyTestSuite struct {
 }
 
 func (suite *PolicyTestSuite) TestAddsCompilable() {
-	policySet = NewPolicySet(&mocks.DataStore{})
+	policySet := NewPolicySet(&mocks.DataStore{})
 
 	err := policySet.UpsertPolicy(goodPolicy())
 	suite.NoError(err, "insertion should succeed")
@@ -35,7 +35,7 @@ func (suite *PolicyTestSuite) TestAddsCompilable() {
 }
 
 func (suite *PolicyTestSuite) TestForOneSucceeds() {
-	policySet = NewPolicySet(&mocks.DataStore{})
+	policySet := NewPolicySet(&mocks.DataStore{})
 
 	err := policySet.UpsertPolicy(goodPolicy())
 	suite.NoError(err, "insertion should succeed")
@@ -50,7 +50,7 @@ func (suite *PolicyTestSuite) TestForOneSucceeds() {
 }
 
 func (suite *PolicyTestSuite) TestForOneFails() {
-	policySet = NewPolicySet(&mocks.DataStore{})
+	policySet := NewPolicySet(&mocks.DataStore{})
 
 	err := policySet.ForOne("1", func(p *v1.Policy, m imageMatcher.Matcher) error {
 		return nil
@@ -59,7 +59,7 @@ func (suite *PolicyTestSuite) TestForOneFails() {
 }
 
 func (suite *PolicyTestSuite) TestThrowsErrorForNotCompilable() {
-	policySet = NewPolicySet(&mocks.DataStore{})
+	policySet := NewPolicySet(&mocks.DataStore{})
 
 	err := policySet.UpsertPolicy(badPolicy())
 	suite.Error(err, "insertion should not succeed since the regex in the policy is bad")

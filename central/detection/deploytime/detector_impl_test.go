@@ -4,8 +4,10 @@ import (
 	"reflect"
 	"testing"
 
+	ptypes "github.com/gogo/protobuf/types"
 	deploymentDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	"github.com/stackrox/rox/central/detection/deploytime/mocks"
+	"github.com/stackrox/rox/central/detection/deployment"
+	utilsMocks "github.com/stackrox/rox/central/detection/utils/mocks"
 	enrichmentMocks "github.com/stackrox/rox/central/enrichment/mocks"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -20,7 +22,7 @@ func TestDetector(t *testing.T) {
 type DetectorTestSuite struct {
 	suite.Suite
 
-	alertManagerMock *mocks.AlertManager
+	alertManagerMock *utilsMocks.AlertManager
 	enricherMock     *enrichmentMocks.Enricher
 	deploymentsMock  *deploymentDataStoreMocks.DataStore
 
@@ -28,12 +30,12 @@ type DetectorTestSuite struct {
 }
 
 func (suite *DetectorTestSuite) SetupTest() {
-	suite.alertManagerMock = &mocks.AlertManager{}
+	suite.alertManagerMock = &utilsMocks.AlertManager{}
 	suite.enricherMock = &enrichmentMocks.Enricher{}
 	suite.deploymentsMock = &deploymentDataStoreMocks.DataStore{}
 
 	suite.detector = NewDetector(
-		NewPolicySet(&policyMocks.DataStore{}),
+		deployment.NewPolicySet(&policyMocks.DataStore{}),
 		suite.alertManagerMock,
 		suite.enricherMock,
 		suite.deploymentsMock)
@@ -147,6 +149,30 @@ func AlertsEqual(a1, a2 *v1.Alert) bool {
 
 // Test Data
 /////////////
+
+// Policies are set up so that policy one is violated by deployment 1, 2 is violated by 2, etc.
+func getAlerts() []*v1.Alert {
+	return []*v1.Alert{
+		{
+			Id:         "alert1",
+			Policy:     getPolicies()[0],
+			Deployment: getDeployments()[0],
+			Time:       &ptypes.Timestamp{Seconds: 100},
+		},
+		{
+			Id:         "alert2",
+			Policy:     getPolicies()[1],
+			Deployment: getDeployments()[1],
+			Time:       &ptypes.Timestamp{Seconds: 200},
+		},
+		{
+			Id:         "alert3",
+			Policy:     getPolicies()[2],
+			Deployment: getDeployments()[2],
+			Time:       &ptypes.Timestamp{Seconds: 300},
+		},
+	}
+}
 
 // Policies are set up so that policy one is violated by deployment 1, 2 is violated by 2, etc.
 func getDeployments() []*v1.Deployment {

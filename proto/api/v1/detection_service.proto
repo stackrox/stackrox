@@ -23,11 +23,4 @@ service DetectionService {
         };
     }
 
-    rpc DetectRunTime(Container) returns (DetectionResponse) {
-        option (google.api.http) = {
-            post: "/v1/detect/run"
-            body: "*"
-        };
-    }
-
 }

@@ -1,13 +1,14 @@
 package buildtime
 
 import (
+	"github.com/stackrox/rox/central/detection/image"
 	"github.com/stackrox/rox/central/detection/utils"
 	"github.com/stackrox/rox/generated/api/v1"
 	imageMatcher "github.com/stackrox/rox/pkg/compiledpolicies/image/matcher"
 )
 
 type detectorImpl struct {
-	policySet PolicySet
+	policySet image.PolicySet
 }
 
 // Detect runs detection on an image, returning any generated alerts.

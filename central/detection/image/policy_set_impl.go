@@ -1,4 +1,4 @@
-package deploytime
+package image
 
 import (
 	"fmt"
@@ -7,22 +7,19 @@ import (
 	"github.com/gogo/protobuf/proto"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
-	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
+	imageMatcher "github.com/stackrox/rox/pkg/compiledpolicies/image/matcher"
 )
 
 type setImpl struct {
 	lock sync.RWMutex
 
 	policyIDToPolicy  map[string]*v1.Policy
-	policyIDToMatcher map[string]deploymentMatcher.Matcher
-
-	runtimePolicyIDToMatcher map[string]deploymentMatcher.Matcher
-
-	policyStore policyDatastore.DataStore
+	policyIDToMatcher map[string]imageMatcher.Matcher
+	policyStore       policyDatastore.DataStore
 }
 
 // ForOne runs the given function on the policy matching the id if it exists.
-func (p *setImpl) ForOne(pID string, fe func(*v1.Policy, deploymentMatcher.Matcher) error) error {
+func (p *setImpl) ForOne(pID string, fe func(*v1.Policy, imageMatcher.Matcher) error) error {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
@@ -33,21 +30,13 @@ func (p *setImpl) ForOne(pID string, fe func(*v1.Policy, deploymentMatcher.Match
 }
 
 // ForEach runs the given function on all present policies.
-func (p *setImpl) ForEach(fe func(*v1.Policy, deploymentMatcher.Matcher) error, runtime bool) error {
+func (p *setImpl) ForEach(fe func(*v1.Policy, imageMatcher.Matcher) error) error {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	if runtime {
-		for id, matcher := range p.runtimePolicyIDToMatcher {
-			if err := fe(p.policyIDToPolicy[id], matcher); err != nil {
-				return err
-			}
-		}
-	} else {
-		for id, matcher := range p.policyIDToMatcher {
-			if err := fe(p.policyIDToPolicy[id], matcher); err != nil {
-				return err
-			}
+	for id, matcher := range p.policyIDToMatcher {
+		if err := fe(p.policyIDToPolicy[id], matcher); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -60,17 +49,13 @@ func (p *setImpl) UpsertPolicy(policy *v1.Policy) error {
 
 	cloned := proto.Clone(policy).(*v1.Policy)
 
-	matcher, err := deploymentMatcher.Compile(cloned)
+	matcher, err := imageMatcher.Compile(cloned)
 	if err != nil {
 		return err
 	}
 
 	p.policyIDToPolicy[cloned.GetId()] = cloned
-	if cloned.GetLifecycleStage() == v1.LifecycleStage_RUN_TIME {
-		p.runtimePolicyIDToMatcher[cloned.GetId()] = matcher
-	} else {
-		p.policyIDToMatcher[cloned.GetId()] = matcher
-	}
+	p.policyIDToMatcher[cloned.GetId()] = matcher
 	return nil
 }
 
@@ -81,13 +66,8 @@ func (p *setImpl) RemovePolicy(policyID string) error {
 
 	if _, exists := p.policyIDToPolicy[policyID]; exists {
 		delete(p.policyIDToPolicy, policyID)
-		if _, exists := p.policyIDToMatcher[policyID]; exists {
-			delete(p.policyIDToMatcher, policyID)
-		} else if _, exists := p.runtimePolicyIDToMatcher[policyID]; exists {
-			delete(p.runtimePolicyIDToMatcher, policyID)
-		}
+		delete(p.policyIDToMatcher, policyID)
 	}
-
 	return nil
 }
 

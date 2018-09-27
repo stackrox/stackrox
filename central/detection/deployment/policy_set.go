@@ -1,4 +1,4 @@
-package deploytime
+package deployment
 
 import (
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
@@ -10,7 +10,7 @@ import (
 //go:generate mockery -name=PolicySet
 type PolicySet interface {
 	ForOne(string, func(*v1.Policy, deploymentMatcher.Matcher) error) error
-	ForEach(fe func(*v1.Policy, deploymentMatcher.Matcher) error, runtime bool) error
+	ForEach(fe func(*v1.Policy, deploymentMatcher.Matcher) error) error
 
 	UpsertPolicy(*v1.Policy) error
 	RemovePolicy(policyID string) error
@@ -20,9 +20,8 @@ type PolicySet interface {
 // NewPolicySet returns a new instance of a PolicySet.
 func NewPolicySet(store policyDatastore.DataStore) PolicySet {
 	return &setImpl{
-		policyIDToPolicy:         make(map[string]*v1.Policy),
-		policyIDToMatcher:        make(map[string]deploymentMatcher.Matcher),
-		runtimePolicyIDToMatcher: make(map[string]deploymentMatcher.Matcher),
-		policyStore:              store,
+		policyIDToPolicy:  make(map[string]*v1.Policy),
+		policyIDToMatcher: make(map[string]deploymentMatcher.Matcher),
+		policyStore:       store,
 	}
 }

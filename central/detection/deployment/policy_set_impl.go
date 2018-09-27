@@ -1,4 +1,4 @@
-package buildtime
+package deployment
 
 import (
 	"fmt"
@@ -7,19 +7,19 @@ import (
 	"github.com/gogo/protobuf/proto"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
-	imageMatcher "github.com/stackrox/rox/pkg/compiledpolicies/image/matcher"
+	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
 )
 
 type setImpl struct {
 	lock sync.RWMutex
 
 	policyIDToPolicy  map[string]*v1.Policy
-	policyIDToMatcher map[string]imageMatcher.Matcher
+	policyIDToMatcher map[string]deploymentMatcher.Matcher
 	policyStore       policyDatastore.DataStore
 }
 
 // ForOne runs the given function on the policy matching the id if it exists.
-func (p *setImpl) ForOne(pID string, fe func(*v1.Policy, imageMatcher.Matcher) error) error {
+func (p *setImpl) ForOne(pID string, fe func(*v1.Policy, deploymentMatcher.Matcher) error) error {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
@@ -30,7 +30,7 @@ func (p *setImpl) ForOne(pID string, fe func(*v1.Policy, imageMatcher.Matcher) e
 }
 
 // ForEach runs the given function on all present policies.
-func (p *setImpl) ForEach(fe func(*v1.Policy, imageMatcher.Matcher) error) error {
+func (p *setImpl) ForEach(fe func(*v1.Policy, deploymentMatcher.Matcher) error) error {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
@@ -49,7 +49,7 @@ func (p *setImpl) UpsertPolicy(policy *v1.Policy) error {
 
 	cloned := proto.Clone(policy).(*v1.Policy)
 
-	matcher, err := imageMatcher.Compile(cloned)
+	matcher, err := deploymentMatcher.Compile(cloned)
 	if err != nil {
 		return err
 	}
