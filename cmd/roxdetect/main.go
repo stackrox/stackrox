@@ -38,7 +38,7 @@ func main() {
 	violatedPolicies, err := getViolatedPolicies(token)
 	if err != nil {
 		fmt.Println(err.Error())
-		return
+		os.Exit(1)
 	}
 
 	// Run requested operations.
@@ -125,7 +125,7 @@ func getAlerts(token string) ([]*v1.Alert, error) {
 
 	// Build context with token header.
 	md := metautils.NiceMD{}
-	md = md.Add("authorization", token)
+	md = md.Add("authorization", "Bearer "+token)
 	ctx := md.ToOutgoing(context.Background())
 
 	// Call detection and return the returned alerts.
