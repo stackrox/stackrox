@@ -91,8 +91,8 @@ class SearchInput extends Component {
         const searchSuggestions = this.props.searchSuggestions.slice();
         const props = {
             className: this.props.id
-                ? `${this.props.id}-search-input ${this.props.className}`
-                : `search-input ${this.props.className}`,
+                ? `${this.props.id}-search-input ${this.props.className} z-10`
+                : `search-input ${this.props.className} z-10`,
             name: 'search-input',
             placeholder: searchIcon,
             onInputChange: this.onInputChange,

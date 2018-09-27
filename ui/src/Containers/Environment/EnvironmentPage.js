@@ -244,7 +244,7 @@ class EnvironmentPage extends Component {
         const iconColor = this.props.simulatorMode ? '#53c6a9' : '#d2d5ed';
         return (
             <button
-                className={`border-2 rounded-sm text-sm ml-2 pl-2 pr-2 h-9 ${className}`}
+                className={`flex-no-shrink border-2 rounded-sm text-sm ml-2 pl-2 pr-2 h-9 ${className}`}
                 onClick={this.toggleNetworkPolicySimulator}
             >
                 <span className="pr-1">Simulate Network Policy</span>

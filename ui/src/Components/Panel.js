@@ -11,7 +11,7 @@ const Panel = props => (
         data-test-id="panel"
     >
         <div className="shadow-underline font-bold bg-white">
-            <div className="flex flex-row w-full py-1">
+            <div className="flex flex-row w-full">
                 <div
                     className="flex flex-1 text-base-600 uppercase items-center tracking-wide py-2 px-4"
                     data-test-id="panel-header"
