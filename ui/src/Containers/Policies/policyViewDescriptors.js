@@ -254,10 +254,6 @@ const fieldsMap = {
         label: 'Container Resources',
         formatValue: formatResources
     },
-    totalResourcePolicy: {
-        label: 'Total Deployment Resources',
-        formatValue: formatResources
-    },
     processPolicy: {
         label: 'Process Name',
         formatValue: d => {

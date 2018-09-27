@@ -182,7 +182,6 @@ message PolicyFields {
     repeated string add_capabilities      = 20;
 
     ResourcePolicy container_resource_policy = 21;
-    ResourcePolicy total_resource_policy     = 22;
 
     ProcessPolicy process_policy = 23;
 }

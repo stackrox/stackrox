@@ -489,11 +489,6 @@ const policyConfigurationDescriptor = [
     cpuResource('Container CPU Limit', 'containerResourcePolicy', 'cpuResourceLimit'),
     memoryResource('Container Memory Request', 'containerResourcePolicy', 'memoryResourceRequest'),
     memoryResource('Container Memory Limit', 'containerResourcePolicy', 'memoryResourceLimit'),
-
-    cpuResource('Total CPU Request', 'totalResourcePolicy', 'cpuResourceRequest'),
-    cpuResource('Total CPU Limit', 'totalResourcePolicy', 'cpuResourceLimit'),
-    memoryResource('Total Memory Request', 'totalResourcePolicy', 'memoryResourceRequest'),
-    memoryResource('Total Memory Limit', 'totalResourcePolicy', 'memoryResourceLimit'),
     {
         label: 'Privileged',
         jsonpath: 'fields.privileged',

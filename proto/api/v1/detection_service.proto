@@ -5,7 +5,6 @@ option java_package = "stackrox.generated";
 
 import weak "google/api/annotations.proto";
 import "api/v1/alert_service.proto";
-import "api/v1/deployment_service.proto";
 import "api/v1/image_service.proto";
 
 package v1;
