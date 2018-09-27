@@ -5,15 +5,16 @@ import {
     CLUSTER_PADDING
 } from 'utils/networkGraphUtils/networkGraphConstants';
 
-export const forceCluster = namespaces => {
+export const forceCluster = () => {
     let nodes;
     let strength = 0.5;
     const f = alpha => {
         // scale + curve alpha value
         /* eslint-disable */
         alpha *= strength * alpha;
+        const centroids = nodes.filter(n => n.centroid);
         nodes.forEach(d => {
-            const c = namespaces.find(n => n.namespace === d.namespace);
+            const c = centroids.find(n => n.namespace === d.namespace);
             if (c === d) return;
 
             let x = d.x - c.x;

@@ -3,8 +3,9 @@ import { MOUSE } from 'three';
 // Force layout constants
 export const MAX_RADIUS = 12; // max radius of individual nodes
 export const PADDING = 2; // separation between same namespace nodes
-export const CLUSTER_PADDING = 100;
-export const CLUSTER_INNER_PADDING = 25;
+export const CLUSTER_PADDING = 150;
+export const CLUSTER_INNER_PADDING = 60;
+export const CLUSTER_BORDER_PADDING = CLUSTER_INNER_PADDING + 5;
 export const NAMESPACE_LABEL_OFFSET = 10;
 export const SCALE_DURATION = 250;
 export const SCALE_FACTOR = 1.5;
@@ -37,3 +38,10 @@ export const RENDERER_CONFIG = {
     precision: 'highp',
     alpha: true
 };
+
+// Colors
+const PRIMARY_COLOR = 0x5a6fd9;
+export const INTERNET_ACCESS_COLOR = 0xa3deff;
+export const NAMESPACE_BORDER_COLOR = 0xced3ed;
+export const NODE_COLOR = PRIMARY_COLOR;
+export const LINK_COLOR = PRIMARY_COLOR;

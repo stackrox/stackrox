@@ -5,11 +5,11 @@ const EnvironmentGraphLegend = () => {
     const items = [
         {
             label: 'Deployment',
-            icon: <Icon.Circle className="h-3 w-3" color="#3F4884" fill="#3F4884" />
+            icon: <Icon.Circle className="h-3 w-3" color="#5a6fd9" fill="#5a6fd9" />
         },
         {
             label: 'Namespace',
-            icon: <Icon.Square className="h-3 w-3" color="#3F4884" strokeWidth="3" />
+            icon: <Icon.Square className="h-3 w-3" color="#5a6fd9" strokeWidth="3" />
         },
         {
             label: 'Ingress/Egress',
@@ -17,7 +17,7 @@ const EnvironmentGraphLegend = () => {
         },
         {
             label: 'Internet Egress',
-            icon: <Icon.Circle className="h-3 w-3" color="#fdc9ef" strokeWidth="4" />
+            icon: <Icon.Circle className="h-3 w-3" color="#a3deff" strokeWidth="4" />
         }
     ];
     return (

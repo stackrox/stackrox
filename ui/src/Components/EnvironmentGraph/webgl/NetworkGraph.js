@@ -42,8 +42,8 @@ class NetworkGraph extends Component {
             this.clear();
 
             // Create objects for the scene
+            namespaces = this.setUpNamespaces(nextProps.nodes);
             nodes = this.setUpNodes(nextProps.nodes);
-            namespaces = this.setUpNamespaces(nodes);
             links = this.setUpLinks(nextProps.nodes, nextProps.links);
 
             this.setUpForceSimulation();
@@ -62,7 +62,9 @@ class NetworkGraph extends Component {
         if (intersectingNodes.length) {
             const node = nodes.find(
                 n =>
-                    n.circle && n.circle.geometry.uuid === intersectingNodes[0].object.geometry.uuid
+                    n.circle &&
+                    n.circle.position.x === intersectingNodes[0].object.position.x &&
+                    n.circle.position.y === intersectingNodes[0].object.position.y
             );
             this.props.onNodeClick(node);
         }
@@ -154,8 +156,13 @@ class NetworkGraph extends Component {
             )
             .force(
                 'cluster',
-                forceCluster(namespaces).strength(constants.FORCE_CONFIG.FORCE_CLUSTER_STRENGTH)
+                forceCluster().strength(constants.FORCE_CONFIG.FORCE_CLUSTER_STRENGTH)
             )
+            .on('tick', () => {
+                this.updateNamespacePositions();
+                this.updateNodesPosition();
+                this.updateLinksPosition();
+            })
             .alpha(1)
             .stop();
 
@@ -173,13 +180,24 @@ class NetworkGraph extends Component {
 
     setUpNodes = propNodes => {
         const newNodes = [];
+        const namespacesMapping = {};
 
         propNodes.forEach(propNode => {
             let modifiedNode;
             const node = { ...propNode };
             node.radius = 1;
 
-            modifiedNode = this.createNodeMesh(node);
+            modifiedNode = this.createNodeMesh(node, namespacesMapping);
+
+            // set centroid
+            if (!namespacesMapping[modifiedNode.namespace]) {
+                modifiedNode.centroid = true;
+                namespacesMapping[modifiedNode.namespace] = modifiedNode;
+            }
+            if (modifiedNode.internetAccess) {
+                namespacesMapping[modifiedNode.namespace] = modifiedNode;
+            }
+
             modifiedNode = this.createNodeLabelMesh(modifiedNode);
 
             newNodes.push(modifiedNode);
@@ -190,11 +208,45 @@ class NetworkGraph extends Component {
 
     setUpNamespaces = propNodes => {
         const namespacesMapping = {};
+        let newNamespaces = [];
+
         propNodes.forEach(propNode => {
-            if (!namespacesMapping[propNode.namespace] || propNode.internetAccess)
-                namespacesMapping[propNode.namespace] = propNode;
+            if (!namespacesMapping[propNode.namespace] || propNode.internetAccess) {
+                const namespace = {
+                    namespace: propNode.namespace,
+                    internetAccess: propNode.internetAccess
+                };
+
+                namespacesMapping[propNode.namespace] = namespace;
+            }
         });
-        return Object.values(namespacesMapping);
+
+        newNamespaces = Object.values(namespacesMapping).map(namespace => {
+            const newNamespace = { ...namespace };
+
+            let geometry = new THREE.PlaneGeometry(1, 1);
+            let material = new THREE.MeshBasicMaterial({
+                color: namespace.internetAccess
+                    ? constants.INTERNET_ACCESS_COLOR
+                    : constants.NAMESPACE_BORDER_COLOR,
+                side: THREE.DoubleSide
+            });
+            newNamespace.border = new THREE.Mesh(geometry, material);
+
+            geometry = new THREE.PlaneGeometry(1, 1);
+            material = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                side: THREE.DoubleSide
+            });
+            newNamespace.plane = new THREE.Mesh(geometry, material);
+
+            this.scene.add(newNamespace.border);
+            this.scene.add(newNamespace.plane);
+
+            return newNamespace;
+        });
+
+        return newNamespaces;
     };
 
     setUpLinks = (propNodes, propLinks) => {
@@ -205,7 +257,7 @@ class NetworkGraph extends Component {
         filteredLinks.forEach(filteredLink => {
             const link = { ...filteredLink };
             link.material = new THREE.LineBasicMaterial({
-                color: 0x5a6fd9
+                color: constants.LINK_COLOR
             });
             link.geometry = new THREE.Geometry();
             link.line = new THREE.Line(link.geometry, link.material);
@@ -215,9 +267,34 @@ class NetworkGraph extends Component {
         return newLinks;
     };
 
+    getNamespaceDimensions = (n, namespace) => {
+        const filteredNodes = n.filter(node => node.namespace === namespace);
+        let minX = filteredNodes[0].x;
+        let minY = filteredNodes[0].y;
+        let maxX = filteredNodes[0].x;
+        let maxY = filteredNodes[0].y;
+        filteredNodes.forEach(node => {
+            if (node.x < minX) minX = node.x;
+            if (node.y > minY) minY = node.y;
+            if (node.x > maxX) maxX = node.x;
+            if (node.y < maxY) maxY = node.y;
+        });
+        const x = minX;
+        const y = minY;
+        const width = maxX - minX;
+        const height = maxY - minY;
+        return {
+            x: x + width / 2,
+            y: y + height / 2,
+            width,
+            height
+        };
+    };
+
     updateNodesPosition = () => {
         nodes.forEach(node => {
-            const { x, y, circle, label } = node;
+            const { x, y, circle, border, label } = node;
+            border.position.set(x, y, 0);
             circle.position.set(x, y, 0);
             label.position.set(x, y - constants.SERVICE_LABEL_OFFSET, 0);
         });
@@ -235,11 +312,21 @@ class NetworkGraph extends Component {
     createNodeMesh = node => {
         const newNode = { ...node };
 
-        const geometry = new THREE.CircleBufferGeometry(5, 32);
-        const material = new THREE.MeshBasicMaterial({
-            color: 0x5a6fd9
+        let geometry = new THREE.CircleBufferGeometry(8, 32);
+        let material = new THREE.MeshBasicMaterial({
+            color: constants.INTERNET_ACCESS_COLOR,
+            transparent: !newNode.internetAccess,
+            opacity: newNode.internetAccess ? 1 : 0
+        });
+        newNode.border = new THREE.Mesh(geometry, material);
+
+        geometry = new THREE.CircleBufferGeometry(5, 32);
+        material = new THREE.MeshBasicMaterial({
+            color: constants.NODE_COLOR
         });
         newNode.circle = new THREE.Mesh(geometry, material);
+
+        this.scene.add(newNode.border);
         this.scene.add(newNode.circle);
 
         return newNode;
@@ -267,6 +354,23 @@ class NetworkGraph extends Component {
         return newNode;
     };
 
+    updateNamespacePositions = () => {
+        namespaces.forEach(namespace => {
+            const { namespace: name, plane, border } = namespace;
+            const { x, y, width, height } = this.getNamespaceDimensions(nodes, name);
+            border.geometry = new THREE.PlaneGeometry(
+                width + constants.CLUSTER_BORDER_PADDING,
+                height - constants.CLUSTER_BORDER_PADDING
+            );
+            border.position.set(x, y, 0);
+            plane.geometry = new THREE.PlaneGeometry(
+                width + constants.CLUSTER_INNER_PADDING,
+                height - constants.CLUSTER_INNER_PADDING
+            );
+            plane.position.set(x, y, 0);
+        });
+    };
+
     clear = () => {
         // Clear everything from the scene
         while (this.scene.children.length > 0) {
@@ -280,10 +384,6 @@ class NetworkGraph extends Component {
         requestAnimationFrame(this.animate);
 
         this.controls.update();
-
-        this.updateNodesPosition();
-
-        this.updateLinksPosition();
 
         this.renderer.render(this.scene, this.camera);
     };
