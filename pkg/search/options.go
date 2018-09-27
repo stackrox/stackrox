@@ -69,7 +69,7 @@ const (
 
 	// ProcessIndicator Search fields
 	IndicatorID      FieldLabel = "Indicator ID"
-	ProcessExecPath  FieldLabel = "Process Exec Path"
+	ProcessExecPath  FieldLabel = "Process Path"
 	ProcessName      FieldLabel = "Process Name"
 	ProcessArguments FieldLabel = "Process Arguments"
 
