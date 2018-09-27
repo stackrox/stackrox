@@ -1,8 +1,6 @@
 package builders
 
 import (
-	"fmt"
-
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
@@ -14,35 +12,17 @@ type conjunctionFieldQueryBuilder struct {
 
 func (c *conjunctionFieldQueryBuilder) Query(fields *v1.PolicyFields,
 	optionsMap map[search.FieldLabel]*v1.SearchField) (*v1.Query, searchbasedpolicies.ViolationPrinter, error) {
-	var conjuncts []*v1.Query
-	var matchers []searchbasedpolicies.ViolationPrinter
-	for _, qb := range c.qbs {
-		conjunct, matcher, err := qb.Query(fields, optionsMap)
-		if err != nil {
-			return nil, nil, err
-		}
-		if conjunct == nil {
-			continue
-		}
-		if matcher == nil {
-			return nil, nil, fmt.Errorf("query builder %+v (%s) returned non-nil query but nil matcher", qb, qb.Name())
-		}
-		conjuncts = append(conjuncts, conjunct)
-		matchers = append(matchers, matcher)
+
+	conjuncts, printers, err := presentQueriesAndPrinters(c.qbs, fields, optionsMap)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	if len(conjuncts) == 0 {
 		return nil, nil, nil
 	}
 
-	concatenatingMatcher := func(result search.Result) (violations []*v1.Alert_Violation) {
-		for _, m := range matchers {
-			violations = append(violations, m(result)...)
-		}
-		return
-	}
-
-	return search.ConjunctionQuery(conjuncts...), concatenatingMatcher, nil
+	return search.ConjunctionQuery(conjuncts...), concatenatingPrinter(printers), nil
 }
 
 func (c *conjunctionFieldQueryBuilder) Name() string {

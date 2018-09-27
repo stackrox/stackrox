@@ -55,3 +55,34 @@ func printKeyValuePolicy(kvp *v1.KeyValuePolicy) string {
 	}
 	return sb.String()
 }
+
+func concatenatingPrinter(printers []searchbasedpolicies.ViolationPrinter) searchbasedpolicies.ViolationPrinter {
+	return func(result search.Result) (violations []*v1.Alert_Violation) {
+		for _, p := range printers {
+			violations = append(violations, p(result)...)
+		}
+		return
+	}
+}
+
+func presentQueriesAndPrinters(qbs []searchbasedpolicies.PolicyQueryBuilder, fields *v1.PolicyFields,
+	optionsMap map[search.FieldLabel]*v1.SearchField) (queries []*v1.Query, printers []searchbasedpolicies.ViolationPrinter, err error) {
+	for _, qb := range qbs {
+		var q *v1.Query
+		var printer searchbasedpolicies.ViolationPrinter
+		q, printer, err = qb.Query(fields, optionsMap)
+		if err != nil {
+			return
+		}
+		if q == nil {
+			continue
+		}
+		if printer == nil {
+			err = fmt.Errorf("query builder %+v (%s) returned non-nil query but nil printer", qb, qb.Name())
+			return
+		}
+		queries = append(queries, q)
+		printers = append(printers, printer)
+	}
+	return
+}

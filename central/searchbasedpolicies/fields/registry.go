@@ -28,6 +28,6 @@ var Registry = []searchbasedpolicies.PolicyQueryBuilder{
 	builders.PrivilegedQueryBuilder{},
 	builders.NewAddCapQueryBuilder(),
 	builders.NewDropCapQueryBuilder(),
-	// container_resource
+	resourcePolicy,
 	// total_resource
 }

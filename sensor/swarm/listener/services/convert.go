@@ -150,7 +150,7 @@ func convertMemoryBytesToMb(bytes int64) float32 {
 func (s serviceWrap) getResources() *v1.Resources {
 	resources := s.Spec.TaskTemplate.Resources
 	if resources == nil {
-		return nil
+		return &v1.Resources{}
 	}
 	var v1Resources v1.Resources
 	if resources.Limits != nil {

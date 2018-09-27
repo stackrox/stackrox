@@ -345,6 +345,19 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.mustIndexDepAndImages(sysAdminDep)
 
+	depWithAllResourceLimitsRequestsSpecified := &v1.Deployment{
+		Id: "ALLRESOURCESANDLIMITSDEP",
+		Containers: []*v1.Container{
+			{Resources: &v1.Resources{
+				CpuCoresRequest: 0.1,
+				CpuCoresLimit:   0.3,
+				MemoryMbLimit:   100,
+				MemoryMbRequest: 1251,
+			}},
+		},
+	}
+	suite.mustIndexDepAndImages(depWithAllResourceLimitsRequestsSpecified)
+
 	// Find all the deployments indexed.
 	allDeployments, err := suite.deploymentIndexer.Search(search.EmptyQuery())
 	suite.NoError(err)
@@ -554,16 +567,17 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			shouldNotMatch: map[string]struct{}{
 				fixtureDep.GetId(): {}, // This deployment has scans on its images.
 				// The rest of the deployments have no images!
-				"FAKEID":                            {},
-				containerPort22Dep.GetId():          {},
-				dockerSockDep.GetId():               {},
-				secretEnvDep.GetId():                {},
-				oldScannedDep.GetId():               {},
-				depWithOwnerAnnotation.GetId():      {},
-				depWithGoodEmailAnnotation.GetId():  {},
-				depWithBadEmailAnnotation.GetId():   {},
-				depWitharbitraryAnnotations.GetId(): {},
-				sysAdminDep.GetId():                 {},
+				"FAKEID":                                          {},
+				containerPort22Dep.GetId():                        {},
+				dockerSockDep.GetId():                             {},
+				secretEnvDep.GetId():                              {},
+				oldScannedDep.GetId():                             {},
+				depWithOwnerAnnotation.GetId():                    {},
+				depWithGoodEmailAnnotation.GetId():                {},
+				depWithBadEmailAnnotation.GetId():                 {},
+				depWitharbitraryAnnotations.GetId():               {},
+				sysAdminDep.GetId():                               {},
+				depWithAllResourceLimitsRequestsSpecified.GetId(): {},
 			},
 			sampleViolationForMatched: "Images without scans were found",
 		},
@@ -643,6 +657,16 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "CVE CVE-2014-0160 matched regex 'CVE-2014-0160'",
 						Link:    "https://heartbleed",
 					},
+				},
+			},
+		},
+		{
+			policyName: "No resource requests or limits specified",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				fixtureDep.GetId(): {
+					{Message: "The CPU resource limit of 0 is equal to the threshold of 0.00"},
+					{Message: "The memory resource limit of 0 is equal to the threshold of 0.00"},
+					{Message: "The memory resource request of 0 is equal to the threshold of 0.00"},
 				},
 			},
 		},

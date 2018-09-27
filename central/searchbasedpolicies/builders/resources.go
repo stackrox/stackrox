@@ -1,0 +1,57 @@
+package builders
+
+import (
+	"fmt"
+
+	"github.com/stackrox/rox/central/searchbasedpolicies"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
+)
+
+var (
+	opToHumanReadable = map[v1.Comparator]string{
+		v1.Comparator_LESS_THAN:              "less than",
+		v1.Comparator_LESS_THAN_OR_EQUALS:    "less than or equal to",
+		v1.Comparator_EQUALS:                 "equal to",
+		v1.Comparator_GREATER_THAN_OR_EQUALS: "greater than or equal to",
+		v1.Comparator_GREATER_THAN:           "greater than",
+	}
+)
+
+type resourcePolicyBuilder struct {
+	extractFieldValue func(fields *v1.PolicyFields) *v1.ResourcePolicy_NumericalPolicy
+	fieldLabel        search.FieldLabel
+	fieldHumanName    string
+}
+
+func (r *resourcePolicyBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
+	numericalPolicy := r.extractFieldValue(fields)
+	if numericalPolicy == nil {
+		return
+	}
+	searchField, err := getSearchField(r.fieldLabel, optionsMap)
+	if err != nil {
+		err = fmt.Errorf("%s: %s", r.Name(), err)
+		return
+	}
+
+	q = search.NewQueryBuilder().AddNumericFieldHighlighted(r.fieldLabel, numericalPolicy.GetOp(), numericalPolicy.GetValue()).ProtoQuery()
+
+	v = violationPrinterForField(searchField.GetFieldPath(), func(match string) string {
+		return fmt.Sprintf("The %s of %s is %s the threshold of %.2f", r.fieldHumanName, match, opToHumanReadable[numericalPolicy.GetOp()], numericalPolicy.GetValue())
+	})
+	return
+}
+
+func (r *resourcePolicyBuilder) Name() string {
+	return fmt.Sprintf("query builder for resource policy: %s", r.fieldHumanName)
+}
+
+// NewResourcePolicyBuilder returns a resource policy builder with the specified parameters.
+func NewResourcePolicyBuilder(extractFieldValue func(fields *v1.PolicyFields) *v1.ResourcePolicy_NumericalPolicy, fieldLabel search.FieldLabel, fieldHumanName string) searchbasedpolicies.PolicyQueryBuilder {
+	return &resourcePolicyBuilder{
+		extractFieldValue: extractFieldValue,
+		fieldHumanName:    fieldHumanName,
+		fieldLabel:        fieldLabel,
+	}
+}
