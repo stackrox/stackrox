@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option go_package = "data";
+option cc_enable_arenas = true;
+
+package data;
+
+enum Role {
+	ROLE_UNKNOWN = 0;
+	ROLE_SERVER  = 1;
+	ROLE_CLIENT  = 2;
+}
+
+enum SocketFamily {
+	SOCKET_FAMILY_UNKNOWN = 0;
+	SOCKET_FAMILY_IPV4    = 1;
+	SOCKET_FAMILY_IPV6    = 2;
+}
+
+enum L4Protocol {
+	L4_PROTOCOL_UNKNOWN = 0;
+	L4_PROTOCOL_TCP     = 1;
+	L4_PROTOCOL_UDP     = 2;
+	L4_PROTOCOL_ICMP    = 3;
+	L4_PROTOCOL_RAW     = 4;
+}

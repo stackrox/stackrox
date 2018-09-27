@@ -37,6 +37,9 @@ func CompareProtoTimestamps(t1, t2 *gogoTimestamp.Timestamp) int {
 
 // ConvertGoGoProtoTimeToGolangProtoTime converts the Gogo Timestamp to the golang protobuf timestamp
 func ConvertGoGoProtoTimeToGolangProtoTime(gogo *gogoTimestamp.Timestamp) *golangTimestamp.Timestamp {
+	if gogo == nil {
+		return nil
+	}
 	return &golangTimestamp.Timestamp{
 		Seconds: gogo.GetSeconds(),
 		Nanos:   gogo.GetNanos(),

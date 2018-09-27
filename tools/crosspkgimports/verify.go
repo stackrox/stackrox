@@ -27,6 +27,7 @@ var (
 		"pkg",
 		"sensor/kubernetes",
 		"sensor/swarm",
+		"sensor/common",
 		"tools",
 		"integration-tests",
 	}

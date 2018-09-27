@@ -4,6 +4,7 @@ option go_package = "sensor";
 option cc_enable_arenas = true;
 
 import "google/protobuf/timestamp.proto";
+import "internalapi/data/common/network_enums.proto";
 
 package sensor;
 
@@ -18,20 +19,15 @@ message NetworkConnectionInfo {
 
 // NetworkConnection tracks connection information about client and server.
 message NetworkConnection {
-    enum Role {
-        ROLE_UNKNOWN = 0;
-        ROLE_SERVER  = 1;
-        ROLE_CLIENT  = 2;
-    }
 
-    SocketFamily socket_family    = 1;
+    data.SocketFamily socket_family    = 1;
 
     NetworkAddress local_address = 2;
     NetworkAddress remote_address = 3;
 
-    L4Protocol protocol           = 4;
+    data.L4Protocol protocol           = 4;
 
-    Role role                     = 5;
+    data.Role role                     = 5;
 
     string container_id           = 6;
 
@@ -45,16 +41,3 @@ message NetworkAddress {
     uint32 port = 2;         // may be 0 if not applicable (e.g., icmp).
 }
 
-enum SocketFamily {
-    SOCKET_FAMILY_UNKNOWN = 0;
-    SOCKET_FAMILY_IPV4    = 1;
-    SOCKET_FAMILY_IPV6    = 2;
-}
-
-enum L4Protocol {
-    L4_PROTOCOL_UNKNOWN = 0;
-    L4_PROTOCOL_TCP     = 1;
-    L4_PROTOCOL_UDP     = 2;
-    L4_PROTOCOL_ICMP    = 3;
-    L4_PROTOCOL_RAW     = 4;
-}
