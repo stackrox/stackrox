@@ -1,3 +1,5 @@
+import { lifecycleStageLabels } from 'messages/common';
+
 const equalityOptions = [
     { label: 'Is greater than', value: 'GREATER_THAN' },
     {
@@ -123,11 +125,11 @@ const policyDetailsFormDescriptor = [
         label: 'Lifecycle Stage',
         jsonpath: 'lifecycleStage',
         type: 'select',
-        options: [
-            { label: 'Build', value: 'BUILD_TIME' },
-            { label: 'Deploy', value: 'DEPLOY_TIME' }
-        ],
-        placeholder: 'Deploy',
+        options: Object.keys(lifecycleStageLabels).map(key => ({
+            label: lifecycleStageLabels[key],
+            value: key
+        })),
+        placeholder: lifecycleStageLabels.DEPLOY_TIME,
         required: false,
         default: true
     },
@@ -447,7 +449,7 @@ const policyConfigurationDescriptor = [
     },
     {
         label: 'Volume Source',
-        jsonpath: 'configurationPolicy.volumePolicy.source',
+        jsonpath: 'fields.volumePolicy.source',
         type: 'text',
         placeholder: '^/var/run/docker.sock$',
         required: false,
@@ -455,7 +457,7 @@ const policyConfigurationDescriptor = [
     },
     {
         label: 'Volume Destination',
-        jsonpath: 'configurationPolicy.volumePolicy.destination',
+        jsonpath: 'fields.volumePolicy.destination',
         type: 'text',
         placeholder: '^/var/run/docker.sock$',
         required: false,
@@ -513,6 +515,22 @@ const policyConfigurationDescriptor = [
         jsonpath: 'fields.addCapabilities',
         type: 'multiselect',
         options: [...capabilities],
+        required: false,
+        default: false
+    },
+    {
+        label: 'Process Name',
+        jsonpath: 'fields.processPolicy.name',
+        type: 'text',
+        placeholder: 'apt-get',
+        required: false,
+        default: false
+    },
+    {
+        label: 'Process Args',
+        jsonpath: 'fields.processPolicy.args',
+        type: 'text',
+        placeholder: 'install nmap',
         required: false,
         default: false
     }

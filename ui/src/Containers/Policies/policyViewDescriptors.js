@@ -257,6 +257,14 @@ const fieldsMap = {
     totalResourcePolicy: {
         label: 'Total Deployment Resources',
         formatValue: formatResources
+    },
+    processPolicy: {
+        label: 'Process Name',
+        formatValue: d => {
+            const name = d.name ? `Process named "${d.name}"` : 'Process';
+            const args = d.args ? `with args "${d.args}"` : '';
+            return `${name} ${args}`;
+        }
     }
 };
 
