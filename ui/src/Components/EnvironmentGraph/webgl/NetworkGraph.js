@@ -11,6 +11,7 @@ import {
     getTextTexture
 } from 'utils/networkGraphUtils/networkGraphUtils';
 import * as constants from 'utils/networkGraphUtils/networkGraphConstants';
+import * as Icon from 'react-feather';
 
 const OrbitControls = threeOrbitControls(THREE);
 
@@ -18,6 +19,7 @@ let nodes = [];
 let links = [];
 let namespaces = [];
 let simulation = null;
+let isZoomIn = false;
 
 class NetworkGraph extends Component {
     static propTypes = {
@@ -286,14 +288,50 @@ class NetworkGraph extends Component {
         this.renderer.render(this.scene, this.camera);
     };
 
+    zoomIn = () => {
+        isZoomIn = true;
+        this.calculateZoom();
+    };
+
+    zoomOut = () => {
+        isZoomIn = false;
+        this.calculateZoom();
+    };
+
+    calculateZoom = () => {
+        const { object, minZoom, maxZoom, update } = this.controls;
+        const scale = 0.65 ** this.controls.zoomSpeed;
+        if (object instanceof THREE.OrthographicCamera) {
+            if (isZoomIn) {
+                object.zoom = Math.max(minZoom, Math.min(maxZoom, object.zoom / scale));
+            } else {
+                object.zoom = Math.max(minZoom, Math.min(maxZoom, object.zoom * scale));
+            }
+            object.updateProjectionMatrix();
+        } else {
+            this.controls.enableZoom = false;
+        }
+        update();
+    };
+
     render() {
         return (
-            <div
-                className="network-graph flex flex-1"
-                ref={ref => {
-                    this.networkGraph = ref;
-                }}
-            />
+            <div className="h-full w-full relative">
+                <div
+                    className="network-graph flex h-full w-full"
+                    ref={ref => {
+                        this.networkGraph = ref;
+                    }}
+                />
+                <div className="graph-zoom-buttons m-4 absolute pin-b pin-r z-20">
+                    <button className="btn-icon btn-primary mb-2" onClick={this.zoomIn}>
+                        <Icon.Plus className="h-4 w-4" />
+                    </button>
+                    <button className="btn-icon btn-primary" onClick={this.zoomOut}>
+                        <Icon.Minus className="h-4 w-4" />
+                    </button>
+                </div>
+            </div>
         );
     }
 }
