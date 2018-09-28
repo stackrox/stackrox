@@ -1,5 +1,6 @@
 import { quadtree as d3QuadTree } from 'd3';
 import {
+    TEXT_COLOR,
     MAX_RADIUS,
     PADDING,
     CLUSTER_PADDING
@@ -138,15 +139,15 @@ export const intersectsNodes = obj => obj.object.geometry.type === 'CircleBuffer
  * @param {String} text text to draw on the canvas
  * @returns {!Object[]}
  */
-export const getTextTexture = text => {
+export const getTextTexture = (text, size) => {
     const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 256;
+    canvas.width = size * 4;
+    canvas.height = size * 4;
     const ctx = canvas.getContext('2d');
-    ctx.font = '16pt Open Sans';
+    ctx.font = `${size / 3}px Open Sans`;
     ctx.fillStyle = 'transparent';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = TEXT_COLOR;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(text, canvas.width / 2, canvas.height / 2);

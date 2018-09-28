@@ -198,7 +198,11 @@ class NetworkGraph extends Component {
                 namespacesMapping[modifiedNode.namespace] = modifiedNode;
             }
 
-            modifiedNode = this.createNodeLabelMesh(modifiedNode);
+            modifiedNode = this.createTextLabelMesh(
+                modifiedNode,
+                modifiedNode.deploymentName,
+                constants.NODE_LABEL_SIZE
+            );
 
             newNodes.push(modifiedNode);
         });
@@ -222,7 +226,7 @@ class NetworkGraph extends Component {
         });
 
         newNamespaces = Object.values(namespacesMapping).map(namespace => {
-            const newNamespace = { ...namespace };
+            let newNamespace = { ...namespace };
 
             let geometry = new THREE.PlaneGeometry(1, 1);
             let material = new THREE.MeshBasicMaterial({
@@ -239,6 +243,12 @@ class NetworkGraph extends Component {
                 side: THREE.DoubleSide
             });
             newNamespace.plane = new THREE.Mesh(geometry, material);
+
+            newNamespace = this.createTextLabelMesh(
+                newNamespace,
+                newNamespace.namespace,
+                constants.NAMESPACE_LABEL_SIZE
+            );
 
             this.scene.add(newNamespace.border);
             this.scene.add(newNamespace.plane);
@@ -296,7 +306,7 @@ class NetworkGraph extends Component {
             const { x, y, circle, border, label } = node;
             border.position.set(x, y, 0);
             circle.position.set(x, y, 0);
-            label.position.set(x, y - constants.SERVICE_LABEL_OFFSET, 0);
+            label.position.set(x, y - constants.NODE_LABEL_OFFSET, 0);
         });
     };
 
@@ -332,31 +342,27 @@ class NetworkGraph extends Component {
         return newNode;
     };
 
-    createNodeLabelMesh = node => {
-        const newNode = { ...node };
-        const trimmedName =
-            newNode.deploymentName.length > 15
-                ? `${newNode.deploymentName.substring(0, 15)}...`
-                : newNode.deploymentName;
+    createTextLabelMesh = (data, text, size) => {
+        const modifiedData = { ...data };
+        const trimmedName = text.length > 15 ? `${text.substring(0, 15)}...` : text;
 
-        const canvasTexture = getTextTexture(trimmedName);
+        const canvasTexture = getTextTexture(trimmedName, size);
+
         const texture = new THREE.Texture(canvasTexture);
         texture.needsUpdate = true;
         const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
         material.transparent = true;
-        const geometry = new THREE.PlaneBufferGeometry(
-            constants.NODE_LABEL_SIZE,
-            constants.NODE_LABEL_SIZE
-        );
-        newNode.label = new THREE.Mesh(geometry, material);
-        this.scene.add(newNode.label);
+        const geometry = new THREE.PlaneBufferGeometry(size, size);
+        modifiedData.label = new THREE.Mesh(geometry, material);
 
-        return newNode;
+        this.scene.add(modifiedData.label);
+
+        return modifiedData;
     };
 
     updateNamespacePositions = () => {
         namespaces.forEach(namespace => {
-            const { namespace: name, plane, border } = namespace;
+            const { namespace: name, plane, border, label } = namespace;
             const { x, y, width, height } = this.getNamespaceDimensions(nodes, name);
             border.geometry = new THREE.PlaneGeometry(
                 width + constants.CLUSTER_BORDER_PADDING,
@@ -368,6 +374,13 @@ class NetworkGraph extends Component {
                 height - constants.CLUSTER_INNER_PADDING
             );
             plane.position.set(x, y, 0);
+            label.position.set(
+                x,
+                y +
+                    (height - constants.CLUSTER_INNER_PADDING - constants.NAMESPACE_LABEL_OFFSET) /
+                        2,
+                0
+            );
         });
     };
 

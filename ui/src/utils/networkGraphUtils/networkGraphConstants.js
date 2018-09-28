@@ -6,12 +6,14 @@ export const PADDING = 2; // separation between same namespace nodes
 export const CLUSTER_PADDING = 150;
 export const CLUSTER_INNER_PADDING = 60;
 export const CLUSTER_BORDER_PADDING = CLUSTER_INNER_PADDING + 5;
-export const NAMESPACE_LABEL_OFFSET = 10;
 export const SCALE_DURATION = 250;
 export const SCALE_FACTOR = 1.5;
 export const SCALE_EXTENT = [0.5, 2];
-export const SERVICE_LABEL_OFFSET = 15;
+
 export const NODE_LABEL_SIZE = 65;
+export const NODE_LABEL_OFFSET = 15;
+export const NAMESPACE_LABEL_SIZE = 200;
+export const NAMESPACE_LABEL_OFFSET = 30;
 
 export const FORCE_CONFIG = {
     FORCE_COLLISION_RADIUS_OFFSET: 20,
@@ -40,8 +42,10 @@ export const RENDERER_CONFIG = {
 };
 
 // Colors
-const PRIMARY_COLOR = 0x5a6fd9;
+const PRIMARY_COLOR_HEX = 0x5a6fd9;
+const PRIMARY_COLOR_STRING = '#525966';
 export const INTERNET_ACCESS_COLOR = 0xa3deff;
 export const NAMESPACE_BORDER_COLOR = 0xced3ed;
-export const NODE_COLOR = PRIMARY_COLOR;
-export const LINK_COLOR = PRIMARY_COLOR;
+export const NODE_COLOR = PRIMARY_COLOR_HEX;
+export const LINK_COLOR = PRIMARY_COLOR_HEX;
+export const TEXT_COLOR = PRIMARY_COLOR_STRING;
