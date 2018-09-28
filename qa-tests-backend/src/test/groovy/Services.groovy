@@ -32,69 +32,68 @@ import stackrox.generated.DeploymentServiceOuterClass.ListDeployment
 import stackrox.generated.DeploymentServiceOuterClass.Deployment
 import stackrox.generated.Common.ResourceByID
 import stackrox.generated.SearchServiceOuterClass
+import v1.Indicator
 import stackrox.generated.SensorEventServiceOuterClass
-import v1.SecretServiceGrpc
 import v1.NetworkPolicyServiceGrpc
+import v1.SecretServiceGrpc
 import v1.NetworkPolicyServiceOuterClass
 
 class Services {
 
     static getChannel() {
         SslContext sslContext = GrpcSslContexts
-                .forClient()
-                .trustManager(InsecureTrustManagerFactory.INSTANCE)
-                .build()
+                        .forClient()
+                        .trustManager(InsecureTrustManagerFactory.INSTANCE)
+                        .build()
 
         int port = Integer.parseInt(System.getenv("PORT"))
 
         def channel = NettyChannelBuilder
-                .forAddress(System.getenv("HOSTNAME"), port)
-                .negotiationType(NegotiationType.TLS)
-                .sslContext(sslContext)
-                .build()
+                        .forAddress(System.getenv("HOSTNAME"), port)
+                        .negotiationType(NegotiationType.TLS)
+                        .sslContext(sslContext)
+                        .build()
         return channel
-    }
+      }
 
     static ResourceByID getResourceByID(String id) {
         return ResourceByID.newBuilder().setId(id).build()
-    }
+      }
 
     static getIntegrationClient() {
         return ImageIntegrationServiceGrpc.newBlockingStub(getChannel())
-    }
+      }
 
     static getDetectionClient() {
         return DetectionServiceGrpc.newBlockingStub(getChannel())
-    }
+      }
 
     static getPolicyClient() {
         return PolicyServiceGrpc.newBlockingStub(getChannel())
-    }
+      }
 
     static getAlertClient() {
         return AlertServiceGrpc.newBlockingStub(getChannel())
-    }
+      }
 
     static getDeploymentClient() {
         return DeploymentServiceGrpc.newBlockingStub(getChannel())
-    }
+      }
 
     static getSearchServiceClient() {
         return SearchServiceGrpc.newBlockingStub(getChannel())
-    }
+      }
 
     static getSecretServiceClient() {
         return SecretServiceGrpc.newBlockingStub(getChannel())
-    }
+      }
 
     static getNetworkPolicyClient() {
         return NetworkPolicyServiceGrpc.newBlockingStub(getChannel())
     }
-
     static getClusterServiceClient() {
         return ClustersServiceGrpc.newBlockingStub(getChannel())
     }
-
     static getNotifierClient() {
         return NotifierServiceGrpc.newBlockingStub(getChannel())
     }
@@ -105,171 +104,184 @@ class Services {
 
     static List<ListPolicy> getPolicies(RawQuery query = RawQuery.newBuilder().build()) {
         return getPolicyClient().listPolicies(query).policiesList
-    }
+      }
 
     static Policy getPolicyByName(String policyName) {
         return getPolicy(
-                getPolicies().find { it.name == policyName }.id
-        )
-    }
+                        getPolicies().find { it.name == policyName }.id
+            )
+      }
 
     static Policy getPolicy(String id) {
         return getPolicyClient().getPolicy(getResourceByID(id))
-    }
+      }
 
     static deletePolicy(String policyID) {
         getPolicyClient().deletePolicy(
-            ResourceByID.newBuilder()
-                .setId(policyID)
-                .build()
-        )
-    }
+                        ResourceByID.newBuilder()
+                                    .setId(policyID)
+                                    .build()
+            )
+      }
 
     static List<ListAlert> getViolations(ListAlertsRequest request = ListAlertsRequest.newBuilder().build()) {
         return getAlertClient().listAlerts(request).alertsList
-    }
+      }
 
     static Alert getViolaton(String id) {
         return getAlertClient().getAlert(getResourceByID(id))
-    }
+      }
 
     static List<ListDeployment> getDeployments(RawQuery query = RawQuery.newBuilder().build()) {
         return getDeploymentClient().listDeployments(query).deploymentsList
-    }
+      }
 
     static Deployment getDeployment(String id) {
         return getDeploymentClient().getDeployment(getResourceByID(id))
-    }
+      }
 
     static SearchServiceOuterClass.SearchResponse getSearchResponse(
-       String query, List<SearchServiceOuterClass.SearchCategory> categories) {
+                  String query, List<SearchServiceOuterClass.SearchCategory> categories) {
         def rawSearchRequest = SearchServiceOuterClass.RawSearchRequest.newBuilder()
-            .addAllCategories(categories)
-            .setQuery(query)
-            .build()
+                        .addAllCategories(categories)
+                        .setQuery(query)
+                        .build()
         return getSearchServiceClient().search(rawSearchRequest)
-    }
+      }
 
     static String getSecret(String id) {
         int intervalSeconds = 1
         int waitTime
         for (waitTime = 0; waitTime < 50000 / intervalSeconds; waitTime++) {
-            def sec= getSecretServiceClient().getSecret(ResourceByID.newBuilder().setId(id).build())
+            def sec = getSecretServiceClient().getSecret(ResourceByID.newBuilder().setId(id).build())
             if (sec != null) {
                 return sec.id
-            }
+                  }
             sleep(intervalSeconds * 1000)
-       }
+            }
         println "Failed to add secret " + id + " after waiting " + waitTime * intervalSeconds + " seconds"
         return null
-   }
+      }
 
     static waitForViolation(String deploymentName, String policyName, int timeoutSeconds) {
         int intervalSeconds = 1
         int waitTime
         for (waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
             def violations = getViolations(ListAlertsRequest.newBuilder()
-                    .setQuery("Deployment:${deploymentName}+Policy:${policyName}").build())
+                              .setQuery("Deployment:${deploymentName}+Policy:${policyName}").build())
             if (violations.size() > 0) {
                 println "violation size is: " + violations.size()
                 println policyName + " triggered after waiting " + waitTime * intervalSeconds + " seconds"
                 return true
-            }
+                  }
             sleep(intervalSeconds * 1000)
-        }
+            }
 
         println "Failed to trigger " + policyName + " after waiting " + waitTime * intervalSeconds + " seconds"
         return false
-    }
+      }
 
     static String addGenericDockerRegistry() {
         return getIntegrationClient().postImageIntegration(
-            ImageIntegration.newBuilder()
-                .setName("dockerhub")
-                .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.REGISTRY)
-                .setType("docker")
-                .setDocker(
-                    ImageIntegrationServiceOuterClass.DockerConfig.newBuilder()
-                    .setUsername("")
-                    .setPassword("")
-                    .setEndpoint("registry-1.docker.io")
-                    .setInsecure(false)
-                    .build()
-                )
-                .build()
-        )
-        .getId()
-    }
+                        ImageIntegration.newBuilder()
+                                    .setName("dockerhub")
+                                    .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.REGISTRY)
+                                    .setType("docker")
+                                    .setDocker(
+                                    ImageIntegrationServiceOuterClass.DockerConfig.newBuilder()
+                                                .setUsername("")
+                                                .setPassword("")
+                                                .setEndpoint("registry-1.docker.io")
+                                                .setInsecure(false)
+                                                .build()
+                        )
+                                    .build()
+            )
+                        .getId()
+      }
 
     static deleteGenericDockerRegistry(String gdrId) {
         getIntegrationClient().deleteImageIntegration(
-                ResourceByID.newBuilder()
-                        .setId(gdrId)
-                        .build()
-        )
-    }
+                        ResourceByID.newBuilder()
+                                    .setId(gdrId)
+                                    .build()
+            )
+      }
 
     static String addDockerTrustedRegistry() {
         return getIntegrationClient().postImageIntegration(
-            ImageIntegration.newBuilder()
-                .setName("dtr")
-                .setType("dtr")
-                .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.REGISTRY)
-                .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.SCANNER)
-                .setDtr(ImageIntegrationServiceOuterClass.DTRConfig.newBuilder()
-                    .setEndpoint("https://apollo-dtr.rox.systems/")
-                    .setUsername("qa")
-                    .setPassword("W3g9xOPKyLTkBBMj")
-                    .setInsecure(false)
-                    .build()
-                )
-            .build()
-        )
-        .getId()
-    }
+                        ImageIntegration.newBuilder()
+                                    .setName("dtr")
+                                    .setType("dtr")
+                                    .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.REGISTRY)
+                                    .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.SCANNER)
+                                    .setDtr(ImageIntegrationServiceOuterClass.DTRConfig.newBuilder()
+                                    .setEndpoint("https://apollo-dtr.rox.systems/")
+                                    .setUsername("qa")
+                                    .setPassword("W3g9xOPKyLTkBBMj")
+                                    .setInsecure(false)
+                                    .build()
+                        )
+                                    .build()
+            )
+                        .getId()
+      }
 
     static deleteDockerTrustedRegistry(String dtrId) {
         getIntegrationClient().deleteImageIntegration(
-                ResourceByID.newBuilder()
-                        .setId(dtrId)
-                        .build()
-        )
-    }
+                        ResourceByID.newBuilder()
+                                    .setId(dtrId)
+                                    .build()
+            )
+      }
 
     static String addClairifyScanner(String clairifyEndpoint) {
         return getIntegrationClient().postImageIntegration(
-            ImageIntegration.newBuilder()
-                .setName("clairify")
-                .setType("clairify")
-                .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.SCANNER)
-                .setClairify(ImageIntegrationServiceOuterClass.ClairifyConfig.newBuilder()
-                    .setEndpoint(clairifyEndpoint)
-                    .build()
-                )
-            .build()
-        )
-        .getId()
-    }
+                        ImageIntegration.newBuilder()
+                                    .setName("clairify")
+                                    .setType("clairify")
+                                    .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.SCANNER)
+                                    .setClairify(ImageIntegrationServiceOuterClass.ClairifyConfig.newBuilder()
+                                    .setEndpoint(clairifyEndpoint)
+                                    .build()
+                        )
+                                    .build()
+            )
+                        .getId()
+      }
 
     static deleteClairifyScanner(String clairifyId) {
         getIntegrationClient().deleteImageIntegration(
-                ResourceByID.newBuilder()
-                        .setId(clairifyId)
-                        .build()
-        )
-    }
+                        ResourceByID.newBuilder()
+                                    .setId(clairifyId)
+                                    .build()
+            )
+      }
 
     static requestBuildImageScan(String registry, String remote, String tag) {
         return getDetectionClient().detectBuildTime(
-                Image.newBuilder()
-                        .setName(ImageServiceOuterClass.ImageName.newBuilder()
-                            .setRegistry(registry)
-                            .setRemote(remote)
-                            .setTag(tag)
-                            .build()
+                        Image.newBuilder()
+                                    .setName(ImageServiceOuterClass.ImageName.newBuilder()
+                                    .setRegistry(registry)
+                                    .setRemote(remote)
+                                    .setTag(tag)
+                                    .build()
                         )
-                        .build()
-        )
+                                    .build()
+            )
+      }
+
+    static List<String> getProcessOnDeployment(String uid) {
+        List<Indicator.ProcessIndicator> signals
+        sleep(30000)
+        signals = getDeploymentClient()
+                  .getDeployment(getResourceByID(uid))
+                  .getProcessesList()
+        List<String> processname = new ArrayList<>()
+        for (Indicator.ProcessIndicator signal: signals) {
+            processname.add(signal.getSignal().getExecFilePath())
+        }
+        return processname
     }
 
     static updatePolicyLifecycleStage(String policyName, LifecycleStage stage) {

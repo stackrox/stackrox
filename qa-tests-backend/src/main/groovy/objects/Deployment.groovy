@@ -10,6 +10,7 @@ class Deployment {
     List<String> secretNames = new ArrayList<String>()
     Map<String, String> labels = new HashMap<>()
     List<Integer> ports = new ArrayList<Integer>()
+    List<String> command = new ArrayList<>()
     List<Pod> pods = new ArrayList<>()
     String deploymentUid
     Boolean skipReplicaWait = false
@@ -43,6 +44,11 @@ class Deployment {
 
     Deployment addPort(Integer p) {
         this.ports.add(p)
+        return this
+    }
+
+    Deployment setCommand(List<String> command) {
+        this.command = command
         return this
     }
 

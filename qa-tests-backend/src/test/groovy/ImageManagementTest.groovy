@@ -3,7 +3,7 @@ import org.junit.experimental.categories.Category
 import spock.lang.Unroll
 import stackrox.generated.PolicyServiceOuterClass
 
-class ImageManagement extends BaseSpecification {
+class ImageManagementTest extends BaseSpecification {
     @Unroll
     @Category(Integration)
     def "Verify CI/CD Integration Endpoint"() {

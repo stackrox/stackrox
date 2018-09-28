@@ -17,13 +17,13 @@ import io.kubernetes.client.models.V1Namespace
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment
 import io.kubernetes.client.models.ExtensionsV1beta1DeploymentSpec
 import io.kubernetes.client.models.V1ContainerPort
-import io.kubernetes.client.models.V1Pod
-import io.kubernetes.client.models.V1PodList
 import io.kubernetes.client.models.V1PodTemplateSpec
 import io.kubernetes.client.models.V1PodSpec
 import io.kubernetes.client.models.V1SecretVolumeSource
 import io.kubernetes.client.models.V1Volume
 import io.kubernetes.client.models.V1Container
+import io.kubernetes.client.models.V1PodList
+import io.kubernetes.client.models.V1Pod
 import io.kubernetes.client.models.V1DeleteOptions
 import io.kubernetes.client.models.V1SecurityContext
 import io.kubernetes.client.models.V1Service
@@ -117,52 +117,67 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                         return v1beta1Deployment.getMetadata().getUid()
                     }
                 }
-                waitTime += sleepDuration
             }
+            waitTime += sleepDuration
         }
         println "Timed out waiting for " + deploymentName
+    }
+
+    String getDeploymentId(String deploymentName, String namespace = this.namespace) {
+        ExtensionsV1beta1DeploymentList dList
+        dList = beta1.listNamespacedDeployment(namespace, null, null, null, null, null, null, null, null, null)
+        for (ExtensionsV1beta1Deployment v1beta1Deployment : dList.getItems()) {
+            if (v1beta1Deployment.getMetadata().getName() == deploymentName) {
+                def val = v1beta1Deployment.getMetadata().uid
+                if (v1beta1Deployment.getStatus().getReadyReplicas() > 0) {
+                    println val + ": deployment id found."
+                    return val
+                }
+            }
+        }
     }
 
     String createDeployment(Deployment deployment) {
         deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
 
         List<V1ContainerPort> containerPorts = deployment.getPorts().stream()
-                .map(portToContainerPort)
-                .collect(Collectors.<V1ContainerPort> toList())
+            .map(portToContainerPort)
+            .collect(Collectors.<V1ContainerPort> toList())
 
-        List<V1VolumeMount>deploymount = new LinkedList<>()
+        List<V1VolumeMount> deploymount = new LinkedList<>()
         for (int i = 0; i < deployment.getVolMounts().size(); ++i) {
             V1VolumeMount volmount = new V1VolumeMount()
-             .name(deployment.getVolMounts().get(i))
-             .mountPath(deployment.getMountpath())
-             .readOnly(true)
+                    .name(deployment.getVolMounts().get(i))
+                    .mountPath(deployment.getMountpath())
+                    .readOnly(true)
             deploymount.add(volmount)
-         }
+        }
 
         List<V1Volume> deployVolumes = new LinkedList<>()
         for (int i = 0; i < deployment.getVolNames().size(); ++i) {
             V1Volume deployVol = new V1Volume()
-               .name(deployment.getVolNames().get(i))
-               .secret(new V1SecretVolumeSource()
-               .secretName(deployment.getSecretNames().get(i)))
+                    .name(deployment.getVolNames().get(i))
+                    .secret(new V1SecretVolumeSource()
+                    .secretName(deployment.getSecretNames().get(i)))
             deployVolumes.add(deployVol)
-           }
+        }
 
         V1PodSpec v1PodSpec = new V1PodSpec()
-         .containers(
-          [
-              new V1Container()
-               .name(deployment.getName())
-               .image(deployment.getImage())
-               .ports(containerPorts)
-               .volumeMounts(deploymount),
-          ]
-         )
-        .volumes(deployVolumes)
+                .containers(
+                [
+                        new V1Container()
+                                .name(deployment.getName())
+                                .image(deployment.getImage())
+                                .command(deployment.getCommand())
+                                .ports(containerPorts)
+                                .volumeMounts(deploymount),
+                ]
+        )
+                .volumes(deployVolumes)
 
         ExtensionsV1beta1Deployment k8sDeployment = new ExtensionsV1beta1Deployment()
-                    .metadata(
-                    new V1ObjectMeta()
+                .metadata(
+                new V1ObjectMeta()
                             .name(deployment.getName())
                             .namespace(deployment.getNamespace())
                             .labels(deployment.getLabels()))
@@ -173,10 +188,10 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                     .spec(v1PodSpec)
                     .metadata(new V1ObjectMeta()
                         .name(deployment.getName())
-                        .labels(deployment.getLabels())
-            )
-            )
-            )
+                        .namespace(this.namespace)
+                        .labels(deployment.getLabels()))
+        )
+        )
 
         try {
             beta1.createNamespacedDeployment(deployment.getNamespace(), k8sDeployment, null)
@@ -217,46 +232,46 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
 
     def deleteDeployment(String name, String namespace = this.namespace) {
         this.beta1.deleteNamespacedDeployment(
-                    name,
-                    namespace, new V1DeleteOptions()
-                    .gracePeriodSeconds(0)
-                    .orphanDependents(false),
-                    null,
-                    0,
-                    false,
-                    null
-            )
+                name,
+                namespace, new V1DeleteOptions()
+                .gracePeriodSeconds(0)
+                .orphanDependents(false),
+                null,
+                0,
+                false,
+                null
+        )
         sleep(sleepDuration)
         println name + ": deployment removed."
-        }
+    }
 
     def deleteSecret(String name, String namespace = this.namespace) {
         this.api.deleteNamespacedSecret(
-                    name,
-                    namespace, new V1DeleteOptions()
-                    .gracePeriodSeconds(0)
-                    .orphanDependents(false),
-                    null,
-                    0,
-                    false,
-                    null
-            )
+                name,
+                namespace, new V1DeleteOptions()
+                .gracePeriodSeconds(0)
+                .orphanDependents(false),
+                null,
+                0,
+                false,
+                null
+        )
         sleep(sleepDuration)
         println name + ": Secret removed."
-        }
+    }
 
     def deleteService(String name, String namespace = this.namespace) {
         this.api.deleteNamespacedService(
-                    name,
-                    namespace, new V1DeleteOptions()
-                    .gracePeriodSeconds(0)
-                    .orphanDependents(false),
-                    null,
-                    0,
-                    false,
-                    null
-            )
-        }
+                name,
+                namespace, new V1DeleteOptions()
+                .gracePeriodSeconds(0)
+                .orphanDependents(false),
+                null,
+                0,
+                false,
+                null
+        )
+    }
 
     String createSecret(String name) {
         Map<String, byte[]> data = new HashMap<String, byte[]>()
@@ -264,45 +279,45 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         data.put("password", "MWYyZDFlMmU2N2Rm".getBytes())
 
         V1Secret createsecret = new V1Secret()
-                    .apiVersion("v1")
-                    .kind("Secret")
-                    .metadata(new V1ObjectMeta()
-                    .name(name))
-                    .type("Opaque")
-                    .data(data)
+                .apiVersion("v1")
+                .kind("Secret")
+                .metadata(new V1ObjectMeta()
+                .name(name))
+                .type("Opaque")
+                .data(data)
         V1Secret createdSecret = this.api.createNamespacedSecret("qa", createsecret, "true")
         return createdSecret.metadata.uid
-        }
+    }
 
     def createClairifyDeployment() {
-            //create clairify service
+        //create clairify service
         Map<String, String> selector = new HashMap<String, String>()
         selector.put("app", "clairify")
 
         V1Service clairifyService = new V1Service()
-                    .apiVersion("v1")
-                    .metadata(new V1ObjectMeta()
-                    .name("clairify")
-                    .namespace("stackrox"))
-                    .spec(new V1ServiceSpec()
-                    .addPortsItem(new V1ServicePort()
-                    .name("clair-http")
-                    .port(6060)
-                    .targetPort(new IntOrString(6060)
-            )
-            )
-                    .addPortsItem(new V1ServicePort()
-                    .name("clairify-http")
-                    .port(8080)
-                    .targetPort(new IntOrString(8080)
-            )
-            )
-                    .type("ClusterIP")
-                    .selector(selector)
-            )
+                .apiVersion("v1")
+                .metadata(new V1ObjectMeta()
+                .name("clairify")
+                .namespace("stackrox"))
+                .spec(new V1ServiceSpec()
+                .addPortsItem(new V1ServicePort()
+                .name("clair-http")
+                .port(6060)
+                .targetPort(new IntOrString(6060)
+        )
+        )
+                .addPortsItem(new V1ServicePort()
+                .name("clairify-http")
+                .port(8080)
+                .targetPort(new IntOrString(8080)
+        )
+        )
+                .type("ClusterIP")
+                .selector(selector)
+        )
         this.api.createNamespacedService("stackrox", clairifyService, null)
 
-            //create clairify deployment
+        //create clairify deployment
         Map<String, String> labels = new HashMap<>()
         labels.put("app", "clairify")
         Map<String, String> annotations = new HashMap<>()
@@ -314,50 +329,50 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         commands.add("/clairify")
 
         V1Container clairContainer = new V1Container()
-                    .name("clairify")
-                    .image("stackrox/clairify:0.3.1")
-                    .command(commands)
-                    .imagePullPolicy("Always")
-                    .addPortsItem(new V1ContainerPort()
-                    .name("clair-http")
-                    .containerPort(6060)
-            )
-                    .addPortsItem(new V1ContainerPort()
-                    .name("clairify-http")
-                    .containerPort(8080)
-            )
-                    .securityContext(new V1SecurityContext()
-                    .capabilities(new V1Capabilities()
-                    .addDropItem("NET_RAW")
-            )
-            )
+                .name("clairify")
+                .image("stackrox/clairify:0.3.1")
+                .command(commands)
+                .imagePullPolicy("Always")
+                .addPortsItem(new V1ContainerPort()
+                .name("clair-http")
+                .containerPort(6060)
+        )
+                .addPortsItem(new V1ContainerPort()
+                .name("clairify-http")
+                .containerPort(8080)
+        )
+                .securityContext(new V1SecurityContext()
+                .capabilities(new V1Capabilities()
+                .addDropItem("NET_RAW")
+        )
+        )
 
         ExtensionsV1beta1Deployment clairifyDeployment = new ExtensionsV1beta1Deployment()
-                    .metadata(new V1ObjectMeta()
-                    .name("clairify")
-                    .namespace("stackrox")
-                    .labels(labels).annotations(annotations)
-            )
-                    .spec(new ExtensionsV1beta1DeploymentSpec()
-                    .replicas(1)
-                    .selector(new V1LabelSelector()
-                    .matchLabels(labels))
-                    .template(new V1PodTemplateSpec()
-                    .metadata(new V1ObjectMeta()
-                    .namespace("stackrox")
-                    .labels(labels))
-                    .spec(new V1PodSpec()
-                    .addContainersItem(clairContainer)
-                    .addImagePullSecretsItem(new V1LocalObjectReference()
-                    .name("stackrox")
-            )
-            )
-            )
-            )
+                .metadata(new V1ObjectMeta()
+                .name("clairify")
+                .namespace("stackrox")
+                .labels(labels).annotations(annotations)
+        )
+                .spec(new ExtensionsV1beta1DeploymentSpec()
+                .replicas(1)
+                .selector(new V1LabelSelector()
+                .matchLabels(labels))
+                .template(new V1PodTemplateSpec()
+                .metadata(new V1ObjectMeta()
+                .namespace("stackrox")
+                .labels(labels))
+                .spec(new V1PodSpec()
+                .addContainersItem(clairContainer)
+                .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name("stackrox")
+        )
+        )
+        )
+        )
 
         this.beta1.createNamespacedDeployment("stackrox", clairifyDeployment, null)
         waitForDeploymentCreation("clairify", "stackrox")
-        }
+    }
 
     String getClairifyEndpoint() {
         return "clairify.stackrox:8080"
@@ -589,4 +604,12 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
 
         return networkPolicy
     }
+
+    String getpods() {
+        V1PodList pods = this.api.listNamespacedPod("qa", "", "", "", false, "", 1, "", 5, false)
+        List<V1Pod> podlist = pods.getItems()
+        podlist.get(0).metadata.name
+        return podlist.get(0).metadata.name
+    }
 }
+

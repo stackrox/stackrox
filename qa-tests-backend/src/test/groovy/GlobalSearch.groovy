@@ -9,10 +9,10 @@ import groups.BAT
 class GlobalSearch extends BaseSpecification {
 
     static final private DEPLOYMENT = new Deployment()
-        .setName("qaglobalsearch")
-        .setImage("nginx")
-        .addPort(22)
-        .addLabel("app", "test")
+            .setName("qaglobalsearch")
+            .setImage("nginx")
+            .addPort(22)
+            .addLabel("app", "test")
 
     def setupSpec() {
         orchestrator.createDeployment(DEPLOYMENT)
@@ -25,8 +25,8 @@ class GlobalSearch extends BaseSpecification {
     @Unroll
     @Category(BAT)
     def "Verify Global search: C961"(String query, List<SearchServiceOuterClass.SearchCategory> searchCategories,
-                                      String expectedResultPrefix,
-                                      List<SearchServiceOuterClass.SearchCategory> expectedCategoriesInResult) {
+                                     String expectedResultPrefix,
+                                     List<SearchServiceOuterClass.SearchCategory> expectedCategoriesInResult) {
 
         // This assertion is a validation on the test inputs, to ensure some consistency.
         // If searchCategories are specified in the request, then the expected categories in the result

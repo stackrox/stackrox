@@ -114,6 +114,14 @@ class DockerEE extends OrchestratorCommon implements OrchestratorMain {
     }
 
     @Override
+    String getDeploymentId(String deploymentName, String namespace = "") {
+    }
+
+    @Override
+    String getpods() {
+    }
+
+    @Override
     def wasContainerKilled(String containerName, String namespace = "") {
     }
 

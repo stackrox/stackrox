@@ -8,6 +8,9 @@ interface OrchestratorMain {
     def cleanup()
 
     def createDeployment(Deployment deployment)
+    String getDeploymentId(String deploymentName, String namespace)
+    String getpods()
+
     /*TODO:
         def getDeploymenton(String deploymentName)
         def updateDeploymenton()
