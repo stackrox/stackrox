@@ -25,6 +25,7 @@ export const types = {
     SET_NETWORK_GRAPH_STATE: 'environment/NETWORK_GRAPH_STATE',
     SET_YAML_FILE: 'environment/SET_YAML_FILE',
     SEND_YAML_NOTIFICATION: 'environment/SEND_YAML_NOTIFICATION',
+    NETWORK_NODES_UPDATE: 'environment/NETWORK_NODES_UPDATE',
     ...searchTypes('environment')
 };
 
@@ -50,6 +51,9 @@ export const actions = {
     }),
     incrementEnvironmentGraphUpdateKey: () => ({
         type: types.INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY
+    }),
+    networkNodesUpdate: () => ({
+        type: types.NETWORK_NODES_UPDATE
     }),
     setNetworkGraphState: () => ({ type: types.SET_NETWORK_GRAPH_STATE }),
     setSimulatorMode: value => ({ type: types.SIMULATOR_MODE_ON, value }),

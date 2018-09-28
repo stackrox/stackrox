@@ -1,10 +1,15 @@
-import { selectors as RiskPageSelectors } from './constants/RiskPage';
+import { selectors as RiskPageSelectors, url } from './constants/RiskPage';
 import selectors from './constants/SearchPage';
+import * as api from './constants/apiEndpoints';
 
 describe('Risk page', () => {
     beforeEach(() => {
-        cy.visit('/');
-        cy.get(RiskPageSelectors.risk).click();
+        cy.server();
+        cy.fixture('risks/riskyDeployments.json').as('risksJson');
+        cy.route('GET', api.risks.riskyDeployments, '@risksJson').as('risks');
+
+        cy.visit(url);
+        cy.wait('@risks');
     });
 
     it('should have selected item in nav bar', () => {
@@ -18,7 +23,7 @@ describe('Risk page', () => {
     });
 
     it('should open the panel to view risk indicators', () => {
-        cy.get(RiskPageSelectors.table.row.prevent_sensor).click({ force: true });
+        cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
         cy
             .get(RiskPageSelectors.panelTabs.riskIndicators)
             .first()
@@ -27,13 +32,13 @@ describe('Risk page', () => {
     });
 
     it('should open the panel to view deployment details', () => {
-        cy.get(RiskPageSelectors.table.row.prevent_sensor).click({ force: true });
+        cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
         cy.get(RiskPageSelectors.panelTabs.deploymentDetails);
         cy.get(RiskPageSelectors.cancelButton).click();
     });
 
     it('should navigate from Risk Page to Images Page', () => {
-        cy.get(RiskPageSelectors.table.row.prevent_sensor).click({ force: true });
+        cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
         cy.get(RiskPageSelectors.panelTabs.deploymentDetails).click({ force: true });
         cy
             .get(RiskPageSelectors.imageLink)

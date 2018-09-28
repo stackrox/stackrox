@@ -147,6 +147,10 @@ function* watchSetYamlFile() {
     yield takeLatest(types.SET_YAML_FILE, filterEnvironmentPageBySearch);
 }
 
+function* watchNetworkNodesUpdate() {
+    yield takeLatest(types.NETWORK_NODES_UPDATE, filterEnvironmentPageBySearch);
+}
+
 export default function* environment() {
     yield all([
         takeEveryLocation(environmentPath, loadEnvironmentPage),
@@ -155,6 +159,7 @@ export default function* environment() {
         fork(watchNetworkPoliciesRequest),
         fork(watchFetchDeploymentRequest),
         fork(watchSelectEnvironmentCluster),
+        fork(watchNetworkNodesUpdate),
         fork(watchFetchClustersSuccess),
         fork(watchSetYamlFile),
         fork(watchSendYAMLNotification),

@@ -21,8 +21,7 @@ export const selectors = {
             priority: 'div.rt-th div:contains("Priority")'
         },
         row: {
-            prevent_sensor: 'div div.cursor-pointer:contains("sensor")',
-            firstRow: 'div.rt-tr:first-child'
+            firstRow: 'div.rt-tr-group:first-child div.rt-tr'
         }
     }
 };

@@ -68,7 +68,8 @@ class EnvironmentPage extends Component {
         yamlFile: PropTypes.shape({
             content: PropTypes.string,
             name: PropTypes.string
-        })
+        }),
+        onNodesUpdate: PropTypes.func
     };
 
     static defaultProps = {
@@ -79,7 +80,8 @@ class EnvironmentPage extends Component {
         nodeUpdatesEpoch: null,
         selectedClusterId: '',
         errorMessage: '',
-        yamlFile: null
+        yamlFile: null,
+        onNodesUpdate: null
     };
 
     componentDidMount() {
@@ -99,12 +101,13 @@ class EnvironmentPage extends Component {
     };
 
     onUpdateGraph = () => {
-        const { incrementEnvironmentGraphUpdateKey } = this.props;
-        incrementEnvironmentGraphUpdateKey();
+        if (this.props.onNodesUpdate) this.props.onNodesUpdate();
+        this.props.incrementEnvironmentGraphUpdateKey();
     };
 
     onYamlUpload = yamlFile => {
         this.props.setYamlFile(yamlFile);
+        this.props.incrementEnvironmentGraphUpdateKey();
     };
 
     getNodeUpdates = () => {
@@ -127,11 +130,13 @@ class EnvironmentPage extends Component {
             setNetworkGraphState,
             setSimulatorMode,
             setYamlFile,
-            yamlFile
+            yamlFile,
+            incrementEnvironmentGraphUpdateKey
         } = this.props;
         setSimulatorMode(!simulatorMode);
         setYamlFile(yamlFile);
         setNetworkGraphState();
+        incrementEnvironmentGraphUpdateKey();
     };
 
     renderGraph = () => {
@@ -348,7 +353,8 @@ const mapDispatchToProps = {
     setSimulatorMode: environmentActions.setSimulatorMode,
     setNetworkGraphState: environmentActions.setNetworkGraphState,
     setYamlFile: environmentActions.setYamlFile,
-    incrementEnvironmentGraphUpdateKey: environmentActions.incrementEnvironmentGraphUpdateKey
+    incrementEnvironmentGraphUpdateKey: environmentActions.incrementEnvironmentGraphUpdateKey,
+    onNodesUpdate: environmentActions.networkNodesUpdate
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(EnvironmentPage);
