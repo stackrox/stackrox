@@ -26,10 +26,12 @@ func (k *kubernetes) Render(c Config) ([]*v1.File, error) {
 	injectImageTags(&c)
 
 	filenames := []string{
+		"kubernetes/ca-setup.sh",
 		"kubernetes/central.sh",
 		"kubernetes/central.yaml",
 		"kubernetes/clairify.sh",
 		"kubernetes/clairify.yaml",
+		"kubernetes/delete-ca.sh",
 		"kubernetes/lb.yaml",
 		"kubernetes/np.yaml",
 		"kubernetes/port-forward.sh",
@@ -40,9 +42,10 @@ func (k *kubernetes) Render(c Config) ([]*v1.File, error) {
 func (k *kubernetes) Instructions() string {
 	return `To deploy:
   1. Unzip the deployment bundle.
-  2. Run central.sh.
-  3. If you want to run the StackRox Clairify scanner, run clairify.sh.
-  4. Expose Central:
+  2. If you need to add additional trusted CAs, run ca-setup.sh.
+  3. Run central.sh.
+  4. If you want to run the StackRox Clairify scanner, run clairify.sh.
+  5. Expose Central:
        a. Using a LoadBalancer: kubectl create -f lb.yaml
        b. Using a NodePort:     kubectl create -f np.yaml
        c. Using a port forward: ./port-forward.sh 8443`

@@ -6,8 +6,12 @@ RUN printf "http://apk.rox.systems/v3.8/main\\nhttp://apk.rox.systems/v3.8/commu
 # The following paths are written to in Central.
 # Including these VOLUME instructions means that we can enable a
 # read-only root file system without preventing writes to these paths.
-VOLUME /var/lib/prevent
+# Trusted CA certificates are written to this path by `update-ca-certificates`.
+VOLUME /etc/ssl
+# Search indices are generated upon startup and updated thereafter.
 VOLUME /tmp/search
+# The BoltDB is stored at this path.
+VOLUME /var/lib/prevent
 
 RUN apk update && \
     apk add --no-cache \
@@ -22,7 +26,7 @@ ENV PATH="/prevent:$PATH"
 COPY ./benchmarks/ /data/benchmarks
 COPY ./policies/ /data/policies
 COPY ./templates/ /data/templates
-COPY ./bin/ /prevent/
+COPY ./bin/ ./entrypoint.sh /prevent/
 COPY ./ui/build  /ui/
 COPY ./VERSION /VERSION
 

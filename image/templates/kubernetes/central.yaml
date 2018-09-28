@@ -55,6 +55,7 @@ spec:
             memory: "8Gi"
             cpu: "2000m"
         command:
+        - /prevent/entrypoint.sh
         - central
         ports:
         - name: api
@@ -77,6 +78,9 @@ spec:
         - name: central-jwt-volume
           mountPath: /run/secrets/stackrox.io/jwt/
           readOnly: true
+        - name: additional-ca-volume
+          mountPath: /usr/local/share/ca-certificates/
+          readOnly: true
         {{if .HostPath -}}
         - name: {{.HostPath.Name}}
           mountPath: {{.HostPath.MountPath}}
@@ -91,6 +95,10 @@ spec:
       - name: central-jwt-volume
         secret:
           secretName: central-jwt
+      - name: additional-ca-volume
+        secret:
+          secretName: additional-ca
+          optional: true
       {{if .HostPath -}}
       - name: {{.HostPath.Name}}
         hostPath:

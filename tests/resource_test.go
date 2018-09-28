@@ -110,7 +110,7 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
 		assert.Equal(t, sha, c.GetImage().GetName().GetTag())
 	}
 
-	require.Len(t, c.GetSecrets(), 2)
+	require.Len(t, c.GetSecrets(), 3)
 	paths := make([]string, 0, 2)
 	for _, secret := range c.GetSecrets() {
 		paths = append(paths, secret.GetPath())
@@ -121,6 +121,7 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
 	expectedPathPrefixes := []string{
 		"/run/secrets/stackrox.io/certs",
 		"/run/secrets/stackrox.io/jwt",
+		"/usr/local/share/ca-certificates/",
 	}
 	for i, path := range paths {
 		assert.True(t, strings.HasPrefix(path, expectedPathPrefixes[i]))

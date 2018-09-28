@@ -19,6 +19,8 @@ func (o *openshift) Render(c Config) ([]*v1.File, error) {
 
 	filenames := []string{
 		"kubernetes/central.yaml",
+		"kubernetes/ca-setup.sh",
+		"kubernetes/delete-ca.sh",
 		"kubernetes/np.yaml",
 
 		"openshift/central.sh",
@@ -36,10 +38,11 @@ func (o *openshift) Render(c Config) ([]*v1.File, error) {
 func (o *openshift) Instructions() string {
 	return `To deploy:
   1. Unzip the deployment bundle.
-  2. Run image-setup.sh.
-  3. Run central.sh.
-  4. If you want to run the StackRox Clairify scanner, run clairify.sh.
-  5. Expose Central:
+  2. If you need to add additional trusted CAs, run ca-setup.sh.
+  3. Run image-setup.sh.
+  4. Run central.sh.
+  5. If you want to run the StackRox Clairify scanner, run clairify.sh.
+  6. Expose Central:
        a. Using a Route:        ./route-setup.sh
        b. Using a NodePort:     oc create -f np.yaml
        c. Using a port forward: ./port-forward.sh 8443`
