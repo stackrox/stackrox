@@ -8,12 +8,6 @@ const comparatorOp = {
     LESS_THAN: '<'
 };
 
-const mathOp = {
-    MAX: 'Max score',
-    AVG: 'Avg score',
-    MIN: 'Min score'
-};
-
 const formatResourceValue = (prefix, value, suffix) =>
     `${prefix} ${comparatorOp[value.op]} ${value.value} ${suffix}`;
 
@@ -157,7 +151,7 @@ const fieldsMap = {
     },
     cvss: {
         label: 'CVSS',
-        formatValue: d => `${mathOp[d.mathOp]} ${comparatorOp[d.op]} ${d.value}`
+        formatValue: d => `${comparatorOp[d.op]} ${d.value}`
     },
     cve: {
         label: 'CVE',

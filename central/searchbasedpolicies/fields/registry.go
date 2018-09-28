@@ -11,7 +11,7 @@ var Registry = []searchbasedpolicies.PolicyQueryBuilder{
 	imageNameQueryBuilder,
 	imageAgeQueryBuilder,
 	builders.NewDockerFileLineQueryBuilder(),
-	// CVSS
+	builders.CVSSQueryBuilder{},
 	builders.CVEQueryBuilder{},
 	componentQueryBuilder,
 	scanAgeQueryBuilder,
@@ -29,5 +29,4 @@ var Registry = []searchbasedpolicies.PolicyQueryBuilder{
 	builders.NewAddCapQueryBuilder(),
 	builders.NewDropCapQueryBuilder(),
 	resourcePolicy,
-	// total_resource
 }

@@ -12,6 +12,14 @@ import (
 
 var (
 	logger = logging.LoggerForModule()
+
+	opToHumanReadable = map[v1.Comparator]string{
+		v1.Comparator_LESS_THAN:              "less than",
+		v1.Comparator_LESS_THAN_OR_EQUALS:    "less than or equal to",
+		v1.Comparator_EQUALS:                 "equal to",
+		v1.Comparator_GREATER_THAN_OR_EQUALS: "greater than or equal to",
+		v1.Comparator_GREATER_THAN:           "greater than",
+	}
 )
 
 func getSearchField(fieldLabel search.FieldLabel, optionsMap map[search.FieldLabel]*v1.SearchField) (*v1.SearchField, error) {
@@ -85,4 +93,8 @@ func presentQueriesAndPrinters(qbs []searchbasedpolicies.PolicyQueryBuilder, fie
 		printers = append(printers, printer)
 	}
 	return
+}
+
+func readableOp(op v1.Comparator) string {
+	return opToHumanReadable[op]
 }

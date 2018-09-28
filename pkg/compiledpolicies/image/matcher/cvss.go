@@ -25,35 +25,11 @@ type cvssMatcherImpl struct {
 }
 
 func (p *cvssMatcherImpl) match(image *v1.Image) (violations []*v1.Alert_Violation) {
-	minimum := float32(math.MaxFloat32)
-	var maximum float32
-	var average float32
+	var maxCVSS float32
 
-	var numVulns float32
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
-			minimum = min(minimum, vuln.GetCvss())
-			maximum = max(maximum, vuln.GetCvss())
-			average += vuln.GetCvss()
-			numVulns++
-		}
-	}
-
-	var value float32
-	switch p.cvss.GetMathOp() {
-	case v1.MathOP_MIN:
-		// This case is necessary due to setting the minimum value as the largest float
-		// If there are no vulns then the minimum value would be max float
-		if numVulns > 0 {
-			value = minimum
-		}
-	case v1.MathOP_MAX:
-		value = maximum
-	case v1.MathOP_AVG:
-		if numVulns == 0 {
-			value = 0
-		} else {
-			value = average / numVulns
+			maxCVSS = max(maxCVSS, vuln.GetCvss())
 		}
 	}
 
@@ -76,16 +52,12 @@ func (p *cvssMatcherImpl) match(image *v1.Image) (violations []*v1.Alert_Violati
 		comparatorFunc = func(x, y float32) bool { return x > y }
 		comparatorChar = ">"
 	}
-	if comparatorFunc(value, p.cvss.GetValue()) {
+	if comparatorFunc(maxCVSS, p.cvss.GetValue()) {
 		violations = append(violations, &v1.Alert_Violation{
-			Message: fmt.Sprintf("The %s(cvss) = %v. %v is %v threshold of %v", p.cvss.GetMathOp(), value, value, comparatorChar, p.cvss.GetValue()),
+			Message: fmt.Sprintf("Max CVSS = %v, which is %v threshold of %v", maxCVSS, comparatorChar, p.cvss.GetValue()),
 		})
 	}
 	return
-}
-
-func min(x, y float32) float32 {
-	return float32(math.Min(float64(x), float64(y)))
 }
 
 func max(x, y float32) float32 {

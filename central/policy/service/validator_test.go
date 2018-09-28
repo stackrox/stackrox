@@ -160,7 +160,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 		LifecycleStage: v1.LifecycleStage_BUILD_TIME,
 		Fields: &v1.PolicyFields{
 			ContainerResourcePolicy: &v1.ResourcePolicy{
-				CpuResourceLimit: &v1.ResourcePolicy_NumericalPolicy{
+				CpuResourceLimit: &v1.NumericalPolicy{
 					Value: 1.0,
 				},
 			},

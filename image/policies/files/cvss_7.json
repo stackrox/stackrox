@@ -1,12 +1,11 @@
 {
-  "name": "Maximum CVSS >= 7",
-  "description": "Alert on deployments with a max CVSS >= 7",
+  "name": "CVSS >= 7",
+  "description": "Alert on deployments with a vulnerability with a CVSS >= 7",
   "severity": "HIGH_SEVERITY",
   "categories": ["Vuln Management"],
   "fields": {
     "cvss": {
       "op": "GREATER_THAN_OR_EQUALS",
-      "math_op": "MAX",
       "value": 7
     }
   },

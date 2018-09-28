@@ -36,9 +36,8 @@ func GetPolicy() *v1.Policy {
 				Value:       "/etc/*",
 			},
 			Cvss: &v1.NumericalPolicy{
-				Op:     v1.Comparator_GREATER_THAN_OR_EQUALS,
-				MathOp: v1.MathOP_MAX,
-				Value:  5,
+				Op:    v1.Comparator_GREATER_THAN_OR_EQUALS,
+				Value: 5,
 			},
 			Cve: "CVE-1234",
 			Component: &v1.Component{

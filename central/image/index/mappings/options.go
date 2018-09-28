@@ -14,7 +14,7 @@ var OptionsMap = map[search.FieldLabel]*v1.SearchField{
 
 	search.CVE:                          search.NewStoredStringField(v1.SearchCategory_IMAGES, "image.scan.components.vulns.cve"),
 	search.CVELink:                      search.NewField(v1.SearchCategory_IMAGES, "image.scan.components.vulns.link", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
-	search.CVSS:                         search.NewNumericField(v1.SearchCategory_IMAGES, "image.scan.components.vulns.cvss"),
+	search.CVSS:                         search.NewStoredNumericField(v1.SearchCategory_IMAGES, "image.scan.components.vulns.cvss"),
 	search.Component:                    search.NewStoredStringField(v1.SearchCategory_IMAGES, "image.scan.components.name"),
 	search.ComponentVersion:             search.NewStoredStringField(v1.SearchCategory_IMAGES, "image.scan.components.version"),
 	search.DockerfileInstructionKeyword: search.NewStoredStringField(v1.SearchCategory_IMAGES, "image.metadata.layers.instruction"),

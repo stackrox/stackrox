@@ -49,7 +49,7 @@ func matchMemoryResourceLimit(rp *v1.ResourcePolicy, resources *v1.Resources, id
 	return
 }
 
-func matchNumericalPolicy(prefix, id string, value float32, p *v1.ResourcePolicy_NumericalPolicy) (violations []*v1.Alert_Violation, policyExists bool) {
+func matchNumericalPolicy(prefix, id string, value float32, p *v1.NumericalPolicy) (violations []*v1.Alert_Violation, policyExists bool) {
 	if p == nil {
 		return
 	}

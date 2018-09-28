@@ -80,7 +80,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "30-Day Scan Age"                             |  STRUTS        | "C941"
 
-        "Maximum CVSS >= 7"                           | STRUTS         | "C933"
+        "CVSS >= 7"                                   | STRUTS         | "C933"
 
         "Shellshock: CVE-2014-6271"                   | SSL_TERMINATOR | "C948"
 

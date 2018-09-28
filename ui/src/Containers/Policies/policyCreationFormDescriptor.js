@@ -302,15 +302,6 @@ const policyConfigurationDescriptor = [
         type: 'group',
         jsonpaths: [
             {
-                jsonpath: 'fields.cvss.mathOp',
-                type: 'select',
-                options: [
-                    { label: 'Max score', value: 'MAX' },
-                    { label: 'Average score', value: 'AVG' },
-                    { label: 'Min score', value: 'MIN' }
-                ]
-            },
-            {
                 jsonpath: 'fields.cvss.op',
                 type: 'select',
                 options: equalityOptions

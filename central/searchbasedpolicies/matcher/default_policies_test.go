@@ -225,16 +225,29 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		componentDeps[component] = dep
 	}
 
-	heartbleedDep := deploymentWithComponents([]*v1.ImageScanComponent{
-		{Name: "heartbleed", Version: "1.2", Vulns: []*v1.Vulnerability{
-			{Cve: "CVE-2014-0160", Link: "https://heartbleed"},
-		}},
-	})
+	heartbleedDep := &v1.Deployment{
+		Id: "HEARTBLEEDDEPID",
+		Containers: []*v1.Container{
+			{
+				SecurityContext: &v1.SecurityContext{Privileged: true},
+				Image: &v1.Image{
+					Name: &v1.ImageName{Sha: "HEARTBLEEDDEPSHA"},
+					Scan: &v1.ImageScan{
+						Components: []*v1.ImageScanComponent{
+							{Name: "heartbleed", Version: "1.2", Vulns: []*v1.Vulnerability{
+								{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6},
+							}},
+						},
+					},
+				},
+			},
+		},
+	}
 	suite.mustIndexDepAndImages(heartbleedDep)
 
 	shellshockDep := deploymentWithComponents([]*v1.ImageScanComponent{
 		{Name: "shellshock", Version: "1.2", Vulns: []*v1.Vulnerability{
-			{Cve: "CVE-2014-6271", Link: "https://shellshock"},
+			{Cve: "CVE-2014-6271", Link: "https://shellshock", Cvss: 6},
 			{Cve: "CVE-ARBITRARY", Link: "https://notshellshock"},
 		}},
 	})
@@ -242,7 +255,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	strutsDep := deploymentWithComponents([]*v1.ImageScanComponent{
 		{Name: "struts", Version: "1.2", Vulns: []*v1.Vulnerability{
-			{Cve: "CVE-2017-5638", Link: "https://struts"},
+			{Cve: "CVE-2017-5638", Link: "https://struts", Cvss: 8},
 		}},
 		{Name: "OTHER", Version: "1.3", Vulns: []*v1.Vulnerability{
 			{Cve: "CVE-1223-451", Link: "https://cvefake"},
@@ -540,6 +553,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "Privileged container found",
 					},
 				},
+				heartbleedDep.GetId(): {
+					{
+						Message: "Privileged container found",
+					},
+				},
 			},
 		},
 		{
@@ -676,6 +694,29 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				secretEnvDep.GetId(): {
 					{
 						Message: "Container Environment (key='THIS_IS_SECRET_VAR', value='stealthmode') matched environment policy (key = '.*SECRET.*', value = '.*')",
+					},
+				},
+			},
+		},
+		{
+			policyName: "CVSS >= 6 and Privileged",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				heartbleedDep.GetId(): {
+					{
+						Message: "Found a CVSS score of 6 (greater than or equal to 6.0) (cve: CVE-2014-0160)",
+					},
+					{
+						Message: "Privileged container found",
+					},
+				},
+			},
+		},
+		{
+			policyName: "CVSS >= 7",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				strutsDep.GetId(): {
+					{
+						Message: "Found a CVSS score of 8 (greater than or equal to 7.0) (cve: CVE-2017-5638)",
 					},
 				},
 			},

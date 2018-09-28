@@ -21,5 +21,5 @@ func NumericalPolicy(p *v1.NumericalPolicy, field string) string {
 	case v1.Comparator_GREATER_THAN:
 		comparatorChar = ">"
 	}
-	return fmt.Sprintf("%s(%v) %v %v", p.GetMathOp(), field, comparatorChar, p.GetValue())
+	return fmt.Sprintf("%v %v %v", field, comparatorChar, p.GetValue())
 }

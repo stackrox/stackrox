@@ -72,12 +72,6 @@ enum Comparator {
     GREATER_THAN           = 4;
 }
 
-enum MathOP {
-    MIN = 0;
-    MAX = 1;
-    AVG = 2;
-}
-
 enum LifecycleStage {
     DEPLOY_TIME = 0;
     BUILD_TIME  = 1;
@@ -86,7 +80,6 @@ enum LifecycleStage {
 
 message NumericalPolicy {
     Comparator op  = 1;
-    MathOP math_op = 2;
     float value    = 3;
 }
 
@@ -123,11 +116,6 @@ message PortPolicy {
 }
 
 message ResourcePolicy {
-    message NumericalPolicy {
-        Comparator op  = 1;
-        float value    = 2;
-    }
-
     NumericalPolicy cpu_resource_request    = 1;
     NumericalPolicy cpu_resource_limit      = 2;
     NumericalPolicy memory_resource_request = 3;

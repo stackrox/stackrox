@@ -48,6 +48,11 @@ func NullQueryString() string {
 	return NullString
 }
 
+// NumericQueryString converts a numeric query to the string query format.
+func NumericQueryString(comparator v1.Comparator, value float32) string {
+	return fmt.Sprintf("%s%.2f", comparatorRepresentation[comparator], value)
+}
+
 type fieldValue struct {
 	l           FieldLabel
 	v           string
@@ -185,7 +190,7 @@ func (qb *QueryBuilder) AddStringQuery(v string) *QueryBuilder {
 
 // AddNumericField adds a numeric field.
 func (qb *QueryBuilder) AddNumericField(k FieldLabel, comparator v1.Comparator, value float32) *QueryBuilder {
-	return qb.AddStrings(k, fmt.Sprintf("%s%.2f", comparatorRepresentation[comparator], value))
+	return qb.AddStrings(k, NumericQueryString(comparator, value))
 }
 
 // AddNumericFieldHighlighted is a convenience wrapper to AddNumericField and MarkHighlighted.

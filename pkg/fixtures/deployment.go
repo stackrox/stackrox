@@ -44,7 +44,7 @@ func GetDeployment() *v1.Deployment {
 								Vulns: []*v1.Vulnerability{
 									{
 										Cve:     "cve",
-										Cvss:    10,
+										Cvss:    5,
 										Summary: "Vuln summary",
 									},
 								},
