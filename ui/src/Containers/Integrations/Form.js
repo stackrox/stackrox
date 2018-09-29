@@ -66,7 +66,7 @@ class Form extends Component {
         data.type = this.props.type;
         data.enabled = true;
         data.categories = data.categories ? data.categories.map(category => category.value) : [];
-        data.clusterIds = data.clusterIds ? data.clusterIds.map(id => id.value) : [];
+        data.clusterIds = data.clusterIds || [];
         return data;
     };
 
