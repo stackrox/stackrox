@@ -36,7 +36,7 @@ describe('Images page', () => {
     it('Should add the image id to the url when clicking a row', () => {
         cy.get(imageSelectors.firstTableRow).click();
         cy.fixture('images/images.json').then(json => {
-            cy.url().should('contain', `${imagesUrl}/${json.images[0].sha}`);
+            cy.url().should('contain', `${imagesUrl}/${json.images[0].id}`);
         });
     });
 

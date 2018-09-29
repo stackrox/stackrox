@@ -22,8 +22,8 @@ func GetDeployment() *v1.Deployment {
 		Containers: []*v1.Container{
 			{
 				Image: &v1.Image{
+					Id: "sha256:SHA1",
 					Name: &v1.ImageName{
-						Sha:      "sha256:SHA1",
 						Registry: "docker.io",
 						Remote:   "library/nginx",
 						Tag:      "1.10",

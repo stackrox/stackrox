@@ -22,21 +22,17 @@ export function fetchImages(options) {
 }
 
 /**
- * Fetches image given an image SHA.
+ * Fetches image given an image ID.
  *
- * @param {!Object} sha
+ * @param {!Object} id
  * @returns {Promise<?Object, Error>} fulfilled with object of image (as defined in .proto)
  */
-export function fetchImage(sha) {
-    if (!sha) throw new Error('Image SHA must be specified');
-    return axios.get(`${imagesUrl}/${sha}`).then(response => {
+export function fetchImage(id) {
+    if (!id) throw new Error('Image ID must be specified');
+    return axios.get(`${imagesUrl}/${id}`).then(response => {
         const image = Object.assign({}, response.data);
         const { name } = response.data;
-        // this is to ensure that the single image api response merges with the slimmed table version properly
-        if (name.sha) {
-            image.sha = name.sha;
-            image.name = name.fullName;
-        }
+        image.name = name.fullName;
         return { response: normalize(image, imageSchema) };
     });
 }

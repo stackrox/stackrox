@@ -22,7 +22,7 @@ func benchmarkAddImageNumThen1(b *testing.B, numImages int) {
 	indexer := getImageIndex(b)
 	image := fixtures.GetImage()
 	addImages(indexer, image, numImages)
-	image.Name.Sha = fmt.Sprintf("%d", numImages+1)
+	image.Id = fmt.Sprintf("%d", numImages+1)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		indexer.AddImage(image)
@@ -31,7 +31,7 @@ func benchmarkAddImageNumThen1(b *testing.B, numImages int) {
 
 func addImages(indexer Indexer, image *v1.Image, numImages int) {
 	for i := 0; i < numImages; i++ {
-		image.Name.Sha = fmt.Sprintf("%d", i)
+		image.Id = fmt.Sprintf("%d", i)
 		indexer.AddImage(image)
 	}
 }

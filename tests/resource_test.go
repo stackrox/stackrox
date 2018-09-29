@@ -174,7 +174,7 @@ func TestImages(t *testing.T) {
 
 	imageMap := make(map[string][]*v1.Image)
 	for _, img := range images.GetImages() {
-		image, err := service.GetImage(ctx, &v1.ResourceByID{Id: img.GetSha()})
+		image, err := service.GetImage(ctx, &v1.ResourceByID{Id: img.GetId()})
 		assert.NoError(t, err)
 		imageMap[image.GetName().GetRegistry()] = append(imageMap[image.GetName().GetRegistry()], image)
 	}

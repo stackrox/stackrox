@@ -229,8 +229,8 @@ func (_m *DataStore) SearchRawImages(q *v1.Query) ([]*v1.Image, error) {
 	return r0, r1
 }
 
-// UpsertDedupeImage provides a mock function with given fields: image
-func (_m *DataStore) UpsertDedupeImage(image *v1.Image) error {
+// UpsertImage provides a mock function with given fields: image
+func (_m *DataStore) UpsertImage(image *v1.Image) error {
 	ret := _m.Called(image)
 
 	var r0 error

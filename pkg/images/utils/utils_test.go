@@ -15,24 +15,24 @@ func TestNewImage(t *testing.T) {
 		{
 			ImageString: "nginx:latest@sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
 			ExpectedImage: &v1.Image{
+				Id: "sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
 				Name: &v1.ImageName{
 					Registry: "docker.io",
 					Remote:   "library/nginx",
 					Tag:      "latest",
-					Sha:      "sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
-					FullName: "docker.io/library/nginx:latest",
+					FullName: "docker.io/library/nginx:latest@sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
 				},
 			},
 		},
 		{
 			ImageString: "stackrox.io/prevent:1.0@sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
 			ExpectedImage: &v1.Image{
+				Id: "sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
 				Name: &v1.ImageName{
 					Registry: "stackrox.io",
 					Remote:   "prevent",
 					Tag:      "1.0",
-					Sha:      "sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
-					FullName: "stackrox.io/prevent:1.0",
+					FullName: "stackrox.io/prevent:1.0@sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
 				},
 			},
 		},

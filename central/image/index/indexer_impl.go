@@ -25,7 +25,7 @@ type imageWrapper struct {
 // AddImage adds the image to the index
 func (b *indexerImpl) AddImage(image *v1.Image) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Add", "Image")
-	digest := types.NewDigest(image.GetName().GetSha()).Digest()
+	digest := types.NewDigest(image.GetId()).Digest()
 	return b.index.Index(digest, &imageWrapper{Type: v1.SearchCategory_IMAGES.String(), Image: image})
 }
 
@@ -35,7 +35,7 @@ func (b *indexerImpl) AddImages(imageList []*v1.Image) error {
 
 	batch := b.index.NewBatch()
 	for _, image := range imageList {
-		digest := types.NewDigest(image.GetName().GetSha()).Digest()
+		digest := types.NewDigest(image.GetId()).Digest()
 		batch.Index(digest, &imageWrapper{Type: v1.SearchCategory_IMAGES.String(), Image: image})
 	}
 	return b.index.Batch(batch)

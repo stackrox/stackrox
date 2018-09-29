@@ -3,7 +3,6 @@ package predicate
 import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
-	imageTypes "github.com/stackrox/rox/pkg/images/types"
 )
 
 func init() {
@@ -35,12 +34,7 @@ func (w *whitelistWrapper) shouldProcess(container *v1.Container) bool {
 func MatchesWhitelist(whitelist *v1.Whitelist_Container, container *v1.Container) bool {
 	whitelistName := whitelist.GetImageName()
 	containerName := container.GetImage().GetName()
-	whitelistDigest := imageTypes.NewDigest(whitelistName.GetSha()).Digest()
-	containerDigest := imageTypes.NewDigest(containerName.GetSha()).Digest()
 
-	if whitelistName.GetSha() != "" && whitelistDigest != containerDigest {
-		return false
-	}
 	if whitelistName.GetRegistry() != "" && whitelistName.GetRegistry() != containerName.GetRegistry() {
 		return false
 	}

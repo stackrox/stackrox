@@ -160,8 +160,8 @@ func (s *policyValidator) validateContainerWhitelist(whitelist *v1.Whitelist) er
 	if imageName == nil {
 		return errors.New("if container whitelist is defined, then image name must also be defined")
 	}
-	if imageName.GetSha() == "" && imageName.GetRegistry() == "" && imageName.GetRemote() == "" && imageName.GetTag() == "" {
-		return errors.New("at least one field of image name must be populated (sha, registry, remote, tag)")
+	if imageName.GetRegistry() == "" && imageName.GetRemote() == "" && imageName.GetTag() == "" {
+		return errors.New("at least one field of image name must be populated (registry, remote, tag)")
 	}
 	return nil
 }

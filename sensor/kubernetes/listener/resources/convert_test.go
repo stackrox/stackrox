@@ -291,7 +291,6 @@ func TestConvert(t *testing.T) {
 						Instances: []*pkgV1.ContainerInstance{
 							{
 								InstanceId: &pkgV1.ContainerInstanceID{
-
 									Node: "mynode",
 								},
 								ContainingPodId: "mypod.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
@@ -315,11 +314,11 @@ func TestConvert(t *testing.T) {
 							Uid: 0,
 						},
 						Image: &pkgV1.Image{
+							Id: "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 							Name: &pkgV1.ImageName{
 								Registry: "docker.io",
 								Remote:   "stackrox/policy-engine",
 								Tag:      "1.3",
-								Sha:      "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 								FullName: "docker.io/stackrox/policy-engine:1.3",
 							},
 						},

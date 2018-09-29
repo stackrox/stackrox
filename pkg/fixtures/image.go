@@ -42,8 +42,8 @@ func GetImage() *v1.Image {
 	}
 	author := "author"
 	return &v1.Image{
+		Id: "sha256:SHA2",
 		Name: &v1.ImageName{
-			Sha:      "sha256:SHA2",
 			Registry: "stackrox.io",
 			Remote:   "srox/mongo",
 			Tag:      "latest",

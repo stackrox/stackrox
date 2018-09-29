@@ -51,7 +51,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, image *v1.Image) (*v1
 	if image.Name == nil {
 		return nil, fmt.Errorf("image name contents missing")
 	}
-	utils.FillFullName(image.Name)
+	utils.FillFullName(image)
 
 	_ = s.imageEnricher.EnrichImage(image)
 

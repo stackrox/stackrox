@@ -15,10 +15,10 @@ function* getImages({ options = [] }) {
     }
 }
 
-export function* getImage(sha) {
+export function* getImage(id) {
     try {
         yield put(actions.fetchImage.request());
-        const result = yield call(fetchImage, sha);
+        const result = yield call(fetchImage, id);
         yield put(actions.fetchImage.success(result.response));
     } catch (error) {
         yield put(actions.fetchImage.failure(error));
@@ -38,10 +38,10 @@ function* watchImagesSearchOptions() {
 }
 
 function* getSelectedImage({ match }) {
-    const { imageSha } = match.params;
-    if (imageSha) {
+    const { imageId } = match.params;
+    if (imageId) {
         // grpc does not take ':' so we are passing the hash after to the server
-        yield fork(getImage, imageSha.split(':')[1]);
+        yield fork(getImage, imageId.split(':')[1]);
     }
 }
 

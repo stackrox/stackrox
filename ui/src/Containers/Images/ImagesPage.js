@@ -56,7 +56,7 @@ class ImagesPage extends Component {
         this.setState({ page: newPage });
     };
     updateSelectedImage = image => {
-        const urlSuffix = image && image.sha ? `/${image.sha}` : '';
+        const urlSuffix = image && image.id ? `/${image.id}` : '';
         this.props.history.push({
             pathname: `/main/images${urlSuffix}`,
             search: this.props.location.search
@@ -117,7 +117,7 @@ class ImagesPage extends Component {
         ];
         const { images, selectedImage } = this.props;
         const rows = images;
-        const sha = selectedImage && selectedImage.sha;
+        const sha = selectedImage && selectedImage.id;
         if (!rows.length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
         return (
@@ -175,8 +175,8 @@ const isViewFiltered = createSelector(
 );
 
 const getSelectedImage = (state, props) => {
-    const { imageSha } = props.match.params;
-    return imageSha ? selectors.getImage(state, imageSha) : null;
+    const { imageId } = props.match.params;
+    return imageId ? selectors.getImage(state, imageId) : null;
 };
 
 const mapStateToProps = createStructuredSelector({

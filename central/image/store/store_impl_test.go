@@ -42,14 +42,14 @@ func (suite *ImageStoreTestSuite) TeardownSuite() {
 func (suite *ImageStoreTestSuite) TestImages() {
 	images := []*v1.Image{
 		{
+			Id: "sha1",
 			Name: &v1.ImageName{
-				Sha:      "sha1",
 				FullName: "name1",
 			},
 		},
 		{
+			Id: "sha2",
 			Name: &v1.ImageName{
-				Sha:      "sha2",
 				FullName: "name2",
 			},
 		},
@@ -61,12 +61,12 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	}
 
 	for _, d := range images {
-		got, exists, err := suite.store.GetImage(d.GetName().GetSha())
+		got, exists, err := suite.store.GetImage(d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, d)
 
-		listGot, exists, err := suite.store.ListImage(d.GetName().GetSha())
+		listGot, exists, err := suite.store.ListImage(d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(listGot.GetName(), d.GetName().GetFullName())
@@ -82,12 +82,12 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	}
 
 	for _, d := range images {
-		got, exists, err := suite.store.GetImage(d.GetName().GetSha())
+		got, exists, err := suite.store.GetImage(d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, d)
 
-		listGot, exists, err := suite.store.ListImage(d.GetName().GetSha())
+		listGot, exists, err := suite.store.ListImage(d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(listGot.GetName(), d.GetName().GetFullName())
@@ -107,20 +107,20 @@ func (suite *ImageStoreTestSuite) TestConvertImagesToListImages() {
 	}{
 		{
 			input: &v1.Image{
+				Id: "sha",
 				Name: &v1.ImageName{
-					Sha:      "sha",
 					FullName: "name",
 				},
 			},
 			expected: &v1.ListImage{
-				Sha:  "sha",
+				Id:   "sha",
 				Name: "name",
 			},
 		},
 		{
 			input: &v1.Image{
+				Id: "sha",
 				Name: &v1.ImageName{
-					Sha:      "sha",
 					FullName: "name",
 				},
 				Metadata: &v1.ImageMetadata{
@@ -147,7 +147,7 @@ func (suite *ImageStoreTestSuite) TestConvertImagesToListImages() {
 				},
 			},
 			expected: &v1.ListImage{
-				Sha:     "sha",
+				Id:      "sha",
 				Name:    "name",
 				Created: ts,
 				SetComponents: &v1.ListImage_Components{
@@ -167,33 +167,4 @@ func (suite *ImageStoreTestSuite) TestConvertImagesToListImages() {
 			assert.Equal(t, c.expected, convertImageToListImage(c.input))
 		})
 	}
-}
-
-func (suite *ImageStoreTestSuite) TestShas() {
-	sha1 := "sha1"
-	sha2 := "sha2"
-	regSha1 := "sha3"
-	regSha2 := "sha4"
-
-	// Upsert shas
-	err := suite.store.UpsertRegistrySha(sha1, regSha1)
-	suite.Nil(err)
-
-	err = suite.store.UpsertRegistrySha(sha2, regSha2)
-	suite.Nil(err)
-
-	// Get Sha
-	retrievedsha, exists, err := suite.store.GetRegistrySha(sha1)
-	suite.Nil(err)
-	suite.True(exists)
-	suite.Equal(regSha1, retrievedsha)
-
-	// Delete sha
-	err = suite.store.DeleteRegistrySha("sha1")
-	suite.Nil(err)
-
-	// Get sha
-	retrievedsha, exists, err = suite.store.GetRegistrySha("sha1")
-	suite.Nil(err)
-	suite.False(exists)
 }

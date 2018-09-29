@@ -328,22 +328,6 @@ func (suite *PolicyValidatorTestSuite) TestValidateWhitelists() {
 	err := suite.validator.validateWhitelists(policy)
 	suite.NoError(err, "whitelists should not be required")
 
-	container := &v1.Whitelist_Container{
-		ImageName: &v1.ImageName{
-			Sha: "sha sha shish boom bah",
-		},
-	}
-	containerWhitelist := &v1.Whitelist{
-		Container: container,
-	}
-	policy = &v1.Policy{
-		Whitelists: []*v1.Whitelist{
-			containerWhitelist,
-		},
-	}
-	err = suite.validator.validateWhitelists(policy)
-	suite.NoError(err, "valid to whitelist by container sha")
-
 	deployment := &v1.Whitelist_Deployment{
 		Name: "that phat cluster",
 	}

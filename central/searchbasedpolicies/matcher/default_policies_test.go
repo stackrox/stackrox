@@ -47,7 +47,8 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 	suite.imageIndexer = imageIndex.New(suite.bleveIndex)
 
 	defaults.PoliciesPath = policies.Directory()
-	defaultPolicies, err := defaults.Policies(true)
+
+	defaultPolicies, err := defaults.Policies()
 	suite.Require().NoError(err)
 
 	suite.defaultPolicies = make(map[string]*v1.Policy, len(defaultPolicies))
@@ -77,7 +78,8 @@ func (suite *DefaultPoliciesTestSuite) mustIndexDepAndImages(deployment *v1.Depl
 
 func imageWithComponents(components []*v1.ImageScanComponent) *v1.Image {
 	return &v1.Image{
-		Name: &v1.ImageName{Sha: uuid.NewV4().String(), FullName: "ASFASF"},
+		Id:   uuid.NewV4().String(),
+		Name: &v1.ImageName{FullName: "ASFASF"},
 		Scan: &v1.ImageScan{
 			Components: components,
 		},
@@ -86,7 +88,7 @@ func imageWithComponents(components []*v1.ImageScanComponent) *v1.Image {
 
 func imageWithLayers(layers []*v1.ImageLayer) *v1.Image {
 	return &v1.Image{
-		Name: &v1.ImageName{Sha: uuid.NewV4().String()},
+		Id: uuid.NewV4().String(),
 		Metadata: &v1.ImageMetadata{
 			Layers: layers,
 		},
@@ -113,8 +115,8 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	suite.mustIndexDepAndImages(fixtureDep)
 
 	nginx110 := &v1.Image{
+		Id: "SHANGINX110",
 		Name: &v1.ImageName{
-			Sha:      "SHANGINX110",
 			Registry: "docker.io",
 			Remote:   "library/nginx",
 			Tag:      "1.10",
@@ -130,9 +132,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	oldScannedTime := time.Now().Add(-31 * 24 * time.Hour)
 	oldScannedImage := &v1.Image{
-		Name: &v1.ImageName{
-			Sha: "SHAOLDSCANNED",
-		},
+		Id: "SHAOLDSCANNED",
 		Scan: &v1.ImageScan{
 			ScanTime: protoconv.ConvertTimeToTimestamp(oldScannedTime),
 		},
@@ -195,7 +195,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	oldImageCreationTime := time.Now().Add(-100 * 24 * time.Hour)
 	oldCreatedImage := &v1.Image{
-		Name:     &v1.ImageName{Sha: "SHA:OLDCREATEDIMAGE"},
+		Id:       "SHA:OLDCREATEDIMAGE",
 		Metadata: &v1.ImageMetadata{Created: protoconv.ConvertTimeToTimestamp(oldImageCreationTime)},
 	}
 	oldImageDep := &v1.Deployment{
@@ -231,7 +231,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			{
 				SecurityContext: &v1.SecurityContext{Privileged: true},
 				Image: &v1.Image{
-					Name: &v1.ImageName{Sha: "HEARTBLEEDDEPSHA"},
+					Id: "HEARTBLEEDDEPSHA",
 					Scan: &v1.ImageScan{
 						Components: []*v1.ImageScanComponent{
 							{Name: "heartbleed", Version: "1.2", Vulns: []*v1.Vulnerability{

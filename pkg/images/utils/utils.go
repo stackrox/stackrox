@@ -16,13 +16,13 @@ func GenerateImageFromString(imageStr string) *v1.Image {
 
 	// Check if its a sha and return if it is
 	if strings.HasPrefix(imageStr, "sha256:") {
-		image.Name.Sha = imageStr
+		image.Id = imageStr
 		return &image
 	}
 
 	// Cut off @sha256:
 	if idx := strings.Index(imageStr, "@sha256:"); idx != -1 {
-		image.Name.Sha = imageStr[idx+1:]
+		image.Id = imageStr[idx+1:]
 		imageStr = imageStr[:idx]
 	}
 
@@ -38,13 +38,18 @@ func GenerateImageFromString(imageStr string) *v1.Image {
 	image.Name.Registry = reference.Domain(named)
 	image.Name.Remote = reference.Path(named)
 	image.Name.Tag = tag
-	FillFullName(image.Name)
+	FillFullName(&image)
 	return &image
 }
 
 // FillFullName uses the fields of the image name to fill in the FullName field.
-func FillFullName(imageName *v1.ImageName) {
-	imageName.FullName = fmt.Sprintf("%s/%s:%s", imageName.Registry, imageName.Remote, imageName.Tag)
+func FillFullName(img *v1.Image) {
+	imageName := img.GetName()
+	if img.Id == "" {
+		imageName.FullName = fmt.Sprintf("%s/%s:%s", imageName.Registry, imageName.Remote, imageName.Tag)
+	} else {
+		imageName.FullName = fmt.Sprintf("%s/%s:%s@%s", imageName.Registry, imageName.Remote, imageName.Tag, img.GetId())
+	}
 }
 
 // ExtractImageSha returns the image sha if it exists within the string.

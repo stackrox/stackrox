@@ -21,7 +21,7 @@ type DataStore interface {
 	CountImages() (int, error)
 	GetImage(sha string) (*v1.Image, bool, error)
 	GetImagesBatch(shas []string) ([]*v1.Image, error)
-	UpsertDedupeImage(image *v1.Image) error
+	UpsertImage(image *v1.Image) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

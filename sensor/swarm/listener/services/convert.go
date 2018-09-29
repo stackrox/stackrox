@@ -69,15 +69,15 @@ func (s serviceWrap) asDeployment(client dockerClientLite, retryGetImageSha bool
 
 	if retryGetImageSha {
 		retries := 0
-		for image.GetName().GetSha() == "" && retries <= 15 {
+		for image.GetId() == "" && retries <= 15 {
 			time.Sleep(time.Second)
 			tasks = s.getTasks(client)
 			if tasks != nil {
-				image.Name.Sha = s.getSHAFromTask(client, tasks)
+				image.Id = s.getSHAFromTask(client, tasks)
 			}
 			retries++
 		}
-		if image.GetName().GetSha() == "" {
+		if image.GetId() == "" {
 			log.Warnf("Couldn't find an image SHA for service %s", s.ID)
 		}
 	}

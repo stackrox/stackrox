@@ -46,7 +46,7 @@ func (suite *ImageIndexTestSuite) SetupSuite() {
 	secondDeployment.Id = "FAKESECONDID"
 	secondDeployment.ClusterName = fakeClusterName
 	secondDeployment.Containers = fixtures.GetDeployment().GetContainers()[:1]
-	secondDeployment.Containers[0].Image.Name.Sha = "FAKENEWSHA"
+	secondDeployment.Containers[0].Image.Id = "FAKENEWSHA"
 
 	suite.NoError(suite.deploymentIndexer.AddDeployment(secondDeployment))
 	suite.NoError(suite.indexer.AddImage(secondDeployment.GetContainers()[0].GetImage()))

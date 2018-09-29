@@ -106,7 +106,7 @@ func (e *enricherImpl) enrichImageWithScanner(image *v1.Image, scanner scannerTy
 		return false
 	}
 	var scan *v1.ImageScan
-	scanItem := e.scanCache.Get(image.GetName().GetSha())
+	scanItem := e.scanCache.Get(image.GetId())
 	if scanItem == nil {
 		e.metrics.IncrementScanCacheMiss()
 		e.scanLimiter.Wait(context.Background())
@@ -117,7 +117,7 @@ func (e *enricherImpl) enrichImageWithScanner(image *v1.Image, scanner scannerTy
 			logger.Errorf("Error getting last scan for %s: %s", image.GetName().GetFullName(), err)
 			return false
 		}
-		addIfKeyNonEmpty(e.scanCache, image.GetName().GetSha(), scan, imageDataExpiration)
+		addIfKeyNonEmpty(e.scanCache, image.GetId(), scan, imageDataExpiration)
 	} else {
 		e.metrics.IncrementScanCacheHit()
 		scan = scanItem.Value().(*v1.ImageScan)

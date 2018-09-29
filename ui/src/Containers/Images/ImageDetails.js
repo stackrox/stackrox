@@ -74,7 +74,7 @@ class ImageDetails extends Component {
     };
 
     updateSelectedImage = image => {
-        const urlSuffix = image && image.sha ? `/${image.sha}` : '';
+        const urlSuffix = image && image.id ? `/${image.id}` : '';
         this.props.history.push({
             pathname: `/main/images${urlSuffix}`,
             search: this.props.location.search
@@ -87,7 +87,7 @@ class ImageDetails extends Component {
         if (!image) return null;
         const imageDetail = {
             scanTime: image.scan ? image.scan.scanTime : '',
-            sha: image.sha,
+            id: image.id,
             totalComponents: image.components ? image.components : 'not available',
             totalCVEs: image.cves ? image.cves : []
         };
@@ -236,7 +236,12 @@ class ImageDetails extends Component {
             }
         ];
         return (
-            <Table rows={scan.components} columns={columns} SubComponent={this.renderVulnsTable} />
+            <Table
+                defaultPageSize={scan.components.length}
+                rows={scan.components}
+                columns={columns}
+                SubComponent={this.renderVulnsTable}
+            />
         );
     };
 

@@ -52,7 +52,7 @@ func TestDefaultPolicies(t *testing.T) {
 	require.NoError(t, err)
 
 	defaults.PoliciesPath = policies.Directory()
-	defaultPolicies, err := defaults.Policies(false) // TODO: This test needs to be updated to support runtime policies
+	defaultPolicies, err := defaults.Policies() // TODO: This test needs to be updated to support runtime policies
 	require.NoError(t, err)
 
 	service := v1.NewPolicyServiceClient(conn)

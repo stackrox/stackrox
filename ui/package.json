@@ -69,7 +69,7 @@
   },
   "proxy": {
     "/v1": {
-      "target": "https://localhost:8080",
+      "target": "https://localhost:8000",
       "changeOrigin": true,
       "secure": false
     },

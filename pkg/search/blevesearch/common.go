@@ -44,12 +44,12 @@ type join struct {
 
 var categoryRelationships = map[relationship]join{
 	newRelationship(v1.SearchCategory_DEPLOYMENTS, v1.SearchCategory_IMAGES): {
-		srcField: "deployment.containers.image.name.sha",
-		dstField: "image.name.sha",
+		srcField: "deployment.containers.image.id",
+		dstField: "image.id",
 	},
 	newRelationship(v1.SearchCategory_IMAGES, v1.SearchCategory_DEPLOYMENTS): {
-		srcField: "image.name.sha",
-		dstField: "deployment.containers.image.name.sha",
+		srcField: "image.id",
+		dstField: "deployment.containers.image.id",
 	},
 	newRelationship(v1.SearchCategory_DEPLOYMENTS, v1.SearchCategory_PROCESS_INDICATORS): {
 		srcField: "deployment.id",

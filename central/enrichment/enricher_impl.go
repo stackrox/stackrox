@@ -38,7 +38,7 @@ func (e *enricherImpl) Enrich(deployment *v1.Deployment) (bool, error) {
 	var deploymentUpdated bool
 	for _, c := range deployment.GetContainers() {
 		if updated := e.imageEnricher.EnrichImage(c.Image); updated {
-			if err := e.imageStorage.UpsertDedupeImage(c.Image); err != nil {
+			if err := e.imageStorage.UpsertImage(c.Image); err != nil {
 				return false, err
 			}
 			deploymentUpdated = true

@@ -141,7 +141,6 @@ func buildRequest() (*v1.Image, error) {
 	im := v1.ImageName{
 		Remote:   *remote,
 		Registry: *registry,
-		Sha:      *digest,
 		Tag:      *tag,
 	}
 
@@ -155,6 +154,7 @@ func buildRequest() (*v1.Image, error) {
 	}
 
 	return &v1.Image{
+		Id:   *digest,
 		Name: &im,
 	}, nil
 }

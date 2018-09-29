@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/stackrox/rox/central/image/index"
@@ -78,94 +77,22 @@ func (ds *datastoreImpl) GetImagesBatch(shas []string) ([]*v1.Image, error) {
 	return ds.storage.GetImagesBatch(shas)
 }
 
-// UpsertDedupeImage dedupes the image with the underlying storage and adds the image to the index.
-func (ds *datastoreImpl) UpsertDedupeImage(image *v1.Image) error {
+// UpsertImage dedupes the image with the underlying storage and adds the image to the index.
+func (ds *datastoreImpl) UpsertImage(image *v1.Image) error {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	// Check the images sha, and figure out if it needs to be changed.
-	shaIs := image.GetName().GetSha()
-	if shaIs == "" {
-		return fmt.Errorf("cannot process an image with no sha: %s", image.GetName())
-	}
-	shaShouldBe, err := ds.dedupeSha(image)
+	oldImage, exists, err := ds.storage.GetImage(image.GetId())
 	if err != nil {
 		return err
 	}
-
-	// Fetch the current image in the DB, and use any information that is more up to date.
-	err = ds.mergeWithDbVersion(image, shaShouldBe)
-	if err != nil {
-		return err
+	if exists {
+		merge(image, oldImage)
 	}
-
-	// If the sha should be changed, we need to merge in the old data, and remove old index and
-	// storage data.
-	if shaIs != shaShouldBe {
-		err = ds.mergeWithDbVersion(image, shaIs)
-		if err != nil {
-			return err
-		}
-		err = ds.handleShaChange(shaIs, shaShouldBe)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Finally upsert the new image to the store and index.
-	image.GetName().Sha = shaShouldBe
 	if err = ds.storage.UpsertImage(image); err != nil {
 		return err
 	}
 	return ds.indexer.AddImage(image)
-}
-
-// dedupeSha looks for what the sha should be for the given image, first by checking the metadata in the image
-// itself, then by looking for a redirect in the store.
-func (ds *datastoreImpl) dedupeSha(image *v1.Image) (shaShouldBe string, err error) {
-	// Check the images sha.
-	shaShouldBe = regShaForimage(image)
-	if shaShouldBe != "" {
-		return
-	}
-
-	// Otherwise, load if we have a registry sha that matches already.
-	shaIs := image.GetName().GetSha()
-	var exists bool
-	shaShouldBe, exists, err = ds.storage.GetRegistrySha(shaIs)
-	if err != nil {
-		return
-	}
-	if exists {
-		return
-	}
-	shaShouldBe = shaIs
-	return
-}
-
-// mergeWithDbVersion adds the data for the given id to the given image if it is more up to date.
-func (ds *datastoreImpl) mergeWithDbVersion(image *v1.Image, shaShouldBe string) (err error) {
-	// Fetch the current image in the DB, and use any information that is more up to date.
-	oldImage, exists, err := ds.storage.GetImage(shaShouldBe)
-	if err != nil || !exists {
-		return
-	}
-	merge(image, oldImage)
-	return
-}
-
-// handleShaChange adds the sha redirect to the store and removes the old sha's data.
-func (ds *datastoreImpl) handleShaChange(oldSha, newSha string) (err error) {
-	err = ds.storage.UpsertRegistrySha(oldSha, newSha)
-	if err != nil {
-		return
-	}
-	err = ds.storage.DeleteImage(oldSha)
-	if err != nil {
-		return
-	}
-	err = ds.indexer.DeleteImage(oldSha)
-	return
 }
 
 // merge adds the most up to date data from the two inputs to the first input.
@@ -177,13 +104,4 @@ func merge(mergeTo *v1.Image, mergeWith *v1.Image) {
 	if protoconv.CompareProtoTimestamps(mergeWith.GetScan().GetScanTime(), mergeTo.GetScan().GetScanTime()) > 0 {
 		mergeTo.Scan = mergeWith.GetScan()
 	}
-}
-
-func regShaForimage(image *v1.Image) string {
-	if image.GetMetadata().GetRegistrySha() != "" {
-		return image.GetMetadata().GetRegistrySha()
-	} else if image.GetMetadata().GetV2().GetDigest() != "" {
-		return image.GetMetadata().GetV2().GetDigest()
-	}
-	return ""
 }

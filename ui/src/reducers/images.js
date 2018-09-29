@@ -30,16 +30,16 @@ export const actions = {
 
 // Reducers
 
-const bySha = (state = {}, action) => {
+const byID = (state = {}, action) => {
     if (action.response && action.response.entities && action.response.entities.image) {
-        const imagesBySha = action.response.entities.image;
-        const newState = mergeEntitiesById(state, imagesBySha);
+        const imagesByID = action.response.entities.image;
+        const newState = mergeEntitiesById(state, imagesByID);
         if (
             action.type === types.FETCH_IMAGES.SUCCESS &&
             (!action.params || !action.params.options || action.params.options.length === 0)
         ) {
             // fetched all images without any filter/search options, leave only those images
-            const onlyExisting = pick(newState, Object.keys(imagesBySha));
+            const onlyExisting = pick(newState, Object.keys(imagesByID));
             return isEqual(onlyExisting, state) ? state : onlyExisting;
         }
         return newState;
@@ -47,7 +47,7 @@ const bySha = (state = {}, action) => {
     return state;
 };
 
-const filteredShas = (state = [], action) => {
+const filteredIDs = (state = [], action) => {
     if (action.type === types.FETCH_IMAGES.SUCCESS) {
         return isEqual(action.response.result, state) ? state : action.response.result;
     }
@@ -55,8 +55,8 @@ const filteredShas = (state = [], action) => {
 };
 
 const reducer = combineReducers({
-    bySha,
-    filteredShas,
+    byID,
+    filteredIDs,
     ...searchReducers('images')
 });
 
@@ -64,16 +64,16 @@ export default reducer;
 
 // Selectors
 
-const getImagesBySha = state => state.bySha;
-const getFilteredShas = state => state.filteredShas;
-const getFilteredImages = createSelector([getImagesBySha, getFilteredShas], (images, shas) =>
-    shas.map(sha => images[sha])
+const getImagesByID = state => state.byID;
+const getFilteredIDs = state => state.filteredIDs;
+const getFilteredImages = createSelector([getImagesByID, getFilteredIDs], (images, ids) =>
+    ids.map(id => images[id])
 );
-const getImage = (state, sha) => getImagesBySha(state)[sha];
+const getImage = (state, id) => getImagesByID(state)[id];
 
 export const selectors = {
-    getImagesBySha,
-    getFilteredShas,
+    getImagesByID,
+    getFilteredIDs,
     getFilteredImages,
     getImage,
     ...getSearchSelectors('images')

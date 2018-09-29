@@ -45,7 +45,7 @@ var OptionsMap = mergeMaps(map[search.FieldLabel]*v1.SearchField{
 	search.VolumeReadonly:    search.NewStoredBoolField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.volumes.read_only"),
 	search.VolumeType:        search.NewStoredStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.volumes.type"),
 
-	"ImageRelationship": search.NewField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.image.name.sha", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
+	"ImageRelationship": search.NewField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.image.id", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
 }, imageMapping.OptionsMap, processIndicatorMapping.OptionsMap)
 
 func mergeMaps(m1 map[search.FieldLabel]*v1.SearchField, otherMaps ...map[search.FieldLabel]*v1.SearchField) map[search.FieldLabel]*v1.SearchField {

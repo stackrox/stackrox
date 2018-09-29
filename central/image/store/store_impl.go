@@ -16,11 +16,11 @@ type storeImpl struct {
 	db *bolt.DB
 }
 
-// ListImage returns ListImage with given sha.
-func (b *storeImpl) ListImage(sha string) (image *v1.ListImage, exists bool, err error) {
+// ListImage returns ListImage with given id.
+func (b *storeImpl) ListImage(id string) (image *v1.ListImage, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ListImage")
 
-	digest := types.NewDigest(sha).Digest()
+	digest := types.NewDigest(id).Digest()
 	err = b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(listImageBucket))
 		image = new(v1.ListImage)
@@ -74,16 +74,16 @@ func (b *storeImpl) CountImages() (count int, err error) {
 	return
 }
 
-// GetImage returns image with given sha.
-func (b *storeImpl) GetImage(sha string) (image *v1.Image, exists bool, err error) {
+// GetImage returns image with given id.
+func (b *storeImpl) GetImage(id string) (image *v1.Image, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Image")
 
 	err = b.db.View(func(tx *bolt.Tx) error {
-		exists = hasImage(tx, []byte(idForSha(sha)))
+		exists = hasImage(tx, []byte(idForSha(id)))
 		if !exists {
 			return nil
 		}
-		image, err = readImage(tx, []byte(idForSha(sha)))
+		image, err = readImage(tx, []byte(idForSha(id)))
 		return err
 	})
 	return
@@ -120,47 +120,15 @@ func (b *storeImpl) UpsertImage(image *v1.Image) error {
 }
 
 // DeleteImage deletes an image an all it's data (but maintains the orch sha to registry sha mapping).
-func (b *storeImpl) DeleteImage(sha string) error {
+func (b *storeImpl) DeleteImage(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Image")
 
 	return b.db.Update(func(tx *bolt.Tx) error {
-		err := deleteImage(tx, []byte(idForSha(sha)))
+		err := deleteImage(tx, []byte(idForSha(id)))
 		if err != nil {
 			return err
 		}
-		return deleteListImage(tx, []byte(idForSha(sha)))
-	})
-}
-
-// GetRegistrySha retrieves a sha to registry sha mapping.
-func (b *storeImpl) GetRegistrySha(orchSha string) (regSha string, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ImageRegistrySha")
-
-	err = b.db.View(func(tx *bolt.Tx) error {
-		exists = hasSha(tx, []byte(idForSha(orchSha)))
-		if !exists {
-			return nil
-		}
-		regSha, err = readSha(tx, []byte(idForSha(orchSha)))
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-	return
-}
-
-// UpsertRegistrySha adds a sha to registry sha mapping.
-func (b *storeImpl) UpsertRegistrySha(orchSha string, regSha string) error {
-	return b.db.Update(func(tx *bolt.Tx) error {
-		return writeSha(tx, []byte(idForSha(orchSha)), regSha)
-	})
-}
-
-// DeleteRegistrySha removes a sha to registry sha mapping.
-func (b *storeImpl) DeleteRegistrySha(orchSha string) error {
-	return b.db.Update(func(tx *bolt.Tx) error {
-		return deleteSha(tx, []byte(idForSha(orchSha)))
+		return deleteListImage(tx, []byte(idForSha(id)))
 	})
 }
 
@@ -173,7 +141,7 @@ func idForSha(sha string) string {
 
 func convertImageToListImage(i *v1.Image) *v1.ListImage {
 	listImage := &v1.ListImage{
-		Sha:     i.GetName().GetSha(),
+		Id:      i.GetId(),
 		Name:    i.GetName().GetFullName(),
 		Created: i.GetMetadata().GetCreated(),
 	}
@@ -248,17 +216,6 @@ func hasImage(tx *bolt.Tx, id []byte) bool {
 	return true
 }
 
-// HasImage returns whether a image exists for the given id.
-func hasSha(tx *bolt.Tx, id []byte) bool {
-	bucket := tx.Bucket([]byte(orchShaToRegShaBucket))
-
-	bytes := bucket.Get(id)
-	if bytes == nil {
-		return false
-	}
-	return true
-}
-
 // readImage reads a image within a transaction.
 func readImage(tx *bolt.Tx, id []byte) (image *v1.Image, err error) {
 	bucket := tx.Bucket([]byte(imageBucket))
@@ -278,7 +235,7 @@ func readImage(tx *bolt.Tx, id []byte) (image *v1.Image, err error) {
 func writeImage(tx *bolt.Tx, image *v1.Image) (err error) {
 	bucket := tx.Bucket([]byte(imageBucket))
 
-	id := []byte(idForSha(image.GetName().GetSha()))
+	id := []byte(idForSha(image.GetId()))
 
 	bytes, err := proto.Marshal(image)
 	if err != nil {
@@ -296,36 +253,6 @@ func deleteImage(tx *bolt.Tx, id []byte) (err error) {
 	return
 }
 
-// readSha reads a image within a transaction.
-func readSha(tx *bolt.Tx, id []byte) (regSha string, err error) {
-	bucket := tx.Bucket([]byte(orchShaToRegShaBucket))
-
-	bytes := bucket.Get(id)
-	if bytes == nil {
-		err = fmt.Errorf("image with id: %s does not exist", id)
-		return
-	}
-
-	regSha = string(bytes)
-	return
-}
-
-// writeSha writes an image's sha within a transaction.
-func writeSha(tx *bolt.Tx, id []byte, regSha string) (err error) {
-	bucket := tx.Bucket([]byte(orchShaToRegShaBucket))
-
-	bucket.Put(id, []byte(regSha))
-	return
-}
-
-// deleteSha deletes an image's sha within a transaction.
-func deleteSha(tx *bolt.Tx, id []byte) (err error) {
-	bucket := tx.Bucket([]byte(orchShaToRegShaBucket))
-
-	bucket.Delete(id)
-	return
-}
-
 func upsertListImage(tx *bolt.Tx, image *v1.Image) error {
 	bucket := tx.Bucket([]byte(listImageBucket))
 	listImage := convertImageToListImage(image)
@@ -333,7 +260,7 @@ func upsertListImage(tx *bolt.Tx, image *v1.Image) error {
 	if err != nil {
 		return err
 	}
-	digest := types.NewDigest(image.GetName().GetSha()).Digest()
+	digest := types.NewDigest(image.GetId()).Digest()
 	return bucket.Put([]byte(digest), bytes)
 }
 

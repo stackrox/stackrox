@@ -1,19 +1,19 @@
 {
     "images": [
         {
-            "sha": "sha256:4771d09578c7c6a65299e110b3ee1c0a2592f5ea2618d23e4ffe7a4cab1ce5de",
+            "id": "sha256:4771d09578c7c6a65299e110b3ee1c0a2592f5ea2618d23e4ffe7a4cab1ce5de",
             "name": "docker.io/library/nginx:latest",
             "created": null
         },
         {
-            "sha": "sha256:26714cf202c4afa3d1df792ec1475d40ba33d1249a58f470caf79ba092e90f91",
+            "id": "sha256:26714cf202c4afa3d1df792ec1475d40ba33d1249a58f470caf79ba092e90f91",
             "name": "apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest",
             "components": "57",
             "cves": "202",
             "created": "2017-10-30T22:37:02.975949433Z"
         },
         {
-            "sha": "sha256:451efa58416d38e138afd1e0c5afcfffccf98f4c4ae9e0a7823adb9800a8beda",
+            "id": "sha256:451efa58416d38e138afd1e0c5afcfffccf98f4c4ae9e0a7823adb9800a8beda",
             "name": "apollo-dtr.rox.systems/legacy-apps/struts-app:latest",
             "components": "206",
             "cves": "117",

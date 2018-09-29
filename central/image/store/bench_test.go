@@ -35,7 +35,7 @@ func BenchmarkGetImage(b *testing.B) {
 	image := fixtures.GetImage()
 	store.UpsertImage(image)
 	for i := 0; i < b.N; i++ {
-		store.GetImage(image.GetName().GetSha())
+		store.GetImage(image.GetId())
 	}
 }
 
@@ -44,14 +44,14 @@ func BenchmarkListImage(b *testing.B) {
 	image := fixtures.GetImage()
 	store.UpsertImage(image)
 	for i := 0; i < b.N; i++ {
-		store.ListImage(image.GetName().GetSha())
+		store.ListImage(image.GetId())
 	}
 }
 
 // This really isn't a benchmark, but just prints out how many ListImages can be returned in an API call
 func BenchmarkMaxListImage(b *testing.B) {
 	listImage := &v1.ListImage{
-		Sha:  uuid.NewDummy().String(),
+		Id:   uuid.NewDummy().String(),
 		Name: "quizzical_cat",
 		SetComponents: &v1.ListImage_Components{
 			Components: 10,

@@ -130,7 +130,7 @@ func (suite *PipelineTestSuite) TestUpdateImages() {
 
 	// Expect that our enforcement generator is called with expected data.
 	expectedImage0 := events[0].GetDeployment().GetContainers()[0].GetImage()
-	suite.images.On("UpsertDedupeImage", expectedImage0).Return(nil)
+	suite.images.On("UpsertImage", expectedImage0).Return(nil)
 
 	// Call function.
 	tested := &updateImagesImpl{
@@ -194,9 +194,7 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 					Containers: []*v1.Container{
 						{
 							Image: &v1.Image{
-								Name: &v1.ImageName{
-									Sha: "sha1",
-								},
+								Id: "sha1",
 							},
 						},
 					},
@@ -211,9 +209,7 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 					Containers: []*v1.Container{
 						{
 							Image: &v1.Image{
-								Name: &v1.ImageName{
-									Sha: "sha1",
-								},
+								Id: "sha1",
 							},
 						},
 					},
@@ -228,9 +224,7 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 					Containers: []*v1.Container{
 						{
 							Image: &v1.Image{
-								Name: &v1.ImageName{
-									Sha: "sha2",
-								},
+								Id: "sha2",
 							},
 						},
 					},
@@ -245,16 +239,12 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 					Containers: []*v1.Container{
 						{
 							Image: &v1.Image{
-								Name: &v1.ImageName{
-									Sha: "sha3",
-								},
+								Id: "sha2",
 							},
 						},
 						{
 							Image: &v1.Image{
-								Name: &v1.ImageName{
-									Sha: "sha2",
-								},
+								Id: "sha2",
 							},
 						},
 					},

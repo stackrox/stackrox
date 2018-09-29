@@ -79,12 +79,25 @@ class DeploymentDetails extends Component {
 
     renderContainerImage = image => {
         if (!image || !image.name || !image.name.fullName) return null;
+        if (image.id === '') {
+            return (
+                <div className="flex py-3">
+                    <div className="pr-1 ">Image Name:</div>
+                    <div className="font-500">
+                        {image.name.fullName}
+                        <span className="italic pl-1">
+                            (image not available until deployment is running)
+                        </span>{' '}
+                    </div>
+                </div>
+            );
+        }
         return (
             <div className="flex py-3">
                 <div className="pr-1">Image Name:</div>
                 <Link
                     className="font-500 text-primary-600 hover:text-primary-800"
-                    to={`/main/images/${image.name.sha}`}
+                    to={`/main/images/${image.id}`}
                 >
                     {image.name.fullName}
                 </Link>

@@ -20,7 +20,7 @@ var (
 )
 
 // Policies returns a list of default policies.
-func Policies(test bool) (policies []*v1.Policy, err error) {
+func Policies() (policies []*v1.Policy, err error) {
 	dir := path.Join(PoliciesPath, "files")
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -39,13 +39,11 @@ func Policies(test bool) (policies []*v1.Policy, err error) {
 		if err != nil {
 			return
 		}
-		if !test && p.GetLifecycleStage() == v1.LifecycleStage_RUN_TIME {
-			if features.RuntimePolicies.Enabled() {
-				policies = append(policies, p)
-			}
-		} else {
-			policies = append(policies, p)
+
+		if !features.RuntimePolicies.Enabled() && p.GetLifecycleStage() == v1.LifecycleStage_RUN_TIME {
+			continue
 		}
+		policies = append(policies, p)
 	}
 
 	return

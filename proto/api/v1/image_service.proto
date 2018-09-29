@@ -55,27 +55,27 @@ message ImageScanComponent {
 }
 
 message ImageName {
-    string sha                              = 1;
-    string registry                         = 2;
-    string remote                           = 3;
-    string tag                              = 4;
-    string full_name                        = 5;
+    string registry                         = 1;
+    string remote                           = 2;
+    string tag                              = 3;
+    string full_name                        = 4;
 }
 
 message ImageScan {
-    google.protobuf.Timestamp scan_time     = 1;
+    google.protobuf.Timestamp   scan_time  = 1;
     repeated ImageScanComponent components = 2;
 }
 
 message Image {
+    string    id            = 4;
     ImageName name          = 1;
 
     ImageMetadata metadata  = 2;
-    ImageScan scan          = 3;
+    ImageScan     scan      = 3;
 }
 
 message ListImage {
-    string sha                        = 1;
+    string id                         = 7;
     string name                       = 2;
     oneof set_components {
         int64 components              = 3;

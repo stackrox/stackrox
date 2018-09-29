@@ -21,7 +21,7 @@ var OptionsMap = map[search.FieldLabel]*v1.SearchField{
 	search.DockerfileInstructionValue:   search.NewStoredStringField(v1.SearchCategory_IMAGES, "image.metadata.layers.value"),
 	search.ImageCreatedTime:             search.NewStoredTimeField(v1.SearchCategory_IMAGES, "image.metadata.created.seconds"),
 	search.ImageName:                    search.NewStoredStringField(v1.SearchCategory_IMAGES, "image.name.full_name"),
-	search.ImageSHA:                     search.NewField(v1.SearchCategory_IMAGES, "image.name.sha", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
+	search.ImageSHA:                     search.NewField(v1.SearchCategory_IMAGES, "image.id", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
 	search.ImageRegistry:                search.NewStoredStringField(v1.SearchCategory_IMAGES, "image.name.registry"),
 	search.ImageRemote:                  search.NewStoredStringField(v1.SearchCategory_IMAGES, "image.name.remote"),
 	search.ImageScanTime:                search.NewStoredTimeField(v1.SearchCategory_IMAGES, "image.scan.scan_time.seconds"),

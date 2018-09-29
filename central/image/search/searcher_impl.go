@@ -87,7 +87,7 @@ func (ds *searcherImpl) searchImages(q *v1.Query) ([]*v1.ListImage, []search.Res
 func convertImage(image *v1.ListImage, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_IMAGES,
-		Id:             types.NewDigest(image.GetSha()).Digest(),
+		Id:             types.NewDigest(image.GetId()).Digest(),
 		Name:           image.GetName(),
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,

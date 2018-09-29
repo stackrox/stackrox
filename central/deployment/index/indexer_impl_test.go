@@ -44,8 +44,8 @@ func (suite *DeploymentIndexTestSuite) TearDownTest() {
 // and request highlights from the search, the highlights we get
 // actually match the value in the deployments.
 func (suite *DeploymentIndexTestSuite) TestHighlighting() {
-	img22 := &v1.Image{Name: &v1.ImageName{Sha: "SHA22", Tag: "2.2"}}
-	img221 := &v1.Image{Name: &v1.ImageName{Sha: "SHA221", Tag: "2.2.1"}}
+	img22 := &v1.Image{Id: "SHA22", Name: &v1.ImageName{Tag: "2.2"}}
+	img221 := &v1.Image{Id: "SHA221", Name: &v1.ImageName{Tag: "2.2.1"}}
 
 	deployment22 := &v1.Deployment{
 		Id: "22",
@@ -191,8 +191,8 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	}
 	suite.NoError(suite.indexer.AddDeployment(containerPort22Dep))
 
-	img110 := &v1.Image{Name: &v1.ImageName{Sha: "SHA110", Tag: "1.10"}}
-	imgNginx := &v1.Image{Name: &v1.ImageName{Sha: "SHANGINX", Remote: "nginx"}}
+	img110 := &v1.Image{Id: "SHA110", Name: &v1.ImageName{Tag: "1.10"}}
+	imgNginx := &v1.Image{Id: "SHANGINX", Name: &v1.ImageName{Remote: "nginx"}}
 	notNginx110Dep := &v1.Deployment{
 		Id:         "NOTNGINX110ID",
 		Name:       "NOT110",
@@ -203,7 +203,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	suite.NoError(suite.imageIndexer.AddImage(img110))
 	suite.NoError(suite.imageIndexer.AddImage(imgNginx))
 
-	imgNginx110 := &v1.Image{Name: &v1.ImageName{Sha: "SHANGINX110", Tag: "1.10", Remote: "nginx"}}
+	imgNginx110 := &v1.Image{Id: "SHANGINX110", Name: &v1.ImageName{Tag: "1.10", Remote: "nginx"}}
 	nginx110Dep := &v1.Deployment{
 		Id:         "NGINX110ID",
 		Name:       "YES110",
