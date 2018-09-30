@@ -7,6 +7,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -26,12 +27,15 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(alerts alertDataStore.DataStore, clusters clusterDataStore.DataStore, deployments deploymentDataStore.DataStore, images imageDataStore.DataStore) Service {
+func New(alerts alertDataStore.DataStore, clusters clusterDataStore.DataStore,
+	deployments deploymentDataStore.DataStore, images imageDataStore.DataStore,
+	secrets secretDataStore.DataStore) Service {
 	s := &serviceImpl{
 		alerts:      alerts,
 		clusters:    clusters,
 		deployments: deployments,
 		images:      images,
+		secrets:     secrets,
 	}
 	s.initializeAuthorizer()
 	return s

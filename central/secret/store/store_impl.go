@@ -70,9 +70,19 @@ func convertSecretToSecretList(s *v1.Secret) *v1.ListSecret {
 	}
 }
 
+// CountSecrets returns the number secrets in the secret bucket
+func (s *storeImpl) CountSecrets() (count int, err error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "Secret")
+	err = s.db.View(func(tx *bolt.Tx) error {
+		count = tx.Bucket([]byte(secretBucket)).Stats().KeyN
+		return nil
+	})
+	return
+}
+
 // GetAllSecrets returns all secrets in the given db.
 func (s *storeImpl) GetAllSecrets() (secrets []*v1.Secret, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Secrets")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Secret")
 
 	s.db.View(func(tx *bolt.Tx) error {
 		secrets, err = readAllSecrets(tx)

@@ -11,10 +11,11 @@ import Logo from 'Components/icons/logo';
 import { actions as authActions, AUTH_STATUS } from 'reducers/auth';
 
 const titleMap = {
-    numAlerts: 'Violation',
-    numClusters: 'Cluster',
-    numDeployments: 'Deployment',
-    numImages: 'Image'
+    numClusters: { singular: 'Cluster', plural: 'Clusters' },
+    numAlerts: { singular: 'Violation', plural: 'Violations' },
+    numDeployments: { singular: 'Deployment', plural: 'Deployments' },
+    numImages: { singular: 'Image', plural: 'Images' },
+    numSecrets: { singular: 'Secret', plural: 'Secrets' }
 };
 
 class TopNavigation extends Component {
@@ -27,7 +28,8 @@ class TopNavigation extends Component {
             numAlerts: PropTypes.string,
             numClusters: PropTypes.string,
             numDeployments: PropTypes.string,
-            numImages: PropTypes.string
+            numImages: PropTypes.string,
+            numSecrets: PropTypes.string
         })
     };
 
@@ -70,8 +72,9 @@ class TopNavigation extends Component {
                     >
                         <div className="text-xl">{summaryCounts[key]}</div>
                         <div className="text-sm pt-1">
-                            {titleMap[key]}
-                            {summaryCounts[key] === '1' ? '' : 's'}
+                            {summaryCounts[key] === '1'
+                                ? titleMap[key].singular
+                                : titleMap[key].plural}
                         </div>
                     </li>
                 ))}

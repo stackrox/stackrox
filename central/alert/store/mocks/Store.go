@@ -25,27 +25,6 @@ func (_m *Store) AddAlert(alert *v1.Alert) error {
 	return r0
 }
 
-// CountAlerts provides a mock function with given fields:
-func (_m *Store) CountAlerts() (int, error) {
-	ret := _m.Called()
-
-	var r0 int
-	if rf, ok := ret.Get(0).(func() int); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(int)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetAlert provides a mock function with given fields: id
 func (_m *Store) GetAlert(id string) (*v1.Alert, bool, error) {
 	ret := _m.Called(id)

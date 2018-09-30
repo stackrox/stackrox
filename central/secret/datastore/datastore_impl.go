@@ -25,6 +25,10 @@ func (d *datastoreImpl) SearchListSecrets(request *v1.Query) ([]*v1.ListSecret, 
 	return d.searcher.SearchListSecrets(request)
 }
 
+func (d *datastoreImpl) CountSecrets() (int, error) {
+	return d.storage.CountSecrets()
+}
+
 func (d *datastoreImpl) UpsertSecret(request *v1.Secret) error {
 	if err := d.storage.UpsertSecret(request); err != nil {
 		return err

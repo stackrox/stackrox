@@ -68,8 +68,8 @@ func (b *storeImpl) CountImages() (count int, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Image")
 
 	err = b.db.View(func(tx *bolt.Tx) error {
-		count, err = countAllImages(tx)
-		return err
+		count = tx.Bucket([]byte(imageBucket)).Stats().KeyN
+		return nil
 	})
 	return
 }
@@ -189,17 +189,6 @@ func readAllImages(tx *bolt.Tx) (images []*v1.Image, err error) {
 		}
 
 		images = append(images, image)
-		return nil
-	})
-	return
-}
-
-// readAllImages reads all the images in the DB within a transaction.
-func countAllImages(tx *bolt.Tx) (count int, err error) {
-	bucket := tx.Bucket([]byte(imageBucket))
-	count = 0
-	err = bucket.ForEach(func(k, v []byte) error {
-		count++
 		return nil
 	})
 	return

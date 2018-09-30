@@ -13,6 +13,7 @@ type DataStore interface {
 	SearchSecrets(q *v1.Query) ([]*v1.SearchResult, error)
 	SearchListSecrets(q *v1.Query) ([]*v1.ListSecret, error)
 
+	CountSecrets() (int, error)
 	GetSecret(id string) (*v1.Secret, bool, error)
 	UpsertSecret(request *v1.Secret) error
 	RemoveSecret(id string) error

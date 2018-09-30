@@ -66,11 +66,8 @@ func (b *storeImpl) GetNetworkPolicies(request *v1.GetNetworkPoliciesRequest) ([
 func (b *storeImpl) CountNetworkPolicies() (count int, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "NetworkPolicy")
 	err = b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(networkPolicyBucket))
-		return b.ForEach(func(k, v []byte) error {
-			count++
-			return nil
-		})
+		count = tx.Bucket([]byte(networkPolicyBucket)).Stats().KeyN
+		return nil
 	})
 
 	return

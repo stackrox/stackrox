@@ -19,7 +19,6 @@ type Store interface {
 
 	GetAlert(id string) (*v1.Alert, bool, error)
 	GetAlerts() ([]*v1.Alert, error)
-	CountAlerts() (int, error)
 	AddAlert(alert *v1.Alert) error
 	UpdateAlert(alert *v1.Alert) error
 }
@@ -28,6 +27,7 @@ type Store interface {
 func New(db *bolt.DB) Store {
 	bolthelper.RegisterBucketOrPanic(db, alertBucket)
 	bolthelper.RegisterBucketOrPanic(db, alertListBucket)
+
 	return &storeImpl{
 		DB: db,
 	}

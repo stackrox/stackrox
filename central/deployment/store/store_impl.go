@@ -140,11 +140,8 @@ func (b *storeImpl) GetDeployments() ([]*v1.Deployment, error) {
 func (b *storeImpl) CountDeployments() (count int, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "Deployment")
 	err = b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(deploymentBucket))
-		return b.ForEach(func(k, v []byte) error {
-			count++
-			return nil
-		})
+		count = tx.Bucket([]byte(deploymentBucket)).Stats().KeyN
+		return nil
 	})
 
 	return

@@ -20,6 +20,7 @@ func initialize() {
 	if err != nil {
 		panic(err)
 	}
+	go startMonitoring(globalDB)
 }
 
 // GetGlobalDB returns a pointer to the global db.

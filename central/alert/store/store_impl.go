@@ -128,21 +128,6 @@ func (b *storeImpl) GetAlerts() ([]*v1.Alert, error) {
 	return alerts, err
 }
 
-// CountAlerts returns the number of non-stale alerts.
-func (b *storeImpl) CountAlerts() (count int, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "Alert")
-
-	err = b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(alertBucket))
-		return b.ForEach(func(k, v []byte) error {
-			count++
-			return nil
-		})
-	})
-
-	return
-}
-
 // AddAlert adds an alert into Bolt
 func (b *storeImpl) AddAlert(alert *v1.Alert) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Alert")

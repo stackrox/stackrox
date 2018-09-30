@@ -9,6 +9,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/role/resources"
+	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -31,6 +32,7 @@ var (
 		"NumClusters":    resources.Cluster,
 		"NumDeployments": resources.Deployment,
 		"NumImages":      resources.Image,
+		"NumSecrets":     resources.Secret,
 	}
 )
 
@@ -40,6 +42,7 @@ type serviceImpl struct {
 	clusters    clusterDataStore.DataStore
 	deployments deploymentDataStore.DataStore
 	images      imageDataStore.DataStore
+	secrets     secretDataStore.DataStore
 
 	authorizer authz.Authorizer
 }
@@ -99,10 +102,17 @@ func (s *serviceImpl) GetSummaryCounts(context.Context, *v1.Empty) (*v1.SummaryC
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	secrets, err := s.secrets.CountSecrets()
+	if err != nil {
+		log.Error(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	return &v1.SummaryCountsResponse{
 		NumAlerts:      int64(alerts),
 		NumClusters:    int64(clusters),
 		NumDeployments: int64(deployments),
 		NumImages:      int64(images),
+		NumSecrets:     int64(secrets),
 	}, nil
 }
