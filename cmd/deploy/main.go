@@ -28,7 +28,7 @@ func init() {
 }
 
 var (
-	clairifyTag   = "0.4"
+	clairifyTag   = "0.4.1"
 	clairifyImage = "clairify:" + clairifyTag
 	preventTag    = getVersion()
 	preventImage  = "prevent:" + preventTag
