@@ -332,7 +332,7 @@ class Services {
                     NetworkPolicyServiceOuterClass.GetNetworkGraphRequest.newBuilder()
                             .setClusterId(getClusterId())
                             .setSimulationYaml(yaml)
-            if (query == null) {
+            if (query != null) {
                 request.setQuery(query)
             }
             return getNetworkPolicyClient().getNetworkGraph(request.build())
