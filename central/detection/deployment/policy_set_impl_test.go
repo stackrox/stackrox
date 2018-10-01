@@ -5,8 +5,10 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
+	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
 	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
+	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -26,6 +28,12 @@ func (suite *PolicyTestSuite) TestAddsCompilable() {
 
 	hasMatch := false
 	policySet.ForEach(func(p *v1.Policy, m deploymentMatcher.Matcher) error {
+		if p.GetId() == "1" {
+			hasMatch = true
+		}
+		return nil
+	})
+	policySet.ForEachSearchBased(func(p *v1.Policy, matcher searchbasedpolicies.Matcher, pred predicate.Predicate) error {
 		if p.GetId() == "1" {
 			hasMatch = true
 		}

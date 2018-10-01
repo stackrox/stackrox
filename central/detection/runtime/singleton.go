@@ -12,7 +12,6 @@ var (
 	once sync.Once
 
 	policySet deployment.PolicySet
-	detector  Detector
 )
 
 func initialize() {
@@ -28,14 +27,6 @@ func initialize() {
 			}
 		}
 	}
-
-	detector = NewDetector(policySet)
-}
-
-// SingletonDetector returns the singleton instance of a Detector.
-func SingletonDetector() Detector {
-	once.Do(initialize)
-	return detector
 }
 
 // SingletonPolicySet returns the singleton instance of a PolicySet.

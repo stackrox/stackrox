@@ -7,6 +7,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/deployment/index/mappings"
 	deploymentDetection "github.com/stackrox/rox/central/detection/deployment"
 	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
 	imageDetection "github.com/stackrox/rox/central/detection/image"
@@ -14,9 +15,11 @@ import (
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
+	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -232,26 +235,43 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *v1.Policy) (*v1
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	matcher, err := deploymentMatcher.Compile(request)
+	shouldProcessFunc, err := predicate.Compile(request)
 	if err != nil {
-		return nil, fmt.Errorf("policy does not compile: %+v", err)
+		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("policy predicate does not compile: %s", err))
 	}
 
 	var resp v1.DryRunResponse
-	deployments, err := s.deployments.GetDeployments()
+	searchBasedMatcher, err := matcher.ForPolicy(request, mappings.OptionsMap)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("couldn't construct matcher: %s", err))
 	}
-	for _, deployment := range deployments {
-		violations := matcher(deployment)
-		if len(violations) > 0 {
-			// Collect the violation messages as strings for the output.
-			convertedViolations := make([]string, 0, len(violations))
-			for _, violation := range violations {
-				convertedViolations = append(convertedViolations, violation.GetMessage())
-			}
-			resp.Alerts = append(resp.Alerts, &v1.DryRunResponse_Alert{Deployment: deployment.GetName(), Violations: convertedViolations})
+
+	violationsPerDeployment, err := searchBasedMatcher.Match(s.deployments)
+	if err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed policy matching: %s", err))
+	}
+
+	for deploymentID, violations := range violationsPerDeployment {
+		if len(violations) == 0 {
+			continue
 		}
+		deployment, exists, err := s.deployments.GetDeployment(deploymentID)
+		if err != nil {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("retrieving deployment '%s': %s", deploymentID, err))
+		}
+		if !exists {
+			// Maybe the deployment was deleted around the time of the dry-run.
+			continue
+		}
+		if shouldProcessFunc != nil && !shouldProcessFunc(deployment) {
+			continue
+		}
+		// Collect the violation messages as strings for the output.
+		convertedViolations := make([]string, 0, len(violations))
+		for _, violation := range violations {
+			convertedViolations = append(convertedViolations, violation.GetMessage())
+		}
+		resp.Alerts = append(resp.Alerts, &v1.DryRunResponse_Alert{Deployment: deployment.GetName(), Violations: convertedViolations})
 	}
 	return &resp, nil
 }

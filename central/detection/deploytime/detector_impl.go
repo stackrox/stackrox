@@ -1,14 +1,17 @@
 package deploytime
 
 import (
+	"github.com/gogo/protobuf/proto"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deployment"
 	"github.com/stackrox/rox/central/detection/utils"
 	"github.com/stackrox/rox/central/enrichment"
+	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
-	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
+	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var logger = logging.LoggerForModule()
@@ -104,10 +107,19 @@ func (d *detectorImpl) RemovePolicy(policyID string) error {
 
 func (d *detectorImpl) getAlertsForDeployment(deployment *v1.Deployment) []*v1.Alert {
 	// Get the new and old alerts for the deployment.
-	// For each cant return an error since our passed function does not return errors.
 	var newAlerts []*v1.Alert
-	d.policySet.ForEach(func(p *v1.Policy, matcher deploymentMatcher.Matcher) error {
-		if violations := matcher(deployment); len(violations) > 0 {
+	d.policySet.ForEachSearchBased(func(p *v1.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
+		if shouldProcess != nil && !shouldProcess(deployment) {
+			return nil
+		}
+
+		violations, err := matcher.MatchOne(d.deployments, search.DeploymentID, deployment.GetId())
+		if err != nil {
+			logger.Errorf("Error evaluating policies for deployment %s: %s", proto.MarshalTextString(deployment), err)
+			return nil
+		}
+
+		if len(violations) > 0 {
 			newAlerts = append(newAlerts, utils.PolicyDeploymentAndViolationsToAlert(p, deployment, violations))
 		}
 		return nil
@@ -116,20 +128,30 @@ func (d *detectorImpl) getAlertsForDeployment(deployment *v1.Deployment) []*v1.A
 }
 
 func (d *detectorImpl) getAlertsForPolicy(policyID string) ([]*v1.Alert, error) {
-	// Fetch all of the deployments and run them against this new policy
-	deployments, err := d.deployments.GetDeployments()
+	var newAlerts []*v1.Alert
+	err := d.policySet.ForOneSearchBased(policyID, func(p *v1.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
+		violationsByDeployment, err := matcher.Match(d.deployments)
+		if err != nil {
+			return err
+		}
+		for deploymentID, violations := range violationsByDeployment {
+			dep, exists, err := d.deployments.GetDeployment(deploymentID)
+			if err != nil {
+				return err
+			}
+			if !exists {
+				logger.Errorf("deployment with id '%s' had violations, but doesn't exist", deploymentID)
+				continue
+			}
+			if shouldProcess != nil && !shouldProcess(dep) {
+				continue
+			}
+			newAlerts = append(newAlerts, utils.PolicyDeploymentAndViolationsToAlert(p, dep, violations))
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	var newAlerts []*v1.Alert
-	for _, deployment := range deployments {
-		d.policySet.ForOne(policyID, func(p *v1.Policy, matcher deploymentMatcher.Matcher) error {
-			if violations := matcher(deployment); len(violations) > 0 {
-				newAlerts = append(newAlerts, utils.PolicyDeploymentAndViolationsToAlert(p, deployment, violations))
-			}
-			return nil
-		})
 	}
 	return newAlerts, nil
 }

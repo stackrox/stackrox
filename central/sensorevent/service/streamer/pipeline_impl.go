@@ -37,7 +37,6 @@ func (s *channeledImpl) process(eventsIn <-chan *v1.SensorEvent, pl pipeline.Pip
 			log.Debugf("no enforcement action taken for: %s", event.Id)
 			continue
 		}
-
 		enforcementsOut <- enforcement
 	}
 }

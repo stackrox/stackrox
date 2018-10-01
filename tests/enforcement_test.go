@@ -27,11 +27,11 @@ func setupTestEnforcement(t *testing.T) {
 	require.NoError(t, err)
 
 	togglePolicyEnforcement(t, conn, true)
-	setupNginxLatestTagDeploymentForEnforcement(t)
+	setupNginxPort22DeploymentForEnforcement(t)
 }
 
-func setupNginxLatestTagDeploymentForEnforcement(t *testing.T) {
-	cmd := exec.Command(`kubectl`, `run`, nginxDeploymentName, `--image=nginx`)
+func setupNginxPort22DeploymentForEnforcement(t *testing.T) {
+	cmd := exec.Command(`kubectl`, `run`, nginxDeploymentName, `--image=nginx`, `--port=22`)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
 }
@@ -80,7 +80,7 @@ func verifyAlertWithEnforcement(t *testing.T) {
 
 	service := v1.NewAlertServiceClient(conn)
 
-	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, expectedLatestTagPolicy).AddBools(search.Stale, false)
+	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, expectedPort22Policy).AddBools(search.Stale, false)
 	alerts, err := service.ListAlerts(ctx, &v1.ListAlertsRequest{
 		Query: qb.Query(),
 	})
@@ -109,7 +109,7 @@ func teardownTestEnforcement(t *testing.T) {
 
 func togglePolicyEnforcement(t *testing.T, conn *grpc.ClientConn, enable bool) {
 	service := v1.NewPolicyServiceClient(conn)
-	qb := search.NewQueryBuilder().AddStrings(search.PolicyName, expectedLatestTagPolicy)
+	qb := search.NewQueryBuilder().AddStrings(search.PolicyName, expectedPort22Policy)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.ListPolicies(ctx, &v1.RawQuery{
 		Query: qb.Query(),

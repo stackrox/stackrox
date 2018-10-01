@@ -18,8 +18,8 @@ func (m *matcherImpl) errorPrefixForMatchOne(fieldLabel search.FieldLabel, id st
 	return fmt.Sprintf("matching policy %s against %s %s", m.policyName, fieldLabel, id)
 }
 
-func (m *matcherImpl) MatchOne(searcher Searcher, fieldLabel search.FieldLabel, id string) ([]*v1.Alert_Violation, error) {
-	q := search.ConjunctionQuery(m.q, search.NewQueryBuilder().AddStrings(fieldLabel, id).ProtoQuery())
+func (m *matcherImpl) MatchOne(searcher searchbasedpolicies.Searcher, fieldLabel search.FieldLabel, id string) ([]*v1.Alert_Violation, error) {
+	q := search.ConjunctionQuery(search.NewQueryBuilder().AddStrings(fieldLabel, id).ProtoQuery(), m.q)
 	results, err := searcher.Search(q)
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (m *matcherImpl) MatchOne(searcher Searcher, fieldLabel search.FieldLabel, 
 	return violations, nil
 }
 
-func (m *matcherImpl) Match(searcher Searcher) (map[string][]*v1.Alert_Violation, error) {
+func (m *matcherImpl) Match(searcher searchbasedpolicies.Searcher) (map[string][]*v1.Alert_Violation, error) {
 	results, err := searcher.Search(m.q)
 	if err != nil {
 		return nil, err
@@ -57,6 +57,7 @@ func (m *matcherImpl) Match(searcher Searcher) (map[string][]*v1.Alert_Violation
 		if result.ID == "" {
 			return nil, fmt.Errorf("matching policy %s: got empty result id: %+v", m.policyName, result)
 		}
+
 		violations := m.violationPrinter(result)
 		if len(violations) == 0 {
 			return nil, fmt.Errorf("matching policy %s: result matched query but couldn't find any violation messages: %+v", m.policyName, result)

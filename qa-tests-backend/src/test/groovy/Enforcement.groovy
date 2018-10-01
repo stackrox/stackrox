@@ -6,6 +6,8 @@ import org.junit.experimental.categories.Category
 import stackrox.generated.PolicyServiceOuterClass
 
 class Enforcement extends BaseSpecification {
+    private final static String CONTAINER_PORT_22_POLICY = "Container Port 22"
+
     @Category([PolicyEnforcement])
     def "Test Kill Enforcement"() {
         // This test only tests enforcement by directly telling Central to kill
@@ -109,7 +111,7 @@ class Enforcement extends BaseSpecification {
         given:
         "Add scale-down enforcement to an existing policy"
         def startEnforcement = Services.updatePolicyEnforcement(
-                "Latest tag",
+                CONTAINER_PORT_22_POLICY,
                 PolicyServiceOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
         )
 
@@ -118,7 +120,7 @@ class Enforcement extends BaseSpecification {
         Deployment d = new Deployment()
                 .setName("scale-down-enforcement-int")
                 .setImage("nginx")
-                .addPort(80)
+                .addPort(22)
                 .addLabel("app", "scale-down-enforcement-int")
                 .setSkipReplicaWait(true)
         orchestrator.createDeployment(d)
@@ -129,7 +131,7 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
-        Services.updatePolicyEnforcement("Latest tag", startEnforcement)
+        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcement)
         orchestrator.deleteDeployment(d.name)
     }
 
@@ -141,7 +143,7 @@ class Enforcement extends BaseSpecification {
         given:
         "Add node constraint enforcement to an existing policy"
         def startEnforcement = Services.updatePolicyEnforcement(
-                "Latest tag",
+                CONTAINER_PORT_22_POLICY,
                 PolicyServiceOuterClass.EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
         )
 
@@ -150,7 +152,7 @@ class Enforcement extends BaseSpecification {
         Deployment d = new Deployment()
                 .setName("node-constraint-enforcement-int")
                 .setImage("nginx")
-                .addPort(80)
+                .addPort(22)
                 .addLabel("app", "node-constraint-enforcement-int")
                 .setSkipReplicaWait(true)
         orchestrator.createDeployment(d)
@@ -163,7 +165,7 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
-        Services.updatePolicyEnforcement("Latest tag", startEnforcement)
+        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcement)
         orchestrator.deleteDeployment(d.name)
     }
 }

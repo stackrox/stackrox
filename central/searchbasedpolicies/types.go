@@ -17,3 +17,16 @@ type PolicyQueryBuilder interface {
 
 // A ViolationPrinter knows how to print violation messages from a search result.
 type ViolationPrinter func(search.Result) []*v1.Alert_Violation
+
+// Searcher allows you to search objects.
+type Searcher interface {
+	Search(q *v1.Query) ([]search.Result, error)
+}
+
+// Matcher matches objects against a policy.
+type Matcher interface {
+	// Match matches the policy against all objects, returning a map from object ID to violations.
+	Match(searcher Searcher) (map[string][]*v1.Alert_Violation, error)
+	// MatchOne matches the policy against the object with the given id.
+	MatchOne(searcher Searcher, fieldLabel search.FieldLabel, id string) ([]*v1.Alert_Violation, error)
+}
