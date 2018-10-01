@@ -50,6 +50,12 @@ class DockerEE extends OrchestratorCommon implements OrchestratorMain {
                 .withPublishMode(PortConfig.PublishMode.ingress)
     }
 
+    def batchCreateDeployments(List<Deployment> deployments) {
+        for (Deployment deployment : deployments) {
+            createDeployment(deployment)
+        }
+    }
+
     def createDeployment(Deployment deployment) {
         List<PortConfig> containerPorts = deployment.getPorts().stream()
                 .map(portToPortConfig)

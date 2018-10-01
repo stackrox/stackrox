@@ -36,9 +36,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     ]
 
     def setupSpec() {
-        for (Deployment deployment : DEPLOYMENTS) {
-            orchestrator.createDeployment(deployment)
-        }
+        orchestrator.batchCreateDeployments(DEPLOYMENTS)
     }
 
     def cleanupSpec() {

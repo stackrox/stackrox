@@ -47,6 +47,7 @@ class NetworkSimulator extends BaseSpecification {
         if (policyId != null) {
             orchestrator.deleteNetworkPolicy(policy)
         }
+        sleep(5000) // Wait for deployment deletion since we create a deployment with the same name later.
     }
 
     @Category([NetworkPolicySimulation, BAT])
@@ -104,6 +105,7 @@ class NetworkSimulator extends BaseSpecification {
         if (policyId != null) {
             orchestrator.deleteNetworkPolicy(policy1)
         }
+        sleep(5000) // Wait for deployment deletion since we create a deployment with the same name later.
     }
 
     @Category([NetworkPolicySimulation])
@@ -152,7 +154,8 @@ class NetworkSimulator extends BaseSpecification {
         "cleanup"
         orchestrator.deleteDeployment("web")
         orchestrator.deleteDeployment("client")
-    }
+        sleep(5000) // Wait for deployment deletion since we create a deployment with the same name later.
+     }
 
     @Category([NetworkPolicySimulation])
     def "Verify yaml requires namespace in metadata"() {
@@ -218,6 +221,7 @@ class NetworkSimulator extends BaseSpecification {
         for (Deployment extra : additionalDeployments) {
             orchestrator.deleteDeployment(extra.name)
         }
+        sleep(5000) // Wait for deployment deletion since we create a deployment with the same name later.
 
         where:
         "Data"

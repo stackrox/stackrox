@@ -5,7 +5,7 @@ import spock.lang.Unroll
 import objects.Deployment
 import org.junit.experimental.categories.Category
 
-class ProcessVisulizationTest extends BaseSpecification {
+class ProcessVisualizationTest extends BaseSpecification {
     // Deployment names
     static final private String NGINXDEPLOYMENT = "qanginx"
     static final private String STRUTSDEPLOYMENT = "qastruts"
@@ -58,38 +58,45 @@ class ProcessVisulizationTest extends BaseSpecification {
             //            .addLabel ( "app", "test" ),
      ]
 
+    static final private MAX_SLEEP_TIME = 60000
+    static final private SLEEP_INCREMENT = 5000
+
     def setupSpec() {
-        for (Deployment deployment : DEPLOYMENTS) {
-            orchestrator.createDeployment(deployment)
-            }
+        orchestrator.batchCreateDeployments(DEPLOYMENTS)
     }
 
     def cleanupSpec() {
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment.getName())
-            }
+        }
     }
 
     @Category(BAT)
     @Unroll
-    def "Verify process visulization on default: #depname"()  {
+    def "Verify process visualization on default: #depName"()  {
         when:
-        "Get Process IDs running on deployment: #depname"
-        String uid = orchestrator?.getDeploymentId(depname)
+        "Get Process IDs running on deployment: #depName"
+        String uid = orchestrator?.getDeploymentId(depName)
         assert uid != null
-        List<String> val = getProcessOnDeployment(uid)
-        println "ProcessVisulizationTest: Dep: " + depname + " Processes: " + val
+
+        List<String> receivedProcessPaths = getProcessOnDeployment(uid)
+        def sleepTime = 0L
+        while ((!receivedProcessPaths.containsAll(expectedFilePaths)) && sleepTime < MAX_SLEEP_TIME) {
+            println "Didn't find all the expected processes, retrying..."
+            sleep(SLEEP_INCREMENT)
+            sleepTime += SLEEP_INCREMENT
+            receivedProcessPaths = getProcessOnDeployment(uid)
+        }
+        println "ProcessVisualizationTest: Dep: " + depName + " Processes: " + receivedProcessPaths
 
         then:
-        "Verify process in added : : #depname"
-        for (String p : filepaths) {
-            assert val.contains(p)
-        }
+        "Verify process in added : : #depName"
+        assert receivedProcessPaths.containsAll(expectedFilePaths)
 
         where:
         "Data inputs are :"
 
-        filepaths |  depname
+        expectedFilePaths |  depName
 
         ["/usr/sbin/nginx"] | NGINXDEPLOYMENT
 

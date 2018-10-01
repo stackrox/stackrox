@@ -273,7 +273,6 @@ class Services {
 
     static List<String> getProcessOnDeployment(String uid) {
         List<Indicator.ProcessIndicator> signals
-        sleep(30000)
         signals = getDeploymentClient()
                   .getDeployment(getResourceByID(uid))
                   .getProcessesList()
@@ -308,6 +307,7 @@ class Services {
         } catch (Exception e) {
             return ""
         }
+        sleep(3000) // Sleep for a little bit to make sure the update propagates in Central.
         println "Updated enforcement of '${policyName}' to ${enforcementAction}"
         return policyMeta.enforcement
     }

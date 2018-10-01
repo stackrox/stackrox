@@ -101,23 +101,25 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
             ExtensionsV1beta1DeploymentList dList
             dList = beta1.listNamespacedDeployment(namespace, null, null, null, null, null, null, null, null, null)
 
+            println "Waiting for " + deploymentName
             for (ExtensionsV1beta1Deployment v1beta1Deployment : dList.getItems()) {
                 if (v1beta1Deployment.getMetadata().getName() == deploymentName) {
-                    println "Waiting for " + deploymentName
-                    sleep(sleepDuration)
-
                     // Using the 'skipReplicaWait' bool to avoid timeout waiting for ready replicas if we know
                     // the deployment will not have replicas available
                     if (v1beta1Deployment.getStatus().getReadyReplicas() ==
                             v1beta1Deployment.getSpec().getReplicas() ||
                             skipReplicaWait) {
+                        // If skipReplicaWait is set, we still want to sleep for a few seconds to allow the deployment
+                        // to work its way through the system.
+                        if (skipReplicaWait) {
+                            sleep(sleepDuration)
+                        }
                         println deploymentName + ": deployment created."
-                        //continue to sleep 5s to make the test more stable
-                        sleep(sleepDuration)
                         return v1beta1Deployment.getMetadata().getUid()
                     }
                 }
             }
+            sleep(sleepDuration)
             waitTime += sleepDuration
         }
         println "Timed out waiting for " + deploymentName
@@ -137,7 +139,16 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         }
     }
 
-    String createDeployment(Deployment deployment) {
+    def batchCreateDeployments(List<Deployment> deployments) {
+        for (Deployment deployment: deployments) {
+            createDeploymentNoWait(deployment)
+        }
+        for (Deployment deployment: deployments) {
+            waitForDeploymentAndPopulateInfo(deployment)
+        }
+    }
+
+    def createDeploymentNoWait(Deployment deployment) {
         deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
 
         List<V1ContainerPort> containerPorts = deployment.getPorts().stream()
@@ -183,7 +194,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                             .labels(deployment.getLabels()))
                     .spec(new ExtensionsV1beta1DeploymentSpec()
                     .replicas(1)
-                    .minReadySeconds(10)
+                    .minReadySeconds(15)
                     .template(new V1PodTemplateSpec()
                     .spec(v1PodSpec)
                     .metadata(new V1ObjectMeta()
@@ -192,9 +203,16 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                         .labels(deployment.getLabels()))
         )
         )
-
         try {
             beta1.createNamespacedDeployment(deployment.getNamespace(), k8sDeployment, null)
+            println("Told the orchestrator to create " + deployment.getName())
+        } catch (Exception e) {
+            println("Error creating kube deployment" + e.toString())
+        }
+    }
+
+    def waitForDeploymentAndPopulateInfo(Deployment deployment) {
+        try {
             deployment.deploymentUid = waitForDeploymentCreation(
                     deployment.getName(),
                     deployment.getNamespace(),
@@ -226,8 +244,13 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 )
             }
         } catch (Exception e) {
-            println("Creating deployment error: " + e.toString())
+            println("Error while waiting for deployment/populating deployment info: " + e.toString())
         }
+    }
+
+    def createDeployment(Deployment deployment) {
+        createDeploymentNoWait(deployment)
+        waitForDeploymentAndPopulateInfo(deployment)
     }
 
     def deleteDeployment(String name, String namespace = this.namespace) {
@@ -241,7 +264,6 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 false,
                 null
         )
-        sleep(sleepDuration)
         println name + ": deployment removed."
     }
 
