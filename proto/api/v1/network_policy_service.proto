@@ -110,6 +110,7 @@ message GetNetworkGraphRequest {
     string cluster_id      = 1;
     string query           = 2;
     string simulation_yaml = 3;
+    google.protobuf.Timestamp since = 4;
 }
 
 message GetNetworkGraphResponse {

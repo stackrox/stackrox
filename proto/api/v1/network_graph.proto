@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/network_policy_service.proto";
+
+package v1;
+
+service NetworkGraphService {
+    rpc GetNetworkGraph (v1.GetNetworkGraphRequest) returns (v1.GetNetworkGraphResponse) {
+        option (google.api.http) = {
+            get: "/v1/networkgraph/cluster/{cluster_id}"
+        };
+    }
+}

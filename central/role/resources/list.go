@@ -29,6 +29,7 @@ var (
 	Indicators        = newResource("Indicator")
 	Notifier          = newResource("Notifier")
 	NetworkPolicy     = newResource("NetworkPolicy")
+	NetworkGraph      = newResource("NetworkGraph")
 	Policy            = newResource("Policy")
 	Role              = newResource("Role")
 	Secret            = newResource("Secret")
