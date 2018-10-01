@@ -8,7 +8,7 @@ import stackrox.generated.PolicyServiceOuterClass
 class Enforcement extends BaseSpecification {
     private final static String CONTAINER_PORT_22_POLICY = "Container Port 22"
 
-    @Category([PolicyEnforcement])
+    @Category([BAT, PolicyEnforcement])
     def "Test Kill Enforcement"() {
         // This test only tests enforcement by directly telling Central to kill
         // a specific pod/container.
@@ -28,6 +28,7 @@ class Enforcement extends BaseSpecification {
 
         when:
         "trigger kill enforcement on container"
+        assert d.pods.size() > 0
         Services.applyKillEnforcement(
                 d.pods.get(0).getPodId(),
                 d.namespace,

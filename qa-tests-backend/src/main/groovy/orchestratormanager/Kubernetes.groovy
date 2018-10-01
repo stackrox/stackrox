@@ -449,47 +449,47 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
 
     def wasContainerKilled(String containerName, String namespace = this.namespace) {
         ApiClient client = Config.defaultClient()
-        client.getHttpClient().setReadTimeout(600, TimeUnit.SECONDS)
+        client.getHttpClient().setReadTimeout(30, TimeUnit.SECONDS)
         Configuration.setDefaultApiClient(client)
+        Long startTime = System.currentTimeMillis()
 
-        Watch<V1Pod> watch =
-                Watch.createWatch(
-                        client,
-                        this.api.listNamespacedPodCall(
-                                namespace,
-                                null,
-                                null,
-                                null,
-                                true,
-                                null,
-                                Integer.MAX_VALUE,
-                                null,
-                                180,
-                                true,
-                                null,
-                                null
-                        ),
-                        new TypeToken<Watch.Response<V1Pod>>() { }.getType()
-                )
+        while (System.currentTimeMillis() - startTime < maxWaitTime) {
+            Watch<V1Pod> watch =
+                    Watch.createWatch(
+                            client,
+                            this.api.listNamespacedPodCall(
+                                    namespace,
+                                    null,
+                                    null,
+                                    null,
+                                    true,
+                                    null,
+                                    Integer.MAX_VALUE,
+                                    null,
+                                    180,
+                                    true,
+                                    null,
+                                    null
+                            ),
+                            new TypeToken<Watch.Response<V1Pod>>() { }.getType()
+                    )
 
-        try {
-            for (Watch.Response<V1Pod> item : watch) {
-                if (item.object.getMetadata().getName() == containerName &&
-                        item.object.getStatus().getContainerStatuses().get(0).getState().getTerminated() != null) {
-                    printf "%s : %s%n",
-                            item.object.getMetadata().getName(),
-                            item.object.getStatus().getContainerStatuses().get(0).getState().getTerminated()
-                    break
+            try {
+                for (Watch.Response<V1Pod> item : watch) {
+                    if (item.object.getMetadata().getName() == containerName && item.type == "DELETED") {
+                        println "${item.object.getMetadata().getName()}: ${item.type}"
+                        return true
+                    }
                 }
+            } catch (Exception e) {
+                println "wasContainerKilled: pod watcher timeout - retrying"
+            } finally {
+                watch.close()
             }
-        } catch (Exception e) {
-            println "did not find terminated pod before timeout"
-            return false
-        } finally {
-            watch.close()
         }
 
-        return true
+        println "wasContainerKilled: did not find killed container before ${maxWaitTime}ms timeout"
+        return false
     }
 
     def getDeploymentReplicaCount(Deployment deployment) {
