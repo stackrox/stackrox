@@ -13,9 +13,9 @@ class ProcessVisualizationTest extends BaseSpecification {
     static final private String APACHEDEPLOYMENT = "apacheserverdeployment"
     static final private String CENTOSDEPLOYMENT = "centosdeployment"
     static final private String FEDORADEPLOYMENT = "fedoradeployment"
-    //static final private String ELASTICDEPLOYMENT = "elasticdeployment"
-    //static final private String REDISDEPLOYMENT = "redisdeployment"
-    //static final private String MONGODEPLOYMENT = "mongodeployment"
+    static final private String ELASTICDEPLOYMENT = "elasticdeployment"
+    static final private String REDISDEPLOYMENT = "redisdeployment"
+    static final private String MONGODEPLOYMENT = "mongodeployment"
 
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
@@ -44,18 +44,18 @@ class ProcessVisualizationTest extends BaseSpecification {
                         .setImage ( "fedora")
                         .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
                         .addLabel ( "app", "test" ),
-            //new Deployment()
-            //            .setName (ELASTICDEPLOYMENT)
-            //            .setImage ( "elasticsearch:latest")
-            //            .addLabel ( "app", "test" ),
-            //new Deployment()
-            //            .setName (REDISDEPLOYMENT)
-            //            .setImage ( "redis")
-            //            .addLabel ( "app", "test" ),
-            //new Deployment()
-            //            .setName (MONGODEPLOYMENT)
-            //            .setImage ( "mongo")
-            //            .addLabel ( "app", "test" ),
+            new Deployment()
+                        .setName (ELASTICDEPLOYMENT)
+                        .setImage ( "elasticsearch:latest")
+                        .addLabel ( "app", "test" ),
+            new Deployment()
+                        .setName (REDISDEPLOYMENT)
+                        .setImage ( "redis")
+                        .addLabel ( "app", "test" ),
+            new Deployment()
+                        .setName (MONGODEPLOYMENT)
+                        .setImage ( "mongo")
+                        .addLabel ( "app", "test" ),
      ]
 
     static final private MAX_SLEEP_TIME = 60000
@@ -115,16 +115,16 @@ class ProcessVisualizationTest extends BaseSpecification {
 
         ["/bin/sh", "/bin/sleep"]  | FEDORADEPLOYMENT
 
-        //["/usr/bin/tr", "/bin/chown", "/bin/egrep", "/bin/grep",
-        // "/usr/local/bin/gosu", "/bin/hostname", "/docker-java-home/jre/bin/java",
-        // "/usr/share/elasticsearch/bin/elasticsearch", "/sbin/ldconfig", "/bin/chown",
-        // "/docker-entrypoint.sh", "/usr/bin/cut", "/usr/bin/id",
-        // "/docker-java-home/jre/bin/java", "/usr/bin/dirname"]  | ELASTICDEPLOYMENT
+        ["/usr/bin/tr", "/bin/chown", "/bin/egrep", "/bin/grep",
+         "/usr/local/bin/gosu", "/bin/hostname", "/docker-java-home/jre/bin/java",
+         "/usr/share/elasticsearch/bin/elasticsearch", "/sbin/ldconfig", "/bin/chown",
+         "/docker-entrypoint.sh", "/usr/bin/cut", "/usr/bin/id",
+         "/docker-java-home/jre/bin/java", "/usr/bin/dirname"]  | ELASTICDEPLOYMENT
 
-        //["/usr/bin/id", "/usr/local/bin/docker-entrypoint.sh",
-        // "/bin/chown", "/usr/local/bin/gosu", "/usr/local/bin/redis-server"]  | REDISDEPLOYMENT
+        ["/usr/bin/id", "/usr/local/bin/docker-entrypoint.sh",
+         "/bin/chown", "/usr/local/bin/gosu", "/usr/local/bin/redis-server"]  | REDISDEPLOYMENT
 
-        //["/bin/true", "/bin/chown", "/usr/local/bin/docker-entrypoint.sh",
-        // "/bin/chown", "/usr/local/bin/gosu", "/usr/bin/mongod", "/usr/bin/numactl"] |  MONGODEPLOYMENT
+        ["/bin/true", "/bin/chown", "/usr/local/bin/docker-entrypoint.sh",
+         "/bin/chown", "/usr/local/bin/gosu", "/usr/bin/mongod", "/usr/bin/numactl"] |  MONGODEPLOYMENT
    }
 }
