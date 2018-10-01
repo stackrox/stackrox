@@ -324,16 +324,18 @@ class Services {
         return getClusterServiceClient().getClusters().clustersList.get(0).id
     }
 
-    static submitNetworkGraphSimulation(String yaml) {
+    static submitNetworkGraphSimulation(String yaml, String query = null) {
         println "Generating simulation using YAML:"
         println yaml
         try {
-            return getNetworkPolicyClient().getNetworkGraph(
+            NetworkPolicyServiceOuterClass.GetNetworkGraphRequest.Builder request =
                     NetworkPolicyServiceOuterClass.GetNetworkGraphRequest.newBuilder()
                             .setClusterId(getClusterId())
                             .setSimulationYaml(yaml)
-                            .build()
-            )
+            if (query == null) {
+                request.setQuery(query)
+            }
+            return getNetworkPolicyClient().getNetworkGraph(request.build())
         } catch (Exception e) {
             println e.toString()
         }

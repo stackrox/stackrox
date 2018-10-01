@@ -8,18 +8,45 @@ import spock.lang.Unroll
 import stackrox.generated.NotifierServiceOuterClass
 
 class NetworkSimulator extends BaseSpecification {
+    // Deployment names
+    static final private String WEBDEPLOYMENT = "web"
+    static final private String WEB2DEPLOYMENT = "alt-web"
+    static final private String CLIENTDEPLOYMENT = "client"
+    static final private String CLIENT2DEPLOYMENT = "alt-client"
+
+    static final private List<Deployment> DEPLOYMENTS = [
+            new Deployment()
+                    .setName(WEBDEPLOYMENT)
+                    .setImage("nginx")
+                    .addPort(80)
+                    .addLabel("app", WEBDEPLOYMENT),
+            new Deployment()
+                    .setName(WEB2DEPLOYMENT)
+                    .setImage("nginx")
+                    .addLabel("app", WEB2DEPLOYMENT),
+            new Deployment()
+                    .setName(CLIENTDEPLOYMENT)
+                    .setImage("nginx")
+                    .addPort(443)
+                    .addLabel("app", CLIENTDEPLOYMENT),
+            new Deployment()
+                    .setName(CLIENT2DEPLOYMENT)
+                    .setImage("nginx")
+                    .addLabel("app", CLIENT2DEPLOYMENT),
+    ]
+
+    def setupSpec() {
+        orchestrator.batchCreateDeployments(DEPLOYMENTS)
+    }
+
+    def cleanupSpec() {
+        for (Deployment deployment : DEPLOYMENTS) {
+            orchestrator.deleteDeployment(deployment.getName())
+        }
+    }
     @Category([NetworkPolicySimulation, BAT])
     def "Verify NetworkPolicy Simulator replace existing network policy"() {
         when:
-        "deploy"
-        orchestrator.createDeployment(new Deployment()
-                .setName("web")
-                .setImage("nginx")
-                .addPort(80)
-                .addLabel("app", "web")
-        )
-
-        and:
         "apply network policy"
         NetworkPolicy policy = new NetworkPolicy("deny-all-namespace-ingress")
                 .setNamespace("qa")
@@ -33,7 +60,7 @@ class NetworkSimulator extends BaseSpecification {
         policy.addPolicyType(NetworkPolicyTypes.EGRESS)
         def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy))
         assert simulation != null
-        def webAppId = simulation.nodesList.find { it.deploymentName == "web" }.id
+        def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.id
 
         then:
         "verify simulation"
@@ -43,31 +70,14 @@ class NetworkSimulator extends BaseSpecification {
 
         cleanup:
         "cleanup"
-        orchestrator.deleteDeployment("web")
         if (policyId != null) {
             orchestrator.deleteNetworkPolicy(policy)
         }
-        sleep(5000) // Wait for deployment deletion since we create a deployment with the same name later.
     }
 
     @Category([NetworkPolicySimulation, BAT])
     def "Verify NetworkPolicy Simulator add to an existing network policy"() {
         when:
-        "deploy"
-        orchestrator.createDeployment(new Deployment()
-                .setName("web")
-                .setImage("nginx")
-                .addPort(80)
-                .addLabel("app", "web")
-        )
-        orchestrator.createDeployment(new Deployment()
-                .setName("client")
-                .setImage("nginx")
-                .addPort(443)
-                .addLabel("app", "client")
-        )
-
-        and:
         "apply network policy"
         NetworkPolicy policy1 = new NetworkPolicy("deny-all-traffic")
                 .setNamespace("qa")
@@ -81,12 +91,12 @@ class NetworkSimulator extends BaseSpecification {
         "generate simulation"
         NetworkPolicy policy2 = new NetworkPolicy("allow-ingress-application-web")
                 .setNamespace("qa")
-                .addPodSelector(["app": "web"])
+                .addPodSelector(["app": WEBDEPLOYMENT])
                 .addIngressNamespaceSelector()
         def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2))
         assert simulation != null
-        def webAppId = simulation.nodesList.find { it.deploymentName == "web" }.id
-        def clientAppId = simulation.nodesList.find { it.deploymentName == "client" }.id
+        def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.id
+        def clientAppId = simulation.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }.id
 
         then:
         "verify simulation"
@@ -100,32 +110,95 @@ class NetworkSimulator extends BaseSpecification {
 
         cleanup:
         "cleanup"
-        orchestrator.deleteDeployment("web")
-        orchestrator.deleteDeployment("client")
         if (policyId != null) {
             orchestrator.deleteNetworkPolicy(policy1)
         }
-        sleep(5000) // Wait for deployment deletion since we create a deployment with the same name later.
+    }
+
+    @Category([NetworkPolicySimulation, BAT])
+    def "Verify NetworkPolicy Simulator with query - multiple policy simulation"() {
+        when:
+        "apply network policy"
+        NetworkPolicy policy1 = new NetworkPolicy("deny-all-traffic")
+                .setNamespace("qa")
+                .addPodSelector()
+                .addPolicyType(NetworkPolicyTypes.INGRESS)
+                .addPolicyType(NetworkPolicyTypes.EGRESS)
+        def policyId = orchestrator.applyNetworkPolicy(policy1)
+
+        and:
+        "generate simulation"
+        NetworkPolicy policy2 = new NetworkPolicy("allow-ingress-application-web")
+                .setNamespace("qa")
+                .addPodSelector(["app": WEBDEPLOYMENT])
+                .addIngressPodSelector(["app": CLIENTDEPLOYMENT])
+        NetworkPolicy policy3 = new NetworkPolicy("allow-egress-application-client")
+                .setNamespace("qa")
+                .addPodSelector(["app": CLIENTDEPLOYMENT])
+                .addEgressPodSelector(["app": WEBDEPLOYMENT])
+        def simulation = Services.submitNetworkGraphSimulation(
+                orchestrator.generateYaml(policy2) + orchestrator.generateYaml(policy3),
+                "Deployment:web,client")
+        assert simulation != null
+        def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.id
+        def clientAppId = simulation.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }.id
+
+        then:
+        "verify simulation"
+        assert simulation.edgesList.findAll { it.target == webAppId }.size() == 1
+        assert simulation.edgesList.findAll { it.target == clientAppId }.size() == 0
+        assert simulation.edgesList.findAll { it.source == webAppId }.size() == 0
+        assert simulation.edgesList.findAll { it.source == clientAppId }.size() == 1
+        assert simulation.nodesList.size() == 2
+
+        cleanup:
+        "cleanup"
+        if (policyId != null) {
+            orchestrator.deleteNetworkPolicy(policy1)
+        }
+    }
+
+    @Category([NetworkPolicySimulation, BAT])
+    def "Verify NetworkPolicy Simulator with query - single policy simulation"() {
+        when:
+        "apply network policy"
+        NetworkPolicy policy1 = new NetworkPolicy("deny-all-traffic")
+                .setNamespace("qa")
+                .addPodSelector()
+                .addPolicyType(NetworkPolicyTypes.INGRESS)
+                .addPolicyType(NetworkPolicyTypes.EGRESS)
+        def policyId = orchestrator.applyNetworkPolicy(policy1)
+
+        and:
+        "generate simulation"
+        NetworkPolicy policy2 = new NetworkPolicy("allow-ingress-application-web")
+                .setNamespace("qa")
+                .addPodSelector(["app": WEBDEPLOYMENT])
+                .addIngressNamespaceSelector()
+        def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2),
+                "Deployment:web,central")
+        assert simulation != null
+        def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.id
+        def centralAppId = simulation.nodesList.find { it.deploymentName == "central" }.id
+
+        then:
+        "verify simulation"
+        assert simulation.edgesList.findAll { it.target == webAppId }.size() == 1
+        assert simulation.edgesList.findAll { it.target == centralAppId }.size() == 0
+        assert simulation.edgesList.findAll { it.source == webAppId }.size() == 0
+        assert simulation.edgesList.findAll { it.source == centralAppId }.size() == 1
+        assert simulation.nodesList.size() == 2
+
+        cleanup:
+        "cleanup"
+        if (policyId != null) {
+            orchestrator.deleteNetworkPolicy(policy1)
+        }
     }
 
     @Category([NetworkPolicySimulation])
     def "Verify NetworkPolicy Simulator allow traffic to an application from all namespaces"() {
         when:
-        "deploy"
-        orchestrator.createDeployment(new Deployment()
-                .setName("web")
-                .setImage("nginx")
-                .addPort(80)
-                .addLabel("app", "web")
-        )
-        orchestrator.createDeployment(new Deployment()
-                .setName("client")
-                .setImage("nginx")
-                .addPort(443)
-                .addLabel("app", "client")
-        )
-
-        and:
         "generate simulation"
         NetworkPolicy policy1 = new NetworkPolicy("deny-all-namespace")
                 .setNamespace("qa")
@@ -134,14 +207,14 @@ class NetworkSimulator extends BaseSpecification {
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
         NetworkPolicy policy2 = new NetworkPolicy("allow-ingress-to-application-web")
                 .setNamespace("qa")
-                .addPodSelector(["app": "web"])
+                .addPodSelector(["app": WEBDEPLOYMENT])
                 .addIngressNamespaceSelector()
         def simulation = Services.submitNetworkGraphSimulation(
                 orchestrator.generateYaml(policy1) + orchestrator.generateYaml(policy2)
         )
         assert simulation != null
-        def webAppId = simulation.nodesList.find { it.deploymentName == "web" }.id
-        def clientAppId = simulation.nodesList.find { it.deploymentName == "client" }.id
+        def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.id
+        def clientAppId = simulation.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }.id
 
         then:
         "verify simulation"
@@ -149,12 +222,6 @@ class NetworkSimulator extends BaseSpecification {
         assert simulation.edgesList.findAll { it.target == clientAppId }.size() == 0
         assert simulation.edgesList.findAll { it.source == webAppId }.size() == 0
         assert simulation.edgesList.findAll { it.source == clientAppId }.size() == 0
-
-        cleanup:
-        "cleanup"
-        orchestrator.deleteDeployment("web")
-        orchestrator.deleteDeployment("client")
-        sleep(5000) // Wait for deployment deletion since we create a deployment with the same name later.
      }
 
     @Category([NetworkPolicySimulation])
@@ -191,18 +258,9 @@ class NetworkSimulator extends BaseSpecification {
     @Category([NetworkPolicySimulation])
     def "Verify NetworkPolicy Simulator results"() {
         when:
-        "deploy"
-        orchestrator.createDeployment(new Deployment()
-                .setName("web")
-                .setImage("nginx")
-                .addPort(80)
-                .addLabel("app", "web")
-        )
-        for (Deployment extra : additionalDeployments) {
-            orchestrator.createDeployment(extra)
-        }
+        "Get Base Graph"
         def baseline = Services.getNetworkGraph()
-        def appId = baseline.nodesList.find { it.deploymentName == "web" }.id
+        def appId = baseline.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.id
 
         then:
         "verify simulation"
@@ -215,47 +273,35 @@ class NetworkSimulator extends BaseSpecification {
                 true :
                 simulation.edgesList.findAll { it.source == appId }.size() == sources
 
-        cleanup:
-        "cleanup"
-        orchestrator.deleteDeployment("web")
-        for (Deployment extra : additionalDeployments) {
-            orchestrator.deleteDeployment(extra.name)
-        }
-        sleep(5000) // Wait for deployment deletion since we create a deployment with the same name later.
-
         where:
         "Data"
 
-        policy                                                  | sources | targets |
-                additionalDeployments
+        policy                                                  | sources | targets
 
         // Test 0:
         // Deny all ingress to app
         // target edges for app should drop to 0
         new NetworkPolicy("deny-all-ingress-to-app")
                 .setNamespace("qa")
-                .addPodSelector(["app":"web"])
-                .addPolicyType(NetworkPolicyTypes.INGRESS)      | _       | 0       |
-                []
+                .addPodSelector(["app":WEBDEPLOYMENT])
+                .addPolicyType(NetworkPolicyTypes.INGRESS)      | _       | 0
 
         // Test 1:
         // Deny all egress from app
         // source edges for app should drop to 0
         new NetworkPolicy("deny-all-egress-from-app")
                 .setNamespace("qa")
-                .addPodSelector(["app":"web"])
-                .addPolicyType(NetworkPolicyTypes.EGRESS)       | 0       | _       |
-                []
+                .addPodSelector(["app":WEBDEPLOYMENT])
+                .addPolicyType(NetworkPolicyTypes.EGRESS)       | 0       | _
 
         // Test 2:
         // Deny all egress/ingress from/to app
         // all sources and target edges should drop to 0
         new NetworkPolicy("deny-all-ingress-egress-app")
                 .setNamespace("qa")
-                .addPodSelector(["app":"web"])
+                .addPodSelector(["app":WEBDEPLOYMENT])
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
-                .addPolicyType(NetworkPolicyTypes.INGRESS)      | 0       | 0       |
-                []
+                .addPolicyType(NetworkPolicyTypes.INGRESS)      | 0       | 0
 
         // Test 3:
         // Allow ingress only from application
@@ -263,13 +309,9 @@ class NetworkSimulator extends BaseSpecification {
         // target edges should drop to 1
         new NetworkPolicy("ingress-only-from-app")
                 .setNamespace("qa")
-                .addPodSelector(["app":"web"])
+                .addPodSelector(["app":WEBDEPLOYMENT])
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
-                .addIngressPodSelector(["app":"web"])           | _       | 1       |
-                [new Deployment()
-                         .setName("client")
-                         .setImage("nginx")
-                         .addLabel("app", "web"),]
+                .addIngressPodSelector(["app":WEB2DEPLOYMENT])           | _       | 1
 
         // Test 4:
         // Allow egress only to application
@@ -277,13 +319,9 @@ class NetworkSimulator extends BaseSpecification {
         // source edges should drop to 1
         new NetworkPolicy("egress-only-to-app")
                 .setNamespace("qa")
-                .addPodSelector(["app":"web"])
+                .addPodSelector(["app":WEBDEPLOYMENT])
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
-                .addEgressPodSelector(["app":"web"])            | 1       | _       |
-                [new Deployment()
-                         .setName("client")
-                         .setImage("nginx")
-                         .addLabel("app", "web"),]
+                .addEgressPodSelector(["app":WEB2DEPLOYMENT])            | 1       | _
 
         // Test 5:
         // Deny all ingress traffic
@@ -291,15 +329,7 @@ class NetworkSimulator extends BaseSpecification {
         // target edges should drop to 0
         new NetworkPolicy("deny-all-ingress")
                 .setNamespace("qa")
-                .addPolicyType(NetworkPolicyTypes.INGRESS)      | _       | 0       |
-                [new Deployment()
-                         .setName("client1")
-                         .setImage("nginx")
-                         .addLabel("app", "web"),
-                 new Deployment()
-                         .setName("client2")
-                         .setImage("nginx")
-                         .addLabel("app", "client"),]
+                .addPolicyType(NetworkPolicyTypes.INGRESS)      | _       | 0
 
         // Test 6:
         // Deny all egress traffic
@@ -307,15 +337,7 @@ class NetworkSimulator extends BaseSpecification {
         // source edges should drop to 0
         new NetworkPolicy("deny-all-namespace-egress")
                 .setNamespace("qa")
-                .addPolicyType(NetworkPolicyTypes.EGRESS)       | 0       | _       |
-                [new Deployment()
-                         .setName("client1")
-                         .setImage("nginx")
-                         .addLabel("app", "web"),
-                 new Deployment()
-                         .setName("client2")
-                         .setImage("nginx")
-                         .addLabel("app", "client"),]
+                .addPolicyType(NetworkPolicyTypes.EGRESS)       | 0       | _
 
         // Test 7:
         // Deny all ingress traffic from outside namespaces
@@ -325,15 +347,7 @@ class NetworkSimulator extends BaseSpecification {
                 .setNamespace("qa")
                 .addPodSelector()
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
-                .addIngressPodSelector()                     | _       | 2       |
-                [new Deployment()
-                         .setName("client1")
-                         .setImage("nginx")
-                         .addLabel("app", "web"),
-                 new Deployment()
-                         .setName("client2")
-                         .setImage("nginx")
-                         .addLabel("app", "client"),]
+                .addIngressPodSelector()                     | _       | DEPLOYMENTS.size() - 1
 
         // Test 8:
         // Deny all egress traffic from outside namespaces
@@ -343,15 +357,7 @@ class NetworkSimulator extends BaseSpecification {
                 .setNamespace("qa")
                 .addPodSelector()
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
-                .addEgressPodSelector()                      | 2       | _       |
-                [new Deployment()
-                         .setName("client1")
-                         .setImage("nginx")
-                         .addLabel("app", "web"),
-                 new Deployment()
-                         .setName("client2")
-                         .setImage("nginx")
-                         .addLabel("app", "client"),]
+                .addEgressPodSelector()                      | DEPLOYMENTS.size() - 1       | _
     }
 
     @Unroll
@@ -379,7 +385,7 @@ class NetworkSimulator extends BaseSpecification {
         "generate a network policy yaml"
         NetworkPolicy policy = new NetworkPolicy("test-yaml")
                 .setNamespace("qa")
-                .addPodSelector(["app":"web"])
+                .addPodSelector(["app":WEBDEPLOYMENT])
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
 
         then:
@@ -414,7 +420,7 @@ class NetworkSimulator extends BaseSpecification {
         "create Netowrk Policy yaml"
         NetworkPolicy policy = new NetworkPolicy("test-yaml")
                 .setNamespace("qa")
-                .addPodSelector(["app":"web"])
+                .addPodSelector(["app":WEBDEPLOYMENT])
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
 
         then:
@@ -445,7 +451,7 @@ class NetworkSimulator extends BaseSpecification {
         "create Netowrk Policy yaml"
         NetworkPolicy policy = new NetworkPolicy("test-yaml")
                 .setNamespace("qa")
-                .addPodSelector(["app":"web"])
+                .addPodSelector(["app":WEBDEPLOYMENT])
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
 
         then:
