@@ -143,9 +143,13 @@ func (w *deploymentWrap) populateFields(obj interface{}, action pkgV1.ResourceAc
 	w.populateContainers(podSpec)
 
 	if action == pkgV1.ResourceAction_UPDATE_RESOURCE {
-		err := w.populatePodData(spec, lister)
-		if err != nil {
-			logger.Errorf("Could not populate pod data: %v", err)
+		// If we have a standalone pod, we cannot use the labels to try and select that pod so we must directly populate the pod data
+		if pod, ok := obj.(*v1.Pod); ok {
+			w.populateDataFromPods(pod)
+		} else {
+			if err := w.populatePodData(spec, lister); err != nil {
+				logger.Errorf("Could not populate pod data: %v", err)
+			}
 		}
 	}
 }
@@ -211,9 +215,13 @@ func (w *deploymentWrap) populatePodData(spec reflect.Value, lister v1listers.Po
 	if err != nil {
 		return err
 	}
+	w.populateDataFromPods(pods...)
+	return nil
+}
+
+func (w *deploymentWrap) populateDataFromPods(pods ...*v1.Pod) {
 	w.populateImageShas(pods...)
 	w.populateContainerInstances(pods...)
-	return nil
 }
 
 func (w *deploymentWrap) populateContainerInstances(pods ...*v1.Pod) {
