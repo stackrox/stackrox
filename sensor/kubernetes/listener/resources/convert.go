@@ -2,18 +2,26 @@ package resources
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strconv"
 
 	ptypes "github.com/gogo/protobuf/types"
+	openshift_appsv1 "github.com/openshift/api/apps/v1"
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/sensor/kubernetes/volumes"
 	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	v1listers "k8s.io/client-go/listers/core/v1"
 )
 
 const (
@@ -22,8 +30,11 @@ const (
 	megabyte = 1024 * 1024
 )
 
-type wrap struct {
+type deploymentWrap struct {
 	*pkgV1.Deployment
+	original    interface{}
+	podLabels   map[string]string
+	portConfigs map[portRef]*pkgV1.PortConfig
 }
 
 // This checks if a reflect value is a Zero value, which means the field did not exist
@@ -31,69 +42,67 @@ func doesFieldExist(value reflect.Value) bool {
 	return !reflect.DeepEqual(value, reflect.Value{})
 }
 
-func newDeploymentEventFromResource(obj interface{}, action pkgV1.ResourceAction, metaFieldIndex []int, resourceType string, lister podLister) (event *pkgV1.Deployment) {
-	objValue := reflect.Indirect(reflect.ValueOf(obj))
-	meta, ok := objValue.FieldByIndex(metaFieldIndex).Interface().(metav1.ObjectMeta)
-	if !ok {
-		logger.Errorf("obj %+v does not have an ObjectMeta field of the correct type", obj)
+func newDeploymentEventFromResource(obj interface{}, action pkgV1.ResourceAction, deploymentType string, lister v1listers.PodLister) (wrap *deploymentWrap) {
+	objMeta, err := meta.Accessor(obj)
+	if err != nil {
+		logger.Errorf("could not access metadata of object of type %T: %v", obj, err)
 		return
 	}
+	kind := deploymentType
 
 	// Ignore resources that are owned by another resource.
 	// DeploymentConfigs can be owned by TemplateInstance which we don't care about
-	if len(meta.OwnerReferences) > 0 && resourceType != kubernetes.DeploymentConfig {
+	if len(objMeta.GetOwnerReferences()) > 0 && kind != kubernetes.DeploymentConfig {
 		return
 	}
 
 	// This only applies to OpenShift
-	if encDeploymentConfig, ok := meta.Annotations[openshiftEncodedDeploymentConfigAnnotation]; ok {
-		newMeta, newResourceType, err := extractDeploymentConfig(encDeploymentConfig)
+	if encDeploymentConfig, ok := objMeta.GetLabels()[openshiftEncodedDeploymentConfigAnnotation]; ok {
+		newMeta, newKind, err := extractDeploymentConfig(encDeploymentConfig)
 		if err != nil {
 			logger.Error(err)
 		} else {
-			meta = newMeta
-			resourceType = newResourceType
+			objMeta, kind = newMeta, newKind
 		}
 	}
 
-	wrap := newWrap(meta, action, resourceType)
-
-	wrap.populateFields(objValue, action, lister)
-
-	return wrap.Deployment
+	wrap = newWrap(objMeta, kind)
+	wrap.populateFields(obj, action, lister)
+	return
 }
 
-func extractDeploymentConfig(encodedDeploymentConfig string) (metav1.ObjectMeta, string, error) {
+func extractDeploymentConfig(encodedDeploymentConfig string) (metav1.Object, string, error) {
 	// Anonymous struct that only contains the fields we are interested in (note: json.Unmarshal silently ignores
 	// fields that are not in the destination object).
 	dc := struct {
-		Kind     string            `json:"kind"`
+		metav1.TypeMeta
 		MetaData metav1.ObjectMeta `json:"metadata"`
 	}{}
 	err := json.Unmarshal([]byte(encodedDeploymentConfig), &dc)
-	return dc.MetaData, dc.Kind, err
+	return &dc.MetaData, dc.Kind, err
 }
 
-func newWrap(meta metav1.ObjectMeta, action pkgV1.ResourceAction, resourceType string) wrap {
-	updatedTime, err := ptypes.TimestampProto(meta.CreationTimestamp.Time)
+func newWrap(meta metav1.Object, kind string) *deploymentWrap {
+	updatedTime, err := ptypes.TimestampProto(meta.GetCreationTimestamp().Time)
 	if err != nil {
 		logger.Error(err)
 	}
-	return wrap{
-		&pkgV1.Deployment{
-			Id:          string(meta.UID),
-			Name:        meta.Name,
-			Type:        resourceType,
-			Version:     meta.ResourceVersion,
-			Namespace:   meta.Namespace,
-			Labels:      meta.Labels,
-			Annotations: meta.Annotations,
+	return &deploymentWrap{
+		Deployment: &pkgV1.Deployment{
+			Id:          string(meta.GetUID()),
+			Name:        meta.GetName(),
+			Type:        kind,
+			Version:     meta.GetResourceVersion(),
+			Namespace:   meta.GetNamespace(),
+			Labels:      meta.GetLabels(),
+			Annotations: meta.GetAnnotations(),
 			UpdatedAt:   updatedTime,
 		},
 	}
 }
 
-func (w *wrap) populateFields(objValue reflect.Value, action pkgV1.ResourceAction, lister podLister) {
+func (w *deploymentWrap) populateFields(obj interface{}, action pkgV1.ResourceAction, lister v1listers.PodLister) {
+	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	spec := objValue.FieldByName("Spec")
 	if !doesFieldExist(spec) {
 		logger.Errorf("Obj %+v does not have a Spec field", objValue)
@@ -102,50 +111,53 @@ func (w *wrap) populateFields(objValue reflect.Value, action pkgV1.ResourceActio
 
 	w.populateReplicas(spec)
 
-	var podTemplate v1.PodTemplateSpec
-	var ok bool
+	var podSpec v1.PodSpec
+	var podLabels map[string]string
 
-	switch w.GetType() {
-	case kubernetes.DeploymentConfig:
-		var podTemplatePtr *v1.PodTemplateSpec
-		// DeploymentConfig has a pointer to the PodTemplateSpec
-		podTemplatePtr, ok = spec.FieldByName("Template").Interface().(*v1.PodTemplateSpec)
-		if ok {
-			podTemplate = *podTemplatePtr
-		} else {
+	switch o := obj.(type) {
+	case *openshift_appsv1.DeploymentConfig:
+		if o.Spec.Template == nil {
 			logger.Errorf("Spec obj %+v does not have a Template field or is not a pointer pod spec", spec)
 			return
 		}
+		podSpec = o.Spec.Template.Spec
+		podLabels = o.Spec.Template.Labels
 	// Pods don't have the abstractions that higher level objects have so maintain it's lifecycle independently
-	case kubernetes.Pod:
+	case *v1.Pod:
 		// Standalone Pods do not have a PodTemplate, like the other deployment
 		// types do. So, we need to directly access the Pod's Spec field,
 		// instead of looking for it inside a PodTemplate.
-		pod, ok := objValue.Interface().(v1.Pod)
-		if !ok {
-			logger.Errorf("objValue %+v was not of type v1.Pod", objValue)
-			return
-		}
-		w.populateContainers(pod.Spec)
-		w.populateImageShas(pod)
-		w.populateContainerInstances(pod)
-		return
+		podSpec = o.Spec
+		podLabels = o.Labels
 	default:
-		podTemplate, ok = spec.FieldByName("Template").Interface().(v1.PodTemplateSpec)
+		podTemplate, ok := spec.FieldByName("Template").Interface().(v1.PodTemplateSpec)
 		if !ok {
 			logger.Errorf("Spec obj %+v does not have a Template field", spec)
 			return
 		}
+		podSpec = podTemplate.Spec
+		podLabels = podTemplate.Labels
 	}
 
-	w.populateContainers(podTemplate.Spec)
+	w.podLabels = podLabels
+	w.populateContainers(podSpec)
 
 	if action == pkgV1.ResourceAction_UPDATE_RESOURCE {
-		w.populatePodData(spec, lister)
+		err := w.populatePodData(spec, lister)
+		if err != nil {
+			logger.Errorf("Could not populate pod data: %v", err)
+		}
 	}
 }
 
-func (w *wrap) populateContainers(podSpec v1.PodSpec) {
+func (w *deploymentWrap) GetDeployment() *pkgV1.Deployment {
+	if w == nil {
+		return nil
+	}
+	return w.Deployment
+}
+
+func (w *deploymentWrap) populateContainers(podSpec v1.PodSpec) {
 	w.Deployment.Containers = make([]*pkgV1.Container, len(podSpec.Containers))
 	for i := range w.Deployment.Containers {
 		w.Deployment.Containers[i] = new(pkgV1.Container)
@@ -161,11 +173,11 @@ func (w *wrap) populateContainers(podSpec v1.PodSpec) {
 	w.populateImagePullSecrets(podSpec)
 }
 
-func (w *wrap) populateServiceAccount(podSpec v1.PodSpec) {
+func (w *deploymentWrap) populateServiceAccount(podSpec v1.PodSpec) {
 	w.ServiceAccount = podSpec.ServiceAccountName
 }
 
-func (w *wrap) populateImagePullSecrets(podSpec v1.PodSpec) {
+func (w *deploymentWrap) populateImagePullSecrets(podSpec v1.PodSpec) {
 	secrets := make([]string, 0, len(podSpec.ImagePullSecrets))
 	for _, s := range podSpec.ImagePullSecrets {
 		secrets = append(secrets, s.Name)
@@ -173,7 +185,7 @@ func (w *wrap) populateImagePullSecrets(podSpec v1.PodSpec) {
 	w.ImagePullSecrets = secrets
 }
 
-func (w *wrap) populateReplicas(spec reflect.Value) {
+func (w *deploymentWrap) populateReplicas(spec reflect.Value) {
 	replicaField := spec.FieldByName("Replicas")
 	if !doesFieldExist(replicaField) {
 		return
@@ -190,14 +202,21 @@ func (w *wrap) populateReplicas(spec reflect.Value) {
 	}
 }
 
-func (w *wrap) populatePodData(spec reflect.Value, lister podLister) {
-	labelSelector := w.getLabelSelector(spec)
-	pods := lister.List(labelSelector)
+func (w *deploymentWrap) populatePodData(spec reflect.Value, lister v1listers.PodLister) error {
+	labelSelector, err := w.getLabelSelector(spec)
+	if err != nil {
+		return err
+	}
+	pods, err := lister.Pods(w.Namespace).List(labelSelector)
+	if err != nil {
+		return err
+	}
 	w.populateImageShas(pods...)
 	w.populateContainerInstances(pods...)
+	return nil
 }
 
-func (w *wrap) populateContainerInstances(pods ...v1.Pod) {
+func (w *deploymentWrap) populateContainerInstances(pods ...*v1.Pod) {
 	for _, p := range pods {
 		for i, instance := range containerInstances(p) {
 			w.Containers[i].Instances = append(w.Containers[i].Instances, instance)
@@ -205,7 +224,7 @@ func (w *wrap) populateContainerInstances(pods ...v1.Pod) {
 	}
 }
 
-func (w *wrap) populateImageShas(pods ...v1.Pod) {
+func (w *deploymentWrap) populateImageShas(pods ...*v1.Pod) {
 	// Iterate over all the pods and set the SHAs based on the index of the container status. All containers have a container status
 	// The downside to this is that if different pods have different versions then we will miss that fact that pods are running
 	// different versions and clobber it. I've added a log to illustrate the clobbering so we can see how often it happens
@@ -228,27 +247,29 @@ func (w *wrap) populateImageShas(pods ...v1.Pod) {
 	}
 }
 
-func (w *wrap) getLabelSelector(spec reflect.Value) map[string]string {
+func (w *deploymentWrap) getLabelSelector(spec reflect.Value) (labels.Selector, error) {
 	s := spec.FieldByName("Selector")
 	if !doesFieldExist(s) {
-		return make(map[string]string)
+		return labels.Nothing(), nil
 	}
 
 	// Selector is of map type for replication controller
-	if labels, ok := s.Interface().(map[string]string); ok {
-		return labels
+	if labelMap, ok := s.Interface().(map[string]string); ok {
+		if len(labelMap) == 0 {
+			return labels.Nothing(), nil
+		}
+		return labels.SelectorFromSet(labels.Set(labelMap)), nil
 	}
 
 	// All other resources uses labelSelector.
 	if ls, ok := s.Interface().(*metav1.LabelSelector); ok {
-		return ls.MatchLabels
+		return metav1.LabelSelectorAsSelector(ls)
 	}
 
-	logger.Warnf("unable to get label selector for %+v", spec.Type())
-	return make(map[string]string)
+	return nil, fmt.Errorf("unable to get label selector for %+v", spec.Type())
 }
 
-func (w *wrap) populateContainerConfigs(podSpec v1.PodSpec) {
+func (w *deploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
 
 		// Skip if there's nothing to add.
@@ -283,13 +304,13 @@ func (w *wrap) populateContainerConfigs(podSpec v1.PodSpec) {
 	}
 }
 
-func (w *wrap) populateImages(podSpec v1.PodSpec) {
+func (w *deploymentWrap) populateImages(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
 		w.Deployment.Containers[i].Image = imageUtils.GenerateImageFromString(c.Image)
 	}
 }
 
-func (w *wrap) populateSecurityContext(podSpec v1.PodSpec) {
+func (w *deploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
 		if s := c.SecurityContext; s != nil {
 			sc := &pkgV1.SecurityContext{}
@@ -322,7 +343,7 @@ func (w *wrap) populateSecurityContext(podSpec v1.PodSpec) {
 	}
 }
 
-func (w *wrap) getVolumeSourceMap(podSpec v1.PodSpec) map[string]volumes.VolumeSource {
+func (w *deploymentWrap) getVolumeSourceMap(podSpec v1.PodSpec) map[string]volumes.VolumeSource {
 	volumeSourceMap := make(map[string]volumes.VolumeSource)
 	for _, v := range podSpec.Volumes {
 		val := reflect.ValueOf(v.VolumeSource)
@@ -354,7 +375,7 @@ func convertQuantityToMb(q *resource.Quantity) float32 {
 	return float32(float64(q.Value()) / megabyte)
 }
 
-func (w *wrap) populateResources(podSpec v1.PodSpec) {
+func (w *deploymentWrap) populateResources(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
 		w.Deployment.Containers[i].Resources = &pkgV1.Resources{
 			CpuCoresRequest: convertQuantityToCores(c.Resources.Requests.Cpu()),
@@ -365,7 +386,7 @@ func (w *wrap) populateResources(podSpec v1.PodSpec) {
 	}
 }
 
-func (w *wrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
+func (w *deploymentWrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
 	volumeSourceMap := w.getVolumeSourceMap(podSpec)
 	for i, c := range podSpec.Containers {
 		for _, v := range c.VolumeMounts {
@@ -391,7 +412,8 @@ func (w *wrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
 	}
 }
 
-func (w *wrap) populatePorts(podSpec v1.PodSpec) {
+func (w *deploymentWrap) populatePorts(podSpec v1.PodSpec) {
+	w.portConfigs = make(map[portRef]*pkgV1.PortConfig)
 	for i, c := range podSpec.Containers {
 		for _, p := range c.Ports {
 			exposedPort := p.ContainerPort
@@ -400,13 +422,70 @@ func (w *wrap) populatePorts(podSpec v1.PodSpec) {
 				exposedPort = p.HostPort
 			}
 
-			w.Deployment.Containers[i].Ports = append(w.Deployment.Containers[i].Ports, &pkgV1.PortConfig{
+			portConfig := &pkgV1.PortConfig{
 				Name:          p.Name,
 				ContainerPort: p.ContainerPort,
 				ExposedPort:   exposedPort,
 				Protocol:      string(p.Protocol),
 				Exposure:      pkgV1.PortConfig_INTERNAL,
-			})
+			}
+			w.Deployment.Containers[i].Ports = append(w.Deployment.Containers[i].Ports, portConfig)
+			w.portConfigs[portRef{Port: intstr.FromInt(int(p.ContainerPort)), Protocol: p.Protocol}] = portConfig
+			if p.Name != "" {
+				w.portConfigs[portRef{Port: intstr.FromString(p.Name), Protocol: p.Protocol}] = portConfig
+			}
 		}
 	}
+}
+
+func (w *deploymentWrap) toEvent(action pkgV1.ResourceAction) *listeners.EventWrap {
+	return &listeners.EventWrap{
+		SensorEvent: &pkgV1.SensorEvent{
+			Id:     w.GetId(),
+			Action: action,
+			Resource: &pkgV1.SensorEvent_Deployment{
+				Deployment: w.Deployment,
+			},
+		},
+		OriginalSpec: w.original,
+	}
+}
+
+func (w *deploymentWrap) resetPortExposure() (updated bool) {
+	for _, portCfg := range w.portConfigs {
+		if portCfg.Exposure != pkgV1.PortConfig_INTERNAL {
+			portCfg.Exposure = pkgV1.PortConfig_INTERNAL
+			updated = true
+		}
+	}
+	return
+}
+
+func (w *deploymentWrap) updatePortExposureFromStore(store *serviceStore) (updated bool) {
+	updated = w.resetPortExposure()
+
+	svcs := store.getMatchingServices(w.Namespace, w.podLabels)
+	for _, svc := range svcs {
+		updated = w.updatePortExposure(svc) || updated
+	}
+	return
+}
+
+func (w *deploymentWrap) updatePortExposure(svc *serviceWrap) (updated bool) {
+	if !svc.selector.Matches(labels.Set(w.podLabels)) {
+		return
+	}
+
+	exposure := svc.exposure()
+	for _, svcPort := range svc.Spec.Ports {
+		portCfg := w.portConfigs[portRef{Port: svcPort.TargetPort, Protocol: svcPort.Protocol}]
+		if portCfg == nil {
+			continue
+		}
+		if containers.IncreasedExposureLevel(portCfg.Exposure, exposure) {
+			portCfg.Exposure = exposure
+			updated = true
+		}
+	}
+	return
 }

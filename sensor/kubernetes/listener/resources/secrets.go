@@ -1,38 +1,16 @@
-package secret
+package resources
 
 import (
 	"encoding/base64"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/cloudflare/cfssl/certinfo"
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/listeners"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/watchlister"
 	"k8s.io/api/core/v1"
-	"k8s.io/client-go/rest"
 )
-
-var logger = logging.LoggerForModule()
-
-// WatchLister implements the WatchLister interface
-type WatchLister struct {
-	watchlister.WatchLister
-	eventC chan<- *listeners.EventWrap
-}
-
-// NewWatchLister implements the watch for secrets
-func NewWatchLister(client rest.Interface, eventC chan<- *listeners.EventWrap, resyncPeriod time.Duration) *WatchLister {
-	npwl := &WatchLister{
-		WatchLister: watchlister.NewWatchLister(client, resyncPeriod),
-		eventC:      eventC,
-	}
-	npwl.SetupWatch("secrets", &v1.Secret{}, npwl.resourceChanged)
-	return npwl
-}
 
 var dataTypeMap = map[string]pkgV1.SecretType{
 	"-----BEGIN CERTIFICATE-----":              pkgV1.SecretType_PUBLIC_CERTIFICATE,
@@ -93,7 +71,7 @@ func parseCertData(data string) *pkgV1.Cert {
 	}
 }
 
-func (npwl *WatchLister) populateTypeData(secret *pkgV1.Secret, dataFiles map[string][]byte) {
+func populateTypeData(secret *pkgV1.Secret, dataFiles map[string][]byte) {
 	for file, rawData := range dataFiles {
 		// Try to base64 decode and if it fails then try the raw value
 		var secretType pkgV1.SecretType
@@ -121,18 +99,21 @@ func (npwl *WatchLister) populateTypeData(secret *pkgV1.Secret, dataFiles map[st
 	}
 }
 
-func (npwl *WatchLister) resourceChanged(secretObj interface{}, action pkgV1.ResourceAction) {
-	secret, ok := secretObj.(*v1.Secret)
-	if !ok {
-		logger.Errorf("Object %+v is not a valid secret", secretObj)
-		return
-	}
+// secretHandler handles secret resource events.
+type secretHandler struct{}
 
+// newSecretHandler creates and returns a new secret handler.
+func newSecretHandler() *secretHandler {
+	return &secretHandler{}
+}
+
+// Process processes a secret resource event, and returns the sensor events to emit in response.
+func (*secretHandler) Process(secret *v1.Secret, action pkgV1.ResourceAction) []*listeners.EventWrap {
 	// Filter out service account tokens because we have a service account field.
 	// Also filter out DockerConfigJson/DockerCfgs because we don't really care about them.
 	switch secret.Type {
 	case v1.SecretTypeDockerConfigJson, v1.SecretTypeDockercfg, v1.SecretTypeServiceAccountToken:
-		return
+		return nil
 	}
 
 	protoSecret := &pkgV1.Secret{
@@ -144,9 +125,9 @@ func (npwl *WatchLister) resourceChanged(secretObj interface{}, action pkgV1.Res
 		CreatedAt:   protoconv.ConvertTimeToTimestamp(secret.GetCreationTimestamp().Time),
 	}
 
-	npwl.populateTypeData(protoSecret, secret.Data)
+	populateTypeData(protoSecret, secret.Data)
 
-	npwl.eventC <- &listeners.EventWrap{
+	return []*listeners.EventWrap{{
 		SensorEvent: &pkgV1.SensorEvent{
 			Id:     string(secret.GetUID()),
 			Action: action,
@@ -154,5 +135,5 @@ func (npwl *WatchLister) resourceChanged(secretObj interface{}, action pkgV1.Res
 				Secret: protoSecret,
 			},
 		},
-	}
+	}}
 }

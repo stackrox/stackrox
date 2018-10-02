@@ -51,7 +51,7 @@ func ParsePodID(str string) (PodID, error) {
 }
 
 // getPodID returns a pod ID for the given pod object.
-func getPodID(pod v1.Pod) PodID {
+func getPodID(pod *v1.Pod) PodID {
 	return PodID{
 		Name:      pod.Name,
 		Namespace: pod.Namespace,

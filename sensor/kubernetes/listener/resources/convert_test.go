@@ -14,7 +14,9 @@ import (
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	v1listers "k8s.io/client-go/listers/core/v1"
 )
 
 func TestConvert(t *testing.T) {
@@ -23,15 +25,18 @@ func TestConvert(t *testing.T) {
 	cases := []struct {
 		name               string
 		inputObj           interface{}
+		deploymentType     string
 		action             pkgV1.ResourceAction
-		metaFieldIndex     []int
-		resourceType       string
 		podLister          *mockPodLister
 		expectedDeployment *pkgV1.Deployment
 	}{
 		{
 			name: "Not top-level replica set",
 			inputObj: &v1beta1.ReplicaSet{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1beta1",
+					Kind:       "ReplicaSet",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					OwnerReferences: []metav1.OwnerReference{
 						{
@@ -41,14 +46,17 @@ func TestConvert(t *testing.T) {
 					},
 				},
 			},
+			deploymentType:     kubernetes.ReplicaSet,
 			action:             pkgV1.ResourceAction_CREATE_RESOURCE,
-			metaFieldIndex:     []int{1},
-			resourceType:       kubernetes.ReplicaSet,
 			expectedDeployment: nil,
 		},
 		{
 			name: "Deployment",
 			inputObj: &v1beta1.Deployment{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1beta1",
+					Kind:       "Deployment",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					UID:       types.UID("FooID"),
 					Name:      "Foo",
@@ -184,11 +192,10 @@ func TestConvert(t *testing.T) {
 					},
 				},
 			},
+			deploymentType: kubernetes.Deployment,
 			action:         pkgV1.ResourceAction_UPDATE_RESOURCE,
-			metaFieldIndex: []int{1},
-			resourceType:   kubernetes.Deployment,
 			podLister: &mockPodLister{
-				pods: []v1.Pod{
+				pods: []*v1.Pod{
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							UID:       types.UID("ebf487f0-a7c3-11e8-8600-42010a8a0066"),
@@ -354,7 +361,7 @@ func TestConvert(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual := newDeploymentEventFromResource(c.inputObj, c.action, c.metaFieldIndex, c.resourceType, c.podLister)
+			actual := newDeploymentEventFromResource(c.inputObj, c.action, c.deploymentType, c.podLister).GetDeployment()
 			assert.Equal(t, c.expectedDeployment, actual)
 		})
 	}
@@ -460,14 +467,20 @@ func TestGetVolumeSourceMap(t *testing.T) {
 		"ebs":           volumes.VolumeRegistry["AWSElasticBlockStore"](ebsVol.AWSElasticBlockStore),
 		"unimplemented": &volumes.Unimplemented{},
 	}
-	w := &wrap{}
+	w := &deploymentWrap{}
 	assert.Equal(t, expectedMap, w.getVolumeSourceMap(spec))
 }
 
 type mockPodLister struct {
-	pods []v1.Pod
+	v1listers.PodLister
+	v1listers.PodNamespaceLister
+	pods []*v1.Pod
 }
 
-func (l *mockPodLister) List(map[string]string) []v1.Pod {
-	return l.pods
+func (l *mockPodLister) List(selector labels.Selector) ([]*v1.Pod, error) {
+	return l.pods, nil
+}
+
+func (l *mockPodLister) Pods(namespace string) v1listers.PodNamespaceLister {
+	return l
 }

@@ -1,19 +1,22 @@
 package listener
 
 import (
+	"reflect"
 	"time"
 
 	openshift "github.com/openshift/client-go/apps/clientset/versioned"
+	"github.com/openshift/client-go/apps/informers/externalversions"
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/namespace"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/networkpolicy"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/secret"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/informers"
+	kubernetesClient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -24,8 +27,17 @@ var (
 	logger = logging.LoggerForModule()
 )
 
+type informerFactoryInterface interface {
+	Start(stopCh <-chan struct{})
+	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
+}
+
+type informerGetter interface {
+	Informer() cache.SharedIndexInformer
+}
+
 type clientSet struct {
-	k8s       *kubernetes.Clientset
+	k8s       *kubernetesClient.Clientset
 	openshift *openshift.Clientset
 }
 
@@ -33,88 +45,133 @@ type kubernetesListener struct {
 	clients *clientSet
 	eventsC chan *listeners.EventWrap
 
-	podWL       *resources.PodWatchLister
-	resourcesWL []resources.ResourceWatchLister
-	serviceWL   *resources.ServiceWatchLister
+	resourceEventsC chan resourceEvent
 
-	networkPolicyWL *networkpolicy.WatchLister
-	namespaceWL     *namespace.WatchLister
-	secretWL        *secret.WatchLister
+	resourceEventDispatcher resources.Dispatcher
+
+	stopSig                concurrency.Signal
+	initialObjectsConsumed concurrency.Flag
 }
 
 // New returns a new kubernetes listener.
 func New() listeners.Listener {
 	k := &kubernetesListener{
-		eventsC: make(chan *listeners.EventWrap, 10),
+		clients:         createClient(),
+		eventsC:         make(chan *listeners.EventWrap, 10),
+		resourceEventsC: make(chan resourceEvent),
+		stopSig:         concurrency.NewSignal(),
 	}
-	k.initialize()
 	return k
 }
 
-func (k *kubernetesListener) initialize() {
-	k.setupClient()
-	k.createResourceWatchers()
-	k.createNetworkPolicyWatcher()
-	k.createNamespaceWatcher()
-	k.createSecretWatcher()
+type resourceEvent struct {
+	obj            interface{}
+	action         pkgV1.ResourceAction
+	deploymentType string
+}
+
+func (k *kubernetesListener) sendResourceEvent(obj interface{}, action pkgV1.ResourceAction, deploymentType string) {
+	rev := resourceEvent{
+		obj:            obj,
+		action:         action,
+		deploymentType: deploymentType,
+	}
+	// If the action is create, then it came from watchlister AddFunc.
+	// If we are listing the initial objects, then we treat them as updates so enforcement isn't done
+	if deploymentType != "" && action == pkgV1.ResourceAction_CREATE_RESOURCE && !k.initialObjectsConsumed.Get() {
+		rev.action = pkgV1.ResourceAction_UPDATE_RESOURCE
+	}
+
+	select {
+	case k.resourceEventsC <- rev:
+	case <-k.stopSig.Done():
+	}
+}
+
+type resourceEventHandler struct {
+	listener       *kubernetesListener
+	deploymentType string
+}
+
+func (h resourceEventHandler) OnAdd(obj interface{}) {
+	h.listener.sendResourceEvent(obj, pkgV1.ResourceAction_CREATE_RESOURCE, h.deploymentType)
+}
+
+func (h resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
+	h.listener.sendResourceEvent(newObj, pkgV1.ResourceAction_UPDATE_RESOURCE, h.deploymentType)
+}
+
+func (h resourceEventHandler) OnDelete(obj interface{}) {
+	h.listener.sendResourceEvent(obj, pkgV1.ResourceAction_REMOVE_RESOURCE, h.deploymentType)
 }
 
 func (k *kubernetesListener) Start() {
-	go k.podWL.Watch()
-	k.podWL.BlockUntilSynced()
-
-	for _, wl := range k.resourcesWL {
-		go wl.Watch(k.serviceWL)
+	k8sFactory := informers.NewSharedInformerFactory(k.clients.k8s, resyncPeriod)
+	podInformer := k8sFactory.Core().V1().Pods()
+	deploymentResources := map[string]informerGetter{
+		kubernetes.Pod:                   podInformer,
+		kubernetes.ReplicationController: k8sFactory.Core().V1().ReplicationControllers(),
+		kubernetes.DaemonSet:             k8sFactory.Extensions().V1beta1().DaemonSets(),
+		kubernetes.Deployment:            k8sFactory.Extensions().V1beta1().Deployments(),
+		kubernetes.ReplicaSet:            k8sFactory.Extensions().V1beta1().ReplicaSets(),
+		kubernetes.StatefulSet:           k8sFactory.Apps().V1beta1().StatefulSets(),
+	}
+	watchResources := []informerGetter{
+		k8sFactory.Core().V1().Secrets(),
+		k8sFactory.Core().V1().Services(),
+		k8sFactory.Core().V1().Namespaces(),
+		k8sFactory.Networking().V1().NetworkPolicies(),
 	}
 
-	go k.serviceWL.StartWatch()
-	go k.networkPolicyWL.StartWatch()
-	go k.secretWL.StartWatch()
-}
-
-func (k *kubernetesListener) createResourceWatchers() {
-	k.podWL = resources.NewPodWatchLister(k.clients.k8s.CoreV1().RESTClient(), resyncPeriod)
-
-	k.resourcesWL = []resources.ResourceWatchLister{
-		resources.NewReplicaSetWatchLister(k.clients.k8s.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL, resyncPeriod),
-		resources.NewDaemonSetWatchLister(k.clients.k8s.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL, resyncPeriod),
-		resources.NewReplicationControllerWatchLister(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, k.podWL, resyncPeriod),
-		resources.NewDeploymentWatcher(k.clients.k8s.ExtensionsV1beta1().RESTClient(), k.eventsC, k.podWL, resyncPeriod),
-		resources.NewStatefulSetWatchLister(k.clients.k8s.AppsV1beta1().RESTClient(), k.eventsC, k.podWL, resyncPeriod),
-		resources.NewPodWatcher(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, k.podWL, resyncPeriod),
-	}
+	factories := []informerFactoryInterface{k8sFactory}
 
 	if env.OpenshiftAPI.Setting() == "true" {
-		k.resourcesWL = append(k.resourcesWL, resources.NewDeploymentConfigWatcher(k.clients.openshift.AppsV1().RESTClient(), k.eventsC, k.podWL, resyncPeriod))
+		factory := externalversions.NewSharedInformerFactory(k.clients.openshift, resyncPeriod)
+		deploymentResources[kubernetes.DeploymentConfig] = factory.Apps().V1().DeploymentConfigs()
+		factories = append(factories, factory)
 	}
 
-	var deploymentGetters []func() (objs []interface{}, deploymentEvents []*pkgV1.Deployment)
-	for _, wl := range k.resourcesWL {
-		deploymentGetters = append(deploymentGetters, wl.ListObjects)
+	k.registerDeploymentEventHandlers(deploymentResources)
+	k.registerEventHandlers(watchResources)
+
+	k.resourceEventDispatcher = resources.NewDispatcher(podInformer.Lister())
+
+	go k.processResourceEvents()
+	for _, informer := range factories {
+		informer.Start(k.stopSig.Done())
 	}
-
-	k.serviceWL = resources.NewServiceWatchLister(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, resyncPeriod, deploymentGetters...)
+	for _, informer := range factories {
+		informer.WaitForCacheSync(k.stopSig.Done())
+	}
+	k.initialObjectsConsumed.Set(true)
 }
 
-func (k *kubernetesListener) createNetworkPolicyWatcher() {
-	k.networkPolicyWL = networkpolicy.NewWatchLister(k.clients.k8s.NetworkingV1().RESTClient(), k.eventsC, resyncPeriod)
+func (k *kubernetesListener) registerEventHandlers(informerGetters []informerGetter) {
+	handler := resourceEventHandler{
+		listener: k,
+	}
+	for _, ig := range informerGetters {
+		ig.Informer().AddEventHandler(handler)
+	}
 }
 
-func (k *kubernetesListener) createNamespaceWatcher() {
-	k.namespaceWL = namespace.NewWatchLister(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, resyncPeriod)
+func (k *kubernetesListener) registerDeploymentEventHandlers(informerGetters map[string]informerGetter) {
+	for deploymentType, ig := range informerGetters {
+		handler := resourceEventHandler{
+			listener:       k,
+			deploymentType: deploymentType,
+		}
+		ig.Informer().AddEventHandler(handler)
+	}
 }
 
-func (k *kubernetesListener) createSecretWatcher() {
-	k.secretWL = secret.NewWatchLister(k.clients.k8s.CoreV1().RESTClient(), k.eventsC, resyncPeriod)
-}
-
-func (k *kubernetesListener) setupClient() {
+func createClient() *clientSet {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		logger.Fatalf("Unable to get cluster config: %s", err)
 	}
 
-	k8s, err := kubernetes.NewForConfig(config)
+	k8s, err := kubernetesClient.NewForConfig(config)
 	if err != nil {
 		logger.Fatalf("Unable to get k8s client: %s", err)
 	}
@@ -124,22 +181,41 @@ func (k *kubernetesListener) setupClient() {
 		logger.Warnf("Could not generate openshift client: %s", err)
 	}
 
-	k.clients = &clientSet{
+	return &clientSet{
 		k8s:       k8s,
 		openshift: oc,
 	}
 }
 
 func (k *kubernetesListener) Stop() {
-	k.podWL.Stop()
-
-	for _, wl := range k.resourcesWL {
-		wl.Stop()
-	}
-
-	k.serviceWL.Stop()
+	k.stopSig.Signal()
 }
 
 func (k *kubernetesListener) Events() <-chan *listeners.EventWrap {
 	return k.eventsC
+}
+
+func (k *kubernetesListener) processResourceEvents() {
+	for {
+		select {
+		case resourceEv, ok := <-k.resourceEventsC:
+			if !ok {
+				return
+			}
+			evWraps := k.resourceEventDispatcher.ProcessEvent(resourceEv.obj, resourceEv.action, resourceEv.deploymentType)
+			k.sendEvents(evWraps...)
+		case <-k.stopSig.Done():
+			return
+		}
+	}
+}
+
+func (k *kubernetesListener) sendEvents(evWraps ...*listeners.EventWrap) {
+	for _, evWrap := range evWraps {
+		select {
+		case k.eventsC <- evWrap:
+		case <-k.stopSig.Done():
+			return
+		}
+	}
 }

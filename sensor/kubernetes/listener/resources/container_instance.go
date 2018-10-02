@@ -11,7 +11,7 @@ const (
 	dockerContainerIDPrefix = `docker://`
 )
 
-func containerInstances(pod corev1.Pod) []*v1.ContainerInstance {
+func containerInstances(pod *corev1.Pod) []*v1.ContainerInstance {
 	podID := getPodID(pod).String()
 	result := make([]*v1.ContainerInstance, len(pod.Status.ContainerStatuses))
 	for i, c := range pod.Status.ContainerStatuses {
