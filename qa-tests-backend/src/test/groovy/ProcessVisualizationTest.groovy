@@ -19,43 +19,43 @@ class ProcessVisualizationTest extends BaseSpecification {
 
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
-                        .setName (NGINXDEPLOYMENT)
-                        .setImage ("nginx:1.14-alpine")
-                        .addLabel ( "app", "test" ) ,
+                .setName (NGINXDEPLOYMENT)
+                .setImage ("nginx:1.14-alpine")
+                .addLabel ( "app", "test" ) ,
             new Deployment()
-                        .setName (STRUTSDEPLOYMENT)
-                        .setImage ( "apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                        .addLabel ( "app", "test" ),
+                .setName (STRUTSDEPLOYMENT)
+                .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
+                .addLabel ("app", "test" ),
             new Deployment()
-                        .setName (SSL_TERMINATOR)
-                        .setImage ( "apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
-                        .addLabel ( "app", "test" ) ,
+                .setName (SSL_TERMINATOR)
+                .setImage ("apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
+                .addLabel ("app", "test" ) ,
             new Deployment()
-                        .setName (APACHEDEPLOYMENT)
-                        .setImage ( "apollo-dtr.rox.systems/legacy-apps/apache-server")
-                        .addLabel ( "app", "test" ),
+                .setName (APACHEDEPLOYMENT)
+                .setImage ("apollo-dtr.rox.systems/legacy-apps/apache-server")
+                .addLabel ("app", "test" ),
             new Deployment()
-                        .setName (CENTOSDEPLOYMENT)
-                        .setImage ( "centos")
-                        .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
-                        .addLabel ( "app", "test" ),
+                .setName (CENTOSDEPLOYMENT)
+                .setImage ("centos@sha256:6f6d986d425aeabdc3a02cb61c02abb2e78e57357e92417d6d58332856024faf")
+                .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
+                .addLabel ("app", "test" ),
             new Deployment()
-                        .setName (FEDORADEPLOYMENT)
-                        .setImage ( "fedora")
-                        .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
-                        .addLabel ( "app", "test" ),
+                .setName (FEDORADEPLOYMENT)
+                .setImage ("fedora@sha256:b41cd083421dd7aa46d619e958b75a026a5d5733f08f14ba6d53943d6106ea6d")
+                .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
+                .addLabel ("app", "test" ),
             new Deployment()
-                        .setName (ELASTICDEPLOYMENT)
-                        .setImage ( "elasticsearch:latest")
-                        .addLabel ( "app", "test" ),
+                .setName (ELASTICDEPLOYMENT)
+                .setImage ("elasticsearch@sha256:a8081d995ef3443dc6d077093172a5931e02cdb8ffddbf05c67e01d348a9770e")
+                .addLabel ("app", "test" ),
             new Deployment()
-                        .setName (REDISDEPLOYMENT)
-                        .setImage ( "redis")
-                        .addLabel ( "app", "test" ),
+                .setName (REDISDEPLOYMENT)
+                .setImage ("redis@sha256:911f976312f503692709ad9534f15e2564a0967f2aa6dd08a74c684fb1e53e1a")
+                .addLabel ("app", "test" ),
             new Deployment()
-                        .setName (MONGODEPLOYMENT)
-                        .setImage ( "mongo")
-                        .addLabel ( "app", "test" ),
+                .setName (MONGODEPLOYMENT)
+                .setImage ("mongo@sha256:e9bab21970befb113734c6ec549a4cf90377961dbe0ec94fe65be2a0abbdcc30")
+                .addLabel ("app", "test" ),
      ]
 
     static final private MAX_SLEEP_TIME = 60000
@@ -121,8 +121,8 @@ class ProcessVisualizationTest extends BaseSpecification {
          "/docker-entrypoint.sh", "/usr/bin/cut", "/usr/bin/id",
          "/docker-java-home/jre/bin/java", "/usr/bin/dirname"]  | ELASTICDEPLOYMENT
 
-        ["/usr/bin/id", "/usr/local/bin/docker-entrypoint.sh",
-         "/bin/chown", "/usr/local/bin/gosu", "/usr/local/bin/redis-server"]  | REDISDEPLOYMENT
+        ["/usr/bin/id", "/usr/bin/find", "/usr/local/bin/docker-entrypoint.sh",
+         "/usr/local/bin/gosu", "/usr/local/bin/redis-server"]  | REDISDEPLOYMENT
 
         ["/bin/true", "/bin/chown", "/usr/local/bin/docker-entrypoint.sh",
          "/bin/chown", "/usr/local/bin/gosu", "/usr/bin/mongod", "/usr/bin/numactl"] |  MONGODEPLOYMENT
