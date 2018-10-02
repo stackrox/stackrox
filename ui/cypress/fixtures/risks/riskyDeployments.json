@@ -78,7 +78,28 @@
         "type": "secret"
       }],
       "ports": []
-    }]
+    }],
+    "risk": {
+      "score": 1.625,
+      "results": [{
+        "name": "Service Configuration",
+        "factors": [{
+          "message": "Secrets prevent_central_certificate, prevent_central_jwt_key, prevent_central_private_key are used inside the deployment",
+          "url": ""
+        }, {
+          "message": "No capabilities were dropped",
+          "url": ""
+        }],
+        "score": 1.25
+      }, {
+        "name": "Service Reachability",
+        "factors": [{
+          "message": "Container stackrox/prevent exposes port 8080 to external clients",
+          "url": ""
+        }],
+        "score": 1.3
+      }]
+    }
   },
   {
     "id": "rug2mk6mokve2kansenxl2lbx",
