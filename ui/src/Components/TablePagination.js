@@ -37,6 +37,7 @@ class TablePagination extends Component {
                             value={page}
                             min={1}
                             max={totalPages}
+                            disabled={totalPages === 1}
                             onChange={this.onChangePage}
                         />
                         of {totalPages}
