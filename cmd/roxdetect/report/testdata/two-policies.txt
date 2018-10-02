@@ -1,0 +1,27 @@
+----------------BEGIN STACKROX CI---------------
+The scanned image violated the following policies:
+✗ CI Test Policy One (policy marked as critical)
+- Description:
+    ↳ CI policy one that is used for tests
+- Rationale:
+    ↳ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nec orci
+      bibendum sapien suscipit maximus. Quisque dapibus accumsan tempor. Vivamus at
+      justo tellus. Vivamus vel sem vel mauris cursus ullamcorper.
+- Remediation:
+    ↳ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus cursus
+      convallis lacinia.
+- Categories:
+    ↳ Vuln Management, Security Best Practices
+✗ CI Test Policy Two
+- Description:
+    ↳ CI policy two that is used for tests
+- Rationale:
+    ↳ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean eleifend ac
+      purus id vehicula. Vivamus malesuada eros at malesuada scelerisque. Praesent
+      pellentesque ipsum mauris, eu tempus diam interdum quis.
+- Remediation:
+    ↳ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nec vehicula
+      magna.
+- Categories:
+    ↳ Vuln Management, Security Best Practices
+----------------END STACKROX CI---------------

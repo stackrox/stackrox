@@ -1,12 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/stackrox/rox/cmd/roxdetect/report"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"golang.org/x/net/context"
@@ -42,56 +42,31 @@ func main() {
 	}
 
 	// Run requested operations.
-	if passFail != nil && *passFail {
-		err = runPassFail(violatedPolicies)
+	if *passFail {
+		err = report.Pretty(os.Stdout, violatedPolicies)
 	} else {
-		err = runInformational(violatedPolicies)
+		err = report.JSON(os.Stdout, violatedPolicies)
 	}
 	if err != nil {
 		os.Exit(1)
 	}
+
+	// Exit with a status of 1 if any of the violated policies were of a
+	// "critical" severity level.
+	if *passFail && criticalViolations(violatedPolicies) {
+		os.Exit(1)
+	}
 }
 
-// runPassFail runs the pipeline in pass/fail mode.
-func runPassFail(violatedPolicies []*v1.Policy) error {
-	fmt.Println("----------------BEGIN STACKROX CI---------------")
-	defer fmt.Println("----------------END STACKROX CI---------------")
-
-	// Print violated policy names.
-	var failed bool
-	if len(violatedPolicies) > 0 {
-		fmt.Println("Policies failed: ")
-		for _, policy := range violatedPolicies {
-			if policy.GetSeverity() >= v1.Severity_CRITICAL_SEVERITY {
-				fmt.Println(policy.Name, " is a critical vulnerability")
-				failed = true
-			} else {
-				fmt.Println(policy.Name)
-			}
-		}
-	} else {
-		fmt.Println("no policy violations found")
-	}
-
-	// If any are failing conditions (CRITICAL severity), print a message and exit.
-	if failed {
-		return fmt.Errorf("critical vulnerability encountered, failing")
-	}
-	return nil
-}
-
-// runInformational just pipes failed policies out on STDOUT in JSON format.
-func runInformational(violatedPolicies []*v1.Policy) error {
-	// Just pipe out the violated policies as JSON.
-	for _, policy := range violatedPolicies {
-		jsonified, err := json.Marshal(policy)
-		if err == nil {
-			os.Stdout.Write([]byte(jsonified))
-		} else {
-			return fmt.Errorf("recieved unexpected output, failing")
+// criticalViolations returns true if any of the given policies are of a
+// "critical" severity level.
+func criticalViolations(policies []*v1.Policy) bool {
+	for _, policy := range policies {
+		if policy.GetSeverity() == v1.Severity_CRITICAL_SEVERITY {
+			return true
 		}
 	}
-	return nil
+	return false
 }
 
 // Fetch the alerts for the inputs and convert them to a list of Policies that are violated.

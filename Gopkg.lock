@@ -652,6 +652,14 @@
   version = "v1.0.1"
 
 [[projects]]
+  digest = "1:9f63926f52745d1f9d6053f8fbbb3bd3983c2c97c0565957e682b8d2f7aad3af"
+  name = "github.com/mitchellh/go-wordwrap"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "9e67c67572bc5dd02aef930e2b0ae3c02a4b5a5c"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:2f42fa12d6911c7b7659738758631bec870b7e9b4c6be5444f963cdcfccc191f"
   name = "github.com/modern-go/concurrent"
   packages = ["."]
@@ -1408,6 +1416,7 @@
     "github.com/hashicorp/golang-lru",
     "github.com/heroku/docker-registry-client/registry",
     "github.com/karlseguin/ccache",
+    "github.com/mitchellh/go-wordwrap",
     "github.com/opencontainers/go-digest",
     "github.com/opencontainers/runc/libcontainer/user",
     "github.com/openshift/api/apps/v1",

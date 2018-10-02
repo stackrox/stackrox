@@ -1,0 +1,3 @@
+----------------BEGIN STACKROX CI---------------
+✔ The scanned image passed all policies
+----------------END STACKROX CI---------------
