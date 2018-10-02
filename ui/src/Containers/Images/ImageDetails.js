@@ -5,7 +5,7 @@ import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
-import ReactTooltip from 'react-tooltip';
+import Tooltip from 'rc-tooltip';
 import 'react-table/react-table.css';
 import Table, { defaultHeaderClassName } from 'Components/Table';
 
@@ -65,6 +65,24 @@ class ImageDetails extends Component {
         this.props.history.push('/main/risk');
     };
 
+    getDockerFileButton = image => {
+        const button = (
+            <button
+                className="flex mx-auto my-2 py-3 px-2 w-5/6 rounded-sm text-primary-600 hover:text-base-100 hover:bg-primary-400 uppercase justify-center text-sm items-center bg-base-100 border-2 border-primary-400"
+                onClick={this.openModal}
+                disabled={!image.metadata}
+            >
+                View Docker File
+            </button>
+        );
+        if (image.metadata) return button;
+        return (
+            <Tooltip placement="top" overlay={<div>Docker file not available</div>}>
+                <div>{button}</div>
+            </Tooltip>
+        );
+    };
+
     openModal = () => {
         this.setState({ modalOpen: true });
     };
@@ -108,29 +126,8 @@ class ImageDetails extends Component {
                                         View Deployments
                                     </button>
                                 </span>
-                                <span
-                                    className="w-1/2 border-low-100 border-l-2"
-                                    data-tip
-                                    data-tip-disable={image.metadata}
-                                    data-for="button-DockerFile"
-                                >
-                                    <button
-                                        className="flex mx-auto my-2 py-3 px-2 w-5/6 rounded-sm text-primary-600 hover:text-base-100 hover:bg-primary-400 uppercase justify-center text-sm items-center bg-base-100 border-2 border-primary-400"
-                                        onClick={this.openModal}
-                                        disabled={!image.metadata}
-                                    >
-                                        View Docker File
-                                    </button>
-                                    {!image.metadata && (
-                                        <ReactTooltip
-                                            id="button-DockerFile"
-                                            type="dark"
-                                            effect="float"
-                                            className="max-w-xs p-2 w-full text-sm text-center bg-base-600 border-base-600"
-                                        >
-                                            Docker file not available
-                                        </ReactTooltip>
-                                    )}
+                                <span className="w-1/2 border-low-100 border-l-2">
+                                    {this.getDockerFileButton(image)}
                                 </span>
                             </div>
                         </div>

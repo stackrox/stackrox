@@ -43,7 +43,6 @@
     "react-table": "^6.8.0",
     "react-dropzone": "^5.1.0",
     "react-toastify": "^3.2.1",
-    "react-tooltip": "^3.4.0",
     "react-transition-group": "^2.2.1",
     "recharts": "^1.0.0-beta.9",
     "redux": "^3.7.2",

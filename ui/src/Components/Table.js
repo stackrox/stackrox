@@ -20,7 +20,7 @@ class Table extends Component {
         idAttribute: PropTypes.string,
         noDataText: ReactTablePropTypes.noDataText,
         setTableRef: PropTypes.func,
-        page: PropTypes.number.isRequired
+        page: PropTypes.number
     };
 
     static defaultProps = {
@@ -28,7 +28,8 @@ class Table extends Component {
         selectedRowId: null,
         idAttribute: 'id',
         onRowClick: null,
-        setTableRef: null
+        setTableRef: null,
+        page: 0
     };
 
     getTrGroupProps = (state, rowInfo) => ({

@@ -62,3 +62,23 @@ export function fetchAlertsByTimeseries(filters) {
         response: response.data
     }));
 }
+
+/**
+ * Resolves an alert given an alert ID.
+ *
+ * @param {!string} alertId
+ * @returns {Promise<AxiosResponse, Error>}
+ */
+export function resolveAlert(alertId) {
+    return axios.patch(`${baseUrl}/${alertId}/resolve`);
+}
+
+/**
+ * Resolves a list of alerts by alert ID.
+ *
+ * @param {string[]} alertIds
+ * @returns {Promise<AxiosResponse, Error>}
+ */
+export function resolveAlerts(alertIds = []) {
+    return Promise.all(alertIds.map(id => resolveAlert(id)));
+}

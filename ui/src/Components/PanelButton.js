@@ -14,7 +14,7 @@ const PanelButton = ({ icon, text, onClick, className, disabled, tooltip }) => {
 
     return (
         <Tooltip placement="top" overlay={<div>{tooltip}</div>}>
-            {button}
+            <div>{button}</div>
         </Tooltip>
     );
 };

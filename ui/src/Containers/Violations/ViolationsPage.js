@@ -10,20 +10,25 @@ import { selectors } from 'reducers';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import Tooltip from 'rc-tooltip';
+import * as Icon from 'react-feather';
 
 import { severityLabels, lifecycleStageLabels } from 'messages/common';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
-import Table, {
+import {
     pageSize,
     wrapClassName,
     defaultHeaderClassName,
     defaultColumnClassName
 } from 'Components/Table';
+import CheckboxTable from 'Components/CheckboxTable';
+import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import Panel from 'Components/Panel';
+import PanelButton from 'Components/PanelButton';
 import TablePagination from 'Components/TablePagination';
+import Dialog from 'Components/Dialog';
 import ViolationsPanel from './ViolationsPanel';
 
 const getSeverityClassName = severityValue => {
@@ -40,11 +45,9 @@ const getSeverityClassName = severityValue => {
 
 class ViolationsPage extends Component {
     static propTypes = {
-        violations: PropTypes.arrayOf(
-            PropTypes.shape({
-                id: PropTypes.string.isRequired
-            })
-        ).isRequired,
+        violations: PropTypes.shape({}).isRequired,
+        whitelistDeployment: PropTypes.func.isRequired,
+        resolveAlerts: PropTypes.func.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
         location: ReactRouterPropTypes.location.isRequired,
         match: ReactRouterPropTypes.match.isRequired,
@@ -60,12 +63,16 @@ class ViolationsPage extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            page: 0
+            page: 0,
+            showWhitelistConfirmationDialog: false,
+            showResolveConfirmationDialog: false,
+            selection: []
         };
     }
 
     onSearch = searchOptions => {
         if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
+            this.clearSelection();
             this.props.history.push('/main/violations');
         }
     };
@@ -78,6 +85,34 @@ class ViolationsPage extends Component {
         this.setState({ page: newPage });
     };
 
+    getTableHeaderText = () => {
+        const { violations, isViewFiltered } = this.props;
+        const { length: selectionCount } = this.state.selection;
+        const { length: rowCount } = Object.keys(violations);
+        return selectionCount !== 0
+            ? `${selectionCount} Violation${selectionCount === 1 ? '' : 's'} Selected`
+            : `${rowCount} Violation${rowCount === 1 ? '' : 's'} ${
+                  isViewFiltered ? 'Matched' : ''
+              }`;
+    };
+
+    clearSelection = () => this.setState({ selection: [] });
+
+    showResolveConfirmationDialog = () => {
+        this.setState({ showResolveConfirmationDialog: true });
+    };
+
+    showWhitelistConfirmationDialog = () => {
+        this.setState({ showWhitelistConfirmationDialog: true });
+    };
+
+    hideConfirmationDialog = () => {
+        this.setState({
+            showResolveConfirmationDialog: false,
+            showWhitelistConfirmationDialog: false
+        });
+    };
+
     updateSelectedAlert = alert => {
         const urlSuffix = alert && alert.id ? `/${alert.id}` : '';
         this.props.history.push({
@@ -86,27 +121,120 @@ class ViolationsPage extends Component {
         });
     };
 
-    renderPanel = () => {
-        const { length } = this.props.violations;
-        const totalPages = length === pageSize ? 1 : Math.floor(length / pageSize) + 1;
-        const paginationComponent = (
-            <TablePagination
-                page={this.state.page}
-                totalPages={totalPages}
-                setPage={this.setTablePage}
+    updateSelection = selection => this.setState({ selection });
+
+    toggleRow = id => {
+        const selection = toggleRow(id, this.state.selection);
+        this.updateSelection(selection);
+    };
+
+    toggleSelectAll = () => {
+        const { length: rowsLength } = Object.keys(this.props.violations);
+        const tableRef = this.checkboxTable.reactTable;
+        const selection = toggleSelectAll(rowsLength, this.state.selection, tableRef);
+        this.updateSelection(selection);
+    };
+
+    resolveAlerts = () => {
+        const { selection } = this.state;
+        const { violations } = this.props;
+        const resolveSelection = selection.filter(
+            id => violations[id] && violations[id].policy.lifecycleStage === 'RUN_TIME'
+        );
+        this.props.resolveAlerts(resolveSelection);
+        this.hideConfirmationDialog();
+        this.clearSelection();
+    };
+
+    whitelistDeployments = () => {
+        const { selection } = this.state;
+        selection.forEach(id => this.props.whitelistDeployment(id));
+        this.hideConfirmationDialog();
+        this.clearSelection();
+    };
+
+    renderWhitelistConfirmationDialog = () => {
+        const numSelectedRows = this.state.selection.length;
+        return (
+            <Dialog
+                isOpen={this.state.showWhitelistConfirmationDialog}
+                text={`Are you sure you want to whitelist ${numSelectedRows} violation${
+                    numSelectedRows === 1 ? '' : 's'
+                }?`}
+                onConfirm={this.whitelistDeployments}
+                onCancel={this.hideConfirmationDialog}
             />
         );
-        const headerText = `${length} Violation${length === 1 ? '' : 's'} ${
-            this.props.isViewFiltered ? 'Matched' : ''
-        }`;
+    };
+
+    renderResolveConfirmationDialog = () => {
+        const { selection } = this.state;
+        const { violations } = this.props;
+        const numSelectedRows = selection.reduce(
+            (acc, id) =>
+                violations[id] && violations[id].policy.lifecycleStage === 'RUN_TIME'
+                    ? acc + 1
+                    : acc,
+            0
+        );
         return (
-            <Panel header={headerText} headerComponents={paginationComponent}>
-                <div className="w-full">{this.renderTable()}</div>
+            <Dialog
+                isOpen={this.state.showResolveConfirmationDialog}
+                text={`Are you sure you want to resolve ${numSelectedRows} violation${
+                    numSelectedRows === 1 ? '' : 's'
+                }?`}
+                onConfirm={this.resolveAlerts}
+                onCancel={this.hideConfirmationDialog}
+            />
+        );
+    };
+
+    renderPanel = () => {
+        const { violations } = this.props;
+        const { selection, page } = this.state;
+        const whitelistCount = selection.length;
+        let resolveCount = 0;
+        selection.forEach(id => {
+            if (violations[id] && violations[id].policy.lifecycleStage === 'RUN_TIME')
+                resolveCount += 1;
+        });
+        const panelButtons = (
+            <React.Fragment>
+                {resolveCount !== 0 && (
+                    <PanelButton
+                        icon={<Icon.Check className="h-4 w- ml-1" />}
+                        text={`Mark as Resolved (${resolveCount})`}
+                        className="btn btn-base"
+                        onClick={this.showResolveConfirmationDialog}
+                    />
+                )}
+                {whitelistCount !== 0 && (
+                    <PanelButton
+                        icon={<Icon.BellOff className="h-4 w- ml-1" />}
+                        text={`Whitelist (${whitelistCount})`}
+                        className="btn btn-base"
+                        onClick={this.showWhitelistConfirmationDialog}
+                    />
+                )}
+            </React.Fragment>
+        );
+        const { length } = Object.keys(violations);
+        const totalPages = length === pageSize ? 1 : Math.floor(length / pageSize) + 1;
+        const paginationComponent = (
+            <TablePagination page={page} totalPages={totalPages} setPage={this.setTablePage} />
+        );
+        return (
+            <Panel
+                header={this.getTableHeaderText()}
+                buttons={panelButtons}
+                headerComponents={paginationComponent}
+            >
+                <div className="w-full">{this.renderSelectTable()}</div>
             </Panel>
         );
     };
 
-    renderTable = () => {
+    renderSelectTable = () => {
         const columns = [
             {
                 Header: 'Deployment',
@@ -123,8 +251,8 @@ class ViolationsPage extends Component {
             {
                 Header: 'Policy',
                 accessor: 'policy.name',
-                headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `w-1/6 ${defaultHeaderClassName}`,
+                className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => (
                     <div>
                         <Tooltip
@@ -143,8 +271,8 @@ class ViolationsPage extends Component {
             {
                 Header: 'Severity',
                 accessor: 'policy.severity',
-                headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                className: `w-1/10 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ value }) => {
                     const severity = severityLabels[value];
                     return <span className={getSeverityClassName(severity)}>{severity}</span>;
@@ -173,8 +301,8 @@ class ViolationsPage extends Component {
             {
                 Header: 'Lifecycle',
                 accessor: 'policy.lifecycleStage',
-                headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                className: `w-1/10 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ value }) => lifecycleStageLabels[value]
             },
             {
@@ -186,15 +314,19 @@ class ViolationsPage extends Component {
                 sortMethod: sortDate
             }
         ];
-        const rows = this.props.violations;
+        const rows = Object.values(this.props.violations);
         const id = this.props.match.params.alertId;
         if (!rows.length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
         return (
-            <Table
+            <CheckboxTable
+                ref={r => (this.checkboxTable = r)} // eslint-disable-line
                 rows={rows}
                 columns={columns}
                 onRowClick={this.updateSelectedAlert}
+                toggleRow={this.toggleRow}
+                toggleSelectAll={this.toggleSelectAll}
+                selection={this.state.selection}
                 selectedRowId={id}
                 noDataText="No results found. Please refine your search."
                 page={this.state.page}
@@ -237,6 +369,8 @@ class ViolationsPage extends Component {
                         {this.renderSidePanel()}
                     </div>
                 </div>
+                {this.renderWhitelistConfirmationDialog()}
+                {this.renderResolveConfirmationDialog()}
             </section>
         );
     }
@@ -248,7 +382,7 @@ const isViewFiltered = createSelector(
 );
 
 const mapStateToProps = createStructuredSelector({
-    violations: selectors.getFilteredAlerts,
+    violations: selectors.getFilteredAlertsById,
     searchOptions: selectors.getAlertsSearchOptions,
     searchModifiers: selectors.getAlertsSearchModifiers,
     searchSuggestions: selectors.getAlertsSearchSuggestions,
@@ -256,6 +390,8 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = (dispatch, props) => ({
+    whitelistDeployment: alertId => dispatch(alertActions.whitelistDeployment.request(alertId)),
+    resolveAlerts: alertIds => dispatch(alertActions.resolveAlerts(alertIds)),
     setSearchOptions: searchOptions => {
         if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
             props.history.push('/main/violations');

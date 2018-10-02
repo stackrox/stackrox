@@ -20,6 +20,7 @@ import { types as dashboardTypes } from 'reducers/dashboard';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { whitelistDeployment } from 'services/PoliciesService';
+import { actions as notificationActions } from 'reducers/notifications';
 
 function filterTimeseriesResultsByClusterSearchOptions(result, filters) {
     const filteredResult = Object.assign({}, result);
@@ -120,15 +121,6 @@ function* getAlertsByTimeseries(filters) {
     }
 }
 
-function* sendWhitelistDeployment({ params }) {
-    try {
-        const result = yield call(whitelistDeployment, params.policy.id, params.deployment.name);
-        yield put(actions.whitelistDeployment.success(result.response));
-    } catch (error) {
-        yield put(actions.whitelistDeployment.failure(error));
-    }
-}
-
 function* filterViolationsPageBySearch() {
     const searchOptions = yield select(selectors.getAlertsSearchOptions);
     if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
@@ -191,6 +183,29 @@ function* cancelPolling() {
     yield put(actions.pollAlerts.stop());
 }
 
+function* sendWhitelistDeployment({ params: alertId }) {
+    try {
+        yield fork(cancelPolling);
+        const alert = yield select(selectors.getAlert, alertId);
+        const result = yield call(whitelistDeployment, alert.policy.id, alert.deployment.name);
+        yield put(actions.whitelistDeployment.success(result.response));
+        yield fork(pollAlerts);
+    } catch (error) {
+        yield put(actions.whitelistDeployment.failure(error));
+    }
+}
+
+function* resolveAlerts({ alertIds }) {
+    try {
+        yield fork(cancelPolling);
+        yield call(service.resolveAlerts, alertIds);
+        yield fork(pollAlerts);
+    } catch (error) {
+        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(notificationActions.removeOldestNotification());
+    }
+}
+
 function* watchAlertsSearchOptions() {
     yield takeLatest(types.SET_SEARCH_OPTIONS, filterViolationsPageBySearch);
 }
@@ -201,6 +216,10 @@ function* watchDashboardSearchOptions() {
 
 function* watchWhitelistDeployment() {
     yield takeLatest(types.WHITELIST_DEPLOYMENT.REQUEST, sendWhitelistDeployment);
+}
+
+function* watchResolveAlerts() {
+    yield takeLatest(types.RESOLVE_ALERTS, resolveAlerts);
 }
 
 function* pollSagaWatcher() {
@@ -218,6 +237,7 @@ export default function* alerts() {
         fork(watchAlertsSearchOptions),
         fork(watchDashboardSearchOptions),
         fork(watchWhitelistDeployment),
+        fork(watchResolveAlerts),
         fork(pollSagaWatcher)
     ]);
 }

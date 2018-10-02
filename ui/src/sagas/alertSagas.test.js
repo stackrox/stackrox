@@ -103,6 +103,7 @@ describe('Alert Sagas', () => {
             whitelists: [{ name: 'deploymentName' }]
         };
         const alert = {
+            id: '1234',
             policy: {
                 id: 'policyId'
             },
@@ -110,21 +111,23 @@ describe('Alert Sagas', () => {
                 name: 'deploymentName'
             }
         };
-        const fetchMock = jest.fn().mockReturnValueOnce({ response });
+        const fetchWhitelistMock = jest.fn().mockReturnValueOnce({ response });
 
         return expectSaga(saga)
             .provide([
                 [select(selectors.getAlertsSearchOptions), []],
+                [select(selectors.getAlert, alert.id), alert],
                 [
                     call(whitelistDeployment, alert.policy.id, alert.deployment.name),
-                    dynamic(fetchMock)
+                    dynamic(fetchWhitelistMock)
                 ]
             ])
-            .dispatch(actions.whitelistDeployment.request(alert))
+            .dispatch(actions.whitelistDeployment.request(alert.id))
             .dispatch({
                 type: types.WHITELIST_DEPLOYMENT,
                 payload: { options: alertTypeSearchOptions }
             })
+            .put(actions.pollAlerts.stop())
             .put(actions.whitelistDeployment.success(response))
             .silentRun();
     });

@@ -29,6 +29,7 @@ export const types = {
     ),
     FETCH_ALERTS_BY_TIMESERIES: createFetchingActionTypes('alerts/FETCH_ALERTS_BY_TIMESERIES'),
     WHITELIST_DEPLOYMENT: createFetchingActionTypes('alerts/WHITELIST_DEPLOYMENT'),
+    RESOLVE_ALERTS: 'alerts/RESOLVE_ALERTS',
     ...searchTypes('alerts')
 };
 
@@ -46,6 +47,7 @@ export const actions = {
     fetchAlertCountsByCluster: createFetchingActions(types.FETCH_ALERT_COUNTS_BY_CLUSTER),
     fetchAlertsByTimeseries: createFetchingActions(types.FETCH_ALERTS_BY_TIMESERIES),
     whitelistDeployment: createFetchingActions(types.WHITELIST_DEPLOYMENT),
+    resolveAlerts: alertIds => ({ type: types.RESOLVE_ALERTS, alertIds }),
     ...getSearchActions('alerts')
 };
 
@@ -130,9 +132,14 @@ const getGlobalAlertCounts = state => state.globalAlertCounts;
 const getAlertCountsByPolicyCategories = state => state.alertCountsByPolicyCategories;
 const getAlertCountsByCluster = state => state.alertCountsByCluster;
 const getAlertsByTimeseries = state => state.alertsByTimeseries;
-const getFilteredAlerts = createSelector([getAlertsById, getFilteredIds], (alerts, ids) =>
-    ids.map(id => alerts[id])
-);
+const getFilteredAlertsById = createSelector([getAlertsById, getFilteredIds], (alerts, ids) => {
+    const alertsObj = {};
+    ids.forEach(id => {
+        alertsObj[id] = alerts[id];
+    });
+    return alertsObj;
+});
+const getFilteredAlerts = state => Object.values(getFilteredAlertsById(state));
 
 export const selectors = {
     getAlertsById,
@@ -144,5 +151,6 @@ export const selectors = {
     getAlertCountsByCluster,
     getAlertsByTimeseries,
     getFilteredAlerts,
+    getFilteredAlertsById,
     ...getSearchSelectors('alerts')
 };
