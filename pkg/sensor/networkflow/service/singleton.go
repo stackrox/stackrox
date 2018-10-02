@@ -1,7 +1,9 @@
-package networkflow
+package service
 
 import (
 	"sync"
+
+	"github.com/stackrox/rox/pkg/sensor/networkflow/manager"
 )
 
 var (
@@ -12,10 +14,10 @@ var (
 
 // newService creates a new streaming service with the collector. It should only be called once.
 func newService() Service {
-
 	return &serviceImpl{
-		connectionsByHost: make(map[string]*hostConnections),
+		manager: manager.Singleton(),
 	}
+
 }
 
 func initialize() {

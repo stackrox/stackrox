@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sensor/common"
+	"github.com/stackrox/rox/pkg/sensor/networkflow/manager"
 	"github.com/stackrox/rox/sensor/swarm/enforcer"
 	"github.com/stackrox/rox/sensor/swarm/listener"
 	"github.com/stackrox/rox/sensor/swarm/orchestrator"
@@ -24,6 +25,7 @@ func main() {
 		listener.MustCreate(),
 		enforcer.MustCreate(),
 		orchestrator.MustCreate(),
+		manager.Singleton(),
 	)
 	s.Start()
 

@@ -1,4 +1,4 @@
-package networkflow
+package service
 
 import (
 	"context"

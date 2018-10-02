@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/sensor"
+	networkConnManager "github.com/stackrox/rox/pkg/sensor/networkflow/manager"
 	signalService "github.com/stackrox/rox/pkg/sensor/service"
 	"google.golang.org/grpc"
 )
@@ -47,9 +48,10 @@ type Sensor struct {
 	advertisedEndpoint string
 	image              string
 
-	listener     listeners.Listener
-	enforcer     enforcers.Enforcer
-	orchestrator orchestrators.Orchestrator
+	listener           listeners.Listener
+	enforcer           enforcers.Enforcer
+	orchestrator       orchestrators.Orchestrator
+	networkConnManager networkConnManager.Manager
 
 	server         pkgGRPC.API
 	benchScheduler *benchmarks.SchedulerClient
@@ -60,7 +62,7 @@ type Sensor struct {
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
-func NewSensor(log *logging.Logger, l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orchestrator) *Sensor {
+func NewSensor(log *logging.Logger, l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orchestrator, n networkConnManager.Manager) *Sensor {
 	return &Sensor{
 		logger: log,
 
@@ -69,9 +71,10 @@ func NewSensor(log *logging.Logger, l listeners.Listener, e enforcers.Enforcer, 
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 		image:              env.Image.Setting(),
 
-		listener:     l,
-		enforcer:     e,
-		orchestrator: o,
+		listener:           l,
+		enforcer:           e,
+		orchestrator:       o,
+		networkConnManager: n,
 	}
 }
 
@@ -112,6 +115,9 @@ func (s *Sensor) Start() {
 		go s.benchScheduler.Start()
 	}
 
+	if s.networkConnManager != nil {
+		go s.networkConnManager.Start()
+	}
 	// Wait for central so we can initiate our GRPC connection to send sensor events.
 	s.waitUntilCentralIsReady(s.conn)
 
@@ -137,6 +143,9 @@ func (s *Sensor) Stop() {
 	}
 	if s.benchScheduler != nil {
 		s.benchScheduler.Stop()
+	}
+	if s.networkConnManager != nil {
+		s.networkConnManager.Stop()
 	}
 
 	s.logger.Info("Sensor shutdown complete")
