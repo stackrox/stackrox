@@ -1,5 +1,6 @@
 package services
 
+import io.grpc.ManagedChannel
 import io.grpc.netty.GrpcSslContexts
 import io.grpc.netty.NegotiationType
 import io.grpc.netty.NettyChannelBuilder
@@ -8,7 +9,9 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 
 class BaseService {
 
-    static getChannel() {
+    static ManagedChannel channelInstance = null
+
+    static initializeChannel() {
         SslContext sslContext = GrpcSslContexts
                 .forClient()
                 .trustManager(InsecureTrustManagerFactory.INSTANCE)
@@ -16,12 +19,17 @@ class BaseService {
 
         int port = Integer.parseInt(System.getenv("PORT"))
 
-        def channel = NettyChannelBuilder
-                .forAddress(System.getenv("HOSTNAME"), port)
-                .negotiationType(NegotiationType.TLS)
-                .sslContext(sslContext)
-                .build()
-        return channel
+        channelInstance = NettyChannelBuilder
+                        .forAddress(System.getenv("HOSTNAME"), port)
+                        .negotiationType(NegotiationType.TLS)
+                        .sslContext(sslContext)
+                        .build()
     }
 
+    static getChannel() {
+        if (channelInstance == null) {
+            initializeChannel()
+        }
+        return channelInstance
+    }
 }

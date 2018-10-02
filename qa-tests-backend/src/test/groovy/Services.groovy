@@ -1,9 +1,5 @@
 import io.grpc.StatusRuntimeException
-import io.grpc.netty.GrpcSslContexts
-import io.grpc.netty.NegotiationType
-import io.grpc.netty.NettyChannelBuilder
-import io.netty.handler.ssl.SslContext
-import io.netty.handler.ssl.util.InsecureTrustManagerFactory
+import services.BaseService
 import stackrox.generated.AlertServiceGrpc
 import stackrox.generated.AlertServiceOuterClass.ListAlert
 import stackrox.generated.ClusterService
@@ -38,23 +34,7 @@ import v1.NetworkPolicyServiceGrpc
 import v1.SecretServiceGrpc
 import v1.NetworkPolicyServiceOuterClass
 
-class Services {
-
-    static getChannel() {
-        SslContext sslContext = GrpcSslContexts
-                        .forClient()
-                        .trustManager(InsecureTrustManagerFactory.INSTANCE)
-                        .build()
-
-        int port = Integer.parseInt(System.getenv("PORT"))
-
-        def channel = NettyChannelBuilder
-                        .forAddress(System.getenv("HOSTNAME"), port)
-                        .negotiationType(NegotiationType.TLS)
-                        .sslContext(sslContext)
-                        .build()
-        return channel
-      }
+class Services extends BaseService {
 
     static ResourceByID getResourceByID(String id) {
         return ResourceByID.newBuilder().setId(id).build()
