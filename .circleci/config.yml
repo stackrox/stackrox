@@ -52,7 +52,11 @@ createGKE: &createGKE
   run:
     name: Create GKE cluster
     command: |
-      .circleci/create-cluster.sh || (echo "Retrying in case this was a transient GCP failure..."; .circleci/create-cluster.sh)
+      .circleci/create-cluster.sh || (
+        echo "Retrying in case this was a transient GCP failure...";
+        gcloud container clusters delete "prevent-ci-${CIRCLE_BUILD_NUM}";
+        .circleci/create-cluster.sh
+      )
 
 # See https://stackoverflow.com/a/46316672 for why we have to use user/pass.
 # This step requires the GCP IAM permission "Kubernetes Engine Admin".
