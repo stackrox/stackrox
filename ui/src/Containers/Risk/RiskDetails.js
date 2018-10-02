@@ -42,8 +42,12 @@ const RiskDetails = ({ risk }) => {
                 key={result.name}
             >
                 <CollapsibleCard title={result.name}>
-                    {result.factors.map(factor => (
-                        <Factor key={factor.message} message={factor.message} url={factor.url} />
+                    {result.factors.map((factor, index) => (
+                        <Factor
+                            key={`factor.message-${index}`}
+                            message={factor.message}
+                            url={factor.url}
+                        />
                     ))}
                 </CollapsibleCard>
             </div>

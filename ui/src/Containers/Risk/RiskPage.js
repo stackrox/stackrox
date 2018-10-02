@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
-import { actions as deploymentsActions, types } from 'reducers/deployments';
+import { actions as deploymentsActions } from 'reducers/deployments';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Table, { pageSize } from 'Components/Table';
@@ -38,12 +38,10 @@ class RiskPage extends Component {
         setSearchSuggestions: PropTypes.func.isRequired,
         isViewFiltered: PropTypes.bool.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
-        location: ReactRouterPropTypes.location.isRequired,
-        isFetchingDeployment: PropTypes.bool
+        location: ReactRouterPropTypes.location.isRequired
     };
 
     static defaultProps = {
-        isFetchingDeployment: false,
         selectedDeployment: null
     };
 
@@ -149,31 +147,32 @@ class RiskPage extends Component {
             riskPanelTabs.push({ text: 'Process Discovery' });
         }
 
-        const content = this.props.isFetchingDeployment ? (
-            <Loader />
-        ) : (
-            <Tabs headers={riskPanelTabs}>
-                <TabContent>
-                    <div className="flex flex-1 flex-col">
-                        <RiskDetails risk={selectedDeployment.risk} />
-                    </div>
-                </TabContent>
-                <TabContent>
-                    <div className="flex flex-1 flex-col relative">
-                        <div className="absolute w-full">
-                            <DeploymentDetails deployment={selectedDeployment} />
+        const content =
+            selectedDeployment && selectedDeployment.risk === undefined ? (
+                <Loader />
+            ) : (
+                <Tabs headers={riskPanelTabs}>
+                    <TabContent>
+                        <div className="flex flex-1 flex-col">
+                            <RiskDetails risk={selectedDeployment.risk} />
                         </div>
-                    </div>
-                </TabContent>
-                <TabContent>
-                    <div className="flex flex-1 flex-col relative">
-                        <div className="absolute w-full">
-                            <ProcessDetails deployment={selectedDeployment} />
+                    </TabContent>
+                    <TabContent>
+                        <div className="flex flex-1 flex-col relative">
+                            <div className="absolute w-full">
+                                <DeploymentDetails deployment={selectedDeployment} />
+                            </div>
                         </div>
-                    </div>
-                </TabContent>
-            </Tabs>
-        );
+                    </TabContent>
+                    <TabContent>
+                        <div className="flex flex-1 flex-col relative">
+                            <div className="absolute w-full">
+                                <ProcessDetails deployment={selectedDeployment} />
+                            </div>
+                        </div>
+                    </TabContent>
+                </Tabs>
+            );
 
         return (
             <div className="w-1/2 bg-primary-200">
@@ -230,7 +229,6 @@ const mapStateToProps = createStructuredSelector({
     searchOptions: selectors.getDeploymentsSearchOptions,
     searchModifiers: selectors.getDeploymentsSearchModifiers,
     searchSuggestions: selectors.getDeploymentsSearchSuggestions,
-    isFetchingDeployment: state => selectors.getLoadingStatus(state, types.FETCH_DEPLOYMENT),
     isViewFiltered
 });
 
