@@ -54,7 +54,7 @@ class TwoLevelPieChart extends Component {
         const textAnchor = cos >= 0 ? 'start' : 'end';
         return (
             <g className="cursor-pointer" onClick={onClick}>
-                <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill}>
+                <text x={cx} y={cy} dy={8} textAnchor="middle" fill="#333">
                     {payload.name}
                 </text>
                 <Sector
@@ -90,13 +90,16 @@ class TwoLevelPieChart extends Component {
     render() {
         return (
             <ResponsiveContainer>
-                <PieChart>
+                <PieChart margin={{ top: -20 }}>
                     <Pie
+                        startAngle={90}
+                        endAngle={500}
+                        sAnimationActive={false}
                         activeIndex={this.state.activeIndex}
                         activeShape={this.renderActiveShape}
                         data={this.props.data}
                         dataKey="value"
-                        innerRadius={60}
+                        innerRadius={70}
                         outerRadius={80}
                         onMouseEnter={this.onPieEnter}
                     >

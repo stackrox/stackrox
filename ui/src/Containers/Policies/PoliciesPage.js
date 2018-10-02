@@ -286,7 +286,7 @@ class PoliciesPage extends Component {
         return (
             <div
                 data-test-id="policies-table-container"
-                className={`w-full pl-3 pr-3
+                className={`w-full
                     ${
                         this.props.wizardState.current !== ''
                             ? 'pointer-events-none opacity-25'
@@ -427,9 +427,11 @@ class PoliciesPage extends Component {
                 header={header}
                 buttons={buttons}
                 onClose={this.setSelectedPolicy}
-                className="w-2/3"
+                className="w-1/2 bg-primary-200"
             >
-                {this.renderSidePanelView(selectedPolicy)}
+                <div className="bg-primary-200 w-full">
+                    {this.renderSidePanelView(selectedPolicy)}
+                </div>
             </Panel>
         );
     };
@@ -467,8 +469,8 @@ class PoliciesPage extends Component {
                         />
                     </PageHeader>
                 </div>
-                <div className="flex flex-1 bg-base-100">
-                    <div className="flex flex-row w-full h-full bg-white rounded-sm shadow">
+                <div className="flex flex-1 bg-base-200">
+                    <div className="flex w-full h-full bg-base-100 rounded-sm shadow">
                         {this.renderTablePanel()}
                         {this.renderSidePanel()}
                     </div>

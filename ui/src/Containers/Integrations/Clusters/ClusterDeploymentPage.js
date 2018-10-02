@@ -33,7 +33,7 @@ YamlDownloadSection.propTypes = {
 };
 
 const WaitingForCheckinMessage = () => (
-    <div className="flex flex-row flex text-primary-600 bg-primary-200 border border-solid border-primary-400 p-4 items-center">
+    <div className="flex flex text-primary-600 bg-primary-200 border border-solid border-primary-400 p-4 items-center">
         <div className="text-center px-4">
             <ClipLoader color="currentColor" loading size={20} />
         </div>
@@ -42,7 +42,7 @@ const WaitingForCheckinMessage = () => (
 );
 
 const SuccessfulCheckinMessage = () => (
-    <div className="flex flex-row flex text-success-600 bg-success-200 border border-solid border-success-400 p-4 items-center">
+    <div className="flex flex text-success-600 bg-success-200 border border-solid border-success-400 p-4 items-center">
         <div className="flex-1 text-center">
             <Icon.CheckCircle />
         </div>

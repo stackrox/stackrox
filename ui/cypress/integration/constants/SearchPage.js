@@ -5,7 +5,7 @@ const selectors = {
     categoryTabs: '.tab',
     searchInput: '.search-modal div.Select-input > input',
     pageSearchInput: 'div.Select-input > input',
-    searchResultsHeader: '.bg-white.flex-1 > .text-xl',
+    searchResultsHeader: '.bg-base-100.flex-1 > .text-xl',
     viewOnViolationsChip:
         'div.rt-tbody > .rt-tr-group:first-child .rt-tr .rt-td:nth-child(3) ul > li:first-child > button',
     viewOnRiskChip:

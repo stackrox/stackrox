@@ -30,7 +30,7 @@ class NetworkPolicySimulatorErrorView extends Component {
         );
         return (
             <button
-                className="absolute pin-r pin-t h-10 w-10 border-base-200"
+                className="absolute pin-r pin-t h-10 w-10 border-base-200 z-10"
                 onClick={this.toggleCollapse}
             >
                 {icon}
@@ -41,11 +41,11 @@ class NetworkPolicySimulatorErrorView extends Component {
     renderYamlFile = () => {
         const { name, content } = this.props.yamlFile;
         return (
-            <div className="flex flex-1 flex-col bg-white relative h-full">
+            <div className="flex flex-1 flex-col bg-base-100 relative h-full">
                 <div className="border-b border-base-200 p-3 text-danger-600">{name}</div>
                 {this.renderCollapseButton()}
                 <div className="network-policy-error-yaml overflow-auto p-3">
-                    <pre className="leading-loose">{content}</pre>
+                    <pre className="leading-loose whitespace-pre-wrap word-break">{content}</pre>
                 </div>
             </div>
         );
@@ -53,7 +53,7 @@ class NetworkPolicySimulatorErrorView extends Component {
 
     render() {
         return (
-            <section className="bg-white shadow text-base-600 border border-base-200 m-3 overflow-hidden h-full">
+            <section className="bg-base-100 shadow text-base-600 border border-base-200 m-3 overflow-hidden h-full">
                 <Message type="error" message={this.props.errorMessage} />
                 {this.renderYamlFile()}
             </section>

@@ -32,7 +32,7 @@ class NetworkPolicySimulatorSuccessView extends Component {
         );
         return (
             <button
-                className="absolute pin-r pin-t h-12 w-12 border-base-200"
+                className="absolute pin-r pin-t h-12 w-12 border-base-200 z-10"
                 onClick={this.toggleCollapse}
             >
                 {icon}
@@ -46,8 +46,10 @@ class NetworkPolicySimulatorSuccessView extends Component {
         return (
             <Tabs headers={tabs}>
                 <TabContent>
-                    <div className="network-policy-success-yaml flex flex-col bg-white overflow-auto">
-                        <pre className="p-3 leading-loose">{yamlFile.content}</pre>
+                    <div className="network-policy-success-yaml flex flex-col bg-base-100 overflow-auto">
+                        <pre className="p-3 leading-loose whitespace-pre-wrap word-break">
+                            {yamlFile.content}
+                        </pre>
                     </div>
                 </TabContent>
             </Tabs>
@@ -56,7 +58,7 @@ class NetworkPolicySimulatorSuccessView extends Component {
 
     render() {
         return (
-            <section className="bg-white shadow text-base-600 border border-base-200 m-3 overflow-hidden h-full">
+            <section className="bg-base-100 shadow text-base-600 border border-base-200 m-3 overflow-hidden h-full">
                 <Message type="info" message={successMessage} />
                 <div className="relative h-full">
                     {this.renderTabs()}

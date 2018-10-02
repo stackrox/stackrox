@@ -56,7 +56,7 @@ class MainPage extends Component {
     };
 
     renderRouter = () => (
-        <section className="flex-auto overflow-auto">
+        <section className="flex-auto w-full overflow-hidden">
             <ErrorBoundary>
                 <Switch>
                     <ProtectedRoute path={dashboardPath} component={DashboardPage} />
@@ -80,7 +80,7 @@ class MainPage extends Component {
             <section className="flex flex-1 flex-col h-full relative">
                 <Notifications />
                 <div className="navigation-gradient" />
-                <header className="flex">
+                <header className="flex z-1">
                     <TopNavigation />
                 </header>
                 <section className="flex flex-1 flex-row">

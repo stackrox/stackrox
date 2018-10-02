@@ -132,7 +132,7 @@ class PolicyCreationForm extends Component {
             <div className="flex p-3 border-t border-base-200 bg-success-100">
                 <span className="w-full">
                     <CustomSelect
-                        className="border bg-white border-success-500 text-success-600 p-3 pr-8 rounded cursor-pointer w-full font-400"
+                        className="border bg-base-100 border-success-500 text-success-600 p-3 pr-8 rounded cursor-pointer w-full font-400"
                         placeholder={placeholder}
                         options={availableFields}
                         value=""
@@ -188,7 +188,7 @@ class PolicyCreationForm extends Component {
                     data-test-id={fieldGroup}
                     key={fieldGroup}
                 >
-                    <div className="bg-white border border-base-200 shadow">
+                    <div className="bg-base-100 border border-base-200 shadow">
                         <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">
                             {fieldGroupName}
                         </div>
@@ -203,7 +203,7 @@ class PolicyCreationForm extends Component {
     render() {
         return (
             <div className="flex flex-1 flex-col">
-                <form id="dynamic-form" className="bg-base-100">
+                <form id="dynamic-form" className="bg-base-200">
                     {this.renderFieldGroupCards()}
                 </form>
             </div>

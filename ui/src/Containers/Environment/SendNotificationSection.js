@@ -41,7 +41,7 @@ class SendNotificationSection extends Component {
                         className="w-3/4"
                     />
                     <button
-                        className="p-3 ml-2 bg-primary-500 rounded-sm text-center text-base-100 w-1/4 h-9 hover:bg-primary-400 hover:text-white"
+                        className="p-3 ml-2 bg-primary-500 rounded-sm text-center text-base-100 w-1/4 h-9 hover:bg-primary-400 hover:text-base-100"
                         onClick={this.onClick}
                         disabled={!selectedNotifier}
                     >
@@ -58,7 +58,7 @@ class SendNotificationSection extends Component {
             <div className="flex items-center justify-between">
                 <span>There are no notifiers integrated.</span>
                 <Link to="/main/integrations">
-                    <button className="pl-3 pr-3 bg-primary-500 rounded-sm text-center text-base-100 h-9 hover:bg-primary-600 hover:text-white">
+                    <button className="pl-3 pr-3 bg-primary-500 rounded-sm text-center text-base-100 h-9 hover:bg-primary-600 hover:text-base-100">
                         Add Notification Integrations
                     </button>
                 </Link>
@@ -68,7 +68,7 @@ class SendNotificationSection extends Component {
 
     render() {
         return (
-            <div className="bg-base-200 border-t-2 border-white p-3">
+            <div className="bg-base-200 border-t-2 border-base-100 p-3">
                 {this.renderMessage()}
                 {this.renderDropdown()}
             </div>

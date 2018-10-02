@@ -69,7 +69,7 @@ class SearchInput extends Component {
     };
 
     renderArrow = () => (
-        <span className="text-base-400">
+        <span className="text-base-500">
             <Icon.ChevronDown color="currentColor" size={18} />
         </span>
     );
@@ -82,17 +82,17 @@ class SearchInput extends Component {
 
     render() {
         const searchIcon = (
-            <span className="text-base-400 flex flex-1 h-full items-center">
+            <span className="text-base-500 flex flex-1 h-full items-center">
                 <Icon.Search color="currentColor" size={18} />
-                <span className="font-600 px-1">{this.props.placeholder}</span>
+                <span className="font-600 px-2">{this.props.placeholder}</span>
             </span>
         );
         const searchOptions = this.props.searchOptions.slice();
         const searchSuggestions = this.props.searchSuggestions.slice();
         const props = {
             className: this.props.id
-                ? `${this.props.id}-search-input ${this.props.className} z-10`
-                : `search-input ${this.props.className} z-10`,
+                ? `${this.props.id}-search-input ${this.props.className}`
+                : `search-input ${this.props.className}`,
             name: 'search-input',
             placeholder: searchIcon,
             onInputChange: this.onInputChange,

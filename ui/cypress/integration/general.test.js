@@ -20,11 +20,11 @@ describe('General sanity checks', () => {
         cy.url().should('contain', dashboardUrl);
 
         // Dashboard is selected
-        cy.get('@firstNavItem').should('have.class', 'bg-primary-600');
+        cy.get('@firstNavItem').should('have.class', 'bg-primary-700');
         cy.get('@firstNavItem').contains('Dashboard');
 
         // nothing else is selected
-        cy.get('@otherNavItems').should('not.have.class', 'bg-primary-600');
+        cy.get('@otherNavItems').should('not.have.class', 'bg-primary-700');
 
         cy.get(selectors.navLinks.list).as('topNavItems');
         cy.get('@topNavItems').should($lis => {

@@ -24,9 +24,11 @@ class NetworkPoliciesDetails extends Component {
                 {networkPolicies.map(networkPolicy => {
                     const { id, name, yaml } = networkPolicy;
                     return (
-                        <div className="px-3 py-4" key={id}>
+                        <div className="px-3 py-5" key={id}>
                             <CollapsibleCard title={name}>
-                                <pre className="h-full p-3 leading-loose">{yaml}</pre>
+                                <pre className="font-600 font-sans h-full leading-normal p-3">
+                                    {yaml}
+                                </pre>
                                 <div className="flex justify-center p-3 border-t border-base-500">
                                     <button
                                         className="download uppercase text-primary-600 p-2 text-center text-sm border border-solid bg-primary-200 border-primary-300 hover:bg-primary-100"

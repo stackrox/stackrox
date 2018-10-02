@@ -88,7 +88,7 @@ class RiskPage extends Component {
         }`;
         return (
             <Panel header={headerText} headerComponents={paginationComponent}>
-                <div className="w-full pl-3 pr-3">{this.renderTable()}</div>
+                <div className="w-full">{this.renderTable()}</div>
             </Panel>
         );
     };
@@ -176,7 +176,7 @@ class RiskPage extends Component {
         );
 
         return (
-            <div className="w-2/3">
+            <div className="w-1/2 bg-primary-200">
                 <Panel header={selectedDeployment.name} onClose={this.updateSelectedDeployment}>
                     {content}
                 </Panel>
@@ -203,7 +203,7 @@ class RiskPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full bg-white rounded-sm shadow bg-base-100">
+                        <div className="w-full bg-base-100 rounded-sm shadow">
                             {this.renderPanel()}
                         </div>
                         {this.renderSidePanel()}

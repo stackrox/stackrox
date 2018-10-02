@@ -43,7 +43,7 @@ export const selectors = {
         }
     },
     policyDetailsPanel: {
-        enabledValueDiv: 'div.text-primary-500:contains("Enabled") + div'
+        enabledValueDiv: 'div.text-base-600:contains("Enabled") + div'
     },
     searchInput: '.Select-input > input',
     sidePanel: '[data-test-id="panel"]',

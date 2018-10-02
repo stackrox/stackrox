@@ -14,7 +14,7 @@ class CollapsibleCard extends Component {
     static defaultProps = {
         open: true,
         titleClassName:
-            'p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide cursor-pointer flex justify-between'
+            'border-b border-base-300 tracking-wide cursor-pointer flex justify-between items-center hover:bg-primary-100 hover:border-primary-300'
     };
 
     renderTriggerElement = cardState => {
@@ -24,20 +24,22 @@ class CollapsibleCard extends Component {
         };
         return (
             <div className={this.props.titleClassName}>
-                <h1 className="text-base font-600">{this.props.title}</h1>
-                <div>{icons[cardState]}</div>
+                <h1 className="p-3 text-base-600 font-700 text-lg capitalize">
+                    {this.props.title}
+                </h1>
+                <div className="flex pr-3">{icons[cardState]}</div>
             </div>
         );
     };
 
     render() {
         return (
-            <div className="bg-white shadow text-primary-600 border border-base-200">
+            <div className="bg-base-100 shadow text-base-600">
                 <Collapsible
                     open={this.props.open}
                     trigger={this.renderTriggerElement('closed')}
                     triggerWhenOpen={this.renderTriggerElement('opened')}
-                    transitionTime={100}
+                    transitionTime={1}
                 >
                     {this.props.children}
                 </Collapsible>

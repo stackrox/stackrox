@@ -1,20 +1,20 @@
 export const url = '/main/dashboard';
 
 const severityColors = {
-    CRITICAL_SEVERITY: 'hsl(7, 100%, 55%)',
-    HIGH_SEVERITY: 'hsl(349, 100%, 78%)',
-    MEDIUM_SEVERITY: 'hsl(20, 100%, 78%)',
-    LOW_SEVERITY: 'hsl(42, 100%, 84%)'
+    CRITICAL_SEVERITY: 'hsl(358, 81%, 80%)',
+    HIGH_SEVERITY: 'hsl(16, 81%, 80%)',
+    MEDIUM_SEVERITY: 'hsl(39, 80%, 80%)',
+    LOW_SEVERITY: 'hsl(230, 43%, 90%)'
 };
 
 export const selectors = {
     navLink: 'nav li:contains("Dashboard") a',
     buttons: {
-        more: 'button:contains("More")'
+        viewAll: 'button:contains("View All")'
     },
     sectionHeaders: {
-        environmentRisk: 'h2:contains("Environment Risk")',
-        benchmarks: 'h2:contains("Benchmarks")',
+        systemViolations: 'h2:contains("System Violations")',
+        benchmarks: '.slick-active h2:contains("Benchmarks")',
         violationsByClusters: 'h2:contains("Violations by Cluster")',
         eventsByTime: 'h2:contains("Active Violations by Time")',
         securityBestPractices: 'h2:contains("Security Best Practices")',

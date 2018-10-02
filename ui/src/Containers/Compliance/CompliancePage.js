@@ -12,9 +12,9 @@ import PageHeader from 'Components/PageHeader';
 const CompliancePage = props => (
     <section className="flex flex-1 h-full">
         <div className="flex flex-1 flex-col">
-            <PageHeader header={props.cluster ? props.cluster.name : ''} />
+            <PageHeader header={`${props.cluster ? props.cluster.name : ''}`} subHeader="Cluster" />
             <div className="flex flex-1">
-                <Tabs className="bg-white" headers={props.benchmarkTabs}>
+                <Tabs className="bg-base-100" headers={props.benchmarkTabs}>
                     {props.benchmarkTabs.map(benchmark => (
                         <TabContent key={benchmark.benchmarkName}>
                             <BenchmarksPage

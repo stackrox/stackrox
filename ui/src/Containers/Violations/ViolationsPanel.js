@@ -101,7 +101,7 @@ class ViolationsPanel extends Component {
             <Panel
                 header={header}
                 buttons={whitelistButton}
-                className="w-2/3"
+                className="w-1/2 bg-primary-200"
                 onClose={this.props.onClose}
             >
                 {this.renderTabs()}

@@ -11,7 +11,7 @@ const Dialog = props => (
         className="ReactModal__Content dialog mx-auto my-0 flex flex-col self-center bg-primary-100 overflow-hidden max-h-full transition p-4"
     >
         <div className="py-4">{props.text}</div>
-        <div className="flex flex-row justify-end">
+        <div className="flex justify-end">
             <button className="btn btn-base" onClick={props.onCancel}>
                 Cancel
             </button>

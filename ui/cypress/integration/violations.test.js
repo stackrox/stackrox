@@ -27,7 +27,7 @@ describe('Violations page', () => {
     };
 
     it('should select item in nav bar', () => {
-        cy.get(ViolationsPageSelectors.navLink).should('have.class', 'bg-primary-600');
+        cy.get(ViolationsPageSelectors.navLink).should('have.class', 'bg-primary-700');
     });
 
     it('should have violations in table', () => {
@@ -108,7 +108,10 @@ describe('Violations page', () => {
             .find(ViolationsPageSelectors.sidePanel.tabs)
             .get(ViolationsPageSelectors.sidePanel.getTabByIndex(0))
             .click();
-        cy.get(ViolationsPageSelectors.collapsible.header).should('have.text', 'Violations');
+        cy
+            .get(ViolationsPageSelectors.collapsible.header)
+            .first()
+            .should('have.text', 'Violations');
         cy
             .get(ViolationsPageSelectors.collapsible.body)
             .contains(

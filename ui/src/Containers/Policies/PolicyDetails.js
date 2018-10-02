@@ -25,12 +25,12 @@ class PolicyDetails extends Component {
         const fields = Object.keys(policy);
         if (!fields) return '';
         return (
-            <div className="px-3 py-4 border-b border-base-300 bg-base-100">
-                <div className="bg-white border border-base-200 shadow">
-                    <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">
+            <div className="px-3 pt-5 bg-base-200">
+                <div className="bg-base-100 shadow">
+                    <div className="p-3 border-b border-base-300 text-base-600 font-700 text-lg capitalize">
                         Policy Details
                     </div>
-                    <div className="h-full p-3">
+                    <div className="h-full p-3 pb-0">
                         {fields.map(field => {
                             if (!fieldsMap[field]) return '';
                             const { label } = fieldsMap[field];
@@ -41,8 +41,8 @@ class PolicyDetails extends Component {
                             if (!value) return '';
                             return (
                                 <div className="mb-4" key={field}>
-                                    <div className="py-2 text-primary-500">{label}</div>
-                                    <div className="flex">{value}</div>
+                                    <div className="text-base-600 font-700">{label}:</div>
+                                    <div className="flex pt-1 leading-normal">{value}</div>
                                 </div>
                             );
                         })}
@@ -58,20 +58,20 @@ class PolicyDetails extends Component {
         const fieldKeys = Object.keys(fields);
         if (!fieldKeys.length) return '';
         return (
-            <div className="px-3 py-4 bg-base-100">
-                <div className="bg-white border border-base-200 shadow">
-                    <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">
+            <div className="px-3 pt-5 bg-base-200">
+                <div className="bg-base-100 shadow">
+                    <div className="p-3 border-b border-base-300 text-base-600 font-700 text-lg capitalize">
                         {policyFormFields.policyConfiguration.header}
                     </div>
-                    <div className="h-full p-3">
+                    <div className="h-full p-3 pb-0">
                         {fieldKeys.map(key => {
                             if (!fieldsMap[key]) return '';
                             const { label } = fieldsMap[key];
                             const value = fieldsMap[key].formatValue(policy.fields[key]);
                             return (
                                 <div className="mb-4" key={key} data-test-id={key}>
-                                    <div className="py-2 text-primary-500">{label}</div>
-                                    <div className="flex">{value}</div>
+                                    <div className="text-base-600 font-700">{label}:</div>
+                                    <div className="flex pt-1 leading-normal">{value}</div>
                                 </div>
                             );
                         })}
@@ -86,7 +86,7 @@ class PolicyDetails extends Component {
         if (!policy) return null;
 
         return (
-            <div className="flex flex-1 flex-col">
+            <div className="flex flex-1 flex-col pb-5">
                 {this.renderFields()}
                 {this.renderPolicyConfigurationFields()}
             </div>

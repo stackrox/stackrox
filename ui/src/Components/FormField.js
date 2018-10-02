@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import FormFieldRemoveButton from 'Components/FormFieldRemoveButton';
 
 const FormField = props => (
-    <div className="mb-4 transition">
+    <div className="mb-4">
         <div className="py-2 text-primary-500">
             <span>{props.label}</span>
             {props.required && (

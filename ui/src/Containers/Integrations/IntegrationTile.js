@@ -18,10 +18,12 @@ class IntegrationTile extends Component {
 
     onClick = () => this.props.onClick(this.props.integration);
 
+    handleKeyUp = e => (e.key === 'Enter' ? this.props.onClick(this.props.integration) : null);
+
     renderIndicator = () => {
         if (this.props.numIntegrations === 0) return null;
         return (
-            <span className="flex h-6 absolute pin-r pin-t m-2 p-2 items-center justify-center text-success-500 font-bold text-xl border-2 border-success-300">
+            <span className="flex h-6 absolute pin-r pin-t m-2 p-2 items-center justify-center text-success-600 font-700 text-xl border-2 border-success-500">
                 {this.props.numIntegrations}
             </span>
         );
@@ -30,26 +32,35 @@ class IntegrationTile extends Component {
     render() {
         const { integration, numIntegrations } = this.props;
         return (
-            <div className="p-3 w-full md:w-1/2 lg:w-1/3 xl:w-1/4">
-                <button
-                    className={`w-full p-4 bg-white rounded-sm shadow text-center relative 
-                    ${numIntegrations !== 0 && 'border-2 border-success-400'}`}
+            <div className="p-3 w-full md:w-1/2 lg:w-1/3 xl:w-1/4 min-h-55">
+                <div
+                    className={`flex flex-col justify-between cursor-pointer border-3 border-base-100 hover:shadow-lg items-center h-full w-full bg-base-100 rounded-sm shadow text-center relative 
+                    ${numIntegrations !== 0 && 'border-2 border-success-500'}`}
                     onClick={this.onClick}
+                    onKeyUp={this.handleKeyUp}
+                    role="button"
+                    tabIndex="0"
                 >
                     {this.renderIndicator()}
-                    <img
-                        className="w-24 h-24 mb-4"
-                        src={integration.image}
-                        alt={integration.label}
-                    />
-                    <div className="font-bold pt-4 text-xl">{integration.label}</div>
-                    {integration.categories !== '' &&
-                        integration.categories !== undefined && (
-                            <div className="text-l mt-2 pt-4 border-t border-base-200">
-                                {integration.categories}
-                            </div>
-                        )}
-                </button>
+                    <div className="flex h-full w-full flex-col justify-center">
+                        <img
+                            className="w-full px-7"
+                            src={integration.image}
+                            alt={integration.label}
+                        />
+                    </div>
+                    <div className="bg-tertiary-200 flex flex-col items-center justify-center min-h-16 w-full">
+                        <div className="leading-loose text-2xl text-tertiary-800">
+                            {integration.label}
+                        </div>
+                        {integration.categories !== '' &&
+                            integration.categories !== undefined && (
+                                <div className="font-700 text-tertiary-700 text-xs tracking-widest uppercase mb-1">
+                                    {integration.categories}
+                                </div>
+                            )}
+                    </div>
+                </div>
             </div>
         );
     }

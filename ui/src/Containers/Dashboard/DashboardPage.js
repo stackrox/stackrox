@@ -34,10 +34,10 @@ import { actions as dashboardActions } from 'reducers/dashboard';
 
 //  @TODO: Have one source of truth for severity colors
 const severityColorMap = {
-    CRITICAL_SEVERITY: 'hsl(7, 100%, 55%)',
-    HIGH_SEVERITY: 'hsl(349, 100%, 78%)',
-    MEDIUM_SEVERITY: 'hsl(20, 100%, 78%)',
-    LOW_SEVERITY: 'hsl(42, 100%, 84%)'
+    CRITICAL_SEVERITY: 'hsl(358, 81%, 80%)',
+    HIGH_SEVERITY: 'hsl(16, 81%, 80%)',
+    MEDIUM_SEVERITY: 'hsl(39, 80%, 80%)',
+    LOW_SEVERITY: 'hsl(230, 43%, 90%)'
 };
 
 const severityPropType = PropTypes.oneOf([
@@ -159,10 +159,12 @@ class DashboardPage extends Component {
 
     renderAlertsByTimeseries = () => {
         if (!this.props.alertsByTimeseries || !this.props.alertsByTimeseries.length) {
-            return <NoResultsMessage message="No Violations Available. Please refine search" />;
+            return (
+                <NoResultsMessage message="No data available. Please ensure your cluster is properly configured." />
+            );
         }
         return (
-            <div className="p-0 h-64 w-full">
+            <div className="p-0 h-64 w-full overflow-hidden">
                 <Slider {...slickSettings}>
                     {this.props.alertsByTimeseries.map(cluster => {
                         const { data, name } = this.formatTimeseriesData(cluster);
@@ -205,7 +207,9 @@ class DashboardPage extends Component {
 
     renderViolationsByCluster = () => {
         if (!this.props.violationsByCluster || !this.props.violationsByCluster.length) {
-            return <NoResultsMessage message="No Clusters Available. Please refine search" />;
+            return (
+                <NoResultsMessage message="No data available. Please ensure your cluster is properly configured." />
+            );
         }
         const clusterCharts = [];
 
@@ -241,31 +245,32 @@ class DashboardPage extends Component {
                         <div key={index}>
                             <ResponsiveContainer className="flex-1 h-full w-full">
                                 <BarChart
+                                    stackOffset="expand"
+                                    maxBarSize={32}
+                                    barGap={16}
                                     data={data}
                                     margin={{
                                         top: 5,
-                                        right: 30,
-                                        left: 20,
+                                        right: 10,
+                                        left: -30,
                                         bottom: 5
                                     }}
                                 >
                                     <XAxis dataKey="name" />
+
                                     <YAxis
                                         domain={[0, 'dataMax']}
                                         allowDecimals={false}
                                         label={{
-                                            value: 'Count',
+                                            value: '',
                                             angle: -90,
                                             position: 'insideLeft',
-                                            textAnchor: 'middle'
+                                            textAnchor: 'right'
                                         }}
                                     />
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <Tooltip />
-                                    <Legend
-                                        horizontalAlign="right"
-                                        wrapperStyle={{ lineHeight: '40px' }}
-                                    />
+                                    <CartesianGrid strokeDasharray="1 1" />
+                                    <Tooltip offset={0} />
+                                    <Legend wrapperStyle={{ left: 0, width: '100%' }} />
                                     {Object.keys(severityLabels).map(severity => {
                                         const arr = [];
                                         const bar = (
@@ -313,11 +318,13 @@ class DashboardPage extends Component {
                 }
             }));
             return (
-                <div className="p-6 w-full lg:w-1/2" key={policyType.group}>
-                    <div className="bg-white rounded-sm shadow h-full">
-                        <h2 className="flex flex-row items-center text-lg text-base font-sans text-base-600 tracking-wide border-primary-200 border-b">
-                            <Icon.BarChart className="h-4 w-4 ml-3" />
-                            <span className="px-4 py-6">{policyType.group}</span>
+                <div className="p-3 w-full lg:w-1/2 xl:w-1/3" key={policyType.group}>
+                    <div className="bg-base-100 rounded-sm shadow h-full rounded">
+                        <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-primary-200 border-b">
+                            <Icon.BarChart className="h-4 w-4 m-3" />
+                            <span className="px-4 py-4 pl-3 uppercase text-base tracking-wide pb-3 border-l border-base-300">
+                                {policyType.group}
+                            </span>
                         </h2>
                         <div className="m-4 h-64">
                             <TwoLevelPieChart data={data} />
@@ -343,9 +350,9 @@ class DashboardPage extends Component {
         });
         const severities = Object.keys(counts);
         return (
-            <div className="flex flex-1 flex-col w-full">
-                <h2 className="flex items-center text-xl text-base font-sans text-base-600 pb-8 tracking-wide font-500">
-                    Environment Risk
+            <div className="w-full">
+                <h2 className="-ml-6 bg-base-100 inline-block leading-normal mb-6 p-3 pb-2 pl-6 pr-4 rounded-r-full text-base-600 text-lg text-primary-800 tracking-wide tracking-widest uppercase">
+                    System Violations
                 </h2>
                 <div className="flex">
                     {severities.map((severity, i) => (
@@ -364,7 +371,9 @@ class DashboardPage extends Component {
 
     renderClusterBenchmarks = () => {
         if (!this.props.benchmarks || !this.props.benchmarks.length) {
-            return <NoResultsMessage message="No Clusters Available. Please refine search" />;
+            return (
+                <NoResultsMessage message="No data available. Please ensure your cluster is properly configured." />
+            );
         }
         return (
             <div className="p-0 h-full w-full dashboard-benchmarks">
@@ -387,9 +396,9 @@ class DashboardPage extends Component {
     render() {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
         return (
-            <section className="flex flex-1 h-full w-full">
+            <section className="flex flex-1 h-full w-full bg-base-200">
                 <div className="flex flex-col w-full">
-                    <div>
+                    <div className="z-1">
                         <PageHeader header="Dashboard" subHeader={subHeader}>
                             <SearchInput
                                 className="flex flex-1"
@@ -403,21 +412,24 @@ class DashboardPage extends Component {
                             />
                         </PageHeader>
                     </div>
-                    <div className="overflow-auto">
-                        <div className="flex bg-white border-b border-primary-500">
-                            <div className="w-1/2 p-6">{this.renderEnvironmentRisk()}</div>
-                            <div className="w-1/2 p-6 border-l border-primary-200">
+                    <div className="overflow-auto bg-base-200 z-0">
+                        <div className="flex flex-wrap bg-base-300 bg-base-100">
+                            <div className="bg-dashboard" />
+                            <div className="w-full lg:w-1/2 p-6 z-1">
+                                {this.renderEnvironmentRisk()}
+                            </div>
+                            <div className="w-full lg:w-1/2 py-6 border-l-2 border-base-400 z-1">
                                 {this.renderClusterBenchmarks()}
                             </div>
                         </div>
-                        <div className="overflow-auto bg-base-100">
-                            <div className="flex flex-col w-full">
-                                <div className="flex w-full flex-wrap">
-                                    <div className="p-6 w-full lg:w-1/2">
-                                        <div className="flex flex-col bg-white rounded-sm shadow h-full">
+                        <div className="overflow-auto bg-base-200 relative border-t border-base-400">
+                            <div className="flex flex-col w-full items-center overflow-hidden">
+                                <div className="flex w-full flex-wrap -mx-6 p-3">
+                                    <div className="w-full lg:w-1/2 xl:w-1/3 p-3">
+                                        <div className="flex flex-col bg-base-100 rounded-sm shadow h-full rounded">
                                             <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-primary-200 border-b">
-                                                <Icon.Layers className="h-4 w-4 ml-3" />
-                                                <span className="px-4 py-6">
+                                                <Icon.Layers className="h-4 w-4 m-3" />
+                                                <span className="px-4 py-4 pl-3 uppercase text-base tracking-wide pb-3 border-l border-base-300">
                                                     Violations by Cluster
                                                 </span>
                                             </h2>
@@ -426,11 +438,11 @@ class DashboardPage extends Component {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="p-6 w-full lg:w-1/2">
-                                        <div className="flex flex-col bg-white rounded-sm shadow h-full">
+                                    <div className="p-3 w-full lg:w-1/2 xl:w-1/3">
+                                        <div className="flex flex-col bg-base-100 rounded-sm shadow h-full rounded">
                                             <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-primary-200 border-b">
-                                                <Icon.AlertTriangle className="h-4 w-4 ml-3" />
-                                                <span className="px-4 py-6">
+                                                <Icon.AlertTriangle className="h-4 w-4 m-3" />
+                                                <span className="px-4 py-4 pl-3 uppercase text-base tracking-wide pb-3 border-l border-base-300">
                                                     Active Violations by Time
                                                 </span>
                                             </h2>
@@ -440,7 +452,7 @@ class DashboardPage extends Component {
                                         </div>
                                     </div>
                                     {this.renderViolationsByPolicyCategory()}
-                                    <div className="p-6 md:w-full lg:w-1/2">
+                                    <div className="p-3 w-full lg:w-1/2 xl:w-1/3">
                                         {this.renderTopRiskyDeployments()}
                                     </div>
                                 </div>

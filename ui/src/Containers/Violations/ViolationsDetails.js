@@ -35,10 +35,14 @@ class ViolationsDetails extends Component {
 
     render() {
         return (
-            <div className="w-full px-3 py-4">
-                <CollapsibleCard title="Violations">
-                    <div className="h-full p-3">{this.renderViolations()}</div>
-                </CollapsibleCard>
+            <div className="w-full pb-5">
+                <div className="px-3 pt-5">
+                    <div className="bg-base-100 text-primary-600">
+                        <CollapsibleCard title="Violations">
+                            <div className="h-full px-3">{this.renderViolations()}</div>
+                        </CollapsibleCard>
+                    </div>
+                </div>
             </div>
         );
     }

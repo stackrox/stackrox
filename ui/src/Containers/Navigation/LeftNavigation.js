@@ -29,6 +29,7 @@ const navLinks = [
     },
     {
         text: 'Compliance',
+        id: 'joe',
         to: '',
         renderIcon: () => <Icon.CheckSquare className="h-4 w-4 mb-1" />,
         panelType: 'compliance'
@@ -91,28 +92,28 @@ class LeftNavigation extends Component {
         const { pathname } = this.props.location;
         const navText = navLink.text.toLowerCase();
         if (pathname.includes('compliance') && navText === 'compliance') {
-            return 'text-white bg-primary-600';
+            return 'text-base-100 bg-primary-700 hover:bg-primary-700';
         }
 
         if (
             (pathname.includes('policies') || pathname.includes('integrations')) &&
             navText === 'configure'
         ) {
-            return 'text-white bg-primary-600';
+            return 'text-base-100 bg-primary-700 hover:bg-primary-700';
         }
 
         if (navLink.to !== '') {
-            return 'text-white bg-primary-600';
+            return 'text-base-100 bg-primary-700 hover:bg-primary-700';
         }
         if (navLink.to === '') {
             if (this.state.panelType && this.state.panelType === navLink.panelType) {
-                return 'text-white bg-primary-700';
+                return 'text-base-100 bg-base-800 hover:bg-base-800';
             } else if (
                 !this.state.panelType &&
                 this.state.clickOnPanelItem &&
                 this.state.selectedPanel === navText
             ) {
-                return 'text-white bg-primary-600';
+                return 'text-base-100 bg-base-800 hover:bg-base-800';
             }
             return 'bg-primary-800';
         }
@@ -139,29 +140,28 @@ class LeftNavigation extends Component {
     renderLink = (navLink, i, arr) => (
         <Link
             to={navLink.to}
+            id={navLink.id}
             activeClassName={this.getActiveClassName(navLink)}
             onClick={this.showNavigationPanel(navLink)}
-            className={`flex flex-col font-condensed font-700 border-primary-900 text-primary-400 px-3 no-underline py-4 hover:bg-primary-700 items-center ${
-                i === arr.length - 1 ? 'border-b border-t' : 'border-t'
+            className={`flex flex-col font-condensed font-700 border-primary-900 text-primary-400 px-3 no-underline justify-center h-18 hover:bg-base-700 items-center ${
+                i === arr.length - 1 ? 'border-b border-b' : 'border-b'
             }`}
         >
             <div className="text-center pb-1">{navLink.renderIcon()}</div>
-            <div className="text-center text-white">{navLink.text}</div>
+            <div className="text-center text-base-100">{navLink.text}</div>
         </Link>
     );
 
     renderLeftSideNavLinks = () => (
         <ul className="flex flex-col list-reset uppercase text-sm tracking-wide">
             {navLinks.map((navLink, i, arr) => (
-                <li key={navLink.text} className="flex-col ">
-                    {this.renderLink(navLink, i, arr)}
-                </li>
+                <li key={navLink.text}>{this.renderLink(navLink, i, arr)}</li>
             ))}
         </ul>
     );
 
     renderVersion = () => (
-        <div className="flex text-center">
+        <div className="flex text-center text-xs font-700">
             <span className="left-navigation p-3 text-primary-400 word-break-all">
                 v{this.props.metadata.version}
             </span>
@@ -175,7 +175,7 @@ class LeftNavigation extends Component {
 
     render() {
         return (
-            <div className="flex flex-col justify-between bg-primary-800">
+            <div className="flex flex-col justify-between bg-primary-800 flex-none overflow-auto z-10">
                 <nav className="left-navigation">{this.renderLeftSideNavLinks()}</nav>
                 {this.renderVersion()}
                 {this.renderNavigationPanel()}

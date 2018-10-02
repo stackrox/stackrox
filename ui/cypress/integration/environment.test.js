@@ -16,7 +16,7 @@ describe('Network page', () => {
 
     it('should have selected item in nav bar', () => {
         cy.get(networkPageSelectors.network).click();
-        cy.get(networkPageSelectors.network).should('have.class', 'bg-primary-600');
+        cy.get(networkPageSelectors.network).should('have.class', 'bg-primary-700');
     });
 
     it('should display a Legend', () => {

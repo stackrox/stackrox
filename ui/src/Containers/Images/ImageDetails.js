@@ -93,7 +93,7 @@ class ImageDetails extends Component {
         };
         return (
             <div className="px-3 py-4">
-                <div className="alert-preview bg-white shadow text-primary-600">
+                <div className="alert-preview bg-base-100 shadow text-primary-600">
                     <CollapsibleCard title={title}>
                         <div className="h-full">
                             <div className="p-3">
@@ -102,7 +102,7 @@ class ImageDetails extends Component {
                             <div className="flex bg-primary-100">
                                 <span className="w-1/2">
                                     <button
-                                        className="flex mx-auto my-2 py-3 px-2 w-5/6 rounded-sm text-primary-600 no-underline hover:text-white hover:bg-primary-400 uppercase justify-center text-sm items-center bg-white border-2 border-primary-400"
+                                        className="flex mx-auto my-2 py-3 px-2 w-5/6 rounded-sm text-primary-600 no-underline hover:text-base-100 hover:bg-primary-400 uppercase justify-center text-sm items-center bg-base-100 border-2 border-primary-400"
                                         onClick={this.onViewDeploymentsClick}
                                     >
                                         View Deployments
@@ -115,7 +115,7 @@ class ImageDetails extends Component {
                                     data-for="button-DockerFile"
                                 >
                                     <button
-                                        className="flex mx-auto my-2 py-3 px-2 w-5/6 rounded-sm text-primary-600 hover:text-white hover:bg-primary-400 uppercase justify-center text-sm items-center bg-white border-2 border-primary-400"
+                                        className="flex mx-auto my-2 py-3 px-2 w-5/6 rounded-sm text-primary-600 hover:text-base-100 hover:bg-primary-400 uppercase justify-center text-sm items-center bg-base-100 border-2 border-primary-400"
                                         onClick={this.openModal}
                                         disabled={!image.metadata}
                                     >
@@ -125,7 +125,8 @@ class ImageDetails extends Component {
                                         <ReactTooltip
                                             id="button-DockerFile"
                                             type="dark"
-                                            effect="solid"
+                                            effect="float"
+                                            className="max-w-xs p-2 w-full text-sm text-center bg-base-600 border-base-600"
                                         >
                                             Docker file not available
                                         </ReactTooltip>
@@ -179,7 +180,7 @@ class ImageDetails extends Component {
                 <Table
                     rows={row.original.vulns}
                     columns={subColumns}
-                    className="bg-base-100"
+                    className="bg-base-200"
                     showPagination={false}
                     pageSize={row.original.vulns.length}
                 />
@@ -191,7 +192,7 @@ class ImageDetails extends Component {
         const title = 'CVEs';
         return (
             <div className="px-3 py-4">
-                <div className="alert-preview bg-white shadow text-primary-600">
+                <div className="alert-preview bg-base-100 shadow text-primary-600">
                     <CollapsibleCard title={title}>
                         <div className="h-full p-3 font-500"> {this.renderCVEsTable()}</div>
                     </CollapsibleCard>
@@ -265,7 +266,11 @@ class ImageDetails extends Component {
             </div>
         );
         return (
-            <Panel header={header} onClose={this.updateSelectedImage} className="w-2/3">
+            <Panel
+                header={header}
+                onClose={this.updateSelectedImage}
+                className="w-1/2 bg-primary-200"
+            >
                 {content}
             </Panel>
         );

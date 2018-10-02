@@ -78,7 +78,7 @@ class SecretPage extends Component {
         }`;
         return (
             <Panel header={headerText} headerComponents={paginationComponent}>
-                <div className="w-full pl-3 pr-3">{this.renderTable()}</div>
+                <div className="w-full">{this.renderTable()}</div>
             </Panel>
         );
     };
@@ -120,7 +120,7 @@ class SecretPage extends Component {
         const { selectedSecret } = this.props;
         if (!selectedSecret) return null;
         return (
-            <div className="w-2/3">
+            <div className="w-1/2 bg-primary-200">
                 <Panel header={selectedSecret.name} onClose={this.updateSelectedSecret}>
                     <SecretDetails secret={selectedSecret} />
                 </Panel>
@@ -147,7 +147,7 @@ class SecretPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full overflow-y-scroll bg-white rounded-sm shadow bg-base-100">
+                        <div className="w-full overflow-y-scroll bg-base-100 rounded-sm shadow">
                             {this.renderPanel()}
                         </div>
                         {this.renderSidePanel()}

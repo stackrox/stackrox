@@ -4,10 +4,10 @@ import * as Icon from 'react-feather';
 
 export const CarouselNextArrow = ({ onClick }) => (
     <button
-        className="border border-base-300 text-base-500 carousel-next-arrow px-2 py-2 hover:text-white hover:bg-base-300 bg-white block"
+        className="bg-base-100 block border border-base-300 carousel-next-arrow h-10 hover:bg-primary-100 hover:text-primary-600 rounded-full text-base-500 w-10"
         onClick={onClick}
     >
-        <Icon.ChevronRight className="w-4 h-4" />
+        <Icon.ChevronRight className="mt-1" />
     </button>
 );
 CarouselNextArrow.propTypes = {
@@ -16,10 +16,10 @@ CarouselNextArrow.propTypes = {
 
 export const CarouselPrevArrow = ({ onClick }) => (
     <button
-        className="border border-base-300 text-base-500 carousel-prev-arrow px-2 py-2 hover:text-white hover:bg-base-300 bg-white block"
+        className="bg-base-100 block border border-base-300 carousel-prev-arrow h-10 hover:bg-primary-100 hover:text-primary-600 rounded-full text-base-500 w-10"
         onClick={onClick}
     >
-        <Icon.ChevronLeft className="w-4 h-4" />
+        <Icon.ChevronLeft className="mt-1" />
     </button>
 );
 CarouselPrevArrow.propTypes = {

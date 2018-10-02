@@ -62,7 +62,7 @@ class PolicyCreationWizard extends Component {
 
     render() {
         return (
-            <div className="flex flex-1 flex-col bg-base-100">
+            <div className="flex flex-1 flex-col bg-base-200">
                 {this.renderEditPanel()}
                 {this.renderPreviewPanel()}
             </div>

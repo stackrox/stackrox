@@ -20,33 +20,33 @@ describe('Global Search Modal', () => {
             .get(selectors.categoryTabs)
             .eq(0)
             .should('have.text', 'All')
-            .should('have.class', 'border-b-2 border-primary-400');
+            .should('have.class', 'border-primary-400');
         cy
             .get(selectors.categoryTabs)
             .eq(1)
             .should('have.text', 'Violations')
-            .should('not.have.class', 'border-b-2 border-primary-400');
+            .should('not.have.class', 'border-primary-400');
         cy
             .get(selectors.categoryTabs)
             .eq(2)
             .should('have.text', 'Policies')
-            .should('not.have.class', 'border-b-2 border-primary-400');
+            .should('not.have.class', 'border-primary-400');
         cy
             .get(selectors.categoryTabs)
             .eq(3)
             .should('have.text', 'Deployments')
-            .should('not.have.class', 'border-b-2 border-primary-400');
+            .should('not.have.class', 'border-primary-400');
         cy
             .get(selectors.categoryTabs)
             .eq(4)
             .should('have.text', 'Images')
-            .should('not.have.class', 'border-b-2 border-primary-400');
+            .should('not.have.class', 'border-primary-400');
 
         cy
             .get(selectors.categoryTabs)
             .eq(5)
             .should('have.text', 'Secrets')
-            .should('not.have.class', 'border-b-2 border-primary-400');
+            .should('not.have.class', 'border-primary-400');
     });
 
     it('Should filter search results', () => {

@@ -108,7 +108,7 @@ const renderCert = cert => (
 
 const renderFileCard = file => (
     <div className="px-3 py-4 w-full overflow-y-scroll">
-        <div className="bg-white shadow text-primary-600 tracking-wide">
+        <div className="bg-base-100 shadow text-primary-600 tracking-wide">
             <CollapsibleCard title={file.name}>
                 <div className="w-full h-full p-3 font-500">
                     <KeyValuePairs data={file} keyValueMap={secretFileDetailsMap} />
@@ -124,9 +124,9 @@ const renderDataDetails = secret => secret.files.map(file => renderFileCard(file
 const SecretDetails = ({ secret }) => {
     if (!secret) return <NoResultsMessage message="No Secret Details Available" />;
     return (
-        <div className="h-full w-full bg-base-100">
+        <div className="h-full w-full bg-base-200">
             <div className="px-3 py-4 w-full overflow-y-scroll">
-                <div className="bg-white shadow text-primary-600 tracking-wide">
+                <div className="bg-base-100 shadow text-primary-600 tracking-wide">
                     <CollapsibleCard title="Overview">
                         <div className="h-full">
                             <div className="p-3">
@@ -137,7 +137,7 @@ const SecretDetails = ({ secret }) => {
                 </div>
             </div>
             <div data-test-id="deployments-card" className="px-3 py-4 w-full overflow-y-scroll">
-                <div className="bg-white shadow text-primary-600 tracking-wide">
+                <div className="bg-base-100 shadow text-primary-600 tracking-wide">
                     <CollapsibleCard title="Deployments">
                         {getDeploymentRelationships(secret)}
                     </CollapsibleCard>

@@ -7,7 +7,7 @@ describe('Secrets page', () => {
     });
 
     it('should have selected item in nav bar', () => {
-        cy.get(SecretsPageSelectors.secrets).should('have.class', 'bg-primary-600');
+        cy.get(SecretsPageSelectors.secrets).should('have.class', 'bg-primary-700');
     });
 
     it('should open the panel to view secret details', () => {

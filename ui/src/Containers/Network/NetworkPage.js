@@ -165,8 +165,12 @@ class NetworkPage extends Component {
         return (
             <section className="flex flex-1 h-full w-full">
                 <div className="flex flex-1 flex-col w-full">
-                    <div className="flex flex-row">
-                        <PageHeader header="Environment" subHeader={subHeader} className="w-2/3">
+                    <div className="flex">
+                        <PageHeader
+                            header="Environment"
+                            subHeader={subHeader}
+                            className="w-1/2 bg-primary-200"
+                        >
                             <SearchInput
                                 id="environment"
                                 className="flex flex-1"
@@ -186,7 +190,7 @@ class NetworkPage extends Component {
                         {this.renderGraph()}
                         {nodeUpdatesCount > 0 && (
                             <button
-                                className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-500 hover:bg-primary-400 rounded-sm text-sm text-white"
+                                className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-500 hover:bg-primary-400 rounded-sm text-sm text-base-100"
                                 onClick={this.onUpdateGraph}
                             >
                                 <Icon.Circle className="h-2 w-2 border-primary-300" />

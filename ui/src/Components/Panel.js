@@ -5,22 +5,20 @@ import CloseButton from './CloseButton';
 
 const Panel = props => (
     <div
-        className={`flex flex-col bg-white border h-full border-t-0 border-base-300 ${
-            props.className
-        }`}
+        className={`flex flex-col border h-full border-t-0 border-base-400 ${props.className}`}
         data-test-id="panel"
     >
-        <div className="shadow-underline font-bold bg-white">
-            <div className="flex flex-row w-full">
+        <div className="border-b border-base-400">
+            <div className="flex w-full h-12 word-break">
                 <div
-                    className="flex flex-1 text-base-600 uppercase items-center tracking-wide py-2 px-4"
+                    className="flex flex-1 text-base-600 uppercase items-center tracking-wide px-4 pt-1 leading-normal font-700"
                     data-test-id="panel-header"
                 >
                     {props.header}
                 </div>
-                <div className="flex items-center py-2 px-4">{props.buttons}</div>
+                <div className="flex items-center px-4">{props.buttons}</div>
                 {props.headerComponents && (
-                    <div className="flex items-center py-2 px-4">{props.headerComponents}</div>
+                    <div className="flex items-center px-4 pr-3">{props.headerComponents}</div>
                 )}
                 {props.onClose && (
                     <CloseButton
@@ -31,7 +29,7 @@ const Panel = props => (
                 )}
             </div>
         </div>
-        <div className="flex flex-1 overflow-auto transition">{props.children}</div>
+        <div className="flex flex-1 overflow-auto">{props.children}</div>
     </div>
 );
 

@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
+import PageHeader from 'Components/PageHeader';
 
 import ClustersModal from 'Containers/Integrations/Clusters/ClustersModal';
 import integrationsList from 'Containers/Integrations/integrationsList';
@@ -183,44 +184,60 @@ class IntegrationsPage extends Component {
         const plugins = this.renderIntegrationTiles('plugins');
         const authProviders = this.renderIntegrationTiles('authProviders');
         return (
-            <section className="flex">
-                <div className="md:w-full border-r border-primary-300 pt-4 bg-base-100">
-                    <h1 className="font-500 mx-3 border-b border-primary-300 pb-4 uppercase text-xl font-800 text-primary-600 tracking-wide">
-                        Integrations
-                    </h1>
-                    <div>
-                        <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 pb-3">
-                            Image Integrations
+            <div className="h-full flex flex-col md:w-full bg-base-200">
+                <div className="flex flex-no-shrink">
+                    <PageHeader header="Integrations" subHeader="Setup & Configuration" />
+                </div>
+                <div className="w-full h-full overflow-auto">
+                    <section className="mb-6">
+                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
+                            Images
                         </h2>
-                        <div className="flex flex-wrap">{imageIntegrations}</div>
-                    </div>
-                    <div>
-                        <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
+                        <div className="flex flex-col items-center w-full">
+                            <div className="flex flex-wrap w-full -mx-6 p-3">
+                                {imageIntegrations}
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="mb-6">
+                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
                             Orchestrators &amp; Container Platforms
                         </h2>
-                        <div className="flex flex-wrap">{orchestrators}</div>
-                    </div>
-                    <div className="mb-6">
-                        <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
+                        <div className="flex flex-col items-center w-full">
+                            <div className="flex flex-wrap w-full -mx-6 p-3">{orchestrators}</div>
+                        </div>
+                    </section>
+
+                    <section className="mb-6">
+                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
                             Plugins
                         </h2>
-                        <div className="flex flex-wrap">{plugins}</div>
-                    </div>
-                    <div className="mb-6">
-                        <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
+                        <div className="flex flex-col items-center w-full">
+                            <div className="flex flex-wrap w-full -mx-6 p-3">{plugins}</div>
+                        </div>
+                    </section>
+
+                    <section className="mb-6">
+                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
                             Authentication Providers
                         </h2>
-                        <div className="flex flex-wrap">{authProviders}</div>
-                    </div>
-                    <div>
-                        <h2 className="mx-3 mt-8 text-xl text-base text-primary-500 border-t border-primary-300 pt-6 pb-3">
+                        <div className="flex flex-col items-center w-full">
+                            <div className="flex flex-wrap w-full -mx-6 p-3">{authProviders}</div>
+                        </div>
+                    </section>
+
+                    <section className="mb-6">
+                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
                             StackRox
                         </h2>
-                        <div className="flex flex-wrap">{dnrIntegrations}</div>
-                    </div>
+                        <div className="flex flex-col items-center w-full">
+                            <div className="flex flex-wrap w-full -mx-6 p-3">{dnrIntegrations}</div>
+                        </div>
+                    </section>
                 </div>
                 {this.renderIntegrationModal()}
-            </section>
+            </div>
         );
     }
 }

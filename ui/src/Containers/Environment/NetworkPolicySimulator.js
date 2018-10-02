@@ -65,15 +65,15 @@ class NetworkPolicySimulator extends Component {
     };
 
     renderGettingStarted = () => (
-        <section className="bg-white shadow text-base-600 border border-base-200 m-3 flex flex-col flex-no-shrink">
-            <div className="p-3 border-b border-base-300 text-primary-600 cursor-pointer flex justify-between space-between">
-                <h1 className="text-base text-base-600 font-600">Getting Started</h1>
+        <section className="bg-base-100 shadow text-base-600 border border-base-200 m-3 flex flex-col flex-no-shrink">
+            <div className="p-3 pb-2 border-b border-base-300 text-primary-600 cursor-pointer flex justify-between space-between">
+                <h1 className="text-base text-base-600 text-lg font-700">Getting Started</h1>
                 <Icon.X className="h-4 w-4 text-base-500" onClick={this.hideGetStartedSection} />
             </div>
             <div className="pt-3 pr-3 pl-3 self-center">
                 <img alt="" src={gettingStarted} />
             </div>
-            <div className="m-3 border-t border-dashed border-base-300 pt-3 leading-loose font-500">
+            <div className="m-3 border-t border-dashed border-base-300 pt-3 leading-loose font-600">
                 The network simulator allows you to quickly preview your environment under different
                 policy configurations. After proper configuration, notify and share the YAML file
                 with your team. To get started, upload a YAML file below.
@@ -82,7 +82,7 @@ class NetworkPolicySimulator extends Component {
     );
 
     renderLoadingSection = () => (
-        <section className="m-3 flex flex-1 border border-dashed border-base-300 bg-white">
+        <section className="m-3 flex flex-1 border border-dashed border-base-300 bg-base-100">
             <div className="flex flex-col flex-1 font-500 uppercase">
                 <Loader message="Processing Network Policies" />
             </div>
@@ -90,13 +90,13 @@ class NetworkPolicySimulator extends Component {
     );
 
     renderDragAndDrop = message => (
-        <section className="bg-white m-3 flex flex-1 border border-dashed border-base-300 cursor-pointer">
+        <section className="bg-base-100 min-h-32 m-3 flex flex-1 border border-dashed border-base-300 hover:border-base-500 cursor-pointer">
             <ReactDropzone
                 onDrop={this.onDrop}
-                className="flex flex-1 flex-col self-center uppercase p-5"
+                className="flex flex-1 flex-col self-center uppercase p-5 h-full hover:bg-warning-100 justify-center"
             >
                 <div
-                    className="h-12 w-12 self-center rounded-full flex items-center justify-center"
+                    className="h-18 w-18 self-center rounded-full flex items-center justify-center"
                     style={{ background: '#faecd2', color: '#b39357' }}
                 >
                     <Icon.Upload className="h-8 w-8" strokeWidth="1.5px" />
@@ -116,7 +116,7 @@ class NetworkPolicySimulator extends Component {
     renderUploadView = () => {
         const { yamlUploadState } = this.props;
         if (yamlUploadState !== 'INITIAL') return null;
-        const uploadMessage = 'Click to upload or drop network policy yaml inside.';
+        const uploadMessage = 'Click to upload or drop network policy yaml inside';
         return (
             <div className="flex flex-col flex-1">
                 {this.state.showGetStartedSection && this.renderGettingStarted()}
@@ -170,8 +170,8 @@ class NetworkPolicySimulator extends Component {
                 className="border-t-0 border-r-0 border-b-0"
                 header={header}
                 onClose={this.onClose}
-                closeButtonClassName={`bg-${colorType}-500 hover:bg-${colorType}-500`}
-                closeButtonIconColor="text-white"
+                closeButtonClassName={`bg-${colorType}-600 hover:bg-${colorType}-600`}
+                closeButtonIconColor="text-base-100"
             >
                 {!yamlFile && this.renderUploadView()}
                 {yamlFile && this.renderProcessingView()}
@@ -183,7 +183,7 @@ class NetworkPolicySimulator extends Component {
 
     render() {
         return (
-            <div className="h-full absolute pin-r pin-b w-2/5 pt-1 pb-1 pr-1 shadow-md">
+            <div className="h-full absolute pin-r pin-b w-1/3 pt-1 pb-1 pr-1 shadow-md bg-base-200">
                 {this.renderSidePanel()}
             </div>
         );

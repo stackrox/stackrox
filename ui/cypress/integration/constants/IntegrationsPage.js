@@ -3,13 +3,13 @@ export const url = '/main/integrations';
 export const selectors = {
     configure: 'nav.left-navigation li:contains("Configure") a',
     navLink: '.navigation-panel li:contains("Integrations") a',
-    dockerSwarmTile: 'button:contains("Docker Swarm")',
-    kubernetesTile: 'button:contains("Kubernetes")',
-    dockerRegistryTile: 'button:contains("Generic Docker Registry")',
-    clairTile: 'button:contains("CoreOS Clair")',
-    clairifyTile: 'button:contains("Clairify")',
-    slackTile: 'button:contains("Slack")',
-    apiTokenTile: 'button:contains("API Token")',
+    dockerSwarmTile: 'div[role="button"]:contains("Docker Swarm")',
+    kubernetesTile: 'div[role="button"]:contains("Kubernetes")',
+    dockerRegistryTile: 'div[role="button"]:contains("Generic Docker Registry")',
+    clairTile: 'div[role="button"]:contains("CoreOS Clair")',
+    clairifyTile: 'div[role="button"]:contains("Clairify")',
+    slackTile: 'div[role="button"]:contains("Slack")',
+    apiTokenTile: 'div[role="button"]:contains("API Token")',
     clusters: {
         swarmCluster1: 'div.rt-td:contains("Swarm Cluster 1")'
     },
@@ -41,7 +41,7 @@ export const selectors = {
         endpointInput: "form input[name='docker.endpoint']"
     },
     readOnlyView: '.overflow-auto > .p-4 > div',
-    plugins: '.mb-6:first button',
+    plugins: '.mb-6:first div[role="button"]',
     dialog: '.dialog',
     checkboxes: 'input'
 };

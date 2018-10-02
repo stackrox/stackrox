@@ -157,7 +157,7 @@ class BenchmarksPage extends Component {
         };
         return (
             <Select
-                className="block w-full border bg-base-100 border-base-200 text-base-500 p-3 pr-8 rounded"
+                className="bg-base-100 block border-2 border-base-400 hover:border-primary-400 cursor-pointer h-9 p-2 pr-8 rounded-sm w-full"
                 value={this.props.schedule.day}
                 placeholder="No scheduled scanning"
                 options={category.options}
@@ -197,7 +197,7 @@ class BenchmarksPage extends Component {
         };
         return (
             <Select
-                className="block w-full border bg-base-100 border-base-200 text-base-500 p-3 pr-8 rounded"
+                className="bg-base-100 block border-2 border-base-400 hover:border-primary-400 cursor-pointer h-9 p-2 pr-8 rounded-sm w-full"
                 value={this.props.schedule.hour}
                 placeholder="None"
                 options={category.options}
@@ -208,13 +208,13 @@ class BenchmarksPage extends Component {
 
     renderScanButton = () => {
         const buttonScanning = (
-            <button className="p-3 ml-5 h-10 w-24 rounded-sm bg-success-500 text-white hover:bg-success-600 uppercase text-center">
+            <button className="bg-success-600 border border-success-700  ml-5 h-9 p-2 rounded-sm text-base-100 uppercase w-24">
                 <ClipLoader color="white" loading={this.state.scanning} size={20} />
             </button>
         );
         const scanButton = (
             <button
-                className="p-3 ml-5 h-10 w-24 rounded-sm bg-success-500 text-white hover:bg-success-600 uppercase"
+                className="bg-success-600 border border-success-700 ml-5 p-2 h-9 hover:bg-success-800 rounded-sm text-base-100 uppercase w-24"
                 onClick={this.onTriggerScan}
             >
                 Scan now
@@ -258,7 +258,9 @@ class BenchmarksPage extends Component {
         const name =
             selectedBenchmarkScanResult.definition && selectedBenchmarkScanResult.definition.name;
         if (!rows.length)
-            return <NoResultsMessage message="No results found. Please refine your search." />;
+            return (
+                <NoResultsMessage message="No benchmark results available. Please scan your cluster first." />
+            );
         return (
             <Table
                 rows={rows}
@@ -266,7 +268,7 @@ class BenchmarksPage extends Component {
                 idAttribute="definition.name"
                 selectedRowId={name}
                 onRowClick={this.onRowClick}
-                noDataText="No results found. Please refine your search."
+                noDataText="No benchmark results available. Please scan your cluster first."
             />
         );
     };
@@ -284,7 +286,7 @@ class BenchmarksPage extends Component {
     renderBenchmarksSidePanel() {
         if (this.props.isFetchingBenchmarkCheckHostResults)
             return (
-                <div className="w-2/3">
+                <div className="w-1/2 bg-base-100">
                     <Loader />
                 </div>
             );
@@ -306,18 +308,18 @@ class BenchmarksPage extends Component {
     render() {
         return (
             <div className="flex flex-col h-full">
-                <div className="flex w-full my-3 px-3 items-center">
-                    <span className="flex flex-1 text-xl font-500 text-primary-500 self-center">
+                <div className="flex w-full my-3 px-3 items-center z-1">
+                    <span className="flex flex-1 font-600 self-center text-base-600 text-lg">
                         Last Scanned: {this.props.lastScannedTime || 'Never'}
                     </span>
-                    <div className="flex self-center justify-end pr-5 border-r border-primary-200">
+                    <div className="flex self-center justify-end pr-5 border-r-2 border-base-400">
                         <span className="mr-4">{this.renderScanOptions()}</span>
                         <span>{this.renderScanTimes()}</span>
                     </div>
                     {this.renderScanButton()}
                 </div>
-                <div className="flex flex-1 border-t border-primary-300 bg-base-100">
-                    <div className="w-full pl-3 pt-3 pr-3 overflow-y-scroll bg-white rounded-sm shadow">
+                <div className="flex flex-1 border-t border-primary-300 bg-base-200">
+                    <div className="w-full overflow-auto bg-base-100 rounded-sm shadow">
                         {this.renderTable()}
                     </div>
                     {this.renderBenchmarksSidePanel()}

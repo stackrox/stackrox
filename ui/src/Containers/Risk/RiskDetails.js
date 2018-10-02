@@ -38,7 +38,7 @@ const RiskDetails = ({ risk }) => {
     return risk.results.map(result => (
         <div className="px-3 py-4" key={result.name}>
             <div
-                className="alert-preview bg-white shadow text-primary-600 tracking-wide"
+                className="alert-preview bg-base-100 shadow text-primary-600 tracking-wide"
                 key={result.name}
             >
                 <CollapsibleCard title={result.name}>

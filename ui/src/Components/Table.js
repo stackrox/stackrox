@@ -5,9 +5,9 @@ import ReactTablePropTypes from 'react-table/lib/propTypes';
 import flattenObject from 'utils/flattenObject';
 
 export const defaultHeaderClassName =
-    'p-3 font-700 text-base-600 border-b border-base-300 hover:text-primary-600 cursor-pointer truncate select-none relative text-left border-r-0 shadow-none';
+    'px-2 py-3 pb-2 font-700 text-base-600 border-b border-base-300 hover:bg-primary-200 hover:text-primary-700 truncate select-none relative text-left border-r-0 shadow-none leading-loose';
 export const defaultColumnClassName =
-    'p-3 font-600 text-base-600 text-left border-r-0 cursor-pointer self-center';
+    'px-2 py-2 font-600 text-base-600 text-left border-r-0 self-center leading-normal';
 export const wrapClassName = 'whitespace-normal overflow-visible';
 export const pageSize = 20;
 
@@ -45,7 +45,7 @@ class Table extends Component {
                 rowInfo &&
                 rowInfo.original &&
                 flattenedRowInfo[this.props.idAttribute] === this.props.selectedRowId
-                    ? 'bg-base-100'
+                    ? 'row-active'
                     : ''
         };
     };
@@ -70,8 +70,7 @@ class Table extends Component {
                 getTrGroupProps={this.getTrGroupProps}
                 getTrProps={this.getTrProps}
                 defaultPageSize={pageSize}
-                className={`flex flex-1 overflow-auto border-0 -highlight w-full ${rows.length >
-                    pageSize && 'h-full'}`}
+                className="flex flex-1 overflow-auto border-0 -highlight w-full h-full"
                 resizable={false}
                 sortable
                 defaultSortDesc={false}

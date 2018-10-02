@@ -116,14 +116,14 @@ class SearchResults extends Component {
             <section className="flex flex-auto h-full">
                 <div className="flex flex-1">
                     <Tabs
-                        className="bg-white mb-8"
+                        className="bg-base-100 mb-8"
                         headers={tabs}
                         onTabClick={this.onTabClick}
                         default={this.props.defaultTab}
-                        tabClass="tab flex-1 items-center justify-center font-600"
-                        tabActiveClass="tab flex-1 items-center justify-center border-b-2 border-primary-400 font-700 text-primary-500"
-                        tabDisabledClass="tab flex-1 items-center justify-center font-600 disabled"
-                        tabContentBgColor="bg-white"
+                        tabClass="tab flex-1 items-center justify-center font-700 p-3 uppercase shadow-none hover:text-primary-600 border-b-2 border-transparent"
+                        tabActiveClass="tab flex-1 items-center justify-center border-b-2 p-3 border-primary-400 shadow-none font-700 text-primary-700 uppercase"
+                        tabDisabledClass="tab flex-1 items-center justify-center border-2 border-transparent p-3 font-700 disabled shadow-none uppercase"
+                        tabContentBgColor="bg-base-100"
                     >
                         {tabs.map(tab => (
                             <TabContent key={tab.text}>
@@ -147,7 +147,7 @@ class SearchResults extends Component {
                     <div className="flex flex-col">
                         <div>{original.name}</div>
                         {original.location ? (
-                            <div className="text-primary-300 italic text-sm pt-2">
+                            <div className="text-base-500 italic text-sm">
                                 in {original.location}
                             </div>
                         ) : null}
@@ -162,7 +162,7 @@ class SearchResults extends Component {
             {
                 Header: 'View On:',
                 Cell: ({ original }) => (
-                    <ul className="p-0 list-reset flex flex-row">
+                    <ul className="p-0 list-reset flex">
                         {!mapping[original.category] || !mapping[original.category].viewOn ? (
                             <li className="text-base-400">N/A</li>
                         ) : (
@@ -188,7 +188,7 @@ class SearchResults extends Component {
             {
                 Header: 'Filter On:',
                 Cell: ({ original }) => (
-                    <ul className="p-0 list-reset flex flex-row">
+                    <ul className="p-0 list-reset flex">
                         {!mapping[original.category] || !mapping[original.category].filterOn ? (
                             <li className="text-base-400">N/A</li>
                         ) : (
@@ -221,18 +221,20 @@ class SearchResults extends Component {
     render() {
         if (!this.props.globalSearchOptions.length) {
             return (
-                <div className="bg-white flex flex-1 items-center justify-center">
-                    <img
-                        src={globalSearchEmptyState}
-                        className="flex h-full w-1/2"
-                        alt="No search results"
-                    />
+                <div className="bg-base-100 flex flex-1 items-center justify-center">
+                    <span className="flex h-full w-full justify-center max-w-4xl p-6">
+                        <img
+                            src={globalSearchEmptyState}
+                            className="flex h-full w-1/2"
+                            alt="No search results"
+                        />
+                    </span>
                 </div>
             );
         }
         return (
-            <div className="bg-white flex-1">
-                <h1 className="w-full text-xl text-primary-600 px-4 py-6 font-400">
+            <div className="bg-base-100 flex-1">
+                <h1 className="w-full text-2xl text-primary-700 px-4 py-6 font-600">
                     {this.props.globalSearchResults.length} search results
                 </h1>
                 {this.renderTabs()}

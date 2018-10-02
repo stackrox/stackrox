@@ -47,16 +47,16 @@ class NavigationPanel extends Component {
     handleKeyDown = () => {};
 
     renderConfigurePanel = () => (
-        <ul className="flex flex-col list-reset uppercase tracking-wide bg-primary-700 border-r border-primary-800">
-            <li className="border-b-2 border-primary-800 px-1 py-5 pl-2 pr-2 text-white text-base-800">
+        <ul className="flex flex-col overflow-auto list-reset uppercase tracking-wide bg-primary-800 border-r border-l border-primary-900">
+            <li className="border-b-2 border-primary-500 px-1 py-5 pl-2 pr-2 text-base-100 font-700">
                 Configure Prevent Settings
             </li>
             {navLinks.map(navLink => (
-                <li key={navLink.text} className="flex flex-col text-sm">
+                <li key={navLink.text} className="text-sm">
                     <Link
                         to={navLink.to}
                         onClick={this.props.onClose(true, 'configure')}
-                        className="no-underline text-white px-1 border-b py-5 border-primary-400 pl-2 pr-2 hover:bg-primary-600"
+                        className="block no-underline text-base-100 px-1 font-700 border-b py-5 border-primary-900 pl-2 pr-2 hover:bg-base-700"
                     >
                         {navLink.text}
                     </Link>
@@ -68,22 +68,24 @@ class NavigationPanel extends Component {
     renderCompliancePanel = () => {
         if (!this.props.clusters) return '';
         return (
-            <ul className="flex flex-col list-reset uppercase tracking-wide bg-primary-700 border-r border-primary-800">
-                <li className="border-b-2 border-primary-800 px-1 py-5 pl-2 pr-2 text-white text-base-800">
+            <ul className="flex flex-col overflow-auto list-reset uppercase tracking-wide bg-primary-800 border-r border-l border-base-900">
+                <li className="border-b-2 border-primary-500 px-1 py-5 pl-2 pr-2 text-base-100 font-700">
                     View Benchmarks per Cluster
                 </li>
                 {!this.props.clusters.length && (
-                    <li className="flex flex-col flex-1 pl-2 pr-2 justify-center text-center text-white text-sm">
+                    <li className="flex flex-col flex-1 pl-2 pr-2 justify-center text-center text-base-100 text-sm">
                         No clusters available
                     </li>
                 )}
                 {this.props.clusters.map(cluster => (
-                    <li key={cluster.id} className="flex flex-col text-sm">
+                    <li key={cluster.id} className="text-sm">
                         <Link
                             to={`/main/compliance/${cluster.id}`}
                             onClick={this.props.onClose(true, 'compliance')}
-                            className={`no-underline text-white px-1 border-b py-5 border-primary-400 pl-2 pr-2 hover:bg-primary-600 ${
-                                this.isSelectedCluster(cluster.id) ? 'bg-primary-600' : ''
+                            className={`block no-underline text-base-100 px-1 border-b font-700 py-5 border-primary-900 pl-2 pr-2 hover:bg-base-700 ${
+                                this.isSelectedCluster(cluster.id)
+                                    ? 'bg-primary-700 hover:bg-primary-700'
+                                    : ''
                             }`}
                         >
                             {cluster.name}

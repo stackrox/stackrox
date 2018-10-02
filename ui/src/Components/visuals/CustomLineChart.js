@@ -33,14 +33,14 @@ class CustomLineChart extends Component {
                 <LineChart
                     data={this.props.data}
                     margin={{
-                        top: 5,
-                        right: 30,
-                        left: 20,
-                        bottom: 20
+                        top: 30,
+                        right: 50,
+                        left: 10,
+                        bottom: 10
                     }}
                 >
                     <XAxis dataKey={this.props.xAxisDataKey}>
-                        <Label value={this.props.name} offset={25} position="bottom" />
+                        <Label value={this.props.name} fill="#696e89" offset={180} position="top" />
                     </XAxis>
                     <YAxis
                         domain={[0, 'dataMax']}
@@ -48,13 +48,21 @@ class CustomLineChart extends Component {
                         label={{
                             value: this.props.yAxisDataKey,
                             angle: -90,
+                            fill: '#696e89',
                             position: 'insideLeft',
                             textAnchor: 'middle'
                         }}
                     />
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <Tooltip />
-                    <Legend />
+                    <CartesianGrid strokeDasharray="1 1" />
+                    <Tooltip offset={0} />
+                    <Legend
+                        wrapperStyle={{
+                            left: 0,
+                            bottom: 0,
+                            width: '100%',
+                            textTransform: 'capitalize'
+                        }}
+                    />
                     {this.props.children}
                 </LineChart>
             </ResponsiveContainer>

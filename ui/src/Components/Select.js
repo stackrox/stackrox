@@ -14,7 +14,7 @@ class Select extends Component {
     static defaultProps = {
         placeholder: '',
         className:
-            'block w-full border bg-white border-base-300 text-base-600 p-3 pr-8 rounded z-1 focus:border-base-300',
+            'block w-full border bg-base-100 border-base-300 text-base-600 p-3 pr-8 rounded z-1 focus:border-base-300',
         value: ''
     };
 

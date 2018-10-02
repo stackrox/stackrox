@@ -30,7 +30,7 @@ describe('Policies page', () => {
     it('should navigate using the left nav', () => {
         cy.visit('/');
         cy.get(selectors.configure).click();
-        cy.get(selectors.navLink).click();
+        cy.get(selectors.navLink).click({ force: true });
         cy.location('pathname').should('eq', url);
     });
 
@@ -66,7 +66,7 @@ describe('Policies page', () => {
     });
 
     it('should have selected item in nav bar', () => {
-        cy.get(selectors.configure).should('have.class', 'bg-primary-600');
+        cy.get(selectors.configure).should('have.class', 'bg-primary-700');
     });
 
     it('should open side panel and check for the policy name', () => {

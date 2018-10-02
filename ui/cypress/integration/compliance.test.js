@@ -61,8 +61,8 @@ describe('Compliance page', () => {
 
     it('should have selected first cluster in Compliance nav bar', () => {
         setupMultipleClustersFixture();
-        cy.get(selectors.firstNavLink).click();
-        cy.get(selectors.compliance).should('have.class', 'bg-primary-600');
+        cy.get(selectors.firstNavLink).click({ force: true });
+        cy.get(selectors.compliance).should('have.class', 'bg-primary-700');
         cy.url().should('contain', '/main/compliance/swarmCluster1');
         // first tab selected by default
         cy
@@ -74,7 +74,7 @@ describe('Compliance page', () => {
 
     it('should have selected second cluster in Compliance nav bar', () => {
         setupMultipleClustersFixture();
-        cy.get(selectors.secondNavLink).click();
+        cy.get(selectors.secondNavLink).click({ force: true });
         cy.url().should('contain', '/main/compliance/kubeCluster1');
         cy.get(selectors.benchmarkTabs).should('contain', 'CIS Kubernetes v1.2.0 Benchmark');
     });

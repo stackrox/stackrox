@@ -44,7 +44,7 @@ class SearchModal extends Component {
     render() {
         return (
             <div className="flex flex-col h-full w-full">
-                <div className="flex flex-row w-full bg-white">
+                <div className="flex w-full bg-base-100">
                     <PageHeader header="Search All:">
                         <SearchInput
                             className="flex flex-1"

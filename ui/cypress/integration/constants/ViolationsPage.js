@@ -8,7 +8,7 @@ export const selectors = {
     lastTableRow: ':nth-child(4) > .rt-tr',
     panels: '[data-test-id="panel"]',
     sidePanel: {
-        header: '.flex-row > .flex-1',
+        header: '[data-test-id="panel-header"]',
         tabs: 'button.tab',
         getTabByIndex: index => `button.tab:nth(${index})`
     },
@@ -17,7 +17,7 @@ export const selectors = {
     modal: '.ReactModalPortal > .ReactModal__Overlay',
     clusterFieldInModal: '.ReactModalPortal > .ReactModal__Overlay span:contains("Cluster")',
     collapsible: {
-        header: '.Collapsible__trigger h1',
+        header: '.Collapsible__trigger',
         body: '.Collapsible__contentInner'
     },
     securityBestPractices: '[data-test-id="deployment-security-practices"]'

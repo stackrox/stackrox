@@ -147,7 +147,7 @@ class EnvironmentPage extends Component {
             <div className={`${simulatorMode} ${networkGraphState} w-full h-full`}>
                 {this.props.simulatorMode && (
                     <div
-                        className={`absolute pin-t pin-l bg-${colorType}-500 text-white uppercase p-2 z-10`}
+                        className={`absolute pin-t pin-l bg-${colorType}-600 text-base-100 uppercase p-2 z-1`}
                     >
                         Simulation Mode
                     </div>
@@ -184,7 +184,7 @@ class EnvironmentPage extends Component {
         );
 
         return (
-            <div className="w-2/5 h-full absolute pin-r z-20">
+            <div className="w-1/3 h-full absolute pin-r z-1 bg-primary-200">
                 <Panel header={deployment.name} onClose={this.closeSidePanel}>
                     {content}
                 </Panel>
@@ -195,7 +195,11 @@ class EnvironmentPage extends Component {
     renderPageHeader = () => {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
         return (
-            <PageHeader header="Network Graph" subHeader={subHeader} className="w-2/3">
+            <PageHeader
+                header="Network Graph"
+                subHeader={subHeader}
+                className="w-2/3 bg-primary-200 "
+            >
                 <SearchInput
                     id="environment"
                     className="flex flex-1"
@@ -236,7 +240,7 @@ class EnvironmentPage extends Component {
     renderNetworkGraphZoom = () => {
         const positionStyle = this.props.simulatorMode ? { right: '40%' } : { right: '0' };
         return (
-            <div className="absolute pin-b z-10" style={positionStyle}>
+            <div className="absolute pin-b" style={positionStyle}>
                 <NetworkGraphZoom />
             </div>
         );
@@ -245,7 +249,7 @@ class EnvironmentPage extends Component {
     renderNetworkPolicySimulatorButton = () => {
         const className = this.props.simulatorMode
             ? 'bg-success-200 border-success-500 hover:border-success-600 hover:text-success-600 text-success-500'
-            : 'bg-base-100 hover:border-base-300 hover:text-base-600 border-base-200 text-base-500';
+            : 'bg-base-200 hover:border-base-300 hover:text-base-600 border-base-200 text-base-500';
         const iconColor = this.props.simulatorMode ? '#53c6a9' : '#d2d5ed';
         return (
             <button
@@ -263,7 +267,7 @@ class EnvironmentPage extends Component {
         if (Number.isNaN(nodeUpdatesCount) || nodeUpdatesCount <= 0) return null;
         return (
             <button
-                className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-500 hover:bg-primary-400 rounded-sm text-sm text-white"
+                className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-500 hover:bg-primary-400 rounded-sm text-sm text-base-100"
                 onClick={this.onUpdateGraph}
             >
                 <Icon.Circle className="h-2 w-2 border-primary-300" />
@@ -291,7 +295,7 @@ class EnvironmentPage extends Component {
         return (
             <section className="flex flex-1 h-full w-full">
                 <div className="flex flex-1 flex-col w-full">
-                    <div className="flex flex-row">{this.renderPageHeader()}</div>
+                    <div className="flex">{this.renderPageHeader()}</div>
                     <section className="environment-grid-bg flex flex-1 relative">
                         <EnvironmentGraphLegend />
                         {this.renderGraph()}

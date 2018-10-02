@@ -9,7 +9,7 @@ const ReduxTextField = ({ name, disabled, placeholder }) => (
         component="input"
         type="text"
         className={`border rounded-l p-3 border-base-300 w-full font-400 ${
-            disabled ? 'bg-base-100' : ''
+            disabled ? 'bg-base-200' : ''
         }`}
         disabled={disabled}
         autoComplete=""

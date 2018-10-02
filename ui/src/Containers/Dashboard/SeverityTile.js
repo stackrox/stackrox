@@ -19,12 +19,10 @@ class SeverityTile extends Component {
         return (
             <div>
                 <div className="absolute pin-l pin-t m-2">
-                    <div className="h-3 w-3" style={backgroundStyle} />
+                    <div className="h-3 w-3 border-2 border-base-100" style={backgroundStyle} />
                 </div>
-                <div className="text-4xl text-base font-sans text-primary-500">
-                    {this.props.count}
-                </div>
-                <div className="text-lg text-base font-sans text-primary-500">
+                <div className="text-6xl font-sans text-primary-800 mb-2">{this.props.count}</div>
+                <div className="uppercase tracking-wide text-base font-700 font-sans text-primary-800">
                     {severityLabels[this.props.severity]}
                 </div>
             </div>
@@ -35,7 +33,7 @@ class SeverityTile extends Component {
         if (this.props.count === 0) {
             return (
                 <div
-                    className={`flex flex-1 flex-col bg-white border border-base-300 p-4 text-center relative ${
+                    className={`severity-tile flex flex-1 flex-col border-base-100 border-3 p-4 text-center rounded-sm relative ${
                         this.props.index !== 0 ? 'ml-4' : ''
                     }`}
                 >
@@ -45,7 +43,7 @@ class SeverityTile extends Component {
         }
         return (
             <Link
-                className={`flex flex-1 flex-col bg-white border border-base-300 p-4 text-center relative cursor-pointer no-underline hover:border-base-500 hover:shadow hover:bg-base-100 ${
+                className={`severity-tile flex flex-1 flex-col border-3 border-base-100 p-4 text-center relative cursor-pointer rounded-sm no-underline hover:bg-primary-200 hover:shadow hover:bg-base-200 ${
                     this.props.index !== 0 ? 'ml-4' : ''
                 }`}
                 to={`/main/violations?severity=${this.props.severity}`}

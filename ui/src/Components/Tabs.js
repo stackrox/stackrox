@@ -9,10 +9,13 @@ class Tabs extends Component {
         className: '',
         onTabClick: null,
         default: null,
-        tabClass: 'tab mt-2',
-        tabActiveClass: 'tab tab-active bg-base-100 border-t-2 mt-2',
-        tabDisabledClass: 'tab disabled mt-2',
-        tabContentBgColor: 'bg-base-100'
+        tabClass:
+            'tab tracking-wide bg-base-100 font-700 hover:text-base-600 px-2 px-4 py-3 text-base-500 text-sm uppercase',
+        tabActiveClass:
+            'tab tab-active tracking-wide bg-base-200 text-primary-700 font-700 px-2 text-sm uppercase px-4 py-3',
+        tabDisabledClass:
+            'tab disabled tracking-wide bg-base-100 font-700 px-2 px-4 py-3 text-base-500 text-sm uppercase',
+        tabContentBgColor: 'bg-base-200'
     };
 
     static propTypes = {
@@ -62,7 +65,7 @@ class Tabs extends Component {
             if (header.disabled) tabClass = this.props.tabDisabledClass;
             return (
                 <button
-                    className={`${tabClass} ${i === 0 ? 'ml-3' : ''}`}
+                    className={`${tabClass}`}
                     key={`${header.text}`}
                     onClick={this.tabClickHandler(header, i)}
                 >
@@ -85,8 +88,10 @@ class Tabs extends Component {
 
     render() {
         return (
-            <div className="w-full h-full bg-white flex flex-col">
-                <div className={`flex shadow-underline font-bold ${this.props.className}`}>
+            <div className="w-full h-full bg-base-100 flex flex-col">
+                <div
+                    className={`tab-row flex z-1 shadow-underline font-700 ${this.props.className}`}
+                >
                     {this.getHeaders()}
                 </div>
                 <div className={`overflow-hidden h-full flex-1 ${this.props.tabContentBgColor}`}>

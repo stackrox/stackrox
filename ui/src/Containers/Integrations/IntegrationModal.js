@@ -131,7 +131,7 @@ class IntegrationModal extends Component {
     renderHeader = () => {
         const { source, type } = this.props;
         return (
-            <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
+            <header className="flex items-center w-full p-4 bg-primary-600 text-base-100 uppercase">
                 <span className="flex flex-1">{`Configure ${type} ${SOURCE_LABELS[source]}`}</span>
                 <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.props.onRequestClose} />
             </header>
@@ -190,7 +190,7 @@ class IntegrationModal extends Component {
                 className="w-full lg:w-5/6 h-full"
             >
                 {this.renderHeader()}
-                <div className="flex flex-1 w-full bg-white">
+                <div className="flex flex-1 w-full bg-base-100">
                     {this.renderTable()}
                     {this.renderForm()}
                 </div>

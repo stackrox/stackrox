@@ -199,11 +199,11 @@ class ClustersModal extends Component {
         const numCheckedClusters = this.state.selection.length;
         return (
             <Modal isOpen onRequestClose={onRequestClose} className="w-full lg:w-5/6 h-full">
-                <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
+                <header className="flex items-center w-full p-4 bg-primary-500 text-base-100 uppercase">
                     <span className="flex flex-1">{clusterTypeLabels[clusterType]}</span>
                     <Icon.X className="h-4 w-4 cursor-pointer" onClick={onRequestClose} />
                 </header>
-                <div className="flex flex-1 w-full bg-white">
+                <div className="flex flex-1 w-full bg-base-100">
                     {this.renderTable()}
                     {this.renderSidePanel()}
                 </div>

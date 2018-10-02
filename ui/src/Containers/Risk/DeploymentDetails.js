@@ -64,9 +64,9 @@ class DeploymentDetails extends Component {
     renderOverview() {
         const title = 'Overview';
         return (
-            <div className="px-3 py-4">
+            <div className="px-3 pt-5">
                 <CollapsibleCard title={title}>
-                    <div className="h-full p-3">
+                    <div className="h-full px-3 word-break">
                         <KeyValuePairs
                             data={this.props.deployment}
                             keyValueMap={deploymentDetailsMap}
@@ -93,10 +93,10 @@ class DeploymentDetails extends Component {
             );
         }
         return (
-            <div className="flex py-3">
-                <div className="pr-1">Image Name:</div>
+            <div className="flex py-3 border-b border-base-300">
+                <div className="pr-1 font-700">Image Name:</div>
                 <Link
-                    className="font-500 text-primary-600 hover:text-primary-800"
+                    className="font-600 text-primary-600 hover:text-primary-800 word-break"
                     to={`/main/images/${image.id}`}
                 >
                     {image.name.fullName}
@@ -106,7 +106,7 @@ class DeploymentDetails extends Component {
     };
 
     renderResources = resources => {
-        if (!resources) return <span className="py-1 font-500 italic">None</span>;
+        if (!resources) return <span className="py-3 font-600 italic">None</span>;
         const resourceMap = {
             cpuCoresRequest: { label: 'CPU Request (cores)' },
             cpuCoresLimit: { label: 'CPU Limit (cores)' },
@@ -118,7 +118,7 @@ class DeploymentDetails extends Component {
     };
 
     renderContainerVolumes = volumes => {
-        if (!volumes || !volumes.length) return <span className="py-1 font-500 italic">None</span>;
+        if (!volumes || !volumes.length) return <span className="py-1 font-600 italic">None</span>;
         return volumes.map((volume, idx) => (
             <li
                 key={idx}
@@ -127,7 +127,7 @@ class DeploymentDetails extends Component {
                 {Object.keys(volume).map(
                     (key, i) =>
                         volume[key] && (
-                            <div key={`${volume.name}-${i}`} className="py-1 font-500">
+                            <div key={`${volume.name}-${i}`} className="py-1 font-600">
                                 <span className=" pr-1">{capitalize(lowerCase(key))}:</span>
                                 <span className="text-accent-400 italic">
                                     {volume[key].toString()}
@@ -140,14 +140,14 @@ class DeploymentDetails extends Component {
     };
 
     renderContainerSecrets = secrets => {
-        if (!secrets || !secrets.length) return <span className="py-1 font-500 italic">None</span>;
+        if (!secrets || !secrets.length) return <span className="py-1 font-600 italic">None</span>;
         return secrets.map((secret, idx) => (
             <div key={idx} className="py-2">
-                <div key={`${secret.name}-${idx}`} className="py-1 font-500">
+                <div key={`${secret.name}-${idx}`} className="py-1 font-600">
                     <span className=" pr-1">Name:</span>
                     <span className="text-accent-400 italic">{secret.name}</span>
                 </div>
-                <div key={`${secret.path}-${idx}`} className="py-1 font-500">
+                <div key={`${secret.path}-${idx}`} className="py-1 font-600">
                     <span className=" pr-1">Container Path:</span>
                     <span className="text-accent-400 italic">{secret.path}</span>
                 </div>
@@ -166,21 +166,21 @@ class DeploymentDetails extends Component {
                     <div key={index} data-test-id="deployment-container-configuration">
                         {this.renderContainerImage(container.image)}
                         {data && <KeyValuePairs data={data} keyValueMap={containerConfigMap} />}
-                        <div className="flex py-3">
-                            <div className="pr-1">Resources:</div>
-                            <ul className="-ml-8 mt-4 w-full list-reset">
+                        <div className="flex py-3 border-b border-base-300">
+                            <div className="pr-1 font-700 ">Resources:</div>
+                            <ul className="ml-4 mt-2 w-full list-reset">
                                 {this.renderResources(container.resources)}
                             </ul>
                         </div>
-                        <div className="flex py-3">
-                            <div className="pr-1">Mounts:</div>
-                            <ul className="-ml-8 mt-4 w-full list-reset">
+                        <div className="py-3 border-b border-base-300">
+                            <div className="pr-1 font-700">Mounts:</div>
+                            <ul className="ml-4 mt-2 w-full list-reset">
                                 {this.renderContainerVolumes(container.volumes)}
                             </ul>
                         </div>
-                        <div className="flex py-3">
-                            <div className="pr-1">Secrets:</div>
-                            <ul className="-ml-8 mt-4 w-full list-reset">
+                        <div className="py-3 border-b border-base-300">
+                            <div className="pr-1 font-700">Secrets:</div>
+                            <ul className="ml-4 mt-2 w-full list-reset">
                                 {this.renderContainerSecrets(container.secrets)}
                             </ul>
                         </div>
@@ -188,12 +188,12 @@ class DeploymentDetails extends Component {
                 );
             });
         } else {
-            containers = <span className="py-1 font-500 italic">None</span>;
+            containers = <span className="py-1 font-600 italic">None</span>;
         }
         return (
-            <div className="px-3 py-4">
+            <div className="px-3 pt-5">
                 <CollapsibleCard title={title}>
-                    <div className="h-full p-3">{containers}</div>
+                    <div className="h-full px-3">{containers}</div>
                 </CollapsibleCard>
             </div>
         );
@@ -220,15 +220,15 @@ class DeploymentDetails extends Component {
                         </div>
                     );
                 });
-            if (!containers.length) containers = <span className="py-1 font-500 italic">None</span>;
+            if (!containers.length) containers = <span className="py-3 font-600 italic">None</span>;
         } else {
-            containers = <span className="py-1 font-500 italic">None</span>;
+            containers = <span className="py-3 font-600 italic">None</span>;
         }
         return (
-            <div className="px-3 py-4">
-                <div className="bg-white shadow text-primary-600 tracking-wide border border-base-200">
+            <div className="px-3 pt-5">
+                <div className="bg-base-100 text-primary-600 tracking-wide">
                     <CollapsibleCard title={title}>
-                        <div className="h-full p-3">{containers}</div>
+                        <div className="flex h-full px-3">{containers}</div>
                     </CollapsibleCard>
                 </div>
             </div>
@@ -237,7 +237,7 @@ class DeploymentDetails extends Component {
 
     render() {
         return (
-            <div className="w-full">
+            <div className="w-full pb-5">
                 {this.renderOverview()}
                 {this.renderContainerConfigurations()}
                 {this.renderSecurityContext()}

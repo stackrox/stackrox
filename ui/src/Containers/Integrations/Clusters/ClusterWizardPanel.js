@@ -99,7 +99,7 @@ class ClusterWizardPanel extends Component {
         return (
             <div className="w-full">
                 <ToastContainer
-                    toastClassName="font-sans text-base-600 text-white font-600 bg-black"
+                    toastClassName="font-sans text-base-600 text-base-100 font-600 bg-black"
                     hideProgressBar
                     autoClose={3000}
                 />

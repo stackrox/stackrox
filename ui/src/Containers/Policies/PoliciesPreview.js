@@ -50,7 +50,7 @@ class PoliciesPreview extends Component {
         const rows = this.props.dryrun.alerts;
         return (
             <div className="px-3 pb-4">
-                <div className="alert-preview bg-white shadow text-primary-600 tracking-wide">
+                <div className="alert-preview bg-base-100 shadow text-primary-600 tracking-wide">
                     <CollapsibleCard title={title}>
                         {rows.length ? (
                             <Table columns={columns} rows={rows} />
@@ -79,7 +79,7 @@ class PoliciesPreview extends Component {
 
         return (
             <div className="px-3 pb-4">
-                <div className="whitelist-exclusions bg-white shadow text-primary-600 tracking-wide">
+                <div className="whitelist-exclusions bg-base-100 shadow text-primary-600 tracking-wide">
                     <CollapsibleCard title={title}>
                         {rows.length ? (
                             <Table columns={columns} rows={rows} />
@@ -96,7 +96,7 @@ class PoliciesPreview extends Component {
 
     render() {
         return (
-            <div className="bg-base-100">
+            <div className="bg-base-200">
                 {this.renderWarnMessage()}
                 {this.renderViolationsPreview()}
                 {this.renderWhitelistedDeployments()}

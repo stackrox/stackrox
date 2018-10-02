@@ -13,7 +13,7 @@ describe('Risk page', () => {
     });
 
     it('should have selected item in nav bar', () => {
-        cy.get(RiskPageSelectors.risk).should('have.class', 'bg-primary-600');
+        cy.get(RiskPageSelectors.risk).should('have.class', 'bg-primary-700');
     });
 
     it('should sort priority in the table', () => {

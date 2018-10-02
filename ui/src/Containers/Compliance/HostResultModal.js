@@ -14,23 +14,30 @@ class HostResultModal extends Component {
     };
 
     renderHeader = () => (
-        <header className="flex w-full p-4 font-bold flex-none">
-            <span className="flex flex-1">{this.props.benchmarkHostResult.host}</span>
-            <Icon.X className="cursor-pointer h-6 w-6" onClick={this.props.onClose} />
+        <header className="bg-primary-600 flex font-700 items-center text-base-100 text-xl uppercase w-full leading-normal">
+            <span className="flex flex-1 mx-3">{this.props.benchmarkHostResult.host}</span>
+            <button
+                className="flex border-l border-primary-700 cursor-pointer h-full hover:bg-primary-700 p-3 text-base-100"
+                onClick={this.props.onClose}
+            >
+                <Icon.X className="cursor-pointer h-6 w-6" />
+            </button>
         </header>
     );
 
     renderBody = () => (
         <div className="flex flex-1 overflow-y-scroll">
-            <div className="flex flex-1 flex-col bg-white m-4">
-                <header className="w-full p-4 font-bold">Notes</header>
-                <div>
+            <div className="flex flex-1 flex-col bg-base-100 m-4">
+                <header className="border-b border-base-400 font-700 pb-3 mb-3 text-lg w-full">
+                    Notes
+                </header>
+                <ul className="leading-loose px-4">
                     {this.props.benchmarkHostResult.notes.map((note, i) => (
-                        <div key={i} className="py-2 px-4 break-words">
+                        <li key={i} className="break-words">
                             {note}
-                        </div>
+                        </li>
                     ))}
-                </div>
+                </ul>
             </div>
         </div>
     );

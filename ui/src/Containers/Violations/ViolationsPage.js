@@ -9,7 +9,7 @@ import { actions as alertActions } from 'reducers/alerts';
 import { selectors } from 'reducers';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
-import ReactTooltip from 'react-tooltip';
+import Tooltip from 'rc-tooltip';
 
 import { severityLabels, lifecycleStageLabels } from 'messages/common';
 
@@ -28,10 +28,10 @@ import ViolationsPanel from './ViolationsPanel';
 
 const getSeverityClassName = severityValue => {
     const severityClassMapping = {
-        Low: 'text-low-500',
-        Medium: 'text-medium-500',
-        High: 'text-high-500',
-        Critical: 'text-critical-500'
+        Low: 'px-2 rounded-full bg-base-200 border-2 border-base-300 text-base-600',
+        Medium: 'px-2 rounded-full bg-warning-200 border-2 border-warning-300 text-warning-800',
+        High: 'px-2 rounded-full bg-caution-200 border-2 border-caution-300 text-caution-800',
+        Critical: 'px-2 rounded-full bg-alert-200 border-2 border-alert-300 text-alert-800'
     };
     const res = severityClassMapping[severityValue];
     if (res) return res;
@@ -101,7 +101,7 @@ class ViolationsPage extends Component {
         }`;
         return (
             <Panel header={headerText} headerComponents={paginationComponent}>
-                <div className="w-full pl-3 pr-3">{this.renderTable()}</div>
+                <div className="w-full">{this.renderTable()}</div>
             </Panel>
         );
     };
@@ -111,40 +111,40 @@ class ViolationsPage extends Component {
             {
                 Header: 'Deployment',
                 accessor: 'deployment.name',
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`
+                headerClassName: ` ${defaultHeaderClassName}`,
+                className: ` ${wrapClassName} ${defaultColumnClassName}`
             },
             {
                 Header: 'Cluster',
                 accessor: 'deployment.clusterName',
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`
+                headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
             },
             {
                 Header: 'Policy',
                 accessor: 'policy.name',
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => (
-                    <div data-tip data-for={`violation-policy-name-${original.policy.name}`}>
-                        <span className="border-b border-dashed leading-normal">
-                            {original.policy.name}
-                        </span>
-                        <ReactTooltip
-                            id={`violation-policy-name-${original.policy.name}`}
-                            type="dark"
-                            effect="solid"
+                    <div>
+                        <Tooltip
+                            placement="top"
+                            mouseLeaveDelay={0}
+                            overlay={<div>{original.policy.description}</div>}
+                            overlayClassName="pointer-events-none text-white rounded max-w-xs p-2 w-full text-sm text-center"
                         >
-                            {original.policy.description}
-                        </ReactTooltip>
+                            <span className="inline-flex hover:text-primary-700 underline">
+                                {original.policy.name}
+                            </span>
+                        </Tooltip>
                     </div>
                 )
             },
             {
                 Header: 'Severity',
                 accessor: 'policy.severity',
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ value }) => {
                     const severity = severityLabels[value];
                     return <span className={getSeverityClassName(severity)}>{severity}</span>;
@@ -154,20 +154,18 @@ class ViolationsPage extends Component {
             {
                 Header: 'Categories',
                 accessor: 'policy.categories',
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ value }) =>
                     value.length > 1 ? (
-                        <div data-tip data-for="button-violation-categories">
-                            Multiple
-                            <ReactTooltip
-                                id="button-violation-categories"
-                                type="dark"
-                                effect="solid"
-                            >
-                                {value.join(' | ')}
-                            </ReactTooltip>
-                        </div>
+                        <Tooltip
+                            placement="top"
+                            mouseLeaveDelay={0}
+                            overlay={<div>{value.join(' | ')}</div>}
+                            overlayClassName="pointer-events-none text-white rounded max-w-xs p-2 w-full text-sm text-center"
+                        >
+                            <div>Multiple</div>
+                        </Tooltip>
                     ) : (
                         value[0]
                     )
@@ -175,15 +173,15 @@ class ViolationsPage extends Component {
             {
                 Header: 'Lifecycle',
                 accessor: 'policy.lifecycleStage',
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ value }) => lifecycleStageLabels[value]
             },
             {
                 Header: 'Time',
                 accessor: 'time',
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ value }) => dateFns.format(value, dateTimeFormat),
                 sortMethod: sortDate
             }
@@ -233,7 +231,7 @@ class ViolationsPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full overflow-y-scroll bg-white rounded-sm shadow border-primary-300 bg-base-100">
+                        <div className="w-full rounded-sm shadow border-primary-300">
                             {this.renderPanel()}
                         </div>
                         {this.renderSidePanel()}

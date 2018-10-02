@@ -155,7 +155,7 @@ class APITokensModal extends Component {
     };
 
     renderHeader = () => (
-        <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
+        <header className="flex items-center w-full p-4 bg-primary-500 text-base-100 uppercase">
             <span className="flex flex-1">Configure API Tokens</span>
             <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.closeModal} />
         </header>
@@ -234,7 +234,7 @@ class APITokensModal extends Component {
                 className="w-full lg:w-5/6 h-full"
             >
                 {this.renderHeader()}
-                <div className="flex flex-1 w-full bg-white">
+                <div className="flex flex-1 w-full bg-base-100">
                     {this.renderTable()}
                     {this.renderForm()}
                     {this.renderDetails()}

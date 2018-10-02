@@ -17,7 +17,7 @@ class DockerFileModal extends Component {
     };
 
     renderHeader = () => (
-        <header className="flex items-center w-full p-4 bg-primary-500 text-white uppercase">
+        <header className="flex items-center w-full p-4 bg-primary-500 text-base-100 uppercase">
             <span className="flex flex-1 uppercase">Docker File</span>
             <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.props.onClose} />
         </header>

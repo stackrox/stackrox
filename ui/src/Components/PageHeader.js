@@ -3,16 +3,18 @@ import PropTypes from 'prop-types';
 
 const renderSubHeader = subHeader => {
     if (!subHeader) return null;
-    return <div className="text-primary-400 mt-2 font-400 italic">{subHeader}</div>;
+    return <div className="text-base-500 mt-1 italic">{subHeader}</div>;
 };
 
 const PageHeader = props => (
-    <div className="flex flex-row bg-white py-3 px-4 border-b border-primary-300 h-16 w-full">
+    <div className="flex bg-base-100 h-18 px-4 border-b border-base-400 w-full">
         <div className="w-48 self-center">
-            <div className="text-base-600 uppercase text-lg tracking-wide">{props.header}</div>
+            <div className="text-base-600 uppercase text-lg tracking-widest font-700 pt-1">
+                {props.header}
+            </div>
             {renderSubHeader(props.subHeader)}
         </div>
-        <div className="flex flex-row w-full">{props.children}</div>
+        <div className="flex w-full items-center">{props.children}</div>
     </div>
 );
 

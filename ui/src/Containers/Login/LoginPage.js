@@ -56,7 +56,7 @@ class LoginPage extends Component {
         const { selectedAuthProviderId } = this.state;
         return (
             <div className="py-8 items-center w-2/3">
-                <div className="text-primary-600 pb-3">Select an auth provider</div>
+                <div className="text-primary-700 font-700 pb-3">Select an auth provider</div>
                 <Select
                     className="text-base-600 font-400 w-full"
                     value={selectedAuthProviderId}
@@ -76,7 +76,7 @@ class LoginPage extends Component {
         if (authStatus === AUTH_STATUS.LOADING) {
             return (
                 <div className="border-t border-base-300 p-6 w-full text-center">
-                    <button className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-500 text-white uppercase text-center tracking-wide">
+                    <button className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 uppercase text-center tracking-wide">
                         <ClipLoader color="white" loading size={15} />
                     </button>
                 </div>
@@ -86,7 +86,7 @@ class LoginPage extends Component {
             return (
                 <div className="border-t border-base-300 p-8 w-full text-center">
                     <Link
-                        className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-500 text-white uppercase text-center tracking-wide no-underline"
+                        className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 uppercase text-center tracking-wide no-underline"
                         to="/main/dashboard"
                     >
                         Go to Dashboard
@@ -97,7 +97,7 @@ class LoginPage extends Component {
         return (
             <div className="border-t border-base-300 p-6 w-full text-center">
                 <button
-                    className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-500 text-white uppercase text-center tracking-wide"
+                    className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 uppercase text-center tracking-wide"
                     onClick={this.login}
                 >
                     Login
@@ -108,8 +108,8 @@ class LoginPage extends Component {
 
     render() {
         return (
-            <section className="flex flex-col items-center justify-center h-full bg-primary-600">
-                <div className="flex flex-col items-center justify-center bg-white w-2/5 w-4/5 md:w-3/5 xl:w-2/5 relative login-bg">
+            <section className="flex flex-col items-center justify-center h-full bg-primary-800">
+                <div className="flex flex-col items-center justify-center bg-base-100 w-2/5 w-4/5 md:w-3/5 xl:w-2/5 relative login-bg">
                     <div className="login-border-t h-1 w-full" />
                     <div className="flex flex-col items-center justify-center w-full">
                         <img className="h-40 h-40 py-6" src={logoPrevent} alt="StackRox" />

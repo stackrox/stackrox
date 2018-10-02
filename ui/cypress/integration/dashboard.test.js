@@ -7,7 +7,7 @@ import * as api from './constants/apiEndpoints';
 describe('Dashboard page', () => {
     it('should select item in nav bar', () => {
         cy.visit(dashboardUrl);
-        cy.get(selectors.navLink).should('have.class', 'bg-primary-600');
+        cy.get(selectors.navLink).should('have.class', 'bg-primary-700');
     });
 
     it('should display benchmarks data for multiple clusters', () => {
@@ -66,7 +66,7 @@ describe('Dashboard page', () => {
         });
     });
 
-    it('should display environment risk tiles', () => {
+    it('should display system violations tiles', () => {
         cy.server();
         cy.fixture('alerts/countsByCluster-single.json').as('countsByCluster');
         cy.route('GET', api.alerts.countsByCluster, '@countsByCluster').as('alertsByCluster');
@@ -75,7 +75,7 @@ describe('Dashboard page', () => {
         cy.wait('@alertsByCluster');
 
         cy
-            .get(selectors.sectionHeaders.environmentRisk)
+            .get(selectors.sectionHeaders.systemViolations)
             .next('div')
             .children()
             .as('riskTiles');
@@ -90,7 +90,7 @@ describe('Dashboard page', () => {
 
     it('should not navigate to the violations page when clicking the critical severity risk tile', () => {
         cy
-            .get(selectors.sectionHeaders.environmentRisk)
+            .get(selectors.sectionHeaders.systemViolations)
             .next('div')
             .children()
             .as('riskTiles');
@@ -106,7 +106,7 @@ describe('Dashboard page', () => {
 
     it('should navigate to violations page when clicking the low severity tile', () => {
         cy
-            .get(selectors.sectionHeaders.environmentRisk)
+            .get(selectors.sectionHeaders.systemViolations)
             .next('div')
             .children()
             .as('riskTiles');
@@ -215,7 +215,7 @@ describe('Dashboard page', () => {
             .find('li')
             .should('have.length', 5);
 
-        cy.get(selectors.buttons.more).click();
+        cy.get(selectors.buttons.viewAll).click();
         cy.url().should('match', /\/main\/risk/);
 
         // TODO: validate clicking on any sector (for some reason '.click()' isn't stable for D3 chart)
@@ -242,6 +242,9 @@ describe('Dashboard page', () => {
         cy
             .get(selectors.sectionHeaders.violationsByClusters)
             .next()
-            .should('have.text', 'No Clusters Available. Please refine search');
+            .should(
+                'have.text',
+                'No data available. Please ensure your cluster is properly configured.'
+            );
     });
 });

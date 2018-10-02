@@ -5,7 +5,7 @@ describe('Integrations page', () => {
     beforeEach(() => {
         cy.visit('/');
         cy.get(selectors.configure).click();
-        cy.get(selectors.navLink).click();
+        cy.get(selectors.navLink).click({ force: true });
     });
 
     it('Plugin tiles should all be the same height', () => {
@@ -17,7 +17,7 @@ describe('Integrations page', () => {
     });
 
     it('should have selected item in nav bar', () => {
-        cy.get(selectors.configure).should('have.class', 'bg-primary-600');
+        cy.get(selectors.configure).should('have.class', 'bg-primary-700');
     });
 
     it('should allow integration with Slack', () => {
@@ -70,7 +70,7 @@ describe('API Token Creation Flow', () => {
     beforeEach(() => {
         cy.visit('/');
         cy.get(selectors.configure).click();
-        cy.get(selectors.navLink).click();
+        cy.get(selectors.navLink).click({ force: true });
     });
 
     it('should pop up API Token Modal', () => {
@@ -116,7 +116,7 @@ describe('Cluster Creation Flow', () => {
         cy.route('POST', api.clusters.list).as('addCluster');
         cy.visit('/');
         cy.get(selectors.configure).click();
-        cy.get(selectors.navLink).click();
+        cy.get(selectors.navLink).click({ force: true });
         cy.wait('@clusters');
     });
 
