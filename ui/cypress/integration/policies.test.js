@@ -36,30 +36,27 @@ describe('Policies page', () => {
 
     it('should display and send a query using the search input', () => {
         cy.route('/v1/policies?query=Category:DevOps Best Practices').as('newSearchQuery');
-        cy.get(selectors.searchInput).type('Category:{enter}', { force: true });
-        cy.get(selectors.searchInput).type('DevOps Best Practices{enter}', { force: true });
+        cy.get(selectors.searchInput).type('Category:{enter}');
+        cy.get(selectors.searchInput).type('DevOps Best Practices{enter}');
         cy.wait('@newSearchQuery');
-        cy.get(selectors.searchInput).type('{del}{del}', { force: true });
+        cy.get(selectors.searchInput).type('{backspace}{backspace}');
         cy.route('/v1/policies?query=Cluster:remote').as('newSearchQuery');
-        cy.get(selectors.searchInput).type('Cluster:{enter}', { force: true });
-        cy.get(selectors.searchInput).type('remote{enter}', { force: true });
+        cy.get(selectors.searchInput).type('Cluster:{enter}');
+        cy.get(selectors.searchInput).type('remote{enter}');
         cy.wait('@newSearchQuery');
     });
 
     it('should show the required "*" next to the required fields', () => {
         addPolicy();
-        cy
-            .get(selectors.form.required)
+        cy.get(selectors.form.required)
             .eq(0)
             .prev()
             .should('have.text', 'Name');
-        cy
-            .get(selectors.form.required)
+        cy.get(selectors.form.required)
             .eq(1)
             .prev()
             .should('have.text', 'Severity');
-        cy
-            .get(selectors.form.required)
+        cy.get(selectors.form.required)
             .eq(2)
             .prev()
             .should('have.text', 'Categories');
@@ -101,16 +98,16 @@ describe('Policies page', () => {
     it('should allow floats for CPU and CVSS configuration fields', () => {
         const addCPUField = () => {
             editPolicy();
-            cy
-                .get(selectors.configurationField.select)
-                .select('fields.containerResourcePolicy.cpuResourceRequest');
-            cy.get(selectors.configurationField.selectArrow).click();
-            cy
-                .get(selectors.configurationField.options)
+            cy.get(selectors.configurationField.select).select(
+                'fields.containerResourcePolicy.cpuResourceRequest'
+            );
+            cy.get(selectors.configurationField.selectArrow)
+                .first() // TODO-ivan: should we instead create a new policy?
+                .click();
+            cy.get(selectors.configurationField.options)
                 .first()
                 .click();
-            cy
-                .get(selectors.configurationField.numericInput)
+            cy.get(selectors.configurationField.numericInput)
                 .last()
                 .type(2.2);
             savePolicy();
@@ -137,8 +134,8 @@ describe('Policies page', () => {
     it('should show a specific message when editing a policy with "enabled" value as "no"', () => {
         cy.get(selectors.policies.scanImage).click();
         editPolicy();
-        cy.get(`${selectors.form.enableField} .Select-arrow`).click();
-        cy.get(`${selectors.form.enableField} div[role="option"]:contains("No")`).click();
+        cy.get(`${selectors.form.enableField} .react-select__dropdown-indicator`).click();
+        cy.get(`div[role="option"]:contains("No")`).click();
         cy.get(selectors.nextButton).click();
         cy.get(selectors.policyPreview.message).should('have.text', text.policyPreview.message);
     });
@@ -149,9 +146,10 @@ describe('Policies page', () => {
         cy.get(selectors.form.select).select('fields.imageName.registry');
         cy.get(selectors.imageRegistry.input).type('docker.io');
         savePolicy();
-        cy
-            .get(selectors.imageRegistry.value)
-            .should('have.text', 'Alert on any image using any tag from registry docker.io');
+        cy.get(selectors.imageRegistry.value).should(
+            'have.text',
+            'Alert on any image using any tag from registry docker.io'
+        );
         editPolicy();
         cy.get(selectors.imageRegistry.deleteButton).click();
         savePolicy();
@@ -188,17 +186,19 @@ describe('Policies page', () => {
         });
 
         cy.get(firstRowEnableDisableButton).click(); // disable policy
-        cy
-            .get(`${firstRowEnableDisableButton} svg`)
-            .should('not.have.class', selectors.enabledPolicyButtonColorClass);
+        cy.get(`${firstRowEnableDisableButton} svg`).should(
+            'not.have.class',
+            selectors.enabledPolicyButtonColorClass
+        );
 
         cy.get(selectors.tableFirstRow).click();
         cy.get(selectors.policyDetailsPanel.enabledValueDiv).should('contain', 'No');
 
         cy.get(firstRowEnableDisableButton).click(); // enable policy
         cy.get(selectors.policyDetailsPanel.enabledValueDiv).should('contain', 'Yes');
-        cy
-            .get(`${firstRowEnableDisableButton} svg`)
-            .should('have.class', selectors.enabledPolicyButtonColorClass);
+        cy.get(`${firstRowEnableDisableButton} svg`).should(
+            'have.class',
+            selectors.enabledPolicyButtonColorClass
+        );
     });
 });

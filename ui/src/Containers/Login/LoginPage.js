@@ -3,8 +3,9 @@ import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import Select from 'react-select';
 import { ClipLoader } from 'react-spinners';
+
+import Select from 'Components/ReactSelect';
 
 import logoPrevent from 'images/logo-prevent.svg';
 
@@ -58,12 +59,9 @@ class LoginPage extends Component {
             <div className="py-8 items-center w-2/3">
                 <div className="text-primary-700 font-700 pb-3">Select an auth provider</div>
                 <Select
-                    className="text-base-600 font-400 w-full"
                     value={selectedAuthProviderId}
-                    name="select-auth-providers"
-                    simpleValue
-                    clearable={false}
-                    disabled={authProviders.length === 1}
+                    isClearable={false}
+                    isDisabled={authProviders.length === 1}
                     onChange={this.onAuthProviderSelected}
                     options={options}
                 />
@@ -76,7 +74,10 @@ class LoginPage extends Component {
         if (authStatus === AUTH_STATUS.LOADING) {
             return (
                 <div className="border-t border-base-300 p-6 w-full text-center">
-                    <button className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 uppercase text-center tracking-wide">
+                    <button
+                        type="button"
+                        className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 uppercase text-center tracking-wide"
+                    >
                         <ClipLoader color="white" loading size={15} />
                     </button>
                 </div>
@@ -97,6 +98,7 @@ class LoginPage extends Component {
         return (
             <div className="border-t border-base-300 p-6 w-full text-center">
                 <button
+                    type="button"
                     className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 uppercase text-center tracking-wide"
                     onClick={this.login}
                 >

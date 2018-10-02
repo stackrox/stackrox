@@ -208,12 +208,16 @@ class BenchmarksPage extends Component {
 
     renderScanButton = () => {
         const buttonScanning = (
-            <button className="bg-success-600 border border-success-700  ml-5 h-9 p-2 rounded-sm text-base-100 uppercase w-24">
+            <button
+                type="button"
+                className="bg-success-600 border border-success-700  ml-5 h-9 p-2 rounded-sm text-base-100 uppercase w-24"
+            >
                 <ClipLoader color="white" loading={this.state.scanning} size={20} />
             </button>
         );
         const scanButton = (
             <button
+                type="button"
                 className="bg-success-600 border border-success-700 ml-5 p-2 h-9 hover:bg-success-800 rounded-sm text-base-100 uppercase w-24"
                 onClick={this.onTriggerScan}
             >
@@ -405,4 +409,9 @@ const mapDispatchToProps = dispatch => ({
     }
 });
 
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(BenchmarksPage));
+export default withRouter(
+    connect(
+        mapStateToProps,
+        mapDispatchToProps
+    )(BenchmarksPage)
+);

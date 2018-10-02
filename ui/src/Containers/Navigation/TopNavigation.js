@@ -41,6 +41,7 @@ class TopNavigation extends Component {
         if (this.props.authStatus !== AUTH_STATUS.LOGGED_IN) return null;
         return (
             <button
+                type="button"
                 onClick={this.props.logout}
                 className="flex flex-end border-l border-r border-base-400 px-4 no-underline py-3 text-base-600 hover:bg-base-200 items-center cursor-pointer"
             >
@@ -52,6 +53,7 @@ class TopNavigation extends Component {
 
     renderSearchButton = () => (
         <button
+            type="button"
             onClick={this.props.toggleGlobalSearchView}
             className="ignore-react-onclickoutside flex flex-end border-l border-r border-base-400 px-4 no-underline pt-3 pb-2 text-base-600 hover:bg-base-200 items-center cursor-pointer hover:bg-base-300"
         >
@@ -110,4 +112,9 @@ const mapDispatchToProps = dispatch => ({
     logout: () => dispatch(authActions.logout())
 });
 
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(TopNavigation));
+export default withRouter(
+    connect(
+        mapStateToProps,
+        mapDispatchToProps
+    )(TopNavigation)
+);

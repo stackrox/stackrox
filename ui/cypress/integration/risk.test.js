@@ -24,8 +24,7 @@ describe('Risk page', () => {
 
     it('should open the panel to view risk indicators', () => {
         cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
-        cy
-            .get(RiskPageSelectors.panelTabs.riskIndicators)
+        cy.get(RiskPageSelectors.panelTabs.riskIndicators)
             .first()
             .should('have.class', 'tab-active');
         cy.get(RiskPageSelectors.cancelButton).click();
@@ -40,8 +39,7 @@ describe('Risk page', () => {
     it('should navigate from Risk Page to Images Page', () => {
         cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
         cy.get(RiskPageSelectors.panelTabs.deploymentDetails).click({ force: true });
-        cy
-            .get(RiskPageSelectors.imageLink)
+        cy.get(RiskPageSelectors.imageLink)
             .first()
             .click({ force: true });
         cy.url().should('contain', '/main/images');
@@ -50,8 +48,7 @@ describe('Risk page', () => {
     it('should close the side panel on search filter', () => {
         cy.get(selectors.pageSearchInput).type('Cluster:{enter}', { force: true });
         cy.get(selectors.pageSearchInput).type('remote{enter}', { force: true });
-        cy
-            .get(selectors.panelHeader)
+        cy.get(selectors.panelHeader)
             .eq(1)
             .should('not.be.visible');
     });

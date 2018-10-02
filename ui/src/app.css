@@ -136,11 +136,6 @@ button[disabled] {
     @apply flex flex-col flex-auto rounded-sm border border-base-300 .overflow-hidden;
 }
 
-.Select-menu-outer {
-    @apply z-10;
-}
-
-
 @screen md {
     .pills {
         @apply flex-row;
@@ -314,28 +309,10 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     border: 2px solid hsl(225, 81%, 90%);
 }
 
-.Select--multi .Select-value.Select-create-option-placeholder {
-    background-color: hsl(228, 45%, 98%) !important;
-    border: 1px solid hsl(229, 47%, 93%) !important;
-    color: hsl(225, 20%, 40%) !important;
-}
-
-.Select-multi-value-wrapper {
-    @apply w-full;
-}
-
-.Select-control {
-    @apply border-2 border-base-300 flex items-center items-center text-xl static overflow-auto;
-}
-
-.Select-arrow-zone {
-    @apply h-4 flex justify-end;
-}
-
 .severity-tile {
-   background: hsla(0, 0%, 100%, 0.19);
-}
-
+    background: hsla(0, 0%, 100%, 0.19);
+ }
+ 
 .slick-initialized.slick-slider, .slick-list, .slick-track {
     height:100%;
 }
@@ -384,22 +361,6 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 
 .text-high-severity {
     color: hsl(349, 50%, 78%);
-}
-
-.Select-menu-outer .Select-create-option-placeholder {
-    display: none;
-}
-
-/* to open react-select menu on top instead of below input */
-.select-up .Select-menu-outer {
-    position: absolute !important;
-    top: auto !important;
-    bottom: calc(100% - 1px) !important;
-    border-radius: 5px 5px 0px 0px !important;
-}
-
-.select-up .is-open .Select-control {
-    border-radius: 0px 0px 5px 5px !important;
 }
 
 .environment-grid-bg {
@@ -552,8 +513,14 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 
 
 /* React Table overrides */
+@import "../node_modules/react-table/react-table.css";
+
 .ReactTable .-pagination  {
     @apply .shadow-none .border-t .shadow-underline .pt-2 .pb-2 .pl-0 .pr-0;
+}
+
+.ReactTable .rt-thead .rt-th:focus {
+    @apply .outline-none
 }
 
 .ReactTable .rt-thead.-header {
@@ -561,7 +528,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .ReactTable .rt-thead .rt-th.-sort-desc, .ReactTable .rt-thead .rt-th.-sort-asc {
-    @apply .shadow-none;
+    @apply .shadow-none
 }
 
 .ReactTable .rt-thead .rt-th.-sort-desc div:after {

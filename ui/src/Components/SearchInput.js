@@ -1,13 +1,49 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-
-import Select from 'react-select';
+import { components } from 'react-select';
 import * as Icon from 'react-feather';
-import differenceBy from 'lodash/differenceBy';
+
+import Select, { Creatable } from 'Components/ReactSelect';
+
+const placeholderCreator = placeholderText => () => (
+    <span className="text-base-500 flex flex-1 h-full items-center">
+        <Icon.Search color="currentColor" size={18} />
+        <span className="font-600 px-2">{placeholderText}</span>
+    </span>
+);
+
+const Option = ({ children, ...rest }) => (
+    <components.Option {...rest}>
+        <div className="flex px-3">
+            <span className="search-option-categories px-2 text-sm">{children}</span>
+        </div>
+    </components.Option>
+);
+
+const MultiValue = props => (
+    <components.MultiValue
+        {...props}
+        className={
+            props.data.type === 'categoryOption'
+                ? 'bg-primary-200 border border-primary-300 text-primary-600'
+                : 'bg-base-100 border border-base-300 text-base-600'
+        }
+    />
+);
+
+// hack-y (uses internal API of react-select): put cross ahead of the value label
+// TODO-ivan: change the behavior to have "key: value" to be one chip
+const MultiValueContainer = ({ children, ...rest }) => (
+    <components.MultiValueContainer {...rest}>
+        {React.Children.toArray(children)[1]}
+        {React.Children.toArray(children)[0]}
+    </components.MultiValueContainer>
+);
+
+const EmptyCreatableMenu = () => null;
 
 class SearchInput extends Component {
     static propTypes = {
-        id: PropTypes.string,
         className: PropTypes.string,
         placeholder: PropTypes.string,
         searchOptions: PropTypes.arrayOf(PropTypes.object),
@@ -20,7 +56,6 @@ class SearchInput extends Component {
     };
 
     static defaultProps = {
-        id: '',
         placeholder: 'Add one or more resource filters',
         className: '',
         searchOptions: [],
@@ -34,9 +69,7 @@ class SearchInput extends Component {
         if (!this.props.isGlobal) this.props.setSearchOptions([]);
     }
 
-    onInputChange = value => value;
-
-    setOptions = searchOptions => {
+    setOptions = (_, searchOptions) => {
         const searchModifiers = this.props.searchModifiers.slice();
         let searchSuggestions = [];
         if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
@@ -50,63 +83,27 @@ class SearchInput extends Component {
         if (this.props.onSearch) this.props.onSearch(searchOptions);
     };
 
-    filterOptions = (options, filterString, excludeOptions, props) => {
-        let filterValue = filterString.slice();
-        if (props.ignoreCase) filterValue = filterValue.toLowerCase();
-        try {
-            return differenceBy(
-                options.filter(obj => {
-                    let { label } = obj;
-                    if (props.ignoreCase) label = label.toLowerCase();
-                    return label.match(filterValue) && !obj.className;
-                }), // Don't show any newly created options
-                excludeOptions.filter(obj => obj.type),
-                'value'
-            );
-        } catch (error) {
-            return [];
-        }
-    };
-
-    renderArrow = () => (
-        <span className="text-base-500">
-            <Icon.ChevronDown color="currentColor" size={18} />
-        </span>
-    );
-
-    renderOption = option => (
-        <div className="flex px-3">
-            <span className="search-option-categories px-2 text-sm">{option.label}</span>
-        </div>
-    );
-
     render() {
-        const searchIcon = (
-            <span className="text-base-500 flex flex-1 h-full items-center">
-                <Icon.Search color="currentColor" size={18} />
-                <span className="font-600 px-2">{this.props.placeholder}</span>
-            </span>
-        );
-        const searchOptions = this.props.searchOptions.slice();
-        const searchSuggestions = this.props.searchSuggestions.slice();
+        const Placeholder = placeholderCreator(this.props.placeholder);
+        const { searchOptions, searchSuggestions } = this.props;
+
         const props = {
-            className: this.props.id
-                ? `${this.props.id}-search-input ${this.props.className}`
-                : `search-input ${this.props.className}`,
-            name: 'search-input',
-            placeholder: searchIcon,
-            onInputChange: this.onInputChange,
+            className: this.props.className,
+            components: { Option, Placeholder, MultiValue, MultiValueContainer },
             options: searchSuggestions,
-            optionRenderer: this.renderOption,
-            arrowRenderer: this.renderArrow,
-            value: searchOptions,
+            optionValue: searchOptions,
             onChange: this.setOptions,
-            filterOptions: this.filterOptions,
-            ignoreCase: true,
-            multi: true
+            isMulti: true
         };
         if (this.props.searchOptions.length === 0) return <Select {...props} autoFocus />;
-        return <Select.Creatable {...props} autoFocus />;
+
+        return (
+            <Creatable
+                {...props}
+                components={{ ...props.components, Menu: EmptyCreatableMenu }}
+                autoFocus
+            />
+        );
     }
 }
 

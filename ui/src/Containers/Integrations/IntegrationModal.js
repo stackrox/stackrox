@@ -210,4 +210,9 @@ const mapDispatchToProps = dispatch => ({
     setCreateState: state => dispatch(actions.setCreateState(state))
 });
 
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(IntegrationModal));
+export default withRouter(
+    connect(
+        mapStateToProps,
+        mapDispatchToProps
+    )(IntegrationModal)
+);

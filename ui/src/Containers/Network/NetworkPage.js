@@ -7,7 +7,7 @@ import { actions as environmentActions, networkGraphClusters } from 'reducers/en
 import { actions as deploymentActions, types as deploymentTypes } from 'reducers/deployments';
 import { actions as clusterActions } from 'reducers/clusters';
 
-import Select from 'react-select';
+import Select from 'Components/ReactSelect';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import NetworkGraph from 'Components/EnvironmentGraph/webgl/NetworkGraph';
@@ -95,8 +95,8 @@ class NetworkPage extends Component {
         this.props.setSelectedNodeId(null);
     };
 
-    changeCluster = option => {
-        if (option) this.props.selectClusterId(option.value);
+    changeCluster = clusterId => {
+        this.props.selectClusterId(clusterId);
         this.closeSidePanel();
     };
 
@@ -190,6 +190,7 @@ class NetworkPage extends Component {
                         {this.renderGraph()}
                         {nodeUpdatesCount > 0 && (
                             <button
+                                type="button"
                                 className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-500 hover:bg-primary-400 rounded-sm text-sm text-base-100"
                                 onClick={this.onUpdateGraph}
                             >
@@ -241,4 +242,7 @@ const mapDispatchToProps = {
     incrementEnvironmentGraphUpdateKey: environmentActions.incrementEnvironmentGraphUpdateKey
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(NetworkPage);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(NetworkPage);

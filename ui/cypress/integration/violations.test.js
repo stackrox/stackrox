@@ -21,9 +21,9 @@ describe('Violations page', () => {
 
     const mockGetAlertWithEmptyContainerConfig = () => {
         cy.fixture('alerts/alertWithEmptyContainerConfig.json').as('alertWithEmptyContainerConfig');
-        cy
-            .route('GET', api.alerts.alertById, '@alertWithEmptyContainerConfig')
-            .as('alertWithEmptyContainerConfig');
+        cy.route('GET', api.alerts.alertById, '@alertWithEmptyContainerConfig').as(
+            'alertWithEmptyContainerConfig'
+        );
     };
 
     it('should select item in nav bar', () => {
@@ -38,8 +38,7 @@ describe('Violations page', () => {
         mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
-        cy
-            .get(ViolationsPageSelectors.panels)
+        cy.get(ViolationsPageSelectors.panels)
             .eq(1)
             .should('be.visible');
     });
@@ -48,8 +47,7 @@ describe('Violations page', () => {
         mockGetAlert();
         cy.get(ViolationsPageSelectors.firstTableRow).click();
         cy.wait('@alertById');
-        cy
-            .get(ViolationsPageSelectors.panels)
+        cy.get(ViolationsPageSelectors.panels)
             .eq(1)
             .find(ViolationsPageSelectors.sidePanel.header)
             .should('have.text', 'tender_edison (z1137vn6nnmipffzpozr0f0ri)');
@@ -63,8 +61,7 @@ describe('Violations page', () => {
         cy.visit(violationsUrl);
         cy.get(selectors.pageSearchInput).type('Cluster:{enter}', { force: true });
         cy.get(selectors.pageSearchInput).type('remote{enter}', { force: true });
-        cy
-            .get(ViolationsPageSelectors.panels)
+        cy.get(ViolationsPageSelectors.panels)
             .eq(1)
             .should('not.be.visible');
     });
@@ -73,25 +70,21 @@ describe('Violations page', () => {
         mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
-        cy
-            .get(ViolationsPageSelectors.panels)
+        cy.get(ViolationsPageSelectors.panels)
             .eq(1)
             .find(ViolationsPageSelectors.sidePanel.tabs)
             .should('have.length', 3);
-        cy
-            .get(ViolationsPageSelectors.panels)
+        cy.get(ViolationsPageSelectors.panels)
             .eq(1)
             .find(ViolationsPageSelectors.sidePanel.tabs)
             .eq(0)
             .should('have.text', 'Violations');
-        cy
-            .get(ViolationsPageSelectors.panels)
+        cy.get(ViolationsPageSelectors.panels)
             .eq(1)
             .find(ViolationsPageSelectors.sidePanel.tabs)
             .eq(1)
             .should('have.text', 'Deployment Details');
-        cy
-            .get(ViolationsPageSelectors.panels)
+        cy.get(ViolationsPageSelectors.panels)
             .eq(1)
             .find(ViolationsPageSelectors.sidePanel.tabs)
             .eq(2)
@@ -102,43 +95,35 @@ describe('Violations page', () => {
         mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
-        cy
-            .get(ViolationsPageSelectors.panels)
+        cy.get(ViolationsPageSelectors.panels)
             .eq(1)
             .find(ViolationsPageSelectors.sidePanel.tabs)
             .get(ViolationsPageSelectors.sidePanel.getTabByIndex(0))
             .click();
-        cy
-            .get(ViolationsPageSelectors.collapsible.header)
+        cy.get(ViolationsPageSelectors.collapsible.header)
             .first()
             .should('have.text', 'Violations');
-        cy
-            .get(ViolationsPageSelectors.collapsible.body)
-            .contains(
-                "Image name 'docker.io/library/redis:latest' matches the name policy 'tag=latest'"
-            );
+        cy.get(ViolationsPageSelectors.collapsible.body).contains(
+            "Image name 'docker.io/library/redis:latest' matches the name policy 'tag=latest'"
+        );
     });
 
     it('should have deployment information in the Deployment Details tab', () => {
         mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
-        cy
-            .get(ViolationsPageSelectors.panels)
+        cy.get(ViolationsPageSelectors.panels)
             .eq(1)
             .get(ViolationsPageSelectors.sidePanel.getTabByIndex(1))
             .click();
         cy.get(ViolationsPageSelectors.collapsible.header).should('have.length', 3);
-        cy
-            .get(ViolationsPageSelectors.collapsible.header)
+        cy.get(ViolationsPageSelectors.collapsible.header)
             .eq(0)
             .should('have.text', 'Overview');
-        cy
-            .get(ViolationsPageSelectors.collapsible.header)
+        cy.get(ViolationsPageSelectors.collapsible.header)
             .eq(1)
             .should('have.text', 'Container configuration');
-        cy
-            .get(ViolationsPageSelectors.collapsible.header)
+        cy.get(ViolationsPageSelectors.collapsible.header)
             .eq(2)
             .should('have.text', 'Security Context');
     });
@@ -147,8 +132,7 @@ describe('Violations page', () => {
         mockGetAlertWithEmptyContainerConfig();
         cy.get(ViolationsPageSelectors.lastTableRow).click();
         cy.wait('@alertWithEmptyContainerConfig');
-        cy
-            .get(ViolationsPageSelectors.panels)
+        cy.get(ViolationsPageSelectors.panels)
             .eq(1)
             .get(ViolationsPageSelectors.sidePanel.getTabByIndex(1))
             .click();

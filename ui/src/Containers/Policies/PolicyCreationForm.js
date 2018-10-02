@@ -5,9 +5,7 @@ import { selectors } from 'reducers';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { reduxForm, formValueSelector, change } from 'redux-form';
 import flattenObject from 'utils/flattenObject';
-import pull from 'lodash/pull';
 
-import 'react-select/dist/react-select.css';
 import FormField from 'Components/FormField';
 import CustomSelect from 'Components/Select';
 import removeEmptyFields from 'utils/removeEmptyFields';
@@ -99,9 +97,7 @@ class PolicyCreationForm extends Component {
             );
             if (field) fieldToAdd = field;
         });
-        const fields = this.state.fields.slice();
-        fields.push(fieldToAdd.jsonpath);
-        this.setState({ fields });
+        this.setState(prevState => ({ fields: prevState.fields.concat(fieldToAdd.jsonpath) }));
     };
 
     removeField = jsonpath => {
@@ -113,10 +109,10 @@ class PolicyCreationForm extends Component {
 
             if (field) fieldToRemove = field;
         });
-        const fields = this.state.fields.slice();
-        pull(fields, fieldToRemove.jsonpath);
+        this.setState(prevState => ({
+            fields: prevState.fields.filter(fieldPath => fieldPath !== fieldToRemove.jsonpath)
+        }));
         this.props.change(fieldToRemove.jsonpath, null);
-        this.setState({ fields });
     };
 
     renderFieldsDropdown = (formFields, formData) => {
@@ -273,5 +269,8 @@ const mapDispatchToProps = dispatch => ({
 });
 
 export default reduxForm({ form: 'policyCreationForm' })(
-    connect(mapStateToProps, mapDispatchToProps)(PolicyCreationForm)
+    connect(
+        mapStateToProps,
+        mapDispatchToProps
+    )(PolicyCreationForm)
 );

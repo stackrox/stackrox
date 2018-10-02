@@ -31,6 +31,7 @@ class NetworkPoliciesDetails extends Component {
                                 </pre>
                                 <div className="flex justify-center p-3 border-t border-base-400">
                                     <button
+                                        type="button"
                                         className="download uppercase text-primary-600 p-2 text-center text-sm border border-solid bg-primary-200 border-primary-300 hover:bg-primary-100"
                                         onClick={this.downloadYamlFile(
                                             `${name}.yaml`,
@@ -50,6 +51,7 @@ class NetworkPoliciesDetails extends Component {
             </div>
         );
     }
+
     render() {
         return <div className="w-full h-full">{this.renderOverview()}</div>;
     }

@@ -101,4 +101,7 @@ const mapDispatchToProps = dispatch => ({
     toggleGlobalSearchView: () => dispatch(globalSearchActions.toggleGlobalSearchView())
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(MainPage);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(MainPage);

@@ -39,5 +39,5 @@ export const selectors = {
         }
     },
     timeseries: 'svg.recharts-surface',
-    searchInput: '.Select-input > input'
+    searchInput: '.react-select__input > input'
 };

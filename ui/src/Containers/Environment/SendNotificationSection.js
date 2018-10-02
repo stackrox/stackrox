@@ -6,7 +6,17 @@ import { selectors } from 'reducers';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { Link } from 'react-router-dom';
 
-import Select from 'react-select';
+import Select from 'Components/ReactSelect';
+
+const selectMenuOnTopStyles = {
+    menu: base => ({
+        ...base,
+        position: 'absolute !important',
+        top: 'auto !important',
+        bottom: '100% !important',
+        'border-radius': '5px 5px 0px 0px !important'
+    })
+};
 
 class SendNotificationSection extends Component {
     static propTypes = {
@@ -15,35 +25,36 @@ class SendNotificationSection extends Component {
     };
 
     state = {
-        selectedNotifier: null
+        selectedNotifierId: null
     };
 
     onClick = () => {
-        const selectedNotifierId = this.state.selectedNotifier && this.state.selectedNotifier.value;
-        this.props.sendYAMLNotification(selectedNotifierId);
+        this.props.sendYAMLNotification(this.state.selectedNotifierId);
     };
 
-    selectNotifier = selectedNotifierId => this.setState({ selectedNotifier: selectedNotifierId });
+    selectNotifier = selectedNotifierId => this.setState({ selectedNotifierId });
 
     renderDropdown() {
         const { notifiers } = this.props;
-        const { selectedNotifier } = this.state;
+        const { selectedNotifierId } = this.state;
         if (!notifiers.length) return null;
         return (
             <div>
                 <span className="uppercase text-primary-500">Send network policy yaml to team</span>
-                <div className="flex items-center mt-2 select-up">
+                <div className="flex items-center mt-2">
                     <Select
                         options={notifiers}
                         placeholder="Select a notifier"
-                        value={this.state.selectedNotifier}
+                        value={selectedNotifierId}
                         onChange={this.selectNotifier}
                         className="w-3/4"
+                        styles={selectMenuOnTopStyles}
                     />
                     <button
+                        type="button"
                         className="p-3 ml-2 bg-primary-500 rounded-sm text-center text-base-100 w-1/4 h-9 hover:bg-primary-400 hover:text-base-100"
                         onClick={this.onClick}
-                        disabled={!selectedNotifier}
+                        disabled={!selectedNotifierId}
                     >
                         Send
                     </button>
@@ -58,7 +69,10 @@ class SendNotificationSection extends Component {
             <div className="flex items-center justify-between">
                 <span>There are no notifiers integrated.</span>
                 <Link to="/main/integrations">
-                    <button className="pl-3 pr-3 bg-primary-500 rounded-sm text-center text-base-100 h-9 hover:bg-primary-600 hover:text-base-100">
+                    <button
+                        type="button"
+                        className="pl-3 pr-3 bg-primary-500 rounded-sm text-center text-base-100 h-9 hover:bg-primary-600 hover:text-base-100"
+                    >
                         Add Notification Integrations
                     </button>
                 </Link>
@@ -91,4 +105,7 @@ const mapDispatchToProps = {
     sendYAMLNotification: actions.sendYAMLNotification
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(SendNotificationSection);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(SendNotificationSection);

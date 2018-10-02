@@ -21,7 +21,7 @@ class NetworkPolicySimulatorSuccessView extends Component {
 
     toggleCollapse = () => {
         this.props.onCollapse(!this.state.isCollapsed);
-        this.setState({ isCollapsed: !this.state.isCollapsed });
+        this.setState(prevState => ({ isCollapsed: !prevState.isCollapsed }));
     };
 
     renderCollapseButton = () => {
@@ -32,6 +32,7 @@ class NetworkPolicySimulatorSuccessView extends Component {
         );
         return (
             <button
+                type="button"
                 className="absolute pin-r pin-t h-12 w-12 border-base-200 z-10"
                 onClick={this.toggleCollapse}
             >

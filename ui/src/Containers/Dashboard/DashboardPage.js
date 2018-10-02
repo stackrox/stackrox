@@ -401,8 +401,7 @@ class DashboardPage extends Component {
                     <div className="z-1">
                         <PageHeader header="Dashboard" subHeader={subHeader}>
                             <SearchInput
-                                className="flex flex-1"
-                                id="images"
+                                className="w-full"
                                 searchOptions={this.props.searchOptions}
                                 searchModifiers={this.props.searchModifiers}
                                 searchSuggestions={this.props.searchSuggestions}
@@ -507,4 +506,7 @@ const mapDispatchToProps = dispatch => ({
         dispatch(dashboardActions.setDashboardSearchSuggestions(searchSuggestions))
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(DashboardPage);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(DashboardPage);

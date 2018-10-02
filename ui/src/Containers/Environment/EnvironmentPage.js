@@ -7,7 +7,7 @@ import { actions as environmentActions, networkGraphClusters } from 'reducers/en
 import { actions as deploymentActions, types as deploymentTypes } from 'reducers/deployments';
 import { actions as clusterActions } from 'reducers/clusters';
 
-import Select from 'react-select';
+import Select from 'Components/ReactSelect';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import NetworkGraphZoom from 'Components/NetworkGraphZoom';
@@ -119,8 +119,8 @@ class EnvironmentPage extends Component {
         this.props.setSelectedNodeId(null);
     };
 
-    changeCluster = option => {
-        if (option) this.props.selectClusterId(option.value);
+    changeCluster = clusterId => {
+        this.props.selectClusterId(clusterId);
         this.closeSidePanel();
     };
 
@@ -202,7 +202,7 @@ class EnvironmentPage extends Component {
             >
                 <SearchInput
                     id="environment"
-                    className="flex flex-1"
+                    className="w-full"
                     searchOptions={this.props.searchOptions}
                     searchModifiers={this.props.searchModifiers}
                     searchSuggestions={this.props.searchSuggestions}
@@ -253,6 +253,7 @@ class EnvironmentPage extends Component {
         const iconColor = this.props.simulatorMode ? '#53c6a9' : '#d2d5ed';
         return (
             <button
+                type="button"
                 className={`flex-no-shrink border-2 rounded-sm text-sm ml-2 pl-2 pr-2 h-9 ${className}`}
                 onClick={this.toggleNetworkPolicySimulator}
             >
@@ -267,6 +268,7 @@ class EnvironmentPage extends Component {
         if (Number.isNaN(nodeUpdatesCount) || nodeUpdatesCount <= 0) return null;
         return (
             <button
+                type="button"
                 className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-500 hover:bg-primary-400 rounded-sm text-sm text-base-100"
                 onClick={this.onUpdateGraph}
             >
@@ -361,4 +363,7 @@ const mapDispatchToProps = {
     onNodesUpdate: environmentActions.networkNodesUpdate
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(EnvironmentPage);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(EnvironmentPage);

@@ -257,4 +257,7 @@ const mapDispatchToProps = {
     revokeAPITokens: actions.revokeAPITokens
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(APITokensModal);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(APITokensModal);

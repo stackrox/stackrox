@@ -272,6 +272,7 @@ class PoliciesPage extends Component {
                 accessor: '',
                 Cell: ({ original }) => (
                     <button
+                        type="button"
                         className="flex rounded-sm uppercase text-center text-sm items-center"
                         onClick={this.toggleEnabledDisabledPolicy(original)}
                     >
@@ -457,7 +458,7 @@ class PoliciesPage extends Component {
                 <div>
                     <PageHeader header="Policies" subHeader={subHeader}>
                         <SearchInput
-                            className="flex flex-1"
+                            className="w-full"
                             id="policies"
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}
@@ -518,4 +519,7 @@ const mapDispatchToProps = {
     removeToast: notificationActions.removeOldestNotification
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(PoliciesPage);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(PoliciesPage);

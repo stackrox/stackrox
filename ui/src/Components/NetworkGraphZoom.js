@@ -40,10 +40,10 @@ const NetworkGraphZoom = () => {
 
     return (
         <div className="graph-zoom-buttons m-4">
-            <button className="btn-icon btn-primary mb-2" onClick={zoomIn}>
+            <button type="button" className="btn-icon btn-primary mb-2" onClick={zoomIn}>
                 <Icon.Plus className="h-4 w-4" />
             </button>
-            <button className="btn-icon btn-primary" onClick={zoomOut}>
+            <button type="button" className="btn-icon btn-primary" onClick={zoomOut}>
                 <Icon.Minus className="h-4 w-4" />
             </button>
         </div>

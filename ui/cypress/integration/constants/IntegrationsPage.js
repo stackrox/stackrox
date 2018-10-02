@@ -26,7 +26,7 @@ export const selectors = {
     },
     apiTokenForm: {
         nameInput: 'form[data-test-id="api-token-form"] input[name="name"]',
-        roleSelect: 'form[data-test-id="api-token-form"] div.Select'
+        roleSelect: 'form[data-test-id="api-token-form"] .react-select__control'
     },
     apiTokenBox: 'span:contains("eyJ")', // all API tokens start with eyJ
     apiTokenDetailsDiv: 'div[data-test-id="api-token-details"]',
@@ -37,7 +37,7 @@ export const selectors = {
     },
     dockerRegistryForm: {
         nameInput: "form input[name='name']",
-        typesSelect: 'form div.Select',
+        typesSelect: 'form .react-select__control',
         endpointInput: "form input[name='docker.endpoint']"
     },
     readOnlyView: '.overflow-auto > .p-4 > div',

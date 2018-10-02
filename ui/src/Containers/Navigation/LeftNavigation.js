@@ -108,7 +108,8 @@ class LeftNavigation extends Component {
         if (navLink.to === '') {
             if (this.state.panelType && this.state.panelType === navLink.panelType) {
                 return 'text-base-100 bg-base-800 hover:bg-base-800';
-            } else if (
+            }
+            if (
                 !this.state.panelType &&
                 this.state.clickOnPanelItem &&
                 this.state.selectedPanel === navText

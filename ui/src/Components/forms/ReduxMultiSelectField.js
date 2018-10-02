@@ -1,18 +1,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Field } from 'redux-form';
-import Select from 'react-select';
+import Select from 'Components/ReactSelect';
 
-const ReduxMultiSelect = props => (
+const ReduxMultiSelect = ({ input: { name, value, onChange }, options, placeholder }) => (
     <Select
-        key={props.input.name}
-        multi
-        onChange={props.input.onChange}
-        options={props.options}
-        placeholder="Select options"
-        removeSelected
-        value={props.input.value}
-        className="text-base-600 font-400 w-full"
+        key={name}
+        isMulti
+        onChange={onChange}
+        options={options}
+        placeholder={placeholder}
+        hideSelectedOptions
+        value={value}
     />
 );
 
@@ -22,7 +21,12 @@ ReduxMultiSelect.propTypes = {
         name: PropTypes.string,
         onChange: PropTypes.func
     }).isRequired,
-    options: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    options: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    placeholder: PropTypes.string
+};
+
+ReduxMultiSelect.defaultProps = {
+    placeholder: 'Select options'
 };
 
 const ReduxMultiSelectField = ({ name, options }) => (

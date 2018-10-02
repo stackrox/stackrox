@@ -1,6 +1,6 @@
 export const url = '/login';
 
 export const selectors = {
-    providerSelect: 'div.Select.Select--single',
+    providerSelect: '.react-select__control',
     loginButton: 'button:contains("Login")'
 };

@@ -17,6 +17,7 @@ class HostResultModal extends Component {
         <header className="bg-primary-600 flex font-700 items-center text-base-100 text-xl uppercase w-full leading-normal">
             <span className="flex flex-1 mx-3">{this.props.benchmarkHostResult.host}</span>
             <button
+                type="button"
                 className="flex border-l border-primary-700 cursor-pointer h-full hover:bg-primary-700 p-3 text-base-100"
                 onClick={this.props.onClose}
             >

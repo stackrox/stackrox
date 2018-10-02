@@ -1,17 +1,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Field } from 'redux-form';
-import Select from 'react-select';
+import { Creatable } from 'Components/ReactSelect';
 
-const ReduxMultiSelectCreatable = props => (
-    <Select.Creatable
-        multi
-        onChange={props.input.onChange}
-        options={props.options}
-        placeholder="Select options"
-        removeSelected
-        value={props.input.value}
-        className="text-base-600 font-400 w-full"
+const ReduxMultiSelectCreatable = ({ input: { name, value, onChange }, options, placeholder }) => (
+    <Creatable
+        key={name}
+        isMulti
+        hideSelectedOptions
+        onChange={onChange}
+        options={options}
+        placeholder={placeholder}
+        value={value}
     />
 );
 
@@ -20,7 +20,12 @@ ReduxMultiSelectCreatable.propTypes = {
         value: PropTypes.array,
         onChange: PropTypes.func
     }).isRequired,
-    options: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    options: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    placeholder: PropTypes.string
+};
+
+ReduxMultiSelectCreatable.defaultProps = {
+    placeholder: 'Select options'
 };
 
 const ReduxMultiSelectCreatableField = ({ name, options }) => (

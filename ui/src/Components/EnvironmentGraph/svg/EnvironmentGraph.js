@@ -266,8 +266,7 @@ class EnvironmentGraph extends Component {
         const svg = d3Select('svg.environment-graph');
 
         // creates svg:defs for the arrow heads
-        svg
-            .append('svg:defs')
+        svg.append('svg:defs')
             .selectAll('marker')
             .data(['start', 'end']) // Different link/path types can be defined here
             .enter()

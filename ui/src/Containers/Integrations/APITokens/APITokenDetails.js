@@ -19,7 +19,7 @@ const Token = ({ token }) => {
                     access it again after you close this window.
                 </span>
                 <CopyToClipboard text={token}>
-                    <button className="btn-success h-8 w-8">
+                    <button type="button" className="btn-success h-8 w-8">
                         {<Icon.Copy className="h-4 w-4" />}
                     </button>
                 </CopyToClipboard>

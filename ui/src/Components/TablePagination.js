@@ -43,6 +43,7 @@ class TablePagination extends Component {
                         of {totalPages}
                     </div>
                     <button
+                        type="button"
                         className="flex items-center rounded-full hover:bg-primary-200 hover:text-primary-600 mr-1 p-1"
                         onClick={this.previousPage}
                         disabled={this.props.page === 0}
@@ -50,6 +51,7 @@ class TablePagination extends Component {
                         <Icon.ChevronLeft className="h-6 w-6" />
                     </button>
                     <button
+                        type="button"
                         className="flex items-center rounded-full text-base-600 hover:bg-primary-200 hover:text-primary-600 p-1"
                         onClick={this.nextPage}
                         disabled={this.props.page === totalPages - 1}

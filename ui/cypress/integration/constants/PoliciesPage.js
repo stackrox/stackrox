@@ -18,12 +18,13 @@ export const selectors = {
         enableField: 'form div.text-primary-500:contains("Enable") + div',
         required: 'form span[data-test-id="required"]',
         select: 'form select',
-        selectValue: 'form .Select-value-label'
+        selectValue: 'form .react-select__multi-value__label'
     },
     configurationField: {
         select: 'form [data-test-id="policyConfiguration"] select',
-        selectArrow: '[data-test-id="policyConfiguration"] div.Select .Select-arrow',
-        options: '[data-test-id="policyConfiguration"] div.Select div[role="option"]',
+        selectArrow:
+            '[data-test-id="policyConfiguration"] .react-select__control .react-select__dropdown-indicator',
+        options: '[data-test-id="policyConfiguration"] div[role="option"]',
         numericInput: '[data-test-id="policyConfiguration"] .react-numeric-input input'
     },
     imageRegistry: {
@@ -45,7 +46,7 @@ export const selectors = {
     policyDetailsPanel: {
         enabledValueDiv: 'div.text-base-600:contains("Enabled") + div'
     },
-    searchInput: '.Select-input > input',
+    searchInput: '.react-select__input > input',
     sidePanel: '[data-test-id="panel"]',
     sidePanelHeader: '[data-test-id="panel-header"]',
     tableFirstRow: 'div.rt-tbody > div.rt-tr-group:first > .rt-tr.-odd',

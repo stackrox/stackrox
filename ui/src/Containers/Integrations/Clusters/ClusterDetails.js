@@ -94,7 +94,7 @@ const detailsComponents = {
 
 const ClusterDetails = ({ cluster }) => {
     const DetailsComponent = detailsComponents[cluster.type];
-    if (!DetailsComponent) throw new Error(`Unknown cluster type "${this.props.clusterType}"`);
+    if (!DetailsComponent) throw new Error(`Unknown cluster type "${cluster.type}"`);
     return (
         <div className="p-4">
             <DetailsComponent cluster={cluster} />

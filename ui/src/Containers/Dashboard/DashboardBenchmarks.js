@@ -54,7 +54,7 @@ class DashboardBenchmarks extends Component {
 
                     <div className="flex flex-1 w-1/2 h-2">
                         {Object.keys(results).map(result => {
-                            const width = Math.ceil(results[result] / total * 100);
+                            const width = Math.ceil((results[result] / total) * 100);
                             if (!width) return '';
                             const backgroundStyle = {
                                 backgroundColor: benchmarkResultsMap[result],
@@ -103,7 +103,10 @@ class DashboardBenchmarks extends Component {
                                 to={`/main/compliance/${this.props.cluster.clusterId}`}
                                 className="no-underline"
                             >
-                                <button className="bg-primary-600 px-5 py-3 text-base-100 font-600 rounded-sm uppercase text-sm hover:bg-primary-700">
+                                <button
+                                    type="button"
+                                    className="bg-primary-600 px-5 py-3 text-base-100 font-600 rounded-sm uppercase text-sm hover:bg-primary-700"
+                                >
                                     Scan your cluster
                                 </button>
                             </Link>

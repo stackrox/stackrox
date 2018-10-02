@@ -1,5 +1,5 @@
 import axios from 'axios';
-import saveAs from 'file-saver';
+import FileSaver from 'file-saver';
 
 // for now only one function exported from this file
 /* eslint-disable import/prefer-default-export */
@@ -24,7 +24,7 @@ export function saveFile({ url, data }) {
                 const file = new Blob([response.data], {
                     type: response.headers['content-type']
                 });
-                saveAs(file, filename);
+                FileSaver.saveAs(file, filename);
             } else {
                 throw new Error('Unable to extract file name');
             }

@@ -1,17 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Field } from 'redux-form';
-import Select from 'react-select';
+import Select from 'Components/ReactSelect';
 
-const ReduxSelect = props => (
+const ReduxSelect = ({ input: { name, value, onChange }, options, placeholder }) => (
     <Select
-        key={props.input.name}
-        onChange={props.input.onChange}
-        options={props.options}
-        placeholder={props.placeholder}
-        simpleValue
-        value={props.input.value}
-        className="text-base-600 font-400 w-full"
+        key={name}
+        onChange={onChange}
+        options={options}
+        placeholder={placeholder}
+        value={value}
     />
 );
 

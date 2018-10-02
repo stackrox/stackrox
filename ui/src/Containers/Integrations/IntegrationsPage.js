@@ -262,4 +262,7 @@ const mapDispatchToProps = dispatch => ({
     fetchClusters: () => dispatch(clusterActions.fetchClusters.request())
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(IntegrationsPage);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(IntegrationsPage);

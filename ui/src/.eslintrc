@@ -36,12 +36,11 @@
         // disallow use of console in favor of raven-js for error capturing
         "no-console": "error",
         
+        // stepping away from Airbnb and into more inconsistent world to avoid huge refactoring
+        "react/destructuring-assignment": ["off"],
+        
         // TODO-ivan: rules below are to be removed after fixing all violations in the code
-        "react/no-array-index-key": "warn",
-
-        "import/no-extraneous-dependencies": [ "error", {
-            "devDependencies": true
-        }]
+        "react/no-array-index-key": "warn"
     },
     "overrides": [
         {

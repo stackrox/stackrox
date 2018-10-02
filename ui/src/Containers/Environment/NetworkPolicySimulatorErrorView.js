@@ -19,7 +19,7 @@ class NetworkPolicySimulatorErrorView extends Component {
 
     toggleCollapse = () => {
         this.props.onCollapse(!this.state.isCollapsed);
-        this.setState({ isCollapsed: !this.state.isCollapsed });
+        this.setState(prevState => ({ isCollapsed: !prevState.isCollapsed }));
     };
 
     renderCollapseButton = () => {
@@ -30,6 +30,7 @@ class NetworkPolicySimulatorErrorView extends Component {
         );
         return (
             <button
+                type="button"
                 className="absolute pin-r pin-t h-10 w-10 border-base-200 z-10"
                 onClick={this.toggleCollapse}
             >

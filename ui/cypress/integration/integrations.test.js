@@ -37,14 +37,10 @@ describe('Integrations page', () => {
             .substring(7)}`;
         cy.get(selectors.dockerRegistryForm.nameInput).type(name);
 
-        cy.get(`${selectors.dockerRegistryForm.typesSelect} .Select-arrow`).click();
-        cy
-            .get(
-                `${
-                    selectors.dockerRegistryForm.typesSelect
-                } div[role="option"]:contains("Registry")`
-            )
-            .click();
+        cy.get(
+            `${selectors.dockerRegistryForm.typesSelect} .react-select__dropdown-indicator`
+        ).click();
+        cy.get('div[role="option"]:contains("Registry")').click();
 
         // test that validation error happens when form is incomplete
         cy.get(selectors.buttons.test).click();
@@ -84,8 +80,8 @@ describe('API Token Creation Flow', () => {
         cy.get(selectors.apiTokenTile).click();
         cy.get(selectors.buttons.generate).click();
         cy.get(selectors.apiTokenForm.nameInput).type(randomTokenName);
-        cy.get(`${selectors.apiTokenForm.roleSelect} .Select-arrow`).click();
-        cy.get(`${selectors.apiTokenForm.roleSelect} div[role="option"]:contains("Admin")`).click();
+        cy.get(`${selectors.apiTokenForm.roleSelect} .react-select__dropdown-indicator`).click();
+        cy.get('div[role="option"]:contains("Admin")').click();
         cy.get(selectors.buttons.generate).click();
         cy.get(selectors.apiTokenBox);
         cy.get(selectors.apiTokenDetailsDiv).contains(`Name:${randomTokenName}`);
@@ -139,23 +135,19 @@ describe('Cluster Creation Flow', () => {
 
         cy.get(selectors.clusters.swarmCluster1).click();
 
-        cy
-            .get(selectors.readOnlyView)
+        cy.get(selectors.readOnlyView)
             .eq(0)
             .should('have.text', 'Name:Swarm Cluster 1');
 
-        cy
-            .get(selectors.readOnlyView)
+        cy.get(selectors.readOnlyView)
             .eq(1)
             .should('have.text', 'Cluster Type:Swarm');
 
-        cy
-            .get(selectors.readOnlyView)
+        cy.get(selectors.readOnlyView)
             .eq(2)
             .should('have.text', 'Prevent Image:stackrox/prevent:latest');
 
-        cy
-            .get(selectors.readOnlyView)
+        cy.get(selectors.readOnlyView)
             .eq(3)
             .should('have.text', 'Central API Endpoint:central.stackrox:443');
     });
@@ -169,14 +161,12 @@ describe('Cluster Creation Flow', () => {
         cy.get(selectors.clusterForm.nameInput).type(clusterName);
         // The image name should be pre-populated, so we don't type it in to test that the prepopulation works.
         // (The backend WILL error out if the image is empty.)
-        cy
-            .get(selectors.clusterForm.endpointInput)
+        cy.get(selectors.clusterForm.endpointInput)
             .clear()
             .type('central.prevent_net:443');
 
         cy.get(selectors.buttons.next).click();
-        cy
-            .wait('@addCluster')
+        cy.wait('@addCluster')
             .its('responseBody')
             .then(response => {
                 const clusterId = response.cluster.id;
@@ -187,14 +177,12 @@ describe('Cluster Creation Flow', () => {
                 cy.get('div:contains("Waiting for the cluster to check-in successfully...")');
 
                 // make cluster to "check-in" by adding "lastContact"
-                cy
-                    .route('GET', `${api.clusters.list}/${clusterId}`, {
-                        cluster: {
-                            id: clusterId,
-                            lastContact: '2018-06-25T19:12:44.955289Z'
-                        }
-                    })
-                    .as('getCluster');
+                cy.route('GET', `${api.clusters.list}/${clusterId}`, {
+                    cluster: {
+                        id: clusterId,
+                        lastContact: '2018-06-25T19:12:44.955289Z'
+                    }
+                }).as('getCluster');
                 cy.wait('@getCluster');
                 cy.get(
                     'div:contains("Success! The cluster has been recognized properly by Prevent. You may now save the configuration.")'

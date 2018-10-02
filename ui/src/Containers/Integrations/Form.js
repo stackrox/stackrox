@@ -119,6 +119,7 @@ class Form extends Component {
             <form id="integrations-form" className="w-full p-4">
                 <div>
                     {formFields.map(field => (
+                        // eslint-disable-next-line jsx-a11y/label-has-for
                         <label className="flex mt-4" htmlFor={field.key} key={field.label}>
                             <div className="mr-4 flex items-center w-2/3 capitalize">
                                 {field.label}
@@ -213,5 +214,8 @@ const mapDispatchToProps = dispatch => ({
 });
 
 export default reduxForm({ form: 'integrationForm' })(
-    connect(mapStateToProps, mapDispatchToProps)(Form)
+    connect(
+        mapStateToProps,
+        mapDispatchToProps
+    )(Form)
 );

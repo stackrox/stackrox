@@ -6,17 +6,15 @@ import * as api from './constants/apiEndpoints';
 describe('Authentication', () => {
     const setupAuth = (landingUrl, authStatusValid = true) => {
         cy.server();
-        cy
-            .route('GET', api.auth.authProviders, 'fixture:auth/authProviders.json')
-            .as('authProviders');
-        cy
-            .route({
-                method: 'GET',
-                url: api.auth.authStatus,
-                status: authStatusValid ? 200 : 401,
-                response: {}
-            })
-            .as('authStatus');
+        cy.route('GET', api.auth.authProviders, 'fixture:auth/authProviders.json').as(
+            'authProviders'
+        );
+        cy.route({
+            method: 'GET',
+            url: api.auth.authStatus,
+            status: authStatusValid ? 200 : 401,
+            response: {}
+        }).as('authStatus');
 
         cy.visit(landingUrl);
         cy.wait('@authProviders');
@@ -62,18 +60,16 @@ describe('Authentication', () => {
          */
         localStorage.setItem('access_token', 'first-token');
         cy.server();
-        cy
-            .route({
-                method: 'GET',
-                url: api.benchmarks.configs,
-                status: 401,
-                delay: 200,
-                response: {},
-                onRequest: () => {
-                    localStorage.setItem('access_token', 'new-token');
-                }
-            })
-            .as('benchmarks');
+        cy.route({
+            method: 'GET',
+            url: api.benchmarks.configs,
+            status: 401,
+            delay: 200,
+            response: {},
+            onRequest: () => {
+                localStorage.setItem('access_token', 'new-token');
+            }
+        }).as('benchmarks');
         setupAuth(complianceUrl);
 
         cy.wait('@benchmarks').then(xhr => {

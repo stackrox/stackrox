@@ -10,5 +10,5 @@ export const selectors = {
     table: {
         rows: 'div.rt-tbody div.rt-tr-group'
     },
-    searchInput: '.Select-input > input'
+    searchInput: '.react-select__input > input'
 };

@@ -133,4 +133,7 @@ const mapDispatchToProps = {
     onPrev: actions.prevWizardPage
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(ClusterWizardPanel);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(ClusterWizardPanel);

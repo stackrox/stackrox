@@ -20,6 +20,7 @@ export class AuthHttpError extends Error {
     }
 
     isAccessDenied = () => this.code === 403;
+
     isInvalidAuth = () => this.code === 401;
 }
 
@@ -88,7 +89,9 @@ export const getAndClearRequestedLocation = () => {
 const BEARER_TOKEN_PREFIX = `Bearer `;
 
 function setAuthHeader(config, token) {
-    const { headers: { Authorization, ...notAuthHeaders } } = config;
+    const {
+        headers: { Authorization, ...notAuthHeaders }
+    } = config;
     // make sure new config doesn't have unnecessary auth header
     const newConfig = {
         ...config,
@@ -123,7 +126,10 @@ function addResponseInterceptor(authHttpErrorHandler) {
     axios.interceptors.response.use(
         response => response,
         error => {
-            const { response: { status }, config } = error;
+            const {
+                response: { status },
+                config
+            } = error;
             if (status === 401 || status === 403) {
                 const requestToken = parseAuthTokenFromHeaders(config.headers);
                 const currentToken = getAccessToken();

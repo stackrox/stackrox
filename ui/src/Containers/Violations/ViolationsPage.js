@@ -352,7 +352,7 @@ class ViolationsPage extends Component {
                 <div className="flex flex-1 flex-col">
                     <PageHeader header="Violations" subHeader={subHeader}>
                         <SearchInput
-                            className="flex flex-1"
+                            className="w-full"
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}
                             searchSuggestions={this.props.searchSuggestions}
@@ -402,4 +402,7 @@ const mapDispatchToProps = (dispatch, props) => ({
     setSearchSuggestions: alertActions.setAlertsSearchSuggestions
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(ViolationsPage);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(ViolationsPage);

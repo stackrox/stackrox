@@ -11,6 +11,7 @@ const YamlDownloadSection = ({ onFileDownload }) => (
             1) Download the required Configuration files
             <div className="flex justify-center p-3">
                 <button
+                    type="button"
                     className="download uppercase text-primary-600 p-2 text-center text-sm border border-solid bg-primary-200 border-primary-300 hover:bg-primary-100"
                     onClick={onFileDownload}
                     tabIndex="-1"

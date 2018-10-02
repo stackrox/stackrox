@@ -53,11 +53,13 @@ class NetworkPolicySimulator extends Component {
             reader.readAsBinaryString(file);
         });
     };
+
     showToast = () => {
         const errorMessage = 'Invalid file type. Try again.';
         this.props.addToast(errorMessage);
         setTimeout(this.props.removeToast, 500);
     };
+
     hideGetStartedSection = () => this.setState({ showGetStartedSection: false });
 
     toggleDragAndDrop = showDragAndDrop => {
@@ -161,6 +163,7 @@ class NetworkPolicySimulator extends Component {
             </div>
         );
     };
+
     renderSidePanel() {
         const { yamlFile } = this.props;
         const colorType = this.props.yamlUploadState === 'ERROR' ? 'danger' : 'success';
@@ -195,4 +198,7 @@ const mapDispatchToProps = {
     removeToast: notificationActions.removeOldestNotification
 };
 
-export default connect(null, mapDispatchToProps)(NetworkPolicySimulator);
+export default connect(
+    null,
+    mapDispatchToProps
+)(NetworkPolicySimulator);

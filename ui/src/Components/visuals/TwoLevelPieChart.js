@@ -103,7 +103,9 @@ class TwoLevelPieChart extends Component {
                         outerRadius={80}
                         onMouseEnter={this.onPieEnter}
                     >
-                        {this.props.data.map(entry => <Cell key={entry.name} fill={entry.color} />)}
+                        {this.props.data.map(entry => (
+                            <Cell key={entry.name} fill={entry.color} />
+                        ))}
                     </Pie>
                     <Legend />
                 </PieChart>

@@ -65,8 +65,7 @@ describe('Compliance page', () => {
         cy.get(selectors.compliance).should('have.class', 'bg-primary-700');
         cy.url().should('contain', '/main/compliance/swarmCluster1');
         // first tab selected by default
-        cy
-            .get(selectors.benchmarkTabs)
+        cy.get(selectors.benchmarkTabs)
             .first()
             .should('have.class', 'tab-active');
         cy.get(selectors.benchmarkTabs).should('contain', 'CIS Swarm v1.1.0 Benchmark');
@@ -93,34 +92,28 @@ describe('Compliance page', () => {
 
     it('should show scan results', () => {
         setupSingleClusterFixtures();
-        cy
-            .get(selectors.benchmarkTabs)
+        cy.get(selectors.benchmarkTabs)
             .first()
             .should('contain', 'CIS Docker v1.1.0 Benchmark');
         cy.get(selectors.checkRows).should('have.length', 5);
-        cy
-            .get(selectors.passColumns)
+        cy.get(selectors.passColumns)
             .last()
             .should('have.text', '0');
     });
 
     it('should show benchmark host results', () => {
         setupSingleClusterFixtures();
-        cy
-            .route(
-                'GET',
-                api.benchmarks.scanHostResults,
-                'fx:benchmarks/dockerBenchmarkHostResults.json'
-            )
-            .as('dockerBenchmarkHostResults');
+        cy.route(
+            'GET',
+            api.benchmarks.scanHostResults,
+            'fx:benchmarks/dockerBenchmarkHostResults.json'
+        ).as('dockerBenchmarkHostResults');
 
-        cy
-            .get(selectors.passColumns)
+        cy.get(selectors.passColumns)
             .first()
             .click();
         cy.wait('@dockerBenchmarkHostResults');
-        cy
-            .get(selectors.hostColumns)
+        cy.get(selectors.hostColumns)
             .should('have.length', 1)
             .and('contain', 'linuxkit-025000000001');
     });

@@ -123,4 +123,9 @@ const mapDispatchToProps = dispatch => ({
     fetchClusters: () => dispatch(clusterActions.fetchClusters.request())
 });
 
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(NavigationPanel));
+export default withRouter(
+    connect(
+        mapStateToProps,
+        mapDispatchToProps
+    )(NavigationPanel)
+);

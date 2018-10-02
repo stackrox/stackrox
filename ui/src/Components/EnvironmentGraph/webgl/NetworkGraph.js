@@ -28,6 +28,12 @@ class NetworkGraph extends Component {
                 id: PropTypes.string.isRequired
             })
         ).isRequired,
+        links: PropTypes.arrayOf(
+            PropTypes.shape({
+                source: PropTypes.string.isRequired,
+                target: PropTypes.string.isRequired
+            })
+        ).isRequired,
         onNodeClick: PropTypes.func.isRequired,
         updateKey: PropTypes.number.isRequired
     };
@@ -84,7 +90,7 @@ class NetworkGraph extends Component {
 
     getIntersectingObjects = (x, y) => {
         const { clientWidth, clientHeight } = this.renderer.domElement;
-        this.mouse.x = x / clientWidth * 2 - 1;
+        this.mouse.x = (x / clientWidth) * 2 - 1;
         this.mouse.y = -(y / clientHeight) * 2 + 1;
 
         // update the ray caster with the camera and mouse position
@@ -437,10 +443,14 @@ class NetworkGraph extends Component {
                     }}
                 />
                 <div className="graph-zoom-buttons m-4 absolute pin-b pin-r z-20">
-                    <button className="btn-icon btn-primary mb-2" onClick={this.zoomIn}>
+                    <button
+                        type="button"
+                        className="btn-icon btn-primary mb-2"
+                        onClick={this.zoomIn}
+                    >
                         <Icon.Plus className="h-4 w-4" />
                     </button>
-                    <button className="btn-icon btn-primary" onClick={this.zoomOut}>
+                    <button type="button" className="btn-icon btn-primary" onClick={this.zoomOut}>
                         <Icon.Minus className="h-4 w-4" />
                     </button>
                 </div>

@@ -190,8 +190,7 @@ class RiskPage extends Component {
                 <div className="flex flex-1 flex-col">
                     <PageHeader header="Risk" subHeader={subHeader}>
                         <SearchInput
-                            className="flex flex-1"
-                            id="risk"
+                            className="w-full"
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}
                             searchSuggestions={this.props.searchSuggestions}
@@ -238,4 +237,7 @@ const mapDispatchToProps = {
     setSearchSuggestions: deploymentsActions.setDeploymentsSearchSuggestions
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(RiskPage);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(RiskPage);

@@ -8,8 +8,8 @@ export const selectors = {
     },
     cancelButton: 'button[data-test-id="cancel"]',
     search: {
-        searchModifier: '.risk-search-input #react-select-3--value > :nth-child(1)',
-        searchWord: '.risk-search-input #react-select-3--value > :nth-child(2)'
+        searchModifier: '.react-select__multi-value__label:first',
+        searchWord: '.react-select__multi-value__label:eq(1)'
     },
     mounts: {
         label: 'div:contains("Mounts"):last',

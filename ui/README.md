@@ -11,7 +11,7 @@ Instead follow the instructions below.
 ### Build Tooling
 
 * [Docker](https://www.docker.com/)
-* [Node.js](https://nodejs.org/en/) (if you're managing multiple versions of Node.js on your machine, consider using [nvm](https://github.com/creationix/nvm))
+* [Node.js](https://nodejs.org/en/) `8.12.0` or above (it's highly recommended to use an LTS version, if you're managing multiple versions of Node.js on your machine, consider using [nvm](https://github.com/creationix/nvm))
 * [yarn](https://yarnpkg.com/en/)
 
 ### Dev Env Setup

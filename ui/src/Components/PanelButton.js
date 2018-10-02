@@ -5,7 +5,7 @@ import 'rc-tooltip/assets/bootstrap.css';
 
 const PanelButton = ({ icon, text, onClick, className, disabled, tooltip }) => {
     const button = (
-        <button className={className} onClick={onClick} disabled={disabled}>
+        <button type="button" className={className} onClick={onClick} disabled={disabled}>
             {icon && <span className="flex items-center">{icon}</span>}
             {text && <span className="mx-2">{text}</span>}
         </button>

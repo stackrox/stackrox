@@ -6,7 +6,7 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 
 const Factor = ({ message, url }) => {
     const renderedMessage = url ? (
-        <a href={url} target="_blank">
+        <a href={url} target="_blank" rel="noopener noreferrer">
             {message}
         </a>
     ) : (

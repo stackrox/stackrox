@@ -3,8 +3,9 @@ const selectors = {
     searchBtn: 'button:contains("Search")',
     pageSearchSuggestions: 'div.Select-menu-outer',
     categoryTabs: '.tab',
-    searchInput: '.search-modal div.Select-input > input',
-    pageSearchInput: 'div.Select-input > input',
+
+    searchInput: '.search-modal .react-select__input > input',
+    pageSearchInput: '.react-select__input > input',
     searchResultsHeader: '.bg-base-100.flex-1 > .text-xl',
     viewOnViolationsChip:
         'div.rt-tbody > .rt-tr-group:first-child .rt-tr .rt-td:nth-child(3) ul > li:first-child > button',

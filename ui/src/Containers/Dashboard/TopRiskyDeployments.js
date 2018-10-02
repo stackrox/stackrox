@@ -9,7 +9,10 @@ const renderMoreButton = deployments => {
     if (!deployments.length) return null;
     return (
         <Link to="/main/risk" className="no-underline">
-            <button className="border-2 border-base-400 font-700 hover:bg-base-200 hover:border-primary-400 hover:text-primary-700 p-1 rounded-sm text-base-600 text-xs uppercase">
+            <button
+                type="button"
+                className="border-2 border-base-400 font-700 hover:bg-base-200 hover:border-primary-400 hover:text-primary-700 p-1 rounded-sm text-base-600 text-xs uppercase"
+            >
                 View All
             </button>
         </Link>

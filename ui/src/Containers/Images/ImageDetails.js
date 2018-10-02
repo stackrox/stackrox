@@ -4,14 +4,14 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import dateFns from 'date-fns';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import Tooltip from 'rc-tooltip';
-import 'react-table/react-table.css';
-import Table, { defaultHeaderClassName } from 'Components/Table';
+
+import dateTimeFormat from 'constants/dateTimeFormat';
 
 import { actions as deploymentsActions } from 'reducers/deployments';
 import { addSearchModifier, addSearchKeyword } from 'utils/searchUtils';
 
+import Table, { defaultHeaderClassName } from 'Components/Table';
 import CollapsibleCard from 'Components/CollapsibleCard';
 import Panel from 'Components/Panel';
 import KeyValuePairs from 'Components/KeyValuePairs';
@@ -68,6 +68,7 @@ class ImageDetails extends Component {
     getDockerFileButton = image => {
         const button = (
             <button
+                type="button"
                 className="flex mx-auto my-2 py-3 px-2 w-5/6 rounded-sm text-primary-600 hover:text-base-100 hover:bg-primary-400 uppercase justify-center text-sm items-center bg-base-100 border-2 border-primary-400"
                 onClick={this.openModal}
                 disabled={!image.metadata}
@@ -120,6 +121,7 @@ class ImageDetails extends Component {
                             <div className="flex bg-primary-100">
                                 <span className="w-1/2">
                                     <button
+                                        type="button"
                                         className="flex mx-auto my-2 py-3 px-2 w-5/6 rounded-sm text-primary-600 no-underline hover:text-base-100 hover:bg-primary-400 uppercase justify-center text-sm items-center bg-base-100 border-2 border-primary-400"
                                         onClick={this.onViewDeploymentsClick}
                                     >
@@ -147,6 +149,7 @@ class ImageDetails extends Component {
                         <a
                             href={ci.original.link}
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="text-primary-600 font-600 pointer-events-auto"
                         >
                             {ci.value}
@@ -278,4 +281,9 @@ const mapDispatchToProps = {
     setDeploymentsSearchOptions: deploymentsActions.setDeploymentsSearchOptions
 };
 
-export default withRouter(connect(null, mapDispatchToProps)(ImageDetails));
+export default withRouter(
+    connect(
+        null,
+        mapDispatchToProps
+    )(ImageDetails)
+);

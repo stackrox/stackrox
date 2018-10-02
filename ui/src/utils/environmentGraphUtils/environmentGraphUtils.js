@@ -62,7 +62,7 @@ export const forceCollision = nodes => alpha => {
                     quad.data.r +
                     (d.namespace === quad.data.namespace ? PADDING : CLUSTER_PADDING);
                 if (l < radius) {
-                    l = (l - radius) / l * alpha;
+                    l = ((l - radius) / l) * alpha;
                     /* eslint-disable */
                     d.x -= x *= l;
                     d.y -= y *= l;

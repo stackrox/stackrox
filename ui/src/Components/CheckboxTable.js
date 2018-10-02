@@ -25,12 +25,15 @@ class CheckboxTable extends Component {
         this.reactTable = table;
     };
 
-    toggleRowHandler = ({ id }) => e => {
-        e.stopPropagation();
+    toggleRowHandler = ({ id }) => () => {
         this.props.toggleRow(id);
     };
 
-    toggleSelectAllHandler = () => () => this.props.toggleSelectAll();
+    stopPropagationOnClick = e => e.stopPropagation();
+
+    toggleSelectAllHandler = () => {
+        this.props.toggleSelectAll();
+    };
 
     someSelected = () => {
         const { selection, rows } = this.props;
@@ -52,7 +55,8 @@ class CheckboxTable extends Component {
                     <input
                         type="checkbox"
                         checked={selection.includes(original.id)}
-                        onClick={this.toggleRowHandler(original)}
+                        onChange={this.toggleRowHandler(original)}
+                        onClick={this.stopPropagationOnClick} // don't want checkbox click to select the row
                     />
                 ),
                 Header: () => (
@@ -61,10 +65,10 @@ class CheckboxTable extends Component {
                         checked={this.allSelected()}
                         ref={input => {
                             if (input) {
-                                input.indeterminate = this.someSelected(); // eslint-disable-line
+                                input.indeterminate = this.someSelected(); // eslint-disable-line no-param-reassign
                             }
                         }}
-                        onChange={this.toggleSelectAllHandler()}
+                        onChange={this.toggleSelectAllHandler}
                     />
                 ),
                 sortable: false,

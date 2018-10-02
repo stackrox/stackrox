@@ -55,6 +55,7 @@ class ImagesPage extends Component {
     setTablePage = newPage => {
         this.setState({ page: newPage });
     };
+
     updateSelectedImage = image => {
         const urlSuffix = image && image.id ? `/${image.id}` : '';
         this.props.history.push({
@@ -146,7 +147,7 @@ class ImagesPage extends Component {
                 <div className="flex flex-1 flex-col">
                     <PageHeader header="Images" subHeader={subHeader}>
                         <SearchInput
-                            className="flex flex-1"
+                            className="w-full"
                             id="images"
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}
@@ -193,4 +194,7 @@ const mapDispatchToProps = {
     setSearchSuggestions: imagesActions.setImagesSearchSuggestions,
     fetchImage: imagesActions.fetchImage
 };
-export default connect(mapStateToProps, mapDispatchToProps)(ImagesPage);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(ImagesPage);

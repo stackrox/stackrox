@@ -11,8 +11,7 @@ describe('Secrets page', () => {
     });
 
     it('should open the panel to view secret details', () => {
-        cy
-            .get(SecretsPageSelectors.table.rows)
+        cy.get(SecretsPageSelectors.table.rows)
             .first()
             .click();
         cy.get(SecretsPageSelectors.panel.secretDetails);
@@ -20,12 +19,10 @@ describe('Secrets page', () => {
     });
 
     it('should navigate from Secrets Page to Risk Page', () => {
-        cy
-            .get(SecretsPageSelectors.table.rows)
+        cy.get(SecretsPageSelectors.table.rows)
             .first()
             .click();
-        cy
-            .get(SecretsPageSelectors.deploymentLinks)
+        cy.get(SecretsPageSelectors.deploymentLinks)
             .first()
             .click();
         cy.url().should('contain', '/main/risk');

@@ -240,4 +240,7 @@ const mapDispatchToProps = {
     startWizard: actions.startWizard
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(ClustersModal);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(ClustersModal);

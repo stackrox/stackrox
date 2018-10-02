@@ -47,7 +47,7 @@ class SearchModal extends Component {
                 <div className="flex w-full bg-base-100">
                     <PageHeader header="Search All:">
                         <SearchInput
-                            className="flex flex-1"
+                            className="w-full"
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}
                             searchSuggestions={this.props.searchSuggestions}
@@ -58,6 +58,7 @@ class SearchModal extends Component {
                         />
                     </PageHeader>
                     <button
+                        type="button"
                         className="flex items-center justify-center border-b border-base-300 border-l px-4 hover:bg-base-200"
                         onClick={this.props.onClose}
                     >
@@ -94,4 +95,7 @@ const mapDispatchToProps = dispatch => ({
         dispatch(globalSearchActions.setGlobalSearchSuggestions(searchSuggestions))
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(SearchModalContainer);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(SearchModalContainer);

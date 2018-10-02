@@ -12,9 +12,9 @@ describe('Dashboard page', () => {
 
     it('should display benchmarks data for multiple clusters', () => {
         cy.server();
-        cy
-            .route('GET', api.benchmarks.summary, 'fixture:benchmarks/summary.json')
-            .as('benchmarksSummary');
+        cy.route('GET', api.benchmarks.summary, 'fixture:benchmarks/summary.json').as(
+            'benchmarksSummary'
+        );
 
         cy.visit(dashboardUrl);
         cy.wait('@benchmarksSummary');
@@ -26,25 +26,24 @@ describe('Dashboard page', () => {
 
         // return back to the first cluster and test it extensively
         // but first need to make sure sliding animation is over, otherwise "previous" button doesn't work in Slick component
-        cy
-            .get(selectors.slick.dashboardBenchmarks.track)
-            .should('have.css', 'transition-duration', '0s');
+        cy.get(selectors.slick.dashboardBenchmarks.track).should(
+            'have.css',
+            'transition-duration',
+            '0s'
+        );
         cy.get(selectors.slick.dashboardBenchmarks.prevButton).click();
         cy.get(selectors.sectionHeaders.benchmarks).should('contain', 'remote');
 
-        cy
-            .get(selectors.sectionHeaders.benchmarks)
+        cy.get(selectors.sectionHeaders.benchmarks)
             .next()
             .children()
             .as('benchmarkSummaries');
-        cy
-            .get('@benchmarkSummaries')
+        cy.get('@benchmarkSummaries')
             .find('a')
             .first()
             .should('have.text', 'CIS Docker v1.1.0 Benchmark');
 
-        cy
-            .get('@benchmarkSummaries')
+        cy.get('@benchmarkSummaries')
             .find('a')
             .next()
             .children()
@@ -54,8 +53,7 @@ describe('Dashboard page', () => {
                 expect(info.getAttribute('style')).to.have.string('width: 9%');
                 expect(note.getAttribute('style')).to.have.string('width: 32%');
             });
-        cy
-            .get('@benchmarkSummaries')
+        cy.get('@benchmarkSummaries')
             .find('a')
             .first()
             .click();
@@ -74,8 +72,7 @@ describe('Dashboard page', () => {
         cy.visit(dashboardUrl);
         cy.wait('@alertsByCluster');
 
-        cy
-            .get(selectors.sectionHeaders.systemViolations)
+        cy.get(selectors.sectionHeaders.systemViolations)
             .next('div')
             .children()
             .as('riskTiles');
@@ -89,14 +86,12 @@ describe('Dashboard page', () => {
     });
 
     it('should not navigate to the violations page when clicking the critical severity risk tile', () => {
-        cy
-            .get(selectors.sectionHeaders.systemViolations)
+        cy.get(selectors.sectionHeaders.systemViolations)
             .next('div')
             .children()
             .as('riskTiles');
 
-        cy
-            .get('@riskTiles')
+        cy.get('@riskTiles')
             .first()
             .click();
         cy.location().should(location => {
@@ -105,14 +100,12 @@ describe('Dashboard page', () => {
     });
 
     it('should navigate to violations page when clicking the low severity tile', () => {
-        cy
-            .get(selectors.sectionHeaders.systemViolations)
+        cy.get(selectors.sectionHeaders.systemViolations)
             .next('div')
             .children()
             .as('riskTiles');
 
-        cy
-            .get('@riskTiles')
+        cy.get('@riskTiles')
             .last()
             .click();
         cy.location().should(location => {
@@ -129,8 +122,7 @@ describe('Dashboard page', () => {
         cy.visit(dashboardUrl);
         cy.wait('@alertsByCluster');
 
-        cy
-            .get(selectors.sectionHeaders.violationsByClusters)
+        cy.get(selectors.sectionHeaders.violationsByClusters)
             .next()
             .as('chart');
 
@@ -140,9 +132,11 @@ describe('Dashboard page', () => {
                 // from alerts fixture : low = 2, medium = 1, therefore medium's height should be twice less
                 const { height } = grid.getBBox();
                 cy.get(selectors.chart.lowSeverityBar).should('have.attr', 'height', `${height}`);
-                cy
-                    .get(selectors.chart.medSeverityBar)
-                    .should('have.attr', 'height', `${height / 2}`);
+                cy.get(selectors.chart.medSeverityBar).should(
+                    'have.attr',
+                    'height',
+                    `${height / 2}`
+                );
             });
         });
 
@@ -157,8 +151,7 @@ describe('Dashboard page', () => {
         cy.visit(dashboardUrl);
         cy.wait('@alertsByCluster');
 
-        cy
-            .get(selectors.sectionHeaders.violationsByClusters)
+        cy.get(selectors.sectionHeaders.violationsByClusters)
             .next()
             .find(selectors.chart.xAxis)
             .should('contain', 'Kubernetes Cluster 1');
@@ -170,8 +163,7 @@ describe('Dashboard page', () => {
         cy.route('GET', api.dashboard.timeseries, '@alertsByTimeseries').as('alertsByTimeseries');
         cy.visit(dashboardUrl);
         cy.wait('@alertsByTimeseries');
-        cy
-            .get(selectors.sectionHeaders.eventsByTime)
+        cy.get(selectors.sectionHeaders.eventsByTime)
             .next()
             .find(selectors.timeseries);
     });
@@ -184,12 +176,10 @@ describe('Dashboard page', () => {
         cy.visit(dashboardUrl);
         cy.wait('@alertsByCategory');
 
-        cy
-            .get(selectors.sectionHeaders.securityBestPractices)
+        cy.get(selectors.sectionHeaders.securityBestPractices)
             .next()
             .as('chart');
-        cy
-            .get('@chart')
+        cy.get('@chart')
             .find(selectors.chart.legendItem)
             .should('have.text', 'Low');
 
@@ -204,14 +194,12 @@ describe('Dashboard page', () => {
         cy.visit(dashboardUrl);
         cy.wait('@riskyDeployments');
 
-        cy
-            .get(selectors.sectionHeaders.topRiskyDeployments)
+        cy.get(selectors.sectionHeaders.topRiskyDeployments)
             .next()
             .as('list');
 
         // Should only display the top 5 risky deployments
-        cy
-            .get('@list')
+        cy.get('@list')
             .find('li')
             .should('have.length', 5);
 
@@ -239,8 +227,7 @@ describe('Dashboard page', () => {
         cy.get(selectors.sectionHeaders.securityBestPractices).should('not.exist');
         cy.get(selectors.sectionHeaders.devopsBestPractices).should('not.exist');
 
-        cy
-            .get(selectors.sectionHeaders.violationsByClusters)
+        cy.get(selectors.sectionHeaders.violationsByClusters)
             .next()
             .should(
                 'have.text',

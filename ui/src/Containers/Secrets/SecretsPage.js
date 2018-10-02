@@ -135,7 +135,7 @@ class SecretPage extends Component {
                 <div className="flex flex-1 flex-col">
                     <PageHeader header="Secrets" subHeader={subHeader}>
                         <SearchInput
-                            className="flex flex-1"
+                            className="w-full"
                             id="secrets"
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}
@@ -183,4 +183,7 @@ const mapDispatchToProps = {
     setSearchSuggestions: secretsActions.setSecretsSearchSuggestions
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(SecretPage);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(SecretPage);

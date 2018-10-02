@@ -54,7 +54,8 @@ const globalSearchResults = (state = [], action) => {
     if (action.type === types.FETCH_GLOBAL_SEARCH_RESULTS.SUCCESS) {
         const results = action.response.results || [];
         return isEqual(results, state) ? state : results;
-    } else if (action.type === types.FETCH_GLOBAL_SEARCH_RESULTS.FAILURE) {
+    }
+    if (action.type === types.FETCH_GLOBAL_SEARCH_RESULTS.FAILURE) {
         const results = [];
         return isEqual(results, state) ? state : results;
     }
@@ -65,7 +66,8 @@ const globalSearchCounts = (state = [], action) => {
     if (action.type === types.FETCH_GLOBAL_SEARCH_RESULTS.SUCCESS && !action.params.category) {
         const counts = action.response.counts || [];
         return isEqual(counts, state) ? state : counts;
-    } else if (action.type === types.FETCH_GLOBAL_SEARCH_RESULTS.FAILURE) {
+    }
+    if (action.type === types.FETCH_GLOBAL_SEARCH_RESULTS.FAILURE) {
         const counts = [];
         return isEqual(counts, state) ? state : counts;
     }

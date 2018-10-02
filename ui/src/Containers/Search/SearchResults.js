@@ -169,6 +169,7 @@ class SearchResults extends Component {
                             mapping[original.category].viewOn.map((item, index) => (
                                 <li key={index}>
                                     <button
+                                        type="button"
                                         onClick={this.onLinkHandler(
                                             original.category,
                                             item,
@@ -195,6 +196,7 @@ class SearchResults extends Component {
                             mapping[original.category].filterOn.map((item, index) => (
                                 <li key={index}>
                                     <button
+                                        type="button"
                                         onClick={this.onLinkHandler(
                                             original.category,
                                             filterOnMapping[item],
@@ -278,4 +280,7 @@ const mapDispatchToProps = dispatch => ({
         dispatch(globalSearchActions.passthroughGlobalSearchOptions(searchOptions, category))
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(SearchResults);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(SearchResults);

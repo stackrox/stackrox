@@ -85,6 +85,7 @@ class IntegrationTable extends Component {
                 accessor: '',
                 Cell: ({ original }) => (
                     <button
+                        type="button"
                         className="flex rounded-sm uppercase text-center text-sm items-center self-center"
                         onClick={this.props.onActivate(original)}
                     >

@@ -123,4 +123,7 @@ const mapDispatchToProps = dispatch => ({
     whitelistDeployment: alert => dispatch(actions.whitelistDeployment.request(alert))
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(ViolationsPanel);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(ViolationsPanel);

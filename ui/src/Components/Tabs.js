@@ -65,6 +65,7 @@ class Tabs extends Component {
             if (header.disabled) tabClass = this.props.tabDisabledClass;
             return (
                 <button
+                    type="button"
                     className={`${tabClass}`}
                     key={`${header.text}`}
                     onClick={this.tabClickHandler(header, i)}

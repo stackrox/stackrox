@@ -10,6 +10,7 @@ const CloseButton = ({ className, iconColor, onClose }) => (
         <span>
             <Tooltip placement="top" overlay={<div>Cancel</div>}>
                 <button
+                    type="button"
                     className={`flex p-3 text-center text-sm items-center hover:text-primary-700 ${iconColor}`}
                     onClick={onClose}
                     data-test-id="cancel"

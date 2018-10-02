@@ -27,8 +27,7 @@ describe('Images page', () => {
 
     it('Should show image in panel header', () => {
         cy.get(imageSelectors.firstTableRow).click();
-        cy
-            .get(imageSelectors.panelHeader)
+        cy.get(imageSelectors.panelHeader)
             .eq(1)
             .should('have.text', 'docker.io/library/nginx:latest');
     });
@@ -51,8 +50,7 @@ describe('Images page', () => {
     it('should close the side panel on search filter', () => {
         cy.get(selectors.pageSearchInput).type('Cluster:{enter}', { force: true });
         cy.get(selectors.pageSearchInput).type('remote{enter}', { force: true });
-        cy
-            .get(imageSelectors.panelHeader)
+        cy.get(imageSelectors.panelHeader)
             .eq(1)
             .should('not.be.visible');
     });
