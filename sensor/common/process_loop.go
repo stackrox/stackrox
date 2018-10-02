@@ -1,4 +1,4 @@
-package sensor
+package common
 
 import (
 	"io"
@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/sensor/metrics"
+	"github.com/stackrox/rox/sensor/common/metrics"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

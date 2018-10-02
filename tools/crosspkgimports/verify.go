@@ -125,6 +125,10 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot string) (errs []
 		allowedPackages = append(allowedPackages, "image")
 	}
 
+	if validImportRoot == "sensor/swarm" || validImportRoot == "sensor/kubernetes" {
+		allowedPackages = append(allowedPackages, "sensor/common")
+	}
+
 	for _, imp := range imps {
 		ok, err := roxImportsFromAllowedPackagesOnly(imp, allowedPackages...)
 		if err != nil {

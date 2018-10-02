@@ -5,8 +5,8 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/listeners"
-	"github.com/stackrox/rox/pkg/sensor/cache"
-	"github.com/stackrox/rox/pkg/sensor/processsignal"
+	"github.com/stackrox/rox/sensor/common/cache"
+	"github.com/stackrox/rox/sensor/common/processsignal"
 )
 
 var (

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/sensor/cache"
+	"github.com/stackrox/rox/sensor/common/cache"
 )
 
 var (

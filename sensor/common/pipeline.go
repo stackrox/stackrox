@@ -1,4 +1,4 @@
-package sensor
+package common
 
 import "github.com/stackrox/rox/generated/api/v1"
 

@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/data/common"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/sensor/cache"
+	"github.com/stackrox/rox/sensor/common/cache"
 )
 
 type hostConnections struct {

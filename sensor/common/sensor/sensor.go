@@ -1,4 +1,4 @@
-package common
+package sensor
 
 import (
 	"context"
@@ -17,9 +17,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/orchestrators"
-	"github.com/stackrox/rox/pkg/sensor"
-	networkConnManager "github.com/stackrox/rox/pkg/sensor/networkflow/manager"
-	signalService "github.com/stackrox/rox/pkg/sensor/service"
+	sensor "github.com/stackrox/rox/sensor/common"
+	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
+	signalService "github.com/stackrox/rox/sensor/common/service"
 	"google.golang.org/grpc"
 )
 

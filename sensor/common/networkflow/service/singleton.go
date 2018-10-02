@@ -3,7 +3,7 @@ package service
 import (
 	"sync"
 
-	"github.com/stackrox/rox/pkg/sensor/networkflow/manager"
+	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 )
 
 var (

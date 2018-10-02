@@ -9,7 +9,7 @@ import (
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sensor"
+	sensor "github.com/stackrox/rox/sensor/common"
 	"google.golang.org/grpc"
 )
 

@@ -6,8 +6,8 @@ import (
 	"syscall"
 
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sensor/common"
-	"github.com/stackrox/rox/pkg/sensor/networkflow/manager"
+	"github.com/stackrox/rox/sensor/common/networkflow/manager"
+	"github.com/stackrox/rox/sensor/common/sensor"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
@@ -20,7 +20,7 @@ func main() {
 	signal.Notify(sigs, os.Interrupt)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	s := common.NewSensor(
+	s := sensor.NewSensor(
 		logger,
 		listener.New(),
 		enforcer.MustCreate(),

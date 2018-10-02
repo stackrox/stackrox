@@ -1,4 +1,4 @@
-package sensor
+package common
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/sensor/cache"
+	"github.com/stackrox/rox/sensor/common/cache"
 	"google.golang.org/grpc"
 )
 
