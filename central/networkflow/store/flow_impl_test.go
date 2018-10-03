@@ -3,10 +3,12 @@ package store
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/boltdb/bolt"
-	"github.com/stackrox/rox/generated/data"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -37,20 +39,24 @@ func (suite *FlowStoreTestSuite) TeardownSuite() {
 }
 
 func (suite *FlowStoreTestSuite) TestStore() {
-	flows := []*data.NetworkFlow{
+	flows := []*v1.NetworkFlow{
 		{
-			Props: &data.NetworkFlowProperties{
-				SourceDeploymentId: "someNode1",
-				TargetDeploymentId: "someNode2",
-				TargetPort:         1,
+			Props: &v1.NetworkFlowProperties{
+				SrcDeploymentId: "someNode1",
+				DstDeploymentId: "someNode2",
+				DstPort:         1,
+				L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
 			},
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
 		},
 		{
-			Props: &data.NetworkFlowProperties{
-				SourceDeploymentId: "someNode2",
-				TargetDeploymentId: "someNode1",
-				TargetPort:         2,
+			Props: &v1.NetworkFlowProperties{
+				SrcDeploymentId: "someOtherNode1",
+				DstDeploymentId: "someOtherNode2",
+				DstPort:         2,
+				L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
 			},
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
 		},
 	}
 	var err error
@@ -73,21 +79,23 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	err = suite.tested.UpsertFlow(flows[1])
 	suite.NoError(err, "upsert should succeed on second insert")
 
-	err = suite.tested.RemoveFlow(&data.NetworkFlowProperties{
-		SourceDeploymentId: flows[1].GetProps().GetSourceDeploymentId(),
-		TargetDeploymentId: flows[1].GetProps().GetTargetDeploymentId(),
-		TargetPort:         flows[1].GetProps().GetTargetPort(),
+	err = suite.tested.RemoveFlow(&v1.NetworkFlowProperties{
+		SrcDeploymentId: flows[1].GetProps().GetSrcDeploymentId(),
+		DstDeploymentId: flows[1].GetProps().GetDstDeploymentId(),
+		DstPort:         flows[1].GetProps().GetDstPort(),
+		L4Protocol:      flows[1].GetProps().GetL4Protocol(),
 	})
 	suite.NoError(err, "remove should succeed when present")
 
-	err = suite.tested.RemoveFlow(&data.NetworkFlowProperties{
-		SourceDeploymentId: flows[1].GetProps().GetSourceDeploymentId(),
-		TargetDeploymentId: flows[1].GetProps().GetTargetDeploymentId(),
-		TargetPort:         flows[1].GetProps().GetTargetPort(),
+	err = suite.tested.RemoveFlow(&v1.NetworkFlowProperties{
+		SrcDeploymentId: flows[1].GetProps().GetSrcDeploymentId(),
+		DstDeploymentId: flows[1].GetProps().GetDstDeploymentId(),
+		DstPort:         flows[1].GetProps().GetDstPort(),
+		L4Protocol:      flows[1].GetProps().GetL4Protocol(),
 	})
 	suite.NoError(err, "remove should succeed when not present")
 
-	var actualFlows []*data.NetworkFlow
+	var actualFlows []*v1.NetworkFlow
 	actualFlows, err = suite.tested.GetAllFlows()
 	suite.Equal(1, len(actualFlows), "only flows[0] should be present")
 	suite.Equal(flows[0], actualFlows[0], "only flows[0] should be present")

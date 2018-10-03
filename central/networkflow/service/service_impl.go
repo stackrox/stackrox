@@ -9,7 +9,6 @@ import (
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/data"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -93,8 +92,8 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.GetNe
 
 	filteredFlows := filterNetworkFlowsByTime(flows, request.GetSince())
 	for _, flow := range filteredFlows {
-		srcID := flow.GetProps().GetSourceDeploymentId()
-		dstID := flow.GetProps().GetTargetDeploymentId()
+		srcID := flow.GetProps().GetSrcDeploymentId()
+		dstID := flow.GetProps().GetDstDeploymentId()
 
 		edges = append(edges, &v1.NetworkEdge{Source: srcID, Target: dstID})
 	}
@@ -105,11 +104,12 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.GetNe
 	}, nil
 }
 
-func filterNetworkFlowsByTime(flows []*data.NetworkFlow, since *google_protobuf.Timestamp) (filterd []*data.NetworkFlow) {
+func filterNetworkFlowsByTime(flows []*v1.NetworkFlow, since *google_protobuf.Timestamp) (filtered []*v1.NetworkFlow) {
 	for _, flow := range flows {
-		if flow.GetTime().GetSeconds() > since.GetSeconds() ||
-			(flow.GetTime().GetSeconds() == since.GetSeconds() && flow.GetTime().GetNanos() > since.GetNanos()) {
-			filterd = append(filterd, flow)
+		flowTS := flow.LastSeenTimestamp
+		if flowTS.GetSeconds() > since.GetSeconds() ||
+			(flowTS.GetSeconds() == since.GetSeconds() && flowTS.GetNanos() > since.GetNanos()) {
+			filtered = append(filtered, flow)
 		}
 	}
 

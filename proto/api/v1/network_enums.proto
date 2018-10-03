@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-option go_package = "data";
+option go_package = "v1";
 option cc_enable_arenas = true;
 
-package data;
+package v1;
 
-enum Role {
+enum ClientServerRole {
 	ROLE_UNKNOWN = 0;
 	ROLE_SERVER  = 1;
 	ROLE_CLIENT  = 2;

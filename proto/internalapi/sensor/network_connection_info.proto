@@ -4,32 +4,27 @@ option go_package = "sensor";
 option cc_enable_arenas = true;
 
 import "google/protobuf/timestamp.proto";
-import "internalapi/data/common/network_enums.proto";
+import "api/v1/network_enums.proto";
 
 package sensor;
 
 message NetworkConnectionInfo {
     // Network connections that were added from the last time state was sent.
-    repeated NetworkConnection updated_connections = 1;
-
+    repeated NetworkConnection updated_connections  = 1;
     //For active connections, the timestamp of the entire message serves as the latest timestamp
     //that connection was deemed active
-    google.protobuf.Timestamp time      = 2;
+    google.protobuf.Timestamp time                  = 2;
 }
 
 // NetworkConnection tracks connection information about client and server.
 message NetworkConnection {
 
-    data.SocketFamily socket_family    = 1;
-
-    NetworkAddress local_address = 2;
-    NetworkAddress remote_address = 3;
-
-    data.L4Protocol protocol           = 4;
-
-    data.Role role                     = 5;
-
-    string container_id           = 6;
+    v1.SocketFamily socket_family       = 1;
+    NetworkAddress local_address        = 2;
+    NetworkAddress remote_address       = 3;
+    v1.L4Protocol protocol            = 4;
+    v1.ClientServerRole role            = 5;
+    string container_id                 = 6;
 
     // If this connection was closed, this gives the timestamp when it was closed. If this is unset, we treat it as an
     // open connection.

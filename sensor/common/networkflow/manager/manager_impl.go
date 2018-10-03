@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/data/common"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -22,7 +22,7 @@ type networkConnIndicator struct {
 	srcDeploymentID string
 	dstDeploymentID string
 	dstPort         uint16
-	protocol        data.L4Protocol
+	protocol        v1.L4Protocol
 }
 
 // connection is an instance of a connection as reported by collector
@@ -31,7 +31,7 @@ type connection struct {
 	dstAddr     string
 	dstPort     uint16
 	containerID string
-	protocol    data.L4Protocol
+	protocol    v1.L4Protocol
 }
 
 type networkFlowManager struct {
@@ -170,7 +170,7 @@ func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connec
 
 	for _, conn := range networkInfo.GetUpdatedConnections() {
 		// Ignore connection originating from a server
-		if conn.Role != data.Role_ROLE_CLIENT {
+		if conn.Role != v1.ClientServerRole_ROLE_CLIENT {
 			continue
 		}
 		c := connection{

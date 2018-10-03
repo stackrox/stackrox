@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "google/protobuf/timestamp.proto";
+import "api/v1/network_enums.proto";
+
+package v1;
+
+message NetworkFlowProperties {
+    // The source deployment ID of the network flow
+    string src_deployment_id    = 1;
+    // The destination deployment ID of the network flow
+    string dst_deployment_id    = 2;
+    // may be 0 if not applicable (e.g., icmp).
+    uint32 dst_port             = 3;
+    v1.L4Protocol l4protocol    = 4;
+}
+
+message NetworkFlow {
+    NetworkFlowProperties props                     = 1;
+
+    google.protobuf.Timestamp last_seen_timestamp   = 2;
+}
+

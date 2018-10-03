@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+import "api/v1/network_flow.proto";
+import "api/v1/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+package central;
+
+message NetworkFlowUpdate {
+    // Network flows that were added or removed from the last time state was sent to Central.
+    repeated v1.NetworkFlow updated        = 1;
+    google.protobuf.Timestamp time      = 2;
+
+}
+
+// A Central service that allows Sensor to send NetworkFlowUpdate messages
+service NetworkFlowService {
+    rpc PushNetworkFlows (stream NetworkFlowUpdate) returns (v1.Empty);
+}
