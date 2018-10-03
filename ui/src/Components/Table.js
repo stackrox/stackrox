@@ -9,6 +9,8 @@ export const defaultHeaderClassName =
 export const defaultColumnClassName =
     'px-2 py-2 font-600 text-base-600 text-left border-r-0 self-center leading-normal';
 export const wrapClassName = 'whitespace-normal overflow-visible';
+export const rtTrActionsClassName =
+    'rt-tr-actions hidden pin-r p-0 mr-2 w-auto text-left self-center shadow';
 export const pageSize = 20;
 
 class Table extends Component {

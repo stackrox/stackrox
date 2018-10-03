@@ -92,6 +92,11 @@ function* savePolicy(policy) {
 function* deletePolicies({ policyIds }) {
     try {
         yield call(service.deletePolicies, policyIds);
+        const successToastMessage = `Successfully deleted ${
+            policyIds.length === 1 ? 'policy' : 'policies'
+        }`;
+        yield put(notificationActions.addNotification(successToastMessage));
+        yield put(notificationActions.removeOldestNotification());
         yield fork(filterPoliciesPageBySearch);
     } catch (error) {
         // TODO-ivan: use global user notification system to display the problem to the user as well

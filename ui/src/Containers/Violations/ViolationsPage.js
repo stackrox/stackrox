@@ -19,7 +19,8 @@ import {
     pageSize,
     wrapClassName,
     defaultHeaderClassName,
-    defaultColumnClassName
+    defaultColumnClassName,
+    rtTrActionsClassName
 } from 'Components/Table';
 import CheckboxTable from 'Components/CheckboxTable';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
@@ -139,11 +140,16 @@ class ViolationsPage extends Component {
         const { selection } = this.state;
         const { violations } = this.props;
         const resolveSelection = selection.filter(
-            id => violations[id] && violations[id].policy.lifecycleStage === 'RUN_TIME'
+            id => violations[id] && violations[id].lifecycleStage === 'RUN_TIME'
         );
         this.props.resolveAlerts(resolveSelection);
         this.hideConfirmationDialog();
         this.clearSelection();
+    };
+
+    resolveAlertHandler = alertId => e => {
+        e.stopPropagation();
+        this.props.resolveAlerts([alertId]);
     };
 
     whitelistDeployments = () => {
@@ -151,6 +157,11 @@ class ViolationsPage extends Component {
         selection.forEach(id => this.props.whitelistDeployment(id));
         this.hideConfirmationDialog();
         this.clearSelection();
+    };
+
+    whitelistDeploymentHandler = alertId => e => {
+        e.stopPropagation();
+        this.props.whitelistDeployment(alertId);
     };
 
     renderWhitelistConfirmationDialog = () => {
@@ -172,9 +183,7 @@ class ViolationsPage extends Component {
         const { violations } = this.props;
         const numSelectedRows = selection.reduce(
             (acc, id) =>
-                violations[id] && violations[id].policy.lifecycleStage === 'RUN_TIME'
-                    ? acc + 1
-                    : acc,
+                violations[id] && violations[id].lifecycleStage === 'RUN_TIME' ? acc + 1 : acc,
             0
         );
         return (
@@ -189,14 +198,53 @@ class ViolationsPage extends Component {
         );
     };
 
+    renderRowActionButtons = alert => {
+        const isRuntimeAlert = alert.lifecycleStage === 'RUN_TIME';
+        return (
+            <div className="border-2 border-r-2 border-base-400 bg-base-100">
+                {isRuntimeAlert && (
+                    <Tooltip
+                        placement="top"
+                        mouseLeaveDelay={0}
+                        overlay={<div>Mark as resolved</div>}
+                        overlayClassName="pointer-events-none"
+                    >
+                        <button
+                            type="button"
+                            className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
+                            onClick={this.resolveAlertHandler(alert.id)}
+                        >
+                            <Icon.Check className="mt-1 h-4 w-4" />
+                        </button>
+                    </Tooltip>
+                )}
+                <Tooltip
+                    placement="top"
+                    mouseLeaveDelay={0}
+                    overlay={<div>Whitelist deployment</div>}
+                    overlayClassName="pointer-events-none"
+                >
+                    <button
+                        type="button"
+                        className={`p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700 ${
+                            isRuntimeAlert ? 'border-l-2 border-base-400' : ''
+                        }`}
+                        onClick={this.whitelistDeploymentHandler(alert.id)}
+                    >
+                        <Icon.BellOff className="mt-1 h-4 w-4" />
+                    </button>
+                </Tooltip>
+            </div>
+        );
+    };
+
     renderPanel = () => {
         const { violations } = this.props;
         const { selection, page } = this.state;
         const whitelistCount = selection.length;
         let resolveCount = 0;
         selection.forEach(id => {
-            if (violations[id] && violations[id].policy.lifecycleStage === 'RUN_TIME')
-                resolveCount += 1;
+            if (violations[id] && violations[id].lifecycleStage === 'RUN_TIME') resolveCount += 1;
         });
         const panelButtons = (
             <React.Fragment>
@@ -239,12 +287,18 @@ class ViolationsPage extends Component {
             {
                 Header: 'Deployment',
                 accessor: 'deployment.name',
-                headerClassName: ` ${defaultHeaderClassName}`,
-                className: ` ${wrapClassName} ${defaultColumnClassName}`
+                headerClassName: `w-1/6 ${defaultHeaderClassName}`,
+                className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`
             },
             {
                 Header: 'Cluster',
                 accessor: 'deployment.clusterName',
+                headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
+            },
+            {
+                Header: 'Namespace',
+                accessor: 'deployment.namespace',
                 headerClassName: `w-1/7 ${defaultHeaderClassName}`,
                 className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
             },
@@ -271,19 +325,20 @@ class ViolationsPage extends Component {
             {
                 Header: 'Severity',
                 accessor: 'policy.severity',
-                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-                className: `w-1/10 ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `${defaultHeaderClassName}`,
+                className: `${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ value }) => {
                     const severity = severityLabels[value];
                     return <span className={getSeverityClassName(severity)}>{severity}</span>;
                 },
-                sortMethod: sortSeverity
+                sortMethod: sortSeverity,
+                width: 90
             },
             {
                 Header: 'Categories',
                 accessor: 'policy.categories',
-                headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                className: `w-1/10 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ value }) =>
                     value.length > 1 ? (
                         <Tooltip
@@ -301,18 +356,25 @@ class ViolationsPage extends Component {
             {
                 Header: 'Lifecycle',
                 accessor: 'lifecycleStage',
-                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-                className: `w-1/10 ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `${defaultHeaderClassName}`,
+                className: `${wrapClassName} ${defaultColumnClassName}`,
 
                 Cell: ({ value }) => lifecycleStageLabels[value]
             },
             {
                 Header: 'Time',
                 accessor: 'time',
-                headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `w-1/10 ${defaultHeaderClassName} text-right`,
+                className: `w-1/10 ${wrapClassName} ${defaultColumnClassName} text-right`,
                 Cell: ({ value }) => dateFns.format(value, dateTimeFormat),
                 sortMethod: sortDate
+            },
+            {
+                Header: '',
+                accessor: '',
+                headerClassName: 'hidden',
+                className: rtTrActionsClassName,
+                Cell: ({ original }) => this.renderRowActionButtons(original)
             }
         ];
         const rows = Object.values(this.props.violations);

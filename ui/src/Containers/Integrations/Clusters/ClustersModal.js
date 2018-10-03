@@ -4,6 +4,7 @@ import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import dateFns from 'date-fns';
+import Tooltip from 'rc-tooltip';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { actions, clusterTypes } from 'reducers/clusters';
@@ -13,7 +14,7 @@ import Dialog from 'Components/Dialog';
 import Modal from 'Components/Modal';
 import CheckboxTable from 'Components/CheckboxTable';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
-import { defaultColumnClassName, wrapClassName } from 'Components/Table';
+import { defaultColumnClassName, wrapClassName, rtTrActionsClassName } from 'Components/Table';
 import Panel from 'Components/Panel';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import PanelButton from 'Components/PanelButton';
@@ -53,15 +54,21 @@ class ClustersModal extends Component {
 
     onAddCluster = () => this.props.startWizard();
 
+    onDeleteHandler = cluster => e => {
+        e.stopPropagation();
+        this.deleteClusters(cluster);
+    };
+
     onClusterDetailsClose = () => this.props.selectCluster(null);
 
     clearSelection = () => this.setState({ selection: [] });
 
-    deleteClusters = () => {
-        if (this.state.selection.length === 0) return;
-        this.props.deleteClusters(this.state.selection);
-        this.hideConfirmationDialog();
-        this.clearSelection();
+    deleteClusters = ({ id }) => {
+        if (!id) {
+            this.props.deleteClusters(this.state.selection);
+            this.hideConfirmationDialog();
+            this.clearSelection();
+        } else this.props.deleteClusters([id]);
     };
 
     showConfirmationDialog = () => {
@@ -106,11 +113,18 @@ class ClustersModal extends Component {
                         return dateFns.format(original.lastContact, dateTimeFormat);
                     return 'N/A';
                 }
+            },
+            {
+                Header: '',
+                accessor: '',
+                headerClassName: 'hidden',
+                className: rtTrActionsClassName,
+                Cell: ({ original }) => this.renderRowActionButtons(original)
             }
         ];
-        const { selectedCluster } = this.props;
+        const { selectedCluster, clusters } = this.props;
         const selectedClusterId = selectedCluster && selectedCluster.id;
-        if (!this.props.clusters || !this.props.clusters.length)
+        if (!clusters || !clusters.length)
             return <NoResultsMessage message="No clusters to show." />;
 
         return (
@@ -118,7 +132,7 @@ class ClustersModal extends Component {
                 ref={table => {
                     this.clusterTableRef = table;
                 }}
-                rows={this.props.clusters}
+                rows={clusters}
                 columns={columns}
                 onRowClick={this.onClusterRowClick}
                 toggleRow={this.toggleRow}
@@ -130,6 +144,20 @@ class ClustersModal extends Component {
             />
         );
     };
+
+    renderRowActionButtons = cluster => (
+        <div className="border-2 border-r-2 border-base-400 bg-base-100">
+            <Tooltip placement="top" overlay={<div>Delete cluster</div>} mouseLeaveDelay={0}>
+                <button
+                    type="button"
+                    className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
+                    onClick={this.onDeleteHandler(cluster)}
+                >
+                    <Icon.Trash2 className="mt-1 h-4 w-4" />
+                </button>
+            </Tooltip>
+        </div>
+    );
 
     renderTable = () => {
         const { clusterType, selectedCluster, clusters, isWizardActive } = this.props;

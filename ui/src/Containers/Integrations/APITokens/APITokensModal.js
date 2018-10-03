@@ -2,14 +2,17 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
+import Tooltip from 'rc-tooltip';
 import { createStructuredSelector } from 'reselect';
 
 import { actions } from 'reducers/apitokens';
 import { selectors } from 'reducers';
 
 import CheckboxTable from 'Components/CheckboxTable';
+import { rtTrActionsClassName } from 'Components/Table';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import Modal from 'Components/Modal';
+import Dialog from 'Components/Dialog';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -44,13 +47,9 @@ class APITokensModal extends Component {
         currentGeneratedTokenMetadata: null
     };
 
-    static tableColumnDescriptors = [
-        { accessor: 'name', Header: 'Name' },
-        { accessor: 'role', Header: 'Role' }
-    ];
-
     state = {
         selectedTokenId: null,
+        showConfirmationDialog: false,
         selection: []
     };
 
@@ -58,14 +57,22 @@ class APITokensModal extends Component {
         this.setState({ selectedTokenId: row.id });
     };
 
+    onRevokeHandler = token => e => {
+        e.stopPropagation();
+        this.revokeTokens(token);
+    };
+
     onSubmit = () => {
         this.props.generateAPIToken();
     };
 
-    revokeTokens = () => {
-        if (this.state.selection.length === 0) return;
-        this.clearSelection();
-        this.props.revokeAPITokens(this.state.selection);
+    revokeTokens = ({ id }) => {
+        if (id) this.props.revokeAPITokens([id]);
+        else {
+            this.props.revokeAPITokens(this.state.selection);
+            this.hideConfirmationDialog();
+            this.clearSelection();
+        }
     };
 
     unSelectRow = () => {
@@ -87,16 +94,37 @@ class APITokensModal extends Component {
 
     clearSelection = () => this.setState({ selection: [] });
 
+    showConfirmationDialog = () => {
+        this.setState({ showConfirmationDialog: true });
+    };
+
+    hideConfirmationDialog = () => {
+        this.setState({ showConfirmationDialog: false });
+    };
+
     showModalView = () => {
         if (!this.props.tokens || !this.props.tokens.length)
             return <NoResultsMessage message="No API Tokens Generated" />;
+
+        const columns = [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'role', Header: 'Role' },
+            {
+                Header: '',
+                accessor: '',
+                headerClassName: 'hidden',
+                className: rtTrActionsClassName,
+                Cell: ({ original }) => this.renderRowActionButtons(original)
+            }
+        ];
+
         return (
             <CheckboxTable
                 ref={table => {
                     this.apiTokenModalTable = table;
                 }}
                 rows={this.props.tokens}
-                columns={APITokensModal.tableColumnDescriptors}
+                columns={columns}
                 onRowClick={this.onRowClick}
                 toggleRow={this.toggleRow}
                 toggleSelectAll={this.toggleSelectAll}
@@ -125,6 +153,20 @@ class APITokensModal extends Component {
 
     updateSelection = selection => this.setState({ selection });
 
+    renderRowActionButtons = token => (
+        <div className="border-2 border-r-2 border-base-400 bg-base-100">
+            <Tooltip placement="top" overlay={<div>Revoke token</div>} mouseLeaveDelay={0}>
+                <button
+                    type="button"
+                    className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
+                    onClick={this.onRevokeHandler(token)}
+                >
+                    <Icon.Trash2 className="mt-1 h-4 w-4" />
+                </button>
+            </Tooltip>
+        </div>
+    );
+
     renderPanelButtons = () => {
         const selectionCount = this.state.selection.length;
         return (
@@ -134,7 +176,7 @@ class APITokensModal extends Component {
                         icon={<Icon.Slash className="h-4 w-4 ml-1" />}
                         text={`Revoke (${selectionCount})`}
                         className="btn btn-danger"
-                        onClick={this.revokeTokens}
+                        onClick={this.showConfirmationDialog}
                         disabled={this.state.selectedTokenId !== null}
                     />
                 )}
@@ -227,6 +269,7 @@ class APITokensModal extends Component {
     };
 
     render() {
+        const { selection, showConfirmationDialog } = this.state;
         return (
             <Modal
                 isOpen
@@ -239,6 +282,14 @@ class APITokensModal extends Component {
                     {this.renderForm()}
                     {this.renderDetails()}
                 </div>
+                <Dialog
+                    isOpen={showConfirmationDialog}
+                    text={`Are you sure you want to revoke ${selection.length} token${
+                        selection.length === 1 ? '' : 's'
+                    }?`}
+                    onConfirm={this.revokeTokens}
+                    onCancel={this.hideConfirmationDialog}
+                />
             </Modal>
         );
     }

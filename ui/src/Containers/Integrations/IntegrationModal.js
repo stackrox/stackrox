@@ -58,8 +58,11 @@ class IntegrationModal extends Component {
         this.props.setCreateState(false);
     }
 
-    onTableDelete = () => {
-        this.showConfirmationDialog();
+    onTableDelete = ({ id }) => {
+        const { length } = this.state.selection;
+        const { source, type } = this.props;
+        if (length) this.showConfirmationDialog();
+        else this.props.deleteIntegrations(source, type, [id]);
     };
 
     onTableAdd = () => {

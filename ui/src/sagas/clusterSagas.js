@@ -49,6 +49,10 @@ function* deleteClusters({ clusterIds }) {
         yield call(service.deleteClusters, clusterIds);
         yield fork(getClusters);
     } catch (error) {
+        if (error.response) {
+            yield put(notificationActions.addNotification(error.response.data.error));
+            yield put(notificationActions.removeOldestNotification());
+        }
         Raven.captureException(error);
     }
 }

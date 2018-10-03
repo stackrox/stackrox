@@ -50,9 +50,10 @@ export const selectors = {
     sidePanel: '[data-test-id="panel"]',
     sidePanelHeader: '[data-test-id="panel-header"]',
     tableFirstRow: 'div.rt-tbody > div.rt-tr-group:first > .rt-tr.-odd',
+    hoverActionButtons: '.rt-tr-actions svg',
     tableContainer: '[data-test-id="policies-table-container"]',
-    enableDisableButton: '.rt-td > button',
-    enabledPolicyButtonColorClass: 'text-success-500'
+    enableDisableIcon: '[data-test-id="enable-disable-icon"]',
+    enabledIconColor: 'bg-success-500'
 };
 
 export const text = {

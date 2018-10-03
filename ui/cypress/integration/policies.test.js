@@ -180,29 +180,33 @@ describe('Policies page', () => {
     });
 
     it('should allow disable/enable policy from the policies table', () => {
-        const firstRowEnableDisableButton = `${selectors.tableFirstRow} ${
-            selectors.enableDisableButton
-        }`;
         // initialize to have enabled policy
-        cy.get(`${firstRowEnableDisableButton} svg`).then(svg => {
-            if (!svg.hasClass(selectors.enabledPolicyButtonColorClass))
-                cy.get(firstRowEnableDisableButton).click();
-        });
+        cy.get(selectors.enableDisableIcon)
+            .first()
+            .then(icon => {
+                if (!icon.hasClass(selectors.enabledIconColor))
+                    cy.get(selectors.hoverActionButtons)
+                        .first()
+                        .click({ force: true });
+            });
 
-        cy.get(firstRowEnableDisableButton).click(); // disable policy
-        cy.get(`${firstRowEnableDisableButton} svg`).should(
-            'not.have.class',
-            selectors.enabledPolicyButtonColorClass
-        );
+        // force click the first enable/disable button on the first row
+        cy.get(selectors.hoverActionButtons)
+            .first()
+            .click({ force: true });
 
+        cy.get(selectors.enableDisableIcon)
+            .first()
+            .should('not.have.class', selectors.enabledIconColor);
         cy.get(selectors.tableFirstRow).click();
         cy.get(selectors.policyDetailsPanel.enabledValueDiv).should('contain', 'No');
 
-        cy.get(firstRowEnableDisableButton).click(); // enable policy
+        cy.get(selectors.hoverActionButtons)
+            .first()
+            .click({ force: true }); // enable policy
         cy.get(selectors.policyDetailsPanel.enabledValueDiv).should('contain', 'Yes');
-        cy.get(`${firstRowEnableDisableButton} svg`).should(
-            'have.class',
-            selectors.enabledPolicyButtonColorClass
-        );
+        cy.get(selectors.enableDisableIcon)
+            .first()
+            .should('have.class', selectors.enabledIconColor);
     });
 });

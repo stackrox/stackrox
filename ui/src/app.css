@@ -120,12 +120,12 @@ button:focus {
 }
 
 button, select {
-    @apply text-base-600 text-base font-600 appearance-none;
+    @apply text-base-600 text-base font-600 appearance-none !important;
     line-height: 14px; /*weird render bug fix where select text gets clipped at bottom */
 }
 
 button[disabled] {
-    @apply .opacity-50 .pointer-events-none;
+    @apply .opacity-50 .pointer-events-none !important;
 }
 
 .content-box {
@@ -133,12 +133,12 @@ button[disabled] {
 }
 
 .pills {
-    @apply flex flex-col flex-auto rounded-sm border border-base-300 .overflow-hidden;
+    @apply flex flex-col flex-auto rounded-sm border border-base-300 .overflow-hidden !important;
 }
 
 @screen md {
     .pills {
-        @apply flex-row;
+        @apply flex-row !important;
     }
 }
 
@@ -147,7 +147,7 @@ button[disabled] {
 }
 
 .disabled {
-@apply opacity-50 cursor-not-allowed .pointer-events-none;
+    @apply opacity-50 cursor-not-allowed .pointer-events-none !important;
 }
 
 .border-collapse {
@@ -155,7 +155,7 @@ button[disabled] {
 }
 
 [class~=flex-1] {
-@apply min-h-0;
+    @apply min-h-0 !important;
 /* Firefox needs this property to properly scroll panels with flex/overflow. Tailwind throws an exception error when using
 their built-in classes, so this is a workaround to `bundle` the Firefox fix with every `flex-1` class by default*/
 }
@@ -169,20 +169,20 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
 }
 
 ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
-    @apply break-words;
+    @apply break-words !important;
 }
 
 .react-modal-overlay {
-    @apply .fixed .pin-t .pin-l .w-full .h-full z-20;
+    @apply .fixed .pin-t .pin-l .w-full .h-full z-20 !important;
     background-color: hsla(225, 41%, 32%, 0.82);
 }
 
 .pill {
-    @apply select-none bg-base-200 cursor-pointer p-2 m-2 rounded-sm .whitespace-no-wrap .flex-1 .text-center .text-xs .text-base-500 .font-600;
+    @apply select-none bg-base-200 cursor-pointer p-2 m-2 rounded-sm .whitespace-no-wrap .flex-1 .text-center .text-xs .text-base-500 .font-600 !important;
 }
 
 .pill-active {
-    @apply .select-none .cursor-pointer .p-2 .m-2 .bg-base-300 .rounded-sm .whitespace-no-wrap .flex-1 .text-center .text-xs .text-base-700 .font-600;
+    @apply .select-none .cursor-pointer .p-2 .m-2 .bg-base-300 .rounded-sm .whitespace-no-wrap .flex-1 .text-center .text-xs .text-base-700 .font-600 !important;
 }
 
 .transition {
@@ -234,11 +234,11 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .pill:hover {
-    @apply .text-primary-500;
+    @apply .text-primary-500 !important;
 }
 
 .pill-active {
-    @apply .text-primary-500;
+    @apply .text-primary-500 !important;
 }
 
 .transform-rotate-half-turn {
@@ -416,43 +416,43 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .btn {
-    @apply .flex .py-1 .px-1 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .ml-2 .min-w-24 .justify-center .bg-base-200 .border-2;
+    @apply .flex .py-1 .px-1 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .ml-2 .min-w-24 .justify-center .bg-base-200 .border-2 !important;
 }
 
 .btn-icon {
-    @apply .flex .py-2 .px-2 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .ml-2 .justify-center .bg-base-200 .border;
+    @apply .flex .py-2 .px-2 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .ml-2 .justify-center .bg-base-200 .border !important;
 }
 
 .btn-success {
-    @apply .text-success-600 .border-success-200;
+    @apply .text-success-600 .border-success-200 !important;
 }
 
 .btn-success:hover {
-    @apply .btn-success .bg-success-100;
+    @apply .btn-success .bg-success-100 !important;
 }
 
 .btn-alert {
-    @apply .text-alert-600 .border-alert-200;
+    @apply .text-alert-600 .border-alert-200 !important;
 }
 
 .btn-alert:hover {
-    @apply .btn-alert .bg-alert-100;
+    @apply .btn-alert .bg-alert-100 !important;
 }
 
 .btn-primary {
-    @apply .text-primary-600 .border-primary-200;
+    @apply .text-primary-600 .border-primary-200 !important;
 }
 
 .btn-primary:hover {
-    @apply .btn-primary .bg-primary-100;
+    @apply .btn-primary .bg-primary-100 !important;
 }
 
 .btn-base {
-    @apply .text-base-600 .border-base-200;
+    @apply .text-base-600 .border-base-200 !important;
 }
 
 .btn-base:hover {
-    @apply .btn-base .bg-base-200;
+    @apply .btn-base .bg-base-200 !important;
 }
 
 /* Network Graph CSS Classes */
@@ -516,19 +516,19 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 @import "../node_modules/react-table/react-table.css";
 
 .ReactTable .-pagination  {
-    @apply .shadow-none .border-t .shadow-underline .pt-2 .pb-2 .pl-0 .pr-0;
+    @apply .shadow-none .border-t .shadow-underline .pt-2 .pb-2 .pl-0 .pr-0 !important;
 }
 
 .ReactTable .rt-thead .rt-th:focus {
-    @apply .outline-none
+    @apply .outline-none !important;
 }
 
 .ReactTable .rt-thead.-header {
-    @apply .shadow-none;
+    @apply .shadow-none !important;
 }
 
 .ReactTable .rt-thead .rt-th.-sort-desc, .ReactTable .rt-thead .rt-th.-sort-asc {
-    @apply .shadow-none
+    @apply .shadow-none !important;
 }
 
 .ReactTable .rt-thead .rt-th.-sort-desc div:after {
@@ -543,43 +543,57 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     margin-left: 4px;
 }
 .ReactTable.-highlight .rt-tbody, .ReactTable.-highlight .rt-thead  {
-    @apply pl-3 pr-3;
+    @apply .pl-3 .pr-3 !important;
 }
 
 .ReactTable.-highlight .rt-tbody .rt-td {
-@apply .whitespace-normal relative;
-top: 1px;
+    @apply .whitespace-normal .relative !important;
+    top: 1px;
 }
+
 .ReactTable.-highlight .rt-tbody .rt-tr {
     box-shadow: 0px -1px 0 0 config('colors.base-300'), inset 0px -1px 0 0 config('colors.base-300');
-    @apply .min-h-14;
+    @apply .min-h-14 !important;
 }
 
 .ReactTable.-highlight .rt-tbody .rt-tr:hover {
-    @apply bg-base-200;
+    @apply .bg-base-200 !important;
     box-shadow: 0px 1px 0 0 config('colors.base-400'), inset 0px 1px 0 0 config('colors.base-400');
 }
 
 .ReactTable.-highlight .rt-tbody .rt-tr.row-active, .ReactTable.-highlight .rt-tbody .rt-tr.row-active:hover {
-    @apply .bg-tertiary-200 .z-0;
+    @apply .bg-tertiary-200 .z-0 !important;
     box-shadow: 0px 1px 0 0 config('colors.tertiary-400'), inset 0px 1px 0 0 config('colors.tertiary-400');
 }
 
 .ReactTable.-highlight .rt-tbody .rt-tr.row-active .rt-td, .ReactTable.-highlight .rt-tbody .rt-tr.row-active:hover .rt-td {
-@apply .text-tertiary-700;
+    @apply .text-tertiary-700 !important;
 }
 
 .ReactTable .rt-tbody .rt-tr-group {
-    @apply .flex-no-grow .cursor-pointer;
+    @apply .flex-no-grow .cursor-pointer !important;
     border: none !important;
 }
 
+.ReactTable .rt-tr {
+    @apply .relative !important;
+}
+
+.ReactTable.-highlight .rt-tbody .rt-td.rt-tr-actions {
+    @apply .absolute !important;
+    top: auto;
+}
+
+.ReactTable .rt-tr:hover .rt-tr-actions {
+    @apply .block !important;
+}
+
 .ReactTable .-previous .-btn, .ReactTable .-next .-btn {
-    @apply .bg-primary-100 .rounded-none .text-primary-600;
+    @apply .bg-primary-100 .rounded-none .text-primary-600 !important;
 }
 
 .ReactTable .-previous .-btn:hover, .ReactTable .-next .-btn:hover {
-    @apply .bg-primary-300 .text-base-100 .rounded-none;
+    @apply .bg-primary-300 .text-base-100 .rounded-none !important;
 }
 
 @tailwind utilities;

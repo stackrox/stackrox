@@ -12,13 +12,14 @@ class CheckboxTable extends Component {
         toggleRow: PropTypes.func.isRequired,
         toggleSelectAll: PropTypes.func.isRequired,
         selection: PropTypes.arrayOf(PropTypes.string),
-        page: PropTypes.number.isRequired
+        page: PropTypes.number
     };
 
     static defaultProps = {
         selectedRowId: null,
         onRowClick: null,
-        selection: []
+        selection: [],
+        page: 0
     };
 
     setTableRef = table => {

@@ -118,7 +118,7 @@ class ImagesPage extends Component {
         ];
         const { images, selectedImage } = this.props;
         const rows = images;
-        const sha = selectedImage && selectedImage.id;
+        const selectedId = selectedImage && selectedImage.id;
         if (!rows.length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
         return (
@@ -126,8 +126,7 @@ class ImagesPage extends Component {
                 rows={rows}
                 columns={columns}
                 onRowClick={this.updateSelectedImage}
-                idAttribute="sha"
-                selectedRowId={sha}
+                selectedRowId={selectedId}
                 noDataText="No results found. Please refine your search."
                 page={this.state.page}
             />

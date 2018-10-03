@@ -6,9 +6,11 @@ import { selectors } from 'reducers';
 import { actions as policyActions, types } from 'reducers/policies';
 import { actions as notificationActions } from 'reducers/notifications';
 import { createSelector, createStructuredSelector } from 'reselect';
-
 import { formValueSelector } from 'redux-form';
 import * as Icon from 'react-feather';
+import Tooltip from 'rc-tooltip';
+import 'rc-tooltip/assets/bootstrap.css';
+
 import Dialog from 'Components/Dialog';
 import Loader from 'Components/Loader';
 import CheckboxTable from 'Components/CheckboxTable';
@@ -17,7 +19,8 @@ import {
     defaultColumnClassName,
     defaultHeaderClassName,
     wrapClassName,
-    pageSize
+    pageSize,
+    rtTrActionsClassName
 } from 'Components/Table';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
@@ -127,8 +130,9 @@ class PoliciesPage extends Component {
 
     onBackToEditFields = () => this.props.setWizardState({ current: 'EDIT' });
 
-    setTablePage = newPage => {
-        this.setState({ page: newPage });
+    onDeletePolicy = ({ id }) => e => {
+        e.stopPropagation();
+        this.props.deletePolicies([id]);
     };
 
     getPolicyDryRun = () => {
@@ -146,6 +150,10 @@ class PoliciesPage extends Component {
             };
             this.props.setWizardState(wizardState);
         }
+    };
+
+    setTablePage = newPage => {
+        this.setState({ page: newPage });
     };
 
     setSelectedPolicy = policy => {
@@ -233,6 +241,32 @@ class PoliciesPage extends Component {
         this.updateSelection(selection);
     };
 
+    renderRowActionButtons = policy => {
+        const enableTooltip = `${policy.disabled ? 'Enable' : 'Disable'} policy`;
+        return (
+            <div className="border-2 border-r-2 border-base-400 bg-base-100">
+                <Tooltip placement="top" overlay={<div>{enableTooltip}</div>} mouseLeaveDelay={0}>
+                    <button
+                        type="button"
+                        className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
+                        onClick={this.toggleEnabledDisabledPolicy(policy)}
+                    >
+                        <Icon.Power className="mt-1 h-4 w-4" />
+                    </button>
+                </Tooltip>
+                <Tooltip placement="top" overlay={<div>Delete policy</div>} mouseLeaveDelay={0}>
+                    <button
+                        type="button"
+                        className="p-1 px-4 border-l-2 border-base-400 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
+                        onClick={this.onDeletePolicy(policy)}
+                    >
+                        <Icon.Trash2 className="mt-1 h-4 w-4" />
+                    </button>
+                </Tooltip>
+            </div>
+        );
+    };
+
     renderSelectTable = () => {
         const columns = [
             {
@@ -244,6 +278,7 @@ class PoliciesPage extends Component {
                             className={`h-2 w-2 rounded-lg absolute ${
                                 !original.disabled ? 'bg-success-500' : 'bg-base-300'
                             }`}
+                            data-test-id="enable-disable-icon"
                         />
                         <div className="pl-4">{original.name}</div>
                     </div>
@@ -268,19 +303,11 @@ class PoliciesPage extends Component {
                 sortMethod: sortSeverity
             },
             {
-                Header: 'Actions',
+                Header: '',
                 accessor: '',
-                Cell: ({ original }) => (
-                    <button
-                        type="button"
-                        className="flex rounded-sm uppercase text-center text-sm items-center"
-                        onClick={this.toggleEnabledDisabledPolicy(original)}
-                    >
-                        {original.disabled && <Icon.Power className="h-5 w-4 text-base-600" />}
-                        {!original.disabled && <Icon.Power className="h-5 w-4 text-success-500" />}
-                    </button>
-                ),
-                width: 75
+                headerClassName: 'hidden',
+                className: rtTrActionsClassName,
+                Cell: ({ original }) => this.renderRowActionButtons(original)
             }
         ];
         const id = this.props.selectedPolicy && this.props.selectedPolicy.id;

@@ -3,14 +3,11 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { ClipLoader } from 'react-spinners';
-import * as Icon from 'react-feather';
 
 import { selectors } from 'reducers';
-import { actions } from 'reducers/alerts';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import Panel from 'Components/Panel';
-import PanelButton from 'Components/PanelButton';
 import DeploymentDetails from '../Risk/DeploymentDetails';
 import ViolationsDetails from './ViolationsDetails';
 import PolicyDetails from '../Policies/PolicyDetails';
@@ -20,25 +17,11 @@ class ViolationsPanel extends Component {
         alert: PropTypes.shape({
             id: PropTypes.string
         }),
-        whitelistDeployment: PropTypes.func.isRequired,
         onClose: PropTypes.func.isRequired
     };
 
     static defaultProps = {
         alert: null
-    };
-
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            whitelisting: false
-        };
-    }
-
-    whitelistDeploymentHandler = () => {
-        this.props.whitelistDeployment(this.props.alert);
-        this.setState({ whitelisting: true }); // hack: after whitelisting the violation will disappear and the panel will close
     };
 
     renderTabs = () => {
@@ -81,29 +64,8 @@ class ViolationsPanel extends Component {
         if (!alert || !alert.policy || !alert.deployment) return null; // TODO: show loading
 
         const header = `${alert.deployment.name} (${alert.deployment.id})`;
-        const whitelistButton = (
-            <PanelButton
-                icon={
-                    this.state.whitelisting ? (
-                        <ClipLoader color="currentColor" loading size={15} />
-                    ) : (
-                        <Icon.CheckSquare className="h-4 w-4" />
-                    )
-                }
-                text="Whitelist"
-                className="btn btn-success"
-                onClick={this.whitelistDeploymentHandler}
-                disabled={this.state.whitelisting}
-                tooltip="Whitelist deployment for this policy. View whitelists in the policy editing page"
-            />
-        );
         return (
-            <Panel
-                header={header}
-                buttons={whitelistButton}
-                className="w-1/2 bg-primary-200"
-                onClose={this.props.onClose}
-            >
+            <Panel header={header} className="w-1/2 bg-primary-200" onClose={this.props.onClose}>
                 {this.renderTabs()}
             </Panel>
         );
@@ -119,11 +81,4 @@ const mapStateToProps = createStructuredSelector({
     alert: getAlert
 });
 
-const mapDispatchToProps = dispatch => ({
-    whitelistDeployment: alert => dispatch(actions.whitelistDeployment.request(alert))
-});
-
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(ViolationsPanel);
+export default connect(mapStateToProps)(ViolationsPanel);

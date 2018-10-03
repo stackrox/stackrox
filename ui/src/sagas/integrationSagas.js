@@ -109,13 +109,18 @@ function* saveIntegration(action) {
 function* deleteIntegrations({ source, sourceType, ids }) {
     try {
         if (source === 'authProviders') {
-            yield call(AuthService.deleteAuthProviders(ids));
+            yield call(AuthService.deleteAuthProviders, ids);
             if (sourceType === 'apitoken') yield put(fetchIntegrationsActionMap[sourceType]);
             else yield put(fetchIntegrationsActionMap[source]);
         } else {
             yield call(service.deleteIntegrations, source, ids);
             yield put(fetchIntegrationsActionMap[source]);
         }
+        const toastMessage = `Successfully deleted ${ids.length} integration${
+            ids.length === 1 ? '' : 's'
+        }`;
+        yield put(notificationActions.addNotification(toastMessage));
+        yield put(notificationActions.removeOldestNotification());
     } catch (error) {
         Raven.captureException(error);
     }

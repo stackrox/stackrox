@@ -99,6 +99,7 @@ describe('API Token Creation Flow', () => {
         cy.get(selectors.apiTokenTile).click();
         cy.get(`.rt-tr:contains("${randomTokenName}") input`).check();
         cy.get(selectors.buttons.revoke).click({ force: true });
+        cy.get(selectors.buttons.confirm).click();
         cy.get(`.rt-td:contains("${randomTokenName}")`).should('not.exist');
     });
 });
