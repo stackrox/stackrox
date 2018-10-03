@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/env"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/grpc/authn/mtls"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/listeners"
@@ -96,8 +97,10 @@ func (s *Sensor) Start() {
 
 	// Create grpc server with custom routes
 	config := pkgGRPC.Config{
-		TLS:          verifier.NonCA{},
-		CustomRoutes: customRoutes,
+		TLS:                verifier.NonCA{},
+		CustomRoutes:       customRoutes,
+		UnaryInterceptors:  []grpc.UnaryServerInterceptor{mtls.UnaryInterceptor()},
+		StreamInterceptors: []grpc.StreamServerInterceptor{mtls.StreamInterceptor()},
 	}
 	s.server = pkgGRPC.NewAPI(config)
 

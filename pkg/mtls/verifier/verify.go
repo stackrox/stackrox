@@ -54,7 +54,6 @@ func (CA) TLSConfig() (*tls.Config, error) {
 
 // TLSConfig initializes a server configuration that requires client TLS
 // authentication based on the Certificate Authority we are using.
-// TODO(cg): NonCA currently does not verify the client cert.
 func (NonCA) TLSConfig() (*tls.Config, error) {
 	serverTLSCert, err := mtls.LeafCertificateFromFile()
 	if err != nil {
@@ -66,7 +65,8 @@ func (NonCA) TLSConfig() (*tls.Config, error) {
 		return nil, err
 	}
 	// TODO(cg): Sensors should also issue creds to, and verify, their clients.
-	conf.ClientAuth = tls.NoClientCert
+	// For the time being, we only verify that the client cert is from the central CA.
+	conf.ClientAuth = tls.RequireAndVerifyClientCert
 	return conf, nil
 }
 

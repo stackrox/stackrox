@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
 	sensor "github.com/stackrox/rox/sensor/common"
@@ -47,8 +48,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, nil
-	//return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
 }
 
 // PushSignals handles the bidirectional gRPC stream with the collector

@@ -240,7 +240,9 @@ func GetAllLoggers() []*Logger {
 func SetGlobalLogLevel(level int32) error {
 	atomic.StoreInt32(&defaultLevel, level)
 
-	thisModuleLogger.Debugf("Set log level to: %d", level)
+	if thisModuleLogger != nil {
+		thisModuleLogger.Debugf("Set log level to: %d", level)
+	}
 
 	ForEachLogger(func(l *Logger) {
 		l.SetLogLevel(level)
