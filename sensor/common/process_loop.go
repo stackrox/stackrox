@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	signalRetries       = 10
+	signalRetries       = 30
 	signalRetryInterval = 2 * time.Second
 )
 
