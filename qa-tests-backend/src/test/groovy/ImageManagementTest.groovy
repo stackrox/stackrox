@@ -1,3 +1,4 @@
+import groups.BAT
 import groups.Integration
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
@@ -5,8 +6,8 @@ import stackrox.generated.PolicyServiceOuterClass.LifecycleStage
 
 class ImageManagementTest extends BaseSpecification {
     @Unroll
-    @Category(Integration)
-    def "Verify CI/CD Integration Endpoint"() {
+    @Category([BAT, Integration])
+    def "Verify CI/CD Integration Endpoint - #policy"() {
         when:
         "Update Policy to BUILD_TIME"
         def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD_TIME,])
@@ -31,14 +32,10 @@ class ImageManagementTest extends BaseSpecification {
         //intentionally use the same policy twice to make sure alert count does not increment
         "Latest tag"                                  | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
         "90-Day Image Age"                            | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
-        "Alpine Linux Package Manager (apk) in Image" | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
         "Aptitude Package Manager (apt) in Image"     | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
         "Curl in Image"                               | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
-        "DNF Package Manager (dnf) in Image"          | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
-        "Maximum CVSS >= 7"                           | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
-        "RPM Package Manager (rpm) in Image"          | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
+        "CVSS >= 7"                                   | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
         "Wget in Image"                               | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
-        "Yum Package Manager (yum) in Image"          | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
         "Apache Struts: CVE-2017-5638"                | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
     }
 
@@ -53,6 +50,6 @@ class ImageManagementTest extends BaseSpecification {
 
         then:
         "assert startStage is null"
-        assert startStages == null
+        assert startStages == []
     }
 }

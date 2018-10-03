@@ -275,7 +275,7 @@ class Services extends BaseService {
         try {
             getPolicyClient().putPolicy(policyDef)
         } catch (Exception e) {
-            return List.<LifecycleStage>of()
+            return []
         }
         println "Updated lifecycleStage of '${policyName}' to ${stages}"
         return policyMeta.getLifecycleStagesList()
