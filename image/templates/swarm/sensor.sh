@@ -22,7 +22,7 @@ OLD_DOCKER_CERT_PATH="$DOCKER_CERT_PATH"
 OLD_DOCKER_TLS_VERIFY="$DOCKER_TLS_VERIFY"
 unset DOCKER_HOST DOCKER_CERT_PATH DOCKER_TLS_VERIFY
 
-docker run --rm --entrypoint=base64 -e REGISTRY_USERNAME="$REGISTRY_USERNAME" -e REGISTRY_PASSWORD="$REGISTRY_PASSWORD" {{.Image}} > registry-auth
+docker run --rm --interactive --entrypoint=encode-docker-auth.sh "{{.Image}}" "$REGISTRY_USERNAME" <<<"$REGISTRY_PASSWORD" > registry-auth
 
 export DOCKER_HOST="$OLD_DOCKER_HOST"
 export DOCKER_CERT_PATH="$OLD_DOCKER_CERT_PATH"

@@ -26,8 +26,8 @@ ENV PATH="/prevent:$PATH"
 COPY ./benchmarks/ /data/benchmarks
 COPY ./policies/ /data/policies
 COPY ./templates/ /data/templates
+COPY ./encode-docker-auth.sh /prevent/
 COPY ./entrypoint.sh /prevent/
-COPY ./bin/base64 /prevent/
 COPY ./bin/benchmark-bootstrap /prevent/
 COPY ./bin/benchmarks /prevent/
 COPY ./bin/central /prevent/

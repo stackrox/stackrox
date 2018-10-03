@@ -94,12 +94,12 @@ use this variant instead:
 Note: you may need to run `unset DOCKER_HOST DOCKER_CERT_PATH DOCKER_TLS_VERIFY`
 on a fresh terminal locally so that you don't try to run an interactive container remotely.
 ```
-docker run -i --rm stackrox.io/prevent:<tag> interactive 1>swarm.zip
+docker run -i --rm stackrox.io/prevent:<tag> interactive > swarm.zip
 ```
 
 This will run you through an installer as follows and generates a swarm.zip file:
 ```$xslt
-docker run -i --rm stackrox.io/prevent:1.2 interactive 1>swarm.zip
+docker run -i --rm stackrox.io/prevent:1.2 interactive > swarm.zip
 Enter orchestrator (dockeree, k8s, openshift, swarm): swarm
 Enter image to use (default: 'stackrox.io/prevent:1.3'): stackrox.io/prevent:1.2
 Enter public port to expose (default: '443'):
@@ -141,13 +141,13 @@ Set your Docker image-pull credentials as `REGISTRY_USERNAME` and
 #### Deploying for Customer
 
 ```
-docker run -i --rm stackrox.io/prevent:<tag> interactive 1>k8s.zip
+docker run -i --rm stackrox.io/prevent:<tag> interactive > k8s.zip
 ```
 
 This will run you through an installer as follows and generates a k8s.zip file.
 The below works on GKE and creates an external volume
 ```$xslt
-docker run -i --rm stackrox.io/prevent:1.2 interactive 1>k8s.zip
+docker run -i --rm stackrox.io/prevent:1.2 interactive > k8s.zip
 Enter orchestrator (dockeree, k8s, openshift, swarm): k8s
 Enter image to use (default: 'stackrox.io/prevent:1.3'): stackrox.io/prevent:1.2
 Enter image pull secret (default: 'stackrox'):
@@ -207,12 +207,12 @@ bash image-setup.sh
 ```
 
 ```
-docker run -i --rm stackrox.io/prevent:<tag> interactive 1>openshift.zip
+docker run -i --rm stackrox.io/prevent:<tag> interactive > openshift.zip
 ```
 
 This will run you through an installer as follows and generates a openshift.zip file.
 ```$xslt
-docker run -i --rm stackrox.io/prevent:1.2 interactive 1>openshift.zip
+docker run -i --rm stackrox.io/prevent:1.2 interactive > openshift.zip
 Enter orchestrator (dockeree, k8s, openshift, swarm): openshift
 Enter image to use (default: 'docker-registry.default.svc:5000/stackrox/prevent:1.3'): docker-registry.default.svc:5000/stackrox/prevent:1.2
 Enter namespace (default: 'stackrox'):
