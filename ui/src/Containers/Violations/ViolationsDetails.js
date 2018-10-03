@@ -1,48 +1,128 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-import KeyValuePairs from 'Components/KeyValuePairs';
-import CollapsibleCard from 'Components/CollapsibleCard';
+import ProcessesCollapsibleCard from 'Containers/Violations/ProcessesCollapsibleCard';
 
-const violationDetailsMap = {
-    message: { label: 'Message' },
-    link: { label: 'CVE Link' }
+import * as Icon from 'react-feather';
+import { getTime, format } from 'date-fns';
+
+const processOccurencesReducer = (accumulator, currentValue) => {
+    const currentTime = getTime(new Date(currentValue.signal.time));
+    let { firstOccurrence, lastOccurrence } = accumulator;
+    if (!firstOccurrence || firstOccurrence > currentTime) firstOccurrence = currentTime;
+    if (!lastOccurrence || lastOccurrence < currentTime) lastOccurrence = currentTime;
+    return { firstOccurrence, lastOccurrence };
 };
-
 class ViolationsDetails extends Component {
     static propTypes = {
-        violations: PropTypes.arrayOf(PropTypes.shape({ message: PropTypes.string.isRequired }))
+        violations: PropTypes.arrayOf(
+            PropTypes.shape({
+                message: PropTypes.string.isRequired
+            })
+        )
     };
 
     static defaultProps = {
         violations: []
     };
 
-    renderViolations = () => {
+    getDeploytimeMessages = () => {
         const { violations } = this.props;
-        if (!violations.length) return 'None';
-        return violations.map(violation => {
-            if (!violation.message) return null;
-            return (
-                <KeyValuePairs
-                    data={violation}
-                    keyValueMap={violationDetailsMap}
-                    key={violation.message}
-                />
-            );
-        });
+        return violations.filter(violation => !violation.processes.length).map(({ message }) => (
+            <div
+                key={message}
+                className="mt-4 p-3 shadow border border-base-200 text-base-600 flex justify-between leading-normal bg-base-100"
+            >
+                {message}
+            </div>
+        ));
+    };
+
+    getRuntimeMessages = () => {
+        const { violations } = this.props;
+        return violations
+            .filter(violation => violation.processes.length)
+            .map(({ message, processes }) => {
+                const { lastOccurrence, firstOccurrence } = processes.reduce(
+                    processOccurencesReducer,
+                    {}
+                );
+                const processesList = processes.map((process, index) => {
+                    const { time, args, execFilePath, containerId } = process.signal;
+                    const processTime = new Date(time);
+                    const dateFormat = format(processTime, 'MM/DD/YYYY');
+                    const timeFormat = format(processTime, 'HH:MM:SSA');
+                    return (
+                        <div className="border-t border-base-300" key={process.id}>
+                            <div className="flex text-base-600">
+                                <span className="flex items-center bg-caution-300 font-700 px-2">
+                                    {index + 1}
+                                </span>
+                                <span className="py-2 px-2 bg-caution-200">{execFilePath}</span>
+                            </div>
+                            <div className="flex flex-1 text-base-600 px-4 py-2 justify-between">
+                                <div>
+                                    <span className="font-700">Container ID:</span> {containerId}
+                                </div>
+                                <div>
+                                    <span className="font-700">Time:</span> {dateFormat}
+                                    {timeFormat}
+                                </div>
+                            </div>
+                            <div className="flex flex-1 text-base-600 px-4 py-2">
+                                <div>
+                                    <span className="font-700">Arguments:</span> {args}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                });
+                return (
+                    <div className="mb-4">
+                        <ProcessesCollapsibleCard title={message} opened={false}>
+                            <div>
+                                <div className="flex flex-1 bg-primary-100">
+                                    <div className="w-1/2 p-4 border-r border-base-300 leading-normal">
+                                        <div className="flex justify-center font-700 italic">
+                                            First Occurence:
+                                        </div>
+                                        <div className="flex justify-center font-600">
+                                            {format(firstOccurrence, 'MM/DD/YYYY | HH:MM:SSA')}
+                                        </div>
+                                    </div>
+                                    <div className="w-1/2 p-4 leading-normal">
+                                        <div className="flex justify-center font-700 italic">
+                                            Last Occurence:
+                                        </div>
+                                        <div className="flex justify-center font-600">
+                                            {format(lastOccurrence, 'MM/DD/YYYY | HH:MM:SSA')}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>{processesList}</div>
+                            </div>
+                        </ProcessesCollapsibleCard>
+                    </div>
+                );
+            });
     };
 
     render() {
-        return (
-            <div className="w-full pb-5">
-                <div className="px-3 pt-5">
-                    <div className="bg-base-100 text-primary-600">
-                        <CollapsibleCard title="Violations">
-                            <div className="h-full px-3">{this.renderViolations()}</div>
-                        </CollapsibleCard>
-                    </div>
+        const deploytimeMessages = this.getDeploytimeMessages();
+        const runtimeMessages = this.getRuntimeMessages();
+        let separator = null;
+        if (deploytimeMessages.length && runtimeMessages.length) {
+            separator = (
+                <div className="flex justify-center items-center mt-4">
+                    <Icon.Plus className="h-8 w-8 text-base-400" />
                 </div>
+            );
+        }
+        return (
+            <div className="w-full px-3 py-4">
+                {runtimeMessages}
+                {separator}
+                {deploytimeMessages}
             </div>
         );
     }

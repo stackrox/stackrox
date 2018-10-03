@@ -5,7 +5,7 @@ export const selectors = {
     rows: '.rt-tbody .rt-tr',
     firstTableRow: '.rt-tbody :nth-child(1) > .rt-tr',
     firstPanelTableRow: '.rt-tbody > :nth-child(1) > .rt-tr',
-    lastTableRow: ':nth-child(4) > .rt-tr',
+    lastTableRow: '.rt-tr:last',
     panels: '[data-test-id="panel"]',
     sidePanel: {
         header: '[data-test-id="panel-header"]',
@@ -20,5 +20,6 @@ export const selectors = {
         header: '.Collapsible__trigger',
         body: '.Collapsible__contentInner'
     },
-    securityBestPractices: '[data-test-id="deployment-security-practices"]'
+    securityBestPractices: '[data-test-id="deployment-security-practices"]',
+    runtimeProcessCards: '.Collapsible'
 };

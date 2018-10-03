@@ -1,85 +1,51 @@
 {
     "alerts": [
         {
-            "id": "fa338227-7461-4a1e-875a-eb5c601313f6",
-            "time": "2018-05-21T18:06:04.385651124Z",
+            "id": "8aaa344c-6266-4037-bc21-cd9323a54a4b",
+            "time": "2018-09-27T21:31:25.729700614Z",
             "policy": {
-                "id": "b9a5bba4-c118-4bc7-bf36-b54bcb496113",
-                "name": "Latest tag",
-                "severity": "LOW_SEVERITY",
-                "description": "Alert on deployments with images using tag 'latest'",
+                "id": "75db9968-8c45-4e18-8180-024f59973d16",
+                "name": "Misuse of iptables",
+                "severity": "HIGH_SEVERITY",
+                "description": "Detects misuse of iptables; iptables is a deprecated way of managing network state in containers",
                 "categories": [
-                    "DevOps Best Practices",
-                    "Security Best Practices"
-                ]
+                    "Network Configuration Change",
+                    "Reconnaissance"
+                ],
+                "lifecycleStage": "RUN_TIME"
             },
             "deployment": {
-                "id": "z1137vn6nnmipffzpozr0f0ri",
-                "name": "tender_edison",
-                "updatedAt": "2018-05-20T18:46:59.558089270Z",
-                "clusterName": "remote"
-            }
+                "id": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+                "name": "ip-masq-agent",
+                "updatedAt": "2018-09-27T19:35:08Z",
+                "clusterName": "remote",
+                "namespace": "kube-system"
+            },
+            "stale": false,
+            "markedStale": null
         },
         {
-            "id": "4f450a61-6062-44d7-8726-757e53a74416",
-            "time": "2018-05-21T18:06:04.324834148Z",
+            "id": "83f1d8d0-1e2b-410a-b1c3-c77ae2bb5ad9",
+            "time": "2018-09-27T19:37:06.854667598Z",
             "policy": {
-                "id": "b9a5bba4-c118-4bc7-bf36-b54bcb496113",
-                "name": "Latest tag",
-                "severity": "LOW_SEVERITY",
-                "description": "Alert on deployments with images using tag 'latest'",
+                "id": "bd88d660-e037-4c1a-a466-4b64901f5010",
+                "name": "Privileged Container",
+                "severity": "MEDIUM_SEVERITY",
+                "description": "Alert on deployments with containers running in privileged mode",
                 "categories": [
-                    "DevOps Best Practices",
-                    "Security Best Practices"
-                ]
+                    "Privileges"
+                ],
+                "lifecycleStage": "DEPLOY_TIME"
             },
             "deployment": {
-                "id": "rb1lzc2up2fl2dg26n3naeeyy",
-                "name": "sharp_noyce",
-                "updatedAt": "2018-05-20T19:24:10.929173294Z",
-                "clusterName": "remote"
-            }
-        },
-        {
-            "id": "41b17c7d-9738-454d-986c-937b113c74fd",
-            "time": "2018-05-21T18:06:04.188799699Z",
-            "policy": {
-                "id": "b9a5bba4-c118-4bc7-bf36-b54bcb496113",
-                "name": "Latest tag",
-                "severity": "LOW_SEVERITY",
-                "description": "Alert on deployments with images using tag 'latest'",
-                "categories": [
-                    "DevOps Best Practices",
-                    "Security Best Practices"
-                ]
+                "id": "6f78ceea-c28c-11e8-b8c4-42010a8a0fe9",
+                "name": "metadata-proxy-v0.1",
+                "updatedAt": "2018-09-27T19:35:05Z",
+                "clusterName": "remote",
+                "namespace": "kube-system"
             },
-            "deployment": {
-                "id": "idhh3a7k3b6xysprfvopoai74",
-                "name": "blissful_dijkstra",
-                "updatedAt": "2018-05-20T19:24:20.917353907Z",
-                "clusterName": "remote"
-            }
-        },
-        {
-            "id": "0a5a12eb-b951-4fae-9358-05c7caf1ce16",
-            "time": "2018-06-07T21:08:27.541697138Z",
-            "policy": {
-                "id": "a2d1eda2-5fde-40af-aa70-9b1efce859bd",
-                "name": "Latest tag",
-                "severity": "LOW_SEVERITY",
-                "description": "Alert on deployments with images using tag 'latest'",
-                "categories": [
-                    "DevOps Best Practices",
-                    "Security Best Practices"
-                ]
-            },
-            "deployment": {
-                "id": "e841ea9b-6a96-11e8-b4ce-42010a8a01d4",
-                "name": "nginx",
-                "updatedAt": "2018-06-07T21:08:20Z",
-                "clusterName": "K8s"
-            }
+            "stale": false,
+            "markedStale": null
         }
-
     ]
 }

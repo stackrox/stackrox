@@ -44,7 +44,7 @@ class ViolationsPanel extends Component {
     renderTabs = () => {
         const { alert } = this.props;
         const riskPanelTabs = [
-            { text: 'Violations' },
+            { text: 'Violation' },
             { text: 'Deployment Details' },
             { text: 'Policy Details' }
         ];

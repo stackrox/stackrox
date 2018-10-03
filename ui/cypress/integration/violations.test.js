@@ -31,7 +31,7 @@ describe('Violations page', () => {
     });
 
     it('should have violations in table', () => {
-        cy.get(ViolationsPageSelectors.rows).should('have.length', 4);
+        cy.get(ViolationsPageSelectors.rows).should('have.length', 2);
     });
 
     it('should show the side panel on row click', () => {
@@ -50,7 +50,7 @@ describe('Violations page', () => {
         cy.get(ViolationsPageSelectors.panels)
             .eq(1)
             .find(ViolationsPageSelectors.sidePanel.header)
-            .should('have.text', 'tender_edison (z1137vn6nnmipffzpozr0f0ri)');
+            .should('have.text', 'ip-masq-agent (70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9)');
     });
 
     it('should have cluster column in table', () => {
@@ -78,7 +78,7 @@ describe('Violations page', () => {
             .eq(1)
             .find(ViolationsPageSelectors.sidePanel.tabs)
             .eq(0)
-            .should('have.text', 'Violations');
+            .should('have.text', 'Violation');
         cy.get(ViolationsPageSelectors.panels)
             .eq(1)
             .find(ViolationsPageSelectors.sidePanel.tabs)
@@ -91,7 +91,7 @@ describe('Violations page', () => {
             .should('have.text', 'Policy Details');
     });
 
-    it('should have a message in the Violations tab', () => {
+    it('should have a collapsible card for runtime violation', () => {
         mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
@@ -100,12 +100,7 @@ describe('Violations page', () => {
             .find(ViolationsPageSelectors.sidePanel.tabs)
             .get(ViolationsPageSelectors.sidePanel.getTabByIndex(0))
             .click();
-        cy.get(ViolationsPageSelectors.collapsible.header)
-            .first()
-            .should('have.text', 'Violations');
-        cy.get(ViolationsPageSelectors.collapsible.body).contains(
-            "Image name 'docker.io/library/redis:latest' matches the name policy 'tag=latest'"
-        );
+        cy.get(ViolationsPageSelectors.runtimeProcessCards);
     });
 
     it('should have deployment information in the Deployment Details tab', () => {
