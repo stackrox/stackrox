@@ -20,6 +20,7 @@ let links = [];
 let namespaces = [];
 let simulation = null;
 let isZoomIn = false;
+let showLinks = false;
 
 class NetworkGraph extends Component {
     static propTypes = {
@@ -79,12 +80,19 @@ class NetworkGraph extends Component {
     onMouseMove = ({ layerX: x, layerY: y }) => {
         const intersectingObjects = this.getIntersectingObjects(x, y);
 
-        const isHoveringOverNode = intersectingObjects.filter(intersectsNodes).length;
+        const hoveredOverNodes = intersectingObjects.filter(intersectsNodes);
 
-        if (isHoveringOverNode) {
+        if (hoveredOverNodes.length) {
             this.networkGraph.classList.add('cursor-pointer');
+            const hoveredOverNode = hoveredOverNodes[0];
+            this.showLinksForConnectedNodes(hoveredOverNode);
         } else {
             this.networkGraph.classList.remove('cursor-pointer');
+            links = links.map(data => {
+                const link = { ...data };
+                link.line.material.opacity = constants.VISIBLE;
+                return link;
+            });
         }
     };
 
@@ -272,11 +280,17 @@ class NetworkGraph extends Component {
 
         filteredLinks.forEach(filteredLink => {
             const link = { ...filteredLink };
-            link.material = new THREE.LineBasicMaterial({
+
+            const material = new THREE.LineBasicMaterial({
                 color: constants.LINK_COLOR
             });
-            link.geometry = new THREE.Geometry();
-            link.line = new THREE.Line(link.geometry, link.material);
+            material.transparent = true;
+            const geometry = new THREE.Geometry();
+            link.line = new THREE.Line(geometry, material);
+            link.line.geometry.verticesNeedUpdate = true;
+            link.line.geometry.vertices[0] = new THREE.Vector3(link.source.x, link.source.y);
+            link.line.geometry.vertices[1] = new THREE.Vector3(link.target.x, link.target.y);
+
             newLinks.push(link);
         });
 
@@ -307,6 +321,34 @@ class NetworkGraph extends Component {
         };
     };
 
+    showLinksForConnectedNodes = node => {
+        const { id } = node.object.userData;
+        links = links.map(data => {
+            const link = { ...data };
+            if (link.source.id === id || link.target.id === id) {
+                link.line.material.opacity = constants.VISIBLE;
+            } else {
+                link.line.material.opacity = constants.TRANSPARENT;
+            }
+            return link;
+        });
+    };
+
+    showHideLinks = () => {
+        if (!showLinks && this.camera.zoom >= constants.ZOOM_LEVEL_TO_SHOW_LINKS) {
+            showLinks = true;
+            links.forEach(link => {
+                this.scene.add(link.line);
+            });
+        } else if (showLinks && this.camera.zoom < constants.ZOOM_LEVEL_TO_SHOW_LINKS) {
+            showLinks = false;
+            const removeLinks = this.scene.children.filter(child => child.type === 'Line');
+            removeLinks.forEach(link => {
+                this.scene.remove(link);
+            });
+        }
+    };
+
     updateNodesPosition = () => {
         nodes.forEach(node => {
             const { x, y, circle, border, label } = node;
@@ -319,14 +361,16 @@ class NetworkGraph extends Component {
     updateLinksPosition = () => {
         links.forEach(link => {
             const { source, target, line } = link;
-            line.geometry.verticesNeedUpdate = true;
-            line.geometry.vertices[0] = new THREE.Vector3(source.x, source.y, 0);
-            line.geometry.vertices[1] = new THREE.Vector3(target.x, target.y, 0);
+            line.geometry.vertices[0].x = source.x;
+            line.geometry.vertices[0].y = source.y;
+            line.geometry.vertices[1].x = target.x;
+            line.geometry.vertices[1].y = target.y;
         });
     };
 
     createNodeMesh = node => {
         const newNode = { ...node };
+        const { id } = newNode;
 
         let geometry = new THREE.CircleBufferGeometry(8, 32);
         let material = new THREE.MeshBasicMaterial({
@@ -335,12 +379,14 @@ class NetworkGraph extends Component {
             opacity: newNode.internetAccess ? 1 : 0
         });
         newNode.border = new THREE.Mesh(geometry, material);
+        newNode.border.userData = { id };
 
         geometry = new THREE.CircleBufferGeometry(5, 32);
         material = new THREE.MeshBasicMaterial({
             color: constants.NODE_COLOR
         });
         newNode.circle = new THREE.Mesh(geometry, material);
+        newNode.circle.userData = { id };
 
         this.scene.add(newNode.border);
         this.scene.add(newNode.circle);
@@ -403,6 +449,10 @@ class NetworkGraph extends Component {
         requestAnimationFrame(this.animate);
 
         this.controls.update();
+
+        this.updateLinksPosition();
+
+        this.showHideLinks();
 
         this.renderer.render(this.scene, this.camera);
     };

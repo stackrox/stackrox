@@ -21,6 +21,7 @@ export const FORCE_CONFIG = {
 };
 
 export const MIN_ZOOM = 0.25;
+export const ZOOM_LEVEL_TO_SHOW_LINKS = 1.5;
 export const MAX_ZOOM = 2;
 export const ORBIT_CONTROLS_CONFIG = {
     maxZoom: MAX_ZOOM,
@@ -49,3 +50,6 @@ export const NAMESPACE_BORDER_COLOR = 0xced3ed;
 export const NODE_COLOR = PRIMARY_COLOR_HEX;
 export const LINK_COLOR = PRIMARY_COLOR_HEX;
 export const TEXT_COLOR = PRIMARY_COLOR_STRING;
+
+export const TRANSPARENT = 0.05;
+export const VISIBLE = 1;
