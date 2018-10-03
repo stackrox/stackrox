@@ -69,6 +69,11 @@ func NewEnforcementField(category v1.SearchCategory, name string) *v1.SearchFiel
 	return NewField(category, name, v1.SearchDataType_SEARCH_ENFORCEMENT, 0)
 }
 
+// NewLifecycleField creates a new mapped field for lifecycle stage values.
+func NewLifecycleField(category v1.SearchCategory, name string) *v1.SearchField {
+	return NewField(category, name, v1.SearchDataType_SEARCH_LIFECYCLE_STAGE, 0)
+}
+
 // NewSecretTypeField creates a new mapped field for secret type enum
 func NewSecretTypeField(category v1.SearchCategory, name string) *v1.SearchField {
 	return NewField(category, name, v1.SearchDataType_SEARCH_SECRET_TYPE, 0)

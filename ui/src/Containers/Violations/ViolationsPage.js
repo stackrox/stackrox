@@ -300,9 +300,10 @@ class ViolationsPage extends Component {
             },
             {
                 Header: 'Lifecycle',
-                accessor: 'policy.lifecycleStage',
+                accessor: 'lifecycleStage',
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${wrapClassName} ${defaultColumnClassName}`,
+
                 Cell: ({ value }) => lifecycleStageLabels[value]
             },
             {

@@ -22,9 +22,12 @@ var (
 	policy = &v1.Policy{
 		Name:        "test policy " + fmt.Sprintf("%d", time.Now().UnixNano()),
 		Description: "description",
-		Severity:    v1.Severity_HIGH_SEVERITY,
-		Categories:  []string{"Image Assurance", "Privileges Capabilities"},
-		Disabled:    false,
+		LifecycleStages: []v1.LifecycleStage{
+			v1.LifecycleStage_DEPLOY_TIME,
+		},
+		Severity:   v1.Severity_HIGH_SEVERITY,
+		Categories: []string{"Image Assurance", "Privileges Capabilities"},
+		Disabled:   false,
 		Fields: &v1.PolicyFields{
 			ImageName: &v1.ImageNamePolicy{
 				Tag: "latest",

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
+	"github.com/stackrox/rox/pkg/policies"
 )
 
 type predicatedMatcher struct {
@@ -84,7 +85,7 @@ func (p *setImpl) UpsertPolicy(policy *v1.Policy) error {
 
 	// TODO(viswa): This breaks the abstraction, but leaving it like this to facilitate an easy
 	// transition of runtime policies to search.
-	if policy.GetLifecycleStage() == v1.LifecycleStage_RUN_TIME {
+	if policies.AppliesAtRunTime(policy) {
 		m, err := deploymentMatcher.Compile(cloned)
 		if err != nil {
 			return err

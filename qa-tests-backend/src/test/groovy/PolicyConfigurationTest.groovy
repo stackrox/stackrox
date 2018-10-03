@@ -2,6 +2,7 @@ import static Services.waitForViolation
 import stackrox.generated.PolicyServiceOuterClass.Policy
 import stackrox.generated.PolicyServiceOuterClass.PolicyFields
 import stackrox.generated.PolicyServiceOuterClass.ImageNamePolicy
+import stackrox.generated.PolicyServiceOuterClass.LifecycleStage
 import groups.BAT
 import objects.Deployment
 import org.junit.experimental.categories.Category
@@ -39,6 +40,7 @@ class PolicyConfigurationTest extends BaseSpecification {
             .setName("testImageTag")
             .setDescription("test image tag")
             .setRationale("test image tag")
+            .addLifecycleStages(LifecycleStage.DEPLOY_TIME)
             .addCategories("Image Assurance")
             .setDisabled(false)
             .setSeverityValue(2)
@@ -60,16 +62,17 @@ class PolicyConfigurationTest extends BaseSpecification {
             .setName("testImageTagLatest")
             .setDescription("qa test")
             .setRationale("qa test")
+            .addLifecycleStages(LifecycleStage.DEPLOY_TIME)
             .addCategories("Image Assurance")
             .setDisabled(false)
             .setSeverityValue(2)
             .setFields(PolicyFields.newBuilder()
-            .setImageName(
-            ImageNamePolicy.newBuilder()
-                .setTag("latest")
+                .setImageName(
+                    ImageNamePolicy.newBuilder()
+                        .setTag("latest")
+                        .build())
                 .build())
-            .build())
-        .build() |
+            .build() |
         new Deployment()
             .setName("testnginxlatest")
             .setImage("nginx:latest")

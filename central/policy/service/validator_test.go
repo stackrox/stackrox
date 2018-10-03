@@ -157,7 +157,9 @@ func (suite *PolicyValidatorTestSuite) TestValidateDescription() {
 
 func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 	policy := &v1.Policy{
-		LifecycleStage: v1.LifecycleStage_BUILD_TIME,
+		LifecycleStages: []v1.LifecycleStage{
+			v1.LifecycleStage_BUILD_TIME,
+		},
 		Fields: &v1.PolicyFields{
 			ContainerResourcePolicy: &v1.ResourcePolicy{
 				CpuResourceLimit: &v1.NumericalPolicy{
@@ -170,7 +172,9 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 	suite.Error(err, "no image criteria")
 
 	policy = &v1.Policy{
-		LifecycleStage: v1.LifecycleStage_BUILD_TIME,
+		LifecycleStages: []v1.LifecycleStage{
+			v1.LifecycleStage_BUILD_TIME,
+		},
 		Fields: &v1.PolicyFields{
 			ImageName: &v1.ImageNamePolicy{
 				Tag: "latest",
@@ -181,13 +185,17 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 	suite.NoError(err, "has image criteria")
 
 	policy = &v1.Policy{
-		LifecycleStage: v1.LifecycleStage_DEPLOY_TIME,
+		LifecycleStages: []v1.LifecycleStage{
+			v1.LifecycleStage_DEPLOY_TIME,
+		},
 	}
 	err = suite.validator.validateCompilableForLifecycle(policy)
 	suite.Error(err, "no criteria")
 
 	policy = &v1.Policy{
-		LifecycleStage: v1.LifecycleStage_DEPLOY_TIME,
+		LifecycleStages: []v1.LifecycleStage{
+			v1.LifecycleStage_DEPLOY_TIME,
+		},
 		Fields: &v1.PolicyFields{
 			ImageName: &v1.ImageNamePolicy{
 				Tag: "latest",

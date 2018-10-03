@@ -2,6 +2,7 @@
   "name": "CVSS >= 7",
   "description": "Alert on deployments with a vulnerability with a CVSS >= 7",
   "severity": "HIGH_SEVERITY",
+  "lifecycle_stages": ["DEPLOY_TIME"],
   "categories": ["Vuln Management"],
   "fields": {
     "cvss": {

@@ -3,7 +3,7 @@ import groups.Integration
 import groups.PolicyEnforcement
 import objects.Deployment
 import org.junit.experimental.categories.Category
-import stackrox.generated.PolicyServiceOuterClass
+import stackrox.generated.PolicyServiceOuterClass.EnforcementAction
 
 class Enforcement extends BaseSpecification {
     private final static String CONTAINER_PORT_22_POLICY = "Container Port 22"
@@ -111,9 +111,9 @@ class Enforcement extends BaseSpecification {
 
         given:
         "Add scale-down enforcement to an existing policy"
-        def startEnforcement = Services.updatePolicyEnforcement(
+        def startEnforcements = Services.updatePolicyEnforcement(
                 CONTAINER_PORT_22_POLICY,
-                PolicyServiceOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
+                [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
         )
 
         when:
@@ -132,7 +132,7 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
-        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcement)
+        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
         orchestrator.deleteDeployment(d.name)
     }
 
@@ -143,9 +143,9 @@ class Enforcement extends BaseSpecification {
 
         given:
         "Add node constraint enforcement to an existing policy"
-        def startEnforcement = Services.updatePolicyEnforcement(
+        def startEnforcements = Services.updatePolicyEnforcement(
                 CONTAINER_PORT_22_POLICY,
-                PolicyServiceOuterClass.EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
+                [EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,]
         )
 
         when:
@@ -166,7 +166,7 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
-        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcement)
+        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
         orchestrator.deleteDeployment(d.name)
     }
 }

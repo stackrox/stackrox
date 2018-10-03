@@ -39,6 +39,9 @@ func assertElementSatisfiesSearchDataType(t *testing.T, obj interface{}, searchD
 	case v1.SearchDataType_SEARCH_ENFORCEMENT:
 		assertKindsEqual(t, reflect.Int32, kind)
 		assert.Equal(t, "EnforcementAction", typ.Name())
+	case v1.SearchDataType_SEARCH_LIFECYCLE_STAGE:
+		assertKindsEqual(t, reflect.Int32, kind)
+		assert.Equal(t, "LifecycleStage", typ.Name())
 	case v1.SearchDataType_SEARCH_SEVERITY:
 		assertKindsEqual(t, reflect.Int32, kind)
 		assert.Equal(t, "Severity", typ.Name())

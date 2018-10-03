@@ -41,16 +41,17 @@ func (s *alertStoreTestSuite) TearDownSuite() {
 func (s *alertStoreTestSuite) TestAlerts() {
 	alerts := []*v1.Alert{
 		{
-			Id: "id1",
+			Id:             "id1",
+			LifecycleStage: v1.LifecycleStage_RUN_TIME,
 			Policy: &v1.Policy{
 				Severity: v1.Severity_LOW_SEVERITY,
 			},
 		},
 		{
-			Id: "id2",
+			Id:             "id2",
+			LifecycleStage: v1.LifecycleStage_DEPLOY_TIME,
 			Policy: &v1.Policy{
-				Severity:       v1.Severity_HIGH_SEVERITY,
-				LifecycleStage: v1.LifecycleStage_RUN_TIME,
+				Severity: v1.Severity_HIGH_SEVERITY,
 			},
 		},
 	}
@@ -72,8 +73,8 @@ func (s *alertStoreTestSuite) TestAlerts() {
 		list, exists, err := s.store.ListAlert(a.GetId())
 		s.NoError(err)
 		s.True(exists)
+		s.Equal(a.GetLifecycleStage(), list.GetLifecycleStage())
 		s.Equal(a.GetPolicy().GetSeverity(), list.GetPolicy().GetSeverity())
-		s.Equal(a.GetPolicy().GetLifecycleStage(), list.GetPolicy().GetLifecycleStage())
 	}
 
 	for _, a := range alerts {
@@ -90,8 +91,8 @@ func (s *alertStoreTestSuite) TestAlerts() {
 		list, exists, err := s.store.ListAlert(a.GetId())
 		s.NoError(err)
 		s.True(exists)
+		s.Equal(a.GetLifecycleStage(), list.GetLifecycleStage())
 		s.Equal(a.GetPolicy().GetSeverity(), list.GetPolicy().GetSeverity())
-		s.Equal(a.GetPolicy().GetLifecycleStage(), list.GetPolicy().GetLifecycleStage())
 	}
 
 }

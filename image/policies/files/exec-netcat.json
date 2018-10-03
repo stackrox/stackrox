@@ -3,7 +3,7 @@
     "description": "Detects execution of netcat in a container",
     "categories": ["Known malicious process"],
     "severity": "MEDIUM_SEVERITY",
-    "lifecycle_stage": "RUN_TIME",
+    "lifecycle_stages": ["RUN_TIME"],
     "fields": {
       "process_policy": {
         "name": "nc$"

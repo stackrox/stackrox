@@ -2,6 +2,7 @@
   "name": "DNF Package Manager (dnf) in Image",
   "description": "Alert on deployments with the DNF package manager (dnf), commonly used in Red Hat-family distributions, present",
   "severity": "LOW_SEVERITY",
+  "lifecycle_stages": ["DEPLOY_TIME"],
   "categories": ["Security Best Practices"],
   "fields": {
     "component": {

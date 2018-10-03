@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/fixtures"
+	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/search"
@@ -791,7 +792,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {
 	for _, p := range suite.defaultPolicies {
-		if p.LifecycleStage == v1.LifecycleStage_RUN_TIME && p.GetFields().GetProcessPolicy() != nil {
+		if policyUtils.AppliesAtRunTime(p) && p.GetFields().GetProcessPolicy() != nil {
 			processPolicy := p.GetFields().GetProcessPolicy()
 			if processPolicy.GetName() != "" {
 				regexp.MustCompile(processPolicy.GetName())

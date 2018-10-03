@@ -13,7 +13,7 @@
       "Security Best Practices"
     ],
     "scope": [],
-    "enforcement": "UNSET_ENFORCEMENT",
+    "enforcement_actions": ["UNSET_ENFORCEMENT"],
     "notifiers": [],
     "imagePolicy": {
       "imageName": {
@@ -101,7 +101,7 @@
       "link": ""
     }
   ],
-  "enforcement": null,
+  "enforcement_actions": null,
   "time": "2018-06-07T21:08:27.541697138Z",
   "stale": false,
   "markedStale": null,

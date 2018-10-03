@@ -263,33 +263,46 @@ class Services extends BaseService {
         return processname
     }
 
-    static updatePolicyLifecycleStage(String policyName, LifecycleStage stage) {
+    static updatePolicyLifecycleStage(String policyName, List<LifecycleStage> stages) {
         Policy policyMeta = getPolicyByName(policyName)
-        def policyDef = Policy.newBuilder(policyMeta)
-                .setLifecycleStage(stage)
-                .build()
+
+        def builder = Policy.newBuilder(policyMeta).clearLifecycleStages()
+        if (stages != null && !stages.isEmpty()) {
+            builder.addAllLifecycleStages(stages)
+        }
+        def policyDef = builder.build()
+
         try {
             getPolicyClient().putPolicy(policyDef)
         } catch (Exception e) {
-            return ""
+            return List.<LifecycleStage>of()
         }
-        println "Updated lifecycleStage of '${policyName}' to ${stage}"
-        return policyMeta.lifecycleStage
+        println "Updated lifecycleStage of '${policyName}' to ${stages}"
+        return policyMeta.getLifecycleStagesList()
     }
 
-    static updatePolicyEnforcement(String policyName, EnforcementAction enforcementAction) {
+    static updatePolicyEnforcement(String policyName, List<EnforcementAction> enforcementActions) {
         Policy policyMeta = getPolicyByName(policyName)
-        def policyDef = Policy.newBuilder(policyMeta)
-                .setEnforcement(enforcementAction)
-                .build()
+
+        def builder = Policy.newBuilder(policyMeta).clearEnforcementActions()
+        if (enforcementActions != null && !enforcementActions.isEmpty()) {
+            builder.addAllEnforcementActions(enforcementActions)
+        }
+        def policyDef = builder.build()
+
         try {
             getPolicyClient().putPolicy(policyDef)
         } catch (Exception e) {
-            return ""
+            return List.<EnforcementAction>of()
         }
         sleep(3000) // Sleep for a little bit to make sure the update propagates in Central.
-        println "Updated enforcement of '${policyName}' to ${enforcementAction}"
-        return policyMeta.enforcement
+
+        if (enforcementActions != null && !enforcementActions.isEmpty()) {
+            println "Updated enforcement of '${policyName}' to ${enforcementActions}"
+        } else {
+            println "Updated enforcement of '${policyName}' to have no enforcement actions"
+        }
+        return policyMeta.getEnforcementActionsList()
     }
 
     static getClusterId(String name = "remote") {
@@ -495,7 +508,7 @@ class Services extends BaseService {
     }
 
     static applyKillEnforcement(String podId, String namespace, String containerId) {
-        SensorEventServiceOuterClass.SensorEnforcement.Builder killEnforcemetBuilder =
+        SensorEventServiceOuterClass.SensorEnforcement.Builder killEnforcementBuilder =
                 SensorEventServiceOuterClass.SensorEnforcement.newBuilder()
                         .setEnforcement(EnforcementAction.KILL_POD_ENFORCEMENT)
                         .setContainerInstance(SensorEventServiceOuterClass.ContainerInstanceEnforcement.newBuilder()
@@ -503,7 +516,7 @@ class Services extends BaseService {
                                 .setPodId(podId)
                                 .setNamespace(namespace)
                         )
-        return applyEnforcement(killEnforcemetBuilder)
+        return applyEnforcement(killEnforcementBuilder)
     }
 
     static applyScaleDownEnforcement(objects.Deployment deployment) {

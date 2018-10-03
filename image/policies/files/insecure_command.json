@@ -2,6 +2,7 @@
   "name": "Insecure specified in CMD",
   "description": "Alert on deployments using 'insecure' in the command",
   "severity": "LOW_SEVERITY",
+  "lifecycle_stages": ["DEPLOY_TIME"],
   "categories": ["Security Best Practices"],
   "fields": {
     "line_rule": {

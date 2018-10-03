@@ -35,6 +35,26 @@ export function postFormatWhitelistField(policy) {
     return serverPolicy;
 }
 
+export function postFormatLifecycleField(policy) {
+    const serverPolicy = Object.assign({}, policy);
+    if (policy.lifecycleStages && policy.lifecycleStages.length !== 0)
+        serverPolicy.lifecycleStages = policy.lifecycleStages.map(o => (o.value ? o.value : o));
+    return serverPolicy;
+}
+
+export function postFormatEnforcementField(policy) {
+    const serverPolicy = Object.assign({}, policy);
+    if (policy.enforcementActions) {
+        if (typeof policy.enforcementActions === 'string') {
+            serverPolicy.enforcementActions = [policy.enforcementActions];
+        } else {
+            // Already converted to array. No need to format.
+            serverPolicy.enforcementActions = policy.enforcementActions;
+        }
+    }
+    return serverPolicy;
+}
+
 export function preFormatPolicyFields(policy) {
     let formattedPolicy = removeEmptyFields(policy);
     formattedPolicy = preFormatWhitelistField(formattedPolicy);
@@ -44,6 +64,8 @@ export function preFormatPolicyFields(policy) {
 
 export function formatPolicyFields(policy) {
     let serverPolicy = removeEmptyFields(policy);
+    serverPolicy = postFormatLifecycleField(serverPolicy);
+    serverPolicy = postFormatEnforcementField(serverPolicy);
     serverPolicy = postFormatWhitelistField(serverPolicy);
     serverPolicy = postFormatScopeField(serverPolicy);
     return serverPolicy;

@@ -173,7 +173,6 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 	}
 
 	err = s.deleteNotifiersFromPolicies(n.GetId())
-
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Notifier is still in use by policies. Error: %s", err))
@@ -184,9 +183,6 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 	}
 
 	s.processor.RemoveNotifier(request.GetId())
-	s.buildTimePolicies.RemoveNotifier(request.GetId())
-	s.deployTimePolicies.RemoveNotifier(request.GetId())
-	s.runTimePolicies.RemoveNotifier(request.GetId())
 	return &v1.Empty{}, nil
 }
 

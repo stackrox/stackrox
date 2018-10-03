@@ -34,6 +34,19 @@ func (d *alertManagerImpl) GetAlertsByDeployment(deploymentID string) ([]*v1.Ale
 	return d.alerts.SearchRawAlerts(qb.ProtoQuery())
 }
 
+func (d *alertManagerImpl) GetAlertsByDeploymentAndPolicyLifecycle(deploymentID string, lifecycle v1.LifecycleStage) ([]*v1.Alert, error) {
+	q := search.NewQueryBuilder().
+		AddBools(search.Stale, false).
+		AddStrings(search.DeploymentID, deploymentID).
+		AddStrings(search.LifecycleStage, lifecycle.String()).ProtoQuery()
+
+	alerts, err := d.alerts.SearchRawAlerts(q)
+	if err != nil {
+		return nil, err
+	}
+	return alerts, nil
+}
+
 func (d *alertManagerImpl) GetAlertsByDeploymentAndPolicy(deploymentID, policyID string) (*v1.Alert, error) {
 	q := search.NewQueryBuilder().
 		AddBools(search.Stale, false).

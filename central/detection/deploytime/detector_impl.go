@@ -1,7 +1,10 @@
 package deploytime
 
 import (
+	"fmt"
+
 	"github.com/gogo/protobuf/proto"
+	ptypes "github.com/gogo/protobuf/types"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deployment"
 	"github.com/stackrox/rox/central/detection/utils"
@@ -12,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var logger = logging.LoggerForModule()
@@ -53,7 +57,7 @@ func (d *detectorImpl) DeploymentUpdated(deployment *v1.Deployment) (string, v1.
 	}
 
 	// Generate enforcement actions based on the currently generated alerts.
-	alertToEnforce, enforcementAction := utils.DetermineEnforcement(presentAlerts)
+	alertToEnforce, enforcementAction := determineEnforcement(presentAlerts)
 	return alertToEnforce, enforcementAction, nil
 }
 
@@ -120,7 +124,7 @@ func (d *detectorImpl) getAlertsForDeployment(deployment *v1.Deployment) []*v1.A
 		}
 
 		if len(violations) > 0 {
-			newAlerts = append(newAlerts, utils.PolicyDeploymentAndViolationsToAlert(p, deployment, violations))
+			newAlerts = append(newAlerts, policyDeploymentAndViolationsToAlert(p, deployment, violations))
 		}
 		return nil
 	})
@@ -146,7 +150,7 @@ func (d *detectorImpl) getAlertsForPolicy(policyID string) ([]*v1.Alert, error) 
 			if shouldProcess != nil && !shouldProcess(dep) {
 				continue
 			}
-			newAlerts = append(newAlerts, utils.PolicyDeploymentAndViolationsToAlert(p, dep, violations))
+			newAlerts = append(newAlerts, policyDeploymentAndViolationsToAlert(p, dep, violations))
 		}
 		return nil
 	})
@@ -154,4 +158,66 @@ func (d *detectorImpl) getAlertsForPolicy(policyID string) ([]*v1.Alert, error) 
 		return nil, err
 	}
 	return newAlerts, nil
+}
+
+// determineEnforcement returns the alert and its enforcement action to use from the input list (if any have enforcement).
+func determineEnforcement(alerts []*v1.Alert) (alertID string, action v1.EnforcementAction) {
+	for _, alert := range alerts {
+		if alert.GetEnforcement().GetAction() == v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT {
+			return alert.GetId(), v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT
+		}
+
+		if alert.GetEnforcement().GetAction() != v1.EnforcementAction_UNSET_ENFORCEMENT {
+			alertID = alert.GetId()
+			action = alert.GetEnforcement().GetAction()
+		}
+	}
+	return
+}
+
+// policyDeploymentAndViolationsToAlert constructs an alert.
+func policyDeploymentAndViolationsToAlert(policy *v1.Policy, deployment *v1.Deployment, violations []*v1.Alert_Violation) *v1.Alert {
+	if len(violations) == 0 {
+		return nil
+	}
+	alert := &v1.Alert{
+		Id:             uuid.NewV4().String(),
+		LifecycleStage: v1.LifecycleStage_DEPLOY_TIME,
+		Deployment:     proto.Clone(deployment).(*v1.Deployment),
+		Policy:         proto.Clone(policy).(*v1.Policy),
+		Violations:     violations,
+		Time:           ptypes.TimestampNow(),
+	}
+	if action, msg := policyAndDeploymentToEnforcement(policy, deployment); action != v1.EnforcementAction_UNSET_ENFORCEMENT {
+		alert.Enforcement = &v1.Alert_Enforcement{
+			Action:  action,
+			Message: msg,
+		}
+	}
+	return alert
+}
+
+// policyAndDeploymentToEnforcement returns enforcement info for a deployment violating a policy.
+func policyAndDeploymentToEnforcement(policy *v1.Policy, deployment *v1.Deployment) (enforcement v1.EnforcementAction, message string) {
+	for _, enforcementAction := range policy.GetEnforcementActions() {
+		if enforcementAction == v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT && scaleToZeroEnabled(deployment) {
+			return v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, fmt.Sprintf("Deployment %s scaled to 0 replicas in response to policy violation", deployment.GetName())
+		}
+		if enforcementAction == v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT {
+			return v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, fmt.Sprintf("Unsatisfiable node constraint applied to deployment %s", deployment.GetName())
+		}
+	}
+	return v1.EnforcementAction_UNSET_ENFORCEMENT, ""
+}
+
+const (
+	globalDeployment    = "Global"
+	daemonSetDeployment = "DaemonSet"
+)
+
+func scaleToZeroEnabled(deployment *v1.Deployment) bool {
+	if deployment.GetType() == globalDeployment || deployment.GetType() == daemonSetDeployment {
+		return false
+	}
+	return true
 }

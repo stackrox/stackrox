@@ -14,6 +14,11 @@ const common = Object.freeze({
         BUILD_TIME: 'Build',
         DEPLOY_TIME: 'Deploy',
         RUN_TIME: 'Runtime'
+    },
+    enforcementActionLabels: {
+        UNSET_ENFORCEMENT: 'None',
+        SCALE_TO_ZERO_ENFORCEMENT: 'Scale to Zero Replicas',
+        UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: 'Add an Unsatisfiable Node Constraint'
     }
 });
 

@@ -63,17 +63,17 @@ func (b *storeImpl) ListAlerts() ([]*v1.ListAlert, error) {
 
 func convertAlertsToListAlerts(a *v1.Alert) *v1.ListAlert {
 	return &v1.ListAlert{
-		Id:          a.GetId(),
-		Time:        a.GetTime(),
-		Stale:       a.GetStale(),
-		MarkedStale: a.GetMarkedStale(),
+		Id:             a.GetId(),
+		Time:           a.GetTime(),
+		Stale:          a.GetStale(),
+		MarkedStale:    a.GetMarkedStale(),
+		LifecycleStage: a.GetLifecycleStage(),
 		Policy: &v1.ListAlertPolicy{
-			Id:             a.GetPolicy().GetId(),
-			Name:           a.GetPolicy().GetName(),
-			Severity:       a.GetPolicy().GetSeverity(),
-			Description:    a.GetPolicy().GetDescription(),
-			Categories:     a.GetPolicy().GetCategories(),
-			LifecycleStage: a.GetPolicy().GetLifecycleStage(),
+			Id:          a.GetPolicy().GetId(),
+			Name:        a.GetPolicy().GetName(),
+			Severity:    a.GetPolicy().GetSeverity(),
+			Description: a.GetPolicy().GetDescription(),
+			Categories:  a.GetPolicy().GetCategories(),
 		},
 		Deployment: &v1.ListAlertDeployment{
 			Id:          a.GetDeployment().GetId(),

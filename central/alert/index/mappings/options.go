@@ -10,11 +10,13 @@ var OptionsMap = map[search.FieldLabel]*v1.SearchField{
 	search.Violation: search.NewStringField(v1.SearchCategory_ALERTS, "alert.violations.message"),
 	search.Stale:     search.NewBoolField(v1.SearchCategory_ALERTS, "alert.stale"),
 
-	search.Enforcement: search.NewEnforcementField(v1.SearchCategory_ALERTS, "alert.policy.enforcement"),
-	search.PolicyID:    search.NewStringField(v1.SearchCategory_ALERTS, "alert.policy.id"),
-	search.PolicyName:  search.NewStringField(v1.SearchCategory_ALERTS, "alert.policy.name"),
-	search.Category:    search.NewStringField(v1.SearchCategory_ALERTS, "alert.policy.categories"),
-	search.Severity:    search.NewSeverityField(v1.SearchCategory_ALERTS, "alert.policy.severity"),
+	search.LifecycleStage: search.NewLifecycleField(v1.SearchCategory_ALERTS, "alert.lifecycle_stage"),
+	search.Enforcement:    search.NewEnforcementField(v1.SearchCategory_ALERTS, "alert.enforcement.action"),
+
+	search.PolicyID:   search.NewStringField(v1.SearchCategory_ALERTS, "alert.policy.id"),
+	search.PolicyName: search.NewStringField(v1.SearchCategory_ALERTS, "alert.policy.name"),
+	search.Category:   search.NewStringField(v1.SearchCategory_ALERTS, "alert.policy.categories"),
+	search.Severity:   search.NewSeverityField(v1.SearchCategory_ALERTS, "alert.policy.severity"),
 
 	search.DeploymentID:   search.NewStringField(v1.SearchCategory_ALERTS, "alert.deployment.id"),
 	search.Cluster:        search.NewStringField(v1.SearchCategory_ALERTS, "alert.deployment.cluster_name"),

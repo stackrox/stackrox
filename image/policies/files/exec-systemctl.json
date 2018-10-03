@@ -3,7 +3,7 @@
     "description": "Detected usage of the systemctl service manager",
     "categories": ["systemd Modification"],
     "severity": "LOW_SEVERITY",
-    "lifecycle_stage": "RUN_TIME",
+    "lifecycle_stages": ["RUN_TIME"],
     "fields": {
       "process_policy": {
         "name": "systemctl$"

@@ -2,6 +2,7 @@
   "name": "RPM Package Manager (rpm) in Image",
   "description": "Alert on deployments with the RPM Package Manager (rpm), commonly used in Red Hat-family distributions, present",
   "severity": "LOW_SEVERITY",
+  "lifecycle_stages": ["DEPLOY_TIME"],
   "categories": ["Security Best Practices"],
   "fields": {
     "component": {

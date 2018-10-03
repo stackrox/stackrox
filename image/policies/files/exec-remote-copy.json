@@ -3,7 +3,7 @@
     "description": "Container initiated remote file copy",
     "categories": ["Remote File Copy"],
     "severity": "MEDIUM_SEVERITY",
-    "lifecycle_stage": "RUN_TIME",
+    "lifecycle_stages": ["RUN_TIME"],
     "fields": {
       "process_policy": {
         "name": "scp$|sshfs$|ssh-copy-id$|meterpreter$"

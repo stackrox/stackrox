@@ -2,6 +2,7 @@
   "name": "Container Port 22",
   "description": "Alert on deployments exposing port 22",
   "severity": "HIGH_SEVERITY",
+  "lifecycle_stages": ["DEPLOY_TIME"],
   "categories": ["Security Best Practices"],
   "fields": {
     "port_policy": {

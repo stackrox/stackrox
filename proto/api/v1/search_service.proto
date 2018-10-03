@@ -30,6 +30,7 @@ enum SearchDataType {
     SEARCH_MAP             = 6;
     SEARCH_SECRET_TYPE     = 7;
     SEARCH_VIOLATION_STATE = 8;
+    SEARCH_LIFECYCLE_STAGE = 9;
 }
 
 message RawQuery {

@@ -59,6 +59,10 @@ describe('Policies page', () => {
         cy.get(selectors.form.required)
             .eq(2)
             .prev()
+            .should('have.text', 'Lifecycle Stages');
+        cy.get(selectors.form.required)
+            .eq(3)
+            .prev()
             .should('have.text', 'Categories');
     });
 

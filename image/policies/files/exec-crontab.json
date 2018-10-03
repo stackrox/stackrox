@@ -2,7 +2,7 @@
     "name": "crontab Execution",
     "description": "Detects the usage of the crontab scheduled jobs editor",
     "severity": "MEDIUM_SEVERITY",
-    "lifecycle_stage": "RUN_TIME",
+    "lifecycle_stages": ["RUN_TIME"],
     "categories": ["Cron Modification"],
     "fields": {
         "process_policy": {

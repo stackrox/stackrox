@@ -124,9 +124,11 @@ func togglePolicyEnforcement(t *testing.T, conn *grpc.ClientConn, enable bool) {
 	})
 
 	if enable {
-		p.Enforcement = v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT
+		p.EnforcementActions = []v1.EnforcementAction{
+			v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+		}
 	} else {
-		p.Enforcement = v1.EnforcementAction_UNSET_ENFORCEMENT
+		p.EnforcementActions = nil
 	}
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	_, err = service.PutPolicy(ctx, p)

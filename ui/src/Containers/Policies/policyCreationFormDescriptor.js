@@ -1,4 +1,4 @@
-import { lifecycleStageLabels } from 'messages/common';
+import { lifecycleStageLabels, enforcementActionLabels } from 'messages/common';
 
 const equalityOptions = [
     { label: 'Is greater than', value: 'GREATER_THAN' },
@@ -122,15 +122,14 @@ const policyDetailsFormDescriptor = [
         default: true
     },
     {
-        label: 'Lifecycle Stage',
-        jsonpath: 'lifecycleStage',
-        type: 'select',
+        label: 'Lifecycle Stages',
+        jsonpath: 'lifecycleStages',
+        type: 'multiselect',
         options: Object.keys(lifecycleStageLabels).map(key => ({
             label: lifecycleStageLabels[key],
             value: key
         })),
-        placeholder: lifecycleStageLabels.DEPLOY_TIME,
-        required: false,
+        required: true,
         default: true
     },
     {
@@ -176,16 +175,12 @@ const policyDetailsFormDescriptor = [
     },
     {
         label: 'Enforcement Action',
-        jsonpath: 'enforcement',
+        jsonpath: 'enforcementActions',
         type: 'select',
-        options: [
-            { label: 'None', value: 'UNSET_ENFORCEMENT' },
-            { label: 'Scale to Zero Replicas', value: 'SCALE_TO_ZERO_ENFORCEMENT' },
-            {
-                label: 'Add an Unsatisfiable Node Constraint',
-                value: 'UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT'
-            }
-        ],
+        options: Object.keys(enforcementActionLabels).map(key => ({
+            label: enforcementActionLabels[key],
+            value: key
+        })),
         required: false,
         default: true
     },

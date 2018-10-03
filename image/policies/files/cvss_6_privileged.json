@@ -2,6 +2,7 @@
   "name": "CVSS >= 6 and Privileged",
   "description": "Alert on deployments with vulnerabilities with a CVSS score >= 6 and running in Privileged Mode",
   "severity": "HIGH_SEVERITY",
+  "lifecycle_stages": ["DEPLOY_TIME"],
   "categories": ["Vuln Management", "Privileges"],
   "fields": {
     "cvss": {

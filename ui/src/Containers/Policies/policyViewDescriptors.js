@@ -1,4 +1,4 @@
-import { lifecycleStageLabels } from 'messages/common';
+import { lifecycleStageLabels, enforcementActionLabels } from 'messages/common';
 
 const comparatorOp = {
     GREATER_THAN: '>',
@@ -38,9 +38,9 @@ const fieldsMap = {
         label: 'Name',
         formatValue: d => d
     },
-    lifecycleStage: {
+    lifecycleStages: {
         label: 'Lifecycle Stage',
-        formatValue: d => lifecycleStageLabels[d]
+        formatValue: d => d.map(v => lifecycleStageLabels[v]).join(', ')
     },
     severity: {
         label: 'Severity',
@@ -93,20 +93,9 @@ const fieldsMap = {
                 })
                 .join(', ')
     },
-    enforcement: {
+    enforcementActions: {
         label: 'Enforcement Action',
-        formatValue: d => {
-            switch (d) {
-                case 'UNSET_ENFORCEMENT':
-                    return 'None';
-                case 'SCALE_TO_ZERO_ENFORCEMENT':
-                    return 'Scale to Zero Replicas';
-                case 'UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT':
-                    return 'Add an Unsatisfiable Node Constraint';
-                default:
-                    return d;
-            }
-        }
+        formatValue: d => d.map(v => enforcementActionLabels[v]).join(', ')
     },
     disabled: {
         label: 'Enabled',

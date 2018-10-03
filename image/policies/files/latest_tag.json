@@ -2,6 +2,7 @@
   "name": "Latest tag",
   "description": "Alert on deployments with images using tag 'latest'",
   "severity": "LOW_SEVERITY",
+  "lifecycle_stages": ["DEPLOY_TIME"],
   "categories": ["DevOps Best Practices"],
   "fields": {
     "image_name": {

@@ -3,7 +3,7 @@
     "description": "Detects process execution of pkg",
     "categories": ["Package Management"],
     "severity": "LOW_SEVERITY",
-    "lifecycle_stage": "RUN_TIME",
+    "lifecycle_stages": ["RUN_TIME"],
     "fields": {
         "process_policy": {
             "name": "\\b([^d])pkg(_?)*"

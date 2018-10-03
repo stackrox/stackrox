@@ -17,25 +17,28 @@ package v1;
 message Alert {
     string id                                = 1;
     Policy policy                            = 2;
-    Deployment deployment                    = 3;
+    LifecycleStage lifecycle_stage           = 3;
+    Deployment deployment                    = 4;
+
     message Violation {
         string message                       = 1;
         string link                          = 2;
         repeated ProcessIndicator processes  = 3;
     }
-    repeated Violation violations            = 4;
+    repeated Violation violations            = 5;
+
     message Enforcement {
         EnforcementAction action = 1;
         string message           = 2;
     }
-    Enforcement enforcement                  = 5;
-    google.protobuf.Timestamp time           = 6;
-    bool stale                               = 7;
-    google.protobuf.Timestamp marked_stale   = 8;
-    google.protobuf.Timestamp first_occurred = 9;
+    Enforcement enforcement                  = 6;
 
-    ViolationState state                  = 10;
-    google.protobuf.Timestamp snooze_till = 11;
+    google.protobuf.Timestamp time           = 7;
+    bool stale                               = 8;
+    google.protobuf.Timestamp marked_stale   = 9;
+    google.protobuf.Timestamp first_occurred = 10;
+    ViolationState state                     = 11;
+    google.protobuf.Timestamp snooze_till    = 12;
 }
 
 message ListAlertsRequest {
@@ -49,7 +52,6 @@ message ListAlertPolicy {
     Severity severity                           = 3;
     string description                          = 4;
     repeated string categories                  = 5;
-    LifecycleStage lifecycle_stage              = 6;
 }
 
 message ListAlertDeployment {
@@ -62,11 +64,12 @@ message ListAlertDeployment {
 
 message ListAlert {
     string id                               = 1;
-    google.protobuf.Timestamp time          = 2;
-    ListAlertPolicy policy                  = 3;
-    ListAlertDeployment deployment          = 4;
-    bool stale                              = 5;
-    google.protobuf.Timestamp marked_stale  = 6;
+    LifecycleStage lifecycle_stage          = 2;
+    google.protobuf.Timestamp time          = 3;
+    ListAlertPolicy policy                  = 4;
+    ListAlertDeployment deployment          = 5;
+    bool stale                              = 6;
+    google.protobuf.Timestamp marked_stale  = 7;
 }
 
 enum ViolationState {

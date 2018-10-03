@@ -13,6 +13,7 @@ import (
 	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
 	imageMatcher "github.com/stackrox/rox/pkg/compiledpolicies/image/matcher"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/policies"
 )
 
 func newPolicyValidator(notifierStorage notifierStore.Store, clusterStorage clusterDataStore.DataStore) *policyValidator {
@@ -60,12 +61,21 @@ func (s *policyValidator) validateDescription(policy *v1.Policy) error {
 }
 
 func (s *policyValidator) validateCompilableForLifecycle(policy *v1.Policy) error {
-	if policy.GetLifecycleStage() == v1.LifecycleStage_BUILD_TIME {
-		return compileForBuildTime(policy)
-	} else if policy.GetLifecycleStage() == v1.LifecycleStage_RUN_TIME {
-		return compilesForRunTime(policy)
+	if len(policy.GetLifecycleStages()) == 0 {
+		return fmt.Errorf("a policy must apply to at least one lifecycle stage")
 	}
-	return compilesForDeployTime(policy)
+
+	errorList := errorhelpers.NewErrorList("error validating lifecycle stage")
+	if policies.AppliesAtBuildTime(policy) {
+		errorList.AddError(compilesForBuildTime(policy))
+	}
+	if policies.AppliesAtDeployTime(policy) {
+		errorList.AddError(compilesForDeployTime(policy))
+	}
+	if policies.AppliesAtRunTime(policy) {
+		errorList.AddError(compilesForRunTime(policy))
+	}
+	return errorList.ToError()
 }
 
 func (s *policyValidator) validateSeverity(policy *v1.Policy) error {
@@ -193,7 +203,7 @@ func (s *policyValidator) validateScope(scope *v1.Scope) error {
 	return nil
 }
 
-func compileForBuildTime(policy *v1.Policy) error {
+func compilesForBuildTime(policy *v1.Policy) error {
 	m, err := imageMatcher.Compile(policy)
 	if err != nil {
 		return err

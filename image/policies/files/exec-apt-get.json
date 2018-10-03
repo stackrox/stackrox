@@ -2,7 +2,7 @@
     "name": "apt-get Execution",
     "description": "Detects process execution of apt-get",
     "severity": "LOW_SEVERITY",
-    "lifecycle_stage": "RUN_TIME",
+    "lifecycle_stages": ["RUN_TIME"],
     "categories": ["Package Management"],
     "fields": {
         "process_policy": {

@@ -18,12 +18,12 @@ import (
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/search"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -150,17 +150,12 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.Policy) (*v1.P
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	// Check that the policy compiles
-	_, err := deploymentMatcher.Compile(request)
-	if err != nil {
-		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
-	}
-
 	id, err := s.policies.AddPolicy(request)
 	if err != nil {
 		return nil, err
 	}
 	request.Id = id
+
 	if err := s.addActivePolicy(request); err != nil {
 		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
 	}
@@ -173,11 +168,12 @@ func (s *serviceImpl) PutPolicy(ctx context.Context, request *v1.Policy) (*v1.Em
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err := s.addActivePolicy(request); err != nil {
-		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
-	}
 	if err := s.policies.UpdatePolicy(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	if err := s.addActivePolicy(request); err != nil {
+		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
 	}
 	return &v1.Empty{}, nil
 }
@@ -348,48 +344,32 @@ func (s *serviceImpl) reprocessDeployments(deployments []*v1.Deployment) {
 
 func (s *serviceImpl) addActivePolicy(policy *v1.Policy) error {
 	s.processor.UpdatePolicy(policy)
-	switch policy.GetLifecycleStage() {
-	case v1.LifecycleStage_BUILD_TIME:
-		return s.updateBuildTimeDetectionWithUpdatedPolicy(policy)
-	case v1.LifecycleStage_RUN_TIME:
-		return s.updateRunTimeDetectionWithUpdatedPolicy(policy)
-	default:
-		return s.updateDeployTimeDetectionWithUpdatedPolicy(policy)
+
+	errorList := errorhelpers.NewErrorList("error adding policy to detection caches: ")
+	if policies.AppliesAtBuildTime(policy) {
+		errorList.AddError(s.buildTimePolicies.UpsertPolicy(policy))
+	} else {
+		errorList.AddError(s.buildTimePolicies.RemovePolicy(policy.GetId()))
 	}
+	if policies.AppliesAtDeployTime(policy) {
+		errorList.AddError(s.deployTimeDetector.UpsertPolicy(policy))
+	} else {
+		errorList.AddError(s.deployTimeDetector.RemovePolicy(policy.GetId()))
+	}
+	if policies.AppliesAtRunTime(policy) {
+		errorList.AddError(s.runTimePolicies.UpsertPolicy(policy))
+	} else {
+		errorList.AddError(s.runTimePolicies.RemovePolicy(policy.GetId()))
+	}
+	return errorList.ToError()
 }
 
 func (s *serviceImpl) removeActivePolicy(policy *v1.Policy) error {
 	s.processor.RemovePolicy(policy)
+
 	errorList := errorhelpers.NewErrorList("error removing policy from detection: ")
 	errorList.AddError(s.buildTimePolicies.RemovePolicy(policy.GetId()))
 	errorList.AddError(s.deployTimeDetector.RemovePolicy(policy.GetId()))
 	errorList.AddError(s.runTimePolicies.RemovePolicy(policy.GetId()))
-	return errorList.ToError()
-}
-
-// We need to add to the intended set, and defensively remove from the others in case lifecycle was changed.
-func (s *serviceImpl) updateBuildTimeDetectionWithUpdatedPolicy(policy *v1.Policy) error {
-	errorList := errorhelpers.NewErrorList("error removing policy from detection: ")
-	errorList.AddError(s.buildTimePolicies.UpsertPolicy(policy))
-	errorList.AddError(s.deployTimeDetector.RemovePolicy(policy.GetId()))
-	errorList.AddError(s.runTimePolicies.RemovePolicy(policy.GetId()))
-	return errorList.ToError()
-}
-
-// We need to add to the intended set, and defensively remove from the others in case lifecycle was changed.
-func (s *serviceImpl) updateDeployTimeDetectionWithUpdatedPolicy(policy *v1.Policy) error {
-	errorList := errorhelpers.NewErrorList("error removing policy from detection: ")
-	errorList.AddError(s.buildTimePolicies.RemovePolicy(policy.GetId()))
-	errorList.AddError(s.deployTimeDetector.UpsertPolicy(policy))
-	errorList.AddError(s.runTimePolicies.RemovePolicy(policy.GetId()))
-	return errorList.ToError()
-}
-
-// We need to add to the intended set, and defensively remove from the others in case lifecycle was changed.
-func (s *serviceImpl) updateRunTimeDetectionWithUpdatedPolicy(policy *v1.Policy) error {
-	errorList := errorhelpers.NewErrorList("error removing policy from detection: ")
-	errorList.AddError(s.buildTimePolicies.RemovePolicy(policy.GetId()))
-	errorList.AddError(s.deployTimeDetector.RemovePolicy(policy.GetId()))
-	errorList.AddError(s.runTimePolicies.UpsertPolicy(policy))
 	return errorList.ToError()
 }

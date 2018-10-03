@@ -65,6 +65,8 @@ func searchFieldToMapping(sf *v1.SearchField) *mapping.FieldMapping {
 		fallthrough
 	case v1.SearchDataType_SEARCH_ENFORCEMENT:
 		fallthrough
+	case v1.SearchDataType_SEARCH_LIFECYCLE_STAGE:
+		fallthrough
 	case v1.SearchDataType_SEARCH_SEVERITY:
 		fallthrough
 	case v1.SearchDataType_SEARCH_DATETIME:

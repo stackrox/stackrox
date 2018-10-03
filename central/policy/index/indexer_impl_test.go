@@ -64,7 +64,7 @@ func (suite *PolicyIndexTestSuite) TestPolicySearch() {
 		},
 		{
 			name:        "Matching severity",
-			q:           search.NewQueryBuilder().AddStrings(search.Severity, "l").ProtoQuery(),
+			q:           search.NewQueryBuilder().AddStrings(search.Severity, "low").ProtoQuery(),
 			expectedIDs: []string{fixtures.GetPolicy().GetId()},
 		},
 		{

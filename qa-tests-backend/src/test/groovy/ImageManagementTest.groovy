@@ -1,7 +1,7 @@
 import groups.Integration
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
-import stackrox.generated.PolicyServiceOuterClass
+import stackrox.generated.PolicyServiceOuterClass.LifecycleStage
 
 class ImageManagementTest extends BaseSpecification {
     @Unroll
@@ -9,7 +9,7 @@ class ImageManagementTest extends BaseSpecification {
     def "Verify CI/CD Integration Endpoint"() {
         when:
         "Update Policy to BUILD_TIME"
-        def startStage = Services.updatePolicyLifecycleStage(policy, PolicyServiceOuterClass.LifecycleStage.BUILD_TIME)
+        def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD_TIME,])
 
         and:
         "Request Image Scan"
@@ -21,7 +21,7 @@ class ImageManagementTest extends BaseSpecification {
 
         cleanup:
         "Revert Policy"
-        Services.updatePolicyLifecycleStage(policy, startStage)
+        Services.updatePolicyLifecycleStage(policy, startStages)
 
         where:
         "Data inputs are: "
@@ -46,13 +46,13 @@ class ImageManagementTest extends BaseSpecification {
     def "Verify lifecycle Stage can only be BUILD_TIME for policies with image criteria"() {
         when:
         "Update Policy to BUILD_TIME"
-        def startStage = Services.updatePolicyLifecycleStage(
+        def startStages = Services.updatePolicyLifecycleStage(
                 "No resource requests or limits specified",
-                PolicyServiceOuterClass.LifecycleStage.BUILD_TIME
+                [LifecycleStage.BUILD_TIME,]
         )
 
         then:
         "assert startStage is null"
-        assert startStage == ""
+        assert startStages == null
     }
 }

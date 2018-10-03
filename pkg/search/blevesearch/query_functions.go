@@ -18,6 +18,7 @@ var datatypeToQueryFunc = map[v1.SearchDataType]func(v1.SearchCategory, string, 
 	v1.SearchDataType_SEARCH_DATETIME:        newTimeQuery,
 	v1.SearchDataType_SEARCH_SEVERITY:        newSeverityQuery,
 	v1.SearchDataType_SEARCH_ENFORCEMENT:     newEnforcementQuery,
+	v1.SearchDataType_SEARCH_LIFECYCLE_STAGE: newLifecycleStageQuery,
 	v1.SearchDataType_SEARCH_SECRET_TYPE:     newSecretTypeQuery,
 	v1.SearchDataType_SEARCH_VIOLATION_STATE: newViolationStateQuery,
 	// Map type is handled specially.
@@ -107,6 +108,10 @@ func newSeverityQuery(_ v1.SearchCategory, field string, value string) (query.Qu
 
 func newEnforcementQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
 	return evaluateEnum(value, field, v1.EnforcementAction_name)
+}
+
+func newLifecycleStageQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
+	return evaluateEnum(value, field, v1.LifecycleStage_name)
 }
 
 func newSecretTypeQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {

@@ -5,14 +5,27 @@ import (
 
 	"github.com/stackrox/rox/central/detection/deployment"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
-	"github.com/stackrox/rox/generated/api/v1"
+	policyUtils "github.com/stackrox/rox/pkg/policies"
 )
 
 var (
 	once sync.Once
 
 	policySet deployment.PolicySet
+	detector  Detector
 )
+
+// SingletonDetector returns the singleton instance of a Detector.
+func SingletonDetector() Detector {
+	once.Do(initialize)
+	return detector
+}
+
+// SingletonPolicySet returns the singleton instance of a PolicySet.
+func SingletonPolicySet() deployment.PolicySet {
+	once.Do(initialize)
+	return policySet
+}
 
 func initialize() {
 	policySet = deployment.NewPolicySet(policyDataStore.Singleton())
@@ -21,16 +34,12 @@ func initialize() {
 		panic(err)
 	}
 	for _, policy := range policies {
-		if policy.GetLifecycleStage() == v1.LifecycleStage_RUN_TIME {
+		if policyUtils.AppliesAtRunTime(policy) {
 			if err := policySet.UpsertPolicy(policy); err != nil {
 				panic(err)
 			}
 		}
 	}
-}
 
-// SingletonPolicySet returns the singleton instance of a PolicySet.
-func SingletonPolicySet() deployment.PolicySet {
-	once.Do(initialize)
-	return policySet
+	detector = NewDetector(policySet)
 }

@@ -1,6 +1,7 @@
 {
   "name": "Required Annotation: Owner",
   "severity": "LOW_SEVERITY",
+  "lifecycle_stages": ["DEPLOY_TIME"],
   "description": "Alert on deployments missing the 'owner' annotation",
   "rationale": "The 'owner' annotation should always be specified so that the deployment can quickly be associated with a specific user or team.",
   "remediation": "Redeploy your service and set the 'owner' annotation to yourself or your team per organizational standards.",
@@ -8,7 +9,7 @@
     "DevOps Best Practices",
     "Security Best Practices"
   ],
-  "enforcement": "UNSET_ENFORCEMENT",
+  "enforcement_actions": ["UNSET_ENFORCEMENT"],
   "fields": {
     "requiredAnnotation": {
       "key": "owner",

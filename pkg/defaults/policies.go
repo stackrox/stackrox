@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	policyUtils "github.com/stackrox/rox/pkg/policies"
 )
 
 var (
@@ -40,7 +41,7 @@ func Policies() (policies []*v1.Policy, err error) {
 			return
 		}
 
-		if !features.RuntimePolicies.Enabled() && p.GetLifecycleStage() == v1.LifecycleStage_RUN_TIME {
+		if !features.RuntimePolicies.Enabled() && policyUtils.AppliesAtRunTime(p) {
 			continue
 		}
 		policies = append(policies, p)

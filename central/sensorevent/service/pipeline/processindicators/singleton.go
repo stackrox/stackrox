@@ -19,7 +19,7 @@ var (
 func initialize() {
 	pi = NewPipeline(
 		processIndicatorDataStore.Singleton(),
-		runtime.SingletonPolicySet(),
+		runtime.SingletonDetector(),
 		utils.SingletonAlertManager(),
 		deploymentDataStore.Singleton())
 }
