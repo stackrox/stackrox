@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -64,7 +64,7 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 		}
 
 		networkInfoMsg := msg.GetInfo()
-		networkInfoMsgTimestamp := time.Now()
+		networkInfoMsgTimestamp := timestamp.Now()
 
 		if networkInfoMsg == nil {
 			return status.Errorf(codes.Internal, "received unexpected message type %T from hostname %s", networkInfoMsg, hostname)

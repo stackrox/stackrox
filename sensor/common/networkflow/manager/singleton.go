@@ -2,9 +2,9 @@ package manager
 
 import (
 	"sync"
-	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/cache"
 )
 
@@ -19,7 +19,7 @@ func newManager() Manager {
 		done:                concurrency.NewSignal(),
 		connectionsByHost:   make(map[string]*hostConnections),
 		pendingCache:        cache.Singleton(),
-		enrichedConnections: make(map[networkConnIndicator]time.Time),
+		enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
 	}
 }
 

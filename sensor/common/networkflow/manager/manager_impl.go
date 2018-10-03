@@ -4,16 +4,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/data/common"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/cache"
 )
 
 type hostConnections struct {
-	connections        map[connection]time.Time
-	lastKnownTimestamp time.Time
+	connections        map[connection]timestamp.MicroTS
+	lastKnownTimestamp timestamp.MicroTS
 
 	mutex sync.Mutex
 }
@@ -40,7 +40,7 @@ type networkFlowManager struct {
 
 	pendingCache *cache.PendingEvents
 
-	enrichedConnections      map[networkConnIndicator]time.Time
+	enrichedConnections      map[networkConnIndicator]timestamp.MicroTS
 	enrichedConnectionsMutex sync.Mutex
 
 	done concurrency.Signal
@@ -70,7 +70,7 @@ func (m *networkFlowManager) enrichConnections() {
 func (m *networkFlowManager) enrich() {
 	conns := m.getAllConnections()
 
-	enrichedConnections := make(map[networkConnIndicator]time.Time)
+	enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
 	for conn, ts := range conns {
 
 		srcDeploymentID, exists := m.pendingCache.FetchDeploymentByContainer(conn.containerID)
@@ -90,7 +90,7 @@ func (m *networkFlowManager) enrich() {
 		 * hence update the timestamp only if we have a more recent connection than the one we have already enriched.
 		 */
 
-		if oldTS, found := enrichedConnections[indicator]; !found || oldTS.Before(ts) {
+		if oldTS, found := enrichedConnections[indicator]; !found || oldTS < ts {
 			enrichedConnections[indicator] = ts
 		}
 	}
@@ -102,11 +102,11 @@ func (m *networkFlowManager) enrich() {
 	// @todo(boo): Send enriched network connections to Central
 }
 
-func (m *networkFlowManager) getAllConnections() map[connection]time.Time {
+func (m *networkFlowManager) getAllConnections() map[connection]timestamp.MicroTS {
 	m.connectionsByHostMutex.Lock()
 	defer m.connectionsByHostMutex.Unlock()
 
-	allConnections := make(map[connection]time.Time)
+	allConnections := make(map[connection]timestamp.MicroTS)
 	for _, c := range m.connectionsByHost {
 		for conn, ts := range c.connections {
 			allConnections[conn] = ts
@@ -123,7 +123,7 @@ func (m *networkFlowManager) RegisterCollector(hostname string) HostNetworkInfo 
 
 	if conns == nil {
 		conns = &hostConnections{
-			connections: make(map[connection]time.Time),
+			connections: make(map[connection]timestamp.MicroTS),
 		}
 		m.connectionsByHost[hostname] = conns
 	}
@@ -131,14 +131,17 @@ func (m *networkFlowManager) RegisterCollector(hostname string) HostNetworkInfo 
 	m.connectionsByHostMutex.Unlock()
 
 	conns.mutex.Lock()
-	conns.lastKnownTimestamp = time.Now()
+	conns.lastKnownTimestamp = timestamp.Now()
 	conns.mutex.Unlock()
 
 	return conns
 }
 
-func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, currTimestamp time.Time, isFirst bool) {
+func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, isFirst bool) {
 	updatedConnections := getUpdatedConnections(networkInfo)
+
+	collectorTS := timestamp.FromProtobuf(networkInfo.GetTime())
+	tsOffset := nowTimestamp - collectorTS
 
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
@@ -153,14 +156,17 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, cur
 
 	for c, t := range updatedConnections {
 		// timestamp = zero implies the connection is newly added. Add new connections, update existing ones to mark them closed
+		if t != 0 { // adjust timestamp if not zero.
+			t += tsOffset
+		}
 		h.connections[c] = t
 	}
 
-	h.lastKnownTimestamp = currTimestamp
+	h.lastKnownTimestamp = nowTimestamp
 }
 
-func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connection]time.Time {
-	updatedConnections := make(map[connection]time.Time)
+func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connection]timestamp.MicroTS {
+	updatedConnections := make(map[connection]timestamp.MicroTS)
 
 	for _, conn := range networkInfo.GetUpdatedConnections() {
 		// Ignore connection originating from a server
@@ -176,17 +182,7 @@ func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connec
 		}
 
 		// timestamp will be set to close timestamp for closed connections, and zero for newly added connection.
-		if conn.CloseTimestamp != nil {
-			timestamp, err := types.TimestampFromProto(conn.CloseTimestamp)
-			if err != nil {
-				log.Errorf("Unable to convert close timestamp in proto: %s", conn.CloseTimestamp)
-				continue
-			}
-			updatedConnections[c] = timestamp
-		} else {
-			updatedConnections[c] = time.Unix(0, 0).UTC()
-		}
-
+		updatedConnections[c] = timestamp.FromProtobuf(conn.CloseTimestamp)
 	}
 
 	return updatedConnections

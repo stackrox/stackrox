@@ -1,10 +1,9 @@
 package manager
 
 import (
-	"time"
-
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 var (
@@ -21,5 +20,5 @@ type Manager interface {
 
 // HostNetworkInfo processes network connections from a single host aka collector.
 type HostNetworkInfo interface {
-	Process(networkInfo *sensor.NetworkConnectionInfo, currTimestamp time.Time, isFirst bool)
+	Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, isFirst bool)
 }
