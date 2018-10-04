@@ -92,7 +92,10 @@ class NetworkPolicySimulator extends Component {
     );
 
     renderDragAndDrop = message => (
-        <section className="bg-base-100 min-h-32 m-3 flex flex-1 border border-dashed border-base-300 hover:border-base-500 cursor-pointer">
+        <section
+            data-test-id="upload-yaml-panel"
+            className="bg-base-100 min-h-32 m-3 flex flex-1 border border-dashed border-base-300 hover:border-base-500 cursor-pointer"
+        >
             <ReactDropzone
                 onDrop={this.onDrop}
                 className="flex flex-1 flex-col self-center uppercase p-5 h-full hover:bg-warning-100 justify-center"
@@ -186,7 +189,10 @@ class NetworkPolicySimulator extends Component {
 
     render() {
         return (
-            <div className="h-full absolute pin-r pin-b w-1/3 pt-1 pb-1 pr-1 shadow-md bg-base-200">
+            <div
+                data-test-id="network-simulator-panel"
+                className="h-full absolute pin-r pin-b w-1/3 pt-1 pb-1 pr-1 shadow-md bg-base-200"
+            >
                 {this.renderSidePanel()}
             </div>
         );

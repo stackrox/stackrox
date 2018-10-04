@@ -1,0 +1,11 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: web-deny-all-egress
+spec:
+  policyTypes:
+  - Egress
+  podSelector:
+    matchLabels:
+      app: front-end
+  egress: []

@@ -254,6 +254,7 @@ class EnvironmentPage extends Component {
         return (
             <button
                 type="button"
+                data-test-id={`simulator-button-${this.props.simulatorMode ? 'on' : 'off'}`}
                 className={`flex-no-shrink border-2 rounded-sm text-sm ml-2 pl-2 pr-2 h-9 ${className}`}
                 onClick={this.toggleNetworkPolicySimulator}
             >

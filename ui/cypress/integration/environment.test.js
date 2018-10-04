@@ -1,6 +1,19 @@
 import { url as networkUrl, selectors as networkPageSelectors } from './constants/EnvironmentPage';
 import * as api from './constants/apiEndpoints';
 
+const uploadFile = (fileName, selector) => {
+    cy.get(selector).then(subject => {
+        cy.fixture(fileName).then(content => {
+            const el = subject[0];
+            const testFile = new File([content], fileName);
+            const dataTransfer = new DataTransfer();
+
+            dataTransfer.items.add(testFile);
+            el.files = dataTransfer.files;
+        });
+    });
+};
+
 describe('Network page', () => {
     beforeEach(() => {
         cy.server();
@@ -44,5 +57,24 @@ describe('Network page', () => {
 
     it('should have 2 bidirectional links', () => {
         cy.get(networkPageSelectors.links.bidirectional).should('have.length', 2);
+    });
+
+    it('should handle toggle click on simulator network policy button', () => {
+        cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
+        cy.get(networkPageSelectors.panels.simulatorPanel).should('be.visible');
+        cy.get(networkPageSelectors.buttons.simulatorButtonOn).click();
+        cy.get(networkPageSelectors.panels.simulatorPanel).should('not.be.visible');
+    });
+
+    it('should display error messages when uploaded wrong yaml', () => {
+        cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
+        uploadFile('environment/policywithoutnamespace.yaml', 'input[type="file"]');
+        cy.get(networkPageSelectors.simulatorSuccessMessage).should('not.be.visible');
+    });
+
+    it('should display success messages when uploaded right yaml', () => {
+        cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
+        uploadFile('environment/policywithnamespace.yaml', 'input[type="file"]');
+        cy.get(networkPageSelectors.simulatorSuccessMessage).should('be.visible');
     });
 });
