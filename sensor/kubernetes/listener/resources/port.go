@@ -9,3 +9,10 @@ type portRef struct {
 	Port     intstr.IntOrString
 	Protocol v1.Protocol
 }
+
+func portRefOf(svcPort v1.ServicePort) portRef {
+	return portRef{
+		Port:     svcPort.TargetPort,
+		Protocol: svcPort.Protocol,
+	}
+}

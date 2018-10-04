@@ -37,13 +37,15 @@ func (s *serviceWrap) exposure() pkgV1.PortConfig_Exposure {
 type serviceHandler struct {
 	serviceStore    *serviceStore
 	deploymentStore *deploymentStore
+	endpointManager *endpointManager
 }
 
 // newServiceHandler creates and returns a new service handler.
-func newServiceHandler(serviceStore *serviceStore, deploymentStore *deploymentStore) *serviceHandler {
+func newServiceHandler(serviceStore *serviceStore, deploymentStore *deploymentStore, endpointManager *endpointManager) *serviceHandler {
 	return &serviceHandler{
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,
+		endpointManager: endpointManager,
 	}
 }
 
@@ -75,6 +77,7 @@ func (sh *serviceHandler) updateDeploymentsFromStore(namespace string, sel selec
 			events = append(events, deploymentWrap.toEvent(pkgV1.ResourceAction_UPDATE_RESOURCE))
 		}
 	}
+	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
 	return
 }
 
@@ -86,5 +89,6 @@ func (sh *serviceHandler) processCreate(svc *v1.Service) (events []*listeners.Ev
 			events = append(events, deploymentWrap.toEvent(pkgV1.ResourceAction_UPDATE_RESOURCE))
 		}
 	}
+	sh.endpointManager.OnServiceCreate(wrap)
 	return
 }

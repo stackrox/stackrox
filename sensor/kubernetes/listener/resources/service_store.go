@@ -8,13 +8,15 @@ import (
 
 // serviceStore stores service objects (by namespace and UID)
 type serviceStore struct {
-	services map[string]map[types.UID]*serviceWrap
+	services         map[string]map[types.UID]*serviceWrap
+	nodePortServices map[types.UID]*serviceWrap
 }
 
 // newServiceStore creates and returns a new service store.
 func newServiceStore() *serviceStore {
 	return &serviceStore{
-		services: make(map[string]map[types.UID]*serviceWrap),
+		services:         make(map[string]map[types.UID]*serviceWrap),
+		nodePortServices: make(map[types.UID]*serviceWrap),
 	}
 }
 
@@ -25,6 +27,11 @@ func (ss *serviceStore) addOrUpdateService(svc *serviceWrap) {
 		ss.services[svc.Namespace] = nsMap
 	}
 	nsMap[svc.UID] = svc
+	if svc.Spec.Type == v1.ServiceTypeNodePort || svc.Spec.Type == v1.ServiceTypeLoadBalancer {
+		ss.nodePortServices[svc.UID] = svc
+	} else {
+		delete(ss.nodePortServices, svc.UID)
+	}
 }
 
 func (ss *serviceStore) removeService(svc *v1.Service) {
@@ -33,6 +40,7 @@ func (ss *serviceStore) removeService(svc *v1.Service) {
 		return
 	}
 	delete(nsMap, svc.UID)
+	delete(ss.nodePortServices, svc.UID)
 }
 
 // OnNamespaceDeleted reacts to a namespace deletion, deleting all services in that namespace from the store.
@@ -48,6 +56,14 @@ func (ss *serviceStore) getMatchingServices(namespace string, labels map[string]
 		}
 	}
 	return
+}
+
+func (ss *serviceStore) getNodePortServices() []*serviceWrap {
+	result := make([]*serviceWrap, 0, len(ss.nodePortServices))
+	for _, svc := range ss.nodePortServices {
+		result = append(result, svc)
+	}
+	return result
 }
 
 func (ss *serviceStore) getService(namespace string, uid types.UID) *serviceWrap {

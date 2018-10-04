@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/orchestrators"
 	sensor "github.com/stackrox/rox/sensor/common"
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
+	networkFlowService "github.com/stackrox/rox/sensor/common/networkflow/service"
 	signalService "github.com/stackrox/rox/sensor/common/service"
 	"google.golang.org/grpc"
 )
@@ -158,6 +159,7 @@ func (s *Sensor) registerAPIServices() {
 	s.server.Register(
 		benchmarks.NewBenchmarkResultsService(benchmarks.NewLRURelayer(s.conn)),
 		signalService.Singleton(),
+		networkFlowService.Singleton(),
 	)
 	s.logger.Info("API services registered")
 }

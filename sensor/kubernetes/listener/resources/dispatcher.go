@@ -3,6 +3,7 @@ package resources
 import (
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/listeners"
+	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"k8s.io/api/core/v1"
 	networkingV1 "k8s.io/api/networking/v1"
 	v1Listers "k8s.io/client-go/listers/core/v1"
@@ -15,16 +16,19 @@ type Dispatcher interface {
 }
 
 // NewDispatcher creates and returns a new dispatcher.
-func NewDispatcher(podLister v1Listers.PodLister) Dispatcher {
+func NewDispatcher(podLister v1Listers.PodLister, entityStore *clusterentities.Store) Dispatcher {
 	serviceStore := newServiceStore()
 	deploymentStore := newDeploymentStore()
+	nodeStore := newNodeStore()
+	endpointManager := newEndpointManager(serviceStore, deploymentStore, nodeStore, entityStore)
 
 	return &dispatcher{
 		namespaceHandler:     newNamespaceHandler(serviceStore, deploymentStore),
-		deploymentHandler:    newDeploymentHandler(serviceStore, deploymentStore, podLister),
-		serviceHandler:       newServiceHandler(serviceStore, deploymentStore),
+		deploymentHandler:    newDeploymentHandler(serviceStore, deploymentStore, endpointManager, podLister),
+		serviceHandler:       newServiceHandler(serviceStore, deploymentStore, endpointManager),
 		secretHandler:        newSecretHandler(),
 		networkPolicyHandler: newNetworkPolicyHandler(),
+		nodeHandler:          newNodeHandler(serviceStore, deploymentStore, nodeStore, endpointManager),
 	}
 }
 
@@ -34,6 +38,7 @@ type dispatcher struct {
 	serviceHandler       *serviceHandler
 	secretHandler        *secretHandler
 	networkPolicyHandler *networkPolicyHandler
+	nodeHandler          *nodeHandler
 }
 
 func (d *dispatcher) ProcessEvent(obj interface{}, action pkgV1.ResourceAction, deploymentType string) []*listeners.EventWrap {
@@ -50,6 +55,8 @@ func (d *dispatcher) ProcessEvent(obj interface{}, action pkgV1.ResourceAction, 
 		return d.networkPolicyHandler.Process(o, action)
 	case *v1.Namespace:
 		return d.namespaceHandler.Process(o, action)
+	case *v1.Node:
+		return d.nodeHandler.Process(o, action)
 	default:
 		return nil
 	}

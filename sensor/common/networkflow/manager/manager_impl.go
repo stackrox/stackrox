@@ -173,6 +173,7 @@ func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connec
 		if conn.Role != v1.ClientServerRole_ROLE_CLIENT {
 			continue
 		}
+
 		c := connection{
 			srcAddr:     string(conn.GetLocalAddress().GetAddressData()),
 			dstAddr:     string(conn.GetRemoteAddress().GetAddressData()),

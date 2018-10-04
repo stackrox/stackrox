@@ -35,6 +35,7 @@ type deploymentWrap struct {
 	original    interface{}
 	podLabels   map[string]string
 	portConfigs map[portRef]*pkgV1.PortConfig
+	pods        []*v1.Pod
 }
 
 // This checks if a reflect value is a Zero value, which means the field did not exist
@@ -211,11 +212,11 @@ func (w *deploymentWrap) populatePodData(spec reflect.Value, lister v1listers.Po
 	if err != nil {
 		return err
 	}
-	pods, err := lister.Pods(w.Namespace).List(labelSelector)
+	w.pods, err = lister.Pods(w.Namespace).List(labelSelector)
 	if err != nil {
 		return err
 	}
-	w.populateDataFromPods(pods...)
+	w.populateDataFromPods(w.pods...)
 	return nil
 }
 

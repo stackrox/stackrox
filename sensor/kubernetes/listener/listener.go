@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"k8s.io/client-go/informers"
 	kubernetesClient "k8s.io/client-go/kubernetes"
@@ -134,7 +135,7 @@ func (k *kubernetesListener) Start() {
 	k.registerDeploymentEventHandlers(deploymentResources)
 	k.registerEventHandlers(watchResources)
 
-	k.resourceEventDispatcher = resources.NewDispatcher(podInformer.Lister())
+	k.resourceEventDispatcher = resources.NewDispatcher(podInformer.Lister(), clusterentities.StoreInstance())
 
 	go k.processResourceEvents()
 	for _, informer := range factories {
