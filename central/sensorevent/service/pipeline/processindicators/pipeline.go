@@ -41,22 +41,22 @@ func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEnforcement, error)
 	case v1.ResourceAction_REMOVE_RESOURCE:
 		return nil, s.indicators.RemoveProcessIndicator(event.GetProcessIndicator().GetId())
 	default:
-		return nil, s.process(event.GetProcessIndicator())
+		return s.process(event.GetProcessIndicator())
 	}
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) process(indicator *v1.ProcessIndicator) error {
+func (s *pipelineImpl) process(indicator *v1.ProcessIndicator) (*v1.SensorEnforcement, error) {
 	err := s.indicators.AddProcessIndicator(indicator)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	deployment, exists, err := s.deploymentDataStore.GetDeployment(indicator.GetDeploymentId())
 	if err != nil {
-		return fmt.Errorf("error getting deployment details from data store: %s", err)
+		return nil, fmt.Errorf("error getting deployment details from data store: %s", err)
 	}
 	if !exists {
-		return fmt.Errorf("couldn't find deployment details for indicator: %+v", indicator)
+		return nil, fmt.Errorf("couldn't find deployment details for indicator: %+v", indicator)
 	}
 
 	// populate process data
@@ -66,23 +66,83 @@ func (s *pipelineImpl) process(indicator *v1.ProcessIndicator) error {
 			ProtoQuery(),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	deployment.Processes = indicators
-	log.Debugf("Processed indicators for deployment %s: %v", deployment.GetId(), deployment.Processes)
-	return s.reconcileAlerts(deployment)
+
+	return s.createResponse(deployment, indicator)
 }
 
-func (s *pipelineImpl) reconcileAlerts(deployment *v1.Deployment) error {
+func (s *pipelineImpl) createResponse(deployment *v1.Deployment, indicator *v1.ProcessIndicator) (*v1.SensorEnforcement, error) {
+	var sensorEnforcement *v1.SensorEnforcement
 	newAlerts, err := s.detector.Detect(deployment)
 	if err != nil {
-		return err
+		return sensorEnforcement, err
 	}
 
 	oldAlerts, err := s.alertManager.GetAlertsByDeploymentAndPolicyLifecycle(deployment.GetId(), v1.LifecycleStage_RUN_TIME)
 	if err != nil {
-		return err
+		return sensorEnforcement, err
 	}
 
-	return s.alertManager.AlertAndNotify(oldAlerts, newAlerts)
+	err = s.alertManager.AlertAndNotify(oldAlerts, newAlerts)
+	if err != nil {
+		return sensorEnforcement, err
+	}
+
+	return enforcementActions(deployment, newAlerts, indicator), nil
+}
+
+func enforcementActions(deployment *v1.Deployment, alerts []*v1.Alert, indicator *v1.ProcessIndicator) *v1.SensorEnforcement {
+	if !killPodActionSupported(alerts, indicator) {
+		return nil
+	}
+
+	return createEnforcementAction(deployment, indicator)
+}
+
+// killPodActionSupported returns true if the alert supports kill pod action.
+func killPodActionSupported(alerts []*v1.Alert, indicator *v1.ProcessIndicator) bool {
+	for _, alert := range alerts {
+		violations := alert.GetViolations()
+		for _, v := range violations {
+			indicators := v.GetProcesses()
+			for _, singleIndicator := range indicators {
+				if singleIndicator.Id == indicator.Id {
+					if alert.GetEnforcement().GetAction() == v1.EnforcementAction_KILL_POD_ENFORCEMENT {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
+func createEnforcementAction(deployment *v1.Deployment, indicator *v1.ProcessIndicator) (sensorEnforcement *v1.SensorEnforcement) {
+	containerID := ""
+	if indicator.GetSignal() != nil {
+		containerID = indicator.GetSignal().ContainerId
+	}
+
+	containers := deployment.GetContainers()
+	for _, container := range containers {
+		for _, instance := range container.GetInstances() {
+			if containerID == instance.InstanceId.Id[:12] {
+				resource := &v1.SensorEnforcement_ContainerInstance{
+					ContainerInstance: &v1.ContainerInstanceEnforcement{
+						ContainerInstanceId: instance.InstanceId.Id,
+						PodId:               instance.ContainingPodId,
+						Namespace:           deployment.Namespace,
+					},
+				}
+				sensorEnforcement = &v1.SensorEnforcement{
+					Enforcement: v1.EnforcementAction_KILL_POD_ENFORCEMENT,
+					Resource:    resource,
+				}
+				return
+			}
+		}
+	}
+	return
 }

@@ -13,6 +13,7 @@ function launch_central {
 
     echo "Generating central config..."
     docker run --rm "$PREVENT_IMAGE" ${flags[@]+"${flags[@]}"} deploy k8s -n stackrox -i "$PREVENT_IMAGE" none > $K8S_DIR/central.zip
+
     UNZIP_DIR="$K8S_DIR/central-deploy/"
     rm -rf "$UNZIP_DIR"
     unzip "$K8S_DIR/central.zip" -d "$UNZIP_DIR"
