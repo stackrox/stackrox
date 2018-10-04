@@ -85,8 +85,12 @@ function* handleLoginPageRedirect({ location }) {
 }
 
 function* handleOidcResponse(location) {
-    const accessToken = queryString.parse(location.hash).access_token;
+    const hash = queryString.parse(location.hash);
+    const accessToken = hash.access_token;
     yield call(AuthService.storeAccessToken, accessToken);
+    if (hash.error) {
+        yield put(actions.handleIdpError(hash));
+    }
 
     // TODO-ivan: seems like react-router-redux doesn't like pushing an action synchronously while handling LOCATION_CHANGE,
     // the bug is that it doesn't produce LOCATION_CHANGE event for this next push. Waiting here should be ok for an user.

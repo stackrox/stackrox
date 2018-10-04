@@ -11,19 +11,27 @@ import logoPrevent from 'images/logo-prevent.svg';
 
 import { AUTH_STATUS } from 'reducers/auth';
 import { selectors } from 'reducers';
+import * as Icon from 'react-feather';
+import Tooltip from 'rc-tooltip';
 
 class LoginPage extends Component {
     static propTypes = {
         authStatus: PropTypes.oneOf(Object.keys(AUTH_STATUS).map(key => AUTH_STATUS[key]))
             .isRequired,
-        authProviders: PropTypes.arrayOf(PropTypes.object).isRequired
+        authProviders: PropTypes.arrayOf(PropTypes.object).isRequired,
+        authProviderResponse: PropTypes.shape({
+            error: PropTypes.string,
+            error_description: PropTypes.string,
+            error_uri: PropTypes.string
+        }).isRequired
     };
 
     constructor(props) {
         super(props);
         const { authProviders } = props;
         this.state = {
-            selectedAuthProviderId: authProviders.length > 0 ? authProviders[0].id : null
+            selectedAuthProviderId: authProviders.length > 0 ? authProviders[0].id : null,
+            showAuthError: true
         };
     }
 
@@ -40,6 +48,54 @@ class LoginPage extends Component {
         const { selectedAuthProviderId } = this.state;
         const authProvider = this.props.authProviders.find(ap => ap.id === selectedAuthProviderId);
         window.location = authProvider.loginUrl; // redirect to external URL, so no react-router
+    };
+
+    dismissAuthError = () => this.setState({ showAuthError: false });
+
+    renderAuthError = () => {
+        const fg = 'alert-800';
+        const bg = 'alert-200';
+        const color = `text-${fg} bg-${bg}`;
+        const { authProviderResponse } = this.props;
+        const closeButton = (
+            <div>
+                <Tooltip placement="top" overlay={<div>Dismiss</div>}>
+                    <button
+                        type="button"
+                        className={`flex p-1 text-center text-sm items-center p-2 ${color} hover:bg-${fg} hover:text-${bg} border-l border-${fg}`}
+                        onClick={this.dismissAuthError}
+                        data-test-id="dismiss"
+                    >
+                        <Icon.X className="h-4" />
+                    </button>
+                </Tooltip>
+            </div>
+        );
+        if (this.state.showAuthError && authProviderResponse.error) {
+            const errorKey = authProviderResponse.error.replace('_', ' ');
+            const errorMsg = authProviderResponse.error_description || '';
+            const errorLink = (url =>
+                url ? (
+                    <span>
+                        (
+                        <a className={`${color}`} href={url}>
+                            more info
+                        </a>
+                        )
+                    </span>
+                ) : (
+                    []
+                ))(authProviderResponse.error_uri);
+            return (
+                <div className={`flex items-center font-sans w-full text-center h-full ${color}`}>
+                    <span className="w-full">
+                        <span className="capitalize">{errorKey}</span>. {errorMsg} {errorLink}
+                    </span>
+                    {closeButton}
+                </div>
+            );
+        }
+        return null;
     };
 
     renderAuthProviders = () => {
@@ -111,7 +167,10 @@ class LoginPage extends Component {
     render() {
         return (
             <section className="flex flex-col items-center justify-center h-full bg-primary-800">
-                <div className="flex flex-col items-center justify-center bg-base-100 w-2/5 w-4/5 md:w-3/5 xl:w-2/5 relative login-bg">
+                <div className="flex flex-col items-center bg-base-100 w-2/5 md:w-3/5 xl:w-2/5 relative">
+                    {this.renderAuthError()}
+                </div>
+                <div className="flex flex-col items-center justify-center bg-base-100 w-2/5 md:w-3/5 xl:w-2/5 relative login-bg">
                     <div className="login-border-t h-1 w-full" />
                     <div className="flex flex-col items-center justify-center w-full">
                         <img className="h-40 h-40 py-6" src={logoPrevent} alt="StackRox" />
@@ -126,7 +185,8 @@ class LoginPage extends Component {
 
 const mapStateToProps = createStructuredSelector({
     authProviders: selectors.getAuthProviders,
-    authStatus: selectors.getAuthStatus
+    authStatus: selectors.getAuthStatus,
+    authProviderResponse: selectors.getAuthProviderError
 });
 
 export default connect(mapStateToProps)(LoginPage);

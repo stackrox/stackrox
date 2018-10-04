@@ -10,7 +10,8 @@ export const types = {
     LOGIN: 'auth/LOGIN',
     LOGOUT: 'auth/LOGOUT',
     GRANT_ANONYMOUS_ACCESS: 'auth/GRANT_ANONYMOUS_ACCESS',
-    AUTH_HTTP_ERROR: 'auth/AUTH_HTTP_ERROR'
+    AUTH_HTTP_ERROR: 'auth/AUTH_HTTP_ERROR',
+    AUTH_IDP_ERROR: 'auth/AUTH_IDP_ERROR'
 };
 
 // Actions
@@ -20,7 +21,8 @@ export const actions = {
     login: () => ({ type: types.LOGIN }),
     logout: () => ({ type: types.LOGOUT }),
     grantAnonymousAccess: () => ({ type: types.GRANT_ANONYMOUS_ACCESS }),
-    handleAuthHttpError: error => ({ type: types.AUTH_HTTP_ERROR, error })
+    handleAuthHttpError: error => ({ type: types.AUTH_HTTP_ERROR, error }),
+    handleIdpError: error => ({ type: types.AUTH_IDP_ERROR, error })
 };
 
 // Reducers
@@ -55,9 +57,20 @@ const authStatus = (state = AUTH_STATUS.LOADING, action) => {
     }
 };
 
+const authProviderResponse = (state = {}, action) => {
+    if (action.type === types.AUTH_IDP_ERROR) {
+        if (action.error && action.error.error) {
+            return action.error;
+        }
+        return null;
+    }
+    return state;
+};
+
 const reducer = combineReducers({
     authProviders,
-    authStatus
+    authStatus,
+    authProviderResponse
 });
 
 export default reducer;
@@ -66,8 +79,10 @@ export default reducer;
 
 const getAuthProviders = state => state.authProviders;
 const getAuthStatus = state => state.authStatus;
+const getAuthProviderError = state => state.authProviderResponse;
 
 export const selectors = {
     getAuthProviders,
-    getAuthStatus
+    getAuthStatus,
+    getAuthProviderError
 };
