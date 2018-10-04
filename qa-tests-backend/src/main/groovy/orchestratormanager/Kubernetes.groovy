@@ -628,10 +628,13 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     }
 
     String getpods() {
+        List<String>podIds = new ArrayList<>()
         V1PodList pods = this.api.listNamespacedPod("qa", "", "", "", false, "", 1, "", 5, false)
         List<V1Pod> podlist = pods.getItems()
-        podlist.get(0).metadata.name
-        return podlist.get(0).metadata.name
+        for ( V1Pod pod : podlist) {
+            podIds.add(podlist.metadata.name)
+        }
+        return podIds.get(0)
     }
 }
 
