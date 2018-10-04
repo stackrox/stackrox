@@ -4,12 +4,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/stackrox/rox/sensor/common/cache"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 )
 
@@ -27,6 +28,19 @@ type networkConnIndicator struct {
 	protocol        v1.L4Protocol
 }
 
+func (i networkConnIndicator) toProto(ts timestamp.MicroTS) *central.NetworkConnectionInfoIndicator {
+	proto := &central.NetworkConnectionInfoIndicator{
+		SrcDeploymentId: i.srcDeploymentID,
+		DstDeploymentId: i.dstDeploymentID,
+		DstPort:         uint32(i.dstPort),
+		L4Protocol:      i.protocol,
+	}
+	if ts != timestamp.InfiniteFuture {
+		proto.LastSeenTimestamp = ts.GogoProtobuf()
+	}
+	return proto
+}
+
 // connection is an instance of a connection as reported by collector
 type connection struct {
 	srcAddr        net.IPAddress
@@ -38,11 +52,9 @@ type networkFlowManager struct {
 	connectionsByHost      map[string]*hostConnections
 	connectionsByHostMutex sync.Mutex
 
-	pendingCache    *cache.PendingEvents
 	clusterEntities *clusterentities.Store
 
-	enrichedConnections      map[networkConnIndicator]timestamp.MicroTS
-	enrichedConnectionsMutex sync.Mutex
+	enrichedLastSentState map[networkConnIndicator]timestamp.MicroTS
 
 	done concurrency.Signal
 }
@@ -63,18 +75,56 @@ func (m *networkFlowManager) enrichConnections() {
 		case <-m.done.WaitC():
 			return
 		case <-ticker.C:
-			m.enrich()
+			m.enrichAndSend()
 		}
 	}
 }
 
-func (m *networkFlowManager) enrich() {
+func computeUpdateMessage(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS) *central.NetworkConnectionIndicatorUpdate {
+	var updates []*central.NetworkConnectionInfoIndicator
+
+	for conn, currTS := range current {
+		prevTS, ok := previous[conn]
+		if !ok || currTS > prevTS {
+			updates = append(updates, conn.toProto(currTS))
+		}
+	}
+
+	for conn, prevTS := range previous {
+		if _, ok := current[conn]; !ok {
+			updates = append(updates, conn.toProto(prevTS))
+		}
+	}
+
+	if len(updates) == 0 {
+		return nil
+	}
+
+	return &central.NetworkConnectionIndicatorUpdate{
+		Updated: updates,
+		Time:    timestamp.Now().GogoProtobuf(),
+	}
+}
+
+func (m *networkFlowManager) enrichAndSend() {
+	current := m.currentEnrichedConns()
+
+	protoToSend := computeUpdateMessage(current, m.enrichedLastSentState)
+	m.enrichedLastSentState = current
+
+	if protoToSend != nil {
+		// TODO: actually send this over the wire.
+		log.Infof("would send this now: %s", proto.MarshalTextString(protoToSend))
+	}
+}
+
+func (m *networkFlowManager) currentEnrichedConns() map[networkConnIndicator]timestamp.MicroTS {
 	conns := m.getAllConnections()
 
 	enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
 	for conn, ts := range conns {
-		srcDeploymentID, exists := m.pendingCache.FetchDeploymentByContainer(conn.srcContainerID)
-		if !exists {
+		srcDeploymentID := m.clusterEntities.LookupByContainerID(conn.srcContainerID)
+		if srcDeploymentID == "" {
 			log.Errorf("Unable to fetch source deployment information, deployment does not exist for container %s", conn.srcContainerID)
 			continue
 		}
@@ -97,11 +147,7 @@ func (m *networkFlowManager) enrich() {
 		}
 	}
 
-	m.enrichedConnectionsMutex.Lock()
-	m.enrichedConnections = enrichedConnections
-	m.enrichedConnectionsMutex.Unlock()
-
-	// @todo(boo): Send enriched network connections to Central
+	return enrichedConnections
 }
 
 func (m *networkFlowManager) getAllConnections() map[connection]timestamp.MicroTS {

@@ -4,8 +4,6 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/stackrox/rox/sensor/common/cache"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 )
 
@@ -17,11 +15,9 @@ var (
 // newService creates a new streaming service with the collector. It should only be called once.
 func newManager() Manager {
 	return &networkFlowManager{
-		done:                concurrency.NewSignal(),
-		connectionsByHost:   make(map[string]*hostConnections),
-		pendingCache:        cache.Singleton(),
-		clusterEntities:     clusterentities.StoreInstance(),
-		enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
+		done:              concurrency.NewSignal(),
+		connectionsByHost: make(map[string]*hostConnections),
+		clusterEntities:   clusterentities.StoreInstance(),
 	}
 }
 

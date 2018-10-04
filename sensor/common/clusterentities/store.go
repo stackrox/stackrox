@@ -13,11 +13,15 @@ type Store struct {
 	ipMap map[net.IPAddress]map[string]struct{}
 	// endpointMap maps endpoints to a (deployment id -> endpoint target info) mapping.
 	endpointMap map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{}
+	// containerIDMap maps container IDs to deployment IDs
+	containerIDMap map[string]string
 
 	// reverseIpMap maps deployment ids to sets of IP addresses associated with this deployment.
 	reverseIPMap map[string]map[net.IPAddress]struct{}
 	// reverseEndpointMap maps deployment ids to sets of endpoints associated with this deployment.
 	reverseEndpointMap map[string]map[net.NumericEndpoint]struct{}
+	// reverseContainerIDMap maps deployment ids to sets of container IDs associated with this deployment.
+	reverseContainerIDMap map[string]map[string]struct{}
 
 	mutex sync.RWMutex
 }
@@ -27,10 +31,12 @@ type Store struct {
 // `StoreInstance()`.
 func NewStore() *Store {
 	return &Store{
-		ipMap:              make(map[net.IPAddress]map[string]struct{}),
-		endpointMap:        make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{}),
-		reverseIPMap:       make(map[string]map[net.IPAddress]struct{}),
-		reverseEndpointMap: make(map[string]map[net.NumericEndpoint]struct{}),
+		ipMap:                 make(map[net.IPAddress]map[string]struct{}),
+		endpointMap:           make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{}),
+		containerIDMap:        make(map[string]string),
+		reverseIPMap:          make(map[string]map[net.IPAddress]struct{}),
+		reverseEndpointMap:    make(map[string]map[net.NumericEndpoint]struct{}),
+		reverseContainerIDMap: make(map[string]map[string]struct{}),
 	}
 }
 
@@ -42,8 +48,9 @@ type EndpointTargetInfo struct {
 
 // EntityData is a data structure representing the updates to be applied to the store for a given deployment.
 type EntityData struct {
-	ips       map[net.IPAddress]struct{}
-	endpoints map[net.NumericEndpoint][]EndpointTargetInfo
+	ips          map[net.IPAddress]struct{}
+	endpoints    map[net.NumericEndpoint][]EndpointTargetInfo
+	containerIDs map[string]struct{}
 }
 
 // AddIP adds an IP address to the set of IP addresses of the respective deployment.
@@ -60,6 +67,14 @@ func (ed *EntityData) AddEndpoint(ep net.NumericEndpoint, info EndpointTargetInf
 		ed.endpoints = make(map[net.NumericEndpoint][]EndpointTargetInfo)
 	}
 	ed.endpoints[ep] = append(ed.endpoints[ep], info)
+}
+
+// AddContainerID adds a container ID to the container IDs of the respective deployment.
+func (ed *EntityData) AddContainerID(containerID string) {
+	if ed.containerIDs == nil {
+		ed.containerIDs = make(map[string]struct{})
+	}
+	ed.containerIDs[containerID] = struct{}{}
 }
 
 // Apply applies an update to the store. If incremental is true, data will be added; otherwise, data for each deployment
@@ -85,9 +100,13 @@ func (e *Store) purgeNoLock(deploymentID string) {
 			delete(e.endpointMap, ep)
 		}
 	}
+	for containerID := range e.reverseContainerIDMap[deploymentID] {
+		delete(e.containerIDMap, containerID)
+	}
 
 	delete(e.reverseIPMap, deploymentID)
 	delete(e.reverseEndpointMap, deploymentID)
+	delete(e.reverseContainerIDMap, deploymentID)
 }
 
 func (e *Store) applyNoLock(updates map[string]*EntityData, incremental bool) {
@@ -108,6 +127,7 @@ func (e *Store) applyNoLock(updates map[string]*EntityData, incremental bool) {
 func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 	reverseEPs := e.reverseEndpointMap[deploymentID]
 	reverseIPs := e.reverseIPMap[deploymentID]
+	reverseContainerIDs := e.reverseContainerIDMap[deploymentID]
 
 	for ep, targetInfos := range data.endpoints {
 		if reverseEPs == nil {
@@ -145,6 +165,15 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 		}
 		ipMap[deploymentID] = struct{}{}
 	}
+
+	for containerID := range data.containerIDs {
+		if reverseContainerIDs == nil {
+			reverseContainerIDs = make(map[string]struct{})
+			e.reverseContainerIDMap[deploymentID] = reverseContainerIDs
+		}
+		reverseContainerIDs[containerID] = struct{}{}
+		e.containerIDMap[containerID] = deploymentID
+	}
 }
 
 // LookupResult contains the result of a lookup operation.
@@ -159,6 +188,13 @@ func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
 	return e.lookupNoLock(endpoint)
+}
+
+// LookupByContainerID retrieves the deployment ID by a container ID.
+func (e *Store) LookupByContainerID(containerID string) string {
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
+	return e.containerIDMap[containerID]
 }
 
 func (e *Store) lookupNoLock(endpoint net.NumericEndpoint) (results []LookupResult) {

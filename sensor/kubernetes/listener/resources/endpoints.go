@@ -83,6 +83,16 @@ func (m *endpointManager) endpointDataForDeployment(w *deploymentWrap) *clustere
 		m.addEndpointDataForService(w, svc, result)
 	}
 
+	for _, c := range w.GetContainers() {
+		for _, inst := range c.GetInstances() {
+			id := inst.GetInstanceId().GetId()
+			if id != "" {
+				id = id[:12]
+				result.AddContainerID(id)
+			}
+		}
+	}
+
 	return result
 }
 
