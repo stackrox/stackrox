@@ -27,7 +27,10 @@ class TablePagination extends Component {
         const page = `${this.props.page + 1}`;
         const { totalPages } = this.props;
         return (
-            <div className="flex items-center justify-end text-base-500 font-500">
+            <div
+                className="flex items-center justify-end text-base-500 font-500"
+                data-test-id="pagination-header"
+            >
                 <div className="flex items-center border-l-2 border-base-300 pl-2 -mr-1">
                     <div className="mr-4 font-600">
                         Page
@@ -39,6 +42,7 @@ class TablePagination extends Component {
                             max={totalPages}
                             disabled={totalPages === 1}
                             onChange={this.onChangePage}
+                            data-test-id="page-number-input"
                         />
                         of {totalPages}
                     </div>
@@ -47,6 +51,7 @@ class TablePagination extends Component {
                         className="flex items-center rounded-full hover:bg-primary-200 hover:text-primary-600 mr-1 p-1"
                         onClick={this.previousPage}
                         disabled={this.props.page === 0}
+                        data-test-id="prev-page-button"
                     >
                         <Icon.ChevronLeft className="h-6 w-6" />
                     </button>
@@ -55,6 +60,7 @@ class TablePagination extends Component {
                         className="flex items-center rounded-full text-base-600 hover:bg-primary-200 hover:text-primary-600 p-1"
                         onClick={this.nextPage}
                         disabled={this.props.page === totalPages - 1}
+                        data-test-id="next-page-button"
                     >
                         <Icon.ChevronRight className="h-6 w-6" />
                     </button>
