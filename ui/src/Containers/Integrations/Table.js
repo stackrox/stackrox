@@ -125,7 +125,7 @@ class IntegrationTable extends Component {
         const { source } = this.props;
         let activateBtn = null;
         if (source === 'authProviders') {
-            const enableTooltip = `${integration.validated ? 'Enable' : 'Disable'} auth provider`;
+            const enableTooltip = `${!integration.validated ? 'Enable' : 'Disable'} auth provider`;
             activateBtn = (
                 <Tooltip placement="top" overlay={<div>{enableTooltip}</div>} mouseLeaveDelay={0}>
                     <button

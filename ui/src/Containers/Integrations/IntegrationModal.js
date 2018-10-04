@@ -103,7 +103,7 @@ class IntegrationModal extends Component {
 
     clearSelection = () => this.setState({ selection: [] });
 
-    activateAuthIntegration = integration => () => {
+    activateAuthIntegration = integration => {
         if (integration !== null && integration.loginUrl !== null && !integration.validated) {
             window.location = integration.loginUrl;
         }
