@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/cache"
+	"github.com/stackrox/rox/sensor/common/clusterentities"
 )
 
 var (
@@ -19,6 +20,7 @@ func newManager() Manager {
 		done:                concurrency.NewSignal(),
 		connectionsByHost:   make(map[string]*hostConnections),
 		pendingCache:        cache.Singleton(),
+		clusterEntities:     clusterentities.StoreInstance(),
 		enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
 	}
 }

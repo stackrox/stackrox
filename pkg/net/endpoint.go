@@ -30,7 +30,21 @@ func (p L4Proto) String() string {
 	}
 }
 
-// L4ProtoFromProtobuf translate a protobuf `data.L4Protocol` enum to an L4Proto.
+// ToProtobuf translates this L4Proto to a protobuf `v1.L4Protocol` enum.
+func (p L4Proto) ToProtobuf() v1.L4Protocol {
+	switch p {
+	case TCP:
+		return v1.L4Protocol_L4_PROTOCOL_TCP
+	case UDP:
+		return v1.L4Protocol_L4_PROTOCOL_UDP
+	case ICMP:
+		return v1.L4Protocol_L4_PROTOCOL_ICMP
+	default:
+		return v1.L4Protocol_L4_PROTOCOL_RAW
+	}
+}
+
+// L4ProtoFromProtobuf translate a protobuf `v1.L4Protocol` enum to an L4Proto.
 func L4ProtoFromProtobuf(l4proto v1.L4Protocol) L4Proto {
 	switch l4proto {
 	case v1.L4Protocol_L4_PROTOCOL_TCP:

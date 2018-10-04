@@ -7,8 +7,10 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/cache"
+	"github.com/stackrox/rox/sensor/common/clusterentities"
 )
 
 type hostConnections struct {
@@ -27,18 +29,17 @@ type networkConnIndicator struct {
 
 // connection is an instance of a connection as reported by collector
 type connection struct {
-	srcAddr     string
-	dstAddr     string
-	dstPort     uint16
-	containerID string
-	protocol    v1.L4Protocol
+	srcAddr        net.IPAddress
+	srcContainerID string
+	dest           net.NumericEndpoint
 }
 
 type networkFlowManager struct {
 	connectionsByHost      map[string]*hostConnections
 	connectionsByHostMutex sync.Mutex
 
-	pendingCache *cache.PendingEvents
+	pendingCache    *cache.PendingEvents
+	clusterEntities *clusterentities.Store
 
 	enrichedConnections      map[networkConnIndicator]timestamp.MicroTS
 	enrichedConnectionsMutex sync.Mutex
@@ -72,26 +73,27 @@ func (m *networkFlowManager) enrich() {
 
 	enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
 	for conn, ts := range conns {
-
-		srcDeploymentID, exists := m.pendingCache.FetchDeploymentByContainer(conn.containerID)
+		srcDeploymentID, exists := m.pendingCache.FetchDeploymentByContainer(conn.srcContainerID)
 		if !exists {
-			log.Errorf("Unable to fetch source deployment information, deployment does not exist for container %s", conn.containerID)
+			log.Errorf("Unable to fetch source deployment information, deployment does not exist for container %s", conn.srcContainerID)
 			continue
 		}
 
-		indicator := networkConnIndicator{
-			srcDeploymentID: srcDeploymentID,
-			dstDeploymentID: "",
-			dstPort:         conn.dstPort,
-			protocol:        conn.protocol,
-		}
-		/*
-		 * Multiple connections from a collector can result in a single enriched connection
-		 * hence update the timestamp only if we have a more recent connection than the one we have already enriched.
-		 */
+		for _, lookupResult := range m.clusterEntities.LookupByEndpoint(conn.dest) {
+			for _, port := range lookupResult.ContainerPorts {
+				indicator := networkConnIndicator{
+					srcDeploymentID: srcDeploymentID,
+					dstDeploymentID: lookupResult.DeploymentID,
+					dstPort:         port,
+					protocol:        conn.dest.L4Proto.ToProtobuf(),
+				}
 
-		if oldTS, found := enrichedConnections[indicator]; !found || oldTS < ts {
-			enrichedConnections[indicator] = ts
+				// Multiple connections from a collector can result in a single enriched connection
+				// hence update the timestamp only if we have a more recent connection than the one we have already enriched.
+				if oldTS, found := enrichedConnections[indicator]; !found || oldTS < ts {
+					enrichedConnections[indicator] = ts
+				}
+			}
 		}
 	}
 
@@ -103,14 +105,23 @@ func (m *networkFlowManager) enrich() {
 }
 
 func (m *networkFlowManager) getAllConnections() map[connection]timestamp.MicroTS {
+	// Phase 1: get a snapshot of all *hostConnections.
 	m.connectionsByHostMutex.Lock()
-	defer m.connectionsByHostMutex.Unlock()
+	allHostConns := make([]*hostConnections, 0, len(m.connectionsByHost))
+	for _, hostConns := range m.connectionsByHost {
+		allHostConns = append(allHostConns, hostConns)
+	}
+	m.connectionsByHostMutex.Unlock()
 
+	// Phase 2: Merge all connections from all *hostConnections into a single map. This two-phase approach avoids
+	// holding two locks simultaneously.
 	allConnections := make(map[connection]timestamp.MicroTS)
-	for _, c := range m.connectionsByHost {
-		for conn, ts := range c.connections {
+	for _, hostConns := range allHostConns {
+		hostConns.mutex.Lock()
+		for conn, ts := range hostConns.connections {
 			allConnections[conn] = ts
 		}
+		hostConns.mutex.Unlock()
 	}
 
 	return allConnections
@@ -156,7 +167,7 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 
 	for c, t := range updatedConnections {
 		// timestamp = zero implies the connection is newly added. Add new connections, update existing ones to mark them closed
-		if t != 0 { // adjust timestamp if not zero.
+		if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
 			t += tsOffset
 		}
 		h.connections[c] = t
@@ -174,16 +185,19 @@ func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connec
 			continue
 		}
 
+		remoteEndpoint := net.MakeNumericEndpoint(net.IPFromBytes(conn.GetRemoteAddress().GetAddressData()), uint16(conn.GetRemoteAddress().GetPort()), net.L4ProtoFromProtobuf(conn.GetProtocol()))
 		c := connection{
-			srcAddr:     string(conn.GetLocalAddress().GetAddressData()),
-			dstAddr:     string(conn.GetRemoteAddress().GetAddressData()),
-			dstPort:     uint16(conn.GetRemoteAddress().GetPort()),
-			containerID: conn.GetContainerId(),
-			protocol:    conn.GetProtocol(),
+			srcContainerID: conn.GetContainerId(),
+			srcAddr:        net.IPFromBytes(conn.GetLocalAddress().GetAddressData()),
+			dest:           remoteEndpoint,
 		}
 
 		// timestamp will be set to close timestamp for closed connections, and zero for newly added connection.
-		updatedConnections[c] = timestamp.FromProtobuf(conn.CloseTimestamp)
+		ts := timestamp.FromProtobuf(conn.CloseTimestamp)
+		if ts == 0 {
+			ts = timestamp.InfiniteFuture
+		}
+		updatedConnections[c] = ts
 	}
 
 	return updatedConnections

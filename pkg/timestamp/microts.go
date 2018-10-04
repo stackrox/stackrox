@@ -1,6 +1,7 @@
 package timestamp
 
 import (
+	"math"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -14,6 +15,9 @@ const (
 
 // MicroTS is a microsecond-granularity Unix UTC timestamp.
 type MicroTS int64
+
+// InfiniteFuture is a microtimestamp that is greater (or equal) to any other microtimestamp.
+const InfiniteFuture MicroTS = math.MaxInt64
 
 // Now returns the current time as a microtimestamp.
 func Now() MicroTS {
