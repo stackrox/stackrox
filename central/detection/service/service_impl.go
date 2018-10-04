@@ -48,7 +48,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // DetectBuildTime runs detection on a built image.
 func (s *serviceImpl) DetectBuildTime(ctx context.Context, image *v1.Image) (*v1.DetectionResponse, error) {
-	if image.Name == nil {
+	if image.GetName() == nil {
 		return nil, fmt.Errorf("image name contents missing")
 	}
 	utils.FillFullName(image)

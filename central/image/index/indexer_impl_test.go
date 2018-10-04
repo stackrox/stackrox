@@ -62,25 +62,25 @@ func (suite *ImageIndexTestSuite) TeardownSuite() {
 
 func (suite *ImageIndexTestSuite) TestSearchImages() {
 	// No filter on either => should return everything.
-	results, err := suite.indexer.SearchImages(search.EmptyQuery())
+	results, err := suite.indexer.Search(search.EmptyQuery())
 	suite.NoError(err)
 	suite.Len(results, 3)
 
 	// Filter on a deployment property.
 	q := search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster").ProtoQuery()
-	results, err = suite.indexer.SearchImages(q)
+	results, err = suite.indexer.Search(q)
 	suite.NoError(err)
 	suite.Len(results, 2)
 
 	// Filter on both deployment and image properties => should return intersection.
 	q = search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster").AddStrings(search.ImageRegistry, "docker.io").ProtoQuery()
-	results, err = suite.indexer.SearchImages(q)
+	results, err = suite.indexer.Search(q)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
 	// Filter on only image properties => should work as expected.
 	q = search.NewQueryBuilder().AddStrings(search.ImageRegistry, "docker.io").ProtoQuery()
-	results, err = suite.indexer.SearchImages(q)
+	results, err = suite.indexer.Search(q)
 	suite.NoError(err)
 	suite.Len(results, 2)
 }

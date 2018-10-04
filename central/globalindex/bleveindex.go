@@ -47,6 +47,11 @@ func TempInitializeIndices(mossPath string) (bleve.Index, error) {
 	return InitializeIndices(filepath.Join(tmpDir, mossPath))
 }
 
+// MemOnlyIndex returns a temporary mem-only index.
+func MemOnlyIndex() (bleve.Index, error) {
+	return bleve.NewMemOnly(getIndexMapping())
+}
+
 // InitializeIndices initializes the index in the specified path.
 func InitializeIndices(mossPath string) (bleve.Index, error) {
 	indexMapping := getIndexMapping()

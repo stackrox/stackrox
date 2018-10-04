@@ -7,14 +7,17 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
+	"github.com/gogo/protobuf/proto"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/deployment/index/mappings"
+	deploymentMappings "github.com/stackrox/rox/central/deployment/index/mappings"
 	"github.com/stackrox/rox/central/globalindex"
 	imageIndex "github.com/stackrox/rox/central/image/index"
+	imageMappings "github.com/stackrox/rox/central/image/index/mappings"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/images/types"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/readable"
@@ -109,6 +112,13 @@ func deploymentWithComponents(components []*v1.ImageScanComponent) *v1.Deploymen
 
 func deploymentWithLayers(layers []*v1.ImageLayer) *v1.Deployment {
 	return deploymentWithImage(imageWithLayers(layers))
+}
+
+func (suite *DefaultPoliciesTestSuite) imageIDFromDep(deployment *v1.Deployment) string {
+	suite.Require().Len(deployment.GetContainers(), 1, "This function only supports deployments with exactly one container")
+	id := deployment.GetContainers()[0].GetImage().GetId()
+	suite.NotEmpty(id, "Deployment '%s' had no image id", proto.MarshalTextString(deployment))
+	return types.NewDigest(id).Digest()
 }
 
 func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
@@ -376,7 +386,10 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	allDeployments, err := suite.deploymentIndexer.Search(search.EmptyQuery())
 	suite.NoError(err)
 
-	testCases := []struct {
+	allImages, err := suite.imageIndexer.Search(search.EmptyQuery())
+	suite.NoError(err)
+
+	type testCase struct {
 		policyName         string
 		expectedViolations map[string][]*v1.Alert_Violation
 
@@ -385,7 +398,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		// If sampleViolationForMatched is provided, we verify that all the matches are the string provided in sampleViolationForMatched.
 		shouldNotMatch            map[string]struct{}
 		sampleViolationForMatched string
-	}{
+	}
+
+	deploymentTestCases := []testCase{
 		{
 			policyName: "Latest tag",
 			expectedViolations: map[string][]*v1.Alert_Violation{
@@ -584,13 +599,14 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		{
 			policyName: "Images with no scans",
 			shouldNotMatch: map[string]struct{}{
-				fixtureDep.GetId(): {}, // This deployment has scans on its images.
+				// These deployments have scans on their images.
+				fixtureDep.GetId():    {},
+				oldScannedDep.GetId(): {},
 				// The rest of the deployments have no images!
 				"FAKEID":                                          {},
 				containerPort22Dep.GetId():                        {},
 				dockerSockDep.GetId():                             {},
 				secretEnvDep.GetId():                              {},
-				oldScannedDep.GetId():                             {},
 				depWithOwnerAnnotation.GetId():                    {},
 				depWithGoodEmailAnnotation.GetId():                {},
 				depWithBadEmailAnnotation.GetId():                 {},
@@ -598,7 +614,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				sysAdminDep.GetId():                               {},
 				depWithAllResourceLimitsRequestsSpecified.GetId(): {},
 			},
-			sampleViolationForMatched: "Images without scans were found",
+			sampleViolationForMatched: "Image has not been scanned",
 		},
 		{
 			policyName: "Cryptomining Entrypoint",
@@ -742,10 +758,10 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		},
 	}
 
-	for _, c := range testCases {
+	for _, c := range deploymentTestCases {
 		p := suite.MustGetPolicy(c.policyName)
 		suite.T().Run(c.policyName, func(t *testing.T) {
-			m, err := ForPolicy(p, mappings.OptionsMap)
+			m, err := ForPolicy(p, deploymentMappings.OptionsMap)
 			require.NoError(t, err)
 			matches, err := m.Match(suite.deploymentIndexer)
 			require.NoError(t, err)
@@ -788,6 +804,300 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		})
 	}
 
+	imageTestCases := []testCase{
+		{
+			policyName: "Latest tag",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				fixtureDep.GetContainers()[1].GetImage().GetId(): {
+					{Message: "Image tag 'latest' matched latest"},
+				},
+			},
+		},
+		{
+			policyName: "DockerHub NGINX 1.10",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				fixtureDep.GetContainers()[0].GetImage().GetId(): {
+					{
+						Message: "Image tag '1.10' matched 1.10",
+					},
+					{
+						Message: "Image registry 'docker.io' matched docker.io",
+					},
+					{
+						Message: "Image remote 'library/nginx' matched nginx",
+					},
+				},
+				suite.imageIDFromDep(nginx110dep): {
+					{
+						Message: "Image tag '1.10' matched 1.10",
+					},
+					{
+						Message: "Image registry 'docker.io' matched docker.io",
+					},
+					{
+						Message: "Image remote 'library/nginx' matched nginx",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Alpine Linux Package Manager (apk) in Image",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(apkDep): {
+					{
+						Message: "Component name 'apk' matched ^apk$",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Aptitude Package Manager (apt) in Image",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(componentDeps["apt"]): {
+					{
+						Message: "Component name 'apt' matched ^apt$",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Curl in Image",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(curlDep): {
+					{
+						Message: "Component name 'curl' matched ^curl$",
+					},
+				},
+			},
+		},
+		{
+			policyName: "DNF Package Manager (dnf) in Image",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(componentDeps["dnf"]): {
+					{
+						Message: "Component name 'dnf' matched ^dnf$",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Wget in Image",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(componentDeps["wget"]): {
+					{
+						Message: "Component name 'wget' matched ^wget$",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Yum Package Manager (yum) in Image",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(componentDeps["yum"]): {
+					{
+						Message: "Component name 'yum' matched ^yum$",
+					},
+				},
+			},
+		},
+		{
+			policyName: "RPM Package Manager (rpm) in Image",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(componentDeps["rpm"]): {
+					{
+						Message: "Component name 'rpm' matched ^rpm$",
+					},
+				},
+			},
+		},
+		{
+			policyName: "90-Day Image Age",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(oldImageDep): {
+					{
+						Message: fmt.Sprintf("Time of image creation '%s' was more than 90 days ago", readable.Time(oldImageCreationTime)),
+					},
+				},
+			},
+		},
+		{
+			policyName: "30-Day Scan Age",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(oldScannedDep): {
+					{
+						Message: fmt.Sprintf("Time of last scan '%s' was more than 30 days ago", readable.Time(oldScannedTime)),
+					},
+				},
+			},
+		},
+		{
+			policyName: "Image Port 22",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(imagePort22Dep): {
+					{
+						Message: "Dockerfile Line 'EXPOSE 22/tcp' matches the rule EXPOSE (^22/tcp|\\s+22/tcp)",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Insecure specified in CMD",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(insecureCMDDep): {
+					{
+						Message: "Dockerfile Line 'CMD do an insecure thing' matches the rule CMD .*insecure.*",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Overwrites /run/secrets Volume",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(runSecretsDep): {
+					{
+						Message: "Dockerfile Line 'VOLUME /run/secrets' matches the rule VOLUME /run/secrets",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Images with no scans",
+			shouldNotMatch: map[string]struct{}{
+				fixtureDep.GetContainers()[0].GetImage().GetId(): {},
+				fixtureDep.GetContainers()[1].GetImage().GetId(): {},
+				suite.imageIDFromDep(oldScannedDep):              {},
+			},
+			sampleViolationForMatched: "Image has not been scanned",
+		},
+		{
+			policyName: "Cryptomining Entrypoint",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(minerdDep): {
+					{
+						Message: "Dockerfile Line 'ENTRYPOINT minerd' matches the rule ENTRYPOINT .*minerd.*",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Shellshock: CVE-2014-6271",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(shellshockDep): {
+					{
+						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-6271'",
+						Link:    "https://shellshock",
+					},
+				},
+				fixtureDep.GetContainers()[1].GetImage().GetId(): {
+					{
+						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-6271'",
+						Link:    "https://nvd.nist.gov/vuln/detail/CVE-2014-6271",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Apache Struts: CVE-2017-5638",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(strutsDep): {
+					{
+						Message: "CVE CVE-2017-5638 matched regex 'CVE-2017-5638'",
+						Link:    "https://struts",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Heartbleed: CVE-2014-0160",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(heartbleedDep): {
+					{
+						Message: "CVE CVE-2014-0160 matched regex 'CVE-2014-0160'",
+						Link:    "https://heartbleed",
+					},
+				},
+			},
+		},
+		{
+			policyName: "CVSS >= 7",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(strutsDep): {
+					{
+						Message: "Found a CVSS score of 8 (greater than or equal to 7.0) (cve: CVE-2017-5638)",
+					},
+				},
+			},
+		},
+		{
+			policyName: "ADD Command used instead of COPY",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				suite.imageIDFromDep(addDockerFileDep): {
+					{
+						Message: "Dockerfile Line 'ADD deploy.sh' matches the rule ADD .*",
+					},
+				},
+				fixtureDep.GetContainers()[0].GetImage().GetId(): {
+					{
+						Message: "Dockerfile Line 'ADD FILE:blah' matches the rule ADD .*",
+					},
+				},
+				fixtureDep.GetContainers()[1].GetImage().GetId(): {
+					{
+						Message: "Dockerfile Line 'ADD file:4eedf861fb567fffb2694b65ebdd58d5e371a2c28c3863f363f333cb34e5eb7b in /' matches the rule ADD .*",
+					},
+				},
+			},
+		},
+	}
+
+	for _, c := range imageTestCases {
+		p := suite.MustGetPolicy(c.policyName)
+		suite.T().Run(fmt.Sprintf("%s (on images)", c.policyName), func(t *testing.T) {
+			m, err := ForPolicy(p, imageMappings.OptionsMap)
+			require.NoError(t, err)
+			matches, err := m.Match(suite.imageIndexer)
+			require.NoError(t, err)
+
+			if len(c.shouldNotMatch) > 0 {
+				assert.Nil(t, c.expectedViolations, "Don't specify expected violations and shouldNotMatch")
+				for id := range c.shouldNotMatch {
+					id = types.NewDigest(id).Digest()
+					_, exists := matches[id]
+					assert.False(t, exists, "Should not have matched %s", id)
+				}
+
+				for _, imageResult := range allImages {
+					id := imageResult.ID
+					_, shouldNotMatch := c.shouldNotMatch[id]
+					if shouldNotMatch {
+						continue
+					}
+					match, exists := matches[id]
+					require.True(t, exists, "Should have matched %s. Got %+v", id, matches)
+					if c.sampleViolationForMatched != "" {
+						assert.Equal(t, c.sampleViolationForMatched, match[0].GetMessage())
+					}
+				}
+				return
+			}
+
+			for id, violations := range c.expectedViolations {
+				id = types.NewDigest(id).Digest()
+				got, ok := matches[id]
+				if !assert.True(t, ok, "Id '%s' didn't match, but should have. Got: %+v", id, matches) {
+					continue
+				}
+				assert.ElementsMatch(t, violations, got, "Expected violations %+v don't match what we got %+v", violations, got)
+
+				// Test match one
+				gotFromMatchOne, err := m.MatchOne(suite.imageIndexer, id)
+				require.NoError(t, err)
+				assert.ElementsMatch(t, violations, gotFromMatchOne, "Expected violations from match one %+v don't match what we got %+v", violations, gotFromMatchOne)
+			}
+			assert.Len(t, matches, len(c.expectedViolations))
+
+		})
+	}
 }
 
 func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {

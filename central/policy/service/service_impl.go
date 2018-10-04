@@ -346,21 +346,25 @@ func (s *serviceImpl) addActivePolicy(policy *v1.Policy) error {
 	s.processor.UpdatePolicy(policy)
 
 	errorList := errorhelpers.NewErrorList("error adding policy to detection caches: ")
+
 	if policies.AppliesAtBuildTime(policy) {
 		errorList.AddError(s.buildTimePolicies.UpsertPolicy(policy))
 	} else {
 		errorList.AddError(s.buildTimePolicies.RemovePolicy(policy.GetId()))
 	}
+
 	if policies.AppliesAtDeployTime(policy) {
 		errorList.AddError(s.deployTimeDetector.UpsertPolicy(policy))
 	} else {
 		errorList.AddError(s.deployTimeDetector.RemovePolicy(policy.GetId()))
 	}
+
 	if policies.AppliesAtRunTime(policy) {
 		errorList.AddError(s.runTimePolicies.UpsertPolicy(policy))
 	} else {
 		errorList.AddError(s.runTimePolicies.RemovePolicy(policy.GetId()))
 	}
+
 	return errorList.ToError()
 }
 

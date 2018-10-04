@@ -3,6 +3,7 @@ package service
 import (
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
@@ -21,7 +22,7 @@ func TestSearchCategoryToResourceMap(t *testing.T) {
 }
 
 func TestSearchFuncs(t *testing.T) {
-	s := New(&alertMocks.DataStore{}, &deploymentMocks.DataStore{}, &imageMocks.DataStore{}, &policyMocks.DataStore{}, &secretMocks.DataStore{})
+	s := New(&alertMocks.DataStore{}, &deploymentMocks.DataStore{}, &imageMocks.DataStore{}, policyMocks.NewMockDataStore(gomock.NewController(t)), &secretMocks.DataStore{})
 	searchFuncMap := s.(*serviceImpl).getSearchFuncs()
 	for _, searchCategory := range getAllSearchableCategories() {
 		_, ok := searchFuncMap[searchCategory]

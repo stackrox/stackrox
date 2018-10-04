@@ -64,6 +64,6 @@ func BenchmarkSearchImage(b *testing.B) {
 	indexer := getImageIndex(b)
 	qb := search.NewQueryBuilder().AddStrings(search.ImageTag, "latest")
 	for i := 0; i < b.N; i++ {
-		indexer.SearchImages(qb.ProtoQuery())
+		indexer.Search(qb.ProtoQuery())
 	}
 }

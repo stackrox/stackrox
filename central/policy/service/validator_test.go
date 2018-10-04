@@ -156,54 +156,157 @@ func (suite *PolicyValidatorTestSuite) TestValidateDescription() {
 }
 
 func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
-	policy := &v1.Policy{
-		LifecycleStages: []v1.LifecycleStage{
-			v1.LifecycleStage_BUILD_TIME,
+	testCases := []struct {
+		description string
+		p           *v1.Policy
+		errExpected bool
+	}{
+		{
+			description: "Build time policy with non-image fields",
+			p: &v1.Policy{
+				LifecycleStages: []v1.LifecycleStage{
+					v1.LifecycleStage_BUILD_TIME,
+				},
+				Fields: &v1.PolicyFields{
+					ImageName: &v1.ImageNamePolicy{Remote: "blah"},
+					ContainerResourcePolicy: &v1.ResourcePolicy{
+						CpuResourceLimit: &v1.NumericalPolicy{
+							Value: 1.0,
+						},
+					},
+				},
+			},
+			errExpected: true,
 		},
-		Fields: &v1.PolicyFields{
-			ContainerResourcePolicy: &v1.ResourcePolicy{
-				CpuResourceLimit: &v1.NumericalPolicy{
-					Value: 1.0,
+		{
+			description: "Build time policy with no image fields",
+			p: &v1.Policy{
+				LifecycleStages: []v1.LifecycleStage{
+					v1.LifecycleStage_BUILD_TIME,
+				},
+			},
+			errExpected: true,
+		},
+		{
+			description: "valid build time",
+			p: &v1.Policy{
+				LifecycleStages: []v1.LifecycleStage{
+					v1.LifecycleStage_BUILD_TIME,
+				},
+				Fields: &v1.PolicyFields{
+					ImageName: &v1.ImageNamePolicy{
+						Tag: "latest",
+					},
+				},
+			},
+		},
+		{
+			description: "deploy time with no fields",
+			p: &v1.Policy{
+				LifecycleStages: []v1.LifecycleStage{
+					v1.LifecycleStage_DEPLOY_TIME,
+				},
+			},
+			errExpected: true,
+		},
+		{
+			description: "deploy time with runtime fields",
+			p: &v1.Policy{
+				LifecycleStages: []v1.LifecycleStage{
+					v1.LifecycleStage_DEPLOY_TIME,
+				},
+				Fields: &v1.PolicyFields{
+					ImageName: &v1.ImageNamePolicy{
+						Tag: "latest",
+					},
+					ProcessPolicy: &v1.ProcessPolicy{Name: "BLAH"},
+				},
+			},
+			errExpected: true,
+		},
+		{
+			description: "Valid deploy time",
+			p: &v1.Policy{
+				LifecycleStages: []v1.LifecycleStage{
+					v1.LifecycleStage_DEPLOY_TIME,
+				},
+				Fields: &v1.PolicyFields{
+					ImageName: &v1.ImageNamePolicy{
+						Tag: "latest",
+					},
+					VolumePolicy: &v1.VolumePolicy{
+						Name: "Asfasf",
+					},
+				},
+			},
+		},
+		{
+			description: "Run time with no fields",
+			p: &v1.Policy{
+				LifecycleStages: []v1.LifecycleStage{
+					v1.LifecycleStage_RUN_TIME,
+				},
+			},
+			errExpected: true,
+		},
+		{
+			description: "Run time with only deploy-time fields",
+			p: &v1.Policy{
+				LifecycleStages: []v1.LifecycleStage{
+					v1.LifecycleStage_RUN_TIME,
+				},
+				Fields: &v1.PolicyFields{
+					ImageName: &v1.ImageNamePolicy{
+						Tag: "latest",
+					},
+					VolumePolicy: &v1.VolumePolicy{
+						Name: "Asfasf",
+					},
+				},
+			},
+			errExpected: true,
+		},
+		{
+			description: "Valid Run time with just process fields",
+			p: &v1.Policy{
+				LifecycleStages: []v1.LifecycleStage{
+					v1.LifecycleStage_RUN_TIME,
+				},
+				Fields: &v1.PolicyFields{
+					ProcessPolicy: &v1.ProcessPolicy{Name: "asfasfaa"},
+				},
+			},
+		},
+		{
+			description: "Valid Run time with all sorts of fields",
+			p: &v1.Policy{
+				LifecycleStages: []v1.LifecycleStage{
+					v1.LifecycleStage_RUN_TIME,
+				},
+				Fields: &v1.PolicyFields{
+					ImageName: &v1.ImageNamePolicy{
+						Tag: "latest",
+					},
+					VolumePolicy: &v1.VolumePolicy{
+						Name: "Asfasf",
+					},
+					ProcessPolicy: &v1.ProcessPolicy{Name: "asfasfaa"},
 				},
 			},
 		},
 	}
-	err := suite.validator.validateCompilableForLifecycle(policy)
-	suite.Error(err, "no image criteria")
 
-	policy = &v1.Policy{
-		LifecycleStages: []v1.LifecycleStage{
-			v1.LifecycleStage_BUILD_TIME,
-		},
-		Fields: &v1.PolicyFields{
-			ImageName: &v1.ImageNamePolicy{
-				Tag: "latest",
-			},
-		},
+	for _, c := range testCases {
+		suite.T().Run(c.description, func(t *testing.T) {
+			c.p.Name = "BLAHBLAH"
+			err := suite.validator.validateCompilableForLifecycle(c.p)
+			if c.errExpected {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
 	}
-	err = suite.validator.validateCompilableForLifecycle(policy)
-	suite.NoError(err, "has image criteria")
-
-	policy = &v1.Policy{
-		LifecycleStages: []v1.LifecycleStage{
-			v1.LifecycleStage_DEPLOY_TIME,
-		},
-	}
-	err = suite.validator.validateCompilableForLifecycle(policy)
-	suite.Error(err, "no criteria")
-
-	policy = &v1.Policy{
-		LifecycleStages: []v1.LifecycleStage{
-			v1.LifecycleStage_DEPLOY_TIME,
-		},
-		Fields: &v1.PolicyFields{
-			ImageName: &v1.ImageNamePolicy{
-				Tag: "latest",
-			},
-		},
-	}
-	err = suite.validator.validateCompilableForLifecycle(policy)
-	suite.NoError(err, "has deployment criteria")
 }
 
 func (suite *PolicyValidatorTestSuite) TestValidateSeverity() {

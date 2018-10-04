@@ -1,41 +1,31 @@
 package image
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/central/image/index/mappings"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
+	"github.com/stackrox/rox/central/searchbasedpolicies"
+	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/generated/api/v1"
-	imageMatcher "github.com/stackrox/rox/pkg/compiledpolicies/image/matcher"
 )
 
 type setImpl struct {
 	lock sync.RWMutex
 
 	policyIDToPolicy  map[string]*v1.Policy
-	policyIDToMatcher map[string]imageMatcher.Matcher
+	policyIDToMatcher map[string]searchbasedpolicies.Matcher
 	policyStore       policyDatastore.DataStore
 }
 
-// ForOne runs the given function on the policy matching the id if it exists.
-func (p *setImpl) ForOne(pID string, fe func(*v1.Policy, imageMatcher.Matcher) error) error {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
-
-	if policy, exists := p.policyIDToPolicy[pID]; exists {
-		return fe(policy, p.policyIDToMatcher[pID])
-	}
-	return fmt.Errorf("policy with ID not found in set: %s", pID)
-}
-
 // ForEach runs the given function on all present policies.
-func (p *setImpl) ForEach(fe func(*v1.Policy, imageMatcher.Matcher) error) error {
+func (p *setImpl) ForEach(fe func(*v1.Policy, searchbasedpolicies.Matcher) error) error {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	for id, matcher := range p.policyIDToMatcher {
-		if err := fe(p.policyIDToPolicy[id], matcher); err != nil {
+	for id, m := range p.policyIDToMatcher {
+		if err := fe(p.policyIDToPolicy[id], m); err != nil {
 			return err
 		}
 	}
@@ -49,13 +39,13 @@ func (p *setImpl) UpsertPolicy(policy *v1.Policy) error {
 
 	cloned := proto.Clone(policy).(*v1.Policy)
 
-	matcher, err := imageMatcher.Compile(cloned)
+	searchBasedMatcher, err := matcher.ForPolicy(cloned, mappings.OptionsMap)
 	if err != nil {
 		return err
 	}
 
 	p.policyIDToPolicy[cloned.GetId()] = cloned
-	p.policyIDToMatcher[cloned.GetId()] = matcher
+	p.policyIDToMatcher[cloned.GetId()] = searchBasedMatcher
 	return nil
 }
 

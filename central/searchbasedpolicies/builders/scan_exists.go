@@ -28,7 +28,7 @@ func (s ScanExistsQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[se
 	q = search.NewQueryBuilder().AddNullField(search.ImageScanTime).ProtoQuery()
 
 	v = func(result search.Result) []*v1.Alert_Violation {
-		return []*v1.Alert_Violation{{Message: "Images without scans were found"}}
+		return []*v1.Alert_Violation{{Message: "Image has not been scanned"}}
 	}
 	return
 }

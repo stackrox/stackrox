@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/golang/mock/gomock"
 	deploymentDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/detection/deployment"
 	utilsMocks "github.com/stackrox/rox/central/detection/utils/mocks"
@@ -36,7 +37,7 @@ func (suite *DetectorTestSuite) SetupTest() {
 	suite.deploymentsMock = &deploymentDataStoreMocks.DataStore{}
 
 	suite.detector = NewDetector(
-		deployment.NewPolicySet(&policyMocks.DataStore{}),
+		deployment.NewPolicySet(policyMocks.NewMockDataStore(gomock.NewController(suite.T()))),
 		suite.alertManagerMock,
 		suite.enricherMock,
 		suite.deploymentsMock)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -21,7 +22,7 @@ type PolicyTestSuite struct {
 }
 
 func (suite *PolicyTestSuite) TestAddsCompilable() {
-	policySet := NewPolicySet(&mocks.DataStore{})
+	policySet := NewPolicySet(mocks.NewMockDataStore(gomock.NewController(suite.T())))
 
 	err := policySet.UpsertPolicy(goodPolicy())
 	suite.NoError(err, "insertion should succeed")
@@ -43,7 +44,7 @@ func (suite *PolicyTestSuite) TestAddsCompilable() {
 }
 
 func (suite *PolicyTestSuite) TestForOneSucceeds() {
-	policySet := NewPolicySet(&mocks.DataStore{})
+	policySet := NewPolicySet(mocks.NewMockDataStore(gomock.NewController(suite.T())))
 
 	err := policySet.UpsertPolicy(goodPolicy())
 	suite.NoError(err, "insertion should succeed")
@@ -58,7 +59,7 @@ func (suite *PolicyTestSuite) TestForOneSucceeds() {
 }
 
 func (suite *PolicyTestSuite) TestForOneFails() {
-	policySet := NewPolicySet(&mocks.DataStore{})
+	policySet := NewPolicySet(mocks.NewMockDataStore(gomock.NewController(suite.T())))
 
 	err := policySet.ForOne("1", func(p *v1.Policy, m deploymentMatcher.Matcher) error {
 		return nil
@@ -67,7 +68,7 @@ func (suite *PolicyTestSuite) TestForOneFails() {
 }
 
 func (suite *PolicyTestSuite) TestThrowsErrorForNotCompilable() {
-	policySet := NewPolicySet(&mocks.DataStore{})
+	policySet := NewPolicySet(mocks.NewMockDataStore(gomock.NewController(suite.T())))
 
 	err := policySet.UpsertPolicy(badPolicy())
 	suite.Error(err, "insertion should not succeed since the regex in the policy is bad")

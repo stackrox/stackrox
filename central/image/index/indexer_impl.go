@@ -48,8 +48,8 @@ func (b *indexerImpl) DeleteImage(sha string) error {
 	return b.index.Delete(digest)
 }
 
-// SearchImages takes a SearchRequest and finds any matches
-func (b *indexerImpl) SearchImages(q *v1.Query) (results []search.Result, err error) {
+// Search takes a SearchRequest and finds any matches
+func (b *indexerImpl) Search(q *v1.Query) (results []search.Result, err error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Image")
 	return blevesearch.RunSearchRequest(v1.SearchCategory_IMAGES, q, b.index, mappings.OptionsMap)
 }

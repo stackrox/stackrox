@@ -42,7 +42,7 @@ func (ds *searcherImpl) SearchListImages(q *v1.Query) ([]*v1.ListImage, error) {
 
 // SearchRawImages retrieves SearchResults from the indexer and storage
 func (ds *searcherImpl) SearchRawImages(q *v1.Query) ([]*v1.Image, error) {
-	results, err := ds.indexer.SearchImages(q)
+	results, err := ds.indexer.Search(q)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (ds *searcherImpl) SearchRawImages(q *v1.Query) ([]*v1.Image, error) {
 }
 
 func (ds *searcherImpl) searchImages(q *v1.Query) ([]*v1.ListImage, []search.Result, error) {
-	results, err := ds.indexer.SearchImages(q)
+	results, err := ds.indexer.Search(q)
 	if err != nil {
 		return nil, nil, err
 	}

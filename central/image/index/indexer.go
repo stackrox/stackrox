@@ -17,7 +17,7 @@ type Indexer interface {
 	AddImage(image *v1.Image) error
 	AddImages(imageList []*v1.Image) error
 	DeleteImage(id string) error
-	SearchImages(q *v1.Query) ([]search.Result, error)
+	Search(q *v1.Query) ([]search.Result, error)
 }
 
 // New returns a new instance of Indexer using the bleve Index provided.

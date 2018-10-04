@@ -29,7 +29,7 @@ type DeploymentIndexTestSuite struct {
 
 func (suite *DeploymentIndexTestSuite) SetupTest() {
 	var err error
-	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
+	suite.bleveIndex, err = globalindex.MemOnlyIndex()
 	suite.Require().NoError(err)
 
 	suite.indexer = New(suite.bleveIndex)

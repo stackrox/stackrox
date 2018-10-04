@@ -8,7 +8,7 @@ import (
 )
 
 // DataStore is an intermediary to PolicyStorage.
-//go:generate mockery -name=DataStore
+//go:generate mockgen -package mocks -destination mocks/datastore.go github.com/stackrox/rox/central/policy/datastore DataStore
 type DataStore interface {
 	SearchPolicies(q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawPolicies(q *v1.Query) ([]*v1.Policy, error)

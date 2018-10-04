@@ -1,12 +1,12 @@
 package image
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
+	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
-	imageMatcher "github.com/stackrox/rox/pkg/compiledpolicies/image/matcher"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -19,13 +19,13 @@ type PolicyTestSuite struct {
 }
 
 func (suite *PolicyTestSuite) TestAddsCompilable() {
-	policySet := NewPolicySet(&mocks.DataStore{})
+	policySet := NewPolicySet(mocks.NewMockDataStore(gomock.NewController(suite.T())))
 
 	err := policySet.UpsertPolicy(goodPolicy())
 	suite.NoError(err, "insertion should succeed")
 
 	hasMatch := false
-	policySet.ForEach(func(p *v1.Policy, m imageMatcher.Matcher) error {
+	policySet.ForEach(func(p *v1.Policy, m searchbasedpolicies.Matcher) error {
 		if p.GetId() == "1" {
 			hasMatch = true
 		}
@@ -34,38 +34,14 @@ func (suite *PolicyTestSuite) TestAddsCompilable() {
 	suite.True(hasMatch, "policy set should contain a matching policy")
 }
 
-func (suite *PolicyTestSuite) TestForOneSucceeds() {
-	policySet := NewPolicySet(&mocks.DataStore{})
-
-	err := policySet.UpsertPolicy(goodPolicy())
-	suite.NoError(err, "insertion should succeed")
-
-	err = policySet.ForOne("1", func(p *v1.Policy, m imageMatcher.Matcher) error {
-		if p.GetId() != "1" {
-			return fmt.Errorf("wrong id served")
-		}
-		return nil
-	})
-	suite.NoError(err, "for one should succeed since the policy exists")
-}
-
-func (suite *PolicyTestSuite) TestForOneFails() {
-	policySet := NewPolicySet(&mocks.DataStore{})
-
-	err := policySet.ForOne("1", func(p *v1.Policy, m imageMatcher.Matcher) error {
-		return nil
-	})
-	suite.Error(err, "for one should fail since no policies exist")
-}
-
 func (suite *PolicyTestSuite) TestThrowsErrorForNotCompilable() {
-	policySet := NewPolicySet(&mocks.DataStore{})
+	policySet := NewPolicySet(mocks.NewMockDataStore(gomock.NewController(suite.T())))
 
 	err := policySet.UpsertPolicy(badPolicy())
 	suite.Error(err, "insertion should not succeed since the regex in the policy is bad")
 
 	hasMatch := false
-	policySet.ForEach(func(p *v1.Policy, m imageMatcher.Matcher) error {
+	policySet.ForEach(func(p *v1.Policy, m searchbasedpolicies.Matcher) error {
 		if p.GetId() == "1" {
 			hasMatch = true
 		}
@@ -83,9 +59,6 @@ func goodPolicy() *v1.Policy {
 		Fields: &v1.PolicyFields{
 			ImageName: &v1.ImageNamePolicy{
 				Tag: "latest",
-			},
-			SetPrivileged: &v1.PolicyFields_Privileged{
-				Privileged: true,
 			},
 		},
 	}

@@ -53,8 +53,8 @@ func (_m *Indexer) DeleteImage(id string) error {
 	return r0
 }
 
-// SearchImages provides a mock function with given fields: q
-func (_m *Indexer) SearchImages(q *v1.Query) ([]search.Result, error) {
+// Search provides a mock function with given fields: q
+func (_m *Indexer) Search(q *v1.Query) ([]search.Result, error) {
 	ret := _m.Called(q)
 
 	var r0 []search.Result

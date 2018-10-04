@@ -8,10 +8,11 @@ import (
 
 	"github.com/deckarep/golang-set"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentMappings "github.com/stackrox/rox/central/deployment/index/mappings"
+	imageMappings "github.com/stackrox/rox/central/image/index/mappings"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
+	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/generated/api/v1"
-	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
-	imageMatcher "github.com/stackrox/rox/pkg/compiledpolicies/image/matcher"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/policies"
 )
@@ -204,34 +205,40 @@ func (s *policyValidator) validateScope(scope *v1.Scope) error {
 }
 
 func compilesForBuildTime(policy *v1.Policy) error {
-	m, err := imageMatcher.Compile(policy)
+	m, err := matcher.ForPolicy(policy, imageMappings.OptionsMap)
 	if err != nil {
-		return err
+		return fmt.Errorf("policy configuration is invalid for build time: %s", err)
 	}
 	if m == nil {
-		return fmt.Errorf("build time policy contains no image constraints")
+		return errors.New("build time policy contains no image constraints")
 	}
 	return nil
 }
 
 func compilesForDeployTime(policy *v1.Policy) error {
-	m, err := deploymentMatcher.Compile(policy)
+	m, err := matcher.ForPolicy(policy, deploymentMappings.OptionsMap)
 	if err != nil {
-		return err
+		return fmt.Errorf("policy configuration is invalid for deploy time: %s", err)
 	}
 	if m == nil {
 		return fmt.Errorf("deploy time policy contains no constraints")
+	}
+	if policy.GetFields().GetProcessPolicy() != nil {
+		return errors.New("deploy time policy cannot contain runtime fields")
 	}
 	return nil
 }
 
 func compilesForRunTime(policy *v1.Policy) error {
-	m, err := deploymentMatcher.Compile(policy)
+	m, err := matcher.ForPolicy(policy, deploymentMappings.OptionsMap)
 	if err != nil {
-		return err
+		return fmt.Errorf("policy configuration is invalid for run time: %s", err)
 	}
 	if m == nil {
-		return fmt.Errorf("run time policy contains no container constraints")
+		return errors.New("run time policy contains no constraints")
+	}
+	if policy.GetFields().GetProcessPolicy() == nil {
+		return errors.New("run time policy must contain runtime specific constraints")
 	}
 	return nil
 }

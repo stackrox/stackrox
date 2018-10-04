@@ -2,14 +2,13 @@ package image
 
 import (
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
+	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
-	imageMatcher "github.com/stackrox/rox/pkg/compiledpolicies/image/matcher"
 )
 
 // PolicySet is a set of build time policies.
 type PolicySet interface {
-	ForOne(pID string, fe func(*v1.Policy, imageMatcher.Matcher) error) error
-	ForEach(func(*v1.Policy, imageMatcher.Matcher) error) error
+	ForEach(func(*v1.Policy, searchbasedpolicies.Matcher) error) error
 
 	UpsertPolicy(*v1.Policy) error
 	RemovePolicy(policyID string) error
@@ -21,7 +20,7 @@ type PolicySet interface {
 func NewPolicySet(store policyDatastore.DataStore) PolicySet {
 	return &setImpl{
 		policyIDToPolicy:  make(map[string]*v1.Policy),
-		policyIDToMatcher: make(map[string]imageMatcher.Matcher),
+		policyIDToMatcher: make(map[string]searchbasedpolicies.Matcher),
 		policyStore:       store,
 	}
 }
