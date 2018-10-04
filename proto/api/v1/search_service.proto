@@ -78,11 +78,17 @@ message MatchLinkedFieldsQuery {
     repeated MatchFieldQuery query = 1;
 }
 
+// DocIDQuery represents a query that matches documents with the provided ids.
+message DocIDQuery {
+    repeated string ids = 1;
+}
+
 message BaseQuery {
     oneof query {
         StringQuery string_query = 1;
         MatchFieldQuery match_field_query = 2;
         MatchLinkedFieldsQuery match_linked_fields_query = 3;
+        DocIDQuery doc_id_query = 4;
     }
 }
 

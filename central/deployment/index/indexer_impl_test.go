@@ -228,6 +228,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 
 	cases := []struct {
 		fieldValues           map[search.FieldLabel]string
+		docIDS                []string
 		linkedFields          []search.FieldLabel
 		linkedFieldValues     []string
 		highlightLinkedFields bool
@@ -235,6 +236,14 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 		expectedIDs           []string
 		expectedMatches       map[string][]string
 	}{
+		{
+			docIDS:      []string{deployment.GetId(), badEmailDep.GetId()},
+			expectedIDs: []string{deployment.GetId(), badEmailDep.GetId()},
+		},
+		{
+			docIDS:      []string{nginx110Dep.GetId()},
+			expectedIDs: []string{nginx110Dep.GetId()},
+		},
 		{
 			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "nginx"},
 			expectedIDs: []string{deployment.GetId()},
@@ -246,6 +255,15 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 		{
 			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nginx"},
 			expectedIDs: []string{notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId(), badEmailDep.GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nginx"},
+			docIDS:      []string{containerPort22Dep.GetId()},
+			expectedIDs: []string{containerPort22Dep.GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nginx"},
+			docIDS:      []string{deployment.GetId()},
 		},
 		{
 			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!r/ngi.*"},
@@ -316,6 +334,18 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 		{
 			fieldValues: map[search.FieldLabel]string{search.ImageTag: "latest"},
 			expectedIDs: []string{deployment.GetId()},
+		},
+		{
+			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "latest"},
+			highlightedFields: []search.FieldLabel{search.ImageTag},
+			docIDS:            []string{nginx110Dep.GetId()},
+		},
+		{
+			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "latest"},
+			highlightedFields: []search.FieldLabel{search.ImageTag},
+			docIDS:            []string{deployment.GetId()},
+			expectedIDs:       []string{deployment.GetId()},
+			expectedMatches:   map[string][]string{"image.name.tag": {"latest"}},
 		},
 		{
 			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "latest"},
@@ -487,6 +517,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 				qb.AddLinkedFields(c.linkedFields, c.linkedFieldValues)
 			}
 		}
+		qb.AddDocIDs(c.docIDS...)
 		results, err := suite.indexer.Search(qb.ProtoQuery())
 		suite.NoError(err)
 

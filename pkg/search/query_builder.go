@@ -62,6 +62,7 @@ type fieldValue struct {
 // QueryBuilder builds a search query
 type QueryBuilder struct {
 	fieldsToValues map[FieldLabel][]string
+	ids            []string
 	linkedFields   [][]fieldValue
 
 	raw               string
@@ -93,6 +94,12 @@ func (qb *QueryBuilder) AddLinkedRegexesHighlighted(fields []FieldLabel, values 
 // so that an array would match ONLY if it had {"a": "avalue", "b": "bvalue"} on the same element.
 func (qb *QueryBuilder) AddLinkedFields(fields []FieldLabel, values []string) *QueryBuilder {
 	return qb.addLinkedFields(fields, values, false)
+}
+
+// AddDocIDs adds the list of ids to the DocID query of the QueryBuilder.
+func (qb *QueryBuilder) AddDocIDs(ids ...string) *QueryBuilder {
+	qb.ids = append(qb.ids, ids...)
+	return qb
 }
 
 // AddLinkedFieldsHighlighted is a convenience wrapper around AddLinkedFields and MarkHighlighted.
@@ -213,7 +220,11 @@ func (qb *QueryBuilder) Query() string {
 
 // ProtoQuery generates a proto query from the query
 func (qb *QueryBuilder) ProtoQuery() *v1.Query {
-	queries := make([]*v1.Query, 0, len(qb.fieldsToValues))
+	queries := make([]*v1.Query, 0, len(qb.fieldsToValues)+len(qb.linkedFields))
+
+	if len(qb.ids) > 0 {
+		queries = append(queries, docIDQuery(qb.ids))
+	}
 
 	// Sort the queries by field value, to ensure consistency of output.
 	fields := make([]FieldLabel, 0, len(qb.fieldsToValues))
@@ -230,7 +241,7 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	}
 
 	for _, linkedFieldsGroup := range qb.linkedFields {
-		queries = append(queries, matchAllFieldsQuery(linkedFieldsGroup))
+		queries = append(queries, matchLinkedFieldsQuery(linkedFieldsGroup))
 	}
 
 	if qb.raw != "" {

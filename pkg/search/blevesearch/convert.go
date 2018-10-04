@@ -61,6 +61,11 @@ func (c *queryConverter) baseQueryToBleve(bq *v1.BaseQuery) (bleveQuery query.Qu
 		return c.matchLinkedFieldsQueryToBleve([]*v1.MatchFieldQuery{bq.MatchFieldQuery})
 	case *v1.BaseQuery_MatchLinkedFieldsQuery:
 		return c.matchLinkedFieldsQueryToBleve(bq.MatchLinkedFieldsQuery.GetQuery())
+	case *v1.BaseQuery_DocIdQuery:
+		if len(bq.DocIdQuery.GetIds()) > 0 {
+			bleveQuery = bleve.NewDocIDQuery(bq.DocIdQuery.GetIds())
+		}
+		return
 	default:
 		panic(fmt.Sprintf("Unhandled base query type: %T", bq))
 	}

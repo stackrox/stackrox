@@ -14,12 +14,12 @@ type matcherImpl struct {
 	violationPrinter searchbasedpolicies.ViolationPrinter
 }
 
-func (m *matcherImpl) errorPrefixForMatchOne(fieldLabel search.FieldLabel, id string) string {
-	return fmt.Sprintf("matching policy %s against %s %s", m.policyName, fieldLabel, id)
+func (m *matcherImpl) errorPrefixForMatchOne(id string) string {
+	return fmt.Sprintf("matching policy %s against %s", m.policyName, id)
 }
 
-func (m *matcherImpl) MatchOne(searcher searchbasedpolicies.Searcher, fieldLabel search.FieldLabel, id string) ([]*v1.Alert_Violation, error) {
-	q := search.ConjunctionQuery(search.NewQueryBuilder().AddStrings(fieldLabel, id).ProtoQuery(), m.q)
+func (m *matcherImpl) MatchOne(searcher searchbasedpolicies.Searcher, id string) ([]*v1.Alert_Violation, error) {
+	q := search.ConjunctionQuery(search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(), m.q)
 	results, err := searcher.Search(q)
 	if err != nil {
 		return nil, err
@@ -28,16 +28,16 @@ func (m *matcherImpl) MatchOne(searcher searchbasedpolicies.Searcher, fieldLabel
 		return nil, nil
 	}
 	if len(results) > 1 {
-		return nil, fmt.Errorf("%s: got more than one result: %+v", m.errorPrefixForMatchOne(fieldLabel, id), results)
+		return nil, fmt.Errorf("%s: got more than one result: %+v", m.errorPrefixForMatchOne(id), results)
 	}
 	result := results[0]
 	if result.ID != id {
-		return nil, fmt.Errorf("%s: id of result %+v did not match passed id", m.errorPrefixForMatchOne(fieldLabel, id), result)
+		return nil, fmt.Errorf("%s: id of result %+v did not match passed id", m.errorPrefixForMatchOne(id), result)
 	}
 
 	violations := m.violationPrinter(result)
 	if len(violations) == 0 {
-		return nil, fmt.Errorf("%s: result matched query but couldn't find any violation messages: %+v", m.errorPrefixForMatchOne(fieldLabel, id), result)
+		return nil, fmt.Errorf("%s: result matched query but couldn't find any violation messages: %+v", m.errorPrefixForMatchOne(id), result)
 	}
 	return violations, nil
 }

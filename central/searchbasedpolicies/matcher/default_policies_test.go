@@ -779,7 +779,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				assert.ElementsMatch(t, violations, got, "Expected violations %+v don't match what we got %+v", violations, got)
 
 				// Test match one
-				gotFromMatchOne, err := m.MatchOne(suite.deploymentIndexer, search.DeploymentID, id)
+				gotFromMatchOne, err := m.MatchOne(suite.deploymentIndexer, id)
 				require.NoError(t, err)
 				assert.ElementsMatch(t, violations, gotFromMatchOne, "Expected violations from match one %+v don't match what we got %+v", violations, gotFromMatchOne)
 			}

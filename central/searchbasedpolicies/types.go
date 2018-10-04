@@ -28,5 +28,5 @@ type Matcher interface {
 	// Match matches the policy against all objects, returning a map from object ID to violations.
 	Match(searcher Searcher) (map[string][]*v1.Alert_Violation, error)
 	// MatchOne matches the policy against the object with the given id.
-	MatchOne(searcher Searcher, fieldLabel search.FieldLabel, id string) ([]*v1.Alert_Violation, error)
+	MatchOne(searcher Searcher, id string) ([]*v1.Alert_Violation, error)
 }

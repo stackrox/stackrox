@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -117,7 +116,7 @@ func (d *detectorImpl) getAlertsForDeployment(deployment *v1.Deployment) []*v1.A
 			return nil
 		}
 
-		violations, err := matcher.MatchOne(d.deployments, search.DeploymentID, deployment.GetId())
+		violations, err := matcher.MatchOne(d.deployments, deployment.GetId())
 		if err != nil {
 			logger.Errorf("Error evaluating policies for deployment %s: %s", proto.MarshalTextString(deployment), err)
 			return nil

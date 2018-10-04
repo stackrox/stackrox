@@ -129,7 +129,7 @@ func matchFieldQuery(field, value string, highlight bool) *v1.Query {
 	})
 }
 
-func matchAllFieldsQuery(fieldValues []fieldValue) *v1.Query {
+func matchLinkedFieldsQuery(fieldValues []fieldValue) *v1.Query {
 	mfqs := make([]*v1.MatchFieldQuery, len(fieldValues))
 	for i, fv := range fieldValues {
 		mfqs[i] = &v1.MatchFieldQuery{Field: fv.l.String(), Value: fv.v, Highlight: fv.highlighted}
@@ -139,5 +139,11 @@ func matchAllFieldsQuery(fieldValues []fieldValue) *v1.Query {
 		Query: &v1.BaseQuery_MatchLinkedFieldsQuery{MatchLinkedFieldsQuery: &v1.MatchLinkedFieldsQuery{
 			Query: mfqs,
 		}},
+	})
+}
+
+func docIDQuery(ids []string) *v1.Query {
+	return queryFromBaseQuery(&v1.BaseQuery{
+		Query: &v1.BaseQuery_DocIdQuery{DocIdQuery: &v1.DocIDQuery{Ids: ids}},
 	})
 }
