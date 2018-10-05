@@ -39,7 +39,7 @@ const MultiValue = props => (
     />
 );
 
-const EmptyCreatableMenu = () => null;
+const noOptionsMessage = () => null;
 
 class SearchInput extends Component {
     static propTypes = {
@@ -69,7 +69,12 @@ class SearchInput extends Component {
     }
 
     setOptions = (_, searchOptions) => {
-        const searchModifiers = this.props.searchModifiers.slice();
+        this.props.setSearchOptions(searchOptions);
+        if (this.props.onSearch) this.props.onSearch(searchOptions);
+    };
+
+    getSuggestions = () => {
+        const { searchOptions, searchModifiers } = this.props;
         let searchSuggestions = [];
         if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
             // If you previously typed a search modifier (Cluster:, Deployment Name:, etc.) then don't show any search suggestions
@@ -77,32 +82,27 @@ class SearchInput extends Component {
         } else {
             searchSuggestions = searchModifiers;
         }
-        this.props.setSearchOptions(searchOptions);
-        this.props.setSearchSuggestions(searchSuggestions);
-        if (this.props.onSearch) this.props.onSearch(searchOptions);
+        return searchSuggestions;
     };
 
     render() {
         const Placeholder = placeholderCreator(this.props.placeholder);
-        const { searchOptions, searchSuggestions } = this.props;
-
+        const { searchOptions, className } = this.props;
+        const hideDropdown = this.getSuggestions().length ? '' : 'hide-dropdown';
         const props = {
-            className: this.props.className,
+            className: `${className} ${hideDropdown}`,
             components: { ValueContainer, Option, Placeholder, MultiValue },
-            options: searchSuggestions,
+            options: this.getSuggestions(),
             optionValue: searchOptions,
             onChange: this.setOptions,
-            isMulti: true
+            isMulti: true,
+            noOptionsMessage,
+            isValidNewOption: (inputValue, selectValue, selectOptions) =>
+                !selectOptions.length && inputValue
         };
         if (this.props.searchOptions.length === 0) return <Select {...props} autoFocus />;
 
-        return (
-            <Creatable
-                {...props}
-                components={{ ...props.components, Menu: EmptyCreatableMenu }}
-                autoFocus
-            />
-        );
+        return <Creatable {...props} components={{ ...props.components }} autoFocus />;
     }
 }
 

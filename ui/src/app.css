@@ -569,6 +569,10 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     right: 0;
 }
 
+/* React Select override */
+.hide-dropdown > div:last-child {
+    @apply .hidden;
+}
 
 
 /* React Table overrides */

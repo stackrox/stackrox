@@ -65,7 +65,7 @@ class Form extends Component {
         data.uiEndpoint = this.props.source === 'authProviders' ? location.host : location.origin;
         data.type = this.props.type;
         data.enabled = true;
-        data.categories = data.categories ? data.categories.map(category => category.value) : [];
+        data.categories = data.categories || [];
         data.clusterIds = data.clusterIds || [];
         return data;
     };
