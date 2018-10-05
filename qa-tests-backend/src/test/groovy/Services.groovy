@@ -144,22 +144,27 @@ class Services extends BaseService {
       }
 
     static waitForViolation(String deploymentName, String policyName, int timeoutSeconds) {
+        def violations = getViolationsWithTimeout(deploymentName, policyName, timeoutSeconds)
+        return violations != null && violations.size() > 0
+      }
+
+    static getViolationsWithTimeout(String deploymentName, String policyName, int timeoutSeconds) {
         int intervalSeconds = 1
         int waitTime
         for (waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
             def violations = getViolations(ListAlertsRequest.newBuilder()
-                              .setQuery("Deployment:${deploymentName}+Policy:${policyName}").build())
+                    .setQuery("Deployment:${deploymentName}+Policy:${policyName}").build())
             if (violations.size() > 0) {
                 println "violation size is: " + violations.size()
                 println policyName + " triggered after waiting " + waitTime * intervalSeconds + " seconds"
-                return true
-                  }
-            sleep(intervalSeconds * 1000)
+                return violations
             }
+            sleep(intervalSeconds * 1000)
+        }
 
         println "Failed to trigger " + policyName + " after waiting " + waitTime * intervalSeconds + " seconds"
-        return false
-      }
+        return []
+    }
 
     static String addGenericDockerRegistry() {
         return getIntegrationClient().postImageIntegration(

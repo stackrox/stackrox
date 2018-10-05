@@ -3,6 +3,7 @@ import groups.Integration
 import groups.PolicyEnforcement
 import objects.Deployment
 import org.junit.experimental.categories.Category
+import stackrox.generated.AlertServiceOuterClass
 import stackrox.generated.PolicyServiceOuterClass.EnforcementAction
 
 class Enforcement extends BaseSpecification {
@@ -126,9 +127,20 @@ class Enforcement extends BaseSpecification {
                 .setSkipReplicaWait(true)
         orchestrator.createDeployment(d)
 
+        and:
+        "get violation details"
+        List<AlertServiceOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
+                d.name,
+                CONTAINER_PORT_22_POLICY,
+                30
+        ) as List<AlertServiceOuterClass.ListAlert>
+        assert violations?.size() != null
+        AlertServiceOuterClass.Alert alert = Services.getViolaton(violations.get(0).id)
+
         then:
         "check deployment was scaled-down to 0 replicas"
         assert orchestrator.getDeploymentReplicaCount(d) == 0
+        assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
@@ -158,11 +170,22 @@ class Enforcement extends BaseSpecification {
                 .setSkipReplicaWait(true)
         orchestrator.createDeployment(d)
 
+        and:
+        "get violation details"
+        List<AlertServiceOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
+                d.name,
+                CONTAINER_PORT_22_POLICY,
+                30
+        ) as List<AlertServiceOuterClass.ListAlert>
+        assert violations?.size() != null
+        AlertServiceOuterClass.Alert alert = Services.getViolaton(violations.get(0).id)
+
         then:
         "check deployment set with unsatisfiable node constraint, and unavailable nodes = desired nodes"
         assert orchestrator.getDeploymentNodeSelectors(d) != null
         assert orchestrator.getDeploymentUnavailableReplicaCount(d) ==
                 orchestrator.getDeploymentReplicaCount(d)
+        assert alert.enforcement.action == EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
