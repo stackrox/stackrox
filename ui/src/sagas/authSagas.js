@@ -3,7 +3,7 @@ import { delay } from 'redux-saga';
 import { push } from 'react-router-redux';
 import queryString from 'query-string';
 
-import { loginPath, integrationsPath, oidcResponsePath } from 'routePaths';
+import { loginPath, integrationsPath, authResponsePrefix } from 'routePaths';
 import { takeEveryLocation } from 'utils/sagaEffects';
 import * as AuthService from 'services/AuthService';
 import { selectors } from 'reducers';
@@ -84,17 +84,39 @@ function* handleLoginPageRedirect({ location }) {
     }
 }
 
-function* handleOidcResponse(location) {
+function handleOidcResponse(location) {
     const hash = queryString.parse(location.hash);
-    const accessToken = hash.access_token;
-    yield call(AuthService.storeAccessToken, accessToken);
     if (hash.error) {
-        yield put(actions.handleIdpError(hash));
+        return hash;
+    }
+    return { token: hash.access_token };
+}
+
+function* dispatchAuthResponse(type, location) {
+    // For every handler registered under `/auth/response/<type>`, add a function that returns the token.
+    const responseHandlers = {
+        oidc: handleOidcResponse
+    };
+    let result = {};
+    const handler = responseHandlers[type];
+    if (handler) {
+        result = handler(location);
+    } else {
+        result = { error: `unknown auth response type ${type}` };
     }
 
-    // TODO-ivan: seems like react-router-redux doesn't like pushing an action synchronously while handling LOCATION_CHANGE,
-    // the bug is that it doesn't produce LOCATION_CHANGE event for this next push. Waiting here should be ok for an user.
-    yield delay(10);
+    if (result.token) {
+        yield call(AuthService.storeAccessToken, result.token);
+
+        // TODO-ivan: seems like react-router-redux doesn't like pushing an action synchronously while handling LOCATION_CHANGE,
+        // the bug is that it doesn't produce LOCATION_CHANGE event for this next push. Waiting here should be ok for an user.
+        yield delay(10);
+    } else {
+        if (!result || !result.error) {
+            result = { error: `no auth token received via method ${type}` };
+        }
+        yield put(actions.handleIdpError(result));
+    }
 
     const storedLocation = yield call(AuthService.getAndClearRequestedLocation);
     yield put(push(storedLocation || '/')); // try to restore requested path
@@ -123,9 +145,10 @@ export default function* auth() {
     // take the first location change, i.e. the location where user landed first time
     const action = yield take(locationActionTypes.LOCATION_CHANGE);
     const { payload: location } = action;
-    if (location.pathname && location.pathname.startsWith(oidcResponsePath)) {
+    if (location.pathname && location.pathname.startsWith(authResponsePrefix)) {
         // if it was a redirect after authentication, handle it properly
-        yield fork(handleOidcResponse, location);
+        const authType = location.pathname.substr(authResponsePrefix.length);
+        yield fork(dispatchAuthResponse, authType, location);
     } else {
         // otherwise we still need to fetch auth providers to check if user can access the app
         yield fork(getAuthProviders);

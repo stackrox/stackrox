@@ -4,7 +4,7 @@
 
 export const mainPath = '/main';
 export const loginPath = '/login';
-export const oidcResponsePath = '/auth/response/oidc';
+export const authResponsePrefix = '/auth/response/';
 
 export const dashboardPath = `${mainPath}/dashboard`;
 export const environmentPath = `${mainPath}/network`;
