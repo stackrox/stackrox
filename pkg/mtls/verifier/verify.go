@@ -66,7 +66,7 @@ func (NonCA) TLSConfig() (*tls.Config, error) {
 	}
 	// TODO(cg): Sensors should also issue creds to, and verify, their clients.
 	// For the time being, we only verify that the client cert is from the central CA.
-	conf.ClientAuth = tls.RequireAndVerifyClientCert
+	conf.ClientAuth = tls.VerifyClientCertIfGiven
 	return conf, nil
 }
 
