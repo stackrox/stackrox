@@ -6,7 +6,7 @@ import ReactSelectCreatable from 'react-select/lib/Creatable';
 const defaultClassName = 'text-base-600 font-400 w-full';
 
 const defaultComponentClassNames = {
-    multiValue: 'bg-base-500 border border-base-300 text-base-500 red'
+    multiValue: 'bg-primary-200 border border-primary-300 text-primary-700'
 };
 
 const Control = ({ className, ...props }) => (

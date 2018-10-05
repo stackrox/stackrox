@@ -29,7 +29,7 @@ const Panel = props => (
                 )}
             </div>
         </div>
-        <div className="flex h-full">{props.children}</div>
+        <div className="flex h-full overflow-auto">{props.children}</div>
     </div>
 );
 
