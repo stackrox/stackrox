@@ -29,7 +29,7 @@ class CollapsibleCard extends Component {
         const { title, titleClassName } = this.props;
         return (
             <div className={titleClassName}>
-                <h1 className="p-3 text-base-600 font-700 text-lg capitalize">{title}</h1>
+                <h1 className="p-3 pb-2 text-base-600 font-700 text-lg">{title}</h1>
                 <div className="flex pr-3">{icons[cardState]}</div>
             </div>
         );

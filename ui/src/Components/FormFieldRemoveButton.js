@@ -14,7 +14,7 @@ class FormFieldRemoveButton extends Component {
         return (
             <div className="flex">
                 <button
-                    className="p-1 px-3 rounded-r-sm text-base-100 uppercase text-center bg-danger-300 hover:bg-danger-400"
+                    className="p-1 px-3 rounded-r-sm text-base-100 uppercase text-center bg-alert-300 hover:bg-alert-400"
                     onClick={this.handleClick}
                     type="button"
                 >

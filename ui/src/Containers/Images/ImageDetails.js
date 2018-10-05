@@ -128,7 +128,7 @@ class ImageDetails extends Component {
                                         View Deployments
                                     </button>
                                 </span>
-                                <span className="w-1/2 border-low-100 border-l-2">
+                                <span className="w-1/2 border-base-300 border-l-2">
                                     {this.getDockerFileButton(image)}
                                 </span>
                             </div>

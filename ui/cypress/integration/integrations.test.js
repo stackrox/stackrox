@@ -136,19 +136,19 @@ describe('Cluster Creation Flow', () => {
 
         cy.get(selectors.clusters.swarmCluster1).click();
 
-        cy.get(selectors.readOnlyView)
+        cy.get(selectors.labeledValue)
             .eq(0)
             .should('have.text', 'Name:Swarm Cluster 1');
 
-        cy.get(selectors.readOnlyView)
+        cy.get(selectors.labeledValue)
             .eq(1)
             .should('have.text', 'Cluster Type:Swarm');
 
-        cy.get(selectors.readOnlyView)
+        cy.get(selectors.labeledValue)
             .eq(2)
             .should('have.text', 'Prevent Image:stackrox/prevent:latest');
 
-        cy.get(selectors.readOnlyView)
+        cy.get(selectors.labeledValue)
             .eq(3)
             .should('have.text', 'Central API Endpoint:central.stackrox:443');
     });

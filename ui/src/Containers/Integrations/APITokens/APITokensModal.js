@@ -175,7 +175,7 @@ class APITokensModal extends Component {
                     <PanelButton
                         icon={<Icon.Slash className="h-4 w-4 ml-1" />}
                         text={`Revoke (${selectionCount})`}
-                        className="btn btn-danger"
+                        className="btn btn-alert"
                         onClick={this.showConfirmationDialog}
                         disabled={this.state.selectedTokenId !== null}
                     />

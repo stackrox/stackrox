@@ -6,18 +6,26 @@ import * as Icon from 'react-feather';
 import Select, { Creatable } from 'Components/ReactSelect';
 
 const placeholderCreator = placeholderText => () => (
-    <span className="text-base-500 flex flex-1 h-full items-center">
-        <Icon.Search color="currentColor" size={18} />
-        <span className="font-600 px-2">{placeholderText}</span>
+    <span className="text-base-500 flex h-full items-center pointer-events-none">
+        <span className="font-600 absolute">{placeholderText}</span>
     </span>
 );
 
 const Option = ({ children, ...rest }) => (
     <components.Option {...rest}>
-        <div className="flex px-3">
+        <div className="flex">
             <span className="search-option-categories px-2 text-sm">{children}</span>
         </div>
     </components.Option>
+);
+
+const ValueContainer = ({ ...props }) => (
+    <React.Fragment>
+        <span className="text-base-500 flex h-full items-center pl-2 pr-1 pointer-events-none">
+            <Icon.Search color="currentColor" size={18} />
+        </span>
+        <components.ValueContainer {...props} />
+    </React.Fragment>
 );
 
 const MultiValue = props => (
@@ -25,19 +33,10 @@ const MultiValue = props => (
         {...props}
         className={
             props.data.type === 'categoryOption'
-                ? 'bg-primary-200 border border-primary-300 text-primary-600'
-                : 'bg-base-100 border border-base-300 text-base-600'
+                ? 'bg-primary-200 border border-primary-300 text-primary-700'
+                : 'bg-base-200 border border-base-300 text-base-600'
         }
     />
-);
-
-// hack-y (uses internal API of react-select): put cross ahead of the value label
-// TODO-ivan: change the behavior to have "key: value" to be one chip
-const MultiValueContainer = ({ children, ...rest }) => (
-    <components.MultiValueContainer {...rest}>
-        {React.Children.toArray(children)[1]}
-        {React.Children.toArray(children)[0]}
-    </components.MultiValueContainer>
 );
 
 const EmptyCreatableMenu = () => null;
@@ -89,7 +88,7 @@ class SearchInput extends Component {
 
         const props = {
             className: this.props.className,
-            components: { Option, Placeholder, MultiValue, MultiValueContainer },
+            components: { ValueContainer, Option, Placeholder, MultiValue },
             options: searchSuggestions,
             optionValue: searchOptions,
             onChange: this.setOptions,

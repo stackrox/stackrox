@@ -5,24 +5,24 @@ import * as Icon from 'react-feather';
 function Message(props) {
     const messageClasses = {
         warn:
-            'warn-message p-3 rounded-sm text-warning-500 items-center m-3 bg-low-100 leading-normal',
+            'warn-message p-2 rounded-sm text-warning-800 items-center border-2 border-base-100 bg-base-200 leading-normal flex-no-shrink',
         error:
-            'error-message p-3 rounded-sm text-alert-600 text-sm items-center m-3 bg-danger-100 leading-normal',
+            'error-message p-2 rounded-sm text-alert-800 text-sm items-center border-2 border-base-100 bg-alert-200 leading-normal flex-no-shrink',
         info:
-            'info-message p-3 rounded-sm text-success-600 text-sm items-center m-3 bg-success-100 leading-normal'
+            'info-message p-2 rounded-sm text-success-800 text-sm items-center border-2 border-base-100 bg-success-300 leading-normal flex-no-shrink'
     };
 
     const icons = {
-        warn: <Icon.AlertTriangle className="h-10 w-10" strokeWidth="1.5px" />,
-        error: <Icon.X className="h-4 w-4" strokeWidth="1.5px" />,
-        info: <Icon.Check className="h-4 w-4" strokeWidth="1.5px" />
+        warn: <Icon.AlertTriangle className="h-10 w-10" strokeWidth="2px" />,
+        error: <Icon.AlertOctagon className="h-4 w-4" strokeWidth="2px" />,
+        info: <Icon.Check className="h-4 w-4" strokeWidth="2px" />
     };
     return (
         <div className={`flex ${messageClasses[props.type]}`}>
             <div className="h-8 w-8 self-center rounded-full flex items-center justify-center bg-base-100 flex-no-shrink">
                 {icons[props.type]}
             </div>
-            <div className="flex pl-5 flex-1">{props.message}</div>
+            <div className="flex pl-3 flex-1">{props.message}</div>
         </div>
     );
 }

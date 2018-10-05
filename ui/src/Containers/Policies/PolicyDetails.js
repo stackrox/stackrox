@@ -27,7 +27,7 @@ class PolicyDetails extends Component {
         return (
             <div className="px-3 pt-5 bg-base-200">
                 <div className="bg-base-100 shadow">
-                    <div className="p-3 border-b border-base-300 text-base-600 font-700 text-lg capitalize">
+                    <div className="p-3 pb-2 border-b border-base-300 text-base-600 font-700 text-lg leading-normal">
                         Policy Details
                     </div>
                     <div className="h-full p-3 pb-0">
@@ -60,7 +60,7 @@ class PolicyDetails extends Component {
         return (
             <div className="px-3 pt-5 bg-base-200">
                 <div className="bg-base-100 shadow">
-                    <div className="p-3 border-b border-base-300 text-base-600 font-700 text-lg capitalize">
+                    <div className="p-3 border-b border-base-300 text-base-600 font-700 text-lg">
                         {policyFormFields.policyConfiguration.header}
                     </div>
                     <div className="h-full p-3 pb-0">

@@ -313,7 +313,7 @@ class ViolationsPage extends Component {
                             placement="top"
                             mouseLeaveDelay={0}
                             overlay={<div>{original.policy.description}</div>}
-                            overlayClassName="pointer-events-none text-white rounded max-w-xs p-2 w-full text-sm text-center"
+                            overlayClassName="pointer-events-none text-white rounded max-w-xs p-2 text-sm text-center"
                         >
                             <span className="inline-flex hover:text-primary-700 underline">
                                 {original.policy.name}
@@ -426,7 +426,7 @@ class ViolationsPage extends Component {
                         />
                     </PageHeader>
                     <div className="flex flex-1">
-                        <div className="w-full rounded-sm shadow border-primary-300">
+                        <div className="w-full rounded-sm shadow border-primary-300 bg-base-100">
                             {this.renderPanel()}
                         </div>
                         {this.renderSidePanel()}

@@ -5,7 +5,7 @@ import CloseButton from './CloseButton';
 
 const Panel = props => (
     <div
-        className={`flex flex-col border h-full border-t-0 border-base-400 ${props.className}`}
+        className={`flex flex-col h-full border-l border-t-0 border-base-400 ${props.className}`}
         data-test-id="panel"
     >
         <div className="border-b border-base-400">
@@ -16,9 +16,9 @@ const Panel = props => (
                 >
                     {props.header}
                 </div>
-                <div className="flex items-center px-4">{props.buttons}</div>
+                <div className="panel-actions relative flex items-center px-3">{props.buttons}</div>
                 {props.headerComponents && (
-                    <div className="flex items-center px-4 pr-3">{props.headerComponents}</div>
+                    <div className="flex items-center pr-3 relative">{props.headerComponents}</div>
                 )}
                 {props.onClose && (
                     <CloseButton
@@ -29,7 +29,7 @@ const Panel = props => (
                 )}
             </div>
         </div>
-        <div className="flex flex-1 overflow-auto">{props.children}</div>
+        <div className="flex h-full">{props.children}</div>
     </div>
 );
 

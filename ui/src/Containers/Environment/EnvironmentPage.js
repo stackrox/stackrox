@@ -140,14 +140,14 @@ class EnvironmentPage extends Component {
     };
 
     renderGraph = () => {
-        const colorType = this.props.networkGraphState === 'ERROR' ? 'danger' : 'success';
+        const colorType = this.props.networkGraphState === 'ERROR' ? 'alert' : 'success';
         const simulatorMode = this.props.simulatorMode ? 'simulator-mode' : '';
         const networkGraphState = this.props.networkGraphState === 'ERROR' ? 'error' : 'success';
         return (
             <div className={`${simulatorMode} ${networkGraphState} w-full h-full`}>
                 {this.props.simulatorMode && (
                     <div
-                        className={`absolute pin-t pin-l bg-${colorType}-600 text-base-100 uppercase p-2 z-1`}
+                        className={`absolute pin-t pin-l bg-${colorType}-600 text-base-100 font-600 uppercase p-2 z-1`}
                     >
                         Simulation Mode
                     </div>
@@ -227,7 +227,7 @@ class EnvironmentPage extends Component {
                 label: cluster.name
             }));
         const clustersProps = {
-            className: 'min-w-64 ml-5',
+            className: 'min-w-64 ml-2',
             options,
             value: this.props.selectedClusterId,
             placeholder: 'Select a cluster',
@@ -238,7 +238,7 @@ class EnvironmentPage extends Component {
     };
 
     renderNetworkGraphZoom = () => {
-        const positionStyle = this.props.simulatorMode ? { right: '40%' } : { right: '0' };
+        const positionStyle = this.props.simulatorMode ? { right: '33%' } : { right: '0' };
         return (
             <div className="absolute pin-b" style={positionStyle}>
                 <NetworkGraphZoom />

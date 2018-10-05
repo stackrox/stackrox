@@ -40,7 +40,7 @@ export const selectors = {
         typesSelect: 'form .react-select__control',
         endpointInput: "form input[name='docker.endpoint']"
     },
-    readOnlyView: '.overflow-auto > .p-4 > div',
+    labeledValue: '[data-test-id="labeled-value"]',
     plugins: '.mb-6:first div[role="button"]',
     dialog: '.dialog',
     checkboxes: 'input'

@@ -898,7 +898,7 @@ module.exports = {
     default: "0 2px 8px 0 hsla(230, 50%, 70%, .25)",
     md: "0 4px 8px 0 hsla(230, 50%, 70%, .25), 0 2px 4px 0 hsla(230, 50%, 70%, .25)",
     lg: "0 15px 30px 0 hsla(230, 50%, 70%, .25), 0 5px 15px 0 hsla(230, 50%, 70%, .25)",
-    inner: "inset 0 2px 4px 0 hsla(230, 50%, 70%, .25)",
+    inner: "inset 0 0px 8px 0 hsla(230, 50%, 70%, .25)",
     none: "none"
   },
 

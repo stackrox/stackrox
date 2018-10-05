@@ -38,13 +38,13 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 const getSeverityClassName = severity => {
     switch (severity) {
         case 'Low':
-            return 'text-low-500';
+            return 'text-base-500';
         case 'Medium':
-            return 'text-medium-500';
+            return 'text-warning-500';
         case 'High':
-            return 'text-high-severity';
+            return 'text-caution-severity';
         case 'Critical':
-            return 'text-critical-severity';
+            return 'text-alert-severity';
         default:
             return '';
     }
@@ -349,7 +349,7 @@ class PoliciesPage extends Component {
                     <PanelButton
                         icon={<Icon.Trash2 className="h-4 w- ml-1" />}
                         text={`Delete (${selectionCount})`}
-                        className="btn btn-danger"
+                        className="btn btn-alert"
                         onClick={this.showConfirmationDialog}
                         disabled={buttonsDisabled}
                     />

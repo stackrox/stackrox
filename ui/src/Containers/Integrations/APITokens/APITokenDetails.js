@@ -24,7 +24,7 @@ const Token = ({ token }) => {
                     </button>
                 </CopyToClipboard>
             </div>
-            <span className="bg-highlight-200 word-break-all">{token}</span>
+            <span className="bg-tertiary-200 word-break-all">{token}</span>
         </div>
     );
 };

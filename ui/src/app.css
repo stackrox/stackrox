@@ -97,6 +97,7 @@
   }
 
 @tailwind preflight;
+@tailwind utilities;
 
 
 
@@ -269,6 +270,16 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     pointer-events: none;
 }
 
+.panel-actions:not(:empty) + div:before {
+    @apply bg-base-300 absolute .rounded-full;
+    content: "";
+    left: -2px;
+    top: 50%;
+    width: 2px;
+    height: 50%;
+    transform: translateY(-50%);
+}
+
 .navigation-gradient {
     height: 2px;
     background-image: linear-gradient(90deg, #d1a0ea 0%, #a3acff 44%, #78effb 99%);
@@ -301,13 +312,60 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     padding-bottom: 84px;
 }
 
-.search-option-categories {
-    background-color: hsl(229, 89%, 96%);
-    color: hsl(45, 4%, 35%);
-    font-family: Open Sans;
-    padding: 2px;
-    border: 2px solid hsl(225, 81%, 90%);
+.react-select__single-value {
+    color: inherit !important;
 }
+
+.react-select__option {
+    @apply .px-2 .cursor-pointer !important;
+}
+
+.react-select__menu {
+    @apply .m-0 !important; 
+}
+
+.react-select__menu-notice--no-options {
+    @apply .text-left !important;
+}
+
+.react-select__control--is-focused, .react-select__control--is-focused:hover {
+    @apply .border-base-400 !important;
+}
+
+.react-select__value-container--is-multi {
+    @apply .pb-0 pl-1 !important;
+}
+
+.react-select__input input {
+    @apply .text-base-600 .font-600 !important;
+    margin-left: -2px !important;
+}
+
+.react-select__indicators {
+    @apply .cursor-pointer;
+}
+
+.react-select__multi-value__label {
+    @apply px-2 !important;
+}
+
+.react-select__multi-value__remove {
+@apply .cursor-pointer;
+}
+
+.react-select__multi-value__remove:hover {
+    @apply .shadow-inner;
+    }
+
+.react-select__menu-list {
+    @apply .p-0 !important;
+}
+
+.search-option-categories {
+    @apply .bg-primary-100 .text-base-600 .border-2 .border-primary-300 .rounded-sm .p-1;
+}
+
+
 
 .severity-tile {
     background: hsla(0, 0%, 100%, 0.19);
@@ -336,13 +394,22 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 
-.recharts-responsive-container .recharts-tooltip-cursor{
-    fill-opacity: 0.0;
+.cursor-text {
+    cursor: text !important;
 }
 
-.dashboard-benchmarks .carousel-prev-arrow, .dashboard-benchmarks .carousel-next-arrow {
-    top: -5%;
+.rc-tooltip-inner {
+    background-color: hsla(230, 13%, 34%, 1) !important;
 }
+
+.rc-tooltip-arrow {
+    border-top-color: hsla(230, 13%, 34%, 1) !important;
+}
+
+.recharts-responsive-container .recharts-tooltip-cursor{
+    fill-opacity: 0;
+}
+
 
 .left-navigation {
     width: 81px;
@@ -397,14 +464,6 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     -moz-box-shadow: inset 0px 0px 0px 4px config('colors.success-600');
     box-shadow: inset 0px 0px 0px 4px config('colors.success-600');
 
-}
-
-.network-policy-success-yaml {
-    height: calc(100% - 5rem);
-}
-
-.network-policy-error-yaml {
-    height: calc(100% - 7.25rem);
 }
 
 .top-navigation {
@@ -519,6 +578,15 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     @apply .shadow-none .border-t .shadow-underline .pt-2 .pb-2 .pl-0 .pr-0 !important;
 }
 
+.ReactTable input[type="checkbox"] {
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+.ReactTable input[type="checkbox"]:hover, .ReactTable input[type="checkbox"]:focus  {
+    @apply .shadow;
+}
+
 .ReactTable .rt-thead .rt-th:focus {
     @apply .outline-none !important;
 }
@@ -542,31 +610,31 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     position: absolute;
     margin-left: 4px;
 }
-.ReactTable.-highlight .rt-tbody, .ReactTable.-highlight .rt-thead  {
+.ReactTable .rt-tbody, .ReactTable .rt-thead  {
     @apply .pl-3 .pr-3 !important;
 }
 
-.ReactTable.-highlight .rt-tbody .rt-td {
+.ReactTable .rt-tbody .rt-td {
     @apply .whitespace-normal .relative !important;
     top: 1px;
 }
 
-.ReactTable.-highlight .rt-tbody .rt-tr {
+.ReactTable .rt-tbody .rt-tr {
     box-shadow: 0px -1px 0 0 config('colors.base-300'), inset 0px -1px 0 0 config('colors.base-300');
     @apply .min-h-14 !important;
 }
 
-.ReactTable.-highlight .rt-tbody .rt-tr:hover {
+.ReactTable .rt-tbody .rt-tr:hover {
     @apply .bg-base-200 !important;
     box-shadow: 0px 1px 0 0 config('colors.base-400'), inset 0px 1px 0 0 config('colors.base-400');
 }
 
-.ReactTable.-highlight .rt-tbody .rt-tr.row-active, .ReactTable.-highlight .rt-tbody .rt-tr.row-active:hover {
+.ReactTable .rt-tbody .rt-tr.row-active, .ReactTable .rt-tbody .rt-tr.row-active:hover {
     @apply .bg-tertiary-200 .z-0 !important;
     box-shadow: 0px 1px 0 0 config('colors.tertiary-400'), inset 0px 1px 0 0 config('colors.tertiary-400');
 }
 
-.ReactTable.-highlight .rt-tbody .rt-tr.row-active .rt-td, .ReactTable.-highlight .rt-tbody .rt-tr.row-active:hover .rt-td {
+.ReactTable .rt-tbody .rt-tr.row-active .rt-td, .ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td {
     @apply .text-tertiary-700 !important;
 }
 
@@ -579,7 +647,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     @apply .relative !important;
 }
 
-.ReactTable.-highlight .rt-tbody .rt-td.rt-tr-actions {
+.ReactTable .rt-tbody .rt-td.rt-tr-actions {
     @apply .absolute !important;
     top: auto;
 }
@@ -596,4 +664,3 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     @apply .bg-primary-300 .text-base-100 .rounded-none !important;
 }
 
-@tailwind utilities;

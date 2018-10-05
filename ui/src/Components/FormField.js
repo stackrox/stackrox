@@ -8,7 +8,7 @@ const FormField = props => (
         <div className="py-2 text-primary-500">
             <span>{props.label}</span>
             {props.required && (
-                <span data-test-id="required" className="text-danger-500 ml-1">
+                <span data-test-id="required" className="text-alert-500 ml-1">
                     *
                 </span>
             )}

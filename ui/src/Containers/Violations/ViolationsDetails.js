@@ -31,7 +31,7 @@ class ViolationsDetails extends Component {
         return violations.filter(violation => !violation.processes.length).map(({ message }) => (
             <div
                 key={message}
-                className="mt-4 p-3 shadow border border-base-200 text-base-600 flex justify-between leading-normal bg-base-100"
+                className="mt-5 p-3 pb-2 shadow border border-base-200 text-base-600 flex justify-between leading-normal bg-base-100"
             >
                 {message}
             </div>
@@ -119,7 +119,7 @@ class ViolationsDetails extends Component {
             );
         }
         return (
-            <div className="w-full px-3 py-4">
+            <div className="w-full px-3 pb-5">
                 {runtimeMessages}
                 {separator}
                 {deploytimeMessages}

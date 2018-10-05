@@ -5,13 +5,13 @@ import ReactTablePropTypes from 'react-table/lib/propTypes';
 import flattenObject from 'utils/flattenObject';
 
 export const defaultHeaderClassName =
-    'px-2 py-3 pb-2 font-700 text-base-600 border-b border-base-300 hover:bg-primary-200 hover:text-primary-700 truncate select-none relative text-left border-r-0 shadow-none leading-loose';
+    'px-2 py-4 pb-3 font-700 text-base-600 border-b border-base-300 hover:bg-primary-200 hover:text-primary-700 truncate select-none relative text-left border-r-0 shadow-none leading-normal';
 export const defaultColumnClassName =
     'px-2 py-2 font-600 text-base-600 text-left border-r-0 self-center leading-normal';
 export const wrapClassName = 'whitespace-normal overflow-visible';
 export const rtTrActionsClassName =
     'rt-tr-actions hidden pin-r p-0 mr-2 w-auto text-left self-center shadow';
-export const pageSize = 20;
+export const pageSize = 50;
 
 class Table extends Component {
     static propTypes = {
@@ -73,7 +73,7 @@ class Table extends Component {
                 getTrGroupProps={this.getTrGroupProps}
                 getTrProps={this.getTrProps}
                 defaultPageSize={pageSize}
-                className="flex flex-1 overflow-auto border-0 -highlight w-full h-full"
+                className="flex flex-1 overflow-auto border-0 w-full h-full"
                 resizable={false}
                 sortable
                 defaultSortDesc={false}

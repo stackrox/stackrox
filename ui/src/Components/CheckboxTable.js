@@ -73,7 +73,7 @@ class CheckboxTable extends Component {
                     />
                 ),
                 sortable: false,
-                width: 40
+                width: 28
             },
             ...columns
         ];

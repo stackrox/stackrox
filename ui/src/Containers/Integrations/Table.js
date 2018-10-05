@@ -72,7 +72,7 @@ class IntegrationTable extends Component {
                     <PanelButton
                         icon={<Icon.Trash2 className="h-4 w-4 ml-1" />}
                         text={`Delete (${selectionCount})`}
-                        className="btn btn-danger"
+                        className="btn btn-alert"
                         onClick={onDelete}
                         disabled={integrationsCount === 0 || !buttonsEnabled}
                     />
