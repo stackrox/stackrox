@@ -54,8 +54,8 @@ func FillFullName(img *v1.Image) {
 
 // ExtractImageSha returns the image sha if it exists within the string.
 func ExtractImageSha(imageStr string) string {
-	if idx := strings.Index(imageStr, "@sha256:"); idx != -1 {
-		return imageStr[idx+len("@sha256:"):]
+	if idx := strings.Index(imageStr, "sha256:"); idx != -1 {
+		return imageStr[idx:]
 	}
 
 	return ""

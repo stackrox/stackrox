@@ -95,6 +95,7 @@ message Container {
     Resources resources                 = 8;
 
     repeated ContainerInstance instances = 9;
+    string name                          = 10;
 }
 
 message ContainerConfig {

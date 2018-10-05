@@ -163,9 +163,11 @@ func (w *deploymentWrap) GetDeployment() *pkgV1.Deployment {
 }
 
 func (w *deploymentWrap) populateContainers(podSpec v1.PodSpec) {
-	w.Deployment.Containers = make([]*pkgV1.Container, len(podSpec.Containers))
-	for i := range w.Deployment.Containers {
-		w.Deployment.Containers[i] = new(pkgV1.Container)
+	w.Deployment.Containers = make([]*pkgV1.Container, 0, len(podSpec.Containers))
+	for _, c := range podSpec.Containers {
+		w.Deployment.Containers = append(w.Deployment.Containers, &pkgV1.Container{
+			Name: c.Name,
+		})
 	}
 
 	w.populateServiceAccount(podSpec)

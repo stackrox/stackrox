@@ -138,6 +138,11 @@ func (k *kubernetesListener) Start() {
 	k.resourceEventDispatcher = resources.NewDispatcher(podInformer.Lister(), clusterentities.StoreInstance())
 
 	go k.processResourceEvents()
+
+	go podInformer.Informer().Run(k.stopSig.Done())
+	// Wait for the pod informer to have synced
+	cache.WaitForCacheSync(k.stopSig.Done(), podInformer.Informer().HasSynced)
+
 	for _, informer := range factories {
 		informer.Start(k.stopSig.Done())
 	}

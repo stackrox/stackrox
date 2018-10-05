@@ -44,3 +44,25 @@ func TestNewImage(t *testing.T) {
 		})
 	}
 }
+
+func TestExtractImageSha(t *testing.T) {
+	var cases = []struct {
+		input  string
+		output string
+	}{
+		{
+			input:  "docker-pullable://k8s.gcr.io/etcd-amd64@sha256:68235934469f3bc58917bcf7018bf0d3b72129e6303b0bef28186d96b2259317",
+			output: "sha256:68235934469f3bc58917bcf7018bf0d3b72129e6303b0bef28186d96b2259317",
+		},
+		{
+			input:  "docker://sha256:041b6144416e6e9c540d1fb4883ebc1b6fe4baf09d066d8311c0109755baae96",
+			output: "sha256:041b6144416e6e9c540d1fb4883ebc1b6fe4baf09d066d8311c0109755baae96",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.input, func(t *testing.T) {
+			assert.Equal(t, c.output, ExtractImageSha(c.input))
+		})
+	}
+}

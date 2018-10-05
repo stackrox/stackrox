@@ -240,7 +240,8 @@ func TestConvert(t *testing.T) {
 				UpdatedAt: &timestamp.Timestamp{Seconds: 1000},
 				Containers: []*pkgV1.Container{
 					{
-						Id: "FooID:container1",
+						Id:   "FooID:container1",
+						Name: "container1",
 						Config: &pkgV1.ContainerConfig{
 							Command: []string{"hello", "world"},
 							Args:    []string{"lorem", "ipsum"},
@@ -305,7 +306,8 @@ func TestConvert(t *testing.T) {
 						},
 					},
 					{
-						Id: "FooID:container2",
+						Id:   "FooID:container2",
+						Name: "container2",
 						Config: &pkgV1.ContainerConfig{
 							Args: []string{"--flag"},
 							Env: []*pkgV1.ContainerConfig_EnvironmentConfig{
