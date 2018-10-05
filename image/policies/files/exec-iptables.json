@@ -10,5 +10,15 @@
       }
     },
   "rationale": "iptables is a deprecated way of managing network state in containers",
-  "remediation": "Check for any processes that may be modifying iptables rules. Check for open ports that may be allowing code injection to modify iptables rules"
+  "remediation": "Check for any processes that may be modifying iptables rules. Check for open ports that may be allowing code injection to modify iptables rules",
+  "whitelists": [
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    }
+  ]
 }

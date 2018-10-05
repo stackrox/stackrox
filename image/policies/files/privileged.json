@@ -31,6 +31,14 @@
           }
         }
       }
+    },
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
     }
   ]
 }
