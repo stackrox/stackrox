@@ -22,13 +22,10 @@
       }
     },
     {
-      "name": "Don't alert on StackRox Detect and Respond",
+      "name": "Don't alert on the stackrox namespace",
       "deployment": {
         "scope": {
-          "label": {
-            "key": "com.docker.stack.namespace",
-            "value": "stackrox"
-          }
+          "namespace": "stackrox"
         }
       }
     },

@@ -35,6 +35,15 @@
       }
     },
     {
+      "name": "Don't alert on StackRox collector",
+      "deployment": {
+        "name": "collector",
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
       "name": "Don't alert on ucp-agent",
       "deployment": {
         "name": "ucp-agent"

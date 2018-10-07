@@ -1,5 +1,8 @@
 import static Services.getPolicies
+import static Services.getViolations
 import static Services.waitForViolation
+
+import stackrox.generated.AlertServiceOuterClass
 
 import groups.BAT
 import org.junit.experimental.categories.Category
@@ -87,4 +90,12 @@ class DefaultPoliciesTest extends BaseSpecification {
         "DockerHub NGINX 1.10"                        |  NGINX_1_10    | "C823"
     }
 
+    @Category(BAT)
+    def "Verify that our services don't trigger alerts"() {
+        expect:
+        "verify not policies are violated within stackrox or kube-system namespace"
+        getViolations(
+                AlertServiceOuterClass.ListAlertsRequest.newBuilder().setQuery("Namespace:stackrox,kube-system").build()
+        ).size() == 0
+    }
 }
