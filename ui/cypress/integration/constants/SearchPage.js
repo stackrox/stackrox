@@ -4,7 +4,7 @@ const selectors = {
     pageSearchSuggestions: 'div.Select-menu-outer',
     categoryTabs: '.tab',
 
-    searchInput: '.search-modal .react-select__input > input',
+    searchInput: '.search-modal input',
     pageSearchInput: '.react-select__input > input',
     searchResultsHeader: '.bg-base-100.flex-1 > .text-xl',
     viewOnViolationsChip:
