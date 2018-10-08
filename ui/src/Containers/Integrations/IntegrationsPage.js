@@ -34,12 +34,10 @@ class IntegrationsPage extends Component {
             })
         ).isRequired,
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
-        dnrIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
         notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
         imageIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
         fetchAuthProviders: PropTypes.func.isRequired,
         fetchAPITokens: PropTypes.func.isRequired,
-        fetchDNRIntegrations: PropTypes.func.isRequired,
         fetchNotifiers: PropTypes.func.isRequired,
         fetchImageIntegrations: PropTypes.func.isRequired,
         fetchClusters: PropTypes.func.isRequired
@@ -59,9 +57,6 @@ class IntegrationsPage extends Component {
                     break;
                 }
                 this.props.fetchAuthProviders();
-                break;
-            case 'dnrIntegrations':
-                this.props.fetchDNRIntegrations();
                 break;
             case 'imageIntegrations':
                 this.props.fetchImageIntegrations();
@@ -106,8 +101,6 @@ class IntegrationsPage extends Component {
         switch (source) {
             case 'clusters':
                 return this.getClustersForOrchestrator(type);
-            case 'dnrIntegrations':
-                return this.props.dnrIntegrations;
             case 'authProviders':
                 if (type === 'apitoken') {
                     return this.props.apiTokens;
@@ -178,7 +171,6 @@ class IntegrationsPage extends Component {
         ));
 
     render() {
-        const dnrIntegrations = this.renderIntegrationTiles('dnrIntegrations');
         const imageIntegrations = this.renderIntegrationTiles('imageIntegrations');
         const orchestrators = this.renderIntegrationTiles('orchestrators');
         const plugins = this.renderIntegrationTiles('plugins');
@@ -226,15 +218,6 @@ class IntegrationsPage extends Component {
                             <div className="flex flex-wrap w-full -mx-6 p-3">{authProviders}</div>
                         </div>
                     </section>
-
-                    <section className="mb-6">
-                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
-                            StackRox
-                        </h2>
-                        <div className="flex flex-col items-center w-full">
-                            <div className="flex flex-wrap w-full -mx-6 p-3">{dnrIntegrations}</div>
-                        </div>
-                    </section>
                 </div>
                 {this.renderIntegrationModal()}
             </div>
@@ -246,7 +229,6 @@ const mapStateToProps = createStructuredSelector({
     authProviders: selectors.getAuthProviders,
     apiTokens: selectors.getAPITokens,
     clusters: selectors.getClusters,
-    dnrIntegrations: selectors.getDNRIntegrations,
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations
 });
@@ -254,7 +236,6 @@ const mapStateToProps = createStructuredSelector({
 const mapDispatchToProps = dispatch => ({
     fetchAuthProviders: () => dispatch(authActions.fetchAuthProviders.request()),
     fetchAPITokens: () => dispatch(apiTokenActions.fetchAPITokens.request()),
-    fetchDNRIntegrations: () => dispatch(integrationActions.fetchDNRIntegrations.request()),
     fetchNotifiers: () => dispatch(integrationActions.fetchNotifiers.request()),
     fetchImageIntegrations: () => dispatch(integrationActions.fetchImageIntegrations.request()),
     fetchRegistries: () => dispatch(integrationActions.fetchRegistries.request()),

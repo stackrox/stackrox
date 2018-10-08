@@ -8,7 +8,6 @@ import (
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterMocks "github.com/stackrox/rox/central/cluster/store/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	dnrintegrationMocks "github.com/stackrox/rox/central/dnrintegration/datastore/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -25,7 +24,6 @@ type ClusterDataStoreTestSuite struct {
 
 	clusters    *clusterMocks.Store
 	deployments *deploymentMocks.DataStore
-	dnrInts     *dnrintegrationMocks.DataStore
 	alerts      *alertMocks.DataStore
 
 	clusterDataStore DataStore
@@ -34,39 +32,13 @@ type ClusterDataStoreTestSuite struct {
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.clusters = &clusterMocks.Store{}
 	suite.deployments = &deploymentMocks.DataStore{}
-	suite.dnrInts = &dnrintegrationMocks.DataStore{}
 	suite.alerts = &alertMocks.DataStore{}
 
-	suite.clusterDataStore = New(suite.clusters, suite.alerts, suite.deployments, suite.dnrInts)
-}
-
-func (suite *ClusterDataStoreTestSuite) TestDNRIntegrationsAreRemoved() {
-	suite.dnrInts.On("GetDNRIntegrations", &v1.GetDNRIntegrationsRequest{
-		ClusterId: fakeClusterID,
-	}).Return([]*v1.DNRIntegration{
-		{
-			Id:         "DNRID",
-			ClusterIds: []string{fakeClusterID},
-		},
-	}, nil)
-	suite.dnrInts.On("RemoveDNRIntegration", "DNRID").Return(nil)
-
-	cluster := &v1.Cluster{Name: fakeClusterID}
-
-	suite.clusters.On("GetCluster", fakeClusterID).Return(cluster, true, nil)
-	suite.clusters.On("RemoveCluster", fakeClusterID).Return(nil)
-
-	suite.deployments.On("ListDeployments").Return(make([]*v1.ListDeployment, 0), nil)
-	suite.deployments.On("RemoveDeployment", "deployment1").Return(nil)
-
-	suite.clusterDataStore.RemoveCluster(fakeClusterID)
-	suite.clusters.AssertExpectations(suite.T())
-	suite.dnrInts.AssertExpectations(suite.T())
+	suite.clusterDataStore = New(suite.clusters, suite.alerts, suite.deployments)
 }
 
 // Test the happy path.
 func (suite *ClusterDataStoreTestSuite) TestRemoveTombstonesDeploymentsAndMarksAlertsStale() {
-	suite.mockOutDNRIntegrationMethod()
 	// We expect alerts to be fetched, and all to be updated.
 	alerts := getAlerts(2)
 	suite.alerts.On("ListAlerts",
@@ -98,7 +70,6 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveTombstonesDeploymentsAndMarksA
 
 // Test that when the cluster we try to remove does not exist, we return an error.
 func (suite *ClusterDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
-	suite.mockOutDNRIntegrationMethod()
 	// Return false for the cluster not existing.
 	suite.clusters.On("GetCluster", fakeClusterID).Return((*v1.Cluster)(nil), false, nil)
 
@@ -112,7 +83,6 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
 
 // Test that when we cannot fetch a cluster, we return the error from the DB.
 func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingCluster() {
-	suite.mockOutDNRIntegrationMethod()
 	// Return an error trying to fetch the cluster.
 	expectedErr := fmt.Errorf("issues need tissues")
 	suite.clusters.On("GetCluster", fakeClusterID).Return((*v1.Cluster)(nil), true, expectedErr)
@@ -128,7 +98,6 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingCluster() {
 // Test that when no deployments exist for a cluster, the cluster is removed successfully with no additional
 // operations on either deployments or alerts.
 func (suite *ClusterDataStoreTestSuite) TestHandlesNoDeployments() {
-	suite.mockOutDNRIntegrationMethod()
 	// Return an error trying to fetch the deployments for a cluster.
 	suite.deployments.On("ListDeployments").Return(([]*v1.ListDeployment)(nil), nil)
 
@@ -150,7 +119,6 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesNoDeployments() {
 // Test that when we get an error trying to fetch the deployments for a cluster, we do not remove the cluster
 // and instead return the error.
 func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingDeployments() {
-	suite.mockOutDNRIntegrationMethod()
 	// Return an error trying to fetch the deployments for a cluster.
 	expectedErr := fmt.Errorf("issues need tissues")
 	suite.deployments.On("ListDeployments").Return(([]*v1.ListDeployment)(nil), expectedErr)
@@ -174,7 +142,6 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingDeployments() {
 // the error received from the db. But we should still attempt to mark it's alerts as stale and remove the
 // other deployments and their alerts.
 func (suite *ClusterDataStoreTestSuite) TestHandlesErrorTombstoningDeployments() {
-	suite.mockOutDNRIntegrationMethod()
 	// We expect alerts to be fetched, and all to be updated.
 	alerts := getAlerts(2)
 	suite.alerts.On("ListAlerts",
@@ -215,7 +182,6 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorTombstoningDeployments()
 // Test that when no alerts exist for a deployment, everything still functions as intended and the
 // deployments and cluster are removed.
 func (suite *ClusterDataStoreTestSuite) TestHandlesNoAlerts() {
-	suite.mockOutDNRIntegrationMethod()
 	// If No alerts exist, everything should still work smoothly.
 	suite.alerts.On("ListAlerts",
 		mock.MatchedBy(func(req *v1.ListAlertsRequest) bool { return strings.Contains(req.Query, "deployment1") })).Return(([]*v1.ListAlert)(nil), nil)
@@ -244,7 +210,6 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesNoAlerts() {
 // Test that when we fail to get the alerts for a deployment, the deployment and cluster are not removed, and
 // the error is returned.
 func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingAlerts() {
-	suite.mockOutDNRIntegrationMethod()
 	// We expect alerts to be fetched, and all to be updated.
 	expectedErr := fmt.Errorf("issues need tissues")
 	suite.alerts.On("ListAlerts",
@@ -273,7 +238,6 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingAlerts() {
 // Test that when we fail to mark an alert as stale, we do not remove the deployment or the cluster, and
 // return the error.
 func (suite *ClusterDataStoreTestSuite) TestHandlesErrorUpdatingAlert() {
-	suite.mockOutDNRIntegrationMethod()
 	// We expect alerts to be fetched, and all to be updated.
 	alerts := getAlerts(2)
 	suite.alerts.On("ListAlerts",
@@ -302,13 +266,6 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorUpdatingAlert() {
 	suite.alerts.AssertExpectations(suite.T())
 	suite.deployments.AssertExpectations(suite.T())
 	suite.clusters.AssertExpectations(suite.T())
-}
-
-// All tests that don't test the deletion of the DNR integration should mock it out with this.
-func (suite *ClusterDataStoreTestSuite) mockOutDNRIntegrationMethod() {
-	suite.dnrInts.On("GetDNRIntegrations", &v1.GetDNRIntegrationsRequest{
-		ClusterId: fakeClusterID,
-	}).Return(nil, nil)
 }
 
 func getAlerts(count int) []*v1.ListAlert {

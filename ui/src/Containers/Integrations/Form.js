@@ -22,13 +22,8 @@ class Form extends Component {
         initialValues: PropTypes.shape({
             name: PropTypes.string
         }),
-        source: PropTypes.oneOf([
-            'imageIntegrations',
-            'dnrIntegrations',
-            'notifiers',
-            'authProviders',
-            'clusters'
-        ]).isRequired,
+        source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders', 'clusters'])
+            .isRequired,
         type: PropTypes.string.isRequired,
         formFields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
         formData: PropTypes.shape({
@@ -165,38 +160,10 @@ class Form extends Component {
 
 const getFormFields = createSelector(
     [selectors.getClusters, (state, props) => props],
-    (clusters, props) => {
-        if (props.source === 'dnrIntegrations') {
-            const options = clusters.map(({ id, name }) => ({ value: id, label: name }));
-            return [
-                {
-                    label: 'Clusters',
-                    jsonpath: 'clusterIds',
-                    type: 'multiselect',
-                    options,
-                    placeholder: 'Choose clusters...'
-                },
-                {
-                    label: 'Portal URL',
-                    jsonpath: 'portalUrl',
-                    type: 'text',
-                    placeholder: ''
-                },
-                {
-                    label: 'Auth Token',
-                    jsonpath: 'authToken',
-                    type: 'text',
-                    placeholder: ''
-                }
-            ];
-        }
-        return formDescriptors[props.source][props.type];
-    }
+    (clusters, props) => formDescriptors[props.source][props.type]
 );
-const getFormFieldKeys = (source, type) => {
-    if (source === 'dnrIntegrations') return ['clusterIds', 'portalUrl', 'authToken'];
-    return formDescriptors[source] ? formDescriptors[source][type].map(obj => obj.jsonpath) : '';
-};
+const getFormFieldKeys = (source, type) =>
+    formDescriptors[source] ? formDescriptors[source][type].map(obj => obj.jsonpath) : '';
 
 const formFieldKeys = (state, props) =>
     formValueSelector('integrationForm')(state, ...getFormFieldKeys(props.source, props.type));

@@ -7,7 +7,6 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	dnrStore "github.com/stackrox/rox/central/dnrintegration/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/search"
@@ -18,7 +17,6 @@ type datastoreImpl struct {
 
 	ads alertDataStore.DataStore
 	dds deploymentDataStore.DataStore
-	dnr dnrStore.DataStore
 }
 
 // GetCluster is a pass through function to the underlying storage.
@@ -93,11 +91,6 @@ func (ds *datastoreImpl) RemoveCluster(id string) error {
 		return err
 	}
 
-	err = ds.removeDNRIntegrationIfExists(id)
-	if err != nil {
-		return err
-	}
-
 	return ds.storage.RemoveCluster(id)
 }
 
@@ -137,29 +130,4 @@ func (ds *datastoreImpl) markAlertsStale(alerts []*v1.ListAlert) error {
 		errorList.AddError(ds.ads.MarkAlertStale(alert.GetId()))
 	}
 	return errorList.ToError()
-}
-
-// If we remove a cluster, we remove the DNR integration from it, if there is one.
-func (ds *datastoreImpl) removeDNRIntegrationIfExists(clusterID string) error {
-	dnrIntegrations, err := ds.dnr.GetDNRIntegrations(&v1.GetDNRIntegrationsRequest{
-		ClusterId: clusterID,
-	})
-	if err != nil {
-		return fmt.Errorf("fetching DNR integrations: %s", err)
-	}
-
-	// There should be either 0 or 1 DNR integrations, but this is not the place to assert that.
-	// We'll just log a message here, and remove all the integrations.
-	if len(dnrIntegrations) > 1 {
-		log.Errorf("Found more than 1 D&R integration for cluster %s: %#v",
-			clusterID, dnrIntegrations)
-	}
-
-	for _, integration := range dnrIntegrations {
-		err = ds.dnr.RemoveDNRIntegration(integration.GetId())
-		if err != nil {
-			return fmt.Errorf("removing DNR integration %s: %s", integration.GetId(), err)
-		}
-	}
-	return nil
 }

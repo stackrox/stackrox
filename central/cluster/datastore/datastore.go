@@ -6,7 +6,6 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	dnrDataStore "github.com/stackrox/rox/central/dnrintegration/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -29,11 +28,10 @@ type DataStore interface {
 }
 
 // New returns an instance of DataStore.
-func New(storage store.Store, ads alertDataStore.DataStore, dds deploymentDataStore.DataStore, dnr dnrDataStore.DataStore) DataStore {
+func New(storage store.Store, ads alertDataStore.DataStore, dds deploymentDataStore.DataStore) DataStore {
 	return &datastoreImpl{
 		storage: storage,
 		ads:     ads,
 		dds:     dds,
-		dnr:     dnr,
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
-	"github.com/stackrox/rox/central/dnrintegration/datastore"
 )
 
 var (
@@ -13,7 +12,7 @@ var (
 )
 
 func initialize() {
-	scorer = NewScorer(alertDataStore.Singleton(), datastore.Singleton())
+	scorer = NewScorer(alertDataStore.Singleton())
 }
 
 // GetScorer returns the singleton Scorer object to use when scoring risk.

@@ -18,20 +18,9 @@ class IntegrationTable extends Component {
     static propTypes = {
         integrations: PropTypes.arrayOf(PropTypes.object).isRequired,
 
-        source: PropTypes.oneOf([
-            'dnrIntegrations',
-            'imageIntegrations',
-            'notifiers',
-            'authProviders'
-        ]).isRequired,
+        source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders']).isRequired,
 
         type: PropTypes.string.isRequired,
-        clusters: PropTypes.arrayOf(
-            PropTypes.shape({
-                name: PropTypes.string.isRequired,
-                id: PropTypes.string.isRequired
-            })
-        ),
 
         buttonsEnabled: PropTypes.bool.isRequired,
 
@@ -48,7 +37,6 @@ class IntegrationTable extends Component {
     };
 
     static defaultProps = {
-        clusters: [],
         selectedIntegrationId: null
     };
 
@@ -103,23 +91,7 @@ class IntegrationTable extends Component {
         return columns;
     };
 
-    getRows = () => {
-        const { source, integrations, clusters } = this.props;
-        if (source === 'dnrIntegrations') {
-            return integrations.map(dnrIntegration => {
-                const clusterNames = [];
-                dnrIntegration.clusterIds.forEach(clusterId => {
-                    const cluster = clusters.find(({ id }) => id === clusterId);
-                    if (cluster && cluster.name) clusterNames.push(cluster.name);
-                });
-                return Object.assign({}, dnrIntegration, {
-                    clusterNames: clusterNames.join(', '),
-                    name: `D&R Integration`
-                });
-            });
-        }
-        return this.props.integrations;
-    };
+    getRows = () => this.props.integrations;
 
     renderRowActionButtons = integration => {
         const { source } = this.props;

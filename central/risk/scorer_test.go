@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/central/dnrintegration"
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -23,30 +22,11 @@ func TestScore(t *testing.T) {
 				},
 			},
 		},
-	}, &getters.MockDNRIntegrationGetter{
-		MockDNRIntegration: &getters.MockDNRIntegration{
-			ExpectedNamespace:   "",
-			ExpectedServiceName: "",
-			MockAlerts: []dnrintegration.PolicyAlert{
-				{PolicyName: "FakePolicy0", SeverityWord: "CRITICAL", SeverityScore: 100},
-				{PolicyName: "FakePolicy1", SeverityWord: "MEDIUM", SeverityScore: 50},
-			},
-			MockError: nil,
-		},
-		Exists: true,
 	})
 
 	// Without user defined function
-	expectedRiskScore := 6.048
+	expectedRiskScore := 4.032
 	expectedRiskResults := []*v1.Risk_Result{
-		{
-			Name: multipliers.DnrAlertsHeading,
-			Factors: []*v1.Risk_Result_Factor{
-				{Message: "FakePolicy0 (Severity: CRITICAL)"},
-				{Message: "FakePolicy1 (Severity: MEDIUM)"},
-			},
-			Score: 1.5,
-		},
 		{
 			Name:    multipliers.PolicyViolationsHeading,
 			Factors: []*v1.Risk_Result_Factor{{Message: "Test (severity: Critical)"}},
@@ -97,7 +77,7 @@ func TestScore(t *testing.T) {
 		scorer.UpdateUserDefinedMultiplier(mult)
 	}
 
-	expectedRiskScore = 36.288
+	expectedRiskScore = 24.192
 	expectedRiskResults = append(expectedRiskResults, []*v1.Risk_Result{
 		{
 			Name: "Cluster multiplier 3",

@@ -4,7 +4,7 @@ import Raven from 'raven-js';
 import { integrationsPath, policiesPath, environmentPath } from 'routePaths';
 import * as service from 'services/IntegrationsService';
 import * as AuthService from 'services/AuthService';
-import { actions as clusterActions, types as clusterTypes } from 'reducers/clusters';
+import { actions as clusterActions } from 'reducers/clusters';
 import { actions, types } from 'reducers/integrations';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as authActions } from 'reducers/auth';
@@ -13,7 +13,6 @@ import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
 const fetchIntegrationsActionMap = {
     authProviders: authActions.fetchAuthProviders.request(),
-    dnrIntegrations: actions.fetchDNRIntegrations.request(),
     imageIntegrations: actions.fetchImageIntegrations.request(),
     notifiers: actions.fetchNotifiers.request(),
     clusters: clusterActions.fetchClusters.request(),
@@ -35,16 +34,12 @@ function* getNotifiers() {
     yield call(fetchIntegrationWrapper, 'notifiers', actions.fetchNotifiers);
 }
 
-function* getDNRIntegrations() {
-    yield call(fetchIntegrationWrapper, 'dnrIntegrations', actions.fetchDNRIntegrations);
-}
-
 function* getImageIntegrations() {
     yield call(fetchIntegrationWrapper, 'imageIntegrations', actions.fetchImageIntegrations);
 }
 
 function* watchLocation() {
-    const effects = [getDNRIntegrations, getImageIntegrations, getNotifiers].map(fetchFunc =>
+    const effects = [getImageIntegrations, getNotifiers].map(fetchFunc =>
         takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc)
     );
     yield all([
@@ -57,8 +52,6 @@ function* watchLocation() {
 function* watchFetchRequest() {
     while (true) {
         const action = yield take([
-            clusterTypes.FETCH_CLUSTERS.SUCCESS,
-            types.FETCH_DNR_INTEGRATIONS.REQUEST,
             types.FETCH_IMAGE_INTEGRATIONS.REQUEST,
             types.FETCH_NOTIFIERS.REQUEST
         ]);
@@ -68,10 +61,6 @@ function* watchFetchRequest() {
                 break;
             case types.FETCH_IMAGE_INTEGRATIONS.REQUEST:
                 yield fork(getImageIntegrations);
-                break;
-            case clusterTypes.FETCH_CLUSTERS.SUCCESS:
-            case types.FETCH_DNR_INTEGRATIONS.REQUEST:
-                yield fork(getDNRIntegrations);
                 break;
             default:
                 throw new Error(`Unknown action type ${action.type}`);

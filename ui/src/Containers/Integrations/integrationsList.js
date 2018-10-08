@@ -28,14 +28,6 @@ const integrationsList = {
             image: logo
         }
     ],
-    dnrIntegrations: [
-        {
-            label: 'StackRox Detect & Respond',
-            type: 'D&R',
-            source: 'dnrIntegrations',
-            image: logo
-        }
-    ],
     imageIntegrations: [
         {
             label: 'Generic Docker Registry',

@@ -15,7 +15,6 @@ import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 
 const SOURCE_LABELS = Object.freeze({
     authProviders: 'authentication provider',
-    dnrIntegrations: 'integrations', // type is set to D&R, so this will read as "D&R Integrations"
     imageIntegrations: 'image integrations',
     notifiers: 'plugin'
 });
@@ -27,12 +26,7 @@ class IntegrationModal extends Component {
                 type: PropTypes.string
             })
         ).isRequired,
-        source: PropTypes.oneOf([
-            'imageIntegrations',
-            'dnrIntegrations',
-            'notifiers',
-            'authProviders'
-        ]).isRequired,
+        source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders']).isRequired,
         type: PropTypes.string.isRequired,
         onRequestClose: PropTypes.func.isRequired,
         deleteIntegrations: PropTypes.func.isRequired,

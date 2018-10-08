@@ -20,12 +20,11 @@ type Scorer interface {
 }
 
 // NewScorer returns a new scorer that encompasses both static and user defined multipliers
-func NewScorer(alertGetter getters.AlertGetter, dnrIntegrationGetter getters.DNRIntegrationGetter) Scorer {
+func NewScorer(alertGetter getters.AlertGetter) Scorer {
 	return &scoreImpl{
 		// These multipliers are intentionally ordered based on the order that we want them to be displayed in.
 		// Please do not re-order willy-nilly.
 		ConfiguredMultipliers: []multipliers.Multiplier{
-			multipliers.NewDNRAlert(dnrIntegrationGetter),
 			multipliers.NewViolations(alertGetter),
 			multipliers.NewVulnerabilities(),
 			multipliers.NewServiceConfig(),

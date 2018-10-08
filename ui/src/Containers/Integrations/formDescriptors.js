@@ -466,27 +466,6 @@ const formDescriptors = {
             }
         ]
     }
-    // dnrIntegrations: [
-    //     {
-    //         label: 'Clusters',
-    //         key: 'clusterIds',
-    //         type: 'multiselect',
-    //         options: [],
-    //         placeholder: 'Choose clusters...'
-    //     },
-    //     {
-    //         label: 'Portal URL',
-    //         key: 'portalUrl',
-    //         type: 'text',
-    //         placeholder: ''
-    //     },
-    //     {
-    //         label: 'Auth Token',
-    //         key: 'authToken',
-    //         type: 'text',
-    //         placeholder: ''
-    //     }
-    // ]
 };
 
 export default formDescriptors;
