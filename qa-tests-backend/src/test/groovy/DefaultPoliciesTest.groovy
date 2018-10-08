@@ -94,11 +94,21 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Category(BAT)
-    def "Verify that our services don't trigger alerts"() {
+    def "Verify that StackRox services don't trigger alerts"() {
         expect:
-        "verify not policies are violated within stackrox or kube-system namespace"
+        "Verify policies are not violated within the stackrox namespace"
         getViolations(
-                AlertServiceOuterClass.ListAlertsRequest.newBuilder().setQuery("Namespace:stackrox,kube-system").build()
+                AlertServiceOuterClass.ListAlertsRequest.newBuilder().setQuery("Namespace:stackrox").build()
+        ).size() == 0
+    }
+
+    @Category(BAT)
+    def "Verify that built-in services don't trigger unexpected alerts"() {
+        expect:
+        "Verify unexpected policies are not violated within the kube-system namespace"
+        getViolations(
+          AlertServiceOuterClass.ListAlertsRequest.newBuilder()
+            .setQuery("Namespace:kube-system+Policy:!Kubernetes Dashboard").build()
         ).size() == 0
     }
 }
