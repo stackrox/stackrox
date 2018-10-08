@@ -40,13 +40,13 @@ func (suite *NetworkGraphServiceTestSuite) TeardownSuite() {
 }
 
 func (suite *NetworkGraphServiceTestSuite) TestFailsIfClusterIsNotSet() {
-	request := &v1.GetNetworkGraphRequest{}
+	request := &v1.NetworkGraphRequest{}
 	_, err := suite.tested.GetNetworkGraph((context.Context)(nil), request)
 	suite.Error(err, "expected graph generation to fail since no cluster is specified")
 }
 
 func (suite *NetworkGraphServiceTestSuite) TestFailsIfSinceIsNotSet() {
-	request := &v1.GetNetworkGraphRequest{ClusterId: "fake one"}
+	request := &v1.NetworkGraphRequest{ClusterId: "fake one"}
 	_, err := suite.tested.GetNetworkGraph((context.Context)(nil), request)
 	suite.Error(err, "expected graph generation to fail since no cluster is specified")
 }

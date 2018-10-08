@@ -4,6 +4,7 @@ option go_package = "v1";
 
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
+import "api/v1/network_graph.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
 
@@ -81,18 +82,8 @@ message NetworkPolicy {
     google.protobuf.Timestamp created       = 11;
 }
 
-message NetworkEdge {
-    string          source       = 1;
-    string          target       = 2;
-}
-
-message NetworkNode {
-    string          id              = 1;
-    string          cluster         = 2;
-    string          namespace       = 3;
-    bool            internet_access = 4;
-    repeated string policy_ids      = 5;
-    string          deployment_name = 6;
+message NetworkGraphEpoch {
+    uint32 epoch = 1;
 }
 
 // API specific objects.
@@ -104,23 +95,6 @@ message GetNetworkPoliciesRequest {
 
 message NetworkPoliciesResponse {
     repeated NetworkPolicy network_policies = 1;
-}
-
-message GetNetworkGraphRequest {
-    string cluster_id      = 1;
-    string query           = 2;
-    string simulation_yaml = 3;
-    google.protobuf.Timestamp since = 4;
-}
-
-message GetNetworkGraphResponse {
-    uint32               epoch = 1;
-    repeated NetworkNode nodes = 2;
-    repeated NetworkEdge edges = 3;
-}
-
-message GetNetworkGraphEpochResponse {
-    uint32 epoch = 1;
 }
 
 message SendNetworkPolicyYamlRequest {
@@ -144,14 +118,14 @@ service NetworkPolicyService {
         };
     }
 
-    rpc GetNetworkGraph (GetNetworkGraphRequest) returns (GetNetworkGraphResponse) {
+    rpc GenerateNetworkGraph (NetworkGraphRequest) returns (NetworkGraph) {
         option (google.api.http) = {
             post: "/v1/networkgraph/cluster/{cluster_id}"
             body: "simulation_yaml"
         };
     }
 
-    rpc GetNetworkGraphEpoch (Empty) returns (GetNetworkGraphEpochResponse) {
+    rpc GetNetworkGraphEpoch (Empty) returns (NetworkGraphEpoch) {
         option (google.api.http) = {
             get: "/v1/networkgraph/epoch"
         };
@@ -163,5 +137,4 @@ service NetworkPolicyService {
             body: "yaml"
         };
     }
-
 }

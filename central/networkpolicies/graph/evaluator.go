@@ -15,7 +15,7 @@ var logger = logging.LoggerForModule()
 // Evaluator implements the interface for the network graph generator
 //go:generate mockery -name=Evaluator
 type Evaluator interface {
-	GetGraph(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) *v1.GetNetworkGraphResponse
+	GetGraph(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) *v1.NetworkGraph
 	IncrementEpoch()
 	Epoch() uint32
 }
@@ -49,9 +49,9 @@ func (g *evaluatorImpl) Epoch() uint32 {
 }
 
 // GetGraph generates a network graph for the input deployments based on the input policies.
-func (g *evaluatorImpl) GetGraph(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) *v1.GetNetworkGraphResponse {
+func (g *evaluatorImpl) GetGraph(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) *v1.NetworkGraph {
 	nodes, edges := g.evaluate(deployments, networkPolicies)
-	return &v1.GetNetworkGraphResponse{
+	return &v1.NetworkGraph{
 		Epoch: g.Epoch(),
 		Nodes: nodes,
 		Edges: edges,

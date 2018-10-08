@@ -48,7 +48,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.GetNetworkGraphRequest) (*v1.GetNetworkGraphResponse, error) {
+func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.NetworkGraphRequest) (*v1.NetworkGraph, error) {
 	if request.GetClusterId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Cluster ID must be specified")
 	}
@@ -98,7 +98,7 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.GetNe
 		edges = append(edges, &v1.NetworkEdge{Source: srcID, Target: dstID})
 	}
 
-	return &v1.GetNetworkGraphResponse{
+	return &v1.NetworkGraph{
 		Nodes: nodes,
 		Edges: edges,
 	}, nil

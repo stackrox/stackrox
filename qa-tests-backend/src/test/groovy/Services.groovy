@@ -30,6 +30,7 @@ import stackrox.generated.Common.ResourceByID
 import stackrox.generated.SearchServiceOuterClass
 import v1.Indicator
 import stackrox.generated.SensorEventServiceOuterClass
+import v1.NetworkGraphOuterClass
 import v1.NetworkPolicyServiceGrpc
 import v1.SecretServiceGrpc
 import v1.NetworkPolicyServiceOuterClass
@@ -328,14 +329,14 @@ class Services extends BaseService {
         println "Generating simulation using YAML:"
         println yaml
         try {
-            NetworkPolicyServiceOuterClass.GetNetworkGraphRequest.Builder request =
-                    NetworkPolicyServiceOuterClass.GetNetworkGraphRequest.newBuilder()
+            NetworkGraphOuterClass.NetworkGraphRequest.Builder request =
+                    NetworkGraphOuterClass.NetworkGraphRequest.newBuilder()
                             .setClusterId(getClusterId())
                             .setSimulationYaml(yaml)
             if (query != null) {
                 request.setQuery(query)
             }
-            return getNetworkPolicyClient().getNetworkGraph(request.build())
+            return getNetworkPolicyClient().generateNetworkGraph(request.build())
         } catch (Exception e) {
             println e.toString()
         }
@@ -343,8 +344,8 @@ class Services extends BaseService {
 
     static getNetworkGraph() {
         try {
-            return getNetworkPolicyClient().getNetworkGraph(
-                    NetworkPolicyServiceOuterClass.GetNetworkGraphRequest.newBuilder()
+            return getNetworkPolicyClient().generateNetworkGraph(
+                    NetworkGraphOuterClass.NetworkGraphRequest.newBuilder()
                             .setClusterId(getClusterId())
                             .build()
             )

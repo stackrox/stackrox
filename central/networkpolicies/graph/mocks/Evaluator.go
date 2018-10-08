@@ -25,15 +25,15 @@ func (_m *Evaluator) Epoch() uint32 {
 }
 
 // GetGraph provides a mock function with given fields: deployments, networkPolicies
-func (_m *Evaluator) GetGraph(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) *v1.GetNetworkGraphResponse {
+func (_m *Evaluator) GetGraph(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) *v1.NetworkGraph {
 	ret := _m.Called(deployments, networkPolicies)
 
-	var r0 *v1.GetNetworkGraphResponse
-	if rf, ok := ret.Get(0).(func([]*v1.Deployment, []*v1.NetworkPolicy) *v1.GetNetworkGraphResponse); ok {
+	var r0 *v1.NetworkGraph
+	if rf, ok := ret.Get(0).(func([]*v1.Deployment, []*v1.NetworkPolicy) *v1.NetworkGraph); ok {
 		r0 = rf(deployments, networkPolicies)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*v1.GetNetworkGraphResponse)
+			r0 = ret.Get(0).(*v1.NetworkGraph)
 		}
 	}
 

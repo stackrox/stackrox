@@ -3,14 +3,43 @@ syntax = "proto3";
 option go_package = "v1";
 
 import weak "google/api/annotations.proto";
-import "api/v1/network_policy_service.proto";
+import "google/protobuf/timestamp.proto";
+import "api/v1/empty.proto";
 
 package v1;
 
+message NetworkEdge {
+    string          source       = 1;
+    string          target       = 2;
+}
+
+message NetworkNode {
+    string          id              = 1;
+    string          cluster         = 2;
+    string          namespace       = 3;
+    bool            internet_access = 4;
+    repeated string policy_ids      = 5;
+    string          deployment_name = 6;
+}
+
+message NetworkGraphRequest {
+    string cluster_id               = 1;
+    string query                    = 2;
+    string simulation_yaml          = 3;
+    google.protobuf.Timestamp since = 4;
+}
+
+message NetworkGraph {
+    uint32               epoch = 1;
+    repeated NetworkNode nodes = 2;
+    repeated NetworkEdge edges = 3;
+}
+
 service NetworkGraphService {
-    rpc GetNetworkGraph (v1.GetNetworkGraphRequest) returns (v1.GetNetworkGraphResponse) {
+    rpc GetNetworkGraph (NetworkGraphRequest) returns (NetworkGraph) {
         option (google.api.http) = {
             get: "/v1/networkgraph/cluster/{cluster_id}"
         };
     }
+
 }

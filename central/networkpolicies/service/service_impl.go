@@ -32,7 +32,7 @@ var (
 		user.With(permissions.View(resources.NetworkPolicy)): {
 			"/v1.NetworkPolicyService/GetNetworkPolicy",
 			"/v1.NetworkPolicyService/GetNetworkPolicies",
-			"/v1.NetworkPolicyService/GetNetworkGraph",
+			"/v1.NetworkPolicyService/GenerateNetworkGraph",
 			"/v1.NetworkPolicyService/GetNetworkGraphEpoch",
 		},
 		user.With(permissions.Modify(resources.Notifier)): {
@@ -109,7 +109,7 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 	}, nil
 }
 
-func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetworkGraphRequest) (*v1.GetNetworkGraphResponse, error) {
+func (s *serviceImpl) GenerateNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest) (*v1.NetworkGraph, error) {
 	if request.GetClusterId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Cluster ID must be specified")
 	}
@@ -139,8 +139,8 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 	return s.graphEvaluator.GetGraph(deployments, networkPolicies), nil
 }
 
-func (s *serviceImpl) GetNetworkGraphEpoch(context.Context, *v1.Empty) (*v1.GetNetworkGraphEpochResponse, error) {
-	return &v1.GetNetworkGraphEpochResponse{
+func (s *serviceImpl) GetNetworkGraphEpoch(context.Context, *v1.Empty) (*v1.NetworkGraphEpoch, error) {
+	return &v1.NetworkGraphEpoch{
 		Epoch: s.graphEvaluator.Epoch(),
 	}, nil
 }
