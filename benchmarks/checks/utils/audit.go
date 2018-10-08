@@ -21,7 +21,7 @@ func CheckAudit(file string) (result v1.CheckResult) {
 	auditFileData, err := ReadFile(ContainerPath(auditFile))
 	if err != nil {
 		Warn(&result)
-		AddNotes(&result, "Error reading %s: %s", auditFile, err.Error())
+		AddNotef(&result, "Error reading %s: %s", auditFile, err.Error())
 		return
 	}
 	if !strings.Contains(auditFileData, file) {
