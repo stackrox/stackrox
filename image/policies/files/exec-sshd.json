@@ -1,7 +1,7 @@
 {
     "name": "Running SSH Server",
     "description": "Detects container running the SSH daemon",
-    "categories": ["Anomalous Process Execution"],
+    "categories": ["Network Tools"],
     "severity": "HIGH_SEVERITY",
     "lifecycle_stages": ["RUN_TIME"],
     "fields": {

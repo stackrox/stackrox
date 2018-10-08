@@ -1,7 +1,7 @@
 {
     "name": "Misuse of iptables",
     "description": "Detects misuse of iptables; iptables is a deprecated way of managing network state in containers",
-    "categories": ["Network Configuration Change", "Reconnaissance"],
+    "categories": ["Network Tools"],
     "severity": "HIGH_SEVERITY",
     "lifecycle_stages": ["RUN_TIME"],
     "fields": {

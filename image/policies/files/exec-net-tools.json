@@ -1,7 +1,7 @@
 {
     "name": "Usage of Network Management Tool",
     "description": "Detects network management program execution",
-    "categories": ["Network Configuration Change", "Reconnaissance"],
+    "categories": ["Network Tools"],
     "severity": "HIGH_SEVERITY",
     "lifecycle_stages": ["RUN_TIME"],
     "fields": {

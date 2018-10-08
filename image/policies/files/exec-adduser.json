@@ -3,7 +3,7 @@
   "description": "Detects when the 'useradd' or 'adduser' process is used to add a new user to the system",
   "severity": "HIGH_SEVERITY",
   "lifecycle_stages": ["RUN_TIME"],
-  "categories": ["User Access Modification"],
+  "categories": ["System Modification", "Privileges"],
   "fields": {
       "process_policy": {
           "name": "useradd|adduser"

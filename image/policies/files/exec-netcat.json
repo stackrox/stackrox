@@ -1,7 +1,7 @@
 {
     "name": "Netcat Execution Detected",
     "description": "Detects execution of netcat in a container",
-    "categories": ["Known malicious process"],
+    "categories": ["Network Tools"],
     "severity": "MEDIUM_SEVERITY",
     "lifecycle_stages": ["RUN_TIME"],
     "fields": {

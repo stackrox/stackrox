@@ -3,7 +3,7 @@
   "description": "Alerts when the nmap process launches in a container during run time",
   "severity": "HIGH_SEVERITY",
   "lifecycle_stages": ["RUN_TIME"],
-  "categories": ["Reconnaissance"],
+  "categories": ["Network Tools"],
   "fields": {
     "process_policy": {
       "name": "nmap$"

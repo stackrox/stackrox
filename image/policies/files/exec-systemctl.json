@@ -1,7 +1,7 @@
 {
     "name": "systemctl Execution",
     "description": "Detected usage of the systemctl service manager",
-    "categories": ["systemd Modification"],
+    "categories": ["System Modification"],
     "severity": "LOW_SEVERITY",
     "lifecycle_stages": ["RUN_TIME"],
     "fields": {

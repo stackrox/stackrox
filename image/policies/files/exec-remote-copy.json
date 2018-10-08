@@ -1,7 +1,7 @@
 {
     "name": "Remote file copy binary Execution",
     "description": "Container initiated remote file copy",
-    "categories": ["Remote File Copy"],
+    "categories": ["Network Tools"],
     "severity": "MEDIUM_SEVERITY",
     "lifecycle_stages": ["RUN_TIME"],
     "fields": {

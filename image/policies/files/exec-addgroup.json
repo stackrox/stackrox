@@ -3,7 +3,7 @@
   "description": "Detects when the 'addgroup' or 'groupadd' process is used to add a new group to the system",
   "severity": "HIGH_SEVERITY",
   "lifecycle_stages": ["RUN_TIME"],
-  "categories": ["User Access Modification"],
+  "categories": ["System Modification", "Privileges"],
   "fields": {
     "process_policy": {
       "name": "addgroup|groupadd"

@@ -1,7 +1,7 @@
 {
     "name": "Process Targeting Kubernetes Service Endpoint",
     "description": "Detects misuse of the Kubernetes Service API endpoint",
-    "categories": ["Kubernetes Service Abuse"],
+    "categories": ["Kubernetes"],
     "severity": "HIGH_SEVERITY",
     "lifecycle_stages": ["RUN_TIME"],
     "fields": {

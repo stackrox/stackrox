@@ -1,7 +1,7 @@
 {
     "name": "Process Targeting Cluster Kubernetes Docker Stats Endpoint",
     "description": "Detects misuse of the Kubernetes docker stats endpoint",
-    "categories": ["Kubernetes Cluster Modification"],
+    "categories": ["Kubernetes"],
     "severity": "HIGH_SEVERITY",
     "lifecycle_stages": ["RUN_TIME"],
     "fields": {
