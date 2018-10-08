@@ -16,6 +16,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/pkg/grpc/authn/mtls"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
@@ -50,8 +51,9 @@ type API interface {
 }
 
 type apiImpl struct {
-	apiServices []APIService
-	config      Config
+	apiServices        []APIService
+	config             Config
+	requestInfoHandler *requestinfo.Handler
 }
 
 // A Config configures the server.
@@ -65,7 +67,8 @@ type Config struct {
 // NewAPI returns an API object.
 func NewAPI(config Config) API {
 	return &apiImpl{
-		config: config,
+		config:             config,
+		requestInfoHandler: requestinfo.NewDefaultRequestInfoHandler(),
 	}
 }
 
@@ -79,6 +82,7 @@ func (a *apiImpl) Register(services ...APIService) {
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	u := []grpc.UnaryServerInterceptor{
+		a.requestInfoHandler.UnaryIntercept,
 		grpc_prometheus.UnaryServerInterceptor,
 		grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
 		mtls.UnaryInterceptor(),
@@ -94,6 +98,7 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 
 func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	s := []grpc.StreamServerInterceptor{
+		a.requestInfoHandler.StreamIntercept,
 		grpc_prometheus.StreamServerInterceptor,
 		grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
 		mtls.StreamInterceptor(),
@@ -134,7 +139,9 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 		mux.Handle(route.Route, route.Handler())
 	}
 
-	gwMux := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{EmitDefaults: true}))
+	gwMux := runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{EmitDefaults: true}),
+		runtime.WithMetadata(a.requestInfoHandler.AnnotateMD))
 	for _, service := range a.apiServices {
 		if err := service.RegisterServiceHandler(context.Background(), gwMux, localConn); err != nil {
 			log.Panicf("failed to register API service: %v", err)
