@@ -4,15 +4,10 @@ function launch_central {
     K8S_DIR="$1"
     PREVENT_IMAGE="$2"
 
-    flags=()
-    if [[ "${ROX_RUNTIME_POLICIES}" = "true" ]]; then
-      flags=(--flags ROX_RUNTIME_POLICIES)
-    fi
-
     set -u
 
     echo "Generating central config..."
-    docker run --rm "$PREVENT_IMAGE" ${flags[@]+"${flags[@]}"} deploy k8s -n stackrox -i "$PREVENT_IMAGE" none > $K8S_DIR/central.zip
+    docker run --rm "$PREVENT_IMAGE" deploy k8s -n stackrox -i "$PREVENT_IMAGE" none > $K8S_DIR/central.zip
 
     UNZIP_DIR="$K8S_DIR/central-deploy/"
     rm -rf "$UNZIP_DIR"

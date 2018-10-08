@@ -228,7 +228,6 @@ jobs:
     environment:
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: true
-      - ROX_RUNTIME_POLICIES: true
     steps:
       - checkout
       - setup_remote_docker

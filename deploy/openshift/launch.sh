@@ -6,15 +6,10 @@ function launch_central {
     PREVENT_IMAGE_REPO="$3"
     PREVENT_IMAGE_TAG="$4"
 
-    flags=()
-    if [[ "${ROX_RUNTIME_POLICIES}" = "true" ]]; then
-      flags=(--flags ROX_RUNTIME_POLICIES)
-    fi
-
     set -u
 
     echo "Generating central config..."
-    docker run "$PREVENT_IMAGE" ${flags[@]+"${flags[@]}"} deploy openshift -n stackrox -i "$PREVENT_IMAGE_REPO/stackrox/prevent:$PREVENT_IMAGE_TAG" none > $OPENSHIFT_DIR/central.zip
+    docker run "$PREVENT_IMAGE" deploy openshift -n stackrox -i "$PREVENT_IMAGE_REPO/stackrox/prevent:$PREVENT_IMAGE_TAG" none > $OPENSHIFT_DIR/central.zip
     UNZIP_DIR="$OPENSHIFT_DIR/central-deploy/"
     rm -rf "$UNZIP_DIR"
     unzip "$OPENSHIFT_DIR/central.zip" -d "$UNZIP_DIR"
