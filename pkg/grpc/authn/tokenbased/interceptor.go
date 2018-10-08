@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/tokenbased"
 	"github.com/stackrox/rox/pkg/auth/tokenbased/user"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
@@ -42,12 +43,12 @@ func NewAuthInterceptor(authProviderAccessor AuthProviderAccessor, userRoleMappe
 
 // UnaryInterceptor parses headers and embeds authentication metadata in the context, if found.
 func (a *AuthInterceptor) UnaryInterceptor() grpc.UnaryServerInterceptor {
-	return a.authUnary
+	return contextutil.UnaryServerInterceptor(a.authToken)
 }
 
 // StreamInterceptor parses headers and embeds authenticated metadata in the context, if found.
 func (a *AuthInterceptor) StreamInterceptor() grpc.StreamServerInterceptor {
-	return a.authStream
+	return contextutil.StreamServerInterceptor(a.authToken)
 }
 
 // HTTPInterceptor is an interceptor for http handlers
@@ -63,24 +64,12 @@ func (a *AuthInterceptor) HTTPInterceptor(h http.Handler) http.Handler {
 	})
 }
 
-func (a *AuthInterceptor) authUnary(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	return handler(a.authToken(ctx), req)
-}
-
-func (a *AuthInterceptor) authStream(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	newStream := &authn.StreamWithContext{
-		ServerStream:    stream,
-		ContextOverride: a.authToken(stream.Context()),
-	}
-	return handler(srv, newStream)
-}
-
-func (a *AuthInterceptor) authToken(ctx context.Context) context.Context {
+func (a *AuthInterceptor) authToken(ctx context.Context) (context.Context, error) {
 	meta, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return ctx
+		return ctx, nil
 	}
-	return a.addAuthInfoToContext(ctx, meta)
+	return a.addAuthInfoToContext(ctx, meta), nil
 }
 
 func (a *AuthInterceptor) addAuthInfoToContext(ctx context.Context, headers map[string][]string) (newCtx context.Context) {

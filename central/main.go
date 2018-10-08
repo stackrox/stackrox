@@ -91,7 +91,7 @@ func (c *central) startGRPCServer() {
 		CustomRoutes:       c.customRoutes(),
 		TLS:                verifier.CA{},
 		UnaryInterceptors:  interceptorSingletons.GrpcUnaryInterceptors(),
-		StreamInterceptors: interceptorSingletons.GrpsStreamInterceptors(),
+		StreamInterceptors: interceptorSingletons.GrpcStreamInterceptors(),
 	}
 
 	c.server = pkgGRPC.NewAPI(config)

@@ -17,7 +17,7 @@ var (
 
 	authInterceptor        *tokenbased.AuthInterceptor
 	grpcUnaryInterceptors  []grpc.UnaryServerInterceptor
-	grpsStreamInterceptors []grpc.StreamServerInterceptor
+	grpcStreamInterceptors []grpc.StreamServerInterceptor
 )
 
 func initialize() {
@@ -28,7 +28,7 @@ func initialize() {
 		authInterceptor.UnaryInterceptor(),
 		clusterWatcher.UnaryInterceptor(),
 	}
-	grpsStreamInterceptors = []grpc.StreamServerInterceptor{
+	grpcStreamInterceptors = []grpc.StreamServerInterceptor{
 		authInterceptor.StreamInterceptor(),
 		clusterWatcher.StreamInterceptor(),
 	}
@@ -46,8 +46,8 @@ func GrpcUnaryInterceptors() []grpc.UnaryServerInterceptor {
 	return grpcUnaryInterceptors
 }
 
-// GrpsStreamInterceptors provides the stream interceptors to use with gRPC based services.
-func GrpsStreamInterceptors() []grpc.StreamServerInterceptor {
+// GrpcStreamInterceptors provides the stream interceptors to use with gRPC based services.
+func GrpcStreamInterceptors() []grpc.StreamServerInterceptor {
 	once.Do(initialize)
-	return grpsStreamInterceptors
+	return grpcStreamInterceptors
 }

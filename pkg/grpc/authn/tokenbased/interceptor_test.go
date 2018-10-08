@@ -94,7 +94,7 @@ func (suite *AuthInterceptorTestSuite) TestAuthInterceptorWithNoProvidersOrToken
 	suite.mockIdentityParser.On("Parse", mock.Anything, mock.Anything).Return(nil, errors.New("doesn't exist"))
 
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.MD{})
-	outGoingCtx := suite.authInterceptor.authToken(ctx)
+	outGoingCtx, _ := suite.authInterceptor.authToken(ctx)
 	identity, err := authn.FromTokenBasedIdentityContext(outGoingCtx)
 	suite.Nil(identity)
 	suite.Equal(authn.ErrNoContext, err)
@@ -114,7 +114,7 @@ func (suite *AuthInterceptorTestSuite) TestAuthInterceptorWithTokensButNoProvide
 	}), mock.Anything).Return(tokenbased.NewIdentity(fakeID, nil, time.Now().Add(fakeExpiration)), nil)
 	ctx := metadata.NewIncomingContext(context.Background(), fakeHeaders)
 
-	outGoingCtx := suite.authInterceptor.authToken(ctx)
+	outGoingCtx, _ := suite.authInterceptor.authToken(ctx)
 	identity, err := authn.FromTokenBasedIdentityContext(outGoingCtx)
 	suite.Require().NoError(err)
 	suite.Require().NotNil(identity)
@@ -140,7 +140,7 @@ func (suite *AuthInterceptorTestSuite) TestAuthInterceptorWithProviders() {
 
 	ctx := metadata.NewIncomingContext(context.Background(), fakeHeaders)
 
-	outGoingCtx := suite.authInterceptor.authToken(ctx)
+	outGoingCtx, _ := suite.authInterceptor.authToken(ctx)
 	identity, err := authn.FromTokenBasedIdentityContext(outGoingCtx)
 	suite.Require().NoError(err)
 	suite.Require().NotNil(identity)
@@ -168,7 +168,7 @@ func (suite *AuthInterceptorTestSuite) TestAuthInterceptorWithNonValidatingAuthP
 
 	ctx := metadata.NewIncomingContext(context.Background(), fakeHeaders)
 
-	outGoingCtx := suite.authInterceptor.authToken(ctx)
+	outGoingCtx, _ := suite.authInterceptor.authToken(ctx)
 	identity, err := authn.FromTokenBasedIdentityContext(outGoingCtx)
 	suite.Require().NoError(err)
 	suite.Require().NotNil(identity)
@@ -197,7 +197,7 @@ func (suite *AuthInterceptorTestSuite) TestAuthInterceptorWithErringProvider() {
 
 	ctx := metadata.NewIncomingContext(context.Background(), fakeHeaders)
 
-	outGoingCtx := suite.authInterceptor.authToken(ctx)
+	outGoingCtx, _ := suite.authInterceptor.authToken(ctx)
 	identity, err := authn.FromTokenBasedIdentityContext(outGoingCtx)
 	suite.Require().Error(err)
 	suite.Nil(identity)

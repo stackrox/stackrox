@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
@@ -42,30 +43,24 @@ func NewClusterWatcher(clusters clusterStore) *ClusterWatcher {
 // a cluster's sensor has last contacted this API server.
 // Naturally, it should be called after authentication metadata is parsed.
 func (cw ClusterWatcher) UnaryInterceptor() grpc.UnaryServerInterceptor {
-	return cw.watchUnary
+	return contextutil.UnaryServerInterceptor(cw.watch)
 }
 
 // StreamInterceptor parses authentication metadata to maintain the time for
 // a cluster's sensor has last contacted this API server.
 // Naturally, it should be called after authentication metadata is parsed.
 func (cw ClusterWatcher) StreamInterceptor() grpc.StreamServerInterceptor {
-	return cw.watchStream
+	return contextutil.StreamServerInterceptor(cw.watch)
 }
 
-func (cw ClusterWatcher) watchUnary(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+// watch records a checkin for the cluster obtained from the given context. Its signature satisfies the ContextUpdater
+// signature.
+func (cw ClusterWatcher) watch(ctx context.Context) (context.Context, error) {
 	err := cw.recordCheckin(ctx)
 	if err != nil {
 		logger.Warnf("Could not record cluster contact: %v", err)
 	}
-	return handler(ctx, req)
-}
-
-func (cw ClusterWatcher) watchStream(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	err := cw.recordCheckin(stream.Context())
-	if err != nil {
-		logger.Warnf("Could not record cluster contact: %v", err)
-	}
-	return handler(srv, stream)
+	return ctx, nil
 }
 
 func (cw ClusterWatcher) recordCheckin(ctx context.Context) error {
