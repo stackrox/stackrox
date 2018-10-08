@@ -7,16 +7,16 @@ import (
 var (
 	once sync.Once
 
-	as *PendingEvents
+	as *ContainerCache
 )
 
 func initialize() {
 	// Caches
-	as = newPendingEvents()
+	as = newContainerCache()
 }
 
 // Singleton implements a singleton for the client streaming gRPC service between collector and sensor
-func Singleton() *PendingEvents {
+func Singleton() *ContainerCache {
 	once.Do(initialize)
 	return as
 }

@@ -2,7 +2,6 @@ package resources
 
 import (
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/listeners"
 	"k8s.io/api/core/v1"
 )
 
@@ -24,24 +23,23 @@ func newNamespaceHandler(deletionListeners ...NamespaceDeletionListener) *namesp
 }
 
 // Process processes a namespace resource events, and returns the sensor events to emit in response.
-func (h *namespaceHandler) Process(ns *v1.Namespace, action pkgV1.ResourceAction) []*listeners.EventWrap {
+func (h *namespaceHandler) Process(ns *v1.Namespace, action pkgV1.ResourceAction) []*pkgV1.SensorEvent {
 	if action == pkgV1.ResourceAction_REMOVE_RESOURCE {
 		for _, listener := range h.deletionListeners {
 			listener.OnNamespaceDeleted(ns.Name)
 		}
 	}
 
-	return []*listeners.EventWrap{{
-		SensorEvent: &pkgV1.SensorEvent{
-			Id:     string(ns.GetUID()),
-			Action: action,
-			Resource: &pkgV1.SensorEvent_Namespace{
-				Namespace: &pkgV1.Namespace{
-					Id:     string(ns.GetUID()),
-					Name:   ns.GetName(),
-					Labels: ns.GetLabels(),
-				},
+	return []*pkgV1.SensorEvent{{
+		Id:     string(ns.GetUID()),
+		Action: action,
+		Resource: &pkgV1.SensorEvent_Namespace{
+			Namespace: &pkgV1.Namespace{
+				Id:     string(ns.GetUID()),
+				Name:   ns.GetName(),
+				Labels: ns.GetLabels(),
 			},
 		},
-	}}
+	},
+	}
 }

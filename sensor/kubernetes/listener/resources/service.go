@@ -2,13 +2,9 @@ package resources
 
 import (
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/listeners"
-	"github.com/stackrox/rox/pkg/logging"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
-
-var logger = logging.LoggerForModule()
 
 type serviceWrap struct {
 	*v1.Service
@@ -50,7 +46,7 @@ func newServiceHandler(serviceStore *serviceStore, deploymentStore *deploymentSt
 }
 
 // Process processes a service resource event, and returns the sensor events to emit in response.
-func (sh *serviceHandler) Process(svc *v1.Service, action pkgV1.ResourceAction) []*listeners.EventWrap {
+func (sh *serviceHandler) Process(svc *v1.Service, action pkgV1.ResourceAction) []*pkgV1.SensorEvent {
 	if action == pkgV1.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)
 	}
@@ -71,7 +67,7 @@ func (sh *serviceHandler) Process(svc *v1.Service, action pkgV1.ResourceAction) 
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }
 
-func (sh *serviceHandler) updateDeploymentsFromStore(namespace string, sel selector) (events []*listeners.EventWrap) {
+func (sh *serviceHandler) updateDeploymentsFromStore(namespace string, sel selector) (events []*pkgV1.SensorEvent) {
 	for _, deploymentWrap := range sh.deploymentStore.getMatchingDeployments(namespace, sel) {
 		if deploymentWrap.updatePortExposureFromStore(sh.serviceStore) {
 			events = append(events, deploymentWrap.toEvent(pkgV1.ResourceAction_UPDATE_RESOURCE))
@@ -81,7 +77,7 @@ func (sh *serviceHandler) updateDeploymentsFromStore(namespace string, sel selec
 	return
 }
 
-func (sh *serviceHandler) processCreate(svc *v1.Service) (events []*listeners.EventWrap) {
+func (sh *serviceHandler) processCreate(svc *v1.Service) (events []*pkgV1.SensorEvent) {
 	wrap := wrapService(svc)
 	sh.serviceStore.addOrUpdateService(wrap)
 	for _, deploymentWrap := range sh.deploymentStore.getMatchingDeployments(svc.Namespace, wrap.selector) {

@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/sensor/common/cache"
 	"github.com/stackrox/rox/sensor/common/processsignal"
 )
@@ -16,13 +15,13 @@ var (
 )
 
 // newService creates a new streaming service with the collector. It should only be called once.
-func newService(pendingCache *cache.PendingEvents) Service {
-	indicators := make(chan *listeners.EventWrap)
+func newService(containerCache *cache.ContainerCache) Service {
+	indicators := make(chan *v1.SensorEvent)
 
 	return &serviceImpl{
 		queue:           make(chan *v1.Signal, maxBufferSize),
 		indicators:      indicators,
-		processPipeline: processsignal.NewProcessPipeline(indicators, pendingCache),
+		processPipeline: processsignal.NewProcessPipeline(indicators, containerCache),
 	}
 }
 

@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/listeners"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/kubernetes/volumes"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -30,6 +30,8 @@ const (
 
 	megabyte = 1024 * 1024
 )
+
+var logger = logging.LoggerForModule()
 
 type deploymentWrap struct {
 	*pkgV1.Deployment
@@ -459,16 +461,13 @@ func (w *deploymentWrap) populatePorts(podSpec v1.PodSpec) {
 	}
 }
 
-func (w *deploymentWrap) toEvent(action pkgV1.ResourceAction) *listeners.EventWrap {
-	return &listeners.EventWrap{
-		SensorEvent: &pkgV1.SensorEvent{
-			Id:     w.GetId(),
-			Action: action,
-			Resource: &pkgV1.SensorEvent_Deployment{
-				Deployment: w.Deployment,
-			},
+func (w *deploymentWrap) toEvent(action pkgV1.ResourceAction) *pkgV1.SensorEvent {
+	return &pkgV1.SensorEvent{
+		Id:     w.GetId(),
+		Action: action,
+		Resource: &pkgV1.SensorEvent_Deployment{
+			Deployment: w.Deployment,
 		},
-		OriginalSpec: w.original,
 	}
 }
 

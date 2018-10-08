@@ -2,7 +2,6 @@ package resources
 
 import (
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/listeners"
 	"k8s.io/api/core/v1"
 )
 
@@ -22,7 +21,7 @@ func newNodeHandler(serviceStore *serviceStore, deploymentStore *deploymentStore
 	}
 }
 
-func (h *nodeHandler) Process(node *v1.Node, action pkgV1.ResourceAction) []*listeners.EventWrap {
+func (h *nodeHandler) Process(node *v1.Node, action pkgV1.ResourceAction) []*pkgV1.SensorEvent {
 	nodePortServices := h.serviceStore.getNodePortServices()
 	if len(nodePortServices) == 0 {
 		return nil

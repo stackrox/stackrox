@@ -5,14 +5,13 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/cache"
 )
 
 const (
-	signalRetries       = 10
+	signalRetries       = 30
 	signalRetryInterval = 2 * time.Second
 )
 
@@ -20,15 +19,15 @@ var logger = logging.LoggerForModule()
 
 // Pipeline is the struct that handles a process signal
 type Pipeline struct {
-	pendingCache *cache.PendingEvents
-	indicators   chan *listeners.EventWrap
+	containerCache *cache.ContainerCache
+	indicators     chan *v1.SensorEvent
 }
 
 // NewProcessPipeline defines how to process a ProcessIndicator
-func NewProcessPipeline(indicators chan *listeners.EventWrap, pendingCache *cache.PendingEvents) *Pipeline {
+func NewProcessPipeline(indicators chan *v1.SensorEvent, pendingCache *cache.ContainerCache) *Pipeline {
 	return &Pipeline{
-		pendingCache: pendingCache,
-		indicators:   indicators,
+		containerCache: pendingCache,
+		indicators:     indicators,
 	}
 }
 
@@ -37,14 +36,14 @@ func (p *Pipeline) reprocessSignalLater(indicator *v1.ProcessIndicator) {
 	logger.Infof("Trying to reprocess '%s'", indicator.GetSignal().GetExecFilePath())
 	for i := 0; i < signalRetries; i++ {
 		<-t.C
-		deploymentID, exists := p.pendingCache.FetchDeploymentByContainer(indicator.GetSignal().GetContainerId())
+		deploymentID, exists := p.containerCache.GetDeploymentFromContainerID(indicator.GetSignal().GetContainerId())
 		if exists {
 			indicator.DeploymentId = deploymentID
-			p.wrapAndSendIndicator(indicator)
+			p.sendIndicatorEvent(indicator)
 			return
 		}
 	}
-	logger.Errorf("Dropping this on the floor: %+v", proto.MarshalTextString(indicator))
+	logger.Errorf("Dropping this on the floor: %s", proto.MarshalTextString(indicator))
 }
 
 // Process defines processes to process a ProcessIndicator
@@ -55,24 +54,21 @@ func (p *Pipeline) Process(signal *v1.ProcessSignal) {
 	}
 
 	// indicator.GetSignal() is never nil at this point
-	deploymentID, exists := p.pendingCache.FetchDeploymentByContainer(indicator.GetSignal().GetContainerId())
+	deploymentID, exists := p.containerCache.GetDeploymentFromContainerID(indicator.GetSignal().GetContainerId())
 	if !exists {
 		go p.reprocessSignalLater(indicator)
 		return
 	}
 	indicator.DeploymentId = deploymentID
-	p.wrapAndSendIndicator(indicator)
+	p.sendIndicatorEvent(indicator)
 }
 
-func (p *Pipeline) wrapAndSendIndicator(indicator *v1.ProcessIndicator) {
-	eventWrap := &listeners.EventWrap{
-		SensorEvent: &v1.SensorEvent{
-			Id:     indicator.GetId(),
-			Action: v1.ResourceAction_CREATE_RESOURCE,
-			Resource: &v1.SensorEvent_ProcessIndicator{
-				ProcessIndicator: indicator,
-			},
+func (p *Pipeline) sendIndicatorEvent(indicator *v1.ProcessIndicator) {
+	p.indicators <- &v1.SensorEvent{
+		Id:     indicator.GetId(),
+		Action: v1.ResourceAction_CREATE_RESOURCE,
+		Resource: &v1.SensorEvent_ProcessIndicator{
+			ProcessIndicator: indicator,
 		},
 	}
-	p.indicators <- eventWrap
 }

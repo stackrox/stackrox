@@ -2,7 +2,6 @@ package resources
 
 import (
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/listeners"
 	"k8s.io/client-go/listers/core/v1"
 )
 
@@ -25,7 +24,7 @@ func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *deploymen
 }
 
 // Process processes a deployment resource events, and returns the sensor events to emit in response.
-func (d *deploymentHandler) Process(obj interface{}, action pkgV1.ResourceAction, deploymentType string) []*listeners.EventWrap {
+func (d *deploymentHandler) Process(obj interface{}, action pkgV1.ResourceAction, deploymentType string) []*pkgV1.SensorEvent {
 	wrap := newDeploymentEventFromResource(obj, action, deploymentType, d.podLister)
 	if wrap == nil {
 		return nil
@@ -39,14 +38,13 @@ func (d *deploymentHandler) Process(obj interface{}, action pkgV1.ResourceAction
 		d.endpointManager.OnDeploymentRemove(wrap)
 	}
 
-	return []*listeners.EventWrap{{
-		SensorEvent: &pkgV1.SensorEvent{
+	return []*pkgV1.SensorEvent{
+		{
 			Id:     wrap.GetId(),
 			Action: action,
 			Resource: &pkgV1.SensorEvent_Deployment{
 				Deployment: wrap.Deployment,
 			},
 		},
-		OriginalSpec: obj,
-	}}
+	}
 }

@@ -7,13 +7,12 @@ import (
 	dockerClient "github.com/docker/docker/client"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/docker"
-	"github.com/stackrox/rox/pkg/listeners"
 )
 
 // Handler creates a new handler for sending resources
 type Handler struct {
 	client  *dockerClient.Client
-	eventsC chan *listeners.EventWrap
+	eventsC chan *v1.SensorEvent
 }
 
 // SendExistingResources sends existing deployments
@@ -30,7 +29,7 @@ func (s *Handler) SendExistingResources() {
 }
 
 // NewHandler instantiates a handler for docker services
-func NewHandler(client *dockerClient.Client, eventsC chan *listeners.EventWrap) *Handler {
+func NewHandler(client *dockerClient.Client, eventsC chan *v1.SensorEvent) *Handler {
 	return &Handler{
 		client:  client,
 		eventsC: eventsC,
@@ -77,7 +76,7 @@ func (s *Handler) HandleMessage(msg events.Message) {
 	s.eventsC <- deploymentEventWrap(resourceAction, deployment, originalSpec)
 }
 
-func (s *Handler) getNewExistingDeployments() ([]*listeners.EventWrap, error) {
+func (s *Handler) getNewExistingDeployments() ([]*v1.SensorEvent, error) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 	swarmServices, err := s.client.ServiceList(ctx, types.ServiceListOptions{})
@@ -85,7 +84,7 @@ func (s *Handler) getNewExistingDeployments() ([]*listeners.EventWrap, error) {
 		return nil, err
 	}
 
-	deployments := make([]*listeners.EventWrap, len(swarmServices))
+	deployments := make([]*v1.SensorEvent, len(swarmServices))
 	for i, service := range swarmServices {
 		d := serviceWrap(service).asDeployment(s.client, true)
 		deployments[i] = deploymentEventWrap(v1.ResourceAction_UPDATE_RESOURCE, d, service)
@@ -93,16 +92,13 @@ func (s *Handler) getNewExistingDeployments() ([]*listeners.EventWrap, error) {
 	return deployments, nil
 }
 
-func deploymentEventWrap(action v1.ResourceAction, deployment *v1.Deployment, obj interface{}) *listeners.EventWrap {
-	return &listeners.EventWrap{
-		SensorEvent: &v1.SensorEvent{
-			Id:     deployment.GetId(),
-			Action: action,
-			Resource: &v1.SensorEvent_Deployment{
-				Deployment: deployment,
-			},
+func deploymentEventWrap(action v1.ResourceAction, deployment *v1.Deployment, obj interface{}) *v1.SensorEvent {
+	return &v1.SensorEvent{
+		Id:     deployment.GetId(),
+		Action: action,
+		Resource: &v1.SensorEvent_Deployment{
+			Deployment: deployment,
 		},
-		OriginalSpec: obj,
 	}
 }
 

@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/integration"
-	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/sensor/common/cache"
@@ -22,7 +21,7 @@ var (
 
 // Sensor interface allows you to start and stop the consumption/production loops.
 type Sensor interface {
-	Start(orchestratorInput <-chan *listeners.EventWrap, collectorInput <-chan *listeners.EventWrap, output chan<- *v1.SensorEnforcement)
+	Start(orchestratorInput <-chan *v1.SensorEvent, collectorInput <-chan *v1.SensorEvent, output chan<- *v1.SensorEnforcement)
 	Stop(error)
 	Wait() error
 }
@@ -41,9 +40,9 @@ func NewSensor(centralConn *grpc.ClientConn, clusterID string) Sensor {
 	return &sensor{
 		conn: centralConn,
 
-		pendingCache:  cache.Singleton(),
-		imageEnricher: imageEnricher,
-		poller:        poller,
+		containerCache: cache.Singleton(),
+		imageEnricher:  imageEnricher,
+		poller:         poller,
 
 		// The Signal needs to be activated so Start() can detect callers that
 		// improperly call Start() repeatedly without calling Stop() first.
@@ -57,9 +56,9 @@ func NewSensor(centralConn *grpc.ClientConn, clusterID string) Sensor {
 type sensor struct {
 	conn *grpc.ClientConn
 
-	pendingCache  *cache.PendingEvents
-	imageEnricher enricher.ImageEnricher
-	poller        integration.Poller
+	containerCache *cache.ContainerCache
+	imageEnricher  enricher.ImageEnricher
+	poller         integration.Poller
 
 	stopped      concurrency.Signal
 	err          error
@@ -72,7 +71,7 @@ type sensor struct {
 // It is an error to call Start repeatedly without first calling Wait(); Wait
 // itself will not return unless Stop() is called, or processing must be
 // aborted for another reason (stream interrupted, channel closed, etc.).
-func (s *sensor) Start(orchestratorInput <-chan *listeners.EventWrap, collectorInput <-chan *listeners.EventWrap, output chan<- *v1.SensorEnforcement) {
+func (s *sensor) Start(orchestratorInput <-chan *v1.SensorEvent, collectorInput <-chan *v1.SensorEvent, output chan<- *v1.SensorEnforcement) {
 	if !s.stopped.Reset() {
 		panic("Sensor has already been started without stopping first")
 	}

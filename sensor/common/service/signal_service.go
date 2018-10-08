@@ -8,7 +8,6 @@ import (
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
-	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
 	sensor "github.com/stackrox/rox/sensor/common"
 	"google.golang.org/grpc"
@@ -25,12 +24,12 @@ type Service interface {
 	pkgGRPC.APIService
 	sensorAPI.SignalServiceServer
 
-	Indicators() <-chan *listeners.EventWrap
+	Indicators() <-chan *v1.SensorEvent
 }
 
 type serviceImpl struct {
 	queue      chan *v1.Signal
-	indicators chan *listeners.EventWrap // EventWrap is just a wrapper around ProcessIndicator
+	indicators chan *v1.SensorEvent
 
 	processPipeline sensor.Pipeline
 }
@@ -57,7 +56,7 @@ func (s *serviceImpl) PushSignals(stream sensorAPI.SignalService_PushSignalsServ
 	return nil
 }
 
-func (s *serviceImpl) Indicators() <-chan *listeners.EventWrap {
+func (s *serviceImpl) Indicators() <-chan *v1.SensorEvent {
 	return s.indicators
 }
 
@@ -85,7 +84,6 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 				log.Error("Empty process signal")
 				continue
 			}
-			log.Infof("Process Signal: %+v", processSignal)
 			go s.processPipeline.Process(processSignal)
 		default:
 			// Currently eat unhandled signals

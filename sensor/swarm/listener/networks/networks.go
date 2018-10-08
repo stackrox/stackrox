@@ -7,7 +7,6 @@ import (
 	dockerClient "github.com/docker/docker/client"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/docker"
-	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -16,7 +15,7 @@ var logger = logging.LoggerForModule()
 // Handler implements the ResourceHandler interface
 type Handler struct {
 	client  *dockerClient.Client
-	eventsC chan *listeners.EventWrap
+	eventsC chan *v1.SensorEvent
 }
 
 // SendExistingResources sends the current networks
@@ -33,7 +32,7 @@ func (s *Handler) SendExistingResources() {
 }
 
 // NewHandler instantiates the Handler for network events
-func NewHandler(client *dockerClient.Client, eventsC chan *listeners.EventWrap) *Handler {
+func NewHandler(client *dockerClient.Client, eventsC chan *v1.SensorEvent) *Handler {
 	return &Handler{
 		client:  client,
 		eventsC: eventsC,
@@ -88,7 +87,7 @@ func (s *Handler) HandleMessage(msg events.Message) {
 	s.eventsC <- networkPolicyEventWrap(resourceAction, np, originalSpec)
 }
 
-func (s *Handler) getExistingNetworks() ([]*listeners.EventWrap, error) {
+func (s *Handler) getExistingNetworks() ([]*v1.SensorEvent, error) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 	filters := filters.NewArgs()
@@ -100,7 +99,7 @@ func (s *Handler) getExistingNetworks() ([]*listeners.EventWrap, error) {
 		return nil, err
 	}
 
-	var events []*listeners.EventWrap
+	var events []*v1.SensorEvent
 	for _, network := range swarmNetworks {
 		n := networkWrap(network).asNetworkPolicy()
 		events = append(events, networkPolicyEventWrap(v1.ResourceAction_UPDATE_RESOURCE, n, network))
@@ -118,15 +117,12 @@ func (s *Handler) getExistingNetworks() ([]*listeners.EventWrap, error) {
 	return events, nil
 }
 
-func networkPolicyEventWrap(action v1.ResourceAction, networkPolicy *v1.NetworkPolicy, obj interface{}) *listeners.EventWrap {
-	return &listeners.EventWrap{
-		SensorEvent: &v1.SensorEvent{
-			Id:     networkPolicy.GetId(),
-			Action: action,
-			Resource: &v1.SensorEvent_NetworkPolicy{
-				NetworkPolicy: networkPolicy,
-			},
+func networkPolicyEventWrap(action v1.ResourceAction, networkPolicy *v1.NetworkPolicy, obj interface{}) *v1.SensorEvent {
+	return &v1.SensorEvent{
+		Id:     networkPolicy.GetId(),
+		Action: action,
+		Resource: &v1.SensorEvent_NetworkPolicy{
+			NetworkPolicy: networkPolicy,
 		},
-		OriginalSpec: obj,
 	}
 }

@@ -7,7 +7,6 @@ import (
 	dockerClient "github.com/docker/docker/client"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/docker"
-	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -16,7 +15,7 @@ var logger = logging.LoggerForModule()
 // Handler implements the ResourceHandler interface
 type Handler struct {
 	client  *dockerClient.Client
-	eventsC chan *listeners.EventWrap
+	eventsC chan *v1.SensorEvent
 }
 
 // SendExistingResources sends the current secrets
@@ -33,7 +32,7 @@ func (s *Handler) SendExistingResources() {
 }
 
 // NewHandler instantiates the Handler for network events
-func NewHandler(client *dockerClient.Client, eventsC chan *listeners.EventWrap) *Handler {
+func NewHandler(client *dockerClient.Client, eventsC chan *v1.SensorEvent) *Handler {
 	return &Handler{
 		client:  client,
 		eventsC: eventsC,
@@ -88,7 +87,7 @@ func (s *Handler) HandleMessage(msg events.Message) {
 	s.eventsC <- secretEventWrap(resourceAction, secret, originalSpec)
 }
 
-func (s *Handler) getExistingSecrets() ([]*listeners.EventWrap, error) {
+func (s *Handler) getExistingSecrets() ([]*v1.SensorEvent, error) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 	swarmSecrets, err := s.client.SecretList(ctx, types.SecretListOptions{})
@@ -96,7 +95,7 @@ func (s *Handler) getExistingSecrets() ([]*listeners.EventWrap, error) {
 		return nil, err
 	}
 
-	var events []*listeners.EventWrap
+	var events []*v1.SensorEvent
 	for _, secret := range swarmSecrets {
 		s := secretWrap(secret).asSecret()
 		events = append(events, secretEventWrap(v1.ResourceAction_UPDATE_RESOURCE, s, secret))
@@ -104,15 +103,12 @@ func (s *Handler) getExistingSecrets() ([]*listeners.EventWrap, error) {
 	return events, nil
 }
 
-func secretEventWrap(action v1.ResourceAction, secret *v1.Secret, obj interface{}) *listeners.EventWrap {
-	return &listeners.EventWrap{
-		SensorEvent: &v1.SensorEvent{
-			Id:     secret.GetId(),
-			Action: action,
-			Resource: &v1.SensorEvent_Secret{
-				Secret: secret,
-			},
+func secretEventWrap(action v1.ResourceAction, secret *v1.Secret, obj interface{}) *v1.SensorEvent {
+	return &v1.SensorEvent{
+		Id:     secret.GetId(),
+		Action: action,
+		Resource: &v1.SensorEvent_Secret{
+			Secret: secret,
 		},
-		OriginalSpec: obj,
 	}
 }

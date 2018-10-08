@@ -44,7 +44,7 @@ type clientSet struct {
 
 type kubernetesListener struct {
 	clients *clientSet
-	eventsC chan *listeners.EventWrap
+	eventsC chan *pkgV1.SensorEvent
 
 	resourceEventsC chan resourceEvent
 
@@ -58,7 +58,7 @@ type kubernetesListener struct {
 func New() listeners.Listener {
 	k := &kubernetesListener{
 		clients:         createClient(),
-		eventsC:         make(chan *listeners.EventWrap, 10),
+		eventsC:         make(chan *pkgV1.SensorEvent, 10),
 		resourceEventsC: make(chan resourceEvent),
 		stopSig:         concurrency.NewSignal(),
 	}
@@ -197,7 +197,7 @@ func (k *kubernetesListener) Stop() {
 	k.stopSig.Signal()
 }
 
-func (k *kubernetesListener) Events() <-chan *listeners.EventWrap {
+func (k *kubernetesListener) Events() <-chan *pkgV1.SensorEvent {
 	return k.eventsC
 }
 
@@ -216,7 +216,7 @@ func (k *kubernetesListener) processResourceEvents() {
 	}
 }
 
-func (k *kubernetesListener) sendEvents(evWraps ...*listeners.EventWrap) {
+func (k *kubernetesListener) sendEvents(evWraps ...*pkgV1.SensorEvent) {
 	for _, evWrap := range evWraps {
 		select {
 		case k.eventsC <- evWrap:
