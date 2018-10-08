@@ -173,7 +173,7 @@ class NetworkPage extends Component {
                         >
                             <SearchInput
                                 id="environment"
-                                className="flex flex-1"
+                                className="w-full"
                                 searchOptions={this.props.searchOptions}
                                 searchModifiers={this.props.searchModifiers}
                                 searchSuggestions={this.props.searchSuggestions}

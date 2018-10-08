@@ -17,7 +17,7 @@ export const NAMESPACE_LABEL_OFFSET = 30;
 
 export const FORCE_CONFIG = {
     FORCE_COLLISION_RADIUS_OFFSET: 20,
-    FORCE_CLUSTER_STRENGTH: 0.9
+    FORCE_CLUSTER_STRENGTH: 0.999
 };
 
 export const MIN_ZOOM = 0.25;
@@ -49,7 +49,18 @@ export const INTERNET_ACCESS_COLOR = 0xa3deff;
 export const NAMESPACE_BORDER_COLOR = 0xced3ed;
 export const NODE_COLOR = PRIMARY_COLOR_HEX;
 export const LINK_COLOR = PRIMARY_COLOR_HEX;
+export const NAMESPACE_LINK_COLOR = 0xbdc2d9;
 export const TEXT_COLOR = PRIMARY_COLOR_STRING;
+
+// Network graph object types
+export const NETWORK_GRAPH_TYPES = Object.freeze({
+    NODE: 'SERVICE',
+    LINK: 'SERVICE_LINK',
+    NAMESPACE: 'NAMESPACE',
+    NAMESPACE_LINK: 'NAMESPACE_LINK'
+});
 
 export const TRANSPARENT = 0.05;
 export const VISIBLE = 1;
+
+export const NAMESPACE_LINK_WIDTH = 0.005;

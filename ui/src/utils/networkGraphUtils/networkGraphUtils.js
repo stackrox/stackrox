@@ -1,10 +1,5 @@
 import { quadtree as d3QuadTree } from 'd3';
-import {
-    TEXT_COLOR,
-    MAX_RADIUS,
-    PADDING,
-    CLUSTER_PADDING
-} from 'utils/networkGraphUtils/networkGraphConstants';
+import * as constants from 'utils/networkGraphUtils/networkGraphConstants';
 
 export const forceCluster = () => {
     let nodes;
@@ -49,7 +44,8 @@ export const forceCollision = nodes => alpha => {
         .addAll(nodes);
 
     nodes.forEach(d => {
-        const r = d.r + MAX_RADIUS + Math.max(PADDING, CLUSTER_PADDING);
+        const r =
+            d.r + constants.MAX_RADIUS + Math.max(constants.PADDING, constants.CLUSTER_PADDING);
         const nx1 = d.x - r;
         const nx2 = d.x + r;
         const ny1 = d.y - r;
@@ -62,7 +58,9 @@ export const forceCollision = nodes => alpha => {
                 const radius =
                     d.r +
                     quad.data.r +
-                    (d.namespace === quad.data.namespace ? PADDING : CLUSTER_PADDING);
+                    (d.namespace === quad.data.namespace
+                        ? constants.PADDING
+                        : constants.CLUSTER_PADDING);
                 if (l < radius) {
                     l = ((l - radius) / l) * alpha;
                     /* eslint-disable */
@@ -79,27 +77,27 @@ export const forceCollision = nodes => alpha => {
 };
 
 /**
- * Iterates through a list of edges that contain a source and target,
- * and returns a new list of edges where an edge has a property "bidirectional" set to true if
- * there is an edge that has the same source and targets, but is flipped the other way around
+ * Iterates through a list of links that contain a source and target,
+ * and returns a new list of links where an link has a property "bidirectional" set to true if
+ * there is an link that has the same source and targets, but is flipped the other way around
  *
- * @param {!Object[]} edges list of edges that contain a "source" and "target"
+ * @param {!Object[]} links list of links that contain a "source" and "target"
  * @returns {!Object[]}
  */
-export const getBidirectionalEdges = edges => {
-    const sourceTargetToEdgeMapping = {};
+export const getBidirectionalLinks = links => {
+    const sourceTargetToLinkMapping = {};
 
-    edges.forEach(edge => {
-        if (!sourceTargetToEdgeMapping[`${edge.source}-${edge.target}`]) {
-            if (!sourceTargetToEdgeMapping[`${edge.target}-${edge.source}`]) {
-                sourceTargetToEdgeMapping[`${edge.source}-${edge.target}`] = edge;
+    links.forEach(link => {
+        if (!sourceTargetToLinkMapping[`${link.source}-${link.target}`]) {
+            if (!sourceTargetToLinkMapping[`${link.target}-${link.source}`]) {
+                sourceTargetToLinkMapping[`${link.source}-${link.target}`] = link;
             } else {
-                sourceTargetToEdgeMapping[`${edge.target}-${edge.source}`].bidirectional = true;
+                sourceTargetToLinkMapping[`${link.target}-${link.source}`].bidirectional = true;
             }
         }
     });
 
-    return Object.values(sourceTargetToEdgeMapping);
+    return Object.values(sourceTargetToLinkMapping);
 };
 
 /**
@@ -134,6 +132,15 @@ export const getLinksInSameNamespace = (nodes, links) => {
 export const intersectsNodes = obj => obj.object.geometry.type === 'CircleBufferGeometry';
 
 /**
+ *  A function to filter a list of intersections through ray casting to show only namespaces
+ *
+ * @returns {Function}
+ */
+
+export const intersectsNamespaces = obj =>
+    obj.object.material.userData.type === constants.NETWORK_GRAPH_TYPES.NAMESPACE;
+
+/**
  *  Function returns a canvas with some text drawn onto it
  *
  * @param {String} text text to draw on the canvas
@@ -147,9 +154,64 @@ export const getTextTexture = (text, size) => {
     ctx.font = `${size / 3}px Open Sans`;
     ctx.fillStyle = 'transparent';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = TEXT_COLOR;
+    ctx.fillStyle = constants.TEXT_COLOR;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(text, canvas.width / 2, canvas.height / 2);
     return canvas;
+};
+
+/**
+ * Picks the Rectangular sides closest between two bounding boxes and returns the
+ * xy-coordinates of both sides
+ *
+ * @param {Number} sourceX the source x position
+ * @param {Number} sourceY the source y position
+ * @param {Number} sourceWidth the source bounding box's width
+ * @param {Number} sourceHeight the source bounding box's height
+ * @param {Number} targetX the target x position
+ * @param {Number} targetY the target y position
+ * @param {Number} targetWidth the target bounding box's width
+ * @param {Number} targetHeight the target bounding box's height
+ * @returns {Object}
+ */
+export const selectClosestSides = (
+    sourceX,
+    sourceY,
+    sourceWidth,
+    sourceHeight,
+    targetX,
+    targetY,
+    targetWidth,
+    targetHeight
+) => {
+    let minDistance = Number.MAX_VALUE;
+    let selectedSourceSide = null;
+    let selectedTargetSide = null;
+    const sourceTop = { x: sourceX, y: sourceY - sourceHeight / 2 };
+    const sourceLeft = { x: sourceX - sourceWidth / 2, y: sourceY };
+    const sourceRight = { x: sourceX + sourceWidth / 2, y: sourceY };
+    const sourceBottom = { x: sourceX, y: sourceY + sourceHeight / 2 };
+    const targetTop = { x: targetX, y: targetY - targetHeight / 2 };
+    const targetLeft = { x: targetX - targetWidth / 2, y: targetY };
+    const targetRight = { x: targetX + targetWidth / 2, y: targetY };
+    const targetBottom = { x: targetX, y: targetY + targetHeight / 2 };
+    const sourceSides = [sourceTop, sourceLeft, sourceRight, sourceBottom];
+    const targetSides = [targetTop, targetLeft, targetRight, targetBottom];
+    sourceSides.forEach(({ x: sourceSideX, y: sourceSideY }) => {
+        targetSides.forEach(({ x: targetSideX, y: targetSideY }) => {
+            const dx = targetSideX - sourceSideX;
+            const dy = targetSideY - sourceSideY;
+            const dr = Math.sqrt(dx * dx + dy * dy);
+            if (dr < minDistance) {
+                selectedSourceSide = { x: sourceSideX, y: sourceSideY };
+                selectedTargetSide = { x: targetSideX, y: targetSideY };
+                minDistance = dr;
+            }
+        });
+    });
+    return {
+        sourceSide: selectedSourceSide,
+        targetSide: selectedTargetSide
+    };
 };

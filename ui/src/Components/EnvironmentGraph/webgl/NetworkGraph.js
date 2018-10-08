@@ -2,22 +2,28 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
 import * as THREE from 'three';
+import { MeshLine, MeshLineMaterial } from 'three.meshline';
 import * as d3 from 'd3';
 import threeOrbitControls from 'three-orbit-controls';
 import {
     forceCluster,
     getLinksInSameNamespace,
     intersectsNodes,
-    getTextTexture
+    intersectsNamespaces,
+    getTextTexture,
+    getBidirectionalLinks,
+    selectClosestSides
 } from 'utils/networkGraphUtils/networkGraphUtils';
 import * as constants from 'utils/networkGraphUtils/networkGraphConstants';
 import * as Icon from 'react-feather';
+import uniqBy from 'lodash/uniqBy';
 
 const OrbitControls = threeOrbitControls(THREE);
 
 let nodes = [];
 let links = [];
 let namespaces = [];
+let namespaceLinks = [];
 let simulation = null;
 let isZoomIn = false;
 let showLinks = false;
@@ -51,7 +57,8 @@ class NetworkGraph extends Component {
             // Create objects for the scene
             namespaces = this.setUpNamespaces(nextProps.nodes);
             nodes = this.setUpNodes(nextProps.nodes);
-            links = this.setUpLinks(nextProps.nodes, nextProps.links);
+            links = this.setUpServiceLinks(nextProps.nodes, nextProps.links);
+            namespaceLinks = this.setUpNamespaceLinks(nextProps.nodes, nextProps.links);
 
             this.setUpForceSimulation();
 
@@ -82,6 +89,8 @@ class NetworkGraph extends Component {
 
         const hoveredOverNodes = intersectingObjects.filter(intersectsNodes);
 
+        const hoveredOverNamespaces = intersectingObjects.filter(intersectsNamespaces);
+
         if (hoveredOverNodes.length) {
             this.networkGraph.classList.add('cursor-pointer');
             const hoveredOverNode = hoveredOverNodes[0];
@@ -93,6 +102,13 @@ class NetworkGraph extends Component {
                 link.line.material.opacity = constants.VISIBLE;
                 return link;
             });
+        }
+
+        if (hoveredOverNamespaces.length) {
+            const hoveredOverNamespace = hoveredOverNamespaces[0];
+            this.showLinksForConnectedNamespaces(hoveredOverNamespace);
+        } else {
+            this.hideAllNamespaceLinks();
         }
     };
 
@@ -176,6 +192,7 @@ class NetworkGraph extends Component {
                 this.updateNamespacePositions();
                 this.updateNodesPosition();
                 this.updateLinksPosition();
+                this.updateNamespaceLinksPosition();
             })
             .alpha(1)
             .stop();
@@ -247,7 +264,11 @@ class NetworkGraph extends Component {
                 color: namespace.internetAccess
                     ? constants.INTERNET_ACCESS_COLOR
                     : constants.NAMESPACE_BORDER_COLOR,
-                side: THREE.DoubleSide
+                side: THREE.DoubleSide,
+                userData: {
+                    type: constants.NETWORK_GRAPH_TYPES.NAMESPACE,
+                    namespace: newNamespace.namespace
+                }
             });
             newNamespace.border = new THREE.Mesh(geometry, material);
 
@@ -273,7 +294,7 @@ class NetworkGraph extends Component {
         return newNamespaces;
     };
 
-    setUpLinks = (propNodes, propLinks) => {
+    setUpServiceLinks = (propNodes, propLinks) => {
         const newLinks = [];
 
         const filteredLinks = getLinksInSameNamespace(propNodes, propLinks);
@@ -282,7 +303,10 @@ class NetworkGraph extends Component {
             const link = { ...filteredLink };
 
             const material = new THREE.LineBasicMaterial({
-                color: constants.LINK_COLOR
+                color: constants.LINK_COLOR,
+                userData: {
+                    type: constants.NETWORK_GRAPH_TYPES.LINK
+                }
             });
             material.transparent = true;
             const geometry = new THREE.Geometry();
@@ -297,7 +321,48 @@ class NetworkGraph extends Component {
         return newLinks;
     };
 
-    getNamespaceDimensions = (n, namespace) => {
+    getLinksBetweenNamespaces = (propNodes, propLinks) => {
+        const nodeIdToNodeMapping = {};
+
+        propNodes.forEach(d => {
+            nodeIdToNodeMapping[d.id] = d;
+        });
+
+        let filteredNamespaceLinks = propLinks
+            .filter(link => {
+                const sourceNamespace = nodeIdToNodeMapping[link.source].namespace;
+                const targetNamespace = nodeIdToNodeMapping[link.target].namespace;
+                return sourceNamespace !== targetNamespace;
+            })
+            .map(link => ({
+                source: nodeIdToNodeMapping[link.source].namespace,
+                target: nodeIdToNodeMapping[link.target].namespace,
+                id: `${nodeIdToNodeMapping[link.source].namespace}-${
+                    nodeIdToNodeMapping[link.target].namespace
+                }`
+            }));
+
+        filteredNamespaceLinks = uniqBy(filteredNamespaceLinks, 'id');
+
+        return filteredNamespaceLinks;
+    };
+
+    setUpNamespaceLinks = (propNodes, propLinks) => {
+        const linksBetweenNamespaces = this.getLinksBetweenNamespaces(propNodes, propLinks);
+
+        const bidirectionalLinks = getBidirectionalLinks(linksBetweenNamespaces).map(data => {
+            let link = { ...data };
+
+            link = this.createLinkEndpointsMesh(link);
+            link = this.createNamespaceLinkMesh(link);
+
+            return link;
+        });
+
+        return bidirectionalLinks;
+    };
+
+    getNamespaceContainerDimensions = (n, namespace) => {
         const filteredNodes = n.filter(node => node.namespace === namespace);
         let minX = filteredNodes[0].x;
         let minY = filteredNodes[0].y;
@@ -321,6 +386,24 @@ class NetworkGraph extends Component {
         };
     };
 
+    showLinksForConnectedNamespaces = obj => {
+        const { namespace } = obj.object.material.userData;
+        const connectedNamespaceLinks = namespaceLinks.filter(
+            link => link.source === namespace || link.target === namespace
+        );
+        connectedNamespaceLinks.forEach(link => {
+            const { lineWidth } = link.line.material.uniforms;
+            lineWidth.value = constants.NAMESPACE_LINK_WIDTH;
+        });
+    };
+
+    hideAllNamespaceLinks = () => {
+        namespaceLinks.forEach(link => {
+            const { lineWidth } = link.line.material.uniforms;
+            lineWidth.value = 0;
+        });
+    };
+
     showLinksForConnectedNodes = node => {
         const { id } = node.object.userData;
         links = links.map(data => {
@@ -342,7 +425,9 @@ class NetworkGraph extends Component {
             });
         } else if (showLinks && this.camera.zoom < constants.ZOOM_LEVEL_TO_SHOW_LINKS) {
             showLinks = false;
-            const removeLinks = this.scene.children.filter(child => child.type === 'Line');
+            const removeLinks = this.scene.children.filter(
+                child => child.material.userData.type === constants.NETWORK_GRAPH_TYPES.LINK
+            );
             removeLinks.forEach(link => {
                 this.scene.remove(link);
             });
@@ -365,6 +450,89 @@ class NetworkGraph extends Component {
             line.geometry.vertices[0].y = source.y;
             line.geometry.vertices[1].x = target.x;
             line.geometry.vertices[1].y = target.y;
+        });
+    };
+
+    updateNamespacePositions = () => {
+        namespaces.forEach(namespace => {
+            const { namespace: name, plane, border, label } = namespace;
+            const { x, y, width, height } = this.getNamespaceContainerDimensions(nodes, name);
+            border.geometry = new THREE.PlaneGeometry(
+                Math.abs(width + constants.CLUSTER_BORDER_PADDING),
+                Math.abs(height - constants.CLUSTER_BORDER_PADDING)
+            );
+            border.position.set(x, y, 0);
+            plane.geometry = new THREE.PlaneGeometry(
+                Math.abs(width + constants.CLUSTER_INNER_PADDING),
+                Math.abs(height - constants.CLUSTER_INNER_PADDING)
+            );
+            plane.position.set(x, y, 0);
+            label.position.set(
+                x,
+                y +
+                    (height - constants.CLUSTER_INNER_PADDING - constants.NAMESPACE_LABEL_OFFSET) /
+                        2,
+                0
+            );
+        });
+    };
+
+    updateNamespaceLinksPosition = () => {
+        const namespacePositionMapping = {};
+
+        namespaces.forEach(namespace => {
+            const { namespace: name } = namespace;
+            const { position } = namespace.plane;
+            const { width, height } = namespace.border.geometry.parameters;
+            namespacePositionMapping[name] = {
+                x: position.x,
+                y: position.y,
+                width,
+                height
+            };
+        });
+
+        namespaceLinks.forEach(link => {
+            const {
+                source,
+                target,
+                line,
+                sourceLinkEndpoint,
+                targetLinkEndpoint,
+                sourceLinkEndpointBorder,
+                targetLinkEndpointBorder
+            } = link;
+            const {
+                x: sourceX,
+                y: sourceY,
+                width: sourceWidth,
+                height: sourceHeight
+            } = namespacePositionMapping[source];
+            const {
+                x: targetX,
+                y: targetY,
+                width: targetWidth,
+                height: targetHeight
+            } = namespacePositionMapping[target];
+            const { sourceSide, targetSide } = selectClosestSides(
+                sourceX,
+                sourceY,
+                sourceWidth,
+                sourceHeight,
+                targetX,
+                targetY,
+                targetWidth,
+                targetHeight
+            );
+            line.geo.vertices[0].x = sourceSide.x;
+            line.geo.vertices[0].y = sourceSide.y;
+            line.geo.vertices[1].x = targetSide.x;
+            line.geo.vertices[1].y = targetSide.y;
+            sourceLinkEndpointBorder.position.set(sourceSide.x, sourceSide.y, 0);
+            targetLinkEndpointBorder.position.set(targetSide.x, targetSide.y, 0);
+            sourceLinkEndpoint.position.set(sourceSide.x, sourceSide.y, 0);
+            targetLinkEndpoint.position.set(targetSide.x, targetSide.y, 0);
+            line.mLine.setGeometry(line.geo);
         });
     };
 
@@ -412,28 +580,67 @@ class NetworkGraph extends Component {
         return modifiedData;
     };
 
-    updateNamespacePositions = () => {
-        namespaces.forEach(namespace => {
-            const { namespace: name, plane, border, label } = namespace;
-            const { x, y, width, height } = this.getNamespaceDimensions(nodes, name);
-            border.geometry = new THREE.PlaneGeometry(
-                width + constants.CLUSTER_BORDER_PADDING,
-                height - constants.CLUSTER_BORDER_PADDING
-            );
-            border.position.set(x, y, 0);
-            plane.geometry = new THREE.PlaneGeometry(
-                width + constants.CLUSTER_INNER_PADDING,
-                height - constants.CLUSTER_INNER_PADDING
-            );
-            plane.position.set(x, y, 0);
-            label.position.set(
-                x,
-                y +
-                    (height - constants.CLUSTER_INNER_PADDING - constants.NAMESPACE_LABEL_OFFSET) /
-                        2,
-                0
-            );
+    createLinkEndpointsMesh = data => {
+        const link = { ...data };
+
+        let geometry;
+        let material;
+
+        // create a link end connector border mesh
+        geometry = new THREE.CircleBufferGeometry(3, 32);
+        material = new THREE.MeshBasicMaterial({
+            color: constants.NAMESPACE_LINK_COLOR
         });
+        link.sourceLinkEndpointBorder = new THREE.Mesh(geometry, material);
+        link.targetLinkEndpointBorder = new THREE.Mesh(geometry, material);
+        this.scene.add(link.sourceLinkEndpointBorder);
+        this.scene.add(link.targetLinkEndpointBorder);
+
+        // create a link end connector mesh
+        geometry = new THREE.CircleBufferGeometry(2, 32);
+        material = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true
+        });
+        link.sourceLinkEndpoint = new THREE.Mesh(geometry, material);
+        link.targetLinkEndpoint = new THREE.Mesh(geometry, material);
+
+        this.scene.add(link.sourceLinkEndpoint);
+        this.scene.add(link.targetLinkEndpoint);
+
+        return link;
+    };
+
+    createNamespaceLinkMesh = data => {
+        const link = { ...data };
+
+        // create a link mesh
+        const geometry = new THREE.Geometry();
+        geometry.vertices[0] = new THREE.Vector3(0, 0, 0);
+        geometry.vertices[1] = new THREE.Vector3(0, 0, 0);
+        const meshLine = new MeshLine();
+        meshLine.setGeometry(geometry);
+        const material = new MeshLineMaterial({
+            useMap: false,
+            color: new THREE.Color(constants.NAMESPACE_LINK_COLOR),
+            opacity: 1,
+            resolution: new THREE.Vector2(
+                this.networkGraph.clientWidth,
+                this.networkGraph.clientHeight
+            ),
+            sizeAttenuation: true,
+            lineWidth: 0,
+            near: this.camera.near,
+            far: this.camera.far
+        });
+        link.line = new THREE.Mesh(meshLine.geometry, material); // this syntax could definitely be improved!
+        link.line.frustumCulled = false;
+        link.line.mLine = meshLine;
+        link.line.geo = geometry;
+
+        this.scene.add(link.line);
+
+        return link;
     };
 
     clear = () => {
@@ -449,8 +656,6 @@ class NetworkGraph extends Component {
         requestAnimationFrame(this.animate);
 
         this.controls.update();
-
-        this.updateLinksPosition();
 
         this.showHideLinks();
 

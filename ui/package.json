@@ -53,7 +53,8 @@
     "store": "^2.0.12",
     "tailwindcss": "^0.6.6",
     "three": "^0.97.0",
-    "three-orbit-controls": "^82.1.0"
+    "three-orbit-controls": "^82.1.0",
+    "three.meshline": "^1.1.0"
   },
   "scripts": {
     "start": "tailwind build ./src/app.css -c ./tailwind.js -o ./src/index.css && HTTPS=true NODE_PATH=src react-scripts start",

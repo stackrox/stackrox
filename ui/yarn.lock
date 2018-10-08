@@ -9960,6 +9960,11 @@ three-orbit-controls@^82.1.0:
   resolved "https://registry.yarnpkg.com/three-orbit-controls/-/three-orbit-controls-82.1.0.tgz#11a7f33d0a20ecec98f098b37780f6537374fab4"
   integrity sha1-EafzPQog7OyY8Jizd4D2U3N0+rQ=
 
+three.meshline@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/three.meshline/-/three.meshline-1.1.0.tgz#cf66be97b239a044d9d80b8bbf63673eb4dc09fc"
+  integrity sha512-YJmFMKP9udGMCNIxx6ntTu6qMti3y2a8w/Z2Ado/n8N837YAqm5kkJX55E8jGRyc0IWahlRkO+B2i+XXZluVGw==
+
 three@^0.97.0:
   version "0.97.0"
   resolved "https://registry.yarnpkg.com/three/-/three-0.97.0.tgz#76141e1b0ace14246fe9198a458fefddc98a4e30"
