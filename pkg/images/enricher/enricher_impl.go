@@ -75,13 +75,15 @@ func (e *enricherImpl) enrichImageWithRegistry(image *v1.Image, registry registr
 			logger.Error(err)
 			return false
 		}
+
 		addIfKeyNonEmpty(e.metadataCache, image.GetName().GetFullName(), metadata, imageDataExpiration)
 	} else {
 		e.metrics.IncrementMetadataCacheHit()
 		metadata = metadataItem.Value().(*v1.ImageMetadata)
 	}
 
-	if protoconv.CompareProtoTimestamps(image.GetMetadata().GetCreated(), metadata.GetCreated()) != 0 {
+	// The nil case is for when there is no v1 data which means created will always be nil
+	if (metadata != nil && image.GetMetadata().GetCreated() == nil && metadata.GetCreated() == nil) || protoconv.CompareProtoTimestamps(image.GetMetadata().GetCreated(), metadata.GetCreated()) != 0 {
 		image.Metadata = metadata
 		return true
 	}

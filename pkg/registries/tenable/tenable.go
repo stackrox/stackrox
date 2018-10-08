@@ -8,6 +8,7 @@ import (
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/generated/api/v1"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/transports"
 )
@@ -92,7 +93,7 @@ func (d *tenableRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 	if image == nil {
 		return nil, nil
 	}
-	manifest, err := d.client().ManifestV2(image.GetName().GetRemote(), image.GetName().GetTag())
+	manifest, err := d.client().ManifestV2(image.GetName().GetRemote(), utils.Reference(image))
 	if err != nil {
 		return nil, err
 	}

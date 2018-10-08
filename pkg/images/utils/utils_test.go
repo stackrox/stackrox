@@ -36,6 +36,17 @@ func TestNewImage(t *testing.T) {
 				},
 			},
 		},
+		{
+			ImageString: "nginx",
+			ExpectedImage: &v1.Image{
+				Name: &v1.ImageName{
+					Registry: "docker.io",
+					Remote:   "library/nginx",
+					Tag:      "latest",
+					FullName: "docker.io/library/nginx:latest",
+				},
+			},
+		},
 	}
 
 	for _, c := range cases {

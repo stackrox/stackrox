@@ -13,6 +13,7 @@ import (
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/opencontainers/go-digest"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -202,7 +203,7 @@ func compareProtoTimestamps(t1, t2 *timestamp.Timestamp) bool {
 }
 
 func (d *Registry) getV2Metadata(image *v1.Image) *v1.V2Metadata {
-	metadata, err := d.client().(*registry.Registry).ManifestV2(image.GetName().GetRemote(), image.GetName().GetTag())
+	metadata, err := d.client().(*registry.Registry).ManifestV2(image.GetName().GetRemote(), utils.Reference(image))
 	if err != nil {
 		return nil
 	}
@@ -226,33 +227,14 @@ func (d *Registry) Global() bool {
 	return len(d.protoImageIntegration.GetClusters()) == 0
 }
 
-// Metadata returns the metadata via this registries implementation
-func (d *Registry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
-	log.Infof("Getting metadata for image %s", image.GetName().GetFullName())
-	if image == nil {
-		return nil, nil
-	}
-
-	// fetch the digest from registry because it is more correct than from the orchestrator
-	digest, err := d.client().ManifestDigest(image.GetName().GetRemote(), image.GetName().GetTag())
-	if err != nil {
-		return nil, err
-	}
-	manifest, err := d.client().SignedManifest(image.GetName().GetRemote(), image.GetName().GetTag())
-	if err != nil {
-		manifest, err = d.client().Manifest(image.GetName().GetRemote(), image.GetName().GetTag())
-		if err != nil {
-			return nil, err
-		}
-	}
-
+func (d *Registry) populateV1DataFromManifest(manifest *manifestV1.SignedManifest) (*v1.ImageMetadata, error) {
 	// Get the latest layer and author
 	var latest v1.ImageLayer
 	var layers []*v1.ImageLayer
 	for _, layer := range manifest.History {
 		var compat v1Compatibility
 		if err := json.Unmarshal([]byte(layer.V1Compatibility), &compat); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Failed unmarshalling v1 capability: %s", err)
 		}
 		layer := scrubDockerfileLines(compat)
 		if compareProtoTimestamps(latest.Created, layer.Created) {
@@ -264,15 +246,63 @@ func (d *Registry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 	for _, fsLayer := range manifest.FSLayers {
 		fsLayers = append(fsLayers, fsLayer.BlobSum.String())
 	}
-	imageMetadata := &v1.ImageMetadata{
-		Created:     latest.Created,
-		Author:      latest.Author,
-		Layers:      layers,
-		FsLayers:    fsLayers,
-		V2:          d.getV2Metadata(image),
-		RegistrySha: digest.String(),
+	return &v1.ImageMetadata{
+		Created:  latest.Created,
+		Author:   latest.Author,
+		Layers:   layers,
+		FsLayers: fsLayers,
+	}, nil
+}
+
+func (d *Registry) populateManifestV1(image *v1.Image) (*v1.ImageMetadata, error) {
+	// First try to use the SHA given (which is probably V2, but for backwards compatibility reasons on old images we will try)
+	signedManifest, err := d.client().SignedManifest(image.GetName().GetRemote(), image.GetId())
+	if err == nil {
+		return d.populateV1DataFromManifest(signedManifest)
 	}
-	return imageMetadata, nil
+
+	manifest, err := d.client().Manifest(image.GetName().GetRemote(), image.GetId())
+	if err == nil {
+		return d.populateV1DataFromManifest(manifest)
+	}
+
+	// Now try to use the tag, which is less specific than the SHA
+	// TODO(cgorman) is it possible to get the tags by the sha?
+	signedManifest, err = d.client().SignedManifest(image.GetName().GetRemote(), image.GetName().GetTag())
+	if err == nil {
+		return d.populateV1DataFromManifest(signedManifest)
+	}
+
+	manifest, err = d.client().Manifest(image.GetName().GetRemote(), image.GetName().GetTag())
+	if err == nil {
+		return d.populateV1DataFromManifest(manifest)
+	}
+
+	return nil, fmt.Errorf("Failed to get the manifest: %s", err)
+}
+
+// Metadata returns the metadata via this registries implementation
+func (d *Registry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
+	log.Infof("Getting metadata for image %s", image.GetName().GetFullName())
+	if image == nil {
+		return nil, nil
+	}
+
+	// fetch the digest from registry because it is more correct than from the orchestrator
+	digest, err := d.client().ManifestDigest(image.GetName().GetRemote(), utils.Reference(image))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get the manifest digest : %s", err)
+	}
+
+	// metadata will be populated as an empty struct if there is a failure
+	metadata, err := d.populateManifestV1(image)
+	if err != nil {
+		log.Error(err)
+		metadata = &v1.ImageMetadata{}
+	}
+	metadata.RegistrySha = digest.String()
+	metadata.V2 = d.getV2Metadata(image)
+	return metadata, nil
 }
 
 // Test tests the current registry and makes sure that it is working properly

@@ -184,9 +184,9 @@ func (c *googleScanner) getVulnsForImage(image *v1.Image) ([]*containeranalysis.
 	defer cancel()
 	resp, err := c.client.ListOccurrences(ctx, occurenceReq)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not list occurences: %s", err)
 	}
-	log.Infof("Found %d vulnerabilies for image %s", len(resp.GetOccurrences()), image.GetName().GetFullName())
+	log.Infof("Found %d vulnerabilities for image %s", len(resp.GetOccurrences()), image.GetName().GetFullName())
 	return resp.GetOccurrences(), nil
 }
 
@@ -201,13 +201,14 @@ func (c *googleScanner) addVulnsToComponents(cpeToComponentMap map[string]map[st
 	// This retrieves all the vulnerabilities for the image through a request to the API
 	pkgVulnOccurences, err := c.getVulnsForImage(image)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get vulns for image: %s", err)
 	}
 	// For every package based vulnerability, get the occurrence note, which gives more info about the vuln
 	for _, occurrence := range pkgVulnOccurences {
 		note, err := c.getOccurrenceNote(occurrence.GetName())
 		if err != nil {
-			return err
+			log.Errorf("unable to get occurrence note '%s': %s", occurrence.GetName(), err)
+			continue
 		}
 
 		// Join the vuln to the component by using the vulns cpeURI -> to look up the affected components
@@ -243,10 +244,10 @@ func (c *googleScanner) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	log.Infof("Retrieving scans for image %s", image.GetName().GetFullName())
 	cpeToComponentMap, err := c.getComponents(image)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get components: %s", err)
 	}
 	if err := c.addVulnsToComponents(cpeToComponentMap, image); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to add vulns to components: %s", err)
 	}
 	var components []*v1.ImageScanComponent
 	for _, v := range cpeToComponentMap {
@@ -261,7 +262,7 @@ func (c *googleScanner) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 
 // Match decides if the image is contained within this scanner
 func (c *googleScanner) Match(image *v1.Image) bool {
-	return strings.Contains(image.GetName().GetRegistry(), "gcr.io")
+	return strings.HasPrefix(image.GetName().GetRegistry(), "gcr.io")
 }
 
 func (c *googleScanner) Global() bool {

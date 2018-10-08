@@ -6,40 +6,63 @@ import (
 
 	"github.com/docker/distribution/reference"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 )
+
+var logger = logging.LoggerForModule()
 
 // GenerateImageFromString generates an image type from a common string format
 func GenerateImageFromString(imageStr string) *v1.Image {
-	image := v1.Image{
-		Name: &v1.ImageName{},
+	image := &v1.Image{
+		Name: &v1.ImageName{
+			FullName: imageStr,
+		},
 	}
 
-	// Check if its a sha and return if it is
-	if strings.HasPrefix(imageStr, "sha256:") {
-		image.Id = imageStr
-		return &image
-	}
-
-	// Cut off @sha256:
-	if idx := strings.Index(imageStr, "@sha256:"); idx != -1 {
-		image.Id = imageStr[idx+1:]
-		imageStr = imageStr[:idx]
-	}
-
-	named, err := reference.ParseNormalizedNamed(imageStr)
+	ref, err := reference.ParseAnyReference(imageStr)
 	if err != nil {
-		return &image
+		logger.Errorf("Error parsing image name: %s", imageStr)
+		return image
 	}
-	tag := "latest"
-	namedTagged, ok := named.(reference.NamedTagged)
+
+	digest, ok := ref.(reference.Digested)
 	if ok {
-		tag = namedTagged.Tag()
+		image.Id = digest.Digest().String()
 	}
-	image.Name.Registry = reference.Domain(named)
-	image.Name.Remote = reference.Path(named)
-	image.Name.Tag = tag
-	FillFullName(&image)
-	return &image
+
+	named, ok := ref.(reference.Named)
+	if ok {
+		image.Name.Registry = reference.Domain(named)
+		image.Name.Remote = reference.Path(named)
+	}
+
+	namedTagged, ok := ref.(reference.NamedTagged)
+	if ok {
+		image.Name.Registry = reference.Domain(namedTagged)
+		image.Name.Remote = reference.Path(namedTagged)
+		image.Name.Tag = namedTagged.Tag()
+	}
+
+	// Default the image to latest if and only if there was no tag specific and also no SHA specified
+	if image.GetId() == "" && image.GetName().GetTag() == "" {
+		image.Name.Tag = "latest"
+		image.Name.FullName = ref.String() + ":latest"
+	} else {
+		image.Name.FullName = ref.String()
+	}
+
+	return image
+}
+
+// Reference returns what to use as the reference when talking to registries
+func Reference(img *v1.Image) string {
+	// If the image id is empty, then use the tag as the reference
+	if img.GetId() != "" {
+		return img.GetId()
+	} else if img.GetName().GetTag() != "" {
+		return img.GetName().GetTag()
+	}
+	return "latest"
 }
 
 // FillFullName uses the fields of the image name to fill in the FullName field.
