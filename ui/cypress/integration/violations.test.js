@@ -25,6 +25,22 @@ describe('Violations page', () => {
             'alertWithEmptyContainerConfig'
         );
     };
+    const mockWhitelistDeployment = () => {
+        cy.fixture('alerts/alertsWithWhitelistedDeployments.json').as(
+            'alertsWithWhitelistedDeployments'
+        );
+        cy.route('GET', api.alerts.alerts, '@alertsWithWhitelistedDeployments').as(
+            'alertsWithWhitelistedDeployments'
+        );
+    };
+
+    const mockGetPolicy = () => {
+        cy.route({
+            method: 'GET',
+            url: '/v1/policies/*',
+            response: {}
+        }).as('getPolicy');
+    };
 
     it('should select item in nav bar', () => {
         cy.get(ViolationsPageSelectors.navLink).should('have.class', 'bg-primary-700');
@@ -32,6 +48,11 @@ describe('Violations page', () => {
 
     it('should have violations in table', () => {
         cy.get(ViolationsPageSelectors.rows).should('have.length', 2);
+    });
+
+    it('should have Lifecycle column in table', () => {
+        cy.get(ViolationsPageSelectors.lifeCycleColumn).should('be.visible');
+        cy.get(ViolationsPageSelectors.firstTableRow).should('contain', 'Runtime');
     });
 
     it('should show the side panel on row click', () => {
@@ -100,7 +121,40 @@ describe('Violations page', () => {
             .find(ViolationsPageSelectors.sidePanel.tabs)
             .get(ViolationsPageSelectors.sidePanel.getTabByIndex(0))
             .click();
-        cy.get(ViolationsPageSelectors.runtimeProcessCards);
+        cy.get(ViolationsPageSelectors.runtimeProcessCards).should('have.length', 10);
+    });
+
+    it('should contain correct action buttons for the lifecycle stage', () => {
+        // Lifecycle: Runtime
+        cy.get(ViolationsPageSelectors.firstTableRow)
+            .get(ViolationsPageSelectors.whitelistDeploymentButton)
+            .should('exist')
+            .get(ViolationsPageSelectors.resolveButton)
+            .should('exist');
+
+        // Lifecycle: Deploy
+        cy.get(ViolationsPageSelectors.lastTableRow)
+            .get(ViolationsPageSelectors.resolveButton)
+            .should('be.hidden')
+            .get(ViolationsPageSelectors.whitelistDeploymentButton)
+            .should('exist');
+    });
+
+    it('should whitelist the deployment', () => {
+        mockWhitelistDeployment();
+        mockGetPolicy();
+        cy.get(ViolationsPageSelectors.lastTableRow)
+            .find('[type="checkbox"]')
+            .check();
+        cy.get('.panel-actions button')
+            .first()
+            .click();
+        cy.get('.ReactModal__Content .btn.btn-success').click();
+
+        cy.wait('@getPolicy');
+        cy.visit('/main/violations');
+        cy.wait('@alertsWithWhitelistedDeployments');
+        cy.get(ViolationsPageSelectors.whitelistDeploymentRow).should('not.exist');
     });
 
     it('should have deployment information in the Deployment Details tab', () => {

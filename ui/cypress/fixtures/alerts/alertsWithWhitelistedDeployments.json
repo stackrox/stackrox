@@ -24,30 +24,6 @@
             },
             "stale": false,
             "markedStale": null
-        },
-        {
-            "id": "83f1d8d0-1e2b-410a-b1c3-c77ae2bb5ad9",
-            "time": "2018-09-27T19:37:06.854667598Z",
-            "lifecycleStage": "DEPLOY_TIME",
-            "policy": {
-                "id": "bd88d660-e037-4c1a-a466-4b64901f5010",
-                "name": "Privileged Container",
-                "severity": "MEDIUM_SEVERITY",
-                "description": "Alert on deployments with containers running in privileged mode",
-                "categories": [
-                    "Privileges"
-                ],
-                "lifecycleStage": "DEPLOY_TIME"
-            },
-            "deployment": {
-                "id": "6f78ceea-c28c-11e8-b8c4-42010a8a0fe9",
-                "name": "metadata-proxy-v0.1",
-                "updatedAt": "2018-09-27T19:35:05Z",
-                "clusterName": "remote",
-                "namespace": "kube-system"
-            },
-            "stale": false,
-            "markedStale": null
         }
     ]
 }

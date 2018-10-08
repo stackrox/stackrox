@@ -201,7 +201,10 @@ class ViolationsPage extends Component {
     renderRowActionButtons = alert => {
         const isRuntimeAlert = alert.lifecycleStage === 'RUN_TIME';
         return (
-            <div className="border-2 border-r-2 border-base-400 bg-base-100">
+            <div
+                data-test-id="alerts-hover-actions"
+                className="border-2 border-r-2 border-base-400 bg-base-100"
+            >
                 {isRuntimeAlert && (
                     <Tooltip
                         placement="top"
@@ -211,6 +214,7 @@ class ViolationsPage extends Component {
                     >
                         <button
                             type="button"
+                            data-test-id="resolve-button"
                             className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
                             onClick={this.resolveAlertHandler(alert.id)}
                         >
@@ -225,6 +229,7 @@ class ViolationsPage extends Component {
                     overlayClassName="pointer-events-none"
                 >
                     <button
+                        data-test-id="whitelist-deployment-button"
                         type="button"
                         className={`p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700 ${
                             isRuntimeAlert ? 'border-l-2 border-base-400' : ''
