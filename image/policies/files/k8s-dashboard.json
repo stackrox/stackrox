@@ -1,0 +1,14 @@
+{
+  "name": "Kubernetes Dashboard Deployed",
+  "description": "Alert on the presence of the Kubernetes dashboard service",
+  "severity": "LOW_SEVERITY",
+  "lifecycle_stages": ["DEPLOY_TIME"],
+  "categories": ["Security Best Practices"],
+  "fields": {
+    "image_name": {
+      "remote": "kubernetes-dashboard-amd64"
+    }
+  },
+  "rationale": "The Kubernetes dashboard can be used to gain external access to a cluster, or to obtain additional access once inside.",
+  "remediation": "Modify your cluster configuration to disable the Kubernetes dashboard service if it is not in use. In Google Kubernetes Engine (GKE), you can execute: gcloud container clusters update --update-addons=KubernetesDashboard=DISABLED [cluster-name]"
+}

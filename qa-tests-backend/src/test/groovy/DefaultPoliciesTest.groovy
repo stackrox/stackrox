@@ -17,6 +17,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private String STRUTS = "qadefpolstruts"
     static final private String SSL_TERMINATOR = "qadefpolsslterm"
     static final private String NGINX_1_10 = "qadefpolnginx110"
+    static final private String K8S_DASHBOARD = "kubernetes-dashboard"
 
     static final private List<Deployment> DEPLOYMENTS = [
         new Deployment()
@@ -63,7 +64,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         assert waitForViolation(deploymentName,  policyName, 30)
 
         where:
-        "Data inputs are :"
+        "Data inputs are:"
 
         policyName                                    | deploymentName | testId
 
@@ -79,15 +80,17 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Aptitude Package Manager (apt) in Image"     | STRUTS         | "C931"
 
-        "30-Day Scan Age"                             |  STRUTS        | "C941"
+        "30-Day Scan Age"                             | STRUTS         | "C941"
 
         "CVSS >= 7"                                   | STRUTS         | "C933"
 
         "Shellshock: CVE-2014-6271"                   | SSL_TERMINATOR | "C948"
 
-        "Curl in Image"                               |  STRUTS        | "C948"
+        "Curl in Image"                               | STRUTS         | "C948"
 
-        "DockerHub NGINX 1.10"                        |  NGINX_1_10    | "C823"
+        "DockerHub NGINX 1.10"                        | NGINX_1_10     | "C823"
+
+        "Kubernetes Dashboard Deployed"               | K8S_DASHBOARD  | ""
     }
 
     @Category(BAT)
