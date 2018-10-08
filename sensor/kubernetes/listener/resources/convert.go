@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 
 	ptypes "github.com/gogo/protobuf/types"
@@ -236,10 +237,19 @@ func (w *deploymentWrap) populateContainerInstances(pods ...*v1.Pod) {
 }
 
 func (w *deploymentWrap) populateImageShas(pods ...*v1.Pod) {
-	// Iterate over all the pods and set the SHAs based on the index of the container status. All containers have a container status
+	// All containers have a container status
 	// The downside to this is that if different pods have different versions then we will miss that fact that pods are running
 	// different versions and clobber it. I've added a log to illustrate the clobbering so we can see how often it happens
+
+	// Sort the w.Deployment.Containers by name and p.Status.ContainerStatuses by name
+	// This is because the order is not guaranteed
+	sort.SliceStable(w.Deployment.Containers, func(i, j int) bool {
+		return w.Deployment.GetContainers()[i].Name < w.Deployment.GetContainers()[j].Name
+	})
 	for _, p := range pods {
+		sort.SliceStable(p.Status.ContainerStatuses, func(i, j int) bool {
+			return p.Status.ContainerStatuses[i].Name < p.Status.ContainerStatuses[j].Name
+		})
 		for i, c := range p.Status.ContainerStatuses {
 			if i >= len(w.Deployment.Containers) {
 				// This should not happened, but could happen if w.Deployment.Containers and container status are out of sync
