@@ -94,6 +94,14 @@ teardownGKE: &teardownGKE
       gcloud container clusters delete --async "prevent-ci-${CIRCLE_BUILD_NUM}"
     when: always
 
+collectK8sLogs: &collectK8sLogs
+  run:
+    name: Collect k8s logs
+    command: |
+      ./scripts/ci/collect-service-logs.sh central
+      ./scripts/ci/collect-service-logs.sh sensor
+    when: always
+
 version: 2
 jobs:
 
@@ -199,12 +207,7 @@ jobs:
             export UI_BASE_URL=https://localhost:${LOCAL_PORT}
             make -C ui test-e2e-ci
 
-      - run:
-          name: Collect k8s logs
-          command: |
-            ./scripts/ci/collect-service-logs.sh central
-            ./scripts/ci/collect-service-logs.sh sensor
-          when: always
+      - *collectK8sLogs
 
       - store_artifacts:
           path: /tmp/k8s-service-logs
@@ -223,7 +226,7 @@ jobs:
           path: ui/cypress/screenshots
           destination: ui-e2e-screenshots
 
-  qa-build-acceptance-tests:
+  qa-tests:
     <<: *defaults
     environment:
       - LOCAL_PORT: 8000
@@ -249,7 +252,13 @@ jobs:
             export CLUSTER=K8S
             export HOSTNAME=localhost
             export PORT=${LOCAL_PORT}
-            make -C qa-tests-backend bat-test
+            if [ "${CIRCLE_BRANCH}" = "master" ]; then
+              echo "On master, running all QA tests..."
+              make -C qa-tests-backend test
+            else
+              echo "On a PR branch, running BAT tests only..."
+              make -C qa-tests-backend bat-test
+            fi
 
       - save-cache:
           key: *gradleCacheKey
@@ -263,12 +272,7 @@ jobs:
           path: ./qa-tests-backend/build/spock-reports
           destination: qa-test-report
 
-      - run:
-          name: Collect k8s logs
-          command: |
-            ./scripts/ci/collect-service-logs.sh central
-            ./scripts/ci/collect-service-logs.sh sensor
-          when: always
+      - *collectK8sLogs
 
       - store_artifacts:
           path: /tmp/k8s-service-logs
@@ -525,7 +529,7 @@ workflows:
           filters:
             tags:
               only: /.*/
-      - qa-build-acceptance-tests:
+      - qa-tests:
           requires:
             - build
           filters:
