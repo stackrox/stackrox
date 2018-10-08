@@ -44,6 +44,7 @@ class NetworkSimulator extends BaseSpecification {
             orchestrator.deleteDeployment(deployment.getName())
         }
     }
+
     @Category([NetworkPolicySimulation, BAT])
     def "Verify NetworkPolicy Simulator replace existing network policy"() {
         when:
@@ -53,6 +54,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPodSelector()
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
         def policyId = orchestrator.applyNetworkPolicy(policy)
+        assert Services.waitForNetworkPolicy(policyId)
         def baseline = Services.getNetworkGraph()
 
         and:
@@ -85,6 +87,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
         def policyId = orchestrator.applyNetworkPolicy(policy1)
+        assert Services.waitForNetworkPolicy(policyId)
         def baseline = Services.getNetworkGraph()
 
         and:
@@ -125,6 +128,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
         def policyId = orchestrator.applyNetworkPolicy(policy1)
+        assert Services.waitForNetworkPolicy(policyId)
 
         and:
         "generate simulation"
@@ -168,6 +172,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
         def policyId = orchestrator.applyNetworkPolicy(policy1)
+        assert Services.waitForNetworkPolicy(policyId)
 
         and:
         "generate simulation"

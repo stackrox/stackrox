@@ -71,9 +71,11 @@ class Services extends BaseService {
     static getNetworkPolicyClient() {
         return NetworkPolicyServiceGrpc.newBlockingStub(getChannel())
     }
+
     static getClusterServiceClient() {
         return ClustersServiceGrpc.newBlockingStub(getChannel())
     }
+
     static getNotifierClient() {
         return NotifierServiceGrpc.newBlockingStub(getChannel())
     }
@@ -550,5 +552,23 @@ class Services extends BaseService {
                         .setAlertId("qa_automation")
                 )
         return applyEnforcement(scaleDownEnforcementBuilder)
+    }
+
+    static waitForNetworkPolicy(String id, int timeoutSeconds = 30) {
+        int intervalSeconds = 1
+        int waitTime
+        for (waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
+            try {
+                getNetworkPolicyClient().getNetworkPolicy(ResourceByID.newBuilder().setId(id).build())
+                return true
+            } catch (Exception e) {
+                println "Exception checking for NetworkPolicy in SR, retrying...:"
+                println e.toString()
+                sleep(intervalSeconds * 1000)
+            }
+        }
+
+        println "SR did not detect the network policy"
+        return false
     }
 }
