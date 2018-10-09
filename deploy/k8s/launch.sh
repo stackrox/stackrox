@@ -24,8 +24,6 @@ function launch_central {
     $UNZIP_DIR/central.sh
     echo
 
-    kubectl -n stackrox patch deployment central --patch "$(cat $K8S_DIR/central-resources-patch.yaml)"
-
     $UNZIP_DIR/port-forward.sh 8000
     wait_for_central "localhost:8000"
     echo "Successfully deployed Central!"
@@ -52,5 +50,4 @@ function launch_sensor {
     $UNZIP_DIR/sensor.sh
     echo
 
-    kubectl -n stackrox patch deployment sensor --patch "$(cat $K8S_DIR/sensor-resources-patch.yaml)"
 }
