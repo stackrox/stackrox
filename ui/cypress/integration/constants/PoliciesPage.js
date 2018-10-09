@@ -15,7 +15,7 @@ export const selectors = {
     },
     form: {
         nameInput: 'form input:first',
-        enableField: 'form div.text-primary-500:contains("Enable") + div',
+        enableField: 'form div:contains("Enable") + div',
         required: 'form span[data-test-id="required"]',
         select: 'form select',
         selectValue: 'form .react-select__multi-value__label'

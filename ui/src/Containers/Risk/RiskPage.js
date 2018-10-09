@@ -158,7 +158,7 @@ class RiskPage extends Component {
             ) : (
                 <Tabs headers={riskPanelTabs}>
                     <TabContent>
-                        <div className="flex flex-1 flex-col">
+                        <div className="flex flex-1 flex-col pb-5">
                             <RiskDetails risk={selectedDeployment.risk} />
                         </div>
                     </TabContent>

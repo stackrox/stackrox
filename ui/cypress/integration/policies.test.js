@@ -138,7 +138,9 @@ describe('Policies page', () => {
     it('should show a specific message when editing a policy with "enabled" value as "no"', () => {
         cy.get(selectors.policies.scanImage).click({ force: true });
         editPolicy();
-        cy.get(`${selectors.form.enableField} .react-select__dropdown-indicator`).click();
+        cy.get(`${selectors.form.enableField} .react-select__dropdown-indicator`)
+            .first()
+            .click();
         cy.get(`div[role="option"]:contains("No")`).click();
         cy.get(selectors.nextButton).click();
         cy.get(selectors.policyPreview.message).should('have.text', text.policyPreview.message);

@@ -25,7 +25,7 @@ class PolicyDetails extends Component {
         const fields = Object.keys(policy);
         if (!fields) return '';
         return (
-            <div className="px-3 py-4">
+            <div className="px-3 pt-5">
                 <div className="bg-base-100 shadow">
                     <div className="p-3 pb-2 border-b border-base-300 text-base-600 font-700 text-lg leading-normal">
                         Policy Details
@@ -58,7 +58,7 @@ class PolicyDetails extends Component {
         const fieldKeys = Object.keys(fields);
         if (!fieldKeys.length) return '';
         return (
-            <div className="px-3 py-4">
+            <div className="px-3 pt-5">
                 <div className="bg-base-100 shadow">
                     <div className="p-3 border-b border-base-300 text-base-600 font-700 text-lg">
                         {policyFormFields.policyConfiguration.header}
@@ -86,7 +86,7 @@ class PolicyDetails extends Component {
         if (!policy) return null;
 
         return (
-            <div className="flex flex-col w-full bg-base-200 overflow-auto">
+            <div className="flex flex-col w-full bg-base-200 overflow-auto pb-5">
                 {this.renderFields()}
                 {this.renderPolicyConfigurationFields()}
             </div>

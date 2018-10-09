@@ -111,7 +111,7 @@ class ImageDetails extends Component {
             totalCVEs: image.cves ? image.cves : []
         };
         return (
-            <div className="px-3 py-4">
+            <div className="px-3 pt-5">
                 <div className="alert-preview bg-base-100 shadow text-primary-600">
                     <CollapsibleCard title={title}>
                         <div className="h-full">
@@ -191,7 +191,7 @@ class ImageDetails extends Component {
     renderCVEs = () => {
         const title = 'CVEs';
         return (
-            <div className="px-3 py-4">
+            <div className="px-3 pt-5">
                 <div className="alert-preview bg-base-100 shadow text-primary-600">
                     <CollapsibleCard title={title}>
                         <div className="h-full p-3"> {this.renderCVEsTable()}</div>
@@ -259,7 +259,7 @@ class ImageDetails extends Component {
         const content = loading ? (
             <Loader />
         ) : (
-            <div className="flex flex-col w-full bg-base-200 overflow-auto">
+            <div className="flex flex-col w-full bg-base-200 overflow-auto pb-5">
                 {this.renderOverview()}
                 {this.renderCVEs()}
                 {this.renderDockerFileModal()}

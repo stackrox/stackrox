@@ -179,13 +179,9 @@ class PolicyCreationForm extends Component {
             const fieldGroupName = fieldGroup.replace(/([A-Z])/g, ' $1');
             const fields = this.props.policyFormFields[fieldGroup].descriptor;
             return (
-                <div
-                    className="px-3 py-4 border-b border-base-300"
-                    data-test-id={fieldGroup}
-                    key={fieldGroup}
-                >
+                <div className="px-3 pt-5" data-test-id={fieldGroup} key={fieldGroup}>
                     <div className="bg-base-100 border border-base-200 shadow">
-                        <div className="p-3 border-b border-base-300 text-primary-600 uppercase tracking-wide">
+                        <div className="p-3 pb-2 border-b border-base-300 text-base-600 font-700 text-lg leading-normal capitalize">
                             {fieldGroupName}
                         </div>
                         {this.renderFields(fields, formData)}
@@ -199,7 +195,7 @@ class PolicyCreationForm extends Component {
     render() {
         return (
             <div className="flex flex-1 flex-col">
-                <form id="dynamic-form" className="bg-base-200">
+                <form id="dynamic-form" className="bg-base-200 pb-5">
                     {this.renderFieldGroupCards()}
                 </form>
             </div>

@@ -34,7 +34,7 @@ const RiskDetails = ({ risk }) => {
     if (!risk) return <NoResultsMessage message="No Risk Details Available" />;
 
     return risk.results.map(result => (
-        <div className="px-3 py-4" key={result.name}>
+        <div className="px-3 pt-5" key={result.name}>
             <div
                 className="alert-preview bg-base-100 shadow text-primary-600 tracking-wide"
                 key={result.name}
