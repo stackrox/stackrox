@@ -5,6 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,11 +44,13 @@ func logSendingEvent(sensorEvent *v1.SensorEvent) {
 func (s *sensor) sendMessages(
 	orchestratorEvents <-chan *v1.SensorEvent,
 	signals <-chan *v1.SensorEvent,
-	stream v1.SensorEventService_RecordEventClient) {
+	flows <-chan *central.NetworkFlowUpdate,
+	eventStream v1.SensorEventService_RecordEventClient,
+	flowStream central.NetworkFlowService_PushNetworkFlowsClient) {
 
 	// When the input channel closes and looping stops and returns, we need to close the stream with central.
-	defer stream.CloseSend()
-
+	defer eventStream.CloseSend()
+	defer flowStream.CloseSend()
 	for {
 		select {
 		// Take in events from the inbound channels and send to Central.
@@ -59,12 +62,19 @@ func (s *sensor) sendMessages(
 			if event.GetDeployment() != nil {
 				s.updateCacheState(event)
 			}
-			s.sendSensorEventWithLog(stream, event)
+			s.sendSensorEventWithLog(eventStream, event)
+
 		case signal, ok := <-signals:
 			if !ok {
 				return
 			}
-			s.sendSensorEventWithLog(stream, signal)
+			s.sendSensorEventWithLog(eventStream, signal)
+
+		case flowUpdate, ok := <-flows:
+			if !ok {
+				return
+			}
+			s.sendFlowUpdate(flowUpdate, flowStream)
 		// If we receive the stop signal, break out of the loop.
 		case <-s.stopped.Done():
 			return
@@ -82,6 +92,12 @@ func (s *sensor) updateCacheState(event *v1.SensorEvent) {
 	default:
 		logger.Errorf("Resource action not handled: %s", event.GetAction())
 		return
+	}
+}
+
+func (s *sensor) sendFlowUpdate(flowUpdate *central.NetworkFlowUpdate, stream central.NetworkFlowService_PushNetworkFlowsClient) {
+	if err := stream.Send(flowUpdate); err != nil {
+		log.Errorf("unable to send flow update event: %s", err)
 	}
 }
 

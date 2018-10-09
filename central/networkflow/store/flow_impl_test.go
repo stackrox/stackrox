@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -61,22 +62,10 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	}
 	var err error
 
-	err = suite.tested.AddFlow(flows[0])
-	suite.NoError(err, "add should succeed for first insert")
-
-	err = suite.tested.AddFlow(flows[0])
-	suite.Error(err, "add should fail on second insert")
-
-	err = suite.tested.UpdateFlow(flows[0])
-	suite.NoError(err, "update should succeed on second insert")
-
-	err = suite.tested.UpdateFlow(flows[1])
-	suite.Error(err, "update should fail on first insert")
-
-	err = suite.tested.UpsertFlow(flows[1])
+	err = suite.tested.UpsertFlows(flows, timestamp.Now())
 	suite.NoError(err, "upsert should succeed on first insert")
 
-	err = suite.tested.UpsertFlow(flows[1])
+	err = suite.tested.UpsertFlows(flows, timestamp.Now())
 	suite.NoError(err, "upsert should succeed on second insert")
 
 	err = suite.tested.RemoveFlow(&v1.NetworkFlowProperties{
@@ -96,7 +85,15 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.NoError(err, "remove should succeed when not present")
 
 	var actualFlows []*v1.NetworkFlow
-	actualFlows, err = suite.tested.GetAllFlows()
+	actualFlows, _, err = suite.tested.GetAllFlows()
 	suite.Equal(1, len(actualFlows), "only flows[0] should be present")
-	suite.Equal(flows[0], actualFlows[0], "only flows[0] should be present")
+	suite.Equal(flows[0], actualFlows[0], "flows should be equal")
+
+	err = suite.tested.UpsertFlows(flows, timestamp.Now())
+	suite.NoError(err, "upsert should succeed")
+
+	actualFlows, _, err = suite.tested.GetAllFlows()
+	suite.Equal(2, len(actualFlows), "expected number of flows does not match")
+	suite.ElementsMatch(flows, actualFlows, "upserted values should be as expected")
+
 }

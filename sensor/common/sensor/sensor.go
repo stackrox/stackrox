@@ -187,7 +187,7 @@ func (s *Sensor) runSensor() {
 	s.sensorInstance = sensor.NewSensor(s.conn, s.clusterID)
 	for {
 		s.logger.Info("Starting central connection.")
-		go s.sensorInstance.Start(s.listener.Events(), signalService.Singleton().Indicators(), s.enforcer.Actions())
+		go s.sensorInstance.Start(s.listener.Events(), signalService.Singleton().Indicators(), s.networkConnManager.FlowUpdates(), s.enforcer.Actions())
 
 		if err := s.sensorInstance.Wait(); err != nil {
 			s.logger.Errorf("Central connection encountered error: %v. Sleeping for %v", err, retryInterval)

@@ -4,9 +4,9 @@ package ops
 
 import "strconv"
 
-const _Op_name = "AddCountGetGetAllGetManyListRenameRemoveUpdateUpsert"
+const _Op_name = "AddCountGetGetAllGetManyListRenameRemoveUpdateUpsertUpsertAll"
 
-var _Op_index = [...]uint8{0, 3, 8, 11, 17, 24, 28, 34, 40, 46, 52}
+var _Op_index = [...]uint8{0, 3, 8, 11, 17, 24, 28, 34, 40, 46, 52, 61}
 
 func (i Op) String() string {
 	if i < 0 || i >= Op(len(_Op_index)-1) {

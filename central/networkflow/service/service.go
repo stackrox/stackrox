@@ -17,10 +17,8 @@ var (
 // Service provides the interface to the microservice that serves alert data.
 type Service interface {
 	grpc.APIService
-
-	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
-
 	v1.NetworkGraphServiceServer
+	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 }
 
 // New returns a new Service instance using the given DataStore.

@@ -4,7 +4,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -28,13 +27,16 @@ type networkConnIndicator struct {
 	protocol        v1.L4Protocol
 }
 
-func (i networkConnIndicator) toProto(ts timestamp.MicroTS) *central.NetworkConnectionInfoIndicator {
-	proto := &central.NetworkConnectionInfoIndicator{
-		SrcDeploymentId: i.srcDeploymentID,
-		DstDeploymentId: i.dstDeploymentID,
-		DstPort:         uint32(i.dstPort),
-		L4Protocol:      i.protocol,
+func (i networkConnIndicator) toProto(ts timestamp.MicroTS) *v1.NetworkFlow {
+	proto := &v1.NetworkFlow{
+		Props: &v1.NetworkFlowProperties{
+			SrcDeploymentId: i.srcDeploymentID,
+			DstDeploymentId: i.dstDeploymentID,
+			DstPort:         uint32(i.dstPort),
+			L4Protocol:      i.protocol,
+		},
 	}
+
 	if ts != timestamp.InfiniteFuture {
 		proto.LastSeenTimestamp = ts.GogoProtobuf()
 	}
@@ -56,7 +58,8 @@ type networkFlowManager struct {
 
 	enrichedLastSentState map[networkConnIndicator]timestamp.MicroTS
 
-	done concurrency.Signal
+	done        concurrency.Signal
+	flowUpdates chan *central.NetworkFlowUpdate
 }
 
 func (m *networkFlowManager) Start() {
@@ -65,6 +68,10 @@ func (m *networkFlowManager) Start() {
 
 func (m *networkFlowManager) Stop() {
 	m.done.Signal()
+}
+
+func (m *networkFlowManager) FlowUpdates() <-chan *central.NetworkFlowUpdate {
+	return m.flowUpdates
 }
 
 func (m *networkFlowManager) enrichConnections() {
@@ -80,8 +87,8 @@ func (m *networkFlowManager) enrichConnections() {
 	}
 }
 
-func computeUpdateMessage(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS) *central.NetworkConnectionIndicatorUpdate {
-	var updates []*central.NetworkConnectionInfoIndicator
+func computeUpdateMessage(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS) *central.NetworkFlowUpdate {
+	var updates []*v1.NetworkFlow
 
 	for conn, currTS := range current {
 		prevTS, ok := previous[conn]
@@ -100,7 +107,7 @@ func computeUpdateMessage(current map[networkConnIndicator]timestamp.MicroTS, pr
 		return nil
 	}
 
-	return &central.NetworkConnectionIndicatorUpdate{
+	return &central.NetworkFlowUpdate{
 		Updated: updates,
 		Time:    timestamp.Now().GogoProtobuf(),
 	}
@@ -113,8 +120,13 @@ func (m *networkFlowManager) enrichAndSend() {
 	m.enrichedLastSentState = current
 
 	if protoToSend != nil {
-		// TODO: actually send this over the wire.
-		log.Infof("would send this now: %s", proto.MarshalTextString(protoToSend))
+		log.Debugf("Flow update : %v", protoToSend)
+		select {
+		case <-m.done.Done():
+			return
+		case m.flowUpdates <- protoToSend:
+			return
+		}
 	}
 }
 

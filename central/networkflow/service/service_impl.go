@@ -82,7 +82,7 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 		return nil, nil
 	}
 
-	flows, err := flowStore.GetAllFlows()
+	flows, _, err := flowStore.GetAllFlows()
 	if err != nil {
 		return nil, err
 	}

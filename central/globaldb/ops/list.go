@@ -16,4 +16,5 @@ const (
 	Remove
 	Update
 	Upsert
+	UpsertAll
 )

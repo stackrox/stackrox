@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -14,7 +15,7 @@ var (
 type Manager interface {
 	Start()
 	Stop()
-
+	FlowUpdates() <-chan *central.NetworkFlowUpdate
 	RegisterCollector(hostname string) HostNetworkInfo
 }
 

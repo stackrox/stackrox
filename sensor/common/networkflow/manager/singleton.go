@@ -3,6 +3,7 @@ package manager
 import (
 	"sync"
 
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 )
@@ -18,11 +19,12 @@ func newManager() Manager {
 		done:              concurrency.NewSignal(),
 		connectionsByHost: make(map[string]*hostConnections),
 		clusterEntities:   clusterentities.StoreInstance(),
+		flowUpdates:       make(chan *central.NetworkFlowUpdate),
 	}
 }
 
 func initialize() {
-	// Creates the signal service with the pending cache embedded
+	// Creates the signal service
 	manager = newManager()
 }
 

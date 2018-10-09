@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/integration"
@@ -21,7 +22,7 @@ var (
 
 // Sensor interface allows you to start and stop the consumption/production loops.
 type Sensor interface {
-	Start(orchestratorInput <-chan *v1.SensorEvent, collectorInput <-chan *v1.SensorEvent, output chan<- *v1.SensorEnforcement)
+	Start(orchestratorInput <-chan *v1.SensorEvent, collectorInput <-chan *v1.SensorEvent, networkFlowInput <-chan *central.NetworkFlowUpdate, output chan<- *v1.SensorEnforcement)
 	Stop(error)
 	Wait() error
 }
@@ -71,7 +72,7 @@ type sensor struct {
 // It is an error to call Start repeatedly without first calling Wait(); Wait
 // itself will not return unless Stop() is called, or processing must be
 // aborted for another reason (stream interrupted, channel closed, etc.).
-func (s *sensor) Start(orchestratorInput <-chan *v1.SensorEvent, collectorInput <-chan *v1.SensorEvent, output chan<- *v1.SensorEnforcement) {
+func (s *sensor) Start(orchestratorInput <-chan *v1.SensorEvent, collectorInput <-chan *v1.SensorEvent, networkFlowInput <-chan *central.NetworkFlowUpdate, output chan<- *v1.SensorEnforcement) {
 	if !s.stopped.Reset() {
 		panic("Sensor has already been started without stopping first")
 	}
@@ -85,19 +86,31 @@ func (s *sensor) Start(orchestratorInput <-chan *v1.SensorEvent, collectorInput 
 	// eventually returns.
 	go s.poller.Run()
 
-	stream, err := s.openStream(cancelCtx)
+	sensorEventStream, err := s.openSensorEventStream(cancelCtx)
 	if err != nil {
 		s.Stop(fmt.Errorf("stream open: %v", err))
 		return
 	}
 
-	go s.sendMessages(orchestratorInput, collectorInput, stream)
-	go s.receiveMessages(output, stream)
+	sensorNetworkFlowStream, err := s.openNetworkFlowStream(cancelCtx)
+	if err != nil {
+		s.Stop(fmt.Errorf("stream open: %v", err))
+		return
+	}
+
+	go s.sendMessages(orchestratorInput, collectorInput, networkFlowInput, sensorEventStream, sensorNetworkFlowStream)
+	go s.receiveMessages(output, sensorEventStream)
+
 }
 
-func (s *sensor) openStream(ctx context.Context) (v1.SensorEventService_RecordEventClient, error) {
+func (s *sensor) openSensorEventStream(ctx context.Context) (v1.SensorEventService_RecordEventClient, error) {
 	cli := v1.NewSensorEventServiceClient(s.conn)
 	return cli.RecordEvent(ctx)
+}
+
+func (s *sensor) openNetworkFlowStream(ctx context.Context) (central.NetworkFlowService_PushNetworkFlowsClient, error) {
+	nfSvc := central.NewNetworkFlowServiceClient(s.conn)
+	return nfSvc.PushNetworkFlows(ctx)
 }
 
 // Stop stops the processing loops reading and writing to input and output, and closes the stream open with central.

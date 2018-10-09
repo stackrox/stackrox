@@ -86,3 +86,8 @@ type ProtoTimestamp interface {
 func FromProtobuf(ts ProtoTimestamp) MicroTS {
 	return MicroTS(ts.GetSeconds()*microsecondsPerSecond + int64(ts.GetNanos()))
 }
+
+// FromGogoProtobuf converts the given gogo protobuf timestamp message to a microtimestamp.
+func FromGogoProtobuf(ts types.Timestamp) MicroTS {
+	return MicroTS(ts.GetSeconds()*microsecondsPerSecond + int64(ts.GetNanos()))
+}
