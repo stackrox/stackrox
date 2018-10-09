@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/enricher"
-	"github.com/stackrox/rox/pkg/images/utils"
 	"google.golang.org/grpc"
 )
 
@@ -51,7 +50,6 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, image *v1.Image) (*v1
 	if image.GetName() == nil {
 		return nil, fmt.Errorf("image name contents missing")
 	}
-	utils.FillFullName(image)
 
 	_ = s.imageEnricher.EnrichImage(image)
 

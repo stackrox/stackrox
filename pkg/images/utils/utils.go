@@ -11,8 +11,9 @@ import (
 
 var logger = logging.LoggerForModule()
 
-// GenerateImageFromString generates an image type from a common string format
-func GenerateImageFromString(imageStr string) *v1.Image {
+// GenerateImageFromStringWithError generates an image type from a common string format and returns an error if
+// there was an issue parsing it
+func GenerateImageFromStringWithError(imageStr string) (*v1.Image, error) {
 	image := &v1.Image{
 		Name: &v1.ImageName{
 			FullName: imageStr,
@@ -21,8 +22,7 @@ func GenerateImageFromString(imageStr string) *v1.Image {
 
 	ref, err := reference.ParseAnyReference(imageStr)
 	if err != nil {
-		logger.Errorf("Error parsing image name: %s", imageStr)
-		return image
+		return image, fmt.Errorf("error parsing image name '%s': %s", imageStr, err)
 	}
 
 	digest, ok := ref.(reference.Digested)
@@ -51,6 +51,15 @@ func GenerateImageFromString(imageStr string) *v1.Image {
 		image.Name.FullName = ref.String()
 	}
 
+	return image, nil
+}
+
+// GenerateImageFromString generates an image type from a common string format
+func GenerateImageFromString(imageStr string) *v1.Image {
+	image, err := GenerateImageFromStringWithError(imageStr)
+	if err != nil {
+		logger.Error(err)
+	}
 	return image
 }
 
@@ -63,16 +72,6 @@ func Reference(img *v1.Image) string {
 		return img.GetName().GetTag()
 	}
 	return "latest"
-}
-
-// FillFullName uses the fields of the image name to fill in the FullName field.
-func FillFullName(img *v1.Image) {
-	imageName := img.GetName()
-	if img.Id == "" {
-		imageName.FullName = fmt.Sprintf("%s/%s:%s", imageName.Registry, imageName.Remote, imageName.Tag)
-	} else {
-		imageName.FullName = fmt.Sprintf("%s/%s:%s@%s", imageName.Registry, imageName.Remote, imageName.Tag, img.GetId())
-	}
 }
 
 // ExtractImageSha returns the image sha if it exists within the string.

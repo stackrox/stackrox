@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/cmd/roxdetect/report"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"golang.org/x/net/context"
 )
 
@@ -17,10 +18,7 @@ const tokenEnv = "STACKROX_TOKEN"
 var (
 	passFail = flag.Bool("pass-fail", true, "exit 1 on any critical policy failures")
 	central  = flag.String("central", "localhost:8080", "endpoint where central is available")
-	digest   = flag.String("digest", "", "the sha256 digest for the image")
-	registry = flag.String("registry", "", "registry where the image is uploaded")
-	remote   = flag.String("remote", "", "the remote name of the image")
-	tag      = flag.String("tag", "", "the tag for the image")
+	image    = flag.String("image", "", "the image name and reference (e.g. nginx:latest or nginx@sha256:...)")
 )
 
 func main() {
@@ -113,23 +111,12 @@ func getAlerts(token string) ([]*v1.Alert, error) {
 
 // Use inputs to generate an image name for request.
 func buildRequest() (*v1.Image, error) {
-	im := v1.ImageName{
-		Remote:   *remote,
-		Registry: *registry,
-		Tag:      *tag,
+	if *image == "" {
+		return nil, fmt.Errorf("image name must be set")
 	}
-
-	switch {
-	case *registry == "":
-		return nil, fmt.Errorf("image registry must be set, or we don't know where to get metadata from")
-	case *remote == "":
-		return nil, fmt.Errorf("image remote must be set, or we don't know which image in the registry to process")
-	case *digest == "" && *tag == "":
-		return nil, fmt.Errorf("an image tag, digest, or both must be set, otherwise we don't know which version of the image to process")
+	img, err := utils.GenerateImageFromStringWithError(*image)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse image '%s': %s", *image, err)
 	}
-
-	return &v1.Image{
-		Id:   *digest,
-		Name: &im,
-	}, nil
+	return img, nil
 }
