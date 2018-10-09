@@ -5,6 +5,7 @@ import ProcessesCollapsibleCard from 'Containers/Violations/ProcessesCollapsible
 
 import * as Icon from 'react-feather';
 import { getTime, format } from 'date-fns';
+import dateTimeFormat from 'constants/dateTimeFormat';
 
 const processOccurencesReducer = (accumulator, currentValue) => {
     const currentTime = getTime(new Date(currentValue.signal.time));
@@ -50,8 +51,7 @@ class ViolationsDetails extends Component {
                 const processesList = processes.map((process, index) => {
                     const { time, args, execFilePath, containerId } = process.signal;
                     const processTime = new Date(time);
-                    const dateFormat = format(processTime, 'MM/DD/YYYY');
-                    const timeFormat = format(processTime, 'HH:MM:SSA');
+                    const timeFormat = format(processTime, dateTimeFormat);
                     return (
                         <div className="border-t border-base-300" key={process.id}>
                             <div className="flex text-base-600">
@@ -65,8 +65,7 @@ class ViolationsDetails extends Component {
                                     <span className="font-700">Container ID:</span> {containerId}
                                 </div>
                                 <div>
-                                    <span className="font-700">Time:</span> {dateFormat}
-                                    {timeFormat}
+                                    <span className="font-700">Time:</span> {timeFormat}
                                 </div>
                             </div>
                             <div className="flex flex-1 text-base-600 px-4 py-2">
@@ -87,7 +86,7 @@ class ViolationsDetails extends Component {
                                             First Occurence:
                                         </div>
                                         <div className="flex justify-center font-600">
-                                            {format(firstOccurrence, 'MM/DD/YYYY | HH:MM:SSA')}
+                                            {format(firstOccurrence, dateTimeFormat)}
                                         </div>
                                     </div>
                                     <div className="w-1/2 p-4 leading-normal">
@@ -95,7 +94,7 @@ class ViolationsDetails extends Component {
                                             Last Occurence:
                                         </div>
                                         <div className="flex justify-center font-600">
-                                            {format(lastOccurrence, 'MM/DD/YYYY | HH:MM:SSA')}
+                                            {format(lastOccurrence, dateTimeFormat)}
                                         </div>
                                     </div>
                                 </div>
