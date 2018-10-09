@@ -91,8 +91,6 @@ class IntegrationTable extends Component {
         return columns;
     };
 
-    getRows = () => this.props.integrations;
-
     renderRowActionButtons = integration => {
         const { source } = this.props;
         let activateBtn = null;
@@ -133,7 +131,7 @@ class IntegrationTable extends Component {
     };
 
     renderTableContent = () => {
-        const rows = this.getRows();
+        const rows = this.props.integrations;
 
         if (!rows.length)
             return <NoResultsMessage message={`No ${this.props.type} integrations`} />;
