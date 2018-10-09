@@ -79,7 +79,7 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 	flowStore := s.clusterStore.GetFlowStore(request.GetClusterId())
 
 	if flowStore == nil {
-		return nil, nil
+		return nil, status.Errorf(codes.NotFound, "no flows found for cluster %s", request.GetClusterId())
 	}
 
 	flows, _, err := flowStore.GetAllFlows()
