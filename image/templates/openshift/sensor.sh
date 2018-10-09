@@ -11,5 +11,5 @@ oc create -f "$DIR/sensor-rbac.yaml"
 oc adm policy add-scc-to-user sensor "system:serviceaccount:$OC_PROJECT:$OC_SA"
 oc adm policy add-scc-to-user benchmark "system:serviceaccount:$OC_PROJECT:$OC_BENCHMARK_SA"
 
-oc create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/central-ca.pem"
+oc create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/ca.pem"
 oc create -f "$DIR/sensor.yaml"

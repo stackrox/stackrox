@@ -70,7 +70,7 @@ secrets:
   sensor_certificate:
     file: sensor-cert.pem
   central_certificate:
-    file: central-ca.pem
+    file: ca.pem
 {{if ne .DisableSwarmTLS "true"}}
   docker_client_ca_pem:
     file: docker-ca.pem

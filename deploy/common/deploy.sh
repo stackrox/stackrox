@@ -185,7 +185,7 @@ function get_authority {
         https://$LOCAL_API_ENDPOINT/v1/authorities)
     echo "Status: $STATUS"
     echo "Response: $(cat ${TMP})"
-    cat "$TMP" | jq -r .authorities[0].certificate > "$OUTPUT_DIR/central-ca.pem"
+    cat "$TMP" | jq -r .authorities[0].certificate > "$OUTPUT_DIR/ca.pem"
     rm "$TMP"
     echo
 }
