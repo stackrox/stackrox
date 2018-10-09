@@ -65,9 +65,47 @@ spec:
             fieldRef:
               fieldPath: spec.serviceAccountName
         volumeMounts:
+        - name: varlog
+          mountPath: /var/log/stackrox/
         - name: certs
           mountPath: /run/secrets/stackrox.io/certs/
           readOnly: true
+      {{if .MonitoringEndpoint}}
+      - name: telegraf
+        image: {{.Image}}
+        command:
+          - /telegraf.sh
+        env:
+        - name: SERVICE
+          value: sensor
+        - name: CLUSTER_NAME
+          value: {{.ClusterName}}
+        - name: PROMETHEUS_ENDPOINT
+          value: https://localhost:443
+        {{if .MonitoringEndpoint}}
+        - name: MONITORING_ENDPOINT
+          value: {{.MonitoringEndpoint}}
+        {{- end}}
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "100m"
+          limits:
+            memory: "200Mi"
+            cpu: "200m"
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+        volumeMounts:
+          - name: varlog
+            mountPath: /var/log/stackrox/
+          - name: monitoring-volume
+            mountPath: /run/secrets/stackrox.io/monitoring/
+            readOnly: true
+          - name: telegraf-config-volume
+            mountPath: /etc/telegraf/
+            readOnly: true
+      {{- end}}
       volumes:
       - name: certs
         secret:
@@ -77,8 +115,21 @@ spec:
             path: cert.pem
           - key: sensor-key.pem
             path: key.pem
-          - key: central-ca.pem
+          - key: ca.pem
             path: ca.pem
+      - name: monitoring-volume
+        secret:
+          secretName: monitoring
+          items:
+          - key: monitoring-password
+            path: password
+          - key: monitoring-ca.pem
+            path: ca.pem
+      - name: varlog
+        emptyDir: {}
+      - name: telegraf-config-volume
+        configMap:
+          name: telegraf
 ---
 apiVersion: v1
 kind: Service
@@ -113,13 +164,13 @@ spec:
       namespace: {{.Namespace}}
     spec:
       containers:
-      - env:
+      - name: collector
+        image: {{.CollectorImage}}
+        env:
         - name: COLLECTOR_CONFIG
           value: '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"},"syscalls":["accept","connect","execve","fork","clone","close","shutdown","socket"]}'
         - name: GRPC_SERVER
           value: sensor.stackrox:443
-        image: {{.CollectorImage}}
-        name: collector
         resources:
           limits:
             cpu: 750m
@@ -150,6 +201,36 @@ spec:
         - name: certs
           mountPath: /run/secrets/stackrox.io/certs/
           readOnly: true
+      {{if .MonitoringEndpoint}}
+      - name: telegraf
+        image: {{.Image}}
+        command:
+          - /telegraf.sh
+        env:
+        - name: SERVICE
+          value: collector
+        - name: CLUSTER_NAME
+          value: {{.ClusterName}}
+        - name: PROMETHEUS_ENDPOINT
+          value: http://localhost:9090
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "100m"
+          limits:
+            memory: "200Mi"
+            cpu: "200m"
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+        volumeMounts:
+          - name: monitoring-volume
+            mountPath: /run/secrets/stackrox.io/monitoring/
+            readOnly: true
+          - name: telegraf-config-volume
+            mountPath: /etc/telegraf/
+            readOnly: true
+      {{- end}}
       imagePullSecrets:
       - name: {{.ImagePullSecret}}
       volumes:
@@ -176,6 +257,19 @@ spec:
             path: cert.pem
           - key: collector-key.pem
             path: key.pem
-          - key: central-ca.pem
+          - key: ca.pem
             path: ca.pem
+      - name: monitoring-volume
+        secret:
+          secretName: monitoring
+          items:
+            - key: monitoring-ca.pem
+              path: ca.pem
+            - key: monitoring-password
+              path: password
+      {{if .MonitoringEndpoint}}
+      - name: telegraf-config-volume
+        configMap:
+          name: telegraf
+      {{- end}}
 {{- end}}

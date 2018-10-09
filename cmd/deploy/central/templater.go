@@ -5,12 +5,13 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"path/filepath"
 	"strings"
 	"text/template"
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/zip"
@@ -44,6 +45,44 @@ type CommonConfig struct {
 	ClairifyImage string
 }
 
+// MonitoringType is the enum for the place monitoring is hosted
+type MonitoringType int
+
+// Types of monitoring
+const (
+	OnPrem = iota
+	None
+	StackRoxHosted
+)
+
+// String returns the string form of the enum
+func (m MonitoringType) String() string {
+	switch m {
+	case OnPrem:
+		return "on-prem"
+	case None:
+		return "none"
+	case StackRoxHosted:
+		return "stackrox-hosted"
+	}
+	return "unknown"
+}
+
+// OnPrem is true if the monitoring is hosted on prem
+func (m MonitoringType) OnPrem() bool {
+	return m == OnPrem
+}
+
+// StackRoxHosted is true if the monitoring is hosted by StackRox
+func (m MonitoringType) StackRoxHosted() bool {
+	return m == StackRoxHosted
+}
+
+// None returns true if there is no monitoring solution
+func (m MonitoringType) None() bool {
+	return m == None
+}
+
 // K8sConfig contains k8s fields
 type K8sConfig struct {
 	CommonConfig
@@ -56,6 +95,10 @@ type K8sConfig struct {
 	// provided inputs for use in templating.
 	PreventImageTag  string
 	ClairifyImageTag string
+
+	MonitoringEndpoint string
+	MonitoringImage    string
+	MonitoringType     MonitoringType
 }
 
 // SwarmConfig contains swarm fields
@@ -96,6 +139,16 @@ func executeTemplate(temp *template.Template, c Config) (string, error) {
 	return buf.String(), nil
 }
 
+func generateMonitoringImage(preventImage string) string {
+	img := types.Wrapper{Image: utils.GenerateImageFromString(preventImage)}
+	remote := img.Namespace() + "/monitoring"
+	// This handles the case where there is no namespace. e.g. stackrox.io/collector:latest
+	if img.Repo() == "" {
+		remote = "monitoring"
+	}
+	return fmt.Sprintf("%s/%s:%s", img.GetName().GetRegistry(), remote, img.GetName().GetTag())
+}
+
 func renderFilenames(filenames []string, c Config) ([]*v1.File, error) {
 	var files []*v1.File
 	for _, f := range filenames {
@@ -107,7 +160,10 @@ func renderFilenames(filenames []string, c Config) ([]*v1.File, error) {
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, zip.NewFile(filepath.Base(f), d, strings.HasSuffix(f, ".sh")))
+
+		// Trim the first section off of the path because it defines the orchestrator
+		path := f[strings.Index(f, "/")+1:]
+		files = append(files, zip.NewFile(path, d, strings.HasSuffix(f, ".sh")))
 	}
 	files = append(files, zip.NewFile("README", standardizeWhitespace(Deployers[c.ClusterType].Instructions()), false))
 	return files, nil

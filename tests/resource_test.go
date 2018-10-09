@@ -102,7 +102,7 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
 	verifyDeployment(t, centralDeployment)
 	assert.Equal(t, "central", centralDeployment.GetLabels()["app"])
 
-	require.Len(t, centralDeployment.GetContainers(), 1)
+	require.Len(t, centralDeployment.GetContainers(), 2)
 	c := centralDeployment.GetContainers()[0]
 
 	assert.Equal(t, `stackrox/prevent`, c.GetImage().GetName().GetRemote())
@@ -110,7 +110,7 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
 		assert.Equal(t, sha, c.GetImage().GetName().GetTag())
 	}
 
-	require.Len(t, c.GetSecrets(), 3)
+	require.Len(t, c.GetSecrets(), 4)
 	paths := make([]string, 0, 2)
 	for _, secret := range c.GetSecrets() {
 		paths = append(paths, secret.GetPath())
@@ -118,9 +118,11 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
 	sort.Slice(paths, func(i, j int) bool {
 		return paths[i] < paths[j]
 	})
+
 	expectedPathPrefixes := []string{
 		"/run/secrets/stackrox.io/certs",
 		"/run/secrets/stackrox.io/jwt",
+		"/run/secrets/stackrox.io/monitoring/",
 		"/usr/local/share/ca-certificates/",
 	}
 	for i, path := range paths {
@@ -137,7 +139,7 @@ func verifySensorDeployment(t *testing.T, sensorDeployment *v1.Deployment) {
 	verifyDeployment(t, sensorDeployment)
 	assert.Equal(t, "sensor", sensorDeployment.GetLabels()["app"])
 
-	require.Len(t, sensorDeployment.GetContainers(), 1)
+	require.Len(t, sensorDeployment.GetContainers(), 2)
 	c := sensorDeployment.GetContainers()[0]
 
 	assert.Equal(t, `stackrox/prevent`, c.GetImage().GetName().GetRemote())

@@ -10,11 +10,21 @@ func init() {
 	Deployers[v1.ClusterType_KUBERNETES_CLUSTER] = newKubernetes()
 }
 
-type kubernetes struct {
-}
+type kubernetes struct{}
 
 func newKubernetes() deployer {
 	return &kubernetes{}
+}
+
+var monitoringOnPrem = []string{
+	"kubernetes/monitoring/monitoring.sh",
+	"kubernetes/monitoring/monitoring.yaml",
+	"kubernetes/monitoring/influxdb.conf",
+	"kubernetes/monitoring/kapacitor.conf",
+}
+
+var monitoringClient = []string{
+	"kubernetes/telegraf.conf",
 }
 
 func (k *kubernetes) Render(c Config) ([]*v1.File, error) {
@@ -24,6 +34,7 @@ func (k *kubernetes) Render(c Config) ([]*v1.File, error) {
 		return nil, err
 	}
 	injectImageTags(&c)
+	c.K8sConfig.MonitoringImage = generateMonitoringImage(c.K8sConfig.PreventImage)
 
 	filenames := []string{
 		"kubernetes/ca-setup.sh",
@@ -37,15 +48,24 @@ func (k *kubernetes) Render(c Config) ([]*v1.File, error) {
 		"kubernetes/port-forward.sh",
 	}
 
+	if c.K8sConfig.MonitoringType.OnPrem() {
+		filenames = append(filenames, monitoringOnPrem...)
+		filenames = append(filenames, monitoringClient...)
+	} else if c.K8sConfig.MonitoringType.StackRoxHosted() {
+		filenames = append(filenames, monitoringClient...)
+	}
+
 	return renderFilenames(filenames, c)
 }
+
 func (k *kubernetes) Instructions() string {
 	return `To deploy:
   1. Unzip the deployment bundle.
   2. If you need to add additional trusted CAs, run ca-setup.sh.
-  3. Run central.sh.
-  4. If you want to run the StackRox Clairify scanner, run clairify.sh.
-  5. Expose Central:
+  3. If you have opted into self-hosting monitoring, run monitoring/monitoring.sh
+  4. Run central.sh.
+  5. If you want to run the StackRox Clairify scanner, run clairify.sh.
+  6. Expose Central:
        a. Using a LoadBalancer: kubectl create -f lb.yaml
        b. Using a NodePort:     kubectl create -f np.yaml
        c. Using a port forward: ./port-forward.sh 8443`

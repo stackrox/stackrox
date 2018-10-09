@@ -3,6 +3,9 @@ LABEL "com.vendor"="StackRox (support@stackrox.com)"
 
 RUN printf "http://apk.rox.systems/v3.8/main\\nhttp://apk.rox.systems/v3.8/community" > /etc/apk/repositories
 
+# Pulled from https://github.com/connorgorman/telegraf/releases with the slimmed down version of telegraf
+RUN wget https://github.com/connorgorman/telegraf/releases/download/1.8.0%2B49-slim/telegraf -O /telegraf && chmod +x /telegraf
+
 RUN apk update && \
     apk add --no-cache \
         ca-certificates=20171114-r3 \
@@ -27,6 +30,8 @@ COPY ./bin/swarm-sensor /prevent/
 COPY ./ui/build  /ui/
 COPY ./VERSION /VERSION
 
+COPY ./telegraf.sh /telegraf.sh
+
 EXPOSE 443
 
 ENTRYPOINT ["deploy"]
@@ -40,3 +45,5 @@ VOLUME /etc/ssl
 VOLUME /tmp/search
 # The BoltDB is stored at this path.
 VOLUME /var/lib/prevent
+# The log file is stored at this path
+VOLUME /var/log/stackrox

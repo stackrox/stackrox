@@ -25,7 +25,14 @@ if ! kubectl get secret/{{.K8sConfig.ImagePullSecret}} -n {{.K8sConfig.Namespace
 	echo
 fi
 
+{{if not .K8sConfig.MonitoringType.None}}
+# Add monitoring client configmap
+kubectl create cm -n "{{.K8sConfig.Namespace}}" telegraf --from-file="$DIR/telegraf.conf"
+{{- end}}
+
+# Add Central secrets
 kubectl create secret -n "{{.K8sConfig.Namespace}}" generic central-tls --from-file="$DIR/ca.pem" --from-file="$DIR/ca-key.pem"
 kubectl create secret -n "{{.K8sConfig.Namespace}}" generic central-jwt --from-file="$DIR/jwt-key.der"
 kubectl create -f "${DIR}/central.yaml"
+
 echo "Central has been deployed"

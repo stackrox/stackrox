@@ -47,6 +47,12 @@ spec:
       containers:
       - name: central
         image: {{.K8sConfig.PreventImage}}
+        command:
+          - /prevent/entrypoint.sh
+          - central
+        ports:
+          - name: api
+            containerPort: 443
         resources:
           requests:
             memory: "2Gi"
@@ -54,12 +60,6 @@ spec:
           limits:
             memory: "8Gi"
             cpu: "2000m"
-        command:
-        - /prevent/entrypoint.sh
-        - central
-        ports:
-        - name: api
-          containerPort: 443
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
@@ -72,6 +72,8 @@ spec:
         {{ end -}}
         {{ end -}}
         volumeMounts:
+        - name: varlog
+          mountPath: /var/log/stackrox/
         - name: central-certs-volume
           mountPath: /run/secrets/stackrox.io/certs/
           readOnly: true
@@ -81,6 +83,9 @@ spec:
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true
+        - name: monitoring-client-volume
+          mountPath: /run/secrets/stackrox.io/monitoring/
+          readOnly: true
         {{if .HostPath -}}
         - name: {{.HostPath.Name}}
           mountPath: {{.HostPath.MountPath}}
@@ -88,7 +93,44 @@ spec:
         - name: {{.External.Name}}
           mountPath: {{.External.MountPath}}
         {{- end}}
+      {{if not .K8sConfig.MonitoringType.None}}
+      - name: telegraf
+        image: {{.K8sConfig.PreventImage}}
+        command:
+          - /telegraf.sh
+        env:
+          - name: SERVICE
+            value: central
+          - name: CLUSTER_NAME
+            value: main
+          - name: PROMETHEUS_ENDPOINT
+            value: https://localhost:443
+          - name: MONITORING_ENDPOINT
+            value: {{.K8sConfig.MonitoringEndpoint}}
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "100m"
+          limits:
+            memory: "200Mi"
+            cpu: "200m"
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+        volumeMounts:
+        - name: monitoring-client-volume
+          mountPath: /run/secrets/stackrox.io/monitoring/
+          readOnly: true
+        - name: telegraf-config-volume
+          mountPath: /etc/telegraf/
+          readOnly: true
+        - name: varlog
+          mountPath: /var/log/stackrox/
+          readOnly: true
+      {{- end}}
       volumes:
+      - name: varlog
+        emptyDir: {}
       - name: central-certs-volume
         secret:
           secretName: central-tls
@@ -98,6 +140,19 @@ spec:
       - name: additional-ca-volume
         secret:
           secretName: additional-ca
+          optional: true
+      - name: monitoring-client-volume
+        secret:
+          secretName: monitoring
+          optional: true
+          items:
+            - key: monitoring-password
+              path: password
+            - key: monitoring-ca.pem
+              path: ca.pem
+      - name: telegraf-config-volume
+        configMap:
+          name: telegraf
           optional: true
       {{if .HostPath -}}
       - name: {{.HostPath.Name}}

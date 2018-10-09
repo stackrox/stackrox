@@ -20,6 +20,10 @@ func addCommonKubernetesParams(params *v1.CommonKubernetesParams, fields map[str
 	fields["Namespace"] = params.GetNamespace()
 }
 
+var monitoringFilenames = []string{
+	"kubernetes/telegraf.conf",
+}
+
 func (k *kubernetes) Render(c Wrap) ([]*v1.File, error) {
 	var kubernetesParams *v1.KubernetesParams
 	clusterKube, ok := c.OrchestratorParams.(*v1.Cluster_Kubernetes)
@@ -47,6 +51,10 @@ func (k *kubernetes) Render(c Wrap) ([]*v1.File, error) {
 		"kubernetes/sensor.yaml",
 		"kubernetes/sensor-rbac.yaml",
 		"kubernetes/delete-sensor.sh",
+	}
+
+	if c.MonitoringEndpoint != "" {
+		filenames = append(filenames, monitoringFilenames...)
 	}
 
 	return renderFilenames(filenames, fields)

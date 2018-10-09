@@ -15,6 +15,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/cmd/deploy/central"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/version"
 	zipPkg "github.com/stackrox/rox/pkg/zip"
 )
@@ -42,6 +44,72 @@ func getVersion() string {
 	return v
 }
 
+func generateJWTSigningKey(zipW *zip.Writer) error {
+	// Generate the private key that we will use to sign JWTs for API keys.
+	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		return fmt.Errorf("couldn't generate private key: %s", err)
+	}
+	err = zipPkg.AddFile(zipW, zipPkg.NewFile("jwt-key.der", string(x509.MarshalPKCS1PrivateKey(privateKey)), false))
+	if err != nil {
+		return fmt.Errorf("failed to write jwt key: %s", err)
+	}
+	return nil
+}
+
+func generateMTLSFiles(zipW *zip.Writer) (cert, key []byte, err error) {
+	// Add MTLS files
+	req := csr.CertificateRequest{
+		CN:         "StackRox Prevent Certificate Authority",
+		KeyRequest: csr.NewBasicKeyRequest(),
+	}
+	cert, _, key, err = initca.New(&req)
+	if err != nil {
+		err = fmt.Errorf("could not generate keypair: %s", err)
+		return
+	}
+	if err = zipPkg.AddFile(zipW, zipPkg.NewFile("ca.pem", string(cert), false)); err != nil {
+		err = fmt.Errorf("failed to write cert.pem: %s", err)
+		return
+	}
+	if err = zipPkg.AddFile(zipW, zipPkg.NewFile("ca-key.pem", string(key), false)); err != nil {
+		err = fmt.Errorf("failed to write key.pem: %s", err)
+		return
+	}
+	return
+}
+
+func generateMonitoringFiles(zipW *zip.Writer, caCert, caKey []byte) error {
+	monitoringCert, monitoringKey, err := mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: v1.ServiceType_MONITORING_DB_SERVICE, Identifier: "Monitoring UI"},
+		caCert, caKey)
+	if err != nil {
+		return err
+	}
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-db-cert.pem", string(monitoringCert), false)); err != nil {
+		return fmt.Errorf("failed to write cert.pem: %s", err)
+	}
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-db-key.pem", string(monitoringKey), false)); err != nil {
+		return fmt.Errorf("failed to write key.pem: %s", err)
+	}
+	monitoringCert, monitoringKey, err = mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: v1.ServiceType_MONITORING_UI_SERVICE, Identifier: "Monitoring"},
+		caCert, caKey)
+	if err != nil {
+		return err
+	}
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-ui-cert.pem", string(monitoringCert), false)); err != nil {
+		return fmt.Errorf("failed to write cert.pem: %s", err)
+	}
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-ui-key.pem", string(monitoringKey), false)); err != nil {
+		return fmt.Errorf("failed to write key.pem: %s", err)
+	}
+
+	// Generate monitoring password
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-password", string(uuid.NewV4().String()), false)); err != nil {
+		return fmt.Errorf("failed to write monitoring-password: %s", err)
+	}
+	return nil
+}
+
 func outputZip(config central.Config) error {
 	fmt.Fprint(os.Stderr, "Generating deployment bundle... ")
 
@@ -63,30 +131,17 @@ func outputZip(config central.Config) error {
 		}
 	}
 
-	// Generate the private key that we will use to sign JWTs for API keys.
-	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
-	if err != nil {
-		return fmt.Errorf("couldn't generate private key: %s", err)
-	}
-	err = zipPkg.AddFile(zipW, zipPkg.NewFile("jwt-key.der", string(x509.MarshalPKCS1PrivateKey(privateKey)), false))
-	if err != nil {
-		return fmt.Errorf("failed to write jwt key: %s", err)
+	if err := generateJWTSigningKey(zipW); err != nil {
+		return err
 	}
 
-	// Add MTLS files
-	req := csr.CertificateRequest{
-		CN:         "StackRox Prevent Certificate Authority",
-		KeyRequest: csr.NewBasicKeyRequest(),
-	}
-	cert, _, key, err := initca.New(&req)
+	cert, key, err := generateMTLSFiles(zipW)
 	if err != nil {
-		return fmt.Errorf("could not generate keypair: %s", err)
+		return err
 	}
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("ca.pem", string(cert), false)); err != nil {
-		return fmt.Errorf("failed to write cert.pem: %s", err)
-	}
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("ca-key.pem", string(key), false)); err != nil {
-		return fmt.Errorf("failed to write key.pem: %s", err)
+
+	if config.K8sConfig != nil && config.K8sConfig.MonitoringType.OnPrem() {
+		generateMonitoringFiles(zipW, cert, key)
 	}
 
 	err = zipW.Close()

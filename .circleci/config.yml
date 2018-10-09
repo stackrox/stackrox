@@ -133,7 +133,7 @@ jobs:
             export TAG=$(make tag)
 
             docker push stackrox/prevent:$TAG | cat
-            docker push stackrox/prevent-health:$TAG | cat
+            docker push stackrox/monitoring:$TAG | cat
             docker push stackrox/grpc-server:$TAG | cat
 
       - save-cache:
@@ -506,9 +506,9 @@ jobs:
             docker tag docker.io/stackrox/prevent:$TAG stackrox.io/prevent:$TAG
             docker push stackrox.io/prevent:$TAG | cat
 
-            docker pull docker.io/stackrox/prevent-health:$TAG
-            docker tag docker.io/stackrox/prevent-health:$TAG stackrox.io/prevent-health:$TAG
-            docker push stackrox.io/prevent-health:$TAG | cat
+            docker pull docker.io/stackrox/monitoring:$TAG
+            docker tag docker.io/stackrox/monitoring:$TAG stackrox.io/monitoring:$TAG
+            docker push stackrox.io/monitoring:$TAG | cat
 
 
 workflows:

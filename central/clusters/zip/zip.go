@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
@@ -19,6 +20,11 @@ import (
 	zipPkg "github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+const (
+	monitoringPasswordPath = "/run/secrets/stackrox.io/monitoring/password"
+	monitoringCAPath       = "/run/secrets/stackrox.io/monitoring/ca.pem"
 )
 
 var (
@@ -134,6 +140,29 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if resp.GetCluster().GetMonitoringEndpoint() != "" {
+		// Pass the monitoring password and CA
+		password, err := ioutil.ReadFile(monitoringPasswordPath)
+		if err != nil {
+			writeGRPCStyleError(w, codes.Internal, err)
+			return
+		}
+		// Add the files required for monitoring
+		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-password", string(password), false)); err != nil {
+			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "monitoring-password", err))
+			return
+		}
+		monitoringCA, err := ioutil.ReadFile(monitoringCAPath)
+		if err != nil {
+			writeGRPCStyleError(w, codes.Internal, err)
+			return
+		}
+		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-ca.pem", string(monitoringCA), false)); err != nil {
+			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "monitoring-ca.pem", err))
+			return
+		}
+	}
+
 	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	authority, err := z.identityService.GetAuthorities(ctx, &v1.Empty{})
@@ -146,8 +175,8 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("central-ca.pem", authority.GetAuthorities()[0].GetCertificate(), false)); err != nil {
-		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "central-ca.pem", err))
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("ca.pem", authority.GetAuthorities()[0].GetCertificate(), false)); err != nil {
+		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "ca.pem", err))
 		return
 	}
 

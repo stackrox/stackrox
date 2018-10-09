@@ -27,7 +27,7 @@ main() {
     mkdir -p "$log_dir"
 
     kubectl describe "deploy/${service_name}" -n stackrox > "${log_dir}/describe.log"
-    kubectl     logs "deploy/${service_name}" -n stackrox > "${log_dir}/logs.log"
+    kubectl     logs "deploy/${service_name}" "${service_name}" -n stackrox > "${log_dir}/${service_name}.log"
     kubectl  logs -p "deploy/${service_name}" -n stackrox > "${log_dir}/logs_previous.log" 2>/dev/null || true
 }
 

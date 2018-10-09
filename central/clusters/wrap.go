@@ -82,10 +82,12 @@ func fieldsFromWrap(c Wrap) map[string]interface{} {
 		"PublicEndpoint":        c.CentralApiEndpoint,
 		"ClusterIDEnv":          env.ClusterID.EnvVar(),
 		"ClusterID":             c.Id,
+		"ClusterName":           c.Name,
 		"AdvertisedEndpointEnv": env.AdvertisedEndpoint.EnvVar(),
 		"AdvertisedEndpoint":    env.AdvertisedEndpoint.Setting(),
 		"RuntimeSupport":        c.RuntimeSupport,
 		"CollectorImage":        generateCollectorImage(c.PreventImage, version.GetCollectorVersion()),
+		"MonitoringEndpoint":    c.MonitoringEndpoint,
 	}
 	return fields
 }

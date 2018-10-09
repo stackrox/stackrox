@@ -1,0 +1,161 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitoring
+  namespace: {{.K8sConfig.Namespace}}
+spec:
+  ports:
+  - name: https
+    port: 8086
+    targetPort: 8086
+  selector:
+    app: monitoring
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: monitoring
+  namespace: {{.K8sConfig.Namespace}}
+  labels:
+    app: monitoring
+  annotations:
+    owner: stackrox
+    email: support@stackrox.com
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: monitoring
+  template:
+    metadata:
+      namespace: {{.K8sConfig.Namespace}}
+      labels:
+        app: monitoring
+    spec:
+      imagePullSecrets:
+      - name: {{.K8sConfig.ImagePullSecret}}
+      containers:
+      - name: influxdb
+        image: {{.K8sConfig.MonitoringImage}}
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "/influx-post-start.sh"]
+        command:
+        - /influxd
+        ports:
+        - name: api
+          containerPort: 8086
+        resources:
+          requests:
+            memory: "500Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+        volumeMounts:
+          - name: monitoring-db-volume
+            mountPath: /run/secrets/stackrox.io/monitoring/certs/
+            readOnly: true
+          - name: monitoring-client-volume
+            mountPath: /run/secrets/stackrox.io/monitoring/client/
+            readOnly: true
+          - name: influxdb-config-volume
+            mountPath: /etc/influxdb/
+            readOnly: true
+      - name: kapacitor
+        image: {{.K8sConfig.MonitoringImage}}
+        command:
+        - /kapacitor.sh
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "100m"
+          limits:
+            memory: "200Mi"
+            cpu: "200m"
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+        volumeMounts:
+          - name: monitoring-client-volume
+            mountPath: /run/secrets/stackrox.io/monitoring/
+            readOnly: true
+          - name: kapacitor-config-volume
+            mountPath: /etc/kapacitor/
+            readOnly: true
+      - name: chronograf
+        image: {{.K8sConfig.MonitoringImage}}
+        command:
+        - /chronograf
+        ports:
+        - name: api
+          containerPort: 8888
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "100m"
+          limits:
+            memory: "500Mi"
+            cpu: "500m"
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+        volumeMounts:
+          - name: monitoring-client-volume
+            mountPath: /run/secrets/stackrox.io/monitoring
+            readOnly: true
+      volumes:
+      - name: monitoring-db-volume
+        secret:
+          secretName: monitoring
+          items:
+            - key: monitoring-db-cert.pem
+              path: cert.pem
+            - key: monitoring-db-key.pem
+              path: key.pem
+      - name: monitoring-ui-volume
+        secret:
+          secretName: monitoring
+          items:
+            - key: monitoring-ui-cert.pem
+              path: cert.pem
+            - key: monitoring-ui-key.pem
+              path: key.pem
+      - name: monitoring-client-volume
+        secret:
+          secretName: monitoring
+          items:
+            - key: monitoring-password
+              path: password
+            - key: monitoring-ca.pem
+              path: ca.pem
+      - name: influxdb-config-volume
+        configMap:
+          name: influxdb
+      - name: kapacitor-config-volume
+        configMap:
+           name: kapacitor
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ext-to-monitoring
+  namespace: {{.K8sConfig.Namespace}}
+spec:
+  ingress:
+  - ports:
+    - port: 8086
+      protocol: TCP
+    - port: 8888
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: monitoring
+  policyTypes:
+  - Ingress

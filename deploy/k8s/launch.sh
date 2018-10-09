@@ -14,9 +14,17 @@ function launch_central {
     unzip "$K8S_DIR/central.zip" -d "$UNZIP_DIR"
     echo
 
+    echo "Deploying Monitoring..."
+    $UNZIP_DIR/monitoring/monitoring.sh
+    echo
+
+    kubectl -n stackrox patch deployment monitoring --patch "$(cat $K8S_DIR/monitoring-resources-patch.yaml)"
+
     echo "Deploying Central..."
     $UNZIP_DIR/central.sh
     echo
+
+    kubectl -n stackrox patch deployment central --patch "$(cat $K8S_DIR/central-resources-patch.yaml)"
 
     $UNZIP_DIR/port-forward.sh 8000
     wait_for_central "localhost:8000"
@@ -33,7 +41,7 @@ function launch_sensor {
 
     COMMON_PARAMS="{ \"params\" : { \"namespace\": \"stackrox\" }, \"imagePullSecret\": \"stackrox\" }"
 
-    EXTRA_CONFIG="\"kubernetes\": $COMMON_PARAMS }"
+    EXTRA_CONFIG="\"monitoringEndpoint\": \"monitoring.stackrox\", \"kubernetes\": $COMMON_PARAMS }"
 
     get_cluster_zip localhost:8000 "$CLUSTER" KUBERNETES_CLUSTER "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "$RUNTIME_SUPPORT" "$EXTRA_CONFIG"
 
@@ -43,4 +51,6 @@ function launch_sensor {
     unzip "$K8S_DIR/sensor-deploy.zip" -d "$UNZIP_DIR"
     $UNZIP_DIR/sensor.sh
     echo
+
+    kubectl -n stackrox patch deployment sensor --patch "$(cat $K8S_DIR/sensor-resources-patch.yaml)"
 }

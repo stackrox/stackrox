@@ -15,6 +15,7 @@ import (
 
 	"github.com/cloudflare/cfssl/config"
 	cfcsr "github.com/cloudflare/cfssl/csr"
+	"github.com/cloudflare/cfssl/helpers"
 	cfsigner "github.com/cloudflare/cfssl/signer"
 	"github.com/cloudflare/cfssl/signer/local"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -98,6 +99,20 @@ func CACert() (*x509.Certificate, []byte, error) {
 	return caCert, caCertDER, caCertErr
 }
 
+func signerFromCABytes(caCert, caKey []byte) (cfsigner.Signer, error) {
+	parsedCa, err := helpers.ParseCertificatePEM(caCert)
+	if err != nil {
+		return nil, err
+	}
+
+	priv, err := helpers.ParsePrivateKeyPEMWithPassword(caKey, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return local.NewSigner(priv, parsedCa, cfsigner.DefaultSigAlgo(priv), signingPolicy())
+}
+
 func signer() (cfsigner.Signer, error) {
 	return local.NewSignerFromFile(caCertFilePath, caKeyFilePath, signingPolicy())
 }
@@ -120,6 +135,49 @@ func signingPolicy() *config.Signing {
 // serviceIdentityStorage represents any object that stores a service identity.
 type serviceIdentityStorage interface {
 	AddServiceIdentity(identity *v1.ServiceIdentity) error
+}
+
+// IssueNewCertFromCA issues a certificate from the CA that is passed in
+func IssueNewCertFromCA(subj Subject, caCert, caKey []byte) (certPEM, keyPEM []byte, err error) {
+	returnErr := func(err error, prefix string) ([]byte, []byte, error) {
+		return nil, nil, fmt.Errorf("%s: %s", prefix, err)
+	}
+
+	s, err := signerFromCABytes(caCert, caKey)
+	if err != nil {
+		return returnErr(err, "signer creation")
+	}
+
+	serial, err := randomSerial()
+	if err != nil {
+		return returnErr(err, "serial generation")
+	}
+	csr := &cfcsr.CertificateRequest{
+		KeyRequest: cfcsr.NewBasicKeyRequest(),
+	}
+	csrBytes, keyBytes, err := cfcsr.ParseRequest(csr)
+	if err != nil {
+		return returnErr(err, "request parsing")
+	}
+
+	req := cfsigner.SignRequest{
+		Hosts:   []string{subj.Hostname()},
+		Request: string(csrBytes),
+		Subject: &cfsigner.Subject{
+			CN:           subj.CN(),
+			Names:        []cfcsr.Name{subj.Name()},
+			SerialNumber: strconv.FormatInt(serial, 10),
+		},
+	}
+	certBytes, err := s.Sign(req)
+	if err != nil {
+		return returnErr(err, "signing")
+	}
+
+	certPEM = certBytes
+	keyPEM = keyBytes
+
+	return certPEM, keyPEM, nil
 }
 
 // IssueNewCert generates a new key and certificate chain for a sensor.

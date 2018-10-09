@@ -47,12 +47,20 @@ function print_rbac_instructions {
 echo "Creating RBAC roles..."
 kubectl apply -f "$DIR/sensor-rbac.yaml" || print_rbac_instructions
 
+
+{{if .MonitoringEndpoint}}
+echo "Creating secrets for monitoring..."
+kubectl create secret -n "{{.Namespace}}" generic monitoring --from-file="$DIR/monitoring-password" --from-file="$DIR/monitoring-ca.pem"
+kubectl create cm -n "{{.Namespace}}" telegraf --from-file="$DIR/telegraf.conf"
+{{- end}}
+
+
 echo "Creating secrets for sensor..."
-kubectl create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/central-ca.pem"
+kubectl create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/ca.pem"
 
 {{if .RuntimeSupport}}
 echo "Creating secrets for collector..."
-kubectl create secret -n "{{.Namespace}}" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/central-ca.pem"
+kubectl create secret -n "{{.Namespace}}" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/ca.pem"
 {{- end}}
 
 echo "Creating deployment..."

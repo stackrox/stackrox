@@ -37,11 +37,14 @@ const (
 
 	// Our project prefix. For all subpackages of this, we strip this prefix.
 	projectPrefix = "github.com/stackrox/rox"
+
+	// The common log file so we can export it
+	loggingPath = "/var/log/stackrox/log.txt"
 )
 
 var (
 	// defaultDestination is the default logging destination, which is currently os.Stdout
-	defaultDestination = os.Stdout
+	defaultDestination io.Writer = os.Stdout
 	//all registered loggers thus far
 	allLoggers = []*weakLoggerRef(nil)
 	// numGCdLoggers is the total numbers of loggers whose (former) weak references are present in allLoggers but have
@@ -157,6 +160,13 @@ func init() {
 	thisModuleLogger = createLogger(thisModule, 0)
 	if !ok && initLevel != "" {
 		thisModuleLogger.Warnf("Invalid LOGLEVEL value '%s', defaulting to %s", initLevel, LabelForLevelOrInvalid(defaultLevel))
+	}
+
+	logFile, err := os.OpenFile(loggingPath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
+	if err != nil {
+		thisModuleLogger.Warnf("Could not create or open log file '%s'", loggingPath)
+	} else {
+		defaultDestination = io.MultiWriter(os.Stdout, logFile)
 	}
 
 	rootLogger = createLogger("root logger", 0)
@@ -415,6 +425,7 @@ func createLogger(module string, skip int) *Logger {
 	} else {
 		creationSite = fmt.Sprintf("%s:%d", creationFile, creationLine)
 	}
+
 	baseLogger := log.New(defaultDestination, module+": ", log.Lshortfile|log.Ldate|log.Lmicroseconds|log.LUTC)
 	newLogger := &Logger{
 		internal:        baseLogger,
