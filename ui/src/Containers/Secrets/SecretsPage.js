@@ -5,7 +5,14 @@ import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
-import Table, { pageSize } from 'Components/Table';
+
+import Table, {
+    pageSize,
+    wrapClassName,
+    defaultHeaderClassName,
+    defaultColumnClassName
+} from 'Components/Table';
+
 import Panel from 'Components/Panel';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
@@ -85,11 +92,20 @@ class SecretPage extends Component {
 
     renderTable = () => {
         const columns = [
-            { accessor: 'name', Header: 'Name' },
+            {
+                accessor: 'name',
+                Header: 'Name',
+                headerClassName: `w-1/8 min-w-48 ${defaultHeaderClassName}`,
+                className: `w-1/8 min-w-48 word-break-all ${wrapClassName} ${defaultColumnClassName}`,
+                Cell: ({ value }) => <span>{value}</span>
+            },
             {
                 id: 'createdAt',
                 accessor: d => dateFns.format(d.createdAt, dateTimeFormat),
-                Header: 'Created'
+                Header: 'Created',
+                headerClassName: `${defaultHeaderClassName}`,
+                className: `${wrapClassName} ${defaultColumnClassName}`,
+                Cell: ({ value }) => <span>{value}</span>
             },
             {
                 id: 'types',
@@ -120,18 +136,20 @@ class SecretPage extends Component {
         const { selectedSecret } = this.props;
         if (!selectedSecret) return null;
         return (
-            <div className="w-1/2 bg-primary-200">
-                <Panel header={selectedSecret.name} onClose={this.updateSelectedSecret}>
-                    <SecretDetails secret={selectedSecret} />
-                </Panel>
-            </div>
+            <Panel
+                className="bg-primary-200 z-10 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
+                header={selectedSecret.name}
+                onClose={this.updateSelectedSecret}
+            >
+                <SecretDetails secret={selectedSecret} />
+            </Panel>
         );
     };
 
     render() {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
         return (
-            <section className="flex flex-1 h-full">
+            <section className="flex flex-1 flex-col h-full">
                 <div className="flex flex-1 flex-col">
                     <PageHeader header="Secrets" subHeader={subHeader}>
                         <SearchInput
@@ -146,8 +164,8 @@ class SecretPage extends Component {
                             onSearch={this.onSearch}
                         />
                     </PageHeader>
-                    <div className="flex flex-1">
-                        <div className="w-full overflow-y-scroll bg-base-100 rounded-sm shadow">
+                    <div className="flex flex-1 relative">
+                        <div className="rounded-sm shadow border-primary-300 bg-base-100 w-full overflow-hidden">
                             {this.renderPanel()}
                         </div>
                         {this.renderSidePanel()}

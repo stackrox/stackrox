@@ -12,12 +12,12 @@ const defaultComponentClassNames = {
 const Control = ({ className, ...props }) => (
     <selectComponents.Control
         {...props}
-        className={`${className} cursor-text border-2 border-base-300 flex items-center items-center text-xl shadow-none overflow-auto hover:border-base-400`}
+        className={`${className} bg-base-100 cursor-text border-2 border-base-300 flex items-center items-center text-xl shadow-none overflow-auto hover:border-base-400`}
     />
 );
 
 const Menu = ({ className, ...props }) => (
-    <selectComponents.Menu className={`${className} z-10`} {...props} />
+    <selectComponents.Menu className={`${className} z-20`} {...props} />
 );
 
 const MultiValue = props => (

@@ -115,7 +115,7 @@ class ImageDetails extends Component {
                 <div className="alert-preview bg-base-100 shadow text-primary-600">
                     <CollapsibleCard title={title}>
                         <div className="h-full">
-                            <div className="p-3">
+                            <div className="px-3">
                                 <KeyValuePairs data={imageDetail} keyValueMap={imageDetailsMap} />
                             </div>
                             <div className="flex bg-primary-100">
@@ -194,7 +194,7 @@ class ImageDetails extends Component {
             <div className="px-3 py-4">
                 <div className="alert-preview bg-base-100 shadow text-primary-600">
                     <CollapsibleCard title={title}>
-                        <div className="h-full p-3 font-500"> {this.renderCVEsTable()}</div>
+                        <div className="h-full p-3"> {this.renderCVEsTable()}</div>
                     </CollapsibleCard>
                 </div>
             </div>
@@ -203,7 +203,7 @@ class ImageDetails extends Component {
 
     renderCVEsTable = () => {
         const { scan } = this.props.image;
-        if (!scan) return <div className="font-500">No scanner setup for this registry</div>;
+        if (!scan) return <div>No scanner setup for this registry</div>;
 
         const columns = [
             {
@@ -259,7 +259,7 @@ class ImageDetails extends Component {
         const content = loading ? (
             <Loader />
         ) : (
-            <div className="flex flex-col overflow-y-scroll w-full bg-primary-100">
+            <div className="flex flex-col w-full bg-base-200 overflow-auto">
                 {this.renderOverview()}
                 {this.renderCVEs()}
                 {this.renderDockerFileModal()}
@@ -269,7 +269,7 @@ class ImageDetails extends Component {
             <Panel
                 header={header}
                 onClose={this.updateSelectedImage}
-                className="w-1/2 bg-primary-200"
+                className="bg-primary-200 z-10 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
             >
                 {content}
             </Panel>

@@ -38,13 +38,13 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 const getSeverityClassName = severity => {
     switch (severity) {
         case 'Low':
-            return 'text-base-500';
+            return 'px-2 rounded-full bg-base-200 border-2 border-base-300 text-base-600';
         case 'Medium':
-            return 'text-warning-500';
+            return 'px-2 rounded-full bg-warning-200 border-2 border-warning-300 text-warning-800';
         case 'High':
-            return 'text-caution-severity';
+            return 'px-2 rounded-full bg-caution-200 border-2 border-caution-300 text-caution-800';
         case 'Critical':
-            return 'text-alert-severity';
+            return 'px-2 rounded-full bg-alert-200 border-2 border-alert-300 text-alert-800';
         default:
             return '';
     }
@@ -244,7 +244,7 @@ class PoliciesPage extends Component {
     renderRowActionButtons = policy => {
         const enableTooltip = `${policy.disabled ? 'Enable' : 'Disable'} policy`;
         return (
-            <div className="border-2 border-r-2 border-base-400 bg-base-100">
+            <div className="border-2 border-r-2 border-base-400 bg-base-100 flex">
                 <Tooltip placement="top" overlay={<div>{enableTooltip}</div>} mouseLeaveDelay={0}>
                     <button
                         type="button"
@@ -283,8 +283,8 @@ class PoliciesPage extends Component {
                         <div className="pl-4">{original.name}</div>
                     </div>
                 ),
-                className: `w-1/5 ${wrapClassName} ${defaultColumnClassName}`,
-                headerClassName: `w-1/5 ${defaultHeaderClassName}`
+                className: `w-1/5 sticky-column left-checkbox-offset ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `w-1/5 sticky-column left-checkbox-offset ${defaultHeaderClassName}`
             },
             {
                 Header: 'Description',
@@ -455,11 +455,9 @@ class PoliciesPage extends Component {
                 header={header}
                 buttons={buttons}
                 onClose={this.setSelectedPolicy}
-                className="w-1/2 bg-primary-200"
+                className="bg-primary-200 z-10 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
             >
-                <div className="bg-primary-200 w-full">
-                    {this.renderSidePanelView(selectedPolicy)}
-                </div>
+                {this.renderSidePanelView(selectedPolicy)}
             </Panel>
         );
     };
@@ -497,11 +495,11 @@ class PoliciesPage extends Component {
                         />
                     </PageHeader>
                 </div>
-                <div className="flex flex-1 bg-base-200">
-                    <div className="flex w-full h-full bg-base-100 rounded-sm shadow">
+                <div className="flex flex-1 relative">
+                    <div className="rounded-sm shadow border-primary-300 bg-base-100 w-full overflow-hidden">
                         {this.renderTablePanel()}
-                        {this.renderSidePanel()}
                     </div>
+                    {this.renderSidePanel()}
                 </div>
                 {this.renderConfirmationDialog()}
             </section>

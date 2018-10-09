@@ -71,7 +71,7 @@ describe('Policies page', () => {
     });
 
     it('should open side panel and check for the policy name', () => {
-        cy.get(selectors.tableFirstRow).click();
+        cy.get(selectors.tableFirstRow).click({ force: true });
         cy.get(selectors.sidePanel).should('exist');
         cy.get(selectors.sidePanelHeader).contains('30-Day Scan Age');
     });
@@ -86,7 +86,7 @@ describe('Policies page', () => {
         const secretSuffix = ':secretSuffix:';
         const deleteSuffix = '{backspace}'.repeat(secretSuffix.length);
 
-        cy.get(selectors.tableFirstRow).click();
+        cy.get(selectors.tableFirstRow).click({ force: true });
         updatePolicyName(secretSuffix);
         cy.get(`.rt-tr:contains("${secretSuffix}")`);
         updatePolicyName(deleteSuffix); // revert back
@@ -116,12 +116,12 @@ describe('Policies page', () => {
                 .type(2.2);
             savePolicy();
         };
-        cy.get(selectors.tableFirstRow).click();
+        cy.get(selectors.tableFirstRow).click({ force: true });
         addCPUField();
     });
 
     it('should open the preview panel to view policy dry run', () => {
-        cy.get(selectors.tableFirstRow).click();
+        cy.get(selectors.tableFirstRow).click({ force: true });
         cy.get(selectors.editPolicyButton).click();
         cy.get(selectors.nextButton).click();
         cy.get('.warn-message').should('exist');
@@ -136,7 +136,7 @@ describe('Policies page', () => {
     });
 
     it('should show a specific message when editing a policy with "enabled" value as "no"', () => {
-        cy.get(selectors.policies.scanImage).click();
+        cy.get(selectors.policies.scanImage).click({ force: true });
         editPolicy();
         cy.get(`${selectors.form.enableField} .react-select__dropdown-indicator`).click();
         cy.get(`div[role="option"]:contains("No")`).click();
@@ -145,7 +145,7 @@ describe('Policies page', () => {
     });
 
     it('should allow updating image fields in a policy', () => {
-        cy.get(selectors.policies.scanImage).click();
+        cy.get(selectors.policies.scanImage).click({ force: true });
         editPolicy();
         cy.get(selectors.form.select).select('fields.imageName.registry');
         cy.get(selectors.imageRegistry.input).type('docker.io');
@@ -160,14 +160,14 @@ describe('Policies page', () => {
     });
 
     it('should show Add Capabilities value in edit mode', () => {
-        cy.get(selectors.policies.addCapabilities).click();
+        cy.get(selectors.policies.addCapabilities).click({ force: true });
         editPolicy();
         cy.get(selectors.form.selectValue).contains('CAP_SYS_ADMIN');
         closePolicySidePanel();
     });
 
     it('should allow updating days since image scanned in a policy', () => {
-        cy.get(selectors.policies.scanImage).click();
+        cy.get(selectors.policies.scanImage).click({ force: true });
         editPolicy();
         cy.get(selectors.form.select).select('fields.scanAgeDays');
         cy.get(selectors.scanAgeDays.input).type('50');
@@ -198,7 +198,7 @@ describe('Policies page', () => {
         cy.get(selectors.enableDisableIcon)
             .first()
             .should('not.have.class', selectors.enabledIconColor);
-        cy.get(selectors.tableFirstRow).click();
+        cy.get(selectors.tableFirstRow).click({ force: true });
         cy.get(selectors.policyDetailsPanel.enabledValueDiv).should('contain', 'No');
 
         cy.get(selectors.hoverActionButtons)

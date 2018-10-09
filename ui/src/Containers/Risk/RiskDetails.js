@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import CollapsibleCard from 'Components/CollapsibleCard';
-import * as Icon from 'react-feather';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
 const Factor = ({ message, url }) => {
@@ -14,11 +13,10 @@ const Factor = ({ message, url }) => {
     );
 
     return (
-        <div className="flex h-full p-3 font-500">
-            <div>
-                <Icon.Circle className="h-2 w-2 mr-3" />
+        <div className="px-3">
+            <div className="py-3 pb-2 leading-normal tracking-normal border-b border-base-300">
+                {renderedMessage}
             </div>
-            <div className="pl-1">{renderedMessage}</div>
         </div>
     );
 };

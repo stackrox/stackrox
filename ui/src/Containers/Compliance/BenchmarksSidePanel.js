@@ -32,7 +32,11 @@ class BenchmarksSidePanel extends Component {
     render() {
         const header = `Host results for "${this.props.header}"`;
         return (
-            <Panel header={header} onClose={this.props.onClose} className="w-1/2 bg-primary-200 ">
+            <Panel
+                header={header}
+                onClose={this.props.onClose}
+                className="bg-primary-200 z-10 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
+            >
                 <div className="bg-base-100 w-full">{this.renderTable()}</div>
             </Panel>
         );

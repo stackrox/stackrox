@@ -95,24 +95,29 @@ class RiskPage extends Component {
         const columns = [
             {
                 Header: 'Name',
-                accessor: 'name'
+                accessor: 'name',
+                Cell: ({ value }) => <span>{value}</span>
             },
             {
                 id: 'updated',
                 Header: 'Updated',
-                accessor: d => dateFns.format(d.updatedAt, dateTimeFormat)
+                accessor: d => dateFns.format(d.updatedAt, dateTimeFormat),
+                Cell: ({ value }) => <span>{value}</span>
             },
             {
                 Header: 'Cluster',
-                accessor: 'cluster'
+                accessor: 'cluster',
+                Cell: ({ value }) => <span>{value}</span>
             },
             {
                 Header: 'Namespace',
-                accessor: 'namespace'
+                accessor: 'namespace',
+                Cell: ({ value }) => <span>{value}</span>
             },
             {
                 Header: 'Priority',
                 accessor: 'priority',
+                Cell: ({ value }) => <span>{value}</span>,
                 sortMethod: sortNumber
             }
         ];
@@ -175,18 +180,20 @@ class RiskPage extends Component {
             );
 
         return (
-            <div className="w-1/2 bg-primary-200">
-                <Panel header={selectedDeployment.name} onClose={this.updateSelectedDeployment}>
-                    {content}
-                </Panel>
-            </div>
+            <Panel
+                header={selectedDeployment.name}
+                className="bg-primary-200 z-10 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
+                onClose={this.updateSelectedDeployment}
+            >
+                {content}
+            </Panel>
         );
     };
 
     render() {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
         return (
-            <section className="flex flex-1 h-full">
+            <section className="flex flex-1 flex-col h-full">
                 <div className="flex flex-1 flex-col">
                     <PageHeader header="Risk" subHeader={subHeader}>
                         <SearchInput
@@ -200,8 +207,8 @@ class RiskPage extends Component {
                             onSearch={this.onSearch}
                         />
                     </PageHeader>
-                    <div className="flex flex-1">
-                        <div className="w-full bg-base-100 rounded-sm shadow">
+                    <div className="flex flex-1 relative">
+                        <div className="rounded-sm shadow border-primary-300 bg-base-100 w-full overflow-hidden">
                             {this.renderPanel()}
                         </div>
                         {this.renderSidePanel()}

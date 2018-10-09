@@ -203,7 +203,7 @@ class ViolationsPage extends Component {
         return (
             <div
                 data-test-id="alerts-hover-actions"
-                className="border-2 border-r-2 border-base-400 bg-base-100"
+                className="flex border-2 border-r-2 border-base-400 bg-base-100 shadow"
             >
                 {isRuntimeAlert && (
                     <Tooltip
@@ -225,8 +225,12 @@ class ViolationsPage extends Component {
                 <Tooltip
                     placement="top"
                     mouseLeaveDelay={0}
-                    overlay={<div>Whitelist deployment</div>}
-                    overlayClassName="pointer-events-none"
+                    overlay={
+                        <div>
+                            Whitelist <br /> deployment
+                        </div>
+                    }
+                    overlayClassName="pointer-events-none text-center"
                 >
                     <button
                         data-test-id="whitelist-deployment-button"
@@ -292,20 +296,23 @@ class ViolationsPage extends Component {
             {
                 Header: 'Deployment',
                 accessor: 'deployment.name',
-                headerClassName: `w-1/6 ${defaultHeaderClassName}`,
-                className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`
+                headerClassName: `w-1/6 sticky-column left-checkbox-offset ${defaultHeaderClassName}`,
+                className: `w-1/6 sticky-column left-checkbox-offset ${wrapClassName} ${defaultColumnClassName}`,
+                Cell: ({ value }) => <span>{value}</span>
             },
             {
                 Header: 'Cluster',
                 accessor: 'deployment.clusterName',
-                headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
+                headerClassName: `w-1/7  ${defaultHeaderClassName}`,
+                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+                Cell: ({ value }) => <span>{value}</span>
             },
             {
                 Header: 'Namespace',
                 accessor: 'deployment.namespace',
                 headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
+                className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+                Cell: ({ value }) => <span>{value}</span>
             },
             {
                 Header: 'Policy',
@@ -313,28 +320,26 @@ class ViolationsPage extends Component {
                 headerClassName: `w-1/6 ${defaultHeaderClassName}`,
                 className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => (
-                    <div>
-                        <Tooltip
-                            placement="top"
-                            mouseLeaveDelay={0}
-                            overlay={<div>{original.policy.description}</div>}
-                            overlayClassName="pointer-events-none text-white rounded max-w-xs p-2 text-sm text-center"
-                        >
-                            <span className="inline-flex hover:text-primary-700 underline">
-                                {original.policy.name}
-                            </span>
-                        </Tooltip>
-                    </div>
+                    <Tooltip
+                        placement="top"
+                        mouseLeaveDelay={0}
+                        overlay={<div>{original.policy.description}</div>}
+                        overlayClassName="pointer-events-none text-white rounded max-w-xs p-2 text-sm text-center"
+                    >
+                        <div className="inline-block hover:text-primary-700 underline">
+                            {original.policy.name}
+                        </div>
+                    </Tooltip>
                 )
             },
             {
                 Header: 'Severity',
                 accessor: 'policy.severity',
-                headerClassName: `${defaultHeaderClassName}`,
-                className: `${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `text-center ${defaultHeaderClassName}`,
+                className: `text-center ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ value }) => {
                     const severity = severityLabels[value];
-                    return <span className={getSeverityClassName(severity)}>{severity}</span>;
+                    return <div className={getSeverityClassName(severity)}>{severity}</div>;
                 },
                 sortMethod: sortSeverity,
                 width: 90
@@ -363,14 +368,13 @@ class ViolationsPage extends Component {
                 accessor: 'lifecycleStage',
                 headerClassName: `${defaultHeaderClassName}`,
                 className: `${wrapClassName} ${defaultColumnClassName}`,
-
                 Cell: ({ value }) => lifecycleStageLabels[value]
             },
             {
                 Header: 'Time',
                 accessor: 'time',
-                headerClassName: `w-1/10 ${defaultHeaderClassName} text-right`,
-                className: `w-1/10 ${wrapClassName} ${defaultColumnClassName} text-right`,
+                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                className: `w-1/10 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ value }) => dateFns.format(value, dateTimeFormat),
                 sortMethod: sortDate
             },
@@ -416,7 +420,7 @@ class ViolationsPage extends Component {
     render() {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
         return (
-            <section className="flex flex-1 h-full">
+            <section className="flex flex-1 flex-col h-full">
                 <div className="flex flex-1 flex-col">
                     <PageHeader header="Violations" subHeader={subHeader}>
                         <SearchInput
@@ -430,8 +434,8 @@ class ViolationsPage extends Component {
                             onSearch={this.onSearch}
                         />
                     </PageHeader>
-                    <div className="flex flex-1">
-                        <div className="w-full rounded-sm shadow border-primary-300 bg-base-100">
+                    <div className="flex flex-1 relative">
+                        <div className="rounded-sm shadow border-primary-300 bg-base-100 w-full overflow-hidden">
                             {this.renderPanel()}
                         </div>
                         {this.renderSidePanel()}

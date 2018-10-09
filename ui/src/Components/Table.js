@@ -5,9 +5,9 @@ import ReactTablePropTypes from 'react-table/lib/propTypes';
 import flattenObject from 'utils/flattenObject';
 
 export const defaultHeaderClassName =
-    'px-2 py-4 pb-3 font-700 text-base-600 border-b border-base-300 hover:bg-primary-200 hover:text-primary-700 truncate select-none relative text-left border-r-0 shadow-none leading-normal';
+    'px-2 py-4 pb-3 font-700 text-base-600 hover:bg-primary-200 hover:z-1 hover:text-primary-700 truncate select-none relative text-left border-r-0 leading-normal';
 export const defaultColumnClassName =
-    'px-2 py-2 font-600 text-base-600 text-left border-r-0 self-center leading-normal';
+    'p-2 flex items-center font-600 text-base-600 text-left border-r-0 leading-normal';
 export const wrapClassName = 'whitespace-normal overflow-visible';
 export const rtTrActionsClassName =
     'rt-tr-actions hidden pin-r p-0 mr-2 w-auto text-left self-center shadow';

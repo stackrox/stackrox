@@ -31,7 +31,7 @@ class TablePagination extends Component {
                 data-test-id="pagination-header"
                 className="flex items-center justify-end text-base-500 font-500"
             >
-                <div className="flex items-center pl-2 -mr-1">
+                <div className="flex items-center pl-5 -mr-1">
                     <div className="mr-4 font-600">
                         Page
                         <input

@@ -5,6 +5,12 @@ import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
+import Table, {
+    pageSize,
+    wrapClassName,
+    defaultHeaderClassName,
+    defaultColumnClassName
+} from 'Components/Table';
 
 import { selectors } from 'reducers';
 import { actions as imagesActions, types } from 'reducers/images';
@@ -12,7 +18,6 @@ import { actions as imagesActions, types } from 'reducers/images';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
-import Table, { pageSize } from 'Components/Table';
 import { sortNumber, sortDate } from 'sorters/sorters';
 import ImageDetails from 'Containers/Images/ImageDetails';
 import Panel from 'Components/Panel';
@@ -88,31 +93,42 @@ class ImagesPage extends Component {
         const columns = [
             {
                 accessor: 'name',
-                Header: 'Image'
+                Header: 'Image',
+                headerClassName: `w-1/2 ${defaultHeaderClassName}`,
+                className: `w-1/2 word-break-all ${wrapClassName} ${defaultColumnClassName}`,
+                Cell: ({ value }) => <span>{value}</span>
             },
             {
                 accessor: 'created',
                 Header: 'Created at',
+                headerClassName: `w-24 ${defaultHeaderClassName}`,
+                className: `w-24 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) =>
-                    original.created ? dateFns.format(original.created, dateTimeFormat) : '-',
+                    original.created ? dateFns.format(original.created, dateTimeFormat) : 'N/A',
                 sortMethod: sortDate
             },
             {
                 accessor: 'components',
                 Header: 'Components',
-                Cell: ({ original }) => original.components || '-',
+                headerClassName: `w-24 ${defaultHeaderClassName}`,
+                className: `w-24 ${wrapClassName} ${defaultColumnClassName}`,
+                Cell: ({ original }) => original.components || 'N/A',
                 sortMethod: sortNumber
             },
             {
                 accessor: 'cves',
                 Header: 'CVEs',
-                Cell: ({ original }) => original.cves || '-',
+                headerClassName: `w-12 ${defaultHeaderClassName}`,
+                className: `w-12 ${wrapClassName} ${defaultColumnClassName}`,
+                Cell: ({ original }) => original.cves || 'N/A',
                 sortMethod: sortNumber
             },
             {
                 accessor: 'fixableCves',
                 Header: 'Fixable',
-                Cell: ({ original }) => original.fixableCves || '-',
+                headerClassName: `w-16 ${defaultHeaderClassName}`,
+                className: `w-16 ${wrapClassName} ${defaultColumnClassName}`,
+                Cell: ({ original }) => original.fixableCves || 'N/A',
                 sortMethod: sortNumber
             }
         ];
@@ -142,7 +158,7 @@ class ImagesPage extends Component {
     render() {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
         return (
-            <section className="flex flex-1 h-full">
+            <section className="flex flex-1 flex-col h-full">
                 <div className="flex flex-1 flex-col">
                     <PageHeader header="Images" subHeader={subHeader}>
                         <SearchInput
@@ -157,8 +173,10 @@ class ImagesPage extends Component {
                             onSearch={this.onSearch}
                         />
                     </PageHeader>
-                    <div className="flex flex-1">
-                        <div className="w-full bg-base-100 rounded-sm">{this.renderPanel()}</div>
+                    <div className="flex flex-1 relative">
+                        <div className="rounded-sm shadow border-primary-300 bg-base-100 w-full overflow-hidden">
+                            {this.renderPanel()}
+                        </div>
                         {this.renderSidePanel()}
                     </div>
                 </div>

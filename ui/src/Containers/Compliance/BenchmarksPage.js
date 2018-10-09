@@ -11,7 +11,11 @@ import { ClipLoader } from 'react-spinners';
 import { sortNumber } from 'sorters/sorters';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
-import Table from 'Components/Table';
+import Table, {
+    wrapClassName,
+    defaultHeaderClassName,
+    defaultColumnClassName
+} from 'Components/Table';
 import Select from 'Components/Select';
 import BenchmarksSidePanel from 'Containers/Compliance/BenchmarksSidePanel';
 import HostResultModal from 'Containers/Compliance/HostResultModal';
@@ -229,29 +233,47 @@ class BenchmarksPage extends Component {
 
     renderTable = () => {
         const columns = [
-            { accessor: 'definition.name', Header: 'Name' },
-            { accessor: 'definition.description', Header: 'Description' },
+            {
+                accessor: 'definition.name',
+                Header: 'Name',
+                headerClassName: `w-1/8 min-w-48 ${defaultHeaderClassName}`,
+                className: `w-1/8 min-w-48 ${wrapClassName} ${defaultColumnClassName}`
+            },
+            {
+                accessor: 'definition.description',
+                Header: 'Description',
+                headerClassName: `w-1/3 ${defaultHeaderClassName}`,
+                className: `w-1/3 ${wrapClassName} ${defaultColumnClassName}`
+            },
             {
                 accessor: 'aggregatedResults.PASS',
                 Header: 'Pass',
+                headerClassName: `w-12 ${defaultHeaderClassName}`,
+                className: `w-12 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => original.aggregatedResults.PASS || 0,
                 sortMethod: sortNumber
             },
             {
                 accessor: 'aggregatedResults.INFO',
                 Header: 'Info',
+                headerClassName: `w-12 ${defaultHeaderClassName}`,
+                className: `w-12 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => original.aggregatedResults.INFO || 0,
                 sortMethod: sortNumber
             },
             {
                 accessor: 'aggregatedResults.WARN',
                 Header: 'Warn',
+                headerClassName: `w-12 ${defaultHeaderClassName}`,
+                className: `w-12 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => original.aggregatedResults.WARN || 0,
                 sortMethod: sortNumber
             },
             {
                 accessor: 'aggregatedResults.NOTE',
                 Header: 'Note',
+                headerClassName: `w-12 ${defaultHeaderClassName}`,
+                className: `w-12 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => original.aggregatedResults.NOTE || 0,
                 sortMethod: sortNumber
             }
@@ -323,7 +345,7 @@ class BenchmarksPage extends Component {
                     {this.renderScanButton()}
                 </div>
                 <div className="flex flex-1 border-t border-primary-300 bg-base-200">
-                    <div className="w-full overflow-auto bg-base-100 rounded-sm shadow">
+                    <div className="rounded-sm shadow border-primary-300 bg-base-100 w-full overflow-hidden">
                         {this.renderTable()}
                     </div>
                     {this.renderBenchmarksSidePanel()}

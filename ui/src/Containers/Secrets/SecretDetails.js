@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import CollapsibleCard from 'Components/CollapsibleCard';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import KeyValuePairs from 'Components/KeyValuePairs';
-import * as Icon from 'react-feather';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 
@@ -73,10 +72,9 @@ const getDeploymentRelationships = secret => {
 
         if (relationships && relationships.length !== 0) {
             return relationships.map(deployment => (
-                <div key={deployment.id} className="w-full h-full p-3 font-500">
-                    <Icon.Circle className="h-2 w-2 mr-3" />
+                <div key={deployment.id} className="w-full h-full p-3">
                     <Link
-                        className="font-500 text-primary-600 hover:text-primary-800"
+                        className="tracking-normal text-primary-700 hover:text-primary-800"
                         to={`/main/risk/${deployment.id}`}
                     >
                         {deployment.name}
@@ -95,11 +93,11 @@ const getDeploymentRelationships = secret => {
 const renderCert = cert => (
     <div className="w-full h-full font-500">
         <KeyValuePairs data={cert} keyValueMap={secretCertFieldsMap} />
-        <span className="font-700 ">Issuer:</span>
+        <span className="font-700 pt-3 block">Issuer:</span>
         <div className="w-full h-full pl-5 font-500">
             <KeyValuePairs data={cert.issuer} keyValueMap={secretFileCertNameMap} />
         </div>
-        <span className="font-700 ">Subject:</span>
+        <span className="font-700 pt-3 block">Subject:</span>
         <div className="w-full h-full pl-5 font-500">
             <KeyValuePairs data={cert.subject} keyValueMap={secretFileCertNameMap} />
         </div>
@@ -107,7 +105,7 @@ const renderCert = cert => (
 );
 
 const renderFileCard = file => (
-    <div className="px-3 py-4 w-full overflow-y-scroll">
+    <div className="px-3 py-4 w-full">
         <div className="bg-base-100 shadow text-primary-600 tracking-wide">
             <CollapsibleCard title={file.name}>
                 <div className="w-full h-full p-3 font-500">
@@ -124,8 +122,8 @@ const renderDataDetails = secret => secret.files.map(file => renderFileCard(file
 const SecretDetails = ({ secret }) => {
     if (!secret) return <NoResultsMessage message="No Secret Details Available" />;
     return (
-        <div className="h-full w-full bg-base-200">
-            <div className="px-3 py-4 w-full overflow-y-scroll">
+        <div className="h-full w-full bg-base-200 overflow-auto">
+            <div className="px-3 py-4 w-full">
                 <div className="bg-base-100 shadow text-primary-600 tracking-wide">
                     <CollapsibleCard title="Overview">
                         <div className="h-full">
@@ -136,7 +134,7 @@ const SecretDetails = ({ secret }) => {
                     </CollapsibleCard>
                 </div>
             </div>
-            <div data-test-id="deployments-card" className="px-3 py-4 w-full overflow-y-scroll">
+            <div data-test-id="deployments-card" className="px-3 py-4 w-full">
                 <div className="bg-base-100 shadow text-primary-600 tracking-wide">
                     <CollapsibleCard title="Deployments">
                         {getDeploymentRelationships(secret)}

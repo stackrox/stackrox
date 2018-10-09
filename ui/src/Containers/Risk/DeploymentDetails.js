@@ -93,10 +93,10 @@ class DeploymentDetails extends Component {
             );
         }
         return (
-            <div className="flex py-3 border-b border-base-300">
-                <div className="pr-1 font-700">Image Name:</div>
+            <div className="py-3 pb-2 leading-normal border-b border-base-300">
+                <div className="font-700 inline">Image Name: </div>
                 <Link
-                    className="font-600 text-primary-600 hover:text-primary-800 word-break"
+                    className="font-600 text-primary-600 hover:text-primary-800 leading-normal word-break"
                     to={`/main/images/${image.id}`}
                 >
                     {image.name.fullName}
@@ -129,7 +129,7 @@ class DeploymentDetails extends Component {
                         volume[key] && (
                             <div key={`${volume.name}-${i}`} className="py-1 font-600">
                                 <span className=" pr-1">{capitalize(lowerCase(key))}:</span>
-                                <span className="text-accent-400 italic">
+                                <span className="text-accent-800 italic">
                                     {volume[key].toString()}
                                 </span>
                             </div>
@@ -145,11 +145,11 @@ class DeploymentDetails extends Component {
             <div key={idx} className="py-2">
                 <div key={`${secret.name}-${idx}`} className="py-1 font-600">
                     <span className=" pr-1">Name:</span>
-                    <span className="text-accent-400 italic">{secret.name}</span>
+                    <span className="text-accent-800 italic">{secret.name}</span>
                 </div>
                 <div key={`${secret.path}-${idx}`} className="py-1 font-600">
                     <span className=" pr-1">Container Path:</span>
-                    <span className="text-accent-400 italic">{secret.path}</span>
+                    <span className="text-accent-800 italic">{secret.path}</span>
                 </div>
             </div>
         ));
@@ -166,21 +166,21 @@ class DeploymentDetails extends Component {
                     <div key={index} data-test-id="deployment-container-configuration">
                         {this.renderContainerImage(container.image)}
                         {data && <KeyValuePairs data={data} keyValueMap={containerConfigMap} />}
-                        <div className="flex py-3 border-b border-base-300">
+                        <div className="py-3 border-b border-base-300">
                             <div className="pr-1 font-700 ">Resources:</div>
-                            <ul className="ml-4 mt-2 w-full list-reset">
+                            <ul className="ml-2 mt-2 w-full list-reset">
                                 {this.renderResources(container.resources)}
                             </ul>
                         </div>
                         <div className="py-3 border-b border-base-300">
                             <div className="pr-1 font-700">Mounts:</div>
-                            <ul className="ml-4 mt-2 w-full list-reset">
+                            <ul className="ml-2 mt-2 w-full list-reset">
                                 {this.renderContainerVolumes(container.volumes)}
                             </ul>
                         </div>
                         <div className="py-3 border-b border-base-300">
                             <div className="pr-1 font-700">Secrets:</div>
-                            <ul className="ml-4 mt-2 w-full list-reset">
+                            <ul className="ml-2 mt-2 w-full list-reset">
                                 {this.renderContainerSecrets(container.secrets)}
                             </ul>
                         </div>

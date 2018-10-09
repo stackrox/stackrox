@@ -10,11 +10,11 @@ class Tabs extends Component {
         onTabClick: null,
         default: null,
         tabClass:
-            'tab tracking-wide bg-base-100 font-700 hover:text-base-600 px-2 px-4 py-3 text-base-500 text-sm uppercase',
+            'tab tracking-wide bg-base-100 font-700 hover:text-base-600 px-2 px-3 py-3 text-base-500 text-sm uppercase',
         tabActiveClass:
-            'tab tab-active tracking-wide bg-base-200 text-primary-700 font-700 px-2 text-sm uppercase px-4 py-3',
+            'tab tab-active tracking-wide bg-base-200 text-primary-700 font-700 px-2 text-sm uppercase px-3 py-3',
         tabDisabledClass:
-            'tab disabled tracking-wide bg-base-100 font-700 px-2 px-4 py-3 text-base-500 text-sm uppercase',
+            'tab disabled tracking-wide bg-base-100 font-700 px-2 px-3 py-3 text-base-500 text-sm uppercase',
         tabContentBgColor: 'bg-base-200'
     };
 

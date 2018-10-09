@@ -11,12 +11,12 @@ const Panel = props => (
         <div className="border-b border-base-400">
             <div className="flex w-full h-12 word-break">
                 <div
-                    className="flex flex-1 text-base-600 uppercase items-center tracking-wide px-4 pt-1 leading-normal font-700"
+                    className="flex flex-1 text-base-600 uppercase items-center tracking-wide pl-4 pt-1 leading-normal font-700"
                     data-test-id="panel-header"
                 >
                     {props.header}
                 </div>
-                <div className="panel-actions relative flex items-center px-3">{props.buttons}</div>
+                <div className="panel-actions relative flex items-center">{props.buttons}</div>
                 {props.headerComponents && (
                     <div className="flex items-center pr-3 relative">{props.headerComponents}</div>
                 )}
