@@ -157,22 +157,22 @@ class ImageDetails extends Component {
                         - {ci.original.summary}
                     </div>
                 ),
-                headerClassName: 'font-600 border-b border-base-300',
-                className: 'pointer-events-none'
+                headerClassName: 'font-600 border-b border-base-300 flex items-end',
+                className: 'pointer-events-none flex items-center justify-end'
             },
             {
                 Header: 'CVSS',
                 accessor: 'cvss',
                 width: 50,
-                headerClassName: 'font-600 border-b border-base-300',
-                className: 'text-right self-center pointer-events-none'
+                headerClassName: 'font-600 border-b border-base-300 flex items-end justify-end',
+                className: 'pointer-events-none flex items-center justify-end'
             },
             {
                 Header: 'Fixed',
                 accessor: 'fixedBy',
                 width: 130,
-                headerClassName: 'font-600 border-b border-base-300',
-                className: 'text-right self-center pointer-events-none'
+                headerClassName: 'font-600 border-b border-base-300 flex items-end',
+                className: 'pointer-events-none flex items-center justify-end'
             }
         ];
         return (
@@ -209,7 +209,7 @@ class ImageDetails extends Component {
             {
                 expander: true,
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: 'w-1/8 pointer-events-none self-center',
+                className: 'w-1/8 pointer-events-none flex items-center justify-end',
                 Expander: ({ isExpanded, ...rest }) => {
                     if (rest.original.vulns.length === 0) return '';
                     const className = 'rt-expander w-1 pt-2 pointer-events-auto';
@@ -225,13 +225,13 @@ class ImageDetails extends Component {
             {
                 Header: 'Version',
                 accessor: 'version',
-                className: 'text-right pr-4 self-center',
+                className: 'pr-4 flex items-center justify-end',
                 headerClassName: 'font-600 text-right border-b border-base-300 border-r-0 pr-4'
             },
             {
                 Header: 'CVEs',
                 accessor: 'vulns.length',
-                className: 'w-1/8 text-right pr-4 self-center',
+                className: 'w-1/8 pr-4 flex items-center justify-end',
                 headerClassName:
                     'w-1/8 font-600 text-right border-b border-base-300 border-r-0 pr-4'
             }
