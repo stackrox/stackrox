@@ -65,7 +65,8 @@
     "cypress-open": "cypress open",
     "test-e2e-local": "cypress run",
     "test-e2e-ci": "cypress run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.json",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "postinstall": "node ./scripts/spdy-issue47-quickfix.js"
   },
   "proxy": {
     "/v1": {
