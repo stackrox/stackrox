@@ -34,8 +34,6 @@ message Alert {
     Enforcement enforcement                  = 6;
 
     google.protobuf.Timestamp time           = 7;
-    bool stale                               = 8;
-    google.protobuf.Timestamp marked_stale   = 9;
     google.protobuf.Timestamp first_occurred = 10;
     ViolationState state                     = 11;
     google.protobuf.Timestamp snooze_till    = 12;
@@ -68,8 +66,7 @@ message ListAlert {
     google.protobuf.Timestamp time          = 3;
     ListAlertPolicy policy                  = 4;
     ListAlertDeployment deployment          = 5;
-    bool stale                              = 6;
-    google.protobuf.Timestamp marked_stale  = 7;
+    ViolationState state                    = 6;
 }
 
 enum ViolationState {

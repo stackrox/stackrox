@@ -515,14 +515,13 @@ class Services extends BaseService {
         }
     }
 
-    static applyKillEnforcement(String podId, String namespace, String containerId) {
+    static applyKillEnforcement(String podId, String containerId) {
         SensorEventServiceOuterClass.SensorEnforcement.Builder killEnforcementBuilder =
                 SensorEventServiceOuterClass.SensorEnforcement.newBuilder()
                         .setEnforcement(EnforcementAction.KILL_POD_ENFORCEMENT)
                         .setContainerInstance(SensorEventServiceOuterClass.ContainerInstanceEnforcement.newBuilder()
                                 .setContainerInstanceId(containerId)
                                 .setPodId(podId)
-                                .setNamespace(namespace)
                         )
         return applyEnforcement(killEnforcementBuilder)
     }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	indexMocks "github.com/stackrox/rox/central/alert/index/mocks"
 	searchMocks "github.com/stackrox/rox/central/alert/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/alert/store/mocks"
@@ -69,7 +68,7 @@ func (s *alertDataStoreTestSuite) TestSearchListAlerts() {
 }
 
 func (s *alertDataStoreTestSuite) TestCountAlerts() {
-	expectedQ := search.NewQueryBuilder().AddBools(search.Stale, false).ProtoQuery()
+	expectedQ := search.NewQueryBuilder().AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String()).ProtoQuery()
 	s.searcher.On("SearchListAlerts", expectedQ).Return(alerttest.NewFakeListAlertSlice(), errFake)
 
 	result, err := s.dataStore.CountAlerts()
@@ -121,16 +120,10 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStale() {
 	s.storage.On("UpdateAlert", mock.Anything).Return(nil)
 	s.indexer.On("AddAlert", mock.Anything).Return(nil)
 
-	before := types.TimestampNow()
 	err := s.dataStore.MarkAlertStale(alerttest.FakeAlertID)
-	after := types.TimestampNow()
-
 	s.NoError(err)
-	s.True(fakeAlert.GetStale())
-	s.True(before.GetSeconds() <= fakeAlert.GetMarkedStale().GetSeconds())
-	s.True(before.GetNanos() <= fakeAlert.GetMarkedStale().GetNanos())
-	s.True(fakeAlert.GetMarkedStale().GetSeconds() <= after.GetSeconds())
-	s.True(fakeAlert.GetMarkedStale().GetNanos() <= after.GetNanos())
+
+	s.Equal(v1.ViolationState_RESOLVED, fakeAlert.GetState())
 
 	s.storage.AssertExpectations(s.T())
 	s.indexer.AssertExpectations(s.T())

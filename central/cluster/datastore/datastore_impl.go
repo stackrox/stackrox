@@ -112,7 +112,7 @@ func (ds *datastoreImpl) getDeployments(cluster *v1.Cluster) ([]*v1.ListDeployme
 
 // TODO(cgorman) Make this a search once the document mapping goes in
 func (ds *datastoreImpl) getAlerts(deployment *v1.ListDeployment) ([]*v1.ListAlert, error) {
-	qb := search.NewQueryBuilder().AddBools(search.Stale, false).AddStrings(search.DeploymentID, deployment.GetId())
+	qb := search.NewQueryBuilder().AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String()).AddStrings(search.DeploymentID, deployment.GetId())
 
 	existingAlerts, err := ds.ads.ListAlerts(&v1.ListAlertsRequest{
 		Query: qb.Query(),

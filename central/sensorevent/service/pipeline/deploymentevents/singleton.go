@@ -5,7 +5,7 @@ import (
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
+	"github.com/stackrox/rox/central/detection/lifecycle"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
@@ -21,7 +21,7 @@ func initialize() {
 	pi = NewPipeline(clusterDataStore.Singleton(),
 		deploymentDataStore.Singleton(),
 		imageDataStore.Singleton(),
-		deployTimeDetection.SingletonDetector(),
+		lifecycle.SingletonManager(),
 		graph.Singleton())
 }
 

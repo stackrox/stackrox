@@ -23,7 +23,7 @@ const (
 )
 
 var alertQuery = func() string {
-	return search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.Label, "hello=world").AddBools(search.Stale, false).Query()
+	return search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.Label, "hello=world").AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String()).Query()
 }()
 
 var (
@@ -262,7 +262,7 @@ func verifyStaleAlerts(t *testing.T) {
 
 	service := v1.NewAlertServiceClient(conn)
 	request := alertRequestOptions
-	request.Query = search.NewQueryBuilder().AddBools(search.Stale, true).Query()
+	request.Query = search.NewQueryBuilder().AddStrings(search.ViolationState, v1.ViolationState_RESOLVED.String()).Query()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	alerts, err := service.ListAlerts(ctx, &request)

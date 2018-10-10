@@ -3,7 +3,7 @@ package deploymentevents
 import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
+	"github.com/stackrox/rox/central/detection/lifecycle"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
@@ -20,14 +20,14 @@ var (
 
 // NewPipeline returns a new instance of Pipeline.
 func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentDataStore.DataStore,
-	images imageDataStore.DataStore, detector deployTimeDetection.Detector,
+	images imageDataStore.DataStore, manager lifecycle.Manager,
 	graphEvaluator graph.Evaluator) pipeline.Pipeline {
 	return &pipelineImpl{
 		validateInput:     newValidateInput(),
 		clusterEnrichment: newClusterEnrichment(clusters),
 		updateImages:      newUpdateImages(images),
 		persistDeployment: newPersistDeployment(deployments),
-		createResponse:    newCreateResponse(detector.DeploymentUpdated, detector.DeploymentRemoved),
+		createResponse:    newCreateResponse(manager.DeploymentUpdated, manager.DeploymentRemoved),
 
 		graphEvaluator: graphEvaluator,
 	}

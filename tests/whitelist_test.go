@@ -63,7 +63,7 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 	cancel()
 	require.NoError(t, err)
 
-	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, latestPolicy.GetName()).AddBools(search.Stale, false)
+	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, latestPolicy.GetName()).AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String())
 	alertService := v1.NewAlertServiceClient(conn)
 	waitForAlert(t, alertService, &v1.ListAlertsRequest{
 		Query: qb.Query(),
@@ -98,7 +98,7 @@ func verifyAlertForWhitelistRemoval(t *testing.T) {
 
 	alertService := v1.NewAlertServiceClient(conn)
 
-	qb = search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, latestPolicy.GetName()).AddBools(search.Stale, false)
+	qb = search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, latestPolicy.GetName()).AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String())
 	waitForAlert(t, alertService, &v1.ListAlertsRequest{
 		Query: qb.Query(),
 	}, 1)

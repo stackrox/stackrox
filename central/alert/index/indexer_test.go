@@ -5,6 +5,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -42,12 +43,12 @@ func (suite *alertIndexTestSuite) TestDefaultStaleness() {
 
 	suite.NoError(suite.indexer.AddAlert(fixtures.GetAlertWithID(nonStaleID)))
 	staleAlert := fixtures.GetAlertWithID(staleID)
-	staleAlert.Stale = true
+	staleAlert.State = v1.ViolationState_RESOLVED
 	suite.NoError(suite.indexer.AddAlert(staleAlert))
 
 	var cases = []struct {
 		name             string
-		staleValue       string
+		state            string
 		expectedAlertIDs []string
 	}{
 		{
@@ -55,13 +56,13 @@ func (suite *alertIndexTestSuite) TestDefaultStaleness() {
 			expectedAlertIDs: []string{nonStaleID},
 		},
 		{
-			name:             "stale = false",
-			staleValue:       "false",
+			name:             "state = active",
+			state:            v1.ViolationState_ACTIVE.String(),
 			expectedAlertIDs: []string{nonStaleID},
 		},
 		{
-			name:             "stale = true",
-			staleValue:       "true",
+			name:             "state = stale",
+			state:            v1.ViolationState_RESOLVED.String(),
 			expectedAlertIDs: []string{staleID},
 		},
 	}
@@ -69,8 +70,8 @@ func (suite *alertIndexTestSuite) TestDefaultStaleness() {
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
 			qb := search.NewQueryBuilder()
-			if c.staleValue != "" {
-				qb.AddStrings(search.Stale, c.staleValue)
+			if c.state != "" {
+				qb.AddStrings(search.ViolationState, c.state)
 			}
 			alerts, err := suite.indexer.SearchAlerts(qb.ProtoQuery())
 			assert.NoError(t, err)

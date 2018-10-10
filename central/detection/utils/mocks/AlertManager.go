@@ -48,29 +48,6 @@ func (_m *AlertManager) GetAlertsByDeployment(deploymentID string) ([]*v1.Alert,
 	return r0, r1
 }
 
-// GetAlertsByDeploymentAndPolicy provides a mock function with given fields: deploymentID, policyID
-func (_m *AlertManager) GetAlertsByDeploymentAndPolicy(deploymentID string, policyID string) (*v1.Alert, error) {
-	ret := _m.Called(deploymentID, policyID)
-
-	var r0 *v1.Alert
-	if rf, ok := ret.Get(0).(func(string, string) *v1.Alert); ok {
-		r0 = rf(deploymentID, policyID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*v1.Alert)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(deploymentID, policyID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetAlertsByDeploymentAndPolicyLifecycle provides a mock function with given fields: deploymentID, lifecycle
 func (_m *AlertManager) GetAlertsByDeploymentAndPolicyLifecycle(deploymentID string, lifecycle v1.LifecycleStage) ([]*v1.Alert, error) {
 	ret := _m.Called(deploymentID, lifecycle)
@@ -110,6 +87,29 @@ func (_m *AlertManager) GetAlertsByPolicy(policyID string) ([]*v1.Alert, error) 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(string) error); ok {
 		r1 = rf(policyID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetAlertsByPolicyAndLifecycle provides a mock function with given fields: policyID, lifecycle
+func (_m *AlertManager) GetAlertsByPolicyAndLifecycle(policyID string, lifecycle v1.LifecycleStage) ([]*v1.Alert, error) {
+	ret := _m.Called(policyID, lifecycle)
+
+	var r0 []*v1.Alert
+	if rf, ok := ret.Get(0).(func(string, v1.LifecycleStage) []*v1.Alert); ok {
+		r0 = rf(policyID, lifecycle)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*v1.Alert)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, v1.LifecycleStage) error); ok {
+		r1 = rf(policyID, lifecycle)
 	} else {
 		r1 = ret.Error(1)
 	}

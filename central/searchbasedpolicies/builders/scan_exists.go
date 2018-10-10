@@ -19,15 +19,15 @@ func (s ScanExistsQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[se
 		return
 	}
 
-	_, exists := optionsMap[search.ImageScanTime]
-	if !exists {
-		err = fmt.Errorf("%s: %s not in optionsMap", s.Name(), search.ImageScanTime)
+	_, err = getSearchFieldNotStored(search.ImageScanTime, optionsMap)
+	if err != nil {
+		err = fmt.Errorf("%s: %s", s.Name(), err)
 		return
 	}
 
 	q = search.NewQueryBuilder().AddNullField(search.ImageScanTime).ProtoQuery()
 
-	v = func(result search.Result) []*v1.Alert_Violation {
+	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*v1.Alert_Violation {
 		return []*v1.Alert_Violation{{Message: "Image has not been scanned"}}
 	}
 	return

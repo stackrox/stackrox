@@ -39,7 +39,7 @@ func (p *setImpl) UpsertPolicy(policy *v1.Policy) error {
 
 	cloned := proto.Clone(policy).(*v1.Policy)
 
-	searchBasedMatcher, err := matcher.ForPolicy(cloned, mappings.OptionsMap)
+	searchBasedMatcher, err := matcher.ForPolicy(cloned, mappings.OptionsMap, nil)
 	if err != nil {
 		return err
 	}

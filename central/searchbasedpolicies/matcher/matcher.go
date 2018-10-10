@@ -11,7 +11,7 @@ import (
 )
 
 // ForPolicy returns a matcher for the given policy.
-func ForPolicy(policy *v1.Policy, optionsMap map[search.FieldLabel]*v1.SearchField) (searchbasedpolicies.Matcher, error) {
+func ForPolicy(policy *v1.Policy, optionsMap map[search.FieldLabel]*v1.SearchField, processGetter searchbasedpolicies.ProcessIndicatorGetter) (searchbasedpolicies.Matcher, error) {
 	if policy.GetName() == "" {
 		return nil, fmt.Errorf("policy %+v doesn't have a name", policy)
 	}
@@ -31,5 +31,6 @@ func ForPolicy(policy *v1.Policy, optionsMap map[search.FieldLabel]*v1.SearchFie
 		q:                q,
 		violationPrinter: v,
 		policyName:       policy.GetName(),
+		processGetter:    processGetter,
 	}, nil
 }

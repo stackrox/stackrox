@@ -12,13 +12,6 @@ import (
 type EnvQueryBuilder struct {
 }
 
-func regexOrWildcard(valueInPolicy string) string {
-	if valueInPolicy == "" {
-		return search.WildcardString
-	}
-	return search.RegexQueryString(valueInPolicy)
-}
-
 // Query implements the PolicyQueryBuilder interface.
 func (e EnvQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	if fields.GetEnv().GetKey() == "" && fields.GetEnv().GetValue() == "" {
@@ -42,7 +35,7 @@ func (e EnvQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.Fi
 		[]search.FieldLabel{search.EnvironmentKey, search.EnvironmentValue},
 		[]string{keyQuery, valueQuery}).ProtoQuery()
 
-	v = func(result search.Result) []*v1.Alert_Violation {
+	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*v1.Alert_Violation {
 		keyMatches := result.Matches[keySearchField.GetFieldPath()]
 		valueMatches := result.Matches[valueSearchField.GetFieldPath()]
 		if len(keyMatches) == 0 || len(valueMatches) == 0 {

@@ -16,7 +16,12 @@ type PolicyQueryBuilder interface {
 }
 
 // A ViolationPrinter knows how to print violation messages from a search result.
-type ViolationPrinter func(search.Result) []*v1.Alert_Violation
+type ViolationPrinter func(search.Result, ProcessIndicatorGetter) []*v1.Alert_Violation
+
+// A ProcessIndicatorGetter knows how to retrieve process indicators given its id.
+type ProcessIndicatorGetter interface {
+	GetProcessIndicator(id string) (*v1.ProcessIndicator, bool, error)
+}
 
 // Searcher allows you to search objects.
 type Searcher interface {

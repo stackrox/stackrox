@@ -65,8 +65,7 @@ func convertAlertsToListAlerts(a *v1.Alert) *v1.ListAlert {
 	return &v1.ListAlert{
 		Id:             a.GetId(),
 		Time:           a.GetTime(),
-		Stale:          a.GetStale(),
-		MarkedStale:    a.GetMarkedStale(),
+		State:          a.GetState(),
 		LifecycleStage: a.GetLifecycleStage(),
 		Policy: &v1.ListAlertPolicy{
 			Id:          a.GetPolicy().GetId(),

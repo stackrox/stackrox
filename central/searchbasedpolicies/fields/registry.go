@@ -29,6 +29,5 @@ var Registry = []searchbasedpolicies.PolicyQueryBuilder{
 	builders.NewAddCapQueryBuilder(),
 	builders.NewDropCapQueryBuilder(),
 	resourcePolicy,
-	builders.NewProcessNameQueryBuilder(),
-	builders.NewProcessArgsQueryBuilder(),
+	builders.ProcessQueryBuilder{},
 }

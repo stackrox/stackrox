@@ -71,6 +71,8 @@ func searchFieldToMapping(sf *v1.SearchField) *mapping.FieldMapping {
 		fallthrough
 	case v1.SearchDataType_SEARCH_DATETIME:
 		fallthrough
+	case v1.SearchDataType_SEARCH_VIOLATION_STATE:
+		fallthrough
 	case v1.SearchDataType_SEARCH_SECRET_TYPE:
 		return setFieldMappingDefaults(mapping.NewNumericFieldMapping(), sf.GetStore())
 	default:

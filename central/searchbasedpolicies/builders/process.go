@@ -2,81 +2,110 @@ package builders
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// processNameQueryBuilder builds queries for process name field.
-type processNameQueryBuilder struct {
+// ProcessQueryBuilder builds queries for process name field.
+type ProcessQueryBuilder struct {
 }
 
-func (p processNameQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
-	processPolicy := fields.GetProcessPolicy()
-	if processPolicy == nil {
-		return
-	}
-	processName := processPolicy.Name
-	if len(processName) == 0 {
+// Query implements the PolicyQueryBuilder interface.
+func (p ProcessQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
+	processName := fields.GetProcessPolicy().GetName()
+	processArgs := fields.GetProcessPolicy().GetArgs()
+	if processName == "" && processArgs == "" {
 		return
 	}
 
-	searchField, err := getSearchField(search.ProcessName, optionsMap)
+	_, err = getSearchFieldNotStored(search.ProcessName, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", processName, err)
+		err = fmt.Errorf("%s: %s", p.Name(), err)
 		return
 	}
-
-	q = search.NewQueryBuilder().AddStringsHighlighted(search.ProcessName, processName).ProtoQuery()
-	v = violationPrinterForField(searchField.GetFieldPath(), func(match string) string {
-		return fmt.Sprintf("%s was in the process name", match)
-	})
-	return
-}
-
-func (p processNameQueryBuilder) Name() string {
-	return fmt.Sprintf("query builder for process name")
-}
-
-// processArgsQueryBuilder builds queries for process args queries.
-type processArgsQueryBuilder struct {
-}
-
-func (p processArgsQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
-	processPolicy := fields.GetProcessPolicy()
-	if processPolicy == nil {
-		return
-	}
-	processArgs := processPolicy.Args
-	if len(processArgs) == 0 {
-		return
-	}
-
-	searchField, err := getSearchField(search.ProcessArguments, optionsMap)
+	_, err = getSearchFieldNotStored(search.ProcessArguments, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", processArgs, err)
-		return
+		err = fmt.Errorf("%s: %s", p.Name(), search.ProcessArguments)
+	}
+	processIDSearchField, err := getSearchFieldNotStored(search.ProcessID, optionsMap)
+	if err != nil {
+		err = fmt.Errorf("%s: %s", p.Name(), err)
 	}
 
-	q = search.NewQueryBuilder().AddStringsHighlighted(search.ProcessArguments, processArgs).ProtoQuery()
-	v = violationPrinterForField(searchField.GetFieldPath(), func(match string) string {
-		return fmt.Sprintf("%s was in the process arguments", match)
-	})
+	fieldLabels := []search.FieldLabel{search.ProcessID}
+	queries := []string{search.WildcardString}
+	highlights := []bool{true}
+
+	if processName != "" {
+		fieldLabels = append(fieldLabels, search.ProcessName)
+		queries = append(queries, search.RegexQueryString(processName))
+		highlights = append(highlights, false)
+	}
+	if processArgs != "" {
+		fieldLabels = append(fieldLabels, search.ProcessArguments)
+		queries = append(queries, search.RegexQueryString(processArgs))
+		highlights = append(highlights, false)
+	}
+
+	q = search.NewQueryBuilder().AddLinkedFieldsWithHighlightValues(
+		fieldLabels, queries, highlights).ProtoQuery()
+
+	v = func(result search.Result, processGetter searchbasedpolicies.ProcessIndicatorGetter) []*v1.Alert_Violation {
+		matches := result.Matches[processIDSearchField.GetFieldPath()]
+		if len(result.Matches[processIDSearchField.GetFieldPath()]) == 0 {
+			logger.Errorf("ID %s matched process query, but couldn't find the matching id", result.ID)
+			return nil
+		}
+		if processGetter == nil {
+			logger.Errorf("Ran process policy %+v but had a nil process getter.", fields)
+			return nil
+		}
+		processes := make([]*v1.ProcessIndicator, 0, len(matches))
+		for _, processID := range matches {
+			process, exists, err := processGetter.GetProcessIndicator(processID)
+			if err != nil {
+				logger.Errorf("Error retrieving process with id %s from store", processID)
+				continue
+			}
+			if !exists { // Likely a race condition
+				continue
+			}
+			processes = append(processes, process)
+		}
+		if len(processes) == 0 {
+			return nil
+		}
+		sort.Slice(processes, func(i, j int) bool {
+			return protoconv.CompareProtoTimestamps(processes[i].GetSignal().GetTime(), processes[j].GetSignal().GetTime()) > 0
+		})
+		var messageBuilder strings.Builder
+		messageBuilder.WriteString("Found ")
+		if len(processes) == 1 {
+			messageBuilder.WriteString("process ")
+		} else {
+			messageBuilder.WriteString("processes ")
+		}
+		messageBuilder.WriteString("with ")
+		if processName != "" {
+			messageBuilder.WriteString(fmt.Sprintf("name matching '%s'", processName))
+			if processArgs != "" {
+				messageBuilder.WriteString(" and ")
+			}
+		}
+		if processArgs != "" {
+			messageBuilder.WriteString(fmt.Sprintf("args matching '%s'", processArgs))
+		}
+		return []*v1.Alert_Violation{{Message: messageBuilder.String(), Processes: processes}}
+	}
 	return
 }
 
 // Name implements the PolicyQueryBuilder interface.
-func (p processArgsQueryBuilder) Name() string {
-	return fmt.Sprintf("query builder for process arguments")
-}
-
-// NewProcessNameQueryBuilder returns a ready-to-use query builder for the process name field in policies.
-func NewProcessNameQueryBuilder() searchbasedpolicies.PolicyQueryBuilder {
-	return processNameQueryBuilder{}
-}
-
-// NewProcessArgsQueryBuilder returns a ready-to-use query builder for the process args field in policies.
-func NewProcessArgsQueryBuilder() searchbasedpolicies.PolicyQueryBuilder {
-	return processArgsQueryBuilder{}
+func (p ProcessQueryBuilder) Name() string {
+	return fmt.Sprintf("query builder for process policy")
 }

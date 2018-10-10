@@ -205,7 +205,7 @@ func (s *policyValidator) validateScope(scope *v1.Scope) error {
 }
 
 func compilesForBuildTime(policy *v1.Policy) error {
-	m, err := matcher.ForPolicy(policy, imageMappings.OptionsMap)
+	m, err := matcher.ForPolicy(policy, imageMappings.OptionsMap, nil)
 	if err != nil {
 		return fmt.Errorf("policy configuration is invalid for build time: %s", err)
 	}
@@ -216,7 +216,7 @@ func compilesForBuildTime(policy *v1.Policy) error {
 }
 
 func compilesForDeployTime(policy *v1.Policy) error {
-	m, err := matcher.ForPolicy(policy, deploymentMappings.OptionsMap)
+	m, err := matcher.ForPolicy(policy, deploymentMappings.OptionsMap, nil)
 	if err != nil {
 		return fmt.Errorf("policy configuration is invalid for deploy time: %s", err)
 	}
@@ -230,7 +230,7 @@ func compilesForDeployTime(policy *v1.Policy) error {
 }
 
 func compilesForRunTime(policy *v1.Policy) error {
-	m, err := matcher.ForPolicy(policy, deploymentMappings.OptionsMap)
+	m, err := matcher.ForPolicy(policy, deploymentMappings.OptionsMap, nil)
 	if err != nil {
 		return fmt.Errorf("policy configuration is invalid for run time: %s", err)
 	}

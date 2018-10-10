@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
-	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stretchr/testify/suite"
 )
@@ -22,19 +21,13 @@ type PolicyTestSuite struct {
 }
 
 func (suite *PolicyTestSuite) TestAddsCompilable() {
-	policySet := NewPolicySet(mocks.NewMockDataStore(gomock.NewController(suite.T())))
+	policySet := NewPolicySet(mocks.NewMockDataStore(gomock.NewController(suite.T())), nil)
 
 	err := policySet.UpsertPolicy(goodPolicy())
 	suite.NoError(err, "insertion should succeed")
 
 	hasMatch := false
-	policySet.ForEach(func(p *v1.Policy, m deploymentMatcher.Matcher) error {
-		if p.GetId() == "1" {
-			hasMatch = true
-		}
-		return nil
-	})
-	policySet.ForEachSearchBased(func(p *v1.Policy, matcher searchbasedpolicies.Matcher, pred predicate.Predicate) error {
+	policySet.ForEach(func(p *v1.Policy, matcher searchbasedpolicies.Matcher, pred predicate.Predicate) error {
 		if p.GetId() == "1" {
 			hasMatch = true
 		}
@@ -44,12 +37,12 @@ func (suite *PolicyTestSuite) TestAddsCompilable() {
 }
 
 func (suite *PolicyTestSuite) TestForOneSucceeds() {
-	policySet := NewPolicySet(mocks.NewMockDataStore(gomock.NewController(suite.T())))
+	policySet := NewPolicySet(mocks.NewMockDataStore(gomock.NewController(suite.T())), nil)
 
 	err := policySet.UpsertPolicy(goodPolicy())
 	suite.NoError(err, "insertion should succeed")
 
-	err = policySet.ForOne("1", func(p *v1.Policy, m deploymentMatcher.Matcher) error {
+	err = policySet.ForOne("1", func(p *v1.Policy, m searchbasedpolicies.Matcher, pred predicate.Predicate) error {
 		if p.GetId() != "1" {
 			return fmt.Errorf("wrong id served")
 		}
@@ -59,22 +52,22 @@ func (suite *PolicyTestSuite) TestForOneSucceeds() {
 }
 
 func (suite *PolicyTestSuite) TestForOneFails() {
-	policySet := NewPolicySet(mocks.NewMockDataStore(gomock.NewController(suite.T())))
+	policySet := NewPolicySet(mocks.NewMockDataStore(gomock.NewController(suite.T())), nil)
 
-	err := policySet.ForOne("1", func(p *v1.Policy, m deploymentMatcher.Matcher) error {
+	err := policySet.ForOne("1", func(p *v1.Policy, m searchbasedpolicies.Matcher, pred predicate.Predicate) error {
 		return nil
 	})
 	suite.Error(err, "for one should fail since no policies exist")
 }
 
 func (suite *PolicyTestSuite) TestThrowsErrorForNotCompilable() {
-	policySet := NewPolicySet(mocks.NewMockDataStore(gomock.NewController(suite.T())))
+	policySet := NewPolicySet(mocks.NewMockDataStore(gomock.NewController(suite.T())), nil)
 
 	err := policySet.UpsertPolicy(badPolicy())
 	suite.Error(err, "insertion should not succeed since the regex in the policy is bad")
 
 	hasMatch := false
-	policySet.ForEach(func(p *v1.Policy, m deploymentMatcher.Matcher) error {
+	policySet.ForEach(func(p *v1.Policy, m searchbasedpolicies.Matcher, pred predicate.Predicate) error {
 		if p.GetId() == "1" {
 			hasMatch = true
 		}

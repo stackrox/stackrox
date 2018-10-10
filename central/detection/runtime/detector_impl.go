@@ -5,25 +5,75 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deployment"
+	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
-	deploymentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/deployment/matcher"
+	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 type detectorImpl struct {
-	policySet deployment.PolicySet
+	policySet   deployment.PolicySet
+	deployments datastore.DataStore
 }
 
-// // Detect runs detection on a container, returning any generated alerts.
-func (d *detectorImpl) Detect(deployment *v1.Deployment) ([]*v1.Alert, error) {
+func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*v1.Alert, error) {
+	var newAlerts []*v1.Alert
+	err := d.policySet.ForOne(policyID, func(p *v1.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
+		violationsByDeployment, err := matcher.Match(d.deployments)
+		if err != nil {
+			return fmt.Errorf("matching policy %s: %s", p.GetName(), err)
+		}
+
+		for deploymentID, violations := range violationsByDeployment {
+			dep, exists, err := d.deployments.GetDeployment(deploymentID)
+			if err != nil {
+				return err
+			}
+			if !exists {
+				logger.Errorf("deployment with id '%s' had violations, but doesn't exist", deploymentID)
+				continue
+			}
+			if shouldProcess != nil && !shouldProcess(dep) {
+				continue
+			}
+			newAlerts = append(newAlerts, policyDeploymentAndViolationsToAlert(p, dep, violations))
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return newAlerts, nil
+}
+
+func (d *detectorImpl) UpsertPolicy(policy *v1.Policy) error {
+	return d.policySet.UpsertPolicy(policy)
+}
+
+func (d *detectorImpl) RemovePolicy(policyID string) error {
+	return d.policySet.RemovePolicy(policyID)
+}
+
+func (d *detectorImpl) AlertsForDeployment(deployment *v1.Deployment) ([]*v1.Alert, error) {
 	var alerts []*v1.Alert
-	d.policySet.ForEach(func(p *v1.Policy, matcher deploymentMatcher.Matcher) error {
-		if violations := matcher(deployment); len(violations) > 0 {
+	err := d.policySet.ForEach(func(p *v1.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
+		if shouldProcess != nil && !shouldProcess(deployment) {
+			return nil
+		}
+		violations, err := matcher.MatchOne(d.deployments, deployment.GetId())
+		if err != nil {
+			return fmt.Errorf("matching against deployment %s/%s: %s", deployment.GetNamespace(), deployment.GetName(), err)
+		}
+		if len(violations) > 0 {
 			alerts = append(alerts, policyDeploymentAndViolationsToAlert(p, deployment, violations))
 		}
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
 	return alerts, nil
 }
 
@@ -40,7 +90,7 @@ func policyDeploymentAndViolationsToAlert(policy *v1.Policy, deployment *v1.Depl
 		Violations:     violations,
 		Time:           ptypes.TimestampNow(),
 	}
-	if action, msg := PolicyAndDeploymentToEnforcement(policy, deployment); action != v1.EnforcementAction_UNSET_ENFORCEMENT {
+	if action, msg := policyAndDeploymentToEnforcement(policy, deployment); action != v1.EnforcementAction_UNSET_ENFORCEMENT {
 		alert.Enforcement = &v1.Alert_Enforcement{
 			Action:  action,
 			Message: msg,
@@ -49,8 +99,8 @@ func policyDeploymentAndViolationsToAlert(policy *v1.Policy, deployment *v1.Depl
 	return alert
 }
 
-// PolicyAndDeploymentToEnforcement returns enforcement info for a deployment violating a policy.
-func PolicyAndDeploymentToEnforcement(policy *v1.Policy, deployment *v1.Deployment) (enforcement v1.EnforcementAction, message string) {
+// policyAndDeploymentToEnforcement returns enforcement info for a deployment violating a policy.
+func policyAndDeploymentToEnforcement(policy *v1.Policy, deployment *v1.Deployment) (enforcement v1.EnforcementAction, message string) {
 	for _, enforcementAction := range policy.GetEnforcementActions() {
 		if enforcementAction == v1.EnforcementAction_KILL_POD_ENFORCEMENT {
 			return v1.EnforcementAction_KILL_POD_ENFORCEMENT, fmt.Sprintf("Deployment %s has pods killed in response to policy violation", deployment.GetName())

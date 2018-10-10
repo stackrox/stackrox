@@ -4,8 +4,7 @@ import (
 	"sync"
 
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/detection/runtime"
-	"github.com/stackrox/rox/central/detection/utils"
+	"github.com/stackrox/rox/central/detection/lifecycle"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 )
@@ -17,11 +16,7 @@ var (
 )
 
 func initialize() {
-	pi = NewPipeline(
-		processIndicatorDataStore.Singleton(),
-		runtime.SingletonDetector(),
-		utils.SingletonAlertManager(),
-		deploymentDataStore.Singleton())
+	pi = NewPipeline(processIndicatorDataStore.Singleton(), deploymentDataStore.Singleton(), lifecycle.SingletonManager())
 }
 
 // Singleton provides the instance of the Service interface to register.

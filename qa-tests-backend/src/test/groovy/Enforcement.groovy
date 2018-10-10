@@ -32,7 +32,6 @@ class Enforcement extends BaseSpecification {
         assert d.pods.size() > 0
         Services.applyKillEnforcement(
                 d.pods.get(0).getPodId(),
-                d.namespace,
                 d.pods.get(0).containerIds.get(0))
 
         then:

@@ -1,8 +1,6 @@
 package getters
 
 import (
-	"strconv"
-
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -20,19 +18,16 @@ func (m MockAlertsGetter) ListAlerts(req *v1.ListAlertsRequest) (alerts []*v1.Li
 		return nil, err
 	}
 
-	var staleValue bool
+	state := v1.ViolationState_ACTIVE.String()
 	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
 		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-		if ok && mfQ.MatchFieldQuery.GetField() == search.Stale.String() {
-			staleValue, err = strconv.ParseBool(mfQ.MatchFieldQuery.GetValue())
-			if err != nil {
-				panic(err)
-			}
+		if ok && mfQ.MatchFieldQuery.GetField() == search.ViolationState.String() {
+			state = mfQ.MatchFieldQuery.GetValue()
 		}
 	})
 
 	for _, a := range m.Alerts {
-		if a.GetStale() == staleValue {
+		if a.GetState().String() == state {
 			alerts = append(alerts, a)
 		}
 	}

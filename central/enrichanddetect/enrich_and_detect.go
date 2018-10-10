@@ -1,7 +1,7 @@
 package enrichanddetect
 
 import (
-	"github.com/stackrox/rox/central/detection/deploytime"
+	"github.com/stackrox/rox/central/detection/lifecycle"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/generated/api/v1"
 )
@@ -13,9 +13,9 @@ type EnricherAndDetector interface {
 }
 
 // New returns a new instance of a EnricherAndDetector.
-func New(enricher enrichment.Enricher, detector deploytime.Detector) EnricherAndDetector {
-	return &enricherAndDetecterImpl{
+func New(enricher enrichment.Enricher, manager lifecycle.Manager) EnricherAndDetector {
+	return &enricherAndDetectorImpl{
 		enricher: enricher,
-		detector: detector,
+		manager:  manager,
 	}
 }

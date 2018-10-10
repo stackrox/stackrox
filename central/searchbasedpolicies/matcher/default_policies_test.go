@@ -2,19 +2,27 @@ package matcher
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"testing"
 	"time"
 
 	"github.com/blevesearch/bleve"
+	"github.com/boltdb/bolt"
 	"github.com/gogo/protobuf/proto"
+	gogoTypes "github.com/gogo/protobuf/types"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	deploymentMappings "github.com/stackrox/rox/central/deployment/index/mappings"
 	"github.com/stackrox/rox/central/globalindex"
 	imageIndex "github.com/stackrox/rox/central/image/index"
 	imageMappings "github.com/stackrox/rox/central/image/index/mappings"
+	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
+	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
+	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
+	processIndicatorStore "github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/image/policies"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -35,9 +43,12 @@ func TestDefaultPolicies(t *testing.T) {
 type DefaultPoliciesTestSuite struct {
 	suite.Suite
 
-	bleveIndex        bleve.Index
+	bleveIndex bleve.Index
+	db         *bolt.DB
+
 	deploymentIndexer deploymentIndex.Indexer
 	imageIndexer      imageIndex.Indexer
+	processDataStore  processIndicatorDataStore.DataStore
 
 	defaultPolicies map[string]*v1.Policy
 }
@@ -47,8 +58,16 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
 	suite.Require().NoError(err)
 
+	suite.db, err = bolthelper.NewTemp("default_policies_test.db")
+	suite.Require().NoError(err)
+
 	suite.deploymentIndexer = deploymentIndex.New(suite.bleveIndex)
 	suite.imageIndexer = imageIndex.New(suite.bleveIndex)
+	processStore := processIndicatorStore.New(suite.db)
+	processIndexer := processIndicatorIndex.New(suite.bleveIndex)
+	processSearcher, err := processIndicatorSearch.New(processStore, processIndexer)
+	suite.Require().NoError(err)
+	suite.processDataStore = processIndicatorDataStore.New(processStore, processIndexer, processSearcher)
 
 	defaults.PoliciesPath = policies.Directory()
 
@@ -63,6 +82,8 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 
 func (suite *DefaultPoliciesTestSuite) TearDownTest() {
 	suite.bleveIndex.Close()
+	suite.db.Close()
+	os.Remove(suite.db.Path())
 }
 
 func (suite *DefaultPoliciesTestSuite) MustGetPolicy(name string) *v1.Policy {
@@ -121,6 +142,22 @@ func (suite *DefaultPoliciesTestSuite) imageIDFromDep(deployment *v1.Deployment)
 	return types.NewDigest(id).Digest()
 }
 
+func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args string) *v1.ProcessIndicator {
+	indicator := &v1.ProcessIndicator{
+		Id:           uuid.NewV4().String(),
+		DeploymentId: deploymentID,
+		Signal: &v1.ProcessSignal{
+			Name: name,
+			Args: args,
+			Time: gogoTypes.TimestampNow(),
+		},
+	}
+	inserted, err := suite.processDataStore.AddProcessIndicator(indicator)
+	suite.True(inserted)
+	suite.NoError(err)
+	return indicator
+}
+
 func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	fixtureDep := fixtures.GetDeployment()
 	suite.mustIndexDepAndImages(fixtureDep)
@@ -133,13 +170,13 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			Tag:      "1.10",
 		},
 	}
-	nginx110dep := &v1.Deployment{
+	nginx110Dep := &v1.Deployment{
 		Id: "nginx110",
 		Containers: []*v1.Container{
 			{Image: nginx110},
 		},
 	}
-	suite.mustIndexDepAndImages(nginx110dep)
+	suite.mustIndexDepAndImages(nginx110Dep)
 
 	oldScannedTime := time.Now().Add(-31 * 24 * time.Hour)
 	oldScannedImage := &v1.Image{
@@ -382,6 +419,19 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.mustIndexDepAndImages(depWithAllResourceLimitsRequestsSpecified)
 
+	// Index processes
+	aptgetIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "apt-get", "install nmap")
+
+	fixtureDepAptIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "apt", "")
+	sysAdminDepAptIndicator := suite.mustAddIndicator(sysAdminDep.GetId(), "apt", "install blah")
+
+	kubeletIndicator := suite.mustAddIndicator(containerPort22Dep.GetId(), "curl", "https://12.13.14.15:10250")
+	kubeletIndicator2 := suite.mustAddIndicator(containerPort22Dep.GetId(), "wget", "https://heapster.kube-system/metrics")
+
+	nmapIndicatorfixtureDep1 := suite.mustAddIndicator(fixtureDep.GetId(), "nmap", "blah")
+	nmapIndicatorfixtureDep2 := suite.mustAddIndicator(fixtureDep.GetId(), "nmap", "blah2")
+	nmapIndicatorNginx110Dep := suite.mustAddIndicator(nginx110Dep.GetId(), "nmap", "")
+
 	// Find all the deployments indexed.
 	allDeployments, err := suite.deploymentIndexer.Search(search.EmptyQuery())
 	suite.NoError(err)
@@ -425,7 +475,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "Image remote 'library/nginx' matched nginx",
 					},
 				},
-				nginx110dep.GetId(): {
+				nginx110Dep.GetId(): {
 					{
 						Message: "Image tag '1.10' matched 1.10",
 					},
@@ -756,12 +806,68 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				},
 			},
 		},
+		{
+			policyName: "apt-get Execution",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				fixtureDep.GetId(): {
+					{
+						Message:   "Found process with name matching 'apt-get$'",
+						Processes: []*v1.ProcessIndicator{aptgetIndicator},
+					},
+				},
+			},
+		},
+		{
+			policyName: "nmap Execution",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				fixtureDep.GetId(): {
+					{
+						Message:   "Found processes with name matching 'nmap$'",
+						Processes: []*v1.ProcessIndicator{nmapIndicatorfixtureDep2, nmapIndicatorfixtureDep1},
+					},
+				},
+				nginx110Dep.GetId(): {
+					{
+						Message:   "Found process with name matching 'nmap$'",
+						Processes: []*v1.ProcessIndicator{nmapIndicatorNginx110Dep},
+					},
+				},
+			},
+		},
+		{
+			policyName: "Process Targeting Cluster Kubelet Endpoint",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				containerPort22Dep.GetId(): {
+					{
+						Message:   "Found processes with args matching '(https?://)?(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\:(10250|10248|10255)|heapster\\.kube\\-system/metrics|KUBERNETES_PORT_443_TCP_ADDR|KUBERNETES_SERVICE_HOST).*'",
+						Processes: []*v1.ProcessIndicator{kubeletIndicator2, kubeletIndicator},
+					},
+				},
+			},
+		},
+		{
+			policyName: "apt Execution",
+			expectedViolations: map[string][]*v1.Alert_Violation{
+				fixtureDep.GetId(): {
+					{
+						Message:   "Found process with name matching 'apt$'",
+						Processes: []*v1.ProcessIndicator{fixtureDepAptIndicator},
+					},
+				},
+				sysAdminDep.GetId(): {
+					{
+						Message:   "Found process with name matching 'apt$'",
+						Processes: []*v1.ProcessIndicator{sysAdminDepAptIndicator},
+					},
+				},
+			},
+		},
 	}
 
 	for _, c := range deploymentTestCases {
 		p := suite.MustGetPolicy(c.policyName)
 		suite.T().Run(c.policyName, func(t *testing.T) {
-			m, err := ForPolicy(p, deploymentMappings.OptionsMap)
+			m, err := ForPolicy(p, deploymentMappings.OptionsMap, suite.processDataStore)
 			require.NoError(t, err)
 			matches, err := m.Match(suite.deploymentIndexer)
 			require.NoError(t, err)
@@ -793,7 +899,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 					continue
 				}
 				assert.ElementsMatch(t, violations, got, "Expected violations %+v don't match what we got %+v", violations, got)
-
 				// Test match one
 				gotFromMatchOne, err := m.MatchOne(suite.deploymentIndexer, id)
 				require.NoError(t, err)
@@ -827,7 +932,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "Image remote 'library/nginx' matched nginx",
 					},
 				},
-				suite.imageIDFromDep(nginx110dep): {
+				suite.imageIDFromDep(nginx110Dep): {
 					{
 						Message: "Image tag '1.10' matched 1.10",
 					},
@@ -1053,7 +1158,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	for _, c := range imageTestCases {
 		p := suite.MustGetPolicy(c.policyName)
 		suite.T().Run(fmt.Sprintf("%s (on images)", c.policyName), func(t *testing.T) {
-			m, err := ForPolicy(p, imageMappings.OptionsMap)
+			m, err := ForPolicy(p, imageMappings.OptionsMap, nil)
 			require.NoError(t, err)
 			matches, err := m.Match(suite.imageIndexer)
 			require.NoError(t, err)

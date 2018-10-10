@@ -29,16 +29,17 @@ func (ds *datastoreImpl) GetProcessIndicators() ([]*v1.ProcessIndicator, error) 
 	return ds.storage.GetProcessIndicators()
 }
 
-func (ds *datastoreImpl) AddProcessIndicator(i *v1.ProcessIndicator) error {
-	inserted, err := ds.storage.AddProcessIndicator(i)
+func (ds *datastoreImpl) AddProcessIndicator(i *v1.ProcessIndicator) (inserted bool, err error) {
+	inserted, err = ds.storage.AddProcessIndicator(i)
 	if err != nil {
-		return err
+		return
 	}
 	// This logic deduplicates indicators
 	if !inserted {
-		return nil
+		return
 	}
-	return ds.indexer.AddProcessIndicator(i)
+	err = ds.indexer.AddProcessIndicator(i)
+	return
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicator(id string) error {

@@ -1,8 +1,7 @@
 package utils
 
 import (
-	"fmt"
-
+	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
@@ -16,10 +15,13 @@ type alertManagerImpl struct {
 	alerts   alertDataStore.DataStore
 }
 
+func activeAlertsQueryBuilder() *search.QueryBuilder {
+	return search.NewQueryBuilder().AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String())
+}
+
 // GetAlertsByPolicy get all of the alerts that match the policy
 func (d *alertManagerImpl) GetAlertsByPolicy(policyID string) ([]*v1.Alert, error) {
-	qb := search.NewQueryBuilder().
-		AddBools(search.Stale, false).
+	qb := activeAlertsQueryBuilder().
 		AddStrings(search.PolicyID, policyID)
 
 	return d.alerts.SearchRawAlerts(qb.ProtoQuery())
@@ -27,17 +29,15 @@ func (d *alertManagerImpl) GetAlertsByPolicy(policyID string) ([]*v1.Alert, erro
 
 // GetAlertsByDeployment get all of the alerts that match the deployment
 func (d *alertManagerImpl) GetAlertsByDeployment(deploymentID string) ([]*v1.Alert, error) {
-	qb := search.NewQueryBuilder().
-		AddBools(search.Stale, false).
+	qb := activeAlertsQueryBuilder().
 		AddStrings(search.DeploymentID, deploymentID)
 
 	return d.alerts.SearchRawAlerts(qb.ProtoQuery())
 }
 
-func (d *alertManagerImpl) GetAlertsByDeploymentAndPolicyLifecycle(deploymentID string, lifecycle v1.LifecycleStage) ([]*v1.Alert, error) {
-	q := search.NewQueryBuilder().
-		AddBools(search.Stale, false).
-		AddStrings(search.DeploymentID, deploymentID).
+func (d *alertManagerImpl) GetAlertsByPolicyAndLifecycle(policyID string, lifecycle v1.LifecycleStage) ([]*v1.Alert, error) {
+	q := activeAlertsQueryBuilder().
+		AddStrings(search.PolicyID, policyID).
 		AddStrings(search.LifecycleStage, lifecycle.String()).ProtoQuery()
 
 	alerts, err := d.alerts.SearchRawAlerts(q)
@@ -47,23 +47,16 @@ func (d *alertManagerImpl) GetAlertsByDeploymentAndPolicyLifecycle(deploymentID 
 	return alerts, nil
 }
 
-func (d *alertManagerImpl) GetAlertsByDeploymentAndPolicy(deploymentID, policyID string) (*v1.Alert, error) {
-	q := search.NewQueryBuilder().
-		AddBools(search.Stale, false).
+func (d *alertManagerImpl) GetAlertsByDeploymentAndPolicyLifecycle(deploymentID string, lifecycle v1.LifecycleStage) ([]*v1.Alert, error) {
+	q := activeAlertsQueryBuilder().
 		AddStrings(search.DeploymentID, deploymentID).
-		AddStrings(search.PolicyID, policyID).ProtoQuery()
+		AddStrings(search.LifecycleStage, lifecycle.String()).ProtoQuery()
 
 	alerts, err := d.alerts.SearchRawAlerts(q)
 	if err != nil {
 		return nil, err
 	}
-	if len(alerts) > 1 {
-		return nil, fmt.Errorf("found multiple active alerts for deployment %s and policy %s", deploymentID, policyID)
-	}
-	if len(alerts) == 1 {
-		return alerts[0], nil
-	}
-	return nil, nil
+	return alerts, nil
 }
 
 // AlertAndNotify inserts and notifies of any new alerts (alerts in current but not in previous) deduplicated and
@@ -96,9 +89,7 @@ func (d *alertManagerImpl) updateBatch(alertsToMark []*v1.Alert) error {
 func (d *alertManagerImpl) markAlertsStale(alertsToMark []*v1.Alert) error {
 	errList := errorhelpers.NewErrorList("Error marking alerts as stale: ")
 	for _, existingAlert := range alertsToMark {
-		existingAlert.Stale = true
-		existingAlert.MarkedStale = ptypes.TimestampNow()
-		errList.AddError(d.alerts.UpdateAlert(existingAlert))
+		errList.AddError(d.alerts.MarkAlertStale(existingAlert.GetId()))
 	}
 	return errList.ToError()
 }
@@ -111,8 +102,28 @@ func (d *alertManagerImpl) notifyAndUpdateBatch(alertsToMark []*v1.Alert) error 
 	return d.updateBatch(alertsToMark)
 }
 
+// We want to avoid continuously updating a runtime alert just because we receive a new process from it.
+func equalRuntimeAlerts(old, new *v1.Alert) bool {
+	if old.GetLifecycleStage() != v1.LifecycleStage_RUN_TIME || new.GetLifecycleStage() != v1.LifecycleStage_RUN_TIME {
+		return false
+	}
+	if len(old.GetViolations()) != len(new.GetViolations()) {
+		return false
+	}
+
+	for i, oldViolation := range old.GetViolations() {
+		if !proto.Equal(oldViolation, new.GetViolations()[i]) {
+			return false
+		}
+	}
+	return true
+}
+
 // MergeAlerts merges two alerts.
 func mergeAlerts(old, new *v1.Alert) *v1.Alert {
+	if equalRuntimeAlerts(old, new) {
+		return old
+	}
 	new.Id = old.GetId()
 	new.Enforcement = old.GetEnforcement()
 	new.FirstOccurred = old.GetFirstOccurred()

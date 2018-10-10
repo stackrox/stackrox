@@ -3,8 +3,10 @@ package runtime
 import (
 	"sync"
 
+	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deployment"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 )
 
@@ -28,7 +30,7 @@ func SingletonPolicySet() deployment.PolicySet {
 }
 
 func initialize() {
-	policySet = deployment.NewPolicySet(policyDataStore.Singleton())
+	policySet = deployment.NewPolicySet(policyDataStore.Singleton(), processDataStore.Singleton())
 	policies, err := policyDataStore.Singleton().GetPolicies()
 	if err != nil {
 		panic(err)
@@ -41,5 +43,5 @@ func initialize() {
 		}
 	}
 
-	detector = NewDetector(policySet)
+	detector = NewDetector(policySet, datastore.Singleton())
 }

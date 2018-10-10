@@ -34,7 +34,7 @@ func (c CVSSQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.F
 		[]search.FieldLabel{search.CVSS, search.CVE},
 		[]string{search.NumericQueryString(cvss.GetOp(), cvss.GetValue()), search.WildcardString}).
 		ProtoQuery()
-	v = func(result search.Result) []*v1.Alert_Violation {
+	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*v1.Alert_Violation {
 		cvssMatches := result.Matches[cvssSearchField.GetFieldPath()]
 		cveMatches := result.Matches[cveSearchField.GetFieldPath()]
 		if len(cvssMatches) != len(cveMatches) {

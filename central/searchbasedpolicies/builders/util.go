@@ -22,10 +22,17 @@ var (
 	}
 )
 
+func regexOrWildcard(valueInPolicy string) string {
+	if valueInPolicy == "" {
+		return search.WildcardString
+	}
+	return search.RegexQueryString(valueInPolicy)
+}
+
 func getSearchField(fieldLabel search.FieldLabel, optionsMap map[search.FieldLabel]*v1.SearchField) (*v1.SearchField, error) {
-	searchField, exists := optionsMap[fieldLabel]
-	if !exists {
-		return nil, fmt.Errorf("couldn't construct query: field %s not found in options map", fieldLabel)
+	searchField, err := getSearchFieldNotStored(fieldLabel, optionsMap)
+	if err != nil {
+		return nil, err
 	}
 	if !searchField.GetStore() {
 		return nil, fmt.Errorf("field %s is required for search, but not stored", fieldLabel)
@@ -33,8 +40,16 @@ func getSearchField(fieldLabel search.FieldLabel, optionsMap map[search.FieldLab
 	return searchField, nil
 }
 
+func getSearchFieldNotStored(fieldLabel search.FieldLabel, optionsMap map[search.FieldLabel]*v1.SearchField) (*v1.SearchField, error) {
+	searchField, exists := optionsMap[fieldLabel]
+	if !exists {
+		return nil, fmt.Errorf("couldn't construct query: field %s not found in options map", fieldLabel)
+	}
+	return searchField, nil
+}
+
 func violationPrinterForField(fieldPath string, matchToMessage func(match string) string) searchbasedpolicies.ViolationPrinter {
-	return func(result search.Result) []*v1.Alert_Violation {
+	return func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*v1.Alert_Violation {
 		matches := result.Matches[fieldPath]
 		if len(matches) == 0 {
 			return nil
@@ -65,9 +80,9 @@ func printKeyValuePolicy(kvp *v1.KeyValuePolicy) string {
 }
 
 func concatenatingPrinter(printers []searchbasedpolicies.ViolationPrinter) searchbasedpolicies.ViolationPrinter {
-	return func(result search.Result) (violations []*v1.Alert_Violation) {
+	return func(result search.Result, getter searchbasedpolicies.ProcessIndicatorGetter) (violations []*v1.Alert_Violation) {
 		for _, p := range printers {
-			violations = append(violations, p(result)...)
+			violations = append(violations, p(result, getter)...)
 		}
 		return
 	}

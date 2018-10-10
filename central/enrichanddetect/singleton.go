@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/detection/deploytime"
+	"github.com/stackrox/rox/central/detection/lifecycle"
 	"github.com/stackrox/rox/central/enrichment"
 )
 
@@ -16,7 +16,7 @@ var (
 )
 
 func initialize() {
-	en = New(enrichment.Singleton(), deploytime.SingletonDetector())
+	en = New(enrichment.Singleton(), lifecycle.SingletonManager())
 	loop = NewLoop(en, deploymentDataStore.Singleton())
 }
 

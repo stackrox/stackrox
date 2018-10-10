@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/alert/index"
 	"github.com/stackrox/rox/central/alert/search"
 	"github.com/stackrox/rox/central/alert/store"
@@ -67,7 +66,7 @@ func (ds *datastoreImpl) GetAlert(id string) (*v1.Alert, bool, error) {
 
 // CountAlerts returns the number of alerts that are active
 func (ds *datastoreImpl) CountAlerts() (int, error) {
-	alerts, err := ds.searcher.SearchListAlerts(searchCommon.NewQueryBuilder().AddBools(searchCommon.Stale, false).ProtoQuery())
+	alerts, err := ds.searcher.SearchListAlerts(searchCommon.NewQueryBuilder().AddStrings(searchCommon.ViolationState, v1.ViolationState_ACTIVE.String()).ProtoQuery())
 	return len(alerts), err
 }
 
@@ -95,7 +94,6 @@ func (ds *datastoreImpl) MarkAlertStale(id string) error {
 	if !exists {
 		return fmt.Errorf("alert with id '%s' does not exist", id)
 	}
-	alert.Stale = true
-	alert.MarkedStale = types.TimestampNow()
+	alert.State = v1.ViolationState_RESOLVED
 	return ds.UpdateAlert(alert)
 }

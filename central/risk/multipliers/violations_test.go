@@ -145,21 +145,21 @@ func TestViolationsScore(t *testing.T) {
 						Severity: v1.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy Don't Show Me!",
 					},
-					Stale: true,
+					State: v1.ViolationState_RESOLVED,
 				},
 				{
 					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_HIGH_SEVERITY,
 						Name:     "Policy Don't Show Me!",
 					},
-					Stale: true,
+					State: v1.ViolationState_RESOLVED,
 				},
 				{
 					Policy: &v1.ListAlertPolicy{
 						Severity: v1.Severity_LOW_SEVERITY,
 						Name:     "Policy Don't Show Me!",
 					},
-					Stale: true,
+					State: v1.ViolationState_RESOLVED,
 				},
 			},
 			expected: &v1.Risk_Result{

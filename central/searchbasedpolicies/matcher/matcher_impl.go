@@ -12,6 +12,7 @@ type matcherImpl struct {
 	q                *v1.Query
 	policyName       string
 	violationPrinter searchbasedpolicies.ViolationPrinter
+	processGetter    searchbasedpolicies.ProcessIndicatorGetter
 }
 
 func (m *matcherImpl) errorPrefixForMatchOne(id string) string {
@@ -35,7 +36,7 @@ func (m *matcherImpl) MatchOne(searcher searchbasedpolicies.Searcher, id string)
 		return nil, fmt.Errorf("%s: id of result %+v did not match passed id", m.errorPrefixForMatchOne(id), result)
 	}
 
-	violations := m.violationPrinter(result)
+	violations := m.violationPrinter(result, m.processGetter)
 	if len(violations) == 0 {
 		return nil, fmt.Errorf("%s: result matched query but couldn't find any violation messages: %+v", m.errorPrefixForMatchOne(id), result)
 	}
@@ -58,7 +59,7 @@ func (m *matcherImpl) Match(searcher searchbasedpolicies.Searcher) (map[string][
 			return nil, fmt.Errorf("matching policy %s: got empty result id: %+v", m.policyName, result)
 		}
 
-		violations := m.violationPrinter(result)
+		violations := m.violationPrinter(result, m.processGetter)
 		if len(violations) == 0 {
 			return nil, fmt.Errorf("matching policy %s: result matched query but couldn't find any violation messages: %+v", m.policyName, result)
 		}

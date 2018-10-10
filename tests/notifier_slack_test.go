@@ -175,7 +175,7 @@ func verifyAlertsForLatestTag(t *testing.T, alert *v1.Alert) {
 
 	service := v1.NewAlertServiceClient(conn)
 
-	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, expectedLatestTagPolicy).AddBools(search.Stale, false)
+	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, expectedLatestTagPolicy).AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String())
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	alerts, err := service.ListAlerts(ctx, &v1.ListAlertsRequest{
 		Query: qb.Query(),

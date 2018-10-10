@@ -57,7 +57,7 @@ func (c *dockerFileLineFieldQueryBuilder) Query(fields *v1.PolicyFields, options
 		[]search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
 		[]string{lineRule.GetInstruction(), search.RegexQueryString(lineRule.GetValue())}).ProtoQuery()
 
-	v = func(result search.Result) []*v1.Alert_Violation {
+	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*v1.Alert_Violation {
 		instMatches := result.Matches[instSearchField.GetFieldPath()]
 		valMatches := result.Matches[valSearchField.GetFieldPath()]
 		if len(instMatches) == 0 || len(valMatches) == 0 {

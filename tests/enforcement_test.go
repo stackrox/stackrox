@@ -80,7 +80,7 @@ func verifyAlertWithEnforcement(t *testing.T) {
 
 	service := v1.NewAlertServiceClient(conn)
 
-	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, expectedPort22Policy).AddBools(search.Stale, false)
+	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, expectedPort22Policy).AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String())
 	alerts, err := service.ListAlerts(ctx, &v1.ListAlertsRequest{
 		Query: qb.Query(),
 	})

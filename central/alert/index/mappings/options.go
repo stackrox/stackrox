@@ -7,8 +7,8 @@ import (
 
 // OptionsMap is exposed for e2e test.
 var OptionsMap = map[search.FieldLabel]*v1.SearchField{
-	search.Violation: search.NewStringField(v1.SearchCategory_ALERTS, "alert.violations.message"),
-	search.Stale:     search.NewBoolField(v1.SearchCategory_ALERTS, "alert.stale"),
+	search.Violation:      search.NewStringField(v1.SearchCategory_ALERTS, "alert.violations.message"),
+	search.ViolationState: search.NewViolationStateField(v1.SearchCategory_ALERTS, "alert.state"),
 
 	search.LifecycleStage: search.NewLifecycleField(v1.SearchCategory_ALERTS, "alert.lifecycle_stage"),
 	search.Enforcement:    search.NewEnforcementField(v1.SearchCategory_ALERTS, "alert.enforcement.action"),

@@ -65,11 +65,11 @@ const (
 	VolumeReadonly    FieldLabel = "Volume ReadOnly"
 	VolumeType        FieldLabel = "Volume Type"
 
-	Violation FieldLabel = "Violation"
-	Stale     FieldLabel = "Stale"
+	Violation      FieldLabel = "Violation"
+	ViolationState FieldLabel = "Violation State"
 
 	// ProcessIndicator Search fields
-	IndicatorID      FieldLabel = "Indicator ID"
+	ProcessID        FieldLabel = "Process ID"
 	ProcessExecPath  FieldLabel = "Process Path"
 	ProcessName      FieldLabel = "Process Name"
 	ProcessArguments FieldLabel = "Process Arguments"

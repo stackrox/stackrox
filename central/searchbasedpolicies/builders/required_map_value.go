@@ -26,9 +26,9 @@ func (r RequiredMapValueQueryBuilder) Query(fields *v1.PolicyFields, optionsMap 
 		return
 	}
 
-	_, exists := optionsMap[r.FieldLabel]
-	if !exists {
-		err = fmt.Errorf("%s: couldn't construct query, search field %s not found in options map", r.Name(), r.FieldLabel)
+	_, err = getSearchFieldNotStored(r.FieldLabel, optionsMap)
+	if err != nil {
+		err = fmt.Errorf("%s: %s", r.Name(), err)
 		return
 	}
 
@@ -40,7 +40,7 @@ func (r RequiredMapValueQueryBuilder) Query(fields *v1.PolicyFields, optionsMap 
 	}
 	q = search.NewQueryBuilder().AddMapQuery(r.FieldLabel, keyValuePolicy.GetKey(), valueQuery).ProtoQuery()
 
-	v = func(result search.Result) []*v1.Alert_Violation {
+	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*v1.Alert_Violation {
 		return []*v1.Alert_Violation{{Message: fmt.Sprintf("Required %s not found (%s)", r.FieldName, printKeyValuePolicy(keyValuePolicy))}}
 	}
 	return

@@ -62,7 +62,7 @@ func queryHasFields(fields ...search.FieldLabel) func(interface{}) bool {
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByPolicy() {
 	// PolicyUpsert side effects. We won't have any deployments or alerts yet.
-	suite.alertsMock.On("SearchRawAlerts", mock.MatchedBy(queryHasFields(search.Stale, search.PolicyID))).Return(([]*v1.Alert)(nil), nil)
+	suite.alertsMock.On("SearchRawAlerts", mock.MatchedBy(queryHasFields(search.ViolationState, search.PolicyID))).Return(([]*v1.Alert)(nil), nil)
 
 	_, err := suite.alertManager.GetAlertsByPolicy("pid")
 	suite.NoError(err, "update should succeed")
@@ -73,7 +73,7 @@ func (suite *AlertManagerTestSuite) TestGetAlertsByPolicy() {
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
 	// PolicyUpsert side effects. We won't have any deployments or alerts yet.
-	suite.alertsMock.On("SearchRawAlerts", mock.MatchedBy(queryHasFields(search.Stale, search.DeploymentID))).Return(([]*v1.Alert)(nil), nil)
+	suite.alertsMock.On("SearchRawAlerts", mock.MatchedBy(queryHasFields(search.ViolationState, search.DeploymentID))).Return(([]*v1.Alert)(nil), nil)
 
 	_, err := suite.alertManager.GetAlertsByDeployment("did")
 	suite.NoError(err, "update should succeed")
@@ -100,11 +100,7 @@ func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
 func (suite *AlertManagerTestSuite) TestMarksOldAlertsStale() {
 	alerts := getAlerts()
 
-	// First alert match on being stale.
-	suite.alertsMock.On("UpdateAlert", mock.MatchedBy(func(in interface{}) bool {
-		alert := in.(*v1.Alert)
-		return alert.Stale
-	})).Return(nil)
+	suite.alertsMock.On("MarkAlertStale", alerts[0].GetId()).Return(nil)
 
 	// Next two should be updates with exactly the same values put in.
 	suite.alertsMock.On("UpdateAlert", alerts[1]).Return(nil)

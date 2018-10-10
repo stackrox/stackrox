@@ -890,10 +890,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 			Time: &timestamp.Timestamp{
 				Seconds: 1,
 			},
-			Stale: true,
-			MarkedStale: &timestamp.Timestamp{
-				Seconds: 8,
-			},
+			State:      v1.ViolationState_RESOLVED,
 			Deployment: &v1.ListAlertDeployment{ClusterName: "dev"},
 			Policy:     &v1.ListAlertPolicy{Severity: v1.Severity_CRITICAL_SEVERITY},
 		},
@@ -910,10 +907,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 			Time: &timestamp.Timestamp{
 				Seconds: 1,
 			},
-			Stale: true,
-			MarkedStale: &timestamp.Timestamp{
-				Seconds: 8,
-			},
+			State:      v1.ViolationState_RESOLVED,
 			Deployment: &v1.ListAlertDeployment{ClusterName: "prod"},
 			Policy:     &v1.ListAlertPolicy{Severity: v1.Severity_LOW_SEVERITY},
 		},
@@ -951,7 +945,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 								Type: v1.Type_CREATED,
 							},
 							{
-								Time: 8000,
+								Time: 1000,
 								Id:   "id1",
 								Type: v1.Type_REMOVED,
 							},
@@ -971,7 +965,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 								Type: v1.Type_CREATED,
 							},
 							{
-								Time: 8000,
+								Time: 1000,
 								Id:   "id3",
 								Type: v1.Type_REMOVED,
 							},

@@ -42,7 +42,7 @@ func (d *detectorImpl) Detect(image *v1.Image) ([]*v1.Alert, error) {
 	}
 
 	var alerts []*v1.Alert
-	d.policySet.ForEach(func(p *v1.Policy, matcher searchbasedpolicies.Matcher) error {
+	err = d.policySet.ForEach(func(p *v1.Policy, matcher searchbasedpolicies.Matcher) error {
 		violations, err := matcher.MatchOne(tempIndexer, types.NewDigest(image.GetId()).Digest())
 		if err != nil {
 			return fmt.Errorf("matching against policy %s: %s", p.GetName(), err)
@@ -52,6 +52,9 @@ func (d *detectorImpl) Detect(image *v1.Image) ([]*v1.Alert, error) {
 		}
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
 	return alerts, nil
 }
 

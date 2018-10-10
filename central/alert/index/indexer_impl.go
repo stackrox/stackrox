@@ -46,20 +46,20 @@ func (b *indexerImpl) DeleteAlert(id string) error {
 func (b *indexerImpl) SearchAlerts(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Alert")
 
-	var querySpecifiesStaleField bool
+	var querySpecifiesStateField bool
 	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
 		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if !ok {
 			return
 		}
-		if matchFieldQuery.MatchFieldQuery.GetField() == search.Stale.String() {
-			querySpecifiesStaleField = true
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.ViolationState.String() {
+			querySpecifiesStateField = true
 		}
 	})
 
 	// By default, set stale to false.
-	if !querySpecifiesStaleField {
-		q = search.ConjunctionQuery(q, search.NewQueryBuilder().AddBools(search.Stale, false).ProtoQuery())
+	if !querySpecifiesStateField {
+		q = search.ConjunctionQuery(q, search.NewQueryBuilder().AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String()).ProtoQuery())
 	}
 
 	return blevesearch.RunSearchRequest(v1.SearchCategory_ALERTS, q, b.index, mappings.OptionsMap)

@@ -8,12 +8,12 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/index/mappings"
-	deploymentDetection "github.com/stackrox/rox/central/detection/deployment"
-	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
 	imageDetection "github.com/stackrox/rox/central/detection/image"
+	"github.com/stackrox/rox/central/detection/lifecycle"
 	"github.com/stackrox/rox/central/enrichanddetect"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
+	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -60,10 +60,10 @@ type serviceImpl struct {
 	policies    datastore.DataStore
 	clusters    clusterDataStore.DataStore
 	deployments deploymentDataStore.DataStore
+	processes   processDataStore.DataStore
 
 	buildTimePolicies   imageDetection.PolicySet
-	deployTimeDetector  deployTimeDetection.Detector
-	runTimePolicies     deploymentDetection.PolicySet
+	lifecycleManager    lifecycle.Manager
 	processor           notifierProcessor.Processor
 	enricherAndDetector enrichanddetect.EnricherAndDetector
 
@@ -237,7 +237,7 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *v1.Policy) (*v1
 	}
 
 	var resp v1.DryRunResponse
-	searchBasedMatcher, err := matcher.ForPolicy(request, mappings.OptionsMap)
+	searchBasedMatcher, err := matcher.ForPolicy(request, mappings.OptionsMap, s.processes)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("couldn't construct matcher: %s", err))
 	}
@@ -353,18 +353,7 @@ func (s *serviceImpl) addActivePolicy(policy *v1.Policy) error {
 		errorList.AddError(s.buildTimePolicies.RemovePolicy(policy.GetId()))
 	}
 
-	if policies.AppliesAtDeployTime(policy) {
-		errorList.AddError(s.deployTimeDetector.UpsertPolicy(policy))
-	} else {
-		errorList.AddError(s.deployTimeDetector.RemovePolicy(policy.GetId()))
-	}
-
-	if policies.AppliesAtRunTime(policy) {
-		errorList.AddError(s.runTimePolicies.UpsertPolicy(policy))
-	} else {
-		errorList.AddError(s.runTimePolicies.RemovePolicy(policy.GetId()))
-	}
-
+	errorList.AddError(s.lifecycleManager.UpsertPolicy(policy))
 	return errorList.ToError()
 }
 
@@ -373,7 +362,6 @@ func (s *serviceImpl) removeActivePolicy(policy *v1.Policy) error {
 
 	errorList := errorhelpers.NewErrorList("error removing policy from detection: ")
 	errorList.AddError(s.buildTimePolicies.RemovePolicy(policy.GetId()))
-	errorList.AddError(s.deployTimeDetector.RemovePolicy(policy.GetId()))
-	errorList.AddError(s.runTimePolicies.RemovePolicy(policy.GetId()))
+	errorList.AddError(s.lifecycleManager.RemovePolicy(policy.GetId()))
 	return errorList.ToError()
 }

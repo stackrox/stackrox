@@ -41,7 +41,7 @@ func (c CVEQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.Fi
 		[]search.FieldLabel{search.CVE, search.CVELink},
 		[]string{search.RegexQueryString(cve), search.WildcardString}).
 		ProtoQuery()
-	v = func(result search.Result) []*v1.Alert_Violation {
+	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*v1.Alert_Violation {
 		cveMatches := result.Matches[cveSearchField.GetFieldPath()]
 		cveLinkMatches := result.Matches[cveLinkSearchField.GetFieldPath()]
 		if len(cveMatches) != len(cveLinkMatches) {

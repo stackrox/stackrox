@@ -107,6 +107,19 @@ func (qb *QueryBuilder) AddLinkedFieldsHighlighted(fields []FieldLabel, values [
 	return qb.addLinkedFields(fields, values, true)
 }
 
+// AddLinkedFieldsWithHighlightValues allows you to add linked fields and specify granuarly which ones you want highlights for.
+func (qb *QueryBuilder) AddLinkedFieldsWithHighlightValues(fields []FieldLabel, values []string, highlighted []bool) *QueryBuilder {
+	if len(fields) != len(values) || len(fields) != len(highlighted) {
+		panic(fmt.Sprintf("Incorrect input to AddLinkedFieldsHighlighted, all three slices (%+v, %+v and %+v) must have the same length", fields, values, highlighted))
+	}
+	fieldValues := make([]fieldValue, len(fields))
+	for i, field := range fields {
+		fieldValues[i] = fieldValue{field, values[i], highlighted[i]}
+	}
+	qb.linkedFields = append(qb.linkedFields, fieldValues)
+	return qb
+}
+
 func (qb *QueryBuilder) addLinkedFields(fields []FieldLabel, values []string, highlighted bool) *QueryBuilder {
 	if len(fields) != len(values) {
 		panic("Incorrect input to AddLinkedFields, the two slices must have the same length")

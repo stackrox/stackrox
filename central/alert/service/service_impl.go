@@ -296,8 +296,8 @@ func getGroupToAlertEvents(alerts []*v1.ListAlert) (clusters map[string]map[v1.S
 		}
 		eventList := clusters[alertCluster][a.GetPolicy().GetSeverity()]
 		eventList = append(eventList, &v1.AlertEvent{Time: a.GetTime().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_CREATED})
-		if a.GetStale() {
-			eventList = append(eventList, &v1.AlertEvent{Time: a.GetMarkedStale().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_REMOVED})
+		if a.GetState() == v1.ViolationState_RESOLVED {
+			eventList = append(eventList, &v1.AlertEvent{Time: a.GetTime().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_REMOVED})
 		}
 		clusters[alertCluster][a.GetPolicy().GetSeverity()] = eventList
 	}
