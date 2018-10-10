@@ -43,67 +43,6 @@ class Enforcement extends BaseSpecification {
         orchestrator.deleteDeployment(d.name)
     }
 
-    @Category([PolicyEnforcement])
-    def "Test Scale-down Enforcement"() {
-        // This test only tests enforcement by directly telling Central to scale-down
-        // a specific deployment.
-        //
-        // THIS TEST SHOULD BE REMOVED IF THE ENFORCEMENT API IS REMOVED
-
-        given:
-        "Create Deployment to test scale-down enforcement"
-        Deployment d = new Deployment()
-                .setName("scale-down-enforcement")
-                .setImage("nginx")
-                .addPort(80)
-                .addLabel("app", "scale-down-enforcement")
-        orchestrator.createDeployment(d)
-
-        when:
-        "trigger scale-down enforcement on container"
-        Services.applyScaleDownEnforcement(d)
-
-        then:
-        "check container was scaled-down to 0 replicas"
-        assert orchestrator.getDeploymentReplicaCount(d) == 0
-
-        cleanup:
-        "remove deployment"
-        orchestrator.deleteDeployment(d.name)
-    }
-
-    @Category([PolicyEnforcement])
-    def "Test Node Constraint Enforcement"() {
-        // This test only tests enforcement by directly telling Central to apply unsatisfiable
-        // node constraint to a specific deployment.
-        //
-        // THIS TEST SHOULD BE REMOVED IF THE ENFORCEMENT API IS REMOVED
-
-        given:
-        "Create Deployment to test node constraint enforcement"
-        Deployment d = new Deployment()
-                .setName("node-constraint-enforcement")
-                .setImage("nginx")
-                .addPort(80)
-                .addLabel("app", "node-constraint-enforcement")
-        orchestrator.createDeployment(d)
-
-        when:
-        "trigger node constraint enforcement on container"
-        Services.applyNodeConstraintEnforcement(d)
-        sleep 3000 // add sleep here to make sure node constraint propogates
-
-        then:
-        "check deployment set with unsatisfiable node constraint, and unavailable nodes = desired nodes"
-        assert orchestrator.getDeploymentNodeSelectors(d) != null
-        assert orchestrator.getDeploymentUnavailableReplicaCount(d) ==
-                orchestrator.getDeploymentReplicaCount(d)
-
-        cleanup:
-        "remove deployment"
-        orchestrator.deleteDeployment(d.name)
-    }
-
     @Category([BAT, Integration, PolicyEnforcement])
     def "Test Scale-down Enforcement - Integration"() {
         // This test verifies enforcement by triggering a policy violation on a policy
@@ -133,7 +72,7 @@ class Enforcement extends BaseSpecification {
                 CONTAINER_PORT_22_POLICY,
                 30
         ) as List<AlertServiceOuterClass.ListAlert>
-        assert violations?.size() != null
+        assert violations != null && violations?.size() > 0
         AlertServiceOuterClass.Alert alert = Services.getViolaton(violations.get(0).id)
 
         then:
@@ -176,7 +115,7 @@ class Enforcement extends BaseSpecification {
                 CONTAINER_PORT_22_POLICY,
                 30
         ) as List<AlertServiceOuterClass.ListAlert>
-        assert violations?.size() != null
+        assert violations != null && violations?.size() > 0
         AlertServiceOuterClass.Alert alert = Services.getViolaton(violations.get(0).id)
 
         then:
