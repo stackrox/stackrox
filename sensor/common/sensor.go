@@ -1,8 +1,6 @@
 package common
 
 import (
-	"context"
-	"fmt"
 	"sync"
 
 	"github.com/stackrox/rox/generated/api/v1"
@@ -78,39 +76,13 @@ func (s *sensor) Start(orchestratorInput <-chan *v1.SensorEvent, collectorInput 
 	}
 	s.err = nil
 
-	// Create a context for the stream that we can cancel.
-	var cancelCtx context.Context
-	cancelCtx, s.cancelFunc = context.WithCancel(context.Background())
-
 	// The poller must be started so that its Stop() signal
 	// eventually returns.
 	go s.poller.Run()
 
-	sensorEventStream, err := s.openSensorEventStream(cancelCtx)
-	if err != nil {
-		s.Stop(fmt.Errorf("stream open: %v", err))
-		return
-	}
+	go s.sendFlowMessages(networkFlowInput, central.NewNetworkFlowServiceClient(s.conn))
+	go s.sendEvents(orchestratorInput, collectorInput, output, v1.NewSensorEventServiceClient(s.conn))
 
-	sensorNetworkFlowStream, err := s.openNetworkFlowStream(cancelCtx)
-	if err != nil {
-		s.Stop(fmt.Errorf("stream open: %v", err))
-		return
-	}
-
-	go s.sendMessages(orchestratorInput, collectorInput, networkFlowInput, sensorEventStream, sensorNetworkFlowStream)
-	go s.receiveMessages(output, sensorEventStream)
-
-}
-
-func (s *sensor) openSensorEventStream(ctx context.Context) (v1.SensorEventService_RecordEventClient, error) {
-	cli := v1.NewSensorEventServiceClient(s.conn)
-	return cli.RecordEvent(ctx)
-}
-
-func (s *sensor) openNetworkFlowStream(ctx context.Context) (central.NetworkFlowService_PushNetworkFlowsClient, error) {
-	nfSvc := central.NewNetworkFlowServiceClient(s.conn)
-	return nfSvc.PushNetworkFlows(ctx)
 }
 
 // Stop stops the processing loops reading and writing to input and output, and closes the stream open with central.

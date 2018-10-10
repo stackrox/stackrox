@@ -185,16 +185,12 @@ func pingWithTimeout(svc v1.PingServiceClient) (err error) {
 
 func (s *Sensor) runSensor() {
 	s.sensorInstance = sensor.NewSensor(s.conn, s.clusterID)
-	for {
-		s.logger.Info("Starting central connection.")
-		go s.sensorInstance.Start(s.listener.Events(), signalService.Singleton().Indicators(), s.networkConnManager.FlowUpdates(), s.enforcer.Actions())
+	s.logger.Info("Starting central connection.")
+	s.sensorInstance.Start(s.listener.Events(), signalService.Singleton().Indicators(), s.networkConnManager.FlowUpdates(), s.enforcer.Actions())
 
-		if err := s.sensorInstance.Wait(); err != nil {
-			s.logger.Errorf("Central connection encountered error: %v. Sleeping for %v", err, retryInterval)
-			time.Sleep(retryInterval)
-		} else {
-			s.logger.Info("Terminating central connection.")
-			return
-		}
+	if err := s.sensorInstance.Wait(); err != nil {
+		s.logger.Errorf("Sensor reported an error: %v", err)
+	} else {
+		s.logger.Info("Terminating central connection.")
 	}
 }
