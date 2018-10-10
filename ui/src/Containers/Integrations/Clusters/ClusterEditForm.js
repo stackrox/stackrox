@@ -6,7 +6,6 @@ import { clusterFormId, clusterTypes } from 'reducers/clusters';
 import FormField from 'Components/FormField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
 import ReduxCheckboxField from 'Components/forms/ReduxCheckboxField';
-import CollapsibleCard from '../../../Components/CollapsibleCard';
 
 const CommonFields = () => (
     <React.Fragment>
@@ -54,12 +53,8 @@ const K8sFields = ({ metadata }) => (
         <FormField label="Image Pull Secret Name" required>
             <ReduxTextField name="kubernetes.imagePullSecret" placeholder="stackrox" />
         </FormField>
-        <CollapsibleCard title="Experimental Features" open={false}>
-            <div className="h-full w-full p-3">
-                <RuntimeSupportFormField />
-                <MonitoringEndpointFormField />
-            </div>
-        </CollapsibleCard>
+        <MonitoringEndpointFormField />
+        <RuntimeSupportFormField />
     </React.Fragment>
 );
 
@@ -155,7 +150,8 @@ const initialValuesFactories = {
                 namespace: 'stackrox'
             }
         },
-        monitoringEndpoint: 'monitoring.stackrox'
+        monitoringEndpoint: 'monitoring.stackrox',
+        runtimeSupport: true
     })
 };
 
