@@ -7,6 +7,7 @@ import { actions as environmentActions, networkGraphClusters } from 'reducers/en
 import { actions as deploymentActions, types as deploymentTypes } from 'reducers/deployments';
 import { actions as clusterActions } from 'reducers/clusters';
 
+import dateFns from 'date-fns';
 import Select from 'Components/ReactSelect';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
@@ -57,7 +58,8 @@ class NetworkPage extends Component {
         isFetchingNode: PropTypes.bool,
         nodeUpdatesEpoch: PropTypes.number,
         environmentGraphUpdateKey: PropTypes.number.isRequired,
-        incrementEnvironmentGraphUpdateKey: PropTypes.func.isRequired
+        incrementEnvironmentGraphUpdateKey: PropTypes.func.isRequired,
+        onNodesUpdate: PropTypes.func
     };
 
     static defaultProps = {
@@ -66,7 +68,8 @@ class NetworkPage extends Component {
         networkPolicies: [],
         deployment: {},
         nodeUpdatesEpoch: null,
-        selectedClusterId: ''
+        selectedClusterId: '',
+        onNodesUpdate: null
     };
 
     onSearch = searchOptions => {
@@ -82,8 +85,8 @@ class NetworkPage extends Component {
     };
 
     onUpdateGraph = () => {
+        if (this.props.onNodesUpdate) this.props.onNodesUpdate();
         this.props.incrementEnvironmentGraphUpdateKey();
-        this.props.fetchEnvironmentGraph();
     };
 
     getNodeUpdates = () => {
@@ -159,9 +162,38 @@ class NetworkPage extends Component {
         return <Select {...clustersProps} />;
     };
 
+    renderNodesUpdateButton = () => {
+        const nodeUpdatesCount = this.getNodeUpdates();
+        if (Number.isNaN(nodeUpdatesCount) || nodeUpdatesCount <= 0) return null;
+        return (
+            <button
+                type="button"
+                className="btn-graph-refresh p-2 bg-primary-500 hover:bg-primary-400 rounded-sm text-sm text-base-100 mt-2 w-full"
+                onClick={this.onUpdateGraph}
+            >
+                <Icon.Circle className="h-2 w-2 border-primary-300" />
+                <span className="pl-1">
+                    {`${nodeUpdatesCount} update${nodeUpdatesCount === 1 ? '' : 's'} available`}
+                </span>
+            </button>
+        );
+    };
+
+    renderNodesUpdateSection = () => {
+        if (!this.props.lastUpdatedTimestamp) return null;
+        return (
+            <div className="absolute pin-t pin-r mt-2 mr-2 p-2 bg-base-100 z-10 rounded-sm shadow-outline">
+                <div className="uppercase">{`Last Updated: ${dateFns.format(
+                    this.props.lastUpdatedTimestamp,
+                    'hh:mm:ssA'
+                )}`}</div>
+                {this.renderNodesUpdateButton()}
+            </div>
+        );
+    };
+
     render() {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
-        const nodeUpdatesCount = this.getNodeUpdates();
         return (
             <section className="flex flex-1 h-full w-full">
                 <div className="flex flex-1 flex-col w-full">
@@ -188,18 +220,7 @@ class NetworkPage extends Component {
                     <section className="environment-grid-bg flex flex-1 relative">
                         <NetworkGraphLegend />
                         {this.renderGraph()}
-                        {nodeUpdatesCount > 0 && (
-                            <button
-                                type="button"
-                                className="btn-graph-refresh absolute pin-t pin-r mt-2 mr-2 p-2 bg-primary-500 hover:bg-primary-400 rounded-sm text-sm text-base-100"
-                                onClick={this.onUpdateGraph}
-                            >
-                                <Icon.Circle className="h-2 w-2 border-primary-300" />
-                                <span className="pl-1">{`${nodeUpdatesCount} ${
-                                    nodeUpdatesCount === 1 ? 'update' : 'updates'
-                                } available`}</span>
-                            </button>
-                        )}
+                        {this.renderNodesUpdateSection()}
                         {this.renderSidePanel()}
                     </section>
                 </div>
@@ -226,7 +247,8 @@ const mapStateToProps = createStructuredSelector({
     deployment: selectors.getDeployment,
     networkPolicies: selectors.getNetworkPolicies,
     environmentGraphUpdateKey: selectors.getEnvironmentGraphUpdateKey,
-    isFetchingNode: state => selectors.getLoadingStatus(state, deploymentTypes.FETCH_DEPLOYMENT)
+    isFetchingNode: state => selectors.getLoadingStatus(state, deploymentTypes.FETCH_DEPLOYMENT),
+    lastUpdatedTimestamp: selectors.getLastUpdatedTimestamp
 });
 
 const mapDispatchToProps = {
@@ -239,7 +261,8 @@ const mapDispatchToProps = {
     setSearchModifiers: environmentActions.setEnvironmentSearchModifiers,
     setSearchSuggestions: environmentActions.setEnvironmentSearchSuggestions,
     selectClusterId: environmentActions.selectEnvironmentClusterId,
-    incrementEnvironmentGraphUpdateKey: environmentActions.incrementEnvironmentGraphUpdateKey
+    incrementEnvironmentGraphUpdateKey: environmentActions.incrementEnvironmentGraphUpdateKey,
+    onNodesUpdate: environmentActions.networkNodesUpdate
 };
 
 export default connect(

@@ -18,6 +18,7 @@ function* getNetworkGraph(filters, clusterId) {
     try {
         const result = yield call(service.fetchEnvironmentGraph, filters, clusterId);
         yield put(actions.fetchEnvironmentGraph.success(result.response));
+        yield put(actions.updateNetworkGraphTimestamp(new Date()));
     } catch (error) {
         yield put(actions.fetchEnvironmentGraph.failure(error));
     }

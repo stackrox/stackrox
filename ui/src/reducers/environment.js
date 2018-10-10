@@ -25,6 +25,7 @@ export const types = {
     SET_NETWORK_GRAPH_STATE: 'environment/NETWORK_GRAPH_STATE',
     SET_YAML_FILE: 'environment/SET_YAML_FILE',
     SEND_YAML_NOTIFICATION: 'environment/SEND_YAML_NOTIFICATION',
+    UPDATE_NETWORKGRAPH_TIMESTAMP: 'environment/UPDATE_NETWORKGRAPH_TIMESTAMP',
     NETWORK_NODES_UPDATE: 'environment/NETWORK_NODES_UPDATE',
     ...searchTypes('environment')
 };
@@ -61,6 +62,10 @@ export const actions = {
     sendYAMLNotification: notifierId => ({
         type: types.SEND_YAML_NOTIFICATION,
         notifierId
+    }),
+    updateNetworkGraphTimestamp: lastUpdatedTimestamp => ({
+        type: types.UPDATE_NETWORKGRAPH_TIMESTAMP,
+        lastUpdatedTimestamp
     }),
     ...environmentSearchActions
 };
@@ -111,6 +116,13 @@ const networkPolicies = (state = [], action) => {
 const nodeUpdatesEpoch = (state = null, action) => {
     if (action.type === types.FETCH_NODE_UPDATES.SUCCESS) {
         return isEqual(action.response.epoch, state) ? state : action.response.epoch;
+    }
+    return state;
+};
+
+const lastUpdatedTimestamp = (state = null, action) => {
+    if (action.type === types.UPDATE_NETWORKGRAPH_TIMESTAMP) {
+        return action.lastUpdatedTimestamp;
     }
     return state;
 };
@@ -207,6 +219,7 @@ const reducer = combineReducers({
     simulatorMode,
     selectedYamlFile,
     errorMessage,
+    lastUpdatedTimestamp,
     ...searchReducers('environment')
 });
 
@@ -223,6 +236,7 @@ const getNetworkGraphState = state => state.networkGraphState;
 const getSimulatorMode = state => state.simulatorMode;
 const getNetworkGraphErrorMessage = state => state.errorMessage;
 const getYamlFile = state => state.selectedYamlFile;
+const getLastUpdatedTimestamp = state => state.lastUpdatedTimestamp;
 
 export const selectors = {
     getEnvironmentGraph,
@@ -236,6 +250,7 @@ export const selectors = {
     getSimulatorMode,
     getNetworkGraphErrorMessage,
     getYamlFile,
+    getLastUpdatedTimestamp,
     ...getSearchSelectors('environment')
 };
 
