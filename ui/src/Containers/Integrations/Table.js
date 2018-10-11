@@ -109,7 +109,7 @@ class IntegrationTable extends Component {
             );
         }
         return (
-            <div className="border-2 border-r-2 border-base-400 bg-base-100">
+            <div className="border-2 border-r-2 border-base-400 bg-base-100 flex">
                 {activateBtn}
                 <Tooltip
                     placement="top"

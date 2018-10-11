@@ -103,7 +103,7 @@ class ClustersModal extends Component {
             {
                 accessor: 'preventImage',
                 Header: 'StackRox Image',
-                className: `${wrapClassName} ${defaultColumnClassName}`
+                className: `${wrapClassName} ${defaultColumnClassName} word-break`
             },
             {
                 accessor: 'lastContact',
