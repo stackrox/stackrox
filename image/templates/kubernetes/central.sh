@@ -16,8 +16,6 @@ metadata:
   namespace: {{.K8sConfig.Namespace}}
 type: kubernetes.io/dockerconfigjson
 EOF
-
-	echo
 fi
 
 {{if not .K8sConfig.MonitoringType.None}}
