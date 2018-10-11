@@ -38,29 +38,28 @@ func k8sBasedOrchestrator(k8sConfig *central.K8sConfig, shortName, longName stri
 
 	// Adds k8s specific flags
 	c.PersistentFlags().StringVarP(&k8sConfig.Namespace, "namespace", "n", "stackrox", "namespace")
+	return c
+}
+
+func newK8sConfig(monitoringDefault central.MonitoringType) *central.K8sConfig {
+	return &central.K8sConfig{
+		MonitoringType: monitoringDefault,
+	}
+}
+
+func k8s() *cobra.Command {
+	k8sConfig := newK8sConfig(central.OnPrem)
+	c := k8sBasedOrchestrator(k8sConfig, "k8s", "Kubernetes", v1.ClusterType_KUBERNETES_CLUSTER)
+	c.PersistentFlags().StringVarP(&k8sConfig.ClairifyImage, "clairify-image", "", "stackrox.io/"+clairifyImage, "Clairify image to use")
+	c.PersistentFlags().StringVarP(&k8sConfig.PreventImage, "prevent-image", "i", "stackrox.io/"+preventImage, "Prevent image to use")
+	c.PersistentFlags().StringVarP(&k8sConfig.ImagePullSecret, "image-pull-secret", "", "stackrox", "image pull secret")
 	c.PersistentFlags().StringVarP(&k8sConfig.MonitoringEndpoint, "monitoring-endpoint", "", "monitoring.stackrox", "monitoring endpoint")
 	c.PersistentFlags().Var(&monitoringWrapper{Monitoring: &k8sConfig.MonitoringType}, "monitoring-type", "where to host the monitoring (on-prem, none)")
 	return c
 }
 
-func newK8sConfig() *central.K8sConfig {
-	mt := central.MonitoringType(central.OnPrem)
-	return &central.K8sConfig{
-		MonitoringType: mt,
-	}
-}
-
-func k8s() *cobra.Command {
-	k8sConfig := newK8sConfig()
-	c := k8sBasedOrchestrator(k8sConfig, "k8s", "Kubernetes", v1.ClusterType_KUBERNETES_CLUSTER)
-	c.PersistentFlags().StringVarP(&k8sConfig.ClairifyImage, "clairify-image", "", "stackrox.io/"+clairifyImage, "Clairify image to use")
-	c.PersistentFlags().StringVarP(&k8sConfig.PreventImage, "prevent-image", "i", "stackrox.io/"+preventImage, "Prevent image to use")
-	c.PersistentFlags().StringVarP(&k8sConfig.ImagePullSecret, "image-pull-secret", "", "stackrox", "image pull secret")
-	return c
-}
-
 func openshift() *cobra.Command {
-	k8sConfig := newK8sConfig()
+	k8sConfig := newK8sConfig(central.None)
 	c := k8sBasedOrchestrator(k8sConfig, "openshift", "Openshift", v1.ClusterType_OPENSHIFT_CLUSTER)
 	c.PersistentFlags().StringVarP(&k8sConfig.ClairifyImage, "clairify-image", "", "docker-registry.default.svc:5000/stackrox/"+clairifyImage, "Clairify image to use")
 	c.PersistentFlags().StringVarP(&k8sConfig.PreventImage, "prevent-image", "i", "docker-registry.default.svc:5000/stackrox/"+preventImage, "Prevent image to use")

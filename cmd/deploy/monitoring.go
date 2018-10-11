@@ -24,7 +24,6 @@ func (m *monitoringWrapper) String() string {
 }
 
 func (m *monitoringWrapper) Set(input string) error {
-	logger.Infof("Input: %s", input)
 	val, ok := monitoringMap[strings.ToLower(input)]
 	if !ok {
 		*m.Monitoring = central.MonitoringType(central.OnPrem)

@@ -117,6 +117,9 @@ spec:
             path: key.pem
           - key: ca.pem
             path: ca.pem
+      - name: varlog
+        emptyDir: {}
+      {{if .MonitoringEndpoint}}
       - name: monitoring-volume
         secret:
           secretName: monitoring
@@ -125,11 +128,10 @@ spec:
             path: password
           - key: monitoring-ca.pem
             path: ca.pem
-      - name: varlog
-        emptyDir: {}
       - name: telegraf-config-volume
         configMap:
           name: telegraf
+      {{- end}}
 ---
 apiVersion: v1
 kind: Service
@@ -259,6 +261,7 @@ spec:
             path: key.pem
           - key: ca.pem
             path: ca.pem
+      {{if .MonitoringEndpoint}}
       - name: monitoring-volume
         secret:
           secretName: monitoring
@@ -267,7 +270,6 @@ spec:
               path: ca.pem
             - key: monitoring-password
               path: password
-      {{if .MonitoringEndpoint}}
       - name: telegraf-config-volume
         configMap:
           name: telegraf
