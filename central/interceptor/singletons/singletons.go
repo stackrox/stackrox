@@ -3,11 +3,7 @@ package singletons
 import (
 	"sync"
 
-	"github.com/stackrox/rox/central/apitoken/parser"
-	authProviderStore "github.com/stackrox/rox/central/authprovider/cachedstore"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/user/mapper"
-	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/grpc/clusters"
 	"google.golang.org/grpc"
 )
@@ -15,7 +11,6 @@ import (
 var (
 	once sync.Once
 
-	authInterceptor        *tokenbased.AuthInterceptor
 	grpcUnaryInterceptors  []grpc.UnaryServerInterceptor
 	grpcStreamInterceptors []grpc.StreamServerInterceptor
 )
@@ -23,21 +18,12 @@ var (
 func initialize() {
 	clusterWatcher := clusters.NewClusterWatcher(clusterDataStore.Singleton())
 
-	authInterceptor = tokenbased.NewAuthInterceptor(authProviderStore.Singleton(), usermapper.Singleton(), parser.Singleton())
 	grpcUnaryInterceptors = []grpc.UnaryServerInterceptor{
-		authInterceptor.UnaryInterceptor(),
 		clusterWatcher.UnaryInterceptor(),
 	}
 	grpcStreamInterceptors = []grpc.StreamServerInterceptor{
-		authInterceptor.StreamInterceptor(),
 		clusterWatcher.StreamInterceptor(),
 	}
-}
-
-// AuthInterceptor provides the auth interceptor to use with gRPC based services.
-func AuthInterceptor() *tokenbased.AuthInterceptor {
-	once.Do(initialize)
-	return authInterceptor
 }
 
 // GrpcUnaryInterceptors provides the unary interceptors to use with gRPC based services.

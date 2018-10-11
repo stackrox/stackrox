@@ -94,14 +94,12 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetI
 		return nil, err
 	}
 
-	identity, err := authn.FromTLSContext(ctx)
-	switch {
-	case err == authn.ErrNoContext:
-		log.Debugf("No authentication context provided")
-	case err != nil:
-		log.Warnf("Error getting client identity: %s", err)
-	case err == nil && identity.Subject.ServiceType == v1.ServiceType_SENSOR_SERVICE:
-		return &v1.GetImageIntegrationsResponse{Integrations: integrations}, nil
+	identity := authn.IdentityFromContext(ctx)
+	if identity != nil {
+		svc := identity.Service()
+		if svc != nil && svc.GetType() == v1.ServiceType_SENSOR_SERVICE {
+			return &v1.GetImageIntegrationsResponse{Integrations: integrations}, nil
+		}
 	}
 
 	// Remove secrets for other API accessors.

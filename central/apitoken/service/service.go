@@ -3,9 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/apitoken/cachedstore"
-	"github.com/stackrox/rox/central/apitoken/parser"
-	"github.com/stackrox/rox/central/apitoken/signer"
+	"github.com/stackrox/rox/central/apitoken"
 	rolestore "github.com/stackrox/rox/central/role/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -21,6 +19,6 @@ type Service interface {
 }
 
 // New returns a ready-to-use instance of Service.
-func New(signer signer.Signer, parser parser.Parser, roleStore rolestore.Store, tokenStore cachedstore.CachedStore) Service {
-	return &serviceImpl{signer: signer, parser: parser, roleStore: roleStore, tokenStore: tokenStore}
+func New(backend apitoken.Backend, roleStore rolestore.Store) Service {
+	return &serviceImpl{backend: backend, roleStore: roleStore}
 }

@@ -9,8 +9,8 @@ import (
 	"github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/grpc/clusters"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -71,8 +71,8 @@ func (s *serviceImpl) PushNetworkFlows(stream central.NetworkFlowService_PushNet
 
 func (s *serviceImpl) receiveNetworkFlowUpdates(stream central.NetworkFlowService_PushNetworkFlowsServer) error {
 
-	clusterID, err := getClusterID(stream)
-	if err != nil {
+	clusterID := clusters.IDFromContext(stream.Context())
+	if clusterID == "" {
 		return status.Errorf(codes.Internal, "unable to get cluster ID from sensor stream")
 	}
 
@@ -138,20 +138,4 @@ func (s *serviceImpl) updateFlowStore(clusterID string, newFlows []*v1.NetworkFl
 	}
 
 	return flowStore.UpsertFlows(flowsToBeUpserted, timestamp.Now())
-}
-
-func getClusterID(stream central.NetworkFlowService_PushNetworkFlowsServer) (string, error) {
-	ctx := stream.Context()
-
-	id, err := authn.FromTLSContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	if id.Subject.Identifier == "" {
-		return "", fmt.Errorf("cluster ID not provided")
-	}
-
-	return id.Subject.Identifier, nil
-
 }

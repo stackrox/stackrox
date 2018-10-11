@@ -9,10 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 )
 
-func defaultInterceptor(h http.Handler) http.Handler {
-	return h
-}
-
 func authorizerHandler(h http.Handler, authorizer authz.Authorizer, route string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if err := authorizer.Authorized(req.Context(), RPCNameForHTTP(route, req.Method)); err != nil {
@@ -25,11 +21,10 @@ func authorizerHandler(h http.Handler, authorizer authz.Authorizer, route string
 
 // CustomRoute is a route that is directly accessed via HTTP
 type CustomRoute struct {
-	Route           string
-	AuthInterceptor func(h http.Handler) http.Handler
-	Authorizer      authz.Authorizer
-	ServerHandler   http.Handler
-	Compression     bool
+	Route         string
+	Authorizer    authz.Authorizer
+	ServerHandler http.Handler
+	Compression   bool
 }
 
 // RPCNameForHTTP returns the RPCName to be used for this HTTP route.
@@ -45,13 +40,10 @@ func RPCNameForHTTP(route, method string) string {
 
 // Handler is the http.Handler for the CustomRoute
 func (c CustomRoute) Handler() http.Handler {
-	if c.AuthInterceptor == nil {
-		c.AuthInterceptor = defaultInterceptor
-	}
 	if c.Authorizer == nil {
 		c.Authorizer = deny.Everyone()
 	}
-	h := c.AuthInterceptor(authorizerHandler(c.ServerHandler, c.Authorizer, c.Route))
+	h := authorizerHandler(c.ServerHandler, c.Authorizer, c.Route)
 	if c.Compression {
 		return gziphandler.GzipHandler(h)
 	}

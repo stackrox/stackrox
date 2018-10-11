@@ -64,26 +64,27 @@ func (cw ClusterWatcher) watch(ctx context.Context) (context.Context, error) {
 }
 
 func (cw ClusterWatcher) recordCheckin(ctx context.Context) error {
-	id, err := authn.FromTLSContext(ctx)
-	switch {
-	case err == authn.ErrNoContext:
+	id := authn.IdentityFromContext(ctx)
+	if id == nil {
 		return nil
-	case err != nil:
-		return err
 	}
-
-	if id.Subject.ServiceType != v1.ServiceType_SENSOR_SERVICE {
+	svc := id.Service()
+	if svc == nil {
 		return nil
 	}
 
-	if id.Subject.Identifier == "" {
+	if svc.GetType() != v1.ServiceType_SENSOR_SERVICE {
+		return nil
+	}
+
+	if svc.GetId() == "" {
 		return status.Error(codes.Unauthenticated, "Cluster ID not provided")
 	}
 
-	_, exists, _ := cw.clusters.GetCluster(id.Subject.Identifier)
+	_, exists, _ := cw.clusters.GetCluster(svc.GetId())
 	if !exists {
 		return status.Error(codes.Unauthenticated, "Cluster does not exist")
 	}
 
-	return cw.clusters.UpdateClusterContactTime(id.Subject.Identifier, time.Now())
+	return cw.clusters.UpdateClusterContactTime(svc.GetId(), time.Now())
 }

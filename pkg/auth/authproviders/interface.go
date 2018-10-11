@@ -15,3 +15,9 @@ type AuthProvider interface {
 	// RefreshURL generates the URL that the browser should refresh in the background to extend the user's access.
 	RefreshURL() string
 }
+
+// AuthProviderAccessor gives us access to auth providers.
+type AuthProviderAccessor interface {
+	GetParsedAuthProviders() map[string]AuthProvider
+	RecordAuthSuccess(id string) error
+}

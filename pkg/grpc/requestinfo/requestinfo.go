@@ -16,13 +16,11 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/monoclock"
 	"golang.org/x/crypto/ed25519"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
@@ -66,6 +64,9 @@ type RequestInfo struct {
 	// RequestURL is the original request URL in the case of a request through the HTTP/1.1 gateway. Nil for direct GRPC
 	// requests.
 	RequestURL *url.URL
+	// Metadata is the request metadata. For *pure* HTTP/1.1 requests, these are the actual HTTP headers. Otherwise,
+	// these are only the headers that make it to the GRPC handler.
+	Metadata metadata.MD
 }
 
 type serializedRequestInfo struct {
@@ -216,7 +217,8 @@ func (h *Handler) extractFromMD(ctx context.Context) (*RequestInfo, error) {
 	return &serializedRI.RequestInfo, nil
 }
 
-func (h *Handler) populateRequestInfo(ctx context.Context) (context.Context, error) {
+// UpdateContextForGRPC provides the context updater logic when used with GRPC interceptors.
+func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, error) {
 	ri, err := h.extractFromMD(ctx)
 	if err != nil {
 		// This should only happen if someone is trying to spoof a RequestInfo. Log, but don't return any details in the
@@ -226,39 +228,32 @@ func (h *Handler) populateRequestInfo(ctx context.Context) (context.Context, err
 	}
 
 	if ri == nil {
-		// Populate request info from TLS state.
-		if tlsState := tlsStateFromContext(ctx); tlsState != nil {
-			ri = &RequestInfo{
-				Hostname:       tlsState.ServerName,
-				VerifiedChains: extractCertInfoChains(tlsState.VerifiedChains),
-			}
-		}
+		ri = &RequestInfo{}
+	}
+	// Populate request info from TLS state.
+	if tlsState := tlsStateFromContext(ctx); tlsState != nil {
+		ri.Hostname = tlsState.ServerName
+		ri.VerifiedChains = extractCertInfoChains(tlsState.VerifiedChains)
 	}
 
-	if ri == nil {
-		return ctx, nil
-	}
+	ri.Metadata, _ = metadata.FromIncomingContext(ctx)
 	return context.WithValue(ctx, requestInfoKey{}, *ri), nil
 }
 
-// UnaryIntercept can be used as a GRPC unary server interceptor to populate the context with a RequestInfo.
-func (h *Handler) UnaryIntercept(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	newCtx, err := h.populateRequestInfo(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return handler(newCtx, req)
-}
-
-// StreamIntercept can be used as a GRPC stream server interceptor to populate the context with a RequestInfo.
-func (h *Handler) StreamIntercept(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	newCtx, err := h.populateRequestInfo(ss.Context())
-	if err != nil {
-		return err
-	}
-	newStream := grpc_middleware.WrapServerStream(ss)
-	newStream.WrappedContext = newCtx
-	return handler(srv, newStream)
+// HTTPIntercept provides a http interceptor logic for populating the context with the request info.
+func (h *Handler) HTTPIntercept(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ri := &RequestInfo{
+			Hostname:   r.Host,
+			RequestURL: r.URL,
+			Metadata:   metadataFromHeader(r.Header),
+		}
+		if r.TLS != nil {
+			ri.VerifiedChains = extractCertInfoChains(r.TLS.VerifiedChains)
+		}
+		newCtx := context.WithValue(r.Context(), requestInfoKey{}, *ri)
+		handler.ServeHTTP(w, r.WithContext(newCtx))
+	})
 }
 
 func sourceIP(ctx context.Context) net.IP {
@@ -276,4 +271,12 @@ func sourceIP(ctx context.Context) net.IP {
 	default:
 		return nil
 	}
+}
+
+func metadataFromHeader(header http.Header) metadata.MD {
+	md := make(metadata.MD)
+	for key, vals := range header {
+		md.Append(key, vals...)
+	}
+	return md
 }

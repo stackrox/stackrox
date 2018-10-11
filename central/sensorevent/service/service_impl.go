@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/sensorevent/service/streamer"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -35,11 +36,16 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // RecordEvent takes in a stream of deployment events and outputs a stream of alerts and enforcement actions.
 func (s *serviceImpl) RecordEvent(stream v1.SensorEventService_RecordEventServer) error {
 	// Get the source cluster's ID.
-	identity, err := authn.FromTLSContext(stream.Context())
-	if err != nil {
-		return err
+	identity := authn.IdentityFromContext(stream.Context())
+	if identity == nil {
+		return authz.ErrNotAuthorized("only sensor may access this API")
 	}
-	clientClusterID := identity.Subject.Identifier
+	svc := identity.Service()
+	if svc == nil {
+		return authz.ErrNotAuthorized("only sensor may access this API")
+	}
+
+	clientClusterID := svc.GetId()
 
 	// Create a stream for the cluster. Throw error if it already exists.
 	sensorStreamer, err := s.streamManager.CreateStreamer(clientClusterID)

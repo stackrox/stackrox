@@ -16,6 +16,7 @@ import (
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
 	authService "github.com/stackrox/rox/central/auth/service"
+	"github.com/stackrox/rox/central/authprovider/cachedstore"
 	authproviderService "github.com/stackrox/rox/central/authprovider/service"
 	benchmarkService "github.com/stackrox/rox/central/benchmark/service"
 	brService "github.com/stackrox/rox/central/benchmarkresult/service"
@@ -33,6 +34,7 @@ import (
 	imageService "github.com/stackrox/rox/central/image/service"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	interceptorSingletons "github.com/stackrox/rox/central/interceptor/singletons"
+	"github.com/stackrox/rox/central/jwt"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	"github.com/stackrox/rox/central/metrics"
@@ -43,13 +45,18 @@ import (
 	policyService "github.com/stackrox/rox/central/policy/service"
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
+	roleStore "github.com/stackrox/rox/central/role/store"
 	searchService "github.com/stackrox/rox/central/search/service"
 	secretService "github.com/stackrox/rox/central/secret/service"
 	seService "github.com/stackrox/rox/central/sensorevent/service"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	summaryService "github.com/stackrox/rox/central/summary/service"
+	"github.com/stackrox/rox/central/user/mapper"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/authn/service"
+	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -92,6 +99,12 @@ func (c *central) startGRPCServer() {
 		TLS:                verifier.CA{},
 		UnaryInterceptors:  interceptorSingletons.GrpcUnaryInterceptors(),
 		StreamInterceptors: interceptorSingletons.GrpcStreamInterceptors(),
+		IdentityExtractors: []authn.IdentityExtractor{
+			service.NewExtractor(),                                                   // internal services
+			tokenbased.NewExtractor(roleStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens (new)
+			tokenbased.NewLegacyExtractor(cachedstore.Singleton(), usermapper.New(roleStore.Singleton())),
+		},
+		AuthProviders: cachedstore.Singleton(),
 	}
 
 	c.server = pkgGRPC.NewAPI(config)
@@ -148,48 +161,42 @@ func dbExportOrBackupAuthorizer() authz.Authorizer {
 func (c *central) customRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = []routes.CustomRoute{
 		{
-			Route:           "/",
-			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
-			Authorizer:      allow.Anonymous(),
-			ServerHandler:   ui.Mux(),
-			Compression:     true,
+			Route:         "/",
+			Authorizer:    allow.Anonymous(),
+			ServerHandler: ui.Mux(),
+			Compression:   true,
 		},
 		{
-			Route:           "/api/extensions/clusters/zip",
-			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
-			Authorizer:      authzUser.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity)),
-			ServerHandler:   clustersZip.Handler(clusterService.Singleton(), siService.Singleton()),
-			Compression:     false,
+			Route:         "/api/extensions/clusters/zip",
+			Authorizer:    authzUser.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity)),
+			ServerHandler: clustersZip.Handler(clusterService.Singleton(), siService.Singleton()),
+			Compression:   false,
 		},
 
 		{
-			Route:           "/db/backup",
-			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
-			Authorizer:      dbExportOrBackupAuthorizer(),
-			ServerHandler:   globaldbHandlers.BackupDB(globaldb.GetGlobalDB()),
-			Compression:     true,
+			Route:         "/db/backup",
+			Authorizer:    dbExportOrBackupAuthorizer(),
+			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB()),
+			Compression:   true,
 		},
 		{
-			Route:           "/db/export",
-			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
-			Authorizer:      dbExportOrBackupAuthorizer(),
-			ServerHandler:   globaldbHandlers.ExportDB(globaldb.GetGlobalDB()),
-			Compression:     true,
+			Route:         "/db/export",
+			Authorizer:    dbExportOrBackupAuthorizer(),
+			ServerHandler: globaldbHandlers.ExportDB(globaldb.GetGlobalDB()),
+			Compression:   true,
 		},
 		{
-			Route:           "/metrics",
-			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
-			Authorizer:      allow.Anonymous(),
-			ServerHandler:   promhttp.Handler(),
-			Compression:     false,
+			Route:         "/metrics",
+			Authorizer:    allow.Anonymous(),
+			ServerHandler: promhttp.Handler(),
+			Compression:   false,
 		},
 	}
 
 	logImbueRoute := "/api/logimbue"
 	customRoutes = append(customRoutes,
 		routes.CustomRoute{
-			Route:           logImbueRoute,
-			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
+			Route: logImbueRoute,
 			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
 				authzUser.With(permissions.View(resources.ImbuedLogs)): {
 					routes.RPCNameForHTTP(logImbueRoute, http.MethodGet),
@@ -224,11 +231,10 @@ func (c *central) debugRoutes() []routes.CustomRoute {
 
 	for r, h := range rs {
 		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:           r,
-			AuthInterceptor: interceptorSingletons.AuthInterceptor().HTTPInterceptor,
-			Authorizer:      authzUser.With(permissions.View(resources.DebugMetrics)),
-			ServerHandler:   h,
-			Compression:     true,
+			Route:         r,
+			Authorizer:    authzUser.With(permissions.View(resources.DebugMetrics)),
+			ServerHandler: h,
+			Compression:   true,
 		})
 	}
 	return customRoutes

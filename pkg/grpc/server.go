@@ -14,10 +14,13 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/pkg/grpc/authn/mtls"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"google.golang.org/grpc"
@@ -60,8 +63,10 @@ type apiImpl struct {
 type Config struct {
 	TLS                verifier.TLSConfigurer
 	CustomRoutes       []routes.CustomRoute
+	IdentityExtractors []authn.IdentityExtractor
 	UnaryInterceptors  []grpc.UnaryServerInterceptor
 	StreamInterceptors []grpc.StreamServerInterceptor
+	AuthProviders      authproviders.AuthProviderAccessor
 }
 
 // NewAPI returns an API object.
@@ -82,10 +87,12 @@ func (a *apiImpl) Register(services ...APIService) {
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	u := []grpc.UnaryServerInterceptor{
-		a.requestInfoHandler.UnaryIntercept,
+		contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		grpc_prometheus.UnaryServerInterceptor,
 		grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-		mtls.UnaryInterceptor(),
+		contextutil.UnaryServerInterceptor(
+			authn.ContextUpdater(a.config.IdentityExtractors...),
+			authn.NewAuthConfigChecker(a.config.AuthProviders)),
 	}
 	u = append(u, a.config.UnaryInterceptors...)
 
@@ -98,10 +105,12 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 
 func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	s := []grpc.StreamServerInterceptor{
-		a.requestInfoHandler.StreamIntercept,
+		contextutil.StreamServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		grpc_prometheus.StreamServerInterceptor,
 		grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-		mtls.StreamInterceptor(),
+		contextutil.StreamServerInterceptor(
+			authn.ContextUpdater(a.config.IdentityExtractors...),
+			authn.NewAuthConfigChecker(a.config.AuthProviders)),
 	}
 	s = append(s, a.config.StreamInterceptors...)
 
@@ -134,9 +143,20 @@ func (a *apiImpl) connectToLocalEndpoint() (*grpc.ClientConn, error) {
 }
 
 func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
+	// Interceptors for HTTP/1.1 requests (in order of processing):
+	// - RequestInfo handler (consumed by other handlers)
+	// - IdentityExtractor
+	// - AuthConfigChecker
+	httpInterceptors := httputil.ChainInterceptors(
+		a.requestInfoHandler.HTTPIntercept,
+		contextutil.HTTPInterceptor(
+			authn.ContextUpdater(a.config.IdentityExtractors...),
+			authn.ContextUpdater(a.config.IdentityExtractors...),
+			authn.NewAuthConfigChecker(a.config.AuthProviders)))
+
 	mux := http.NewServeMux()
 	for _, route := range a.config.CustomRoutes {
-		mux.Handle(route.Route, route.Handler())
+		mux.Handle(route.Route, httpInterceptors(route.Handler()))
 	}
 
 	gwMux := runtime.NewServeMux(

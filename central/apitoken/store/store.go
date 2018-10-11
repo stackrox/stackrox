@@ -15,7 +15,7 @@ const (
 // Importantly, the Store persists token revocations.
 type Store interface {
 	AddToken(*v1.TokenMetadata) error
-	GetToken(id string) (token *v1.TokenMetadata, exists bool, err error)
+	GetTokenOrNil(id string) (token *v1.TokenMetadata, err error)
 	GetTokens(*v1.GetAPITokensRequest) ([]*v1.TokenMetadata, error)
 	RevokeToken(id string) (exists bool, err error)
 }

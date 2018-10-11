@@ -2,12 +2,9 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/central/apitoken/cachedstore"
-	"github.com/stackrox/rox/central/apitoken/parser"
-	"github.com/stackrox/rox/central/apitoken/signer"
+	"github.com/stackrox/rox/central/apitoken"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/store"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -15,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -35,28 +31,26 @@ var (
 )
 
 type serviceImpl struct {
-	signer     signer.Signer
-	parser     parser.Parser
-	roleStore  store.Store
-	tokenStore cachedstore.CachedStore
+	backend   apitoken.Backend
+	roleStore store.Store
 }
 
 func (s *serviceImpl) GetAPIToken(ctx context.Context, req *v1.ResourceByID) (*v1.TokenMetadata, error) {
 	if req.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "empty id passed")
 	}
-	token, exists, err := s.tokenStore.GetToken(req.GetId())
+	token, err := s.backend.GetTokenOrNil(req.GetId())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "token retrieval failed: %s", err)
 	}
-	if !exists {
+	if token == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "token with id '%s' does not exist", req.GetId())
 	}
 	return token, nil
 }
 
 func (s *serviceImpl) GetAPITokens(ctx context.Context, req *v1.GetAPITokensRequest) (*v1.GetAPITokensResponse, error) {
-	tokens, err := s.tokenStore.GetTokens(req)
+	tokens, err := s.backend.GetTokens(req)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "retrieval of tokens failed: %s", err)
 	}
@@ -66,7 +60,7 @@ func (s *serviceImpl) GetAPITokens(ctx context.Context, req *v1.GetAPITokensRequ
 }
 
 func (s *serviceImpl) RevokeToken(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
-	exists, err := s.tokenStore.RevokeToken(req.GetId())
+	exists, err := s.backend.RevokeToken(req.GetId())
 	if err != nil {
 		return &v1.Empty{}, status.Errorf(codes.Internal, "couldn't revoke token: %s", err)
 	}
@@ -82,24 +76,12 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 	}
 
 	// Make sure the role exists. We do not allow people to generate a token for a role that doesn't exist.
-	_, exists := s.roleStore.GetRole(req.GetRole())
-	if !exists {
-		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("role '%s' doesn't exist", req.GetRole()))
+	role := s.roleStore.RoleByName(req.GetRole())
+	if role == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "role '%s' doesn't exist", req.GetRole())
 	}
 
-	token, id, issuedAt, expiration, err := s.signer.SignedJWT(req.GetRole())
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	metadata := &v1.TokenMetadata{
-		Id:         id,
-		Name:       req.GetName(),
-		Role:       req.GetRole(),
-		IssuedAt:   protoconv.ConvertTimeToTimestamp(issuedAt),
-		Expiration: protoconv.ConvertTimeToTimestamp(expiration),
-	}
-	err = s.tokenStore.AddToken(metadata)
+	token, metadata, err := s.backend.IssueRoleToken(req.GetName(), role)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

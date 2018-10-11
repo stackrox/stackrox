@@ -8,6 +8,11 @@ type Role interface {
 	Has(Permission) bool
 }
 
+// RoleStore allows querying roles by name.
+type RoleStore interface {
+	RoleByName(name string) Role
+}
+
 // NewAllAccessRole returns a new role with the given name,
 // which has access to all permissions. Use sparingly!
 func NewAllAccessRole(name string) Role {

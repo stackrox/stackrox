@@ -11,7 +11,7 @@ import (
 // The store's interface can be expanded if we start allowing for the creation
 // of custom roles, or for the updating of existing roles.
 type Store interface {
-	GetRole(name string) (role permissions.Role, exists bool)
+	permissions.RoleStore
 	GetRoles() []permissions.Role
 }
 

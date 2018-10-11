@@ -35,7 +35,7 @@ func (b *storeImpl) AddToken(token *v1.TokenMetadata) error {
 	})
 }
 
-func (b *storeImpl) GetToken(id string) (token *v1.TokenMetadata, exists bool, err error) {
+func (b *storeImpl) GetTokenOrNil(id string) (token *v1.TokenMetadata, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "APIToken")
 
 	err = b.View(func(tx *bolt.Tx) error {
@@ -44,7 +44,6 @@ func (b *storeImpl) GetToken(id string) (token *v1.TokenMetadata, exists bool, e
 		if tokenBytes == nil {
 			return nil
 		}
-		exists = true
 		token = new(v1.TokenMetadata)
 		err := proto.Unmarshal(tokenBytes, token)
 		if err != nil {
@@ -81,10 +80,11 @@ func (b *storeImpl) GetTokens(req *v1.GetAPITokensRequest) (tokens []*v1.TokenMe
 func (b *storeImpl) RevokeToken(id string) (exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "RevokedTokenID")
 
-	token, exists, err := b.GetToken(id)
-	if !exists {
+	token, err := b.GetTokenOrNil(id)
+	if token == nil {
 		return
 	}
+	exists = true
 	token.Revoked = true
 	bytes, err := proto.Marshal(token)
 	if err != nil {

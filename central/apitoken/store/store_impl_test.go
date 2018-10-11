@@ -38,23 +38,23 @@ func (suite *APITokenStoreTestSuite) TeardownSuite() {
 }
 
 func (suite *APITokenStoreTestSuite) verifyTokenDoesntExist(id string) {
-	_, exists, err := suite.store.GetToken(id)
+	token, err := suite.store.GetTokenOrNil(id)
 	suite.Require().NoError(err)
-	suite.False(exists)
+	suite.Nil(token)
 }
 
 func (suite *APITokenStoreTestSuite) mustGetToken(id string) *v1.TokenMetadata {
-	token, exists, err := suite.store.GetToken(id)
+	token, err := suite.store.GetTokenOrNil(id)
 	suite.Require().NoError(err)
-	suite.True(exists)
+	suite.NotNil(token)
 	return token
 }
 
 // verifyTokenIDs verifies token ids using by the get one and the get all APIs
 func (suite *APITokenStoreTestSuite) verifyTokenIDs(req *v1.GetAPITokensRequest, ids ...string) {
 	for _, id := range ids {
-		_, exists, err := suite.store.GetToken(id)
-		suite.True(exists, "couldn't find token %s", id)
+		token, err := suite.store.GetTokenOrNil(id)
+		suite.NotNil(token, "couldn't find token %s", id)
 		suite.NoError(err, "Error retrieving token %s", id)
 	}
 

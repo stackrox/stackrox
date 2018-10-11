@@ -20,7 +20,6 @@ func (s *storeImpl) GetRoles() []permissions.Role {
 	return roles
 }
 
-func (s *storeImpl) GetRole(name string) (role permissions.Role, exists bool) {
-	role, exists = s.roles[name]
-	return
+func (s *storeImpl) RoleByName(name string) permissions.Role {
+	return s.roles[name]
 }

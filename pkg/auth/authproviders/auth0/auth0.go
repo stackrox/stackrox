@@ -12,7 +12,10 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/tokenbased"
+	grpcTokenbased "github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/jwt"
+	"google.golang.org/grpc/metadata"
+	joseJWT "gopkg.in/square/go-jose.v2/jwt"
 )
 
 const (
@@ -174,19 +177,22 @@ func (a auth0) RefreshURL() string {
 }
 
 // User validates the user, if possible, based on the headers.
-func (a auth0) Parse(headers map[string][]string, roleMapper tokenbased.RoleMapper) (identity tokenbased.Identity, err error) {
+func (a auth0) Parse(metadata metadata.MD, roleMapper tokenbased.RoleMapper) (identity tokenbased.Identity, err error) {
 	jwks := jwt.NewJWKSGetter(a.jwksURL())
-	validator := jwt.NewRS256Validator(jwks, a.issuer(), a.config.audience())
-	accessToken, claims, err := validator.ValidateFromHeaders(headers)
-	if err != nil {
+	validator := jwt.NewRS256Validator(jwks, a.issuer(), joseJWT.Audience{a.config.audience()})
+	var claims joseJWT.Claims
+
+	rawToken := grpcTokenbased.ExtractToken(metadata, "Bearer")
+	if err := validator.Validate(rawToken, &claims); err != nil {
 		return nil, fmt.Errorf("token validation: %s", err)
 	}
-	email, err := a.getProfile(accessToken)
+
+	email, err := a.getProfile(rawToken)
 	if err != nil {
 		return nil, fmt.Errorf("user profile retrieval: %s", err)
 	}
-	role, exists := roleMapper.Role(email)
-	if !exists {
+	role := roleMapper.Role(email)
+	if role == nil {
 		return nil, fmt.Errorf("couldn't find role for email: %s", email)
 	}
 	return tokenbased.NewIdentity(email, role, claims.Expiry.Time()), nil

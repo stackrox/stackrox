@@ -25,15 +25,16 @@ func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 		return nil
 	}
 
-	identity, err := authn.FromTokenBasedIdentityContext(ctx)
-	if err != nil {
+	id := authn.IdentityFromContext(ctx)
+	if id == nil {
 		return authz.ErrNoCredentials
 	}
-	if identity.ID() == "" || identity.Role() == nil {
+	role := id.Role()
+	if role == nil {
 		return authz.ErrNoCredentials
 	}
 	for _, permission := range p.requiredPermissions {
-		if !identity.Role().Has(permission) {
+		if !role.Has(permission) {
 			return authz.ErrNotAuthorized(fmt.Sprintf("not authorized to %s %s",
 				permission.Access, permission.Resource))
 		}

@@ -4,7 +4,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/auth/tokenbased/user"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"golang.org/x/net/context"
@@ -33,53 +32,30 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetAuthStatus retrieves the auth status based on the credentials given to the server.
 func (s *serviceImpl) GetAuthStatus(ctx context.Context, request *v1.Empty) (*v1.AuthStatus, error) {
-	authStatus, err := tokenAuthStatus(ctx)
-	if err == nil {
-		return authStatus, nil
+	id := authn.IdentityFromContext(ctx)
+	if id == nil {
+		return nil, status.Error(codes.Unauthenticated, "not authenticated")
 	}
 
-	authStatus, err = tlsAuthStatus(ctx)
-	if err == nil {
-		return authStatus, nil
-	}
-
-	return nil, status.Error(codes.Unauthenticated, "not authenticated")
+	return authStatusForID(id)
 }
 
-func tokenAuthStatus(ctx context.Context) (*v1.AuthStatus, error) {
-	identity, err := authn.FromTokenBasedIdentityContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	exp, err := types.TimestampProto(identity.Expiration())
+func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
+	exp, err := types.TimestampProto(id.Expiry())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "expiration time: %s", err)
 	}
-	var url string
-	if asUserIdentity, ok := identity.(user.Identity); ok {
-		url = asUserIdentity.AuthProvider().RefreshURL()
-	}
-	return &v1.AuthStatus{
-		Id:         &v1.AuthStatus_UserId{UserId: identity.ID()},
-		Expires:    exp,
-		RefreshUrl: url,
-	}, nil
-}
 
-func tlsAuthStatus(ctx context.Context) (*v1.AuthStatus, error) {
-	id, err := authn.FromTLSContext(ctx)
-	switch {
-	case err == authn.ErrNoContext:
-		return nil, status.Error(codes.Unauthenticated, err.Error())
-	case err != nil:
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	exp, err := types.TimestampProto(id.Expiration)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "expiration time: %s", err)
-	}
-	return &v1.AuthStatus{
-		Id:      &v1.AuthStatus_ServiceId{ServiceId: id.Identity.V1()},
+	result := &v1.AuthStatus{
 		Expires: exp,
-	}, nil
+	}
+	if provider := id.ExternalAuthProvider(); provider != nil {
+		result.RefreshUrl = provider.RefreshURL()
+	}
+	if svc := id.Service(); svc != nil {
+		result.Id = &v1.AuthStatus_ServiceId{ServiceId: svc}
+	} else {
+		result.Id = &v1.AuthStatus_UserId{UserId: id.UID()}
+	}
+	return result, nil
 }

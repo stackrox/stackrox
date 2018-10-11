@@ -4,15 +4,27 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	cfcsr "github.com/cloudflare/cfssl/csr"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 )
 
 // Identity identifies a particular certificate.
 type Identity struct {
 	Subject Subject
 	Serial  *big.Int
+	Expiry  time.Time
+}
+
+// IdentityFromCert returns an mTLS identity for the given certificate.
+func IdentityFromCert(cert requestinfo.CertInfo) Identity {
+	return Identity{
+		Subject: SubjectFromCommonName(cert.Subject.CommonName),
+		Serial:  cert.SerialNumber,
+		Expiry:  cert.NotAfter,
+	}
 }
 
 // V1 returns the identity represented as a v1 API ServiceIdentity.

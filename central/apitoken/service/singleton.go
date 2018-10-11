@@ -3,9 +3,7 @@ package service
 import (
 	"sync"
 
-	"github.com/stackrox/rox/central/apitoken/cachedstore"
-	"github.com/stackrox/rox/central/apitoken/parser"
-	"github.com/stackrox/rox/central/apitoken/signer"
+	"github.com/stackrox/rox/central/apitoken"
 	rolestore "github.com/stackrox/rox/central/role/store"
 )
 
@@ -15,7 +13,7 @@ var (
 )
 
 func initialize() {
-	svc = New(signer.Singleton(), parser.Singleton(), rolestore.Singleton(), cachedstore.Singleton())
+	svc = New(apitoken.BackendSingleton(), rolestore.Singleton())
 }
 
 // Singleton returns the API token singleton.
