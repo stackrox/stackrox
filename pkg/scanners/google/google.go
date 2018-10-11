@@ -12,6 +12,7 @@ import (
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1alpha1"
 	"google.golang.org/grpc"
@@ -43,6 +44,7 @@ func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScann
 type googleScanner struct {
 	client           containeranalysis.ContainerAnalysisClient
 	project          string
+	registry         string
 	protoIntegration *v1.ImageIntegration
 }
 
@@ -55,6 +57,15 @@ func newScanner(integration *v1.ImageIntegration) (*googleScanner, error) {
 	if !ok {
 		return nil, errors.New("'service-account' parameter must be defined for Google Container Analysis")
 	}
+	endpoint, ok := integration.GetConfig()["endpoint"]
+	if !ok {
+		return nil, errors.New("'endpoint' parameter must be defined for Google Container Analysis")
+	}
+	url, err := urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	if err != nil {
+		return nil, err
+	}
+	registry := urlfmt.GetServerFromURL(url)
 	conn, err := getGRPCConnection(serviceAccount)
 	if err != nil {
 		return nil, err
@@ -63,6 +74,7 @@ func newScanner(integration *v1.ImageIntegration) (*googleScanner, error) {
 		client: containeranalysis.NewContainerAnalysisClient(conn),
 
 		project:          project,
+		registry:         registry,
 		protoIntegration: integration,
 	}
 	return scanner, nil
@@ -262,7 +274,7 @@ func (c *googleScanner) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 
 // Match decides if the image is contained within this scanner
 func (c *googleScanner) Match(image *v1.Image) bool {
-	return strings.HasPrefix(image.GetName().GetRegistry(), "gcr.io")
+	return c.registry == image.GetName().GetRegistry()
 }
 
 func (c *googleScanner) Global() bool {
