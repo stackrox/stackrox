@@ -15,6 +15,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -66,7 +67,8 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) PushNetworkFlows(stream central.NetworkFlowService_PushNetworkFlowsServer) error {
-	return s.receiveNetworkFlowUpdates(stream)
+	err := s.receiveNetworkFlowUpdates(stream)
+	return err
 }
 
 func (s *serviceImpl) receiveNetworkFlowUpdates(stream central.NetworkFlowService_PushNetworkFlowsServer) error {
@@ -76,11 +78,15 @@ func (s *serviceImpl) receiveNetworkFlowUpdates(stream central.NetworkFlowServic
 		return status.Errorf(codes.Internal, "unable to get cluster ID from sensor stream")
 	}
 
+	if err := stream.SendHeader(metadata.MD{}); err != nil {
+		return status.Errorf(codes.Internal, "sending initial metadata: %v", err)
+	}
+
 	isFirst := true
 	for {
 		update, err := stream.Recv()
 		if err != nil {
-			return status.Errorf(codes.Internal, "error dequeing message from stream; %s", err)
+			return fmt.Errorf("receiving message: %v", err)
 		}
 
 		updatedFlows := update.Updated
@@ -97,7 +103,10 @@ func (s *serviceImpl) receiveNetworkFlowUpdates(stream central.NetworkFlowServic
 }
 
 func (s *serviceImpl) updateFlowStore(clusterID string, newFlows []*v1.NetworkFlow, updateTS *protobuf.Timestamp, isFirst bool) error {
-	flowStore := s.clusterStore.GetFlowStore(clusterID)
+	flowStore, err := s.clusterStore.CreateFlowStore(clusterID)
+	if err != nil {
+		return fmt.Errorf("could not get or create flow store for cluster %s: %v", clusterID, err)
+	}
 
 	tsOffset := timestamp.Now() - timestamp.FromProtobuf(updateTS)
 	updatedFlows := make(map[networkFlowProperties]timestamp.MicroTS, len(newFlows))
@@ -106,7 +115,7 @@ func (s *serviceImpl) updateFlowStore(clusterID string, newFlows []*v1.NetworkFl
 		existingFlows, lastUpdateTS, err := flowStore.GetAllFlows()
 
 		if err != nil {
-			return fmt.Errorf("unable to get existing flows for cluster %s from store", clusterID)
+			return fmt.Errorf("unable to get existing flows for cluster %s from store: %v", clusterID, err)
 		}
 
 		for _, flow := range existingFlows {
@@ -123,7 +132,7 @@ func (s *serviceImpl) updateFlowStore(clusterID string, newFlows []*v1.NetworkFl
 		updatedFlows[fromProto(newFlow.GetProps())] = t
 	}
 
-	flowsToBeUpserted := make([]*v1.NetworkFlow, len(updatedFlows))
+	flowsToBeUpserted := make([]*v1.NetworkFlow, 0, len(updatedFlows))
 	for props, ts := range updatedFlows {
 		toBeUpserted := &v1.NetworkFlow{
 			Props: props.toProto(),

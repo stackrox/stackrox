@@ -1,48 +1,36 @@
 package store
 
 import (
+	"bytes"
+	"crypto/sha1"
 	"fmt"
 	"time"
 
 	"github.com/boltdb/bolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/pborman/uuid"
 	"github.com/stackrox/rox/central/globaldb/ops"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 type flowStoreImpl struct {
-	db *bolt.DB
-
-	bucketName         string
-	updateTSBucketName string
-	bucketUUID         uuid.UUID
+	flowsBucket bolthelper.BucketRef
 }
+
+const updatedTSKey = "\x00"
 
 // GetAllFlows returns all the flows in the store.;
 func (s *flowStoreImpl) GetAllFlows() (flows []*v1.NetworkFlow, ts types.Timestamp, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
 
-	err = s.db.View(func(tx *bolt.Tx) error {
-		flows, err = s.readAllFlows(tx)
-		if err != nil {
-			return err
-		}
-		bucket := tx.Bucket([]byte(s.updateTSBucketName))
-
-		bytes := bucket.Get([]byte(s.bucketUUID))
-		if bytes == nil {
-			return fmt.Errorf("unable to get last update timestamp for flows from cluster %s", s.bucketUUID)
-		}
-		err = ts.Unmarshal(bytes)
-		if err != nil {
-			return err
-		}
-		return nil
+	err = s.flowsBucket.View(func(b *bolt.Bucket) error {
+		var err error
+		flows, ts, err = readAllFlows(b)
+		return err
 	})
 
 	return flows, ts, err
@@ -52,13 +40,10 @@ func (s *flowStoreImpl) GetAllFlows() (flows []*v1.NetworkFlow, ts types.Timesta
 func (s *flowStoreImpl) GetFlow(props *v1.NetworkFlowProperties) (flow *v1.NetworkFlow, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
 
-	id, err := s.getID(flow.GetProps())
-	if err != nil {
-		return nil, err
-	}
+	id := getID(flow.GetProps())
 
-	err = s.db.View(func(tx *bolt.Tx) error {
-		flow, err = s.readFlow(tx, id)
+	err = s.flowsBucket.View(func(b *bolt.Bucket) error {
+		flow, err = readFlow(b, id)
 		if err != nil {
 			return err
 		}
@@ -69,18 +54,27 @@ func (s *flowStoreImpl) GetFlow(props *v1.NetworkFlowProperties) (flow *v1.Netwo
 
 // UpsertFlow updates an flow to the store, adding it if not already present.
 func (s *flowStoreImpl) UpsertFlows(flows []*v1.NetworkFlow, lastUpdatedTS timestamp.MicroTS) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.UpsertAll, "NetworkFlow")
+	tsData, err := protoconv.ConvertTimeToTimestamp(lastUpdatedTS.GoTime()).Marshal()
+	if err != nil {
+		return err
+	}
 
-	return s.db.Update(func(tx *bolt.Tx) error {
-		t, err := protoconv.ConvertTimeToTimestamp(lastUpdatedTS.GoTime()).Marshal()
+	kvs := make([]bolthelper.KV, len(flows)+1)
+	kvs[0] = bolthelper.KV{Key: []byte(updatedTSKey), Value: tsData}
+
+	for i, flow := range flows {
+		k := getID(flow.GetProps())
+		v, err := proto.Marshal(flow)
 		if err != nil {
 			return err
 		}
-		bucket := tx.Bucket([]byte(s.updateTSBucketName))
-		bucket.Put([]byte(s.bucketUUID), t)
+		kvs[i+1] = bolthelper.KV{Key: k, Value: v}
+	}
 
-		return s.writeFlows(tx, flows...)
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.UpsertAll, "NetworkFlow")
 
+	return s.flowsBucket.Update(func(b *bolt.Bucket) error {
+		return bolthelper.PutAll(b, kvs...)
 	})
 }
 
@@ -88,23 +82,21 @@ func (s *flowStoreImpl) UpsertFlows(flows []*v1.NetworkFlow, lastUpdatedTS times
 func (s *flowStoreImpl) RemoveFlow(props *v1.NetworkFlowProperties) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
-	id, err := s.getID(props)
-	if err != nil {
-		return err
-	}
+	id := getID(props)
 
-	return s.db.Update(func(tx *bolt.Tx) error {
-		return s.removeFlow(tx, id)
+	return s.flowsBucket.Update(func(b *bolt.Bucket) error {
+		return b.Delete(id)
 	})
 }
 
-// Member helper functions.
+// Static helper functions.
 /////////////////////////
 
-func (s *flowStoreImpl) readAllFlows(tx *bolt.Tx) (flows []*v1.NetworkFlow, err error) {
-
-	bucket := tx.Bucket([]byte(s.bucketName))
+func readAllFlows(bucket *bolt.Bucket) (flows []*v1.NetworkFlow, lastUpdateTS types.Timestamp, err error) {
 	err = bucket.ForEach(func(k, v []byte) error {
+		if bytes.Equal(k, []byte(updatedTSKey)) {
+			return proto.Unmarshal(v, &lastUpdateTS)
+		}
 		flow := new(v1.NetworkFlow)
 
 		err = proto.Unmarshal(v, flow)
@@ -118,9 +110,7 @@ func (s *flowStoreImpl) readAllFlows(tx *bolt.Tx) (flows []*v1.NetworkFlow, err 
 	return
 }
 
-func (s *flowStoreImpl) readFlow(tx *bolt.Tx, id []byte) (flow *v1.NetworkFlow, err error) {
-	bucket := tx.Bucket([]byte(s.bucketName))
-
+func readFlow(bucket *bolt.Bucket, id []byte) (flow *v1.NetworkFlow, err error) {
 	v := bucket.Get(id)
 	if v == nil {
 		return
@@ -134,37 +124,8 @@ func (s *flowStoreImpl) readFlow(tx *bolt.Tx, id []byte) (flow *v1.NetworkFlow, 
 	return
 }
 
-func (s *flowStoreImpl) writeFlows(tx *bolt.Tx, flows ...*v1.NetworkFlow) error {
-	bucket := tx.Bucket([]byte(s.bucketName))
-
-	for _, flow := range flows {
-		id, err := s.getID(flow.GetProps())
-		if err != nil {
-			return err
-		}
-
-		v, err := proto.Marshal(flow)
-		if err != nil {
-			return err
-		}
-
-		bucket.Put(id, v)
-	}
-	return nil
-}
-
-func (s *flowStoreImpl) removeFlow(tx *bolt.Tx, id []byte) error {
-	bucket := tx.Bucket([]byte(s.bucketName))
-	bucket.Delete(id)
-	return nil
-}
-
-func (s *flowStoreImpl) getID(props *v1.NetworkFlowProperties) (serialized []byte, err error) {
-	var marshaledProps []byte
-	marshaledProps, err = proto.Marshal(props)
-	if err != nil {
-		return
-	}
-	serialized, err = uuid.NewSHA1(s.bucketUUID, marshaledProps).MarshalText()
-	return
+func getID(props *v1.NetworkFlowProperties) []byte {
+	hashed := sha1.New()
+	fmt.Fprintf(hashed, "%s:%s:%x:%x", props.GetSrcDeploymentId(), props.GetDstDeploymentId(), props.GetDstPort(), props.GetL4Protocol())
+	return hashed.Sum(nil)
 }

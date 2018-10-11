@@ -45,12 +45,6 @@ func (suite *NetworkGraphServiceTestSuite) TestFailsIfClusterIsNotSet() {
 	suite.Error(err, "expected graph generation to fail since no cluster is specified")
 }
 
-func (suite *NetworkGraphServiceTestSuite) TestFailsIfSinceIsNotSet() {
-	request := &v1.NetworkGraphRequest{ClusterId: "fake one"}
-	_, err := suite.tested.GetNetworkGraph((context.Context)(nil), request)
-	suite.Error(err, "expected graph generation to fail since no cluster is specified")
-}
-
 func TestNetworkGraph(t *testing.T) {
 	suite.Run(t, new(NetworkGraphServiceTestSuite))
 }

@@ -49,6 +49,7 @@ import (
 	searchService "github.com/stackrox/rox/central/search/service"
 	secretService "github.com/stackrox/rox/central/secret/service"
 	seService "github.com/stackrox/rox/central/sensorevent/service"
+	"github.com/stackrox/rox/central/sensornetworkflow"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/user/mapper"
@@ -137,6 +138,7 @@ func (c *central) startGRPCServer() {
 		seService.Singleton(),
 		siService.Singleton(),
 		summaryService.Singleton(),
+		sensornetworkflow.Singleton(),
 	)
 
 	enrichanddetect.GetLoop().Start()

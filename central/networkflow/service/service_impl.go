@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
+	"time"
 
-	google_protobuf "github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -53,8 +54,9 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 		return nil, status.Errorf(codes.InvalidArgument, "Cluster ID must be specified")
 	}
 
-	if request.GetSince() == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "Request parameter Since must be specified")
+	since := timestamp.FromProtobuf(request.GetSince())
+	if since == 0 {
+		since = timestamp.FromGoTime(time.Now().Add(-5 * time.Minute))
 	}
 
 	// Get the deployments we want to check connectivity between.
@@ -90,7 +92,7 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 	// compute edges
 	var edges []*v1.NetworkEdge
 
-	filteredFlows := filterNetworkFlowsByTime(flows, request.GetSince())
+	filteredFlows := filterNetworkFlowsByTime(flows, since)
 	for _, flow := range filteredFlows {
 		srcID := flow.GetProps().GetSrcDeploymentId()
 		dstID := flow.GetProps().GetDstDeploymentId()
@@ -104,13 +106,14 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 	}, nil
 }
 
-func filterNetworkFlowsByTime(flows []*v1.NetworkFlow, since *google_protobuf.Timestamp) (filtered []*v1.NetworkFlow) {
+func filterNetworkFlowsByTime(flows []*v1.NetworkFlow, since timestamp.MicroTS) (filtered []*v1.NetworkFlow) {
+	filtered = flows[:0]
 	for _, flow := range flows {
-		flowTS := flow.LastSeenTimestamp
-		if flowTS.GetSeconds() > since.GetSeconds() ||
-			(flowTS.GetSeconds() == since.GetSeconds() && flowTS.GetNanos() > since.GetNanos()) {
-			filtered = append(filtered, flow)
+		flowTS := timestamp.FromProtobuf(flow.LastSeenTimestamp)
+		if flowTS != 0 && flowTS < since {
+			continue
 		}
+		filtered = append(filtered, flow)
 	}
 
 	return

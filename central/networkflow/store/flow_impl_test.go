@@ -26,12 +26,12 @@ type FlowStoreTestSuite struct {
 
 func (suite *FlowStoreTestSuite) SetupSuite() {
 	db, err := bolthelper.NewTemp(suite.T().Name() + ".db")
-	if err != nil {
-		suite.FailNow("Failed to make BoltDB", err.Error())
-	}
+	suite.Require().NoError(err, "Failed to make BoltDB")
 
 	suite.db = db
-	suite.tested = NewFlowStore(db, "fakecluster")
+	cs := NewClusterStore(suite.db)
+	suite.tested, err = cs.CreateFlowStore("fakecluster")
+	suite.Require().NoError(err)
 }
 
 func (suite *FlowStoreTestSuite) TeardownSuite() {

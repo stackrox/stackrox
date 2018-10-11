@@ -140,6 +140,9 @@ func (s *sensor) sendEventsSingle(
 			if !ok {
 				return false, errors.New("orchestrator events channel closed")
 			}
+			if evt.GetDeployment() != nil {
+				s.updateCacheState(evt)
+			}
 			if err := stream.Send(evt); err != nil {
 				return true, err
 			}

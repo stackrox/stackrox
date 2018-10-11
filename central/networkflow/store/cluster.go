@@ -12,7 +12,7 @@ type ClusterStore interface {
 	GetAllFlowStores() []FlowStore
 	GetFlowStore(clusterID string) FlowStore
 
-	CreateFlowStore(clusterID string) FlowStore
+	CreateFlowStore(clusterID string) (FlowStore, error)
 	RemoveFlowStore(clusterID string) error
 }
 
@@ -20,6 +20,6 @@ type ClusterStore interface {
 func NewClusterStore(db *bolt.DB) ClusterStore {
 	bolthelper.RegisterBucketOrPanic(db, clusterFlowBucket)
 	return &clusterStoreImpl{
-		db: db,
+		clusterFlowsBucket: bolthelper.TopLevelRef(db, []byte(clusterFlowBucket)),
 	}
 }
