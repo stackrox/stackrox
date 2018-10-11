@@ -30,7 +30,7 @@ import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import TablePagination from 'Components/TablePagination';
 
-import { severityLabels } from 'messages/common';
+import { severityLabels, lifecycleStageLabels } from 'messages/common';
 import { sortSeverity } from 'sorters/sorters';
 import PolicyCreationWizard from 'Containers/Policies/PolicyCreationWizard';
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -291,6 +291,17 @@ class PoliciesPage extends Component {
                 accessor: 'description',
                 className: `w-1/3 ${wrapClassName} ${defaultColumnClassName}`,
                 headerClassName: `w-1/3 ${defaultHeaderClassName}`
+            },
+            {
+                Header: 'Lifecycle',
+                accessor: 'lifecycle_stages',
+                className: `${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `${defaultHeaderClassName}`,
+                Cell: ({ original }) => {
+                    const { lifecycleStages } = original;
+                    return lifecycleStages.map(stage => lifecycleStageLabels[stage]).join(', ');
+                },
+                sortable: false
             },
             {
                 Header: 'Severity',

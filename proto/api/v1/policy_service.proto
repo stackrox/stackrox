@@ -203,11 +203,12 @@ message DeletePolicyCategoryRequest {
 }
 
 message ListPolicy {
-    string   id          = 1;
-    string   name        = 2;
-    string   description = 3;
-    Severity severity    = 4;
-    bool     disabled    = 5;
+    string   id                                 = 1;
+    string   name                               = 2;
+    string   description                        = 3;
+    Severity severity                           = 4;
+    bool     disabled                           = 5;
+    repeated LifecycleStage lifecycle_stages    = 6;
 }
 
 message ListPoliciesResponse {

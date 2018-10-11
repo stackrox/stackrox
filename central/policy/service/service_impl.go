@@ -107,11 +107,12 @@ func convertPoliciesToListPolicies(policies []*v1.Policy) []*v1.ListPolicy {
 	listPolicies := make([]*v1.ListPolicy, 0, len(policies))
 	for _, p := range policies {
 		listPolicies = append(listPolicies, &v1.ListPolicy{
-			Id:          p.GetId(),
-			Name:        p.GetName(),
-			Description: p.GetDescription(),
-			Severity:    p.GetSeverity(),
-			Disabled:    p.GetDisabled(),
+			Id:              p.GetId(),
+			Name:            p.GetName(),
+			Description:     p.GetDescription(),
+			Severity:        p.GetSeverity(),
+			Disabled:        p.GetDisabled(),
+			LifecycleStages: p.GetLifecycleStages(),
 		})
 	}
 	return listPolicies

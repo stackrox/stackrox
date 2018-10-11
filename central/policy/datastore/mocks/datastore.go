@@ -5,10 +5,9 @@
 package mocks
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	reflect "reflect"
 )
 
 // MockDataStore is a mock of DataStore interface
