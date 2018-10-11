@@ -19,7 +19,6 @@ ENV PATH="/prevent:$PATH"
 COPY ./benchmarks/ /data/benchmarks
 COPY ./policies/ /data/policies
 COPY ./templates/ /data/templates
-COPY ./encode-docker-auth.sh /prevent/
 COPY ./entrypoint.sh /prevent/
 COPY ./bin/benchmark-bootstrap /prevent/
 COPY ./bin/benchmarks /prevent/
@@ -31,6 +30,7 @@ COPY ./ui/build  /ui/
 COPY ./VERSION /VERSION
 
 COPY ./telegraf.sh /telegraf.sh
+COPY ./assets /data/assets
 
 EXPOSE 443
 

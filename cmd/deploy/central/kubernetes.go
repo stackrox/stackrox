@@ -55,7 +55,7 @@ func (k *kubernetes) Render(c Config) ([]*v1.File, error) {
 		filenames = append(filenames, monitoringClient...)
 	}
 
-	return renderFilenames(filenames, c)
+	return renderFilenames(filenames, c, "/data/assets/docker-auth.sh")
 }
 
 func (k *kubernetes) Instructions() string {

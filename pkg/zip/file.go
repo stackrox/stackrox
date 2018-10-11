@@ -3,6 +3,7 @@ package zip
 import (
 	"archive/zip"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
 
@@ -16,6 +17,15 @@ func NewFile(name, content string, exec bool) *v1.File {
 		Content:    content,
 		Executable: exec,
 	}
+}
+
+// NewFromFile creates a v1.File from an existing file.
+func NewFromFile(srcFilename, tgtFilename string, exec bool) (*v1.File, error) {
+	contents, err := ioutil.ReadFile(srcFilename)
+	if err != nil {
+		return nil, err
+	}
+	return NewFile(tgtFilename, string(contents), exec), nil
 }
 
 // AddFile adds a file to the zip writer

@@ -4,23 +4,18 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 kubectl get namespace {{.K8sConfig.Namespace}} > /dev/null || kubectl create namespace {{.K8sConfig.Namespace}}
 
 if ! kubectl get secret/{{.K8sConfig.ImagePullSecret}} -n {{.K8sConfig.Namespace}} > /dev/null; then
-  if [ -z "${REGISTRY_USERNAME}" ]; then
-    echo -n "Username for {{.K8sConfig.Registry}}: "
-    read REGISTRY_USERNAME
-    echo
-  fi
-  if [ -z "${REGISTRY_PASSWORD}" ]; then
-    echo -n "Password for {{.K8sConfig.Registry}}: "
-    read -s REGISTRY_PASSWORD
-    echo
-  fi
-
-  kubectl create secret docker-registry \
-    "{{.K8sConfig.ImagePullSecret}}" --namespace "{{.K8sConfig.Namespace}}" \
-    --docker-server={{.K8sConfig.Registry}} \
-    --docker-username="${REGISTRY_USERNAME}" \
-    --docker-password="${REGISTRY_PASSWORD}" \
-    --docker-email="support@stackrox.com"
+  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.K8sConfig.Registry}}")"
+  [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
+  kubectl create --namespace "{{.K8sConfig.Namespace}}" -f - <<EOF
+apiVersion: v1
+data:
+  .dockerconfigjson: ${registry_auth}
+kind: Secret
+metadata:
+  name: {{.K8sConfig.ImagePullSecret}}
+  namespace: {{.K8sConfig.Namespace}}
+type: kubernetes.io/dockerconfigjson
+EOF
 
 	echo
 fi

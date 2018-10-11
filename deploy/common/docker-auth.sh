@@ -1,0 +1,1 @@
+../../image/assets/docker-auth.sh

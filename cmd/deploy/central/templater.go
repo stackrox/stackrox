@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"path"
 	"strings"
 	"text/template"
 
@@ -149,7 +150,7 @@ func generateMonitoringImage(preventImage string) string {
 	return fmt.Sprintf("%s/%s:%s", img.GetName().GetRegistry(), remote, img.GetName().GetTag())
 }
 
-func renderFilenames(filenames []string, c Config) ([]*v1.File, error) {
+func renderFilenames(filenames []string, c Config, staticFilenames ...string) ([]*v1.File, error) {
 	var files []*v1.File
 	for _, f := range filenames {
 		t, err := templates.ReadFileAndTemplate(f)
@@ -164,6 +165,13 @@ func renderFilenames(filenames []string, c Config) ([]*v1.File, error) {
 		// Trim the first section off of the path because it defines the orchestrator
 		path := f[strings.Index(f, "/")+1:]
 		files = append(files, zip.NewFile(path, d, strings.HasSuffix(f, ".sh")))
+	}
+	for _, staticFilename := range staticFilenames {
+		f, err := zip.NewFromFile(staticFilename, path.Base(staticFilename), path.Ext(staticFilename) == ".sh")
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, f)
 	}
 	files = append(files, zip.NewFile("README", standardizeWhitespace(Deployers[c.ClusterType].Instructions()), false))
 	return files, nil

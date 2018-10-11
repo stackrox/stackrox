@@ -34,5 +34,5 @@ func (s *swarm) Render(c Wrap) ([]*v1.File, error) {
 		"swarm/delete-sensor.sh",
 	}
 
-	return renderFilenames(filenames, fields)
+	return renderFilenames(filenames, fields, "/data/assets/docker-auth.sh")
 }

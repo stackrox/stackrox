@@ -3,8 +3,8 @@ package clusters
 import (
 	"bytes"
 	"fmt"
+	"path"
 	"path/filepath"
-	"strings"
 	"text/template"
 
 	"github.com/stackrox/rox/generated/api/v1"
@@ -92,7 +92,7 @@ func fieldsFromWrap(c Wrap) map[string]interface{} {
 	return fields
 }
 
-func renderFilenames(filenames []string, c map[string]interface{}) ([]*v1.File, error) {
+func renderFilenames(filenames []string, c map[string]interface{}, staticFilenames ...string) ([]*v1.File, error) {
 	var files []*v1.File
 	for _, f := range filenames {
 		t, err := templates.ReadFileAndTemplate(f)
@@ -103,7 +103,14 @@ func renderFilenames(filenames []string, c map[string]interface{}) ([]*v1.File, 
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, zip.NewFile(filepath.Base(f), d, strings.HasSuffix(f, ".sh")))
+		files = append(files, zip.NewFile(filepath.Base(f), d, path.Ext(f) == ".sh"))
+	}
+	for _, staticFilename := range staticFilenames {
+		f, err := zip.NewFromFile(staticFilename, path.Base(staticFilename), path.Ext(staticFilename) == ".sh")
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, f)
 	}
 	return files, nil
 }
