@@ -3,7 +3,7 @@
     "description": "Detects process execution of make",
     "categories": ["Package Management"],
     "severity": "LOW_SEVERITY",
-    "lifecycle_stages": ["RUN_TIME"],
+    "lifecycle_stages": ["RUNTIME"],
     "fields": {
       "process_policy": {
         "name": "make$"

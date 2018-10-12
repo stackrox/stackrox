@@ -4,17 +4,17 @@ import "github.com/stackrox/rox/generated/api/v1"
 
 // AppliesAtBuildTime returns if a policy applies at build time.
 func AppliesAtBuildTime(policy *v1.Policy) bool {
-	return appliesAt(policy, v1.LifecycleStage_BUILD_TIME)
+	return appliesAt(policy, v1.LifecycleStage_BUILD)
 }
 
 // AppliesAtDeployTime returns if a policy applies at deploy time.
 func AppliesAtDeployTime(policy *v1.Policy) bool {
-	return appliesAt(policy, v1.LifecycleStage_DEPLOY_TIME)
+	return appliesAt(policy, v1.LifecycleStage_DEPLOY)
 }
 
 // AppliesAtRunTime returns if a policy applies at run time.
 func AppliesAtRunTime(policy *v1.Policy) bool {
-	return appliesAt(policy, v1.LifecycleStage_RUN_TIME)
+	return appliesAt(policy, v1.LifecycleStage_RUNTIME)
 }
 
 func appliesAt(policy *v1.Policy, lc v1.LifecycleStage) bool {

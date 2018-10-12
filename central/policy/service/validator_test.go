@@ -165,7 +165,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 			description: "Build time policy with non-image fields",
 			p: &v1.Policy{
 				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_BUILD_TIME,
+					v1.LifecycleStage_BUILD,
 				},
 				Fields: &v1.PolicyFields{
 					ImageName: &v1.ImageNamePolicy{Remote: "blah"},
@@ -182,7 +182,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 			description: "Build time policy with no image fields",
 			p: &v1.Policy{
 				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_BUILD_TIME,
+					v1.LifecycleStage_BUILD,
 				},
 			},
 			errExpected: true,
@@ -191,7 +191,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 			description: "valid build time",
 			p: &v1.Policy{
 				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_BUILD_TIME,
+					v1.LifecycleStage_BUILD,
 				},
 				Fields: &v1.PolicyFields{
 					ImageName: &v1.ImageNamePolicy{
@@ -204,7 +204,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 			description: "deploy time with no fields",
 			p: &v1.Policy{
 				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_DEPLOY_TIME,
+					v1.LifecycleStage_DEPLOY,
 				},
 			},
 			errExpected: true,
@@ -213,7 +213,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 			description: "deploy time with runtime fields",
 			p: &v1.Policy{
 				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_DEPLOY_TIME,
+					v1.LifecycleStage_DEPLOY,
 				},
 				Fields: &v1.PolicyFields{
 					ImageName: &v1.ImageNamePolicy{
@@ -228,7 +228,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 			description: "Valid deploy time",
 			p: &v1.Policy{
 				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_DEPLOY_TIME,
+					v1.LifecycleStage_DEPLOY,
 				},
 				Fields: &v1.PolicyFields{
 					ImageName: &v1.ImageNamePolicy{
@@ -244,7 +244,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 			description: "Run time with no fields",
 			p: &v1.Policy{
 				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_RUN_TIME,
+					v1.LifecycleStage_RUNTIME,
 				},
 			},
 			errExpected: true,
@@ -253,7 +253,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 			description: "Run time with only deploy-time fields",
 			p: &v1.Policy{
 				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_RUN_TIME,
+					v1.LifecycleStage_RUNTIME,
 				},
 				Fields: &v1.PolicyFields{
 					ImageName: &v1.ImageNamePolicy{
@@ -270,7 +270,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 			description: "Valid Run time with just process fields",
 			p: &v1.Policy{
 				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_RUN_TIME,
+					v1.LifecycleStage_RUNTIME,
 				},
 				Fields: &v1.PolicyFields{
 					ProcessPolicy: &v1.ProcessPolicy{Name: "asfasfaa"},
@@ -281,7 +281,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 			description: "Valid Run time with all sorts of fields",
 			p: &v1.Policy{
 				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_RUN_TIME,
+					v1.LifecycleStage_RUNTIME,
 				},
 				Fields: &v1.PolicyFields{
 					ImageName: &v1.ImageNamePolicy{

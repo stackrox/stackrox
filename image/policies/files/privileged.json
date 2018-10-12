@@ -2,7 +2,7 @@
   "name": "Privileged Container",
   "description": "Alert on deployments with containers running in privileged mode",
   "severity": "MEDIUM_SEVERITY",
-  "lifecycle_stages": ["DEPLOY_TIME"],
+  "lifecycle_stages": ["DEPLOY"],
   "categories": ["Privileges"],
   "fields": {
     "privileged": true

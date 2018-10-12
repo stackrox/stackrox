@@ -84,7 +84,7 @@ func policyDeploymentAndViolationsToAlert(policy *v1.Policy, deployment *v1.Depl
 	}
 	alert := &v1.Alert{
 		Id:             uuid.NewV4().String(),
-		LifecycleStage: v1.LifecycleStage_RUN_TIME,
+		LifecycleStage: v1.LifecycleStage_RUNTIME,
 		Deployment:     proto.Clone(deployment).(*v1.Deployment),
 		Policy:         proto.Clone(policy).(*v1.Policy),
 		Violations:     violations,

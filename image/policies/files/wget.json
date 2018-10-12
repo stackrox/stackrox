@@ -2,7 +2,7 @@
   "name": "Wget in Image",
   "description": "Alert on deployments with wget present",
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["DEPLOY_TIME"],
+  "lifecycle_stages": ["DEPLOY"],
   "categories": ["Security Best Practices"],
   "fields": {
     "component": {

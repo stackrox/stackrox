@@ -43,7 +43,7 @@
                 "args": ""
             }
         },
-        "lifecycleStage": "RUN_TIME",
+        "lifecycleStage": "RUNTIME",
         "whitelists": [
             {
                 "name": "",

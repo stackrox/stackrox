@@ -2,7 +2,7 @@
   "name": "Kubernetes Dashboard Deployed",
   "description": "Alert on the presence of the Kubernetes dashboard service",
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["DEPLOY_TIME"],
+  "lifecycle_stages": ["DEPLOY"],
   "categories": ["Security Best Practices"],
   "fields": {
     "image_name": {

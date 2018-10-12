@@ -3,7 +3,7 @@
   "description": "Cryptocurrency mining process spawned",
   "categories": ["Cryptocurrency Mining"],
   "severity": "HIGH_SEVERITY",
-  "lifecycle_stages": ["RUN_TIME"],
+  "lifecycle_stages": ["RUNTIME"],
   "fields": {
     "process_policy" : {
       "name": "sgminer$|cgminer$|cpuminer$|minerd$|geth$|ethminer$|xmr-stak-cpu$|xmr-stak-amd$|xmr-stak-nvidia$|xmrminer$|cpuminer-multi$"

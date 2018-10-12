@@ -2,7 +2,7 @@
   "name": "CAP_SYS_ADMIN capability added",
   "description": "Alert on deployments with containers escalating with CAP_SYS_ADMIN",
   "severity": "MEDIUM_SEVERITY",
-  "lifecycle_stages": ["DEPLOY_TIME"],
+  "lifecycle_stages": ["DEPLOY"],
   "categories": ["Privileges"],
   "rationale": "CAP_SYS_ADMIN grants an elevated level of privilege to a container that may not be necessary. https://lwn.net/Articles/486306/ explains what CAP_SYS_ADMIN does and points to possible alternatives.",
   "remediation": "Ensure that the container really needs the CAP_SYS_ADMIN capability or use a userspace derivative.",

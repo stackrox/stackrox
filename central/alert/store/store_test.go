@@ -42,14 +42,14 @@ func (s *alertStoreTestSuite) TestAlerts() {
 	alerts := []*v1.Alert{
 		{
 			Id:             "id1",
-			LifecycleStage: v1.LifecycleStage_RUN_TIME,
+			LifecycleStage: v1.LifecycleStage_RUNTIME,
 			Policy: &v1.Policy{
 				Severity: v1.Severity_LOW_SEVERITY,
 			},
 		},
 		{
 			Id:             "id2",
-			LifecycleStage: v1.LifecycleStage_DEPLOY_TIME,
+			LifecycleStage: v1.LifecycleStage_DEPLOY,
 			Policy: &v1.Policy{
 				Severity: v1.Severity_HIGH_SEVERITY,
 			},

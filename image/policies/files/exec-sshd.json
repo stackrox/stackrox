@@ -3,7 +3,7 @@
     "description": "Detects container running the SSH daemon",
     "categories": ["Network Tools"],
     "severity": "HIGH_SEVERITY",
-    "lifecycle_stages": ["RUN_TIME"],
+    "lifecycle_stages": ["RUNTIME"],
     "fields": {
       "process_policy" : {
         "name": "sshd$"

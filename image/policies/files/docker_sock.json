@@ -2,7 +2,7 @@
   "name": "Mount Docker Socket",
   "description": "Alert on deployments with volume mount on docker socket",
   "severity": "MEDIUM_SEVERITY",
-  "lifecycle_stages": ["DEPLOY_TIME"],
+  "lifecycle_stages": ["DEPLOY"],
   "categories": ["Security Best Practices"],
   "fields": {
     "volume_policy": {

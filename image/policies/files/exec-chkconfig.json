@@ -2,7 +2,7 @@
   "name": "chkconfig Execution",
   "description": "Detected usage of the chkconfig service manager; typically this is not used within a container",
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["RUN_TIME"],
+  "lifecycle_stages": ["RUNTIME"],
   "categories": ["System Modification"],
   "fields": {
     "process_policy": {

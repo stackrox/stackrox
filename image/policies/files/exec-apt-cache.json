@@ -2,7 +2,7 @@
   "name": "apt-cache Execution",
   "description": "Detects process execution of apt-cache",
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["RUN_TIME"],
+  "lifecycle_stages": ["RUNTIME"],
   "categories": ["Package Management"],
   "fields": {
     "process_policy": {

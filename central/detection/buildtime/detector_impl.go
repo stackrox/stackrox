@@ -64,7 +64,7 @@ func policyAndViolationsToAlert(policy *v1.Policy, violations []*v1.Alert_Violat
 	}
 	alert := &v1.Alert{
 		Id:             uuid.NewV4().String(),
-		LifecycleStage: v1.LifecycleStage_BUILD_TIME,
+		LifecycleStage: v1.LifecycleStage_BUILD,
 		Policy:         proto.Clone(policy).(*v1.Policy),
 		Violations:     violations,
 		Time:           ptypes.TimestampNow(),

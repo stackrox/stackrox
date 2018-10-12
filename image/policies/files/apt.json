@@ -2,7 +2,7 @@
   "name": "Aptitude Package Manager (apt) in Image",
   "description": "Alert on deployments with the Aptitude package manager (apt) present",
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["DEPLOY_TIME"],
+  "lifecycle_stages": ["DEPLOY"],
   "categories": ["Security Best Practices"],
   "fields": {
     "component": {

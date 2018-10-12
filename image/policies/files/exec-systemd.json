@@ -3,7 +3,7 @@
     "description": "Detected usage of the systemd service manager",
     "categories": ["System Modification"],
     "severity": "LOW_SEVERITY",
-    "lifecycle_stages": ["RUN_TIME"],
+    "lifecycle_stages": ["RUNTIME"],
     "fields": {
         "process_policy": {
             "name": "systemd$"

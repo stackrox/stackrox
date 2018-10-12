@@ -86,6 +86,8 @@ class ViolationsPage extends Component {
         this.setState({ page: newPage });
     };
 
+    isRunTimeViolation = violation => violation && violation.lifecycleStage === 'RUNTIME';
+
     getTableHeaderText = () => {
         const { violations, isViewFiltered } = this.props;
         const { length: selectionCount } = this.state.selection;
@@ -139,9 +141,7 @@ class ViolationsPage extends Component {
     resolveAlerts = () => {
         const { selection } = this.state;
         const { violations } = this.props;
-        const resolveSelection = selection.filter(
-            id => violations[id] && violations[id].lifecycleStage === 'RUN_TIME'
-        );
+        const resolveSelection = selection.filter(id => this.isRunTimeViolation(violations[id]));
         this.props.resolveAlerts(resolveSelection);
         this.hideConfirmationDialog();
         this.clearSelection();
@@ -182,8 +182,7 @@ class ViolationsPage extends Component {
         const { selection } = this.state;
         const { violations } = this.props;
         const numSelectedRows = selection.reduce(
-            (acc, id) =>
-                violations[id] && violations[id].lifecycleStage === 'RUN_TIME' ? acc + 1 : acc,
+            (acc, id) => (this.isRunTimeViolation(violations[id]) ? acc + 1 : acc),
             0
         );
         return (
@@ -199,7 +198,7 @@ class ViolationsPage extends Component {
     };
 
     renderRowActionButtons = alert => {
-        const isRuntimeAlert = alert.lifecycleStage === 'RUN_TIME';
+        const isRuntimeAlert = this.isRunTimeViolation(alert);
         return (
             <div
                 data-test-id="alerts-hover-actions"
@@ -253,7 +252,7 @@ class ViolationsPage extends Component {
         const whitelistCount = selection.length;
         let resolveCount = 0;
         selection.forEach(id => {
-            if (violations[id] && violations[id].lifecycleStage === 'RUN_TIME') resolveCount += 1;
+            if (this.isRunTimeViolation(violations[id])) resolveCount += 1;
         });
         const panelButtons = (
             <React.Fragment>

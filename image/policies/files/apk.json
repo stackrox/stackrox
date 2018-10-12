@@ -2,7 +2,7 @@
   "name": "Alpine Linux Package Manager (apk) in Image",
   "description": "Alert on deployments with the Alpine Linux package manager (apk) present",
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["DEPLOY_TIME"],
+  "lifecycle_stages": ["DEPLOY"],
   "categories": ["Security Best Practices"],
   "fields": {
     "component": {

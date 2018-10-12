@@ -1,7 +1,7 @@
 {
   "name": "Required Label: Owner",
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["DEPLOY_TIME"],
+  "lifecycle_stages": ["DEPLOY"],
   "description": "Alert on deployments missing the 'owner' label",
   "rationale": "The 'owner' label should always be specified so that the deployment can quickly be associated with a specific user or team.",
   "remediation": "Redeploy your service and set the 'owner' label to yourself or your team per organizational standards.",

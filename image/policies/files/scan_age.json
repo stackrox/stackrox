@@ -2,7 +2,7 @@
   "name": "30-Day Scan Age",
   "description": "Alert on deployments with images that haven't been scanned in 30 days",
   "severity": "MEDIUM_SEVERITY",
-  "lifecycle_stages": ["DEPLOY_TIME"],
+  "lifecycle_stages": ["DEPLOY"],
   "categories": ["Security Best Practices"],
   "fields": {
     "scan_age_days": 30

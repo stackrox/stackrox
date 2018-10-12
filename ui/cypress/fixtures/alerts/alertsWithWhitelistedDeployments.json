@@ -3,7 +3,7 @@
         {
             "id": "8aaa344c-6266-4037-bc21-cd9323a54a4b",
             "time": "2018-09-27T21:31:25.729700614Z",
-            "lifecycleStage": "RUN_TIME",
+            "lifecycleStage": "RUNTIME",
             "policy": {
                 "id": "75db9968-8c45-4e18-8180-024f59973d16",
                 "name": "Misuse of iptables",
@@ -13,7 +13,7 @@
                     "Network Configuration Change",
                     "Reconnaissance"
                 ],
-                "lifecycleStage": "RUN_TIME"
+                "lifecycleStage": "RUNTIME"
             },
             "deployment": {
                 "id": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",

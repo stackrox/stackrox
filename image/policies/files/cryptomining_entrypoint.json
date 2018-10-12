@@ -2,7 +2,7 @@
   "name": "Cryptomining Entrypoint",
   "description": "Alert on deployments with an entrypoint that contains `minerd`",
   "severity": "HIGH_SEVERITY",
-  "lifecycle_stages": ["DEPLOY_TIME"],
+  "lifecycle_stages": ["DEPLOY"],
   "categories": ["Security Best Practices"],
   "fields": {
     "line_rule": {

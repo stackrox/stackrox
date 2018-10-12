@@ -72,9 +72,9 @@ enum Comparator {
 }
 
 enum LifecycleStage {
-    DEPLOY_TIME = 0;
-    BUILD_TIME  = 1;
-    RUN_TIME    = 2;
+    DEPLOY    = 0;
+    BUILD     = 1;
+    RUNTIME   = 2;
 }
 
 message NumericalPolicy {

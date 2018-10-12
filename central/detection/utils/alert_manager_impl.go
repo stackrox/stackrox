@@ -104,7 +104,7 @@ func (d *alertManagerImpl) notifyAndUpdateBatch(alertsToMark []*v1.Alert) error 
 
 // We want to avoid continuously updating a runtime alert just because we receive a new process from it.
 func equalRuntimeAlerts(old, new *v1.Alert) bool {
-	if old.GetLifecycleStage() != v1.LifecycleStage_RUN_TIME || new.GetLifecycleStage() != v1.LifecycleStage_RUN_TIME {
+	if old.GetLifecycleStage() != v1.LifecycleStage_RUNTIME || new.GetLifecycleStage() != v1.LifecycleStage_RUNTIME {
 		return false
 	}
 	if len(old.GetViolations()) != len(new.GetViolations()) {

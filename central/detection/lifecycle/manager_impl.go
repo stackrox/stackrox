@@ -24,7 +24,7 @@ func (m *managerImpl) IndicatorAdded(indicator *v1.ProcessIndicator, deployment 
 		return nil, err
 	}
 
-	oldAlerts, err := m.alertManager.GetAlertsByDeploymentAndPolicyLifecycle(indicator.GetDeploymentId(), v1.LifecycleStage_RUN_TIME)
+	oldAlerts, err := m.alertManager.GetAlertsByDeploymentAndPolicyLifecycle(indicator.GetDeploymentId(), v1.LifecycleStage_RUNTIME)
 	if err != nil {
 		return nil, fmt.Errorf("retrieving old alerts for deployment %s: %s", indicator.GetDeploymentId(), err)
 	}

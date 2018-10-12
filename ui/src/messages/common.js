@@ -11,9 +11,9 @@ const common = Object.freeze({
         OPENSHIFT_CLUSTER: 'OpenShift Clusters'
     },
     lifecycleStageLabels: {
-        BUILD_TIME: 'Build',
-        DEPLOY_TIME: 'Deploy',
-        RUN_TIME: 'Runtime'
+        BUILD: 'Build',
+        DEPLOY: 'Deploy',
+        RUNTIME: 'Runtime'
     },
     enforcementActionLabels: {
         UNSET_ENFORCEMENT: 'None',

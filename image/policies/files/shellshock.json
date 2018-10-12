@@ -2,7 +2,7 @@
   "name": "Shellshock: CVE-2014-6271",
   "description": "Alert on deployments with images containing Shellshock vulnerability (CVE-2014-6271)",
   "severity": "CRITICAL_SEVERITY",
-  "lifecycle_stages": ["DEPLOY_TIME"],
+  "lifecycle_stages": ["DEPLOY"],
   "categories": ["Vuln Management"],
   "fields": {
     "cve": "CVE-2014-6271"

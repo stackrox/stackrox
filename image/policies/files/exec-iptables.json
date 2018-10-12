@@ -3,7 +3,7 @@
     "description": "Detects misuse of iptables; iptables is a deprecated way of managing network state in containers",
     "categories": ["Network Tools"],
     "severity": "HIGH_SEVERITY",
-    "lifecycle_stages": ["RUN_TIME"],
+    "lifecycle_stages": ["RUNTIME"],
     "fields": {
       "process_policy": {
         "name": "iptables$"

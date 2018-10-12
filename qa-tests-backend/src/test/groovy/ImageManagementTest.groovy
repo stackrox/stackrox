@@ -9,8 +9,8 @@ class ImageManagementTest extends BaseSpecification {
     @Category([BAT, Integration])
     def "Verify CI/CD Integration Endpoint - #policy"() {
         when:
-        "Update Policy to BUILD_TIME"
-        def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD_TIME,])
+        "Update Policy to build time"
+        def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD,])
 
         and:
         "Request Image Scan"
@@ -40,12 +40,12 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Category(Integration)
-    def "Verify lifecycle Stage can only be BUILD_TIME for policies with image criteria"() {
+    def "Verify lifecycle Stage can only be build time for policies with image criteria"() {
         when:
-        "Update Policy to BUILD_TIME"
+        "Update Policy to build time"
         def startStages = Services.updatePolicyLifecycleStage(
                 "No resource requests or limits specified",
-                [LifecycleStage.BUILD_TIME,]
+                [LifecycleStage.BUILD,]
         )
 
         then:

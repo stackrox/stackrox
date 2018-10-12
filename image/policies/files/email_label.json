@@ -1,7 +1,7 @@
 {
   "name": "Required Label: Email",
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["DEPLOY_TIME"],
+  "lifecycle_stages": ["DEPLOY"],
   "description": "Alert on deployments missing the 'email' label",
   "rationale": "The 'email' label should always be specified so that issues with the deployment can quickly be routed to the proper party.",
   "remediation": "Redeploy your service and set the 'email' label as your email or your team's email.",

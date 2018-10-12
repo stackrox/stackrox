@@ -23,7 +23,7 @@ var (
 		Name:        "test policy " + fmt.Sprintf("%d", time.Now().UnixNano()),
 		Description: "description",
 		LifecycleStages: []v1.LifecycleStage{
-			v1.LifecycleStage_DEPLOY_TIME,
+			v1.LifecycleStage_DEPLOY,
 		},
 		Severity:   v1.Severity_HIGH_SEVERITY,
 		Categories: []string{"Image Assurance", "Privileges Capabilities"},
