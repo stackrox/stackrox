@@ -29,7 +29,7 @@ class NetworkPoliciesDetails extends Component {
                                 <pre className="font-600 font-sans h-full leading-normal p-3">
                                     {yaml}
                                 </pre>
-                                <div className="flex justify-center p-3 border-t border-base-500">
+                                <div className="flex justify-center p-3 border-t border-base-400">
                                     <button
                                         type="button"
                                         className="download uppercase text-primary-600 p-2 text-center text-sm border border-solid bg-primary-200 border-primary-300 hover:bg-primary-100"

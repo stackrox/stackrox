@@ -81,7 +81,10 @@ class NetworkGraphLegend extends Component {
 
     render() {
         return (
-            <div className="env-graph-legend absolute pin-b pin-l mb-2 ml-2 bg-base-100 text-base-500 text-sm font-700 border-base-400 border-2 rounded-sm z-10">
+            <div
+                data-test-id="legend"
+                className="env-graph-legend absolute pin-b pin-l mb-2 ml-2 bg-base-100 text-base-500 text-sm font-700 border-base-400 border-2 rounded-sm z-10"
+            >
                 {this.renderLegendButton()}
                 {this.renderLegendContent()}
             </div>

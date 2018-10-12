@@ -1,7 +1,7 @@
 import { all, take, call, fork, put, takeLatest } from 'redux-saga/effects';
 import Raven from 'raven-js';
 
-import { integrationsPath, policiesPath, environmentPath } from 'routePaths';
+import { integrationsPath, policiesPath, networkPath } from 'routePaths';
 import * as service from 'services/IntegrationsService';
 import * as AuthService from 'services/AuthService';
 import { actions as clusterActions } from 'reducers/clusters';
@@ -45,7 +45,7 @@ function* watchLocation() {
     yield all([
         ...effects,
         takeEveryNewlyMatchedLocation(policiesPath, getNotifiers),
-        takeEveryNewlyMatchedLocation(environmentPath, getNotifiers)
+        takeEveryNewlyMatchedLocation(networkPath, getNotifiers)
     ]);
 }
 

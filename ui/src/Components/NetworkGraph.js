@@ -15,7 +15,6 @@ import {
     selectClosestSides
 } from 'utils/networkGraphUtils/networkGraphUtils';
 import * as constants from 'utils/networkGraphUtils/networkGraphConstants';
-import * as Icon from 'react-feather';
 import uniqBy from 'lodash/uniqBy';
 
 const OrbitControls = threeOrbitControls(THREE);
@@ -46,11 +45,16 @@ class NetworkGraph extends Component {
     };
 
     componentDidMount() {
-        this.setUpScene();
+        if (this.isWebGLAvailable()) {
+            this.setUpScene();
+        }
     }
 
     shouldComponentUpdate(nextProps) {
-        if (!simulation || nextProps.updateKey !== this.props.updateKey) {
+        if (
+            this.isWebGLAvailable() &&
+            (!simulation || nextProps.updateKey !== this.props.updateKey)
+        ) {
             // Clear the canvas
             this.clear();
 
@@ -64,9 +68,20 @@ class NetworkGraph extends Component {
 
             this.animate();
         }
-
         return false;
     }
+
+    isWebGLAvailable = () => {
+        try {
+            const canvas = document.createElement('canvas');
+            return !!(
+                window.WebGLRenderingContext &&
+                (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
+            );
+        } catch (e) {
+            return false;
+        }
+    };
 
     onGraphClick = ({ layerX: x, layerY: y }) => {
         const intersectingObjects = this.getIntersectingObjects(x, y);
@@ -690,25 +705,13 @@ class NetworkGraph extends Component {
 
     render() {
         return (
-            <div className="h-full w-full relative">
+            <div className="h-full w-full">
                 <div
-                    className="network-graph flex h-full w-full"
+                    className="network-graph network-grid-bg flex h-full w-full"
                     ref={ref => {
                         this.networkGraph = ref;
                     }}
                 />
-                <div className="graph-zoom-buttons m-4 absolute pin-b pin-r z-20">
-                    <button
-                        type="button"
-                        className="btn-icon btn-primary mb-2"
-                        onClick={this.zoomIn}
-                    >
-                        <Icon.Plus className="h-4 w-4" />
-                    </button>
-                    <button type="button" className="btn-icon btn-primary" onClick={this.zoomOut}>
-                        <Icon.Minus className="h-4 w-4" />
-                    </button>
-                </div>
             </div>
         );
     }

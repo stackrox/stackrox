@@ -5,12 +5,12 @@ const baseUrl = '/v1/networkgraph';
 const networkPoliciesUrl = '/v1/networkpolicies';
 
 /**
- * Fetches nodes and links for the environment graph.
+ * Fetches nodes and links for the network graph.
  * Returns response with nodes and links
  *
  * @returns {Promise<Object, Error>}
  */
-export function fetchEnvironmentGraph(filters, clusterId) {
+export function fetchNetworkGraph(filters, clusterId) {
     const { query, simulationYaml } = filters;
     const params = queryString.stringify({ query });
     const options = {

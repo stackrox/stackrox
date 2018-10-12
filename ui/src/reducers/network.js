@@ -15,43 +15,43 @@ import {
 // Action types
 
 export const types = {
-    FETCH_ENVIRONMENT_GRAPH: createFetchingActionTypes('environment/FETCH_ENVIRONMENT_GRAPH'),
-    FETCH_NETWORK_POLICIES: createFetchingActionTypes('environment/FETCH_NETWORK_POLICIES'),
-    FETCH_NODE_UPDATES: createFetchingActionTypes('environment/FETCH_NODE_UPDATES'),
-    SET_SELECTED_NODE_ID: 'environment/SET_SELECTED_NODE_ID',
-    SELECT_ENVIRONMENT_CLUSTER_ID: 'environment/SELECT_ENVIRONMENT_CLUSTER_ID',
-    INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY: 'environment/INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY',
-    SIMULATOR_MODE_ON: 'environment/SIMULATOR_MODE_ON',
-    SET_NETWORK_GRAPH_STATE: 'environment/NETWORK_GRAPH_STATE',
-    SET_YAML_FILE: 'environment/SET_YAML_FILE',
-    SEND_YAML_NOTIFICATION: 'environment/SEND_YAML_NOTIFICATION',
-    UPDATE_NETWORKGRAPH_TIMESTAMP: 'environment/UPDATE_NETWORKGRAPH_TIMESTAMP',
-    NETWORK_NODES_UPDATE: 'environment/NETWORK_NODES_UPDATE',
-    ...searchTypes('environment')
+    FETCH_NETWORK_GRAPH: createFetchingActionTypes('network/FETCH_NETWORK_GRAPH'),
+    FETCH_NETWORK_POLICIES: createFetchingActionTypes('network/FETCH_NETWORK_POLICIES'),
+    FETCH_NODE_UPDATES: createFetchingActionTypes('network/FETCH_NODE_UPDATES'),
+    SET_SELECTED_NODE_ID: 'network/SET_SELECTED_NODE_ID',
+    SELECT_NETWORK_CLUSTER_ID: 'network/SELECT_NETWORK_CLUSTER_ID',
+    INCREMENT_NETWORK_GRAPH_UPDATE_KEY: 'network/INCREMENT_NETWORK_GRAPH_UPDATE_KEY',
+    SIMULATOR_MODE_ON: 'network/SIMULATOR_MODE_ON',
+    SET_NETWORK_GRAPH_STATE: 'network/NETWORK_GRAPH_STATE',
+    SET_YAML_FILE: 'network/SET_YAML_FILE',
+    SEND_YAML_NOTIFICATION: 'network/SEND_YAML_NOTIFICATION',
+    UPDATE_NETWORKGRAPH_TIMESTAMP: 'network/UPDATE_NETWORKGRAPH_TIMESTAMP',
+    NETWORK_NODES_UPDATE: 'network/NETWORK_NODES_UPDATE',
+    ...searchTypes('network')
 };
 
 // Actions
 
-// Environment search should not show the 'Cluster' category
-const getEnvironmentSearchActions = getSearchActions('environment');
-const environmentSearchActions = Object.assign({}, getEnvironmentSearchActions);
+// Network search should not show the 'Cluster' category
+const getNetworkSearchActions = getSearchActions('network');
+const networkSearchActions = Object.assign({}, getNetworkSearchActions);
 const filterSearchOptions = options => options.filter(obj => obj.value !== 'Cluster:');
-environmentSearchActions.setEnvironmentSearchModifiers = options =>
-    getEnvironmentSearchActions.setEnvironmentSearchModifiers(filterSearchOptions(options));
-environmentSearchActions.setEnvironmentSearchSuggestions = options =>
-    getEnvironmentSearchActions.setEnvironmentSearchSuggestions(filterSearchOptions(options));
+networkSearchActions.setNetworkSearchModifiers = options =>
+    getNetworkSearchActions.setNetworkSearchModifiers(filterSearchOptions(options));
+networkSearchActions.setNetworkSearchSuggestions = options =>
+    getNetworkSearchActions.setNetworkSearchSuggestions(filterSearchOptions(options));
 
 export const actions = {
-    fetchEnvironmentGraph: createFetchingActions(types.FETCH_ENVIRONMENT_GRAPH),
+    fetchNetworkGraph: createFetchingActions(types.FETCH_NETWORK_GRAPH),
     fetchNetworkPolicies: createFetchingActions(types.FETCH_NETWORK_POLICIES),
     fetchNodeUpdates: createFetchingActions(types.FETCH_NODE_UPDATES),
     setSelectedNodeId: id => ({ type: types.SET_SELECTED_NODE_ID, id }),
-    selectEnvironmentClusterId: clusterId => ({
-        type: types.SELECT_ENVIRONMENT_CLUSTER_ID,
+    selectNetworkClusterId: clusterId => ({
+        type: types.SELECT_NETWORK_CLUSTER_ID,
         clusterId
     }),
-    incrementEnvironmentGraphUpdateKey: () => ({
-        type: types.INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY
+    incrementNetworkGraphUpdateKey: () => ({
+        type: types.INCREMENT_NETWORK_GRAPH_UPDATE_KEY
     }),
     networkNodesUpdate: () => ({
         type: types.NETWORK_NODES_UPDATE
@@ -67,13 +67,13 @@ export const actions = {
         type: types.UPDATE_NETWORKGRAPH_TIMESTAMP,
         lastUpdatedTimestamp
     }),
-    ...environmentSearchActions
+    ...networkSearchActions
 };
 
 // Reducers
 
-const environmentGraph = (state = { nodes: [], edges: [] }, action) => {
-    if (action.type === types.FETCH_ENVIRONMENT_GRAPH.SUCCESS) {
+const networkGraph = (state = { nodes: [], edges: [] }, action) => {
+    if (action.type === types.FETCH_NETWORK_GRAPH.SUCCESS) {
         return isEqual(action.response, state) ? state : action.response;
     }
     return state;
@@ -131,11 +131,8 @@ export const networkGraphClusters = {
     KUBERNETES_CLUSTER: true,
     OPENSHIFT_CLUSTER: true
 };
-if (process.env.NODE_ENV === 'development') networkGraphClusters.SWARM_CLUSTER = true;
 
-if (process.env.NODE_ENV === 'development') networkGraphClusters.SWARM_CLUSTER = true;
-
-const selectedEnvironmentClusterId = (state = null, action) => {
+const selectedNetworkClusterId = (state = null, action) => {
     if (!state && action.type === clusterTypes.FETCH_CLUSTERS.SUCCESS) {
         const { cluster } = action.response.entities;
         const filteredClusters = Object.values(cluster).filter(c => networkGraphClusters[c.type]);
@@ -144,14 +141,14 @@ const selectedEnvironmentClusterId = (state = null, action) => {
             return isEqual(clusterId, state) ? state : clusterId;
         }
     }
-    if (action.type === types.SELECT_ENVIRONMENT_CLUSTER_ID) {
+    if (action.type === types.SELECT_NETWORK_CLUSTER_ID) {
         const { clusterId } = action;
         return isEqual(clusterId, state) ? state : clusterId;
     }
     return state;
 };
 
-const environmentGraphUpdateKey = (state = { shouldUpdate: true, key: 0 }, action) => {
+const networkGraphUpdateKey = (state = { shouldUpdate: true, key: 0 }, action) => {
     const { type, payload, options } = action;
 
     if (type === LOCATION_CHANGE && payload.pathname.startsWith('/main/network')) {
@@ -163,13 +160,13 @@ const environmentGraphUpdateKey = (state = { shouldUpdate: true, key: 0 }, actio
         if (length && !action.options[length - 1].type)
             return { shouldUpdate: true, key: state.key };
     }
-    if (type === types.SELECT_ENVIRONMENT_CLUSTER_ID) {
+    if (type === types.SELECT_NETWORK_CLUSTER_ID) {
         return { shouldUpdate: true, key: state.key + 1 };
     }
-    if (type === types.INCREMENT_ENVIRONMENT_GRAPH_UPDATE_KEY) {
+    if (type === types.INCREMENT_NETWORK_GRAPH_UPDATE_KEY) {
         return { shouldUpdate: true, key: state.key + 1 };
     }
-    if (type === types.FETCH_ENVIRONMENT_GRAPH.SUCCESS) {
+    if (type === types.FETCH_NETWORK_GRAPH.SUCCESS) {
         if (state.shouldUpdate) return { shouldUpdate: false, key: state.key + 1 };
     }
     return state;
@@ -180,13 +177,13 @@ const networkGraphState = (state = 'INITIAL', action) => {
     if (type === types.SET_NETWORK_GRAPH_STATE) {
         return 'INITIAL';
     }
-    if (type === types.FETCH_ENVIRONMENT_GRAPH.REQUEST) {
+    if (type === types.FETCH_NETWORK_GRAPH.REQUEST) {
         return 'REQUEST';
     }
-    if (type === types.FETCH_ENVIRONMENT_GRAPH.FAILURE) {
+    if (type === types.FETCH_NETWORK_GRAPH.FAILURE) {
         return 'ERROR';
     }
-    if (type === types.FETCH_ENVIRONMENT_GRAPH.SUCCESS) {
+    if (type === types.FETCH_NETWORK_GRAPH.SUCCESS) {
         return 'SUCCESS';
     }
     return state;
@@ -200,7 +197,7 @@ const simulatorMode = (state = false, action) => {
 };
 
 const errorMessage = (state = '', action) => {
-    if (action.type === types.FETCH_ENVIRONMENT_GRAPH.FAILURE) {
+    if (action.type === types.FETCH_NETWORK_GRAPH.FAILURE) {
         const { message } = action.error.response.data;
         return message;
     }
@@ -208,30 +205,30 @@ const errorMessage = (state = '', action) => {
 };
 
 const reducer = combineReducers({
-    environmentGraph,
+    networkGraph,
     deployment,
     networkPolicies,
     selectedNodeId,
     nodeUpdatesEpoch,
-    selectedEnvironmentClusterId,
-    environmentGraphUpdateKey,
+    selectedNetworkClusterId,
+    networkGraphUpdateKey,
     networkGraphState,
     simulatorMode,
     selectedYamlFile,
     errorMessage,
     lastUpdatedTimestamp,
-    ...searchReducers('environment')
+    ...searchReducers('network')
 });
 
 // Selectors
 
-const getEnvironmentGraph = state => state.environmentGraph;
+const getNetworkGraph = state => state.networkGraph;
 const getDeployment = state => state.deployment;
 const getNetworkPolicies = state => state.networkPolicies;
 const getSelectedNodeId = state => state.selectedNodeId;
 const getNodeUpdatesEpoch = state => state.nodeUpdatesEpoch;
-const getSelectedEnvironmentClusterId = state => state.selectedEnvironmentClusterId;
-const getEnvironmentGraphUpdateKey = state => state.environmentGraphUpdateKey.key;
+const getSelectedNetworkClusterId = state => state.selectedNetworkClusterId;
+const getNetworkGraphUpdateKey = state => state.networkGraphUpdateKey.key;
 const getNetworkGraphState = state => state.networkGraphState;
 const getSimulatorMode = state => state.simulatorMode;
 const getNetworkGraphErrorMessage = state => state.errorMessage;
@@ -239,19 +236,19 @@ const getYamlFile = state => state.selectedYamlFile;
 const getLastUpdatedTimestamp = state => state.lastUpdatedTimestamp;
 
 export const selectors = {
-    getEnvironmentGraph,
+    getNetworkGraph,
     getDeployment,
     getNetworkPolicies,
     getSelectedNodeId,
     getNodeUpdatesEpoch,
-    getSelectedEnvironmentClusterId,
-    getEnvironmentGraphUpdateKey,
+    getSelectedNetworkClusterId,
+    getNetworkGraphUpdateKey,
     getNetworkGraphState,
     getSimulatorMode,
     getNetworkGraphErrorMessage,
     getYamlFile,
     getLastUpdatedTimestamp,
-    ...getSearchSelectors('environment')
+    ...getSearchSelectors('network')
 };
 
 export default reducer;

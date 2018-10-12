@@ -439,7 +439,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     color: hsl(349, 50%, 78%);
 }
 
-.environment-grid-bg {
+.network-grid-bg {
     background-color: rgba(157, 163, 193, 0.1);
     background-image: -webkit-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px), -webkit-linear-gradient(left, rgba(157, 163, 193, 0.3) 1px, transparent 1px), -webkit-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px), -webkit-linear-gradient(left, rgba(157, 163, 193, 0.2) 1px, transparent 1px);
     background-image: -o-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px), -o-linear-gradient(left, rgba(157, 163, 193, 0.3) 1px, transparent 1px), -o-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px), -o-linear-gradient(left, rgba(157, 163, 193, 0.2) 1px, transparent 1px);
@@ -525,9 +525,17 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 
 /* Network Graph CSS Classes */
 
+.pin-network-zoom-buttons-left {
+    left: -70px !important;
+}
+
+.pin-network-update-label-left {
+    left: -175px !important;
+}
+
 .btn-graph-refresh circle {
-    fill: #3F4884;
-    stroke: #3f4884;
+    fill: hsla(225, 51%, 52%, 1);
+    stroke: hsla(225, 51%, 52%, 1);
 }
 
 .node circle {

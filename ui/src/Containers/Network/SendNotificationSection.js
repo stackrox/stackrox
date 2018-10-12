@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { actions } from 'reducers/environment';
+import { actions } from 'reducers/network';
 import { selectors } from 'reducers';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { Link } from 'react-router-dom';

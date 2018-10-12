@@ -1,9 +1,9 @@
 import { all, take, takeLatest, call, fork, put, select, cancel } from 'redux-saga/effects';
 import { delay } from 'redux-saga';
-import { environmentPath, networkPath } from 'routePaths';
-import * as service from 'services/EnvironmentService';
+import { networkPath } from 'routePaths';
+import * as service from 'services/NetworkService';
 import { fetchClusters } from 'services/ClustersService';
-import { actions, types } from 'reducers/environment';
+import { actions, types } from 'reducers/network';
 import { actions as clusterActions, types as clusterTypes } from 'reducers/clusters';
 import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
@@ -14,13 +14,13 @@ import { types as locationActionTypes } from 'reducers/routes';
 import { getDeployment } from './deploymentSagas';
 
 function* getNetworkGraph(filters, clusterId) {
-    yield put(actions.fetchEnvironmentGraph.request());
+    yield put(actions.fetchNetworkGraph.request());
     try {
-        const result = yield call(service.fetchEnvironmentGraph, filters, clusterId);
-        yield put(actions.fetchEnvironmentGraph.success(result.response));
+        const result = yield call(service.fetchNetworkGraph, filters, clusterId);
+        yield put(actions.fetchNetworkGraph.success(result.response));
         yield put(actions.updateNetworkGraphTimestamp(new Date()));
     } catch (error) {
-        yield put(actions.fetchEnvironmentGraph.failure(error));
+        yield put(actions.fetchNetworkGraph.failure(error));
     }
 }
 
@@ -51,7 +51,7 @@ export function* pollNodeUpdates() {
 
 function* sendYAMLNotification({ notifierId }) {
     try {
-        const clusterId = yield select(selectors.getSelectedEnvironmentClusterId);
+        const clusterId = yield select(selectors.getSelectedNetworkClusterId);
         const { content } = yield select(selectors.getYamlFile);
         yield call(service.sendYAMLNotification, clusterId, notifierId, content);
         yield put(notificationActions.addNotification('Successfully sent notification.'));
@@ -71,7 +71,7 @@ function* watchLocation() {
         if (
             location &&
             location.pathname &&
-            location.pathname.startsWith(environmentPath) &&
+            location.pathname.startsWith(networkPath) &&
             !pollTask
         ) {
             // start only if it's not already in progress
@@ -96,9 +96,9 @@ function* getClusters() {
     }
 }
 
-function* filterEnvironmentPageBySearch() {
-    const clusterId = yield select(selectors.getSelectedEnvironmentClusterId);
-    const searchOptions = yield select(selectors.getEnvironmentSearchOptions);
+function* filterNetworkPageBySearch() {
+    const clusterId = yield select(selectors.getSelectedNetworkClusterId);
+    const searchOptions = yield select(selectors.getNetworkSearchOptions);
     const yamlFile = yield select(selectors.getYamlFile);
     const simulatorMode = yield select(selectors.getSimulatorMode);
     if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
@@ -115,13 +115,13 @@ function* filterEnvironmentPageBySearch() {
     }
 }
 
-function* loadEnvironmentPage() {
+function* loadNetworkPage() {
     yield fork(getClusters);
-    yield fork(filterEnvironmentPageBySearch);
+    yield fork(filterNetworkPageBySearch);
 }
 
-function* watchEnvironmentSearchOptions() {
-    yield takeLatest(types.SET_SEARCH_OPTIONS, filterEnvironmentPageBySearch);
+function* watchNetworkSearchOptions() {
+    yield takeLatest(types.SET_SEARCH_OPTIONS, filterNetworkPageBySearch);
 }
 
 function* watchFetchDeploymentRequest() {
@@ -132,8 +132,8 @@ function* watchNetworkPoliciesRequest() {
     yield takeLatest(types.FETCH_NETWORK_POLICIES.REQUEST, getNetworkPolicies);
 }
 
-function* watchSelectEnvironmentCluster() {
-    yield takeLatest(types.SELECT_ENVIRONMENT_CLUSTER_ID, filterEnvironmentPageBySearch);
+function* watchSelectNetworkCluster() {
+    yield takeLatest(types.SELECT_NETWORK_CLUSTER_ID, filterNetworkPageBySearch);
 }
 
 function* watchSendYAMLNotification() {
@@ -141,25 +141,24 @@ function* watchSendYAMLNotification() {
 }
 
 function* watchFetchClustersSuccess() {
-    yield takeLatest(clusterTypes.FETCH_CLUSTERS.SUCCESS, filterEnvironmentPageBySearch);
+    yield takeLatest(clusterTypes.FETCH_CLUSTERS.SUCCESS, filterNetworkPageBySearch);
 }
 
 function* watchSetYamlFile() {
-    yield takeLatest(types.SET_YAML_FILE, filterEnvironmentPageBySearch);
+    yield takeLatest(types.SET_YAML_FILE, filterNetworkPageBySearch);
 }
 
 function* watchNetworkNodesUpdate() {
-    yield takeLatest(types.NETWORK_NODES_UPDATE, filterEnvironmentPageBySearch);
+    yield takeLatest(types.NETWORK_NODES_UPDATE, filterNetworkPageBySearch);
 }
 
-export default function* environment() {
+export default function* network() {
     yield all([
-        takeEveryLocation(environmentPath, loadEnvironmentPage),
-        takeEveryLocation(networkPath, loadEnvironmentPage),
-        fork(watchEnvironmentSearchOptions),
+        takeEveryLocation(networkPath, loadNetworkPage),
+        fork(watchNetworkSearchOptions),
         fork(watchNetworkPoliciesRequest),
         fork(watchFetchDeploymentRequest),
-        fork(watchSelectEnvironmentCluster),
+        fork(watchSelectNetworkCluster),
         fork(watchNetworkNodesUpdate),
         fork(watchFetchClustersSuccess),
         fork(watchSetYamlFile),

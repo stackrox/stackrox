@@ -8,10 +8,7 @@ export const selectors = {
         uploadPanel: '[data-test-id="upload-yaml-panel"]'
     },
     legend: {
-        deployment: '.env-graph-legend > :nth-child(1)',
-        namespace: '.env-graph-legend > :nth-child(2)',
-        ingressEgress: '.env-graph-legend > :nth-child(3)',
-        internetEgress: '.env-graph-legend > :nth-child(4)'
+        items: '[data-test-id=legend] > div:last img'
     },
     namespaces: {
         all: 'g.container > rect',

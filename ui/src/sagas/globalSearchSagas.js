@@ -4,7 +4,7 @@ import { actions, types } from 'reducers/globalSearch';
 import { actions as alertsActions } from 'reducers/alerts';
 import { actions as imagesActions } from 'reducers/images';
 import { actions as deploymentsActions } from 'reducers/deployments';
-import { actions as environmentActions } from 'reducers/environment';
+import { actions as networkActions } from 'reducers/network';
 import { actions as secretsActions } from 'reducers/secrets';
 import { actions as policiesActions } from 'reducers/policies';
 import { selectors } from 'reducers';
@@ -49,7 +49,7 @@ export function* passthroughGlobalSearchOptions({ searchOptions, category }) {
             yield put(secretsActions.setSecretsSearchOptions(searchOptions));
             break;
         case 'NETWORK':
-            yield put(environmentActions.setEnvironmentSearchOptions(searchOptions));
+            yield put(networkActions.setNetworkSearchOptions(searchOptions));
             break;
         case 'POLICIES':
             yield put(policiesActions.setPoliciesSearchOptions(searchOptions));

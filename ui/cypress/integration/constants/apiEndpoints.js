@@ -43,7 +43,7 @@ export const dashboard = {
     timeseries: '/v1/alerts/summary/timeseries?*'
 };
 
-export const environment = {
+export const network = {
     networkGraph: '/v1/networkgraph/cluster/*',
     epoch: '/v1/networkgraph/epoch'
 };

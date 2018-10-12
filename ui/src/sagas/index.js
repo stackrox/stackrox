@@ -14,7 +14,7 @@ import roles from './roleSagas';
 import searches from './searchSagas';
 import summaries from './summarySagas';
 import secrets from './secretSagas';
-import environment from './environmentSagas';
+import network from './networkSagas';
 import metadata from './metadataSagas';
 
 export default function* root() {
@@ -33,7 +33,7 @@ export default function* root() {
         fork(searches),
         fork(summaries),
         fork(secrets),
-        fork(environment),
+        fork(network),
         fork(metadata)
     ]);
 }

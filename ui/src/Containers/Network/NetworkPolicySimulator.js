@@ -8,7 +8,7 @@ import Loader from 'Components/Loader';
 import { actions as notificationActions } from 'reducers/notifications';
 import { connect } from 'react-redux';
 
-import SendNotificationSection from 'Containers/Environment/SendNotificationSection';
+import SendNotificationSection from './SendNotificationSection';
 import NetworkPolicySimulatorSuccessView from './NetworkPolicySimulatorSuccessView';
 import NetworkPolicySimulatorErrorView from './NetworkPolicySimulatorErrorView';
 

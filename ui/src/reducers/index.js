@@ -20,7 +20,7 @@ import metadata, { selectors as metadataSelectors } from './metadata';
 import dashboard, { selectors as dashboardSelectors } from './dashboard';
 import loading, { selectors as loadingSelectors } from './loading';
 import route, { selectors as routeSelectors } from './routes';
-import environment, { selectors as environmentSelectors } from './environment';
+import network, { selectors as networkSelectors } from './network';
 
 // Reducers
 
@@ -42,7 +42,7 @@ const appReducer = combineReducers({
     dashboard,
     loading,
     metadata,
-    environment
+    network
 });
 
 const rootReducer = combineReducers({
@@ -74,7 +74,7 @@ const getSecrets = state => getApp(state).secrets;
 const getDashboard = state => getApp(state).dashboard;
 const getLoadingStatus = state => getApp(state).loading;
 const getMetadata = state => getApp(state).metadata;
-const getEnvironment = state => getApp(state).environment;
+const getNetwork = state => getApp(state).network;
 
 const boundSelectors = {
     ...bindSelectors(getAlerts, alertSelectors),
@@ -95,7 +95,7 @@ const boundSelectors = {
     ...bindSelectors(getDashboard, dashboardSelectors),
     ...bindSelectors(getLoadingStatus, loadingSelectors),
     ...bindSelectors(getMetadata, metadataSelectors),
-    ...bindSelectors(getEnvironment, environmentSelectors)
+    ...bindSelectors(getNetwork, networkSelectors)
 };
 
 export const selectors = {
