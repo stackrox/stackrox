@@ -38,7 +38,7 @@ func newGraphEvaluator(namespaceStore namespaceProvider) *evaluatorImpl {
 	}
 }
 
-// IncrementEpoch increments epoch, effictively indicating that a graph that is generated may change.
+// IncrementEpoch increments epoch, effectively indicating that a graph that is generated may change.
 func (g *evaluatorImpl) IncrementEpoch() {
 	atomic.AddUint32(&g.epoch, 1)
 }

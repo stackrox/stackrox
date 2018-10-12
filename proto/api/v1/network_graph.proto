@@ -25,8 +25,7 @@ message NetworkNode {
 message NetworkGraphRequest {
     string cluster_id               = 1;
     string query                    = 2;
-    string simulation_yaml          = 3;
-    google.protobuf.Timestamp since = 4;
+    google.protobuf.Timestamp since = 3;
 }
 
 message NetworkGraph {
@@ -35,11 +34,15 @@ message NetworkGraph {
     repeated NetworkEdge edges = 3;
 }
 
+
+
 service NetworkGraphService {
     rpc GetNetworkGraph (NetworkGraphRequest) returns (NetworkGraph) {
         option (google.api.http) = {
             get: "/v1/networkgraph/cluster/{cluster_id}"
         };
     }
+
+
 
 }

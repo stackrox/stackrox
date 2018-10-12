@@ -82,10 +82,6 @@ message NetworkPolicy {
     google.protobuf.Timestamp created       = 11;
 }
 
-message NetworkGraphEpoch {
-    uint32 epoch = 1;
-}
-
 // API specific objects.
 ////////////////////////
 
@@ -103,6 +99,20 @@ message SendNetworkPolicyYamlRequest {
     string  cluster_id  = 3;
 }
 
+message GetNetworkGraphRequest {
+    string cluster_id = 1;
+    string query      = 2;
+}
+
+message SimulateNetworkGraphRequest {
+    string cluster_id               = 1;
+    string query                    = 2;
+    string simulation_yaml          = 3;
+}
+
+message NetworkGraphEpoch {
+    uint32 epoch = 1;
+}
 
 service NetworkPolicyService {
 
@@ -118,22 +128,28 @@ service NetworkPolicyService {
         };
     }
 
-    rpc GenerateNetworkGraph (NetworkGraphRequest) returns (NetworkGraph) {
+    rpc GetNetworkGraph (GetNetworkGraphRequest) returns (NetworkGraph) {
         option (google.api.http) = {
-            post: "/v1/networkgraph/cluster/{cluster_id}"
-            body: "simulation_yaml"
+            get: "/v1/networkpolicies/cluster/{cluster_id}"
         };
     }
 
     rpc GetNetworkGraphEpoch (Empty) returns (NetworkGraphEpoch) {
         option (google.api.http) = {
-            get: "/v1/networkgraph/epoch"
+            get: "/v1/networkpolicies/epoch"
+        };
+    }
+
+    rpc SimulateNetworkGraph (SimulateNetworkGraphRequest) returns (NetworkGraph) {
+        option (google.api.http) = {
+            post: "/v1/networkpolicies/simulate/{cluster_id}"
+            body: "simulation_yaml"
         };
     }
 
     rpc SendNetworkPolicyYAML (SendNetworkPolicyYamlRequest) returns (Empty) {
         option (google.api.http) = {
-            post: "/v1/networkpolicies/simulation/notify"
+            post: "/v1/networkpolicies/simulate/{cluster_id}/notify"
             body: "yaml"
         };
     }

@@ -24,8 +24,10 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.NetworkGraph)): {
 			"/v1.NetworkGraphService/GetNetworkGraph",
+			"/v1.NetworkGraphService/GetNetworkGraphEpoch",
 		},
 	})
+	defaultSince = -5 * time.Minute
 )
 
 // serviceImpl provides APIs for alerts.
@@ -51,14 +53,13 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.NetworkGraphRequest) (*v1.NetworkGraph, error) {
 	if request.GetClusterId() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "Cluster ID must be specified")
+		return nil, status.Errorf(codes.InvalidArgument, "cluster ID must be specified")
 	}
 
 	since := timestamp.FromProtobuf(request.GetSince())
 	if since == 0 {
-		since = timestamp.FromGoTime(time.Now().Add(-5 * time.Minute))
+		since = timestamp.FromGoTime(time.Now().Add(defaultSince))
 	}
-
 	// Get the deployments we want to check connectivity between.
 	deployments, err := s.getDeployments(request.GetClusterId())
 
@@ -108,6 +109,7 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 
 func filterNetworkFlowsByTime(flows []*v1.NetworkFlow, since timestamp.MicroTS) (filtered []*v1.NetworkFlow) {
 	filtered = flows[:0]
+
 	for _, flow := range flows {
 		flowTS := timestamp.FromProtobuf(flow.LastSeenTimestamp)
 		if flowTS != 0 && flowTS < since {

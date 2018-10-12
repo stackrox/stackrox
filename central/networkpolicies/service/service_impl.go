@@ -33,7 +33,7 @@ var (
 			"/v1.NetworkPolicyService/GetNetworkPolicy",
 			"/v1.NetworkPolicyService/GetNetworkPolicies",
 			"/v1.NetworkPolicyService/GenerateNetworkGraph",
-			"/v1.NetworkPolicyService/GetNetworkGraphEpoch",
+			"/v1.NetworkPolicyService/GetNetworkGraph",
 		},
 		user.With(permissions.Modify(resources.Notifier)): {
 			"/v1.NetworkPolicyService/SendNetworkPolicyYAML",
@@ -109,7 +109,43 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 	}, nil
 }
 
-func (s *serviceImpl) GenerateNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest) (*v1.NetworkGraph, error) {
+func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetworkGraphRequest) (*v1.NetworkGraph, error) {
+	if request.GetClusterId() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "cluster ID must be specified")
+	}
+
+	// Check that the cluster exists. If not there is nothing to we can process.
+	_, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if !exists {
+		return nil, status.Errorf(codes.NotFound, "cluster with ID '%s' does not exist", request.GetClusterId())
+	}
+
+	// Gather all of the network policies that apply to the cluster and add the addition we are testing if applicable.
+	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: request.GetClusterId()})
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the deployments we want to check connectivity between.
+	deployments, err := s.getDeployments(request.GetClusterId(), request.GetQuery())
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate the graph.
+	return s.graphEvaluator.GetGraph(deployments, networkPolicies), nil
+}
+
+func (s *serviceImpl) GetNetworkGraphEpoch(context.Context, *v1.Empty) (*v1.NetworkGraphEpoch, error) {
+	return &v1.NetworkGraphEpoch{
+		Epoch: s.graphEvaluator.Epoch(),
+	}, nil
+}
+
+func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.SimulateNetworkGraphRequest) (*v1.NetworkGraph, error) {
 	if request.GetClusterId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Cluster ID must be specified")
 	}
@@ -137,12 +173,6 @@ func (s *serviceImpl) GenerateNetworkGraph(ctx context.Context, request *v1.Netw
 
 	// Generate the graph.
 	return s.graphEvaluator.GetGraph(deployments, networkPolicies), nil
-}
-
-func (s *serviceImpl) GetNetworkGraphEpoch(context.Context, *v1.Empty) (*v1.NetworkGraphEpoch, error) {
-	return &v1.NetworkGraphEpoch{
-		Epoch: s.graphEvaluator.Epoch(),
-	}, nil
 }
 
 func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.SendNetworkPolicyYamlRequest) (*v1.Empty, error) {

@@ -44,6 +44,6 @@ export const dashboard = {
 };
 
 export const network = {
-    networkGraph: '/v1/networkgraph/cluster/*',
-    epoch: '/v1/networkgraph/epoch'
+    networkGraph: '/v1/networkpolicies/simulate/*',
+    epoch: '/v1/networkpolicies/epoch'
 };

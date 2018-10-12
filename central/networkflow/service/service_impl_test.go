@@ -8,6 +8,7 @@ import (
 	"github.com/boltdb/bolt"
 	dDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
+	npGraphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
@@ -17,6 +18,7 @@ type NetworkGraphServiceTestSuite struct {
 	suite.Suite
 	db          *bolt.DB
 	deployments *dDataStoreMocks.DataStore
+	evaluator   *npGraphMocks.Evaluator
 	tested      Service
 }
 
@@ -31,7 +33,9 @@ func (suite *NetworkGraphServiceTestSuite) SetupTest() {
 	suite.db = db
 
 	clusterStore := networkFlowStore.NewClusterStore(db)
-	suite.tested = New(clusterStore, suite.deployments)
+	suite.evaluator = &npGraphMocks.Evaluator{}
+
+	suite.tested = New(clusterStore, suite.deployments, suite.evaluator)
 }
 
 func (suite *NetworkGraphServiceTestSuite) TeardownSuite() {

@@ -1,8 +1,7 @@
 import axios from 'axios';
 import queryString from 'query-string';
 
-const baseUrl = '/v1/networkgraph';
-const networkPoliciesUrl = '/v1/networkpolicies';
+const networkPoliciesBaseUrl = '/v1/networkpolicies';
 
 /**
  * Fetches nodes and links for the network graph.
@@ -13,11 +12,20 @@ const networkPoliciesUrl = '/v1/networkpolicies';
 export function fetchNetworkGraph(filters, clusterId) {
     const { query, simulationYaml } = filters;
     const params = queryString.stringify({ query });
-    const options = {
-        method: 'POST',
-        data: simulationYaml && `"${simulationYaml.split('\n').join('\\n')}"`,
-        url: `${baseUrl}/cluster/${clusterId}?${params}`
-    };
+    let options;
+    if (simulationYaml) {
+        options = {
+            method: 'POST',
+            data: simulationYaml && `"${simulationYaml.split('\n').join('\\n')}"`,
+            url: `${networkPoliciesBaseUrl}/simulate/${clusterId}?${params}`
+        };
+    } else {
+        options = {
+            method: 'GET',
+            url: `${networkPoliciesBaseUrl}/cluster/${clusterId}?${params}`
+        };
+    }
+
     return axios(options).then(response => ({
         response: response.data
     }));
@@ -31,7 +39,7 @@ export function fetchNetworkGraph(filters, clusterId) {
  */
 export function fetchNetworkPolicies(policyIds) {
     const networkPoliciesPromises = policyIds.map(policyId =>
-        axios.get(`${networkPoliciesUrl}/${policyId}`)
+        axios.get(`${networkPoliciesBaseUrl}/${policyId}`)
     );
     return axios
         .all([...networkPoliciesPromises])
@@ -44,7 +52,7 @@ export function fetchNetworkPolicies(policyIds) {
  * @returns {Promise<Object, Error>}
  */
 export function fetchNodeUpdates() {
-    return axios.get(`${baseUrl}/epoch`).then(response => ({
+    return axios.get(`${networkPoliciesBaseUrl}/epoch`).then(response => ({
         response: response.data
     }));
 }
@@ -61,7 +69,7 @@ export function sendYAMLNotification(clusterId, notifierId, simulationYaml) {
     const options = {
         method: 'POST',
         data: simulationYaml && `"${simulationYaml.split('\n').join('\\n')}"`,
-        url: `${networkPoliciesUrl}/simulation/notify?cluster_id=${clusterId}&notifier_id=${notifierId}`
+        url: `${networkPoliciesBaseUrl}/simulate/${clusterId}/notify?cluster_id=${clusterId}&notifier_id=${notifierId}`
     };
     return axios(options).then(response => ({
         response: response.data

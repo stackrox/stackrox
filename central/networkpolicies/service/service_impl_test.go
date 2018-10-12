@@ -91,8 +91,8 @@ func (suite *ServiceTestSuite) SetupTest() {
 }
 
 func (suite *ServiceTestSuite) TestFailsIfClusterIsNotSet() {
-	request := &v1.NetworkGraphRequest{}
-	_, err := suite.tested.GenerateNetworkGraph((context.Context)(nil), request)
+	request := &v1.SimulateNetworkGraphRequest{}
+	_, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.Error(err, "expected graph generation to fail since no cluster is specified")
 
 	suite.assertAllExpectationsMet()
@@ -104,10 +104,10 @@ func (suite *ServiceTestSuite) TestFailsIfClusterDoesNotExist() {
 		Return((*v1.Cluster)(nil), false, nil)
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.NetworkGraphRequest{
+	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId: fakeClusterID,
 	}
-	_, err := suite.tested.GenerateNetworkGraph((context.Context)(nil), request)
+	_, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.Error(err, "expected graph generation to fail since cluster does not exist")
 
 	suite.assertAllExpectationsMet()
@@ -120,11 +120,11 @@ func (suite *ServiceTestSuite) TestRejectsYamlWithoutNamespace() {
 		Return(cluster, true, nil)
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.NetworkGraphRequest{
+	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId:      fakeClusterID,
 		SimulationYaml: badYAML,
 	}
-	_, err := suite.tested.GenerateNetworkGraph((context.Context)(nil), request)
+	_, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.Error(err, "expected graph generation to fail since input yaml has no namespace")
 
 	suite.assertAllExpectationsMet()
@@ -152,10 +152,10 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 		Return(expectedResp, nil)
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.NetworkGraphRequest{
+	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId: fakeClusterID,
 	}
-	actualResp, err := suite.tested.GenerateNetworkGraph((context.Context)(nil), request)
+	actualResp, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.NoError(err, "expected graph generation to succeed")
 	suite.Equal(expectedResp, actualResp, "response should be output from graph generation")
 
@@ -187,11 +187,11 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 		Return(expectedResp, nil)
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.NetworkGraphRequest{
+	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId:      fakeClusterID,
 		SimulationYaml: fakeYAML1,
 	}
-	actualResp, err := suite.tested.GenerateNetworkGraph((context.Context)(nil), request)
+	actualResp, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.NoError(err, "expected graph generation to succeed")
 	suite.Equal(expectedResp, actualResp, "response should be output from graph generation")
 
@@ -219,11 +219,11 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 	suite.evaluator.On("GetGraph", deps, mock.MatchedBy(checkHasPolicies("first-policy", "second-policy"))).
 		Return(expectedResp, nil)
 
-	request := &v1.NetworkGraphRequest{
+	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId:      fakeClusterID,
 		SimulationYaml: fakeYAML1,
 	}
-	actualResp, err := suite.tested.GenerateNetworkGraph((context.Context)(nil), request)
+	actualResp, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.NoError(err, "expected graph generation to succeed")
 	suite.Equal(expectedResp, actualResp, "response should be output from graph generation")
 
@@ -252,11 +252,11 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 		Return(expectedResp, nil)
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.NetworkGraphRequest{
+	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId:      fakeClusterID,
 		SimulationYaml: combinedYAMLs,
 	}
-	actualResp, err := suite.tested.GenerateNetworkGraph((context.Context)(nil), request)
+	actualResp, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.NoError(err, "expected graph generation to succeed")
 	suite.Equal(expectedResp, actualResp, "response should be output from graph generation")
 
@@ -284,11 +284,11 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 		Return(expectedResp, nil)
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.NetworkGraphRequest{
+	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId:      fakeClusterID,
 		SimulationYaml: combinedYAMLs,
 	}
-	actualResp, err := suite.tested.GenerateNetworkGraph((context.Context)(nil), request)
+	actualResp, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.NoError(err, "expected graph generation to succeed")
 	suite.Equal(expectedResp, actualResp, "response should be output from graph generation")
 

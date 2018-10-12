@@ -5,6 +5,7 @@ import (
 
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
+	"github.com/stackrox/rox/central/networkpolicies/graph"
 )
 
 var (
@@ -14,7 +15,7 @@ var (
 )
 
 func initialize() {
-	as = New(networkFlowStore.Singleton(), deploymentDataStore.Singleton())
+	as = New(networkFlowStore.Singleton(), deploymentDataStore.Singleton(), graph.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.
