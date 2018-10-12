@@ -37,12 +37,15 @@ class DashboardBenchmarks extends Component {
                 INFO: 0,
                 NOTE: 0
             };
-            let total = 0;
-            benchmark.counts.forEach(count => {
+            const getTotal = (total, count) => {
                 const value = parseInt(count.count, 10);
                 results[count.status] += value;
-                total += value;
-            });
+                return total + value;
+            };
+            const { counts } = benchmark;
+            const total = counts
+                .filter(count => count.status !== 'NOT_APPLICABLE')
+                .reduce(getTotal, 0);
             return (
                 <div className="pb-3 flex w-full items-center" key={benchmark.benchmark}>
                     <Link
