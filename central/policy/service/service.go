@@ -9,6 +9,7 @@ import (
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/policy/datastore"
+	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"golang.org/x/net/context"
@@ -40,6 +41,7 @@ func New(policies datastore.DataStore,
 	clusters clusterDataStore.DataStore,
 	deployments deploymentDataStore.DataStore,
 	notifiers notifierStore.Store,
+	processes processIndicatorDataStore.DataStore,
 	buildTimePolicies imageDetection.PolicySet,
 	manager lifecycle.Manager,
 	processor notifierProcessor.Processor,
@@ -48,6 +50,7 @@ func New(policies datastore.DataStore,
 		policies:    policies,
 		clusters:    clusters,
 		deployments: deployments,
+		processes:   processes,
 
 		buildTimePolicies: buildTimePolicies,
 		lifecycleManager:  manager,

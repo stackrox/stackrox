@@ -11,6 +11,7 @@ import (
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/policy/datastore"
+	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 )
 
 var (
@@ -24,6 +25,7 @@ func initialize() {
 		clusterDataStore.Singleton(),
 		deploymentDataStore.Singleton(),
 		notifierStore.Singleton(),
+		processIndicatorDataStore.Singleton(),
 		buildTimeDetection.SingletonPolicySet(),
 		lifecycle.SingletonManager(),
 		notifierProcessor.Singleton(),
