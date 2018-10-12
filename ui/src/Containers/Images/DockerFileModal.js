@@ -28,20 +28,21 @@ class DockerFileModal extends Component {
             {
                 accessor: 'instruction',
                 Header: 'Instruction',
-                className: 'text-left pl-3'
+                headerClassName: `text-left ${wrapClassName} ${defaultHeaderClassName}`,
+                className: `text-left pl-3 ${wrapClassName} ${defaultColumnClassName}`
             },
             {
                 accessor: 'value',
                 Header: 'Value',
-                headerClassName: `w-2/5 text-left ${wrapClassName} ${defaultHeaderClassName}`,
-                className: `w-2/5 text-left pl-3 ${wrapClassName} ${defaultColumnClassName}`
+                headerClassName: `w-3/5 text-left ${wrapClassName} ${defaultHeaderClassName}`,
+                className: `w-3/5 text-left pl-3 word-break-all ${wrapClassName} ${defaultColumnClassName}`
             },
             {
                 accessor: 'created',
                 Header: 'Created',
                 align: 'right',
-                widthClassName: `w-1/5 text-right pr-3 ${wrapClassName} ${defaultHeaderClassName}`,
-                className: `w-1/5 text-right pr-3 ${wrapClassName} ${defaultColumnClassName}`,
+                widthClassName: `text-left pr-3 ${wrapClassName} ${defaultHeaderClassName}`,
+                className: `text-left pr-3 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => dateFns.format(original.created, dateTimeFormat)
             }
         ];
