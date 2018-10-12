@@ -823,7 +823,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				fixtureDep.GetId(): {
 					{
 						Message:   "Found processes with name matching 'nmap$'",
-						Processes: []*v1.ProcessIndicator{nmapIndicatorfixtureDep2, nmapIndicatorfixtureDep1},
+						Processes: []*v1.ProcessIndicator{nmapIndicatorfixtureDep1, nmapIndicatorfixtureDep2},
 					},
 				},
 				nginx110Dep.GetId(): {
@@ -840,7 +840,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				containerPort22Dep.GetId(): {
 					{
 						Message:   "Found processes with args matching '(https?://)?(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\:(10250|10248|10255)|heapster\\.kube\\-system/metrics|KUBERNETES_PORT_443_TCP_ADDR|KUBERNETES_SERVICE_HOST).*'",
-						Processes: []*v1.ProcessIndicator{kubeletIndicator2, kubeletIndicator},
+						Processes: []*v1.ProcessIndicator{kubeletIndicator, kubeletIndicator2},
 					},
 				},
 			},

@@ -81,7 +81,7 @@ func (p ProcessQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[searc
 			return nil
 		}
 		sort.Slice(processes, func(i, j int) bool {
-			return protoconv.CompareProtoTimestamps(processes[i].GetSignal().GetTime(), processes[j].GetSignal().GetTime()) > 0
+			return protoconv.CompareProtoTimestamps(processes[i].GetSignal().GetTime(), processes[j].GetSignal().GetTime()) < 0
 		})
 		var messageBuilder strings.Builder
 		messageBuilder.WriteString("Found ")
