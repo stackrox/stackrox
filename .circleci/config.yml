@@ -102,6 +102,16 @@ collectK8sLogs: &collectK8sLogs
       ./scripts/ci/collect-service-logs.sh sensor
     when: always
 
+checkOpenshiftLabel: &checkOpenshiftLabel
+  run:
+    name: Determine whether to run OpenShift tests
+    command: |
+      if ! .circleci/pr_has_label.sh ci-openshift-tests; then
+        echo "Skipping tests because we're on a PR. Apply the ci-openshift-tests label to your PR if you want to run them."
+        circleci step halt
+      fi
+
+
 version: 2
 jobs:
 
@@ -182,6 +192,15 @@ jobs:
       - LOCAL_PORT: 8000
     steps:
       - checkout
+
+      - run:
+          name: Determine whether to skip tests
+          command: |
+            if .circleci/pr_has_label.sh ci-no-k8s-tests; then
+              echo "Skipping tests because of the presence of the ci-no-k8s-tests label..."
+              circleci step halt
+            fi
+
       - setup_remote_docker
 
       - attach_workspace:
@@ -233,6 +252,15 @@ jobs:
       - RUNTIME_SUPPORT: true
     steps:
       - checkout
+
+      - run:
+          name: Determine whether to skip tests
+          command: |
+            if .circleci/pr_has_label.sh ci-no-qa-tests; then
+              echo "Skipping tests because of the presence of the ci-no-qa-tests label..."
+              circleci step halt
+            fi
+
       - setup_remote_docker
 
       - attach_workspace:
@@ -254,6 +282,9 @@ jobs:
             export PORT=${LOCAL_PORT}
             if [ "${CIRCLE_BRANCH}" = "master" ]; then
               echo "On master, running all QA tests..."
+              make -C qa-tests-backend test
+            elif .circleci/pr_has_label.sh ci-all-qa-tests; then
+              echo "ci-all-qa-tests label was specified, so running all QA tests..."
               make -C qa-tests-backend test
             else
               echo "On a PR branch, running BAT tests only..."
@@ -284,6 +315,7 @@ jobs:
     <<: *defaults
     steps:
       - checkout
+      - *checkOpenshiftLabel
       - setup_remote_docker
 
       - attach_workspace:
@@ -363,6 +395,7 @@ jobs:
       - LOCAL_PORT: 8000
     steps:
       - checkout
+      - *checkOpenshiftLabel
       - setup_remote_docker
 
       - run:
@@ -535,22 +568,19 @@ workflows:
           filters:
             tags:
               only: /.*/
-      # Provision and test OpenShift only on master
       - provision-openshift:
           filters:
-            branches:
+            tags:
               only:
-              - master
-              - /.*openshift.*/
+              - /.*/
       - openshift-tests:
           requires:
             - build
             - provision-openshift
           filters:
-            branches:
+            tags:
               only:
-              - master
-              - /.*openshift.*/
+              - /.*/
       # Push release only on tags.
       - push-release:
           requires:
