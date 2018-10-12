@@ -256,6 +256,19 @@ class NetworkGraph extends Component {
         return newNodes;
     };
 
+    getBorderCanvas = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = constants.NAMESPACE_BORDER_CANVAS_WIDTH;
+        canvas.height = constants.NAMESPACE_BORDER_CANVAS_HEIGHT;
+        ctx.fillStyle = constants.NAMESPACE_BORDER_RECT_COLOR;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = constants.NAMESPACE_INTERNET_ACCESS_BORDER_COLOR;
+        ctx.setLineDash(constants.NAMESPACE_BORDER_DASH_WIDTH);
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+        return canvas;
+    };
+
     setUpNamespaces = propNodes => {
         const namespacesMapping = {};
         let newNamespaces = [];
@@ -275,16 +288,26 @@ class NetworkGraph extends Component {
             let newNamespace = { ...namespace };
 
             let geometry = new THREE.PlaneGeometry(1, 1);
+            let map = null;
+            if (namespace.internetAccess) {
+                const canvas = this.getBorderCanvas();
+                // adds texture to the border for the namespace
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.needsUpdate = true;
+                texture.magFilter = THREE.NearestFilter;
+                texture.minFilter = THREE.LinearMipMapLinearFilter;
+                map = texture;
+            }
             let material = new THREE.MeshBasicMaterial({
-                color: namespace.internetAccess
-                    ? constants.INTERNET_ACCESS_COLOR
-                    : constants.NAMESPACE_BORDER_COLOR,
+                map,
+                color: !namespace.internetAccess && constants.NAMESPACE_BORDER_COLOR,
                 side: THREE.DoubleSide,
                 userData: {
                     type: constants.NETWORK_GRAPH_TYPES.NAMESPACE,
                     namespace: newNamespace.namespace
                 }
             });
+            // creates border for the namespace
             newNamespace.border = new THREE.Mesh(geometry, material);
 
             geometry = new THREE.PlaneGeometry(1, 1);
@@ -566,7 +589,9 @@ class NetworkGraph extends Component {
 
         geometry = new THREE.CircleBufferGeometry(5, 32);
         material = new THREE.MeshBasicMaterial({
-            color: constants.NODE_COLOR
+            color: newNode.internetAccess
+                ? constants.INTERNET_ACCESS_NODE_COLOR
+                : constants.NODE_COLOR
         });
         newNode.circle = new THREE.Mesh(geometry, material);
         newNode.circle.userData = { id };
