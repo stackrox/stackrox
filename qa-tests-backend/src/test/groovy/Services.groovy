@@ -570,4 +570,24 @@ class Services extends BaseService {
         println "SR did not detect the network policy"
         return false
     }
+
+    static waitForDeployment(String deploymentId, int timeoutSeconds = 30) {
+        int intervalSeconds = 1
+        int waitTime
+        def startTime = System.currentTimeMillis()
+        for (waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
+            try {
+                getDeploymentClient().getDeployment(ResourceByID.newBuilder().setId(deploymentId).build())
+                println "SR found deployment within ${(System.currentTimeMillis() - startTime) / 1000}s"
+                return true
+            } catch (Exception e) {
+                println "SR does not detect the deployment yet... retrying in ${intervalSeconds}s"
+                println e.toString()
+                sleep(intervalSeconds * 1000)
+            }
+        }
+
+        println "SR did not detect the deployment"
+        return false
+    }
 }

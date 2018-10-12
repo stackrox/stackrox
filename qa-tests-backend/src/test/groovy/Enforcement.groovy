@@ -8,38 +8,51 @@ import stackrox.generated.PolicyServiceOuterClass.EnforcementAction
 
 class Enforcement extends BaseSpecification {
     private final static String CONTAINER_PORT_22_POLICY = "Container Port 22"
+    private final static String APT_GET_POLICY = "apt-get Execution"
 
-    @Category([BAT, PolicyEnforcement])
-    def "Test Kill Enforcement"() {
-        // This test only tests enforcement by directly telling Central to kill
-        // a specific pod/container.
-        //
-        // Need to add a test using policy violation once piped
-        //
-        // THIS TEST SHOULD BE REMOVED IF THE ENFORCEMENT API IS REMOVED
+    @Category([BAT, Integration, PolicyEnforcement])
+    def "Test Kill Enforcement - Integration"() {
+        // This test verifies enforcement by triggering a policy violation on a policy
+        // that is configured for Kill Pod enforcement
 
         given:
-        "Create Deployment to test kill enforcement"
-        Deployment d = new Deployment()
-                .setName("kill-enforcement")
-                .setImage("nginx")
-                .addPort(80)
-                .addLabel("app", "kill-enforcement")
-        orchestrator.createDeployment(d)
+        "Add killn enforcement to an existing runtime policy"
+        def startEnforcements = Services.updatePolicyEnforcement(
+                APT_GET_POLICY,
+                [EnforcementAction.KILL_POD_ENFORCEMENT,]
+        )
 
         when:
-        "trigger kill enforcement on container"
-        assert d.pods.size() > 0
-        Services.applyKillEnforcement(
-                d.pods.get(0).getPodId(),
-                d.pods.get(0).containerIds.get(0))
+        "Create Deployment to test kill enforcement"
+        Deployment d = new Deployment()
+                .setName("kill-enforcement-int")
+                .setImage("nginx")
+                .addLabel("app", "kill-enforcement-int")
+                .setCommand(["sh" , "-c" , "while true; do sleep 5; apt-get -y update; done"])
+        orchestrator.createDeployment(d)
+        assert Services.waitForDeployment(d.deploymentUid)
+
+        and:
+        "get violation details"
+        List<AlertServiceOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
+                d.name,
+                APT_GET_POLICY,
+                30
+        ) as List<AlertServiceOuterClass.ListAlert>
+        assert violations != null && violations?.size() > 0
+        AlertServiceOuterClass.Alert alert = Services.getViolaton(violations.get(0).id)
 
         then:
-        "check container was killed"
-        assert orchestrator.wasContainerKilled(d.pods.get(0).name)
+        "check pod was killed"
+        assert d.pods.collect {
+            it -> println "checking if ${it.name} was killed"
+            orchestrator.wasContainerKilled(it.name)
+        }.find { it == true }
+        assert alert.enforcement.action == EnforcementAction.KILL_POD_ENFORCEMENT
 
         cleanup:
-        "remove deployment"
+        "restore enforcement state of policy and remove deployment"
+        Services.updatePolicyEnforcement(APT_GET_POLICY, startEnforcements)
         orchestrator.deleteDeployment(d.name)
     }
 
@@ -64,6 +77,7 @@ class Enforcement extends BaseSpecification {
                 .addLabel("app", "scale-down-enforcement-int")
                 .setSkipReplicaWait(true)
         orchestrator.createDeployment(d)
+        assert Services.waitForDeployment(d.deploymentUid)
 
         and:
         "get violation details"
@@ -107,6 +121,7 @@ class Enforcement extends BaseSpecification {
                 .addLabel("app", "node-constraint-enforcement-int")
                 .setSkipReplicaWait(true)
         orchestrator.createDeployment(d)
+        assert Services.waitForDeployment(d.deploymentUid)
 
         and:
         "get violation details"
