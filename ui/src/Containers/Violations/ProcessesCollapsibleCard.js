@@ -15,9 +15,7 @@ class ProcessesCollapsibleCard extends Component {
             'border-b border-base-300 leading-normal bg-base-200 cursor-pointer flex justify-between items-center hover:bg-primary-100 hover:border-primary-300';
         return (
             <div className={titleClassName}>
-                <h1 className="p-3 text-base-600 font-700 text-lg capitalize">
-                    {this.props.title}
-                </h1>
+                <h1 className="p-3 text-base-600 font-700 text-lg">{this.props.title}</h1>
                 <div className="flex pr-3">
                     <Icon.ChevronUp className="h-4 w-4" />
                 </div>
