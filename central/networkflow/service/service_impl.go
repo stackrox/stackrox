@@ -24,7 +24,6 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.NetworkGraph)): {
 			"/v1.NetworkGraphService/GetNetworkGraph",
-			"/v1.NetworkGraphService/GetNetworkGraphEpoch",
 		},
 	})
 	defaultSince = -5 * time.Minute
@@ -61,7 +60,7 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 		since = timestamp.FromGoTime(time.Now().Add(defaultSince))
 	}
 	// Get the deployments we want to check connectivity between.
-	deployments, err := s.getDeployments(request.GetClusterId())
+	deployments, err := s.getDeployments(request.GetClusterId(), request.GetQuery())
 
 	if err != nil {
 		return nil, err
@@ -93,7 +92,10 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 	// compute edges
 	var edges []*v1.NetworkEdge
 
-	filteredFlows := filterNetworkFlowsByTime(flows, since)
+	// Filter by deployments, and then by time.
+	filteredFlows := filterNetworkFlowsByDeployments(flows, deployments)
+	filteredFlows = filterNetworkFlowsByTime(filteredFlows, since)
+
 	for _, flow := range filteredFlows {
 		srcID := flow.GetProps().GetSrcDeploymentId()
 		dstID := flow.GetProps().GetDstDeploymentId()
@@ -105,6 +107,27 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 		Nodes: nodes,
 		Edges: edges,
 	}, nil
+}
+
+func filterNetworkFlowsByDeployments(flows []*v1.NetworkFlow, deployments []*v1.Deployment) (filtered []*v1.NetworkFlow) {
+
+	filtered = flows[:0]
+	deploymentIDMap := make(map[string]bool)
+	for _, d := range deployments {
+		deploymentIDMap[d.Id] = true
+	}
+
+	for _, flow := range flows {
+		srcID := flow.GetProps().SrcDeploymentId
+		dstID := flow.GetProps().DstDeploymentId
+
+		if deploymentIDMap[srcID] && deploymentIDMap[dstID] {
+			filtered = append(filtered, flow)
+		}
+
+	}
+
+	return
 }
 
 func filterNetworkFlowsByTime(flows []*v1.NetworkFlow, since timestamp.MicroTS) (filtered []*v1.NetworkFlow) {
@@ -121,9 +144,18 @@ func filterNetworkFlowsByTime(flows []*v1.NetworkFlow, since timestamp.MicroTS) 
 	return
 }
 
-func (s *serviceImpl) getDeployments(clusterID string) (deployments []*v1.Deployment, err error) {
+func (s *serviceImpl) getDeployments(clusterID string, query string) (deployments []*v1.Deployment, err error) {
 	clusterQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
 
-	deployments, err = s.deployments.SearchRawDeployments(clusterQuery)
+	q := clusterQuery
+	if query != "" {
+		q, err = search.ParseRawQuery(query)
+		if err != nil {
+			return
+		}
+		q = search.ConjunctionQuery(q, clusterQuery)
+	}
+
+	deployments, err = s.deployments.SearchRawDeployments(q)
 	return
 }

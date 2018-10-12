@@ -32,8 +32,9 @@ var (
 		user.With(permissions.View(resources.NetworkPolicy)): {
 			"/v1.NetworkPolicyService/GetNetworkPolicy",
 			"/v1.NetworkPolicyService/GetNetworkPolicies",
-			"/v1.NetworkPolicyService/GenerateNetworkGraph",
+			"/v1.NetworkPolicyService/SimulateNetworkGraph",
 			"/v1.NetworkPolicyService/GetNetworkGraph",
+			"/v1.NetworkPolicyService/GetNetworkGraphEpoch",
 		},
 		user.With(permissions.Modify(resources.Notifier)): {
 			"/v1.NetworkPolicyService/SendNetworkPolicyYAML",
@@ -215,15 +216,13 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 func (s *serviceImpl) getDeployments(clusterID, query string) (deployments []*v1.Deployment, err error) {
 	clusterQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
 
-	var q *v1.Query
+	q := clusterQuery
 	if query != "" {
 		q, err = search.ParseRawQuery(query)
 		if err != nil {
 			return
 		}
 		q = search.ConjunctionQuery(q, clusterQuery)
-	} else {
-		q = clusterQuery
 	}
 
 	deployments, err = s.deployments.SearchRawDeployments(q)

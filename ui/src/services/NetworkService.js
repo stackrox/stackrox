@@ -52,7 +52,7 @@ export function fetchNetworkPolicies(policyIds) {
  * @returns {Promise<Object, Error>}
  */
 export function fetchNodeUpdates() {
-    return axios.get(`${networkPoliciesBaseUrl}/epoch`).then(response => ({
+    return axios.get(`${networkPoliciesBaseUrl}/graph/epoch`).then(response => ({
         response: response.data
     }));
 }

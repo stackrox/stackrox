@@ -136,7 +136,7 @@ service NetworkPolicyService {
 
     rpc GetNetworkGraphEpoch (Empty) returns (NetworkGraphEpoch) {
         option (google.api.http) = {
-            get: "/v1/networkpolicies/epoch"
+            get: "/v1/networkpolicies/graph/epoch"
         };
     }
 
