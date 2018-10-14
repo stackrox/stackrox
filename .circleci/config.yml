@@ -106,7 +106,9 @@ checkOpenshiftLabel: &checkOpenshiftLabel
   run:
     name: Determine whether to run OpenShift tests
     command: |
-      if ! .circleci/pr_has_label.sh ci-openshift-tests; then
+      set +e
+      .circleci/pr_has_label.sh ci-openshift-tests
+      if [ $? -eq 1 ]; then
         echo "Skipping tests because we're on a PR. Apply the ci-openshift-tests label to your PR if you want to run them."
         circleci step halt
       fi
