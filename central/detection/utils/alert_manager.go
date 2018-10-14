@@ -12,6 +12,7 @@ type AlertManager interface {
 	GetAlertsByPolicy(policyID string) ([]*v1.Alert, error)
 	GetAlertsByPolicyAndLifecycle(policyID string, lifecycle v1.LifecycleStage) ([]*v1.Alert, error)
 	GetAlertsByDeployment(deploymentID string) ([]*v1.Alert, error)
+	GetAlertsByLifecycle(lifecyle v1.LifecycleStage) ([]*v1.Alert, error)
 	GetAlertsByDeploymentAndPolicyLifecycle(deploymentID string, lifecycle v1.LifecycleStage) ([]*v1.Alert, error)
 	AlertAndNotify(previousAlerts, currentAlerts []*v1.Alert) error
 }

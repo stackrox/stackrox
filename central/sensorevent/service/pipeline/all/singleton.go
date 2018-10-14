@@ -14,11 +14,11 @@ import (
 var (
 	once sync.Once
 
-	pi pipeline.Pipeline
+	allPipeline pipeline.Pipeline
 )
 
 func initialize() {
-	pi = NewPipeline(deploymentevents.Singleton(),
+	allPipeline = NewPipeline(deploymentevents.Singleton(),
 		processindicators.Singleton(),
 		networkpolicies.Singleton(),
 		namespaces.Singleton(),
@@ -28,5 +28,5 @@ func initialize() {
 // Singleton provides the instance of the Service interface to register.
 func Singleton() pipeline.Pipeline {
 	once.Do(initialize)
-	return pi
+	return allPipeline
 }

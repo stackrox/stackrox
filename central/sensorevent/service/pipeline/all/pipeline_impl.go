@@ -16,21 +16,23 @@ type pipelineImpl struct {
 }
 
 // sendMessages grabs items from the queue, processes them, and sends them back to sensor.
-func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEnforcement, error) {
+func (s *pipelineImpl) Run(event *v1.SensorEvent, injector pipeline.EnforcementInjector) error {
+	var p pipeline.Pipeline
 	switch x := event.Resource.(type) {
 	case *v1.SensorEvent_Deployment:
-		return s.deploymentPipeline.Run(event)
+		p = s.deploymentPipeline
 	case *v1.SensorEvent_NetworkPolicy:
-		return s.networkPolicyPipeline.Run(event)
+		p = s.networkPolicyPipeline
 	case *v1.SensorEvent_Namespace:
-		return s.namespacePipeline.Run(event)
+		p = s.namespacePipeline
 	case *v1.SensorEvent_ProcessIndicator:
-		return s.processIndicatorPipeline.Run(event)
+		p = s.processIndicatorPipeline
 	case *v1.SensorEvent_Secret:
-		return s.secretPipeline.Run(event)
+		p = s.secretPipeline
 	case nil:
-		return nil, fmt.Errorf("Resource field is empty")
+		return fmt.Errorf("Resource field is empty")
 	default:
-		return nil, fmt.Errorf("No resource with type %T", x)
+		return fmt.Errorf("No resource with type %T", x)
 	}
+	return p.Run(event, injector)
 }

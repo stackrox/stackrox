@@ -2,38 +2,134 @@ package lifecycle
 
 import (
 	"fmt"
+	"sync"
+	"time"
 
+	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/detection/utils"
 	"github.com/stackrox/rox/central/enrichment"
+	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/policies"
+	"golang.org/x/time/rate"
 )
+
+type indicatorInfo struct {
+	deploymentID string
+	containerID  string
+}
+
+type indicatorInfoWithInjector struct {
+	info                indicatorInfo
+	enforcementInjector pipeline.EnforcementInjector
+}
 
 type managerImpl struct {
 	enricher           enrichment.Enricher
 	runtimeDetector    runtime.Detector
 	deploytimeDetector deploytime.Detector
 	alertManager       utils.AlertManager
+
+	deploymentDataStore datastore.DataStore
+
+	queuedIndicatorsToContainers map[string]indicatorInfoWithInjector
+	queueLock                    sync.Mutex
+	flushProcessingLock          sync.Mutex
+
+	limiter *rate.Limiter
+	ticker  *time.Ticker
 }
 
-func (m *managerImpl) IndicatorAdded(indicator *v1.ProcessIndicator, deployment *v1.Deployment) (*v1.SensorEnforcement, error) {
-	newAlerts, err := m.runtimeDetector.AlertsForDeployment(deployment)
+func (m *managerImpl) copyAndResetIndicatorQueue() map[string]indicatorInfoWithInjector {
+	m.queueLock.Lock()
+	defer m.queueLock.Unlock()
+	if len(m.queuedIndicatorsToContainers) == 0 {
+		return nil
+	}
+	copied := make(map[string]indicatorInfoWithInjector, len(m.queuedIndicatorsToContainers))
+	for indicatorID, indicatorInfo := range m.queuedIndicatorsToContainers {
+		copied[indicatorID] = indicatorInfo
+	}
+	m.queuedIndicatorsToContainers = make(map[string]indicatorInfoWithInjector)
+	return copied
+}
+
+func (m *managerImpl) flushQueuePeriodically() {
+	defer m.ticker.Stop()
+	for range m.ticker.C {
+		m.flushIndicatorQueue()
+	}
+}
+
+func (m *managerImpl) flushIndicatorQueue() {
+	m.flushProcessingLock.Lock()
+	defer m.flushProcessingLock.Unlock()
+
+	copiedQueue := m.copyAndResetIndicatorQueue()
+	if len(copiedQueue) == 0 {
+		return
+	}
+	newAlerts, err := m.runtimeDetector.AlertsForAllDeploymentsAndPolicies()
 	if err != nil {
-		return nil, err
+		logger.Errorf("Failed to compute runtime alerts: %s", err)
+		return
 	}
 
-	oldAlerts, err := m.alertManager.GetAlertsByDeploymentAndPolicyLifecycle(indicator.GetDeploymentId(), v1.LifecycleStage_RUNTIME)
+	oldAlerts, err := m.alertManager.GetAlertsByLifecycle(v1.LifecycleStage_RUNTIME)
 	if err != nil {
-		return nil, fmt.Errorf("retrieving old alerts for deployment %s: %s", indicator.GetDeploymentId(), err)
+		logger.Errorf("Failed to retrieve old runtime alerts: %s", err)
+		return
 	}
 
 	err = m.alertManager.AlertAndNotify(oldAlerts, newAlerts)
 	if err != nil {
-		return nil, err
+		logger.Errorf("Couldn't alert and notify: %s", err)
 	}
-	return enforcementActionForAddedIndicator(deployment, newAlerts, indicator), nil
+
+	containersSet := containersToKill(newAlerts, copiedQueue)
+	for indicatorInfo, enforcementInjector := range containersSet {
+		if enforcementInjector == nil {
+			logger.Errorf("Nil enforcement injector received for indicator %+v", indicatorInfo)
+			continue
+		}
+		if indicatorInfo.deploymentID == "" || indicatorInfo.containerID == "" {
+			continue
+		}
+		deployment, exists, err := m.deploymentDataStore.GetDeployment(indicatorInfo.deploymentID)
+		if err != nil {
+			logger.Errorf("Couldn't enforce on deployment %s: failed to retrieve: %s", indicatorInfo.deploymentID, err)
+			continue
+		}
+		if !exists {
+			logger.Errorf("Couldn't enforce on deployment %s: not found in store", indicatorInfo.deploymentID)
+			continue
+		}
+		enforcementAction := createEnforcementAction(deployment, indicatorInfo.containerID)
+		injected := enforcementInjector.InjectEnforcement(enforcementAction)
+		if !injected {
+			logger.Errorf("Failed to inject enforcement action: %s", proto.MarshalTextString(enforcementAction))
+		}
+	}
+}
+
+func (m *managerImpl) IndicatorAdded(indicator *v1.ProcessIndicator, injector pipeline.EnforcementInjector) error {
+	if indicator.GetId() == "" {
+		return fmt.Errorf("invalid indicator received: %s, id was empty", proto.MarshalTextString(indicator))
+	}
+	m.queueLock.Lock()
+	m.queuedIndicatorsToContainers[indicator.GetId()] = indicatorInfoWithInjector{
+		info:                indicatorInfo{deploymentID: indicator.GetDeploymentId(), containerID: indicator.GetSignal().GetContainerId()},
+		enforcementInjector: injector,
+	}
+	m.queueLock.Unlock()
+
+	if m.limiter.Allow() {
+		go m.flushIndicatorQueue()
+	}
+	return nil
 }
 
 func (m *managerImpl) DeploymentUpdated(deployment *v1.Deployment) (string, v1.EnforcementAction, error) {
@@ -164,38 +260,27 @@ func determineEnforcement(alerts []*v1.Alert) (alertID string, action v1.Enforce
 	return
 }
 
-func enforcementActionForAddedIndicator(deployment *v1.Deployment, alerts []*v1.Alert, indicator *v1.ProcessIndicator) *v1.SensorEnforcement {
-	if !killPodActionSupported(alerts, indicator) {
-		return nil
-	}
+func containersToKill(alerts []*v1.Alert, indicatorsToInfo map[string]indicatorInfoWithInjector) map[indicatorInfo]pipeline.EnforcementInjector {
+	containersSet := make(map[indicatorInfo]pipeline.EnforcementInjector)
 
-	return createEnforcementAction(deployment, indicator)
-}
-
-// killPodActionSupported returns true if the alert supports kill pod action.
-func killPodActionSupported(alerts []*v1.Alert, indicator *v1.ProcessIndicator) bool {
 	for _, alert := range alerts {
+		if alert.GetEnforcement().GetAction() != v1.EnforcementAction_KILL_POD_ENFORCEMENT {
+			continue
+		}
 		violations := alert.GetViolations()
 		for _, v := range violations {
-			indicators := v.GetProcesses()
-			for _, singleIndicator := range indicators {
-				if singleIndicator.GetId() == indicator.GetId() {
-					if alert.GetEnforcement().GetAction() == v1.EnforcementAction_KILL_POD_ENFORCEMENT {
-						return true
-					}
+			for _, singleIndicator := range v.GetProcesses() {
+				if infoWithInjector, ok := indicatorsToInfo[singleIndicator.GetId()]; ok {
+					containersSet[infoWithInjector.info] = infoWithInjector.enforcementInjector
 				}
 			}
 		}
 	}
-	return false
+
+	return containersSet
 }
 
-func createEnforcementAction(deployment *v1.Deployment, indicator *v1.ProcessIndicator) *v1.SensorEnforcement {
-	containerID := indicator.GetSignal().GetContainerId()
-	if containerID == "" {
-		return nil
-	}
-
+func createEnforcementAction(deployment *v1.Deployment, containerID string) *v1.SensorEnforcement {
 	containers := deployment.GetContainers()
 	for _, container := range containers {
 		for _, instance := range container.GetInstances() {

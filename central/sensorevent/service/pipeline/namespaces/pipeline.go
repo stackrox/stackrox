@@ -34,7 +34,7 @@ type pipelineImpl struct {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEnforcement, error) {
+func (s *pipelineImpl) Run(event *v1.SensorEvent, _ pipeline.EnforcementInjector) error {
 	namespace := event.GetNamespace()
 	namespace.ClusterId = event.GetClusterId()
 
@@ -47,37 +47,37 @@ func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEnforcement, error)
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *v1.Namespace) (*v1.SensorEnforcement, error) {
+func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *v1.Namespace) error {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Add/Update/Remove the deployment from persistence depending on the event action.
 	if err := s.persistNamespace(action, event); err != nil {
-		return nil, err
+		return err
 	}
 	s.graphEvaluator.IncrementEpoch()
 
-	return nil, nil
+	return nil
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, ns *v1.Namespace) (*v1.SensorEnforcement, error) {
+func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, ns *v1.Namespace) error {
 	if err := s.validateInput(ns); err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := s.enrichCluster(ns); err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := s.persistNamespace(action, ns); err != nil {
-		return nil, err
+		return err
 	}
 	s.graphEvaluator.IncrementEpoch()
 
-	return nil, nil
+	return nil
 }
 
 func (s *pipelineImpl) validateInput(np *v1.Namespace) error {

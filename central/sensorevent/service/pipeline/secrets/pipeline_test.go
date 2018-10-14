@@ -43,6 +43,6 @@ func (suite *PipelineTestSuite) TestRun() {
 			Secret: secret,
 		},
 	}
-	_, err := pipeline.Run(sensorEvent)
+	err := pipeline.Run(sensorEvent, nil)
 	suite.NoError(err)
 }

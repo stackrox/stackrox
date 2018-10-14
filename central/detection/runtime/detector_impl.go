@@ -18,9 +18,16 @@ type detectorImpl struct {
 	deployments datastore.DataStore
 }
 
-func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*v1.Alert, error) {
-	var newAlerts []*v1.Alert
-	err := d.policySet.ForOne(policyID, func(p *v1.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
+type alertSlice struct {
+	alerts []*v1.Alert
+}
+
+func (a *alertSlice) append(alerts ...*v1.Alert) {
+	a.alerts = append(a.alerts, alerts...)
+}
+
+func (d *detectorImpl) policyMatcher(alerts *alertSlice) func(*v1.Policy, searchbasedpolicies.Matcher, predicate.Predicate) error {
+	return func(p *v1.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
 		violationsByDeployment, err := matcher.Match(d.deployments)
 		if err != nil {
 			return fmt.Errorf("matching policy %s: %s", p.GetName(), err)
@@ -38,14 +45,28 @@ func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*v1.Alert, error) {
 			if shouldProcess != nil && !shouldProcess(dep) {
 				continue
 			}
-			newAlerts = append(newAlerts, policyDeploymentAndViolationsToAlert(p, dep, violations))
+			alerts.append(policyDeploymentAndViolationsToAlert(p, dep, violations))
 		}
 		return nil
-	})
+	}
+}
+
+func (d *detectorImpl) AlertsForAllDeploymentsAndPolicies() ([]*v1.Alert, error) {
+	alertSlice := &alertSlice{}
+	err := d.policySet.ForEach(d.policyMatcher(alertSlice))
 	if err != nil {
 		return nil, err
 	}
-	return newAlerts, nil
+	return alertSlice.alerts, nil
+}
+
+func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*v1.Alert, error) {
+	alertSlice := &alertSlice{}
+	err := d.policySet.ForOne(policyID, d.policyMatcher(alertSlice))
+	if err != nil {
+		return nil, err
+	}
+	return alertSlice.alerts, nil
 }
 
 func (d *detectorImpl) UpsertPolicy(policy *v1.Policy) error {

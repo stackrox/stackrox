@@ -1,6 +1,7 @@
 package deploymentevents
 
 import (
+	"github.com/gogo/protobuf/proto"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
@@ -45,16 +46,28 @@ type pipelineImpl struct {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEnforcement, error) {
+func (s *pipelineImpl) Run(event *v1.SensorEvent, injector pipeline.EnforcementInjector) error {
 	deployment := event.GetDeployment()
 	deployment.ClusterId = event.GetClusterId()
 
+	var resp *v1.SensorEnforcement
+	var err error
 	switch event.GetAction() {
 	case v1.ResourceAction_REMOVE_RESOURCE:
-		return s.runRemovePipeline(event.GetAction(), deployment)
+		resp, err = s.runRemovePipeline(event.GetAction(), deployment)
 	default:
-		return s.runGeneralPipeline(event.GetAction(), deployment)
+		resp, err = s.runGeneralPipeline(event.GetAction(), deployment)
 	}
+	if err != nil {
+		return err
+	}
+	if resp != nil {
+		injected := injector.InjectEnforcement(resp)
+		if !injected {
+			log.Errorf("Failed to inject enforcement action %s", proto.MarshalTextString(resp))
+		}
+	}
+	return nil
 }
 
 // Run runs the pipeline template on the input and returns the output.

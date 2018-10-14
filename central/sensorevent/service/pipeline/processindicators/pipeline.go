@@ -1,9 +1,6 @@
 package processindicators
 
 import (
-	"fmt"
-
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -32,32 +29,24 @@ type pipelineImpl struct {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEnforcement, error) {
+func (s *pipelineImpl) Run(event *v1.SensorEvent, injector pipeline.EnforcementInjector) error {
 	switch event.GetAction() {
 	case v1.ResourceAction_REMOVE_RESOURCE:
-		return nil, s.indicators.RemoveProcessIndicator(event.GetProcessIndicator().GetId())
+		return s.indicators.RemoveProcessIndicator(event.GetProcessIndicator().GetId())
 	default:
-		return s.process(event.GetProcessIndicator())
+		return s.process(event.GetProcessIndicator(), injector)
 	}
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) process(indicator *v1.ProcessIndicator) (*v1.SensorEnforcement, error) {
-	deployment, exists, err := s.deployments.GetDeployment(indicator.GetDeploymentId())
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving deployment from indicator %s: %s", proto.MarshalTextString(indicator), err)
-	}
-	if !exists {
-		return nil, fmt.Errorf("received indicator %s for non-existent deployment", proto.MarshalTextString(indicator))
-	}
-
+func (s *pipelineImpl) process(indicator *v1.ProcessIndicator, injector pipeline.EnforcementInjector) error {
 	inserted, err := s.indicators.AddProcessIndicator(indicator)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// This short-circuits the processing for de-duplicated indicators.
 	if !inserted {
-		return nil, nil
+		return nil
 	}
-	return s.manager.IndicatorAdded(indicator, deployment)
+	return s.manager.IndicatorAdded(indicator, injector)
 }

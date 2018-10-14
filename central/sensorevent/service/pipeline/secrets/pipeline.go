@@ -31,7 +31,7 @@ type pipelineImpl struct {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEnforcement, error) {
+func (s *pipelineImpl) Run(event *v1.SensorEvent, _ pipeline.EnforcementInjector) error {
 	secret := event.GetSecret()
 	secret.ClusterId = event.GetClusterId()
 
@@ -44,35 +44,35 @@ func (s *pipelineImpl) Run(event *v1.SensorEvent) (*v1.SensorEnforcement, error)
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *v1.Secret) (*v1.SensorEnforcement, error) {
+func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *v1.Secret) error {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Add/Update/Remove the deployment from persistence depending on the event action.
 	if err := s.persistSecret(action, event); err != nil {
-		return nil, err
+		return err
 	}
 
-	return nil, nil
+	return nil
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, secret *v1.Secret) (*v1.SensorEnforcement, error) {
+func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, secret *v1.Secret) error {
 	if err := s.validateInput(secret); err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := s.enrichCluster(secret); err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := s.persistSecret(action, secret); err != nil {
-		return nil, err
+		return err
 	}
 
-	return nil, nil
+	return nil
 }
 
 func (s *pipelineImpl) validateInput(secret *v1.Secret) error {

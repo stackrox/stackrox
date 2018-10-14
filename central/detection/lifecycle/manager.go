@@ -1,12 +1,22 @@
 package lifecycle
 
 import (
+	"time"
+
+	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/detection/utils"
 	"github.com/stackrox/rox/central/enrichment"
+	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
+	"golang.org/x/time/rate"
+)
+
+const (
+	rateLimitDuration = 20 * time.Second
+	tickerDuration    = 1 * time.Minute
 )
 
 var (
@@ -15,7 +25,7 @@ var (
 
 // A Manager manages deployment/policy lifecycle updates.
 type Manager interface {
-	IndicatorAdded(indicator *v1.ProcessIndicator, deployment *v1.Deployment) (*v1.SensorEnforcement, error)
+	IndicatorAdded(indicator *v1.ProcessIndicator, injector pipeline.EnforcementInjector) error
 	// DeploymentUpdated processes a new or updated deployment, generating and updating alerts in the store and returning
 	// enforcement action.
 	DeploymentUpdated(deployment *v1.Deployment) (string, v1.EnforcementAction, error)
@@ -26,12 +36,20 @@ type Manager interface {
 }
 
 // NewManager returns a new manager with the injected dependencies.
-func NewManager(enricher enrichment.Enricher, deploytimeDetector deploytime.Detector,
-	runtimeDetector runtime.Detector, alertManager utils.AlertManager) Manager {
-	return &managerImpl{
-		enricher:           enricher,
-		deploytimeDetector: deploytimeDetector,
-		runtimeDetector:    runtimeDetector,
-		alertManager:       alertManager,
+func NewManager(enricher enrichment.Enricher, deploytimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
+	deploymentDatastore datastore.DataStore, alertManager utils.AlertManager) Manager {
+	m := &managerImpl{
+		enricher:            enricher,
+		deploytimeDetector:  deploytimeDetector,
+		runtimeDetector:     runtimeDetector,
+		alertManager:        alertManager,
+		deploymentDataStore: deploymentDatastore,
+
+		queuedIndicatorsToContainers: make(map[string]indicatorInfoWithInjector),
+
+		limiter: rate.NewLimiter(rate.Every(rateLimitDuration), 5),
+		ticker:  time.NewTicker(tickerDuration),
 	}
+	go m.flushQueuePeriodically()
+	return m
 }

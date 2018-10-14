@@ -2,15 +2,40 @@ package utils
 
 import (
 	"testing"
+	"time"
 
+	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
+
+var (
+	nowProcess        = getProcessIndicator(ptypes.TimestampNow())
+	yesterdayProcess  = getProcessIndicator(protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * time.Hour)))
+	twoDaysAgoProcess = getProcessIndicator(protoconv.ConvertTimeToTimestamp(time.Now().Add(-2 * 24 * time.Hour)))
+)
+
+func getProcessIndicator(timestamp *ptypes.Timestamp) *v1.ProcessIndicator {
+	return &v1.ProcessIndicator{
+		Signal: &v1.ProcessSignal{
+			Name: "apt-get",
+			Time: timestamp,
+		},
+	}
+}
+
+func getFakeRuntimeAlert(indicators ...*v1.ProcessIndicator) *v1.Alert {
+	return &v1.Alert{
+		LifecycleStage: v1.LifecycleStage_RUNTIME,
+		Violations:     []*v1.Alert_Violation{{Processes: indicators}},
+	}
+}
 
 func TestAlertManager(t *testing.T) {
 	suite.Run(t, new(AlertManagerTestSuite))
@@ -30,6 +55,11 @@ func (suite *AlertManagerTestSuite) SetupTest() {
 	suite.notifierMock = &notifierMocks.Processor{}
 
 	suite.alertManager = NewAlertManager(suite.notifierMock, suite.alertsMock)
+}
+
+func (suite *AlertManagerTestSuite) TearDownTest() {
+	suite.alertsMock.AssertExpectations(suite.T())
+	suite.notifierMock.AssertExpectations(suite.T())
 }
 
 // Returns a function that can be used to match *v1.Query,
@@ -66,9 +96,6 @@ func (suite *AlertManagerTestSuite) TestGetAlertsByPolicy() {
 
 	_, err := suite.alertManager.GetAlertsByPolicy("pid")
 	suite.NoError(err, "update should succeed")
-
-	suite.alertsMock.AssertExpectations(suite.T())
-	suite.notifierMock.AssertExpectations(suite.T())
 }
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
@@ -77,9 +104,6 @@ func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
 
 	_, err := suite.alertManager.GetAlertsByDeployment("did")
 	suite.NoError(err, "update should succeed")
-
-	suite.alertsMock.AssertExpectations(suite.T())
-	suite.notifierMock.AssertExpectations(suite.T())
 }
 
 func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
@@ -92,9 +116,6 @@ func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
 
 	err := suite.alertManager.AlertAndNotify(alerts, alerts)
 	suite.NoError(err, "update should succeed")
-
-	suite.alertsMock.AssertExpectations(suite.T())
-	suite.notifierMock.AssertExpectations(suite.T())
 }
 
 func (suite *AlertManagerTestSuite) TestMarksOldAlertsStale() {
@@ -109,9 +130,6 @@ func (suite *AlertManagerTestSuite) TestMarksOldAlertsStale() {
 	// Make one of the alerts not appear in the current alerts.
 	err := suite.alertManager.AlertAndNotify(alerts, alerts[1:])
 	suite.NoError(err, "update should succeed")
-
-	suite.alertsMock.AssertExpectations(suite.T())
-	suite.notifierMock.AssertExpectations(suite.T())
 }
 
 func (suite *AlertManagerTestSuite) TestSendsNotificationsForNewAlerts() {
@@ -128,9 +146,57 @@ func (suite *AlertManagerTestSuite) TestSendsNotificationsForNewAlerts() {
 	// Make one of the alerts not appear in the previous alerts.
 	err := suite.alertManager.AlertAndNotify(alerts[1:], alerts)
 	suite.NoError(err, "update should succeed")
+}
 
-	suite.alertsMock.AssertExpectations(suite.T())
-	suite.notifierMock.AssertExpectations(suite.T())
+func (suite *AlertManagerTestSuite) makeAlertsMockReturn(alerts ...*v1.Alert) {
+	suite.alertsMock.On("SearchRawAlerts",
+		mock.MatchedBy(queryHasFields(search.ViolationState, search.DeploymentID, search.PolicyID))).
+		Return(alerts, nil)
+}
+
+func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesForNonRuntime() {
+	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(getAlerts()[0]))
+}
+
+func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithNoOldAlert() {
+	suite.makeAlertsMockReturn()
+	alert := getFakeRuntimeAlert(nowProcess)
+	clonedAlert := proto.Clone(alert).(*v1.Alert)
+	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(alert))
+	suite.Equal(clonedAlert, alert)
+}
+
+func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithTheSameAlert() {
+	suite.makeAlertsMockReturn(getFakeRuntimeAlert(nowProcess))
+	suite.True(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(getFakeRuntimeAlert(nowProcess)))
+}
+
+func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithAnOldAlert() {
+	suite.makeAlertsMockReturn(getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess))
+	alert := getFakeRuntimeAlert(nowProcess)
+	clonedAlert := proto.Clone(alert).(*v1.Alert)
+	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(alert))
+	suite.Equal(clonedAlert, alert)
+}
+
+func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithOldAndResolved() {
+	suite.makeAlertsMockReturn(getFakeRuntimeAlert(nowProcess), getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess))
+	suite.True(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(getFakeRuntimeAlert(nowProcess)))
+}
+
+func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithSuperOldAlert() {
+	suite.makeAlertsMockReturn(getFakeRuntimeAlert(nowProcess), getFakeRuntimeAlert(twoDaysAgoProcess, nowProcess))
+	suite.True(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(getFakeRuntimeAlert(yesterdayProcess)))
+}
+
+func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesActuallyTrims() {
+	suite.makeAlertsMockReturn(getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess))
+	alert := getFakeRuntimeAlert(yesterdayProcess, nowProcess)
+	clonedAlert := proto.Clone(alert).(*v1.Alert)
+	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(alert))
+	suite.NotEqual(clonedAlert, alert)
+	suite.Len(alert.GetViolations()[0].GetProcesses(), 1)
+	suite.Equal(alert.GetViolations()[0].GetProcesses()[0], nowProcess)
 }
 
 //////////////////////////////////////

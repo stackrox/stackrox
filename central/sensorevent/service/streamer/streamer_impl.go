@@ -113,7 +113,7 @@ func (s *streamerImpl) processWithPipeline() {
 	}
 
 	// Processing -> Process -> OutputChannel
-	NewPipeline(closeOutput).Start(s.eventsQueued, s.pl, s.enforcementsToSend)
+	NewPipeline(closeOutput).Start(s.eventsQueued, s.pl, s)
 }
 
 // sendToStream reads from the input channel and sends received data out over the input stream. When the input channel

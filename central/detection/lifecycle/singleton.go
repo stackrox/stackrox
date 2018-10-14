@@ -3,6 +3,7 @@ package lifecycle
 import (
 	"sync"
 
+	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/detection/utils"
@@ -15,7 +16,8 @@ var (
 )
 
 func initialize() {
-	manager = NewManager(enrichment.Singleton(), deploytime.SingletonDetector(), runtime.SingletonDetector(), utils.SingletonAlertManager())
+	manager = NewManager(enrichment.Singleton(), deploytime.SingletonDetector(), runtime.SingletonDetector(),
+		datastore.Singleton(), utils.SingletonAlertManager())
 }
 
 // SingletonManager returns the manager instance.

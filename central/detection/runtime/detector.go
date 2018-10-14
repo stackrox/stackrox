@@ -14,6 +14,7 @@ var (
 // Detector provides an interface for performing runtime policy violation detection.
 type Detector interface {
 	AlertsForDeployment(deployment *v1.Deployment) ([]*v1.Alert, error)
+	AlertsForAllDeploymentsAndPolicies() ([]*v1.Alert, error)
 	AlertsForPolicy(policyID string) ([]*v1.Alert, error)
 	UpsertPolicy(policy *v1.Policy) error
 	RemovePolicy(policyID string) error

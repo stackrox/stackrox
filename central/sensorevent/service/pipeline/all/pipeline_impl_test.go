@@ -46,9 +46,9 @@ func (suite *PipelineTestSuite) TestCallsDeploymentPipeline() {
 		Resource: &v1.SensorEvent_Deployment{},
 	}
 
-	suite.depMock.On("Run", event).Return((*v1.SensorEnforcement)(nil), expectedError)
+	suite.depMock.On("Run", event, nil).Return(expectedError)
 
-	_, err := suite.tested.Run(event)
+	err := suite.tested.Run(event, nil)
 	suite.Equal(expectedError, err, "expected the error")
 
 	suite.assertExpectationsMet()
@@ -60,9 +60,9 @@ func (suite *PipelineTestSuite) TestCallProcessIndicationPipeline() {
 		Resource: &v1.SensorEvent_ProcessIndicator{},
 	}
 
-	suite.proMock.On("Run", event).Return((*v1.SensorEnforcement)(nil), expectedError)
+	suite.proMock.On("Run", event, nil).Return(expectedError)
 
-	_, err := suite.tested.Run(event)
+	err := suite.tested.Run(event, nil)
 	suite.Equal(expectedError, err, "expected the error")
 
 	suite.assertExpectationsMet()
@@ -74,9 +74,9 @@ func (suite *PipelineTestSuite) TestCallsNetworkPolicyPipeline() {
 		Resource: &v1.SensorEvent_NetworkPolicy{},
 	}
 
-	suite.netMock.On("Run", event).Return((*v1.SensorEnforcement)(nil), expectedError)
+	suite.netMock.On("Run", event, nil).Return(expectedError)
 
-	_, err := suite.tested.Run(event)
+	err := suite.tested.Run(event, nil)
 	suite.Equal(expectedError, err, "expected the error")
 
 	suite.assertExpectationsMet()
@@ -88,9 +88,9 @@ func (suite *PipelineTestSuite) TestCallsNamespacePipeline() {
 		Resource: &v1.SensorEvent_Namespace{},
 	}
 
-	suite.namMock.On("Run", event).Return((*v1.SensorEnforcement)(nil), expectedError)
+	suite.namMock.On("Run", event, nil).Return(expectedError)
 
-	_, err := suite.tested.Run(event)
+	err := suite.tested.Run(event, nil)
 	suite.Equal(expectedError, err, "expected the error")
 
 	suite.assertExpectationsMet()
@@ -102,9 +102,9 @@ func (suite *PipelineTestSuite) TestCallsSecretPipeline() {
 		Resource: &v1.SensorEvent_Secret{},
 	}
 
-	suite.secMock.On("Run", event).Return((*v1.SensorEnforcement)(nil), expectedError)
+	suite.secMock.On("Run", event, nil).Return(expectedError)
 
-	_, err := suite.tested.Run(event)
+	err := suite.tested.Run(event, nil)
 	suite.Equal(expectedError, err, "expected the error")
 
 	suite.assertExpectationsMet()
@@ -113,7 +113,7 @@ func (suite *PipelineTestSuite) TestCallsSecretPipeline() {
 func (suite *PipelineTestSuite) TestHandlesNoType() {
 	event := &v1.SensorEvent{}
 
-	_, err := suite.tested.Run(event)
+	err := suite.tested.Run(event, nil)
 	suite.Error(err, "expected the error")
 
 	suite.assertExpectationsMet()
