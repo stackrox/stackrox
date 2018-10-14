@@ -35,9 +35,9 @@ func New(resultStore benchmarkscanStore.Store, scheduleStore benchmarkscheduleSt
 		panic(err)
 	}
 	return &serviceImpl{
-		resultStore:   resultStore,
-		scheduleStore: scheduleStore,
-		cache:         cache,
+		resultStore:            resultStore,
+		scheduleStore:          scheduleStore,
+		cache:                  cache,
 		notificationsProcessor: notificationsProcessor,
 	}
 }

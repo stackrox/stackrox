@@ -116,7 +116,7 @@ func NewDockerRegistry(cfg Config, integration *v1.ImageIntegration) (*Registry,
 		url:      url,
 		registry: registry,
 
-		cfg: cfg,
+		cfg:                   cfg,
 		protoImageIntegration: integration,
 	}, nil
 }

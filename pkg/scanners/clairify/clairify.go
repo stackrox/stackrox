@@ -47,8 +47,8 @@ func newScanner(protoImageIntegration *v1.ImageIntegration, activeRegistries reg
 		return nil, err
 	}
 	scanner := &clairify{
-		client: client,
-		conf:   conf,
+		client:                client,
+		conf:                  conf,
 		protoImageIntegration: protoImageIntegration,
 		activeRegistries:      activeRegistries,
 	}

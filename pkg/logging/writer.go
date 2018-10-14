@@ -33,5 +33,5 @@ func (w *Writer) Write(args ...interface{}) {
 
 // Writef prints the formatted arguments without the log prefixes - if and only if - SetOutput has been previously called
 func (w *Writer) Writef(format string, args ...interface{}) {
-	w.writer.Write([]byte(fmt.Sprintf(format, args) + w.fields.String()))
+	w.writer.Write([]byte(fmt.Sprintf(format, args...) + w.fields.String()))
 }

@@ -16,8 +16,8 @@ func GetDeployment() *v1.Deployment {
 		Labels: map[string]string{
 			"com.docker.stack.namespace":    "prevent",
 			"com.docker.swarm.service.name": "prevent_sensor",
-			"email": "vv@stackrox.com",
-			"owner": "stackrox",
+			"email":                         "vv@stackrox.com",
+			"owner":                         "stackrox",
 		},
 		Containers: []*v1.Container{
 			{

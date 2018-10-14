@@ -625,12 +625,12 @@ func (l *Logger) Panicf(format string, args ...interface{}) {
 
 //Log logs the message regardless of loglevel
 func (l *Logger) Log(args ...interface{}) {
-	l.internal.Output(l.stackTraceLevel, fmt.Sprint(args)+l.fields.String())
+	l.internal.Output(l.stackTraceLevel, fmt.Sprint(args...)+l.fields.String())
 }
 
 //Logf logs the message regardless of loglevel
 func (l *Logger) Logf(format string, args ...interface{}) {
-	l.internal.Output(l.stackTraceLevel, fmt.Sprintf(format, args)+l.fields.String())
+	l.internal.Output(l.stackTraceLevel, fmt.Sprintf(format, args...)+l.fields.String())
 }
 
 //WithFields provides custom formatted output
@@ -702,10 +702,10 @@ func Warn(args ...interface{}) { rootLogger.Warn(args...) }
 func Warnf(format string, args ...interface{}) { rootLogger.Warnf(format, args...) }
 
 //Log logs the message regardless of log level
-func Log(args ...interface{}) { rootLogger.Log(args) }
+func Log(args ...interface{}) { rootLogger.Log(args...) }
 
 //Logf logs the message regardless of log level
-func Logf(format string, args ...interface{}) { rootLogger.Logf(format, args) }
+func Logf(format string, args ...interface{}) { rootLogger.Logf(format, args...) }
 
 //WithFields provides custom formatted output
 func WithFields(fields map[string]interface{}) *Logger { return rootLogger.WithFields(fields) }

@@ -27,7 +27,7 @@ func (c *imageCopyBenchmark) Run() (result v1.CheckResult) {
 		historySlice, err := utils.DockerClient.ImageHistory(ctx, image.ID)
 		if err != nil {
 			utils.Warn(&result)
-			utils.AddNotef(&result, "Could not get image history for image %v: %+v", err)
+			utils.AddNotef(&result, "Could not get image history for image %v: %s", image.ID, err)
 			continue
 		}
 		for _, history := range historySlice {

@@ -101,7 +101,7 @@ func (c *central) startGRPCServer() {
 		UnaryInterceptors:  interceptorSingletons.GrpcUnaryInterceptors(),
 		StreamInterceptors: interceptorSingletons.GrpcStreamInterceptors(),
 		IdentityExtractors: []authn.IdentityExtractor{
-			service.NewExtractor(),                                                   // internal services
+			service.NewExtractor(), // internal services
 			tokenbased.NewExtractor(roleStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens (new)
 			tokenbased.NewLegacyExtractor(cachedstore.Singleton(), usermapper.New(roleStore.Singleton())),
 		},

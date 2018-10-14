@@ -85,9 +85,9 @@ func newScanner(protoImageIntegration *v1.ImageIntegration) (*dtr, error) {
 	}
 
 	scanner := &dtr{
-		client:   client,
-		registry: registry,
-		conf:     conf,
+		client:                client,
+		registry:              registry,
+		conf:                  conf,
 		protoImageIntegration: protoImageIntegration,
 	}
 
