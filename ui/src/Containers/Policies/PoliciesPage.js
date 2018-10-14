@@ -34,6 +34,7 @@ import { severityLabels, lifecycleStageLabels } from 'messages/common';
 import { sortSeverity } from 'sorters/sorters';
 import PolicyCreationWizard from 'Containers/Policies/PolicyCreationWizard';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import cloneDeep from 'lodash/cloneDeep';
 
 const getSeverityClassName = severity => {
     switch (severity) {
@@ -126,6 +127,14 @@ class PoliciesPage extends Component {
     onPolicyEdit = () => {
         const wizardState = { current: 'EDIT', policy: null };
         this.props.setWizardState(wizardState);
+    };
+
+    onPolicyClone = () => {
+        const policyClone = cloneDeep(this.props.selectedPolicy);
+        policyClone.id = '';
+        policyClone.name += ' (COPY)';
+        this.setSelectedPolicy();
+        this.props.setWizardState({ current: 'EDIT', policy: policyClone, isNew: true });
     };
 
     onBackToEditFields = () => this.props.setWizardState({ current: 'EDIT' });
@@ -436,13 +445,22 @@ class PoliciesPage extends Component {
                 );
             default:
                 return (
-                    <PanelButton
-                        icon={<Icon.Edit className="h-4 w-4" />}
-                        text="Edit"
-                        className="btn btn-success"
-                        onClick={this.onPolicyEdit}
-                        disabled={this.props.isFetchingPolicy}
-                    />
+                    <React.Fragment>
+                        <PanelButton
+                            icon={<Icon.Copy className="h-4 w-4" />}
+                            text="Clone"
+                            className="btn btn-success"
+                            onClick={this.onPolicyClone}
+                            disabled={this.props.isFetchingPolicy}
+                        />
+                        <PanelButton
+                            icon={<Icon.Edit className="h-4 w-4" />}
+                            text="Edit"
+                            className="btn btn-success"
+                            onClick={this.onPolicyEdit}
+                            disabled={this.props.isFetchingPolicy}
+                        />
+                    </React.Fragment>
                 );
         }
     };
