@@ -23,3 +23,12 @@ func (d selectorDisjunction) Matches(labels2 labels.Labels) bool {
 func or(sels ...selector) selector {
 	return selectorDisjunction(sels)
 }
+
+// SelectorFromMap converts the given map to a selector. It correctly translates a `nil` map to a `nothing` collector,
+// as is, e.g., used for headless services.
+func SelectorFromMap(labelsMap map[string]string) labels.Selector {
+	if len(labelsMap) == 0 {
+		return labels.Nothing()
+	}
+	return labels.SelectorFromSet(labels.Set(labelsMap))
+}

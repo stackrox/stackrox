@@ -14,7 +14,7 @@ type serviceWrap struct {
 func wrapService(svc *v1.Service) *serviceWrap {
 	return &serviceWrap{
 		Service:  svc,
-		selector: labels.SelectorFromSet(labels.Set(svc.Spec.Selector)),
+		selector: SelectorFromMap(svc.Spec.Selector),
 	}
 }
 

@@ -278,10 +278,7 @@ func (w *deploymentWrap) getLabelSelector(spec reflect.Value) (labels.Selector, 
 
 	// Selector is of map type for replication controller
 	if labelMap, ok := s.Interface().(map[string]string); ok {
-		if len(labelMap) == 0 {
-			return labels.Nothing(), nil
-		}
-		return labels.SelectorFromSet(labels.Set(labelMap)), nil
+		return SelectorFromMap(labelMap), nil
 	}
 
 	// All other resources uses labelSelector.
