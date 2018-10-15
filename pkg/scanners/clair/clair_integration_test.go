@@ -3,13 +3,11 @@
 package clair
 
 import (
-	"testing"
-
-	// This is needed to register Docker registries.
-	_ "github.com/stackrox/rox/pkg/registries/docker"
+	"testing" // This is needed to register Docker registries.
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/registries"
+	_ "github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -25,8 +23,10 @@ type ClairIntegrationSuite struct {
 
 func (suite *ClairIntegrationSuite) SetupSuite() {
 	protoImageIntegration := &v1.ImageIntegration{
-		Config: map[string]string{
-			"endpoint": "http://localhost:6060",
+		IntegrationConfig: &v1.ImageIntegration_Clair{
+			Clair: &v1.ClairConfig{
+				Endpoint: "http://localhost:6060",
+			},
 		},
 	}
 
@@ -52,10 +52,10 @@ func (suite *ClairIntegrationSuite) TestGetLastScan() {
 
 	creator := registries.Registry["docker"]
 	s, err := creator(&v1.ImageIntegration{
-		Config: map[string]string{
-			"username": "",
-			"password": "",
-			"endpoint": "registry-1.docker.io",
+		IntegrationConfig: &v1.ImageIntegration_Clair{
+			Clair: &v1.ClairConfig{
+				Endpoint: "registry-1.docker.io",
+			},
 		},
 	})
 	if err != nil {

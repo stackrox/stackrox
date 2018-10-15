@@ -17,9 +17,11 @@ const (
 
 func TestTenable(t *testing.T) {
 	protoImageIntegration := &v1.ImageIntegration{
-		Config: map[string]string{
-			"accessKey": accessKey,
-			"secretKey": secretKey,
+		IntegrationConfig: &v1.ImageIntegration_Tenable{
+			Tenable: &v1.TenableConfig{
+				AccessKey: accessKey,
+				SecretKey: secretKey,
+			},
 		},
 	}
 	reg, err := newRegistry(protoImageIntegration)

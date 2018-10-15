@@ -476,10 +476,13 @@ class Services extends BaseService {
                     .setType("google")
                     .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.REGISTRY)
                     .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.SCANNER)
-                    .putConfig("endpoint", "gcr.io")
-                    .putConfig("project", "ultra-current-825")
-                    .putConfig("serviceAccount", serviceAccount)
-                    .build()
+                    .setGoogle(
+                        ImageIntegrationServiceOuterClass.GoogleConfig.newBuilder()
+                            .setEndpoint("gcr.io")
+                            .setProject("ultra-current-825")
+                            .setServiceAccount(serviceAccount)
+                            .build()
+                        ).build()
             )
             .getId()
         } catch (Exception e) {

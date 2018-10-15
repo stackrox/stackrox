@@ -6,11 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime/debug"
-	"syscall"
-
-	// These imports are required to register things from the respective packages.
-	_ "github.com/stackrox/rox/pkg/auth/authproviders/all"
-	_ "github.com/stackrox/rox/pkg/notifiers/all"
+	"syscall" // These imports are required to register things from the respective packages.
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	alertService "github.com/stackrox/rox/central/alert/service"
@@ -53,6 +49,7 @@ import (
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/user/mapper"
+	_ "github.com/stackrox/rox/pkg/auth/authproviders/all"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -65,6 +62,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	_ "github.com/stackrox/rox/pkg/notifiers/all" // These imports are required to register things from the respective packages.
 	"github.com/stackrox/rox/pkg/ui"
 )
 

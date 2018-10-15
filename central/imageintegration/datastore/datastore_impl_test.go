@@ -53,14 +53,18 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsFiltering() {
 	integrations := []*v1.ImageIntegration{
 		{
 			Name: "registry1",
-			Config: map[string]string{
-				"endpoint": "https://endpoint1",
+			IntegrationConfig: &v1.ImageIntegration_Docker{
+				Docker: &v1.DockerConfig{
+					Endpoint: "https://endpoint1",
+				},
 			},
 		},
 		{
 			Name: "registry2",
-			Config: map[string]string{
-				"endpoint": "https://endpoint2",
+			IntegrationConfig: &v1.ImageIntegration_Docker{
+				Docker: &v1.DockerConfig{
+					Endpoint: "https://endpoint2",
+				},
 			},
 		},
 	}
@@ -81,14 +85,18 @@ func testIntegrations(t *testing.T, insertStorage, retrievalStorage store.Store)
 	integrations := []*v1.ImageIntegration{
 		{
 			Name: "registry1",
-			Config: map[string]string{
-				"endpoint": "https://endpoint1",
+			IntegrationConfig: &v1.ImageIntegration_Docker{
+				Docker: &v1.DockerConfig{
+					Endpoint: "https://endpoint1",
+				},
 			},
 		},
 		{
 			Name: "registry2",
-			Config: map[string]string{
-				"endpoint": "https://endpoint2",
+			IntegrationConfig: &v1.ImageIntegration_Docker{
+				Docker: &v1.DockerConfig{
+					Endpoint: "https://endpoint2",
+				},
 			},
 		},
 	}

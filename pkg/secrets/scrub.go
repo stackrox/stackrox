@@ -32,17 +32,6 @@ var scrubber = newSecretKeys([]string{
 	"SecretAccessKey",
 })
 
-// ScrubSecretsFromMap removes secret keys from a map[string]string and returns a new copy without secrets.
-func ScrubSecretsFromMap(m map[string]string) map[string]string {
-	newMap := make(map[string]string)
-	for k, v := range m {
-		if !scrubber.shouldScrub(k) {
-			newMap[k] = v
-		}
-	}
-	return newMap
-}
-
 // ScrubSecretsFromStruct removes secret keys from an object
 func ScrubSecretsFromStruct(obj interface{}) {
 	value := reflect.ValueOf(obj)

@@ -5,15 +5,13 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	_ "crypto/sha256"
 	mathRand "math/rand"
 	"testing"
 
-	// Needed for accessing the function behind crypto.SHA256.
-	_ "crypto/sha256"
-
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"golang.org/x/crypto/ed25519"
+	"golang.org/x/crypto/ed25519" // Needed for accessing the function behind crypto.SHA256.
 )
 
 type signerTestSuite struct {

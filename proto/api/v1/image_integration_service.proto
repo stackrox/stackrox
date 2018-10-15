@@ -44,11 +44,25 @@ message ECRConfig {
     string region            = 4;
 }
 
+message TenableConfig {
+    string access_key = 1;
+    string secret_key = 2;
+}
+
+message GoogleConfig {
+    string endpoint        = 1;
+    string service_account = 2;
+    string project         = 3;
+}
+
+message ClairConfig {
+    string endpoint = 1;
+}
+
 message ImageIntegration {
     string id                                    = 1;
     string name                                  = 2;
     string type                                  = 3;
-    map<string, string> config                   = 4;
     // If a list of clusters is provided, the integration will only be accessed from the specified clusters' sensors.
     repeated string clusters                     = 5;
     repeated ImageIntegrationCategory categories = 6;
@@ -58,6 +72,9 @@ message ImageIntegration {
         DockerConfig   docker   = 9;
         QuayConfig     quay     = 10;
         ECRConfig      ecr      = 11;
+        TenableConfig  tenable  = 12;
+        GoogleConfig   google   = 13;
+        ClairConfig    clair    = 14;
     }
 }
 

@@ -44,8 +44,10 @@ func (suite *ClairSuite) SetupSuite() {
 	suite.server = masterServer
 
 	protoScanner := &v1.ImageIntegration{
-		Config: map[string]string{
-			"endpoint": "http://" + masterServer.Listener.Addr().String(),
+		IntegrationConfig: &v1.ImageIntegration_Clair{
+			Clair: &v1.ClairConfig{
+				Endpoint: "http://" + masterServer.Listener.Addr().String(),
+			},
 		},
 	}
 

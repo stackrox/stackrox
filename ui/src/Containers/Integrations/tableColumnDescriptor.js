@@ -61,7 +61,7 @@ const tableColumnDescriptor = Object.freeze({
         ],
         clair: [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'config.endpoint', Header: 'Endpoint' }
+            { accessor: 'clair.endpoint', Header: 'Endpoint' }
         ],
         clairify: [
             { accessor: 'name', Header: 'Name' },
@@ -69,7 +69,7 @@ const tableColumnDescriptor = Object.freeze({
         ],
         google: [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'config.endpoint', Header: 'Endpoint' }
+            { accessor: 'google.endpoint', Header: 'Endpoint' }
         ],
         ecr: [
             { accessor: 'name', Header: 'Name' },

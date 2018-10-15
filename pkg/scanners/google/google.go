@@ -3,12 +3,12 @@ package google
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -48,32 +48,43 @@ type googleScanner struct {
 	protoIntegration *v1.ImageIntegration
 }
 
+func validate(google *v1.GoogleConfig) error {
+	errorList := errorhelpers.NewErrorList("Google Validation")
+	if google.GetEndpoint() == "" {
+		errorList.AddString("Endpoint must be specified for Google Container Analysis (e.g. gcr.io, us.gcr.io, eu.gcr.io)")
+	}
+	if google.GetServiceAccount() == "" {
+		errorList.AddString("Service account must be specified for Google Container Analysis")
+	}
+	if google.GetProject() == "" {
+		errorList.AddString("Project must be specified for Google Container Analysis")
+	}
+	return errorList.ToError()
+}
+
 func newScanner(integration *v1.ImageIntegration) (*googleScanner, error) {
-	project, ok := integration.GetConfig()["project"]
+	googleConfig, ok := integration.IntegrationConfig.(*v1.ImageIntegration_Google)
 	if !ok {
-		return nil, errors.New("'project' parameter must be defined for Google Container Analysis")
+		return nil, fmt.Errorf("Google Container Analysis configuration required")
 	}
-	serviceAccount, ok := integration.GetConfig()["serviceAccount"]
-	if !ok {
-		return nil, errors.New("'service-account' parameter must be defined for Google Container Analysis")
+	config := googleConfig.Google
+	if err := validate(config); err != nil {
+		return nil, err
 	}
-	endpoint, ok := integration.GetConfig()["endpoint"]
-	if !ok {
-		return nil, errors.New("'endpoint' parameter must be defined for Google Container Analysis")
-	}
-	url, err := urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+
+	url, err := urlfmt.FormatURL(config.GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return nil, err
 	}
 	registry := urlfmt.GetServerFromURL(url)
-	conn, err := getGRPCConnection(serviceAccount)
+	conn, err := getGRPCConnection(config.GetServiceAccount())
 	if err != nil {
 		return nil, err
 	}
 	scanner := &googleScanner{
 		client: containeranalysis.NewContainerAnalysisClient(conn),
 
-		project:          project,
+		project:          config.GetProject(),
 		registry:         registry,
 		protoIntegration: integration,
 	}
@@ -258,6 +269,9 @@ func (c *googleScanner) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get components: %s", err)
 	}
+	if len(cpeToComponentMap) == 0 {
+		return nil, fmt.Errorf("No components were found in image '%s'", image.GetName().GetFullName())
+	}
 	if err := c.addVulnsToComponents(cpeToComponentMap, image); err != nil {
 		return nil, fmt.Errorf("failed to add vulns to components: %s", err)
 	}
@@ -274,7 +288,7 @@ func (c *googleScanner) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 
 // Match decides if the image is contained within this scanner
 func (c *googleScanner) Match(image *v1.Image) bool {
-	return c.registry == image.GetName().GetRegistry()
+	return image.GetName().GetRegistry() == c.registry && strings.HasPrefix(image.GetName().GetRemote(), c.project)
 }
 
 func (c *googleScanner) Global() bool {

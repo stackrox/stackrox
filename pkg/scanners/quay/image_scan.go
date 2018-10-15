@@ -1,9 +1,9 @@
 package quay
 
 import (
-	clairV1 "github.com/coreos/clair/api/v1"
-
 	"encoding/json"
+
+	clairV1 "github.com/coreos/clair/api/v1"
 )
 
 // https://docs.quay.io/api/swagger

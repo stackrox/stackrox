@@ -94,9 +94,11 @@ func (suite *TenableSuite) SetupSuite() {
 	suite.server = masterServer
 
 	protoImageIntegration := &v1.ImageIntegration{
-		Config: map[string]string{
-			"accessKey": "key1",
-			"secretKey": "key2",
+		IntegrationConfig: &v1.ImageIntegration_Tenable{
+			Tenable: &v1.TenableConfig{
+				AccessKey: "key1",
+				SecretKey: "key2",
+			},
 		},
 	}
 

@@ -1,9 +1,8 @@
 package store
 
 import (
-	"github.com/stackrox/rox/pkg/bolthelper"
-
 	"github.com/boltdb/bolt"
+	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
 type clusterStoreImpl struct {

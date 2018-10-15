@@ -1,9 +1,8 @@
 package idcheck
 
 import (
-	"github.com/stackrox/rox/pkg/grpc/authn"
-
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 )
 

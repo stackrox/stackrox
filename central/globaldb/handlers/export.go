@@ -79,7 +79,6 @@ func clearImageIntegrationConfigs(db *bolt.DB) error {
 		return err
 	}
 	for _, d := range integrations {
-		d.Config = nil
 		if err := store.UpdateImageIntegration(d); err != nil {
 			return err
 		}

@@ -1,12 +1,12 @@
 package tenable
 
 import (
-	"errors"
-	"sync"
+	"fmt"
 
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -29,11 +29,9 @@ func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageRegis
 type tenableRegistry struct {
 	protoImageIntegration *v1.ImageIntegration
 
-	getClientOnce sync.Once
-	clientObj     client
+	client *registry.Registry
 
-	accessKey string
-	secretKey string
+	config    *v1.TenableConfig
 	transport *transports.PersistentTokenTransport
 }
 
@@ -54,38 +52,42 @@ func (n nilClient) Repositories() ([]string, error) {
 	return nil, n.error
 }
 
+func validate(config *v1.TenableConfig) error {
+	errorList := errorhelpers.NewErrorList("Tenable Validation")
+	if config.GetAccessKey() == "" {
+		errorList.AddString("Access key must be specified for Tenable scanner")
+	}
+	if config.GetSecretKey() == "" {
+		errorList.AddString("Secret Key must be specified for Tenable scanner")
+	}
+	return errorList.ToError()
+}
+
 func newRegistry(integration *v1.ImageIntegration) (*tenableRegistry, error) {
-	accessKey, ok := integration.Config["accessKey"]
+	tenableConfig, ok := integration.IntegrationConfig.(*v1.ImageIntegration_Tenable)
 	if !ok {
-		return nil, errors.New("Config parameter 'accessKey' must be defined for Tenable registries")
+		return nil, fmt.Errorf("Tenable configuration required")
 	}
-	secretKey, ok := integration.Config["secretKey"]
-	if !ok {
-		return nil, errors.New("Config parameter 'secretKey' must be defined for Tenable registries")
+	config := tenableConfig.Tenable
+	if err := validate(config); err != nil {
+		return nil, err
 	}
-	tran, err := transports.NewPersistentTokenTransport(remoteEndpoint, accessKey, secretKey)
+	tran, err := transports.NewPersistentTokenTransport(remoteEndpoint, config.GetAccessKey(), config.GetSecretKey())
+	if err != nil {
+		return nil, err
+	}
+
+	reg, err := registry.NewFromTransport(remoteEndpoint, tran, registry.Log)
 	if err != nil {
 		return nil, err
 	}
 
 	return &tenableRegistry{
-		accessKey:             accessKey,
-		secretKey:             secretKey,
+		config:                config,
+		client:                reg,
 		transport:             tran,
 		protoImageIntegration: integration,
 	}, nil
-}
-
-func (d *tenableRegistry) client() client {
-	d.getClientOnce.Do(func() {
-		reg, err := registry.NewFromTransport(remoteEndpoint, d.transport, registry.Log)
-		if err != nil {
-			d.clientObj = nilClient{err}
-			return
-		}
-		d.clientObj = reg
-	})
-	return d.clientObj
 }
 
 // Metadata returns the metadata via this registries implementation
@@ -93,7 +95,7 @@ func (d *tenableRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 	if image == nil {
 		return nil, nil
 	}
-	manifest, err := d.client().ManifestV2(image.GetName().GetRemote(), utils.Reference(image))
+	manifest, err := d.client.ManifestV2(image.GetName().GetRemote(), utils.Reference(image))
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +115,7 @@ func (d *tenableRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 
 // Test tests the current registry and makes sure that it is working properly
 func (d *tenableRegistry) Test() error {
-	_, err := d.client().Repositories()
+	_, err := d.client.Repositories()
 	return err
 }
 

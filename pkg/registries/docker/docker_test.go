@@ -122,9 +122,14 @@ func getProtoTimestamp(nanos int64) *timestamp.Timestamp {
 func TestGetMetadata(t *testing.T) {
 	newMockRegistry()
 
-	dockerHubClient := &Registry{
-		url: "http://" + server.Listener.Addr().String(),
-	}
+	dockerHubClient, err := newRegistry(&v1.ImageIntegration{
+		IntegrationConfig: &v1.ImageIntegration_Docker{
+			Docker: &v1.DockerConfig{
+				Endpoint: "http://" + server.Listener.Addr().String(),
+			},
+		},
+	})
+	require.NoError(t, err)
 
 	image := v1.Image{
 		Name: &v1.ImageName{

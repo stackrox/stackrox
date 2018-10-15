@@ -67,7 +67,6 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func scrubImageIntegration(i *v1.ImageIntegration) {
-	i.Config = secrets.ScrubSecretsFromMap(i.Config)
 	secrets.ScrubSecretsFromStruct(i)
 }
 

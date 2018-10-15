@@ -12,9 +12,12 @@ import (
 
 func TestGoogle(t *testing.T) {
 	integration := &v1.ImageIntegration{
-		Config: map[string]string{
-			"serviceAccount": os.Getenv("SERVICE_ACCOUNT"),
-			"project":        os.Getenv("PROJECT"),
+		IntegrationConfig: &v1.ImageIntegration_Google{
+			Google: &v1.GoogleConfig{
+				Endpoint:       "us.gcr.io",
+				ServiceAccount: os.Getenv("SERVICE_ACCOUNT"),
+				Project:        os.Getenv("PROJECT"),
+			},
 		},
 	}
 

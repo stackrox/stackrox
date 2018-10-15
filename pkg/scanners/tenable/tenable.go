@@ -1,7 +1,6 @@
 package tenable
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -9,6 +8,7 @@ import (
 
 	dockerRegistry "github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -41,24 +41,35 @@ func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScann
 type tenable struct {
 	client *http.Client
 
-	accessKey string
-	secretKey string
+	config *v1.TenableConfig
 
 	reg *dockerRegistry.Registry
 
 	protoImageIntegration *v1.ImageIntegration
 }
 
-func newScanner(protoImageIntegration *v1.ImageIntegration) (*tenable, error) {
-	accessKey, ok := protoImageIntegration.Config["accessKey"]
-	if !ok {
-		return nil, errors.New("'accessKey' parameter must be defined for Tenable.io")
+func validate(config *v1.TenableConfig) error {
+	errorList := errorhelpers.NewErrorList("Tenable Validation")
+	if config.GetAccessKey() == "" {
+		errorList.AddString("Access key must be specified for Tenable scanner")
 	}
-	secretKey, ok := protoImageIntegration.Config["secretKey"]
-	if !ok {
-		return nil, errors.New("'secretKey' parameter must be defined for Tenable.io")
+	if config.GetSecretKey() == "" {
+		errorList.AddString("Secret Key must be specified for Tenable scanner")
 	}
-	tran, err := transports.NewPersistentTokenTransport(registryEndpoint, accessKey, secretKey)
+	return errorList.ToError()
+}
+
+func newScanner(integration *v1.ImageIntegration) (*tenable, error) {
+	tenableConfig, ok := integration.IntegrationConfig.(*v1.ImageIntegration_Tenable)
+	if !ok {
+		return nil, fmt.Errorf("Tenable configuration required")
+	}
+	config := tenableConfig.Tenable
+	if err := validate(config); err != nil {
+		return nil, err
+	}
+
+	tran, err := transports.NewPersistentTokenTransport(registryEndpoint, config.GetAccessKey(), config.GetSecretKey())
 	if err != nil {
 		return nil, err
 	}
@@ -70,10 +81,9 @@ func newScanner(protoImageIntegration *v1.ImageIntegration) (*tenable, error) {
 		Timeout: requestTimeout,
 	}
 	scanner := &tenable{
-		client:    client,
-		accessKey: accessKey,
-		secretKey: secretKey,
-		reg:       reg,
+		client: client,
+		reg:    reg,
+		config: config,
 	}
 	return scanner, nil
 }
@@ -83,7 +93,7 @@ func (d *tenable) sendRequest(method, urlPrefix string) ([]byte, int, error) {
 	if err != nil {
 		return nil, -1, err
 	}
-	req.Header.Add("X-ApiKeys", fmt.Sprintf("accessKey=%v; secretKey=%v", d.accessKey, d.secretKey))
+	req.Header.Add("X-ApiKeys", fmt.Sprintf("accessKey=%v; secretKey=%v", d.config.GetAccessKey(), d.config.GetSecretKey()))
 	resp, err := d.client.Do(req)
 	if err != nil {
 		return nil, -1, err

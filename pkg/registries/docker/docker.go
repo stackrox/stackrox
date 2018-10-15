@@ -4,14 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	ptypes "github.com/gogo/protobuf/types"
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/heroku/docker-registry-client/registry"
-	"github.com/opencontainers/go-digest"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -36,8 +34,7 @@ type Registry struct {
 	cfg                   Config
 	protoImageIntegration *v1.ImageIntegration
 
-	getClientOnce sync.Once
-	clientObj     client
+	client *registry.Registry
 
 	url      string
 	registry string // This is the registry portion of the image
@@ -67,38 +64,6 @@ type v1Compatibility struct {
 	Config  v1Config  `json:"container_config"`
 }
 
-type client interface {
-	Manifest(repository, reference string) (*manifestV1.SignedManifest, error)
-	ManifestDigest(repository, reference string) (digest.Digest, error)
-	SignedManifest(repository, reference string) (*manifestV1.SignedManifest, error)
-	Repositories() ([]string, error)
-	Ping() error
-}
-
-type nilClient struct {
-	error error
-}
-
-func (n nilClient) Manifest(repository, reference string) (*manifestV1.SignedManifest, error) {
-	return nil, n.error
-}
-
-func (n nilClient) ManifestDigest(repository, reference string) (digest.Digest, error) {
-	return digest.Digest(""), n.error
-}
-
-func (n nilClient) SignedManifest(repository, reference string) (*manifestV1.SignedManifest, error) {
-	return nil, n.error
-}
-
-func (n nilClient) Repositories() ([]string, error) {
-	return nil, n.error
-}
-
-func (n nilClient) Ping() error {
-	return n.error
-}
-
 // NewDockerRegistry creates a new instantiation of the docker registry
 // TODO(cgorman) AP-386 - properly put the base docker registry into another pkg
 func NewDockerRegistry(cfg Config, integration *v1.ImageIntegration) (*Registry, error) {
@@ -106,16 +71,26 @@ func NewDockerRegistry(cfg Config, integration *v1.ImageIntegration) (*Registry,
 	if err != nil {
 		return nil, err
 	}
-	// if the registry endpoint contains docker.io then the image will be docker.io/namespace/repo:tag
-	registry := urlfmt.GetServerFromURL(url)
+	// if the registryServer endpoint contains docker.io then the image will be docker.io/namespace/repo:tag
+	registryServer := urlfmt.GetServerFromURL(url)
 	if strings.Contains(cfg.Endpoint, "docker.io") {
-		registry = "docker.io"
+		registryServer = "docker.io"
+	}
+
+	var client *registry.Registry
+	if cfg.Insecure {
+		client, err = registry.NewInsecure(url, cfg.Username, cfg.Password)
+	} else {
+		client, err = registry.New(url, cfg.Username, cfg.Password)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return &Registry{
-		url:      url,
-		registry: registry,
-
+		url:                   url,
+		registry:              registryServer,
+		client:                client,
 		cfg:                   cfg,
 		protoImageIntegration: integration,
 	}, nil
@@ -133,24 +108,6 @@ func newRegistry(integration *v1.ImageIntegration) (*Registry, error) {
 		Insecure: dockerConfig.Docker.GetInsecure(),
 	}
 	return NewDockerRegistry(cfg, integration)
-}
-
-func (d *Registry) client() (c client) {
-	d.getClientOnce.Do(func() {
-		var reg *registry.Registry
-		var err error
-		if d.cfg.Insecure {
-			reg, err = registry.NewInsecure(d.url, d.cfg.Username, d.cfg.Password)
-		} else {
-			reg, err = registry.New(d.url, d.cfg.Username, d.cfg.Password)
-		}
-		if err != nil {
-			d.clientObj = nilClient{err}
-			return
-		}
-		d.clientObj = reg
-	})
-	return d.clientObj
 }
 
 var scrubPrefixes = []string{
@@ -203,7 +160,7 @@ func compareProtoTimestamps(t1, t2 *timestamp.Timestamp) bool {
 }
 
 func (d *Registry) getV2Metadata(image *v1.Image) *v1.V2Metadata {
-	metadata, err := d.client().(*registry.Registry).ManifestV2(image.GetName().GetRemote(), utils.Reference(image))
+	metadata, err := d.client.ManifestV2(image.GetName().GetRemote(), utils.Reference(image))
 	if err != nil {
 		return nil
 	}
@@ -256,24 +213,24 @@ func (d *Registry) populateV1DataFromManifest(manifest *manifestV1.SignedManifes
 
 func (d *Registry) populateManifestV1(image *v1.Image) (*v1.ImageMetadata, error) {
 	// First try to use the SHA given (which is probably V2, but for backwards compatibility reasons on old images we will try)
-	signedManifest, err := d.client().SignedManifest(image.GetName().GetRemote(), image.GetId())
+	signedManifest, err := d.client.SignedManifest(image.GetName().GetRemote(), image.GetId())
 	if err == nil {
 		return d.populateV1DataFromManifest(signedManifest)
 	}
 
-	manifest, err := d.client().Manifest(image.GetName().GetRemote(), image.GetId())
+	manifest, err := d.client.Manifest(image.GetName().GetRemote(), image.GetId())
 	if err == nil {
 		return d.populateV1DataFromManifest(manifest)
 	}
 
 	// Now try to use the tag, which is less specific than the SHA
 	// TODO(cgorman) is it possible to get the tags by the sha?
-	signedManifest, err = d.client().SignedManifest(image.GetName().GetRemote(), image.GetName().GetTag())
+	signedManifest, err = d.client.SignedManifest(image.GetName().GetRemote(), image.GetName().GetTag())
 	if err == nil {
 		return d.populateV1DataFromManifest(signedManifest)
 	}
 
-	manifest, err = d.client().Manifest(image.GetName().GetRemote(), image.GetName().GetTag())
+	manifest, err = d.client.Manifest(image.GetName().GetRemote(), image.GetName().GetTag())
 	if err == nil {
 		return d.populateV1DataFromManifest(manifest)
 	}
@@ -289,7 +246,7 @@ func (d *Registry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 	}
 
 	// fetch the digest from registry because it is more correct than from the orchestrator
-	digest, err := d.client().ManifestDigest(image.GetName().GetRemote(), utils.Reference(image))
+	digest, err := d.client.ManifestDigest(image.GetName().GetRemote(), utils.Reference(image))
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get the manifest digest : %s", err)
 	}
@@ -307,7 +264,7 @@ func (d *Registry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 
 // Test tests the current registry and makes sure that it is working properly
 func (d *Registry) Test() error {
-	return d.client().Ping()
+	return d.client.Ping()
 }
 
 // Config returns the configuration of the docker registry

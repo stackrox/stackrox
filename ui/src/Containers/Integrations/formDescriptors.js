@@ -193,13 +193,13 @@ const formDescriptors = {
             },
             {
                 label: 'Access Key',
-                jsonpath: 'config.accessKey',
+                jsonpath: 'tenable.accessKey',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Secret Key',
-                jsonpath: 'config.secretKey',
+                jsonpath: 'tenable.secretKey',
                 type: 'text',
                 placeholder: ''
             }
@@ -364,7 +364,7 @@ const formDescriptors = {
             },
             {
                 label: 'Endpoint',
-                jsonpath: 'config.endpoint',
+                jsonpath: 'clair.endpoint',
                 type: 'text',
                 placeholder: 'https://clair.example.com'
             }
@@ -409,19 +409,19 @@ const formDescriptors = {
             },
             {
                 label: 'Registry Endpoint',
-                jsonpath: 'config.endpoint',
+                jsonpath: 'google.endpoint',
                 type: 'text',
                 placeholder: 'gcr.io'
             },
             {
                 label: 'Project',
-                jsonpath: 'config.project',
+                jsonpath: 'google.project',
                 type: 'text',
                 placeholder: ''
             },
             {
                 label: 'Service Account Key (JSON)',
-                jsonpath: 'config.serviceAccount',
+                jsonpath: 'google.serviceAccount',
                 type: 'text',
                 placeholder: ''
             }

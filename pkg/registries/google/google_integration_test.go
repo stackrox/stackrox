@@ -19,9 +19,11 @@ func TestGoogle(t *testing.T) {
 		t.Fatal("PROJECT env variable required")
 	}
 	integration := &v1.ImageIntegration{
-		Config: map[string]string{
-			"endpoint":       "us.gcr.io",
-			"serviceAccount": os.Getenv("SERVICE_ACCOUNT"),
+		IntegrationConfig: &v1.ImageIntegration_Google{
+			Google: &v1.GoogleConfig{
+				Endpoint:       "us.gcr.io",
+				ServiceAccount: os.Getenv("SERVICE_ACCOUNT"),
+			},
 		},
 	}
 

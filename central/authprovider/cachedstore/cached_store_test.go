@@ -5,10 +5,8 @@ import (
 	"sync"
 	"testing"
 
-	// This import is required to register auth providers.
-	_ "github.com/stackrox/rox/pkg/auth/authproviders/all"
-
 	"github.com/stackrox/rox/generated/api/v1"
+	_ "github.com/stackrox/rox/pkg/auth/authproviders/all" // This import is required to register auth providers.
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 )

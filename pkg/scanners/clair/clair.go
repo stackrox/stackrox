@@ -11,6 +11,7 @@ import (
 
 	clairV1 "github.com/coreos/clair/api/v1"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -40,13 +41,25 @@ type clair struct {
 	protoImageIntegration *v1.ImageIntegration
 }
 
-func newScanner(protoImageIntegration *v1.ImageIntegration) (*clair, error) {
-	endpoint, ok := protoImageIntegration.Config["endpoint"]
+func validate(clair *v1.ClairConfig) error {
+	errorList := errorhelpers.NewErrorList("Clair Validation")
+	if clair.GetEndpoint() == "" {
+		errorList.AddString("Endpoint must be specified")
+	}
+	return errorList.ToError()
+}
+
+func newScanner(integration *v1.ImageIntegration) (*clair, error) {
+	clairConfig, ok := integration.IntegrationConfig.(*v1.ImageIntegration_Clair)
 	if !ok {
-		return nil, errors.New("endpoint parameter must be defined for Clair")
+		return nil, fmt.Errorf("Clair configuration required")
+	}
+	config := clairConfig.Clair
+	if err := validate(config); err != nil {
+		return nil, err
 	}
 
-	endpoint, err := urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	endpoint, err := urlfmt.FormatURL(config.GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +69,7 @@ func newScanner(protoImageIntegration *v1.ImageIntegration) (*clair, error) {
 	scanner := &clair{
 		client:                client,
 		endpoint:              endpoint,
-		protoImageIntegration: protoImageIntegration,
+		protoImageIntegration: integration,
 	}
 	return scanner, nil
 }

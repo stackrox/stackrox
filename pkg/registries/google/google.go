@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
 )
@@ -20,17 +21,30 @@ func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageRegis
 	}
 }
 
-func newRegistry(integration *v1.ImageIntegration) (*docker.Registry, error) {
-	if _, ok := integration.Config["endpoint"]; !ok {
-		return nil, fmt.Errorf("Endpoint must be specified for Google registry (e.g. gcr.io, us.gcr.io, eu.gcr.io)")
+func validate(google *v1.GoogleConfig) error {
+	errorList := errorhelpers.NewErrorList("Google Validation")
+	if google.GetEndpoint() == "" {
+		errorList.AddString("Endpoint must be specified for Google registry (e.g. gcr.io, us.gcr.io, eu.gcr.io)")
 	}
-	if _, ok := integration.Config["serviceAccount"]; !ok {
-		return nil, fmt.Errorf("Service account must be specified for Google registry")
+	if google.GetServiceAccount() == "" {
+		errorList.AddString("Service account must be specified for Google registry")
+	}
+	return errorList.ToError()
+}
+
+func newRegistry(integration *v1.ImageIntegration) (*docker.Registry, error) {
+	googleConfig, ok := integration.IntegrationConfig.(*v1.ImageIntegration_Google)
+	if !ok {
+		return nil, fmt.Errorf("Google configuration required")
+	}
+	config := googleConfig.Google
+	if err := validate(config); err != nil {
+		return nil, err
 	}
 	cfg := docker.Config{
 		Username: username,
-		Password: integration.Config["serviceAccount"],
-		Endpoint: integration.Config["endpoint"],
+		Password: config.GetServiceAccount(),
+		Endpoint: config.GetEndpoint(),
 	}
 	return docker.NewDockerRegistry(cfg, integration)
 }
