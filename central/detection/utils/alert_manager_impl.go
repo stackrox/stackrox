@@ -198,7 +198,10 @@ func mergeAlerts(old, new *v1.Alert) *v1.Alert {
 		return old
 	}
 	new.Id = old.GetId()
-	new.Enforcement = old.GetEnforcement()
+	// Updated deploy-time alerts continue to have the same enforcement action.
+	if new.GetLifecycleStage() == v1.LifecycleStage_DEPLOY && old.GetLifecycleStage() == v1.LifecycleStage_DEPLOY {
+		new.Enforcement = old.GetEnforcement()
+	}
 	new.FirstOccurred = old.GetFirstOccurred()
 	return new
 }

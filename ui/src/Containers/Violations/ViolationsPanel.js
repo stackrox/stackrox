@@ -41,7 +41,10 @@ class ViolationsPanel extends Component {
             <Tabs headers={riskPanelTabs}>
                 <TabContent>
                     <div className="flex flex-1 flex-col">
-                        <ViolationsDetails violations={alert.violations} />
+                        <ViolationsDetails
+                            violations={alert.violations}
+                            firstOccurred={alert.firstOccurred}
+                        />
                     </div>
                 </TabContent>
                 <TabContent>

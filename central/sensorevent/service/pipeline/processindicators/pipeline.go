@@ -40,13 +40,9 @@ func (s *pipelineImpl) Run(event *v1.SensorEvent, injector pipeline.EnforcementI
 
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) process(indicator *v1.ProcessIndicator, injector pipeline.EnforcementInjector) error {
-	inserted, err := s.indicators.AddProcessIndicator(indicator)
+	err := s.indicators.AddProcessIndicator(indicator)
 	if err != nil {
 		return err
-	}
-	// This short-circuits the processing for de-duplicated indicators.
-	if !inserted {
-		return nil
 	}
 	return s.manager.IndicatorAdded(indicator, injector)
 }

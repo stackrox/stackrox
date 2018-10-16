@@ -27,7 +27,7 @@ class ProcessesCollapsibleCard extends Component {
         return (
             <CollapsibleCard
                 title={this.props.title}
-                open={false}
+                open
                 renderWhenOpened={this.renderCollapsibleOpened}
             >
                 {this.props.children}

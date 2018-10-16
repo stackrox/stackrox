@@ -154,8 +154,7 @@ func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args
 			Time: gogoTypes.TimestampNow(),
 		},
 	}
-	inserted, err := suite.processDataStore.AddProcessIndicator(indicator)
-	suite.True(inserted)
+	err := suite.processDataStore.AddProcessIndicator(indicator)
 	suite.NoError(err)
 	return indicator
 }

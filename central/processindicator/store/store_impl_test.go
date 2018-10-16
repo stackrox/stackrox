@@ -37,15 +37,36 @@ func (suite *IndicatorStoreTestSuite) TeardownSuite() {
 	os.Remove(suite.db.Path())
 }
 
+func (suite *IndicatorStoreTestSuite) verifyIndicatorsAre(indicators ...*v1.ProcessIndicator) {
+	for _, i := range indicators {
+		retrievedIndicator, exists, err := suite.store.GetProcessIndicator(i.GetId())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.NotNil(retrievedIndicator)
+		suite.Equal(i, retrievedIndicator)
+	}
+
+	// Get all indicators
+	retrievedIndicators, err := suite.store.GetProcessIndicators()
+	suite.NoError(err)
+	suite.ElementsMatch(indicators, retrievedIndicators)
+
+}
+
 func (suite *IndicatorStoreTestSuite) TestIndicators() {
-	var indicators = []*v1.ProcessIndicator{
+	repeatedSignal := &v1.ProcessSignal{
+		Args:         "da_args",
+		ContainerId:  "aa",
+		Name:         "blah",
+		ExecFilePath: "file",
+	}
+
+	indicators := []*v1.ProcessIndicator{
 		{
 			Id:           "id1",
 			DeploymentId: "d1",
 
-			Signal: &v1.ProcessSignal{
-				Args: "args",
-			},
+			Signal: repeatedSignal,
 		},
 		{
 			Id:           "id2",
@@ -57,35 +78,25 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 		},
 	}
 
+	repeatIndicator := &v1.ProcessIndicator{
+		Id:           "id3",
+		DeploymentId: "d1",
+		Signal:       repeatedSignal,
+	}
+
 	for _, i := range indicators {
-		inserted, err := suite.store.AddProcessIndicator(i)
+		err := suite.store.AddProcessIndicator(i)
 		suite.NoError(err)
-		suite.True(inserted)
 	}
 
-	// Adding an indicator with the exact same commandline should have inserted be false
-	for _, i := range indicators {
-		inserted, _ := suite.store.AddProcessIndicator(i)
-		suite.False(inserted)
-	}
+	suite.verifyIndicatorsAre(indicators...)
 
-	// Get all indicators
-	retrievedIndicators, err := suite.store.GetProcessIndicators()
-	suite.Nil(err)
-	suite.ElementsMatch(indicators, retrievedIndicators)
+	// Adding an indicator with the same secondary key should replace the original one.
+	suite.NoError(suite.store.AddProcessIndicator(repeatIndicator))
+	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 
-	for _, i := range indicators {
-		retrievedIndicator, exists, err := suite.store.GetProcessIndicator(i.GetId())
-		suite.NoError(err)
-		suite.True(exists)
-		suite.Equal(i, retrievedIndicator)
-	}
-
-	for _, i := range indicators {
+	for _, i := range []*v1.ProcessIndicator{indicators[1], repeatIndicator} {
 		suite.NoError(suite.store.RemoveProcessIndicator(i.GetId()))
 	}
-
-	retrievedIndicators, err = suite.store.GetProcessIndicators()
-	suite.NoError(err)
-	suite.Empty(retrievedIndicators)
+	suite.verifyIndicatorsAre()
 }

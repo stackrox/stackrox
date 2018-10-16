@@ -108,6 +108,11 @@ func (m *managerImpl) flushIndicatorQueue() {
 			continue
 		}
 		enforcementAction := createEnforcementAction(deployment, indicatorInfo.containerID)
+		if enforcementAction == nil {
+			logger.Errorf("Couldn't enforce on container %s, not found in deployment %s/%s", indicatorInfo.containerID,
+				deployment.GetNamespace(), deployment.GetName())
+			continue
+		}
 		injected := enforcementInjector.InjectEnforcement(enforcementAction)
 		if !injected {
 			logger.Errorf("Failed to inject enforcement action: %s", proto.MarshalTextString(enforcementAction))

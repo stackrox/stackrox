@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
@@ -29,17 +31,14 @@ func (ds *datastoreImpl) GetProcessIndicators() ([]*v1.ProcessIndicator, error) 
 	return ds.storage.GetProcessIndicators()
 }
 
-func (ds *datastoreImpl) AddProcessIndicator(i *v1.ProcessIndicator) (inserted bool, err error) {
-	inserted, err = ds.storage.AddProcessIndicator(i)
-	if err != nil {
-		return
+func (ds *datastoreImpl) AddProcessIndicator(i *v1.ProcessIndicator) error {
+	if err := ds.storage.AddProcessIndicator(i); err != nil {
+		return fmt.Errorf("adding indicator to bolt: %s", err)
 	}
-	// This logic deduplicates indicators
-	if !inserted {
-		return
+	if err := ds.indexer.AddProcessIndicator(i); err != nil {
+		return fmt.Errorf("adding indicator to index: %s", err)
 	}
-	err = ds.indexer.AddProcessIndicator(i)
-	return
+	return nil
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicator(id string) error {

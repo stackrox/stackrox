@@ -7,20 +7,14 @@ import * as Icon from 'react-feather';
 import { getTime, format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 
-const processOccurencesReducer = (accumulator, currentValue) => {
-    const currentTime = getTime(new Date(currentValue.signal.time));
-    let { firstOccurrence, lastOccurrence } = accumulator;
-    if (!firstOccurrence || firstOccurrence > currentTime) firstOccurrence = currentTime;
-    if (!lastOccurrence || lastOccurrence < currentTime) lastOccurrence = currentTime;
-    return { firstOccurrence, lastOccurrence };
-};
 class ViolationsDetails extends Component {
     static propTypes = {
         violations: PropTypes.arrayOf(
             PropTypes.shape({
                 message: PropTypes.string.isRequired
             })
-        )
+        ),
+        firstOccurred: PropTypes.string.isRequired
     };
 
     static defaultProps = {
@@ -40,13 +34,13 @@ class ViolationsDetails extends Component {
     };
 
     getRuntimeMessages = () => {
-        const { violations } = this.props;
+        const { violations, firstOccurred } = this.props;
         return violations
             .filter(violation => violation.processes.length)
             .map(({ message, processes }) => {
-                const { lastOccurrence, firstOccurrence } = processes.reduce(
-                    processOccurencesReducer,
-                    {}
+                const firstOccurrenceTimestamp = getTime(firstOccurred);
+                const lastOccurrenceTimestamp = Math.max(
+                    ...processes.map(process => getTime(process.signal.time))
                 );
                 const processesList = processes.map((process, index) => {
                     const { time, args, execFilePath, containerId } = process.signal;
@@ -77,8 +71,8 @@ class ViolationsDetails extends Component {
                     );
                 });
                 return (
-                    <div className="mb-4">
-                        <ProcessesCollapsibleCard title={message} opened={false}>
+                    <div className="mb-4" key={message}>
+                        <ProcessesCollapsibleCard title={message}>
                             <div>
                                 <div className="flex flex-1 bg-primary-100">
                                     <div className="w-1/2 p-4 border-r border-base-300 leading-normal">
@@ -86,7 +80,7 @@ class ViolationsDetails extends Component {
                                             First Occurence:
                                         </div>
                                         <div className="flex justify-center font-600">
-                                            {format(firstOccurrence, dateTimeFormat)}
+                                            {format(firstOccurrenceTimestamp, dateTimeFormat)}
                                         </div>
                                     </div>
                                     <div className="w-1/2 p-4 leading-normal">
@@ -94,7 +88,7 @@ class ViolationsDetails extends Component {
                                             Last Occurence:
                                         </div>
                                         <div className="flex justify-center font-600">
-                                            {format(lastOccurrence, dateTimeFormat)}
+                                            {format(lastOccurrenceTimestamp, dateTimeFormat)}
                                         </div>
                                     </div>
                                 </div>
