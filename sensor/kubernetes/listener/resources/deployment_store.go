@@ -31,6 +31,16 @@ func (ds *deploymentStore) removeDeployment(wrap *deploymentWrap) {
 	delete(nsMap, wrap.GetId())
 }
 
+func (ds *deploymentStore) getOwningDeployments(namespace string, podLabels map[string]string) (owning []*deploymentWrap) {
+	podLabelSet := labels.Set(podLabels)
+	for _, wrap := range ds.deployments[namespace] {
+		if wrap.podSelector != nil && wrap.podSelector.Matches(podLabelSet) {
+			owning = append(owning, wrap)
+		}
+	}
+	return
+}
+
 func (ds *deploymentStore) getMatchingDeployments(namespace string, sel selector) (matching []*deploymentWrap) {
 	for _, wrap := range ds.deployments[namespace] {
 		if sel.Matches(labels.Set(wrap.podLabels)) {

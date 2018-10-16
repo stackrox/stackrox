@@ -39,6 +39,7 @@ type deploymentWrap struct {
 	podLabels   map[string]string
 	portConfigs map[portRef]*pkgV1.PortConfig
 	pods        []*v1.Pod
+	podSelector labels.Selector
 }
 
 // This checks if a reflect value is a Zero value, which means the field did not exist
@@ -106,6 +107,7 @@ func newWrap(meta metav1.Object, kind string) *deploymentWrap {
 }
 
 func (w *deploymentWrap) populateFields(obj interface{}, action pkgV1.ResourceAction, lister v1listers.PodLister) {
+	w.original = obj
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	spec := objValue.FieldByName("Spec")
 	if !doesFieldExist(spec) {
@@ -146,7 +148,7 @@ func (w *deploymentWrap) populateFields(obj interface{}, action pkgV1.ResourceAc
 	w.podLabels = podLabels
 	w.populateContainers(podSpec)
 
-	if action == pkgV1.ResourceAction_UPDATE_RESOURCE {
+	if action != pkgV1.ResourceAction_REMOVE_RESOURCE {
 		// If we have a standalone pod, we cannot use the labels to try and select that pod so we must directly populate the pod data
 		if pod, ok := obj.(*v1.Pod); ok {
 			w.populateDataFromPods(pod)
@@ -217,7 +219,8 @@ func (w *deploymentWrap) populatePodData(spec reflect.Value, lister v1listers.Po
 	if err != nil {
 		return err
 	}
-	w.pods, err = lister.Pods(w.Namespace).List(labelSelector)
+	w.podSelector = labelSelector
+	w.pods, err = lister.Pods(w.Namespace).List(w.podSelector)
 	if err != nil {
 		return err
 	}
