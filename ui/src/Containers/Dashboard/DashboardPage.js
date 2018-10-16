@@ -412,8 +412,7 @@ class DashboardPage extends Component {
                         </PageHeader>
                     </div>
                     <div className="overflow-auto bg-base-200 z-0">
-                        <div className="flex flex-wrap bg-base-300 bg-base-100">
-                            <div className="bg-dashboard" />
+                        <div className="flex flex-wrap bg-base-300 bg-dashboard">
                             <div className="w-full lg:w-1/2 p-6 z-1">
                                 {this.renderEnvironmentRisk()}
                             </div>
