@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"errors"
 	"sync"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 type hostConnections struct {
 	connections        map[connection]timestamp.MicroTS
 	lastKnownTimestamp timestamp.MicroTS
+	sequenceID         int64
 
 	mutex sync.Mutex
 }
@@ -185,7 +187,7 @@ func (m *networkFlowManager) getAllConnections() map[connection]timestamp.MicroT
 	return allConnections
 }
 
-func (m *networkFlowManager) RegisterCollector(hostname string) HostNetworkInfo {
+func (m *networkFlowManager) RegisterCollector(hostname string) (HostNetworkInfo, int64) {
 
 	m.connectionsByHostMutex.Lock()
 	conns := m.connectionsByHost[hostname]
@@ -200,13 +202,13 @@ func (m *networkFlowManager) RegisterCollector(hostname string) HostNetworkInfo 
 	m.connectionsByHostMutex.Unlock()
 
 	conns.mutex.Lock()
-	conns.lastKnownTimestamp = timestamp.Now()
+	seqID := conns.sequenceID + 1
 	conns.mutex.Unlock()
 
-	return conns
+	return conns, seqID
 }
 
-func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, isFirst bool) {
+func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
 	updatedConnections := getUpdatedConnections(networkInfo)
 
 	collectorTS := timestamp.FromProtobuf(networkInfo.GetTime())
@@ -215,12 +217,16 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
-	if isFirst {
+	if sequenceID < h.sequenceID {
+		return errors.New("replaced by newer connection")
+	} else if sequenceID > h.sequenceID {
+		// This is the first message of the new connection.
 		for c := range h.connections {
 			// Mark all connections as closed this is the first update
 			// after a connection went down and came back up again.
 			h.connections[c] = h.lastKnownTimestamp
 		}
+		h.sequenceID = sequenceID
 	}
 
 	for c, t := range updatedConnections {
@@ -232,6 +238,8 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	}
 
 	h.lastKnownTimestamp = nowTimestamp
+
+	return nil
 }
 
 func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connection]timestamp.MicroTS {

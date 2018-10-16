@@ -16,10 +16,10 @@ type Manager interface {
 	Start()
 	Stop()
 	FlowUpdates() <-chan *central.NetworkFlowUpdate
-	RegisterCollector(hostname string) HostNetworkInfo
+	RegisterCollector(hostname string) (HostNetworkInfo, int64)
 }
 
 // HostNetworkInfo processes network connections from a single host aka collector.
 type HostNetworkInfo interface {
-	Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, isFirst bool)
+	Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error
 }

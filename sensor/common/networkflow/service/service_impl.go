@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -41,22 +43,19 @@ func (s *serviceImpl) PushNetworkConnectionInfo(stream sensor.NetworkConnectionI
 func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
 	var hostname string
 
-	msg, err := stream.Recv()
-	if err != nil {
-		log.Errorf("error dequeueing message: %s", err)
-		return status.Errorf(codes.Internal, "error dequeueing message: %s", err)
+	incomingMD := metautils.ExtractIncoming(stream.Context())
+	hostname = incomingMD.Get("rox-collector-hostname")
+	if hostname == "" {
+		return status.Error(codes.Internal, "collector did not transmit a hostname in initial metadata")
 	}
 
-	registerReq := msg.GetRegister()
-	if registerReq == nil {
-		return status.Error(codes.Internal, "unexpected message: expected a register message")
+	if err := stream.SendHeader(metadata.MD{}); err != nil {
+		return status.Errorf(codes.Internal, "error sending initial metadata: %v", err)
 	}
 
-	hostname = registerReq.GetHostname()
-	hostConnections := s.manager.RegisterCollector(hostname)
+	hostConnections, sequenceID := s.manager.RegisterCollector(hostname)
 
-	isFirst := true
-	for {
+	for stream.Context().Err() == nil {
 		msg, err := stream.Recv()
 		if err != nil {
 			log.Errorf("error dequeueing message: %s", err)
@@ -70,7 +69,10 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 			return status.Errorf(codes.Internal, "received unexpected message type %T from hostname %s", networkInfoMsg, hostname)
 		}
 
-		hostConnections.Process(networkInfoMsg, networkInfoMsgTimestamp, isFirst)
-		isFirst = false
+		if err := hostConnections.Process(networkInfoMsg, networkInfoMsgTimestamp, sequenceID); err != nil {
+			return status.Errorf(codes.Internal, "could not process connections: %v", err)
+		}
 	}
+
+	return stream.Context().Err()
 }
