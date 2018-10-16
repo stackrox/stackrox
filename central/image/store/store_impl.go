@@ -143,7 +143,7 @@ func convertImageToListImage(i *v1.Image) *v1.ListImage {
 	listImage := &v1.ListImage{
 		Id:      i.GetId(),
 		Name:    i.GetName().GetFullName(),
-		Created: i.GetMetadata().GetCreated(),
+		Created: i.GetMetadata().GetV1().GetCreated(),
 	}
 
 	if i.GetScan() != nil {
@@ -167,7 +167,7 @@ func convertImageToListImage(i *v1.Image) *v1.ListImage {
 		listImage.SetCves = &v1.ListImage_Cves{
 			Cves: numVulns,
 		}
-		if fixedByProvided {
+		if numVulns == 0 || fixedByProvided {
 			listImage.SetFixable = &v1.ListImage_FixableCves{
 				FixableCves: numFixableVulns,
 			}

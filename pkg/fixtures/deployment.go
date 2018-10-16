@@ -29,10 +29,12 @@ func GetDeployment() *v1.Deployment {
 						Tag:      "1.10",
 					},
 					Metadata: &v1.ImageMetadata{
-						Layers: []*v1.ImageLayer{
-							{
-								Instruction: "ADD",
-								Value:       "FILE:blah",
+						V1: &v1.V1Metadata{
+							Layers: []*v1.ImageLayer{
+								{
+									Instruction: "ADD",
+									Value:       "FILE:blah",
+								},
 							},
 						},
 					},

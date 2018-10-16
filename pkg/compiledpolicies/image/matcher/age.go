@@ -30,7 +30,7 @@ type ageMatcherImpl struct {
 func (p *ageMatcherImpl) match(image *v1.Image) []*v1.Alert_Violation {
 	var violations []*v1.Alert_Violation
 	deadline := time.Now().AddDate(0, 0, -int(*p.imageAgeDays))
-	created := image.GetMetadata().GetCreated()
+	created := image.GetMetadata().GetV1().GetCreated()
 	if created == nil {
 		return nil
 	}

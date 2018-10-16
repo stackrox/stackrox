@@ -9,7 +9,6 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -146,7 +145,7 @@ func (c *googleScanner) Test() error {
 }
 
 func getResourceURL(image *v1.Image) string {
-	return fmt.Sprintf("https://%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), imageTypes.NewDigest(image.GetMetadata().GetRegistrySha()).Digest())
+	return fmt.Sprintf("https://%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), image.GetId())
 }
 
 func generalizeName(name string) string {

@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
@@ -108,12 +109,19 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetI
 	return &v1.GetImageIntegrationsResponse{Integrations: integrations}, nil
 }
 
+func sortCategories(categories []v1.ImageIntegrationCategory) {
+	sort.SliceStable(categories, func(i, j int) bool {
+		return int32(categories[i]) < int32(categories[j])
+	})
+}
+
 // PutImageIntegration updates an image integration in the system
 func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*v1.Empty, error) {
 	err := s.validateClustersAndCategories(request)
 	if err != nil {
 		return nil, err
 	}
+	sortCategories(request.Categories)
 
 	if err := s.datastore.UpdateImageIntegration(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -135,6 +143,7 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *v1.Imag
 	if err != nil {
 		return nil, err
 	}
+	sortCategories(request.Categories)
 
 	id, err := s.datastore.AddImageIntegration(request)
 	if err != nil {

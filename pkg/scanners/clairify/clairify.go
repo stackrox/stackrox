@@ -75,7 +75,7 @@ func convertLayerToImageScan(layerEnvelope *clairV1.LayerEnvelope) *v1.ImageScan
 
 func v1ImageToClairifyImage(i *v1.Image) *types.Image {
 	return &types.Image{
-		SHA:      i.GetMetadata().GetRegistrySha(),
+		SHA:      i.GetId(),
 		Registry: i.GetName().GetRegistry(),
 		Remote:   i.GetName().GetRemote(),
 		Tag:      i.GetName().GetTag(),
@@ -88,12 +88,10 @@ func (c *clairify) getScanBySHA(sha string) (*clairV1.LayerEnvelope, error) {
 
 // Try many ways to retrieve a sha
 func (c *clairify) getScan(image *v1.Image) (*clairV1.LayerEnvelope, error) {
+	if env, err := c.getScanBySHA(image.GetId()); err == nil {
+		return env, nil
+	}
 	switch {
-	case image.GetMetadata().GetRegistrySha() != "":
-		if env, err := c.getScanBySHA(image.GetMetadata().GetRegistrySha()); err == nil {
-			return env, nil
-		}
-		fallthrough
 	case image.GetMetadata().GetV2().GetDigest() != "":
 		if env, err := c.getScanBySHA(image.GetMetadata().GetV2().GetDigest()); err == nil {
 			return env, nil

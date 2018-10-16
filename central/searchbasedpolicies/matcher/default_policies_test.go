@@ -115,7 +115,9 @@ func imageWithLayers(layers []*v1.ImageLayer) *v1.Image {
 	return &v1.Image{
 		Id: uuid.NewV4().String(),
 		Metadata: &v1.ImageMetadata{
-			Layers: layers,
+			V1: &v1.V1Metadata{
+				Layers: layers,
+			},
 		},
 	}
 }
@@ -243,8 +245,12 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	oldImageCreationTime := time.Now().Add(-100 * 24 * time.Hour)
 	oldCreatedImage := &v1.Image{
-		Id:       "SHA:OLDCREATEDIMAGE",
-		Metadata: &v1.ImageMetadata{Created: protoconv.ConvertTimeToTimestamp(oldImageCreationTime)},
+		Id: "SHA:OLDCREATEDIMAGE",
+		Metadata: &v1.ImageMetadata{
+			V1: &v1.V1Metadata{
+				Created: protoconv.ConvertTimeToTimestamp(oldImageCreationTime),
+			},
+		},
 	}
 	oldImageDep := &v1.Deployment{
 		Id:         "oldimagedep",

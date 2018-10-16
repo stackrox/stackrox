@@ -322,7 +322,7 @@
   revision = "edc3ab29cdff8694dd6feb85cfeb4b5f1b38ed9c"
 
 [[projects]]
-  digest = "1:61f1304f07ca38ada392b1e566c783fd427ae9fa2c8f2743da2a6d47aa49c079"
+  digest = "1:bb7e04fe988281ea459dad4e2656b8b893f7b0fc7d65bec5f8fa1f615cf3b292"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -342,17 +342,35 @@
     "api/types/versions",
     "api/types/volume",
     "client",
+    "daemon/graphdriver",
+    "dockerversion",
+    "image",
+    "layer",
+    "oci",
+    "pkg/archive",
+    "pkg/chrootarchive",
+    "pkg/fileutils",
+    "pkg/idtools",
     "pkg/ioutils",
     "pkg/jsonlog",
     "pkg/jsonmessage",
     "pkg/longpath",
     "pkg/mount",
+    "pkg/parsers/kernel",
+    "pkg/plugingetter",
+    "pkg/plugins",
+    "pkg/plugins/transport",
+    "pkg/pools",
+    "pkg/promise",
+    "pkg/reexec",
     "pkg/stringid",
     "pkg/system",
     "pkg/tarsum",
     "pkg/term",
     "pkg/term/windows",
     "pkg/tlsconfig",
+    "pkg/useragent",
+    "plugin/v2",
     "registry",
     "registry/resumable",
   ]
@@ -596,12 +614,12 @@
   revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
-  branch = "master"
-  digest = "1:ac7de0140e117273e1e3a7338579a28febec7135a0fc405b3511b41e59cdef56"
+  branch = "cgorman-manifest-updates"
+  digest = "1:21fe3c512997dcf2fd967069088ea3356e863344557b93b3f0bdc28b38c24655"
   name = "github.com/heroku/docker-registry-client"
   packages = ["registry"]
   pruneopts = "NUT"
-  revision = "a98a2e5c9cabe69c035c368d938ba443438f968a"
+  revision = "7aaa8e8d76f06ad750117261e1972664b90a1886"
   source = "github.com/stackrox/docker-registry-client.git"
 
 [[projects]]
@@ -636,12 +654,12 @@
   version = "v1.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:989f7876a6eb91515a05b20a01d9322e00c811ce78ffd13e7045e04feb1b0aca"
-  name = "github.com/karlseguin/ccache"
+  digest = "1:d0164259ed17929689df11205194d80288e8ae25351778f7a3421a24774c36f8"
+  name = "github.com/mattn/go-shellwords"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "a3174167557e15eabc4a64cb63d1712ee38ec79e"
+  revision = "02e3cf038dcea8290e44424da473dd12be796a8a"
+  version = "v1.0.3"
 
 [[projects]]
   digest = "1:5985ef4caf91ece5d54817c11ea25f182697534f8ae6521eadcd628c142ac4b6"
@@ -703,11 +721,24 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:8cf7d3a34a552c4424104a15f63cab43f8bf9cee38fb271699ca722f4bcc4c99"
+  digest = "1:665148313bcef8bee229ade70b3d345344121db27777e3b1edb78ca5088bb9c4"
   name = "github.com/opencontainers/runc"
-  packages = ["libcontainer/user"]
+  packages = [
+    "libcontainer/configs",
+    "libcontainer/devices",
+    "libcontainer/system",
+    "libcontainer/user",
+  ]
   pruneopts = "NUT"
   revision = "e6516b3d5dc780cb57a976013c242a9a93052543"
+
+[[projects]]
+  digest = "1:57234a321bf1f8f98a8a9a5122a2404cc60d0800516f4ab7a7b2375e4b2d19ea"
+  name = "github.com/opencontainers/runtime-spec"
+  packages = ["specs-go"]
+  pruneopts = "NUT"
+  revision = "4e3b9264a330d094b0386c3703c5f379119711e8"
+  version = "v1.0.1"
 
 [[projects]]
   digest = "1:61820d62888624679de099adf44bb6cf2fd55b7f9e8f4f8d320d9d9d28bee938"
@@ -844,15 +875,15 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "master"
-  digest = "1:4870e44664f4282c4cb6e60df4ee66c50d98b57e88635b499c5ecb490b225bc9"
+  branch = "cgorman-update-manifiests-registry-client"
+  digest = "1:8a3462e0c52a3a0931b7c9f0dd38708ecc607a4b4cfcb91a0ea9ecf24bfec17f"
   name = "github.com/stackrox/clairify"
   packages = [
     "client",
     "types",
   ]
   pruneopts = "NUT"
-  revision = "b37d808292b149cd482840033e50ae2bce67577f"
+  revision = "eb581accbe4debe3a8f5e625943815bb39456d99"
 
 [[projects]]
   branch = "master"
@@ -909,6 +940,18 @@
   pruneopts = "NUT"
   revision = "315f955fa460a324c1de2f5d576a87c922c8bd93"
   version = "v1.0.5"
+
+[[projects]]
+  digest = "1:89ad20dbfd31a97fb68c073cd1e6ed32bdcee9c0086d5428009c89680a2d1ff5"
+  name = "github.com/vbatts/tar-split"
+  packages = [
+    "archive/tar",
+    "tar/asm",
+    "tar/storage",
+  ]
+  pruneopts = "NUT"
+  revision = "61b49a82bb343c846b8dd388c20187c7b3f3c7b5"
+  version = "v0.11.0"
 
 [[projects]]
   digest = "1:3f3f2b36f76d1187ccf6640dd5bdbce43fd3c1a2cc0d747abc1e0de374d13e63"
@@ -1398,6 +1441,7 @@
     "github.com/docker/docker/api/types/network",
     "github.com/docker/docker/api/types/swarm",
     "github.com/docker/docker/client",
+    "github.com/docker/docker/image",
     "github.com/docker/docker/registry",
     "github.com/docker/go-units",
     "github.com/gogo/protobuf/proto",
@@ -1418,8 +1462,8 @@
     "github.com/grpc-ecosystem/grpc-gateway/utilities",
     "github.com/hashicorp/golang-lru",
     "github.com/heroku/docker-registry-client/registry",
-    "github.com/karlseguin/ccache",
     "github.com/mitchellh/go-wordwrap",
+    "github.com/opencontainers/go-digest",
     "github.com/opencontainers/runc/libcontainer/user",
     "github.com/openshift/api/apps/v1",
     "github.com/openshift/client-go/apps/clientset/versioned",

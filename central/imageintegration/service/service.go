@@ -24,12 +24,7 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	GetImageIntegration(ctx context.Context, request *v1.ResourceByID) (*v1.ImageIntegration, error)
-	GetImageIntegrations(ctx context.Context, request *v1.GetImageIntegrationsRequest) (*v1.GetImageIntegrationsResponse, error)
-	PutImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*v1.Empty, error)
-	PostImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*v1.ImageIntegration, error)
-	TestImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*v1.Empty, error)
-	DeleteImageIntegration(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error)
+	v1.ImageIntegrationServiceServer
 }
 
 // New returns a new Service instance using the given DataStore.

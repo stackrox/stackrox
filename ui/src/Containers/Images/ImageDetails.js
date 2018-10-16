@@ -248,8 +248,8 @@ class ImageDetails extends Component {
 
     renderDockerFileModal() {
         const { image } = this.props;
-        if (!this.state.modalOpen || !image || !image.metadata) return null;
-        return <DockerFileModal data={image.metadata.layers} onClose={this.closeModal} />;
+        if (!this.state.modalOpen || !image || !image.metadata || !image.metadata.v1) return null;
+        return <DockerFileModal data={image.metadata.v1.layers} onClose={this.closeModal} />;
     }
 
     render() {

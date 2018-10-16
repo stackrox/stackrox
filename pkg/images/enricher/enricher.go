@@ -3,7 +3,6 @@ package enricher
 import (
 	"time"
 
-	"github.com/karlseguin/ccache"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"
@@ -26,10 +25,8 @@ func New(is integration.Set, subsystem pkgMetrics.Subsystem) ImageEnricher {
 	return &enricherImpl{
 		integrations: is,
 
-		metadataLimiter: rate.NewLimiter(rate.Every(5*time.Second), 3),
-		metadataCache:   ccache.New(ccache.Configure().MaxSize(maxCacheSize).ItemsToPrune(itemsToPrune)),
-		scanLimiter:     rate.NewLimiter(rate.Every(5*time.Second), 3),
-		scanCache:       ccache.New(ccache.Configure().MaxSize(maxCacheSize).ItemsToPrune(itemsToPrune)),
+		metadataLimiter: rate.NewLimiter(rate.Every(1*time.Second), 3),
+		scanLimiter:     rate.NewLimiter(rate.Every(3*time.Second), 3),
 
 		metrics: newMetrics(subsystem),
 	}

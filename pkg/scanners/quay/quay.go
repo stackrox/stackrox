@@ -106,7 +106,7 @@ func (q *quay) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	values := url.Values{}
 	values.Add("features", "true")
 	values.Add("vulnerabilities", "true")
-	digest := imageTypes.NewDigest(image.GetMetadata().GetRegistrySha()).Digest()
+	digest := imageTypes.NewDigest(image.GetId()).Digest()
 	body, status, err := q.sendRequest("GET", values, "api", "v1", "repository", image.GetName().GetRemote(), "manifest", digest, "security")
 	if err != nil {
 		return nil, err

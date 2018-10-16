@@ -443,8 +443,8 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			highlightLinkedFields: true,
 			expectedIDs:           []string{deployment.GetId()},
 			expectedMatches: map[string][]string{
-				"image.metadata.layers.instruction": {"ADD"},
-				"image.metadata.layers.value":       {"file:4eedf861fb567fffb2694b65ebdd58d5e371a2c28c3863f363f333cb34e5eb7b in /"},
+				"image.metadata.v1.layers.instruction": {"ADD"},
+				"image.metadata.v1.layers.value":       {"file:4eedf861fb567fffb2694b65ebdd58d5e371a2c28c3863f363f333cb34e5eb7b in /"},
 			},
 		},
 		{
@@ -475,9 +475,9 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			expectedMatches: func() map[string][]string {
 				m := make(map[string][]string)
 				for _, container := range deployment.GetContainers() {
-					for _, layer := range container.GetImage().GetMetadata().GetLayers() {
-						m["image.metadata.layers.instruction"] = append(m["image.metadata.layers.instruction"], layer.GetInstruction())
-						m["image.metadata.layers.value"] = append(m["image.metadata.layers.value"], layer.GetValue())
+					for _, layer := range container.GetImage().GetMetadata().GetV1().GetLayers() {
+						m["image.metadata.v1.layers.instruction"] = append(m["image.metadata.v1.layers.instruction"], layer.GetInstruction())
+						m["image.metadata.v1.layers.value"] = append(m["image.metadata.v1.layers.value"], layer.GetValue())
 					}
 				}
 				return m
@@ -489,8 +489,8 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			highlightLinkedFields: true,
 			expectedIDs:           []string{deployment.GetId()},
 			expectedMatches: map[string][]string{
-				"image.metadata.layers.instruction": {"CMD", "CMD"},
-				"image.metadata.layers.value":       {`["nginx" "-g" "daemon off;"]`, `["/bin/bash"]`},
+				"image.metadata.v1.layers.instruction": {"CMD", "CMD"},
+				"image.metadata.v1.layers.value":       {`["nginx" "-g" "daemon off;"]`, `["/bin/bash"]`},
 			},
 		},
 		{

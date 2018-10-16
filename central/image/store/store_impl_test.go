@@ -124,7 +124,9 @@ func (suite *ImageStoreTestSuite) TestConvertImagesToListImages() {
 					FullName: "name",
 				},
 				Metadata: &v1.ImageMetadata{
-					Created: ts,
+					V1: &v1.V1Metadata{
+						Created: ts,
+					},
 				},
 				Scan: &v1.ImageScan{
 					Components: []*v1.ImageScanComponent{

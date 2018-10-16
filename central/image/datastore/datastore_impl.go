@@ -98,7 +98,7 @@ func (ds *datastoreImpl) UpsertImage(image *v1.Image) error {
 // merge adds the most up to date data from the two inputs to the first input.
 func merge(mergeTo *v1.Image, mergeWith *v1.Image) {
 	// If the image currently in the DB has more up to date info, swap it out.
-	if protoconv.CompareProtoTimestamps(mergeWith.GetMetadata().GetCreated(), mergeTo.GetMetadata().GetCreated()) > 0 {
+	if protoconv.CompareProtoTimestamps(mergeWith.GetMetadata().GetV1().GetCreated(), mergeTo.GetMetadata().GetV1().GetCreated()) > 0 {
 		mergeTo.Metadata = mergeWith.GetMetadata()
 	}
 	if protoconv.CompareProtoTimestamps(mergeWith.GetScan().GetScanTime(), mergeTo.GetScan().GetScanTime()) > 0 {

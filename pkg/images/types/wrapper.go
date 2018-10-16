@@ -27,7 +27,7 @@ func (i Wrapper) Repo() string {
 
 // ShortRegistrySHA returns the SHA from the registry truncated to 12 characters.
 func (i Wrapper) ShortRegistrySHA() string {
-	withoutAlgorithm := NewDigest(i.GetMetadata().GetRegistrySha()).Hash()
+	withoutAlgorithm := NewDigest(i.GetId()).Hash()
 	if len(withoutAlgorithm) <= 12 {
 		return withoutAlgorithm
 	}

@@ -105,7 +105,6 @@ func (d *tenableRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 		layers = append(layers, layer.Digest.String())
 	}
 	return &v1.ImageMetadata{
-		RegistrySha: digest,
 		V2: &v1.V2Metadata{
 			Digest: digest,
 			Layers: layers,

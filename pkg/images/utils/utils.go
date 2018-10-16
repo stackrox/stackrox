@@ -54,15 +54,6 @@ func GenerateImageFromStringWithError(imageStr string) (*v1.Image, error) {
 	return image, nil
 }
 
-// GenerateImageFromString generates an image type from a common string format
-func GenerateImageFromString(imageStr string) *v1.Image {
-	image, err := GenerateImageFromStringWithError(imageStr)
-	if err != nil {
-		logger.Error(err)
-	}
-	return image
-}
-
 // Reference returns what to use as the reference when talking to registries
 func Reference(img *v1.Image) string {
 	// If the image id is empty, then use the tag as the reference
@@ -72,6 +63,15 @@ func Reference(img *v1.Image) string {
 		return img.GetName().GetTag()
 	}
 	return "latest"
+}
+
+// GenerateImageFromString generates an image type from a common string format
+func GenerateImageFromString(imageStr string) *v1.Image {
+	image, err := GenerateImageFromStringWithError(imageStr)
+	if err != nil {
+		logger.Error(err)
+	}
+	return image
 }
 
 // ExtractImageSha returns the image sha if it exists within the string.

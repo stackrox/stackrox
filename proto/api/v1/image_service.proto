@@ -17,18 +17,27 @@ message ImageLayer {
     string author                      = 4;
 }
 
+message V1Metadata {
+    string                    digest    = 1;
+    google.protobuf.Timestamp created   = 2;
+    string                    author    = 3;
+    repeated ImageLayer       layers    = 4;
+    repeated string           fs_layers = 5;
+}
+
 message V2Metadata {
-    string digest          = 1;
-    repeated string layers = 2;
+    string                    digest = 1;
+    repeated string           layers = 2;
 }
 
 message ImageMetadata {
-    google.protobuf.Timestamp created  = 1;
-    string author                      = 2;
-    repeated ImageLayer layers         = 3;
-    repeated string fs_layers          = 4;
-    V2Metadata v2                      = 5;
-    string registry_sha                = 6;
+    // V1Metadata contains all of the V1 docker data. In the normal case we will get this because the image is a
+    // V1 image OR because the v2 manifest has a link to it in it's config.
+    // See https://docs.docker.com/registry/spec/manifest-v2-2/#image-manifest-field-descriptions
+    // The only time we will not get it is in the rare caseof a strictly V2 image schema
+    V1Metadata                v1 = 1;
+    // We should always get V2 metadata unless the registry is old or the image is strictly V1
+    V2Metadata                v2 = 2;
 }
 
 message License {

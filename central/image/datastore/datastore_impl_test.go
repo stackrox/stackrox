@@ -56,16 +56,12 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithoutMetadata() {
 // Outcome: The sha should be changed to the registry sha, and the mapping added to the store.
 func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithMetadata() {
 	newImage := &v1.Image{
-		Id: "sha1",
-		Metadata: &v1.ImageMetadata{
-			RegistrySha: "sha2",
-		},
+		Id:       "sha1",
+		Metadata: &v1.ImageMetadata{},
 	}
 	upsertedImage := &v1.Image{
-		Id: "sha1",
-		Metadata: &v1.ImageMetadata{
-			RegistrySha: "sha2",
-		},
+		Id:       "sha1",
+		Metadata: &v1.ImageMetadata{},
 	}
 
 	suite.mockStore.On("GetImage", "sha1").Return((*v1.Image)(nil), false, nil)

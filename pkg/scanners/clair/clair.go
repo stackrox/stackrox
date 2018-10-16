@@ -153,14 +153,14 @@ func (c *clair) getLastScanFromV2Metadata(image *v1.Image) (*clairV1.LayerEnvelo
 }
 
 func (c *clair) getLastScanFromV1Metadata(image *v1.Image) (*clairV1.LayerEnvelope, bool) {
-	digest := imageTypes.NewDigest(image.GetMetadata().GetRegistrySha()).Digest()
+	digest := imageTypes.NewDigest(image.GetId()).Digest()
 	layerEnvelope, err := c.retrieveLayerData(digest)
 	if err == nil {
 		return layerEnvelope, true
 	} else if err != errNotExists {
 		log.Error(err)
 	}
-	for _, layer := range image.GetMetadata().GetFsLayers() {
+	for _, layer := range image.GetMetadata().GetV1().GetFsLayers() {
 		layerEnvelope, err := c.retrieveLayerData(layer)
 		if err == nil {
 			return layerEnvelope, true
