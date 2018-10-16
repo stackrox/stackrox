@@ -5,12 +5,18 @@ option go_package = "v1";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/empty.proto";
+import "api/v1/network_enums.proto";
 
 package v1;
 
 message NetworkEdge {
-    string          source       = 1;
-    string          target       = 2;
+    string          source                          = 1;
+    string          target                          = 2;
+    uint32          port                            = 3;
+    L4Protocol      protocol                        = 4;
+
+    google.protobuf.Timestamp last_active_timestamp = 5;
+
 }
 
 message NetworkNode {

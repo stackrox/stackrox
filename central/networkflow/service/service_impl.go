@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"google.golang.org/grpc"
@@ -97,10 +98,19 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 	filteredFlows = filterNetworkFlowsByTime(filteredFlows, since)
 
 	for _, flow := range filteredFlows {
-		srcID := flow.GetProps().GetSrcDeploymentId()
-		dstID := flow.GetProps().GetDstDeploymentId()
+		edge := &v1.NetworkEdge{
+			Source:   flow.GetProps().GetSrcDeploymentId(),
+			Target:   flow.GetProps().GetDstDeploymentId(),
+			Port:     flow.GetProps().GetDstPort(),
+			Protocol: flow.GetProps().L4Protocol,
+		}
 
-		edges = append(edges, &v1.NetworkEdge{Source: srcID, Target: dstID})
+		edge.LastActiveTimestamp = flow.GetLastSeenTimestamp()
+		if edge.LastActiveTimestamp == nil {
+			edge.LastActiveTimestamp = protoconv.ConvertTimeToTimestamp(time.Now())
+		}
+
+		edges = append(edges, edge)
 	}
 
 	return &v1.NetworkGraph{
