@@ -24,7 +24,7 @@ func (s *swarm) Render(c Config) ([]*v1.File, error) {
 		"swarm/clairify.sh",
 	}
 
-	return renderFilenames(filenames, c)
+	return renderFilenames(filenames, &c)
 }
 
 func (s *swarm) Instructions() string {

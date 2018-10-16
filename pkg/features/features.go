@@ -20,10 +20,14 @@ type FeatureFlag interface {
 
 var (
 	// Features contains all defined Features by name.
-	Features = map[string]Feature{}
+	Features = map[string]Feature{
+		HtpasswdAuth.Name(): HtpasswdAuth,
+	}
 
 	// Flags contains all defined FeatureFlags by name.
-	Flags = map[string]FeatureFlag{}
+	Flags = map[string]FeatureFlag{
+		HtpasswdAuth.Name(): HtpasswdAuth,
+	}
 )
 
 func isEnabled(val string, defaultValue bool) bool {

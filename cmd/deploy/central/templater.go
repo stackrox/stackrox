@@ -119,6 +119,7 @@ type Config struct {
 	External *ExternalPersistence
 	HostPath *HostPathPersistence
 	Features []features.FeatureFlag
+	Password string
 }
 
 type deployer interface {
@@ -129,7 +130,7 @@ type deployer interface {
 // Deployers contains all implementations for central deployment generators.
 var Deployers = make(map[v1.ClusterType]deployer)
 
-func executeTemplate(temp *template.Template, c Config) (string, error) {
+func executeTemplate(temp *template.Template, c *Config) (string, error) {
 	var b []byte
 	buf := bytes.NewBuffer(b)
 	err := temp.Execute(buf, c)
@@ -150,7 +151,7 @@ func generateMonitoringImage(preventImage string) string {
 	return fmt.Sprintf("%s/%s:%s", img.GetName().GetRegistry(), remote, img.GetName().GetTag())
 }
 
-func renderFilenames(filenames []string, c Config, staticFilenames ...string) ([]*v1.File, error) {
+func renderFilenames(filenames []string, c *Config, staticFilenames ...string) ([]*v1.File, error) {
 	var files []*v1.File
 	for _, f := range filenames {
 		t, err := templates.ReadFileAndTemplate(f)
@@ -174,6 +175,15 @@ func renderFilenames(filenames []string, c Config, staticFilenames ...string) ([
 		files = append(files, f)
 	}
 	files = append(files, zip.NewFile("README", standardizeWhitespace(Deployers[c.ClusterType].Instructions()), false))
+
+	if features.HtpasswdAuth.Enabled() {
+		htpasswd, err := generateHtpasswd(c)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, zip.NewFile("htpasswd", htpasswd, false))
+		files = append(files, zip.NewFile("password", c.Password+"\n", false))
+	}
 	return files, nil
 }
 

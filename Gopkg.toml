@@ -66,6 +66,10 @@ required = ["golang.org/x/tools/go/ast/astutil"]
   version = "1.1.4"
 
 [[constraint]]
+  name = "golang.org/x/crypto"
+  branch = "master"
+
+[[constraint]]
   name = "golang.org/x/net"
   branch = "master"
 

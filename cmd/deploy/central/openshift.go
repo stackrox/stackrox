@@ -31,7 +31,8 @@ func (o *openshift) Render(c Config) ([]*v1.File, error) {
 		"openshift/port-forward.sh",
 		"openshift/route-setup.sh",
 	}
-	return renderFilenames(filenames, c)
+
+	return renderFilenames(filenames, &c)
 }
 
 func (o *openshift) Instructions() string {

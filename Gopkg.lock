@@ -920,9 +920,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:862259ab24532f81f6b57de611b7cf1d8d8cd096bbeea8c0df4cd37a097389f3"
+  digest = "1:d031e55eb6b9bc9676b868dc97316a2154d88c2825deeb587c39411addeef0ea"
   name = "golang.org/x/crypto"
   packages = [
+    "bcrypt",
+    "blowfish",
     "cryptobyte",
     "cryptobyte/asn1",
     "ed25519",
@@ -1435,6 +1437,7 @@
     "github.com/stretchr/testify/require",
     "github.com/stretchr/testify/suite",
     "github.com/tkuchiki/go-timezone",
+    "golang.org/x/crypto/bcrypt",
     "golang.org/x/crypto/ed25519",
     "golang.org/x/net/context",
     "golang.org/x/oauth2/google",
