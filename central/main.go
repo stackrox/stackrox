@@ -39,6 +39,7 @@ import (
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	pingService "github.com/stackrox/rox/central/ping/service"
 	policyService "github.com/stackrox/rox/central/policy/service"
+	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
 	roleStore "github.com/stackrox/rox/central/role/store"
@@ -130,6 +131,7 @@ func (c *central) startGRPCServer() {
 		notifierService.Singleton(),
 		pingService.Singleton(),
 		policyService.Singleton(),
+		processIndicatorService.Singleton(),
 		roleService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),

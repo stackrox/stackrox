@@ -31,14 +31,20 @@ func NewProcessPipeline(indicators chan *v1.SensorEvent, clusterEntities *cluste
 	}
 }
 
+func populateIndicatorFromCachedContainer(indicator *v1.ProcessIndicator, cachedContainer clusterentities.ContainerMetadata) {
+	indicator.DeploymentId = cachedContainer.DeploymentID
+	indicator.ContainerName = cachedContainer.ContainerName
+	indicator.PodId = cachedContainer.PodID
+}
+
 func (p *Pipeline) reprocessSignalLater(indicator *v1.ProcessIndicator) {
 	t := time.NewTicker(signalRetryInterval)
 	logger.Infof("Trying to reprocess '%s'", indicator.GetSignal().GetExecFilePath())
 	for i := 0; i < signalRetries; i++ {
 		<-t.C
-		deploymentID := p.clusterEntities.LookupByContainerID(indicator.GetSignal().GetContainerId())
-		if deploymentID != "" {
-			indicator.DeploymentId = deploymentID
+		metadata, ok := p.clusterEntities.LookupByContainerID(indicator.GetSignal().GetContainerId())
+		if ok {
+			populateIndicatorFromCachedContainer(indicator, metadata)
 			p.sendIndicatorEvent(indicator)
 			return
 		}
@@ -54,12 +60,12 @@ func (p *Pipeline) Process(signal *v1.ProcessSignal) {
 	}
 
 	// indicator.GetSignal() is never nil at this point
-	deploymentID := p.clusterEntities.LookupByContainerID(indicator.GetSignal().GetContainerId())
-	if deploymentID == "" {
+	metadata, ok := p.clusterEntities.LookupByContainerID(indicator.GetSignal().GetContainerId())
+	if !ok {
 		go p.reprocessSignalLater(indicator)
 		return
 	}
-	indicator.DeploymentId = deploymentID
+	populateIndicatorFromCachedContainer(indicator, metadata)
 	p.sendIndicatorEvent(indicator)
 }
 

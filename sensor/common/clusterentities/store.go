@@ -6,6 +6,13 @@ import (
 	"github.com/stackrox/rox/pkg/net"
 )
 
+// ContainerMetadata is the container metadata that is stored per instance
+type ContainerMetadata struct {
+	DeploymentID  string
+	PodID         string
+	ContainerName string
+}
+
 // Store is a store for managing cluster entities (currently deployments only) and allows looking them up by
 // endpoint.
 type Store struct {
@@ -13,8 +20,8 @@ type Store struct {
 	ipMap map[net.IPAddress]map[string]struct{}
 	// endpointMap maps endpoints to a (deployment id -> endpoint target info) mapping.
 	endpointMap map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{}
-	// containerIDMap maps container IDs to deployment IDs
-	containerIDMap map[string]string
+	// containerIDMap maps container IDs to container metadata
+	containerIDMap map[string]ContainerMetadata
 
 	// reverseIpMap maps deployment ids to sets of IP addresses associated with this deployment.
 	reverseIPMap map[string]map[net.IPAddress]struct{}
@@ -33,7 +40,7 @@ func NewStore() *Store {
 	return &Store{
 		ipMap:                 make(map[net.IPAddress]map[string]struct{}),
 		endpointMap:           make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{}),
-		containerIDMap:        make(map[string]string),
+		containerIDMap:        make(map[string]ContainerMetadata),
 		reverseIPMap:          make(map[string]map[net.IPAddress]struct{}),
 		reverseEndpointMap:    make(map[string]map[net.NumericEndpoint]struct{}),
 		reverseContainerIDMap: make(map[string]map[string]struct{}),
@@ -50,7 +57,7 @@ type EndpointTargetInfo struct {
 type EntityData struct {
 	ips          map[net.IPAddress]struct{}
 	endpoints    map[net.NumericEndpoint][]EndpointTargetInfo
-	containerIDs map[string]struct{}
+	containerIDs map[string]ContainerMetadata
 }
 
 // AddIP adds an IP address to the set of IP addresses of the respective deployment.
@@ -70,11 +77,11 @@ func (ed *EntityData) AddEndpoint(ep net.NumericEndpoint, info EndpointTargetInf
 }
 
 // AddContainerID adds a container ID to the container IDs of the respective deployment.
-func (ed *EntityData) AddContainerID(containerID string) {
+func (ed *EntityData) AddContainerID(containerID string, container ContainerMetadata) {
 	if ed.containerIDs == nil {
-		ed.containerIDs = make(map[string]struct{})
+		ed.containerIDs = make(map[string]ContainerMetadata)
 	}
-	ed.containerIDs[containerID] = struct{}{}
+	ed.containerIDs[containerID] = container
 }
 
 // Apply applies an update to the store. If incremental is true, data will be added; otherwise, data for each deployment
@@ -166,13 +173,13 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 		ipMap[deploymentID] = struct{}{}
 	}
 
-	for containerID := range data.containerIDs {
+	for containerID, metadata := range data.containerIDs {
 		if reverseContainerIDs == nil {
 			reverseContainerIDs = make(map[string]struct{})
 			e.reverseContainerIDMap[deploymentID] = reverseContainerIDs
 		}
 		reverseContainerIDs[containerID] = struct{}{}
-		e.containerIDMap[containerID] = deploymentID
+		e.containerIDMap[containerID] = metadata
 	}
 }
 
@@ -191,10 +198,11 @@ func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
 }
 
 // LookupByContainerID retrieves the deployment ID by a container ID.
-func (e *Store) LookupByContainerID(containerID string) string {
+func (e *Store) LookupByContainerID(containerID string) (ContainerMetadata, bool) {
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
-	return e.containerIDMap[containerID]
+	metadata, ok := e.containerIDMap[containerID]
+	return metadata, ok
 }
 
 func (e *Store) lookupNoLock(endpoint net.NumericEndpoint) (results []LookupResult) {

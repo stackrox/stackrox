@@ -20,7 +20,6 @@ fi
 
 # Generic secrets and client config maps
 kubectl create cm -n "{{.K8sConfig.Namespace}}" influxdb --from-file="$DIR/influxdb.conf"
-kubectl create cm -n "{{.K8sConfig.Namespace}}" kapacitor --from-file="$DIR/kapacitor.conf"
 
 # Monitoring CA
 cp "$DIR/../ca.pem" "$DIR/monitoring-ca.pem"

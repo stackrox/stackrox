@@ -137,8 +137,8 @@ func (m *networkFlowManager) currentEnrichedConns() map[networkConnIndicator]tim
 
 	enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
 	for conn, ts := range conns {
-		srcDeploymentID := m.clusterEntities.LookupByContainerID(conn.srcContainerID)
-		if srcDeploymentID == "" {
+		container, ok := m.clusterEntities.LookupByContainerID(conn.srcContainerID)
+		if !ok {
 			log.Errorf("Unable to fetch source deployment information, deployment does not exist for container %s", conn.srcContainerID)
 			continue
 		}
@@ -146,7 +146,7 @@ func (m *networkFlowManager) currentEnrichedConns() map[networkConnIndicator]tim
 		for _, lookupResult := range m.clusterEntities.LookupByEndpoint(conn.dest) {
 			for _, port := range lookupResult.ContainerPorts {
 				indicator := networkConnIndicator{
-					srcDeploymentID: srcDeploymentID,
+					srcDeploymentID: container.DeploymentID,
 					dstDeploymentID: lookupResult.DeploymentID,
 					dstPort:         port,
 					protocol:        conn.dest.L4Proto.ToProtobuf(),

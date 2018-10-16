@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/indicator.proto";
+
+package v1;
+
+message GetProcessesByDeploymentRequest {
+    string deployment_id = 1;
+}
+
+message GetProcessesResponse {
+    repeated ProcessIndicator processes = 1;
+}
+
+message ProcessGroup {
+    string                    args    = 1;
+    repeated ProcessIndicator signals = 2;
+}
+
+message ProcessNameGroup {
+    string                name           = 1;
+    int64                 times_executed = 2;
+    repeated ProcessGroup groups         = 3;
+}
+
+message GetGroupedProcessesResponse {
+    repeated ProcessNameGroup groups = 3;
+}
+
+service ProcessService {
+
+    rpc GetProcessesByDeployment (GetProcessesByDeploymentRequest) returns (GetProcessesResponse) {
+        option (google.api.http) = {
+            get: "/v1/processes/deployment/{deployment_id}"
+        };
+    }
+
+    rpc GetGroupedProcessByDeployment (GetProcessesByDeploymentRequest) returns (GetGroupedProcessesResponse) {
+        option (google.api.http) = {
+            get: "/v1/processes/deployment/{deployment_id}/grouped"
+        };
+    }
+
+}
