@@ -4,21 +4,27 @@ function launch_central {
     K8S_DIR="$1"
     PREVENT_IMAGE="$2"
 
-    set -u
-
     echo "Generating central config..."
-    docker run --rm "$PREVENT_IMAGE" deploy k8s -n stackrox -i "$PREVENT_IMAGE" none > $K8S_DIR/central.zip
+
+    EXTRA_ARGS=()
+    if [[ "$MONITORING_SUPPORT" == "false" ]]; then
+        EXTRA_ARGS+=("--monitoring-type=none")
+    fi
+
+    docker run --rm "$PREVENT_IMAGE" deploy k8s ${EXTRA_ARGS[@]} -i "$PREVENT_IMAGE" none > $K8S_DIR/central.zip
 
     UNZIP_DIR="$K8S_DIR/central-deploy/"
     rm -rf "$UNZIP_DIR"
     unzip "$K8S_DIR/central.zip" -d "$UNZIP_DIR"
     echo
 
-    echo "Deploying Monitoring..."
-    $UNZIP_DIR/monitoring/monitoring.sh
-    echo
+    if [[ "$MONITORING_SUPPORT" == "true" ]]; then
+        echo "Deploying Monitoring..."
+        $UNZIP_DIR/monitoring/monitoring.sh
+        echo
 
-    kubectl -n stackrox patch deployment monitoring --patch "$(cat $K8S_DIR/monitoring-resources-patch.yaml)"
+        kubectl -n stackrox patch deployment monitoring --patch "$(cat $K8S_DIR/monitoring-resources-patch.yaml)"
+    fi
 
     echo "Deploying Central..."
     $UNZIP_DIR/central.sh
@@ -39,7 +45,11 @@ function launch_sensor {
 
     COMMON_PARAMS="{ \"params\" : { \"namespace\": \"stackrox\" }, \"imagePullSecret\": \"stackrox\" }"
 
-    EXTRA_CONFIG="\"monitoringEndpoint\": \"monitoring.stackrox\", \"kubernetes\": $COMMON_PARAMS }"
+    EXTRA_CONFIG=""
+    if [[ "$MONITORING_SUPPORT" == "true" ]]; then
+        EXTRA_CONFIG+='"monitoringEndpoint": "monitoring.stackrox", '
+    fi
+    EXTRA_CONFIG+="\"kubernetes\": $COMMON_PARAMS }"
 
     get_cluster_zip localhost:8000 "$CLUSTER" KUBERNETES_CLUSTER "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "$RUNTIME_SUPPORT" "$EXTRA_CONFIG"
 

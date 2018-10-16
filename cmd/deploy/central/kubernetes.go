@@ -20,7 +20,6 @@ var monitoringOnPrem = []string{
 	"kubernetes/monitoring/monitoring.sh",
 	"kubernetes/monitoring/monitoring.yaml",
 	"kubernetes/monitoring/influxdb.conf",
-	"kubernetes/monitoring/kapacitor.conf",
 }
 
 var monitoringClient = []string{

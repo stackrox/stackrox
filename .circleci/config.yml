@@ -192,6 +192,7 @@ jobs:
     <<: *defaults
     environment:
       - LOCAL_PORT: 8000
+      - MONITORING_SUPPORT: false
     steps:
       - checkout
 
@@ -252,6 +253,7 @@ jobs:
     environment:
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: true
+      - MONITORING_SUPPORT: false
     steps:
       - checkout
 

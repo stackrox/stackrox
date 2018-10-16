@@ -83,9 +83,11 @@ spec:
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true
+        {{if not .K8sConfig.MonitoringType.None}}
         - name: monitoring-client-volume
           mountPath: /run/secrets/stackrox.io/monitoring/
           readOnly: true
+        {{- end}}
         {{if .HostPath -}}
         - name: {{.HostPath.Name}}
           mountPath: {{.HostPath.MountPath}}
@@ -109,24 +111,26 @@ spec:
             value: {{.K8sConfig.MonitoringEndpoint}}
         resources:
           requests:
+            memory: "50Mi"
+            cpu: "50m"
+          limits:
             memory: "100Mi"
             cpu: "100m"
-          limits:
-            memory: "200Mi"
-            cpu: "200m"
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
         volumeMounts:
+        - name: varlog
+          mountPath: /var/log/stackrox/
+          readOnly: true
+        {{if not .K8sConfig.MonitoringType.None}}
         - name: monitoring-client-volume
           mountPath: /run/secrets/stackrox.io/monitoring/
           readOnly: true
         - name: telegraf-config-volume
           mountPath: /etc/telegraf/
           readOnly: true
-        - name: varlog
-          mountPath: /var/log/stackrox/
-          readOnly: true
+        {{- end}}
       {{- end}}
       volumes:
       - name: varlog
@@ -141,10 +145,10 @@ spec:
         secret:
           secretName: additional-ca
           optional: true
+      {{if not .K8sConfig.MonitoringType.None}}
       - name: monitoring-client-volume
         secret:
           secretName: monitoring
-          optional: true
           items:
             - key: monitoring-password
               path: password
@@ -153,7 +157,7 @@ spec:
       - name: telegraf-config-volume
         configMap:
           name: telegraf
-          optional: true
+      {{- end}}
       {{if .HostPath -}}
       - name: {{.HostPath.Name}}
         hostPath:

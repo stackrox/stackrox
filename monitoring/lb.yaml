@@ -5,9 +5,9 @@ metadata:
   namespace: stackrox
 spec:
   ports:
-  - name: chronograf
-    port: 8888
-    targetPort: 8888
+  - name: grafana
+    port: 3000
+    targetPort: 3000
   - name: influxdb
     port: 8086
     targetPort: 8086

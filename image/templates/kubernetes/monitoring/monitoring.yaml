@@ -68,34 +68,13 @@ spec:
           - name: influxdb-config-volume
             mountPath: /etc/influxdb/
             readOnly: true
-      - name: kapacitor
+      - name: grafana
         image: {{.K8sConfig.MonitoringImage}}
         command:
-        - /kapacitor.sh
-        resources:
-          requests:
-            memory: "100Mi"
-            cpu: "100m"
-          limits:
-            memory: "200Mi"
-            cpu: "200m"
-        securityContext:
-          capabilities:
-            drop: ["NET_RAW"]
-        volumeMounts:
-          - name: monitoring-client-volume
-            mountPath: /run/secrets/stackrox.io/monitoring/
-            readOnly: true
-          - name: kapacitor-config-volume
-            mountPath: /etc/kapacitor/
-            readOnly: true
-      - name: chronograf
-        image: {{.K8sConfig.MonitoringImage}}
-        command:
-        - /chronograf
+        - /run.sh
         ports:
         - name: api
-          containerPort: 8888
+          containerPort: 3000
         resources:
           requests:
             memory: "100Mi"
@@ -138,9 +117,6 @@ spec:
       - name: influxdb-config-volume
         configMap:
           name: influxdb
-      - name: kapacitor-config-volume
-        configMap:
-           name: kapacitor
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -152,7 +128,7 @@ spec:
   - ports:
     - port: 8086
       protocol: TCP
-    - port: 8888
+    - port: 3000
       protocol: TCP
   podSelector:
     matchLabels:
