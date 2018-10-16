@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/sensor/common/cache"
 	"google.golang.org/grpc"
 )
 
@@ -39,9 +38,8 @@ func NewSensor(centralConn *grpc.ClientConn, clusterID string) Sensor {
 	return &sensor{
 		conn: centralConn,
 
-		containerCache: cache.Singleton(),
-		imageEnricher:  imageEnricher,
-		poller:         poller,
+		imageEnricher: imageEnricher,
+		poller:        poller,
 
 		// The Signal needs to be activated so Start() can detect callers that
 		// improperly call Start() repeatedly without calling Stop() first.
@@ -55,9 +53,8 @@ func NewSensor(centralConn *grpc.ClientConn, clusterID string) Sensor {
 type sensor struct {
 	conn *grpc.ClientConn
 
-	containerCache *cache.ContainerCache
-	imageEnricher  enricher.ImageEnricher
-	poller         integration.Poller
+	imageEnricher enricher.ImageEnricher
+	poller        integration.Poller
 
 	stopped      concurrency.Signal
 	err          error

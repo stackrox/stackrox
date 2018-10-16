@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/common/cache"
+	"github.com/stackrox/rox/sensor/common/clusterentities"
 )
 
 const (
@@ -19,15 +19,15 @@ var logger = logging.LoggerForModule()
 
 // Pipeline is the struct that handles a process signal
 type Pipeline struct {
-	containerCache *cache.ContainerCache
-	indicators     chan *v1.SensorEvent
+	clusterEntities *clusterentities.Store
+	indicators      chan *v1.SensorEvent
 }
 
 // NewProcessPipeline defines how to process a ProcessIndicator
-func NewProcessPipeline(indicators chan *v1.SensorEvent, pendingCache *cache.ContainerCache) *Pipeline {
+func NewProcessPipeline(indicators chan *v1.SensorEvent, clusterEntities *clusterentities.Store) *Pipeline {
 	return &Pipeline{
-		containerCache: pendingCache,
-		indicators:     indicators,
+		clusterEntities: clusterEntities,
+		indicators:      indicators,
 	}
 }
 
@@ -36,8 +36,8 @@ func (p *Pipeline) reprocessSignalLater(indicator *v1.ProcessIndicator) {
 	logger.Infof("Trying to reprocess '%s'", indicator.GetSignal().GetExecFilePath())
 	for i := 0; i < signalRetries; i++ {
 		<-t.C
-		deploymentID, exists := p.containerCache.GetDeploymentFromContainerID(indicator.GetSignal().GetContainerId())
-		if exists {
+		deploymentID := p.clusterEntities.LookupByContainerID(indicator.GetSignal().GetContainerId())
+		if deploymentID != "" {
 			indicator.DeploymentId = deploymentID
 			p.sendIndicatorEvent(indicator)
 			return
@@ -54,8 +54,8 @@ func (p *Pipeline) Process(signal *v1.ProcessSignal) {
 	}
 
 	// indicator.GetSignal() is never nil at this point
-	deploymentID, exists := p.containerCache.GetDeploymentFromContainerID(indicator.GetSignal().GetContainerId())
-	if !exists {
+	deploymentID := p.clusterEntities.LookupByContainerID(indicator.GetSignal().GetContainerId())
+	if deploymentID == "" {
 		go p.reprocessSignalLater(indicator)
 		return
 	}

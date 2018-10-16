@@ -140,9 +140,6 @@ func (s *sensor) sendEventsSingle(
 			if !ok {
 				return false, errors.New("orchestrator events channel closed")
 			}
-			if evt.GetDeployment() != nil {
-				s.updateCacheState(evt)
-			}
 			if err := stream.Send(evt); err != nil {
 				return true, err
 			}
@@ -152,19 +149,6 @@ func (s *sensor) sendEventsSingle(
 			log.Infof("Sensor is stopped!")
 			return false, nil
 		}
-	}
-}
-
-func (s *sensor) updateCacheState(event *v1.SensorEvent) {
-	switch event.GetAction() {
-	case v1.ResourceAction_CREATE_RESOURCE, v1.ResourceAction_UPDATE_RESOURCE:
-		s.enrichImages(event.GetDeployment())
-		s.containerCache.AddDeployment(event.GetDeployment())
-	case v1.ResourceAction_REMOVE_RESOURCE:
-		s.containerCache.RemoveDeployment(event.GetId())
-	default:
-		logger.Errorf("Resource action not handled: %s", event.GetAction())
-		return
 	}
 }
 
