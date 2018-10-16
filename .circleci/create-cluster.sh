@@ -8,7 +8,7 @@
 
 gcloud container clusters create \
     --machine-type n1-standard-2 \
-    --num-nodes 3 \
+    --num-nodes 4 \
     --create-subnetwork range=/28 \
     --cluster-ipv4-cidr=/20 \
     --services-ipv4-cidr=/24 \

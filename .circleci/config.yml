@@ -98,8 +98,9 @@ collectK8sLogs: &collectK8sLogs
   run:
     name: Collect k8s logs
     command: |
-      ./scripts/ci/collect-service-logs.sh central
-      ./scripts/ci/collect-service-logs.sh sensor
+      ./scripts/ci/collect-service-logs.sh central deployment
+      ./scripts/ci/collect-service-logs.sh sensor deployment
+      ./scripts/ci/collect-service-logs.sh collector daemonset
     when: always
 
 checkOpenshiftLabel: &checkOpenshiftLabel
@@ -484,12 +485,7 @@ jobs:
             export UI_BASE_URL=https://localhost:${LOCAL_PORT}
             make -C ui test-e2e-ci
 
-      - run:
-          name: Collect k8s logs
-          command: |
-            ./scripts/ci/collect-service-logs.sh central
-            ./scripts/ci/collect-service-logs.sh sensor
-          when: always
+      - *collectK8sLogs
 
       - store_artifacts:
           path: /tmp/k8s-service-logs

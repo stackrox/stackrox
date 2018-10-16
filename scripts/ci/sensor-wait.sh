@@ -19,6 +19,17 @@ main() {
         sleep 1
     done
     echo "Sensor is running"
+
+    if ! kubectl -n stackrox get ds/collector ; then
+        return
+    fi
+
+    echo "Waiting for collectors to start"
+    until [ "$(kubectl -n stackrox get po --selector 'service=collector' | tail -n +2 | awk '{print $3}' | grep Running | wc -l)" -eq "$(kubectl get nodes | tail -n +2 | wc -l)" ]; do
+        echo -n .
+        sleep 1
+    done
+    echo "Collectors are running"
 }
 
 main "$@"
