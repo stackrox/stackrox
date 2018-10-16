@@ -8,7 +8,7 @@ export const selectors = {
     cancelButton: 'button[data-test-id="cancel"]',
     deploymentLinks: 'div[data-test-id="deployments-card"] a',
     table: {
-        rows: 'div.rt-tbody div.rt-tr-group'
+        firstRow: 'div.rt-tr-group:first-child div.rt-tr'
     },
     searchInput: '.react-select__input > input'
 };

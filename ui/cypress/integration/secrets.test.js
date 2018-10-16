@@ -1,9 +1,8 @@
-import { selectors as SecretsPageSelectors } from './constants/SecretsPage';
+import { selectors as SecretsPageSelectors, url as secretsUrl } from './constants/SecretsPage';
 
 describe('Secrets page', () => {
     beforeEach(() => {
-        cy.visit('/');
-        cy.get(SecretsPageSelectors.secrets).click();
+        cy.visit(secretsUrl);
     });
 
     it('should have selected item in nav bar', () => {
@@ -11,17 +10,17 @@ describe('Secrets page', () => {
     });
 
     it('should open the panel to view secret details', () => {
-        cy.get(SecretsPageSelectors.table.rows)
-            .first()
-            .click();
+        // TODO: need to force the click because there is probably some issue with Electron / Cypress / product UI
+        // that somehow table on it's appearance is scrolled down and first row is hidden behind the table header.
+        cy.get(SecretsPageSelectors.table.firstRow).click({ force: true });
         cy.get(SecretsPageSelectors.panel.secretDetails);
         cy.get(SecretsPageSelectors.cancelButton).click();
     });
 
     it('should navigate from Secrets Page to Risk Page', () => {
-        cy.get(SecretsPageSelectors.table.rows)
-            .first()
-            .click();
+        // TODO: need to force the click because there is probably some issue with Electron / Cypress / product UI
+        // that somehow table on it's appearance is scrolled down and first row is hidden behind the table header.
+        cy.get(SecretsPageSelectors.table.firstRow).click({ force: true });
         cy.get(SecretsPageSelectors.deploymentLinks)
             .first()
             .click();
