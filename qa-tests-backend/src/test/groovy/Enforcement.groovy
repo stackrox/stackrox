@@ -37,7 +37,7 @@ class Enforcement extends BaseSpecification {
         List<AlertServiceOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
                 APT_GET_POLICY,
-                30
+                90
         ) as List<AlertServiceOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
         AlertServiceOuterClass.Alert alert = Services.getViolaton(violations.get(0).id)
