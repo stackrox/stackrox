@@ -1,6 +1,6 @@
 defaults: &defaults
   docker:
-    - image: docker.io/stackrox/apollo-ci:0.1.11-12-g7eaafa4345
+    - image: docker.io/stackrox/apollo-ci:0.1.11-13-g3c8360ac34
       auth:
         username: $DOCKERHUB_USERNAME
         password: $DOCKERHUB_PASSWORD
@@ -11,7 +11,7 @@ setupBazel: &setupBazel
     name: Setup Bazel cache access and bazel.rc
     command: |
       echo "$GKE_SERVICE_ACCOUNT" > /tmp/gcp.json
-      cp tools/ci-bazel.rc tools/bazel.rc
+      cp tools/ci-bazel.rc .bazelrc
 
 depCacheKey: &depCacheKey 'v1-prevent-go-pkg-dep-{{ checksum "Gopkg.lock" }}'
 restoreDep: &restoreDep
