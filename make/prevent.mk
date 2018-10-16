@@ -11,14 +11,6 @@ GO_BASE_PATH ?= /go/src/github.com/stackrox/rox
 ###########################
 ## Developer Environment ##
 ###########################
-.PHONY: dev
-dev:
-	@echo "+ $@"
-	@go get -u github.com/golang/lint/golint
-	@go get -u golang.org/x/tools/cmd/goimports
-	@go get -u github.com/jstemmer/go-junit-report
-	@go get -u github.com/golang/dep/cmd/dep
-
 .PHONY: docs
 docs: generated-srcs
 	@echo "+ $@"

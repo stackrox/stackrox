@@ -68,6 +68,15 @@ blanks:
 	@echo "+ $@"
 	@find . \( \( -name vendor -o -name generated \) -type d -prune \) -o \( -name \*.go -print0 \) | xargs -0 $(BASE_PATH)/tools/import_validate.py
 
+.PHONY: dev
+dev:
+	@echo "+ $@"
+	@go get -u golang.org/x/lint/golint
+	@go get -u golang.org/x/tools/cmd/goimports
+	@go get -u github.com/jstemmer/go-junit-report
+	@go get -u github.com/golang/dep/cmd/dep
+
+
 #####################################
 ## Generated Code and Dependencies ##
 #####################################
