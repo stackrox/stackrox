@@ -37,5 +37,9 @@ func (o *openshift) Render(c Wrap) ([]*v1.File, error) {
 		"openshift/sensor-rbac.yaml",
 	}
 
+	if c.MonitoringEndpoint != "" {
+		filenames = append(filenames, monitoringFilenames...)
+	}
+
 	return renderFilenames(filenames, fields, "/data/assets/docker-auth.sh")
 }

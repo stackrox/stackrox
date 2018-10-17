@@ -10,3 +10,5 @@ echo "PREVENT_IMAGE set to $PREVENT_IMAGE"
 
 export NAMESPACE=${NAMESPACE:-stackrox}
 echo "Kubernetes namespace set to $NAMESPACE"
+
+export MONITORING_SUPPORT=${MONITORING_SUPPORT:-true}

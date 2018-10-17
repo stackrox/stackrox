@@ -2,8 +2,12 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 oc get project "{{.Namespace}}" || oc new-project "{{.Namespace}}"
+oc project "{{.Namespace}}"
 
 oc create -f "$DIR/sensor-rbac.yaml"
+
+# OpenShift roles can be delayed to be added
+sleep 5
 
 if ! oc get secret/stackrox -n {{.Namespace}} > /dev/null; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.ImageRegistry}}")"
@@ -47,6 +51,12 @@ oc secrets add serviceaccount/collector secrets/collector-stackrox --for=pull
 echo "Creating secrets for collector..."
 kubectl create secret -n "{{.Namespace}}" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/ca.pem"
 
+{{- end}}
+
+{{if .MonitoringEndpoint}}
+echo "Creating secrets for monitoring..."
+kubectl create secret -n "{{.Namespace}}" generic monitoring --from-file="$DIR/monitoring-password" --from-file="$DIR/monitoring-ca.pem"
+kubectl create cm -n "{{.Namespace}}" telegraf --from-file="$DIR/telegraf.conf"
 {{- end}}
 
 oc create -f "$DIR/sensor.yaml"

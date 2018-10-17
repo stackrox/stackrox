@@ -16,7 +16,7 @@ func newKubernetes() deployer {
 	return &kubernetes{}
 }
 
-var monitoringOnPrem = []string{
+var k8sMonitoringOnPrem = []string{
 	"kubernetes/monitoring/monitoring.sh",
 	"kubernetes/monitoring/monitoring.yaml",
 	"kubernetes/monitoring/influxdb.conf",
@@ -48,7 +48,7 @@ func (k *kubernetes) Render(c Config) ([]*v1.File, error) {
 	}
 
 	if c.K8sConfig.MonitoringType.OnPrem() {
-		filenames = append(filenames, monitoringOnPrem...)
+		filenames = append(filenames, k8sMonitoringOnPrem...)
 		filenames = append(filenames, monitoringClient...)
 	} else if c.K8sConfig.MonitoringType.StackRoxHosted() {
 		filenames = append(filenames, monitoringClient...)

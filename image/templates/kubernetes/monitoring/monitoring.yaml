@@ -34,6 +34,12 @@ spec:
       labels:
         app: monitoring
     spec:
+      {{if eq .ClusterType.String "KUBERNETES_CLUSTER" -}}
+      imagePullSecrets:
+      - name: stackrox
+      {{else -}}
+      serviceAccount: monitoring
+      {{end -}}
       imagePullSecrets:
       - name: stackrox
       containers:

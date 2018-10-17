@@ -3,7 +3,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 oc get project "{{.K8sConfig.Namespace}}" || oc new-project "{{.K8sConfig.Namespace}}"
 
-echo "Adding cluster roles to the service account..."
+echo "Creating Central RBAC..."
 oc create -f "${DIR}/central-rbac.yaml"
 
 if ! oc get secret/stackrox -n {{.K8sConfig.Namespace}} > /dev/null; then
@@ -20,6 +20,11 @@ metadata:
 type: kubernetes.io/dockerconfigjson
 EOF
 fi
+
+{{if not .K8sConfig.MonitoringType.None}}
+# Add monitoring client configmap
+kubectl create cm -n "{{.K8sConfig.Namespace}}" telegraf --from-file="$DIR/telegraf.conf"
+{{- end}}
 
 oc -n {{.K8sConfig.Namespace}} secrets add serviceaccount/central secrets/stackrox --for=pull
 

@@ -123,14 +123,12 @@ spec:
         - name: varlog
           mountPath: /var/log/stackrox/
           readOnly: true
-        {{if not .K8sConfig.MonitoringType.None}}
         - name: monitoring-client-volume
           mountPath: /run/secrets/stackrox.io/monitoring/
           readOnly: true
         - name: telegraf-config-volume
           mountPath: /etc/telegraf/
           readOnly: true
-        {{- end}}
       {{- end}}
       volumes:
       - name: varlog

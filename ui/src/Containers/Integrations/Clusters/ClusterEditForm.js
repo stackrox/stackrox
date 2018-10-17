@@ -72,6 +72,7 @@ const OpenShiftFields = ({ metadata }) => (
         <FormField label="Namespace" required>
             <ReduxTextField name="openshift.params.namespace" placeholder="stackrox" />
         </FormField>
+        <MonitoringEndpointFormField />
         <RuntimeSupportFormField />
     </React.Fragment>
 );
