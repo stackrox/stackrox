@@ -1,0 +1,15 @@
+{
+  "name": "Login Binaries",
+  "description": "Processes that indicate login attempts",
+  "categories": ["Security Best Practices"],
+  "severity": "HIGH_SEVERITY",
+  "lifecycle_stages": ["RUNTIME"],
+  "fields": {
+    "process_policy" : {
+      "name": "login$|systemd$|systemd$|systemd-logind$|gosu$|su$|nologin$|faillog$|lastlog$|newgrp$|sg$"
+    }
+  },
+  "disabled": true,
+  "rationale": "Login processes at runtime are unusual in a container",
+  "remediation": "Ensure that the base image used to create the Dockerfile doesn't have login binaries packaged with it."
+}

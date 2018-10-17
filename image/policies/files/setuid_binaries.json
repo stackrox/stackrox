@@ -1,0 +1,15 @@
+{
+  "name": "SetUID Processes",
+  "description": "Processes that are known to use setuid binaries",
+  "categories": ["System Modification"],
+  "severity": "HIGH_SEVERITY",
+  "lifecycle_stages": ["RUNTIME"],
+  "fields": {
+    "process_policy" : {
+      "name": "sshd$|dbus-daemon-lau$|ping$|ping6$|critical-stack-$|pmmcli$|filemng$|PassengerAgent$|bwrap$|osdetect$|nginxmng$|sw-engine-fpm$|start-stop-daem$"
+    }
+  },
+  "disabled": true,
+  "rationale": "setuid permits users to run certain programs with escalated privileges",
+  "remediation": "Ensure that the base image used to create the Dockerfile doesn't have setuid software packaged with it."
+}

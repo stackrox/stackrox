@@ -6,7 +6,7 @@
     "categories": ["System Modification"],
     "fields": {
         "process_policy": {
-            "name": "crontab$"
+            "name": "anacron$|cron$|crond$|crontab$"
         }
     },
     "rationale": "Crontab running in a container with access to a shell makes it easier to 'clandestinely' schedule processes to run in order to better evade detection",

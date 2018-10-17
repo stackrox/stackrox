@@ -1,0 +1,15 @@
+{
+  "name": "Shell Management",
+  "description": "Commands that are used to add/remove a shell",
+  "categories": ["System Modification"],
+  "severity": "LOW_SEVERITY",
+  "lifecycle_stages": ["RUNTIME"],
+  "fields": {
+    "process_policy" : {
+      "name": "add-shell$|remove-shell$"
+    }
+  },
+  "disabled": true,
+  "rationale": "Shell management is not usually done at runtime",
+  "remediation": "Ensure that the base image used to create the Dockerfile doesn't have shell binaries packaged with it."
+}

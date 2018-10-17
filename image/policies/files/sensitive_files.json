@@ -1,0 +1,15 @@
+{
+  "name": "Sensitive file access",
+  "description": "Sensitive files being accessed",
+  "categories": ["System Modification"],
+  "severity": "HIGH_SEVERITY",
+  "lifecycle_stages": ["RUNTIME"],
+  "fields": {
+    "process_policy" : {
+      "args": "/etc/shadow$|/etc/sudoers$|/etc/pam.conf$"
+    }
+  },
+  "disabled": true,
+  "rationale": "Attempts to access sudo/shadow files is unusual in containers at runtime.",
+  "remediation": "Audit processes that require to modify such files during production."
+}

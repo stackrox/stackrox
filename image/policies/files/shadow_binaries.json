@@ -1,0 +1,15 @@
+{
+  "name": "Shadow File Modification",
+  "description": "Processes that indicate attempts to modify shadow files",
+  "categories": ["System Modification"],
+  "severity": "HIGH_SEVERITY",
+  "lifecycle_stages": ["RUNTIME"],
+  "fields": {
+    "process_policy" : {
+      "name": "chage$|gpasswd$|lastlog$|newgrp$|sg$|adduser$|deluser$|chpasswd$|groupadd$|groupdel$|addgroup$|delgroup$|groupmems$|groupmod$|grpck$|grpconv$|grpunconv$|newusers$|pwck$|pwconv$|pwunconv$|useradd$|userdel$|usermod$|vigr$|vipw$|unix_chkpwd$"
+    }
+  },
+  "disabled": true,
+  "rationale": "Attempts to change shadow file during runtime in containers is unusual",
+  "remediation": "Ensure that the base image used to create the Dockerfile doesn't have shadow utils packaged with it."
+}
