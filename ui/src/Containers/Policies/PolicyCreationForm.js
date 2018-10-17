@@ -55,6 +55,8 @@ class PolicyCreationForm extends Component {
                         name={field.jsonpath}
                         options={field.options}
                         placeholder={field.placeholder}
+                        disabled={field.disabled}
+                        defaultValue={field.default}
                     />
                 );
             case 'multiselect':

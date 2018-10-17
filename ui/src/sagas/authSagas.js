@@ -84,23 +84,41 @@ function* handleLoginPageRedirect({ location }) {
     }
 }
 
-function handleOidcResponse(location) {
+function* handleOidcResponse(location) {
     const hash = queryString.parse(location.hash);
     if (hash.error) {
         return hash;
     }
-    return { token: hash.access_token };
+    try {
+        const { id_token: idToken, state } = hash;
+        const result = yield call(AuthService.exchangeAuthToken, idToken, 'oidc', state);
+        return result;
+    } catch (error) {
+        if (error.response) {
+            return { error: error.response.data.error };
+        }
+        return { error: 'Could not exchange OIDC ID token' };
+    }
+}
+
+function handleGenericResponse(location) {
+    const hash = queryString.parse(location.hash);
+    if (hash.error) {
+        return hash;
+    }
+    return { token: hash.token };
 }
 
 function* dispatchAuthResponse(type, location) {
     // For every handler registered under `/auth/response/<type>`, add a function that returns the token.
     const responseHandlers = {
-        oidc: handleOidcResponse
+        oidc: handleOidcResponse,
+        generic: handleGenericResponse
     };
     let result = {};
     const handler = responseHandlers[type];
     if (handler) {
-        result = handler(location);
+        result = yield call(handler, location);
     } else {
         result = { error: `unknown auth response type ${type}` };
     }

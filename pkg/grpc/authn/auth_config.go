@@ -33,23 +33,18 @@ func FromAuthConfigurationContext(ctx context.Context) (AuthConfiguration, error
 }
 
 // NewAuthConfigChecker returns a context updater that checks (and stores) if any authentication providers are configured.
-func NewAuthConfigChecker(providerAccessor authproviders.AuthProviderAccessor) contextutil.ContextUpdater {
-	return authConfigChecker{providerAccessor: providerAccessor}.updateContext
+func NewAuthConfigChecker(registry authproviders.Registry) contextutil.ContextUpdater {
+	return authConfigChecker{registry: registry}.updateContext
 }
 
 type authConfigChecker struct {
-	providerAccessor authproviders.AuthProviderAccessor
+	registry authproviders.Registry
 }
 
 func (c authConfigChecker) updateContext(ctx context.Context) (context.Context, error) {
 	anyConfigured := false
-	if c.providerAccessor != nil {
-		for _, provider := range c.providerAccessor.GetParsedAuthProviders() {
-			if provider.Enabled() && provider.Validated() {
-				anyConfigured = true
-				break
-			}
-		}
+	if c.registry != nil {
+		anyConfigured = c.registry.HasUsableProviders()
 	} else {
 		// If providerAccessor is nil, there will never be any (configured) auth providers, so the configuration can be
 		// considered final.

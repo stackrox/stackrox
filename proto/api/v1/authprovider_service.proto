@@ -22,17 +22,49 @@ message AuthProvider {
     bool validated              = 8;
 }
 
+message GetAuthProviderRequest {
+    string id           = 1;
+    string client_state = 2;
+}
+
 message GetAuthProvidersRequest {
     string name = 1;
     string type = 2;
+
+    string client_state = 3;
 }
 
 message GetAuthProvidersResponse {
     repeated AuthProvider auth_providers = 1;
 }
 
+message PostAuthProviderRequest {
+    AuthProvider provider = 1;
+    string client_state   = 2;
+}
+
+message UpdateAuthProviderRequest {
+    string id = 1;
+
+    oneof name_opt    { string name  = 2; }
+    oneof enabled_opt { bool enabled = 3; }
+
+    string client_state = 4;
+}
+
+message ExchangeTokenRequest {
+    string external_token = 1;
+    string type           = 2;
+    string state          = 3;
+}
+
+message ExchangeTokenResponse {
+    string token        = 1;
+    string client_state = 2;
+}
+
 service AuthProviderService {
-    rpc GetAuthProvider (ResourceByID) returns (AuthProvider) {
+    rpc GetAuthProvider (GetAuthProviderRequest) returns (AuthProvider) {
         option (google.api.http) = {
             get: "/v1/authProviders/{id}"
         };
@@ -44,16 +76,16 @@ service AuthProviderService {
         };
     }
 
-    rpc PostAuthProvider (AuthProvider) returns (AuthProvider) {
+    rpc PostAuthProvider (PostAuthProviderRequest) returns (AuthProvider) {
         option (google.api.http) = {
             post: "/v1/authProviders"
-            body: "*"
+            body: "provider"
         };
     }
 
-    rpc PutAuthProvider (AuthProvider) returns (Empty) {
+    rpc UpdateAuthProvider (UpdateAuthProviderRequest) returns (AuthProvider) {
         option (google.api.http) = {
-            put: "/v1/authProviders/{id}"
+            patch: "/v1/authProviders/{id}"
             body: "*"
         };
     }
@@ -61,6 +93,13 @@ service AuthProviderService {
     rpc DeleteAuthProvider (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/authProviders/{id}"
+        };
+    }
+
+    rpc ExchangeToken (ExchangeTokenRequest) returns (ExchangeTokenResponse) {
+        option (google.api.http) = {
+            post: "/v1/authProviders/exchangeToken"
+            body: "*"
         };
     }
 }

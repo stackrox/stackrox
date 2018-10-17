@@ -9,8 +9,9 @@ import (
 
 // ExternalUserClaim represents the claim that this token identifies a user from an external identity provider.
 type ExternalUserClaim struct {
-	AuthProviderID string
-	UserID         string
+	UserID   string `json:"user_id"`
+	FullName string `json:"full_name,omitempty"`
+	Email    string `json:"email,omitempty"`
 }
 
 // RoxClaims are the claims used for authentication by the StackRox container security platform.

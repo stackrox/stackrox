@@ -4,18 +4,18 @@ import "github.com/stackrox/rox/pkg/grpc/requestinfo"
 
 // IdentityExtractor extracts the identity of a user making a request from a request info.
 type IdentityExtractor interface {
-	IdentityForRequest(ri requestinfo.RequestInfo) Identity
+	IdentityForRequest(ri requestinfo.RequestInfo) (Identity, error)
 }
 
 type extractorList []IdentityExtractor
 
-func (l extractorList) IdentityForRequest(ri requestinfo.RequestInfo) Identity {
+func (l extractorList) IdentityForRequest(ri requestinfo.RequestInfo) (Identity, error) {
 	for _, extractor := range l {
-		if id := extractor.IdentityForRequest(ri); id != nil {
-			return id
+		if id, err := extractor.IdentityForRequest(ri); id != nil || err != nil {
+			return id, err
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // CombineExtractors combines the given identity extractors.

@@ -4,11 +4,11 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/central/role/store"
-	"github.com/stackrox/rox/pkg/auth/tokenbased"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
 var (
-	roleMapper tokenbased.RoleMapper
+	roleMapper permissions.RoleMapper
 	once       sync.Once
 )
 
@@ -17,7 +17,7 @@ func initialize() {
 }
 
 // Singleton returns the singleton user role mapper.
-func Singleton() tokenbased.RoleMapper {
+func Singleton() permissions.RoleMapper {
 	once.Do(initialize)
 	return roleMapper
 }

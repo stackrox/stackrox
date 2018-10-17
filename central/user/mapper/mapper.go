@@ -4,7 +4,6 @@ package usermapper
 import (
 	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/auth/tokenbased"
 )
 
 // Currently, we don't really have a notion of identities for human users.
@@ -18,6 +17,6 @@ func (a *allAccessMapper) Role(id string) permissions.Role {
 }
 
 // New returns a new instance of the mapper.
-func New(roleStore permissions.RoleStore) tokenbased.RoleMapper {
+func New(roleStore permissions.RoleStore) permissions.RoleMapper {
 	return &allAccessMapper{roleStore: roleStore}
 }

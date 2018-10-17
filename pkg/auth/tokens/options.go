@@ -22,7 +22,7 @@ func (f optFunc) apply(claims *Claims) {
 func WithExpiry(expiry time.Time) Option {
 	return optFunc(func(claims *Claims) {
 		expiryDate := jwt.NewNumericDate(expiry)
-		if expiryDate < claims.Expiry {
+		if expiryDate < claims.Expiry || claims.Expiry == 0 {
 			claims.Expiry = expiryDate
 		}
 	})
@@ -33,7 +33,7 @@ func WithExpiry(expiry time.Time) Option {
 func WithTTL(ttl time.Duration) Option {
 	return optFunc(func(claims *Claims) {
 		expiryDate := jwt.NewNumericDate(time.Now().Add(ttl))
-		if expiryDate < claims.Expiry {
+		if expiryDate < claims.Expiry || claims.Expiry == 0 {
 			claims.Expiry = expiryDate
 		}
 	})

@@ -8,6 +8,7 @@ import google from 'images/google-cloud.svg';
 import jira from 'images/jira.svg';
 import kubernetes from 'images/kubernetes.svg';
 import logo from 'images/logo-tall.svg';
+import oidc from 'images/openidconnect.svg';
 import openshift from 'images/openshift.svg';
 import quay from 'images/quay.svg';
 import slack from 'images/slack.svg';
@@ -20,6 +21,12 @@ const integrationsList = {
             type: 'auth0',
             source: 'authProviders',
             image: auth0
+        },
+        {
+            label: 'OpenID Connect',
+            type: 'oidc',
+            source: 'authProviders',
+            image: oidc
         },
         {
             label: 'API Token',

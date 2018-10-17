@@ -20,9 +20,9 @@ class IntegrationsPage extends Component {
         authProviders: PropTypes.arrayOf(
             PropTypes.shape({
                 config: PropTypes.shape({
-                    audience: PropTypes.string.isRequired,
                     client_id: PropTypes.string.isRequired,
-                    domain: PropTypes.string.isRequired
+                    issuer: PropTypes.string.isRequired,
+                    mode: PropTypes.string.isRequired
                 }),
                 name: PropTypes.string.isRequired
             })

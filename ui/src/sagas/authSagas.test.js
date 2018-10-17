@@ -193,16 +193,28 @@ describe('Auth Sagas', () => {
     it('should handle OIDC redirect and restore previous location', () => {
         const storeAccessTokenMock = jest.fn();
         const token = 'my-token';
+        const serverState = 'provider-prefix:client-state';
+        const exchangedToken = 'my-rox-token';
         const requestedLocation = '/my-location';
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors(),
                 [call(AuthService.fetchAuthProviders), { response: [] }],
-                [call(AuthService.storeAccessToken, token), dynamic(storeAccessTokenMock)],
+                [
+                    call(AuthService.exchangeAuthToken, token, 'oidc', serverState),
+                    { token: exchangedToken }
+                ],
+                [call(AuthService.storeAccessToken, exchangedToken), dynamic(storeAccessTokenMock)],
                 [call(AuthService.getAndClearRequestedLocation), requestedLocation]
             ])
             .put(push(requestedLocation))
-            .dispatch(createLocationChange('/auth/response/oidc', null, `access_token=${token}`))
+            .dispatch(
+                createLocationChange(
+                    '/auth/response/oidc',
+                    null,
+                    `id_token=${token}&state=${serverState}`
+                )
+            )
             .silentRun()
             .then(() => {
                 expect(storeAccessTokenMock.mock.calls.length).toBe(1);

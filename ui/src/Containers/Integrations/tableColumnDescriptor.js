@@ -2,9 +2,13 @@ import React from 'react';
 
 const tableColumnDescriptor = Object.freeze({
     authProviders: {
+        oidc: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'config.issuer', Header: 'Issuer' }
+        ],
         auth0: [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'config.domain', Header: 'Auth0 Domain' }
+            { accessor: 'config.issuer', Header: 'Auth0 Tenant' }
         ]
     },
     notifiers: {

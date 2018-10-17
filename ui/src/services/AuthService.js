@@ -42,7 +42,10 @@ export function fetchAuthProviders() {
  */
 export function saveAuthProvider(authProvider) {
     return authProvider.id
-        ? axios.put(`${authProvidersUrl}/${authProvider.id}`, authProvider)
+        ? axios.patch(`${authProvidersUrl}/${authProvider.id}`, {
+              name: authProvider.name,
+              enabled: authProvider.enabled
+          })
         : axios.post(authProvidersUrl, authProvider);
 }
 
@@ -63,6 +66,24 @@ export function deleteAuthProvider(authProviderId) {
  */
 export function deleteAuthProviders(authProviderIds) {
     return Promise.all(authProviderIds.map(id => deleteAuthProvider(id)));
+}
+
+/**
+ * Exchanges an external auth token for a Rox auth token.
+ *
+ * @param token the external auth token
+ * @param type the type of authentication provider
+ * @param state the state parameter
+ * @param extra additional parameters
+ * @returns {Promise} promise which is fulfilled when the request is complete
+ */
+export function exchangeAuthToken(token, type, state) {
+    const data = {
+        external_token: token,
+        type,
+        state
+    };
+    return axios.post(`${authProvidersUrl}/exchangeToken`, data).then(response => response.data);
 }
 
 /**

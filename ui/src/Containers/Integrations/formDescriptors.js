@@ -1,5 +1,38 @@
 const formDescriptors = {
     authProviders: {
+        oidc: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'Auth0'
+            },
+            {
+                label: 'Issuer',
+                jsonpath: 'config.issuer',
+                type: 'text',
+                placeholder: 'your-tenant.auth0.com',
+                immutable: true
+            },
+            {
+                label: 'Client ID',
+                jsonpath: 'config.client_id',
+                type: 'text',
+                placeholder: '',
+                immutable: true
+            },
+            {
+                label: 'Callback Mode',
+                jsonpath: 'config.mode',
+                type: 'select',
+                options: [
+                    { value: 'fragment', label: 'Fragment' },
+                    { value: 'post', label: 'HTTP POST' }
+                ],
+                default: 'fragment',
+                immutable: true
+            }
+        ],
         auth0: [
             {
                 label: 'Integration Name',
@@ -8,22 +41,23 @@ const formDescriptors = {
                 placeholder: 'Auth0'
             },
             {
-                label: 'Domain',
-                jsonpath: 'config.domain',
+                label: 'Auth0 Tenant',
+                jsonpath: 'config.issuer',
                 type: 'text',
-                placeholder: 'your-tenant.auth0.com'
+                placeholder: 'your-tenant.auth0.com',
+                immutable: true
             },
             {
                 label: 'Client ID',
                 jsonpath: 'config.client_id',
                 type: 'text',
-                placeholder: ''
+                placeholder: '',
+                immutable: true
             },
             {
-                label: 'Audience',
-                jsonpath: 'config.audience',
-                type: 'text',
-                placeholder: 'prevent.stackrox.io'
+                jsonpath: 'config.mode',
+                type: 'hidden',
+                value: 'fragment'
             }
         ]
     },

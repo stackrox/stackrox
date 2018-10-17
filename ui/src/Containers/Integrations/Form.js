@@ -65,23 +65,28 @@ class Form extends Component {
         return data;
     };
 
+    renderHiddenField = field => <input type="hidden" name={field.jsonpath} value={field.value} />;
+
     renderFormField = field => {
+        const disabled = field.disabled || (this.isEditMode() && field.immutable);
         switch (field.type) {
             case 'text':
                 return (
                     <ReduxTextField
                         key={field.jsonpath}
                         name={field.jsonpath}
-                        disabled={field.disabled}
+                        disabled={disabled}
                         placeholder={field.placeholder}
+                        value={field.default}
                     />
                 );
             case 'checkbox':
                 return (
                     <ReduxCheckboxField
                         name={field.jsonpath}
-                        disabled={field.disabled}
+                        disabled={disabled}
                         placeholder={field.placeholder}
+                        value={field.default}
                     />
                 );
             case 'select':
@@ -90,6 +95,8 @@ class Form extends Component {
                         key={field.jsonpath}
                         name={field.jsonpath}
                         options={field.options}
+                        disabled={disabled}
+                        value={field.default}
                     />
                 );
 
@@ -99,10 +106,17 @@ class Form extends Component {
                         name={field.jsonpath}
                         key={field.jsonpath}
                         placeholder={field.placeholder}
+                        disabled={disabled}
                     />
                 );
             case 'multiselect':
-                return <ReduxMultiSelectField name={field.jsonpath} options={field.options} />;
+                return (
+                    <ReduxMultiSelectField
+                        name={field.jsonpath}
+                        options={field.options}
+                        disabled={disabled}
+                    />
+                );
             default:
                 throw new Error(`Unknown field type: ${field.type}`);
         }
@@ -113,7 +127,7 @@ class Form extends Component {
         return (
             <form id="integrations-form" className="w-full p-4">
                 <div>
-                    {formFields.map(field => (
+                    {formFields.filter(field => field.type !== 'hidden').map(field => (
                         // eslint-disable-next-line jsx-a11y/label-has-for
                         <label className="flex mt-4" htmlFor={field.key} key={field.label}>
                             <div className="mr-4 flex items-center w-2/3 capitalize">
@@ -122,6 +136,9 @@ class Form extends Component {
                             {this.renderFormField(field)}
                         </label>
                     ))}
+                    {formFields
+                        .filter(field => field.type === 'hidden')
+                        .map(this.renderHiddenField)}
                 </div>
             </form>
         );

@@ -66,7 +66,7 @@ type Config struct {
 	IdentityExtractors []authn.IdentityExtractor
 	UnaryInterceptors  []grpc.UnaryServerInterceptor
 	StreamInterceptors []grpc.StreamServerInterceptor
-	AuthProviders      authproviders.AuthProviderAccessor
+	AuthProviders      authproviders.Registry
 }
 
 // NewAPI returns an API object.
@@ -151,12 +151,15 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 		a.requestInfoHandler.HTTPIntercept,
 		contextutil.HTTPInterceptor(
 			authn.ContextUpdater(a.config.IdentityExtractors...),
-			authn.ContextUpdater(a.config.IdentityExtractors...),
 			authn.NewAuthConfigChecker(a.config.AuthProviders)))
 
 	mux := http.NewServeMux()
 	for _, route := range a.config.CustomRoutes {
 		mux.Handle(route.Route, httpInterceptors(route.Handler()))
+	}
+
+	if a.config.AuthProviders != nil {
+		mux.Handle(a.config.AuthProviders.URLPathPrefix(), a.config.AuthProviders)
 	}
 
 	gwMux := runtime.NewServeMux(

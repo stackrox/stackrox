@@ -246,6 +246,14 @@
   version = "v2.0.4"
 
 [[projects]]
+  digest = "1:c91a5363a19174cb0181832821a7bb9da0aeefb5e2180724614b1005c2269712"
+  name = "github.com/coreos/go-oidc"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "1180514eaf4d9f38d0d19eef639a1d695e066e72"
+  version = "v2.0.0"
+
+[[projects]]
   digest = "1:79bb2ff26204a4ed69b83bd154d2e2a3949f71f7b15e757d7f07c6b24bd865a1"
   name = "github.com/coreos/pkg"
   packages = ["timeutil"]
@@ -796,6 +804,17 @@
   pruneopts = "NUT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:e91bc1b1cfb1a99107ad015ff3803071d13dc12924ed1fdf9c9d54346bcbbf6e"
+  name = "github.com/pquerna/cachecontrol"
+  packages = [
+    ".",
+    "cacheobject",
+  ]
+  pruneopts = "NUT"
+  revision = "1555304b9b35fdd2b425bccf1a5613677705e7d0"
 
 [[projects]]
   digest = "1:03bca087b180bf24c4f9060775f137775550a0834e18f0bca0520a868679dbd7"
@@ -1429,6 +1448,7 @@
     "github.com/cloudflare/cfssl/signer",
     "github.com/cloudflare/cfssl/signer/local",
     "github.com/coreos/clair/api/v1",
+    "github.com/coreos/go-oidc",
     "github.com/deckarep/golang-set",
     "github.com/docker/distribution/manifest/schema1",
     "github.com/docker/distribution/manifest/schema2",
@@ -1484,6 +1504,7 @@
     "golang.org/x/crypto/bcrypt",
     "golang.org/x/crypto/ed25519",
     "golang.org/x/net/context",
+    "golang.org/x/oauth2",
     "golang.org/x/oauth2/google",
     "golang.org/x/time/rate",
     "golang.org/x/tools/go/ast/astutil",

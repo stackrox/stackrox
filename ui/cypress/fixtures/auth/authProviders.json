@@ -3,14 +3,14 @@
         {
             "id": "authProvider-id1",
             "name": "auth-provider-name",
-            "type": "auth0",
+            "type": "oidc",
             "enabled": true,
             "config": {
                 "audience": "audience",
                 "client_id": "client_id",
-                "domain": "domain"
+                "issuer": "domain"
             },
-            "loginUrl": "/auth/response/oidc#access_token=my-token",
+            "loginUrl": "/auth/response/generic#token=my-token",
             "uiEndpoint": "does not matter",
             "validated": true
         }

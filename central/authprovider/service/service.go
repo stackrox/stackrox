@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/authprovider/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -19,16 +19,12 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	GetAuthProvider(ctx context.Context, request *v1.ResourceByID) (*v1.AuthProvider, error)
-	GetAuthProviders(ctx context.Context, request *v1.GetAuthProvidersRequest) (*v1.GetAuthProvidersResponse, error)
-	PostAuthProvider(ctx context.Context, request *v1.AuthProvider) (*v1.AuthProvider, error)
-	PutAuthProvider(ctx context.Context, request *v1.AuthProvider) (*v1.Empty, error)
-	DeleteAuthProvider(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error)
+	v1.AuthProviderServiceServer
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(storage store.Store) Service {
+func New(registry authproviders.Registry) Service {
 	return &serviceImpl{
-		storage: storage,
+		registry: registry,
 	}
 }

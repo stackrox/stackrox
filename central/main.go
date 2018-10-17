@@ -6,14 +6,14 @@ import (
 	"os"
 	"os/signal"
 	"runtime/debug"
-	"syscall" // These imports are required to register things from the respective packages.
+	"syscall"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
 	authService "github.com/stackrox/rox/central/auth/service"
-	"github.com/stackrox/rox/central/authprovider/cachedstore"
 	authproviderService "github.com/stackrox/rox/central/authprovider/service"
+	authProviderStore "github.com/stackrox/rox/central/authprovider/store"
 	benchmarkService "github.com/stackrox/rox/central/benchmark/service"
 	brService "github.com/stackrox/rox/central/benchmarkresult/service"
 	bsService "github.com/stackrox/rox/central/benchmarkscan/service"
@@ -50,7 +50,8 @@ import (
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/user/mapper"
-	_ "github.com/stackrox/rox/pkg/auth/authproviders/all"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -69,6 +70,16 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+
+	authProviderBackendFactories = map[string]authproviders.BackendFactoryCreator{
+		oidc.TypeName: oidc.NewFactory,
+		"auth0":       oidc.NewFactory, // legacy
+	}
+)
+
+const (
+	ssoURLPathPrefix     = "/sso/"
+	tokenRedirectURLPath = "/auth/response/generic"
 )
 
 func main() {
@@ -94,6 +105,21 @@ func newCentral() *central {
 }
 
 func (c *central) startGRPCServer() {
+	registry, err := authproviders.NewStoreBackedRegistry(
+		ssoURLPathPrefix, tokenRedirectURLPath,
+		authProviderStore.New(globaldb.GetGlobalDB()), jwt.IssuerFactorySingleton(),
+		usermapper.Singleton())
+
+	if err != nil {
+		log.Panicf("Could not create auth provider registry: %v", err)
+	}
+
+	for typeName, factoryCreator := range authProviderBackendFactories {
+		if err := registry.RegisterBackendFactory(typeName, factoryCreator); err != nil {
+			log.Panicf("Could not register %s auth provider factory: %v", typeName, err)
+		}
+	}
+
 	config := pkgGRPC.Config{
 		CustomRoutes:       c.customRoutes(),
 		TLS:                verifier.CA{},
@@ -101,10 +127,9 @@ func (c *central) startGRPCServer() {
 		StreamInterceptors: interceptorSingletons.GrpcStreamInterceptors(),
 		IdentityExtractors: []authn.IdentityExtractor{
 			service.NewExtractor(), // internal services
-			tokenbased.NewExtractor(roleStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens (new)
-			tokenbased.NewLegacyExtractor(cachedstore.Singleton(), usermapper.New(roleStore.Singleton())),
+			tokenbased.NewExtractor(roleStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
 		},
-		AuthProviders: cachedstore.Singleton(),
+		AuthProviders: registry,
 	}
 
 	c.server = pkgGRPC.NewAPI(config)
@@ -113,7 +138,7 @@ func (c *central) startGRPCServer() {
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
 		authService.Singleton(),
-		authproviderService.Singleton(),
+		authproviderService.New(registry),
 		benchmarkService.Singleton(),
 		bsService.Singleton(),
 		bshService.Singleton(),

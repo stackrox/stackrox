@@ -7,7 +7,9 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -20,7 +22,7 @@ type AuthProviderStoreTestSuite struct {
 
 	db *bolt.DB
 
-	store Store
+	store authproviders.Store
 }
 
 func (suite *AuthProviderStoreTestSuite) SetupSuite() {
@@ -52,40 +54,23 @@ func (suite *AuthProviderStoreTestSuite) TestAuthProviders() {
 
 	// Test Add
 	for _, r := range authProviders {
-		id, err := suite.store.AddAuthProvider(r)
+		r.Id = uuid.NewV4().String()
+		err := suite.store.AddAuthProvider(r)
 		suite.NoError(err)
-		suite.NotEmpty(id)
 	}
 
-	for _, r := range authProviders {
-		got, exists, err := suite.store.GetAuthProvider(r.GetId())
-		suite.NoError(err)
-		suite.True(exists)
-		suite.Equal(got, r)
-	}
-
-	// Test GetAuthProviders
-	retrievedProviders, err := suite.store.GetAuthProviders(&v1.GetAuthProvidersRequest{})
-	suite.NoError(err)
-	suite.Len(retrievedProviders, len(authProviders))
-	// Sort them alphabetically by name (which is how we should keep our authProviders slice sorted).
-	sort.Slice(retrievedProviders, func(i, j int) bool {
-		return retrievedProviders[i].Name < retrievedProviders[j].Name
+	sort.Slice(authProviders, func(i, j int) bool {
+		return authProviders[i].Id < authProviders[j].Id
 	})
-	for i, retrievedProvider := range retrievedProviders {
-		suite.Equal(authProviders[i], retrievedProvider)
-	}
 
-	// Test GetAuthProviders with a non-empty request
-	retrievedProvidersByType, err := suite.store.GetAuthProviders(&v1.GetAuthProvidersRequest{Type: "Auth Provider 1"})
-	suite.NoError(err)
-	suite.Len(retrievedProvidersByType, 1)
-	suite.Equal(authProviders[0], retrievedProvidersByType[0])
+	// Test GetAllAuthProviders
+	allProviders, err := suite.store.GetAllAuthProviders()
+	suite.Require().NoError(err)
+	sort.Slice(allProviders, func(i, j int) bool {
+		return allProviders[i].Id < authProviders[j].Id
+	})
 
-	retrievedProvidersByName, err := suite.store.GetAuthProviders(&v1.GetAuthProvidersRequest{Name: "authProvider1"})
-	suite.NoError(err)
-	suite.Len(retrievedProvidersByName, 1)
-	suite.Equal(authProviders[0], retrievedProvidersByName[0])
+	suite.Equal(authProviders, allProviders)
 
 	// Test Update
 	for _, r := range authProviders {
@@ -96,21 +81,20 @@ func (suite *AuthProviderStoreTestSuite) TestAuthProviders() {
 		suite.NoError(suite.store.UpdateAuthProvider(r))
 	}
 
-	for _, r := range authProviders {
-		got, exists, err := suite.store.GetAuthProvider(r.GetId())
-		suite.NoError(err)
-		suite.True(exists)
-		suite.Equal(got, r)
-	}
+	allProviders, err = suite.store.GetAllAuthProviders()
+	suite.Require().NoError(err)
+	sort.Slice(allProviders, func(i, j int) bool {
+		return allProviders[i].Id < authProviders[j].Id
+	})
+
+	suite.Equal(authProviders, allProviders)
 
 	// Test Remove
 	for _, r := range authProviders {
 		suite.NoError(suite.store.RemoveAuthProvider(r.GetId()))
 	}
 
-	for _, r := range authProviders {
-		_, exists, err := suite.store.GetAuthProvider(r.GetId())
-		suite.NoError(err)
-		suite.False(exists)
-	}
+	allProviders, err = suite.store.GetAllAuthProviders()
+	suite.NoError(err)
+	suite.Empty(allProviders)
 }

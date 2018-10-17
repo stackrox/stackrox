@@ -24,7 +24,7 @@ describe('Authentication', () => {
         setupAuth(complianceUrl);
         cy.url().should('contain', loginUrl);
         cy.get(selectors.providerSelect).should('have.text', 'auth-provider-name');
-        cy.get(selectors.loginButton).click(); // stubbed auth provider will simulate OIDC redirect with 'my-token'
+        cy.get(selectors.loginButton).click(); // stubbed auth provider will simulate redirect with 'my-token'
         cy.wait('@authStatus').then(xhr => {
             expect(xhr.request.headers.Authorization).to.eq('Bearer my-token');
         });
