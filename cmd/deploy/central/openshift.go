@@ -2,6 +2,7 @@ package central
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
+	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 )
 
 func init() {
@@ -16,6 +17,12 @@ func newOpenshift() deployer {
 
 func (o *openshift) Render(c Config) ([]*v1.File, error) {
 	injectImageTags(&c)
+
+	var err error
+	c.K8sConfig.Registry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.PreventImage)
+	if err != nil {
+		return nil, err
+	}
 
 	filenames := []string{
 		"kubernetes/central.yaml",
@@ -32,7 +39,7 @@ func (o *openshift) Render(c Config) ([]*v1.File, error) {
 		"openshift/route-setup.sh",
 	}
 
-	return renderFilenames(filenames, &c)
+	return renderFilenames(filenames, &c, "/data/assets/docker-auth.sh")
 }
 
 func (o *openshift) Instructions() string {

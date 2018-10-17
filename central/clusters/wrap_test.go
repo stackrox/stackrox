@@ -3,6 +3,7 @@ package clusters
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +37,9 @@ func TestGenerateCollectorImage(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.preventImage, func(t *testing.T) {
-			assert.Equal(t, c.expectedImage, generateCollectorImage(c.preventImage, c.collectorTag))
+			inputImg := utils.GenerateImageFromString(c.preventImage)
+			outputImg := utils.GenerateImageFromString(c.expectedImage)
+			assert.Equal(t, outputImg.GetName(), generateCollectorImage(inputImg.GetName(), c.collectorTag))
 		})
 	}
 }

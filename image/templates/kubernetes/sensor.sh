@@ -3,27 +3,37 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 kubectl get namespace {{.Namespace}} > /dev/null || kubectl create namespace {{.Namespace}}
 
-if ! kubectl get secret/{{.ImagePullSecret}} -n {{.Namespace}} > /dev/null; then
-  if [ -z "${REGISTRY_USERNAME}" ]; then
-    echo -n "Username for {{.Registry}}: "
-    read REGISTRY_USERNAME
-    echo
-  fi
-  if [ -z "${REGISTRY_PASSWORD}" ]; then
-    echo -n "Password for {{.Registry}}: "
-    read -s REGISTRY_PASSWORD
-    echo
-  fi
-
-  kubectl create secret docker-registry \
-    "{{.ImagePullSecret}}" --namespace "{{.Namespace}}" \
-    --docker-server={{.Registry}} \
-    --docker-username="${REGISTRY_USERNAME}" \
-    --docker-password="${REGISTRY_PASSWORD}" \
-    --docker-email="support@stackrox.com"
-
-	echo
+if ! kubectl get secret/stackrox -n {{.Namespace}} > /dev/null; then
+  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.Registry}}")"
+  [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
+  kubectl create --namespace "{{.Namespace}}" -f - <<EOF
+apiVersion: v1
+data:
+  .dockerconfigjson: ${registry_auth}
+kind: Secret
+metadata:
+  name: stackrox
+  namespace: {{.Namespace}}
+type: kubernetes.io/dockerconfigjson
+EOF
 fi
+
+{{if .RuntimeSupport}}
+if ! kubectl get secret/collector-stackrox -n {{.Namespace}} > /dev/null; then
+  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.CollectorRegistry}}")"
+  [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
+  kubectl create --namespace "{{.Namespace}}" -f - <<EOF
+apiVersion: v1
+data:
+  .dockerconfigjson: ${registry_auth}
+kind: Secret
+metadata:
+  name: collector-stackrox
+  namespace: {{.Namespace}}
+type: kubernetes.io/dockerconfigjson
+EOF
+fi
+{{- end}}
 
 function print_rbac_instructions {
 	echo

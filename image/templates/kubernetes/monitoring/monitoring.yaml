@@ -35,7 +35,7 @@ spec:
         app: monitoring
     spec:
       imagePullSecrets:
-      - name: {{.K8sConfig.ImagePullSecret}}
+      - name: stackrox
       containers:
       - name: influxdb
         image: {{.K8sConfig.MonitoringImage}}

@@ -22,10 +22,12 @@ func (o *openshift) Render(c Wrap) ([]*v1.File, error) {
 		openshiftParams = clusterOpenshift.Openshift
 	}
 
-	fields := fieldsFromWrap(c)
+	fields, err := fieldsFromWrap(c)
+	if err != nil {
+		return nil, err
+	}
 	addCommonKubernetesParams(openshiftParams.GetParams(), fields)
 	fields["OpenshiftAPIEnv"] = env.OpenshiftAPI.EnvVar()
-	fields["OpenshiftAPI"] = `"true"`
 
 	filenames := []string{
 		"kubernetes/sensor.yaml",
@@ -35,5 +37,5 @@ func (o *openshift) Render(c Wrap) ([]*v1.File, error) {
 		"openshift/sensor-rbac.yaml",
 	}
 
-	return renderFilenames(filenames, fields)
+	return renderFilenames(filenames, fields, "/data/assets/docker-auth.sh")
 }

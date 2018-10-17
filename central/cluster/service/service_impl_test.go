@@ -166,23 +166,6 @@ func TestValidateCluster(t *testing.T) {
 			expectedError: true,
 		},
 		{
-			name: "K8s Image Pull Secret with spaces",
-			cluster: &v1.Cluster{
-				Name:               "name",
-				PreventImage:       "image",
-				CentralApiEndpoint: "central:443",
-				OrchestratorParams: &v1.Cluster_Kubernetes{
-					Kubernetes: &v1.KubernetesParams{
-						ImagePullSecret: "I HAVE SPACES",
-						Params: &v1.CommonKubernetesParams{
-							Namespace: "valid-dns-name",
-						},
-					},
-				},
-			},
-			expectedError: true,
-		},
-		{
 			name: "OpenShift Namespace with spaces",
 			cluster: &v1.Cluster{
 				Name:               "name",
@@ -206,7 +189,6 @@ func TestValidateCluster(t *testing.T) {
 				CentralApiEndpoint: "central:443",
 				OrchestratorParams: &v1.Cluster_Kubernetes{
 					Kubernetes: &v1.KubernetesParams{
-						ImagePullSecret: "valid-dns-name",
 						Params: &v1.CommonKubernetesParams{
 							Namespace: "valid-dns-name-again",
 						},

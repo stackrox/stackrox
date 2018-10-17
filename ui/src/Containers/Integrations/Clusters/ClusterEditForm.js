@@ -50,9 +50,6 @@ const K8sFields = ({ metadata }) => (
         <FormField label="Namespace" required>
             <ReduxTextField name="kubernetes.params.namespace" placeholder="stackrox" />
         </FormField>
-        <FormField label="Image Pull Secret Name" required>
-            <ReduxTextField name="kubernetes.imagePullSecret" placeholder="stackrox" />
-        </FormField>
         <MonitoringEndpointFormField />
         <RuntimeSupportFormField />
     </React.Fragment>
@@ -68,9 +65,7 @@ const OpenShiftFields = ({ metadata }) => (
         <FormField label="Prevent Image" required>
             <ReduxTextField
                 name="preventImage"
-                placeholder={`docker-registry.default.svc:5000/stackrox/prevent:${
-                    metadata.version
-                }`}
+                placeholder={`stackrox.io/prevent:${metadata.version}`}
             />
         </FormField>
         <CentralAPIFormField placeholder="central.stackrox:443" />
@@ -133,13 +128,14 @@ const initialValuesFactories = {
         centralApiEndpoint: 'central.prevent_net:443'
     }),
     OPENSHIFT_CLUSTER: metadata => ({
-        preventImage: `docker-registry.default.svc:5000/stackrox/prevent:${metadata.version}`,
+        preventImage: `stackrox.io/prevent:${metadata.version}`,
         centralApiEndpoint: 'central.stackrox:443',
         openshift: {
             params: {
                 namespace: 'stackrox'
             }
-        }
+        },
+        runtimeSupport: true
     }),
     KUBERNETES_CLUSTER: metadata => ({
         preventImage: `stackrox.io/prevent:${metadata.version}`,

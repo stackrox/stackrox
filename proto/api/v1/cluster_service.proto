@@ -19,12 +19,11 @@ enum ClusterType {
 }
 
 message CommonKubernetesParams {
-    string namespace = 1;
+    string namespace         = 1;
 }
 
 message KubernetesParams {
     CommonKubernetesParams params = 1;
-    string image_pull_secret      = 2;
 }
 
 message OpenshiftParams {

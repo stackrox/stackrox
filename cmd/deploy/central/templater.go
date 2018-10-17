@@ -88,9 +88,8 @@ func (m MonitoringType) None() bool {
 type K8sConfig struct {
 	CommonConfig
 
-	ImagePullSecret string
-	Namespace       string
-	Registry        string
+	Namespace string
+	Registry  string
 
 	// These variables are not prompted for by Cobra, but are set based on
 	// provided inputs for use in templating.

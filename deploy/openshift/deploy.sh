@@ -14,6 +14,6 @@ echo "CLUSTER set to $CLUSTER"
 export RUNTIME_SUPPORT=${RUNTIME_SUPPORT:-false}
 echo "RUNTIME_SUPPORT set to $RUNTIME_SUPPORT"
 
-launch_central "$LOCAL_API_ENDPOINT" "$K8S_DIR" docker-registry.default.svc:5000 "$PREVENT_IMAGE_TAG"
+launch_central "$K8S_DIR" "$PREVENT_IMAGE"
 
-launch_sensor  "$LOCAL_API_ENDPOINT" "$K8S_DIR" docker-registry.default.svc:5000 "$PREVENT_IMAGE_TAG" "$CLUSTER" "$CLUSTER_API_ENDPOINT"
+launch_sensor "$K8S_DIR" "$CLUSTER" "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$RUNTIME_SUPPORT"

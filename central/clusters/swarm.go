@@ -25,7 +25,10 @@ func (s *swarm) Render(c Wrap) ([]*v1.File, error) {
 		swarmParams = clusterSwarm.Swarm
 	}
 
-	fields := fieldsFromWrap(c)
+	fields, err := fieldsFromWrap(c)
+	if err != nil {
+		return nil, err
+	}
 	fields["DisableSwarmTLS"] = strconv.FormatBool(swarmParams.GetDisableSwarmTls())
 
 	filenames := []string{

@@ -3,7 +3,6 @@ package clusters
 import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
-	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 )
 
 func init() {
@@ -31,20 +30,13 @@ func (k *kubernetes) Render(c Wrap) ([]*v1.File, error) {
 		kubernetesParams = clusterKube.Kubernetes
 	}
 
-	fields := fieldsFromWrap(c)
-	addCommonKubernetesParams(kubernetesParams.GetParams(), fields)
-
-	fields["OpenshiftAPIEnv"] = env.OpenshiftAPI.EnvVar()
-	fields["OpenshiftAPI"] = `"false"`
-
-	fields["ImagePullSecretEnv"] = env.ImagePullSecrets.EnvVar()
-	fields["ImagePullSecret"] = kubernetesParams.GetImagePullSecret()
-
-	var err error
-	fields["Registry"], err = kubernetesPkg.GetResolvedRegistry(c.PreventImage)
+	fields, err := fieldsFromWrap(c)
 	if err != nil {
 		return nil, err
 	}
+	addCommonKubernetesParams(kubernetesParams.GetParams(), fields)
+
+	fields["ImagePullSecretEnv"] = env.ImagePullSecrets.EnvVar()
 
 	filenames := []string{
 		"kubernetes/sensor.sh",
@@ -57,5 +49,5 @@ func (k *kubernetes) Render(c Wrap) ([]*v1.File, error) {
 		filenames = append(filenames, monitoringFilenames...)
 	}
 
-	return renderFilenames(filenames, fields)
+	return renderFilenames(filenames, fields, "/data/assets/docker-auth.sh")
 }

@@ -40,7 +40,7 @@ spec:
       {{end -}}
       {{if eq .ClusterType.String "KUBERNETES_CLUSTER" -}}
       imagePullSecrets:
-      - name: {{.K8sConfig.ImagePullSecret}}
+      - name: stackrox
       {{else -}}
       serviceAccount: central
       {{end -}}

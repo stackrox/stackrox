@@ -20,10 +20,10 @@ spec:
       labels:
         app: sensor
     spec:
-    {{if .ImagePullSecret }}
+      {{if eq .ClusterType "KUBERNETES_CLUSTER"}}
       imagePullSecrets:
-        - name: {{.ImagePullSecret}}
-    {{- end}}
+        - name: stackrox
+      {{- end}}
       serviceAccount: sensor
       containers:
       - image: {{.Image}}
@@ -50,12 +50,14 @@ spec:
           value: {{.Image}}
         - name: {{.AdvertisedEndpointEnv}}
           value: sensor.{{.Namespace}}:443
-{{if .ImagePullSecret }}
+          {{if eq .ClusterType "KUBERNETES_CLUSTER"}}
         - name: {{.ImagePullSecretEnv}}
-          value: {{.ImagePullSecret}}
-{{- end}}
+          value: stackrox
+          {{- end}}
+          {{if eq .ClusterType "OPENSHIFT_CLUSTER"}}
         - name: {{.OpenshiftAPIEnv}}
-          value: {{.OpenshiftAPI}}
+          value: "true"
+          {{- end}}
         - name: ROX_PREVENT_NAMESPACE
           valueFrom:
             fieldRef:
@@ -163,6 +165,13 @@ spec:
         service: collector
       namespace: {{.Namespace}}
     spec:
+      {{if eq .ClusterType "KUBERNETES_CLUSTER"}}
+      imagePullSecrets:
+        - name: collector-stackrox
+      {{- end}}
+      {{if eq .ClusterType "OPENSHIFT_CLUSTER"}}
+      serviceAccount: collector
+      {{- end}}
       containers:
       - name: collector
         image: {{.CollectorImage}}
@@ -233,8 +242,6 @@ spec:
             mountPath: /etc/telegraf/
             readOnly: true
       {{- end}}
-      imagePullSecrets:
-      - name: {{.ImagePullSecret}}
       volumes:
       - hostPath:
           path: /var/run/docker.sock

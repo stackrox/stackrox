@@ -1,15 +1,13 @@
 #!/usr/bin/env bash
 
 function launch_central {
-    LOCAL_API_ENDPOINT="$1"
-    OPENSHIFT_DIR="$2"
-    PREVENT_IMAGE_REPO="$3"
-    PREVENT_IMAGE_TAG="$4"
+    OPENSHIFT_DIR="$1"
+    PREVENT_IMAGE="$2"
 
     set -u
 
     echo "Generating central config..."
-    docker run "$PREVENT_IMAGE" deploy openshift -n stackrox -i "$PREVENT_IMAGE_REPO/stackrox/prevent:$PREVENT_IMAGE_TAG" none > $OPENSHIFT_DIR/central.zip
+    docker run "$PREVENT_IMAGE" deploy openshift -i "$PREVENT_IMAGE" none > $OPENSHIFT_DIR/central.zip
     UNZIP_DIR="$OPENSHIFT_DIR/central-deploy/"
     rm -rf "$UNZIP_DIR"
     unzip "$OPENSHIFT_DIR/central.zip" -d "$UNZIP_DIR"
@@ -29,18 +27,17 @@ function launch_central {
 }
 
 function launch_sensor {
-    LOCAL_API_ENDPOINT="$1"
-    OPENSHIFT_DIR="$2"
-    PREVENT_IMAGE_REPO="$3"
-    PREVENT_IMAGE_TAG="$4"
-    CLUSTER="$5"
-    CLUSTER_API_ENDPOINT="$6"
+    OPENSHIFT_DIR="$1"
+    CLUSTER="$2"
+    PREVENT_IMAGE="$3"
+    CLUSTER_API_ENDPOINT="$4"
+    RUNTIME_SUPPORT="$5"
 
     COMMON_PARAMS="{ \"params\" : { \"namespace\": \"stackrox\" } }"
 
     EXTRA_CONFIG="\"openshift\": $COMMON_PARAMS }"
 
-    get_cluster_zip "$LOCAL_API_ENDPOINT" "$CLUSTER" OPENSHIFT_CLUSTER "docker-registry.default.svc:5000/stackrox/prevent:$PREVENT_IMAGE_TAG" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "$RUNTIME_SUPPORT" "$EXTRA_CONFIG"
+    get_cluster_zip localhost:8000 "$CLUSTER" OPENSHIFT_CLUSTER "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$OPENSHIFT_DIR" "$RUNTIME_SUPPORT" "$EXTRA_CONFIG"
 
     echo "Deploying Sensor..."
     UNZIP_DIR="$OPENSHIFT_DIR/sensor-deploy/"

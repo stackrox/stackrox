@@ -52,7 +52,6 @@ func k8s() *cobra.Command {
 	c := k8sBasedOrchestrator(k8sConfig, "k8s", "Kubernetes", v1.ClusterType_KUBERNETES_CLUSTER)
 	c.PersistentFlags().StringVarP(&k8sConfig.ClairifyImage, "clairify-image", "", "stackrox.io/"+clairifyImage, "Clairify image to use")
 	c.PersistentFlags().StringVarP(&k8sConfig.PreventImage, "prevent-image", "i", "stackrox.io/"+preventImage, "Prevent image to use")
-	c.PersistentFlags().StringVarP(&k8sConfig.ImagePullSecret, "image-pull-secret", "", "stackrox", "image pull secret")
 	c.PersistentFlags().StringVarP(&k8sConfig.MonitoringEndpoint, "monitoring-endpoint", "", "monitoring.stackrox", "monitoring endpoint")
 	c.PersistentFlags().Var(&monitoringWrapper{Monitoring: &k8sConfig.MonitoringType}, "monitoring-type", "where to host the monitoring (on-prem, none)")
 	return c
@@ -61,7 +60,7 @@ func k8s() *cobra.Command {
 func openshift() *cobra.Command {
 	k8sConfig := newK8sConfig(central.None)
 	c := k8sBasedOrchestrator(k8sConfig, "openshift", "Openshift", v1.ClusterType_OPENSHIFT_CLUSTER)
-	c.PersistentFlags().StringVarP(&k8sConfig.ClairifyImage, "clairify-image", "", "docker-registry.default.svc:5000/stackrox/"+clairifyImage, "Clairify image to use")
-	c.PersistentFlags().StringVarP(&k8sConfig.PreventImage, "prevent-image", "i", "docker-registry.default.svc:5000/stackrox/"+preventImage, "Prevent image to use")
+	c.PersistentFlags().StringVarP(&k8sConfig.ClairifyImage, "clairify-image", "", "stackrox.io/"+clairifyImage, "Clairify image to use")
+	c.PersistentFlags().StringVarP(&k8sConfig.PreventImage, "prevent-image", "i", "stackrox.io/"+preventImage, "Prevent image to use")
 	return c
 }

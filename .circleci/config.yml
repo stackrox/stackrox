@@ -398,6 +398,7 @@ jobs:
     <<: *defaults
     environment:
       - LOCAL_PORT: 8000
+      - RUNTIME_SUPPORT: true
     steps:
       - checkout
       - *checkOpenshiftLabel
@@ -417,7 +418,6 @@ jobs:
             echo "export OPENSHIFT_HOST=$(cat openshift/master)"            >> "$BASH_ENV"
             echo "export PREVENT_IMAGE_REGISTRY=docker.io"                  >> "$BASH_ENV"
             echo "export PREVENT_IMAGE_TAG=$(make tag)"                     >> "$BASH_ENV"
-            echo "export PRIVATE_REGISTRY=docker-registry.default.svc:5000" >> "$BASH_ENV"
             echo "export REGISTRY_PASSWORD=$DOCKERHUB_PASSWORD"             >> "$BASH_ENV"
             echo "export REGISTRY_USERNAME=$DOCKERHUB_USERNAME"             >> "$BASH_ENV"
 
@@ -441,13 +441,6 @@ jobs:
           command: |
             docker run -i "stackrox/prevent:$PREVENT_IMAGE_TAG" deploy openshift none > /tmp/openshift.zip
             unzip /tmp/openshift.zip -d openshift
-
-      - run:
-          name: Run Image Setup
-          command: |
-            scp -o StrictHostKeyChecking=no openshift/image-setup.sh "stackrox@$OPENSHIFT_HOST:~/image-setup.sh"
-            ssh -o StrictHostKeyChecking=no "stackrox@$OPENSHIFT_HOST" "yes | CLAIRIFY_IMAGE_TAG=$CLAIRIFY_IMAGE_TAG PREVENT_IMAGE_REGISTRY=$PREVENT_IMAGE_REGISTRY PREVENT_IMAGE_TAG=$PREVENT_IMAGE_TAG PRIVATE_REGISTRY=$PRIVATE_REGISTRY REGISTRY_PASSWORD=$REGISTRY_PASSWORD REGISTRY_USERNAME=$REGISTRY_USERNAME ~/image-setup.sh"
-            oc -n stackrox get imagestreams
 
       - run:
           name: Deploy to remote cluster

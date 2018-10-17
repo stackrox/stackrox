@@ -100,7 +100,6 @@ func validateInput(cluster *v1.Cluster) error {
 	case *v1.Cluster_Kubernetes:
 		// Kube validates namespaces and secret names using the DNS1123 Label validator.
 		errorList.AddError(validateDNS1123Field("namespace", orchSpecific.Kubernetes.GetParams().GetNamespace()))
-		errorList.AddError(validateDNS1123Field("image pull secret", orchSpecific.Kubernetes.GetImagePullSecret()))
 	case *v1.Cluster_Openshift:
 		errorList.AddError(validateDNS1123Field("namespace", orchSpecific.Openshift.GetParams().GetNamespace()))
 	case *v1.Cluster_Swarm:
