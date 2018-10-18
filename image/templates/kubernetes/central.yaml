@@ -160,7 +160,6 @@ spec:
       - name: {{.HostPath.Name}}
         hostPath:
           path: {{.HostPath.HostPath}}
-          type: Directory
       {{else if .External -}}
       - name: {{.External.Name}}
         persistentVolumeClaim:

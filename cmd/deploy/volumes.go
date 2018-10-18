@@ -68,7 +68,7 @@ func hostPathVolume(cluster v1.ClusterType) *cobra.Command {
 	case v1.ClusterType_KUBERNETES_CLUSTER, v1.ClusterType_OPENSHIFT_CLUSTER:
 		defaultSelector = "kubernetes.io/hostname"
 	}
-	c.Flags().StringVarP(&hostpath.NodeSelectorKey, "node-selector-key", "", defaultSelector, "node selector key")
+	c.Flags().StringVarP(&hostpath.NodeSelectorKey, "node-selector-key", "", "", fmt.Sprintf("node selector key (e.g. %s)", defaultSelector))
 	c.Flags().StringVarP(&hostpath.NodeSelectorValue, "node-selector-value", "", "", "node selector value")
 
 	return c

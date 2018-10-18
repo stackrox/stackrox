@@ -22,7 +22,7 @@ func validateHostPath(hostpath *central.HostPathPersistence) error {
 	if hostpath == nil {
 		return nil
 	}
-	if hostpath.NodeSelectorKey == "" || hostpath.NodeSelectorValue == "" {
+	if (hostpath.NodeSelectorKey == "") != (hostpath.NodeSelectorValue == "") {
 		return fmt.Errorf("Both node selector key and node selector value must be specified when using a hostpath")
 	}
 	return nil
