@@ -6,9 +6,9 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/globaldb/ops"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
 type storeImpl struct {

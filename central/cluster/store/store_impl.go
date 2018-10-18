@@ -9,10 +9,10 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/prometheus/common/log"
-	"github.com/stackrox/rox/central/globaldb/ops"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/dberrors"
+	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	"github.com/stackrox/rox/pkg/uuid"
 )

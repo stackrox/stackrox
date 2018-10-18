@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stackrox/rox/central/globaldb/ops"
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -34,6 +33,13 @@ var (
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
+
+	sensorEventQueueCounterVec = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.Namespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "sensor_event_queue",
+		Help:      "Number of elements in removed from the queue",
+	}, []string{"Operation"})
 )
 
 // IncrementPanicCounter increments the number of panic calls seen in a function
@@ -46,11 +52,16 @@ func startTimeToMS(t time.Time) float64 {
 }
 
 // SetBoltOperationDurationTime times how long a particular bolt operation took on a particular resource
-func SetBoltOperationDurationTime(start time.Time, op ops.Op, t string) {
+func SetBoltOperationDurationTime(start time.Time, op metrics.Op, t string) {
 	boltOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
 }
 
 // SetIndexOperationDurationTime times how long a particular index operation took on a particular resource
-func SetIndexOperationDurationTime(start time.Time, op string, t string) {
-	indexOperationHistogramVec.With(prometheus.Labels{"Operation": op, "Type": t}).Observe(startTimeToMS(start))
+func SetIndexOperationDurationTime(start time.Time, op metrics.Op, t string) {
+	indexOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
+}
+
+// IncrementSensorEventQueueCounter increments the counter for the passed operation
+func IncrementSensorEventQueueCounter(action string) {
+	sensorEventQueueCounterVec.With(prometheus.Labels{"Operation": action}).Inc()
 }

@@ -31,7 +31,7 @@ type DataStore interface {
 	RemoveDeployment(id string) error
 }
 
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
+// New returns a new instance ofDataStore using the input store, indexer, and searcher.
 func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
 	return &datastoreImpl{
 		storage:  storage,

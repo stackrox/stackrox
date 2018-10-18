@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/alert/index/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -22,13 +23,13 @@ type alertWrapper struct {
 
 // AddAlert adds the alert to the indexer
 func (b *indexerImpl) AddAlert(alert *v1.Alert) error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), "Add", "Alert")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Alert")
 	return b.index.Index(alert.GetId(), &alertWrapper{Type: v1.SearchCategory_ALERTS.String(), Alert: alert})
 }
 
 // AddAlerts adds the alerts to the indexer
 func (b *indexerImpl) AddAlerts(alerts []*v1.Alert) error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), "AddBatch", "Alert")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Alert")
 	batch := b.index.NewBatch()
 	for _, alert := range alerts {
 		batch.Index(alert.GetId(), &alertWrapper{Type: v1.SearchCategory_ALERTS.String(), Alert: alert})
@@ -38,13 +39,13 @@ func (b *indexerImpl) AddAlerts(alerts []*v1.Alert) error {
 
 // DeleteAlert deletes the alert from the indexer
 func (b *indexerImpl) DeleteAlert(id string) error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "Alert")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "Alert")
 	return b.index.Delete(id)
 }
 
 // SearchAlerts takes a SearchRequest and finds any matches
 func (b *indexerImpl) SearchAlerts(q *v1.Query) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Alert")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Alert")
 
 	var querySpecifiesStateField bool
 	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {

@@ -14,4 +14,5 @@ func init() {
 	prometheus.MustRegister(panicCounter)
 	prometheus.MustRegister(boltOperationHistogramVec)
 	prometheus.MustRegister(indexOperationHistogramVec)
+	prometheus.MustRegister(sensorEventQueueCounterVec)
 }

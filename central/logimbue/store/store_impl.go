@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
-	"github.com/stackrox/rox/central/globaldb/ops"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
 type storeImpl struct {

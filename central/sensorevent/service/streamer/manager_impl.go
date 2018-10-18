@@ -6,14 +6,12 @@ import (
 
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/central/sensorevent/service/queue"
-	sensorEventStore "github.com/stackrox/rox/central/sensorevent/store"
 )
 
 type managerImpl struct {
 	lock sync.Mutex
 
-	deploymentEvents sensorEventStore.Store
-	pl               pipeline.Pipeline
+	pl pipeline.Pipeline
 
 	clusterIDToStream map[string]Streamer
 }
@@ -36,10 +34,7 @@ func (s *managerImpl) CreateStreamer(clusterID string) (Streamer, error) {
 		return nil, fmt.Errorf("stream for cluster ID %s is already open", clusterID)
 	}
 
-	pendingEvents := queue.NewPersistedEventQueue(s.deploymentEvents)
-	if err := pendingEvents.Load(clusterID); err != nil {
-		return nil, err
-	}
+	pendingEvents := queue.NewEventQueue()
 
 	st := NewStreamer(clusterID, pendingEvents, s.pl)
 	s.clusterIDToStream[clusterID] = st

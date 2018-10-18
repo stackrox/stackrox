@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator/index/mappings"
 	"github.com/stackrox/rox/generated/api/v1"
+	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -23,13 +24,13 @@ type indicatorWrapper struct {
 
 // AddProcessIndicator adds the indicator to the index
 func (b *indexerImpl) AddProcessIndicator(indicator *v1.ProcessIndicator) error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), "Add", "ProcessIndicator")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "ProcessIndicator")
 	return b.index.Index(indicator.GetId(), &indicatorWrapper{Type: v1.SearchCategory_PROCESS_INDICATORS.String(), ProcessIndicator: indicator})
 }
 
 // AddIndicators adds the indicators to the indexer
 func (b *indexerImpl) AddProcessIndicators(indicators []*v1.ProcessIndicator) error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), "AddBatch", "ProcessIndicator")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
 	batch := b.index.NewBatch()
 	for _, indicator := range indicators {
 		batch.Index(indicator.GetId(), &indicatorWrapper{Type: v1.SearchCategory_PROCESS_INDICATORS.String(), ProcessIndicator: indicator})
@@ -39,12 +40,12 @@ func (b *indexerImpl) AddProcessIndicators(indicators []*v1.ProcessIndicator) er
 
 // DeleteIndicator deletes the indicator from the index
 func (b *indexerImpl) DeleteProcessIndicator(id string) error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "ProcessIndicator")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "ProcessIndicator")
 	return b.index.Delete(id)
 }
 
 // SearchIndicators takes a SearchRequest and finds any matches
 func (b *indexerImpl) SearchProcessIndicators(q *v1.Query) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "ProcessIndicator")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ProcessIndicator")
 	return blevesearch.RunSearchRequest(v1.SearchCategory_PROCESS_INDICATORS, q, b.index, mappings.OptionsMap)
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/policy/index/mappings"
 	"github.com/stackrox/rox/generated/api/v1"
+	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -23,13 +24,13 @@ type policyWrapper struct {
 
 // AddPolicy adds the policy to the index
 func (b *indexerImpl) AddPolicy(policy *v1.Policy) error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), "Add", "Policy")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Policy")
 	return b.index.Index(policy.GetId(), &policyWrapper{Type: v1.SearchCategory_POLICIES.String(), Policy: policy})
 }
 
 // AddPolicies adds the policies to the indexer
 func (b *indexerImpl) AddPolicies(policies []*v1.Policy) error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), "AddBatch", "Policy")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Policy")
 	batch := b.index.NewBatch()
 	for _, policy := range policies {
 		batch.Index(policy.GetId(), &policyWrapper{Type: v1.SearchCategory_POLICIES.String(), Policy: policy})
@@ -39,12 +40,12 @@ func (b *indexerImpl) AddPolicies(policies []*v1.Policy) error {
 
 // DeletePolicy deletes the policy from the index
 func (b *indexerImpl) DeletePolicy(id string) error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), "Delete", "Policy")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "Policy")
 	return b.index.Delete(id)
 }
 
 // SearchPolicies takes a SearchRequest and finds any matches
 func (b *indexerImpl) SearchPolicies(q *v1.Query) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), "Search", "Policy")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Policy")
 	return blevesearch.RunSearchRequest(v1.SearchCategory_POLICIES, q, b.index, mappings.OptionsMap)
 }

@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline/all"
-	"github.com/stackrox/rox/central/sensorevent/store"
 )
 
 var (
@@ -17,7 +16,7 @@ var (
 // multiple clusters.
 func ManagerSingleton() Manager {
 	once.Do(func() {
-		sm = NewManager(store.Singleton(), all.Singleton())
+		sm = NewManager(all.Singleton())
 	})
 	return sm
 }
