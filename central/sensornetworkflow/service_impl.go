@@ -109,6 +109,7 @@ func (s *serviceImpl) updateFlowStore(clusterID string, newFlows []*v1.NetworkFl
 	}
 
 	tsOffset := timestamp.Now() - timestamp.FromProtobuf(updateTS)
+
 	updatedFlows := make(map[networkFlowProperties]timestamp.MicroTS, len(newFlows))
 
 	if isFirst {
@@ -119,8 +120,7 @@ func (s *serviceImpl) updateFlowStore(clusterID string, newFlows []*v1.NetworkFl
 		}
 
 		for _, flow := range existingFlows {
-			updatedFlows[fromProto(flow.GetProps())] = timestamp.FromGogoProtobuf(lastUpdateTS)
-
+			updatedFlows[fromProto(flow.GetProps())] = timestamp.FromProtobuf(&lastUpdateTS)
 		}
 	}
 
