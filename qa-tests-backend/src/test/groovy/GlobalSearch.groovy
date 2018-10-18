@@ -1,4 +1,5 @@
 import static Services.getSearchResponse
+import static Services.waitForViolation
 import stackrox.generated.SearchServiceOuterClass.SearchResponse.Count
 import objects.Deployment
 import spock.lang.Unroll
@@ -16,6 +17,9 @@ class GlobalSearch extends BaseSpecification {
 
     def setupSpec() {
         orchestrator.createDeployment(DEPLOYMENT)
+        assert Services.waitForDeployment(DEPLOYMENT.getDeploymentUid())
+        // Wait for the latest tag violation since we try to search by it.
+        assert waitForViolation(DEPLOYMENT.getName(), "Latest tag")
     }
 
     def cleanupSpec() {

@@ -68,6 +68,8 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         policyName                                    | deploymentName | testId
 
+        "Latest tag"                                  | NGINX_LATEST   | ""
+
         "Container Port 22"                           | NGINX_LATEST   | "C311"
 
         "Apache Struts: CVE-2017-5638"                | STRUTS         | "C938"

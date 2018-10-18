@@ -145,7 +145,7 @@ class Services extends BaseService {
         return null
       }
 
-    static waitForViolation(String deploymentName, String policyName, int timeoutSeconds) {
+    static waitForViolation(String deploymentName, String policyName, int timeoutSeconds = 30) {
         def violations = getViolationsWithTimeout(deploymentName, policyName, timeoutSeconds)
         return violations != null && violations.size() > 0
       }
@@ -574,22 +574,37 @@ class Services extends BaseService {
         return false
     }
 
+    static boolean roxDetectedDeployment(String deploymentID) {
+        try {
+            def deployment = getDeploymentClient().
+                    getDeployment(ResourceByID.newBuilder().setId(deploymentID).build())
+            if (deployment.getContainersList().size() == 0) {
+                println("Deployment found but it had no containers...")
+                return false
+            }
+            if (deployment.getContainers(0).getImage() == null) {
+                println("Deployment found by SR, but images not correlated yet... ")
+                return false
+            }
+            return true
+        } catch (Exception e) {
+            println "SR does not detect the deployment yet: " + e.toString()
+            return false
+        }
+    }
+
     static waitForDeployment(String deploymentId, int timeoutSeconds = 30) {
         int intervalSeconds = 1
         int waitTime
         def startTime = System.currentTimeMillis()
         for (waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
-            try {
-                getDeploymentClient().getDeployment(ResourceByID.newBuilder().setId(deploymentId).build())
+            if (roxDetectedDeployment(deploymentId)) {
                 println "SR found deployment within ${(System.currentTimeMillis() - startTime) / 1000}s"
                 return true
-            } catch (Exception e) {
-                println "SR does not detect the deployment yet... retrying in ${intervalSeconds}s"
-                println e.toString()
-                sleep(intervalSeconds * 1000)
             }
+            println "Retrying in ${intervalSeconds}..."
+            sleep(intervalSeconds * 1000)
         }
-
         println "SR did not detect the deployment"
         return false
     }
