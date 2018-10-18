@@ -22,12 +22,10 @@ message V1Metadata {
     google.protobuf.Timestamp created   = 2;
     string                    author    = 3;
     repeated ImageLayer       layers    = 4;
-    repeated string           fs_layers = 5;
 }
 
 message V2Metadata {
     string                    digest = 1;
-    repeated string           layers = 2;
 }
 
 message ImageMetadata {
@@ -35,9 +33,11 @@ message ImageMetadata {
     // V1 image OR because the v2 manifest has a link to it in it's config.
     // See https://docs.docker.com/registry/spec/manifest-v2-2/#image-manifest-field-descriptions
     // The only time we will not get it is in the rare caseof a strictly V2 image schema
-    V1Metadata                v1 = 1;
+    V1Metadata                v1         = 1;
     // We should always get V2 metadata unless the registry is old or the image is strictly V1
-    V2Metadata                v2 = 2;
+    V2Metadata                v2         = 2;
+    // We never need both sets of layers so consolidate them. They will be ordered by oldest->newest
+    repeated string           layer_shas = 3;
 }
 
 message License {

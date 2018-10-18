@@ -41,7 +41,7 @@ func (r *Registry) handleV2Manifest(remote, ref string) (*v1.ImageMetadata, erro
 		V1: v1Metadata,
 		V2: &v1.V2Metadata{
 			Digest: ref,
-			Layers: layers,
 		},
+		LayerShas: layers,
 	}, nil
 }

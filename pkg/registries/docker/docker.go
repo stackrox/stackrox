@@ -130,21 +130,9 @@ func (r *Registry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 
 	switch manifestType {
 	case manifestV1.MediaTypeManifest:
-		v1Metadata, err := r.handleV1Manifest(remote, digest.String())
-		if err != nil {
-			return nil, err
-		}
-		return &v1.ImageMetadata{
-			V1: v1Metadata,
-		}, nil
+		return r.handleV1Manifest(remote, digest.String())
 	case manifestV1.MediaTypeSignedManifest:
-		v1Metadata, err := r.handleV1SignedManifest(remote, digest.String())
-		if err != nil {
-			return nil, err
-		}
-		return &v1.ImageMetadata{
-			V1: v1Metadata,
-		}, nil
+		return r.handleV1SignedManifest(remote, digest.String())
 	case registry.MediaTypeManifestList:
 		return r.handleV2ManifestList(remote, digest.String())
 	case schema2.MediaTypeManifest:

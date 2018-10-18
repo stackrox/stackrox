@@ -12,7 +12,6 @@ import (
 	clairV1 "github.com/coreos/clair/api/v1"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -127,63 +126,20 @@ func (c *clair) retrieveLayerData(layer string) (*clairV1.LayerEnvelope, error) 
 	return le, nil
 }
 
-func (c *clair) getLastScanFromV2Metadata(image *v1.Image) (*clairV1.LayerEnvelope, bool) {
-	if image.GetMetadata().GetV2() == nil {
-		return nil, false
-	}
-	v2 := image.GetMetadata().GetV2()
-	layerEnvelope, err := c.retrieveLayerData(v2.GetDigest())
-	if err == nil {
-		return layerEnvelope, true
-	} else if err != errNotExists {
-		log.Error(err)
-	}
-
-	// V2 Metadata has latest image layer last so look for images in Clair from most recent to least recent
-	layers := v2.GetLayers()
-	for i := len(layers) - 1; i >= 0; i-- {
-		layerEnvelope, err := c.retrieveLayerData(layers[i])
-		if err == nil {
-			return layerEnvelope, true
-		} else if err != errNotExists {
-			log.Error(err)
-		}
-	}
-	return nil, false
-}
-
-func (c *clair) getLastScanFromV1Metadata(image *v1.Image) (*clairV1.LayerEnvelope, bool) {
-	digest := imageTypes.NewDigest(image.GetId()).Digest()
-	layerEnvelope, err := c.retrieveLayerData(digest)
-	if err == nil {
-		return layerEnvelope, true
-	} else if err != errNotExists {
-		log.Error(err)
-	}
-	for _, layer := range image.GetMetadata().GetV1().GetFsLayers() {
-		layerEnvelope, err := c.retrieveLayerData(layer)
-		if err == nil {
-			return layerEnvelope, true
-		} else if err != errNotExists {
-			log.Error(err)
-		}
-	}
-	return nil, false
-}
-
 // GetLastScan retrieves the most recent scan
 func (c *clair) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}
-	le, found := c.getLastScanFromV2Metadata(image)
-	if !found {
-		le, found = c.getLastScanFromV1Metadata(image)
+	layers := image.GetMetadata().GetLayerShas()
+	if len(layers) == 0 {
+		return nil, fmt.Errorf("Cannot get scan for '%s' because no layers were found", image.GetName().GetFullName())
 	}
-	if le == nil || le.Layer == nil {
-		return nil, fmt.Errorf("No scan data found for image %s", image.GetName().GetFullName())
+	layerEnvelope, err := c.retrieveLayerData(layers[len(layers)-1])
+	if err != nil {
+		return nil, err
 	}
-	return convertLayerToImageScan(image, le), nil
+	return convertLayerToImageScan(image, layerEnvelope), nil
 }
 
 // Match decides if the image is contained within this scanner

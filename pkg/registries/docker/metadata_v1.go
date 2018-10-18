@@ -39,7 +39,7 @@ func lineToInstructionAndValue(line string) (instruction string, value string) {
 }
 
 func convertImageToDockerFileLine(img *image.V1Image) *v1.ImageLayer {
-	line := strings.Join(img.Config.Cmd, " ")
+	line := strings.Join(img.ContainerConfig.Cmd, " ")
 	line = strings.Join(strings.Fields(line), " ")
 	instruction, value := lineToInstructionAndValue(line)
 	protoTS, err := types.TimestampProto(img.Created)
@@ -54,36 +54,40 @@ func convertImageToDockerFileLine(img *image.V1Image) *v1.ImageLayer {
 	}
 }
 
-func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, ref string) (*v1.V1Metadata, error) {
+func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, ref string) (*v1.ImageMetadata, error) {
 	// Get the latest layer and author
 	var latest v1.ImageLayer
 	var layers []*v1.ImageLayer
-	for _, layer := range manifest.History {
+	for i := len(manifest.History) - 1; i > -1; i-- {
+		historyLayer := manifest.History[i]
 		var v1Image image.V1Image
-		if err := json.Unmarshal([]byte(layer.V1Compatibility), &v1Image); err != nil {
+		if err := json.Unmarshal([]byte(historyLayer.V1Compatibility), &v1Image); err != nil {
 			return nil, fmt.Errorf("Failed unmarshalling v1 capability: %s", err)
 		}
 		layer := convertImageToDockerFileLine(&v1Image)
-		if protoconv.CompareProtoTimestamps(latest.Created, layer.Created) == 1 {
+		if protoconv.CompareProtoTimestamps(layer.Created, latest.Created) == 1 {
 			latest = *layer
 		}
 		layers = append(layers, layer)
 	}
+	// Orient the layers to be oldest to newest
 	fsLayers := make([]string, 0, len(manifest.FSLayers))
-	for _, fsLayer := range manifest.FSLayers {
-		fsLayers = append(fsLayers, fsLayer.BlobSum.String())
+	for i := len(manifest.FSLayers) - 1; i > -1; i-- {
+		fsLayers = append(fsLayers, manifest.FSLayers[i].BlobSum.String())
 	}
 
-	return &v1.V1Metadata{
-		Digest:   ref,
-		Created:  latest.Created,
-		Author:   latest.Author,
-		Layers:   layers,
-		FsLayers: fsLayers,
+	return &v1.ImageMetadata{
+		V1: &v1.V1Metadata{
+			Digest:  ref,
+			Created: latest.Created,
+			Author:  latest.Author,
+			Layers:  layers,
+		},
+		LayerShas: fsLayers,
 	}, nil
 }
 
-func (r *Registry) handleV1SignedManifest(remote, ref string) (*v1.V1Metadata, error) {
+func (r *Registry) handleV1SignedManifest(remote, ref string) (*v1.ImageMetadata, error) {
 	manifest, err := r.client.SignedManifest(remote, ref)
 	if err != nil {
 		return nil, err
@@ -91,7 +95,7 @@ func (r *Registry) handleV1SignedManifest(remote, ref string) (*v1.V1Metadata, e
 	return r.populateV1DataFromManifest(manifest, ref)
 }
 
-func (r *Registry) handleV1Manifest(remote, ref string) (*v1.V1Metadata, error) {
+func (r *Registry) handleV1Manifest(remote, ref string) (*v1.ImageMetadata, error) {
 	manifest, err := r.client.Manifest(remote, ref)
 	if err != nil {
 		return nil, err

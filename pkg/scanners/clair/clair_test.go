@@ -76,11 +76,9 @@ func (suite *ClairSuite) TestGetLastScan() {
 			Tag:      "1.10",
 		},
 		Metadata: &v1.ImageMetadata{
-			V1: &v1.V1Metadata{
-				FsLayers: []string{
-					"sha256:0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455",
-					"sha256:randomhashthatshouldnotbeused",
-				},
+			LayerShas: []string{
+				"sha256:randomhashthatshouldnotbeused",
+				"sha256:0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455",
 			},
 		},
 	}

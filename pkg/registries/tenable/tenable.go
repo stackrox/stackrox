@@ -107,8 +107,8 @@ func (d *tenableRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 	return &v1.ImageMetadata{
 		V2: &v1.V2Metadata{
 			Digest: digest,
-			Layers: layers,
 		},
+		LayerShas: layers,
 	}, nil
 }
 
