@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
 // EventQueue provides an interface for a queue that stores SensorEvents.
@@ -39,7 +40,7 @@ func (p *eventQueue) Pull() (*v1.SensorEvent, error) {
 		return nil, nil
 	}
 
-	metrics.IncrementSensorEventQueueCounter("pull")
+	metrics.IncrementSensorEventQueueCounter(ops.Remove)
 	evt := p.queue.Remove(p.queue.Front()).(*v1.SensorEvent)
 	delete(p.resourceIDToEvent, evt.GetId())
 	return evt, nil
@@ -47,12 +48,12 @@ func (p *eventQueue) Pull() (*v1.SensorEvent, error) {
 
 // Push attempts to add an item to the queue, and returns an error if it is unable.
 func (p *eventQueue) Push(event *v1.SensorEvent) error {
-	metrics.IncrementSensorEventQueueCounter("push")
+	metrics.IncrementSensorEventQueueCounter(ops.Add)
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
 	if evt, ok := p.resourceIDToEvent[event.GetId()]; ok {
-		metrics.IncrementSensorEventQueueCounter("dedup")
+		metrics.IncrementSensorEventQueueCounter(ops.Dedupe)
 		p.queue.Remove(evt)
 	}
 

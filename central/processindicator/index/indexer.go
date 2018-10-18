@@ -16,6 +16,7 @@ type Indexer interface {
 	AddProcessIndicator(*v1.ProcessIndicator) error
 	AddProcessIndicators([]*v1.ProcessIndicator) error
 	DeleteProcessIndicator(id string) error
+	DeleteProcessIndicators(ids ...string) error
 	SearchProcessIndicators(q *v1.Query) ([]search.Result, error)
 }
 

@@ -1,12 +1,10 @@
 package store
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/boltdb/bolt"
 	"github.com/gogo/protobuf/proto"
-	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -159,17 +157,12 @@ func (b *storeImpl) upsertDeployment(deployment *v1.Deployment, bucket *bolt.Buc
 // upsert and update.
 func (b *storeImpl) putDeployment(deployment *v1.Deployment, tx *bolt.Tx, errorIfNotExists bool) error {
 	bucket := tx.Bucket([]byte(deploymentBucket))
-	existingDeployment, exists, err := b.getDeployment(deployment.GetId(), bucket)
+	_, exists, err := b.getDeployment(deployment.GetId(), bucket)
 	if err != nil {
 		return err
 	}
 	if errorIfNotExists && !exists {
 		return dberrors.ErrNotFound{Type: "Deployment", ID: deployment.GetId()}
-	}
-
-	// Apply the tombstone to the update. This update should have more up to date info so worth saving
-	if exists && existingDeployment.GetTombstone() != nil {
-		deployment.Tombstone = existingDeployment.GetTombstone()
 	}
 
 	b.ranker.Add(deployment.GetId(), deployment.GetRisk().GetScore())
@@ -195,23 +188,13 @@ func (b *storeImpl) UpdateDeployment(deployment *v1.Deployment) error {
 	})
 }
 
-// RemoveDeployment updates a deployment with a tombstone
+// RemoveDeployment removes a deployment
 func (b *storeImpl) RemoveDeployment(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Deployment")
 
-	var deployment *v1.Deployment
 	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
 
-		var exists bool
-		var err error
-		deployment, exists, err = b.getDeployment(id, bucket)
-		if err != nil {
-			return err
-		}
-		if !exists {
-			return dberrors.ErrNotFound{Type: "Deployment", ID: id}
-		}
 		b.ranker.Remove(id)
 		if err := bucket.Delete([]byte(id)); err != nil {
 			return err
@@ -222,51 +205,5 @@ func (b *storeImpl) RemoveDeployment(id string) error {
 	if err != nil {
 		return err
 	}
-	if deployment != nil {
-		b.addDeploymentToGraveyard(deployment)
-	}
 	return nil
-}
-
-// GetTombstonedDeployments returns all of the deployments that have been tombstoned.
-func (b *storeImpl) GetTombstonedDeployments() ([]*v1.Deployment, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "TombstonedDeployment")
-	var deployments []*v1.Deployment
-	err := b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(deploymentGraveyard))
-		return bucket.ForEach(func(k, v []byte) error {
-			var deployment v1.Deployment
-			if err := proto.Unmarshal(v, &deployment); err != nil {
-				return err
-			}
-
-			deployments = append(deployments, &deployment)
-			return nil
-		})
-	})
-	return deployments, err
-}
-
-func (b *storeImpl) addDeploymentToGraveyard(deployment *v1.Deployment) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "TombstonedDeployment")
-	err := b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(deploymentGraveyard))
-
-		if val := bucket.Get([]byte(deployment.GetId())); val != nil {
-			return fmt.Errorf("deployment %s cannot be tombstoned because it already has been", deployment.GetId())
-		}
-
-		deployment.Tombstone = ptypes.TimestampNow()
-		bytes, err := proto.Marshal(deployment)
-		if err != nil {
-			return err
-		}
-
-		return bucket.Put([]byte(deployment.GetId()), bytes)
-	})
-
-	// If there is an error stuffing a deployment in the graveyard, then just abandon it in the street.
-	if err != nil {
-		log.Errorf("unable to tombstone deployment: %s", err)
-	}
 }

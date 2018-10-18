@@ -16,6 +16,7 @@ type DataStore interface {
 	GetProcessIndicators() ([]*v1.ProcessIndicator, error)
 	AddProcessIndicator(*v1.ProcessIndicator) error
 	RemoveProcessIndicator(id string) error
+	RemoveProcessIndicatorsByDeployment(id string) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

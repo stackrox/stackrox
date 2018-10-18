@@ -3,10 +3,12 @@ package datastore
 import (
 	"fmt"
 
+	"github.com/prometheus/common/log"
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {
@@ -46,4 +48,23 @@ func (ds *datastoreImpl) RemoveProcessIndicator(id string) error {
 		return err
 	}
 	return ds.indexer.DeleteProcessIndicator(id)
+}
+
+func (ds *datastoreImpl) RemoveProcessIndicatorsByDeployment(id string) error {
+	query := pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.DeploymentID, id).ProtoQuery()
+	results, err := ds.SearchProcessIndicators(query)
+	if err != nil {
+		return err
+	}
+	idsToDelete := make([]string, 0, len(results))
+	for _, r := range results {
+		idsToDelete = append(idsToDelete, r.GetId())
+	}
+
+	for _, id := range idsToDelete {
+		if err := ds.storage.RemoveProcessIndicator(id); err != nil {
+			log.Warnf("Failed to remove process indicator %q: %v", id, err)
+		}
+	}
+	return ds.indexer.DeleteProcessIndicators(idsToDelete...)
 }

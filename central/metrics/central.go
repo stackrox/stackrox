@@ -62,6 +62,6 @@ func SetIndexOperationDurationTime(start time.Time, op metrics.Op, t string) {
 }
 
 // IncrementSensorEventQueueCounter increments the counter for the passed operation
-func IncrementSensorEventQueueCounter(action string) {
-	sensorEventQueueCounterVec.With(prometheus.Labels{"Operation": action}).Inc()
+func IncrementSensorEventQueueCounter(op metrics.Op) {
+	sensorEventQueueCounterVec.With(prometheus.Labels{"Operation": op.String()}).Inc()
 }

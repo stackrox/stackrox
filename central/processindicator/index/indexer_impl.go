@@ -44,6 +44,17 @@ func (b *indexerImpl) DeleteProcessIndicator(id string) error {
 	return b.index.Delete(id)
 }
 
+// DeleteIndicator deletes the indicator from the index
+func (b *indexerImpl) DeleteProcessIndicators(ids ...string) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.RemoveMany, "ProcessIndicator")
+
+	batch := b.index.NewBatch()
+	for _, id := range ids {
+		batch.Delete(id)
+	}
+	return b.index.Batch(batch)
+}
+
 // SearchIndicators takes a SearchRequest and finds any matches
 func (b *indexerImpl) SearchProcessIndicators(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ProcessIndicator")

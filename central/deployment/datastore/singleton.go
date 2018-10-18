@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
+	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/ranking"
 )
 
@@ -31,7 +32,7 @@ func initialize() {
 		panic("unable to load search index for alerts")
 	}
 
-	ad = New(storage, indexer, searcher)
+	ad = New(storage, indexer, searcher, processDataStore.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.

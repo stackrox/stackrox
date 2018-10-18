@@ -20,6 +20,7 @@ const (
 	List
 	Rename
 	Remove
+	RemoveMany
 
 	Search
 

@@ -27,13 +27,11 @@ type Store interface {
 	UpsertDeployment(deployment *v1.Deployment) error
 	UpdateDeployment(deployment *v1.Deployment) error
 	RemoveDeployment(id string) error
-	GetTombstonedDeployments() ([]*v1.Deployment, error)
 }
 
 // New returns a new Store instance using the provided bolt DB instance.
 func New(db *bolt.DB, ranker *ranking.Ranker) Store {
 	bolthelper.RegisterBucketOrPanic(db, deploymentBucket)
-	bolthelper.RegisterBucketOrPanic(db, deploymentGraveyard)
 	bolthelper.RegisterBucketOrPanic(db, deploymentListBucket)
 	return &storeImpl{
 		DB:     db,

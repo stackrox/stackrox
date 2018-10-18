@@ -1,81 +1,87 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/deployment/search"
-	"github.com/stackrox/rox/central/deployment/store"
+	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
+	deploymentSearch "github.com/stackrox/rox/central/deployment/search"
+	deploymentStore "github.com/stackrox/rox/central/deployment/store"
+	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	indexer  index.Indexer
-	searcher search.Searcher
+	deploymentStore    deploymentStore.Store
+	deploymentIndexer  deploymentIndex.Indexer
+	deploymentSearcher deploymentSearch.Searcher
+
+	processDataStore processDataStore.DataStore
 }
 
 func (ds *datastoreImpl) Search(q *v1.Query) ([]pkgSearch.Result, error) {
-	return ds.searcher.Search(q)
+	return ds.deploymentSearcher.Search(q)
 }
 
 func (ds *datastoreImpl) ListDeployment(id string) (*v1.ListDeployment, bool, error) {
-	return ds.storage.ListDeployment(id)
+	return ds.deploymentStore.ListDeployment(id)
 }
 
 func (ds *datastoreImpl) SearchListDeployments(q *v1.Query) ([]*v1.ListDeployment, error) {
-	return ds.searcher.SearchListDeployments(q)
+	return ds.deploymentSearcher.SearchListDeployments(q)
 }
 
-// ListDeployments returns all deployments in their minimal form
+// ListDeployments returns all deploymentStore in their minimal form
 func (ds *datastoreImpl) ListDeployments() ([]*v1.ListDeployment, error) {
-	return ds.storage.ListDeployments()
+	return ds.deploymentStore.ListDeployments()
 }
 
 // SearchDeployments
 func (ds *datastoreImpl) SearchDeployments(q *v1.Query) ([]*v1.SearchResult, error) {
-	return ds.searcher.SearchDeployments(q)
+	return ds.deploymentSearcher.SearchDeployments(q)
 }
 
 // SearchRawDeployments
 func (ds *datastoreImpl) SearchRawDeployments(q *v1.Query) ([]*v1.Deployment, error) {
-	return ds.searcher.SearchRawDeployments(q)
+	return ds.deploymentSearcher.SearchRawDeployments(q)
 }
 
 // GetDeployment
 func (ds *datastoreImpl) GetDeployment(id string) (*v1.Deployment, bool, error) {
-	return ds.storage.GetDeployment(id)
+	return ds.deploymentStore.GetDeployment(id)
 }
 
 // GetDeployments
 func (ds *datastoreImpl) GetDeployments() ([]*v1.Deployment, error) {
-	return ds.storage.GetDeployments()
+	return ds.deploymentStore.GetDeployments()
 }
 
 // CountDeployments
 func (ds *datastoreImpl) CountDeployments() (int, error) {
-	return ds.storage.CountDeployments()
+	return ds.deploymentStore.CountDeployments()
 }
 
-// UpsertDeployment inserts a deployment into storage and into the indexer
+// UpsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
 func (ds *datastoreImpl) UpsertDeployment(deployment *v1.Deployment) error {
-	if err := ds.storage.UpsertDeployment(deployment); err != nil {
+	if err := ds.deploymentStore.UpsertDeployment(deployment); err != nil {
 		return err
 	}
-	return ds.indexer.AddDeployment(deployment)
+	return ds.deploymentIndexer.AddDeployment(deployment)
 }
 
-// UpdateDeployment updates a deployment in storage and in the indexer
+// UpdateDeployment updates a deployment in deploymentStore and in the deploymentIndexer
 func (ds *datastoreImpl) UpdateDeployment(deployment *v1.Deployment) error {
-	if err := ds.storage.UpdateDeployment(deployment); err != nil {
+	if err := ds.deploymentStore.UpdateDeployment(deployment); err != nil {
 		return err
 	}
-	return ds.indexer.AddDeployment(deployment)
+	return ds.deploymentIndexer.AddDeployment(deployment)
 }
 
-// RemoveDeployment removes an alert from the storage and the indexer
+// RemoveDeployment removes an alert from the deploymentStore and the deploymentIndexer
 func (ds *datastoreImpl) RemoveDeployment(id string) error {
-	if err := ds.storage.RemoveDeployment(id); err != nil {
+	if err := ds.deploymentStore.RemoveDeployment(id); err != nil {
 		return err
 	}
-	return ds.indexer.DeleteDeployment(id)
+	if err := ds.deploymentIndexer.DeleteDeployment(id); err != nil {
+		return err
+	}
+	return ds.processDataStore.RemoveProcessIndicatorsByDeployment(id)
 }

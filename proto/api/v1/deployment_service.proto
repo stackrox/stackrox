@@ -49,7 +49,6 @@ message Deployment {
 
     repeated Container containers              = 11;
     Risk risk                                  = 12;
-    google.protobuf.Timestamp tombstone        = 13;
     map<string, string> annotations            = 14;
     int64 priority                             = 15;
     bool inactive                              = 16;

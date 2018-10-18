@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/search"
 	"github.com/stackrox/rox/central/deployment/store"
+	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -31,11 +32,12 @@ type DataStore interface {
 	RemoveDeployment(id string) error
 }
 
-// New returns a new instance ofDataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
+// New returns a new instance of DataStore using the input store, indexer, and searcher.
+func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, processDataStore processDataStore.DataStore) DataStore {
 	return &datastoreImpl{
-		storage:  storage,
-		indexer:  indexer,
-		searcher: searcher,
+		deploymentStore:    storage,
+		deploymentIndexer:  indexer,
+		deploymentSearcher: searcher,
+		processDataStore:   processDataStore,
 	}
 }

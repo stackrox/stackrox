@@ -133,11 +133,4 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 		suite.NoError(err)
 		suite.False(exists)
 	}
-
-	// Test tombstones are set
-	tombstoned, err := suite.store.GetTombstonedDeployments()
-	for _, d := range tombstoned {
-		suite.NoError(err)
-		suite.NotNil(d.GetTombstone())
-	}
 }
