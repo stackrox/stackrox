@@ -90,10 +90,10 @@ spec:
         {{- end}}
         {{if .HostPath -}}
         - name: {{.HostPath.Name}}
-          mountPath: {{.HostPath.MountPath}}
+          mountPath: /var/lib/prevent
         {{else if .External -}}
         - name: {{.External.Name}}
-          mountPath: {{.External.MountPath}}
+          mountPath: /var/lib/prevent
         {{- end}}
       {{if not .K8sConfig.MonitoringType.None}}
       - name: telegraf

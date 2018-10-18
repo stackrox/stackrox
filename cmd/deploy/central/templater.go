@@ -25,7 +25,6 @@ var (
 // ExternalPersistence holds the data for a volume that is already created (e.g. docker volume, PV, etc)
 type ExternalPersistence struct {
 	Name         string
-	MountPath    string
 	StorageClass string
 }
 
@@ -33,7 +32,6 @@ type ExternalPersistence struct {
 type HostPathPersistence struct {
 	Name              string
 	HostPath          string
-	MountPath         string
 	NodeSelectorKey   string
 	NodeSelectorValue string
 }

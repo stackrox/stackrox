@@ -36,11 +36,11 @@ services:
         mode: 400
     {{if .HostPath -}}
     volumes:
-      - {{.HostPath.HostPath}}:{{.HostPath.MountPath}}
+      - {{.HostPath.HostPath}}:/var/lib/prevent
     {{- end}}
     {{if .External -}}
     volumes:
-      - {{.External.Name}}:{{.External.MountPath}}
+      - {{.External.Name}}:/var/lib/prevent
     {{- end}}
 networks:
   net:
