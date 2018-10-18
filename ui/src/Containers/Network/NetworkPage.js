@@ -166,8 +166,9 @@ class NetworkPage extends Component {
     };
 
     renderSideComponents = () => {
+        const { selectedNodeId, simulatorMode } = this.props;
         const className = `${
-            this.props.selectedNodeId ? 'w-1/3' : 'w-0'
+            selectedNodeId || simulatorMode ? 'w-1/3' : 'w-0'
         } h-full absolute pin-r z-1 bg-primary-200`;
         return (
             <div className={className}>
