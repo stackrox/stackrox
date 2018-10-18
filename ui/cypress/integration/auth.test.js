@@ -15,6 +15,12 @@ describe('Authentication', () => {
             status: authStatusValid ? 200 : 401,
             response: {}
         }).as('authStatus');
+        cy.route({
+            method: 'GET',
+            url: '/v1/metadata',
+            status: 200, // since we use a fake token, make sure we don't force a logout by a 401 response.
+            response: { version: '1.2.3' }
+        });
 
         cy.visit(landingUrl);
         cy.wait('@authProviders');
