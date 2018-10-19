@@ -6,15 +6,6 @@ import * as api from './constants/apiEndpoints';
 describe('Authentication', () => {
     const setupAuth = (landingUrl, authStatusValid = true) => {
         cy.server();
-
-        // server returns 401 for any invalid token regardless if anonymoys access is allowed or not,
-        // since we use a fake token, make sure we don't force a logout by a 401 response.
-        cy.route({
-            method: 'GET',
-            url: '**',
-            status: authStatusValid ? 200 : 401,
-            response: {}
-        });
         cy.route('GET', api.auth.authProviders, 'fixture:auth/authProviders.json').as(
             'authProviders'
         );
@@ -68,9 +59,7 @@ describe('Authentication', () => {
          *   3. Response comes back with 401, but token changed, so it should retry with a new token
          */
         localStorage.setItem('access_token', 'first-token');
-
         cy.server();
-        cy.route('**', {}); // don't create any noise and make sure only one request fails with 401
         cy.route({
             method: 'GET',
             url: api.benchmarks.configs,
@@ -81,8 +70,7 @@ describe('Authentication', () => {
                 localStorage.setItem('access_token', 'new-token');
             }
         }).as('benchmarks');
-
-        cy.visit(complianceUrl);
+        setupAuth(complianceUrl);
 
         cy.wait('@benchmarks').then(xhr => {
             expect(xhr.request.headers.Authorization).to.eq('Bearer first-token');

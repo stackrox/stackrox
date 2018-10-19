@@ -5,8 +5,11 @@ import (
 
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/stackrox/rox/pkg/logging"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 type contextUpdater struct {
@@ -16,8 +19,7 @@ type contextUpdater struct {
 func (u contextUpdater) updateContext(ctx context.Context) (context.Context, error) {
 	id, err := u.extractor.IdentityForRequest(requestinfo.FromContext(ctx))
 	if err != nil {
-		err = status.Errorf(codes.Unauthenticated, err.Error())
-		return ctx, err
+		log.Errorf("Error extracting identity: %v", err)
 	}
 	if id == nil {
 		return ctx, nil
