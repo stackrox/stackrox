@@ -4,9 +4,9 @@ package metrics
 
 import "strconv"
 
-const _Op_name = "AddAddManyCountDedupeGetGetAllGetManyListRenameRemoveSearchUpdateUpsertUpsertAll"
+const _Op_name = "AddAddManyCountDedupeGetGetAllGetManyListRenameRemoveRemoveManySearchUpdateUpsertUpsertAll"
 
-var _Op_index = [...]uint8{0, 3, 10, 15, 21, 24, 30, 37, 41, 47, 53, 59, 65, 71, 80}
+var _Op_index = [...]uint8{0, 3, 10, 15, 21, 24, 30, 37, 41, 47, 53, 63, 69, 75, 81, 90}
 
 func (i Op) String() string {
 	if i < 0 || i >= Op(len(_Op_index)-1) {
