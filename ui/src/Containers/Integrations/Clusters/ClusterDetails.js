@@ -44,6 +44,7 @@ const K8sDetails = ({ cluster }) => (
             label="Image Pull Secret Name"
             value={get(cluster, 'kubernetes.imagePullSecret', 'N/A')}
         />
+        <LabeledValue label="Monitoring Endpoint" value={cluster.monitoringEndpoint || 'N/A'} />
     </React.Fragment>
 );
 K8sDetails.propTypes = {
