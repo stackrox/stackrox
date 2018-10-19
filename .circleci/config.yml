@@ -1,6 +1,6 @@
 defaults: &defaults
   docker:
-    - image: docker.io/stackrox/apollo-ci:0.1.11-13-g3c8360ac34
+    - image: docker.io/stackrox/apollo-ci:0.1.11-14-g2811d09a20
       auth:
         username: $DOCKERHUB_USERNAME
         password: $DOCKERHUB_PASSWORD
@@ -183,7 +183,7 @@ jobs:
 
       - run:
           name: Run style checks and unit tests
-          command: make style test
+          command: make style test upload-coverage
 
       - store_artifacts:
           path: qa-tests-backend/build/reports/codenarc

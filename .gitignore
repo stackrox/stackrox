@@ -28,6 +28,7 @@ protoc-*
 image/VERSION
 coverage.out
 coverage.html
+combined_coverage.dat
 
 # Bazel
 bazel-*

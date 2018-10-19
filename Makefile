@@ -172,7 +172,7 @@ bazel-test: gazelle
 	-rm vendor/github.com/grpc-ecosystem/grpc-gateway/BUILD
 	@# Be careful if you add action_env arguments; their values can invalidate cached
 	@# test results. See https://github.com/bazelbuild/bazel/issues/2574#issuecomment-320006871.
-	bazel test $(PURE) $(RACE) \
+	bazel coverage $(PURE) $(RACE) \
 	    --test_output=errors \
 	    -- \
 	    //... -benchmarks/... -proto/... -qa-tests-backend/... -tests/... -vendor/...
@@ -189,6 +189,16 @@ ui-test:
 
 .PHONY: test
 test: bazel-test benchmarks-test ui-test
+
+upload-coverage:
+	@# 'mode: set' is repeated in each coverage file, but Coveralls only wants it
+	@# exactly once at the head of the file.
+	@# We might be able to use Coveralls parallel builds to resolve this:
+	@#     https://docs.coveralls.io/parallel-build-webhook
+
+	@echo 'mode: set' > combined_coverage.dat
+	@find ./bazel-testlogs/ -name 'coverage.dat' | xargs -I {} cat "{}" | grep -v 'mode: set' >> combined_coverage.dat
+	goveralls -coverprofile="combined_coverage.dat" -service=circle-ci -repotoken="$$COVERALLS_REPO_TOKEN"
 
 .PHONY: coverage
 coverage:
@@ -210,7 +220,6 @@ image: gazelle clean-image
 		//sensor/kubernetes \
 		//sensor/swarm \
 		//integration-tests/mock-grpc-server \
-
 
 	make -C ui build
 
