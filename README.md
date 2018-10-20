@@ -1,33 +1,42 @@
 [![CircleCI][circleci-badge]][circleci-link]
 [![Coverage Status][coveralls-badge]][coveralls-link]
 
-# StackRox Prevent
+# StackRox Container Security Platform
 
-Prevent is a new StackRox initiative to provide security in the
-deployment phase of the container lifecycle.
+The StackRox Container Security Platform performs a risk analysis of the container
+environment, delivers visibility and runtime alerts, and provides recommendations
+to proactively improve security by hardening the environment. StackRox
+integrates with every stage of container lifecycle: build, deploy and runtime.
 
-## Build Tooling
-**Note**: if you want to develop only Prevent UI, please refer to [ui/README.md](./ui/README.md) for dev env setup instructions.
+Note: the StackRox platform is built on the foundation of the product formerly
+known as Prevent, which itself was called Mitigate and Apollo. You may find
+references to these previous names in code or documentation.
 
-Prevent is distributed as a single image. The following build tools are
-required to completely build that image and run tests:
+## Development
+**Note**: if you want to develop only StackRox UI, please refer to [ui/README.md](./ui/README.md).
 
- * Make
+### Build Tooling
+The following tools are necessary to build image(s):
+
+ * [Make](https://www.gnu.org/software/make/)
  * [Bazel](https://docs.bazel.build/versions/master/install.html) 0.17.2 or higher.
  Install XCode before Bazel if you are building on a Mac.
+ * [Go](https://golang.org/dl/) 1.11.
+ * Various Go linters that can be installed using `make dev`.
+ * [Node.js](https://nodejs.org/en/) `8.12.0` or higher (it's highly recommended to use an LTS version)
+ If you're managing multiple versions of Node.js on your machine, consider using [nvm](https://github.com/creationix/nvm))
  * [Yarn](https://yarnpkg.com/en/)
- * [Go](https://golang.org/dl/)
- * Various Go linters that can be installed using `make -C central dev`
 
-## How to Build
+### How to Build
 ```bash
 make image
 ```
 
 This will create `stackrox/prevent` with a tag defined by `make tag`.
-This is the only image required to run StackRox Prevent.
+This is the only image required to run the base configuration of StackRox.
+Runtime collection and system monitoring require additional images.
 
-## How to Test
+### How to Test
 ```bash
 make test
 ```
@@ -35,21 +44,17 @@ make test
 Note: there are integration tests in some components, and we currently
 run those manually. They will be re-enabled at some point.
 
-## How to Apply or Check Style Standards
+### How to Apply or Check Style Standards
 ```bash
 make style
 ```
 
-This will rewrite Go code to conform to standard style guidelines.
-JavaScript code is only checked, not rewritten.
+This will check Go and Javascript code for conformance with standard style
+guidelines, and rewrite the relevant code if possible.
 
-## How to Deploy
+### How to Deploy
 Deployment configurations are under the `deploy/` directory, organized
 per orchestrator.
-
-_**WARNING:** You are looking at the tip of the development tree.
-If you need to create a customer demo, use the instructions for the
-[latest stable version](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/233242976/StackRox+Prevent)._
 
 The deploy script will:
 
@@ -57,21 +62,23 @@ The deploy script will:
  1. Create a cluster configuration and a service identity, then
  deploy the cluster sensor using that configuration and those credentials.
 
-You can (and likely should) set the environment variable `PREVENT_IMAGE_TAG`
-in your shell to ensure that you get the version you want.
+You can set the environment variable `PREVENT_IMAGE_TAG` in your shell to
+ensure that you get the version you want.
+If you check out a commit, the scripts will launch the image corresponding to
+that commit by default. The image will be pulled if needed.
 
-### Docker Swarm
+Further steps are orchestrator specific.
 
-#### Deploy for Development
+<details><summary>Docker Swarm</summary>
+
 Set `LOCAL_API_ENDPOINT` to a `hostname:port` string appropriate for your
 local host, VM, or cluster, then:
-
 ```bash
 ./deploy/swarm/deploy.sh
 ```
 
 When prompted, enter the credentials for whatever image registry you are
-downloading StackRox Prevent from. Usually, this is [Docker Hub](https://hub.docker.com).
+downloading StackRox Platform from. Usually, this is [Docker Hub](https://hub.docker.com).
 They are necessary so that Sensor can properly deploy the Benchmark Bootstrap
 service on all cluster nodes when requested.
 You may set these as `REGISTRY_USERNAME` and `REGISTRY_PASSWORD` in your
@@ -83,34 +90,37 @@ credentials. Otherwise, the credentials currently in use in your shell
 will be sent to the cluster and created as secrets for the Sensor to use.
 
 If you are running on a local VM and do not want Swarm to pull a new image when
-you submit the StackRox Prevent stack (e.g., to use a locally built `:latest` tag),
+you submit the StackRox Platform stack (e.g., to use a locally built `:latest` tag),
 use this variant instead:
 
 ```bash
 ./deploy/swarm/deploy-local.sh
 ```
+</details>
 
-#### Deploy for Customer
+<details><summary>Kubernetes</summary>
+
+Set your Docker image-pull credentials as `REGISTRY_USERNAME` and
+`REGISTRY_PASSWORD`, then run:
+
+```bash
+./deploy/k8s/deploy.sh
+```
+</details>
+
+## Deploying for Customer
+
+<details><summary>Docker Swarm (not officially supported)</summary>
 
 Note: you may need to run `unset DOCKER_HOST DOCKER_CERT_PATH DOCKER_TLS_VERIFY`
-on a fresh terminal locally so that you don't try to run an interactive container remotely.
+on a fresh terminal locally so that you don't try to run an interactive container
+remotely.
+
 ```
 docker run -i --rm stackrox.io/prevent:<tag> interactive > swarm.zip
 ```
 
-This will run you through an installer as follows and generates a swarm.zip file:
-```$xslt
-docker run -i --rm stackrox.io/prevent:1.2 interactive > swarm.zip
-Enter orchestrator (dockeree, k8s, openshift, swarm): swarm
-Enter image to use (default: 'stackrox.io/prevent:1.3'): stackrox.io/prevent:1.2
-Enter public port to expose (default: '443'):
-Enter volume (optional) (external, hostpath): hostpath
-Enter path on the host (default: '/var/lib/prevent'):
-Enter mount path inside the container (default: '/var/lib/prevent'):
-Enter hostpath volume name (default: 'prevent-db'):
-Enter node selector key (default: 'node.hostname'):
-Enter node selector value: roxbase2
-```
+This will run you through an installer and generate a `swarm.zip` file:
 
 ```$xslt
 unzip swarm.zip -d swarm
@@ -118,91 +128,39 @@ unzip swarm.zip -d swarm
 
 Note: This should be run in an environment that does have the proper cert bundle
 ```$xslt
-bash swarm/deploy.sh
-```
-Now central has been deployed and use the UI to deploy sensor
-
-#### Monitoring
-You can deploy Prometheus to monitor the services:
-
-```bash
-docker stack deploy -c prometheus/swarm.yaml prevent-health
+bash swarm/central.sh
 ```
 
-### Kubernetes
+Now Central has been deployed. Use the UI to deploy Sensor.
 
-#### Deploy for Development
-Set your Docker image-pull credentials as `REGISTRY_USERNAME` and
-`REGISTRY_PASSWORD`, then run:
+</details>
 
-```bash
-./deploy/k8s/deploy.sh
-```
-
-#### Deploying for Customer
+<details><summary>Kubernetes</summary>
 
 ```
 docker run -i --rm stackrox.io/prevent:<tag> interactive > k8s.zip
 ```
 
-This will run you through an installer as follows and generates a k8s.zip file.
-The below works on GKE and creates an external volume
-```$xslt
-docker run -i --rm stackrox.io/prevent:1.2 interactive > k8s.zip
-Enter orchestrator (dockeree, k8s, openshift, swarm): k8s
-Enter image to use (default: 'stackrox.io/prevent:1.3'): stackrox.io/prevent:1.2
-Enter image pull secret (default: 'stackrox'):
-Enter namespace (default: 'stackrox'):
-Enter volume (optional) (external, hostpath): external
-Enter mount path inside the container (default: '/var/lib/prevent'):
-```
+This will run you through an installer and generate a `k8s.zip` file.
 
 ```$xslt
 unzip k8s.zip -d k8s
 ```
 
 ```$xslt
-bash k8s/deploy.sh
+bash k8s/central.sh
 ```
-Now central has been deployed and use the UI to deploy sensor
+Now Central has been deployed. Use the UI to deploy Sensor.
 
-#### Exposing the UI
-The script will provide access the UI using a local port-forward, but you can
-optionally create a LoadBalancer service to access Central instead.
+</details>
 
-```bash
-kubectl create -f deploy/k8s/lb.yaml
-```
-
-#### RBAC
-If you are deploying Sensor into a cluster with RBAC enabled (generally,
-this applies to Kubernetes >=1.8), you need to create RBAC bindings.
-
-In some environments, you may need to elevate privileges to execute this;
-for instance, in GKE, you need to pass kubectl `--username` and `--password`
-from `gcloud container clusters describe --format=json [NAME] | jq .masterAuth`.)
-
-```bash
-kubectl create -f deploy/k8s/rbac.yaml
-```
-
-#### Monitoring
-You can deploy Prometheus to monitor the services:
-
-```bash
-kubectl create -f prometheus/k8s.yaml
-```
-Create a port forward to the pod on port 9090 to access the UI.
-
-### OpenShift
-
-#### Deployment for Customer
+<details><summary>OpenShift</summary>
 
 Note: If using a host mount, you need to allow the container to access it by using
 `sudo chcon -Rt svirt_sandbox_file_t <full volume path>`
 
-Take the image-setup.sh script from this repo and run it to do the pull/push to local OpenShift registry
-This is a prerequisite for every new cluster
+Take the image-setup.sh script from this repo and run it to do the pull/push to
+local OpenShift registry. This is a prerequisite for every new cluster.
 ```
 bash image-setup.sh
 ```
@@ -211,53 +169,58 @@ bash image-setup.sh
 docker run -i --rm stackrox.io/prevent:<tag> interactive > openshift.zip
 ```
 
-This will run you through an installer as follows and generates a openshift.zip file.
-```$xslt
-docker run -i --rm stackrox.io/prevent:1.2 interactive > openshift.zip
-Enter orchestrator (dockeree, k8s, openshift, swarm): openshift
-Enter image to use (default: 'docker-registry.default.svc:5000/stackrox/prevent:1.3'): docker-registry.default.svc:5000/stackrox/prevent:1.2
-Enter namespace (default: 'stackrox'):
-Enter volume (optional) (external, hostpath):
-```
+This will run you through an installer and generate a `openshift.zip` file.
 
 ```$xslt
 unzip openshift.zip -d openshift
 ```
 
 ```$xslt
-bash openshift/deploy.sh
+bash openshift/central.sh
 ```
-
+</details>
 
 ## How to Release a New Version
-Releasing a new version of StackRox Prevent requires only a few steps.
 
-These steps assume that the tip of `origin/master` is what you plan to release,
-and that the build for that commit has completed.
-
-### Get Ready
-```bash
-git checkout master
-git pull
-export RELEASE_COMMIT="$(git rev-parse HEAD)"
-echo "Preparing to release ${RELEASE_COMMIT}"
-```
-
-Decide the release version and export it into your shell for convenience,
-for example:
-
+Replace the value with a version number you're about to release:
 ```bash
 export RELEASE_VERSION=0.999
 ```
 
-By convention, we do not currently use a `v` prefix for release branches and
-tags (that is, we push branches like `release/0.5` and tags like `0.5`,
-not `release/v0.5` and `v0.5`).
+By convention, we do not currently use a `v` prefix for release tags (that is,
+we push tags like `0.5`, not `v0.5`).
 
-### Create a Release Branch (for non-patch releases)
+### Get Ready
+Proceed with the steps that under the section of the release type you're making:
+non-patch or patch.
+
+#### Non-patch Release
+These steps assume that the tip of `origin/master` is what you plan to release
+and that all the builds for that commit have completed successfully.
+
 ```bash
-git checkout -b release/${RELEASE_VERSION}
-git push -u origin release/${RELEASE_VERSION}
+git checkout master
+git pull
+export RELEASE_COMMIT="$(git rev-parse HEAD)"
+echo -e "Preparing to release:\n$(git log -n 1 ${RELEASE_COMMIT})"
+```
+
+#### Patch Release
+Identify the release version / tag that will be patched (patch or non-patch):
+```bash
+export RELEASE_TO_PATCH=0.998
+git fetch --tags
+git checkout -b release/${RELEASE_VERSION} ${RELEASE_TO_PATCH}
+```
+
+Then use `get cherry-pick -x ${commit_sha}` to cherry pick commits from `master`
+that are going into this patch release. If release requires special changes
+(besides cherry picking from `master`), push the release branch and create
+(and merge after code review) PR(s) targeting it.
+
+```bash
+export RELEASE_COMMIT="$(git rev-parse HEAD)"
+echo -e "Preparing to release:\n$(git log -n 1 ${RELEASE_COMMIT})"
 ```
 
 ### Create a Tag
@@ -271,28 +234,24 @@ When you push the tag to GitHub, CircleCI will start a build and will push
 the image as `stackrox/prevent:[your-release-tag]`,
 for example `stackrox/prevent:1.0` and `stackrox.io/prevent:1.0`.
 
-### Modify Demo Instructions
-The StackRox Prevent demo instructions live in a [Google Drive folder](https://drive.google.com/drive/folders/1gem9vG0Z0hzokF7S_r4WGwXDCCXi6fbT).
-
-1. Copy the current latest version of the instructions to a new Google Doc.
-1. Update the instructions at the top of the document to reference the new
-release version git and Docker image tags.
-1. Run through the entire document and make sure that everything works.
-1. If there are new features to showcase, consider modifying the demo
-instructions to demonstrate them.
-
 ### Update JIRA release
-Mark this version "Released" in JIRA. Create the next one if it does not exist.
+Mark this version "Released" in [JIRA](https://stack-rox.atlassian.net/projects/ROX?orderField=RANK&selectedItem=com.atlassian.jira.jira-projects-plugin%3Arelease-page&status=unreleased).
+Create the next one if it does not exist.
 
 Find all bugs that are still open and affect a previous release.
 Add this release to the "Affects Version(s)" list for those bugs.
 
-### Publish a Confluence Page for the Version
-Copy the "Latest Stable Version" page, update it, and replace the link on
-[Prevent wiki homepage](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/233242976/StackRox+Prevent).
+### Create Release Notes
+1. Go the [releases page on GitHub](https://github.com/stackrox/rox/releases).
+1. Edit the corresponding tag and write release notes based on JIRA issues that
+went into the current release.
+1. Mark the release as "Pre-release" if QA verification is pending.
 
-Also, update the [current releases page](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/591593496/Current+product+releases)
-so that the team knows which versions to deploy to customers.
+### Promote the Release for Demos / POCs
+If QA and the team has approved the promotion of the release to SEs for customer
+demos and POCs, then
+* update the [current releases page](https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/591593496/Current+product+releases)
+* remove "Pre-release" mark from [GitHub releases](https://github.com/stackrox/rox/releases)
 
 [circleci-badge]: https://circleci.com/gh/stackrox/rox.svg?&style=shield&circle-token=140f88ea9dfd594ff68b71eaf1d4407c4331833d
 [circleci-link]:  https://circleci.com/gh/stackrox/workflows/rox/tree/master
