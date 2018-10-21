@@ -1,6 +1,5 @@
 package orchestratormanager
 
-import com.google.gson.reflect.TypeToken
 import common.YamlGenerator
 import io.kubernetes.client.ApiClient
 import io.kubernetes.client.ApiException
@@ -38,12 +37,10 @@ import io.kubernetes.client.models.V1beta1NetworkPolicyIngressRule
 import io.kubernetes.client.models.V1beta1NetworkPolicyPeer
 import io.kubernetes.client.models.V1beta1NetworkPolicySpec
 import io.kubernetes.client.util.Config
-import io.kubernetes.client.util.Watch
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 
-import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
 
 class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
@@ -448,47 +445,33 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     }
 
     def wasContainerKilled(String containerName, String namespace = this.namespace) {
-        ApiClient client = Config.defaultClient()
-        client.getHttpClient().setReadTimeout(30, TimeUnit.SECONDS)
-        Configuration.setDefaultApiClient(client)
         Long startTime = System.currentTimeMillis()
+        V1PodList pods = new V1PodList()
 
-        while (System.currentTimeMillis() - startTime < maxWaitTime) {
-            Watch<V1Pod> watch =
-                    Watch.createWatch(
-                            client,
-                            this.api.listNamespacedPodCall(
-                                    namespace,
-                                    null,
-                                    null,
-                                    null,
-                                    true,
-                                    null,
-                                    Integer.MAX_VALUE,
-                                    null,
-                                    180,
-                                    true,
-                                    null,
-                                    null
-                            ),
-                            new TypeToken<Watch.Response<V1Pod>>() { }.getType()
-                    )
-
+        while (System.currentTimeMillis() - startTime < 60000) {
             try {
-                for (Watch.Response<V1Pod> item : watch) {
-                    if (item.object.getMetadata().getName() == containerName && item.type == "DELETED") {
-                        println "${item.object.getMetadata().getName()}: ${item.type}"
-                        return true
-                    }
+                pods = api.listNamespacedPod(
+                        namespace,
+                        null,
+                        null,
+                        "metadata.name=${containerName}",
+                        true,
+                        null,
+                        Integer.MAX_VALUE,
+                        null,
+                        180,
+                        false)
+                if (pods.items.size() == 0) {
+                    println "Could not query K8S for pod details, assuming pod was killed"
+                    return true
                 }
             } catch (Exception e) {
-                println "wasContainerKilled: pod watcher timeout - retrying"
-            } finally {
-                watch.close()
+                println "wasContainerKilled: error fetching pod details - retrying"
             }
         }
 
-        println "wasContainerKilled: did not find killed container before ${maxWaitTime}ms timeout"
+        println "wasContainerKilled: did not determine container was killed before 60s timeout"
+        println "container details were found:\n${containerName}: ${pods.getItems().get(0).toString()}"
         return false
     }
 

@@ -44,11 +44,13 @@ class Enforcement extends BaseSpecification {
 
         then:
         "check pod was killed"
+        def startTime = System.currentTimeMillis()
         assert d.pods.collect {
             it -> println "checking if ${it.name} was killed"
             orchestrator.wasContainerKilled(it.name)
         }.find { it == true }
         assert alert.enforcement.action == EnforcementAction.KILL_POD_ENFORCEMENT
+        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
@@ -91,7 +93,14 @@ class Enforcement extends BaseSpecification {
 
         then:
         "check deployment was scaled-down to 0 replicas"
-        assert orchestrator.getDeploymentReplicaCount(d) == 0
+        def replicaCount = 1
+        def startTime = System.currentTimeMillis()
+        while (replicaCount > 0 && (System.currentTimeMillis() - startTime) < 60000) {
+            replicaCount = orchestrator.getDeploymentReplicaCount(d)
+            sleep 1000
+        }
+        assert replicaCount == 0
+        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
 
         cleanup:
@@ -135,7 +144,14 @@ class Enforcement extends BaseSpecification {
 
         then:
         "check deployment set with unsatisfiable node constraint, and unavailable nodes = desired nodes"
-        assert orchestrator.getDeploymentNodeSelectors(d) != null
+        def nodeSelectors = null
+        def startTime = System.currentTimeMillis()
+        while (nodeSelectors == null && (System.currentTimeMillis() - startTime) < 60000) {
+            nodeSelectors = orchestrator.getDeploymentNodeSelectors(d)
+            sleep 1000
+        }
+        assert nodeSelectors != null
+        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert orchestrator.getDeploymentUnavailableReplicaCount(d) ==
                 orchestrator.getDeploymentReplicaCount(d)
         assert alert.enforcement.action == EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
