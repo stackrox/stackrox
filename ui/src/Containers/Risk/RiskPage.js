@@ -17,7 +17,7 @@ import Loader from 'Components/Loader';
 import TabContent from 'Components/TabContent';
 import TablePagination from 'Components/TablePagination';
 
-import { sortNumber } from 'sorters/sorters';
+import { sortNumber, sortDate } from 'sorters/sorters';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import RiskDetails from './RiskDetails';
@@ -101,8 +101,9 @@ class RiskPage extends Component {
             {
                 id: 'updated',
                 Header: 'Updated',
-                accessor: d => dateFns.format(d.updatedAt, dateTimeFormat),
-                Cell: ({ value }) => <span>{value}</span>
+                accessor: 'updatedAt',
+                Cell: ({ value }) => <span>{dateFns.format(value, dateTimeFormat)}</span>,
+                sortMethod: sortDate
             },
             {
                 Header: 'Cluster',
