@@ -183,12 +183,7 @@ class NetworkPage extends Component {
     renderSidePanel = () => {
         const { selectedNodeId, deployment, networkPolicies } = this.props;
         if (!selectedNodeId || this.props.simulatorMode) {
-            return (
-                <React.Fragment>
-                    {this.renderNodesUpdateSection()}
-                    {this.renderNetworkPolicySimulator()}
-                </React.Fragment>
-            );
+            return <React.Fragment>{this.renderNodesUpdateSection()}</React.Fragment>;
         }
         const envGraphPanelTabs = [{ text: 'Deployment Details' }, { text: 'Network Policies' }];
         const content = this.props.isFetchingNode ? (

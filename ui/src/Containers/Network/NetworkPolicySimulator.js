@@ -190,7 +190,7 @@ class NetworkPolicySimulator extends Component {
         return (
             <div
                 data-test-id="network-simulator-panel"
-                className="h-full absolute pin-r pin-b pt-1 pb-1 pr-1 shadow-md bg-base-200"
+                className="w-full h-full absolute pin-r pin-b pt-1 pb-1 pr-1 shadow-md bg-base-200"
             >
                 {this.renderSidePanel()}
             </div>
