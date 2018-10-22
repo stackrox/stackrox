@@ -4,7 +4,7 @@ import { MOUSE } from 'three';
 export const MAX_RADIUS = 12; // max radius of individual nodes
 export const PADDING = 2; // separation between same namespace nodes
 export const CLUSTER_PADDING = 150;
-export const CLUSTER_INNER_PADDING = 60;
+export const CLUSTER_INNER_PADDING = 45;
 export const CLUSTER_BORDER_PADDING = CLUSTER_INNER_PADDING + 5;
 export const SCALE_DURATION = 250;
 export const SCALE_FACTOR = 1.5;
@@ -20,7 +20,7 @@ export const NAMESPACE_BORDER_CANVAS_HEIGHT = 32;
 
 export const FORCE_CONFIG = {
     FORCE_COLLISION_RADIUS_OFFSET: 20,
-    FORCE_CLUSTER_STRENGTH: 0.999
+    FORCE_CLUSTER_STRENGTH: 0.9
 };
 
 export const MIN_ZOOM = 0.25;
