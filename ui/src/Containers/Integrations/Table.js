@@ -96,11 +96,15 @@ class IntegrationTable extends Component {
         let activateBtn = null;
         if (source === 'authProviders') {
             const enableTooltip = `${!integration.validated ? 'Enable' : 'Disable'} auth provider`;
+            const enableIconColor = integration.disabled ? 'text-primary-600' : 'text-success-600';
+            const enableIconHoverColor = integration.disabled
+                ? 'text-primary-700'
+                : 'text-success-700';
             activateBtn = (
                 <Tooltip placement="top" overlay={<div>{enableTooltip}</div>} mouseLeaveDelay={0}>
                     <button
                         type="button"
-                        className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
+                        className={`p-1 px-4 hover:bg-primary-200 ${enableIconColor} hover:${enableIconHoverColor}`}
                         onClick={this.onActivateHandler(integration)}
                     >
                         <Icon.Power className="mt-1 h-4 w-4" />

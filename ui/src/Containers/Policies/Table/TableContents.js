@@ -105,12 +105,14 @@ class TableContents extends Component {
 
     renderRowActionButtons = policy => {
         const enableTooltip = `${policy.disabled ? 'Enable' : 'Disable'} policy`;
+        const enableIconColor = policy.disabled ? 'text-primary-600' : 'text-success-600';
+        const enableIconHoverColor = policy.disabled ? 'text-primary-700' : 'text-success-700';
         return (
             <div className="border-2 border-r-2 border-base-400 bg-base-100 flex">
                 <Tooltip placement="top" overlay={<div>{enableTooltip}</div>} mouseLeaveDelay={0}>
                     <button
                         type="button"
-                        className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
+                        className={`p-1 px-4 hover:bg-primary-200 ${enableIconColor} hover:${enableIconHoverColor}`}
                         onClick={this.toggleEnabledDisabledPolicy(policy)}
                     >
                         <Icon.Power className="mt-1 h-4 w-4" />
