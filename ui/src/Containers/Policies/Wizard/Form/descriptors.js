@@ -1,4 +1,4 @@
-import { lifecycleStageLabels, enforcementActionLabels } from 'messages/common';
+import { lifecycleStageLabels } from 'messages/common';
 
 const equalityOptions = [
     { label: 'Is greater than', value: 'GREATER_THAN' },
@@ -171,17 +171,6 @@ const policyDetailsFormDescriptor = [
         type: 'multiselect-creatable',
         options: [],
         required: true,
-        default: true
-    },
-    {
-        label: 'Enforcement Action',
-        jsonpath: 'enforcementActions',
-        type: 'select',
-        options: Object.keys(enforcementActionLabels).map(key => ({
-            label: enforcementActionLabels[key],
-            value: key
-        })),
-        required: false,
         default: true
     },
     {

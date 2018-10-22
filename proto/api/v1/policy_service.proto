@@ -38,10 +38,11 @@ message Policy {
 /////////////////////
 
 enum EnforcementAction {
-    UNSET_ENFORCEMENT                           = 0;
-    SCALE_TO_ZERO_ENFORCEMENT                   = 1;
-    UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT   = 2;
-    KILL_POD_ENFORCEMENT                        = 3;
+    UNSET_ENFORCEMENT                         = 0;
+    SCALE_TO_ZERO_ENFORCEMENT                 = 1;
+    UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT = 2;
+    KILL_POD_ENFORCEMENT                      = 3;
+    FAIL_BUILD_ENFORCEMENT                    = 4;
 }
 
 message Whitelist {

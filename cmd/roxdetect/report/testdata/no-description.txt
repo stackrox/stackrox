@@ -1,6 +1,6 @@
 ----------------BEGIN STACKROX CI---------------
 The scanned image violated the following policies:
-✗ CI Test Policy One (policy marked as critical)
+✗ CI Test Policy One (policy enforcement failed build)
 - Rationale:
     ↳ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nec orci
       bibendum sapien suscipit maximus. Quisque dapibus accumsan tempor. Vivamus at

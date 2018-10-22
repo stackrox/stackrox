@@ -4,26 +4,21 @@ import { connect } from 'react-redux';
 import { selectors } from 'reducers';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { reduxForm, formValueSelector, change } from 'redux-form';
+
 import flattenObject from 'utils/flattenObject';
+import removeEmptyFields from 'utils/removeEmptyFields';
+import { getPolicyFormDataKeys } from 'Containers/Policies/Wizard/Form/utils';
+import policyFormFields from 'Containers/Policies/Wizard/Form/descriptors';
 
 import FormField from 'Components/FormField';
 import CustomSelect from 'Components/Select';
-import removeEmptyFields from 'utils/removeEmptyFields';
-import { getPolicyFormDataKeys } from 'Containers/Policies/policyFormUtils';
-import policyFormFields from 'Containers/Policies/policyCreationFormDescriptor';
+import Field from 'Containers/Policies/Wizard/Form/Field';
 
-import ReduxSelectField from 'Components/forms/ReduxSelectField';
-import ReduxTextField from 'Components/forms/ReduxTextField';
-import ReduxTextAreaField from 'Components/forms/ReduxTextAreaField';
-import ReduxCheckboxField from 'Components/forms/ReduxCheckboxField';
-import ReduxMultiSelectField from 'Components/forms/ReduxMultiSelectField';
-import ReduxMultiSelectCreatableField from 'Components/forms/ReduxMultiSelectCreatableField';
-import ReduxNumericInputField from 'Components/forms/ReduxNumericInputField';
-
-class PolicyCreationForm extends Component {
+class FieldGroupCards extends Component {
     static propTypes = {
         policyFormFields: PropTypes.shape({}).isRequired,
         formData: PropTypes.shape({}).isRequired,
+
         change: PropTypes.func.isRequired
     };
 
@@ -34,62 +29,6 @@ class PolicyCreationForm extends Component {
             fields: []
         };
     }
-
-    getReduxFormField = field => {
-        switch (field.type) {
-            case 'text':
-                return (
-                    <ReduxTextField
-                        key={field.jsonpath}
-                        name={field.jsonpath}
-                        disabled={field.disabled}
-                        placeholder={field.placeholder}
-                    />
-                );
-            case 'checkbox':
-                return <ReduxCheckboxField name={field.jsonpath} disabled={field.disabled} />;
-            case 'select':
-                return (
-                    <ReduxSelectField
-                        key={field.jsonpath}
-                        name={field.jsonpath}
-                        options={field.options}
-                        placeholder={field.placeholder}
-                        disabled={field.disabled}
-                        defaultValue={field.default}
-                    />
-                );
-            case 'multiselect':
-                return <ReduxMultiSelectField name={field.jsonpath} options={field.options} />;
-            case 'multiselect-creatable':
-                return (
-                    <ReduxMultiSelectCreatableField name={field.jsonpath} options={field.options} />
-                );
-            case 'textarea':
-                return (
-                    <ReduxTextAreaField
-                        name={field.jsonpath}
-                        disabled={field.disabled}
-                        placeholder={field.placeholder}
-                    />
-                );
-            case 'number':
-                return (
-                    <ReduxNumericInputField
-                        key={field.jsonpath}
-                        name={field.jsonpath}
-                        min={field.min}
-                        max={field.max}
-                        step={field.step}
-                        placeholder={field.placeholder}
-                    />
-                );
-            case 'group':
-                return field.jsonpaths.map(input => this.getReduxFormField(input));
-            default:
-                throw new Error(`Unknown field type: ${field.type}`);
-        }
-    };
 
     addFormField = jsonpath => {
         let fieldToAdd = {};
@@ -111,10 +50,46 @@ class PolicyCreationForm extends Component {
 
             if (field) fieldToRemove = field;
         });
+
         this.setState(prevState => ({
             fields: prevState.fields.filter(fieldPath => fieldPath !== fieldToRemove.jsonpath)
         }));
+
         this.props.change(fieldToRemove.jsonpath, null);
+    };
+
+    renderFields = (formFields, formData) => {
+        const filteredFields = formFields.filter(field => {
+            const isAddedField =
+                this.state.fields.length !== 0 && this.state.fields.find(o => o === field.jsonpath);
+            return (
+                field.default ||
+                isAddedField ||
+                formData.find(jsonpath => jsonpath.includes(field.jsonpath))
+            );
+        });
+        if (!filteredFields.length) {
+            return <div className="p-3 text-base-500 font-500">No Fields Added</div>;
+        }
+
+        return (
+            <div className="h-full p-3">
+                {filteredFields.map(field => {
+                    const removeField = !field.default ? this.removeField : null;
+                    return (
+                        <FormField
+                            key={field.jsonpath}
+                            label={field.label}
+                            name={field.jsonpath}
+                            required={field.required}
+                            onRemove={removeField}
+                        >
+                            <Field field={field} />
+                        </FormField>
+                    );
+                })}
+            </div>
+        );
     };
 
     renderFieldsDropdown = (formFields, formData) => {
@@ -141,67 +116,25 @@ class PolicyCreationForm extends Component {
         );
     };
 
-    renderFields = (formFields, formData) => {
-        const filteredFields = formFields.filter(field => {
-            const isAddedField =
-                this.state.fields.length !== 0 && this.state.fields.find(o => o === field.jsonpath);
-            return (
-                field.default ||
-                isAddedField ||
-                formData.find(jsonpath => jsonpath.includes(field.jsonpath))
-            );
-        });
-        if (!filteredFields.length) {
-            return <div className="p-3 text-base-500 font-500">No Fields Added</div>;
-        }
-        return (
-            <div className="h-full p-3">
-                {filteredFields.map(field => {
-                    const removeField = !field.default ? this.removeField : null;
-                    return (
-                        <FormField
-                            key={field.jsonpath}
-                            label={field.label}
-                            name={field.jsonpath}
-                            required={field.required}
-                            onRemove={removeField}
-                        >
-                            {this.getReduxFormField(field)}
-                        </FormField>
-                    );
-                })}
-            </div>
-        );
-    };
-
-    renderFieldGroupCards = () => {
+    render() {
         const fieldGroups = Object.keys(this.props.policyFormFields);
         const formData = Object.keys(flattenObject(removeEmptyFields(this.props.formData)));
+
         return fieldGroups.map(fieldGroup => {
             const fieldGroupName = fieldGroup.replace(/([A-Z])/g, ' $1');
-            const fields = this.props.policyFormFields[fieldGroup].descriptor;
+            const formFields = this.props.policyFormFields[fieldGroup].descriptor;
             return (
                 <div className="px-3 pt-5" data-test-id={fieldGroup} key={fieldGroup}>
                     <div className="bg-base-100 border border-base-200 shadow">
                         <div className="p-3 pb-2 border-b border-base-300 text-base-600 font-700 text-lg leading-normal capitalize">
                             {fieldGroupName}
                         </div>
-                        {this.renderFields(fields, formData)}
-                        {this.renderFieldsDropdown(fields, formData)}
+                        {this.renderFields(formFields, formData)}
+                        {this.renderFieldsDropdown(formFields, formData)}
                     </div>
                 </div>
             );
         });
-    };
-
-    render() {
-        return (
-            <div className="flex flex-1 flex-col">
-                <form id="dynamic-form" className="bg-base-200 pb-5">
-                    {this.renderFieldGroupCards()}
-                </form>
-            </div>
-        );
     }
 }
 
@@ -255,6 +188,7 @@ const getPolicyFormFields = createSelector(
 
 const formFields = state =>
     formValueSelector('policyCreationForm')(state, ...getPolicyFormDataKeys());
+
 const getFormData = createSelector([formFields], formData => formData);
 
 const mapStateToProps = createStructuredSelector({
@@ -270,5 +204,5 @@ export default reduxForm({ form: 'policyCreationForm' })(
     connect(
         mapStateToProps,
         mapDispatchToProps
-    )(PolicyCreationForm)
+    )(FieldGroupCards)
 );

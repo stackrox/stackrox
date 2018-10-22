@@ -10,7 +10,7 @@ import TabContent from 'Components/TabContent';
 import Panel from 'Components/Panel';
 import DeploymentDetails from '../Risk/DeploymentDetails';
 import ViolationsDetails from './ViolationsDetails';
-import PolicyDetails from '../Policies/PolicyDetails';
+import { Panel as PolicyDetails } from '../Policies/Wizard/Details/Panel';
 
 class ViolationsPanel extends Component {
     static propTypes = {
@@ -54,7 +54,7 @@ class ViolationsPanel extends Component {
                 </TabContent>
                 <TabContent>
                     <div className="flex flex-1 flex-col">
-                        <PolicyDetails policy={alert.policy} />
+                        <PolicyDetails wizardPolicy={alert.policy} />
                     </div>
                 </TabContent>
             </Tabs>

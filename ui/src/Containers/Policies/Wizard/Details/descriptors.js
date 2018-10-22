@@ -13,16 +13,16 @@ const formatResourceValue = (prefix, value, suffix) =>
 
 const formatResources = resource => {
     const output = [];
-    if (resource.memoryResourceRequest !== null) {
+    if (resource.memoryResourceRequest) {
         output.push(formatResourceValue('Memory request', resource.memoryResourceRequest, 'MB'));
     }
-    if (resource.memoryResourceLimit !== null) {
+    if (resource.memoryResourceLimit) {
         output.push(formatResourceValue('Memory limit', resource.memoryResourceLimit, 'MB'));
     }
-    if (resource.cpuResourceRequest !== null) {
+    if (resource.cpuResourceRequest) {
         output.push(formatResourceValue('CPU request', resource.cpuResourceRequest, 'Cores'));
     }
-    if (resource.cpuResourceLimit !== null) {
+    if (resource.cpuResourceLimit) {
         output.push(formatResourceValue('CPU limit', resource.cpuResourceLimit, 'Cores'));
     }
     return output.join(', ');
@@ -126,12 +126,12 @@ const fieldsMap = {
         label: 'Image Created',
         formatValue: d => (d !== '0' ? `${Number(d)} Days ago` : '')
     },
-    scanExists: {
+    noScanExists: {
         label: 'Scan Does Not Exist',
         formatValue: () => 'Verify that the image is scanned'
     },
     scanAgeDays: {
-        label: 'Image Last Scanned',
+        label: 'Days since Image scanned',
         formatValue: d => (d !== '0' ? `${Number(d)} Days ago` : '')
     },
     lineRule: {

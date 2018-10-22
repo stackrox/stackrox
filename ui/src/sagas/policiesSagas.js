@@ -4,37 +4,61 @@ import Raven from 'raven-js';
 
 import { policiesPath, violationsPath } from 'routePaths';
 import * as service from 'services/PoliciesService';
-import { actions, types } from 'reducers/policies';
+import { actions as backendActions, types as backendTypes } from 'reducers/policies/backend';
+import { actions as pageActions } from 'reducers/policies/page';
+import { types as searchTypes } from 'reducers/policies/search';
+import { actions as tableActions, types as tableTypes } from 'reducers/policies/table';
+import { actions as wizardActions, types as wizardTypes } from 'reducers/policies/wizard';
 import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { takeEveryNewlyMatchedLocation, takeEveryLocation } from 'utils/sagaEffects';
 
+import wizardStages from 'Containers/Policies/Wizard/wizardStages';
+
 export function* getPolicies(filters) {
     try {
         const result = yield call(service.fetchPolicies, filters);
-        yield put(actions.fetchPolicies.success(result.response));
+        yield put(backendActions.fetchPolicies.success(result.response));
+
+        // If the fetched policies do not contain the wizard policy, close the wizard.
+        const fetchedPolicIds = result.response.result.policies;
+        if (fetchedPolicIds) {
+            const policy = yield select(selectors.getWizardPolicy);
+            if (policy && fetchedPolicIds.find(id => id === policy.id) === undefined) {
+                yield put(pageActions.closeWizard());
+            }
+        }
     } catch (error) {
-        yield put(actions.fetchPolicies.failure(error));
+        yield put(backendActions.fetchPolicies.failure(error));
     }
 }
 
 export function* getPolicy(policyId) {
-    yield put(actions.fetchPolicy.request());
+    yield put(backendActions.fetchPolicy.request());
     try {
         const result = yield call(service.fetchPolicy, policyId);
-        yield put(actions.fetchPolicy.success(result.response));
+        yield put(backendActions.fetchPolicy.success(result.response));
+
+        // When a policy is selected, make sure the wizard is opened for it.
+        const fetchedPolicies = Object.values(result.response.entities.policy);
+        if (fetchedPolicies.length === 1) {
+            yield put(tableActions.selectPolicyId(fetchedPolicies[0].id));
+            yield put(wizardActions.setWizardPolicy(fetchedPolicies[0]));
+            yield put(wizardActions.setWizardStage(wizardStages.details));
+            yield put(pageActions.openWizard());
+        }
     } catch (error) {
-        yield put(actions.fetchPolicy.failure(error));
+        yield put(backendActions.fetchPolicy.failure(error));
     }
 }
 
 export function* getPolicyCategories() {
     try {
         const result = yield call(service.fetchPolicyCategories);
-        yield put(actions.fetchPolicyCategories.success(result.response));
+        yield put(backendActions.fetchPolicyCategories.success(result.response));
     } catch (error) {
-        yield put(actions.fetchPolicyCategories.failure(error));
+        yield put(backendActions.fetchPolicyCategories.failure(error));
     }
 }
 
@@ -56,7 +80,7 @@ export function* loadViolationsPage() {
 function* createPolicy(policy) {
     try {
         const { data } = yield call(service.createPolicy, policy);
-        yield put(actions.setPolicyWizardState({ current: '', isNew: false }));
+        yield put(wizardActions.setWizardStage(wizardStages.details));
         yield put(push(`/main/policies/${data.id}`));
         yield fork(filterPoliciesPageBySearch);
     } catch (error) {
@@ -67,7 +91,8 @@ function* createPolicy(policy) {
             // TODO-ivan: use global user notification system to display the problem to the user as well
             Raven.captureException(error);
         }
-        yield put(actions.setPolicyWizardState({ current: 'PREVIEW', policy }));
+        yield put(wizardActions.setWizardPolicy(policy));
+        yield put(wizardActions.setWizardStage(wizardStages.enforcement));
     }
 }
 
@@ -75,7 +100,7 @@ function* savePolicy(policy) {
     try {
         yield call(service.savePolicy, policy);
         yield fork(getPolicy, policy.id);
-        yield put(actions.setPolicyWizardState({ current: '', isNew: false }));
+        yield put(wizardActions.setWizardStage(wizardStages.details));
         yield fork(filterPoliciesPageBySearch);
     } catch (error) {
         if (error.response) {
@@ -85,7 +110,8 @@ function* savePolicy(policy) {
             // TODO-ivan: use global user notification system to display the problem to the user as well
             Raven.captureException(error);
         }
-        yield put(actions.setPolicyWizardState({ current: 'PREVIEW', policy }));
+        yield put(wizardActions.setWizardPolicy(policy));
+        yield put(wizardActions.setWizardStage(wizardStages.enforcement));
     }
 }
 
@@ -138,13 +164,8 @@ function* reassessPolicies() {
 function* getDryRun(policy) {
     try {
         const policyDryRun = yield call(service.getDryRun, policy);
-        yield put(
-            actions.setPolicyWizardState({
-                current: 'PREVIEW',
-                dryrun: policyDryRun.data,
-                policy
-            })
-        );
+        yield put(wizardActions.setWizardDryRun(policyDryRun.data));
+        yield put(wizardActions.setWizardStage(wizardStages.preview));
     } catch (error) {
         if (error.response) {
             yield put(notificationActions.addNotification(error.response.data.error));
@@ -168,42 +189,43 @@ export function* loadPolicy({ match }) {
 }
 
 function* watchPoliciesSearchOptions() {
-    yield takeLatest(types.SET_SEARCH_OPTIONS, filterPoliciesPageBySearch);
+    yield takeLatest(searchTypes.SET_SEARCH_OPTIONS, filterPoliciesPageBySearch);
 }
 
 function* watchUpdateRequest() {
-    yield takeLatest(types.UPDATE_POLICY, updatePolicy);
+    yield takeLatest(backendTypes.UPDATE_POLICY, updatePolicy);
 }
 
 function* watchReassessPolicies() {
-    yield takeLatest(types.REASSESS_POLICIES, reassessPolicies);
+    yield takeLatest(backendTypes.REASSESS_POLICIES, reassessPolicies);
 }
 
 export function* watchFetchRequest() {
     while (true) {
-        const action = yield take(types.FETCH_POLICIES.REQUEST);
-        if (action.type === types.FETCH_POLICIES.REQUEST) {
+        const action = yield take(backendTypes.FETCH_POLICIES.REQUEST);
+        if (action.type === backendTypes.FETCH_POLICIES.REQUEST) {
             yield fork(filterPoliciesPageBySearch);
         }
     }
 }
 
 function* watchDeletePolicies() {
-    yield takeLatest(types.DELETE_POLICIES, deletePolicies);
+    yield takeLatest(backendTypes.DELETE_POLICIES, deletePolicies);
 }
 
 function* watchWizardState() {
     while (true) {
-        const action = yield take(types.SET_POLICY_WIZARD_STATE);
-        switch (action.state.current) {
-            case 'PRE_PREVIEW':
-                yield fork(getDryRun, action.state.policy);
+        const action = yield take(wizardTypes.SET_WIZARD_STAGE);
+        const policy = yield select(selectors.getWizardPolicy);
+        switch (action.stage) {
+            case wizardStages.prepreview:
+                yield fork(getDryRun, policy);
                 break;
-            case 'SAVE':
-                yield fork(savePolicy, action.state.policy);
+            case wizardStages.save:
+                yield fork(savePolicy, policy);
                 break;
-            case 'CREATE':
-                yield fork(createPolicy, action.state.policy);
+            case wizardStages.create:
+                yield fork(createPolicy, policy);
                 break;
             default:
                 break;
@@ -211,7 +233,7 @@ function* watchWizardState() {
     }
 }
 
-function* updatePolicyDisabledState({ policyId, disabled }) {
+function* updatePolicyDisabled({ policyId, disabled }) {
     try {
         yield call(service.updatePolicyDisabledState, policyId, disabled);
         yield fork(filterPoliciesPageBySearch);
@@ -232,6 +254,6 @@ export default function* policies() {
         fork(watchDeletePolicies),
         fork(watchUpdateRequest),
         fork(watchPoliciesSearchOptions),
-        takeEvery(types.UPDATE_POLICY_DISABLED_STATE, updatePolicyDisabledState)
+        takeEvery(tableTypes.UPDATE_POLICY_DISABLED_STATE, updatePolicyDisabled)
     ]);
 }

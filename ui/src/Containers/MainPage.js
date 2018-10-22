@@ -26,7 +26,7 @@ import DashboardPage from 'Containers/Dashboard/DashboardPage';
 import NetworkPage from 'Containers/Network/NetworkPage';
 import IntegrationsPage from 'Containers/Integrations/IntegrationsPage';
 import ViolationsPage from 'Containers/Violations/ViolationsPage';
-import PoliciesPage from 'Containers/Policies/PoliciesPage';
+import PoliciesPage from 'Containers/Policies/Page';
 import ImagesPage from 'Containers/Images/ImagesPage';
 import CompliancePage from 'Containers/Compliance/CompliancePage';
 import RiskPage from 'Containers/Risk/RiskPage';

@@ -1,4 +1,4 @@
-import policyFormFields from 'Containers/Policies/policyCreationFormDescriptor';
+import policyFormFields from 'Containers/Policies/Wizard/Form/descriptors';
 import removeEmptyFields from 'utils/removeEmptyFields';
 
 export function preFormatScopeField(obj) {

@@ -4,7 +4,7 @@ import * as matchers from 'redux-saga-test-plan/matchers';
 
 import { actions as alertActions } from 'reducers/alerts';
 import { actions as deploymentsActions } from 'reducers/deployments';
-import { actions as policiesActions } from 'reducers/policies';
+import { actions as policiesActions } from 'reducers/policies/search';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { fetchOptions } from 'services/SearchService';
 import createLocationChange from './sagaTestUtils';

@@ -5,11 +5,11 @@ import * as Icon from 'react-feather';
 function Message(props) {
     const messageClasses = {
         warn:
-            'warn-message p-2 rounded-sm text-warning-800 items-center border-2 border-base-100 bg-base-200 leading-normal flex-no-shrink',
+            'warn-message p-4 rounded-sm text-warning-700 items-center border-2 border-base-100 bg-base-200 leading-normal flex-no-shrink',
         error:
-            'error-message p-2 rounded-sm text-alert-800 text-sm items-center border-2 border-base-100 bg-alert-200 leading-normal flex-no-shrink',
+            'error-message p-4 rounded-sm text-alert-800 text-sm items-center border-2 border-base-100 bg-alert-200 leading-normal flex-no-shrink',
         info:
-            'info-message p-2 rounded-sm text-success-800 text-sm items-center border-2 border-base-100 bg-success-300 leading-normal flex-no-shrink'
+            'info-message p-4 rounded-sm text-success-800 text-sm items-center border-2 border-base-100 bg-success-300 leading-normal flex-no-shrink'
     };
 
     const icons = {
@@ -19,7 +19,7 @@ function Message(props) {
     };
     return (
         <div className={`flex ${messageClasses[props.type]}`}>
-            <div className="h-8 w-8 self-center rounded-full flex items-center justify-center bg-base-100 flex-no-shrink">
+            <div className="h-8 w-8 self-center rounded-full flex items-center justify-center flex-no-shrink">
                 {icons[props.type]}
             </div>
             <div className="flex pl-3 flex-1">{props.message}</div>

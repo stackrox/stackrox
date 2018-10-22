@@ -12,7 +12,7 @@ import images, { selectors as imageSelectors } from './images';
 import integrations, { selectors as integrationSelectors } from './integrations';
 import notifications, { selectors as notificationSelectors } from './notifications';
 import globalSearch, { selectors as globalSearchSelectors } from './globalSearch';
-import policies, { selectors as policySelectors } from './policies';
+import policies, { selectors as policySelectors } from './policies/reducer';
 import roles, { selectors as roleSelectors } from './roles';
 import summaries, { selectors as summarySelectors } from './summaries';
 import secrets, { selectors as secretSelectors } from './secrets';

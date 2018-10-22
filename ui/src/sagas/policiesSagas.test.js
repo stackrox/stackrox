@@ -4,9 +4,14 @@ import { dynamic } from 'redux-saga-test-plan/providers';
 import { push } from 'react-router-redux';
 
 import { selectors } from 'reducers';
-import { actions, types } from 'reducers/policies';
+import { actions as backendActions, types as backendTypes } from 'reducers/policies/backend';
+import { actions as pageActions } from 'reducers/policies/page';
+import { actions as searchActions, types as searchTypes } from 'reducers/policies/search';
+import { actions as tableActions } from 'reducers/policies/table';
+import { actions as wizardActions } from 'reducers/policies/wizard';
 import { actions as notificationActions } from 'reducers/notifications';
 import { types as locationActionTypes } from 'reducers/routes';
+import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 import * as service from 'services/PoliciesService';
 import saga from './policiesSagas';
 
@@ -60,9 +65,9 @@ describe('Policies Sagas', () => {
                 [call(service.fetchPolicies, { query: '' }), dynamic(fetchPoliciesMock)],
                 [call(service.fetchPolicyCategories), dynamic(fetchPolicyCategoriesMock)]
             ])
-            .put(actions.fetchPolicies.success(policies))
-            .put(actions.fetchPolicyCategories.success(policyCategories))
-            .dispatch({ type: types.SET_SEARCH_OPTIONS, payload: { options: [] } })
+            .put(backendActions.fetchPolicies.success(policies))
+            .put(backendActions.fetchPolicyCategories.success(policyCategories))
+            .dispatch({ type: searchTypes.SET_SEARCH_OPTIONS, payload: { options: [] } })
             .dispatch(createLocationChange('/main/policies'))
             .silentRun();
     });
@@ -75,9 +80,9 @@ describe('Policies Sagas', () => {
                 [select(selectors.getPoliciesSearchOptions), policyTypeSearchOptions],
                 [call(service.fetchPolicies, policiesSearchQuery), dynamic(fetchMock)]
             ])
-            .put(actions.fetchPolicies.success(policies))
+            .put(backendActions.fetchPolicies.success(policies))
             .dispatch({
-                type: types.SET_SEARCH_OPTIONS,
+                type: searchTypes.SET_SEARCH_OPTIONS,
                 payload: { options: policyTypeSearchOptions }
             })
             .dispatch(createLocationChange('/main/policies'))
@@ -92,25 +97,31 @@ describe('Policies Sagas', () => {
                 [select(selectors.getPoliciesSearchOptions), policyTypeSearchOptions],
                 [call(service.fetchPolicies, policiesSearchQuery), dynamic(fetchMock)]
             ])
-            .put(actions.fetchPolicies.success(policies))
+            .put(backendActions.fetchPolicies.success(policies))
             .dispatch({
-                type: types.SET_SEARCH_OPTIONS,
+                type: searchTypes.SET_SEARCH_OPTIONS,
                 payload: { options: policyTypeSearchOptions }
             })
-            .dispatch(actions.setPoliciesSearchOptions(policyTypeSearchOptions))
+            .dispatch(searchActions.setPoliciesSearchOptions(policyTypeSearchOptions))
             .silentRun();
     });
 
     it('should fetch policy details on Policies page with policy selected', () => {
         const policyId = '12345';
-        const fetchMock = jest.fn().mockReturnValueOnce({ response: policy });
+        const response = { entities: { policy: [policy] } };
+        const fetchMock = jest.fn().mockReturnValueOnce({ response });
 
         return expectSaga(saga)
             .provide([
                 [select(selectors.getPoliciesSearchOptions), []],
-                [call(service.fetchPolicy, policyId), dynamic(fetchMock)]
+                [call(service.fetchPolicy, policyId), dynamic(fetchMock)],
+                [select(selectors.getWizardPolicy), policy]
             ])
-            .put(actions.fetchPolicy.success(policy))
+            .put(backendActions.fetchPolicy.success(response))
+            .put(tableActions.selectPolicyId(policy.id))
+            .put(wizardActions.setWizardPolicy(policy))
+            .put(wizardActions.setWizardStage(wizardStages.details))
+            .put(pageActions.openWizard())
             .dispatch(createLocationChange(`/main/policies/${policyId}`))
             .silentRun();
     });
@@ -120,7 +131,7 @@ describe('Policies Sagas', () => {
             .provide([[call(service.reassessPolicies), {}]])
             .put(notificationActions.addNotification('Policies were reassessed'))
             .put(notificationActions.removeOldestNotification())
-            .dispatch({ type: types.REASSESS_POLICIES })
+            .dispatch({ type: backendTypes.REASSESS_POLICIES })
             .silentRun());
 
     it('should delete policies', () =>
@@ -129,7 +140,7 @@ describe('Policies Sagas', () => {
                 [select(selectors.getPoliciesSearchOptions), []],
                 [call(service.deletePolicies), ['12345', '6789']]
             ])
-            .dispatch({ type: types.DELETE_POLICIES })
+            .dispatch({ type: backendTypes.DELETE_POLICIES })
             .silentRun());
 
     it('should update given policy', () => {
@@ -140,7 +151,7 @@ describe('Policies Sagas', () => {
                 [select(selectors.getPoliciesSearchOptions), []],
                 [call(service.savePolicy, policy), dynamic(saveMock)]
             ])
-            .dispatch({ type: types.UPDATE_POLICY, policy })
+            .dispatch({ type: backendTypes.UPDATE_POLICY, policy })
             .silentRun()
             .then(() => {
                 expect(saveMock.mock.calls.length).toBe(1);
@@ -153,14 +164,12 @@ describe('Policies Sagas', () => {
         return expectSaga(saga)
             .provide([
                 [select(selectors.getPoliciesSearchOptions), []],
+                [select(selectors.getWizardPolicy), policy],
                 [call(service.createPolicy, policy), dynamic(createMock)]
             ])
-            .put(actions.setPolicyWizardState({ current: '', isNew: false }))
+            .put(wizardActions.setWizardStage(wizardStages.details))
             .put(push(`/main/policies/${policy.id}`))
-            .dispatch({
-                type: types.SET_POLICY_WIZARD_STATE,
-                state: { current: 'CREATE', policy }
-            })
+            .dispatch(wizardActions.setWizardStage(wizardStages.create))
             .silentRun()
             .then(() => {
                 expect(createMock.mock.calls.length).toBe(1);
@@ -173,13 +182,11 @@ describe('Policies Sagas', () => {
         return expectSaga(saga)
             .provide([
                 [select(selectors.getPoliciesSearchOptions), []],
+                [select(selectors.getWizardPolicy), policy],
                 [call(service.savePolicy, policy), dynamic(saveMock)]
             ])
-            .put(actions.setPolicyWizardState({ current: '', isNew: false }))
-            .dispatch({
-                type: types.SET_POLICY_WIZARD_STATE,
-                state: { current: 'SAVE', policy }
-            })
+            .put(wizardActions.setWizardStage(wizardStages.details))
+            .dispatch(wizardActions.setWizardStage(wizardStages.save))
             .silentRun()
             .then(() => {
                 expect(saveMock.mock.calls.length).toBe(1);
@@ -190,18 +197,13 @@ describe('Policies Sagas', () => {
         const dryRunMock = jest.fn().mockReturnValueOnce({ data: dryRun });
 
         return expectSaga(saga)
-            .provide([[call(service.getDryRun, policy), dynamic(dryRunMock)]])
-            .put(
-                actions.setPolicyWizardState({
-                    current: 'PREVIEW',
-                    dryrun: dryRun,
-                    policy
-                })
-            )
-            .dispatch({
-                type: types.SET_POLICY_WIZARD_STATE,
-                state: { current: 'PRE_PREVIEW', policy }
-            })
+            .provide([
+                [call(service.getDryRun, policy), dynamic(dryRunMock)],
+                [select(selectors.getWizardPolicy), policy]
+            ])
+            .put(wizardActions.setWizardDryRun(dryRun))
+            .put(wizardActions.setWizardStage(wizardStages.preview))
+            .dispatch(wizardActions.setWizardStage(wizardStages.prepreview))
             .silentRun();
     });
 });

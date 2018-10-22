@@ -17,6 +17,7 @@ const common = Object.freeze({
     },
     enforcementActionLabels: {
         UNSET_ENFORCEMENT: 'None',
+        FAIL_BUILD_ENFORCEMENT: 'Fail builds during continuous integration',
         SCALE_TO_ZERO_ENFORCEMENT: 'Scale to Zero Replicas',
         KILL_POD_ENFORCEMENT: 'Kill Pod',
         UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: 'Add an Unsatisfiable Node Constraint'

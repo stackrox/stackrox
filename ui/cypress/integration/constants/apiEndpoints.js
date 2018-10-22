@@ -47,3 +47,8 @@ export const network = {
     networkGraph: '/v1/networkpolicies/cluster/*',
     epoch: '/v1/networkpolicies/graph/epoch'
 };
+
+export const policies = {
+    policy: 'v1/policies/*',
+    dryrun: 'v1/policies/dryrun'
+};

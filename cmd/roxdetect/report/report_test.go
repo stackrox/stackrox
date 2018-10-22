@@ -22,6 +22,9 @@ var (
 		Rationale:   "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nec orci bibendum sapien suscipit maximus. Quisque dapibus accumsan tempor. Vivamus at justo tellus. Vivamus vel sem vel mauris cursus ullamcorper.",
 		Remediation: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus cursus convallis lacinia.",
 		Categories:  []string{"Vuln Management", "Security Best Practices"},
+		EnforcementActions: []v1.EnforcementAction{
+			v1.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
+		},
 	}
 
 	policyTwo = v1.Policy{

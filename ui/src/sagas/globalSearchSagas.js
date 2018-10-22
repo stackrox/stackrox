@@ -6,7 +6,7 @@ import { actions as imagesActions } from 'reducers/images';
 import { actions as deploymentsActions } from 'reducers/deployments';
 import { actions as networkActions } from 'reducers/network';
 import { actions as secretsActions } from 'reducers/secrets';
-import { actions as policiesActions } from 'reducers/policies';
+import { actions as policiesActions } from 'reducers/policies/search';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 

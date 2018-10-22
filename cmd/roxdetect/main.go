@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/stackrox/rox/cmd/roxdetect/report"
@@ -18,10 +17,9 @@ import (
 const tokenEnv = "STACKROX_TOKEN"
 
 var (
-	version  = "development"
-	central  = flag.String("central", "localhost:8443", "Host and port endpoint where Central is located.")
-	image    = flag.String("image", "", "the image name and reference (e.g. nginx:latest or nginx@sha256:...)")
-	severity = flag.String("severity", "critical", "Exit with a non-zero status if any violated policies meet or exceed this severity.\nAllowed values are "+levelText()+".\nIgnored if \"-json\" is set.")
+	version = "development"
+	central = flag.String("central", "localhost:8443", "Host and port endpoint where Central is located.")
+	image   = flag.String("image", "", "the image name and reference (e.g. nginx:latest or nginx@sha256:...)")
 
 	versionFlag = flag.Bool("version", false, `Prints the version "`+version+`" and exits.`)
 	json        = flag.Bool("json", false, "Output policy results as json.")
@@ -43,10 +41,6 @@ func main() {
 }
 
 func mainCmd() error {
-	if err := checkLevel(*severity); err != nil {
-		return err
-	}
-
 	// Read token from ENV.
 	token, exists := os.LookupEnv(tokenEnv)
 	if !exists {
@@ -69,14 +63,13 @@ func mainCmd() error {
 		return err
 	}
 
-	// Exit with a status of 1 if any of the violated policies were of a
-	// exceeded our severity threshold level.
+	// Check if any of the violated policies have an enforcement action that
+	// fails the CI build.
 	for _, policy := range violatedPolicies {
-		if exceedsThreshold(*severity, policy.Severity) {
-			return errors.New("policy severity exceeds threshold")
+		if report.EnforcementFailedBuild(policy) {
+			return errors.New("Violated a policy with CI enforcement set")
 		}
 	}
-
 	return nil
 }
 
@@ -132,62 +125,4 @@ func buildRequest() (*v1.Image, error) {
 		return nil, fmt.Errorf("could not parse image '%s': %s", *image, err)
 	}
 	return img, nil
-}
-
-// levelNames return an ordered list of string names that are derived from API
-// severity levels. Additionally, the names "any" and "none" are added to this
-// list as additional options.
-func levelNames() []string {
-	names := make([]string, len(v1.Severity_value)+2)
-	names[0] = "any"
-	names[len(names)-1] = "none"
-	for key, value := range v1.Severity_value {
-		name := strings.ToLower(strings.TrimSuffix(key, "_SEVERITY"))
-		names[value+1] = name
-	}
-	return names
-}
-
-// levelText returns a textual description of the severity levels.
-// Example: `"none", "unset", ..."critical", or "any"`
-func levelText() string {
-	names := levelNames()
-	result := ""
-	for index, name := range names {
-		switch index {
-		case 0:
-			result += fmt.Sprintf(`"%s"`, name)
-		case len(names) - 1:
-			result += fmt.Sprintf(`, or "%s"`, name)
-		default:
-			result += fmt.Sprintf(`, "%s"`, name)
-		}
-	}
-	return result
-}
-
-// checkLevel checks if the given level is allowed. An error is returned if an
-// unknown level name is given.
-func checkLevel(level string) error {
-	names := levelNames()
-	for _, name := range names {
-		if level == name {
-			return nil
-		}
-	}
-	return fmt.Errorf("unknown severity level")
-}
-
-// exceedsThreshold checks if the given severity meets or exceeds the named
-// threshold level.
-func exceedsThreshold(threshold string, severity v1.Severity) bool {
-	switch threshold {
-	case "any":
-		return true
-	case "none":
-		return false
-	default:
-		key := strings.ToUpper(threshold) + "_SEVERITY"
-		return severity >= v1.Severity(v1.Severity_value[key])
-	}
 }

@@ -16,7 +16,7 @@ const (
 	failedTemplate = `----------------BEGIN STACKROX CI---------------
 The scanned image violated the following policies:
 {{- range .}}
-✗ {{.Name}}{{if critical .Severity}} (policy marked as critical){{end -}}
+✗ {{.Name}}{{if failed .}} (policy enforcement failed build){{end -}}
 {{if .Description}}
 - Description:
     ↳ {{wrap .Description}}{{end -}}
@@ -46,9 +46,9 @@ var (
 	// policies.
 	failedTpl = template.Must(template.New("failed").Funcs(
 		template.FuncMap{
-			"critical": critical,
-			"join":     strings.Join,
-			"wrap":     wrap,
+			"failed": EnforcementFailedBuild,
+			"join":   strings.Join,
+			"wrap":   wrap,
 		},
 	).Parse(failedTemplate))
 
@@ -81,10 +81,16 @@ func Pretty(output io.Writer, policies []*v1.Policy) error {
 	}
 }
 
-// critical returns true if the given policy is marked as critical. Intended
-// to be uses as a test template function.
-func critical(severity v1.Severity) bool {
-	return severity == v1.Severity_CRITICAL_SEVERITY
+// EnforcementFailedBuild returns true if the given policy has an enforcement
+// action that fails the CI build. Intended to be uses as a test template
+// function.
+func EnforcementFailedBuild(policy *v1.Policy) bool {
+	for _, action := range policy.GetEnforcementActions() {
+		if action == v1.EnforcementAction_FAIL_BUILD_ENFORCEMENT {
+			return true
+		}
+	}
+	return false
 }
 
 // wrap performs line-wrapping of the given text at 80 characters in length.

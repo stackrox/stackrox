@@ -29,7 +29,7 @@ export const selectors = {
     },
     imageRegistry: {
         input: 'input[name="fields.imageName.registry"]',
-        deleteButton: 'input[name="fields.imageName.registry"] + div>button',
+        deleteButton: 'div:contains("Image Registry")+ div.flex>div.flex>button',
         value: '[data-test-id="imageName"] div.flex'
     },
     scanAgeDays: {
@@ -44,6 +44,7 @@ export const selectors = {
         }
     },
     policyDetailsPanel: {
+        idValueDiv: 'div.text-base-600:contains("Id") + div',
         enabledValueDiv: 'div.text-base-600:contains("Enabled") + div'
     },
     searchInput: '.react-select__input > input',

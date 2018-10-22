@@ -23,8 +23,18 @@ describe('Policies page', () => {
     };
 
     const savePolicy = () => {
+        // Next will dryrun and show the policy effects preview.
+        cy.route('POST', api.policies.dryrun).as('dryrunPolicy');
         cy.get(selectors.nextButton).click();
+        cy.wait('@dryrunPolicy');
+        // Next will now take you to the enforcement page.
+        cy.get(selectors.nextButton).click();
+        // Save will PUT the policy (assuming it is not new), then GET it.
+        cy.route('PUT', api.policies.policy).as('savePolicy');
+        cy.route('GET', api.policies.policy).as('getPolicy');
         cy.get(selectors.savePolicyButton).click();
+        cy.wait('@savePolicy');
+        cy.wait('@getPolicy');
     };
 
     it('should navigate using the left nav', () => {
@@ -159,6 +169,37 @@ describe('Policies page', () => {
         editPolicy();
         cy.get(selectors.imageRegistry.deleteButton).click();
         savePolicy();
+    });
+
+    it('should de-highlight a row on panel close', () => {
+        // Select a row.
+        cy.route('GET', api.policies.policy).as('getPolicy');
+        cy.get(selectors.policies.scanImage).click({ force: true });
+        cy.wait('@getPolicy'); // Wait for the panel to be loaded before closing.
+
+        // Check that the row is active and highlighted
+        cy.get(selectors.policies.scanImage).should('have.class', 'row-active');
+
+        // Close the side panel.
+        closePolicySidePanel();
+
+        // Check that it is no longer active and highlighted.
+        cy.get(selectors.policies.scanImage).should('not.have.class', 'row-active');
+    });
+
+    it('should have details panel open on page refresh', () => {
+        // Select a row.
+        cy.get(selectors.policies.scanImage).click({ force: true });
+
+        // Reload the page with that row's id in the URL.
+        cy.get(selectors.policyDetailsPanel.idValueDiv)
+            .invoke('text')
+            .then(idValue => {
+                cy.visit(url.concat('/', idValue));
+            });
+
+        // Check that the side panel is open.
+        cy.get(selectors.cancelButton).should('exist');
     });
 
     it('should show Add Capabilities value in edit mode', () => {

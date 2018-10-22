@@ -13,7 +13,7 @@ import {
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 import { actions as alertActions } from 'reducers/alerts';
 import { actions as deploymentsActions } from 'reducers/deployments';
-import { actions as policiesActions } from 'reducers/policies';
+import { actions as policiesActions } from 'reducers/policies/search';
 import { actions as imagesActions } from 'reducers/images';
 import { actions as secretsActions } from 'reducers/secrets';
 import { actions as dashboardActions } from 'reducers/dashboard';
