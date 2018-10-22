@@ -11,5 +11,6 @@ FROM grafana/grafana:5.3.0
 COPY --from=0 /influx /influx
 COPY --from=0 /influxd /influxd
 COPY ./influx-post-start.sh /influx-post-start.sh
+COPY /grafana-entrypoint.sh /grafana-entrypoint.sh
 
 USER root
