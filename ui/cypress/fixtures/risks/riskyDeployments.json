@@ -7,8 +7,8 @@
     "namespace": "",
     "replicas": "1",
     "labels": {
-      "com.docker.stack.image": "stackrox/prevent:latest",
-      "com.docker.stack.namespace": "prevent"
+      "com.docker.stack.image": "stackrox/main:latest",
+      "com.docker.stack.namespace": "main"
     },
     "updatedAt": "2018-03-29T20:38:01.064862691Z",
     "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
@@ -38,9 +38,9 @@
         "name": {
           "sha": "sha256:e1b3db0717ac65be6891c443dc0883a5a79c24ce587fabc43f1f977e2b68cf80",
           "registry": "docker.io",
-          "remote": "stackrox/prevent",
+          "remote": "stackrox/main",
           "tag": "latest",
-          "fullName": "docker.io/stackrox/prevent:latest"
+          "fullName": "docker.io/stackrox/main:latest"
         },
         "metadata": null,
         "scan": null
@@ -109,8 +109,8 @@
     "namespace": "",
     "replicas": "1",
     "labels": {
-      "com.docker.stack.image": "stackrox/prevent:latest",
-      "com.docker.stack.namespace": "prevent"
+      "com.docker.stack.image": "stackrox/main:latest",
+      "com.docker.stack.namespace": "main"
     },
     "updatedAt": "2018-03-29T20:37:43.865525758Z",
     "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
@@ -128,9 +128,9 @@
         "name": {
           "sha": "sha256:e1b3db0717ac65be6891c443dc0883a5a79c24ce587fabc43f1f977e2b68cf80",
           "registry": "docker.io",
-          "remote": "stackrox/prevent",
+          "remote": "stackrox/main",
           "tag": "latest",
-          "fullName": "docker.io/stackrox/prevent:latest"
+          "fullName": "docker.io/stackrox/main:latest"
         },
         "metadata": null,
         "scan": null
@@ -165,8 +165,8 @@
     "namespace": "",
     "replicas": "1",
     "labels": {
-      "com.docker.stack.image": "stackrox/prevent:latest",
-      "com.docker.stack.namespace": "prevent"
+      "com.docker.stack.image": "stackrox/main:latest",
+      "com.docker.stack.namespace": "main"
     },
     "updatedAt": "2018-03-29T20:38:01.064862691Z",
     "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
@@ -184,7 +184,7 @@
           "value": "f01f284a-aa22-4445-9f3e-8619df46b5a1"
         }, {
           "key": "ROX_PREVENT_IMAGE",
-          "value": "stackrox/prevent:latest"
+          "value": "stackrox/main:latest"
         }],
         "command": ["swarm-sensor"],
         "args": [],
@@ -196,9 +196,9 @@
         "name": {
           "sha": "sha256:e1b3db0717ac65be6891c443dc0883a5a79c24ce587fabc43f1f977e2b68cf80",
           "registry": "docker.io",
-          "remote": "stackrox/prevent",
+          "remote": "stackrox/main",
           "tag": "latest",
-          "fullName": "docker.io/stackrox/prevent:latest"
+          "fullName": "docker.io/stackrox/main:latest"
         },
         "metadata": null,
         "scan": null
@@ -246,8 +246,8 @@
     "namespace": "",
     "replicas": "1",
     "labels": {
-      "com.docker.stack.image": "stackrox/prevent:latest",
-      "com.docker.stack.namespace": "prevent"
+      "com.docker.stack.image": "stackrox/main:latest",
+      "com.docker.stack.namespace": "main"
     },
     "updatedAt": "2018-03-29T20:38:01.064862691Z",
     "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
@@ -265,7 +265,7 @@
           "value": "f01f284a-aa22-4445-9f3e-8619df46b5a1"
         }, {
           "key": "ROX_PREVENT_IMAGE",
-          "value": "stackrox/prevent:latest"
+          "value": "stackrox/main:latest"
         }],
         "command": ["swarm-sensor"],
         "args": [],
@@ -277,9 +277,9 @@
         "name": {
           "sha": "sha256:e1b3db0717ac65be6891c443dc0883a5a79c24ce587fabc43f1f977e2b68cf80",
           "registry": "docker.io",
-          "remote": "stackrox/prevent",
+          "remote": "stackrox/main",
           "tag": "latest",
-          "fullName": "docker.io/stackrox/prevent:latest"
+          "fullName": "docker.io/stackrox/main:latest"
         },
         "metadata": null,
         "scan": null
@@ -327,8 +327,8 @@
     "namespace": "",
     "replicas": "1",
     "labels": {
-      "com.docker.stack.image": "stackrox/prevent:latest",
-      "com.docker.stack.namespace": "prevent"
+      "com.docker.stack.image": "stackrox/main:latest",
+      "com.docker.stack.namespace": "main"
     },
     "updatedAt": "2018-03-29T20:38:01.064862691Z",
     "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
@@ -346,7 +346,7 @@
           "value": "f01f284a-aa22-4445-9f3e-8619df46b5a1"
         }, {
           "key": "ROX_PREVENT_IMAGE",
-          "value": "stackrox/prevent:latest"
+          "value": "stackrox/main:latest"
         }],
         "command": ["swarm-sensor"],
         "args": [],
@@ -358,9 +358,9 @@
         "name": {
           "sha": "sha256:e1b3db0717ac65be6891c443dc0883a5a79c24ce587fabc43f1f977e2b68cf80",
           "registry": "docker.io",
-          "remote": "stackrox/prevent",
+          "remote": "stackrox/main",
           "tag": "latest",
-          "fullName": "docker.io/stackrox/prevent:latest"
+          "fullName": "docker.io/stackrox/main:latest"
         },
         "metadata": null,
         "scan": null
@@ -408,8 +408,8 @@
     "namespace": "",
     "replicas": "1",
     "labels": {
-      "com.docker.stack.image": "stackrox/prevent:latest",
-      "com.docker.stack.namespace": "prevent"
+      "com.docker.stack.image": "stackrox/main:latest",
+      "com.docker.stack.namespace": "main"
     },
     "updatedAt": "2018-03-29T20:38:01.064862691Z",
     "clusterId": "f01f284a-aa22-4445-9f3e-8619df46b5a1",
@@ -427,7 +427,7 @@
           "value": "f01f284a-aa22-4445-9f3e-8619df46b5a1"
         }, {
           "key": "ROX_PREVENT_IMAGE",
-          "value": "stackrox/prevent:latest"
+          "value": "stackrox/main:latest"
         }],
         "command": ["swarm-sensor"],
         "args": [],
@@ -439,9 +439,9 @@
         "name": {
           "sha": "sha256:e1b3db0717ac65be6891c443dc0883a5a79c24ce587fabc43f1f977e2b68cf80",
           "registry": "docker.io",
-          "remote": "stackrox/prevent",
+          "remote": "stackrox/main",
           "tag": "latest",
-          "fullName": "docker.io/stackrox/prevent:latest"
+          "fullName": "docker.io/stackrox/main:latest"
         },
         "metadata": null,
         "scan": null

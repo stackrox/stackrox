@@ -1,7 +1,7 @@
 import axios from 'axios/index';
 
 /**
- * Fetches Prevent metadata.
+ * Fetches StackRox metadata.
  * @returns {Promise<Object, Error>} fulfilled with response
  */
 

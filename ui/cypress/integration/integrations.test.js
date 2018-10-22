@@ -146,7 +146,7 @@ describe('Cluster Creation Flow', () => {
 
         cy.get(selectors.labeledValue)
             .eq(2)
-            .should('have.text', 'Prevent Image:stackrox/prevent:latest');
+            .should('have.text', 'StackRox Image:stackrox/main:latest');
 
         cy.get(selectors.labeledValue)
             .eq(3)
@@ -186,7 +186,7 @@ describe('Cluster Creation Flow', () => {
                 }).as('getCluster');
                 cy.wait('@getCluster');
                 cy.get(
-                    'div:contains("Success! The cluster has been recognized properly by Prevent. You may now save the configuration.")'
+                    'div:contains("Success! The cluster has been recognized properly by StackRox. You may now save the configuration.")'
                 );
 
                 // clean up after the test by deleting the cluster

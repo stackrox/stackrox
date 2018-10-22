@@ -40,10 +40,10 @@ const MonitoringEndpointFormField = () => (
 const K8sFields = ({ metadata }) => (
     <React.Fragment>
         <CommonFields />
-        <FormField label="Prevent Image" required>
+        <FormField label="StackRox Image" required>
             <ReduxTextField
                 name="preventImage"
-                placeholder={`stackrox.io/prevent:${metadata.version}`}
+                placeholder={`stackrox.io/main:${metadata.version}`}
             />
         </FormField>
         <CentralAPIFormField placeholder="central.stackrox:443" />
@@ -62,10 +62,10 @@ K8sFields.propTypes = {
 const OpenShiftFields = ({ metadata }) => (
     <React.Fragment>
         <CommonFields />
-        <FormField label="Prevent Image" required>
+        <FormField label="StackRox Image" required>
             <ReduxTextField
                 name="preventImage"
-                placeholder={`stackrox.io/prevent:${metadata.version}`}
+                placeholder={`stackrox.io/main:${metadata.version}`}
             />
         </FormField>
         <CentralAPIFormField placeholder="central.stackrox:443" />
@@ -84,10 +84,10 @@ OpenShiftFields.propTypes = {
 const DockerFields = ({ metadata }) => (
     <React.Fragment>
         <CommonFields />
-        <FormField label="Prevent Image" required>
+        <FormField label="StackRox Image" required>
             <ReduxTextField
                 name="preventImage"
-                placeholder={`stackrox.io/prevent:${metadata.version}`}
+                placeholder={`stackrox.io/main:${metadata.version}`}
             />
         </FormField>
         <CentralAPIFormField placeholder="central.prevent_net:443" />
@@ -125,11 +125,11 @@ const ConnectedForm = reduxForm({ form: clusterFormId })(ClusterEditForm);
 
 const initialValuesFactories = {
     SWARM_CLUSTER: metadata => ({
-        preventImage: `stackrox.io/prevent:${metadata.version}`,
+        preventImage: `stackrox.io/main:${metadata.version}`,
         centralApiEndpoint: 'central.prevent_net:443'
     }),
     OPENSHIFT_CLUSTER: metadata => ({
-        preventImage: `stackrox.io/prevent:${metadata.version}`,
+        preventImage: `stackrox.io/main:${metadata.version}`,
         centralApiEndpoint: 'central.stackrox:443',
         openshift: {
             params: {
@@ -139,7 +139,7 @@ const initialValuesFactories = {
         runtimeSupport: true
     }),
     KUBERNETES_CLUSTER: metadata => ({
-        preventImage: `stackrox.io/prevent:${metadata.version}`,
+        preventImage: `stackrox.io/main:${metadata.version}`,
         centralApiEndpoint: 'central.stackrox:443',
         kubernetes: {
             imagePullSecret: 'stackrox',

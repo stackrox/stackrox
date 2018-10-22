@@ -133,13 +133,13 @@ const formDescriptors = {
                 label: 'Sender',
                 jsonpath: 'email.sender',
                 type: 'text',
-                placeholder: 'prevent-notifier@example.com'
+                placeholder: 'stackrox-notifier@example.com'
             },
             {
                 label: 'Default Recipient',
                 jsonpath: 'labelDefault',
                 type: 'text',
-                placeholder: 'prevent-alerts@example.com'
+                placeholder: 'stackrox-alerts@example.com'
             },
             {
                 label: 'Label/Annotation Key for Recipient',

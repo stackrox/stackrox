@@ -8,7 +8,7 @@ import selectors from './constants/GeneralPage';
 describe('General sanity checks', () => {
     it('should have correct <title>', () => {
         cy.visit('/');
-        cy.title().should('eq', 'Prevent');
+        cy.title().should('eq', 'StackRox');
     });
 
     it('should render navbar with Dashboard selected', () => {
