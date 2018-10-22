@@ -129,7 +129,7 @@ export const getLinksInSameNamespace = (nodes, links) => {
  * @returns {Function}
  */
 
-export const intersectsNodes = obj => obj.object.geometry.type === 'CircleBufferGeometry';
+export const intersectsNodes = obj => obj.object.material.userData.type === 'NODE';
 
 /**
  *  A function to filter a list of intersections through ray casting to show only namespaces
@@ -214,4 +214,84 @@ export const selectClosestSides = (
         sourceSide: selectedSourceSide,
         targetSide: selectedTargetSide
     };
+};
+
+/**
+ *  Function returns a canvas for namespace borders
+ *
+ * @returns {!Object[]}
+ */
+export const getBorderCanvas = () => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = constants.NAMESPACE_BORDER_CANVAS_WIDTH;
+    canvas.height = constants.NAMESPACE_BORDER_CANVAS_HEIGHT;
+    ctx.fillStyle = constants.NAMESPACE_BORDER_RECT_COLOR;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = constants.NAMESPACE_INTERNET_ACCESS_BORDER_COLOR;
+    ctx.setLineDash(constants.NAMESPACE_BORDER_DASH_WIDTH);
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    return canvas;
+};
+
+/**
+ *  Function returns a canvas for planes
+ * @param {String} color to draw on the canvas
+ * @returns {!Object[]}
+ */
+export const getPlaneCanvas = (color = 'transparent') => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    return canvas;
+};
+
+/**
+ *  Function returns a canvas for ingress egress icons
+ * @returns {!Object[]}
+ */
+export const getIconCanvas = () => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = constants.INGRESS_EGRESS_ICON_BG_COLOR;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = constants.INGRESS_EGRESS_ICON_COLOR;
+    ctx.font = '200px stackrox';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const cloudIcon = '\ue901';
+    ctx.fillText(cloudIcon, canvas.width / 2, canvas.height / 2);
+    return canvas;
+};
+
+/**
+ *  Function returns a canvas for node
+ * @param {Object} node
+ * @returns {!Object[]}
+ */
+
+export const getNodeCanvas = node => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = constants.CANVAS_BG_COLOR;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (node.internetAccess) {
+        ctx.fillStyle = constants.INTERNET_ACCESS_NODE_BORDER_COLOR;
+        ctx.font = '150px stackrox';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const iconPotential = '\ue900';
+        ctx.fillText(iconPotential, canvas.width / 2, canvas.height / 2, canvas.width);
+    }
+
+    const iconNode = '\ue902';
+    ctx.fillStyle = node.internetAccess
+        ? constants.INTERNET_ACCESS_NODE_COLOR
+        : constants.NODE_COLOR;
+    ctx.font = '140px stackrox';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(iconNode, canvas.width / 2, canvas.height / 2, canvas.width);
+    return canvas;
 };

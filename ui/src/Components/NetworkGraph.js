@@ -12,7 +12,11 @@ import {
     intersectsNamespaces,
     getTextTexture,
     getBidirectionalLinks,
-    selectClosestSides
+    selectClosestSides,
+    getBorderCanvas,
+    getPlaneCanvas,
+    getIconCanvas,
+    getNodeCanvas
 } from 'utils/networkGraphUtils/networkGraphUtils';
 import * as constants from 'utils/networkGraphUtils/networkGraphConstants';
 import uniqBy from 'lodash/uniqBy';
@@ -256,19 +260,6 @@ class NetworkGraph extends Component {
         return newNodes;
     };
 
-    getBorderCanvas = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = constants.NAMESPACE_BORDER_CANVAS_WIDTH;
-        canvas.height = constants.NAMESPACE_BORDER_CANVAS_HEIGHT;
-        ctx.fillStyle = constants.NAMESPACE_BORDER_RECT_COLOR;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = constants.NAMESPACE_INTERNET_ACCESS_BORDER_COLOR;
-        ctx.setLineDash(constants.NAMESPACE_BORDER_DASH_WIDTH);
-        ctx.strokeRect(0, 0, canvas.width, canvas.height);
-        return canvas;
-    };
-
     setUpNamespaces = propNodes => {
         const namespacesMapping = {};
         let newNamespaces = [];
@@ -289,10 +280,12 @@ class NetworkGraph extends Component {
 
             let geometry = new THREE.PlaneGeometry(1, 1);
             let map = null;
+            let canvas = null;
+            let texture = null;
             if (namespace.internetAccess) {
-                const canvas = this.getBorderCanvas();
+                canvas = getBorderCanvas();
                 // adds texture to the border for the namespace
-                const texture = new THREE.CanvasTexture(canvas);
+                texture = new THREE.CanvasTexture(canvas);
                 texture.needsUpdate = true;
                 texture.magFilter = THREE.NearestFilter;
                 texture.minFilter = THREE.LinearMipMapLinearFilter;
@@ -311,9 +304,16 @@ class NetworkGraph extends Component {
             newNamespace.border = new THREE.Mesh(geometry, material);
 
             geometry = new THREE.PlaneGeometry(1, 1);
+            canvas = getPlaneCanvas(constants.CANVAS_BG_COLOR);
+            texture = new THREE.CanvasTexture(canvas);
+
             material = new THREE.MeshBasicMaterial({
-                color: 0xffffff,
-                side: THREE.DoubleSide
+                map: texture,
+                side: THREE.DoubleSide,
+                userData: {
+                    type: constants.NETWORK_GRAPH_TYPES.NAMESPACE,
+                    namespace: newNamespace.namespace
+                }
             });
             newNamespace.plane = new THREE.Mesh(geometry, material);
 
@@ -322,10 +322,25 @@ class NetworkGraph extends Component {
                 newNamespace.namespace,
                 constants.NAMESPACE_LABEL_SIZE
             );
+            if (namespace.internetAccess) {
+                canvas = getIconCanvas();
+                texture = new THREE.Texture(canvas);
+                texture.needsUpdate = true;
+                geometry = new THREE.PlaneBufferGeometry(1, 1);
+                material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    userData: {
+                        type: constants.NETWORK_GRAPH_TYPES.NAMESPACE,
+                        namespace: newNamespace.namespace
+                    }
+                });
+                newNamespace.icon = new THREE.Mesh(geometry, material);
+                this.scene.add(newNamespace.icon);
+            }
 
             this.scene.add(newNamespace.border);
             this.scene.add(newNamespace.plane);
-
             return newNamespace;
         });
 
@@ -474,8 +489,7 @@ class NetworkGraph extends Component {
 
     updateNodesPosition = () => {
         nodes.forEach(node => {
-            const { x, y, circle, border, label } = node;
-            border.position.set(x, y, 0);
+            const { x, y, circle, label } = node;
             circle.position.set(x, y, 0);
             label.position.set(x, y - constants.NODE_LABEL_OFFSET, 0);
         });
@@ -493,7 +507,7 @@ class NetworkGraph extends Component {
 
     updateNamespacePositions = () => {
         namespaces.forEach(namespace => {
-            const { namespace: name, plane, border, label } = namespace;
+            const { namespace: name, plane, border, label, icon } = namespace;
             const { x, y, width, height } = this.getNamespaceContainerDimensions(nodes, name);
             border.geometry = new THREE.PlaneGeometry(
                 Math.abs(width + constants.CLUSTER_BORDER_PADDING),
@@ -505,6 +519,15 @@ class NetworkGraph extends Component {
                 Math.abs(height - constants.CLUSTER_INNER_PADDING)
             );
             plane.position.set(x, y, 0);
+            icon.geometry = new THREE.PlaneGeometry(
+                constants.INTERNET_ACCESS_ICON_WIDTH,
+                constants.INTERNET_ACCESS_ICON_HEIGHT
+            );
+            icon.position.set(
+                x + width / 2 + constants.INTERNET_ACCESS_ICON_X_OFFSET,
+                y - height / 2 + constants.INTERNET_ACCESS_ICON_Y_OFFSET,
+                0
+            );
             label.position.set(
                 x,
                 y +
@@ -577,26 +600,19 @@ class NetworkGraph extends Component {
     createNodeMesh = node => {
         const newNode = { ...node };
         const { id } = newNode;
+        const nodeCanvas = getNodeCanvas(newNode);
+        const nodeTexture = new THREE.Texture(nodeCanvas);
+        nodeTexture.needsUpdate = true;
+        const geometry = new THREE.PlaneBufferGeometry(32, 16);
 
-        let geometry = new THREE.CircleBufferGeometry(8, 32);
-        let material = new THREE.MeshBasicMaterial({
-            color: constants.INTERNET_ACCESS_COLOR,
-            transparent: !newNode.internetAccess,
-            opacity: newNode.internetAccess ? 1 : 0
-        });
-        newNode.border = new THREE.Mesh(geometry, material);
-        newNode.border.userData = { id };
-
-        geometry = new THREE.CircleBufferGeometry(5, 32);
-        material = new THREE.MeshBasicMaterial({
-            color: newNode.internetAccess
-                ? constants.INTERNET_ACCESS_NODE_COLOR
-                : constants.NODE_COLOR
+        const material = new THREE.MeshBasicMaterial({
+            map: nodeTexture,
+            userData: {
+                id,
+                type: 'NODE'
+            }
         });
         newNode.circle = new THREE.Mesh(geometry, material);
-        newNode.circle.userData = { id };
-
-        this.scene.add(newNode.border);
         this.scene.add(newNode.circle);
 
         return newNode;
