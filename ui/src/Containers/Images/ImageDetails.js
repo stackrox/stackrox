@@ -71,7 +71,7 @@ class ImageDetails extends Component {
                 type="button"
                 className="flex mx-auto my-2 py-3 px-2 w-5/6 rounded-sm text-primary-600 hover:text-base-100 hover:bg-primary-400 uppercase justify-center text-sm items-center bg-base-100 border-2 border-primary-400"
                 onClick={this.openModal}
-                disabled={!image.metadata}
+                disabled={!(image.metadata && image.metadata.v1)}
             >
                 View Docker File
             </button>
