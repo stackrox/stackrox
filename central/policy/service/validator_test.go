@@ -309,6 +309,95 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 	}
 }
 
+func (suite *PolicyValidatorTestSuite) TestValidateLifeCycleEnforcementCombination() {
+	testCases := []struct {
+		description  string
+		p            *v1.Policy
+		expectedSize int
+	}{
+		{
+			description: "Remove invalid enforcement with runtime lifecycle",
+			p: &v1.Policy{
+				LifecycleStages: []v1.LifecycleStage{
+					v1.LifecycleStage_RUNTIME,
+				},
+				Fields: &v1.PolicyFields{
+					ImageName: &v1.ImageNamePolicy{
+						Tag: "latest",
+					},
+					VolumePolicy: &v1.VolumePolicy{
+						Name: "Asfasf",
+					},
+					ProcessPolicy: &v1.ProcessPolicy{Name: "asfasfaa"},
+				},
+				EnforcementActions: []v1.EnforcementAction{
+					v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
+					v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+					v1.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
+					v1.EnforcementAction_KILL_POD_ENFORCEMENT,
+				},
+			},
+			expectedSize: 1,
+		},
+		{
+			description: "Remove invalid enforcement with build lifecycle",
+			p: &v1.Policy{
+				LifecycleStages: []v1.LifecycleStage{
+					v1.LifecycleStage_BUILD,
+				},
+				Fields: &v1.PolicyFields{
+					ImageName: &v1.ImageNamePolicy{
+						Tag: "latest",
+					},
+					VolumePolicy: &v1.VolumePolicy{
+						Name: "Asfasf",
+					},
+					ProcessPolicy: &v1.ProcessPolicy{Name: "asfasfaa"},
+				},
+				EnforcementActions: []v1.EnforcementAction{
+					v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
+					v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+					v1.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
+					v1.EnforcementAction_KILL_POD_ENFORCEMENT,
+				},
+			},
+			expectedSize: 1,
+		},
+		{
+			description: "Remove invalid enforcement with deployment lifecycle",
+			p: &v1.Policy{
+				LifecycleStages: []v1.LifecycleStage{
+					v1.LifecycleStage_DEPLOY,
+				},
+				Fields: &v1.PolicyFields{
+					ImageName: &v1.ImageNamePolicy{
+						Tag: "latest",
+					},
+					VolumePolicy: &v1.VolumePolicy{
+						Name: "Asfasf",
+					},
+					ProcessPolicy: &v1.ProcessPolicy{Name: "asfasfaa"},
+				},
+				EnforcementActions: []v1.EnforcementAction{
+					v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
+					v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+					v1.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
+					v1.EnforcementAction_KILL_POD_ENFORCEMENT,
+				},
+			},
+			expectedSize: 2,
+		},
+	}
+
+	for _, c := range testCases {
+		suite.T().Run(c.description, func(t *testing.T) {
+			c.p.Name = "BLAHBLAH"
+			suite.validator.removeEnforcementsForMissingLifecycles(c.p)
+			assert.Equal(t, len(c.p.EnforcementActions), c.expectedSize, "enforcement size does not match")
+		})
+	}
+}
+
 func (suite *PolicyValidatorTestSuite) TestValidateSeverity() {
 	policy := &v1.Policy{
 		Severity: v1.Severity_LOW_SEVERITY,

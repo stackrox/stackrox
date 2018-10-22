@@ -35,6 +35,8 @@ type policyValidator struct {
 }
 
 func (s *policyValidator) validate(policy *v1.Policy) error {
+	s.removeEnforcementsForMissingLifecycles(policy)
+
 	errorList := errorhelpers.NewErrorList("policy invalid")
 	errorList.AddError(s.validateName(policy))
 	errorList.AddError(s.validateDescription(policy))
@@ -77,6 +79,18 @@ func (s *policyValidator) validateCompilableForLifecycle(policy *v1.Policy) erro
 		errorList.AddError(compilesForRunTime(policy))
 	}
 	return errorList.ToError()
+}
+
+func (s *policyValidator) removeEnforcementsForMissingLifecycles(policy *v1.Policy) {
+	if !policies.AppliesAtBuildTime(policy) {
+		removeEnforcementForLifecycle(policy, v1.LifecycleStage_BUILD)
+	}
+	if !policies.AppliesAtDeployTime(policy) {
+		removeEnforcementForLifecycle(policy, v1.LifecycleStage_DEPLOY)
+	}
+	if !policies.AppliesAtRunTime(policy) {
+		removeEnforcementForLifecycle(policy, v1.LifecycleStage_RUNTIME)
+	}
 }
 
 func (s *policyValidator) validateSeverity(policy *v1.Policy) error {
@@ -241,4 +255,21 @@ func compilesForRunTime(policy *v1.Policy) error {
 		return errors.New("run time policy must contain runtime specific constraints")
 	}
 	return nil
+}
+
+var enforcementToLifecycle = map[v1.EnforcementAction]v1.LifecycleStage{
+	v1.EnforcementAction_FAIL_BUILD_ENFORCEMENT:                    v1.LifecycleStage_BUILD,
+	v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT:                 v1.LifecycleStage_DEPLOY,
+	v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: v1.LifecycleStage_DEPLOY,
+	v1.EnforcementAction_KILL_POD_ENFORCEMENT:                      v1.LifecycleStage_RUNTIME,
+}
+
+func removeEnforcementForLifecycle(policy *v1.Policy, stage v1.LifecycleStage) {
+	newActions := policy.EnforcementActions[:0]
+	for _, ea := range policy.GetEnforcementActions() {
+		if enforcementToLifecycle[ea] != stage {
+			newActions = append(newActions, ea)
+		}
+	}
+	policy.EnforcementActions = newActions
 }
