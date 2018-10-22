@@ -9,7 +9,6 @@
     "DevOps Best Practices",
     "Security Best Practices"
   ],
-  "enforcement_actions": ["UNSET_ENFORCEMENT"],
   "fields": {
     "requiredAnnotation": {
       "key": "email",
