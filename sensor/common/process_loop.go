@@ -77,11 +77,11 @@ func (s *sensor) sendFlowMessagesSingle(flows <-chan *central.NetworkFlowUpdate,
 
 	for {
 		select {
-		case flow, ok := <-flows:
+		case flowUpdate, ok := <-flows:
 			if !ok {
 				return false, errors.New("flows channel closed")
 			}
-			if err := stream.Send(flow); err != nil {
+			if err := stream.Send(flowUpdate); err != nil {
 				return true, err
 			}
 		case <-stream.Context().Done():

@@ -9,9 +9,11 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/metrics"
 )
 
 type hostConnections struct {
@@ -121,14 +123,17 @@ func (m *networkFlowManager) enrichAndSend() {
 	protoToSend := computeUpdateMessage(current, m.enrichedLastSentState)
 	m.enrichedLastSentState = current
 
-	if protoToSend != nil {
-		log.Debugf("Flow update : %v", protoToSend)
-		select {
-		case <-m.done.Done():
-			return
-		case m.flowUpdates <- protoToSend:
-			return
-		}
+	if protoToSend == nil {
+		return
+	}
+
+	metrics.IncrementTotalNetworkFlowsSentCounter(env.ClusterID.Setting(), len(protoToSend.Updated))
+	log.Debugf("Flow update : %v", protoToSend)
+	select {
+	case <-m.done.Done():
+		return
+	case m.flowUpdates <- protoToSend:
+		return
 	}
 }
 
