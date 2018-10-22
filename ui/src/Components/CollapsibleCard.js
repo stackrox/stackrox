@@ -10,7 +10,8 @@ class CollapsibleCard extends Component {
         open: PropTypes.bool,
         titleClassName: PropTypes.string,
         renderWhenOpened: PropTypes.func,
-        renderWhenClosed: PropTypes.func
+        renderWhenClosed: PropTypes.func,
+        cardClassName: PropTypes.string
     };
 
     static defaultProps = {
@@ -18,7 +19,8 @@ class CollapsibleCard extends Component {
         titleClassName:
             'border-b border-base-300 leading-normal cursor-pointer flex justify-between items-center hover:bg-primary-100 hover:border-primary-300',
         renderWhenOpened: null,
-        renderWhenClosed: null
+        renderWhenClosed: null,
+        cardClassName: 'border border-base-400'
     };
 
     renderTriggerElement = cardState => {
@@ -47,7 +49,7 @@ class CollapsibleCard extends Component {
             ? this.props.renderWhenClosed
             : this.renderWhenClosed;
         return (
-            <div className="bg-base-100 shadow text-base-600">
+            <div className={`bg-base-100 text-base-600 rounded ${this.props.cardClassName}`}>
                 <Collapsible
                     open={this.props.open}
                     trigger={renderWhenClosed()}

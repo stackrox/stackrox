@@ -12,7 +12,7 @@ class ProcessesCollapsibleCard extends Component {
 
     renderCollapsibleOpened = () => {
         const titleClassName =
-            'border-b border-base-300 leading-normal bg-base-200 cursor-pointer flex justify-between items-center hover:bg-primary-100 hover:border-primary-300';
+            'border-b border-base-300 leading-normal bg-base-200 cursor-pointer flex justify-between items-center hover:bg-primary-200 hover:border-primary-300';
         return (
             <div className={titleClassName}>
                 <h1 className="p-3 text-base-600 font-700 text-lg">{this.props.title}</h1>

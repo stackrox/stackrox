@@ -21,6 +21,7 @@ import dashboard, { selectors as dashboardSelectors } from './dashboard';
 import loading, { selectors as loadingSelectors } from './loading';
 import route, { selectors as routeSelectors } from './routes';
 import network, { selectors as networkSelectors } from './network';
+import processes, { selectors as processSelectors } from './processes';
 
 // Reducers
 
@@ -42,7 +43,8 @@ const appReducer = combineReducers({
     dashboard,
     loading,
     metadata,
-    network
+    network,
+    processes
 });
 
 const rootReducer = combineReducers({
@@ -75,6 +77,7 @@ const getDashboard = state => getApp(state).dashboard;
 const getLoadingStatus = state => getApp(state).loading;
 const getMetadata = state => getApp(state).metadata;
 const getNetwork = state => getApp(state).network;
+const getProcesses = state => getApp(state).processes;
 
 const boundSelectors = {
     ...bindSelectors(getAlerts, alertSelectors),
@@ -95,7 +98,8 @@ const boundSelectors = {
     ...bindSelectors(getDashboard, dashboardSelectors),
     ...bindSelectors(getLoadingStatus, loadingSelectors),
     ...bindSelectors(getMetadata, metadataSelectors),
-    ...bindSelectors(getNetwork, networkSelectors)
+    ...bindSelectors(getNetwork, networkSelectors),
+    ...bindSelectors(getProcesses, processSelectors)
 };
 
 export const selectors = {

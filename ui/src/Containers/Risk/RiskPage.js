@@ -30,6 +30,7 @@ class RiskPage extends Component {
         selectedDeployment: PropTypes.shape({
             id: PropTypes.string.isRequired
         }),
+        processGroup: PropTypes.shape({}),
         searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
         searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
         searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -42,7 +43,8 @@ class RiskPage extends Component {
     };
 
     static defaultProps = {
-        selectedDeployment: null
+        selectedDeployment: null,
+        processGroup: {}
     };
 
     constructor(props) {
@@ -144,12 +146,10 @@ class RiskPage extends Component {
         const { selectedDeployment } = this.props;
         if (!selectedDeployment) return null;
 
+        const { processGroup } = this.props;
+
         const riskPanelTabs = [{ text: 'Risk Indicators' }, { text: 'Deployment Details' }];
-        if (
-            selectedDeployment &&
-            selectedDeployment.processes &&
-            selectedDeployment.processes.length !== 0
-        ) {
+        if (processGroup.groups !== undefined && processGroup.groups.length !== 0) {
             riskPanelTabs.push({ text: 'Process Discovery' });
         }
 
@@ -172,9 +172,7 @@ class RiskPage extends Component {
                     </TabContent>
                     <TabContent>
                         <div className="flex flex-1 flex-col relative">
-                            <div className="absolute w-full">
-                                <ProcessDetails deployment={selectedDeployment} />
-                            </div>
+                            <ProcessDetails processGroup={processGroup} />
                         </div>
                     </TabContent>
                 </Tabs>
@@ -230,9 +228,15 @@ const getSelectedDeployment = (state, props) => {
     return deploymentId ? selectors.getSelectedDeployment(state, deploymentId) : null;
 };
 
+const getProcessesForDeployment = (state, props) => {
+    const { deploymentId } = props.match.params;
+    return deploymentId ? selectors.getProcessesByDeployment(state, deploymentId) : {};
+};
+
 const mapStateToProps = createStructuredSelector({
     deployments: selectors.getFilteredDeployments,
     selectedDeployment: getSelectedDeployment,
+    processGroup: getProcessesForDeployment,
     searchOptions: selectors.getDeploymentsSearchOptions,
     searchModifiers: selectors.getDeploymentsSearchModifiers,
     searchSuggestions: selectors.getDeploymentsSearchSuggestions,

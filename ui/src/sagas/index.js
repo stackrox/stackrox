@@ -16,6 +16,7 @@ import summaries from './summarySagas';
 import secrets from './secretSagas';
 import network from './networkSagas';
 import metadata from './metadataSagas';
+import processes from './processSagas';
 
 export default function* root() {
     yield all([
@@ -34,6 +35,7 @@ export default function* root() {
         fork(summaries),
         fork(secrets),
         fork(network),
-        fork(metadata)
+        fork(metadata),
+        fork(processes)
     ]);
 }

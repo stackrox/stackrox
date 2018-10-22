@@ -10,7 +10,7 @@ export const defaultColumnClassName =
     'p-2 flex items-center font-600 text-base-600 text-left border-r-0 leading-normal';
 export const wrapClassName = 'whitespace-normal overflow-visible';
 export const rtTrActionsClassName =
-    'rt-tr-actions hidden pin-r p-0 mr-2 w-auto text-left self-center shadow';
+    'rt-tr-actions hidden pin-r p-0 mr-2 w-auto text-left self-center';
 export const pageSize = 50;
 
 class Table extends Component {
@@ -22,7 +22,8 @@ class Table extends Component {
         idAttribute: PropTypes.string,
         noDataText: ReactTablePropTypes.noDataText,
         setTableRef: PropTypes.func,
-        page: PropTypes.number
+        page: PropTypes.number,
+        trClassName: PropTypes.string
     };
 
     static defaultProps = {
@@ -31,11 +32,12 @@ class Table extends Component {
         idAttribute: 'id',
         onRowClick: null,
         setTableRef: null,
-        page: 0
+        page: 0,
+        trClassName: ''
     };
 
     getTrGroupProps = (state, rowInfo) => ({
-        className: rowInfo && rowInfo.original ? '' : 'hidden'
+        className: rowInfo && rowInfo.original ? this.props.trClassName : 'hidden'
     });
 
     getTrProps = (state, rowInfo) => {

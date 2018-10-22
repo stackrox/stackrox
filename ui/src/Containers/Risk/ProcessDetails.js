@@ -3,69 +3,101 @@ import PropTypes from 'prop-types';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 
-import KeyValuePairs from 'Components/KeyValuePairs';
-import CollapsibleCard from 'Components/CollapsibleCard';
-
-const signalMap = {
-    containerId: { label: 'Container' }
-};
-
-const processSignalsMap = {
-    execFilePath: { label: 'Binary Path' },
-    name: { label: 'Command Name' },
-    args: { label: 'Arguments' },
-    uid: { label: 'User ID' },
-    gid: { label: 'Group ID' }
-};
+import ProcessDiscoveryCard from 'Containers/Risk/ProcessDiscoveryCard';
+import ProcessBinaryCollapsible from 'Containers/Risk/ProcessBinaryCollapsible';
+import Table, {
+    defaultHeaderClassName,
+    defaultColumnClassName,
+    wrapClassName
+} from 'Components/Table';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 class ProcessDetails extends Component {
     static propTypes = {
-        deployment: PropTypes.shape({ id: PropTypes.string.isRequired }).isRequired
+        processGroup: PropTypes.shape({
+            groups: PropTypes.arrayOf(PropTypes.object)
+        }).isRequired
     };
 
-    renderProcess = process => {
-        const processSignal = process.signal;
-        let title = processSignal.execFilePath;
-        const titleClassName =
-            'p-3 border-b border-base-300 text-primary-600 tracking-wide cursor-pointer flex justify-between';
-        if (process.signal.time) {
-            title += ` | ${dateFns.format(process.signal.time, dateTimeFormat)}`;
-        }
+    constructor(props) {
+        super(props);
+        this.state = {
+            page: 0
+        };
+    }
+
+    renderProcessSignals = signals => {
+        const columns = [
+            {
+                Header: 'Time',
+                id: 'time',
+                accessor: d => dateFns.format(d.signal.time, dateTimeFormat),
+                headerClassName: `${defaultHeaderClassName} w-1/4 pointer-events-none`,
+                className: `${wrapClassName} ${defaultColumnClassName} w-1/4 pointer-events-none`
+            },
+            {
+                Header: 'Pod ID',
+                accessor: 'podId',
+                headerClassName: `${defaultHeaderClassName} w-1/4 pointer-events-none`,
+                className: `${wrapClassName} ${defaultColumnClassName} w-1/4 pointer-events-none`
+            },
+            {
+                Header: 'Name',
+                accessor: 'containerName',
+                headerClassName: `${defaultHeaderClassName} w-1/4 pointer-events-none`,
+                className: `${wrapClassName} ${defaultColumnClassName} w-1/4 pointer-events-none`
+            },
+            {
+                Header: 'Container ID',
+                accessor: 'signal.containerId',
+                headerClassName: `${defaultHeaderClassName} w-1/4 pointer-events-none`,
+                className: `${wrapClassName} ${defaultColumnClassName} w-1/4 pointer-events-none`
+            }
+        ];
+        const rows = signals;
+        if (!rows.length)
+            return <NoResultsMessage message="No results found. Please refine your search." />;
         return (
-            <div className="px-3 py-4">
-                <CollapsibleCard title={title} open={false} titleClassName={titleClassName}>
-                    <div className="h-full p-3">
-                        <KeyValuePairs data={process.signal} keyValueMap={signalMap} />
-                        <KeyValuePairs data={process.signal} keyValueMap={processSignalsMap} />
-                    </div>
-                </CollapsibleCard>
+            <div className="border-b border-base-300">
+                <Table
+                    rows={signals}
+                    columns={columns}
+                    onRowClick={this.updateSelectedDeployment}
+                    noDataText="No results found. Please refine your search."
+                    page={this.state.page}
+                    trClassName="pointer-events-none"
+                />
             </div>
         );
     };
 
-    renderProcesses = () => {
-        const { deployment } = this.props;
-        let processes = [];
-        if (deployment.processes && deployment.processes.length !== 0) {
-            processes = deployment.processes.map((process, index) => (
-                <div key={index}>{this.renderProcess(process)}</div>
-            ));
-        } else {
-            return (
-                <div className="px-3 py-4">
-                    <CollapsibleCard title="No Processes Found" />
-                </div>
-            );
-        }
-        return (
-            <div className="px-3 py-4">
-                <div className="h-full p-3">{processes}</div>
+    renderProcessBinaries = binaries =>
+        binaries.map(({ args, signals }) => (
+            <ProcessBinaryCollapsible args={args} key={args}>
+                {this.renderProcessSignals(signals)}
+            </ProcessBinaryCollapsible>
+        ));
+
+    renderProcessDiscoveryCard = ({ name, timesExecuted, groups }) => (
+        <ProcessDiscoveryCard name={name} timesExecuted={timesExecuted}>
+            {this.renderProcessBinaries(groups)}
+        </ProcessDiscoveryCard>
+    );
+
+    renderProcessDiscoveryCards = () => {
+        const { groups: processGroups } = this.props.processGroup;
+        return processGroups.map((processGroup, i, list) => (
+            <div
+                className={`px-3 pt-5 ${i === list.length - 1 ? 'pb-5' : ''}`}
+                key={processGroup.name}
+            >
+                {this.renderProcessDiscoveryCard(processGroup)}
             </div>
-        );
+        ));
     };
 
     render() {
-        return <div className="w-full">{this.renderProcesses()}</div>;
+        return <div>{this.renderProcessDiscoveryCards()}</div>;
     }
 }
 
