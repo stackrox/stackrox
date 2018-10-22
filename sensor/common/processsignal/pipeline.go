@@ -21,6 +21,7 @@ var logger = logging.LoggerForModule()
 type Pipeline struct {
 	clusterEntities *clusterentities.Store
 	indicators      chan *v1.SensorEvent
+	deduper         *deduper
 }
 
 // NewProcessPipeline defines how to process a ProcessIndicator
@@ -28,6 +29,7 @@ func NewProcessPipeline(indicators chan *v1.SensorEvent, clusterEntities *cluste
 	return &Pipeline{
 		clusterEntities: clusterEntities,
 		indicators:      indicators,
+		deduper:         newDeduper(),
 	}
 }
 
@@ -54,6 +56,10 @@ func (p *Pipeline) reprocessSignalLater(indicator *v1.ProcessIndicator) {
 
 // Process defines processes to process a ProcessIndicator
 func (p *Pipeline) Process(signal *v1.ProcessSignal) {
+	if !p.deduper.Allow(signal) {
+		return
+	}
+
 	indicator := &v1.ProcessIndicator{
 		Id:     uuid.NewV4().String(),
 		Signal: signal,

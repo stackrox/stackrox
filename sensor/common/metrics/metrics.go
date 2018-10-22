@@ -5,6 +5,11 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
+func init() {
+	prometheus.Register(processDedupeCacheHits)
+	prometheus.Register(processDedupeCacheMisses)
+}
+
 var (
 	// Panics encountered
 	panicCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -14,26 +19,19 @@ var (
 		Help:      "Number of panic calls within Sensor.",
 	}, []string{"FunctionName"})
 
-	signalToIndicatorCreateLagGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	processDedupeCacheHits = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.Namespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "signal_to_indicator_lag",
-		Help:      "Nanoseconds between the signal emission timestamp and the creation time of an indicator message",
-	}, []string{"ClusterID"})
+		Name:      "dedupe_cache_hits",
+		Help:      "A counter of the total number of times we've deduped the process passed in",
+	})
 
-	signalToIndicatorEmitLagGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	processDedupeCacheMisses = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.Namespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "signal_to_indicator_send_lag",
-		Help:      "Nanoseconds between the signal emission timestamp and the emission time of an indicator message",
-	}, []string{"ClusterID"})
-
-	sensorIndicatorChannelFullCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.Namespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "indicators_channel_indicator_dropped_counter",
-		Help:      "A counter of the total number of times we've dropped indicators from the indicators channel because it was full",
-	}, []string{"ClusterID"})
+		Name:      "dedupe_cache_misses",
+		Help:      "A counter of the total number of times we've passed through the dedupe cache",
+	})
 )
 
 // IncrementPanicCounter increments the number of panic calls seen in a function
@@ -41,17 +39,12 @@ func IncrementPanicCounter(functionName string) {
 	panicCounter.With(prometheus.Labels{"FunctionName": functionName}).Inc()
 }
 
-// RegisterSignalToIndicatorCreateLag registers the lag between a collector signal timestamp and the create timestamp of an indicator
-func RegisterSignalToIndicatorCreateLag(clusterID string, lag float64) {
-	signalToIndicatorCreateLagGauge.With(prometheus.Labels{"ClusterID": clusterID}).Set(lag)
+// IncrementProcessDedupeCacheHits increments the number of times we deduped a process
+func IncrementProcessDedupeCacheHits() {
+	processDedupeCacheHits.Inc()
 }
 
-// RegisterSignalToIndicatorEmitLag registers the lag between a collector signal timestamp and the emit timestamp of an indicator
-func RegisterSignalToIndicatorEmitLag(clusterID string, lag float64) {
-	signalToIndicatorEmitLagGauge.With(prometheus.Labels{"ClusterID": clusterID}).Set(lag)
-}
-
-// RegisterSensorIndicatorChannelFullCounter increments indicator channel drops when the channel is full
-func RegisterSensorIndicatorChannelFullCounter(clusterID string) {
-	sensorIndicatorChannelFullCounter.With(prometheus.Labels{"ClusterID": clusterID}).Inc()
+// IncrementProcessDedupeCacheMisses increments the number of times we failed to dedupe a process
+func IncrementProcessDedupeCacheMisses() {
+	processDedupeCacheMisses.Inc()
 }
