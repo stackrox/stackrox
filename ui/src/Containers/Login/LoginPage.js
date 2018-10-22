@@ -7,7 +7,7 @@ import { ClipLoader } from 'react-spinners';
 
 import Select from 'Components/ReactSelect';
 
-import logoPrevent from 'images/logo-prevent.svg';
+import logoPlatform from 'images/logo-platform.svg';
 
 import { AUTH_STATUS } from 'reducers/auth';
 import { selectors } from 'reducers';
@@ -173,7 +173,7 @@ class LoginPage extends Component {
                 <div className="flex flex-col items-center justify-center bg-base-100 w-2/5 md:w-3/5 xl:w-2/5 relative login-bg">
                     <div className="login-border-t h-1 w-full" />
                     <div className="flex flex-col items-center justify-center w-full">
-                        <img className="h-40 h-40 py-6" src={logoPrevent} alt="StackRox" />
+                        <img className="h-40 h-40 py-6" src={logoPlatform} alt="StackRox" />
                         {this.renderAuthProviders()}
                     </div>
                     {this.renderLoginButton()}
