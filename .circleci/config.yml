@@ -513,6 +513,38 @@ jobs:
               stackrox/openshift-automation:terraform-0.3.0 destroy "${CIRCLE_SHA1:0:7}"
           when: always
 
+  oss-audit:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - run:
+          name: Install ossls
+          working_directory: /tmp
+          command: |
+            wget --quiet https://github.com/gruntwork-io/fetch/releases/download/v0.3.2/fetch_linux_amd64
+            sudo install fetch_linux_amd64 /usr/bin/fetch
+            export GITHUB_OAUTH_TOKEN="$GITHUB_TOKEN"
+            fetch --repo="https://github.com/stackrox/ossls" --tag="0.2.0" --release-asset="ossls_linux_amd64" .
+            sudo install ossls_linux_amd64 /usr/bin/ossls
+            ossls -version
+
+      - *restoreDep
+      - *restoreUI
+
+      - run:
+          name: Install Go dependencies
+          command: dep ensure
+
+      - run:
+          name: Install Javascript dependencies
+          working_directory: ui
+          command: yarn install --frozen-lockfile
+
+      - run:
+          name: Audit dependencies
+          command: ossls -audit
+
   push-release:
     <<: *defaults
     resource_class: small
@@ -574,6 +606,10 @@ workflows:
             tags:
               only:
               - /.*/
+      - oss-audit:
+          filters:
+            tags:
+              only: /.*/
       # Push release only on tags.
       - push-release:
           requires:
