@@ -186,12 +186,14 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 	}
 
 	cluster, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to retrieve cluster: %s", err.Error())
+	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, err.Error())
+		return nil, status.Errorf(codes.NotFound, "Cluster '%s' not found", request.GetClusterId())
 	}
 
 	notifierProto, exists, err := s.notifierStore.GetNotifier(request.GetNotifierId())
-
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -200,7 +202,6 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 	}
 
 	notifier, err := notifiers.CreateNotifier(notifierProto)
-
 	if err != nil {
 		return &v1.Empty{}, fmt.Errorf("Error creating notifier with %s (%s) and type %s: %v", notifierProto.GetId(), notifierProto.GetName(), notifierProto.GetType(), err)
 	}
