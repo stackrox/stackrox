@@ -16,7 +16,6 @@ import { severityLabels, lifecycleStageLabels } from 'messages/common';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import {
-    pageSize,
     wrapClassName,
     defaultHeaderClassName,
     defaultColumnClassName,
@@ -275,9 +274,8 @@ class ViolationsPage extends Component {
             </React.Fragment>
         );
         const { length } = Object.keys(violations);
-        const totalPages = length === pageSize ? 1 : Math.floor(length / pageSize) + 1;
         const paginationComponent = (
-            <TablePagination page={page} totalPages={totalPages} setPage={this.setTablePage} />
+            <TablePagination page={page} dataLength={length} setPage={this.setTablePage} />
         );
         return (
             <Panel

@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { selectors } from 'reducers';
 import { createSelector, createStructuredSelector } from 'reselect';
-import { pageSize } from 'Components/Table';
 import { actions } from 'reducers/policies/table';
 
 import Panel from 'Components/Panel';
@@ -27,8 +26,7 @@ class Table extends Component {
 
     pagination = (policies, page) => {
         const { length } = policies;
-        const totalPages = Math.floor((length - 1) / pageSize) + 1;
-        return <TablePagination page={page} totalPages={totalPages} setPage={this.props.setPage} />;
+        return <TablePagination page={page} dataLength={length} setPage={this.props.setPage} />;
     };
 
     getTableHeaderText = () => {

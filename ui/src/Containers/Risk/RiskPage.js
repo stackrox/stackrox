@@ -8,7 +8,7 @@ import { selectors } from 'reducers';
 import { actions as deploymentsActions } from 'reducers/deployments';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
-import Table, { pageSize } from 'Components/Table';
+import Table from 'Components/Table';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import Panel from 'Components/Panel';
@@ -74,11 +74,10 @@ class RiskPage extends Component {
 
     renderPanel = () => {
         const { length } = this.props.deployments;
-        const totalPages = length === pageSize ? 1 : Math.floor(length / pageSize) + 1;
         const paginationComponent = (
             <TablePagination
                 page={this.state.page}
-                totalPages={totalPages}
+                dataLength={length}
                 setPage={this.setTablePage}
             />
         );

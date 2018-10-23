@@ -7,7 +7,6 @@ import { createSelector, createStructuredSelector } from 'reselect';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
 import Table, {
-    pageSize,
     wrapClassName,
     defaultHeaderClassName,
     defaultColumnClassName
@@ -72,11 +71,10 @@ class SecretPage extends Component {
 
     renderPanel = () => {
         const { length } = this.props.secrets;
-        const totalPages = length === pageSize ? 1 : Math.floor(length / pageSize) + 1;
         const paginationComponent = (
             <TablePagination
                 page={this.state.page}
-                totalPages={totalPages}
+                dataLength={length}
                 setPage={this.setTablePage}
             />
         );

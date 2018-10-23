@@ -1,12 +1,18 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
+import { pageSize } from './Table';
 
 class TablePagination extends Component {
     static propTypes = {
         page: PropTypes.number.isRequired,
-        totalPages: PropTypes.number.isRequired,
+        dataLength: PropTypes.number.isRequired,
         setPage: PropTypes.func.isRequired
+    };
+
+    getTotalPages = () => {
+        const { dataLength } = this.props;
+        return Math.ceil(dataLength / pageSize);
     };
 
     onChangePage = e => {
@@ -25,7 +31,7 @@ class TablePagination extends Component {
 
     render() {
         const page = `${this.props.page + 1}`;
-        const { totalPages } = this.props;
+        const totalPages = this.getTotalPages();
         return (
             <div
                 data-test-id="pagination-header"

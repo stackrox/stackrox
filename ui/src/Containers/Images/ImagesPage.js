@@ -6,7 +6,6 @@ import { createSelector, createStructuredSelector } from 'reselect';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import Table, {
-    pageSize,
     wrapClassName,
     defaultHeaderClassName,
     defaultColumnClassName
@@ -71,11 +70,10 @@ class ImagesPage extends Component {
 
     renderPanel = () => {
         const { length } = this.props.images;
-        const totalPages = length === pageSize ? 1 : Math.floor(length / pageSize) + 1;
         const paginationComponent = (
             <TablePagination
                 page={this.state.page}
-                totalPages={totalPages}
+                dataLength={length}
                 setPage={this.setTablePage}
             />
         );
