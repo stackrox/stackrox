@@ -20,6 +20,7 @@ import {
 } from 'utils/networkGraphUtils/networkGraphUtils';
 import * as constants from 'utils/networkGraphUtils/networkGraphConstants';
 import uniqBy from 'lodash/uniqBy';
+import upperCase from 'lodash/upperCase';
 
 const OrbitControls = threeOrbitControls(THREE);
 
@@ -251,7 +252,9 @@ class NetworkGraph extends Component {
             modifiedNode = this.createTextLabelMesh(
                 modifiedNode,
                 modifiedNode.deploymentName,
-                constants.NODE_LABEL_SIZE
+                constants.NODE_LABEL_CANVAS_SIZE,
+                constants.NODE_LABEL_FONT_SIZE,
+                false
             );
 
             newNodes.push(modifiedNode);
@@ -317,10 +320,13 @@ class NetworkGraph extends Component {
             });
             newNamespace.plane = new THREE.Mesh(geometry, material);
 
+            const uppercaseNamespace = upperCase(newNamespace.namespace);
             newNamespace = this.createTextLabelMesh(
                 newNamespace,
-                newNamespace.namespace,
-                constants.NAMESPACE_LABEL_SIZE
+                uppercaseNamespace,
+                constants.NAMESPACE_LABEL_CANVAS_SIZE,
+                constants.NAMESPACE_LABEL_FONT_SIZE,
+                true
             );
             if (namespace.internetAccess) {
                 canvas = getIconCanvas();
@@ -603,7 +609,7 @@ class NetworkGraph extends Component {
         const nodeCanvas = getNodeCanvas(newNode);
         const nodeTexture = new THREE.Texture(nodeCanvas);
         nodeTexture.needsUpdate = true;
-        const geometry = new THREE.PlaneBufferGeometry(32, 16);
+        const geometry = new THREE.PlaneBufferGeometry(16, 16);
 
         const material = new THREE.MeshBasicMaterial({
             map: nodeTexture,
@@ -618,17 +624,18 @@ class NetworkGraph extends Component {
         return newNode;
     };
 
-    createTextLabelMesh = (data, text, size) => {
+    createTextLabelMesh = (data, text, canvasSize, fontSize, isNamespace) => {
         const modifiedData = { ...data };
         const trimmedName = text.length > 15 ? `${text.substring(0, 15)}...` : text;
 
-        const canvasTexture = getTextTexture(trimmedName, size);
+        const canvasTexture = getTextTexture(trimmedName, canvasSize, fontSize, isNamespace);
 
         const texture = new THREE.Texture(canvasTexture);
         texture.needsUpdate = true;
         const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
         material.transparent = true;
-        const geometry = new THREE.PlaneBufferGeometry(size, size);
+        const geometrySize = canvasSize / 4;
+        const geometry = new THREE.PlaneBufferGeometry(geometrySize, geometrySize);
         modifiedData.label = new THREE.Mesh(geometry, material);
 
         this.scene.add(modifiedData.label);

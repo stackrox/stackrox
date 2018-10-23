@@ -10,17 +10,20 @@ export const SCALE_DURATION = 250;
 export const SCALE_FACTOR = 1.5;
 export const SCALE_EXTENT = [0.5, 2];
 
-export const NODE_LABEL_SIZE = 65;
+export const NODE_CANVAS_SIZE = 128;
+export const NODE_LABEL_FONT_SIZE = 24;
 export const NODE_LABEL_OFFSET = 15;
-export const NAMESPACE_LABEL_SIZE = 200;
+export const NODE_LABEL_CANVAS_SIZE = 256;
+export const NAMESPACE_LABEL_FONT_SIZE = 48;
+export const NAMESPACE_LABEL_CANVAS_SIZE = 512;
 export const NAMESPACE_LABEL_OFFSET = 30;
 export const NAMESPACE_BORDER_DASH_WIDTH = [1, 1];
 export const NAMESPACE_BORDER_CANVAS_WIDTH = 32;
 export const NAMESPACE_BORDER_CANVAS_HEIGHT = 32;
-export const INTERNET_ACCESS_ICON_WIDTH = 30;
+export const INTERNET_ACCESS_ICON_WIDTH = 32;
 export const INTERNET_ACCESS_ICON_HEIGHT = 16;
-export const INTERNET_ACCESS_ICON_X_OFFSET = 15;
-export const INTERNET_ACCESS_ICON_Y_OFFSET = 22;
+export const INTERNET_ACCESS_ICON_X_OFFSET = 7;
+export const INTERNET_ACCESS_ICON_Y_OFFSET = 15;
 
 export const FORCE_CONFIG = {
     FORCE_COLLISION_RADIUS_OFFSET: 20,
@@ -65,6 +68,7 @@ export const INTERNET_ACCESS_NODE_BORDER_COLOR = '#c4cdfa';
 export const LINK_COLOR = PRIMARY_COLOR_HEX;
 export const NAMESPACE_LINK_COLOR = 0xbdc2d9;
 export const TEXT_COLOR = PRIMARY_COLOR_STRING;
+export const NAMESPACE_TEXT_COLOR = '#60689B';
 
 // Network graph object types
 export const NETWORK_GRAPH_TYPES = Object.freeze({

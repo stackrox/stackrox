@@ -146,15 +146,16 @@ export const intersectsNamespaces = obj =>
  * @param {String} text text to draw on the canvas
  * @returns {!Object[]}
  */
-export const getTextTexture = (text, size) => {
+export const getTextTexture = (text, canvasSize, fontSize, isNamespace) => {
+    const { NAMESPACE_TEXT_COLOR, TEXT_COLOR } = constants;
     const canvas = document.createElement('canvas');
-    canvas.width = size * 4;
-    canvas.height = size * 4;
+    canvas.width = canvasSize;
+    canvas.height = canvasSize;
     const ctx = canvas.getContext('2d');
-    ctx.font = `${size / 3}px Open Sans`;
+    ctx.font = `${isNamespace ? 'bold' : ''} ${fontSize}px Open Sans`;
     ctx.fillStyle = 'transparent';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = constants.TEXT_COLOR;
+    ctx.fillStyle = isNamespace ? NAMESPACE_TEXT_COLOR : TEXT_COLOR;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(text, canvas.width / 2, canvas.height / 2);
@@ -274,15 +275,17 @@ export const getIconCanvas = () => {
 export const getNodeCanvas = node => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
+    canvas.width = constants.NODE_CANVAS_SIZE;
+    canvas.height = constants.NODE_CANVAS_SIZE;
     ctx.fillStyle = constants.CANVAS_BG_COLOR;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     if (node.internetAccess) {
         ctx.fillStyle = constants.INTERNET_ACCESS_NODE_BORDER_COLOR;
-        ctx.font = '150px stackrox';
+        ctx.font = '140px stackrox';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         const iconPotential = '\ue900';
-        ctx.fillText(iconPotential, canvas.width / 2, canvas.height / 2, canvas.width);
+        ctx.fillText(iconPotential, canvas.width / 2, canvas.height / 2);
     }
 
     const iconNode = '\ue902';
@@ -292,6 +295,6 @@ export const getNodeCanvas = node => {
     ctx.font = '140px stackrox';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(iconNode, canvas.width / 2, canvas.height / 2, canvas.width);
+    ctx.fillText(iconNode, canvas.width / 2, canvas.height / 2);
     return canvas;
 };
