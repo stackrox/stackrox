@@ -85,14 +85,16 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 	}
 
 	for _, i := range indicators {
-		err := suite.store.AddProcessIndicator(i)
+		_, err := suite.store.AddProcessIndicator(i)
 		suite.NoError(err)
 	}
 
 	suite.verifyIndicatorsAre(indicators...)
 
 	// Adding an indicator with the same secondary key should replace the original one.
-	suite.NoError(suite.store.AddProcessIndicator(repeatIndicator))
+	removed, err := suite.store.AddProcessIndicator(repeatIndicator)
+	suite.NoError(err)
+	suite.Equal("id1", removed)
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 
 	for _, i := range []*v1.ProcessIndicator{indicators[1], repeatIndicator} {

@@ -156,13 +156,6 @@ func (m *managerImpl) DeploymentUpdated(deployment *v1.Deployment) (string, v1.E
 		presentAlerts = append(presentAlerts, deployTimeAlerts...)
 	}
 
-	runTimeAlerts, err := m.runtimeDetector.AlertsForDeployment(deployment)
-	if err != nil {
-		logger.Errorf("Error fetching run time alerts: %s", err)
-	} else {
-		presentAlerts = append(presentAlerts, runTimeAlerts...)
-	}
-
 	// Get the previous alerts for the deployment (if any exist).
 	previousAlerts, err := m.alertManager.GetAlertsByDeployment(deployment.GetId())
 	if err != nil {

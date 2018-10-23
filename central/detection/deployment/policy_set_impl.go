@@ -3,9 +3,11 @@ package deployment
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/deployment/index/mappings"
+	"github.com/stackrox/rox/central/metrics"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
@@ -34,9 +36,11 @@ func (p *setImpl) ForEach(f func(*v1.Policy, searchbasedpolicies.Matcher, predic
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 	for id, matcher := range p.policyIDToSearchBasedMatcher {
+		t := time.Now()
 		if err := f(p.policyIDToPolicy[id], matcher.m, matcher.p); err != nil {
 			return err
 		}
+		metrics.SetPolicyEvaluationDurationTime(t, p.policyIDToPolicy[id].GetName())
 	}
 	return nil
 }

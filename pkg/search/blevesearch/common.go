@@ -199,17 +199,26 @@ func resolveMatchFieldQuery(index bleve.Index, category v1.SearchCategory, searc
 	if err != nil {
 		return nil, fmt.Errorf("running sub query to retrieve field %s: %s", relationshipField.dstField, err)
 	}
+	if len(results) == 0 {
+		return bleve.NewMatchNoneQuery(), nil
+	}
 
 	// We now create a new disjunction query with the specified field of the results,
 	// which is used to correlate between parents and their children
 	disjunctionQuery := bleve.NewDisjunctionQuery()
 
+	// Reference set is the overall references so we can dedupe if there are many results for the same top level id
+	refSet := make(map[string]struct{})
 	for _, r := range results {
 		fieldValues := getValuesFromFields(relationshipField.dstField, r.Fields)
 		if len(fieldValues) == 0 {
 			continue
 		}
 		for _, fieldValue := range fieldValues {
+			if _, ok := refSet[fieldValue]; ok {
+				continue
+			}
+			refSet[fieldValue] = struct{}{}
 			q, err := matchFieldQuery(parentCategory, relationshipField.srcField, v1.SearchDataType_SEARCH_STRING, fieldValue)
 			if err != nil {
 				return nil, fmt.Errorf("computing query for field '%s': %s", fieldValue, err)

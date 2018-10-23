@@ -10,14 +10,14 @@ import (
 var (
 	// Panics encountered
 	panicCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.Namespace,
+		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "panic_counter",
 		Help:      "Number of panic calls within Central.",
 	}, []string{"FunctionName"})
 
 	indexOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: metrics.Namespace,
+		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "index_op_duration",
 		Help:      "Time taken to perform an index operation",
@@ -26,7 +26,7 @@ var (
 	}, []string{"Operation", "Type"})
 
 	boltOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: metrics.Namespace,
+		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "bolt_op_duration",
 		Help:      "Time taken to perform a bolt operation",
@@ -35,11 +35,26 @@ var (
 	}, []string{"Operation", "Type"})
 
 	sensorEventQueueCounterVec = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.Namespace,
+		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_event_queue",
 		Help:      "Number of elements in removed from the queue",
 	}, []string{"Operation"})
+
+	resourceProcessedCounterVec = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "resource_processed_count",
+		Help:      "Number of elements received and processed",
+	}, []string{"Operation", "Resource"})
+
+	policyEvaluationHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "policy_evaluation_duration",
+		Help:      "Histogram of how long each policy has taken to evaluate",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Policy"})
 )
 
 // IncrementPanicCounter increments the number of panic calls seen in a function
@@ -64,4 +79,14 @@ func SetIndexOperationDurationTime(start time.Time, op metrics.Op, t string) {
 // IncrementSensorEventQueueCounter increments the counter for the passed operation
 func IncrementSensorEventQueueCounter(op metrics.Op) {
 	sensorEventQueueCounterVec.With(prometheus.Labels{"Operation": op.String()}).Inc()
+}
+
+// SetPolicyEvaluationDurationTime is the amount of time a specific policy took
+func SetPolicyEvaluationDurationTime(t time.Time, name string) {
+	policyEvaluationHistogram.With(prometheus.Labels{"Policy": name}).Observe(startTimeToMS(t))
+}
+
+// IncrementResourceProcessedCounter is a counter for how many times a resource has been processed in Central
+func IncrementResourceProcessedCounter(op metrics.Op, resource metrics.Resource) {
+	resourceProcessedCounterVec.With(prometheus.Labels{"Operation": op.String(), "Resource": resource.String()}).Inc()
 }

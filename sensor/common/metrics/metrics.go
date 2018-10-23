@@ -13,35 +13,35 @@ func init() {
 var (
 	// Panics encountered
 	panicCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.Namespace,
+		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "panic_counter",
 		Help:      "Number of panic calls within Sensor.",
 	}, []string{"FunctionName"})
 
 	processDedupeCacheHits = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.Namespace,
+		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "dedupe_cache_hits",
 		Help:      "A counter of the total number of times we've deduped the process passed in",
 	})
 
 	processDedupeCacheMisses = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.Namespace,
+		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "dedupe_cache_misses",
 		Help:      "A counter of the total number of times we've passed through the dedupe cache",
 	})
 
 	sensorIndicatorChannelFullCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.Namespace,
+		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "indicators_channel_indicator_dropped_counter",
 		Help:      "A counter of the total number of times we've dropped indicators from the indicators channel because it was full",
 	}, []string{"ClusterID"})
 
 	totalNetworkFlowsSentCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.Namespace,
+		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "total_network_flows_sent_counter",
 		Help:      "A counter of the total number of network flows sent to Central by Sensor",

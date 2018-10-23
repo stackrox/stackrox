@@ -15,4 +15,6 @@ func init() {
 	prometheus.MustRegister(boltOperationHistogramVec)
 	prometheus.MustRegister(indexOperationHistogramVec)
 	prometheus.MustRegister(sensorEventQueueCounterVec)
+	prometheus.MustRegister(policyEvaluationHistogram)
+	prometheus.MustRegister(resourceProcessedCounterVec)
 }

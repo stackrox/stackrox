@@ -43,6 +43,7 @@ func (suite *PipelineTestSuite) SetupTest() {
 func (suite *PipelineTestSuite) TestCallsDeploymentPipeline() {
 	expectedError := fmt.Errorf("this is expected")
 	event := &v1.SensorEvent{
+		Action:   v1.ResourceAction_CREATE_RESOURCE,
 		Resource: &v1.SensorEvent_Deployment{},
 	}
 
@@ -57,6 +58,7 @@ func (suite *PipelineTestSuite) TestCallsDeploymentPipeline() {
 func (suite *PipelineTestSuite) TestCallProcessIndicationPipeline() {
 	expectedError := fmt.Errorf("this is expected")
 	event := &v1.SensorEvent{
+		Action:   v1.ResourceAction_CREATE_RESOURCE,
 		Resource: &v1.SensorEvent_ProcessIndicator{},
 	}
 
@@ -71,6 +73,7 @@ func (suite *PipelineTestSuite) TestCallProcessIndicationPipeline() {
 func (suite *PipelineTestSuite) TestCallsNetworkPolicyPipeline() {
 	expectedError := fmt.Errorf("this is expected")
 	event := &v1.SensorEvent{
+		Action:   v1.ResourceAction_CREATE_RESOURCE,
 		Resource: &v1.SensorEvent_NetworkPolicy{},
 	}
 
@@ -85,6 +88,7 @@ func (suite *PipelineTestSuite) TestCallsNetworkPolicyPipeline() {
 func (suite *PipelineTestSuite) TestCallsNamespacePipeline() {
 	expectedError := fmt.Errorf("this is expected")
 	event := &v1.SensorEvent{
+		Action:   v1.ResourceAction_CREATE_RESOURCE,
 		Resource: &v1.SensorEvent_Namespace{},
 	}
 
@@ -99,6 +103,7 @@ func (suite *PipelineTestSuite) TestCallsNamespacePipeline() {
 func (suite *PipelineTestSuite) TestCallsSecretPipeline() {
 	expectedError := fmt.Errorf("this is expected")
 	event := &v1.SensorEvent{
+		Action:   v1.ResourceAction_CREATE_RESOURCE,
 		Resource: &v1.SensorEvent_Secret{},
 	}
 
@@ -111,7 +116,9 @@ func (suite *PipelineTestSuite) TestCallsSecretPipeline() {
 }
 
 func (suite *PipelineTestSuite) TestHandlesNoType() {
-	event := &v1.SensorEvent{}
+	event := &v1.SensorEvent{
+		Action: v1.ResourceAction_CREATE_RESOURCE,
+	}
 
 	err := suite.tested.Run(event, nil)
 	suite.Error(err, "expected the error")

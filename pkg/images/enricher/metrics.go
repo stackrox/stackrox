@@ -42,25 +42,25 @@ func (m *metricsImpl) IncrementScanCacheMiss() {
 func newMetrics(subsystem pkgMetrics.Subsystem) metrics {
 	m := &metricsImpl{
 		metadataCacheHits: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: pkgMetrics.Namespace,
+			Namespace: pkgMetrics.PrometheusNamespace,
 			Subsystem: subsystem.String(),
 			Name:      "metadata_cache_hits",
 			Help:      "Number of cache hits in the metadata cache",
 		}),
 		metadataCacheMisses: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: pkgMetrics.Namespace,
+			Namespace: pkgMetrics.PrometheusNamespace,
 			Subsystem: subsystem.String(),
 			Name:      "metadata_cache_misses",
 			Help:      "Number of cache misses in the metadata cache",
 		}),
 		scanCacheHits: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: pkgMetrics.Namespace,
+			Namespace: pkgMetrics.PrometheusNamespace,
 			Subsystem: subsystem.String(),
 			Name:      "scan_cache_hits",
 			Help:      "Number of cache hits in the scan cache",
 		}),
 		scanCacheMisses: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: pkgMetrics.Namespace,
+			Namespace: pkgMetrics.PrometheusNamespace,
 			Subsystem: subsystem.String(),
 			Name:      "scan_cache_misses",
 			Help:      "Number of cache misses in the scan cache",

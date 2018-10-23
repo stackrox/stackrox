@@ -63,16 +63,18 @@ func getSecondaryKey(indicator *v1.ProcessIndicator) []byte {
 		signal.GetName(), signal.GetArgs()))
 }
 
-func (b *storeImpl) AddProcessIndicator(indicator *v1.ProcessIndicator) error {
+// AddProcessIndicator returns the id of the indicator that was deduped or empty if none was deduped
+func (b *storeImpl) AddProcessIndicator(indicator *v1.ProcessIndicator) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "ProcessIndicator")
 	if indicator.GetId() == "" {
-		return errors.New("received malformed indicator with no id")
+		return "", errors.New("received malformed indicator with no id")
 	}
 	indicatorBytes, err := proto.Marshal(indicator)
 	if err != nil {
-		return fmt.Errorf("process indicator proto marshaling: %s", err)
+		return "", fmt.Errorf("process indicator proto marshalling: %s", err)
 	}
 
+	var oldIDString string
 	err = b.Update(func(tx *bolt.Tx) error {
 		indicatorBucket := tx.Bucket([]byte(processIndicatorBucket))
 		indicatorIDBytes := []byte(indicator.GetId())
@@ -86,6 +88,7 @@ func (b *storeImpl) AddProcessIndicator(indicator *v1.ProcessIndicator) error {
 		if oldID != nil {
 			// Remove the old indicator.
 			removeProcessIndicator(tx, oldID)
+			oldIDString = string(oldID)
 		}
 		if err := indicatorBucket.Put(indicatorIDBytes, indicatorBytes); err != nil {
 			return fmt.Errorf("inserting into indicator bucket: %s", err)
@@ -95,7 +98,7 @@ func (b *storeImpl) AddProcessIndicator(indicator *v1.ProcessIndicator) error {
 		}
 		return nil
 	})
-	return nil
+	return oldIDString, nil
 }
 
 func removeProcessIndicator(tx *bolt.Tx, id []byte) error {

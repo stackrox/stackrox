@@ -18,7 +18,7 @@ const (
 type Store interface {
 	GetProcessIndicator(id string) (*v1.ProcessIndicator, bool, error)
 	GetProcessIndicators() ([]*v1.ProcessIndicator, error)
-	AddProcessIndicator(*v1.ProcessIndicator) error
+	AddProcessIndicator(*v1.ProcessIndicator) (string, error)
 	RemoveProcessIndicator(id string) error
 }
 

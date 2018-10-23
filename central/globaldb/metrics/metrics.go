@@ -47,7 +47,7 @@ func init() {
 
 func newGauge(name, help string) prometheus.Gauge {
 	return prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: metrics.Namespace,
+		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      name,
 		Help:      help,
@@ -56,7 +56,7 @@ func newGauge(name, help string) prometheus.Gauge {
 
 func newBucketGauge(name, help string) *prometheus.GaugeVec {
 	return prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metrics.Namespace,
+		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      name,
 		Help:      help,
