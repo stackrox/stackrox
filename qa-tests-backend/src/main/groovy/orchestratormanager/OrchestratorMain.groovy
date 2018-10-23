@@ -16,7 +16,7 @@ interface OrchestratorMain {
         def getDeploymenton(String deploymentName)
         def updateDeploymenton()
     */
-    def deleteDeployment(String deploymentName, String namespace)
+    def deleteDeployment(String deploymentName, String namespace, Boolean deleteService)
     def deleteService(String serviceName, String namespace)
     def createClairifyDeployment()
     String getClairifyEndpoint()

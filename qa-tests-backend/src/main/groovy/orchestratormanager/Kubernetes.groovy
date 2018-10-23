@@ -87,10 +87,6 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     def cleanup() {
     }
 
-    def portToContainerPort = { p -> new V1ContainerPort().containerPort(p) }
-
-    def containerToContainerID = { container -> container.getContainerID() }
-
     def waitForDeploymentCreation(String deploymentName, String namespace, Boolean skipReplicaWait = false) {
         int waitTime = 0
 
@@ -148,9 +144,9 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     def createDeploymentNoWait(Deployment deployment) {
         deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
 
-        List<V1ContainerPort> containerPorts = deployment.getPorts().stream()
-            .map(portToContainerPort)
-            .collect(Collectors.<V1ContainerPort> toList())
+        List<V1ContainerPort> containerPorts = deployment.getPorts().collect {
+            k, v -> new V1ContainerPort().containerPort(k).protocol(v)
+        }
 
         List<V1VolumeMount> deploymount = new LinkedList<>()
         for (int i = 0; i < deployment.getVolMounts().size(); ++i) {
@@ -177,6 +173,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                                 .name(deployment.getName())
                                 .image(deployment.getImage())
                                 .command(deployment.getCommand())
+                                .args(deployment.getArgs())
                                 .ports(containerPorts)
                                 .volumeMounts(deploymount),
                 ]
@@ -234,11 +231,38 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 deployment.addPod(
                         pod.getMetadata().getName(),
                         pod.getMetadata().getUid(),
-                        pod.getStatus().getContainerStatuses() == null ?
-                                [] :
-                                pod.getStatus().getContainerStatuses().stream().map(containerToContainerID)
-                                .collect(Collectors.toList())
+                        pod.getStatus().getContainerStatuses() != null ?
+                                pod.getStatus().getContainerStatuses().stream().map {
+                                    container -> container.getContainerID()
+                                }.collect(Collectors.toList()) :
+                                [],
+                        pod.getStatus().getPodIP()
                 )
+            }
+
+            // Create service if needed
+            if (deployment.exposeAsService) {
+                api.createNamespacedService(
+                        this.namespace,
+                        new V1Service()
+                                .metadata(
+                                        new V1ObjectMeta()
+                                                .name(deployment.name)
+                                                .namespace(this.namespace)
+                                                .labels(deployment.labels)
+                                )
+                                .spec(
+                                        new V1ServiceSpec()
+                                                .ports(deployment.getPorts().collect {
+                                            k, v -> new V1ServicePort()
+                                                    .name(k as String)
+                                                    .port(k as Integer)
+                                                    .protocol(v) })
+                                                .selector(deployment.labels)
+                                ),
+                        null
+                )
+                println "${deployment.name}: Service created"
             }
         } catch (Exception e) {
             println("Error while waiting for deployment/populating deployment info: " + e.toString())
@@ -250,7 +274,10 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         waitForDeploymentAndPopulateInfo(deployment)
     }
 
-    def deleteDeployment(String name, String namespace = this.namespace) {
+    def deleteDeployment(String name, String namespace = this.namespace, Boolean deleteService = false) {
+        if (deleteService) {
+            this.deleteService(name, namespace)
+        }
         this.beta1.deleteNamespacedDeployment(
                 name,
                 namespace, new V1DeleteOptions()

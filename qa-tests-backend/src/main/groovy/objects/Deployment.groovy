@@ -9,11 +9,13 @@ class Deployment {
     String mountpath
     List<String> secretNames = new ArrayList<String>()
     Map<String, String> labels = new HashMap<>()
-    List<Integer> ports = new ArrayList<Integer>()
+    Map<Integer, String> ports = new HashMap<>()
     List<String> command = new ArrayList<>()
     List<Pod> pods = new ArrayList<>()
     String deploymentUid
     Boolean skipReplicaWait = false
+    List<String> args = new ArrayList<>()
+    Boolean exposeAsService = false
 
     Deployment setName(String n) {
         this.name = n
@@ -42,13 +44,23 @@ class Deployment {
         return this
     }
 
-    Deployment addPort(Integer p) {
-        this.ports.add(p)
+    Deployment addPort(Integer p, String protocol = "TCP") {
+        this.ports.put(p, protocol)
         return this
     }
 
     Deployment setCommand(List<String> command) {
         this.command = command
+        return this
+    }
+
+    Deployment setArgs(List<String> args) {
+        this.args = args
+        return this
+    }
+
+    Deployment setExposeAsService(Boolean expose) {
+        this.exposeAsService = expose
         return this
     }
 
@@ -72,13 +84,14 @@ class Deployment {
         return this
     }
 
-    Deployment addPod(String podName, String podUid, List<String> containerIds) {
+    Deployment addPod(String podName, String podUid, List<String> containerIds, String podIP) {
         this.pods.add(
                 new Pod(
                         name: podName,
                         namespace: this.namespace,
                         uid: podUid,
-                        containerIds: containerIds
+                        containerIds: containerIds,
+                        podIP: podIP
                 )
         )
         return this

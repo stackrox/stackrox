@@ -1,3 +1,4 @@
+import com.google.protobuf.Timestamp
 import com.jayway.restassured.RestAssured
 import groovy.util.logging.Slf4j
 import orchestratormanager.OrchestratorMain
@@ -25,6 +26,8 @@ class BaseSpecification extends Specification {
     def resultMap = [:]
     @Shared
     OrchestratorMain orchestrator = OrchestratorType.create(OrchestratorTypes.valueOf(System.getenv("CLUSTER")), "qa")
+    @Shared
+    private testStartTime
 
     @Shared
     private gdrId = ""
@@ -32,6 +35,9 @@ class BaseSpecification extends Specification {
     private dtrId = ""
 
     def setupSpec() {
+        def startTime = System.currentTimeMillis()
+        testStartTime = Timestamp.newBuilder().setSeconds(startTime / 1000 as Long)
+                .setNanos((int) ((startTime % 1000) * 1000000)).build()
         RestAssured.useRelaxedHTTPSValidation()
         try {
             gdrId = Services.addGenericDockerRegistry()

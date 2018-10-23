@@ -1,9 +1,8 @@
 import io.grpc.StatusRuntimeException
 import services.BaseService
+import services.ClusterService
 import stackrox.generated.AlertServiceGrpc
 import stackrox.generated.AlertServiceOuterClass.ListAlert
-import stackrox.generated.ClusterService
-import stackrox.generated.ClustersServiceGrpc
 import stackrox.generated.DeploymentServiceGrpc
 import stackrox.generated.DetectionServiceGrpc
 import stackrox.generated.EnforcementServiceGrpc
@@ -70,10 +69,6 @@ class Services extends BaseService {
 
     static getNetworkPolicyClient() {
         return NetworkPolicyServiceGrpc.newBlockingStub(getChannel())
-    }
-
-    static getClusterServiceClient() {
-        return ClustersServiceGrpc.newBlockingStub(getChannel())
     }
 
     static getNotifierClient() {
@@ -312,25 +307,13 @@ class Services extends BaseService {
         return policyMeta.getEnforcementActionsList()
     }
 
-    static getClusterId(String name = "remote") {
-        ClusterService.Cluster cluster = getClusterServiceClient().getClusters().clustersList.find { it.name == name }
-
-        if (cluster == null) {
-            def firstClusterName = getClusterServiceClient().getClusters().clustersList.get(0).name
-            println "Could not find id for cluster name ${name}"
-            println "Will return id for first cluster: ${firstClusterName}"
-        }
-
-        return getClusterServiceClient().getClusters().clustersList.get(0).id
-    }
-
     static submitNetworkGraphSimulation(String yaml, String query = null) {
         println "Generating simulation using YAML:"
         println yaml
         try {
             NetworkPolicyServiceOuterClass.SimulateNetworkGraphRequest.Builder request =
                     NetworkPolicyServiceOuterClass.SimulateNetworkGraphRequest.newBuilder()
-                            .setClusterId(getClusterId())
+                            .setClusterId(ClusterService.getClusterId())
                             .setSimulationYaml(yaml)
             if (query != null) {
                 request.setQuery(query)
@@ -345,7 +328,7 @@ class Services extends BaseService {
         try {
             return getNetworkPolicyClient().getNetworkGraph(
                     NetworkPolicyServiceOuterClass.GetNetworkGraphRequest.newBuilder()
-                            .setClusterId(getClusterId())
+                            .setClusterId(ClusterService.getClusterId())
                             .build()
             )
         } catch (Exception e) {
@@ -451,7 +434,10 @@ class Services extends BaseService {
         }
     }
 
-    static sendSimulationNotification(String notifierId, String yaml, String clusterId = getClusterId()) {
+    static sendSimulationNotification(
+            String notifierId,
+            String yaml,
+            String clusterId = ClusterService.getClusterId()) {
         try {
             NetworkPolicyServiceOuterClass.SendNetworkPolicyYamlRequest.Builder request =
                     NetworkPolicyServiceOuterClass.SendNetworkPolicyYamlRequest.newBuilder()
@@ -508,7 +494,7 @@ class Services extends BaseService {
         try {
             return getEnforcementClient().applyEnforcement(
                     EnforcementServiceOuterClass.EnforcementRequest.newBuilder()
-                            .setClusterId(getClusterId())
+                            .setClusterId(ClusterService.getClusterId())
                             .setEnforcement(builder)
                     .build()
             )

@@ -82,7 +82,7 @@ class DockerEE extends OrchestratorCommon implements OrchestratorMain {
     }
 
     @Override
-    def deleteDeployment(String deploymentName, String namespace = "") {
+    def deleteDeployment(String deploymentName, String namespace = "", Boolean deleteService = false) {
         docker.removeServiceCmd(deploymentName).exec()
         println "Service removed."
     }
