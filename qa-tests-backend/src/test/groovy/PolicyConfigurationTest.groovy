@@ -13,7 +13,7 @@ import spock.lang.Unroll
 class PolicyConfigurationTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX = "deploymentnginx"
     static final private String DEPLOYMENTREMOTE = "deploymentremote"
-    static final private String DEPLOYMENTREGISTRY = "deploymentregistry"
+    //static final private String DEPLOYMENTREGISTRY = "deploymentregistry"
     static final private String DEPLOYMENTAGE = "deploymentage"
     static final private String DEPLOYMENTSCANAGE = "deploymentscanage"
     static final private String DEPLOYMENTDOCKERFILE = "deploymentdockerfileandnoscan"
@@ -45,14 +45,17 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .setImage ("nginx:1.7.9")
                     .addLabel ( "app", "test" ),
 
-            new Deployment()
+           /* new Deployment()
                     .setName (DEPLOYMENTREGISTRY)
                     .setImage ("us.gcr.io/ultra-current-825/apache-dns:latest")
-                    .addLabel ( "app", "test" ),
+                    .addLabel ( "app", "test" ),*/
     ]
 
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
+        for (Deployment deploymentId : DEPLOYMENTS) {
+            assert Services.waitForDeployment(deploymentId.getDeploymentUid())
+        }
     }
 
     def cleanupSpec() {

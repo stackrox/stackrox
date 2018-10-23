@@ -136,6 +136,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         for (Deployment deployment: deployments) {
             createDeploymentNoWait(deployment)
         }
+
         for (Deployment deployment: deployments) {
             waitForDeploymentAndPopulateInfo(deployment)
         }

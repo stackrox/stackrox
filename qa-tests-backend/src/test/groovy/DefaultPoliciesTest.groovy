@@ -1,7 +1,6 @@
 import static Services.getPolicies
 import static Services.getViolations
 import static Services.waitForViolation
-
 import stackrox.generated.AlertServiceOuterClass
 
 import groups.BAT
@@ -41,6 +40,9 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
+        for (Deployment deployment : DEPLOYMENTS) {
+            assert Services.waitForDeployment(deployment.getDeploymentUid())
+        }
     }
 
     def cleanupSpec() {

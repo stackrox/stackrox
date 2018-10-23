@@ -25,6 +25,9 @@ class RuntimePolicyTest extends BaseSpecification  {
 
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
+        for (Deployment deploymentId : DEPLOYMENTS) {
+            assert Services.waitForDeployment(deploymentId.getDeploymentUid())
+        }
     }
 
     def cleanupSpec() {
