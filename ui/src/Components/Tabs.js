@@ -58,6 +58,14 @@ class Tabs extends Component {
         };
     }
 
+    componentDidUpdate = () => {
+        const { activeIndex } = this.state;
+        const { headers } = this.props;
+        if (headers.length - 1 < activeIndex) {
+            this.setState({ activeIndex: 0 });
+        }
+    };
+
     getHeaders() {
         const { activeIndex } = this.state;
         return this.props.headers.map((header, i) => {
