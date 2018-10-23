@@ -61,29 +61,6 @@ func (b *storeImpl) ListAlerts() ([]*v1.ListAlert, error) {
 	return alerts, err
 }
 
-func convertAlertsToListAlerts(a *v1.Alert) *v1.ListAlert {
-	return &v1.ListAlert{
-		Id:             a.GetId(),
-		Time:           a.GetTime(),
-		State:          a.GetState(),
-		LifecycleStage: a.GetLifecycleStage(),
-		Policy: &v1.ListAlertPolicy{
-			Id:          a.GetPolicy().GetId(),
-			Name:        a.GetPolicy().GetName(),
-			Severity:    a.GetPolicy().GetSeverity(),
-			Description: a.GetPolicy().GetDescription(),
-			Categories:  a.GetPolicy().GetCategories(),
-		},
-		Deployment: &v1.ListAlertDeployment{
-			Id:          a.GetDeployment().GetId(),
-			Name:        a.GetDeployment().GetName(),
-			UpdatedAt:   a.GetDeployment().GetUpdatedAt(),
-			ClusterName: a.GetDeployment().GetClusterName(),
-			Namespace:   a.GetDeployment().GetNamespace(),
-		},
-	}
-}
-
 func (b *storeImpl) getAlert(id string, bucket *bolt.Bucket) (alert *v1.Alert, exists bool, err error) {
 	alert = new(v1.Alert)
 	val := bucket.Get([]byte(id))

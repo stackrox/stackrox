@@ -158,7 +158,6 @@ message PolicyFields {
 
     VolumePolicy volume_policy           = 14;
 
-
     PortPolicy port_policy                = 15;
     KeyValuePolicy required_label         = 16;
     KeyValuePolicy required_annotation    = 17;

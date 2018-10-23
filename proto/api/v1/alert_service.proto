@@ -67,6 +67,7 @@ message ListAlert {
     ListAlertPolicy policy                  = 4;
     ListAlertDeployment deployment          = 5;
     ViolationState state                    = 6;
+    int32 enforcement_count                 = 7;
 }
 
 enum ViolationState {
