@@ -1,4 +1,5 @@
 import io.grpc.StatusRuntimeException
+import orchestratormanager.OrchestratorType
 import services.BaseService
 import services.ClusterService
 import stackrox.generated.AlertServiceGrpc
@@ -579,12 +580,20 @@ class Services extends BaseService {
         }
     }
 
-    static waitForDeployment(String deploymentId, int timeoutSeconds = 30) {
+    static waitForDeployment(objects.Deployment deployment, int timeoutSeconds = 30) {
+        if (deployment.deploymentUid == null) {
+            println "deploymentID is null, checking orchestrator directly for deployment ID"
+            deployment.deploymentUid = OrchestratorType.orchestrator.getDeploymentId(deployment)
+            if (deployment.deploymentUid == null) {
+                println "deployment does not exist in orchestrator"
+                return false
+            }
+        }
         int intervalSeconds = 1
         int waitTime
         def startTime = System.currentTimeMillis()
         for (waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
-            if (roxDetectedDeployment(deploymentId)) {
+            if (roxDetectedDeployment(deployment.deploymentUid)) {
                 println "SR found deployment within ${(System.currentTimeMillis() - startTime) / 1000}s"
                 return true
             }

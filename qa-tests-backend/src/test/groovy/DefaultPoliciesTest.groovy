@@ -41,7 +41,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
-            assert Services.waitForDeployment(deployment.getDeploymentUid())
+            assert Services.waitForDeployment(deployment)
         }
     }
 

@@ -17,7 +17,7 @@ class GlobalSearch extends BaseSpecification {
 
     def setupSpec() {
         orchestrator.createDeployment(DEPLOYMENT)
-        assert Services.waitForDeployment(DEPLOYMENT.getDeploymentUid())
+        assert Services.waitForDeployment(DEPLOYMENT)
         // Wait for the latest tag violation since we try to search by it.
         assert waitForViolation(DEPLOYMENT.getName(), "Latest tag")
     }

@@ -141,7 +141,7 @@ class NetworkFlowTest extends BaseSpecification {
         DEPLOYMENTS.add(icmp)
         */
         for (Deployment d : DEPLOYMENTS) {
-            assert Services.waitForDeployment(d.deploymentUid)
+            assert Services.waitForDeployment(d)
         }
     }
 

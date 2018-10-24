@@ -30,7 +30,7 @@ class Enforcement extends BaseSpecification {
                 .addLabel("app", "kill-enforcement-int")
                 .setCommand(["sh" , "-c" , "while true; do sleep 5; apt-get -y update; done"])
         orchestrator.createDeployment(d)
-        assert Services.waitForDeployment(d.deploymentUid)
+        assert Services.waitForDeployment(d)
 
         and:
         "get violation details"
@@ -79,7 +79,7 @@ class Enforcement extends BaseSpecification {
                 .addLabel("app", "scale-down-enforcement-int")
                 .setSkipReplicaWait(true)
         orchestrator.createDeployment(d)
-        assert Services.waitForDeployment(d.deploymentUid)
+        assert Services.waitForDeployment(d)
 
         and:
         "get violation details"
@@ -130,7 +130,7 @@ class Enforcement extends BaseSpecification {
                 .addLabel("app", "node-constraint-enforcement-int")
                 .setSkipReplicaWait(true)
         orchestrator.createDeployment(d)
-        assert Services.waitForDeployment(d.deploymentUid)
+        assert Services.waitForDeployment(d)
 
         and:
         "get violation details"
