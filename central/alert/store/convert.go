@@ -25,20 +25,32 @@ func convertAlertsToListAlerts(alert *v1.Alert) *v1.ListAlert {
 			Namespace:   alert.GetDeployment().GetNamespace(),
 		},
 	}
-	addEnforcementCount(alert, listAlert)
+	if alert.GetState() == v1.ViolationState_ACTIVE {
+		addEnforcementCount(alert, listAlert)
+	}
 	return listAlert
 }
 
-// Since runtime enforcement is killing a pod, we can determine how many times
-// a runtime policy has been enforced by counting unique pod ids.
 func addEnforcementCount(alert *v1.Alert, listAlert *v1.ListAlert) {
-	if alert.GetLifecycleStage() != v1.LifecycleStage_RUNTIME || alert.GetEnforcement() == nil {
+	if alert.GetEnforcement() == nil {
 		return
 	}
-	listAlert.EnforcementCount = determineEnforcementCount(alert.GetViolations())
+
+	// Since runtime enforcement is killing a pod, we can determine how many times
+	// a runtime policy has been enforced.
+	if alert.GetLifecycleStage() == v1.LifecycleStage_RUNTIME {
+		listAlert.EnforcementCount = determineRuntimeEnforcementCount(alert.GetViolations())
+		return
+	}
+	// We assume for a given deploy time alert with enforcement, that it is currently being
+	// enforced.
+	if alert.GetLifecycleStage() == v1.LifecycleStage_DEPLOY {
+		listAlert.EnforcementCount = 1
+		return
+	}
 }
 
-func determineEnforcementCount(violations []*v1.Alert_Violation) int32 {
+func determineRuntimeEnforcementCount(violations []*v1.Alert_Violation) int32 {
 	podIds := make(map[string]struct{})
 	for _, violation := range violations {
 		for _, pi := range violation.GetProcesses() {
