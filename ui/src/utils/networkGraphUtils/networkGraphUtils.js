@@ -222,16 +222,20 @@ export const selectClosestSides = (
  *
  * @returns {!Object[]}
  */
-export const getBorderCanvas = () => {
+export const getBorderCanvas = namespace => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = constants.NAMESPACE_BORDER_CANVAS_WIDTH;
     canvas.height = constants.NAMESPACE_BORDER_CANVAS_HEIGHT;
-    ctx.fillStyle = constants.NAMESPACE_BORDER_RECT_COLOR;
+    ctx.fillStyle = namespace.internetAccess
+        ? constants.NAMESPACE_BORDER_RECT_COLOR
+        : constants.NAMESPACE_BORDER_COLOR;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = constants.NAMESPACE_INTERNET_ACCESS_BORDER_COLOR;
-    ctx.setLineDash(constants.NAMESPACE_BORDER_DASH_WIDTH);
-    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    if (namespace.internetAccess) {
+        ctx.strokeStyle = constants.NAMESPACE_INTERNET_ACCESS_BORDER_COLOR;
+        ctx.setLineDash(constants.NAMESPACE_BORDER_DASH_WIDTH);
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    }
     return canvas;
 };
 

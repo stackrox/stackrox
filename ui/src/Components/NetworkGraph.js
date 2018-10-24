@@ -282,21 +282,16 @@ class NetworkGraph extends Component {
             let newNamespace = { ...namespace };
 
             let geometry = new THREE.PlaneGeometry(1, 1);
-            let map = null;
             let canvas = null;
             let texture = null;
-            if (namespace.internetAccess) {
-                canvas = getBorderCanvas();
-                // adds texture to the border for the namespace
-                texture = new THREE.CanvasTexture(canvas);
-                texture.needsUpdate = true;
-                texture.magFilter = THREE.NearestFilter;
-                texture.minFilter = THREE.LinearMipMapLinearFilter;
-                map = texture;
-            }
+            canvas = getBorderCanvas(namespace);
+            // adds texture to the border for the namespace
+            texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            texture.magFilter = THREE.NearestFilter;
+            texture.minFilter = THREE.LinearMipMapLinearFilter;
             let material = new THREE.MeshBasicMaterial({
-                map,
-                color: !namespace.internetAccess && constants.NAMESPACE_BORDER_COLOR,
+                map: texture,
                 side: THREE.DoubleSide,
                 userData: {
                     type: constants.NETWORK_GRAPH_TYPES.NAMESPACE,
@@ -525,15 +520,17 @@ class NetworkGraph extends Component {
                 Math.abs(height - constants.CLUSTER_INNER_PADDING)
             );
             plane.position.set(x, y, 0);
-            icon.geometry = new THREE.PlaneGeometry(
-                constants.INTERNET_ACCESS_ICON_WIDTH,
-                constants.INTERNET_ACCESS_ICON_HEIGHT
-            );
-            icon.position.set(
-                x + width / 2 + constants.INTERNET_ACCESS_ICON_X_OFFSET,
-                y - height / 2 + constants.INTERNET_ACCESS_ICON_Y_OFFSET,
-                0
-            );
+            if (icon) {
+                icon.geometry = new THREE.PlaneGeometry(
+                    constants.INTERNET_ACCESS_ICON_WIDTH,
+                    constants.INTERNET_ACCESS_ICON_HEIGHT
+                );
+                icon.position.set(
+                    x + width / 2 + constants.INTERNET_ACCESS_ICON_X_OFFSET,
+                    y - height / 2 + constants.INTERNET_ACCESS_ICON_Y_OFFSET,
+                    0
+                );
+            }
             label.position.set(
                 x,
                 y +
