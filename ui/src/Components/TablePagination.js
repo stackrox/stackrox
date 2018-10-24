@@ -17,8 +17,11 @@ class TablePagination extends Component {
 
     onChangePage = e => {
         let { value } = e.target;
-        value = Number(value) - 1;
-        this.props.setPage(value);
+        value = Number(value);
+        if (value >= 0) {
+            value -= 1;
+            this.props.setPage(value);
+        }
     };
 
     previousPage = () => {
@@ -56,7 +59,7 @@ class TablePagination extends Component {
                         type="button"
                         className="flex items-center rounded-full hover:bg-primary-200 hover:text-primary-600 mr-1 p-1"
                         onClick={this.previousPage}
-                        disabled={this.props.page === 0}
+                        disabled={this.props.page <= 0}
                         data-test-id="prev-page-button"
                     >
                         <Icon.ChevronLeft className="h-6 w-6" />
