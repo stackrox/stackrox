@@ -532,11 +532,11 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .btn {
-    @apply .flex .py-1 .px-1 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .ml-2 .min-w-24 .justify-center .bg-base-200 .border-2 !important;
+    @apply .flex .py-1 .px-1 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .min-w-24 .justify-center .bg-base-200 .border-2 !important;
 }
 
 .btn-icon {
-    @apply .flex .py-2 .px-2 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .ml-2 .justify-center .bg-base-200 .border !important;
+    @apply .flex .py-2 .px-2 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .justify-center .bg-base-200 .border !important;
 }
 
 .btn-success {

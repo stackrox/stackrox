@@ -1,5 +1,7 @@
 import { quadtree as d3QuadTree } from 'd3';
-import * as constants from 'utils/networkGraphUtils/networkGraphConstants';
+import * as constants from 'constants/networkGraph';
+import uniqBy from 'lodash/uniqBy';
+import * as THREE from 'three';
 
 export const forceCluster = () => {
     let nodes;
@@ -114,13 +116,41 @@ export const getLinksInSameNamespace = (nodes, links) => {
         nodeIdToNodeMapping[d.id] = d;
     });
 
-    const filteredLinks = links.filter(link => {
-        const sourceNamespace = nodeIdToNodeMapping[link.source].namespace;
-        const targetNamespace = nodeIdToNodeMapping[link.target].namespace;
-        return sourceNamespace === targetNamespace;
-    });
+    const filteredLinks = links
+        .filter(link => {
+            const sourceNamespace = nodeIdToNodeMapping[link.source].namespace;
+            const targetNamespace = nodeIdToNodeMapping[link.target].namespace;
+            return sourceNamespace === targetNamespace;
+        })
+        .map(link => ({ ...link }));
 
     return filteredLinks;
+};
+
+export const getLinksBetweenNamespaces = (nodes, links) => {
+    const nodeIdToNodeMapping = {};
+
+    nodes.forEach(d => {
+        nodeIdToNodeMapping[d.id] = d;
+    });
+
+    let filteredNamespaceLinks = links
+        .filter(link => {
+            const sourceNamespace = nodeIdToNodeMapping[link.source].namespace;
+            const targetNamespace = nodeIdToNodeMapping[link.target].namespace;
+            return sourceNamespace !== targetNamespace;
+        })
+        .map(link => ({
+            source: nodeIdToNodeMapping[link.source].namespace,
+            target: nodeIdToNodeMapping[link.target].namespace,
+            id: `${nodeIdToNodeMapping[link.source].namespace}-${
+                nodeIdToNodeMapping[link.target].namespace
+            }`
+        }));
+
+    filteredNamespaceLinks = uniqBy(filteredNamespaceLinks, 'id');
+
+    return filteredNamespaceLinks;
 };
 
 /**
@@ -129,7 +159,8 @@ export const getLinksInSameNamespace = (nodes, links) => {
  * @returns {Function}
  */
 
-export const intersectsNodes = obj => obj.object.material.userData.type === 'NODE';
+export const intersectsNodes = obj =>
+    obj.object.material.userData.type === constants.NETWORK_GRAPH_TYPES.NODE;
 
 /**
  *  A function to filter a list of intersections through ray casting to show only namespaces
@@ -144,6 +175,7 @@ export const intersectsNamespaces = obj =>
  *  Function returns a canvas with some text drawn onto it
  *
  * @param {String} text text to draw on the canvas
+ * @param {Number} size dimensions for the canvas width and height
  * @returns {!Object[]}
  */
 export const getTextTexture = (text, canvasSize, fontSize, isNamespace) => {
@@ -160,6 +192,29 @@ export const getTextTexture = (text, canvasSize, fontSize, isNamespace) => {
     ctx.textBaseline = 'middle';
     ctx.fillText(text, canvas.width / 2, canvas.height / 2);
     return canvas;
+};
+
+/**
+ *  Function returns a mesh with a canvas texture
+ *
+ * @param {String} text text to draw on the canvas
+ * @param {Number} size dimensions for the canvas width and height
+ * @returns {!Object[]}
+ */
+export const CreateTextLabelMesh = (text, canvasSize, fontSize, isNamespace) => {
+    const trimmedName = text.length > 15 ? `${text.substring(0, 15)}...` : text;
+
+    const canvasTexture = getTextTexture(trimmedName, canvasSize, fontSize, isNamespace);
+
+    const texture = new THREE.Texture(canvasTexture);
+    texture.needsUpdate = true;
+    const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+    material.transparent = true;
+    const geometrySize = canvasSize / 4;
+    const geometry = new THREE.PlaneBufferGeometry(geometrySize, geometrySize);
+    const label = new THREE.Mesh(geometry, material);
+
+    return label;
 };
 
 /**

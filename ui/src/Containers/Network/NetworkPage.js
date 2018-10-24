@@ -234,6 +234,31 @@ class NetworkPage extends Component {
         );
     };
 
+    renderPageHeader = () => {
+        const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
+        return (
+            <PageHeader
+                header="Network Graph"
+                subHeader={subHeader}
+                className="w-2/3 bg-primary-200 "
+            >
+                <SearchInput
+                    id="network"
+                    className="w-full"
+                    searchOptions={this.props.searchOptions}
+                    searchModifiers={this.props.searchModifiers}
+                    searchSuggestions={this.props.searchSuggestions}
+                    setSearchOptions={this.props.setSearchOptions}
+                    setSearchModifiers={this.props.setSearchModifiers}
+                    setSearchSuggestions={this.props.setSearchSuggestions}
+                    onSearch={this.onSearch}
+                />
+                {this.renderClustersSelect()}
+                {this.renderNetworkPolicySimulatorButton()}
+            </PageHeader>
+        );
+    };
+
     renderClustersSelect = () => {
         if (!this.props.clusters.length) return null;
         // network policies are only applicable on k8s-based clusters
