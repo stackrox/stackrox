@@ -15,15 +15,6 @@ type storeImpl struct {
 	*bolt.DB
 }
 
-func (b *storeImpl) upsertListAlert(bucket *bolt.Bucket, alert *v1.Alert) error {
-	listAlert := convertAlertsToListAlerts(alert)
-	bytes, err := proto.Marshal(listAlert)
-	if err != nil {
-		return err
-	}
-	return bucket.Put([]byte(alert.Id), bytes)
-}
-
 // GetAlert returns an alert with given id.
 func (b *storeImpl) ListAlert(id string) (alert *v1.ListAlert, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ListAlert")
@@ -61,24 +52,13 @@ func (b *storeImpl) ListAlerts() ([]*v1.ListAlert, error) {
 	return alerts, err
 }
 
-func (b *storeImpl) getAlert(id string, bucket *bolt.Bucket) (alert *v1.Alert, exists bool, err error) {
-	alert = new(v1.Alert)
-	val := bucket.Get([]byte(id))
-	if val == nil {
-		return
-	}
-	exists = true
-	err = proto.Unmarshal(val, alert)
-	return
-}
-
 // GetAlert returns an alert with given id.
 func (b *storeImpl) GetAlert(id string) (alert *v1.Alert, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Alert")
 
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(alertBucket))
-		alert, exists, err = b.getAlert(id, bucket)
+		alert, exists, err = getAlert(id, bucket)
 		return err
 	})
 
@@ -108,24 +88,26 @@ func (b *storeImpl) GetAlerts() ([]*v1.Alert, error) {
 func (b *storeImpl) AddAlert(alert *v1.Alert) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Alert")
 
+	bytes, err := proto.Marshal(alert)
+	if err != nil {
+		return err
+	}
+
+	listBytes, err := marshalAsListAlert(alert)
+	if err != nil {
+		return err
+	}
+
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(alertBucket))
-		_, exists, err := b.getAlert(alert.Id, bucket)
-		if err != nil {
-			return err
-		}
-		if exists {
+		if bucket.Get([]byte(alert.Id)) != nil {
 			return fmt.Errorf("Alert %v cannot be added because it already exists", alert.GetId())
-		}
-		bytes, err := proto.Marshal(alert)
-		if err != nil {
-			return err
 		}
 		if err := bucket.Put([]byte(alert.Id), bytes); err != nil {
 			return err
 		}
-		return b.upsertListAlert(tx.Bucket([]byte(alertListBucket)), alert)
-
+		bucket = tx.Bucket([]byte(alertListBucket))
+		return bucket.Put([]byte(alert.Id), listBytes)
 	})
 }
 
@@ -133,15 +115,38 @@ func (b *storeImpl) AddAlert(alert *v1.Alert) error {
 func (b *storeImpl) UpdateAlert(alert *v1.Alert) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Alert")
 
+	bytes, err := proto.Marshal(alert)
+	if err != nil {
+		return err
+	}
+
+	listBytes, err := marshalAsListAlert(alert)
+	if err != nil {
+		return err
+	}
+
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(alertBucket))
-		bytes, err := proto.Marshal(alert)
-		if err != nil {
-			return err
-		}
 		if err := bucket.Put([]byte(alert.Id), bytes); err != nil {
 			return err
 		}
-		return b.upsertListAlert(tx.Bucket([]byte(alertListBucket)), alert)
+		bucket = tx.Bucket([]byte(alertListBucket))
+		return bucket.Put([]byte(alert.Id), listBytes)
 	})
+}
+
+func getAlert(id string, bucket *bolt.Bucket) (alert *v1.Alert, exists bool, err error) {
+	alert = new(v1.Alert)
+	val := bucket.Get([]byte(id))
+	if val == nil {
+		return
+	}
+	exists = true
+	err = proto.Unmarshal(val, alert)
+	return
+}
+
+func marshalAsListAlert(alert *v1.Alert) ([]byte, error) {
+	listAlert := convertAlertsToListAlerts(alert)
+	return proto.Marshal(listAlert)
 }
