@@ -146,18 +146,13 @@ func (m *managerImpl) DeploymentUpdated(deployment *v1.Deployment) (string, v1.E
 	// Asynchronously update risk after processing.
 	defer m.enricher.ReprocessDeploymentRiskAsync(deployment)
 
-	// Get alerts for the new deployment from the current set of policies.
-	var presentAlerts []*v1.Alert
-
-	deployTimeAlerts, err := m.deploytimeDetector.AlertsForDeployment(deployment)
+	presentAlerts, err := m.deploytimeDetector.AlertsForDeployment(deployment)
 	if err != nil {
-		logger.Errorf("Error fetching deploy time alerts: %s", err)
-	} else {
-		presentAlerts = append(presentAlerts, deployTimeAlerts...)
+		return "", v1.EnforcementAction_UNSET_ENFORCEMENT, fmt.Errorf("fetching deploy time alerts: %s", err)
 	}
 
 	// Get the previous alerts for the deployment (if any exist).
-	previousAlerts, err := m.alertManager.GetAlertsByDeployment(deployment.GetId())
+	previousAlerts, err := m.alertManager.GetAlertsByDeploymentAndPolicyLifecycle(deployment.GetId(), v1.LifecycleStage_DEPLOY)
 	if err != nil {
 		return "", v1.EnforcementAction_UNSET_ENFORCEMENT, err
 	}
