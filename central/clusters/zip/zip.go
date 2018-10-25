@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -14,17 +15,13 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
+	"github.com/stackrox/rox/central/monitoring"
 	serviceIdentitiesService "github.com/stackrox/rox/central/serviceidentities/service"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	zipPkg "github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-)
-
-const (
-	monitoringPasswordPath = "/run/secrets/stackrox.io/monitoring/password"
-	monitoringCAPath       = "/run/secrets/stackrox.io/monitoring/ca.pem"
 )
 
 var (
@@ -142,9 +139,10 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if resp.GetCluster().GetMonitoringEndpoint() != "" {
 		// Pass the monitoring password and CA
-		password, err := ioutil.ReadFile(monitoringPasswordPath)
+		password, err := ioutil.ReadFile(monitoring.PasswordPath)
 		if err != nil {
-			writeGRPCStyleError(w, codes.Internal, err)
+			writeGRPCStyleError(w, codes.InvalidArgument,
+				errors.New("Could not read monitoring password in Central. Please remove the monitoring endpoint to continue"))
 			return
 		}
 		// Add the files required for monitoring
@@ -152,7 +150,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "monitoring-password", err))
 			return
 		}
-		monitoringCA, err := ioutil.ReadFile(monitoringCAPath)
+		monitoringCA, err := ioutil.ReadFile(monitoring.CAPath)
 		if err != nil {
 			writeGRPCStyleError(w, codes.Internal, err)
 			return

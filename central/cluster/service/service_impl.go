@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strings"
 
 	"github.com/docker/distribution/reference"
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/central/enrichment"
+	"github.com/stackrox/rox/central/monitoring"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -105,6 +107,13 @@ func validateInput(cluster *v1.Cluster) error {
 	case *v1.Cluster_Swarm:
 		if cluster.GetRuntimeSupport() {
 			errorList.AddError(errors.New("runtime is not supported with Swarm"))
+		}
+	}
+
+	if cluster.GetMonitoringEndpoint() != "" {
+		// Purposefully not checking the CAPath because only one is needed for an indication of monitoring not being enabled
+		if _, err := ioutil.ReadFile(monitoring.PasswordPath); err != nil {
+			errorList.AddString("Could not read monitoring password. Continue by removing the monitoring endpoint")
 		}
 	}
 
