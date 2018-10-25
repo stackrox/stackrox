@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -27,7 +28,8 @@ import (
 )
 
 const (
-	retryInterval = 5 * time.Second
+	// The 127.0.0.1 ensures we do not expose it externally and must be port-forwarded to
+	pprofServer = "127.0.0.1:6060"
 )
 
 var (
@@ -39,6 +41,8 @@ var (
 			Compression:   false,
 		},
 	}
+
+	log = logging.LoggerForModule()
 )
 
 // A Sensor object configures a StackRox Sensor.
@@ -56,8 +60,9 @@ type Sensor struct {
 	orchestrator       orchestrators.Orchestrator
 	networkConnManager networkConnManager.Manager
 
-	server         pkgGRPC.API
-	benchScheduler *benchmarks.SchedulerClient
+	server          pkgGRPC.API
+	profilingServer *http.Server
+	benchScheduler  *benchmarks.SchedulerClient
 
 	conn *grpc.ClientConn
 
@@ -81,6 +86,20 @@ func NewSensor(log *logging.Logger, l listeners.Listener, e enforcers.Enforcer, 
 	}
 }
 
+func (s *Sensor) startProfilingServer() *http.Server {
+	handler := http.NewServeMux()
+	for path, debugHandler := range routes.DebugRoutes {
+		handler.Handle(path, debugHandler)
+	}
+	srv := &http.Server{Addr: pprofServer, Handler: handler}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			log.Warnf("Closing profiling server: %v", err)
+		}
+	}()
+	return srv
+}
+
 // Start registers APIs and starts background tasks.
 // It returns once tasks have succesfully started.
 func (s *Sensor) Start() {
@@ -96,6 +115,8 @@ func (s *Sensor) Start() {
 	if err != nil {
 		panic(err)
 	}
+
+	s.profilingServer = s.startProfilingServer()
 
 	// Create grpc server with custom routes
 	config := pkgGRPC.Config{
@@ -150,6 +171,10 @@ func (s *Sensor) Stop() {
 	}
 	if s.networkConnManager != nil {
 		s.networkConnManager.Stop()
+	}
+
+	if s.profilingServer != nil {
+		s.profilingServer.Close()
 	}
 
 	s.logger.Info("Sensor shutdown complete")

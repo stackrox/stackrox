@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-	"net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime/debug"
@@ -241,22 +240,9 @@ func (c *central) customRoutes() (customRoutes []routes.CustomRoute) {
 }
 
 func (c *central) debugRoutes() []routes.CustomRoute {
-	rs := map[string]http.Handler{
-		"/debug/pprof":         http.HandlerFunc(pprof.Index),
-		"/debug/pprof/cmdline": http.HandlerFunc(pprof.Cmdline),
-		"/debug/pprof/profile": http.HandlerFunc(pprof.Profile),
-		"/debug/pprof/symbol":  http.HandlerFunc(pprof.Symbol),
-		"/debug/pprof/trace":   http.HandlerFunc(pprof.Trace),
-		"/debug/block":         pprof.Handler(`block`),
-		"/debug/goroutine":     pprof.Handler(`goroutine`),
-		"/debug/heap":          pprof.Handler(`heap`),
-		"/debug/mutex":         pprof.Handler(`mutex`),
-		"/debug/threadcreate":  pprof.Handler(`threadcreate`),
-	}
+	customRoutes := make([]routes.CustomRoute, 0, len(routes.DebugRoutes))
 
-	customRoutes := make([]routes.CustomRoute, 0, len(rs))
-
-	for r, h := range rs {
+	for r, h := range routes.DebugRoutes {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         r,
 			Authorizer:    authzUser.With(permissions.View(resources.DebugMetrics)),
