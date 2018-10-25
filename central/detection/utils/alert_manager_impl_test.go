@@ -8,6 +8,7 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
+	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
@@ -31,9 +32,11 @@ func getProcessIndicator(timestamp *ptypes.Timestamp) *v1.ProcessIndicator {
 }
 
 func getFakeRuntimeAlert(indicators ...*v1.ProcessIndicator) *v1.Alert {
+	v := &v1.Alert_Violation{Processes: indicators}
+	builders.UpdateRuntimeAlertViolationMessage(v)
 	return &v1.Alert{
 		LifecycleStage: v1.LifecycleStage_RUNTIME,
-		Violations:     []*v1.Alert_Violation{{Processes: indicators}},
+		Violations:     []*v1.Alert_Violation{v},
 	}
 }
 

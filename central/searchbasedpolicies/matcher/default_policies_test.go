@@ -144,14 +144,15 @@ func (suite *DefaultPoliciesTestSuite) imageIDFromDep(deployment *v1.Deployment)
 	return types.NewDigest(id).Digest()
 }
 
-func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args string) *v1.ProcessIndicator {
+func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args, path string) *v1.ProcessIndicator {
 	indicator := &v1.ProcessIndicator{
 		Id:           uuid.NewV4().String(),
 		DeploymentId: deploymentID,
 		Signal: &v1.ProcessSignal{
-			Name: name,
-			Args: args,
-			Time: gogoTypes.TimestampNow(),
+			Name:         name,
+			Args:         args,
+			ExecFilePath: path,
+			Time:         gogoTypes.TimestampNow(),
 		},
 	}
 	err := suite.processDataStore.AddProcessIndicator(indicator)
@@ -436,17 +437,17 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	suite.mustIndexDepAndImages(depWithAllResourceLimitsRequestsSpecified)
 
 	// Index processes
-	aptgetIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "apt-get", "install nmap")
+	aptgetIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "apt-get", "install nmap", "/usr/bin/apt-get")
 
-	fixtureDepAptIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "apt", "")
-	sysAdminDepAptIndicator := suite.mustAddIndicator(sysAdminDep.GetId(), "apt", "install blah")
+	fixtureDepAptIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt")
+	sysAdminDepAptIndicator := suite.mustAddIndicator(sysAdminDep.GetId(), "apt", "install blah", "/usr/bin/apt")
 
-	kubeletIndicator := suite.mustAddIndicator(containerPort22Dep.GetId(), "curl", "https://12.13.14.15:10250")
-	kubeletIndicator2 := suite.mustAddIndicator(containerPort22Dep.GetId(), "wget", "https://heapster.kube-system/metrics")
+	kubeletIndicator := suite.mustAddIndicator(containerPort22Dep.GetId(), "curl", "https://12.13.14.15:10250", "/bin/curl")
+	kubeletIndicator2 := suite.mustAddIndicator(containerPort22Dep.GetId(), "wget", "https://heapster.kube-system/metrics", "/bin/wget")
 
-	nmapIndicatorfixtureDep1 := suite.mustAddIndicator(fixtureDep.GetId(), "nmap", "blah")
-	nmapIndicatorfixtureDep2 := suite.mustAddIndicator(fixtureDep.GetId(), "nmap", "blah2")
-	nmapIndicatorNginx110Dep := suite.mustAddIndicator(nginx110Dep.GetId(), "nmap", "")
+	nmapIndicatorfixtureDep1 := suite.mustAddIndicator(fixtureDep.GetId(), "nmap", "blah", "/usr/bin/nmap")
+	nmapIndicatorfixtureDep2 := suite.mustAddIndicator(fixtureDep.GetId(), "nmap", "blah2", "/usr/bin/nmap")
+	nmapIndicatorNginx110Dep := suite.mustAddIndicator(nginx110Dep.GetId(), "nmap", "", "/usr/bin/nmap")
 
 	// Find all the deployments indexed.
 	allDeployments, err := suite.deploymentIndexer.Search(search.EmptyQuery())
@@ -816,7 +817,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				fixtureDep.GetId(): {
 					{
-						Message:   "Found process with name matching 'apt-get$'",
+						Message:   "Detected execution of binary '/usr/bin/apt-get' with arguments 'install nmap'",
 						Processes: []*v1.ProcessIndicator{aptgetIndicator},
 					},
 				},
@@ -827,13 +828,13 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				fixtureDep.GetId(): {
 					{
-						Message:   "Found processes with name matching 'nmap$'",
+						Message:   "Detected executions of binary '/usr/bin/nmap' with 2 different arguments",
 						Processes: []*v1.ProcessIndicator{nmapIndicatorfixtureDep1, nmapIndicatorfixtureDep2},
 					},
 				},
 				nginx110Dep.GetId(): {
 					{
-						Message:   "Found process with name matching 'nmap$'",
+						Message:   "Detected execution of binary '/usr/bin/nmap'",
 						Processes: []*v1.ProcessIndicator{nmapIndicatorNginx110Dep},
 					},
 				},
@@ -844,7 +845,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				containerPort22Dep.GetId(): {
 					{
-						Message:   "Found processes with args matching '(https?://)?(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\:(10250|10248|10255)|heapster\\.kube\\-system/metrics|KUBERNETES_PORT_443_TCP_ADDR|KUBERNETES_SERVICE_HOST).*'",
+						Message:   "Detected executions of 2 binaries with 2 different arguments",
 						Processes: []*v1.ProcessIndicator{kubeletIndicator, kubeletIndicator2},
 					},
 				},
@@ -855,13 +856,13 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				fixtureDep.GetId(): {
 					{
-						Message:   "Found process with name matching 'apt$'",
+						Message:   "Detected execution of binary '/usr/bin/apt'",
 						Processes: []*v1.ProcessIndicator{fixtureDepAptIndicator},
 					},
 				},
 				sysAdminDep.GetId(): {
 					{
-						Message:   "Found process with name matching 'apt$'",
+						Message:   "Detected execution of binary '/usr/bin/apt' with arguments 'install blah'",
 						Processes: []*v1.ProcessIndicator{sysAdminDepAptIndicator},
 					},
 				},

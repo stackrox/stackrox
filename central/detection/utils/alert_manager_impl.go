@@ -5,6 +5,7 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -187,6 +188,7 @@ func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(alert *v1.Alert
 			}
 		}
 		violation.Processes = filtered
+		builders.UpdateRuntimeAlertViolationMessage(violation)
 	}
 	isFullyResolved = !newProcessFound
 	return

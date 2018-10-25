@@ -42,16 +42,13 @@ class ViolationsDetails extends Component {
                 const lastOccurrenceTimestamp = Math.max(
                     ...processes.map(process => getTime(process.signal.time))
                 );
-                const processesList = processes.map((process, index) => {
+                const processesList = processes.map(process => {
                     const { time, args, execFilePath, containerId } = process.signal;
                     const processTime = new Date(time);
                     const timeFormat = format(processTime, dateTimeFormat);
                     return (
                         <div className="border-t border-base-300" key={process.id}>
                             <div className="flex text-base-600">
-                                <span className="flex items-center bg-caution-300 font-700 px-2">
-                                    {index + 1}
-                                </span>
                                 <span className="py-2 px-2 bg-caution-200">{execFilePath}</span>
                             </div>
                             <div className="flex flex-1 text-base-600 px-4 py-2 justify-between">

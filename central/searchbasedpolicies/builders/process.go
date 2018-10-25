@@ -3,7 +3,6 @@ package builders
 import (
 	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -37,23 +36,24 @@ func (p ProcessQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[searc
 		err = fmt.Errorf("%s: %s", p.Name(), err)
 	}
 
+	// Construct query for ProcessID and processArgs (if found)
 	fieldLabels := []search.FieldLabel{search.ProcessID}
-	queries := []string{search.WildcardString}
+	queryStrings := []string{search.WildcardString}
 	highlights := []bool{true}
+
+	if processArgs != "" {
+		fieldLabels = append(fieldLabels, search.ProcessArguments)
+		queryStrings = append(queryStrings, search.RegexQueryString(processArgs))
+		highlights = append(highlights, false)
+	}
 
 	if processName != "" {
 		fieldLabels = append(fieldLabels, search.ProcessName)
-		queries = append(queries, search.RegexQueryString(processName))
-		highlights = append(highlights, false)
-	}
-	if processArgs != "" {
-		fieldLabels = append(fieldLabels, search.ProcessArguments)
-		queries = append(queries, search.RegexQueryString(processArgs))
+		queryStrings = append(queryStrings, search.RegexQueryString(processName))
 		highlights = append(highlights, false)
 	}
 
-	q = search.NewQueryBuilder().AddLinkedFieldsWithHighlightValues(
-		fieldLabels, queries, highlights).ProtoQuery()
+	q = search.NewQueryBuilder().AddLinkedFieldsWithHighlightValues(fieldLabels, queryStrings, highlights).ProtoQuery()
 
 	v = func(result search.Result, processGetter searchbasedpolicies.ProcessIndicatorGetter) []*v1.Alert_Violation {
 		matches := result.Matches[processIDSearchField.GetFieldPath()]
@@ -83,24 +83,10 @@ func (p ProcessQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[searc
 		sort.Slice(processes, func(i, j int) bool {
 			return protoconv.CompareProtoTimestamps(processes[i].GetSignal().GetTime(), processes[j].GetSignal().GetTime()) < 0
 		})
-		var messageBuilder strings.Builder
-		messageBuilder.WriteString("Found ")
-		if len(processes) == 1 {
-			messageBuilder.WriteString("process ")
-		} else {
-			messageBuilder.WriteString("processes ")
-		}
-		messageBuilder.WriteString("with ")
-		if processName != "" {
-			messageBuilder.WriteString(fmt.Sprintf("name matching '%s'", processName))
-			if processArgs != "" {
-				messageBuilder.WriteString(" and ")
-			}
-		}
-		if processArgs != "" {
-			messageBuilder.WriteString(fmt.Sprintf("args matching '%s'", processArgs))
-		}
-		return []*v1.Alert_Violation{{Message: messageBuilder.String(), Processes: processes}}
+
+		v := &v1.Alert_Violation{Processes: processes}
+		UpdateRuntimeAlertViolationMessage(v)
+		return []*v1.Alert_Violation{v}
 	}
 	return
 }
@@ -108,4 +94,42 @@ func (p ProcessQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[searc
 // Name implements the PolicyQueryBuilder interface.
 func (p ProcessQueryBuilder) Name() string {
 	return fmt.Sprintf("query builder for process policy")
+}
+
+// UpdateRuntimeAlertViolationMessage updates the violation message for a violation in-place
+func UpdateRuntimeAlertViolationMessage(v *v1.Alert_Violation) {
+	processes := v.GetProcesses()
+	if len(processes) == 0 {
+		return
+	}
+
+	pathSet := make(map[string]struct{})
+	argsSet := make(map[string]struct{})
+	for _, process := range processes {
+		pathSet[process.GetSignal().GetExecFilePath()] = struct{}{}
+		if process.GetSignal().GetArgs() != "" {
+			argsSet[process.GetSignal().GetArgs()] = struct{}{}
+		}
+	}
+
+	var countMessage, argsMessage, pathMessage string
+	if len(processes) == 1 {
+		countMessage = "execution of"
+	} else {
+		countMessage = "executions of"
+	}
+
+	if len(pathSet) == 1 {
+		pathMessage = fmt.Sprintf(" binary '%s'", processes[0].GetSignal().GetExecFilePath())
+	} else if len(pathSet) > 0 {
+		pathMessage = fmt.Sprintf(" %d binaries", len(pathSet))
+	}
+
+	if len(argsSet) == 1 {
+		argsMessage = fmt.Sprintf(" with arguments '%s'", processes[0].GetSignal().GetArgs())
+	} else if len(argsSet) > 0 {
+		argsMessage = fmt.Sprintf(" with %d different arguments", len(argsSet))
+	}
+
+	v.Message = fmt.Sprintf("Detected %s%s%s", countMessage, pathMessage, argsMessage)
 }
