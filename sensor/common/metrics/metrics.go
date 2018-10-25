@@ -5,11 +5,6 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
-func init() {
-	prometheus.Register(processDedupeCacheHits)
-	prometheus.Register(processDedupeCacheMisses)
-}
-
 var (
 	// Panics encountered
 	panicCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -50,7 +45,7 @@ var (
 	totalNetworkFlowsReceivedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "total_network_flows_received_counter",
+		Name:      "total_network_flows_sensor_received_counter",
 		Help:      "A counter of the total number of network flows received by Sensor from Collector",
 	}, []string{"ClusterID"})
 )

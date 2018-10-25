@@ -17,4 +17,5 @@ func init() {
 	prometheus.MustRegister(sensorEventQueueCounterVec)
 	prometheus.MustRegister(policyEvaluationHistogram)
 	prometheus.MustRegister(resourceProcessedCounterVec)
+	prometheus.MustRegister(totalNetworkFlowsReceivedCounter)
 }

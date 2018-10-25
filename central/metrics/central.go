@@ -59,7 +59,7 @@ var (
 	totalNetworkFlowsReceivedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "total_network_flows_received_counter",
+		Name:      "total_network_flows_central_received_counter",
 		Help:      "A counter of the total number of network flows received by Central from Sensor",
 	}, []string{"ClusterID"})
 )
