@@ -85,28 +85,20 @@ GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_GW_SRCS)
 
 include make/protogen.mk
 
-# These targets are not really phony, but they are never run in CI, only in the rare instance
-# when someone wants to create/update a mock. The extra ten seconds it takes then isn't a big deal.
-# Making it a phony target and always using the latest version (an effect of "go get -u")
-# should be fine for the case of generated mocks, and is helpful in ensuring that we don't ping-pong
-# due to different people having different versions of these binaries.
 MOCKERY_BIN := $(GOPATH)/bin/mockery
-.PHONY: $(MOCKERY_BIN)
 $(MOCKERY_BIN):
 	@echo "+ $@"
-	@go get -u github.com/vektra/mockery/.../
+	@go get github.com/vektra/mockery/...
 
 STRINGER_BIN := $(GOPATH)/bin/stringer
-.PHONY: $(STRINGER_BIN)
 $(STRINGER_BIN):
 	@echo "+ $@"
-	@go get -u golang.org/x/tools/cmd/stringer
+	@$(BASE_PATH)/scripts/go-get-version.sh golang.org/x/tools/cmd/stringer a2dc47679d30b6c496245bafc6a166b46c5fe318
 
 MOCKGEN_BIN := $(GOPATH)/bin/mockgen
-.PHONY: $(MOCKGEN_BIN)
 $(MOCKGEN_BIN):
 	@echo "+ $@"
-	@go get -u github.com/golang/mock/mockgen
+	@$(BASE_PATH)/scripts/go-get-version.sh github.com/golang/mock/mockgen 8a44ef6e8be577e050008c7886f24fc705d709fb
 
 .PHONY: go-generated-srcs
 go-generated-srcs: $(MOCKERY_BIN) $(MOCKGEN_BIN) $(STRINGER_BIN)

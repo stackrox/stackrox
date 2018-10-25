@@ -189,6 +189,13 @@ jobs:
           path: qa-tests-backend/build/reports/codenarc
           destination: reports/codenarc
 
+      - run:
+          name: Ensure that generated files are up to date. (If this fails, run `make go-generated-srcs` and commit the result.)
+          command: |
+            make go-generated-srcs
+            git diff --exit-code HEAD
+
+
   k8s-tests:
     <<: *defaults
     environment:
