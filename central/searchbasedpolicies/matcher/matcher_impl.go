@@ -15,6 +15,10 @@ type matcherImpl struct {
 	processGetter    searchbasedpolicies.ProcessIndicatorGetter
 }
 
+func (m *matcherImpl) MatchMany(searcher searchbasedpolicies.Searcher, ids ...string) (map[string][]*v1.Alert_Violation, error) {
+	return m.violationsMapFromQuery(searcher, search.ConjunctionQuery(search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(), m.q))
+}
+
 func (m *matcherImpl) errorPrefixForMatchOne(id string) string {
 	return fmt.Sprintf("matching policy %s against %s", m.policyName, id)
 }
@@ -44,7 +48,11 @@ func (m *matcherImpl) MatchOne(searcher searchbasedpolicies.Searcher, id string)
 }
 
 func (m *matcherImpl) Match(searcher searchbasedpolicies.Searcher) (map[string][]*v1.Alert_Violation, error) {
-	results, err := searcher.Search(m.q)
+	return m.violationsMapFromQuery(searcher, m.q)
+}
+
+func (m *matcherImpl) violationsMapFromQuery(searcher searchbasedpolicies.Searcher, q *v1.Query) (map[string][]*v1.Alert_Violation, error) {
+	results, err := searcher.Search(q)
 	if err != nil {
 		return nil, err
 	}

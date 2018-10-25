@@ -159,6 +159,17 @@ func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args
 	return indicator
 }
 
+type testCase struct {
+	policyName         string
+	expectedViolations map[string][]*v1.Alert_Violation
+
+	// If shouldNotMatch is specified (which is the case for policies that check for the absence of something), we verify that
+	// it matches everything except shouldNotMatch.
+	// If sampleViolationForMatched is provided, we verify that all the matches are the string provided in sampleViolationForMatched.
+	shouldNotMatch            map[string]struct{}
+	sampleViolationForMatched string
+}
+
 func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	fixtureDep := fixtures.GetDeployment()
 	suite.mustIndexDepAndImages(fixtureDep)
@@ -443,17 +454,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	allImages, err := suite.imageIndexer.Search(search.EmptyQuery())
 	suite.NoError(err)
-
-	type testCase struct {
-		policyName         string
-		expectedViolations map[string][]*v1.Alert_Violation
-
-		// If shouldNotMatch is specified (which is the case for policies that check for the absence of something), we verify that
-		// it matches everything except shouldNotMatch.
-		// If sampleViolationForMatched is provided, we verify that all the matches are the string provided in sampleViolationForMatched.
-		shouldNotMatch            map[string]struct{}
-		sampleViolationForMatched string
-	}
 
 	deploymentTestCases := []testCase{
 		{
@@ -871,46 +871,35 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	for _, c := range deploymentTestCases {
 		p := suite.MustGetPolicy(c.policyName)
-		suite.T().Run(c.policyName, func(t *testing.T) {
+		suite.T().Run(fmt.Sprintf("%s (on deployments)", c.policyName), func(t *testing.T) {
 			m, err := ForPolicy(p, deploymentMappings.OptionsMap, suite.processDataStore)
 			require.NoError(t, err)
 			matches, err := m.Match(suite.deploymentIndexer)
 			require.NoError(t, err)
+			validateDeploymentMatches(matches, allDeployments, c, t)
 
-			if len(c.shouldNotMatch) > 0 {
-				assert.Nil(t, c.expectedViolations, "Don't specify expected violations and shouldNotMatch")
-				for id := range c.shouldNotMatch {
-					_, exists := matches[id]
-					assert.False(t, exists, "Should not have matched %s", id)
-				}
-				for _, depResult := range allDeployments {
-					id := depResult.ID
-					_, shouldNotMatch := c.shouldNotMatch[id]
-					if shouldNotMatch {
-						continue
-					}
-					match, exists := matches[id]
-					require.True(t, exists, "Should have matched %s", id)
-					if c.sampleViolationForMatched != "" {
-						assert.Equal(t, c.sampleViolationForMatched, match[0].GetMessage())
-					}
-				}
-				return
+			var allIDs []string
+			for _, deployment := range allDeployments {
+				allIDs = append(allIDs, deployment.ID)
 			}
+			matchesFromMatchMany, err := m.MatchMany(suite.deploymentIndexer, allIDs...)
+			require.NoError(t, err)
+			validateDeploymentMatches(matchesFromMatchMany, allDeployments, c, t)
+
+			var matchingIDs []string
+			for id := range c.expectedViolations {
+				matchingIDs = append(matchingIDs, id)
+			}
+			matchesFromExactlyMatchMany, err := m.MatchMany(suite.deploymentIndexer, matchingIDs...)
+			require.NoError(t, err)
+			validateDeploymentMatches(matchesFromExactlyMatchMany, allDeployments, c, t)
 
 			for id, violations := range c.expectedViolations {
-				got, ok := matches[id]
-				if !assert.True(t, ok, "Id '%s' didn't match, but should have. Got: %+v", id, matches) {
-					continue
-				}
-				assert.ElementsMatch(t, violations, got, "Expected violations %+v don't match what we got %+v", violations, got)
 				// Test match one
 				gotFromMatchOne, err := m.MatchOne(suite.deploymentIndexer, id)
 				require.NoError(t, err)
 				assert.ElementsMatch(t, violations, gotFromMatchOne, "Expected violations from match one %+v don't match what we got %+v", violations, gotFromMatchOne)
 			}
-			assert.Len(t, matches, len(c.expectedViolations))
-
 		})
 	}
 
@@ -1167,47 +1156,102 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			require.NoError(t, err)
 			matches, err := m.Match(suite.imageIndexer)
 			require.NoError(t, err)
+			validateImageMatches(matches, allImages, c, t)
 
-			if len(c.shouldNotMatch) > 0 {
-				assert.Nil(t, c.expectedViolations, "Don't specify expected violations and shouldNotMatch")
-				for id := range c.shouldNotMatch {
-					id = types.NewDigest(id).Digest()
-					_, exists := matches[id]
-					assert.False(t, exists, "Should not have matched %s", id)
-				}
-
-				for _, imageResult := range allImages {
-					id := imageResult.ID
-					_, shouldNotMatch := c.shouldNotMatch[id]
-					if shouldNotMatch {
-						continue
-					}
-					match, exists := matches[id]
-					require.True(t, exists, "Should have matched %s. Got %+v", id, matches)
-					if c.sampleViolationForMatched != "" {
-						assert.Equal(t, c.sampleViolationForMatched, match[0].GetMessage())
-					}
-				}
-				return
+			var allIDs []string
+			for _, image := range allImages {
+				allIDs = append(allIDs, types.NewDigest(image.ID).Digest())
 			}
+			matchesFromMatchMany, err := m.MatchMany(suite.imageIndexer, allIDs...)
+			require.NoError(t, err)
+			validateImageMatches(matchesFromMatchMany, allImages, c, t)
+
+			var matchingIDs []string
+			for id := range c.expectedViolations {
+				matchingIDs = append(matchingIDs, types.NewDigest(id).Digest())
+			}
+			matchesFromExactlyMatchMany, err := m.MatchMany(suite.imageIndexer, matchingIDs...)
+			require.NoError(t, err)
+			validateImageMatches(matchesFromExactlyMatchMany, allImages, c, t)
 
 			for id, violations := range c.expectedViolations {
 				id = types.NewDigest(id).Digest()
-				got, ok := matches[id]
-				if !assert.True(t, ok, "Id '%s' didn't match, but should have. Got: %+v", id, matches) {
-					continue
-				}
-				assert.ElementsMatch(t, violations, got, "Expected violations %+v don't match what we got %+v", violations, got)
-
 				// Test match one
 				gotFromMatchOne, err := m.MatchOne(suite.imageIndexer, id)
 				require.NoError(t, err)
 				assert.ElementsMatch(t, violations, gotFromMatchOne, "Expected violations from match one %+v don't match what we got %+v", violations, gotFromMatchOne)
 			}
-			assert.Len(t, matches, len(c.expectedViolations))
-
 		})
 	}
+}
+
+func validateImageMatches(matches map[string][]*v1.Alert_Violation, allImages []search.Result, c testCase, t *testing.T) {
+	if len(c.shouldNotMatch) > 0 {
+		assert.Nil(t, c.expectedViolations, "Don't specify expected violations and shouldNotMatch")
+		for id := range c.shouldNotMatch {
+			id = types.NewDigest(id).Digest()
+			_, exists := matches[id]
+			assert.False(t, exists, "Should not have matched %s", id)
+		}
+
+		for _, imageResult := range allImages {
+			id := imageResult.ID
+			_, shouldNotMatch := c.shouldNotMatch[id]
+			if shouldNotMatch {
+				continue
+			}
+			match, exists := matches[id]
+			require.True(t, exists, "Should have matched %s. Got %+v", id, matches)
+			if c.sampleViolationForMatched != "" {
+				assert.Equal(t, c.sampleViolationForMatched, match[0].GetMessage())
+			}
+		}
+		return
+	}
+
+	for id, violations := range c.expectedViolations {
+		id = types.NewDigest(id).Digest()
+		got, ok := matches[id]
+		if !assert.True(t, ok, "Id '%s' didn't match, but should have. Got: %+v", id, matches) {
+			continue
+		}
+		assert.ElementsMatch(t, violations, got, "Expected violations %+v don't match what we got %+v", violations, got)
+	}
+	assert.Len(t, matches, len(c.expectedViolations))
+}
+
+func validateDeploymentMatches(matches map[string][]*v1.Alert_Violation, allDeployments []search.Result, c testCase, t *testing.T) {
+	if len(c.shouldNotMatch) > 0 {
+		assert.Nil(t, c.expectedViolations, "Don't specify expected violations and shouldNotMatch")
+		for id := range c.shouldNotMatch {
+			_, exists := matches[id]
+			assert.False(t, exists, "Should not have matched %s", id)
+		}
+		for _, depResult := range allDeployments {
+			id := depResult.ID
+			_, shouldNotMatch := c.shouldNotMatch[id]
+			if shouldNotMatch {
+				continue
+			}
+			match, exists := matches[id]
+			require.True(t, exists, "Should have matched %s", id)
+			if c.sampleViolationForMatched != "" {
+				assert.Equal(t, c.sampleViolationForMatched, match[0].GetMessage())
+			}
+		}
+		return
+	}
+
+	for id, violations := range c.expectedViolations {
+		got, ok := matches[id]
+		if !assert.True(t, ok, "Id '%s' didn't match, but should have. Got: %+v", id, matches) {
+			continue
+		}
+		assert.ElementsMatch(t, violations, got, "Expected violations %+v don't match what we got %+v", violations, got)
+
+	}
+	assert.Len(t, matches, len(c.expectedViolations))
+
 }
 
 func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {

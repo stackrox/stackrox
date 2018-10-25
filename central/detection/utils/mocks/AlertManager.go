@@ -48,29 +48,6 @@ func (_m *AlertManager) GetAlertsByDeployment(deploymentID string) ([]*v1.Alert,
 	return r0, r1
 }
 
-// GetAlertsByDeploymentAndPolicyLifecycle provides a mock function with given fields: deploymentID, lifecycle
-func (_m *AlertManager) GetAlertsByDeploymentAndPolicyLifecycle(deploymentID string, lifecycle v1.LifecycleStage) ([]*v1.Alert, error) {
-	ret := _m.Called(deploymentID, lifecycle)
-
-	var r0 []*v1.Alert
-	if rf, ok := ret.Get(0).(func(string, v1.LifecycleStage) []*v1.Alert); ok {
-		r0 = rf(deploymentID, lifecycle)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*v1.Alert)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, v1.LifecycleStage) error); ok {
-		r1 = rf(deploymentID, lifecycle)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetAlertsByLifecycle provides a mock function with given fields: lifecyle
 func (_m *AlertManager) GetAlertsByLifecycle(lifecyle v1.LifecycleStage) ([]*v1.Alert, error) {
 	ret := _m.Called(lifecyle)
@@ -87,6 +64,36 @@ func (_m *AlertManager) GetAlertsByLifecycle(lifecyle v1.LifecycleStage) ([]*v1.
 	var r1 error
 	if rf, ok := ret.Get(1).(func(v1.LifecycleStage) error); ok {
 		r1 = rf(lifecyle)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetAlertsByLifecycleAndDeployments provides a mock function with given fields: lifecycle, deploymentIDs
+func (_m *AlertManager) GetAlertsByLifecycleAndDeployments(lifecycle v1.LifecycleStage, deploymentIDs ...string) ([]*v1.Alert, error) {
+	_va := make([]interface{}, len(deploymentIDs))
+	for _i := range deploymentIDs {
+		_va[_i] = deploymentIDs[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, lifecycle)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 []*v1.Alert
+	if rf, ok := ret.Get(0).(func(v1.LifecycleStage, ...string) []*v1.Alert); ok {
+		r0 = rf(lifecycle, deploymentIDs...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*v1.Alert)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(v1.LifecycleStage, ...string) error); ok {
+		r1 = rf(lifecycle, deploymentIDs...)
 	} else {
 		r1 = ret.Error(1)
 	}

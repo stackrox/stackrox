@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/deckarep/golang-set"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deploytime"
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/set"
 	"golang.org/x/time/rate"
 )
 
@@ -49,10 +51,7 @@ func (m *managerImpl) copyAndResetIndicatorQueue() map[string]indicatorInfoWithI
 	if len(m.queuedIndicatorsToContainers) == 0 {
 		return nil
 	}
-	copied := make(map[string]indicatorInfoWithInjector, len(m.queuedIndicatorsToContainers))
-	for indicatorID, indicatorInfo := range m.queuedIndicatorsToContainers {
-		copied[indicatorID] = indicatorInfo
-	}
+	copied := m.queuedIndicatorsToContainers
 	m.queuedIndicatorsToContainers = make(map[string]indicatorInfoWithInjector)
 	return copied
 }
@@ -72,13 +71,15 @@ func (m *managerImpl) flushIndicatorQueue() {
 	if len(copiedQueue) == 0 {
 		return
 	}
-	newAlerts, err := m.runtimeDetector.AlertsForAllDeploymentsAndPolicies()
+	deploymentIDs := uniqueDeploymentIDs(copiedQueue)
+
+	newAlerts, err := m.runtimeDetector.AlertsForDeployments(deploymentIDs...)
 	if err != nil {
 		logger.Errorf("Failed to compute runtime alerts: %s", err)
 		return
 	}
 
-	oldAlerts, err := m.alertManager.GetAlertsByLifecycle(v1.LifecycleStage_RUNTIME)
+	oldAlerts, err := m.alertManager.GetAlertsByLifecycleAndDeployments(v1.LifecycleStage_RUNTIME, deploymentIDs...)
 	if err != nil {
 		logger.Errorf("Failed to retrieve old runtime alerts: %s", err)
 		return
@@ -120,16 +121,22 @@ func (m *managerImpl) flushIndicatorQueue() {
 	}
 }
 
-func (m *managerImpl) IndicatorAdded(indicator *v1.ProcessIndicator, injector pipeline.EnforcementInjector) error {
-	if indicator.GetId() == "" {
-		return fmt.Errorf("invalid indicator received: %s, id was empty", proto.MarshalTextString(indicator))
-	}
+func (m *managerImpl) addToQueue(indicator *v1.ProcessIndicator, injector pipeline.EnforcementInjector) {
 	m.queueLock.Lock()
+	defer m.queueLock.Unlock()
+
 	m.queuedIndicatorsToContainers[indicator.GetId()] = indicatorInfoWithInjector{
 		info:                indicatorInfo{deploymentID: indicator.GetDeploymentId(), containerID: indicator.GetSignal().GetContainerId()},
 		enforcementInjector: injector,
 	}
-	m.queueLock.Unlock()
+}
+
+func (m *managerImpl) IndicatorAdded(indicator *v1.ProcessIndicator, injector pipeline.EnforcementInjector) error {
+	if indicator.GetId() == "" {
+		return fmt.Errorf("invalid indicator received: %s, id was empty", proto.MarshalTextString(indicator))
+	}
+
+	m.addToQueue(indicator, injector)
 
 	if m.limiter.Allow() {
 		go m.flushIndicatorQueue()
@@ -152,7 +159,7 @@ func (m *managerImpl) DeploymentUpdated(deployment *v1.Deployment) (string, v1.E
 	}
 
 	// Get the previous alerts for the deployment (if any exist).
-	previousAlerts, err := m.alertManager.GetAlertsByDeploymentAndPolicyLifecycle(deployment.GetId(), v1.LifecycleStage_DEPLOY)
+	previousAlerts, err := m.alertManager.GetAlertsByLifecycleAndDeployments(v1.LifecycleStage_DEPLOY, deployment.GetId())
 	if err != nil {
 		return "", v1.EnforcementAction_UNSET_ENFORCEMENT, err
 	}
@@ -251,6 +258,18 @@ func determineEnforcement(alerts []*v1.Alert) (alertID string, action v1.Enforce
 		}
 	}
 	return
+}
+
+func uniqueDeploymentIDs(indicatorsToInfo map[string]indicatorInfoWithInjector) []string {
+	m := mapset.NewSet()
+	for _, infoWithInjector := range indicatorsToInfo {
+		deploymentID := infoWithInjector.info.deploymentID
+		if deploymentID == "" {
+			continue
+		}
+		m.Add(deploymentID)
+	}
+	return set.StringSliceFromSet(m)
 }
 
 func containersToKill(alerts []*v1.Alert, indicatorsToInfo map[string]indicatorInfoWithInjector) map[indicatorInfo]pipeline.EnforcementInjector {

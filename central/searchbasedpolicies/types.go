@@ -34,4 +34,6 @@ type Matcher interface {
 	Match(searcher Searcher) (map[string][]*v1.Alert_Violation, error)
 	// MatchOne matches the policy against the object with the given id.
 	MatchOne(searcher Searcher, id string) ([]*v1.Alert_Violation, error)
+	// MatchMany mathes the policy against just the objects with the given ids.
+	MatchMany(searcher Searcher, ids ...string) (map[string][]*v1.Alert_Violation, error)
 }

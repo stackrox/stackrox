@@ -26,9 +26,16 @@ func (a *alertSlice) append(alerts ...*v1.Alert) {
 	a.alerts = append(a.alerts, alerts...)
 }
 
-func (d *detectorImpl) policyMatcher(alerts *alertSlice) func(*v1.Policy, searchbasedpolicies.Matcher, predicate.Predicate) error {
+func (d *detectorImpl) policyMatcher(alerts *alertSlice, deploymentIDs ...string) func(*v1.Policy, searchbasedpolicies.Matcher, predicate.Predicate) error {
 	return func(p *v1.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
-		violationsByDeployment, err := matcher.Match(d.deployments)
+		var err error
+		var violationsByDeployment map[string][]*v1.Alert_Violation
+		if len(deploymentIDs) == 0 {
+			violationsByDeployment, err = matcher.Match(d.deployments)
+		} else {
+			violationsByDeployment, err = matcher.MatchMany(d.deployments, deploymentIDs...)
+		}
+
 		if err != nil {
 			return fmt.Errorf("matching policy %s: %s", p.GetName(), err)
 		}
@@ -51,9 +58,9 @@ func (d *detectorImpl) policyMatcher(alerts *alertSlice) func(*v1.Policy, search
 	}
 }
 
-func (d *detectorImpl) AlertsForAllDeploymentsAndPolicies() ([]*v1.Alert, error) {
+func (d *detectorImpl) AlertsForDeployments(deploymentIDs ...string) ([]*v1.Alert, error) {
 	alertSlice := &alertSlice{}
-	err := d.policySet.ForEach(d.policyMatcher(alertSlice))
+	err := d.policySet.ForEach(d.policyMatcher(alertSlice, deploymentIDs...))
 	if err != nil {
 		return nil, err
 	}

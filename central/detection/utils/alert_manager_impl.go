@@ -59,9 +59,9 @@ func (d *alertManagerImpl) GetAlertsByPolicyAndLifecycle(policyID string, lifecy
 	return alerts, nil
 }
 
-func (d *alertManagerImpl) GetAlertsByDeploymentAndPolicyLifecycle(deploymentID string, lifecycle v1.LifecycleStage) ([]*v1.Alert, error) {
+func (d *alertManagerImpl) GetAlertsByLifecycleAndDeployments(lifecycle v1.LifecycleStage, deploymentIDs ...string) ([]*v1.Alert, error) {
 	q := activeAlertsQueryBuilder().
-		AddStrings(search.DeploymentID, deploymentID).
+		AddStrings(search.DeploymentID, deploymentIDs...).
 		AddStrings(search.LifecycleStage, lifecycle.String()).ProtoQuery()
 
 	alerts, err := d.alerts.SearchRawAlerts(q)
