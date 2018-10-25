@@ -236,6 +236,11 @@ func (w *deploymentWrap) populateDataFromPods(pods ...*v1.Pod) {
 func (w *deploymentWrap) populateContainerInstances(pods ...*v1.Pod) {
 	for _, p := range pods {
 		for i, instance := range containerInstances(p) {
+			// This check that the size is not greater is necessary, because pods can be in terminating as a deployment is updated
+			// The deployment will still be managing the pods, but we want to take the new pod(s) as the source of truth
+			if i >= len(w.Containers) {
+				break
+			}
 			w.Containers[i].Instances = append(w.Containers[i].Instances, instance)
 		}
 	}

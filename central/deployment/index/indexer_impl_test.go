@@ -360,6 +360,16 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			expectedMatches:   map[string][]string{"image.name.tag": {"latest"}},
 		},
 		{
+			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "=lat"},
+			highlightedFields: []search.FieldLabel{search.ImageTag},
+		},
+		{
+			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "=latest"},
+			highlightedFields: []search.FieldLabel{search.ImageTag},
+			expectedIDs:       []string{deployment.GetId()},
+			expectedMatches:   map[string][]string{"image.name.tag": {"latest"}},
+		},
+		{
 			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "lata"},
 			highlightedFields: []search.FieldLabel{search.ImageTag},
 		},

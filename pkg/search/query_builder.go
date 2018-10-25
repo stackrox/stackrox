@@ -21,6 +21,9 @@ const (
 
 	// NegationPrefix is the prefix to negate a query.
 	NegationPrefix = "!"
+
+	// EqualityPrefix is the prefix for an exact match
+	EqualityPrefix = "="
 )
 
 var (
@@ -32,6 +35,11 @@ var (
 		v1.Comparator_GREATER_THAN:           ">",
 	}
 )
+
+// ExactMatchString returns the "exact match" form of the query.
+func ExactMatchString(query string) string {
+	return fmt.Sprintf("%s%s", EqualityPrefix, query)
+}
 
 // RegexQueryString returns the "regex" form of the query.
 func RegexQueryString(query string) string {
@@ -164,6 +172,14 @@ func (qb *QueryBuilder) AddNullField(k FieldLabel) *QueryBuilder {
 // AddStrings adds a key value pair to the query.
 func (qb *QueryBuilder) AddStrings(k FieldLabel, v ...string) *QueryBuilder {
 	qb.fieldsToValues[k] = append(qb.fieldsToValues[k], v...)
+	return qb
+}
+
+// AddExactMatches adds a key value pair to the query
+func (qb *QueryBuilder) AddExactMatches(k FieldLabel, values ...string) *QueryBuilder {
+	for _, v := range values {
+		qb.fieldsToValues[k] = append(qb.fieldsToValues[k], ExactMatchString(v))
+	}
 	return qb
 }
 

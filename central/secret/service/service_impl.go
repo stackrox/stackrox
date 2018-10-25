@@ -59,9 +59,9 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 	}
 
 	psr := search.NewQueryBuilder().
-		AddStrings(search.ClusterID, secret.GetClusterId()).
-		AddStrings(search.Namespace, secret.GetNamespace()).
-		AddStrings(search.SecretName, secret.GetName()).
+		AddExactMatches(search.ClusterID, secret.GetClusterId()).
+		AddExactMatches(search.Namespace, secret.GetNamespace()).
+		AddExactMatches(search.SecretName, secret.GetName()).
 		ProtoQuery()
 
 	deploymentResults, err := s.deployments.SearchDeployments(psr)

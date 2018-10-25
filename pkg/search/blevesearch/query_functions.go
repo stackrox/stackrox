@@ -71,6 +71,10 @@ func newStringQuery(category v1.SearchCategory, field string, value string) (que
 		q := bleve.NewRegexpQuery(value[len(pkgSearch.RegexPrefix):])
 		q.SetField(field)
 		return q, nil
+	case strings.HasPrefix(value, pkgSearch.EqualityPrefix) && len(value) > len(pkgSearch.EqualityPrefix):
+		q := bleve.NewMatchQuery(value[len(pkgSearch.EqualityPrefix):])
+		q.SetField(field)
+		return q, nil
 	default:
 		return NewMatchPhrasePrefixQuery(field, value), nil
 	}

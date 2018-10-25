@@ -45,9 +45,9 @@ func (suite *SecretServiceTestSuite) TestGetSecret() {
 	suite.mockSecretStore.On("GetSecret", secretID).Return(expectedSecret, true, nil)
 
 	psr := search.NewQueryBuilder().
-		AddStrings(search.ClusterID, "cluster").
-		AddStrings(search.Namespace, "namespace").
-		AddStrings(search.SecretName, "secretname").
+		AddExactMatches(search.ClusterID, "cluster").
+		AddExactMatches(search.Namespace, "namespace").
+		AddExactMatches(search.SecretName, "secretname").
 		ProtoQuery()
 
 	results := []*v1.SearchResult{
@@ -114,9 +114,9 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithNoRelationship() {
 	suite.mockSecretStore.On("GetSecret", secretID).Return(expectedSecret, true, nil)
 
 	psr := search.NewQueryBuilder().
-		AddStrings(search.ClusterID, "cluster").
-		AddStrings(search.Namespace, "namespace").
-		AddStrings(search.SecretName, "secretname").
+		AddExactMatches(search.ClusterID, "cluster").
+		AddExactMatches(search.Namespace, "namespace").
+		AddExactMatches(search.SecretName, "secretname").
 		ProtoQuery()
 
 	suite.mockDeploymentStore.On("SearchDeployments", psr).Return([]*v1.SearchResult{}, nil)
@@ -140,9 +140,9 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreRelationshipFailure(
 	suite.mockSecretStore.On("GetSecret", secretID).Return(expectedSecret, true, nil)
 
 	psr := search.NewQueryBuilder().
-		AddStrings(search.ClusterID, "cluster").
-		AddStrings(search.Namespace, "namespace").
-		AddStrings(search.SecretName, "secretname").
+		AddExactMatches(search.ClusterID, "cluster").
+		AddExactMatches(search.Namespace, "namespace").
+		AddExactMatches(search.SecretName, "secretname").
 		ProtoQuery()
 
 	expectedErr := fmt.Errorf("failure")
