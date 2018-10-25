@@ -583,7 +583,7 @@ class Services extends BaseService {
     static waitForDeployment(objects.Deployment deployment, int timeoutSeconds = 30) {
         if (deployment.deploymentUid == null) {
             println "deploymentID is null, checking orchestrator directly for deployment ID"
-            deployment.deploymentUid = OrchestratorType.orchestrator.getDeploymentId(deployment)
+            deployment.deploymentUid = OrchestratorType.orchestrator.getDeploymentId(deployment.name)
             if (deployment.deploymentUid == null) {
                 println "deployment does not exist in orchestrator"
                 return false
