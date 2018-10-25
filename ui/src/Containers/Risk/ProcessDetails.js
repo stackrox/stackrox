@@ -42,15 +42,15 @@ class ProcessDetails extends Component {
                 className: `${wrapClassName} ${defaultColumnClassName} w-1/4 pointer-events-none`
             },
             {
-                Header: 'Name',
+                Header: 'Container Name',
                 accessor: 'containerName',
-                headerClassName: `${defaultHeaderClassName} w-1/4 pointer-events-none`,
+                headerClassName: `${defaultHeaderClassName} ${wrapClassName} w-1/4 pointer-events-none`,
                 className: `${wrapClassName} ${defaultColumnClassName} w-1/4 pointer-events-none`
             },
             {
                 Header: 'Container ID',
                 accessor: 'signal.containerId',
-                headerClassName: `${defaultHeaderClassName} w-1/4 pointer-events-none`,
+                headerClassName: `${defaultHeaderClassName} ${wrapClassName} w-1/4 pointer-events-none`,
                 className: `${wrapClassName} ${defaultColumnClassName} w-1/4 pointer-events-none`
             }
         ];

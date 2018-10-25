@@ -21,6 +21,7 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 						Id:           "1",
 						ExecFilePath: "cat",
 						Args:         "hello",
+						ContainerId:  "A",
 					},
 				},
 				{
@@ -28,6 +29,7 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 						Id:           "2",
 						ExecFilePath: "cat",
 						Args:         "hello",
+						ContainerId:  "B",
 					},
 				},
 				{
@@ -35,6 +37,7 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 						Id:           "3",
 						ExecFilePath: "cat",
 						Args:         "boo",
+						ContainerId:  "A",
 					},
 				},
 				{
@@ -42,6 +45,7 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 						Id:           "4",
 						ExecFilePath: "blah",
 						Args:         "boo",
+						ContainerId:  "C",
 					},
 				},
 			},
@@ -58,6 +62,7 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 										Id:           "4",
 										ExecFilePath: "blah",
 										Args:         "boo",
+										ContainerId:  "C",
 									},
 								},
 							},
@@ -66,7 +71,7 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 				},
 				{
 					Name:          "cat",
-					TimesExecuted: 3,
+					TimesExecuted: 2,
 					Groups: []*v1.ProcessGroup{
 						{
 							Args: "boo",
@@ -76,6 +81,7 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 										Id:           "3",
 										ExecFilePath: "cat",
 										Args:         "boo",
+										ContainerId:  "A",
 									},
 								},
 							},
@@ -88,6 +94,7 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 										Id:           "1",
 										ExecFilePath: "cat",
 										Args:         "hello",
+										ContainerId:  "A",
 									},
 								},
 								{
@@ -95,6 +102,7 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 										Id:           "2",
 										ExecFilePath: "cat",
 										Args:         "hello",
+										ContainerId:  "B",
 									},
 								},
 							},

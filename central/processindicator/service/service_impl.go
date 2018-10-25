@@ -74,14 +74,17 @@ func sortIndicators(indicators []*v1.ProcessIndicator) {
 
 func indicatorsToGroupedResponses(indicators []*v1.ProcessIndicator) []*v1.ProcessNameGroup {
 	processGroups := make(map[string]map[string][]*v1.ProcessIndicator)
+	processNameToContainers := make(map[string]map[string]struct{})
 	for _, i := range indicators {
 		fullProcessName := i.GetSignal().GetExecFilePath()
 		nameMap, ok := processGroups[fullProcessName]
 		if !ok {
 			nameMap = make(map[string][]*v1.ProcessIndicator)
 			processGroups[fullProcessName] = nameMap
+			processNameToContainers[fullProcessName] = make(map[string]struct{})
 		}
 		nameMap[i.GetSignal().GetArgs()] = append(nameMap[i.GetSignal().GetArgs()], i)
+		processNameToContainers[fullProcessName][i.GetSignal().GetContainerId()] = struct{}{}
 	}
 
 	groups := make([]*v1.ProcessNameGroup, 0, len(processGroups))
@@ -97,7 +100,7 @@ func indicatorsToGroupedResponses(indicators []*v1.ProcessIndicator) []*v1.Proce
 		groups = append(groups, &v1.ProcessNameGroup{
 			Name:          name,
 			Groups:        processGroups,
-			TimesExecuted: timesExecuted,
+			TimesExecuted: int64(len(processNameToContainers[name])),
 		})
 	}
 	sort.SliceStable(groups, func(i, j int) bool { return groups[i].Name < groups[j].Name })

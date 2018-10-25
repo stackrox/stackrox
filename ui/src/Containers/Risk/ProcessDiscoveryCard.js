@@ -21,7 +21,7 @@ class ProcessesDiscoveryCard extends Component {
                 <div className="p-3 text-primary-800">
                     <h1 className="text-lg font-700">{name}</h1>
                     <h2 className="text-sm font-600 italic">
-                        {`executed ${timesExecuted} time${timesExecuted === 1 ? '' : 's'} `}
+                        {`executed in ${timesExecuted} container${timesExecuted === 1 ? '' : 's'} `}
                     </h2>
                 </div>
                 <div className="flex pr-3">{icon}</div>
