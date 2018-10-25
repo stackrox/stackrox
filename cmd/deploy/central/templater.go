@@ -36,6 +36,14 @@ type HostPathPersistence struct {
 	NodeSelectorValue string
 }
 
+// WithNodeSelector is a helper function for the templater that returns if node selectors are used
+func (h *HostPathPersistence) WithNodeSelector() bool {
+	if h == nil {
+		return false
+	}
+	return h.NodeSelectorKey != ""
+}
+
 // CommonConfig contains the common config between orchestrators that cannot be placed at the top level
 // Image is an example as it can be parameterized per orchestrator with different defaults so it cannot be placed
 // at the top level

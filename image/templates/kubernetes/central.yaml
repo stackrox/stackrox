@@ -34,7 +34,7 @@ spec:
       labels:
         app: central
     spec:
-      {{if .HostPath -}}
+      {{if .HostPath.WithNodeSelector -}}
       nodeSelector:
         {{.HostPath.NodeSelectorKey}}: {{.HostPath.NodeSelectorValue}}
       {{end -}}
