@@ -237,6 +237,28 @@ jobs:
             export UI_BASE_URL=https://localhost:${LOCAL_PORT}
             make -C ui test-e2e-ci
 
+      - run:
+          name: Collect imbued UI logs
+          command: |
+            mkdir -p /tmp/imbued-ui-logs
+            status_code="$(curl -sk -o logs.zip -w "%{http_code}\n" "https://localhost:${LOCAL_PORT}/api/logimbue")"
+            # Central returns 204 if there are no imbued logs
+            if [ "${status_code}" -eq 204 ]; then
+              echo "No imbued logs found."
+            elif [ "${status_code}" -eq 200 ]; then
+              echo "Logs imbued from the UI were found. Please find them in the artifacts section."
+              unzip logs.zip -d /tmp/imbued-ui-logs
+            else
+              echo "Received error status code ${status_code} from the log imbue endpoint; is the log imbue handler broken?"
+              exit 1
+            fi
+          when:
+            always
+
+      - store_artifacts:
+          path: /tmp/imbued-ui-logs
+          destination: imbued-ui-logs
+
       - *collectK8sLogs
 
       - store_artifacts:

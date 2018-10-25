@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/stackrox/rox/central/logimbue/store"
 )
@@ -74,8 +75,20 @@ func (l handlerImpl) get(resp http.ResponseWriter, req *http.Request) {
 	// Write any logs found into the zip file. Record if we ever succeed or fail for error return.
 	anyFailures := false
 	anySuccesses := false
-	for _, alog := range logs {
-		if _, err = compressor.Write([]byte(alog)); err != nil {
+	// Each log will be a JSON object. For convenience, we wrap it in "[]" so that
+	// it is readable as a JSON array.
+	for i, alog := range logs {
+		sb := strings.Builder{}
+		if i == 0 {
+			sb.WriteString("[")
+		}
+		sb.WriteString(alog)
+		if i == len(logs)-1 {
+			sb.WriteString("]")
+		} else {
+			sb.WriteString(",\n")
+		}
+		if _, err = compressor.Write([]byte(sb.String())); err != nil {
 			log.Error(err)
 			anyFailures = true
 		} else {
@@ -140,7 +153,7 @@ type Compressor interface {
 func getCompressor() (Compressor, error) {
 	buf := new(bytes.Buffer)
 	closer := zip.NewWriter(buf)
-	writer, err := closer.Create("logs")
+	writer, err := closer.Create("logs.json")
 	if err != nil {
 		return nil, err
 	}

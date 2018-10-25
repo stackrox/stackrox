@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/central/logimbue/store/mocks"
@@ -14,6 +15,10 @@ import (
 
 func TestLogImbueHandler(t *testing.T) {
 	suite.Run(t, new(LogImbueHandlerTestSuite))
+}
+
+func matches(log []byte, message string) bool {
+	return strings.Contains(string(log), message)
 }
 
 type LogImbueHandlerTestSuite struct {
@@ -106,9 +111,9 @@ func (suite *LogImbueHandlerTestSuite) TestGetReturnsLogsFromDb() {
 	suite.compressorProvider.compressor = mc
 
 	// Then we will use the compressor to compress all of the logs.
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return string(log) == loggedMessages[0] })).Return(len(loggedMessages[0]), nil)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return string(log) == loggedMessages[1] })).Return(len(loggedMessages[1]), nil)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return string(log) == loggedMessages[2] })).Return(len(loggedMessages[2]), nil)
+	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[0]) })).Return(len(loggedMessages[0]), nil)
+	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[1]) })).Return(len(loggedMessages[1]), nil)
+	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[2]) })).Return(len(loggedMessages[2]), nil)
 	mc.On("Close").Return(nil)
 	fakeCompressed := "compressed logs"
 	mc.On("Bytes").Return([]byte(fakeCompressed))
@@ -168,9 +173,9 @@ func (suite *LogImbueHandlerTestSuite) TestGetHandlesCompressionWriteError() {
 
 	// Then we will use the compressor to compress all of the logs, but fail with all of them.
 	writeErr := fmt.Errorf("cant write dude")
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return string(log) == loggedMessages[0] })).Return(len(loggedMessages[0]), writeErr)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return string(log) == loggedMessages[1] })).Return(len(loggedMessages[1]), writeErr)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return string(log) == loggedMessages[2] })).Return(len(loggedMessages[2]), writeErr)
+	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[0]) })).Return(len(loggedMessages[0]), writeErr)
+	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[1]) })).Return(len(loggedMessages[1]), writeErr)
+	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[2]) })).Return(len(loggedMessages[2]), writeErr)
 	mc.On("Close").Return(nil)
 
 	recorder := httptest.NewRecorder()
@@ -195,9 +200,9 @@ func (suite *LogImbueHandlerTestSuite) TestGetHandlesPartialCompressionWriteErro
 
 	// Then we will use the compressor to compress all of the logs, but will fail to compress some of them.
 	writeErr := fmt.Errorf("cant write dude")
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return string(log) == loggedMessages[0] })).Return(len(loggedMessages[0]), nil)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return string(log) == loggedMessages[1] })).Return(len(loggedMessages[1]), writeErr)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return string(log) == loggedMessages[2] })).Return(len(loggedMessages[2]), nil)
+	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[0]) })).Return(len(loggedMessages[0]), nil)
+	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[1]) })).Return(len(loggedMessages[1]), writeErr)
+	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[2]) })).Return(len(loggedMessages[2]), nil)
 	mc.On("Close").Return(nil)
 	fakeCompressed := "compressed logs"
 	mc.On("Bytes").Return([]byte(fakeCompressed))
@@ -223,9 +228,9 @@ func (suite *LogImbueHandlerTestSuite) TestGetHandlesCompressionCloseError() {
 	suite.compressorProvider.compressor = mc
 
 	// Then we will use the compressor to compress all of the logs, but fail when closing.
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return string(log) == loggedMessages[0] })).Return(len(loggedMessages[0]), nil)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return string(log) == loggedMessages[1] })).Return(len(loggedMessages[1]), nil)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return string(log) == loggedMessages[2] })).Return(len(loggedMessages[2]), nil)
+	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[0]) })).Return(len(loggedMessages[0]), nil)
+	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[1]) })).Return(len(loggedMessages[1]), nil)
+	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[2]) })).Return(len(loggedMessages[2]), nil)
 	closeErr := fmt.Errorf("cant close the compression home slice")
 	mc.On("Close").Return(closeErr)
 
