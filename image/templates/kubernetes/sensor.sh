@@ -4,7 +4,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 kubectl get namespace {{.Namespace}} > /dev/null || kubectl create namespace {{.Namespace}}
 
 if ! kubectl get secret/stackrox -n {{.Namespace}} > /dev/null; then
-  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.Registry}}")"
+  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.ImageRegistry}}")"
   [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
   kubectl create --namespace "{{.Namespace}}" -f - <<EOF
 apiVersion: v1
