@@ -56,7 +56,8 @@ class ClustersModal extends Component {
 
     onDeleteHandler = cluster => e => {
         e.stopPropagation();
-        this.deleteClusters(cluster);
+        this.setState({ selection: [cluster.id] });
+        this.showConfirmationDialog();
     };
 
     onClusterDetailsClose = () => this.props.selectCluster(null);
@@ -76,7 +77,7 @@ class ClustersModal extends Component {
     };
 
     hideConfirmationDialog = () => {
-        this.setState({ showConfirmationDialog: false });
+        this.setState({ showConfirmationDialog: false, selection: [] });
     };
 
     toggleRow = id => {
@@ -225,6 +226,7 @@ class ClustersModal extends Component {
     render() {
         const { clusterType, onRequestClose } = this.props;
         const numCheckedClusters = this.state.selection.length;
+        const confirmationText = `Cluster deletion won't tear down StackRox services running on this cluster. You can remove them from the corresponding cluster by running the "delete-sensor.sh" script from the sensor installation bundle. Are you sure you want to delete ${numCheckedClusters} cluster(s)?`;
         return (
             <Modal isOpen onRequestClose={onRequestClose} className="w-full lg:w-5/6 h-full">
                 <header className="flex items-center w-full p-4 bg-primary-500 text-base-100 uppercase">
@@ -236,8 +238,9 @@ class ClustersModal extends Component {
                     {this.renderSidePanel()}
                 </div>
                 <Dialog
+                    className="w-1/3"
                     isOpen={this.state.showConfirmationDialog}
-                    text={`Are you sure you want to delete ${numCheckedClusters} cluster(s)?`}
+                    text={confirmationText}
                     onConfirm={this.deleteClusters}
                     onCancel={this.hideConfirmationDialog}
                 />
