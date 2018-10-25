@@ -119,6 +119,14 @@
   version = "v1.15.21"
 
 [[projects]]
+  digest = "1:f4298c81d8a94ab68d9e387eaf6e653387df5da17702f06c6d8718a7a8e549d0"
+  name = "github.com/beevik/etree"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "9d7e8feddccb4ed1b8afb54e368bd323d2ff652c"
+  version = "v1.0.1"
+
+[[projects]]
   branch = "master"
   digest = "1:707ebe952a8b3d00b343c01536c79c73771d100f63ec6babeaed5c79e2b8a8dd"
   name = "github.com/beorn7/perks"
@@ -646,6 +654,14 @@
   revision = "0b12d6b5"
 
 [[projects]]
+  digest = "1:6b1eae4bb93e5ccd23cb09d1e005ecb391316d27701b7a5264f8555a6e2f3d87"
+  name = "github.com/jonboulle/clockwork"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "2eee05ed794112d45db504eb05aa693efd2b8b09"
+  version = "v0.1.0"
+
+[[projects]]
   digest = "1:8e36686e8b139f8fe240c1d5cf3a145bc675c22ff8e707857cdd3ae17b00d728"
   name = "github.com/json-iterator/go"
   packages = ["."]
@@ -860,6 +876,30 @@
   ]
   pruneopts = "NUT"
   revision = "05ee40e3a273f7245e8777337fc7b46e533a9a92"
+
+[[projects]]
+  digest = "1:53a982387e68e56a5d7c7f629b49260c2e1e4b099b6ff6392de4e48e32743dbf"
+  name = "github.com/russellhaering/gosaml2"
+  packages = [
+    ".",
+    "types",
+    "uuid",
+  ]
+  pruneopts = "NUT"
+  revision = "4f381189230874b6542a39d68f3f89dfd66f969d"
+  version = "v0.3.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:61ceb5558efc2cddc251dbec312749caf8a0a8e3f8aca237e138f9260aa4a958"
+  name = "github.com/russellhaering/goxmldsig"
+  packages = [
+    ".",
+    "etreeutils",
+    "types",
+  ]
+  pruneopts = "NUT"
+  revision = "7acd5e4a6ef74fe1b082c20f119556adf70c3944"
 
 [[projects]]
   digest = "1:7ff9d791d48d8bafcfad8691d0f54dd3351d9d98e26a0f38a268479201022ca1"
@@ -1491,6 +1531,9 @@
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",
     "github.com/prometheus/common/log",
+    "github.com/russellhaering/gosaml2",
+    "github.com/russellhaering/gosaml2/types",
+    "github.com/russellhaering/goxmldsig",
     "github.com/satori/go.uuid",
     "github.com/spf13/cobra",
     "github.com/spf13/pflag",

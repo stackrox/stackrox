@@ -1,3 +1,5 @@
+import React from 'react';
+
 const formDescriptors = {
     authProviders: {
         oidc: [
@@ -58,6 +60,70 @@ const formDescriptors = {
                 jsonpath: 'config.mode',
                 type: 'hidden',
                 value: 'fragment'
+            }
+        ],
+        saml: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'Shibboleth'
+            },
+            {
+                label: 'ServiceProvider Issuer',
+                jsonpath: 'config.sp_issuer',
+                type: 'text',
+                placeholder: 'https://prevent.stackrox.io/',
+                immutable: true
+            },
+            {
+                html: (
+                    <div className="flex mt-4 justify-center">
+                        <div className="w-4/5 relative p-1 text-center text-separator">
+                            Option 1: Dynamic Configuration
+                        </div>
+                    </div>
+                ),
+                type: 'html'
+            },
+            {
+                label: 'IdP Metadata URL',
+                jsonpath: 'config.idp_metadata_url',
+                type: 'text',
+                placeholder: 'https://idp.example.com/metadata',
+                immutable: true
+            },
+            {
+                html: (
+                    <div className="flex mt-4 justify-center">
+                        <div className="w-4/5 relative p-1 text-center text-separator">
+                            Option 2: Static Configuration
+                        </div>
+                    </div>
+                ),
+                type: 'html'
+            },
+            {
+                label: 'IdP Issuer',
+                jsonpath: 'config.idp_issuer',
+                type: 'text',
+                placeholder: 'https://idp.example.com/',
+                immutable: true
+            },
+            {
+                label: 'IdP SSO URL',
+                jsonpath: 'config.idp_sso_url',
+                type: 'text',
+                placeholder: 'https://idp.example.com/login',
+                immutable: true
+            },
+            {
+                label: 'IdP Certificate (PEM)',
+                jsonpath: 'config.idp_cert_pem',
+                type: 'textarea',
+                placeholder:
+                    '-----BEGIN CERTIFICATE-----\nYour certificate data\n-----END CERTIFICATE-----',
+                immutable: true
             }
         ]
     },

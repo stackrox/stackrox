@@ -9,6 +9,10 @@ const tableColumnDescriptor = Object.freeze({
         auth0: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'config.issuer', Header: 'Auth0 Tenant' }
+        ],
+        saml: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'config.idp_issuer', Header: 'Issuer' }
         ]
     },
     notifiers: {

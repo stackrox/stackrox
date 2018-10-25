@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-export LOCAL_API_ENDPOINT="${LOCAL_API_ENDPOINT:-"localhost:8080"}"
+export LOCAL_API_ENDPOINT="${LOCAL_API_ENDPOINT:-"localhost:8000"}"
 echo "Local StackRox Prevent endpoint set to $LOCAL_API_ENDPOINT"
 
 export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.prevent_net:443}"

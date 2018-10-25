@@ -42,7 +42,9 @@ func (r *storeBackedRegistry) ServeHTTP(w http.ResponseWriter, req *http.Request
 		http.Error(w, "Not Found", http.StatusNotFound)
 		return
 	}
-	parts := strings.SplitN(req.URL.Path[len(r.urlPathPrefix):], "/", 2)
+
+	relativePath := req.URL.Path[len(r.urlPathPrefix):]
+	parts := strings.SplitN(relativePath, "/", 2)
 	if len(parts) == 0 {
 		http.Error(w, "Not Found", http.StatusNotFound)
 		return

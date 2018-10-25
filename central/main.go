@@ -51,6 +51,7 @@ import (
 	"github.com/stackrox/rox/central/user/mapper"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
+	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -73,6 +74,7 @@ var (
 	authProviderBackendFactories = map[string]authproviders.BackendFactoryCreator{
 		oidc.TypeName: oidc.NewFactory,
 		"auth0":       oidc.NewFactory, // legacy
+		saml.TypeName: saml.NewFactory,
 	}
 )
 

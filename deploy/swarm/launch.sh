@@ -14,7 +14,7 @@ function launch_central {
 
     set -u
 
-    docker run --rm "$PREVENT_IMAGE" deploy swarm -i "$PREVENT_IMAGE" -p 8080 none > "$SWARM_DIR/central.zip"
+    docker run --rm "$PREVENT_IMAGE" deploy swarm -i "$PREVENT_IMAGE" -p 8000 none > "$SWARM_DIR/central.zip"
 
     export DOCKER_HOST="$OLD_DOCKER_HOST"
     export DOCKER_CERT_PATH="$OLD_DOCKER_CERT_PATH"
@@ -34,9 +34,9 @@ function launch_central {
 
     $UNZIP_DIR/central.sh
     echo
-    wait_for_central "localhost:8080"
+    wait_for_central "localhost:8000"
     echo "Successfully launched central"
-    echo "Access the UI at: https://localhost:8080"
+    echo "Access the UI at: https://localhost:8000"
 }
 
 function launch_sensor {
@@ -51,7 +51,7 @@ function launch_sensor {
         EXTRA_CONFIG="\"swarm\": { \"disableSwarmTls\":true } }"
     fi
     # false is for runtime support
-    get_cluster_zip localhost:8080 "$CLUSTER" SWARM_CLUSTER "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$SWARM_DIR" false "$EXTRA_CONFIG"
+    get_cluster_zip localhost:8000 "$CLUSTER" SWARM_CLUSTER "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$SWARM_DIR" false "$EXTRA_CONFIG"
 
     echo "Deploying Sensor..."
     UNZIP_DIR="$SWARM_DIR/sensor-deploy/"

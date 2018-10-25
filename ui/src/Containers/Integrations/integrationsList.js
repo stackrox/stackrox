@@ -11,6 +11,7 @@ import logo from 'images/logo-tall.svg';
 import oidc from 'images/openidconnect.svg';
 import openshift from 'images/openshift.svg';
 import quay from 'images/quay.svg';
+import saml from 'images/saml.svg';
 import slack from 'images/slack.svg';
 import tenable from 'images/tenable.svg';
 
@@ -27,6 +28,12 @@ const integrationsList = {
             type: 'oidc',
             source: 'authProviders',
             image: oidc
+        },
+        {
+            label: 'SAML 2.0',
+            type: 'saml',
+            source: 'authProviders',
+            image: saml
         },
         {
             label: 'API Token',

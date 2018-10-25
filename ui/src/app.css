@@ -620,6 +620,29 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     background-size: 1650px 450px, 4px 4px;
 }
 
+.text-separator {
+    overflow: hidden;
+}
+
+.text-separator:before, .text-separator:after {
+    content:"";
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    overflow: hidden;
+    border: 1px solid currentColor;
+}
+
+.text-separator:before {
+    transform: translateX(-100%) translateY(-50%);
+    top: 50%;
+}
+
+.text-separator:after {
+    transform: translateY(-50%);
+    top: 50%;
+}
+
 /* React Select override */
 .hide-dropdown > div:last-child {
     @apply .hidden;

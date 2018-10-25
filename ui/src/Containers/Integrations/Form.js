@@ -11,6 +11,7 @@ import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
+import ReduxTextAreaField from 'Components/forms/ReduxTextAreaField';
 import ReduxPasswordField from 'Components/forms/ReduxPasswordField';
 import ReduxCheckboxField from 'Components/forms/ReduxCheckboxField';
 import ReduxMultiSelectField from 'Components/forms/ReduxMultiSelectField';
@@ -80,6 +81,16 @@ class Form extends Component {
                         value={field.default}
                     />
                 );
+            case 'textarea':
+                return (
+                    <ReduxTextAreaField
+                        key={field.jsonpath}
+                        name={field.jsonpath}
+                        disabled={disabled}
+                        placeholder={field.placeholder}
+                        value={field.default}
+                    />
+                );
             case 'checkbox':
                 return (
                     <ReduxCheckboxField
@@ -127,15 +138,20 @@ class Form extends Component {
         return (
             <form id="integrations-form" className="w-full p-4">
                 <div>
-                    {formFields.filter(field => field.type !== 'hidden').map(field => (
-                        // eslint-disable-next-line jsx-a11y/label-has-for
-                        <label className="flex mt-4" htmlFor={field.key} key={field.label}>
-                            <div className="mr-4 flex items-center w-2/3 capitalize">
-                                {field.label}
-                            </div>
-                            {this.renderFormField(field)}
-                        </label>
-                    ))}
+                    {formFields.filter(field => field.type !== 'hidden').map(field => {
+                        if (field.type === 'html') {
+                            return field.html;
+                        }
+                        return (
+                            // eslint-disable-next-line jsx-a11y/label-has-for
+                            <label className="flex mt-4" htmlFor={field.key} key={field.label}>
+                                <div className="mr-4 flex items-center w-2/3 capitalize">
+                                    {field.label}
+                                </div>
+                                {this.renderFormField(field)}
+                            </label>
+                        );
+                    })}
                     {formFields
                         .filter(field => field.type === 'hidden')
                         .map(this.renderHiddenField)}
