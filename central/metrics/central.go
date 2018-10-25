@@ -55,6 +55,13 @@ var (
 		Help:      "Histogram of how long each policy has taken to evaluate",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Policy"})
+
+	totalNetworkFlowsReceivedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "total_network_flows_received_counter",
+		Help:      "A counter of the total number of network flows received by Central from Sensor",
+	}, []string{"ClusterID"})
 )
 
 // IncrementPanicCounter increments the number of panic calls seen in a function
@@ -89,4 +96,9 @@ func SetPolicyEvaluationDurationTime(t time.Time, name string) {
 // IncrementResourceProcessedCounter is a counter for how many times a resource has been processed in Central
 func IncrementResourceProcessedCounter(op metrics.Op, resource metrics.Resource) {
 	resourceProcessedCounterVec.With(prometheus.Labels{"Operation": op.String(), "Resource": resource.String()}).Inc()
+}
+
+// IncrementTotalNetworkFlowsReceivedCounter registers the total number of flows received
+func IncrementTotalNetworkFlowsReceivedCounter(clusterID string, numberOfFlows int) {
+	totalNetworkFlowsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfFlows))
 }

@@ -6,6 +6,7 @@ import (
 
 	protobuf "github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -94,6 +95,7 @@ func (s *serviceImpl) receiveNetworkFlowUpdates(stream central.NetworkFlowServic
 			return status.Errorf(codes.Internal, "received empty updated flows")
 		}
 
+		metrics.IncrementTotalNetworkFlowsReceivedCounter(clusterID, len(updatedFlows))
 		err = s.updateFlowStore(clusterID, updatedFlows, update.Time, isFirst)
 		if err != nil {
 			return status.Errorf(codes.Internal, err.Error())

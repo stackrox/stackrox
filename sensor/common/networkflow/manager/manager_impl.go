@@ -91,32 +91,6 @@ func (m *networkFlowManager) enrichConnections() {
 	}
 }
 
-func computeUpdateMessage(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS) *central.NetworkFlowUpdate {
-	var updates []*v1.NetworkFlow
-
-	for conn, currTS := range current {
-		prevTS, ok := previous[conn]
-		if !ok || currTS > prevTS {
-			updates = append(updates, conn.toProto(currTS))
-		}
-	}
-
-	for conn, prevTS := range previous {
-		if _, ok := current[conn]; !ok {
-			updates = append(updates, conn.toProto(prevTS))
-		}
-	}
-
-	if len(updates) == 0 {
-		return nil
-	}
-
-	return &central.NetworkFlowUpdate{
-		Updated: updates,
-		Time:    timestamp.Now().GogoProtobuf(),
-	}
-}
-
 func (m *networkFlowManager) enrichAndSend() {
 	current := m.currentEnrichedConns()
 
@@ -167,6 +141,32 @@ func (m *networkFlowManager) currentEnrichedConns() map[networkConnIndicator]tim
 	}
 
 	return enrichedConnections
+}
+
+func computeUpdateMessage(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS) *central.NetworkFlowUpdate {
+	var updates []*v1.NetworkFlow
+
+	for conn, currTS := range current {
+		prevTS, ok := previous[conn]
+		if !ok || currTS > prevTS {
+			updates = append(updates, conn.toProto(currTS))
+		}
+	}
+
+	for conn, prevTS := range previous {
+		if _, ok := current[conn]; !ok {
+			updates = append(updates, conn.toProto(prevTS))
+		}
+	}
+
+	if len(updates) == 0 {
+		return nil
+	}
+
+	return &central.NetworkFlowUpdate{
+		Updated: updates,
+		Time:    timestamp.Now().GogoProtobuf(),
+	}
 }
 
 func (m *networkFlowManager) getAllConnections() map[connection]timestamp.MicroTS {
@@ -256,7 +256,11 @@ func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connec
 			continue
 		}
 
-		remoteEndpoint := net.MakeNumericEndpoint(net.IPFromBytes(conn.GetRemoteAddress().GetAddressData()), uint16(conn.GetRemoteAddress().GetPort()), net.L4ProtoFromProtobuf(conn.GetProtocol()))
+		remoteEndpoint := net.MakeNumericEndpoint(
+			net.IPFromBytes(conn.GetRemoteAddress().GetAddressData()),
+			uint16(conn.GetRemoteAddress().GetPort()),
+			net.L4ProtoFromProtobuf(conn.GetProtocol()),
+		)
 		c := connection{
 			srcContainerID: conn.GetContainerId(),
 			srcAddr:        net.IPFromBytes(conn.GetLocalAddress().GetAddressData()),

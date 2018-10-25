@@ -46,6 +46,13 @@ var (
 		Name:      "total_network_flows_sent_counter",
 		Help:      "A counter of the total number of network flows sent to Central by Sensor",
 	}, []string{"ClusterID"})
+
+	totalNetworkFlowsReceivedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "total_network_flows_received_counter",
+		Help:      "A counter of the total number of network flows received by Sensor from Collector",
+	}, []string{"ClusterID"})
 )
 
 // IncrementPanicCounter increments the number of panic calls seen in a function
@@ -71,4 +78,9 @@ func RegisterSensorIndicatorChannelFullCounter(clusterID string) {
 // IncrementTotalNetworkFlowsSentCounter registers the total number of flows processed
 func IncrementTotalNetworkFlowsSentCounter(clusterID string, numberOfFlows int) {
 	totalNetworkFlowsSentCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfFlows))
+}
+
+// IncrementTotalNetworkFlowsReceivedCounter registers the total number of flows received
+func IncrementTotalNetworkFlowsReceivedCounter(clusterID string, numberOfFlows int) {
+	totalNetworkFlowsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfFlows))
 }
