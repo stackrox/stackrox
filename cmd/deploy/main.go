@@ -33,8 +33,8 @@ func init() {
 var (
 	clairifyTag   = "0.4.1"
 	clairifyImage = "clairify:" + clairifyTag
-	preventTag    = getVersion()
-	preventImage  = "prevent:" + preventTag
+	mainTag       = getVersion()
+	mainImage     = "main:" + mainTag
 )
 
 func getVersion() string {
@@ -61,7 +61,7 @@ func generateJWTSigningKey(zipW *zip.Writer) error {
 func generateMTLSFiles(zipW *zip.Writer) (cert, key []byte, err error) {
 	// Add MTLS files
 	req := csr.CertificateRequest{
-		CN:         "StackRox Prevent Certificate Authority",
+		CN:         "StackRox Certificate Authority",
 		KeyRequest: csr.NewBasicKeyRequest(),
 	}
 	cert, _, key, err = initca.New(&req)
@@ -189,8 +189,8 @@ func interactive() *cobra.Command {
 func cmd() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "deploy",
-		Short: "Deploy generates deployment files for StackRox Prevent Central",
-		Long: `Deploy generates deployment files for StackRox Prevent Central.
+		Short: "Deploy generates deployment files for StackRox Central",
+		Long: `Deploy generates deployment files for StackRox Central.
 Output is a zip file printed to stdout.`,
 		Run: func(*cobra.Command, []string) {
 			printToStderr("Orchestrator is required\n")

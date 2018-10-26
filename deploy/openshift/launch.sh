@@ -1,64 +1,64 @@
 #!/usr/bin/env bash
 
 function launch_central {
-    OPENSHIFT_DIR="$1"
-    PREVENT_IMAGE="$2"
+    local openshift_dir="$1"
+    local main_image="$2"
 
     set -u
 
-    EXTRA_ARGS=()
+    local extra_args=()
     if [[ "$MONITORING_SUPPORT" == "false" ]]; then
-        EXTRA_ARGS+=("--monitoring-type=none")
+        extra_args+=("--monitoring-type=none")
     fi
 
-    docker run "$PREVENT_IMAGE" deploy openshift ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} -i "$PREVENT_IMAGE" none > $OPENSHIFT_DIR/central.zip
-    UNZIP_DIR="$OPENSHIFT_DIR/central-deploy/"
-    rm -rf "$UNZIP_DIR"
-    unzip "$OPENSHIFT_DIR/central.zip" -d "$UNZIP_DIR"
+    docker run "$main_image" deploy openshift ${extra_args[@]+"${extra_args[@]}"} -i "$main_image" none > $openshift_dir/central.zip
+    local unzip_dir="$openshift_dir/central-deploy/"
+    rm -rf "$unzip_dir"
+    unzip "$openshift_dir/central.zip" -d "$unzip_dir"
     echo
 
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then
         echo "Deploying Monitoring..."
-        $UNZIP_DIR/monitoring/monitoring.sh
+        $unzip_dir/monitoring/monitoring.sh
         echo
 
         oc -n stackrox patch deployment monitoring --patch "$(cat $K8S_DIR/monitoring-resources-patch.yaml)"
     fi
 
     echo "Deploying Central..."
-    $UNZIP_DIR/central.sh
+    $unzip_dir/central.sh
     echo
 
-    $UNZIP_DIR/port-forward.sh 8000
-    export LOCAL_API_ENDPOINT=localhost:8000
-    echo "Set local API endpoint to: $LOCAL_API_ENDPOINT"
+    $unzip_dir/port-forward.sh 8000
+    local local_api_endpoint=localhost:8000
+    echo "Set local API endpoint to: $local_api_endpoint"
 
-    wait_for_central "$LOCAL_API_ENDPOINT"
+    wait_for_central "$local_api_endpoint"
     echo "Successfully deployed Central!"
-    echo "Access the UI at: https://$LOCAL_API_ENDPOINT"
+    echo "Access the UI at: https://$local_api_endpoint"
 }
 
 function launch_sensor {
-    OPENSHIFT_DIR="$1"
-    CLUSTER="$2"
-    PREVENT_IMAGE="$3"
-    CLUSTER_API_ENDPOINT="$4"
-    RUNTIME_SUPPORT="$5"
+    local openshift_dir="$1"
+    local cluster="$2"
+    local main_image="$3"
+    local cluster_api_endpoint="$4"
+    local runtime_support="$5"
 
-    COMMON_PARAMS="{ \"params\" : { \"namespace\": \"stackrox\" } }"
+    local common_params="{ \"params\" : { \"namespace\": \"stackrox\" } }"
 
-    EXTRA_CONFIG=""
+    local extra_config=""
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then
-        EXTRA_CONFIG+='"monitoringEndpoint": "monitoring.stackrox", '
+        extra_config+='"monitoringEndpoint": "monitoring.stackrox", '
     fi
-    EXTRA_CONFIG+="\"openshift\": $COMMON_PARAMS }"
+    extra_config+="\"openshift\": $common_params}"
 
-    get_cluster_zip localhost:8000 "$CLUSTER" OPENSHIFT_CLUSTER "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$OPENSHIFT_DIR" "$RUNTIME_SUPPORT" "$EXTRA_CONFIG"
+    get_cluster_zip localhost:8000 "$cluster" OPENSHIFT_CLUSTER "$main_image" "$cluster_api_endpoint" "$openshift_dir" "$runtime_support" "$extra_config"
 
     echo "Deploying Sensor..."
-    UNZIP_DIR="$OPENSHIFT_DIR/sensor-deploy/"
-    rm -rf "$UNZIP_DIR"
-    unzip "$OPENSHIFT_DIR/sensor-deploy.zip" -d "$UNZIP_DIR"
-    $UNZIP_DIR/sensor.sh
+    local unzip_dir="$openshift_dir/sensor-deploy/"
+    rm -rf "$unzip_dir"
+    unzip "$openshift_dir/sensor-deploy.zip" -d "$unzip_dir"
+    $unzip_dir/sensor.sh
     echo
 }

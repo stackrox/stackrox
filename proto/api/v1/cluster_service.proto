@@ -38,7 +38,7 @@ message Cluster {
     string                    id                   = 1;
     string                    name                 = 2;
     ClusterType               type                 = 3;
-    string                    prevent_image        = 4;
+    string                    main_image           = 4;
     string                    central_api_endpoint = 5;
     google.protobuf.Timestamp last_contact         = 6;
     bool                      runtime_support      = 7;

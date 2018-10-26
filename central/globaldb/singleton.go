@@ -5,7 +5,6 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/env"
 )
 
 var (
@@ -16,7 +15,7 @@ var (
 
 func initialize() {
 	var err error
-	globalDB, err = bolthelper.NewWithDefaults(env.DBPath.Setting())
+	globalDB, err = bolthelper.NewWithDefaults()
 	if err != nil {
 		panic(err)
 	}
@@ -33,6 +32,6 @@ func GetGlobalDB() *bolt.DB {
 func Close() {
 	once.Do(initialize)
 	if err := globalDB.Close(); err != nil {
-		log.Errorf("unable to close bolt db: %s", err)
+		logger.Errorf("unable to close bolt db: %s", err)
 	}
 }

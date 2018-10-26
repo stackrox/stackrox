@@ -16,9 +16,13 @@ var (
 	log = logging.LoggerForModule()
 )
 
+const (
+	dbFileFormat = "stackrox_2006_01_02.db"
+)
+
 // BackupDB is a handler that writes a consistent view of the database to the HTTP response.
 func BackupDB(db *bolt.DB) http.Handler {
-	filename := time.Now().Format("prevent_2006_01_02.db")
+	filename := time.Now().Format(dbFileFormat)
 	return serializeDB(db, filename, "")
 }
 
@@ -60,7 +64,7 @@ func serializeDB(db *bolt.DB, file, removalPath string) http.Handler {
 }
 
 func generateFilePaths() (string, string, string) {
-	filename := time.Now().Format("prevent_2006_01_02.db")
+	filename := time.Now().Format(dbFileFormat)
 	exportedFilepath := filepath.Join(os.TempDir(), "exported.db")
 	compactedFilepath := filepath.Join(os.TempDir(), filename)
 	return filename, exportedFilepath, compactedFilepath

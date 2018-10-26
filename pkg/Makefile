@@ -1,7 +1,7 @@
 ROX_PROJECT=pkg
 TESTFLAGS=-race -p 4
 
-include ../make/prevent.mk
+include ../make/stackrox.mk
 
 .PHONY: all
 all: style build-pkg test report

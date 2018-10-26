@@ -80,7 +80,7 @@ func GetDeployment() *v1.Deployment {
 				Secrets: []*v1.EmbeddedSecret{
 					{
 						Name: "secretname",
-						Path: "/var/lib/prevent",
+						Path: "/var/lib/stackrox",
 					},
 				},
 			},

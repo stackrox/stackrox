@@ -9,35 +9,35 @@ import (
 
 func TestGenerateCollectorImage(t *testing.T) {
 	var cases = []struct {
-		preventImage  string
+		mainImage     string
 		collectorTag  string
 		expectedImage string
 	}{
 		{
-			preventImage:  "stackrox/prevent:latest",
+			mainImage:     "stackrox/main:latest",
 			collectorTag:  "latest",
 			expectedImage: "docker.io/stackrox/collector:latest",
 		},
 		{
-			preventImage:  "docker.io/stackrox/prevent:latest",
+			mainImage:     "docker.io/stackrox/main:latest",
 			collectorTag:  "latest",
 			expectedImage: "docker.io/stackrox/collector:latest",
 		},
 		{
-			preventImage:  "stackrox.io/prevent:latest",
+			mainImage:     "stackrox.io/main:latest",
 			collectorTag:  "latest",
 			expectedImage: "collector.stackrox.io/collector:latest",
 		},
 		{
-			preventImage:  "stackrox.io/prevent:latest",
+			mainImage:     "stackrox.io/main:latest",
 			collectorTag:  "loooool",
 			expectedImage: "collector.stackrox.io/collector:loooool",
 		},
 	}
 
 	for _, c := range cases {
-		t.Run(c.preventImage, func(t *testing.T) {
-			inputImg := utils.GenerateImageFromString(c.preventImage)
+		t.Run(c.mainImage, func(t *testing.T) {
+			inputImg := utils.GenerateImageFromString(c.mainImage)
 			outputImg := utils.GenerateImageFromString(c.expectedImage)
 			assert.Equal(t, outputImg.GetName(), generateCollectorImage(inputImg.GetName(), c.collectorTag))
 		})

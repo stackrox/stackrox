@@ -20,7 +20,7 @@ func dockerBasedOrchestrator(shortName, longName string, cluster v1.ClusterType)
 
 	// Adds swarm specific flags
 	c.PersistentFlags().StringVarP(&swarmConfig.ClairifyImage, "clairify-image", "", "stackrox.io/"+clairifyImage, "Clairify image to use")
-	c.PersistentFlags().StringVarP(&swarmConfig.PreventImage, "prevent-image", "i", "stackrox.io/"+preventImage, "Prevent image to use")
+	c.PersistentFlags().StringVarP(&swarmConfig.MainImage, "main-image", "i", "stackrox.io/"+mainImage, "Tmage to use")
 	c.PersistentFlags().StringVarP(&swarmConfig.NetworkMode, "mode", "m", "ingress", "network mode to use (ingress or host)")
 	c.PersistentFlags().IntVarP(&swarmConfig.PublicPort, "port", "p", 443, "public port to expose")
 	return c

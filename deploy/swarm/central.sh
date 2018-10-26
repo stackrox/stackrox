@@ -8,4 +8,4 @@ source $COMMON_DIR/deploy.sh
 source $SWARM_DIR/launch.sh
 source $SWARM_DIR/env.sh
 
-launch_central "$SWARM_DIR" "$PREVENT_IMAGE" "$PREVENT_DISABLE_REGISTRY_AUTH"
+launch_central "$SWARM_DIR" "$MAIN_IMAGE" "$ROX_DISABLE_REGISTRY_AUTH"

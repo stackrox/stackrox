@@ -226,11 +226,11 @@ image: gazelle clean-image
 	cp bazel-bin/integration-tests/mock-grpc-server/linux_amd64_pure_stripped/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	echo "$(TAG)" > image/VERSION
 	chmod +w image/bin/*
-	docker build -t stackrox/prevent:$(TAG) image/
+	docker build -t stackrox/main:$(TAG) image/
 	docker build -t stackrox/monitoring:$(TAG) monitoring
 	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
 	@echo "Built images with tag: $(TAG)"
-	@echo "You may wish to:       export PREVENT_IMAGE_TAG=$(TAG)"
+	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
 
 ###########

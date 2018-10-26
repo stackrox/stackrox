@@ -13,26 +13,26 @@ setupBazel: &setupBazel
       echo "$GKE_SERVICE_ACCOUNT" > /tmp/gcp.json
       cp tools/ci-bazel.rc .bazelrc
 
-depCacheKey: &depCacheKey 'v1-prevent-go-pkg-dep-{{ checksum "Gopkg.lock" }}'
+depCacheKey: &depCacheKey 'v1-rox-go-pkg-dep-{{ checksum "Gopkg.lock" }}'
 restoreDep: &restoreDep
   restore_cache:
     keys:
       - *depCacheKey
-      - v1-prevent-go-pkg-dep
+      - v1-rox-go-pkg-dep
 
-gradleCacheKey: &gradleCacheKey 'v2-gradle-{{ checksum "qa-tests-backend/build.gradle" }}'
+gradleCacheKey: &gradleCacheKey 'v1-rox-gradle-{{ checksum "qa-tests-backend/build.gradle" }}'
 restoreGradle: &restoreGradle
   restore_cache:
     keys:
       - *gradleCacheKey
-      - v2-gradle
+      - v1-rox-gradle
 
-uiCacheKey: &uiCacheKey 'v1-prevent-ui-deps-{{ checksum "ui/yarn.lock" }}'
+uiCacheKey: &uiCacheKey 'v1-rox-ui-deps-{{ checksum "ui/yarn.lock" }}'
 restoreUI: &restoreUI
   restore_cache:
     keys:
       - *uiCacheKey
-      - v1-prevent-ui-deps
+      - v1-rox-ui-deps
 
 setupGCP: &setupGCP
   run:
@@ -41,7 +41,7 @@ setupGCP: &setupGCP
       docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
       echo 'export REGISTRY_USERNAME="$DOCKERHUB_USERNAME"' >> $BASH_ENV
       echo 'export REGISTRY_PASSWORD="$DOCKERHUB_PASSWORD"' >> $BASH_ENV
-      echo 'export PREVENT_IMAGE_TAG="$(make tag)"' >> $BASH_ENV
+      echo 'export MAIN_IMAGE_TAG="$(make tag)"' >> $BASH_ENV
       echo $GKE_SERVICE_ACCOUNT > /tmp/gcp.json
       echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json' >> $BASH_ENV
       gcloud auth activate-service-account --key-file /tmp/gcp.json
@@ -145,7 +145,7 @@ jobs:
 
             export TAG=$(make tag)
 
-            docker push stackrox/prevent:$TAG | cat
+            docker push stackrox/main:$TAG | cat
             docker push stackrox/monitoring:$TAG | cat
             docker push stackrox/grpc-server:$TAG | cat
 
@@ -445,8 +445,8 @@ jobs:
           command: |
             echo "export CLAIRIFY_IMAGE_TAG=0.4"                            >> "$BASH_ENV"
             echo "export OPENSHIFT_HOST=$(cat openshift/master)"            >> "$BASH_ENV"
-            echo "export PREVENT_IMAGE_REGISTRY=docker.io"                  >> "$BASH_ENV"
-            echo "export PREVENT_IMAGE_TAG=$(make tag)"                     >> "$BASH_ENV"
+            echo "export ROX_IMAGE_REGISTRY=docker.io"                      >> "$BASH_ENV"
+            echo "export MAIN_IMAGE_TAG=$(make tag)"                        >> "$BASH_ENV"
             echo "export REGISTRY_PASSWORD=$DOCKERHUB_PASSWORD"             >> "$BASH_ENV"
             echo "export REGISTRY_USERNAME=$DOCKERHUB_USERNAME"             >> "$BASH_ENV"
 
@@ -468,7 +468,7 @@ jobs:
       - run:
           name: Generate Installation Bundle
           command: |
-            docker run -i "stackrox/prevent:$PREVENT_IMAGE_TAG" deploy openshift none > /tmp/openshift.zip
+            docker run -i "stackrox/main:$MAIN_IMAGE_TAG" deploy openshift none > /tmp/openshift.zip
             unzip /tmp/openshift.zip -d openshift
 
       - run:
@@ -589,9 +589,9 @@ jobs:
 
             export TAG=$(make tag)
 
-            docker pull docker.io/stackrox/prevent:$TAG
-            docker tag docker.io/stackrox/prevent:$TAG stackrox.io/prevent:$TAG
-            docker push stackrox.io/prevent:$TAG | cat
+            docker pull docker.io/stackrox/main:$TAG
+            docker tag docker.io/stackrox/main:$TAG stackrox.io/main:$TAG
+            docker push stackrox.io/main:$TAG | cat
 
             docker pull docker.io/stackrox/monitoring:$TAG
             docker tag docker.io/stackrox/monitoring:$TAG stackrox.io/monitoring:$TAG

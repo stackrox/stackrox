@@ -11,8 +11,8 @@ import (
 func orchestratorCommand(shortName, longName string) *cobra.Command {
 	c := &cobra.Command{
 		Use:   shortName,
-		Short: fmt.Sprintf("%s specifies that you are going to launch StackRox Prevent Central in %s.", shortName, longName),
-		Long: fmt.Sprintf(`%s specifies that you are going to launch StackRox Prevent Central in %s.
+		Short: fmt.Sprintf("%s specifies that you are going to launch StackRox Central in %s.", shortName, longName),
+		Long: fmt.Sprintf(`%s specifies that you are going to launch StackRox Central in %s.
 Output is a zip file printed to stdout.`, shortName, longName),
 		SilenceErrors: true,
 		Annotations: map[string]string{
@@ -40,7 +40,7 @@ func k8sBasedOrchestrator(k8sConfig *central.K8sConfig, shortName, longName stri
 	c.PersistentFlags().StringVarP(&k8sConfig.Namespace, "namespace", "n", "stackrox", "namespace")
 	c.PersistentFlags().StringVarP(&k8sConfig.MonitoringEndpoint, "monitoring-endpoint", "", "monitoring.stackrox", "monitoring endpoint")
 	c.PersistentFlags().Var(&monitoringWrapper{Monitoring: &k8sConfig.MonitoringType}, "monitoring-type", "where to host the monitoring (on-prem, none)")
-	c.PersistentFlags().StringVarP(&k8sConfig.PreventImage, "prevent-image", "i", "stackrox.io/"+preventImage, "Prevent image to use")
+	c.PersistentFlags().StringVarP(&k8sConfig.MainImage, "main-image", "i", "stackrox.io/"+mainImage, "Image to use")
 	c.PersistentFlags().StringVarP(&k8sConfig.ClairifyImage, "clairify-image", "", "stackrox.io/"+clairifyImage, "Clairify image to use")
 	return c
 }

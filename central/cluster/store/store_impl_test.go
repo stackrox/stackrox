@@ -49,14 +49,14 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 
 	clusters := []*v1.Cluster{
 		{
-			Name:         "cluster1",
-			PreventImage: "test-dtr.example.com/prevent",
-			LastContact:  ts1,
+			Name:        "cluster1",
+			MainImage:   "test-dtr.example.com/main",
+			LastContact: ts1,
 		},
 		{
-			Name:         "cluster2",
-			PreventImage: "docker.io/stackrox/prevent",
-			LastContact:  ts2,
+			Name:        "cluster2",
+			MainImage:   "docker.io/stackrox/main",
+			LastContact: ts2,
 		},
 	}
 
@@ -82,7 +82,7 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 
 	// Test Update
 	for _, b := range clusters {
-		b.PreventImage = b.PreventImage + "/prevent"
+		b.MainImage = b.MainImage + "/main"
 	}
 
 	for _, b := range clusters {

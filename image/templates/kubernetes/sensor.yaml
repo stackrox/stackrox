@@ -58,11 +58,11 @@ spec:
         - name: {{.OpenshiftAPIEnv}}
           value: "true"
           {{- end}}
-        - name: ROX_PREVENT_NAMESPACE
+        - name: {{.NamespaceEnv}}
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        - name: ROX_PREVENT_SERVICE_ACCOUNT
+        - name: {{.ServiceAccountEnv}}
           valueFrom:
             fieldRef:
               fieldPath: spec.serviceAccountName

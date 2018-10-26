@@ -13,7 +13,10 @@ import (
 	"github.com/stackrox/rox/pkg/secondarykey"
 )
 
-const txMaxSize = 65536
+const (
+	dbMountPath = "/var/lib/stackrox"
+	txMaxSize   = 65536
+)
 
 // New returns an instance of the persistent BoltDB store
 func New(path string) (*bolt.DB, error) {
@@ -35,12 +38,8 @@ func New(path string) (*bolt.DB, error) {
 }
 
 // NewWithDefaults returns an instance of the persistent BoltDB store with default values loaded.
-func NewWithDefaults(dbPath string) (*bolt.DB, error) {
-	if filepath.Ext(dbPath) != ".db" {
-		dbPath = filepath.Join(dbPath, "prevent.db")
-	}
-
-	db, err := New(dbPath)
+func NewWithDefaults() (*bolt.DB, error) {
+	db, err := New(filepath.Join(dbMountPath, "stackrox.db"))
 	if err != nil {
 		return db, err
 	}

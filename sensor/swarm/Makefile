@@ -6,4 +6,4 @@ TESTFLAGS=-race -p 4
 .PHONY: all
 all: style build test report
 
-include ../../make/prevent.mk
+include ../../make/stackrox.mk

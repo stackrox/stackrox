@@ -32,7 +32,7 @@ export const selectors = {
     apiTokenDetailsDiv: 'div[data-test-id="api-token-details"]',
     clusterForm: {
         nameInput: 'form[data-test-id="cluster-form"] input[name="name"]',
-        imageInput: 'form[data-test-id="cluster-form"] input[name="preventImage"]',
+        imageInput: 'form[data-test-id="cluster-form"] input[name="mainImage"]',
         endpointInput: 'form[data-test-id="cluster-form"] input[name="centralApiEndpoint"]'
     },
     dockerRegistryForm: {

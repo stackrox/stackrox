@@ -1,7 +1,7 @@
 version: "3.2"
 services:
   central:
-    image: {{.SwarmConfig.PreventImage}}
+    image: {{.SwarmConfig.MainImage}}
     entrypoint: ["central"]
     networks:
       net:
@@ -36,11 +36,11 @@ services:
         mode: 400
     {{if .HostPath -}}
     volumes:
-      - {{.HostPath.HostPath}}:/var/lib/prevent
+      - {{.HostPath.HostPath}}:/var/lib/stackrox
     {{- end}}
     {{if .External -}}
     volumes:
-      - {{.External.Name}}:/var/lib/prevent
+      - {{.External.Name}}:/var/lib/stackrox
     {{- end}}
 networks:
   net:

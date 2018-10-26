@@ -54,22 +54,22 @@ func executeTemplate(temp *template.Template, fields map[string]interface{}) (st
 	return buf.String(), nil
 }
 
-func generateCollectorImage(preventName *v1.ImageName, tag string) *v1.ImageName {
+func generateCollectorImage(mainImageName *v1.ImageName, tag string) *v1.ImageName {
 	// Populate the tag
 	collectorName := &v1.ImageName{
 		Tag: tag,
 	}
 	// Populate Registry
-	collectorName.Registry = preventName.GetRegistry()
-	if preventName.GetRegistry() == "stackrox.io" {
+	collectorName.Registry = mainImageName.GetRegistry()
+	if mainImageName.GetRegistry() == "stackrox.io" {
 		collectorName.Registry = "collector.stackrox.io"
 	}
 	// Populate Remote
 	// This handles the case where there is no namespace. e.g. stackrox.io/collector:latest
-	if slashIdx := strings.Index(preventName.GetRemote(), "/"); slashIdx == -1 {
+	if slashIdx := strings.Index(mainImageName.GetRemote(), "/"); slashIdx == -1 {
 		collectorName.Remote = "collector"
 	} else {
-		collectorName.Remote = preventName.GetRemote()[:slashIdx] + "/collector"
+		collectorName.Remote = mainImageName.GetRemote()[:slashIdx] + "/collector"
 	}
 	// Populate FullName
 	collectorName.FullName = fmt.Sprintf("%s/%s:%s",
@@ -78,10 +78,10 @@ func generateCollectorImage(preventName *v1.ImageName, tag string) *v1.ImageName
 }
 
 func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
-	preventName := utils.GenerateImageFromString(c.PreventImage).GetName()
-	collectorName := generateCollectorImage(preventName, version.GetCollectorVersion())
+	mainImageName := utils.GenerateImageFromString(c.MainImage).GetName()
+	collectorName := generateCollectorImage(mainImageName, version.GetCollectorVersion())
 
-	preventRegistry, err := urlfmt.FormatURL(preventName.GetRegistry(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	mainRegistry, err := urlfmt.FormatURL(mainImageName.GetRegistry(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return nil, err
 	}
@@ -92,9 +92,9 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 
 	fields := map[string]interface{}{
 		"ImageEnv":      env.Image.EnvVar(),
-		"Image":         c.PreventImage,
-		"ImageRegistry": preventRegistry,
-		"ImageTag":      preventName.GetTag(),
+		"Image":         c.MainImage,
+		"ImageRegistry": mainRegistry,
+		"ImageTag":      mainImageName.GetTag(),
 
 		"PublicEndpointEnv": env.CentralEndpoint.EnvVar(),
 		"PublicEndpoint":    c.CentralApiEndpoint,

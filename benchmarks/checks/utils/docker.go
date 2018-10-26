@@ -203,7 +203,7 @@ func GetContainers() ([]types.ContainerJSON, []types.ContainerJSON, error) {
 			return nil, nil, err
 
 		}
-		if strings.Contains(containerInspect.Config.Image, "stackrox/prevent") {
+		if strings.Contains(containerInspect.Config.Image, "stackrox/main") {
 			continue
 		}
 		if containerInspect.State.Status == "running" {

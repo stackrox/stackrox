@@ -2,21 +2,21 @@
 
 set -e
 
-if [ -z "$PREVENT_IMAGE_REGISTRY" ]; then
+if [ -z "$ROX_IMAGE_REGISTRY" ]; then
   echo "This script pulls the StackRox image and pushes it to the OpenShift registry."
   echo "We first need to know which image to pull, and from where."
   echo "Most users can use the defaults."
   echo
   echo "The options are: 'stackrox.io' or 'docker.io'."
   echo -n "Which registry will you deploy from? (default: stackrox.io): "
-  read PREVENT_IMAGE_REGISTRY
-  PREVENT_IMAGE_REGISTRY="${PREVENT_IMAGE_REGISTRY:-stackrox.io}"
+  read ROX_IMAGE_REGISTRY
+  ROX_IMAGE_REGISTRY="${ROX_IMAGE_REGISTRY:-stackrox.io}"
 fi
 
-if [ -z "$PREVENT_IMAGE_TAG" ]; then
-  echo -n "Enter StackRox Prevent image tag (default: {{.K8sConfig.PreventImageTag}}): "
-  read PREVENT_IMAGE_TAG
-  PREVENT_IMAGE_TAG="${PREVENT_IMAGE_TAG:-{{.K8sConfig.PreventImageTag}}}"
+if [ -z "$MAIN_IMAGE_TAG" ]; then
+  echo -n "Enter StackRox image tag (default: {{.K8sConfig.MainImageTag}}): "
+  read MAIN_IMAGE_TAG
+  MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-{{.K8sConfig.MainImageTag}}}"
 fi
 
 if [ -z "$CLAIRIFY_IMAGE_TAG" ]; then
@@ -25,18 +25,18 @@ if [ -z "$CLAIRIFY_IMAGE_TAG" ]; then
   CLAIRIFY_IMAGE_TAG="${CLAIRIFY_IMAGE_TAG:-{{.K8sConfig.ClairifyImageTag}}}"
 fi
 
-if [ "$PREVENT_IMAGE_REGISTRY" = "stackrox.io" ]; then
-	PREVENT_IMAGE_REPO="prevent"
+if [ "$ROX_IMAGE_REGISTRY" = "stackrox.io" ]; then
+	MAIN_IMAGE_REPO="main"
 	CLAIRIFY_IMAGE_REPO="clairify"
-elif [ "$PREVENT_IMAGE_REGISTRY" = "docker.io" ]; then
-	PREVENT_IMAGE_REPO="stackrox/prevent"
+elif [ "$ROX_IMAGE_REGISTRY" = "docker.io" ]; then
+	MAIN_IMAGE_REPO="stackrox/main"
 	CLAIRIFY_IMAGE_REPO="stackrox/clairify"
 fi
 
-if [ -z "$PREVENT_IMAGE_REPO" ]; then
-	echo -n "Enter StackRox Prevent Repo (default: prevent): "
-	read PREVENT_IMAGE_REPO
-  PREVENT_IMAGE_REPO="${PREVENT_IMAGE_REPO:-prevent}"
+if [ -z "$MAIN_IMAGE_REPO" ]; then
+	echo -n "Enter StackRox Repo (default: main): "
+	read MAIN_IMAGE_REPO
+  MAIN_IMAGE_REPO="${MAIN_IMAGE_REPO:-main}"
 fi
 
 if [ -z "$CLAIRIFY_IMAGE_REPO" ]; then
@@ -45,11 +45,11 @@ if [ -z "$CLAIRIFY_IMAGE_REPO" ]; then
   CLAIRIFY_IMAGE_REPO="${CLAIRIFY_IMAGE_REPO:-clairify}"
 fi
 
-PREVENT_IMAGE="${PREVENT_IMAGE_REGISTRY}/${PREVENT_IMAGE_REPO}:${PREVENT_IMAGE_TAG}"
-CLAIRIFY_IMAGE="${PREVENT_IMAGE_REGISTRY}/${CLAIRIFY_IMAGE_REPO}:${CLAIRIFY_IMAGE_TAG}"
+MAIN_IMAGE="${ROX_IMAGE_REGISTRY}/${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"
+CLAIRIFY_IMAGE="${ROX_IMAGE_REGISTRY}/${CLAIRIFY_IMAGE_REPO}:${CLAIRIFY_IMAGE_TAG}"
 
 echo "Images to pull:"
-echo "  - ${PREVENT_IMAGE}"
+echo "  - ${MAIN_IMAGE}"
 echo "  - ${CLAIRIFY_IMAGE}"
 echo -n "Does that look correct? Hit any key to continue, or ctrl-C to exit. "
 read -s -n 1
@@ -72,15 +72,15 @@ DOCKER+=("docker")
 echo "Testing: ${DOCKER[*]} version"
 "${DOCKER[@]}" version --format 'Running Docker {{`{{.Server.Version}}`}}'
 
-echo "Please enter your credentials to login to $PREVENT_IMAGE_REGISTRY"
+echo "Please enter your credentials to login to $ROX_IMAGE_REGISTRY"
 # To use this script without an interactive shell, set REGISTRY_USERNAME and REGISTRY_PASSWORD.
 if [ -n "$REGISTRY_USERNAME" ] && [ -n "$REGISTRY_PASSWORD" ]; then
-    "${DOCKER[@]}" login -u "$REGISTRY_USERNAME" -p "$REGISTRY_PASSWORD" "$PREVENT_IMAGE_REGISTRY"
+    "${DOCKER[@]}" login -u "$REGISTRY_USERNAME" -p "$REGISTRY_PASSWORD" "$ROX_IMAGE_REGISTRY"
 else
-    "${DOCKER[@]}" login "$PREVENT_IMAGE_REGISTRY"
+    "${DOCKER[@]}" login "$ROX_IMAGE_REGISTRY"
 fi
 
-"${DOCKER[@]}" pull "${PREVENT_IMAGE}"
+"${DOCKER[@]}" pull "${MAIN_IMAGE}"
 "${DOCKER[@]}" pull "${CLAIRIFY_IMAGE}"
 
 OC_PROJECT="${OC_PROJECT:-{{.K8sConfig.Namespace}}}"
@@ -99,8 +99,8 @@ TOKEN="$(oc serviceaccounts get-token pusher)"
 "${DOCKER[@]}" login -u "anything" -p "$TOKEN" "$PRIVATE_REGISTRY"
 
 echo "Pulling and pushing images to $PRIVATE_REGISTRY"
-"${DOCKER[@]}" tag "${PREVENT_IMAGE}" "$PRIVATE_REGISTRY/$OC_PROJECT/prevent:$PREVENT_IMAGE_TAG"
-"${DOCKER[@]}" push "$PRIVATE_REGISTRY/$OC_PROJECT/prevent:$PREVENT_IMAGE_TAG"
+"${DOCKER[@]}" tag "${MAIN_IMAGE}" "$PRIVATE_REGISTRY/$OC_PROJECT/main:$MAIN_IMAGE_TAG"
+"${DOCKER[@]}" push "$PRIVATE_REGISTRY/$OC_PROJECT/main:$MAIN_IMAGE_TAG"
 
 "${DOCKER[@]}" tag "${CLAIRIFY_IMAGE}" "$PRIVATE_REGISTRY/$OC_PROJECT/clairify:$CLAIRIFY_IMAGE_TAG"
 "${DOCKER[@]}" push "$PRIVATE_REGISTRY/$OC_PROJECT/clairify:$CLAIRIFY_IMAGE_TAG"

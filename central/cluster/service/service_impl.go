@@ -86,8 +86,8 @@ func validateInput(cluster *v1.Cluster) error {
 	if cluster.GetName() == "" {
 		errorList.AddString("Cluster name is required")
 	}
-	if _, err := reference.ParseAnyReference(cluster.GetPreventImage()); err != nil {
-		errorList.AddError(fmt.Errorf("invalid prevent image '%s': %s", cluster.GetPreventImage(), err))
+	if _, err := reference.ParseAnyReference(cluster.GetMainImage()); err != nil {
+		errorList.AddError(fmt.Errorf("invalid image '%s': %s", cluster.GetMainImage(), err))
 	}
 	if cluster.GetCentralApiEndpoint() == "" {
 		errorList.AddString("Central API Endpoint is required")

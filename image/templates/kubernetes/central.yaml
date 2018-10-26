@@ -46,9 +46,9 @@ spec:
       {{end -}}
       containers:
       - name: central
-        image: {{.K8sConfig.PreventImage}}
+        image: {{.K8sConfig.MainImage}}
         command:
-          - /prevent/entrypoint.sh
+          - /stackrox/entrypoint.sh
           - central
         ports:
           - name: api
@@ -90,14 +90,14 @@ spec:
         {{- end}}
         {{if .HostPath -}}
         - name: {{.HostPath.Name}}
-          mountPath: /var/lib/prevent
+          mountPath: /var/lib/stackrox
         {{else if .External -}}
         - name: {{.External.Name}}
-          mountPath: /var/lib/prevent
+          mountPath: /var/lib/stackrox
         {{- end}}
       {{if not .K8sConfig.MonitoringType.None}}
       - name: telegraf
-        image: {{.K8sConfig.PreventImage}}
+        image: {{.K8sConfig.MainImage}}
         command:
           - /telegraf.sh
         env:

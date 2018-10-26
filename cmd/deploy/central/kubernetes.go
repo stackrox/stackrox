@@ -28,12 +28,12 @@ var monitoringClient = []string{
 
 func (k *kubernetes) Render(c Config) ([]*v1.File, error) {
 	var err error
-	c.K8sConfig.Registry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.PreventImage)
+	c.K8sConfig.Registry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.MainImage)
 	if err != nil {
 		return nil, err
 	}
 	injectImageTags(&c)
-	c.K8sConfig.MonitoringImage = generateMonitoringImage(c.K8sConfig.PreventImage)
+	c.K8sConfig.MonitoringImage = generateMonitoringImage(c.K8sConfig.MainImage)
 
 	filenames := []string{
 		"kubernetes/ca-setup.sh",
@@ -72,5 +72,5 @@ func (k *kubernetes) Instructions() string {
 
 func injectImageTags(c *Config) {
 	c.K8sConfig.ClairifyImageTag = utils.GenerateImageFromString(c.K8sConfig.ClairifyImage).GetName().GetTag()
-	c.K8sConfig.PreventImageTag = utils.GenerateImageFromString(c.K8sConfig.PreventImage).GetName().GetTag()
+	c.K8sConfig.MainImageTag = utils.GenerateImageFromString(c.K8sConfig.MainImage).GetName().GetTag()
 }

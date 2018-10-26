@@ -2,11 +2,11 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-export PREVENT_IMAGE_TAG="${PREVENT_IMAGE_TAG:-$(git describe --tags --abbrev=10 --dirty)}"
-echo "StackRox Prevent image tag set to $PREVENT_IMAGE_TAG"
+export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(git describe --tags --abbrev=10 --dirty)}"
+echo "StackRox image tag set to $MAIN_IMAGE_TAG"
 
-export PREVENT_IMAGE="${PREVENT_IMAGE:-stackrox/prevent:$PREVENT_IMAGE_TAG}"
-echo "StackRox Prevent image set to $PREVENT_IMAGE"
+export MAIN_IMAGE="${MAIN_IMAGE:-stackrox/main:$MAIN_IMAGE_TAG}"
+echo "StackRox image set to $MAIN_IMAGE"
 
 # generate_ca
 # arguments:
@@ -48,7 +48,7 @@ function wait_for_central {
 #   - central API server endpoint reachable from this host
 #   - name of cluster
 #   - type of cluster (e.g., SWARM_CLUSTER)
-#   - image reference (e.g., stackrox/prevent:$(git describe --tags --abbrev=10 --dirty))
+#   - image reference (e.g., stackrox/main:$(git describe --tags --abbrev=10 --dirty))
 #   - central API endpoint reachable from the container (e.g., my-host:8080)
 #   - directory to drop files in
 #   - extra fields in JSON format
@@ -66,7 +66,7 @@ function get_cluster_zip {
     if [ "$EXTRA_JSON" != "" ]; then
         EXTRA_JSON=", $EXTRA_JSON"
     fi
-    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"prevent_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\", \"runtime_support\": $RUNTIME_SUPPORT $EXTRA_JSON}"
+    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"main_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\", \"runtime_support\": $RUNTIME_SUPPORT $EXTRA_JSON}"
 
     TMP=$(mktemp)
     STATUS=$(curl -X POST \
@@ -95,48 +95,6 @@ function get_cluster_zip {
     echo "Status: $STATUS"
     echo "Saved zip file to $OUTPUT_DIR"
     echo
-}
-
-# create_cluster
-# arguments:
-#   - central API server endpoint reachable from this host
-#   - name of cluster
-#   - type of cluster (e.g., SWARM_CLUSTER)
-#   - image reference (e.g., stackrox/prevent:$(git describe --tags --abbrev=10 --dirty))
-#   - central API endpoint reachable from the container (e.g., my-host:8080)
-#   - directory to drop files in
-#   - extra fields in JSON format
-function create_cluster {
-    LOCAL_API_ENDPOINT="$1"
-    CLUSTER_NAME="$2"
-    CLUSTER_TYPE="$3"
-    CLUSTER_IMAGE="$4"
-    CLUSTER_API_ENDPOINT="$5"
-    OUTPUT_DIR="$6"
-    EXTRA_JSON="$7"
-
-    >&2 echo "Creating a new cluster"
-    if [ "$EXTRA_JSON" != "" ]; then
-        EXTRA_JSON=", $EXTRA_JSON"
-    fi
-    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"prevent_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\" $EXTRA_JSON}"
-
-    TMP=$(mktemp)
-    STATUS=$(curl -X POST \
-        -d "$CLUSTER_JSON" \
-        -k \
-        -s \
-        -o $TMP \
-        -w "%{http_code}\n" \
-        https://$LOCAL_API_ENDPOINT/v1/clusters)
-    >&2 echo "Status: $STATUS"
-    >&2 echo "Response: $(cat ${TMP})"
-    cat "$TMP" | jq -r .deploymentYaml > "$OUTPUT_DIR/sensor-deploy.yaml"
-    cat "$TMP" | jq -r .deploymentCommand > "$OUTPUT_DIR/sensor-deploy.sh"
-    chmod +x "$OUTPUT_DIR/sensor-deploy.sh"
-    cat "$TMP" | jq -r .cluster.id
-    rm "$TMP"
-    >&2 echo
 }
 
 # get_identity

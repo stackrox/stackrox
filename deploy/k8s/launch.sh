@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 function launch_central {
-    K8S_DIR="$1"
-    PREVENT_IMAGE="$2"
+    local k8s_dir="$1"
+    local main_image="$2"
 
     echo "Generating central config..."
 
@@ -11,53 +11,53 @@ function launch_central {
         EXTRA_ARGS+=("--monitoring-type=none")
     fi
 
-    docker run --rm "$PREVENT_IMAGE" deploy k8s ${EXTRA_ARGS[@]} -i "$PREVENT_IMAGE" none > $K8S_DIR/central.zip
+    docker run --rm "$main_image" deploy k8s ${EXTRA_ARGS[@]} -i "$main_image" none > $k8s_dir/central.zip
 
-    UNZIP_DIR="$K8S_DIR/central-deploy/"
-    rm -rf "$UNZIP_DIR"
-    unzip "$K8S_DIR/central.zip" -d "$UNZIP_DIR"
+    local unzip_dir="$k8s_dir/central-deploy/"
+    rm -rf "$unzip_dir"
+    unzip "$k8s_dir/central.zip" -d "$unzip_dir"
     echo
 
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then
         echo "Deploying Monitoring..."
-        $UNZIP_DIR/monitoring/monitoring.sh
+        $unzip_dir/monitoring/monitoring.sh
         echo
 
-        kubectl -n stackrox patch deployment monitoring --patch "$(cat $K8S_DIR/monitoring-resources-patch.yaml)"
+        kubectl -n stackrox patch deployment monitoring --patch "$(cat $k8s_dir/monitoring-resources-patch.yaml)"
     fi
 
     echo "Deploying Central..."
-    $UNZIP_DIR/central.sh
+    $unzip_dir/central.sh
     echo
 
-    $UNZIP_DIR/port-forward.sh 8000
+    $unzip_dir/port-forward.sh 8000
     wait_for_central "localhost:8000"
     echo "Successfully deployed Central!"
     echo "Access the UI at: https://localhost:8000"
 }
 
 function launch_sensor {
-    K8S_DIR="$1"
-    CLUSTER="$2"
-    PREVENT_IMAGE="$3"
-    CLUSTER_API_ENDPOINT="$4"
-    RUNTIME_SUPPORT="$5"
+    local k8s_dir="$1"
+    local cluster="$2"
+    local main_image="$3"
+    local cluster_api_endpoint="$4"
+    local runtime_support="$5"
 
-    COMMON_PARAMS="{ \"params\" : { \"namespace\": \"stackrox\" }, \"imagePullSecret\": \"stackrox\" }"
+    local common_params="{ \"params\" : { \"namespace\": \"stackrox\" }, \"imagePullSecret\": \"stackrox\" }"
 
-    EXTRA_CONFIG=""
+    local extra_config=""
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then
-        EXTRA_CONFIG+='"monitoringEndpoint": "monitoring.stackrox", '
+        extra_config+='"monitoringEndpoint": "monitoring.stackrox", '
     fi
-    EXTRA_CONFIG+="\"kubernetes\": $COMMON_PARAMS }"
+    extra_config+="\"kubernetes\": $common_params }"
 
-    get_cluster_zip localhost:8000 "$CLUSTER" KUBERNETES_CLUSTER "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$K8S_DIR" "$RUNTIME_SUPPORT" "$EXTRA_CONFIG"
+    get_cluster_zip localhost:8000 "$cluster" KUBERNETES_CLUSTER "$main_image" "$cluster_api_endpoint" "$k8s_dir" "$runtime_support" "$extra_config"
 
     echo "Deploying Sensor..."
-    UNZIP_DIR="$K8S_DIR/sensor-deploy/"
-    rm -rf "$UNZIP_DIR"
-    unzip "$K8S_DIR/sensor-deploy.zip" -d "$UNZIP_DIR"
-    $UNZIP_DIR/sensor.sh
+    local unzip_dir="$k8s_dir/sensor-deploy/"
+    rm -rf "$unzip_dir"
+    unzip "$k8s_dir/sensor-deploy.zip" -d "$unzip_dir"
+    $unzip_dir/sensor.sh
     echo
 
 }

@@ -32,7 +32,7 @@ func externalVolume() *cobra.Command {
 		}
 		return outputZip(cfg)
 	}
-	c.Flags().StringVarP(&external.Name, "name", "", "prevent-db", "external volume name")
+	c.Flags().StringVarP(&external.Name, "name", "", "stackrox-db", "external volume name")
 	c.Flags().StringVarP(&external.StorageClass, "storage-class", "", "", "storage class name (optional)")
 	return c
 }
@@ -58,8 +58,8 @@ func hostPathVolume(cluster v1.ClusterType) *cobra.Command {
 		}
 		return outputZip(cfg)
 	}
-	c.Flags().StringVarP(&hostpath.Name, "name", "", "prevent-db", "hostpath volume name")
-	c.Flags().StringVarP(&hostpath.HostPath, "hostpath", "", "/var/lib/prevent", "path on the host")
+	c.Flags().StringVarP(&hostpath.Name, "name", "", "stackrox-db", "hostpath volume name")
+	c.Flags().StringVarP(&hostpath.HostPath, "hostpath", "", "/var/lib/stackrox", "path on the host")
 
 	var defaultSelector string
 	switch cluster {

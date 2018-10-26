@@ -58,7 +58,7 @@ func TestValidateCluster(t *testing.T) {
 		{
 			name: "No name",
 			cluster: &v1.Cluster{
-				PreventImage:       "image",
+				MainImage:          "image",
 				CentralApiEndpoint: "central:443",
 			},
 			expectedError: true,
@@ -74,7 +74,7 @@ func TestValidateCluster(t *testing.T) {
 		{
 			name: "Image without tag",
 			cluster: &v1.Cluster{
-				PreventImage:       "stackrox/prevent",
+				MainImage:          "stackrox/main",
 				Name:               "name",
 				CentralApiEndpoint: "central:443",
 			},
@@ -83,7 +83,7 @@ func TestValidateCluster(t *testing.T) {
 		{
 			name: "Non-trivial image",
 			cluster: &v1.Cluster{
-				PreventImage:       "stackrox/prevent:1.2",
+				MainImage:          "stackrox/main:1.2",
 				Name:               "name",
 				CentralApiEndpoint: "central:443",
 			},
@@ -92,7 +92,7 @@ func TestValidateCluster(t *testing.T) {
 		{
 			name: "Moderately complex image",
 			cluster: &v1.Cluster{
-				PreventImage:       "stackrox.io/prevent:1.2.512-125125",
+				MainImage:          "stackrox.io/main:1.2.512-125125",
 				Name:               "name",
 				CentralApiEndpoint: "central:443",
 			},
@@ -101,7 +101,7 @@ func TestValidateCluster(t *testing.T) {
 		{
 			name: "Image with SHA",
 			cluster: &v1.Cluster{
-				PreventImage:       "stackrox.io/prevent@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+				MainImage:          "stackrox.io/main@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
 				Name:               "name",
 				CentralApiEndpoint: "central:443",
 			},
@@ -110,7 +110,7 @@ func TestValidateCluster(t *testing.T) {
 		{
 			name: "Invalid image - contains spaces",
 			cluster: &v1.Cluster{
-				PreventImage:       "stackrox.io/prevent:1.2.3 injectedCommand",
+				MainImage:          "stackrox.io/main:1.2.3 injectedCommand",
 				Name:               "name",
 				CentralApiEndpoint: "central:443",
 			},
@@ -119,8 +119,8 @@ func TestValidateCluster(t *testing.T) {
 		{
 			name: "No Central Endpoint",
 			cluster: &v1.Cluster{
-				Name:         "name",
-				PreventImage: "image",
+				Name:      "name",
+				MainImage: "image",
 			},
 			expectedError: true,
 		},
@@ -128,7 +128,7 @@ func TestValidateCluster(t *testing.T) {
 			name: "Central Endpoint w/o port",
 			cluster: &v1.Cluster{
 				Name:               "name",
-				PreventImage:       "image",
+				MainImage:          "image",
 				CentralApiEndpoint: "central",
 			},
 			expectedError: true,
@@ -137,7 +137,7 @@ func TestValidateCluster(t *testing.T) {
 			name: "K8s Empty Namespace",
 			cluster: &v1.Cluster{
 				Name:               "name",
-				PreventImage:       "image",
+				MainImage:          "image",
 				CentralApiEndpoint: "central:443",
 				OrchestratorParams: &v1.Cluster_Kubernetes{
 					Kubernetes: &v1.KubernetesParams{
@@ -153,7 +153,7 @@ func TestValidateCluster(t *testing.T) {
 			name: "K8s Namespace with spaces",
 			cluster: &v1.Cluster{
 				Name:               "name",
-				PreventImage:       "image",
+				MainImage:          "image",
 				CentralApiEndpoint: "central:443",
 				OrchestratorParams: &v1.Cluster_Kubernetes{
 					Kubernetes: &v1.KubernetesParams{
@@ -169,7 +169,7 @@ func TestValidateCluster(t *testing.T) {
 			name: "OpenShift Namespace with spaces",
 			cluster: &v1.Cluster{
 				Name:               "name",
-				PreventImage:       "image",
+				MainImage:          "image",
 				CentralApiEndpoint: "central:443",
 				OrchestratorParams: &v1.Cluster_Openshift{
 					Openshift: &v1.OpenshiftParams{
@@ -185,7 +185,7 @@ func TestValidateCluster(t *testing.T) {
 			name: "Happy path K8s",
 			cluster: &v1.Cluster{
 				Name:               "name",
-				PreventImage:       "image",
+				MainImage:          "image",
 				CentralApiEndpoint: "central:443",
 				OrchestratorParams: &v1.Cluster_Kubernetes{
 					Kubernetes: &v1.KubernetesParams{
@@ -201,7 +201,7 @@ func TestValidateCluster(t *testing.T) {
 			name: "Happy path",
 			cluster: &v1.Cluster{
 				Name:               "name",
-				PreventImage:       "image",
+				MainImage:          "image",
 				CentralApiEndpoint: "central:443",
 			},
 			expectedError: false,

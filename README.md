@@ -32,7 +32,7 @@ The following tools are necessary to build image(s):
 make image
 ```
 
-This will create `stackrox/prevent` with a tag defined by `make tag`.
+This will create `stackrox/main` with a tag defined by `make tag`.
 This is the only image required to run the base configuration of StackRox.
 Runtime collection and system monitoring require additional images.
 
@@ -62,7 +62,7 @@ The deploy script will:
  1. Create a cluster configuration and a service identity, then
  deploy the cluster sensor using that configuration and those credentials.
 
-You can set the environment variable `PREVENT_IMAGE_TAG` in your shell to
+You can set the environment variable `MAIN_IMAGE_TAG` in your shell to
 ensure that you get the version you want.
 If you check out a commit, the scripts will launch the image corresponding to
 that commit by default. The image will be pulled if needed.
@@ -117,7 +117,7 @@ on a fresh terminal locally so that you don't try to run an interactive containe
 remotely.
 
 ```
-docker run -i --rm stackrox.io/prevent:<tag> interactive > swarm.zip
+docker run -i --rm stackrox.io/main:<tag> interactive > swarm.zip
 ```
 
 This will run you through an installer and generate a `swarm.zip` file:
@@ -138,7 +138,7 @@ Now Central has been deployed. Use the UI to deploy Sensor.
 <details><summary>Kubernetes</summary>
 
 ```
-docker run -i --rm stackrox.io/prevent:<tag> interactive > k8s.zip
+docker run -i --rm stackrox.io/main:<tag> interactive > k8s.zip
 ```
 
 This will run you through an installer and generate a `k8s.zip` file.
@@ -166,7 +166,7 @@ bash image-setup.sh
 ```
 
 ```
-docker run -i --rm stackrox.io/prevent:<tag> interactive > openshift.zip
+docker run -i --rm stackrox.io/main:<tag> interactive > openshift.zip
 ```
 
 This will run you through an installer and generate a `openshift.zip` file.
@@ -231,8 +231,8 @@ git push origin "${RELEASE_VERSION}"
 ```
 
 When you push the tag to GitHub, CircleCI will start a build and will push
-the image as `stackrox/prevent:[your-release-tag]`,
-for example `stackrox/prevent:1.0` and `stackrox.io/prevent:1.0`.
+the image as `stackrox/main:[your-release-tag]`,
+for example `stackrox/main:1.0` and `stackrox.io/main:1.0`.
 
 ### Update JIRA release
 Mark this version "Released" in [JIRA](https://stack-rox.atlassian.net/projects/ROX?orderField=RANK&selectedItem=com.atlassian.jira.jira-projects-plugin%3Arelease-page&status=unreleased).

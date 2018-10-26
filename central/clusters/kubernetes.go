@@ -17,6 +17,8 @@ func newKubernetes() Deployer {
 
 func addCommonKubernetesParams(params *v1.CommonKubernetesParams, fields map[string]interface{}) {
 	fields["Namespace"] = params.GetNamespace()
+	fields["NamespaceEnv"] = env.Namespace.EnvVar()
+	fields["ServiceAccountEnv"] = env.ServiceAccount.EnvVar()
 }
 
 var monitoringFilenames = []string{

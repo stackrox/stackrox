@@ -20,6 +20,6 @@ until $(curl --output /dev/null --silent --fail -k "https://localhost:${LOCAL_PO
 done
 echo "done"
 
-echo "StackRox Prevent is available on https://localhost:${LOCAL_PORT}/"
+echo "StackRox Central is available on https://localhost:${LOCAL_PORT}/"
 
 wait ${PID}

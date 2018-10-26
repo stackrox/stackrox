@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 function launch_central {
-    SWARM_DIR="$1"
-    PREVENT_IMAGE="$2"
-    LOCAL_API_ENDPOINT="$3"
-    PREVENT_DISABLE_REGISTRY_AUTH="$4"
+    local swarm_dir="$1"
+    local main_image="$2"
+    local local_api_endpoint="$3"
+    local rox_disable_registry_auth="$4"
 
     echo "Generating central config..."
     OLD_DOCKER_HOST="$DOCKER_HOST"
@@ -14,25 +14,26 @@ function launch_central {
 
     set -u
 
-    docker run --rm "$PREVENT_IMAGE" deploy swarm -i "$PREVENT_IMAGE" -p 8000 none > "$SWARM_DIR/central.zip"
+    docker run --rm "$main_image" deploy swarm -i "$main_image" -p 8000 none > "$swarm_dir/central.zip"
+
 
     export DOCKER_HOST="$OLD_DOCKER_HOST"
     export DOCKER_CERT_PATH="$OLD_DOCKER_CERT_PATH"
     export DOCKER_TLS_VERIFY="$OLD_DOCKER_TLS_VERIFY"
 
-    UNZIP_DIR="$SWARM_DIR/central-deploy/"
-    rm -rf "$UNZIP_DIR"
-    unzip "$SWARM_DIR/central.zip" -d "$UNZIP_DIR"
+    local unzip_dir="$swarm_dir/central-deploy/"
+    rm -rf "$unzip_dir"
+    unzip "$swarm_dir/central.zip" -d "$unzip_dir"
     echo
 
     echo "Deploying Central..."
-    if [ "$PREVENT_DISABLE_REGISTRY_AUTH" = "true" ]; then
-        cp "$UNZIP_DIR/deploy.sh" "$UNZIP_DIR/tmp"
-        cat "$UNZIP_DIR/tmp" | sed "s/--with-registry-auth//" > "$UNZIP_DIR/deploy.sh"
-        rm "$UNZIP_DIR/tmp"
+    if [ "$rox_disable_registry_auth" = "true" ]; then
+        cp "$unzip_dir/central.sh" "$unzip_dir/tmp"
+        cat "$unzip_dir/tmp" | sed "s/--with-registry-auth//" > "$unzip_dir/central.sh"
+        rm "$unzip_dir/tmp"
     fi
 
-    $UNZIP_DIR/central.sh
+    $unzip_dir/central.sh
     echo
     wait_for_central "localhost:8000"
     echo "Successfully launched central"
@@ -40,31 +41,31 @@ function launch_central {
 }
 
 function launch_sensor {
-    SWARM_DIR="$1"
-    PREVENT_IMAGE="$2"
-    CLUSTER="$3"
-    CLUSTER_API_ENDPOINT="$4"
-    PREVENT_DISABLE_REGISTRY_AUTH="$5"
+    local swarm_dir="$1"
+    local main_image="$2"
+    local cluster="$3"
+    local cluster_api_endpoint="$4"
+    local rox_disable_registry_auth="$5"
 
-    EXTRA_CONFIG=""
+    local extra_config=""
     if [ "$DOCKER_CERT_PATH" = "" ]; then
-        EXTRA_CONFIG="\"swarm\": { \"disableSwarmTls\":true } }"
+        extra_config="\"swarm\": { \"disableSwarmTls\":true } }"
     fi
     # false is for runtime support
-    get_cluster_zip localhost:8000 "$CLUSTER" SWARM_CLUSTER "$PREVENT_IMAGE" "$CLUSTER_API_ENDPOINT" "$SWARM_DIR" false "$EXTRA_CONFIG"
+    get_cluster_zip localhost:8000 "$cluster" SWARM_CLUSTER "$main_image" "$cluster_api_endpoint" "$swarm_dir" false "$extra_config"
 
     echo "Deploying Sensor..."
-    UNZIP_DIR="$SWARM_DIR/sensor-deploy/"
-    rm -rf "$UNZIP_DIR"
-    unzip "$SWARM_DIR/sensor-deploy.zip" -d "$UNZIP_DIR"
+    local unzip_dir="$swarm_dir/sensor-deploy/"
+    rm -rf "$unzip_dir"
+    unzip "$swarm_dir/sensor-deploy.zip" -d "$unzip_dir"
 
-    if [ "$PREVENT_DISABLE_REGISTRY_AUTH" = "true" ]; then
-        cp "$UNZIP_DIR/deploy.sh" "$UNZIP_DIR/tmp"
-        cat "$UNZIP_DIR/tmp" | sed "s/--with-registry-auth//" > "$UNZIP_DIR/deploy.sh"
-        rm "$UNZIP_DIR/tmp"
+    if [ "$rox_disable_registry_auth" = "true" ]; then
+        cp "$unzip_dir/sensor.sh" "$unzip_dir/tmp"
+        cat "$unzip_dir/tmp" | sed "s/--with-registry-auth//" > "$unzip_dir/sensor.sh"
+        rm "$unzip_dir/tmp"
     fi
 
-    $UNZIP_DIR/sensor.sh
+    $unzip_dir/sensor.sh
     echo
 
     echo "Successfully deployed!"

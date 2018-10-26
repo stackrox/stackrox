@@ -29,7 +29,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
 }
 
-// GetMetadata returns the metadata for Prevent.
+// GetMetadata returns the metadata for Rox.
 func (s *serviceImpl) GetMetadata(context.Context, *v1.Empty) (*v1.Metadata, error) {
 	v, err := version.GetVersion()
 	if err != nil {

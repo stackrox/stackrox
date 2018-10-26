@@ -4,7 +4,7 @@
             "id": "swarmCluster1",
             "name": "Swarm Cluster 1",
             "type": "SWARM_CLUSTER",
-            "preventImage": "stackrox/main:latest",
+            "mainImage": "stackrox/main:latest",
             "centralApiEndpoint": "central.stackrox:443",
             "namespace": "",
             "imagePullSecret": "",

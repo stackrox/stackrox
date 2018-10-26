@@ -48,7 +48,7 @@ func (h *HostPathPersistence) WithNodeSelector() bool {
 // Image is an example as it can be parameterized per orchestrator with different defaults so it cannot be placed
 // at the top level
 type CommonConfig struct {
-	PreventImage  string
+	MainImage     string
 	ClairifyImage string
 }
 
@@ -99,7 +99,7 @@ type K8sConfig struct {
 
 	// These variables are not prompted for by Cobra, but are set based on
 	// provided inputs for use in templating.
-	PreventImageTag  string
+	MainImageTag     string
 	ClairifyImageTag string
 
 	MonitoringEndpoint string
@@ -146,8 +146,8 @@ func executeTemplate(temp *template.Template, c *Config) (string, error) {
 	return buf.String(), nil
 }
 
-func generateMonitoringImage(preventImage string) string {
-	img := types.Wrapper{Image: utils.GenerateImageFromString(preventImage)}
+func generateMonitoringImage(mainImage string) string {
+	img := types.Wrapper{Image: utils.GenerateImageFromString(mainImage)}
 	remote := img.Namespace() + "/monitoring"
 	// This handles the case where there is no namespace. e.g. stackrox.io/collector:latest
 	if img.Repo() == "" {

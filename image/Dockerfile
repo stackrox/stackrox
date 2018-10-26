@@ -14,18 +14,18 @@ RUN apk update && \
     apk --purge del apk-tools \
     ;
 
-ENV PATH="/prevent:$PATH"
+ENV PATH="/stackrox:$PATH"
 
 COPY ./benchmarks/ /data/benchmarks
 COPY ./policies/ /data/policies
 COPY ./templates/ /data/templates
-COPY ./entrypoint.sh /prevent/
-COPY ./bin/benchmark-bootstrap /prevent/
-COPY ./bin/benchmarks /prevent/
-COPY ./bin/central /prevent/
-COPY ./bin/deploy /prevent/
-COPY ./bin/kubernetes-sensor /prevent/
-COPY ./bin/swarm-sensor /prevent/
+COPY ./entrypoint.sh /stackrox/
+COPY ./bin/benchmark-bootstrap /stackrox/
+COPY ./bin/benchmarks /stackrox/
+COPY ./bin/central /stackrox/
+COPY ./bin/deploy /stackrox/
+COPY ./bin/kubernetes-sensor /stackrox/
+COPY ./bin/swarm-sensor /stackrox/
 COPY ./ui/build  /ui/
 COPY ./VERSION /VERSION
 
@@ -44,6 +44,6 @@ VOLUME /etc/ssl
 # Search indices are generated upon startup and updated thereafter.
 VOLUME /tmp/search
 # The BoltDB is stored at this path.
-VOLUME /var/lib/prevent
+VOLUME /var/lib/stackrox
 # The log file is stored at this path
 VOLUME /var/log/stackrox

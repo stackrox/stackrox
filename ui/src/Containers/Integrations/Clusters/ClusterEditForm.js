@@ -25,6 +25,16 @@ CentralAPIFormField.propTypes = {
     placeholder: PropTypes.string.isRequired
 };
 
+const StackRoxImageFormField = ({ version }) => (
+    <FormField label="StackRox Image" required>
+        <ReduxTextField name="mainImage" placeholder={`stackrox.io/main:${version}`} />
+    </FormField>
+);
+
+StackRoxImageFormField.propTypes = {
+    version: PropTypes.string.isRequired
+};
+
 const RuntimeSupportFormField = () => (
     <FormField label="Runtime Support">
         <ReduxCheckboxField name="runtimeSupport" />
@@ -40,12 +50,7 @@ const MonitoringEndpointFormField = () => (
 const K8sFields = ({ metadata }) => (
     <React.Fragment>
         <CommonFields />
-        <FormField label="StackRox Image" required>
-            <ReduxTextField
-                name="preventImage"
-                placeholder={`stackrox.io/main:${metadata.version}`}
-            />
-        </FormField>
+        <StackRoxImageFormField version={metadata.version} />
         <CentralAPIFormField placeholder="central.stackrox:443" />
         <FormField label="Namespace" required>
             <ReduxTextField name="kubernetes.params.namespace" placeholder="stackrox" />
@@ -62,12 +67,7 @@ K8sFields.propTypes = {
 const OpenShiftFields = ({ metadata }) => (
     <React.Fragment>
         <CommonFields />
-        <FormField label="StackRox Image" required>
-            <ReduxTextField
-                name="preventImage"
-                placeholder={`stackrox.io/main:${metadata.version}`}
-            />
-        </FormField>
+        <StackRoxImageFormField version={metadata.version} />
         <CentralAPIFormField placeholder="central.stackrox:443" />
         <FormField label="Namespace" required>
             <ReduxTextField name="openshift.params.namespace" placeholder="stackrox" />
@@ -84,12 +84,7 @@ OpenShiftFields.propTypes = {
 const DockerFields = ({ metadata }) => (
     <React.Fragment>
         <CommonFields />
-        <FormField label="StackRox Image" required>
-            <ReduxTextField
-                name="preventImage"
-                placeholder={`stackrox.io/main:${metadata.version}`}
-            />
-        </FormField>
+        <StackRoxImageFormField version={metadata.version} />
         <CentralAPIFormField placeholder="central.prevent_net:443" />
         <FormField label="Disable Swarm TLS">
             <ReduxCheckboxField name="swarm.disableSwarmTls" />
@@ -125,11 +120,11 @@ const ConnectedForm = reduxForm({ form: clusterFormId })(ClusterEditForm);
 
 const initialValuesFactories = {
     SWARM_CLUSTER: metadata => ({
-        preventImage: `stackrox.io/main:${metadata.version}`,
+        mainImage: `stackrox.io/main:${metadata.version}`,
         centralApiEndpoint: 'central.prevent_net:443'
     }),
     OPENSHIFT_CLUSTER: metadata => ({
-        preventImage: `stackrox.io/main:${metadata.version}`,
+        mainImage: `stackrox.io/main:${metadata.version}`,
         centralApiEndpoint: 'central.stackrox:443',
         openshift: {
             params: {
@@ -139,7 +134,7 @@ const initialValuesFactories = {
         runtimeSupport: true
     }),
     KUBERNETES_CLUSTER: metadata => ({
-        preventImage: `stackrox.io/main:${metadata.version}`,
+        mainImage: `stackrox.io/main:${metadata.version}`,
         centralApiEndpoint: 'central.stackrox:443',
         kubernetes: {
             imagePullSecret: 'stackrox',

@@ -26,11 +26,11 @@ func (o *openshift) Render(c Config) ([]*v1.File, error) {
 	injectImageTags(&c)
 
 	var err error
-	c.K8sConfig.Registry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.PreventImage)
+	c.K8sConfig.Registry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.MainImage)
 	if err != nil {
 		return nil, err
 	}
-	c.K8sConfig.MonitoringImage = generateMonitoringImage(c.K8sConfig.PreventImage)
+	c.K8sConfig.MonitoringImage = generateMonitoringImage(c.K8sConfig.MainImage)
 
 	filenames := []string{
 		"kubernetes/central.yaml",
