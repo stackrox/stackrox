@@ -78,14 +78,81 @@ waitForAPI: &waitForAPI
   run:
     name: Wait for the API server to be up
     command: |
-      export PING_URL=https://127.0.0.1:${LOCAL_PORT}/v1/ping
-      curl -k --connect-timeout 5 --max-time 10 --retry 10 --retry-connrefused --retry-delay 1 --retry-max-time 30 ${PING_URL}
+      export PING_URL="https://127.0.0.1:${LOCAL_PORT}/v1/ping"
+      curl -k --connect-timeout 5 --max-time 10 --retry 10 --retry-connrefused --retry-delay 1 --retry-max-time 30 "${PING_URL}"
 
 waitForSensorK8s: &waitForSensorK8s
   run:
     name: Wait for the Sensor to be running K8s
     command: |
       ./scripts/ci/sensor-wait.sh
+
+determineWhetherToRunUIDevServer: &determineWhetherToRunUIDevServer
+  run:
+    name: Determine whether to run the UI dev server
+    command: |
+      if .circleci/pr_has_label.sh ci-ui-dev-server; then
+        echo "Running UI E2Es against the dev server due to the presence of the ci-ui-dev-server label."
+        echo 'export RUN_UI_DEV_SERVER=true' >> "${BASH_ENV}"
+      else
+        echo "Running UI E2Es against the production server. Apply the ci-ui-dev-server label to your PR to run against the dev server."
+        echo 'export RUN_UI_DEV_SERVER=false' >> "${BASH_ENV}"
+      fi
+
+runUIDevServer: &runUIDevServer
+  run:
+    name: Run the UI dev server
+    command: |
+      if [ "${RUN_UI_DEV_SERVER}" = "true" ]; then
+        make -C ui start
+      fi
+    background: true
+
+waitForUIDevServer: &waitForUIDevServer
+  run:
+    name: Wait for the UI dev server to be up
+    command: |
+      if [ "${RUN_UI_DEV_SERVER}" = "true" ]; then
+        curl -k --max-time 60 --retry 50 --retry-connrefused --retry-delay 5 --retry-max-time 300 https://127.0.0.1:3000/v1/ping
+      else
+        echo "Not running the dev server, skipping..."
+      fi
+
+runUIE2E: &runUIE2E
+  run:
+    name: UI e2e tests
+    command: |
+      if [ "${RUN_UI_DEV_SERVER}" = "true" ]; then
+        export UI_BASE_URL="https://localhost:3000"
+      else
+        export UI_BASE_URL="https://localhost:${LOCAL_PORT}"
+      fi
+      make -C ui test-e2e-ci
+
+collectImbuedUILogs: &collectImbuedUILogs
+  run:
+    name: Collect imbued UI logs
+    command: |
+      mkdir -p /tmp/imbued-ui-logs
+      status_code="$(curl -sk -o logs.zip -w "%{http_code}\n" "https://localhost:${LOCAL_PORT}/api/logimbue")"
+      # Central returns 204 if there are no imbued logs
+      if [ "${status_code}" -eq 204 ]; then
+        echo "No imbued logs found."
+      elif [ "${status_code}" -eq 200 ]; then
+        echo "Logs imbued from the UI were found. Please find them in the artifacts section."
+        unzip logs.zip -d /tmp/imbued-ui-logs
+      else
+        echo "Received error status code ${status_code} from the log imbue endpoint; is the log imbue handler broken?"
+        exit 1
+      fi
+    when:
+      always
+
+storeImbuedUILogs: &storeImbuedUILogs
+  store_artifacts:
+    path: /tmp/imbued-ui-logs
+    destination: imbued-ui-logs
+
 
 teardownGKE: &teardownGKE
   run:
@@ -102,6 +169,26 @@ collectK8sLogs: &collectK8sLogs
       ./scripts/ci/collect-service-logs.sh sensor deployment
       ./scripts/ci/collect-service-logs.sh collector daemonset
     when: always
+
+storeK8sLogs: &storeK8sLogs
+  store_artifacts:
+    path: /tmp/k8s-service-logs
+    destination: k8s-service-logs
+
+storeCypressResults: &storeCypressResults
+ store_test_results:
+    path: ui/cypress/reports
+
+storeCypressVideos: &storeCypressVideos
+  store_artifacts:
+    path: ui/cypress/videos
+    destination: ui-e2e-videos
+
+storeCypressScreenshots: &storeCypressScreenshots
+  store_artifacts:
+    path: ui/cypress/screenshots
+    destination: ui-e2e-screenshots
+
 
 checkOpenshiftLabel: &checkOpenshiftLabel
   run:
@@ -240,52 +327,22 @@ jobs:
             make -C tests
 
       - *restoreUI
-      - run:
-          name: UI e2e tests
-          command: |
-            export UI_BASE_URL=https://localhost:${LOCAL_PORT}
-            make -C ui test-e2e-ci
+      - *determineWhetherToRunUIDevServer
+      - *runUIDevServer
+      - *waitForUIDevServer
+      - *runUIE2E
 
-      - run:
-          name: Collect imbued UI logs
-          command: |
-            mkdir -p /tmp/imbued-ui-logs
-            status_code="$(curl -sk -o logs.zip -w "%{http_code}\n" "https://localhost:${LOCAL_PORT}/api/logimbue")"
-            # Central returns 204 if there are no imbued logs
-            if [ "${status_code}" -eq 204 ]; then
-              echo "No imbued logs found."
-            elif [ "${status_code}" -eq 200 ]; then
-              echo "Logs imbued from the UI were found. Please find them in the artifacts section."
-              unzip logs.zip -d /tmp/imbued-ui-logs
-            else
-              echo "Received error status code ${status_code} from the log imbue endpoint; is the log imbue handler broken?"
-              exit 1
-            fi
-          when:
-            always
-
-      - store_artifacts:
-          path: /tmp/imbued-ui-logs
-          destination: imbued-ui-logs
+      - *collectImbuedUILogs
+      - *storeImbuedUILogs
 
       - *collectK8sLogs
-
-      - store_artifacts:
-          path: /tmp/k8s-service-logs
-          destination: k8s-service-logs
+      - *storeK8sLogs
 
       - *teardownGKE
 
-      - store_test_results:
-          path: ui/cypress/reports
-
-      - store_artifacts:
-          path: ui/cypress/videos
-          destination: ui-e2e-videos
-
-      - store_artifacts:
-          path: ui/cypress/screenshots
-          destination: ui-e2e-screenshots
+      - *storeCypressResults
+      - *storeCypressScreenshots
+      - *storeCypressVideos
 
   qa-tests:
     <<: *defaults
@@ -347,10 +404,7 @@ jobs:
           destination: qa-test-report
 
       - *collectK8sLogs
-
-      - store_artifacts:
-          path: /tmp/k8s-service-logs
-          destination: k8s-service-logs
+      - *storeK8sLogs
 
       - *teardownGKE
 
@@ -486,21 +540,9 @@ jobs:
             ./deploy/openshift/deploy.sh
             oc -n stackrox get all
 
-      - run:
-          name: Setup port-forwarding for tests
-          command: ./scripts/k8s/local-port-forward.sh
-          background: true
-
-      - run:
-          name: Wait for the API server to be up
-          command: |
-            export PING_URL=https://127.0.0.1:${LOCAL_PORT}/v1/ping
-            curl -k --connect-timeout 5 --max-time 10 --retry 10 --retry-connrefused --retry-delay 1 --retry-max-time 30 ${PING_URL}
-
-      - run:
-          name: Wait for the Sensor to be running
-          command: |
-            ./scripts/ci/sensor-wait.sh
+      - *portForwardK8s
+      - *waitForAPI
+      - *waitForSensorK8s
 
 #      # TODO: make -C tests hangs when run
 #      - run:
@@ -510,28 +552,20 @@ jobs:
 #            make -C tests
 
       - *restoreUI
-      - run:
-          name: UI e2e tests
-          command: |
-            export UI_BASE_URL=https://localhost:${LOCAL_PORT}
-            make -C ui test-e2e-ci
+      - *determineWhetherToRunUIDevServer
+      - *runUIDevServer
+      - *waitForUIDevServer
+      - *runUIE2E
+
+      - *collectImbuedUILogs
+      - *storeImbuedUILogs
 
       - *collectK8sLogs
+      - *storeK8sLogs
 
-      - store_artifacts:
-          path: /tmp/k8s-service-logs
-          destination: k8s-service-logs
-
-      - store_test_results:
-          path: ui/cypress/reports
-
-      - store_artifacts:
-          path: ui/cypress/videos
-          destination: ui-e2e-videos
-
-      - store_artifacts:
-          path: ui/cypress/screenshots
-          destination: ui-e2e-screenshots
+      - *storeCypressResults
+      - *storeCypressScreenshots
+      - *storeCypressVideos
 
       - run:
           name: Pack openshift volume

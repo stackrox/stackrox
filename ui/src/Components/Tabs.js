@@ -48,6 +48,18 @@ class Tabs extends Component {
         tabContentBgColor: PropTypes.string
     };
 
+    // If the number of tabs reduces to being less than the active index,
+    // we select the first of the remaining tabs by default.
+    static getDerivedStateFromProps = (props, state) => {
+        if (state.activeIndex === 0) {
+            return null;
+        }
+        if (props.headers.length - 1 < state.activeIndex) {
+            return { activeIndex: 0 };
+        }
+        return null;
+    };
+
     constructor(props) {
         super(props);
 
@@ -57,14 +69,6 @@ class Tabs extends Component {
             activeIndex: index === -1 ? 0 : index
         };
     }
-
-    componentDidUpdate = () => {
-        const { activeIndex } = this.state;
-        const { headers } = this.props;
-        if (headers.length - 1 < activeIndex) {
-            this.setState({ activeIndex: 0 });
-        }
-    };
 
     getHeaders() {
         const { activeIndex } = this.state;
