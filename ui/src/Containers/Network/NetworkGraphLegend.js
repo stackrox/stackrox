@@ -42,36 +42,43 @@ class NetworkGraphLegend extends Component {
                 </div>
                 <div className="bg-primary-100">
                     <div className="flex border-b border-base-400">
-                        <LegendTile svgName="deployment" tooltip="Deployment" />
+                        <LegendTile name="deployment" tooltip="Deployment" type="font" />
                         <LegendTile
-                            svgName="deployment-allowed-connections"
+                            name="deployment-allowed-connections"
                             tooltip="Deployment with allowed external connections"
+                            type="font"
                         />
                     </div>
                     <div className="flex border-b border-base-400">
-                        <LegendTile svgName="namespace" tooltip="Namespace" />
+                        <LegendTile name="namespace" tooltip="Namespace" type="svg" />
                         <LegendTile
-                            svgName="namespace-allowed-connection"
+                            name="namespace-allowed-connection"
                             tooltip="Namespace with allowed external connections"
+                            type="svg"
                         />
                     </div>
                     <div className="flex border-b border-base-400">
-                        <LegendTile svgName="namespace-connection" tooltip="Namespace connection" />
-                        <LegendTile svgName="active-connection" tooltip="Active connection" />
-                        <LegendTile svgName="allowed-connection" tooltip="Allowed connection" />
+                        <LegendTile
+                            name="namespace-connection"
+                            tooltip="Namespace connection"
+                            type="svg"
+                        />
+                        <LegendTile
+                            name="active-connection"
+                            tooltip="Active connection"
+                            type="svg"
+                        />
+                        <LegendTile
+                            name="allowed-connection"
+                            tooltip="Allowed connection"
+                            type="svg"
+                        />
                     </div>
                     <div className="flex">
                         <LegendTile
-                            svgName="namespace-egress"
-                            tooltip="Namespace external egress traffic"
-                        />
-                        <LegendTile
-                            svgName="namespace-ingress"
-                            tooltip="Namespace external ingress traffic"
-                        />
-                        <LegendTile
-                            svgName="namespace-egress-ingress"
+                            name="namespace-egress-ingress"
                             tooltip="Namespace external egress/ingress traffic"
+                            type="font"
                         />
                     </div>
                 </div>

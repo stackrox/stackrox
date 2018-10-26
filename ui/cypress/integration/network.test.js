@@ -35,34 +35,37 @@ describe('Network page', () => {
     it('should display a legend', () => {
         cy.get(networkPageSelectors.legend.items)
             .eq(0)
-            .should('have.attr', 'alt', 'deployment');
+            .children()
+            .should('have.class', 'icon-node');
         cy.get(networkPageSelectors.legend.items)
             .eq(1)
-            .should('have.attr', 'alt', 'deployment-allowed-connections');
+            .children()
+            .children()
+            .should('have.class', 'icon-potential');
         cy.get(networkPageSelectors.legend.items)
             .eq(2)
+            .children()
             .should('have.attr', 'alt', 'namespace');
         cy.get(networkPageSelectors.legend.items)
             .eq(3)
+            .children()
             .should('have.attr', 'alt', 'namespace-allowed-connection');
         cy.get(networkPageSelectors.legend.items)
             .eq(4)
+            .children()
             .should('have.attr', 'alt', 'namespace-connection');
         cy.get(networkPageSelectors.legend.items)
             .eq(5)
+            .children()
             .should('have.attr', 'alt', 'active-connection');
         cy.get(networkPageSelectors.legend.items)
             .eq(6)
+            .children()
             .should('have.attr', 'alt', 'allowed-connection');
         cy.get(networkPageSelectors.legend.items)
             .eq(7)
-            .should('have.attr', 'alt', 'namespace-egress');
-        cy.get(networkPageSelectors.legend.items)
-            .eq(8)
-            .should('have.attr', 'alt', 'namespace-ingress');
-        cy.get(networkPageSelectors.legend.items)
-            .eq(9)
-            .should('have.attr', 'alt', 'namespace-egress-ingress');
+            .children()
+            .should('have.class', 'icon-ingress-egress');
     });
 
     it('should handle toggle click on simulator network policy button', () => {
