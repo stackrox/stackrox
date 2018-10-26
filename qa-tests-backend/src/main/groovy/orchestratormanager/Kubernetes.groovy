@@ -10,6 +10,7 @@ import io.kubernetes.client.custom.IntOrString
 import io.kubernetes.client.models.ExtensionsV1beta1DeploymentList
 import io.kubernetes.client.models.V1Capabilities
 import io.kubernetes.client.models.V1LabelSelector
+import io.kubernetes.client.models.V1EnvVar
 import io.kubernetes.client.models.V1LocalObjectReference
 import io.kubernetes.client.models.V1ObjectMeta
 import io.kubernetes.client.models.V1Namespace
@@ -87,6 +88,19 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     def cleanup() {
     }
 
+    def List<V1EnvVar> envToList (Map<String, String> env) {
+        List<V1EnvVar> l
+        l = new ArrayList<V1EnvVar>()
+        for (Map.Entry<String, String> entry : env) {
+            V1EnvVar var
+            var = new V1EnvVar()
+            var.setName(entry.getKey())
+            var.setValue(entry.getValue())
+            l.add(var)
+        }
+        return l
+    }
+
     def waitForDeploymentCreation(String deploymentName, String namespace, Boolean skipReplicaWait = false) {
         int waitTime = 0
 
@@ -149,23 +163,25 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
             k, v -> new V1ContainerPort().containerPort(k).protocol(v)
         }
 
-        List<V1VolumeMount> deploymount = new LinkedList<>()
+        List<V1VolumeMount> mounts = new LinkedList<>()
         for (int i = 0; i < deployment.getVolMounts().size(); ++i) {
-            V1VolumeMount volmount = new V1VolumeMount()
+            V1VolumeMount mount = new V1VolumeMount()
                     .name(deployment.getVolMounts().get(i))
                     .mountPath(deployment.getMountpath())
                     .readOnly(true)
-            deploymount.add(volmount)
+            mounts.add(mount)
         }
 
-        List<V1Volume> deployVolumes = new LinkedList<>()
+        List<V1Volume> volumes = new LinkedList<>()
         for (int i = 0; i < deployment.getVolNames().size(); ++i) {
             V1Volume deployVol = new V1Volume()
                     .name(deployment.getVolNames().get(i))
                     .secret(new V1SecretVolumeSource()
                     .secretName(deployment.getSecretNames().get(i)))
-            deployVolumes.add(deployVol)
+            volumes.add(deployVol)
         }
+
+        List<V1EnvVar> env = envToList(deployment.getEnv())
 
         V1PodSpec v1PodSpec = new V1PodSpec()
                 .containers(
@@ -175,11 +191,12 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                                 .image(deployment.getImage())
                                 .command(deployment.getCommand())
                                 .args(deployment.getArgs())
+                                .env(env)
                                 .ports(containerPorts)
-                                .volumeMounts(deploymount),
+                                .volumeMounts(mounts),
                 ]
         )
-                .volumes(deployVolumes)
+                .volumes(volumes)
 
         ExtensionsV1beta1Deployment k8sDeployment = new ExtensionsV1beta1Deployment()
                 .metadata(
@@ -648,4 +665,3 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         return podIds.get(0)
     }
 }
-

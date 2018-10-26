@@ -16,6 +16,7 @@ class Deployment {
     Boolean skipReplicaWait = false
     List<String> args = new ArrayList<>()
     Boolean exposeAsService = false
+    Map<String, String> env = new HashMap<>()
 
     Deployment setName(String n) {
         this.name = n
@@ -94,6 +95,11 @@ class Deployment {
                         podIP: podIP
                 )
         )
+        return this
+    }
+
+    Deployment setEnv(Map<String, String> env) {
+        this.env = env
         return this
     }
 }

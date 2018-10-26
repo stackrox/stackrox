@@ -1,14 +1,23 @@
+import static Services.getAlertCounts
+import static Services.getAlertGroups
 import static Services.getPolicies
 import static Services.getViolations
 import static Services.waitForViolation
 import stackrox.generated.AlertServiceOuterClass
+import stackrox.generated.AlertServiceOuterClass.ListAlert
+import stackrox.generated.AlertServiceOuterClass.ListAlertsRequest
+import stackrox.generated.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
+import stackrox.generated.AlertServiceOuterClass.GetAlertsCountsRequest
+import stackrox.generated.AlertServiceOuterClass.GetAlertsGroupResponse
 
 import groups.BAT
 import org.junit.experimental.categories.Category
+import spock.lang.Stepwise
 import spock.lang.Unroll
 import objects.Deployment
 import java.util.stream.Collectors
 
+@Stepwise // We need to verify all of the expected alerts are present before other tests.
 class DefaultPoliciesTest extends BaseSpecification {
 
     // Deployment names
@@ -23,7 +32,8 @@ class DefaultPoliciesTest extends BaseSpecification {
             .setName (NGINX_LATEST)
             .setImage ("nginx")
             .addPort (22)
-            .addLabel ("app", "test"),
+            .addLabel ("app", "test")
+            .setEnv([SECRET: 'true']),
         new Deployment()
             .setName(STRUTS)
             .setImage("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
@@ -68,33 +78,35 @@ class DefaultPoliciesTest extends BaseSpecification {
         where:
         "Data inputs are:"
 
-        policyName                                    | deploymentName | testId
+        policyName                                     | deploymentName | testId
 
-        "Latest tag"                                  | NGINX_LATEST   | ""
+        "Container Port 22"                            | NGINX_LATEST   | "C311"
 
-        "Container Port 22"                           | NGINX_LATEST   | "C311"
+        "Latest tag"                                   | NGINX_LATEST   | ""
 
-        "Apache Struts: CVE-2017-5638"                | STRUTS         | "C938"
+        "Don't use environment variables with secrets" | NGINX_LATEST   | ""
 
-        "Heartbleed: CVE-2014-0160"                   | SSL_TERMINATOR | "C947"
+        "Apache Struts: CVE-2017-5638"                 | STRUTS         | "C938"
 
-        "Wget in Image"                               | STRUTS         | "C939"
+        "Heartbleed: CVE-2014-0160"                    | SSL_TERMINATOR | "C947"
 
-        "90-Day Image Age"                            | STRUTS         | "C810"
+        "Wget in Image"                                | STRUTS         | "C939"
 
-        "Aptitude Package Manager (apt) in Image"     | STRUTS         | "C931"
+        "90-Day Image Age"                             | STRUTS         | "C810"
 
-        "30-Day Scan Age"                             | STRUTS         | "C941"
+        "Aptitude Package Manager (apt) in Image"      | STRUTS         | "C931"
 
-        "CVSS >= 7"                                   | STRUTS         | "C933"
+        "30-Day Scan Age"                              | STRUTS         | "C941"
 
-        "Shellshock: CVE-2014-6271"                   | SSL_TERMINATOR | "C948"
+        "CVSS >= 7"                                    | STRUTS         | "C933"
 
-        "Curl in Image"                               | STRUTS         | "C948"
+        "Shellshock: CVE-2014-6271"                    | SSL_TERMINATOR | "C948"
 
-        "DockerHub NGINX 1.10"                        | NGINX_1_10     | "C823"
+        "Curl in Image"                                | STRUTS         | "C948"
 
-        "Kubernetes Dashboard Deployed"               | K8S_DASHBOARD  | ""
+        "DockerHub NGINX 1.10"                         | NGINX_1_10     | "C823"
+
+        "Kubernetes Dashboard Deployed"                | K8S_DASHBOARD  | ""
     }
 
     @Category(BAT)
@@ -114,5 +126,93 @@ class DefaultPoliciesTest extends BaseSpecification {
           AlertServiceOuterClass.ListAlertsRequest.newBuilder()
             .setQuery("Namespace:kube-system+Policy:!Kubernetes Dashboard").build()
         ).size() == 0
+    }
+
+    def queryForDeployments() {
+        def query = "Violation State:Active+Deployment:"
+        def names = new ArrayList<String>()
+        DEPLOYMENTS.each { d ->
+            names.add(d.name)
+        }
+        query += names.join(',')
+        return ListAlertsRequest.newBuilder().setQuery(query).build()
+    }
+
+    def numUniqueCategories(List<ListAlert> alerts) {
+        def m = [] as Set
+        alerts.each { a ->
+            a.getPolicy().getCategoriesList().each { c ->
+                m.add(c)
+            }
+        }
+        return m.size()
+    }
+
+    def countAlerts(ListAlertsRequest req, RequestGroup group) {
+        def c = getAlertCounts(
+                GetAlertsCountsRequest.newBuilder().setRequest(req).setGroupBy(group).build()
+        )
+        return c
+    }
+
+    def totalAlerts(AlertServiceOuterClass.GetAlertsCountsResponse resp) {
+        def total = 0
+        resp.getGroupsList().each { g ->
+            g.getCountsList().each { c ->
+                total += c.getCount()
+            }
+        }
+        return total
+    }
+
+    @Category(BAT)
+    def "Verify that alert counts API is consistent with alerts"()  {
+        given:
+        def alertReq = queryForDeployments()
+        def violations = getViolations(alertReq)
+        def uniqueCategories = numUniqueCategories(violations)
+
+        when:
+        def ungrouped = countAlerts(alertReq, RequestGroup.UNSET)
+        def byCluster = countAlerts(alertReq, RequestGroup.CLUSTER)
+        def byCategory = countAlerts(alertReq, RequestGroup.CATEGORY)
+
+        then:
+        "Verify counts match expected value"
+        ungrouped.getGroupsCount() == 1
+        totalAlerts(ungrouped) == violations.size()
+
+        byCluster.getGroupsCount() == 1
+        totalAlerts(byCluster) == violations.size()
+
+        byCategory.getGroupsCount() == uniqueCategories
+        // Policies can have multiple categories, so the count is _at least_
+        // the number of total violations, but usually is more.
+        totalAlerts(byCategory) >= violations.size()
+    }
+
+    def flattenGroups(GetAlertsGroupResponse resp) {
+        def m = [:]
+        resp.getAlertsByPoliciesList().each { group ->
+            m.put(group.getPolicy().getName(), group.getNumAlerts())
+        }
+        return m
+    }
+
+    @Category(BAT)
+    def "Verify that alert groups API is consistent with alerts"()  {
+        given:
+        def alertReq = queryForDeployments()
+
+        when:
+        def groups = getAlertGroups(alertReq)
+        def flat = flattenGroups(groups)
+
+        then:
+        "Verify expected groups have non-zero counts"
+        flat.size() >= 3
+        flat["Latest tag"] != 0
+        flat["Container Port 22"] != 0
+        flat["Don't use environment variables with secrets"] != 0
     }
 }

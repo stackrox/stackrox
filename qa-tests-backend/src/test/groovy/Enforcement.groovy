@@ -16,7 +16,7 @@ class Enforcement extends BaseSpecification {
         // that is configured for Kill Pod enforcement
 
         given:
-        "Add killn enforcement to an existing runtime policy"
+        "Add kill enforcement to an existing runtime policy"
         def startEnforcements = Services.updatePolicyEnforcement(
                 APT_GET_POLICY,
                 [EnforcementAction.KILL_POD_ENFORCEMENT,]

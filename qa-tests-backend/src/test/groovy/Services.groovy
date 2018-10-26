@@ -3,6 +3,10 @@ import orchestratormanager.OrchestratorType
 import services.BaseService
 import services.ClusterService
 import stackrox.generated.AlertServiceGrpc
+import stackrox.generated.AlertServiceOuterClass.GetAlertsCountsRequest
+import stackrox.generated.AlertServiceOuterClass.GetAlertsCountsResponse
+import stackrox.generated.AlertServiceOuterClass.GetAlertsGroupResponse
+import stackrox.generated.AlertServiceOuterClass.GetAlertTimeseriesResponse
 import stackrox.generated.AlertServiceOuterClass.ListAlert
 import stackrox.generated.DeploymentServiceGrpc
 import stackrox.generated.DetectionServiceGrpc
@@ -104,6 +108,20 @@ class Services extends BaseService {
 
     static List<ListAlert> getViolations(ListAlertsRequest request = ListAlertsRequest.newBuilder().build()) {
         return getAlertClient().listAlerts(request).alertsList
+      }
+
+    static GetAlertsCountsResponse getAlertCounts(
+            GetAlertsCountsRequest request = GetAlertsCountsRequest.newBuilder().build()) {
+        return getAlertClient().getAlertsCounts(request)
+      }
+
+    static GetAlertsGroupResponse getAlertGroups(ListAlertsRequest request = ListAlertsRequest.newBuilder().build()) {
+        return getAlertClient().getAlertsGroup(request)
+      }
+
+    static GetAlertTimeseriesResponse getAlertTimeseries(
+            ListAlertsRequest request = ListAlertsRequest.newBuilder().build()) {
+        return getAlertClient().getAlertTimeseries(request)
       }
 
     static Alert getViolaton(String id) {
