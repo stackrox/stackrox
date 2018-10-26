@@ -168,6 +168,15 @@ jobs:
           - ui/deps
           - vendor
 
+      - run:
+          name: Comment on PR
+          command: |
+            wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc4/hub-comment_linux_amd64
+            sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
+
+            export TAG=$(make tag)
+            hub-comment -template-file .circleci/comment-template.tpl
+
   unit-tests:
     <<: *defaults
     resource_class: large
