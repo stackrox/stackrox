@@ -53,6 +53,10 @@ class NetworkPage extends Component {
             ),
             epoch: PropTypes.number
         }).isRequired,
+        networkFlowMapping: PropTypes.shape({
+            policyGraph: PropTypes.shape({}).isRequired,
+            flowGraph: PropTypes.shape({}).isRequired
+        }).isRequired,
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
         selectedClusterId: PropTypes.string,
         isFetchingNode: PropTypes.bool,
@@ -159,6 +163,7 @@ class NetworkPage extends Component {
                     updateKey={this.props.networkGraphUpdateKey}
                     nodes={this.props.networkGraph.nodes}
                     links={this.props.networkGraph.edges}
+                    networkFlowMapping={this.props.networkFlowMapping}
                     onNodeClick={this.onNodeClick}
                 />
             </div>
@@ -401,6 +406,7 @@ const mapStateToProps = createStructuredSelector({
     isViewFiltered,
     selectedNodeId: selectors.getSelectedNodeId,
     deployment: selectors.getDeployment,
+    networkFlowMapping: selectors.getNetworkFlowMapping,
     networkPolicies: selectors.getNetworkPolicies,
     networkGraphUpdateKey: selectors.getNetworkGraphUpdateKey,
     isFetchingNode: state => selectors.getLoadingStatus(state, deploymentTypes.FETCH_DEPLOYMENT),

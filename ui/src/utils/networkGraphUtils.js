@@ -90,11 +90,11 @@ export const getBidirectionalLinks = links => {
     const sourceTargetToLinkMapping = {};
 
     links.forEach(link => {
-        if (!sourceTargetToLinkMapping[`${link.source}-${link.target}`]) {
-            if (!sourceTargetToLinkMapping[`${link.target}-${link.source}`]) {
-                sourceTargetToLinkMapping[`${link.source}-${link.target}`] = link;
+        if (!sourceTargetToLinkMapping[`${link.source}--${link.target}`]) {
+            if (!sourceTargetToLinkMapping[`${link.target}--${link.source}`]) {
+                sourceTargetToLinkMapping[`${link.source}--${link.target}`] = link;
             } else {
-                sourceTargetToLinkMapping[`${link.target}-${link.source}`].bidirectional = true;
+                sourceTargetToLinkMapping[`${link.target}--${link.source}`].bidirectional = true;
             }
         }
     });
@@ -109,7 +109,7 @@ export const getBidirectionalLinks = links => {
  * @param {!Object[]} links list of links that contain a "source" and "target"
  * @returns {!Object[]}
  */
-export const getLinksInSameNamespace = (nodes, links) => {
+export const getLinksInSameNamespace = (nodes, links, networkFlowMapping) => {
     const nodeIdToNodeMapping = {};
 
     nodes.forEach(d => {
@@ -122,7 +122,10 @@ export const getLinksInSameNamespace = (nodes, links) => {
             const targetNamespace = nodeIdToNodeMapping[link.target].namespace;
             return sourceNamespace === targetNamespace;
         })
-        .map(link => ({ ...link }));
+        .map(link => {
+            const isActive = !!networkFlowMapping[`${link.source}--${link.target}`];
+            return { ...link, isActive };
+        });
 
     return filteredLinks;
 };

@@ -15,9 +15,11 @@ import {
 // Action types
 
 export const types = {
-    FETCH_NETWORK_GRAPH: createFetchingActionTypes('network/FETCH_NETWORK_GRAPH'),
+    FETCH_NETWORK_POLICY_GRAPH: createFetchingActionTypes('network/FETCH_NETWORK_POLICY_GRAPH'),
+    FETCH_NETWORK_FLOW_GRAPH: createFetchingActionTypes('network/FETCH_NETWORK_FLOW_GRAPH'),
     FETCH_NETWORK_POLICIES: createFetchingActionTypes('network/FETCH_NETWORK_POLICIES'),
     FETCH_NODE_UPDATES: createFetchingActionTypes('network/FETCH_NODE_UPDATES'),
+    SET_NETWORK_FLOW_MAPPING: 'network/SET_NETWORK_FLOW_MAPPING',
     SET_SELECTED_NODE_ID: 'network/SET_SELECTED_NODE_ID',
     SELECT_NETWORK_CLUSTER_ID: 'network/SELECT_NETWORK_CLUSTER_ID',
     INCREMENT_NETWORK_GRAPH_UPDATE_KEY: 'network/INCREMENT_NETWORK_GRAPH_UPDATE_KEY',
@@ -42,9 +44,14 @@ networkSearchActions.setNetworkSearchSuggestions = options =>
     getNetworkSearchActions.setNetworkSearchSuggestions(filterSearchOptions(options));
 
 export const actions = {
-    fetchNetworkGraph: createFetchingActions(types.FETCH_NETWORK_GRAPH),
+    fetchNetworkPolicyGraph: createFetchingActions(types.FETCH_NETWORK_POLICY_GRAPH),
+    fetchNetworkFlowGraph: createFetchingActions(types.FETCH_NETWORK_FLOW_GRAPH),
     fetchNetworkPolicies: createFetchingActions(types.FETCH_NETWORK_POLICIES),
     fetchNodeUpdates: createFetchingActions(types.FETCH_NODE_UPDATES),
+    setNetworkFlowMapping: flowGraph => ({
+        type: types.SET_NETWORK_FLOW_MAPPING,
+        flowGraph
+    }),
     setSelectedNodeId: id => ({ type: types.SET_SELECTED_NODE_ID, id }),
     selectNetworkClusterId: clusterId => ({
         type: types.SELECT_NETWORK_CLUSTER_ID,
@@ -73,8 +80,23 @@ export const actions = {
 // Reducers
 
 const networkGraph = (state = { nodes: [], edges: [] }, action) => {
-    if (action.type === types.FETCH_NETWORK_GRAPH.SUCCESS) {
+    if (action.type === types.FETCH_NETWORK_POLICY_GRAPH.SUCCESS) {
         return isEqual(action.response, state) ? state : action.response;
+    }
+    return state;
+};
+
+const networkFlowMapping = (state = {}, action) => {
+    if (action.type === types.SET_NETWORK_FLOW_MAPPING) {
+        const { flowGraph } = action;
+        const flowEquals = isEqual(flowGraph, state);
+        const newState = Object.assign({}, state);
+        if (!flowEquals) {
+            flowGraph.edges.forEach(edge => {
+                newState[`${edge.source}--${edge.target}`] = true;
+            });
+        }
+        return flowEquals ? state : newState;
     }
     return state;
 };
@@ -166,8 +188,14 @@ const networkGraphUpdateKey = (state = { shouldUpdate: true, key: 0 }, action) =
     if (type === types.INCREMENT_NETWORK_GRAPH_UPDATE_KEY) {
         return { shouldUpdate: true, key: state.key + 1 };
     }
-    if (type === types.FETCH_NETWORK_GRAPH.SUCCESS) {
+    if (
+        type === types.FETCH_NETWORK_POLICY_GRAPH.SUCCESS ||
+        type === types.FETCH_NETWORK_FLOW_GRAPH.SUCCESS
+    ) {
         if (state.shouldUpdate) return { shouldUpdate: false, key: state.key + 1 };
+    }
+    if (type === types.SET_NETWORK_FLOW_MAPPING) {
+        return { shouldUpdate: true, key: state.key + 1 };
     }
     return state;
 };
@@ -177,13 +205,13 @@ const networkGraphState = (state = 'INITIAL', action) => {
     if (type === types.SET_NETWORK_GRAPH_STATE) {
         return 'INITIAL';
     }
-    if (type === types.FETCH_NETWORK_GRAPH.REQUEST) {
+    if (type === types.FETCH_NETWORK_POLICY_GRAPH.REQUEST) {
         return 'REQUEST';
     }
-    if (type === types.FETCH_NETWORK_GRAPH.FAILURE) {
+    if (type === types.FETCH_NETWORK_POLICY_GRAPH.FAILURE) {
         return 'ERROR';
     }
-    if (type === types.FETCH_NETWORK_GRAPH.SUCCESS) {
+    if (type === types.FETCH_NETWORK_POLICY_GRAPH.SUCCESS) {
         return 'SUCCESS';
     }
     return state;
@@ -197,7 +225,7 @@ const simulatorMode = (state = false, action) => {
 };
 
 const errorMessage = (state = '', action) => {
-    if (action.type === types.FETCH_NETWORK_GRAPH.FAILURE) {
+    if (action.type === types.FETCH_NETWORK_POLICY_GRAPH.FAILURE) {
         const { message } = action.error.response.data;
         return message;
     }
@@ -206,6 +234,7 @@ const errorMessage = (state = '', action) => {
 
 const reducer = combineReducers({
     networkGraph,
+    networkFlowMapping,
     deployment,
     networkPolicies,
     selectedNodeId,
@@ -223,6 +252,7 @@ const reducer = combineReducers({
 // Selectors
 
 const getNetworkGraph = state => state.networkGraph;
+const getNetworkFlowMapping = state => state.networkFlowMapping;
 const getDeployment = state => state.deployment;
 const getNetworkPolicies = state => state.networkPolicies;
 const getSelectedNodeId = state => state.selectedNodeId;
@@ -237,6 +267,7 @@ const getLastUpdatedTimestamp = state => state.lastUpdatedTimestamp;
 
 export const selectors = {
     getNetworkGraph,
+    getNetworkFlowMapping,
     getDeployment,
     getNetworkPolicies,
     getSelectedNodeId,

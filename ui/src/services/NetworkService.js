@@ -2,6 +2,7 @@ import axios from 'axios';
 import queryString from 'query-string';
 
 const networkPoliciesBaseUrl = '/v1/networkpolicies';
+const networkFlowBaseUrl = '/v1/networkgraph';
 
 /**
  * Fetches nodes and links for the network graph.
@@ -9,7 +10,7 @@ const networkPoliciesBaseUrl = '/v1/networkpolicies';
  *
  * @returns {Promise<Object, Error>}
  */
-export function fetchNetworkGraph(filters, clusterId) {
+export function fetchNetworkPolicyGraph(filters, clusterId) {
     const { query, simulationYaml } = filters;
     const params = queryString.stringify({ query });
     let options;
@@ -25,6 +26,25 @@ export function fetchNetworkGraph(filters, clusterId) {
             url: `${networkPoliciesBaseUrl}/cluster/${clusterId}?${params}`
         };
     }
+
+    return axios(options).then(response => ({
+        response: response.data
+    }));
+}
+
+/**
+ * Fetches nodes and links for the network flow graph.
+ * Returns response with nodes and links
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function fetchNetworkFlowGraph(filters, clusterId) {
+    const { query } = filters;
+    const params = queryString.stringify({ query });
+    const options = {
+        method: 'GET',
+        url: `${networkFlowBaseUrl}/cluster/${clusterId}?${params}`
+    };
 
     return axios(options).then(response => ({
         response: response.data

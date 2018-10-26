@@ -4,7 +4,7 @@ import { MOUSE } from 'three';
 export const MAX_RADIUS = 12; // max radius of individual nodes
 export const PADDING = 2; // separation between same namespace nodes
 export const CLUSTER_PADDING = 150;
-export const CLUSTER_INNER_PADDING = 45;
+export const CLUSTER_INNER_PADDING = 60;
 export const CLUSTER_BORDER_PADDING = CLUSTER_INNER_PADDING + 5;
 export const SCALE_DURATION = 250;
 export const SCALE_FACTOR = 1.5;
@@ -22,8 +22,8 @@ export const NAMESPACE_BORDER_CANVAS_WIDTH = 32;
 export const NAMESPACE_BORDER_CANVAS_HEIGHT = 32;
 export const INTERNET_ACCESS_ICON_WIDTH = 32;
 export const INTERNET_ACCESS_ICON_HEIGHT = 16;
-export const INTERNET_ACCESS_ICON_X_OFFSET = 7;
-export const INTERNET_ACCESS_ICON_Y_OFFSET = 15;
+export const INTERNET_ACCESS_ICON_X_OFFSET = 14;
+export const INTERNET_ACCESS_ICON_Y_OFFSET = 22;
 
 export const FORCE_CONFIG = {
     FORCE_COLLISION_RADIUS_OFFSET: 20,
@@ -53,7 +53,6 @@ export const RENDERER_CONFIG = {
 };
 
 // Colors
-const PRIMARY_COLOR_HEX = 0x5a6fd9;
 const PRIMARY_COLOR_STRING = '#525966';
 export const INTERNET_ACCESS_COLOR = 0xa3deff;
 export const NAMESPACE_BORDER_COLOR = '#cacfe5';
@@ -65,7 +64,7 @@ export const CANVAS_BG_COLOR = '#ffffff';
 export const NODE_COLOR = '#7c86b3';
 export const INTERNET_ACCESS_NODE_COLOR = '#64a6f0';
 export const INTERNET_ACCESS_NODE_BORDER_COLOR = '#c4cdfa';
-export const LINK_COLOR = PRIMARY_COLOR_HEX;
+export const LINK_COLOR = '#C5CEF7';
 export const NAMESPACE_LINK_COLOR = 0xbdc2d9;
 export const TEXT_COLOR = PRIMARY_COLOR_STRING;
 export const NAMESPACE_TEXT_COLOR = '#60689B';
@@ -82,3 +81,7 @@ export const TRANSPARENT = 0.05;
 export const VISIBLE = 1;
 
 export const NAMESPACE_LINK_WIDTH = 0.005;
+export const NODE_LINK_WIDTH = 0.004;
+export const NODE_DASH_ARRAY = 0.05;
+export const NODE_DASH_OFFSET = 0;
+export const NODE_DASH_RATIO = 0.65;

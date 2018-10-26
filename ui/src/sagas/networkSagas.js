@@ -13,12 +13,24 @@ import { types as deploymentTypes } from 'reducers/deployments';
 import { types as locationActionTypes } from 'reducers/routes';
 import { getDeployment } from './deploymentSagas';
 
-function* getNetworkGraph(filters, clusterId) {
-    yield put(actions.fetchNetworkGraph.request());
+function* getNetworkFlowGraph(filters, clusterId) {
+    yield put(actions.fetchNetworkFlowGraph.request());
     try {
-        const result = yield call(service.fetchNetworkGraph, filters, clusterId);
-        yield put(actions.fetchNetworkGraph.success(result.response));
+        const flowResult = yield call(service.fetchNetworkFlowGraph, filters, clusterId);
+        yield put(actions.setNetworkFlowMapping(flowResult.response));
         yield put(actions.updateNetworkGraphTimestamp(new Date()));
+    } catch (error) {
+        yield put(actions.fetchNetworkFlowGraph.failure(error));
+    }
+}
+
+function* getNetworkGraph(filters, clusterId) {
+    yield put(actions.fetchNetworkPolicyGraph.request());
+    try {
+        const policyResult = yield call(service.fetchNetworkPolicyGraph, filters, clusterId);
+        yield put(actions.fetchNetworkPolicyGraph.success(policyResult.response));
+        yield put(actions.updateNetworkGraphTimestamp(new Date()));
+        yield fork(getNetworkFlowGraph, filters, clusterId);
     } catch (error) {
         yield put(actions.fetchNetworkGraph.failure(error));
     }

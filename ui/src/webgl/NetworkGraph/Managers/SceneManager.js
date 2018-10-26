@@ -71,7 +71,7 @@ const SceneManager = canvas => {
         });
 
         links.forEach(link => {
-            objects.push(new Link(webGLScene, link));
+            objects.push(new Link(webGLScene, canvas, link));
         });
 
         nodes.forEach(node => {

@@ -119,7 +119,7 @@ const DataManager = canvas => {
 
     function setData(data) {
         nodes = enrichNodes(data.nodes);
-        links = getLinksInSameNamespace(nodes, data.links);
+        links = getLinksInSameNamespace(nodes, data.links, data.networkFlowMapping);
         namespaces = getNamespaces(nodes);
         namespaceLinks = getNamespaceLinks(nodes, data.links);
         simulation = setUpForceLayout();

@@ -46,8 +46,8 @@ const NetworkGraphManager = element => {
         networkGraphCanvas.removeEventListener('mousemove', mouseMove, false);
     }
 
-    function setUpNetworkData({ nodes, links }) {
-        dataManager.setData({ nodes, links });
+    function setUpNetworkData({ nodes, links, networkFlowMapping }) {
+        dataManager.setData({ nodes, links, networkFlowMapping });
         const data = dataManager.getData();
         sceneManager.setData(data);
         shouldUpdate = true;
