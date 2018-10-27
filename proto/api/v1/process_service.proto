@@ -22,7 +22,7 @@ message ProcessGroup {
 
 message ProcessNameGroup {
     string                name           = 1;
-    int64                 times_executed = 2;
+    uint32                times_executed = 2;
     repeated ProcessGroup groups         = 3;
 }
 

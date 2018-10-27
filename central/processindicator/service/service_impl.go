@@ -90,17 +90,15 @@ func indicatorsToGroupedResponses(indicators []*v1.ProcessIndicator) []*v1.Proce
 	groups := make([]*v1.ProcessNameGroup, 0, len(processGroups))
 	for name, nameMap := range processGroups {
 		processGroups := make([]*v1.ProcessGroup, 0, len(nameMap))
-		var timesExecuted int64
 		for args, indicators := range nameMap {
 			sortIndicators(indicators)
 			processGroups = append(processGroups, &v1.ProcessGroup{Args: args, Signals: indicators})
-			timesExecuted += int64(len(indicators))
 		}
 		sort.SliceStable(processGroups, func(i, j int) bool { return processGroups[i].GetArgs() < processGroups[j].GetArgs() })
 		groups = append(groups, &v1.ProcessNameGroup{
 			Name:          name,
 			Groups:        processGroups,
-			TimesExecuted: int64(len(processNameToContainers[name])),
+			TimesExecuted: uint32(len(processNameToContainers[name])),
 		})
 	}
 	sort.SliceStable(groups, func(i, j int) bool { return groups[i].Name < groups[j].Name })
