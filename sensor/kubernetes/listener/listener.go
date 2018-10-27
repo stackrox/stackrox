@@ -2,7 +2,6 @@ package listener
 
 import (
 	"reflect"
-	"time"
 
 	openshift "github.com/openshift/client-go/apps/clientset/versioned"
 	"github.com/openshift/client-go/apps/informers/externalversions"
@@ -21,7 +20,9 @@ import (
 )
 
 const (
-	resyncPeriod = 10 * time.Minute
+	// See https://groups.google.com/forum/#!topic/kubernetes-sig-api-machinery/PbSCXdLDno0
+	// Kubernetes scheduler no longer uses a resync period and it seems like its usage doesn't apply to us
+	resyncPeriod = 0
 )
 
 var (

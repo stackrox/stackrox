@@ -25,6 +25,7 @@ var dataTypeMap = map[string]pkgV1.SecretType{
 }
 
 func getSecretType(data string) pkgV1.SecretType {
+	data = strings.TrimSpace(data)
 	for dataPrefix, t := range dataTypeMap {
 		if strings.HasPrefix(data, dataPrefix) {
 			return t
