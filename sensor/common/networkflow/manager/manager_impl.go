@@ -185,6 +185,9 @@ func (m *networkFlowManager) getAllConnections() map[connection]timestamp.MicroT
 		hostConns.mutex.Lock()
 		for conn, ts := range hostConns.connections {
 			allConnections[conn] = ts
+			if ts != timestamp.InfiniteFuture {
+				delete(hostConns.connections, conn) // connection not active, no longer needed
+			}
 		}
 		hostConns.mutex.Unlock()
 	}
