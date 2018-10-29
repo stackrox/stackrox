@@ -330,6 +330,22 @@ class ViolationsPage extends Component {
                 )
             },
             {
+                Header: 'Enforced',
+                accessor: '',
+                headerClassName: `w-1/10  ${defaultHeaderClassName}`,
+                className: `w-1/10 ${wrapClassName} ${defaultColumnClassName}`,
+                Cell: ({ original }) => {
+                    const count = original.enforcementCount;
+                    if (original.lifecycleStage === 'DEPLOY') {
+                        const message = count === 0 ? 'No' : 'Yes';
+                        return <span>{message}</span>;
+                    }
+                    const countMessage = count === 1 ? `1 time` : `${count} times`;
+                    const message = count === 0 ? 'No' : countMessage;
+                    return <span>{message}</span>;
+                }
+            },
+            {
                 Header: 'Severity',
                 accessor: 'policy.severity',
                 headerClassName: `text-center ${defaultHeaderClassName}`,
