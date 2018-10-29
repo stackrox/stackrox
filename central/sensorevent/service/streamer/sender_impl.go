@@ -1,6 +1,7 @@
 package streamer
 
 import (
+	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
@@ -26,6 +27,8 @@ func (s *senderImpl) pipelineToSend(in <-chan *v1.SensorEnforcement, stream v1.S
 		if !ok {
 			return
 		}
+
+		log.Warnf("Enforcing: %s", proto.MarshalTextString(enforcement))
 
 		if err := stream.Send(enforcement); err != nil {
 			log.Error("error sending deployment enforcement", err)

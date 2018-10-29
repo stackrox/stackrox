@@ -37,8 +37,6 @@ func (s *createResponseImpl) do(deployment *v1.Deployment, action v1.ResourceAct
 		return nil
 	}
 
-	log.Warnf("Taking enforcement action %s against deployment %s", enforcement, deployment.GetName())
-
 	// Only form and return the response if there is an enforcement action to be taken.
 	response := new(v1.DeploymentEnforcement)
 	response.DeploymentId = deployment.GetId()
