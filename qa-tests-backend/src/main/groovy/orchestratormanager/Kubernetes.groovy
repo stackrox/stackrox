@@ -47,7 +47,7 @@ import java.util.stream.Collectors
 class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     private final String namespace
     private final int sleepDuration = 5000
-    private final int maxWaitTime = 30000
+    private final int maxWaitTime = 90000
 
     final private CoreV1Api api
     final private ExtensionsV1beta1Api beta1
