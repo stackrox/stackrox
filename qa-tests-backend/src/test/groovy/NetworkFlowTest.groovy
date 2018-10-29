@@ -147,11 +147,7 @@ class NetworkFlowTest extends BaseSpecification {
 
     def cleanupSpec() {
         for (Deployment deployment : DEPLOYMENTS) {
-            orchestrator.deleteDeployment(
-                    deployment.getName(),
-                    deployment.getNamespace(),
-                    deployment.getExposeAsService()
-            )
+            orchestrator.deleteDeployment(deployment)
         }
     }
 

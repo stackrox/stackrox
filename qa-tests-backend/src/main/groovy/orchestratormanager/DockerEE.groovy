@@ -11,6 +11,7 @@ import com.github.dockerjava.api.model.PortConfigProtocol
 import com.github.dockerjava.core.DefaultDockerClientConfig
 import com.github.dockerjava.core.DockerClientBuilder
 import com.github.dockerjava.core.DockerClientConfig
+import objects.DaemonSet
 import objects.Deployment
 import objects.NetworkPolicy
 
@@ -82,9 +83,29 @@ class DockerEE extends OrchestratorCommon implements OrchestratorMain {
     }
 
     @Override
-    def deleteDeployment(String deploymentName, String namespace = "", Boolean deleteService = false) {
-        docker.removeServiceCmd(deploymentName).exec()
+    def deleteDeployment(Deployment deployment) {
+        docker.removeServiceCmd(deployment.name).exec()
         println "Service removed."
+    }
+
+    @Override
+    def createDaemonSet(DaemonSet daemonSet) {
+    }
+
+    @Override
+    def deleteDaemonSet(DaemonSet daemonSet) {
+    }
+
+    @Override
+    def getDaemonSetReplicaCount(DaemonSet daemonSet) {
+    }
+
+    @Override
+    def getDaemonSetNodeSelectors(DaemonSet daemonSet) {
+    }
+
+    @Override
+    def getDaemonSetUnavailableReplicaCount(DaemonSet daemonSet) {
     }
 
     @Override
@@ -120,7 +141,7 @@ class DockerEE extends OrchestratorCommon implements OrchestratorMain {
     }
 
     @Override
-    String getDeploymentId(String deploymentName, String namespace = "") {
+    String getDeploymentId(Deployment deployment) {
     }
 
     @Override

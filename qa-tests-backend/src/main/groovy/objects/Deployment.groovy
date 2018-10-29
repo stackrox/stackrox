@@ -1,5 +1,7 @@
 package objects
 
+import orchestratormanager.OrchestratorType
+
 class Deployment {
     String name
     String namespace
@@ -101,5 +103,27 @@ class Deployment {
     Deployment setEnv(Map<String, String> env) {
         this.env = env
         return this
+    }
+
+    Deployment create() {
+        OrchestratorType.orchestrator.createDeployment(this)
+        return this
+    }
+
+    def delete() {
+        OrchestratorType.orchestrator.deleteDeployment(this)
+    }
+}
+
+class DaemonSet extends Deployment {
+    @Override
+    DaemonSet create() {
+        OrchestratorType.orchestrator.createDaemonSet(this)
+        return this
+    }
+
+    @Override
+    def delete() {
+        OrchestratorType.orchestrator.deleteDaemonSet(this)
     }
 }

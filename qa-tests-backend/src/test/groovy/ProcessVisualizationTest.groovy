@@ -70,7 +70,7 @@ class ProcessVisualizationTest extends BaseSpecification {
 
     def cleanupSpec() {
         for (Deployment deployment : DEPLOYMENTS) {
-            orchestrator.deleteDeployment(deployment.getName())
+            orchestrator.deleteDeployment(deployment)
         }
     }
 
@@ -79,7 +79,7 @@ class ProcessVisualizationTest extends BaseSpecification {
     def "Verify process visualization on default: #depName"()  {
         when:
         "Get Process IDs running on deployment: #depName"
-        String uid = orchestrator?.getDeploymentId(depName)
+        String uid = orchestrator?.getDeploymentId(DEPLOYMENTS.find { it.name == depName })
         assert uid != null
 
         List<String> receivedProcessPaths = getProcessOnDeployment(uid)

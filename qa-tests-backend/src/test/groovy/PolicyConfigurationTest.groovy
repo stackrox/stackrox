@@ -60,7 +60,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
     def cleanupSpec() {
         for (Deployment deployment : DEPLOYMENTS) {
-            orchestrator.deleteDeployment(deployment.getName())
+            orchestrator.deleteDeployment(deployment)
         }
     }
     @Unroll

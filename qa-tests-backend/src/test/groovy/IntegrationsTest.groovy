@@ -1,3 +1,4 @@
+import objects.Deployment
 import org.junit.experimental.categories.Category
 import groups.BAT
 import spock.lang.Unroll
@@ -23,7 +24,7 @@ class IntegrationsTest extends BaseSpecification {
         cleanup:
         "Remove the deployment and integration"
         orchestrator.deleteService("clairify", "stackrox")
-        orchestrator.deleteDeployment("clairify", "stackrox")
+        orchestrator.deleteDeployment(new Deployment(name: "clairify", namespace: "stackrox"))
         assert Services.deleteClairifyScanner(clairifyId)
     }
     @Category(BAT)

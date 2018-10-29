@@ -12,7 +12,7 @@ class SecretsTest extends BaseSpecification {
 
          and:
         "Create a Deployment using above created secret"
-        orchestrator.createDeployment(new Deployment()
+        Deployment deployment = new Deployment()
                  .setName ("depwithsecrets")
                  .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
                  .addLabel ( "app", "test" )
@@ -20,7 +20,7 @@ class SecretsTest extends BaseSpecification {
                  .addVolMountName("test")
                  .addMountPath("/etc/try")
                  .addSecretName("qasec")
-         )
+        orchestrator.createDeployment(deployment)
 
          then:
         "Verify Secret is added to the list"
@@ -28,7 +28,7 @@ class SecretsTest extends BaseSpecification {
 
          cleanup:
         "Remove Deployment #deploymentName"
-        orchestrator.deleteDeployment("depwithsecrets")
+        orchestrator.deleteDeployment(deployment)
         orchestrator.deleteSecret("qasec")
     }
 }

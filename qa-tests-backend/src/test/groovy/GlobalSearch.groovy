@@ -23,7 +23,7 @@ class GlobalSearch extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        orchestrator.deleteDeployment(DEPLOYMENT.getName())
+        orchestrator.deleteDeployment(DEPLOYMENT)
     }
 
     @Unroll

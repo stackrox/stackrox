@@ -296,6 +296,7 @@ class Services extends BaseService {
         try {
             getPolicyClient().putPolicy(policyDef)
         } catch (Exception e) {
+            println e.toString()
             return []
         }
         println "Updated lifecycleStage of '${policyName}' to ${stages}"
@@ -308,13 +309,16 @@ class Services extends BaseService {
         def builder = Policy.newBuilder(policyMeta).clearEnforcementActions()
         if (enforcementActions != null && !enforcementActions.isEmpty()) {
             builder.addAllEnforcementActions(enforcementActions)
+        } else {
+            builder.addAllEnforcementActions([])
         }
         def policyDef = builder.build()
 
         try {
             getPolicyClient().putPolicy(policyDef)
         } catch (Exception e) {
-            return List.<EnforcementAction>of()
+            println e.toString()
+            return ["EXCEPTION"]
         }
         sleep(3000) // Sleep for a little bit to make sure the update propagates in Central.
 
@@ -600,8 +604,8 @@ class Services extends BaseService {
 
     static waitForDeployment(objects.Deployment deployment, int timeoutSeconds = 30) {
         if (deployment.deploymentUid == null) {
-            println "deploymentID is null, checking orchestrator directly for deployment ID"
-            deployment.deploymentUid = OrchestratorType.orchestrator.getDeploymentId(deployment.name)
+            println "deploymentID for [${deployment.name}] is null, checking orchestrator directly for deployment ID"
+            deployment.deploymentUid = OrchestratorType.orchestrator.getDeploymentId(deployment)
             if (deployment.deploymentUid == null) {
                 println "deployment does not exist in orchestrator"
                 return false
