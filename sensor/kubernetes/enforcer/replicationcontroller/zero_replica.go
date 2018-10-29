@@ -21,7 +21,7 @@ func EnforceZeroReplica(client *kubernetes.Clientset, deploymentInfo *roxV1.Depl
 
 	_, err = client.CoreV1().ReplicationControllers(deploymentInfo.GetNamespace()).UpdateScale(deploymentInfo.GetDeploymentName(), scaleRequest)
 	if err != nil {
-		retry.MakeRetryable(err)
+		return retry.MakeRetryable(err)
 	}
 	return nil
 }
