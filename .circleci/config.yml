@@ -278,8 +278,12 @@ jobs:
       - *setupBazel
 
       - run:
-          name: Run style checks and unit tests
-          command: make style test upload-coverage
+          name: Run unit tests
+          command: make test upload-coverage
+
+      - run:
+          name: Run style checks
+          command: make style
 
       - store_artifacts:
           path: qa-tests-backend/build/reports/codenarc
