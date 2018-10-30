@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -101,4 +102,16 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 		suite.NoError(suite.store.RemoveProcessIndicator(i.GetId()))
 	}
 	suite.verifyIndicatorsAre()
+
+	oldIDs, err := suite.store.AddProcessIndicators(indicators...)
+	suite.NoError(err)
+	suite.Empty(oldIDs)
+
+	// Modify indicator ids so we can batch add and we should get the old values out
+	for idx, i := range indicators {
+		i.Id = fmt.Sprintf("id%d", idx+3)
+	}
+	oldIDs, err = suite.store.AddProcessIndicators(indicators...)
+	suite.NoError(err)
+	suite.ElementsMatch([]string{"id1", "id2"}, oldIDs)
 }

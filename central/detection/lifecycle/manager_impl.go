@@ -7,11 +7,12 @@ import (
 
 	"github.com/deckarep/golang-set"
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/deployment/datastore"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/detection/utils"
 	"github.com/stackrox/rox/central/enrichment"
+	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/policies"
@@ -19,13 +20,8 @@ import (
 	"golang.org/x/time/rate"
 )
 
-type indicatorInfo struct {
-	deploymentID string
-	containerID  string
-}
-
-type indicatorInfoWithInjector struct {
-	info                indicatorInfo
+type indicatorWithInjector struct {
+	indicator           *v1.ProcessIndicator
 	enforcementInjector pipeline.EnforcementInjector
 }
 
@@ -35,25 +31,28 @@ type managerImpl struct {
 	deploytimeDetector deploytime.Detector
 	alertManager       utils.AlertManager
 
-	deploymentDataStore datastore.DataStore
+	deploymentDataStore deploymentDatastore.DataStore
+	processesDataStore  processIndicatorDatastore.DataStore
 
-	queuedIndicatorsToContainers map[string]indicatorInfoWithInjector
-	queueLock                    sync.Mutex
-	flushProcessingLock          sync.Mutex
+	queuedIndicators map[string]indicatorWithInjector
+
+	queueLock           sync.Mutex
+	flushProcessingLock sync.Mutex
 
 	limiter *rate.Limiter
 	ticker  *time.Ticker
 }
 
-func (m *managerImpl) copyAndResetIndicatorQueue() map[string]indicatorInfoWithInjector {
+func (m *managerImpl) copyAndResetIndicatorQueue() map[string]indicatorWithInjector {
 	m.queueLock.Lock()
 	defer m.queueLock.Unlock()
-	if len(m.queuedIndicatorsToContainers) == 0 {
+	if len(m.queuedIndicators) == 0 {
 		return nil
 	}
-	copied := m.queuedIndicatorsToContainers
-	m.queuedIndicatorsToContainers = make(map[string]indicatorInfoWithInjector)
-	return copied
+	copiedMap := m.queuedIndicators
+	m.queuedIndicators = make(map[string]indicatorWithInjector)
+
+	return copiedMap
 }
 
 func (m *managerImpl) flushQueuePeriodically() {
@@ -71,8 +70,19 @@ func (m *managerImpl) flushIndicatorQueue() {
 	if len(copiedQueue) == 0 {
 		return
 	}
-	deploymentIDs := uniqueDeploymentIDs(copiedQueue)
 
+	// Map copiedQueue to slice
+	indicatorSlice := make([]*v1.ProcessIndicator, 0, len(copiedQueue))
+	for _, i := range copiedQueue {
+		indicatorSlice = append(indicatorSlice, i.indicator)
+	}
+
+	// Index the process indicators in batch
+	if err := m.processesDataStore.AddProcessIndicators(indicatorSlice...); err != nil {
+		logger.Errorf("Error adding process indicators: %v", err)
+	}
+
+	deploymentIDs := uniqueDeploymentIDs(copiedQueue)
 	newAlerts, err := m.runtimeDetector.AlertsForDeployments(deploymentIDs...)
 	if err != nil {
 		logger.Errorf("Failed to compute runtime alerts: %s", err)
@@ -91,30 +101,24 @@ func (m *managerImpl) flushIndicatorQueue() {
 	}
 
 	containersSet := containersToKill(newAlerts, copiedQueue)
-	for indicatorInfo, enforcementInjector := range containersSet {
-		if enforcementInjector == nil {
-			logger.Errorf("Nil enforcement injector received for indicator %+v", indicatorInfo)
-			continue
-		}
-		if indicatorInfo.deploymentID == "" || indicatorInfo.containerID == "" {
-			continue
-		}
-		deployment, exists, err := m.deploymentDataStore.GetDeployment(indicatorInfo.deploymentID)
+	for _, indicatorInfo := range containersSet {
+		info := indicatorInfo.indicator
+		deployment, exists, err := m.deploymentDataStore.GetDeployment(info.GetDeploymentId())
 		if err != nil {
-			logger.Errorf("Couldn't enforce on deployment %s: failed to retrieve: %s", indicatorInfo.deploymentID, err)
+			logger.Errorf("Couldn't enforce on deployment %s: failed to retrieve: %s", info.GetDeploymentId(), err)
 			continue
 		}
 		if !exists {
-			logger.Errorf("Couldn't enforce on deployment %s: not found in store", indicatorInfo.deploymentID)
+			logger.Errorf("Couldn't enforce on deployment %s: not found in store", info.GetDeploymentId())
 			continue
 		}
-		enforcementAction := createEnforcementAction(deployment, indicatorInfo.containerID)
+		enforcementAction := createEnforcementAction(deployment, info.GetSignal().GetContainerId())
 		if enforcementAction == nil {
-			logger.Errorf("Couldn't enforce on container %s, not found in deployment %s/%s", indicatorInfo.containerID,
+			logger.Errorf("Couldn't enforce on container %s, not found in deployment %s/%s", info.GetSignal().GetContainerId(),
 				deployment.GetNamespace(), deployment.GetName())
 			continue
 		}
-		injected := enforcementInjector.InjectEnforcement(enforcementAction)
+		injected := indicatorInfo.enforcementInjector.InjectEnforcement(enforcementAction)
 		if !injected {
 			logger.Errorf("Failed to inject enforcement action: %s", proto.MarshalTextString(enforcementAction))
 		}
@@ -125,8 +129,8 @@ func (m *managerImpl) addToQueue(indicator *v1.ProcessIndicator, injector pipeli
 	m.queueLock.Lock()
 	defer m.queueLock.Unlock()
 
-	m.queuedIndicatorsToContainers[indicator.GetId()] = indicatorInfoWithInjector{
-		info:                indicatorInfo{deploymentID: indicator.GetDeploymentId(), containerID: indicator.GetSignal().GetContainerId()},
+	m.queuedIndicators[indicator.GetId()] = indicatorWithInjector{
+		indicator:           indicator,
 		enforcementInjector: injector,
 	}
 }
@@ -260,10 +264,10 @@ func determineEnforcement(alerts []*v1.Alert) (alertID string, action v1.Enforce
 	return
 }
 
-func uniqueDeploymentIDs(indicatorsToInfo map[string]indicatorInfoWithInjector) []string {
+func uniqueDeploymentIDs(indicatorsToInfo map[string]indicatorWithInjector) []string {
 	m := mapset.NewSet()
 	for _, infoWithInjector := range indicatorsToInfo {
-		deploymentID := infoWithInjector.info.deploymentID
+		deploymentID := infoWithInjector.indicator.GetDeploymentId()
 		if deploymentID == "" {
 			continue
 		}
@@ -272,8 +276,8 @@ func uniqueDeploymentIDs(indicatorsToInfo map[string]indicatorInfoWithInjector) 
 	return set.StringSliceFromSet(m)
 }
 
-func containersToKill(alerts []*v1.Alert, indicatorsToInfo map[string]indicatorInfoWithInjector) map[indicatorInfo]pipeline.EnforcementInjector {
-	containersSet := make(map[indicatorInfo]pipeline.EnforcementInjector)
+func containersToKill(alerts []*v1.Alert, indicatorsToInfo map[string]indicatorWithInjector) map[string]indicatorWithInjector {
+	containersSet := make(map[string]indicatorWithInjector)
 
 	for _, alert := range alerts {
 		if alert.GetEnforcement().GetAction() != v1.EnforcementAction_KILL_POD_ENFORCEMENT {
@@ -283,7 +287,7 @@ func containersToKill(alerts []*v1.Alert, indicatorsToInfo map[string]indicatorI
 		for _, v := range violations {
 			for _, singleIndicator := range v.GetProcesses() {
 				if infoWithInjector, ok := indicatorsToInfo[singleIndicator.GetId()]; ok {
-					containersSet[infoWithInjector.info] = infoWithInjector.enforcementInjector
+					containersSet[infoWithInjector.indicator.GetSignal().GetContainerId()] = infoWithInjector
 				}
 			}
 		}

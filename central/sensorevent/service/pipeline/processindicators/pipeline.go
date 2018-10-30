@@ -40,9 +40,5 @@ func (s *pipelineImpl) Run(event *v1.SensorEvent, injector pipeline.EnforcementI
 
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) process(indicator *v1.ProcessIndicator, injector pipeline.EnforcementInjector) error {
-	err := s.indicators.AddProcessIndicator(indicator)
-	if err != nil {
-		return err
-	}
 	return s.manager.IndicatorAdded(indicator, injector)
 }

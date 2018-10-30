@@ -15,6 +15,7 @@ type DataStore interface {
 	GetProcessIndicator(id string) (*v1.ProcessIndicator, bool, error)
 	GetProcessIndicators() ([]*v1.ProcessIndicator, error)
 	AddProcessIndicator(*v1.ProcessIndicator) error
+	AddProcessIndicators(...*v1.ProcessIndicator) error
 	RemoveProcessIndicator(id string) error
 	RemoveProcessIndicatorsByDeployment(id string) error
 }

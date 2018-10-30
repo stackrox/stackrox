@@ -33,6 +33,19 @@ func (ds *datastoreImpl) GetProcessIndicators() ([]*v1.ProcessIndicator, error) 
 	return ds.storage.GetProcessIndicators()
 }
 
+func (ds *datastoreImpl) AddProcessIndicators(indicators ...*v1.ProcessIndicator) error {
+	removedIndicators, err := ds.storage.AddProcessIndicators(indicators...)
+	if err != nil {
+		return err
+	}
+	if len(removedIndicators) > 0 {
+		if err := ds.indexer.DeleteProcessIndicators(removedIndicators...); err != nil {
+			return err
+		}
+	}
+	return ds.indexer.AddProcessIndicators(indicators)
+}
+
 func (ds *datastoreImpl) AddProcessIndicator(i *v1.ProcessIndicator) error {
 	removedIndicator, err := ds.storage.AddProcessIndicator(i)
 	if err != nil {

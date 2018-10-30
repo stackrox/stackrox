@@ -47,7 +47,6 @@ func (b *indexerImpl) DeleteProcessIndicator(id string) error {
 // DeleteIndicator deletes the indicator from the index
 func (b *indexerImpl) DeleteProcessIndicators(ids ...string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.RemoveMany, "ProcessIndicator")
-
 	batch := b.index.NewBatch()
 	for _, id := range ids {
 		batch.Delete(id)

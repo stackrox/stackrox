@@ -3,11 +3,12 @@ package lifecycle
 import (
 	"time"
 
-	"github.com/stackrox/rox/central/deployment/datastore"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/detection/utils"
 	"github.com/stackrox/rox/central/enrichment"
+	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
@@ -37,15 +38,16 @@ type Manager interface {
 
 // NewManager returns a new manager with the injected dependencies.
 func NewManager(enricher enrichment.Enricher, deploytimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
-	deploymentDatastore datastore.DataStore, alertManager utils.AlertManager) Manager {
+	deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore, alertManager utils.AlertManager) Manager {
 	m := &managerImpl{
 		enricher:            enricher,
 		deploytimeDetector:  deploytimeDetector,
 		runtimeDetector:     runtimeDetector,
 		alertManager:        alertManager,
 		deploymentDataStore: deploymentDatastore,
+		processesDataStore:  processesDataStore,
 
-		queuedIndicatorsToContainers: make(map[string]indicatorInfoWithInjector),
+		queuedIndicators: make(map[string]indicatorWithInjector),
 
 		limiter: rate.NewLimiter(rate.Every(rateLimitDuration), 5),
 		ticker:  time.NewTicker(tickerDuration),
