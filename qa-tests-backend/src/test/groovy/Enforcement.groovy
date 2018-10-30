@@ -55,6 +55,7 @@ class Enforcement extends BaseSpecification {
         }.find { it == true }
         assert alert.enforcement.action == EnforcementAction.KILL_POD_ENFORCEMENT
         println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        assert Services.getAlertEnforcementCount("kill-enforcement-int", APT_GET_POLICY) > 0
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
@@ -106,6 +107,9 @@ class Enforcement extends BaseSpecification {
         assert replicaCount == 0
         println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
+        assert Services.getAlertEnforcementCount(
+                "scale-down-enforcement-int",
+                CONTAINER_PORT_22_POLICY) == 1
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
@@ -159,6 +163,9 @@ class Enforcement extends BaseSpecification {
         assert orchestrator.getDeploymentUnavailableReplicaCount(d) ==
                 orchestrator.getDeploymentReplicaCount(d)
         assert alert.enforcement.action == EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
+        assert Services.getAlertEnforcementCount(
+                "node-constraint-enforcement-int",
+                CONTAINER_PORT_22_POLICY) == 1
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
@@ -255,6 +262,9 @@ class Enforcement extends BaseSpecification {
         assert orchestrator.getDeploymentNodeSelectors(d) == null
         assert orchestrator.getDeploymentUnavailableReplicaCount(d) !=
                 orchestrator.getDeploymentReplicaCount(d)
+        assert Services.getAlertEnforcementCount(
+                "scale-node-deployment-enforcement-int",
+                CONTAINER_PORT_22_POLICY) == 1
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
@@ -310,6 +320,9 @@ class Enforcement extends BaseSpecification {
                 orchestrator.getDaemonSetReplicaCount(d)
         assert alert.enforcement.action == EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
         assert orchestrator.getDaemonSetReplicaCount(d) == 0
+        assert Services.getAlertEnforcementCount(
+                "scale-node-daemonset-enforcement-int",
+                CONTAINER_PORT_22_POLICY) == 1
 
         cleanup:
         "restore enforcement state of policy and remove deployment"

@@ -124,6 +124,12 @@ class Services extends BaseService {
         return getAlertClient().getAlertTimeseries(request)
       }
 
+    static int getAlertEnforcementCount(String deploymentName, String policyName) {
+        def violations = getViolations(ListAlertsRequest.newBuilder()
+                .setQuery("Deployment:${deploymentName}+Policy:${policyName}").build())
+        return violations.get(0)?.enforcementCount
+    }
+
     static Alert getViolaton(String id) {
         return getAlertClient().getAlert(getResourceByID(id))
       }
