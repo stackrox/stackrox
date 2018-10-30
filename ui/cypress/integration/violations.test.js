@@ -87,14 +87,14 @@ describe('Violations page', () => {
             .should('not.be.visible');
     });
 
-    it('should have 3 tabs in the sidepanel', () => {
+    it('should have 4 tabs in the sidepanel', () => {
         mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
         cy.get(ViolationsPageSelectors.panels)
             .eq(1)
             .find(ViolationsPageSelectors.sidePanel.tabs)
-            .should('have.length', 3);
+            .should('have.length', 4);
         cy.get(ViolationsPageSelectors.panels)
             .eq(1)
             .find(ViolationsPageSelectors.sidePanel.tabs)
@@ -104,12 +104,17 @@ describe('Violations page', () => {
             .eq(1)
             .find(ViolationsPageSelectors.sidePanel.tabs)
             .eq(1)
-            .should('have.text', 'Deployment Details');
+            .should('have.text', 'Enforcement');
         cy.get(ViolationsPageSelectors.panels)
             .eq(1)
             .find(ViolationsPageSelectors.sidePanel.tabs)
             .eq(2)
-            .should('have.text', 'Policy Details');
+            .should('have.text', 'Deployment');
+        cy.get(ViolationsPageSelectors.panels)
+            .eq(1)
+            .find(ViolationsPageSelectors.sidePanel.tabs)
+            .eq(3)
+            .should('have.text', 'Policy');
     });
 
     it('should have a collapsible card for runtime violation', () => {
@@ -163,7 +168,7 @@ describe('Violations page', () => {
         cy.wait('@alertById');
         cy.get(ViolationsPageSelectors.panels)
             .eq(1)
-            .get(ViolationsPageSelectors.sidePanel.getTabByIndex(1))
+            .get(ViolationsPageSelectors.sidePanel.getTabByIndex(2))
             .click();
         cy.get(ViolationsPageSelectors.collapsible.header).should('have.length', 3);
         cy.get(ViolationsPageSelectors.collapsible.header)

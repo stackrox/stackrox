@@ -8,6 +8,7 @@ import { selectors } from 'reducers';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import Panel from 'Components/Panel';
+import { Details as EnforcementDetails } from 'Containers/Violations/Enforcement/Details';
 import DeploymentDetails from '../Risk/DeploymentDetails';
 import ViolationsDetails from './ViolationsDetails';
 import { Panel as PolicyDetails } from '../Policies/Wizard/Details/Panel';
@@ -28,8 +29,9 @@ class ViolationsPanel extends Component {
         const { alert } = this.props;
         const riskPanelTabs = [
             { text: 'Violation' },
-            { text: 'Deployment Details' },
-            { text: 'Policy Details' }
+            { text: 'Enforcement' },
+            { text: 'Deployment' },
+            { text: 'Policy' }
         ];
         const isLoading = !alert; // TODO: poor-man loading check until a proper one in place
         const content = isLoading ? (
@@ -45,6 +47,11 @@ class ViolationsPanel extends Component {
                             violations={alert.violations}
                             firstOccurred={alert.firstOccurred}
                         />
+                    </div>
+                </TabContent>
+                <TabContent>
+                    <div className="flex flex-1 flex-col">
+                        <EnforcementDetails listAlert={alert} />
                     </div>
                 </TabContent>
                 <TabContent>
