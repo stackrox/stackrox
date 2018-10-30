@@ -37,7 +37,7 @@ type Registry interface {
 	// URLPathPrefix returns the path prefix (including a trailing slash) for URLs handled by this registry.
 	URLPathPrefix() string
 
-	CreateAuthProvider(ctx context.Context, typ, name, uiEndpoint string, enabled bool, config map[string]string) (AuthProvider, error)
+	CreateAuthProvider(ctx context.Context, typ, name, uiEndpoint string, enabled bool, validated bool, config map[string]string) (AuthProvider, error)
 	UpdateAuthProvider(ctx context.Context, id string, name *string, enabled *bool) (AuthProvider, error)
 	GetAuthProvider(ctx context.Context, id string) AuthProvider
 	GetAuthProviders(ctx context.Context, name, typ *string) []AuthProvider

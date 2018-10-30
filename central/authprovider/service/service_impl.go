@@ -95,7 +95,7 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 	if providerReq.GetLoginUrl() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Auth Provider loginUrl field must be empty")
 	}
-	provider, err := s.registry.CreateAuthProvider(ctx, providerReq.GetType(), providerReq.GetName(), providerReq.GetUiEndpoint(), providerReq.GetEnabled(), providerReq.GetConfig())
+	provider, err := s.registry.CreateAuthProvider(ctx, providerReq.GetType(), providerReq.GetName(), providerReq.GetUiEndpoint(), providerReq.GetEnabled(), providerReq.GetValidated(), providerReq.GetConfig())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "could not create auth provider: %v", err)
 	}

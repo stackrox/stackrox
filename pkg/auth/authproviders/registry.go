@@ -125,7 +125,7 @@ func (r *storeBackedRegistry) init() error {
 }
 
 func (r *storeBackedRegistry) createFromStoredDef(ctx context.Context, def *v1.AuthProvider) *authProvider {
-	provider, err := r.createProvider(ctx, def.GetId(), def.GetType(), def.GetName(), def.GetUiEndpoint(), def.GetEnabled(), def.GetConfig())
+	provider, err := r.createProvider(ctx, def.GetId(), def.GetType(), def.GetName(), def.GetUiEndpoint(), def.GetEnabled(), def.GetValidated(), def.GetConfig())
 	if err != nil {
 		log.Errorf("Could not instantiate auth provider for stored configuration: %v", err)
 		return &authProvider{
@@ -144,7 +144,7 @@ func (r *storeBackedRegistry) getFactory(typ string) BackendFactory {
 	return r.backendFactories[typ]
 }
 
-func (r *storeBackedRegistry) createProvider(ctx context.Context, id, typ, name, uiEndpoint string, enabled bool, config map[string]string) (*authProvider, error) {
+func (r *storeBackedRegistry) createProvider(ctx context.Context, id, typ, name, uiEndpoint string, enabled bool, validated bool, config map[string]string) (*authProvider, error) {
 	factory := r.getFactory(typ)
 	if factory == nil {
 		return nil, fmt.Errorf("unknown auth provider type %s", typ)
@@ -162,6 +162,7 @@ func (r *storeBackedRegistry) createProvider(ctx context.Context, id, typ, name,
 			UiEndpoint: uiEndpoint,
 			Enabled:    enabled,
 			Config:     effectiveConfig,
+			Validated:  validated,
 		},
 		registry:   r,
 		roleMapper: r.defaultRoleMapper,
@@ -185,9 +186,9 @@ func (r *storeBackedRegistry) registerProvider(provider *authProvider) {
 	provider.issuer = issuer
 }
 
-func (r *storeBackedRegistry) CreateAuthProvider(ctx context.Context, typ, name, uiEndpoint string, enabled bool, config map[string]string) (AuthProvider, error) {
+func (r *storeBackedRegistry) CreateAuthProvider(ctx context.Context, typ, name, uiEndpoint string, enabled bool, validate bool, config map[string]string) (AuthProvider, error) {
 	id := uuid.NewV4().String()
-	newProvider, err := r.createProvider(ctx, id, typ, name, uiEndpoint, enabled, config)
+	newProvider, err := r.createProvider(ctx, id, typ, name, uiEndpoint, enabled, validate, config)
 	if err != nil {
 		return nil, err
 	}
