@@ -14,6 +14,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"syscall"
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
@@ -211,6 +212,8 @@ func (h *Handler) extractFromMD(ctx context.Context) (*RequestInfo, error) {
 
 	timeDelta := h.clock.SinceEpoch() - serializedRI.RequestMonotime
 	if timeDelta < 0 || timeDelta > maxTimeDelta {
+		log.Errorf("UNEXPECTED: decoded request info has invalid time delta %v", timeDelta)
+		syscall.Kill(syscall.Getpid(), syscall.SIGABRT)
 		return nil, fmt.Errorf("decoded request info has invalid time delta %v", timeDelta)
 	}
 
