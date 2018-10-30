@@ -73,7 +73,6 @@ type QueryBuilder struct {
 	ids            []string
 	linkedFields   [][]fieldValue
 
-	raw               string
 	highlightedFields map[FieldLabel]struct{}
 }
 
@@ -218,12 +217,6 @@ func (qb *QueryBuilder) AddBools(k FieldLabel, v ...bool) *QueryBuilder {
 	return qb
 }
 
-// AddStringQuery adds a raw string query.
-func (qb *QueryBuilder) AddStringQuery(v string) *QueryBuilder {
-	qb.raw = v
-	return qb
-}
-
 // AddNumericField adds a numeric field.
 func (qb *QueryBuilder) AddNumericField(k FieldLabel, comparator v1.Comparator, value float32) *QueryBuilder {
 	return qb.AddStrings(k, NumericQueryString(comparator, value))
@@ -241,9 +234,6 @@ func (qb *QueryBuilder) Query() string {
 		pairs = append(pairs, fmt.Sprintf("%s:%s", k, strings.Join(values, ",")))
 	}
 	sort.Strings(pairs)
-	if qb.raw != "" {
-		return fmt.Sprintf("Has:%s+", qb.raw) + strings.Join(pairs, "+")
-	}
 	return strings.Join(pairs, "+")
 }
 
@@ -273,9 +263,6 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 		queries = append(queries, matchLinkedFieldsQuery(linkedFieldsGroup))
 	}
 
-	if qb.raw != "" {
-		queries = append(queries, stringQuery(qb.raw))
-	}
 	return ConjunctionQuery(queries...)
 }
 

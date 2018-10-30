@@ -45,7 +45,7 @@ func TestParseRawQuery(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedQuery, actualQuery)
 
-	query = fmt.Sprintf("%s:field1,field12 + Has:rawstuff+ %s:field2", DeploymentName, Category)
+	query = fmt.Sprintf("%s:field1,field12 + %s:field2", DeploymentName, Category)
 
 	expectedQuery = &v1.Query{
 		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
@@ -68,13 +68,6 @@ func TestParseRawQuery(t *testing.T) {
 						}},
 					},
 				}}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_StringQuery{
-							StringQuery: &v1.StringQuery{Query: "rawstuff"},
-						},
-					},
-				}},
 				{Query: &v1.Query_BaseQuery{
 					BaseQuery: &v1.BaseQuery{
 						Query: &v1.BaseQuery_MatchFieldQuery{

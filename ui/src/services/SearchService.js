@@ -16,11 +16,6 @@ export function fetchOptions(query = '') {
             label: `${option}:`,
             type: 'categoryOption'
         }));
-        options.unshift({
-            value: `Has:`,
-            label: `Has:`,
-            type: 'categoryOption'
-        });
         return { options };
     });
 }

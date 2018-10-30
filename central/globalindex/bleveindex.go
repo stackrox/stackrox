@@ -69,6 +69,7 @@ func InitializeIndices(mossPath string) (bleve.Index, error) {
 	if err != nil {
 		return nil, err
 	}
+	go startMonitoring(mossPath)
 	return globalIndex, nil
 }
 

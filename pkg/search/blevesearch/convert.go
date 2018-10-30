@@ -52,11 +52,6 @@ func (c *queryConverter) baseQueryToBleve(bq *v1.BaseQuery) (bleveQuery query.Qu
 	}
 
 	switch bq := bq.GetQuery().(type) {
-	case *v1.BaseQuery_StringQuery:
-		if bq.StringQuery.GetQuery() != "" {
-			bleveQuery = NewMatchPhrasePrefixQuery("", bq.StringQuery.GetQuery())
-		}
-		return
 	case *v1.BaseQuery_MatchFieldQuery:
 		return c.matchLinkedFieldsQueryToBleve([]*v1.MatchFieldQuery{bq.MatchFieldQuery})
 	case *v1.BaseQuery_MatchLinkedFieldsQuery:

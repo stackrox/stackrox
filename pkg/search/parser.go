@@ -46,11 +46,6 @@ func parseRawQuery(query string) (*v1.Query, error) {
 }
 
 func queryFromKeyValue(key, commaSeparatedValues string) *v1.Query {
-	// Check if it's a raw string query.
-	if strings.EqualFold(key, "has") {
-		return stringQuery(commaSeparatedValues)
-	}
-
 	valueSlice := strings.Split(commaSeparatedValues, ",")
 
 	return queryFromFieldValues(key, valueSlice, false)
@@ -115,12 +110,6 @@ func queryFromBaseQuery(baseQuery *v1.BaseQuery) *v1.Query {
 	return &v1.Query{
 		Query: &v1.Query_BaseQuery{BaseQuery: baseQuery},
 	}
-}
-
-func stringQuery(value string) *v1.Query {
-	return queryFromBaseQuery(&v1.BaseQuery{
-		Query: &v1.BaseQuery_StringQuery{StringQuery: &v1.StringQuery{Query: value}},
-	})
 }
 
 func matchFieldQuery(field, value string, highlight bool) *v1.Query {
