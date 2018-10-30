@@ -27,7 +27,7 @@ func testHtpasswd(t *testing.T, password string) {
 
 	assert.NotEmpty(t, cfg.Password)
 
-	hf, err := htpasswd.ReadHashFile(bytes.NewBufferString(htpasswdFile))
+	hf, err := htpasswd.ReadHashFile(bytes.NewBuffer(htpasswdFile))
 	require.NoError(t, err)
 	assert.True(t, hf.Check(adminUsername, cfg.Password))
 }

@@ -104,11 +104,11 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("sensor-cert.pem", id.GetCertificate(), false)); err != nil {
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("sensor-cert.pem", id.GetCertificatePem(), false)); err != nil {
 		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "sensor-cert.pem", err))
 		return
 	}
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("sensor-key.pem", id.GetPrivateKey(), false)); err != nil {
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("sensor-key.pem", id.GetPrivateKeyPem(), false)); err != nil {
 		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "sensor-key.pem", err))
 		return
 	}
@@ -127,11 +127,11 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("collector-cert.pem", id.GetCertificate(), false)); err != nil {
+		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("collector-cert.pem", id.GetCertificatePem(), false)); err != nil {
 			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "collector-cert.pem", err))
 			return
 		}
-		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("collector-key.pem", id.GetPrivateKey(), false)); err != nil {
+		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("collector-key.pem", id.GetPrivateKeyPem(), false)); err != nil {
 			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "collector-key.pem", err))
 			return
 		}
@@ -146,7 +146,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// Add the files required for monitoring
-		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-password", string(password), false)); err != nil {
+		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-password", password, false)); err != nil {
 			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "monitoring-password", err))
 			return
 		}
@@ -155,7 +155,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			writeGRPCStyleError(w, codes.Internal, err)
 			return
 		}
-		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-ca.pem", string(monitoringCA), false)); err != nil {
+		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-ca.pem", monitoringCA, false)); err != nil {
 			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "monitoring-ca.pem", err))
 			return
 		}
@@ -173,7 +173,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("ca.pem", authority.GetAuthorities()[0].GetCertificate(), false)); err != nil {
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("ca.pem", authority.GetAuthorities()[0].GetCertificatePem(), false)); err != nil {
 		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "ca.pem", err))
 		return
 	}

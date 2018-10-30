@@ -135,15 +135,15 @@ type deployer interface {
 // Deployers contains all implementations for central deployment generators.
 var Deployers = make(map[v1.ClusterType]deployer)
 
-func executeTemplate(temp *template.Template, c *Config) (string, error) {
+func executeTemplate(temp *template.Template, c *Config) ([]byte, error) {
 	var b []byte
 	buf := bytes.NewBuffer(b)
 	err := temp.Execute(buf, c)
 	if err != nil {
 		log.Errorf("Template execution failed: %s", err)
-		return "", err
+		return nil, err
 	}
-	return buf.String(), nil
+	return buf.Bytes(), nil
 }
 
 func generateMonitoringImage(mainImage string) string {
@@ -179,7 +179,7 @@ func renderFilenames(filenames []string, c *Config, staticFilenames ...string) (
 		}
 		files = append(files, f)
 	}
-	files = append(files, zip.NewFile("README", standardizeWhitespace(Deployers[c.ClusterType].Instructions()), false))
+	files = append(files, zip.NewFile("README", []byte(standardizeWhitespace(Deployers[c.ClusterType].Instructions())), false))
 
 	if features.HtpasswdAuth.Enabled() {
 		htpasswd, err := generateHtpasswd(c)
@@ -187,7 +187,7 @@ func renderFilenames(filenames []string, c *Config, staticFilenames ...string) (
 			return nil, err
 		}
 		files = append(files, zip.NewFile("htpasswd", htpasswd, false))
-		files = append(files, zip.NewFile("password", c.Password+"\n", false))
+		files = append(files, zip.NewFile("password", []byte(c.Password+"\n"), false))
 	}
 	return files, nil
 }

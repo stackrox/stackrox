@@ -35,13 +35,13 @@ message CreateServiceIdentityRequest {
 }
 
 message CreateServiceIdentityResponse {
-    ServiceIdentity identity    = 1;
-    string          certificate = 2;
-    string          private_key = 3;
+    ServiceIdentity identity       = 1;
+    bytes          certificate_pem = 2;
+    bytes          private_key_pem = 3;
 }
 
 message Authority {
-    string certificate = 1;
+    bytes certificate_pem = 1;
 }
 
 message Authorities {

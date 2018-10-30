@@ -11,7 +11,7 @@ import (
 )
 
 // NewFile returns a File object with the given parameters
-func NewFile(name, content string, exec bool) *v1.File {
+func NewFile(name string, content []byte, exec bool) *v1.File {
 	return &v1.File{
 		Name:       name,
 		Content:    content,
@@ -25,7 +25,7 @@ func NewFromFile(srcFilename, tgtFilename string, exec bool) (*v1.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewFile(tgtFilename, string(contents), exec), nil
+	return NewFile(tgtFilename, contents, exec), nil
 }
 
 // AddFile adds a file to the zip writer
@@ -41,7 +41,7 @@ func AddFile(zipW *zip.Writer, file *v1.File) error {
 	if err != nil {
 		return fmt.Errorf("file creation: %s", err)
 	}
-	_, err = f.Write([]byte(file.GetContent()))
+	_, err = f.Write(file.GetContent())
 	if err != nil {
 		return fmt.Errorf("file writing: %s", err)
 	}

@@ -16,7 +16,7 @@ const (
 	pwCharacters = `abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`
 )
 
-func generateHtpasswd(c *Config) (string, error) {
+func generateHtpasswd(c *Config) ([]byte, error) {
 	if c.Password == "" {
 		c.Password = createPassword()
 	}
@@ -25,7 +25,7 @@ func generateHtpasswd(c *Config) (string, error) {
 	hf.Set(adminUsername, c.Password)
 	buf := new(bytes.Buffer)
 	err := hf.Write(buf)
-	return buf.String(), err
+	return buf.Bytes(), err
 }
 
 func createPassword() string {

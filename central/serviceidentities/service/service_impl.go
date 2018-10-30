@@ -78,9 +78,9 @@ func (s *serviceImpl) CreateServiceIdentity(ctx context.Context, request *v1.Cre
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &v1.CreateServiceIdentityResponse{
-		Identity:    id,
-		Certificate: string(cert),
-		PrivateKey:  string(key),
+		Identity:       id,
+		CertificatePem: cert,
+		PrivateKeyPem:  key,
 	}, nil
 }
 
@@ -93,7 +93,7 @@ func (s *serviceImpl) GetAuthorities(ctx context.Context, request *v1.Empty) (*v
 	return &v1.Authorities{
 		Authorities: []*v1.Authority{
 			{
-				Certificate: string(ca),
+				CertificatePem: ca,
 			},
 		},
 	}, nil

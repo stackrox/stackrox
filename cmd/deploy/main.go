@@ -51,7 +51,7 @@ func generateJWTSigningKey(zipW *zip.Writer) error {
 	if err != nil {
 		return fmt.Errorf("couldn't generate private key: %s", err)
 	}
-	err = zipPkg.AddFile(zipW, zipPkg.NewFile("jwt-key.der", string(x509.MarshalPKCS1PrivateKey(privateKey)), false))
+	err = zipPkg.AddFile(zipW, zipPkg.NewFile("jwt-key.der", x509.MarshalPKCS1PrivateKey(privateKey), false))
 	if err != nil {
 		return fmt.Errorf("failed to write jwt key: %s", err)
 	}
@@ -69,11 +69,11 @@ func generateMTLSFiles(zipW *zip.Writer) (cert, key []byte, err error) {
 		err = fmt.Errorf("could not generate keypair: %s", err)
 		return
 	}
-	if err = zipPkg.AddFile(zipW, zipPkg.NewFile("ca.pem", string(cert), false)); err != nil {
+	if err = zipPkg.AddFile(zipW, zipPkg.NewFile("ca.pem", cert, false)); err != nil {
 		err = fmt.Errorf("failed to write cert.pem: %s", err)
 		return
 	}
-	if err = zipPkg.AddFile(zipW, zipPkg.NewFile("ca-key.pem", string(key), false)); err != nil {
+	if err = zipPkg.AddFile(zipW, zipPkg.NewFile("ca-key.pem", key, false)); err != nil {
 		err = fmt.Errorf("failed to write key.pem: %s", err)
 		return
 	}
@@ -86,10 +86,10 @@ func generateMonitoringFiles(zipW *zip.Writer, caCert, caKey []byte) error {
 	if err != nil {
 		return err
 	}
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-db-cert.pem", string(monitoringCert), false)); err != nil {
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-db-cert.pem", monitoringCert, false)); err != nil {
 		return fmt.Errorf("failed to write cert.pem: %s", err)
 	}
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-db-key.pem", string(monitoringKey), false)); err != nil {
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-db-key.pem", monitoringKey, false)); err != nil {
 		return fmt.Errorf("failed to write key.pem: %s", err)
 	}
 	monitoringCert, monitoringKey, err = mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: v1.ServiceType_MONITORING_UI_SERVICE, Identifier: "Monitoring"},
@@ -97,15 +97,15 @@ func generateMonitoringFiles(zipW *zip.Writer, caCert, caKey []byte) error {
 	if err != nil {
 		return err
 	}
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-ui-cert.pem", string(monitoringCert), false)); err != nil {
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-ui-cert.pem", monitoringCert, false)); err != nil {
 		return fmt.Errorf("failed to write cert.pem: %s", err)
 	}
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-ui-key.pem", string(monitoringKey), false)); err != nil {
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-ui-key.pem", monitoringKey, false)); err != nil {
 		return fmt.Errorf("failed to write key.pem: %s", err)
 	}
 
 	// Generate monitoring password
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-password", string(uuid.NewV4().String()), false)); err != nil {
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-password", []byte(uuid.NewV4().String()), false)); err != nil {
 		return fmt.Errorf("failed to write monitoring-password: %s", err)
 	}
 	return nil

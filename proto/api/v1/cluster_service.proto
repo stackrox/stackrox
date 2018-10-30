@@ -53,7 +53,7 @@ message Cluster {
 
 message File {
     string name     = 1;
-    string content  = 2;
+    bytes content  = 2;
     bool executable = 3;
 }
 

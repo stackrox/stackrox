@@ -43,15 +43,15 @@ type Deployer interface {
 
 var deployers = make(map[v1.ClusterType]Deployer)
 
-func executeTemplate(temp *template.Template, fields map[string]interface{}) (string, error) {
+func executeTemplate(temp *template.Template, fields map[string]interface{}) ([]byte, error) {
 	var b []byte
 	buf := bytes.NewBuffer(b)
 	err := temp.Execute(buf, fields)
 	if err != nil {
 		log.Errorf("template execution: %s", err)
-		return "", err
+		return nil, err
 	}
-	return buf.String(), nil
+	return buf.Bytes(), nil
 }
 
 func generateCollectorImage(mainImageName *v1.ImageName, tag string) *v1.ImageName {
