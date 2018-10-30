@@ -16,6 +16,7 @@ const (
 //go:generate mockery -name=Store
 type Store interface {
 	ListSecrets(id []string) ([]*v1.ListSecret, error)
+	ListAllSecrets() ([]*v1.ListSecret, error)
 
 	CountSecrets() (int, error)
 	GetAllSecrets() ([]*v1.Secret, error)

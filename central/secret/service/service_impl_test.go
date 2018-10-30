@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
@@ -156,13 +157,11 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreRelationshipFailure(
 
 // Test happy path for searching secrets and relationships
 func (suite *SecretServiceTestSuite) TestSearchSecret() {
-	query := &v1.Query{}
-
 	expectedReturns := []*v1.ListSecret{
 		{Id: "id1"},
 	}
 
-	suite.mockSecretStore.On("SearchListSecrets", query).Return(expectedReturns, nil)
+	suite.mockSecretStore.On("ListSecrets").Return(expectedReturns, nil)
 
 	_, err := suite.service.ListSecrets((context.Context)(nil), &v1.RawQuery{})
 	suite.NoError(err)
@@ -174,10 +173,10 @@ func (suite *SecretServiceTestSuite) TestSearchSecret() {
 func (suite *SecretServiceTestSuite) TestSearchSecretFailure() {
 	expectedError := fmt.Errorf("failure")
 
-	suite.mockSecretStore.On("SearchListSecrets", &v1.Query{}).Return(([]*v1.ListSecret)(nil), expectedError)
+	suite.mockSecretStore.On("ListSecrets").Return(([]*v1.ListSecret)(nil), expectedError)
 
 	_, actualErr := suite.service.ListSecrets((context.Context)(nil), &v1.RawQuery{})
-	suite.Equal(expectedError, actualErr)
+	suite.True(strings.Contains(actualErr.Error(), expectedError.Error()))
 
 	suite.mockSecretStore.AssertExpectations(suite.T())
 }

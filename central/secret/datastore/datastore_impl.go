@@ -13,6 +13,18 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
+func (d *datastoreImpl) ListSecrets() ([]*v1.ListSecret, error) {
+	return d.storage.ListAllSecrets()
+}
+
+func (d *datastoreImpl) buildIndex() error {
+	secrets, err := d.storage.GetAllSecrets()
+	if err != nil {
+		return err
+	}
+	return d.indexer.UpsertSecrets(secrets...)
+}
+
 func (d *datastoreImpl) GetSecret(id string) (*v1.Secret, bool, error) {
 	return d.storage.GetSecret(id)
 }

@@ -61,6 +61,29 @@ func (_m *DataStore) GetSecret(id string) (*v1.Secret, bool, error) {
 	return r0, r1, r2
 }
 
+// ListSecrets provides a mock function with given fields:
+func (_m *DataStore) ListSecrets() ([]*v1.ListSecret, error) {
+	ret := _m.Called()
+
+	var r0 []*v1.ListSecret
+	if rf, ok := ret.Get(0).(func() []*v1.ListSecret); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*v1.ListSecret)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RemoveSecret provides a mock function with given fields: id
 func (_m *DataStore) RemoveSecret(id string) error {
 	ret := _m.Called(id)

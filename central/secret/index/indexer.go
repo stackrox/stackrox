@@ -8,7 +8,8 @@ import (
 // Indexer indexes secret information.
 //go:generate mockery -name=Indexer
 type Indexer interface {
-	UpsertSecret(sar *v1.Secret) error
+	UpsertSecret(*v1.Secret) error
+	UpsertSecrets(...*v1.Secret) error
 	RemoveSecret(id string) error
 }
 

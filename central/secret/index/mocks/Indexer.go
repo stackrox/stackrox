@@ -24,13 +24,33 @@ func (_m *Indexer) RemoveSecret(id string) error {
 	return r0
 }
 
-// UpsertSecret provides a mock function with given fields: sar
-func (_m *Indexer) UpsertSecret(sar *v1.Secret) error {
-	ret := _m.Called(sar)
+// UpsertSecret provides a mock function with given fields: _a0
+func (_m *Indexer) UpsertSecret(_a0 *v1.Secret) error {
+	ret := _m.Called(_a0)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*v1.Secret) error); ok {
-		r0 = rf(sar)
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertSecrets provides a mock function with given fields: _a0
+func (_m *Indexer) UpsertSecrets(_a0 ...*v1.Secret) error {
+	_va := make([]interface{}, len(_a0))
+	for _i := range _a0 {
+		_va[_i] = _a0[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(...*v1.Secret) error); ok {
+		r0 = rf(_a0...)
 	} else {
 		r0 = ret.Error(0)
 	}

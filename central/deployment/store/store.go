@@ -1,8 +1,9 @@
 package store
 
 import (
+	"fmt"
+
 	"github.com/boltdb/bolt"
-	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/logging"
@@ -10,7 +11,6 @@ import (
 
 const deploymentBucket = "deployments"
 const deploymentListBucket = "deployments_list"
-const deploymentGraveyard = "deployments_graveyard"
 
 var (
 	log = logging.LoggerForModule()
@@ -30,11 +30,14 @@ type Store interface {
 }
 
 // New returns a new Store instance using the provided bolt DB instance.
-func New(db *bolt.DB, ranker *ranking.Ranker) Store {
+func New(db *bolt.DB) (Store, error) {
 	bolthelper.RegisterBucketOrPanic(db, deploymentBucket)
 	bolthelper.RegisterBucketOrPanic(db, deploymentListBucket)
-	return &storeImpl{
-		DB:     db,
-		ranker: ranker,
+	s := &storeImpl{
+		DB: db,
 	}
+	if err := s.initializeRanker(); err != nil {
+		return nil, fmt.Errorf("failed to initialize ranker: %s", err)
+	}
+	return s, nil
 }

@@ -84,13 +84,21 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 
 // ListSecrets returns all secrets that match the query.
 func (s *serviceImpl) ListSecrets(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListSecretsResponse, error) {
-	q, err := search.ParseRawQueryOrEmpty(rawQuery.GetQuery())
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+	var secrets []*v1.ListSecret
+	var err error
+	if rawQuery.GetQuery() == "" {
+		secrets, err = s.storage.ListSecrets()
+	} else {
+		var q *v1.Query
+		q, err = search.ParseRawQueryOrEmpty(rawQuery.GetQuery())
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		secrets, err = s.storage.SearchListSecrets(q)
 	}
-	secrets, err := s.storage.SearchListSecrets(q)
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Internal, "failed to retrieve secrets: %s", err)
 	}
+
 	return &v1.ListSecretsResponse{Secrets: secrets}, nil
 }

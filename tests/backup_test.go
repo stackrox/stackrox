@@ -9,8 +9,7 @@ import (
 	"testing"
 	"time"
 
-	deploymenStore "github.com/stackrox/rox/central/deployment/store"
-	"github.com/stackrox/rox/central/ranking"
+	deploymentStore "github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -69,7 +68,8 @@ func TestBackup(t *testing.T) {
 	b, err := bolthelper.New("backup.db")
 	require.NoError(t, err)
 
-	depStore := deploymenStore.New(b, ranking.NewRanker())
+	depStore, err := deploymentStore.New(b)
+	require.NoError(t, err)
 	deployments, err := depStore.GetDeployments()
 	require.NoError(t, err)
 	assert.NotEmpty(t, deployments)

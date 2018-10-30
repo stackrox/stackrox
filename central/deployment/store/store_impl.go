@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/boltdb/bolt"
@@ -15,6 +16,18 @@ import (
 type storeImpl struct {
 	*bolt.DB
 	ranker *ranking.Ranker
+}
+
+func (b *storeImpl) initializeRanker() error {
+	b.ranker = ranking.NewRanker()
+	deployments, err := b.GetDeployments()
+	if err != nil {
+		return fmt.Errorf("retrieving deployments: %s", err)
+	}
+	for _, deployment := range deployments {
+		b.ranker.Add(deployment.GetId(), deployment.GetRisk().GetScore())
+	}
+	return nil
 }
 
 // GetListDeployment returns a list deployment with given id.

@@ -6,7 +6,6 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -20,7 +19,11 @@ func getDeploymentStore(b *testing.B) Store {
 	if err != nil {
 		b.Fatal(err)
 	}
-	return New(db, ranking.NewRanker())
+	store, err := New(db)
+	if err != nil {
+		b.Fatal(err)
+	}
+	return store
 }
 
 func BenchmarkAddDeployment(b *testing.B) {

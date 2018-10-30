@@ -41,7 +41,8 @@ func (suite *SecretDataStoreTestSuite) SetupSuite() {
 	suite.storage = store.New(db)
 	suite.searcher = secretSearch.New(suite.storage, suite.bleveIndex)
 	suite.indexer = index.New(suite.bleveIndex)
-	suite.datastore = New(suite.storage, suite.indexer, suite.searcher)
+	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)
+	suite.Require().NoError(err)
 }
 
 func (suite *SecretDataStoreTestSuite) TeardownSuite() {

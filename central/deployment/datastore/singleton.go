@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/ranking"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (
@@ -20,16 +20,22 @@ var (
 	searcher search.Searcher
 
 	ad DataStore
+
+	logger = logging.LoggerForModule()
 )
 
 func initialize() {
 	indexer = index.New(globalindex.GetGlobalIndex())
-	storage = store.New(globaldb.GetGlobalDB(), ranking.NewRanker())
 
 	var err error
+	storage, err = store.New(globaldb.GetGlobalDB())
+	if err != nil {
+		logger.Panicf("Failed to initialize deployment store: %s", err)
+	}
+
 	searcher, err = search.New(storage, indexer)
 	if err != nil {
-		panic("unable to load search index for alerts")
+		logger.Panicf("Failed to load deployment index %s", err)
 	}
 
 	ad = New(storage, indexer, searcher, processDataStore.Singleton())

@@ -6,7 +6,6 @@ import (
 
 	"github.com/boltdb/bolt"
 	ptypes "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/dberrors"
@@ -32,12 +31,39 @@ func (suite *DeploymentStoreTestSuite) SetupSuite() {
 	}
 
 	suite.db = db
-	suite.store = New(db, ranking.NewRanker())
+	suite.store, err = New(db)
+	suite.Require().NoError(err)
 }
 
 func (suite *DeploymentStoreTestSuite) TeardownSuite() {
 	suite.db.Close()
 	os.Remove(suite.db.Path())
+}
+
+func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store Store, deployments ...*v1.Deployment) {
+	for _, d := range deployments {
+		// Test retrieval of full objects
+		got, exists, err := store.GetDeployment(d.GetId())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.Equal(d, got)
+
+		// Test retrieval of list objects
+		gotList, exists, err := store.ListDeployment(d.GetId())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.Equal(&v1.ListDeployment{
+			Id:        d.GetId(),
+			Name:      d.GetName(),
+			UpdatedAt: d.GetUpdatedAt(),
+			Priority:  d.GetPriority(),
+		}, gotList)
+	}
+
+	// Test Count
+	count, err := store.CountDeployments()
+	suite.NoError(err)
+	suite.Equal(len(deployments), count)
 }
 
 func (suite *DeploymentStoreTestSuite) TestDeployments() {
@@ -76,61 +102,33 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 		d.Priority = int64(i + 1)
 	}
 
-	for _, d := range deployments {
-		// Test retrieval of full objects
-		got, exists, err := suite.store.GetDeployment(d.GetId())
-		suite.NoError(err)
-		suite.True(exists)
-		suite.Equal(got, d)
-
-		// Test retrieval of list objects
-		gotList, exists, err := suite.store.ListDeployment(d.GetId())
-		suite.NoError(err)
-		suite.True(exists)
-		suite.Equal(&v1.ListDeployment{
-			Id:        d.GetId(),
-			Name:      d.GetName(),
-			UpdatedAt: d.GetUpdatedAt(),
-			Priority:  d.GetPriority(),
-		}, gotList)
-	}
+	suite.verifyDeploymentsAre(suite.store, deployments...)
 
 	// Test Update
 	for _, d := range deployments {
 		d.UpdatedAt = ptypes.TimestampNow()
 		d.Version += "0"
-	}
-
-	for _, d := range deployments {
 		d.Name += "-ext"
 		suite.NoError(suite.store.UpdateDeployment(d))
 	}
 
-	for _, d := range deployments {
-		got, exists, err := suite.store.GetDeployment(d.GetId())
-		suite.NoError(err)
-		suite.True(exists)
-		suite.Equal(got, d)
+	suite.verifyDeploymentsAre(suite.store, deployments...)
 
-		listGot, exists, err := suite.store.ListDeployment(d.GetId())
-		suite.NoError(err)
-		suite.True(exists)
-		suite.Equal(listGot.GetName(), listGot.GetName())
-	}
+	// This verifies that things work as expected on restarts.
+	newStore, err := New(suite.db)
+	suite.Require().NoError(err)
 
-	// Test Count
-	count, err := suite.store.CountDeployments()
-	suite.NoError(err)
-	suite.Equal(len(deployments), count)
+	suite.verifyDeploymentsAre(newStore, deployments...)
 
 	// Test Remove
 	for _, d := range deployments {
 		suite.NoError(suite.store.RemoveDeployment(d.GetId()))
 	}
 
-	for _, d := range deployments {
-		_, exists, err := suite.store.GetDeployment(d.GetId())
-		suite.NoError(err)
-		suite.False(exists)
-	}
+	suite.verifyDeploymentsAre(suite.store)
+
+	newStore, err = New(suite.db)
+	suite.Require().NoError(err)
+
+	suite.verifyDeploymentsAre(newStore)
 }

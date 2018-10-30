@@ -91,6 +91,28 @@ func (s *storeImpl) GetAllSecrets() (secrets []*v1.Secret, err error) {
 	return secrets, err
 }
 
+func (s *storeImpl) ListAllSecrets() (secrets []*v1.ListSecret, err error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.List, "Secret")
+
+	err = s.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(secretListBucket))
+		return bucket.ForEach(func(k, v []byte) error {
+			secret := new(v1.ListSecret)
+			err := proto.Unmarshal(v, secret)
+			if err != nil {
+				return err
+			}
+			secrets = append(secrets, secret)
+			return nil
+
+		})
+	})
+	if err != nil {
+		return nil, err
+	}
+	return secrets, nil
+}
+
 // GetSecret returns the secret for the given id.
 func (s *storeImpl) GetSecret(id string) (secret *v1.Secret, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Secret")
