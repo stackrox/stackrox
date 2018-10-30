@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/role/resources"
@@ -80,6 +81,9 @@ func (s *serviceImpl) GetAuthProviders(ctx context.Context, request *v1.GetAuthP
 	for i, provider := range authProviders {
 		result[i] = provider.AsV1(request.GetClientState())
 	}
+	sort.SliceStable(result, func(i, j int) bool {
+		return result[i].GetName() < result[j].GetName()
+	})
 	return &v1.GetAuthProvidersResponse{AuthProviders: result}, nil
 }
 
