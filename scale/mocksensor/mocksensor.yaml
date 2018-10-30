@@ -1,0 +1,48 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mocksensor
+  namespace: stackrox
+  labels:
+    app: mocksensor
+  annotations:
+    owner: stackrox
+    email: support@stackrox.com
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: mocksensor
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: mocksensor
+    spec:
+      imagePullSecrets:
+        - name: stackrox
+      containers:
+      - image: stackrox/scale:1.9-117-g026c6bf164-dirty
+        name: mocksensor
+        command:
+          - /mocksensor
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log/stackrox/
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+      volumes:
+      - name: certs
+        secret:
+          secretName: sensor-tls
+          items:
+          - key: sensor-cert.pem
+            path: cert.pem
+          - key: sensor-key.pem
+            path: key.pem
+          - key: ca.pem
+            path: ca.pem
+      - name: varlog
+        emptyDir: {}

@@ -217,6 +217,7 @@ image: gazelle clean-image
 		//sensor/kubernetes \
 		//sensor/swarm \
 		//integration-tests/mock-grpc-server \
+		//scale/mocksensor
 
 	make -C ui build
 
@@ -229,11 +230,14 @@ image: gazelle clean-image
 	cp bazel-bin/sensor/swarm/linux_amd64_pure_stripped/swarm image/bin/swarm-sensor
 	cp bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-sensor
 	cp bazel-bin/integration-tests/mock-grpc-server/linux_amd64_pure_stripped/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
+	cp bazel-bin/scale/mocksensor/linux_amd64_pure_stripped/mocksensor scale/image/bin/mocksensor
 	echo "$(TAG)" > image/VERSION
 	chmod +w image/bin/*
+	chmod +w scale/image/bin/*
 	docker build -t stackrox/main:$(TAG) image/
 	docker build -t stackrox/monitoring:$(TAG) monitoring
 	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
+	docker build -t stackrox/scale:$(TAG) scale/image
 	@echo "Built images with tag: $(TAG)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 

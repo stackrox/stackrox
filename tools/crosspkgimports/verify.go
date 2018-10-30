@@ -30,6 +30,7 @@ var (
 		"sensor/common",
 		"tools",
 		"integration-tests",
+		"scale",
 	}
 
 	ignoredRoots = []string{
