@@ -4,7 +4,6 @@ import (
 	"sort"
 	"sync/atomic"
 
-	"github.com/deckarep/golang-set"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
@@ -59,18 +58,18 @@ func (g *evaluatorImpl) GetGraph(deployments []*v1.Deployment, networkPolicies [
 }
 
 func (g *evaluatorImpl) evaluate(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) ([]*v1.NetworkNode, []*v1.NetworkEdge) {
-	selectedDeploymentsToIngressPolicies := make(map[string]mapset.Set)
-	selectedDeploymentsToEgressPolicies := make(map[string]mapset.Set)
+	selectedDeploymentsToIngressPolicies := make(map[string]set.StringSet)
+	selectedDeploymentsToEgressPolicies := make(map[string]set.StringSet)
 
-	matchedDeploymentsToIngressPolicies := make(map[string]mapset.Set)
-	matchedDeploymentsToEgressPolicies := make(map[string]mapset.Set)
+	matchedDeploymentsToIngressPolicies := make(map[string]set.StringSet)
+	matchedDeploymentsToEgressPolicies := make(map[string]set.StringSet)
 
 	var nodes []*v1.NetworkNode
 	for _, d := range deployments {
-		selectedDeploymentsToIngressPolicies[d.GetId()] = mapset.NewSet()
-		selectedDeploymentsToEgressPolicies[d.GetId()] = mapset.NewSet()
-		matchedDeploymentsToIngressPolicies[d.GetId()] = mapset.NewSet()
-		matchedDeploymentsToEgressPolicies[d.GetId()] = mapset.NewSet()
+		selectedDeploymentsToIngressPolicies[d.GetId()] = set.NewStringSet()
+		selectedDeploymentsToEgressPolicies[d.GetId()] = set.NewStringSet()
+		matchedDeploymentsToIngressPolicies[d.GetId()] = set.NewStringSet()
+		matchedDeploymentsToEgressPolicies[d.GetId()] = set.NewStringSet()
 
 		var internetAccess bool
 		for _, n := range networkPolicies {
@@ -98,7 +97,7 @@ func (g *evaluatorImpl) evaluate(deployments []*v1.Deployment, networkPolicies [
 			internetAccess = true
 		}
 
-		nodePoliciesSet := set.StringSliceFromSet(selectedDeploymentsToIngressPolicies[d.GetId()].Union(selectedDeploymentsToEgressPolicies[d.GetId()]))
+		nodePoliciesSet := selectedDeploymentsToIngressPolicies[d.GetId()].Union(selectedDeploymentsToEgressPolicies[d.GetId()]).AsSlice()
 		sort.Strings(nodePoliciesSet)
 
 		nodes = append(nodes, &v1.NetworkNode{

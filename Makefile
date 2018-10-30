@@ -100,8 +100,13 @@ $(MOCKGEN_BIN):
 	@echo "+ $@"
 	@$(BASE_PATH)/scripts/go-get-version.sh github.com/golang/mock/mockgen 8a44ef6e8be577e050008c7886f24fc705d709fb
 
+GENNY_BIN := $(GOPATH)/bin/genny
+$(GENNY_BIN):
+	@echo "+ $@"
+	@go get github.com/mauricelam/genny
+
 .PHONY: go-generated-srcs
-go-generated-srcs: $(MOCKERY_BIN) $(MOCKGEN_BIN) $(STRINGER_BIN)
+go-generated-srcs: $(MOCKERY_BIN) $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
 	@echo "+ $@"
 	go generate ./...
 

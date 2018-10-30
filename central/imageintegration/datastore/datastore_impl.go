@@ -24,7 +24,7 @@ func (ds *datastoreImpl) GetImageIntegrations(request *v1.GetImageIntegrationsRe
 
 	integrationSlice := integrations[:0]
 	for _, integration := range integrations {
-		clusterSet := set.NewSetFromStringSlice(integration.GetClusters())
+		clusterSet := set.NewStringSet(integration.GetClusters()...)
 		if len(request.GetCluster()) != 0 && !clusterSet.Contains(request.GetCluster()) {
 			continue
 		}

@@ -20,8 +20,8 @@ func (ds *datastoreImpl) GetBenchmarkTriggers(request *v1.GetBenchmarkTriggersRe
 		return nil, err
 	}
 
-	idSet := set.NewSetFromStringSlice(request.GetIds())
-	clusterSet := set.NewSetFromStringSlice(request.GetClusterIds())
+	idSet := set.NewStringSet(request.GetIds()...)
+	clusterSet := set.NewStringSet(request.GetClusterIds()...)
 	filteredTriggers := triggers[:0]
 	for _, trigger := range triggers {
 		if idSet.Cardinality() > 0 && !idSet.Contains(trigger.GetId()) {

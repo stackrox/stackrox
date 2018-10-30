@@ -694,6 +694,14 @@
   version = "v1.0.1"
 
 [[projects]]
+  branch = "master"
+  digest = "1:ea20e3ac44f752806612ec7269a6eede1ec6dde20aeb88a2731f2057fbb12661"
+  name = "github.com/mauricelam/genny"
+  packages = ["generic"]
+  pruneopts = "NUT"
+  revision = "eb2c5232c885956af3565a20ecf48555cab2b9bc"
+
+[[projects]]
   digest = "1:9f63926f52745d1f9d6053f8fbbb3bd3983c2c97c0565957e682b8d2f7aad3af"
   name = "github.com/mitchellh/go-wordwrap"
   packages = ["."]
@@ -1522,6 +1530,7 @@
     "github.com/grpc-ecosystem/grpc-gateway/utilities",
     "github.com/hashicorp/golang-lru",
     "github.com/heroku/docker-registry-client/registry",
+    "github.com/mauricelam/genny/generic",
     "github.com/mitchellh/go-wordwrap",
     "github.com/opencontainers/go-digest",
     "github.com/opencontainers/runc/libcontainer/user",

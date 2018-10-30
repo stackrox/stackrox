@@ -2,6 +2,7 @@ package store
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 func convertAlertsToListAlerts(alert *v1.Alert) *v1.ListAlert {
@@ -51,11 +52,11 @@ func addEnforcementCount(alert *v1.Alert, listAlert *v1.ListAlert) {
 }
 
 func determineRuntimeEnforcementCount(violations []*v1.Alert_Violation) int32 {
-	podIds := make(map[string]struct{})
+	podIds := set.NewStringSet()
 	for _, violation := range violations {
 		for _, pi := range violation.GetProcesses() {
-			podIds[pi.GetPodId()] = struct{}{}
+			podIds.Add(pi.GetPodId())
 		}
 	}
-	return int32(len(podIds))
+	return int32(podIds.Cardinality())
 }

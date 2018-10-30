@@ -754,6 +754,14 @@ dependencies:
     attribution:
     - Copyright © 2018 HashiCorp
 
+  vendor/github.com/mauricelam/genny:
+    url: https://github.com/mauricelam/genny
+    license: MIT
+    files:
+      LICENSE: 1a248d1287ff3f6c6f3dd341f467a26dca32ccdadc59dc554b0286869e658e85
+    attribution:
+    - Copyright (c) 2014 cheekybits
+
   vendor/github.com/opencontainers/runc:
     url: https://github.com/opencontainers/runc
     license: Apache-2.0

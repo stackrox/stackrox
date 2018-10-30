@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/deckarep/golang-set"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -95,8 +94,8 @@ var capAdds = map[string]struct{}{
 }
 
 func (s *serviceConfigMultiplier) scoreCapabilities(deployment *v1.Deployment) (capAddFactor, capDropFactor string) {
-	capsAdded := mapset.NewSet()
-	capsDropped := mapset.NewSet()
+	capsAdded := set.NewStringSet()
+	capsDropped := set.NewStringSet()
 	for _, container := range deployment.GetContainers() {
 		context := container.GetSecurityContext()
 		for _, cap := range context.GetAddCapabilities() {
@@ -109,7 +108,7 @@ func (s *serviceConfigMultiplier) scoreCapabilities(deployment *v1.Deployment) (
 		}
 	}
 	if capsAdded.Cardinality() != 0 {
-		addedSlice := set.StringSliceFromSet(capsAdded)
+		addedSlice := capsAdded.AsSlice()
 		capAddFactor = fmt.Sprintf("Capabilities %s were added", strings.Join(addedSlice, ", "))
 	}
 	if capsDropped.Cardinality() == 0 {

@@ -33,20 +33,15 @@ func (a *allAccessRoleImpl) Has(permission Permission) bool {
 
 // NewRoleWithPermissions returns a new role with the given name and permissions.
 func NewRoleWithPermissions(name string, permissions ...Permission) Role {
-	permissionsMap := make(map[Permission]struct{})
-
-	for _, permission := range permissions {
-		permissionsMap[permission] = struct{}{}
-	}
 	return &permissionedRoleImpl{
 		name:        name,
-		permissions: permissionsMap,
+		permissions: NewPermissionSet(permissions...),
 	}
 }
 
 type permissionedRoleImpl struct {
 	name        string
-	permissions map[Permission]struct{}
+	permissions PermissionSet
 }
 
 func (r *permissionedRoleImpl) Name() string {
@@ -54,6 +49,5 @@ func (r *permissionedRoleImpl) Name() string {
 }
 
 func (r *permissionedRoleImpl) Has(permission Permission) bool {
-	_, has := r.permissions[permission]
-	return has
+	return r.permissions.Contains(permission)
 }

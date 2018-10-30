@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deckarep/golang-set"
 	"github.com/gogo/protobuf/proto"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deploytime"
@@ -265,7 +264,7 @@ func determineEnforcement(alerts []*v1.Alert) (alertID string, action v1.Enforce
 }
 
 func uniqueDeploymentIDs(indicatorsToInfo map[string]indicatorWithInjector) []string {
-	m := mapset.NewSet()
+	m := set.NewStringSet()
 	for _, infoWithInjector := range indicatorsToInfo {
 		deploymentID := infoWithInjector.indicator.GetDeploymentId()
 		if deploymentID == "" {
@@ -273,7 +272,7 @@ func uniqueDeploymentIDs(indicatorsToInfo map[string]indicatorWithInjector) []st
 		}
 		m.Add(deploymentID)
 	}
-	return set.StringSliceFromSet(m)
+	return m.AsSlice()
 }
 
 func containersToKill(alerts []*v1.Alert, indicatorsToInfo map[string]indicatorWithInjector) map[string]indicatorWithInjector {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"sort"
 
-	"github.com/deckarep/golang-set"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
@@ -131,14 +130,14 @@ func (s *serviceImpl) GetLabels(context.Context, *v1.Empty) (*v1.DeploymentLabel
 }
 
 func labelsMapFromDeployments(deployments []*v1.Deployment) (keyValuesMap map[string]*v1.DeploymentLabelsResponse_LabelValues, values []string) {
-	tempSet := make(map[string]mapset.Set)
-	globalValueSet := mapset.NewSet()
+	tempSet := make(map[string]set.StringSet)
+	globalValueSet := set.NewStringSet()
 
 	for _, d := range deployments {
 		for k, v := range d.GetLabels() {
-			valSet := tempSet[k]
-			if valSet == nil {
-				valSet = mapset.NewSet()
+			valSet, ok := tempSet[k]
+			if !ok {
+				valSet = set.NewStringSet()
 				tempSet[k] = valSet
 			}
 			valSet.Add(v)
@@ -152,10 +151,10 @@ func labelsMapFromDeployments(deployments []*v1.Deployment) (keyValuesMap map[st
 			Values: make([]string, 0, valSet.Cardinality()),
 		}
 
-		keyValuesMap[k].Values = append(keyValuesMap[k].Values, set.StringSliceFromSet(valSet)...)
+		keyValuesMap[k].Values = append(keyValuesMap[k].Values, valSet.AsSlice()...)
 		sort.Strings(keyValuesMap[k].Values)
 	}
-	values = set.StringSliceFromSet(globalValueSet)
+	values = globalValueSet.AsSlice()
 	sort.Strings(values)
 
 	return

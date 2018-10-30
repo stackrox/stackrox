@@ -21,7 +21,7 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Deployment)): {
+		user.With(permissions.View(resources.Indicator)): {
 			"/v1.ProcessService/GetProcessesByDeployment",
 			"/v1.ProcessService/GetGroupedProcessByDeployment",
 		},
