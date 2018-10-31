@@ -17,25 +17,21 @@ type messageCrudImpl struct {
 
 // Read reads and returns a single proto message from bolt.
 func (crud *messageCrudImpl) Read(id string) (msg proto.Message, err error) {
-	var bytes []byte
 	err = crud.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(crud.bucketName)
-		bytes = b.Get([]byte(id))
-		return nil
-	})
-	if len(bytes) == 0 {
-		return
-	}
+		bytes := b.Get([]byte(id))
+		if len(bytes) == 0 {
+			return nil
+		}
 
-	msg = crud.allocFunc()
-	err = proto.Unmarshal(bytes, msg)
+		msg = crud.allocFunc()
+		return proto.Unmarshal(bytes, msg)
+	})
 	return
 }
 
 // ReadBatch reads and returns a list of proto messages for a list of ids in the same order.
 func (crud *messageCrudImpl) ReadBatch(ids []string) (msgs []proto.Message, err error) {
-	// Read all the byte arrays.
-	bytes := make([][]byte, 0, len(ids))
 	err = crud.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(crud.bucketName)
 		for _, id := range ids {
@@ -43,49 +39,34 @@ func (crud *messageCrudImpl) ReadBatch(ids []string) (msgs []proto.Message, err 
 			if v == nil {
 				return fmt.Errorf("cannot find value for key: %s", id)
 			}
-			bytes = append(bytes, v)
-		}
 
-		return nil
-	})
-	if len(bytes) == 0 {
-		return
-	}
-
-	// Do all of the unmarshaling.
-	for _, serialized := range bytes {
-		msg := crud.allocFunc()
-		err = proto.Unmarshal(serialized, msg)
-		if err == nil {
+			msg := crud.allocFunc()
+			err := proto.Unmarshal(v, msg)
+			if err != nil {
+				return err
+			}
 			msgs = append(msgs, msg)
 		}
-	}
+		return nil
+	})
 	return
 }
 
 // ReadAll returns all of the proto messages stored in the bucket.
 func (crud *messageCrudImpl) ReadAll() (msgs []proto.Message, err error) {
 	// Read all the byte arrays.
-	var bytes [][]byte
 	err = crud.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(crud.bucketName)
 		return b.ForEach(func(k, v []byte) error {
-			bytes = append(bytes, v)
+			msg := crud.allocFunc()
+			err := proto.Unmarshal(v, msg)
+			if err != nil {
+				return err
+			}
+			msgs = append(msgs, msg)
 			return nil
 		})
 	})
-	if len(bytes) == 0 {
-		return
-	}
-
-	// Do all of the unmarshaling.
-	for _, serialized := range bytes {
-		msg := crud.allocFunc()
-		err = proto.Unmarshal(serialized, msg)
-		if err == nil {
-			msgs = append(msgs, msg)
-		}
-	}
 	return
 }
 
