@@ -6,16 +6,10 @@ class NetworkGraph extends Component {
     static propTypes = {
         nodes: PropTypes.arrayOf(
             PropTypes.shape({
-                id: PropTypes.string.isRequired
+                deploymentId: PropTypes.string.isRequired
             })
         ).isRequired,
-        links: PropTypes.arrayOf(
-            PropTypes.shape({
-                source: PropTypes.string.isRequired,
-                target: PropTypes.string.isRequired
-            })
-        ).isRequired,
-        networkFlowMapping: PropTypes.shape({}).isRequired,
+        networkFlowMapping: PropTypes.instanceOf(Map).isRequired,
         onNodeClick: PropTypes.func.isRequired,
         updateKey: PropTypes.number.isRequired
     };
@@ -34,8 +28,8 @@ class NetworkGraph extends Component {
     shouldComponentUpdate(nextProps) {
         if (this.isWebGLAvailable()) {
             if (nextProps.updateKey !== this.props.updateKey) {
-                const { nodes, links, networkFlowMapping } = nextProps;
-                this.manager.setUpNetworkData({ nodes, links, networkFlowMapping });
+                const { nodes, networkFlowMapping } = nextProps;
+                this.manager.setUpNetworkData({ nodes, networkFlowMapping });
                 this.manager.setOnNodeClick(nextProps.onNodeClick);
             }
         }

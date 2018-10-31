@@ -23,12 +23,12 @@ const DataManager = canvas => {
 
         const forceSimulation = d3
             .forceSimulation()
-            .nodes(nodes, d => d.id)
+            .nodes(nodes, d => d.deploymentId)
             .force(
                 'link',
                 d3
                     .forceLink(links)
-                    .id(d => d.id)
+                    .id(d => d.deploymentId)
                     .strength(0)
             )
             .force('charge', d3.forceManyBody())
@@ -103,8 +103,8 @@ const DataManager = canvas => {
         return enrichedNodes;
     }
 
-    function getNamespaceLinks(dataNodes, dataLinks) {
-        const linksBetweenNamespaces = getLinksBetweenNamespaces(dataNodes, dataLinks);
+    function getNamespaceLinks(dataNodes) {
+        const linksBetweenNamespaces = getLinksBetweenNamespaces(dataNodes);
         return getBidirectionalLinks(linksBetweenNamespaces);
     }
 
@@ -119,9 +119,9 @@ const DataManager = canvas => {
 
     function setData(data) {
         nodes = enrichNodes(data.nodes);
-        links = getLinksInSameNamespace(nodes, data.links, data.networkFlowMapping);
+        links = getLinksInSameNamespace(nodes, data.networkFlowMapping);
         namespaces = getNamespaces(nodes);
-        namespaceLinks = getNamespaceLinks(nodes, data.links);
+        namespaceLinks = getNamespaceLinks(nodes);
         simulation = setUpForceLayout();
     }
 

@@ -42,21 +42,13 @@ class NetworkPage extends Component {
         networkGraph: PropTypes.shape({
             nodes: PropTypes.arrayOf(
                 PropTypes.shape({
-                    id: PropTypes.string.isRequired
-                })
-            ),
-            edges: PropTypes.arrayOf(
-                PropTypes.shape({
-                    source: PropTypes.string.isRequired,
-                    target: PropTypes.string.isRequired
+                    deploymentId: PropTypes.string.isRequired,
+                    outEdges: PropTypes.shape({})
                 })
             ),
             epoch: PropTypes.number
         }).isRequired,
-        networkFlowMapping: PropTypes.shape({
-            policyGraph: PropTypes.shape({}).isRequired,
-            flowGraph: PropTypes.shape({}).isRequired
-        }).isRequired,
+        networkFlowMapping: PropTypes.instanceOf(Map).isRequired,
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
         selectedClusterId: PropTypes.string,
         isFetchingNode: PropTypes.bool,
@@ -99,8 +91,8 @@ class NetworkPage extends Component {
     };
 
     onNodeClick = node => {
-        this.props.setSelectedNodeId(node.id);
-        this.props.fetchDeployment(node.id);
+        this.props.setSelectedNodeId(node.deploymentId);
+        this.props.fetchDeployment(node.deploymentId);
         this.props.fetchNetworkPolicies([...node.policyIds]);
     };
 
@@ -162,7 +154,6 @@ class NetworkPage extends Component {
                     }}
                     updateKey={this.props.networkGraphUpdateKey}
                     nodes={this.props.networkGraph.nodes}
-                    links={this.props.networkGraph.edges}
                     networkFlowMapping={this.props.networkFlowMapping}
                     onNodeClick={this.onNodeClick}
                 />

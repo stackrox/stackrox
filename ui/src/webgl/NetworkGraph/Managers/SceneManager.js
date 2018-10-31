@@ -114,7 +114,7 @@ const SceneManager = canvas => {
     }
 
     function showOnlyLinksForConnectedNodes(obj) {
-        const { id } = obj.object.material.userData && obj.object.material.userData.node;
+        const { deploymentId } = obj.object.material.userData && obj.object.material.userData.node;
         sceneObjects
             .filter(sceneObject => sceneObject.getType() === constants.NETWORK_GRAPH_TYPES.LINK)
             .forEach(link => {
@@ -122,7 +122,10 @@ const SceneManager = canvas => {
                 const target = link.getTarget();
                 if (link.isLinkInScene()) {
                     // do nothing
-                } else if (source.id === id || target.id === id) {
+                } else if (
+                    source.deploymentId === deploymentId ||
+                    target.deploymentId === deploymentId
+                ) {
                     link.createLink();
                 } else {
                     link.removeLink();

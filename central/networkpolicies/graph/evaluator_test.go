@@ -553,37 +553,41 @@ func getExamplePolicy(name string) *v1.NetworkPolicy {
 	return np
 }
 
-func egressEdges(src string, dsts ...string) []*v1.NetworkEdge {
-	var edges []*v1.NetworkEdge
+type edge struct {
+	Source, Target string
+}
+
+func egressEdges(src string, dsts ...string) []edge {
+	var edges []edge
 	for _, d := range dsts {
-		edges = append(edges, &v1.NetworkEdge{Source: src, Target: d})
+		edges = append(edges, edge{Source: src, Target: d})
 	}
 	return edges
 }
 
-func ingressEdges(dst string, srcs ...string) []*v1.NetworkEdge {
-	var edges []*v1.NetworkEdge
+func ingressEdges(dst string, srcs ...string) []edge {
+	var edges []edge
 	for _, s := range srcs {
-		edges = append(edges, &v1.NetworkEdge{Source: s, Target: dst})
+		edges = append(edges, edge{Source: s, Target: dst})
 	}
 	return edges
 }
 
-func fullyConnectedEdges(values ...string) []*v1.NetworkEdge {
-	var edges []*v1.NetworkEdge
+func fullyConnectedEdges(values ...string) []edge {
+	var edges []edge
 	for i, value1 := range values {
 		for j, value2 := range values {
 			if i == j {
 				continue
 			}
-			edges = append(edges, &v1.NetworkEdge{Source: value1, Target: value2})
+			edges = append(edges, edge{Source: value1, Target: value2})
 		}
 	}
 	return edges
 }
 
-func edgeCombiner(edges ...[]*v1.NetworkEdge) []*v1.NetworkEdge {
-	var finalEdges []*v1.NetworkEdge
+func flattenEdges(edges ...[]edge) []edge {
+	var finalEdges []edge
 	for _, e := range edges {
 		finalEdges = append(finalEdges, e...)
 	}
@@ -595,10 +599,11 @@ func createNode(node string, namespace string, internetAccess bool, policies ...
 		policies = []string{}
 	}
 	return &v1.NetworkNode{
-		Id:             node,
+		DeploymentId:   node,
 		Namespace:      namespace,
 		PolicyIds:      policies,
 		InternetAccess: internetAccess,
+		OutEdges:       make(map[int32]*v1.NetworkEdgePropertiesBundle),
 	}
 }
 
@@ -622,7 +627,7 @@ func TestEvaluateClusters(t *testing.T) {
 		name        string
 		deployments []*v1.Deployment
 		nps         []*v1.NetworkPolicy
-		edges       []*v1.NetworkEdge
+		edges       []edge
 		nodes       []*v1.NetworkNode
 	}{
 		{
@@ -658,7 +663,7 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			edges: edgeCombiner(
+			edges: flattenEdges(
 				egressEdges("d1", "d2", "d3"),
 				fullyConnectedEdges("d2", "d3"),
 			),
@@ -690,7 +695,7 @@ func TestEvaluateClusters(t *testing.T) {
 					Labels:    deploymentLabels("app", "coffeeshop", "role", "api"),
 				},
 			},
-			edges: edgeCombiner(
+			edges: flattenEdges(
 				fullyConnectedEdges("d1", "d2"),
 				fullyConnectedEdges("d2", "d3"),
 				ingressEdges("d3", "d1"),
@@ -721,7 +726,7 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			edges: edgeCombiner(
+			edges: flattenEdges(
 				fullyConnectedEdges("d1", "d2", "d3"),
 			),
 			nps: []*v1.NetworkPolicy{
@@ -751,7 +756,7 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace: "stackrox",
 				},
 			},
-			edges: edgeCombiner(
+			edges: flattenEdges(
 				egressEdges("d1", "d3"),
 				egressEdges("d2", "d3"),
 			),
@@ -780,7 +785,7 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace: "stackrox",
 				},
 			},
-			edges: edgeCombiner(
+			edges: flattenEdges(
 				fullyConnectedEdges("d1", "d2"),
 				egressEdges("d1", "d3"),
 				egressEdges("d2", "d3"),
@@ -811,7 +816,7 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace: "stackrox",
 				},
 			},
-			edges: edgeCombiner(
+			edges: flattenEdges(
 				fullyConnectedEdges("d1", "d2"),
 				fullyConnectedEdges("d1", "d3"),
 				egressEdges("d2", "d3"),
@@ -843,7 +848,7 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace: "stackrox",
 				},
 			},
-			edges: edgeCombiner(
+			edges: flattenEdges(
 				fullyConnectedEdges("d1", "d3"),
 				fullyConnectedEdges("d2", "d3"),
 				egressEdges("d1", "d2"),
@@ -880,7 +885,7 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			edges: edgeCombiner(
+			edges: flattenEdges(
 				fullyConnectedEdges("d2", "d3", "d4"),
 				egressEdges("d1", "d2", "d3", "d4"),
 			),
@@ -908,7 +913,7 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			edges: edgeCombiner(
+			edges: flattenEdges(
 				ingressEdges("d1", "d2"),
 			),
 			nps: []*v1.NetworkPolicy{
@@ -936,7 +941,7 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace: "stackrox",
 				},
 			},
-			edges: edgeCombiner(
+			edges: flattenEdges(
 				egressEdges("d3", "d1", "d2"),
 			),
 			nps: []*v1.NetworkPolicy{
@@ -965,7 +970,7 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace: "stackrox",
 				},
 			},
-			edges: edgeCombiner(
+			edges: flattenEdges(
 				fullyConnectedEdges("d1", "d2", "d3"),
 			),
 			nps: []*v1.NetworkPolicy{
@@ -999,7 +1004,7 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			edges: edgeCombiner(
+			edges: flattenEdges(
 				ingressEdges("d1", "d2", "d3", "d4"),
 				ingressEdges("d3", "d1", "d2", "d4"),
 				ingressEdges("d4", "d1", "d2", "d3"),
@@ -1017,10 +1022,27 @@ func TestEvaluateClusters(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
+		populateOutEdges(c.nodes, c.edges)
 		t.Run(c.name, func(t *testing.T) {
-			nodes, edges := g.evaluate(c.deployments, c.nps)
+			nodes := g.evaluate(c.deployments, c.nps)
 			assert.ElementsMatch(t, c.nodes, nodes)
-			assert.ElementsMatch(t, c.edges, edges)
 		})
+	}
+}
+
+func populateOutEdges(nodes []*v1.NetworkNode, edges []edge) {
+	indexMap := make(map[string]int)
+	for i, node := range nodes {
+		indexMap[node.DeploymentId] = i
+	}
+
+	for _, e := range edges {
+		if e.Source == e.Target {
+			continue
+		}
+		srcIndex := indexMap[e.Source]
+		srcNode := nodes[srcIndex]
+		tgtIndex := indexMap[e.Target]
+		srcNode.OutEdges[int32(tgtIndex)] = &v1.NetworkEdgePropertiesBundle{}
 	}
 }

@@ -79,24 +79,28 @@ export const actions = {
 
 // Reducers
 
-const networkGraph = (state = { nodes: [], edges: [] }, action) => {
+const networkGraph = (state = { nodes: [] }, action) => {
     if (action.type === types.FETCH_NETWORK_POLICY_GRAPH.SUCCESS) {
         return isEqual(action.response, state) ? state : action.response;
     }
     return state;
 };
 
-const networkFlowMapping = (state = {}, action) => {
+const networkFlowMapping = (state = new Map(), action) => {
     if (action.type === types.SET_NETWORK_FLOW_MAPPING) {
         const { flowGraph } = action;
         const flowEquals = isEqual(flowGraph, state);
-        const newState = Object.assign({}, state);
-        if (!flowEquals) {
-            flowGraph.edges.forEach(edge => {
-                newState[`${edge.source}--${edge.target}`] = true;
-            });
+        if (flowEquals) {
+            return state;
         }
-        return flowEquals ? state : newState;
+        const newState = new Map(state);
+        flowGraph.nodes.forEach(node => {
+            Object.keys(node.outEdges).forEach(tgtIndex => {
+                const tgtNode = flowGraph.nodes[tgtIndex];
+                newState.set({ source: node.deploymentId, target: tgtNode.deploymentId }, {});
+            });
+        });
+        return newState;
     }
     return state;
 };

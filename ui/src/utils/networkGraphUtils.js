@@ -1,6 +1,5 @@
 import { quadtree as d3QuadTree } from 'd3';
 import * as constants from 'constants/networkGraph';
-import uniqBy from 'lodash/uniqBy';
 import * as THREE from 'three';
 
 export const forceCluster = () => {
@@ -87,73 +86,63 @@ export const forceCollision = nodes => alpha => {
  * @returns {!Object[]}
  */
 export const getBidirectionalLinks = links => {
-    const sourceTargetToLinkMapping = {};
+    const sourceTargetToLinkMapping = new Map();
 
     links.forEach(link => {
-        if (!sourceTargetToLinkMapping[`${link.source}--${link.target}`]) {
-            if (!sourceTargetToLinkMapping[`${link.target}--${link.source}`]) {
-                sourceTargetToLinkMapping[`${link.source}--${link.target}`] = link;
+        const key = { source: link.source, target: link.target };
+        if (!sourceTargetToLinkMapping.has(key)) {
+            const reverseKey = { source: link.target, target: link.source };
+            const reverseLink = sourceTargetToLinkMapping.get(reverseKey);
+            if (reverseLink === undefined) {
+                sourceTargetToLinkMapping.set(key, link);
             } else {
-                sourceTargetToLinkMapping[`${link.target}--${link.source}`].bidirectional = true;
+                reverseLink.bidirectional = true;
             }
         }
     });
 
-    return Object.values(sourceTargetToLinkMapping);
+    return Array.from(sourceTargetToLinkMapping.values());
 };
 
 /**
- * Iterates through a list of links and returns only links in the same namespace
+ * Iterates through a list of nodes and returns only links in the same namespace
  *
  * @param {!Object[]} nodes list of nodes
- * @param {!Object[]} links list of links that contain a "source" and "target"
  * @returns {!Object[]}
  */
-export const getLinksInSameNamespace = (nodes, links, networkFlowMapping) => {
-    const nodeIdToNodeMapping = {};
+export const getLinksInSameNamespace = (nodes, networkFlowMapping) => {
+    const filteredLinks = [];
 
-    nodes.forEach(d => {
-        nodeIdToNodeMapping[d.id] = d;
-    });
-
-    const filteredLinks = links
-        .filter(link => {
-            const sourceNamespace = nodeIdToNodeMapping[link.source].namespace;
-            const targetNamespace = nodeIdToNodeMapping[link.target].namespace;
-            return sourceNamespace === targetNamespace;
-        })
-        .map(link => {
-            const isActive = !!networkFlowMapping[`${link.source}--${link.target}`];
-            return { ...link, isActive };
+    nodes.forEach(node => {
+        const sourceNamespace = node.namespace;
+        Object.keys(node.outEdges).forEach(targetIndex => {
+            const tgtNode = nodes[targetIndex];
+            if (sourceNamespace !== tgtNode.namespace) {
+                return;
+            }
+            const link = { source: node.deploymentId, target: tgtNode.deploymentId };
+            link.isActive = networkFlowMapping.has(link);
+            filteredLinks.push(link);
         });
+    });
 
     return filteredLinks;
 };
 
-export const getLinksBetweenNamespaces = (nodes, links) => {
-    const nodeIdToNodeMapping = {};
+export const getLinksBetweenNamespaces = nodes => {
+    const namespaceLinks = new Set();
 
-    nodes.forEach(d => {
-        nodeIdToNodeMapping[d.id] = d;
+    nodes.forEach(node => {
+        const sourceNamespace = node.namespace;
+        Object.keys(node.outEdges).forEach(targetIndex => {
+            const tgtNamespace = nodes[targetIndex].namespace;
+            if (sourceNamespace !== tgtNamespace) {
+                namespaceLinks.add({ source: sourceNamespace, target: tgtNamespace });
+            }
+        });
     });
 
-    let filteredNamespaceLinks = links
-        .filter(link => {
-            const sourceNamespace = nodeIdToNodeMapping[link.source].namespace;
-            const targetNamespace = nodeIdToNodeMapping[link.target].namespace;
-            return sourceNamespace !== targetNamespace;
-        })
-        .map(link => ({
-            source: nodeIdToNodeMapping[link.source].namespace,
-            target: nodeIdToNodeMapping[link.target].namespace,
-            id: `${nodeIdToNodeMapping[link.source].namespace}-${
-                nodeIdToNodeMapping[link.target].namespace
-            }`
-        }));
-
-    filteredNamespaceLinks = uniqBy(filteredNamespaceLinks, 'id');
-
-    return filteredNamespaceLinks;
+    return Array.from(namespaceLinks);
 };
 
 /**

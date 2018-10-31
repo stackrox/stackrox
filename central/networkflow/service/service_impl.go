@@ -70,13 +70,16 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 	// compute nodes
 	var nodes []*v1.NetworkNode
 
-	for _, d := range deployments {
+	nodeIndices := make(map[string]int)
+	for i, d := range deployments {
 		nodes = append(nodes, &v1.NetworkNode{
-			Id:             d.GetId(),
+			DeploymentId:   d.GetId(),
 			DeploymentName: d.GetName(),
 			Cluster:        d.GetClusterName(),
 			Namespace:      d.GetNamespace(),
+			OutEdges:       make(map[int32]*v1.NetworkEdgePropertiesBundle),
 		})
+		nodeIndices[d.GetId()] = i
 	}
 
 	flowStore := s.clusterStore.GetFlowStore(request.GetClusterId())
@@ -91,31 +94,38 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 	}
 
 	// compute edges
-	var edges []*v1.NetworkEdge
 
 	// Filter by deployments, and then by time.
 	filteredFlows := filterNetworkFlowsByDeployments(flows, deployments)
 	filteredFlows = filterNetworkFlowsByTime(filteredFlows, since)
 
 	for _, flow := range filteredFlows {
-		edge := &v1.NetworkEdge{
-			Source:   flow.GetProps().GetSrcDeploymentId(),
-			Target:   flow.GetProps().GetDstDeploymentId(),
-			Port:     flow.GetProps().GetDstPort(),
-			Protocol: flow.GetProps().L4Protocol,
+		props := flow.GetProps()
+		srcIdx := nodeIndices[props.GetSrcDeploymentId()]
+		srcNode := nodes[srcIdx]
+		tgtIdx := int32(nodeIndices[props.GetDstDeploymentId()])
+
+		tgtEdgeBundle := srcNode.OutEdges[tgtIdx]
+		if tgtEdgeBundle == nil {
+			tgtEdgeBundle = &v1.NetworkEdgePropertiesBundle{}
+			srcNode.OutEdges[tgtIdx] = tgtEdgeBundle
 		}
 
-		edge.LastActiveTimestamp = flow.GetLastSeenTimestamp()
-		if edge.LastActiveTimestamp == nil {
-			edge.LastActiveTimestamp = protoconv.ConvertTimeToTimestamp(time.Now())
+		edgeProps := &v1.NetworkEdgeProperties{
+			Port:     props.GetDstPort(),
+			Protocol: props.L4Protocol,
 		}
 
-		edges = append(edges, edge)
+		edgeProps.LastActiveTimestamp = flow.GetLastSeenTimestamp()
+		if edgeProps.LastActiveTimestamp == nil {
+			edgeProps.LastActiveTimestamp = protoconv.ConvertTimeToTimestamp(time.Now())
+		}
+
+		tgtEdgeBundle.Properties = append(tgtEdgeBundle.Properties, edgeProps)
 	}
 
 	return &v1.NetworkGraph{
 		Nodes: nodes,
-		Edges: edges,
 	}, nil
 }
 

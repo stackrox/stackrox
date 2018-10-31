@@ -49,27 +49,36 @@ func (g *evaluatorImpl) Epoch() uint32 {
 
 // GetGraph generates a network graph for the input deployments based on the input policies.
 func (g *evaluatorImpl) GetGraph(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) *v1.NetworkGraph {
-	nodes, edges := g.evaluate(deployments, networkPolicies)
+	nodes := g.evaluate(deployments, networkPolicies)
 	return &v1.NetworkGraph{
 		Epoch: g.Epoch(),
 		Nodes: nodes,
-		Edges: edges,
 	}
 }
 
-func (g *evaluatorImpl) evaluate(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) ([]*v1.NetworkNode, []*v1.NetworkEdge) {
-	selectedDeploymentsToIngressPolicies := make(map[string]set.StringSet)
-	selectedDeploymentsToEgressPolicies := make(map[string]set.StringSet)
+type nodeData struct {
+	selectedDeploymentsToIngressPolicies set.StringSet
+	selectedDeploymentsToEgressPolicies  set.StringSet
+	matchedDeploymentsToIngressPolicies  set.StringSet
+	matchedDeploymentsToEgressPolicies   set.StringSet
 
-	matchedDeploymentsToIngressPolicies := make(map[string]set.StringSet)
-	matchedDeploymentsToEgressPolicies := make(map[string]set.StringSet)
+	node  *v1.NetworkNode
+	index int
+}
 
-	var nodes []*v1.NetworkNode
-	for _, d := range deployments {
-		selectedDeploymentsToIngressPolicies[d.GetId()] = set.NewStringSet()
-		selectedDeploymentsToEgressPolicies[d.GetId()] = set.NewStringSet()
-		matchedDeploymentsToIngressPolicies[d.GetId()] = set.NewStringSet()
-		matchedDeploymentsToEgressPolicies[d.GetId()] = set.NewStringSet()
+func (g *evaluatorImpl) evaluate(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) []*v1.NetworkNode {
+	nodeDataMap := make(map[*v1.Deployment]*nodeData, len(deployments))
+	nodes := make([]*v1.NetworkNode, 0, len(deployments))
+
+	for i, d := range deployments {
+		data := &nodeData{
+			selectedDeploymentsToIngressPolicies: set.NewStringSet(),
+			selectedDeploymentsToEgressPolicies:  set.NewStringSet(),
+			matchedDeploymentsToIngressPolicies:  set.NewStringSet(),
+			matchedDeploymentsToEgressPolicies:   set.NewStringSet(),
+
+			index: i,
+		}
 
 		var internetAccess bool
 		for _, n := range networkPolicies {
@@ -77,50 +86,59 @@ func (g *evaluatorImpl) evaluate(deployments []*v1.Deployment, networkPolicies [
 				continue
 			}
 			if ingressNetworkPolicySelectorAppliesToDeployment(d, n) {
-				selectedDeploymentsToIngressPolicies[d.GetId()].Add(n.GetId())
+				data.selectedDeploymentsToIngressPolicies.Add(n.GetId())
 			}
 			if g.doesIngressNetworkPolicyRuleMatchDeployment(d, n) {
-				matchedDeploymentsToIngressPolicies[d.GetId()].Add(n.GetId())
+				data.matchedDeploymentsToIngressPolicies.Add(n.GetId())
 			}
 			if applies, internetConnection := egressNetworkPolicySelectorAppliesToDeployment(d, n); applies {
-				selectedDeploymentsToEgressPolicies[d.GetId()].Add(n.GetId())
+				data.selectedDeploymentsToEgressPolicies.Add(n.GetId())
 				if internetConnection {
 					internetAccess = true
 				}
 			}
 			if g.doesEgressNetworkPolicyRuleMatchDeployment(d, n) {
-				matchedDeploymentsToEgressPolicies[d.GetId()].Add(n.GetId())
+				data.matchedDeploymentsToEgressPolicies.Add(n.GetId())
 			}
 		}
 		// If there are no egress policies, then it defaults to true
-		if selectedDeploymentsToEgressPolicies[d.GetId()].Cardinality() == 0 {
+		if data.selectedDeploymentsToEgressPolicies.Cardinality() == 0 {
 			internetAccess = true
 		}
 
-		nodePoliciesSet := selectedDeploymentsToIngressPolicies[d.GetId()].Union(selectedDeploymentsToEgressPolicies[d.GetId()]).AsSlice()
+		nodePoliciesSet := data.selectedDeploymentsToIngressPolicies.Union(data.selectedDeploymentsToEgressPolicies).AsSlice()
 		sort.Strings(nodePoliciesSet)
 
-		nodes = append(nodes, &v1.NetworkNode{
-			Id:             d.GetId(),
+		node := &v1.NetworkNode{
+			DeploymentId:   d.GetId(),
 			DeploymentName: d.GetName(),
 			Cluster:        d.GetClusterName(),
 			Namespace:      d.GetNamespace(),
 			InternetAccess: internetAccess,
 			PolicyIds:      nodePoliciesSet,
-		})
+			OutEdges:       make(map[int32]*v1.NetworkEdgePropertiesBundle),
+		}
+
+		data.node = node
+		nodeDataMap[d] = data
+
+		nodes = append(nodes, node)
 	}
 
-	var edges []*v1.NetworkEdge
 	for _, src := range deployments {
+		srcData := nodeDataMap[src]
+		srcNode := srcData.node
 		for _, dst := range deployments {
-			if src.GetId() == dst.GetId() {
+			if src == dst {
 				continue
 			}
 
+			dstData := nodeDataMap[dst]
+
 			// This set is the set of Egress policies that are applicable to the src
-			selectedEgressPoliciesSet := selectedDeploymentsToEgressPolicies[src.GetId()]
+			selectedEgressPoliciesSet := srcData.selectedDeploymentsToEgressPolicies
 			// This set is the set if Egress policies that have rules that are applicable to the dst
-			matchedEgressPoliciesSet := matchedDeploymentsToEgressPolicies[dst.GetId()]
+			matchedEgressPoliciesSet := dstData.matchedDeploymentsToEgressPolicies
 			// If there are no values in the src set of egress then it has no Egress rules and can talk to everything
 			// Otherwise, if it is not empty then ensure that the intersection of the policies that apply to the source and the rules that apply to the dst have at least one in common
 			if selectedEgressPoliciesSet.Cardinality() != 0 && selectedEgressPoliciesSet.Intersect(matchedEgressPoliciesSet).Cardinality() == 0 {
@@ -128,19 +146,19 @@ func (g *evaluatorImpl) evaluate(deployments []*v1.Deployment, networkPolicies [
 			}
 
 			// This set is the set of Ingress policies that are applicable to the dst
-			selectedIngressPoliciesSet := selectedDeploymentsToIngressPolicies[dst.GetId()]
+			selectedIngressPoliciesSet := dstData.selectedDeploymentsToIngressPolicies
 			// This set is the set if Ingress policies that have rules that are applicable to the src
-			matchedIngressPoliciesSet := matchedDeploymentsToIngressPolicies[src.GetId()]
+			matchedIngressPoliciesSet := srcData.matchedDeploymentsToIngressPolicies
 			// If there are no values in the src set of egress then it has no Egress rules and can talk to everything
 			// Otherwise, if it is not empty then ensure that the intersection of the policies that apply to the source and the rules that apply to the dst have at least one in common
 			if selectedIngressPoliciesSet.Cardinality() != 0 && selectedIngressPoliciesSet.Intersect(matchedIngressPoliciesSet).Cardinality() == 0 {
 				continue
 			}
 
-			edges = append(edges, &v1.NetworkEdge{Source: src.GetId(), Target: dst.GetId()})
+			srcNode.OutEdges[int32(dstData.index)] = &v1.NetworkEdgePropertiesBundle{}
 		}
 	}
-	return nodes, edges
+	return nodes
 }
 
 func egressNetworkPolicySelectorAppliesToDeployment(d *v1.Deployment, np *v1.NetworkPolicy) (applies bool, internetAccess bool) {

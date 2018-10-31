@@ -2,14 +2,16 @@ import com.google.protobuf.Timestamp
 import groups.BAT
 import groups.NetworkFlowVisualization
 import objects.Deployment
+import objects.Edge
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import org.junit.experimental.categories.Category
 import services.NetworkGraphService
 import spock.lang.Unroll
+import util.NetworkGraphUtil
 import v1.NetworkEnums
-import v1.NetworkGraphOuterClass
 import v1.NetworkGraphOuterClass.NetworkGraph
+import com.google.protobuf.util.Timestamps
 
 class NetworkFlowTest extends BaseSpecification {
     static final private NETWORK_FLOW_UPDATE_CADENCE = 30000 // Network flow data is updated every 30 seconds
@@ -162,9 +164,9 @@ class NetworkFlowTest extends BaseSpecification {
         assert sourceUid != null
 
         expect:
-        "Check for edge in entwork graph"
+        "Check for edge in network graph"
         println "Checking for edge between ${sourceDeployment} and ${targetDeployment}"
-        List<NetworkGraphOuterClass.NetworkEdge> edges = checkForEdge(sourceUid, targetUid)
+        List<Edge> edges = checkForEdge(sourceUid, targetUid)
         assert edges
         assert edges.get(0).protocol == protocol
         assert DEPLOYMENTS.find { it.name == targetDeployment }?.ports?.keySet()?.contains(edges.get(0).port)
@@ -190,7 +192,7 @@ class NetworkFlowTest extends BaseSpecification {
         when:
         "Check for edge in entwork graph"
         println "Checking for edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
-        List<NetworkGraphOuterClass.NetworkEdge> edges = checkForEdge(sourceUid, targetUid)
+        List<Edge> edges = checkForEdge(sourceUid, targetUid)
         assert edges
 
         then:
@@ -225,7 +227,7 @@ class NetworkFlowTest extends BaseSpecification {
         when:
         "Check for edge in entwork graph"
         println "Checking for edge between ${SINGLECONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
-        List<NetworkGraphOuterClass.NetworkEdge> edges = checkForEdge(sourceUid, targetUid)
+        List<Edge> edges = checkForEdge(sourceUid, targetUid)
         assert edges
 
         then:
@@ -244,7 +246,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         when:
         "Check for edge in entwork graph"
-        List<NetworkGraphOuterClass.NetworkEdge> edges = checkForEdge(sourceUid, targetUid)
+        List<Edge> edges = checkForEdge(sourceUid, targetUid)
         assert edges
 
         then:
@@ -274,7 +276,7 @@ class NetworkFlowTest extends BaseSpecification {
         and:
         "Check for original edge in network graph"
         println "Checking for edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
-        List<NetworkGraphOuterClass.NetworkEdge> edges = checkForEdge(sourceUid, targetUid)
+        List<Edge> edges = checkForEdge(sourceUid, targetUid)
         assert edges
 
         then:
@@ -306,15 +308,13 @@ class NetworkFlowTest extends BaseSpecification {
         given:
         "Get current state of edges and current timestamp"
         NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph()
-        Long time = System.currentTimeMillis()
-        Timestamp currentTimestamp =  Timestamp.newBuilder().setSeconds(time / 1000 as Long)
-                .setNanos((int) ((time % 1000) * 1000000)).build()
+        long currentTime = System.currentTimeMillis()
 
         expect:
         "Check timestamp for each edge"
-        for (NetworkGraphOuterClass.NetworkEdge edge : currentGraph.edgesList) {
-            assert edge.lastActiveTimestamp.seconds <= currentTimestamp.seconds
-            assert edge.lastActiveTimestamp.seconds >= testStartTime.seconds
+        for (Edge edge : NetworkGraphUtil.findEdges(currentGraph, null, null)) {
+            assert edge.lastActiveTimestamp <= currentTime
+            assert edge.lastActiveTimestamp >= Timestamps.toMillis(testStartTime)
         }
     }
 
@@ -323,32 +323,29 @@ class NetworkFlowTest extends BaseSpecification {
         int waitTime
         def startTime = System.currentTimeMillis()
         for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
-            NetworkGraphOuterClass.NetworkGraph graph = NetworkGraphService.getNetworkGraph(since)
-            List<NetworkGraphOuterClass.NetworkEdge> edges = graph.edgesList.findAll {
-                targetId != null ?
-                        it.source == sourceId && it.target == targetId :
-                        it.source == sourceId
+            if (waitTime > 0) {
+                sleep intervalSeconds * 1000
             }
+
+            def graph = NetworkGraphService.getNetworkGraph(since)
+            def edges = NetworkGraphUtil.findEdges(graph, sourceId, targetId)
             if (edges != null && edges.size() > 0) {
                 println "Found source -> target in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
                 return edges
             }
-            sleep intervalSeconds * 1000
         }
         println "SR did not detect the edge in Network Flow graph"
         return null
     }
 
-    private waitForEdgeUpdate(NetworkGraphOuterClass.NetworkEdge edge, int timeoutSeconds = 60) {
+    private waitForEdgeUpdate(Edge edge, int timeoutSeconds = 60) {
         int intervalSeconds = 1
         int waitTime
         def startTime = System.currentTimeMillis()
         for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
-            NetworkGraph graph = NetworkGraphService.getNetworkGraph()
-            NetworkGraphOuterClass.NetworkEdge newEdge = graph.edgesList.find {
-                it.source == edge.source && it.target == edge.target
-            }
-            if (newEdge != null && newEdge.lastActiveTimestamp?.seconds > edge.lastActiveTimestamp.seconds) {
+            def graph = NetworkGraphService.getNetworkGraph()
+            def newEdge = NetworkGraphUtil.findEdges(graph, edge.sourceID, edge.targetID)?.find { true }
+            if (newEdge != null && newEdge.lastActiveTimestamp > edge.lastActiveTimestamp) {
                 println "Found updated edge in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
                 return newEdge
             }

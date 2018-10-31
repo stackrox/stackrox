@@ -9,23 +9,26 @@ import "api/v1/network_enums.proto";
 
 package v1;
 
-message NetworkEdge {
-    string          source                          = 1;
-    string          target                          = 2;
-    uint32          port                            = 3;
-    L4Protocol      protocol                        = 4;
+message NetworkEdgeProperties {
+    uint32     port     = 1;
+    L4Protocol protocol = 2;
 
-    google.protobuf.Timestamp last_active_timestamp = 5;
+    google.protobuf.Timestamp last_active_timestamp = 3;
+}
 
+message NetworkEdgePropertiesBundle {
+    repeated NetworkEdgeProperties properties = 1;
 }
 
 message NetworkNode {
-    string          id              = 1;
+    string          deployment_id   = 1;
     string          cluster         = 2;
     string          namespace       = 3;
     bool            internet_access = 4;
     repeated string policy_ids      = 5;
     string          deployment_name = 6;
+
+    map<int32, NetworkEdgePropertiesBundle> out_edges = 7;
 }
 
 message NetworkGraphRequest {
@@ -37,10 +40,7 @@ message NetworkGraphRequest {
 message NetworkGraph {
     uint32               epoch = 1;
     repeated NetworkNode nodes = 2;
-    repeated NetworkEdge edges = 3;
 }
-
-
 
 service NetworkGraphService {
     rpc GetNetworkGraph (NetworkGraphRequest) returns (NetworkGraph) {

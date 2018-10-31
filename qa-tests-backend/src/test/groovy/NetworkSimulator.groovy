@@ -6,6 +6,7 @@ import objects.NetworkPolicyTypes
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
 import stackrox.generated.NotifierServiceOuterClass
+import util.NetworkGraphUtil
 
 class NetworkSimulator extends BaseSpecification {
     // Deployment names
@@ -62,13 +63,13 @@ class NetworkSimulator extends BaseSpecification {
         policy.addPolicyType(NetworkPolicyTypes.EGRESS)
         def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy))
         assert simulation != null
-        def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.id
+        def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
 
         then:
         "verify simulation"
-        assert simulation.edgesList.findAll { it.target == webAppId }.size() ==
-                baseline.edgesList.findAll { it.target == webAppId }.size()
-        assert simulation.edgesList.findAll { it.source == webAppId }.size() == 0
+        assert NetworkGraphUtil.findEdges(simulation, null, webAppId).size() ==
+                NetworkGraphUtil.findEdges(baseline, null, webAppId).size()
+        assert NetworkGraphUtil.findEdges(simulation, webAppId, null).size() == 0
 
         cleanup:
         "cleanup"
@@ -98,18 +99,18 @@ class NetworkSimulator extends BaseSpecification {
                 .addIngressNamespaceSelector()
         def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2))
         assert simulation != null
-        def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.id
-        def clientAppId = simulation.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }.id
+        def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
+        def clientAppId = simulation.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }.deploymentId
 
         then:
         "verify simulation"
-        assert simulation.edgesList.findAll { it.target == webAppId }.size() > 0
-        assert simulation.edgesList.findAll { it.target == clientAppId }.size() ==
-                baseline.edgesList.findAll { it.target == clientAppId }.size()
-        assert simulation.edgesList.findAll { it.source == webAppId }.size() ==
-                baseline.edgesList.findAll { it.source == webAppId }.size()
-        assert simulation.edgesList.findAll { it.source == clientAppId }.size() ==
-                baseline.edgesList.findAll { it.source == clientAppId }.size()
+        assert NetworkGraphUtil.findEdges(simulation, null, webAppId).size() > 0
+        assert NetworkGraphUtil.findEdges(simulation, null, clientAppId).size() ==
+                NetworkGraphUtil.findEdges(baseline, null, clientAppId).size()
+        assert NetworkGraphUtil.findEdges(simulation, webAppId, null).size() ==
+                NetworkGraphUtil.findEdges(baseline, webAppId, null).size()
+        assert NetworkGraphUtil.findEdges(simulation, clientAppId, null).size() ==
+                NetworkGraphUtil.findEdges(baseline, clientAppId, null).size()
 
         cleanup:
         "cleanup"
@@ -144,15 +145,15 @@ class NetworkSimulator extends BaseSpecification {
                 orchestrator.generateYaml(policy2) + orchestrator.generateYaml(policy3),
                 "Deployment:web,client")
         assert simulation != null
-        def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.id
-        def clientAppId = simulation.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }.id
+        def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
+        def clientAppId = simulation.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }.deploymentId
 
         then:
         "verify simulation"
-        assert simulation.edgesList.findAll { it.target == webAppId }.size() == 1
-        assert simulation.edgesList.findAll { it.target == clientAppId }.size() == 0
-        assert simulation.edgesList.findAll { it.source == webAppId }.size() == 0
-        assert simulation.edgesList.findAll { it.source == clientAppId }.size() == 1
+        assert NetworkGraphUtil.findEdges(simulation, null, webAppId).size() == 1
+        assert NetworkGraphUtil.findEdges(simulation, null, clientAppId).size() == 0
+        assert NetworkGraphUtil.findEdges(simulation, webAppId, null).size() == 0
+        assert NetworkGraphUtil.findEdges(simulation, clientAppId, null).size() == 1
         assert simulation.nodesList.size() == 2
 
         cleanup:
@@ -183,15 +184,15 @@ class NetworkSimulator extends BaseSpecification {
         def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2),
                 "Deployment:web,central")
         assert simulation != null
-        def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.id
-        def centralAppId = simulation.nodesList.find { it.deploymentName == "central" }.id
+        def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
+        def centralAppId = simulation.nodesList.find { it.deploymentName == "central" }.deploymentId
 
         then:
         "verify simulation"
-        assert simulation.edgesList.findAll { it.target == webAppId }.size() == 1
-        assert simulation.edgesList.findAll { it.target == centralAppId }.size() == 0
-        assert simulation.edgesList.findAll { it.source == webAppId }.size() == 0
-        assert simulation.edgesList.findAll { it.source == centralAppId }.size() == 1
+        assert NetworkGraphUtil.findEdges(simulation, null, webAppId).size() == 1
+        assert NetworkGraphUtil.findEdges(simulation, null, centralAppId).size() == 0
+        assert NetworkGraphUtil.findEdges(simulation, webAppId, null).size() == 0
+        assert NetworkGraphUtil.findEdges(simulation, centralAppId, null).size() == 1
         assert simulation.nodesList.size() == 2
 
         cleanup:
@@ -218,15 +219,15 @@ class NetworkSimulator extends BaseSpecification {
                 orchestrator.generateYaml(policy1) + orchestrator.generateYaml(policy2)
         )
         assert simulation != null
-        def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.id
-        def clientAppId = simulation.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }.id
+        def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
+        def clientAppId = simulation.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }.deploymentId
 
         then:
         "verify simulation"
-        assert simulation.edgesList.findAll { it.target == webAppId }.size() > 0
-        assert simulation.edgesList.findAll { it.target == clientAppId }.size() == 0
-        assert simulation.edgesList.findAll { it.source == webAppId }.size() == 0
-        assert simulation.edgesList.findAll { it.source == clientAppId }.size() == 0
+        assert NetworkGraphUtil.findEdges(simulation, null, webAppId).size() > 0
+        assert NetworkGraphUtil.findEdges(simulation, null, clientAppId).size() == 0
+        assert NetworkGraphUtil.findEdges(simulation, webAppId, null).size() == 0
+        assert NetworkGraphUtil.findEdges(simulation, clientAppId, null).size() == 0
      }
 
     @Category([NetworkPolicySimulation])
@@ -265,7 +266,7 @@ class NetworkSimulator extends BaseSpecification {
         when:
         "Get Base Graph"
         def baseline = Services.getNetworkGraph()
-        def appId = baseline.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.id
+        def appId = baseline.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
 
         then:
         "verify simulation"
@@ -273,10 +274,10 @@ class NetworkSimulator extends BaseSpecification {
         assert simulation != null
         assert targets == _ ?
                 true :
-                simulation.edgesList.findAll { it.target == appId }.size() == targets
+                NetworkGraphUtil.findEdges(simulation, null, appId).size() == targets
         assert sources == _ ?
                 true :
-                simulation.edgesList.findAll { it.source == appId }.size() == sources
+                NetworkGraphUtil.findEdges(simulation, appId, null).size() == sources
 
         where:
         "Data"
