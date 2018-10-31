@@ -104,6 +104,7 @@ func policyDeploymentAndViolationsToAlert(policy *v1.Policy, deployment *v1.Depl
 			Action:  action,
 			Message: msg,
 		}
+		logger.Warnf("generated deploy alert with enforcement for deployment %s: %s", alert.GetDeployment().GetName(), proto.MarshalTextString(alert.GetEnforcement()))
 	}
 	return alert
 }
