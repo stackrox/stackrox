@@ -8,4 +8,4 @@ source $COMMON_DIR/deploy.sh
 source $K8S_DIR/launch.sh
 source $K8S_DIR/env.sh
 
-launch_central "$K8S_DIR" "$MAIN_IMAGE"
+launch_central "$K8S_DIR" "$MAIN_IMAGE" "$STORAGE"

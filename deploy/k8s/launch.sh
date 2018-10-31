@@ -3,6 +3,7 @@
 function launch_central {
     local k8s_dir="$1"
     local main_image="$2"
+    local storage="$3"
 
     echo "Generating central config..."
 
@@ -11,11 +12,11 @@ function launch_central {
         EXTRA_ARGS+=("--monitoring-type=none")
     fi
 
-    docker run --rm "$main_image" deploy k8s ${EXTRA_ARGS[@]} -i "$main_image" none > $k8s_dir/central.zip
+    docker run --rm "${main_image}" deploy k8s ${EXTRA_ARGS[@]} -i "$main_image" "${storage}" > "${k8s_dir}/central.zip"
 
-    local unzip_dir="$k8s_dir/central-deploy/"
-    rm -rf "$unzip_dir"
-    unzip "$k8s_dir/central.zip" -d "$unzip_dir"
+    local unzip_dir="${k8s_dir}/central-deploy/"
+    rm -rf "${unzip_dir}"
+    unzip "${k8s_dir}/central.zip" -d "${unzip_dir}"
     echo
 
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then
