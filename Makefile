@@ -93,7 +93,7 @@ $(MOCKERY_BIN):
 STRINGER_BIN := $(GOPATH)/bin/stringer
 $(STRINGER_BIN):
 	@echo "+ $@"
-	@$(BASE_PATH)/scripts/go-get-version.sh golang.org/x/tools/cmd/stringer a2dc47679d30b6c496245bafc6a166b46c5fe318
+	@go get golang.org/x/tools/cmd/stringer
 
 MOCKGEN_BIN := $(GOPATH)/bin/mockgen
 $(MOCKGEN_BIN):
@@ -103,7 +103,7 @@ $(MOCKGEN_BIN):
 GENNY_BIN := $(GOPATH)/bin/genny
 $(GENNY_BIN):
 	@echo "+ $@"
-	@go get github.com/mauricelam/genny
+	@$(BASE_PATH)/scripts/go-get-version.sh github.com/mauricelam/genny e937528877485c089aa62cfa9f60968749d650f1
 
 .PHONY: go-generated-srcs
 go-generated-srcs: $(MOCKERY_BIN) $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
