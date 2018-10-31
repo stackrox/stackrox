@@ -86,18 +86,18 @@ const networkGraph = (state = { nodes: [] }, action) => {
     return state;
 };
 
-const networkFlowMapping = (state = new Map(), action) => {
+const networkFlowMapping = (state = {}, action) => {
     if (action.type === types.SET_NETWORK_FLOW_MAPPING) {
         const { flowGraph } = action;
         const flowEquals = isEqual(flowGraph, state);
         if (flowEquals) {
             return state;
         }
-        const newState = new Map(state);
+        const newState = Object.assign({}, state);
         flowGraph.nodes.forEach(node => {
             Object.keys(node.outEdges).forEach(tgtIndex => {
                 const tgtNode = flowGraph.nodes[tgtIndex];
-                newState.set({ source: node.deploymentId, target: tgtNode.deploymentId }, {});
+                newState[`${node.deploymentId}--${tgtNode.deploymentId}`] = true;
             });
         });
         return newState;

@@ -114,14 +114,14 @@ export const getLinksInSameNamespace = (nodes, networkFlowMapping) => {
     const filteredLinks = [];
 
     nodes.forEach(node => {
-        const sourceNamespace = node.namespace;
+        const srcNamespace = node.namespace;
         Object.keys(node.outEdges).forEach(targetIndex => {
             const tgtNode = nodes[targetIndex];
-            if (sourceNamespace !== tgtNode.namespace) {
+            if (srcNamespace !== tgtNode.namespace) {
                 return;
             }
             const link = { source: node.deploymentId, target: tgtNode.deploymentId };
-            link.isActive = networkFlowMapping.has(link);
+            link.isActive = networkFlowMapping[`${node.deploymentId}--${tgtNode.deploymentId}`];
             filteredLinks.push(link);
         });
     });
@@ -129,15 +129,25 @@ export const getLinksInSameNamespace = (nodes, networkFlowMapping) => {
     return filteredLinks;
 };
 
-export const getLinksBetweenNamespaces = nodes => {
+export const getLinksBetweenNamespaces = (nodes, networkFlowMapping) => {
     const namespaceLinks = new Set();
+    const namespaceMapping = {};
 
     nodes.forEach(node => {
-        const sourceNamespace = node.namespace;
+        const srcNamespace = node.namespace;
+        const srcDeploymentId = node.deploymentId;
         Object.keys(node.outEdges).forEach(targetIndex => {
             const tgtNamespace = nodes[targetIndex].namespace;
-            if (sourceNamespace !== tgtNamespace) {
-                namespaceLinks.add({ source: sourceNamespace, target: tgtNamespace });
+            const tgtDeploymentId = nodes[targetIndex].deploymentId;
+            const isActive = networkFlowMapping[`${srcDeploymentId}--${tgtDeploymentId}`];
+            const hasActive = namespaceMapping[`${srcNamespace}--${tgtNamespace}`];
+            if (srcNamespace !== tgtNamespace) {
+                namespaceMapping[`${srcNamespace}--${tgtNamespace}`] = hasActive || isActive;
+                namespaceLinks.add({
+                    source: srcNamespace,
+                    target: tgtNamespace,
+                    isActive: !!namespaceMapping[`${srcNamespace}--${tgtNamespace}`]
+                });
             }
         });
     });

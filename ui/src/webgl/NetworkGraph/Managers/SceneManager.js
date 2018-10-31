@@ -79,7 +79,7 @@ const SceneManager = canvas => {
         });
 
         namespaceLinks.forEach(namespaceLink => {
-            objects.push(new NamespaceLink(webGLScene, camera, canvas, namespaceLink));
+            objects.push(new NamespaceLink(webGLScene, canvas, namespaceLink));
         });
 
         return objects;

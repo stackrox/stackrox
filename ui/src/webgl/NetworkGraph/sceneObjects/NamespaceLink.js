@@ -3,7 +3,7 @@ import { MeshLine, MeshLineMaterial } from 'three.meshline';
 import * as constants from 'constants/networkGraph';
 import { selectClosestSides } from 'utils/networkGraphUtils';
 
-const NamespaceLink = (scene, camera, canvas, data) => {
+const NamespaceLink = (scene, canvas, data) => {
     const link = data;
 
     let geometry;
@@ -19,16 +19,21 @@ const NamespaceLink = (scene, camera, canvas, data) => {
      */
     const meshLine = new MeshLine();
     meshLine.setGeometry(geometry);
-    material = new MeshLineMaterial({
+    const materialConfig = {
         useMap: false,
         color: new THREE.Color(constants.NAMESPACE_LINK_COLOR),
         opacity: 1,
+        transparent: true,
         resolution: new THREE.Vector2(canvas.clientWidth, canvas.clientHeight),
         sizeAttenuation: true,
-        lineWidth: 0,
-        near: camera.near,
-        far: camera.far
-    });
+        lineWidth: 0
+    };
+    if (!link.isActive) {
+        materialConfig.dashArray = constants.NODE_DASH_ARRAY;
+        materialConfig.dashOffset = constants.NODE_DASH_OFFSET;
+        materialConfig.dashRatio = constants.NODE_DASH_RATIO;
+    }
+    material = new MeshLineMaterial(materialConfig);
     const line = new THREE.Mesh(meshLine.geometry, material);
     line.frustumCulled = false;
     line.mLine = meshLine;

@@ -103,8 +103,8 @@ const DataManager = canvas => {
         return enrichedNodes;
     }
 
-    function getNamespaceLinks(dataNodes) {
-        const linksBetweenNamespaces = getLinksBetweenNamespaces(dataNodes);
+    function getNamespaceLinks(dataNodes, networkFlowMapping) {
+        const linksBetweenNamespaces = getLinksBetweenNamespaces(dataNodes, networkFlowMapping);
         return getBidirectionalLinks(linksBetweenNamespaces);
     }
 
@@ -121,7 +121,7 @@ const DataManager = canvas => {
         nodes = enrichNodes(data.nodes);
         links = getLinksInSameNamespace(nodes, data.networkFlowMapping);
         namespaces = getNamespaces(nodes);
-        namespaceLinks = getNamespaceLinks(nodes);
+        namespaceLinks = getNamespaceLinks(nodes, data.networkFlowMapping);
         simulation = setUpForceLayout();
     }
 
