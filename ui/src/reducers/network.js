@@ -79,8 +79,15 @@ export const actions = {
 
 // Reducers
 
-const networkGraph = (state = { nodes: [] }, action) => {
+const networkPolicyGraph = (state = { nodes: [] }, action) => {
     if (action.type === types.FETCH_NETWORK_POLICY_GRAPH.SUCCESS) {
+        return isEqual(action.response, state) ? state : action.response;
+    }
+    return state;
+};
+
+const networkFlowGraph = (state = { nodes: [], edges: [] }, action) => {
+    if (action.type === types.FETCH_NETWORK_FLOW_GRAPH.SUCCESS) {
         return isEqual(action.response, state) ? state : action.response;
     }
     return state;
@@ -237,7 +244,8 @@ const errorMessage = (state = '', action) => {
 };
 
 const reducer = combineReducers({
-    networkGraph,
+    networkPolicyGraph,
+    networkFlowGraph,
     networkFlowMapping,
     deployment,
     networkPolicies,
@@ -255,7 +263,8 @@ const reducer = combineReducers({
 
 // Selectors
 
-const getNetworkGraph = state => state.networkGraph;
+const getNetworkPolicyGraph = state => state.networkPolicyGraph;
+const getNetworkFlowGraph = state => state.networkFlowGraph;
 const getNetworkFlowMapping = state => state.networkFlowMapping;
 const getDeployment = state => state.deployment;
 const getNetworkPolicies = state => state.networkPolicies;
@@ -270,7 +279,8 @@ const getYamlFile = state => state.selectedYamlFile;
 const getLastUpdatedTimestamp = state => state.lastUpdatedTimestamp;
 
 export const selectors = {
-    getNetworkGraph,
+    getNetworkPolicyGraph,
+    getNetworkFlowGraph,
     getNetworkFlowMapping,
     getDeployment,
     getNetworkPolicies,

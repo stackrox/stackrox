@@ -3,12 +3,10 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
-import { actions as networkActions, networkGraphClusters } from 'reducers/network';
+import { actions as networkActions } from 'reducers/network';
 import { actions as deploymentActions, types as deploymentTypes } from 'reducers/deployments';
-import { actions as clusterActions } from 'reducers/clusters';
+import { ALL_STATE, ACTIVE_STATE } from 'constants/networkGraph';
 
-import dateFns from 'date-fns';
-import Select from 'Components/ReactSelect';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import NetworkGraph from 'Components/NetworkGraph';
@@ -21,6 +19,10 @@ import DeploymentDetails from '../Risk/DeploymentDetails';
 import NetworkPoliciesDetails from './NetworkPoliciesDetails';
 import NetworkGraphLegend from './NetworkGraphLegend';
 import NetworkPolicySimulator from './NetworkPolicySimulator';
+import GraphFilters from './GraphFilters';
+import ZoomButtons from './ZoomButtons';
+import NodesUpdateSection from './NodesUpdateSection';
+import ClusterSelect from './ClusterSelect';
 
 class NetworkPage extends Component {
     static propTypes = {
@@ -35,11 +37,9 @@ class NetworkPage extends Component {
         isViewFiltered: PropTypes.bool.isRequired,
         fetchNetworkPolicies: PropTypes.func.isRequired,
         fetchDeployment: PropTypes.func.isRequired,
-        fetchClusters: PropTypes.func.isRequired,
         deployment: PropTypes.shape({}),
         networkPolicies: PropTypes.arrayOf(PropTypes.object),
-        selectClusterId: PropTypes.func.isRequired,
-        networkGraph: PropTypes.shape({
+        networkPolicyGraph: PropTypes.shape({
             nodes: PropTypes.arrayOf(
                 PropTypes.shape({
                     deploymentId: PropTypes.string.isRequired,
@@ -48,9 +48,16 @@ class NetworkPage extends Component {
             ),
             epoch: PropTypes.number
         }).isRequired,
-        networkFlowMapping: PropTypes.instanceOf(Map).isRequired,
-        clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
-        selectedClusterId: PropTypes.string,
+        networkFlowGraph: PropTypes.shape({
+            nodes: PropTypes.arrayOf(
+                PropTypes.shape({
+                    deploymentId: PropTypes.string.isRequired,
+                    outEdges: PropTypes.shape({})
+                })
+            ),
+            epoch: PropTypes.number
+        }),
+        networkFlowMapping: PropTypes.shape({}).isRequired,
         isFetchingNode: PropTypes.bool,
         nodeUpdatesEpoch: PropTypes.number,
         networkGraphUpdateKey: PropTypes.number.isRequired,
@@ -65,7 +72,8 @@ class NetworkPage extends Component {
             content: PropTypes.string,
             name: PropTypes.string
         }),
-        onNodesUpdate: PropTypes.func
+        onNodesUpdate: PropTypes.func,
+        lastUpdatedTimestamp: PropTypes.instanceOf(Date)
     };
 
     static defaultProps = {
@@ -74,15 +82,16 @@ class NetworkPage extends Component {
         networkPolicies: [],
         deployment: {},
         nodeUpdatesEpoch: null,
-        selectedClusterId: '',
         errorMessage: '',
         yamlFile: null,
-        onNodesUpdate: null
+        onNodesUpdate: null,
+        lastUpdatedTimestamp: null,
+        networkFlowGraph: null
     };
 
-    componentDidMount() {
-        this.props.fetchClusters();
-    }
+    state = {
+        filterState: ALL_STATE
+    };
 
     onSearch = searchOptions => {
         if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
@@ -106,18 +115,17 @@ class NetworkPage extends Component {
         this.props.incrementNetworkGraphUpdateKey();
     };
 
+    onFilterButtonClick = filterState => {
+        this.setState({ filterState });
+    };
+
     getNodeUpdates = () => {
-        const { networkGraph, nodeUpdatesEpoch } = this.props;
-        return nodeUpdatesEpoch - networkGraph.epoch;
+        const { networkPolicyGraph, nodeUpdatesEpoch } = this.props;
+        return nodeUpdatesEpoch - networkPolicyGraph.epoch;
     };
 
     closeSidePanel = () => {
         this.props.setSelectedNodeId(null);
-    };
-
-    changeCluster = clusterId => {
-        this.props.selectClusterId(clusterId);
-        this.closeSidePanel();
     };
 
     toggleNetworkPolicySimulator = () => {
@@ -139,6 +147,11 @@ class NetworkPage extends Component {
         const colorType = this.props.networkGraphState === 'ERROR' ? 'alert' : 'success';
         const simulatorMode = this.props.simulatorMode ? 'simulator-mode' : '';
         const networkGraphState = this.props.networkGraphState === 'ERROR' ? 'error' : 'success';
+        const networkGraph = {};
+        const { filterState } = this.state;
+        const { networkPolicyGraph, networkFlowGraph } = this.props;
+        networkGraph.nodes =
+            filterState === ACTIVE_STATE ? networkFlowGraph.nodes : networkPolicyGraph.nodes;
         return (
             <div className={`${simulatorMode} ${networkGraphState} w-full h-full`}>
                 {this.props.simulatorMode && (
@@ -153,9 +166,10 @@ class NetworkPage extends Component {
                         this.networkGraph = instance;
                     }}
                     updateKey={this.props.networkGraphUpdateKey}
-                    nodes={this.props.networkGraph.nodes}
+                    nodes={networkGraph.nodes}
                     networkFlowMapping={this.props.networkFlowMapping}
                     onNodeClick={this.onNodeClick}
+                    filterState={filterState}
                 />
             </div>
         );
@@ -169,9 +183,13 @@ class NetworkPage extends Component {
         return (
             <div className={className}>
                 {this.renderSidePanel()}
-                {this.renderNodesUpdateSection()}
+                <NodesUpdateSection
+                    getNodeUpdates={this.getNodeUpdates}
+                    onUpdateGraph={this.onUpdateGraph}
+                    lastUpdatedTimestamp={this.props.lastUpdatedTimestamp}
+                />
                 {this.renderNetworkPolicySimulator()}
-                {this.renderZoomButtons()}
+                <ZoomButtons networkGraph={this.networkGraph} />
             </div>
         );
     };
@@ -179,7 +197,13 @@ class NetworkPage extends Component {
     renderSidePanel = () => {
         const { selectedNodeId, deployment, networkPolicies } = this.props;
         if (!selectedNodeId || this.props.simulatorMode) {
-            return <React.Fragment>{this.renderNodesUpdateSection()}</React.Fragment>;
+            return (
+                <NodesUpdateSection
+                    getNodeUpdates={this.getNodeUpdates}
+                    onUpdateGraph={this.onUpdateGraph}
+                    lastUpdatedTimestamp={this.props.lastUpdatedTimestamp}
+                />
+            );
         }
         const envGraphPanelTabs = [{ text: 'Deployment Details' }, { text: 'Network Policies' }];
         const content = this.props.isFetchingNode ? (
@@ -224,55 +248,10 @@ class NetworkPage extends Component {
                     setSearchSuggestions={this.props.setSearchSuggestions}
                     onSearch={this.onSearch}
                 />
-                {this.renderClustersSelect()}
+                <ClusterSelect closeSidePanel={this.closeSidePanel} />
                 {this.renderNetworkPolicySimulatorButton()}
             </PageHeader>
         );
-    };
-
-    renderPageHeader = () => {
-        const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
-        return (
-            <PageHeader
-                header="Network Graph"
-                subHeader={subHeader}
-                className="w-2/3 bg-primary-200 "
-            >
-                <SearchInput
-                    id="network"
-                    className="w-full"
-                    searchOptions={this.props.searchOptions}
-                    searchModifiers={this.props.searchModifiers}
-                    searchSuggestions={this.props.searchSuggestions}
-                    setSearchOptions={this.props.setSearchOptions}
-                    setSearchModifiers={this.props.setSearchModifiers}
-                    setSearchSuggestions={this.props.setSearchSuggestions}
-                    onSearch={this.onSearch}
-                />
-                {this.renderClustersSelect()}
-                {this.renderNetworkPolicySimulatorButton()}
-            </PageHeader>
-        );
-    };
-
-    renderClustersSelect = () => {
-        if (!this.props.clusters.length) return null;
-        // network policies are only applicable on k8s-based clusters
-        const options = this.props.clusters
-            .filter(cluster => networkGraphClusters[cluster.type])
-            .map(cluster => ({
-                value: cluster.id,
-                label: cluster.name
-            }));
-        const clustersProps = {
-            className: 'min-w-64 ml-2',
-            options,
-            value: this.props.selectedClusterId,
-            placeholder: 'Select a cluster',
-            onChange: this.changeCluster,
-            autoFocus: true
-        };
-        return <Select {...clustersProps} />;
     };
 
     renderNetworkPolicySimulatorButton = () => {
@@ -293,36 +272,6 @@ class NetworkPage extends Component {
         );
     };
 
-    renderNodesUpdateButton = () => {
-        const nodeUpdatesCount = this.getNodeUpdates();
-        if (Number.isNaN(nodeUpdatesCount) || nodeUpdatesCount <= 0) return null;
-        return (
-            <button
-                type="button"
-                className="btn-graph-refresh p-1 bg-primary-300 border-2 border-primary-400 hover:bg-primary-200 rounded-sm text-sm text-primary-700 mt-2 w-full font-700"
-                onClick={this.onUpdateGraph}
-            >
-                <Icon.Circle className="h-2 w-2 text-primary-300 border-primary-300" />
-                <span className="pl-1">
-                    {`${nodeUpdatesCount} update${nodeUpdatesCount === 1 ? '' : 's'} available`}
-                </span>
-            </button>
-        );
-    };
-
-    renderNodesUpdateSection = () => {
-        if (!this.props.lastUpdatedTimestamp) return null;
-        return (
-            <div className="absolute pin-t pin-network-update-label-left mt-2 mr-2 p-2 bg-base-100 rounded-sm shadow-outline text-base-500 text-sm font-700">
-                <div className="uppercase">{`Last Updated: ${dateFns.format(
-                    this.props.lastUpdatedTimestamp,
-                    'hh:mm:ssA'
-                )}`}</div>
-                {this.renderNodesUpdateButton()}
-            </div>
-        );
-    };
-
     renderNetworkPolicySimulator() {
         if (!this.props.simulatorMode) return null;
         return (
@@ -336,31 +285,13 @@ class NetworkPage extends Component {
         );
     }
 
-    renderZoomButtons = () => (
-        <div className="graph-zoom-buttons m-4 absolute pin-b pin-network-zoom-buttons-left">
-            <button
-                type="button"
-                className="btn-icon btn-base border-b border-base-300 shadow"
-                onClick={this.networkGraph && this.networkGraph.zoomIn}
-            >
-                <Icon.Plus className="h-4 w-4" />
-            </button>
-            <button
-                type="button"
-                className="btn-icon btn-base shadow"
-                onClick={this.networkGraph && this.networkGraph.zoomOut}
-            >
-                <Icon.Minus className="h-4 w-4" />
-            </button>
-        </div>
-    );
-
     render() {
         return (
             <section className="flex flex-1 h-full w-full">
                 <div className="flex flex-1 flex-col w-full">
                     <div className="flex">{this.renderPageHeader()}</div>
                     <section className="network-grid-bg flex flex-1 relative">
+                        <GraphFilters onFilter={this.onFilterButtonClick} />
                         <NetworkGraphLegend />
                         {this.renderGraph()}
                         {this.renderSideComponents()}
@@ -387,9 +318,9 @@ const getNetworkGraphState = createSelector(
 );
 
 const mapStateToProps = createStructuredSelector({
-    clusters: selectors.getClusters,
     selectedClusterId: selectors.getSelectedNetworkClusterId,
-    networkGraph: selectors.getNetworkGraph,
+    networkPolicyGraph: selectors.getNetworkPolicyGraph,
+    networkFlowGraph: selectors.getNetworkFlowGraph,
     searchOptions: selectors.getNetworkSearchOptions,
     searchModifiers: selectors.getNetworkSearchModifiers,
     searchSuggestions: selectors.getNetworkSearchSuggestions,
@@ -411,12 +342,10 @@ const mapStateToProps = createStructuredSelector({
 const mapDispatchToProps = {
     fetchNetworkPolicies: networkActions.fetchNetworkPolicies.request,
     fetchDeployment: deploymentActions.fetchDeployment.request,
-    fetchClusters: clusterActions.fetchClusters.request,
     setSelectedNodeId: networkActions.setSelectedNodeId,
     setSearchOptions: networkActions.setNetworkSearchOptions,
     setSearchModifiers: networkActions.setNetworkSearchModifiers,
     setSearchSuggestions: networkActions.setNetworkSearchSuggestions,
-    selectClusterId: networkActions.selectNetworkClusterId,
     setSimulatorMode: networkActions.setSimulatorMode,
     setNetworkGraphState: networkActions.setNetworkGraphState,
     setYamlFile: networkActions.setYamlFile,

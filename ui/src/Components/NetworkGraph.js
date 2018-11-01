@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import NetworkGraphManager from 'webgl/NetworkGraph/Managers/NetworkGraphManager';
+import { ALLOWED_STATE } from 'constants/networkGraph';
 
 class NetworkGraph extends Component {
     static propTypes = {
@@ -9,9 +10,10 @@ class NetworkGraph extends Component {
                 deploymentId: PropTypes.string.isRequired
             })
         ).isRequired,
-        networkFlowMapping: PropTypes.instanceOf(Map).isRequired,
+        networkFlowMapping: PropTypes.shape({}).isRequired,
         onNodeClick: PropTypes.func.isRequired,
-        updateKey: PropTypes.number.isRequired
+        updateKey: PropTypes.number.isRequired,
+        filterState: PropTypes.number.isRequired
     };
 
     constructor(props) {
@@ -27,9 +29,17 @@ class NetworkGraph extends Component {
 
     shouldComponentUpdate(nextProps) {
         if (this.isWebGLAvailable()) {
-            if (nextProps.updateKey !== this.props.updateKey) {
-                const { nodes, networkFlowMapping } = nextProps;
-                this.manager.setUpNetworkData({ nodes, networkFlowMapping });
+            if (
+                nextProps.updateKey !== this.props.updateKey ||
+                nextProps.filterState !== this.props.filterState
+            ) {
+                const { nodes, networkFlowMapping, filterState } = nextProps;
+                const filteredNetworkFlowMapping =
+                    filterState === ALLOWED_STATE ? {} : networkFlowMapping;
+                this.manager.setUpNetworkData({
+                    nodes,
+                    networkFlowMapping: filteredNetworkFlowMapping
+                });
                 this.manager.setOnNodeClick(nextProps.onNodeClick);
             }
         }

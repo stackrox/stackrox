@@ -77,6 +77,10 @@ export const NETWORK_GRAPH_TYPES = Object.freeze({
     NAMESPACE_LINK: 'NAMESPACE_LINK'
 });
 
+export const ACTIVE_STATE = 0;
+export const ALLOWED_STATE = 1;
+export const ALL_STATE = 2;
+
 export const TRANSPARENT = 0.05;
 export const VISIBLE = 1;
 

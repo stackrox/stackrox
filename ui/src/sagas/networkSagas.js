@@ -17,6 +17,7 @@ function* getNetworkFlowGraph(filters, clusterId) {
     yield put(actions.fetchNetworkFlowGraph.request());
     try {
         const flowResult = yield call(service.fetchNetworkFlowGraph, filters, clusterId);
+        yield put(actions.fetchNetworkFlowGraph.success(flowResult.response));
         yield put(actions.setNetworkFlowMapping(flowResult.response));
         yield put(actions.updateNetworkGraphTimestamp(new Date()));
     } catch (error) {
