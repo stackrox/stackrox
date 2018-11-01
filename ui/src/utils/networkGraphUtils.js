@@ -86,22 +86,21 @@ export const forceCollision = nodes => alpha => {
  * @returns {!Object[]}
  */
 export const getBidirectionalLinks = links => {
-    const sourceTargetToLinkMapping = new Map();
+    const sourceTargetToLinkMapping = {};
 
     links.forEach(link => {
-        const key = { source: link.source, target: link.target };
-        if (!sourceTargetToLinkMapping.has(key)) {
-            const reverseKey = { source: link.target, target: link.source };
-            const reverseLink = sourceTargetToLinkMapping.get(reverseKey);
-            if (reverseLink === undefined) {
-                sourceTargetToLinkMapping.set(key, link);
+        const key = `${link.source}-${link.target}`;
+        const reverseKey = `${link.target}-${link.source}`;
+        if (!sourceTargetToLinkMapping[key]) {
+            if (!sourceTargetToLinkMapping[reverseKey]) {
+                sourceTargetToLinkMapping[key] = link;
             } else {
-                reverseLink.bidirectional = true;
+                sourceTargetToLinkMapping[reverseKey].bidirectional = true;
+                sourceTargetToLinkMapping[reverseKey].isActive = link.isActive;
             }
         }
     });
-
-    return Array.from(sourceTargetToLinkMapping.values());
+    return Object.values(sourceTargetToLinkMapping);
 };
 
 /**
@@ -130,8 +129,7 @@ export const getLinksInSameNamespace = (nodes, networkFlowMapping) => {
 };
 
 export const getLinksBetweenNamespaces = (nodes, networkFlowMapping) => {
-    const namespaceLinks = new Set();
-    const namespaceMapping = {};
+    const namespaceLinks = {};
 
     nodes.forEach(node => {
         const srcNamespace = node.namespace;
@@ -139,20 +137,22 @@ export const getLinksBetweenNamespaces = (nodes, networkFlowMapping) => {
         Object.keys(node.outEdges).forEach(targetIndex => {
             const tgtNamespace = nodes[targetIndex].namespace;
             const tgtDeploymentId = nodes[targetIndex].deploymentId;
+            const key = `${srcNamespace}--${tgtNamespace}`;
             const isActive = networkFlowMapping[`${srcDeploymentId}--${tgtDeploymentId}`];
-            const hasActive = namespaceMapping[`${srcNamespace}--${tgtNamespace}`];
+            const hasActive = namespaceLinks[key] && namespaceLinks[key].isActive;
             if (srcNamespace !== tgtNamespace) {
-                namespaceMapping[`${srcNamespace}--${tgtNamespace}`] = hasActive || isActive;
-                namespaceLinks.add({
+                const activeStatus = hasActive || isActive;
+                namespaceLinks[key] = {
                     source: srcNamespace,
                     target: tgtNamespace,
-                    isActive: !!namespaceMapping[`${srcNamespace}--${tgtNamespace}`]
-                });
+                    id: key,
+                    isActive: !!activeStatus
+                };
             }
         });
     });
 
-    return Array.from(namespaceLinks);
+    return Object.values(namespaceLinks);
 };
 
 /**
