@@ -70,7 +70,7 @@ func (ds *datastoreImpl) RemoveProcessIndicator(id string) error {
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicatorsByDeployment(id string) error {
-	query := pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.DeploymentID, id).ProtoQuery()
+	query := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, id).ProtoQuery()
 	results, err := ds.SearchProcessIndicators(query)
 	if err != nil {
 		return err

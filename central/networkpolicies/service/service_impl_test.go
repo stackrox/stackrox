@@ -311,7 +311,7 @@ func deploymentSearchIsForCluster(clusterID string) func(in interface{}) bool {
 			return false
 		}
 		// Should be a single conjunction with a base string query inside.
-		return query.GetBaseQuery().GetMatchFieldQuery().GetValue() == clusterID
+		return query.GetBaseQuery().GetMatchFieldQuery().GetValue() == "="+clusterID
 	}
 }
 

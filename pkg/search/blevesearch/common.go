@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/blevesearch/validpositions"
 )
 
-const maxSearchResponses = 2000
+const maxSearchResponses = 20000
 
 var logger = logging.LoggerForModule()
 

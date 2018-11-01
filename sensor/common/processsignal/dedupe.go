@@ -31,11 +31,12 @@ func newDeduper() *deduper {
 	}
 }
 
-func generateProcessSignalKey(signal *v1.ProcessSignal) string {
-	return fmt.Sprintf("%s %s %s %s", signal.GetContainerId(), signal.GetExecFilePath(), signal.GetName(), signal.GetArgs())
+func generateProcessSignalKey(indicator *v1.ProcessIndicator) string {
+	signal := indicator.GetSignal()
+	return fmt.Sprintf("%s %s %s %s %s", indicator.GetPodId(), indicator.GetContainerName(), signal.GetExecFilePath(), signal.GetName(), signal.GetArgs())
 }
 
-func (d *deduper) Allow(signal *v1.ProcessSignal) (allow bool) {
+func (d *deduper) Allow(indicator *v1.ProcessIndicator) (allow bool) {
 	defer func() {
 		if allow {
 			metrics.IncrementProcessDedupeCacheMisses()
@@ -44,7 +45,7 @@ func (d *deduper) Allow(signal *v1.ProcessSignal) (allow bool) {
 		}
 	}()
 
-	key := generateProcessSignalKey(signal)
+	key := generateProcessSignalKey(indicator)
 	elem, ok := d.cache.Get(key)
 	if !ok {
 		allow = true

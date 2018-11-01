@@ -56,10 +56,6 @@ func (p *Pipeline) reprocessSignalLater(indicator *v1.ProcessIndicator) {
 
 // Process defines processes to process a ProcessIndicator
 func (p *Pipeline) Process(signal *v1.ProcessSignal) {
-	if !p.deduper.Allow(signal) {
-		return
-	}
-
 	indicator := &v1.ProcessIndicator{
 		Id:     uuid.NewV4().String(),
 		Signal: signal,
@@ -76,6 +72,11 @@ func (p *Pipeline) Process(signal *v1.ProcessSignal) {
 }
 
 func (p *Pipeline) sendIndicatorEvent(indicator *v1.ProcessIndicator) {
+	// determine whether or not we should send the event
+	if !p.deduper.Allow(indicator) {
+		return
+	}
+
 	p.indicators <- &v1.SensorEvent{
 		Id:     indicator.GetId(),
 		Action: v1.ResourceAction_CREATE_RESOURCE,

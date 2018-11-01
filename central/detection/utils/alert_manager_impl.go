@@ -35,7 +35,7 @@ func (d *alertManagerImpl) GetAlertsByLifecycle(lifecyle v1.LifecycleStage) ([]*
 // GetAlertsByPolicy get all of the alerts that match the policy
 func (d *alertManagerImpl) GetAlertsByPolicy(policyID string) ([]*v1.Alert, error) {
 	qb := activeAlertsQueryBuilder().
-		AddStrings(search.PolicyID, policyID)
+		AddExactMatches(search.PolicyID, policyID)
 
 	return d.alerts.SearchRawAlerts(qb.ProtoQuery())
 }
@@ -43,14 +43,14 @@ func (d *alertManagerImpl) GetAlertsByPolicy(policyID string) ([]*v1.Alert, erro
 // GetAlertsByDeployment get all of the alerts that match the deployment
 func (d *alertManagerImpl) GetAlertsByDeployment(deploymentID string) ([]*v1.Alert, error) {
 	qb := activeAlertsQueryBuilder().
-		AddStrings(search.DeploymentID, deploymentID)
+		AddExactMatches(search.DeploymentID, deploymentID)
 
 	return d.alerts.SearchRawAlerts(qb.ProtoQuery())
 }
 
 func (d *alertManagerImpl) GetAlertsByPolicyAndLifecycle(policyID string, lifecycle v1.LifecycleStage) ([]*v1.Alert, error) {
 	q := activeAlertsQueryBuilder().
-		AddStrings(search.PolicyID, policyID).
+		AddExactMatches(search.PolicyID, policyID).
 		AddStrings(search.LifecycleStage, lifecycle.String()).ProtoQuery()
 
 	alerts, err := d.alerts.SearchRawAlerts(q)
@@ -62,7 +62,7 @@ func (d *alertManagerImpl) GetAlertsByPolicyAndLifecycle(policyID string, lifecy
 
 func (d *alertManagerImpl) GetAlertsByLifecycleAndDeployments(lifecycle v1.LifecycleStage, deploymentIDs ...string) ([]*v1.Alert, error) {
 	q := activeAlertsQueryBuilder().
-		AddStrings(search.DeploymentID, deploymentIDs...).
+		AddExactMatches(search.DeploymentID, deploymentIDs...).
 		AddStrings(search.LifecycleStage, lifecycle.String()).ProtoQuery()
 
 	alerts, err := d.alerts.SearchRawAlerts(q)
@@ -159,8 +159,8 @@ func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(alert *v1.Alert
 
 	q := search.NewQueryBuilder().
 		AddStrings(search.ViolationState, v1.ViolationState_RESOLVED.String()).
-		AddStrings(search.DeploymentID, alert.GetDeployment().GetId()).
-		AddStrings(search.PolicyID, alert.GetPolicy().GetId()).
+		AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).
+		AddExactMatches(search.PolicyID, alert.GetPolicy().GetId()).
 		ProtoQuery()
 
 	oldRunTimeAlerts, err := d.alerts.SearchRawAlerts(q)

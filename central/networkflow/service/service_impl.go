@@ -165,7 +165,7 @@ func filterNetworkFlowsByTime(flows []*v1.NetworkFlow, since timestamp.MicroTS) 
 }
 
 func (s *serviceImpl) getDeployments(clusterID string, query string) (deployments []*v1.Deployment, err error) {
-	clusterQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
+	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 
 	q := clusterQuery
 	if query != "" {

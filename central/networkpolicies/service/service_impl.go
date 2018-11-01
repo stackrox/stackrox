@@ -215,7 +215,7 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 }
 
 func (s *serviceImpl) getDeployments(clusterID, query string) (deployments []*v1.Deployment, err error) {
-	clusterQuery := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
+	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 
 	q := clusterQuery
 	if query != "" {

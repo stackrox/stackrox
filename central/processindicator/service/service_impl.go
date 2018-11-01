@@ -54,7 +54,7 @@ func (s *serviceImpl) GetProcessesByDeployment(_ context.Context, req *v1.GetPro
 	}
 	indicators, err := s.processIndicators.SearchRawProcessIndicators(
 		search.NewQueryBuilder().
-			AddStrings(search.DeploymentID, req.GetDeploymentId()).
+			AddExactMatches(search.DeploymentID, req.GetDeploymentId()).
 			ProtoQuery(),
 	)
 	if err != nil {
@@ -111,7 +111,7 @@ func (s *serviceImpl) GetGroupedProcessByDeployment(_ context.Context, req *v1.G
 	}
 	indicators, err := s.processIndicators.SearchRawProcessIndicators(
 		search.NewQueryBuilder().
-			AddStrings(search.DeploymentID, req.GetDeploymentId()).
+			AddExactMatches(search.DeploymentID, req.GetDeploymentId()).
 			ProtoQuery(),
 	)
 	if err != nil {
