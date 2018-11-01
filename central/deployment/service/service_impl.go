@@ -72,18 +72,6 @@ func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByI
 	if !exists {
 		return nil, status.Errorf(codes.NotFound, "deployment with id '%s' does not exist", request.GetId())
 	}
-
-	// populate process data
-	indicators, err := s.processIndicators.SearchRawProcessIndicators(
-		search.NewQueryBuilder().
-			AddStrings(search.DeploymentID, deployment.GetId()).
-			ProtoQuery(),
-	)
-	if err != nil {
-		return nil, err
-	}
-	deployment.Processes = indicators
-
 	return deployment, nil
 }
 

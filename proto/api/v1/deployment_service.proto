@@ -54,7 +54,6 @@ message Deployment {
     bool inactive                              = 16;
     repeated string image_pull_secrets         = 17;
     string service_account                     = 18;
-    repeated ProcessIndicator processes        = 19;
 }
 
 enum ContainerRuntime {

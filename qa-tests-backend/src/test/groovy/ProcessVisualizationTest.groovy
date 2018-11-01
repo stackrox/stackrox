@@ -1,5 +1,5 @@
+import services.ProcessService
 
-import static Services.getProcessOnDeployment
 import groups.BAT
 import spock.lang.Unroll
 import objects.Deployment
@@ -82,13 +82,13 @@ class ProcessVisualizationTest extends BaseSpecification {
         String uid = orchestrator?.getDeploymentId(DEPLOYMENTS.find { it.name == depName })
         assert uid != null
 
-        List<String> receivedProcessPaths = getProcessOnDeployment(uid)
+        List<String> receivedProcessPaths = ProcessService.getProcessPaths(uid)
         def sleepTime = 0L
         while ((!receivedProcessPaths.containsAll(expectedFilePaths)) && sleepTime < MAX_SLEEP_TIME) {
             println "Didn't find all the expected processes, retrying..."
             sleep(SLEEP_INCREMENT)
             sleepTime += SLEEP_INCREMENT
-            receivedProcessPaths = getProcessOnDeployment(uid)
+            receivedProcessPaths = ProcessService.getProcessPaths(uid)
         }
         println "ProcessVisualizationTest: Dep: " + depName + " Processes: " + receivedProcessPaths
 
