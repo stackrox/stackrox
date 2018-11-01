@@ -6,7 +6,7 @@
     "categories": ["Package Management"],
     "fields": {
         "process_policy": {
-            "name": "apt-get$"
+            "name": "apt-get"
         }
     },
     "rationale": "Package managers make it easier for attackers to use compromised containers, since they can easily add software.",

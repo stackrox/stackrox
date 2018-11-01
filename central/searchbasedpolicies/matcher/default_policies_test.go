@@ -499,7 +499,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				apkDep.GetId(): {
 					{
-						Message: "Component name 'apk' matched ^apk$",
+						Message: "Component name 'apk' matched apk",
 					},
 				},
 			},
@@ -509,7 +509,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				componentDeps["apt"].GetId(): {
 					{
-						Message: "Component name 'apt' matched ^apt$",
+						Message: "Component name 'apt' matched apt",
 					},
 				},
 			},
@@ -519,7 +519,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				curlDep.GetId(): {
 					{
-						Message: "Component name 'curl' matched ^curl$",
+						Message: "Component name 'curl' matched curl",
 					},
 				},
 			},
@@ -529,7 +529,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				componentDeps["dnf"].GetId(): {
 					{
-						Message: "Component name 'dnf' matched ^dnf$",
+						Message: "Component name 'dnf' matched dnf",
 					},
 				},
 			},
@@ -539,7 +539,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				componentDeps["wget"].GetId(): {
 					{
-						Message: "Component name 'wget' matched ^wget$",
+						Message: "Component name 'wget' matched wget",
 					},
 				},
 			},
@@ -549,7 +549,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				componentDeps["yum"].GetId(): {
 					{
-						Message: "Component name 'yum' matched ^yum$",
+						Message: "Component name 'yum' matched yum",
 					},
 				},
 			},
@@ -559,7 +559,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				componentDeps["rpm"].GetId(): {
 					{
-						Message: "Component name 'rpm' matched ^rpm$",
+						Message: "Component name 'rpm' matched rpm",
 					},
 				},
 			},
@@ -569,7 +569,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				dockerSockDep.GetId(): {
 					{
-						Message: "Volume source '/var/run/docker.sock' matched ^/var/run/docker.sock$",
+						Message: "Volume source '/var/run/docker.sock' matched /var/run/docker.sock",
 					},
 				},
 			},
@@ -599,7 +599,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				imagePort22Dep.GetId(): {
 					{
-						Message: "Dockerfile Line 'EXPOSE 22/tcp' matches the rule EXPOSE (^22/tcp|\\s+22/tcp)",
+						Message: "Dockerfile Line 'EXPOSE 22/tcp' matches the rule EXPOSE (22/tcp|\\s+22/tcp)",
 					},
 				},
 			},
@@ -685,12 +685,12 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		{
 			policyName:                "Required Label: Email",
 			shouldNotMatch:            map[string]struct{}{fixtureDep.GetId(): {}},
-			sampleViolationForMatched: "Required label not found (key = 'email', value = '^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$')",
+			sampleViolationForMatched: "Required label not found (key = 'email', value = '[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+')",
 		},
 		{
 			policyName:                "Required Annotation: Email",
 			shouldNotMatch:            map[string]struct{}{depWithGoodEmailAnnotation.GetId(): {}},
-			sampleViolationForMatched: "Required annotation not found (key = 'email', value = '^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$')",
+			sampleViolationForMatched: "Required annotation not found (key = 'email', value = '[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+')",
 		},
 		{
 			policyName:                "Required Label: Owner",
@@ -945,7 +945,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				suite.imageIDFromDep(apkDep): {
 					{
-						Message: "Component name 'apk' matched ^apk$",
+						Message: "Component name 'apk' matched apk",
 					},
 				},
 			},
@@ -955,7 +955,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				suite.imageIDFromDep(componentDeps["apt"]): {
 					{
-						Message: "Component name 'apt' matched ^apt$",
+						Message: "Component name 'apt' matched apt",
 					},
 				},
 			},
@@ -965,7 +965,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				suite.imageIDFromDep(curlDep): {
 					{
-						Message: "Component name 'curl' matched ^curl$",
+						Message: "Component name 'curl' matched curl",
 					},
 				},
 			},
@@ -975,7 +975,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				suite.imageIDFromDep(componentDeps["dnf"]): {
 					{
-						Message: "Component name 'dnf' matched ^dnf$",
+						Message: "Component name 'dnf' matched dnf",
 					},
 				},
 			},
@@ -985,7 +985,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				suite.imageIDFromDep(componentDeps["wget"]): {
 					{
-						Message: "Component name 'wget' matched ^wget$",
+						Message: "Component name 'wget' matched wget",
 					},
 				},
 			},
@@ -995,7 +995,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				suite.imageIDFromDep(componentDeps["yum"]): {
 					{
-						Message: "Component name 'yum' matched ^yum$",
+						Message: "Component name 'yum' matched yum",
 					},
 				},
 			},
@@ -1005,7 +1005,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				suite.imageIDFromDep(componentDeps["rpm"]): {
 					{
-						Message: "Component name 'rpm' matched ^rpm$",
+						Message: "Component name 'rpm' matched rpm",
 					},
 				},
 			},
@@ -1035,7 +1035,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				suite.imageIDFromDep(imagePort22Dep): {
 					{
-						Message: "Dockerfile Line 'EXPOSE 22/tcp' matches the rule EXPOSE (^22/tcp|\\s+22/tcp)",
+						Message: "Dockerfile Line 'EXPOSE 22/tcp' matches the rule EXPOSE (22/tcp|\\s+22/tcp)",
 					},
 				},
 			},

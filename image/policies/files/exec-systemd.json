@@ -6,7 +6,7 @@
     "lifecycle_stages": ["RUNTIME"],
     "fields": {
         "process_policy": {
-            "name": "systemd$"
+            "name": "systemd"
         }
     },
     "rationale": "The systemd service manager is generally not used in containers, and its use could indicate suspicious activity",

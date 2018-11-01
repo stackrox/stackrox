@@ -7,7 +7,7 @@
   "fields": {
     "line_rule": {
       "instruction": "EXPOSE",
-      "value": "(^22\/tcp|\\s+22\/tcp)"
+      "value": "(22\/tcp|\\s+22\/tcp)"
     }
   },
   "rationale": "Port 22 is reserved for SSH access. SSH should not typically be used within containers.",

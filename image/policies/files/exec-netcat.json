@@ -6,7 +6,7 @@
     "lifecycle_stages": ["RUNTIME"],
     "fields": {
       "process_policy": {
-        "name": "nc$"
+        "name": "nc"
       }
     },
   "rationale": "netcat is a known malicious process",

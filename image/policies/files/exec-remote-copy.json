@@ -6,7 +6,7 @@
     "lifecycle_stages": ["RUNTIME"],
     "fields": {
       "process_policy": {
-        "name": "scp$|sshfs$|ssh-copy-id$|meterpreter$"
+        "name": "scp|sshfs|ssh-copy-id|meterpreter"
       }
     },
     "rationale": "Remote copy tools can be used to exfiltrate data from a container",

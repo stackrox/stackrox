@@ -6,7 +6,7 @@
   "categories": ["Security Best Practices"],
   "fields": {
     "volume_policy": {
-      "source": "^/var/run/docker.sock$"
+      "source": "/var/run/docker.sock"
     }
   },
   "rationale": "Mounting /var/run/docker.sock implies container access to the docker daemon. This expands the attack surface of the container and gives an intruder an opportunity to break containment if the daemon is not properly secured.",

@@ -6,7 +6,7 @@
   "lifecycle_stages": ["RUNTIME"],
   "fields": {
     "process_policy" : {
-      "name": "login$|systemd$|systemd$|systemd-logind$|gosu$|su$|nologin$|faillog$|lastlog$|newgrp$|sg$"
+      "name": "login|systemd|systemd|systemd-logind|gosu|su|nologin|faillog|lastlog|newgrp|sg"
     }
   },
   "disabled": true,

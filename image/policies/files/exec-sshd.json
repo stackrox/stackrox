@@ -6,7 +6,7 @@
     "lifecycle_stages": ["RUNTIME"],
     "fields": {
       "process_policy" : {
-        "name": "sshd$"
+        "name": "sshd"
       }
     },
   "rationale": "ssh allows shell access to a container, which can be dangerous",

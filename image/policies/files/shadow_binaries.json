@@ -6,7 +6,7 @@
   "lifecycle_stages": ["RUNTIME"],
   "fields": {
     "process_policy" : {
-      "name": "chage$|gpasswd$|lastlog$|newgrp$|sg$|adduser$|deluser$|chpasswd$|groupadd$|groupdel$|addgroup$|delgroup$|groupmems$|groupmod$|grpck$|grpconv$|grpunconv$|newusers$|pwck$|pwconv$|pwunconv$|useradd$|userdel$|usermod$|vigr$|vipw$|unix_chkpwd$"
+      "name": "chage|gpasswd|lastlog|newgrp|sg|adduser|deluser|chpasswd|groupadd|groupdel|addgroup|delgroup|groupmems|groupmod|grpck|grpconv|grpunconv|newusers|pwck|pwconv|pwunconv|useradd|userdel|usermod|vigr|vipw|unix_chkpwd"
     }
   },
   "disabled": true,

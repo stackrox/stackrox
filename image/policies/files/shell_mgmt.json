@@ -6,7 +6,7 @@
   "lifecycle_stages": ["RUNTIME"],
   "fields": {
     "process_policy" : {
-      "name": "add-shell$|remove-shell$"
+      "name": "add-shell|remove-shell"
     }
   },
   "disabled": true,

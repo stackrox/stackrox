@@ -6,7 +6,7 @@
     "lifecycle_stages": ["RUNTIME"],
     "fields": {
         "process_policy": {
-            "name": "yum$"
+            "name": "yum"
         }
     },
     "rationale": "Package managers make it easier for attackers to use compromised containers, since they can easily add software.",

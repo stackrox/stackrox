@@ -6,7 +6,7 @@
   "categories": ["Network Tools"],
   "fields": {
     "process_policy": {
-      "name": "nmap$"
+      "name": "nmap"
     }
   },
   "rationale": "Nmap can be used to probe a running container's network to enumerate open ports and perform other actions such as OS version detection and launching over-the-network scripted attacks",

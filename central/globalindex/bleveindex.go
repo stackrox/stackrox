@@ -9,8 +9,7 @@ import (
 	"github.com/blevesearch/bleve/analysis/analyzer/custom"
 	"github.com/blevesearch/bleve/analysis/token/lowercase"
 	"github.com/blevesearch/bleve/analysis/tokenizer/whitespace"
-	"github.com/blevesearch/bleve/index/store/moss"
-	"github.com/blevesearch/bleve/index/upsidedown"
+	"github.com/blevesearch/bleve/index/scorch"
 	"github.com/blevesearch/bleve/mapping"
 	alertMapping "github.com/stackrox/rox/central/alert/index/mappings"
 	deploymentMapping "github.com/stackrox/rox/central/deployment/index/mappings"
@@ -57,7 +56,9 @@ func InitializeIndices(mossPath string) (bleve.Index, error) {
 	indexMapping := getIndexMapping()
 
 	kvconfig := map[string]interface{}{
-		"mossLowerLevelStoreName": "mossStore",
+		// This sounds scary. It's not. It just means that the persistence to disk is not guaranteed
+		// which is fine for us because we replay on Central restart
+		"unsafe_batch": true,
 	}
 
 	// Bleve requires that the directory we provide is already empty.
@@ -65,11 +66,11 @@ func InitializeIndices(mossPath string) (bleve.Index, error) {
 	if err != nil {
 		logger.Warnf("Could not clean up search index path %s: %v", mossPath, err)
 	}
-	globalIndex, err := bleve.NewUsing(mossPath, indexMapping, upsidedown.Name, moss.Name, kvconfig)
+	globalIndex, err := bleve.NewUsing(mossPath, indexMapping, scorch.Name, scorch.Name, kvconfig)
 	if err != nil {
 		return nil, err
 	}
-	go startMonitoring(mossPath)
+	go startMonitoring(globalIndex, mossPath)
 	return globalIndex, nil
 }
 

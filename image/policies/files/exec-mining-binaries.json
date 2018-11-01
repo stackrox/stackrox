@@ -6,7 +6,7 @@
   "lifecycle_stages": ["RUNTIME"],
   "fields": {
     "process_policy" : {
-      "name": "sgminer$|cgminer$|cpuminer$|minerd$|geth$|ethminer$|xmr-stak-cpu$|xmr-stak-amd$|xmr-stak-nvidia$|xmrminer$|cpuminer-multi$"
+      "name": "sgminer|cgminer|cpuminer|minerd|geth|ethminer|xmr-stak-cpu|xmr-stak-amd|xmr-stak-nvidia|xmrminer|cpuminer-multi"
     }
   },
   "rationale": "Cryptomining binaries are CPU intensive and can divert resources away from the containerized application",

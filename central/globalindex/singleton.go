@@ -14,7 +14,7 @@ var (
 
 func initialize() {
 	var err error
-	globalIndex, err = InitializeIndices("/tmp/search/moss.bleve")
+	globalIndex, err = InitializeIndices("/tmp/search/scorch.bleve")
 	if err != nil {
 		panic(err)
 	}

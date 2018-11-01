@@ -6,7 +6,7 @@
     "lifecycle_stages": ["RUNTIME"],
     "fields": {
       "process_policy": {
-        "name": "make$"
+        "name": "make"
       }
     },
   "rationale": "Calling make during runtime could indicate someone trying to use your infrastructure to build software.",

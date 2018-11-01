@@ -12,7 +12,7 @@
   "fields": {
     "requiredAnnotation": {
       "key": "email",
-      "value": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
+      "value": "[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+"
     }
   },
   "whitelists": [

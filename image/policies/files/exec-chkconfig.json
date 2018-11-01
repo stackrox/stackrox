@@ -6,7 +6,7 @@
   "categories": ["System Modification"],
   "fields": {
     "process_policy": {
-      "name": "chkconfig$"
+      "name": "chkconfig"
     }
   },
   "rationale": "chkconfig can be used to activate and deactivate services, and should generally not be run within a container",

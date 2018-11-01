@@ -6,7 +6,7 @@
   "categories": ["Security Best Practices"],
   "fields": {
     "component": {
-      "name": "^apk$"
+      "name": "apk"
     }
   },
   "rationale": "Package managers make it easier for attackers to use compromised containers, since they can easily add software.",

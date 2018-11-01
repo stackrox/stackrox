@@ -6,7 +6,7 @@
   "categories": ["Security Best Practices"],
   "fields": {
     "component": {
-      "name": "^wget$"
+      "name": "wget"
     }
   },
   "rationale": "Leaving download tools like wget in an image makes it easier for attackers to use compromised containers, since they can easily download software.",

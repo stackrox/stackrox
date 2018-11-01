@@ -135,7 +135,7 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  digest = "1:f8b4a27154ebe6819e21d994b7a07e7186100a19d11039153c38392781d0b31d"
+  digest = "1:d99f8659919d6f509feafcb9528519fe85d0243bac7002306e08849d3c9b9a5d"
   name = "github.com/blevesearch/bleve"
   packages = [
     ".",
@@ -161,7 +161,6 @@
     "index/store",
     "index/store/boltdb",
     "index/store/gtreap",
-    "index/store/moss",
     "index/upsidedown",
     "mapping",
     "numeric",
@@ -268,21 +267,6 @@
   pruneopts = "NUT"
   revision = "97fdf19511ea361ae1c100dd393cc47f8dcfa1e1"
   version = "v4"
-
-[[projects]]
-  digest = "1:4c7bcdf687f256e280e880f3aa3d77913f9ec1fbae99df4e3be982432c5cf90c"
-  name = "github.com/couchbase/ghistogram"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "d910dd063dd68fb4d2a1ba344440f834ebb4ef62"
-
-[[projects]]
-  branch = "master"
-  digest = "1:15280589db8928397869c1275d1bbdea8e576bc63e1a408c11fdaa326a0e1029"
-  name = "github.com/couchbase/moss"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "956632ec1bc3e28276d00ee2f22c3202f06efb12"
 
 [[projects]]
   branch = "master"
@@ -1481,8 +1465,7 @@
     "github.com/blevesearch/bleve/analysis/token/lowercase",
     "github.com/blevesearch/bleve/analysis/tokenizer/whitespace",
     "github.com/blevesearch/bleve/index",
-    "github.com/blevesearch/bleve/index/store/moss",
-    "github.com/blevesearch/bleve/index/upsidedown",
+    "github.com/blevesearch/bleve/index/scorch",
     "github.com/blevesearch/bleve/mapping",
     "github.com/blevesearch/bleve/search",
     "github.com/blevesearch/bleve/search/query",
