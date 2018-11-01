@@ -15,6 +15,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
@@ -47,8 +48,8 @@ type APIService interface {
 
 // API listens for new connections on port 443, and redirects them to the gRPC-Gateway
 type API interface {
-	// Start runs the API in a goroutine.
-	Start()
+	// Start runs the API in a goroutine, and returns a signal that can be checked for when the API server is started.
+	Start() *concurrency.Signal
 	// Register adds a new APIService to the list of API services
 	Register(services ...APIService)
 }
@@ -77,8 +78,10 @@ func NewAPI(config Config) API {
 	}
 }
 
-func (a *apiImpl) Start() {
-	go a.run()
+func (a *apiImpl) Start() *concurrency.Signal {
+	startedSig := concurrency.NewSignal()
+	go a.run(&startedSig)
+	return &startedSig
 }
 
 func (a *apiImpl) Register(services ...APIService) {
@@ -174,7 +177,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	return mux
 }
 
-func (a *apiImpl) run() {
+func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	tlsConf, err := a.config.TLS.TLSConfig()
 	if err != nil {
 		panic(err)
@@ -215,6 +218,10 @@ func (a *apiImpl) run() {
 	}
 
 	log.Infof("gRPC server started on %s", srv.Addr)
+	if startedSig != nil {
+		startedSig.Signal()
+	}
+
 	err = srv.Serve(listener)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)

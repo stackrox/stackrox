@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"runtime/debug"
 	"syscall"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	alertService "github.com/stackrox/rox/central/alert/service"
@@ -53,6 +54,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/concurrency"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -81,6 +83,8 @@ var (
 const (
 	ssoURLPathPrefix     = "/sso/"
 	tokenRedirectURLPath = "/auth/response/generic"
+
+	grpcServerWatchdogTimeout = 20 * time.Second
 )
 
 func main() {
@@ -89,6 +93,14 @@ func main() {
 	go central.startGRPCServer()
 
 	central.processForever()
+}
+
+func watchdog(signal *concurrency.Signal, timeout time.Duration) {
+	if !concurrency.WaitWithTimeout(signal, timeout) {
+		log.Errorf("API server failed to start within %v!", timeout)
+		log.Errorf("This usually means something is *very* wrong. Terminating ...")
+		syscall.Kill(syscall.Getpid(), syscall.SIGABRT)
+	}
 }
 
 type central struct {
@@ -168,7 +180,8 @@ func (c *central) startGRPCServer() {
 	)
 
 	enrichanddetect.GetLoop().Start()
-	c.server.Start()
+	startedSig := c.server.Start()
+	go watchdog(startedSig, grpcServerWatchdogTimeout)
 }
 
 // allResourcesViewPermissions returns a slice containing view permissions for all resource types.
