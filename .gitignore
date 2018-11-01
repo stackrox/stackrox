@@ -25,7 +25,8 @@ deps
 report.xml
 test.log
 protoc-*
-image/VERSION
+image/VERSION.txt
+image/NOTICE.txt
 coverage.out
 coverage.html
 combined_coverage.dat

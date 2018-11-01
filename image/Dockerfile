@@ -27,7 +27,10 @@ COPY ./bin/deploy /stackrox/
 COPY ./bin/kubernetes-sensor /stackrox/
 COPY ./bin/swarm-sensor /stackrox/
 COPY ./ui/build  /ui/
-COPY ./VERSION /VERSION
+
+# This will expand to VERSION.txt during a local build, but NOTICE.txt and
+# VERSION.txt during a CI build.
+COPY ./*.txt /
 
 COPY ./telegraf.sh /telegraf.sh
 COPY ./assets /data/assets

@@ -231,7 +231,8 @@ image: gazelle clean-image
 	cp bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-sensor
 	cp bazel-bin/integration-tests/mock-grpc-server/linux_amd64_pure_stripped/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	cp bazel-bin/scale/mocksensor/linux_amd64_pure_stripped/mocksensor scale/image/bin/mocksensor
-	echo "$(TAG)" > image/VERSION
+
+	echo "$(TAG)" > image/VERSION.txt
 	chmod +w image/bin/*
 	chmod +w scale/image/bin/*
 	docker build -t stackrox/main:$(TAG) image/
@@ -259,3 +260,9 @@ clean-image:
 .PHONY: tag
 tag:
 	@echo $(TAG)
+
+ossls-audit:
+	ossls -audit
+
+ossls-notice:
+	ossls -notice | tee image/NOTICE.txt

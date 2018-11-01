@@ -11,7 +11,7 @@ const (
 	collectorTagEnvVar  = "ROX_COLLECTOR_TAG"
 	defaultCollectorTag = "1.6.0-44-g7dc30596" // check https://hub.docker.com/r/stackrox/collector/tags/
 
-	versionFile = "VERSION"
+	versionFile = "VERSION.txt"
 )
 
 var (

@@ -17,7 +17,7 @@ dependencies:
         author: f42007f16a84c67ae63be24ad8cae6ced19c8027c55444b0215af097f943976d
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2014-present Matt Zabriskie
+    - 2014-present Matt Zabriskie
 
   ui/node_modules/d3:
     url: https://github.com/d3/d3
@@ -28,7 +28,7 @@ dependencies:
         author: afe0674b41e36f1cdb4a5485171b5f6a02ae7d5147173442ffb09a9a88439ad2
         license: f15ff9073b9028a1ec2bc0f18cc3e3ed6df570ab3197b5597d8932ccb30e6d6b
     attribution:
-    - Copyright 2010-2017 Mike Bostock
+    - 2010-2017 Mike Bostock
 
   ui/node_modules/date-fns:
     url: https://github.com/date-fns/date-fns
@@ -49,7 +49,7 @@ dependencies:
         author: e09d2f153a94a06625d99f86d1c54c0b5227e194cc36fd7d0a0b8084ad86900c
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2015 Airbnb, Inc.
+    - 2015 Airbnb, Inc.
     - Leland Richardson
 
   ui/node_modules/enzyme-adapter-react-16:
@@ -60,7 +60,7 @@ dependencies:
         author: e09d2f153a94a06625d99f86d1c54c0b5227e194cc36fd7d0a0b8084ad86900c
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2015 Airbnb, Inc.
+    - 2015 Airbnb, Inc.
     - Leland Richardson
 
   ui/node_modules/eslint-plugin-prettier:
@@ -72,8 +72,8 @@ dependencies:
         author: 4155dabcee84b1947c03f1e8a9c0f7d01474095231365fb6b21f858ef6f6cf05
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright © 2017 Andres Suarez
-    - Copyright © 2017 Teddy Katz
+    - 2017 Andres Suarez
+    - 2017 Teddy Katz
 
   ui/node_modules/express:
     url: https://github.com/expressjs/express
@@ -85,9 +85,9 @@ dependencies:
         contributors: 1b1f36889e9319c39720c54fdeebba47ab31ae9d8b004a9b7a81f27c286347ac
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2009-2014 TJ Holowaychuk
-    - Copyright (c) 2013-2014 Roman Shtylman
-    - Copyright (c) 2014-2015 Douglas Christopher Wilson
+    - 2009-2014 TJ Holowaychuk
+    - 2013-2014 Roman Shtylman
+    - 2014-2015 Douglas Christopher Wilson
 
   ui/node_modules/file-saver:
     url: https://github.com/eligrey/FileSaver.js
@@ -98,7 +98,7 @@ dependencies:
         author: e448ef5bc6e2f10fa888154a56072912f551aeaafe705cd826d7c65aa6d3d25b
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright © 2016 Eli Grey
+    - 2016 Eli Grey
 
   ui/node_modules/flat:
     url: https://github.com/hughsk/flat
@@ -109,7 +109,7 @@ dependencies:
         author: 7cc1d344f70dc1cdd1137fb726a0a1d1facc496cf56fc7b6ba87a3fa956bc716
         license: f15ff9073b9028a1ec2bc0f18cc3e3ed6df570ab3197b5597d8932ccb30e6d6b
     attribution:
-    - Copyright (c) 2014, Hugh Kennedy
+    - 2014 Hugh Kennedy
 
   ui/node_modules/history:
     url: https://github.com/ReactTraining/history
@@ -120,7 +120,7 @@ dependencies:
         author: b23cbc488702e9c897869b27671fb496d0ea3846ab563083db133e5d556a6126
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) React Training 2016-2018
+    - React Training 2016-2018
     - Michael Jackson
 
   ui/node_modules/http-proxy-middleware:
@@ -132,7 +132,7 @@ dependencies:
         author: f3c630d96089392b54b154c97fabdac69b732ac346fadedef50ecc9465d78de7
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2015 Steven Chim
+    - 2015 Steven Chim
 
   ui/node_modules/lodash:
     url: https://github.com/lodash/lodash
@@ -144,7 +144,7 @@ dependencies:
         contributors: babe1030cb89fc75797fb428628704d84497a6604b8681a1b6543a33e8a1fd2f
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright JS Foundation and other contributors
+    - JS Foundation and other contributors
 
   ui/node_modules/normalizr:
     url: https://github.com/paularmstrong/normalizr
@@ -156,8 +156,8 @@ dependencies:
         contributors: 0e9fc822077e2b4e99fdb9f7adc9f884b2dd3521ce1818469556e070426eb6cd
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2016 Paul Armstrong
-    - Copyright (c) 2016 Dan Abramov
+    - 2016 Paul Armstrong
+    - 2016 Dan Abramov
 
   ui/node_modules/object-resolve-path:
     url: https://github.com/capaj/object-resolve-path
@@ -168,7 +168,7 @@ dependencies:
         author: e09edbcd42d71f4600c36a918425f72d8572731a627f32788e0c713d8daa0ee4
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2015 Jiri Spac
+    - 2015 Jiri Spac
 
   ui/node_modules/prop-types:
     url: https://github.com/facebook/prop-types
@@ -178,7 +178,7 @@ dependencies:
       package.json:
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2013-present, Facebook, Inc.
+    - 2013-present Facebook, Inc.
 
   ui/node_modules/query-string:
     url: https://github.com/sindresorhus/query-string
@@ -189,7 +189,7 @@ dependencies:
         author: a79cf742e06a2994f196cd45b37bb1fab34f935f97b8a48cfbd6a563f160c59f
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) Sindre Sorhus
+    - Sindre Sorhus
 
   ui/node_modules/raven-for-redux:
     url: https://github.com/captbaritone/raven-for-redux
@@ -208,7 +208,7 @@ dependencies:
       package.json:
         license: a17e9fcbccf09abdc402726dff1327dc8fecb58020884ded7204a62f23d33489
     attribution:
-    - Copyright (c) 2018, Sentry
+    - 2018 Sentry
 
   ui/node_modules/rc-tooltip:
     url: https://github.com/react-component/tooltip
@@ -218,7 +218,7 @@ dependencies:
       package.json:
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2015-present Alipay.com
+    - 2015-present Alipay.com
 
   ui/node_modules/react:
     url: https://github.com/facebook/react
@@ -228,7 +228,7 @@ dependencies:
       package.json:
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) Facebook, Inc. and its affiliates.
+    - Facebook, Inc. and its affiliates.
 
   ui/node_modules/react-collapsible:
     url: https://github.com/glennflanagan/react-collapsible
@@ -240,7 +240,7 @@ dependencies:
         contributors: f116a6e287b6ad202a023f0b71aa61b18d3b7f082ac7633ab127b8fb90f24871
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2017 Glenn Flanagan
+    - 2017 Glenn Flanagan
 
   ui/node_modules/react-copy-to-clipboard:
     url: https://github.com/nkbt/react-copy-to-clipboard
@@ -251,7 +251,7 @@ dependencies:
         author: c963452d2f5e3208b792a0a8bd6c8428ba41729e6e5eeaa01c9dee5665a96259
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2016 Nik Butenko
+    - 2016 Nik Butenko
 
   ui/node_modules/react-dom:
     url: https://github.com/facebook/react/tree/master/packages/react-dom
@@ -261,7 +261,7 @@ dependencies:
       package.json:
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) Facebook, Inc. and its affiliates.
+    - Facebook, Inc. and its affiliates.
 
   ui/node_modules/react-dropzone:
     url: https://github.com/react-dropzone/react-dropzone
@@ -273,7 +273,7 @@ dependencies:
         contributors: 3531b6b6d2794cdc99df55c04a95fc92a8dd1b1220092b1f01608404f0c6c45a
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2014 Param Aggarwal
+    - 2014 Param Aggarwal
 
   ui/node_modules/react-feather:
     url: https://github.com/carmelopullara/react-feather
@@ -284,7 +284,7 @@ dependencies:
         author: f169dea73c7c695f593d54c7adf24376a8f24b2f48185acd9028f9b157298348
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2017 Carmelo Pullara
+    - 2017 Carmelo Pullara
 
   ui/node_modules/react-modal:
     url: https://github.com/reactjs/react-modal
@@ -295,7 +295,7 @@ dependencies:
         authors: 5f6a26eee72709d9bddace35f56972cc1a4c52badc2f7ea1670c636539b3d6f0
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2017 Ryan Florence
+    - 2017 Ryan Florence
 
   ui/node_modules/react-numeric-input:
     url: https://github.com/vlad-ignatov/react-numeric-input
@@ -306,7 +306,7 @@ dependencies:
         author: 2ab7ec2c84d8001a27e9868b82244f99133a3038ce37191f7bbe595c12cc4fc7
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2015 Vladimir Ignatov
+    - 2015 Vladimir Ignatov
 
   ui/node_modules/react-onclickoutside:
     url: https://github.com/Pomax/react-onclickoutside
@@ -328,7 +328,7 @@ dependencies:
         author: 2765714ddc31aed48aa35f8d12cb4ce075bca5b73f87fcd7db305b66bbbcf7fe
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2015-present Dan Abramov
+    - 2015-present Dan Abramov
 
   ui/node_modules/react-router:
     url: https://github.com/ReactTraining/react-router
@@ -338,7 +338,7 @@ dependencies:
         authors: a3c1f8b53c7146d70d563424f389bc8fadf85ea92d5c80376fa1cead827cd787
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) React Training 2016-2018
+    - React Training 2016-2018
     - Michael Jackson
     - Ryan Florence
 
@@ -350,7 +350,7 @@ dependencies:
         authors: a3c1f8b53c7146d70d563424f389bc8fadf85ea92d5c80376fa1cead827cd787
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) React Training 2016-2018
+    - React Training 2016-2018
     - Michael Jackson
     - Ryan Florence
 
@@ -363,7 +363,7 @@ dependencies:
         author: 87739c05eaabe4c637b75055c02de46b731598812e8b000bbe79b4a7c33b3aa4
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2017 Raiden
+    - 2017 Raiden
 
   ui/node_modules/react-router-redux:
     url: https://github.com/ReactTraining/react-router/tree/master/packages/react-router-redux
@@ -373,7 +373,7 @@ dependencies:
         authors: 0c7f0c73aca6983ed3052965436588d5781a56266e3191433a2d9a0a4eb18477
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) React Training 2016-2018
+    - React Training 2016-2018
     - Tim Dorr
 
   ui/node_modules/react-scripts:
@@ -383,7 +383,7 @@ dependencies:
       package.json:
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2013-present, Facebook, Inc.
+    - 2013-present Facebook, Inc.
 
   ui/node_modules/react-select:
     url: https://github.com/JedWatson/react-select
@@ -394,7 +394,7 @@ dependencies:
         author: 74971219656ffbd3641a342130a54f69896fc9678f50ea6ca6b7c45f74f48d92
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2018 Jed Watson
+    - 2018 Jed Watson
 
   ui/node_modules/react-slick:
     url: https://github.com/akiran/react-slick
@@ -405,7 +405,7 @@ dependencies:
         author: 18f9837118dfc1f6b9ac36cf20ffb23ed265526b397c22cdc18549a17f478a65
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2014 Kiran Abburi
+    - 2014 Kiran Abburi
 
   ui/node_modules/react-spinners:
     url: https://github.com/davidhu2000/react-spinners
@@ -417,7 +417,7 @@ dependencies:
         contributors: 744206dd5dffbaad5b5e5b85a87ba54a3a3f56c3abbb02c488236acff64787e9
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2017 David Hu
+    - 2017 David Hu
 
   ui/node_modules/react-table:
     url: https://github.com/react-tools/react-table
@@ -427,7 +427,7 @@ dependencies:
       package.json:
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2016 Tanner Linsley
+    - 2016 Tanner Linsley
 
   ui/node_modules/react-toastify:
     url: https://github.com/fkhadra/react-toastify
@@ -438,7 +438,7 @@ dependencies:
         author: 5d0891255c7edb235b122434ef700c7fd103ce06db7dec058ea91a3d64f42f7a
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2017 Fadi Khadra
+    - 2017 Fadi Khadra
 
   ui/node_modules/react-transition-group:
     url: https://github.com/reactjs/react-transition-group
@@ -449,8 +449,8 @@ dependencies:
         author: bd85bcdb8d4e613a79cb62d0903946ad10c83e63dc75f67614c159c0dbf4d184
         license: f15ff9073b9028a1ec2bc0f18cc3e3ed6df570ab3197b5597d8932ccb30e6d6b
     attribution:
-    - Copyright (c) 2016, React Community
-    - Copyright 2013-present, Facebook, Inc.
+    - 2016 React Community
+    - 2013-present Facebook, Inc.
 
   ui/node_modules/recharts:
     url: https://github.com/recharts/recharts
@@ -461,8 +461,8 @@ dependencies:
         author: 86914564379eec827afed61f30819dd11db50899cd92805bebc7d8431976736c
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2015 recharts
-    - Copyright (c) 2015-2017 Recharts Group
+    - 2015 recharts
+    - 2015-2017 Recharts Group
 
   ui/node_modules/redux:
     url: https://github.com/reduxjs/redux
@@ -473,7 +473,7 @@ dependencies:
         authors: 3ad5f067b8124a52ba6f936682e631dca67096f65df506803946b0b9c08748ad
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2015-present Dan Abramov
+    - 2015-present Dan Abramov
 
   ui/node_modules/redux-form:
     url: https://github.com/erikras/redux-form
@@ -484,7 +484,7 @@ dependencies:
         author: 6ea9edd5135708940ce8019901e792356fbac1282fe4077be96e695cc610d108
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2015 Erik Rasmussen
+    - 2015 Erik Rasmussen
 
   ui/node_modules/redux-saga:
     url: https://github.com/redux-saga/redux-saga
@@ -496,7 +496,7 @@ dependencies:
         contributors: b7334a6827ea2989218f05b533b22ef734967c55478654b2c46a800944cff9a9
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2015 Yassine Elouafi
+    - 2015 Yassine Elouafi
 
   ui/node_modules/reselect:
     url: https://github.com/reduxjs/reselect
@@ -507,7 +507,7 @@ dependencies:
         authors: 3423611ef5d2a94a01214bc4fcdd31036f2f071b3c047efa5099570481dfc13b
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2015-2018 Reselect Contributors
+    - 2015-2018 Reselect Contributors
 
   ui/node_modules/shave:
     url: https://github.com/dollarshaveclub/shave
@@ -530,7 +530,7 @@ dependencies:
         contributors: 33d02af9de35739adda649cdce499e2dad1e0a6fc1206d67fd3469fba01d9e96
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2017 Ken Wheeler
+    - 2017 Ken Wheeler
 
   ui/node_modules/store:
     url: https://github.com/marcuswestin/store.js
@@ -541,7 +541,7 @@ dependencies:
         author: 796a9873aea2d2cc825d38ec29a66b4c2e98a9a9ca1c79e7494cbd88106ce84e
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2010-2017 Marcus Westin
+    - 2010-2017 Marcus Westin
 
   ui/node_modules/tailwindcss:
     url: https://github.com/tailwindcss/tailwindcss
@@ -552,8 +552,8 @@ dependencies:
         contributors: 24b64c5761ef841181844107512d964408c9ceea2bc7a0631b458a2841c40e5c
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) Adam Wathan
-    - Copyright (c) Jonathan Reinink
+    - Adam Wathan
+    - Jonathan Reinink
     - David Hemphill
 
   ui/node_modules/three:
@@ -565,7 +565,7 @@ dependencies:
         author: d7304c2b6b6d0b9ffb28a49687d4d38e784304fac55740e6a9a78332cbcb8c5a
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright © 2010-2018 three.js authors
+    - 2010-2018 three.js authors
 
   ui/node_modules/three-orbit-controls:
     url: https://github.com/mattdesl/three-orbit-controls
@@ -586,7 +586,7 @@ dependencies:
         author: 1d19aa53523e02e939eca09dfcf900cb35831c1db110474958677d3f0c475063
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
-    - Copyright (c) 2016 Jaume Sanchez
+    - 2016 Jaume Sanchez
 
   vendor/github.com/NYTimes/gziphandler:
     url: https://github.com/NYTimes/gziphandler
@@ -594,7 +594,7 @@ dependencies:
     files:
       LICENSE: 2252a5b1e2b1d3663b53ea77051b8ed065cb9270a3d1174d5d6ead8a2de051b6
     attribution:
-    - Copyright 2016-2017 The New York Times Company
+    - 2016-2017 The New York Times Company
 
   vendor/github.com/andygrunwald/go-jira:
     url: https://github.com/andygrunwald/go-jira
@@ -602,7 +602,7 @@ dependencies:
     files:
       LICENSE: c5e2e2b0cc1c204cdf39b6881da716759f3779da0128c58d32bb51378b9d37d6
     attribution:
-    - Copyright (c) 2015 Andy Grunwald
+    - 2015 Andy Grunwald
 
   vendor/github.com/aws/aws-sdk-go:
     url: https://github.com/aws/aws-sdk-go
@@ -611,8 +611,8 @@ dependencies:
       LICENSE.txt: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
       NOTICE.txt: d64678da511cc3c76e1b20cd7074c102a62de0685d486eba144e3ff7b3ee60f3
     attribution:
-    - Copyright 2017 Amazon.com, Inc. or its affiliates.
-    - Copyright 2014-2015 Stripe, Inc.
+    - 2017 Amazon.com, Inc. or its affiliates.
+    - 2014-2015 Stripe, Inc.
 
   vendor/github.com/blevesearch/bleve:
     url: https://github.com/blevesearch/bleve
@@ -620,7 +620,7 @@ dependencies:
     files:
       LICENSE: 58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd
     attribution:
-    - Copyright (c) 2017 Couchbase, Inc.
+    - 2017 Couchbase, Inc.
 
   vendor/github.com/boltdb/bolt:
     url: https://github.com/boltdb/bolt
@@ -628,7 +628,7 @@ dependencies:
     files:
       LICENSE: c15d721c37e277a11584547de6d618541501f7aa10c4e32a945a4f9ff36cb0f6
     attribution:
-    - Copyright (c) 2013 Ben Johnson
+    - 2013 Ben Johnson
 
   vendor/github.com/cloudflare/cfssl:
     url: https://github.com/cloudflare/cfssl
@@ -636,7 +636,7 @@ dependencies:
     files:
       LICENSE: dc439285c60b63ec585769cf151a03345654a78271cdfd56250f59f1175fba88
     attribution:
-    - Copyright (c) 2014 CloudFlare Inc.
+    - 2014 CloudFlare Inc.
 
   vendor/github.com/coreos/clair:
     url: https://github.com/coreos/clair
@@ -645,8 +645,8 @@ dependencies:
       LICENSE: cb5e8e7e5f4a3988e1063c142c60dc2df75605f4c46515e776e3aca6df976e14
       NOTICE: afb5767f24ce18fcadf11bf71606c41f32b97aee2d54aee6a6d9706efa5d1a47
     attribution:
-    - Copyright 2018 clair authors
-    - Copyright 2015 CoreOS, Inc
+    - 2018 clair authors
+    - 2015 CoreOS, Inc
 
   vendor/github.com/deckarep/golang-set:
     url: https://github.com/deckarep/golang-set
@@ -654,7 +654,7 @@ dependencies:
     files:
       LICENSE: 4fc9ad5a7b8440dd4c4bfda52d7867df370e8c151b3ef7b95088353f8f13cf98
     attribution:
-    - Copyright (c) 2013 Ralph Caraveo
+    - 2013 Ralph Caraveo
 
   vendor/github.com/docker/distribution:
     url: https://github.com/docker/distribution
@@ -662,7 +662,7 @@ dependencies:
     files:
       LICENSE: cb5e8e7e5f4a3988e1063c142c60dc2df75605f4c46515e776e3aca6df976e14
     attribution:
-    - Copyright Docker, Inc.
+    - Docker, Inc.
 
   vendor/github.com/docker/docker:
     url: https://github.com/moby/moby
@@ -671,8 +671,8 @@ dependencies:
       LICENSE: 2d81ea060825006fc8f3fe28aa5dc0ffeb80faf325b612c955229157b8c10dc0
       NOTICE: 48be79df44c9ce3e4b8839d89da3a87cc6d21c53fb350d4e4a9abdf0cceeeaa1
     attribution:
-    - Copyright 2013-2018 Docker, Inc.
-    - Copyright 2014-2018 The Docker & Go Authors.
+    - 2013-2018 Docker, Inc.
+    - 2014-2018 The Docker & Go Authors.
 
   vendor/github.com/docker/go-units:
     url: https://github.com/docker/go-units
@@ -680,7 +680,7 @@ dependencies:
     files:
       LICENSE: ba3065d2f4b11bb42a0f7b708b021d1c28fa45d097b3eab3e7db9ab4745040d1
     attribution:
-    - Copyright 2015 Docker, Inc.
+    - 2015 Docker, Inc.
 
   vendor/github.com/gogo/protobuf:
     url: https://github.com/gogo/protobuf
@@ -691,7 +691,7 @@ dependencies:
       CONTRIBUTORS: 3a435dccff74f880f8dfcd19a6efe17ea2feac6eb5606b3dcee0bba36d0a1843
       GOLANG_CONTRIBUTORS: f4466de681163c4b024f14cf6159220ea4b008a6e23e38ff1c606d45a6d1494f
     attribution:
-    - Copyright (c) 2013, The GoGo Authors.
+    - 2013 The GoGo Authors.
     - Sendgrid, Inc
     - Vastech SA (PTY) LTD
     - Walter Schulze
@@ -718,7 +718,7 @@ dependencies:
       LICENSE: 583251bbdd1cbc531bf7ebe12b8535e1f9d3a4c7aa3cf25db5be62c5aa8cbd8f
       CONTRIBUTORS: 9a8de5acb21b2911cc799e14f943b8974b281f503637cf92aeee4f01aa568e03
     attribution:
-    - Copyright 2010 The Go Authors.
+    - 2010 The Go Authors.
 
   vendor/github.com/grpc-ecosystem/go-grpc-middleware:
     url: https://github.com/grpc-ecosystem/go-grpc-middleware
@@ -726,9 +726,9 @@ dependencies:
     files:
       LICENSE: 332c4f0a1a657a8937ad0caf7a335a31ec72343821481e364d8894f568c8b010
     attribution:
-    - Copyright 2017 David Ackroyd.
-    - Copyright 2017 Michal Witkowski
-    - Copyright (c) Improbable Worlds Ltd.
+    - 2017 David Ackroyd.
+    - 2017 Michal Witkowski
+    - Improbable Worlds Ltd.
 
   vendor/github.com/grpc-ecosystem/go-grpc-prometheus:
     url: https://github.com/grpc-ecosystem/go-grpc-prometheus
@@ -736,7 +736,7 @@ dependencies:
     files:
       LICENSE: 332c4f0a1a657a8937ad0caf7a335a31ec72343821481e364d8894f568c8b010
     attribution:
-    - Copyright 2016 Michal Witkowski
+    - 2016 Michal Witkowski
 
   vendor/github.com/grpc-ecosystem/grpc-gateway:
     url: https://github.com/grpc-ecosystem/grpc-gateway
@@ -744,7 +744,7 @@ dependencies:
     files:
       LICENSE.txt: a15b1d1b168954c92ff7fb1620382418f7c72f4f4d251ee791d1098ad68ab0c4
     attribution:
-    - Copyright (c) 2015, Gengo, Inc.
+    - 2015 Gengo, Inc.
 
   vendor/github.com/hashicorp/golang-lru:
     url: https://github.com/hashicorp/golang-lru
@@ -752,7 +752,7 @@ dependencies:
     files:
       LICENSE: af175b9d96ee93c21a036152e1b905b0b95304d4ae8c2c921c7609100ba8df7e
     attribution:
-    - Copyright © 2018 HashiCorp
+    - 2018 HashiCorp
 
   vendor/github.com/mauricelam/genny:
     url: https://github.com/mauricelam/genny
@@ -769,8 +769,8 @@ dependencies:
       LICENSE: 552a739c3b25792263f731542238b92f6f8d07e9a488eae27e6c4690038a8243
       NOTICE: 7373acc8c2833ffd46e8d937210689e11efebd74578e532b51fbe08dc1ea6e21
     attribution:
-    - Copyright 2012-2015 Docker, Inc.
-    - Copyright (C) 2017 SUSE LLC
+    - 2012-2015 Docker, Inc.
+    - 2017 SUSE LLC
 
   vendor/github.com/openshift/api:
     url: https://github.com/openshift/api
@@ -778,7 +778,7 @@ dependencies:
     files:
       LICENSE: b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1
     attribution:
-    - Copyright © 2018 Red Hat, Inc.
+    - 2018 Red Hat, Inc.
 
   vendor/github.com/openshift/client-go:
     url: https://github.com/openshift/client-go
@@ -786,7 +786,7 @@ dependencies:
     files:
       LICENSE: f6d5b461deb8038ce0e083c9cb7f59859caa04c9b4f72149367393e9b252cf14
     attribution:
-    - Copyright © 2018 Red Hat, Inc.
+    - 2018 Red Hat, Inc.
 
   vendor/github.com/prometheus/client_golang:
     url: https://github.com/prometheus/client_golang
@@ -796,8 +796,8 @@ dependencies:
       LICENSE: c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4
       NOTICE: 5ff7ccec357cd44bb3fcf1b3b53a4eddee322eb383d487847d1cf1ccfbd94f46
     attribution:
-    - Copyright 2018 The Prometheus Authors
-    - Copyright SoundCloud Ltd.
+    - 2018 The Prometheus Authors
+    - SoundCloud Ltd.
 
   vendor/github.com/satori/go.uuid:
     url: https://github.com/satori/go.uuid
@@ -805,7 +805,7 @@ dependencies:
     files:
       LICENSE: f56f51f3aac08674202e9c399e4f32e733c12953c09e15464b0cc3227ac442c0
     attribution:
-    - Copyright (C) 2013-2018 by Maxim Bublis
+    - 2013-2018 by Maxim Bublis
 
   vendor/github.com/spf13/cobra:
     url: https://github.com/spf13/cobra
@@ -813,7 +813,7 @@ dependencies:
     files:
       LICENSE.txt: 5e3400b93bbb099e83e52bab885e7441750673c21f97988ca3f1240639b63283
     attribution:
-    - Copyright © 2015 Steve Francia
+    - 2015 Steve Francia
 
   vendor/github.com/stackrox/clairify:
     url: https://github.com/stackrox/clairify
@@ -821,7 +821,7 @@ dependencies:
     files:
       LICENSE: b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1
     attribution:
-    - Copyright 2015 clair authors
+    - 2015 clair authors
 
   vendor/github.com/stretchr/testify:
     url: https://github.com/stretchr/testify
@@ -829,7 +829,7 @@ dependencies:
     files:
       LICENSE: 402f39eed8a1851385d0703999aa9f23d067c2ea3e15c63c074e389cbf8f8f8f
     attribution:
-    - Copyright (c) 2012 - 2013 Mat Ryer and Tyler Bunnell
+    - 2012-2013 Mat Ryer and Tyler Bunnell
 
   vendor/github.com/tkuchiki/go-timezone:
     url: https://github.com/tkuchiki/go-timezone
@@ -837,7 +837,7 @@ dependencies:
     files:
       LICENSE: 6dce751ea769df0200c3395b7ef04e6015fbce6cc87f3408e86eb8d98a430083
     attribution:
-    - Copyright (c) 2016 tkuchiki
+    - 2016 tkuchiki
 
   vendor/golang.org/x/crypto:
     url: https://github.com/golang/crypto
@@ -848,7 +848,7 @@ dependencies:
       PATENTS: 96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc
       CONTRIBUTORS: fa714cb1012a065fbe08b174eb1f5604327bd24d42dab2c461878ce36f68d0c9
     attribution:
-    - Copyright 2009 The Go Authors.
+    - 2009 The Go Authors.
 
   vendor/golang.org/x/net:
     url: https://github.com/golang/net
@@ -859,7 +859,7 @@ dependencies:
       PATENTS: 96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc
       CONTRIBUTORS: 9a8de5acb21b2911cc799e14f943b8974b281f503637cf92aeee4f01aa568e03
     attribution:
-    - Copyright 2014 The Go Authors.
+    - 2014 The Go Authors.
 
   vendor/golang.org/x/time:
     url: https://github.com/golang/time
@@ -870,7 +870,7 @@ dependencies:
       PATENTS: 96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc
       CONTRIBUTORS: 9a8de5acb21b2911cc799e14f943b8974b281f503637cf92aeee4f01aa568e03
     attribution:
-    - Copyright (c) 2009 The Go Authors.
+    - 2009 The Go Authors.
 
   vendor/google.golang.org/genproto:
     url: https://github.com/google/go-genproto
@@ -878,7 +878,7 @@ dependencies:
     files:
       LICENSE: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
     attribution:
-    - Copyright Google Inc.
+    - Google Inc.
 
   vendor/google.golang.org/grpc:
     url: https://github.com/grpc/grpc-go
@@ -887,8 +887,8 @@ dependencies:
       AUTHORS: 627c695f80fdac6412d66e6ad4160a4acb41923ca7ee3fd7e112e105f0ff46b9
       LICENSE: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
     attribution:
-    - Copyright Google Inc.
-    - Copyright 2018 gRPC authors.
+    - Google Inc.
+    - 2018 gRPC authors.
 
   vendor/gopkg.in/square/go-jose.v2:
     url: https://github.com/square/go-jose
@@ -896,7 +896,7 @@ dependencies:
     files:
       LICENSE: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
     attribution:
-    - Copyright Square, Inc.
+    - Square, Inc.
 
   vendor/gopkg.in/yaml.v2:
     url: https://github.com/go-yaml/yaml
@@ -906,8 +906,8 @@ dependencies:
       LICENSE.libyaml: a94710b55e03b5285f77d048c5ba61bb9d6ee04a06c0eb90e68821e11b0c707a
       NOTICE: f6c2dd3a67b576eafb89b80200b8b1627230bf3821a0c14cb99a22ac19107d00
     attribution:
-    - Copyright 2011-2016 Canonical Ltd.
-    - Copyright (c) 2006 Kirill Simonov
+    - 2011-2016 Canonical Ltd.
+    - 2006 Kirill Simonov
 
   vendor/k8s.io/api:
     url: https://github.com/kubernetes/api
@@ -915,7 +915,7 @@ dependencies:
     files:
       LICENSE: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
     attribution:
-    - Copyright The Kubernetes Authors
+    - The Kubernetes Authors
 
   vendor/k8s.io/apimachinery:
     url: https://github.com/kubernetes/apimachinery
@@ -923,7 +923,7 @@ dependencies:
     files:
       LICENSE: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
     attribution:
-    - Copyright The Kubernetes Authors
+    - The Kubernetes Authors
 
   vendor/k8s.io/apiserver:
     url: https://github.com/kubernetes/apiserver
@@ -931,7 +931,7 @@ dependencies:
     files:
       LICENSE: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
     attribution:
-    - Copyright The Kubernetes Authors
+    - The Kubernetes Authors
 
   vendor/k8s.io/client-go:
     url: https://github.com/kubernetes/client-go
@@ -939,4 +939,4 @@ dependencies:
     files:
       LICENSE: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
     attribution:
-    - Copyright The Kubernetes Authors
+    - The Kubernetes Authors

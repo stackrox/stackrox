@@ -222,6 +222,21 @@ jobs:
       - *setupBazel
 
       - run:
+          name: Install ossls
+          working_directory: /tmp
+          command: |
+            wget --quiet https://github.com/gruntwork-io/fetch/releases/download/v0.3.2/fetch_linux_amd64
+            sudo install fetch_linux_amd64 /usr/bin/fetch
+            export GITHUB_OAUTH_TOKEN="$GITHUB_TOKEN"
+            fetch --repo="https://github.com/stackrox/ossls" --tag="0.3.0-rc1" --release-asset="ossls_linux_amd64" .
+            sudo install ossls_linux_amd64 /usr/bin/ossls
+            ossls -version
+
+      - run:
+          name: Generate OSS notice
+          command: make ossls-notice
+
+      - run:
           name: Build image
           command: make image
 
@@ -294,7 +309,6 @@ jobs:
           command: |
             make go-generated-srcs
             git diff --exit-code HEAD
-
 
   k8s-tests:
     <<: *defaults
@@ -601,7 +615,7 @@ jobs:
             wget --quiet https://github.com/gruntwork-io/fetch/releases/download/v0.3.2/fetch_linux_amd64
             sudo install fetch_linux_amd64 /usr/bin/fetch
             export GITHUB_OAUTH_TOKEN="$GITHUB_TOKEN"
-            fetch --repo="https://github.com/stackrox/ossls" --tag="0.2.0" --release-asset="ossls_linux_amd64" .
+            fetch --repo="https://github.com/stackrox/ossls" --tag="0.3.0-rc1" --release-asset="ossls_linux_amd64" .
             sudo install ossls_linux_amd64 /usr/bin/ossls
             ossls -version
 
@@ -619,7 +633,7 @@ jobs:
 
       - run:
           name: Audit dependencies
-          command: ossls -audit
+          command: make ossls-audit
 
   push-release:
     <<: *defaults
