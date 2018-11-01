@@ -63,7 +63,7 @@ func (s *serviceImpl) GetAuthProvider(ctx context.Context, request *v1.GetAuthPr
 	if authProvider == nil {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("Auth Provider %v not found", request.GetId()))
 	}
-	return authProvider.AsV1(request.GetClientState()), nil
+	return authProvider.AsV1(), nil
 }
 
 // GetAuthProviders retrieves all authProviders that matches the request filters
@@ -79,7 +79,7 @@ func (s *serviceImpl) GetAuthProviders(ctx context.Context, request *v1.GetAuthP
 	authProviders := s.registry.GetAuthProviders(ctx, name, typ)
 	result := make([]*v1.AuthProvider, len(authProviders))
 	for i, provider := range authProviders {
-		result[i] = provider.AsV1(request.GetClientState())
+		result[i] = provider.AsV1()
 	}
 	sort.SliceStable(result, func(i, j int) bool {
 		return result[i].GetName() < result[j].GetName()
@@ -103,7 +103,7 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "could not create auth provider: %v", err)
 	}
-	return provider.AsV1(request.GetClientState()), nil
+	return provider.AsV1(), nil
 }
 
 func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.UpdateAuthProviderRequest) (*v1.AuthProvider, error) {
@@ -122,7 +122,7 @@ func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.Update
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "could not update auth provider: %v", err)
 	}
-	return provider.AsV1(request.GetClientState()), nil
+	return provider.AsV1(), nil
 }
 
 // DeleteAuthProvider deletes an auth provider from the system

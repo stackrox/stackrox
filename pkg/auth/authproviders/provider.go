@@ -101,15 +101,12 @@ func (p *authProvider) update(name *string, enabled *bool) (bool, v1.AuthProvide
 	return modified, p.baseInfo, oldName
 }
 
-func (p *authProvider) AsV1(clientState string) *v1.AuthProvider {
+func (p *authProvider) AsV1() *v1.AuthProvider {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 	result := p.baseInfo
 	if p.backend == nil {
 		result.Enabled = false
-	}
-	if result.GetEnabled() {
-		result.LoginUrl = p.backend.LoginURL(clientState)
 	}
 
 	return &result

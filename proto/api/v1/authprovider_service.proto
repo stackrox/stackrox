@@ -24,14 +24,11 @@ message AuthProvider {
 
 message GetAuthProviderRequest {
     string id           = 1;
-    string client_state = 2;
 }
 
 message GetAuthProvidersRequest {
     string name = 1;
     string type = 2;
-
-    string client_state = 3;
 }
 
 message GetAuthProvidersResponse {
@@ -40,7 +37,6 @@ message GetAuthProvidersResponse {
 
 message PostAuthProviderRequest {
     AuthProvider provider = 1;
-    string client_state   = 2;
 }
 
 message UpdateAuthProviderRequest {
@@ -48,8 +44,6 @@ message UpdateAuthProviderRequest {
 
     oneof name_opt    { string name  = 2; }
     oneof enabled_opt { bool enabled = 3; }
-
-    string client_state = 4;
 }
 
 message ExchangeTokenRequest {

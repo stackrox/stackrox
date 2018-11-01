@@ -20,7 +20,7 @@ type AuthProvider interface {
 	RoleMapper() permissions.RoleMapper
 
 	// AsV1 returns a description of the authentication provider in protobuf format.
-	AsV1(clientState string) *v1.AuthProvider
+	AsV1() *v1.AuthProvider
 
 	// RecordSuccess should be called the first time a user successfully logs in through an auth provider, to mark it as
 	// validated. This is used to prevent a user from accidentally locking themselves out of the system by setting up a

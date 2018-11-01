@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -32,6 +33,7 @@ var (
 func NewStoreBackedRegistry(urlPathPrefix string, redirectURL string, store Store, tokenIssuerFactory tokens.IssuerFactory, defaultRoleMapper permissions.RoleMapper) (Registry, error) {
 	urlPathPrefix = strings.TrimRight(urlPathPrefix, "/") + "/"
 	registry := &storeBackedRegistry{
+		ServeMux:      http.NewServeMux(),
 		urlPathPrefix: urlPathPrefix,
 		redirectURL:   redirectURL,
 		store:         store,
@@ -51,6 +53,8 @@ func NewStoreBackedRegistry(urlPathPrefix string, redirectURL string, store Stor
 }
 
 type storeBackedRegistry struct {
+	*http.ServeMux
+
 	urlPathPrefix string
 	redirectURL   string
 
@@ -83,7 +87,7 @@ func (r *storeBackedRegistry) RegisterBackendFactory(typ string, factoryCreator 
 	if r.backendFactories[typ] != nil {
 		return fmt.Errorf("backend factory for type %s is already registered", typ)
 	}
-	pathPrefix := fmt.Sprintf("%s%s/", r.urlPathPrefix, typ)
+	pathPrefix := fmt.Sprintf("%s%s/", r.providersURLPrefix(), typ)
 	factory := factoryCreator(pathPrefix)
 	if factory == nil {
 		return errors.New("factory creator returned nil factory")
@@ -121,6 +125,8 @@ func (r *storeBackedRegistry) init() error {
 		provider := r.createFromStoredDef(context.Background(), def)
 		r.registerProvider(provider)
 	}
+
+	r.initHTTPMux()
 	return nil
 }
 
@@ -162,6 +168,7 @@ func (r *storeBackedRegistry) createProvider(ctx context.Context, id, typ, name,
 			UiEndpoint: uiEndpoint,
 			Enabled:    enabled,
 			Config:     effectiveConfig,
+			LoginUrl:   r.loginURL(id),
 			Validated:  validated,
 		},
 		registry:   r,
