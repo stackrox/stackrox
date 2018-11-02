@@ -6,7 +6,7 @@ const (
 	Admin = "Admin"
 
 	// ContinuousIntegration is for CI piplines.
-	ContinuousIntegration = "ContinuousIntegration"
+	ContinuousIntegration = "Continuous Integration"
 
 	// SensorCreator is a role that has the minimal privileges required to create a sensor.
 	SensorCreator = "Sensor Creator"
