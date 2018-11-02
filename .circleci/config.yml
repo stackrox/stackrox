@@ -250,6 +250,7 @@ jobs:
             docker push stackrox/main:$TAG | cat
             docker push stackrox/monitoring:$TAG | cat
             docker push stackrox/grpc-server:$TAG | cat
+            docker push stackrox/scale:$TAG | cat
 
       - save-cache:
           key: *depCacheKey

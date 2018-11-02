@@ -5,8 +5,8 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
-// GetDeployment returns a Mock Deployment
-func GetDeployment() *v1.Deployment {
+// LightweightDeployment returns a mock deployment which doesn't have all the crazy images.
+func LightweightDeployment() *v1.Deployment {
 	return &v1.Deployment{
 		Name:        "nginx_server",
 		Id:          "s79mdvmb6dsl",
@@ -84,9 +84,13 @@ func GetDeployment() *v1.Deployment {
 					},
 				},
 			},
-			{
-				Image: GetImage(),
-			},
 		},
 	}
+}
+
+// GetDeployment returns a Mock Deployment
+func GetDeployment() *v1.Deployment {
+	dep := LightweightDeployment()
+	dep.Containers = append(dep.Containers, &v1.Container{Image: GetImage()})
+	return dep
 }

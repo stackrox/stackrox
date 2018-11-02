@@ -23,7 +23,7 @@ spec:
       imagePullSecrets:
         - name: stackrox
       containers:
-      - image: stackrox/scale:1.9-117-g026c6bf164-dirty
+      - image: stackrox/scale:REPLACE-ME
         name: mocksensor
         command:
           - /mocksensor
