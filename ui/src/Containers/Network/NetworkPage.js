@@ -65,7 +65,6 @@ class NetworkPage extends Component {
         networkGraphState: PropTypes.string.isRequired,
         setSimulatorMode: PropTypes.func.isRequired,
         simulatorMode: PropTypes.bool.isRequired,
-        setNetworkGraphState: PropTypes.func.isRequired,
         setYamlFile: PropTypes.func.isRequired,
         errorMessage: PropTypes.string,
         yamlFile: PropTypes.shape({
@@ -129,18 +128,9 @@ class NetworkPage extends Component {
     };
 
     toggleNetworkPolicySimulator = () => {
-        const {
-            simulatorMode,
-            setNetworkGraphState,
-            setSimulatorMode,
-            setYamlFile,
-            yamlFile,
-            incrementNetworkGraphUpdateKey
-        } = this.props;
+        const { simulatorMode, setSimulatorMode, setYamlFile } = this.props;
+        if (simulatorMode) setYamlFile(null);
         setSimulatorMode(!simulatorMode);
-        setYamlFile(yamlFile);
-        setNetworkGraphState();
-        incrementNetworkGraphUpdateKey();
     };
 
     renderGraph = () => {
@@ -347,7 +337,6 @@ const mapDispatchToProps = {
     setSearchModifiers: networkActions.setNetworkSearchModifiers,
     setSearchSuggestions: networkActions.setNetworkSearchSuggestions,
     setSimulatorMode: networkActions.setSimulatorMode,
-    setNetworkGraphState: networkActions.setNetworkGraphState,
     setYamlFile: networkActions.setYamlFile,
     incrementNetworkGraphUpdateKey: networkActions.incrementNetworkGraphUpdateKey,
     onNodesUpdate: networkActions.networkNodesUpdate
