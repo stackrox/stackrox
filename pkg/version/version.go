@@ -2,42 +2,45 @@ package version
 
 import (
 	"io/ioutil"
-	"os"
 	"strings"
-	"sync"
 )
 
 const (
-	collectorTagEnvVar  = "ROX_COLLECTOR_TAG"
-	defaultCollectorTag = "1.6.0-44-g7dc30596" // check https://hub.docker.com/r/stackrox/collector/tags/
+	collectorVersionFile = "COLLECTOR_VERSION.txt" // check https://hub.docker.com/r/stackrox/collector/tags/
 
 	versionFile = "VERSION.txt"
 )
 
 var (
-	version string
-	err     error
-	once    sync.Once
+	version          string
+	collectorVersion string
 )
+
+func init() {
+	version, _ = readVersion(versionFile)
+	collectorVersion, _ = readVersion(collectorVersionFile)
+}
 
 // GetVersion returns the tag of Prevent
 func GetVersion() (string, error) {
-	once.Do(func() {
-		var versionBytes []byte
-		versionBytes, err = ioutil.ReadFile(versionFile)
-		if err != nil {
-			return
-		}
-		version = strings.TrimSpace(string(versionBytes))
-	})
-	return version, err
+	if version == "" {
+		panic("version string is empty")
+	}
+	return version, nil
 }
 
 // GetCollectorVersion returns the current collector tag
 func GetCollectorVersion() string {
-	collectorTag := os.Getenv(collectorTagEnvVar)
-	if collectorTag == "" {
-		collectorTag = defaultCollectorTag
+	if collectorVersion == "" {
+		panic("collector version string is empty")
 	}
-	return collectorTag
+	return collectorVersion
+}
+
+func readVersion(filename string) (string, error) {
+	body, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(body)), nil
 }

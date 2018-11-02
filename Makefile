@@ -185,7 +185,7 @@ ui-test:
 	make -C ui test
 
 .PHONY: test
-test: bazel-test benchmarks-test ui-test
+test: bazel-test benchmarks-test ui-test collector-tag
 
 upload-coverage:
 	@# 'mode: set' is repeated in each coverage file, but Coveralls only wants it
@@ -266,3 +266,7 @@ ossls-audit:
 
 ossls-notice:
 	ossls -notice | tee image/NOTICE.txt
+
+.PHONY: collector-tag
+collector-tag:
+	@cat image/COLLECTOR_VERSION.txt

@@ -28,8 +28,9 @@ COPY ./bin/kubernetes-sensor /stackrox/
 COPY ./bin/swarm-sensor /stackrox/
 COPY ./ui/build  /ui/
 
-# This will expand to VERSION.txt during a local build, but NOTICE.txt and
-# VERSION.txt during a CI build.
+# This will expand to VERSION.txt and COLLECTOR_VERSION.txt during a local
+# build, but COLLECTOR_VERSION.txt, NOTICE.txt, and VERSION.txt during a CI
+# build.
 COPY ./*.txt /
 
 COPY ./telegraf.sh /telegraf.sh

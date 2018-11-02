@@ -245,7 +245,7 @@ jobs:
           command: |
             docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD docker.io
 
-            export TAG=$(make tag)
+            TAG=$(make tag)
 
             docker push stackrox/main:$TAG | cat
             docker push stackrox/monitoring:$TAG | cat
@@ -645,18 +645,24 @@ jobs:
       - run:
           name: Push image into stackrox.io
           command: |
-            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD" docker.io
             docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD" stackrox.io
+            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD" collector.stackrox.io
 
-            export TAG=$(make tag)
+            MAIN_TAG=$(make tag)
+            COLLECTOR_TAG=$(make collector-tag)
 
-            docker pull docker.io/stackrox/main:$TAG
-            docker tag docker.io/stackrox/main:$TAG stackrox.io/main:$TAG
-            docker push stackrox.io/main:$TAG | cat
+            docker pull docker.io/stackrox/main:$MAIN_TAG | cat
+            docker tag  docker.io/stackrox/main:$MAIN_TAG stackrox.io/main:$MAIN_TAG
+            docker push        stackrox.io/main:$MAIN_TAG | cat
 
-            docker pull docker.io/stackrox/monitoring:$TAG
-            docker tag docker.io/stackrox/monitoring:$TAG stackrox.io/monitoring:$TAG
-            docker push stackrox.io/monitoring:$TAG | cat
+            docker pull docker.io/stackrox/monitoring:$MAIN_TAG | cat
+            docker tag  docker.io/stackrox/monitoring:$MAIN_TAG stackrox.io/monitoring:$MAIN_TAG
+            docker push        stackrox.io/monitoring:$MAIN_TAG | cat
+
+            docker pull    docker.io/stackrox/collector:$COLLECTOR_TAG | cat
+            docker tag     docker.io/stackrox/collector:$COLLECTOR_TAG collector.stackrox.io/collector:$COLLECTOR_TAG
+            docker push collector.stackrox.io/collector:$COLLECTOR_TAG | cat
 
 
 workflows:
