@@ -10,8 +10,12 @@ export const forceCluster = () => {
         /* eslint-disable */
         alpha *= strength * alpha;
         const centroids = nodes.filter(n => n.centroid);
+        const map = {};
+        centroids.forEach(centroid => {
+            map[centroid.namespace] = centroid;
+        });
         nodes.forEach(d => {
-            const c = centroids.find(n => n.namespace === d.namespace);
+            const c = map[d.namespace];
             if (c === d) return;
 
             let x = d.x - c.x;
@@ -38,7 +42,7 @@ export const forceCluster = () => {
     return f;
 };
 
-export const forceCollision = nodes => alpha => {
+export const forceCollide = nodes => alpha => {
     const quadtree = d3QuadTree()
         .x(d => d.x)
         .y(d => d.y)
@@ -46,7 +50,9 @@ export const forceCollision = nodes => alpha => {
 
     nodes.forEach(d => {
         const r =
-            d.r + constants.MAX_RADIUS + Math.max(constants.PADDING, constants.CLUSTER_PADDING);
+            d.radius +
+            constants.MAX_RADIUS +
+            Math.max(constants.PADDING, constants.CLUSTER_PADDING);
         const nx1 = d.x - r;
         const nx2 = d.x + r;
         const ny1 = d.y - r;
@@ -57,8 +63,8 @@ export const forceCollision = nodes => alpha => {
                 let y = d.y - quad.data.y;
                 let l = Math.sqrt(x * x + y * y);
                 const radius =
-                    d.r +
-                    quad.data.r +
+                    d.radius +
+                    quad.data.radius +
                     (d.namespace === quad.data.namespace
                         ? constants.PADDING
                         : constants.CLUSTER_PADDING);
@@ -89,14 +95,16 @@ export const getBidirectionalLinks = links => {
     const sourceTargetToLinkMapping = {};
 
     links.forEach(link => {
-        const key = `${link.source}-${link.target}`;
-        const reverseKey = `${link.target}-${link.source}`;
+        const key = `${link.source}--${link.target}`;
+        const reverseKey = `${link.target}--${link.source}`;
         if (!sourceTargetToLinkMapping[key]) {
             if (!sourceTargetToLinkMapping[reverseKey]) {
                 sourceTargetToLinkMapping[key] = link;
             } else {
                 sourceTargetToLinkMapping[reverseKey].bidirectional = true;
-                sourceTargetToLinkMapping[reverseKey].isActive = link.isActive;
+                const activeStatus =
+                    sourceTargetToLinkMapping[reverseKey].isActive || link.isActive;
+                sourceTargetToLinkMapping[reverseKey].isActive = activeStatus;
             }
         }
     });
@@ -145,7 +153,6 @@ export const getLinksBetweenNamespaces = (nodes, networkFlowMapping) => {
                 namespaceLinks[key] = {
                     source: srcNamespace,
                     target: tgtNamespace,
-                    id: key,
                     isActive: !!activeStatus
                 };
             }

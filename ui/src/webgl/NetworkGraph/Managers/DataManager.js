@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
 import * as constants from 'constants/networkGraph';
 import {
+    forceCollide,
     forceCluster,
     getLinksInSameNamespace,
     getLinksBetweenNamespaces,
@@ -33,12 +34,7 @@ const DataManager = canvas => {
             )
             .force('charge', d3.forceManyBody())
             .force('center', d3.forceCenter(clientWidth / 2, clientHeight / 2))
-            .force(
-                'collide',
-                d3
-                    .forceCollide()
-                    .radius(d => d.radius + constants.FORCE_CONFIG.FORCE_COLLISION_RADIUS_OFFSET)
-            )
+            .force('collide', forceCollide(nodes))
             .force(
                 'cluster',
                 forceCluster().strength(constants.FORCE_CONFIG.FORCE_CLUSTER_STRENGTH)
@@ -48,7 +44,7 @@ const DataManager = canvas => {
 
         // create static force layout by calculating ticks beforehand
         let i = 0;
-        const x = nodes.length * 10;
+        const x = nodes.length * 5;
         while (i < x) {
             forceSimulation.tick();
             i += 1;
@@ -86,7 +82,7 @@ const DataManager = canvas => {
 
         const enrichedNodes = dataNodes.map(dataNode => {
             const node = { ...dataNode };
-            node.radius = 1;
+            node.radius = constants.NODE_RADIUS;
 
             // set centroid
             if (!namespacesMapping[node.namespace]) {

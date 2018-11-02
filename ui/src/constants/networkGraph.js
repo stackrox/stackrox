@@ -1,10 +1,11 @@
 import { MOUSE } from 'three';
 
 // Force layout constants
-export const MAX_RADIUS = 12; // max radius of individual nodes
-export const PADDING = 2; // separation between same namespace nodes
-export const CLUSTER_PADDING = 150;
-export const CLUSTER_INNER_PADDING = 60;
+export const NODE_RADIUS = 16; // radius of nodes
+export const MAX_RADIUS = 16; // max radius of individual nodes
+export const PADDING = 15; // separation between same namespace nodes
+export const CLUSTER_PADDING = 100; // separation between nodes in different namespaces
+export const CLUSTER_INNER_PADDING = 60; // minimum separation between node and edge of the namespace
 export const CLUSTER_BORDER_PADDING = CLUSTER_INNER_PADDING + 5;
 export const SCALE_DURATION = 250;
 export const SCALE_FACTOR = 1.5;

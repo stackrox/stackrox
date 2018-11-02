@@ -17,7 +17,8 @@ const Node = (scene, data) => {
         userData: {
             node,
             type: constants.NETWORK_GRAPH_TYPES.NODE
-        }
+        },
+        transparent: true
     });
     circle = new THREE.Mesh(geometry, material);
 
