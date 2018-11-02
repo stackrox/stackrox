@@ -4,9 +4,9 @@ import PropTypes from 'prop-types';
 function deployHeader(count) {
     let message = '';
     if (count && count > 0) {
-        message = 'is in effect';
+        message = 'on this deployment is enabled for this policy';
     } else {
-        message = 'is not in effect';
+        message = 'on this deployment is not enabled for this policy';
     }
     return message;
 }
@@ -20,7 +20,7 @@ function runtimeHeader(count) {
             message = `"Kill Pod" has been applied ${count} times`;
         }
     } else {
-        message = '"Kill Pod" has not yet been applied';
+        message = `on this deployment was not enabled as of the last known violation of this policy.`;
     }
     return message;
 }
