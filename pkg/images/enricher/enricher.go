@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -21,12 +22,15 @@ type ImageEnricher interface {
 
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(is integration.Set, subsystem pkgMetrics.Subsystem) ImageEnricher {
+func New(is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache, scanCache expiringcache.Cache) ImageEnricher {
 	return &enricherImpl{
 		integrations: is,
 
 		metadataLimiter: rate.NewLimiter(rate.Every(1*time.Second), 3),
-		scanLimiter:     rate.NewLimiter(rate.Every(3*time.Second), 3),
+		metadataCache:   metadataCache,
+
+		scanLimiter: rate.NewLimiter(rate.Every(3*time.Second), 3),
+		scanCache:   scanCache,
 
 		metrics: newMetrics(subsystem),
 	}

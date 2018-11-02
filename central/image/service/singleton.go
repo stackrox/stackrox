@@ -3,6 +3,7 @@ package service
 import (
 	"sync"
 
+	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/image/datastore"
 )
 
@@ -13,7 +14,7 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton())
+	as = New(datastore.Singleton(), enrichment.ImageMetadataCacheSingleton(), enrichment.ImageScanCacheSingleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

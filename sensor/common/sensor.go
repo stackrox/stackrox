@@ -2,10 +2,12 @@ package common
 
 import (
 	"sync"
+	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"
@@ -15,6 +17,9 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+
+	imageDataExpiry = 1 * time.Hour
+	imageDataSize   = 50000
 )
 
 // Sensor interface allows you to start and stop the consumption/production loops.
@@ -32,8 +37,11 @@ func NewSensor(centralConn *grpc.ClientConn, clusterID string) Sensor {
 	// This polls central for the integrations specific to this cluster.
 	poller := integration.NewPoller(integrationSet, centralConn, clusterID)
 
+	metadataCache := expiringcache.NewExpiringCacheOrPanic(imageDataSize, imageDataExpiry)
+	scanCache := expiringcache.NewExpiringCacheOrPanic(imageDataSize, imageDataExpiry)
+
 	// This uses those integrations to enrich images.
-	imageEnricher := enricher.New(integrationSet, metrics.SensorSubsystem)
+	imageEnricher := enricher.New(integrationSet, metrics.SensorSubsystem, metadataCache, scanCache)
 
 	return &sensor{
 		conn: centralConn,

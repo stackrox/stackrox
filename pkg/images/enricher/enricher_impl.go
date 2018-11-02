@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
@@ -14,8 +15,10 @@ type enricherImpl struct {
 	integrations integration.Set
 
 	metadataLimiter *rate.Limiter
+	metadataCache   expiringcache.Cache
 
 	scanLimiter *rate.Limiter
+	scanCache   expiringcache.Cache
 
 	metrics metrics
 }
@@ -43,6 +46,12 @@ func (e *enricherImpl) enrichImageWithRegistry(image *v1.Image, registry registr
 	if !registry.Match(image) {
 		return false
 	}
+
+	if metadataValue := e.metadataCache.Get(image.GetId()); metadataValue != nil {
+		image.Metadata = metadataValue.(*v1.ImageMetadata)
+		return true
+	}
+
 	// Wait until limiter allows entrance
 	e.metadataLimiter.Wait(context.Background())
 	metadata, err := registry.Metadata(image)
@@ -51,6 +60,7 @@ func (e *enricherImpl) enrichImageWithRegistry(image *v1.Image, registry registr
 		return false
 	}
 	image.Metadata = metadata
+	e.metadataCache.Add(image.GetId(), metadata)
 	return true
 }
 
@@ -70,11 +80,18 @@ func (e *enricherImpl) enrichImageWithScanner(image *v1.Image, scanner scannerTy
 	if !scanner.Match(image) {
 		return false
 	}
+	if scanValue := e.scanCache.Get(image.GetId()); scanValue != nil {
+		image.Scan = scanValue.(*v1.ImageScan)
+		return true
+	}
+	// Wait until limiter allows entrance
+	e.scanLimiter.Wait(context.Background())
 	scan, err := scanner.GetLastScan(image)
 	if err != nil {
 		logger.Errorf("Error getting last scan for %s: %s", image.GetName().GetFullName(), err)
 		return false
 	}
 	image.Scan = scan
+	e.scanCache.Add(image.GetId(), scan)
 	return true
 }

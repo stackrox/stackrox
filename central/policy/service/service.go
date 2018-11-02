@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/policy/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
 	"golang.org/x/net/context"
 )
@@ -45,7 +46,9 @@ func New(policies datastore.DataStore,
 	buildTimePolicies imageDetection.PolicySet,
 	manager lifecycle.Manager,
 	processor notifierProcessor.Processor,
-	enricherAndDetector enrichanddetect.EnricherAndDetector) Service {
+	enricherAndDetector enrichanddetect.EnricherAndDetector,
+	metadataCache expiringcache.Cache,
+	scanCache expiringcache.Cache) Service {
 	return &serviceImpl{
 		policies:    policies,
 		clusters:    clusters,
@@ -57,6 +60,9 @@ func New(policies datastore.DataStore,
 
 		processor:           processor,
 		enricherAndDetector: enricherAndDetector,
+
+		metadataCache: metadataCache,
+		scanCache:     scanCache,
 
 		validator: newPolicyValidator(notifiers, clusters),
 	}

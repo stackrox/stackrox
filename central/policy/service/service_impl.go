@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -66,6 +67,8 @@ type serviceImpl struct {
 	lifecycleManager    lifecycle.Manager
 	processor           notifierProcessor.Processor
 	enricherAndDetector enrichanddetect.EnricherAndDetector
+	metadataCache       expiringcache.Cache
+	scanCache           expiringcache.Cache
 
 	validator *policyValidator
 }
@@ -218,6 +221,10 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 
 // ReassessPolicies manually triggers enrichment of all deployments, and re-assesses policies if there's updated data.
 func (s *serviceImpl) ReassessPolicies(context.Context, *v1.Empty) (*v1.Empty, error) {
+	// Invalidate scan and metadata caches
+	s.metadataCache.Purge()
+	s.scanCache.Purge()
+
 	deployments, err := s.deployments.GetDeployments()
 	if err != nil {
 		return &v1.Empty{}, err

@@ -8,6 +8,7 @@ import (
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	"github.com/stackrox/rox/central/enrichanddetect"
+	"github.com/stackrox/rox/central/enrichment"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/policy/datastore"
@@ -29,7 +30,9 @@ func initialize() {
 		buildTimeDetection.SingletonPolicySet(),
 		lifecycle.SingletonManager(),
 		notifierProcessor.Singleton(),
-		enrichanddetect.Singleton())
+		enrichanddetect.Singleton(),
+		enrichment.ImageMetadataCacheSingleton(),
+		enrichment.ImageScanCacheSingleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

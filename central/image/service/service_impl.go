@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -29,6 +30,9 @@ var (
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
 	datastore datastore.DataStore
+
+	metadataCache expiringcache.Cache
+	scanCache     expiringcache.Cache
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -78,4 +82,11 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 	return &v1.ListImagesResponse{
 		Images: images,
 	}, nil
+}
+
+// InvalidateScanAndRegistryCaches invalidates the image scan caches
+func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty) (*v1.Empty, error) {
+	s.metadataCache.Purge()
+	s.scanCache.Purge()
+	return &v1.Empty{}, nil
 }

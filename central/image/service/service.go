@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -19,13 +20,14 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	GetImage(ctx context.Context, request *v1.ResourceByID) (*v1.Image, error)
-	ListImages(ctx context.Context, request *v1.RawQuery) (*v1.ListImagesResponse, error)
+	v1.ImageServiceServer
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.DataStore) Service {
+func New(datastore datastore.DataStore, metadataCache, scanCache expiringcache.Cache) Service {
 	return &serviceImpl{
-		datastore: datastore,
+		datastore:     datastore,
+		metadataCache: metadataCache,
+		scanCache:     scanCache,
 	}
 }
