@@ -35,7 +35,13 @@ function wait_for_central {
 
     echo -n "Waiting for Central to respond."
     set +e
+    local start_time="$(date '+%s')"
+    local deadline=$((start_time + 10*60))  # 10 minutes
     until $(curl --output /dev/null --silent --fail -k "https://$LOCAL_API_ENDPOINT/v1/ping"); do
+        if [[ "$(date '+%s')" > "$deadline" ]]; then
+            echo >&2 "Exceeded deadline waiting for Central."
+            exit 1
+        fi
         echo -n '.'
         sleep 1
     done
