@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import shave from 'shave';
 import Tooltip from 'rc-tooltip';
 import 'rc-tooltip/assets/bootstrap.css';
 
@@ -9,17 +8,11 @@ import CollapsibleCard from 'Components/CollapsibleCard';
 
 const titleClassName =
     'border-b border-base-300 leading-normal cursor-pointer justify-between items-center hover:bg-primary-100 hover:border-primary-300';
-const MAX_STRING_HEIGHT = 70;
-
 class ProcessBinaryCollapsible extends Component {
     static propTypes = {
         args: PropTypes.string.isRequired,
         children: PropTypes.node.isRequired
     };
-
-    componentDidMount() {
-        shave('.binary-args', MAX_STRING_HEIGHT);
-    }
 
     renderHeader = (backgroundClass, icon) => {
         let { args } = this.props;

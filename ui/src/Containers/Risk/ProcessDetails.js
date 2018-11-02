@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
+import shave from 'shave';
 
 import ProcessDiscoveryCard from 'Containers/Risk/ProcessDiscoveryCard';
 import ProcessBinaryCollapsible from 'Containers/Risk/ProcessBinaryCollapsible';
@@ -11,6 +12,8 @@ import Table, {
     wrapClassName
 } from 'Components/Table';
 import NoResultsMessage from 'Components/NoResultsMessage';
+
+const MAX_STRING_HEIGHT = 70;
 
 class ProcessDetails extends Component {
     static propTypes = {
@@ -24,6 +27,19 @@ class ProcessDetails extends Component {
         this.state = {
             page: 0
         };
+    }
+
+    componentDidMount() {
+        /*
+        * @TODO: Investigate a better alternative to this approach. The "shave.js" function call 
+        * was hoisted up from the ProcessBinaryCollapsible Component because each "componentDidMount"
+        * was causing a forced reflow that was causing some slow performance. This isn't a very
+        * React friendly way of doing things since this component knows more than it should about 
+        * it's child components, but we can see some performance improvements. In addition, windowing
+        * or using something like react-virtualized might be helpful when it comes to rendering 
+        * a large number of iterated Components
+        */
+        shave('.binary-args', MAX_STRING_HEIGHT);
     }
 
     renderProcessSignals = signals => {
