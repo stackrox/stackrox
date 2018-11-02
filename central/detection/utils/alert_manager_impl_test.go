@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
@@ -200,6 +201,52 @@ func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesActuallyTrims() {
 	suite.NotEqual(clonedAlert, alert)
 	suite.Len(alert.GetViolations()[0].GetProcesses(), 1)
 	suite.Equal(alert.GetViolations()[0].GetProcesses()[0], nowProcess)
+}
+
+func TestMergeProcessesFromOldIntoNew(t *testing.T) {
+	for _, c := range []struct {
+		desc           string
+		old            *v1.Alert
+		new            *v1.Alert
+		expectedNew    *v1.Alert
+		expectedOutput bool
+	}{
+		{
+			desc:           "Equal",
+			old:            getFakeRuntimeAlert(yesterdayProcess),
+			new:            getFakeRuntimeAlert(yesterdayProcess),
+			expectedNew:    nil,
+			expectedOutput: false,
+		},
+		{
+			desc:           "Equal with two",
+			old:            getFakeRuntimeAlert(yesterdayProcess, nowProcess),
+			new:            getFakeRuntimeAlert(yesterdayProcess, nowProcess),
+			expectedOutput: false,
+		},
+		{
+			desc:           "New has new",
+			old:            getFakeRuntimeAlert(yesterdayProcess),
+			new:            getFakeRuntimeAlert(nowProcess),
+			expectedNew:    getFakeRuntimeAlert(yesterdayProcess, nowProcess),
+			expectedOutput: true,
+		},
+		{
+			desc:           "New has many new",
+			old:            getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess),
+			new:            getFakeRuntimeAlert(yesterdayProcess, nowProcess),
+			expectedNew:    getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess, nowProcess),
+			expectedOutput: true,
+		},
+	} {
+		t.Run(c.desc, func(t *testing.T) {
+			out := mergeProcessesFromOldIntoNew(c.old, c.new)
+			assert.Equal(t, c.expectedOutput, out)
+			if c.expectedNew != nil {
+				assert.Equal(t, c.expectedNew, c.new)
+			}
+		})
+	}
 }
 
 //////////////////////////////////////

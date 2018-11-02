@@ -115,20 +115,10 @@ func (d *alertManagerImpl) notifyAndUpdateBatch(alertsToMark []*v1.Alert) error 
 	return d.updateBatch(alertsToMark)
 }
 
-// We want to avoid continuously updating the timestamp of a runtime alert.
-func equalRuntimeAlerts(old, new *v1.Alert) bool {
-	if old.GetLifecycleStage() != v1.LifecycleStage_RUNTIME || new.GetLifecycleStage() != v1.LifecycleStage_RUNTIME {
-		return false
-	}
-	if len(old.GetViolations()) != len(new.GetViolations()) {
-		return false
-	}
-	for i, oldViolation := range old.GetViolations() {
-		if !proto.Equal(oldViolation, new.GetViolations()[i]) {
-			return false
-		}
-	}
-	return true
+// It is the caller's responsibility to not call this with an empty slice,
+// else this function will panic.
+func lastTimestamp(processes []*v1.ProcessIndicator) *ptypes.Timestamp {
+	return processes[len(processes)-1].GetSignal().GetTime()
 }
 
 // This depends on the fact that we sort process indicators in increasing order of timestamp.
@@ -139,7 +129,7 @@ func getMostRecentProcessTimestampInAlerts(alerts ...*v1.Alert) (ts *ptypes.Time
 			if len(processes) == 0 {
 				continue
 			}
-			lastTimeStampInViolation := processes[len(processes)-1].GetSignal().GetTime()
+			lastTimeStampInViolation := lastTimestamp(processes)
 			if protoconv.CompareProtoTimestamps(ts, lastTimeStampInViolation) < 0 {
 				ts = lastTimeStampInViolation
 			}
@@ -194,18 +184,68 @@ func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(alert *v1.Alert
 	return
 }
 
+// Some processes in the old alert might have been deleted from the process store because of our pruning,
+// which means they only exist in the old alert, and will not be in the new generated alert.
+// We don't want to lose them, though, so we keep all the processes from the old alert, and add ones from the new, if any.
+// Note that the old alert _was_ active which means that all the processes in it are guaranteed to violate the policy.
+func mergeProcessesFromOldIntoNew(old, newAlert *v1.Alert) (newAlertHasNewProcesses bool) {
+	// There is exactly one sub-object which has processes.
+	var oldViolationWithProcesses *v1.Alert_Violation
+	for _, violation := range old.GetViolations() {
+		if len(violation.GetProcesses()) > 0 {
+			oldViolationWithProcesses = violation
+			break
+		}
+	}
+	if oldViolationWithProcesses == nil {
+		logger.Errorf("UNEXPECTED: found no old violation with processes for runtime alert %s", proto.MarshalTextString(old))
+		newAlertHasNewProcesses = true
+		return
+	}
+
+	for i, newViolation := range newAlert.GetViolations() {
+		if len(newViolation.GetProcesses()) == 0 {
+			continue
+		}
+		newProcessesSlice := oldViolationWithProcesses.GetProcesses()
+		// De-dupe processes using timestamps.
+		timestamp := lastTimestamp(oldViolationWithProcesses.GetProcesses())
+		for _, process := range newViolation.GetProcesses() {
+			if protoconv.CompareProtoTimestamps(process.GetSignal().GetTime(), timestamp) > 0 {
+				newAlertHasNewProcesses = true
+				newProcessesSlice = append(newProcessesSlice, process)
+			}
+		}
+		// If there are no new processes, we'll just use the old alert.
+		if !newAlertHasNewProcesses {
+			return
+		}
+		newAlert.Violations[i].Processes = newProcessesSlice
+		builders.UpdateRuntimeAlertViolationMessage(newAlert.Violations[i])
+		return
+	}
+
+	logger.Errorf("UNEXPECTED: found no new violation with processes for runtime alert %s", proto.MarshalTextString(newAlert))
+	return
+}
+
 // MergeAlerts merges two alerts.
-func mergeAlerts(old, new *v1.Alert) *v1.Alert {
-	if equalRuntimeAlerts(old, new) {
-		return old
+func mergeAlerts(old, newAlert *v1.Alert) *v1.Alert {
+	if old.GetLifecycleStage() == v1.LifecycleStage_RUNTIME && newAlert.GetLifecycleStage() == v1.LifecycleStage_RUNTIME {
+		newAlertHasNewProcesses := mergeProcessesFromOldIntoNew(old, newAlert)
+		// This ensures that we don't keep updating the timestamp of an old runtime alert.
+		if !newAlertHasNewProcesses {
+			return old
+		}
 	}
-	new.Id = old.GetId()
+
+	newAlert.Id = old.GetId()
 	// Updated deploy-time alerts continue to have the same enforcement action.
-	if new.GetLifecycleStage() == v1.LifecycleStage_DEPLOY && old.GetLifecycleStage() == v1.LifecycleStage_DEPLOY {
-		new.Enforcement = old.GetEnforcement()
+	if newAlert.GetLifecycleStage() == v1.LifecycleStage_DEPLOY && old.GetLifecycleStage() == v1.LifecycleStage_DEPLOY {
+		newAlert.Enforcement = old.GetEnforcement()
 	}
-	new.FirstOccurred = old.GetFirstOccurred()
-	return new
+	newAlert.FirstOccurred = old.GetFirstOccurred()
+	return newAlert
 }
 
 // MergeManyAlerts merges two alerts.

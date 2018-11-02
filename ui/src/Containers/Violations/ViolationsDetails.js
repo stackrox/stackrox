@@ -13,8 +13,7 @@ class ViolationsDetails extends Component {
             PropTypes.shape({
                 message: PropTypes.string.isRequired
             })
-        ),
-        firstOccurred: PropTypes.string.isRequired
+        )
     };
 
     static defaultProps = {
@@ -34,14 +33,14 @@ class ViolationsDetails extends Component {
     };
 
     getRuntimeMessages = () => {
-        const { violations, firstOccurred } = this.props;
+        const { violations } = this.props;
         return violations
             .filter(violation => violation.processes.length)
             .map(({ message, processes }) => {
-                const firstOccurrenceTimestamp = getTime(firstOccurred);
-                const lastOccurrenceTimestamp = Math.max(
-                    ...processes.map(process => getTime(process.signal.time))
-                );
+                const timestamps = processes.map(process => getTime(process.signal.time));
+                const firstOccurrenceTimestamp = Math.min(...timestamps);
+                const lastOccurrenceTimestamp = Math.max(...timestamps);
+
                 const processesList = processes.map(process => {
                     const { time, args, execFilePath, containerId } = process.signal;
                     const processTime = new Date(time);

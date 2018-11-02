@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // ProcessQueryBuilder builds queries for process name field.
@@ -103,12 +104,12 @@ func UpdateRuntimeAlertViolationMessage(v *v1.Alert_Violation) {
 		return
 	}
 
-	pathSet := make(map[string]struct{})
-	argsSet := make(map[string]struct{})
+	pathSet := set.NewStringSet()
+	argsSet := set.NewStringSet()
 	for _, process := range processes {
-		pathSet[process.GetSignal().GetExecFilePath()] = struct{}{}
+		pathSet.Add(process.GetSignal().GetExecFilePath())
 		if process.GetSignal().GetArgs() != "" {
-			argsSet[process.GetSignal().GetArgs()] = struct{}{}
+			argsSet.Add(process.GetSignal().GetArgs())
 		}
 	}
 
@@ -119,16 +120,16 @@ func UpdateRuntimeAlertViolationMessage(v *v1.Alert_Violation) {
 		countMessage = "executions of"
 	}
 
-	if len(pathSet) == 1 {
+	if pathSet.Cardinality() == 1 {
 		pathMessage = fmt.Sprintf(" binary '%s'", processes[0].GetSignal().GetExecFilePath())
-	} else if len(pathSet) > 0 {
-		pathMessage = fmt.Sprintf(" %d binaries", len(pathSet))
+	} else if pathSet.Cardinality() > 0 {
+		pathMessage = fmt.Sprintf(" %d binaries", pathSet.Cardinality())
 	}
 
-	if len(argsSet) == 1 {
+	if argsSet.Cardinality() == 1 {
 		argsMessage = fmt.Sprintf(" with arguments '%s'", processes[0].GetSignal().GetArgs())
-	} else if len(argsSet) > 0 {
-		argsMessage = fmt.Sprintf(" with %d different arguments", len(argsSet))
+	} else if argsSet.Cardinality() > 0 {
+		argsMessage = fmt.Sprintf(" with %d different arguments", argsSet.Cardinality())
 	}
 
 	v.Message = fmt.Sprintf("Detected %s%s%s", countMessage, pathMessage, argsMessage)
