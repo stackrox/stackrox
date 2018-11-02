@@ -30,6 +30,11 @@ func (k StringSet) Add(i string) bool {
 	return k.underlying.Add(i)
 }
 
+// Remove removes an element of type string.
+func (k StringSet) Remove(i string) {
+	k.underlying.Remove(i)
+}
+
 // Contains returns whether the set contains an element of type string.
 func (k StringSet) Contains(i string) bool {
 	return k.underlying.Contains(i)

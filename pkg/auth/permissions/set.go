@@ -30,6 +30,11 @@ func (k PermissionSet) Add(i Permission) bool {
 	return k.underlying.Add(i)
 }
 
+// Remove removes an element of type Permission.
+func (k PermissionSet) Remove(i Permission) {
+	k.underlying.Remove(i)
+}
+
 // Contains returns whether the set contains an element of type Permission.
 func (k PermissionSet) Contains(i Permission) bool {
 	return k.underlying.Contains(i)

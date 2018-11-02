@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type datastoreImpl struct {
@@ -38,12 +39,31 @@ func (ds *datastoreImpl) AddProcessIndicators(indicators ...*v1.ProcessIndicator
 	if err != nil {
 		return err
 	}
-	if len(removedIndicators) > 0 {
-		if err := ds.indexer.DeleteProcessIndicators(removedIndicators...); err != nil {
+
+	// If there are no indicators to remove, short-circuit the rest of the code path.
+	if len(removedIndicators) == 0 {
+		return ds.indexer.AddProcessIndicators(indicators)
+	}
+
+	removedIndicatorsSet := set.NewStringSet(removedIndicators...)
+
+	// We want to filter out indicators in the current batch which were dropped.
+	filteredIndicators := indicators[:0]
+	for _, indicator := range indicators {
+		if removedIndicatorsSet.Contains(indicator.GetId()) {
+			removedIndicatorsSet.Remove(indicator.GetId())
+			continue
+		}
+		filteredIndicators = append(filteredIndicators, indicator)
+	}
+
+	// This removes indicators that previously existed in the index.
+	if removedIndicatorsSet.Cardinality() > 0 {
+		if err := ds.indexer.DeleteProcessIndicators(removedIndicatorsSet.AsSlice()...); err != nil {
 			return err
 		}
 	}
-	return ds.indexer.AddProcessIndicators(indicators)
+	return ds.indexer.AddProcessIndicators(filteredIndicators)
 }
 
 func (ds *datastoreImpl) AddProcessIndicator(i *v1.ProcessIndicator) error {

@@ -29,6 +29,11 @@ func (k KeyTypeSet) Add(i KeyType) bool {
 	return k.underlying.Add(i)
 }
 
+// Remove removes an element of type KeyType.
+func (k KeyTypeSet) Remove(i KeyType) {
+	k.underlying.Remove(i)
+}
+
 // Contains returns whether the set contains an element of type KeyType.
 func (k KeyTypeSet) Contains(i KeyType) bool {
 	return k.underlying.Contains(i)
