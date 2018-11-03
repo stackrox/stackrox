@@ -176,7 +176,7 @@ func (e *email) AlertNotify(alert *v1.Alert) error {
 		return err
 	}
 
-	recipient := notifiers.GetLabelValue(alert, e.notifier.GetLabelKey(), body)
+	recipient := notifiers.GetLabelValue(alert, e.notifier.GetLabelKey(), e.notifier.GetLabelDefault())
 	return e.sendEmail(recipient, subject, body)
 }
 
