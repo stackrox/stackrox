@@ -46,7 +46,7 @@ type: kubernetes.io/dockerconfigjson
 EOF
 fi
 
-oc secrets add serviceaccount/collector secrets/collector-stackrox --for=pull
+oc secrets add serviceaccount/collector secrets/stackrox secrets/collector-stackrox --for=pull
 
 echo "Creating secrets for collector..."
 kubectl create secret -n "{{.Namespace}}" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/ca.pem"
