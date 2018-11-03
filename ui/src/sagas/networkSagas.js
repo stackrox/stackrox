@@ -33,7 +33,7 @@ function* getNetworkGraph(filters, clusterId) {
         yield put(actions.updateNetworkGraphTimestamp(new Date()));
         yield fork(getNetworkFlowGraph, filters, clusterId);
     } catch (error) {
-        yield put(actions.fetchNetworkGraph.failure(error));
+        yield put(actions.fetchNetworkPolicyGraph.failure(error));
     }
 }
 
