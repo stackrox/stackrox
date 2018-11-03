@@ -104,7 +104,9 @@ function try_dockercfg_plain() {
         print_auth "$auth_str"
     fi
     [[ -z "$username" || "$username" == "${components[1]}" ]] || return
-    if [[ -n "${components[1]}" && -n "${components[2]}" ]]; then
+    # stackrox.io returns a refresh token instead of a username and password so we should fall back to
+    # user input username and password
+    if [[ -n "${components[1]}" && "${components[1]}" != "<token>" && -n "${components[2]}" ]]; then
         echo >&2 "Using login for ${components[0]} @ ${registry_url} from ~/.docker/config.json"
         print_auth "$(mkauth "${components[0]}" "${components[1]}")"
     fi
@@ -125,7 +127,9 @@ function try_dockercfg_credstore() {
     local components=()
     IFS=$'\n' read -d '' -r -a components < <(jq -r <<<"$creds_output" '(.Username // "", .Secret // "")')
     [[ -z "$username" || "$username" == "${components[0]}" ]] || return
-    if [[ -n "${components[0]}" && -n "${components[1]}" ]]; then
+    # stackrox.io returns a refresh token instead of a username and password so we should fall back to
+    # user input username and password
+    if [[ -n "${components[0]}" && "${components[0]}" != "<token>" && -n "${components[1]}" ]]; then
         echo >&2 "Using login for ${components[0]} @ ${registry_url} from keychain '${credstore}'."
         print_auth "$(mkauth "${components[0]}" "${components[1]}")"
     fi
