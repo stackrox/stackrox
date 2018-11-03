@@ -29,7 +29,7 @@ import (
 
 const (
 	publicAPIEndpoint     = ":443"
-	insecureLocalEndpoint = "localhost:444"
+	insecureLocalEndpoint = "127.0.0.1:444"
 )
 
 func init() {
