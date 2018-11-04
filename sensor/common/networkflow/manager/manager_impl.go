@@ -49,9 +49,9 @@ func (i networkConnIndicator) toProto(ts timestamp.MicroTS) *v1.NetworkFlow {
 
 // connection is an instance of a connection as reported by collector
 type connection struct {
-	srcAddr        net.IPAddress
-	srcContainerID string
+	src            net.IPPortPair
 	dest           net.NumericEndpoint
+	srcContainerID string
 }
 
 type networkFlowManager struct {
@@ -250,6 +250,13 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	return nil
 }
 
+func getIPAndPort(address *sensor.NetworkAddress) net.IPPortPair {
+	return net.IPPortPair{
+		Address: net.IPFromBytes(address.GetAddressData()),
+		Port:    uint16(address.GetPort()),
+	}
+}
+
 func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connection]timestamp.MicroTS {
 	updatedConnections := make(map[connection]timestamp.MicroTS)
 
@@ -259,15 +266,15 @@ func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connec
 			continue
 		}
 
-		remoteEndpoint := net.MakeNumericEndpoint(
-			net.IPFromBytes(conn.GetRemoteAddress().GetAddressData()),
-			uint16(conn.GetRemoteAddress().GetPort()),
-			net.L4ProtoFromProtobuf(conn.GetProtocol()),
-		)
+		dest := net.NumericEndpoint{
+			IPAndPort: getIPAndPort(conn.GetRemoteAddress()),
+			L4Proto:   net.L4ProtoFromProtobuf(conn.GetProtocol()),
+		}
+		src := getIPAndPort(conn.GetLocalAddress())
 		c := connection{
+			src:            src,
+			dest:           dest,
 			srcContainerID: conn.GetContainerId(),
-			srcAddr:        net.IPFromBytes(conn.GetLocalAddress().GetAddressData()),
-			dest:           remoteEndpoint,
 		}
 
 		// timestamp will be set to close timestamp for closed connections, and zero for newly added connection.
