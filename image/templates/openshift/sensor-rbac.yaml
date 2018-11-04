@@ -72,6 +72,8 @@ rules:
     - '*'
     verbs:
     - update
+    - patch
+    - delete
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
