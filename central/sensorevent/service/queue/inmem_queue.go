@@ -52,6 +52,12 @@ func (p *eventQueue) Push(event *v1.SensorEvent) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
+	// Don't dedupe deployment events, since we need Creates for enforcement.
+	if event.GetDeployment() != nil {
+		p.queue.PushBack(event)
+		return nil
+	}
+
 	if evt, ok := p.resourceIDToEvent[event.GetId()]; ok {
 		metrics.IncrementSensorEventQueueCounter(ops.Dedupe)
 		p.queue.Remove(evt)
