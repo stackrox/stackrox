@@ -42,8 +42,8 @@ const RuntimeSupportFormField = () => (
 );
 
 const MonitoringEndpointFormField = () => (
-    <FormField label="Monitoring Endpoint (empty means no monitoring)">
-        <ReduxTextField name="monitoringEndpoint" placeholder="monitoring.stackrox" />
+    <FormField label="Monitoring Endpoint (include port; empty means no monitoring)">
+        <ReduxTextField name="monitoringEndpoint" placeholder="monitoring.stackrox:8086" />
     </FormField>
 );
 
@@ -142,7 +142,7 @@ const initialValuesFactories = {
                 namespace: 'stackrox'
             }
         },
-        monitoringEndpoint: 'monitoring.stackrox',
+        monitoringEndpoint: 'monitoring.stackrox:8086',
         runtimeSupport: true
     })
 };

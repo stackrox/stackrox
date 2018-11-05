@@ -4,6 +4,11 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/netutil"
+)
+
+const (
+	defaultMonitoringPort = 8086
 )
 
 func init() {
@@ -37,6 +42,7 @@ func (k *kubernetes) Render(c Config) ([]*v1.File, error) {
 	}
 	injectImageTags(&c)
 	c.K8sConfig.MonitoringImage = generateMonitoringImage(c.K8sConfig.MainImage)
+	c.K8sConfig.MonitoringEndpoint = netutil.WithDefaultPort(c.K8sConfig.MonitoringEndpoint, defaultMonitoringPort)
 
 	filenames := []string{
 		"kubernetes/ca-setup.sh",

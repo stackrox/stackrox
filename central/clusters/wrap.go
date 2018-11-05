@@ -12,12 +12,17 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+const (
+	defaultMonitoringPort = 8086
 )
 
 var (
@@ -111,7 +116,7 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 		"CollectorImage":    collectorName.GetFullName(),
 		"CollectorTag":      version.GetCollectorVersion(),
 
-		"MonitoringEndpoint": c.MonitoringEndpoint,
+		"MonitoringEndpoint": netutil.WithDefaultPort(c.MonitoringEndpoint, defaultMonitoringPort),
 		"ClusterType":        c.Type.String(),
 	}
 	return fields, nil

@@ -49,7 +49,7 @@ function launch_sensor {
 
     local extra_config=""
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then
-        extra_config+='"monitoringEndpoint": "monitoring.stackrox", '
+        extra_config+='"monitoringEndpoint": "monitoring.stackrox:8086", '
     fi
     extra_config+="\"openshift\": $common_params}"
 

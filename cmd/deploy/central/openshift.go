@@ -3,6 +3,7 @@ package central
 import (
 	"github.com/stackrox/rox/generated/api/v1"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/netutil"
 )
 
 func init() {
@@ -34,6 +35,7 @@ func (o *openshift) Render(c Config) ([]*v1.File, error) {
 		return nil, err
 	}
 	c.K8sConfig.MonitoringImage = generateMonitoringImage(c.K8sConfig.MainImage)
+	c.K8sConfig.MonitoringEndpoint = netutil.WithDefaultPort(c.K8sConfig.MonitoringEndpoint, defaultMonitoringPort)
 
 	filenames := []string{
 		"kubernetes/central.yaml",
