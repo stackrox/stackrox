@@ -68,12 +68,6 @@ deployGKE: &deployGKE
       ./deploy/k8s/deploy.sh
       kubectl delete clusterrolebinding temporary-admin
 
-portForwardK8s: &portForwardK8s
-  run:
-    name: Setup port-forwarding for tests
-    command: ./scripts/k8s/local-port-forward.sh
-    background: true
-
 waitForAPI: &waitForAPI
   run:
     name: Wait for the API server to be up
@@ -335,7 +329,6 @@ jobs:
       - *setupGCP
       - *createGKE
       - *deployGKE
-      - *portForwardK8s
       - *waitForAPI
       - *waitForSensorK8s
 
@@ -388,7 +381,6 @@ jobs:
       - *setupGCP
       - *createGKE
       - *deployGKE
-      - *portForwardK8s
       - *waitForAPI
       - *waitForSensorK8s
 
@@ -559,7 +551,6 @@ jobs:
             ./deploy/openshift/deploy.sh
             oc -n stackrox get all
 
-      - *portForwardK8s
       - *waitForAPI
       - *waitForSensorK8s
 
