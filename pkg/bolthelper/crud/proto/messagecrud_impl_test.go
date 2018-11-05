@@ -1,4 +1,4 @@
-package messagecrud
+package proto
 
 import (
 	"os"
