@@ -11,10 +11,12 @@ import (
 	openshift_appsv1 "github.com/openshift/api/apps/v1"
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/containers"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/kubernetes/volumes"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -29,9 +31,28 @@ const (
 	openshiftEncodedDeploymentConfigAnnotation = `openshift.io/encoded-deployment-config`
 
 	megabyte = 1024 * 1024
+
+	kubeProxyLabelKey   = "component"
+	kubeProxyLabelValue = "kube-proxy"
+	kubeProxyType       = "StaticPods"
+	kubeSystemNamespace = "kube-system"
 )
 
-var logger = logging.LoggerForModule()
+var (
+	logger = logging.LoggerForModule()
+
+	kubeProxyDeploymentName = "static-kube-proxy-pods"
+	kubeProxyDeploymentID   = getKubeProxyDeploymentID()
+)
+
+func getKubeProxyDeploymentID() string {
+	u, err := uuid.FromString(env.ClusterID.Setting())
+	if err != nil {
+		logger.Error(err)
+		return ""
+	}
+	return uuid.NewV5(u, "kube-proxy").String()
+}
 
 type deploymentWrap struct {
 	*pkgV1.Deployment
@@ -106,6 +127,16 @@ func newWrap(meta metav1.Object, kind string) *deploymentWrap {
 	}
 }
 
+func (w *deploymentWrap) populateKubeProxyIfNecessary(o *v1.Pod) labels.Selector {
+	if o.Namespace == kubeSystemNamespace && o.Labels[kubeProxyLabelKey] == kubeProxyLabelValue {
+		w.Id = kubeProxyDeploymentID
+		w.Name = kubeProxyDeploymentName
+		w.Type = kubeProxyType
+		return SelectorFromMap(o.GetLabels())
+	}
+	return nil
+}
+
 func (w *deploymentWrap) populateFields(obj interface{}, action pkgV1.ResourceAction, lister v1listers.PodLister) {
 	w.original = obj
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
@@ -119,6 +150,8 @@ func (w *deploymentWrap) populateFields(obj interface{}, action pkgV1.ResourceAc
 
 	var podSpec v1.PodSpec
 	var podLabels map[string]string
+	var labelSelector labels.Selector
+	var err error
 
 	switch o := obj.(type) {
 	case *openshift_appsv1.DeploymentConfig:
@@ -128,6 +161,13 @@ func (w *deploymentWrap) populateFields(obj interface{}, action pkgV1.ResourceAc
 		}
 		podSpec = o.Spec.Template.Spec
 		podLabels = o.Spec.Template.Labels
+
+		labelSelector, err = w.getLabelSelector(spec)
+		if err != nil {
+			logger.Errorf("Error getting label selector: %v", err)
+			return
+		}
+
 	// Pods don't have the abstractions that higher level objects have so maintain it's lifecycle independently
 	case *v1.Pod:
 		// Standalone Pods do not have a PodTemplate, like the other deployment
@@ -135,6 +175,8 @@ func (w *deploymentWrap) populateFields(obj interface{}, action pkgV1.ResourceAc
 		// instead of looking for it inside a PodTemplate.
 		podSpec = o.Spec
 		podLabels = o.Labels
+
+		labelSelector = w.populateKubeProxyIfNecessary(o)
 	default:
 		podTemplate, ok := spec.FieldByName("Template").Interface().(v1.PodTemplateSpec)
 		if !ok {
@@ -143,6 +185,12 @@ func (w *deploymentWrap) populateFields(obj interface{}, action pkgV1.ResourceAc
 		}
 		podSpec = podTemplate.Spec
 		podLabels = podTemplate.Labels
+
+		labelSelector, err = w.getLabelSelector(spec)
+		if err != nil {
+			logger.Errorf("Error getting label selector: %v", err)
+			return
+		}
 	}
 
 	w.podLabels = podLabels
@@ -150,10 +198,11 @@ func (w *deploymentWrap) populateFields(obj interface{}, action pkgV1.ResourceAc
 
 	if action != pkgV1.ResourceAction_REMOVE_RESOURCE {
 		// If we have a standalone pod, we cannot use the labels to try and select that pod so we must directly populate the pod data
-		if pod, ok := obj.(*v1.Pod); ok {
+		// We need to special case kube-proxy because we are consolidating it into a deployment
+		if pod, ok := obj.(*v1.Pod); ok && w.Id != kubeProxyDeploymentID {
 			w.populateDataFromPods(pod)
 		} else {
-			if err := w.populatePodData(spec, lister); err != nil {
+			if err := w.populatePodData(labelSelector, lister); err != nil {
 				logger.Errorf("Could not populate pod data: %v", err)
 			}
 		}
@@ -214,12 +263,9 @@ func (w *deploymentWrap) populateReplicas(spec reflect.Value) {
 	}
 }
 
-func (w *deploymentWrap) populatePodData(spec reflect.Value, lister v1listers.PodLister) error {
-	labelSelector, err := w.getLabelSelector(spec)
-	if err != nil {
-		return err
-	}
+func (w *deploymentWrap) populatePodData(labelSelector labels.Selector, lister v1listers.PodLister) error {
 	w.podSelector = labelSelector
+	var err error
 	w.pods, err = lister.Pods(w.Namespace).List(w.podSelector)
 	if err != nil {
 		return err
