@@ -50,6 +50,7 @@ import (
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/user/mapper"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
@@ -185,9 +186,9 @@ func (c *central) startGRPCServer() {
 }
 
 // allResourcesViewPermissions returns a slice containing view permissions for all resource types.
-func allResourcesViewPermissions() []permissions.Permission {
+func allResourcesViewPermissions() []*v1.Permission {
 	resourceLst := resources.ListAll()
-	result := make([]permissions.Permission, len(resourceLst))
+	result := make([]*v1.Permission, len(resourceLst))
 	for i, resource := range resourceLst {
 		result[i] = permissions.View(resource)
 	}

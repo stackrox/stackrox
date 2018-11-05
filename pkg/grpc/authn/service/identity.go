@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
@@ -26,7 +25,7 @@ func (i identity) FriendlyName() string {
 	return i.id.Subject.CN()
 }
 
-func (i identity) Role() permissions.Role {
+func (i identity) Role() *v1.Role {
 	return nil // services do not have roles
 }
 

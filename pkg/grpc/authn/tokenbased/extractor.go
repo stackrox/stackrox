@@ -46,10 +46,10 @@ func (e *extractor) IdentityForRequest(ri requestinfo.RequestInfo) (authn.Identi
 	}
 
 	// Anonymous role-based tokens.
-	if token.Role != "" {
-		role := e.roleStore.RoleByName(token.Role)
+	if token.RoleName != "" {
+		role := e.roleStore.RoleByName(token.RoleName)
 		if role == nil {
-			return nil, fmt.Errorf("token referenced invalid role %q", token.Role)
+			return nil, fmt.Errorf("token referenced invalid role %q", token.RoleName)
 		}
 		id := &roleBasedIdentity{
 			uid:          fmt.Sprintf("auth-token:%s", token.ID),
@@ -57,7 +57,7 @@ func (e *extractor) IdentityForRequest(ri requestinfo.RequestInfo) (authn.Identi
 			role:         role,
 		}
 		if id.friendlyName == "" {
-			id.friendlyName = fmt.Sprintf("anonymous bearer token with role %s (expires %v)", role.Name(), token.Expiry())
+			id.friendlyName = fmt.Sprintf("anonymous bearer token with role %s (expires %v)", role.GetName(), token.Expiry())
 		}
 		return id, nil
 	}

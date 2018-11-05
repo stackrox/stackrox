@@ -14,7 +14,6 @@ import (
 
 // KeyType represents a generic type that we want to have a set of.
 //go:generate genny -in=$GOFILE -out=gen-string-$GOFILE gen "KeyType=string"
-//go:generate genny -in=$GOFILE -out=$GOPATH/src/github.com/stackrox/rox/pkg/auth/permissions/set.go -pkg permissions gen "KeyType=Permission"
 type KeyType generic.Type
 
 // KeyTypeSet will get translated to generic sets.

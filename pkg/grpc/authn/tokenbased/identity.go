@@ -5,13 +5,12 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
 type roleBasedIdentity struct {
 	uid          string
 	friendlyName string
-	role         permissions.Role
+	role         *v1.Role
 	expiry       time.Time
 }
 
@@ -23,7 +22,7 @@ func (i *roleBasedIdentity) FriendlyName() string {
 	return i.friendlyName
 }
 
-func (i *roleBasedIdentity) Role() permissions.Role {
+func (i *roleBasedIdentity) Role() *v1.Role {
 	return i.role
 }
 

@@ -4,13 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 )
 
 type permissionChecker struct {
-	requiredPermissions []permissions.Permission
+	requiredPermissions []*v1.Permission
 }
 
 func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
@@ -34,9 +36,9 @@ func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 		return authz.ErrNoCredentials
 	}
 	for _, permission := range p.requiredPermissions {
-		if !role.Has(permission) {
-			return authz.ErrNotAuthorized(fmt.Sprintf("not authorized to %s %s",
-				permission.Access, permission.Resource))
+		if !permissions.RoleHasPermission(role, permission) {
+			return authz.ErrNotAuthorized(fmt.Sprintf("not authorized to %s",
+				proto.MarshalTextString(permission)))
 		}
 	}
 	return nil
@@ -44,6 +46,6 @@ func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 
 // With returns an authorizer that only authorizes users/tokens
 // which satisfy all the given permissions.
-func With(requiredPermissions ...permissions.Permission) authz.Authorizer {
+func With(requiredPermissions ...*v1.Permission) authz.Authorizer {
 	return &permissionChecker{requiredPermissions}
 }

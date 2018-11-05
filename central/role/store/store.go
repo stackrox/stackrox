@@ -3,6 +3,7 @@ package store
 import (
 	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
@@ -12,12 +13,12 @@ import (
 // of custom roles, or for the updating of existing roles.
 type Store interface {
 	permissions.RoleStore
-	GetRoles() []permissions.Role
+	GetRoles() []*v1.Role
 }
 
 // defaultRolesMap returns the pre-defined roles that we allow.
-func defaultRolesMap() map[string]permissions.Role {
-	return map[string]permissions.Role{
+func defaultRolesMap() map[string]*v1.Role {
+	return map[string]*v1.Role{
 		role.Admin: permissions.NewAllAccessRole(role.Admin),
 		role.ContinuousIntegration: permissions.NewRoleWithPermissions(role.ContinuousIntegration,
 			permissions.View(resources.Detection),

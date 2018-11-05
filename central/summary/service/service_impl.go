@@ -58,7 +58,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 }
 
 func (s *serviceImpl) initializeAuthorizer() {
-	requiredPermissions := make([]permissions.Permission, 0, len(summaryTypeToResource))
+	requiredPermissions := make([]*v1.Permission, 0, len(summaryTypeToResource))
 	for _, resource := range summaryTypeToResource {
 		requiredPermissions = append(requiredPermissions, permissions.View(resource))
 	}

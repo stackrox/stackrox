@@ -9,8 +9,22 @@ import "api/v1/empty.proto";
 
 package v1;
 
+// Access values should be in escalating order. IE READ_WRITE means you have READ as well.
+enum Access {
+    READ_PERMISSION = 0;
+    READ_WRITE_PERMISSION = 1;
+}
+
+message Permission {
+    string resource = 1;
+    Access access = 2;
+}
+
 message Role {
     string name = 1;
+    bool all_access = 2;
+
+    map<string, Permission> resource_to_permission = 3;
 }
 
 message GetRolesResponse {

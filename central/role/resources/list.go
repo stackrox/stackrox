@@ -37,10 +37,9 @@ var (
 	allResources = make(map[permissions.Resource]struct{})
 )
 
-func newResource(name string) permissions.Resource {
-	r := permissions.Resource(name)
-	allResources[r] = struct{}{}
-	return r
+func newResource(name permissions.Resource) permissions.Resource {
+	allResources[name] = struct{}{}
+	return name
 }
 
 // ListAll returns a list of all resources.

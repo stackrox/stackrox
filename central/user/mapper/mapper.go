@@ -3,6 +3,7 @@ package usermapper
 
 import (
 	"github.com/stackrox/rox/central/role"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
@@ -12,7 +13,7 @@ type allAccessMapper struct {
 	roleStore permissions.RoleStore
 }
 
-func (a *allAccessMapper) Role(id string) permissions.Role {
+func (a *allAccessMapper) Role(id string) *v1.Role {
 	return a.roleStore.RoleByName(role.Admin)
 }
 

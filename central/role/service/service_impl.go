@@ -41,7 +41,7 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 func (s *serviceImpl) GetRoles(context.Context, *v1.Empty) (*v1.GetRolesResponse, error) {
 	resp := new(v1.GetRolesResponse)
 	for _, role := range s.roleStore.GetRoles() {
-		resp.Roles = append(resp.GetRoles(), &v1.Role{Name: role.Name()})
+		resp.Roles = append(resp.GetRoles(), &v1.Role{Name: role.GetName()})
 	}
 	return resp, nil
 }

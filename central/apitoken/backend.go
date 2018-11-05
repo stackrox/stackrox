@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/jwt"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -39,7 +38,7 @@ func BackendSingleton() Backend {
 type Backend interface {
 	GetTokenOrNil(tokenID string) (*v1.TokenMetadata, error)
 	GetTokens(req *v1.GetAPITokensRequest) ([]*v1.TokenMetadata, error)
-	IssueRoleToken(name string, role permissions.Role) (string, *v1.TokenMetadata, error)
+	IssueRoleToken(name string, role *v1.Role) (string, *v1.TokenMetadata, error)
 	RevokeToken(tokenID string) (bool, error)
 }
 
@@ -63,8 +62,8 @@ func newBackend(issuerFactory tokens.IssuerFactory, tokenStore store.Store) (*ba
 	}, nil
 }
 
-func (c *backend) IssueRoleToken(name string, role permissions.Role) (string, *v1.TokenMetadata, error) {
-	tokenInfo, err := c.issuer.Issue(tokens.RoxClaims{Role: role.Name()})
+func (c *backend) IssueRoleToken(name string, role *v1.Role) (string, *v1.TokenMetadata, error) {
+	tokenInfo, err := c.issuer.Issue(tokens.RoxClaims{RoleName: role.GetName()})
 	if err != nil {
 		return "", nil, err
 	}
@@ -82,7 +81,7 @@ func metadataFromTokenInfo(name string, info *tokens.TokenInfo) *v1.TokenMetadat
 	return &v1.TokenMetadata{
 		Id:         info.ID,
 		Name:       name,
-		Role:       info.Role,
+		Role:       info.RoleName,
 		IssuedAt:   protoconv.ConvertTimeToTimestamp(info.IssuedAt()),
 		Expiration: protoconv.ConvertTimeToTimestamp(info.Expiry()),
 	}
