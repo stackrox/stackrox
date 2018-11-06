@@ -48,6 +48,13 @@ var (
 		Name:      "total_network_flows_sensor_received_counter",
 		Help:      "A counter of the total number of network flows received by Sensor from Collector",
 	}, []string{"ClusterID"})
+
+	sensorEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "sensor_events",
+		Help:      "A counter for the total number of events sent from Sensor to Central",
+	}, []string{"Action", "ResourceType", "Type"})
 )
 
 // IncrementPanicCounter increments the number of panic calls seen in a function

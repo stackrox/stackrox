@@ -11,6 +11,9 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common/deduper"
+	"github.com/stackrox/rox/sensor/common/eventstream"
+	"github.com/stackrox/rox/sensor/common/metrics"
 )
 
 const (
@@ -127,6 +130,11 @@ func (s *sensor) sendEventsSingle(
 
 	go s.receiveMessages(output, stream)
 
+	eventStream := eventstream.Wrap(stream)
+	eventStream = metrics.NewCountingEventStream(eventStream, "unique")
+	eventStream = deduper.NewDedupingEventStream(eventStream)
+	eventStream = metrics.NewCountingEventStream(eventStream, "total")
+
 	for {
 		select {
 		case sig, ok := <-signals:
@@ -140,7 +148,7 @@ func (s *sensor) sendEventsSingle(
 			if !ok {
 				return false, errors.New("orchestrator events channel closed")
 			}
-			if err := stream.Send(evt); err != nil {
+			if err := eventStream.Send(evt); err != nil {
 				return true, err
 			}
 		case <-stream.Context().Done():
