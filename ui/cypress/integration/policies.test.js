@@ -252,4 +252,27 @@ describe('Policies page', () => {
             .first()
             .should('have.class', selectors.enabledIconColor);
     });
+
+    it('should show delete button when the checkboxes are chosen', () => {
+        cy.get(selectors.reassessAllButton).should('be.visible');
+        cy.get(selectors.newPolicyButton).should('be.visible');
+        cy.get(selectors.checkboxes)
+            .eq(1)
+            .click({ force: true });
+        cy.get(selectors.deleteButton).should('contain', '1');
+        cy.get(selectors.reassessAllButton).should('not.be.visible');
+        cy.get(selectors.newPolicyButton).should('not.be.visible');
+    });
+
+    it('should delete a policy when the hover delete policy clicked', () => {
+        cy.get(selectors.tableFirstRow).click({ force: true });
+        cy.get(selectors.sidePanel).should('exist');
+        const policyName = cy.get(selectors.sidePanelHeader).text;
+        cy.get(selectors.hoverActionButtons)
+            .eq(1)
+            .click({ force: true });
+        cy.get(selectors.tableFirstRow).click({ force: true });
+        cy.get(selectors.sidePanel).should('exist');
+        cy.get(selectors.sidePanelHeader).should('not.have.text', policyName);
+    });
 });

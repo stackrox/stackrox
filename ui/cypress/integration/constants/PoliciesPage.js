@@ -9,6 +9,9 @@ export const selectors = {
     nextButton: '.btn:contains("Next")',
     prevButton: 'button:contains("Previous")',
     cancelButton: 'button[data-test-id="cancel"]',
+    reassessAllButton: 'button:contains("Reassess")',
+    deleteButton: 'button:contains("Delete")',
+    checkboxes: 'input:checkbox',
     policies: {
         scanImage: 'div.rt-tr:contains("90-Day")',
         addCapabilities: '.rt-tr:contains("CAP_SYS_ADMIN capability added")'
