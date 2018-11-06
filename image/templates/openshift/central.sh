@@ -4,7 +4,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 oc get project "{{.K8sConfig.Namespace}}" || oc new-project "{{.K8sConfig.Namespace}}"
 
 echo "Creating Central RBAC..."
-oc create -f "${DIR}/central-rbac.yaml"
+oc apply -f "${DIR}/central-rbac.yaml"
 
 if ! oc get secret/stackrox -n {{.K8sConfig.Namespace}} > /dev/null; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.K8sConfig.Registry}}")"
@@ -30,4 +30,4 @@ oc -n {{.K8sConfig.Namespace}} secrets add serviceaccount/central secrets/stackr
 
 oc create secret -n "{{.K8sConfig.Namespace}}" generic central-tls --from-file="$DIR/ca.pem" --from-file="$DIR/ca-key.pem"
 oc create secret -n "{{.K8sConfig.Namespace}}" generic central-jwt --from-file="$DIR/jwt-key.der"
-oc create -f "$DIR/central.yaml"
+oc apply -f "$DIR/central.yaml"

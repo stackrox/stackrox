@@ -1,4 +1,12 @@
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: clairify
+  namespace: {{.K8sConfig.Namespace}}
+imagePullSecrets:
+- name: stackrox
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: clairify
@@ -62,9 +70,4 @@ spec:
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
-      {{if eq .ClusterType.String "KUBERNETES_CLUSTER" }}
-      imagePullSecrets:
-      - name: stackrox
-      {{else}}
       serviceAccount: clairify
-      {{- end}}

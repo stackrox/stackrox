@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-kubectl create -f "${DIR}/clairify.yaml"
+kubectl apply -f "${DIR}/clairify.yaml"

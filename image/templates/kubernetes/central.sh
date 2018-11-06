@@ -26,6 +26,6 @@ kubectl create cm -n "{{.K8sConfig.Namespace}}" telegraf --from-file="$DIR/teleg
 # Add Central secrets
 kubectl create secret -n "{{.K8sConfig.Namespace}}" generic central-tls --from-file="$DIR/ca.pem" --from-file="$DIR/ca-key.pem"
 kubectl create secret -n "{{.K8sConfig.Namespace}}" generic central-jwt --from-file="$DIR/jwt-key.der"
-kubectl create -f "${DIR}/central.yaml"
+kubectl apply -f "${DIR}/central.yaml"
 
 echo "Central has been deployed"

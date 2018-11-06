@@ -74,4 +74,4 @@ kubectl create secret -n "{{.Namespace}}" generic collector-tls --from-file="$DI
 {{- end}}
 
 echo "Creating deployment..."
-kubectl create -f "$DIR/sensor.yaml"
+kubectl apply -f "$DIR/sensor.yaml"

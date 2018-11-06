@@ -4,7 +4,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 oc get namespace {{.K8sConfig.Namespace}} > /dev/null || oc create namespace {{.K8sConfig.Namespace}}
 
 echo "Creating Monitoring RBAC..."
-oc create -f "${DIR}/monitoring-rbac.yaml"
+oc apply -f "${DIR}/monitoring-rbac.yaml"
 
 if ! oc get secret/stackrox -n {{.K8sConfig.Namespace}} > /dev/null; then
   registry_auth="$("${DIR}/../docker-auth.sh" -m k8s "{{.K8sConfig.Registry}}")"
@@ -30,5 +30,5 @@ oc create secret -n "{{.K8sConfig.Namespace}}" generic monitoring --from-file="$
 --from-file="$DIR/monitoring-db-cert.pem" --from-file="$DIR/monitoring-db-key.pem" \
 --from-file="$DIR/monitoring-ui-cert.pem" --from-file="$DIR/monitoring-ui-key.pem"
 
-oc create -f "${DIR}/monitoring.yaml"
+oc apply -f "${DIR}/monitoring.yaml"
 echo "Monitoring has been deployed"

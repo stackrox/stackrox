@@ -3,6 +3,8 @@ kind: ServiceAccount
 metadata:
   name: sensor
   namespace: {{.Namespace}}
+imagePullSecrets:
+- name: stackrox
 ---
 apiVersion: v1
 kind: ServiceAccount

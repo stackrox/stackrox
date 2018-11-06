@@ -4,7 +4,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 oc get project "{{.Namespace}}" || oc new-project "{{.Namespace}}"
 oc project "{{.Namespace}}"
 
-oc create -f "$DIR/sensor-rbac.yaml"
+oc apply -f "$DIR/sensor-rbac.yaml"
 
 # OpenShift roles can be delayed to be added
 sleep 5
@@ -59,4 +59,4 @@ kubectl create secret -n "{{.Namespace}}" generic monitoring --from-file="$DIR/m
 kubectl create cm -n "{{.Namespace}}" telegraf --from-file="$DIR/telegraf.conf"
 {{- end}}
 
-oc create -f "$DIR/sensor.yaml"
+oc apply -f "$DIR/sensor.yaml"
