@@ -78,3 +78,29 @@ roleRef:
   kind: ClusterRole
   name: {{.Namespace}}:network-policies
   apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{.Namespace}}:view-nodes
+rules:
+- resources:
+  - nodes
+  apiGroups: [""]
+  verbs:
+  - get
+  - watch
+  - list
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{.Namespace}}:view-nodes-binding
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{.Namespace}}
+roleRef:
+  kind: ClusterRole
+  name: {{.Namespace}}:view-nodes
+  apiGroup: rbac.authorization.k8s.io

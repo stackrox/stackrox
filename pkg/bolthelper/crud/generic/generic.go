@@ -21,6 +21,7 @@ type Crud interface {
 	Read(firstKey Key, restKeys ...Key) (interface{}, error)
 	ReadBatch(keyPaths ...KeyPath) ([]interface{}, error)
 	ReadAll(maxDepth int, keyPathPrefix ...Key) ([]Entry, error)
+	CountLeaves(maxDepth int, keyPathPrefix ...Key) (int, error)
 
 	Create(x interface{}, nesting ...Key) error
 	CreateBatch(entries []Entry, nestingPrefix ...Key) error

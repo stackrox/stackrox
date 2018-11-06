@@ -33,7 +33,7 @@ import stackrox.generated.DeploymentServiceOuterClass.Deployment
 import stackrox.generated.Common.ResourceByID
 import stackrox.generated.SearchServiceOuterClass
 import v1.Indicator
-import stackrox.generated.SensorEventServiceOuterClass
+import stackrox.generated.SensorEventIservice
 import v1.NetworkPolicyServiceGrpc
 import v1.SecretServiceGrpc
 import v1.NetworkPolicyServiceOuterClass
@@ -520,7 +520,7 @@ class Services extends BaseService {
         }
     }
 
-    static applyEnforcement(SensorEventServiceOuterClass.SensorEnforcement.Builder builder) {
+    static applyEnforcement(SensorEventIservice.SensorEnforcement.Builder builder) {
         try {
             return getEnforcementClient().applyEnforcement(
                     EnforcementServiceOuterClass.EnforcementRequest.newBuilder()
@@ -534,10 +534,10 @@ class Services extends BaseService {
     }
 
     static applyKillEnforcement(String podId, String containerId) {
-        SensorEventServiceOuterClass.SensorEnforcement.Builder killEnforcementBuilder =
-                SensorEventServiceOuterClass.SensorEnforcement.newBuilder()
+        SensorEventIservice.SensorEnforcement.Builder killEnforcementBuilder =
+                SensorEventIservice.SensorEnforcement.newBuilder()
                         .setEnforcement(EnforcementAction.KILL_POD_ENFORCEMENT)
-                        .setContainerInstance(SensorEventServiceOuterClass.ContainerInstanceEnforcement.newBuilder()
+                        .setContainerInstance(SensorEventIservice.ContainerInstanceEnforcement.newBuilder()
                                 .setContainerInstanceId(containerId)
                                 .setPodId(podId)
                         )
@@ -545,10 +545,10 @@ class Services extends BaseService {
     }
 
     static applyScaleDownEnforcement(objects.Deployment deployment) {
-        SensorEventServiceOuterClass.SensorEnforcement.Builder scaleDownEnforcementBuilder =
-                SensorEventServiceOuterClass.SensorEnforcement.newBuilder()
+        SensorEventIservice.SensorEnforcement.Builder scaleDownEnforcementBuilder =
+                SensorEventIservice.SensorEnforcement.newBuilder()
                         .setEnforcement(EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
-                        .setDeployment(SensorEventServiceOuterClass.DeploymentEnforcement.newBuilder()
+                        .setDeployment(SensorEventIservice.DeploymentEnforcement.newBuilder()
                                 .setDeploymentId(deployment.deploymentUid)
                                 .setDeploymentName(deployment.name)
                                 .setDeploymentType("Deployment")
@@ -559,10 +559,10 @@ class Services extends BaseService {
     }
 
     static applyNodeConstraintEnforcement(objects.Deployment deployment) {
-        SensorEventServiceOuterClass.SensorEnforcement.Builder scaleDownEnforcementBuilder =
-                SensorEventServiceOuterClass.SensorEnforcement.newBuilder()
+        SensorEventIservice.SensorEnforcement.Builder scaleDownEnforcementBuilder =
+                SensorEventIservice.SensorEnforcement.newBuilder()
                         .setEnforcement(EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT)
-                        .setDeployment(SensorEventServiceOuterClass.DeploymentEnforcement.newBuilder()
+                        .setDeployment(SensorEventIservice.DeploymentEnforcement.newBuilder()
                         .setDeploymentId(deployment.deploymentUid)
                         .setDeploymentName(deployment.name)
                         .setDeploymentType("Deployment")

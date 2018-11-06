@@ -12,6 +12,7 @@ type MessageCrud interface {
 	Read(id string) (proto.Message, error)
 	ReadBatch(ids []string) ([]proto.Message, error)
 	ReadAll() ([]proto.Message, error)
+	Count() (int, error)
 
 	Create(msg proto.Message) error
 	CreateBatch(msgs []proto.Message) error

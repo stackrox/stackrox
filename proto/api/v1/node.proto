@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+package v1;
+
+// Node represents information about a node in the cluster.
+message Node {
+    // A unique ID identifying this node.
+    string id   = 1;
+    // The (host)name of the node. Might or might not be the same as ID.
+    string name = 2;
+}

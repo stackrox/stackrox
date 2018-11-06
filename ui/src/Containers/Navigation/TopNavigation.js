@@ -12,6 +12,7 @@ import { actions as authActions, AUTH_STATUS } from 'reducers/auth';
 
 const titleMap = {
     numClusters: { singular: 'Cluster', plural: 'Clusters' },
+    numNodes: { singular: 'Node', plural: 'Nodes' },
     numAlerts: { singular: 'Violation', plural: 'Violations' },
     numDeployments: { singular: 'Deployment', plural: 'Deployments' },
     numImages: { singular: 'Image', plural: 'Images' },
@@ -27,6 +28,7 @@ class TopNavigation extends Component {
         summaryCounts: PropTypes.shape({
             numAlerts: PropTypes.string,
             numClusters: PropTypes.string,
+            numNodes: PropTypes.string,
             numDeployments: PropTypes.string,
             numImages: PropTypes.string,
             numSecrets: PropTypes.string
@@ -67,16 +69,14 @@ class TopNavigation extends Component {
         if (!summaryCounts) return '';
         return (
             <ul className="flex uppercase text-sm p-0 w-full">
-                {Object.keys(summaryCounts).map(key => (
+                {Object.entries(titleMap).map(([key, titles]) => (
                     <li
                         key={key}
                         className="flex flex-col border-r border-base-400 border-dashed px-3 w-24 no-underline py-3 text-base-500 items-center justify-center font-condensed"
                     >
                         <div className="text-3xl tracking-widest">{summaryCounts[key]}</div>
                         <div className="text-sm pt-1 tracking-wide">
-                            {summaryCounts[key] === '1'
-                                ? titleMap[key].singular
-                                : titleMap[key].plural}
+                            {summaryCounts[key] === '1' ? titles.singular : titles.plural}
                         </div>
                     </li>
                 ))}

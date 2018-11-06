@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	clusterBucket       = "clusters"
-	clusterStatusBucket = "clusters_status"
+	clusterBucket                = "clusters"
+	clusterLastContactTimeBucket = "clusters_last_contact"
 )
 
 // Store provides storage functionality for alerts.
@@ -28,7 +28,7 @@ type Store interface {
 // New returns a new Store instance using the provided bolt DB instance.
 func New(db *bolt.DB) Store {
 	bolthelper.RegisterBucketOrPanic(db, clusterBucket)
-	bolthelper.RegisterBucketOrPanic(db, clusterStatusBucket)
+	bolthelper.RegisterBucketOrPanic(db, clusterLastContactTimeBucket)
 	return &storeImpl{
 		DB: db,
 	}

@@ -8,6 +8,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	nodeStore "github.com/stackrox/rox/central/node/store"
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -30,6 +31,7 @@ var (
 	summaryTypeToResource = map[string]permissions.Resource{
 		"NumAlerts":      resources.Alert,
 		"NumClusters":    resources.Cluster,
+		"NumNodes":       resources.Node,
 		"NumDeployments": resources.Deployment,
 		"NumImages":      resources.Image,
 		"NumSecrets":     resources.Secret,
@@ -43,6 +45,7 @@ type serviceImpl struct {
 	deployments deploymentDataStore.DataStore
 	images      imageDataStore.DataStore
 	secrets     secretDataStore.DataStore
+	nodes       nodeStore.GlobalStore
 
 	authorizer authz.Authorizer
 }
@@ -84,7 +87,13 @@ func (s *serviceImpl) GetSummaryCounts(context.Context, *v1.Empty) (*v1.SummaryC
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	clusters, err := s.clusters.CountClusters()
+	numClusters, err := s.clusters.CountClusters()
+	if err != nil {
+		log.Error(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	numNodes, err := s.nodes.CountAllNodes()
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -110,7 +119,8 @@ func (s *serviceImpl) GetSummaryCounts(context.Context, *v1.Empty) (*v1.SummaryC
 
 	return &v1.SummaryCountsResponse{
 		NumAlerts:      int64(alerts),
-		NumClusters:    int64(clusters),
+		NumClusters:    int64(numClusters),
+		NumNodes:       int64(numNodes),
 		NumDeployments: int64(deployments),
 		NumImages:      int64(images),
 		NumSecrets:     int64(secrets),

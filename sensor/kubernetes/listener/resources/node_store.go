@@ -53,3 +53,7 @@ func (s *nodeStore) getNodes() []*nodeWrap {
 	}
 	return result
 }
+
+func (s *nodeStore) numNodes() int {
+	return len(s.nodes)
+}

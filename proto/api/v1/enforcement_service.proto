@@ -5,7 +5,7 @@ option java_package = "stackrox.generated";
 
 import "google/api/annotations.proto";
 import "api/v1/empty.proto";
-import "api/v1/sensor_event_service.proto";
+import "api/v1/sensor_event_iservice.proto";
 
 
 package v1;

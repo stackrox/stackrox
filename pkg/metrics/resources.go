@@ -13,4 +13,5 @@ const (
 	Secret
 	Namespace
 	NetworkPolicy
+	Node
 )

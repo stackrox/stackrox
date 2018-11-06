@@ -149,6 +149,24 @@ func (c *crudImpl) ReadAll(maxDepth int, keyPathPrefix ...Key) ([]Entry, error) 
 	return resultEntries, nil
 }
 
+func (c *crudImpl) CountLeaves(maxDepth int, keyPathPrefix ...Key) (int, error) {
+	numLeaves := 0
+	err := c.bucketRef.View(func(b *bolt.Bucket) error {
+		currBucket := b
+		for _, prefixKey := range keyPathPrefix {
+			currBucket = b.Bucket(prefixKey)
+			if currBucket == nil {
+				return nil
+			}
+		}
+		return bolthelper.CountLeavesRecursive(b, maxDepth, &numLeaves)
+	})
+	if err != nil {
+		return 0, err
+	}
+	return numLeaves, nil
+}
+
 // Create creates a new entry in bolt for the input value .
 // Returns an error if an entry with a matching key exists.
 func (c *crudImpl) Create(x interface{}, nesting ...Key) error {

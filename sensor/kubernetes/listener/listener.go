@@ -119,6 +119,7 @@ func (k *kubernetesListener) Start() {
 		kubernetes.StatefulSet:           k8sFactory.Apps().V1beta1().StatefulSets(),
 	}
 	watchResources := []informerGetter{
+		k8sFactory.Core().V1().Nodes(),
 		k8sFactory.Core().V1().Secrets(),
 		k8sFactory.Core().V1().Services(),
 		k8sFactory.Core().V1().Namespaces(),

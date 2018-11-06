@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/node.proto";
+
+package v1;
+
+message ListNodesRequest {
+    string cluster_id = 1;
+}
+
+message ListNodesResponse {
+    repeated Node nodes = 1;
+}
+
+message GetNodeRequest {
+    string cluster_id = 1;
+    string node_id = 2;
+}
+
+// Node represents information about a node in the cluster.
+service NodeService {
+
+    rpc ListNodes(ListNodesRequest) returns (ListNodesResponse) {
+        option (google.api.http) = {
+            get: "/v1/nodes/{cluster_id}"
+        };
+    }
+
+    rpc GetNode(GetNodeRequest) returns (Node) {
+        option (google.api.http) = {
+            get: "/v1/nodes/{cluster_id}/{node_id}"
+        };
+    }
+}

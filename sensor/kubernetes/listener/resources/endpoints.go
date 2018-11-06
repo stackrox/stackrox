@@ -196,7 +196,7 @@ func (m *endpointManager) OnNodeCreate(node *nodeWrap) {
 		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
 			update, ok := updates[deployment.GetId()]
 			if !ok {
-				update := &clusterentities.EntityData{}
+				update = &clusterentities.EntityData{}
 				updates[deployment.GetId()] = update
 			}
 			for _, port := range svc.Spec.Ports {

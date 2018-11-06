@@ -4,9 +4,9 @@ package metrics
 
 import "strconv"
 
-const _Resource_name = "AlertDeploymentProcessIndicatorImageSecretNamespaceNetworkPolicy"
+const _Resource_name = "AlertDeploymentProcessIndicatorImageSecretNamespaceNetworkPolicyNode"
 
-var _Resource_index = [...]uint8{0, 5, 15, 31, 36, 42, 51, 64}
+var _Resource_index = [...]uint8{0, 5, 15, 31, 36, 42, 51, 64, 68}
 
 func (i Resource) String() string {
 	if i < 0 || i >= Resource(len(_Resource_index)-1) {

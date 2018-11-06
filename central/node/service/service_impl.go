@@ -1,0 +1,80 @@
+package service
+
+import (
+	"context"
+
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/node/store"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+var (
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(permissions.View(resources.Node)): {
+			"/v1.NodeService/GetNode",
+			"/v1.NodeService/ListNodes",
+		},
+	})
+)
+
+type nodeServiceImpl struct {
+	nodeStore store.GlobalStore
+}
+
+// New creates a new node service from the given node store.
+func New(nodeStore store.GlobalStore) pkgGRPC.APIService {
+	return &nodeServiceImpl{
+		nodeStore: nodeStore,
+	}
+}
+
+func (s *nodeServiceImpl) RegisterServiceServer(server *grpc.Server) {
+	v1.RegisterNodeServiceServer(server, s)
+}
+
+func (s *nodeServiceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return v1.RegisterNodeServiceHandler(ctx, mux, conn)
+}
+
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *nodeServiceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
+}
+
+func (s *nodeServiceImpl) ListNodes(ctx context.Context, req *v1.ListNodesRequest) (*v1.ListNodesResponse, error) {
+	clusterLocalStore, err := s.nodeStore.GetClusterNodeStore(req.GetClusterId())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "could not access per-cluster node store for cluster %q: %v", req.GetClusterId(), err)
+	}
+
+	nodes, err := clusterLocalStore.ListNodes()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "could not list notes in cluster %s: %v", req.GetClusterId(), err)
+	}
+	return &v1.ListNodesResponse{
+		Nodes: nodes,
+	}, nil
+}
+
+func (s *nodeServiceImpl) GetNode(ctx context.Context, req *v1.GetNodeRequest) (*v1.Node, error) {
+	clusterLocalStore, err := s.nodeStore.GetClusterNodeStore(req.GetClusterId())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "could not access per-cluster node store for cluster %q: %v", req.GetClusterId(), err)
+	}
+
+	node, err := clusterLocalStore.GetNode(req.GetNodeId())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "could not locate node %q in per-cluster node store for cluster %s: %v", req.GetNodeId(), req.GetClusterId(), err)
+	}
+
+	return node, nil
+}

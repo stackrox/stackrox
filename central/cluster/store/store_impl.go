@@ -8,13 +8,17 @@ import (
 	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	timestamp "github.com/gogo/protobuf/types"
-	"github.com/prometheus/common/log"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/dberrors"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	"github.com/stackrox/rox/pkg/uuid"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 type storeImpl struct {
@@ -87,6 +91,7 @@ func (b *storeImpl) AddCluster(cluster *v1.Cluster) (string, error) {
 		}
 		return bucket.Put([]byte(cluster.GetId()), bytes)
 	})
+
 	return cluster.Id, err
 }
 
@@ -130,20 +135,20 @@ func (b *storeImpl) RemoveCluster(id string) error {
 // by updates to the main Cluster config object.
 func (b *storeImpl) UpdateClusterContactTime(id string, t time.Time) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "ClusterContactTime")
+
+	tsProto, err := ptypes.TimestampProto(t)
+	if err != nil {
+		return err
+	}
+	bytes, err := proto.Marshal(tsProto)
+	if err != nil {
+		return err
+	}
+
+	key := []byte(id)
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(clusterStatusBucket))
-		tsProto, err := ptypes.TimestampProto(t)
-		if err != nil {
-			return err
-		}
-		status := &v1.ClusterStatus{
-			LastContact: tsProto,
-		}
-		bytes, err := proto.Marshal(status)
-		if err != nil {
-			return err
-		}
-		return bucket.Put([]byte(id), bytes)
+		bucket := tx.Bucket([]byte(clusterLastContactTimeBucket))
+		return bucket.Put(key, bytes)
 	})
 }
 
@@ -171,17 +176,16 @@ func (b *storeImpl) populateProtoContactTime(tx *bolt.Tx, cluster *v1.Cluster) {
 	cluster.LastContact = t
 }
 
-func (b *storeImpl) getClusterContactTime(tx *bolt.Tx, id string) (t *timestamp.Timestamp, err error) {
-	bucket := tx.Bucket([]byte(clusterStatusBucket))
+func (b *storeImpl) getClusterContactTime(tx *bolt.Tx, id string) (*timestamp.Timestamp, error) {
+	bucket := tx.Bucket([]byte(clusterLastContactTimeBucket))
 	val := bucket.Get([]byte(id))
 	if val == nil {
-		return
+		return nil, nil
 	}
-	status := new(v1.ClusterStatus)
-	err = proto.Unmarshal(val, status)
+	t := new(timestamp.Timestamp)
+	err := proto.Unmarshal(val, t)
 	if err != nil {
-		return
+		return nil, err
 	}
-	t = status.GetLastContact()
-	return
+	return t, nil
 }

@@ -14,6 +14,7 @@ message SummaryCountsResponse {
     int64 num_deployments       = 3;
     int64 num_images            = 4;
     int64 num_secrets           = 5;
+    int64 num_nodes             = 6;
 }
 
 service SummaryService {

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/swarm/listener/networks"
+	"github.com/stackrox/rox/sensor/swarm/listener/nodes"
 	"github.com/stackrox/rox/sensor/swarm/listener/secrets"
 	"github.com/stackrox/rox/sensor/swarm/listener/services"
 )
@@ -66,6 +67,7 @@ func New() (listeners.Listener, error) {
 			"service": services.NewHandler(dockerClient, eventsC),
 			"network": networks.NewHandler(dockerClient, eventsC),
 			"secret":  secrets.NewHandler(dockerClient, eventsC),
+			"node":    nodes.NewHandler(dockerClient, eventsC),
 		},
 	}, nil
 }
@@ -107,9 +109,9 @@ func (dl *listener) eventHandler() (<-chan (events.Message), <-chan error, conte
 	ctx, cancel := context.WithCancel(context.Background())
 	filters := filters.NewArgs()
 	filters.Add("scope", "swarm")
-	filters.Add("type", "service")
-	filters.Add("type", "network")
-	filters.Add("type", "secret")
+	for resourceType := range dl.resourceHandlers {
+		filters.Add("type", resourceType)
+	}
 	events, errors := dl.Client.Events(ctx, types.EventsOptions{
 		Filters: filters,
 	})

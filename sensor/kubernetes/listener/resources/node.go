@@ -22,11 +22,6 @@ func newNodeHandler(serviceStore *serviceStore, deploymentStore *deploymentStore
 }
 
 func (h *nodeHandler) Process(node *v1.Node, action pkgV1.ResourceAction) []*pkgV1.SensorEvent {
-	nodePortServices := h.serviceStore.getNodePortServices()
-	if len(nodePortServices) == 0 {
-		return nil
-	}
-
 	if action == pkgV1.ResourceAction_REMOVE_RESOURCE {
 		h.nodeStore.removeNode(node)
 	} else {
@@ -42,5 +37,20 @@ func (h *nodeHandler) Process(node *v1.Node, action pkgV1.ResourceAction) []*pkg
 		h.endpointManager.OnNodeUpdateOrRemove(node.Name)
 	}
 
-	return nil
+	nodeResource := &pkgV1.Node{
+		Id:   string(node.UID),
+		Name: node.Name,
+	}
+
+	events := []*pkgV1.SensorEvent{
+		{
+			Id:     nodeResource.GetId(),
+			Action: action,
+			Resource: &pkgV1.SensorEvent_Node{
+				Node: nodeResource,
+			},
+		},
+	}
+
+	return events
 }

@@ -66,10 +66,6 @@ message ClustersList {
     repeated Cluster clusters = 1;
 }
 
-message ClusterStatus {
-    google.protobuf.Timestamp last_contact = 1;
-}
-
 service ClustersService {
 
     rpc GetClusters (Empty) returns (ClustersList) {

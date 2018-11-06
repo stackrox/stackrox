@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline/deploymentevents"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline/namespaces"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline/networkpolicies"
+	"github.com/stackrox/rox/central/sensorevent/service/pipeline/nodes"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline/processindicators"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline/secrets"
 )
@@ -22,7 +23,8 @@ func initialize() {
 		processindicators.Singleton(),
 		networkpolicies.Singleton(),
 		namespaces.Singleton(),
-		secrets.Singleton())
+		secrets.Singleton(),
+		nodes.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

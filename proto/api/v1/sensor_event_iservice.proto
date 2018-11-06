@@ -3,10 +3,10 @@ syntax = "proto3";
 option go_package = "v1";
 option java_package = "stackrox.generated";
 
-import weak "google/api/annotations.proto";
 import "api/v1/deployment_service.proto";
 import "api/v1/indicator.proto";
 import "api/v1/network_policy_service.proto";
+import "api/v1/node.proto";
 import "api/v1/policy_service.proto";
 import "api/v1/secret_service.proto";
 
@@ -31,6 +31,7 @@ message SensorEvent {
         Deployment       deployment        = 5;
         Namespace        namespace         = 6;
         Secret           secret            = 7;
+        Node             node              = 9;
 
         // Indicators
         ProcessIndicator process_indicator = 8;
@@ -61,11 +62,6 @@ message ContainerInstanceEnforcement {
 
 service SensorEventService {
 
-    rpc RecordEvent(stream SensorEvent) returns (stream SensorEnforcement) {
-        option (google.api.http) = {
-            post: "/v1/sensor/events"
-            body: "*"
-        };
-    }
+    rpc RecordEvent(stream SensorEvent) returns (stream SensorEnforcement);
 
 }

@@ -23,9 +23,9 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	v1.RegisterSensorEventServiceServer(grpcServer, s)
 }
 
-// RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
+// RegisterServiceHandler does nothing, as this is an internal API.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return v1.RegisterSensorEventServiceHandler(ctx, mux, conn)
+	return nil
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.

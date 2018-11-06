@@ -36,6 +36,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	networkFlowService "github.com/stackrox/rox/central/networkflow/service"
 	networkPolicyService "github.com/stackrox/rox/central/networkpolicies/service"
+	nodeService "github.com/stackrox/rox/central/node/service"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	pingService "github.com/stackrox/rox/central/ping/service"
 	policyService "github.com/stackrox/rox/central/policy/service"
@@ -167,6 +168,7 @@ func (c *central) startGRPCServer() {
 		metadataService.New(),
 		networkFlowService.Singleton(),
 		networkPolicyService.Singleton(),
+		nodeService.Singleton(),
 		notifierService.Singleton(),
 		pingService.Singleton(),
 		policyService.Singleton(),

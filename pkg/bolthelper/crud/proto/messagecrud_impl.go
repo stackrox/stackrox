@@ -55,6 +55,10 @@ func (crud *messageCrudImpl) ReadAll() ([]proto.Message, error) {
 	return msgResults, nil
 }
 
+func (crud *messageCrudImpl) Count() (int, error) {
+	return crud.genericCrud.CountLeaves(0)
+}
+
 // Create creates a new entry in bolt for the input message.
 // Returns an error if an entry with a matching id exists.
 func (crud *messageCrudImpl) Create(msg proto.Message) error {
