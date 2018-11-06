@@ -32,6 +32,12 @@ message CSCC {
     string gcp_project     = 3;
 }
 
+message Splunk {
+    string http_token    = 1;
+    string http_endpoint = 2;
+    bool insecure        = 3;
+}
+
 message Notifier {
     string id                  = 1;
     string name                = 2;
@@ -44,6 +50,7 @@ message Notifier {
         Jira  jira             = 10;
         Email email            = 11;
         CSCC  cscc             = 12;
+        Splunk splunk          = 13;
     }
 }
 

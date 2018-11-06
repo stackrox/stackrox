@@ -30,6 +30,7 @@ var scrubber = newSecretKeys([]string{
 	"serviceAccount",
 	"AccessKeyId",
 	"SecretAccessKey",
+	"httpToken",
 })
 
 // ScrubSecretsFromStruct removes secret keys from an object

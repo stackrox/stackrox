@@ -44,6 +44,18 @@ const tableColumnDescriptor = Object.freeze({
         cscc: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'cscc.gcpOrgId', Header: 'Google Cloud Platform Org ID' }
+        ],
+        splunk: [
+            { accessor: 'name', Header: 'Name' },
+            {
+                accessor: 'splunk.httpEndpoint',
+                keyValueFunc: url => (
+                    <a href={url} target="_blank" rel="noopener noreferrer">
+                        {url}
+                    </a>
+                ),
+                Header: 'URL'
+            }
         ]
     },
     imageIntegrations: {

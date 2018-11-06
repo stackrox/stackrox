@@ -277,6 +277,32 @@ const formDescriptors = {
                 type: 'text',
                 placeholder: ''
             }
+        ],
+        splunk: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'Splunk Integration'
+            },
+            {
+                label: 'HTTP Event Collector URL',
+                jsonpath: 'splunk.httpEndpoint',
+                type: 'text',
+                placeholder: 'https://localhost:8088'
+            },
+            {
+                label: 'HTTP Event Collector Token',
+                jsonpath: 'splunk.httpToken',
+                type: 'password',
+                placeholder: ''
+            },
+            {
+                label: 'Disable TLS Certificate Validation (Insecure)',
+                jsonpath: 'splunk.insecure',
+                type: 'checkbox',
+                placeholder: ''
+            }
         ]
     },
     imageIntegrations: {

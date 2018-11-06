@@ -13,6 +13,7 @@ import openshift from 'images/openshift.svg';
 import quay from 'images/quay.svg';
 import saml from 'images/saml.svg';
 import slack from 'images/slack.svg';
+import splunk from 'images/splunk.svg';
 import tenable from 'images/tenable.svg';
 
 const integrationsList = {
@@ -160,6 +161,12 @@ const integrationsList = {
             type: 'cscc',
             source: 'notifiers',
             image: google
+        },
+        {
+            label: 'Splunk',
+            type: 'splunk',
+            source: 'notifiers',
+            image: splunk
         }
     ]
 };
