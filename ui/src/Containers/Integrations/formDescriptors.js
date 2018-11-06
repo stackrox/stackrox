@@ -196,6 +196,12 @@ const formDescriptors = {
                 type: 'password'
             },
             {
+                label: 'From',
+                jsonpath: 'email.from',
+                type: 'text',
+                placeholder: 'StackRox'
+            },
+            {
                 label: 'Sender',
                 jsonpath: 'email.sender',
                 type: 'text',

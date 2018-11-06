@@ -23,6 +23,7 @@ message Email {
     string password  = 4;
     bool disableTLS  = 5;
     bool useSTARTTLS = 6;
+    string from      = 7;
 }
 
 message CSCC {

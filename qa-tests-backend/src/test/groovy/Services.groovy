@@ -429,6 +429,7 @@ class Services extends BaseService {
                             .setUsername("postmaster@sandboxa91803d176f944229a601fc109e20250.mailgun.org")
                             .setPassword("5da76fea807449ea105a77d4fa05420f-7bbbcb78-b8136e8b")
                             .setSender("from@example.com")
+                            .setFrom("stackrox")
                             .setDisableTLS(disableTLS)
                             .setUseSTARTTLS(startTLS)
                     )

@@ -1,6 +1,7 @@
 package email
 
 import (
+	"bytes"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -129,12 +130,19 @@ func newEmail(notifier *v1.Notifier) (*email, error) {
 
 type message struct {
 	To      string
+	From    string
 	Subject string
 	Body    string
 }
 
 func (m message) Bytes() []byte {
-	return []byte(fmt.Sprintf("To: %v\r\nSubject: %v\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n%v\r\n", m.To, m.Subject, m.Body))
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "From: %s\r\n", m.From)
+	fmt.Fprintf(&buf, "To: %s\r\n", m.To)
+	fmt.Fprintf(&buf, "Subject: %s\r\n", m.Subject)
+	fmt.Fprint(&buf, "Content-Type: text/plain; charset=utf-8\r\n\r\n")
+	fmt.Fprintf(&buf, "%s\r\n", m.Body)
+	return buf.Bytes()
 }
 
 func (e *email) plainTextAlert(alert *v1.Alert) (string, error) {
@@ -214,8 +222,16 @@ func (e *email) Test() error {
 }
 
 func (e *email) sendEmail(recipient, subject, body string) error {
+	var from string
+	if e.config.GetFrom() != "" {
+		from = fmt.Sprintf("%s <%s>", e.config.GetFrom(), e.config.GetSender())
+	} else {
+		from = e.config.GetSender()
+	}
+
 	msg := message{
 		To:      recipient,
+		From:    from,
 		Subject: subject,
 		Body:    body,
 	}
