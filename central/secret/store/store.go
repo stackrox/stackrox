@@ -13,7 +13,7 @@ const (
 )
 
 // Store provides access and update functions for secrets.
-//go:generate mockery -name=Store
+//go:generate mockgen-wrapper Store
 type Store interface {
 	ListSecrets(id []string) ([]*v1.ListSecret, error)
 	ListAllSecrets() ([]*v1.ListSecret, error)

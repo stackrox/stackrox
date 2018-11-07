@@ -6,14 +6,15 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/golang/mock/gomock"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -48,22 +49,24 @@ func TestAlertManager(t *testing.T) {
 type AlertManagerTestSuite struct {
 	suite.Suite
 
-	alertsMock   *alertMocks.DataStore
-	notifierMock *notifierMocks.Processor
+	alertsMock   *alertMocks.MockDataStore
+	notifierMock *notifierMocks.MockProcessor
 
 	alertManager AlertManager
+
+	mockCtrl *gomock.Controller
 }
 
 func (suite *AlertManagerTestSuite) SetupTest() {
-	suite.alertsMock = &alertMocks.DataStore{}
-	suite.notifierMock = &notifierMocks.Processor{}
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.alertsMock = alertMocks.NewMockDataStore(suite.mockCtrl)
+	suite.notifierMock = notifierMocks.NewMockProcessor(suite.mockCtrl)
 
 	suite.alertManager = New(suite.notifierMock, suite.alertsMock)
 }
 
 func (suite *AlertManagerTestSuite) TearDownTest() {
-	suite.alertsMock.AssertExpectations(suite.T())
-	suite.notifierMock.AssertExpectations(suite.T())
+	suite.mockCtrl.Finish()
 }
 
 // Returns a function that can be used to match *v1.Query,
@@ -95,14 +98,14 @@ func queryHasFields(fields ...search.FieldLabel) func(interface{}) bool {
 }
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByPolicy() {
-	suite.alertsMock.On("SearchRawAlerts", mock.MatchedBy(queryHasFields(search.ViolationState, search.PolicyID))).Return(([]*v1.Alert)(nil), nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(testutils.PredMatcher("query for violation state, policy", queryHasFields(search.ViolationState, search.PolicyID))).Return(([]*v1.Alert)(nil), nil)
 
 	err := suite.alertManager.AlertAndNotify(nil, WithPolicyID("pid"))
 	suite.NoError(err, "update should succeed")
 }
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
-	suite.alertsMock.On("SearchRawAlerts", mock.MatchedBy(queryHasFields(search.ViolationState, search.DeploymentID))).Return(([]*v1.Alert)(nil), nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(testutils.PredMatcher("query for violation state, deployment", queryHasFields(search.ViolationState, search.DeploymentID))).Return(([]*v1.Alert)(nil), nil)
 
 	err := suite.alertManager.AlertAndNotify(nil, WithDeploymentIDs("did"))
 	suite.NoError(err, "update should succeed")
@@ -111,10 +114,10 @@ func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
 func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
 	alerts := getAlerts()
 
-	suite.alertsMock.On("SearchRawAlerts", mock.Anything).Return(alerts, nil)
-	suite.alertsMock.On("UpdateAlert", alerts[0]).Return(nil)
-	suite.alertsMock.On("UpdateAlert", alerts[1]).Return(nil)
-	suite.alertsMock.On("UpdateAlert", alerts[2]).Return(nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(gomock.Any()).Return(alerts, nil)
+	suite.alertsMock.EXPECT().UpdateAlert(alerts[0]).Return(nil)
+	suite.alertsMock.EXPECT().UpdateAlert(alerts[1]).Return(nil)
+	suite.alertsMock.EXPECT().UpdateAlert(alerts[2]).Return(nil)
 
 	err := suite.alertManager.AlertAndNotify(alerts)
 	suite.NoError(err, "update should succeed")
@@ -123,13 +126,13 @@ func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
 func (suite *AlertManagerTestSuite) TestMarksOldAlertsStale() {
 	alerts := getAlerts()
 
-	suite.alertsMock.On("MarkAlertStale", alerts[0].GetId()).Return(nil)
+	suite.alertsMock.EXPECT().MarkAlertStale(alerts[0].GetId()).Return(nil)
 
 	// Next two should be updates with exactly the same values put in.
-	suite.alertsMock.On("UpdateAlert", alerts[1]).Return(nil)
-	suite.alertsMock.On("UpdateAlert", alerts[2]).Return(nil)
+	suite.alertsMock.EXPECT().UpdateAlert(alerts[1]).Return(nil)
+	suite.alertsMock.EXPECT().UpdateAlert(alerts[2]).Return(nil)
 
-	suite.alertsMock.On("SearchRawAlerts", mock.Anything).Return(alerts, nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(gomock.Any()).Return(alerts, nil)
 
 	// Make one of the alerts not appear in the current alerts.
 	err := suite.alertManager.AlertAndNotify(alerts[1:])
@@ -140,23 +143,23 @@ func (suite *AlertManagerTestSuite) TestSendsNotificationsForNewAlerts() {
 	alerts := getAlerts()
 
 	// PolicyUpsert side effects. We won't have any deployments or alerts yet.
-	suite.alertsMock.On("UpdateAlert", alerts[0]).Return(nil)
-	suite.alertsMock.On("UpdateAlert", alerts[1]).Return(nil)
-	suite.alertsMock.On("UpdateAlert", alerts[2]).Return(nil)
+	suite.alertsMock.EXPECT().UpdateAlert(alerts[0]).Return(nil)
+	suite.alertsMock.EXPECT().UpdateAlert(alerts[1]).Return(nil)
+	suite.alertsMock.EXPECT().UpdateAlert(alerts[2]).Return(nil)
 
 	// We should get a notification for the new alert.
-	suite.notifierMock.On("ProcessAlert", alerts[0]).Return(nil)
+	suite.notifierMock.EXPECT().ProcessAlert(alerts[0]).Return()
 
 	// Make one of the alerts not appear in the previous alerts.
-	suite.alertsMock.On("SearchRawAlerts", mock.Anything).Return(alerts[1:], nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(gomock.Any()).Return(alerts[1:], nil)
 
 	err := suite.alertManager.AlertAndNotify(alerts)
 	suite.NoError(err, "update should succeed")
 }
 
 func (suite *AlertManagerTestSuite) makeAlertsMockReturn(alerts ...*v1.Alert) {
-	suite.alertsMock.On("SearchRawAlerts",
-		mock.MatchedBy(queryHasFields(search.ViolationState, search.DeploymentID, search.PolicyID))).
+	suite.alertsMock.EXPECT().SearchRawAlerts(
+		testutils.PredMatcher("query for violation state, deployment, policy", queryHasFields(search.ViolationState, search.DeploymentID, search.PolicyID))).
 		Return(alerts, nil)
 }
 

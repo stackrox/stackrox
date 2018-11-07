@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	cDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	dDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	npGraphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
@@ -11,7 +12,7 @@ import (
 	notifierStoreMocks "github.com/stackrox/rox/central/notifier/store/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
-	"github.com/stretchr/testify/mock"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -72,35 +73,40 @@ func TestNetworkPolicyService(t *testing.T) {
 type ServiceTestSuite struct {
 	suite.Suite
 
-	clusters        *cDataStoreMocks.DataStore
-	deployments     *dDataStoreMocks.DataStore
-	networkPolicies *npStoreMocks.Store
-	evaluator       *npGraphMocks.Evaluator
-	notifiers       *notifierStoreMocks.Store
+	clusters        *cDataStoreMocks.MockDataStore
+	deployments     *dDataStoreMocks.MockDataStore
+	networkPolicies *npStoreMocks.MockStore
+	evaluator       *npGraphMocks.MockEvaluator
+	notifiers       *notifierStoreMocks.MockStore
 	tested          Service
+
+	mockCtrl *gomock.Controller
 }
 
 func (suite *ServiceTestSuite) SetupTest() {
-	suite.networkPolicies = &npStoreMocks.Store{}
-	suite.evaluator = &npGraphMocks.Evaluator{}
-	suite.clusters = &cDataStoreMocks.DataStore{}
-	suite.deployments = &dDataStoreMocks.DataStore{}
-	suite.notifiers = &notifierStoreMocks.Store{}
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.networkPolicies = npStoreMocks.NewMockStore(suite.mockCtrl)
+	suite.evaluator = npGraphMocks.NewMockEvaluator(suite.mockCtrl)
+	suite.clusters = cDataStoreMocks.NewMockDataStore(suite.mockCtrl)
+	suite.deployments = dDataStoreMocks.NewMockDataStore(suite.mockCtrl)
+	suite.notifiers = notifierStoreMocks.NewMockStore(suite.mockCtrl)
 
 	suite.tested = New(suite.networkPolicies, suite.deployments, suite.evaluator, suite.clusters, suite.notifiers)
+}
+
+func (suite *ServiceTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
 func (suite *ServiceTestSuite) TestFailsIfClusterIsNotSet() {
 	request := &v1.SimulateNetworkGraphRequest{}
 	_, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.Error(err, "expected graph generation to fail since no cluster is specified")
-
-	suite.assertAllExpectationsMet()
 }
 
 func (suite *ServiceTestSuite) TestFailsIfClusterDoesNotExist() {
 	// Mock that cluster exists.
-	suite.clusters.On("GetCluster", fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(fakeClusterID).
 		Return((*v1.Cluster)(nil), false, nil)
 
 	// Make the request to the service and check that it did not err.
@@ -109,14 +115,12 @@ func (suite *ServiceTestSuite) TestFailsIfClusterDoesNotExist() {
 	}
 	_, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.Error(err, "expected graph generation to fail since cluster does not exist")
-
-	suite.assertAllExpectationsMet()
 }
 
 func (suite *ServiceTestSuite) TestRejectsYamlWithoutNamespace() {
 	// Mock that cluster exists.
 	cluster := &v1.Cluster{Id: fakeClusterID}
-	suite.clusters.On("GetCluster", fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Make the request to the service and check that it did not err.
@@ -126,30 +130,28 @@ func (suite *ServiceTestSuite) TestRejectsYamlWithoutNamespace() {
 	}
 	_, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.Error(err, "expected graph generation to fail since input yaml has no namespace")
-
-	suite.assertAllExpectationsMet()
 }
 
 func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 	// Mock that cluster exists.
 	cluster := &v1.Cluster{Id: fakeClusterID}
-	suite.clusters.On("GetCluster", fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*v1.Deployment, 0)
-	suite.deployments.On("SearchRawDeployments", mock.MatchedBy(deploymentSearchIsForCluster(fakeClusterID))).
+	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
 	// Mock that we have network policies in effect for the cluster.
 	pols := make([]*v1.NetworkPolicy, 0)
-	suite.networkPolicies.On("GetNetworkPolicies", mock.MatchedBy(networkPolicyGetIsForCluster(fakeClusterID))).
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID)).
 		Return(pols, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.On("GetGraph", deps, pols).
-		Return(expectedGraph, nil)
+	suite.evaluator.EXPECT().GetGraph(deps, pols).
+		Return(expectedGraph)
 	expectedResp := &v1.SimulateNetworkGraphResponse{
 		SimulatedGraph: expectedGraph,
 		Policies:       []*v1.NetworkPolicyInSimulation{},
@@ -162,19 +164,17 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 	actualResp, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.NoError(err, "expected graph generation to succeed")
 	suite.Equal(expectedResp, actualResp, "response should be output from graph generation")
-
-	suite.assertAllExpectationsMet()
 }
 
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 	// Mock that cluster exists.
 	cluster := &v1.Cluster{Id: fakeClusterID}
-	suite.clusters.On("GetCluster", fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*v1.Deployment, 0)
-	suite.deployments.On("SearchRawDeployments", mock.MatchedBy(deploymentSearchIsForCluster(fakeClusterID))).
+	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
 	// Mock that we have network policies in effect for the cluster.
@@ -182,13 +182,13 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 	pols := []*v1.NetworkPolicy{
 		compiledPolicies[0],
 	}
-	suite.networkPolicies.On("GetNetworkPolicies", mock.MatchedBy(networkPolicyGetIsForCluster(fakeClusterID))).
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID)).
 		Return(pols, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.On("GetGraph", deps, mock.MatchedBy(checkHasPolicies("first-policy"))).
-		Return(expectedGraph, nil)
+	suite.evaluator.EXPECT().GetGraph(deps, checkHasPolicies("first-policy")).
+		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
@@ -201,30 +201,28 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 	suite.Require().Len(actualResp.GetPolicies(), 1)
 	suite.Equal("first-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_MODIFIED, actualResp.GetPolicies()[0].GetStatus())
-
-	suite.assertAllExpectationsMet()
 }
 
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 	// Mock that cluster exists.
 	cluster := &v1.Cluster{Id: fakeClusterID}
-	suite.clusters.On("GetCluster", fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*v1.Deployment, 0)
-	suite.deployments.On("SearchRawDeployments", mock.MatchedBy(deploymentSearchIsForCluster(fakeClusterID))).
+	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML2}.ToRoxNetworkPolicies()
-	suite.networkPolicies.On("GetNetworkPolicies", mock.MatchedBy(networkPolicyGetIsForCluster(fakeClusterID))).
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID)).
 		Return(compiledPolicies, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.On("GetGraph", deps, mock.MatchedBy(checkHasPolicies("first-policy", "second-policy"))).
-		Return(expectedGraph, nil)
+	suite.evaluator.EXPECT().GetGraph(deps, checkHasPolicies("first-policy", "second-policy")).
+		Return(expectedGraph)
 
 	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId:      fakeClusterID,
@@ -238,30 +236,28 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 	suite.Equal(v1.NetworkPolicyInSimulation_UNCHANGED, actualResp.GetPolicies()[0].GetStatus())
 	suite.Equal("first-policy", actualResp.GetPolicies()[1].GetPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_ADDED, actualResp.GetPolicies()[1].GetStatus())
-
-	suite.assertAllExpectationsMet()
 }
 
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 	// Mock that cluster exists.
 	cluster := &v1.Cluster{Id: fakeClusterID}
-	suite.clusters.On("GetCluster", fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*v1.Deployment, 0)
-	suite.deployments.On("SearchRawDeployments", mock.MatchedBy(deploymentSearchIsForCluster(fakeClusterID))).
+	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML1}.ToRoxNetworkPolicies()
-	suite.networkPolicies.On("GetNetworkPolicies", mock.MatchedBy(networkPolicyGetIsForCluster(fakeClusterID))).
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID)).
 		Return(compiledPolicies, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.On("GetGraph", deps, mock.MatchedBy(checkHasPolicies("first-policy", "second-policy"))).
-		Return(expectedGraph, nil)
+	suite.evaluator.EXPECT().GetGraph(deps, checkHasPolicies("first-policy", "second-policy")).
+		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
@@ -270,35 +266,34 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.NoError(err, "expected graph generation to succeed")
+
 	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 2)
 	suite.Equal("first-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_MODIFIED, actualResp.GetPolicies()[0].GetStatus())
 	suite.Equal("second-policy", actualResp.GetPolicies()[1].GetPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_ADDED, actualResp.GetPolicies()[1].GetStatus())
-
-	suite.assertAllExpectationsMet()
 }
 
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 	// Mock that cluster exists.
 	cluster := &v1.Cluster{Id: fakeClusterID}
-	suite.clusters.On("GetCluster", fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*v1.Deployment, 0)
-	suite.deployments.On("SearchRawDeployments", mock.MatchedBy(deploymentSearchIsForCluster(fakeClusterID))).
+	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
 	// Mock that we have network policies in effect for the cluster.
-	suite.networkPolicies.On("GetNetworkPolicies", mock.MatchedBy(networkPolicyGetIsForCluster(fakeClusterID))).
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID)).
 		Return(nil, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.On("GetGraph", deps, mock.MatchedBy(checkHasPolicies("first-policy", "second-policy"))).
-		Return(expectedGraph, nil)
+	suite.evaluator.EXPECT().GetGraph(deps, checkHasPolicies("first-policy", "second-policy")).
+		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
@@ -313,51 +308,29 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 	suite.Equal(v1.NetworkPolicyInSimulation_ADDED, actualResp.GetPolicies()[0].GetStatus())
 	suite.Equal("second-policy", actualResp.GetPolicies()[1].GetPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_ADDED, actualResp.GetPolicies()[1].GetStatus())
-
-	suite.assertAllExpectationsMet()
-}
-
-func (suite *ServiceTestSuite) assertAllExpectationsMet() {
-	suite.networkPolicies.AssertExpectations(suite.T())
-	suite.evaluator.AssertExpectations(suite.T())
-	suite.clusters.AssertExpectations(suite.T())
-	suite.deployments.AssertExpectations(suite.T())
 }
 
 // deploymentSearchIsForCluster returns a function that returns true if the in input ParsedSearchRequest has the
 // ClusterID field set to the input clusterID.
-func deploymentSearchIsForCluster(clusterID string) func(in interface{}) bool {
-	return func(in interface{}) bool {
-		query, isQuery := in.(*v1.Query)
-		if !isQuery {
-			return false
-		}
+func deploymentSearchIsForCluster(clusterID string) gomock.Matcher {
+	return testutils.PredMatcher("deployment search is for cluster", func(query *v1.Query) bool {
 		// Should be a single conjunction with a base string query inside.
 		return query.GetBaseQuery().GetMatchFieldQuery().GetValue() == "="+clusterID
-	}
+	})
 }
 
 // networkPolicyGetIsForCluster returns a function that returns true if the in input GetNetworkPolicyRequest has the
 // ClusterID field set to the input clusterID.
-func networkPolicyGetIsForCluster(clusterID string) func(in interface{}) bool {
-	return func(in interface{}) bool {
-		request, isNPRequest := in.(*v1.GetNetworkPoliciesRequest)
-		if !isNPRequest {
-			return false
-		}
+func networkPolicyGetIsForCluster(clusterID string) gomock.Matcher {
+	return testutils.PredMatcher("network policy get is for cluster", func(request *v1.GetNetworkPoliciesRequest) bool {
 		return request.ClusterId == clusterID
-	}
+	})
 }
 
 // checkHasPolicies returns a function that returns true if the input is a slice of network policies, containing
 // exactly one policy for every input (policyNames).
-func checkHasPolicies(policyNames ...string) func(in interface{}) bool {
-	return func(in interface{}) bool {
-		networkPolicies, isNetworkPolicySlice := in.([]*v1.NetworkPolicy)
-		if !isNetworkPolicySlice {
-			return false
-		}
-
+func checkHasPolicies(policyNames ...string) gomock.Matcher {
+	return testutils.PredMatcher("has policies", func(networkPolicies []*v1.NetworkPolicy) bool {
 		for _, name := range policyNames {
 			count := 0
 			for _, policy := range networkPolicies {
@@ -370,5 +343,5 @@ func checkHasPolicies(policyNames ...string) func(in interface{}) bool {
 			}
 		}
 		return true
-	}
+	})
 }

@@ -6,7 +6,7 @@ import (
 )
 
 // Indexer indexes secret information.
-//go:generate mockery -name=Indexer
+//go:generate mockgen-wrapper Indexer
 type Indexer interface {
 	UpsertSecret(*v1.Secret) error
 	UpsertSecrets(...*v1.Secret) error

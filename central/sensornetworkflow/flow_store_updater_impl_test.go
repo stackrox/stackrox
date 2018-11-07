@@ -5,10 +5,11 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/golang/mock/gomock"
 	flowStoreMocks "github.com/stackrox/rox/central/networkflow/store/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stretchr/testify/mock"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -19,13 +20,20 @@ func TestFlowStoreUpdater(t *testing.T) {
 type FlowStoreUpdaterTestSuite struct {
 	suite.Suite
 
-	mockFlowStore *flowStoreMocks.FlowStore
+	mockFlowStore *flowStoreMocks.MockFlowStore
 	tested        flowStoreUpdater
+
+	mockCtrl *gomock.Controller
 }
 
 func (suite *FlowStoreUpdaterTestSuite) SetupSuite() {
-	suite.mockFlowStore = &flowStoreMocks.FlowStore{}
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.mockFlowStore = flowStoreMocks.NewMockFlowStore(suite.mockCtrl)
 	suite.tested = newFlowStoreUpdater(suite.mockFlowStore)
+}
+
+func (suite *FlowStoreUpdaterTestSuite) TearDownSuite() {
+	suite.mockCtrl.Finish()
 }
 
 func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
@@ -104,10 +112,10 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	}
 
 	// Return storedFlows on DB read.
-	suite.mockFlowStore.On("GetAllFlows").Return(storedFlows, *firstTimestamp, nil)
+	suite.mockFlowStore.EXPECT().GetAllFlows().Return(storedFlows, *firstTimestamp, nil)
 
 	// Check that the given write matches expectations.
-	suite.mockFlowStore.On("UpsertFlows", mock.MatchedBy(func(actualUpdates []*v1.NetworkFlow) bool {
+	suite.mockFlowStore.EXPECT().UpsertFlows(testutils.PredMatcher("matches expected updates", func(actualUpdates []*v1.NetworkFlow) bool {
 		if len(actualUpdates) != len(expectedUpdateProps) {
 			return false
 		}
@@ -123,13 +131,10 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 			}
 		}
 		return len(used) == len(expectedUpdateProps)
-	}), mock.Anything).Return(nil)
+	}), gomock.Any()).Return(nil)
 
 	// Run test.
 	var err error
 	err = suite.tested.update(newFlows, secondTimestamp)
 	suite.NoError(err, "update should succeed on first insert")
-
-	// Validate mock assertions.
-	suite.mockFlowStore.AssertExpectations(suite.T())
 }

@@ -17,7 +17,7 @@ var (
 )
 
 // Processor is the interface for processing benchmarks, notifiers, and policies.
-//go:generate mockery -name=Processor
+//go:generate mockgen-wrapper Processor
 type Processor interface {
 	Start()
 	ProcessAlert(alert *v1.Alert)

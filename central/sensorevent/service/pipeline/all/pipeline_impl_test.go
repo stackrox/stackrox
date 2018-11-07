@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -17,23 +18,26 @@ func TestPipeline(t *testing.T) {
 type PipelineTestSuite struct {
 	suite.Suite
 
-	depMock *mocks.Pipeline
-	proMock *mocks.Pipeline
-	netMock *mocks.Pipeline
-	namMock *mocks.Pipeline
-	secMock *mocks.Pipeline
-	cstMock *mocks.Pipeline
+	depMock *mocks.MockPipeline
+	proMock *mocks.MockPipeline
+	netMock *mocks.MockPipeline
+	namMock *mocks.MockPipeline
+	secMock *mocks.MockPipeline
+	cstMock *mocks.MockPipeline
 
 	tested pipeline.Pipeline
+
+	mockCtrl *gomock.Controller
 }
 
 func (suite *PipelineTestSuite) SetupTest() {
-	suite.depMock = &mocks.Pipeline{}
-	suite.proMock = &mocks.Pipeline{}
-	suite.netMock = &mocks.Pipeline{}
-	suite.namMock = &mocks.Pipeline{}
-	suite.secMock = &mocks.Pipeline{}
-	suite.cstMock = &mocks.Pipeline{}
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.depMock = mocks.NewMockPipeline(suite.mockCtrl)
+	suite.proMock = mocks.NewMockPipeline(suite.mockCtrl)
+	suite.netMock = mocks.NewMockPipeline(suite.mockCtrl)
+	suite.namMock = mocks.NewMockPipeline(suite.mockCtrl)
+	suite.secMock = mocks.NewMockPipeline(suite.mockCtrl)
+	suite.cstMock = mocks.NewMockPipeline(suite.mockCtrl)
 
 	suite.tested = NewPipeline(suite.depMock,
 		suite.proMock,
@@ -43,6 +47,10 @@ func (suite *PipelineTestSuite) SetupTest() {
 		suite.cstMock)
 }
 
+func (suite *PipelineTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
+}
+
 func (suite *PipelineTestSuite) TestCallsDeploymentPipeline() {
 	expectedError := fmt.Errorf("this is expected")
 	event := &v1.SensorEvent{
@@ -50,12 +58,10 @@ func (suite *PipelineTestSuite) TestCallsDeploymentPipeline() {
 		Resource: &v1.SensorEvent_Deployment{},
 	}
 
-	suite.depMock.On("Run", event, nil).Return(expectedError)
+	suite.depMock.EXPECT().Run(event, nil).Return(expectedError)
 
 	err := suite.tested.Run(event, nil)
 	suite.Equal(expectedError, err, "expected the error")
-
-	suite.assertExpectationsMet()
 }
 
 func (suite *PipelineTestSuite) TestCallProcessIndicationPipeline() {
@@ -65,12 +71,10 @@ func (suite *PipelineTestSuite) TestCallProcessIndicationPipeline() {
 		Resource: &v1.SensorEvent_ProcessIndicator{},
 	}
 
-	suite.proMock.On("Run", event, nil).Return(expectedError)
+	suite.proMock.EXPECT().Run(event, nil).Return(expectedError)
 
 	err := suite.tested.Run(event, nil)
 	suite.Equal(expectedError, err, "expected the error")
-
-	suite.assertExpectationsMet()
 }
 
 func (suite *PipelineTestSuite) TestCallsNetworkPolicyPipeline() {
@@ -80,12 +84,10 @@ func (suite *PipelineTestSuite) TestCallsNetworkPolicyPipeline() {
 		Resource: &v1.SensorEvent_NetworkPolicy{},
 	}
 
-	suite.netMock.On("Run", event, nil).Return(expectedError)
+	suite.netMock.EXPECT().Run(event, nil).Return(expectedError)
 
 	err := suite.tested.Run(event, nil)
 	suite.Equal(expectedError, err, "expected the error")
-
-	suite.assertExpectationsMet()
 }
 
 func (suite *PipelineTestSuite) TestCallsNamespacePipeline() {
@@ -95,12 +97,10 @@ func (suite *PipelineTestSuite) TestCallsNamespacePipeline() {
 		Resource: &v1.SensorEvent_Namespace{},
 	}
 
-	suite.namMock.On("Run", event, nil).Return(expectedError)
+	suite.namMock.EXPECT().Run(event, nil).Return(expectedError)
 
 	err := suite.tested.Run(event, nil)
 	suite.Equal(expectedError, err, "expected the error")
-
-	suite.assertExpectationsMet()
 }
 
 func (suite *PipelineTestSuite) TestCallsSecretPipeline() {
@@ -110,12 +110,10 @@ func (suite *PipelineTestSuite) TestCallsSecretPipeline() {
 		Resource: &v1.SensorEvent_Secret{},
 	}
 
-	suite.secMock.On("Run", event, nil).Return(expectedError)
+	suite.secMock.EXPECT().Run(event, nil).Return(expectedError)
 
 	err := suite.tested.Run(event, nil)
 	suite.Equal(expectedError, err, "expected the error")
-
-	suite.assertExpectationsMet()
 }
 
 func (suite *PipelineTestSuite) TestHandlesNoType() {
@@ -125,14 +123,4 @@ func (suite *PipelineTestSuite) TestHandlesNoType() {
 
 	err := suite.tested.Run(event, nil)
 	suite.Error(err, "expected the error")
-
-	suite.assertExpectationsMet()
-}
-
-func (suite *PipelineTestSuite) assertExpectationsMet() {
-	suite.depMock.AssertExpectations(suite.T())
-	suite.proMock.AssertExpectations(suite.T())
-	suite.netMock.AssertExpectations(suite.T())
-	suite.namMock.AssertExpectations(suite.T())
-	suite.secMock.AssertExpectations(suite.T())
 }

@@ -13,7 +13,7 @@ const (
 )
 
 // Store provides storage functionality for alerts.
-//go:generate mockery -name=Store
+//go:generate mockgen-wrapper Store
 type Store interface {
 	ListImage(sha string) (*v1.ListImage, bool, error)
 	ListImages() ([]*v1.ListImage, error)

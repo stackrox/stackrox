@@ -14,7 +14,7 @@ const (
 )
 
 // Store provides storage functionality for alerts.
-//go:generate mockery -name=Store
+//go:generate mockgen-wrapper Store
 type Store interface {
 	GetCluster(id string) (*v1.Cluster, bool, error)
 	GetClusters() ([]*v1.Cluster, error)

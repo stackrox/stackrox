@@ -8,7 +8,7 @@ import (
 )
 
 // DataStore is an intermediary to AlertStorage.
-//go:generate mockery -name=DataStore
+//go:generate mockgen-wrapper DataStore
 type DataStore interface {
 	SearchListImages(q *v1.Query) ([]*v1.ListImage, error)
 	ListImage(sha string) (*v1.ListImage, bool, error)

@@ -12,7 +12,7 @@ import (
 var logger = logging.LoggerForModule()
 
 // Evaluator implements the interface for the network graph generator
-//go:generate mockery -name=Evaluator
+//go:generate mockgen-wrapper Evaluator
 type Evaluator interface {
 	GetGraph(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) *v1.NetworkGraph
 	IncrementEpoch()

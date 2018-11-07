@@ -10,7 +10,7 @@ import (
 )
 
 // DataStore is an intermediary to SecretStorage.
-//go:generate mockery -name=DataStore
+//go:generate mockgen-wrapper DataStore
 type DataStore interface {
 	SearchSecrets(q *v1.Query) ([]*v1.SearchResult, error)
 	SearchListSecrets(q *v1.Query) ([]*v1.ListSecret, error)

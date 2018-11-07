@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/boltdb/bolt"
+	"github.com/golang/mock/gomock"
 	dDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
 	npGraphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
@@ -17,13 +18,17 @@ import (
 type NetworkGraphServiceTestSuite struct {
 	suite.Suite
 	db          *bolt.DB
-	deployments *dDataStoreMocks.DataStore
-	evaluator   *npGraphMocks.Evaluator
+	deployments *dDataStoreMocks.MockDataStore
+	evaluator   *npGraphMocks.MockEvaluator
 	tested      Service
+
+	mockCtrl *gomock.Controller
 }
 
 func (suite *NetworkGraphServiceTestSuite) SetupTest() {
-	suite.deployments = &dDataStoreMocks.DataStore{}
+	suite.mockCtrl = gomock.NewController(suite.T())
+
+	suite.deployments = dDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 
 	db, err := bolthelper.NewTemp("fun.db")
 	if err != nil {
@@ -33,14 +38,16 @@ func (suite *NetworkGraphServiceTestSuite) SetupTest() {
 	suite.db = db
 
 	clusterStore := networkFlowStore.NewClusterStore(db)
-	suite.evaluator = &npGraphMocks.Evaluator{}
+	suite.evaluator = npGraphMocks.NewMockEvaluator(suite.mockCtrl)
 
 	suite.tested = New(clusterStore, suite.deployments, suite.evaluator)
 }
 
-func (suite *NetworkGraphServiceTestSuite) TeardownSuite() {
+func (suite *NetworkGraphServiceTestSuite) TearDownTest() {
 	suite.db.Close()
 	os.Remove(suite.db.Path())
+
+	suite.mockCtrl.Finish()
 }
 
 func (suite *NetworkGraphServiceTestSuite) TestFailsIfClusterIsNotSet() {

@@ -140,6 +140,7 @@ func recoverFromBuffPanic(w http.ResponseWriter) {
 // to be written to the output http.ResponseWriter. The expectation is that the Writer is used, then the
 // Closer, then the BytesProvider will be able to supply the compressed data.
 // In this case we are using zip compression.
+//go:generate mockgen-wrapper Compressor
 type Compressor interface {
 	// Writing adds bytes to be compressed.
 	io.Writer

@@ -5,7 +5,7 @@ import (
 )
 
 // Pipeline represents the processing applied to a SensorEvent to produce a response.
-//go:generate mockery -name=Pipeline
+//go:generate mockgen-wrapper Pipeline
 type Pipeline interface {
 	Run(event *v1.SensorEvent, injector EnforcementInjector) error
 }

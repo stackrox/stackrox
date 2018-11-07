@@ -7,7 +7,7 @@ import (
 )
 
 // Searcher provides search functionality on existing alerts
-//go:generate mockery -name=Searcher
+//go:generate mockgen-wrapper Searcher
 type Searcher interface {
 	SearchAlerts(q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawAlerts(q *v1.Query) ([]*v1.Alert, error)

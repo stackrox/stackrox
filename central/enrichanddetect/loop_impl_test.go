@@ -18,31 +18,29 @@ func TestLoop(t *testing.T) {
 
 type loopTestSuite struct {
 	suite.Suite
-	mockDeployments *deploymentMocks.DataStore
+	mockDeployments *deploymentMocks.MockDataStore
 	mockEnricher    *enrichAndDetectorMocks.MockEnricherAndDetector
 	mockCtrl        *gomock.Controller
 }
 
 func (suite *loopTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.mockDeployments = &deploymentMocks.DataStore{}
+	suite.mockDeployments = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.mockEnricher = enrichAndDetectorMocks.NewMockEnricherAndDetector(suite.mockCtrl)
 }
 
 func (suite *loopTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
-	suite.mockDeployments.AssertExpectations(suite.T())
 }
 
 func (suite *loopTestSuite) expectCalls(times int, allowMore bool) {
 	deployment := fixtures.GetDeployment()
-	suite.mockDeployments.On("GetDeployments").Return([]*v1.Deployment{deployment}, nil)
-	call := suite.mockEnricher.EXPECT().EnrichAndDetect(deployment)
+	timesSpec := (*gomock.Call).Times
 	if allowMore {
-		call.MinTimes(times)
-	} else {
-		call.Times(times)
+		timesSpec = (*gomock.Call).MinTimes
 	}
+	timesSpec(suite.mockDeployments.EXPECT().GetDeployments(), times).Return([]*v1.Deployment{deployment}, nil)
+	timesSpec(suite.mockEnricher.EXPECT().EnrichAndDetect(deployment), times).Return(nil)
 }
 
 func (suite *loopTestSuite) TestTimerDoesNotTick() {

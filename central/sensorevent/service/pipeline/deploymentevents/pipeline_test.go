@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
@@ -20,17 +21,25 @@ type PipelineTestSuite struct {
 	suite.Suite
 
 	ctx         context.Context
-	clusters    *clusterMocks.DataStore
-	deployments *deploymentMocks.DataStore
-	images      *imageMocks.DataStore
+	clusters    *clusterMocks.MockDataStore
+	deployments *deploymentMocks.MockDataStore
+	images      *imageMocks.MockDataStore
 	detector    *mockDetector
+
+	mockCtrl *gomock.Controller
 }
 
 func (suite *PipelineTestSuite) SetupTest() {
-	suite.clusters = &clusterMocks.DataStore{}
-	suite.deployments = &deploymentMocks.DataStore{}
-	suite.images = &imageMocks.DataStore{}
+	suite.mockCtrl = gomock.NewController(suite.T())
+
+	suite.clusters = clusterMocks.NewMockDataStore(suite.mockCtrl)
+	suite.deployments = deploymentMocks.NewMockDataStore(suite.mockCtrl)
+	suite.images = imageMocks.NewMockDataStore(suite.mockCtrl)
 	suite.detector = &mockDetector{}
+}
+
+func (suite *PipelineTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
 func (suite *PipelineTestSuite) TestCreateResponseForUpdate() {
@@ -76,7 +85,7 @@ func (suite *PipelineTestSuite) TestPersistDeploymentCreate() {
 	events[0].Action = v1.ResourceAction_CREATE_RESOURCE
 
 	// Expect that our enforcement generator is called with expected data.
-	suite.deployments.On("UpsertDeployment", events[0].GetDeployment()).Return(nil)
+	suite.deployments.EXPECT().UpsertDeployment(events[0].GetDeployment()).Return(nil)
 
 	// Call function.
 	tested := &persistDeploymentImpl{
@@ -86,7 +95,6 @@ func (suite *PipelineTestSuite) TestPersistDeploymentCreate() {
 
 	// Pull one more time to get nil
 	suite.NoError(err, "persistence should have succeeded")
-	suite.deployments.AssertExpectations(suite.T())
 }
 
 func (suite *PipelineTestSuite) TestPersistDeploymentUpdate() {
@@ -94,7 +102,7 @@ func (suite *PipelineTestSuite) TestPersistDeploymentUpdate() {
 	events[0].Action = v1.ResourceAction_UPDATE_RESOURCE
 
 	// Expect that our enforcement generator is called with expected data.
-	suite.deployments.On("UpsertDeployment", events[0].GetDeployment()).Return(nil)
+	suite.deployments.EXPECT().UpsertDeployment(events[0].GetDeployment()).Return(nil)
 
 	// Call function.
 	tested := &persistDeploymentImpl{
@@ -104,7 +112,6 @@ func (suite *PipelineTestSuite) TestPersistDeploymentUpdate() {
 
 	// Pull one more time to get nil
 	suite.NoError(err, "persistence should have succeeded")
-	suite.deployments.AssertExpectations(suite.T())
 }
 
 func (suite *PipelineTestSuite) TestPersistDeploymentRemove() {
@@ -112,7 +119,7 @@ func (suite *PipelineTestSuite) TestPersistDeploymentRemove() {
 	events[0].Action = v1.ResourceAction_REMOVE_RESOURCE
 
 	// Expect that our enforcement generator is called with expected data.
-	suite.deployments.On("RemoveDeployment", events[0].GetDeployment().GetId()).Return(nil)
+	suite.deployments.EXPECT().RemoveDeployment(events[0].GetDeployment().GetId()).Return(nil)
 
 	// Call function.
 	tested := &persistDeploymentImpl{
@@ -122,7 +129,6 @@ func (suite *PipelineTestSuite) TestPersistDeploymentRemove() {
 
 	// Pull one more time to get nil
 	suite.NoError(err, "persistence should have succeeded")
-	suite.deployments.AssertExpectations(suite.T())
 }
 
 func (suite *PipelineTestSuite) TestUpdateImages() {
@@ -130,7 +136,7 @@ func (suite *PipelineTestSuite) TestUpdateImages() {
 
 	// Expect that our enforcement generator is called with expected data.
 	expectedImage0 := events[0].GetDeployment().GetContainers()[0].GetImage()
-	suite.images.On("UpsertImage", expectedImage0).Return(nil)
+	suite.images.EXPECT().UpsertImage(expectedImage0).Return(nil)
 
 	// Call function.
 	tested := &updateImagesImpl{
@@ -140,7 +146,6 @@ func (suite *PipelineTestSuite) TestUpdateImages() {
 
 	// Pull one more time to get nil
 	suite.Equal(expectedImage0, events[0].GetDeployment().GetContainers()[0].GetImage())
-	suite.images.AssertExpectations(suite.T())
 }
 
 func (suite *PipelineTestSuite) TestUpdateImagesSkipped() {
@@ -162,9 +167,6 @@ func (suite *PipelineTestSuite) TestUpdateImagesSkipped() {
 		images: suite.images,
 	}
 	tested.do(deployment)
-
-	// Pull one more time to get nil
-	suite.images.AssertExpectations(suite.T())
 }
 
 func (suite *PipelineTestSuite) TestValidateImages() {

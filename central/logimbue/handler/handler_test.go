@@ -5,11 +5,12 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	mocks2 "github.com/stackrox/rox/central/logimbue/handler/mocks"
 	"github.com/stackrox/rox/central/logimbue/store/mocks"
-	"github.com/stretchr/testify/mock"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -17,27 +18,30 @@ func TestLogImbueHandler(t *testing.T) {
 	suite.Run(t, new(LogImbueHandlerTestSuite))
 }
 
-func matches(log []byte, message string) bool {
-	return strings.Contains(string(log), message)
-}
-
 type LogImbueHandlerTestSuite struct {
 	suite.Suite
 
-	logsStorage        *mocks.Store
+	logsStorage        *mocks.MockStore
 	compressorProvider *mockCompressorProvider
 
 	logImbueHandler *handlerImpl
+
+	mockCtrl *gomock.Controller
 }
 
 func (suite *LogImbueHandlerTestSuite) SetupTest() {
-	suite.logsStorage = &mocks.Store{}
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.logsStorage = mocks.NewMockStore(suite.mockCtrl)
 	suite.compressorProvider = &mockCompressorProvider{}
 
 	suite.logImbueHandler = &handlerImpl{
 		storage:            suite.logsStorage,
 		compressorProvider: suite.compressorProvider.provide,
 	}
+}
+
+func (suite *LogImbueHandlerTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
 // Test the happy path.
@@ -48,13 +52,11 @@ func (suite *LogImbueHandlerTestSuite) TestPostWritesLogsToDb() {
 		Body:   mockReadCloseMessage(loggedMessage),
 	}
 
-	suite.logsStorage.On("AddLog", mock.MatchedBy(func(log string) bool { return log == loggedMessage })).Return(nil)
+	suite.logsStorage.EXPECT().AddLog(loggedMessage).Return(nil)
 
 	recorder := httptest.NewRecorder()
 	suite.logImbueHandler.ServeHTTP(recorder, req)
 	suite.Equal(http.StatusAccepted, recorder.Code)
-
-	suite.logsStorage.AssertExpectations(suite.T())
 }
 
 func (suite *LogImbueHandlerTestSuite) TestPostHandlesDbError() {
@@ -65,13 +67,11 @@ func (suite *LogImbueHandlerTestSuite) TestPostHandlesDbError() {
 	}
 
 	dbErr := fmt.Errorf("the deebee has failed you")
-	suite.logsStorage.On("AddLog", mock.MatchedBy(func(log string) bool { return log == loggedMessage })).Return(dbErr)
+	suite.logsStorage.EXPECT().AddLog(loggedMessage).Return(dbErr)
 
 	recorder := httptest.NewRecorder()
 	suite.logImbueHandler.ServeHTTP(recorder, req)
 	suite.Equal(http.StatusInternalServerError, recorder.Code)
-
-	suite.logsStorage.AssertExpectations(suite.T())
 }
 
 func (suite *LogImbueHandlerTestSuite) TestPostHandlesReadError() {
@@ -83,8 +83,6 @@ func (suite *LogImbueHandlerTestSuite) TestPostHandlesReadError() {
 	recorder := httptest.NewRecorder()
 	suite.logImbueHandler.ServeHTTP(recorder, req)
 	suite.Equal(http.StatusInternalServerError, recorder.Code)
-
-	suite.logsStorage.AssertExpectations(suite.T())
 }
 
 func (suite *LogImbueHandlerTestSuite) TestPostHandlesCloseError() {
@@ -97,26 +95,24 @@ func (suite *LogImbueHandlerTestSuite) TestPostHandlesCloseError() {
 	recorder := httptest.NewRecorder()
 	suite.logImbueHandler.ServeHTTP(recorder, req)
 	suite.Equal(http.StatusInternalServerError, recorder.Code)
-
-	suite.logsStorage.AssertExpectations(suite.T())
 }
 
 func (suite *LogImbueHandlerTestSuite) TestGetReturnsLogsFromDb() {
 	// Read the logs from the db.
 	loggedMessages := logs()
-	suite.logsStorage.On("GetLogs").Return(loggedMessages, nil)
+	suite.logsStorage.EXPECT().GetLogs().Return(loggedMessages, nil)
 
 	// Our compressor provider will provide an instance of our mock compressor
-	mc := &mockCompressor{}
+	mc := mocks2.NewMockCompressor(suite.mockCtrl)
 	suite.compressorProvider.compressor = mc
 
 	// Then we will use the compressor to compress all of the logs.
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[0]) })).Return(len(loggedMessages[0]), nil)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[1]) })).Return(len(loggedMessages[1]), nil)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[2]) })).Return(len(loggedMessages[2]), nil)
-	mc.On("Close").Return(nil)
+	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[0])).Return(len(loggedMessages[0]), nil)
+	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[1])).Return(len(loggedMessages[1]), nil)
+	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[2])).Return(len(loggedMessages[2]), nil)
+	mc.EXPECT().Close().Return(nil)
 	fakeCompressed := "compressed logs"
-	mc.On("Bytes").Return([]byte(fakeCompressed))
+	mc.EXPECT().Bytes().Return([]byte(fakeCompressed))
 
 	recorder := httptest.NewRecorder()
 	req := &http.Request{
@@ -124,15 +120,12 @@ func (suite *LogImbueHandlerTestSuite) TestGetReturnsLogsFromDb() {
 	}
 	suite.logImbueHandler.ServeHTTP(recorder, req)
 	suite.Equal(http.StatusOK, recorder.Code)
-
-	mc.AssertExpectations(suite.T())
-	suite.logsStorage.AssertExpectations(suite.T())
 }
 
 func (suite *LogImbueHandlerTestSuite) TestGetHandlesDBError() {
 	// Fail to read the logs from the db.
 	dbErr := fmt.Errorf("no db logs for you bro")
-	suite.logsStorage.On("GetLogs").Return(([]string)(nil), dbErr)
+	suite.logsStorage.EXPECT().GetLogs().Return(([]string)(nil), dbErr)
 
 	recorder := httptest.NewRecorder()
 	req := &http.Request{
@@ -140,14 +133,12 @@ func (suite *LogImbueHandlerTestSuite) TestGetHandlesDBError() {
 	}
 	suite.logImbueHandler.ServeHTTP(recorder, req)
 	suite.Equal(http.StatusInternalServerError, recorder.Code)
-
-	suite.logsStorage.AssertExpectations(suite.T())
 }
 
 func (suite *LogImbueHandlerTestSuite) TestGetHandlesCompressionInitializationError() {
 	// Read the logs from the db.
 	loggedMessages := logs()
-	suite.logsStorage.On("GetLogs").Return(loggedMessages, nil)
+	suite.logsStorage.EXPECT().GetLogs().Return(loggedMessages, nil)
 
 	// Our compressor provider will error out and give us nothing
 	suite.compressorProvider.err = fmt.Errorf("you get no compressor buddy")
@@ -158,25 +149,23 @@ func (suite *LogImbueHandlerTestSuite) TestGetHandlesCompressionInitializationEr
 	}
 	suite.logImbueHandler.ServeHTTP(recorder, req)
 	suite.Equal(http.StatusInternalServerError, recorder.Code)
-
-	suite.logsStorage.AssertExpectations(suite.T())
 }
 
 func (suite *LogImbueHandlerTestSuite) TestGetHandlesCompressionWriteError() {
 	// Read the logs from the db.
 	loggedMessages := logs()
-	suite.logsStorage.On("GetLogs").Return(loggedMessages, nil)
+	suite.logsStorage.EXPECT().GetLogs().Return(loggedMessages, nil)
 
 	// Our compressor provider will provide an instance of our mock compressor
-	mc := &mockCompressor{}
+	mc := mocks2.NewMockCompressor(suite.mockCtrl)
 	suite.compressorProvider.compressor = mc
 
 	// Then we will use the compressor to compress all of the logs, but fail with all of them.
 	writeErr := fmt.Errorf("cant write dude")
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[0]) })).Return(len(loggedMessages[0]), writeErr)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[1]) })).Return(len(loggedMessages[1]), writeErr)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[2]) })).Return(len(loggedMessages[2]), writeErr)
-	mc.On("Close").Return(nil)
+	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[0])).Return(len(loggedMessages[0]), writeErr)
+	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[1])).Return(len(loggedMessages[1]), writeErr)
+	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[2])).Return(len(loggedMessages[2]), writeErr)
+	mc.EXPECT().Close().Return(nil)
 
 	recorder := httptest.NewRecorder()
 	req := &http.Request{
@@ -184,28 +173,25 @@ func (suite *LogImbueHandlerTestSuite) TestGetHandlesCompressionWriteError() {
 	}
 	suite.logImbueHandler.ServeHTTP(recorder, req)
 	suite.Equal(http.StatusInternalServerError, recorder.Code)
-
-	mc.AssertExpectations(suite.T())
-	suite.logsStorage.AssertExpectations(suite.T())
 }
 
 func (suite *LogImbueHandlerTestSuite) TestGetHandlesPartialCompressionWriteError() {
 	// Read the logs from the db.
 	loggedMessages := logs()
-	suite.logsStorage.On("GetLogs").Return(loggedMessages, nil)
+	suite.logsStorage.EXPECT().GetLogs().Return(loggedMessages, nil)
 
 	// Our compressor provider will provide an instance of our mock compressor
-	mc := &mockCompressor{}
+	mc := mocks2.NewMockCompressor(suite.mockCtrl)
 	suite.compressorProvider.compressor = mc
 
 	// Then we will use the compressor to compress all of the logs, but will fail to compress some of them.
 	writeErr := fmt.Errorf("cant write dude")
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[0]) })).Return(len(loggedMessages[0]), nil)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[1]) })).Return(len(loggedMessages[1]), writeErr)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[2]) })).Return(len(loggedMessages[2]), nil)
-	mc.On("Close").Return(nil)
+	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[0])).Return(len(loggedMessages[0]), nil)
+	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[1])).Return(len(loggedMessages[1]), writeErr)
+	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[2])).Return(len(loggedMessages[2]), nil)
+	mc.EXPECT().Close().Return(nil)
 	fakeCompressed := "compressed logs"
-	mc.On("Bytes").Return([]byte(fakeCompressed))
+	mc.EXPECT().Bytes().Return([]byte(fakeCompressed))
 
 	recorder := httptest.NewRecorder()
 	req := &http.Request{
@@ -213,26 +199,23 @@ func (suite *LogImbueHandlerTestSuite) TestGetHandlesPartialCompressionWriteErro
 	}
 	suite.logImbueHandler.ServeHTTP(recorder, req)
 	suite.Equal(http.StatusPartialContent, recorder.Code)
-
-	mc.AssertExpectations(suite.T())
-	suite.logsStorage.AssertExpectations(suite.T())
 }
 
 func (suite *LogImbueHandlerTestSuite) TestGetHandlesCompressionCloseError() {
 	// Read the logs from the db.
 	loggedMessages := logs()
-	suite.logsStorage.On("GetLogs").Return(loggedMessages, nil)
+	suite.logsStorage.EXPECT().GetLogs().Return(loggedMessages, nil)
 
 	// Our compressor provider will provide an instance of our mock compressor
-	mc := &mockCompressor{}
+	mc := mocks2.NewMockCompressor(suite.mockCtrl)
 	suite.compressorProvider.compressor = mc
 
 	// Then we will use the compressor to compress all of the logs, but fail when closing.
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[0]) })).Return(len(loggedMessages[0]), nil)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[1]) })).Return(len(loggedMessages[1]), nil)
-	mc.On("Write", mock.MatchedBy(func(log []byte) bool { return matches(log, loggedMessages[2]) })).Return(len(loggedMessages[2]), nil)
+	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[0])).Return(len(loggedMessages[0]), nil)
+	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[1])).Return(len(loggedMessages[1]), nil)
+	mc.EXPECT().Write(testutils.ContainsStringMatcher(loggedMessages[2])).Return(len(loggedMessages[2]), nil)
 	closeErr := fmt.Errorf("cant close the compression home slice")
-	mc.On("Close").Return(closeErr)
+	mc.EXPECT().Close().Return(closeErr)
 
 	recorder := httptest.NewRecorder()
 	req := &http.Request{
@@ -240,9 +223,6 @@ func (suite *LogImbueHandlerTestSuite) TestGetHandlesCompressionCloseError() {
 	}
 	suite.logImbueHandler.ServeHTTP(recorder, req)
 	suite.Equal(http.StatusInternalServerError, recorder.Code)
-
-	mc.AssertExpectations(suite.T())
-	suite.logsStorage.AssertExpectations(suite.T())
 }
 
 // Helper function that returns a few fake logs to use.
@@ -253,27 +233,6 @@ func logs() []string {
 		`log`,
 		`{log: wowie dooooooood, header: whose dat girl nanananananana}`,
 	}
-}
-
-// Mock CompressorProvider implementation so fake and test compression is used.
-///////////////////////////////////////////////////////////////////////////////
-type mockCompressor struct {
-	mock.Mock
-}
-
-func (m *mockCompressor) Write(p []byte) (int, error) {
-	args := m.Called(p)
-	return args.Int(0), args.Error(1)
-}
-
-func (m *mockCompressor) Close() error {
-	args := m.Called()
-	return args.Error(0)
-}
-
-func (m *mockCompressor) Bytes() []byte {
-	args := m.Called()
-	return args.Get(0).([]byte)
 }
 
 // Mock CompressorProvider implementation to inject mock compressor or errors.

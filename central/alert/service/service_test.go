@@ -9,6 +9,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	timestamp "github.com/gogo/protobuf/types"
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/alert/datastore"
 	dataStoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	indexMocks "github.com/stackrox/rox/central/alert/index/mocks"
@@ -40,25 +41,41 @@ func TestAlertService(t *testing.T) {
 	suite.Run(t, new(patchAlertTests))
 }
 
-type getAlertTests struct {
+type baseSuite struct {
 	suite.Suite
 
-	storage  *storeMocks.Store
-	indexer  *indexMocks.Indexer
-	searcher *searchMocks.Searcher
-	service  Service
+	storage  *storeMocks.MockStore
+	indexer  *indexMocks.MockIndexer
+	searcher *searchMocks.MockSearcher
+
+	service Service
+
+	mockCtrl *gomock.Controller
+}
+
+func (s *baseSuite) SetupTest() {
+	s.mockCtrl = gomock.NewController(s.T())
+	s.storage = storeMocks.NewMockStore(s.mockCtrl)
+	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
+	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
+
+	dataStore := datastore.New(s.storage, s.indexer, s.searcher)
+
+	s.service = New(dataStore)
+}
+
+func (s *baseSuite) TearDownTest() {
+	s.mockCtrl.Finish()
+}
+
+type getAlertTests struct {
+	baseSuite
 
 	fakeResourceByIDRequest *v1.ResourceByID
 }
 
 func (s *getAlertTests) SetupTest() {
-	s.storage = new(storeMocks.Store)
-	s.indexer = new(indexMocks.Indexer)
-	s.searcher = new(searchMocks.Searcher)
-
-	dataStore := datastore.New(s.storage, s.indexer, s.searcher)
-
-	s.service = New(dataStore)
+	s.baseSuite.SetupTest()
 
 	s.fakeResourceByIDRequest = &v1.ResourceByID{
 		Id: alerttest.FakeAlertID,
@@ -68,7 +85,7 @@ func (s *getAlertTests) SetupTest() {
 func (s *getAlertTests) TestGetAlert() {
 	fakeAlert := alerttest.NewFakeAlert()
 
-	s.storage.On("GetAlert", alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 
 	result, err := s.service.GetAlert(context.Background(), s.fakeResourceByIDRequest)
 
@@ -77,7 +94,7 @@ func (s *getAlertTests) TestGetAlert() {
 }
 
 func (s *getAlertTests) TestGetAlertWhenTheDataAccessLayerFails() {
-	s.storage.On("GetAlert", alerttest.FakeAlertID).Return(alerttest.NewFakeAlert(), false, errFake)
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(alerttest.NewFakeAlert(), false, errFake)
 
 	result, err := s.service.GetAlert(context.Background(), s.fakeResourceByIDRequest)
 
@@ -86,7 +103,7 @@ func (s *getAlertTests) TestGetAlertWhenTheDataAccessLayerFails() {
 }
 
 func (s *getAlertTests) TestGetAlertWhenAlertIsMissing() {
-	s.storage.On("GetAlert", alerttest.FakeAlertID).Return(nil, false, nil)
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(nil, false, nil)
 
 	result, err := s.service.GetAlert(context.Background(), s.fakeResourceByIDRequest)
 
@@ -95,25 +112,14 @@ func (s *getAlertTests) TestGetAlertWhenAlertIsMissing() {
 }
 
 type listAlertsTests struct {
-	suite.Suite
-
-	storage  *storeMocks.Store
-	indexer  *indexMocks.Indexer
-	searcher *searchMocks.Searcher
-	service  Service
+	baseSuite
 
 	fakeListAlertSlice         []*v1.ListAlert
 	expectedListAlertsResponse *v1.ListAlertsResponse
 }
 
 func (s *listAlertsTests) SetupTest() {
-	s.storage = new(storeMocks.Store)
-	s.indexer = new(indexMocks.Indexer)
-	s.searcher = new(searchMocks.Searcher)
-
-	dataStore := datastore.New(s.storage, s.indexer, s.searcher)
-
-	s.service = New(dataStore)
+	s.baseSuite.SetupTest()
 
 	s.fakeListAlertSlice = []*v1.ListAlert{
 		{
@@ -208,7 +214,7 @@ func (s *listAlertsTests) SetupTest() {
 func (s *listAlertsTests) TestListAlerts() {
 	fakeQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, "field1", "field12").AddStrings(search.Category, "field2")
 
-	s.searcher.On("SearchListAlerts", fakeQuery.ProtoQuery()).Return(s.fakeListAlertSlice, nil)
+	s.searcher.EXPECT().SearchListAlerts(fakeQuery.ProtoQuery()).Return(s.fakeListAlertSlice, nil)
 
 	result, err := s.service.ListAlerts(context.Background(), &v1.ListAlertsRequest{
 		Query: fakeQuery.Query(),
@@ -219,7 +225,7 @@ func (s *listAlertsTests) TestListAlerts() {
 }
 
 func (s *listAlertsTests) TestListAlertsWhenTheQueryIsEmpty() {
-	s.searcher.On("SearchListAlerts", &v1.Query{}).Return(s.fakeListAlertSlice, nil)
+	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(s.fakeListAlertSlice, nil)
 
 	result, err := s.service.ListAlerts(context.Background(), &v1.ListAlertsRequest{
 		Query: "",
@@ -239,7 +245,7 @@ func (s *listAlertsTests) TestListAlertsWhenTheQueryIsInvalid() {
 }
 
 func (s *listAlertsTests) TestListAlertsWhenTheDataLayerFails() {
-	s.searcher.On("SearchListAlerts", &v1.Query{}).Return(nil, errFake)
+	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(nil, errFake)
 
 	result, err := s.service.ListAlerts(context.Background(), &v1.ListAlertsRequest{
 		Query: "",
@@ -250,22 +256,7 @@ func (s *listAlertsTests) TestListAlertsWhenTheDataLayerFails() {
 }
 
 type getAlertsGroupsTests struct {
-	suite.Suite
-
-	storage  *storeMocks.Store
-	indexer  *indexMocks.Indexer
-	searcher *searchMocks.Searcher
-	service  Service
-}
-
-func (s *getAlertsGroupsTests) SetupTest() {
-	s.storage = new(storeMocks.Store)
-	s.indexer = new(indexMocks.Indexer)
-	s.searcher = new(searchMocks.Searcher)
-
-	dataStore := datastore.New(s.storage, s.indexer, s.searcher)
-
-	s.service = New(dataStore)
+	baseSuite
 }
 
 func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
@@ -408,7 +399,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 }
 
 func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*v1.ListAlert, expected *v1.GetAlertsGroupResponse) {
-	s.searcher.On("SearchListAlerts", &v1.Query{}).Return(fakeListAlertSlice, nil)
+	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsGroup(context.Background(), &v1.ListAlertsRequest{
 		Query: "",
@@ -419,7 +410,7 @@ func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*v1.Li
 }
 
 func (s *getAlertsGroupsTests) TestGetAlertsGroupWhenTheDataAccessLayerFails() {
-	s.searcher.On("SearchListAlerts", &v1.Query{}).Return(nil, errFake)
+	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(nil, errFake)
 
 	result, err := s.service.GetAlertsGroup(context.Background(), &v1.ListAlertsRequest{
 		Query: "",
@@ -430,22 +421,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupWhenTheDataAccessLayerFails() {
 }
 
 type getAlertsCountsTests struct {
-	suite.Suite
-
-	storage  *storeMocks.Store
-	indexer  *indexMocks.Indexer
-	searcher *searchMocks.Searcher
-	service  Service
-}
-
-func (s *getAlertsCountsTests) SetupTest() {
-	s.storage = new(storeMocks.Store)
-	s.indexer = new(indexMocks.Indexer)
-	s.searcher = new(searchMocks.Searcher)
-
-	dataStore := datastore.New(s.storage, s.indexer, s.searcher)
-
-	s.service = New(dataStore)
+	baseSuite
 }
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
@@ -755,7 +731,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 }
 
 func (s *getAlertsCountsTests) testGetAlertCounts(fakeListAlertSlice []*v1.ListAlert, groupBy v1.GetAlertsCountsRequest_RequestGroup, expected *v1.GetAlertsCountsResponse) {
-	s.searcher.On("SearchListAlerts", &v1.Query{}).Return(fakeListAlertSlice, nil)
+	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsCounts(context.Background(), &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -843,7 +819,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 		},
 	}
 
-	s.searcher.On("SearchListAlerts", &v1.Query{}).Return(fakeListAlertSlice, nil)
+	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsCounts(context.Background(), &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -854,7 +830,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 }
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheDataAccessLayerFails() {
-	s.searcher.On("SearchListAlerts", &v1.Query{}).Return(nil, errFake)
+	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(nil, errFake)
 
 	result, err := s.service.GetAlertsCounts(context.Background(), &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -865,22 +841,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheDataAccessLayerFails() 
 }
 
 type getAlertTimeseriesTests struct {
-	suite.Suite
-
-	storage  *storeMocks.Store
-	indexer  *indexMocks.Indexer
-	searcher *searchMocks.Searcher
-	service  Service
-}
-
-func (s *getAlertTimeseriesTests) SetupTest() {
-	s.storage = new(storeMocks.Store)
-	s.indexer = new(indexMocks.Indexer)
-	s.searcher = new(searchMocks.Searcher)
-
-	dataStore := datastore.New(s.storage, s.indexer, s.searcher)
-
-	s.service = New(dataStore)
+	baseSuite
 }
 
 func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
@@ -986,7 +947,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 		},
 	}
 
-	s.searcher.On("SearchListAlerts", &v1.Query{}).Return(alerts, nil)
+	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(alerts, nil)
 
 	result, err := s.service.GetAlertTimeseries(context.Background(), &v1.ListAlertsRequest{
 		Query: "",
@@ -997,7 +958,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 }
 
 func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFails() {
-	s.searcher.On("SearchListAlerts", &v1.Query{}).Return(nil, errFake)
+	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(nil, errFake)
 
 	result, err := s.service.GetAlertTimeseries(context.Background(), &v1.ListAlertsRequest{
 		Query: "",
@@ -1010,26 +971,32 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFa
 type patchAlertTests struct {
 	suite.Suite
 
-	storage *dataStoreMocks.DataStore
+	storage *dataStoreMocks.MockDataStore
 	service Service
+
+	mockCtrl *gomock.Controller
 
 	fakeResourceByIDRequest *v1.ResourceByID
 }
 
 func (s *patchAlertTests) SetupTest() {
-
-	s.storage = &dataStoreMocks.DataStore{}
+	s.mockCtrl = gomock.NewController(s.T())
+	s.storage = dataStoreMocks.NewMockDataStore(s.mockCtrl)
 
 	s.service = New(s.storage)
 }
 
+func (s *patchAlertTests) TearDownTest() {
+	s.mockCtrl.Finish()
+}
+
 func (s *patchAlertTests) TestSnoozeAlert() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.On("GetAlert", alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	snoozeTill, err := timestamp.TimestampProto(time.Now().Add(1 * time.Hour))
 	s.NoError(err)
 	fakeAlert.SnoozeTill = snoozeTill
-	s.storage.On("UpdateAlert", fakeAlert).Return(nil)
+	s.storage.EXPECT().UpdateAlert(fakeAlert).Return(nil)
 	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
 	s.NoError(err)
 
@@ -1039,7 +1006,7 @@ func (s *patchAlertTests) TestSnoozeAlert() {
 
 func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.On("GetAlert", alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).AnyTimes().Return(fakeAlert, true, nil)
 	snoozeTill, err := timestamp.TimestampProto(time.Now().Add(-1 * time.Hour))
 	s.NoError(err)
 	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
@@ -1049,9 +1016,9 @@ func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {
 
 func (s *patchAlertTests) TestResolveAlert() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.On("GetAlert", alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	fakeAlert.State = v1.ViolationState_RESOLVED
-	s.storage.On("UpdateAlert", fakeAlert).Return(nil)
+	s.storage.EXPECT().UpdateAlert(fakeAlert).Return(nil)
 	_, err := s.service.ResolveAlert(context.Background(), &v1.ResolveAlertRequest{Id: alerttest.FakeAlertID})
 	s.NoError(err)
 

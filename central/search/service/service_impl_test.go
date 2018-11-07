@@ -22,7 +22,10 @@ func TestSearchCategoryToResourceMap(t *testing.T) {
 }
 
 func TestSearchFuncs(t *testing.T) {
-	s := New(&alertMocks.DataStore{}, &deploymentMocks.DataStore{}, &imageMocks.DataStore{}, policyMocks.NewMockDataStore(gomock.NewController(t)), &secretMocks.DataStore{})
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	s := New(alertMocks.NewMockDataStore(mockCtrl), deploymentMocks.NewMockDataStore(mockCtrl), imageMocks.NewMockDataStore(mockCtrl), policyMocks.NewMockDataStore(gomock.NewController(t)), secretMocks.NewMockDataStore(mockCtrl))
 	searchFuncMap := s.(*serviceImpl).getSearchFuncs()
 	for _, searchCategory := range getAllSearchableCategories() {
 		_, ok := searchFuncMap[searchCategory]

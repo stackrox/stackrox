@@ -16,7 +16,7 @@ import (
 type Creator func(scanner *v1.ImageIntegration) (types.ImageScanner, error)
 
 // Factory provides a centralized location for creating ImageScanner from v1.ImageIntegrations.
-//go:generate mockgen -package mocks -destination mocks/factory.go github.com/stackrox/rox/pkg/scanners Factory
+//go:generate mockgen-wrapper Factory
 type Factory interface {
 	CreateScanner(source *v1.ImageIntegration) (types.ImageScanner, error)
 }

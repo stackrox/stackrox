@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/store/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -18,14 +19,21 @@ func TestPolicyValidator(t *testing.T) {
 type PolicyValidatorTestSuite struct {
 	suite.Suite
 	validator *policyValidator
-	nStorage  *notifierMocks.Store
-	cStorage  *clusterMocks.DataStore
+	nStorage  *notifierMocks.MockStore
+	cStorage  *clusterMocks.MockDataStore
+
+	mockCtrl *gomock.Controller
 }
 
 func (suite *PolicyValidatorTestSuite) SetupTest() {
-	suite.nStorage = &notifierMocks.Store{}
-	suite.cStorage = &clusterMocks.DataStore{}
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.nStorage = notifierMocks.NewMockStore(suite.mockCtrl)
+	suite.cStorage = clusterMocks.NewMockDataStore(suite.mockCtrl)
 	suite.validator = newPolicyValidator(suite.nStorage, suite.cStorage)
+}
+
+func (suite *PolicyValidatorTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
 func (suite *PolicyValidatorTestSuite) TestValidatesName() {
@@ -443,30 +451,27 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 			"id1",
 		},
 	}
-	suite.nStorage.On("GetNotifier", "id1").Return((*v1.Notifier)(nil), true, nil)
+	suite.nStorage.EXPECT().GetNotifier("id1").Return((*v1.Notifier)(nil), true, nil)
 	err := suite.validator.validateNotifiers(policy)
 	suite.NoError(err, "severity should pass when set")
-	suite.nStorage.AssertExpectations(suite.T())
 
 	policy = &v1.Policy{
 		Notifiers: []string{
 			"id2",
 		},
 	}
-	suite.nStorage.On("GetNotifier", "id2").Return((*v1.Notifier)(nil), false, nil)
+	suite.nStorage.EXPECT().GetNotifier("id2").Return((*v1.Notifier)(nil), false, nil)
 	err = suite.validator.validateNotifiers(policy)
 	suite.Error(err, "should fail when it does not exist")
-	suite.nStorage.AssertExpectations(suite.T())
 
 	policy = &v1.Policy{
 		Notifiers: []string{
 			"id3",
 		},
 	}
-	suite.nStorage.On("GetNotifier", "id3").Return((*v1.Notifier)(nil), true, fmt.Errorf("oh noes"))
+	suite.nStorage.EXPECT().GetNotifier("id3").Return((*v1.Notifier)(nil), true, fmt.Errorf("oh noes"))
 	err = suite.validator.validateNotifiers(policy)
 	suite.Error(err, "should fail when an error is thrown")
-	suite.nStorage.AssertExpectations(suite.T())
 }
 
 func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
@@ -482,10 +487,9 @@ func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
 			scope,
 		},
 	}
-	suite.cStorage.On("GetCluster", "cluster1").Return((*v1.Cluster)(nil), true, nil)
+	suite.cStorage.EXPECT().GetCluster("cluster1").Return((*v1.Cluster)(nil), true, nil)
 	err = suite.validator.validateScopes(policy)
 	suite.NoError(err, "valid scope definition")
-	suite.cStorage.AssertExpectations(suite.T())
 
 	scope = &v1.Scope{}
 	policy = &v1.Policy{
@@ -504,10 +508,9 @@ func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
 			scope,
 		},
 	}
-	suite.cStorage.On("GetCluster", "cluster2").Return((*v1.Cluster)(nil), false, nil)
+	suite.cStorage.EXPECT().GetCluster("cluster2").Return((*v1.Cluster)(nil), false, nil)
 	err = suite.validator.validateScopes(policy)
 	suite.Error(err, "scopes whose clusters can't be found should fail")
-	suite.cStorage.AssertExpectations(suite.T())
 
 	scope = &v1.Scope{
 		Cluster: "cluster3",
@@ -517,10 +520,9 @@ func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
 			scope,
 		},
 	}
-	suite.cStorage.On("GetCluster", "cluster3").Return((*v1.Cluster)(nil), true, fmt.Errorf("dang boi"))
+	suite.cStorage.EXPECT().GetCluster("cluster3").Return((*v1.Cluster)(nil), true, fmt.Errorf("dang boi"))
 	err = suite.validator.validateScopes(policy)
 	suite.Error(err, "scopes whose clusters fail to be found should fail")
-	suite.cStorage.AssertExpectations(suite.T())
 }
 
 func (suite *PolicyValidatorTestSuite) TestValidateWhitelists() {

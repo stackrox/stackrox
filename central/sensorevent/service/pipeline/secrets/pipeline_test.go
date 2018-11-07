@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -19,20 +20,27 @@ type PipelineTestSuite struct {
 	suite.Suite
 
 	ctx      context.Context
-	clusters *clusterMocks.DataStore
-	secrets  *secretMocks.DataStore
+	clusters *clusterMocks.MockDataStore
+	secrets  *secretMocks.MockDataStore
+
+	mockCtrl *gomock.Controller
 }
 
 func (suite *PipelineTestSuite) SetupTest() {
-	suite.clusters = &clusterMocks.DataStore{}
-	suite.secrets = &secretMocks.DataStore{}
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.clusters = clusterMocks.NewMockDataStore(suite.mockCtrl)
+	suite.secrets = secretMocks.NewMockDataStore(suite.mockCtrl)
+}
+
+func (suite *PipelineTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
 func (suite *PipelineTestSuite) TestRun() {
 	secret := fixtures.GetSecret()
 
-	suite.clusters.On("GetCluster", "clusterid").Return(&v1.Cluster{Id: "clusterid", Name: "clustername"}, true, nil)
-	suite.secrets.On("UpsertSecret", secret).Return(nil)
+	suite.clusters.EXPECT().GetCluster("clusterid").Return(&v1.Cluster{Id: "clusterid", Name: "clustername"}, true, nil)
+	suite.secrets.EXPECT().UpsertSecret(secret).Return(nil)
 
 	pipeline := NewPipeline(suite.clusters, suite.secrets)
 	sensorEvent := &v1.SensorEvent{

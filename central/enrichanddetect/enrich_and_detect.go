@@ -7,7 +7,7 @@ import (
 )
 
 // EnricherAndDetector combines enrichment and detection into a single function call.
-//go:generate mockgen -package mocks -destination mocks/enricher_and_detector.go github.com/stackrox/rox/central/enrichanddetect EnricherAndDetector
+//go:generate mockgen-wrapper EnricherAndDetector
 type EnricherAndDetector interface {
 	EnrichAndDetect(deployment *v1.Deployment) error
 }

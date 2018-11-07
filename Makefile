@@ -85,11 +85,6 @@ GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_GW_SRCS)
 
 include make/protogen.mk
 
-MOCKERY_BIN := $(GOPATH)/bin/mockery
-$(MOCKERY_BIN):
-	@echo "+ $@"
-	@go get github.com/vektra/mockery/...
-
 STRINGER_BIN := $(GOPATH)/bin/stringer
 $(STRINGER_BIN):
 	@echo "+ $@"
@@ -107,7 +102,7 @@ $(GENNY_BIN):
 	@$(BASE_PATH)/scripts/go-get-version.sh github.com/mauricelam/genny e937528877485c089aa62cfa9f60968749d650f1
 
 .PHONY: go-generated-srcs
-go-generated-srcs: $(MOCKERY_BIN) $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
+go-generated-srcs: $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
 	@echo "+ $@"
 	PATH=$(PATH):$(BASE_DIR)/tools/generate-helpers go generate ./...
 

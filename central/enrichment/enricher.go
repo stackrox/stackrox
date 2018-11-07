@@ -16,7 +16,7 @@ var (
 )
 
 // Enricher enriches images with data from registries and scanners.
-//go:generate mockery -name=Enricher
+//go:generate mockgen-wrapper Enricher
 type Enricher interface {
 	Enrich(deployment *v1.Deployment) (bool, error)
 

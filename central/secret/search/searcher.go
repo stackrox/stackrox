@@ -12,7 +12,7 @@ var (
 )
 
 // Searcher provides search functionality on existing secrets.
-//go:generate mockery -name=Searcher
+//go:generate mockgen-wrapper Searcher
 type Searcher interface {
 	SearchSecrets(*v1.Query) ([]*v1.SearchResult, error)
 	SearchListSecrets(query *v1.Query) ([]*v1.ListSecret, error)

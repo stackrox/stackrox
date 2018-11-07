@@ -3,6 +3,7 @@ package datastore
 import (
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	indexMock "github.com/stackrox/rox/central/image/index/mocks"
 	searchMock "github.com/stackrox/rox/central/image/search/mocks"
 	storeMock "github.com/stackrox/rox/central/image/store/mocks"
@@ -17,19 +18,27 @@ func TestImageDataStore(t *testing.T) {
 type ImageDataStoreTestSuite struct {
 	suite.Suite
 
-	mockIndexer  *indexMock.Indexer
-	mockSearcher *searchMock.Searcher
-	mockStore    *storeMock.Store
+	mockIndexer  *indexMock.MockIndexer
+	mockSearcher *searchMock.MockSearcher
+	mockStore    *storeMock.MockStore
 
 	datastore DataStore
+
+	mockCtrl *gomock.Controller
 }
 
 func (suite *ImageDataStoreTestSuite) SetupTest() {
-	suite.mockIndexer = &indexMock.Indexer{}
-	suite.mockSearcher = &searchMock.Searcher{}
-	suite.mockStore = &storeMock.Store{}
+	suite.mockCtrl = gomock.NewController(suite.T())
+
+	suite.mockIndexer = indexMock.NewMockIndexer(suite.mockCtrl)
+	suite.mockSearcher = searchMock.NewMockSearcher(suite.mockCtrl)
+	suite.mockStore = storeMock.NewMockStore(suite.mockCtrl)
 
 	suite.datastore = New(suite.mockStore, suite.mockIndexer, suite.mockSearcher)
+}
+
+func (suite *ImageDataStoreTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
 // Scenario: We have a new image with a sha and no scan or metadata. And no previously matched registry shas.
@@ -39,17 +48,13 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithoutMetadata() {
 		Id: "sha1",
 	}
 
-	suite.mockStore.On("GetImage", "sha1").Return((*v1.Image)(nil), false, nil)
+	suite.mockStore.EXPECT().GetImage("sha1").Return((*v1.Image)(nil), false, nil)
 
-	suite.mockStore.On("UpsertImage", image).Return(nil)
-	suite.mockIndexer.On("AddImage", image).Return(nil)
+	suite.mockStore.EXPECT().UpsertImage(image).Return(nil)
+	suite.mockIndexer.EXPECT().AddImage(image).Return(nil)
 
 	err := suite.datastore.UpsertImage(image)
 	suite.NoError(err)
-
-	suite.mockIndexer.AssertExpectations(suite.T())
-	suite.mockSearcher.AssertExpectations(suite.T())
-	suite.mockStore.AssertExpectations(suite.T())
 }
 
 // Scenario: We have a new image with metadata, but its sha and the registry sha do not match.
@@ -64,14 +69,10 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithMetadata() {
 		Metadata: &v1.ImageMetadata{},
 	}
 
-	suite.mockStore.On("GetImage", "sha1").Return((*v1.Image)(nil), false, nil)
-	suite.mockStore.On("UpsertImage", upsertedImage).Return(nil)
-	suite.mockIndexer.On("AddImage", upsertedImage).Return(nil)
+	suite.mockStore.EXPECT().GetImage("sha1").Return((*v1.Image)(nil), false, nil)
+	suite.mockStore.EXPECT().UpsertImage(upsertedImage).Return(nil)
+	suite.mockIndexer.EXPECT().AddImage(upsertedImage).Return(nil)
 
 	err := suite.datastore.UpsertImage(newImage)
 	suite.NoError(err)
-
-	suite.mockIndexer.AssertExpectations(suite.T())
-	suite.mockSearcher.AssertExpectations(suite.T())
-	suite.mockStore.AssertExpectations(suite.T())
 }
