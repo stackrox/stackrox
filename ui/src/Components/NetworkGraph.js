@@ -19,9 +19,11 @@ class NetworkGraph extends Component {
     constructor(props) {
         super(props);
         this.manager = {};
+        this.canvas = null;
     }
 
     componentDidMount() {
+        this.canvas = document.createElement('canvas');
         if (this.isWebGLAvailable()) {
             this.manager = new NetworkGraphManager(this.networkGraph);
         }
@@ -54,10 +56,9 @@ class NetworkGraph extends Component {
 
     isWebGLAvailable = () => {
         try {
-            const canvas = document.createElement('canvas');
             return !!(
                 window.WebGLRenderingContext &&
-                (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
+                (this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl'))
             );
         } catch (e) {
             return false;
