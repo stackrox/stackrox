@@ -98,6 +98,7 @@ $(STRINGER_BIN):
 MOCKGEN_BIN := $(GOPATH)/bin/mockgen
 $(MOCKGEN_BIN):
 	@echo "+ $@"
+	@$(BASE_PATH)/scripts/go-get-version.sh golang.org/x/tools e21233ffa6c386fc230b4328493f77af54ff9372 --skip-install
 	@$(BASE_PATH)/scripts/go-get-version.sh github.com/golang/mock/mockgen 8a44ef6e8be577e050008c7886f24fc705d709fb
 
 GENNY_BIN := $(GOPATH)/bin/genny
