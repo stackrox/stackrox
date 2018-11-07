@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+function die() {
+	echo >&2 "$@"
+	exit 1
+}
+
+[[ -n "$GOFILE" ]] || die "Required environment variable GOFILE not set"
+package="$(go list)"
+[[ -n "$package" ]] || die "Could not determine Go package for working directory $PWD"
+
+mkdir -p mocks || die "Could not create '${PWD}/mocks' subdirectory"
+exec mockgen -package mocks -destination "mocks/${GOFILE}" "$package" "$@"

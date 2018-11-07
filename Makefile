@@ -28,12 +28,12 @@ fmt:
 ifdef CI
 		@echo "The environment indicates we are in CI; checking gofmt."
 		@echo 'If this fails, run `make style`.'
-		@$(eval FMT=`find . -name vendor -prune -o -name generated -prune -o -name '*.go' -print | xargs gofmt -s -l`)
+		@$(eval FMT=`find . -name vendor -prune -o -name generated -prune -o -name mocks -prune -o -name '*.go' -print | xargs gofmt -s -l`)
 		@echo "gofmt problems in the following files, if any:"
 		@echo $(FMT)
 		@test -z "$(FMT)"
 endif
-	@find . -name vendor -prune -o -name generated -prune -o -name '*.go' -print | xargs gofmt -s -l -w
+	@find . -name vendor -prune -o -name generated -prune -o -name mocks -prune -o -name '*.go' -print | xargs gofmt -s -l -w
 
 .PHONY: imports
 imports: deps proto-generated-srcs
@@ -109,7 +109,7 @@ $(GENNY_BIN):
 .PHONY: go-generated-srcs
 go-generated-srcs: $(MOCKERY_BIN) $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
 	@echo "+ $@"
-	go generate ./...
+	PATH=$(PATH):$(BASE_DIR)/tools/generate-helpers go generate ./...
 
 .PHONY: proto-generated-srcs
 proto-generated-srcs: $(GENERATED_SRCS)

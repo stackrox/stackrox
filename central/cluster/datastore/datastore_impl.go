@@ -7,6 +7,7 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	nodeStore "github.com/stackrox/rox/central/node/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/search"
@@ -17,6 +18,7 @@ type datastoreImpl struct {
 
 	ads alertDataStore.DataStore
 	dds deploymentDataStore.DataStore
+	ns  nodeStore.GlobalStore
 }
 
 // GetCluster is a pass through function to the underlying storage.
@@ -88,6 +90,11 @@ func (ds *datastoreImpl) RemoveCluster(id string) error {
 		}
 	}
 	if err := errorList.ToError(); err != nil {
+		return err
+	}
+
+	// Remove nodes associated with this cluster
+	if err := ds.ns.RemoveClusterNodeStore(id); err != nil {
 		return err
 	}
 

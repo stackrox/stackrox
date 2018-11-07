@@ -5,9 +5,12 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
+//go:generate mockgen-wrapper GlobalStore
+
 // GlobalStore stores the nodes for all clusters.
 type GlobalStore interface {
 	GetClusterNodeStore(clusterID string) (Store, error)
+	RemoveClusterNodeStore(clusterID string) error
 
 	CountAllNodes() (int, error)
 }

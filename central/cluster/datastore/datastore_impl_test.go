@@ -5,9 +5,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterMocks "github.com/stackrox/rox/central/cluster/store/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/store/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -25,16 +27,25 @@ type ClusterDataStoreTestSuite struct {
 	clusters    *clusterMocks.Store
 	deployments *deploymentMocks.DataStore
 	alerts      *alertMocks.DataStore
+	nodes       *nodeMocks.MockGlobalStore
 
 	clusterDataStore DataStore
+
+	mockCtrl *gomock.Controller
 }
 
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.clusters = &clusterMocks.Store{}
 	suite.deployments = &deploymentMocks.DataStore{}
 	suite.alerts = &alertMocks.DataStore{}
+	suite.nodes = nodeMocks.NewMockGlobalStore(suite.mockCtrl)
 
-	suite.clusterDataStore = New(suite.clusters, suite.alerts, suite.deployments)
+	suite.clusterDataStore = New(suite.clusters, suite.alerts, suite.deployments, suite.nodes)
+}
+
+func (suite *ClusterDataStoreTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
 // Test the happy path.
@@ -58,6 +69,8 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveTombstonesDeploymentsAndMarksA
 	}
 	suite.clusters.On("GetCluster", fakeClusterID).Return(cluster, true, nil)
 	suite.clusters.On("RemoveCluster", fakeClusterID).Return(nil)
+
+	suite.nodes.EXPECT().RemoveClusterNodeStore(fakeClusterID).Times(1).Return(nil)
 
 	// run removal.
 	suite.clusterDataStore.RemoveCluster(fakeClusterID)
@@ -107,6 +120,8 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesNoDeployments() {
 	}
 	suite.clusters.On("GetCluster", fakeClusterID).Return(cluster, true, nil)
 	suite.clusters.On("RemoveCluster", fakeClusterID).Return(nil)
+
+	suite.nodes.EXPECT().RemoveClusterNodeStore(fakeClusterID).Times(1).Return(nil)
 
 	// run removal.
 	suite.clusterDataStore.RemoveCluster(fakeClusterID)
@@ -197,6 +212,8 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesNoAlerts() {
 	}
 	suite.clusters.On("GetCluster", fakeClusterID).Return(cluster, true, nil)
 	suite.clusters.On("RemoveCluster", fakeClusterID).Return(nil)
+
+	suite.nodes.EXPECT().RemoveClusterNodeStore(fakeClusterID).Times(1).Return(nil)
 
 	// run removal.
 	suite.clusterDataStore.RemoveCluster(fakeClusterID)
