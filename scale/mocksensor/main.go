@@ -4,14 +4,17 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"math"
 	"math/rand"
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -27,9 +30,17 @@ func main() {
 	maxDeployments := flag.Int("max-deployments", 10000, "maximum number of deployments to send")
 	indicatorInterval := flag.Duration("indicator-interval", 100*time.Millisecond, "interval for sending indicators")
 	maxIndicators := flag.Int("max-indicators", 20000, "maximum number of indicators to send")
+	networkFlowInterval := flag.Duration("network-flow-interval", 30*time.Second, "interval for sending network flow diffs")
+	maxNetworkFlows := flag.Int("max-network-flows", 1000, "maximum number of network flows to send at once")
+	maxUpdates := flag.Int("max-updates", 100, "total number of network flows updates to send")
+	flowDeleteRate := flag.Float64("flow-delete-rate", 0.03, "fraction of flows that will be marked removed in each network flow update")
 	centralEndpoint := flag.String("central", "central.stackrox:443", "central endpoint")
 	bigDepRate := flag.Float64("big-dep-rate", 0.01, "fraction of giant deployments to send")
 	flag.Parse()
+
+	if *maxNetworkFlows > int(math.Pow(float64(*maxDeployments), 2)) {
+		logger.Fatalf("Unable to generate specified flows. Increase maxDeployments or decrease maxNetworkFlows")
+	}
 
 	conn, err := clientconn.GRPCConnection(*centralEndpoint)
 	if err != nil {
@@ -52,14 +63,31 @@ func main() {
 	indicatorSignal := concurrency.NewSignal()
 	go sendIndicators(stream, *maxIndicators, *indicatorInterval, indicatorSignal)
 
+	nfClient := central.NewNetworkFlowServiceClient(conn)
+	nfStream, err := nfClient.PushNetworkFlows(ctx)
+
+	if err != nil {
+		panic(err)
+	}
+	defer nfStream.CloseSend()
+	networkFlowSignal := concurrency.NewSignal()
+
+	go sendNetworkFlows(nfStream, *networkFlowInterval, *maxNetworkFlows, *maxUpdates, *flowDeleteRate, networkFlowSignal)
+
 	deploymentSignal.Wait()
 	indicatorSignal.Wait()
+	networkFlowSignal.Wait()
+
 	logger.Infof("All sending done. The mock sensor will now just sleep forever.")
 	time.Sleep(365 * 24 * time.Hour)
 }
 
 func getDeploymentID() string {
-	return fmt.Sprintf("%s%d", deploymentIDBase, deploymentCount)
+	return getGeneratedDeploymentID(deploymentCount)
+}
+
+func getGeneratedDeploymentID(i int) string {
+	return fmt.Sprintf("%s%d", deploymentIDBase, i)
 }
 
 func deploymentSensorEvent(bigDepRate float64) *v1.SensorEvent {
@@ -121,4 +149,58 @@ func sendIndicators(stream v1.SensorEventService_RecordEventClient, maxIndicator
 	}
 	logger.Infof("Finished writing %d indicators", maxIndicators)
 	signal.Signal()
+}
+
+func sendNetworkFlows(stream central.NetworkFlowService_PushNetworkFlowsClient, networkFlowInterval time.Duration, maxNetworkFlows int, maxUpdates int, flowDeleteRate float64, signal concurrency.Signal) {
+	for u := 0; u < maxUpdates; u++ {
+		update := generateNetworkFlowUpdate(maxNetworkFlows, flowDeleteRate)
+		ticker := time.NewTicker(networkFlowInterval)
+		for c := 0; c < maxNetworkFlows; c++ {
+			<-ticker.C
+			if err := stream.Send(update); err != nil {
+				logger.Errorf("Error: %v", err)
+			}
+		}
+		ticker.Stop()
+		logger.Infof("Finished sending update (%d) with %d network flows", u, maxNetworkFlows)
+	}
+	signal.Signal()
+}
+
+func generateNetworkFlowUpdate(maxNetworkFlows int, flowDeleteRate float64) *central.NetworkFlowUpdate {
+	flows := make([]*v1.NetworkFlow, 0, maxNetworkFlows)
+
+	max := math.Max(float64(maxNetworkFlows), math.Pow(float64(deploymentCount), 2))
+	for i := 0; i < int(max); i++ {
+		srcID := getGeneratedDeploymentID(rand.Int() % deploymentCount)
+		var dstID string
+		for {
+			dstID = getGeneratedDeploymentID(rand.Int() % deploymentCount)
+			if srcID != dstID {
+				break
+			}
+		}
+
+		flow := &v1.NetworkFlow{
+			Props: &v1.NetworkFlowProperties{
+				SrcDeploymentId: srcID,
+				DstDeploymentId: dstID,
+				L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
+				DstPort:         80,
+			},
+		}
+
+		if rand.Float64() < flowDeleteRate {
+			flow.LastSeenTimestamp = timestamp.Now().GogoProtobuf()
+		} else {
+			flow.LastSeenTimestamp = timestamp.MicroTS(0).GogoProtobuf()
+		}
+
+		flows = append(flows, flow)
+	}
+
+	return &central.NetworkFlowUpdate{
+		Updated: flows,
+		Time:    timestamp.Now().GogoProtobuf(),
+	}
 }
