@@ -61,7 +61,7 @@ class NetworkSimulator extends BaseSpecification {
         and:
         "generate simulation"
         policy.addPolicyType(NetworkPolicyTypes.EGRESS)
-        def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy))
+        def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy))?.simulatedGraph
         assert simulation != null
         def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
 
@@ -97,7 +97,7 @@ class NetworkSimulator extends BaseSpecification {
                 .setNamespace("qa")
                 .addPodSelector(["app": WEBDEPLOYMENT])
                 .addIngressNamespaceSelector()
-        def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2))
+        def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2))?.simulatedGraph
         assert simulation != null
         def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
         def clientAppId = simulation.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }.deploymentId
@@ -143,7 +143,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addEgressPodSelector(["app": WEBDEPLOYMENT])
         def simulation = Services.submitNetworkGraphSimulation(
                 orchestrator.generateYaml(policy2) + orchestrator.generateYaml(policy3),
-                "Deployment:web,client")
+                "Deployment:web,client")?.simulatedGraph
         assert simulation != null
         def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
         def clientAppId = simulation.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }.deploymentId
@@ -182,7 +182,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPodSelector(["app": WEBDEPLOYMENT])
                 .addIngressNamespaceSelector()
         def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2),
-                "Deployment:web,central")
+                "Deployment:web,central")?.simulatedGraph
         assert simulation != null
         def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
         def centralAppId = simulation.nodesList.find { it.deploymentName == "central" }.deploymentId
@@ -217,7 +217,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addIngressNamespaceSelector()
         def simulation = Services.submitNetworkGraphSimulation(
                 orchestrator.generateYaml(policy1) + orchestrator.generateYaml(policy2)
-        )
+        )?.simulatedGraph
         assert simulation != null
         def webAppId = simulation.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
         def clientAppId = simulation.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }.deploymentId
@@ -270,7 +270,7 @@ class NetworkSimulator extends BaseSpecification {
 
         then:
         "verify simulation"
-        def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy))
+        def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy))?.simulatedGraph
         assert simulation != null
         assert targets == _ ?
                 true :

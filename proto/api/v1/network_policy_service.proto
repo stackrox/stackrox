@@ -110,6 +110,24 @@ message SimulateNetworkGraphRequest {
     string simulation_yaml          = 3;
 }
 
+message NetworkPolicyInSimulation {
+    enum Status {
+        INVALID = 0;
+        UNCHANGED = 1;
+        MODIFIED = 2;
+        ADDED = 3;
+    }
+
+    NetworkPolicy policy = 1;
+    Status        status = 2;
+    NetworkPolicy old_policy = 3;  // if status is MODIFIED, this contains the previous network policy.
+}
+
+message SimulateNetworkGraphResponse {
+    NetworkGraph simulated_graph                = 1;
+    repeated NetworkPolicyInSimulation policies = 2;
+}
+
 message NetworkGraphEpoch {
     uint32 epoch = 1;
 }
@@ -140,7 +158,7 @@ service NetworkPolicyService {
         };
     }
 
-    rpc SimulateNetworkGraph (SimulateNetworkGraphRequest) returns (NetworkGraph) {
+    rpc SimulateNetworkGraph (SimulateNetworkGraphRequest) returns (SimulateNetworkGraphResponse) {
         option (google.api.http) = {
             post: "/v1/networkpolicies/simulate/{cluster_id}"
             body: "simulation_yaml"

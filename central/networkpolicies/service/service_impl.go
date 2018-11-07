@@ -146,7 +146,7 @@ func (s *serviceImpl) GetNetworkGraphEpoch(context.Context, *v1.Empty) (*v1.Netw
 	}, nil
 }
 
-func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.SimulateNetworkGraphRequest) (*v1.NetworkGraph, error) {
+func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.SimulateNetworkGraphRequest) (*v1.SimulateNetworkGraphResponse, error) {
 	if request.GetClusterId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Cluster ID must be specified")
 	}
@@ -161,7 +161,7 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 	}
 
 	// Gather all of the network policies that apply to the cluster and add the addition we are testing if applicable.
-	networkPolicies, err := s.getNetworkPolicies(request.GetClusterId(), request.GetSimulationYaml())
+	networkPoliciesInSimulation, err := s.getNetworkPoliciesInSimulation(request.GetClusterId(), request.GetSimulationYaml())
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,15 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 	}
 
 	// Generate the graph.
-	return s.graphEvaluator.GetGraph(deployments, networkPolicies), nil
+	networkPolicies := make([]*v1.NetworkPolicy, len(networkPoliciesInSimulation))
+	for i, policyInSim := range networkPoliciesInSimulation {
+		networkPolicies[i] = policyInSim.GetPolicy()
+	}
+	graph := s.graphEvaluator.GetGraph(deployments, networkPolicies)
+	return &v1.SimulateNetworkGraphResponse{
+		SimulatedGraph: graph,
+		Policies:       networkPoliciesInSimulation,
+	}, nil
 }
 
 func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.SendNetworkPolicyYamlRequest) (*v1.Empty, error) {
@@ -230,7 +238,7 @@ func (s *serviceImpl) getDeployments(clusterID, query string) (deployments []*v1
 	return
 }
 
-func (s *serviceImpl) getNetworkPolicies(clusterID, simulationYaml string) ([]*v1.NetworkPolicy, error) {
+func (s *serviceImpl) getNetworkPoliciesInSimulation(clusterID, simulationYaml string) ([]*v1.NetworkPolicyInSimulation, error) {
 	// Confirm that any input yamls are valid. Do this check first since it is the cheapest.
 	additionalPolicies, err := compileValidateYaml(simulationYaml)
 	if err != nil {
@@ -246,46 +254,50 @@ func (s *serviceImpl) getNetworkPolicies(clusterID, simulationYaml string) ([]*v
 	return replaceOrAddPolicies(additionalPolicies, currentPolicies), nil
 }
 
+type networkPolicyRef struct {
+	Name, Namespace string
+}
+
+func getRef(policy *v1.NetworkPolicy) networkPolicyRef {
+	return networkPolicyRef{
+		Name:      policy.GetName(),
+		Namespace: policy.GetNamespace(),
+	}
+}
+
 // replaceOrAddPolicies returns the input slice of policies modified to use newPolicies.
 // If oldPolicies contains a network policy with the same name and namespace as newPolicy, we consider newPolicy a
 // replacement.
 // If oldPolicies does not contain a network policy with a matching namespace and name, we consider it a new additional
 // policy.
-func replaceOrAddPolicies(newPolicies []*v1.NetworkPolicy, oldPolicies []*v1.NetworkPolicy) (outputPolicies []*v1.NetworkPolicy) {
-	if len(newPolicies) == 0 {
-		outputPolicies = oldPolicies
-		return
-	}
-
-	// Add old policies without matching new policies, and new policies that override old policies.
-	outputPolicies = make([]*v1.NetworkPolicy, 0, len(oldPolicies))
+func replaceOrAddPolicies(newPolicies []*v1.NetworkPolicy, oldPolicies []*v1.NetworkPolicy) (outputPolicies []*v1.NetworkPolicyInSimulation) {
+	outputPolicies = make([]*v1.NetworkPolicyInSimulation, 0, len(newPolicies)+len(oldPolicies))
+	policiesByRef := make(map[networkPolicyRef]*v1.NetworkPolicyInSimulation, len(oldPolicies))
 	for _, oldPolicy := range oldPolicies {
-		match := getMatch(newPolicies, oldPolicy)
-		if match != nil {
-			outputPolicies = append(outputPolicies, match)
-		} else {
-			outputPolicies = append(outputPolicies, oldPolicy)
+		simPolicy := &v1.NetworkPolicyInSimulation{
+			Policy: oldPolicy,
+			Status: v1.NetworkPolicyInSimulation_UNCHANGED,
 		}
+		outputPolicies = append(outputPolicies, simPolicy)
+		policiesByRef[getRef(oldPolicy)] = simPolicy
 	}
 
 	// Add new policies that have no matching old policies.
 	for _, newPolicy := range newPolicies {
-		match := getMatch(oldPolicies, newPolicy)
-		if match == nil {
-			outputPolicies = append(outputPolicies, newPolicy)
+		oldPolicySim := policiesByRef[getRef(newPolicy)]
+		if oldPolicySim != nil {
+			oldPolicySim.Status = v1.NetworkPolicyInSimulation_MODIFIED
+			oldPolicySim.OldPolicy = oldPolicySim.Policy
+			oldPolicySim.Policy = newPolicy
+			continue
 		}
+		newPolicySim := &v1.NetworkPolicyInSimulation{
+			Status: v1.NetworkPolicyInSimulation_ADDED,
+			Policy: newPolicy,
+		}
+		outputPolicies = append(outputPolicies, newPolicySim)
 	}
 	return
-}
-
-// getMatch finds a matching policy in matchFrom that matches matchTo
-func getMatch(matchFrom []*v1.NetworkPolicy, matchTo *v1.NetworkPolicy) *v1.NetworkPolicy {
-	for _, match := range matchFrom {
-		if matchTo.GetName() == match.GetName() && matchTo.GetNamespace() == match.GetNamespace() {
-			return match
-		}
-	}
-	return nil
 }
 
 // compileValidateYaml compiles the YAML into a v1.NetworkPolicy, and verifies that a valid namespace exists.

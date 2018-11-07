@@ -147,9 +147,13 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 		Return(pols, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
-	expectedResp := &v1.NetworkGraph{}
+	expectedGraph := &v1.NetworkGraph{}
 	suite.evaluator.On("GetGraph", deps, pols).
-		Return(expectedResp, nil)
+		Return(expectedGraph, nil)
+	expectedResp := &v1.SimulateNetworkGraphResponse{
+		SimulatedGraph: expectedGraph,
+		Policies:       []*v1.NetworkPolicyInSimulation{},
+	}
 
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
@@ -182,9 +186,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 		Return(pols, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
-	expectedResp := &v1.NetworkGraph{}
+	expectedGraph := &v1.NetworkGraph{}
 	suite.evaluator.On("GetGraph", deps, mock.MatchedBy(checkHasPolicies("first-policy"))).
-		Return(expectedResp, nil)
+		Return(expectedGraph, nil)
 
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
@@ -193,7 +197,10 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedResp, actualResp, "response should be output from graph generation")
+	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	suite.Require().Len(actualResp.GetPolicies(), 1)
+	suite.Equal("first-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
+	suite.Equal(v1.NetworkPolicyInSimulation_MODIFIED, actualResp.GetPolicies()[0].GetStatus())
 
 	suite.assertAllExpectationsMet()
 }
@@ -215,9 +222,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 		Return(compiledPolicies, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
-	expectedResp := &v1.NetworkGraph{}
+	expectedGraph := &v1.NetworkGraph{}
 	suite.evaluator.On("GetGraph", deps, mock.MatchedBy(checkHasPolicies("first-policy", "second-policy"))).
-		Return(expectedResp, nil)
+		Return(expectedGraph, nil)
 
 	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId:      fakeClusterID,
@@ -225,7 +232,12 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedResp, actualResp, "response should be output from graph generation")
+	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	suite.Require().Len(actualResp.GetPolicies(), 2)
+	suite.Equal("second-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
+	suite.Equal(v1.NetworkPolicyInSimulation_UNCHANGED, actualResp.GetPolicies()[0].GetStatus())
+	suite.Equal("first-policy", actualResp.GetPolicies()[1].GetPolicy().GetName())
+	suite.Equal(v1.NetworkPolicyInSimulation_ADDED, actualResp.GetPolicies()[1].GetStatus())
 
 	suite.assertAllExpectationsMet()
 }
@@ -247,9 +259,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 		Return(compiledPolicies, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
-	expectedResp := &v1.NetworkGraph{}
+	expectedGraph := &v1.NetworkGraph{}
 	suite.evaluator.On("GetGraph", deps, mock.MatchedBy(checkHasPolicies("first-policy", "second-policy"))).
-		Return(expectedResp, nil)
+		Return(expectedGraph, nil)
 
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
@@ -258,7 +270,12 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedResp, actualResp, "response should be output from graph generation")
+	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	suite.Require().Len(actualResp.GetPolicies(), 2)
+	suite.Equal("first-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
+	suite.Equal(v1.NetworkPolicyInSimulation_MODIFIED, actualResp.GetPolicies()[0].GetStatus())
+	suite.Equal("second-policy", actualResp.GetPolicies()[1].GetPolicy().GetName())
+	suite.Equal(v1.NetworkPolicyInSimulation_ADDED, actualResp.GetPolicies()[1].GetStatus())
 
 	suite.assertAllExpectationsMet()
 }
@@ -279,9 +296,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 		Return(nil, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
-	expectedResp := &v1.NetworkGraph{}
+	expectedGraph := &v1.NetworkGraph{}
 	suite.evaluator.On("GetGraph", deps, mock.MatchedBy(checkHasPolicies("first-policy", "second-policy"))).
-		Return(expectedResp, nil)
+		Return(expectedGraph, nil)
 
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
@@ -290,7 +307,12 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedResp, actualResp, "response should be output from graph generation")
+	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	suite.Require().Len(actualResp.GetPolicies(), 2)
+	suite.Equal("first-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
+	suite.Equal(v1.NetworkPolicyInSimulation_ADDED, actualResp.GetPolicies()[0].GetStatus())
+	suite.Equal("second-policy", actualResp.GetPolicies()[1].GetPolicy().GetName())
+	suite.Equal(v1.NetworkPolicyInSimulation_ADDED, actualResp.GetPolicies()[1].GetStatus())
 
 	suite.assertAllExpectationsMet()
 }

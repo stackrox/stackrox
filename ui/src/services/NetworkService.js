@@ -14,12 +14,14 @@ export function fetchNetworkPolicyGraph(filters, clusterId) {
     const { query, simulationYaml } = filters;
     const params = queryString.stringify({ query });
     let options;
+    let getGraph = data => data;
     if (simulationYaml) {
         options = {
             method: 'POST',
             data: simulationYaml && `"${simulationYaml.split('\n').join('\\n')}"`,
             url: `${networkPoliciesBaseUrl}/simulate/${clusterId}?${params}`
         };
+        getGraph = ({ simulatedGraph }) => simulatedGraph;
     } else {
         options = {
             method: 'GET',
@@ -28,7 +30,7 @@ export function fetchNetworkPolicyGraph(filters, clusterId) {
     }
 
     return axios(options).then(response => ({
-        response: response.data
+        response: getGraph(response.data)
     }));
 }
 
