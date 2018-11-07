@@ -4,9 +4,9 @@ import (
 	"time"
 
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/detection/alertmanager"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
-	"github.com/stackrox/rox/central/detection/utils"
 	"github.com/stackrox/rox/central/enrichment"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
@@ -38,7 +38,7 @@ type Manager interface {
 
 // NewManager returns a new manager with the injected dependencies.
 func NewManager(enricher enrichment.Enricher, deploytimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
-	deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore, alertManager utils.AlertManager) Manager {
+	deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore, alertManager alertmanager.AlertManager) Manager {
 	m := &managerImpl{
 		enricher:            enricher,
 		deploytimeDetector:  deploytimeDetector,

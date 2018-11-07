@@ -1,6 +1,8 @@
-package utils
+package alertmanager
 
 import (
+	"fmt"
+
 	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
@@ -22,60 +24,16 @@ type alertManagerImpl struct {
 	alerts   alertDataStore.DataStore
 }
 
-func activeAlertsQueryBuilder() *search.QueryBuilder {
-	return search.NewQueryBuilder().AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String())
-}
-
-func (d *alertManagerImpl) GetAlertsByLifecycle(lifecyle v1.LifecycleStage) ([]*v1.Alert, error) {
-	q := activeAlertsQueryBuilder().
-		AddStrings(search.LifecycleStage, lifecyle.String()).ProtoQuery()
-	return d.alerts.SearchRawAlerts(q)
-}
-
-// GetAlertsByPolicy get all of the alerts that match the policy
-func (d *alertManagerImpl) GetAlertsByPolicy(policyID string) ([]*v1.Alert, error) {
-	qb := activeAlertsQueryBuilder().
-		AddExactMatches(search.PolicyID, policyID)
-
-	return d.alerts.SearchRawAlerts(qb.ProtoQuery())
-}
-
-// GetAlertsByDeployment get all of the alerts that match the deployment
-func (d *alertManagerImpl) GetAlertsByDeployment(deploymentID string) ([]*v1.Alert, error) {
-	qb := activeAlertsQueryBuilder().
-		AddExactMatches(search.DeploymentID, deploymentID)
-
-	return d.alerts.SearchRawAlerts(qb.ProtoQuery())
-}
-
-func (d *alertManagerImpl) GetAlertsByPolicyAndLifecycle(policyID string, lifecycle v1.LifecycleStage) ([]*v1.Alert, error) {
-	q := activeAlertsQueryBuilder().
-		AddExactMatches(search.PolicyID, policyID).
-		AddStrings(search.LifecycleStage, lifecycle.String()).ProtoQuery()
-
-	alerts, err := d.alerts.SearchRawAlerts(q)
-	if err != nil {
-		return nil, err
+func (d *alertManagerImpl) AlertAndNotify(currentAlerts []*v1.Alert, oldAlertFilters ...AlertFilterOption) error {
+	qb := search.NewQueryBuilder().AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String())
+	for _, filter := range oldAlertFilters {
+		filter(qb)
 	}
-	return alerts, nil
-}
-
-func (d *alertManagerImpl) GetAlertsByLifecycleAndDeployments(lifecycle v1.LifecycleStage, deploymentIDs ...string) ([]*v1.Alert, error) {
-	q := activeAlertsQueryBuilder().
-		AddExactMatches(search.DeploymentID, deploymentIDs...).
-		AddStrings(search.LifecycleStage, lifecycle.String()).ProtoQuery()
-
-	alerts, err := d.alerts.SearchRawAlerts(q)
+	previousAlerts, err := d.alerts.SearchRawAlerts(qb.ProtoQuery())
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("couldn't load previous alerts (query was %s): %s", qb.Query(), err)
 	}
-	return alerts, nil
-}
 
-// AlertAndNotify inserts and notifies of any new alerts (alerts in current but not in previous) deduplicated and
-// updates those still produced (in both previous and current) and marks those no longer produced (in previous but
-// not current) as stale.
-func (d *alertManagerImpl) AlertAndNotify(previousAlerts, currentAlerts []*v1.Alert) error {
 	// Merge the old and the new alerts.
 	newAlerts, updatedAlerts, staleAlerts := d.mergeManyAlerts(previousAlerts, currentAlerts)
 

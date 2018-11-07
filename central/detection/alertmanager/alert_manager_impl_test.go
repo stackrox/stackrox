@@ -1,4 +1,4 @@
-package utils
+package alertmanager
 
 import (
 	"testing"
@@ -58,7 +58,7 @@ func (suite *AlertManagerTestSuite) SetupTest() {
 	suite.alertsMock = &alertMocks.DataStore{}
 	suite.notifierMock = &notifierMocks.Processor{}
 
-	suite.alertManager = NewAlertManager(suite.notifierMock, suite.alertsMock)
+	suite.alertManager = New(suite.notifierMock, suite.alertsMock)
 }
 
 func (suite *AlertManagerTestSuite) TearDownTest() {
@@ -95,30 +95,28 @@ func queryHasFields(fields ...search.FieldLabel) func(interface{}) bool {
 }
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByPolicy() {
-	// PolicyUpsert side effects. We won't have any deployments or alerts yet.
 	suite.alertsMock.On("SearchRawAlerts", mock.MatchedBy(queryHasFields(search.ViolationState, search.PolicyID))).Return(([]*v1.Alert)(nil), nil)
 
-	_, err := suite.alertManager.GetAlertsByPolicy("pid")
+	err := suite.alertManager.AlertAndNotify(nil, WithPolicyID("pid"))
 	suite.NoError(err, "update should succeed")
 }
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
-	// PolicyUpsert side effects. We won't have any deployments or alerts yet.
 	suite.alertsMock.On("SearchRawAlerts", mock.MatchedBy(queryHasFields(search.ViolationState, search.DeploymentID))).Return(([]*v1.Alert)(nil), nil)
 
-	_, err := suite.alertManager.GetAlertsByDeployment("did")
+	err := suite.alertManager.AlertAndNotify(nil, WithDeploymentIDs("did"))
 	suite.NoError(err, "update should succeed")
 }
 
 func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
 	alerts := getAlerts()
 
-	// PolicyUpsert side effects. We won't have any deployments or alerts yet.
+	suite.alertsMock.On("SearchRawAlerts", mock.Anything).Return(alerts, nil)
 	suite.alertsMock.On("UpdateAlert", alerts[0]).Return(nil)
 	suite.alertsMock.On("UpdateAlert", alerts[1]).Return(nil)
 	suite.alertsMock.On("UpdateAlert", alerts[2]).Return(nil)
 
-	err := suite.alertManager.AlertAndNotify(alerts, alerts)
+	err := suite.alertManager.AlertAndNotify(alerts)
 	suite.NoError(err, "update should succeed")
 }
 
@@ -131,8 +129,10 @@ func (suite *AlertManagerTestSuite) TestMarksOldAlertsStale() {
 	suite.alertsMock.On("UpdateAlert", alerts[1]).Return(nil)
 	suite.alertsMock.On("UpdateAlert", alerts[2]).Return(nil)
 
+	suite.alertsMock.On("SearchRawAlerts", mock.Anything).Return(alerts, nil)
+
 	// Make one of the alerts not appear in the current alerts.
-	err := suite.alertManager.AlertAndNotify(alerts, alerts[1:])
+	err := suite.alertManager.AlertAndNotify(alerts[1:])
 	suite.NoError(err, "update should succeed")
 }
 
@@ -148,7 +148,9 @@ func (suite *AlertManagerTestSuite) TestSendsNotificationsForNewAlerts() {
 	suite.notifierMock.On("ProcessAlert", alerts[0]).Return(nil)
 
 	// Make one of the alerts not appear in the previous alerts.
-	err := suite.alertManager.AlertAndNotify(alerts[1:], alerts)
+	suite.alertsMock.On("SearchRawAlerts", mock.Anything).Return(alerts[1:], nil)
+
+	err := suite.alertManager.AlertAndNotify(alerts)
 	suite.NoError(err, "update should succeed")
 }
 

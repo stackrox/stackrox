@@ -7,9 +7,9 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/detection/alertmanager"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
-	"github.com/stackrox/rox/central/detection/utils"
 	"github.com/stackrox/rox/central/enrichment"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
@@ -28,7 +28,7 @@ type managerImpl struct {
 	enricher           enrichment.Enricher
 	runtimeDetector    runtime.Detector
 	deploytimeDetector deploytime.Detector
-	alertManager       utils.AlertManager
+	alertManager       alertmanager.AlertManager
 
 	deploymentDataStore deploymentDatastore.DataStore
 	processesDataStore  processIndicatorDatastore.DataStore
@@ -88,13 +88,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 		return
 	}
 
-	oldAlerts, err := m.alertManager.GetAlertsByLifecycleAndDeployments(v1.LifecycleStage_RUNTIME, deploymentIDs...)
-	if err != nil {
-		logger.Errorf("Failed to retrieve old runtime alerts: %s", err)
-		return
-	}
-
-	err = m.alertManager.AlertAndNotify(oldAlerts, newAlerts)
+	err = m.alertManager.AlertAndNotify(newAlerts, alertmanager.WithLifecycleStage(v1.LifecycleStage_RUNTIME), alertmanager.WithDeploymentIDs(deploymentIDs...))
 	if err != nil {
 		logger.Errorf("Couldn't alert and notify: %s", err)
 	}
@@ -161,14 +155,8 @@ func (m *managerImpl) DeploymentUpdated(deployment *v1.Deployment) (string, v1.E
 		return "", v1.EnforcementAction_UNSET_ENFORCEMENT, fmt.Errorf("fetching deploy time alerts: %s", err)
 	}
 
-	// Get the previous alerts for the deployment (if any exist).
-	previousAlerts, err := m.alertManager.GetAlertsByLifecycleAndDeployments(v1.LifecycleStage_DEPLOY, deployment.GetId())
-	if err != nil {
-		return "", v1.EnforcementAction_UNSET_ENFORCEMENT, err
-	}
-
-	// Perform notifications and update DB.
-	if err := m.alertManager.AlertAndNotify(previousAlerts, presentAlerts); err != nil {
+	if err := m.alertManager.AlertAndNotify(presentAlerts,
+		alertmanager.WithLifecycleStage(v1.LifecycleStage_DEPLOY), alertmanager.WithDeploymentIDs(deployment.GetId())); err != nil {
 		return "", v1.EnforcementAction_UNSET_ENFORCEMENT, err
 	}
 
@@ -216,22 +204,12 @@ func (m *managerImpl) UpsertPolicy(policy *v1.Policy) error {
 		}
 	}
 
-	// Get any alerts previously existing for the policy (if any exist).
-	previousAlerts, err := m.alertManager.GetAlertsByPolicy(policy.GetId())
-	if err != nil {
-		return err
-	}
-
 	// Perform notifications and update DB.
-	return m.alertManager.AlertAndNotify(previousAlerts, presentAlerts)
+	return m.alertManager.AlertAndNotify(presentAlerts, alertmanager.WithPolicyID(policy.GetId()))
 }
 
 func (m *managerImpl) DeploymentRemoved(deployment *v1.Deployment) error {
-	oldAlerts, err := m.alertManager.GetAlertsByDeployment(deployment.GetId())
-	if err != nil {
-		return err
-	}
-	return m.alertManager.AlertAndNotify(oldAlerts, nil)
+	return m.alertManager.AlertAndNotify(nil, alertmanager.WithDeploymentIDs(deployment.GetId()))
 }
 
 func (m *managerImpl) RemovePolicy(policyID string) error {
@@ -241,11 +219,7 @@ func (m *managerImpl) RemovePolicy(policyID string) error {
 	if err := m.runtimeDetector.RemovePolicy(policyID); err != nil {
 		return err
 	}
-	oldAlerts, err := m.alertManager.GetAlertsByPolicy(policyID)
-	if err != nil {
-		return err
-	}
-	return m.alertManager.AlertAndNotify(oldAlerts, nil)
+	return m.alertManager.AlertAndNotify(nil, alertmanager.WithPolicyID(policyID))
 }
 
 // determineEnforcement returns the alert and its enforcement action to use from the input list (if any have enforcement).

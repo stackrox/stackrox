@@ -1,4 +1,4 @@
-package utils
+package alertmanager
 
 import (
 	"sync"
@@ -14,11 +14,11 @@ var (
 )
 
 func initialize() {
-	alertManager = NewAlertManager(notifierProcessor.Singleton(), alertDataStore.Singleton())
+	alertManager = New(notifierProcessor.Singleton(), alertDataStore.Singleton())
 }
 
-// SingletonAlertManager returns the singleton instance of an AlertManager
-func SingletonAlertManager() AlertManager {
+// Singleton returns the singleton instance of an AlertManager
+func Singleton() AlertManager {
 	once.Do(initialize)
 	return alertManager
 }
