@@ -11,6 +11,8 @@ kind: ServiceAccount
 metadata:
   name: benchmark
   namespace: {{.Namespace}}
+imagePullSecrets:
+- name: stackrox
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1

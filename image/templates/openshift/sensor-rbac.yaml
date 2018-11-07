@@ -3,12 +3,16 @@ kind: ServiceAccount
 metadata:
   name: sensor
   namespace: {{.Namespace}}
+imagePullSecrets:
+- name: stackrox
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: benchmark
   namespace: {{.Namespace}}
+imagePullSecrets:
+- name: stackrox
 ---
 {{if .RuntimeSupport}}
 apiVersion: v1
@@ -16,6 +20,9 @@ kind: ServiceAccount
 metadata:
   name: collector
   namespace: {{.Namespace}}
+imagePullSecrets:
+- name: stackrox
+- name: stackrox-collector
 {{- end}}
 ---
 kind: ClusterRole

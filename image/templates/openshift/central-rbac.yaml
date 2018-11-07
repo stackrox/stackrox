@@ -3,6 +3,8 @@ kind: ServiceAccount
 metadata:
   name: central
   namespace: {{.K8sConfig.Namespace}}
+imagePullSecrets:
+- name: stackrox
 ---
 kind: SecurityContextConstraints
 apiVersion: v1

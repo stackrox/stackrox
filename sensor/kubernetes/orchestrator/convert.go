@@ -4,7 +4,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -26,18 +25,10 @@ type serviceWrap struct {
 	namespace string
 }
 
-type converter struct {
-	imagePullSecrets []string
-}
+type converter struct{}
 
 func newConverter() converter {
-	var secrets []string
-	if pullSecrets := env.ImagePullSecrets.Setting(); pullSecrets != "" {
-		secrets = strings.Split(pullSecrets, ",")
-	}
-	return converter{
-		imagePullSecrets: secrets,
-	}
+	return converter{}
 }
 
 func (c converter) asDaemonSet(service *serviceWrap) *v1beta1.DaemonSet {
@@ -82,7 +73,6 @@ func (c converter) asKubernetesPod(service *serviceWrap) v1.PodTemplateSpec {
 		Spec: v1.PodSpec{
 			Containers:         c.asContainers(service),
 			ServiceAccountName: service.ServiceAccount,
-			ImagePullSecrets:   c.asImagePullSecrets(),
 			RestartPolicy:      v1.RestartPolicyAlways,
 			Volumes:            c.asVolumes(service),
 			HostPID:            service.HostPID,
@@ -95,17 +85,6 @@ func (converter) asKubernetesLabels(name string) (labels map[string]string) {
 
 	labels[namespaceLabel] = preventLabelValue
 	labels[serviceLabel] = name
-	return
-}
-
-func (c converter) asImagePullSecrets() (result []v1.LocalObjectReference) {
-	result = make([]v1.LocalObjectReference, len(c.imagePullSecrets))
-
-	for i, s := range c.imagePullSecrets {
-		result[i] = v1.LocalObjectReference{
-			Name: s,
-		}
-	}
 	return
 }
 

@@ -50,10 +50,6 @@ spec:
           value: {{.Image}}
         - name: {{.AdvertisedEndpointEnv}}
           value: sensor.{{.Namespace}}:443
-          {{if eq .ClusterType "KUBERNETES_CLUSTER"}}
-        - name: {{.ImagePullSecretEnv}}
-          value: stackrox
-          {{- end}}
           {{if eq .ClusterType "OPENSHIFT_CLUSTER"}}
         - name: {{.OpenshiftAPIEnv}}
           value: "true"
@@ -62,10 +58,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        - name: {{.ServiceAccountEnv}}
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.serviceAccountName
         volumeMounts:
         - name: varlog
           mountPath: /var/log/stackrox/

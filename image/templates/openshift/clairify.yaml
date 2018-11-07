@@ -3,6 +3,8 @@ kind: ServiceAccount
 metadata:
   name: clairify
   namespace: {{.K8sConfig.Namespace}}
+imagePullSecrets:
+- name: stackrox
 ---
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1

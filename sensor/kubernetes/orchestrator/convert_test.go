@@ -72,14 +72,6 @@ func TestConvertDeployment(t *testing.T) {
 									},
 								},
 							},
-							ImagePullSecrets: []v1.LocalObjectReference{
-								{
-									Name: `stackrox`,
-								},
-								{
-									Name: `pullSecret`,
-								},
-							},
 							RestartPolicy: v1.RestartPolicyAlways,
 							Volumes: []v1.Volume{
 								{
@@ -98,9 +90,7 @@ func TestConvertDeployment(t *testing.T) {
 		},
 	}
 
-	convert := &converter{
-		imagePullSecrets: []string{`stackrox`, `pullSecret`},
-	}
+	convert := &converter{}
 
 	for _, c := range cases {
 		actual := convert.asDeployment(c.input)
@@ -172,14 +162,6 @@ func TestCovertDaemonSet(t *testing.T) {
 									},
 								},
 							},
-							ImagePullSecrets: []v1.LocalObjectReference{
-								{
-									Name: `stackrox`,
-								},
-								{
-									Name: `pullSecret`,
-								},
-							},
 							RestartPolicy: v1.RestartPolicyAlways,
 							Volumes: []v1.Volume{
 								{
@@ -206,9 +188,7 @@ func TestCovertDaemonSet(t *testing.T) {
 		},
 	}
 
-	convert := &converter{
-		imagePullSecrets: []string{`stackrox`, `pullSecret`},
-	}
+	convert := &converter{}
 
 	for _, c := range cases {
 		actual := convert.asDaemonSet(c.input)
