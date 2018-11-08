@@ -87,6 +87,6 @@ func (suite *PolicyIndexTestSuite) TestPolicySearch() {
 	}
 }
 
-func (suite *PolicyIndexTestSuite) TeardownSuite() {
+func (suite *PolicyIndexTestSuite) TearDownSuite() {
 	suite.bleveIndex.Close()
 }

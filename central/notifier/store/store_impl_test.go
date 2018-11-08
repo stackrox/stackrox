@@ -32,7 +32,7 @@ func (suite *NotifierStoreTestSuite) SetupSuite() {
 	suite.store = New(db)
 }
 
-func (suite *NotifierStoreTestSuite) TeardownSuite() {
+func (suite *NotifierStoreTestSuite) TearDownSuite() {
 	suite.db.Close()
 	os.Remove(suite.db.Path())
 }

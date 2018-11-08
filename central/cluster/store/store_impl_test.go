@@ -34,7 +34,7 @@ func (suite *ClusterStoreTestSuite) SetupSuite() {
 	suite.store = New(db)
 }
 
-func (suite *ClusterStoreTestSuite) TeardownSuite() {
+func (suite *ClusterStoreTestSuite) TearDownSuite() {
 	suite.db.Close()
 	os.Remove(suite.db.Path())
 }

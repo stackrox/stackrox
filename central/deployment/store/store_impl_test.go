@@ -35,7 +35,7 @@ func (suite *DeploymentStoreTestSuite) SetupSuite() {
 	suite.Require().NoError(err)
 }
 
-func (suite *DeploymentStoreTestSuite) TeardownSuite() {
+func (suite *DeploymentStoreTestSuite) TearDownSuite() {
 	suite.db.Close()
 	os.Remove(suite.db.Path())
 }

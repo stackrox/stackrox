@@ -33,7 +33,7 @@ func (suite *PolicyStoreTestSuite) SetupSuite() {
 	suite.store = newWithoutDefaults(db)
 }
 
-func (suite *PolicyStoreTestSuite) TeardownSuite() {
+func (suite *PolicyStoreTestSuite) TearDownSuite() {
 	suite.db.Close()
 	os.Remove(suite.db.Path())
 }

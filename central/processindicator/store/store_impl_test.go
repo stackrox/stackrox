@@ -33,7 +33,7 @@ func (suite *IndicatorStoreTestSuite) SetupSuite() {
 	suite.store = New(db)
 }
 
-func (suite *IndicatorStoreTestSuite) TeardownSuite() {
+func (suite *IndicatorStoreTestSuite) TearDownSuite() {
 	suite.db.Close()
 	os.Remove(suite.db.Path())
 }

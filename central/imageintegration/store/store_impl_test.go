@@ -33,7 +33,7 @@ func (suite *ImageIntegrationStoreTestSuite) SetupTest() {
 	suite.store = New(db)
 }
 
-func (suite *ImageIntegrationStoreTestSuite) TeardownTest() {
+func (suite *ImageIntegrationStoreTestSuite) TearDownTest() {
 	suite.db.Close()
 	os.Remove(suite.db.Path())
 }

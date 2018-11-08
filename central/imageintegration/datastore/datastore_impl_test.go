@@ -36,7 +36,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 	suite.datastore = New(suite.store)
 }
 
-func (suite *ImageIntegrationDataStoreTestSuite) TeardownTest() {
+func (suite *ImageIntegrationDataStoreTestSuite) TearDownTest() {
 	suite.db.Close()
 	os.Remove(suite.db.Path())
 }

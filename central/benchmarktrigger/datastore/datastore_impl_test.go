@@ -37,7 +37,7 @@ func (suite *BenchmarkTriggerDataStoreTestSuite) SetupTest() {
 	suite.datastore = New(suite.store)
 }
 
-func (suite *BenchmarkTriggerDataStoreTestSuite) TeardownTest() {
+func (suite *BenchmarkTriggerDataStoreTestSuite) TearDownTest() {
 	suite.db.Close()
 	os.Remove(suite.db.Path())
 }

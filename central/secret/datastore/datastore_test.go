@@ -45,7 +45,7 @@ func (suite *SecretDataStoreTestSuite) SetupSuite() {
 	suite.Require().NoError(err)
 }
 
-func (suite *SecretDataStoreTestSuite) TeardownSuite() {
+func (suite *SecretDataStoreTestSuite) TearDownSuite() {
 	suite.bleveIndex.Close()
 }
 

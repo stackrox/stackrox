@@ -32,7 +32,7 @@ func (suite *APITokenStoreTestSuite) SetupSuite() {
 	suite.store = New(db)
 }
 
-func (suite *APITokenStoreTestSuite) TeardownSuite() {
+func (suite *APITokenStoreTestSuite) TearDownSuite() {
 	suite.db.Close()
 	os.Remove(suite.db.Path())
 }

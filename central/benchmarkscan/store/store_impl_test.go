@@ -34,7 +34,7 @@ func (suite *BenchmarkScanStoreTestSuite) SetupSuite() {
 	suite.store = New(db)
 }
 
-func (suite *BenchmarkScanStoreTestSuite) TeardownSuite() {
+func (suite *BenchmarkScanStoreTestSuite) TearDownSuite() {
 	suite.db.Close()
 	os.Remove(suite.db.Path())
 }

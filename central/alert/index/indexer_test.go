@@ -33,7 +33,7 @@ func (suite *alertIndexTestSuite) SetupSuite() {
 
 }
 
-func (suite *alertIndexTestSuite) TeardownSuite() {
+func (suite *alertIndexTestSuite) TearDownSuite() {
 	suite.bleveIndex.Close()
 }
 

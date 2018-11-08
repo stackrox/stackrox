@@ -56,7 +56,7 @@ func (suite *ImageIndexTestSuite) SetupSuite() {
 	}
 }
 
-func (suite *ImageIndexTestSuite) TeardownSuite() {
+func (suite *ImageIndexTestSuite) TearDownSuite() {
 	suite.bleveIndex.Close()
 }
 
