@@ -15,7 +15,6 @@ class PolicyConfigurationTest extends BaseSpecification {
     static final private String DEPLOYMENTREMOTE = "deploymentremote"
     //static final private String DEPLOYMENTREGISTRY = "deploymentregistry"
     static final private String DEPLOYMENTAGE = "deploymentage"
-    static final private String DEPLOYMENTSCANAGE = "deploymentscanage"
     static final private String DEPLOYMENTDOCKERFILE = "deploymentdockerfileandnoscan"
 
     static final private List<Deployment> DEPLOYMENTS = [
@@ -33,11 +32,6 @@ class PolicyConfigurationTest extends BaseSpecification {
             new Deployment()
                     .setName (DEPLOYMENTAGE)
                     .setImage ("nginx:1.10")
-                    .addLabel ( "app", "test" ),
-
-            new Deployment()
-                    .setName (DEPLOYMENTSCANAGE)
-                    .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
                     .addLabel ( "app", "test" ),
 
             new Deployment()
@@ -73,7 +67,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
         then:
         "Verify Violation #policyName is triggered"
-        assert waitForViolation(depname,  policy.getName(), 600)
+        assert waitForViolation(depname,  policy.getName(), 60)
 
         cleanup:
         "Remove Policy #policyName"
@@ -160,7 +154,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                         .setScanAgeDays(30)
                         .build())
-                        .build() | DEPLOYMENTSCANAGE
+                        .build() | DEPLOYMENTREMOTE
 
         "Dockerfile Line" |
                 Policy.newBuilder()

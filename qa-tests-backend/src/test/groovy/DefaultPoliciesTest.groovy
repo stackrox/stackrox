@@ -96,7 +96,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Aptitude Package Manager (apt) in Image"      | STRUTS         | "C931"
 
-        "30-Day Scan Age"                              | STRUTS         | "C941"
+        "30-Day Scan Age"                              | SSL_TERMINATOR | "C941"
 
         "CVSS >= 7"                                    | STRUTS         | "C933"
 
