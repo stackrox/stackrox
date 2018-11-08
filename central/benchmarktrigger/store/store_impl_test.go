@@ -25,15 +25,13 @@ type BenchmarkTriggerStoreTestSuite struct {
 
 func (suite *BenchmarkTriggerStoreTestSuite) SetupTest() {
 	db, err := bolthelper.NewTemp("BenchmarkTriggerStoreTestSuite.db")
-	if err != nil {
-		suite.FailNow("Failed to make BoltDB", err.Error())
-	}
+	suite.Require().NoError(err, "failed to create BoltDB")
 
 	suite.db = db
 	suite.store = New(db)
 }
 
-func (suite *BenchmarkTriggerStoreTestSuite) TeardownTest() {
+func (suite *BenchmarkTriggerStoreTestSuite) TearDownTest() {
 	suite.db.Close()
 	os.Remove(suite.db.Path())
 }

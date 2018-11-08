@@ -45,7 +45,7 @@ func (suite *BenchmarkTriggerDataStoreTestSuite) TeardownTest() {
 func (suite *BenchmarkTriggerDataStoreTestSuite) TestBenchmarkTriggers() {
 	triggerTime1 := ptypes.TimestampNow()
 	triggerTime2 := ptypes.TimestampNow()
-	triggerTime2.Seconds -= 1000
+	triggerTime2.Seconds += 1000
 
 	triggers := []*v1.BenchmarkTrigger{
 		{
@@ -68,8 +68,8 @@ func (suite *BenchmarkTriggerDataStoreTestSuite) TestBenchmarkTriggersFiltering(
 	triggerTime1 := ptypes.TimestampNow()
 	triggerTime2 := ptypes.TimestampNow()
 	triggerTime3 := ptypes.TimestampNow()
-	triggerTime2.Seconds -= 1000
-	triggerTime3.Seconds -= 2000
+	triggerTime2.Seconds += 1000
+	triggerTime3.Seconds += 2000
 
 	cluster1 := uuid.NewV4().String()
 	cluster2a := uuid.NewV4().String()

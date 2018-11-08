@@ -54,8 +54,15 @@ func (ds *datastoreImpl) GetBenchmarkTriggers(request *v1.GetBenchmarkTriggersRe
 		filteredTriggers = append(filteredTriggers, trigger)
 	}
 
-	sort.SliceStable(filteredTriggers, func(i, j int) bool {
-		return protoconv.CompareProtoTimestamps(filteredTriggers[i].Time, filteredTriggers[j].Time) == 1
+	sort.Slice(filteredTriggers, func(i, j int) bool {
+		cmp := protoconv.CompareProtoTimestamps(filteredTriggers[i].Time, filteredTriggers[j].Time)
+		if cmp < 0 {
+			return true
+		}
+		if cmp > 0 {
+			return false
+		}
+		return filteredTriggers[i].Id < filteredTriggers[j].Id
 	})
 	return filteredTriggers, nil
 }
