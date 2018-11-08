@@ -16,6 +16,7 @@ interface OrchestratorMain {
     def getDeploymentReplicaCount(Deployment deployment)
     def getDeploymentUnavailableReplicaCount(Deployment deployment)
     def getDeploymentNodeSelectors(Deployment deployment)
+    def getDeploymentCount()
 
     //DaemonSets
     def createDaemonSet(DaemonSet daemonSet)
@@ -23,10 +24,12 @@ interface OrchestratorMain {
     def getDaemonSetReplicaCount(DaemonSet daemonSet)
     def getDaemonSetNodeSelectors(DaemonSet daemonSet)
     def getDaemonSetUnavailableReplicaCount(DaemonSet daemonSet)
+    def getDaemonSetCount()
 
     //Containers
     String getpods()
     def wasContainerKilled(String containerName, String namespace)
+    def isKubeProxyPresent()
 
     //Services
     def deleteService(String serviceName, String namespace)
@@ -34,10 +37,14 @@ interface OrchestratorMain {
     //Secrets
     def createSecret(String name)
     def deleteSecret(String name, String namespace)
+    def getSecretCount()
 
     //NetworkPolicies
     String applyNetworkPolicy(NetworkPolicy policy)
     boolean deleteNetworkPolicy(NetworkPolicy policy)
+
+    //Nodes
+    def getNodeCount()
 
     //Misc
     def createClairifyDeployment()

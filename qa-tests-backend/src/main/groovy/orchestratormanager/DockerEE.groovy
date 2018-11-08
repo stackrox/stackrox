@@ -163,4 +163,24 @@ class DockerEE extends OrchestratorCommon implements OrchestratorMain {
     @Override
     def getDeploymentNodeSelectors(Deployment deployment) {
     }
+
+    @Override
+    def getNodeCount() {
+    }
+
+    @Override
+    def getDeploymentCount() {
+    }
+
+    @Override
+    def getSecretCount() {
+    }
+
+    @Override
+    def getDaemonSetCount() {
+    }
+
+    @Override
+    def isKubeProxyPresent() {
+    }
 }

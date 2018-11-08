@@ -218,6 +218,20 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         return null
     }
 
+    def getDeploymentCount() {
+        return beta1.listDeploymentForAllNamespaces(
+                null,
+                null,
+                true,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false
+        ).getItems().size()
+    }
+
     /*
         DaemonSet Methods
     */
@@ -307,6 +321,20 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         return null
     }
 
+    def getDaemonSetCount() {
+        return beta1.listDaemonSetForAllNamespaces(
+                null,
+                null,
+                true,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false
+        ).getItems().size()
+    }
+
     /*
         Container Methods
     */
@@ -350,6 +378,15 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         println "wasContainerKilled: did not determine container was killed before 60s timeout"
         println "container details were found:\n${containerName}: ${pods.getItems().get(0).toString()}"
         return false
+    }
+
+    def isKubeProxyPresent() {
+        V1PodList pods = api.listPodForAllNamespaces(null, null, true, null, null, null, null, null, false)
+        return pods.getItems().findAll {
+            it.getSpec().getContainers().find {
+                it.getImage().contains("kube-proxy")
+            }
+        }
     }
 
     /*
@@ -428,6 +465,20 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         println name + ": Secret removed."
     }
 
+    def getSecretCount() {
+        return api.listSecretForAllNamespaces(
+                null,
+                "type=Opaque", //SR only counts Opaque secrets
+                true,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false
+        ).getItems().size()
+    }
+
     /*
         Network Policy Methods
     */
@@ -469,6 +520,24 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
 
         println "${policy.name}: Failed to remove NetworkPolicy."
         return false
+    }
+
+    /*
+        Node Methods
+     */
+
+    def getNodeCount() {
+        return api.listNode(
+                null,
+                null,
+                null,
+                true,
+                null,
+                null,
+                null,
+                null,
+                false
+        ).getItems().size()
     }
 
     /*
