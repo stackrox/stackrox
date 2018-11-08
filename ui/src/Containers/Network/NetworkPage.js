@@ -63,8 +63,6 @@ class NetworkPage extends Component {
         networkGraphUpdateKey: PropTypes.number.isRequired,
         incrementNetworkGraphUpdateKey: PropTypes.func.isRequired,
         networkGraphState: PropTypes.string.isRequired,
-        setSimulatorMode: PropTypes.func.isRequired,
-        simulatorMode: PropTypes.bool.isRequired,
         setYamlFile: PropTypes.func.isRequired,
         errorMessage: PropTypes.string,
         yamlFile: PropTypes.shape({
@@ -89,7 +87,8 @@ class NetworkPage extends Component {
     };
 
     state = {
-        filterState: ALL_STATE
+        filterState: ALL_STATE,
+        simulatorMode: false
     };
 
     onSearch = searchOptions => {
@@ -111,7 +110,6 @@ class NetworkPage extends Component {
 
     onYamlUpload = yamlFile => {
         this.props.setYamlFile(yamlFile);
-        this.props.incrementNetworkGraphUpdateKey();
     };
 
     onFilterButtonClick = filterState => {
@@ -128,14 +126,15 @@ class NetworkPage extends Component {
     };
 
     toggleNetworkPolicySimulator = () => {
-        const { simulatorMode, setSimulatorMode, setYamlFile } = this.props;
-        if (simulatorMode) setYamlFile(null);
-        setSimulatorMode(!simulatorMode);
+        const { setYamlFile, yamlFile } = this.props;
+        const { simulatorMode } = this.state;
+        if (simulatorMode && yamlFile) setYamlFile(null);
+        this.setState({ simulatorMode: !simulatorMode });
     };
 
     renderGraph = () => {
         const colorType = this.props.networkGraphState === 'ERROR' ? 'alert' : 'success';
-        const simulatorMode = this.props.simulatorMode ? 'simulator-mode' : '';
+        const simulatorMode = this.state.simulatorMode ? 'simulator-mode' : '';
         const networkGraphState = this.props.networkGraphState === 'ERROR' ? 'error' : 'success';
         const networkGraph = {};
         const { filterState } = this.state;
@@ -144,7 +143,7 @@ class NetworkPage extends Component {
             filterState === ACTIVE_STATE ? networkFlowGraph.nodes : networkPolicyGraph.nodes;
         return (
             <div className={`${simulatorMode} ${networkGraphState} w-full h-full`}>
-                {this.props.simulatorMode && (
+                {this.state.simulatorMode && (
                     <div
                         className={`absolute pin-t pin-l bg-${colorType}-600 text-base-100 font-600 uppercase p-2 z-1`}
                     >
@@ -166,9 +165,9 @@ class NetworkPage extends Component {
     };
 
     renderSideComponents = () => {
-        const { selectedNodeId, simulatorMode } = this.props;
+        const { selectedNodeId } = this.props;
         const className = `${
-            selectedNodeId || simulatorMode ? 'w-1/3' : 'w-0'
+            selectedNodeId || this.state.simulatorMode ? 'w-1/3' : 'w-0'
         } h-full absolute pin-r z-1 bg-primary-200`;
         return (
             <div className={className}>
@@ -186,7 +185,7 @@ class NetworkPage extends Component {
 
     renderSidePanel = () => {
         const { selectedNodeId, deployment, networkPolicies } = this.props;
-        if (!selectedNodeId || this.props.simulatorMode) {
+        if (!selectedNodeId || this.state.simulatorMode) {
             return (
                 <NodesUpdateSection
                     getNodeUpdates={this.getNodeUpdates}
@@ -245,14 +244,15 @@ class NetworkPage extends Component {
     };
 
     renderNetworkPolicySimulatorButton = () => {
-        const className = this.props.simulatorMode
+        const { simulatorMode } = this.state;
+        const className = simulatorMode
             ? 'bg-success-200 border-success-500 hover:border-success-600 hover:text-success-600 text-success-500'
             : 'bg-base-200 hover:border-base-300 hover:text-base-600 border-base-200 text-base-500';
-        const iconColor = this.props.simulatorMode ? '#53c6a9' : '#d2d5ed';
+        const iconColor = simulatorMode ? '#53c6a9' : '#d2d5ed';
         return (
             <button
                 type="button"
-                data-test-id={`simulator-button-${this.props.simulatorMode ? 'on' : 'off'}`}
+                data-test-id={`simulator-button-${simulatorMode ? 'on' : 'off'}`}
                 className={`flex-no-shrink border-2 rounded-sm text-sm ml-2 pl-2 pr-2 h-9 ${className}`}
                 onClick={this.toggleNetworkPolicySimulator}
             >
@@ -263,7 +263,7 @@ class NetworkPage extends Component {
     };
 
     renderNetworkPolicySimulator() {
-        if (!this.props.simulatorMode) return null;
+        if (!this.state.simulatorMode) return null;
         return (
             <NetworkPolicySimulator
                 onClose={this.toggleNetworkPolicySimulator}
@@ -281,7 +281,10 @@ class NetworkPage extends Component {
                 <div className="flex flex-1 flex-col w-full">
                     <div className="flex">{this.renderPageHeader()}</div>
                     <section className="network-grid-bg flex flex-1 relative">
-                        <GraphFilters onFilter={this.onFilterButtonClick} />
+                        <GraphFilters
+                            onFilter={this.onFilterButtonClick}
+                            offset={this.state.simulatorMode}
+                        />
                         <NetworkGraphLegend />
                         {this.renderGraph()}
                         {this.renderSideComponents()}
@@ -324,7 +327,6 @@ const mapStateToProps = createStructuredSelector({
     isFetchingNode: state => selectors.getLoadingStatus(state, deploymentTypes.FETCH_DEPLOYMENT),
     lastUpdatedTimestamp: selectors.getLastUpdatedTimestamp,
     networkGraphState: getNetworkGraphState,
-    simulatorMode: selectors.getSimulatorMode,
     errorMessage: selectors.getNetworkGraphErrorMessage,
     yamlFile: selectors.getYamlFile
 });
@@ -336,7 +338,6 @@ const mapDispatchToProps = {
     setSearchOptions: networkActions.setNetworkSearchOptions,
     setSearchModifiers: networkActions.setNetworkSearchModifiers,
     setSearchSuggestions: networkActions.setNetworkSearchSuggestions,
-    setSimulatorMode: networkActions.setSimulatorMode,
     setYamlFile: networkActions.setYamlFile,
     incrementNetworkGraphUpdateKey: networkActions.incrementNetworkGraphUpdateKey,
     onNodesUpdate: networkActions.networkNodesUpdate

@@ -93,7 +93,6 @@ function* watchLocation() {
             yield cancel(pollTask);
             pollTask = null;
             yield put(actions.setSelectedNodeId(null));
-            yield put(actions.setSimulatorMode(false));
             yield put(actions.setNetworkGraphState(null));
             yield put(actions.setYamlFile(null));
         }
@@ -113,14 +112,13 @@ function* filterNetworkPageBySearch() {
     const clusterId = yield select(selectors.getSelectedNetworkClusterId);
     const searchOptions = yield select(selectors.getNetworkSearchOptions);
     const yamlFile = yield select(selectors.getYamlFile);
-    const simulatorMode = yield select(selectors.getSimulatorMode);
     if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
         return;
     }
     const filters = {
         query: searchOptionsToQuery(searchOptions)
     };
-    if (simulatorMode && yamlFile) {
+    if (yamlFile) {
         filters.simulationYaml = yamlFile.content;
     }
     if (clusterId) {

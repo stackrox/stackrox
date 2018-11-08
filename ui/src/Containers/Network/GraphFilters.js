@@ -10,7 +10,8 @@ const activeButtonClassName = `${baseButtonClassName} bg-primary-300 border-prim
 
 class GraphFilters extends Component {
     static propTypes = {
-        onFilter: PropTypes.func.isRequired
+        onFilter: PropTypes.func.isRequired,
+        offset: PropTypes.bool.isRequired
     };
 
     constructor(props, context) {
@@ -29,7 +30,11 @@ class GraphFilters extends Component {
     render() {
         const { value } = this.state;
         return (
-            <div className="absolute pin-t pin-l px-2 py-2 mt-2 ml-2 absolute z-1 bg-primary-100 uppercase flex flex-row items-center text-sm border-base-400 border-2 ">
+            <div
+                className={`absolute pin-t pin-l px-2 py-2 ${
+                    this.props.offset ? 'mt-8' : 'mt-2'
+                } ml-2 absolute z-1 bg-primary-100 uppercase flex flex-row items-center text-sm border-base-400 border-2`}
+            >
                 <span className="text-base-500 font-700 mr-2">Connections:</span>
                 <div className="flex flex-row items-center">
                     <button

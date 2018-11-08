@@ -23,7 +23,6 @@ export const types = {
     SET_SELECTED_NODE_ID: 'network/SET_SELECTED_NODE_ID',
     SELECT_NETWORK_CLUSTER_ID: 'network/SELECT_NETWORK_CLUSTER_ID',
     INCREMENT_NETWORK_GRAPH_UPDATE_KEY: 'network/INCREMENT_NETWORK_GRAPH_UPDATE_KEY',
-    SIMULATOR_MODE_ON: 'network/SIMULATOR_MODE_ON',
     SET_NETWORK_GRAPH_STATE: 'network/NETWORK_GRAPH_STATE',
     SET_YAML_FILE: 'network/SET_YAML_FILE',
     SEND_YAML_NOTIFICATION: 'network/SEND_YAML_NOTIFICATION',
@@ -64,7 +63,6 @@ export const actions = {
         type: types.NETWORK_NODES_UPDATE
     }),
     setNetworkGraphState: () => ({ type: types.SET_NETWORK_GRAPH_STATE }),
-    setSimulatorMode: value => ({ type: types.SIMULATOR_MODE_ON, value }),
     setYamlFile: file => ({ type: types.SET_YAML_FILE, file }),
     sendYAMLNotification: notifierId => ({
         type: types.SEND_YAML_NOTIFICATION,
@@ -228,13 +226,6 @@ const networkGraphState = (state = 'INITIAL', action) => {
     return state;
 };
 
-const simulatorMode = (state = false, action) => {
-    if (action.type === types.SIMULATOR_MODE_ON) {
-        return action.value;
-    }
-    return state;
-};
-
 const errorMessage = (state = '', action) => {
     if (action.type === types.FETCH_NETWORK_POLICY_GRAPH.FAILURE) {
         const { message } = action.error.response.data;
@@ -254,7 +245,6 @@ const reducer = combineReducers({
     selectedNetworkClusterId,
     networkGraphUpdateKey,
     networkGraphState,
-    simulatorMode,
     selectedYamlFile,
     errorMessage,
     lastUpdatedTimestamp,
@@ -273,7 +263,6 @@ const getNodeUpdatesEpoch = state => state.nodeUpdatesEpoch;
 const getSelectedNetworkClusterId = state => state.selectedNetworkClusterId;
 const getNetworkGraphUpdateKey = state => state.networkGraphUpdateKey.key;
 const getNetworkGraphState = state => state.networkGraphState;
-const getSimulatorMode = state => state.simulatorMode;
 const getNetworkGraphErrorMessage = state => state.errorMessage;
 const getYamlFile = state => state.selectedYamlFile;
 const getLastUpdatedTimestamp = state => state.lastUpdatedTimestamp;
@@ -289,7 +278,6 @@ export const selectors = {
     getSelectedNetworkClusterId,
     getNetworkGraphUpdateKey,
     getNetworkGraphState,
-    getSimulatorMode,
     getNetworkGraphErrorMessage,
     getYamlFile,
     getLastUpdatedTimestamp,
