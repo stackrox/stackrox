@@ -76,33 +76,41 @@ func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*v1.Alert, error) {
 	return alertSlice.alerts, nil
 }
 
+func (d *detectorImpl) DeploymentWhitelistedForPolicy(deploymentID, policyID string) (isWhitelisted bool) {
+	err := d.policySet.ForOne(policyID, func(p *v1.Policy, _ searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
+		if p.GetDisabled() {
+			isWhitelisted = true
+			return nil
+		}
+		dep, exists, err := d.deployments.GetDeployment(deploymentID)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			// Assume it's not whitelisted if it doesn't exist, otherwise runtime alerts for deleted deployments
+			// will always get removed every time we update a policy.
+			isWhitelisted = false
+			return nil
+		}
+		if shouldProcess == nil {
+			isWhitelisted = false
+			return nil
+		}
+		isWhitelisted = !shouldProcess(dep)
+		return nil
+	})
+	if err != nil {
+		logger.Errorf("Couldn't evaluate whitelist for deployment %s, policy %s", deploymentID, policyID)
+	}
+	return
+}
+
 func (d *detectorImpl) UpsertPolicy(policy *v1.Policy) error {
 	return d.policySet.UpsertPolicy(policy)
 }
 
 func (d *detectorImpl) RemovePolicy(policyID string) error {
 	return d.policySet.RemovePolicy(policyID)
-}
-
-func (d *detectorImpl) AlertsForDeployment(deployment *v1.Deployment) ([]*v1.Alert, error) {
-	var alerts []*v1.Alert
-	err := d.policySet.ForEach(func(p *v1.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
-		if shouldProcess != nil && !shouldProcess(deployment) {
-			return nil
-		}
-		violations, err := matcher.MatchOne(d.deployments, deployment.GetId())
-		if err != nil {
-			return fmt.Errorf("matching against deployment %s/%s: %s", deployment.GetNamespace(), deployment.GetName(), err)
-		}
-		if len(violations) > 0 {
-			alerts = append(alerts, policyDeploymentAndViolationsToAlert(p, deployment, violations))
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return alerts, nil
 }
 
 // PolicyDeploymentAndViolationsToAlert constructs an alert.

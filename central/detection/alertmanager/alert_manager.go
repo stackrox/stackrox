@@ -2,6 +2,7 @@ package alertmanager
 
 import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/detection/runtime"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/generated/api/v1"
 )
@@ -16,9 +17,10 @@ type AlertManager interface {
 }
 
 // New returns a new instance of AlertManager. You should just use the singleton instance instead.
-func New(notifier notifierProcessor.Processor, alerts alertDataStore.DataStore) AlertManager {
+func New(notifier notifierProcessor.Processor, alerts alertDataStore.DataStore, detector runtime.Detector) AlertManager {
 	return &alertManagerImpl{
-		notifier: notifier,
-		alerts:   alerts,
+		notifier:        notifier,
+		alerts:          alerts,
+		runtimeDetector: detector,
 	}
 }

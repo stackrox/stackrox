@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/detection/runtime"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
@@ -20,22 +22,17 @@ var (
 )
 
 type alertManagerImpl struct {
-	notifier notifierProcessor.Processor
-	alerts   alertDataStore.DataStore
+	notifier        notifierProcessor.Processor
+	alerts          alertDataStore.DataStore
+	runtimeDetector runtime.Detector
 }
 
 func (d *alertManagerImpl) AlertAndNotify(currentAlerts []*v1.Alert, oldAlertFilters ...AlertFilterOption) error {
-	qb := search.NewQueryBuilder().AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String())
-	for _, filter := range oldAlertFilters {
-		filter(qb)
-	}
-	previousAlerts, err := d.alerts.SearchRawAlerts(qb.ProtoQuery())
-	if err != nil {
-		return fmt.Errorf("couldn't load previous alerts (query was %s): %s", qb.Query(), err)
-	}
-
 	// Merge the old and the new alerts.
-	newAlerts, updatedAlerts, staleAlerts := d.mergeManyAlerts(previousAlerts, currentAlerts)
+	newAlerts, updatedAlerts, staleAlerts, err := d.mergeManyAlerts(currentAlerts, oldAlertFilters...)
+	if err != nil {
+		return err
+	}
 
 	// Mark any old alerts no longer generated as stale, and insert new alerts.
 	if err := d.notifyAndUpdateBatch(newAlerts); err != nil {
@@ -207,7 +204,17 @@ func mergeAlerts(old, newAlert *v1.Alert) *v1.Alert {
 }
 
 // MergeManyAlerts merges two alerts.
-func (d *alertManagerImpl) mergeManyAlerts(previousAlerts, presentAlerts []*v1.Alert) (newAlerts, updatedAlerts, staleAlerts []*v1.Alert) {
+func (d *alertManagerImpl) mergeManyAlerts(presentAlerts []*v1.Alert, oldAlertFilters ...AlertFilterOption) (newAlerts, updatedAlerts, staleAlerts []*v1.Alert, err error) {
+	qb := search.NewQueryBuilder().AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String())
+	for _, filter := range oldAlertFilters {
+		filter.apply(qb)
+	}
+	previousAlerts, err := d.alerts.SearchRawAlerts(qb.ProtoQuery())
+	if err != nil {
+		err = fmt.Errorf("couldn't load previous alerts (query was %s): %s", qb.Query(), err)
+		return
+	}
+
 	// Merge any alerts that have new and old alerts.
 	for _, alert := range presentAlerts {
 		// Don't generate a new alert if it was a resolved runtime alerts.
@@ -226,11 +233,44 @@ func (d *alertManagerImpl) mergeManyAlerts(previousAlerts, presentAlerts []*v1.A
 
 	// Find any old alerts no longer being produced.
 	for _, alert := range previousAlerts {
-		if matchingNew := findAlert(alert, presentAlerts); matchingNew == nil {
+		if d.shouldMarkAlertStale(alert, presentAlerts, oldAlertFilters...) {
 			staleAlerts = append(staleAlerts, alert)
 		}
 	}
 	return
+}
+
+func (d *alertManagerImpl) shouldMarkAlertStale(alert *v1.Alert, presentAlerts []*v1.Alert, oldAlertFilters ...AlertFilterOption) bool {
+	// If the alert is still being produced, don't mark it stale.
+	if matchingNew := findAlert(alert, presentAlerts); matchingNew != nil {
+		return false
+	}
+
+	// Only runtime alerts should not be marked stale when they are no longer produced.
+	// (Deploy time alerts should disappear along with deployments, for example.)
+	if alert.GetLifecycleStage() != v1.LifecycleStage_RUNTIME {
+		return true
+	}
+
+	// We only want to mark runtime alerts as stale if a policy update causes them to no longer be produced.
+	// To determine if this is a policy update, we check if there is a filter on policy ids here.
+	specifiedPolicyIDs := set.NewStringSet()
+	for _, filter := range oldAlertFilters {
+		if filterSpecified := filter.specifiedPolicyID(); filterSpecified != "" {
+			specifiedPolicyIDs.Add(filterSpecified)
+		}
+	}
+	if specifiedPolicyIDs.Cardinality() == 0 {
+		return false
+	}
+
+	// Some other policies were updated, we don't want to mark this alert stale in response.
+	if !specifiedPolicyIDs.Contains(alert.GetPolicy().GetId()) {
+		return false
+	}
+
+	// If the deployment is whitelisted for the policy now, we should mark the alert stale, otherwise we will keep it around.
+	return d.runtimeDetector.DeploymentWhitelistedForPolicy(alert.GetDeployment().GetId(), alert.GetPolicy().GetId())
 }
 
 func findAlert(toFind *v1.Alert, alerts []*v1.Alert) *v1.Alert {

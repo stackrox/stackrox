@@ -6,26 +6,48 @@ import (
 )
 
 // An AlertFilterOption modifies the query builder to filter existing alerts in the DB.
-// Clients should use the helper functions below to create one instead of creating them on their own.
-type AlertFilterOption func(*search.QueryBuilder)
+type AlertFilterOption interface {
+	apply(*search.QueryBuilder)
+	specifiedPolicyID() string
+}
+
+type alertFilterOptionImpl struct {
+	applyFunc func(*search.QueryBuilder)
+	policyID  string
+}
+
+func (a *alertFilterOptionImpl) apply(qb *search.QueryBuilder) {
+	a.applyFunc(qb)
+}
+
+func (a *alertFilterOptionImpl) specifiedPolicyID() string {
+	return a.policyID
+}
 
 // WithPolicyID returns an AlertFilterOption that filters by policy id.
 func WithPolicyID(policyID string) AlertFilterOption {
-	return func(qb *search.QueryBuilder) {
-		qb.AddExactMatches(search.PolicyID, policyID)
+	return &alertFilterOptionImpl{
+		applyFunc: func(qb *search.QueryBuilder) {
+			qb.AddExactMatches(search.PolicyID, policyID)
+		},
+		policyID: policyID,
 	}
 }
 
 // WithDeploymentIDs returns an AlertFilterOption that filters by deployment id.
 func WithDeploymentIDs(deploymentIDs ...string) AlertFilterOption {
-	return func(qb *search.QueryBuilder) {
-		qb.AddExactMatches(search.DeploymentID, deploymentIDs...)
+	return &alertFilterOptionImpl{
+		applyFunc: func(qb *search.QueryBuilder) {
+			qb.AddExactMatches(search.DeploymentID, deploymentIDs...)
+		},
 	}
 }
 
 // WithLifecycleStage returns an AlertFilterOptions that filters by lifecycle stage.
 func WithLifecycleStage(lifecycleStage v1.LifecycleStage) AlertFilterOption {
-	return func(qb *search.QueryBuilder) {
-		qb.AddStrings(search.LifecycleStage, lifecycleStage.String())
+	return &alertFilterOptionImpl{
+		applyFunc: func(qb *search.QueryBuilder) {
+			qb.AddStrings(search.LifecycleStage, lifecycleStage.String())
+		},
 	}
 }

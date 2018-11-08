@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/detection/runtime"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 )
 
@@ -14,7 +15,7 @@ var (
 )
 
 func initialize() {
-	alertManager = New(notifierProcessor.Singleton(), alertDataStore.Singleton())
+	alertManager = New(notifierProcessor.Singleton(), alertDataStore.Singleton(), runtime.SingletonDetector())
 }
 
 // Singleton returns the singleton instance of an AlertManager

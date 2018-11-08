@@ -62,7 +62,7 @@ func (suite *AlertManagerTestSuite) SetupTest() {
 	suite.alertsMock = alertMocks.NewMockDataStore(suite.mockCtrl)
 	suite.notifierMock = notifierMocks.NewMockProcessor(suite.mockCtrl)
 
-	suite.alertManager = New(suite.notifierMock, suite.alertsMock)
+	suite.alertManager = New(suite.notifierMock, suite.alertsMock, nil)
 }
 
 func (suite *AlertManagerTestSuite) TearDownTest() {

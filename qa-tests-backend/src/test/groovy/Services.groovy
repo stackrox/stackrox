@@ -3,11 +3,13 @@ import orchestratormanager.OrchestratorType
 import services.BaseService
 import services.ClusterService
 import stackrox.generated.AlertServiceGrpc
+import stackrox.generated.AlertServiceOuterClass
 import stackrox.generated.AlertServiceOuterClass.GetAlertsCountsRequest
 import stackrox.generated.AlertServiceOuterClass.GetAlertsCountsResponse
 import stackrox.generated.AlertServiceOuterClass.GetAlertsGroupResponse
 import stackrox.generated.AlertServiceOuterClass.GetAlertTimeseriesResponse
 import stackrox.generated.AlertServiceOuterClass.ListAlert
+import stackrox.generated.Common
 import stackrox.generated.DeploymentServiceGrpc
 import stackrox.generated.DetectionServiceGrpc
 import stackrox.generated.EnforcementServiceGrpc
@@ -20,6 +22,7 @@ import stackrox.generated.ImageServiceOuterClass.Image
 import stackrox.generated.NotifierServiceGrpc
 import stackrox.generated.NotifierServiceOuterClass
 import stackrox.generated.PolicyServiceGrpc
+import stackrox.generated.PolicyServiceOuterClass
 import stackrox.generated.PolicyServiceOuterClass.EnforcementAction
 import stackrox.generated.PolicyServiceOuterClass.LifecycleStage
 import stackrox.generated.PolicyServiceOuterClass.ListPolicy
@@ -32,7 +35,6 @@ import stackrox.generated.DeploymentServiceOuterClass.ListDeployment
 import stackrox.generated.DeploymentServiceOuterClass.Deployment
 import stackrox.generated.Common.ResourceByID
 import stackrox.generated.SearchServiceOuterClass
-import v1.Indicator
 import stackrox.generated.SensorEventIservice
 import v1.NetworkPolicyServiceGrpc
 import v1.SecretServiceGrpc
@@ -130,9 +132,14 @@ class Services extends BaseService {
         return violations.get(0)?.enforcementCount
     }
 
-    static Alert getViolaton(String id) {
+    static Alert getViolation(String id) {
         return getAlertClient().getAlert(getResourceByID(id))
-      }
+    }
+
+    static resolveAlert(String alertID) {
+        return getAlertClient().resolveAlert(
+            AlertServiceOuterClass.ResolveAlertRequest.newBuilder().setId(alertID).build())
+    }
 
     static List<ListDeployment> getDeployments(RawQuery query = RawQuery.newBuilder().build()) {
         return getDeploymentClient().listDeployments(query).deploymentsList
@@ -170,12 +177,12 @@ class Services extends BaseService {
         return violations != null && violations.size() > 0
       }
 
-    static getViolationsWithTimeout(String deploymentName, String policyName, int timeoutSeconds) {
+    private static getViolationsHelper(String query, String policyName, int timeoutSeconds) {
         int intervalSeconds = 1
         int waitTime
         for (waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
             def violations = getViolations(ListAlertsRequest.newBuilder()
-                    .setQuery("Deployment:${deploymentName}+Policy:${policyName}").build())
+                    .setQuery(query).build())
             if (violations.size() > 0) {
                 println "violation size is: " + violations.size()
                 println policyName + " triggered after waiting " + waitTime * intervalSeconds + " seconds"
@@ -186,6 +193,14 @@ class Services extends BaseService {
 
         println "Failed to trigger " + policyName + " after waiting " + waitTime * intervalSeconds + " seconds"
         return []
+    }
+
+    static getViolationsWithTimeout(String deploymentName, String policyName, int timeoutSeconds) {
+        return getViolationsHelper("Deployment:${deploymentName}+Policy:${policyName}", policyName, timeoutSeconds)
+    }
+
+    static getViolationsByDeploymentID(String deploymentID, String policyName, int timeoutSeconds) {
+        return getViolationsHelper("Deployment Id:${deploymentID}+Policy:${policyName}", policyName, timeoutSeconds)
     }
 
     static String addGenericDockerRegistry() {
@@ -278,16 +293,36 @@ class Services extends BaseService {
             )
       }
 
-    static List<String> getProcessOnDeployment(String uid) {
-        List<Indicator.ProcessIndicator> signals
-        signals = getDeploymentClient()
-                  .getDeployment(getResourceByID(uid))
-                  .getProcessesList()
-        List<String> processname = new ArrayList<>()
-        for (Indicator.ProcessIndicator signal: signals) {
-            processname.add(signal.getSignal().getExecFilePath())
+    static updatePolicy(Policy policyDef) {
+        try {
+            getPolicyClient().putPolicy(policyDef)
+        } catch (Exception e) {
+            println e.toString()
         }
-        return processname
+    }
+
+    static updatePolicyToWhitelistDeployment(String policyName, objects.Deployment deployment) {
+        Policy policyMeta = getPolicyByName(policyName)
+
+        def policyDef = Policy.
+            newBuilder(policyMeta).
+            addWhitelists(PolicyServiceOuterClass.Whitelist.newBuilder().
+                setDeployment(PolicyServiceOuterClass.Whitelist.Deployment.newBuilder().
+                    setName(deployment.getName()).
+                    setScope(Common.Scope.newBuilder().
+                        setNamespace(deployment.getNamespace())
+                    ).
+                    build()).
+                build()).
+            build()
+
+        try {
+            getPolicyClient().putPolicy(policyDef)
+        } catch (Exception e) {
+            println e.toString()
+        }
+        println "Updated ${policyName} to whitelist ${deployment.getName()}"
+        return policyMeta
     }
 
     static updatePolicyLifecycleStage(String policyName, List<LifecycleStage> stages) {
