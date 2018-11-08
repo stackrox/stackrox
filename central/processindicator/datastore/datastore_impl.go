@@ -18,8 +18,8 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (ds *datastoreImpl) SearchProcessIndicators(q *v1.Query) ([]*v1.SearchResult, error) {
-	return ds.searcher.SearchProcessIndicators(q)
+func (ds *datastoreImpl) Search(q *v1.Query) ([]pkgSearch.Result, error) {
+	return ds.searcher.Search(q)
 }
 
 func (ds *datastoreImpl) SearchRawProcessIndicators(q *v1.Query) ([]*v1.ProcessIndicator, error) {
@@ -73,7 +73,7 @@ func (ds *datastoreImpl) AddProcessIndicator(i *v1.ProcessIndicator) error {
 	}
 	if removedIndicator != "" {
 		if err := ds.indexer.DeleteProcessIndicator(removedIndicator); err != nil {
-			return fmt.Errorf("Error removing process indicator")
+			return fmt.Errorf("removing process indicator: %s", err)
 		}
 	}
 	if err := ds.indexer.AddProcessIndicator(i); err != nil {
@@ -89,15 +89,10 @@ func (ds *datastoreImpl) RemoveProcessIndicator(id string) error {
 	return ds.indexer.DeleteProcessIndicator(id)
 }
 
-func (ds *datastoreImpl) RemoveProcessIndicatorsByDeployment(id string) error {
-	query := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, id).ProtoQuery()
-	results, err := ds.SearchProcessIndicators(query)
-	if err != nil {
-		return err
-	}
+func (ds *datastoreImpl) removeMatchingIndicators(results []pkgSearch.Result) error {
 	idsToDelete := make([]string, 0, len(results))
 	for _, r := range results {
-		idsToDelete = append(idsToDelete, r.GetId())
+		idsToDelete = append(idsToDelete, r.ID)
 	}
 
 	for _, id := range idsToDelete {
@@ -106,4 +101,28 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByDeployment(id string) error {
 		}
 	}
 	return ds.indexer.DeleteProcessIndicators(idsToDelete...)
+}
+
+func (ds *datastoreImpl) RemoveProcessIndicatorsByDeployment(id string) error {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, id).ProtoQuery()
+	results, err := ds.Search(q)
+	if err != nil {
+		return err
+	}
+	return ds.removeMatchingIndicators(results)
+}
+
+func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainers(deploymentID string, currentContainerIDs []string) error {
+	queries := make([]*v1.Query, 0, len(currentContainerIDs)+1)
+	queries = append(queries, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery())
+
+	for _, containerID := range currentContainerIDs {
+		queries = append(queries, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.ContainerID, pkgSearch.NegateQueryString(containerID)).ProtoQuery())
+	}
+
+	results, err := ds.Search(pkgSearch.ConjunctionQuery(queries...))
+	if err != nil {
+		return err
+	}
+	return ds.removeMatchingIndicators(results)
 }

@@ -40,6 +40,7 @@ const (
 	CommandArgs       FieldLabel = "Command Args"
 	CPUCoresLimit     FieldLabel = "CPU Cores Limit"
 	CPUCoresRequest   FieldLabel = "CPU Cores Request"
+	ContainerID       FieldLabel = "Container Id"
 	DeploymentID      FieldLabel = "Deployment Id"
 	DeploymentName    FieldLabel = "Deployment"
 	DeploymentType    FieldLabel = "Deployment Type"

@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -13,7 +14,7 @@ var (
 
 // Searcher provides search functionality on existing alerts
 type Searcher interface {
-	SearchProcessIndicators(q *v1.Query) ([]*v1.SearchResult, error)
+	Search(q *v1.Query) ([]search.Result, error)
 	SearchRawProcessIndicators(q *v1.Query) ([]*v1.ProcessIndicator, error)
 }
 

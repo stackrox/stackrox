@@ -45,6 +45,11 @@ func (k StringSet) Cardinality() int {
 	return k.underlying.Cardinality()
 }
 
+// Difference returns a new set with all elements of k not in other.
+func (k StringSet) Difference(other StringSet) StringSet {
+	return StringSet{underlying: k.underlying.Difference(other.underlying)}
+}
+
 // Intersect returns a new set with the intersection of the members of both sets.
 func (k StringSet) Intersect(other StringSet) StringSet {
 	return StringSet{underlying: k.underlying.Intersect(other.underlying)}

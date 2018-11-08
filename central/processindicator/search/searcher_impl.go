@@ -1,6 +1,8 @@
 package search
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -23,52 +25,26 @@ func (s *searcherImpl) buildIndex() error {
 
 // SearchRawIndicators retrieves Policies from the indexer and storage
 func (s *searcherImpl) SearchRawProcessIndicators(q *v1.Query) ([]*v1.ProcessIndicator, error) {
-	indicators, _, err := s.searchIndicators(q)
-	return indicators, err
-}
-
-// SearchIndicators retrieves SearchResults from the indexer and storage
-func (s *searcherImpl) SearchProcessIndicators(q *v1.Query) ([]*v1.SearchResult, error) {
-	indicators, results, err := s.searchIndicators(q)
+	results, err := s.indexer.SearchProcessIndicators(q)
 	if err != nil {
 		return nil, err
 	}
-	protoResults := make([]*v1.SearchResult, 0, len(indicators))
-	for i, indicator := range indicators {
-		protoResults = append(protoResults, convertIndicator(indicator, results[i]))
-	}
-	return protoResults, nil
-}
-
-func (s *searcherImpl) searchIndicators(q *v1.Query) ([]*v1.ProcessIndicator, []search.Result, error) {
-	results, err := s.indexer.SearchProcessIndicators(q)
-	if err != nil {
-		return nil, nil, err
-	}
-	var indicators []*v1.ProcessIndicator
-	var newResults []search.Result
+	indicators := make([]*v1.ProcessIndicator, 0, len(results))
 	for _, result := range results {
 		indicator, exists, err := s.storage.GetProcessIndicator(result.ID)
 		if err != nil {
-			return nil, nil, err
+			return nil, fmt.Errorf("retrieving indicator with id '%s': %s", result.ID, err)
 		}
 		// The result may not exist if the object was deleted after the search
 		if !exists {
 			continue
 		}
 		indicators = append(indicators, indicator)
-		newResults = append(newResults, result)
 	}
-	return indicators, newResults, nil
+	return indicators, nil
 }
 
-// convertIndicator returns proto search result from a indicator object and the internal search result
-func convertIndicator(indicator *v1.ProcessIndicator, result search.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_PROCESS_INDICATORS,
-		Id:             indicator.GetId(),
-		Name:           indicator.GetSignal().GetName(),
-		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+// SearchIndicators retrieves SearchResults from the indexer and storage
+func (s *searcherImpl) Search(q *v1.Query) ([]search.Result, error) {
+	return s.indexer.SearchProcessIndicators(q)
 }

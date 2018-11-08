@@ -1,11 +1,14 @@
 package datastore
 
 import (
+	"fmt"
+
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	deploymentSearch "github.com/stackrox/rox/central/deployment/search"
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/containerid"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -59,12 +62,32 @@ func (ds *datastoreImpl) CountDeployments() (int, error) {
 	return ds.deploymentStore.CountDeployments()
 }
 
+func containerIds(deployment *v1.Deployment) (ids []string) {
+	for _, container := range deployment.GetContainers() {
+		for _, instance := range container.GetInstances() {
+			containerID := containerid.ShortContainerIDFromInstance(instance)
+			if containerID != "" {
+				ids = append(ids, containerID)
+			}
+		}
+	}
+	return
+}
+
 // UpsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
 func (ds *datastoreImpl) UpsertDeployment(deployment *v1.Deployment) error {
 	if err := ds.deploymentStore.UpsertDeployment(deployment); err != nil {
-		return err
+		return fmt.Errorf("inserting deployment '%s' to store: %s", deployment.GetId(), err)
 	}
-	return ds.deploymentIndexer.AddDeployment(deployment)
+	if err := ds.deploymentIndexer.AddDeployment(deployment); err != nil {
+		return fmt.Errorf("inserting deployment '%s' to index: %s", deployment.GetId(), err)
+	}
+
+	if err := ds.processDataStore.RemoveProcessIndicatorsOfStaleContainers(deployment.GetId(), containerIds(deployment)); err != nil {
+		logger.Errorf("Failed to remove stale process indicators for deployment %s/%s: %s",
+			deployment.GetNamespace(), deployment.GetName(), err)
+	}
+	return nil
 }
 
 // UpdateDeployment updates a deployment in deploymentStore and in the deploymentIndexer

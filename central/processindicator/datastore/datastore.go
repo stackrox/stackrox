@@ -5,11 +5,12 @@ import (
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to PolicyStorage.
 type DataStore interface {
-	SearchProcessIndicators(q *v1.Query) ([]*v1.SearchResult, error)
+	Search(q *v1.Query) ([]pkgSearch.Result, error)
 	SearchRawProcessIndicators(q *v1.Query) ([]*v1.ProcessIndicator, error)
 
 	GetProcessIndicator(id string) (*v1.ProcessIndicator, bool, error)
@@ -18,6 +19,7 @@ type DataStore interface {
 	AddProcessIndicators(...*v1.ProcessIndicator) error
 	RemoveProcessIndicator(id string) error
 	RemoveProcessIndicatorsByDeployment(id string) error
+	RemoveProcessIndicatorsOfStaleContainers(deploymentID string, currentContainerIDs []string) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

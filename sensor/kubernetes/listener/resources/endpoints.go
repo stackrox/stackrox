@@ -3,6 +3,7 @@ package resources
 import (
 	"strings"
 
+	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"k8s.io/api/core/v1"
@@ -87,21 +88,20 @@ func (m *endpointManager) endpointDataForDeployment(w *deploymentWrap) *clustere
 
 	for _, c := range w.GetContainers() {
 		for _, inst := range c.GetInstances() {
-			id := inst.GetInstanceId().GetId()
-			if id != "" {
-				id = id[:12]
-
-				podID := inst.ContainingPodId
-				if idx := strings.Index(podID, "."); idx != -1 {
-					podID = podID[:idx]
-				}
-
-				result.AddContainerID(id, clusterentities.ContainerMetadata{
-					DeploymentID:  w.GetId(),
-					PodID:         podID,
-					ContainerName: c.GetName(),
-				})
+			id := containerid.ShortContainerIDFromInstance(inst)
+			if id == "" {
+				continue
 			}
+			podID := inst.ContainingPodId
+			if idx := strings.Index(podID, "."); idx != -1 {
+				podID = podID[:idx]
+			}
+
+			result.AddContainerID(id, clusterentities.ContainerMetadata{
+				DeploymentID:  w.GetId(),
+				PodID:         podID,
+				ContainerName: c.GetName(),
+			})
 		}
 	}
 

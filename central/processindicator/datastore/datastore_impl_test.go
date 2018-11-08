@@ -11,12 +11,9 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
-
-var fakeID = fixtures.GetProcessIndicator().GetId()
 
 func TestIndicatorDatastore(t *testing.T) {
 	suite.Run(t, new(IndicatorDataStoreTestSuite))
@@ -122,4 +119,61 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorAddOneByOne() {
 
 	suite.NoError(suite.datastore.AddProcessIndicators(repeatIndicator))
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
+}
+
+func generateIndicators(deploymentIDs []string, containerIDs []string) []*v1.ProcessIndicator {
+	var indicators []*v1.ProcessIndicator
+	for _, d := range deploymentIDs {
+		for _, c := range containerIDs {
+			indicators = append(indicators, &v1.ProcessIndicator{
+				Id:           fmt.Sprintf("indicator_id_%s_%s", d, c),
+				DeploymentId: d,
+				Signal: &v1.ProcessSignal{
+					ContainerId:  fmt.Sprintf("%s_%s", d, c),
+					ExecFilePath: fmt.Sprintf("EXECFILE_%s_%s", d, c),
+				},
+			})
+		}
+	}
+	return indicators
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByDeploymentID() {
+	indicators := generateIndicators([]string{"d1", "d2"}, []string{"c1", "c2"})
+	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
+	suite.verifyIndicatorsAre(indicators...)
+
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsByDeployment("d1"))
+	suite.verifyIndicatorsAre(generateIndicators([]string{"d2"}, []string{"c1", "c2"})...)
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByDeploymentIDAgain() {
+	indicators := generateIndicators([]string{"d1", "d2", "d3"}, []string{"c1", "c2", "c3"})
+	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
+	suite.verifyIndicatorsAre(indicators...)
+
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsByDeployment("dnonexistent"))
+	suite.verifyIndicatorsAre(indicators...)
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerID() {
+	indicators := generateIndicators([]string{"d1", "d2"}, []string{"c1", "c2"})
+	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
+	suite.verifyIndicatorsAre(indicators...)
+
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers("d1", []string{"d1_c2"}))
+	suite.verifyIndicatorsAre(
+		append(generateIndicators([]string{"d1"}, []string{"c2"}), generateIndicators([]string{"d2"}, []string{"c1", "c2"})...)...)
+
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers("d2", []string{"d2_c2"}))
+	suite.verifyIndicatorsAre(generateIndicators([]string{"d1", "d2"}, []string{"c2"})...)
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerIDAgain() {
+	indicators := generateIndicators([]string{"d1", "d2"}, []string{"c1", "c2"})
+	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
+	suite.verifyIndicatorsAre(indicators...)
+
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers("d1", nil))
+	suite.verifyIndicatorsAre(generateIndicators([]string{"d2"}, []string{"c1", "c2"})...)
 }

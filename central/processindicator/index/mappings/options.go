@@ -9,6 +9,7 @@ import (
 var OptionsMap = map[search.FieldLabel]*v1.SearchField{
 	search.ProcessID:    search.NewField(v1.SearchCategory_PROCESS_INDICATORS, "process_indicator.id", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
 	search.DeploymentID: search.NewField(v1.SearchCategory_PROCESS_INDICATORS, "process_indicator.deployment_id", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
+	search.ContainerID:  search.NewField(v1.SearchCategory_PROCESS_INDICATORS, "process_indicator.signal.container_id", v1.SearchDataType_SEARCH_STRING, search.OptionHidden),
 
 	search.ProcessArguments: search.NewStringField(v1.SearchCategory_PROCESS_INDICATORS, "process_indicator.signal.args"),
 	search.ProcessExecPath:  search.NewStringField(v1.SearchCategory_PROCESS_INDICATORS, "process_indicator.signal.exec_file_path"),
